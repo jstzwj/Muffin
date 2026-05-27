@@ -35,7 +35,9 @@ void Document::setTheme(const Theme& theme) {
 void Document::render() {
     ThemeStylesheet ss(m_theme);
     DocumentRenderer renderer(ss);
-    m_textDocument = renderer.render(m_astTree);
+    RenderResult result = renderer.render(m_astTree, m_markdown);
+    m_textDocument = std::move(result.document);
+    m_sourceMap = std::move(result.sourceMap);
     m_textDocument->setModified(false);
 
     emit documentRendered();

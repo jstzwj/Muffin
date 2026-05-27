@@ -6,9 +6,12 @@ set(MUFFIN_SOURCES
     core/FileManager.cpp
     parser/CmarkParser.cpp
     renderer/DocumentRenderer.cpp
+    renderer/RenderSourceMap.cpp
     theme/Theme.cpp
     theme/ThemeStylesheet.cpp
     editor/MarkdownEditor.cpp
+    editor/MarkdownCommand.cpp
+    editor/MarkdownPatch.cpp
 )
 
 set(MUFFIN_HEADERS
@@ -20,9 +23,13 @@ set(MUFFIN_HEADERS
     parser/AstTree.h
     parser/CmarkParser.h
     renderer/DocumentRenderer.h
+    renderer/RenderSourceMap.h
+    renderer/SourceBlockData.h
     theme/Theme.h
     theme/ThemeStylesheet.h
     editor/MarkdownEditor.h
+    editor/MarkdownCommand.h
+    editor/MarkdownPatch.h
     utils/SafeCString.h
 )
 

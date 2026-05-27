@@ -1,5 +1,6 @@
 #pragma once
 
+#include "editor/MarkdownCommand.h"
 #include "editor/MarkdownEditor.h"
 #include "core/Document.h"
 #include "core/FileManager.h"
@@ -7,7 +8,9 @@
 #include <QMainWindow>
 #include <QString>
 #include <QStringList>
+#include <QVector>
 #include <memory>
+#include <optional>
 
 class QAction;
 class QActionGroup;
@@ -43,6 +46,28 @@ private slots:
     void onZoomIn();
     void onZoomOut();
     void onOpenRecentFile();
+    void onClearRecentFiles();
+    void onSourceTextChanged();
+    void onRenderedSourceRangeClicked(SourceRange range);
+    void onRenderedInlineTextSelected(SourceRange range, const QString& text);
+    void onRenderedEditRequested(RenderedEdit edit);
+    void onFindReplace();
+    void onToggleBold();
+    void onToggleItalic();
+    void onToggleUnderline();
+    void onToggleInlineCode();
+    void onInsertLink();
+    void onApplyHeading1();
+    void onApplyHeading2();
+    void onApplyHeading3();
+    void onApplyHeading4();
+    void onApplyHeading5();
+    void onApplyHeading6();
+    void onApplyParagraph();
+    void onApplyQuote();
+    void onApplyOrderedList();
+    void onApplyUnorderedList();
+    void onApplyTaskList();
     void onToggleViewMode();
     void onThemeChanged(QAction* action);
     void onDocumentRendered();
@@ -61,12 +86,26 @@ private:
     int wordCount() const;
     int characterCount() const;
     int lineCount() const;
+    QString currentMarkdownText() const;
+    void syncSourceToDocument();
+    void ensureSourceMode();
+    void moveSourceCursorToRange(SourceRange range, bool selectRange);
+    bool moveSourceCursorToInlineText(SourceRange range, const QString& text);
+    bool hasRenderedCommandTarget() const;
+    bool warnIfMissingRenderedCommandTarget();
+    void clearRenderedCommandTarget();
+    void updateSingleBlockCommandState();
+    void applyRenderedMarkdownCommand(void (*command)(QPlainTextEdit*));
+    void applyMarkdownCommand(void (*command)(QPlainTextEdit*));
+    void applyMarkdownListCommand(MarkdownCommand::ListType type);
+    void applyHeadingLevel(int level);
 
     bool saveToFile(const QString& filePath);
     bool loadFromFile(const QString& filePath);
     bool maybeSave();
 
     MarkdownEditor* m_editor;
+    QLabel* m_commandTargetLabel = nullptr;
     QLabel* m_wordCountLabel;
     QAction* m_toggleViewAction = nullptr;
     QAction* m_fullscreenAction = nullptr;
@@ -74,6 +113,8 @@ private:
     QAction* m_actualSizeAction = nullptr;
     QMenu* m_recentFilesMenu = nullptr;
     QActionGroup* m_themeActionGroup = nullptr;
+    QVector<QAction*> m_singleBlockParagraphActions;
+    QMenu* m_tableMenu = nullptr;
     ThemePreset m_themePreset = ThemePreset::Github;
     int m_sourceZoomSteps = 0;
     double m_zoomFactor = 1.0;
@@ -82,6 +123,9 @@ private:
     FileManager m_fileManager;
 
     QString m_currentFile;
+    SourceRange m_lastRenderedSourceRange;
+    QString m_lastRenderedSelectedText;
+    std::optional<int> m_pendingRenderedCursorSourceOffset;
     bool m_modified = false;
 };
 

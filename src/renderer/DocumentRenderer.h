@@ -1,8 +1,10 @@
 #pragma once
 #include "parser/AstTree.h"
+#include "RenderSourceMap.h"
 #include "theme/ThemeStylesheet.h"
 #include <QTextDocument>
 #include <QTextLength>
+#include <QString>
 #include <QVector>
 #include <memory>
 
@@ -10,11 +12,16 @@ class QTextTable;
 
 namespace Muffin {
 
+struct RenderResult {
+    std::unique_ptr<QTextDocument> document;
+    RenderSourceMap sourceMap;
+};
+
 class DocumentRenderer {
 public:
     explicit DocumentRenderer(const ThemeStylesheet& stylesheet);
 
-    std::unique_ptr<QTextDocument> render(const AstTree& tree);
+    RenderResult render(const AstTree& tree, const QString& source);
 
 private:
     void renderNode(QTextCursor& cursor, const AstNode& node);
@@ -25,8 +32,9 @@ private:
     void renderCodeBlock(QTextCursor& cursor, const AstNode& node);
     void renderList(QTextCursor& cursor, const AstNode& node);
     void renderItem(QTextCursor& cursor, const AstNode& node, int index);
-    void renderThematicBreak(QTextCursor& cursor);
+    void renderThematicBreak(QTextCursor& cursor, const AstNode& node);
     void renderHtmlBlock(QTextCursor& cursor, const AstNode& node);
+    void attachSourceRange(QTextCursor& cursor, const AstNode& node);
 
     void renderInlineChildren(QTextCursor& cursor, const AstNode& node);
     void renderText(QTextCursor& cursor, const AstNode& node);
@@ -45,7 +53,23 @@ private:
     void renderTableRow(QTextTable* table, int row, const AstNode& rowNode, bool isHeader);
     void renderTableCell(QTextTable* table, int row, int col, const AstNode& cellNode, bool isHeader);
 
+    void beginEditableBlock(const AstNode& node, RenderSpan::Kind kind, SourceSpan sourceSpan);
+    void endEditableBlock();
+    SourceSpan sourceSpanForNode(const AstNode& node) const;
+    SourceSpan nextInlineSourceSpan(const QString& literal);
+    void recordSpan(int renderedStart, int renderedEnd, SourceSpan source, SourceRange sourceRange,
+                    RenderSpan::Kind kind, bool editable);
+
     const ThemeStylesheet& m_ss;
+    QString m_source;
+    SourceCoordinateMapper m_sourceMapper;
+    RenderSourceMap m_sourceMap;
+    bool m_inEditableBlock = false;
+    int m_nonPlainInlineDepth = 0;
+    SourceSpan m_currentEditableSourceSpan;
+    int m_currentSourceSearchOffset = -1;
+    SourceRange m_currentBlockRange;
+    RenderSpan::Kind m_currentBlockKind = RenderSpan::Kind::Unsupported;
 };
 
 } // namespace Muffin

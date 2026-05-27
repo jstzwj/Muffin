@@ -1,4 +1,6 @@
 #include "MainWindow.h"
+#include "editor/MarkdownPatch.h"
+#include "renderer/SourceBlockData.h"
 
 #include <QAction>
 #include <QActionGroup>
@@ -8,15 +10,21 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QFormLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QPageLayout>
 #include <QPrintDialog>
 #include <QPrinter>
+#include <QPushButton>
 #include <QRegularExpression>
 #include <QSettings>
 #include <QStatusBar>
+#include <QTextBlock>
 #include <QTextStream>
 #include <QUrl>
 
@@ -179,8 +187,9 @@ void MainWindow::setupMenuBar()
     disabledAction(editMenu, QStringLiteral("拼写检查..."));
     editMenu->addSeparator();
 
-    QMenu* findMenu = editMenu->addMenu(QStringLiteral("查找和替换"));
-    findMenu->setEnabled(false);
+    QAction* findReplaceAction = editMenu->addAction(QStringLiteral("查找和替换"));
+    findReplaceAction->setShortcut(QKeySequence::Find);
+    connect(findReplaceAction, &QAction::triggered, this, &MainWindow::onFindReplace);
     editMenu->addSeparator();
 
     disabledAction(editMenu, QStringLiteral("表情与符号"), QKeySequence(QStringLiteral("Win+Period")));
@@ -194,24 +203,32 @@ void MainWindow::setupMenuBar()
         QStringLiteral("四级标题"), QStringLiteral("五级标题"), QStringLiteral("六级标题")
     };
     for (int i = 0; i < headingNames.size(); ++i) {
-        QAction* action = disabledAction(paragraphMenu, headingNames[i], QKeySequence(QStringLiteral("Ctrl+%1").arg(i + 1)));
+        QAction* action = paragraphMenu->addAction(headingNames[i]);
+        action->setShortcut(QKeySequence(QStringLiteral("Ctrl+%1").arg(i + 1)));
         action->setCheckable(true);
+        connect(action, &QAction::triggered, this, [this, i]() { applyHeadingLevel(i + 1); });
         paragraphGroup->addAction(action);
+        m_singleBlockParagraphActions.append(action);
     }
     paragraphMenu->addSeparator();
 
-    QAction* paragraphAction = disabledAction(paragraphMenu, QStringLiteral("段落"), QKeySequence(QStringLiteral("Ctrl+0")));
+    QAction* paragraphAction = paragraphMenu->addAction(QStringLiteral("段落"));
+    paragraphAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+0")));
     paragraphAction->setCheckable(true);
     paragraphAction->setChecked(true);
+    connect(paragraphAction, &QAction::triggered, this, &MainWindow::onApplyParagraph);
     paragraphGroup->addAction(paragraphAction);
+    m_singleBlockParagraphActions.append(paragraphAction);
     paragraphMenu->addSeparator();
 
-    disabledAction(paragraphMenu, QStringLiteral("提升标题级别"), QKeySequence(QStringLiteral("Ctrl+-")));
-    disabledAction(paragraphMenu, QStringLiteral("降低标题级别"), QKeySequence(QStringLiteral("Ctrl++")));
+    QAction* promoteHeadingAction = disabledAction(paragraphMenu, QStringLiteral("提升标题级别"), QKeySequence(QStringLiteral("Ctrl+-")));
+    QAction* demoteHeadingAction = disabledAction(paragraphMenu, QStringLiteral("降低标题级别"), QKeySequence(QStringLiteral("Ctrl++")));
+    m_singleBlockParagraphActions.append(promoteHeadingAction);
+    m_singleBlockParagraphActions.append(demoteHeadingAction);
     paragraphMenu->addSeparator();
 
-    QMenu* tableMenu = paragraphMenu->addMenu(QStringLiteral("表格"));
-    tableMenu->setEnabled(false);
+    m_tableMenu = paragraphMenu->addMenu(QStringLiteral("表格"));
+    m_tableMenu->setEnabled(false);
     disabledAction(paragraphMenu, QStringLiteral("公式块"), QKeySequence(QStringLiteral("Ctrl+Shift+M")));
     disabledAction(paragraphMenu, QStringLiteral("代码块"), QKeySequence(QStringLiteral("Ctrl+Shift+K")));
     disabledAction(paragraphMenu, QStringLiteral("代码工具"));
@@ -219,12 +236,22 @@ void MainWindow::setupMenuBar()
     alertMenu->setEnabled(false);
     paragraphMenu->addSeparator();
 
-    disabledAction(paragraphMenu, QStringLiteral("引用"), QKeySequence(QStringLiteral("Ctrl+Shift+Q")));
+    QAction* quoteAction = paragraphMenu->addAction(QStringLiteral("引用"));
+    quoteAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+Q")));
+    connect(quoteAction, &QAction::triggered, this, &MainWindow::onApplyQuote);
     paragraphMenu->addSeparator();
 
-    disabledAction(paragraphMenu, QStringLiteral("有序列表"), QKeySequence(QStringLiteral("Ctrl+Shift+[")));
-    disabledAction(paragraphMenu, QStringLiteral("无序列表"), QKeySequence(QStringLiteral("Ctrl+Shift+]")));
-    disabledAction(paragraphMenu, QStringLiteral("任务列表"), QKeySequence(QStringLiteral("Ctrl+Shift+X")));
+    QAction* orderedListAction = paragraphMenu->addAction(QStringLiteral("有序列表"));
+    orderedListAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+[")));
+    connect(orderedListAction, &QAction::triggered, this, &MainWindow::onApplyOrderedList);
+
+    QAction* unorderedListAction = paragraphMenu->addAction(QStringLiteral("无序列表"));
+    unorderedListAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+]")));
+    connect(unorderedListAction, &QAction::triggered, this, &MainWindow::onApplyUnorderedList);
+
+    QAction* taskListAction = paragraphMenu->addAction(QStringLiteral("任务列表"));
+    taskListAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+X")));
+    connect(taskListAction, &QAction::triggered, this, &MainWindow::onApplyTaskList);
     QMenu* taskStatusMenu = paragraphMenu->addMenu(QStringLiteral("任务状态"));
     taskStatusMenu->setEnabled(false);
     QMenu* listIndentMenu = paragraphMenu->addMenu(QStringLiteral("列表缩进"));
@@ -244,17 +271,34 @@ void MainWindow::setupMenuBar()
     disabledAction(paragraphMenu, QStringLiteral("YAML Front Matter"));
 
     QMenu* formatMenu = menuBar()->addMenu(QStringLiteral("格式(&O)"));
-    disabledAction(formatMenu, QStringLiteral("加粗"), QKeySequence::Bold)->setCheckable(true);
-    disabledAction(formatMenu, QStringLiteral("斜体"), QKeySequence::Italic)->setCheckable(true);
-    disabledAction(formatMenu, QStringLiteral("下划线"), QKeySequence::Underline)->setCheckable(true);
-    disabledAction(formatMenu, QStringLiteral("代码"), QKeySequence(QStringLiteral("Ctrl+Shift+`")))->setCheckable(true);
+    QAction* boldAction = formatMenu->addAction(QStringLiteral("加粗"));
+    boldAction->setShortcut(QKeySequence::Bold);
+    boldAction->setCheckable(true);
+    connect(boldAction, &QAction::triggered, this, &MainWindow::onToggleBold);
+
+    QAction* italicAction = formatMenu->addAction(QStringLiteral("斜体"));
+    italicAction->setShortcut(QKeySequence::Italic);
+    italicAction->setCheckable(true);
+    connect(italicAction, &QAction::triggered, this, &MainWindow::onToggleItalic);
+
+    QAction* underlineAction = formatMenu->addAction(QStringLiteral("下划线"));
+    underlineAction->setShortcut(QKeySequence::Underline);
+    underlineAction->setCheckable(true);
+    connect(underlineAction, &QAction::triggered, this, &MainWindow::onToggleUnderline);
+
+    QAction* codeAction = formatMenu->addAction(QStringLiteral("代码"));
+    codeAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+`")));
+    codeAction->setCheckable(true);
+    connect(codeAction, &QAction::triggered, this, &MainWindow::onToggleInlineCode);
     formatMenu->addSeparator();
 
     disabledAction(formatMenu, QStringLiteral("删除线"), QKeySequence(QStringLiteral("Alt+Shift+5")));
     disabledAction(formatMenu, QStringLiteral("注释"));
     formatMenu->addSeparator();
 
-    disabledAction(formatMenu, QStringLiteral("超链接"), QKeySequence(QStringLiteral("Ctrl+K")));
+    QAction* linkAction = formatMenu->addAction(QStringLiteral("超链接"));
+    linkAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+K")));
+    connect(linkAction, &QAction::triggered, this, &MainWindow::onInsertLink);
     QMenu* linkMenu = formatMenu->addMenu(QStringLiteral("链接操作"));
     linkMenu->setEnabled(false);
     QMenu* imageMenu = formatMenu->addMenu(QStringLiteral("图像"));
@@ -401,13 +445,18 @@ void MainWindow::setupStatusBar()
     sourceIcon->setFixedWidth(34);
     sourceIcon->setAlignment(Qt::AlignCenter);
 
+    m_commandTargetLabel = new QLabel(this);
+    m_commandTargetLabel->setObjectName(QStringLiteral("commandTarget"));
+    m_commandTargetLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+
     m_wordCountLabel = new QLabel(QStringLiteral("0 词  "), this);
     m_wordCountLabel->setObjectName(QStringLiteral("wordCount"));
     m_wordCountLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
     statusBar()->addWidget(outlineIcon);
     statusBar()->addWidget(sourceIcon);
-    statusBar()->addPermanentWidget(m_wordCountLabel, 1);
+    statusBar()->addWidget(m_commandTargetLabel, 1);
+    statusBar()->addPermanentWidget(m_wordCountLabel);
 }
 
 void MainWindow::connectSignals()
@@ -418,6 +467,18 @@ void MainWindow::connectSignals()
     connect(m_editor, &MarkdownEditor::modeChanged, this, [this](MarkdownEditor::Mode mode) {
         m_toggleViewAction->setChecked(mode == MarkdownEditor::SourceMode);
     });
+
+    connect(m_editor->sourceEditor(), &QPlainTextEdit::textChanged,
+            this, &MainWindow::onSourceTextChanged);
+
+    connect(m_editor, &MarkdownEditor::renderedSourceRangeClicked,
+            this, &MainWindow::onRenderedSourceRangeClicked);
+
+    connect(m_editor, &MarkdownEditor::renderedInlineTextSelected,
+            this, &MainWindow::onRenderedInlineTextSelected);
+
+    connect(m_editor, &MarkdownEditor::renderedEditRequested,
+            this, &MainWindow::onRenderedEditRequested);
 }
 
 bool MainWindow::openFile(const QString& filePath)
@@ -434,6 +495,7 @@ void MainWindow::onFileNew()
         m_modified = false;
         m_editor->setSourceText({});
         m_editor->setRenderedDocument(nullptr);
+        clearRenderedCommandTarget();
         updateWindowTitle();
     }
 }
@@ -517,18 +579,381 @@ bool MainWindow::onFileSaveAs()
     return saveToFile(filePath);
 }
 
+void MainWindow::onSourceTextChanged()
+{
+    if (m_editor->mode() != MarkdownEditor::SourceMode) {
+        return;
+    }
+
+    clearRenderedCommandTarget();
+    m_modified = true;
+    updateWindowTitle();
+}
+
+void MainWindow::onRenderedSourceRangeClicked(SourceRange range)
+{
+    m_lastRenderedSourceRange = range;
+    m_lastRenderedSelectedText.clear();
+    updateSingleBlockCommandState();
+    m_editor->highlightRenderedSourceRange(range);
+    if (m_commandTargetLabel) {
+        if (range.endLine > range.startLine) {
+            m_commandTargetLabel->setText(tr("Selected source lines %1-%2").arg(range.startLine).arg(range.endLine));
+        } else {
+            m_commandTargetLabel->setText(tr("Selected source line %1").arg(range.startLine));
+        }
+    }
+}
+
+void MainWindow::onRenderedInlineTextSelected(SourceRange range, const QString& text)
+{
+    m_lastRenderedSourceRange = range;
+    m_lastRenderedSelectedText = text;
+    updateSingleBlockCommandState();
+    m_editor->highlightRenderedSourceRange(range);
+    if (m_commandTargetLabel) {
+        const QString compactText = text.simplified();
+        m_commandTargetLabel->setText(tr("Selected text on source line %1: %2")
+            .arg(range.startLine)
+            .arg(compactText.left(40)));
+    }
+}
+
+void MainWindow::onRenderedEditRequested(RenderedEdit edit)
+{
+    PatchResult result = MarkdownPatch::applyRenderedEdit(m_document->markdown(), m_document->sourceMap(), edit);
+    if (!result.ok) {
+        statusBar()->showMessage(result.error, 3000);
+        return;
+    }
+
+    m_pendingRenderedCursorSourceOffset = result.cursorSourceOffset;
+    m_document->setMarkdown(result.text);
+    m_modified = true;
+    updateWindowTitle();
+}
+
 void MainWindow::onToggleViewMode()
 {
     if (m_editor->mode() == MarkdownEditor::RenderedMode) {
-        // Switch to source — update source text from document
         m_editor->setSourceText(m_document->markdown());
         m_editor->setMode(MarkdownEditor::SourceMode);
     } else {
-        // Switch to rendered — apply source edits back to document
-        QString source = m_editor->sourceText();
-        m_document->setMarkdown(source);
+        syncSourceToDocument();
         m_editor->setMode(MarkdownEditor::RenderedMode);
     }
+}
+
+void MainWindow::ensureSourceMode()
+{
+    if (m_editor->mode() != MarkdownEditor::SourceMode) {
+        m_editor->setSourceText(m_document->markdown());
+        m_editor->setMode(MarkdownEditor::SourceMode);
+    }
+}
+
+void MainWindow::moveSourceCursorToRange(SourceRange range, bool selectRange)
+{
+    if (range.startLine <= 0) {
+        return;
+    }
+
+    QTextDocument* sourceDocument = m_editor->sourceEditor()->document();
+    QTextBlock startBlock = sourceDocument->findBlockByLineNumber(range.startLine - 1);
+    if (!startBlock.isValid()) {
+        return;
+    }
+
+    int startPosition = startBlock.position() + qMax(0, range.startColumn - 1);
+    QTextCursor cursor(sourceDocument);
+    cursor.setPosition(startPosition);
+
+    if (selectRange && range.endLine >= range.startLine) {
+        QTextBlock endBlock = sourceDocument->findBlockByLineNumber(range.endLine - 1);
+        if (endBlock.isValid()) {
+            const int endColumn = range.endColumn > 0 ? range.endColumn : endBlock.length() - 1;
+            int endPosition = endBlock.position() + qMax(0, endColumn);
+            cursor.setPosition(qMax(startPosition, endPosition), QTextCursor::KeepAnchor);
+        }
+    }
+
+    m_editor->sourceEditor()->setTextCursor(cursor);
+    m_editor->sourceEditor()->centerCursor();
+}
+
+bool MainWindow::moveSourceCursorToInlineText(SourceRange range, const QString& text)
+{
+    if (range.startLine <= 0 || text.isEmpty()) {
+        return false;
+    }
+
+    QTextDocument* sourceDocument = m_editor->sourceEditor()->document();
+    QTextBlock startBlock = sourceDocument->findBlockByLineNumber(range.startLine - 1);
+    QTextBlock endBlock = sourceDocument->findBlockByLineNumber(qMax(range.startLine, range.endLine) - 1);
+    if (!startBlock.isValid() || !endBlock.isValid()) {
+        return false;
+    }
+
+    const int startPosition = startBlock.position();
+    const int endPosition = endBlock.position() + endBlock.length() - 1;
+    QTextCursor cursor(sourceDocument);
+    cursor.setPosition(startPosition);
+    cursor.setPosition(endPosition, QTextCursor::KeepAnchor);
+
+    const QString sourceText = cursor.selectedText();
+    const QString normalizedNeedle = text.simplified();
+    int relativePosition = sourceText.indexOf(text);
+    int matchLength = text.size();
+
+    if (relativePosition < 0) {
+        relativePosition = sourceText.simplified().indexOf(normalizedNeedle);
+        matchLength = normalizedNeedle.size();
+    }
+
+    if (relativePosition < 0) {
+        return false;
+    }
+
+    cursor.clearSelection();
+    cursor.setPosition(startPosition + relativePosition);
+    cursor.setPosition(startPosition + relativePosition + matchLength, QTextCursor::KeepAnchor);
+    m_editor->sourceEditor()->setTextCursor(cursor);
+    m_editor->sourceEditor()->centerCursor();
+    return true;
+}
+
+bool MainWindow::hasRenderedCommandTarget() const
+{
+    return m_lastRenderedSourceRange.startLine > 0;
+}
+
+bool MainWindow::warnIfMissingRenderedCommandTarget()
+{
+    if (hasRenderedCommandTarget()) {
+        return false;
+    }
+
+    statusBar()->showMessage(tr("Click a rendered block first, then apply a formatting command."), 3000);
+    return true;
+}
+
+void MainWindow::clearRenderedCommandTarget()
+{
+    m_lastRenderedSourceRange = {};
+    m_lastRenderedSelectedText.clear();
+    m_editor->clearRenderedSourceRangeHighlight();
+    if (m_commandTargetLabel) {
+        m_commandTargetLabel->clear();
+    }
+    updateSingleBlockCommandState();
+}
+
+void MainWindow::updateSingleBlockCommandState()
+{
+    const bool isMultiBlockTarget = m_lastRenderedSourceRange.startLine > 0
+        && m_lastRenderedSourceRange.endLine > m_lastRenderedSourceRange.startLine;
+    const bool enabled = !isMultiBlockTarget;
+
+    for (QAction* action : m_singleBlockParagraphActions) {
+        if (action) {
+            action->setEnabled(enabled);
+        }
+    }
+    if (m_tableMenu) {
+        m_tableMenu->setEnabled(false);
+    }
+}
+
+void MainWindow::applyRenderedMarkdownCommand(void (*command)(QPlainTextEdit*))
+{
+    const bool wasRenderedMode = m_editor->mode() == MarkdownEditor::RenderedMode;
+    if (wasRenderedMode) {
+        if (warnIfMissingRenderedCommandTarget()) {
+            return;
+        }
+        m_editor->setSourceText(m_document->markdown());
+        m_editor->setMode(MarkdownEditor::SourceMode);
+        if (!moveSourceCursorToInlineText(m_lastRenderedSourceRange, m_lastRenderedSelectedText)) {
+            moveSourceCursorToRange(m_lastRenderedSourceRange, true);
+        }
+    } else {
+        ensureSourceMode();
+    }
+
+    command(m_editor->sourceEditor());
+
+    if (wasRenderedMode) {
+        syncSourceToDocument();
+        m_editor->setMode(MarkdownEditor::RenderedMode);
+        clearRenderedCommandTarget();
+    }
+}
+
+void MainWindow::applyMarkdownCommand(void (*command)(QPlainTextEdit*))
+{
+    applyRenderedMarkdownCommand(command);
+}
+
+void MainWindow::applyMarkdownListCommand(MarkdownCommand::ListType type)
+{
+    const bool wasRenderedMode = m_editor->mode() == MarkdownEditor::RenderedMode;
+    if (wasRenderedMode) {
+        if (warnIfMissingRenderedCommandTarget()) {
+            return;
+        }
+        m_editor->setSourceText(m_document->markdown());
+        m_editor->setMode(MarkdownEditor::SourceMode);
+        moveSourceCursorToRange(m_lastRenderedSourceRange, false);
+    } else {
+        ensureSourceMode();
+    }
+
+    MarkdownCommand::applyList(m_editor->sourceEditor(), type);
+
+    if (wasRenderedMode) {
+        syncSourceToDocument();
+        m_editor->setMode(MarkdownEditor::RenderedMode);
+        clearRenderedCommandTarget();
+    }
+}
+
+void MainWindow::applyHeadingLevel(int level)
+{
+    const bool wasRenderedMode = m_editor->mode() == MarkdownEditor::RenderedMode;
+    if (wasRenderedMode) {
+        if (warnIfMissingRenderedCommandTarget()) {
+            return;
+        }
+        m_editor->setSourceText(m_document->markdown());
+        m_editor->setMode(MarkdownEditor::SourceMode);
+        moveSourceCursorToRange(m_lastRenderedSourceRange, false);
+    } else {
+        ensureSourceMode();
+    }
+
+    MarkdownCommand::applyHeading(m_editor->sourceEditor(), level);
+
+    if (wasRenderedMode) {
+        syncSourceToDocument();
+        m_editor->setMode(MarkdownEditor::RenderedMode);
+        clearRenderedCommandTarget();
+    }
+}
+
+void MainWindow::onToggleBold()
+{
+    applyMarkdownCommand(&MarkdownCommand::toggleBold);
+}
+
+void MainWindow::onToggleItalic()
+{
+    applyMarkdownCommand(&MarkdownCommand::toggleItalic);
+}
+
+void MainWindow::onToggleUnderline()
+{
+    applyMarkdownCommand(&MarkdownCommand::toggleUnderline);
+}
+
+void MainWindow::onToggleInlineCode()
+{
+    applyMarkdownCommand(&MarkdownCommand::toggleInlineCode);
+}
+
+void MainWindow::onInsertLink()
+{
+    applyMarkdownCommand(&MarkdownCommand::insertLink);
+}
+
+void MainWindow::onApplyHeading1() { applyHeadingLevel(1); }
+void MainWindow::onApplyHeading2() { applyHeadingLevel(2); }
+void MainWindow::onApplyHeading3() { applyHeadingLevel(3); }
+void MainWindow::onApplyHeading4() { applyHeadingLevel(4); }
+void MainWindow::onApplyHeading5() { applyHeadingLevel(5); }
+void MainWindow::onApplyHeading6() { applyHeadingLevel(6); }
+
+void MainWindow::onApplyParagraph()
+{
+    applyMarkdownCommand(&MarkdownCommand::applyParagraph);
+}
+
+void MainWindow::onApplyQuote()
+{
+    applyMarkdownCommand(&MarkdownCommand::applyQuote);
+}
+
+void MainWindow::onApplyOrderedList()
+{
+    applyMarkdownListCommand(MarkdownCommand::ListType::Ordered);
+}
+
+void MainWindow::onApplyUnorderedList()
+{
+    applyMarkdownListCommand(MarkdownCommand::ListType::Unordered);
+}
+
+void MainWindow::onApplyTaskList()
+{
+    applyMarkdownListCommand(MarkdownCommand::ListType::Task);
+}
+
+void MainWindow::onFindReplace()
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("Find and Replace"));
+
+    QLineEdit* findEdit = new QLineEdit(&dialog);
+    QLineEdit* replaceEdit = new QLineEdit(&dialog);
+    replaceEdit->setEnabled(m_editor->mode() == MarkdownEditor::SourceMode);
+
+    QFormLayout* layout = new QFormLayout(&dialog);
+    layout->addRow(tr("Find:"), findEdit);
+    layout->addRow(tr("Replace:"), replaceEdit);
+
+    QDialogButtonBox* buttons = new QDialogButtonBox(&dialog);
+    QPushButton* findButton = buttons->addButton(tr("Find Next"), QDialogButtonBox::ActionRole);
+    QPushButton* replaceButton = buttons->addButton(tr("Replace"), QDialogButtonBox::ActionRole);
+    QPushButton* closeButton = buttons->addButton(QDialogButtonBox::Close);
+    replaceButton->setEnabled(m_editor->mode() == MarkdownEditor::SourceMode);
+    layout->addWidget(buttons);
+
+    connect(findButton, &QPushButton::clicked, &dialog, [this, findEdit]() {
+        const QString text = findEdit->text();
+        if (text.isEmpty()) {
+            return;
+        }
+
+        if (m_editor->mode() == MarkdownEditor::SourceMode) {
+            if (!m_editor->sourceEditor()->find(text)) {
+                QTextCursor cursor = m_editor->sourceEditor()->textCursor();
+                cursor.movePosition(QTextCursor::Start);
+                m_editor->sourceEditor()->setTextCursor(cursor);
+                m_editor->sourceEditor()->find(text);
+            }
+        } else {
+            m_editor->setSourceText(m_document->markdown());
+            m_editor->setMode(MarkdownEditor::SourceMode);
+            m_editor->sourceEditor()->find(text);
+        }
+    });
+
+    connect(replaceButton, &QPushButton::clicked, &dialog, [this, findEdit, replaceEdit]() {
+        if (m_editor->mode() != MarkdownEditor::SourceMode || findEdit->text().isEmpty()) {
+            return;
+        }
+
+        QTextCursor cursor = m_editor->sourceEditor()->textCursor();
+        if (!cursor.hasSelection() || cursor.selectedText() != findEdit->text()) {
+            if (!m_editor->sourceEditor()->find(findEdit->text())) {
+                return;
+            }
+            cursor = m_editor->sourceEditor()->textCursor();
+        }
+        cursor.insertText(replaceEdit->text());
+    });
+
+    connect(closeButton, &QPushButton::clicked, &dialog, &QDialog::accept);
+    dialog.exec();
 }
 
 void MainWindow::onShowWordCount()
@@ -606,9 +1031,25 @@ void MainWindow::onOpenRecentFile()
     }
 
     const QString filePath = action->data().toString();
-    if (!filePath.isEmpty() && maybeSave()) {
-        loadFromFile(filePath);
+    if (filePath.isEmpty() || !maybeSave()) {
+        return;
     }
+
+    if (!QFileInfo::exists(filePath)) {
+        QStringList files = recentFiles();
+        files.removeAll(filePath);
+        setRecentFiles(files);
+        QMessageBox::warning(this, tr("Open Recent File"), tr("The file no longer exists."));
+        return;
+    }
+
+    loadFromFile(filePath);
+}
+
+void MainWindow::onClearRecentFiles()
+{
+    setRecentFiles({});
+    updateRecentFilesMenu();
 }
 
 void MainWindow::onThemeChanged(QAction* action)
@@ -633,8 +1074,11 @@ void MainWindow::applyTheme(ThemePreset preset)
         "QMenuBar::item { padding: 4px 8px; background: transparent; }"
         "QMenuBar::item:selected, QMenuBar::item:pressed { background: rgba(128, 128, 128, 30); border-radius: 3px; }"
         "QMenu { background: %3; color: %4; border: 1px solid rgba(128, 128, 128, 42); border-radius: 8px; padding: 6px 0; }"
-        "QMenu::item { padding: 6px 34px 6px 30px; }"
-        "QMenu::item:selected { background: rgba(128, 128, 128, 30); }"
+        "QMenu::item { padding: 6px 34px 6px 30px; color: %4; }"
+        "QMenu::item:selected:enabled { background: rgba(128, 128, 128, 30); }"
+        "QMenu::item:disabled { color: rgba(120, 120, 120, 86); background: transparent; }"
+        "QMenu::item:selected:disabled { color: rgba(120, 120, 120, 86); background: transparent; }"
+        "QMenu::separator { height: 1px; background: rgba(128, 128, 128, 38); margin: 5px 14px; }"
         "QMenu::indicator { width: 18px; height: 18px; left: 7px; }"
         "QMenu::indicator:checked { image: none; }"
         "QMenu::indicator:checked:enabled { color: %5; }")
@@ -646,6 +1090,7 @@ void MainWindow::applyTheme(ThemePreset preset)
         "QStatusBar { background: %1; color: rgba(80, 80, 80, 170); border: none; font-size: 12px; }"
         "QStatusBar::item { border: none; }"
         "QLabel#statusIcon { color: rgba(40, 40, 40, 190); padding-bottom: 1px; }"
+        "QLabel#commandTarget { color: rgba(40, 40, 40, 150); padding-left: 4px; }"
         "QLabel#wordCount { color: rgba(40, 40, 40, 190); padding-right: 4px; }")
         .arg(theme.statusBackground.name()));
 }
@@ -664,11 +1109,32 @@ void MainWindow::updateRecentFilesMenu()
         return;
     }
 
+    QStringList existingFiles;
     for (const QString& filePath : files) {
-        QAction* action = m_recentFilesMenu->addAction(QDir::toNativeSeparators(filePath));
+        if (QFileInfo::exists(filePath)) {
+            existingFiles.append(filePath);
+        }
+    }
+    if (existingFiles != files) {
+        setRecentFiles(existingFiles);
+    }
+
+    if (existingFiles.isEmpty()) {
+        QAction* emptyAction = m_recentFilesMenu->addAction(QStringLiteral("无最近文件"));
+        emptyAction->setEnabled(false);
+        return;
+    }
+
+    for (const QString& filePath : existingFiles) {
+        QAction* action = m_recentFilesMenu->addAction(QFileInfo(filePath).fileName());
+        action->setToolTip(QDir::toNativeSeparators(filePath));
         action->setData(filePath);
         connect(action, &QAction::triggered, this, &MainWindow::onOpenRecentFile);
     }
+
+    m_recentFilesMenu->addSeparator();
+    QAction* clearAction = m_recentFilesMenu->addAction(QStringLiteral("清除最近文件"));
+    connect(clearAction, &QAction::triggered, this, &MainWindow::onClearRecentFiles);
 }
 
 void MainWindow::addRecentFile(const QString& filePath)
@@ -694,31 +1160,61 @@ void MainWindow::setRecentFiles(const QStringList& files)
     settings.setValue(QStringLiteral("recentFiles"), files);
 }
 
+QString MainWindow::currentMarkdownText() const
+{
+    return m_editor->mode() == MarkdownEditor::SourceMode
+        ? m_editor->sourceText()
+        : m_document->markdown();
+}
+
 int MainWindow::wordCount() const
 {
-    return m_document->markdown().split(QRegularExpression(QStringLiteral("\\s+")), Qt::SkipEmptyParts).size();
+    return currentMarkdownText().split(QRegularExpression(QStringLiteral("\\s+")), Qt::SkipEmptyParts).size();
 }
 
 int MainWindow::characterCount() const
 {
-    return m_document->markdown().size();
+    return currentMarkdownText().size();
 }
 
 int MainWindow::lineCount() const
 {
-    if (m_document->markdown().isEmpty()) {
+    const QString text = currentMarkdownText();
+    if (text.isEmpty()) {
         return 0;
     }
-    return m_document->markdown().count(QChar('\n')) + 1;
+    return text.count(QChar('\n')) + 1;
+}
+
+void MainWindow::syncSourceToDocument()
+{
+    m_document->setMarkdown(m_editor->sourceText());
 }
 
 void MainWindow::onDocumentRendered()
 {
     QTextDocument* doc = m_document->textDocument();
     if (doc) {
-        // Clone the document so QTextBrowser doesn't take ownership
         auto clone = doc->clone(m_editor);
+        QTextBlock sourceBlock = doc->begin();
+        QTextBlock clonedBlock = clone->begin();
+        while (sourceBlock.isValid() && clonedBlock.isValid()) {
+            auto* sourceData = dynamic_cast<SourceBlockData*>(sourceBlock.userData());
+            if (sourceData && sourceData->isValid()) {
+                clonedBlock.setUserData(new SourceBlockData(sourceData->range()));
+            }
+            sourceBlock = sourceBlock.next();
+            clonedBlock = clonedBlock.next();
+        }
         m_editor->setRenderedDocument(clone);
+        if (m_pendingRenderedCursorSourceOffset) {
+            std::optional<int> renderedPosition = m_document->sourceMap().renderedPositionForSourceOffset(
+                *m_pendingRenderedCursorSourceOffset, RenderSourceMap::Bias::Backward);
+            if (renderedPosition) {
+                m_editor->setRenderedCursorPosition(*renderedPosition);
+            }
+            m_pendingRenderedCursorSourceOffset.reset();
+        }
     }
 }
 
@@ -741,12 +1237,11 @@ void MainWindow::updateWindowTitle()
 
 bool MainWindow::saveToFile(const QString& filePath)
 {
-    QString content;
     if (m_editor->mode() == MarkdownEditor::SourceMode) {
-        content = m_editor->sourceText();
-    } else {
-        content = m_document->markdown();
+        syncSourceToDocument();
     }
+
+    QString content = m_document->markdown();
 
     if (!m_fileManager.writeFile(filePath, content)) {
         QMessageBox::warning(this, tr("Save Error"),
@@ -775,6 +1270,7 @@ bool MainWindow::loadFromFile(const QString& filePath)
     m_currentFile = filePath;
     m_modified = false;
     m_editor->setMode(MarkdownEditor::RenderedMode);
+    clearRenderedCommandTarget();
     addRecentFile(filePath);
     updateWindowTitle();
     return true;

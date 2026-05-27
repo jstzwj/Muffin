@@ -1,5 +1,6 @@
 #pragma once
 #include "parser/AstTree.h"
+#include "renderer/RenderSourceMap.h"
 #include "theme/Theme.h"
 #include <QTextDocument>
 #include <QString>
@@ -16,6 +17,7 @@ public:
     QString markdown() const { return m_markdown; }
     QTextDocument* textDocument() const { return m_textDocument.get(); }
     const AstTree& astTree() const { return m_astTree; }
+    const RenderSourceMap& sourceMap() const { return m_sourceMap; }
 
     void setMarkdown(const QString& markdown);
     void setTheme(const Theme& theme);
@@ -35,6 +37,7 @@ private:
     QString m_markdown;
     AstTree m_astTree;
     std::unique_ptr<QTextDocument> m_textDocument;
+    RenderSourceMap m_sourceMap;
     QString m_filePath;
     Theme m_theme = Theme::preset(ThemePreset::Github);
 };
