@@ -1,0 +1,99 @@
+# ======================== Build ========================
+build/
+cmake-build-*/
+out/
+x64/
+Debug/
+Release/
+RelWithDebInfo/
+MinSizeRel/
+Muffin-dist/
+
+# ======================== Conan ========================
+.conan/
+conan.lock
+graph_info
+CMakeUserPresets.json
+
+# ======================== CMake generated ========================
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CTestTestfile.cmake
+*.cmake.in
+_deps/
+
+# ======================== Qt generated ========================
+moc_*
+ui_*
+qrc_*
+*.qm
+*.qrc.depends
+automoc/
+.autogen/
+
+# ======================== Compiled objects ========================
+*.obj
+*.o
+*.exe
+*.dll
+*.lib
+*.a
+*.so
+*.so.*
+*.dylib
+*.pdb
+*.ilk
+*.exp
+*.idb
+*.pgc
+*.pgd
+
+# ======================== IDE / Editor ========================
+# Visual Studio
+.vs/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.suo
+*.ncb
+*.sdf
+*.opensdf
+ipch/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# CLion / IntelliJ
+.idea/
+cmake-build-*/
+
+# Vim / Emacs
+*.swp
+*.swo
+*~
+.*.sw[a-z]
+\#*\#
+.#*
+
+# ======================== OS ========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ======================== Misc ========================
+*.log
+*.tmp
+*.bak
+*.patch
+*.diff
+tags
+TAGS

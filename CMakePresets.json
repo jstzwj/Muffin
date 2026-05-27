@@ -1,0 +1,46 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "dev",
+            "binaryDir": "${sourceDir}/build/dev",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "BUILD_TESTING": "ON"
+            }
+        },
+        {
+            "name": "release",
+            "binaryDir": "${sourceDir}/build/release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_TESTING": "OFF"
+            }
+        },
+        {
+            "name": "conan",
+            "hidden": true,
+            "toolchainFile": "${sourceDir}/build/generators/conan_toolchain.cmake"
+        },
+        {
+            "name": "dev-conan",
+            "inherits": ["dev", "conan"],
+            "binaryDir": "${sourceDir}/build/dev"
+        },
+        {
+            "name": "release-conan",
+            "inherits": ["release", "conan"],
+            "binaryDir": "${sourceDir}/build/release"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "dev",
+            "configurePreset": "dev"
+        },
+        {
+            "name": "release",
+            "configurePreset": "release"
+        }
+    ]
+}
