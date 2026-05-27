@@ -16,7 +16,7 @@ endif()
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE INTERNAL "")
 
 # Find Qt6
-find_package(Qt6 REQUIRED COMPONENTS Widgets Gui)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Gui PrintSupport)
 
 # cmark-gfm via FetchContent (avoids Conan availability issues)
 include(FetchContent)

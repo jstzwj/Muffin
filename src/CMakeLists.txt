@@ -36,6 +36,7 @@ target_include_directories(muffin PRIVATE
 target_link_libraries(muffin PRIVATE
     Qt6::Widgets
     Qt6::Gui
+    Qt6::PrintSupport
     libcmark-gfm_static
     libcmark-gfm-extensions_static
 )
