@@ -21,6 +21,8 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget* parent = nullptr);
 
+    bool openFile(const QString& filePath);
+
 protected:
     void closeEvent(QCloseEvent* event) override;
 

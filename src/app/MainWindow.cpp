@@ -161,6 +161,11 @@ void MainWindow::connectSignals()
     });
 }
 
+bool MainWindow::openFile(const QString& filePath)
+{
+    return loadFromFile(filePath);
+}
+
 void MainWindow::onFileNew()
 {
     if (maybeSave()) {
