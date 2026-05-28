@@ -6,6 +6,7 @@
 #include "core/FileManager.h"
 #include "theme/Theme.h"
 #include <QMainWindow>
+#include <QTimer>
 #include <QString>
 #include <QStringList>
 #include <QVector>
@@ -87,6 +88,8 @@ private:
     int characterCount() const;
     int lineCount() const;
     QString currentMarkdownText() const;
+    void scheduleSourceSync();
+    void flushPendingSourceSync();
     void syncSourceToDocument();
     void ensureSourceMode();
     void moveSourceCursorToRange(SourceRange range, bool selectRange);
@@ -124,6 +127,9 @@ private:
     QString m_currentFile;
     SourceRange m_lastRenderedSourceRange;
     QString m_lastRenderedSelectedText;
+    QTimer m_sourceSyncTimer;
+    QString m_pendingSourceText;
+    int m_pendingSourceCursorOffset = -1;
     std::optional<int> m_pendingRenderedCursorSourceOffset;
     bool m_updatingSourceFromDocument = false;
     bool m_modified = false;

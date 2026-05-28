@@ -3,6 +3,7 @@
 #include "renderer/DocumentRenderer.h"
 #include "theme/ThemeStylesheet.h"
 
+#include <QDateTime>
 #include <QUndoCommand>
 #include <utility>
 
@@ -25,13 +26,38 @@ public:
 
     void undo() override { m_document->setMarkdownInternal(m_before, m_beforeCursorSourceOffset); }
     void redo() override { m_document->setMarkdownInternal(m_after, m_afterCursorSourceOffset); }
+    int id() const override { return 1; }
+    bool mergeWith(const QUndoCommand* command) override
+    {
+        const auto* other = dynamic_cast<const MarkdownEditCommand*>(command);
+        if (!other || text() != other->text() || m_after != other->m_before) {
+            return false;
+        }
+        if (m_lastEditTime.msecsTo(other->m_lastEditTime) > 1000 ||
+            !isMergeableTextEdit(m_before, m_after, other->m_after)) {
+            return false;
+        }
+
+        m_after = other->m_after;
+        m_afterCursorSourceOffset = other->m_afterCursorSourceOffset;
+        m_lastEditTime = other->m_lastEditTime;
+        return true;
+    }
 
 private:
+    static bool isMergeableTextEdit(const QString& before, const QString& middle, const QString& after)
+    {
+        const int firstDelta = qAbs(middle.size() - before.size());
+        const int secondDelta = qAbs(after.size() - middle.size());
+        return firstDelta <= 1 && secondDelta <= 1;
+    }
+
     Document* m_document;
     QString m_before;
     QString m_after;
     int m_beforeCursorSourceOffset = -1;
     int m_afterCursorSourceOffset = -1;
+    QDateTime m_lastEditTime = QDateTime::currentDateTimeUtc();
 };
 
 } // namespace Internal
@@ -89,6 +115,8 @@ void Document::render() {
     RenderResult result = renderer.render(m_astTree, m_markdown, m_mathSpans);
     m_textDocument = std::move(result.document);
     m_sourceMap = std::move(result.sourceMap);
+    m_blocks = std::move(result.blocks);
+    m_syntaxTokens = std::move(result.syntaxTokens);
     m_textDocument->setModified(false);
 
     emit documentRendered();

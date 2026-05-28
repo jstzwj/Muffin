@@ -68,6 +68,16 @@ private slots:
         QCOMPARE(span.end, 5);
     }
 
+    void mapsRenderedPositionForUtf8SourceOffset()
+    {
+        RenderSourceMap map;
+        map.addSpan({0, 4, {3, 5}, {1, 4, 1, 9}, RenderSpan::Kind::Text, true, false, {3, 5}, RenderSpan::EditPolicy::LinearText});
+
+        QCOMPARE(map.renderedPositionForSourceOffset(3).value(), 0);
+        QCOMPARE(map.renderedPositionForSourceOffset(4).value(), 1);
+        QCOMPARE(map.renderedPositionForSourceOffset(5).value(), 2);
+    }
+
     void mapsSelectionAcrossAdjacentEditableSpans()
     {
         RenderSourceMap map;
@@ -100,6 +110,19 @@ private slots:
         QCOMPARE(map.sourceOffsetForRenderedPosition(2).value(), 5);
         QCOMPARE(map.sourceSpanForRenderedRange(0, 2).value().end, 5);
         QVERIFY(!map.sourceSpanForRenderedRange(0, 1).has_value());
+    }
+
+    void mapsWholeAtomicReplacementOnly()
+    {
+        RenderSourceMap map;
+        map.addSpan({0, 1, {1, 6}, {1, 1, 1, 6}, RenderSpan::Kind::FormulaInline, true, false, {1, 6}, RenderSpan::EditPolicy::Atomic});
+
+        SourceSpan span = map.editableSourceSpanForRenderedRange(0, 1).value();
+
+        QCOMPARE(span.start, 1);
+        QCOMPARE(span.end, 6);
+        QCOMPARE(map.editableSourceInsertionPoint(0).value(), 1);
+        QCOMPARE(map.editableSourceInsertionPoint(1).value(), 6);
     }
 };
 

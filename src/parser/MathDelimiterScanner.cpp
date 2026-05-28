@@ -1,4 +1,5 @@
 #include "MathDelimiterScanner.h"
+#include "parser/SourceCoordinateMapper.h"
 
 #include <algorithm>
 
@@ -30,71 +31,7 @@ bool overlapsAny(const QVector<SourceSpan>& spans, SourceSpan candidate)
     return false;
 }
 
-struct LineMap {
-    int start = 0;
-    int end = 0;
-    QVector<int> byteOffsetToUtf16Offset;
-};
-
-QVector<LineMap> buildLineMap(const QString& markdown)
-{
-    QVector<LineMap> lines;
-    int lineStart = 0;
-    while (lineStart <= markdown.size()) {
-        const int newline = markdown.indexOf(QChar('\n'), lineStart);
-        const int lineEnd = newline < 0 ? markdown.size() : newline;
-
-        LineMap line;
-        line.start = lineStart;
-        line.end = lineEnd;
-        line.byteOffsetToUtf16Offset.append(lineStart);
-
-        int utf16Offset = lineStart;
-        while (utf16Offset < lineEnd) {
-            const int nextUtf16Offset = utf16Offset + (markdown.at(utf16Offset).isHighSurrogate()
-                && utf16Offset + 1 < lineEnd
-                && markdown.at(utf16Offset + 1).isLowSurrogate() ? 2 : 1);
-            const int byteLength = QStringView(markdown).mid(utf16Offset, nextUtf16Offset - utf16Offset).toUtf8().size();
-            for (int i = 1; i <= byteLength; ++i) {
-                line.byteOffsetToUtf16Offset.append(nextUtf16Offset);
-            }
-            utf16Offset = nextUtf16Offset;
-        }
-
-        lines.append(line);
-        if (newline < 0) {
-            break;
-        }
-        lineStart = newline + 1;
-    }
-    return lines;
-}
-
-int offsetForLineColumn(const QVector<LineMap>& lines, int line, int column)
-{
-    if (line <= 0 || line > lines.size()) {
-        return -1;
-    }
-
-    const LineMap& lineMap = lines.at(line - 1);
-    const int byteOffset = qMax(0, column - 1);
-    if (byteOffset >= lineMap.byteOffsetToUtf16Offset.size()) {
-        return lineMap.end;
-    }
-    return qBound(lineMap.start, lineMap.byteOffsetToUtf16Offset.at(byteOffset), lineMap.end);
-}
-
-SourceSpan spanForRange(const QVector<LineMap>& lines, SourceRange range)
-{
-    const int start = offsetForLineColumn(lines, range.startLine, range.startColumn);
-    const int end = offsetForLineColumn(lines, range.endLine, range.endColumn > 0 ? range.endColumn + 1 : range.endColumn);
-    if (start < 0 || end < start) {
-        return {};
-    }
-    return {start, end};
-}
-
-void collectProtectedSpans(const AstNode& node, const QVector<LineMap>& lines, QVector<SourceSpan>& spans)
+void collectProtectedSpans(const AstNode& node, const SourceCoordinateMapper& mapper, QVector<SourceSpan>& spans)
 {
     if (node.isNull()) {
         return;
@@ -102,7 +39,7 @@ void collectProtectedSpans(const AstNode& node, const QVector<LineMap>& lines, Q
 
     const cmark_node_type type = node.type();
     if (type == CMARK_NODE_CODE_BLOCK || type == CMARK_NODE_CODE) {
-        const SourceSpan span = spanForRange(lines, node.sourceRange());
+        const SourceSpan span = mapper.spanForRange(node.sourceRange());
         if (span.isValid()) {
             spans.append(span);
         }
@@ -110,7 +47,7 @@ void collectProtectedSpans(const AstNode& node, const QVector<LineMap>& lines, Q
 
     AstNode child = node.firstChild();
     while (!child.isNull()) {
-        collectProtectedSpans(child, lines, spans);
+        collectProtectedSpans(child, mapper, spans);
         child = child.next();
     }
 }
@@ -119,7 +56,8 @@ QVector<SourceSpan> protectedSpansForTree(const AstTree& tree, const QString& ma
 {
     QVector<SourceSpan> spans;
     if (!tree.isNull()) {
-        collectProtectedSpans(tree.root(), buildLineMap(markdown), spans);
+        const SourceCoordinateMapper mapper(markdown);
+        collectProtectedSpans(tree.root(), mapper, spans);
     }
     std::sort(spans.begin(), spans.end(), [](SourceSpan lhs, SourceSpan rhs) {
         return lhs.start < rhs.start;

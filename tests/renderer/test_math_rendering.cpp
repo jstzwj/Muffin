@@ -50,7 +50,7 @@ class TestMathRendering : public QObject
     Q_OBJECT
 
 private slots:
-    void inlineMathRendersAsNonEditableFormulaSpan()
+    void inlineMathRendersAsAtomicFormulaSpan()
     {
         const QString markdown = QStringLiteral("hello $x+y$ world");
         RenderResult result = renderMarkdown(markdown);
@@ -61,7 +61,8 @@ private slots:
         for (const RenderSpan& span : result.sourceMap.spans()) {
             if (span.kind == RenderSpan::Kind::FormulaInline) {
                 foundFormula = true;
-                QVERIFY(!span.editable);
+                QVERIFY(span.editable);
+                QCOMPARE(span.editPolicy, RenderSpan::EditPolicy::Atomic);
                 QCOMPARE(markdown.mid(span.source.start, span.source.end - span.source.start), QStringLiteral("$x+y$"));
             }
         }

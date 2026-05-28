@@ -1,8 +1,8 @@
 #pragma once
 
 #include "parser/AstNode.h"
+#include "parser/SourceCoordinateMapper.h"
 #include "parser/SourceSpan.h"
-#include <QString>
 #include <QVector>
 #include <optional>
 
@@ -52,26 +52,6 @@ struct RenderSpan {
     bool hasRenderedRange() const { return renderedStart >= 0 && renderedEnd >= renderedStart; }
     bool containsRenderedPosition(int position) const { return position >= renderedStart && position <= renderedEnd; }
     bool containsRenderedRange(int start, int end) const { return start >= renderedStart && end <= renderedEnd; }
-};
-
-class SourceCoordinateMapper {
-public:
-    explicit SourceCoordinateMapper(QString source = {});
-
-    int offsetForLineColumn(int line, int column) const;
-    SourceSpan spanForRange(SourceRange range) const;
-    SourceSpan lineSpan(int line) const;
-    SourceSpan headingContentSpan(SourceRange range, int level) const;
-
-private:
-    struct LineMap {
-        int utf16Start = 0;
-        int utf16End = 0;
-        QVector<int> byteOffsetToUtf16Offset;
-    };
-
-    QString m_source;
-    QVector<LineMap> m_lines;
 };
 
 class RenderSourceMap {

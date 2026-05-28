@@ -1,11 +1,14 @@
 set(TEST_SOURCES
     parser/test_cmark_parser.cpp
     parser/test_math_delimiter_scanner.cpp
+    parser/test_source_coordinate_mapper.cpp
     renderer/test_render_source_map.cpp
     renderer/test_document_renderer.cpp
     renderer/test_math_rendering.cpp
     editor/test_markdown_patch.cpp
     editor/test_markdown_command.cpp
+    editor/test_editor_selection_mapper.cpp
+    editor/test_markdown_edit_engine.cpp
 )
 
 set(MUFFIN_TEST_PATH "$ENV{PATH}")
@@ -49,20 +52,28 @@ foreach(TEST_FILE ${TEST_SOURCES})
     if(TEST_FILE MATCHES "parser/test_cmark_parser.cpp")
         target_sources(${TEST_NAME} PRIVATE
             ${CMAKE_SOURCE_DIR}/src/parser/CmarkParser.cpp
-            ${CMAKE_SOURCE_DIR}/src/parser/MathDelimiterScanner.cpp)
+            ${CMAKE_SOURCE_DIR}/src/parser/MathDelimiterScanner.cpp
+            ${CMAKE_SOURCE_DIR}/src/parser/SourceCoordinateMapper.cpp)
     endif()
     if(TEST_FILE MATCHES "parser/test_math_delimiter_scanner.cpp")
         target_sources(${TEST_NAME} PRIVATE
             ${CMAKE_SOURCE_DIR}/src/parser/CmarkParser.cpp
-            ${CMAKE_SOURCE_DIR}/src/parser/MathDelimiterScanner.cpp)
+            ${CMAKE_SOURCE_DIR}/src/parser/MathDelimiterScanner.cpp
+            ${CMAKE_SOURCE_DIR}/src/parser/SourceCoordinateMapper.cpp)
+    endif()
+    if(TEST_FILE MATCHES "parser/test_source_coordinate_mapper.cpp")
+        target_sources(${TEST_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src/parser/SourceCoordinateMapper.cpp)
     endif()
     if(TEST_FILE MATCHES "renderer/test_render_source_map.cpp")
-        target_sources(${TEST_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src/renderer/RenderSourceMap.cpp)
+        target_sources(${TEST_NAME} PRIVATE
+            ${CMAKE_SOURCE_DIR}/src/parser/SourceCoordinateMapper.cpp
+            ${CMAKE_SOURCE_DIR}/src/renderer/RenderSourceMap.cpp)
     endif()
     if(TEST_FILE MATCHES "renderer/test_document_renderer.cpp")
         target_sources(${TEST_NAME} PRIVATE
             ${CMAKE_SOURCE_DIR}/src/parser/CmarkParser.cpp
             ${CMAKE_SOURCE_DIR}/src/parser/MathDelimiterScanner.cpp
+            ${CMAKE_SOURCE_DIR}/src/parser/SourceCoordinateMapper.cpp
             ${CMAKE_SOURCE_DIR}/src/renderer/DocumentRenderer.cpp
             ${CMAKE_SOURCE_DIR}/src/renderer/MathImageRenderer.cpp
             ${CMAKE_SOURCE_DIR}/src/renderer/RenderSourceMap.cpp
@@ -74,6 +85,7 @@ foreach(TEST_FILE ${TEST_SOURCES})
         target_sources(${TEST_NAME} PRIVATE
             ${CMAKE_SOURCE_DIR}/src/parser/CmarkParser.cpp
             ${CMAKE_SOURCE_DIR}/src/parser/MathDelimiterScanner.cpp
+            ${CMAKE_SOURCE_DIR}/src/parser/SourceCoordinateMapper.cpp
             ${CMAKE_SOURCE_DIR}/src/renderer/DocumentRenderer.cpp
             ${CMAKE_SOURCE_DIR}/src/renderer/MathImageRenderer.cpp
             ${CMAKE_SOURCE_DIR}/src/renderer/RenderSourceMap.cpp
@@ -88,6 +100,22 @@ foreach(TEST_FILE ${TEST_SOURCES})
     endif()
     if(TEST_FILE MATCHES "editor/test_markdown_command.cpp")
         target_sources(${TEST_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src/editor/MarkdownCommand.cpp)
+        target_link_libraries(${TEST_NAME} PRIVATE Qt6::Widgets)
+    endif()
+    if(TEST_FILE MATCHES "editor/test_editor_selection_mapper.cpp")
+        target_sources(${TEST_NAME} PRIVATE
+            ${CMAKE_SOURCE_DIR}/src/editor/EditorSelectionMapper.cpp
+            ${CMAKE_SOURCE_DIR}/src/parser/SourceCoordinateMapper.cpp)
+        target_link_libraries(${TEST_NAME} PRIVATE Qt6::Widgets)
+    endif()
+    if(TEST_FILE MATCHES "editor/test_markdown_edit_engine.cpp")
+        target_sources(${TEST_NAME} PRIVATE
+            ${CMAKE_SOURCE_DIR}/src/editor/EditorSelectionMapper.cpp
+            ${CMAKE_SOURCE_DIR}/src/editor/MarkdownCommand.cpp
+            ${CMAKE_SOURCE_DIR}/src/editor/MarkdownEditEngine.cpp
+            ${CMAKE_SOURCE_DIR}/src/editor/MarkdownPatch.cpp
+            ${CMAKE_SOURCE_DIR}/src/parser/SourceCoordinateMapper.cpp
+            ${CMAKE_SOURCE_DIR}/src/renderer/RenderSourceMap.cpp)
         target_link_libraries(${TEST_NAME} PRIVATE Qt6::Widgets)
     endif()
     if(WIN32)

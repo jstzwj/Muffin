@@ -6,13 +6,16 @@ set(MUFFIN_SOURCES
     core/FileManager.cpp
     parser/CmarkParser.cpp
     parser/MathDelimiterScanner.cpp
+    parser/SourceCoordinateMapper.cpp
     renderer/DocumentRenderer.cpp
     renderer/MathImageRenderer.cpp
     renderer/RenderSourceMap.cpp
     theme/Theme.cpp
     theme/ThemeStylesheet.cpp
     editor/MarkdownEditor.cpp
+    editor/EditorSelectionMapper.cpp
     editor/MarkdownCommand.cpp
+    editor/MarkdownEditEngine.cpp
     editor/MarkdownPatch.cpp
 )
 
@@ -27,14 +30,18 @@ set(MUFFIN_HEADERS
     parser/MathDelimiterScanner.h
     parser/MathSpan.h
     parser/SourceSpan.h
+    parser/SourceCoordinateMapper.h
     renderer/DocumentRenderer.h
     renderer/MathImageRenderer.h
+    renderer/MarkdownBlock.h
     renderer/RenderSourceMap.h
     renderer/SourceBlockData.h
     theme/Theme.h
     theme/ThemeStylesheet.h
     editor/MarkdownEditor.h
+    editor/EditorSelectionMapper.h
     editor/MarkdownCommand.h
+    editor/MarkdownEditEngine.h
     editor/MarkdownPatch.h
     utils/SafeCString.h
 )

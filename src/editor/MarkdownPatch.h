@@ -1,7 +1,9 @@
 #pragma once
 
+#include "renderer/MarkdownBlock.h"
 #include "renderer/RenderSourceMap.h"
 #include <QString>
+#include <QVector>
 
 namespace Muffin {
 
@@ -33,6 +35,10 @@ class MarkdownPatch {
 public:
     static PatchResult applyRenderedEdit(const QString& markdown,
                                          const RenderSourceMap& sourceMap,
+                                         const RenderedEdit& edit);
+    static PatchResult applyRenderedEdit(const QString& markdown,
+                                         const RenderSourceMap& sourceMap,
+                                         const QVector<MarkdownBlock>& blocks,
                                          const RenderedEdit& edit);
 };
 

@@ -2,6 +2,8 @@
 #include "parser/AstTree.h"
 #include "parser/MathSpan.h"
 #include "RenderSourceMap.h"
+#include "renderer/MarkdownBlock.h"
+#include "renderer/SyntaxTokenSpan.h"
 #include "theme/ThemeStylesheet.h"
 #include <QTextDocument>
 #include <QTextLength>
@@ -16,6 +18,8 @@ namespace Muffin {
 struct RenderResult {
     std::unique_ptr<QTextDocument> document;
     RenderSourceMap sourceMap;
+    QVector<MarkdownBlock> blocks;
+    QVector<SyntaxTokenSpan> syntaxTokens;
 };
 
 class DocumentRenderer {
@@ -64,16 +68,22 @@ private:
     const MathSpan* displayMathSpanFor(SourceSpan source) const;
     QVector<MathSpan> inlineMathSpansIn(SourceSpan source) const;
     SourceSpan nextInlineSourceSpan(const QString& literal);
+    SourceSpan inlineContentSpan(const AstNode& node, int markerLength) const;
+    void recordSyntaxMarkers(SourceSpan source, int markerLength, SyntaxTokenSpan::Kind kind);
     void recordSpan(int renderedStart, int renderedEnd, SourceSpan source, SourceRange sourceRange,
                     RenderSpan::Kind kind, bool editable, bool block = false,
                     RenderSpan::EditPolicy editPolicy = RenderSpan::EditPolicy::None,
                     SourceSpan editSource = {});
+    void recordBlock(int renderedStart, int renderedEnd, SourceSpan source, SourceSpan content,
+                     SourceRange sourceRange, RenderSpan::Kind kind, bool editable);
 
     const ThemeStylesheet& m_ss;
     QString m_source;
     QVector<MathSpan> m_mathSpans;
     SourceCoordinateMapper m_sourceMapper;
     RenderSourceMap m_sourceMap;
+    QVector<MarkdownBlock> m_blocks;
+    QVector<SyntaxTokenSpan> m_syntaxTokens;
     bool m_inEditableBlock = false;
     int m_nonPlainInlineDepth = 0;
     SourceSpan m_currentEditableSourceSpan;

@@ -6,9 +6,23 @@ namespace Muffin {
 
 namespace {
 
-bool isHeadingOrParagraph(RenderSpan::Kind kind)
+bool isTextBlock(RenderSpan::Kind kind)
 {
-    return kind == RenderSpan::Kind::Heading || kind == RenderSpan::Kind::Paragraph;
+    return kind == RenderSpan::Kind::Heading || kind == RenderSpan::Kind::Paragraph || kind == RenderSpan::Kind::List;
+}
+
+bool canSplitBlock(RenderSpan::Kind kind)
+{
+    return isTextBlock(kind);
+}
+
+bool canMergeBlocks(RenderSpan::Kind previous, RenderSpan::Kind next)
+{
+    if (previous == RenderSpan::Kind::List) {
+        return next == RenderSpan::Kind::List;
+    }
+    return (previous == RenderSpan::Kind::Heading || previous == RenderSpan::Kind::Paragraph)
+        && (next == RenderSpan::Kind::Heading || next == RenderSpan::Kind::Paragraph);
 }
 
 QString headingMarkerAt(const QString& markdown, int sourceOffset)
@@ -29,6 +43,11 @@ int contentStartForBlock(const QString& markdown, const RenderSpan& block)
         return block.source.start;
     }
     return block.source.start + static_cast<int>(headingMarkerAt(markdown, block.source.start).size());
+}
+
+int contentStartForBlock(const MarkdownBlock& block)
+{
+    return block.content.isValid() ? block.content.start : block.source.start;
 }
 
 PatchResult success(QString text, int cursorSourceOffset)
@@ -85,7 +104,7 @@ PatchResult applyEnter(const QString& markdown, const RenderSourceMap& sourceMap
     const std::optional<int> sourceOffset = selectionSpan
         ? std::optional<int>(selectionSpan->start)
         : sourceMap.editableSourceInsertionPoint(renderedPosition);
-    if (!editableSpan || !block || !sourceOffset || !isHeadingOrParagraph(block->kind)) {
+    if (!editableSpan || !block || !sourceOffset || !canSplitBlock(block->kind)) {
         return failure(markdown, QStringLiteral("Enter is not supported in this rendered block yet."));
     }
 
@@ -113,9 +132,9 @@ PatchResult applyEnter(const QString& markdown, const RenderSourceMap& sourceMap
     return success(patched, *sourceOffset + static_cast<int>(insertion.size()));
 }
 
-PatchResult mergeNextBlockIntoPrevious(const QString& markdown, const RenderSpan& previous, const RenderSpan& next)
+PatchResult mergeNextBlockIntoPrevious(const QString& markdown, const MarkdownBlock& previous, const MarkdownBlock& next)
 {
-    if (!isHeadingOrParagraph(previous.kind)) {
+    if (!isTextBlock(previous.kind)) {
         return failure(markdown, QStringLiteral("This block cannot merge with the next block yet."));
     }
 
@@ -138,7 +157,47 @@ PatchResult mergeNextBlockIntoPrevious(const QString& markdown, const RenderSpan
         return success(patched, removeStart);
     }
 
-    if (!isHeadingOrParagraph(next.kind)) {
+    if (!canMergeBlocks(previous.kind, next.kind)) {
+        return failure(markdown, QStringLiteral("This next block cannot be merged yet."));
+    }
+
+    const int removeStart = previous.source.end;
+    const int removeEnd = contentStartForBlock(next);
+    if (removeStart < 0 || removeEnd < removeStart || removeEnd > markdown.size()) {
+        return failure(markdown, QStringLiteral("Rendered/source mapping is out of date."));
+    }
+
+    QString patched = markdown;
+    patched.remove(removeStart, removeEnd - removeStart);
+    return success(patched, removeStart);
+}
+
+PatchResult mergeNextBlockIntoPrevious(const QString& markdown, const RenderSpan& previous, const RenderSpan& next)
+{
+    if (!isTextBlock(previous.kind)) {
+        return failure(markdown, QStringLiteral("This block cannot merge with the next block yet."));
+    }
+
+    if (next.kind == RenderSpan::Kind::Table) {
+        return noChange(markdown, previous.source.end);
+    }
+
+    if (next.kind == RenderSpan::Kind::FormulaBlock) {
+        int removeStart = previous.source.end;
+        int removeEnd = next.source.end;
+        while (removeEnd < markdown.size() && markdown.at(removeEnd) == QChar('\n')) {
+            ++removeEnd;
+            if (removeEnd < markdown.size() && markdown.at(removeEnd) == QChar('\n')) {
+                ++removeEnd;
+            }
+            break;
+        }
+        QString patched = markdown;
+        patched.remove(removeStart, removeEnd - removeStart);
+        return success(patched, removeStart);
+    }
+
+    if (!canMergeBlocks(previous.kind, next.kind)) {
         return failure(markdown, QStringLiteral("This next block cannot be merged yet."));
     }
 
@@ -175,6 +234,141 @@ std::optional<RenderSpan> blockAfterSourceOffset(const RenderSourceMap& sourceMa
         }
     }
     return std::nullopt;
+}
+
+std::optional<MarkdownBlock> blockForRenderedPosition(const QVector<MarkdownBlock>& blocks, int renderedPosition)
+{
+    const MarkdownBlock* fallback = nullptr;
+    for (const MarkdownBlock& block : blocks) {
+        if (!block.hasRenderedRange()) {
+            continue;
+        }
+        if (block.containsRenderedPosition(renderedPosition)) {
+            return block;
+        }
+        if (renderedPosition > block.renderedEnd) {
+            fallback = &block;
+        } else if (renderedPosition < block.renderedStart) {
+            break;
+        }
+    }
+    if (!fallback) {
+        return std::nullopt;
+    }
+    return *fallback;
+}
+
+std::optional<MarkdownBlock> blockBeforeSourceOffset(const QVector<MarkdownBlock>& blocks, int sourceOffset)
+{
+    std::optional<MarkdownBlock> best;
+    for (const MarkdownBlock& block : blocks) {
+        if (block.source.isValid() && block.source.end <= sourceOffset && (!best || block.source.end > best->source.end)) {
+            best = block;
+        }
+    }
+    return best;
+}
+
+std::optional<MarkdownBlock> blockAfterSourceOffset(const QVector<MarkdownBlock>& blocks, int sourceOffset)
+{
+    for (const MarkdownBlock& block : blocks) {
+        if (block.source.isValid() && block.source.start >= sourceOffset) {
+            return block;
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<MarkdownBlock> blockContainingContentOffset(const QVector<MarkdownBlock>& blocks, int sourceOffset)
+{
+    for (const MarkdownBlock& block : blocks) {
+        if (block.source.isValid() && sourceOffset >= contentStartForBlock(block) && sourceOffset <= block.source.end) {
+            return block;
+        }
+    }
+    return std::nullopt;
+}
+
+PatchResult applyDelete(const QString& markdown, const RenderSourceMap& sourceMap, const QVector<MarkdownBlock>& blocks, int renderedPosition)
+{
+    const std::optional<int> sourceOffset = sourceMap.editableSourceInsertionPoint(renderedPosition, RenderSourceMap::Bias::Backward);
+    if (!sourceOffset) {
+        return failure(markdown, QStringLiteral("Delete is not supported here yet."));
+    }
+
+    const std::optional<MarkdownBlock> previous = blockBeforeSourceOffset(blocks, *sourceOffset + 1);
+    if (!previous || *sourceOffset < previous->source.end) {
+        return applyPlainReplacement(markdown, sourceMap, renderedPosition, renderedPosition + 1, {});
+    }
+
+    const std::optional<MarkdownBlock> next = blockAfterSourceOffset(blocks, previous->source.end);
+    if (!next) {
+        return noChange(markdown, *sourceOffset);
+    }
+    return mergeNextBlockIntoPrevious(markdown, *previous, *next);
+}
+
+PatchResult applyBackspace(const QString& markdown, const RenderSourceMap& sourceMap, const QVector<MarkdownBlock>& blocks, int renderedPosition)
+{
+    const std::optional<int> sourceOffset = sourceMap.editableSourceInsertionPoint(renderedPosition, RenderSourceMap::Bias::Forward);
+    if (!sourceOffset) {
+        return failure(markdown, QStringLiteral("Backspace is not supported here yet."));
+    }
+
+    const std::optional<MarkdownBlock> current = blockContainingContentOffset(blocks, *sourceOffset);
+    if (!current || *sourceOffset > contentStartForBlock(*current)) {
+        return applyPlainReplacement(markdown, sourceMap, renderedPosition - 1, renderedPosition, {});
+    }
+
+    const std::optional<MarkdownBlock> previous = blockBeforeSourceOffset(blocks, current->source.start);
+    if (!previous) {
+        return noChange(markdown, *sourceOffset);
+    }
+    return mergeNextBlockIntoPrevious(markdown, *previous, *current);
+}
+
+PatchResult applyEnter(const QString& markdown, const RenderSourceMap& sourceMap, const QVector<MarkdownBlock>& blocks,
+                       int renderedStart, int renderedEnd)
+{
+    const int renderedPosition = qMin(renderedStart, renderedEnd);
+    const std::optional<RenderSpan> editableSpan = sourceMap.editableSpanAtRenderedPosition(renderedPosition);
+    const std::optional<MarkdownBlock> block = blockForRenderedPosition(blocks, renderedPosition);
+    std::optional<SourceSpan> selectionSpan;
+    if (renderedStart != renderedEnd) {
+        selectionSpan = sourceMap.editableSourceSpanForRenderedRange(renderedStart, renderedEnd);
+    }
+    const std::optional<int> sourceOffset = selectionSpan
+        ? std::optional<int>(selectionSpan->start)
+        : sourceMap.editableSourceInsertionPoint(renderedPosition);
+    if (!editableSpan || !block || !sourceOffset || !canSplitBlock(block->kind)) {
+        return failure(markdown, QStringLiteral("Enter is not supported in this rendered block yet."));
+    }
+
+    if (*sourceOffset > markdown.size() || (selectionSpan && selectionSpan->end > markdown.size())) {
+        return failure(markdown, QStringLiteral("Rendered/source mapping is out of date."));
+    }
+
+    QString insertion;
+    if (block->kind == RenderSpan::Kind::Heading) {
+        const QString marker = headingMarkerAt(markdown, block->source.start);
+        if (marker.isEmpty()) {
+            return failure(markdown, QStringLiteral("Cannot determine heading level for split."));
+        }
+        insertion = QChar('\n') + marker;
+    } else if (block->kind == RenderSpan::Kind::List) {
+        const QString marker = markdown.mid(block->source.start, contentStartForBlock(*block) - block->source.start);
+        insertion = QChar('\n') + marker;
+    } else {
+        insertion = QStringLiteral("\n\n");
+    }
+
+    QString patched = markdown;
+    if (selectionSpan) {
+        patched.replace(selectionSpan->start, selectionSpan->end - selectionSpan->start, insertion);
+    } else {
+        patched.insert(*sourceOffset, insertion);
+    }
+    return success(patched, *sourceOffset + static_cast<int>(insertion.size()));
 }
 
 PatchResult applyDelete(const QString& markdown, const RenderSourceMap& sourceMap, int renderedPosition)
@@ -221,6 +415,24 @@ PatchResult MarkdownPatch::applyRenderedEdit(const QString& markdown,
                                              const RenderSourceMap& sourceMap,
                                              const RenderedEdit& edit)
 {
+    QVector<MarkdownBlock> blocks;
+    for (const RenderSpan& span : sourceMap.spans()) {
+        if (span.block) {
+            SourceSpan content = span.editSource;
+            if (span.kind == RenderSpan::Kind::Heading && content.start == span.source.start && content.end == span.source.end) {
+                content.start = contentStartForBlock(markdown, span);
+            }
+            blocks.append({span.source, content, span.sourceRange, span.renderedStart, span.renderedEnd, span.kind, span.editable});
+        }
+    }
+    return applyRenderedEdit(markdown, sourceMap, blocks, edit);
+}
+
+PatchResult MarkdownPatch::applyRenderedEdit(const QString& markdown,
+                                             const RenderSourceMap& sourceMap,
+                                             const QVector<MarkdownBlock>& blocks,
+                                             const RenderedEdit& edit)
+{
     int renderedStart = edit.renderedStart;
     int renderedEnd = edit.renderedEnd;
     if (renderedStart > renderedEnd) {
@@ -233,11 +445,11 @@ PatchResult MarkdownPatch::applyRenderedEdit(const QString& markdown,
 
     switch (edit.operation) {
     case RenderedEditOperation::Backspace:
-        return applyBackspace(markdown, sourceMap, renderedStart);
+        return applyBackspace(markdown, sourceMap, blocks, renderedStart);
     case RenderedEditOperation::Delete:
-        return applyDelete(markdown, sourceMap, renderedStart);
+        return applyDelete(markdown, sourceMap, blocks, renderedStart);
     case RenderedEditOperation::Enter:
-        return applyEnter(markdown, sourceMap, renderedStart, renderedEnd);
+        return applyEnter(markdown, sourceMap, blocks, renderedStart, renderedEnd);
     case RenderedEditOperation::InsertText:
     case RenderedEditOperation::ReplaceSelection:
     case RenderedEditOperation::Paste:

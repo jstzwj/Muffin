@@ -1,5 +1,6 @@
 #include "MainWindow.h"
-#include "editor/MarkdownPatch.h"
+#include "editor/EditorSelectionMapper.h"
+#include "editor/MarkdownEditEngine.h"
 #include "renderer/SourceBlockData.h"
 
 #include <QAction>
@@ -40,6 +41,9 @@ MainWindow::MainWindow(QWidget* parent)
     setupEditor();
     setupMenuBar();
     setupStatusBar();
+    m_sourceSyncTimer.setSingleShot(true);
+    m_sourceSyncTimer.setInterval(150);
+    connect(&m_sourceSyncTimer, &QTimer::timeout, this, &MainWindow::flushPendingSourceSync);
     connectSignals();
     applyTheme(m_themePreset);
     updateWindowTitle();
@@ -504,6 +508,9 @@ bool MainWindow::openFile(const QString& filePath)
 void MainWindow::onFileNew()
 {
     if (maybeSave()) {
+        m_sourceSyncTimer.stop();
+        m_pendingSourceText.clear();
+        m_pendingSourceCursorOffset = -1;
         m_document->setMarkdown({});
         m_document->setFilePath({});
         m_currentFile.clear();
@@ -602,8 +609,7 @@ void MainWindow::onSourceTextChanged()
     }
 
     clearRenderedCommandTarget();
-    const int cursorOffset = m_editor->sourceEditor()->textCursor().position();
-    m_document->applyMarkdownEdit(m_editor->sourceText(), cursorOffset, tr("Edit Source"));
+    scheduleSourceSync();
 }
 
 void MainWindow::onRenderedSourceRangeClicked(SourceRange range)
@@ -637,7 +643,7 @@ void MainWindow::onRenderedInlineTextSelected(SourceRange range, const QString& 
 
 void MainWindow::onRenderedEditRequested(RenderedEdit edit)
 {
-    PatchResult result = MarkdownPatch::applyRenderedEdit(m_document->markdown(), m_document->sourceMap(), edit);
+    PatchResult result = MarkdownEditEngine::applyRenderedEdit(m_document->markdown(), m_document->sourceMap(), m_document->blocks(), edit);
     if (!result.ok) {
         statusBar()->showMessage(result.error, 3000);
         return;
@@ -657,6 +663,7 @@ void MainWindow::onRenderedEditRequested(RenderedEdit edit)
 void MainWindow::onToggleViewMode()
 {
     if (m_editor->mode() == MarkdownEditor::RenderedMode) {
+        flushPendingSourceSync();
         m_updatingSourceFromDocument = true;
         m_editor->setSourceText(m_document->markdown());
         m_updatingSourceFromDocument = false;
@@ -670,6 +677,7 @@ void MainWindow::onToggleViewMode()
 void MainWindow::ensureSourceMode()
 {
     if (m_editor->mode() != MarkdownEditor::SourceMode) {
+        flushPendingSourceSync();
         m_updatingSourceFromDocument = true;
         m_editor->setSourceText(m_document->markdown());
         m_updatingSourceFromDocument = false;
@@ -679,72 +687,12 @@ void MainWindow::ensureSourceMode()
 
 void MainWindow::moveSourceCursorToRange(SourceRange range, bool selectRange)
 {
-    if (range.startLine <= 0) {
-        return;
-    }
-
-    QTextDocument* sourceDocument = m_editor->sourceEditor()->document();
-    QTextBlock startBlock = sourceDocument->findBlockByLineNumber(range.startLine - 1);
-    if (!startBlock.isValid()) {
-        return;
-    }
-
-    int startPosition = startBlock.position() + qMax(0, range.startColumn - 1);
-    QTextCursor cursor(sourceDocument);
-    cursor.setPosition(startPosition);
-
-    if (selectRange && range.endLine >= range.startLine) {
-        QTextBlock endBlock = sourceDocument->findBlockByLineNumber(range.endLine - 1);
-        if (endBlock.isValid()) {
-            const int endColumn = range.endColumn > 0 ? range.endColumn : endBlock.length() - 1;
-            int endPosition = endBlock.position() + qMax(0, endColumn);
-            cursor.setPosition(qMax(startPosition, endPosition), QTextCursor::KeepAnchor);
-        }
-    }
-
-    m_editor->sourceEditor()->setTextCursor(cursor);
-    m_editor->sourceEditor()->centerCursor();
+    EditorSelectionMapper::moveSourceCursorToRange(m_editor->sourceEditor(), range, selectRange);
 }
 
 bool MainWindow::moveSourceCursorToInlineText(SourceRange range, const QString& text)
 {
-    if (range.startLine <= 0 || text.isEmpty()) {
-        return false;
-    }
-
-    QTextDocument* sourceDocument = m_editor->sourceEditor()->document();
-    QTextBlock startBlock = sourceDocument->findBlockByLineNumber(range.startLine - 1);
-    QTextBlock endBlock = sourceDocument->findBlockByLineNumber(qMax(range.startLine, range.endLine) - 1);
-    if (!startBlock.isValid() || !endBlock.isValid()) {
-        return false;
-    }
-
-    const int startPosition = startBlock.position();
-    const int endPosition = endBlock.position() + endBlock.length() - 1;
-    QTextCursor cursor(sourceDocument);
-    cursor.setPosition(startPosition);
-    cursor.setPosition(endPosition, QTextCursor::KeepAnchor);
-
-    const QString sourceText = cursor.selectedText();
-    const QString normalizedNeedle = text.simplified();
-    int relativePosition = sourceText.indexOf(text);
-    int matchLength = text.size();
-
-    if (relativePosition < 0) {
-        relativePosition = sourceText.simplified().indexOf(normalizedNeedle);
-        matchLength = normalizedNeedle.size();
-    }
-
-    if (relativePosition < 0) {
-        return false;
-    }
-
-    cursor.clearSelection();
-    cursor.setPosition(startPosition + relativePosition);
-    cursor.setPosition(startPosition + relativePosition + matchLength, QTextCursor::KeepAnchor);
-    m_editor->sourceEditor()->setTextCursor(cursor);
-    m_editor->sourceEditor()->centerCursor();
-    return true;
+    return EditorSelectionMapper::moveSourceCursorToInlineText(m_editor->sourceEditor(), range, text);
 }
 
 bool MainWindow::hasRenderedCommandTarget() const
@@ -791,31 +739,22 @@ void MainWindow::updateSingleBlockCommandState()
 
 void MainWindow::applyMarkdownCommand(MarkdownCommandResult (*command)(const QString&, SourceSelection))
 {
-    SourceSelection selection;
-    QString markdown;
     const bool wasRenderedMode = m_editor->mode() == MarkdownEditor::RenderedMode;
+    const QString markdown = wasRenderedMode ? m_document->markdown() : m_editor->sourceText();
+    MarkdownCommandResult result;
+
     if (wasRenderedMode) {
         if (warnIfMissingRenderedCommandTarget()) {
             return;
         }
-        markdown = m_document->markdown();
-        const SourceCoordinateMapper mapper(markdown);
-        SourceSpan span = mapper.spanForRange(m_lastRenderedSourceRange);
-        if (!m_lastRenderedSelectedText.isEmpty()) {
-            const int relative = markdown.mid(span.start, span.end - span.start).indexOf(m_lastRenderedSelectedText);
-            if (relative >= 0) {
-                span = {span.start + relative, span.start + relative + static_cast<int>(m_lastRenderedSelectedText.size())};
-            }
-        }
-        selection = {span.start, span.end};
+        result = MarkdownEditEngine::applyInlineCommandToRenderedTarget(
+            markdown, m_document->blocks(), {m_lastRenderedSourceRange, m_lastRenderedSelectedText}, command);
     } else {
         ensureSourceMode();
-        markdown = m_editor->sourceText();
-        QTextCursor cursor = m_editor->sourceEditor()->textCursor();
-        selection = {cursor.selectionStart(), cursor.selectionEnd()};
+        result = MarkdownEditEngine::applyInlineCommand(
+            markdown, EditorSelectionMapper::sourceSelectionForEditor(m_editor->sourceEditor()), command);
     }
 
-    MarkdownCommandResult result = command(markdown, selection);
     if (!result.changed) {
         return;
     }
@@ -832,25 +771,22 @@ void MainWindow::applyMarkdownCommand(MarkdownCommandResult (*command)(const QSt
 
 void MainWindow::applyMarkdownListCommand(MarkdownCommand::ListType type)
 {
-    SourceSelection selection;
-    QString markdown;
     const bool wasRenderedMode = m_editor->mode() == MarkdownEditor::RenderedMode;
+    const QString markdown = wasRenderedMode ? m_document->markdown() : m_editor->sourceText();
+    MarkdownCommandResult result;
+
     if (wasRenderedMode) {
         if (warnIfMissingRenderedCommandTarget()) {
             return;
         }
-        markdown = m_document->markdown();
-        const SourceCoordinateMapper mapper(markdown);
-        const SourceSpan span = mapper.spanForRange(m_lastRenderedSourceRange);
-        selection = {span.start, span.end};
+        result = MarkdownEditEngine::applyListCommandToRenderedTarget(
+            markdown, m_document->blocks(), {m_lastRenderedSourceRange, m_lastRenderedSelectedText}, type);
     } else {
         ensureSourceMode();
-        markdown = m_editor->sourceText();
-        QTextCursor cursor = m_editor->sourceEditor()->textCursor();
-        selection = {cursor.selectionStart(), cursor.selectionEnd()};
+        result = MarkdownEditEngine::applyListCommand(
+            markdown, EditorSelectionMapper::sourceSelectionForEditor(m_editor->sourceEditor()), type);
     }
 
-    MarkdownCommandResult result = MarkdownCommand::applyList(markdown, selection, type);
     if (!result.changed) {
         return;
     }
@@ -864,25 +800,22 @@ void MainWindow::applyMarkdownListCommand(MarkdownCommand::ListType type)
 
 void MainWindow::applyHeadingLevel(int level)
 {
-    SourceSelection selection;
-    QString markdown;
     const bool wasRenderedMode = m_editor->mode() == MarkdownEditor::RenderedMode;
+    const QString markdown = wasRenderedMode ? m_document->markdown() : m_editor->sourceText();
+    MarkdownCommandResult result;
+
     if (wasRenderedMode) {
         if (warnIfMissingRenderedCommandTarget()) {
             return;
         }
-        markdown = m_document->markdown();
-        const SourceCoordinateMapper mapper(markdown);
-        const SourceSpan span = mapper.spanForRange(m_lastRenderedSourceRange);
-        selection = {span.start, span.end};
+        result = MarkdownEditEngine::applyHeadingCommandToRenderedTarget(
+            markdown, m_document->blocks(), {m_lastRenderedSourceRange, m_lastRenderedSelectedText}, level);
     } else {
         ensureSourceMode();
-        markdown = m_editor->sourceText();
-        QTextCursor cursor = m_editor->sourceEditor()->textCursor();
-        selection = {cursor.selectionStart(), cursor.selectionEnd()};
+        result = MarkdownEditEngine::applyHeadingCommand(
+            markdown, EditorSelectionMapper::sourceSelectionForEditor(m_editor->sourceEditor()), level);
     }
 
-    MarkdownCommandResult result = MarkdownCommand::applyHeading(markdown, selection, level);
     if (!result.changed) {
         return;
     }
@@ -1242,9 +1175,33 @@ int MainWindow::lineCount() const
     return text.count(QChar('\n')) + 1;
 }
 
+void MainWindow::scheduleSourceSync()
+{
+    m_pendingSourceText = m_editor->sourceText();
+    m_pendingSourceCursorOffset = m_editor->sourceEditor()->textCursor().position();
+    m_sourceSyncTimer.start();
+}
+
+void MainWindow::flushPendingSourceSync()
+{
+    if (m_pendingSourceCursorOffset < 0) {
+        return;
+    }
+
+    const QString text = std::move(m_pendingSourceText);
+    const int cursorOffset = m_pendingSourceCursorOffset;
+    m_pendingSourceText.clear();
+    m_pendingSourceCursorOffset = -1;
+    m_sourceSyncTimer.stop();
+    m_document->applyMarkdownEdit(text, cursorOffset, tr("Edit Source"));
+}
+
 void MainWindow::syncSourceToDocument()
 {
-    m_document->applyMarkdownEdit(m_editor->sourceText(), m_editor->sourceEditor()->textCursor().position(), tr("Edit Source"));
+    flushPendingSourceSync();
+    if (m_document->markdown() != m_editor->sourceText()) {
+        m_document->applyMarkdownEdit(m_editor->sourceText(), m_editor->sourceEditor()->textCursor().position(), tr("Edit Source"));
+    }
 }
 
 void MainWindow::onDocumentRendered()
@@ -1332,6 +1289,9 @@ bool MainWindow::loadFromFile(const QString& filePath)
         return false;
     }
 
+    m_sourceSyncTimer.stop();
+    m_pendingSourceText.clear();
+    m_pendingSourceCursorOffset = -1;
     m_document->setMarkdown(content);
     m_document->setFilePath(filePath);
     m_currentFile = filePath;
