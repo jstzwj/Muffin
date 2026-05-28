@@ -5,7 +5,17 @@
 
 namespace Muffin {
 
+enum class RenderedEditOperation {
+    InsertText,
+    ReplaceSelection,
+    Backspace,
+    Delete,
+    Enter,
+    Paste
+};
+
 struct RenderedEdit {
+    RenderedEditOperation operation = RenderedEditOperation::InsertText;
     int renderedStart = -1;
     int renderedEnd = -1;
     QString replacement;
@@ -13,6 +23,7 @@ struct RenderedEdit {
 
 struct PatchResult {
     bool ok = false;
+    bool changed = false;
     QString text;
     int cursorSourceOffset = -1;
     QString error;

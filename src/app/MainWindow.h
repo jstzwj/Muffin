@@ -95,8 +95,7 @@ private:
     bool warnIfMissingRenderedCommandTarget();
     void clearRenderedCommandTarget();
     void updateSingleBlockCommandState();
-    void applyRenderedMarkdownCommand(void (*command)(QPlainTextEdit*));
-    void applyMarkdownCommand(void (*command)(QPlainTextEdit*));
+    void applyMarkdownCommand(MarkdownCommandResult (*command)(const QString&, SourceSelection));
     void applyMarkdownListCommand(MarkdownCommand::ListType type);
     void applyHeadingLevel(int level);
 
@@ -126,6 +125,7 @@ private:
     SourceRange m_lastRenderedSourceRange;
     QString m_lastRenderedSelectedText;
     std::optional<int> m_pendingRenderedCursorSourceOffset;
+    bool m_updatingSourceFromDocument = false;
     bool m_modified = false;
 };
 

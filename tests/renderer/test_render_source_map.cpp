@@ -38,6 +38,69 @@ private slots:
         QCOMPARE(span.start, 3);
         QCOMPARE(span.end, 8);
     }
+
+    void mapsChineseUtf8ColumnsToUtf16Offsets()
+    {
+        SourceCoordinateMapper mapper(QStringLiteral("a你b"));
+
+        QCOMPARE(mapper.offsetForLineColumn(1, 1), 0);
+        QCOMPARE(mapper.offsetForLineColumn(1, 2), 1);
+        QCOMPARE(mapper.offsetForLineColumn(1, 5), 2);
+        QCOMPARE(mapper.offsetForLineColumn(1, 6), 3);
+    }
+
+    void mapsEmojiUtf8ColumnsToUtf16Offsets()
+    {
+        SourceCoordinateMapper mapper(QStringLiteral("a😀b"));
+
+        QCOMPARE(mapper.offsetForLineColumn(1, 1), 0);
+        QCOMPARE(mapper.offsetForLineColumn(1, 2), 1);
+        QCOMPARE(mapper.offsetForLineColumn(1, 6), 3);
+        QCOMPARE(mapper.offsetForLineColumn(1, 7), 4);
+    }
+
+    void mapsHeadingContentWithChineseText()
+    {
+        SourceCoordinateMapper mapper(QStringLiteral("## 你好"));
+        SourceSpan span = mapper.headingContentSpan({1, 1, 1, 9}, 2);
+
+        QCOMPARE(span.start, 3);
+        QCOMPARE(span.end, 5);
+    }
+
+    void mapsSelectionAcrossAdjacentEditableSpans()
+    {
+        RenderSourceMap map;
+        map.addSpan({0, 2, {0, 2}, {1, 1, 1, 2}, RenderSpan::Kind::Text, true, false, {0, 2}, RenderSpan::EditPolicy::LinearText});
+        map.addSpan({2, 5, {2, 5}, {1, 3, 1, 5}, RenderSpan::Kind::Text, true, false, {2, 5}, RenderSpan::EditPolicy::LinearText});
+
+        SourceSpan span = map.editableSourceSpanForRenderedRange(1, 4).value();
+
+        QCOMPARE(span.start, 1);
+        QCOMPARE(span.end, 4);
+    }
+
+    void rejectsSelectionAcrossNonEditableGap()
+    {
+        RenderSourceMap map;
+        map.addSpan({0, 2, {0, 2}, {1, 1, 1, 2}, RenderSpan::Kind::Text, true, false, {0, 2}, RenderSpan::EditPolicy::LinearText});
+        map.addSpan({2, 4, {2, 8}, {1, 3, 1, 8}, RenderSpan::Kind::Strong, false, false, {2, 8}, RenderSpan::EditPolicy::None});
+        map.addSpan({4, 6, {8, 10}, {1, 9, 1, 10}, RenderSpan::Kind::Text, true, false, {8, 10}, RenderSpan::EditPolicy::LinearText});
+
+        QVERIFY(!map.editableSourceSpanForRenderedRange(1, 5).has_value());
+    }
+
+    void rejectsInteriorMappingForNonLinearText()
+    {
+        RenderSourceMap map;
+        map.addSpan({0, 2, {0, 5}, {1, 1, 1, 5}, RenderSpan::Kind::Text, true, false, {0, 5}, RenderSpan::EditPolicy::NonLinearText});
+
+        QCOMPARE(map.sourceOffsetForRenderedPosition(0).value(), 0);
+        QVERIFY(!map.sourceOffsetForRenderedPosition(1).has_value());
+        QCOMPARE(map.sourceOffsetForRenderedPosition(2).value(), 5);
+        QCOMPARE(map.sourceSpanForRenderedRange(0, 2).value().end, 5);
+        QVERIFY(!map.sourceSpanForRenderedRange(0, 1).has_value());
+    }
 };
 
 QTEST_MAIN(TestRenderSourceMap)

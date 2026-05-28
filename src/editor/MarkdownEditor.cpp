@@ -166,7 +166,7 @@ protected:
         if (event->matches(QKeySequence::Paste)) {
             const QMimeData* mime = QApplication::clipboard()->mimeData();
             if (mime && mime->hasText()) {
-                requestEdit(cursor.selectionStart(), cursor.selectionEnd(), mime->text());
+                requestEdit(RenderedEditOperation::Paste, cursor.selectionStart(), cursor.selectionEnd(), mime->text());
             }
             event->accept();
             return;
@@ -182,9 +182,9 @@ protected:
 
         if (event->key() == Qt::Key_Backspace) {
             if (cursor.hasSelection()) {
-                requestEdit(cursor.selectionStart(), cursor.selectionEnd(), {});
+                requestEdit(RenderedEditOperation::ReplaceSelection, cursor.selectionStart(), cursor.selectionEnd(), {});
             } else if (cursor.position() > 0) {
-                requestEdit(cursor.position() - 1, cursor.position(), {});
+                requestEdit(RenderedEditOperation::Backspace, cursor.position(), cursor.position(), {});
             }
             event->accept();
             return;
@@ -192,23 +192,24 @@ protected:
 
         if (event->key() == Qt::Key_Delete) {
             if (cursor.hasSelection()) {
-                requestEdit(cursor.selectionStart(), cursor.selectionEnd(), {});
+                requestEdit(RenderedEditOperation::ReplaceSelection, cursor.selectionStart(), cursor.selectionEnd(), {});
             } else {
-                requestEdit(cursor.position(), cursor.position() + 1, {});
+                requestEdit(RenderedEditOperation::Delete, cursor.position(), cursor.position(), {});
             }
             event->accept();
             return;
         }
 
         if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
-            requestEdit(cursor.selectionStart(), cursor.selectionEnd(), QStringLiteral("\n"));
+            requestEdit(RenderedEditOperation::Enter, cursor.selectionStart(), cursor.selectionEnd(), QStringLiteral("\n"));
             event->accept();
             return;
         }
 
         const QString text = event->text();
         if (!text.isEmpty() && text != QStringLiteral("\r")) {
-            requestEdit(cursor.selectionStart(), cursor.selectionEnd(), text);
+            requestEdit(cursor.hasSelection() ? RenderedEditOperation::ReplaceSelection : RenderedEditOperation::InsertText,
+                        cursor.selectionStart(), cursor.selectionEnd(), text);
             event->accept();
             return;
         }
@@ -223,7 +224,7 @@ protected:
         }
 
         QTextCursor cursor = textCursor();
-        requestEdit(cursor.selectionStart(), cursor.selectionEnd(), source->text());
+        requestEdit(RenderedEditOperation::Paste, cursor.selectionStart(), cursor.selectionEnd(), source->text());
     }
 
     void paintEvent(QPaintEvent* event) override
@@ -239,10 +240,10 @@ private:
         return dynamic_cast<SourceBlockData*>(block.userData());
     }
 
-    void requestEdit(int start, int end, const QString& replacement)
+    void requestEdit(RenderedEditOperation operation, int start, int end, const QString& replacement)
     {
         if (editRequested) {
-            editRequested({qMin(start, end), qMax(start, end), replacement});
+            editRequested({operation, qMin(start, end), qMax(start, end), replacement});
         }
     }
 

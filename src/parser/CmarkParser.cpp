@@ -1,4 +1,5 @@
 #include "CmarkParser.h"
+#include "MathDelimiterScanner.h"
 #include <cmark-gfm.h>
 #include <cmark-gfm-core-extensions.h>
 #include <extensions/strikethrough.h>
@@ -44,6 +45,14 @@ AstTree CmarkParser::parse(const QByteArray& utf8Data) {
     cmark_parser_free(parser);
 
     return AstTree(root);
+}
+
+ParseResult CmarkParser::parseDocument(const QString& markdown)
+{
+    ParseResult result;
+    result.ast = parse(markdown);
+    result.mathSpans = MathDelimiterScanner::scan(markdown, result.ast);
+    return result;
 }
 
 } // namespace Muffin

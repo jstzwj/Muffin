@@ -38,6 +38,12 @@ if(EXISTS "${SOURCE_DIR}/resources/themes")
     message(STATUS "  Copied: resources/themes/")
 endif()
 
+if(EXISTS "${SOURCE_DIR}/third_party/MicroTeX/res")
+    file(MAKE_DIRECTORY "${DEPLOY_DIR}/third_party/MicroTeX")
+    file(COPY "${SOURCE_DIR}/third_party/MicroTeX/res" DESTINATION "${DEPLOY_DIR}/third_party/MicroTeX")
+    message(STATUS "  Copied: third_party/MicroTeX/res/")
+endif()
+
 # ------------------------------------------------------------------
 # Platform-specific deployment
 # ------------------------------------------------------------------

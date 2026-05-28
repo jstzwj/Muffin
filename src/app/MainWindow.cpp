@@ -127,11 +127,11 @@ void MainWindow::setupMenuBar()
 
     QAction* undoAction = editMenu->addAction(QStringLiteral("撤消"));
     undoAction->setShortcut(QKeySequence::Undo);
-    connect(undoAction, &QAction::triggered, m_editor->sourceEditor(), &QPlainTextEdit::undo);
+    connect(undoAction, &QAction::triggered, m_document->undoStack(), &QUndoStack::undo);
 
     QAction* redoAction = editMenu->addAction(QStringLiteral("重做"));
     redoAction->setShortcut(QKeySequence::Redo);
-    connect(redoAction, &QAction::triggered, m_editor->sourceEditor(), &QPlainTextEdit::redo);
+    connect(redoAction, &QAction::triggered, m_document->undoStack(), &QUndoStack::redo);
     editMenu->addSeparator();
 
     QAction* cutAction = editMenu->addAction(QStringLiteral("剪切"));
@@ -464,6 +464,21 @@ void MainWindow::connectSignals()
     connect(m_document.get(), &Document::documentRendered,
             this, &MainWindow::onDocumentRendered);
 
+    connect(m_document.get(), &Document::cursorSourceOffsetRequested, this, [this](int offset) {
+        if (m_editor->mode() == MarkdownEditor::SourceMode) {
+            QTextCursor cursor = m_editor->sourceEditor()->textCursor();
+            cursor.setPosition(qBound(0, offset, m_editor->sourceText().size()));
+            m_editor->sourceEditor()->setTextCursor(cursor);
+        } else {
+            m_pendingRenderedCursorSourceOffset = offset;
+        }
+    });
+
+    connect(m_document->undoStack(), &QUndoStack::cleanChanged, this, [this](bool clean) {
+        m_modified = !clean;
+        updateWindowTitle();
+    });
+
     connect(m_editor, &MarkdownEditor::modeChanged, this, [this](MarkdownEditor::Mode mode) {
         m_toggleViewAction->setChecked(mode == MarkdownEditor::SourceMode);
     });
@@ -493,6 +508,7 @@ void MainWindow::onFileNew()
         m_document->setFilePath({});
         m_currentFile.clear();
         m_modified = false;
+        m_document->undoStack()->setClean();
         m_editor->setSourceText({});
         m_editor->setRenderedDocument(nullptr);
         clearRenderedCommandTarget();
@@ -581,13 +597,13 @@ bool MainWindow::onFileSaveAs()
 
 void MainWindow::onSourceTextChanged()
 {
-    if (m_editor->mode() != MarkdownEditor::SourceMode) {
+    if (m_editor->mode() != MarkdownEditor::SourceMode || m_updatingSourceFromDocument) {
         return;
     }
 
     clearRenderedCommandTarget();
-    m_modified = true;
-    updateWindowTitle();
+    const int cursorOffset = m_editor->sourceEditor()->textCursor().position();
+    m_document->applyMarkdownEdit(m_editor->sourceText(), cursorOffset, tr("Edit Source"));
 }
 
 void MainWindow::onRenderedSourceRangeClicked(SourceRange range)
@@ -595,7 +611,7 @@ void MainWindow::onRenderedSourceRangeClicked(SourceRange range)
     m_lastRenderedSourceRange = range;
     m_lastRenderedSelectedText.clear();
     updateSingleBlockCommandState();
-    m_editor->highlightRenderedSourceRange(range);
+    m_editor->clearRenderedSourceRangeHighlight();
     if (m_commandTargetLabel) {
         if (range.endLine > range.startLine) {
             m_commandTargetLabel->setText(tr("Selected source lines %1-%2").arg(range.startLine).arg(range.endLine));
@@ -610,7 +626,7 @@ void MainWindow::onRenderedInlineTextSelected(SourceRange range, const QString& 
     m_lastRenderedSourceRange = range;
     m_lastRenderedSelectedText = text;
     updateSingleBlockCommandState();
-    m_editor->highlightRenderedSourceRange(range);
+    m_editor->clearRenderedSourceRangeHighlight();
     if (m_commandTargetLabel) {
         const QString compactText = text.simplified();
         m_commandTargetLabel->setText(tr("Selected text on source line %1: %2")
@@ -627,16 +643,23 @@ void MainWindow::onRenderedEditRequested(RenderedEdit edit)
         return;
     }
 
+    if (!result.changed) {
+        if (result.cursorSourceOffset >= 0) {
+            m_pendingRenderedCursorSourceOffset = result.cursorSourceOffset;
+        }
+        return;
+    }
+
     m_pendingRenderedCursorSourceOffset = result.cursorSourceOffset;
-    m_document->setMarkdown(result.text);
-    m_modified = true;
-    updateWindowTitle();
+    m_document->applyMarkdownEdit(result.text, result.cursorSourceOffset, tr("Edit Markdown"));
 }
 
 void MainWindow::onToggleViewMode()
 {
     if (m_editor->mode() == MarkdownEditor::RenderedMode) {
+        m_updatingSourceFromDocument = true;
         m_editor->setSourceText(m_document->markdown());
+        m_updatingSourceFromDocument = false;
         m_editor->setMode(MarkdownEditor::SourceMode);
     } else {
         syncSourceToDocument();
@@ -647,7 +670,9 @@ void MainWindow::onToggleViewMode()
 void MainWindow::ensureSourceMode()
 {
     if (m_editor->mode() != MarkdownEditor::SourceMode) {
+        m_updatingSourceFromDocument = true;
         m_editor->setSourceText(m_document->markdown());
+        m_updatingSourceFromDocument = false;
         m_editor->setMode(MarkdownEditor::SourceMode);
     }
 }
@@ -764,80 +789,109 @@ void MainWindow::updateSingleBlockCommandState()
     }
 }
 
-void MainWindow::applyRenderedMarkdownCommand(void (*command)(QPlainTextEdit*))
+void MainWindow::applyMarkdownCommand(MarkdownCommandResult (*command)(const QString&, SourceSelection))
 {
+    SourceSelection selection;
+    QString markdown;
     const bool wasRenderedMode = m_editor->mode() == MarkdownEditor::RenderedMode;
     if (wasRenderedMode) {
         if (warnIfMissingRenderedCommandTarget()) {
             return;
         }
-        m_editor->setSourceText(m_document->markdown());
-        m_editor->setMode(MarkdownEditor::SourceMode);
-        if (!moveSourceCursorToInlineText(m_lastRenderedSourceRange, m_lastRenderedSelectedText)) {
-            moveSourceCursorToRange(m_lastRenderedSourceRange, true);
+        markdown = m_document->markdown();
+        const SourceCoordinateMapper mapper(markdown);
+        SourceSpan span = mapper.spanForRange(m_lastRenderedSourceRange);
+        if (!m_lastRenderedSelectedText.isEmpty()) {
+            const int relative = markdown.mid(span.start, span.end - span.start).indexOf(m_lastRenderedSelectedText);
+            if (relative >= 0) {
+                span = {span.start + relative, span.start + relative + static_cast<int>(m_lastRenderedSelectedText.size())};
+            }
         }
+        selection = {span.start, span.end};
     } else {
         ensureSourceMode();
+        markdown = m_editor->sourceText();
+        QTextCursor cursor = m_editor->sourceEditor()->textCursor();
+        selection = {cursor.selectionStart(), cursor.selectionEnd()};
     }
 
-    command(m_editor->sourceEditor());
+    MarkdownCommandResult result = command(markdown, selection);
+    if (!result.changed) {
+        return;
+    }
 
+    const int cursorOffset = result.selection.normalizedStart();
     if (wasRenderedMode) {
-        syncSourceToDocument();
-        m_editor->setMode(MarkdownEditor::RenderedMode);
+        m_pendingRenderedCursorSourceOffset = cursorOffset;
+        m_document->applyMarkdownEdit(result.markdown, cursorOffset, tr("Format Markdown"));
         clearRenderedCommandTarget();
+    } else {
+        m_document->applyMarkdownEdit(result.markdown, cursorOffset, tr("Format Markdown"));
     }
-}
-
-void MainWindow::applyMarkdownCommand(void (*command)(QPlainTextEdit*))
-{
-    applyRenderedMarkdownCommand(command);
 }
 
 void MainWindow::applyMarkdownListCommand(MarkdownCommand::ListType type)
 {
+    SourceSelection selection;
+    QString markdown;
     const bool wasRenderedMode = m_editor->mode() == MarkdownEditor::RenderedMode;
     if (wasRenderedMode) {
         if (warnIfMissingRenderedCommandTarget()) {
             return;
         }
-        m_editor->setSourceText(m_document->markdown());
-        m_editor->setMode(MarkdownEditor::SourceMode);
-        moveSourceCursorToRange(m_lastRenderedSourceRange, false);
+        markdown = m_document->markdown();
+        const SourceCoordinateMapper mapper(markdown);
+        const SourceSpan span = mapper.spanForRange(m_lastRenderedSourceRange);
+        selection = {span.start, span.end};
     } else {
         ensureSourceMode();
+        markdown = m_editor->sourceText();
+        QTextCursor cursor = m_editor->sourceEditor()->textCursor();
+        selection = {cursor.selectionStart(), cursor.selectionEnd()};
     }
 
-    MarkdownCommand::applyList(m_editor->sourceEditor(), type);
-
+    MarkdownCommandResult result = MarkdownCommand::applyList(markdown, selection, type);
+    if (!result.changed) {
+        return;
+    }
+    const int cursorOffset = result.selection.normalizedStart();
     if (wasRenderedMode) {
-        syncSourceToDocument();
-        m_editor->setMode(MarkdownEditor::RenderedMode);
+        m_pendingRenderedCursorSourceOffset = cursorOffset;
         clearRenderedCommandTarget();
     }
+    m_document->applyMarkdownEdit(result.markdown, cursorOffset, tr("Format Markdown"));
 }
 
 void MainWindow::applyHeadingLevel(int level)
 {
+    SourceSelection selection;
+    QString markdown;
     const bool wasRenderedMode = m_editor->mode() == MarkdownEditor::RenderedMode;
     if (wasRenderedMode) {
         if (warnIfMissingRenderedCommandTarget()) {
             return;
         }
-        m_editor->setSourceText(m_document->markdown());
-        m_editor->setMode(MarkdownEditor::SourceMode);
-        moveSourceCursorToRange(m_lastRenderedSourceRange, false);
+        markdown = m_document->markdown();
+        const SourceCoordinateMapper mapper(markdown);
+        const SourceSpan span = mapper.spanForRange(m_lastRenderedSourceRange);
+        selection = {span.start, span.end};
     } else {
         ensureSourceMode();
+        markdown = m_editor->sourceText();
+        QTextCursor cursor = m_editor->sourceEditor()->textCursor();
+        selection = {cursor.selectionStart(), cursor.selectionEnd()};
     }
 
-    MarkdownCommand::applyHeading(m_editor->sourceEditor(), level);
-
+    MarkdownCommandResult result = MarkdownCommand::applyHeading(markdown, selection, level);
+    if (!result.changed) {
+        return;
+    }
+    const int cursorOffset = result.selection.normalizedStart();
     if (wasRenderedMode) {
-        syncSourceToDocument();
-        m_editor->setMode(MarkdownEditor::RenderedMode);
+        m_pendingRenderedCursorSourceOffset = cursorOffset;
         clearRenderedCommandTarget();
     }
+    m_document->applyMarkdownEdit(result.markdown, cursorOffset, tr("Format Markdown"));
 }
 
 void MainWindow::onToggleBold()
@@ -931,7 +985,9 @@ void MainWindow::onFindReplace()
                 m_editor->sourceEditor()->find(text);
             }
         } else {
+            m_updatingSourceFromDocument = true;
             m_editor->setSourceText(m_document->markdown());
+            m_updatingSourceFromDocument = false;
             m_editor->setMode(MarkdownEditor::SourceMode);
             m_editor->sourceEditor()->find(text);
         }
@@ -1188,11 +1244,21 @@ int MainWindow::lineCount() const
 
 void MainWindow::syncSourceToDocument()
 {
-    m_document->setMarkdown(m_editor->sourceText());
+    m_document->applyMarkdownEdit(m_editor->sourceText(), m_editor->sourceEditor()->textCursor().position(), tr("Edit Source"));
 }
 
 void MainWindow::onDocumentRendered()
 {
+    if (m_editor->mode() == MarkdownEditor::SourceMode && m_editor->sourceText() != m_document->markdown()) {
+        const int cursorPosition = m_editor->sourceEditor()->textCursor().position();
+        m_updatingSourceFromDocument = true;
+        m_editor->setSourceText(m_document->markdown());
+        m_updatingSourceFromDocument = false;
+        QTextCursor cursor = m_editor->sourceEditor()->textCursor();
+        cursor.setPosition(qBound(0, cursorPosition, m_editor->sourceText().size()));
+        m_editor->sourceEditor()->setTextCursor(cursor);
+    }
+
     QTextDocument* doc = m_document->textDocument();
     if (doc) {
         auto clone = doc->clone(m_editor);
@@ -1228,7 +1294,7 @@ void MainWindow::updateWindowTitle()
         ? tr("Untitled")
         : QFileInfo(m_currentFile).fileName();
 
-    if (m_modified)
+    if (!m_document->undoStack()->isClean())
         title += "*";
 
     title += " - Muffin";
@@ -1251,6 +1317,7 @@ bool MainWindow::saveToFile(const QString& filePath)
 
     m_currentFile = filePath;
     m_modified = false;
+    m_document->undoStack()->setClean();
     addRecentFile(filePath);
     updateWindowTitle();
     return true;
@@ -1269,6 +1336,7 @@ bool MainWindow::loadFromFile(const QString& filePath)
     m_document->setFilePath(filePath);
     m_currentFile = filePath;
     m_modified = false;
+    m_document->undoStack()->setClean();
     m_editor->setMode(MarkdownEditor::RenderedMode);
     clearRenderedCommandTarget();
     addRecentFile(filePath);
@@ -1278,7 +1346,7 @@ bool MainWindow::loadFromFile(const QString& filePath)
 
 bool MainWindow::maybeSave()
 {
-    if (!m_modified && !m_document->isModified())
+    if (m_document->undoStack()->isClean() && !m_document->isModified())
         return true;
 
     auto result = QMessageBox::question(this, tr("Unsaved Changes"),

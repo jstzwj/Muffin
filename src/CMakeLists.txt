@@ -5,7 +5,9 @@ set(MUFFIN_SOURCES
     core/Document.cpp
     core/FileManager.cpp
     parser/CmarkParser.cpp
+    parser/MathDelimiterScanner.cpp
     renderer/DocumentRenderer.cpp
+    renderer/MathImageRenderer.cpp
     renderer/RenderSourceMap.cpp
     theme/Theme.cpp
     theme/ThemeStylesheet.cpp
@@ -22,7 +24,11 @@ set(MUFFIN_HEADERS
     parser/AstNode.h
     parser/AstTree.h
     parser/CmarkParser.h
+    parser/MathDelimiterScanner.h
+    parser/MathSpan.h
+    parser/SourceSpan.h
     renderer/DocumentRenderer.h
+    renderer/MathImageRenderer.h
     renderer/RenderSourceMap.h
     renderer/SourceBlockData.h
     theme/Theme.h
@@ -46,6 +52,7 @@ target_link_libraries(muffin PRIVATE
     Qt6::PrintSupport
     libcmark-gfm_static
     libcmark-gfm-extensions_static
+    LaTeX
 )
 
 # cmark-gfm: use static linkage (no __declspec(dllimport))

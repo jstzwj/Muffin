@@ -1,8 +1,11 @@
 #include "app/Application.h"
 #include "app/MainWindow.h"
 
+#include <QDir>
+#include <QFileInfo>
 #include <QTimer>
 #include <QString>
+#include <iostream>
 
 int main(int argc, char* argv[])
 {
@@ -30,8 +33,15 @@ int main(int argc, char* argv[])
     window.show();
 
     if (!screenshotPath.isEmpty()) {
-        QTimer::singleShot(800, &window, [&window, screenshotPath]() {
-            window.grab().save(screenshotPath);
+        QTimer::singleShot(1500, &window, [&window, screenshotPath]() {
+            const QFileInfo info(screenshotPath);
+            if (!info.absoluteDir().exists()) {
+                info.absoluteDir().mkpath(QStringLiteral("."));
+            }
+            const bool saved = window.grab().save(screenshotPath);
+            if (!saved) {
+                std::cerr << "Failed to save screenshot: " << screenshotPath.toLocal8Bit().constData() << '\n';
+            }
             QCoreApplication::quit();
         });
     }

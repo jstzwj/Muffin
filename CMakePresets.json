@@ -18,6 +18,14 @@
             }
         },
         {
+            "name": "release-test",
+            "inherits": "release",
+            "binaryDir": "${sourceDir}/build/release-test",
+            "cacheVariables": {
+                "BUILD_TESTING": "ON"
+            }
+        },
+        {
             "name": "conan",
             "hidden": true,
             "toolchainFile": "${sourceDir}/build/generators/conan_toolchain.cmake"
@@ -31,6 +39,11 @@
             "name": "release-conan",
             "inherits": ["release", "conan"],
             "binaryDir": "${sourceDir}/build/release"
+        },
+        {
+            "name": "release-test-conan",
+            "inherits": ["release-test", "conan"],
+            "binaryDir": "${sourceDir}/build/release-test"
         }
     ],
     "buildPresets": [
@@ -39,8 +52,20 @@
             "configurePreset": "dev"
         },
         {
+            "name": "dev-conan",
+            "configurePreset": "dev-conan"
+        },
+        {
             "name": "release",
             "configurePreset": "release"
+        },
+        {
+            "name": "release-conan",
+            "configurePreset": "release-conan"
+        },
+        {
+            "name": "release-test-conan",
+            "configurePreset": "release-test-conan"
         }
     ]
 }
