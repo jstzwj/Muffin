@@ -545,21 +545,30 @@ void MainWindow::applyTheme() {
     QString statusBg = theme.statusBackground().name();
 
     QString ss = QString(
-        "QMenuBar { background: %1; color: %2; font-size: 13px; padding: 2px; }"
-        "QMenuBar::item { padding: 4px 10px; }"
-        "QMenuBar::item:selected { background: rgba(128,128,128,30); border-radius: 3px; }"
+        "QMainWindow { background: %1; }"
+        "QMenuBar { background: %1; color: %2; font-size: 13px; padding: 0px 2px; spacing: 0px; }"
+        "QMenuBar::item { padding: 5px 8px; background: transparent; }"
+        "QMenuBar::item:selected { background: #e8e8e8; }"
         "QMenu { background: %3; color: %4; border: 1px solid rgba(128,128,128,42); "
-        "  border-radius: 8px; padding: 6px 0px; }"
-        "QMenu::item { padding: 5px 28px 5px 20px; }"
-        "QMenu::item:selected { background: rgba(128,128,128,30); border-radius: 3px; }"
+        "  padding: 4px 0px; }"
+        "QMenu::item { padding: 5px 30px 5px 22px; }"
+        "QMenu::item:selected { background: #e8e8e8; }"
         "QMenu::item:disabled { color: rgba(120,120,120,86); }"
         "QMenu::separator { height: 1px; background: rgba(128,128,128,38); margin: 4px 14px; }"
-        "QStatusBar { background: %5; color: rgba(80,80,80,170); font-size: 12px; }"
+        "QStatusBar { background: %5; color: rgba(80,80,80,170); font-size: 12px; border-top: none; }"
+        "QStatusBar::item { border: none; }"
     ).arg(chromeBg, fg, menuBg, menuFg, statusBg);
 
     // Editor page background
     QString pageBg = theme.pageBackground().name();
-    ss += QString("QTextEdit { background: %1; border: none; }").arg(pageBg);
+    ss += QString(
+        "QTextEdit { background: %1; border: none; selection-background-color: #b8d7ff; "
+        "  selection-color: #222222; }"
+        "QTextEdit QScrollBar:vertical { background: transparent; width: 8px; margin: 0px; }"
+        "QTextEdit QScrollBar::handle:vertical { background: #b9b9b9; min-height: 64px; }"
+        "QTextEdit QScrollBar::add-line:vertical, QTextEdit QScrollBar::sub-line:vertical { height: 0px; }"
+        "QTextEdit QScrollBar::add-page:vertical, QTextEdit QScrollBar::sub-page:vertical { background: transparent; }"
+    ).arg(pageBg);
 
     setStyleSheet(ss);
 }

@@ -88,6 +88,10 @@ else()
 endif()
 target_link_libraries(muffin PRIVATE muffin_lib)
 
+if(MSVC)
+    target_compile_options(muffin PRIVATE /Zc:__cplusplus /permissive- /utf-8)
+endif()
+
 # --- Post-build: copy all runtime DLLs to dist directory ---
 if(WIN32)
     set(_muffin_binary_dir "${CMAKE_BINARY_DIR}")

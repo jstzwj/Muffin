@@ -16,6 +16,8 @@ struct InlineFormat {
     bool code = false;
     bool math = false;
     bool link = false;
+    int headingLevel = 0;
+    bool quote = false;
 };
 
 class DocumentRenderer {
@@ -54,7 +56,8 @@ private:
 
     // Helpers
     QTextCharFormat buildCharFormat(const InlineFormat &fmt) const;
-    void renderInlineChildren(cmark_node *parent, QTextCursor &cursor);
+    void renderInlineChildren(cmark_node *parent, QTextCursor &cursor,
+                              const InlineFormat &fmt = {});
 };
 
 } // namespace Md

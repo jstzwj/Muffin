@@ -47,6 +47,7 @@ public:
     // Table
     QColor tableBorderColor() const { return m_tableBorderColor; }
     QColor tableHeaderBgColor() const { return m_tableHeaderBackground; }
+    QColor tableAltRowBgColor() const { return m_tableAltRowBackground; }
 
     // Thematic break
     QColor thematicBreakColor() const { return m_hrColor; }
@@ -85,6 +86,7 @@ private:
 
     QColor m_tableBorderColor;
     QColor m_tableHeaderBackground;
+    QColor m_tableAltRowBackground;
 
     QColor m_hrColor;
 

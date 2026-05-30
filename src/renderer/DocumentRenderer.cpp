@@ -13,6 +13,7 @@ extern "C" {
 #include <QTextBlockFormat>
 #include <QTextCharFormat>
 #include <QTextFrameFormat>
+#include <QTextLength>
 
 namespace Md {
 
@@ -27,6 +28,7 @@ void DocumentRenderer::renderDocument(cmark_node *cmarkRoot, QTextDocument *targ
 
     target->clear();
     target->setDefaultFont(m_theme.bodyFont());
+    target->setDocumentMargin(0);
 
     // Set document-wide line height via default stylesheet
     double lineH = m_theme.lineHeight();
@@ -97,8 +99,16 @@ void DocumentRenderer::renderBlock(cmark_node *node, QTextCursor &cursor) {
 
 QTextCharFormat DocumentRenderer::buildCharFormat(const InlineFormat &fmt) const {
     QTextCharFormat f;
-    f.setFont(m_theme.bodyFont());
-    f.setForeground(m_theme.textColor());
+    if (fmt.headingLevel > 0) {
+        f.setFont(m_theme.headingFont());
+        f.setFontPointSize(m_theme.bodyFontSize() * m_theme.headingSize(fmt.headingLevel));
+        f.setFontWeight(QFont::Bold);
+        f.setForeground(m_theme.headingColor());
+    } else {
+        f.setFont(m_theme.bodyFont());
+        f.setFontPointSize(m_theme.bodyFontSize());
+        f.setForeground(fmt.quote ? m_theme.quoteForegroundColor() : m_theme.textColor());
+    }
 
     if (fmt.bold) f.setFontWeight(QFont::Bold);
     if (fmt.italic) f.setFontItalic(true);
@@ -113,17 +123,18 @@ QTextCharFormat DocumentRenderer::buildCharFormat(const InlineFormat &fmt) const
     }
     if (fmt.code) {
         f.setFont(m_theme.codeFont());
+        f.setFontPointSize(m_theme.bodyFontSize() * m_theme.codeFontSizeScale());
         f.setForeground(m_theme.codeForegroundColor());
     }
 
     return f;
 }
 
-void DocumentRenderer::renderInlineChildren(cmark_node *parent, QTextCursor &cursor) {
-    InlineFormat emptyFmt;
+void DocumentRenderer::renderInlineChildren(cmark_node *parent, QTextCursor &cursor,
+                                            const InlineFormat &fmt) {
     cmark_node *child = cmark_node_first_child(parent);
     while (child) {
-        renderInlineSubtree(child, cursor, emptyFmt);
+        renderInlineSubtree(child, cursor, fmt);
         child = cmark_node_next(child);
     }
 }
@@ -132,10 +143,13 @@ void DocumentRenderer::renderInlineChildren(cmark_node *parent, QTextCursor &cur
 
 void DocumentRenderer::renderParagraph(cmark_node *node, QTextCursor &cursor) {
     QTextBlockFormat bf;
-    bf.setTopMargin(6);
-    bf.setBottomMargin(6);
+    bf.setTopMargin(7);
+    bf.setBottomMargin(7);
+    bf.setLineHeight(m_theme.lineHeight() * 100.0, QTextBlockFormat::ProportionalHeight);
     cursor.insertBlock(bf);
-    renderInlineChildren(node, cursor);
+    InlineFormat fmt;
+    cursor.setCharFormat(buildCharFormat(fmt));
+    renderInlineChildren(node, cursor, fmt);
 }
 
 void DocumentRenderer::renderHeading(cmark_node *node, QTextCursor &cursor) {
@@ -143,33 +157,31 @@ void DocumentRenderer::renderHeading(cmark_node *node, QTextCursor &cursor) {
 
     QTextBlockFormat bf;
     if (level <= 2) {
-        bf.setTopMargin(20);
-        bf.setBottomMargin(7);
+        bf.setTopMargin(level == 1 ? 28 : 24);
+        bf.setBottomMargin(9);
     } else {
-        double sz = m_theme.headingSize(level);
-        bf.setTopMargin(15.0 / sz);
-        bf.setBottomMargin(5);
+        bf.setTopMargin(18);
+        bf.setBottomMargin(7);
     }
+    bf.setLineHeight(118, QTextBlockFormat::ProportionalHeight);
     cursor.insertBlock(bf);
 
-    QTextCharFormat fmt;
-    fmt.setFont(m_theme.headingFont());
-    double pointSize = m_theme.bodyFontSize() * m_theme.headingSize(level);
-    fmt.setFontPointSize(pointSize);
-    fmt.setForeground(m_theme.headingColor());
-    cursor.setCharFormat(fmt);
+    InlineFormat headingFmt;
+    headingFmt.headingLevel = level;
+    cursor.setCharFormat(buildCharFormat(headingFmt));
 
-    renderInlineChildren(node, cursor);
+    renderInlineChildren(node, cursor, headingFmt);
 
-    // Bottom border for h1 and h2
     if (level <= 2) {
         QTextBlockFormat borderBf;
         borderBf.setTopMargin(2);
-        borderBf.setBottomMargin(4);
+        borderBf.setBottomMargin(6);
         cursor.insertBlock(borderBf);
         QTextCharFormat hrFmt;
+        hrFmt.setFont(m_theme.bodyFont());
+        hrFmt.setFontPointSize(4);
         hrFmt.setForeground(m_theme.headingBorderColor());
-        cursor.insertText(QString(QChar(0x2500)).repeated(60), hrFmt);
+        cursor.insertText(QString(QChar(0x2500)).repeated(96), hrFmt);
     }
 }
 
@@ -179,30 +191,36 @@ void DocumentRenderer::renderBlockQuote(cmark_node *node, QTextCursor &cursor) {
         cmark_node_type childType = cmark_node_get_type(child);
         if (childType == CMARK_NODE_PARAGRAPH) {
             QTextBlockFormat bf;
-            bf.setLeftMargin(20);
-            bf.setTopMargin(2);
-            bf.setBottomMargin(2);
+            bf.setLeftMargin(18);
+            bf.setTopMargin(8);
+            bf.setBottomMargin(8);
             bf.setRightMargin(10);
+            bf.setBackground(QColor(m_theme.blockQuoteBorderColor().red(),
+                                    m_theme.blockQuoteBorderColor().green(),
+                                    m_theme.blockQuoteBorderColor().blue(), 18));
+            bf.setLineHeight(m_theme.lineHeight() * 100.0, QTextBlockFormat::ProportionalHeight);
             cursor.insertBlock(bf);
-            QTextCharFormat qf;
-            qf.setFont(m_theme.bodyFont());
-            qf.setForeground(m_theme.quoteForegroundColor());
-            cursor.setCharFormat(qf);
-            renderInlineChildren(child, cursor);
+            InlineFormat quoteFmt;
+            quoteFmt.quote = true;
+            cursor.setCharFormat(buildCharFormat(quoteFmt));
+            renderInlineChildren(child, cursor, quoteFmt);
         } else if (childType == CMARK_NODE_BLOCK_QUOTE) {
             cmark_node *inner = cmark_node_first_child(child);
             while (inner) {
                 if (cmark_node_get_type(inner) == CMARK_NODE_PARAGRAPH) {
                     QTextBlockFormat bf;
-                    bf.setLeftMargin(40);
-                    bf.setTopMargin(2);
-                    bf.setBottomMargin(2);
+                    bf.setLeftMargin(36);
+                    bf.setTopMargin(6);
+                    bf.setBottomMargin(6);
+                    bf.setBackground(QColor(m_theme.blockQuoteBorderColor().red(),
+                                            m_theme.blockQuoteBorderColor().green(),
+                                            m_theme.blockQuoteBorderColor().blue(), 18));
+                    bf.setLineHeight(m_theme.lineHeight() * 100.0, QTextBlockFormat::ProportionalHeight);
                     cursor.insertBlock(bf);
-                    QTextCharFormat qf;
-                    qf.setFont(m_theme.bodyFont());
-                    qf.setForeground(m_theme.quoteForegroundColor());
-                    cursor.setCharFormat(qf);
-                    renderInlineChildren(inner, cursor);
+                    InlineFormat quoteFmt;
+                    quoteFmt.quote = true;
+                    cursor.setCharFormat(buildCharFormat(quoteFmt));
+                    renderInlineChildren(inner, cursor, quoteFmt);
                 }
                 inner = cmark_node_next(inner);
             }
@@ -228,9 +246,10 @@ void DocumentRenderer::renderListItems(cmark_node *listNode, QTextCursor &cursor
         }
 
         QTextBlockFormat bf;
-        bf.setLeftMargin(20.0 * (depth + 1));
-        bf.setTopMargin(2);
-        bf.setBottomMargin(2);
+        bf.setLeftMargin(22.0 * (depth + 1));
+        bf.setTopMargin(3);
+        bf.setBottomMargin(3);
+        bf.setLineHeight(m_theme.lineHeight() * 100.0, QTextBlockFormat::ProportionalHeight);
         cursor.insertBlock(bf);
 
         // Render marker
@@ -244,6 +263,7 @@ void DocumentRenderer::renderListItems(cmark_node *listNode, QTextCursor &cursor
         }
         QTextCharFormat markerFmt;
         markerFmt.setFont(m_theme.bodyFont());
+        markerFmt.setFontPointSize(m_theme.bodyFontSize());
         markerFmt.setForeground(m_theme.textColor());
         cursor.insertText(marker, markerFmt);
 
@@ -252,7 +272,8 @@ void DocumentRenderer::renderListItems(cmark_node *listNode, QTextCursor &cursor
         while (child) {
             cmark_node_type childType = cmark_node_get_type(child);
             if (childType == CMARK_NODE_PARAGRAPH) {
-                renderInlineChildren(child, cursor);
+                InlineFormat itemFmt;
+                renderInlineChildren(child, cursor, itemFmt);
             } else if (childType == CMARK_NODE_LIST) {
                 renderListItems(child, cursor, depth + 1);
             } else if (childType == CMARK_NODE_CODE_BLOCK) {
@@ -267,15 +288,17 @@ void DocumentRenderer::renderListItems(cmark_node *listNode, QTextCursor &cursor
 
 void DocumentRenderer::renderCodeBlock(cmark_node *node, QTextCursor &cursor) {
     QTextBlockFormat bf;
-    bf.setTopMargin(6);
-    bf.setBottomMargin(6);
-    bf.setLeftMargin(10);
-    bf.setRightMargin(10);
+    bf.setTopMargin(10);
+    bf.setBottomMargin(10);
+    bf.setLeftMargin(0);
+    bf.setRightMargin(0);
+    bf.setBackground(m_theme.codeBgColor());
+    bf.setLineHeight(145, QTextBlockFormat::ProportionalHeight);
     cursor.insertBlock(bf);
 
     QTextCharFormat fmt;
     fmt.setFont(m_theme.codeFont());
-    fmt.setBackground(m_theme.codeBgColor());
+    fmt.setFontPointSize(m_theme.bodyFontSize() * m_theme.codeFontSizeScale());
     fmt.setForeground(m_theme.codeForegroundColor());
 
     const char *lit = cmark_node_get_literal(node);
@@ -294,12 +317,14 @@ void DocumentRenderer::renderCodeBlock(cmark_node *node, QTextCursor &cursor) {
 
 void DocumentRenderer::renderHtmlBlock(cmark_node *node, QTextCursor &cursor) {
     QTextBlockFormat bf;
-    bf.setTopMargin(4);
-    bf.setBottomMargin(4);
+    bf.setTopMargin(8);
+    bf.setBottomMargin(8);
+    bf.setBackground(m_theme.codeBgColor());
     cursor.insertBlock(bf);
 
     QTextCharFormat fmt;
     fmt.setFont(m_theme.codeFont());
+    fmt.setFontPointSize(m_theme.bodyFontSize() * m_theme.codeFontSizeScale());
     fmt.setForeground(m_theme.metaColor());
     cursor.setCharFormat(fmt);
 
@@ -309,16 +334,17 @@ void DocumentRenderer::renderHtmlBlock(cmark_node *node, QTextCursor &cursor) {
 
 void DocumentRenderer::renderMathBlock(cmark_node *node, QTextCursor &cursor) {
     QTextBlockFormat bf;
-    bf.setTopMargin(6);
-    bf.setBottomMargin(6);
-    bf.setLeftMargin(10);
-    bf.setRightMargin(10);
+    bf.setTopMargin(12);
+    bf.setBottomMargin(12);
+    bf.setLeftMargin(0);
+    bf.setRightMargin(0);
     bf.setAlignment(Qt::AlignCenter);
+    bf.setBackground(m_theme.codeBgColor());
     cursor.insertBlock(bf);
 
     QTextCharFormat fmt;
     fmt.setFont(m_theme.codeFont());
-    fmt.setBackground(m_theme.codeBgColor());
+    fmt.setFontPointSize(m_theme.bodyFontSize() * m_theme.codeFontSizeScale());
     fmt.setForeground(m_theme.metaColor());
     cursor.setCharFormat(fmt);
 
@@ -337,16 +363,16 @@ void DocumentRenderer::renderMathBlock(cmark_node *node, QTextCursor &cursor) {
 }
 
 void DocumentRenderer::renderThematicBreak(cmark_node *node, QTextCursor &cursor) {
+    Q_UNUSED(node)
     QTextBlockFormat bf;
-    bf.setTopMargin(8);
-    bf.setBottomMargin(8);
+    bf.setTopMargin(16);
+    bf.setBottomMargin(16);
     cursor.insertBlock(bf);
-
     QTextCharFormat fmt;
+    fmt.setFont(m_theme.bodyFont());
+    fmt.setFontPointSize(4);
     fmt.setForeground(m_theme.thematicBreakColor());
-    fmt.setFontPointSize(m_theme.bodyFontSize());
-    QString hr = QString(QChar(0x2500)).repeated(60);
-    cursor.insertText(hr, fmt);
+    cursor.insertText(QString(QChar(0x2500)).repeated(96), fmt);
 }
 
 void DocumentRenderer::renderTable(cmark_node *node, QTextCursor &cursor) {
@@ -368,15 +394,23 @@ void DocumentRenderer::renderTable(cmark_node *node, QTextCursor &cursor) {
     }
     if (nrows == 0) return;
 
-    cursor.insertBlock();
+    QTextBlockFormat beforeTable;
+    beforeTable.setTopMargin(12);
+    beforeTable.setBottomMargin(2);
+    cursor.insertBlock(beforeTable);
     int tableStartPos = cursor.position();
 
     QTextTable *table = cursor.insertTable(nrows, ncols);
     QTextTableFormat tff = table->format();
     tff.setBorder(1);
     tff.setBorderBrush(m_theme.tableBorderColor());
-    tff.setCellPadding(4);
+    tff.setCellPadding(8);
     tff.setCellSpacing(0);
+    QVector<QTextLength> widths;
+    widths.reserve(ncols);
+    for (int i = 0; i < ncols; ++i)
+        widths.append(QTextLength(QTextLength::PercentageLength, 100.0 / ncols));
+    tff.setColumnWidthConstraints(widths);
     table->setFormat(tff);
 
     int r = 0;
@@ -402,14 +436,19 @@ void DocumentRenderer::renderTable(cmark_node *node, QTextCursor &cursor) {
 
                 QTextCharFormat cellFmt;
                 cellFmt.setFont(m_theme.bodyFont());
+                cellFmt.setFontPointSize(m_theme.bodyFontSize());
                 cellFmt.setForeground(m_theme.textColor());
                 if (isHeader) {
                     cellFmt.setFontWeight(QFont::Bold);
                     cellFmt.setBackground(m_theme.tableHeaderBgColor());
+                } else if (r % 2 == 1) {
+                    cellFmt.setBackground(m_theme.tableAltRowBgColor());
                 }
                 cellCursor.setCharFormat(cellFmt);
 
                 InlineFormat emptyFmt;
+                if (isHeader)
+                    emptyFmt.bold = true;
                 cmark_node *inlineChild = cmark_node_first_child(cell);
                 while (inlineChild) {
                     renderInlineSubtree(inlineChild, cellCursor, emptyFmt);
@@ -426,6 +465,10 @@ void DocumentRenderer::renderTable(cmark_node *node, QTextCursor &cursor) {
     // Move cursor past the table
     cursor.setPosition(tableStartPos + 1);
     cursor.movePosition(QTextCursor::End);
+    QTextBlockFormat afterTable;
+    afterTable.setTopMargin(2);
+    afterTable.setBottomMargin(12);
+    cursor.insertBlock(afterTable);
 }
 
 // ── Inline Rendering ──
@@ -469,11 +512,7 @@ void DocumentRenderer::renderInlineSubtree(cmark_node *node, QTextCursor &cursor
 
     if (isMathInline) {
         childFmt.math = true;
-        renderMetaMarker("$", cursor);
     }
-
-    // Opening meta-marker
-    renderOpeningMarker(node, cursor);
 
     // Recurse into children
     cmark_node *child = cmark_node_first_child(node);
@@ -482,12 +521,6 @@ void DocumentRenderer::renderInlineSubtree(cmark_node *node, QTextCursor &cursor
         child = cmark_node_next(child);
     }
 
-    // Closing meta-marker
-    renderClosingMarker(node, cursor);
-
-    if (isMathInline) {
-        renderMetaMarker("$", cursor);
-    }
 }
 
 void DocumentRenderer::renderInlineLeaf(cmark_node *node, QTextCursor &cursor,
@@ -507,6 +540,7 @@ void DocumentRenderer::renderInlineLeaf(cmark_node *node, QTextCursor &cursor,
 
     if (type == CMARK_NODE_CODE) {
         charFmt.setFont(m_theme.codeFont());
+        charFmt.setFontPointSize(m_theme.bodyFontSize() * m_theme.codeFontSizeScale());
         charFmt.setBackground(m_theme.codeBgColor());
         charFmt.setForeground(m_theme.codeForegroundColor());
     }

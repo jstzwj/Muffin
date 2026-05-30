@@ -19,6 +19,8 @@ public:
     void setTheme(const Theme &theme);
 
 private:
+    void resizeEvent(QResizeEvent *event) override;
+    void updateDocumentWidth();
     void onDocumentReset();
 
     std::unique_ptr<MdDocument> m_doc;
