@@ -1,8 +1,10 @@
 #pragma once
-#include "parser/AstTree.h"
 #include "parser/MathSpan.h"
+#include "model/MarkdownDocument.h"
+#include "renderer/PartialRenderResult.h"
 #include "RenderSourceMap.h"
 #include "renderer/MarkdownBlock.h"
+#include "renderer/RenderFragment.h"
 #include "renderer/SyntaxTokenSpan.h"
 #include "theme/ThemeStylesheet.h"
 #include <QTextDocument>
@@ -20,70 +22,76 @@ struct RenderResult {
     RenderSourceMap sourceMap;
     QVector<MarkdownBlock> blocks;
     QVector<SyntaxTokenSpan> syntaxTokens;
+    QVector<RenderFragment> fragments;
 };
 
 class DocumentRenderer {
 public:
     explicit DocumentRenderer(const ThemeStylesheet& stylesheet);
 
-    RenderResult render(const AstTree& tree, const QString& source, const QVector<MathSpan>& mathSpans = {});
+    RenderResult render(const MarkdownDocument& document, const QVector<MathSpan>& mathSpans = {});
+    PartialRenderResult renderPartial(const MarkdownDocument& document,
+                                      const QVector<MarkdownNodeId>& nodeIds,
+                                      const QVector<MathSpan>& mathSpans = {});
 
 private:
-    void renderNode(QTextCursor& cursor, const AstNode& node);
-    void renderDocument(QTextCursor& cursor, const AstNode& node);
-    void renderHeading(QTextCursor& cursor, const AstNode& node);
-    void renderParagraph(QTextCursor& cursor, const AstNode& node);
-    void renderFormulaBlock(QTextCursor& cursor, const AstNode& node, const MathSpan& span);
-    void renderBlockQuote(QTextCursor& cursor, const AstNode& node);
-    void renderCodeBlock(QTextCursor& cursor, const AstNode& node);
-    void renderList(QTextCursor& cursor, const AstNode& node);
-    void renderItem(QTextCursor& cursor, const AstNode& node, int index);
-    void renderThematicBreak(QTextCursor& cursor, const AstNode& node);
-    void renderHtmlBlock(QTextCursor& cursor, const AstNode& node);
-    void insertBlockForNode(QTextCursor& cursor, const QTextBlockFormat& blockFormat, const QTextCharFormat& charFormat);
-    void attachSourceRange(QTextCursor& cursor, const AstNode& node);
+    void resetState(const MarkdownDocument& document, const QVector<MathSpan>& mathSpans);
+    std::unique_ptr<QTextDocument> createTextDocument() const;
+    MarkdownNodeId renderableNodeIdForPartial(const MarkdownDocument& document, MarkdownNodeId nodeId) const;
+    void renderModelNode(QTextCursor& cursor, MarkdownNodeId nodeId);
+    void renderModelDocument(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelHeading(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelParagraph(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelFormulaBlock(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelBlockQuote(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelCodeBlock(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelList(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelItem(QTextCursor& cursor, const MarkdownNode& node, int number);
+    void renderModelThematicBreak(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelHtmlBlock(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelInlineChildren(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelText(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelTextChunk(QTextCursor& cursor, const QString& text, SourceSpan source, SourceRange sourceRange, MarkdownNodeId nodeId);
+    void renderModelEmph(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelStrong(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelInlineCode(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelFormulaInline(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelLink(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelImage(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelStrikethrough(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelTable(QTextCursor& cursor, const MarkdownNode& node);
+    void renderModelTableRow(QTextTable* table, int row, const MarkdownNode& rowNode, bool isHeader);
+    void renderModelTableCell(QTextTable* table, int row, int col, const MarkdownNode& cellNode, bool isHeader);
+    QVector<QTextLength> tableColumnConstraints(const MarkdownNode& node, int cols) const;
+    int tableCellTextLength(const MarkdownNode& cellNode) const;
 
-    void renderInlineChildren(QTextCursor& cursor, const AstNode& node);
-    void renderText(QTextCursor& cursor, const AstNode& node);
-    void renderTextChunk(QTextCursor& cursor, const QString& text, SourceSpan source, SourceRange sourceRange);
-    void renderInlineFormula(QTextCursor& cursor, const MathSpan& span, SourceRange sourceRange);
+    void insertBlockForNode(QTextCursor& cursor, const QTextBlockFormat& blockFormat, const QTextCharFormat& charFormat);
+
+    void renderInlineFormula(QTextCursor& cursor, const MathSpan& span, SourceRange sourceRange, MarkdownNodeId nodeId);
     void renderSoftBreak(QTextCursor& cursor);
     void renderLineBreak(QTextCursor& cursor);
-    void renderEmph(QTextCursor& cursor, const AstNode& node);
-    void renderStrong(QTextCursor& cursor, const AstNode& node);
-    void renderInlineCode(QTextCursor& cursor, const AstNode& node);
-    void renderLink(QTextCursor& cursor, const AstNode& node);
-    void renderImage(QTextCursor& cursor, const AstNode& node);
-    void renderStrikethrough(QTextCursor& cursor, const AstNode& node);
 
-    void renderTable(QTextCursor& cursor, const AstNode& node);
-    QVector<QTextLength> tableColumnConstraints(const AstNode& node, int cols) const;
-    int tableCellTextLength(const AstNode& cellNode) const;
-    void renderTableRow(QTextTable* table, int row, const AstNode& rowNode, bool isHeader);
-    void renderTableCell(QTextTable* table, int row, int col, const AstNode& cellNode, bool isHeader);
-
-    void beginEditableBlock(const AstNode& node, RenderSpan::Kind kind, SourceSpan sourceSpan);
+    void beginEditableBlock(const MarkdownNode& node, RenderSpan::Kind kind, SourceSpan sourceSpan);
     void endEditableBlock();
-    SourceSpan sourceSpanForNode(const AstNode& node) const;
-    const MathSpan* displayMathSpanFor(SourceSpan source) const;
-    QVector<MathSpan> inlineMathSpansIn(SourceSpan source) const;
     SourceSpan nextInlineSourceSpan(const QString& literal);
-    SourceSpan inlineContentSpan(const AstNode& node, int markerLength) const;
-    void recordSyntaxMarkers(SourceSpan source, int markerLength, SyntaxTokenSpan::Kind kind);
+    void recordSyntaxMarkers(SourceSpan source, int markerLength, SyntaxTokenSpan::Kind kind, MarkdownNodeId nodeId);
     void recordSpan(int renderedStart, int renderedEnd, SourceSpan source, SourceRange sourceRange,
                     RenderSpan::Kind kind, bool editable, bool block = false,
                     RenderSpan::EditPolicy editPolicy = RenderSpan::EditPolicy::None,
-                    SourceSpan editSource = {});
+                    SourceSpan editSource = {}, MarkdownNodeId nodeId = 0);
     void recordBlock(int renderedStart, int renderedEnd, SourceSpan source, SourceSpan content,
-                     SourceRange sourceRange, RenderSpan::Kind kind, bool editable);
+                     SourceRange sourceRange, RenderSpan::Kind kind, bool editable, MarkdownNodeId nodeId = 0,
+                     int replacementRenderedStart = -1, int replacementRenderedEnd = -1);
 
     const ThemeStylesheet& m_ss;
     QString m_source;
+    const MarkdownDocument* m_model = nullptr;
     QVector<MathSpan> m_mathSpans;
     SourceCoordinateMapper m_sourceMapper;
     RenderSourceMap m_sourceMap;
     QVector<MarkdownBlock> m_blocks;
     QVector<SyntaxTokenSpan> m_syntaxTokens;
+    QVector<RenderFragment> m_fragments;
     bool m_inEditableBlock = false;
     int m_nonPlainInlineDepth = 0;
     SourceSpan m_currentEditableSourceSpan;

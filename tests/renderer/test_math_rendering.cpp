@@ -19,7 +19,7 @@ RenderResult renderMarkdown(const QString& markdown, ParseResult* parsedOut = nu
     ParseResult parsed = parser.parseDocument(markdown);
     ThemeStylesheet stylesheet(Theme::preset(ThemePreset::Github));
     DocumentRenderer renderer(stylesheet);
-    RenderResult result = renderer.render(parsed.ast, markdown, parsed.mathSpans);
+    RenderResult result = renderer.render(parsed.document, parsed.mathSpans);
     if (parsedOut) {
         *parsedOut = std::move(parsed);
     }

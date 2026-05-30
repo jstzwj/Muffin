@@ -6,165 +6,199 @@
 #include <QTextList>
 #include <QUrl>
 #include <QVector>
-#include <cstring>
 
 namespace Muffin {
 
 DocumentRenderer::DocumentRenderer(const ThemeStylesheet& stylesheet)
     : m_ss(stylesheet) {}
 
-RenderResult DocumentRenderer::render(const AstTree& tree, const QString& source, const QVector<MathSpan>& mathSpans) {
-    m_source = source;
+void DocumentRenderer::resetState(const MarkdownDocument& document, const QVector<MathSpan>& mathSpans)
+{
+    m_source = document.source();
+    m_model = &document;
     m_mathSpans = mathSpans;
-    m_sourceMapper = SourceCoordinateMapper(source);
+    m_sourceMapper = SourceCoordinateMapper(m_source);
     m_sourceMap.clear();
     m_blocks.clear();
     m_syntaxTokens.clear();
+    m_fragments.clear();
     m_inEditableBlock = false;
     m_nonPlainInlineDepth = 0;
     m_currentEditableSourceSpan = {};
     m_currentSourceSearchOffset = -1;
     m_currentBlockRange = {};
     m_currentBlockKind = RenderSpan::Kind::Unsupported;
+}
 
+std::unique_ptr<QTextDocument> DocumentRenderer::createTextDocument() const
+{
     auto doc = std::make_unique<QTextDocument>();
     doc->setDefaultFont(m_ss.theme().bodyFont);
     doc->setDefaultStyleSheet("");
+    return doc;
+}
+
+RenderResult DocumentRenderer::render(const MarkdownDocument& document, const QVector<MathSpan>& mathSpans)
+{
+    resetState(document, mathSpans);
+    auto doc = createTextDocument();
 
     QTextCursor cursor(doc.get());
     cursor.setBlockFormat(m_ss.bodyBlockFormat());
     cursor.setCharFormat(m_ss.bodyCharFormat());
 
-    if (!tree.isNull()) {
-        renderNode(cursor, tree.root());
+    if (!document.isEmpty()) {
+        renderModelNode(cursor, document.rootId());
         cursor.movePosition(QTextCursor::End);
         if (cursor.block().text().isEmpty() && cursor.block().blockNumber() > 0) {
             cursor.deletePreviousChar();
         }
     }
 
-    return {std::move(doc), m_sourceMap, m_blocks, m_syntaxTokens};
+    return {std::move(doc), m_sourceMap, m_blocks, m_syntaxTokens, m_fragments};
 }
 
-void DocumentRenderer::renderNode(QTextCursor& cursor, const AstNode& node) {
-    if (node.isNull()) return;
-
-    auto type = node.type();
-
-    switch (type) {
-    case CMARK_NODE_DOCUMENT:
-        renderDocument(cursor, node);
-        break;
-    case CMARK_NODE_HEADING:
-        renderHeading(cursor, node);
-        break;
-    case CMARK_NODE_PARAGRAPH:
-        renderParagraph(cursor, node);
-        break;
-    case CMARK_NODE_BLOCK_QUOTE:
-        renderBlockQuote(cursor, node);
-        break;
-    case CMARK_NODE_CODE_BLOCK:
-        renderCodeBlock(cursor, node);
-        break;
-    case CMARK_NODE_LIST:
-        renderList(cursor, node);
-        break;
-    case CMARK_NODE_THEMATIC_BREAK:
-        renderThematicBreak(cursor, node);
-        break;
-    case CMARK_NODE_HTML_BLOCK:
-        renderHtmlBlock(cursor, node);
-        break;
-    case CMARK_NODE_TEXT:
-        renderText(cursor, node);
-        break;
-    case CMARK_NODE_SOFTBREAK:
-        renderSoftBreak(cursor);
-        break;
-    case CMARK_NODE_LINEBREAK:
-        renderLineBreak(cursor);
-        break;
-    case CMARK_NODE_EMPH:
-        renderEmph(cursor, node);
-        break;
-    case CMARK_NODE_STRONG:
-        renderStrong(cursor, node);
-        break;
-    case CMARK_NODE_CODE:
-        renderInlineCode(cursor, node);
-        break;
-    case CMARK_NODE_LINK:
-        renderLink(cursor, node);
-        break;
-    case CMARK_NODE_IMAGE:
-        renderImage(cursor, node);
-        break;
-    default:
-        if (type == CMARK_NODE_TABLE) {
-            renderTable(cursor, node);
-        } else if (type == CMARK_NODE_TABLE_ROW || type == CMARK_NODE_TABLE_CELL) {
-        } else if (type == CMARK_NODE_STRIKETHROUGH) {
-            renderStrikethrough(cursor, node);
-        } else {
-            renderInlineChildren(cursor, node);
+MarkdownNodeId DocumentRenderer::renderableNodeIdForPartial(const MarkdownDocument& document, MarkdownNodeId nodeId) const
+{
+    const MarkdownNode* node = document.nodeById(nodeId);
+    while (node) {
+        switch (node->type) {
+        case MarkdownNodeType::Document:
+        case MarkdownNodeType::Heading:
+        case MarkdownNodeType::Paragraph:
+        case MarkdownNodeType::BlockQuote:
+        case MarkdownNodeType::List:
+        case MarkdownNodeType::ListItem:
+        case MarkdownNodeType::CodeBlock:
+        case MarkdownNodeType::ThematicBreak:
+        case MarkdownNodeType::HtmlBlock:
+        case MarkdownNodeType::Table:
+        case MarkdownNodeType::FormulaBlock:
+            return node->id;
+        default:
+            node = document.nodeById(node->parent);
+            break;
         }
-        break;
     }
+    return 0;
 }
 
-void DocumentRenderer::renderDocument(QTextCursor& cursor, const AstNode& node) {
-    AstNode child = node.firstChild();
-    while (!child.isNull()) {
-        renderNode(cursor, child);
-        child = child.next();
+PartialRenderResult DocumentRenderer::renderPartial(const MarkdownDocument& document,
+                                                    const QVector<MarkdownNodeId>& nodeIds,
+                                                    const QVector<MathSpan>& mathSpans)
+{
+    resetState(document, mathSpans);
+    if (nodeIds.isEmpty() || document.isEmpty()) {
+        return {};
     }
+
+    QVector<MarkdownNodeId> renderableNodeIds;
+    for (MarkdownNodeId nodeId : nodeIds) {
+        const MarkdownNodeId renderableNodeId = renderableNodeIdForPartial(document, nodeId);
+        if (renderableNodeId != 0 && !renderableNodeIds.contains(renderableNodeId)) {
+            renderableNodeIds.append(renderableNodeId);
+        }
+    }
+    if (renderableNodeIds.isEmpty()) {
+        return {};
+    }
+
+    auto doc = createTextDocument();
+    QTextCursor cursor(doc.get());
+    cursor.setBlockFormat(m_ss.bodyBlockFormat());
+    cursor.setCharFormat(m_ss.bodyCharFormat());
+
+    for (MarkdownNodeId nodeId : renderableNodeIds) {
+        renderModelNode(cursor, nodeId);
+    }
+
+    return {std::shared_ptr<QTextDocument>(std::move(doc)), renderableNodeIds, {}, m_sourceMap, m_blocks, m_syntaxTokens, m_fragments};
 }
 
-void DocumentRenderer::renderHeading(QTextCursor& cursor, const AstNode& node) {
-    int level = node.headingLevel();
-
-    insertBlockForNode(cursor, m_ss.headingBlockFormat(level), m_ss.headingCharFormat(level));
-    attachSourceRange(cursor, node);
-    const int renderedStart = cursor.position();
-    const SourceSpan editSource = m_sourceMapper.headingContentSpan(node.sourceRange(), level);
-    beginEditableBlock(node, RenderSpan::Kind::Heading, editSource);
-    renderInlineChildren(cursor, node);
-    endEditableBlock();
-    const SourceSpan source = sourceSpanForNode(node);
-    recordSpan(renderedStart, cursor.position(), source, node.sourceRange(),
-               RenderSpan::Kind::Heading, false, true, RenderSpan::EditPolicy::BlockContent, editSource);
-    recordBlock(renderedStart, cursor.position(), source, editSource, node.sourceRange(), RenderSpan::Kind::Heading, true);
-}
-
-void DocumentRenderer::renderParagraph(QTextCursor& cursor, const AstNode& node) {
-    const SourceSpan paragraphSource = sourceSpanForNode(node);
-    if (const MathSpan* displaySpan = displayMathSpanFor(paragraphSource)) {
-        renderFormulaBlock(cursor, node, *displaySpan);
+void DocumentRenderer::renderModelNode(QTextCursor& cursor, MarkdownNodeId nodeId)
+{
+    if (!m_model) {
+        return;
+    }
+    const MarkdownNode* node = m_model->nodeById(nodeId);
+    if (!node) {
         return;
     }
 
-    insertBlockForNode(cursor, m_ss.bodyBlockFormat(), m_ss.bodyCharFormat());
-    attachSourceRange(cursor, node);
-    const int renderedStart = cursor.position();
-    const SourceSpan editSource = paragraphSource;
-    beginEditableBlock(node, RenderSpan::Kind::Paragraph, editSource);
-    renderInlineChildren(cursor, node);
-    endEditableBlock();
-    recordSpan(renderedStart, cursor.position(), paragraphSource, node.sourceRange(),
-               RenderSpan::Kind::Paragraph, false, true, RenderSpan::EditPolicy::BlockContent, editSource);
-    recordBlock(renderedStart, cursor.position(), paragraphSource, editSource, node.sourceRange(), RenderSpan::Kind::Paragraph, true);
+    switch (node->type) {
+    case MarkdownNodeType::Document: renderModelDocument(cursor, *node); break;
+    case MarkdownNodeType::Heading: renderModelHeading(cursor, *node); break;
+    case MarkdownNodeType::Paragraph: renderModelParagraph(cursor, *node); break;
+    case MarkdownNodeType::BlockQuote: renderModelBlockQuote(cursor, *node); break;
+    case MarkdownNodeType::List: renderModelList(cursor, *node); break;
+    case MarkdownNodeType::ListItem: renderModelItem(cursor, *node, -1); break;
+    case MarkdownNodeType::CodeBlock: renderModelCodeBlock(cursor, *node); break;
+    case MarkdownNodeType::ThematicBreak: renderModelThematicBreak(cursor, *node); break;
+    case MarkdownNodeType::HtmlBlock: renderModelHtmlBlock(cursor, *node); break;
+    case MarkdownNodeType::Text: renderModelText(cursor, *node); break;
+    case MarkdownNodeType::SoftBreak: renderSoftBreak(cursor); break;
+    case MarkdownNodeType::LineBreak: renderLineBreak(cursor); break;
+    case MarkdownNodeType::Emphasis: renderModelEmph(cursor, *node); break;
+    case MarkdownNodeType::Strong: renderModelStrong(cursor, *node); break;
+    case MarkdownNodeType::InlineCode: renderModelInlineCode(cursor, *node); break;
+    case MarkdownNodeType::Link: renderModelLink(cursor, *node); break;
+    case MarkdownNodeType::Image: renderModelImage(cursor, *node); break;
+    case MarkdownNodeType::Table: renderModelTable(cursor, *node); break;
+    case MarkdownNodeType::TableRow:
+    case MarkdownNodeType::TableCell:
+        break;
+    case MarkdownNodeType::FormulaInline: renderModelFormulaInline(cursor, *node); break;
+    case MarkdownNodeType::FormulaBlock: renderModelFormulaBlock(cursor, *node); break;
+    case MarkdownNodeType::Strikethrough: renderModelStrikethrough(cursor, *node); break;
+    case MarkdownNodeType::Unknown: renderModelInlineChildren(cursor, *node); break;
+    }
 }
 
-void DocumentRenderer::renderFormulaBlock(QTextCursor& cursor, const AstNode& node, const MathSpan& span)
+void DocumentRenderer::renderModelDocument(QTextCursor& cursor, const MarkdownNode& node)
+{
+    for (MarkdownNodeId child : node.children) {
+        renderModelNode(cursor, child);
+    }
+}
+
+void DocumentRenderer::renderModelHeading(QTextCursor& cursor, const MarkdownNode& node)
+{
+    const int level = qBound(1, node.headingLevel, 6);
+    insertBlockForNode(cursor, m_ss.headingBlockFormat(level), m_ss.headingCharFormat(level));
+    cursor.block().setUserData(new SourceBlockData(node.sourceRange));
+    const int renderedStart = cursor.position();
+    const SourceSpan editSource = m_sourceMapper.headingContentSpan(node.sourceRange, level);
+    beginEditableBlock(node, RenderSpan::Kind::Heading, editSource);
+    renderModelInlineChildren(cursor, node);
+    endEditableBlock();
+    recordSpan(renderedStart, cursor.position(), node.source, node.sourceRange,
+               RenderSpan::Kind::Heading, false, true, RenderSpan::EditPolicy::BlockContent, editSource, node.id);
+    recordBlock(renderedStart, cursor.position(), node.source, editSource, node.sourceRange, RenderSpan::Kind::Heading, true, node.id);
+}
+
+void DocumentRenderer::renderModelParagraph(QTextCursor& cursor, const MarkdownNode& node)
+{
+    insertBlockForNode(cursor, m_ss.bodyBlockFormat(), m_ss.bodyCharFormat());
+    cursor.block().setUserData(new SourceBlockData(node.sourceRange));
+    const int renderedStart = cursor.position();
+    beginEditableBlock(node, RenderSpan::Kind::Paragraph, node.source);
+    renderModelInlineChildren(cursor, node);
+    endEditableBlock();
+    recordSpan(renderedStart, cursor.position(), node.source, node.sourceRange,
+               RenderSpan::Kind::Paragraph, false, true, RenderSpan::EditPolicy::BlockContent, node.source, node.id);
+    recordBlock(renderedStart, cursor.position(), node.source, node.source, node.sourceRange, RenderSpan::Kind::Paragraph, true, node.id);
+}
+
+void DocumentRenderer::renderModelFormulaBlock(QTextCursor& cursor, const MarkdownNode& node)
 {
     QTextBlockFormat blockFormat = m_ss.bodyBlockFormat();
     blockFormat.setAlignment(Qt::AlignHCenter);
     blockFormat.setTopMargin(12);
     blockFormat.setBottomMargin(12);
     insertBlockForNode(cursor, blockFormat, m_ss.bodyCharFormat());
-    attachSourceRange(cursor, node);
+    cursor.block().setUserData(new SourceBlockData(node.sourceRange));
 
+    const MathSpan span{node.source, node.content, node.literal, true};
     MathImageRenderer renderer(m_ss.theme());
     const QImage image = renderer.render(span);
     const QString resourceName = QStringLiteral("muffin-math:%1:%2").arg(span.source.start).arg(span.source.end);
@@ -177,31 +211,43 @@ void DocumentRenderer::renderFormulaBlock(QTextCursor& cursor, const AstNode& no
 
     const int renderedStart = cursor.position();
     cursor.insertImage(imageFormat);
-    recordSpan(renderedStart, cursor.position(), span.source, node.sourceRange(),
-               RenderSpan::Kind::FormulaBlock, false, true, RenderSpan::EditPolicy::Atomic, span.source);
-    recordBlock(renderedStart, cursor.position(), span.source, span.source, node.sourceRange(), RenderSpan::Kind::FormulaBlock, false);
+    recordSpan(renderedStart, cursor.position(), span.source, node.sourceRange,
+               RenderSpan::Kind::FormulaBlock, false, true, RenderSpan::EditPolicy::Atomic, span.source, node.id);
+    recordBlock(renderedStart, cursor.position(), span.source, span.source, node.sourceRange, RenderSpan::Kind::FormulaBlock, false, node.id);
 }
 
-void DocumentRenderer::renderBlockQuote(QTextCursor& cursor, const AstNode& node) {
+void DocumentRenderer::renderModelBlockQuote(QTextCursor& cursor, const MarkdownNode& node)
+{
     QTextCharFormat charFmt = m_ss.bodyCharFormat();
     charFmt.merge(m_ss.blockquoteCharFormat());
-
-    AstNode child = node.firstChild();
-    while (!child.isNull()) {
-        if (child.type() == CMARK_NODE_PARAGRAPH) {
+    const bool recordQuoteBlock = node.children.size() == 1;
+    for (MarkdownNodeId childId : node.children) {
+        const MarkdownNode* child = m_model ? m_model->nodeById(childId) : nullptr;
+        if (child && child->type == MarkdownNodeType::Paragraph) {
             insertBlockForNode(cursor, m_ss.blockquoteBlockFormat(), charFmt);
-            attachSourceRange(cursor, child);
-            renderInlineChildren(cursor, child);
+            cursor.block().setUserData(new SourceBlockData(child->sourceRange));
+            const int renderedStart = cursor.position();
+            const RenderSpan::Kind kind = recordQuoteBlock ? RenderSpan::Kind::BlockQuote : RenderSpan::Kind::Paragraph;
+            const MarkdownNodeId nodeId = recordQuoteBlock ? node.id : child->id;
+            beginEditableBlock(*child, kind, child->source);
+            renderModelInlineChildren(cursor, *child);
+            endEditableBlock();
+            recordSpan(renderedStart, cursor.position(), child->source, child->sourceRange,
+                       kind, false, true, RenderSpan::EditPolicy::BlockContent, child->source, nodeId);
+            const SourceSpan blockSource = recordQuoteBlock ? node.source : child->source;
+            const SourceRange blockSourceRange = recordQuoteBlock ? node.sourceRange : child->sourceRange;
+            recordBlock(renderedStart, cursor.position(), blockSource, child->source, blockSourceRange, kind, true, nodeId);
         } else {
-            renderNode(cursor, child);
+            renderModelNode(cursor, childId);
         }
-        child = child.next();
     }
 }
 
-void DocumentRenderer::renderCodeBlock(QTextCursor& cursor, const AstNode& node) {
+void DocumentRenderer::renderModelCodeBlock(QTextCursor& cursor, const MarkdownNode& node)
+{
     insertBlockForNode(cursor, m_ss.bodyBlockFormat(), m_ss.bodyCharFormat());
-    attachSourceRange(cursor, node);
+    cursor.block().setUserData(new SourceBlockData(node.sourceRange));
+    const int replacementRenderedStart = cursor.block().position();
 
     QTextFrameFormat frameFormat;
     frameFormat.setBackground(m_ss.theme().codeBackground);
@@ -215,85 +261,85 @@ void DocumentRenderer::renderCodeBlock(QTextCursor& cursor, const AstNode& node)
     codeCursor.setBlockFormat(m_ss.codeBlockFormat());
     codeCursor.setCharFormat(m_ss.codeBlockCharFormat());
 
-    QString text = node.literal();
+    QString text = node.literal;
     if (text.endsWith('\n')) text.chop(1);
     const int renderedStart = codeCursor.position();
     codeCursor.insertText(text, m_ss.codeBlockCharFormat());
-    const SourceSpan source = sourceSpanForNode(node);
-    recordSpan(renderedStart, codeCursor.position(), source, node.sourceRange(), RenderSpan::Kind::CodeBlock, false, true);
-    recordBlock(renderedStart, codeCursor.position(), source, source, node.sourceRange(), RenderSpan::Kind::CodeBlock, false);
+    const SourceSpan editSource = node.content.isValid() ? node.content : node.source;
+    recordSpan(renderedStart, codeCursor.position(), node.source, node.sourceRange, RenderSpan::Kind::CodeBlock, true, true,
+               RenderSpan::EditPolicy::LinearText, editSource, node.id);
 
     cursor = frame->lastCursorPosition();
     cursor.movePosition(QTextCursor::End);
+    recordBlock(renderedStart, codeCursor.position(), node.source, editSource, node.sourceRange, RenderSpan::Kind::CodeBlock, true, node.id,
+                replacementRenderedStart, cursor.position());
 }
 
-void DocumentRenderer::renderList(QTextCursor& cursor, const AstNode& node) {
-    auto listType = node.listType();
-    int start = node.listStart();
-    if (start == 0) start = 1;
-
-    AstNode child = node.firstChild();
+void DocumentRenderer::renderModelList(QTextCursor& cursor, const MarkdownNode& node)
+{
     int index = 0;
-    while (!child.isNull()) {
-        if (child.type() == CMARK_NODE_ITEM) {
-            renderItem(cursor, child, listType == CMARK_ORDERED_LIST ? start + index : -1);
-            index++;
+    const int start = node.listStart == 0 ? 1 : node.listStart;
+    for (MarkdownNodeId childId : node.children) {
+        const MarkdownNode* child = m_model ? m_model->nodeById(childId) : nullptr;
+        if (child && child->type == MarkdownNodeType::ListItem) {
+            renderModelItem(cursor, *child, node.orderedList ? start + index : -1);
+            ++index;
         }
-        child = child.next();
     }
 }
 
-void DocumentRenderer::renderItem(QTextCursor& cursor, const AstNode& node, int number) {
-    QString prefix;
-    if (number < 0) {
-        prefix = QString::fromUtf8("\xe2\x80\xa2") + " ";
-    } else {
-        prefix = QString::number(number) + ". ";
-    }
+void DocumentRenderer::renderModelItem(QTextCursor& cursor, const MarkdownNode& node, int number)
+{
+    QString prefix = number < 0 ? QString::fromUtf8("\xe2\x80\xa2") + " " : QString::number(number) + ". ";
 
     QTextBlockFormat blockFmt = m_ss.bodyBlockFormat();
     blockFmt.setLeftMargin(blockFmt.leftMargin() + 20);
-
     insertBlockForNode(cursor, blockFmt, m_ss.bodyCharFormat());
-    attachSourceRange(cursor, node);
-    QTextCharFormat prefixFmt = m_ss.bodyCharFormat();
-    cursor.insertText(prefix, prefixFmt);
+    cursor.block().setUserData(new SourceBlockData(node.sourceRange));
+    cursor.insertText(prefix, m_ss.bodyCharFormat());
 
-    bool isTasklist = (strcmp(node.typeString(), "tasklist") == 0);
-    if (isTasklist) {
-        if (node.isTasklistChecked()) {
-            cursor.insertText(QString::fromUtf8("\xe2\x98\x91 "), prefixFmt);
-        } else {
-            cursor.insertText(QString::fromUtf8("\xe2\x97\xbb "), prefixFmt);
-        }
+    if (node.taskList) {
+        cursor.insertText(node.taskChecked ? QString::fromUtf8("\xe2\x98\x91 ") : QString::fromUtf8("\xe2\x97\xbb "),
+                          m_ss.bodyCharFormat());
     }
 
     const int renderedStart = cursor.position();
-    const SourceSpan source = sourceSpanForNode(node);
-    const int markerEnd = qMin(source.end, source.start + prefix.size());
-    const SourceSpan content{markerEnd, source.end};
-    beginEditableBlock(node, RenderSpan::Kind::List, content);
-
-    AstNode child = node.firstChild();
-    while (!child.isNull()) {
-        if (child.type() == CMARK_NODE_PARAGRAPH) {
-            renderInlineChildren(cursor, child);
+    const int markerEnd = qMin(node.source.end, node.source.start + prefix.size() + (node.taskList ? 4 : 0));
+    const SourceSpan content{markerEnd, node.source.end};
+    const bool recordChildParagraphBlocks = node.children.size() > 1;
+    bool firstParagraph = true;
+    for (MarkdownNodeId childId : node.children) {
+        const MarkdownNode* child = m_model ? m_model->nodeById(childId) : nullptr;
+        if (child && child->type == MarkdownNodeType::Paragraph) {
+            if (!firstParagraph) {
+                insertBlockForNode(cursor, blockFmt, m_ss.bodyCharFormat());
+                cursor.block().setUserData(new SourceBlockData(child->sourceRange));
+            }
+            const int paragraphRenderedStart = cursor.position();
+            beginEditableBlock(*child, RenderSpan::Kind::Paragraph, child->source);
+            renderModelInlineChildren(cursor, *child);
+            endEditableBlock();
+            if (recordChildParagraphBlocks) {
+                recordSpan(paragraphRenderedStart, cursor.position(), child->source, child->sourceRange,
+                           RenderSpan::Kind::Paragraph, false, true, RenderSpan::EditPolicy::BlockContent, child->source, child->id);
+                recordBlock(paragraphRenderedStart, cursor.position(), child->source, child->source, child->sourceRange,
+                            RenderSpan::Kind::Paragraph, true, child->id);
+            }
+            firstParagraph = false;
         } else {
-            renderNode(cursor, child);
+            renderModelNode(cursor, childId);
         }
-        child = child.next();
     }
-
-    endEditableBlock();
-    recordSpan(renderedStart, cursor.position(), source, node.sourceRange(),
-               RenderSpan::Kind::List, false, true, RenderSpan::EditPolicy::BlockContent, content);
-    recordBlock(renderedStart, cursor.position(), source, content, node.sourceRange(), RenderSpan::Kind::List, true);
+    recordSpan(renderedStart, cursor.position(), node.source, node.sourceRange,
+               RenderSpan::Kind::List, false, true, RenderSpan::EditPolicy::BlockContent, content, node.id);
+    recordBlock(renderedStart, cursor.position(), node.source, content, node.sourceRange, RenderSpan::Kind::List, true, node.id);
 }
 
-void DocumentRenderer::renderThematicBreak(QTextCursor& cursor, const AstNode& node) {
+void DocumentRenderer::renderModelThematicBreak(QTextCursor& cursor, const MarkdownNode& node)
+{
     QTextBlockFormat fmt = m_ss.thematicBreakFormat();
     insertBlockForNode(cursor, fmt, m_ss.bodyCharFormat());
-    attachSourceRange(cursor, node);
+    cursor.block().setUserData(new SourceBlockData(node.sourceRange));
 
     QTextFrameFormat lineFormat;
     lineFormat.setHeight(1);
@@ -303,197 +349,163 @@ void DocumentRenderer::renderThematicBreak(QTextCursor& cursor, const AstNode& n
     cursor.movePosition(QTextCursor::End);
 }
 
-void DocumentRenderer::renderHtmlBlock(QTextCursor& cursor, const AstNode& node) {
+void DocumentRenderer::renderModelHtmlBlock(QTextCursor& cursor, const MarkdownNode& node)
+{
     insertBlockForNode(cursor, m_ss.bodyBlockFormat(), m_ss.bodyCharFormat());
-    attachSourceRange(cursor, node);
+    cursor.block().setUserData(new SourceBlockData(node.sourceRange));
     const int renderedStart = cursor.position();
-    cursor.insertText(node.literal());
-    const SourceSpan source = sourceSpanForNode(node);
-    recordSpan(renderedStart, cursor.position(), source, node.sourceRange(), RenderSpan::Kind::HtmlBlock, false);
-    recordBlock(renderedStart, cursor.position(), source, source, node.sourceRange(), RenderSpan::Kind::HtmlBlock, false);
+    cursor.insertText(node.literal);
+    recordSpan(renderedStart, cursor.position(), node.source, node.sourceRange, RenderSpan::Kind::HtmlBlock, false, false,
+               RenderSpan::EditPolicy::None, {}, node.id);
+    recordBlock(renderedStart, cursor.position(), node.source, node.source, node.sourceRange, RenderSpan::Kind::HtmlBlock, false, node.id);
 }
 
-void DocumentRenderer::insertBlockForNode(QTextCursor& cursor, const QTextBlockFormat& blockFormat, const QTextCharFormat& charFormat)
+void DocumentRenderer::renderModelInlineChildren(QTextCursor& cursor, const MarkdownNode& node)
 {
-    if (cursor.position() == 0 && cursor.document()->isEmpty()) {
-        cursor.setBlockFormat(blockFormat);
-        cursor.setCharFormat(charFormat);
-        return;
+    for (MarkdownNodeId child : node.children) {
+        renderModelNode(cursor, child);
     }
-    cursor.insertBlock(blockFormat, charFormat);
 }
 
-void DocumentRenderer::attachSourceRange(QTextCursor& cursor, const AstNode& node)
+void DocumentRenderer::renderModelText(QTextCursor& cursor, const MarkdownNode& node)
 {
-    const SourceRange range = node.sourceRange();
-    if (range.startLine > 0) {
-        cursor.block().setUserData(new SourceBlockData(range));
+    const QString literal = node.literal;
+    SourceSpan source = node.source;
+    if (!source.isValid() && !literal.isEmpty()) {
+        source = nextInlineSourceSpan(literal);
     }
+
+    renderModelTextChunk(cursor, literal, source, node.sourceRange, node.id);
 }
 
-void DocumentRenderer::renderInlineChildren(QTextCursor& cursor, const AstNode& node) {
-    AstNode child = node.firstChild();
-    while (!child.isNull()) {
-        renderNode(cursor, child);
-        child = child.next();
-    }
-}
-
-void DocumentRenderer::renderText(QTextCursor& cursor, const AstNode& node) {
-    const QString literal = node.literal();
-    const SourceSpan source = nextInlineSourceSpan(literal);
-    const QVector<MathSpan> inlineSpans = inlineMathSpansIn(source);
-    if (inlineSpans.isEmpty()) {
-        renderTextChunk(cursor, literal, source, node.sourceRange());
-        return;
-    }
-
-    int sourceOffset = source.start;
-    for (const MathSpan& span : inlineSpans) {
-        if (span.source.start > sourceOffset) {
-            renderTextChunk(cursor, m_source.mid(sourceOffset, span.source.start - sourceOffset),
-                            {sourceOffset, span.source.start}, node.sourceRange());
-        }
-        renderInlineFormula(cursor, span, node.sourceRange());
-        sourceOffset = span.source.end;
-    }
-    if (sourceOffset < source.end) {
-        renderTextChunk(cursor, m_source.mid(sourceOffset, source.end - sourceOffset),
-                        {sourceOffset, source.end}, node.sourceRange());
-    }
-}
-
-void DocumentRenderer::renderTextChunk(QTextCursor& cursor, const QString& text, SourceSpan source, SourceRange sourceRange)
+void DocumentRenderer::renderModelTextChunk(QTextCursor& cursor, const QString& text, SourceSpan source,
+                                            SourceRange sourceRange, MarkdownNodeId nodeId)
 {
     if (text.isEmpty()) {
         return;
     }
+
     const int renderedStart = cursor.position();
     cursor.insertText(text);
     const bool linear = source.isValid() && m_source.mid(source.start, source.end - source.start) == text;
     const bool editable = m_inEditableBlock && m_nonPlainInlineDepth == 0 && linear;
     recordSpan(renderedStart, cursor.position(), source, sourceRange, RenderSpan::Kind::Text, editable, false,
-               linear ? RenderSpan::EditPolicy::LinearText : RenderSpan::EditPolicy::NonLinearText, source);
+               linear ? RenderSpan::EditPolicy::LinearText : RenderSpan::EditPolicy::NonLinearText, source, nodeId);
 }
 
-void DocumentRenderer::renderInlineFormula(QTextCursor& cursor, const MathSpan& span, SourceRange sourceRange)
+void DocumentRenderer::renderModelEmph(QTextCursor& cursor, const MarkdownNode& node)
 {
-    MathImageRenderer renderer(m_ss.theme());
-    const QImage image = renderer.render(span);
-    const QString resourceName = QStringLiteral("muffin-math:%1:%2").arg(span.source.start).arg(span.source.end);
-    cursor.document()->addResource(QTextDocument::ImageResource, QUrl(resourceName), image);
-
-    QTextImageFormat imageFormat;
-    imageFormat.setName(resourceName);
-    imageFormat.setWidth(image.width());
-    imageFormat.setHeight(image.height());
-
-    const int renderedStart = cursor.position();
-    cursor.insertImage(imageFormat);
-    recordSpan(renderedStart, cursor.position(), span.source, sourceRange,
-               RenderSpan::Kind::FormulaInline, m_inEditableBlock, false, RenderSpan::EditPolicy::Atomic, span.source);
-}
-
-void DocumentRenderer::renderSoftBreak(QTextCursor& cursor) {
-    cursor.insertText(" ");
-}
-
-void DocumentRenderer::renderLineBreak(QTextCursor& cursor) {
-    cursor.insertText("\n");
-}
-
-void DocumentRenderer::renderEmph(QTextCursor& cursor, const AstNode& node) {
     QTextCharFormat savedFmt = cursor.charFormat();
     cursor.mergeCharFormat(m_ss.italicCharFormat());
-    const SourceSpan source = sourceSpanForNode(node);
-    recordSyntaxMarkers(source, 1, SyntaxTokenSpan::Kind::EmphasisMarker);
+    recordSyntaxMarkers(node.source, 1, SyntaxTokenSpan::Kind::EmphasisMarker, node.id);
     const int renderedStart = cursor.position();
-    renderInlineChildren(cursor, node);
-    recordSpan(renderedStart, cursor.position(), source, node.sourceRange(), RenderSpan::Kind::Emphasis, false);
+    renderModelInlineChildren(cursor, node);
+    recordSpan(renderedStart, cursor.position(), node.source, node.sourceRange, RenderSpan::Kind::Emphasis, false, false,
+               RenderSpan::EditPolicy::None, {}, node.id);
     cursor.setCharFormat(savedFmt);
 }
 
-void DocumentRenderer::renderStrong(QTextCursor& cursor, const AstNode& node) {
+void DocumentRenderer::renderModelStrong(QTextCursor& cursor, const MarkdownNode& node)
+{
     QTextCharFormat savedFmt = cursor.charFormat();
     cursor.mergeCharFormat(m_ss.boldCharFormat());
-    const SourceSpan source = sourceSpanForNode(node);
-    recordSyntaxMarkers(source, 2, SyntaxTokenSpan::Kind::StrongMarker);
+    recordSyntaxMarkers(node.source, 2, SyntaxTokenSpan::Kind::StrongMarker, node.id);
     const int renderedStart = cursor.position();
-    renderInlineChildren(cursor, node);
-    recordSpan(renderedStart, cursor.position(), source, node.sourceRange(), RenderSpan::Kind::Strong, false);
+    renderModelInlineChildren(cursor, node);
+    recordSpan(renderedStart, cursor.position(), node.source, node.sourceRange, RenderSpan::Kind::Strong, false, false,
+               RenderSpan::EditPolicy::None, {}, node.id);
     cursor.setCharFormat(savedFmt);
 }
 
-void DocumentRenderer::renderInlineCode(QTextCursor& cursor, const AstNode& node) {
+void DocumentRenderer::renderModelInlineCode(QTextCursor& cursor, const MarkdownNode& node)
+{
     QTextCharFormat fmt = cursor.charFormat();
     fmt.merge(m_ss.inlineCodeCharFormat());
-    const SourceSpan source = sourceSpanForNode(node);
-    const SourceSpan content = inlineContentSpan(node, 1);
-    recordSyntaxMarkers(source, 1, SyntaxTokenSpan::Kind::InlineCodeMarker);
+    const SourceSpan content = node.source.isValid() && node.source.end - node.source.start >= 2
+        ? SourceSpan{node.source.start + 1, node.source.end - 1}
+        : SourceSpan{};
+    recordSyntaxMarkers(node.source, 1, SyntaxTokenSpan::Kind::InlineCodeMarker, node.id);
     const int renderedStart = cursor.position();
-    cursor.insertText(node.literal(), fmt);
+    cursor.insertText(node.literal, fmt);
     const bool editable = m_inEditableBlock && content.isValid();
-    recordSpan(renderedStart, cursor.position(), content, node.sourceRange(), RenderSpan::Kind::InlineCode, editable, false,
-               RenderSpan::EditPolicy::LinearText, content);
+    recordSpan(renderedStart, cursor.position(), content, node.sourceRange, RenderSpan::Kind::InlineCode, editable, false,
+               RenderSpan::EditPolicy::LinearText, content, node.id);
 }
 
-void DocumentRenderer::renderLink(QTextCursor& cursor, const AstNode& node) {
+void DocumentRenderer::renderModelFormulaInline(QTextCursor& cursor, const MarkdownNode& node)
+{
+    renderInlineFormula(cursor, {node.source, node.content, node.literal, false}, node.sourceRange, node.id);
+}
+
+void DocumentRenderer::renderModelLink(QTextCursor& cursor, const MarkdownNode& node)
+{
     QTextCharFormat linkFmt = cursor.charFormat();
-    linkFmt.merge(m_ss.linkCharFormat(node.url()));
+    linkFmt.merge(m_ss.linkCharFormat(node.url));
     linkFmt.setAnchor(true);
-    linkFmt.setAnchorHref(node.url());
+    linkFmt.setAnchorHref(node.url);
 
     QTextCharFormat savedFmt = cursor.charFormat();
     cursor.setCharFormat(linkFmt);
-    ++m_nonPlainInlineDepth;
     const int renderedStart = cursor.position();
-    renderInlineChildren(cursor, node);
-    recordSpan(renderedStart, cursor.position(), sourceSpanForNode(node), node.sourceRange(), RenderSpan::Kind::Link, false);
-    --m_nonPlainInlineDepth;
+    renderModelInlineChildren(cursor, node);
+    recordSpan(renderedStart, cursor.position(), node.source, node.sourceRange, RenderSpan::Kind::Link, false, false,
+               RenderSpan::EditPolicy::None, {}, node.id);
     cursor.setCharFormat(savedFmt);
 }
 
-void DocumentRenderer::renderImage(QTextCursor& cursor, const AstNode& node) {
-    QString url = node.url();
-    QString alt = node.firstChild().isNull() ? QString() : node.firstChild().literal();
-    const int renderedStart = cursor.position();
+void DocumentRenderer::renderModelImage(QTextCursor& cursor, const MarkdownNode& node)
+{
+    QString alt;
+    if (!node.children.isEmpty() && m_model) {
+        if (const MarkdownNode* altNode = m_model->nodeById(node.children.first())) {
+            alt = altNode->literal;
+        }
+    }
 
-    if (!url.isEmpty()) {
+    const int renderedStart = cursor.position();
+    if (!node.url.isEmpty()) {
         QTextImageFormat imgFmt;
-        imgFmt.setName(url);
+        imgFmt.setName(node.url);
         imgFmt.setProperty(QTextFormat::UserProperty, alt);
         cursor.insertImage(imgFmt);
     } else {
         cursor.insertText(alt.isEmpty() ? QString("[image]") : QString("[%1]").arg(alt));
     }
-    recordSpan(renderedStart, cursor.position(), sourceSpanForNode(node), node.sourceRange(), RenderSpan::Kind::Image, false);
+    recordSpan(renderedStart, cursor.position(), node.source, node.sourceRange, RenderSpan::Kind::Image, false, false,
+               RenderSpan::EditPolicy::None, {}, node.id);
 }
 
-void DocumentRenderer::renderStrikethrough(QTextCursor& cursor, const AstNode& node) {
+void DocumentRenderer::renderModelStrikethrough(QTextCursor& cursor, const MarkdownNode& node)
+{
     QTextCharFormat savedFmt = cursor.charFormat();
     cursor.mergeCharFormat(m_ss.strikethroughCharFormat());
     ++m_nonPlainInlineDepth;
     const int renderedStart = cursor.position();
-    renderInlineChildren(cursor, node);
-    recordSpan(renderedStart, cursor.position(), sourceSpanForNode(node), node.sourceRange(), RenderSpan::Kind::Unsupported, false);
+    renderModelInlineChildren(cursor, node);
+    recordSpan(renderedStart, cursor.position(), node.source, node.sourceRange, RenderSpan::Kind::Unsupported, false, false,
+               RenderSpan::EditPolicy::None, {}, node.id);
     --m_nonPlainInlineDepth;
     cursor.setCharFormat(savedFmt);
 }
 
-void DocumentRenderer::renderTable(QTextCursor& cursor, const AstNode& node) {
-    int cols = node.tableColumns();
-    if (cols <= 0) return;
-
+void DocumentRenderer::renderModelTable(QTextCursor& cursor, const MarkdownNode& node)
+{
     int rows = 0;
-    AstNode rowNode = node.firstChild();
-    while (!rowNode.isNull()) {
-        rows++;
-        rowNode = rowNode.next();
+    int cols = 0;
+    for (MarkdownNodeId rowId : node.children) {
+        const MarkdownNode* row = m_model ? m_model->nodeById(rowId) : nullptr;
+        if (!row || row->type != MarkdownNodeType::TableRow) {
+            continue;
+        }
+        ++rows;
+        cols = qMax(cols, row->children.size());
     }
-    if (rows == 0) return;
+    if (rows == 0 || cols <= 0) {
+        return;
+    }
 
     insertBlockForNode(cursor, m_ss.bodyBlockFormat(), m_ss.bodyCharFormat());
-    attachSourceRange(cursor, node);
+    cursor.block().setUserData(new SourceBlockData(node.sourceRange));
 
     QTextTableFormat tableFormat = m_ss.tableFormat();
     tableFormat.setColumnWidthConstraints(tableColumnConstraints(node, cols));
@@ -501,34 +513,69 @@ void DocumentRenderer::renderTable(QTextCursor& cursor, const AstNode& node) {
     const int renderedStart = cursor.position();
     QTextTable* table = cursor.insertTable(rows, cols, tableFormat);
 
-    rowNode = node.firstChild();
-    int rowIdx = 0;
-    while (!rowNode.isNull()) {
-        bool isHeader = rowNode.isTableRowHeader();
-        renderTableRow(table, rowIdx, rowNode, isHeader);
-        rowIdx++;
-        rowNode = rowNode.next();
+    int rowIndex = 0;
+    for (MarkdownNodeId rowId : node.children) {
+        const MarkdownNode* row = m_model ? m_model->nodeById(rowId) : nullptr;
+        if (!row || row->type != MarkdownNodeType::TableRow) {
+            continue;
+        }
+        renderModelTableRow(table, rowIndex, *row, row->tableHeader);
+        ++rowIndex;
     }
 
     cursor.movePosition(QTextCursor::End);
-    const SourceSpan source = sourceSpanForNode(node);
-    recordSpan(renderedStart, cursor.position(), source, node.sourceRange(), RenderSpan::Kind::Table, false, true);
-    recordBlock(renderedStart, cursor.position(), source, source, node.sourceRange(), RenderSpan::Kind::Table, false);
+    recordSpan(renderedStart, cursor.position(), node.source, node.sourceRange, RenderSpan::Kind::Table, false, true,
+               RenderSpan::EditPolicy::None, {}, node.id);
+    recordBlock(renderedStart, cursor.position(), node.source, node.source, node.sourceRange, RenderSpan::Kind::Table, false, node.id);
 }
 
-QVector<QTextLength> DocumentRenderer::tableColumnConstraints(const AstNode& node, int cols) const {
-    QVector<int> weights(cols, 4);
-
-    AstNode rowNode = node.firstChild();
-    while (!rowNode.isNull()) {
-        AstNode cellNode = rowNode.firstChild();
-        int col = 0;
-        while (!cellNode.isNull() && col < cols) {
-            weights[col] = qMax(weights[col], tableCellTextLength(cellNode));
-            cellNode = cellNode.next();
-            col++;
+void DocumentRenderer::renderModelTableRow(QTextTable* table, int row, const MarkdownNode& rowNode, bool isHeader)
+{
+    int col = 0;
+    for (MarkdownNodeId cellId : rowNode.children) {
+        const MarkdownNode* cell = m_model ? m_model->nodeById(cellId) : nullptr;
+        if (cell && cell->type == MarkdownNodeType::TableCell && col < table->columns()) {
+            renderModelTableCell(table, row, col, *cell, isHeader);
+            ++col;
         }
-        rowNode = rowNode.next();
+    }
+}
+
+void DocumentRenderer::renderModelTableCell(QTextTable* table, int row, int col, const MarkdownNode& cellNode, bool isHeader)
+{
+    QTextTableCell cell = table->cellAt(row, col);
+    cell.setFormat(m_ss.tableCellFormat(isHeader));
+
+    QTextCursor cellCursor = cell.firstCursorPosition();
+    cellCursor.setBlockFormat(m_ss.tableCellBlockFormat(isHeader));
+    cellCursor.block().setUserData(new SourceBlockData(cellNode.sourceRange));
+
+    QTextCharFormat fmt = m_ss.bodyCharFormat();
+    if (isHeader) fmt.merge(m_ss.tableHeaderCharFormat());
+    cellCursor.setCharFormat(fmt);
+
+    QTextCharFormat savedFmt = cellCursor.charFormat();
+    cellCursor.setCharFormat(fmt);
+    renderModelInlineChildren(cellCursor, cellNode);
+    cellCursor.setCharFormat(savedFmt);
+}
+
+QVector<QTextLength> DocumentRenderer::tableColumnConstraints(const MarkdownNode& node, int cols) const
+{
+    QVector<int> weights(cols, 4);
+    for (MarkdownNodeId rowId : node.children) {
+        const MarkdownNode* row = m_model ? m_model->nodeById(rowId) : nullptr;
+        if (!row) {
+            continue;
+        }
+        int col = 0;
+        for (MarkdownNodeId cellId : row->children) {
+            const MarkdownNode* cell = m_model ? m_model->nodeById(cellId) : nullptr;
+            if (cell && col < cols) {
+                weights[col] = qMax(weights[col], tableCellTextLength(*cell));
+                ++col;
+            }
+        }
     }
 
     int total = 0;
@@ -552,53 +599,60 @@ QVector<QTextLength> DocumentRenderer::tableColumnConstraints(const AstNode& nod
     return constraints;
 }
 
-int DocumentRenderer::tableCellTextLength(const AstNode& cellNode) const {
-    int length = cellNode.literal().trimmed().size();
-
-    AstNode child = cellNode.firstChild();
-    while (!child.isNull()) {
-        length += tableCellTextLength(child);
-        child = child.next();
+int DocumentRenderer::tableCellTextLength(const MarkdownNode& cellNode) const
+{
+    int length = cellNode.literal.trimmed().size();
+    for (MarkdownNodeId childId : cellNode.children) {
+        const MarkdownNode* child = m_model ? m_model->nodeById(childId) : nullptr;
+        if (child) {
+            length += tableCellTextLength(*child);
+        }
     }
-
     return qMax(length, 1);
 }
 
-void DocumentRenderer::renderTableRow(QTextTable* table, int row, const AstNode& rowNode, bool isHeader) {
-    AstNode cellNode = rowNode.firstChild();
-    int col = 0;
-    while (!cellNode.isNull() && col < table->columns()) {
-        renderTableCell(table, row, col, cellNode, isHeader);
-        col++;
-        cellNode = cellNode.next();
+void DocumentRenderer::insertBlockForNode(QTextCursor& cursor, const QTextBlockFormat& blockFormat, const QTextCharFormat& charFormat)
+{
+    if (cursor.position() == 0 && cursor.document()->isEmpty()) {
+        cursor.setBlockFormat(blockFormat);
+        cursor.setCharFormat(charFormat);
+        return;
     }
+    cursor.insertBlock(blockFormat, charFormat);
 }
 
-void DocumentRenderer::renderTableCell(QTextTable* table, int row, int col,
-                                        const AstNode& cellNode, bool isHeader) {
-    QTextTableCell cell = table->cellAt(row, col);
-    cell.setFormat(m_ss.tableCellFormat(isHeader));
+void DocumentRenderer::renderInlineFormula(QTextCursor& cursor, const MathSpan& span, SourceRange sourceRange, MarkdownNodeId nodeId)
+{
+    MathImageRenderer renderer(m_ss.theme());
+    const QImage image = renderer.render(span);
+    const QString resourceName = QStringLiteral("muffin-math:%1:%2").arg(span.source.start).arg(span.source.end);
+    cursor.document()->addResource(QTextDocument::ImageResource, QUrl(resourceName), image);
 
-    QTextCursor cellCursor = cell.firstCursorPosition();
-    cellCursor.setBlockFormat(m_ss.tableCellBlockFormat(isHeader));
-    attachSourceRange(cellCursor, cellNode);
+    QTextImageFormat imageFormat;
+    imageFormat.setName(resourceName);
+    imageFormat.setWidth(image.width());
+    imageFormat.setHeight(image.height());
 
-    QTextCharFormat fmt = m_ss.bodyCharFormat();
-    if (isHeader) fmt.merge(m_ss.tableHeaderCharFormat());
-    cellCursor.setCharFormat(fmt);
-
-    QTextCharFormat savedFmt = cellCursor.charFormat();
-    cellCursor.setCharFormat(fmt);
-    renderInlineChildren(cellCursor, cellNode);
-    cellCursor.setCharFormat(savedFmt);
+    const int renderedStart = cursor.position();
+    cursor.insertImage(imageFormat);
+    recordSpan(renderedStart, cursor.position(), span.source, sourceRange,
+               RenderSpan::Kind::FormulaInline, m_inEditableBlock, false, RenderSpan::EditPolicy::Atomic, span.source, nodeId);
 }
 
-void DocumentRenderer::beginEditableBlock(const AstNode& node, RenderSpan::Kind kind, SourceSpan sourceSpan)
+void DocumentRenderer::renderSoftBreak(QTextCursor& cursor) {
+    cursor.insertText(" ");
+}
+
+void DocumentRenderer::renderLineBreak(QTextCursor& cursor) {
+    cursor.insertText("\n");
+}
+
+void DocumentRenderer::beginEditableBlock(const MarkdownNode& node, RenderSpan::Kind kind, SourceSpan sourceSpan)
 {
     m_inEditableBlock = sourceSpan.isValid();
     m_currentEditableSourceSpan = sourceSpan;
     m_currentSourceSearchOffset = sourceSpan.start;
-    m_currentBlockRange = node.sourceRange();
+    m_currentBlockRange = node.sourceRange;
     m_currentBlockKind = kind;
 }
 
@@ -609,35 +663,6 @@ void DocumentRenderer::endEditableBlock()
     m_currentSourceSearchOffset = -1;
     m_currentBlockRange = {};
     m_currentBlockKind = RenderSpan::Kind::Unsupported;
-}
-
-SourceSpan DocumentRenderer::sourceSpanForNode(const AstNode& node) const
-{
-    return m_sourceMapper.spanForRange(node.sourceRange());
-}
-
-const MathSpan* DocumentRenderer::displayMathSpanFor(SourceSpan source) const
-{
-    for (const MathSpan& span : m_mathSpans) {
-        if (span.display && span.source.start >= source.start && span.source.end <= source.end) {
-            return &span;
-        }
-    }
-    return nullptr;
-}
-
-QVector<MathSpan> DocumentRenderer::inlineMathSpansIn(SourceSpan source) const
-{
-    QVector<MathSpan> spans;
-    if (!source.isValid()) {
-        return spans;
-    }
-    for (const MathSpan& span : m_mathSpans) {
-        if (!span.display && span.source.start >= source.start && span.source.end <= source.end) {
-            spans.append(span);
-        }
-    }
-    return spans;
 }
 
 SourceSpan DocumentRenderer::nextInlineSourceSpan(const QString& literal)
@@ -657,38 +682,34 @@ SourceSpan DocumentRenderer::nextInlineSourceSpan(const QString& literal)
     return {relative, relative + literalSize};
 }
 
-SourceSpan DocumentRenderer::inlineContentSpan(const AstNode& node, int markerLength) const
-{
-    SourceSpan source = sourceSpanForNode(node);
-    if (!source.isValid() || source.end - source.start < markerLength * 2) {
-        return {};
-    }
-    return {source.start + markerLength, source.end - markerLength};
-}
-
-void DocumentRenderer::recordSyntaxMarkers(SourceSpan source, int markerLength, SyntaxTokenSpan::Kind kind)
+void DocumentRenderer::recordSyntaxMarkers(SourceSpan source, int markerLength, SyntaxTokenSpan::Kind kind, MarkdownNodeId nodeId)
 {
     if (!source.isValid() || markerLength <= 0 || source.end - source.start < markerLength * 2) {
         return;
     }
 
-    m_syntaxTokens.append({{source.start, source.start + markerLength}, kind});
-    m_syntaxTokens.append({{source.end - markerLength, source.end}, kind});
+    const SourceSpan opening{source.start, source.start + markerLength};
+    const SourceSpan closing{source.end - markerLength, source.end};
+    m_syntaxTokens.append({opening, kind, nodeId});
+    m_syntaxTokens.append({closing, kind, nodeId});
+    m_fragments.append({nodeId, opening, {}, RenderFragment::Kind::Marker, kind, false, false});
+    m_fragments.append({nodeId, closing, {}, RenderFragment::Kind::Marker, kind, false, false});
 }
 
 void DocumentRenderer::recordSpan(int renderedStart, int renderedEnd, SourceSpan source, SourceRange sourceRange,
                                   RenderSpan::Kind kind, bool editable, bool block,
-                                  RenderSpan::EditPolicy editPolicy, SourceSpan editSource)
+                                  RenderSpan::EditPolicy editPolicy, SourceSpan editSource, MarkdownNodeId nodeId)
 {
     if (!source.isValid() || renderedEnd < renderedStart) {
         return;
     }
 
-    m_sourceMap.addSpan({renderedStart, renderedEnd, source, sourceRange, kind, editable, block, editSource, editPolicy});
+    m_sourceMap.addSpan({renderedStart, renderedEnd, source, sourceRange, kind, editable, block, editSource, editPolicy, nodeId});
 }
 
 void DocumentRenderer::recordBlock(int renderedStart, int renderedEnd, SourceSpan source, SourceSpan content,
-                                   SourceRange sourceRange, RenderSpan::Kind kind, bool editable)
+                                   SourceRange sourceRange, RenderSpan::Kind kind, bool editable, MarkdownNodeId nodeId,
+                                   int replacementRenderedStart, int replacementRenderedEnd)
 {
     if (!source.isValid() || renderedEnd < renderedStart) {
         return;
@@ -697,7 +718,13 @@ void DocumentRenderer::recordBlock(int renderedStart, int renderedEnd, SourceSpa
         content = source;
     }
 
-    m_blocks.append({source, content, sourceRange, renderedStart, renderedEnd, kind, editable});
+    if (replacementRenderedStart < 0 || replacementRenderedEnd < replacementRenderedStart) {
+        replacementRenderedStart = renderedStart;
+        replacementRenderedEnd = renderedEnd;
+    }
+
+    m_blocks.append({source, content, sourceRange, renderedStart, renderedEnd, kind, editable, nodeId,
+                     replacementRenderedStart, replacementRenderedEnd});
 }
 
 } // namespace Muffin

@@ -31,10 +31,38 @@
 
 namespace Muffin {
 
+namespace {
+
+QString markerKindName(SyntaxTokenSpan::Kind kind)
+{
+    switch (kind) {
+    case SyntaxTokenSpan::Kind::StrongMarker:
+        return QStringLiteral("strong");
+    case SyntaxTokenSpan::Kind::EmphasisMarker:
+        return QStringLiteral("em");
+    case SyntaxTokenSpan::Kind::InlineCodeMarker:
+        return QStringLiteral("code");
+    }
+    return QStringLiteral("marker");
+}
+
+QString markerPairDebugText(const SyntaxMarkerPair& pair)
+{
+    return QStringLiteral("marker: %1 [%2,%3) [%4,%5)")
+        .arg(markerKindName(pair.opening.kind))
+        .arg(pair.opening.source.start)
+        .arg(pair.opening.source.end)
+        .arg(pair.closing.source.start)
+        .arg(pair.closing.source.end);
+}
+
+} // namespace
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , m_document(std::make_unique<Document>())
 {
+    m_document->setRenderTimerEnabled(true);
     setMinimumSize(800, 600);
     resize(1024, 768);
 
@@ -294,9 +322,13 @@ void MainWindow::setupMenuBar()
     codeAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+`")));
     codeAction->setCheckable(true);
     connect(codeAction, &QAction::triggered, this, &MainWindow::onToggleInlineCode);
+
+    QAction* strikethroughAction = formatMenu->addAction(QStringLiteral("删除线"));
+    strikethroughAction->setShortcut(QKeySequence(QStringLiteral("Alt+Shift+5")));
+    strikethroughAction->setCheckable(true);
+    connect(strikethroughAction, &QAction::triggered, this, &MainWindow::onToggleStrikethrough);
     formatMenu->addSeparator();
 
-    disabledAction(formatMenu, QStringLiteral("删除线"), QKeySequence(QStringLiteral("Alt+Shift+5")));
     disabledAction(formatMenu, QStringLiteral("注释"));
     formatMenu->addSeparator();
 
@@ -345,6 +377,10 @@ void MainWindow::setupMenuBar()
 
     QAction* wordCountAction = viewMenu->addAction(QStringLiteral("字数统计窗口"));
     connect(wordCountAction, &QAction::triggered, this, &MainWindow::onShowWordCount);
+    viewMenu->addSeparator();
+
+    QAction* renderDiagnosticsAction = viewMenu->addAction(QStringLiteral("渲染诊断"));
+    connect(renderDiagnosticsAction, &QAction::triggered, this, &MainWindow::onShowRenderDiagnostics);
     viewMenu->addSeparator();
 
     m_fullscreenAction = viewMenu->addAction(QStringLiteral("切换全屏"));
@@ -413,7 +449,7 @@ void MainWindow::setupMenuBar()
     disabledAction(helpMenu, QStringLiteral("Markdown Reference"));
     disabledAction(helpMenu, QStringLiteral("Install and Use Pandoc"));
     disabledAction(helpMenu, QStringLiteral("Custom Themes"));
-    disabledAction(helpMenu, QStringLiteral("Use Images in Typora"));
+    disabledAction(helpMenu, QStringLiteral("Use Images in Muffin"));
     disabledAction(helpMenu, QStringLiteral("Data Recovery and Version Control"));
     disabledAction(helpMenu, QStringLiteral("更多主题..."));
     helpMenu->addSeparator();
@@ -453,6 +489,15 @@ void MainWindow::setupStatusBar()
     m_commandTargetLabel->setObjectName(QStringLiteral("commandTarget"));
     m_commandTargetLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
+    m_markerVisibilityLabel = new QLabel(this);
+    m_markerVisibilityLabel->setObjectName(QStringLiteral("markerVisibility"));
+    m_markerVisibilityLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_markerVisibilityLabel->hide();
+
+    m_renderDiagnosticsLabel = new QLabel(this);
+    m_renderDiagnosticsLabel->setObjectName(QStringLiteral("renderDiagnostics"));
+    m_renderDiagnosticsLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+
     m_wordCountLabel = new QLabel(QStringLiteral("0 词  "), this);
     m_wordCountLabel->setObjectName(QStringLiteral("wordCount"));
     m_wordCountLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -460,6 +505,8 @@ void MainWindow::setupStatusBar()
     statusBar()->addWidget(outlineIcon);
     statusBar()->addWidget(sourceIcon);
     statusBar()->addWidget(m_commandTargetLabel, 1);
+    statusBar()->addPermanentWidget(m_markerVisibilityLabel);
+    statusBar()->addPermanentWidget(m_renderDiagnosticsLabel);
     statusBar()->addPermanentWidget(m_wordCountLabel);
 }
 
@@ -474,7 +521,22 @@ void MainWindow::connectSignals()
             cursor.setPosition(qBound(0, offset, m_editor->sourceText().size()));
             m_editor->sourceEditor()->setTextCursor(cursor);
         } else {
-            m_pendingRenderedCursorSourceOffset = offset;
+            setPendingRenderedCursorSourceOffset(offset);
+        }
+    });
+
+    connect(m_document.get(), &Document::sourceSelectionRequested, this, [this](SourceSelection selection) {
+        if (selection.start > selection.end) {
+            std::swap(selection.start, selection.end);
+        }
+        if (m_editor->mode() == MarkdownEditor::SourceMode) {
+            QTextCursor cursor = m_editor->sourceEditor()->textCursor();
+            const int textSize = m_editor->sourceText().size();
+            cursor.setPosition(qBound(0, selection.start, textSize));
+            cursor.setPosition(qBound(0, selection.end, textSize), QTextCursor::KeepAnchor);
+            m_editor->sourceEditor()->setTextCursor(cursor);
+        } else {
+            setPendingRenderedSourceSelection(selection);
         }
     });
 
@@ -498,6 +560,12 @@ void MainWindow::connectSignals()
 
     connect(m_editor, &MarkdownEditor::renderedEditRequested,
             this, &MainWindow::onRenderedEditRequested);
+
+    connect(m_editor, &MarkdownEditor::renderedSelectionChanged,
+            this, &MainWindow::onRenderedSelectionChanged);
+
+    connect(m_editor, &MarkdownEditor::renderedMarkerClicked,
+            this, &MainWindow::handleRenderedMarkerClicked);
 }
 
 bool MainWindow::openFile(const QString& filePath)
@@ -510,7 +578,7 @@ void MainWindow::onFileNew()
     if (maybeSave()) {
         m_sourceSyncTimer.stop();
         m_pendingSourceText.clear();
-        m_pendingSourceCursorOffset = -1;
+        m_pendingSourceSelection = {};
         m_document->setMarkdown({});
         m_document->setFilePath({});
         m_currentFile.clear();
@@ -519,6 +587,7 @@ void MainWindow::onFileNew()
         m_editor->setSourceText({});
         m_editor->setRenderedDocument(nullptr);
         clearRenderedCommandTarget();
+        resetMarkerVisibilityState();
         updateWindowTitle();
     }
 }
@@ -643,21 +712,42 @@ void MainWindow::onRenderedInlineTextSelected(SourceRange range, const QString& 
 
 void MainWindow::onRenderedEditRequested(RenderedEdit edit)
 {
-    PatchResult result = MarkdownEditEngine::applyRenderedEdit(m_document->markdown(), m_document->sourceMap(), m_document->blocks(), edit);
+    if (edit.targetKind == RenderedEdit::TargetKind::SourceSpan && edit.sourceSpan.isValid() && m_pinnedMarker) {
+        clearPinnedMarkerVisibility();
+    }
+
+    PatchResult result = MarkdownEditEngine::applyRenderedEdit(m_document->markdownDocument(), m_document->sourceMap(), m_document->blocks(), edit);
     if (!result.ok) {
         statusBar()->showMessage(result.error, 3000);
         return;
     }
 
     if (!result.changed) {
-        if (result.cursorSourceOffset >= 0) {
-            m_pendingRenderedCursorSourceOffset = result.cursorSourceOffset;
+        if (result.sourceSelection) {
+            setPendingRenderedSourceSelection(*result.sourceSelection);
+        } else if (result.cursorSourceOffset >= 0) {
+            setPendingRenderedCursorSourceOffset(result.cursorSourceOffset);
         }
         return;
     }
 
-    m_pendingRenderedCursorSourceOffset = result.cursorSourceOffset;
-    m_document->applyMarkdownEdit(result.text, result.cursorSourceOffset, tr("Edit Markdown"));
+    if (result.sourceSelection) {
+        setPendingRenderedSourceSelection(*result.sourceSelection);
+    } else {
+        setPendingRenderedCursorSourceOffset(result.cursorSourceOffset);
+    }
+    if (result.transaction) {
+        m_document->applyMarkdownEdit(std::move(*result.transaction), result.transactionValidation, tr("Edit Markdown"));
+    } else if (result.sourceSelection) {
+        m_document->applyMarkdownEdit(result.text, *result.sourceSelection, tr("Edit Markdown"));
+    } else {
+        m_document->applyMarkdownEdit(result.text, result.cursorSourceOffset, tr("Edit Markdown"));
+    }
+}
+
+void MainWindow::onRenderedSelectionChanged(SourceSelection renderedSelection)
+{
+    updateMarkerVisibilityForRenderedSelection(renderedSelection);
 }
 
 void MainWindow::onToggleViewMode()
@@ -761,7 +851,7 @@ void MainWindow::applyMarkdownCommand(MarkdownCommandResult (*command)(const QSt
 
     const int cursorOffset = result.selection.normalizedStart();
     if (wasRenderedMode) {
-        m_pendingRenderedCursorSourceOffset = cursorOffset;
+        setPendingRenderedCursorSourceOffset(cursorOffset);
         m_document->applyMarkdownEdit(result.markdown, cursorOffset, tr("Format Markdown"));
         clearRenderedCommandTarget();
     } else {
@@ -769,10 +859,53 @@ void MainWindow::applyMarkdownCommand(MarkdownCommandResult (*command)(const QSt
     }
 }
 
+void MainWindow::applyFormattedEdit(const MarkdownCommandResult& result)
+{
+    if (result.transaction) {
+        m_document->applyMarkdownEdit(std::move(*result.transaction),
+                                      result.transactionValidation,
+                                      tr("Format Markdown"));
+    } else {
+        const int cursorOffset = result.selection.normalizedStart();
+        m_document->applyMarkdownEdit(result.markdown, cursorOffset, tr("Format Markdown"));
+    }
+}
+
+void MainWindow::applyInlineStyleCommand(StyleCommandHandler::InlineStyle style,
+                                         MarkdownCommandResult (*fallback)(const QString&, SourceSelection))
+{
+    const bool wasRenderedMode = m_editor->mode() == MarkdownEditor::RenderedMode;
+    if (!wasRenderedMode) {
+        syncSourceToDocument();
+    }
+
+    MarkdownCommandResult result;
+    if (wasRenderedMode) {
+        if (warnIfMissingRenderedCommandTarget()) {
+            return;
+        }
+        result = MarkdownEditEngine::applyInlineStyleCommandToRenderedTarget(
+            m_document->markdownDocument(), m_document->blocks(), {m_lastRenderedSourceRange, m_lastRenderedSelectedText}, style, fallback);
+    } else {
+        ensureSourceMode();
+        result = MarkdownEditEngine::applyInlineStyleCommand(
+            m_document->markdownDocument(), EditorSelectionMapper::sourceSelectionForEditor(m_editor->sourceEditor()), style, fallback);
+    }
+    if (!result.changed) {
+        return;
+    }
+
+    const int cursorOffset = result.selection.normalizedStart();
+    if (wasRenderedMode) {
+        setPendingRenderedCursorSourceOffset(cursorOffset);
+        clearRenderedCommandTarget();
+    }
+    applyFormattedEdit(result);
+}
+
 void MainWindow::applyMarkdownListCommand(MarkdownCommand::ListType type)
 {
     const bool wasRenderedMode = m_editor->mode() == MarkdownEditor::RenderedMode;
-    const QString markdown = wasRenderedMode ? m_document->markdown() : m_editor->sourceText();
     MarkdownCommandResult result;
 
     if (wasRenderedMode) {
@@ -780,11 +913,11 @@ void MainWindow::applyMarkdownListCommand(MarkdownCommand::ListType type)
             return;
         }
         result = MarkdownEditEngine::applyListCommandToRenderedTarget(
-            markdown, m_document->blocks(), {m_lastRenderedSourceRange, m_lastRenderedSelectedText}, type);
+            m_document->markdownDocument(), m_document->blocks(), {m_lastRenderedSourceRange, m_lastRenderedSelectedText}, type);
     } else {
         ensureSourceMode();
         result = MarkdownEditEngine::applyListCommand(
-            markdown, EditorSelectionMapper::sourceSelectionForEditor(m_editor->sourceEditor()), type);
+            m_document->markdownDocument(), EditorSelectionMapper::sourceSelectionForEditor(m_editor->sourceEditor()), type);
     }
 
     if (!result.changed) {
@@ -792,16 +925,71 @@ void MainWindow::applyMarkdownListCommand(MarkdownCommand::ListType type)
     }
     const int cursorOffset = result.selection.normalizedStart();
     if (wasRenderedMode) {
-        m_pendingRenderedCursorSourceOffset = cursorOffset;
+        setPendingRenderedCursorSourceOffset(cursorOffset);
         clearRenderedCommandTarget();
     }
-    m_document->applyMarkdownEdit(result.markdown, cursorOffset, tr("Format Markdown"));
+    applyFormattedEdit(result);
+}
+
+void MainWindow::applyParagraphCommand()
+{
+    const bool wasRenderedMode = m_editor->mode() == MarkdownEditor::RenderedMode;
+    MarkdownCommandResult result;
+
+    if (wasRenderedMode) {
+        if (warnIfMissingRenderedCommandTarget()) {
+            return;
+        }
+        result = MarkdownEditEngine::applyParagraphCommandToRenderedTarget(
+            m_document->markdownDocument(), m_document->blocks(), {m_lastRenderedSourceRange, m_lastRenderedSelectedText});
+    } else {
+        ensureSourceMode();
+        result = MarkdownEditEngine::applyParagraphCommand(
+            m_document->markdownDocument(), EditorSelectionMapper::sourceSelectionForEditor(m_editor->sourceEditor()));
+    }
+
+    if (!result.changed) {
+        return;
+    }
+    const int cursorOffset = result.selection.normalizedStart();
+    if (wasRenderedMode) {
+        setPendingRenderedCursorSourceOffset(cursorOffset);
+        clearRenderedCommandTarget();
+    }
+    applyFormattedEdit(result);
+}
+
+void MainWindow::applyQuoteCommand()
+{
+    const bool wasRenderedMode = m_editor->mode() == MarkdownEditor::RenderedMode;
+    MarkdownCommandResult result;
+
+    if (wasRenderedMode) {
+        if (warnIfMissingRenderedCommandTarget()) {
+            return;
+        }
+        result = MarkdownEditEngine::applyQuoteCommandToRenderedTarget(
+            m_document->markdownDocument(), m_document->blocks(), {m_lastRenderedSourceRange, m_lastRenderedSelectedText});
+    } else {
+        ensureSourceMode();
+        result = MarkdownEditEngine::applyQuoteCommand(
+            m_document->markdownDocument(), EditorSelectionMapper::sourceSelectionForEditor(m_editor->sourceEditor()));
+    }
+
+    if (!result.changed) {
+        return;
+    }
+    const int cursorOffset = result.selection.normalizedStart();
+    if (wasRenderedMode) {
+        setPendingRenderedCursorSourceOffset(cursorOffset);
+        clearRenderedCommandTarget();
+    }
+    applyFormattedEdit(result);
 }
 
 void MainWindow::applyHeadingLevel(int level)
 {
     const bool wasRenderedMode = m_editor->mode() == MarkdownEditor::RenderedMode;
-    const QString markdown = wasRenderedMode ? m_document->markdown() : m_editor->sourceText();
     MarkdownCommandResult result;
 
     if (wasRenderedMode) {
@@ -809,11 +997,11 @@ void MainWindow::applyHeadingLevel(int level)
             return;
         }
         result = MarkdownEditEngine::applyHeadingCommandToRenderedTarget(
-            markdown, m_document->blocks(), {m_lastRenderedSourceRange, m_lastRenderedSelectedText}, level);
+            m_document->markdownDocument(), m_document->blocks(), {m_lastRenderedSourceRange, m_lastRenderedSelectedText}, level);
     } else {
         ensureSourceMode();
         result = MarkdownEditEngine::applyHeadingCommand(
-            markdown, EditorSelectionMapper::sourceSelectionForEditor(m_editor->sourceEditor()), level);
+            m_document->markdownDocument(), EditorSelectionMapper::sourceSelectionForEditor(m_editor->sourceEditor()), level);
     }
 
     if (!result.changed) {
@@ -821,20 +1009,20 @@ void MainWindow::applyHeadingLevel(int level)
     }
     const int cursorOffset = result.selection.normalizedStart();
     if (wasRenderedMode) {
-        m_pendingRenderedCursorSourceOffset = cursorOffset;
+        setPendingRenderedCursorSourceOffset(cursorOffset);
         clearRenderedCommandTarget();
     }
-    m_document->applyMarkdownEdit(result.markdown, cursorOffset, tr("Format Markdown"));
+    applyFormattedEdit(result);
 }
 
 void MainWindow::onToggleBold()
 {
-    applyMarkdownCommand(&MarkdownCommand::toggleBold);
+    applyInlineStyleCommand(StyleCommandHandler::InlineStyle::Strong, &MarkdownCommand::toggleBold);
 }
 
 void MainWindow::onToggleItalic()
 {
-    applyMarkdownCommand(&MarkdownCommand::toggleItalic);
+    applyInlineStyleCommand(StyleCommandHandler::InlineStyle::Emphasis, &MarkdownCommand::toggleItalic);
 }
 
 void MainWindow::onToggleUnderline()
@@ -844,7 +1032,12 @@ void MainWindow::onToggleUnderline()
 
 void MainWindow::onToggleInlineCode()
 {
-    applyMarkdownCommand(&MarkdownCommand::toggleInlineCode);
+    applyInlineStyleCommand(StyleCommandHandler::InlineStyle::InlineCode, &MarkdownCommand::toggleInlineCode);
+}
+
+void MainWindow::onToggleStrikethrough()
+{
+    applyInlineStyleCommand(StyleCommandHandler::InlineStyle::Strikethrough, &MarkdownCommand::toggleStrikethrough);
 }
 
 void MainWindow::onInsertLink()
@@ -861,12 +1054,12 @@ void MainWindow::onApplyHeading6() { applyHeadingLevel(6); }
 
 void MainWindow::onApplyParagraph()
 {
-    applyMarkdownCommand(&MarkdownCommand::applyParagraph);
+    applyParagraphCommand();
 }
 
 void MainWindow::onApplyQuote()
 {
-    applyMarkdownCommand(&MarkdownCommand::applyQuote);
+    applyQuoteCommand();
 }
 
 void MainWindow::onApplyOrderedList()
@@ -952,6 +1145,11 @@ void MainWindow::onShowWordCount()
             .arg(wordCount())
             .arg(characterCount())
             .arg(lineCount()));
+}
+
+void MainWindow::onShowRenderDiagnostics()
+{
+    QMessageBox::information(this, tr("Render Diagnostics"), m_document->lastRenderDiagnosticsText());
 }
 
 void MainWindow::onToggleFullscreen()
@@ -1080,6 +1278,8 @@ void MainWindow::applyTheme(ThemePreset preset)
         "QStatusBar::item { border: none; }"
         "QLabel#statusIcon { color: rgba(40, 40, 40, 190); padding-bottom: 1px; }"
         "QLabel#commandTarget { color: rgba(40, 40, 40, 150); padding-left: 4px; }"
+        "QLabel#markerVisibility { color: rgba(40, 40, 40, 120); padding-right: 10px; }"
+        "QLabel#renderDiagnostics { color: rgba(40, 40, 40, 120); padding-right: 10px; }"
         "QLabel#wordCount { color: rgba(40, 40, 40, 190); padding-right: 4px; }")
         .arg(theme.statusBackground.name()));
 }
@@ -1178,34 +1378,38 @@ int MainWindow::lineCount() const
 void MainWindow::scheduleSourceSync()
 {
     m_pendingSourceText = m_editor->sourceText();
-    m_pendingSourceCursorOffset = m_editor->sourceEditor()->textCursor().position();
+    m_pendingSourceSelection = EditorSelectionMapper::sourceSelectionForEditor(m_editor->sourceEditor());
     m_sourceSyncTimer.start();
 }
 
 void MainWindow::flushPendingSourceSync()
 {
-    if (m_pendingSourceCursorOffset < 0) {
+    if (m_pendingSourceSelection.start < 0 || m_pendingSourceSelection.end < 0) {
         return;
     }
 
     const QString text = std::move(m_pendingSourceText);
-    const int cursorOffset = m_pendingSourceCursorOffset;
+    const SourceSelection selection = m_pendingSourceSelection;
     m_pendingSourceText.clear();
-    m_pendingSourceCursorOffset = -1;
+    m_pendingSourceSelection = {};
     m_sourceSyncTimer.stop();
-    m_document->applyMarkdownEdit(text, cursorOffset, tr("Edit Source"));
+    m_document->applyMarkdownEdit(text, selection, tr("Edit Source"));
 }
 
 void MainWindow::syncSourceToDocument()
 {
     flushPendingSourceSync();
     if (m_document->markdown() != m_editor->sourceText()) {
-        m_document->applyMarkdownEdit(m_editor->sourceText(), m_editor->sourceEditor()->textCursor().position(), tr("Edit Source"));
+        m_document->applyMarkdownEdit(m_editor->sourceText(),
+                                      EditorSelectionMapper::sourceSelectionForEditor(m_editor->sourceEditor()),
+                                      tr("Edit Source"));
     }
 }
 
 void MainWindow::onDocumentRendered()
 {
+    updateRenderDiagnosticsSummaryLabel();
+
     if (m_editor->mode() == MarkdownEditor::SourceMode && m_editor->sourceText() != m_document->markdown()) {
         const int cursorPosition = m_editor->sourceEditor()->textCursor().position();
         m_updatingSourceFromDocument = true;
@@ -1230,15 +1434,191 @@ void MainWindow::onDocumentRendered()
             clonedBlock = clonedBlock.next();
         }
         m_editor->setRenderedDocument(clone);
-        if (m_pendingRenderedCursorSourceOffset) {
-            std::optional<int> renderedPosition = m_document->sourceMap().renderedPositionForSourceOffset(
-                *m_pendingRenderedCursorSourceOffset, RenderSourceMap::Bias::Backward);
-            if (renderedPosition) {
-                m_editor->setRenderedCursorPosition(*renderedPosition);
+        m_editor->setRenderedMarkdownSource(m_document->markdown());
+        resetMarkerVisibilityState();
+        if (m_pendingRenderedRangeBookmark || m_pendingRenderedSelectionBookmark || m_pendingRenderedCursorSourceOffset) {
+            const RenderedSelectionRestoreResult restore =
+                EditorSelectionMapper::restoreRenderedSelection(m_document->sourceMap(),
+                                                                {m_pendingRenderedRangeBookmark,
+                                                                 m_pendingRenderedSelectionBookmark,
+                                                                 m_pendingRenderedCursorSourceOffset});
+            if (restore.selection) {
+                m_editor->setRenderedSelection(restore.selection->start, restore.selection->end);
+            } else if (restore.cursorPosition) {
+                m_editor->setRenderedCursorPosition(*restore.cursorPosition);
             }
+            m_pendingRenderedRangeBookmark.reset();
+            m_pendingRenderedSelectionBookmark.reset();
             m_pendingRenderedCursorSourceOffset.reset();
         }
     }
+}
+
+void MainWindow::setPendingRenderedCursorSourceOffset(int offset)
+{
+    if (offset < 0) {
+        m_pendingRenderedCursorSourceOffset.reset();
+        m_pendingRenderedSelectionBookmark.reset();
+        m_pendingRenderedRangeBookmark.reset();
+        return;
+    }
+
+    m_pendingRenderedCursorSourceOffset = offset;
+    m_pendingRenderedRangeBookmark.reset();
+    SelectionBookmark bookmark = EditorSelectionMapper::bookmarkForSourceOffset(m_document->markdownDocument(), offset);
+    if (bookmark.isValid()) {
+        m_pendingRenderedSelectionBookmark = bookmark;
+    } else {
+        m_pendingRenderedSelectionBookmark.reset();
+    }
+}
+
+void MainWindow::setPendingRenderedSourceSelection(SourceSelection selection)
+{
+    if (selection.start < 0 || selection.end < 0) {
+        m_pendingRenderedRangeBookmark.reset();
+        setPendingRenderedCursorSourceOffset(-1);
+        return;
+    }
+
+    m_pendingRenderedCursorSourceOffset = selection.end;
+    m_pendingRenderedSelectionBookmark.reset();
+    const SelectionRangeBookmark bookmark =
+        EditorSelectionMapper::bookmarkForSourceSelection(m_document->markdownDocument(), selection);
+    if (bookmark.isValid()) {
+        m_pendingRenderedRangeBookmark = bookmark;
+    } else {
+        m_pendingRenderedRangeBookmark.reset();
+    }
+}
+
+void MainWindow::updateMarkerVisibilityForRenderedSelection(SourceSelection renderedSelection)
+{
+    if (m_editor->mode() != MarkdownEditor::RenderedMode) {
+        resetMarkerVisibilityState();
+        return;
+    }
+
+    const int renderedStart = renderedSelection.normalizedStart();
+    const int renderedEnd = renderedSelection.normalizedEnd();
+    if (m_pinnedMarker) {
+        if (renderedSelectionInsidePinnedMarker(renderedSelection)) {
+            return;
+        }
+        clearPinnedMarkerVisibility();
+    }
+
+    if (renderedStart == renderedEnd) {
+        const std::optional<int> sourceOffset =
+            m_document->sourceMap().sourceOffsetForRenderedPosition(renderedEnd, RenderSourceMap::Bias::Backward);
+        if (!sourceOffset) {
+            resetMarkerVisibilityState();
+            return;
+        }
+        const SelectionBookmark caret =
+            EditorSelectionMapper::bookmarkForSourceOffset(m_document->markdownDocument(), *sourceOffset);
+        m_currentMarkerVisibilityState = m_document->markerVisibilityStateForCaret(caret);
+        m_editor->setVisibleMarkerFragments(m_currentMarkerVisibilityState.visibleFragments, m_document->sourceMap());
+        updateMarkerVisibilityDebugLabel();
+        return;
+    }
+
+    const std::optional<SourceSpan> sourceSpan =
+        m_document->sourceMap().editableSourceSpanForRenderedRange(renderedStart, renderedEnd);
+    if (!sourceSpan || !sourceSpan->isValid()) {
+        resetMarkerVisibilityState();
+        return;
+    }
+
+    const SelectionRangeBookmark selection =
+        EditorSelectionMapper::bookmarkForSourceSelection(m_document->markdownDocument(),
+                                                          {sourceSpan->start, sourceSpan->end});
+    m_currentMarkerVisibilityState = m_document->markerVisibilityStateForSelection(selection);
+    m_editor->setVisibleMarkerFragments(m_currentMarkerVisibilityState.visibleFragments, m_document->sourceMap());
+    updateMarkerVisibilityDebugLabel();
+}
+
+void MainWindow::handleRenderedMarkerClicked(RenderedMarkerHit hit)
+{
+    if (!m_document || !hit.source.isValid() || hit.nodeId == 0) {
+        return;
+    }
+
+    m_pinnedMarker = PinnedMarker{hit.source, hit.nodeId, hit.kind};
+    m_currentMarkerVisibilityState = m_document->markerVisibilityStateForPinnedMarker(*m_pinnedMarker);
+    if (!m_currentMarkerVisibilityState.hasVisibleMarkers()) {
+        m_pinnedMarker.reset();
+        resetMarkerVisibilityState();
+        return;
+    }
+
+    m_editor->setVisibleMarkerFragments(m_currentMarkerVisibilityState.visibleFragments, m_document->sourceMap());
+    updateMarkerVisibilityDebugLabel();
+}
+
+void MainWindow::clearPinnedMarkerVisibility()
+{
+    m_pinnedMarker.reset();
+    if (m_currentMarkerVisibilityState.mode == MarkerVisibilityMode::PinnedMarkerPair) {
+        resetMarkerVisibilityState();
+    }
+}
+
+bool MainWindow::renderedSelectionInsidePinnedMarker(SourceSelection renderedSelection) const
+{
+    if (!m_document || !m_pinnedMarker || !m_pinnedMarker->source.isValid()) {
+        return false;
+    }
+
+    const int renderedStart = renderedSelection.normalizedStart();
+    const int renderedEnd = renderedSelection.normalizedEnd();
+    if (renderedStart == renderedEnd) {
+        const std::optional<int> sourceOffset =
+            m_document->sourceMap().sourceOffsetForRenderedPosition(renderedEnd, RenderSourceMap::Bias::Backward);
+        return sourceOffset && *sourceOffset >= m_pinnedMarker->source.start && *sourceOffset <= m_pinnedMarker->source.end;
+    }
+
+    const std::optional<SourceSpan> sourceSpan =
+        m_document->sourceMap().editableSourceSpanForRenderedRange(renderedStart, renderedEnd);
+    return sourceSpan && sourceSpan->isValid() &&
+           sourceSpan->start >= m_pinnedMarker->source.start &&
+           sourceSpan->end <= m_pinnedMarker->source.end;
+}
+
+void MainWindow::updateMarkerVisibilityDebugLabel()
+{
+    if (!m_markerVisibilityLabel) {
+        return;
+    }
+    if (m_currentMarkerVisibilityState.visiblePairs.isEmpty()) {
+        m_markerVisibilityLabel->clear();
+        m_markerVisibilityLabel->hide();
+        return;
+    }
+
+    m_markerVisibilityLabel->setText(markerPairDebugText(m_currentMarkerVisibilityState.visiblePairs.first()));
+    m_markerVisibilityLabel->show();
+}
+
+void MainWindow::updateRenderDiagnosticsSummaryLabel()
+{
+    if (!m_renderDiagnosticsLabel || !m_document) {
+        return;
+    }
+    const QString summary = m_document->lastRenderDiagnosticsSummary();
+    m_renderDiagnosticsLabel->setText(summary);
+    m_renderDiagnosticsLabel->setToolTip(m_document->lastRenderDiagnosticsText());
+    m_renderDiagnosticsLabel->setVisible(!summary.isEmpty());
+}
+
+void MainWindow::resetMarkerVisibilityState()
+{
+    m_pinnedMarker.reset();
+    m_currentMarkerVisibilityState = {};
+    if (m_editor) {
+        m_editor->clearVisibleMarkerFragments();
+    }
+    updateMarkerVisibilityDebugLabel();
 }
 
 void MainWindow::updateWindowTitle()
@@ -1291,7 +1671,7 @@ bool MainWindow::loadFromFile(const QString& filePath)
 
     m_sourceSyncTimer.stop();
     m_pendingSourceText.clear();
-    m_pendingSourceCursorOffset = -1;
+    m_pendingSourceSelection = {};
     m_document->setMarkdown(content);
     m_document->setFilePath(filePath);
     m_currentFile = filePath;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "model/MarkdownNode.h"
 #include "parser/SourceSpan.h"
 
 namespace Muffin {
@@ -13,6 +14,7 @@ struct SyntaxTokenSpan {
 
     SourceSpan source;
     Kind kind = Kind::EmphasisMarker;
+    MarkdownNodeId nodeId = 0;
 };
 
 } // namespace Muffin

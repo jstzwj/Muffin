@@ -4,19 +4,50 @@ set(MUFFIN_SOURCES
     app/MainWindow.cpp
     core/Document.cpp
     core/FileManager.cpp
+    model/BlockDocumentMerger.cpp
+    model/MarkdownDocument.cpp
+    model/MarkdownMathSpanBuilder.cpp
+    model/MarkdownNode.cpp
+    model/MarkdownSerializer.cpp
+    model/MarkdownSourceSpanUpdater.cpp
+    model/MarkdownTransform.cpp
     parser/CmarkParser.cpp
+    parser/BlockReparsePlanner.cpp
+    parser/BlockReparser.cpp
     parser/MathDelimiterScanner.cpp
     parser/SourceCoordinateMapper.cpp
     renderer/DocumentRenderer.cpp
+    renderer/IncrementalRenderValidationPolicy.cpp
+    renderer/MarkerFragmentIndex.cpp
+    renderer/MarkerProjection.cpp
     renderer/MathImageRenderer.cpp
+    renderer/PartialDocumentPatchApplier.cpp
+    renderer/PartialDocumentPatchPlanner.cpp
+    renderer/PartialPatchApplyPolicy.cpp
+    renderer/PartialRenderStateMerger.cpp
+    renderer/RenderConsistency.cpp
     renderer/RenderSourceMap.cpp
+    renderer/RenderUpdateQueue.cpp
+    renderer/SyntaxTokenIndex.cpp
+    renderer/TextDocumentPatchConsistency.cpp
     theme/Theme.cpp
     theme/ThemeStylesheet.cpp
     editor/MarkdownEditor.cpp
     editor/EditorSelectionMapper.cpp
+    editor/EditTransactionApplier.cpp
+    editor/EditTransactionValidator.cpp
+    editor/MarkerCaretController.cpp
+    editor/MarkerSelectionMapper.cpp
+    editor/MarkerVisibilityController.cpp
     editor/MarkdownCommand.cpp
     editor/MarkdownEditEngine.cpp
-    editor/MarkdownPatch.cpp
+    editor/HeadingCommandHandler.cpp
+    editor/ListCommandHandler.cpp
+    editor/QuoteCommandHandler.cpp
+    editor/RenderInvalidation.cpp
+    editor/RenderedEditPlanner.cpp
+    editor/StyleCommandHandler.cpp
+    editor/StructuralUndoController.cpp
 )
 
 set(MUFFIN_HEADERS
@@ -24,25 +55,61 @@ set(MUFFIN_HEADERS
     app/MainWindow.h
     core/Document.h
     core/FileManager.h
+    model/BlockDocumentMerger.h
+    model/MarkdownDocument.h
+    model/MarkdownMathSpanBuilder.h
+    model/MarkdownNode.h
+    model/MarkdownSerializer.h
+    model/MarkdownSourceSpanUpdater.h
+    model/MarkdownTransform.h
     parser/AstNode.h
     parser/AstTree.h
+    parser/BlockReparsePlanner.h
+    parser/BlockReparser.h
     parser/CmarkParser.h
     parser/MathDelimiterScanner.h
     parser/MathSpan.h
     parser/SourceSpan.h
     parser/SourceCoordinateMapper.h
     renderer/DocumentRenderer.h
+    renderer/IncrementalRenderValidationPolicy.h
+    renderer/MarkerFragmentIndex.h
+    renderer/MarkerProjection.h
     renderer/MathImageRenderer.h
     renderer/MarkdownBlock.h
+    renderer/PartialDocumentPatchApplier.h
+    renderer/PartialDocumentPatchPlanner.h
+    renderer/PartialPatchApplyPolicy.h
+    renderer/PartialRenderResult.h
+    renderer/PartialRenderStateMerger.h
+    renderer/RenderConsistency.h
+    renderer/RenderFragment.h
     renderer/RenderSourceMap.h
+    renderer/RenderUpdateQueue.h
     renderer/SourceBlockData.h
+    renderer/SyntaxTokenIndex.h
+    renderer/SyntaxTokenSpan.h
+    renderer/TextDocumentPatchConsistency.h
     theme/Theme.h
     theme/ThemeStylesheet.h
     editor/MarkdownEditor.h
     editor/EditorSelectionMapper.h
+    editor/EditTransaction.h
+    editor/EditTransactionApplier.h
+    editor/EditTransactionValidator.h
+    editor/MarkerCaretController.h
+    editor/MarkerSelectionMapper.h
+    editor/MarkerVisibilityController.h
     editor/MarkdownCommand.h
     editor/MarkdownEditEngine.h
-    editor/MarkdownPatch.h
+    editor/HeadingCommandHandler.h
+    editor/ListCommandHandler.h
+    editor/QuoteCommandHandler.h
+    editor/RenderInvalidation.h
+    editor/RenderedEdit.h
+    editor/RenderedEditPlanner.h
+    editor/StyleCommandHandler.h
+    editor/StructuralUndoController.h
     utils/SafeCString.h
 )
 

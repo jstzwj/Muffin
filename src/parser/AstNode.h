@@ -78,6 +78,7 @@ public:
     // GFM extensions
     int tableColumns() const { return cmark_gfm_extensions_get_table_columns(m_node); }
     bool isTableRowHeader() const { return cmark_gfm_extensions_get_table_row_is_header(m_node); }
+    bool isTasklistItem() const { return strcmp(typeString(), "tasklist") == 0; }
     bool isTasklistChecked() const { return cmark_gfm_extensions_get_tasklist_item_checked(m_node); }
 
 private:

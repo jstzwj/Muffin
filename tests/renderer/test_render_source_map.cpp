@@ -124,6 +124,21 @@ private slots:
         QCOMPARE(map.editableSourceInsertionPoint(0).value(), 1);
         QCOMPARE(map.editableSourceInsertionPoint(1).value(), 6);
     }
+
+    void findsSpanByNodeId()
+    {
+        RenderSourceMap map;
+        RenderSpan span{0, 5, {0, 5}, {1, 1, 1, 5}, RenderSpan::Kind::Paragraph, true, true};
+        span.nodeId = 42;
+        map.addSpan(span);
+
+        std::optional<RenderSpan> found = map.spanForNode(42);
+
+        QVERIFY(found.has_value());
+        QCOMPARE(found->nodeId, 42);
+        QCOMPARE(found->source.start, 0);
+        QVERIFY(!map.spanForNode(99).has_value());
+    }
 };
 
 QTEST_MAIN(TestRenderSourceMap)

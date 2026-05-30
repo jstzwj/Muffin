@@ -118,6 +118,11 @@ MarkdownCommandResult MarkdownCommand::toggleInlineCode(const QString& markdown,
     return wrapSourceSelection(markdown, selection, QStringLiteral("`"), QStringLiteral("`"));
 }
 
+MarkdownCommandResult MarkdownCommand::toggleStrikethrough(const QString& markdown, SourceSelection selection)
+{
+    return wrapSourceSelection(markdown, selection, QStringLiteral("~~"), QStringLiteral("~~"));
+}
+
 MarkdownCommandResult MarkdownCommand::insertLink(const QString& markdown, SourceSelection selection)
 {
     return wrapSourceSelection(markdown, selection, QStringLiteral("["), QStringLiteral("](url)"));
@@ -184,6 +189,12 @@ void MarkdownCommand::toggleInlineCode(QPlainTextEdit* editor)
 {
     if (!editor) return;
     applyResultToEditor(editor, toggleInlineCode(editor->toPlainText(), editorSelection(editor)));
+}
+
+void MarkdownCommand::toggleStrikethrough(QPlainTextEdit* editor)
+{
+    if (!editor) return;
+    applyResultToEditor(editor, toggleStrikethrough(editor->toPlainText(), editorSelection(editor)));
 }
 
 void MarkdownCommand::insertLink(QPlainTextEdit* editor)

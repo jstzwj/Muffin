@@ -222,6 +222,20 @@ std::optional<RenderSpan> RenderSourceMap::blockAfterRenderedPosition(int render
     return std::nullopt;
 }
 
+std::optional<RenderSpan> RenderSourceMap::spanForNode(MarkdownNodeId nodeId) const
+{
+    if (nodeId == 0) {
+        return std::nullopt;
+    }
+
+    for (const RenderSpan& span : m_spans) {
+        if (span.nodeId == nodeId) {
+            return span;
+        }
+    }
+    return std::nullopt;
+}
+
 std::optional<int> RenderSourceMap::renderedPositionForSourceOffset(int sourceOffset, Bias bias) const
 {
     const RenderSpan* best = nullptr;

@@ -2,6 +2,8 @@
 
 #include "editor/MarkdownCommand.h"
 #include "editor/MarkdownEditor.h"
+#include "editor/EditorSelectionMapper.h"
+#include "editor/StyleCommandHandler.h"
 #include "core/Document.h"
 #include "core/FileManager.h"
 #include "theme/Theme.h"
@@ -27,6 +29,7 @@ public:
     explicit MainWindow(QWidget* parent = nullptr);
 
     bool openFile(const QString& filePath);
+    MarkerVisibilityState currentMarkerVisibilityStateForTesting() const { return m_currentMarkerVisibilityState; }
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -52,11 +55,13 @@ private slots:
     void onRenderedSourceRangeClicked(SourceRange range);
     void onRenderedInlineTextSelected(SourceRange range, const QString& text);
     void onRenderedEditRequested(RenderedEdit edit);
+    void onRenderedSelectionChanged(SourceSelection renderedSelection);
     void onFindReplace();
     void onToggleBold();
     void onToggleItalic();
     void onToggleUnderline();
     void onToggleInlineCode();
+    void onToggleStrikethrough();
     void onInsertLink();
     void onApplyHeading1();
     void onApplyHeading2();
@@ -70,6 +75,7 @@ private slots:
     void onApplyUnorderedList();
     void onApplyTaskList();
     void onToggleViewMode();
+    void onShowRenderDiagnostics();
     void onThemeChanged(QAction* action);
     void onDocumentRendered();
     void updateWindowTitle();
@@ -99,8 +105,22 @@ private:
     void clearRenderedCommandTarget();
     void updateSingleBlockCommandState();
     void applyMarkdownCommand(MarkdownCommandResult (*command)(const QString&, SourceSelection));
+    void applyFormattedEdit(const MarkdownCommandResult& result);
+    void applyInlineStyleCommand(StyleCommandHandler::InlineStyle style,
+                                 MarkdownCommandResult (*fallback)(const QString&, SourceSelection));
     void applyMarkdownListCommand(MarkdownCommand::ListType type);
+    void applyParagraphCommand();
+    void applyQuoteCommand();
     void applyHeadingLevel(int level);
+    void setPendingRenderedCursorSourceOffset(int offset);
+    void setPendingRenderedSourceSelection(SourceSelection selection);
+    void updateMarkerVisibilityForRenderedSelection(SourceSelection renderedSelection);
+    void handleRenderedMarkerClicked(RenderedMarkerHit hit);
+    void clearPinnedMarkerVisibility();
+    bool renderedSelectionInsidePinnedMarker(SourceSelection renderedSelection) const;
+    void updateMarkerVisibilityDebugLabel();
+    void updateRenderDiagnosticsSummaryLabel();
+    void resetMarkerVisibilityState();
 
     bool saveToFile(const QString& filePath);
     bool loadFromFile(const QString& filePath);
@@ -108,6 +128,8 @@ private:
 
     MarkdownEditor* m_editor;
     QLabel* m_commandTargetLabel = nullptr;
+    QLabel* m_markerVisibilityLabel = nullptr;
+    QLabel* m_renderDiagnosticsLabel = nullptr;
     QLabel* m_wordCountLabel;
     QAction* m_toggleViewAction = nullptr;
     QAction* m_fullscreenAction = nullptr;
@@ -129,8 +151,12 @@ private:
     QString m_lastRenderedSelectedText;
     QTimer m_sourceSyncTimer;
     QString m_pendingSourceText;
-    int m_pendingSourceCursorOffset = -1;
+    SourceSelection m_pendingSourceSelection;
     std::optional<int> m_pendingRenderedCursorSourceOffset;
+    std::optional<SelectionBookmark> m_pendingRenderedSelectionBookmark;
+    std::optional<SelectionRangeBookmark> m_pendingRenderedRangeBookmark;
+    MarkerVisibilityState m_currentMarkerVisibilityState;
+    std::optional<PinnedMarker> m_pinnedMarker;
     bool m_updatingSourceFromDocument = false;
     bool m_modified = false;
 };

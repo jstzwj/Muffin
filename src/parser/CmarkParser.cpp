@@ -52,6 +52,16 @@ ParseResult CmarkParser::parseDocument(const QString& markdown)
     ParseResult result;
     result.ast = parse(markdown);
     result.mathSpans = MathDelimiterScanner::scan(markdown, result.ast);
+    result.document = MarkdownDocument::fromAst(result.ast, markdown, result.mathSpans);
+    return result;
+}
+
+ParseResult CmarkParser::parseDocument(const QString& markdown, const MarkdownDocument& previousDocument)
+{
+    ParseResult result;
+    result.ast = parse(markdown);
+    result.mathSpans = MathDelimiterScanner::scan(markdown, result.ast);
+    result.document = MarkdownDocument::fromAst(result.ast, markdown, result.mathSpans, previousDocument);
     return result;
 }
 

@@ -3,6 +3,7 @@
 #include "parser/AstNode.h"
 #include "parser/SourceCoordinateMapper.h"
 #include "parser/SourceSpan.h"
+#include "model/MarkdownNode.h"
 #include <QVector>
 #include <optional>
 
@@ -20,6 +21,7 @@ struct RenderSpan {
         InlineCode,
         Link,
         Image,
+        BlockQuote,
         List,
         CodeBlock,
         FormulaInline,
@@ -48,6 +50,7 @@ struct RenderSpan {
     bool block = false;
     SourceSpan editSource;
     EditPolicy editPolicy = EditPolicy::None;
+    MarkdownNodeId nodeId = 0;
 
     bool hasRenderedRange() const { return renderedStart >= 0 && renderedEnd >= renderedStart; }
     bool containsRenderedPosition(int position) const { return position >= renderedStart && position <= renderedEnd; }
@@ -75,6 +78,7 @@ public:
     std::optional<RenderSpan> blockSpanForRenderedPosition(int renderedPos, Bias bias = Bias::Forward) const;
     std::optional<RenderSpan> blockBeforeRenderedPosition(int renderedPos) const;
     std::optional<RenderSpan> blockAfterRenderedPosition(int renderedPos) const;
+    std::optional<RenderSpan> spanForNode(MarkdownNodeId nodeId) const;
     std::optional<int> renderedPositionForSourceOffset(int sourceOffset, Bias bias = Bias::Forward) const;
     bool isEditableRenderedRange(int renderedStart, int renderedEnd) const;
 
