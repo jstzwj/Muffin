@@ -11,14 +11,12 @@ MdParser::MdParser() = default;
 
 MdParser::~MdParser() = default;
 
-std::unique_ptr<MdNode> MdParser::parse(const QString &markdown) {
-    // Register all GFM core extensions once
+ParseResult MdParser::parse(const QString &markdown) {
     cmark_gfm_core_extensions_ensure_registered();
 
     int options = CMARK_OPT_DEFAULT | CMARK_OPT_UNSAFE;
     cmark_parser *parser = cmark_parser_new(options);
 
-    // Attach all registered syntax extensions
     cmark_llist *extensions = cmark_list_syntax_extensions(cmark_get_default_mem_allocator());
     for (cmark_llist *it = extensions; it; it = it->next) {
         cmark_parser_attach_syntax_extension(parser,
@@ -26,15 +24,15 @@ std::unique_ptr<MdNode> MdParser::parse(const QString &markdown) {
     }
     cmark_llist_free(cmark_get_default_mem_allocator(), extensions);
 
-    // Feed the document
     QByteArray utf8 = markdown.toUtf8();
     cmark_parser_feed(parser, utf8.constData(), utf8.size());
 
     cmark_node *root = cmark_parser_finish(parser);
 
-    std::unique_ptr<MdNode> result;
+    ParseResult result;
+    result.cmarkRoot = root;
     if (root) {
-        result.reset(buildTree(root));
+        result.mdRoot.reset(buildTree(root));
     }
 
     cmark_parser_free(parser);

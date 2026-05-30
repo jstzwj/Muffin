@@ -1,5 +1,6 @@
 set(TEST_SOURCES
     test_parser.cpp
+    test_renderer.cpp
 )
 
 foreach(test_file ${TEST_SOURCES})

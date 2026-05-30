@@ -18,99 +18,78 @@ class TestParser : public QObject {
 private slots:
     void testParseParagraph() {
         MdParser parser;
-        auto root = parser.parse("Hello world");
-        QVERIFY(root != nullptr);
-        QCOMPARE(root->blockType(), BlockType::Document);
+        auto result = parser.parse("Hello world");
+        QVERIFY(result.mdRoot != nullptr);
+        QCOMPARE(result.mdRoot->blockType(), BlockType::Document);
+        QVERIFY(result.cmarkRoot != nullptr);
     }
 
     void testParseHeading() {
         MdParser parser;
-        auto root = parser.parse("# Heading 1\n## Heading 2");
-        QVERIFY(root != nullptr);
+        auto result = parser.parse("# Heading 1\n## Heading 2");
+        QVERIFY(result.mdRoot != nullptr);
     }
 
     void testParseList() {
         MdParser parser;
-        auto root = parser.parse("- item 1\n- item 2\n- item 3");
-        QVERIFY(root != nullptr);
+        auto result = parser.parse("- item 1\n- item 2\n- item 3");
+        QVERIFY(result.mdRoot != nullptr);
     }
 
     void testParseCodeBlock() {
         MdParser parser;
-        auto root = parser.parse("```cpp\nint x = 1;\n```");
-        QVERIFY(root != nullptr);
+        auto result = parser.parse("```cpp\nint x = 1;\n```");
+        QVERIFY(result.mdRoot != nullptr);
     }
 
     void testParseTable() {
         MdParser parser;
-        auto root = parser.parse("| A | B |\n|---|---|\n| 1 | 2 |");
-        QVERIFY(root != nullptr);
+        auto result = parser.parse("| A | B |\n|---|---|\n| 1 | 2 |");
+        QVERIFY(result.mdRoot != nullptr);
     }
 
     void testParseInlineMath() {
         MdParser parser;
-        auto root = parser.parse("The formula $x^2 + y^2 = z^2$ is Pythagorean.");
-        QVERIFY(root != nullptr);
+        auto result = parser.parse("The formula $x^2 + y^2 = z^2$ is Pythagorean.");
+        QVERIFY(result.mdRoot != nullptr);
     }
 
     void testParseDisplayMath() {
         MdParser parser;
-        // Single-line display math
-        auto root = parser.parse("$$E=mc^2$$");
-        QVERIFY(root != nullptr);
+        auto result = parser.parse("$$E=mc^2$$");
+        QVERIFY(result.mdRoot != nullptr);
     }
 
     void testParseMultiLineDisplayMath() {
         MdParser parser;
-        auto root = parser.parse("$$\nx^2 + y^2 = z^2\n$$");
-        QVERIFY(root != nullptr);
+        auto result = parser.parse("$$\nx^2 + y^2 = z^2\n$$");
+        QVERIFY(result.mdRoot != nullptr);
     }
 
     void testParseFencedMath() {
         MdParser parser;
-        auto root = parser.parse("```math\nE=mc^2\n```");
-        QVERIFY(root != nullptr);
-    }
-
-    void testRawCmarkDisplayMath() {
-        // Direct cmark-gfm test with $$ block math
-        cmark_gfm_core_extensions_ensure_registered();
-        int options = CMARK_OPT_DEFAULT;
-        cmark_parser *parser = cmark_parser_new(options);
-
-        cmark_llist *extensions = cmark_list_syntax_extensions(cmark_get_default_mem_allocator());
-        for (cmark_llist *it = extensions; it; it = it->next) {
-            cmark_parser_attach_syntax_extension(parser,
-                static_cast<cmark_syntax_extension *>(it->data));
-        }
-        cmark_llist_free(cmark_get_default_mem_allocator(), extensions);
-
-        cmark_parser_feed(parser, "$$E=mc^2$$\n", 11);
-        cmark_node *root = cmark_parser_finish(parser);
-
-        QVERIFY(root != nullptr);
-        cmark_parser_free(parser);
+        auto result = parser.parse("```math\nE=mc^2\n```");
+        QVERIFY(result.mdRoot != nullptr);
     }
 
     void testRoundtripParagraph() {
         QString md = "Hello world\n";
         MdParser parser;
-        auto root = parser.parse(md);
-        QVERIFY(root != nullptr);
-        QString result = MdSerializer::toMarkdown(root.get());
-        QCOMPARE(result.trimmed(), md.trimmed());
+        auto result = parser.parse(md);
+        QVERIFY(result.cmarkRoot != nullptr);
+        QString output = MdSerializer::toMarkdown(result.cmarkRoot);
+        QCOMPARE(output.trimmed(), md.trimmed());
     }
 
     void testRoundtripHeading() {
         QString md = "# Hello\n";
         MdParser parser;
-        auto root = parser.parse(md);
-        QVERIFY(root != nullptr);
-        QString result = MdSerializer::toMarkdown(root.get());
-        QCOMPARE(result.trimmed(), md.trimmed());
+        auto result = parser.parse(md);
+        QVERIFY(result.cmarkRoot != nullptr);
+        QString output = MdSerializer::toMarkdown(result.cmarkRoot);
+        QCOMPARE(output.trimmed(), md.trimmed());
     }
 };
 
 QTEST_MAIN(TestParser)
-// To run without GUI: set QT_QPA_PLATFORM=offscreen
 #include "test_parser.moc"

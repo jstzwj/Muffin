@@ -1,14 +1,14 @@
 #pragma once
 
+struct cmark_node;
+
 class QString;
 
 namespace Md {
 
-class MdNode;
-
 class MdSerializer {
 public:
-    static QString toMarkdown(const MdNode *root);
+    static QString toMarkdown(cmark_node *root);
 };
 
 } // namespace Md

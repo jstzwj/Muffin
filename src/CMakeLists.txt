@@ -8,6 +8,7 @@ set(MUFFIN_LIB_SOURCES
     core/SourceMap.cpp
     renderer/DocumentRenderer.cpp
     renderer/Theme.cpp
+    editor/WysiwygEditor.cpp
 )
 
 set(MUFFIN_LIB_HEADERS
@@ -20,6 +21,7 @@ set(MUFFIN_LIB_HEADERS
     core/SourceMap.h
     renderer/DocumentRenderer.h
     renderer/Theme.h
+    editor/WysiwygEditor.h
 )
 
 # Static library for sharing code between executable and tests
@@ -79,7 +81,11 @@ if(_MUFFIN_QT_INCLUDE_DIR AND IS_DIRECTORY "${_MUFFIN_QT_INCLUDE_DIR}")
 endif()
 
 # Executable
-add_executable(muffin main.cpp)
+if(WIN32)
+    add_executable(muffin WIN32 main.cpp)
+else()
+    add_executable(muffin main.cpp)
+endif()
 target_link_libraries(muffin PRIVATE muffin_lib)
 
 # --- Post-build: copy all runtime DLLs to dist directory ---

@@ -4,20 +4,23 @@
 #include <memory>
 
 struct cmark_node;
-struct cmark_parser;
 
 namespace Md {
+
+struct ParseResult {
+    std::unique_ptr<MdNode> mdRoot;
+    cmark_node *cmarkRoot = nullptr;
+};
 
 class MdParser {
 public:
     MdParser();
     ~MdParser();
 
-    std::unique_ptr<MdNode> parse(const QString &markdown);
+    ParseResult parse(const QString &markdown);
 
 private:
     MdNode *buildTree(cmark_node *root);
-
     NodeId m_nextId = 1;
 };
 
