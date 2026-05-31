@@ -26,6 +26,7 @@ public:
   void paint(QPainter& painter, QPointF origin) const;
   qsizetype hitTestTextOffset(QPointF localPos) const;
   QRectF cursorRect(qsizetype textOffset) const;
+  QVector<QRectF> selectionRects(qsizetype startOffset, qsizetype endOffset) const;
 
   QString plainText() const;
   QString html() const;

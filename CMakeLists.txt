@@ -27,6 +27,8 @@ set(CMARK_LIB_FUZZER OFF CACHE BOOL "" FORCE)
 add_subdirectory(third_party/cmark-gfm EXCLUDE_FROM_ALL)
 
 set(MUFFIN_CORE_SOURCES
+  src/app/DocumentSession.cpp
+  src/app/DocumentSession.h
   src/document/NodeId.cpp
   src/document/NodeId.h
   src/document/SourceRange.h
@@ -71,13 +73,8 @@ target_include_directories(MuffinCore
 add_executable(Muffin
   src/app/CommandRegistry.cpp
   src/app/CommandRegistry.h
-  src/app/DocumentSession.cpp
-  src/app/DocumentSession.h
   src/app/MainWindow.cpp
   src/app/MainWindow.h
-  src/editor/CursorPosition.h
-  src/editor/EditorView.cpp
-  src/editor/EditorView.h
   src/editor/SourceEditorWidget.cpp
   src/editor/SourceEditorWidget.h
   src/io/FileController.cpp
@@ -85,6 +82,25 @@ add_executable(Muffin
 )
 
 set(MUFFIN_UI_SOURCES
+  src/commands/StylizeController.cpp
+  src/commands/StylizeController.h
+  src/edit/EditTransaction.cpp
+  src/edit/EditTransaction.h
+  src/edit/UndoStack.cpp
+  src/edit/UndoStack.h
+  src/editor/BrushQueue.cpp
+  src/editor/BrushQueue.h
+  src/editor/ClipboardController.cpp
+  src/editor/ClipboardController.h
+  src/editor/CursorPosition.h
+  src/editor/EditorController.cpp
+  src/editor/EditorController.h
+  src/editor/EditorView.cpp
+  src/editor/EditorView.h
+  src/editor/InputController.cpp
+  src/editor/InputController.h
+  src/editor/SelectionController.cpp
+  src/editor/SelectionController.h
   src/render/BlockLayout.cpp
   src/render/BlockLayout.h
   src/render/BlockLayoutBuilder.cpp
@@ -195,3 +211,14 @@ add_test(
   NAME MuffinRenderLayoutTest
   COMMAND MuffinRenderLayoutTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md"
 )
+
+add_executable(MuffinEditorControllerTest
+  tests/editor/EditorControllerTest.cpp
+)
+
+target_link_libraries(MuffinEditorControllerTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinEditorControllerTest COMMAND MuffinEditorControllerTest)

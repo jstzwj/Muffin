@@ -26,6 +26,7 @@ public:
   void setFilePath(QString path);
   void setMarkdownText(QString text, bool modified);
   void updateFromEditor(QString text);
+  void applyMarkdownText(QString text, bool modified);
 
 signals:
   void documentTextChanged(QString text);

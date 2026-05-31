@@ -62,6 +62,11 @@ void DocumentSession::updateFromEditor(QString text) {
   parseAndStore(std::move(text), true);
 }
 
+void DocumentSession::applyMarkdownText(QString text, bool modified) {
+  parseAndStore(std::move(text), modified);
+  emit documentTextChanged(document_.markdownText());
+}
+
 void DocumentSession::parseAndStore(QString text, bool modified) {
   ParseResult result = parser_.parseDocument(QStringView(text), parseOptions_);
   lastParseElapsedMs_ = result.elapsedMs;

@@ -2,6 +2,7 @@
 
 #include "app/CommandRegistry.h"
 #include "app/DocumentSession.h"
+#include "editor/EditorController.h"
 #include "io/FileController.h"
 #include "theme/ThemeManager.h"
 
@@ -63,9 +64,13 @@ private:
   void updateTitle();
   void updateStatus();
   void updateCursorStatus(int line, int column);
+  void updateRenderCursorStatus(const HitTestResult& hit);
   void updateSidebarMode();
   void updateViewMode();
   void updateFileActions();
+  bool sourceModeEnabled() const;
+  void undoEdit();
+  void redoEdit();
   void applyTheme(QString name);
   void updateThemeActions();
   void rebuildRecentFilesMenu();
@@ -80,6 +85,7 @@ private:
   FileController fileController_;
   CommandRegistry commands_;
   ThemeManager themeManager_;
+  EditorController editorController_;
   QSplitter* centralSplitter_ = nullptr;
   QWidget* sidebar_ = nullptr;
   QStackedWidget* viewStack_ = nullptr;
@@ -93,6 +99,7 @@ private:
   QMenu* recentFilesMenu_ = nullptr;
   int cursorLine_ = 1;
   int cursorColumn_ = 1;
+  QString renderCursorStatus_;
   int zoomPercent_ = 100;
 };
 

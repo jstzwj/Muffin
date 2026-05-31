@@ -121,6 +121,53 @@ QRectF InlineLayout::cursorRect(qsizetype textOffset) const {
   return QRectF(blockRect.left() + x, blockRect.top() + line.y(), 1.0, line.height());
 }
 
+QVector<QRectF> InlineLayout::selectionRects(qsizetype startOffset, qsizetype endOffset) const {
+  QVector<QRectF> rects;
+  if (!document_) {
+    return rects;
+  }
+
+  const int start = qBound(0, static_cast<int>(qMin(startOffset, endOffset)), static_cast<int>(plainText_.size()));
+  const int end = qBound(0, static_cast<int>(qMax(startOffset, endOffset)), static_cast<int>(plainText_.size()));
+  if (start == end) {
+    return rects;
+  }
+
+  for (QTextBlock block = document_->begin(); block.isValid(); block = block.next()) {
+    QTextLayout* layout = block.layout();
+    if (!layout) {
+      continue;
+    }
+    const QRectF blockRect = document_->documentLayout()->blockBoundingRect(block);
+    const int blockStart = block.position();
+    const int blockEnd = blockStart + block.length();
+    const int localStart = qMax(0, start - blockStart);
+    const int localEnd = qMin(block.length(), end - blockStart);
+    if (localStart >= localEnd || end <= blockStart || start >= blockEnd) {
+      continue;
+    }
+
+    for (int i = 0; i < layout->lineCount(); ++i) {
+      const QTextLine line = layout->lineAt(i);
+      if (!line.isValid()) {
+        continue;
+      }
+      const int lineStart = line.textStart();
+      const int lineEnd = lineStart + line.textLength();
+      const int rangeStart = qMax(localStart, lineStart);
+      const int rangeEnd = qMin(localEnd, lineEnd);
+      if (rangeStart >= rangeEnd) {
+        continue;
+      }
+
+      const qreal x1 = line.cursorToX(rangeStart);
+      const qreal x2 = line.cursorToX(rangeEnd);
+      rects.push_back(QRectF(blockRect.left() + qMin(x1, x2), blockRect.top() + line.y(), qAbs(x2 - x1), line.height()));
+    }
+  }
+  return rects;
+}
+
 QString InlineLayout::plainText() const {
   return plainText_;
 }

@@ -72,12 +72,16 @@ public:
   void paint(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
   bool intersects(const QRectF& documentViewport) const;
   HitTestResult hitTest(QPointF documentPos, const RenderTheme& theme) const;
+  QVector<QRectF> selectionRects(const SelectionRange& selection, const RenderTheme& theme) const;
+  QVector<QRectF> selectionRectsForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
 
 private:
   void paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
   void paintTable(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
   HitTestResult hitSelf(QPointF documentPos, const RenderTheme& theme) const;
   HitTestResult hitTable(QPointF documentPos, const RenderTheme& theme) const;
+  QVector<QRectF> selectionRectsSelf(const SelectionRange& selection, const RenderTheme& theme) const;
+  QVector<QRectF> selectionRectsSelfForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
 
   NodeId id_;
   BlockType type_ = BlockType::Unknown;

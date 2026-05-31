@@ -33,6 +33,18 @@ struct SelectionRange {
     return anchor.blockId == focus.blockId && anchor.text.textOffset == focus.text.textOffset &&
            anchor.text.inMeta == focus.text.inMeta;
   }
+
+  bool isSingleBlock() const {
+    return anchor.blockId.isValid() && anchor.blockId == focus.blockId;
+  }
+
+  qsizetype startOffset() const {
+    return qMin(anchor.text.textOffset, focus.text.textOffset);
+  }
+
+  qsizetype endOffset() const {
+    return qMax(anchor.text.textOffset, focus.text.textOffset);
+  }
 };
 
 struct HitTestResult {

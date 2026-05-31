@@ -162,6 +162,22 @@ HitTestResult BlockLayout::hitTest(QPointF documentPos, const RenderTheme& theme
   return hitSelf(documentPos, theme);
 }
 
+QVector<QRectF> BlockLayout::selectionRects(const SelectionRange& selection, const RenderTheme& theme) const {
+  QVector<QRectF> rects = selectionRectsSelf(selection, theme);
+  for (const auto& child : children_) {
+    rects += child->selectionRects(selection, theme);
+  }
+  return rects;
+}
+
+QVector<QRectF> BlockLayout::selectionRectsForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const {
+  QVector<QRectF> rects = selectionRectsSelfForOffsets(startOffset, endOffset, theme);
+  for (const auto& child : children_) {
+    rects += child->selectionRectsForOffsets(startOffset, endOffset, theme);
+  }
+  return rects;
+}
+
 void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY) const {
   const QRectF viewRect = rect_.translated(0, -scrollY);
 
@@ -237,6 +253,54 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
     default:
       break;
   }
+}
+
+QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection, const RenderTheme& theme) const {
+  QVector<QRectF> rects;
+  if (!selection.isSingleBlock() || selection.isCollapsed() || selection.anchor.blockId != id_ || !inlineLayout_) {
+    return rects;
+  }
+
+  switch (type_) {
+    case BlockType::Heading:
+    case BlockType::Paragraph:
+    case BlockType::ListItem:
+      break;
+    default:
+      return rects;
+  }
+
+  const qreal textLeft = !listMarker_.isEmpty() ? rect_.left() + theme.listIndent() : rect_.left();
+  const QPointF origin(textLeft, rect_.top());
+  for (QRectF rect : inlineLayout_->selectionRects(selection.startOffset(), selection.endOffset())) {
+    rect.translate(origin);
+    rects.push_back(rect.adjusted(-1.0, 0, 1.0, 0));
+  }
+  return rects;
+}
+
+QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const {
+  QVector<QRectF> rects;
+  if (!inlineLayout_) {
+    return rects;
+  }
+
+  switch (type_) {
+    case BlockType::Heading:
+    case BlockType::Paragraph:
+    case BlockType::ListItem:
+      break;
+    default:
+      return rects;
+  }
+
+  const qreal textLeft = !listMarker_.isEmpty() ? rect_.left() + theme.listIndent() : rect_.left();
+  const QPointF origin(textLeft, rect_.top());
+  for (QRectF rect : inlineLayout_->selectionRects(startOffset, endOffset)) {
+    rect.translate(origin);
+    rects.push_back(rect.adjusted(-1.0, 0, 1.0, 0));
+  }
+  return rects;
 }
 
 HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme) const {

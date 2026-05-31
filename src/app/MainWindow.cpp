@@ -56,6 +56,28 @@ QMenu* addDisabledMenu(QMenu* parent, const QString& title) {
   return menu;
 }
 
+QString zoneName(HitTestResult::Zone zone) {
+  switch (zone) {
+    case HitTestResult::Zone::Text:
+      return QStringLiteral("text");
+    case HitTestResult::Zone::Marker:
+      return QStringLiteral("marker");
+    case HitTestResult::Zone::TableCell:
+      return QStringLiteral("table");
+    case HitTestResult::Zone::Code:
+      return QStringLiteral("code");
+    case HitTestResult::Zone::Math:
+      return QStringLiteral("math");
+    case HitTestResult::Zone::Html:
+      return QStringLiteral("html");
+    case HitTestResult::Zone::Block:
+      return QStringLiteral("block");
+    case HitTestResult::Zone::None:
+    default:
+      return QStringLiteral("none");
+  }
+}
+
 }  // namespace
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
@@ -186,8 +208,11 @@ void MainWindow::setupStatusBar() {
 }
 
 void MainWindow::setupConnections() {
+  editorController_.attach(&session_, renderView_);
+
   connect(editor_, &SourceEditorWidget::textEdited, &session_, &DocumentSession::updateFromEditor);
   connect(editor_, &SourceEditorWidget::cursorPositionChanged, this, &MainWindow::updateCursorStatus);
+  connect(&editorController_, &EditorController::cursorChanged, this, &MainWindow::updateRenderCursorStatus);
 
   connect(&session_, &DocumentSession::documentTextChanged, editor_, &SourceEditorWidget::setText);
   connect(&session_, &DocumentSession::filePathChanged, this, &MainWindow::updateTitle);
@@ -198,15 +223,18 @@ void MainWindow::setupConnections() {
     renderView_->setDocument(session_.document());
     updateStatus();
   });
+  connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateStatus);
   connect(&themeManager_, &ThemeManager::themeChanged, this, [this](const QString& name) {
     applyTheme(name);
   });
 
   commands_.bind(QStringLiteral("file.new"), [this] {
+    editorController_.clearHistoryAndSelection();
     fileController_.newFile(session_, this);
   });
   commands_.bind(QStringLiteral("file.open"), [this] {
     if (fileController_.open(session_, this)) {
+      editorController_.clearHistoryAndSelection();
       addRecentFile(session_.filePath());
     }
   });
@@ -226,12 +254,59 @@ void MainWindow::setupConnections() {
     close();
   });
 
-  commands_.bind(QStringLiteral("edit.undo"), [this] { editor_->editor()->undo(); });
-  commands_.bind(QStringLiteral("edit.redo"), [this] { editor_->editor()->redo(); });
-  commands_.bind(QStringLiteral("edit.cut"), [this] { editor_->editor()->cut(); });
-  commands_.bind(QStringLiteral("edit.copy"), [this] { editor_->editor()->copy(); });
-  commands_.bind(QStringLiteral("edit.paste"), [this] { editor_->editor()->paste(); });
+  commands_.bind(QStringLiteral("edit.undo"), [this] { undoEdit(); });
+  commands_.bind(QStringLiteral("edit.redo"), [this] { redoEdit(); });
+  commands_.bind(QStringLiteral("edit.cut"), [this] {
+    if (sourceModeEnabled()) {
+      editor_->editor()->cut();
+    } else {
+      editorController_.cut();
+    }
+  });
+  commands_.bind(QStringLiteral("edit.copy"), [this] {
+    if (sourceModeEnabled()) {
+      editor_->editor()->copy();
+    } else {
+      editorController_.copy();
+    }
+  });
+  commands_.bind(QStringLiteral("edit.paste"), [this] {
+    if (sourceModeEnabled()) {
+      editor_->editor()->paste();
+    } else {
+      editorController_.paste();
+    }
+  });
   commands_.bind(QStringLiteral("edit.select_all"), [this] { editor_->editor()->selectAll(); });
+
+  commands_.bind(QStringLiteral("format.bold"), [this] {
+    if (sourceModeEnabled()) {
+      editor_->editor()->insertPlainText(QStringLiteral("****"));
+    } else {
+      editorController_.toggleBold();
+    }
+  });
+  commands_.bind(QStringLiteral("format.italic"), [this] {
+    if (sourceModeEnabled()) {
+      editor_->editor()->insertPlainText(QStringLiteral("**"));
+    } else {
+      editorController_.toggleItalic();
+    }
+  });
+  commands_.bind(QStringLiteral("format.code"), [this] {
+    if (sourceModeEnabled()) {
+      editor_->editor()->insertPlainText(QStringLiteral("``"));
+    } else {
+      editorController_.toggleCode();
+    }
+  });
+  commands_.bind(QStringLiteral("format.link"), [this] {
+    if (sourceModeEnabled()) {
+      editor_->editor()->insertPlainText(QStringLiteral("[](url)"));
+    } else {
+      editorController_.insertLink();
+    }
+  });
 
   commands_.bind(QStringLiteral("view.word_wrap"), [this] {
     editor_->setWordWrapEnabled(commands_.action(QStringLiteral("view.word_wrap"))->isChecked());
@@ -420,14 +495,14 @@ void MainWindow::setupParagraphMenu() {
 
 void MainWindow::setupFormatMenu() {
   QMenu* format = menuBar()->addMenu(QStringLiteral("格式(&O)"));
-  addCheckAction(format, QStringLiteral("format.bold"), QStringLiteral("加粗"), QKeySequence::Bold, false, false);
-  addCheckAction(format, QStringLiteral("format.italic"), QStringLiteral("斜体"), QKeySequence::Italic, false, false);
+  addCheckAction(format, QStringLiteral("format.bold"), QStringLiteral("加粗"), QKeySequence::Bold);
+  addCheckAction(format, QStringLiteral("format.italic"), QStringLiteral("斜体"), QKeySequence::Italic);
   addCheckAction(format, QStringLiteral("format.underline"), QStringLiteral("下划线"), QKeySequence::Underline, false, false);
-  addCheckAction(format, QStringLiteral("format.code"), QStringLiteral("代码"), QKeySequence(QStringLiteral("Ctrl+Shift+`")), false, false);
+  addCheckAction(format, QStringLiteral("format.code"), QStringLiteral("代码"), QKeySequence(QStringLiteral("Ctrl+Shift+`")));
   addCheckAction(format, QStringLiteral("format.strike"), QStringLiteral("删除线"), QKeySequence(QStringLiteral("Alt+Shift+5")), false, false);
   format->addSeparator();
   addAction(format, QStringLiteral("format.comment"), QStringLiteral("注释"), {}, false);
-  addAction(format, QStringLiteral("format.link"), QStringLiteral("超链接"), QKeySequence(QStringLiteral("Ctrl+K")), false);
+  addAction(format, QStringLiteral("format.link"), QStringLiteral("超链接"), QKeySequence(QStringLiteral("Ctrl+K")));
   addDisabledMenu(format, QStringLiteral("链接操作"));
   addDisabledMenu(format, QStringLiteral("图像"));
   addAction(format, QStringLiteral("format.clear"), QStringLiteral("清除样式"), QKeySequence(QStringLiteral("Ctrl+\\")), false);
@@ -502,12 +577,27 @@ void MainWindow::updateStatus() {
   const QString text = session_.markdownText();
   parseLabel_->setText(QStringLiteral("解析 %1 ms").arg(session_.lastParseElapsedMs()));
   wordsLabel_->setText(QStringLiteral("%1 词").arg(countWords(text)));
-  cursorLabel_->setText(QStringLiteral("%1:%2").arg(cursorLine_).arg(cursorColumn_));
+  if (!sourceModeEnabled() && !renderCursorStatus_.isEmpty()) {
+    cursorLabel_->setText(renderCursorStatus_);
+  } else {
+    cursorLabel_->setText(QStringLiteral("%1:%2").arg(cursorLine_).arg(cursorColumn_));
+  }
 }
 
 void MainWindow::updateCursorStatus(int line, int column) {
   cursorLine_ = line;
   cursorColumn_ = column;
+  updateStatus();
+}
+
+void MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {
+  if (!hit.isValid()) {
+    renderCursorStatus_.clear();
+  } else {
+    renderCursorStatus_ = QStringLiteral("%1 %2 offset %3")
+                              .arg(zoneName(hit.zone), hit.blockId.toString())
+                              .arg(hit.textOffset);
+  }
   updateStatus();
 }
 
@@ -525,18 +615,50 @@ void MainWindow::updateViewMode() {
   if (!viewStack_ || !renderView_ || !editor_) {
     return;
   }
-  const QAction* action = commands_.action(QStringLiteral("view.source_mode"));
-  const bool sourceMode = action && action->isChecked();
+  const bool sourceMode = sourceModeEnabled();
   viewStack_->setCurrentWidget(sourceMode ? static_cast<QWidget*>(editor_) : static_cast<QWidget*>(renderView_));
   if (sourceModeButton_) {
     sourceModeButton_->setChecked(sourceMode);
   }
+  if (!sourceMode) {
+    renderView_->setFocus(Qt::OtherFocusReason);
+  }
+  updateStatus();
 }
 
 void MainWindow::updateFileActions() {
   const bool hasFile = !session_.filePath().isEmpty();
   commands_.setEnabled(QStringLiteral("file.properties"), hasFile);
   commands_.setEnabled(QStringLiteral("file.reveal"), hasFile);
+}
+
+bool MainWindow::sourceModeEnabled() const {
+  const QAction* action = commands_.action(QStringLiteral("view.source_mode"));
+  return action && action->isChecked();
+}
+
+void MainWindow::undoEdit() {
+  if (sourceModeEnabled()) {
+    editor_->editor()->undo();
+    return;
+  }
+
+  if (!editorController_.canUndo()) {
+    return;
+  }
+  editorController_.undo();
+}
+
+void MainWindow::redoEdit() {
+  if (sourceModeEnabled()) {
+    editor_->editor()->redo();
+    return;
+  }
+
+  if (!editorController_.canRedo()) {
+    return;
+  }
+  editorController_.redo();
 }
 
 void MainWindow::applyTheme(QString name) {
