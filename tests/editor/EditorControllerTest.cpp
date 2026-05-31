@@ -233,6 +233,35 @@ void testInputEnterMovesCursorToNewParagraph() {
   require(selection.cursorPosition().text.textOffset == 0, "enter cursor offset should be start of new paragraph");
 }
 
+void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("alpha"), false);
+  setCursor(selection, blockAt(session, 0), 0);
+  require(input.insertParagraphBreak(), "enter at paragraph start should create empty paragraph");
+  require(session.markdownText() == QStringLiteral("\n\nalpha"), "paragraph start enter text mismatch");
+  require(session.document().root().children().size() == 2, "paragraph start enter should create virtual empty block");
+  require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "paragraph start enter cursor block mismatch");
+  require(selection.cursorPosition().text.textOffset == 0, "paragraph start enter cursor offset mismatch");
+  require(input.insertText(QStringLiteral("before")), "typing into leading empty paragraph should work");
+  require(session.markdownText() == QStringLiteral("before\n\nalpha"), "typing into leading empty paragraph text mismatch");
+
+  session.setMarkdownText(QStringLiteral("alpha"), false);
+  setCursor(selection, blockAt(session, 0), 5);
+  require(input.insertParagraphBreak(), "enter at paragraph end should create empty paragraph");
+  require(session.markdownText() == QStringLiteral("alpha\n\n"), "paragraph end enter text mismatch");
+  require(session.document().root().children().size() == 2, "paragraph end enter should create virtual empty block");
+  require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "paragraph end enter cursor block mismatch");
+  require(selection.cursorPosition().text.textOffset == 0, "paragraph end enter cursor offset mismatch");
+  require(input.insertText(QStringLiteral("after")), "typing into trailing empty paragraph should work");
+  require(session.markdownText() == QStringLiteral("alpha\n\nafter"), "typing into trailing empty paragraph text mismatch");
+}
+
 void testInputMergeParagraphs() {
   DocumentSession session;
   SelectionController selection;
@@ -830,6 +859,7 @@ int main(int argc, char** argv) {
   testUndoStack();
   testInputInsertAndBackspace();
   testInputEnterMovesCursorToNewParagraph();
+  testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph();
   testInputMergeParagraphs();
   testInputUndoRedoSnapshots();
   testInputSelectionReplaceAndDelete();

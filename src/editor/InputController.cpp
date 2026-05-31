@@ -365,6 +365,20 @@ bool InputController::editParagraph(Operation operation, QString text) {
       if (context.node && context.node->type() == BlockType::ListItem) {
         return context.sourceText.trimmed().isEmpty() ? exitListItem(context) : splitListItem(context);
       }
+      if (nextOffset <= 0) {
+        QString nextDocument = session_->markdownText();
+        nextDocument.insert(context.sourceStart, QStringLiteral("\n\n"));
+        applyEdit(EditTransaction::Kind::SplitParagraph, QStringLiteral("Insert Paragraph Before"), std::move(nextDocument),
+                  context.sourceStart);
+        return true;
+      }
+      if (nextOffset >= nextParagraph.size()) {
+        QString nextDocument = session_->markdownText();
+        nextDocument.insert(context.sourceEnd, QStringLiteral("\n\n"));
+        applyEdit(EditTransaction::Kind::SplitParagraph, QStringLiteral("Insert Paragraph After"), std::move(nextDocument),
+                  context.sourceEnd + 2);
+        return true;
+      }
       if (nextOffset < nextParagraph.size() && nextParagraph.at(nextOffset).isSpace()) {
         nextParagraph.remove(nextOffset, 1);
       } else if (nextOffset > 0 && nextParagraph.at(nextOffset - 1).isSpace()) {
