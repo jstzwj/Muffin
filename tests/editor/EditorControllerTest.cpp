@@ -248,8 +248,12 @@ void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
   require(session.document().root().children().size() == 2, "paragraph start enter should create virtual empty block");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "paragraph start enter cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 0, "paragraph start enter cursor offset mismatch");
+  require(input.insertParagraphBreak(), "enter in leading empty paragraph should create another empty paragraph");
+  require(session.markdownText() == QStringLiteral("\n\n\n\nalpha"), "leading empty paragraph repeated enter text mismatch");
+  require(session.document().root().children().size() == 3, "leading empty paragraph repeated enter should create another virtual block");
+  require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "leading empty paragraph repeated enter cursor block mismatch");
   require(input.insertText(QStringLiteral("before")), "typing into leading empty paragraph should work");
-  require(session.markdownText() == QStringLiteral("before\n\nalpha"), "typing into leading empty paragraph text mismatch");
+  require(session.markdownText() == QStringLiteral("\n\nbefore\n\nalpha"), "typing into leading empty paragraph text mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
@@ -258,8 +262,12 @@ void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
   require(session.document().root().children().size() == 2, "paragraph end enter should create virtual empty block");
   require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "paragraph end enter cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 0, "paragraph end enter cursor offset mismatch");
+  require(input.insertParagraphBreak(), "enter in trailing empty paragraph should create another empty paragraph");
+  require(session.markdownText() == QStringLiteral("alpha\n\n\n\n"), "trailing empty paragraph repeated enter text mismatch");
+  require(session.document().root().children().size() == 3, "trailing empty paragraph repeated enter should create another virtual block");
+  require(selection.cursorPosition().blockId == blockAt(session, 2)->id(), "trailing empty paragraph repeated enter cursor block mismatch");
   require(input.insertText(QStringLiteral("after")), "typing into trailing empty paragraph should work");
-  require(session.markdownText() == QStringLiteral("alpha\n\nafter"), "typing into trailing empty paragraph text mismatch");
+  require(session.markdownText() == QStringLiteral("alpha\n\n\n\nafter"), "typing into trailing empty paragraph text mismatch");
 }
 
 void testInputMergeParagraphs() {

@@ -161,11 +161,11 @@ void EditorView::paintEvent(QPaintEvent* event) {
   const QVector<const BlockLayout*> blocks = layout_->visibleBlocks(visible.adjusted(0, -80, 0, 80));
   painter.setRenderHint(QPainter::Antialiasing, true);
   painter.setRenderHint(QPainter::TextAntialiasing, true);
-  paintSelection(painter);
-  paintCurrentTableCell(painter);
   for (const BlockLayout* block : blocks) {
     block->paint(painter, theme_, scrollY());
   }
+  paintSelection(painter);
+  paintCurrentTableCell(painter);
   paintInsertionCursor(painter);
 }
 

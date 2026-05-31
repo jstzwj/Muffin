@@ -95,7 +95,7 @@ private:
   qsizetype sourceOffsetForLineEnd(const QString& text, int line) const;
   CursorPosition cursorFor(NodeId blockId, qsizetype offset) const;
   CursorPosition cursorForNode(MarkdownNode& node, qsizetype offset) const;
-  CursorPosition cursorForSourceOffset(qsizetype sourceOffset) const;
+  CursorPosition cursorForSourceOffset(qsizetype sourceOffset, bool preferLaterEmptyAtOffset = false) const;
   MarkdownNode* paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset) const;
   MarkdownNode* selectableBlockByDirection(NodeId current, int direction) const;
   qsizetype selectableTextLength(const MarkdownNode& node) const;
@@ -103,6 +103,7 @@ private:
   bool moveCursorVertical(int direction, bool extendSelection);
   void setCursorOrExtend(CursorPosition cursor, bool extendSelection);
   void applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText, qsizetype nextSourceOffset);
+  void applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText, qsizetype nextSourceOffset, bool preferLaterEmptyAtOffset);
   QString printableText(QKeyEvent* event) const;
 
   DocumentSession* session_ = nullptr;

@@ -70,18 +70,30 @@ void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, Markdown
   qsizetype childIndex = 0;
   int previousEndLine = 0;
 
+  if (root.children().empty()) {
+    const int emptyCount = lines.size() / 2;
+    for (int i = 0; i < emptyCount; ++i) {
+      const int emptyLine = 1 + i * 2;
+      if (emptyLine - 1 < lines.size() && lines.at(emptyLine - 1).trimmed().isEmpty()) {
+        root.appendChild(createVirtualEmptyParagraph(emptyLine));
+      }
+    }
+    return;
+  }
+
   while (childIndex < root.children().size()) {
     MarkdownNode* child = root.children().at(static_cast<size_t>(childIndex)).get();
     const SourceRange range = child->sourceRange();
     const int startLine = range.lineStart;
-    if (startLine > 0 && startLine - previousEndLine >= 3) {
-      const int emptyLine = qMax(1, startLine - 2);
+    const int blankLines = startLine > 0 ? startLine - previousEndLine - 1 : 0;
+    const int emptyCount = qMax(0, blankLines / 2);
+    const int firstEmptyLine = previousEndLine == 0 ? 1 : previousEndLine + 2;
+    for (int i = 0; i < emptyCount; ++i) {
+      const int emptyLine = firstEmptyLine + i * 2;
       const int lineIndex = emptyLine - 1;
       if (lineIndex >= 0 && lineIndex < lines.size() && lines.at(lineIndex).trimmed().isEmpty()) {
         root.insertChild(childIndex, createVirtualEmptyParagraph(emptyLine));
-        previousEndLine = emptyLine;
         ++childIndex;
-        continue;
       }
     }
 
@@ -90,8 +102,10 @@ void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, Markdown
   }
 
   const int totalLines = lines.size();
-  if (totalLines - previousEndLine >= 2) {
-    const int emptyLine = qMax(1, previousEndLine + 2);
+  const int trailingLines = totalLines - previousEndLine;
+  const int trailingEmptyCount = qMax(0, trailingLines / 2);
+  for (int i = 0; i < trailingEmptyCount; ++i) {
+    const int emptyLine = previousEndLine + 2 + i * 2;
     const int lineIndex = emptyLine - 1;
     if (lineIndex >= 0 && lineIndex < lines.size() && lines.at(lineIndex).trimmed().isEmpty()) {
       root.appendChild(createVirtualEmptyParagraph(emptyLine));

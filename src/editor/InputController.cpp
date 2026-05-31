@@ -380,7 +380,7 @@ bool InputController::editParagraph(Operation operation, QString text) {
         QString nextDocument = session_->markdownText();
         nextDocument.insert(context.sourceStart, QStringLiteral("\n\n"));
         applyEdit(EditTransaction::Kind::SplitParagraph, QStringLiteral("Insert Paragraph Before"), std::move(nextDocument),
-                  context.sourceStart);
+                  context.sourceStart + (context.sourceText.isEmpty() ? 2 : 0), context.sourceText.isEmpty());
         return true;
       }
       if (nextOffset >= nextParagraph.size()) {
@@ -995,11 +995,20 @@ void InputController::applyEdit(
     const QString& label,
     QString nextText,
     qsizetype nextSourceOffset) {
+  applyEdit(kind, label, std::move(nextText), nextSourceOffset, false);
+}
+
+void InputController::applyEdit(
+    EditTransaction::Kind kind,
+    const QString& label,
+    QString nextText,
+    qsizetype nextSourceOffset,
+    bool preferLaterEmptyAtOffset) {
   const CursorPosition beforeCursor = selection_ && selection_->hasCursor() ? selection_->cursorPosition() : CursorPosition();
   const QString beforeText = session_->markdownText();
 
   session_->applyMarkdownText(nextText, true);
-  CursorPosition nextCursor = cursorForSourceOffset(nextSourceOffset);
+  CursorPosition nextCursor = cursorForSourceOffset(nextSourceOffset, preferLaterEmptyAtOffset);
   if (selection_) {
     if (!nextCursor.isValid()) {
       nextCursor = cursorForSourceOffset(session_->markdownText().size());
