@@ -34,7 +34,26 @@ QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, cons
 
 bool isSelectableZone(HitTestResult::Zone zone) {
   return zone == HitTestResult::Zone::Text || zone == HitTestResult::Zone::Code || zone == HitTestResult::Zone::Math ||
-         zone == HitTestResult::Zone::Html;
+         zone == HitTestResult::Zone::Html || zone == HitTestResult::Zone::TableCell;
+}
+
+qsizetype selectableLength(const BlockLayout* block) {
+  if (!block) {
+    return 0;
+  }
+  if (const InlineLayout* inlineLayout = block->inlineLayout()) {
+    return inlineLayout->plainText().size();
+  }
+  switch (block->type()) {
+    case BlockType::CodeFence:
+    case BlockType::MathBlock:
+    case BlockType::HtmlBlock:
+      return block->literal().size();
+    case BlockType::Table:
+      return 1;
+    default:
+      return 0;
+  }
 }
 
 }  // namespace
@@ -163,6 +182,15 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     setFocus(Qt::MouseFocusReason);
     const HitTestResult hit = hitTest(event->position());
+    if (event->modifiers().testFlag(Qt::ShiftModifier) && hit.isValid() && isSelectableZone(hit.zone) && cursorPosition_.isValid()) {
+      SelectionRange range;
+      range.anchor = selection_.anchor.isValid() ? selection_.anchor : cursorPosition_;
+      range.focus = hit.cursorPosition();
+      setSelectionRange(range);
+      emit selectionChanged(range, hit);
+      event->accept();
+      return;
+    }
     setCursorHit(hit);
     emit blockClicked(hit);
     if (hit.isValid() && isSelectableZone(hit.zone)) {
@@ -289,25 +317,25 @@ void EditorView::paintSelection(QPainter& painter) const {
     const QVector<const BlockLayout*> selectedBlocks = blocksBetween(selection_.anchor.blockId, selection_.focus.blockId);
     for (qsizetype i = 0; i < selectedBlocks.size(); ++i) {
       const BlockLayout* block = selectedBlocks.at(i);
-      if (!block || !block->inlineLayout()) {
+      if (!block) {
         continue;
       }
       const bool isAnchor = block->nodeId() == selection_.anchor.blockId;
       const bool isFocus = block->nodeId() == selection_.focus.blockId;
       qsizetype start = 0;
-      qsizetype end = block->inlineLayout()->plainText().size();
+      qsizetype end = selectableLength(block);
       if (isAnchor) {
         if (anchorFirst) {
-          start = selection_.anchor.text.textOffset;
+          start = block->type() == BlockType::Table ? 0 : selection_.anchor.text.textOffset;
         } else {
-          end = selection_.anchor.text.textOffset;
+          end = block->type() == BlockType::Table ? selectableLength(block) : selection_.anchor.text.textOffset;
         }
       }
       if (isFocus) {
         if (anchorFirst) {
-          end = selection_.focus.text.textOffset;
+          end = block->type() == BlockType::Table ? selectableLength(block) : selection_.focus.text.textOffset;
         } else {
-          start = selection_.focus.text.textOffset;
+          start = block->type() == BlockType::Table ? 0 : selection_.focus.text.textOffset;
         }
       }
       for (QRectF rect : block->selectionRectsForOffsets(start, end, theme_)) {
@@ -514,10 +542,7 @@ void EditorView::updateDragSelection(QPointF viewportPos) {
   }
 
   const HitTestResult focusHit = hitTest(viewportPos);
-  if (!focusHit.isValid() || !isSelectableZone(focusHit.zone) || focusHit.zone != dragAnchorHit_.zone) {
-    return;
-  }
-  if (focusHit.zone != HitTestResult::Zone::Text && focusHit.blockId != dragAnchorHit_.blockId) {
+  if (!focusHit.isValid() || !isSelectableZone(focusHit.zone)) {
     return;
   }
 

@@ -1,10 +1,12 @@
 #include "app/DocumentSession.h"
 #include "commands/StylizeController.h"
 #include "document/MarkdownNode.h"
+#include "document/SelectionSerializer.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
 #include "editor/ClipboardController.h"
 #include "editor/EditorController.h"
+#include "editor/EditorView.h"
 #include "editor/InputController.h"
 #include "editor/SelectionController.h"
 #include "render/InlineLayout.h"
@@ -12,6 +14,7 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QKeyEvent>
 
 #include <cstdlib>
 #include <iostream>
@@ -177,6 +180,20 @@ void setCrossSelection(
   selection.setSelection(range);
 }
 
+QString selectedMarkdown(const DocumentSession& session, const SelectionController& selection) {
+  return SelectionSerializer().exportMarkdown(session.document(), selection.selection());
+}
+
+QString selectedPlainText(const DocumentSession& session, const SelectionController& selection) {
+  return SelectionSerializer().exportPlainText(session.document(), selection.selection());
+}
+
+void wireClipboard(ClipboardController& clipboard, DocumentSession& session, SelectionController& selection, InputController& input) {
+  clipboard.setDocumentSession(&session);
+  clipboard.setSelectionController(&selection);
+  clipboard.setInputController(&input);
+}
+
 void testInputInsertAndBackspace() {
   DocumentSession session;
   SelectionController selection;
@@ -299,8 +316,8 @@ void testInputCrossParagraphSelectionReplaceAndDelete() {
 
   session.setMarkdownText(QStringLiteral("alpha\n\nbeta\n\ngamma"), false);
   setCrossSelection(selection, blockAt(session, 0), 2, blockAt(session, 2), 3);
-  require(input.selectedMarkdown() == QStringLiteral("pha\n\nbeta\n\ngam"), "cross selection markdown mismatch");
-  require(input.selectedText() == QStringLiteral("pha\nbeta\ngam"), "cross selection plain text mismatch");
+  require(selectedMarkdown(session, selection) == QStringLiteral("pha\n\nbeta\n\ngam"), "cross selection markdown mismatch");
+  require(selectedPlainText(session, selection) == QStringLiteral("pha\nbeta\ngam"), "cross selection plain text mismatch");
 
   require(input.insertText(QStringLiteral("X")), "typing should replace cross paragraph selection");
   require(session.markdownText() == QStringLiteral("alXma"), "cross paragraph replace mismatch");
@@ -547,7 +564,7 @@ void testClipboardPlainText() {
   InputController input;
   ClipboardController clipboard;
   wireInput(input, session, selection, undoStack, brushQueue);
-  clipboard.setInputController(&input);
+  wireClipboard(clipboard, session, selection, input);
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setSelection(selection, blockAt(session, 0), 1, 4);
@@ -561,6 +578,138 @@ void testClipboardPlainText() {
   QApplication::clipboard()->setText(QStringLiteral("XYZ"));
   require(clipboard.paste(), "paste should insert clipboard text");
   require(session.markdownText() == QStringLiteral("aXYZa"), "clipboard paste document mismatch");
+}
+
+void testClipboardMarkdownPreservesLinePrefix() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  ClipboardController clipboard;
+  wireInput(input, session, selection, undoStack, brushQueue);
+  wireClipboard(clipboard, session, selection, input);
+
+  session.setMarkdownText(QStringLiteral("## 技术栈\n\n> quoted text\n\n- list item"), false);
+  setSelection(selection, blockAt(session, 0), 1, 3);
+  require(clipboard.copy(), "heading markdown copy should work");
+  require(QApplication::clipboard()->text() == QStringLiteral("## 术栈"), "heading markdown copy should preserve heading marker");
+
+  MarkdownNode* quoteParagraph = childAt(blockAt(session, 1), 0);
+  setSelection(selection, quoteParagraph, 0, 6);
+  require(clipboard.copy(), "blockquote markdown copy should work");
+  require(QApplication::clipboard()->text() == QStringLiteral("> quoted"), "blockquote markdown copy should preserve quote marker");
+
+  MarkdownNode* listItem = listItemAt(session, 2, 0);
+  setSelection(selection, listItem, 0, 4);
+  require(clipboard.copy(), "list markdown copy should work");
+  require(QApplication::clipboard()->text() == QStringLiteral("- list"), "list markdown copy should preserve list marker");
+}
+
+void testClipboardCrossMarkdownPreservesStartPrefix() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  ClipboardController clipboard;
+  wireInput(input, session, selection, undoStack, brushQueue);
+  wireClipboard(clipboard, session, selection, input);
+
+  session.setMarkdownText(QStringLiteral("## Block Quote\n\n> Muffin treats Markdown as the source of truth.\n>\n> The editor surface"), false);
+  MarkdownNode* secondQuoteParagraph = childAt(blockAt(session, 1), 1);
+  setCrossSelection(selection, blockAt(session, 0), 1, secondQuoteParagraph, 10);
+  require(clipboard.copy(), "cross heading quote markdown copy should work");
+  require(QApplication::clipboard()->text() ==
+              QStringLiteral("## lock Quote\n\n> Muffin treats Markdown as the source of truth.\n>\n> The editor"),
+          "cross heading quote markdown copy should preserve heading marker");
+
+  setCrossSelection(selection, secondQuoteParagraph, 10, blockAt(session, 0), 1);
+  require(clipboard.copy(), "reverse cross heading quote markdown copy should work");
+  require(QApplication::clipboard()->text() ==
+              QStringLiteral("## lock Quote\n\n> Muffin treats Markdown as the source of truth.\n>\n> The editor"),
+          "reverse cross heading quote markdown copy should preserve heading marker");
+}
+
+void testSelectionSerializerFormats() {
+  DocumentSession session;
+  SelectionController selection;
+  SelectionSerializer serializer;
+
+  session.setMarkdownText(QStringLiteral("## Headings\n\nalpha"), false);
+  setCrossSelection(selection, blockAt(session, 0), 1, blockAt(session, 1), 2);
+
+  SelectionExportResult markdown =
+      serializer.exportSelection(SelectionExportRequest{&session.document(), selection.selection(), SelectionExportFormat::Markdown});
+  require(markdown.mimeType == QStringLiteral("text/markdown"), "markdown export mime mismatch");
+  require(markdown.text == QStringLiteral("## eadings\n\nal"), "markdown export should preserve only structural prefix");
+
+  SelectionExportResult plainText =
+      serializer.exportSelection(SelectionExportRequest{&session.document(), selection.selection(), SelectionExportFormat::PlainText});
+  require(plainText.mimeType == QStringLiteral("text/plain"), "plain text export mime mismatch");
+  require(plainText.text == QStringLiteral("eadings\nal"), "plain text export mismatch");
+
+  SelectionExportResult html =
+      serializer.exportSelection(SelectionExportRequest{&session.document(), selection.selection(), SelectionExportFormat::Html});
+  require(html.mimeType == QStringLiteral("text/html"), "html export mime mismatch");
+  require(html.text.contains(QStringLiteral("## eadings")), "html export should be based on markdown fragment");
+}
+
+void testSelectionSerializerCrossComplexInlineEdges() {
+  DocumentSession session;
+  SelectionController selection;
+
+  session.setMarkdownText(QStringLiteral("Plain **bold** and `code`\n\nMiddle\n\nTail $x+y$ and [link](https://example.com)"), false);
+  setCrossSelection(selection, blockAt(session, 0), 6, blockAt(session, 2), 8);
+
+  const QString markdown = selectedMarkdown(session, selection);
+  require(markdown == QStringLiteral("**bold** and `code`\n\nMiddle\n\nTail $x+y$"),
+          "complex inline cross selection should preserve only selected edge text");
+
+  const QString plainText = selectedPlainText(session, selection);
+  require(plainText == QStringLiteral("bold and code\nMiddle\nTail x+y"), "complex inline cross selection plain text mismatch");
+}
+
+void testClipboardBlockSelectionFallback() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  ClipboardController clipboard;
+  wireInput(input, session, selection, undoStack, brushQueue);
+  wireClipboard(clipboard, session, selection, input);
+
+  session.setMarkdownText(QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |\n\n```cpp\nreturn 0;\n```"), false);
+  MarkdownNode* table = blockAt(session, 0);
+  MarkdownNode* code = blockAt(session, 1);
+  setCrossSelection(selection, table, 0, code, 5);
+  require(input.hasEditableSelection(), "block fallback selection should be copyable");
+  require(clipboard.copy(), "copy should support block fallback selection");
+  require(QApplication::clipboard()->text().contains(QStringLiteral("A")), "block fallback copy should include table text");
+  require(selectedMarkdown(session, selection).contains(QStringLiteral("```cpp")), "block fallback markdown should include code fence");
+}
+
+void testKeyboardNavigationBasics() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  EditorView view;
+  wireInput(input, session, selection, undoStack, brushQueue);
+  input.attach(&view);
+
+  session.setMarkdownText(QStringLiteral("alpha\n\nbeta"), false);
+  setCursor(selection, blockAt(session, 0), 5);
+  QKeyEvent right(QEvent::KeyPress, Qt::Key_Right, Qt::NoModifier);
+  require(input.eventFilter(&view, &right), "right at block end should move to next block");
+  require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "right should move to next block");
+  require(selection.cursorPosition().text.textOffset == 0, "right next block offset mismatch");
+
+  QKeyEvent shiftRight(QEvent::KeyPress, Qt::Key_Right, Qt::ShiftModifier);
+  require(input.eventFilter(&view, &shiftRight), "shift-right should extend selection");
+  require(!selection.selection().isCollapsed(), "shift-right should create selection");
 }
 
 void testComplexBlockActivationRoutesInput() {
@@ -694,6 +843,12 @@ int main(int argc, char** argv) {
   testHeadingAndListItemStylize();
   testStylizeCrossParagraphSelectionWrap();
   testClipboardPlainText();
+  testClipboardMarkdownPreservesLinePrefix();
+  testClipboardCrossMarkdownPreservesStartPrefix();
+  testSelectionSerializerFormats();
+  testSelectionSerializerCrossComplexInlineEdges();
+  testClipboardBlockSelectionFallback();
+  testKeyboardNavigationBasics();
   testComplexBlockActivationRoutesInput();
   testCodeActivationKeepsClickedOffsetForTyping();
   testSwitchingBetweenCodeBlocksRoutesInputToClickedBlock();

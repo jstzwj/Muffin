@@ -37,6 +37,9 @@ set(MUFFIN_CORE_SOURCES
   src/document/InlineNode.h
   src/document/MarkdownNode.cpp
   src/document/MarkdownNode.h
+  src/document/TextSelection.h
+  src/document/SelectionSerializer.cpp
+  src/document/SelectionSerializer.h
   src/document/NodeIndex.cpp
   src/document/NodeIndex.h
   src/document/MarkdownDocument.cpp

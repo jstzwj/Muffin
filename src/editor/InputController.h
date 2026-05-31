@@ -45,8 +45,6 @@ public:
   bool outdentListItem();
   bool deleteSelection();
   bool hasEditableSelection() const;
-  QString selectedText() const;
-  QString selectedMarkdown() const;
   bool handleInputMethod(QInputMethodEvent* event);
 
   bool eventFilter(QObject* watched, QEvent* event) override;
@@ -86,7 +84,8 @@ private:
   bool fillEditableContext(MarkdownNode& displayNode, ParagraphEditContext& context) const;
   bool selectionContext(ParagraphEditContext& context, qsizetype& start, qsizetype& end) const;
   bool selectionSourceRange(qsizetype& start, qsizetype& end) const;
-  QString plainTextForMarkdownRange(qsizetype start, qsizetype end) const;
+  bool blockSelectionSourceRange(qsizetype& start, qsizetype& end) const;
+  bool blockSourceRange(const MarkdownNode& node, qsizetype& start, qsizetype& end) const;
   bool isPlainParagraph(const MarkdownNode& node, const QString& sourceText) const;
   bool isPlainInlineEditable(const MarkdownNode& node, const QString& sourceText) const;
   MarkdownNode* primaryParagraph(MarkdownNode& node) const;
@@ -95,8 +94,14 @@ private:
   qsizetype sourceOffsetForLineColumn(const QString& text, int line, int column) const;
   qsizetype sourceOffsetForLineEnd(const QString& text, int line) const;
   CursorPosition cursorFor(NodeId blockId, qsizetype offset) const;
+  CursorPosition cursorForNode(MarkdownNode& node, qsizetype offset) const;
   CursorPosition cursorForSourceOffset(qsizetype sourceOffset) const;
   MarkdownNode* paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset) const;
+  MarkdownNode* selectableBlockByDirection(NodeId current, int direction) const;
+  qsizetype selectableTextLength(const MarkdownNode& node) const;
+  bool moveCursorHorizontal(int direction, bool extendSelection);
+  bool moveCursorVertical(int direction, bool extendSelection);
+  void setCursorOrExtend(CursorPosition cursor, bool extendSelection);
   void applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText, qsizetype nextSourceOffset);
   QString printableText(QKeyEvent* event) const;
 

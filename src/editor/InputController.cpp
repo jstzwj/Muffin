@@ -11,7 +11,6 @@
 #include "blocks/html/HtmlBlockController.h"
 #include "blocks/math/MathBlockController.h"
 #include "blocks/table/TableController.h"
-#include "parser/CmarkGfmParser.h"
 
 #include <QEvent>
 #include <QKeyEvent>
@@ -50,30 +49,7 @@ QString plainTextForInlines(const QVector<InlineNode>& inlines) {
 QString plainTextForNode(const MarkdownNode& node) {
   QString text;
   switch (node.type()) {
-    case BlockType::Document:
-      for (const auto& child : node.children()) {
-        const QString childText = plainTextForNode(*child);
-        if (childText.isEmpty()) {
-          continue;
-        }
-        if (!text.isEmpty()) {
-          text += QLatin1Char('\n');
-        }
-        text += childText;
-      }
-      return text;
     case BlockType::List:
-      for (const auto& child : node.children()) {
-        const QString childText = plainTextForNode(*child);
-        if (childText.isEmpty()) {
-          continue;
-        }
-        if (!text.isEmpty()) {
-          text += QLatin1Char('\n');
-        }
-        text += childText;
-      }
-      return text;
     case BlockType::ListItem:
       for (const auto& child : node.children()) {
         const QString childText = plainTextForNode(*child);
@@ -88,6 +64,7 @@ QString plainTextForNode(const MarkdownNode& node) {
       return text;
     case BlockType::Paragraph:
     case BlockType::Heading:
+    case BlockType::TableCell:
       return plainTextForInlines(node.inlines());
     default:
       return node.literal();
@@ -249,25 +226,7 @@ bool InputController::deleteSelection() {
 bool InputController::hasEditableSelection() const {
   qsizetype start = 0;
   qsizetype end = 0;
-  return selectionSourceRange(start, end);
-}
-
-QString InputController::selectedText() const {
-  qsizetype sourceStart = 0;
-  qsizetype sourceEnd = 0;
-  if (selectionSourceRange(sourceStart, sourceEnd)) {
-    return plainTextForMarkdownRange(sourceStart, sourceEnd);
-  }
-  return {};
-}
-
-QString InputController::selectedMarkdown() const {
-  qsizetype sourceStart = 0;
-  qsizetype sourceEnd = 0;
-  if (!selectionSourceRange(sourceStart, sourceEnd)) {
-    return {};
-  }
-  return session_->markdownText().mid(sourceStart, sourceEnd - sourceStart);
+  return selectionSourceRange(start, end) || blockSelectionSourceRange(start, end);
 }
 
 bool InputController::replaceSelection(QString text, EditTransaction::Kind kind, QString label) {
@@ -294,23 +253,6 @@ bool InputController::replaceSelection(QString text, EditTransaction::Kind kind,
   nextDocument.replace(sourceStart, sourceEnd - sourceStart, text);
   applyEdit(kind, label, std::move(nextDocument), sourceStart + text.size());
   return true;
-}
-
-QString InputController::plainTextForMarkdownRange(qsizetype start, qsizetype end) const {
-  if (!session_ || start < 0 || end <= start) {
-    return {};
-  }
-
-  const QString markdown = session_->markdownText().mid(start, end - start);
-  ParseResult result = CmarkGfmParser().parseDocument(QStringView(markdown), ParseOptions());
-  if (!result.root) {
-    return markdown;
-  }
-  QString text = plainTextForNode(*result.root);
-  while (text.endsWith(QLatin1Char('\n'))) {
-    text.chop(1);
-  }
-  return text;
 }
 
 bool InputController::handleInputMethod(QInputMethodEvent* event) {
@@ -342,6 +284,14 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
       return deleteBackward();
     case Qt::Key_Delete:
       return deleteForward();
+    case Qt::Key_Left:
+      return moveCursorHorizontal(-1, event->modifiers().testFlag(Qt::ShiftModifier));
+    case Qt::Key_Right:
+      return moveCursorHorizontal(1, event->modifiers().testFlag(Qt::ShiftModifier));
+    case Qt::Key_Up:
+      return moveCursorVertical(-1, event->modifiers().testFlag(Qt::ShiftModifier));
+    case Qt::Key_Down:
+      return moveCursorVertical(1, event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_Escape:
       if (codeFenceController_ && codeFenceController_->isEditing()) {
         return codeFenceController_->exitEditMode();
@@ -710,6 +660,59 @@ bool InputController::selectionSourceRange(qsizetype& start, qsizetype& end) con
   return start < end;
 }
 
+bool InputController::blockSelectionSourceRange(qsizetype& start, qsizetype& end) const {
+  if (!selection_ || !selection_->hasCursor() || !session_ || selection_->selection().isCollapsed()) {
+    return false;
+  }
+
+  const SelectionRange range = selection_->selection();
+  MarkdownNode* anchorNode = session_->document().node(range.anchor.blockId);
+  MarkdownNode* focusNode = session_->document().node(range.focus.blockId);
+  if (!anchorNode || !focusNode) {
+    return false;
+  }
+
+  qsizetype anchorStart = -1;
+  qsizetype anchorEnd = -1;
+  qsizetype focusStart = -1;
+  qsizetype focusEnd = -1;
+  if (!blockSourceRange(*anchorNode, anchorStart, anchorEnd) || !blockSourceRange(*focusNode, focusStart, focusEnd)) {
+    return false;
+  }
+
+  if (anchorStart < focusStart || (anchorStart == focusStart && range.anchor.text.textOffset <= range.focus.text.textOffset)) {
+    start = anchorStart + (anchorNode == focusNode ? qBound<qsizetype>(0, range.anchor.text.textOffset, anchorEnd - anchorStart) : 0);
+    end = focusEnd;
+    if (anchorNode == focusNode) {
+      end = anchorStart + qBound<qsizetype>(0, range.focus.text.textOffset, anchorEnd - anchorStart);
+    }
+  } else {
+    start = focusStart + (anchorNode == focusNode ? qBound<qsizetype>(0, range.focus.text.textOffset, focusEnd - focusStart) : 0);
+    end = anchorEnd;
+    if (anchorNode == focusNode) {
+      end = focusStart + qBound<qsizetype>(0, range.anchor.text.textOffset, focusEnd - focusStart);
+    }
+  }
+  return start < end;
+}
+
+bool InputController::blockSourceRange(const MarkdownNode& node, qsizetype& start, qsizetype& end) const {
+  if (!session_) {
+    return false;
+  }
+  const SourceRange range = node.sourceRange();
+  if (range.lineStart <= 0 || range.lineEnd < range.lineStart) {
+    return false;
+  }
+  const QString markdown = session_->markdownText();
+  start = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
+  end = sourceOffsetForLineEnd(markdown, range.lineEnd);
+  if (end >= 0 && range.lineEnd > range.lineStart && end < markdown.size()) {
+    end = qMin<qsizetype>(markdown.size(), end);
+  }
+  return start >= 0 && end >= start;
+}
+
 bool InputController::isPlainParagraph(const MarkdownNode& node, const QString& sourceText) const {
   return node.type() == BlockType::Paragraph && isPlainInlineEditable(node, sourceText);
 }
@@ -815,6 +818,22 @@ CursorPosition InputController::cursorFor(NodeId blockId, qsizetype offset) cons
   return cursor;
 }
 
+CursorPosition InputController::cursorForNode(MarkdownNode& node, qsizetype offset) const {
+  CursorPosition cursor;
+  cursor.blockId = node.id();
+  cursor.text.nodeId = node.id();
+  cursor.text.textOffset = qBound<qsizetype>(0, offset, selectableTextLength(node));
+  if (node.type() == BlockType::Table) {
+    for (const auto& row : node.children()) {
+      for (const auto& cell : row->children()) {
+        cursor.text.nodeId = cell->id();
+        return cursor;
+      }
+    }
+  }
+  return cursor;
+}
+
 CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset) const {
   CursorPosition cursor;
   if (!session_) {
@@ -848,6 +867,102 @@ MarkdownNode* InputController::paragraphAtSourceOffset(MarkdownNode& node, qsize
     }
   }
   return nullptr;
+}
+
+MarkdownNode* InputController::selectableBlockByDirection(NodeId current, int direction) const {
+  if (!session_) {
+    return nullptr;
+  }
+  const auto& blocks = session_->document().root().children();
+  for (qsizetype i = 0; i < blocks.size(); ++i) {
+    if (blocks.at(i)->id() != current) {
+      continue;
+    }
+    const qsizetype next = i + direction;
+    if (next >= 0 && next < blocks.size()) {
+      return blocks.at(next).get();
+    }
+    return nullptr;
+  }
+  return nullptr;
+}
+
+qsizetype InputController::selectableTextLength(const MarkdownNode& node) const {
+  switch (node.type()) {
+    case BlockType::Paragraph:
+    case BlockType::Heading:
+      return plainTextForInlines(node.inlines()).size();
+    case BlockType::ListItem:
+      return plainTextForNode(node).size();
+    case BlockType::CodeFence:
+    case BlockType::MathBlock:
+    case BlockType::HtmlBlock:
+      return node.literal().size();
+    case BlockType::Table:
+      return 1;
+    default:
+      return 0;
+  }
+}
+
+bool InputController::moveCursorHorizontal(int direction, bool extendSelection) {
+  if (!selection_ || !selection_->hasCursor() || !session_ || direction == 0) {
+    return false;
+  }
+
+  CursorPosition current = selection_->cursorPosition();
+  MarkdownNode* node = session_->document().node(current.blockId);
+  if (!node) {
+    return false;
+  }
+
+  const qsizetype length = selectableTextLength(*node);
+  qsizetype nextOffset = current.text.textOffset + direction;
+  if (nextOffset < 0) {
+    if (MarkdownNode* previous = selectableBlockByDirection(current.blockId, -1)) {
+      setCursorOrExtend(cursorForNode(*previous, selectableTextLength(*previous)), extendSelection);
+      return true;
+    }
+    nextOffset = 0;
+  } else if (nextOffset > length) {
+    if (MarkdownNode* next = selectableBlockByDirection(current.blockId, 1)) {
+      setCursorOrExtend(cursorForNode(*next, 0), extendSelection);
+      return true;
+    }
+    nextOffset = length;
+  }
+
+  setCursorOrExtend(cursorForNode(*node, nextOffset), extendSelection);
+  return true;
+}
+
+bool InputController::moveCursorVertical(int direction, bool extendSelection) {
+  if (!selection_ || !selection_->hasCursor() || !session_ || direction == 0) {
+    return false;
+  }
+  MarkdownNode* target = selectableBlockByDirection(selection_->cursorPosition().blockId, direction);
+  if (!target) {
+    return false;
+  }
+  const qsizetype offset = direction > 0 ? 0 : selectableTextLength(*target);
+  setCursorOrExtend(cursorForNode(*target, offset), extendSelection);
+  return true;
+}
+
+void InputController::setCursorOrExtend(CursorPosition cursor, bool extendSelection) {
+  if (!selection_ || !cursor.isValid()) {
+    return;
+  }
+  if (!extendSelection) {
+    selection_->setCursorPosition(cursor);
+    return;
+  }
+  SelectionRange range = selection_->selection();
+  if (!range.anchor.isValid()) {
+    range.anchor = selection_->cursorPosition();
+  }
+  range.focus = cursor;
+  selection_->setSelection(range);
 }
 
 void InputController::applyEdit(

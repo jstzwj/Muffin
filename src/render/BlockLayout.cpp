@@ -387,6 +387,9 @@ QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection,
     case BlockType::HtmlBlock:
     case BlockType::MathBlock:
       return literalSelectionRects(selection.startOffset(), selection.endOffset(), theme);
+    case BlockType::Table:
+      rects.push_back(rect_.adjusted(-1.0, -1.0, 1.0, 1.0));
+      return rects;
     default:
       return rects;
   }
@@ -416,6 +419,11 @@ QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset,
     case BlockType::HtmlBlock:
     case BlockType::MathBlock:
       return literalSelectionRects(startOffset, endOffset, theme);
+    case BlockType::Table:
+      if (startOffset != endOffset) {
+        rects.push_back(rect_.adjusted(-1.0, -1.0, 1.0, 1.0));
+      }
+      return rects;
     default:
       return rects;
   }
@@ -523,6 +531,9 @@ HitTestResult BlockLayout::hitTable(QPointF documentPos, const RenderTheme& them
         result.tableRow = rowIndex;
         result.tableColumn = columnIndex;
         result.textOffset = cell.text.hitTestTextOffset(documentPos - cell.rect.marginsRemoved(theme.tableCellPadding()).topLeft());
+        if (result.textOffset == 0 && documentPos.x() > cell.rect.center().x()) {
+          result.textOffset = 1;
+        }
         result.cursorRect = cell.text.cursorRect(result.textOffset).translated(cell.rect.marginsRemoved(theme.tableCellPadding()).topLeft());
         return result;
       }

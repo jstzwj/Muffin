@@ -44,6 +44,8 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
   tableController_.setSelectionController(&selection_);
   tableController_.setUndoStack(&undoStack_);
   tableController_.setBrushQueue(&brushQueue_);
+  clipboardController_.setDocumentSession(session_);
+  clipboardController_.setSelectionController(&selection_);
   clipboardController_.setInputController(&inputController_);
 
   if (view_) {

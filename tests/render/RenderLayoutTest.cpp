@@ -127,6 +127,17 @@ void testLayoutForTheme(const MarkdownDocument& document, const RenderTheme& the
   codeSelection.focus.text.textOffset = 5;
   require(!layout.block(code->id())->selectionRects(codeSelection, theme).isEmpty(),
           QStringLiteral("%1 code selection rects should not be empty").arg(themeName));
+  SelectionRange crossSelection;
+  crossSelection.anchor.blockId = paragraph->id();
+  crossSelection.anchor.text.nodeId = paragraph->id();
+  crossSelection.anchor.text.textOffset = 0;
+  crossSelection.focus.blockId = code->id();
+  crossSelection.focus.text.nodeId = code->id();
+  crossSelection.focus.text.textOffset = 5;
+  require(!layout.block(code->id())->selectionRectsForOffsets(0, 5, theme).isEmpty(),
+          QStringLiteral("%1 code cross-block selection rects should not be empty").arg(themeName));
+  require(!layout.block(table->id())->selectionRectsForOffsets(0, 1, theme).isEmpty(),
+          QStringLiteral("%1 table cross-block selection rects should not be empty").arg(themeName));
 
   const QRectF mathRect = layout.block(math->id())->rect();
   const HitTestResult mathHit = layout.hitTest(mathRect.center(), theme);
