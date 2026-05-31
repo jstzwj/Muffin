@@ -1,6 +1,10 @@
 #pragma once
 
 #include "app/DocumentSession.h"
+#include "blocks/code/CodeFenceController.h"
+#include "blocks/html/HtmlBlockController.h"
+#include "blocks/math/MathBlockController.h"
+#include "blocks/table/TableController.h"
 #include "commands/StylizeController.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
@@ -29,6 +33,10 @@ public:
   const UndoStack& undoStack() const;
   InputController& inputController();
   StylizeController& stylizeController();
+  CodeFenceController& codeFenceController();
+  HtmlBlockController& htmlBlockController();
+  MathBlockController& mathBlockController();
+  TableController& tableController();
   ClipboardController& clipboardController();
   BrushQueue& brushQueue();
 
@@ -40,10 +48,32 @@ public:
   bool toggleItalic();
   bool toggleCode();
   bool insertLink();
+  bool insertTableRowBefore();
+  bool insertTableRowAfter();
+  bool deleteTableRow();
+  bool moveTableRowUp();
+  bool moveTableRowDown();
+  bool insertTableColumnBefore();
+  bool insertTableColumnAfter();
+  bool deleteTableColumn();
+  bool moveTableColumnLeft();
+  bool moveTableColumnRight();
+  bool setTableColumnAlignment(TableAlignment alignment);
+  bool insertTable();
+  bool enterCodeFenceEditMode();
+  bool exitCodeFenceEditMode();
+  bool setCodeFenceLanguage(QString language);
+  bool enterHtmlBlockEditMode();
+  bool exitHtmlBlockEditMode();
+  bool setHtmlBlockSource(QString html);
+  bool enterMathBlockEditMode();
+  bool exitMathBlockEditMode();
+  bool setMathBlockTex(QString tex);
   bool copy();
   bool cut();
   bool paste();
   void clearHistoryAndSelection();
+  void activateHit(HitTestResult hit);
 
 signals:
   void cursorChanged(HitTestResult hit);
@@ -59,6 +89,10 @@ private:
   BrushQueue brushQueue_;
   InputController inputController_;
   StylizeController stylizeController_;
+  CodeFenceController codeFenceController_;
+  HtmlBlockController htmlBlockController_;
+  MathBlockController mathBlockController_;
+  TableController tableController_;
   ClipboardController clipboardController_;
 };
 

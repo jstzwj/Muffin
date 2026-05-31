@@ -51,6 +51,7 @@ private:
   QRectF documentViewportRect() const;
   qreal scrollY() const;
   void applyScrollBarStyle();
+  void paintCurrentTableCell(QPainter& painter) const;
   void paintSelection(QPainter& painter) const;
   void paintInsertionCursor(QPainter& painter) const;
   HitTestResult hitForCursorPosition(CursorPosition position) const;

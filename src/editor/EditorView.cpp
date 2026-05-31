@@ -7,10 +7,37 @@
 #include <QWheelEvent>
 #include <QMouseEvent>
 #include <QInputMethodEvent>
+#include <QFontMetricsF>
 
 #include <cmath>
 
 namespace muffin {
+namespace {
+
+QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin) {
+  const QFontMetricsF metrics(font);
+  const qreal lineHeight = qMax<qreal>(14.0, metrics.height());
+  offset = qBound<qsizetype>(0, offset, literal.size());
+
+  qsizetype lineStart = 0;
+  int line = 0;
+  for (qsizetype i = 0; i < offset && i < literal.size(); ++i) {
+    if (literal.at(i) == QLatin1Char('\n')) {
+      ++line;
+      lineStart = i + 1;
+    }
+  }
+
+  const qreal x = metrics.horizontalAdvance(literal.mid(lineStart, offset - lineStart));
+  return QRectF(origin.x() + x, origin.y() + line * lineHeight, 1.0, lineHeight);
+}
+
+bool isSelectableZone(HitTestResult::Zone zone) {
+  return zone == HitTestResult::Zone::Text || zone == HitTestResult::Zone::Code || zone == HitTestResult::Zone::Math ||
+         zone == HitTestResult::Zone::Html;
+}
+
+}  // namespace
 
 EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(std::make_unique<DocumentLayout>()) {
   setFrameShape(QFrame::NoFrame);
@@ -116,6 +143,7 @@ void EditorView::paintEvent(QPaintEvent* event) {
   painter.setRenderHint(QPainter::Antialiasing, true);
   painter.setRenderHint(QPainter::TextAntialiasing, true);
   paintSelection(painter);
+  paintCurrentTableCell(painter);
   for (const BlockLayout* block : blocks) {
     block->paint(painter, theme_, scrollY());
   }
@@ -137,7 +165,7 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
     const HitTestResult hit = hitTest(event->position());
     setCursorHit(hit);
     emit blockClicked(hit);
-    if (hit.isValid() && hit.zone == HitTestResult::Zone::Text) {
+    if (hit.isValid() && isSelectableZone(hit.zone)) {
       draggingSelection_ = true;
       dragAnchorHit_ = hit;
     }
@@ -291,6 +319,29 @@ void EditorView::paintSelection(QPainter& painter) const {
   painter.restore();
 }
 
+void EditorView::paintCurrentTableCell(QPainter& painter) const {
+  if (!layout_ || cursorHit_.zone != HitTestResult::Zone::TableCell || cursorHit_.tableRow < 0 || cursorHit_.tableColumn < 0) {
+    return;
+  }
+
+  const BlockLayout* table = layout_->block(cursorHit_.blockId);
+  if (!table || table->type() != BlockType::Table) {
+    return;
+  }
+
+  QRectF rect = table->tableCellRect(cursorHit_.tableRow, cursorHit_.tableColumn);
+  if (rect.isEmpty()) {
+    return;
+  }
+  rect.translate(0, -scrollY());
+
+  painter.save();
+  painter.setPen(QPen(theme_.linkColor(), 1.4));
+  painter.setBrush(QColor(79, 143, 247, 28));
+  painter.drawRect(rect.adjusted(0.5, 0.5, -0.5, -0.5));
+  painter.restore();
+}
+
 void EditorView::paintInsertionCursor(QPainter& painter) const {
   if (!cursorVisible_ || !cursorHit_.isValid()) {
     return;
@@ -344,12 +395,51 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
       break;
     case BlockType::CodeFence:
       hit.zone = HitTestResult::Zone::Code;
+      hit.cursorRect = literalCursorRectForOffset(block->literal(), position.text.textOffset, theme_.codeFont(),
+                                                  block->rect().marginsRemoved(theme_.codePadding()).topLeft());
       break;
     case BlockType::MathBlock:
       hit.zone = HitTestResult::Zone::Math;
+      hit.cursorRect = literalCursorRectForOffset(block->literal(), position.text.textOffset, theme_.mathFont(),
+                                                  block->rect().marginsRemoved(theme_.codePadding()).topLeft());
       break;
     case BlockType::HtmlBlock:
       hit.zone = HitTestResult::Zone::Html;
+      hit.cursorRect = literalCursorRectForOffset(block->literal(), position.text.textOffset, theme_.codeFont(),
+                                                  block->rect().marginsRemoved(theme_.codePadding()).topLeft());
+      break;
+    case BlockType::Table:
+      hit.zone = HitTestResult::Zone::TableCell;
+      hit.tableRow = -1;
+      hit.tableColumn = -1;
+      for (int row = 0; row < static_cast<int>(block->tableRows().size()); ++row) {
+        const auto& tableRow = block->tableRows().at(static_cast<size_t>(row));
+        for (int column = 0; column < static_cast<int>(tableRow.cells.size()); ++column) {
+          if (tableRow.cells.at(static_cast<size_t>(column)).nodeId == hit.textNodeId) {
+            hit.tableRow = row;
+            hit.tableColumn = column;
+            break;
+          }
+        }
+        if (hit.tableRow >= 0) {
+          break;
+        }
+      }
+      if (hit.tableRow >= 0 && hit.tableColumn >= 0) {
+        const QRectF cellRect = block->tableCellRect(hit.tableRow, hit.tableColumn);
+        for (const auto& tableRow : block->tableRows()) {
+          for (const auto& cell : tableRow.cells) {
+            if (cell.nodeId == hit.textNodeId) {
+              const QRectF contentRect = cell.rect.marginsRemoved(theme_.tableCellPadding());
+              hit.cursorRect = cell.text.cursorRect(position.text.textOffset).translated(contentRect.topLeft());
+              break;
+            }
+          }
+        }
+        if (hit.cursorRect.isEmpty()) {
+          hit.cursorRect = QRectF(cellRect.left() + 6.0, cellRect.top() + 4.0, 1.0, qMax<qreal>(14.0, cellRect.height() - 8.0));
+        }
+      }
       break;
     default:
       break;
@@ -424,7 +514,10 @@ void EditorView::updateDragSelection(QPointF viewportPos) {
   }
 
   const HitTestResult focusHit = hitTest(viewportPos);
-  if (!focusHit.isValid() || focusHit.zone != HitTestResult::Zone::Text) {
+  if (!focusHit.isValid() || !isSelectableZone(focusHit.zone) || focusHit.zone != dragAnchorHit_.zone) {
+    return;
+  }
+  if (focusHit.zone != HitTestResult::Zone::Text && focusHit.blockId != dragAnchorHit_.blockId) {
     return;
   }
 
@@ -437,7 +530,9 @@ void EditorView::updateDragSelection(QPointF viewportPos) {
 
 void EditorView::updateMouseCursor(QPointF viewportPos) {
   const HitTestResult hit = hitTest(viewportPos);
-  if (hit.isValid() && hit.zone == HitTestResult::Zone::Text) {
+  if (hit.isValid() &&
+      (hit.zone == HitTestResult::Zone::Text || hit.zone == HitTestResult::Zone::Code || hit.zone == HitTestResult::Zone::Math ||
+       hit.zone == HitTestResult::Zone::Html)) {
     viewport()->setCursor(Qt::IBeamCursor);
   } else {
     viewport()->unsetCursor();

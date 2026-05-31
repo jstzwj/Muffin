@@ -82,6 +82,20 @@ add_executable(Muffin
 )
 
 set(MUFFIN_UI_SOURCES
+  src/blocks/code/CodeFenceController.cpp
+  src/blocks/code/CodeFenceController.h
+  src/blocks/html/HtmlBlockController.cpp
+  src/blocks/html/HtmlBlockController.h
+  src/blocks/html/HtmlSanitizer.cpp
+  src/blocks/html/HtmlSanitizer.h
+  src/blocks/math/MathBlockController.cpp
+  src/blocks/math/MathBlockController.h
+  src/blocks/math/MathRenderer.cpp
+  src/blocks/math/MathRenderer.h
+  src/blocks/table/TableController.cpp
+  src/blocks/table/TableController.h
+  src/blocks/table/TableModelOps.cpp
+  src/blocks/table/TableModelOps.h
   src/commands/StylizeController.cpp
   src/commands/StylizeController.h
   src/edit/EditTransaction.cpp
@@ -222,3 +236,47 @@ target_link_libraries(MuffinEditorControllerTest
 )
 
 add_test(NAME MuffinEditorControllerTest COMMAND MuffinEditorControllerTest)
+
+add_executable(MuffinTableModelOpsTest
+  tests/blocks/TableModelOpsTest.cpp
+)
+
+target_link_libraries(MuffinTableModelOpsTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinTableModelOpsTest COMMAND MuffinTableModelOpsTest)
+
+add_executable(MuffinCodeFenceControllerTest
+  tests/blocks/CodeFenceControllerTest.cpp
+)
+
+target_link_libraries(MuffinCodeFenceControllerTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinCodeFenceControllerTest COMMAND MuffinCodeFenceControllerTest)
+
+add_executable(MuffinMathBlockControllerTest
+  tests/blocks/MathBlockControllerTest.cpp
+)
+
+target_link_libraries(MuffinMathBlockControllerTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinMathBlockControllerTest COMMAND MuffinMathBlockControllerTest)
+
+add_executable(MuffinHtmlBlockControllerTest
+  tests/blocks/HtmlBlockControllerTest.cpp
+)
+
+target_link_libraries(MuffinHtmlBlockControllerTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinHtmlBlockControllerTest COMMAND MuffinHtmlBlockControllerTest)

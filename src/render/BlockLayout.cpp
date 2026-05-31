@@ -4,7 +4,113 @@
 #include <QPainter>
 #include <QTextOption>
 
+#include <cmath>
+
 namespace muffin {
+namespace {
+
+qsizetype literalOffsetForPoint(const QString& literal, QPointF localPos, const QFont& font) {
+  const QFontMetricsF metrics(font);
+  const qreal lineHeight = qMax<qreal>(1.0, metrics.height());
+  const int targetLine = qMax(0, static_cast<int>(std::floor(localPos.y() / lineHeight)));
+
+  qsizetype line = 0;
+  qsizetype lineStart = 0;
+  while (line < targetLine && lineStart < literal.size()) {
+    const qsizetype newline = literal.indexOf(QLatin1Char('\n'), lineStart);
+    if (newline < 0) {
+      lineStart = literal.size();
+      break;
+    }
+    lineStart = newline + 1;
+    ++line;
+  }
+
+  qsizetype lineEnd = literal.indexOf(QLatin1Char('\n'), lineStart);
+  if (lineEnd < 0) {
+    lineEnd = literal.size();
+  }
+
+  qsizetype offset = lineStart;
+  qreal bestDistance = std::numeric_limits<qreal>::max();
+  for (qsizetype candidate = lineStart; candidate <= lineEnd; ++candidate) {
+    const qreal x = metrics.horizontalAdvance(literal.mid(lineStart, candidate - lineStart));
+    const qreal distance = std::abs(localPos.x() - x);
+    if (distance <= bestDistance) {
+      bestDistance = distance;
+      offset = candidate;
+    }
+  }
+  return qBound<qsizetype>(0, offset, literal.size());
+}
+
+QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin) {
+  const QFontMetricsF metrics(font);
+  const qreal lineHeight = qMax<qreal>(14.0, metrics.height());
+  offset = qBound<qsizetype>(0, offset, literal.size());
+
+  qsizetype lineStart = 0;
+  int line = 0;
+  for (qsizetype i = 0; i < offset && i < literal.size(); ++i) {
+    if (literal.at(i) == QLatin1Char('\n')) {
+      ++line;
+      lineStart = i + 1;
+    }
+  }
+
+  const qreal x = metrics.horizontalAdvance(literal.mid(lineStart, offset - lineStart));
+  return QRectF(origin.x() + x, origin.y() + line * lineHeight, 1.0, lineHeight);
+}
+
+QVector<QRectF> literalSelectionRectsForRange(
+    const QString& literal,
+    qsizetype startOffset,
+    qsizetype endOffset,
+    const QFont& font,
+    QPointF origin,
+    qreal maxWidth) {
+  QVector<QRectF> rects;
+  startOffset = qBound<qsizetype>(0, startOffset, literal.size());
+  endOffset = qBound<qsizetype>(0, endOffset, literal.size());
+  if (startOffset > endOffset) {
+    qSwap(startOffset, endOffset);
+  }
+  if (startOffset == endOffset) {
+    return rects;
+  }
+
+  const QFontMetricsF metrics(font);
+  const qreal lineHeight = qMax<qreal>(14.0, metrics.height());
+  qsizetype lineStart = 0;
+  int line = 0;
+  while (lineStart <= literal.size()) {
+    qsizetype lineEnd = literal.indexOf(QLatin1Char('\n'), lineStart);
+    const bool hasNewline = lineEnd >= 0;
+    if (!hasNewline) {
+      lineEnd = literal.size();
+    }
+
+    const qsizetype rangeStart = qMax(startOffset, lineStart);
+    const qsizetype rangeEnd = qMin(endOffset, lineEnd);
+    if (rangeStart < rangeEnd) {
+      const qreal x1 = metrics.horizontalAdvance(literal.mid(lineStart, rangeStart - lineStart));
+      const qreal x2 = metrics.horizontalAdvance(literal.mid(lineStart, rangeEnd - lineStart));
+      rects.push_back(QRectF(origin.x() + x1, origin.y() + line * lineHeight, qMax<qreal>(1.0, x2 - x1), lineHeight));
+    } else if (endOffset > lineEnd && startOffset <= lineEnd && hasNewline) {
+      const qreal x = metrics.horizontalAdvance(literal.mid(lineStart, lineEnd - lineStart));
+      rects.push_back(QRectF(origin.x() + x, origin.y() + line * lineHeight, qMax<qreal>(1.0, qMin<qreal>(24.0, maxWidth - x)), lineHeight));
+    }
+
+    if (!hasNewline) {
+      break;
+    }
+    lineStart = lineEnd + 1;
+    ++line;
+  }
+  return rects;
+}
+
+}  // namespace
 
 BlockLayout::BlockLayout(NodeId id) : id_(std::move(id)) {}
 
@@ -128,6 +234,17 @@ std::vector<BlockLayout::TableRowLayout>& BlockLayout::tableRows() {
 
 const std::vector<BlockLayout::TableRowLayout>& BlockLayout::tableRows() const {
   return tableRows_;
+}
+
+QRectF BlockLayout::tableCellRect(int row, int column) const {
+  if (row < 0 || row >= static_cast<int>(tableRows_.size())) {
+    return {};
+  }
+  const TableRowLayout& tableRow = tableRows_.at(static_cast<size_t>(row));
+  if (column < 0 || column >= static_cast<int>(tableRow.cells.size())) {
+    return {};
+  }
+  return tableRow.cells.at(static_cast<size_t>(column)).rect;
 }
 
 void BlockLayout::paint(QPainter& painter, const RenderTheme& theme, qreal scrollY) const {
@@ -257,7 +374,7 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
 
 QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection, const RenderTheme& theme) const {
   QVector<QRectF> rects;
-  if (!selection.isSingleBlock() || selection.isCollapsed() || selection.anchor.blockId != id_ || !inlineLayout_) {
+  if (!selection.isSingleBlock() || selection.isCollapsed() || selection.anchor.blockId != id_) {
     return rects;
   }
 
@@ -266,8 +383,16 @@ QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection,
     case BlockType::Paragraph:
     case BlockType::ListItem:
       break;
+    case BlockType::CodeFence:
+    case BlockType::HtmlBlock:
+    case BlockType::MathBlock:
+      return literalSelectionRects(selection.startOffset(), selection.endOffset(), theme);
     default:
       return rects;
+  }
+
+  if (!inlineLayout_) {
+    return rects;
   }
 
   const qreal textLeft = !listMarker_.isEmpty() ? rect_.left() + theme.listIndent() : rect_.left();
@@ -281,17 +406,22 @@ QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection,
 
 QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const {
   QVector<QRectF> rects;
-  if (!inlineLayout_) {
-    return rects;
-  }
 
   switch (type_) {
     case BlockType::Heading:
     case BlockType::Paragraph:
     case BlockType::ListItem:
       break;
+    case BlockType::CodeFence:
+    case BlockType::HtmlBlock:
+    case BlockType::MathBlock:
+      return literalSelectionRects(startOffset, endOffset, theme);
     default:
       return rects;
+  }
+
+  if (!inlineLayout_) {
+    return rects;
   }
 
   const qreal textLeft = !listMarker_.isEmpty() ? rect_.left() + theme.listIndent() : rect_.left();
@@ -299,6 +429,19 @@ QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset,
   for (QRectF rect : inlineLayout_->selectionRects(startOffset, endOffset)) {
     rect.translate(origin);
     rects.push_back(rect.adjusted(-1.0, 0, 1.0, 0));
+  }
+  return rects;
+}
+
+QVector<QRectF> BlockLayout::literalSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const {
+  QFont font = theme.codeFont();
+  if (type_ == BlockType::MathBlock) {
+    font = theme.mathFont();
+  }
+  const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
+  QVector<QRectF> rects = literalSelectionRectsForRange(literal_, startOffset, endOffset, font, contentRect.topLeft(), contentRect.width());
+  for (QRectF& rect : rects) {
+    rect = rect.adjusted(-1.0, 0, 1.0, 0).intersected(contentRect.adjusted(0, 0, 1, 0));
   }
   return rects;
 }
@@ -329,15 +472,27 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
       break;
     case BlockType::CodeFence:
       result.zone = HitTestResult::Zone::Code;
-      result.cursorRect = QRectF(rect_.marginsRemoved(theme.codePadding()).topLeft(), QSizeF(1.0, rect_.height()));
+      {
+        const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
+        result.textOffset = literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont());
+        result.cursorRect = literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft());
+      }
       break;
     case BlockType::MathBlock:
       result.zone = HitTestResult::Zone::Math;
-      result.cursorRect = QRectF(rect_.marginsRemoved(theme.codePadding()).topLeft(), QSizeF(1.0, rect_.height()));
+      {
+        const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
+        result.textOffset = literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.mathFont());
+        result.cursorRect = literalCursorRectForOffset(literal_, result.textOffset, theme.mathFont(), contentRect.topLeft());
+      }
       break;
     case BlockType::HtmlBlock:
       result.zone = HitTestResult::Zone::Html;
-      result.cursorRect = QRectF(rect_.marginsRemoved(theme.codePadding()).topLeft(), QSizeF(1.0, rect_.height()));
+      {
+        const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
+        result.textOffset = literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont());
+        result.cursorRect = literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft());
+      }
       break;
     default:
       result.cursorRect = QRectF(rect_.topLeft(), QSizeF(1.0, rect_.height()));

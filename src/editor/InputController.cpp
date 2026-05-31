@@ -7,6 +7,10 @@
 #include "editor/EditorView.h"
 #include "editor/SelectionController.h"
 #include "edit/UndoStack.h"
+#include "blocks/code/CodeFenceController.h"
+#include "blocks/html/HtmlBlockController.h"
+#include "blocks/math/MathBlockController.h"
+#include "blocks/table/TableController.h"
 #include "parser/CmarkGfmParser.h"
 
 #include <QEvent>
@@ -110,6 +114,22 @@ void InputController::setBrushQueue(BrushQueue* brushQueue) {
   brushQueue_ = brushQueue;
 }
 
+void InputController::setTableController(TableController* tableController) {
+  tableController_ = tableController;
+}
+
+void InputController::setCodeFenceController(CodeFenceController* codeFenceController) {
+  codeFenceController_ = codeFenceController;
+}
+
+void InputController::setHtmlBlockController(HtmlBlockController* htmlBlockController) {
+  htmlBlockController_ = htmlBlockController;
+}
+
+void InputController::setMathBlockController(MathBlockController* mathBlockController) {
+  mathBlockController_ = mathBlockController;
+}
+
 void InputController::attach(EditorView* view) {
   if (view_ == view) {
     return;
@@ -134,6 +154,18 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
 }
 
 bool InputController::insertText(QString text) {
+  if (codeFenceController_ && codeFenceController_->isEditing()) {
+    return codeFenceController_->insertText(std::move(text));
+  }
+  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
+    return htmlBlockController_->insertText(std::move(text));
+  }
+  if (mathBlockController_ && mathBlockController_->isEditing()) {
+    return mathBlockController_->insertText(std::move(text));
+  }
+  if (tableController_ && tableController_->currentCell().isValid()) {
+    return tableController_->insertText(std::move(text));
+  }
   if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
     return replaceSelection(std::move(text), EditTransaction::Kind::InsertText, QStringLiteral("Replace Selection"));
   }
@@ -145,6 +177,18 @@ bool InputController::insertParagraphBreak() {
 }
 
 bool InputController::deleteBackward() {
+  if (codeFenceController_ && codeFenceController_->isEditing()) {
+    return codeFenceController_->deleteBackward();
+  }
+  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
+    return htmlBlockController_->deleteBackward();
+  }
+  if (mathBlockController_ && mathBlockController_->isEditing()) {
+    return mathBlockController_->deleteBackward();
+  }
+  if (tableController_ && tableController_->currentCell().isValid()) {
+    return tableController_->deleteBackward();
+  }
   if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
     return deleteSelection();
   }
@@ -152,6 +196,18 @@ bool InputController::deleteBackward() {
 }
 
 bool InputController::deleteForward() {
+  if (codeFenceController_ && codeFenceController_->isEditing()) {
+    return codeFenceController_->deleteForward();
+  }
+  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
+    return htmlBlockController_->deleteForward();
+  }
+  if (mathBlockController_ && mathBlockController_->isEditing()) {
+    return mathBlockController_->deleteForward();
+  }
+  if (tableController_ && tableController_->currentCell().isValid()) {
+    return tableController_->deleteForward();
+  }
   if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
     return deleteSelection();
   }
@@ -272,13 +328,42 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
 
   switch (event->key()) {
     case Qt::Key_Tab:
+      if (codeFenceController_ && codeFenceController_->isEditing()) {
+        return insertText(QStringLiteral("\t"));
+      }
+      if (htmlBlockController_ && htmlBlockController_->isEditing()) {
+        return insertText(QStringLiteral("  "));
+      }
+      if (mathBlockController_ && mathBlockController_->isEditing()) {
+        return insertText(QStringLiteral("  "));
+      }
       return event->modifiers().testFlag(Qt::ShiftModifier) ? outdentListItem() : indentListItem();
     case Qt::Key_Backspace:
       return deleteBackward();
     case Qt::Key_Delete:
       return deleteForward();
+    case Qt::Key_Escape:
+      if (codeFenceController_ && codeFenceController_->isEditing()) {
+        return codeFenceController_->exitEditMode();
+      }
+      if (htmlBlockController_ && htmlBlockController_->isEditing()) {
+        return htmlBlockController_->exitEditMode();
+      }
+      if (mathBlockController_ && mathBlockController_->isEditing()) {
+        return mathBlockController_->exitEditMode();
+      }
+      return false;
     case Qt::Key_Return:
     case Qt::Key_Enter:
+      if (codeFenceController_ && codeFenceController_->isEditing()) {
+        return insertText(QStringLiteral("\n"));
+      }
+      if (htmlBlockController_ && htmlBlockController_->isEditing()) {
+        return insertText(QStringLiteral("\n"));
+      }
+      if (mathBlockController_ && mathBlockController_->isEditing()) {
+        return insertText(QStringLiteral("\n"));
+      }
       return insertParagraphBreak();
     default: {
       const QString text = printableText(event);

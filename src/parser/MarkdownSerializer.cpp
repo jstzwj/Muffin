@@ -169,7 +169,9 @@ QString MarkdownSerializer::serializeTable(const MarkdownNode& node) const {
 }
 
 QString MarkdownSerializer::serializeCodeFence(const MarkdownNode& node) const {
-  return QStringLiteral("```%1\n%2\n```").arg(node.codeLanguage(), node.literal());
+  const QString literal = node.literal();
+  const QString closingSeparator = literal.endsWith(QLatin1Char('\n')) ? QString() : QStringLiteral("\n");
+  return QStringLiteral("```%1\n%2%3```").arg(node.codeLanguage(), literal, closingSeparator);
 }
 
 QString MarkdownSerializer::escapeTableCell(QString text) const {

@@ -15,6 +15,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QInputDialog>
 #include <QPlainTextEdit>
 #include <QSettings>
 #include <QSplitter>
@@ -177,10 +178,15 @@ void MainWindow::setupMenuBar() {
   setupFileMenu();
   setupEditMenu();
   setupParagraphMenu();
+  setupTableMenu();
+  setupCodeMenu();
+  setupHtmlMenu();
+  setupMathMenu();
   setupFormatMenu();
   setupViewMenu();
   setupThemeMenu();
   setupHelpMenu();
+  normalizeComplexBlockMenuText();
 }
 
 void MainWindow::setupStatusBar() {
@@ -224,6 +230,10 @@ void MainWindow::setupConnections() {
     updateStatus();
   });
   connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateStatus);
+  connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateTableActions);
+  connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateCodeActions);
+  connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateHtmlActions);
+  connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateMathActions);
   connect(&themeManager_, &ThemeManager::themeChanged, this, [this](const QString& name) {
     applyTheme(name);
   });
@@ -308,6 +318,52 @@ void MainWindow::setupConnections() {
     }
   });
 
+  commands_.bind(QStringLiteral("table.insert_row_before"), [this] { editorController_.insertTableRowBefore(); });
+  commands_.bind(QStringLiteral("table.insert_row_after"), [this] { editorController_.insertTableRowAfter(); });
+  commands_.bind(QStringLiteral("table.delete_row"), [this] { editorController_.deleteTableRow(); });
+  commands_.bind(QStringLiteral("table.move_row_up"), [this] { editorController_.moveTableRowUp(); });
+  commands_.bind(QStringLiteral("table.move_row_down"), [this] { editorController_.moveTableRowDown(); });
+  commands_.bind(QStringLiteral("table.insert_column_before"), [this] { editorController_.insertTableColumnBefore(); });
+  commands_.bind(QStringLiteral("table.insert_column_after"), [this] { editorController_.insertTableColumnAfter(); });
+  commands_.bind(QStringLiteral("table.delete_column"), [this] { editorController_.deleteTableColumn(); });
+  commands_.bind(QStringLiteral("table.move_column_left"), [this] { editorController_.moveTableColumnLeft(); });
+  commands_.bind(QStringLiteral("table.move_column_right"), [this] { editorController_.moveTableColumnRight(); });
+  commands_.bind(QStringLiteral("table.align_left"), [this] { editorController_.setTableColumnAlignment(TableAlignment::Left); });
+  commands_.bind(QStringLiteral("table.align_center"), [this] { editorController_.setTableColumnAlignment(TableAlignment::Center); });
+  commands_.bind(QStringLiteral("table.align_right"), [this] { editorController_.setTableColumnAlignment(TableAlignment::Right); });
+  commands_.bind(QStringLiteral("table.align_none"), [this] { editorController_.setTableColumnAlignment(TableAlignment::None); });
+  commands_.bind(QStringLiteral("table.insert_table"), [this] { editorController_.insertTable(); });
+
+  commands_.bind(QStringLiteral("code.enter_edit"), [this] { editorController_.enterCodeFenceEditMode(); });
+  commands_.bind(QStringLiteral("code.exit_edit"), [this] { editorController_.exitCodeFenceEditMode(); });
+  commands_.bind(QStringLiteral("code.set_language"), [this] {
+    bool ok = false;
+    const QString language = QInputDialog::getText(this, tr("Code Language"), tr("Language:"), QLineEdit::Normal, QString(), &ok);
+    if (ok) {
+      editorController_.setCodeFenceLanguage(language);
+    }
+  });
+
+  commands_.bind(QStringLiteral("html.enter_edit"), [this] { editorController_.enterHtmlBlockEditMode(); });
+  commands_.bind(QStringLiteral("html.exit_edit"), [this] { editorController_.exitHtmlBlockEditMode(); });
+  commands_.bind(QStringLiteral("html.set_source"), [this] {
+    bool ok = false;
+    const QString html = QInputDialog::getMultiLineText(this, tr("HTML Source"), tr("HTML:"), QString(), &ok);
+    if (ok) {
+      editorController_.setHtmlBlockSource(html);
+    }
+  });
+
+  commands_.bind(QStringLiteral("math.enter_edit"), [this] { editorController_.enterMathBlockEditMode(); });
+  commands_.bind(QStringLiteral("math.exit_edit"), [this] { editorController_.exitMathBlockEditMode(); });
+  commands_.bind(QStringLiteral("math.set_tex"), [this] {
+    bool ok = false;
+    const QString tex = QInputDialog::getMultiLineText(this, tr("Math TeX"), tr("TeX:"), QString(), &ok);
+    if (ok) {
+      editorController_.setMathBlockTex(tex);
+    }
+  });
+
   commands_.bind(QStringLiteral("view.word_wrap"), [this] {
     editor_->setWordWrapEnabled(commands_.action(QStringLiteral("view.word_wrap"))->isChecked());
   });
@@ -364,6 +420,10 @@ void MainWindow::setupConnections() {
   });
 
   updateFileActions();
+  updateTableActions();
+  updateCodeActions();
+  updateHtmlActions();
+  updateMathActions();
   rebuildRecentFilesMenu();
   updateSidebarMode();
   updateViewMode();
@@ -394,6 +454,40 @@ void MainWindow::applyTyporaLikeChrome() {
       "}"
       "QToolButton:hover { background: #eeeeee; }"
       "QToolButton:checked { color: #111111; background: #e9e9e9; }"));
+}
+
+void MainWindow::normalizeComplexBlockMenuText() {
+  for (QAction* menuAction : menuBar()->actions()) {
+    if (!menuAction || !menuAction->menu()) {
+      continue;
+    }
+    QMenu* menu = menuAction->menu();
+    if (menu->actions().contains(commands_.action(QStringLiteral("math.enter_edit")))) {
+      menuAction->setText(QString::fromUtf8("\xe5\x85\xac\xe5\xbc\x8f(&M)"));
+    }
+    if (menu->actions().contains(commands_.action(QStringLiteral("html.enter_edit")))) {
+      menuAction->setText(QStringLiteral("HTML(&H)"));
+    }
+  }
+
+  if (QAction* action = commands_.action(QStringLiteral("math.enter_edit"))) {
+    action->setText(QString::fromUtf8("\xe8\xbf\x9b\xe5\x85\xa5\xe7\xbc\x96\xe8\xbe\x91"));
+  }
+  if (QAction* action = commands_.action(QStringLiteral("math.exit_edit"))) {
+    action->setText(QString::fromUtf8("\xe9\x80\x80\xe5\x87\xba\xe7\xbc\x96\xe8\xbe\x91"));
+  }
+  if (QAction* action = commands_.action(QStringLiteral("math.set_tex"))) {
+    action->setText(QString::fromUtf8("\xe8\xae\xbe\xe7\xbd\xae TeX..."));
+  }
+  if (QAction* action = commands_.action(QStringLiteral("html.enter_edit"))) {
+    action->setText(QString::fromUtf8("\xe8\xbf\x9b\xe5\x85\xa5\xe7\xbc\x96\xe8\xbe\x91"));
+  }
+  if (QAction* action = commands_.action(QStringLiteral("html.exit_edit"))) {
+    action->setText(QString::fromUtf8("\xe9\x80\x80\xe5\x87\xba\xe7\xbc\x96\xe8\xbe\x91"));
+  }
+  if (QAction* action = commands_.action(QStringLiteral("html.set_source"))) {
+    action->setText(QString::fromUtf8("\xe8\xae\xbe\xe7\xbd\xae HTML..."));
+  }
 }
 
 void MainWindow::setupFileMenu() {
@@ -508,6 +602,49 @@ void MainWindow::setupFormatMenu() {
   addAction(format, QStringLiteral("format.clear"), QStringLiteral("清除样式"), QKeySequence(QStringLiteral("Ctrl+\\")), false);
 }
 
+void MainWindow::setupTableMenu() {
+  QMenu* table = menuBar()->addMenu(QStringLiteral("表格(&B)"));
+  addAction(table, QStringLiteral("table.insert_table"), QStringLiteral("插入表格"));
+  table->addSeparator();
+  addAction(table, QStringLiteral("table.insert_row_before"), QStringLiteral("在上方插入行"));
+  addAction(table, QStringLiteral("table.insert_row_after"), QStringLiteral("在下方插入行"));
+  addAction(table, QStringLiteral("table.delete_row"), QStringLiteral("删除行"));
+  addAction(table, QStringLiteral("table.move_row_up"), QStringLiteral("上移行"));
+  addAction(table, QStringLiteral("table.move_row_down"), QStringLiteral("下移行"));
+  table->addSeparator();
+  addAction(table, QStringLiteral("table.insert_column_before"), QStringLiteral("在左侧插入列"));
+  addAction(table, QStringLiteral("table.insert_column_after"), QStringLiteral("在右侧插入列"));
+  addAction(table, QStringLiteral("table.delete_column"), QStringLiteral("删除列"));
+  addAction(table, QStringLiteral("table.move_column_left"), QStringLiteral("左移列"));
+  addAction(table, QStringLiteral("table.move_column_right"), QStringLiteral("右移列"));
+  table->addSeparator();
+  addAction(table, QStringLiteral("table.align_left"), QStringLiteral("左对齐"));
+  addAction(table, QStringLiteral("table.align_center"), QStringLiteral("居中对齐"));
+  addAction(table, QStringLiteral("table.align_right"), QStringLiteral("右对齐"));
+  addAction(table, QStringLiteral("table.align_none"), QStringLiteral("清除对齐"));
+}
+
+void MainWindow::setupCodeMenu() {
+  QMenu* code = menuBar()->addMenu(QStringLiteral("代码(&C)"));
+  addAction(code, QStringLiteral("code.enter_edit"), QStringLiteral("进入编辑"));
+  addAction(code, QStringLiteral("code.exit_edit"), QStringLiteral("退出编辑"));
+  addAction(code, QStringLiteral("code.set_language"), QStringLiteral("设置语言..."));
+}
+
+void MainWindow::setupMathMenu() {
+  QMenu* math = menuBar()->addMenu(QStringLiteral("å…¬å¼(&M)"));
+  addAction(math, QStringLiteral("math.enter_edit"), QStringLiteral("è¿›å…¥ç¼–è¾‘"));
+  addAction(math, QStringLiteral("math.exit_edit"), QStringLiteral("é€€å‡ºç¼–è¾‘"));
+  addAction(math, QStringLiteral("math.set_tex"), QStringLiteral("è®¾ç½® TeX..."));
+}
+
+void MainWindow::setupHtmlMenu() {
+  QMenu* html = menuBar()->addMenu(QStringLiteral("HTML(&H)"));
+  addAction(html, QStringLiteral("html.enter_edit"), QStringLiteral("è¿›å…¥ç¼–è¾‘"));
+  addAction(html, QStringLiteral("html.exit_edit"), QStringLiteral("é€€å‡ºç¼–è¾‘"));
+  addAction(html, QStringLiteral("html.set_source"), QStringLiteral("è®¾ç½® HTML..."));
+}
+
 void MainWindow::setupViewMenu() {
   QMenu* view = menuBar()->addMenu(QStringLiteral("视图(&V)"));
   addCheckAction(view, QStringLiteral("view.sidebar"), QStringLiteral("显示 / 隐藏侧边栏"), QKeySequence(QStringLiteral("Ctrl+Shift+L")), false);
@@ -593,11 +730,17 @@ void MainWindow::updateCursorStatus(int line, int column) {
 void MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {
   if (!hit.isValid()) {
     renderCursorStatus_.clear();
+  } else if (hit.zone == HitTestResult::Zone::TableCell) {
+    renderCursorStatus_ = QStringLiteral("表格 %1:%2 offset %3").arg(hit.tableRow + 1).arg(hit.tableColumn + 1).arg(hit.textOffset);
   } else {
     renderCursorStatus_ = QStringLiteral("%1 %2 offset %3")
                               .arg(zoneName(hit.zone), hit.blockId.toString())
                               .arg(hit.textOffset);
   }
+  updateTableActions();
+  updateCodeActions();
+  updateHtmlActions();
+  updateMathActions();
   updateStatus();
 }
 
@@ -630,6 +773,51 @@ void MainWindow::updateFileActions() {
   const bool hasFile = !session_.filePath().isEmpty();
   commands_.setEnabled(QStringLiteral("file.properties"), hasFile);
   commands_.setEnabled(QStringLiteral("file.reveal"), hasFile);
+}
+
+void MainWindow::updateTableActions() {
+  const bool enabled = !sourceModeEnabled() && editorController_.tableController().currentCell().isValid();
+  const QStringList ids = {
+      QStringLiteral("table.insert_row_before"),
+      QStringLiteral("table.insert_row_after"),
+      QStringLiteral("table.delete_row"),
+      QStringLiteral("table.move_row_up"),
+      QStringLiteral("table.move_row_down"),
+      QStringLiteral("table.insert_column_before"),
+      QStringLiteral("table.insert_column_after"),
+      QStringLiteral("table.delete_column"),
+      QStringLiteral("table.move_column_left"),
+      QStringLiteral("table.move_column_right"),
+      QStringLiteral("table.align_left"),
+      QStringLiteral("table.align_center"),
+      QStringLiteral("table.align_right"),
+      QStringLiteral("table.align_none"),
+  };
+  for (const QString& id : ids) {
+    commands_.setEnabled(id, enabled);
+  }
+  commands_.setEnabled(QStringLiteral("table.insert_table"), !sourceModeEnabled());
+}
+
+void MainWindow::updateCodeActions() {
+  const bool codeActive = !sourceModeEnabled() && editorController_.codeFenceController().currentCodeFenceId().isValid();
+  commands_.setEnabled(QStringLiteral("code.enter_edit"), codeActive);
+  commands_.setEnabled(QStringLiteral("code.exit_edit"), !sourceModeEnabled() && editorController_.codeFenceController().isEditing());
+  commands_.setEnabled(QStringLiteral("code.set_language"), codeActive || (!sourceModeEnabled() && editorController_.codeFenceController().isEditing()));
+}
+
+void MainWindow::updateHtmlActions() {
+  const bool htmlActive = !sourceModeEnabled() && editorController_.htmlBlockController().currentHtmlBlockId().isValid();
+  commands_.setEnabled(QStringLiteral("html.enter_edit"), htmlActive);
+  commands_.setEnabled(QStringLiteral("html.exit_edit"), !sourceModeEnabled() && editorController_.htmlBlockController().isEditing());
+  commands_.setEnabled(QStringLiteral("html.set_source"), htmlActive || (!sourceModeEnabled() && editorController_.htmlBlockController().isEditing()));
+}
+
+void MainWindow::updateMathActions() {
+  const bool mathActive = !sourceModeEnabled() && editorController_.mathBlockController().currentMathBlockId().isValid();
+  commands_.setEnabled(QStringLiteral("math.enter_edit"), mathActive);
+  commands_.setEnabled(QStringLiteral("math.exit_edit"), !sourceModeEnabled() && editorController_.mathBlockController().isEditing());
+  commands_.setEnabled(QStringLiteral("math.set_tex"), mathActive || (!sourceModeEnabled() && editorController_.mathBlockController().isEditing()));
 }
 
 bool MainWindow::sourceModeEnabled() const {

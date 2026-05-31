@@ -97,6 +97,10 @@ void testLayoutForTheme(const MarkdownDocument& document, const RenderTheme& the
   requireUsableRect(layout.block(table->id())->rect(), QStringLiteral("%1 table").arg(themeName));
   requireUsableRect(layout.block(code->id())->rect(), QStringLiteral("%1 code").arg(themeName));
   requireUsableRect(layout.block(math->id())->rect(), QStringLiteral("%1 math").arg(themeName));
+  require(!layout.block(code->id())->literal().endsWith(QLatin1Char('\n')),
+          QStringLiteral("%1 code display literal should hide structural trailing newline").arg(themeName));
+  require(layout.block(math->id())->rect().height() >= 20.0,
+          QStringLiteral("%1 math block height should leave room for displayed text").arg(themeName));
 
   const QRectF paragraphRect = layout.block(paragraph->id())->rect();
   const HitTestResult paragraphHit = layout.hitTest(paragraphRect.center(), theme);
@@ -114,6 +118,15 @@ void testLayoutForTheme(const MarkdownDocument& document, const RenderTheme& the
   const HitTestResult codeHit = layout.hitTest(codeRect.center(), theme);
   require(codeHit.isValid(), QStringLiteral("%1 code hit invalid").arg(themeName));
   require(codeHit.zone == HitTestResult::Zone::Code, QStringLiteral("%1 code hit should be code").arg(themeName));
+  SelectionRange codeSelection;
+  codeSelection.anchor.blockId = code->id();
+  codeSelection.anchor.text.nodeId = code->id();
+  codeSelection.anchor.text.textOffset = 0;
+  codeSelection.focus.blockId = code->id();
+  codeSelection.focus.text.nodeId = code->id();
+  codeSelection.focus.text.textOffset = 5;
+  require(!layout.block(code->id())->selectionRects(codeSelection, theme).isEmpty(),
+          QStringLiteral("%1 code selection rects should not be empty").arg(themeName));
 
   const QRectF mathRect = layout.block(math->id())->rect();
   const HitTestResult mathHit = layout.hitTest(mathRect.center(), theme);

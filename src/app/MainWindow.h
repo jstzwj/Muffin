@@ -52,10 +52,15 @@ private:
   void setupStatusBar();
   void setupConnections();
   void applyTyporaLikeChrome();
+  void normalizeComplexBlockMenuText();
 
   void setupFileMenu();
   void setupEditMenu();
   void setupParagraphMenu();
+  void setupTableMenu();
+  void setupCodeMenu();
+  void setupHtmlMenu();
+  void setupMathMenu();
   void setupFormatMenu();
   void setupViewMenu();
   void setupThemeMenu();
@@ -68,6 +73,10 @@ private:
   void updateSidebarMode();
   void updateViewMode();
   void updateFileActions();
+  void updateTableActions();
+  void updateCodeActions();
+  void updateHtmlActions();
+  void updateMathActions();
   bool sourceModeEnabled() const;
   void undoEdit();
   void redoEdit();

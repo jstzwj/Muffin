@@ -4,6 +4,7 @@
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
 #include "editor/ClipboardController.h"
+#include "editor/EditorController.h"
 #include "editor/InputController.h"
 #include "editor/SelectionController.h"
 #include "render/InlineLayout.h"
@@ -104,6 +105,16 @@ MarkdownNode* firstChildOfType(MarkdownNode* node, BlockType type) {
     }
   }
   require(false, "child type not found");
+  return nullptr;
+}
+
+MarkdownNode* firstBlockOfType(const DocumentSession& session, BlockType type) {
+  for (const auto& child : session.document().root().children()) {
+    if (child->type() == type) {
+      return child.get();
+    }
+  }
+  require(false, "block type not found");
   return nullptr;
 }
 
@@ -552,6 +563,95 @@ void testClipboardPlainText() {
   require(session.markdownText() == QStringLiteral("aXYZa"), "clipboard paste document mismatch");
 }
 
+void testComplexBlockActivationRoutesInput() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("| Name | Value |\n| --- | --- |\n| one | two |\n\n```cpp\nx\n```"), false);
+  MarkdownNode* table = firstBlockOfType(session, BlockType::Table);
+  MarkdownNode* tableCell = childAt(childAt(table, 1), 0);
+  MarkdownNode* code = firstBlockOfType(session, BlockType::CodeFence);
+
+  HitTestResult codeHit;
+  codeHit.zone = HitTestResult::Zone::Code;
+  codeHit.blockId = code->id();
+  codeHit.textNodeId = code->id();
+  codeHit.textOffset = 0;
+  controller.activateHit(codeHit);
+  require(controller.codeFenceController().isEditing(), "code click should enter code edit mode");
+  require(controller.selection().cursorPosition().text.textOffset == 0, "code click should preserve hit offset");
+
+  HitTestResult cellHit;
+  cellHit.zone = HitTestResult::Zone::TableCell;
+  cellHit.blockId = table->id();
+  cellHit.textNodeId = tableCell->id();
+  cellHit.tableRow = 1;
+  cellHit.tableColumn = 0;
+  cellHit.textOffset = 3;
+  controller.activateHit(cellHit);
+  require(!controller.codeFenceController().isEditing(), "table click should leave code edit mode");
+  require(controller.tableController().currentCell().isValid(), "table click should activate current cell");
+
+  require(controller.inputController().insertText(QStringLiteral("Z")), "table input should edit the active cell");
+  require(session.markdownText().contains(QStringLiteral("oneZ")), "table input should update table cell text");
+  require(!session.markdownText().contains(QStringLiteral("xZ")), "table input should not continue editing code fence");
+  require(!session.markdownText().contains(QStringLiteral("x\n\n```")), "table input should not grow code fence trailing blank lines");
+}
+
+void testCodeActivationKeepsClickedOffsetForTyping() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("```cpp\nabcd\n```"), false);
+  MarkdownNode* code = firstBlockOfType(session, BlockType::CodeFence);
+
+  HitTestResult codeHit;
+  codeHit.zone = HitTestResult::Zone::Code;
+  codeHit.blockId = code->id();
+  codeHit.textNodeId = code->id();
+  codeHit.textOffset = 2;
+  controller.activateHit(codeHit);
+
+  require(controller.codeFenceController().isEditing(), "code activation should enter edit mode");
+  require(controller.selection().cursorPosition().text.textOffset == 2, "code activation should keep clicked offset");
+  require(controller.inputController().insertText(QStringLiteral("X")), "typing in active code block should work");
+  require(session.markdownText().contains(QStringLiteral("abXcd")), "code typing should use clicked offset");
+}
+
+void testSwitchingBetweenCodeBlocksRoutesInputToClickedBlock() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("```cpp\nfirst\n```\n\n```cpp\nsecond\n```"), false);
+  MarkdownNode* firstCode = blockAt(session, 0);
+  MarkdownNode* secondCode = blockAt(session, 1);
+  require(firstCode->type() == BlockType::CodeFence, "first block should be code fence");
+  require(secondCode->type() == BlockType::CodeFence, "second block should be code fence");
+
+  HitTestResult firstHit;
+  firstHit.zone = HitTestResult::Zone::Code;
+  firstHit.blockId = firstCode->id();
+  firstHit.textNodeId = firstCode->id();
+  firstHit.textOffset = 0;
+  controller.activateHit(firstHit);
+  require(controller.inputController().insertText(QStringLiteral("A")), "first code input should work");
+
+  HitTestResult secondHit;
+  secondHit.zone = HitTestResult::Zone::Code;
+  secondHit.blockId = blockAt(session, 1)->id();
+  secondHit.textNodeId = blockAt(session, 1)->id();
+  secondHit.textOffset = 0;
+  controller.activateHit(secondHit);
+  require(controller.inputController().insertText(QStringLiteral("B")), "second code input should work");
+
+  require(session.markdownText().contains(QStringLiteral("Afirst")), "first code edit should remain in first code block");
+  require(session.markdownText().contains(QStringLiteral("Bsecond")), "second code edit should target second code block");
+  require(!session.markdownText().contains(QStringLiteral("BAfirst")), "second code input should not write into first code block");
+}
+
 void testInlineSelectionRects() {
   RenderTheme theme = RenderTheme::typoraLike();
   InlineLayout layout;
@@ -594,6 +694,9 @@ int main(int argc, char** argv) {
   testHeadingAndListItemStylize();
   testStylizeCrossParagraphSelectionWrap();
   testClipboardPlainText();
+  testComplexBlockActivationRoutesInput();
+  testCodeActivationKeepsClickedOffsetForTyping();
+  testSwitchingBetweenCodeBlocksRoutesInputToClickedBlock();
   testInlineSelectionRects();
   return 0;
 }

@@ -1,6 +1,7 @@
 #include "render/BlockLayoutBuilder.h"
 
 #include <QFontMetricsF>
+#include <QStringList>
 #include <QTextLayout>
 #include <QTextOption>
 
@@ -11,6 +12,7 @@ qreal layoutTextHeight(const QString& text, const QFont& font, qreal width) {
   QTextLayout layout(text.isEmpty() ? QStringLiteral(" ") : text, font);
   QTextOption option;
   option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+  option.setFlags(QTextOption::ShowTabsAndSpaces);
   layout.setTextOption(option);
   layout.beginLayout();
 
@@ -26,6 +28,23 @@ qreal layoutTextHeight(const QString& text, const QFont& font, qreal width) {
   }
   layout.endLayout();
   return qMax(height, QFontMetricsF(font).height());
+}
+
+qreal layoutLiteralHeight(const QString& text, const QFont& font, qreal width) {
+  const QStringList lines = text.isEmpty() ? QStringList{QString()} : text.split(QLatin1Char('\n'));
+  qreal height = 0;
+  for (const QString& line : lines) {
+    height += layoutTextHeight(line.isEmpty() ? QStringLiteral(" ") : line, font, width);
+  }
+  return qMax(height, QFontMetricsF(font).height());
+}
+
+QString displayLiteralFor(const MarkdownNode& node) {
+  QString literal = node.type() == BlockType::CodeFence ? node.literal() : node.literal().trimmed();
+  if (node.type() == BlockType::CodeFence && literal.endsWith(QLatin1Char('\n'))) {
+    literal.chop(1);
+  }
+  return literal;
 }
 
 }  // namespace
@@ -172,7 +191,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
   auto layout = std::make_unique<BlockLayout>(node.id());
   layout->setType(node.type());
   layout->setDepth(depth);
-  layout->setLiteral(node.literal().trimmed());
+  layout->setLiteral(displayLiteralFor(node));
   const qreal height = textHeight(layout->literal(), node.type() == BlockType::MathBlock ? theme.mathFont() : theme.codeFont(), width, theme.codePadding());
   layout->setRect(QRectF(x, y, width, height));
   return layout;
@@ -288,7 +307,7 @@ QVector<InlineNode> BlockLayoutBuilder::primaryInlinesForListItem(const Markdown
 
 qreal BlockLayoutBuilder::textHeight(const QString& text, const QFont& font, qreal width, const QMarginsF& padding) const {
   const qreal innerWidth = qMax<qreal>(1.0, width - padding.left() - padding.right());
-  return layoutTextHeight(text, font, innerWidth) + padding.top() + padding.bottom();
+  return std::ceil(layoutLiteralHeight(text, font, innerWidth) + padding.top() + padding.bottom() + 2.0);
 }
 
 }  // namespace muffin

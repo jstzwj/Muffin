@@ -1,0 +1,81 @@
+#pragma once
+
+#include "blocks/table/TableModelOps.h"
+#include "edit/EditTransaction.h"
+#include "editor/CursorPosition.h"
+
+#include <QObject>
+
+#include <functional>
+
+namespace muffin {
+
+class BrushQueue;
+class DocumentSession;
+class MarkdownNode;
+class SelectionController;
+class UndoStack;
+
+struct TableLocation {
+  NodeId tableId;
+  int tableIndex = -1;
+  int row = -1;
+  int column = -1;
+
+  bool isValid() const {
+    return (tableId.isValid() || tableIndex >= 0) && row >= 0 && column >= 0;
+  }
+};
+
+class TableController final : public QObject {
+  Q_OBJECT
+
+public:
+  explicit TableController(QObject* parent = nullptr);
+
+  void setDocumentSession(DocumentSession* session);
+  void setSelectionController(SelectionController* selection);
+  void setUndoStack(UndoStack* undoStack);
+  void setBrushQueue(BrushQueue* brushQueue);
+
+  TableLocation currentCell() const;
+
+  bool insertText(QString text);
+  bool deleteBackward();
+  bool deleteForward();
+  bool deleteSelection();
+
+  bool insertRowBefore();
+  bool insertRowAfter();
+  bool deleteCurrentRow();
+  bool moveCurrentRowUp();
+  bool moveCurrentRowDown();
+
+  bool insertColumnBefore();
+  bool insertColumnAfter();
+  bool deleteCurrentColumn();
+  bool moveCurrentColumnLeft();
+  bool moveCurrentColumnRight();
+  bool setCurrentColumnAlignment(TableAlignment alignment);
+  bool insertTable(int rows = 2, int columns = 2);
+
+signals:
+  void tableCommandRejected(QString reason);
+
+private:
+  bool editCurrentCell(QString label, EditTransaction::Kind kind, const std::function<bool(MarkdownNode&, qsizetype&)>& mutate);
+  bool mutateCurrentTable(QString label, EditTransaction::Kind kind, const std::function<bool(MarkdownNode&, TableLocation)>& mutate);
+  MarkdownNode* tableForLocation(TableLocation location) const;
+  MarkdownNode* cellForLocation(TableLocation location) const;
+  CursorPosition cursorForLocation(TableLocation location) const;
+  MarkdownNode* findAncestorTable(MarkdownNode& node) const;
+  int tableIndexFor(const MarkdownNode& table) const;
+  MarkdownNode* tableByIndex(int index) const;
+
+  DocumentSession* session_ = nullptr;
+  SelectionController* selection_ = nullptr;
+  UndoStack* undoStack_ = nullptr;
+  BrushQueue* brushQueue_ = nullptr;
+};
+
+}  // namespace muffin

@@ -68,6 +68,7 @@ public:
   void setTableRows(std::vector<TableRowLayout> rows);
   std::vector<TableRowLayout>& tableRows();
   const std::vector<TableRowLayout>& tableRows() const;
+  QRectF tableCellRect(int row, int column) const;
 
   void paint(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
   bool intersects(const QRectF& documentViewport) const;
@@ -82,6 +83,7 @@ private:
   HitTestResult hitTable(QPointF documentPos, const RenderTheme& theme) const;
   QVector<QRectF> selectionRectsSelf(const SelectionRange& selection, const RenderTheme& theme) const;
   QVector<QRectF> selectionRectsSelfForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
+  QVector<QRectF> literalSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
 
   NodeId id_;
   BlockType type_ = BlockType::Unknown;

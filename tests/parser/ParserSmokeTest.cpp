@@ -253,6 +253,28 @@ void testFencedCodeBlock() {
           QStringLiteral("Fence literal missing second command"));
 }
 
+void testCodeFenceSerializationDoesNotGrowTrailingBlankLines() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  MarkdownSerializer serializer;
+  const QString markdown = QStringLiteral("```cpp\nreturn 0;\n```");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for code fence growth sample"));
+
+  MarkdownDocument document;
+  document.setMarkdownText(markdown, std::move(parsed.root));
+  const QString once = serializer.serializeDocument(document);
+  require(once == markdown, QStringLiteral("Code fence first serialization added blank lines"));
+
+  ParseResult reparsed = parser.parseDocument(once, options);
+  require(reparsed.root != nullptr, QStringLiteral("Parser returned null root after code fence serialization"));
+  MarkdownDocument reparsedDocument;
+  reparsedDocument.setMarkdownText(once, std::move(reparsed.root));
+  const QString twice = serializer.serializeDocument(reparsedDocument);
+  require(twice == once, QStringLiteral("Code fence repeated serialization added blank lines"));
+}
+
 void testTaskListMetadata() {
   CmarkGfmParser parser;
   ParseOptions options;
@@ -280,6 +302,7 @@ int main(int argc, char** argv) {
   testMathInHeadingsAndTables();
   testMathEdgeCases();
   testFencedCodeBlock();
+  testCodeFenceSerializationDoesNotGrowTrailingBlankLines();
   testTaskListMetadata();
   return 0;
 }

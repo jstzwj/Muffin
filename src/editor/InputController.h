@@ -11,10 +11,14 @@ class QInputMethodEvent;
 namespace muffin {
 
 class BrushQueue;
+class CodeFenceController;
 class DocumentSession;
 class EditorView;
+class HtmlBlockController;
+class MathBlockController;
 class MarkdownNode;
 class SelectionController;
+class TableController;
 class UndoStack;
 
 class InputController final : public QObject {
@@ -27,6 +31,10 @@ public:
   void setSelectionController(SelectionController* selection);
   void setUndoStack(UndoStack* undoStack);
   void setBrushQueue(BrushQueue* brushQueue);
+  void setTableController(TableController* tableController);
+  void setCodeFenceController(CodeFenceController* codeFenceController);
+  void setHtmlBlockController(HtmlBlockController* htmlBlockController);
+  void setMathBlockController(MathBlockController* mathBlockController);
   void attach(EditorView* view);
 
   bool insertText(QString text);
@@ -96,6 +104,10 @@ private:
   SelectionController* selection_ = nullptr;
   UndoStack* undoStack_ = nullptr;
   BrushQueue* brushQueue_ = nullptr;
+  CodeFenceController* codeFenceController_ = nullptr;
+  HtmlBlockController* htmlBlockController_ = nullptr;
+  MathBlockController* mathBlockController_ = nullptr;
+  TableController* tableController_ = nullptr;
   EditorView* view_ = nullptr;
 };
 
