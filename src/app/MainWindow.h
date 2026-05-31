@@ -16,7 +16,7 @@ class QWidget;
 
 namespace muffin {
 
-class MarkdownRenderWidget;
+class EditorView;
 class SourceEditorWidget;
 
 class MainWindow final : public QMainWindow {
@@ -79,7 +79,7 @@ private:
   QSplitter* centralSplitter_ = nullptr;
   QWidget* sidebar_ = nullptr;
   QStackedWidget* viewStack_ = nullptr;
-  MarkdownRenderWidget* renderView_ = nullptr;
+  EditorView* renderView_ = nullptr;
   SourceEditorWidget* editor_ = nullptr;
   QToolButton* sidebarButton_ = nullptr;
   QToolButton* sourceModeButton_ = nullptr;

@@ -1,7 +1,7 @@
 #include "app/MainWindow.h"
 
+#include "editor/EditorView.h"
 #include "editor/SourceEditorWidget.h"
-#include "render/MarkdownRenderWidget.h"
 
 #include <QAction>
 #include <QApplication>
@@ -138,7 +138,7 @@ void MainWindow::setupUi() {
   sidebarLayout->addStretch(1);
 
   viewStack_ = new QStackedWidget(this);
-  renderView_ = new MarkdownRenderWidget(viewStack_);
+  renderView_ = new EditorView(viewStack_);
   editor_ = new SourceEditorWidget(this);
   viewStack_->addWidget(renderView_);
   viewStack_->addWidget(editor_);

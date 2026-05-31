@@ -76,12 +76,22 @@ add_executable(Muffin
   src/app/DocumentSession.h
   src/app/MainWindow.cpp
   src/app/MainWindow.h
+  src/editor/EditorView.cpp
+  src/editor/EditorView.h
   src/editor/SourceEditorWidget.cpp
   src/editor/SourceEditorWidget.h
   src/io/FileController.cpp
   src/io/FileController.h
-  src/render/MarkdownRenderWidget.cpp
-  src/render/MarkdownRenderWidget.h
+  src/render/BlockLayout.cpp
+  src/render/BlockLayout.h
+  src/render/BlockLayoutBuilder.cpp
+  src/render/BlockLayoutBuilder.h
+  src/render/DocumentLayout.cpp
+  src/render/DocumentLayout.h
+  src/render/InlineLayout.cpp
+  src/render/InlineLayout.h
+  src/theme/RenderTheme.cpp
+  src/theme/RenderTheme.h
 )
 
 target_link_libraries(Muffin
