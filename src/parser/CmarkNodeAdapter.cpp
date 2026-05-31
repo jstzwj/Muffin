@@ -6,6 +6,7 @@ extern "C" {
 #include "cmark-gfm-core-extensions.h"
 #include "strikethrough.h"
 #include "table.h"
+#include "math_extension.h"
 }
 
 namespace muffin {
@@ -75,6 +76,8 @@ InlineNode CmarkNodeAdapter::convertInline(cmark_node* node) {
       return InlineNode::strong(QStringLiteral("**"), convertInlineChildren(node));
     case InlineType::Strikethrough:
       return InlineNode::strikethrough(QStringLiteral("~~"), convertInlineChildren(node));
+    case InlineType::InlineMath:
+      return InlineNode::inlineMath(fromUtf8(cmark_node_get_string_content(node)));
     case InlineType::Link:
       return InlineNode::link(
           fromUtf8(cmark_node_get_url(node)),
@@ -114,6 +117,7 @@ BlockType CmarkNodeAdapter::mapBlockType(cmark_node* node) const {
   if (type == CMARK_NODE_TABLE) return BlockType::Table;
   if (type == CMARK_NODE_TABLE_ROW) return BlockType::TableRow;
   if (type == CMARK_NODE_TABLE_CELL) return BlockType::TableCell;
+  if (type == CMARK_NODE_MATH_BLOCK) return BlockType::MathBlock;
   return BlockType::Unknown;
 }
 
@@ -129,6 +133,7 @@ InlineType CmarkNodeAdapter::mapInlineType(cmark_node* node) const {
   if (type == CMARK_NODE_LINK) return InlineType::Link;
   if (type == CMARK_NODE_IMAGE) return InlineType::Image;
   if (type == CMARK_NODE_STRIKETHROUGH) return InlineType::Strikethrough;
+  if (type == CMARK_NODE_INLINE_MATH) return InlineType::InlineMath;
   return InlineType::Unknown;
 }
 
@@ -169,6 +174,9 @@ void CmarkNodeAdapter::readBlockMetadata(cmark_node* cmarkNode, MarkdownNode& mu
       break;
     case BlockType::HtmlBlock:
       muffinNode.setLiteral(fromUtf8(cmark_node_get_literal(cmarkNode)));
+      break;
+    case BlockType::MathBlock:
+      muffinNode.setLiteral(fromUtf8(cmark_node_get_string_content(cmarkNode)).trimmed());
       break;
     case BlockType::Table:
       readTableMetadata(cmarkNode, muffinNode);

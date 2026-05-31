@@ -2,9 +2,12 @@
 qt/6.11.1
 
 [options]
+qt/*:shared=True
 qt/*:widgets=True
 qt/*:gui=True
 qt/*:qtdeclarative=False
+qt/*:with_odbc=False
+qt/*:with_pq=False
 
 [generators]
 CMakeDeps

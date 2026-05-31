@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <limits.h>
+#include <string.h>
 
 #include "cmark_ctype.h"
 #include "syntax_extension.h"
@@ -193,6 +194,11 @@ static CMARK_INLINE bool accepts_lines(cmark_node_type block_type) {
   return (block_type == CMARK_NODE_PARAGRAPH ||
           block_type == CMARK_NODE_HEADING ||
           block_type == CMARK_NODE_CODE_BLOCK);
+}
+
+static CMARK_INLINE bool is_math_block(cmark_node *node) {
+  return node && node->extension &&
+         strcmp(cmark_node_get_type_string(node), "math_block") == 0;
 }
 
 static CMARK_INLINE bool contains_inlines(cmark_node *node) {
@@ -1324,7 +1330,7 @@ static void open_new_blocks(cmark_parser *parser, cmark_node **container,
       }
     }
 
-    if (accepts_lines(S_type(*container))) {
+    if (accepts_lines(S_type(*container)) || is_math_block(*container)) {
       // if it's a line container, it can't contain other containers
       break;
     }
@@ -1384,6 +1390,8 @@ static void add_text_to_container(cmark_parser *parser, cmark_node *container,
     }
 
     if (S_type(container) == CMARK_NODE_CODE_BLOCK) {
+      add_line(container, input, parser);
+    } else if (is_math_block(container)) {
       add_line(container, input, parser);
     } else if (S_type(container) == CMARK_NODE_HTML_BLOCK) {
       add_line(container, input, parser);

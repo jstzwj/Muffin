@@ -14,6 +14,10 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+if(MSVC)
+  add_compile_options(/utf-8)
+endif()
+
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 set(CMARK_TESTS OFF CACHE BOOL "" FORCE)
@@ -66,8 +70,18 @@ target_include_directories(MuffinCore
 
 add_executable(Muffin
   src/main.cpp
-  src/MainWindow.cpp
-  src/MainWindow.h
+  src/app/CommandRegistry.cpp
+  src/app/CommandRegistry.h
+  src/app/DocumentSession.cpp
+  src/app/DocumentSession.h
+  src/app/MainWindow.cpp
+  src/app/MainWindow.h
+  src/editor/SourceEditorWidget.cpp
+  src/editor/SourceEditorWidget.h
+  src/io/FileController.cpp
+  src/io/FileController.h
+  src/render/MarkdownRenderWidget.cpp
+  src/render/MarkdownRenderWidget.h
 )
 
 target_link_libraries(Muffin
@@ -84,6 +98,40 @@ target_include_directories(Muffin
 if(WIN32)
   set_target_properties(Muffin PROPERTIES WIN32_EXECUTABLE TRUE)
 endif()
+
+set(MUFFIN_DIST_DIR "${CMAKE_BINARY_DIR}/dist" CACHE PATH "Muffin distribution output directory")
+
+set(MUFFIN_QT_PLUGIN_DIRS)
+get_target_property(MUFFIN_QT_CORE_LOCATION_RELEASE Qt6::Core IMPORTED_LOCATION_RELEASE)
+get_target_property(MUFFIN_QT_CORE_LOCATION Qt6::Core IMPORTED_LOCATION)
+if(NOT MUFFIN_QT_CORE_LOCATION_RELEASE)
+  set(MUFFIN_QT_CORE_LOCATION_RELEASE "${MUFFIN_QT_CORE_LOCATION}")
+endif()
+
+if(MUFFIN_QT_CORE_LOCATION_RELEASE)
+  get_filename_component(MUFFIN_QT_LIB_OR_BIN_DIR "${MUFFIN_QT_CORE_LOCATION_RELEASE}" DIRECTORY)
+  get_filename_component(MUFFIN_QT_PACKAGE_DIR "${MUFFIN_QT_LIB_OR_BIN_DIR}" DIRECTORY)
+  foreach(MUFFIN_QT_PLUGIN_SUBDIR platforms styles imageformats)
+    if(EXISTS "${MUFFIN_QT_PACKAGE_DIR}/plugins/${MUFFIN_QT_PLUGIN_SUBDIR}")
+      list(APPEND MUFFIN_QT_PLUGIN_DIRS "${MUFFIN_QT_PACKAGE_DIR}/plugins/${MUFFIN_QT_PLUGIN_SUBDIR}")
+    endif()
+  endforeach()
+endif()
+
+string(JOIN "|" MUFFIN_QT_PLUGIN_DIRS_ARG ${MUFFIN_QT_PLUGIN_DIRS})
+
+add_custom_target(dist
+  COMMAND
+    ${CMAKE_COMMAND}
+      "-DAPP_FILE=$<TARGET_FILE:Muffin>"
+      "-DDIST_DIR=${MUFFIN_DIST_DIR}"
+      "-DRUNTIME_DLLS=$<JOIN:$<TARGET_RUNTIME_DLLS:Muffin>,|>"
+      "-DQT_PLUGIN_DIRS=${MUFFIN_QT_PLUGIN_DIRS_ARG}"
+      -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/MuffinDeploy.cmake"
+  DEPENDS Muffin
+  COMMENT "Create Muffin distribution directory"
+  VERBATIM
+)
 
 enable_testing()
 

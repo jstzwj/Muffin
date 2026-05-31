@@ -42,6 +42,8 @@ QString MarkdownSerializer::serializeBlock(const MarkdownNode& node) const {
       return serializeCodeFence(node);
     case BlockType::HtmlBlock:
       return node.literal();
+    case BlockType::MathBlock:
+      return QStringLiteral("$$\n%1\n$$").arg(node.literal());
     case BlockType::Table:
       return serializeTable(node);
     default:
