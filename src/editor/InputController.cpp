@@ -280,6 +280,17 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
         return insertText(QStringLiteral("  "));
       }
       return event->modifiers().testFlag(Qt::ShiftModifier) ? outdentListItem() : indentListItem();
+    case Qt::Key_Backtab:
+      if (codeFenceController_ && codeFenceController_->isEditing()) {
+        return insertText(QStringLiteral("\t"));
+      }
+      if (htmlBlockController_ && htmlBlockController_->isEditing()) {
+        return insertText(QStringLiteral("  "));
+      }
+      if (mathBlockController_ && mathBlockController_->isEditing()) {
+        return insertText(QStringLiteral("  "));
+      }
+      return outdentListItem();
     case Qt::Key_Backspace:
       return deleteBackward();
     case Qt::Key_Delete:

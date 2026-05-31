@@ -443,6 +443,15 @@ void testListItemEditingCommands() {
   setCursor(selection, childAt(nestedList, 0), 0);
   require(input.outdentListItem(), "shift-tab should outdent nested list item");
   require(session.markdownText() == QStringLiteral("- alpha\n- beta"), "list item outdent mismatch");
+
+  EditorView view;
+  input.attach(&view);
+  session.setMarkdownText(QStringLiteral("- alpha\n  - beta"), false);
+  nestedList = firstChildOfType(listItemAt(session, 0, 0), BlockType::List);
+  setCursor(selection, childAt(nestedList, 0), 0);
+  QKeyEvent backtab(QEvent::KeyPress, Qt::Key_Backtab, Qt::ShiftModifier);
+  require(input.eventFilter(&view, &backtab), "backtab key should outdent nested list item");
+  require(session.markdownText() == QStringLiteral("- alpha\n- beta"), "backtab key list outdent mismatch");
 }
 
 void testStylizeCollapsedSkeletons() {
