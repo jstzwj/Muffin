@@ -11,6 +11,9 @@ namespace muffin {
 class RenderTheme {
 public:
   static RenderTheme typoraLike(int zoomPercent = 100);
+  static RenderTheme github(int zoomPercent = 100);
+  static RenderTheme newsprint(int zoomPercent = 100);
+  static RenderTheme night(int zoomPercent = 100);
 
   int zoomPercent() const;
   void setZoomPercent(int percent);
@@ -36,6 +39,7 @@ public:
   QColor quoteBorderColor() const;
   QColor tableBorderColor() const;
   QColor tableHeaderBackgroundColor() const;
+  QColor tableAlternateBackgroundColor() const;
   QColor selectionColor() const;
 
   QMarginsF codePadding() const;
@@ -45,6 +49,17 @@ private:
   qreal scaled(qreal value) const;
 
   int zoomPercent_ = 100;
+  QColor backgroundColor_ = QColor(QStringLiteral("#ffffff"));
+  QColor textColor_ = QColor(QStringLiteral("#202124"));
+  QColor mutedTextColor_ = QColor(QStringLiteral("#57606a"));
+  QColor linkColor_ = QColor(QStringLiteral("#2f6fbd"));
+  QColor codeBackgroundColor_ = QColor(QStringLiteral("#f6f8fa"));
+  QColor codeBorderColor_ = QColor(QStringLiteral("#e5e7eb"));
+  QColor quoteBorderColor_ = QColor(QStringLiteral("#d0d7de"));
+  QColor tableBorderColor_ = QColor(QStringLiteral("#d0d7de"));
+  QColor tableHeaderBackgroundColor_ = QColor(QStringLiteral("#f6f8fa"));
+  QColor tableAlternateBackgroundColor_ = QColor(QStringLiteral("#fbfbfb"));
+  QColor selectionColor_ = QColor(QStringLiteral("#d7e8ff"));
 };
 
 }  // namespace muffin

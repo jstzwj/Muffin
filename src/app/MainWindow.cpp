@@ -198,6 +198,9 @@ void MainWindow::setupConnections() {
     renderView_->setDocument(session_.document());
     updateStatus();
   });
+  connect(&themeManager_, &ThemeManager::themeChanged, this, [this](const QString& name) {
+    applyTheme(name);
+  });
 
   commands_.bind(QStringLiteral("file.new"), [this] {
     fileController_.newFile(session_, this);
@@ -270,6 +273,10 @@ void MainWindow::setupConnections() {
         tr("Muffin\n\nA fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets."));
   });
 
+  commands_.bind(QStringLiteral("theme.github"), [this] { themeManager_.setTheme(QStringLiteral("github")); });
+  commands_.bind(QStringLiteral("theme.newsprint"), [this] { themeManager_.setTheme(QStringLiteral("newsprint")); });
+  commands_.bind(QStringLiteral("theme.night"), [this] { themeManager_.setTheme(QStringLiteral("night")); });
+
   connect(sidebarButton_, &QToolButton::clicked, this, [this] {
     if (QAction* action = commands_.action(QStringLiteral("view.sidebar"))) {
       action->trigger();
@@ -285,6 +292,7 @@ void MainWindow::setupConnections() {
   rebuildRecentFilesMenu();
   updateSidebarMode();
   updateViewMode();
+  applyTheme(themeManager_.currentThemeName());
   renderView_->setDocument(session_.document());
 }
 
@@ -453,9 +461,9 @@ void MainWindow::setupViewMenu() {
 
 void MainWindow::setupThemeMenu() {
   QMenu* theme = menuBar()->addMenu(QStringLiteral("主题(&T)"));
-  addCheckAction(theme, QStringLiteral("theme.github"), QStringLiteral("Github"), {}, true, false);
-  addCheckAction(theme, QStringLiteral("theme.newsprint"), QStringLiteral("Newsprint"), {}, false, false);
-  addCheckAction(theme, QStringLiteral("theme.night"), QStringLiteral("Night"), {}, false, false);
+  addCheckAction(theme, QStringLiteral("theme.github"), QStringLiteral("Github"), {}, true);
+  addCheckAction(theme, QStringLiteral("theme.newsprint"), QStringLiteral("Newsprint"), {}, false);
+  addCheckAction(theme, QStringLiteral("theme.night"), QStringLiteral("Night"), {}, false);
   addCheckAction(theme, QStringLiteral("theme.pixyll"), QStringLiteral("Pixyll"), {}, false, false);
   addCheckAction(theme, QStringLiteral("theme.whitey"), QStringLiteral("Whitey"), {}, false, false);
   theme->addSeparator();
@@ -529,6 +537,39 @@ void MainWindow::updateFileActions() {
   const bool hasFile = !session_.filePath().isEmpty();
   commands_.setEnabled(QStringLiteral("file.properties"), hasFile);
   commands_.setEnabled(QStringLiteral("file.reveal"), hasFile);
+}
+
+void MainWindow::applyTheme(QString name) {
+  const RenderTheme theme = themeManager_.currentTheme(zoomPercent_);
+  renderView_->setTheme(theme);
+  editor_->setTheme(theme);
+  updateThemeActions();
+
+  if (name == QStringLiteral("night")) {
+    setStyleSheet(QStringLiteral(
+        "QMainWindow { background:#1f2328; }"
+        "QMenuBar { background:#1f2328; color:#e6edf3; padding:0; }"
+        "QMenuBar::item { padding:4px 9px; background:transparent; }"
+        "QMenuBar::item:selected { background:#2b3138; }"
+        "QMenu { background:#242a31; color:#e6edf3; border:1px solid #3d444d; padding:4px 0; }"
+        "QMenu::item { padding:5px 34px 5px 24px; }"
+        "QMenu::item:selected { background:#264f78; }"
+        "QMenu::item:disabled { color:#6e7681; }"
+        "QStatusBar { background:#1f2328; color:#9aa4af; border:0; font-size:12px; }"
+        "QStatusBar::item { border:0; }"
+        "QToolButton { background:transparent; border:0; color:#9aa4af; padding:0 8px; min-width:22px; min-height:18px; font-size:12px; }"
+        "QToolButton:hover { background:#2b3138; }"
+        "QToolButton:checked { color:#e6edf3; background:#30363d; }"));
+  } else {
+    applyTyporaLikeChrome();
+  }
+}
+
+void MainWindow::updateThemeActions() {
+  const QString current = themeManager_.currentThemeName();
+  commands_.setChecked(QStringLiteral("theme.github"), current == QStringLiteral("github"));
+  commands_.setChecked(QStringLiteral("theme.newsprint"), current == QStringLiteral("newsprint"));
+  commands_.setChecked(QStringLiteral("theme.night"), current == QStringLiteral("night"));
 }
 
 void MainWindow::rebuildRecentFilesMenu() {

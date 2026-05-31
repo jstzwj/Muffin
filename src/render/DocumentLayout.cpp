@@ -2,6 +2,8 @@
 
 #include "render/BlockLayoutBuilder.h"
 
+#include <cmath>
+
 namespace muffin {
 
 void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth) {
@@ -65,6 +67,33 @@ const BlockLayout* DocumentLayout::blockAt(QPointF documentPos) const {
     }
   }
   return nullptr;
+}
+
+HitTestResult DocumentLayout::hitTest(QPointF documentPos, const RenderTheme& theme) const {
+  for (auto it = blocks_.rbegin(); it != blocks_.rend(); ++it) {
+    const BlockLayout& block = **it;
+    if (block.rect().adjusted(0, -theme.blockSpacing(), 0, theme.blockSpacing()).contains(documentPos)) {
+      HitTestResult result = block.hitTest(documentPos, theme);
+      if (result.isValid()) {
+        return result;
+      }
+    }
+  }
+
+  if (blocks_.empty()) {
+    return {};
+  }
+
+  const BlockLayout* nearest = blocks_.front().get();
+  qreal bestDistance = std::abs(nearest->rect().center().y() - documentPos.y());
+  for (const auto& block : blocks_) {
+    const qreal distance = std::abs(block->rect().center().y() - documentPos.y());
+    if (distance < bestDistance) {
+      nearest = block.get();
+      bestDistance = distance;
+    }
+  }
+  return nearest->hitTest(QPointF(qBound(nearest->rect().left(), documentPos.x(), nearest->rect().right()), nearest->rect().center().y()), theme);
 }
 
 void DocumentLayout::indexBlock(const BlockLayout& block) {

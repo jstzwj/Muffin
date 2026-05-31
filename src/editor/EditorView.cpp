@@ -5,6 +5,7 @@
 #include <QPainter>
 #include <QScrollBar>
 #include <QWheelEvent>
+#include <QMouseEvent>
 
 #include <cmath>
 
@@ -26,6 +27,17 @@ void EditorView::setDocument(const MarkdownDocument& document) {
 
 void EditorView::setZoomPercent(int percent) {
   theme_.setZoomPercent(percent);
+  applyScrollBarStyle();
+  viewport()->setPalette(QPalette(theme_.backgroundColor()));
+  rebuildLayout();
+}
+
+void EditorView::setTheme(RenderTheme theme) {
+  const int zoom = theme_.zoomPercent();
+  theme_ = std::move(theme);
+  theme_.setZoomPercent(zoom);
+  applyScrollBarStyle();
+  viewport()->setPalette(QPalette(theme_.backgroundColor()));
   rebuildLayout();
 }
 
@@ -42,6 +54,13 @@ const BlockLayout* EditorView::blockAtViewportPos(QPointF viewportPos) const {
     return nullptr;
   }
   return layout_->blockAt(QPointF(viewportPos.x(), viewportPos.y() + scrollY()));
+}
+
+HitTestResult EditorView::hitTest(QPointF viewportPos) const {
+  if (!layout_) {
+    return {};
+  }
+  return layout_->hitTest(QPointF(viewportPos.x(), viewportPos.y() + scrollY()), theme_);
 }
 
 void EditorView::paintEvent(QPaintEvent* event) {
@@ -70,6 +89,13 @@ void EditorView::resizeEvent(QResizeEvent* event) {
 
 void EditorView::wheelEvent(QWheelEvent* event) {
   QAbstractScrollArea::wheelEvent(event);
+}
+
+void EditorView::mousePressEvent(QMouseEvent* event) {
+  if (event->button() == Qt::LeftButton) {
+    emit blockClicked(hitTest(event->position()));
+  }
+  QAbstractScrollArea::mousePressEvent(event);
 }
 
 void EditorView::rebuildLayout() {
@@ -106,18 +132,20 @@ qreal EditorView::scrollY() const {
 }
 
 void EditorView::applyScrollBarStyle() {
+  const QString background = theme_.backgroundColor().name(QColor::HexRgb);
   setStyleSheet(QStringLiteral(
-      "EditorView { background:#ffffff; border:0; }"
-      "QScrollBar:vertical { background:#ffffff; width:8px; margin:0; }"
+      "EditorView { background:%1; border:0; }"
+      "QScrollBar:vertical { background:%1; width:8px; margin:0; }"
       "QScrollBar::handle:vertical { background:#b7b7b7; min-height:54px; border-radius:3px; margin:1px 2px; }"
       "QScrollBar::handle:vertical:hover { background:#999999; }"
       "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height:0; border:0; background:transparent; }"
       "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background:transparent; }"
-      "QScrollBar:horizontal { background:#ffffff; height:8px; margin:0; }"
+      "QScrollBar:horizontal { background:%1; height:8px; margin:0; }"
       "QScrollBar::handle:horizontal { background:#b7b7b7; min-width:54px; border-radius:3px; margin:2px 1px; }"
       "QScrollBar::handle:horizontal:hover { background:#999999; }"
       "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width:0; border:0; background:transparent; }"
-      "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal { background:transparent; }"));
+      "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal { background:transparent; }")
+                    .arg(background));
 }
 
 }  // namespace muffin

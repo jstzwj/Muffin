@@ -85,6 +85,19 @@ QString BlockLayout::listMarker() const {
   return listMarker_;
 }
 
+void BlockLayout::setTaskListItem(bool taskListItem, bool checked) {
+  taskListItem_ = taskListItem;
+  taskChecked_ = checked;
+}
+
+bool BlockLayout::isTaskListItem() const {
+  return taskListItem_;
+}
+
+bool BlockLayout::taskChecked() const {
+  return taskChecked_;
+}
+
 void BlockLayout::setDepth(int depth) {
   depth_ = depth;
 }
@@ -128,6 +141,27 @@ bool BlockLayout::intersects(const QRectF& documentViewport) const {
   return rect_.intersects(documentViewport);
 }
 
+HitTestResult BlockLayout::hitTest(QPointF documentPos, const RenderTheme& theme) const {
+  for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
+    const BlockLayout& child = **it;
+    if (child.rect().adjusted(-theme.blockSpacing(), -theme.blockSpacing(), theme.blockSpacing(), theme.blockSpacing()).contains(documentPos)) {
+      HitTestResult childHit = child.hitTest(documentPos, theme);
+      if (childHit.isValid()) {
+        return childHit;
+      }
+    }
+  }
+
+  if (!rect_.adjusted(-2, -theme.blockSpacing() * 0.5, 2, theme.blockSpacing() * 0.5).contains(documentPos)) {
+    return {};
+  }
+
+  if (type_ == BlockType::Table) {
+    return hitTable(documentPos, theme);
+  }
+  return hitSelf(documentPos, theme);
+}
+
 void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY) const {
   const QRectF viewRect = rect_.translated(0, -scrollY);
 
@@ -141,7 +175,23 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
           painter.setFont(theme.paragraphFont());
           painter.setPen(theme.textColor());
           const QFontMetricsF metrics(painter.font());
-          painter.drawText(QPointF(viewRect.left(), viewRect.top() + metrics.ascent()), listMarker_);
+          if (taskListItem_) {
+            const QRectF box(
+                viewRect.left() + 1,
+                viewRect.top() + qMax<qreal>(2.0, (metrics.height() - 13.0) / 2.0),
+                13,
+                13);
+            painter.setBrush(theme.backgroundColor());
+            painter.setPen(QPen(theme.tableBorderColor(), 1));
+            painter.drawRoundedRect(box, 2, 2);
+            if (taskChecked_) {
+              painter.setPen(QPen(theme.linkColor(), 1.8));
+              painter.drawLine(QPointF(box.left() + 3, box.center().y()), QPointF(box.left() + 5.5, box.bottom() - 3));
+              painter.drawLine(QPointF(box.left() + 5.5, box.bottom() - 3), QPointF(box.right() - 3, box.top() + 3));
+            }
+          } else {
+            painter.drawText(QPointF(viewRect.left(), viewRect.top() + metrics.ascent()), listMarker_);
+          }
           painter.restore();
           inlineLayout_->paint(painter, QPointF(viewRect.left() + theme.listIndent(), viewRect.top()));
         } else {
@@ -189,6 +239,83 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
   }
 }
 
+HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme) const {
+  HitTestResult result;
+  result.blockId = id_;
+  result.textNodeId = id_;
+  result.blockRect = rect_;
+  result.zone = HitTestResult::Zone::Block;
+
+  switch (type_) {
+    case BlockType::Heading:
+    case BlockType::Paragraph:
+    case BlockType::ListItem:
+      if (inlineLayout_) {
+        const qreal textLeft = !listMarker_.isEmpty() ? rect_.left() + theme.listIndent() : rect_.left();
+        const QRectF textRect(textLeft, rect_.top(), qMax<qreal>(1.0, rect_.right() - textLeft), rect_.height());
+        if (!listMarker_.isEmpty() && documentPos.x() < textLeft) {
+          result.zone = HitTestResult::Zone::Marker;
+          result.cursorRect = QRectF(textLeft, rect_.top(), 1.0, rect_.height());
+          return result;
+        }
+        result.zone = HitTestResult::Zone::Text;
+        result.textOffset = inlineLayout_->hitTestTextOffset(documentPos - textRect.topLeft());
+        result.cursorRect = inlineLayout_->cursorRect(result.textOffset).translated(textRect.topLeft());
+      }
+      break;
+    case BlockType::CodeFence:
+      result.zone = HitTestResult::Zone::Code;
+      result.cursorRect = QRectF(rect_.marginsRemoved(theme.codePadding()).topLeft(), QSizeF(1.0, rect_.height()));
+      break;
+    case BlockType::MathBlock:
+      result.zone = HitTestResult::Zone::Math;
+      result.cursorRect = QRectF(rect_.marginsRemoved(theme.codePadding()).topLeft(), QSizeF(1.0, rect_.height()));
+      break;
+    case BlockType::HtmlBlock:
+      result.zone = HitTestResult::Zone::Html;
+      result.cursorRect = QRectF(rect_.marginsRemoved(theme.codePadding()).topLeft(), QSizeF(1.0, rect_.height()));
+      break;
+    default:
+      result.cursorRect = QRectF(rect_.topLeft(), QSizeF(1.0, rect_.height()));
+      break;
+  }
+
+  return result;
+}
+
+HitTestResult BlockLayout::hitTable(QPointF documentPos, const RenderTheme& theme) const {
+  HitTestResult result;
+  result.blockId = id_;
+  result.textNodeId = id_;
+  result.blockRect = rect_;
+  result.zone = HitTestResult::Zone::Block;
+
+  int rowIndex = 0;
+  for (const TableRowLayout& row : tableRows_) {
+    if (!row.rect.contains(documentPos)) {
+      ++rowIndex;
+      continue;
+    }
+    int columnIndex = 0;
+    for (const TableCellLayout& cell : row.cells) {
+      if (cell.rect.contains(documentPos)) {
+        result.zone = HitTestResult::Zone::TableCell;
+        result.textNodeId = cell.nodeId.isValid() ? cell.nodeId : id_;
+        result.tableRow = rowIndex;
+        result.tableColumn = columnIndex;
+        result.textOffset = cell.text.hitTestTextOffset(documentPos - cell.rect.marginsRemoved(theme.tableCellPadding()).topLeft());
+        result.cursorRect = cell.text.cursorRect(result.textOffset).translated(cell.rect.marginsRemoved(theme.tableCellPadding()).topLeft());
+        return result;
+      }
+      ++columnIndex;
+    }
+    ++rowIndex;
+  }
+
+  result.cursorRect = QRectF(rect_.topLeft(), QSizeF(1.0, rect_.height()));
+  return result;
+}
+
 void BlockLayout::paintTable(QPainter& painter, const RenderTheme& theme, qreal scrollY) const {
   painter.save();
   for (const TableRowLayout& row : tableRows_) {
@@ -196,9 +323,16 @@ void BlockLayout::paintTable(QPainter& painter, const RenderTheme& theme, qreal 
     for (const TableCellLayout& cell : row.cells) {
       const QRectF cellRect = cell.rect.translated(0, -scrollY);
       painter.setPen(theme.tableBorderColor());
-      painter.setBrush(cell.header ? theme.tableHeaderBackgroundColor() : theme.backgroundColor());
+      painter.setBrush(cell.header ? theme.tableHeaderBackgroundColor() : (cell.alternate ? theme.tableAlternateBackgroundColor() : theme.backgroundColor()));
       painter.drawRect(cellRect.adjusted(0.5, 0.5, -0.5, -0.5));
-      cell.text.paint(painter, cellRect.marginsRemoved(theme.tableCellPadding()).topLeft());
+      QRectF contentRect = cellRect.marginsRemoved(theme.tableCellPadding());
+      qreal textX = contentRect.left();
+      if (cell.alignment == TableAlignment::Right) {
+        textX = contentRect.right() - cell.text.size().width();
+      } else if (cell.alignment == TableAlignment::Center) {
+        textX = contentRect.left() + (contentRect.width() - cell.text.size().width()) / 2.0;
+      }
+      cell.text.paint(painter, QPointF(qMax(contentRect.left(), textX), contentRect.top()));
     }
     Q_UNUSED(rowRect);
   }

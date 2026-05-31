@@ -2,6 +2,9 @@
 
 #include <QAbstractTextDocumentLayout>
 #include <QPainter>
+#include <QTextBlock>
+#include <QTextCursor>
+#include <QTextLine>
 
 namespace muffin {
 namespace {
@@ -86,6 +89,36 @@ void InlineLayout::paint(QPainter& painter, QPointF origin) const {
   QAbstractTextDocumentLayout::PaintContext context;
   document_->documentLayout()->draw(&painter, context);
   painter.restore();
+}
+
+qsizetype InlineLayout::hitTestTextOffset(QPointF localPos) const {
+  if (!document_) {
+    return 0;
+  }
+  const int position = document_->documentLayout()->hitTest(localPos, Qt::FuzzyHit);
+  return static_cast<qsizetype>(qBound(0, position, static_cast<int>(plainText_.size())));
+}
+
+QRectF InlineLayout::cursorRect(qsizetype textOffset) const {
+  if (!document_) {
+    return {};
+  }
+  const int position = qBound(0, static_cast<int>(textOffset), qMax(0, document_->characterCount() - 1));
+  const QTextBlock block = document_->findBlock(position);
+  if (!block.isValid() || !block.layout()) {
+    return {};
+  }
+
+  const int relativePosition = qBound(0, position - block.position(), block.length());
+  const QTextLine line = block.layout()->lineForTextPosition(relativePosition);
+  if (!line.isValid()) {
+    const QRectF blockRect = document_->documentLayout()->blockBoundingRect(block);
+    return QRectF(blockRect.left(), blockRect.top(), 1.0, blockRect.height());
+  }
+
+  const qreal x = line.cursorToX(relativePosition);
+  const QRectF blockRect = document_->documentLayout()->blockBoundingRect(block);
+  return QRectF(blockRect.left() + x, blockRect.top() + line.y(), 1.0, line.height());
 }
 
 QString InlineLayout::plainText() const {

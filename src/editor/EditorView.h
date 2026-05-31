@@ -20,14 +20,20 @@ public:
 
   void setDocument(const MarkdownDocument& document);
   void setZoomPercent(int percent);
+  void setTheme(RenderTheme theme);
 
   QRectF nodeRect(NodeId id) const;
   const BlockLayout* blockAtViewportPos(QPointF viewportPos) const;
+  HitTestResult hitTest(QPointF viewportPos) const;
+
+signals:
+  void blockClicked(HitTestResult result);
 
 protected:
   void paintEvent(QPaintEvent* event) override;
   void resizeEvent(QResizeEvent* event) override;
   void wheelEvent(QWheelEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
 
 private:
   void rebuildLayout();

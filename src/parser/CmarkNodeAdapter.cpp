@@ -168,6 +168,9 @@ void CmarkNodeAdapter::readBlockMetadata(cmark_node* cmarkNode, MarkdownNode& mu
       muffinNode.setListStart(cmark_node_get_list_start(cmarkNode));
       muffinNode.setListTight(cmark_node_get_list_tight(cmarkNode) != 0);
       break;
+    case BlockType::ListItem:
+      muffinNode.setTaskChecked(cmark_gfm_extensions_get_tasklist_item_checked(cmarkNode));
+      break;
     case BlockType::CodeFence:
       muffinNode.setLiteral(fromUtf8(cmark_node_get_literal(cmarkNode)));
       muffinNode.setCodeLanguage(fromUtf8(cmark_node_get_fence_info(cmarkNode)).section(' ', 0, 0));

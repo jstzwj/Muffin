@@ -5,7 +5,45 @@
 namespace muffin {
 
 RenderTheme RenderTheme::typoraLike(int zoomPercent) {
+  return github(zoomPercent);
+}
+
+RenderTheme RenderTheme::github(int zoomPercent) {
   RenderTheme theme;
+  theme.setZoomPercent(zoomPercent);
+  return theme;
+}
+
+RenderTheme RenderTheme::newsprint(int zoomPercent) {
+  RenderTheme theme;
+  theme.backgroundColor_ = QColor(QStringLiteral("#fbfaf7"));
+  theme.textColor_ = QColor(QStringLiteral("#1f2328"));
+  theme.mutedTextColor_ = QColor(QStringLiteral("#6b665d"));
+  theme.linkColor_ = QColor(QStringLiteral("#2f6f9f"));
+  theme.codeBackgroundColor_ = QColor(QStringLiteral("#f1eee8"));
+  theme.codeBorderColor_ = QColor(QStringLiteral("#ded8cc"));
+  theme.quoteBorderColor_ = QColor(QStringLiteral("#c8bfae"));
+  theme.tableBorderColor_ = QColor(QStringLiteral("#d8d0c2"));
+  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#eee9df"));
+  theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#f6f3ed"));
+  theme.selectionColor_ = QColor(QStringLiteral("#d9e8ef"));
+  theme.setZoomPercent(zoomPercent);
+  return theme;
+}
+
+RenderTheme RenderTheme::night(int zoomPercent) {
+  RenderTheme theme;
+  theme.backgroundColor_ = QColor(QStringLiteral("#1f2328"));
+  theme.textColor_ = QColor(QStringLiteral("#e6edf3"));
+  theme.mutedTextColor_ = QColor(QStringLiteral("#9aa4af"));
+  theme.linkColor_ = QColor(QStringLiteral("#7fb4f5"));
+  theme.codeBackgroundColor_ = QColor(QStringLiteral("#2b3138"));
+  theme.codeBorderColor_ = QColor(QStringLiteral("#3d444d"));
+  theme.quoteBorderColor_ = QColor(QStringLiteral("#56616d"));
+  theme.tableBorderColor_ = QColor(QStringLiteral("#3d444d"));
+  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#2b3138"));
+  theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#242a31"));
+  theme.selectionColor_ = QColor(QStringLiteral("#264f78"));
   theme.setZoomPercent(zoomPercent);
   return theme;
 }
@@ -71,43 +109,47 @@ QFont RenderTheme::mathFont() const {
 }
 
 QColor RenderTheme::backgroundColor() const {
-  return QColor(QStringLiteral("#ffffff"));
+  return backgroundColor_;
 }
 
 QColor RenderTheme::textColor() const {
-  return QColor(QStringLiteral("#202124"));
+  return textColor_;
 }
 
 QColor RenderTheme::mutedTextColor() const {
-  return QColor(QStringLiteral("#57606a"));
+  return mutedTextColor_;
 }
 
 QColor RenderTheme::linkColor() const {
-  return QColor(QStringLiteral("#2f6fbd"));
+  return linkColor_;
 }
 
 QColor RenderTheme::codeBackgroundColor() const {
-  return QColor(QStringLiteral("#f6f8fa"));
+  return codeBackgroundColor_;
 }
 
 QColor RenderTheme::codeBorderColor() const {
-  return QColor(QStringLiteral("#e5e7eb"));
+  return codeBorderColor_;
 }
 
 QColor RenderTheme::quoteBorderColor() const {
-  return QColor(QStringLiteral("#d0d7de"));
+  return quoteBorderColor_;
 }
 
 QColor RenderTheme::tableBorderColor() const {
-  return QColor(QStringLiteral("#d0d7de"));
+  return tableBorderColor_;
 }
 
 QColor RenderTheme::tableHeaderBackgroundColor() const {
-  return QColor(QStringLiteral("#f6f8fa"));
+  return tableHeaderBackgroundColor_;
+}
+
+QColor RenderTheme::tableAlternateBackgroundColor() const {
+  return tableAlternateBackgroundColor_;
 }
 
 QColor RenderTheme::selectionColor() const {
-  return QColor(QStringLiteral("#d7e8ff"));
+  return selectionColor_;
 }
 
 QMarginsF RenderTheme::codePadding() const {

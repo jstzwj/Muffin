@@ -155,6 +155,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   } else {
     layout->setListMarker(QStringLiteral("•"));
   }
+  layout->setTaskListItem(node.taskChecked(), node.taskChecked());
 
   layout->setRect(QRectF(x, y, width, height));
   layout->setChildren(std::move(children));
@@ -201,8 +202,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
 
   const qreal columnWidth = width / columnCount;
   const QMarginsF padding = theme.tableCellPadding();
+  const QVector<TableAlignment> alignments = node.tableAlignments();
   std::vector<BlockLayout::TableRowLayout> rows;
   qreal cursorY = y;
+  int rowIndex = 0;
 
   for (const auto& rowNode : node.children()) {
     std::vector<BlockLayout::TableCellLayout> cells;
@@ -210,7 +213,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
     int column = 0;
     for (const auto& cellNode : rowNode->children()) {
       BlockLayout::TableCellLayout cell;
+      cell.nodeId = cellNode->id();
       cell.header = rowNode->tableRowIsHeader();
+      cell.alternate = rowIndex % 2 == 1;
+      cell.alignment = column < alignments.size() ? alignments.at(column) : TableAlignment::None;
       cell.text.build(
           cellNode->inlines(),
           theme,
@@ -223,6 +229,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
     }
     while (column < columnCount) {
       BlockLayout::TableCellLayout cell;
+      cell.nodeId = rowNode->id();
+      cell.alternate = rowIndex % 2 == 1;
+      cell.alignment = column < alignments.size() ? alignments.at(column) : TableAlignment::None;
       cell.rect = QRectF(x + column * columnWidth, cursorY, columnWidth, 0);
       rowHeight = qMax(rowHeight, QFontMetricsF(theme.paragraphFont()).height() + padding.top() + padding.bottom());
       cells.push_back(std::move(cell));
@@ -236,6 +245,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
     row.cells = std::move(cells);
     rows.push_back(std::move(row));
     cursorY += rowHeight;
+    ++rowIndex;
   }
 
   layout->setRect(QRectF(x, y, width, cursorY - y));

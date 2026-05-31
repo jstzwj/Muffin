@@ -1,5 +1,7 @@
 #include "editor/SourceEditorWidget.h"
 
+#include "theme/RenderTheme.h"
+
 #include <QFont>
 #include <QHBoxLayout>
 #include <QPlainTextEdit>
@@ -62,6 +64,21 @@ void SourceEditorWidget::setZoomPercent(int percent) {
   editor_->setFont(font);
 }
 
+void SourceEditorWidget::setTheme(const RenderTheme& theme) {
+  setStyleSheet(QStringLiteral(
+                    "SourceEditorWidget { background:%1; }"
+                    "QPlainTextEdit {"
+                    "  background:%1;"
+                    "  color:%2;"
+                    "  selection-background-color:%3;"
+                    "  padding:0 0 56px 0;"
+                    "}")
+                    .arg(
+                        theme.backgroundColor().name(QColor::HexRgb),
+                        theme.textColor().name(QColor::HexRgb),
+                        theme.selectionColor().name(QColor::HexRgb)));
+}
+
 QPlainTextEdit* SourceEditorWidget::editor() {
   return editor_;
 }
@@ -79,14 +96,7 @@ void SourceEditorWidget::setupStyle() {
   QFont font(QStringLiteral("Microsoft YaHei UI"));
   font.setPointSizeF(13.0);
   editor_->setFont(font);
-  setStyleSheet(QStringLiteral(
-      "SourceEditorWidget { background: #ffffff; }"
-      "QPlainTextEdit {"
-      "  background: #ffffff;"
-      "  color: #222222;"
-      "  selection-background-color: #cfe6ff;"
-      "  padding: 0 0 56px 0;"
-      "}"));
+  setTheme(RenderTheme::github());
 }
 
 void SourceEditorWidget::updateEditorWidth() {

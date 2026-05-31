@@ -7,6 +7,9 @@ class QResizeEvent;
 
 namespace muffin {
 
+class RenderTheme;
+
+
 class SourceEditorWidget final : public QWidget {
   Q_OBJECT
 
@@ -17,6 +20,7 @@ public:
   void setText(const QString& text);
   void setWordWrapEnabled(bool enabled);
   void setZoomPercent(int percent);
+  void setTheme(const RenderTheme& theme);
 
   QPlainTextEdit* editor();
   const QPlainTextEdit* editor() const;

@@ -69,19 +69,22 @@ target_include_directories(MuffinCore
 )
 
 add_executable(Muffin
-  src/main.cpp
   src/app/CommandRegistry.cpp
   src/app/CommandRegistry.h
   src/app/DocumentSession.cpp
   src/app/DocumentSession.h
   src/app/MainWindow.cpp
   src/app/MainWindow.h
+  src/editor/CursorPosition.h
   src/editor/EditorView.cpp
   src/editor/EditorView.h
   src/editor/SourceEditorWidget.cpp
   src/editor/SourceEditorWidget.h
   src/io/FileController.cpp
   src/io/FileController.h
+)
+
+set(MUFFIN_UI_SOURCES
   src/render/BlockLayout.cpp
   src/render/BlockLayout.h
   src/render/BlockLayoutBuilder.cpp
@@ -92,12 +95,35 @@ add_executable(Muffin
   src/render/InlineLayout.h
   src/theme/RenderTheme.cpp
   src/theme/RenderTheme.h
+  src/theme/ThemeManager.cpp
+  src/theme/ThemeManager.h
+)
+
+add_library(MuffinUi STATIC
+  ${MUFFIN_UI_SOURCES}
+)
+
+target_link_libraries(MuffinUi
+  PUBLIC
+    Qt6::Widgets
+    MuffinCore
+)
+
+target_include_directories(MuffinUi
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_sources(Muffin
+  PRIVATE
+    src/main.cpp
 )
 
 target_link_libraries(Muffin
   PRIVATE
     Qt6::Widgets
     MuffinCore
+    MuffinUi
 )
 
 target_include_directories(Muffin
@@ -155,3 +181,17 @@ target_link_libraries(MuffinParserSmokeTest
 )
 
 add_test(NAME MuffinParserSmokeTest COMMAND MuffinParserSmokeTest)
+
+add_executable(MuffinRenderLayoutTest
+  tests/render/RenderLayoutTest.cpp
+)
+
+target_link_libraries(MuffinRenderLayoutTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(
+  NAME MuffinRenderLayoutTest
+  COMMAND MuffinRenderLayoutTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md"
+)

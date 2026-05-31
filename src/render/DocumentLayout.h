@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/MarkdownDocument.h"
+#include "editor/CursorPosition.h"
 #include "render/BlockLayout.h"
 #include "theme/RenderTheme.h"
 
@@ -25,6 +26,7 @@ public:
   QVector<const BlockLayout*> visibleBlocks(QRectF documentViewport) const;
   const BlockLayout* block(NodeId id) const;
   const BlockLayout* blockAt(QPointF documentPos) const;
+  HitTestResult hitTest(QPointF documentPos, const RenderTheme& theme) const;
 
 private:
   void indexBlock(const BlockLayout& block);

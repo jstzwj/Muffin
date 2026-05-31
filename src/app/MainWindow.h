@@ -3,6 +3,7 @@
 #include "app/CommandRegistry.h"
 #include "app/DocumentSession.h"
 #include "io/FileController.h"
+#include "theme/ThemeManager.h"
 
 #include <QMainWindow>
 #include <QString>
@@ -65,6 +66,8 @@ private:
   void updateSidebarMode();
   void updateViewMode();
   void updateFileActions();
+  void applyTheme(QString name);
+  void updateThemeActions();
   void rebuildRecentFilesMenu();
   void addRecentFile(QString path);
   QStringList recentFiles() const;
@@ -76,6 +79,7 @@ private:
   DocumentSession session_;
   FileController fileController_;
   CommandRegistry commands_;
+  ThemeManager themeManager_;
   QSplitter* centralSplitter_ = nullptr;
   QWidget* sidebar_ = nullptr;
   QStackedWidget* viewStack_ = nullptr;

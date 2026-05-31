@@ -253,6 +253,24 @@ void testFencedCodeBlock() {
           QStringLiteral("Fence literal missing second command"));
 }
 
+void testTaskListMetadata() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QStringLiteral(
+      "- [x] done\n"
+      "- [ ] pending\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for task list sample"));
+  require(parsed.root->children().size() == 1, QStringLiteral("Unexpected task list block count"));
+
+  const MarkdownNode& list = childAt(*parsed.root, 0);
+  require(list.type() == BlockType::List, QStringLiteral("Expected task list to parse as list"));
+  require(list.children().size() == 2, QStringLiteral("Unexpected task item count"));
+  require(childAt(list, 0).taskChecked(), QStringLiteral("Checked task metadata missing"));
+  require(!childAt(list, 1).taskChecked(), QStringLiteral("Unchecked task metadata should be false"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -262,5 +280,6 @@ int main(int argc, char** argv) {
   testMathInHeadingsAndTables();
   testMathEdgeCases();
   testFencedCodeBlock();
+  testTaskListMetadata();
   return 0;
 }

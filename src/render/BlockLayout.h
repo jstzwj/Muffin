@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/MarkdownNode.h"
+#include "editor/CursorPosition.h"
 #include "render/InlineLayout.h"
 #include "theme/RenderTheme.h"
 
@@ -15,9 +16,12 @@ namespace muffin {
 class BlockLayout {
 public:
   struct TableCellLayout {
+    NodeId nodeId;
     QRectF rect;
     InlineLayout text;
+    TableAlignment alignment = TableAlignment::None;
     bool header = false;
+    bool alternate = false;
   };
 
   struct TableRowLayout {
@@ -50,6 +54,9 @@ public:
 
   void setListMarker(QString marker);
   QString listMarker() const;
+  void setTaskListItem(bool taskListItem, bool checked);
+  bool isTaskListItem() const;
+  bool taskChecked() const;
 
   void setDepth(int depth);
   int depth() const;
@@ -64,10 +71,13 @@ public:
 
   void paint(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
   bool intersects(const QRectF& documentViewport) const;
+  HitTestResult hitTest(QPointF documentPos, const RenderTheme& theme) const;
 
 private:
   void paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
   void paintTable(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
+  HitTestResult hitSelf(QPointF documentPos, const RenderTheme& theme) const;
+  HitTestResult hitTable(QPointF documentPos, const RenderTheme& theme) const;
 
   NodeId id_;
   BlockType type_ = BlockType::Unknown;
@@ -76,6 +86,8 @@ private:
   QString literal_;
   int headingLevel_ = 0;
   QString listMarker_;
+  bool taskListItem_ = false;
+  bool taskChecked_ = false;
   int depth_ = 0;
   std::vector<std::unique_ptr<BlockLayout>> children_;
   std::vector<TableRowLayout> tableRows_;
