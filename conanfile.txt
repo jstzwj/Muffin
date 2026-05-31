@@ -1,0 +1,14 @@
+[requires]
+qt/6.11.1
+
+[options]
+qt/*:widgets=True
+qt/*:gui=True
+qt/*:qtdeclarative=False
+
+[generators]
+CMakeDeps
+CMakeToolchain
+
+[layout]
+cmake_layout
