@@ -437,12 +437,80 @@ void EditorController::applySnapshot(const DocumentSnapshot& snapshot) {
   }
 
   session_->applyMarkdownText(snapshot.markdownText, true);
-  if (snapshot.cursor.isValid()) {
-    selection_.setCursorPosition(snapshot.cursor);
+  const CursorPosition cursor = remapSnapshotCursor(snapshot.cursor);
+  if (cursor.isValid()) {
+    selection_.setCursorPosition(cursor);
   } else {
     selection_.clear();
   }
   brushQueue_.requestFullRefresh();
+}
+
+CursorPosition EditorController::remapSnapshotCursor(const CursorPosition& snapshotCursor) const {
+  CursorPosition cursor;
+  if (!session_ || !snapshotCursor.isValid()) {
+    return cursor;
+  }
+
+  BlockEditContextResolver resolver(const_cast<DocumentSession*>(session_), const_cast<SelectionController*>(&selection_));
+  if (snapshotCursor.text.sourceOffset >= 0) {
+    if (MarkdownNode* node = resolver.nodeAtContentSourceOffset(session_->document().root(), snapshotCursor.text.sourceOffset)) {
+      BlockEditContext context;
+      if (resolver.fill(*node, context)) {
+        const qsizetype localSourceOffset =
+            qBound<qsizetype>(0, snapshotCursor.text.sourceOffset - context.contentRange.byteStart, context.contentText.size());
+        qsizetype visibleOffset = -1;
+        if (!context.inlineProjection.visibleOffsetForSourceOffset(localSourceOffset, visibleOffset)) {
+          visibleOffset = qBound<qsizetype>(0, localSourceOffset, context.visibleText.size());
+        }
+        cursor.blockId = node->id();
+        cursor.text.nodeId = context.editableNode ? context.editableNode->id() : node->id();
+        cursor.text.textOffset = visibleOffset;
+        cursor.text.sourceOffset = snapshotCursor.text.sourceOffset;
+        cursor.text.inMeta = snapshotCursor.text.inMeta;
+        return cursor;
+      }
+    }
+  }
+
+  if (MarkdownNode* node = session_->document().node(snapshotCursor.blockId)) {
+    BlockEditContext context;
+    if (resolver.fill(*node, context)) {
+      const qsizetype visibleOffset = qBound<qsizetype>(0, snapshotCursor.text.textOffset, context.visibleText.size());
+      qsizetype localSourceOffset = -1;
+      context.inlineProjection.sourceOffsetForVisibleOffset(visibleOffset, localSourceOffset);
+      cursor.blockId = node->id();
+      cursor.text.nodeId = context.editableNode ? context.editableNode->id() : node->id();
+      cursor.text.textOffset = visibleOffset;
+      cursor.text.sourceOffset = localSourceOffset >= 0 ? context.contentRange.byteStart + localSourceOffset : snapshotCursor.text.sourceOffset;
+      cursor.text.inMeta = snapshotCursor.text.inMeta;
+      return cursor;
+    }
+    cursor.blockId = node->id();
+    cursor.text.nodeId = node->id();
+    cursor.text.textOffset = snapshotCursor.text.textOffset;
+    cursor.text.sourceOffset = snapshotCursor.text.sourceOffset;
+    cursor.text.inMeta = snapshotCursor.text.inMeta;
+    return cursor;
+  }
+
+  const QString markdown = session_->markdownText();
+  const qsizetype sourceOffset = qBound<qsizetype>(0, snapshotCursor.text.sourceOffset >= 0 ? snapshotCursor.text.sourceOffset : markdown.size(), markdown.size());
+  if (MarkdownNode* node = resolver.nodeAtContentSourceOffset(session_->document().root(), sourceOffset)) {
+    BlockEditContext context;
+    if (resolver.fill(*node, context)) {
+      const qsizetype localSourceOffset = qBound<qsizetype>(0, sourceOffset - context.contentRange.byteStart, context.contentText.size());
+      qsizetype visibleOffset = -1;
+      context.inlineProjection.visibleOffsetForSourceOffset(localSourceOffset, visibleOffset);
+      cursor.blockId = node->id();
+      cursor.text.nodeId = context.editableNode ? context.editableNode->id() : node->id();
+      cursor.text.textOffset = qBound<qsizetype>(0, visibleOffset, context.visibleText.size());
+      cursor.text.sourceOffset = context.contentRange.byteStart + localSourceOffset;
+      cursor.text.inMeta = snapshotCursor.text.inMeta;
+      return cursor;
+    }
+  }
+  return cursor;
 }
 
 }  // namespace muffin

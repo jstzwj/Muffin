@@ -81,6 +81,7 @@ signals:
 
 private:
   void applySnapshot(const DocumentSnapshot& snapshot);
+  CursorPosition remapSnapshotCursor(const CursorPosition& snapshotCursor) const;
 
   DocumentSession* session_ = nullptr;
   EditorView* view_ = nullptr;

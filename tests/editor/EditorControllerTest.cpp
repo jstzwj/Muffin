@@ -709,6 +709,34 @@ void testInputUndoRedoSnapshots() {
   require(selection.cursorPosition().text.textOffset == 6, "redo snapshot cursor mismatch");
 }
 
+void testControllerUndoRedoRemapsCursorAfterReparse() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("$123$"), false);
+  view.setDocument(session.document());
+  setSourceCursor(controller.selection(), blockAt(session, 0), 0, 1);
+  require(controller.inputController().insertText(QStringLiteral("a")), "controller input should edit inline math");
+  require(session.markdownText() == QStringLiteral("$a123$"), "controller inline math insert mismatch");
+
+  controller.undo();
+  require(session.markdownText() == QStringLiteral("$123$"), "controller undo text mismatch");
+  require(controller.selection().hasCursor(), "controller undo should keep cursor");
+  require(controller.selection().cursorPosition().blockId == blockAt(session, 0)->id(), "controller undo cursor should remap to reparsed block");
+  require(controller.selection().cursorPosition().text.sourceOffset == 1, "controller undo cursor source mismatch");
+  view.setCursorPosition(controller.selection().cursorPosition());
+  require(view.hitTest(view.nodeRect(blockAt(session, 0)->id()).center()).isValid(), "controller undo view should keep valid layout hit");
+
+  controller.redo();
+  require(session.markdownText() == QStringLiteral("$a123$"), "controller redo text mismatch");
+  require(controller.selection().hasCursor(), "controller redo should keep cursor");
+  require(controller.selection().cursorPosition().blockId == blockAt(session, 0)->id(), "controller redo cursor should remap to reparsed block");
+  require(controller.selection().cursorPosition().text.sourceOffset == 2, "controller redo cursor source mismatch");
+}
+
 void testInputSelectionReplaceAndDelete() {
   DocumentSession session;
   SelectionController selection;
@@ -805,6 +833,17 @@ void testHeadingEnterAtStartInsertsParagraphBeforeBlock() {
   require(session.document().root().children().size() == 2, "heading end enter should create trailing empty paragraph");
   require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "heading end enter cursor should move to empty paragraph");
   require(selection.cursorPosition().text.textOffset == 0, "heading end enter cursor should be at empty paragraph start");
+
+  session.setMarkdownText(QStringLiteral("## Headings"), false);
+  setCursor(selection, blockAt(session, 0), 3);
+
+  require(input.insertParagraphBreak(), "heading middle enter should split heading");
+  require(session.markdownText() == QStringLiteral("## Hea\n\n## dings"), "heading middle enter should preserve heading marker on second half");
+  require(session.document().root().children().size() == 2, "heading middle enter should create two headings");
+  require(blockAt(session, 0)->type() == BlockType::Heading, "heading middle enter first block should remain heading");
+  require(blockAt(session, 1)->type() == BlockType::Heading, "heading middle enter second block should be heading");
+  require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "heading middle enter cursor block mismatch");
+  require(selection.cursorPosition().text.textOffset == 0, "heading middle enter cursor should be at second heading start");
 }
 
 void testListItemInput() {
@@ -1343,6 +1382,7 @@ int main(int argc, char** argv) {
   testInputBackspaceAtParagraphStartDeletesStructuralBoundary();
   testInputDeleteAtParagraphEndDeletesStructuralBoundary();
   testInputUndoRedoSnapshots();
+  testControllerUndoRedoRemapsCursorAfterReparse();
   testInputSelectionReplaceAndDelete();
   testInputCrossParagraphSelectionReplaceAndDelete();
   testHeadingInput();

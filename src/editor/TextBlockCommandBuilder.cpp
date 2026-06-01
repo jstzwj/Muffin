@@ -140,8 +140,13 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitTextBlock(
     nextContent.remove(nextOffset - 1, 1);
     --nextOffset;
   }
-  nextContent.insert(nextOffset, QStringLiteral("\n\n"));
-  nextOffset += 2;
+  QString insertion = QStringLiteral("\n\n");
+  if (context.blockType == BlockType::Heading && context.blockRange.byteStart >= 0 &&
+      context.blockRange.byteStart < context.contentRange.byteStart) {
+    insertion += session_->markdownText().mid(context.blockRange.byteStart, context.contentRange.byteStart - context.blockRange.byteStart);
+  }
+  nextContent.insert(nextOffset, insertion);
+  nextOffset += insertion.size();
 
   command.markdownText = session_->markdownText();
   command.markdownText.replace(context.contentRange.byteStart, context.contentRange.byteEnd - context.contentRange.byteStart, nextContent);
