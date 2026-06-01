@@ -1,6 +1,7 @@
 #include "document/SelectionSerializer.h"
 
 #include "document/InlineNode.h"
+#include "document/InlineSourceMap.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 #include "parser/CmarkGfmParser.h"
@@ -9,33 +10,6 @@
 
 namespace muffin {
 namespace {
-
-QString plainTextForInlines(const QVector<InlineNode>& inlines) {
-  QString text;
-  for (const InlineNode& inlineNode : inlines) {
-    switch (inlineNode.type()) {
-      case InlineType::Text:
-      case InlineType::Code:
-      case InlineType::InlineMath:
-      case InlineType::HtmlInline:
-        text += inlineNode.text();
-        break;
-      case InlineType::SoftBreak:
-        text += QLatin1Char(' ');
-        break;
-      case InlineType::LineBreak:
-        text += QLatin1Char('\n');
-        break;
-      case InlineType::Image:
-        text += inlineNode.alt();
-        break;
-      default:
-        text += plainTextForInlines(inlineNode.children());
-        break;
-    }
-  }
-  return text;
-}
 
 QString plainTextForNode(const MarkdownNode& node) {
   QString text;
@@ -65,7 +39,7 @@ QString plainTextForNode(const MarkdownNode& node) {
     case BlockType::Paragraph:
     case BlockType::Heading:
     case BlockType::TableCell:
-      return plainTextForInlines(node.inlines());
+      return InlineSourceMap::plainTextForInlines(node.inlines());
     default:
       return node.literal();
   }
@@ -230,9 +204,7 @@ bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, c
   context.sourceStart = sourceStart;
   context.sourceEnd = sourceEnd;
   context.sourceText = markdown.mid(sourceStart, sourceEnd - sourceStart);
-  qsizetype mappedStart = -1;
-  return isPlainInlineEditable(*editable, context.sourceText) ||
-         sourceOffsetForVisibleOffset(editable->inlines(), context.sourceText, 0, mappedStart);
+  return isPlainInlineEditable(*editable, context.sourceText) || InlineSourceMap(editable->inlines(), context.sourceText).isValid();
 }
 
 bool SelectionSerializer::editableCursorSourceOffset(
@@ -252,168 +224,13 @@ bool SelectionSerializer::editableCursorSourceOffset(
 
   const qsizetype offset = qMax<qsizetype>(0, cursor.text.textOffset);
   qsizetype localSourceOffset = -1;
-  if (!context.editableNode ||
-      !sourceOffsetForVisibleOffset(context.editableNode->inlines(), context.sourceText, offset, localSourceOffset)) {
+  InlineSourceMap sourceMap(context.editableNode ? context.editableNode->inlines() : QVector<InlineNode>(), context.sourceText);
+  if (!sourceMap.sourceOffsetForVisibleOffset(offset, localSourceOffset)) {
     localSourceOffset = qBound<qsizetype>(0, offset, context.sourceText.size());
   }
   sourceOffset = context.sourceStart + localSourceOffset;
   contextSourceStart = context.sourceStart;
   return true;
-}
-
-bool SelectionSerializer::sourceOffsetForVisibleOffset(
-    const QVector<InlineNode>& inlines,
-    const QString& sourceText,
-    qsizetype visibleOffset,
-    qsizetype& sourceOffset) const {
-  if (visibleOffset <= 0) {
-    sourceOffset = 0;
-    return true;
-  }
-
-  qsizetype searchFrom = 0;
-  qsizetype consumed = 0;
-  for (const InlineNode& inlineNode : inlines) {
-    QString inlineMarkdown;
-    switch (inlineNode.type()) {
-      case InlineType::Text:
-        inlineMarkdown = inlineNode.text();
-        break;
-      case InlineType::Code:
-        inlineMarkdown = QStringLiteral("`%1`").arg(inlineNode.text());
-        break;
-      case InlineType::InlineMath:
-        inlineMarkdown = QStringLiteral("$%1$").arg(inlineNode.text());
-        break;
-      case InlineType::HtmlInline:
-        inlineMarkdown = inlineNode.text();
-        break;
-      case InlineType::Emphasis:
-        inlineMarkdown = QStringLiteral("%1%2%1").arg(inlineNode.marker().isEmpty() ? QStringLiteral("*") : inlineNode.marker(),
-                                                       plainTextForInlines(inlineNode.children()));
-        break;
-      case InlineType::Strong:
-        inlineMarkdown = QStringLiteral("%1%2%1").arg(inlineNode.marker().isEmpty() ? QStringLiteral("**") : inlineNode.marker(),
-                                                       plainTextForInlines(inlineNode.children()));
-        break;
-      case InlineType::Strikethrough:
-        inlineMarkdown = QStringLiteral("~~%1~~").arg(plainTextForInlines(inlineNode.children()));
-        break;
-      case InlineType::Link:
-        inlineMarkdown = QStringLiteral("[%1](%2%3)").arg(
-            plainTextForInlines(inlineNode.children()),
-            inlineNode.href(),
-            inlineNode.title().isEmpty() ? QString() : QStringLiteral(" \"%1\"").arg(inlineNode.title()));
-        break;
-      case InlineType::Image:
-        inlineMarkdown = QStringLiteral("![%1](%2%3)").arg(
-            inlineNode.alt(),
-            inlineNode.href(),
-            inlineNode.title().isEmpty() ? QString() : QStringLiteral(" \"%1\"").arg(inlineNode.title()));
-        break;
-      case InlineType::SoftBreak:
-        inlineMarkdown = QStringLiteral("\n");
-        break;
-      case InlineType::LineBreak:
-        inlineMarkdown = QStringLiteral("  \n");
-        break;
-      default:
-        inlineMarkdown = plainTextForInlines(inlineNode.children());
-        break;
-    }
-
-    const qsizetype sourceStart = sourceText.indexOf(inlineMarkdown, searchFrom);
-    if (sourceStart < 0) {
-      return false;
-    }
-
-    const qsizetype inlineVisibleLength = plainTextForInlines(QVector<InlineNode>{inlineNode}).size();
-    if (visibleOffset <= consumed + inlineVisibleLength) {
-      const qsizetype insideOffset = visibleOffset - consumed;
-      const qsizetype mapped = sourceOffsetWithinInline(inlineNode, inlineMarkdown, insideOffset);
-      if (mapped < 0) {
-        return false;
-      }
-      sourceOffset = sourceStart + mapped;
-      return true;
-    }
-
-    consumed += inlineVisibleLength;
-    searchFrom = sourceStart + inlineMarkdown.size();
-  }
-
-  if (visibleOffset == consumed) {
-    sourceOffset = sourceText.size();
-    return true;
-  }
-  return false;
-}
-
-qsizetype SelectionSerializer::sourceOffsetWithinInline(const InlineNode& node, const QString& markdown, qsizetype visibleOffset) const {
-  if (visibleOffset < 0) {
-    return -1;
-  }
-
-  switch (node.type()) {
-    case InlineType::Text:
-    case InlineType::HtmlInline:
-      return qBound<qsizetype>(0, visibleOffset, markdown.size());
-    case InlineType::Code:
-    case InlineType::InlineMath:
-      if (visibleOffset <= 0) {
-        return 0;
-      }
-      if (visibleOffset >= node.text().size()) {
-        return markdown.size();
-      }
-      return qBound<qsizetype>(1, visibleOffset + 1, qMax<qsizetype>(1, markdown.size() - 1));
-    case InlineType::Emphasis:
-    case InlineType::Strong: {
-      const QString marker = node.marker().isEmpty()
-                                 ? (node.type() == InlineType::Strong ? QStringLiteral("**") : QStringLiteral("*"))
-                                 : node.marker();
-      const qsizetype visibleLength = plainTextForInlines(node.children()).size();
-      if (visibleOffset <= 0) {
-        return 0;
-      }
-      if (visibleOffset >= visibleLength) {
-        return markdown.size();
-      }
-      return qBound<qsizetype>(marker.size(), marker.size() + visibleOffset, qMax<qsizetype>(marker.size(), markdown.size() - marker.size()));
-    }
-    case InlineType::Strikethrough:
-      if (visibleOffset <= 0) {
-        return 0;
-      }
-      if (visibleOffset >= plainTextForInlines(node.children()).size()) {
-        return markdown.size();
-      }
-      return qBound<qsizetype>(2, 2 + visibleOffset, qMax<qsizetype>(2, markdown.size() - 2));
-    case InlineType::Link: {
-      const qsizetype visibleLength = plainTextForInlines(node.children()).size();
-      if (visibleOffset <= 0) {
-        return 0;
-      }
-      if (visibleOffset >= visibleLength) {
-        return markdown.size();
-      }
-      return qBound<qsizetype>(1, 1 + visibleOffset, qMax<qsizetype>(1, markdown.indexOf(QLatin1Char(']'))));
-    }
-    case InlineType::Image:
-      if (visibleOffset <= 0) {
-        return 0;
-      }
-      if (visibleOffset >= node.alt().size()) {
-        return markdown.size();
-      }
-      return qBound<qsizetype>(2, 2 + visibleOffset, qMax<qsizetype>(2, markdown.indexOf(QLatin1Char(']'))));
-    case InlineType::SoftBreak:
-      return qBound<qsizetype>(0, visibleOffset, markdown.size());
-    case InlineType::LineBreak:
-      return visibleOffset <= 0 ? 0 : markdown.size();
-    default:
-      return qBound<qsizetype>(0, visibleOffset, markdown.size());
-  }
 }
 
 bool SelectionSerializer::selectionSourceRange(

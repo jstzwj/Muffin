@@ -4,11 +4,13 @@
 #include "document/SelectionSerializer.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
+#include "editor/BlockEditContext.h"
 #include "editor/ClipboardController.h"
 #include "editor/EditorController.h"
 #include "editor/EditorView.h"
 #include "editor/InputController.h"
 #include "editor/SelectionController.h"
+#include "editor/TextBlockCommandBuilder.h"
 #include "render/InlineLayout.h"
 #include "theme/RenderTheme.h"
 
@@ -233,6 +235,32 @@ void testInputEnterMovesCursorToNewParagraph() {
   require(selection.cursorPosition().text.textOffset == 0, "enter cursor offset should be start of new paragraph");
 }
 
+void testInputEnterSplitsComplexInlineParagraphs() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("before **bold** after"), false);
+  setCursor(selection, blockAt(session, 0), 11);
+  require(input.insertParagraphBreak(), "enter should split strong inline paragraph");
+  require(session.markdownText() == QStringLiteral("before **bold**\n\nafter"), "strong inline split mismatch");
+  require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "strong inline split cursor block mismatch");
+  require(selection.cursorPosition().text.textOffset == 0, "strong inline split cursor offset mismatch");
+
+  session.setMarkdownText(QStringLiteral("before `code` after"), false);
+  setCursor(selection, blockAt(session, 0), 11);
+  require(input.insertParagraphBreak(), "enter should split code inline paragraph");
+  require(session.markdownText() == QStringLiteral("before `code`\n\nafter"), "code inline split mismatch");
+
+  session.setMarkdownText(QStringLiteral("before $x+y$ after"), false);
+  setCursor(selection, blockAt(session, 0), 10);
+  require(input.insertParagraphBreak(), "enter should split inline math paragraph");
+  require(session.markdownText() == QStringLiteral("before $x+y$\n\nafter"), "inline math split mismatch");
+}
+
 void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
   DocumentSession session;
   SelectionController selection;
@@ -243,17 +271,28 @@ void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 0);
+  const NodeId originalAlphaId = blockAt(session, 0)->id();
   require(input.insertParagraphBreak(), "enter at paragraph start should create empty paragraph");
   require(session.markdownText() == QStringLiteral("\n\nalpha"), "paragraph start enter text mismatch");
   require(session.document().root().children().size() == 2, "paragraph start enter should create virtual empty block");
-  require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "paragraph start enter cursor block mismatch");
+  require(blockAt(session, 1)->id() == originalAlphaId, "paragraph start enter should preserve original paragraph id");
+  require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "paragraph start enter cursor should stay on original paragraph");
   require(selection.cursorPosition().text.textOffset == 0, "paragraph start enter cursor offset mismatch");
-  require(input.insertParagraphBreak(), "enter in leading empty paragraph should create another empty paragraph");
+  require(input.insertText(QStringLiteral("x")), "typing after paragraph start enter should edit original paragraph");
+  require(session.markdownText() == QStringLiteral("\n\nxalpha"), "typing after paragraph start enter should not edit empty paragraph");
+  require(blockAt(session, 1)->id() == originalAlphaId, "typing after paragraph start enter should keep original paragraph id");
+
+  session.setMarkdownText(QStringLiteral("alpha"), false);
+  setCursor(selection, blockAt(session, 0), 0);
+  const NodeId repeatedAlphaId = blockAt(session, 0)->id();
+  require(input.insertParagraphBreak(), "enter at paragraph start should create empty paragraph for repeat case");
+  require(input.insertParagraphBreak(), "repeated enter at original paragraph start should create another empty paragraph");
   require(session.markdownText() == QStringLiteral("\n\n\n\nalpha"), "leading empty paragraph repeated enter text mismatch");
   require(session.document().root().children().size() == 3, "leading empty paragraph repeated enter should create another virtual block");
-  require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "leading empty paragraph repeated enter cursor block mismatch");
-  require(input.insertText(QStringLiteral("before")), "typing into leading empty paragraph should work");
-  require(session.markdownText() == QStringLiteral("\n\nbefore\n\nalpha"), "typing into leading empty paragraph text mismatch");
+  require(blockAt(session, 2)->id() == repeatedAlphaId, "repeated paragraph start enter should keep original paragraph id");
+  require(selection.cursorPosition().blockId == blockAt(session, 2)->id(), "repeated paragraph start enter cursor block mismatch");
+  require(input.insertText(QStringLiteral("before")), "typing after repeated paragraph start enter should edit original paragraph");
+  require(session.markdownText() == QStringLiteral("\n\n\n\nbeforealpha"), "typing after repeated paragraph start enter text mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
@@ -268,6 +307,70 @@ void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
   require(selection.cursorPosition().blockId == blockAt(session, 2)->id(), "trailing empty paragraph repeated enter cursor block mismatch");
   require(input.insertText(QStringLiteral("after")), "typing into trailing empty paragraph should work");
   require(session.markdownText() == QStringLiteral("alpha\n\n\n\nafter"), "typing into trailing empty paragraph text mismatch");
+}
+
+void testLocalReparsePreservesUntouchedNodeIds() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("alpha\n\nbeta\n\ngamma"), false);
+  const NodeId secondId = blockAt(session, 1)->id();
+  const NodeId thirdId = blockAt(session, 2)->id();
+  setCursor(selection, blockAt(session, 0), 5);
+
+  require(input.insertText(QStringLiteral("!")), "local text input should work");
+  require(session.markdownText() == QStringLiteral("alpha!\n\nbeta\n\ngamma"), "local input text mismatch");
+  require(blockAt(session, 1)->id() == secondId, "local input should preserve untouched second paragraph id");
+  require(blockAt(session, 2)->id() == thirdId, "local input should preserve untouched third paragraph id");
+}
+
+void testBlockEditContextSeparatesBlockAndContentRanges() {
+  DocumentSession session;
+  SelectionController selection;
+
+  session.setMarkdownText(QStringLiteral("## Status"), false);
+  setCursor(selection, blockAt(session, 0), 0);
+
+  BlockEditContextResolver resolver(&session, &selection);
+  BlockEditContext context;
+  require(resolver.current(context), "block edit context should resolve heading");
+  require(context.blockRange.byteStart == 0, "heading block range should start at marker");
+  require(context.blockRange.byteEnd == 9, "heading block range end mismatch");
+  require(context.contentRange.byteStart == 3, "heading content range should skip marker");
+  require(context.contentRange.byteEnd == 9, "heading content range end mismatch");
+  require(context.contentText == QStringLiteral("Status"), "heading content text mismatch");
+}
+
+void testTextBlockCommandBuilderCreatesStructuralEnterCommands() {
+  DocumentSession session;
+  SelectionController selection;
+
+  session.setMarkdownText(QStringLiteral("## Status"), false);
+  setCursor(selection, blockAt(session, 0), 0);
+
+  BlockEditContextResolver resolver(&session, &selection);
+  BlockEditContext context;
+  require(resolver.current(context), "builder test context should resolve heading");
+
+  TextBlockCommandBuilder builder(&session, &resolver);
+  TextBlockCommandBuilder::Command before =
+      builder.buildTextEdit(context, TextBlockCommandBuilder::Operation::Enter);
+  require(before.valid && before.handled, "builder should produce heading-start enter command");
+  require(before.markdownText == QStringLiteral("\n\n## Status"), "builder heading-start command text mismatch");
+  require(before.preferredCursor.blockId == blockAt(session, 0)->id(), "builder heading-start cursor should prefer original heading");
+  require(before.preferredCursor.text.textOffset == 0, "builder heading-start cursor offset mismatch");
+
+  setCursor(selection, blockAt(session, 0), 6);
+  require(resolver.current(context), "builder heading-end context should resolve");
+  TextBlockCommandBuilder::Command after =
+      builder.buildTextEdit(context, TextBlockCommandBuilder::Operation::Enter);
+  require(after.valid && after.handled, "builder should produce heading-end enter command");
+  require(after.markdownText == QStringLiteral("## Status\n\n"), "builder heading-end command text mismatch");
+  require(!after.preferredCursor.isValid(), "builder heading-end should use fallback cursor for new block");
 }
 
 void testInputMergeParagraphs() {
@@ -291,6 +394,66 @@ void testInputMergeParagraphs() {
   require(input.deleteForward(), "delete at paragraph end should merge next paragraph");
   require(session.markdownText() == QStringLiteral("alpha beta"), "delete merge result mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "delete merge cursor mismatch");
+}
+
+void testInputBackspaceAtParagraphStartDeletesStructuralBoundary() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("alpha"), false);
+  setCursor(selection, blockAt(session, 0), 0);
+  require(input.deleteBackward(), "backspace at document start should be handled as no-op");
+  require(session.markdownText() == QStringLiteral("alpha"), "backspace at document start should not change text");
+  require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "backspace at document start cursor block mismatch");
+  require(selection.cursorPosition().text.textOffset == 0, "backspace at document start cursor offset mismatch");
+
+  session.setMarkdownText(QStringLiteral("alpha\n\n\n\nbeta"), false);
+  setCursor(selection, blockAt(session, 2), 0);
+  require(input.deleteBackward(), "backspace after empty paragraph should remove one empty boundary");
+  require(session.markdownText() == QStringLiteral("alpha\n\nbeta"), "backspace empty paragraph boundary mismatch");
+  require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "backspace empty boundary cursor block mismatch");
+  require(selection.cursorPosition().text.textOffset == 0, "backspace empty boundary cursor offset mismatch");
+
+  session.setMarkdownText(QStringLiteral("# Title\n\nbody"), false);
+  setCursor(selection, blockAt(session, 1), 0);
+  require(input.deleteBackward(), "backspace after heading should merge into heading");
+  require(session.markdownText() == QStringLiteral("# Title body"), "backspace heading merge mismatch");
+  require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "backspace heading merge cursor block mismatch");
+  require(selection.cursorPosition().text.textOffset == 5, "backspace heading merge cursor offset mismatch");
+
+  session.setMarkdownText(QStringLiteral("before **bold**\n\nafter"), false);
+  setCursor(selection, blockAt(session, 1), 0);
+  require(input.deleteBackward(), "backspace after complex inline paragraph should merge");
+  require(session.markdownText() == QStringLiteral("before **bold** after"), "backspace complex inline merge mismatch");
+  require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "backspace complex inline cursor block mismatch");
+  require(selection.cursorPosition().text.textOffset == 11, "backspace complex inline cursor offset mismatch");
+}
+
+void testInputDeleteAtParagraphEndDeletesStructuralBoundary() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("alpha\n\n# Title"), false);
+  setCursor(selection, blockAt(session, 0), 5);
+  require(input.deleteForward(), "delete before heading should merge heading into paragraph");
+  require(session.markdownText() == QStringLiteral("alpha Title"), "delete heading merge mismatch");
+  require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "delete heading merge cursor block mismatch");
+  require(selection.cursorPosition().text.textOffset == 5, "delete heading merge cursor offset mismatch");
+
+  session.setMarkdownText(QStringLiteral("before **bold**\n\nafter"), false);
+  setCursor(selection, blockAt(session, 0), 11);
+  require(input.deleteForward(), "delete after complex inline paragraph should merge");
+  require(session.markdownText() == QStringLiteral("before **bold** after"), "delete complex inline merge mismatch");
+  require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "delete complex inline cursor block mismatch");
+  require(selection.cursorPosition().text.textOffset == 11, "delete complex inline cursor offset mismatch");
 }
 
 void testInputUndoRedoSnapshots() {
@@ -385,6 +548,35 @@ void testHeadingInput() {
   setCursor(selection, blockAt(session, 0), 0);
   require(input.deleteBackward(), "heading start backspace should be handled");
   require(session.markdownText() == QStringLiteral("# Title!"), "heading start backspace should not remove marker");
+}
+
+void testHeadingEnterAtStartInsertsParagraphBeforeBlock() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("## Status"), false);
+  const NodeId headingId = blockAt(session, 0)->id();
+  setCursor(selection, blockAt(session, 0), 0);
+
+  require(input.insertParagraphBreak(), "heading start enter should edit document");
+  require(session.markdownText() == QStringLiteral("\n\n## Status"), "heading start enter should insert before heading marker");
+  require(session.document().root().children().size() == 2, "heading start enter should create leading empty paragraph");
+  require(blockAt(session, 1)->id() == headingId, "heading start enter should preserve heading id");
+  require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "heading start enter cursor should stay on heading");
+  require(selection.cursorPosition().text.textOffset == 0, "heading start enter cursor should stay at heading text start");
+
+  session.setMarkdownText(QStringLiteral("## Status"), false);
+  setCursor(selection, blockAt(session, 0), 6);
+
+  require(input.insertParagraphBreak(), "heading end enter should edit document");
+  require(session.markdownText() == QStringLiteral("## Status\n\n"), "heading end enter should insert after heading block");
+  require(session.document().root().children().size() == 2, "heading end enter should create trailing empty paragraph");
+  require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "heading end enter cursor should move to empty paragraph");
+  require(selection.cursorPosition().text.textOffset == 0, "heading end enter cursor should be at empty paragraph start");
 }
 
 void testListItemInput() {
@@ -876,12 +1068,19 @@ int main(int argc, char** argv) {
   testUndoStack();
   testInputInsertAndBackspace();
   testInputEnterMovesCursorToNewParagraph();
+  testInputEnterSplitsComplexInlineParagraphs();
   testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph();
+  testLocalReparsePreservesUntouchedNodeIds();
+  testBlockEditContextSeparatesBlockAndContentRanges();
+  testTextBlockCommandBuilderCreatesStructuralEnterCommands();
   testInputMergeParagraphs();
+  testInputBackspaceAtParagraphStartDeletesStructuralBoundary();
+  testInputDeleteAtParagraphEndDeletesStructuralBoundary();
   testInputUndoRedoSnapshots();
   testInputSelectionReplaceAndDelete();
   testInputCrossParagraphSelectionReplaceAndDelete();
   testHeadingInput();
+  testHeadingEnterAtStartInsertsParagraphBeforeBlock();
   testListItemInput();
   testListItemEditingCommands();
   testStylizeCollapsedSkeletons();

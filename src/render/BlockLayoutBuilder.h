@@ -10,6 +10,7 @@ namespace muffin {
 
 class BlockLayoutBuilder {
 public:
+  void setActiveCursor(CursorPosition cursor);
   std::unique_ptr<BlockLayout> build(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth = 0);
 
 private:
@@ -59,6 +60,8 @@ private:
   QString textForListMarker(const MarkdownNode& listNode, qsizetype index) const;
   QVector<InlineNode> primaryInlinesForListItem(const MarkdownNode& node) const;
   qreal textHeight(const QString& text, const QFont& font, qreal width, const QMarginsF& padding) const;
+
+  CursorPosition activeCursor_;
 };
 
 }  // namespace muffin

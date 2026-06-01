@@ -20,6 +20,7 @@ public:
 
   QString markdownText() const;
   void setMarkdownText(QString text, std::unique_ptr<MarkdownNode> root);
+  void replaceTopLevelRange(qsizetype first, qsizetype count, std::vector<std::unique_ptr<MarkdownNode>> replacements, QString text);
 
   quint64 revision() const;
   bool isModified() const;

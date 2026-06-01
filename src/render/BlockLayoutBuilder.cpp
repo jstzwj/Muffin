@@ -49,6 +49,10 @@ QString displayLiteralFor(const MarkdownNode& node) {
 
 }  // namespace
 
+void BlockLayoutBuilder::setActiveCursor(CursorPosition cursor) {
+  activeCursor_ = cursor;
+}
+
 std::unique_ptr<BlockLayout> BlockLayoutBuilder::build(
     const MarkdownNode& node,
     const RenderTheme& theme,
@@ -93,7 +97,11 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
 
   auto inlineLayout = std::make_unique<InlineLayout>();
   const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
-  inlineLayout->build(node.inlines(), theme, width, font);
+  InlineLayout::BuildOptions options;
+  if (activeCursor_.blockId == node.id()) {
+    options.activeTextOffset = activeCursor_.text.textOffset;
+  }
+  inlineLayout->build(node.inlines(), theme, width, font, options);
   const qreal height = inlineLayout->height();
   layout->setRect(QRectF(x, y, width, height));
   layout->setInlineLayout(std::move(inlineLayout));
@@ -144,7 +152,11 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   qreal cursorY = y;
 
   auto inlineLayout = std::make_unique<InlineLayout>();
-  inlineLayout->build(primaryInlinesForListItem(node), theme, contentWidth, theme.paragraphFont());
+  InlineLayout::BuildOptions options;
+  if (activeCursor_.blockId == node.id()) {
+    options.activeTextOffset = activeCursor_.text.textOffset;
+  }
+  inlineLayout->build(primaryInlinesForListItem(node), theme, contentWidth, theme.paragraphFont(), options);
   layout->setInlineLayout(std::move(inlineLayout));
 
   qreal height = layout->inlineLayout() ? layout->inlineLayout()->height() : QFontMetricsF(theme.paragraphFont()).height();
@@ -236,11 +248,16 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       cell.header = rowNode->tableRowIsHeader();
       cell.alternate = rowIndex % 2 == 1;
       cell.alignment = column < alignments.size() ? alignments.at(column) : TableAlignment::None;
+      InlineLayout::BuildOptions options;
+      if (activeCursor_.text.nodeId == cellNode->id()) {
+        options.activeTextOffset = activeCursor_.text.textOffset;
+      }
       cell.text.build(
           cellNode->inlines(),
           theme,
           qMax<qreal>(1.0, columnWidth - padding.left() - padding.right()),
-          cell.header ? theme.headingFont(6) : theme.paragraphFont());
+          cell.header ? theme.headingFont(6) : theme.paragraphFont(),
+          options);
       rowHeight = qMax(rowHeight, cell.text.height() + padding.top() + padding.bottom());
       cell.rect = QRectF(x + column * columnWidth, cursorY, columnWidth, 0);
       cells.push_back(std::move(cell));

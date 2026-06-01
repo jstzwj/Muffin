@@ -70,6 +70,27 @@ void requireUsableRect(const QRectF& rect, const QString& label) {
   require(rect.height() > 10.0, QStringLiteral("%1 rect height too small").arg(label));
 }
 
+void testInlineMarkerExpansion() {
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::text(QStringLiteral("before ")));
+  inlines.push_back(InlineNode::strong(QStringLiteral("**"), QVector<InlineNode>{InlineNode::text(QStringLiteral("bold"))}));
+  inlines.push_back(InlineNode::text(QStringLiteral(" after")));
+
+  RenderTheme theme = RenderTheme::github();
+  InlineLayout collapsed;
+  collapsed.build(inlines, theme, 400.0, theme.paragraphFont());
+  require(!collapsed.html().contains(QStringLiteral("**")), QStringLiteral("collapsed inline should hide strong markers"));
+
+  InlineLayout expanded;
+  InlineLayout::BuildOptions options;
+  options.activeTextOffset = 8;
+  expanded.build(inlines, theme, 400.0, theme.paragraphFont(), options);
+  require(expanded.html().contains(QStringLiteral("**")), QStringLiteral("active inline should show strong markers"));
+  require(expanded.plainText() == QStringLiteral("before bold after"), QStringLiteral("expanded plain text should stay collapsed"));
+  require(expanded.hitTestTextOffset(expanded.cursorRect(8).center()) == 8,
+          QStringLiteral("expanded hit test should map display marker offsets back to visible offsets"));
+}
+
 void testLayoutForTheme(const MarkdownDocument& document, const RenderTheme& theme, const QString& themeName) {
   DocumentLayout layout;
   layout.rebuild(document, theme, 1000.0);
@@ -161,6 +182,7 @@ int main(int argc, char** argv) {
   MarkdownDocument document;
   document.setMarkdownText(markdown, std::move(parsed.root));
 
+  testInlineMarkerExpansion();
   testLayoutForTheme(document, RenderTheme::github(), QStringLiteral("github"));
   testLayoutForTheme(document, RenderTheme::newsprint(), QStringLiteral("newsprint"));
   testLayoutForTheme(document, RenderTheme::night(), QStringLiteral("night"));

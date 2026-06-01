@@ -7,6 +7,10 @@
 namespace muffin {
 
 void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth) {
+  rebuild(document, theme, viewportWidth, CursorPosition());
+}
+
+void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, CursorPosition activeCursor) {
   blocks_.clear();
   index_.clear();
 
@@ -15,6 +19,7 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
   pageLeft_ = qMax<qreal>(0.0, (viewportWidth - pageWidth_) / 2.0);
 
   BlockLayoutBuilder builder;
+  builder.setActiveCursor(activeCursor);
   qreal cursorY = theme.topMargin();
   for (const auto& child : document.root().children()) {
     if (child->type() == BlockType::Heading && cursorY > theme.topMargin()) {

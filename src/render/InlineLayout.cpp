@@ -40,6 +40,23 @@ QString flattenPlainText(const QVector<InlineNode>& inlines) {
   return text;
 }
 
+QString markerForInline(const InlineNode& node) {
+  switch (node.type()) {
+    case InlineType::Code:
+      return QStringLiteral("`");
+    case InlineType::InlineMath:
+      return QStringLiteral("$");
+    case InlineType::Emphasis:
+      return node.marker().isEmpty() ? QStringLiteral("*") : node.marker();
+    case InlineType::Strong:
+      return node.marker().isEmpty() ? QStringLiteral("**") : node.marker();
+    case InlineType::Strikethrough:
+      return QStringLiteral("~~");
+    default:
+      return {};
+  }
+}
+
 }  // namespace
 
 void InlineLayout::build(
@@ -47,8 +64,20 @@ void InlineLayout::build(
     const RenderTheme& theme,
     qreal width,
     const QFont& baseFont) {
+  build(inlines, theme, width, baseFont, BuildOptions{});
+}
+
+void InlineLayout::build(
+    const QVector<InlineNode>& inlines,
+    const RenderTheme& theme,
+    qreal width,
+    const QFont& baseFont,
+    BuildOptions options) {
   plainText_ = flattenPlainText(inlines);
-  html_ = renderInlines(inlines, theme);
+  offsetMap_.clear();
+  displayText_.clear();
+  qsizetype visibleOffset = 0;
+  html_ = renderInlines(inlines, theme, visibleOffset, options);
   document_ = std::make_unique<QTextDocument>();
   document_->setDefaultFont(baseFont);
   document_->setDocumentMargin(0);
@@ -96,14 +125,15 @@ qsizetype InlineLayout::hitTestTextOffset(QPointF localPos) const {
     return 0;
   }
   const int position = document_->documentLayout()->hitTest(localPos, Qt::FuzzyHit);
-  return static_cast<qsizetype>(qBound(0, position, static_cast<int>(plainText_.size())));
+  return visibleOffsetForDisplayOffset(position);
 }
 
 QRectF InlineLayout::cursorRect(qsizetype textOffset) const {
   if (!document_) {
     return {};
   }
-  const int position = qBound(0, static_cast<int>(textOffset), qMax(0, document_->characterCount() - 1));
+  const int displayOffset = static_cast<int>(displayOffsetForVisibleOffset(textOffset));
+  const int position = qBound(0, displayOffset, qMax(0, document_->characterCount() - 1));
   const QTextBlock block = document_->findBlock(position);
   if (!block.isValid() || !block.layout()) {
     return {};
@@ -127,8 +157,8 @@ QVector<QRectF> InlineLayout::selectionRects(qsizetype startOffset, qsizetype en
     return rects;
   }
 
-  const int start = qBound(0, static_cast<int>(qMin(startOffset, endOffset)), static_cast<int>(plainText_.size()));
-  const int end = qBound(0, static_cast<int>(qMax(startOffset, endOffset)), static_cast<int>(plainText_.size()));
+  const int start = qBound(0, static_cast<int>(displayOffsetForVisibleOffset(qMin(startOffset, endOffset))), static_cast<int>(displayText_.size()));
+  const int end = qBound(0, static_cast<int>(displayOffsetForVisibleOffset(qMax(startOffset, endOffset))), static_cast<int>(displayText_.size()));
   if (start == end) {
     return rects;
   }
@@ -176,45 +206,148 @@ QString InlineLayout::html() const {
   return html_;
 }
 
-QString InlineLayout::renderInlines(const QVector<InlineNode>& inlines, const RenderTheme& theme) const {
+QString InlineLayout::renderInlines(const QVector<InlineNode>& inlines, const RenderTheme& theme, qsizetype& visibleOffset, BuildOptions options) {
   QString html;
   for (const InlineNode& node : inlines) {
-    html += renderInline(node, theme);
+    html += renderInline(node, theme, visibleOffset, options);
   }
   return html;
 }
 
-QString InlineLayout::renderInline(const InlineNode& node, const RenderTheme& theme) const {
+QString InlineLayout::renderInline(const InlineNode& node, const RenderTheme& theme, qsizetype& visibleOffset, BuildOptions options) {
+  const QString visible = flattenPlainText(QVector<InlineNode>{node});
+  const qsizetype visibleStart = visibleOffset;
+  const qsizetype visibleEnd = visibleStart + visible.size();
+  const QString marker = markerForInline(node);
+  const bool expandable = !marker.isEmpty();
+  const bool active = expandable && options.activeTextOffset >= visibleStart && options.activeTextOffset <= visibleEnd;
+  auto appendDisplay = [&](QString text, qsizetype mapVisibleStart, qsizetype mapVisibleEnd) {
+    const qsizetype displayStart = displayText_.size();
+    displayText_ += text;
+    offsetMap_.push_back(OffsetMapEntry{displayStart, displayText_.size(), mapVisibleStart, mapVisibleEnd});
+    return escaped(text);
+  };
+  const QString markerHtml = QStringLiteral("<span style=\"color:%1;\">%2</span>").arg(cssColor(theme.mutedTextColor()));
+
   switch (node.type()) {
-    case InlineType::Text:
-      return escaped(node.text());
-    case InlineType::SoftBreak:
-      return QStringLiteral(" ");
-    case InlineType::LineBreak:
+    case InlineType::Text: {
+      const QString html = appendDisplay(node.text(), visibleStart, visibleEnd);
+      visibleOffset = visibleEnd;
+      return html;
+    }
+    case InlineType::SoftBreak: {
+      const QString html = appendDisplay(QStringLiteral(" "), visibleStart, visibleEnd);
+      visibleOffset = visibleEnd;
+      return html;
+    }
+    case InlineType::LineBreak: {
+      appendDisplay(QStringLiteral("\n"), visibleStart, visibleEnd);
+      visibleOffset = visibleEnd;
       return QStringLiteral("<br/>");
-    case InlineType::Code:
-      return QStringLiteral("<code>%1</code>").arg(escaped(node.text()));
+    }
+    case InlineType::Code: {
+      QString html;
+      if (active) {
+        html += markerHtml.arg(escaped(marker));
+        appendDisplay(marker, visibleStart, visibleStart);
+      }
+      html += QStringLiteral("<code>%1</code>").arg(appendDisplay(node.text(), visibleStart, visibleEnd));
+      if (active) {
+        html += markerHtml.arg(escaped(marker));
+        appendDisplay(marker, visibleEnd, visibleEnd);
+      }
+      visibleOffset = visibleEnd;
+      return html;
+    }
     case InlineType::Emphasis:
-      return QStringLiteral("<em>%1</em>").arg(renderInlines(node.children(), theme));
     case InlineType::Strong:
-      return QStringLiteral("<strong>%1</strong>").arg(renderInlines(node.children(), theme));
-    case InlineType::Strikethrough:
-      return QStringLiteral("<s>%1</s>").arg(renderInlines(node.children(), theme));
-    case InlineType::Link:
-      return QStringLiteral("<a href=\"%1\">%2</a>").arg(escaped(node.href()), renderInlines(node.children(), theme));
-    case InlineType::Image:
-      return QStringLiteral("<span style=\"color:%1;\">[%2]</span>").arg(cssColor(theme.mutedTextColor()), escaped(node.alt()));
-    case InlineType::InlineMath:
-      return QStringLiteral("<span class=\"math\">%1</span>").arg(escaped(node.text()));
-    case InlineType::HtmlInline:
-      return escaped(node.text());
+    case InlineType::Strikethrough: {
+      QString html;
+      if (active) {
+        html += markerHtml.arg(escaped(marker));
+        appendDisplay(marker, visibleStart, visibleStart);
+      }
+      const QString inner = renderInlines(node.children(), theme, visibleOffset, options);
+      const QString tag = node.type() == InlineType::Emphasis ? QStringLiteral("em")
+                          : node.type() == InlineType::Strong ? QStringLiteral("strong")
+                                                              : QStringLiteral("s");
+      html += QStringLiteral("<%1>%2</%1>").arg(tag, inner);
+      if (active) {
+        html += markerHtml.arg(escaped(marker));
+        appendDisplay(marker, visibleEnd, visibleEnd);
+      }
+      visibleOffset = visibleEnd;
+      return html;
+    }
+    case InlineType::Link: {
+      const QString inner = renderInlines(node.children(), theme, visibleOffset, options);
+      visibleOffset = visibleEnd;
+      return QStringLiteral("<a href=\"%1\">%2</a>").arg(escaped(node.href()), inner);
+    }
+    case InlineType::Image: {
+      visibleOffset = visibleEnd;
+      return QStringLiteral("<span style=\"color:%1;\">[%2]</span>").arg(cssColor(theme.mutedTextColor()), appendDisplay(node.alt(), visibleStart, visibleEnd));
+    }
+    case InlineType::InlineMath: {
+      QString html;
+      if (active) {
+        html += markerHtml.arg(escaped(marker));
+        appendDisplay(marker, visibleStart, visibleStart);
+      }
+      html += QStringLiteral("<span class=\"math\">%1</span>").arg(appendDisplay(node.text(), visibleStart, visibleEnd));
+      if (active) {
+        html += markerHtml.arg(escaped(marker));
+        appendDisplay(marker, visibleEnd, visibleEnd);
+      }
+      visibleOffset = visibleEnd;
+      return html;
+    }
+    case InlineType::HtmlInline: {
+      const QString html = appendDisplay(node.text(), visibleStart, visibleEnd);
+      visibleOffset = visibleEnd;
+      return html;
+    }
     default:
-      return renderInlines(node.children(), theme);
+      return renderInlines(node.children(), theme, visibleOffset, options);
   }
 }
 
 QString InlineLayout::cssColor(const QColor& color) const {
   return color.name(QColor::HexRgb);
+}
+
+qsizetype InlineLayout::visibleOffsetForDisplayOffset(qsizetype displayOffset) const {
+  if (offsetMap_.isEmpty()) {
+    return qBound<qsizetype>(0, displayOffset, plainText_.size());
+  }
+  displayOffset = qBound<qsizetype>(0, displayOffset, displayText_.size());
+  for (const OffsetMapEntry& entry : offsetMap_) {
+    if (displayOffset <= entry.displayEnd) {
+      if (entry.visibleEnd <= entry.visibleStart || entry.displayEnd <= entry.displayStart) {
+        return entry.visibleStart;
+      }
+      const qsizetype delta = qBound<qsizetype>(0, displayOffset - entry.displayStart, entry.visibleEnd - entry.visibleStart);
+      return qBound<qsizetype>(entry.visibleStart, entry.visibleStart + delta, entry.visibleEnd);
+    }
+  }
+  return plainText_.size();
+}
+
+qsizetype InlineLayout::displayOffsetForVisibleOffset(qsizetype visibleOffset) const {
+  if (offsetMap_.isEmpty()) {
+    return qBound<qsizetype>(0, visibleOffset, plainText_.size());
+  }
+  visibleOffset = qBound<qsizetype>(0, visibleOffset, plainText_.size());
+  for (const OffsetMapEntry& entry : offsetMap_) {
+    if (visibleOffset <= entry.visibleEnd) {
+      if (entry.visibleEnd <= entry.visibleStart || entry.displayEnd <= entry.displayStart) {
+        continue;
+      }
+      const qsizetype delta = qBound<qsizetype>(0, visibleOffset - entry.visibleStart, entry.displayEnd - entry.displayStart);
+      return qBound<qsizetype>(entry.displayStart, entry.displayStart + delta, entry.displayEnd);
+    }
+  }
+  return displayText_.size();
 }
 
 }  // namespace muffin

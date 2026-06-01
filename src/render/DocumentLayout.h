@@ -17,6 +17,7 @@ namespace muffin {
 class DocumentLayout {
 public:
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth);
+  void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, CursorPosition activeCursor);
 
   qreal pageLeft() const;
   qreal pageWidth() const;

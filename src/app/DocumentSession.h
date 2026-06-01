@@ -5,8 +5,15 @@
 
 #include <QObject>
 #include <QString>
+#include <QVector>
 
 namespace muffin {
+
+struct LocalEditNodeHint {
+  NodeId nodeId;
+  qsizetype targetSourceOffset = -1;
+  BlockType type = BlockType::Unknown;
+};
 
 class DocumentSession final : public QObject {
   Q_OBJECT
@@ -27,6 +34,12 @@ public:
   void setMarkdownText(QString text, bool modified);
   void updateFromEditor(QString text);
   void applyMarkdownText(QString text, bool modified);
+  bool applyLocalMarkdownEdit(
+      qsizetype sourceStart,
+      qsizetype sourceEnd,
+      QString replacementText,
+      bool modified,
+      QVector<LocalEditNodeHint> nodeHints = {});
 
 signals:
   void documentTextChanged(QString text);
@@ -36,6 +49,12 @@ signals:
 
 private:
   void parseAndStore(QString text, bool modified);
+  bool tryApplyTopLevelLocalEdit(
+      qsizetype sourceStart,
+      qsizetype sourceEnd,
+      QString replacementText,
+      bool modified,
+      const QVector<LocalEditNodeHint>& nodeHints);
 
   MarkdownDocument document_;
   CmarkGfmParser parser_;

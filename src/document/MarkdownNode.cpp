@@ -12,6 +12,10 @@ NodeId MarkdownNode::id() const {
   return id_;
 }
 
+void MarkdownNode::setId(NodeId id) {
+  id_ = std::move(id);
+}
+
 BlockType MarkdownNode::type() const {
   return type_;
 }

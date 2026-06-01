@@ -6,6 +6,7 @@
 
 #include <QTextDocument>
 #include <QString>
+#include <QVector>
 
 #include <memory>
 
@@ -13,6 +14,10 @@ namespace muffin {
 
 class InlineLayout {
 public:
+  struct BuildOptions {
+    qsizetype activeTextOffset = -1;
+  };
+
   InlineLayout() = default;
   InlineLayout(const InlineLayout&) = delete;
   InlineLayout& operator=(const InlineLayout&) = delete;
@@ -20,6 +25,7 @@ public:
   InlineLayout& operator=(InlineLayout&&) noexcept = default;
 
   void build(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width, const QFont& baseFont);
+  void build(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width, const QFont& baseFont, BuildOptions options);
 
   QSizeF size() const;
   qreal height() const;
@@ -32,14 +38,25 @@ public:
   QString html() const;
 
 private:
-  QString renderInlines(const QVector<InlineNode>& inlines, const RenderTheme& theme) const;
-  QString renderInline(const InlineNode& node, const RenderTheme& theme) const;
+  struct OffsetMapEntry {
+    qsizetype displayStart = 0;
+    qsizetype displayEnd = 0;
+    qsizetype visibleStart = 0;
+    qsizetype visibleEnd = 0;
+  };
+
+  QString renderInlines(const QVector<InlineNode>& inlines, const RenderTheme& theme, qsizetype& visibleOffset, BuildOptions options);
+  QString renderInline(const InlineNode& node, const RenderTheme& theme, qsizetype& visibleOffset, BuildOptions options);
   QString cssColor(const QColor& color) const;
+  qsizetype visibleOffsetForDisplayOffset(qsizetype displayOffset) const;
+  qsizetype displayOffsetForVisibleOffset(qsizetype visibleOffset) const;
 
   std::unique_ptr<QTextDocument> document_;
   QSizeF size_;
   QString html_;
   QString plainText_;
+  QString displayText_;
+  QVector<OffsetMapEntry> offsetMap_;
 };
 
 }  // namespace muffin

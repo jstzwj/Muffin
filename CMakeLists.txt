@@ -35,6 +35,8 @@ set(MUFFIN_CORE_SOURCES
   src/document/MarkdownTypes.h
   src/document/InlineNode.cpp
   src/document/InlineNode.h
+  src/document/InlineSourceMap.cpp
+  src/document/InlineSourceMap.h
   src/document/MarkdownNode.cpp
   src/document/MarkdownNode.h
   src/document/TextSelection.h
@@ -107,6 +109,8 @@ set(MUFFIN_UI_SOURCES
   src/edit/UndoStack.h
   src/editor/BrushQueue.cpp
   src/editor/BrushQueue.h
+  src/editor/BlockEditContext.cpp
+  src/editor/BlockEditContext.h
   src/editor/ClipboardController.cpp
   src/editor/ClipboardController.h
   src/editor/CursorPosition.h
@@ -118,6 +122,8 @@ set(MUFFIN_UI_SOURCES
   src/editor/InputController.h
   src/editor/SelectionController.cpp
   src/editor/SelectionController.h
+  src/editor/TextBlockCommandBuilder.cpp
+  src/editor/TextBlockCommandBuilder.h
   src/render/BlockLayout.cpp
   src/render/BlockLayout.h
   src/render/BlockLayoutBuilder.cpp

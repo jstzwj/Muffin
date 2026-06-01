@@ -21,6 +21,7 @@ public:
   MarkdownNode& operator=(MarkdownNode&&) = default;
 
   NodeId id() const;
+  void setId(NodeId id);
   BlockType type() const;
   void setType(BlockType type);
 

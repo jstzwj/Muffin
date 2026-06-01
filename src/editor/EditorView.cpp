@@ -96,7 +96,9 @@ void EditorView::setCursorHit(HitTestResult hit) {
   cursorPosition_ = hit.cursorPosition();
   selection_.anchor = cursorPosition_;
   selection_.focus = cursorPosition_;
-  cursorVisible_ = hit.isValid();
+  rebuildLayout();
+  cursorHit_ = hitForCursorPosition(cursorPosition_);
+  cursorVisible_ = cursorHit_.isValid();
   viewport()->update();
 }
 
@@ -104,6 +106,7 @@ void EditorView::setCursorPosition(CursorPosition position) {
   cursorPosition_ = position;
   selection_.anchor = cursorPosition_;
   selection_.focus = cursorPosition_;
+  rebuildLayout();
   cursorHit_ = hitForCursorPosition(position);
   cursorVisible_ = cursorHit_.isValid();
   viewport()->update();
@@ -112,6 +115,7 @@ void EditorView::setCursorPosition(CursorPosition position) {
 void EditorView::setSelectionRange(SelectionRange selection) {
   selection_ = selection;
   cursorPosition_ = selection.focus;
+  rebuildLayout();
   cursorHit_ = hitForCursorPosition(selection.focus);
   cursorVisible_ = selection.isCollapsed() && cursorHit_.isValid();
   viewport()->update();
@@ -247,7 +251,7 @@ void EditorView::rebuildLayout() {
 
   if (document_) {
     const int oldValue = verticalScrollBar()->value();
-    layout_->rebuild(*document_, theme_, viewport()->width());
+    layout_->rebuild(*document_, theme_, viewport()->width(), cursorPosition_);
     updateScrollBars();
     verticalScrollBar()->setValue(qMin(oldValue, verticalScrollBar()->maximum()));
     if (cursorPosition_.isValid()) {

@@ -34,6 +34,27 @@ void MarkdownDocument::setMarkdownText(QString text, std::unique_ptr<MarkdownNod
   replaceRoot(std::move(root));
 }
 
+void MarkdownDocument::replaceTopLevelRange(
+    qsizetype first,
+    qsizetype count,
+    std::vector<std::unique_ptr<MarkdownNode>> replacements,
+    QString text) {
+  markdownText_ = std::move(text);
+  const qsizetype boundedFirst = qBound<qsizetype>(0, first, root_->children().size());
+  const qsizetype boundedCount = qBound<qsizetype>(0, count, root_->children().size() - boundedFirst);
+  for (qsizetype i = 0; i < boundedCount; ++i) {
+    root_->detachChild(boundedFirst);
+  }
+  qsizetype insertAt = boundedFirst;
+  for (auto& replacement : replacements) {
+    root_->insertChild(insertAt, std::move(replacement));
+    ++insertAt;
+  }
+  index_.rebuild(*root_);
+  ++revision_;
+  emit documentReset();
+}
+
 quint64 MarkdownDocument::revision() const {
   return revision_;
 }

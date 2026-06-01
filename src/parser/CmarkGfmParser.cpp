@@ -12,6 +12,65 @@ extern "C" {
 }
 
 namespace muffin {
+namespace {
+
+qsizetype sourceOffsetForLineColumn(QStringView text, int line, int column) {
+  if (line <= 0 || column <= 0) {
+    return -1;
+  }
+
+  int currentLine = 1;
+  qsizetype offset = 0;
+  while (currentLine < line && offset < text.size()) {
+    if (text.at(offset) == QLatin1Char('\n')) {
+      ++currentLine;
+    }
+    ++offset;
+  }
+
+  if (currentLine != line) {
+    return -1;
+  }
+  return qMin(offset + column - 1, text.size());
+}
+
+qsizetype sourceOffsetForLineEnd(QStringView text, int line) {
+  if (line <= 0) {
+    return -1;
+  }
+
+  int currentLine = 1;
+  qsizetype offset = 0;
+  while (offset < text.size()) {
+    if (currentLine == line && text.at(offset) == QLatin1Char('\n')) {
+      return offset;
+    }
+    if (text.at(offset) == QLatin1Char('\n')) {
+      ++currentLine;
+    }
+    ++offset;
+  }
+  return currentLine == line ? text.size() : -1;
+}
+
+void annotateSourceOffsets(QStringView markdown, MarkdownNode& node) {
+  SourceRange range = node.sourceRange();
+  if (range.lineStart > 0) {
+    const qsizetype start = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
+    const qsizetype end = sourceOffsetForLineEnd(markdown, range.lineEnd);
+    if (start >= 0 && end >= start) {
+      range.byteStart = start;
+      range.byteEnd = end;
+      node.setSourceRange(range);
+    }
+  }
+
+  for (const auto& child : node.children()) {
+    annotateSourceOffsets(markdown, *child);
+  }
+}
+
+}  // namespace
 
 CmarkGfmParser::CmarkGfmParser() {
   ensureExtensionsRegistered();
@@ -31,6 +90,7 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   ParseResult result;
   result.root = adapter.convertBlock(document);
   insertVirtualEmptyParagraphs(markdown, *result.root);
+  annotateSourceOffsets(markdown, *result.root);
   result.elapsedMs = timer.elapsed();
 
   cmark_node_free(document);

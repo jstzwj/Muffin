@@ -1,9 +1,12 @@
 #pragma once
 
+#include "app/DocumentSession.h"
 #include "document/NodeId.h"
 #include "edit/EditTransaction.h"
+#include "editor/TextBlockCommandBuilder.h"
 
 #include <QObject>
+#include <QVector>
 
 class QKeyEvent;
 class QInputMethodEvent;
@@ -12,7 +15,6 @@ namespace muffin {
 
 class BrushQueue;
 class CodeFenceController;
-class DocumentSession;
 class EditorView;
 class HtmlBlockController;
 class MathBlockController;
@@ -53,49 +55,17 @@ signals:
   void unsupportedEditRequested(QString reason);
 
 private:
-  enum class Operation {
-    InsertText,
-    Backspace,
-    Delete,
-    Enter
-  };
-
-  struct ParagraphEditContext {
-    MarkdownNode* node = nullptr;
-    MarkdownNode* editableNode = nullptr;
-    qsizetype sourceStart = -1;
-    qsizetype sourceEnd = -1;
-    qsizetype cursorOffset = 0;
-    QString sourceText;
-  };
-
   bool handleKeyPress(QKeyEvent* event);
-  bool editParagraph(Operation operation, QString text = {});
+  bool editParagraph(TextBlockCommandBuilder::Operation operation, QString text = {});
+  bool applyTextCommand(const TextBlockCommandBuilder::Command& command);
   bool replaceSelection(QString text, EditTransaction::Kind kind, QString label);
-  bool mergeWithPreviousParagraph(const ParagraphEditContext& context);
-  bool mergeWithNextParagraph(const ParagraphEditContext& context);
-  bool splitListItem(const ParagraphEditContext& context);
-  bool exitListItem(const ParagraphEditContext& context);
-  bool outdentListItem(const ParagraphEditContext& context);
-  bool listItemLineBounds(const ParagraphEditContext& context, qsizetype& lineStart, qsizetype& contentStart, qsizetype& lineEnd) const;
-  QString listMarkerFor(const QString& line) const;
-  bool paragraphContext(ParagraphEditContext& context) const;
-  bool paragraphContextFor(NodeId blockId, ParagraphEditContext& context) const;
-  bool fillEditableContext(MarkdownNode& displayNode, ParagraphEditContext& context) const;
-  bool selectionContext(ParagraphEditContext& context, qsizetype& start, qsizetype& end) const;
   bool selectionSourceRange(qsizetype& start, qsizetype& end) const;
   bool blockSelectionSourceRange(qsizetype& start, qsizetype& end) const;
-  bool blockSourceRange(const MarkdownNode& node, qsizetype& start, qsizetype& end) const;
-  bool isPlainParagraph(const MarkdownNode& node, const QString& sourceText) const;
-  bool isPlainInlineEditable(const MarkdownNode& node, const QString& sourceText) const;
-  MarkdownNode* primaryParagraph(MarkdownNode& node) const;
-  MarkdownNode* previousPlainParagraph(const MarkdownNode& node, ParagraphEditContext& context) const;
-  MarkdownNode* nextPlainParagraph(const MarkdownNode& node, ParagraphEditContext& context) const;
-  qsizetype sourceOffsetForLineColumn(const QString& text, int line, int column) const;
-  qsizetype sourceOffsetForLineEnd(const QString& text, int line) const;
+  BlockEditContextResolver contextResolver() const;
   CursorPosition cursorFor(NodeId blockId, qsizetype offset) const;
   CursorPosition cursorForNode(MarkdownNode& node, qsizetype offset) const;
   CursorPosition cursorForSourceOffset(qsizetype sourceOffset, bool preferLaterEmptyAtOffset = false) const;
+  CursorPosition cursorAfterEdit(CursorPosition preferredCursor, qsizetype fallbackSourceOffset, bool preferLaterEmptyAtOffset = false) const;
   MarkdownNode* paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset) const;
   MarkdownNode* selectableBlockByDirection(NodeId current, int direction) const;
   qsizetype selectableTextLength(const MarkdownNode& node) const;
@@ -104,6 +74,14 @@ private:
   void setCursorOrExtend(CursorPosition cursor, bool extendSelection);
   void applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText, qsizetype nextSourceOffset);
   void applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText, qsizetype nextSourceOffset, bool preferLaterEmptyAtOffset);
+  void applyEdit(
+      EditTransaction::Kind kind,
+      const QString& label,
+      QString nextText,
+      CursorPosition preferredCursor,
+      qsizetype fallbackSourceOffset,
+      QVector<LocalEditNodeHint> nodeHints = {},
+      bool preferLaterEmptyAtOffset = false);
   QString printableText(QKeyEvent* event) const;
 
   DocumentSession* session_ = nullptr;

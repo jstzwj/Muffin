@@ -54,9 +54,6 @@ private:
   bool editableContextFor(const MarkdownDocument& document, const MarkdownNode& displayNode, EditableContext& context) const;
   bool editableCursorSourceOffset(const MarkdownDocument& document, const CursorPosition& cursor, qsizetype& sourceOffset,
                                   qsizetype& contextSourceStart) const;
-  bool sourceOffsetForVisibleOffset(const QVector<InlineNode>& inlines, const QString& sourceText, qsizetype visibleOffset,
-                                    qsizetype& sourceOffset) const;
-  qsizetype sourceOffsetWithinInline(const InlineNode& node, const QString& markdown, qsizetype visibleOffset) const;
   bool selectionSourceRange(const MarkdownDocument& document, const SelectionRange& selection, qsizetype& start, qsizetype& end) const;
   bool blockSelectionSourceRange(const MarkdownDocument& document, const SelectionRange& selection, qsizetype& start, qsizetype& end) const;
   bool blockSourceRange(const MarkdownDocument& document, const MarkdownNode& node, qsizetype& start, qsizetype& end) const;

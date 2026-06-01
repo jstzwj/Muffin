@@ -1,0 +1,347 @@
+#include "editor/TextBlockCommandBuilder.h"
+
+#include "document/MarkdownNode.h"
+
+namespace muffin {
+
+TextBlockCommandBuilder::TextBlockCommandBuilder(DocumentSession* session, const BlockEditContextResolver* resolver)
+    : session_(session), resolver_(resolver) {}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
+    const BlockEditContext& context,
+    Operation operation,
+    QString text) const {
+  Command command;
+  if (!session_ || !context.node) {
+    return command;
+  }
+
+  if (!context.plainInlineEditable && operation != Operation::Enter && operation != Operation::Backspace && operation != Operation::Delete) {
+    return command;
+  }
+
+  QString nextParagraph = context.contentText;
+  qsizetype nextOffset = context.plainInlineEditable ? qBound<qsizetype>(0, context.cursorTextOffset, nextParagraph.size())
+                                                     : qBound<qsizetype>(0, context.cursorSourceOffset - context.contentRange.byteStart, nextParagraph.size());
+  command.kind = EditTransaction::Kind::InsertText;
+  command.label = QStringLiteral("Insert Text");
+
+  switch (operation) {
+    case Operation::InsertText:
+      nextParagraph.insert(nextOffset, text);
+      nextOffset += text.size();
+      command.kind = EditTransaction::Kind::InsertText;
+      command.label = QStringLiteral("Insert Text");
+      break;
+    case Operation::Backspace:
+      if (context.cursorTextOffset <= 0) {
+        if (context.node->type() == BlockType::ListItem) {
+          return buildOutdentListItem(context);
+        }
+        return buildMergeWithPreviousParagraph(context);
+      }
+      if (!context.plainInlineEditable) {
+        return command;
+      }
+      nextParagraph.remove(nextOffset - 1, 1);
+      --nextOffset;
+      command.kind = EditTransaction::Kind::DeleteText;
+      command.label = QStringLiteral("Backspace");
+      break;
+    case Operation::Delete:
+      if (context.cursorTextOffset >= context.visibleText.size()) {
+        return buildMergeWithNextParagraph(context);
+      }
+      if (!context.plainInlineEditable) {
+        return command;
+      }
+      nextParagraph.remove(nextOffset, 1);
+      command.kind = EditTransaction::Kind::DeleteText;
+      command.label = QStringLiteral("Delete");
+      break;
+    case Operation::Enter:
+      if (context.node->type() == BlockType::ListItem) {
+        return context.contentText.trimmed().isEmpty() ? buildExitListItem(context) : buildSplitListItem(context);
+      }
+      if (context.cursorTextOffset <= 0) {
+        return buildInsertBlockBefore(context);
+      }
+      if (context.cursorTextOffset >= context.visibleText.size()) {
+        return buildInsertBlockAfter(context);
+      }
+      return buildSplitTextBlock(context, context.cursorSourceOffset - context.contentRange.byteStart);
+  }
+
+  command.markdownText = session_->markdownText();
+  command.fallbackSourceOffset = context.contentRange.byteStart + nextOffset;
+  command.markdownText.replace(context.contentRange.byteStart, context.contentRange.byteEnd - context.contentRange.byteStart, nextParagraph);
+  command.nodeHints.push_back(LocalEditNodeHint{
+      context.node->id(),
+      context.blockRange.byteStart >= 0 ? context.blockRange.byteStart : context.contentRange.byteStart,
+      context.node->type()});
+  command.preferredCursor = cursorFor(context.node->id(), nextOffset);
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildInsertBlockBefore(const BlockEditContext& context) const {
+  Command command;
+  const qsizetype insertStart = context.blockRange.byteStart >= 0 ? context.blockRange.byteStart : context.contentRange.byteStart;
+  if (!session_ || insertStart < 0 || !context.node) {
+    return command;
+  }
+
+  command.markdownText = session_->markdownText();
+  command.markdownText.insert(insertStart, QStringLiteral("\n\n"));
+  command.kind = EditTransaction::Kind::SplitParagraph;
+  command.label = QStringLiteral("Insert Paragraph Before");
+  command.preferredCursor = cursorFor(context.node->id(), 0);
+  command.fallbackSourceOffset = insertStart + 2;
+  command.nodeHints.push_back(LocalEditNodeHint{context.node->id(), insertStart + 2, context.node->type()});
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildInsertBlockAfter(const BlockEditContext& context) const {
+  Command command;
+  const qsizetype insertEnd = context.blockRange.byteEnd >= 0 ? context.blockRange.byteEnd : context.contentRange.byteEnd;
+  if (!session_ || insertEnd < 0 || !context.node) {
+    return command;
+  }
+
+  command.markdownText = session_->markdownText();
+  command.markdownText.insert(insertEnd, QStringLiteral("\n\n"));
+  command.kind = EditTransaction::Kind::SplitParagraph;
+  command.label = QStringLiteral("Insert Paragraph After");
+  command.fallbackSourceOffset = insertEnd + 2;
+  command.nodeHints.push_back(LocalEditNodeHint{context.node->id(), context.blockRange.byteStart, context.node->type()});
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitTextBlock(
+    const BlockEditContext& context,
+    qsizetype contentOffset) const {
+  Command command;
+  if (!session_ || !context.node) {
+    return command;
+  }
+
+  QString nextContent = context.contentText;
+  qsizetype nextOffset = qBound<qsizetype>(0, contentOffset, nextContent.size());
+  if (nextOffset > 0 && nextOffset < nextContent.size()) {
+    const QChar previous = nextContent.at(nextOffset - 1);
+    const QChar next = nextContent.at(nextOffset);
+    if ((previous == QLatin1Char('*') && next == QLatin1Char('*')) || (previous == QLatin1Char('`') && next == QLatin1Char('`')) ||
+        (previous == QLatin1Char('$') && next == QLatin1Char('$'))) {
+      --nextOffset;
+    }
+  }
+  if (nextOffset < nextContent.size() && nextContent.at(nextOffset).isSpace()) {
+    nextContent.remove(nextOffset, 1);
+  } else if (nextOffset > 0 && nextContent.at(nextOffset - 1).isSpace()) {
+    nextContent.remove(nextOffset - 1, 1);
+    --nextOffset;
+  }
+  nextContent.insert(nextOffset, QStringLiteral("\n\n"));
+  nextOffset += 2;
+
+  command.markdownText = session_->markdownText();
+  command.markdownText.replace(context.contentRange.byteStart, context.contentRange.byteEnd - context.contentRange.byteStart, nextContent);
+  command.kind = EditTransaction::Kind::SplitParagraph;
+  command.label = QStringLiteral("Split Paragraph");
+  command.fallbackSourceOffset = context.contentRange.byteStart + nextOffset;
+  command.nodeHints.push_back(LocalEditNodeHint{context.node->id(), context.blockRange.byteStart, context.node->type()});
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPreviousParagraph(const BlockEditContext& context) const {
+  Command command;
+  if (!session_ || !resolver_ || !context.node) {
+    return command;
+  }
+
+  BlockEditContext previous;
+  if (!resolver_->previousEditableTextBlock(*context.node, previous)) {
+    command.valid = true;
+    command.handled = false;
+    return command;
+  }
+
+  command.markdownText = session_->markdownText();
+  const qsizetype separatorStart = previous.contentRange.byteEnd;
+  const qsizetype separatorLength = qMax<qsizetype>(0, context.contentRange.byteStart - previous.contentRange.byteEnd);
+  command.fallbackSourceOffset = previous.contentRange.byteEnd;
+  const QString separator = previous.contentText.isEmpty() || context.contentText.isEmpty() ? QString() : QStringLiteral(" ");
+  command.markdownText.replace(separatorStart, separatorLength, separator);
+  command.kind = EditTransaction::Kind::DeleteText;
+  command.label = QStringLiteral("Merge Paragraphs");
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithNextParagraph(const BlockEditContext& context) const {
+  Command command;
+  if (!session_ || !resolver_ || !context.node) {
+    return command;
+  }
+
+  BlockEditContext next;
+  if (!resolver_->nextEditableTextBlock(*context.node, next)) {
+    command.valid = true;
+    command.handled = false;
+    return command;
+  }
+
+  command.markdownText = session_->markdownText();
+  const qsizetype separatorStart = context.contentRange.byteEnd;
+  const qsizetype separatorLength = qMax<qsizetype>(0, next.contentRange.byteStart - context.contentRange.byteEnd);
+  command.fallbackSourceOffset = context.contentRange.byteEnd;
+  const QString separator = context.contentText.isEmpty() || next.contentText.isEmpty() ? QString() : QStringLiteral(" ");
+  command.markdownText.replace(separatorStart, separatorLength, separator);
+  command.kind = EditTransaction::Kind::DeleteText;
+  command.label = QStringLiteral("Merge Paragraphs");
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(const BlockEditContext& context) const {
+  Command command;
+  if (!session_ || !resolver_) {
+    return command;
+  }
+
+  qsizetype lineStart = -1;
+  qsizetype contentStart = -1;
+  qsizetype lineEnd = -1;
+  if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd)) {
+    return command;
+  }
+
+  const QString markdown = session_->markdownText();
+  const QString line = markdown.mid(lineStart, lineEnd - lineStart);
+  const QString marker = resolver_->listMarkerFor(line);
+  if (marker.isEmpty()) {
+    return command;
+  }
+
+  command.markdownText = markdown;
+  const qsizetype splitOffset = context.contentRange.byteStart + qBound<qsizetype>(0, context.cursorTextOffset, context.contentText.size());
+  const qsizetype markerColumn = qMax<qsizetype>(0, contentStart - lineStart - marker.size());
+  QString nextMarker = marker;
+  qsizetype digitCount = 0;
+  while (digitCount < marker.size() && marker.at(digitCount).isDigit()) {
+    ++digitCount;
+  }
+  if (digitCount > 0) {
+    const int nextNumber = marker.left(digitCount).toInt() + 1;
+    nextMarker = QStringLiteral("%1. ").arg(nextNumber);
+  }
+  const QString insertion = QLatin1Char('\n') + QString(markerColumn, QLatin1Char(' ')) + nextMarker;
+  command.markdownText.insert(splitOffset, insertion);
+  command.kind = EditTransaction::Kind::SplitParagraph;
+  command.label = QStringLiteral("Split List Item");
+  command.fallbackSourceOffset = splitOffset + insertion.size();
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildExitListItem(const BlockEditContext& context) const {
+  Command command;
+  if (!session_ || !resolver_) {
+    return command;
+  }
+
+  qsizetype lineStart = -1;
+  qsizetype contentStart = -1;
+  qsizetype lineEnd = -1;
+  if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd)) {
+    return command;
+  }
+
+  command.markdownText = session_->markdownText();
+  command.markdownText.remove(lineStart, lineEnd - lineStart);
+  command.markdownText.insert(lineStart, QLatin1Char('\n'));
+  command.kind = EditTransaction::Kind::DeleteText;
+  command.label = QStringLiteral("Exit List Item");
+  command.fallbackSourceOffset = lineStart;
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(const BlockEditContext& context) const {
+  Command command;
+  if (!session_ || !resolver_) {
+    return command;
+  }
+
+  qsizetype lineStart = -1;
+  qsizetype contentStart = -1;
+  qsizetype lineEnd = -1;
+  if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd)) {
+    return command;
+  }
+
+  command.markdownText = session_->markdownText();
+  const qsizetype indent =
+      qMax<qsizetype>(0, contentStart - lineStart - resolver_->listMarkerFor(command.markdownText.mid(lineStart, lineEnd - lineStart)).size());
+  if (indent >= 2) {
+    command.markdownText.remove(lineStart, 2);
+    command.kind = EditTransaction::Kind::DeleteText;
+    command.label = QStringLiteral("Outdent List Item");
+    command.fallbackSourceOffset = qMax<qsizetype>(lineStart, context.contentRange.byteStart + context.cursorTextOffset - 2);
+    command.valid = true;
+    command.handled = true;
+    return command;
+  }
+
+  command.markdownText.remove(lineStart, contentStart - lineStart);
+  command.kind = EditTransaction::Kind::DeleteText;
+  command.label = QStringLiteral("Exit List Item");
+  command.fallbackSourceOffset = lineStart;
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildIndentListItem(const BlockEditContext& context) const {
+  Command command;
+  if (!session_ || !resolver_ || !context.node || context.node->type() != BlockType::ListItem) {
+    return command;
+  }
+
+  qsizetype lineStart = -1;
+  qsizetype contentStart = -1;
+  qsizetype lineEnd = -1;
+  if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd)) {
+    return command;
+  }
+
+  command.markdownText = session_->markdownText();
+  command.markdownText.insert(lineStart, QStringLiteral("  "));
+  command.kind = EditTransaction::Kind::InsertText;
+  command.label = QStringLiteral("Indent List Item");
+  command.fallbackSourceOffset = context.contentRange.byteStart + context.cursorTextOffset + 2;
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+CursorPosition TextBlockCommandBuilder::cursorFor(NodeId blockId, qsizetype offset) const {
+  CursorPosition cursor;
+  cursor.blockId = blockId;
+  cursor.text.nodeId = blockId;
+  cursor.text.textOffset = offset;
+  return cursor;
+}
+
+}  // namespace muffin
