@@ -61,16 +61,6 @@ qsizetype selectableLength(const BlockLayout* block) {
   }
 }
 
-bool projectionHasExpandableSyntax(const InlineProjection& projection) {
-  for (const InlineProjectionSpan& span : projection.spans()) {
-    if (span.kind == InlineSpanKind::OpenMarker || span.kind == InlineSpanKind::CloseMarker ||
-        span.kind == InlineSpanKind::HiddenSyntax || span.kind == InlineSpanKind::EmptyContentSlot) {
-      return true;
-    }
-  }
-  return false;
-}
-
 }  // namespace
 
 EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(std::make_unique<DocumentLayout>()) {
@@ -145,40 +135,32 @@ void EditorView::setTheme(RenderTheme theme) {
 }
 
 void EditorView::setCursorHit(HitTestResult hit) {
-  const CursorPosition previous = cursorPosition_;
   cursorHit_ = hit;
   cursorPosition_ = hit.cursorPosition();
   selection_.anchor = cursorPosition_;
   selection_.focus = cursorPosition_;
-  if (cursorMoveRequiresLayoutRebuild(previous, cursorPosition_)) {
-    rebuildLayout();
-  }
+  rebuildLayout();
   cursorHit_ = hitForCursorPosition(cursorPosition_);
   cursorVisible_ = cursorHit_.isValid();
-  updateCodeLanguageEditor();
   viewport()->update();
 }
 
 void EditorView::setCursorPosition(CursorPosition position) {
-  const CursorPosition previous = cursorPosition_;
   cursorPosition_ = position;
   selection_.anchor = cursorPosition_;
   selection_.focus = cursorPosition_;
-  if (cursorMoveRequiresLayoutRebuild(previous, cursorPosition_)) {
-    rebuildLayout();
-  }
+  rebuildLayout();
   cursorHit_ = hitForCursorPosition(position);
   cursorVisible_ = cursorHit_.isValid();
-  updateCodeLanguageEditor();
   viewport()->update();
 }
 
 void EditorView::setSelectionRange(SelectionRange selection) {
   selection_ = selection;
   cursorPosition_ = selection.focus;
+  rebuildLayout();
   cursorHit_ = hitForCursorPosition(selection.focus);
   cursorVisible_ = selection.isCollapsed() && cursorHit_.isValid();
-  updateCodeLanguageEditor();
   viewport()->update();
 }
 
@@ -716,51 +698,6 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
     hit.cursorRect = QRectF(hit.blockRect.left(), hit.blockRect.top(), 1.0, hit.blockRect.height());
   }
   return hit;
-}
-
-bool EditorView::cursorMoveRequiresLayoutRebuild(CursorPosition previous, CursorPosition next) const {
-  if (!next.isValid()) {
-    return false;
-  }
-  if (previous.blockId != next.blockId) {
-    return blockHasExpandableInlineMarkers(previous.blockId) || blockHasExpandableInlineMarkers(next.blockId);
-  }
-  if (!blockHasExpandableInlineMarkers(next.blockId)) {
-    return false;
-  }
-  return previous.text.sourceOffset != next.text.sourceOffset || previous.text.textOffset != next.text.textOffset;
-}
-
-bool EditorView::blockHasExpandableInlineMarkers(NodeId id) const {
-  if (!layout_ || !id.isValid()) {
-    return false;
-  }
-  const BlockLayout* block = layout_->block(id);
-  if (!block) {
-    return false;
-  }
-  switch (block->type()) {
-    case BlockType::Paragraph:
-    case BlockType::Heading:
-    case BlockType::ListItem:
-    case BlockType::Table:
-      break;
-    default:
-      return false;
-  }
-  if (const InlineLayout* inlineLayout = block->inlineLayout()) {
-    return projectionHasExpandableSyntax(inlineLayout->projection());
-  }
-  if (block->type() == BlockType::Table) {
-    for (const auto& row : block->tableRows()) {
-      for (const auto& cell : row.cells) {
-        if (projectionHasExpandableSyntax(cell.text.projection())) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
 }
 
 QVector<const BlockLayout*> EditorView::blocksBetween(NodeId first, NodeId last) const {
