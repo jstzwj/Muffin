@@ -66,6 +66,8 @@ private:
   void paintSelection(QPainter& painter) const;
   void paintInsertionCursor(QPainter& painter) const;
   HitTestResult hitForCursorPosition(CursorPosition position) const;
+  bool cursorMoveRequiresLayoutRebuild(CursorPosition previous, CursorPosition next) const;
+  bool blockHasExpandableInlineMarkers(NodeId id) const;
   QVector<const BlockLayout*> blocksBetween(NodeId first, NodeId last) const;
   bool blockComesBefore(NodeId first, NodeId second) const;
   void updateDragSelection(QPointF viewportPos);

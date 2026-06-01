@@ -255,6 +255,10 @@ QString InlineLayout::html() const {
   return html_;
 }
 
+const InlineProjection& InlineLayout::projection() const {
+  return projection_;
+}
+
 QString InlineLayout::renderInlines(const QVector<InlineNode>& inlines, const RenderTheme& theme, qsizetype& visibleOffset, BuildOptions options) {
   QString html;
   for (const InlineNode& node : inlines) {

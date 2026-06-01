@@ -42,6 +42,7 @@ public:
 
   QString plainText() const;
   QString html() const;
+  const InlineProjection& projection() const;
 
 private:
   struct OffsetMapEntry {

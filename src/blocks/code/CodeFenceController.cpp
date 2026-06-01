@@ -274,7 +274,7 @@ bool CodeFenceController::mutateCodeFence(
     undoStack_->push(EditTransaction(kind, std::move(label), {beforeText, beforeCursor}, {nextText, nextCursor}));
   }
   if (brushQueue_) {
-    brushQueue_->requestFullRefresh();
+    brushQueue_->requestBlockRefresh(nextCursor.blockId.isValid() ? nextCursor.blockId : codeId);
   }
   return true;
 }
