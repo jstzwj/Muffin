@@ -169,9 +169,14 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPrevious
 
   command.markdownText = session_->markdownText();
   const qsizetype separatorStart = previous.contentRange.byteEnd;
-  const qsizetype separatorLength = qMax<qsizetype>(0, context.contentRange.byteStart - previous.contentRange.byteEnd);
-  command.fallbackSourceOffset = previous.contentRange.byteEnd;
+  const bool preserveCurrentHeadingPrefix =
+      context.blockType == BlockType::Heading && previous.contentText.isEmpty() && context.blockRange.byteStart >= 0 &&
+      context.blockRange.byteStart < context.contentRange.byteStart;
+  const qsizetype separatorEnd = preserveCurrentHeadingPrefix ? context.blockRange.byteStart : context.contentRange.byteStart;
+  const qsizetype separatorLength = qMax<qsizetype>(0, separatorEnd - separatorStart);
   const QString separator = previous.contentText.isEmpty() || context.contentText.isEmpty() ? QString() : QStringLiteral(" ");
+  command.fallbackSourceOffset =
+      preserveCurrentHeadingPrefix ? context.contentRange.byteStart - separatorLength + separator.size() : previous.contentRange.byteEnd;
   command.markdownText.replace(separatorStart, separatorLength, separator);
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Merge Paragraphs");
@@ -195,9 +200,14 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithNextPara
 
   command.markdownText = session_->markdownText();
   const qsizetype separatorStart = context.contentRange.byteEnd;
-  const qsizetype separatorLength = qMax<qsizetype>(0, next.contentRange.byteStart - context.contentRange.byteEnd);
-  command.fallbackSourceOffset = context.contentRange.byteEnd;
+  const bool preserveNextHeadingPrefix =
+      next.blockType == BlockType::Heading && context.contentText.isEmpty() && next.blockRange.byteStart >= 0 &&
+      next.blockRange.byteStart < next.contentRange.byteStart;
+  const qsizetype separatorEnd = preserveNextHeadingPrefix ? next.blockRange.byteStart : next.contentRange.byteStart;
+  const qsizetype separatorLength = qMax<qsizetype>(0, separatorEnd - separatorStart);
   const QString separator = context.contentText.isEmpty() || next.contentText.isEmpty() ? QString() : QStringLiteral(" ");
+  command.fallbackSourceOffset =
+      preserveNextHeadingPrefix ? next.contentRange.byteStart - separatorLength + separator.size() : context.contentRange.byteEnd;
   command.markdownText.replace(separatorStart, separatorLength, separator);
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Merge Paragraphs");

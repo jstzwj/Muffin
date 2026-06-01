@@ -630,6 +630,14 @@ void testInputBackspaceAtParagraphStartDeletesStructuralBoundary() {
   require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "backspace empty boundary cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 0, "backspace empty boundary cursor offset mismatch");
 
+  session.setMarkdownText(QStringLiteral("\n\n#### Heading Level 4 With `code`"), false);
+  setCursor(selection, blockAt(session, 1), 0);
+  require(input.deleteBackward(), "backspace from heading after empty paragraph should remove empty boundary");
+  require(session.markdownText() == QStringLiteral("#### Heading Level 4 With `code`"), "backspace should preserve current heading marker");
+  require(blockAt(session, 0)->type() == BlockType::Heading, "backspace should keep current block as heading");
+  require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "backspace preserved heading cursor block mismatch");
+  require(selection.cursorPosition().text.textOffset == 0, "backspace preserved heading cursor offset mismatch");
+
   session.setMarkdownText(QStringLiteral("# Title\n\nbody"), false);
   setCursor(selection, blockAt(session, 1), 0);
   require(input.deleteBackward(), "backspace after heading should merge into heading");
@@ -659,6 +667,14 @@ void testInputDeleteAtParagraphEndDeletesStructuralBoundary() {
   require(session.markdownText() == QStringLiteral("alpha Title"), "delete heading merge mismatch");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "delete heading merge cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "delete heading merge cursor offset mismatch");
+
+  session.setMarkdownText(QStringLiteral("\n\n#### Heading Level 4 With `code`"), false);
+  setCursor(selection, blockAt(session, 0), 0);
+  require(input.deleteForward(), "delete from empty paragraph before heading should remove empty boundary");
+  require(session.markdownText() == QStringLiteral("#### Heading Level 4 With `code`"), "delete should preserve next heading marker");
+  require(blockAt(session, 0)->type() == BlockType::Heading, "delete should keep next block as heading");
+  require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "delete preserved heading cursor block mismatch");
+  require(selection.cursorPosition().text.textOffset == 0, "delete preserved heading cursor offset mismatch");
 
   session.setMarkdownText(QStringLiteral("before **bold**\n\nafter"), false);
   setCursor(selection, blockAt(session, 0), 11);
