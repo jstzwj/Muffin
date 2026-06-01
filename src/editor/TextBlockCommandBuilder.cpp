@@ -3,6 +3,77 @@
 #include "document/MarkdownNode.h"
 
 namespace muffin {
+namespace {
+
+struct InlineSplitMarker {
+  QString open;
+  QString close;
+  qsizetype sourceStart = -1;
+  qsizetype sourceEnd = -1;
+};
+
+qsizetype normalizeSplitOffset(QString& source, qsizetype offset) {
+  offset = qBound<qsizetype>(0, offset, source.size());
+  if (offset > 0 && offset < source.size()) {
+    const QChar previous = source.at(offset - 1);
+    const QChar next = source.at(offset);
+    if ((previous == QLatin1Char('*') && next == QLatin1Char('*')) || (previous == QLatin1Char('`') && next == QLatin1Char('`')) ||
+        (previous == QLatin1Char('$') && next == QLatin1Char('$'))) {
+      --offset;
+    }
+  }
+  if (offset < source.size() && source.at(offset).isSpace()) {
+    source.remove(offset, 1);
+  } else if (offset > 0 && source.at(offset - 1).isSpace()) {
+    source.remove(offset - 1, 1);
+    --offset;
+  }
+  return offset;
+}
+
+InlineSplitMarker inlineSplitMarkerAt(const QString& source, qsizetype offset) {
+  const QStringList markers = {
+      QStringLiteral("**"),
+      QStringLiteral("~~"),
+      QStringLiteral("`"),
+      QStringLiteral("$"),
+      QStringLiteral("*"),
+  };
+
+  for (const QString& marker : markers) {
+    const qsizetype open = source.lastIndexOf(marker, qMax<qsizetype>(0, offset - 1));
+    if (open < 0) {
+      continue;
+    }
+    const qsizetype contentStart = open + marker.size();
+    if (offset <= contentStart) {
+      continue;
+    }
+
+    const qsizetype close = source.indexOf(marker, qMax(contentStart, offset));
+    if (close < 0 || offset >= close) {
+      continue;
+    }
+
+    InlineSplitMarker split;
+    split.open = marker;
+    split.close = marker;
+    split.sourceStart = open;
+    split.sourceEnd = close + marker.size();
+    return split;
+  }
+  return {};
+}
+
+QString insertionWithInlineSplit(QString blockBreak, const QString& source, qsizetype offset) {
+  const InlineSplitMarker inlineSplit = inlineSplitMarkerAt(source, offset);
+  if (inlineSplit.open.isEmpty()) {
+    return blockBreak;
+  }
+  return inlineSplit.close + blockBreak + inlineSplit.open;
+}
+
+}  // namespace
 
 TextBlockCommandBuilder::TextBlockCommandBuilder(DocumentSession* session, const BlockEditContextResolver* resolver)
     : session_(session), resolver_(resolver) {}
@@ -125,26 +196,13 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitTextBlock(
   }
 
   QString nextContent = context.contentText;
-  qsizetype nextOffset = qBound<qsizetype>(0, contentOffset, nextContent.size());
-  if (nextOffset > 0 && nextOffset < nextContent.size()) {
-    const QChar previous = nextContent.at(nextOffset - 1);
-    const QChar next = nextContent.at(nextOffset);
-    if ((previous == QLatin1Char('*') && next == QLatin1Char('*')) || (previous == QLatin1Char('`') && next == QLatin1Char('`')) ||
-        (previous == QLatin1Char('$') && next == QLatin1Char('$'))) {
-      --nextOffset;
-    }
-  }
-  if (nextOffset < nextContent.size() && nextContent.at(nextOffset).isSpace()) {
-    nextContent.remove(nextOffset, 1);
-  } else if (nextOffset > 0 && nextContent.at(nextOffset - 1).isSpace()) {
-    nextContent.remove(nextOffset - 1, 1);
-    --nextOffset;
-  }
+  qsizetype nextOffset = normalizeSplitOffset(nextContent, contentOffset);
   QString insertion = QStringLiteral("\n\n");
   if (context.blockType == BlockType::Heading && context.blockRange.byteStart >= 0 &&
       context.blockRange.byteStart < context.contentRange.byteStart) {
     insertion += session_->markdownText().mid(context.blockRange.byteStart, context.contentRange.byteStart - context.blockRange.byteStart);
   }
+  insertion = insertionWithInlineSplit(insertion, nextContent, nextOffset);
   nextContent.insert(nextOffset, insertion);
   nextOffset += insertion.size();
 
@@ -242,7 +300,10 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(con
   }
 
   command.markdownText = markdown;
-  const qsizetype splitOffset = context.contentRange.byteStart + qBound<qsizetype>(0, context.cursorTextOffset, context.contentText.size());
+  QString nextLineContent = context.contentText;
+  qsizetype contentOffset = context.plainInlineEditable ? context.cursorTextOffset : context.cursorSourceOffset - context.contentRange.byteStart;
+  const qsizetype splitContentOffset = normalizeSplitOffset(nextLineContent, contentOffset);
+  const qsizetype splitOffset = context.contentRange.byteStart + splitContentOffset;
   const qsizetype markerColumn = qMax<qsizetype>(0, contentStart - lineStart - marker.size());
   QString nextMarker = marker;
   qsizetype digitCount = 0;
@@ -253,7 +314,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(con
     const int nextNumber = marker.left(digitCount).toInt() + 1;
     nextMarker = QStringLiteral("%1. ").arg(nextNumber);
   }
-  const QString insertion = QLatin1Char('\n') + QString(markerColumn, QLatin1Char(' ')) + nextMarker;
+  QString insertion = QLatin1Char('\n') + QString(markerColumn, QLatin1Char(' ')) + nextMarker;
+  insertion = insertionWithInlineSplit(insertion, nextLineContent, splitContentOffset);
+  command.markdownText.replace(context.contentRange.byteStart, context.contentRange.byteEnd - context.contentRange.byteStart, nextLineContent);
   command.markdownText.insert(splitOffset, insertion);
   command.kind = EditTransaction::Kind::SplitParagraph;
   command.label = QStringLiteral("Split List Item");

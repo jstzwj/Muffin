@@ -274,6 +274,31 @@ void testInputEnterSplitsComplexInlineParagraphs() {
   setCursor(selection, blockAt(session, 0), 10);
   require(input.insertParagraphBreak(), "enter should split inline math paragraph");
   require(session.markdownText() == QStringLiteral("before $x+y$\n\nafter"), "inline math split mismatch");
+
+  session.setMarkdownText(QStringLiteral("Plain text can mix **bold**"), false);
+  setSourceCursor(selection, blockAt(session, 0), QStringLiteral("Plain text can mix b").size(), QStringLiteral("Plain text can mix **b").size());
+  require(input.insertParagraphBreak(), "enter inside strong inline should split wrapper");
+  require(session.markdownText() == QStringLiteral("Plain text can mix **b**\n\n**old**"), "strong inline wrapper split mismatch");
+
+  session.setMarkdownText(QStringLiteral("Plain text can mix *italic*"), false);
+  setSourceCursor(selection, blockAt(session, 0), QStringLiteral("Plain text can mix ita").size(), QStringLiteral("Plain text can mix *ita").size());
+  require(input.insertParagraphBreak(), "enter inside emphasis inline should split wrapper");
+  require(session.markdownText() == QStringLiteral("Plain text can mix *ita*\n\n*lic*"), "emphasis inline wrapper split mismatch");
+
+  session.setMarkdownText(QStringLiteral("Plain text can mix ~~through~~"), false);
+  setSourceCursor(selection, blockAt(session, 0), QStringLiteral("Plain text can mix thr").size(), QStringLiteral("Plain text can mix ~~thr").size());
+  require(input.insertParagraphBreak(), "enter inside strike inline should split wrapper");
+  require(session.markdownText() == QStringLiteral("Plain text can mix ~~thr~~\n\n~~ough~~"), "strike inline wrapper split mismatch");
+
+  session.setMarkdownText(QStringLiteral("before `code` after"), false);
+  setSourceCursor(selection, blockAt(session, 0), QStringLiteral("before co").size(), QStringLiteral("before `co").size());
+  require(input.insertParagraphBreak(), "enter inside code inline should split wrapper");
+  require(session.markdownText() == QStringLiteral("before `co`\n\n`de` after"), "code inline wrapper split mismatch");
+
+  session.setMarkdownText(QStringLiteral("before $x+y$ after"), false);
+  setSourceCursor(selection, blockAt(session, 0), QStringLiteral("before x").size(), QStringLiteral("before $x").size());
+  require(input.insertParagraphBreak(), "enter inside math inline should split wrapper");
+  require(session.markdownText() == QStringLiteral("before $x$\n\n$+y$ after"), "math inline wrapper split mismatch");
 }
 
 void testInputEditsComplexInlineSourcePositions() {
@@ -890,6 +915,37 @@ void testListItemEditingCommands() {
   setCursor(selection, listItemAt(session, 0, 0), 2);
   require(input.insertParagraphBreak(), "enter should split ordered list item");
   require(session.markdownText() == QStringLiteral("1. al\n2. pha\n2. beta"), "ordered list split mismatch");
+
+  session.setMarkdownText(QStringLiteral("- Plain text can mix **bold**\n- beta"), false);
+  setSourceCursor(selection, listItemAt(session, 0, 0), QStringLiteral("Plain text can mix b").size(),
+                  QStringLiteral("- Plain text can mix **b").size());
+  require(input.insertParagraphBreak(), "enter inside strong inline list item should split wrapper");
+  require(session.markdownText() == QStringLiteral("- Plain text can mix **b**\n- **old**\n- beta"),
+          "strong inline list wrapper split mismatch");
+
+  session.setMarkdownText(QStringLiteral("- Plain text can mix *italic*\n- beta"), false);
+  setSourceCursor(selection, listItemAt(session, 0, 0), QStringLiteral("Plain text can mix ita").size(),
+                  QStringLiteral("- Plain text can mix *ita").size());
+  require(input.insertParagraphBreak(), "enter inside emphasis inline list item should split wrapper");
+  require(session.markdownText() == QStringLiteral("- Plain text can mix *ita*\n- *lic*\n- beta"),
+          "emphasis inline list wrapper split mismatch");
+
+  session.setMarkdownText(QStringLiteral("- Plain text can mix ~~through~~\n- beta"), false);
+  setSourceCursor(selection, listItemAt(session, 0, 0), QStringLiteral("Plain text can mix thr").size(),
+                  QStringLiteral("- Plain text can mix ~~thr").size());
+  require(input.insertParagraphBreak(), "enter inside strike inline list item should split wrapper");
+  require(session.markdownText() == QStringLiteral("- Plain text can mix ~~thr~~\n- ~~ough~~\n- beta"),
+          "strike inline list wrapper split mismatch");
+
+  session.setMarkdownText(QStringLiteral("- before `code` after\n- beta"), false);
+  setSourceCursor(selection, listItemAt(session, 0, 0), QStringLiteral("before co").size(), QStringLiteral("- before `co").size());
+  require(input.insertParagraphBreak(), "enter inside code inline list item should split wrapper");
+  require(session.markdownText() == QStringLiteral("- before `co`\n- `de` after\n- beta"), "code inline list wrapper split mismatch");
+
+  session.setMarkdownText(QStringLiteral("- before $x+y$ after\n- beta"), false);
+  setSourceCursor(selection, listItemAt(session, 0, 0), QStringLiteral("before x").size(), QStringLiteral("- before $x").size());
+  require(input.insertParagraphBreak(), "enter inside math inline list item should split wrapper");
+  require(session.markdownText() == QStringLiteral("- before $x$\n- $+y$ after\n- beta"), "math inline list wrapper split mismatch");
 
   session.setMarkdownText(QStringLiteral("- \n- beta"), false);
   setCursor(selection, listItemAt(session, 0, 0), 0);
