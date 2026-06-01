@@ -63,6 +63,7 @@ public:
   bool enterCodeFenceEditMode();
   bool exitCodeFenceEditMode();
   bool setCodeFenceLanguage(QString language);
+  bool setCodeFenceLanguage(NodeId codeId, QString language);
   bool enterHtmlBlockEditMode();
   bool exitHtmlBlockEditMode();
   bool setHtmlBlockSource(QString html);

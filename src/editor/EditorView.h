@@ -5,8 +5,12 @@
 
 #include <QAbstractScrollArea>
 #include <QPointer>
+#include <QStringList>
 
 #include <memory>
+
+class QCompleter;
+class QLineEdit;
 
 namespace muffin {
 
@@ -25,6 +29,7 @@ public:
   void setCursorPosition(CursorPosition position);
   void setSelectionRange(SelectionRange selection);
   void clearCursor();
+  void setCodeLanguageSuggestions(QStringList languages);
 
   QRectF nodeRect(NodeId id) const;
   const BlockLayout* blockAtViewportPos(QPointF viewportPos) const;
@@ -34,6 +39,7 @@ signals:
   void blockClicked(HitTestResult result);
   void selectionChanged(SelectionRange selection, HitTestResult focusHit);
   void textCommitted(QString text);
+  void codeLanguageCommitted(NodeId codeId, QString language);
 
 protected:
   void paintEvent(QPaintEvent* event) override;
@@ -51,6 +57,11 @@ private:
   QRectF documentViewportRect() const;
   qreal scrollY() const;
   void applyScrollBarStyle();
+  void ensureCodeLanguageEditor();
+  void updateCodeLanguageEditor();
+  void showCodeLanguageEditor(const BlockLayout& block);
+  void hideCodeLanguageEditor();
+  void commitCodeLanguageEditor();
   void paintCurrentTableCell(QPainter& painter) const;
   void paintSelection(QPainter& painter) const;
   void paintInsertionCursor(QPainter& painter) const;
@@ -69,6 +80,11 @@ private:
   bool cursorVisible_ = false;
   bool draggingSelection_ = false;
   HitTestResult dragAnchorHit_;
+  QLineEdit* codeLanguageEditor_ = nullptr;
+  QCompleter* codeLanguageCompleter_ = nullptr;
+  QStringList codeLanguageSuggestions_;
+  NodeId codeLanguageNodeId_;
+  bool updatingCodeLanguageEditor_ = false;
 };
 
 }  // namespace muffin

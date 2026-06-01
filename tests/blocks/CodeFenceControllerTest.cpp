@@ -28,6 +28,19 @@ MarkdownNode* firstCodeFence(DocumentSession& session) {
   return nullptr;
 }
 
+MarkdownNode* codeFenceAt(DocumentSession& session, int index) {
+  int current = 0;
+  for (const auto& child : session.document().root().children()) {
+    if (child->type() == BlockType::CodeFence) {
+      if (current == index) {
+        return child.get();
+      }
+      ++current;
+    }
+  }
+  return nullptr;
+}
+
 void setCodeHit(SelectionController& selection, MarkdownNode* code, qsizetype offset = 0) {
   HitTestResult hit;
   hit.zone = HitTestResult::Zone::Code;
@@ -100,6 +113,30 @@ void testSetLanguageAndContent() {
   require(session.markdownText().contains(QStringLiteral("conan install\ncmake --build")), "set content markdown mismatch");
 }
 
+void testSetLanguageForSpecificFenceKeepsCursor() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  CodeFenceController controller;
+  controller.setDocumentSession(&session);
+  controller.setSelectionController(&selection);
+  controller.setUndoStack(&undoStack);
+  controller.setBrushQueue(&brushQueue);
+
+  session.setMarkdownText(QStringLiteral("```cpp\nfirst\n```\n\n```\nsecond\n```"), false);
+  MarkdownNode* first = codeFenceAt(session, 0);
+  MarkdownNode* second = codeFenceAt(session, 1);
+  require(first != nullptr && second != nullptr, "two code fences missing");
+  setCodeHit(selection, first, 2);
+
+  require(controller.setLanguageFor(second->id(), QStringLiteral("python")), "set language for target fence should work");
+  require(session.markdownText().contains(QStringLiteral("```cpp\nfirst\n```")), "first code language should remain unchanged");
+  require(session.markdownText().contains(QStringLiteral("```python\nsecond\n```")), "second code language mismatch");
+  require(selection.cursorPosition().text.textOffset == 2, "target language edit should keep cursor offset");
+  require(undoStack.canUndo(), "target language edit should push undo");
+}
+
 void testSelectionReplaceAndDelete() {
   DocumentSession session;
   SelectionController selection;
@@ -131,6 +168,7 @@ void testSelectionReplaceAndDelete() {
 int main() {
   testEnterEditAndTextEditing();
   testSetLanguageAndContent();
+  testSetLanguageForSpecificFenceKeepsCursor();
   testSelectionReplaceAndDelete();
   return 0;
 }

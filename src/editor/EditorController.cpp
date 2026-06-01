@@ -338,6 +338,10 @@ bool EditorController::setCodeFenceLanguage(QString language) {
   return codeFenceController_.setLanguage(std::move(language));
 }
 
+bool EditorController::setCodeFenceLanguage(NodeId codeId, QString language) {
+  return codeFenceController_.setLanguageFor(codeId, std::move(language));
+}
+
 bool EditorController::enterHtmlBlockEditMode() {
   return htmlBlockController_.enterEditMode();
 }

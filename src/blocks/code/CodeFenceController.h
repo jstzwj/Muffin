@@ -36,6 +36,7 @@ public:
   bool deleteForward();
   bool deleteSelection();
   bool setLanguage(QString language);
+  bool setLanguageFor(NodeId codeId, QString language);
   bool setContent(QString content);
 
 signals:
@@ -43,6 +44,11 @@ signals:
 
 private:
   bool mutateCurrentCodeFence(QString label, EditTransaction::Kind kind, const std::function<bool(MarkdownNode&, qsizetype&)>& mutate);
+  bool mutateCodeFence(
+      NodeId requestedCodeId,
+      QString label,
+      EditTransaction::Kind kind,
+      const std::function<bool(MarkdownNode&, qsizetype&)>& mutate);
   MarkdownNode* currentCodeFence() const;
   MarkdownNode* codeFenceById(NodeId id) const;
   MarkdownNode* codeFenceByIndex(int index) const;

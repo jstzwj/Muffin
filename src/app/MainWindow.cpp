@@ -219,6 +219,12 @@ void MainWindow::setupConnections() {
   connect(editor_, &SourceEditorWidget::textEdited, &session_, &DocumentSession::updateFromEditor);
   connect(editor_, &SourceEditorWidget::cursorPositionChanged, this, &MainWindow::updateCursorStatus);
   connect(&editorController_, &EditorController::cursorChanged, this, &MainWindow::updateRenderCursorStatus);
+  connect(renderView_, &EditorView::codeLanguageCommitted, this, [this](NodeId codeId, const QString& language) {
+    if (sourceModeEnabled()) {
+      return;
+    }
+    editorController_.setCodeFenceLanguage(codeId, language);
+  });
 
   connect(&session_, &DocumentSession::documentTextChanged, editor_, &SourceEditorWidget::setText);
   connect(&session_, &DocumentSession::filePathChanged, this, &MainWindow::updateTitle);

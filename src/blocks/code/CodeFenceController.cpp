@@ -170,6 +170,14 @@ bool CodeFenceController::setLanguage(QString language) {
                                 });
 }
 
+bool CodeFenceController::setLanguageFor(NodeId codeId, QString language) {
+  return mutateCodeFence(codeId, QStringLiteral("Set Code Fence Language"), EditTransaction::Kind::ReplaceDocumentText,
+                         [language = std::move(language).trimmed()](MarkdownNode& code, qsizetype&) {
+                           code.setCodeLanguage(language);
+                           return true;
+                         });
+}
+
 bool CodeFenceController::setContent(QString content) {
   return mutateCurrentCodeFence(QStringLiteral("Set Code Fence Content"), EditTransaction::Kind::ReplaceDocumentText,
                                 [content = std::move(content)](MarkdownNode& code, qsizetype& offset) {
@@ -183,19 +191,29 @@ bool CodeFenceController::mutateCurrentCodeFence(
     QString label,
     EditTransaction::Kind kind,
     const std::function<bool(MarkdownNode&, qsizetype&)>& mutate) {
+  const MarkdownNode* activeCode = currentCodeFence();
+  return activeCode ? mutateCodeFence(activeCode->id(), std::move(label), kind, mutate) : false;
+}
+
+bool CodeFenceController::mutateCodeFence(
+    NodeId requestedCodeId,
+    QString label,
+    EditTransaction::Kind kind,
+    const std::function<bool(MarkdownNode&, qsizetype&)>& mutate) {
   if (!session_ || !selection_) {
     return false;
   }
 
-  MarkdownNode* activeCode = currentCodeFence();
+  MarkdownNode* activeCode = codeFenceById(requestedCodeId);
   if (!activeCode) {
     return false;
   }
   const bool wasEditing = isEditing();
   NodeId codeId = activeCode->id();
   const int codeIndex = codeFenceIndexFor(codeId);
-
   const CursorPosition beforeCursor = selection_->hasCursor() ? selection_->cursorPosition() : cursorFor(codeId, 0);
+  const int beforeCursorCodeIndex = codeFenceIndexFor(beforeCursor.blockId);
+  const bool cursorWasInTarget = beforeCursor.blockId == codeId || (wasEditing && beforeCursor.blockId == editingCodeId_);
   const QString beforeText = session_->markdownText();
   auto rootCopy = session_->document().root().clone(CloneMode::PreserveIds);
   MarkdownNode* target = findCodeFenceById(*rootCopy, codeId);
@@ -221,10 +239,7 @@ bool CodeFenceController::mutateCurrentCodeFence(
     return false;
   }
 
-  qsizetype nextOffset =
-      beforeCursor.blockId == codeId || (wasEditing && beforeCursor.blockId == editingCodeId_)
-          ? beforeCursor.text.textOffset
-          : target->literal().size();
+  qsizetype nextOffset = cursorWasInTarget ? beforeCursor.text.textOffset : target->literal().size();
   if (!mutate(*target, nextOffset)) {
     return false;
   }
@@ -242,7 +257,16 @@ bool CodeFenceController::mutateCurrentCodeFence(
       editingCodeIndex_ = codeIndex;
     }
   }
-  const CursorPosition nextCursor = cursorFor(codeId, nextOffset);
+  CursorPosition nextCursor;
+  if (cursorWasInTarget) {
+    nextCursor = cursorFor(codeId, nextOffset);
+  } else if (MarkdownNode* reparsedCursorCode = codeFenceByIndex(beforeCursorCodeIndex)) {
+    nextCursor = cursorFor(reparsedCursorCode->id(), beforeCursor.text.textOffset);
+  } else if (MarkdownNode* reparsedCursorNode = session_->document().node(beforeCursor.blockId)) {
+    nextCursor = beforeCursor;
+    nextCursor.blockId = reparsedCursorNode->id();
+    nextCursor.text.nodeId = reparsedCursorNode->id();
+  }
   if (selection_ && nextCursor.isValid()) {
     selection_->setCursorPosition(nextCursor);
   }

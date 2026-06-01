@@ -2,8 +2,13 @@
 
 #include "document/MarkdownDocument.h"
 
+#include <QCompleter>
+#include <QGraphicsDropShadowEffect>
 #include <QPainter>
+#include <QLineEdit>
+#include <QListView>
 #include <QScrollBar>
+#include <QStringListModel>
 #include <QWheelEvent>
 #include <QMouseEvent>
 #include <QInputMethodEvent>
@@ -68,6 +73,44 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
   viewport()->setAutoFillBackground(false);
   setBackgroundRole(QPalette::Base);
   applyScrollBarStyle();
+  connect(verticalScrollBar(), &QScrollBar::valueChanged, this, [this] { updateCodeLanguageEditor(); });
+  setCodeLanguageSuggestions({
+      QStringLiteral("bash"),
+      QStringLiteral("c"),
+      QStringLiteral("cpp"),
+      QStringLiteral("csharp"),
+      QStringLiteral("css"),
+      QStringLiteral("go"),
+      QStringLiteral("html"),
+      QStringLiteral("ini"),
+      QStringLiteral("java"),
+      QStringLiteral("javascript"),
+      QStringLiteral("json"),
+      QStringLiteral("kotlin"),
+      QStringLiteral("lua"),
+      QStringLiteral("markdown"),
+      QStringLiteral("mermaid"),
+      QStringLiteral("objective-c"),
+      QStringLiteral("pascal"),
+      QStringLiteral("pegjs"),
+      QStringLiteral("perl"),
+      QStringLiteral("perl6"),
+      QStringLiteral("pgp"),
+      QStringLiteral("php"),
+      QStringLiteral("powershell"),
+      QStringLiteral("python"),
+      QStringLiteral("qml"),
+      QStringLiteral("r"),
+      QStringLiteral("ruby"),
+      QStringLiteral("rust"),
+      QStringLiteral("sql"),
+      QStringLiteral("swift"),
+      QStringLiteral("text"),
+      QStringLiteral("toml"),
+      QStringLiteral("typescript"),
+      QStringLiteral("xml"),
+      QStringLiteral("yaml"),
+  });
 }
 
 void EditorView::setDocument(const MarkdownDocument& document) {
@@ -126,7 +169,17 @@ void EditorView::clearCursor() {
   selection_ = {};
   cursorHit_ = {};
   cursorVisible_ = false;
+  updateCodeLanguageEditor();
   viewport()->update();
+}
+
+void EditorView::setCodeLanguageSuggestions(QStringList languages) {
+  languages.removeDuplicates();
+  languages.sort(Qt::CaseInsensitive);
+  codeLanguageSuggestions_ = std::move(languages);
+  if (codeLanguageCompleter_) {
+    codeLanguageCompleter_->setModel(new QStringListModel(codeLanguageSuggestions_, codeLanguageCompleter_));
+  }
 }
 
 QRectF EditorView::nodeRect(NodeId id) const {
@@ -176,10 +229,12 @@ void EditorView::paintEvent(QPaintEvent* event) {
 void EditorView::resizeEvent(QResizeEvent* event) {
   QAbstractScrollArea::resizeEvent(event);
   rebuildLayout();
+  updateCodeLanguageEditor();
 }
 
 void EditorView::wheelEvent(QWheelEvent* event) {
   QAbstractScrollArea::wheelEvent(event);
+  updateCodeLanguageEditor();
 }
 
 void EditorView::mousePressEvent(QMouseEvent* event) {
@@ -197,6 +252,7 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
     }
     setCursorHit(hit);
     emit blockClicked(hit);
+    updateCodeLanguageEditor();
     if (hit.isValid() && isSelectableZone(hit.zone)) {
       draggingSelection_ = true;
       dragAnchorHit_ = hit;
@@ -262,6 +318,7 @@ void EditorView::rebuildLayout() {
     layout_ = std::make_unique<DocumentLayout>();
     updateScrollBars();
   }
+  updateCodeLanguageEditor();
   viewport()->update();
 }
 
@@ -296,6 +353,157 @@ void EditorView::applyScrollBarStyle() {
       "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width:0; border:0; background:transparent; }"
       "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal { background:transparent; }")
                     .arg(background));
+}
+
+void EditorView::ensureCodeLanguageEditor() {
+  if (codeLanguageEditor_) {
+    return;
+  }
+
+  codeLanguageEditor_ = new QLineEdit(viewport());
+  codeLanguageEditor_->setObjectName(QStringLiteral("codeLanguageEditor"));
+  codeLanguageEditor_->setPlaceholderText(QStringLiteral("text"));
+  codeLanguageEditor_->setClearButtonEnabled(false);
+  codeLanguageEditor_->setFrame(false);
+  codeLanguageEditor_->setFixedWidth(116);
+  codeLanguageEditor_->hide();
+  codeLanguageEditor_->setStyleSheet(QStringLiteral(
+      "QLineEdit#codeLanguageEditor {"
+      "  background:rgba(255,255,255,235);"
+      "  color:#222222;"
+      "  border:1px solid #d7dce2;"
+      "  border-radius:4px;"
+      "  padding:2px 8px;"
+      "  selection-background-color:#2f80ed;"
+      "  selection-color:#ffffff;"
+      "  font-size:12px;"
+      "}"));
+  auto* shadow = new QGraphicsDropShadowEffect(codeLanguageEditor_);
+  shadow->setBlurRadius(14.0);
+  shadow->setOffset(0.0, 3.0);
+  shadow->setColor(QColor(15, 23, 42, 35));
+  codeLanguageEditor_->setGraphicsEffect(shadow);
+
+  codeLanguageCompleter_ = new QCompleter(codeLanguageSuggestions_, codeLanguageEditor_);
+  codeLanguageCompleter_->setCaseSensitivity(Qt::CaseInsensitive);
+  codeLanguageCompleter_->setFilterMode(Qt::MatchContains);
+  codeLanguageCompleter_->setCompletionMode(QCompleter::PopupCompletion);
+  auto* popup = new QListView(codeLanguageEditor_);
+  popup->setObjectName(QStringLiteral("codeLanguagePopup"));
+  popup->setUniformItemSizes(true);
+  popup->setAlternatingRowColors(false);
+  popup->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  popup->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  popup->setStyleSheet(QStringLiteral(
+      "QListView#codeLanguagePopup {"
+      "  background:#ffffff;"
+      "  color:#333333;"
+      "  border:1px solid #e1e4e8;"
+      "  border-radius:5px;"
+      "  padding:6px 0;"
+      "  outline:0;"
+      "  font-size:13px;"
+      "}"
+      "QListView#codeLanguagePopup::item {"
+      "  min-height:28px;"
+      "  padding:4px 12px;"
+      "}"
+      "QListView#codeLanguagePopup::item:selected {"
+      "  background:#f1f6ff;"
+      "  color:#111111;"
+      "}"));
+  codeLanguageCompleter_->setPopup(popup);
+  codeLanguageEditor_->setCompleter(codeLanguageCompleter_);
+
+  connect(codeLanguageEditor_, &QLineEdit::editingFinished, this, &EditorView::commitCodeLanguageEditor);
+  connect(codeLanguageEditor_, &QLineEdit::returnPressed, this, &EditorView::commitCodeLanguageEditor);
+  connect(codeLanguageEditor_, &QLineEdit::textEdited, this, [this] {
+    if (codeLanguageCompleter_) {
+      QRect rect = codeLanguageEditor_->rect();
+      rect.setWidth(140);
+      codeLanguageCompleter_->complete(rect);
+    }
+  });
+}
+
+void EditorView::updateCodeLanguageEditor() {
+  if (updatingCodeLanguageEditor_) {
+    return;
+  }
+
+  if (!layout_ || !document_ || !cursorPosition_.isValid() || cursorPosition_.blockId != cursorHit_.blockId ||
+      cursorHit_.zone != HitTestResult::Zone::Code) {
+    hideCodeLanguageEditor();
+    return;
+  }
+
+  const BlockLayout* block = layout_->block(cursorPosition_.blockId);
+  if (!block || block->type() != BlockType::CodeFence) {
+    hideCodeLanguageEditor();
+    return;
+  }
+  showCodeLanguageEditor(*block);
+}
+
+void EditorView::showCodeLanguageEditor(const BlockLayout& block) {
+  ensureCodeLanguageEditor();
+  if (!codeLanguageEditor_ || !document_) {
+    return;
+  }
+
+  const MarkdownNode* node = document_->node(block.nodeId());
+  if (!node || node->type() != BlockType::CodeFence) {
+    hideCodeLanguageEditor();
+    return;
+  }
+
+  updatingCodeLanguageEditor_ = true;
+  codeLanguageNodeId_ = block.nodeId();
+  if (!codeLanguageEditor_->hasFocus()) {
+    const QString language = node->codeLanguage().isEmpty() ? QStringLiteral("text") : node->codeLanguage();
+    if (codeLanguageEditor_->text() != language) {
+      codeLanguageEditor_->setText(language);
+    }
+    codeLanguageEditor_->deselect();
+    codeLanguageEditor_->setCursorPosition(codeLanguageEditor_->text().size());
+  }
+
+  const QRectF blockRect = block.rect().translated(0, -scrollY());
+  codeLanguageEditor_->resize(116, 26);
+  const int margin = 10;
+  const int x = qRound(blockRect.right()) - codeLanguageEditor_->width() - margin;
+  int y = qRound(blockRect.bottom()) - codeLanguageEditor_->height() / 2;
+  if (y + codeLanguageEditor_->height() + margin > viewport()->height()) {
+    y = qRound(blockRect.bottom()) - codeLanguageEditor_->height() - margin;
+  }
+  codeLanguageEditor_->move(qMax(0, x), qMax(0, y));
+  codeLanguageEditor_->show();
+  codeLanguageEditor_->raise();
+  updatingCodeLanguageEditor_ = false;
+}
+
+void EditorView::hideCodeLanguageEditor() {
+  codeLanguageNodeId_ = {};
+  if (codeLanguageEditor_) {
+    codeLanguageEditor_->hide();
+  }
+}
+
+void EditorView::commitCodeLanguageEditor() {
+  if (updatingCodeLanguageEditor_ || !codeLanguageEditor_ || !codeLanguageEditor_->isVisible() || !codeLanguageNodeId_.isValid()) {
+    return;
+  }
+  QString language = codeLanguageEditor_->text().trimmed();
+  if (language == QStringLiteral("text")) {
+    language.clear();
+  }
+  if (document_) {
+    const MarkdownNode* node = document_->node(codeLanguageNodeId_);
+    if (node && node->codeLanguage() == language) {
+      return;
+    }
+  }
+  emit codeLanguageCommitted(codeLanguageNodeId_, language);
 }
 
 void EditorView::paintSelection(QPainter& painter) const {
