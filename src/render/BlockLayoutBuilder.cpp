@@ -12,7 +12,6 @@ qreal layoutTextHeight(const QString& text, const QFont& font, qreal width) {
   QTextLayout layout(text.isEmpty() ? QStringLiteral(" ") : text, font);
   QTextOption option;
   option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-  option.setFlags(QTextOption::ShowTabsAndSpaces);
   layout.setTextOption(option);
   layout.beginLayout();
 
@@ -229,6 +228,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
   layout->setType(node.type());
   layout->setDepth(depth);
   layout->setLiteral(displayLiteralFor(node));
+  if (node.type() == BlockType::CodeFence) {
+    layout->setCodeLanguage(node.codeLanguage());
+    layout->setCodeHighlightSpans(codeHighlighter_.highlight(node.codeLanguage(), layout->literal()));
+  }
   const qreal height = textHeight(layout->literal(), node.type() == BlockType::MathBlock ? theme.mathFont() : theme.codeFont(), width, theme.codePadding());
   layout->setRect(QRectF(x, y, width, height));
   return layout;

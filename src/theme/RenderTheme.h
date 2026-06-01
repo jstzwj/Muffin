@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/MarkdownTypes.h"
+#include "render/CodeHighlight.h"
 
 #include <QColor>
 #include <QFont>
@@ -41,6 +42,7 @@ public:
   QColor tableHeaderBackgroundColor() const;
   QColor tableAlternateBackgroundColor() const;
   QColor selectionColor() const;
+  QColor codeHighlightColor(CodeHighlightRole role) const;
 
   QMarginsF codePadding() const;
   QMarginsF tableCellPadding() const;

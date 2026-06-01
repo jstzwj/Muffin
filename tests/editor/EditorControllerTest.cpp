@@ -1282,6 +1282,41 @@ void testClipboardBlockSelectionFallback() {
   require(selectedMarkdown(session, selection).contains(QStringLiteral("```cpp")), "block fallback markdown should include code fence");
 }
 
+void testCodeFenceSelectionCopyUsesLiteralOffsets() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  ClipboardController clipboard;
+  wireInput(input, session, selection, undoStack, brushQueue);
+  wireClipboard(clipboard, session, selection, input);
+
+  const QString code = QStringLiteral(
+      "#include <iostream>\n\n"
+      "int main() {\n"
+      "  const auto message = \"Hello from Muffin\";\n"
+      "  std::cout << message << '\\n';\n"
+      "  return 0;\n"
+      "}\n");
+  session.setMarkdownText(QStringLiteral("```cpp\n%1```").arg(code), false);
+  MarkdownNode* fence = blockAt(session, 0);
+  SelectionRange range;
+  range.anchor.blockId = fence->id();
+  range.anchor.text.nodeId = fence->id();
+  range.anchor.text.textOffset = 0;
+  range.focus.blockId = fence->id();
+  range.focus.text.nodeId = fence->id();
+  range.focus.text.textOffset = code.size() - 1;
+  selection.setSelection(range);
+
+  require(clipboard.copy(), "code fence copy should work");
+  require(QApplication::clipboard()->text() == QStringLiteral("```cpp\n%1").arg(code.left(code.size() - 1)),
+          "code fence markdown copy should use literal offsets after fence header");
+  require(selectedPlainText(session, selection) == code.left(code.size() - 1),
+          "code fence plain text copy should use literal offsets");
+}
+
 void testKeyboardNavigationBasics() {
   DocumentSession session;
   SelectionController selection;
@@ -1457,6 +1492,7 @@ int main(int argc, char** argv) {
   testSelectionSerializerFormats();
   testSelectionSerializerCrossComplexInlineEdges();
   testClipboardBlockSelectionFallback();
+  testCodeFenceSelectionCopyUsesLiteralOffsets();
   testKeyboardNavigationBasics();
   testComplexBlockActivationRoutesInput();
   testCodeActivationKeepsClickedOffsetForTyping();

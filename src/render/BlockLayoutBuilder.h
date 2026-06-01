@@ -2,6 +2,7 @@
 
 #include "document/MarkdownNode.h"
 #include "render/BlockLayout.h"
+#include "render/TreeSitterHighlighter.h"
 #include "theme/RenderTheme.h"
 
 #include <memory>
@@ -68,6 +69,7 @@ private:
 
   QString markdownText_;
   CursorPosition activeCursor_;
+  TreeSitterHighlighter codeHighlighter_;
 };
 
 }  // namespace muffin

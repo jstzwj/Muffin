@@ -26,6 +26,32 @@ set(CMARK_SHARED OFF CACHE BOOL "" FORCE)
 set(CMARK_LIB_FUZZER OFF CACHE BOOL "" FORCE)
 add_subdirectory(third_party/cmark-gfm EXCLUDE_FROM_ALL)
 
+add_library(tree-sitter-runtime STATIC
+  third_party/tree-sitter/lib/src/lib.c
+)
+target_include_directories(tree-sitter-runtime
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tree-sitter/lib/include
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tree-sitter/lib/src
+)
+
+add_library(tree-sitter-languages STATIC
+  third_party/tree-sitter-python/src/parser.c
+  third_party/tree-sitter-python/src/scanner.c
+  third_party/tree-sitter-c/src/parser.c
+  third_party/tree-sitter-cpp/src/parser.c
+  third_party/tree-sitter-cpp/src/scanner.c
+)
+target_include_directories(tree-sitter-languages
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tree-sitter/lib/include
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tree-sitter-python/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tree-sitter-c/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tree-sitter-cpp/src
+)
+
 set(MUFFIN_CORE_SOURCES
   src/app/DocumentSession.cpp
   src/app/DocumentSession.h
@@ -126,12 +152,15 @@ set(MUFFIN_UI_SOURCES
   src/editor/TextBlockCommandBuilder.h
   src/render/BlockLayout.cpp
   src/render/BlockLayout.h
+  src/render/CodeHighlight.h
   src/render/BlockLayoutBuilder.cpp
   src/render/BlockLayoutBuilder.h
   src/render/DocumentLayout.cpp
   src/render/DocumentLayout.h
   src/render/InlineLayout.cpp
   src/render/InlineLayout.h
+  src/render/TreeSitterHighlighter.cpp
+  src/render/TreeSitterHighlighter.h
   src/theme/RenderTheme.cpp
   src/theme/RenderTheme.h
   src/theme/ThemeManager.cpp
@@ -146,6 +175,8 @@ target_link_libraries(MuffinUi
   PUBLIC
     Qt6::Widgets
     MuffinCore
+    tree-sitter-runtime
+    tree-sitter-languages
 )
 
 target_include_directories(MuffinUi

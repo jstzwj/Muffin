@@ -152,6 +152,38 @@ QColor RenderTheme::selectionColor() const {
   return selectionColor_;
 }
 
+QColor RenderTheme::codeHighlightColor(CodeHighlightRole role) const {
+  const bool dark = backgroundColor_.lightness() < 128;
+  switch (role) {
+    case CodeHighlightRole::Comment:
+      return dark ? QColor(QStringLiteral("#8b949e")) : QColor(QStringLiteral("#6a737d"));
+    case CodeHighlightRole::Keyword:
+    case CodeHighlightRole::Preprocessor:
+      return dark ? QColor(QStringLiteral("#ff7b72")) : QColor(QStringLiteral("#d73a49"));
+    case CodeHighlightRole::String:
+      return dark ? QColor(QStringLiteral("#a5d6ff")) : QColor(QStringLiteral("#032f62"));
+    case CodeHighlightRole::Number:
+    case CodeHighlightRole::Constant:
+      return dark ? QColor(QStringLiteral("#79c0ff")) : QColor(QStringLiteral("#005cc5"));
+    case CodeHighlightRole::Function:
+      return dark ? QColor(QStringLiteral("#d2a8ff")) : QColor(QStringLiteral("#6f42c1"));
+    case CodeHighlightRole::Type:
+      return dark ? QColor(QStringLiteral("#ffa657")) : QColor(QStringLiteral("#e36209"));
+    case CodeHighlightRole::Variable:
+      return textColor_;
+    case CodeHighlightRole::Property:
+      return dark ? QColor(QStringLiteral("#7ee787")) : QColor(QStringLiteral("#22863a"));
+    case CodeHighlightRole::Operator:
+    case CodeHighlightRole::Punctuation:
+      return mutedTextColor_;
+    case CodeHighlightRole::Escape:
+      return dark ? QColor(QStringLiteral("#f2cc60")) : QColor(QStringLiteral("#b08800"));
+    case CodeHighlightRole::Plain:
+    default:
+      return textColor_;
+  }
+}
+
 QMarginsF RenderTheme::codePadding() const {
   return QMarginsF(scaled(12), scaled(10), scaled(12), scaled(10));
 }

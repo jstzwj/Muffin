@@ -57,6 +57,9 @@ private:
   bool selectionSourceRange(const MarkdownDocument& document, const SelectionRange& selection, qsizetype& start, qsizetype& end) const;
   bool blockSelectionSourceRange(const MarkdownDocument& document, const SelectionRange& selection, qsizetype& start, qsizetype& end) const;
   bool blockSourceRange(const MarkdownDocument& document, const MarkdownNode& node, qsizetype& start, qsizetype& end) const;
+  bool literalCursorSourceOffset(const MarkdownDocument& document, const CursorPosition& cursor, qsizetype& sourceOffset) const;
+  bool literalContentSourceRange(const MarkdownDocument& document, const MarkdownNode& node, qsizetype& start, qsizetype& end) const;
+  QString literalMarkdownPrefix(const MarkdownDocument& document, const MarkdownNode& node) const;
   qsizetype structuredLineStart(const QString& markdown, qsizetype contextSourceStart) const;
   qsizetype sourceOffsetForLineColumn(const QString& text, int line, int column) const;
   qsizetype sourceOffsetForLineEnd(const QString& text, int line) const;

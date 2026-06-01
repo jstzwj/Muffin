@@ -1,6 +1,7 @@
 #include "document/MarkdownDocument.h"
 #include "parser/CmarkGfmParser.h"
 #include "render/DocumentLayout.h"
+#include "render/TreeSitterHighlighter.h"
 #include "theme/RenderTheme.h"
 
 #include <QApplication>
@@ -103,6 +104,47 @@ void testInlineMarkerExpansion() {
           QStringLiteral("math cursor rect should round-trip source offset after first char"));
 }
 
+bool hasRole(const QVector<CodeHighlightSpan>& spans, CodeHighlightRole role) {
+  for (const CodeHighlightSpan& span : spans) {
+    if (span.role == role) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool hasExactRoleSpan(const QVector<CodeHighlightSpan>& spans, CodeHighlightRole role, qsizetype start, qsizetype end) {
+  for (const CodeHighlightSpan& span : spans) {
+    if (span.role == role && span.start == start && span.end == end) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void testTreeSitterCodeHighlighting() {
+  TreeSitterHighlighter highlighter;
+  require(highlighter.supportsLanguage(QStringLiteral("python")), QStringLiteral("python highlighting should be registered"));
+  const QVector<CodeHighlightSpan> python = highlighter.highlight(
+      QStringLiteral("python"),
+      QStringLiteral("def greet(name):\n    return \"hello \" + name\n"));
+  require(hasRole(python, CodeHighlightRole::Keyword), QStringLiteral("python should highlight keywords"));
+  require(hasRole(python, CodeHighlightRole::Function), QStringLiteral("python should highlight functions"));
+  require(hasRole(python, CodeHighlightRole::String), QStringLiteral("python should highlight strings"));
+
+  const QVector<CodeHighlightSpan> cpp = highlighter.highlight(
+      QStringLiteral("cpp"),
+      QStringLiteral("#include <QApplication>\nint main() { return 0; }\n"));
+  require(hasRole(cpp, CodeHighlightRole::Preprocessor), QStringLiteral("cpp should highlight preprocessor"));
+  require(hasRole(cpp, CodeHighlightRole::Keyword), QStringLiteral("cpp should highlight keywords"));
+  require(hasRole(cpp, CodeHighlightRole::Function), QStringLiteral("cpp should highlight functions"));
+  const QString cppText = QStringLiteral("#include <QApplication>\nint main() { return 0; }\n");
+  const QVector<CodeHighlightSpan> cppExact = highlighter.highlight(QStringLiteral("cpp"), cppText);
+  const qsizetype returnStart = cppText.indexOf(QStringLiteral("return"));
+  require(hasExactRoleSpan(cppExact, CodeHighlightRole::Keyword, returnStart, returnStart + 6),
+          QStringLiteral("cpp keyword span should align exactly with return"));
+}
+
 void testLayoutForTheme(const MarkdownDocument& document, const RenderTheme& theme, const QString& themeName) {
   DocumentLayout layout;
   layout.rebuild(document, theme, 1000.0);
@@ -132,6 +174,8 @@ void testLayoutForTheme(const MarkdownDocument& document, const RenderTheme& the
   requireUsableRect(layout.block(math->id())->rect(), QStringLiteral("%1 math").arg(themeName));
   require(!layout.block(code->id())->literal().endsWith(QLatin1Char('\n')),
           QStringLiteral("%1 code display literal should hide structural trailing newline").arg(themeName));
+  require(!layout.block(code->id())->codeHighlightSpans().isEmpty(),
+          QStringLiteral("%1 code block should have syntax highlight spans").arg(themeName));
   require(layout.block(math->id())->rect().height() >= 20.0,
           QStringLiteral("%1 math block height should leave room for displayed text").arg(themeName));
 
@@ -195,6 +239,7 @@ int main(int argc, char** argv) {
   document.setMarkdownText(markdown, std::move(parsed.root));
 
   testInlineMarkerExpansion();
+  testTreeSitterCodeHighlighting();
   testLayoutForTheme(document, RenderTheme::github(), QStringLiteral("github"));
   testLayoutForTheme(document, RenderTheme::newsprint(), QStringLiteral("newsprint"));
   testLayoutForTheme(document, RenderTheme::night(), QStringLiteral("night"));

@@ -2,6 +2,7 @@
 
 #include "document/MarkdownNode.h"
 #include "editor/CursorPosition.h"
+#include "render/CodeHighlight.h"
 #include "render/InlineLayout.h"
 #include "theme/RenderTheme.h"
 
@@ -49,6 +50,10 @@ public:
 
   void setLiteral(QString literal);
   QString literal() const;
+  void setCodeLanguage(QString language);
+  QString codeLanguage() const;
+  void setCodeHighlightSpans(QVector<CodeHighlightSpan> spans);
+  const QVector<CodeHighlightSpan>& codeHighlightSpans() const;
 
   void setHeadingLevel(int level);
   int headingLevel() const;
@@ -87,12 +92,15 @@ private:
   QVector<QRectF> selectionRectsSelf(const SelectionRange& selection, const RenderTheme& theme) const;
   QVector<QRectF> selectionRectsSelfForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
   QVector<QRectF> literalSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
+  void paintCodeFence(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
 
   NodeId id_;
   BlockType type_ = BlockType::Unknown;
   QRectF rect_;
   std::unique_ptr<InlineLayout> inlineLayout_;
   QString literal_;
+  QString codeLanguage_;
+  QVector<CodeHighlightSpan> codeHighlightSpans_;
   int headingLevel_ = 0;
   QString listMarker_;
   qsizetype contentSourceStart_ = -1;

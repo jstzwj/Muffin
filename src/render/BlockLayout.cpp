@@ -2,6 +2,7 @@
 
 #include <QFontMetricsF>
 #include <QPainter>
+#include <QTextLayout>
 #include <QTextOption>
 
 #include <cmath>
@@ -173,6 +174,22 @@ void BlockLayout::setLiteral(QString literal) {
 
 QString BlockLayout::literal() const {
   return literal_;
+}
+
+void BlockLayout::setCodeLanguage(QString language) {
+  codeLanguage_ = std::move(language);
+}
+
+QString BlockLayout::codeLanguage() const {
+  return codeLanguage_;
+}
+
+void BlockLayout::setCodeHighlightSpans(QVector<CodeHighlightSpan> spans) {
+  codeHighlightSpans_ = std::move(spans);
+}
+
+const QVector<CodeHighlightSpan>& BlockLayout::codeHighlightSpans() const {
+  return codeHighlightSpans_;
 }
 
 void BlockLayout::setHeadingLevel(int level) {
@@ -349,6 +366,8 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
       break;
     }
     case BlockType::CodeFence:
+      paintCodeFence(painter, theme, viewRect);
+      break;
     case BlockType::HtmlBlock:
     case BlockType::MathBlock: {
       painter.save();
@@ -460,6 +479,72 @@ QVector<QRectF> BlockLayout::literalSelectionRects(qsizetype startOffset, qsizet
     rect = rect.adjusted(-1.0, 0, 1.0, 0).intersected(contentRect.adjusted(0, 0, 1, 0));
   }
   return rects;
+}
+
+void BlockLayout::paintCodeFence(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
+  painter.save();
+  painter.setPen(theme.codeBorderColor());
+  painter.setBrush(theme.codeBackgroundColor());
+  painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
+
+  const QRectF contentRect = viewRect.marginsRemoved(theme.codePadding());
+  const QStringList lines = literal_.isEmpty() ? QStringList{QString()} : literal_.split(QLatin1Char('\n'));
+  QTextCharFormat baseFormat;
+  baseFormat.setForeground(theme.textColor());
+  QTextOption option;
+  option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+
+  qreal y = contentRect.top();
+  qsizetype lineStartOffset = 0;
+  for (const QString& sourceLine : lines) {
+    const QString lineText = sourceLine.isEmpty() ? QStringLiteral(" ") : sourceLine;
+    QTextLayout layout(lineText, theme.codeFont());
+    layout.setTextOption(option);
+
+    QVector<QTextLayout::FormatRange> formats;
+    QTextLayout::FormatRange baseRange;
+    baseRange.start = 0;
+    baseRange.length = sourceLine.size();
+    baseRange.format = baseFormat;
+    formats.push_back(baseRange);
+
+    for (const CodeHighlightSpan& span : codeHighlightSpans_) {
+      const qsizetype lineEndOffset = lineStartOffset + sourceLine.size();
+      const qsizetype start = qMax(span.start, lineStartOffset);
+      const qsizetype end = qMin(span.end, lineEndOffset);
+      if (end <= start) {
+        continue;
+      }
+      QTextCharFormat format;
+      format.setForeground(theme.codeHighlightColor(span.role));
+      if (span.role == CodeHighlightRole::Keyword || span.role == CodeHighlightRole::Function || span.role == CodeHighlightRole::Type) {
+        format.setFontWeight(QFont::DemiBold);
+      }
+      QTextLayout::FormatRange range;
+      range.start = static_cast<int>(start - lineStartOffset);
+      range.length = static_cast<int>(end - start);
+      range.format = format;
+      formats.push_back(range);
+    }
+    layout.setFormats(formats);
+
+    layout.beginLayout();
+    qreal lineY = 0;
+    while (true) {
+      QTextLine textLine = layout.createLine();
+      if (!textLine.isValid()) {
+        break;
+      }
+      textLine.setLineWidth(qMax<qreal>(1.0, contentRect.width()));
+      textLine.setPosition(QPointF(0, lineY));
+      lineY += textLine.height();
+    }
+    layout.endLayout();
+    layout.draw(&painter, QPointF(contentRect.left(), y));
+    y += qMax<qreal>(lineY, QFontMetricsF(theme.codeFont()).height());
+    lineStartOffset += sourceLine.size() + 1;
+  }
+  painter.restore();
 }
 
 HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme) const {
