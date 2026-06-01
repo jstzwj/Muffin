@@ -73,9 +73,20 @@ void InlineLayout::build(
     qreal width,
     const QFont& baseFont,
     BuildOptions options) {
+  build(inlines, InlineProjection::markdownForInlines(inlines), theme, width, baseFont, options);
+}
+
+void InlineLayout::build(
+    const QVector<InlineNode>& inlines,
+    QString sourceText,
+    const RenderTheme& theme,
+    qreal width,
+    const QFont& baseFont,
+    BuildOptions options) {
   plainText_ = flattenPlainText(inlines);
   offsetMap_.clear();
   displayText_.clear();
+  projection_ = InlineProjection(inlines, std::move(sourceText), options.activeSourceOffset);
   qsizetype visibleOffset = 0;
   html_ = renderInlines(inlines, theme, visibleOffset, options);
   document_ = std::make_unique<QTextDocument>();
@@ -128,12 +139,50 @@ qsizetype InlineLayout::hitTestTextOffset(QPointF localPos) const {
   return visibleOffsetForDisplayOffset(position);
 }
 
+qsizetype InlineLayout::hitTestSourceOffset(QPointF localPos) const {
+  if (!document_) {
+    return 0;
+  }
+  const int position = document_->documentLayout()->hitTest(localPos, Qt::FuzzyHit);
+  qsizetype sourceOffset = -1;
+  if (projection_.sourceOffsetForDisplayOffset(position, sourceOffset)) {
+    return sourceOffset;
+  }
+  return visibleOffsetForDisplayOffset(position);
+}
+
 QRectF InlineLayout::cursorRect(qsizetype textOffset) const {
   if (!document_) {
     return {};
   }
   const int displayOffset = static_cast<int>(displayOffsetForVisibleOffset(textOffset));
   const int position = qBound(0, displayOffset, qMax(0, document_->characterCount() - 1));
+  const QTextBlock block = document_->findBlock(position);
+  if (!block.isValid() || !block.layout()) {
+    return {};
+  }
+
+  const int relativePosition = qBound(0, position - block.position(), block.length());
+  const QTextLine line = block.layout()->lineForTextPosition(relativePosition);
+  if (!line.isValid()) {
+    const QRectF blockRect = document_->documentLayout()->blockBoundingRect(block);
+    return QRectF(blockRect.left(), blockRect.top(), 1.0, blockRect.height());
+  }
+
+  const qreal x = line.cursorToX(relativePosition);
+  const QRectF blockRect = document_->documentLayout()->blockBoundingRect(block);
+  return QRectF(blockRect.left() + x, blockRect.top() + line.y(), 1.0, line.height());
+}
+
+QRectF InlineLayout::cursorRectForSourceOffset(qsizetype sourceOffset) const {
+  qsizetype displayOffset = -1;
+  if (!projection_.displayOffsetForSourceOffset(sourceOffset, displayOffset)) {
+    return cursorRect(sourceOffset);
+  }
+  if (!document_) {
+    return {};
+  }
+  const int position = qBound(0, static_cast<int>(displayOffset), qMax(0, document_->characterCount() - 1));
   const QTextBlock block = document_->findBlock(position);
   if (!block.isValid() || !block.layout()) {
     return {};

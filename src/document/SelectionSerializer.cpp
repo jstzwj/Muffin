@@ -1,7 +1,7 @@
 #include "document/SelectionSerializer.h"
 
 #include "document/InlineNode.h"
-#include "document/InlineSourceMap.h"
+#include "document/InlineProjection.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 #include "parser/CmarkGfmParser.h"
@@ -39,7 +39,7 @@ QString plainTextForNode(const MarkdownNode& node) {
     case BlockType::Paragraph:
     case BlockType::Heading:
     case BlockType::TableCell:
-      return InlineSourceMap::plainTextForInlines(node.inlines());
+      return InlineProjection::plainTextForInlines(node.inlines());
     default:
       return node.literal();
   }
@@ -204,7 +204,7 @@ bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, c
   context.sourceStart = sourceStart;
   context.sourceEnd = sourceEnd;
   context.sourceText = markdown.mid(sourceStart, sourceEnd - sourceStart);
-  return isPlainInlineEditable(*editable, context.sourceText) || InlineSourceMap(editable->inlines(), context.sourceText).isValid();
+  return isPlainInlineEditable(*editable, context.sourceText) || InlineProjection(editable->inlines(), context.sourceText).isValid();
 }
 
 bool SelectionSerializer::editableCursorSourceOffset(
@@ -224,8 +224,11 @@ bool SelectionSerializer::editableCursorSourceOffset(
 
   const qsizetype offset = qMax<qsizetype>(0, cursor.text.textOffset);
   qsizetype localSourceOffset = -1;
-  InlineSourceMap sourceMap(context.editableNode ? context.editableNode->inlines() : QVector<InlineNode>(), context.sourceText);
-  if (!sourceMap.sourceOffsetForVisibleOffset(offset, localSourceOffset)) {
+  InlineProjection projection(context.editableNode ? context.editableNode->inlines() : QVector<InlineNode>(), context.sourceText,
+                              cursor.text.sourceOffset >= context.sourceStart ? cursor.text.sourceOffset - context.sourceStart : -1);
+  if (cursor.text.sourceOffset >= context.sourceStart && cursor.text.sourceOffset <= context.sourceEnd) {
+    localSourceOffset = cursor.text.sourceOffset - context.sourceStart;
+  } else if (!projection.sourceOffsetForVisibleOffset(offset, localSourceOffset)) {
     localSourceOffset = qBound<qsizetype>(0, offset, context.sourceText.size());
   }
   sourceOffset = context.sourceStart + localSourceOffset;

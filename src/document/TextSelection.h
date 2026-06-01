@@ -7,6 +7,7 @@ namespace muffin {
 struct TextPosition {
   NodeId nodeId;
   qsizetype textOffset = 0;
+  qsizetype sourceOffset = -1;
   bool inMeta = false;
 
   bool isValid() const {
@@ -29,7 +30,7 @@ struct SelectionRange {
 
   bool isCollapsed() const {
     return anchor.blockId == focus.blockId && anchor.text.textOffset == focus.text.textOffset &&
-           anchor.text.inMeta == focus.text.inMeta;
+           anchor.text.sourceOffset == focus.text.sourceOffset && anchor.text.inMeta == focus.text.inMeta;
   }
 
   bool isSingleBlock() const {

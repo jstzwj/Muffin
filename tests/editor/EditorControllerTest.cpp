@@ -1,6 +1,7 @@
 #include "app/DocumentSession.h"
 #include "commands/StylizeController.h"
 #include "document/MarkdownNode.h"
+#include "document/InlineProjection.h"
 #include "document/SelectionSerializer.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
@@ -131,6 +132,20 @@ void setCursor(SelectionController& selection, MarkdownNode* block, qsizetype of
   selection.setCursorPosition(cursor);
 }
 
+void setSourceCursor(SelectionController& selection, MarkdownNode* block, qsizetype visibleOffset, qsizetype sourceOffset) {
+  CursorPosition cursor;
+  cursor.blockId = block->id();
+  cursor.text.nodeId = block->id();
+  cursor.text.textOffset = visibleOffset;
+  cursor.text.sourceOffset = sourceOffset;
+  selection.setCursorPosition(cursor);
+}
+
+bool pressKey(InputController& input, QObject* target, int key, Qt::KeyboardModifiers modifiers = Qt::NoModifier) {
+  QKeyEvent event(QEvent::KeyPress, key, modifiers);
+  return input.eventFilter(target, &event);
+}
+
 void wireInput(
     InputController& input,
     DocumentSession& session,
@@ -259,6 +274,203 @@ void testInputEnterSplitsComplexInlineParagraphs() {
   setCursor(selection, blockAt(session, 0), 10);
   require(input.insertParagraphBreak(), "enter should split inline math paragraph");
   require(session.markdownText() == QStringLiteral("before $x+y$\n\nafter"), "inline math split mismatch");
+}
+
+void testInputEditsComplexInlineSourcePositions() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("before **bold** after"), false);
+  setSourceCursor(selection, blockAt(session, 0), 9, 11);
+  require(input.insertText(QStringLiteral("X")), "typing inside strong inline should edit markdown source");
+  require(session.markdownText() == QStringLiteral("before **boXld** after"), "strong inline source insert mismatch");
+  require(selection.cursorPosition().text.sourceOffset == 12, "strong inline source cursor mismatch");
+
+  session.setMarkdownText(QStringLiteral("before `code` after"), false);
+  setSourceCursor(selection, blockAt(session, 0), 9, 9);
+  require(input.insertText(QStringLiteral("X")), "typing inside code inline should edit markdown source");
+  require(session.markdownText() == QStringLiteral("before `cXode` after"), "code inline source insert mismatch");
+
+  session.setMarkdownText(QStringLiteral("before $x+y$ after"), false);
+  setSourceCursor(selection, blockAt(session, 0), 9, 9);
+  require(input.insertText(QStringLiteral("0")), "typing inside inline math should edit markdown source");
+  require(session.markdownText() == QStringLiteral("before $x0+y$ after"), "inline math source insert mismatch");
+
+  session.setMarkdownText(QStringLiteral("before **bold** after"), false);
+  setSourceCursor(selection, blockAt(session, 0), 10, 12);
+  require(input.deleteBackward(), "backspace inside strong inline should edit markdown source");
+  require(session.markdownText() == QStringLiteral("before **bod** after"), "strong inline source backspace mismatch");
+
+  session.setMarkdownText(QStringLiteral("before `code` after"), false);
+  setSourceCursor(selection, blockAt(session, 0), 9, 9);
+  require(input.deleteForward(), "delete inside code inline should edit markdown source");
+  require(session.markdownText() == QStringLiteral("before `cde` after"), "code inline source delete mismatch");
+}
+
+void testCodeAndMathCursorAfterSourceInsert() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("$123$"), false);
+  setSourceCursor(selection, blockAt(session, 0), 0, 1);
+  require(input.insertText(QStringLiteral("a")), "typing before first math char should work");
+  require(session.markdownText() == QStringLiteral("$a123$"), "math insert before first char mismatch");
+  require(selection.cursorPosition().text.sourceOffset == 2, "math cursor source should stay after inserted char");
+  require(selection.cursorPosition().text.textOffset == 1, "math cursor visible offset should stay after inserted char");
+
+  session.setMarkdownText(QStringLiteral("`123`"), false);
+  setSourceCursor(selection, blockAt(session, 0), 0, 1);
+  require(input.insertText(QStringLiteral("a")), "typing before first code char should work");
+  require(session.markdownText() == QStringLiteral("`a123`"), "code insert before first char mismatch");
+  require(selection.cursorPosition().text.sourceOffset == 2, "code cursor source should stay after inserted char");
+  require(selection.cursorPosition().text.textOffset == 1, "code cursor visible offset should stay after inserted char");
+}
+
+void testInlineProjectionMarkerSourcePositions() {
+  QVector<InlineNode> strikeChildren;
+  strikeChildren.push_back(InlineNode::text(QStringLiteral("through")));
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::strikethrough(QStringLiteral("~~"), strikeChildren));
+
+  InlineProjection projection(inlines, QStringLiteral("~~through~~"), 1);
+  require(projection.isValid(), "projection should be valid for strikethrough");
+  qsizetype displayOffset = -1;
+  require(projection.displayOffsetForSourceOffset(1, displayOffset), "projection should map marker source to display");
+  require(displayOffset == 1, "projection marker display offset mismatch");
+  qsizetype sourceOffset = -1;
+  require(projection.sourceOffsetForDisplayOffset(1, sourceOffset), "projection should map marker display to source");
+  require(sourceOffset == 1, "projection marker source offset mismatch");
+}
+
+void testHorizontalNavigationEntersInlineMarkers() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+  EditorView view;
+  input.attach(&view);
+
+  session.setMarkdownText(QStringLiteral("**bold**"), false);
+  setSourceCursor(selection, blockAt(session, 0), 0, 0);
+  require(pressKey(input, &view, Qt::Key_Right), "right arrow should move into strong opener");
+  require(selection.cursorPosition().text.sourceOffset == 1, "strong opener marker source offset mismatch");
+  require(input.insertText(QStringLiteral("X")), "typing inside strong opener marker should edit source");
+  require(session.markdownText() == QStringLiteral("*X*bold**"), "strong opener marker edit mismatch");
+
+  session.setMarkdownText(QStringLiteral("*italic*"), false);
+  setSourceCursor(selection, blockAt(session, 0), 0, 0);
+  require(pressKey(input, &view, Qt::Key_Right), "right arrow should move into italic opener");
+  require(selection.cursorPosition().text.sourceOffset == 1, "italic opener marker source offset mismatch");
+
+  session.setMarkdownText(QStringLiteral("~~through~~"), false);
+  setSourceCursor(selection, blockAt(session, 0), 0, 0);
+  require(pressKey(input, &view, Qt::Key_Right), "right arrow should move into strike opener");
+  require(selection.cursorPosition().text.sourceOffset == 1, "strike opener marker source offset mismatch");
+  require(input.deleteBackward(), "backspace inside strike opener should edit source");
+  require(session.markdownText() == QStringLiteral("~through~~"), "strike opener backspace mismatch");
+
+  session.setMarkdownText(QStringLiteral("`code`"), false);
+  setSourceCursor(selection, blockAt(session, 0), 0, 0);
+  require(pressKey(input, &view, Qt::Key_Right), "right arrow should move after code opener");
+  require(selection.cursorPosition().text.sourceOffset == 1, "code opener source offset mismatch");
+
+  session.setMarkdownText(QStringLiteral("$x+y$"), false);
+  setSourceCursor(selection, blockAt(session, 0), 0, 0);
+  require(pressKey(input, &view, Qt::Key_Right), "right arrow should move after math opener");
+  require(selection.cursorPosition().text.sourceOffset == 1, "math opener source offset mismatch");
+}
+
+void testTextHitActivationAddsSourceOffsetForInlineEditing() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("before **bold** after"), false);
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Text;
+  hit.blockId = blockAt(session, 0)->id();
+  hit.textNodeId = hit.blockId;
+  hit.textOffset = 9;
+  controller.activateHit(hit);
+
+  require(controller.selection().cursorPosition().text.sourceOffset == 11, "text hit should resolve strong source offset");
+  require(controller.inputController().insertText(QStringLiteral("X")), "typing after text hit should edit strong inline");
+  require(session.markdownText() == QStringLiteral("before **boXld** after"), "text hit inline insert mismatch");
+}
+
+void testEditorViewHitTestActivatesInlineSourceEditing() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("before **bold** after"), false);
+  view.setDocument(session.document());
+  const QRectF blockRect = view.nodeRect(blockAt(session, 0)->id());
+  require(!blockRect.isEmpty(), "view should layout inline paragraph");
+  const InlineLayout* inlineLayout = view.blockAtViewportPos(blockRect.center())->inlineLayout();
+  require(inlineLayout != nullptr, "view hit test should find inline layout");
+
+  const QPointF documentPos = blockRect.topLeft() + inlineLayout->cursorRectForSourceOffset(11).center();
+  HitTestResult hit = view.hitTest(documentPos);
+  require(hit.isValid() && hit.zone == HitTestResult::Zone::Text, "view hit test should return text hit");
+  require(hit.sourceOffset == 11, "view hit test source offset mismatch");
+
+  controller.activateHit(hit);
+  require(controller.selection().cursorPosition().text.sourceOffset == 11, "view hit should resolve source offset");
+  require(controller.inputController().insertText(QStringLiteral("X")), "typing after view hit should edit inline");
+  require(session.markdownText() == QStringLiteral("before **boXld** after"), "view hit inline insert mismatch");
+}
+
+void testMixedInlineParagraphHitEditingBeforeAutolink() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  const QString markdown = QStringLiteral(
+      "Plain text can mix **bold**, *italic*, ~~strikethrough~~, `inline code`, inline HTML <kbd>Ctrl</kbd> + "
+      "<kbd>S</kbd>, links such as [Muffin](https://example.com), autolinks like https://example.com, and inline math $E = mc^2$.");
+  session.setMarkdownText(markdown, false);
+
+  HitTestResult boldHit;
+  boldHit.zone = HitTestResult::Zone::Text;
+  boldHit.blockId = blockAt(session, 0)->id();
+  boldHit.textNodeId = boldHit.blockId;
+  boldHit.textOffset = QStringLiteral("Plain text can mix bo").size();
+  controller.activateHit(boldHit);
+  require(controller.inputController().insertText(QStringLiteral("X")), "typing in mixed paragraph bold should work");
+  require(session.markdownText().contains(QStringLiteral("**boXld**")), "mixed paragraph bold insert mismatch");
+
+  session.setMarkdownText(markdown, false);
+  HitTestResult italicHit;
+  italicHit.zone = HitTestResult::Zone::Text;
+  italicHit.blockId = blockAt(session, 0)->id();
+  italicHit.textNodeId = italicHit.blockId;
+  italicHit.textOffset = QStringLiteral("Plain text can mix bold, ita").size();
+  controller.activateHit(italicHit);
+  require(controller.inputController().insertText(QStringLiteral("Y")), "typing in mixed paragraph italic should work");
+  require(session.markdownText().contains(QStringLiteral("*itaYlic*")), "mixed paragraph italic insert mismatch");
+
+  session.setMarkdownText(markdown, false);
+  HitTestResult strikeHit;
+  strikeHit.zone = HitTestResult::Zone::Text;
+  strikeHit.blockId = blockAt(session, 0)->id();
+  strikeHit.textNodeId = strikeHit.blockId;
+  strikeHit.textOffset = QStringLiteral("Plain text can mix bold, italic, strike").size();
+  controller.activateHit(strikeHit);
+  require(controller.inputController().insertText(QStringLiteral("Z")), "typing in mixed paragraph strike should work");
+  require(session.markdownText().contains(QStringLiteral("~~strikeZthrough~~")), "mixed paragraph strike insert mismatch");
 }
 
 void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
@@ -667,6 +879,7 @@ void testStylizeCollapsedSkeletons() {
   require(stylize.toggleBold(), "bold skeleton should insert");
   require(session.markdownText() == QStringLiteral("alpha****"), "bold skeleton text mismatch");
   require(selection.cursorPosition().text.textOffset == 7, "bold skeleton cursor mismatch");
+  require(selection.cursorPosition().text.sourceOffset == 7, "bold skeleton source cursor mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
@@ -679,12 +892,42 @@ void testStylizeCollapsedSkeletons() {
   require(stylize.toggleCode(), "code skeleton should insert");
   require(session.markdownText() == QStringLiteral("alpha``"), "code skeleton text mismatch");
   require(selection.cursorPosition().text.textOffset == 6, "code skeleton cursor mismatch");
+  require(selection.cursorPosition().text.sourceOffset == 6, "code skeleton source cursor mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(stylize.insertLink(), "link skeleton should insert");
   require(session.markdownText() == QStringLiteral("alpha[](url)"), "link skeleton text mismatch");
   require(selection.cursorPosition().text.textOffset == 6, "link skeleton cursor mismatch");
+}
+
+void testTypingIntoCollapsedStyleSkeletons() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  StylizeController stylize;
+  wireInput(input, session, selection, undoStack, brushQueue);
+  wireStyle(stylize, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("alpha"), false);
+  setCursor(selection, blockAt(session, 0), 5);
+  require(stylize.toggleBold(), "bold skeleton should insert before typing");
+  require(input.insertText(QStringLiteral("B")), "typing into bold skeleton should work");
+  require(session.markdownText() == QStringLiteral("alpha**B**"), "bold skeleton typing mismatch");
+
+  session.setMarkdownText(QStringLiteral("alpha"), false);
+  setCursor(selection, blockAt(session, 0), 5);
+  require(stylize.toggleCode(), "code skeleton should insert before typing");
+  require(input.insertText(QStringLiteral("C")), "typing into code skeleton should work");
+  require(session.markdownText() == QStringLiteral("alpha`C`"), "code skeleton typing mismatch");
+
+  session.setMarkdownText(QStringLiteral("alpha"), false);
+  setCursor(selection, blockAt(session, 0), 5);
+  require(stylize.toggleItalic(), "italic skeleton should insert before typing");
+  require(input.insertText(QStringLiteral("I")), "typing into italic skeleton should work");
+  require(session.markdownText() == QStringLiteral("alpha*I*"), "italic skeleton typing mismatch");
 }
 
 void testStylizeSelectionWrap() {
@@ -1069,6 +1312,13 @@ int main(int argc, char** argv) {
   testInputInsertAndBackspace();
   testInputEnterMovesCursorToNewParagraph();
   testInputEnterSplitsComplexInlineParagraphs();
+  testInputEditsComplexInlineSourcePositions();
+  testCodeAndMathCursorAfterSourceInsert();
+  testInlineProjectionMarkerSourcePositions();
+  testHorizontalNavigationEntersInlineMarkers();
+  testTextHitActivationAddsSourceOffsetForInlineEditing();
+  testEditorViewHitTestActivatesInlineSourceEditing();
+  testMixedInlineParagraphHitEditingBeforeAutolink();
   testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph();
   testLocalReparsePreservesUntouchedNodeIds();
   testBlockEditContextSeparatesBlockAndContentRanges();
@@ -1084,6 +1334,7 @@ int main(int argc, char** argv) {
   testListItemInput();
   testListItemEditingCommands();
   testStylizeCollapsedSkeletons();
+  testTypingIntoCollapsedStyleSkeletons();
   testStylizeSelectionWrap();
   testStylizeUndoRedoSnapshots();
   testHeadingAndListItemStylize();

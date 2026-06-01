@@ -22,6 +22,7 @@ struct HitTestResult {
   NodeId blockId;
   NodeId textNodeId;
   qsizetype textOffset = 0;
+  qsizetype sourceOffset = -1;
   QRectF blockRect;
   QRectF cursorRect;
   int tableRow = -1;
@@ -36,6 +37,7 @@ struct HitTestResult {
     position.blockId = blockId;
     position.text.nodeId = textNodeId.isValid() ? textNodeId : blockId;
     position.text.textOffset = textOffset;
+    position.text.sourceOffset = sourceOffset;
     position.text.inMeta = zone == Zone::Marker;
     return position;
   }

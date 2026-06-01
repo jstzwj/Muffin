@@ -412,6 +412,7 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
   hit.blockId = position.blockId;
   hit.textNodeId = position.text.nodeId.isValid() ? position.text.nodeId : position.blockId;
   hit.textOffset = position.text.textOffset;
+  hit.sourceOffset = position.text.sourceOffset;
   hit.blockRect = block->rect();
   hit.zone = HitTestResult::Zone::Block;
 
@@ -422,7 +423,11 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
       hit.zone = position.text.inMeta ? HitTestResult::Zone::Marker : HitTestResult::Zone::Text;
       if (const InlineLayout* inlineLayout = block->inlineLayout()) {
         const qreal textLeft = !block->listMarker().isEmpty() ? block->rect().left() + theme_.listIndent() : block->rect().left();
-        hit.cursorRect = inlineLayout->cursorRect(position.text.textOffset).translated(QPointF(textLeft, block->rect().top()));
+        const qsizetype localSourceOffset =
+            position.text.sourceOffset >= 0 && block->contentSourceStart() >= 0 ? position.text.sourceOffset - block->contentSourceStart() : -1;
+        hit.cursorRect = localSourceOffset >= 0
+                             ? inlineLayout->cursorRectForSourceOffset(localSourceOffset).translated(QPointF(textLeft, block->rect().top()))
+                             : inlineLayout->cursorRect(position.text.textOffset).translated(QPointF(textLeft, block->rect().top()));
       }
       break;
     case BlockType::CodeFence:
@@ -463,7 +468,11 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
           for (const auto& cell : tableRow.cells) {
             if (cell.nodeId == hit.textNodeId) {
               const QRectF contentRect = cell.rect.marginsRemoved(theme_.tableCellPadding());
-              hit.cursorRect = cell.text.cursorRect(position.text.textOffset).translated(contentRect.topLeft());
+              const qsizetype localSourceOffset =
+                  position.text.sourceOffset >= 0 && cell.contentSourceStart >= 0 ? position.text.sourceOffset - cell.contentSourceStart : -1;
+              hit.cursorRect = localSourceOffset >= 0
+                                   ? cell.text.cursorRectForSourceOffset(localSourceOffset).translated(contentRect.topLeft())
+                                   : cell.text.cursorRect(position.text.textOffset).translated(contentRect.topLeft());
               break;
             }
           }

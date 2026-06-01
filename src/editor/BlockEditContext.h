@@ -1,5 +1,6 @@
 #pragma once
 
+#include "document/InlineProjection.h"
 #include "document/MarkdownTypes.h"
 #include "document/NodeId.h"
 #include "document/SourceRange.h"
@@ -23,6 +24,7 @@ struct BlockEditContext {
   qsizetype cursorSourceOffset = -1;
   QString contentText;
   QString visibleText;
+  InlineProjection inlineProjection;
   bool plainInlineEditable = false;
   bool supportsVisibleOffsetMapping = false;
 };

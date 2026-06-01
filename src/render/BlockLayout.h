@@ -19,6 +19,7 @@ public:
     NodeId nodeId;
     QRectF rect;
     InlineLayout text;
+    qsizetype contentSourceStart = -1;
     TableAlignment alignment = TableAlignment::None;
     bool header = false;
     bool alternate = false;
@@ -54,6 +55,8 @@ public:
 
   void setListMarker(QString marker);
   QString listMarker() const;
+  void setContentSourceStart(qsizetype sourceStart);
+  qsizetype contentSourceStart() const;
   void setTaskListItem(bool taskListItem, bool checked);
   bool isTaskListItem() const;
   bool taskChecked() const;
@@ -92,6 +95,7 @@ private:
   QString literal_;
   int headingLevel_ = 0;
   QString listMarker_;
+  qsizetype contentSourceStart_ = -1;
   bool taskListItem_ = false;
   bool taskChecked_ = false;
   int depth_ = 0;

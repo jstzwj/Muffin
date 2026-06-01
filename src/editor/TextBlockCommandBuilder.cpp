@@ -16,7 +16,8 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
     return command;
   }
 
-  if (!context.plainInlineEditable && operation != Operation::Enter && operation != Operation::Backspace && operation != Operation::Delete) {
+  if (!context.plainInlineEditable && context.cursorSourceOffset < context.contentRange.byteStart &&
+      operation != Operation::Enter) {
     return command;
   }
 
@@ -34,14 +35,11 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
       command.label = QStringLiteral("Insert Text");
       break;
     case Operation::Backspace:
-      if (context.cursorTextOffset <= 0) {
+      if (nextOffset <= 0) {
         if (context.node->type() == BlockType::ListItem) {
           return buildOutdentListItem(context);
         }
         return buildMergeWithPreviousParagraph(context);
-      }
-      if (!context.plainInlineEditable) {
-        return command;
       }
       nextParagraph.remove(nextOffset - 1, 1);
       --nextOffset;
@@ -49,11 +47,8 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
       command.label = QStringLiteral("Backspace");
       break;
     case Operation::Delete:
-      if (context.cursorTextOffset >= context.visibleText.size()) {
+      if (nextOffset >= nextParagraph.size()) {
         return buildMergeWithNextParagraph(context);
-      }
-      if (!context.plainInlineEditable) {
-        return command;
       }
       nextParagraph.remove(nextOffset, 1);
       command.kind = EditTransaction::Kind::DeleteText;
@@ -79,7 +74,6 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
       context.node->id(),
       context.blockRange.byteStart >= 0 ? context.blockRange.byteStart : context.contentRange.byteStart,
       context.node->type()});
-  command.preferredCursor = cursorFor(context.node->id(), nextOffset);
   command.valid = true;
   command.handled = true;
   return command;

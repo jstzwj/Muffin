@@ -2,7 +2,7 @@
 
 #include "app/DocumentSession.h"
 #include "document/InlineNode.h"
-#include "document/InlineSourceMap.h"
+#include "document/InlineProjection.h"
 #include "document/MarkdownNode.h"
 #include "editor/BrushQueue.h"
 #include "editor/EditorView.h"
@@ -440,11 +440,14 @@ CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset, bo
   }
   const qsizetype localSourceOffset = qBound<qsizetype>(0, sourceOffset - context.contentRange.byteStart, context.contentText.size());
   qsizetype visibleOffset = -1;
-  InlineSourceMap sourceMap(context.editableNode ? context.editableNode->inlines() : QVector<InlineNode>(), context.contentText);
-  if (sourceMap.visibleOffsetForSourceOffset(localSourceOffset, visibleOffset)) {
-    return cursorFor(node->id(), visibleOffset);
+  if (context.inlineProjection.visibleOffsetForSourceOffset(localSourceOffset, visibleOffset)) {
+    CursorPosition cursorForVisible = cursorFor(node->id(), visibleOffset);
+    cursorForVisible.text.sourceOffset = sourceOffset;
+    return cursorForVisible;
   }
-  return cursorFor(node->id(), qBound<qsizetype>(0, localSourceOffset, context.visibleText.size()));
+  CursorPosition fallbackCursor = cursorFor(node->id(), qBound<qsizetype>(0, localSourceOffset, context.visibleText.size()));
+  fallbackCursor.text.sourceOffset = sourceOffset;
+  return fallbackCursor;
 }
 
 CursorPosition InputController::cursorAfterEdit(CursorPosition preferredCursor, qsizetype fallbackSourceOffset, bool preferLaterEmptyAtOffset) const {
@@ -505,6 +508,31 @@ bool InputController::moveCursorHorizontal(int direction, bool extendSelection) 
   MarkdownNode* node = session_->document().node(current.blockId);
   if (!node) {
     return false;
+  }
+
+  BlockEditContextResolver resolver = contextResolver();
+  BlockEditContext context;
+  if (resolver.fill(*node, context)) {
+    const qsizetype currentSourceOffset =
+        current.text.sourceOffset >= context.contentRange.byteStart && current.text.sourceOffset <= context.contentRange.byteEnd
+            ? current.text.sourceOffset
+            : context.contentRange.byteStart + qBound<qsizetype>(0, current.text.textOffset, context.contentText.size());
+    qsizetype nextSourceOffset = currentSourceOffset + direction;
+    if (nextSourceOffset < context.contentRange.byteStart) {
+      if (MarkdownNode* previous = selectableBlockByDirection(current.blockId, -1)) {
+        setCursorOrExtend(cursorForNode(*previous, selectableTextLength(*previous)), extendSelection);
+        return true;
+      }
+      nextSourceOffset = context.contentRange.byteStart;
+    } else if (nextSourceOffset > context.contentRange.byteEnd) {
+      if (MarkdownNode* next = selectableBlockByDirection(current.blockId, 1)) {
+        setCursorOrExtend(cursorForNode(*next, 0), extendSelection);
+        return true;
+      }
+      nextSourceOffset = context.contentRange.byteEnd;
+    }
+    setCursorOrExtend(cursorForSourceOffset(nextSourceOffset), extendSelection);
+    return true;
   }
 
   const qsizetype length = selectableTextLength(*node);

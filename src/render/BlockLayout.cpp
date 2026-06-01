@@ -191,6 +191,14 @@ QString BlockLayout::listMarker() const {
   return listMarker_;
 }
 
+void BlockLayout::setContentSourceStart(qsizetype sourceStart) {
+  contentSourceStart_ = sourceStart;
+}
+
+qsizetype BlockLayout::contentSourceStart() const {
+  return contentSourceStart_;
+}
+
 void BlockLayout::setTaskListItem(bool taskListItem, bool checked) {
   taskListItem_ = taskListItem;
   taskChecked_ = checked;
@@ -475,7 +483,9 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
         }
         result.zone = HitTestResult::Zone::Text;
         result.textOffset = inlineLayout_->hitTestTextOffset(documentPos - textRect.topLeft());
-        result.cursorRect = inlineLayout_->cursorRect(result.textOffset).translated(textRect.topLeft());
+        const qsizetype localSourceOffset = inlineLayout_->hitTestSourceOffset(documentPos - textRect.topLeft());
+        result.sourceOffset = contentSourceStart_ >= 0 ? contentSourceStart_ + localSourceOffset : localSourceOffset;
+        result.cursorRect = inlineLayout_->cursorRectForSourceOffset(localSourceOffset).translated(textRect.topLeft());
       }
       break;
     case BlockType::CodeFence:
@@ -531,10 +541,12 @@ HitTestResult BlockLayout::hitTable(QPointF documentPos, const RenderTheme& them
         result.tableRow = rowIndex;
         result.tableColumn = columnIndex;
         result.textOffset = cell.text.hitTestTextOffset(documentPos - cell.rect.marginsRemoved(theme.tableCellPadding()).topLeft());
+        const qsizetype localSourceOffset = cell.text.hitTestSourceOffset(documentPos - cell.rect.marginsRemoved(theme.tableCellPadding()).topLeft());
+        result.sourceOffset = cell.contentSourceStart >= 0 ? cell.contentSourceStart + localSourceOffset : localSourceOffset;
         if (result.textOffset == 0 && documentPos.x() > cell.rect.center().x()) {
           result.textOffset = 1;
         }
-        result.cursorRect = cell.text.cursorRect(result.textOffset).translated(cell.rect.marginsRemoved(theme.tableCellPadding()).topLeft());
+        result.cursorRect = cell.text.cursorRectForSourceOffset(localSourceOffset).translated(cell.rect.marginsRemoved(theme.tableCellPadding()).topLeft());
         return result;
       }
       ++columnIndex;

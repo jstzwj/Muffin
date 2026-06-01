@@ -399,6 +399,7 @@ CursorPosition StylizeController::cursorForSourceOffset(qsizetype sourceOffset) 
   cursor.blockId = node->id();
   cursor.text.nodeId = node->id();
   cursor.text.textOffset = qBound<qsizetype>(0, sourceOffset - context.sourceStart, context.sourceText.size());
+  cursor.text.sourceOffset = sourceOffset;
   return cursor;
 }
 

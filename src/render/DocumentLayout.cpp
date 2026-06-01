@@ -11,6 +11,7 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
 }
 
 void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, CursorPosition activeCursor) {
+  document_ = &document;
   blocks_.clear();
   index_.clear();
 
@@ -19,6 +20,7 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
   pageLeft_ = qMax<qreal>(0.0, (viewportWidth - pageWidth_) / 2.0);
 
   BlockLayoutBuilder builder;
+  builder.setMarkdownText(document.markdownText());
   builder.setActiveCursor(activeCursor);
   qreal cursorY = theme.topMargin();
   for (const auto& child : document.root().children()) {

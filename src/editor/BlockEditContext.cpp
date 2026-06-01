@@ -2,7 +2,6 @@
 
 #include "app/DocumentSession.h"
 #include "document/InlineNode.h"
-#include "document/InlineSourceMap.h"
 #include "document/MarkdownNode.h"
 #include "editor/SelectionController.h"
 
@@ -105,15 +104,32 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
   context.cursorTextOffset = selection_ && selection_->hasCursor() && selection_->cursorPosition().blockId == displayNode.id()
                               ? selection_->cursorPosition().text.textOffset
                               : 0;
+  const qsizetype cursorStoredSourceOffset =
+      selection_ && selection_->hasCursor() && selection_->cursorPosition().blockId == displayNode.id()
+          ? selection_->cursorPosition().text.sourceOffset
+          : -1;
   context.contentText = markdown.mid(start, end - start);
-  InlineSourceMap sourceMap(editable->inlines(), context.contentText);
-  context.visibleText = sourceMap.visibleText();
-  context.plainInlineEditable = InlineSourceMap::isPlainInlineSource(editable->inlines(), context.contentText);
+  context.inlineProjection = InlineProjection(editable->inlines(), context.contentText, cursorStoredSourceOffset - start);
+  context.visibleText = context.inlineProjection.visibleText();
+  context.plainInlineEditable = InlineProjection::isPlainInlineSource(editable->inlines(), context.contentText);
   qsizetype localSourceOffset = -1;
+  const bool hasStoredSourceOffset = cursorStoredSourceOffset >= start && cursorStoredSourceOffset <= end;
   context.supportsVisibleOffsetMapping =
-      context.plainInlineEditable || sourceMap.sourceOffsetForVisibleOffset(context.cursorTextOffset, localSourceOffset);
+      context.plainInlineEditable || hasStoredSourceOffset ||
+      context.inlineProjection.sourceOffsetForVisibleOffset(context.cursorTextOffset, localSourceOffset);
   if (context.plainInlineEditable) {
-    context.cursorSourceOffset = start + qBound<qsizetype>(0, context.cursorTextOffset, context.contentText.size());
+    if (hasStoredSourceOffset) {
+      context.cursorSourceOffset = cursorStoredSourceOffset;
+      context.cursorTextOffset = qBound<qsizetype>(0, cursorStoredSourceOffset - start, context.contentText.size());
+    } else {
+      context.cursorSourceOffset = start + qBound<qsizetype>(0, context.cursorTextOffset, context.contentText.size());
+    }
+  } else if (hasStoredSourceOffset) {
+    context.cursorSourceOffset = cursorStoredSourceOffset;
+    qsizetype visibleOffset = -1;
+    if (context.inlineProjection.visibleOffsetForSourceOffset(cursorStoredSourceOffset - start, visibleOffset)) {
+      context.cursorTextOffset = visibleOffset;
+    }
   } else if (context.supportsVisibleOffsetMapping) {
     context.cursorSourceOffset = start + localSourceOffset;
   }

@@ -47,7 +47,20 @@ QString displayLiteralFor(const MarkdownNode& node) {
   return literal;
 }
 
+const MarkdownNode* primaryParagraph(const MarkdownNode& node) {
+  for (const auto& child : node.children()) {
+    if (child->type() == BlockType::Paragraph) {
+      return child.get();
+    }
+  }
+  return nullptr;
+}
+
 }  // namespace
+
+void BlockLayoutBuilder::setMarkdownText(QString markdownText) {
+  markdownText_ = std::move(markdownText);
+}
 
 void BlockLayoutBuilder::setActiveCursor(CursorPosition cursor) {
   activeCursor_ = cursor;
@@ -94,14 +107,17 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   layout->setType(node.type());
   layout->setDepth(depth);
   layout->setHeadingLevel(node.headingLevel());
+  layout->setContentSourceStart(sourceContentStartForEditableNode(node));
 
   auto inlineLayout = std::make_unique<InlineLayout>();
   const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
   InlineLayout::BuildOptions options;
   if (activeCursor_.blockId == node.id()) {
     options.activeTextOffset = activeCursor_.text.textOffset;
+    options.activeSourceOffset = activeCursor_.text.sourceOffset >= 0 ? activeCursor_.text.sourceOffset - sourceContentStartForEditableNode(node)
+                                                                      : -1;
   }
-  inlineLayout->build(node.inlines(), theme, width, font, options);
+  inlineLayout->build(node.inlines(), sourceTextForEditableNode(node), theme, width, font, options);
   const qreal height = inlineLayout->height();
   layout->setRect(QRectF(x, y, width, height));
   layout->setInlineLayout(std::move(inlineLayout));
@@ -155,8 +171,17 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   InlineLayout::BuildOptions options;
   if (activeCursor_.blockId == node.id()) {
     options.activeTextOffset = activeCursor_.text.textOffset;
+    if (const MarkdownNode* paragraph = primaryParagraph(node)) {
+      options.activeSourceOffset = activeCursor_.text.sourceOffset >= 0 ? activeCursor_.text.sourceOffset - sourceContentStartForEditableNode(*paragraph)
+                                                                        : -1;
+    }
   }
-  inlineLayout->build(primaryInlinesForListItem(node), theme, contentWidth, theme.paragraphFont(), options);
+  QString listSourceText;
+  if (const MarkdownNode* paragraph = primaryParagraph(node)) {
+    listSourceText = sourceTextForEditableNode(*paragraph);
+    layout->setContentSourceStart(sourceContentStartForEditableNode(*paragraph));
+  }
+  inlineLayout->build(primaryInlinesForListItem(node), listSourceText, theme, contentWidth, theme.paragraphFont(), options);
   layout->setInlineLayout(std::move(inlineLayout));
 
   qreal height = layout->inlineLayout() ? layout->inlineLayout()->height() : QFontMetricsF(theme.paragraphFont()).height();
@@ -245,15 +270,19 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
     for (const auto& cellNode : rowNode->children()) {
       BlockLayout::TableCellLayout cell;
       cell.nodeId = cellNode->id();
+      cell.contentSourceStart = sourceContentStartForEditableNode(*cellNode);
       cell.header = rowNode->tableRowIsHeader();
       cell.alternate = rowIndex % 2 == 1;
       cell.alignment = column < alignments.size() ? alignments.at(column) : TableAlignment::None;
       InlineLayout::BuildOptions options;
       if (activeCursor_.text.nodeId == cellNode->id()) {
         options.activeTextOffset = activeCursor_.text.textOffset;
+        options.activeSourceOffset = activeCursor_.text.sourceOffset >= 0 ? activeCursor_.text.sourceOffset - sourceContentStartForEditableNode(*cellNode)
+                                                                          : -1;
       }
       cell.text.build(
           cellNode->inlines(),
+          sourceTextForEditableNode(*cellNode),
           theme,
           qMax<qreal>(1.0, columnWidth - padding.left() - padding.right()),
           cell.header ? theme.headingFont(6) : theme.paragraphFont(),
@@ -320,6 +349,70 @@ QVector<InlineNode> BlockLayoutBuilder::primaryInlinesForListItem(const Markdown
     }
   }
   return {};
+}
+
+QString BlockLayoutBuilder::sourceTextForEditableNode(const MarkdownNode& node) const {
+  const qsizetype start = sourceContentStartForEditableNode(node);
+  const SourceRange range = node.sourceRange();
+  const qsizetype end = sourceOffsetForLineEnd(range.lineEnd);
+  if (start < 0 || end < start) {
+    return {};
+  }
+  return markdownText_.mid(start, end - start);
+}
+
+qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNode& node) const {
+  const SourceRange range = node.sourceRange();
+  qsizetype start = sourceOffsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
+  const qsizetype end = sourceOffsetForLineEnd(range.lineEnd);
+  if (start < 0 || end < start) {
+    return -1;
+  }
+  if (node.type() == BlockType::Heading) {
+    while (start < end && markdownText_.at(start) == QLatin1Char('#')) {
+      ++start;
+    }
+    if (start < end && markdownText_.at(start).isSpace()) {
+      ++start;
+    }
+  }
+  return start;
+}
+
+qsizetype BlockLayoutBuilder::sourceOffsetForLineColumn(int line, int column) const {
+  if (line <= 0 || column <= 0) {
+    return -1;
+  }
+  int currentLine = 1;
+  qsizetype offset = 0;
+  while (currentLine < line && offset < markdownText_.size()) {
+    if (markdownText_.at(offset) == QLatin1Char('\n')) {
+      ++currentLine;
+    }
+    ++offset;
+  }
+  if (currentLine != line) {
+    return -1;
+  }
+  return qMin(offset + column - 1, markdownText_.size());
+}
+
+qsizetype BlockLayoutBuilder::sourceOffsetForLineEnd(int line) const {
+  if (line <= 0) {
+    return -1;
+  }
+  int currentLine = 1;
+  qsizetype offset = 0;
+  while (offset < markdownText_.size()) {
+    if (currentLine == line && markdownText_.at(offset) == QLatin1Char('\n')) {
+      return offset;
+    }
+    if (markdownText_.at(offset) == QLatin1Char('\n')) {
+      ++currentLine;
+    }
+    ++offset;
+  }
+  return currentLine == line ? markdownText_.size() : -1;
 }
 
 qreal BlockLayoutBuilder::textHeight(const QString& text, const QFont& font, qreal width, const QMarginsF& padding) const {

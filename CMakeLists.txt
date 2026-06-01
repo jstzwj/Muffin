@@ -35,8 +35,8 @@ set(MUFFIN_CORE_SOURCES
   src/document/MarkdownTypes.h
   src/document/InlineNode.cpp
   src/document/InlineNode.h
-  src/document/InlineSourceMap.cpp
-  src/document/InlineSourceMap.h
+  src/document/InlineProjection.cpp
+  src/document/InlineProjection.h
   src/document/MarkdownNode.cpp
   src/document/MarkdownNode.h
   src/document/TextSelection.h
@@ -210,6 +210,19 @@ add_custom_target(dist
 
 enable_testing()
 
+set(MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS)
+if(MUFFIN_QT_CORE_LOCATION_RELEASE)
+  get_filename_component(MUFFIN_QT_RUNTIME_DIR "${MUFFIN_QT_CORE_LOCATION_RELEASE}" DIRECTORY)
+  list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "PATH=path_list_prepend:${MUFFIN_QT_RUNTIME_DIR}")
+endif()
+set(MUFFIN_CONAN_QT_BUILD_BIN "C:/Users/jstzw/.conan2/p/b/qt584dfe634b273/b/build/qtbase/bin")
+if(EXISTS "${MUFFIN_CONAN_QT_BUILD_BIN}")
+  list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "PATH=path_list_prepend:${MUFFIN_CONAN_QT_BUILD_BIN}")
+endif()
+if(MUFFIN_QT_PLUGIN_DIRS_ARG)
+  list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "QT_PLUGIN_PATH=set:${MUFFIN_QT_PLUGIN_DIRS_ARG}")
+endif()
+
 add_executable(MuffinParserSmokeTest
   tests/parser/ParserSmokeTest.cpp
 )
@@ -220,6 +233,7 @@ target_link_libraries(MuffinParserSmokeTest
 )
 
 add_test(NAME MuffinParserSmokeTest COMMAND MuffinParserSmokeTest)
+set_tests_properties(MuffinParserSmokeTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
 
 add_executable(MuffinRenderLayoutTest
   tests/render/RenderLayoutTest.cpp
@@ -234,6 +248,7 @@ add_test(
   NAME MuffinRenderLayoutTest
   COMMAND MuffinRenderLayoutTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md"
 )
+set_tests_properties(MuffinRenderLayoutTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
 
 add_executable(MuffinEditorControllerTest
   tests/editor/EditorControllerTest.cpp
@@ -245,6 +260,7 @@ target_link_libraries(MuffinEditorControllerTest
 )
 
 add_test(NAME MuffinEditorControllerTest COMMAND MuffinEditorControllerTest)
+set_tests_properties(MuffinEditorControllerTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
 
 add_executable(MuffinTableModelOpsTest
   tests/blocks/TableModelOpsTest.cpp
@@ -256,6 +272,7 @@ target_link_libraries(MuffinTableModelOpsTest
 )
 
 add_test(NAME MuffinTableModelOpsTest COMMAND MuffinTableModelOpsTest)
+set_tests_properties(MuffinTableModelOpsTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
 
 add_executable(MuffinCodeFenceControllerTest
   tests/blocks/CodeFenceControllerTest.cpp
@@ -267,6 +284,7 @@ target_link_libraries(MuffinCodeFenceControllerTest
 )
 
 add_test(NAME MuffinCodeFenceControllerTest COMMAND MuffinCodeFenceControllerTest)
+set_tests_properties(MuffinCodeFenceControllerTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
 
 add_executable(MuffinMathBlockControllerTest
   tests/blocks/MathBlockControllerTest.cpp
@@ -278,6 +296,7 @@ target_link_libraries(MuffinMathBlockControllerTest
 )
 
 add_test(NAME MuffinMathBlockControllerTest COMMAND MuffinMathBlockControllerTest)
+set_tests_properties(MuffinMathBlockControllerTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
 
 add_executable(MuffinHtmlBlockControllerTest
   tests/blocks/HtmlBlockControllerTest.cpp
@@ -289,3 +308,4 @@ target_link_libraries(MuffinHtmlBlockControllerTest
 )
 
 add_test(NAME MuffinHtmlBlockControllerTest COMMAND MuffinHtmlBlockControllerTest)
+set_tests_properties(MuffinHtmlBlockControllerTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")

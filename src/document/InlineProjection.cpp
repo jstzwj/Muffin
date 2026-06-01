@@ -1,0 +1,452 @@
+#include "document/InlineProjection.h"
+
+namespace muffin {
+namespace {
+
+bool isAutolinkInline(const InlineNode& node, const QString& label) {
+  return node.type() == InlineType::Link && node.title().isEmpty() &&
+         (label == node.href() || QStringLiteral("http://%1").arg(label) == node.href() ||
+          QStringLiteral("mailto:%1").arg(label) == node.href());
+}
+
+bool containsOffset(qsizetype start, qsizetype end, qsizetype offset) {
+  return offset >= start && offset <= end;
+}
+
+}  // namespace
+
+InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, qsizetype activeSourceOffset)
+    : sourceText_(std::move(sourceText)), visibleText_(plainTextForInlines(inlines)) {
+  BuildState state;
+  state.sourceText = &sourceText_;
+  state.activeSourceOffset = activeSourceOffset;
+  appendInlines(state, inlines, 0, sourceText_.size());
+  displayText_ = state.displayText;
+  spans_ = state.spans;
+  if (displayText_.isEmpty() && !sourceText_.isEmpty()) {
+    appendTextSpan(state, InlineType::Text, InlineSpanKind::Text, 0, sourceText_.size(), sourceText_, true);
+    displayText_ = state.displayText;
+    spans_ = state.spans;
+  }
+  valid_ = !spans_.isEmpty() || sourceText_.isEmpty();
+  if (sourceText_.isEmpty() && displayText_.isEmpty()) {
+    valid_ = true;
+  }
+}
+
+bool InlineProjection::isValid() const {
+  return valid_;
+}
+
+QString InlineProjection::sourceText() const {
+  return sourceText_;
+}
+
+QString InlineProjection::displayText() const {
+  return displayText_;
+}
+
+QString InlineProjection::visibleText() const {
+  return visibleText_;
+}
+
+const QVector<InlineProjectionSpan>& InlineProjection::spans() const {
+  return spans_;
+}
+
+bool InlineProjection::sourceOffsetForVisibleOffset(qsizetype visibleOffset, qsizetype& sourceOffset) const {
+  if (!valid_) {
+    return false;
+  }
+  visibleOffset = qBound<qsizetype>(0, visibleOffset, visibleText_.size());
+  if (visibleOffset == 0) {
+    sourceOffset = 0;
+    return true;
+  }
+  for (const InlineProjectionSpan& span : spans_) {
+    if (visibleOffset <= span.visibleEnd) {
+      if (span.visibleEnd <= span.visibleStart || span.sourceEnd <= span.sourceStart) {
+        sourceOffset = span.sourceStart;
+      } else if (visibleOffset >= span.visibleEnd) {
+        sourceOffset = span.sourceEnd;
+      } else {
+        sourceOffset = qBound<qsizetype>(
+            span.contentSourceStart,
+            span.contentSourceStart + visibleOffset - span.visibleStart,
+            span.contentSourceEnd);
+      }
+      return true;
+    }
+  }
+  sourceOffset = sourceText_.size();
+  return true;
+}
+
+bool InlineProjection::visibleOffsetForSourceOffset(qsizetype sourceOffset, qsizetype& visibleOffset) const {
+  if (!valid_) {
+    return false;
+  }
+  sourceOffset = qBound<qsizetype>(0, sourceOffset, sourceText_.size());
+  for (const InlineProjectionSpan& span : spans_) {
+    if (sourceOffset <= span.sourceEnd) {
+      if (span.visibleEnd <= span.visibleStart || span.sourceEnd <= span.sourceStart) {
+        visibleOffset = span.visibleStart;
+      } else if (sourceOffset <= span.contentSourceStart) {
+        visibleOffset = span.visibleStart;
+      } else if (sourceOffset >= span.contentSourceEnd) {
+        visibleOffset = span.visibleEnd;
+      } else {
+        visibleOffset = qBound<qsizetype>(
+            span.visibleStart,
+            span.visibleStart + sourceOffset - span.contentSourceStart,
+            span.visibleEnd);
+      }
+      return true;
+    }
+  }
+  visibleOffset = visibleText_.size();
+  return true;
+}
+
+bool InlineProjection::sourceOffsetForDisplayOffset(qsizetype displayOffset, qsizetype& sourceOffset) const {
+  if (!valid_) {
+    return false;
+  }
+  displayOffset = qBound<qsizetype>(0, displayOffset, displayText_.size());
+  for (const InlineProjectionSpan& span : spans_) {
+    if (displayOffset <= span.displayEnd) {
+      if (span.displayEnd <= span.displayStart || span.sourceEnd <= span.sourceStart) {
+        sourceOffset = span.sourceStart;
+      } else if (displayOffset <= span.displayStart) {
+        sourceOffset = span.contentSourceStart;
+      } else if (displayOffset >= span.displayEnd) {
+        sourceOffset = span.contentSourceEnd;
+      } else {
+        sourceOffset = qBound<qsizetype>(
+            span.contentSourceStart,
+            span.contentSourceStart + displayOffset - span.displayStart,
+            span.contentSourceEnd);
+      }
+      return true;
+    }
+  }
+  sourceOffset = sourceText_.size();
+  return true;
+}
+
+bool InlineProjection::displayOffsetForSourceOffset(qsizetype sourceOffset, qsizetype& displayOffset) const {
+  if (!valid_) {
+    return false;
+  }
+  sourceOffset = qBound<qsizetype>(0, sourceOffset, sourceText_.size());
+  for (const InlineProjectionSpan& span : spans_) {
+    if (sourceOffset <= span.sourceEnd) {
+      if (span.displayEnd <= span.displayStart || span.sourceEnd <= span.sourceStart) {
+        displayOffset = span.displayStart;
+      } else if (sourceOffset <= span.contentSourceStart) {
+        displayOffset = span.displayStart;
+      } else if (sourceOffset >= span.contentSourceEnd) {
+        displayOffset = span.displayEnd;
+      } else {
+        displayOffset = qBound<qsizetype>(
+            span.displayStart,
+            span.displayStart + sourceOffset - span.contentSourceStart,
+            span.displayEnd);
+      }
+      return true;
+    }
+  }
+  displayOffset = displayText_.size();
+  return true;
+}
+
+QString InlineProjection::plainTextForInlines(const QVector<InlineNode>& inlines) {
+  QString text;
+  for (const InlineNode& node : inlines) {
+    text += plainTextForInline(node);
+  }
+  return text;
+}
+
+bool InlineProjection::isPlainInlineSource(const QVector<InlineNode>& inlines, const QString& sourceText) {
+  QString plain;
+  for (const InlineNode& node : inlines) {
+    switch (node.type()) {
+      case InlineType::Text:
+        plain += node.text();
+        break;
+      case InlineType::SoftBreak:
+        plain += QLatin1Char('\n');
+        break;
+      case InlineType::LineBreak:
+        plain += QStringLiteral("  \n");
+        break;
+      default:
+        return false;
+    }
+  }
+  return plain == sourceText;
+}
+
+QString InlineProjection::markerForInline(const InlineNode& node) {
+  switch (node.type()) {
+    case InlineType::Code:
+      return QStringLiteral("`");
+    case InlineType::InlineMath:
+      return QStringLiteral("$");
+    case InlineType::Emphasis:
+      return node.marker().isEmpty() ? QStringLiteral("*") : node.marker();
+    case InlineType::Strong:
+      return node.marker().isEmpty() ? QStringLiteral("**") : node.marker();
+    case InlineType::Strikethrough:
+      return QStringLiteral("~~");
+    default:
+      return {};
+  }
+}
+
+QString InlineProjection::markdownForInline(const InlineNode& node) {
+  switch (node.type()) {
+    case InlineType::Text:
+      return node.text();
+    case InlineType::SoftBreak:
+      return QStringLiteral("\n");
+    case InlineType::LineBreak:
+      return QStringLiteral("  \n");
+    case InlineType::Code:
+      return QStringLiteral("`%1`").arg(node.text());
+    case InlineType::InlineMath:
+      return QStringLiteral("$%1$").arg(node.text());
+    case InlineType::HtmlInline:
+      return node.text();
+    case InlineType::Emphasis:
+    case InlineType::Strong:
+      return QStringLiteral("%1%2%1").arg(markerForInline(node), markdownForInlines(node.children()));
+    case InlineType::Strikethrough:
+      return QStringLiteral("~~%1~~").arg(markdownForInlines(node.children()));
+    case InlineType::Link: {
+      const QString label = markdownForInlines(node.children());
+      if (isAutolinkInline(node, label)) {
+        return label;
+      }
+      return QStringLiteral("[%1](%2%3)").arg(
+          label,
+          node.href(),
+          node.title().isEmpty() ? QString() : QStringLiteral(" \"%1\"").arg(node.title()));
+    }
+    case InlineType::Image:
+      return QStringLiteral("![%1](%2%3)").arg(
+          node.alt(),
+          node.href(),
+          node.title().isEmpty() ? QString() : QStringLiteral(" \"%1\"").arg(node.title()));
+    default:
+      return node.text();
+  }
+}
+
+QString InlineProjection::markdownForInlines(const QVector<InlineNode>& inlines) {
+  QString markdown;
+  for (const InlineNode& node : inlines) {
+    markdown += markdownForInline(node);
+  }
+  return markdown;
+}
+
+QString InlineProjection::plainTextForInline(const InlineNode& node) {
+  switch (node.type()) {
+    case InlineType::Text:
+    case InlineType::Code:
+    case InlineType::InlineMath:
+    case InlineType::HtmlInline:
+      return node.text();
+    case InlineType::SoftBreak:
+      return QStringLiteral(" ");
+    case InlineType::LineBreak:
+      return QStringLiteral("\n");
+    case InlineType::Image:
+      return node.alt();
+    default:
+      return plainTextForInlines(node.children());
+  }
+}
+
+void InlineProjection::appendTextSpan(
+    BuildState& state,
+    InlineType type,
+    InlineSpanKind kind,
+    qsizetype sourceStart,
+    qsizetype sourceEnd,
+    QString displayText,
+    bool visible,
+    bool editable) {
+  appendTextSpan(state, type, kind, sourceStart, sourceEnd, sourceStart, sourceEnd, std::move(displayText), visible, editable);
+}
+
+void InlineProjection::appendTextSpan(
+    BuildState& state,
+    InlineType type,
+    InlineSpanKind kind,
+    qsizetype sourceStart,
+    qsizetype sourceEnd,
+    qsizetype contentSourceStart,
+    qsizetype contentSourceEnd,
+    QString displayText,
+    bool visible,
+    bool editable) {
+  InlineProjectionSpan span;
+  span.type = type;
+  span.kind = kind;
+  span.sourceStart = sourceStart;
+  span.sourceEnd = sourceEnd;
+  span.contentSourceStart = contentSourceStart;
+  span.contentSourceEnd = contentSourceEnd;
+  span.displayStart = state.displayOffset;
+  span.displayEnd = state.displayOffset + displayText.size();
+  span.visibleStart = state.visibleOffset;
+  span.visibleEnd = state.visibleOffset + (visible ? displayText.size() : 0);
+  span.editable = editable;
+  state.displayText += displayText;
+  if (visible) {
+    state.visibleText += displayText;
+    state.visibleOffset = span.visibleEnd;
+  }
+  state.displayOffset = span.displayEnd;
+  state.spans.push_back(span);
+}
+
+void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode>& inlines, qsizetype sourceStart, qsizetype sourceEnd) {
+  qsizetype searchFrom = sourceStart;
+  for (const InlineNode& node : inlines) {
+    const QString markdown = markdownForInline(node);
+    const qsizetype nodeStart = findMarkdown(*state.sourceText, markdown, searchFrom, sourceEnd);
+    if (nodeStart < 0) {
+      continue;
+    }
+    if (nodeStart > searchFrom) {
+      appendTextSpan(
+          state,
+          InlineType::Text,
+          InlineSpanKind::Text,
+          searchFrom,
+          nodeStart,
+          state.sourceText->mid(searchFrom, nodeStart - searchFrom),
+          true);
+    }
+    appendInline(state, node, nodeStart, nodeStart + markdown.size());
+    searchFrom = nodeStart + markdown.size();
+  }
+  if (searchFrom < sourceEnd) {
+    appendTextSpan(
+        state,
+        InlineType::Text,
+        InlineSpanKind::Text,
+        searchFrom,
+        sourceEnd,
+        state.sourceText->mid(searchFrom, sourceEnd - searchFrom),
+        true);
+  }
+}
+
+void InlineProjection::appendInline(BuildState& state, const InlineNode& node, qsizetype sourceStart, qsizetype sourceEnd) {
+  const QString marker = markerForInline(node);
+  const bool active = state.activeSourceOffset >= 0 && containsOffset(sourceStart, sourceEnd, state.activeSourceOffset);
+  const qsizetype displayStart = state.displayOffset;
+  const qsizetype visibleStart = state.visibleOffset;
+  switch (node.type()) {
+    case InlineType::Text:
+      appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, node.text(), true);
+      break;
+    case InlineType::SoftBreak:
+      appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, QStringLiteral(" "), true);
+      break;
+    case InlineType::LineBreak:
+      appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, QStringLiteral("\n"), true);
+      break;
+    case InlineType::Code:
+    case InlineType::InlineMath: {
+      const qsizetype contentStart = qMin(sourceEnd, sourceStart + marker.size());
+      const qsizetype contentEnd = qMax(contentStart, sourceEnd - marker.size());
+      if (active) {
+        appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, contentStart, marker, false);
+      }
+      appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, contentStart, contentEnd, node.text(), true);
+      if (active) {
+        appendTextSpan(state, node.type(), InlineSpanKind::CloseMarker, contentEnd, sourceEnd, marker, false);
+      }
+      break;
+    }
+    case InlineType::Emphasis:
+    case InlineType::Strong:
+    case InlineType::Strikethrough: {
+      const qsizetype contentStart = qMin(sourceEnd, sourceStart + marker.size());
+      const qsizetype contentEnd = qMax(contentStart, sourceEnd - marker.size());
+      if (active) {
+        appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, contentStart, marker, false);
+      }
+      appendInlines(state, node.children(), contentStart, contentEnd);
+      if (contentStart == contentEnd) {
+        appendTextSpan(state, node.type(), InlineSpanKind::EmptyContentSlot, contentStart, contentEnd, QString(), false);
+      }
+      if (active) {
+        appendTextSpan(state, node.type(), InlineSpanKind::CloseMarker, contentEnd, sourceEnd, marker, false);
+      }
+      if (!active && state.spans.size() > 0) {
+        const qsizetype displayEnd = state.displayOffset;
+        const qsizetype visibleEnd = state.visibleOffset;
+        for (InlineProjectionSpan& span : state.spans) {
+          if (span.displayStart >= displayStart && span.displayEnd <= displayEnd && span.visibleStart >= visibleStart &&
+              span.visibleEnd <= visibleEnd) {
+            span.sourceStart = sourceStart;
+            span.sourceEnd = sourceEnd;
+          }
+        }
+      }
+      break;
+    }
+    case InlineType::HtmlInline:
+      appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, node.text(), true);
+      break;
+    case InlineType::Link: {
+      const QString label = markdownForInlines(node.children());
+      if (isAutolinkInline(node, label)) {
+        appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, label, true);
+        break;
+      }
+      const QString markdown = state.sourceText->mid(sourceStart, sourceEnd - sourceStart);
+      const qsizetype labelEnd = markdown.indexOf(QLatin1Char(']'));
+      const qsizetype contentStart = qMin(sourceEnd, sourceStart + 1);
+      const qsizetype contentEnd = labelEnd >= 0 ? sourceStart + labelEnd : contentStart;
+      if (active) {
+        appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, contentStart, QStringLiteral("["), false);
+      }
+      appendInlines(state, node.children(), contentStart, contentEnd);
+      if (active) {
+        appendTextSpan(state, node.type(), InlineSpanKind::HiddenSyntax, contentEnd, sourceEnd, state.sourceText->mid(contentEnd, sourceEnd - contentEnd), false);
+      }
+      break;
+    }
+    case InlineType::Image:
+      appendTextSpan(state, node.type(), InlineSpanKind::Atom, sourceStart, sourceEnd, node.alt(), true);
+      break;
+    default:
+      appendInlines(state, node.children(), sourceStart, sourceEnd);
+      break;
+  }
+}
+
+qsizetype InlineProjection::findMarkdown(const QString& sourceText, const QString& markdown, qsizetype searchFrom, qsizetype searchEnd) {
+  if (markdown.isEmpty()) {
+    return qBound<qsizetype>(0, searchFrom, sourceText.size());
+  }
+  const qsizetype found = sourceText.indexOf(markdown, searchFrom);
+  if (found < 0 || found + markdown.size() > searchEnd) {
+    return -1;
+  }
+  return found;
+}
+
+bool InlineProjection::offsetInSource(qsizetype sourceOffset) const {
+  return sourceOffset >= 0 && sourceOffset <= sourceText_.size();
+}
+
+}  // namespace muffin

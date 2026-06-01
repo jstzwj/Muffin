@@ -32,6 +32,7 @@ public:
 private:
   void indexBlock(const BlockLayout& block);
 
+  const MarkdownDocument* document_ = nullptr;
   std::vector<std::unique_ptr<BlockLayout>> blocks_;
   QHash<NodeId, const BlockLayout*> index_;
   qreal pageLeft_ = 0;

@@ -84,11 +84,23 @@ void testInlineMarkerExpansion() {
   InlineLayout expanded;
   InlineLayout::BuildOptions options;
   options.activeTextOffset = 8;
-  expanded.build(inlines, theme, 400.0, theme.paragraphFont(), options);
+  options.activeSourceOffset = 10;
+  expanded.build(inlines, QStringLiteral("before **bold** after"), theme, 400.0, theme.paragraphFont(), options);
   require(expanded.html().contains(QStringLiteral("**")), QStringLiteral("active inline should show strong markers"));
   require(expanded.plainText() == QStringLiteral("before bold after"), QStringLiteral("expanded plain text should stay collapsed"));
   require(expanded.hitTestTextOffset(expanded.cursorRect(8).center()) == 8,
           QStringLiteral("expanded hit test should map display marker offsets back to visible offsets"));
+  require(expanded.hitTestSourceOffset(expanded.cursorRectForSourceOffset(9).center()) == 9,
+          QStringLiteral("expanded hit test should map opener marker display to source offset"));
+
+  QVector<InlineNode> mathInlines;
+  mathInlines.push_back(InlineNode::inlineMath(QStringLiteral("a123")));
+  InlineLayout math;
+  InlineLayout::BuildOptions mathOptions;
+  mathOptions.activeSourceOffset = 2;
+  math.build(mathInlines, QStringLiteral("$a123$"), theme, 400.0, theme.paragraphFont(), mathOptions);
+  require(math.hitTestSourceOffset(math.cursorRectForSourceOffset(2).center()) == 2,
+          QStringLiteral("math cursor rect should round-trip source offset after first char"));
 }
 
 void testLayoutForTheme(const MarkdownDocument& document, const RenderTheme& theme, const QString& themeName) {

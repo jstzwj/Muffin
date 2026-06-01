@@ -1,8 +1,109 @@
 #include "editor/EditorController.h"
 
+#include "document/InlineProjection.h"
+#include "document/MarkdownNode.h"
 #include "editor/EditorView.h"
 
 namespace muffin {
+namespace {
+
+qsizetype sourceOffsetForLineColumn(const QString& text, int line, int column) {
+  if (line <= 0 || column <= 0) {
+    return -1;
+  }
+
+  int currentLine = 1;
+  qsizetype offset = 0;
+  while (currentLine < line && offset < text.size()) {
+    if (text.at(offset) == QLatin1Char('\n')) {
+      ++currentLine;
+    }
+    ++offset;
+  }
+
+  if (currentLine != line) {
+    return -1;
+  }
+  return qMin(offset + column - 1, text.size());
+}
+
+qsizetype sourceOffsetForLineEnd(const QString& text, int line) {
+  if (line <= 0) {
+    return -1;
+  }
+
+  int currentLine = 1;
+  qsizetype offset = 0;
+  while (offset < text.size()) {
+    if (currentLine == line && text.at(offset) == QLatin1Char('\n')) {
+      return offset;
+    }
+    if (text.at(offset) == QLatin1Char('\n')) {
+      ++currentLine;
+    }
+    ++offset;
+  }
+  return currentLine == line ? text.size() : -1;
+}
+
+MarkdownNode* primaryParagraph(MarkdownNode& node) {
+  if (node.type() == BlockType::ListItem) {
+    for (const auto& child : node.children()) {
+      if (child->type() == BlockType::Paragraph) {
+        return child.get();
+      }
+    }
+  }
+  return &node;
+}
+
+bool fillSourceOffsetForTextHit(const DocumentSession& session, HitTestResult& hit) {
+  if (hit.zone != HitTestResult::Zone::Text && hit.zone != HitTestResult::Zone::Marker &&
+      hit.zone != HitTestResult::Zone::TableCell) {
+    return false;
+  }
+
+  MarkdownNode* node = session.document().node(hit.zone == HitTestResult::Zone::TableCell ? hit.textNodeId : hit.blockId);
+  if (!node) {
+    return false;
+  }
+
+  MarkdownNode* editable = primaryParagraph(*node);
+  if (!editable || (editable->type() != BlockType::Paragraph && editable->type() != BlockType::Heading &&
+                    editable->type() != BlockType::TableCell)) {
+    return false;
+  }
+
+  const SourceRange range = editable->sourceRange();
+  const QString markdown = session.markdownText();
+  qsizetype start = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
+  const qsizetype end = sourceOffsetForLineEnd(markdown, range.lineEnd);
+  if (start < 0 || end < start) {
+    return false;
+  }
+
+  if (editable->type() == BlockType::Heading) {
+    while (start < end && markdown.at(start) == QLatin1Char('#')) {
+      ++start;
+    }
+    if (start < end && markdown.at(start).isSpace()) {
+      ++start;
+    }
+  }
+
+  const QString contentText = markdown.mid(start, end - start);
+  qsizetype localSourceOffset = -1;
+  InlineProjection projection(editable->inlines(), contentText, hit.sourceOffset >= start ? hit.sourceOffset - start : -1);
+  if (hit.sourceOffset >= 0) {
+    localSourceOffset = qBound<qsizetype>(0, hit.sourceOffset - start, contentText.size());
+  } else if (!projection.sourceOffsetForVisibleOffset(hit.textOffset, localSourceOffset)) {
+    localSourceOffset = qBound<qsizetype>(0, hit.textOffset, contentText.size());
+  }
+  hit.sourceOffset = start + localSourceOffset;
+  return true;
+}
+
+}  // namespace
 
 EditorController::EditorController(QObject* parent) : QObject(parent) {}
 
@@ -288,6 +389,9 @@ void EditorController::activateHit(HitTestResult hit) {
     htmlBlockController_.exitEditMode();
     mathBlockController_.exitEditMode();
     return;
+  }
+  if (session_) {
+    fillSourceOffsetForTextHit(*session_, hit);
   }
 
   switch (hit.zone) {
