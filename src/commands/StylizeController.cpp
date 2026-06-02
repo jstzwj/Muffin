@@ -90,10 +90,15 @@ bool StylizeController::wrapOrInsert(
     nextFocusSourceOffset = context.sourceStart + end + openMarker.size();
   }
 
-  QString nextDocument = session_->markdownText();
-  nextDocument.replace(context.sourceStart, context.sourceEnd - context.sourceStart, nextParagraph);
-  applyStyle(kind, label, std::move(nextDocument), nextAnchorSourceOffset, nextFocusSourceOffset);
-  return true;
+  return applyStyleDelta(
+      kind,
+      label,
+      context.sourceStart,
+      context.sourceEnd - context.sourceStart,
+      std::move(nextParagraph),
+      nextAnchorSourceOffset,
+      nextFocusSourceOffset,
+      QVector<LocalEditNodeHint>{LocalEditNodeHint{context.editableNode->id(), context.sourceStart, context.editableNode->type()}});
 }
 
 bool StylizeController::wrapMultiBlockSelection(
@@ -120,6 +125,8 @@ bool StylizeController::wrapMultiBlockSelection(
   }
 
   struct EditSpan {
+    NodeId nodeId;
+    BlockType nodeType = BlockType::Unknown;
     qsizetype sourceStart = -1;
     qsizetype sourceEnd = -1;
     qsizetype startOffset = 0;
@@ -151,6 +158,8 @@ bool StylizeController::wrapMultiBlockSelection(
         span.startOffset = qBound<qsizetype>(0, selectionStart - context.sourceStart, context.sourceText.size());
         span.endOffset = qBound<qsizetype>(0, selectionEnd - context.sourceStart, context.sourceText.size());
         if (span.startOffset < span.endOffset) {
+          span.nodeId = context.editableNode->id();
+          span.nodeType = context.editableNode->type();
           spans.push_back(span);
         }
       }
@@ -175,12 +184,16 @@ bool StylizeController::wrapMultiBlockSelection(
   });
 
   const QString beforeText = session_->markdownText();
-  QString nextDocument = beforeText;
+  const qsizetype sourceStart = spans.last().sourceStart;
+  const qsizetype sourceEnd = spans.first().sourceEnd;
+  QString replacement = beforeText.mid(sourceStart, sourceEnd - sourceStart);
+  QVector<LocalEditNodeHint> nodeHints;
   for (const EditSpan& span : spans) {
     const qsizetype absoluteEnd = span.sourceStart + span.endOffset;
     const qsizetype absoluteStart = span.sourceStart + span.startOffset;
-    nextDocument.insert(absoluteEnd, closeMarker);
-    nextDocument.insert(absoluteStart, openMarker);
+    replacement.insert(absoluteEnd - sourceStart, closeMarker);
+    replacement.insert(absoluteStart - sourceStart, openMarker);
+    nodeHints.push_back(LocalEditNodeHint{span.nodeId, span.sourceStart, span.nodeType});
   }
 
   const qsizetype nextAnchorSourceOffset = (anchorFirst ? selectionStart : selectionEnd) + openMarker.size();
@@ -189,20 +202,15 @@ bool StylizeController::wrapMultiBlockSelection(
                                             : openMarker.size();
   const qsizetype nextFocusSourceOffset = (anchorFirst ? selectionEnd : selectionStart) + insertedBeforeFocus;
 
-  session_->applyMarkdownText(nextDocument, true);
-  SelectionRange nextSelection;
-  nextSelection.anchor = cursorForSourceOffset(nextAnchorSourceOffset);
-  nextSelection.focus = cursorForSourceOffset(nextFocusSourceOffset);
-  if (selection_ && nextSelection.focus.isValid()) {
-    selection_->setSelection(nextSelection);
-  }
-  if (undoStack_) {
-    undoStack_->push(EditTransaction(kind, label, {beforeText, selection_->cursorPosition()}, {nextDocument, nextSelection.focus}));
-  }
-  if (brushQueue_) {
-    brushQueue_->requestFullRefresh();
-  }
-  return true;
+  return applyStyleDelta(
+      kind,
+      label,
+      sourceStart,
+      sourceEnd - sourceStart,
+      std::move(replacement),
+      nextAnchorSourceOffset,
+      nextFocusSourceOffset,
+      std::move(nodeHints));
 }
 
 bool StylizeController::paragraphContext(ParagraphStyleContext& context) const {
@@ -352,28 +360,61 @@ qsizetype StylizeController::sourceOffsetForLineEnd(const QString& text, int lin
   return currentLine == line ? text.size() : -1;
 }
 
-void StylizeController::applyStyle(
+bool StylizeController::applyStyleDelta(
     EditTransaction::Kind kind,
     const QString& label,
-    QString nextText,
+    qsizetype sourceStart,
+    qsizetype removedLength,
+    QString insertedText,
     qsizetype nextAnchorSourceOffset,
-    qsizetype nextFocusSourceOffset) {
-  const CursorPosition beforeCursor = selection_ && selection_->hasCursor() ? selection_->cursorPosition() : CursorPosition();
-  const QString beforeText = session_->markdownText();
+    qsizetype nextFocusSourceOffset,
+    QVector<LocalEditNodeHint> nodeHints) {
+  if (!session_ || sourceStart < 0 || removedLength < 0 || sourceStart + removedLength > session_->markdownText().size()) {
+    return false;
+  }
 
-  session_->applyMarkdownText(nextText, true);
+  const CursorPosition beforeCursor = selection_ && selection_->hasCursor() ? selection_->cursorPosition() : CursorPosition();
+  const QString removedText = session_->markdownText().mid(sourceStart, removedLength);
+  QVector<NodeId> affectedNodes;
+  for (const LocalEditNodeHint& hint : nodeHints) {
+    if (hint.nodeId.isValid() && !affectedNodes.contains(hint.nodeId)) {
+      affectedNodes.push_back(hint.nodeId);
+    }
+  }
+  if (!session_->applyTextDelta(sourceStart, removedLength, insertedText, true, std::move(nodeHints))) {
+    return false;
+  }
+
   SelectionRange nextSelection;
   nextSelection.anchor = cursorForSourceOffset(nextAnchorSourceOffset);
   nextSelection.focus = cursorForSourceOffset(nextFocusSourceOffset);
   if (selection_ && nextSelection.focus.isValid()) {
     selection_->setSelection(nextSelection);
   }
-  if (undoStack_) {
-    undoStack_->push(EditTransaction(kind, label, {beforeText, beforeCursor}, {std::move(nextText), nextSelection.focus}));
+  if (nextSelection.anchor.blockId.isValid() && !affectedNodes.contains(nextSelection.anchor.blockId)) {
+    affectedNodes.push_back(nextSelection.anchor.blockId);
+  }
+  if (nextSelection.focus.blockId.isValid() && !affectedNodes.contains(nextSelection.focus.blockId)) {
+    affectedNodes.push_back(nextSelection.focus.blockId);
+  }
+  if (undoStack_ && beforeCursor.isValid() && nextSelection.focus.isValid()) {
+    undoStack_->push(EditTransaction(
+        kind,
+        label,
+        TextDeltaCommand{
+            TextDelta{sourceStart, removedText, insertedText},
+            beforeCursor,
+            nextSelection.focus,
+            std::move(affectedNodes)}));
   }
   if (brushQueue_) {
-    brushQueue_->requestBlockRefresh(nextSelection.focus.blockId);
+    if (!affectedNodes.isEmpty()) {
+      brushQueue_->requestBlocksRefresh(std::move(affectedNodes));
+    } else {
+      brushQueue_->requestFullRefresh();
+    }
   }
+  return true;
 }
 
 CursorPosition StylizeController::cursorForSourceOffset(qsizetype sourceOffset) const {

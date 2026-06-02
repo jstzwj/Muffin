@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/DocumentSession.h"
 #include "document/MarkdownTypes.h"
 #include "edit/EditTransaction.h"
 
@@ -56,12 +57,15 @@ private:
   MarkdownNode* primaryParagraph(MarkdownNode& node) const;
   qsizetype sourceOffsetForLineColumn(const QString& text, int line, int column) const;
   qsizetype sourceOffsetForLineEnd(const QString& text, int line) const;
-  void applyStyle(
+  bool applyStyleDelta(
       EditTransaction::Kind kind,
       const QString& label,
-      QString nextText,
+      qsizetype sourceStart,
+      qsizetype removedLength,
+      QString insertedText,
       qsizetype nextAnchorSourceOffset,
-      qsizetype nextFocusSourceOffset);
+      qsizetype nextFocusSourceOffset,
+      QVector<LocalEditNodeHint> nodeHints = {});
   CursorPosition cursorForSourceOffset(qsizetype sourceOffset) const;
   MarkdownNode* paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset) const;
 

@@ -1666,7 +1666,7 @@ void testStylizeSelectionWrap() {
   require(session.markdownText() == QStringLiteral("a[lph](url)a"), "link wrap text mismatch");
 }
 
-void testStylizeUndoRedoSnapshots() {
+void testStylizeUndoRedoTextDelta() {
   DocumentSession session;
   SelectionController selection;
   UndoStack undoStack;
@@ -1679,14 +1679,27 @@ void testStylizeUndoRedoSnapshots() {
   require(stylize.toggleBold(), "bold should create transaction");
 
   const EditTransaction undo = undoStack.takeUndo();
-  session.applyMarkdownText(undo.before().markdownText, true);
-  selection.setCursorPosition(undo.before().cursor);
+  require(undo.isTextDeltaCommand(), "style undo should use TextDeltaCommand");
+  require(undo.textDeltaCommand().delta.start == 0, "style undo delta start mismatch");
+  require(undo.textDeltaCommand().delta.removedText == QStringLiteral("alpha"), "style undo removed text mismatch");
+  require(undo.textDeltaCommand().delta.insertedText == QStringLiteral("alpha****"), "style undo inserted text mismatch");
+  session.applyTextDelta(
+      undo.textDeltaCommand().delta.start,
+      undo.textDeltaCommand().delta.insertedText.size(),
+      undo.textDeltaCommand().delta.removedText,
+      true);
+  selection.setCursorPosition(undo.textDeltaCommand().beforeCursor);
   require(session.markdownText() == QStringLiteral("alpha"), "style undo text mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "style undo cursor mismatch");
 
   const EditTransaction redo = undoStack.takeRedo();
-  session.applyMarkdownText(redo.after().markdownText, true);
-  selection.setCursorPosition(redo.after().cursor);
+  require(redo.isTextDeltaCommand(), "style redo should use TextDeltaCommand");
+  session.applyTextDelta(
+      redo.textDeltaCommand().delta.start,
+      redo.textDeltaCommand().delta.removedText.size(),
+      redo.textDeltaCommand().delta.insertedText,
+      true);
+  selection.setCursorPosition(redo.textDeltaCommand().afterCursor);
   require(session.markdownText() == QStringLiteral("alpha****"), "style redo text mismatch");
   require(selection.cursorPosition().text.textOffset == 7, "style redo cursor mismatch");
 }
@@ -2303,7 +2316,7 @@ int main(int argc, char** argv) {
   testStylizeCollapsedSkeletons();
   testTypingIntoCollapsedStyleSkeletons();
   testStylizeSelectionWrap();
-  testStylizeUndoRedoSnapshots();
+  testStylizeUndoRedoTextDelta();
   testHeadingAndListItemStylize();
   testStylizeCrossParagraphSelectionWrap();
   testClipboardPlainText();
