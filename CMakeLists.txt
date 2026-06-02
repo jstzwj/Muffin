@@ -6,6 +6,15 @@ project(Muffin
   LANGUAGES C CXX
 )
 
+set(MUFFIN_VERSION_OVERRIDE "" CACHE STRING "Override Muffin application version")
+set(MUFFIN_EFFECTIVE_VERSION "${PROJECT_VERSION}")
+if(MUFFIN_VERSION_OVERRIDE)
+  if(NOT MUFFIN_VERSION_OVERRIDE MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+    message(FATAL_ERROR "MUFFIN_VERSION_OVERRIDE must use x.y.z format")
+  endif()
+  set(MUFFIN_EFFECTIVE_VERSION "${MUFFIN_VERSION_OVERRIDE}")
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -199,6 +208,11 @@ target_link_libraries(Muffin
 target_include_directories(Muffin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_definitions(Muffin
+  PRIVATE
+    MUFFIN_VERSION="${MUFFIN_EFFECTIVE_VERSION}"
 )
 
 if(WIN32)

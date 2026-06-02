@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
   QApplication::setApplicationName("Muffin");
   QApplication::setOrganizationName("Muffin");
-  QApplication::setApplicationVersion("0.1.0");
+  QApplication::setApplicationVersion(QStringLiteral(MUFFIN_VERSION));
 
   QCommandLineParser parser;
   parser.setApplicationDescription("A fast native Markdown editor built with C++ and Qt 6 Widgets.");

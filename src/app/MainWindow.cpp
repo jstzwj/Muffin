@@ -452,7 +452,8 @@ void MainWindow::setupConnections() {
     QMessageBox::about(
         this,
         tr("About Muffin"),
-        tr("Muffin\n\nA fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets."));
+        tr("Muffin %1\n\nA fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.")
+            .arg(QApplication::applicationVersion()));
   });
 
   commands_.bind(QStringLiteral("theme.github"), [this] { themeManager_.setTheme(QStringLiteral("github")); });
