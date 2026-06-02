@@ -20,18 +20,24 @@ jobs:
             runner: windows-latest
             artifact-suffix: windows-x64
             conan-arch: x86_64
+            configure-preset: conan-default
+            conan-cppstd: 17
             cmake-args: ''
             test-command: ctest --preset conan-release --output-on-failure
           - name: macOS x64
             runner: macos-13
             artifact-suffix: macos-x64
             conan-arch: x86_64
+            configure-preset: conan-release
+            conan-cppstd: 17
             cmake-args: -DCMAKE_OSX_ARCHITECTURES=x86_64
             test-command: ctest --preset conan-release --output-on-failure
           - name: Linux x64
             runner: ubuntu-latest
             artifact-suffix: linux-x64
             conan-arch: x86_64
+            configure-preset: conan-release
+            conan-cppstd: gnu17
             cmake-args: ''
             test-command: xvfb-run ctest --preset conan-release --output-on-failure
 
@@ -61,11 +67,15 @@ jobs:
       - name: Detect Conan profile
         run: conan profile detect --force
 
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgl-dev
+
       - name: Install dependencies
-        run: conan install . -s build_type=Release -s compiler.cppstd=17 -s arch=${{ matrix.conan-arch }} --build=missing
+        run: conan install . -s build_type=Release -s compiler.cppstd=${{ matrix.conan-cppstd }} -s arch=${{ matrix.conan-arch }} --build=missing
 
       - name: Configure
-        run: cmake --preset conan-default -DMUFFIN_VERSION_OVERRIDE=${{ env.MUFFIN_RELEASE_VERSION }} ${{ matrix.cmake-args }}
+        run: cmake --preset ${{ matrix.configure-preset }} -DMUFFIN_VERSION_OVERRIDE=${{ env.MUFFIN_RELEASE_VERSION }} ${{ matrix.cmake-args }}
 
       - name: Build
         run: cmake --build --preset conan-release

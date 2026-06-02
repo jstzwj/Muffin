@@ -14,12 +14,18 @@ jobs:
         include:
           - name: Windows
             runner: windows-latest
+            configure-preset: conan-default
+            conan-cppstd: 17
             test-command: ctest --preset conan-release --output-on-failure
           - name: macOS
             runner: macos-latest
+            configure-preset: conan-release
+            conan-cppstd: 17
             test-command: ctest --preset conan-release --output-on-failure
           - name: Linux
             runner: ubuntu-latest
+            configure-preset: conan-release
+            conan-cppstd: gnu17
             test-command: xvfb-run ctest --preset conan-release --output-on-failure
 
     steps:
@@ -37,11 +43,15 @@ jobs:
       - name: Detect Conan profile
         run: conan profile detect --force
 
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgl-dev
+
       - name: Install dependencies
-        run: conan install . -s build_type=Release -s compiler.cppstd=17 --build=missing
+        run: conan install . -s build_type=Release -s compiler.cppstd=${{ matrix.conan-cppstd }} --build=missing
 
       - name: Configure
-        run: cmake --preset conan-default
+        run: cmake --preset ${{ matrix.configure-preset }}
 
       - name: Build
         run: cmake --build --preset conan-release
