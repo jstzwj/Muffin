@@ -264,6 +264,7 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
       case InlineType::Link:
         if (span.kind == InlineSpanKind::Text) {
           format.setForeground(theme.linkColor());
+          format.setFontUnderline(true);
         }
         break;
       case InlineType::Strong:

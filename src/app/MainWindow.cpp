@@ -656,6 +656,7 @@ void MainWindow::setupFormatMenu() {
 
 void MainWindow::setupTableMenu() {
   QMenu* table = menuBar()->addMenu(QStringLiteral("表格(&B)"));
+  table->menuAction()->setVisible(false);
   addAction(table, QStringLiteral("table.insert_table"), QStringLiteral("插入表格"));
   table->addSeparator();
   addAction(table, QStringLiteral("table.insert_row_before"), QStringLiteral("在上方插入行"));
@@ -678,6 +679,7 @@ void MainWindow::setupTableMenu() {
 
 void MainWindow::setupCodeMenu() {
   QMenu* code = menuBar()->addMenu(QStringLiteral("代码(&C)"));
+  code->menuAction()->setVisible(false);
   addAction(code, QStringLiteral("code.enter_edit"), QStringLiteral("进入编辑"));
   addAction(code, QStringLiteral("code.exit_edit"), QStringLiteral("退出编辑"));
   addAction(code, QStringLiteral("code.set_language"), QStringLiteral("设置语言..."));
@@ -685,6 +687,7 @@ void MainWindow::setupCodeMenu() {
 
 void MainWindow::setupMathMenu() {
   QMenu* math = menuBar()->addMenu(QStringLiteral("å…¬å¼(&M)"));
+  math->menuAction()->setVisible(false);
   addAction(math, QStringLiteral("math.enter_edit"), QStringLiteral("è¿›å…¥ç¼–è¾‘"));
   addAction(math, QStringLiteral("math.exit_edit"), QStringLiteral("é€€å‡ºç¼–è¾‘"));
   addAction(math, QStringLiteral("math.set_tex"), QStringLiteral("è®¾ç½® TeX..."));
@@ -692,6 +695,7 @@ void MainWindow::setupMathMenu() {
 
 void MainWindow::setupHtmlMenu() {
   QMenu* html = menuBar()->addMenu(QStringLiteral("HTML(&H)"));
+  html->menuAction()->setVisible(false);
   addAction(html, QStringLiteral("html.enter_edit"), QStringLiteral("è¿›å…¥ç¼–è¾‘"));
   addAction(html, QStringLiteral("html.exit_edit"), QStringLiteral("é€€å‡ºç¼–è¾‘"));
   addAction(html, QStringLiteral("html.set_source"), QStringLiteral("è®¾ç½® HTML..."));

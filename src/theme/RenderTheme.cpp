@@ -61,7 +61,7 @@ qreal RenderTheme::pageWidth() const {
 }
 
 qreal RenderTheme::topMargin() const {
-  return scaled(38.0);
+  return scaled(64.0);
 }
 
 qreal RenderTheme::bottomMargin() const {
@@ -69,7 +69,7 @@ qreal RenderTheme::bottomMargin() const {
 }
 
 qreal RenderTheme::blockSpacing() const {
-  return scaled(8.0);
+  return scaled(11.0);
 }
 
 qreal RenderTheme::listIndent() const {
@@ -189,7 +189,7 @@ QMarginsF RenderTheme::codePadding() const {
 }
 
 QMarginsF RenderTheme::tableCellPadding() const {
-  return QMarginsF(scaled(10), scaled(7), scaled(10), scaled(7));
+  return QMarginsF(scaled(12), scaled(6), scaled(12), scaled(6));
 }
 
 qreal RenderTheme::scaled(qreal value) const {
