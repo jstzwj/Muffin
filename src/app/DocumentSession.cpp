@@ -1,5 +1,7 @@
 #include "app/DocumentSession.h"
 
+#include "parser/MarkdownSerializer.h"
+
 #include <QFileInfo>
 #include <QElapsedTimer>
 #include <QLoggingCategory>
@@ -220,6 +222,71 @@ void applyNodeHints(
   }
 }
 
+MarkdownNode* tableByIdOrIndex(MarkdownDocument& document, NodeId tableId, int tableIndex) {
+  if (tableId.isValid()) {
+    if (MarkdownNode* table = document.node(tableId)) {
+      if (table->type() == BlockType::Table) {
+        return table;
+      }
+    }
+  }
+
+  if (tableIndex < 0) {
+    return nullptr;
+  }
+
+  int index = 0;
+  const auto visit = [&](const auto& self, MarkdownNode& node) -> MarkdownNode* {
+    if (node.type() == BlockType::Table) {
+      if (index == tableIndex) {
+        return &node;
+      }
+      ++index;
+    }
+    for (const auto& child : node.children()) {
+      if (MarkdownNode* found = self(self, *child)) {
+        return found;
+      }
+    }
+    return nullptr;
+  };
+  return visit(visit, document.root());
+}
+
+MarkdownNode* nodeByTypeIndex(MarkdownDocument& document, BlockType type, int targetIndex) {
+  if (type == BlockType::Unknown || targetIndex < 0) {
+    return nullptr;
+  }
+
+  int index = 0;
+  const auto visit = [&](const auto& self, MarkdownNode& node) -> MarkdownNode* {
+    if (node.type() == type) {
+      if (index == targetIndex) {
+        return &node;
+      }
+      ++index;
+    }
+    for (const auto& child : node.children()) {
+      if (MarkdownNode* found = self(self, *child)) {
+        return found;
+      }
+    }
+    return nullptr;
+  };
+  return visit(visit, document.root());
+}
+
+MarkdownNode* nodeByIdOrTypeIndex(MarkdownDocument& document, NodeId nodeId, BlockType type, int nodeIndex) {
+  if (nodeId.isValid()) {
+    if (MarkdownNode* node = document.node(nodeId)) {
+      if (node->type() == type) {
+        return node;
+      }
+    }
+  }
+  return nodeByTypeIndex(document, type, nodeIndex);
+}
+
 }  // namespace
 
 DocumentSession::DocumentSession(QObject* parent) : QObject(parent) {
@@ -301,6 +368,67 @@ bool DocumentSession::applyTextDelta(
   }
   emit documentLocallyEdited(sourceStart, removedLength, insertedText);
   return true;
+}
+
+bool DocumentSession::applyTableSnapshot(NodeId tableId, int tableIndex, const MarkdownNode& tableSnapshot, bool modified) {
+  if (tableSnapshot.type() != BlockType::Table) {
+    return false;
+  }
+
+  MarkdownNode* currentTable = tableByIdOrIndex(document_, tableId, tableIndex);
+  if (!currentTable) {
+    return false;
+  }
+
+  const SourceRange range = currentTable->sourceRange();
+  if (range.byteStart < 0 || range.byteEnd < range.byteStart || range.byteEnd > document_.markdownText().size()) {
+    return false;
+  }
+
+  MarkdownSerializer serializer;
+  const QString replacementText = serializer.serializeBlock(tableSnapshot);
+  QVector<LocalEditNodeHint> nodeHints{LocalEditNodeHint{tableId.isValid() ? tableId : currentTable->id(), range.byteStart, BlockType::Table}};
+  return applyTextDelta(range.byteStart, range.byteEnd - range.byteStart, replacementText, modified, std::move(nodeHints));
+}
+
+bool DocumentSession::applyNodeSnapshot(NodeId nodeId, BlockType nodeType, int nodeIndex, const MarkdownNode& nodeSnapshot, bool modified) {
+  if (nodeType == BlockType::Unknown || nodeSnapshot.type() != nodeType) {
+    return false;
+  }
+
+  MarkdownNode* currentNode = nodeByIdOrTypeIndex(document_, nodeId, nodeType, nodeIndex);
+  if (!currentNode) {
+    return false;
+  }
+
+  const SourceRange range = currentNode->sourceRange();
+  if (range.byteStart < 0 || range.byteEnd < range.byteStart || range.byteEnd > document_.markdownText().size()) {
+    return false;
+  }
+
+  MarkdownSerializer serializer;
+  const QString replacementText = serializer.serializeBlock(nodeSnapshot);
+  QVector<LocalEditNodeHint> nodeHints{LocalEditNodeHint{nodeId.isValid() ? nodeId : currentNode->id(), range.byteStart, nodeType}};
+  return applyTextDelta(range.byteStart, range.byteEnd - range.byteStart, replacementText, modified, std::move(nodeHints));
+}
+
+bool DocumentSession::applyInsertedNode(
+    NodeId nodeId,
+    BlockType nodeType,
+    qsizetype sourceStart,
+    qsizetype targetSourceOffset,
+    qsizetype removedLength,
+    QString insertedText,
+    bool modified) {
+  if (!nodeId.isValid() || nodeType == BlockType::Unknown) {
+    return false;
+  }
+
+  QVector<LocalEditNodeHint> nodeHints;
+  if (!insertedText.isEmpty()) {
+    nodeHints.push_back(LocalEditNodeHint{nodeId, targetSourceOffset, nodeType});
+  }
+  return applyTextDelta(sourceStart, removedLength, std::move(insertedText), modified, std::move(nodeHints));
 }
 
 void DocumentSession::parseAndStore(QString text, bool modified) {

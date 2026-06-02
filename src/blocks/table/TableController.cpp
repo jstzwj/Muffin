@@ -12,6 +12,110 @@
 #include <memory>
 
 namespace muffin {
+namespace {
+
+struct TableCellSourceRange {
+  qsizetype start = -1;
+  qsizetype end = -1;
+
+  bool isValid() const {
+    return start >= 0 && end >= start;
+  }
+};
+
+bool isHorizontalPadding(QChar ch) {
+  return ch == QLatin1Char(' ') || ch == QLatin1Char('\t');
+}
+
+qsizetype sourceOffsetForLineColumn(const QString& text, int line, int column) {
+  if (line <= 0 || column <= 0) {
+    return -1;
+  }
+  qsizetype lineStart = 0;
+  for (int currentLine = 1; currentLine < line; ++currentLine) {
+    const qsizetype newline = text.indexOf(QLatin1Char('\n'), lineStart);
+    if (newline < 0) {
+      return -1;
+    }
+    lineStart = newline + 1;
+  }
+  const qsizetype lineEnd = text.indexOf(QLatin1Char('\n'), lineStart);
+  const qsizetype boundedLineEnd = lineEnd < 0 ? text.size() : lineEnd;
+  return qBound<qsizetype>(lineStart, lineStart + column - 1, boundedLineEnd);
+}
+
+qsizetype sourceOffsetForLineEnd(const QString& text, int line) {
+  if (line <= 0) {
+    return -1;
+  }
+  const qsizetype lineStart = sourceOffsetForLineColumn(text, line, 1);
+  if (lineStart < 0) {
+    return -1;
+  }
+  const qsizetype newline = text.indexOf(QLatin1Char('\n'), lineStart);
+  return newline < 0 ? text.size() : newline;
+}
+
+TableCellSourceRange sourceRangeForTableCellContent(const QString& markdown, const MarkdownNode& cell) {
+  if (cell.type() != BlockType::TableCell) {
+    return {};
+  }
+
+  const SourceRange range = cell.sourceRange();
+  if (range.lineStart <= 0 || range.lineEnd < range.lineStart || range.columnStart <= 0) {
+    return {};
+  }
+
+  const qsizetype lineEnd = sourceOffsetForLineEnd(markdown, range.lineStart);
+  qsizetype fieldStart = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
+  qsizetype fieldEnd = range.columnEnd >= range.columnStart
+                           ? sourceOffsetForLineColumn(markdown, range.lineStart, range.columnEnd + 1)
+                           : lineEnd;
+  if (fieldStart < 0 || fieldEnd < fieldStart || lineEnd < fieldEnd) {
+    return {};
+  }
+
+  qsizetype contentStart = fieldStart;
+  qsizetype contentEnd = fieldEnd;
+  while (contentStart < contentEnd && isHorizontalPadding(markdown.at(contentStart))) {
+    ++contentStart;
+  }
+  while (contentEnd > contentStart && isHorizontalPadding(markdown.at(contentEnd - 1))) {
+    --contentEnd;
+  }
+  if (contentStart == fieldEnd && fieldEnd > fieldStart) {
+    contentStart = fieldStart + (fieldEnd - fieldStart) / 2;
+    contentEnd = contentStart;
+  }
+  return {contentStart, contentEnd};
+}
+
+qsizetype sourceOffsetForTableCellVisibleOffset(const QString& escapedMarkdown, qsizetype visibleOffset) {
+  visibleOffset = qMax<qsizetype>(0, visibleOffset);
+  qsizetype visible = 0;
+  qsizetype source = 0;
+  while (source < escapedMarkdown.size()) {
+    if (visible >= visibleOffset) {
+      return source;
+    }
+    if (escapedMarkdown.at(source) == QLatin1Char('\\') && source + 1 < escapedMarkdown.size() &&
+        escapedMarkdown.at(source + 1) == QLatin1Char('|')) {
+      source += 2;
+      ++visible;
+      continue;
+    }
+    if (escapedMarkdown.mid(source, 4) == QStringLiteral("<br>")) {
+      source += 4;
+      ++visible;
+      continue;
+    }
+    ++source;
+    ++visible;
+  }
+  return escapedMarkdown.size();
+}
+
+}  // namespace
 
 TableController::TableController(QObject* parent) : QObject(parent) {}
 
@@ -224,9 +328,9 @@ bool TableController::insertTable(int rows, int columns) {
 
   const CursorPosition beforeCursor = selection_ ? selection_->cursorPosition() : CursorPosition();
   const QString beforeText = session_->markdownText();
-  auto rootCopy = session_->document().root().clone(CloneMode::PreserveIds);
 
   auto table = std::make_unique<MarkdownNode>(BlockType::Table);
+  const NodeId insertedTableId = table->id();
   QVector<TableAlignment> alignments;
   for (int column = 0; column < columns; ++column) {
     alignments.push_back(TableAlignment::None);
@@ -242,27 +346,48 @@ bool TableController::insertTable(int rows, int columns) {
     }
     table->appendChild(std::move(rowNode));
   }
-  rootCopy->appendChild(std::move(table));
 
-  MarkdownDocument nextDocument;
-  nextDocument.setMarkdownText(beforeText, std::move(rootCopy));
   MarkdownSerializer serializer;
-  QString nextText = serializer.serializeDocument(nextDocument);
-  session_->applyMarkdownText(nextText, true);
-
-  TableLocation location;
-  location.tableIndex = 0;
-  int index = 0;
+  const QString tableText = serializer.serializeBlock(*table);
+  const MarkdownNode* lastBlock = session_->document().root().children().empty()
+                                      ? nullptr
+                                      : session_->document().root().children().back().get();
+  const qsizetype replaceStart = lastBlock && lastBlock->sourceRange().byteStart >= 0
+                                     ? lastBlock->sourceRange().byteStart
+                                     : beforeText.size();
+  if (replaceStart < 0 || replaceStart > beforeText.size()) {
+    return false;
+  }
+  const QString removedText = beforeText.mid(replaceStart);
+  const QString prefix = removedText.isEmpty() ? QString() : removedText + QStringLiteral("\n\n");
+  const QString insertedText = prefix + tableText;
+  const qsizetype tableSourceStart = replaceStart + prefix.size();
+  const int insertedNodeIndex = static_cast<int>(session_->document().root().children().size());
+  int insertedTableIndex = 0;
   const auto countTables = [&](const auto& self, const MarkdownNode& node) -> void {
     if (node.type() == BlockType::Table) {
-      location.tableIndex = index;
-      ++index;
+      ++insertedTableIndex;
     }
     for (const auto& child : node.children()) {
       self(self, *child);
     }
   };
   countTables(countTables, session_->document().root());
+  auto commandNode = table->clone(CloneMode::PreserveIds);
+  if (!session_->applyInsertedNode(
+          insertedTableId,
+          BlockType::Table,
+          replaceStart,
+          tableSourceStart,
+          removedText.size(),
+          insertedText,
+          true)) {
+    return false;
+  }
+
+  TableLocation location;
+  location.tableId = insertedTableId;
+  location.tableIndex = insertedTableIndex;
   location.row = 0;
   location.column = 0;
   const CursorPosition nextCursor = cursorForLocation(location);
@@ -270,11 +395,22 @@ bool TableController::insertTable(int rows, int columns) {
     selection_->setCursorPosition(nextCursor);
   }
   if (undoStack_) {
-    undoStack_->push(EditTransaction(EditTransaction::Kind::InsertText, QStringLiteral("Insert Table"), {beforeText, beforeCursor},
-                                     {nextText, nextCursor}));
+    undoStack_->push(EditTransaction(
+        EditTransaction::Kind::InsertText,
+        QStringLiteral("Insert Table"),
+        InsertNodeCommand{
+            insertedTableId,
+            BlockType::Table,
+            insertedNodeIndex,
+            TextDelta{replaceStart, removedText, insertedText},
+            tableSourceStart,
+            std::move(commandNode),
+            beforeCursor,
+            nextCursor,
+            QVector<NodeId>{insertedTableId}}));
   }
   if (brushQueue_) {
-    brushQueue_->requestFullRefresh();
+    brushQueue_->requestBlockRefresh(insertedTableId);
   }
   return true;
 }
@@ -294,21 +430,8 @@ bool TableController::editCurrentCell(
 
   const CursorPosition beforeCursor = selection_->cursorPosition();
   const QString beforeText = session_->markdownText();
-  auto rootCopy = session_->document().root().clone(CloneMode::PreserveIds);
 
-  const auto findById = [&](const auto& self, MarkdownNode& node, NodeId id) -> MarkdownNode* {
-    if (node.id() == id) {
-      return &node;
-    }
-    for (const auto& child : node.children()) {
-      if (MarkdownNode* found = self(self, *child, id)) {
-        return found;
-      }
-    }
-    return nullptr;
-  };
-
-  MarkdownNode* table = findById(findById, *rootCopy, beforeLocation.tableId);
+  MarkdownNode* table = tableForLocation(beforeLocation);
   if (!table) {
     return false;
   }
@@ -316,26 +439,57 @@ bool TableController::editCurrentCell(
   if (!cell) {
     return false;
   }
+  const NodeId tableId = table->id();
+  const NodeId cellId = cell->id();
 
+  const TableCellSourceRange contentRange = sourceRangeForTableCellContent(beforeText, *cell);
+  if (!contentRange.isValid() || contentRange.end > beforeText.size()) {
+    return false;
+  }
+  const QString removedText = beforeText.mid(contentRange.start, contentRange.end - contentRange.start);
+  auto nextCell = cell->clone(CloneMode::PreserveIds);
   qsizetype nextOffset = beforeCursor.text.textOffset;
-  if (!mutate(*cell, nextOffset)) {
+  if (!mutate(*nextCell, nextOffset)) {
     return false;
   }
 
-  MarkdownDocument nextDocument;
-  nextDocument.setMarkdownText(beforeText, std::move(rootCopy));
   MarkdownSerializer serializer;
-  QString nextText = serializer.serializeDocument(nextDocument);
+  const QString insertedText = serializer.serializeTableCellContent(*nextCell);
+  if (removedText == insertedText) {
+    CursorPosition unchangedCursor = cursorForLocation(beforeLocation);
+    unchangedCursor.text.textOffset = nextOffset;
+    unchangedCursor.text.sourceOffset =
+        contentRange.start + sourceOffsetForTableCellVisibleOffset(removedText, nextOffset);
+    selection_->setCursorPosition(unchangedCursor);
+    return true;
+  }
 
-  session_->applyMarkdownText(nextText, true);
+  QVector<LocalEditNodeHint> nodeHints;
+  nodeHints.push_back(LocalEditNodeHint{tableId, contentRange.start, BlockType::Table});
+  if (!session_->applyTextDelta(contentRange.start, contentRange.end - contentRange.start, insertedText, true, std::move(nodeHints))) {
+    return false;
+  }
   CursorPosition nextCursor = cursorForLocation(beforeLocation);
   nextCursor.text.textOffset = nextOffset;
+  nextCursor.text.sourceOffset = contentRange.start + sourceOffsetForTableCellVisibleOffset(insertedText, nextOffset);
   selection_->setCursorPosition(nextCursor);
   if (undoStack_) {
-    undoStack_->push(EditTransaction(kind, std::move(label), {beforeText, beforeCursor}, {nextText, nextCursor}));
+    CursorPosition storedBeforeCursor = beforeCursor;
+    storedBeforeCursor.blockId = tableId;
+    storedBeforeCursor.text.nodeId = cellId;
+    storedBeforeCursor.text.sourceOffset =
+        contentRange.start + sourceOffsetForTableCellVisibleOffset(removedText, beforeCursor.text.textOffset);
+    undoStack_->push(EditTransaction(
+        kind,
+        std::move(label),
+        TextDeltaCommand{
+            TextDelta{contentRange.start, removedText, insertedText},
+            storedBeforeCursor,
+            nextCursor,
+            QVector<NodeId>{tableId}}));
   }
   if (brushQueue_) {
-    brushQueue_->requestFullRefresh();
+    brushQueue_->requestBlockRefresh(tableId);
   }
   return true;
 }
@@ -371,9 +525,11 @@ bool TableController::mutateCurrentTable(
     return nullptr;
   };
   targetTable = findById(findById, *rootCopy);
+  std::unique_ptr<MarkdownNode> beforeTable = targetTable ? targetTable->clone(CloneMode::PreserveIds) : nullptr;
   if (!targetTable || !mutate(*targetTable, beforeLocation)) {
     return false;
   }
+  std::unique_ptr<MarkdownNode> afterTable = targetTable->clone(CloneMode::PreserveIds);
 
   MarkdownDocument nextDocument;
   nextDocument.setMarkdownText(beforeText, std::move(rootCopy));
@@ -386,7 +542,18 @@ bool TableController::mutateCurrentTable(
     selection_->setCursorPosition(nextCursor);
   }
   if (undoStack_) {
-    undoStack_->push(EditTransaction(kind, std::move(label), {beforeText, beforeCursor}, {nextText, nextCursor}));
+    undoStack_->push(EditTransaction(
+        kind,
+        std::move(label),
+        TableCommand{
+            beforeLocation.tableId,
+            beforeLocation.tableIndex,
+            beforeLocation.row,
+            beforeLocation.column,
+            std::move(beforeTable),
+            std::move(afterTable),
+            beforeCursor,
+            nextCursor}));
   }
   if (brushQueue_) {
     brushQueue_->requestFullRefresh();

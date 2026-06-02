@@ -32,8 +32,6 @@ public:
   void setSelectionRange(SelectionRange selection);
   void clearCursor();
   void setCodeLanguageSuggestions(QStringList languages);
-  void setInlineGeometryBackend(InlineLayout::InlineGeometryBackend backend);
-  InlineLayout::InlineGeometryBackend inlineGeometryBackend() const;
 
   QRectF nodeRect(NodeId id) const;
   const BlockLayout* blockAtViewportPos(QPointF viewportPos) const;
@@ -81,7 +79,6 @@ private:
   QPointer<const MarkdownDocument> document_;
   RenderTheme theme_ = RenderTheme::typoraLike();
   std::unique_ptr<DocumentLayout> layout_;
-  InlineLayout::InlineGeometryBackend inlineGeometryBackend_ = InlineLayout::InlineGeometryBackend::QTextLayout;
   CursorPosition cursorPosition_;
   SelectionRange selection_;
   HitTestResult cursorHit_;

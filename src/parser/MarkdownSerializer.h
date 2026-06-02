@@ -10,6 +10,7 @@ public:
   QString serializeBlock(const MarkdownNode& node) const;
   QString serializeInlineList(const QVector<InlineNode>& nodes) const;
   QString serializeInline(const InlineNode& node) const;
+  QString serializeTableCellContent(const MarkdownNode& node) const;
 
 private:
   QString serializeChildren(const MarkdownNode& node, QString separator) const;

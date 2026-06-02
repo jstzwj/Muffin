@@ -61,6 +61,9 @@ void testEnterEditAndTextEditing() {
   require(controller.insertText(QStringLiteral("\n<span>beta</span>")), "html insert should work");
   require(session.markdownText().contains(QStringLiteral("<span>beta</span>")), "html insert markdown mismatch");
   require(undoStack.canUndo(), "html insert should push undo");
+  EditTransaction htmlInsertUndo = undoStack.takeUndo();
+  require(htmlInsertUndo.isReplaceNodeCommand(), "html insert should use ReplaceNodeCommand");
+  require(htmlInsertUndo.replaceNodeCommand().nodeType == BlockType::HtmlBlock, "html insert command type mismatch");
 
   require(controller.deleteBackward(), "html backspace should work");
   require(session.markdownText().contains(QStringLiteral("<span>beta</span")), "html backspace markdown mismatch");
@@ -87,6 +90,8 @@ void testSetHtmlRoundtripAndSanitizer() {
   require(controller.setHtml(source), "set html should work");
   require(session.markdownText().contains(QStringLiteral("onclick=\"evil()\"")), "raw html roundtrip mismatch");
   require(undoStack.canUndo(), "set html should push undo");
+  EditTransaction setHtmlUndo = undoStack.takeUndo();
+  require(setHtmlUndo.isReplaceNodeCommand(), "set html should use ReplaceNodeCommand");
 
   const QString preview = controller.sanitizedPreview();
   require(!preview.contains(QStringLiteral("<script"), Qt::CaseInsensitive), "script tag should be removed");

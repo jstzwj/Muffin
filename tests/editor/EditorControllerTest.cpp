@@ -775,17 +775,15 @@ void testEditorViewInlineProjectionStateChanges() {
   require(selectedLayout->cursorRectForSourceOffset(9).left() != collapsedCursor.left(), "selection touching inline should expand marker layout");
 }
 
-void testEditorViewProbeGeometryBackendSmoke() {
+void testEditorViewInlineLayoutSmoke() {
   DocumentSession session;
   EditorView view;
   EditorController controller;
   controller.attach(&session, &view);
-  view.setInlineGeometryBackend(InlineLayout::InlineGeometryBackend::QTextLayout);
   view.resize(900, 500);
 
   session.setMarkdownText(QStringLiteral("before **bold** after"), false);
   view.setDocument(session.document());
-  require(view.inlineGeometryBackend() == InlineLayout::InlineGeometryBackend::QTextLayout, "view should use probe geometry backend");
 
   MarkdownNode* block = blockAt(session, 0);
   const QRectF blockRect = view.nodeRect(block->id());
@@ -841,76 +839,6 @@ void testEditorViewProbeGeometryBackendSmoke() {
   }
 }
 
-class ScopedEnvironmentVariable {
-public:
-  ScopedEnvironmentVariable(const char* name, QByteArray value) : name_(name), previous_(qgetenv(name)), hadPrevious_(!previous_.isNull()) {
-    if (value.isNull()) {
-      qunsetenv(name_);
-    } else {
-      qputenv(name_, value);
-    }
-  }
-
-  ~ScopedEnvironmentVariable() {
-    if (hadPrevious_) {
-      qputenv(name_, previous_);
-    } else {
-      qunsetenv(name_);
-    }
-  }
-
-private:
-  const char* name_;
-  QByteArray previous_;
-  bool hadPrevious_ = false;
-};
-
-void testEditorViewInlineGeometryBackendConfiguration() {
-  constexpr const char* envName = "MUFFIN_INLINE_GEOMETRY_BACKEND";
-  {
-    ScopedEnvironmentVariable env(envName, QByteArray());
-    EditorView view;
-    require(view.inlineGeometryBackend() == InlineLayout::InlineGeometryBackend::QTextLayout,
-            "default inline geometry backend should use QTextLayout");
-  }
-  {
-    ScopedEnvironmentVariable env(envName, QByteArray("qtextdocument"));
-    EditorView view;
-    require(view.inlineGeometryBackend() == InlineLayout::InlineGeometryBackend::QTextDocument,
-            "env inline geometry backend should allow QTextDocument fallback");
-    view.setInlineGeometryBackend(InlineLayout::InlineGeometryBackend::QTextLayout);
-    require(view.inlineGeometryBackend() == InlineLayout::InlineGeometryBackend::QTextLayout,
-            "manual inline geometry backend setter should override env-configured document backend");
-  }
-  {
-    ScopedEnvironmentVariable env(envName, QByteArray("qtextlayout"));
-    EditorView view;
-    require(view.inlineGeometryBackend() == InlineLayout::InlineGeometryBackend::QTextLayout,
-            "env inline geometry backend should enable QTextLayout");
-  }
-  {
-    ScopedEnvironmentVariable env(envName, QByteArray("qtextlayoutprobe"));
-    EditorView view;
-    require(view.inlineGeometryBackend() == InlineLayout::InlineGeometryBackend::QTextLayout,
-            "legacy probe env value should still enable QTextLayout");
-  }
-}
-
-struct BackendViewPair {
-  DocumentSession session;
-  EditorView documentView;
-  EditorView probeView;
-};
-
-void layoutBackendViews(BackendViewPair& pair, QString markdown, QSize size) {
-  pair.session.setMarkdownText(std::move(markdown), false);
-  pair.documentView.resize(size);
-  pair.probeView.resize(size);
-  pair.probeView.setInlineGeometryBackend(InlineLayout::InlineGeometryBackend::QTextLayout);
-  pair.documentView.setDocument(pair.session.document());
-  pair.probeView.setDocument(pair.session.document());
-}
-
 const BlockLayout* requireViewBlock(EditorView& view, NodeId blockId, const QString& label) {
   const QRectF blockRect = view.nodeRect(blockId);
   require(!blockRect.isEmpty(), label + QStringLiteral(" block rect should exist"));
@@ -957,17 +885,6 @@ SelectionRange inlineSelection(NodeId blockId, qsizetype anchorOffset, qsizetype
   return selection;
 }
 
-void requireSelectionRectsClose(const QVector<QRectF>& documentRects, const QVector<QRectF>& probeRects, const QString& label) {
-  require(!documentRects.isEmpty(), label + QStringLiteral(" document selection rects should exist"));
-  require(!probeRects.isEmpty(), label + QStringLiteral(" probe selection rects should exist"));
-  require(documentRects.size() == probeRects.size(), label + QStringLiteral(" selection rect count mismatch"));
-  for (qsizetype i = 0; i < probeRects.size(); ++i) {
-    require(probeRects.at(i).width() > 0 && probeRects.at(i).height() > 0, label + QStringLiteral(" probe selection rect should have area"));
-    require(qAbs(documentRects.at(i).height() - probeRects.at(i).height()) < qMax(documentRects.at(i).height(), probeRects.at(i).height()),
-            label + QStringLiteral(" selection rect height mismatch"));
-  }
-}
-
 struct CursorLineRange {
   qsizetype start = 0;
   qsizetype end = 0;
@@ -996,127 +913,111 @@ QVector<CursorLineRange> cursorLineRanges(const InlineLayout& layout) {
   return ranges;
 }
 
-void testEditorViewProbePlainBackendEquivalence() {
-  BackendViewPair pair;
-  layoutBackendViews(pair, QStringLiteral("alpha beta gamma delta epsilon"), QSize(900, 500));
-  const NodeId blockId = blockAt(pair.session, 0)->id();
+void testEditorViewPlainInlineLayout() {
+  DocumentSession session;
+  EditorView view;
+  session.setMarkdownText(QStringLiteral("alpha beta gamma delta epsilon"), false);
+  view.resize(900, 500);
+  view.setDocument(session.document());
+  const NodeId blockId = blockAt(session, 0)->id();
 
-  const InlineLayout* documentInline = requireViewInlineLayout(pair.documentView, blockId, QStringLiteral("plain document"));
-  const InlineLayout* probeInline = requireViewInlineLayout(pair.probeView, blockId, QStringLiteral("plain probe"));
-  const QVector<qsizetype> offsets{0, 1, 6, 12, documentInline->plainText().size()};
+  const InlineLayout* inlineLayout = requireViewInlineLayout(view, blockId, QStringLiteral("plain inline"));
+  const QVector<qsizetype> offsets{0, 1, 6, 12, inlineLayout->plainText().size()};
   for (qsizetype offset : offsets) {
-    const HitTestResult documentHit = hitAtTextOffset(pair.documentView, blockId, offset, QStringLiteral("plain document %1").arg(offset));
-    const HitTestResult probeHit = hitAtTextOffset(pair.probeView, blockId, offset, QStringLiteral("plain probe %1").arg(offset));
-    require(documentHit.textOffset == offset, QStringLiteral("plain document hit offset mismatch"));
-    require(probeHit.textOffset == offset, QStringLiteral("plain probe hit offset mismatch"));
-    require(documentHit.sourceOffset == probeHit.sourceOffset, QStringLiteral("plain source offset backend mismatch"));
-
-    const QRectF documentCursor = documentInline->cursorRect(offset);
-    const QRectF probeCursor = probeInline->cursorRect(offset);
-    require(qAbs(documentCursor.center().y() - probeCursor.center().y()) < qMax(documentCursor.height(), probeCursor.height()),
-            QStringLiteral("plain cursor y should stay on same line"));
+    const HitTestResult hit = hitAtTextOffset(view, blockId, offset, QStringLiteral("plain inline %1").arg(offset));
+    require(hit.textOffset == offset, QStringLiteral("plain inline hit offset mismatch"));
+    require(hit.sourceOffset == offset, QStringLiteral("plain inline source offset mismatch"));
+    require(!inlineLayout->cursorRect(offset).isEmpty(), QStringLiteral("plain inline cursor rect should exist"));
   }
 
-  const SelectionRange selection = inlineSelection(blockId, 1, documentInline->plainText().size() - 1);
-  const QVector<QRectF> documentRects = requireViewBlock(pair.documentView, blockId, QStringLiteral("plain document"))->selectionRects(selection, RenderTheme::typoraLike());
-  const QVector<QRectF> probeRects = requireViewBlock(pair.probeView, blockId, QStringLiteral("plain probe"))->selectionRects(selection, RenderTheme::typoraLike());
-  requireSelectionRectsClose(documentRects, probeRects, QStringLiteral("plain backend"));
+  const SelectionRange selection = inlineSelection(blockId, 1, inlineLayout->plainText().size() - 1);
+  const QVector<QRectF> rects = requireViewBlock(view, blockId, QStringLiteral("plain inline"))->selectionRects(selection, RenderTheme::typoraLike());
+  require(!rects.isEmpty(), QStringLiteral("plain inline selection rects should exist"));
 }
 
-void testEditorViewProbeStyledBackendEquivalence() {
-  BackendViewPair pair;
-  layoutBackendViews(pair, QStringLiteral("before **bold** [link](u) `code` after"), QSize(900, 500));
-  const NodeId blockId = blockAt(pair.session, 0)->id();
+void testEditorViewStyledInlineLayout() {
+  DocumentSession session;
+  EditorView view;
+  session.setMarkdownText(QStringLiteral("before **bold** [link](u) `code` after"), false);
+  view.resize(900, 500);
+  view.setDocument(session.document());
+  const NodeId blockId = blockAt(session, 0)->id();
 
   const CursorPosition activeCursor = inlineCursor(blockId, 9, 11);
-  pair.documentView.setCursorPosition(activeCursor);
-  pair.probeView.setCursorPosition(activeCursor);
+  view.setCursorPosition(activeCursor);
 
-  const HitTestResult documentHit = hitAtSourceOffset(pair.documentView, blockId, 11, QStringLiteral("styled document"));
-  const HitTestResult probeHit = hitAtSourceOffset(pair.probeView, blockId, 11, QStringLiteral("styled probe"));
-  require(documentHit.textOffset == probeHit.textOffset, QStringLiteral("styled active text offset backend mismatch"));
-  require(documentHit.sourceOffset == probeHit.sourceOffset, QStringLiteral("styled active source offset backend mismatch"));
+  const HitTestResult hit = hitAtSourceOffset(view, blockId, 11, QStringLiteral("styled inline"));
+  require(hit.sourceOffset == 11, QStringLiteral("styled active source offset mismatch"));
 
-  const InlineLayout* documentInline = requireViewInlineLayout(pair.documentView, blockId, QStringLiteral("styled document"));
-  const InlineLayout* probeInline = requireViewInlineLayout(pair.probeView, blockId, QStringLiteral("styled probe"));
-  const QRectF documentCursor = documentInline->cursorRectForSourceOffset(11);
-  const QRectF probeCursor = probeInline->cursorRectForSourceOffset(11);
-  require(!documentCursor.isEmpty() && !probeCursor.isEmpty(), QStringLiteral("styled active cursor rects should exist"));
-  require(qAbs(documentCursor.center().y() - probeCursor.center().y()) < qMax(documentCursor.height(), probeCursor.height()) * 2.0,
-          QStringLiteral("styled active cursor y should stay close"));
+  const InlineLayout* inlineLayout = requireViewInlineLayout(view, blockId, QStringLiteral("styled inline"));
+  const QRectF cursor = inlineLayout->cursorRectForSourceOffset(11);
+  require(!cursor.isEmpty(), QStringLiteral("styled active cursor rect should exist"));
 
   SelectionRange selection;
   selection.anchor = inlineCursor(blockId, 7, 9);
   selection.focus = inlineCursor(blockId, 11, 13);
-  pair.documentView.setSelectionRange(selection);
-  pair.probeView.setSelectionRange(selection);
-  const QVector<QRectF> documentRects = requireViewBlock(pair.documentView, blockId, QStringLiteral("styled document"))->selectionRects(selection, RenderTheme::typoraLike());
-  const QVector<QRectF> probeRects = requireViewBlock(pair.probeView, blockId, QStringLiteral("styled probe"))->selectionRects(selection, RenderTheme::typoraLike());
-  requireSelectionRectsClose(documentRects, probeRects, QStringLiteral("styled backend"));
+  view.setSelectionRange(selection);
+  const QVector<QRectF> rects = requireViewBlock(view, blockId, QStringLiteral("styled inline"))->selectionRects(selection, RenderTheme::typoraLike());
+  require(!rects.isEmpty(), QStringLiteral("styled inline selection rects should exist"));
 }
 
-void testEditorViewProbeWrappedBackendEquivalence() {
-  BackendViewPair pair;
-  layoutBackendViews(
-      pair,
+void testEditorViewWrappedInlineLayout() {
+  DocumentSession session;
+  EditorView view;
+  session.setMarkdownText(
       QStringLiteral("alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau"),
-      QSize(360, 500));
-  const NodeId blockId = blockAt(pair.session, 0)->id();
+      false);
+  view.resize(360, 500);
+  view.setDocument(session.document());
+  const NodeId blockId = blockAt(session, 0)->id();
 
-  const InlineLayout* probeInline = requireViewInlineLayout(pair.probeView, blockId, QStringLiteral("wrapped probe"));
-  const QVector<CursorLineRange> lines = cursorLineRanges(*probeInline);
-  require(lines.size() >= 2, QStringLiteral("wrapped probe view should create multiple lines"));
+  const InlineLayout* inlineLayout = requireViewInlineLayout(view, blockId, QStringLiteral("wrapped inline"));
+  const QVector<CursorLineRange> lines = cursorLineRanges(*inlineLayout);
+  require(lines.size() >= 2, QStringLiteral("wrapped inline view should create multiple lines"));
 
   for (const CursorLineRange& line : lines) {
     QVector<qsizetype> offsets{line.start, (line.start + line.end) / 2, line.end};
     for (qsizetype offset : offsets) {
-      const HitTestResult hit = hitAtTextOffset(pair.probeView, blockId, offset, QStringLiteral("wrapped probe %1").arg(offset));
-      require(hit.textOffset == offset, QStringLiteral("wrapped probe hit-test should round-trip line offset"));
-      require(hit.sourceOffset == offset, QStringLiteral("wrapped probe source offset should round-trip line offset"));
+      const HitTestResult hit = hitAtTextOffset(view, blockId, offset, QStringLiteral("wrapped inline %1").arg(offset));
+      require(hit.textOffset == offset, QStringLiteral("wrapped inline hit-test should round-trip line offset"));
+      require(hit.sourceOffset == offset, QStringLiteral("wrapped inline source offset should round-trip line offset"));
     }
   }
   for (qsizetype i = 1; i < lines.size(); ++i) {
-    require(lines.at(i).y > lines.at(i - 1).y, QStringLiteral("wrapped probe cursor y should increase by line"));
-    const QRectF previousEnd = probeInline->cursorRect(lines.at(i - 1).end);
-    const QRectF nextStart = probeInline->cursorRect(lines.at(i).start);
-    require(nextStart.left() <= previousEnd.left(), QStringLiteral("wrapped probe line start should return toward x origin"));
+    require(lines.at(i).y > lines.at(i - 1).y, QStringLiteral("wrapped inline cursor y should increase by line"));
+    const QRectF previousEnd = inlineLayout->cursorRect(lines.at(i - 1).end);
+    const QRectF nextStart = inlineLayout->cursorRect(lines.at(i).start);
+    require(nextStart.left() <= previousEnd.left(), QStringLiteral("wrapped inline line start should return toward x origin"));
   }
 
-  const SelectionRange selection = inlineSelection(blockId, 0, probeInline->plainText().size());
-  const QVector<QRectF> documentRects = requireViewBlock(pair.documentView, blockId, QStringLiteral("wrapped document"))->selectionRects(selection, RenderTheme::typoraLike());
-  const QVector<QRectF> probeRects = requireViewBlock(pair.probeView, blockId, QStringLiteral("wrapped probe"))->selectionRects(selection, RenderTheme::typoraLike());
-  requireSelectionRectsClose(documentRects, probeRects, QStringLiteral("wrapped backend"));
-  require(probeRects.size() == lines.size(), QStringLiteral("wrapped probe selection rect count should match line count"));
+  const SelectionRange selection = inlineSelection(blockId, 0, inlineLayout->plainText().size());
+  const QVector<QRectF> rects = requireViewBlock(view, blockId, QStringLiteral("wrapped inline"))->selectionRects(selection, RenderTheme::typoraLike());
+  require(rects.size() == lines.size(), QStringLiteral("wrapped inline selection rect count should match line count"));
 }
 
-void testEditorViewProbeTableCellBackendEquivalence() {
-  BackendViewPair pair;
-  layoutBackendViews(pair, QStringLiteral("| Name | Value |\n| --- | --- |\n| one | two |"), QSize(900, 500));
+void testEditorViewTableCellInlineLayout() {
+  DocumentSession session;
+  EditorView view;
+  session.setMarkdownText(QStringLiteral("| Name | Value |\n| --- | --- |\n| one | two |"), false);
+  view.resize(900, 500);
+  view.setDocument(session.document());
 
-  MarkdownNode* table = blockAt(pair.session, 0);
+  MarkdownNode* table = blockAt(session, 0);
   MarkdownNode* firstBodyCell = childAt(childAt(table, 1), 0);
-  const BlockLayout* documentTable = requireViewBlock(pair.documentView, table->id(), QStringLiteral("table document"));
-  const BlockLayout* probeTable = requireViewBlock(pair.probeView, table->id(), QStringLiteral("table probe"));
-  require(documentTable->tableRows().size() >= 2 && probeTable->tableRows().size() >= 2, QStringLiteral("table rows should exist"));
-  require(!documentTable->tableRows().at(1).cells.empty() && !probeTable->tableRows().at(1).cells.empty(), QStringLiteral("table cells should exist"));
+  const BlockLayout* tableLayout = requireViewBlock(view, table->id(), QStringLiteral("table inline"));
+  require(tableLayout->tableRows().size() >= 2, QStringLiteral("table rows should exist"));
+  require(!tableLayout->tableRows().at(1).cells.empty(), QStringLiteral("table cells should exist"));
 
-  const auto& documentCell = documentTable->tableRows().at(1).cells.at(0);
-  const auto& probeCell = probeTable->tableRows().at(1).cells.at(0);
-  require(documentCell.nodeId == firstBodyCell->id() && probeCell.nodeId == firstBodyCell->id(), QStringLiteral("table cell node id mismatch"));
-  require(!documentCell.text.cursorRect(1).isEmpty(), QStringLiteral("document table cell cursor rect should exist"));
-  require(!probeCell.text.cursorRect(1).isEmpty(), QStringLiteral("probe table cell cursor rect should exist"));
-  require(!probeCell.text.selectionRects(0, 3).isEmpty(), QStringLiteral("probe table cell selection rects should exist"));
+  const auto& cell = tableLayout->tableRows().at(1).cells.at(0);
+  require(cell.nodeId == firstBodyCell->id(), QStringLiteral("table cell node id mismatch"));
+  require(!cell.text.cursorRect(1).isEmpty(), QStringLiteral("table cell cursor rect should exist"));
+  require(!cell.text.selectionRects(0, 3).isEmpty(), QStringLiteral("table cell selection rects should exist"));
 
   const QMarginsF padding = RenderTheme::typoraLike().tableCellPadding();
-  const QPointF documentPoint = documentCell.rect.marginsRemoved(padding).topLeft() + QPointF(documentCell.text.cursorRect(1).left(), documentCell.text.cursorRect(1).center().y());
-  const QPointF probePoint = probeCell.rect.marginsRemoved(padding).topLeft() + QPointF(probeCell.text.cursorRect(1).left(), probeCell.text.cursorRect(1).center().y());
-  const HitTestResult documentHit = pair.documentView.hitTest(documentPoint);
-  const HitTestResult probeHit = pair.probeView.hitTest(probePoint);
-  require(documentHit.zone == HitTestResult::Zone::TableCell && probeHit.zone == HitTestResult::Zone::TableCell,
-          QStringLiteral("table cell hit should use table cell zone"));
-  require(documentHit.textNodeId == firstBodyCell->id() && probeHit.textNodeId == firstBodyCell->id(),
-          QStringLiteral("table cell hit should return cell node id"));
-  require(documentHit.textOffset == probeHit.textOffset, QStringLiteral("table cell text offset backend mismatch"));
+  const QPointF point = cell.rect.marginsRemoved(padding).topLeft() + QPointF(cell.text.cursorRect(1).left(), cell.text.cursorRect(1).center().y());
+  const HitTestResult hit = view.hitTest(point);
+  require(hit.zone == HitTestResult::Zone::TableCell, QStringLiteral("table cell hit should use table cell zone"));
+  require(hit.textNodeId == firstBodyCell->id(), QStringLiteral("table cell hit should return cell node id"));
 }
 
 void testMixedInlineParagraphHitEditingBeforeAutolink() {
@@ -2066,6 +1967,111 @@ void testComplexBlockActivationRoutesInput() {
   require(!session.markdownText().contains(QStringLiteral("x\n\n```")), "table input should not grow code fence trailing blank lines");
 }
 
+void testTableStructureUndoUsesTableCommand() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), false);
+  MarkdownNode* table = firstBlockOfType(session, BlockType::Table);
+  MarkdownNode* tableCell = childAt(childAt(table, 1), 1);
+
+  HitTestResult cellHit;
+  cellHit.zone = HitTestResult::Zone::TableCell;
+  cellHit.blockId = table->id();
+  cellHit.textNodeId = tableCell->id();
+  cellHit.tableRow = 1;
+  cellHit.tableColumn = 1;
+  controller.activateHit(cellHit);
+
+  require(controller.tableController().insertColumnAfter(), "table insert column should work");
+  require(session.markdownText().contains(QStringLiteral("| A | B |  |")), "table insert column text mismatch");
+  require(controller.undoStack().canUndo(), "table insert column should push undo");
+  require(controller.undoStack().undoText() == QStringLiteral("Insert Table Column After"), "table command undo label mismatch");
+
+  const EditTransaction transaction = controller.undoStack().takeUndo();
+  require(transaction.isTableCommand(), "table structure undo should use TableCommand");
+  require(transaction.tableCommand().beforeTable != nullptr && transaction.tableCommand().afterTable != nullptr,
+          "table command snapshots should exist");
+  require(transaction.tableCommand().tableId.isValid() || transaction.tableCommand().tableIndex >= 0, "table command target missing");
+  require(TableModelOps::columnCount(*transaction.tableCommand().beforeTable) == 2, "table command before column count mismatch");
+  require(TableModelOps::columnCount(*transaction.tableCommand().afterTable) == 3, "table command after column count mismatch");
+  controller.undoStack().push(transaction);
+
+  controller.undo();
+  require(session.markdownText() == QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), "table command undo text mismatch");
+  require(controller.selection().hasCursor(), "table command undo should keep cursor");
+
+  controller.redo();
+  require(session.markdownText().contains(QStringLiteral("| A | B |  |")), "table command redo text mismatch");
+  require(controller.selection().hasCursor(), "table command redo should keep cursor");
+}
+
+void testTableCellTextUndoUsesTextDeltaCommand() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), false);
+  MarkdownNode* table = firstBlockOfType(session, BlockType::Table);
+  MarkdownNode* tableCell = childAt(childAt(table, 1), 1);
+
+  HitTestResult cellHit;
+  cellHit.zone = HitTestResult::Zone::TableCell;
+  cellHit.blockId = table->id();
+  cellHit.textNodeId = tableCell->id();
+  cellHit.tableRow = 1;
+  cellHit.tableColumn = 1;
+  cellHit.textOffset = 1;
+  controller.activateHit(cellHit);
+
+  require(controller.inputController().insertText(QStringLiteral("|X")), "table cell input should work");
+  require(session.markdownText().contains(QStringLiteral("| 1 | 2\\|X |")), "table cell input should escape pipe");
+  require(controller.undoStack().canUndo(), "table cell input should push undo");
+
+  const EditTransaction transaction = controller.undoStack().takeUndo();
+  require(transaction.isTextDeltaCommand(), "table cell text undo should use TextDeltaCommand");
+  require(transaction.textDeltaCommand().affectedNodes.contains(table->id()), "table cell text delta should refresh table");
+  controller.undoStack().push(transaction);
+
+  controller.undo();
+  require(session.markdownText() == QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), "table cell text undo mismatch");
+  require(controller.selection().hasCursor(), "table cell text undo should keep cursor");
+  require(controller.selection().cursorPosition().text.nodeId.isValid(), "table cell text undo should keep text node");
+
+  controller.redo();
+  require(session.markdownText().contains(QStringLiteral("| 1 | 2\\|X |")), "table cell text redo mismatch");
+  require(controller.selection().hasCursor(), "table cell text redo should keep cursor");
+}
+
+void testInsertTableUndoUsesInsertNodeCommand() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("alpha"), false);
+  MarkdownNode* paragraph = blockAt(session, 0);
+  setCursor(controller.selection(), paragraph, 5);
+
+  require(controller.insertTable(), "insert table should work");
+  require(session.markdownText().startsWith(QStringLiteral("alpha\n\n| Header | Header |")), "insert table text mismatch");
+  require(controller.undoStack().canUndo(), "insert table should push undo");
+
+  const EditTransaction transaction = controller.undoStack().takeUndo();
+  require(transaction.isInsertNodeCommand(), "insert table undo should use InsertNodeCommand");
+  require(transaction.insertNodeCommand().nodeType == BlockType::Table, "insert table node type mismatch");
+  require(transaction.insertNodeCommand().insertedNode != nullptr, "insert table node snapshot missing");
+  controller.undoStack().push(transaction);
+
+  controller.undo();
+  require(session.markdownText() == QStringLiteral("alpha"), "insert table undo text mismatch");
+
+  controller.redo();
+  require(session.markdownText().startsWith(QStringLiteral("alpha\n\n| Header | Header |")), "insert table redo text mismatch");
+  require(controller.selection().hasCursor(), "insert table redo should keep cursor");
+  require(controller.tableController().currentCell().isValid(), "insert table redo should restore table cursor");
+}
+
 void testCodeActivationKeepsClickedOffsetForTyping() {
   DocumentSession session;
   EditorController controller;
@@ -2085,6 +2091,39 @@ void testCodeActivationKeepsClickedOffsetForTyping() {
   require(controller.selection().cursorPosition().text.textOffset == 2, "code activation should keep clicked offset");
   require(controller.inputController().insertText(QStringLiteral("X")), "typing in active code block should work");
   require(session.markdownText().contains(QStringLiteral("abXcd")), "code typing should use clicked offset");
+}
+
+void testCodeFenceUndoUsesReplaceNodeCommand() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("```cpp\nabcd\n```"), false);
+  MarkdownNode* code = firstBlockOfType(session, BlockType::CodeFence);
+
+  HitTestResult codeHit;
+  codeHit.zone = HitTestResult::Zone::Code;
+  codeHit.blockId = code->id();
+  codeHit.textNodeId = code->id();
+  codeHit.textOffset = 2;
+  controller.activateHit(codeHit);
+
+  require(controller.inputController().insertText(QStringLiteral("X")), "code input should work");
+  require(session.markdownText().contains(QStringLiteral("abXcd")), "code input text mismatch");
+  require(controller.undoStack().canUndo(), "code input should push undo");
+
+  const EditTransaction transaction = controller.undoStack().takeUndo();
+  require(transaction.isReplaceNodeCommand(), "code input undo should use ReplaceNodeCommand");
+  require(transaction.replaceNodeCommand().nodeType == BlockType::CodeFence, "code replace command type mismatch");
+  controller.undoStack().push(transaction);
+
+  controller.undo();
+  require(session.markdownText() == QStringLiteral("```cpp\nabcd\n```"), "code replace undo text mismatch");
+  require(controller.selection().hasCursor(), "code replace undo should keep cursor");
+
+  controller.redo();
+  require(session.markdownText().contains(QStringLiteral("abXcd")), "code replace redo text mismatch");
+  require(controller.selection().hasCursor(), "code replace redo should keep cursor");
 }
 
 void testSwitchingBetweenCodeBlocksRoutesInputToClickedBlock() {
@@ -2159,12 +2198,11 @@ int main(int argc, char** argv) {
   testTextHitActivationAddsSourceOffsetForInlineEditing();
   testEditorViewHitTestActivatesInlineSourceEditing();
   testEditorViewInlineProjectionStateChanges();
-  testEditorViewProbeGeometryBackendSmoke();
-  testEditorViewInlineGeometryBackendConfiguration();
-  testEditorViewProbePlainBackendEquivalence();
-  testEditorViewProbeStyledBackendEquivalence();
-  testEditorViewProbeWrappedBackendEquivalence();
-  testEditorViewProbeTableCellBackendEquivalence();
+  testEditorViewInlineLayoutSmoke();
+  testEditorViewPlainInlineLayout();
+  testEditorViewStyledInlineLayout();
+  testEditorViewWrappedInlineLayout();
+  testEditorViewTableCellInlineLayout();
   testMixedInlineParagraphHitEditingBeforeAutolink();
   testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph();
   testLocalReparsePreservesUntouchedNodeIds();
@@ -2196,7 +2234,11 @@ int main(int argc, char** argv) {
   testCodeFenceSelectionCopyUsesLiteralOffsets();
   testKeyboardNavigationBasics();
   testComplexBlockActivationRoutesInput();
+  testTableStructureUndoUsesTableCommand();
+  testTableCellTextUndoUsesTextDeltaCommand();
+  testInsertTableUndoUsesInsertNodeCommand();
   testCodeActivationKeepsClickedOffsetForTyping();
+  testCodeFenceUndoUsesReplaceNodeCommand();
   testSwitchingBetweenCodeBlocksRoutesInputToClickedBlock();
   testInlineSelectionRects();
   return 0;

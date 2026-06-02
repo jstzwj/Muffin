@@ -28,8 +28,6 @@ public:
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth);
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, SelectionRange selection);
   BlockRebuildResult rebuildBlock(NodeId blockId, const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
-  void setInlineGeometryBackend(InlineLayout::InlineGeometryBackend backend);
-  InlineLayout::InlineGeometryBackend inlineGeometryBackend() const;
 
   qreal pageLeft() const;
   qreal pageWidth() const;
@@ -52,7 +50,6 @@ private:
   std::vector<std::unique_ptr<BlockLayout>> blocks_;
   QHash<NodeId, qsizetype> topLevelIndex_;
   QHash<NodeId, const BlockLayout*> layoutIndex_;
-  InlineLayout::InlineGeometryBackend inlineGeometryBackend_ = InlineLayout::InlineGeometryBackend::QTextLayout;
   qreal pageLeft_ = 0;
   qreal pageWidth_ = 0;
   qreal totalHeight_ = 0;

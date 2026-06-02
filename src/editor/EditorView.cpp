@@ -3,7 +3,6 @@
 #include "document/MarkdownDocument.h"
 
 #include <QCompleter>
-#include <QByteArray>
 #include <QElapsedTimer>
 #include <QGraphicsDropShadowEffect>
 #include <QPainter>
@@ -23,24 +22,6 @@ namespace muffin {
 namespace {
 
 Q_LOGGING_CATEGORY(viewPerf, "muffin.perf", QtWarningMsg)
-
-InlineLayout::InlineGeometryBackend configuredInlineGeometryBackend() {
-  const QByteArray value = qgetenv("MUFFIN_INLINE_GEOMETRY_BACKEND").trimmed().toLower();
-  if (value == "qtextdocument" || value == "document" || value == "html") {
-    return InlineLayout::InlineGeometryBackend::QTextDocument;
-  }
-  return InlineLayout::InlineGeometryBackend::QTextLayout;
-}
-
-const char* inlineGeometryBackendName(InlineLayout::InlineGeometryBackend backend) {
-  switch (backend) {
-    case InlineLayout::InlineGeometryBackend::QTextLayout:
-      return "QTextLayout";
-    case InlineLayout::InlineGeometryBackend::QTextDocument:
-    default:
-      return "QTextDocument";
-  }
-}
 
 class PerfTimer {
 public:
@@ -127,9 +108,6 @@ void addRebuildDirtyRect(
 }  // namespace
 
 EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(std::make_unique<DocumentLayout>()) {
-  inlineGeometryBackend_ = configuredInlineGeometryBackend();
-  layout_->setInlineGeometryBackend(inlineGeometryBackend_);
-  qCDebug(viewPerf).nospace() << "view.inlineGeometryBackend " << inlineGeometryBackendName(inlineGeometryBackend_);
   setFrameShape(QFrame::NoFrame);
   setFocusPolicy(Qt::StrongFocus);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -289,21 +267,6 @@ void EditorView::setCodeLanguageSuggestions(QStringList languages) {
   }
 }
 
-void EditorView::setInlineGeometryBackend(InlineLayout::InlineGeometryBackend backend) {
-  if (inlineGeometryBackend_ == backend) {
-    return;
-  }
-  inlineGeometryBackend_ = backend;
-  if (layout_) {
-    layout_->setInlineGeometryBackend(backend);
-  }
-  rebuildLayout();
-}
-
-InlineLayout::InlineGeometryBackend EditorView::inlineGeometryBackend() const {
-  return inlineGeometryBackend_;
-}
-
 QRectF EditorView::nodeRect(NodeId id) const {
   if (!layout_) {
     return {};
@@ -428,7 +391,6 @@ void EditorView::rebuildLayout() {
   if (!layout_) {
     layout_ = std::make_unique<DocumentLayout>();
   }
-  layout_->setInlineGeometryBackend(inlineGeometryBackend_);
 
   if (document_) {
     const int oldValue = verticalScrollBar()->value();

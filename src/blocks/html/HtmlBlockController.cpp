@@ -2,7 +2,6 @@
 
 #include "app/DocumentSession.h"
 #include "blocks/html/HtmlSanitizer.h"
-#include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
@@ -158,48 +157,27 @@ bool HtmlBlockController::mutateCurrentHtmlBlock(
   }
   const bool wasEditing = isEditing();
   NodeId htmlId = activeHtml->id();
+  const NodeId originalHtmlId = htmlId;
   const int htmlIndex = htmlBlockIndexFor(htmlId);
 
   const CursorPosition beforeCursor = selection_->hasCursor() ? selection_->cursorPosition() : cursorFor(htmlId, 0);
-  const QString beforeText = session_->markdownText();
-  auto rootCopy = session_->document().root().clone(CloneMode::PreserveIds);
-  MarkdownNode* target = findHtmlBlockById(*rootCopy, htmlId);
-  if (!target && htmlIndex >= 0) {
-    int index = 0;
-    const auto visit = [&](const auto& self, MarkdownNode& node) -> MarkdownNode* {
-      if (node.type() == BlockType::HtmlBlock) {
-        if (index == htmlIndex) {
-          return &node;
-        }
-        ++index;
-      }
-      for (const auto& child : node.children()) {
-        if (MarkdownNode* found = self(self, *child)) {
-          return found;
-        }
-      }
-      return nullptr;
-    };
-    target = visit(visit, *rootCopy);
-  }
-  if (!target) {
-    return false;
-  }
+  std::unique_ptr<MarkdownNode> beforeNode = activeHtml->clone(CloneMode::PreserveIds);
+  std::unique_ptr<MarkdownNode> afterNode = activeHtml->clone(CloneMode::PreserveIds);
 
   qsizetype nextOffset =
       beforeCursor.blockId == htmlId || (wasEditing && beforeCursor.blockId == editingHtmlId_)
           ? beforeCursor.text.textOffset
-          : target->literal().size();
-  if (!mutate(*target, nextOffset)) {
+          : afterNode->literal().size();
+  if (!mutate(*afterNode, nextOffset)) {
     return false;
   }
+  if (MarkdownSerializer().serializeBlock(*beforeNode) == MarkdownSerializer().serializeBlock(*afterNode)) {
+    return true;
+  }
 
-  MarkdownDocument nextDocument;
-  nextDocument.setMarkdownText(beforeText, std::move(rootCopy));
-  MarkdownSerializer serializer;
-  QString nextText = serializer.serializeDocument(nextDocument);
-
-  session_->applyMarkdownText(nextText, true);
+  if (!session_->applyNodeSnapshot(htmlId, BlockType::HtmlBlock, htmlIndex, *afterNode, true)) {
+    return false;
+  }
   if (MarkdownNode* reparsed = htmlBlockByIndex(htmlIndex)) {
     htmlId = reparsed->id();
     if (wasEditing) {
@@ -212,10 +190,21 @@ bool HtmlBlockController::mutateCurrentHtmlBlock(
     selection_->setCursorPosition(nextCursor);
   }
   if (undoStack_) {
-    undoStack_->push(EditTransaction(kind, std::move(label), {beforeText, beforeCursor}, {nextText, nextCursor}));
+    undoStack_->push(EditTransaction(
+        kind,
+        std::move(label),
+        ReplaceNodeCommand{
+            originalHtmlId,
+            BlockType::HtmlBlock,
+            htmlIndex,
+            std::move(beforeNode),
+            std::move(afterNode),
+            beforeCursor,
+            nextCursor,
+            QVector<NodeId>{originalHtmlId}}));
   }
   if (brushQueue_) {
-    brushQueue_->requestFullRefresh();
+    brushQueue_->requestBlockRefresh(htmlId);
   }
   return true;
 }

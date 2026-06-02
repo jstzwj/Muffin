@@ -1,7 +1,6 @@
 #include "blocks/code/CodeFenceController.h"
 
 #include "app/DocumentSession.h"
-#include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
@@ -210,46 +209,25 @@ bool CodeFenceController::mutateCodeFence(
   }
   const bool wasEditing = isEditing();
   NodeId codeId = activeCode->id();
+  const NodeId originalCodeId = codeId;
   const int codeIndex = codeFenceIndexFor(codeId);
   const CursorPosition beforeCursor = selection_->hasCursor() ? selection_->cursorPosition() : cursorFor(codeId, 0);
   const int beforeCursorCodeIndex = codeFenceIndexFor(beforeCursor.blockId);
   const bool cursorWasInTarget = beforeCursor.blockId == codeId || (wasEditing && beforeCursor.blockId == editingCodeId_);
-  const QString beforeText = session_->markdownText();
-  auto rootCopy = session_->document().root().clone(CloneMode::PreserveIds);
-  MarkdownNode* target = findCodeFenceById(*rootCopy, codeId);
-  if (!target && codeIndex >= 0) {
-    int index = 0;
-    const auto visit = [&](const auto& self, MarkdownNode& node) -> MarkdownNode* {
-      if (node.type() == BlockType::CodeFence) {
-        if (index == codeIndex) {
-          return &node;
-        }
-        ++index;
-      }
-      for (const auto& child : node.children()) {
-        if (MarkdownNode* found = self(self, *child)) {
-          return found;
-        }
-      }
-      return nullptr;
-    };
-    target = visit(visit, *rootCopy);
-  }
-  if (!target) {
+  std::unique_ptr<MarkdownNode> beforeNode = activeCode->clone(CloneMode::PreserveIds);
+  std::unique_ptr<MarkdownNode> afterNode = activeCode->clone(CloneMode::PreserveIds);
+
+  qsizetype nextOffset = cursorWasInTarget ? beforeCursor.text.textOffset : afterNode->literal().size();
+  if (!mutate(*afterNode, nextOffset)) {
     return false;
   }
-
-  qsizetype nextOffset = cursorWasInTarget ? beforeCursor.text.textOffset : target->literal().size();
-  if (!mutate(*target, nextOffset)) {
-    return false;
+  if (MarkdownSerializer().serializeBlock(*beforeNode) == MarkdownSerializer().serializeBlock(*afterNode)) {
+    return true;
   }
 
-  MarkdownDocument nextDocument;
-  nextDocument.setMarkdownText(beforeText, std::move(rootCopy));
-  MarkdownSerializer serializer;
-  QString nextText = serializer.serializeDocument(nextDocument);
-
-  session_->applyMarkdownText(nextText, true);
+  if (!session_->applyNodeSnapshot(codeId, BlockType::CodeFence, codeIndex, *afterNode, true)) {
+    return false;
+  }
   if (MarkdownNode* reparsed = codeFenceByIndex(codeIndex)) {
     codeId = reparsed->id();
     if (wasEditing) {
@@ -271,10 +249,21 @@ bool CodeFenceController::mutateCodeFence(
     selection_->setCursorPosition(nextCursor);
   }
   if (undoStack_) {
-    undoStack_->push(EditTransaction(kind, std::move(label), {beforeText, beforeCursor}, {nextText, nextCursor}));
+    undoStack_->push(EditTransaction(
+        kind,
+        std::move(label),
+        ReplaceNodeCommand{
+            originalCodeId,
+            BlockType::CodeFence,
+            codeIndex,
+            std::move(beforeNode),
+            std::move(afterNode),
+            beforeCursor,
+            nextCursor,
+            QVector<NodeId>{originalCodeId}}));
   }
   if (brushQueue_) {
-    brushQueue_->requestFullRefresh();
+    brushQueue_->requestBlockRefresh(codeId);
   }
   return true;
 }

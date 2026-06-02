@@ -13,7 +13,6 @@ class BlockLayoutBuilder {
 public:
   void setMarkdownText(QString markdownText);
   void setSelection(SelectionRange selection);
-  void setInlineGeometryBackend(InlineLayout::InlineGeometryBackend backend);
   std::unique_ptr<BlockLayout> build(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth = 0);
 
 private:
@@ -70,7 +69,6 @@ private:
 
   QString markdownText_;
   SelectionRange selection_;
-  InlineLayout::InlineGeometryBackend inlineGeometryBackend_ = InlineLayout::InlineGeometryBackend::QTextLayout;
   TreeSitterHighlighter codeHighlighter_;
 };
 

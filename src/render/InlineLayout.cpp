@@ -1,19 +1,13 @@
 #include "render/InlineLayout.h"
 
-#include <QAbstractTextDocumentLayout>
 #include <QPainter>
+#include <QPen>
 #include <QTextCharFormat>
-#include <QTextBlock>
-#include <QTextCursor>
 #include <QTextLine>
 #include <QTextOption>
 
 namespace muffin {
 namespace {
-
-QString escaped(QString value) {
-  return value.toHtmlEscaped();
-}
 
 QString flattenPlainText(const QVector<InlineNode>& inlines) {
   QString text;
@@ -71,40 +65,11 @@ void InlineLayout::build(
   plainText_ = flattenPlainText(inlines);
   offsetMap_.clear();
   displayText_.clear();
-  geometryBackend_ = options.geometryBackend;
   textLayoutCodeBackgroundColor_ = theme.codeBackgroundColor();
   textLayoutCodeBorderColor_ = theme.codeBorderColor();
   projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState);
-  qsizetype visibleOffset = 0;
-  html_ = renderInlines(inlines, theme, visibleOffset, options);
   buildOffsetMapFromProjection();
   buildTextLayout(theme, width, baseFont);
-  if (geometryBackend_ == InlineGeometryBackend::QTextLayout) {
-    document_.reset();
-    size_ = textLayoutSize_;
-    return;
-  }
-
-  document_ = std::make_unique<QTextDocument>();
-  document_->setDefaultFont(baseFont);
-  document_->setDocumentMargin(0);
-  document_->setTextWidth(qMax<qreal>(1.0, width));
-  document_->setHtml(QStringLiteral(
-                         "<html><head><style>"
-                         "body { margin:0; color:%1; }"
-                         "p { margin:0; line-height:1.45; }"
-                         "a { color:%2; text-decoration:none; }"
-                         "code { font-family:'Cascadia Mono','Consolas',monospace; background:%3;"
-                         " border:1px solid %4; padding:1px 4px; }"
-                         ".math { font-family:'Cambria Math','Times New Roman',serif; }"
-                         "</style></head><body><p>%5</p></body></html>")
-                         .arg(
-                             cssColor(theme.textColor()),
-                             cssColor(theme.linkColor()),
-                             cssColor(theme.codeBackgroundColor()),
-                             cssColor(theme.codeBorderColor()),
-                             html_));
-  size_ = document_->size();
 }
 
 QSizeF InlineLayout::size() const {
@@ -116,49 +81,22 @@ qreal InlineLayout::height() const {
 }
 
 void InlineLayout::paint(QPainter& painter, QPointF origin) const {
-  if (geometryBackend_ == InlineGeometryBackend::QTextLayout) {
-    if (!textLayout_) {
-      return;
-    }
-    painter.save();
-    paintTextLayoutCodeSpans(painter, origin);
-    textLayout_->draw(&painter, origin);
-    painter.restore();
-    return;
-  }
-
-  if (!document_) {
+  if (!textLayout_) {
     return;
   }
 
   painter.save();
-  painter.translate(origin);
-  QAbstractTextDocumentLayout::PaintContext context;
-  document_->documentLayout()->draw(&painter, context);
+  paintTextLayoutCodeSpans(painter, origin);
+  textLayout_->draw(&painter, origin);
   painter.restore();
 }
 
 qsizetype InlineLayout::hitTestTextOffset(QPointF localPos) const {
-  if (geometryBackend_ == InlineGeometryBackend::QTextLayout) {
-    return textLayoutHitTestTextOffset(localPos);
-  }
-  if (!document_) {
-    return 0;
-  }
-  const int position = document_->documentLayout()->hitTest(localPos, Qt::FuzzyHit);
-  return visibleOffsetForDisplayOffset(position);
+  return visibleOffsetForDisplayOffset(textLayoutDisplayOffsetForPoint(localPos));
 }
 
 qsizetype InlineLayout::hitTestSourceOffset(QPointF localPos) const {
-  int position = 0;
-  if (geometryBackend_ == InlineGeometryBackend::QTextLayout) {
-    position = static_cast<int>(textLayoutDisplayOffsetForPoint(localPos));
-  } else {
-    if (!document_) {
-      return 0;
-    }
-    position = document_->documentLayout()->hitTest(localPos, Qt::FuzzyHit);
-  }
+  const qsizetype position = textLayoutDisplayOffsetForPoint(localPos);
   qsizetype sourceOffset = -1;
   if (projection_.sourceOffsetForDisplayOffset(position, sourceOffset)) {
     return sourceOffset;
@@ -167,29 +105,7 @@ qsizetype InlineLayout::hitTestSourceOffset(QPointF localPos) const {
 }
 
 QRectF InlineLayout::cursorRect(qsizetype textOffset) const {
-  if (geometryBackend_ == InlineGeometryBackend::QTextLayout) {
-    return textLayoutCursorRect(textOffset);
-  }
-  if (!document_) {
-    return {};
-  }
-  const int displayOffset = static_cast<int>(displayOffsetForVisibleOffset(textOffset));
-  const int position = qBound(0, displayOffset, qMax(0, document_->characterCount() - 1));
-  const QTextBlock block = document_->findBlock(position);
-  if (!block.isValid() || !block.layout()) {
-    return {};
-  }
-
-  const int relativePosition = qBound(0, position - block.position(), block.length());
-  const QTextLine line = block.layout()->lineForTextPosition(relativePosition);
-  if (!line.isValid()) {
-    const QRectF blockRect = document_->documentLayout()->blockBoundingRect(block);
-    return QRectF(blockRect.left(), blockRect.top(), 1.0, blockRect.height());
-  }
-
-  const qreal x = line.cursorToX(relativePosition);
-  const QRectF blockRect = document_->documentLayout()->blockBoundingRect(block);
-  return QRectF(blockRect.left() + x, blockRect.top() + line.y(), 1.0, line.height());
+  return textLayoutCursorRectForDisplayOffset(displayOffsetForVisibleOffset(textOffset));
 }
 
 QRectF InlineLayout::cursorRectForSourceOffset(qsizetype sourceOffset) const {
@@ -197,93 +113,10 @@ QRectF InlineLayout::cursorRectForSourceOffset(qsizetype sourceOffset) const {
   if (!projection_.displayOffsetForSourceOffset(sourceOffset, displayOffset)) {
     return cursorRect(sourceOffset);
   }
-  if (geometryBackend_ == InlineGeometryBackend::QTextLayout) {
-    return textLayoutCursorRectForDisplayOffset(displayOffset);
-  }
-  if (!document_) {
-    return {};
-  }
-  const int position = qBound(0, static_cast<int>(displayOffset), qMax(0, document_->characterCount() - 1));
-  const QTextBlock block = document_->findBlock(position);
-  if (!block.isValid() || !block.layout()) {
-    return {};
-  }
-
-  const int relativePosition = qBound(0, position - block.position(), block.length());
-  const QTextLine line = block.layout()->lineForTextPosition(relativePosition);
-  if (!line.isValid()) {
-    const QRectF blockRect = document_->documentLayout()->blockBoundingRect(block);
-    return QRectF(blockRect.left(), blockRect.top(), 1.0, blockRect.height());
-  }
-
-  const qreal x = line.cursorToX(relativePosition);
-  const QRectF blockRect = document_->documentLayout()->blockBoundingRect(block);
-  return QRectF(blockRect.left() + x, blockRect.top() + line.y(), 1.0, line.height());
+  return textLayoutCursorRectForDisplayOffset(displayOffset);
 }
 
 QVector<QRectF> InlineLayout::selectionRects(qsizetype startOffset, qsizetype endOffset) const {
-  if (geometryBackend_ == InlineGeometryBackend::QTextLayout) {
-    return textLayoutSelectionRects(startOffset, endOffset);
-  }
-  QVector<QRectF> rects;
-  if (!document_) {
-    return rects;
-  }
-
-  const int start = qBound(0, static_cast<int>(displayOffsetForVisibleOffset(qMin(startOffset, endOffset))), static_cast<int>(displayText_.size()));
-  const int end = qBound(0, static_cast<int>(displayOffsetForVisibleOffset(qMax(startOffset, endOffset))), static_cast<int>(displayText_.size()));
-  if (start == end) {
-    return rects;
-  }
-
-  for (QTextBlock block = document_->begin(); block.isValid(); block = block.next()) {
-    QTextLayout* layout = block.layout();
-    if (!layout) {
-      continue;
-    }
-    const QRectF blockRect = document_->documentLayout()->blockBoundingRect(block);
-    const int blockStart = block.position();
-    const int blockEnd = blockStart + block.length();
-    const int localStart = qMax(0, start - blockStart);
-    const int localEnd = qMin(block.length(), end - blockStart);
-    if (localStart >= localEnd || end <= blockStart || start >= blockEnd) {
-      continue;
-    }
-
-    for (int i = 0; i < layout->lineCount(); ++i) {
-      const QTextLine line = layout->lineAt(i);
-      if (!line.isValid()) {
-        continue;
-      }
-      const int lineStart = line.textStart();
-      const int lineEnd = lineStart + line.textLength();
-      const int rangeStart = qMax(localStart, lineStart);
-      const int rangeEnd = qMin(localEnd, lineEnd);
-      if (rangeStart >= rangeEnd) {
-        continue;
-      }
-
-      const qreal x1 = line.cursorToX(rangeStart);
-      const qreal x2 = line.cursorToX(rangeEnd);
-      rects.push_back(QRectF(blockRect.left() + qMin(x1, x2), blockRect.top() + line.y(), qAbs(x2 - x1), line.height()));
-    }
-  }
-  return rects;
-}
-
-QSizeF InlineLayout::textLayoutSize() const {
-  return textLayoutSize_;
-}
-
-QRectF InlineLayout::textLayoutCursorRect(qsizetype textOffset) const {
-  return textLayoutCursorRectForDisplayOffset(displayOffsetForVisibleOffset(textOffset));
-}
-
-qsizetype InlineLayout::textLayoutHitTestTextOffset(QPointF localPos) const {
-  return visibleOffsetForDisplayOffset(textLayoutDisplayOffsetForPoint(localPos));
-}
-
-QVector<QRectF> InlineLayout::textLayoutSelectionRects(qsizetype startOffset, qsizetype endOffset) const {
   QVector<QRectF> rects;
   if (!textLayout_) {
     return rects;
@@ -360,14 +193,6 @@ QString InlineLayout::displayText() const {
   return displayText_;
 }
 
-QString InlineLayout::documentText() const {
-  return document_ ? document_->toPlainText() : QString();
-}
-
-QString InlineLayout::html() const {
-  return html_;
-}
-
 void InlineLayout::buildOffsetMapFromProjection() {
   displayText_ = projection_.displayText();
   offsetMap_.clear();
@@ -399,7 +224,7 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
     maxWidth = qMax(maxWidth, line.naturalTextWidth());
   }
   textLayout_->endLayout();
-  textLayoutSize_ = QSizeF(qMin(lineWidth, qMax<qreal>(maxWidth, 1.0)), height);
+  size_ = QSizeF(qMin(lineWidth, qMax<qreal>(maxWidth, 1.0)), height);
 }
 
 QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTheme& theme, const QFont& baseFont) const {
@@ -463,139 +288,6 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
   return formats;
 }
 
-QString InlineLayout::renderInlines(const QVector<InlineNode>& inlines, const RenderTheme& theme, qsizetype& visibleOffset, BuildOptions options) {
-  QString html;
-  for (const InlineNode& node : inlines) {
-    html += renderInline(node, theme, visibleOffset, options);
-  }
-  return html;
-}
-
-QString InlineLayout::renderInline(const InlineNode& node, const RenderTheme& theme, qsizetype& visibleOffset, BuildOptions options) {
-  const QString visible = flattenPlainText(QVector<InlineNode>{node});
-  const qsizetype visibleStart = visibleOffset;
-  const qsizetype visibleEnd = visibleStart + visible.size();
-  const bool active = projectionSyntaxSpan(node.type(), InlineSpanKind::OpenMarker, visibleStart).isValid() ||
-                      projectionSyntaxSpan(node.type(), InlineSpanKind::HiddenSyntax, visibleEnd).isValid();
-
-  switch (node.type()) {
-    case InlineType::Text: {
-      visibleOffset = visibleEnd;
-      return escaped(node.text());
-    }
-    case InlineType::SoftBreak: {
-      visibleOffset = visibleEnd;
-      return QStringLiteral(" ");
-    }
-    case InlineType::LineBreak: {
-      visibleOffset = visibleEnd;
-      return QStringLiteral("<br/>");
-    }
-    case InlineType::Code: {
-      QString html;
-      if (active) {
-        html += renderProjectionSyntaxSpan(node.type(), InlineSpanKind::OpenMarker, visibleStart, theme);
-      }
-      html += QStringLiteral("<code>%1</code>").arg(escaped(node.text()));
-      if (active) {
-        html += renderProjectionSyntaxSpan(node.type(), InlineSpanKind::CloseMarker, visibleEnd, theme);
-      }
-      visibleOffset = visibleEnd;
-      return html;
-    }
-    case InlineType::Emphasis:
-    case InlineType::Strong:
-    case InlineType::Strikethrough: {
-      QString html;
-      if (active) {
-        html += renderProjectionSyntaxSpan(node.type(), InlineSpanKind::OpenMarker, visibleStart, theme);
-      }
-      const QString inner = renderInlines(node.children(), theme, visibleOffset, options);
-      const QString tag = node.type() == InlineType::Emphasis ? QStringLiteral("em")
-                          : node.type() == InlineType::Strong ? QStringLiteral("strong")
-                                                              : QStringLiteral("s");
-      html += QStringLiteral("<%1>%2</%1>").arg(tag, inner);
-      if (active) {
-        html += renderProjectionSyntaxSpan(node.type(), InlineSpanKind::CloseMarker, visibleEnd, theme);
-      }
-      visibleOffset = visibleEnd;
-      return html;
-    }
-    case InlineType::Link: {
-      QString html;
-      if (active) {
-        html += renderProjectionSyntaxSpan(node.type(), InlineSpanKind::OpenMarker, visibleStart, theme);
-      }
-      const QString inner = renderInlines(node.children(), theme, visibleOffset, options);
-      html += QStringLiteral("<a href=\"%1\">%2</a>").arg(escaped(node.href()), inner);
-      visibleOffset = visibleEnd;
-      if (active) {
-        html += renderProjectionSyntaxSpan(node.type(), InlineSpanKind::HiddenSyntax, visibleEnd, theme);
-      }
-      return html;
-    }
-    case InlineType::Image: {
-      QString html;
-      if (active) {
-        html += renderProjectionSyntaxSpan(node.type(), InlineSpanKind::OpenMarker, visibleStart, theme);
-      }
-      html += QStringLiteral("<span style=\"color:%1;\">%2</span>").arg(cssColor(theme.mutedTextColor()), escaped(node.alt()));
-      visibleOffset = visibleEnd;
-      if (active) {
-        html += renderProjectionSyntaxSpan(node.type(), InlineSpanKind::HiddenSyntax, visibleEnd, theme);
-      }
-      return html;
-    }
-    case InlineType::InlineMath: {
-      QString html;
-      if (active) {
-        html += renderProjectionSyntaxSpan(node.type(), InlineSpanKind::OpenMarker, visibleStart, theme);
-      }
-      html += QStringLiteral("<span class=\"math\">%1</span>").arg(escaped(node.text()));
-      if (active) {
-        html += renderProjectionSyntaxSpan(node.type(), InlineSpanKind::CloseMarker, visibleEnd, theme);
-      }
-      visibleOffset = visibleEnd;
-      return html;
-    }
-    case InlineType::HtmlInline: {
-      visibleOffset = visibleEnd;
-      return escaped(node.text());
-    }
-    default:
-      return renderInlines(node.children(), theme, visibleOffset, options);
-  }
-}
-
-InlineLayout::ProjectionSyntaxSpanRef InlineLayout::projectionSyntaxSpan(
-    InlineType type,
-    InlineSpanKind kind,
-    qsizetype visiblePosition) const {
-  for (const InlineProjectionSpan& span : projection_.spans()) {
-    if (span.type == type && span.kind == kind && span.visibleStart == visiblePosition && span.visibleEnd == visiblePosition &&
-        span.displayEnd > span.displayStart) {
-      return ProjectionSyntaxSpanRef{&span, projection_.displayText().mid(span.displayStart, span.displayEnd - span.displayStart)};
-    }
-  }
-  return {};
-}
-
-QString InlineLayout::renderProjectionSyntaxSpan(
-    InlineType type,
-    InlineSpanKind kind,
-    qsizetype visiblePosition,
-    const RenderTheme& theme) const {
-  const ProjectionSyntaxSpanRef syntaxSpan = projectionSyntaxSpan(type, kind, visiblePosition);
-  if (!syntaxSpan.isValid()) {
-    return {};
-  }
-  return QStringLiteral("<span style=\"color:%1;\">%2</span>").arg(cssColor(theme.mutedTextColor()), escaped(syntaxSpan.text));
-}
-
-QString InlineLayout::cssColor(const QColor& color) const {
-  return color.name(QColor::HexRgb);
-}
-
 qsizetype InlineLayout::visibleOffsetForDisplayOffset(qsizetype displayOffset) const {
   if (offsetMap_.isEmpty()) {
     return qBound<qsizetype>(0, displayOffset, plainText_.size());
@@ -646,7 +338,7 @@ qsizetype InlineLayout::textLayoutDisplayOffsetForPoint(QPointF localPos) const 
       continue;
     }
     const QRectF naturalRect(line.x(), line.y(), line.naturalTextWidth(), line.height());
-    const QRectF fullLineRect(0.0, line.y(), qMax(textLayoutSize_.width(), naturalRect.width()), line.height());
+    const QRectF fullLineRect(0.0, line.y(), qMax(size_.width(), naturalRect.width()), line.height());
     if (!fullLineRect.contains(localPos) && localPos.y() > fullLineRect.bottom()) {
       continue;
     }

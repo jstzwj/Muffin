@@ -1,5 +1,6 @@
 #include "editor/EditorController.h"
 
+#include "blocks/table/TableModelOps.h"
 #include "document/InlineProjection.h"
 #include "document/MarkdownNode.h"
 #include "editor/EditorView.h"
@@ -105,6 +106,161 @@ bool fillSourceOffsetForTextHit(const DocumentSession& session, HitTestResult& h
   }
   hit.sourceOffset = start + localSourceOffset;
   return true;
+}
+
+MarkdownNode* tableByIdOrIndex(DocumentSession& session, NodeId tableId, int tableIndex) {
+  if (tableId.isValid()) {
+    if (MarkdownNode* table = session.document().node(tableId)) {
+      if (table->type() == BlockType::Table) {
+        return table;
+      }
+    }
+  }
+  if (tableIndex < 0) {
+    return nullptr;
+  }
+
+  int index = 0;
+  const auto visit = [&](const auto& self, MarkdownNode& node) -> MarkdownNode* {
+    if (node.type() == BlockType::Table) {
+      if (index == tableIndex) {
+        return &node;
+      }
+      ++index;
+    }
+    for (const auto& child : node.children()) {
+      if (MarkdownNode* found = self(self, *child)) {
+        return found;
+      }
+    }
+    return nullptr;
+  };
+  return visit(visit, session.document().root());
+}
+
+CursorPosition tableCursorForLocation(DocumentSession& session, const TableCommand& command, const CursorPosition& fallback) {
+  CursorPosition cursor;
+  MarkdownNode* table = tableByIdOrIndex(session, command.tableId, command.tableIndex);
+  if (!table) {
+    return cursor;
+  }
+
+  MarkdownNode* cell = TableModelOps::cellAt(*table, qMax(0, command.cursorRow), qMax(0, command.cursorColumn));
+  if (!cell && fallback.text.nodeId.isValid()) {
+    if (MarkdownNode* fallbackCell = session.document().node(fallback.text.nodeId)) {
+      if (fallbackCell->type() == BlockType::TableCell) {
+        cell = fallbackCell;
+      }
+    }
+  }
+  if (!cell) {
+    return cursor;
+  }
+
+  cursor.blockId = table->id();
+  cursor.text.nodeId = cell->id();
+  cursor.text.textOffset = qMax<qsizetype>(0, fallback.text.textOffset);
+  cursor.text.sourceOffset = fallback.text.sourceOffset;
+  return cursor;
+}
+
+CursorPosition tableCellTextCursor(DocumentSession& session, const CursorPosition& storedCursor) {
+  CursorPosition cursor;
+  if (!storedCursor.isValid() || !storedCursor.text.nodeId.isValid()) {
+    return cursor;
+  }
+
+  MarkdownNode* cell = session.document().node(storedCursor.text.nodeId);
+  if (!cell || cell->type() != BlockType::TableCell) {
+    return cursor;
+  }
+
+  MarkdownNode* table = cell;
+  while (table && table->type() != BlockType::Table) {
+    table = table->parent();
+  }
+  if (!table) {
+    return cursor;
+  }
+
+  cursor = storedCursor;
+  cursor.blockId = table->id();
+  cursor.text.nodeId = cell->id();
+  return cursor;
+}
+
+MarkdownNode* nodeByTopLevelIndex(DocumentSession& session, int nodeIndex, BlockType nodeType) {
+  const auto& children = session.document().root().children();
+  if (nodeIndex < 0 || nodeIndex >= static_cast<int>(children.size())) {
+    return nullptr;
+  }
+  MarkdownNode* node = children.at(static_cast<size_t>(nodeIndex)).get();
+  return node && node->type() == nodeType ? node : nullptr;
+}
+
+MarkdownNode* nodeBySourceOffset(MarkdownNode& node, BlockType nodeType, qsizetype sourceOffset) {
+  const SourceRange range = node.sourceRange();
+  if (node.type() == nodeType && range.byteStart <= sourceOffset && range.byteEnd >= sourceOffset) {
+    return &node;
+  }
+  for (const auto& child : node.children()) {
+    if (MarkdownNode* found = nodeBySourceOffset(*child, nodeType, sourceOffset)) {
+      return found;
+    }
+  }
+  return nullptr;
+}
+
+CursorPosition insertedNodeCursor(DocumentSession& session, const InsertNodeCommand& command, const CursorPosition& storedCursor) {
+  CursorPosition cursor;
+  if (command.nodeType != BlockType::Table) {
+    return cursor;
+  }
+
+  MarkdownNode* table = session.document().node(command.nodeId);
+  if (!table || table->type() != BlockType::Table) {
+    table = nodeBySourceOffset(session.document().root(), BlockType::Table, command.nodeSourceStart);
+  }
+  if (!table) {
+    table = nodeByTopLevelIndex(session, command.nodeIndex, BlockType::Table);
+  }
+  if (!table) {
+    return cursor;
+  }
+
+  MarkdownNode* cell = storedCursor.text.nodeId.isValid() ? session.document().node(storedCursor.text.nodeId) : nullptr;
+  if (!cell || cell->type() != BlockType::TableCell) {
+    cell = TableModelOps::cellAt(*table, 0, 0);
+  }
+  if (!cell) {
+    return cursor;
+  }
+
+  cursor = storedCursor;
+  cursor.blockId = table->id();
+  cursor.text.nodeId = cell->id();
+  cursor.text.textOffset = qMax<qsizetype>(0, storedCursor.text.textOffset);
+  return cursor;
+}
+
+CursorPosition replacedNodeCursor(DocumentSession& session, const ReplaceNodeCommand& command, const CursorPosition& storedCursor) {
+  CursorPosition cursor;
+  if (!storedCursor.isValid()) {
+    return cursor;
+  }
+
+  MarkdownNode* node = command.nodeId.isValid() ? session.document().node(command.nodeId) : nullptr;
+  if (!node || node->type() != command.nodeType) {
+    node = nodeByTopLevelIndex(session, command.nodeIndex, command.nodeType);
+  }
+  if (!node) {
+    return cursor;
+  }
+
+  cursor = storedCursor;
+  cursor.blockId = node->id();
+  cursor.text.nodeId = node->id();
+  return cursor;
 }
 
 }  // namespace
@@ -472,6 +628,112 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     return;
   }
 
+  if (transaction.isTableCommand()) {
+    const TableCommand& command = transaction.tableCommand();
+    const MarkdownNode* table = undo ? command.beforeTable.get() : command.afterTable.get();
+    if (!table) {
+      return;
+    }
+    const bool applied = session_->applyTableSnapshot(command.tableId, command.tableIndex, *table, true);
+    const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
+    CursorPosition cursor = tableCursorForLocation(*session_, command, storedCursor);
+    if (!cursor.isValid()) {
+      cursor = remapSnapshotCursor(storedCursor);
+    }
+    if (cursor.isValid()) {
+      selection_.setCursorPosition(cursor);
+    } else {
+      selection_.clear();
+    }
+    if (applied) {
+      QVector<NodeId> refreshNodes;
+      if (command.tableId.isValid()) {
+        refreshNodes.push_back(command.tableId);
+      }
+      if (cursor.isValid() && !refreshNodes.contains(cursor.blockId)) {
+        refreshNodes.push_back(cursor.blockId);
+      }
+      if (refreshNodes.isEmpty()) {
+        brushQueue_.requestFullRefresh();
+      } else {
+        brushQueue_.requestBlocksRefresh(std::move(refreshNodes));
+      }
+    }
+    return;
+  }
+
+  if (transaction.isInsertNodeCommand()) {
+    const InsertNodeCommand& command = transaction.insertNodeCommand();
+    const QString replacement = undo ? command.delta.removedText : command.delta.insertedText;
+    const qsizetype replaceStart = command.delta.start;
+    const qsizetype replaceEnd = command.delta.start + (undo ? command.delta.insertedText.size() : command.delta.removedText.size());
+    const bool appliedLocally =
+        session_->applyInsertedNode(command.nodeId, command.nodeType, replaceStart, command.nodeSourceStart, replaceEnd - replaceStart, replacement, true);
+    const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
+    CursorPosition cursor = undo ? CursorPosition() : insertedNodeCursor(*session_, command, storedCursor);
+    if (!cursor.isValid()) {
+      cursor = tableCellTextCursor(*session_, storedCursor);
+    }
+    if (!cursor.isValid()) {
+      cursor = remapSnapshotCursor(storedCursor);
+    }
+    if (cursor.isValid()) {
+      selection_.setCursorPosition(cursor);
+    } else {
+      selection_.clear();
+    }
+    if (appliedLocally) {
+      QVector<NodeId> refreshNodes = command.affectedNodes;
+      if (!undo && command.nodeId.isValid() && !refreshNodes.contains(command.nodeId)) {
+        refreshNodes.push_back(command.nodeId);
+      }
+      if (cursor.isValid() && !refreshNodes.contains(cursor.blockId)) {
+        refreshNodes.push_back(cursor.blockId);
+      }
+      if (refreshNodes.isEmpty()) {
+        brushQueue_.requestFullRefresh();
+      } else {
+        brushQueue_.requestBlocksRefresh(std::move(refreshNodes));
+      }
+    } else {
+      brushQueue_.requestFullRefresh();
+    }
+    return;
+  }
+
+  if (transaction.isReplaceNodeCommand()) {
+    const ReplaceNodeCommand& command = transaction.replaceNodeCommand();
+    const MarkdownNode* node = undo ? command.beforeNode.get() : command.afterNode.get();
+    if (!node) {
+      return;
+    }
+    const bool appliedLocally = session_->applyNodeSnapshot(command.nodeId, command.nodeType, command.nodeIndex, *node, true);
+    const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
+    CursorPosition cursor = replacedNodeCursor(*session_, command, storedCursor);
+    if (!cursor.isValid()) {
+      cursor = remapSnapshotCursor(storedCursor);
+    }
+    if (cursor.isValid()) {
+      selection_.setCursorPosition(cursor);
+    } else {
+      selection_.clear();
+    }
+    if (appliedLocally) {
+      QVector<NodeId> refreshNodes = command.affectedNodes;
+      if (cursor.isValid() && !refreshNodes.contains(cursor.blockId)) {
+        refreshNodes.push_back(cursor.blockId);
+      }
+      if (refreshNodes.isEmpty()) {
+        brushQueue_.requestFullRefresh();
+      } else {
+        brushQueue_.requestBlocksRefresh(std::move(refreshNodes));
+      }
+    } else {
+      brushQueue_.requestFullRefresh();
+    }
+    return;
+  }
+
   if (!transaction.isTextDeltaCommand()) {
     return;
   }
@@ -487,7 +749,10 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
   }
   const bool appliedLocally = session_->applyTextDelta(replaceStart, replaceEnd - replaceStart, replacement, true, std::move(nodeHints));
   const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
-  const CursorPosition cursor = remapSnapshotCursor(storedCursor);
+  CursorPosition cursor = tableCellTextCursor(*session_, storedCursor);
+  if (!cursor.isValid()) {
+    cursor = remapSnapshotCursor(storedCursor);
+  }
   if (cursor.isValid()) {
     selection_.setCursorPosition(cursor);
   } else {

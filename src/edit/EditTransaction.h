@@ -2,9 +2,12 @@
 
 #include "editor/CursorPosition.h"
 #include "document/NodeId.h"
+#include "document/MarkdownNode.h"
 
 #include <QString>
 #include <QVector>
+
+#include <memory>
 
 namespace muffin {
 
@@ -30,6 +33,92 @@ struct TextDeltaCommand {
   bool isValid() const;
 };
 
+struct TableCommand {
+  NodeId tableId;
+  int tableIndex = -1;
+  int cursorRow = -1;
+  int cursorColumn = -1;
+  std::unique_ptr<MarkdownNode> beforeTable;
+  std::unique_ptr<MarkdownNode> afterTable;
+  CursorPosition beforeCursor;
+  CursorPosition afterCursor;
+
+  TableCommand() = default;
+  TableCommand(
+      NodeId tableId,
+      int tableIndex,
+      int cursorRow,
+      int cursorColumn,
+      std::unique_ptr<MarkdownNode> beforeTable,
+      std::unique_ptr<MarkdownNode> afterTable,
+      CursorPosition beforeCursor,
+      CursorPosition afterCursor);
+  TableCommand(const TableCommand& other);
+  TableCommand& operator=(const TableCommand& other);
+  TableCommand(TableCommand&&) noexcept = default;
+  TableCommand& operator=(TableCommand&&) noexcept = default;
+
+  bool isValid() const;
+};
+
+struct InsertNodeCommand {
+  NodeId nodeId;
+  BlockType nodeType = BlockType::Unknown;
+  int nodeIndex = -1;
+  TextDelta delta;
+  qsizetype nodeSourceStart = -1;
+  std::unique_ptr<MarkdownNode> insertedNode;
+  CursorPosition beforeCursor;
+  CursorPosition afterCursor;
+  QVector<NodeId> affectedNodes;
+
+  InsertNodeCommand() = default;
+  InsertNodeCommand(
+      NodeId nodeId,
+      BlockType nodeType,
+      int nodeIndex,
+      TextDelta delta,
+      qsizetype nodeSourceStart,
+      std::unique_ptr<MarkdownNode> insertedNode,
+      CursorPosition beforeCursor,
+      CursorPosition afterCursor,
+      QVector<NodeId> affectedNodes);
+  InsertNodeCommand(const InsertNodeCommand& other);
+  InsertNodeCommand& operator=(const InsertNodeCommand& other);
+  InsertNodeCommand(InsertNodeCommand&&) noexcept = default;
+  InsertNodeCommand& operator=(InsertNodeCommand&&) noexcept = default;
+
+  bool isValid() const;
+};
+
+struct ReplaceNodeCommand {
+  NodeId nodeId;
+  BlockType nodeType = BlockType::Unknown;
+  int nodeIndex = -1;
+  std::unique_ptr<MarkdownNode> beforeNode;
+  std::unique_ptr<MarkdownNode> afterNode;
+  CursorPosition beforeCursor;
+  CursorPosition afterCursor;
+  QVector<NodeId> affectedNodes;
+
+  ReplaceNodeCommand() = default;
+  ReplaceNodeCommand(
+      NodeId nodeId,
+      BlockType nodeType,
+      int nodeIndex,
+      std::unique_ptr<MarkdownNode> beforeNode,
+      std::unique_ptr<MarkdownNode> afterNode,
+      CursorPosition beforeCursor,
+      CursorPosition afterCursor,
+      QVector<NodeId> affectedNodes);
+  ReplaceNodeCommand(const ReplaceNodeCommand& other);
+  ReplaceNodeCommand& operator=(const ReplaceNodeCommand& other);
+  ReplaceNodeCommand(ReplaceNodeCommand&&) noexcept = default;
+  ReplaceNodeCommand& operator=(ReplaceNodeCommand&&) noexcept = default;
+
+  bool isValid() const;
+};
+
 class EditTransaction {
 public:
   enum class Kind {
@@ -42,24 +131,49 @@ public:
   enum class Storage {
     Invalid,
     Snapshot,
-    TextDeltaCommand
+    TextDeltaCommand,
+    TableCommand,
+    InsertNodeCommand,
+    ReplaceNodeCommand
   };
 
   EditTransaction() = default;
+  EditTransaction(const EditTransaction& other);
+  EditTransaction& operator=(const EditTransaction& other);
+  EditTransaction(EditTransaction&&) noexcept = default;
+  EditTransaction& operator=(EditTransaction&&) noexcept = default;
   EditTransaction(Kind kind, QString label, DocumentSnapshot before, DocumentSnapshot after);
   EditTransaction(
       Kind kind,
       QString label,
       TextDeltaCommand command);
+  EditTransaction(
+      Kind kind,
+      QString label,
+      TableCommand command);
+  EditTransaction(
+      Kind kind,
+      QString label,
+      InsertNodeCommand command);
+  EditTransaction(
+      Kind kind,
+      QString label,
+      ReplaceNodeCommand command);
 
   Kind kind() const;
   QString label() const;
   Storage storage() const;
   bool isSnapshot() const;
   bool isTextDeltaCommand() const;
+  bool isTableCommand() const;
+  bool isInsertNodeCommand() const;
+  bool isReplaceNodeCommand() const;
   const DocumentSnapshot& before() const;
   const DocumentSnapshot& after() const;
   const TextDeltaCommand& textDeltaCommand() const;
+  const TableCommand& tableCommand() const;
+  const InsertNodeCommand& insertNodeCommand() const;
+  const ReplaceNodeCommand& replaceNodeCommand() const;
   bool isValid() const;
 
 private:
@@ -69,6 +183,9 @@ private:
   DocumentSnapshot before_;
   DocumentSnapshot after_;
   TextDeltaCommand textDeltaCommand_;
+  TableCommand tableCommand_;
+  InsertNodeCommand insertNodeCommand_;
+  ReplaceNodeCommand replaceNodeCommand_;
 };
 
 }  // namespace muffin

@@ -98,6 +98,13 @@ QString MarkdownSerializer::serializeInline(const InlineNode& node) const {
   }
 }
 
+QString MarkdownSerializer::serializeTableCellContent(const MarkdownNode& node) const {
+  if (node.type() != BlockType::TableCell) {
+    return {};
+  }
+  return escapeTableCell(serializeBlock(node));
+}
+
 QString MarkdownSerializer::serializeChildren(const MarkdownNode& node, QString separator) const {
   QStringList blocks;
   for (const auto& child : node.children()) {

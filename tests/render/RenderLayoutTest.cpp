@@ -140,14 +140,14 @@ void testInlineMarkerExpansion() {
   RenderTheme theme = RenderTheme::github();
   InlineLayout collapsed;
   collapsed.build(inlines, theme, 400.0, theme.paragraphFont());
-  require(!collapsed.html().contains(QStringLiteral("**")), QStringLiteral("collapsed inline should hide strong markers"));
+  require(!collapsed.displayText().contains(QStringLiteral("**")), QStringLiteral("collapsed inline should hide strong markers"));
 
   InlineLayout expanded;
   InlineLayout::BuildOptions options;
   options.projectionState.cursorVisibleOffset = 8;
   options.projectionState.cursorSourceOffset = 10;
   expanded.build(inlines, QStringLiteral("before **bold** after"), theme, 400.0, theme.paragraphFont(), options);
-  require(expanded.html().contains(QStringLiteral("**")), QStringLiteral("active inline should show strong markers"));
+  require(expanded.displayText().contains(QStringLiteral("**")), QStringLiteral("active inline should show strong markers"));
   require(expanded.plainText() == QStringLiteral("before bold after"), QStringLiteral("expanded plain text should stay collapsed"));
   require(expanded.hitTestTextOffset(expanded.cursorRect(8).center()) == 8,
           QStringLiteral("expanded hit test should map display marker offsets back to visible offsets"));
@@ -168,30 +168,27 @@ void testInlineMarkerExpansion() {
   selectionOptions.projectionState.selectionVisibleStart = 8;
   selectionOptions.projectionState.selectionVisibleEnd = 10;
   selectionExpanded.build(inlines, QStringLiteral("before **bold** after"), theme, 400.0, theme.paragraphFont(), selectionOptions);
-  require(selectionExpanded.html().contains(QStringLiteral("**")), QStringLiteral("selection touching inline should show strong markers"));
+  require(selectionExpanded.displayText().contains(QStringLiteral("**")), QStringLiteral("selection touching inline should show strong markers"));
 }
 
-void testInlineHtmlProjectionContract() {
+void testInlineProjectionContract() {
   RenderTheme theme = RenderTheme::github();
-  InlineLayout::BuildOptions documentOptions;
-  documentOptions.geometryBackend = InlineLayout::InlineGeometryBackend::QTextDocument;
+  InlineLayout::BuildOptions options;
   const QVector<InlineNode> linkInlines{
       InlineNode::link(QStringLiteral("https://example.com"), QString(), {InlineNode::text(QStringLiteral("label"))})};
   const QString linkMarkdown = QStringLiteral("[label](https://example.com)");
 
   InlineLayout collapsedLink;
-  collapsedLink.build(linkInlines, linkMarkdown, theme, 400.0, theme.paragraphFont(), documentOptions);
+  collapsedLink.build(linkInlines, linkMarkdown, theme, 400.0, theme.paragraphFont(), options);
   require(collapsedLink.displayText() == QStringLiteral("label"), QStringLiteral("inactive link projection text mismatch"));
-  require(collapsedLink.documentText() == collapsedLink.displayText(), QStringLiteral("inactive link html text should match projection"));
-  require(!collapsedLink.documentText().contains(QStringLiteral("](")), QStringLiteral("inactive link should not render source syntax"));
+  require(!collapsedLink.displayText().contains(QStringLiteral("](")), QStringLiteral("inactive link should not render source syntax"));
 
-  InlineLayout::BuildOptions activeLinkOptions = documentOptions;
+  InlineLayout::BuildOptions activeLinkOptions = options;
   activeLinkOptions.projectionState.cursorSourceOffset = 2;
   InlineLayout activeLink;
   activeLink.build(linkInlines, linkMarkdown, theme, 400.0, theme.paragraphFont(), activeLinkOptions);
   require(activeLink.displayText() == linkMarkdown, QStringLiteral("active link projection text mismatch"));
-  require(activeLink.documentText() == activeLink.displayText(), QStringLiteral("active link html text should match projection"));
-  require(activeLink.documentText().contains(QStringLiteral("](")), QStringLiteral("active link should render source syntax"));
+  require(activeLink.displayText().contains(QStringLiteral("](")), QStringLiteral("active link should render source syntax"));
   require(activeLink.hitTestSourceOffset(activeLink.cursorRectForSourceOffset(2).center()) == 2,
           QStringLiteral("active link cursor rect should round-trip source offset"));
   require(!activeLink.selectionRects(0, 5).isEmpty(), QStringLiteral("active link selection rects should remain valid"));
@@ -200,65 +197,36 @@ void testInlineHtmlProjectionContract() {
   const QString imageMarkdown = QStringLiteral("![alt](https://example.com/image.png)");
 
   InlineLayout collapsedImage;
-  collapsedImage.build(imageInlines, imageMarkdown, theme, 400.0, theme.paragraphFont(), documentOptions);
+  collapsedImage.build(imageInlines, imageMarkdown, theme, 400.0, theme.paragraphFont(), options);
   require(collapsedImage.displayText() == QStringLiteral("alt"), QStringLiteral("inactive image projection text mismatch"));
-  require(collapsedImage.documentText() == collapsedImage.displayText(), QStringLiteral("inactive image html text should match projection"));
-  require(!collapsedImage.documentText().contains(QStringLiteral("![")), QStringLiteral("inactive image should not render source syntax"));
+  require(!collapsedImage.displayText().contains(QStringLiteral("![")), QStringLiteral("inactive image should not render source syntax"));
 
-  InlineLayout::BuildOptions activeImageOptions = documentOptions;
+  InlineLayout::BuildOptions activeImageOptions = options;
   activeImageOptions.projectionState.cursorSourceOffset = 2;
   InlineLayout activeImage;
   activeImage.build(imageInlines, imageMarkdown, theme, 400.0, theme.paragraphFont(), activeImageOptions);
   require(activeImage.displayText() == imageMarkdown, QStringLiteral("active image projection text mismatch"));
-  require(activeImage.documentText() == activeImage.displayText(), QStringLiteral("active image html text should match projection"));
-  require(activeImage.documentText().contains(QStringLiteral("![")), QStringLiteral("active image should render source syntax"));
+  require(activeImage.displayText().contains(QStringLiteral("![")), QStringLiteral("active image should render source syntax"));
   require(activeImage.hitTestSourceOffset(activeImage.cursorRectForSourceOffset(2).center()) == 2,
           QStringLiteral("active image cursor rect should round-trip source offset"));
   require(!activeImage.selectionRects(0, 3).isEmpty(), QStringLiteral("active image selection rects should remain valid"));
 }
 
-void testInlineTextLayoutBackendEquivalence() {
+void testInlineLayoutGeometryContract() {
   RenderTheme theme = RenderTheme::github();
   QVector<InlineNode> plainInlines;
   plainInlines.push_back(InlineNode::text(QStringLiteral("alpha beta gamma delta epsilon zeta eta theta")));
 
   InlineLayout plain;
-  InlineLayout::BuildOptions documentOptions;
-  documentOptions.geometryBackend = InlineLayout::InlineGeometryBackend::QTextDocument;
-  plain.build(plainInlines, theme, 130.0, theme.paragraphFont(), documentOptions);
-  InlineLayout::BuildOptions probeBackendOptions;
-  probeBackendOptions.geometryBackend = InlineLayout::InlineGeometryBackend::QTextLayout;
-  InlineLayout plainProbeBackend;
-  plainProbeBackend.build(plainInlines, theme, 130.0, theme.paragraphFont(), probeBackendOptions);
-  require(plain.textLayoutSize().height() > 0.0, QStringLiteral("text layout backend should measure plain inline height"));
-  require(qAbs(plain.textLayoutSize().height() - plain.height()) < plain.height(),
-          QStringLiteral("text layout backend height should stay in QTextDocument range"));
-  require(plainProbeBackend.height() == plainProbeBackend.textLayoutSize().height(),
-          QStringLiteral("probe backend height should use QTextLayout size"));
-  require(plainProbeBackend.size() == plainProbeBackend.textLayoutSize(),
-          QStringLiteral("probe backend size should use QTextLayout size"));
-  require(plainProbeBackend.documentText().isEmpty(), QStringLiteral("probe backend should not keep a QTextDocument"));
+  plain.build(plainInlines, theme, 130.0, theme.paragraphFont());
+  require(plain.height() > 0.0, QStringLiteral("inline layout should measure plain inline height"));
+  require(plain.size().height() == plain.height(), QStringLiteral("inline layout size should expose measured height"));
 
-  const QRectF documentCursor = plain.cursorRect(6);
-  const QRectF probeCursor = plain.textLayoutCursorRect(6);
-  require(!documentCursor.isEmpty() && !probeCursor.isEmpty(), QStringLiteral("text layout backend cursor rect should be available"));
-  require(plain.hitTestTextOffset(documentCursor.center()) == 6, QStringLiteral("document cursor point should round-trip plain offset"));
-  const qsizetype probeHit = plain.textLayoutHitTestTextOffset(QPointF(probeCursor.left(), probeCursor.center().y()));
-  require(probeHit >= 0 && probeHit <= plain.plainText().size(), QStringLiteral("text layout backend hit-test should return a valid plain offset"));
-  const QRectF backendCursor = plainProbeBackend.cursorRect(6);
-  require(!backendCursor.isEmpty(), QStringLiteral("probe backend cursor rect should be available"));
-  require(plainProbeBackend.hitTestTextOffset(QPointF(backendCursor.left(), backendCursor.center().y())) >= 0,
-          QStringLiteral("probe backend hit-test should return a valid plain offset"));
-  require(!plainProbeBackend.selectionRects(1, 18).isEmpty(), QStringLiteral("probe backend selection rects should be available"));
-
-  const QVector<QRectF> documentSelection = plain.selectionRects(1, 18);
-  const QVector<QRectF> probeSelection = plain.textLayoutSelectionRects(1, 18);
-  require(!documentSelection.isEmpty() && !probeSelection.isEmpty(), QStringLiteral("text layout backend selection rects should exist"));
-  require(documentSelection.size() == probeSelection.size(), QStringLiteral("text layout backend should wrap selection into same number of lines"));
-  for (qsizetype i = 0; i < documentSelection.size(); ++i) {
-    require(qAbs(documentSelection.at(i).height() - probeSelection.at(i).height()) < qMax(documentSelection.at(i).height(), probeSelection.at(i).height()),
-            QStringLiteral("text layout backend selection rect height should stay close to document"));
-  }
+  const QRectF plainCursor = plain.cursorRect(6);
+  require(!plainCursor.isEmpty(), QStringLiteral("inline layout cursor rect should be available"));
+  require(plain.hitTestTextOffset(QPointF(plainCursor.left(), plainCursor.center().y())) == 6,
+          QStringLiteral("inline layout cursor point should round-trip plain offset"));
+  require(!plain.selectionRects(1, 18).isEmpty(), QStringLiteral("inline layout selection rects should be available"));
 
   QVector<InlineNode> styledInlines;
   styledInlines.push_back(InlineNode::text(QStringLiteral("before ")));
@@ -268,31 +236,20 @@ void testInlineTextLayoutBackendEquivalence() {
   styledInlines.push_back(InlineNode::text(QStringLiteral(" ")));
   styledInlines.push_back(InlineNode::code(QStringLiteral("code")));
 
-  InlineLayout::BuildOptions options = documentOptions;
+  InlineLayout::BuildOptions options;
   options.projectionState.revealMarkdownMarkers = true;
   InlineLayout styled;
   styled.build(styledInlines, QStringLiteral("before **bold** [link](u) `code`"), theme, 180.0, theme.paragraphFont(), options);
-  InlineLayout styledProbeBackend;
-  InlineLayout::BuildOptions styledProbeOptions = options;
-  styledProbeOptions.geometryBackend = InlineLayout::InlineGeometryBackend::QTextLayout;
-  styledProbeBackend.build(styledInlines, QStringLiteral("before **bold** [link](u) `code`"), theme, 180.0, theme.paragraphFont(), styledProbeOptions);
-  require(styled.textLayoutSize().height() > 0.0, QStringLiteral("text layout backend should measure styled inline height"));
-  require(styled.documentText() == styled.displayText(), QStringLiteral("styled document text should still match projection"));
-  require(styledProbeBackend.height() == styledProbeBackend.textLayoutSize().height(),
-          QStringLiteral("styled probe backend height should use QTextLayout size"));
-  require(styledProbeBackend.documentText().isEmpty(), QStringLiteral("styled probe backend should not keep a QTextDocument"));
-  const QRectF styledProbeCursor = styled.textLayoutCursorRect(9);
-  require(!styledProbeCursor.isEmpty(), QStringLiteral("text layout backend styled cursor rect should be available"));
-  const qsizetype styledProbeHit = styled.textLayoutHitTestTextOffset(QPointF(styledProbeCursor.left(), styledProbeCursor.center().y()));
-  require(styledProbeHit >= 0 && styledProbeHit <= styled.plainText().size(), QStringLiteral("text layout backend hit-test should return a valid styled offset"));
-  require(!styled.textLayoutSelectionRects(0, styled.plainText().size()).isEmpty(),
-          QStringLiteral("text layout backend should produce styled selection rects"));
-  require(!styledProbeBackend.cursorRect(9).isEmpty(), QStringLiteral("styled probe backend cursor rect should be available"));
-  require(!styledProbeBackend.selectionRects(0, styled.plainText().size()).isEmpty(),
-          QStringLiteral("styled probe backend selection rects should be available"));
+  require(styled.height() > 0.0, QStringLiteral("inline layout should measure styled inline height"));
+  require(styled.displayText() == QStringLiteral("before **bold** [link](u) `code`"), QStringLiteral("styled display text should match projection"));
+  const QRectF styledCursor = styled.cursorRect(9);
+  require(!styledCursor.isEmpty(), QStringLiteral("inline layout styled cursor rect should be available"));
+  const qsizetype styledHit = styled.hitTestTextOffset(QPointF(styledCursor.left(), styledCursor.center().y()));
+  require(styledHit >= 0 && styledHit <= styled.plainText().size(), QStringLiteral("inline layout hit-test should return a valid styled offset"));
+  require(!styled.selectionRects(0, styled.plainText().size()).isEmpty(), QStringLiteral("inline layout should produce styled selection rects"));
 }
 
-void testInlineTextLayoutBackendPainting() {
+void testInlineLayoutPainting() {
   RenderTheme theme = RenderTheme::github();
   QVector<InlineNode> inlines;
   inlines.push_back(InlineNode::text(QStringLiteral("before ")));
@@ -304,13 +261,11 @@ void testInlineTextLayoutBackendPainting() {
   inlines.push_back(InlineNode::text(QStringLiteral(" after")));
 
   InlineLayout::BuildOptions options;
-  options.geometryBackend = InlineLayout::InlineGeometryBackend::QTextLayout;
   options.projectionState.revealMarkdownMarkers = true;
 
   InlineLayout layout;
   layout.build(inlines, QStringLiteral("before **bold** [link](https://example.com) `code` after"), theme, 280.0, theme.paragraphFont(), options);
-  require(layout.height() == layout.textLayoutSize().height(), QStringLiteral("paint probe should use probe height"));
-  require(layout.documentText().isEmpty(), QStringLiteral("paint probe should not depend on QTextDocument text"));
+  require(layout.height() > 0.0, QStringLiteral("inline layout paint fixture should have height"));
 
   QImage image(QSize(320, qCeil(layout.height()) + 20), QImage::Format_ARGB32);
   image.fill(theme.backgroundColor());
@@ -327,7 +282,7 @@ void testInlineTextLayoutBackendPainting() {
       }
     }
   }
-  require(changedPixels > 25, QStringLiteral("probe backend paint should draw visible pixels"));
+  require(changedPixels > 25, QStringLiteral("inline layout paint should draw visible pixels"));
 }
 
 void requireTextLayoutCursorRoundTrip(const InlineLayout& layout, qsizetype offset, const QString& label) {
@@ -353,13 +308,12 @@ void requireTextLayoutCharacterBias(const InlineLayout& layout, qsizetype offset
   require(layout.hitTestTextOffset(QPointF(threeQuarter, y)) == offset + 1, label + QStringLiteral(" right half hit-test mismatch"));
 }
 
-void testInlineTextLayoutBackendHitTesting() {
+void testInlineLayoutHitTesting() {
   RenderTheme theme = RenderTheme::github();
   QVector<InlineNode> plainInlines;
   plainInlines.push_back(InlineNode::text(QStringLiteral("alpha beta gamma delta epsilon zeta eta theta iota kappa lambda")));
 
   InlineLayout::BuildOptions probeOptions;
-  probeOptions.geometryBackend = InlineLayout::InlineGeometryBackend::QTextLayout;
   InlineLayout plain;
   plain.build(plainInlines, theme, 125.0, theme.paragraphFont(), probeOptions);
 
@@ -379,10 +333,10 @@ void testInlineTextLayoutBackendHitTesting() {
       break;
     }
   }
-  require(testedWrappedBias, QStringLiteral("probe hit-test should find a same-line bias fixture"));
+  require(testedWrappedBias, QStringLiteral("inline hit-test should find a same-line bias fixture"));
 
   const QVector<QRectF> wrappedSelection = plain.selectionRects(0, plain.plainText().size());
-  require(wrappedSelection.size() >= 2, QStringLiteral("probe hit-test fixture should wrap across lines"));
+  require(wrappedSelection.size() >= 2, QStringLiteral("inline hit-test fixture should wrap across lines"));
   for (const QRectF& rect : wrappedSelection) {
     require(plain.hitTestTextOffset(QPointF(rect.left(), rect.center().y())) >= 0, QStringLiteral("wrapped line start hit should be valid"));
     require(plain.hitTestTextOffset(rect.center()) >= 0, QStringLiteral("wrapped line middle hit should be valid"));
@@ -402,74 +356,63 @@ void testInlineTextLayoutBackendHitTesting() {
           QStringLiteral("active marker source hit-test should not drift"));
 }
 
-void testInlineTextLayoutBackendCursorRects() {
+void testInlineLayoutCursorRects() {
   RenderTheme theme = RenderTheme::github();
   QVector<InlineNode> plainInlines;
   plainInlines.push_back(InlineNode::text(QStringLiteral("alpha beta gamma delta epsilon zeta eta theta iota kappa lambda")));
 
-  InlineLayout documentLayout;
-  InlineLayout::BuildOptions documentOptions;
-  documentOptions.geometryBackend = InlineLayout::InlineGeometryBackend::QTextDocument;
-  documentLayout.build(plainInlines, theme, 125.0, theme.paragraphFont(), documentOptions);
+  InlineLayout layout;
+  InlineLayout::BuildOptions options;
+  layout.build(plainInlines, theme, 125.0, theme.paragraphFont(), options);
 
-  InlineLayout::BuildOptions probeOptions;
-  probeOptions.geometryBackend = InlineLayout::InlineGeometryBackend::QTextLayout;
-  InlineLayout probeLayout;
-  probeLayout.build(plainInlines, theme, 125.0, theme.paragraphFont(), probeOptions);
-
-  const QVector<qsizetype> offsets{0, 1, 5, 6, 12, 20, probeLayout.plainText().size()};
+  const QVector<qsizetype> offsets{0, 1, 5, 6, 12, 20, layout.plainText().size()};
   for (qsizetype offset : offsets) {
-    const QRectF documentRect = documentLayout.cursorRect(offset);
-    const QRectF probeRect = probeLayout.cursorRect(offset);
-    require(!documentRect.isEmpty() && !probeRect.isEmpty(), QStringLiteral("probe cursor rect should be non-empty"));
-    if (offset <= 6) {
-      require(qAbs(documentRect.center().y() - probeRect.center().y()) < qMax(documentRect.height(), probeRect.height()) * 2.0,
-              QStringLiteral("probe first-line cursor y should stay near document backend"));
-    }
+    const QRectF cursor = layout.cursorRect(offset);
+    require(!cursor.isEmpty(), QStringLiteral("inline cursor rect should be non-empty"));
   }
 
   bool testedMonotonic = false;
-  for (qsizetype offset = 0; offset + 3 < probeLayout.plainText().size(); ++offset) {
-    const QRectF first = probeLayout.cursorRect(offset);
-    const QRectF second = probeLayout.cursorRect(offset + 1);
-    const QRectF third = probeLayout.cursorRect(offset + 2);
+  for (qsizetype offset = 0; offset + 3 < layout.plainText().size(); ++offset) {
+    const QRectF first = layout.cursorRect(offset);
+    const QRectF second = layout.cursorRect(offset + 1);
+    const QRectF third = layout.cursorRect(offset + 2);
     if (!first.isEmpty() && !second.isEmpty() && !third.isEmpty() &&
         qAbs(first.center().y() - second.center().y()) < 0.5 && qAbs(second.center().y() - third.center().y()) < 0.5) {
-      require(first.left() <= second.left() && second.left() <= third.left(), QStringLiteral("probe cursor x should be monotonic on same line"));
+      require(first.left() <= second.left() && second.left() <= third.left(), QStringLiteral("inline cursor x should be monotonic on same line"));
       testedMonotonic = true;
       break;
     }
   }
-  require(testedMonotonic, QStringLiteral("probe cursor test should find same-line offsets"));
+  require(testedMonotonic, QStringLiteral("inline cursor test should find same-line offsets"));
 
   bool foundWrap = false;
-  for (qsizetype offset = 0; offset + 1 < probeLayout.plainText().size(); ++offset) {
-    const QRectF previous = probeLayout.cursorRect(offset);
-    const QRectF next = probeLayout.cursorRect(offset + 1);
+  for (qsizetype offset = 0; offset + 1 < layout.plainText().size(); ++offset) {
+    const QRectF previous = layout.cursorRect(offset);
+    const QRectF next = layout.cursorRect(offset + 1);
     if (!previous.isEmpty() && !next.isEmpty() && next.center().y() > previous.center().y() + previous.height() * 0.5) {
-      require(next.left() < previous.left(), QStringLiteral("probe cursor x should return toward line start after wrap"));
+      require(next.left() < previous.left(), QStringLiteral("inline cursor x should return toward line start after wrap"));
       foundWrap = true;
       break;
     }
   }
-  require(foundWrap, QStringLiteral("probe cursor test should observe a wrapped line"));
+  require(foundWrap, QStringLiteral("inline cursor test should observe a wrapped line"));
 
   QVector<InlineNode> activeInlines;
   activeInlines.push_back(InlineNode::text(QStringLiteral("before ")));
   activeInlines.push_back(InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QStringLiteral("bold"))}));
   activeInlines.push_back(InlineNode::text(QStringLiteral(" after")));
-  InlineLayout::BuildOptions activeOptions = probeOptions;
+  InlineLayout::BuildOptions activeOptions = options;
   activeOptions.projectionState.revealMarkdownMarkers = true;
   InlineLayout active;
   active.build(activeInlines, QStringLiteral("before **bold** after"), theme, 240.0, theme.paragraphFont(), activeOptions);
   const QRectF markerRect = active.cursorRectForSourceOffset(9);
-  require(!markerRect.isEmpty(), QStringLiteral("probe source marker cursor rect should be non-empty"));
+  require(!markerRect.isEmpty(), QStringLiteral("inline source marker cursor rect should be non-empty"));
   require(active.hitTestSourceOffset(QPointF(markerRect.left(), markerRect.center().y())) == 9,
-          QStringLiteral("probe source marker cursor rect should hit marker source offset"));
+          QStringLiteral("inline source marker cursor rect should hit marker source offset"));
   const QRectF visibleRect = active.cursorRect(7);
-  require(!visibleRect.isEmpty(), QStringLiteral("probe visible active cursor rect should be non-empty"));
+  require(!visibleRect.isEmpty(), QStringLiteral("inline visible active cursor rect should be non-empty"));
   require(qAbs(visibleRect.center().y() - markerRect.center().y()) < qMax(visibleRect.height(), markerRect.height()),
-          QStringLiteral("probe visible/source active cursor rects should stay on same line"));
+          QStringLiteral("inline visible/source active cursor rects should stay on same line"));
 }
 
 void requireValidSelectionRects(const QVector<QRectF>& rects, const QString& label) {
@@ -480,56 +423,49 @@ void requireValidSelectionRects(const QVector<QRectF>& rects, const QString& lab
   }
 }
 
-void testInlineTextLayoutBackendSelectionRects() {
+void testInlineLayoutSelectionRects() {
   RenderTheme theme = RenderTheme::github();
-  InlineLayout::BuildOptions probeOptions;
-  probeOptions.geometryBackend = InlineLayout::InlineGeometryBackend::QTextLayout;
 
   QVector<InlineNode> shortInlines;
   shortInlines.push_back(InlineNode::text(QStringLiteral("alpha beta")));
   InlineLayout singleLine;
-  singleLine.build(shortInlines, theme, 400.0, theme.paragraphFont(), probeOptions);
+  singleLine.build(shortInlines, theme, 400.0, theme.paragraphFont());
   const QVector<QRectF> single = singleLine.selectionRects(1, 6);
-  const QVector<QRectF> directSingle = singleLine.textLayoutSelectionRects(1, 6);
-  require(single.size() == 1, QStringLiteral("probe single-line selection should produce one rect"));
-  requireValidSelectionRects(single, QStringLiteral("probe single-line"));
-  require(directSingle.size() == single.size(), QStringLiteral("direct probe single-line selection should match backend"));
+  require(single.size() == 1, QStringLiteral("inline single-line selection should produce one rect"));
+  requireValidSelectionRects(single, QStringLiteral("inline single-line"));
   const QVector<QRectF> reverseSingle = singleLine.selectionRects(6, 1);
-  const QVector<QRectF> directReverseSingle = singleLine.textLayoutSelectionRects(6, 1);
-  require(reverseSingle.size() == single.size(), QStringLiteral("probe reverse selection should keep rect count"));
-  require(directReverseSingle.size() == single.size(), QStringLiteral("direct probe reverse selection should keep rect count"));
+  require(reverseSingle.size() == single.size(), QStringLiteral("inline reverse selection should keep rect count"));
   require(qAbs(reverseSingle.first().left() - single.first().left()) < 0.5 &&
               qAbs(reverseSingle.first().width() - single.first().width()) < 0.5,
-          QStringLiteral("probe reverse selection should match forward rect"));
-  require(singleLine.selectionRects(3, 3).isEmpty(), QStringLiteral("probe collapsed selection should return no rects"));
-  require(singleLine.textLayoutSelectionRects(3, 3).isEmpty(), QStringLiteral("direct probe collapsed selection should return no rects"));
+          QStringLiteral("inline reverse selection should match forward rect"));
+  require(singleLine.selectionRects(3, 3).isEmpty(), QStringLiteral("inline collapsed selection should return no rects"));
 
   QVector<InlineNode> wrappedInlines;
   wrappedInlines.push_back(InlineNode::text(QStringLiteral("alpha beta gamma delta epsilon zeta eta theta iota kappa lambda")));
   InlineLayout wrapped;
-  wrapped.build(wrappedInlines, theme, 125.0, theme.paragraphFont(), probeOptions);
+  wrapped.build(wrappedInlines, theme, 125.0, theme.paragraphFont());
   const QVector<QRectF> wrappedRects = wrapped.selectionRects(0, wrapped.plainText().size());
-  require(wrappedRects.size() >= 2, QStringLiteral("probe wrapped selection should span multiple rects"));
-  requireValidSelectionRects(wrappedRects, QStringLiteral("probe wrapped"));
+  require(wrappedRects.size() >= 2, QStringLiteral("inline wrapped selection should span multiple rects"));
+  requireValidSelectionRects(wrappedRects, QStringLiteral("inline wrapped"));
   for (qsizetype i = 1; i < wrappedRects.size(); ++i) {
-    require(wrappedRects.at(i).top() > wrappedRects.at(i - 1).top(), QStringLiteral("probe wrapped selection rects should move downward"));
+    require(wrappedRects.at(i).top() > wrappedRects.at(i - 1).top(), QStringLiteral("inline wrapped selection rects should move downward"));
   }
 
   QVector<InlineNode> activeInlines;
   activeInlines.push_back(InlineNode::text(QStringLiteral("before ")));
   activeInlines.push_back(InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QStringLiteral("bold"))}));
   activeInlines.push_back(InlineNode::text(QStringLiteral(" after")));
-  InlineLayout::BuildOptions activeOptions = probeOptions;
+  InlineLayout::BuildOptions activeOptions;
   activeOptions.projectionState.revealMarkdownMarkers = true;
   InlineLayout active;
   active.build(activeInlines, QStringLiteral("before **bold** after"), theme, 240.0, theme.paragraphFont(), activeOptions);
   const QVector<QRectF> visibleContent = active.selectionRects(7, 11);
-  require(visibleContent.size() == 1, QStringLiteral("probe active visible content selection should stay single-line"));
-  requireValidSelectionRects(visibleContent, QStringLiteral("probe active visible content"));
+  require(visibleContent.size() == 1, QStringLiteral("inline active visible content selection should stay single-line"));
+  requireValidSelectionRects(visibleContent, QStringLiteral("inline active visible content"));
   const QRectF markerStart = active.cursorRectForSourceOffset(7);
   const QRectF markerEnd = active.cursorRectForSourceOffset(9);
-  require(!markerStart.isEmpty() && !markerEnd.isEmpty(), QStringLiteral("probe active marker cursor rects should exist"));
-  require(markerEnd.left() > markerStart.left(), QStringLiteral("probe active marker source rect should cover visible marker width"));
+  require(!markerStart.isEmpty() && !markerEnd.isEmpty(), QStringLiteral("inline active marker cursor rects should exist"));
+  require(markerEnd.left() > markerStart.left(), QStringLiteral("inline active marker source rect should cover visible marker width"));
 }
 
 bool hasRole(const QVector<CodeHighlightSpan>& spans, CodeHighlightRole role) {
@@ -565,7 +501,7 @@ int changedPixelCount(const QImage& image, QColor background) {
   return changedPixels;
 }
 
-void testDocumentLayoutQTextLayoutBackendContract() {
+void testDocumentLayoutInlineLayoutContract() {
   DocumentSession session;
   session.setMarkdownText(
       QStringLiteral("alpha `code` beta gamma delta epsilon zeta eta theta\n\n| A | B |\n| --- | --- |\n| `one` | two |"),
@@ -573,31 +509,25 @@ void testDocumentLayoutQTextLayoutBackendContract() {
 
   RenderTheme theme = RenderTheme::github();
   DocumentLayout layout;
-  layout.setInlineGeometryBackend(InlineLayout::InlineGeometryBackend::QTextLayout);
   layout.rebuild(session.document(), theme, 360.0);
-  require(layout.inlineGeometryBackend() == InlineLayout::InlineGeometryBackend::QTextLayout,
-          QStringLiteral("document layout should keep QTextLayout backend"));
 
   const MarkdownNode* paragraph = findFirstBlock(session.document().root(), BlockType::Paragraph);
   const MarkdownNode* table = findFirstBlock(session.document().root(), BlockType::Table);
   const MarkdownNode* tableCell = findFirstTableCell(session.document().root());
-  require(paragraph != nullptr && table != nullptr && tableCell != nullptr, QStringLiteral("qtextlayout document fixture missing blocks"));
+  require(paragraph != nullptr && table != nullptr && tableCell != nullptr, QStringLiteral("inline layout document fixture missing blocks"));
 
   const BlockLayout* paragraphLayout = layout.block(paragraph->id());
   const BlockLayout* tableLayout = layout.block(table->id());
-  require(paragraphLayout != nullptr && paragraphLayout->inlineLayout() != nullptr, QStringLiteral("qtextlayout paragraph layout missing"));
-  require(tableLayout != nullptr && tableLayout->type() == BlockType::Table, QStringLiteral("qtextlayout table layout missing"));
+  require(paragraphLayout != nullptr && paragraphLayout->inlineLayout() != nullptr, QStringLiteral("inline layout paragraph layout missing"));
+  require(tableLayout != nullptr && tableLayout->type() == BlockType::Table, QStringLiteral("inline layout table layout missing"));
   const BlockLayout::TableCellLayout* cellLayout = findTableCellLayout(*tableLayout, tableCell->id());
-  require(cellLayout != nullptr, QStringLiteral("qtextlayout table cell layout missing"));
+  require(cellLayout != nullptr, QStringLiteral("inline layout table cell layout missing"));
 
-  require(paragraphLayout->inlineLayout()->height() == paragraphLayout->inlineLayout()->textLayoutSize().height(),
-          QStringLiteral("paragraph height should come from QTextLayout backend"));
-  require(paragraphLayout->inlineLayout()->documentText().isEmpty(),
-          QStringLiteral("paragraph QTextLayout backend should not keep QTextDocument text"));
-  require(cellLayout->text.height() == cellLayout->text.textLayoutSize().height(),
-          QStringLiteral("table cell height should come from QTextLayout backend"));
-  require(cellLayout->text.documentText().isEmpty(),
-          QStringLiteral("table cell QTextLayout backend should not keep QTextDocument text"));
+  require(paragraphLayout->inlineLayout()->height() > 0.0, QStringLiteral("paragraph inline layout should have height"));
+  require(paragraphLayout->inlineLayout()->size().height() == paragraphLayout->inlineLayout()->height(),
+          QStringLiteral("paragraph inline layout size should expose height"));
+  require(cellLayout->text.height() > 0.0, QStringLiteral("table cell inline layout should have height"));
+  require(cellLayout->text.size().height() == cellLayout->text.height(), QStringLiteral("table cell inline layout size should expose height"));
 
   QImage image(QSize(420, qCeil(layout.totalHeight()) + 20), QImage::Format_ARGB32);
   image.fill(theme.backgroundColor());
@@ -606,19 +536,19 @@ void testDocumentLayoutQTextLayoutBackendContract() {
     block->paint(painter, theme, 0.0);
   }
   painter.end();
-  require(changedPixelCount(image, theme.backgroundColor()) > 100, QStringLiteral("document qtextlayout paint should draw visible pixels"));
+  require(changedPixelCount(image, theme.backgroundColor()) > 100, QStringLiteral("document inline layout paint should draw visible pixels"));
 
   const HitTestResult paragraphHit = layout.hitTest(paragraphLayout->rect().center(), theme);
   require(paragraphHit.isValid() && paragraphHit.zone == HitTestResult::Zone::Text,
-          QStringLiteral("document qtextlayout paragraph hit-test should hit text"));
+          QStringLiteral("document inline layout paragraph hit-test should hit text"));
   require(!paragraphLayout->selectionRectsForOffsets(0, 5, theme).isEmpty(),
-          QStringLiteral("document qtextlayout paragraph selection should be available"));
+          QStringLiteral("document inline layout paragraph selection should be available"));
 
   const HitTestResult tableHit = layout.hitTest(cellLayout->rect.center(), theme);
   require(tableHit.isValid() && tableHit.zone == HitTestResult::Zone::TableCell,
-          QStringLiteral("document qtextlayout table hit-test should hit table cell"));
+          QStringLiteral("document inline layout table hit-test should hit table cell"));
   require(!tableLayout->selectionRectsForOffsets(0, 1, theme).isEmpty(),
-          QStringLiteral("document qtextlayout table selection should be available"));
+          QStringLiteral("document inline layout table selection should be available"));
 }
 
 bool hasExactRoleSpan(const QVector<CodeHighlightSpan>& spans, CodeHighlightRole role, qsizetype start, qsizetype end) {
@@ -747,14 +677,14 @@ int main(int argc, char** argv) {
   document.setMarkdownText(markdown, std::move(parsed.root));
 
   testInlineMarkerExpansion();
-  testInlineHtmlProjectionContract();
-  testInlineTextLayoutBackendEquivalence();
-  testInlineTextLayoutBackendPainting();
-  testInlineTextLayoutBackendHitTesting();
-  testInlineTextLayoutBackendCursorRects();
-  testInlineTextLayoutBackendSelectionRects();
+  testInlineProjectionContract();
+  testInlineLayoutGeometryContract();
+  testInlineLayoutPainting();
+  testInlineLayoutHitTesting();
+  testInlineLayoutCursorRects();
+  testInlineLayoutSelectionRects();
   testIncrementalBlockRebuildContract();
-  testDocumentLayoutQTextLayoutBackendContract();
+  testDocumentLayoutInlineLayoutContract();
   testTreeSitterCodeHighlighting();
   testLayoutForTheme(document, RenderTheme::github(), QStringLiteral("github"));
   testLayoutForTheme(document, RenderTheme::newsprint(), QStringLiteral("newsprint"));

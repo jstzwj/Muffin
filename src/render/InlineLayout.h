@@ -5,25 +5,24 @@
 #include "editor/CursorPosition.h"
 #include "theme/RenderTheme.h"
 
-#include <QTextDocument>
+#include <QColor>
+#include <QPointF>
+#include <QRectF>
+#include <QSizeF>
 #include <QTextLayout>
 #include <QString>
 #include <QVector>
 
 #include <memory>
 
+class QPainter;
+
 namespace muffin {
 
 class InlineLayout {
 public:
-  enum class InlineGeometryBackend {
-    QTextDocument,
-    QTextLayout
-  };
-
   struct BuildOptions {
     InlineProjectionState projectionState;
-    InlineGeometryBackend geometryBackend = InlineGeometryBackend::QTextLayout;
   };
 
   InlineLayout() = default;
@@ -45,15 +44,9 @@ public:
   QRectF cursorRect(qsizetype textOffset) const;
   QRectF cursorRectForSourceOffset(qsizetype sourceOffset) const;
   QVector<QRectF> selectionRects(qsizetype startOffset, qsizetype endOffset) const;
-  QSizeF textLayoutSize() const;
-  QRectF textLayoutCursorRect(qsizetype textOffset) const;
-  qsizetype textLayoutHitTestTextOffset(QPointF localPos) const;
-  QVector<QRectF> textLayoutSelectionRects(qsizetype startOffset, qsizetype endOffset) const;
 
   QString plainText() const;
   QString displayText() const;
-  QString documentText() const;
-  QString html() const;
 
 private:
   struct OffsetMapEntry {
@@ -63,35 +56,19 @@ private:
     qsizetype visibleEnd = 0;
   };
 
-  struct ProjectionSyntaxSpanRef {
-    const InlineProjectionSpan* span = nullptr;
-    QString text;
-
-    bool isValid() const { return span != nullptr && !text.isEmpty(); }
-  };
-
-  QString renderInlines(const QVector<InlineNode>& inlines, const RenderTheme& theme, qsizetype& visibleOffset, BuildOptions options);
-  QString renderInline(const InlineNode& node, const RenderTheme& theme, qsizetype& visibleOffset, BuildOptions options);
-  ProjectionSyntaxSpanRef projectionSyntaxSpan(InlineType type, InlineSpanKind kind, qsizetype visiblePosition) const;
-  QString renderProjectionSyntaxSpan(InlineType type, InlineSpanKind kind, qsizetype visiblePosition, const RenderTheme& theme) const;
   void buildOffsetMapFromProjection();
   void buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont);
   void paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) const;
   QVector<QTextLayout::FormatRange> textLayoutFormats(const RenderTheme& theme, const QFont& baseFont) const;
-  QString cssColor(const QColor& color) const;
   qsizetype visibleOffsetForDisplayOffset(qsizetype displayOffset) const;
   qsizetype displayOffsetForVisibleOffset(qsizetype visibleOffset) const;
   qsizetype textLayoutDisplayOffsetForPoint(QPointF localPos) const;
   QRectF textLayoutCursorRectForDisplayOffset(qsizetype displayOffset) const;
 
-  std::unique_ptr<QTextDocument> document_;
   std::unique_ptr<QTextLayout> textLayout_;
   QSizeF size_;
-  QSizeF textLayoutSize_;
-  InlineGeometryBackend geometryBackend_ = InlineGeometryBackend::QTextLayout;
   QColor textLayoutCodeBackgroundColor_;
   QColor textLayoutCodeBorderColor_;
-  QString html_;
   QString plainText_;
   QString displayText_;
   QVector<OffsetMapEntry> offsetMap_;

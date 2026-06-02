@@ -1,7 +1,6 @@
 #include "blocks/math/MathBlockController.h"
 
 #include "app/DocumentSession.h"
-#include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
@@ -152,48 +151,27 @@ bool MathBlockController::mutateCurrentMathBlock(
   }
   const bool wasEditing = isEditing();
   NodeId mathId = activeMath->id();
+  const NodeId originalMathId = mathId;
   const int mathIndex = mathBlockIndexFor(mathId);
 
   const CursorPosition beforeCursor = selection_->hasCursor() ? selection_->cursorPosition() : cursorFor(mathId, 0);
-  const QString beforeText = session_->markdownText();
-  auto rootCopy = session_->document().root().clone(CloneMode::PreserveIds);
-  MarkdownNode* target = findMathBlockById(*rootCopy, mathId);
-  if (!target && mathIndex >= 0) {
-    int index = 0;
-    const auto visit = [&](const auto& self, MarkdownNode& node) -> MarkdownNode* {
-      if (node.type() == BlockType::MathBlock) {
-        if (index == mathIndex) {
-          return &node;
-        }
-        ++index;
-      }
-      for (const auto& child : node.children()) {
-        if (MarkdownNode* found = self(self, *child)) {
-          return found;
-        }
-      }
-      return nullptr;
-    };
-    target = visit(visit, *rootCopy);
-  }
-  if (!target) {
-    return false;
-  }
+  std::unique_ptr<MarkdownNode> beforeNode = activeMath->clone(CloneMode::PreserveIds);
+  std::unique_ptr<MarkdownNode> afterNode = activeMath->clone(CloneMode::PreserveIds);
 
   qsizetype nextOffset =
       beforeCursor.blockId == mathId || (wasEditing && beforeCursor.blockId == editingMathId_)
           ? beforeCursor.text.textOffset
-          : target->literal().size();
-  if (!mutate(*target, nextOffset)) {
+          : afterNode->literal().size();
+  if (!mutate(*afterNode, nextOffset)) {
     return false;
   }
+  if (MarkdownSerializer().serializeBlock(*beforeNode) == MarkdownSerializer().serializeBlock(*afterNode)) {
+    return true;
+  }
 
-  MarkdownDocument nextDocument;
-  nextDocument.setMarkdownText(beforeText, std::move(rootCopy));
-  MarkdownSerializer serializer;
-  QString nextText = serializer.serializeDocument(nextDocument);
-
-  session_->applyMarkdownText(nextText, true);
+  if (!session_->applyNodeSnapshot(mathId, BlockType::MathBlock, mathIndex, *afterNode, true)) {
+    return false;
+  }
   if (MarkdownNode* reparsed = mathBlockByIndex(mathIndex)) {
     mathId = reparsed->id();
     if (wasEditing) {
@@ -206,10 +184,21 @@ bool MathBlockController::mutateCurrentMathBlock(
     selection_->setCursorPosition(nextCursor);
   }
   if (undoStack_) {
-    undoStack_->push(EditTransaction(kind, std::move(label), {beforeText, beforeCursor}, {nextText, nextCursor}));
+    undoStack_->push(EditTransaction(
+        kind,
+        std::move(label),
+        ReplaceNodeCommand{
+            originalMathId,
+            BlockType::MathBlock,
+            mathIndex,
+            std::move(beforeNode),
+            std::move(afterNode),
+            beforeCursor,
+            nextCursor,
+            QVector<NodeId>{originalMathId}}));
   }
   if (brushQueue_) {
-    brushQueue_->requestFullRefresh();
+    brushQueue_->requestBlockRefresh(mathId);
   }
   return true;
 }

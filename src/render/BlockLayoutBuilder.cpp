@@ -67,10 +67,6 @@ void BlockLayoutBuilder::setSelection(SelectionRange selection) {
   selection_ = selection;
 }
 
-void BlockLayoutBuilder::setInlineGeometryBackend(InlineLayout::InlineGeometryBackend backend) {
-  inlineGeometryBackend_ = backend;
-}
-
 std::unique_ptr<BlockLayout> BlockLayoutBuilder::build(
     const MarkdownNode& node,
     const RenderTheme& theme,
@@ -118,7 +114,6 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
   InlineLayout::BuildOptions options;
   options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), sourceContentStartForEditableNode(node));
-  options.geometryBackend = inlineGeometryBackend_;
   inlineLayout->build(node.inlines(), sourceTextForEditableNode(node), theme, width, font, options);
   const qreal height = inlineLayout->height();
   layout->setRect(QRectF(x, y, width, height));
@@ -171,7 +166,6 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
 
   auto inlineLayout = std::make_unique<InlineLayout>();
   InlineLayout::BuildOptions options;
-  options.geometryBackend = inlineGeometryBackend_;
   QString listSourceText;
   if (const MarkdownNode* paragraph = primaryParagraph(node)) {
     listSourceText = sourceTextForEditableNode(*paragraph);
@@ -276,7 +270,6 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       cell.alternate = rowIndex % 2 == 1;
       cell.alignment = column < alignments.size() ? alignments.at(column) : TableAlignment::None;
       InlineLayout::BuildOptions options;
-      options.geometryBackend = inlineGeometryBackend_;
       if (selection_.focus.text.nodeId == cellNode->id()) {
         options.projectionState = InlineProjectionState::forSelection(selection_, selection_.focus.blockId, sourceContentStartForEditableNode(*cellNode));
       }

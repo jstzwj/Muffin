@@ -126,6 +126,12 @@ void testTableControllerCommands() {
   require(controller.insertColumnAfter(), "controller should insert column after");
   require(session.markdownText().contains(QStringLiteral("| A | B |  |")), "controller insert column mismatch");
   require(undoStack.canUndo(), "table command should push undo");
+  EditTransaction insertColumnUndo = undoStack.takeUndo();
+  require(insertColumnUndo.isTableCommand(), "table structure command should use TableCommand undo");
+  require(insertColumnUndo.tableCommand().beforeTable != nullptr, "table command before snapshot missing");
+  require(insertColumnUndo.tableCommand().afterTable != nullptr, "table command after snapshot missing");
+  require(TableModelOps::columnCount(*insertColumnUndo.tableCommand().beforeTable) == 2, "table command before column count mismatch");
+  require(TableModelOps::columnCount(*insertColumnUndo.tableCommand().afterTable) == 3, "table command after column count mismatch");
 
   session.setMarkdownText(QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), false);
   cell = TableModelOps::cellAt(*session.document().root().children().front(), 1, 0);
@@ -136,6 +142,8 @@ void testTableControllerCommands() {
   selection.setHitResult(hit);
   require(controller.setCurrentColumnAlignment(TableAlignment::Right), "controller should set alignment");
   require(session.markdownText().contains(QStringLiteral("| ---: | --- |")), "controller alignment mismatch");
+  EditTransaction alignmentUndo = undoStack.takeUndo();
+  require(alignmentUndo.isTableCommand(), "table alignment should use TableCommand undo");
 
   session.setMarkdownText(QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |\n| 3 | 4 |"), false);
   MarkdownNode& moveTable = *session.document().root().children().front();
@@ -147,6 +155,8 @@ void testTableControllerCommands() {
   selection.setHitResult(hit);
   require(controller.moveCurrentRowUp(), "controller should move row up");
   require(session.markdownText().contains(QStringLiteral("| 3 | 4 |\n| 1 | 2 |")), "controller move row mismatch");
+  EditTransaction moveRowUndo = undoStack.takeUndo();
+  require(moveRowUndo.isTableCommand(), "table row move should use TableCommand undo");
 
   cell = TableModelOps::cellAt(*session.document().root().children().front(), 1, 1);
   hit.blockId = session.document().root().children().front()->id();
@@ -156,6 +166,8 @@ void testTableControllerCommands() {
   selection.setHitResult(hit);
   require(controller.moveCurrentColumnLeft(), "controller should move column left");
   require(session.markdownText().contains(QStringLiteral("| B | A |")), "controller move column mismatch");
+  EditTransaction moveColumnUndo = undoStack.takeUndo();
+  require(moveColumnUndo.isTableCommand(), "table column move should use TableCommand undo");
 }
 
 void testTableControllerCellTextEditing() {
@@ -186,6 +198,11 @@ void testTableControllerCellTextEditing() {
   require(tableController.insertText(QStringLiteral("X")), "table cell insert should work");
   require(session.markdownText().contains(QStringLiteral("| 1 | 2X |")), "table cell insert markdown mismatch");
   require(selection.cursorPosition().text.textOffset == 2, "table cell insert cursor mismatch");
+  require(undoStack.canUndo(), "table cell insert should push undo");
+  EditTransaction cellEditUndo = undoStack.takeUndo();
+  require(cellEditUndo.isTextDeltaCommand(), "table cell edit should use TextDeltaCommand");
+  require(cellEditUndo.textDeltaCommand().delta.removedText == QStringLiteral("2"), "table cell removed text mismatch");
+  require(cellEditUndo.textDeltaCommand().delta.insertedText == QStringLiteral("2X"), "table cell inserted text mismatch");
 
   require(tableController.deleteBackward(), "table cell backspace should work");
   require(session.markdownText().contains(QStringLiteral("| 1 | 2 |")), "table cell backspace markdown mismatch");
@@ -210,6 +227,11 @@ void testTableControllerInsertTable() {
   require(session.markdownText().contains(QStringLiteral("| Header | Header |")), "insert table header mismatch");
   require(session.markdownText().contains(QStringLiteral("| --- | --- |")), "insert table delimiter mismatch");
   require(undoStack.canUndo(), "insert table should push undo");
+  EditTransaction insertTableUndo = undoStack.takeUndo();
+  require(insertTableUndo.isInsertNodeCommand(), "insert table should use InsertNodeCommand");
+  require(insertTableUndo.insertNodeCommand().nodeType == BlockType::Table, "insert table command type mismatch");
+  require(insertTableUndo.insertNodeCommand().insertedNode != nullptr, "insert table command node missing");
+  require(!insertTableUndo.insertNodeCommand().delta.insertedText.isEmpty(), "insert table command delta missing");
 }
 
 }  // namespace

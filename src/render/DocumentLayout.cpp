@@ -38,7 +38,6 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
   BlockLayoutBuilder builder;
   builder.setMarkdownText(document.markdownText());
   builder.setSelection(selection);
-  builder.setInlineGeometryBackend(inlineGeometryBackend_);
   qreal cursorY = theme.topMargin();
   for (const auto& child : document.root().children()) {
     cursorY += spacingBeforeBlock(*child, theme, cursorY);
@@ -74,7 +73,6 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
   BlockLayoutBuilder builder;
   builder.setMarkdownText(document.markdownText());
   builder.setSelection(selection);
-  builder.setInlineGeometryBackend(inlineGeometryBackend_);
   std::unique_ptr<BlockLayout>& slot = blocks_.at(static_cast<size_t>(index));
   result.blockId = node->id();
   result.oldRect = slot->rect();
@@ -126,14 +124,6 @@ qreal DocumentLayout::totalHeight() const {
 
 const std::vector<std::unique_ptr<BlockLayout>>& DocumentLayout::blocks() const {
   return blocks_;
-}
-
-void DocumentLayout::setInlineGeometryBackend(InlineLayout::InlineGeometryBackend backend) {
-  inlineGeometryBackend_ = backend;
-}
-
-InlineLayout::InlineGeometryBackend DocumentLayout::inlineGeometryBackend() const {
-  return inlineGeometryBackend_;
 }
 
 QVector<const BlockLayout*> DocumentLayout::visibleBlocks(QRectF documentViewport) const {

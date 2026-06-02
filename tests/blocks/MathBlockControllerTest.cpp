@@ -60,6 +60,9 @@ void testEnterEditAndTextEditing() {
   require(controller.insertText(QStringLiteral("\n+c")), "math insert should work");
   require(session.markdownText().contains(QStringLiteral("a=b\n+c")), "math insert markdown mismatch");
   require(undoStack.canUndo(), "math insert should push undo");
+  EditTransaction mathInsertUndo = undoStack.takeUndo();
+  require(mathInsertUndo.isReplaceNodeCommand(), "math insert should use ReplaceNodeCommand");
+  require(mathInsertUndo.replaceNodeCommand().nodeType == BlockType::MathBlock, "math insert command type mismatch");
 
   require(controller.deleteBackward(), "math backspace should work");
   require(session.markdownText().contains(QStringLiteral("a=b\n+")), "math backspace markdown mismatch");
@@ -85,6 +88,8 @@ void testSetTexAndRoundtripFence() {
   require(controller.setTex(QStringLiteral("E = mc^2\n\\\\int_0^1 x dx")), "set tex should work");
   require(session.markdownText().contains(QStringLiteral("$$\nE = mc^2\n\\\\int_0^1 x dx\n$$")), "math fence roundtrip mismatch");
   require(undoStack.canUndo(), "set tex should push undo");
+  EditTransaction setTexUndo = undoStack.takeUndo();
+  require(setTexUndo.isReplaceNodeCommand(), "set tex should use ReplaceNodeCommand");
 }
 
 }  // namespace

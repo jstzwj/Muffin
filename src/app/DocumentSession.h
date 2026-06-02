@@ -41,6 +41,16 @@ public:
       QString insertedText,
       bool modified,
       QVector<LocalEditNodeHint> nodeHints = {});
+  bool applyTableSnapshot(NodeId tableId, int tableIndex, const MarkdownNode& tableSnapshot, bool modified);
+  bool applyNodeSnapshot(NodeId nodeId, BlockType nodeType, int nodeIndex, const MarkdownNode& nodeSnapshot, bool modified);
+  bool applyInsertedNode(
+      NodeId nodeId,
+      BlockType nodeType,
+      qsizetype sourceStart,
+      qsizetype targetSourceOffset,
+      qsizetype removedLength,
+      QString insertedText,
+      bool modified);
 
 signals:
   void documentTextChanged(QString text);

@@ -84,6 +84,9 @@ void testEnterEditAndTextEditing() {
   require(controller.insertText(QStringLiteral("\n// done")), "code insert should work");
   require(session.markdownText().contains(QStringLiteral("// done")), "code insert markdown mismatch");
   require(undoStack.canUndo(), "code insert should push undo");
+  EditTransaction codeInsertUndo = undoStack.takeUndo();
+  require(codeInsertUndo.isReplaceNodeCommand(), "code insert should use ReplaceNodeCommand");
+  require(codeInsertUndo.replaceNodeCommand().nodeType == BlockType::CodeFence, "code insert command type mismatch");
 
   require(controller.deleteBackward(), "code backspace should work");
   require(!session.markdownText().contains(QStringLiteral("// done")), "code backspace markdown mismatch");
@@ -108,9 +111,13 @@ void testSetLanguageAndContent() {
   require(controller.enterEditMode(), "enter code edit should work for language test");
   require(controller.setLanguage(QStringLiteral("powershell")), "set language should work");
   require(session.markdownText().startsWith(QStringLiteral("```powershell")), "set language markdown mismatch");
+  EditTransaction languageUndo = undoStack.takeUndo();
+  require(languageUndo.isReplaceNodeCommand(), "set language should use ReplaceNodeCommand");
 
   require(controller.setContent(QStringLiteral("conan install\ncmake --build")), "set content should work");
   require(session.markdownText().contains(QStringLiteral("conan install\ncmake --build")), "set content markdown mismatch");
+  EditTransaction contentUndo = undoStack.takeUndo();
+  require(contentUndo.isReplaceNodeCommand(), "set content should use ReplaceNodeCommand");
 }
 
 void testSetLanguageForSpecificFenceKeepsCursor() {
@@ -135,6 +142,8 @@ void testSetLanguageForSpecificFenceKeepsCursor() {
   require(session.markdownText().contains(QStringLiteral("```python\nsecond\n```")), "second code language mismatch");
   require(selection.cursorPosition().text.textOffset == 2, "target language edit should keep cursor offset");
   require(undoStack.canUndo(), "target language edit should push undo");
+  EditTransaction targetLanguageUndo = undoStack.takeUndo();
+  require(targetLanguageUndo.isReplaceNodeCommand(), "target language edit should use ReplaceNodeCommand");
 }
 
 void testSelectionReplaceAndDelete() {
