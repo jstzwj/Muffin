@@ -162,19 +162,12 @@ bool CodeFenceController::deleteSelection() {
 }
 
 bool CodeFenceController::setLanguage(QString language) {
-  return mutateCurrentCodeFence(QStringLiteral("Set Code Fence Language"), EditTransaction::Kind::ReplaceDocumentText,
-                                [language = std::move(language).trimmed()](MarkdownNode& code, qsizetype&) {
-                                  code.setCodeLanguage(language);
-                                  return true;
-                                });
+  const MarkdownNode* activeCode = currentCodeFence();
+  return activeCode ? setLanguageForCodeFence(activeCode->id(), std::move(language)) : false;
 }
 
 bool CodeFenceController::setLanguageFor(NodeId codeId, QString language) {
-  return mutateCodeFence(codeId, QStringLiteral("Set Code Fence Language"), EditTransaction::Kind::ReplaceDocumentText,
-                         [language = std::move(language).trimmed()](MarkdownNode& code, qsizetype&) {
-                           code.setCodeLanguage(language);
-                           return true;
-                         });
+  return setLanguageForCodeFence(codeId, std::move(language));
 }
 
 bool CodeFenceController::setContent(QString content) {
@@ -192,6 +185,76 @@ bool CodeFenceController::mutateCurrentCodeFence(
     const std::function<bool(MarkdownNode&, qsizetype&)>& mutate) {
   const MarkdownNode* activeCode = currentCodeFence();
   return activeCode ? mutateCodeFence(activeCode->id(), std::move(label), kind, mutate) : false;
+}
+
+bool CodeFenceController::setLanguageForCodeFence(NodeId requestedCodeId, QString language) {
+  if (!session_ || !selection_) {
+    return false;
+  }
+
+  MarkdownNode* activeCode = codeFenceById(requestedCodeId);
+  if (!activeCode) {
+    return false;
+  }
+  language = language.trimmed();
+  const QString beforeLanguage = activeCode->codeLanguage();
+  if (beforeLanguage == language) {
+    return true;
+  }
+
+  const bool wasEditing = isEditing();
+  NodeId codeId = activeCode->id();
+  const NodeId originalCodeId = codeId;
+  const int codeIndex = codeFenceIndexFor(codeId);
+  const CursorPosition beforeCursor = selection_->hasCursor() ? selection_->cursorPosition() : cursorFor(codeId, 0);
+  const int beforeCursorCodeIndex = codeFenceIndexFor(beforeCursor.blockId);
+  const bool cursorWasInTarget = beforeCursor.blockId == codeId || (wasEditing && beforeCursor.blockId == editingCodeId_);
+  auto afterNode = activeCode->clone(CloneMode::PreserveIds);
+  afterNode->setCodeLanguage(language);
+
+  if (!session_->applyNodeSnapshot(codeId, BlockType::CodeFence, codeIndex, *afterNode, true)) {
+    return false;
+  }
+  if (MarkdownNode* reparsed = codeFenceByIndex(codeIndex)) {
+    codeId = reparsed->id();
+    if (wasEditing) {
+      editingCodeId_ = codeId;
+      editingCodeIndex_ = codeIndex;
+    }
+  }
+
+  CursorPosition nextCursor;
+  if (cursorWasInTarget) {
+    nextCursor = cursorFor(codeId, beforeCursor.text.textOffset);
+  } else if (MarkdownNode* reparsedCursorCode = codeFenceByIndex(beforeCursorCodeIndex)) {
+    nextCursor = cursorFor(reparsedCursorCode->id(), beforeCursor.text.textOffset);
+  } else if (MarkdownNode* reparsedCursorNode = session_->document().node(beforeCursor.blockId)) {
+    nextCursor = beforeCursor;
+    nextCursor.blockId = reparsedCursorNode->id();
+    nextCursor.text.nodeId = reparsedCursorNode->id();
+  }
+  if (selection_ && nextCursor.isValid()) {
+    selection_->setCursorPosition(nextCursor);
+  }
+  if (undoStack_ && nextCursor.isValid()) {
+    undoStack_->push(EditTransaction(
+        EditTransaction::Kind::ReplaceDocumentText,
+        QStringLiteral("Set Code Fence Language"),
+        SetNodeAttrCommand{
+            originalCodeId,
+            BlockType::CodeFence,
+            codeIndex,
+            NodeAttribute::CodeLanguage,
+            beforeLanguage,
+            language,
+            beforeCursor,
+            nextCursor,
+            QVector<NodeId>{originalCodeId}}));
+  }
+  if (brushQueue_) {
+    brushQueue_->requestBlockRefresh(codeId);
+  }
+  return true;
 }
 
 bool CodeFenceController::mutateCodeFence(

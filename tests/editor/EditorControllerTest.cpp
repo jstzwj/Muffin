@@ -21,6 +21,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <variant>
 
 using namespace muffin;
 
@@ -1985,6 +1986,7 @@ void testTableStructureUndoUsesTableCommand() {
   controller.activateHit(cellHit);
 
   require(controller.tableController().insertColumnAfter(), "table insert column should work");
+  require(session.lastParseWasLocalEdit(), "table insert column should use local table apply");
   require(session.markdownText().contains(QStringLiteral("| A | B |  |")), "table insert column text mismatch");
   require(controller.undoStack().canUndo(), "table insert column should push undo");
   require(controller.undoStack().undoText() == QStringLiteral("Insert Table Column After"), "table command undo label mismatch");
@@ -2126,6 +2128,85 @@ void testCodeFenceUndoUsesReplaceNodeCommand() {
   require(controller.selection().hasCursor(), "code replace redo should keep cursor");
 }
 
+void testWholeBlockDeleteUsesRemoveNodeCommand() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("alpha\n\nbeta\n\ngamma"), false);
+  MarkdownNode* middle = blockAt(session, 1);
+  setSelection(controller.selection(), middle, 0, 4);
+
+  require(controller.inputController().deleteSelection(), "whole block delete should work");
+  require(session.markdownText() == QStringLiteral("alpha\n\ngamma"), "whole block delete markdown mismatch");
+  require(controller.undoStack().canUndo(), "whole block delete should push undo");
+  EditTransaction transaction = controller.undoStack().takeUndo();
+  require(transaction.isRemoveNodeCommand(), "whole block delete should use RemoveNodeCommand");
+  require(transaction.removeNodeCommand().nodeType == BlockType::Paragraph, "remove node command type mismatch");
+  require(transaction.removeNodeCommand().removedNode != nullptr, "remove node command snapshot missing");
+  require(transaction.removeNodeCommand().delta.removedText.contains(QStringLiteral("beta")), "remove node command removed text mismatch");
+  require(transaction.removeNodeCommand().delta.insertedText.isEmpty(), "remove node command inserted text should be empty");
+  controller.undoStack().push(transaction);
+
+  controller.undo();
+  require(session.markdownText() == QStringLiteral("alpha\n\nbeta\n\ngamma"), "whole block delete undo mismatch");
+  controller.redo();
+  require(session.markdownText() == QStringLiteral("alpha\n\ngamma"), "whole block delete redo mismatch");
+  require(controller.selection().hasCursor(), "whole block delete redo should keep cursor");
+}
+
+void testStructuredNodeCommandModels() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("# Title"), false);
+  MarkdownNode* heading = firstBlockOfType(session, BlockType::Heading);
+  require(heading != nullptr, "heading command target missing");
+  setCursor(controller.selection(), heading, 0);
+  const CursorPosition cursor = controller.selection().cursorPosition();
+
+  SetNodeAttrCommand attrCommand{
+      heading->id(),
+      BlockType::Heading,
+      0,
+      NodeAttribute::HeadingLevel,
+      1,
+      2,
+      cursor,
+      cursor,
+      QVector<NodeId>{heading->id()}};
+  require(attrCommand.isValid(), "set node attr command should validate");
+  EditTransaction attrTransaction(EditTransaction::Kind::ReplaceDocumentText, QStringLiteral("Set Heading Level"), attrCommand);
+  require(attrTransaction.isSetNodeAttrCommand(), "set node attr transaction storage mismatch");
+  auto afterHeading = heading->clone(CloneMode::PreserveIds);
+  afterHeading->setHeadingLevel(2);
+  session.applyNodeSnapshot(heading->id(), BlockType::Heading, 0, *afterHeading, true);
+  controller.undoStack().push(attrTransaction);
+  controller.undo();
+  require(session.markdownText() == QStringLiteral("# Title"), "set node attr undo mismatch");
+  controller.redo();
+  require(session.markdownText() == QStringLiteral("## Title"), "set node attr redo mismatch");
+  controller.undo();
+  require(session.markdownText() == QStringLiteral("# Title"), "set node attr second undo mismatch");
+
+  heading = firstBlockOfType(session, BlockType::Heading);
+  const QString removedText = session.markdownText();
+  RemoveNodeCommand removeCommand{
+      heading->id(),
+      BlockType::Heading,
+      0,
+      TextDelta{0, removedText, QString()},
+      0,
+      heading->clone(CloneMode::PreserveIds),
+      cursor,
+      CursorPosition(),
+      QVector<NodeId>{heading->id()}};
+  require(removeCommand.isValid(), "remove node command should validate");
+  EditTransaction removeTransaction(EditTransaction::Kind::DeleteText, QStringLiteral("Remove Heading"), removeCommand);
+  require(removeTransaction.isRemoveNodeCommand(), "remove node transaction storage mismatch");
+}
+
 void testSwitchingBetweenCodeBlocksRoutesInputToClickedBlock() {
   DocumentSession session;
   EditorController controller;
@@ -2239,6 +2320,8 @@ int main(int argc, char** argv) {
   testInsertTableUndoUsesInsertNodeCommand();
   testCodeActivationKeepsClickedOffsetForTyping();
   testCodeFenceUndoUsesReplaceNodeCommand();
+  testWholeBlockDeleteUsesRemoveNodeCommand();
+  testStructuredNodeCommandModels();
   testSwitchingBetweenCodeBlocksRoutesInputToClickedBlock();
   testInlineSelectionRects();
   return 0;

@@ -11,6 +11,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <variant>
 
 using namespace muffin;
 
@@ -124,6 +125,7 @@ void testTableControllerCommands() {
   require(location.row == 1 && location.column == 1, "current table location mismatch");
 
   require(controller.insertColumnAfter(), "controller should insert column after");
+  require(session.lastParseWasLocalEdit(), "controller insert column should use local table apply");
   require(session.markdownText().contains(QStringLiteral("| A | B |  |")), "controller insert column mismatch");
   require(undoStack.canUndo(), "table command should push undo");
   EditTransaction insertColumnUndo = undoStack.takeUndo();
@@ -143,7 +145,12 @@ void testTableControllerCommands() {
   require(controller.setCurrentColumnAlignment(TableAlignment::Right), "controller should set alignment");
   require(session.markdownText().contains(QStringLiteral("| ---: | --- |")), "controller alignment mismatch");
   EditTransaction alignmentUndo = undoStack.takeUndo();
-  require(alignmentUndo.isTableCommand(), "table alignment should use TableCommand undo");
+  require(alignmentUndo.isSetNodeAttrCommand(), "table alignment should use SetNodeAttrCommand undo");
+  require(alignmentUndo.setNodeAttrCommand().attribute == NodeAttribute::TableAlignments, "table alignment attribute mismatch");
+  require(std::get<QVector<TableAlignment>>(alignmentUndo.setNodeAttrCommand().beforeValue).at(0) == TableAlignment::None,
+          "table alignment before value mismatch");
+  require(std::get<QVector<TableAlignment>>(alignmentUndo.setNodeAttrCommand().afterValue).at(0) == TableAlignment::Right,
+          "table alignment after value mismatch");
 
   session.setMarkdownText(QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |\n| 3 | 4 |"), false);
   MarkdownNode& moveTable = *session.document().root().children().front();
@@ -168,6 +175,19 @@ void testTableControllerCommands() {
   require(session.markdownText().contains(QStringLiteral("| B | A |")), "controller move column mismatch");
   EditTransaction moveColumnUndo = undoStack.takeUndo();
   require(moveColumnUndo.isTableCommand(), "table column move should use TableCommand undo");
+
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| 1 |"), false);
+  MarkdownNode& singleColumnTable = *session.document().root().children().front();
+  cell = TableModelOps::cellAt(singleColumnTable, 1, 0);
+  hit.blockId = singleColumnTable.id();
+  hit.textNodeId = cell->id();
+  hit.tableRow = 1;
+  hit.tableColumn = 0;
+  selection.setHitResult(hit);
+  require(!controller.deleteCurrentColumn(), "deleting only column should be a no-op");
+  require(!undoStack.canUndo(), "no-op table command should not push undo");
+  require(!controller.moveCurrentColumnLeft(), "moving first column left should be a no-op");
+  require(!undoStack.canUndo(), "boundary table command should not push undo");
 }
 
 void testTableControllerCellTextEditing() {

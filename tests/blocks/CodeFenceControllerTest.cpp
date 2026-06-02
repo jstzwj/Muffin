@@ -7,6 +7,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <variant>
 
 using namespace muffin;
 
@@ -112,7 +113,10 @@ void testSetLanguageAndContent() {
   require(controller.setLanguage(QStringLiteral("powershell")), "set language should work");
   require(session.markdownText().startsWith(QStringLiteral("```powershell")), "set language markdown mismatch");
   EditTransaction languageUndo = undoStack.takeUndo();
-  require(languageUndo.isReplaceNodeCommand(), "set language should use ReplaceNodeCommand");
+  require(languageUndo.isSetNodeAttrCommand(), "set language should use SetNodeAttrCommand");
+  require(languageUndo.setNodeAttrCommand().attribute == NodeAttribute::CodeLanguage, "set language attribute mismatch");
+  require(std::get<QString>(languageUndo.setNodeAttrCommand().beforeValue).isEmpty(), "set language before value mismatch");
+  require(std::get<QString>(languageUndo.setNodeAttrCommand().afterValue) == QStringLiteral("powershell"), "set language after value mismatch");
 
   require(controller.setContent(QStringLiteral("conan install\ncmake --build")), "set content should work");
   require(session.markdownText().contains(QStringLiteral("conan install\ncmake --build")), "set content markdown mismatch");
@@ -143,7 +147,9 @@ void testSetLanguageForSpecificFenceKeepsCursor() {
   require(selection.cursorPosition().text.textOffset == 2, "target language edit should keep cursor offset");
   require(undoStack.canUndo(), "target language edit should push undo");
   EditTransaction targetLanguageUndo = undoStack.takeUndo();
-  require(targetLanguageUndo.isReplaceNodeCommand(), "target language edit should use ReplaceNodeCommand");
+  require(targetLanguageUndo.isSetNodeAttrCommand(), "target language edit should use SetNodeAttrCommand");
+  require(targetLanguageUndo.setNodeAttrCommand().attribute == NodeAttribute::CodeLanguage, "target language attribute mismatch");
+  require(std::get<QString>(targetLanguageUndo.setNodeAttrCommand().afterValue) == QStringLiteral("python"), "target language after value mismatch");
 }
 
 void testSelectionReplaceAndDelete() {

@@ -249,6 +249,10 @@ bool InputController::hasEditableSelection() const {
 }
 
 bool InputController::replaceSelection(QString text, EditTransaction::Kind kind, QString label) {
+  if (text.isEmpty() && kind == EditTransaction::Kind::DeleteText && tryRemoveExactWholeBlockSelection(kind, label)) {
+    return true;
+  }
+
   BlockEditContextResolver resolver = contextResolver();
   BlockEditContext context;
   qsizetype start = 0;
@@ -272,6 +276,110 @@ bool InputController::replaceSelection(QString text, EditTransaction::Kind kind,
   QString nextDocument = session_->markdownText();
   nextDocument.replace(sourceStart, sourceEnd - sourceStart, text);
   applyEdit(kind, label, std::move(nextDocument), sourceStart + text.size());
+  return true;
+}
+
+bool InputController::tryRemoveExactWholeBlockSelection(EditTransaction::Kind kind, const QString& label) {
+  if (!session_ || !selection_ || !selection_->hasCursor() || selection_->selection().isCollapsed()) {
+    return false;
+  }
+
+  const SelectionRange range = selection_->selection();
+  if (range.anchor.blockId != range.focus.blockId) {
+    return false;
+  }
+
+  MarkdownNode* node = session_->document().node(range.anchor.blockId);
+  if (!node || !node->parent() || node->parent()->type() != BlockType::Document) {
+    return false;
+  }
+
+  qsizetype blockStart = -1;
+  qsizetype blockEnd = -1;
+  BlockEditContextResolver resolver = contextResolver();
+  if (!resolver.blockSourceRange(*node, blockStart, blockEnd)) {
+    return false;
+  }
+
+  qsizetype selectionStart = -1;
+  qsizetype selectionEnd = -1;
+  if (!blockSelectionSourceRange(selectionStart, selectionEnd) || selectionStart != blockStart || selectionEnd != blockEnd) {
+    return false;
+  }
+
+  const auto& blocks = session_->document().root().children();
+  int nodeIndex = -1;
+  for (int i = 0; i < static_cast<int>(blocks.size()); ++i) {
+    if (blocks.at(static_cast<size_t>(i)).get() == node) {
+      nodeIndex = i;
+      break;
+    }
+  }
+  if (nodeIndex < 0) {
+    return false;
+  }
+
+  qsizetype deleteStart = blockStart;
+  qsizetype deleteEnd = blockEnd;
+  if (blocks.size() == 1) {
+    deleteStart = 0;
+    deleteEnd = session_->markdownText().size();
+  } else if (nodeIndex + 1 < static_cast<int>(blocks.size())) {
+    deleteEnd = blocks.at(static_cast<size_t>(nodeIndex + 1))->sourceRange().byteStart;
+  } else {
+    deleteStart = blocks.at(static_cast<size_t>(nodeIndex - 1))->sourceRange().byteEnd;
+  }
+  deleteStart = qBound<qsizetype>(0, deleteStart, session_->markdownText().size());
+  deleteEnd = qBound<qsizetype>(deleteStart, deleteEnd, session_->markdownText().size());
+  if (deleteStart >= deleteEnd) {
+    return false;
+  }
+
+  const CursorPosition beforeCursor = selection_->cursorPosition();
+  const QString removedText = session_->markdownText().mid(deleteStart, deleteEnd - deleteStart);
+  std::unique_ptr<MarkdownNode> removedNode = node->clone(CloneMode::PreserveIds);
+  const NodeId removedNodeId = node->id();
+  const BlockType removedNodeType = node->type();
+
+  QVector<LocalEditNodeHint> nodeHints;
+  nodeHints.push_back(LocalEditNodeHint{removedNodeId, blockStart, removedNodeType});
+  if (!session_->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
+    return false;
+  }
+
+  CursorPosition nextCursor = cursorAfterEdit(CursorPosition(), deleteStart, true);
+  if (nextCursor.isValid()) {
+    selection_->setCursorPosition(nextCursor);
+  } else {
+    selection_->clear();
+  }
+
+  if (undoStack_) {
+    QVector<NodeId> affectedNodes{removedNodeId};
+    if (nextCursor.isValid() && !affectedNodes.contains(nextCursor.blockId)) {
+      affectedNodes.push_back(nextCursor.blockId);
+    }
+    undoStack_->push(EditTransaction(
+        kind,
+        label,
+        RemoveNodeCommand{
+            removedNodeId,
+            removedNodeType,
+            nodeIndex,
+            TextDelta{deleteStart, removedText, QString()},
+            blockStart,
+            std::move(removedNode),
+            beforeCursor,
+            nextCursor,
+            std::move(affectedNodes)}));
+  }
+  if (brushQueue_) {
+    if (nextCursor.isValid()) {
+      brushQueue_->requestBlockRefresh(nextCursor.blockId);
+    } else {
+      brushQueue_->requestFullRefresh();
+    }
+  }
   return true;
 }
 

@@ -64,7 +64,7 @@ signals:
 
 private:
   bool editCurrentCell(QString label, EditTransaction::Kind kind, const std::function<bool(MarkdownNode&, qsizetype&)>& mutate);
-  bool mutateCurrentTable(QString label, EditTransaction::Kind kind, const std::function<bool(MarkdownNode&, TableLocation)>& mutate);
+  bool mutateCurrentTable(QString label, EditTransaction::Kind kind, const std::function<bool(MarkdownNode&, TableLocation&)>& mutate);
   MarkdownNode* tableForLocation(TableLocation location) const;
   MarkdownNode* cellForLocation(TableLocation location) const;
   CursorPosition cursorForLocation(TableLocation location) const;

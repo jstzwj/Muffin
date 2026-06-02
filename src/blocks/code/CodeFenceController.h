@@ -49,6 +49,7 @@ private:
       QString label,
       EditTransaction::Kind kind,
       const std::function<bool(MarkdownNode&, qsizetype&)>& mutate);
+  bool setLanguageForCodeFence(NodeId requestedCodeId, QString language);
   MarkdownNode* currentCodeFence() const;
   MarkdownNode* codeFenceById(NodeId id) const;
   MarkdownNode* codeFenceByIndex(int index) const;

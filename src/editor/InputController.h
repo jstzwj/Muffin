@@ -59,6 +59,7 @@ private:
   bool editParagraph(TextBlockCommandBuilder::Operation operation, QString text = {});
   bool applyTextCommand(const TextBlockCommandBuilder::Command& command);
   bool replaceSelection(QString text, EditTransaction::Kind kind, QString label);
+  bool tryRemoveExactWholeBlockSelection(EditTransaction::Kind kind, const QString& label);
   bool selectionSourceRange(qsizetype& start, qsizetype& end) const;
   bool blockSelectionSourceRange(qsizetype& start, qsizetype& end) const;
   BlockEditContextResolver contextResolver() const;

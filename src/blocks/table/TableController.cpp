@@ -115,6 +115,17 @@ qsizetype sourceOffsetForTableCellVisibleOffset(const QString& escapedMarkdown, 
   return escapedMarkdown.size();
 }
 
+TableLocation clampedTableLocation(TableLocation location, const MarkdownNode& table) {
+  const int rows = TableModelOps::rowCount(table);
+  const int columns = TableModelOps::columnCount(table);
+  if (rows <= 0 || columns <= 0) {
+    return {};
+  }
+  location.row = qBound(0, location.row, rows - 1);
+  location.column = qBound(0, location.column, columns - 1);
+  return location;
+}
+
 }  // namespace
 
 TableController::TableController(QObject* parent) : QObject(parent) {}
@@ -229,93 +240,169 @@ bool TableController::deleteSelection() {
 }
 
 bool TableController::insertRowBefore() {
-  return mutateCurrentTable(QStringLiteral("Insert Table Row Before"), EditTransaction::Kind::InsertText, [](MarkdownNode& table, TableLocation location) {
+  return mutateCurrentTable(QStringLiteral("Insert Table Row Before"), EditTransaction::Kind::InsertText, [](MarkdownNode& table, TableLocation& location) {
     TableModelOps::insertRow(table, location.row, InsertPosition::Before);
     return true;
   });
 }
 
 bool TableController::insertRowAfter() {
-  return mutateCurrentTable(QStringLiteral("Insert Table Row After"), EditTransaction::Kind::InsertText, [](MarkdownNode& table, TableLocation location) {
+  return mutateCurrentTable(QStringLiteral("Insert Table Row After"), EditTransaction::Kind::InsertText, [](MarkdownNode& table, TableLocation& location) {
     TableModelOps::insertRow(table, location.row, InsertPosition::After);
+    ++location.row;
     return true;
   });
 }
 
 bool TableController::deleteCurrentRow() {
-  return mutateCurrentTable(QStringLiteral("Delete Table Row"), EditTransaction::Kind::DeleteText, [](MarkdownNode& table, TableLocation location) {
+  return mutateCurrentTable(QStringLiteral("Delete Table Row"), EditTransaction::Kind::DeleteText, [](MarkdownNode& table, TableLocation& location) {
+    if (TableModelOps::rowCount(table) <= 1) {
+      return false;
+    }
     TableModelOps::deleteRow(table, location.row);
+    location.row = qMin(location.row, TableModelOps::rowCount(table) - 1);
     return true;
   });
 }
 
 bool TableController::moveCurrentRowUp() {
-  return mutateCurrentTable(QStringLiteral("Move Table Row Up"), EditTransaction::Kind::ReplaceDocumentText, [](MarkdownNode& table, TableLocation location) {
+  return mutateCurrentTable(QStringLiteral("Move Table Row Up"), EditTransaction::Kind::ReplaceDocumentText, [](MarkdownNode& table, TableLocation& location) {
     if (location.row <= 0) {
       return false;
     }
     TableModelOps::moveRow(table, location.row, location.row - 1);
+    --location.row;
     return true;
   });
 }
 
 bool TableController::moveCurrentRowDown() {
-  return mutateCurrentTable(QStringLiteral("Move Table Row Down"), EditTransaction::Kind::ReplaceDocumentText, [](MarkdownNode& table, TableLocation location) {
+  return mutateCurrentTable(QStringLiteral("Move Table Row Down"), EditTransaction::Kind::ReplaceDocumentText, [](MarkdownNode& table, TableLocation& location) {
     if (location.row + 1 >= TableModelOps::rowCount(table)) {
       return false;
     }
     TableModelOps::moveRow(table, location.row, location.row + 1);
+    ++location.row;
     return true;
   });
 }
 
 bool TableController::insertColumnBefore() {
-  return mutateCurrentTable(QStringLiteral("Insert Table Column Before"), EditTransaction::Kind::InsertText, [](MarkdownNode& table, TableLocation location) {
+  return mutateCurrentTable(QStringLiteral("Insert Table Column Before"), EditTransaction::Kind::InsertText, [](MarkdownNode& table, TableLocation& location) {
     TableModelOps::insertColumn(table, location.column, InsertPosition::Before);
     return true;
   });
 }
 
 bool TableController::insertColumnAfter() {
-  return mutateCurrentTable(QStringLiteral("Insert Table Column After"), EditTransaction::Kind::InsertText, [](MarkdownNode& table, TableLocation location) {
+  return mutateCurrentTable(QStringLiteral("Insert Table Column After"), EditTransaction::Kind::InsertText, [](MarkdownNode& table, TableLocation& location) {
     TableModelOps::insertColumn(table, location.column, InsertPosition::After);
+    ++location.column;
     return true;
   });
 }
 
 bool TableController::deleteCurrentColumn() {
-  return mutateCurrentTable(QStringLiteral("Delete Table Column"), EditTransaction::Kind::DeleteText, [](MarkdownNode& table, TableLocation location) {
+  return mutateCurrentTable(QStringLiteral("Delete Table Column"), EditTransaction::Kind::DeleteText, [](MarkdownNode& table, TableLocation& location) {
+    if (TableModelOps::columnCount(table) <= 1) {
+      return false;
+    }
     TableModelOps::deleteColumn(table, location.column);
+    location.column = qMin(location.column, TableModelOps::columnCount(table) - 1);
     return true;
   });
 }
 
 bool TableController::moveCurrentColumnLeft() {
-  return mutateCurrentTable(QStringLiteral("Move Table Column Left"), EditTransaction::Kind::ReplaceDocumentText, [](MarkdownNode& table, TableLocation location) {
+  return mutateCurrentTable(QStringLiteral("Move Table Column Left"), EditTransaction::Kind::ReplaceDocumentText, [](MarkdownNode& table, TableLocation& location) {
     if (location.column <= 0) {
       return false;
     }
     TableModelOps::moveColumn(table, location.column, location.column - 1);
+    --location.column;
     return true;
   });
 }
 
 bool TableController::moveCurrentColumnRight() {
-  return mutateCurrentTable(QStringLiteral("Move Table Column Right"), EditTransaction::Kind::ReplaceDocumentText, [](MarkdownNode& table, TableLocation location) {
+  return mutateCurrentTable(QStringLiteral("Move Table Column Right"), EditTransaction::Kind::ReplaceDocumentText, [](MarkdownNode& table, TableLocation& location) {
     if (location.column + 1 >= TableModelOps::columnCount(table)) {
       return false;
     }
     TableModelOps::moveColumn(table, location.column, location.column + 1);
+    ++location.column;
     return true;
   });
 }
 
 bool TableController::setCurrentColumnAlignment(TableAlignment alignment) {
-  return mutateCurrentTable(QStringLiteral("Set Table Column Alignment"), EditTransaction::Kind::ReplaceDocumentText,
-                            [alignment](MarkdownNode& table, TableLocation location) {
-                              TableModelOps::setAlignment(table, location.column, alignment);
-                              return true;
-                            });
+  if (!session_) {
+    return false;
+  }
+
+  const TableLocation beforeLocation = currentCell();
+  if (!beforeLocation.isValid()) {
+    emit tableCommandRejected(QStringLiteral("No table cell is active."));
+    return false;
+  }
+
+  MarkdownNode* table = tableForLocation(beforeLocation);
+  if (!table) {
+    return false;
+  }
+  const int columnCount = TableModelOps::columnCount(*table);
+  if (beforeLocation.column < 0 || beforeLocation.column >= columnCount) {
+    return false;
+  }
+
+  QVector<TableAlignment> beforeAlignments = table->tableAlignments();
+  while (beforeAlignments.size() < columnCount) {
+    beforeAlignments.push_back(TableAlignment::None);
+  }
+  QVector<TableAlignment> afterAlignments = beforeAlignments;
+  afterAlignments[beforeLocation.column] = alignment;
+  if (beforeAlignments == afterAlignments) {
+    return false;
+  }
+
+  const CursorPosition beforeCursor = selection_ ? selection_->cursorPosition() : CursorPosition();
+  auto afterTable = table->clone(CloneMode::PreserveIds);
+  afterTable->setTableAlignments(afterAlignments);
+  if (!session_->applyNodeSnapshot(beforeLocation.tableId, BlockType::Table, beforeLocation.tableIndex, *afterTable, true)) {
+    return false;
+  }
+
+  TableLocation afterLocation = beforeLocation;
+  if (MarkdownNode* reparsedTable = tableForLocation(beforeLocation)) {
+    afterLocation.tableId = reparsedTable->id();
+    afterLocation.tableIndex = tableIndexFor(*reparsedTable);
+  }
+  const CursorPosition nextCursor = cursorForLocation(afterLocation);
+  if (!nextCursor.isValid()) {
+    return false;
+  }
+  if (selection_) {
+    selection_->setCursorPosition(nextCursor);
+  }
+  if (undoStack_) {
+    undoStack_->push(EditTransaction(
+        EditTransaction::Kind::ReplaceDocumentText,
+        QStringLiteral("Set Table Column Alignment"),
+        SetNodeAttrCommand{
+            beforeLocation.tableId,
+            BlockType::Table,
+            beforeLocation.tableIndex,
+            NodeAttribute::TableAlignments,
+            beforeAlignments,
+            afterAlignments,
+            beforeCursor,
+            nextCursor,
+            QVector<NodeId>{beforeLocation.tableId}}));
+  }
+  if (brushQueue_) {
+    brushQueue_->requestBlockRefresh(afterLocation.tableId);
+  }
+  return true;
 }
 
 bool TableController::insertTable(int rows, int columns) {
@@ -497,7 +584,7 @@ bool TableController::editCurrentCell(
 bool TableController::mutateCurrentTable(
     QString label,
     EditTransaction::Kind kind,
-    const std::function<bool(MarkdownNode&, TableLocation)>& mutate) {
+    const std::function<bool(MarkdownNode&, TableLocation&)>& mutate) {
   if (!session_) {
     return false;
   }
@@ -508,37 +595,42 @@ bool TableController::mutateCurrentTable(
     return false;
   }
 
-  const CursorPosition beforeCursor = selection_ ? selection_->cursorPosition() : CursorPosition();
-  const QString beforeText = session_->markdownText();
-  auto rootCopy = session_->document().root().clone(CloneMode::PreserveIds);
-
-  MarkdownNode* targetTable = nullptr;
-  const auto findById = [&](const auto& self, MarkdownNode& node) -> MarkdownNode* {
-    if (node.id() == beforeLocation.tableId) {
-      return &node;
-    }
-    for (const auto& child : node.children()) {
-      if (MarkdownNode* found = self(self, *child)) {
-        return found;
-      }
-    }
-    return nullptr;
-  };
-  targetTable = findById(findById, *rootCopy);
-  std::unique_ptr<MarkdownNode> beforeTable = targetTable ? targetTable->clone(CloneMode::PreserveIds) : nullptr;
-  if (!targetTable || !mutate(*targetTable, beforeLocation)) {
+  MarkdownNode* table = tableForLocation(beforeLocation);
+  if (!table) {
     return false;
   }
-  std::unique_ptr<MarkdownNode> afterTable = targetTable->clone(CloneMode::PreserveIds);
 
-  MarkdownDocument nextDocument;
-  nextDocument.setMarkdownText(beforeText, std::move(rootCopy));
+  const CursorPosition beforeCursor = selection_ ? selection_->cursorPosition() : CursorPosition();
+  std::unique_ptr<MarkdownNode> beforeTable = table->clone(CloneMode::PreserveIds);
+  std::unique_ptr<MarkdownNode> afterTable = table->clone(CloneMode::PreserveIds);
+  TableLocation afterLocation = beforeLocation;
+  if (!mutate(*afterTable, afterLocation)) {
+    return false;
+  }
+  afterLocation = clampedTableLocation(afterLocation, *afterTable);
+  if (!afterLocation.isValid()) {
+    return false;
+  }
+
   MarkdownSerializer serializer;
-  QString nextText = serializer.serializeDocument(nextDocument);
+  if (serializer.serializeBlock(*beforeTable) == serializer.serializeBlock(*afterTable)) {
+    return false;
+  }
 
-  session_->applyMarkdownText(nextText, true);
-  const CursorPosition nextCursor = cursorForLocation(beforeLocation);
-  if (selection_ && nextCursor.isValid()) {
+  if (!session_->applyTableSnapshot(beforeLocation.tableId, beforeLocation.tableIndex, *afterTable, true)) {
+    return false;
+  }
+
+  MarkdownNode* reparsedTable = tableForLocation(afterLocation);
+  if (reparsedTable) {
+    afterLocation.tableId = reparsedTable->id();
+    afterLocation.tableIndex = tableIndexFor(*reparsedTable);
+  }
+  const CursorPosition nextCursor = cursorForLocation(afterLocation);
+  if (!nextCursor.isValid()) {
+    return false;
+  }
+  if (selection_) {
     selection_->setCursorPosition(nextCursor);
   }
   if (undoStack_) {
@@ -550,13 +642,15 @@ bool TableController::mutateCurrentTable(
             beforeLocation.tableIndex,
             beforeLocation.row,
             beforeLocation.column,
+            afterLocation.row,
+            afterLocation.column,
             std::move(beforeTable),
             std::move(afterTable),
             beforeCursor,
             nextCursor}));
   }
   if (brushQueue_) {
-    brushQueue_->requestFullRefresh();
+    brushQueue_->requestBlockRefresh(reparsedTable ? reparsedTable->id() : beforeLocation.tableId);
   }
   return true;
 }

@@ -8,6 +8,7 @@
 #include <QVector>
 
 #include <memory>
+#include <variant>
 
 namespace muffin {
 
@@ -33,11 +34,27 @@ struct TextDeltaCommand {
   bool isValid() const;
 };
 
+enum class NodeAttribute {
+  Unknown,
+  HeadingLevel,
+  ListKind,
+  ListStart,
+  ListTight,
+  TaskChecked,
+  CodeLanguage,
+  TableAlignments,
+  TableRowIsHeader
+};
+
+using NodeAttributeValue = std::variant<std::monostate, int, bool, QString, ListKind, QVector<TableAlignment>>;
+
 struct TableCommand {
   NodeId tableId;
   int tableIndex = -1;
-  int cursorRow = -1;
-  int cursorColumn = -1;
+  int beforeRow = -1;
+  int beforeColumn = -1;
+  int afterRow = -1;
+  int afterColumn = -1;
   std::unique_ptr<MarkdownNode> beforeTable;
   std::unique_ptr<MarkdownNode> afterTable;
   CursorPosition beforeCursor;
@@ -47,8 +64,10 @@ struct TableCommand {
   TableCommand(
       NodeId tableId,
       int tableIndex,
-      int cursorRow,
-      int cursorColumn,
+      int beforeRow,
+      int beforeColumn,
+      int afterRow,
+      int afterColumn,
       std::unique_ptr<MarkdownNode> beforeTable,
       std::unique_ptr<MarkdownNode> afterTable,
       CursorPosition beforeCursor,
@@ -119,6 +138,62 @@ struct ReplaceNodeCommand {
   bool isValid() const;
 };
 
+struct RemoveNodeCommand {
+  NodeId nodeId;
+  BlockType nodeType = BlockType::Unknown;
+  int nodeIndex = -1;
+  TextDelta delta;
+  qsizetype nodeSourceStart = -1;
+  std::unique_ptr<MarkdownNode> removedNode;
+  CursorPosition beforeCursor;
+  CursorPosition afterCursor;
+  QVector<NodeId> affectedNodes;
+
+  RemoveNodeCommand() = default;
+  RemoveNodeCommand(
+      NodeId nodeId,
+      BlockType nodeType,
+      int nodeIndex,
+      TextDelta delta,
+      qsizetype nodeSourceStart,
+      std::unique_ptr<MarkdownNode> removedNode,
+      CursorPosition beforeCursor,
+      CursorPosition afterCursor,
+      QVector<NodeId> affectedNodes);
+  RemoveNodeCommand(const RemoveNodeCommand& other);
+  RemoveNodeCommand& operator=(const RemoveNodeCommand& other);
+  RemoveNodeCommand(RemoveNodeCommand&&) noexcept = default;
+  RemoveNodeCommand& operator=(RemoveNodeCommand&&) noexcept = default;
+
+  bool isValid() const;
+};
+
+struct SetNodeAttrCommand {
+  NodeId nodeId;
+  BlockType nodeType = BlockType::Unknown;
+  int nodeIndex = -1;
+  NodeAttribute attribute = NodeAttribute::Unknown;
+  NodeAttributeValue beforeValue;
+  NodeAttributeValue afterValue;
+  CursorPosition beforeCursor;
+  CursorPosition afterCursor;
+  QVector<NodeId> affectedNodes;
+
+  SetNodeAttrCommand() = default;
+  SetNodeAttrCommand(
+      NodeId nodeId,
+      BlockType nodeType,
+      int nodeIndex,
+      NodeAttribute attribute,
+      NodeAttributeValue beforeValue,
+      NodeAttributeValue afterValue,
+      CursorPosition beforeCursor,
+      CursorPosition afterCursor,
+      QVector<NodeId> affectedNodes);
+
+  bool isValid() const;
+};
+
 class EditTransaction {
 public:
   enum class Kind {
@@ -134,7 +209,9 @@ public:
     TextDeltaCommand,
     TableCommand,
     InsertNodeCommand,
-    ReplaceNodeCommand
+    ReplaceNodeCommand,
+    RemoveNodeCommand,
+    SetNodeAttrCommand
   };
 
   EditTransaction() = default;
@@ -159,6 +236,14 @@ public:
       Kind kind,
       QString label,
       ReplaceNodeCommand command);
+  EditTransaction(
+      Kind kind,
+      QString label,
+      RemoveNodeCommand command);
+  EditTransaction(
+      Kind kind,
+      QString label,
+      SetNodeAttrCommand command);
 
   Kind kind() const;
   QString label() const;
@@ -168,12 +253,16 @@ public:
   bool isTableCommand() const;
   bool isInsertNodeCommand() const;
   bool isReplaceNodeCommand() const;
+  bool isRemoveNodeCommand() const;
+  bool isSetNodeAttrCommand() const;
   const DocumentSnapshot& before() const;
   const DocumentSnapshot& after() const;
   const TextDeltaCommand& textDeltaCommand() const;
   const TableCommand& tableCommand() const;
   const InsertNodeCommand& insertNodeCommand() const;
   const ReplaceNodeCommand& replaceNodeCommand() const;
+  const RemoveNodeCommand& removeNodeCommand() const;
+  const SetNodeAttrCommand& setNodeAttrCommand() const;
   bool isValid() const;
 
 private:
@@ -186,6 +275,8 @@ private:
   TableCommand tableCommand_;
   InsertNodeCommand insertNodeCommand_;
   ReplaceNodeCommand replaceNodeCommand_;
+  RemoveNodeCommand removeNodeCommand_;
+  SetNodeAttrCommand setNodeAttrCommand_;
 };
 
 }  // namespace muffin
