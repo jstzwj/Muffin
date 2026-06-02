@@ -333,9 +333,10 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
           painter.setFont(theme.paragraphFont());
           painter.setPen(theme.textColor());
           const QFontMetricsF metrics(painter.font());
+          const qreal markerX = viewRect.left() + theme.listIndent() * 0.45;
           if (taskListItem_) {
             const QRectF box(
-                viewRect.left() + 1,
+                markerX,
                 viewRect.top() + qMax<qreal>(2.0, (metrics.height() - 13.0) / 2.0),
                 13,
                 13);
@@ -348,7 +349,7 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
               painter.drawLine(QPointF(box.left() + 5.5, box.bottom() - 3), QPointF(box.right() - 3, box.top() + 3));
             }
           } else {
-            painter.drawText(QPointF(viewRect.left(), viewRect.top() + metrics.ascent()), listMarker_);
+            painter.drawText(QPointF(markerX, viewRect.top() + metrics.ascent()), listMarker_);
           }
           painter.restore();
           inlineLayout_->paint(painter, QPointF(viewRect.left() + theme.listIndent(), viewRect.top()));
@@ -358,7 +359,7 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
         if (type_ == BlockType::Heading && headingLevel_ <= 2) {
           painter.save();
           painter.setPen(QPen(theme.codeBorderColor(), 1));
-          const qreal y = viewRect.bottom() - theme.blockSpacing() * 0.25;
+          const qreal y = viewRect.top() + inlineLayout_->height() + theme.blockSpacing() * 0.15;
           painter.drawLine(QPointF(viewRect.left(), y), QPointF(viewRect.right(), y));
           painter.restore();
         }

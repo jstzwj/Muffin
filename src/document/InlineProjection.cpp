@@ -489,6 +489,11 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
         appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, contentStart, QStringLiteral("["), false);
       }
       appendInlines(state, node.children(), contentStart, contentEnd);
+      for (InlineProjectionSpan& span : state.spans) {
+        if (span.displayStart >= displayStart && span.displayEnd <= state.displayOffset) {
+          span.type = InlineType::Link;
+        }
+      }
       if (active) {
         appendTextSpan(state, node.type(), InlineSpanKind::HiddenSyntax, contentEnd, sourceEnd, state.sourceText->mid(contentEnd, sourceEnd - contentEnd), false);
       }

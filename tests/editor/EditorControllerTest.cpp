@@ -505,7 +505,7 @@ void testInlineProjectionSpanContracts() {
       activeLink,
       {
           {InlineType::Link, InlineSpanKind::OpenMarker, 0, 1, 0, 1, 0, 1, 0, 0},
-          {InlineType::Text, InlineSpanKind::Text, 1, 2, 1, 2, 1, 2, 0, 1},
+          {InlineType::Link, InlineSpanKind::Text, 1, 2, 1, 2, 1, 2, 0, 1},
           {InlineType::Link, InlineSpanKind::HiddenSyntax, 2, 6, 2, 6, 2, 6, 1, 1},
       },
       QStringLiteral("[x](u)"),
@@ -516,7 +516,7 @@ void testInlineProjectionSpanContracts() {
       QStringLiteral("[x](u)"),
       inactive,
       {
-          {InlineType::Text, InlineSpanKind::Text, 1, 2, 1, 2, 0, 1, 0, 1},
+          {InlineType::Link, InlineSpanKind::Text, 1, 2, 1, 2, 0, 1, 0, 1},
       },
       QStringLiteral("x"),
       QStringLiteral("x"),

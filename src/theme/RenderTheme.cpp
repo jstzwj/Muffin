@@ -61,7 +61,7 @@ qreal RenderTheme::pageWidth() const {
 }
 
 qreal RenderTheme::topMargin() const {
-  return scaled(48.0);
+  return scaled(46.0);
 }
 
 qreal RenderTheme::bottomMargin() const {
@@ -73,7 +73,7 @@ qreal RenderTheme::blockSpacing() const {
 }
 
 qreal RenderTheme::listIndent() const {
-  return scaled(26.0);
+  return scaled(30.0);
 }
 
 qreal RenderTheme::blockQuoteIndent() const {

@@ -6,6 +6,8 @@
 #include <QTextLine>
 #include <QTextOption>
 
+#include <cmath>
+
 namespace muffin {
 namespace {
 
@@ -219,8 +221,9 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
       break;
     }
     line.setLineWidth(lineWidth);
-    line.setPosition(QPointF(0.0, height));
-    height += line.height();
+    const qreal lineHeight = std::ceil(line.height() * 1.16);
+    line.setPosition(QPointF(0.0, height + (lineHeight - line.height()) * 0.5));
+    height += lineHeight;
     maxWidth = qMax(maxWidth, line.naturalTextWidth());
   }
   textLayout_->endLayout();
@@ -262,7 +265,8 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
         format.setFont(theme.mathFont());
         break;
       case InlineType::Link:
-        if (span.kind == InlineSpanKind::Text) {
+        if (span.kind != InlineSpanKind::OpenMarker && span.kind != InlineSpanKind::CloseMarker &&
+            span.kind != InlineSpanKind::HiddenSyntax && span.kind != InlineSpanKind::EmptyContentSlot) {
           format.setForeground(theme.linkColor());
           format.setFontUnderline(true);
         }

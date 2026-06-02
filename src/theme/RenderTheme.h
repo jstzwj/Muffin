@@ -54,7 +54,7 @@ private:
   QColor backgroundColor_ = QColor(QStringLiteral("#ffffff"));
   QColor textColor_ = QColor(QStringLiteral("#202124"));
   QColor mutedTextColor_ = QColor(QStringLiteral("#57606a"));
-  QColor linkColor_ = QColor(QStringLiteral("#2f6fbd"));
+  QColor linkColor_ = QColor(QStringLiteral("#4183c4"));
   QColor codeBackgroundColor_ = QColor(QStringLiteral("#f6f8fa"));
   QColor codeBorderColor_ = QColor(QStringLiteral("#e5e7eb"));
   QColor quoteBorderColor_ = QColor(QStringLiteral("#d0d7de"));

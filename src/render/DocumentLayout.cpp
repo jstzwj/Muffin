@@ -15,7 +15,10 @@ qreal spacingBeforeBlock(const MarkdownNode& node, const RenderTheme& theme, qre
   if (node.type() != BlockType::Heading || cursorY <= theme.topMargin()) {
     return 0;
   }
-  return node.headingLevel() <= 2 ? theme.blockSpacing() * 1.4 : theme.blockSpacing() * 0.7;
+  if (node.headingLevel() == 2) {
+    return theme.blockSpacing() * 1.1;
+  }
+  return node.headingLevel() < 2 ? theme.blockSpacing() * 1.25 : theme.blockSpacing() * 0.7;
 }
 
 }  // namespace
@@ -33,7 +36,7 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
 
   const qreal horizontalInset = qMin<qreal>(64.0, qMax<qreal>(16.0, viewportWidth * 0.08));
   pageWidth_ = qMin(theme.pageWidth(), qMax<qreal>(320.0, viewportWidth - horizontalInset * 2.0));
-  pageLeft_ = qMax<qreal>(0.0, (viewportWidth - pageWidth_) / 2.0);
+  pageLeft_ = qMax<qreal>(16.0, (viewportWidth - pageWidth_) / 2.0 - 12.0);
 
   BlockLayoutBuilder builder;
   builder.setMarkdownText(document.markdownText());

@@ -237,6 +237,8 @@ void MainWindow::setupStatusBar() {
 
   statusBar()->addWidget(sidebarButton_);
   statusBar()->addWidget(sourceModeButton_);
+  parseLabel_->setVisible(false);
+  cursorLabel_->setVisible(false);
   statusBar()->addPermanentWidget(parseLabel_);
   statusBar()->addPermanentWidget(cursorLabel_);
   statusBar()->addPermanentWidget(wordsLabel_);

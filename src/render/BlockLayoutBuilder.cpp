@@ -83,7 +83,7 @@ QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& t
     preferredTotal += widths[column];
   }
 
-  const qreal minimum = qMax<qreal>(56.0, width * 0.12);
+  const qreal minimum = qMax<qreal>(56.0, width * 0.23);
   for (qreal& columnWidth : widths) {
     columnWidth = qMax(columnWidth, minimum);
   }
@@ -166,7 +166,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   inlineLayout->build(node.inlines(), sourceTextForEditableNode(node), theme, width, font, options);
   qreal height = inlineLayout->height();
   if (node.type() == BlockType::Heading && node.headingLevel() <= 2) {
-    height += theme.blockSpacing() * 0.75;
+    height += theme.blockSpacing() * 0.35;
   }
   layout->setRect(QRectF(x, y, width, height));
   layout->setInlineLayout(std::move(inlineLayout));
