@@ -253,6 +253,24 @@ MarkdownNode* tableByIdOrIndex(MarkdownDocument& document, NodeId tableId, int t
   return visit(visit, document.root());
 }
 
+bool topLevelStructureChanged(
+    const std::vector<std::unique_ptr<MarkdownNode>>& oldBlocks,
+    qsizetype first,
+    qsizetype count,
+    const std::vector<std::unique_ptr<MarkdownNode>>& replacements) {
+  if (count != static_cast<qsizetype>(replacements.size())) {
+    return true;
+  }
+  for (qsizetype i = 0; i < count; ++i) {
+    const MarkdownNode& oldNode = *oldBlocks.at(static_cast<size_t>(first + i));
+    const MarkdownNode& newNode = *replacements.at(static_cast<size_t>(i));
+    if (oldNode.id() != newNode.id() || oldNode.type() != newNode.type()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 MarkdownNode* nodeByTypeIndex(MarkdownDocument& document, BlockType type, int targetIndex) {
   if (type == BlockType::Unknown || targetIndex < 0) {
     return nullptr;
@@ -325,6 +343,10 @@ bool DocumentSession::lastParseWasLocalEdit() const {
   return lastParseWasLocalEdit_;
 }
 
+bool DocumentSession::lastLocalEditChangedTopLevelStructure() const {
+  return lastLocalEditChangedTopLevelStructure_;
+}
+
 void DocumentSession::newDocument() {
   filePath_.clear();
   emit filePathChanged(filePath_);
@@ -360,10 +382,12 @@ bool DocumentSession::applyTextDelta(
     QString insertedText,
     bool modified,
     QVector<LocalEditNodeHint> nodeHints) {
+  lastLocalEditChangedTopLevelStructure_ = false;
   if (sourceStart < 0 || removedLength < 0 || sourceStart + removedLength > document_.markdownText().size()) {
     return false;
   }
   if (!tryApplyTopLevelLocalEdit(sourceStart, sourceStart + removedLength, insertedText, modified, nodeHints)) {
+    lastLocalEditChangedTopLevelStructure_ = false;
     return false;
   }
   emit documentLocallyEdited(sourceStart, removedLength, insertedText);
@@ -436,6 +460,7 @@ void DocumentSession::parseAndStore(QString text, bool modified) {
   ParseResult result = parser_.parseDocument(QStringView(text), parseOptions_);
   lastParseElapsedMs_ = result.elapsedMs;
   lastParseWasLocalEdit_ = false;
+  lastLocalEditChangedTopLevelStructure_ = false;
   document_.setMarkdownText(std::move(text), std::move(result.root));
   document_.setModified(modified);
   emit parsed(lastParseElapsedMs_);
@@ -477,6 +502,7 @@ bool DocumentSession::tryApplyTopLevelLocalEdit(
     replacements.push_back(std::move(child));
   }
   applyNodeHints(document_, replacements, nodeHints);
+  lastLocalEditChangedTopLevelStructure_ = topLevelStructureChanged(document_.root().children(), slice.first, slice.count, replacements);
 
   const int editLineDelta = countNewlines(QStringView(replacementText)) - countNewlines(QStringView(oldText).mid(sourceStart, sourceEnd - sourceStart));
   const qsizetype firstFollowing = slice.first + slice.count;

@@ -29,6 +29,7 @@ public:
   const QString& markdownText() const;
   qint64 lastParseElapsedMs() const;
   bool lastParseWasLocalEdit() const;
+  bool lastLocalEditChangedTopLevelStructure() const;
 
   void newDocument();
   void setFilePath(QString path);
@@ -74,6 +75,7 @@ private:
   QString filePath_;
   qint64 lastParseElapsedMs_ = 0;
   bool lastParseWasLocalEdit_ = false;
+  bool lastLocalEditChangedTopLevelStructure_ = false;
 };
 
 }  // namespace muffin

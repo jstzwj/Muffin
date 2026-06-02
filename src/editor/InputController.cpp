@@ -844,7 +844,11 @@ void InputController::applyLocalEdit(
     }
   }
   if (brushQueue_) {
-    brushQueue_->requestBlockRefresh(nextCursor.blockId);
+    if (!appliedLocally || session_->lastLocalEditChangedTopLevelStructure()) {
+      brushQueue_->requestFullRefresh();
+    } else {
+      brushQueue_->requestBlockRefresh(nextCursor.blockId);
+    }
   }
 }
 
@@ -904,7 +908,11 @@ void InputController::applyEdit(
     }
   }
   if (brushQueue_) {
-    brushQueue_->requestBlockRefresh(nextCursor.blockId);
+    if (!appliedLocally || session_->lastLocalEditChangedTopLevelStructure()) {
+      brushQueue_->requestFullRefresh();
+    } else {
+      brushQueue_->requestBlockRefresh(nextCursor.blockId);
+    }
   }
 }
 

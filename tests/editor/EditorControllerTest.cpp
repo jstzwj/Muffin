@@ -1066,6 +1066,10 @@ void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
   SelectionController selection;
   UndoStack undoStack;
   BrushQueue brushQueue;
+  QVector<BrushQueue::RefreshRequest> requests;
+  QObject::connect(&brushQueue, &BrushQueue::refreshRequested, [&requests](BrushQueue::RefreshRequest request) {
+    requests.push_back(std::move(request));
+  });
   InputController input;
   wireInput(input, session, selection, undoStack, brushQueue);
 
@@ -1075,11 +1079,22 @@ void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
   require(input.insertParagraphBreak(), "enter at paragraph start should create empty paragraph");
   require(session.markdownText() == QStringLiteral("\n\nalpha"), "paragraph start enter text mismatch");
   require(session.document().root().children().size() == 2, "paragraph start enter should create virtual empty block");
+  require(session.lastLocalEditChangedTopLevelStructure(), "paragraph start enter should mark top-level structure changed");
+  brushQueue.flush();
+  require(requests.size() == 1, "paragraph start enter should request one refresh");
+  require(requests.last().fullLayoutDirty, "paragraph start enter should request full layout refresh");
+  require(requests.last().layoutDirtyBlocks.isEmpty(), "paragraph start enter full refresh should not keep block dirty ids");
   require(blockAt(session, 1)->id() == originalAlphaId, "paragraph start enter should preserve original paragraph id");
   require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "paragraph start enter cursor should stay on original paragraph");
   require(selection.cursorPosition().text.textOffset == 0, "paragraph start enter cursor offset mismatch");
   require(input.insertText(QStringLiteral("x")), "typing after paragraph start enter should edit original paragraph");
   require(session.markdownText() == QStringLiteral("\n\nxalpha"), "typing after paragraph start enter should not edit empty paragraph");
+  require(!session.lastLocalEditChangedTopLevelStructure(), "typing after paragraph start enter should keep top-level structure stable");
+  brushQueue.flush();
+  require(requests.size() == 2, "typing after paragraph start enter should request another refresh");
+  require(!requests.last().fullLayoutDirty, "typing after paragraph start enter should request block refresh");
+  require(requests.last().layoutDirtyBlocks.size() == 1, "typing after paragraph start enter should dirty one block");
+  require(requests.last().layoutDirtyBlocks.contains(blockAt(session, 1)->id()), "typing after paragraph start enter should dirty original paragraph");
   require(blockAt(session, 1)->id() == originalAlphaId, "typing after paragraph start enter should keep original paragraph id");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
