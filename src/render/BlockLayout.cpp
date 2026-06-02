@@ -355,6 +355,13 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
         } else {
           inlineLayout_->paint(painter, viewRect.topLeft());
         }
+        if (type_ == BlockType::Heading && headingLevel_ <= 2) {
+          painter.save();
+          painter.setPen(QPen(theme.codeBorderColor(), 1));
+          const qreal y = viewRect.bottom() - theme.blockSpacing() * 0.25;
+          painter.drawLine(QPointF(viewRect.left(), y), QPointF(viewRect.right(), y));
+          painter.restore();
+        }
       }
       break;
     case BlockType::BlockQuote: {

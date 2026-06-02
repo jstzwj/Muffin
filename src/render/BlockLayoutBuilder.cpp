@@ -115,7 +115,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   InlineLayout::BuildOptions options;
   options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), sourceContentStartForEditableNode(node));
   inlineLayout->build(node.inlines(), sourceTextForEditableNode(node), theme, width, font, options);
-  const qreal height = inlineLayout->height();
+  qreal height = inlineLayout->height();
+  if (node.type() == BlockType::Heading && node.headingLevel() <= 2) {
+    height += theme.blockSpacing() * 0.75;
+  }
   layout->setRect(QRectF(x, y, width, height));
   layout->setInlineLayout(std::move(inlineLayout));
   return layout;
@@ -346,8 +349,7 @@ QVector<InlineNode> BlockLayoutBuilder::primaryInlinesForListItem(const Markdown
 
 QString BlockLayoutBuilder::sourceTextForEditableNode(const MarkdownNode& node) const {
   const qsizetype start = sourceContentStartForEditableNode(node);
-  const SourceRange range = node.sourceRange();
-  const qsizetype end = sourceOffsetForLineEnd(range.lineEnd);
+  const qsizetype end = sourceContentEndForEditableNode(node);
   if (start < 0 || end < start) {
     return {};
   }
@@ -357,7 +359,7 @@ QString BlockLayoutBuilder::sourceTextForEditableNode(const MarkdownNode& node) 
 qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNode& node) const {
   const SourceRange range = node.sourceRange();
   qsizetype start = sourceOffsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
-  const qsizetype end = sourceOffsetForLineEnd(range.lineEnd);
+  const qsizetype end = sourceContentEndForEditableNode(node);
   if (start < 0 || end < start) {
     return -1;
   }
@@ -368,8 +370,29 @@ qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNo
     if (start < end && markdownText_.at(start).isSpace()) {
       ++start;
     }
+  } else if (node.type() == BlockType::TableCell) {
+    while (start < end && markdownText_.at(start).isSpace()) {
+      ++start;
+    }
   }
   return start;
+}
+
+qsizetype BlockLayoutBuilder::sourceContentEndForEditableNode(const MarkdownNode& node) const {
+  const SourceRange range = node.sourceRange();
+  qsizetype end = node.type() == BlockType::TableCell
+                    ? sourceOffsetForLineColumn(range.lineEnd, qMax(1, range.columnEnd + 1))
+                    : sourceOffsetForLineEnd(range.lineEnd);
+  const qsizetype start = sourceOffsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
+  if (start < 0 || end < start) {
+    return -1;
+  }
+  if (node.type() == BlockType::TableCell) {
+    while (end > start && markdownText_.at(end - 1).isSpace()) {
+      --end;
+    }
+  }
+  return end;
 }
 
 qsizetype BlockLayoutBuilder::sourceOffsetForLineColumn(int line, int column) const {

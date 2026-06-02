@@ -528,6 +528,7 @@ void testDocumentLayoutInlineLayoutContract() {
           QStringLiteral("paragraph inline layout size should expose height"));
   require(cellLayout->text.height() > 0.0, QStringLiteral("table cell inline layout should have height"));
   require(cellLayout->text.size().height() == cellLayout->text.height(), QStringLiteral("table cell inline layout size should expose height"));
+  require(!cellLayout->text.displayText().contains(QLatin1Char('|')), QStringLiteral("table cell layout should hide markdown pipe separators"));
 
   QImage image(QSize(420, qCeil(layout.totalHeight()) + 20), QImage::Format_ARGB32);
   image.fill(theme.backgroundColor());
