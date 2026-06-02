@@ -93,7 +93,11 @@ bool fillSourceOffsetForTextHit(const DocumentSession& session, HitTestResult& h
 
   const QString contentText = markdown.mid(start, end - start);
   qsizetype localSourceOffset = -1;
-  InlineProjection projection(editable->inlines(), contentText, hit.sourceOffset >= start ? hit.sourceOffset - start : -1);
+  CursorPosition cursor = hit.cursorPosition();
+  cursor.text.textOffset = hit.textOffset;
+  cursor.text.sourceOffset = hit.sourceOffset;
+  InlineProjectionState projectionState = InlineProjectionState::forCursor(cursor, hit.blockId, start);
+  InlineProjection projection(editable->inlines(), contentText, projectionState);
   if (hit.sourceOffset >= 0) {
     localSourceOffset = qBound<qsizetype>(0, hit.sourceOffset - start, contentText.size());
   } else if (!projection.sourceOffsetForVisibleOffset(hit.textOffset, localSourceOffset)) {
@@ -168,13 +172,21 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
     emit stateChanged();
   });
   connect(&undoStack_, &UndoStack::stateChanged, this, &EditorController::stateChanged);
-  connect(&brushQueue_, &BrushQueue::blockRefreshRequested, this, [this](NodeId) {
-    if (session_ && view_) {
-      view_->setDocument(session_->document());
+  connect(&brushQueue_, &BrushQueue::refreshRequested, this, [this](const BrushQueue::RefreshRequest& request) {
+    if (!session_ || !view_) {
+      return;
     }
-  });
-  connect(&brushQueue_, &BrushQueue::fullRefreshRequested, this, [this] {
-    if (session_ && view_) {
+    if (request.fullLayoutDirty) {
+      view_->setDocument(session_->document());
+      return;
+    }
+    if (request.layoutDirtyBlocks.size() == 1) {
+      if (!view_->refreshBlock(request.layoutDirtyBlocks.first(), session_->document())) {
+        view_->setDocument(session_->document());
+      }
+      return;
+    }
+    if (!request.layoutDirtyBlocks.isEmpty() && !view_->refreshBlocks(request.layoutDirtyBlocks, session_->document())) {
       view_->setDocument(session_->document());
     }
   });
@@ -252,14 +264,14 @@ void EditorController::undo() {
   if (!canUndo()) {
     return;
   }
-  applySnapshot(undoStack_.takeUndo().before());
+  applyTransaction(undoStack_.takeUndo(), true);
 }
 
 void EditorController::redo() {
   if (!canRedo()) {
     return;
   }
-  applySnapshot(undoStack_.takeRedo().after());
+  applyTransaction(undoStack_.takeRedo(), false);
 }
 
 bool EditorController::toggleBold() {
@@ -448,6 +460,60 @@ void EditorController::applySnapshot(const DocumentSnapshot& snapshot) {
     selection_.clear();
   }
   brushQueue_.requestFullRefresh();
+}
+
+void EditorController::applyTransaction(const EditTransaction& transaction, bool undo) {
+  if (!session_ || !transaction.isValid()) {
+    return;
+  }
+
+  if (transaction.isSnapshot()) {
+    applySnapshot(undo ? transaction.before() : transaction.after());
+    return;
+  }
+
+  if (!transaction.isTextDeltaCommand()) {
+    return;
+  }
+
+  const TextDeltaCommand& command = transaction.textDeltaCommand();
+  const TextDelta& delta = command.delta;
+  const QString replacement = undo ? delta.removedText : delta.insertedText;
+  const qsizetype replaceStart = delta.start;
+  const qsizetype replaceEnd = delta.start + (undo ? delta.insertedText.size() : delta.removedText.size());
+  QVector<LocalEditNodeHint> nodeHints;
+  for (NodeId nodeId : command.affectedNodes) {
+    nodeHints.push_back(LocalEditNodeHint{nodeId, replaceStart, BlockType::Unknown});
+  }
+  const bool appliedLocally = session_->applyTextDelta(replaceStart, replaceEnd - replaceStart, replacement, true, std::move(nodeHints));
+  const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
+  const CursorPosition cursor = remapSnapshotCursor(storedCursor);
+  if (cursor.isValid()) {
+    selection_.setCursorPosition(cursor);
+  } else {
+    selection_.clear();
+  }
+
+  if (!appliedLocally) {
+    QString text = session_->markdownText();
+    if (replaceStart < 0 || replaceEnd < replaceStart || replaceEnd > text.size()) {
+      return;
+    }
+    text.replace(replaceStart, replaceEnd - replaceStart, replacement);
+    session_->applyMarkdownText(std::move(text), true);
+    brushQueue_.requestFullRefresh();
+  } else {
+    const QVector<NodeId>& affectedNodes = command.affectedNodes;
+    if (affectedNodes.isEmpty()) {
+      brushQueue_.requestFullRefresh();
+    } else {
+      QVector<NodeId> refreshNodes = affectedNodes;
+      if (cursor.isValid() && !refreshNodes.contains(cursor.blockId)) {
+        refreshNodes.push_back(cursor.blockId);
+      }
+      brushQueue_.requestBlocksRefresh(std::move(refreshNodes));
+    }
+  }
 }
 
 CursorPosition EditorController::remapSnapshotCursor(const CursorPosition& snapshotCursor) const {

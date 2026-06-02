@@ -243,8 +243,10 @@ bool SelectionSerializer::editableCursorSourceOffset(
 
   const qsizetype offset = qMax<qsizetype>(0, cursor.text.textOffset);
   qsizetype localSourceOffset = -1;
-  InlineProjection projection(context.editableNode ? context.editableNode->inlines() : QVector<InlineNode>(), context.sourceText,
-                              cursor.text.sourceOffset >= context.sourceStart ? cursor.text.sourceOffset - context.sourceStart : -1);
+  CursorPosition contextCursor = cursor;
+  contextCursor.text.textOffset = offset;
+  InlineProjectionState projectionState = InlineProjectionState::forCursor(contextCursor, cursor.blockId, context.sourceStart);
+  InlineProjection projection(context.editableNode ? context.editableNode->inlines() : QVector<InlineNode>(), context.sourceText, projectionState);
   if (cursor.text.sourceOffset >= context.sourceStart && cursor.text.sourceOffset <= context.sourceEnd) {
     localSourceOffset = cursor.text.sourceOffset - context.sourceStart;
   } else if (!projection.sourceOffsetForVisibleOffset(offset, localSourceOffset)) {

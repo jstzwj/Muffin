@@ -5,15 +5,31 @@
 #include <cmath>
 
 namespace muffin {
+namespace {
 
-void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth) {
-  rebuild(document, theme, viewportWidth, CursorPosition());
+qreal spacingAfterBlock(const MarkdownNode& node, const RenderTheme& theme) {
+  return node.type() == BlockType::Heading ? theme.blockSpacing() * 0.65 : theme.blockSpacing();
 }
 
-void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, CursorPosition activeCursor) {
+qreal spacingBeforeBlock(const MarkdownNode& node, const RenderTheme& theme, qreal cursorY) {
+  if (node.type() != BlockType::Heading || cursorY <= theme.topMargin()) {
+    return 0;
+  }
+  return node.headingLevel() <= 2 ? theme.blockSpacing() * 1.4 : theme.blockSpacing() * 0.7;
+}
+
+}  // namespace
+
+void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth) {
+  rebuild(document, theme, viewportWidth, SelectionRange());
+}
+
+void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, SelectionRange selection) {
   document_ = &document;
+  viewportWidth_ = viewportWidth;
   blocks_.clear();
-  index_.clear();
+  topLevelIndex_.clear();
+  layoutIndex_.clear();
 
   const qreal horizontalInset = qMin<qreal>(64.0, qMax<qreal>(16.0, viewportWidth * 0.08));
   pageWidth_ = qMin(theme.pageWidth(), qMax<qreal>(320.0, viewportWidth - horizontalInset * 2.0));
@@ -21,20 +37,79 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
 
   BlockLayoutBuilder builder;
   builder.setMarkdownText(document.markdownText());
-  builder.setActiveCursor(activeCursor);
+  builder.setSelection(selection);
+  builder.setInlineGeometryBackend(inlineGeometryBackend_);
   qreal cursorY = theme.topMargin();
   for (const auto& child : document.root().children()) {
-    if (child->type() == BlockType::Heading && cursorY > theme.topMargin()) {
-      cursorY += child->headingLevel() <= 2 ? theme.blockSpacing() * 1.4 : theme.blockSpacing() * 0.7;
-    }
+    cursorY += spacingBeforeBlock(*child, theme, cursorY);
     auto block = builder.build(*child, theme, pageLeft_, cursorY, pageWidth_);
-    const qreal afterSpacing = child->type() == BlockType::Heading ? theme.blockSpacing() * 0.65 : theme.blockSpacing();
-    cursorY = block->rect().bottom() + afterSpacing;
-    indexBlock(*block);
+    cursorY = block->rect().bottom() + spacingAfterBlock(*child, theme);
+    indexTopLevelBlock(*block, static_cast<qsizetype>(blocks_.size()));
     blocks_.push_back(std::move(block));
   }
 
   totalHeight_ = qMax(cursorY + theme.bottomMargin(), theme.topMargin() + theme.bottomMargin());
+}
+
+DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
+    NodeId blockId,
+    const MarkdownDocument& document,
+    const RenderTheme& theme,
+    SelectionRange selection) {
+  BlockRebuildResult result;
+  if (!blockId.isValid() || document_ != &document || blocks_.empty() || viewportWidth_ <= 0) {
+    return result;
+  }
+
+  const MarkdownNode* node = topLevelBlockFor(blockId, document);
+  if (!node) {
+    return result;
+  }
+  auto indexIt = topLevelIndex_.constFind(node->id());
+  if (indexIt == topLevelIndex_.constEnd()) {
+    return result;
+  }
+  const qsizetype index = indexIt.value();
+
+  BlockLayoutBuilder builder;
+  builder.setMarkdownText(document.markdownText());
+  builder.setSelection(selection);
+  builder.setInlineGeometryBackend(inlineGeometryBackend_);
+  std::unique_ptr<BlockLayout>& slot = blocks_.at(static_cast<size_t>(index));
+  result.blockId = node->id();
+  result.oldRect = slot->rect();
+  auto replacement = builder.build(*node, theme, slot->rect().left(), slot->rect().top(), pageWidth_);
+  result.newRect = replacement->rect();
+
+  qreal newNextTop = replacement->rect().bottom() + spacingAfterBlock(*node, theme);
+  const auto& documentBlocks = document.root().children();
+  if (index + 1 < static_cast<qsizetype>(documentBlocks.size())) {
+    newNextTop += spacingBeforeBlock(*documentBlocks.at(static_cast<size_t>(index + 1)), theme, newNextTop);
+  }
+  const qreal delta =
+      index + 1 < static_cast<qsizetype>(blocks_.size())
+          ? newNextTop - blocks_.at(static_cast<size_t>(index + 1))->rect().top()
+          : qMax(newNextTop + theme.bottomMargin(), theme.topMargin() + theme.bottomMargin()) - totalHeight_;
+  result.heightDelta = delta;
+  slot = std::move(replacement);
+
+  QRectF shiftedRect;
+  for (qsizetype i = index + 1; i < static_cast<qsizetype>(blocks_.size()); ++i) {
+    BlockLayout& block = *blocks_.at(static_cast<size_t>(i));
+    const QRectF oldRect = block.rect();
+    block.translateY(delta);
+    shiftedRect = shiftedRect.united(oldRect).united(block.rect());
+  }
+  result.shiftedRect = shiftedRect;
+  if (index + 1 < static_cast<qsizetype>(blocks_.size())) {
+    totalHeight_ += delta;
+  } else {
+    totalHeight_ = qMax(newNextTop + theme.bottomMargin(), theme.topMargin() + theme.bottomMargin());
+  }
+
+  rebuildIndexes();
+  result.rebuilt = true;
+  return result;
 }
 
 qreal DocumentLayout::pageLeft() const {
@@ -53,6 +128,14 @@ const std::vector<std::unique_ptr<BlockLayout>>& DocumentLayout::blocks() const 
   return blocks_;
 }
 
+void DocumentLayout::setInlineGeometryBackend(InlineLayout::InlineGeometryBackend backend) {
+  inlineGeometryBackend_ = backend;
+}
+
+InlineLayout::InlineGeometryBackend DocumentLayout::inlineGeometryBackend() const {
+  return inlineGeometryBackend_;
+}
+
 QVector<const BlockLayout*> DocumentLayout::visibleBlocks(QRectF documentViewport) const {
   QVector<const BlockLayout*> result;
   for (const auto& block : blocks_) {
@@ -64,7 +147,7 @@ QVector<const BlockLayout*> DocumentLayout::visibleBlocks(QRectF documentViewpor
 }
 
 const BlockLayout* DocumentLayout::block(NodeId id) const {
-  return index_.value(id, nullptr);
+  return layoutIndex_.value(id, nullptr);
 }
 
 const BlockLayout* DocumentLayout::blockAt(QPointF documentPos) const {
@@ -103,12 +186,45 @@ HitTestResult DocumentLayout::hitTest(QPointF documentPos, const RenderTheme& th
   return nearest->hitTest(QPointF(qBound(nearest->rect().left(), documentPos.x(), nearest->rect().right()), nearest->rect().center().y()), theme);
 }
 
-void DocumentLayout::indexBlock(const BlockLayout& block) {
+const MarkdownNode* DocumentLayout::topLevelBlockFor(NodeId id, const MarkdownDocument& document) const {
+  const MarkdownNode* node = document.node(id);
+  if (!node) {
+    return nullptr;
+  }
+  while (node->parent() && node->parent()->type() != BlockType::Document) {
+    node = node->parent();
+  }
+  return node && node->parent() && node->parent()->type() == BlockType::Document ? node : nullptr;
+}
+
+void DocumentLayout::indexTopLevelBlock(const BlockLayout& block, qsizetype index) {
   if (block.nodeId().isValid()) {
-    index_.insert(block.nodeId(), &block);
+    topLevelIndex_.insert(block.nodeId(), index);
+  }
+  indexLayoutBlock(block);
+}
+
+void DocumentLayout::indexLayoutBlock(const BlockLayout& block) {
+  if (block.nodeId().isValid()) {
+    layoutIndex_.insert(block.nodeId(), &block);
+  }
+  for (const BlockLayout::TableRowLayout& row : block.tableRows()) {
+    for (const BlockLayout::TableCellLayout& cell : row.cells) {
+      if (cell.nodeId.isValid()) {
+        layoutIndex_.insert(cell.nodeId, &block);
+      }
+    }
   }
   for (const auto& child : block.children()) {
-    indexBlock(*child);
+    indexLayoutBlock(*child);
+  }
+}
+
+void DocumentLayout::rebuildIndexes() {
+  topLevelIndex_.clear();
+  layoutIndex_.clear();
+  for (qsizetype i = 0; i < static_cast<qsizetype>(blocks_.size()); ++i) {
+    indexTopLevelBlock(*blocks_.at(static_cast<size_t>(i)), i);
   }
 }
 

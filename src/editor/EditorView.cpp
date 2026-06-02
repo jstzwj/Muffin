@@ -3,10 +3,13 @@
 #include "document/MarkdownDocument.h"
 
 #include <QCompleter>
+#include <QByteArray>
+#include <QElapsedTimer>
 #include <QGraphicsDropShadowEffect>
 #include <QPainter>
 #include <QLineEdit>
 #include <QListView>
+#include <QLoggingCategory>
 #include <QScrollBar>
 #include <QStringListModel>
 #include <QWheelEvent>
@@ -18,6 +21,46 @@
 
 namespace muffin {
 namespace {
+
+Q_LOGGING_CATEGORY(viewPerf, "muffin.perf", QtWarningMsg)
+
+InlineLayout::InlineGeometryBackend configuredInlineGeometryBackend() {
+  const QByteArray value = qgetenv("MUFFIN_INLINE_GEOMETRY_BACKEND").trimmed().toLower();
+  if (value == "qtextdocument" || value == "document" || value == "html") {
+    return InlineLayout::InlineGeometryBackend::QTextDocument;
+  }
+  return InlineLayout::InlineGeometryBackend::QTextLayout;
+}
+
+const char* inlineGeometryBackendName(InlineLayout::InlineGeometryBackend backend) {
+  switch (backend) {
+    case InlineLayout::InlineGeometryBackend::QTextLayout:
+      return "QTextLayout";
+    case InlineLayout::InlineGeometryBackend::QTextDocument:
+    default:
+      return "QTextDocument";
+  }
+}
+
+class PerfTimer {
+public:
+  explicit PerfTimer(const char* label) : label_(label), enabled_(viewPerf().isDebugEnabled()) {
+    if (enabled_) {
+      timer_.start();
+    }
+  }
+
+  ~PerfTimer() {
+    if (enabled_) {
+      qCDebug(viewPerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0 << " ms";
+    }
+  }
+
+private:
+  const char* label_;
+  bool enabled_ = false;
+  QElapsedTimer timer_;
+};
 
 QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin) {
   const QFontMetricsF metrics(font);
@@ -61,9 +104,32 @@ qsizetype selectableLength(const BlockLayout* block) {
   }
 }
 
+QRect viewportUpdateRect(QRectF documentRect, qreal scrollY, const QSize& viewportSize) {
+  if (documentRect.isNull() || documentRect.isEmpty()) {
+    return {};
+  }
+  documentRect.translate(0, -scrollY);
+  return documentRect.adjusted(-4, -4, 4, 4).toAlignedRect().intersected(QRect(QPoint(0, 0), viewportSize));
+}
+
+void addRebuildDirtyRect(
+    QRect& dirty,
+    const DocumentLayout::BlockRebuildResult& result,
+    QRectF documentViewport,
+    qreal scrollY,
+    const QSize& viewportSize) {
+  dirty = dirty.united(viewportUpdateRect(result.oldRect.united(result.newRect), scrollY, viewportSize));
+  if (!result.shiftedRect.isEmpty()) {
+    dirty = dirty.united(viewportUpdateRect(result.shiftedRect.intersected(documentViewport), scrollY, viewportSize));
+  }
+}
+
 }  // namespace
 
 EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(std::make_unique<DocumentLayout>()) {
+  inlineGeometryBackend_ = configuredInlineGeometryBackend();
+  layout_->setInlineGeometryBackend(inlineGeometryBackend_);
+  qCDebug(viewPerf).nospace() << "view.inlineGeometryBackend " << inlineGeometryBackendName(inlineGeometryBackend_);
   setFrameShape(QFrame::NoFrame);
   setFocusPolicy(Qt::StrongFocus);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -118,6 +184,53 @@ void EditorView::setDocument(const MarkdownDocument& document) {
   rebuildLayout();
 }
 
+bool EditorView::refreshBlock(NodeId blockId, const MarkdownDocument& document) {
+  PerfTimer perf("view.refreshBlock");
+  if (!layout_ || document_ != &document) {
+    return false;
+  }
+
+  const DocumentLayout::BlockRebuildResult result = layout_->rebuildBlock(blockId, document, theme_, selection_);
+  if (!result.rebuilt) {
+    return false;
+  }
+  if (!qFuzzyIsNull(result.heightDelta)) {
+    updateScrollBars();
+  }
+  updateCursorHitFromPosition();
+  QRect dirty;
+  addRebuildDirtyRect(dirty, result, documentViewportRect(), scrollY(), viewport()->size());
+  if (dirty.isEmpty()) {
+    dirty = viewport()->rect();
+  }
+  viewport()->update(dirty);
+  return true;
+}
+
+bool EditorView::refreshBlocks(const QVector<NodeId>& blockIds, const MarkdownDocument& document) {
+  PerfTimer perf("view.refreshBlocks");
+  if (!layout_ || document_ != &document) {
+    return false;
+  }
+
+  QRect dirty;
+  bool scrollbarDirty = false;
+  for (NodeId blockId : blockIds) {
+    const DocumentLayout::BlockRebuildResult result = layout_->rebuildBlock(blockId, document, theme_, selection_);
+    if (!result.rebuilt) {
+      return false;
+    }
+    scrollbarDirty = scrollbarDirty || !qFuzzyIsNull(result.heightDelta);
+    addRebuildDirtyRect(dirty, result, documentViewportRect(), scrollY(), viewport()->size());
+  }
+  if (scrollbarDirty) {
+    updateScrollBars();
+  }
+  updateCursorHitFromPosition();
+  viewport()->update(dirty.isEmpty() ? viewport()->rect() : dirty);
+  return true;
+}
+
 void EditorView::setZoomPercent(int percent) {
   theme_.setZoomPercent(percent);
   applyScrollBarStyle();
@@ -135,33 +248,27 @@ void EditorView::setTheme(RenderTheme theme) {
 }
 
 void EditorView::setCursorHit(HitTestResult hit) {
+  const SelectionRange previousSelection = selection_;
   cursorHit_ = hit;
   cursorPosition_ = hit.cursorPosition();
   selection_.anchor = cursorPosition_;
   selection_.focus = cursorPosition_;
-  rebuildLayout();
-  cursorHit_ = hitForCursorPosition(cursorPosition_);
-  cursorVisible_ = cursorHit_.isValid();
-  viewport()->update();
+  refreshInlineProjectionForSelectionChange(previousSelection);
 }
 
 void EditorView::setCursorPosition(CursorPosition position) {
+  const SelectionRange previousSelection = selection_;
   cursorPosition_ = position;
   selection_.anchor = cursorPosition_;
   selection_.focus = cursorPosition_;
-  rebuildLayout();
-  cursorHit_ = hitForCursorPosition(position);
-  cursorVisible_ = cursorHit_.isValid();
-  viewport()->update();
+  refreshInlineProjectionForSelectionChange(previousSelection);
 }
 
 void EditorView::setSelectionRange(SelectionRange selection) {
+  const SelectionRange previousSelection = selection_;
   selection_ = selection;
   cursorPosition_ = selection.focus;
-  rebuildLayout();
-  cursorHit_ = hitForCursorPosition(selection.focus);
-  cursorVisible_ = selection.isCollapsed() && cursorHit_.isValid();
-  viewport()->update();
+  refreshInlineProjectionForSelectionChange(previousSelection);
 }
 
 void EditorView::clearCursor() {
@@ -180,6 +287,21 @@ void EditorView::setCodeLanguageSuggestions(QStringList languages) {
   if (codeLanguageCompleter_) {
     codeLanguageCompleter_->setModel(new QStringListModel(codeLanguageSuggestions_, codeLanguageCompleter_));
   }
+}
+
+void EditorView::setInlineGeometryBackend(InlineLayout::InlineGeometryBackend backend) {
+  if (inlineGeometryBackend_ == backend) {
+    return;
+  }
+  inlineGeometryBackend_ = backend;
+  if (layout_) {
+    layout_->setInlineGeometryBackend(backend);
+  }
+  rebuildLayout();
+}
+
+InlineLayout::InlineGeometryBackend EditorView::inlineGeometryBackend() const {
+  return inlineGeometryBackend_;
 }
 
 QRectF EditorView::nodeRect(NodeId id) const {
@@ -205,6 +327,7 @@ HitTestResult EditorView::hitTest(QPointF viewportPos) const {
 }
 
 void EditorView::paintEvent(QPaintEvent* event) {
+  PerfTimer perf("view.paint");
   Q_UNUSED(event);
 
   QPainter painter(viewport());
@@ -301,13 +424,15 @@ QVariant EditorView::inputMethodQuery(Qt::InputMethodQuery query) const {
 }
 
 void EditorView::rebuildLayout() {
+  PerfTimer perf("view.rebuildLayout");
   if (!layout_) {
     layout_ = std::make_unique<DocumentLayout>();
   }
+  layout_->setInlineGeometryBackend(inlineGeometryBackend_);
 
   if (document_) {
     const int oldValue = verticalScrollBar()->value();
-    layout_->rebuild(*document_, theme_, viewport()->width(), cursorPosition_);
+    layout_->rebuild(*document_, theme_, viewport()->width(), selection_);
     updateScrollBars();
     verticalScrollBar()->setValue(qMin(oldValue, verticalScrollBar()->maximum()));
     if (cursorPosition_.isValid()) {
@@ -504,6 +629,40 @@ void EditorView::commitCodeLanguageEditor() {
     }
   }
   emit codeLanguageCommitted(codeLanguageNodeId_, language);
+}
+
+void EditorView::updateCursorHitFromPosition() {
+  cursorHit_ = hitForCursorPosition(cursorPosition_);
+  cursorVisible_ = cursorHit_.isValid();
+  updateCodeLanguageEditor();
+}
+
+void EditorView::refreshInlineProjectionForSelectionChange(SelectionRange previousSelection) {
+  QVector<NodeId> blockIds;
+  addSelectionBlocks(blockIds, previousSelection);
+  addSelectionBlocks(blockIds, selection_);
+
+  bool refreshed = false;
+  if (document_ && layout_ && !blockIds.isEmpty()) {
+    refreshed = refreshBlocks(blockIds, *document_);
+  }
+  if (!refreshed) {
+    updateCursorHitFromPosition();
+    cursorVisible_ = selection_.isCollapsed() && cursorHit_.isValid();
+    viewport()->update();
+  } else {
+    cursorVisible_ = selection_.isCollapsed() && cursorHit_.isValid();
+  }
+}
+
+void EditorView::addSelectionBlocks(QVector<NodeId>& blockIds, const SelectionRange& selection) const {
+  auto add = [&blockIds](NodeId id) {
+    if (id.isValid() && !blockIds.contains(id)) {
+      blockIds.push_back(id);
+    }
+  };
+  add(selection.anchor.blockId);
+  add(selection.focus.blockId);
 }
 
 void EditorView::paintSelection(QPainter& painter) const {

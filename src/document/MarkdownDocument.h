@@ -18,9 +18,15 @@ public:
   NodeIndex& index();
   const NodeIndex& index() const;
 
-  QString markdownText() const;
+  const QString& markdownText() const;
   void setMarkdownText(QString text, std::unique_ptr<MarkdownNode> root);
-  void replaceTopLevelRange(qsizetype first, qsizetype count, std::vector<std::unique_ptr<MarkdownNode>> replacements, QString text);
+  void replaceTopLevelRange(
+      qsizetype first,
+      qsizetype count,
+      std::vector<std::unique_ptr<MarkdownNode>> replacements,
+      qsizetype sourceStart,
+      qsizetype sourceEnd,
+      const QString& replacementText);
 
   quint64 revision() const;
   bool isModified() const;

@@ -25,7 +25,7 @@ const NodeIndex& MarkdownDocument::index() const {
   return index_;
 }
 
-QString MarkdownDocument::markdownText() const {
+const QString& MarkdownDocument::markdownText() const {
   return markdownText_;
 }
 
@@ -38,8 +38,10 @@ void MarkdownDocument::replaceTopLevelRange(
     qsizetype first,
     qsizetype count,
     std::vector<std::unique_ptr<MarkdownNode>> replacements,
-    QString text) {
-  markdownText_ = std::move(text);
+    qsizetype sourceStart,
+    qsizetype sourceEnd,
+    const QString& replacementText) {
+  markdownText_.replace(sourceStart, sourceEnd - sourceStart, replacementText);
   const qsizetype boundedFirst = qBound<qsizetype>(0, first, root_->children().size());
   const qsizetype boundedCount = qBound<qsizetype>(0, count, root_->children().size() - boundedFirst);
   for (qsizetype i = 0; i < boundedCount; ++i) {

@@ -16,8 +16,20 @@ namespace muffin {
 
 class DocumentLayout {
 public:
+  struct BlockRebuildResult {
+    bool rebuilt = false;
+    NodeId blockId;
+    QRectF oldRect;
+    QRectF newRect;
+    QRectF shiftedRect;
+    qreal heightDelta = 0;
+  };
+
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth);
-  void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, CursorPosition activeCursor);
+  void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, SelectionRange selection);
+  BlockRebuildResult rebuildBlock(NodeId blockId, const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
+  void setInlineGeometryBackend(InlineLayout::InlineGeometryBackend backend);
+  InlineLayout::InlineGeometryBackend inlineGeometryBackend() const;
 
   qreal pageLeft() const;
   qreal pageWidth() const;
@@ -30,11 +42,17 @@ public:
   HitTestResult hitTest(QPointF documentPos, const RenderTheme& theme) const;
 
 private:
-  void indexBlock(const BlockLayout& block);
+  const MarkdownNode* topLevelBlockFor(NodeId id, const MarkdownDocument& document) const;
+  void indexTopLevelBlock(const BlockLayout& block, qsizetype index);
+  void indexLayoutBlock(const BlockLayout& block);
+  void rebuildIndexes();
 
   const MarkdownDocument* document_ = nullptr;
+  qreal viewportWidth_ = 0;
   std::vector<std::unique_ptr<BlockLayout>> blocks_;
-  QHash<NodeId, const BlockLayout*> index_;
+  QHash<NodeId, qsizetype> topLevelIndex_;
+  QHash<NodeId, const BlockLayout*> layoutIndex_;
+  InlineLayout::InlineGeometryBackend inlineGeometryBackend_ = InlineLayout::InlineGeometryBackend::QTextLayout;
   qreal pageLeft_ = 0;
   qreal pageWidth_ = 0;
   qreal totalHeight_ = 0;

@@ -11,6 +11,7 @@
 
 class QLabel;
 class QMenu;
+class QTimer;
 class QSplitter;
 class QStackedWidget;
 class QToolButton;
@@ -77,6 +78,9 @@ private:
   void updateCodeActions();
   void updateHtmlActions();
   void updateMathActions();
+  void syncSourceEditorIfNeeded();
+  void scheduleWordCountUpdate();
+  void updateWordCountNow();
   bool sourceModeEnabled() const;
   void undoEdit();
   void redoEdit();
@@ -105,11 +109,14 @@ private:
   QLabel* parseLabel_ = nullptr;
   QLabel* cursorLabel_ = nullptr;
   QLabel* wordsLabel_ = nullptr;
+  QTimer* wordCountTimer_ = nullptr;
   QMenu* recentFilesMenu_ = nullptr;
   int cursorLine_ = 1;
   int cursorColumn_ = 1;
   QString renderCursorStatus_;
   int zoomPercent_ = 100;
+  bool sourceEditorDirty_ = false;
+  bool wordCountDirty_ = true;
 };
 
 }  // namespace muffin

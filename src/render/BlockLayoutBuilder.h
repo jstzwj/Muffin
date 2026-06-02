@@ -12,7 +12,8 @@ namespace muffin {
 class BlockLayoutBuilder {
 public:
   void setMarkdownText(QString markdownText);
-  void setActiveCursor(CursorPosition cursor);
+  void setSelection(SelectionRange selection);
+  void setInlineGeometryBackend(InlineLayout::InlineGeometryBackend backend);
   std::unique_ptr<BlockLayout> build(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth = 0);
 
 private:
@@ -68,7 +69,8 @@ private:
   qreal textHeight(const QString& text, const QFont& font, qreal width, const QMarginsF& padding) const;
 
   QString markdownText_;
-  CursorPosition activeCursor_;
+  SelectionRange selection_;
+  InlineLayout::InlineGeometryBackend inlineGeometryBackend_ = InlineLayout::InlineGeometryBackend::QTextLayout;
   TreeSitterHighlighter codeHighlighter_;
 };
 

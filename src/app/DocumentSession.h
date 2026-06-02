@@ -26,23 +26,25 @@ public:
 
   QString filePath() const;
   QString displayName() const;
-  QString markdownText() const;
+  const QString& markdownText() const;
   qint64 lastParseElapsedMs() const;
+  bool lastParseWasLocalEdit() const;
 
   void newDocument();
   void setFilePath(QString path);
   void setMarkdownText(QString text, bool modified);
   void updateFromEditor(QString text);
   void applyMarkdownText(QString text, bool modified);
-  bool applyLocalMarkdownEdit(
+  bool applyTextDelta(
       qsizetype sourceStart,
-      qsizetype sourceEnd,
-      QString replacementText,
+      qsizetype removedLength,
+      QString insertedText,
       bool modified,
       QVector<LocalEditNodeHint> nodeHints = {});
 
 signals:
   void documentTextChanged(QString text);
+  void documentLocallyEdited(qsizetype start, qsizetype removedLength, QString insertedText);
   void filePathChanged(QString path);
   void parsed(qint64 elapsedMs);
   void modifiedChanged(bool modified);
@@ -52,7 +54,7 @@ private:
   bool tryApplyTopLevelLocalEdit(
       qsizetype sourceStart,
       qsizetype sourceEnd,
-      QString replacementText,
+      const QString& replacementText,
       bool modified,
       const QVector<LocalEditNodeHint>& nodeHints);
 
@@ -61,6 +63,7 @@ private:
   ParseOptions parseOptions_;
   QString filePath_;
   qint64 lastParseElapsedMs_ = 0;
+  bool lastParseWasLocalEdit_ = false;
 };
 
 }  // namespace muffin

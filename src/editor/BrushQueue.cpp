@@ -1,5 +1,9 @@
 #include "editor/BrushQueue.h"
 
+#include <algorithm>
+
+#include <QTimer>
+
 namespace muffin {
 
 BrushQueue::BrushQueue(QObject* parent) : QObject(parent) {}
@@ -10,11 +14,59 @@ void BrushQueue::requestBlockRefresh(NodeId blockId) {
     return;
   }
 
-  emit blockRefreshRequested(blockId);
+  requestBlocksRefresh({blockId});
+}
+
+void BrushQueue::requestBlocksRefresh(QVector<NodeId> blockIds) {
+  if (pending_.fullLayoutDirty) {
+    scheduleFlush();
+    return;
+  }
+  blockIds.erase(std::remove_if(blockIds.begin(), blockIds.end(), [](const NodeId& id) { return !id.isValid(); }), blockIds.end());
+  if (blockIds.isEmpty()) {
+    requestFullRefresh();
+    return;
+  }
+  QVector<NodeId> uniqueIds;
+  uniqueIds.reserve(blockIds.size());
+  for (const NodeId& id : blockIds) {
+    if (!uniqueIds.contains(id)) {
+      uniqueIds.push_back(id);
+    }
+  }
+  blockIds = std::move(uniqueIds);
+  for (const NodeId& id : blockIds) {
+    if (!pending_.layoutDirtyBlocks.contains(id)) {
+      pending_.layoutDirtyBlocks.push_back(id);
+    }
+  }
+  scheduleFlush();
 }
 
 void BrushQueue::requestFullRefresh() {
-  emit fullRefreshRequested();
+  pending_.fullLayoutDirty = true;
+  pending_.layoutDirtyBlocks.clear();
+  scheduleFlush();
+}
+
+void BrushQueue::flush() {
+  if (!pending_.fullLayoutDirty && pending_.layoutDirtyBlocks.isEmpty()) {
+    flushScheduled_ = false;
+    return;
+  }
+
+  RefreshRequest request = std::move(pending_);
+  pending_ = {};
+  flushScheduled_ = false;
+  emit refreshRequested(std::move(request));
+}
+
+void BrushQueue::scheduleFlush() {
+  if (flushScheduled_) {
+    return;
+  }
+  flushScheduled_ = true;
+  QTimer::singleShot(0, this, [this] { flush(); });
 }
 
 }  // namespace muffin

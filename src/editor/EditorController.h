@@ -82,6 +82,7 @@ signals:
 
 private:
   void applySnapshot(const DocumentSnapshot& snapshot);
+  void applyTransaction(const EditTransaction& transaction, bool undo);
   CursorPosition remapSnapshotCursor(const CursorPosition& snapshotCursor) const;
 
   DocumentSession* session_ = nullptr;

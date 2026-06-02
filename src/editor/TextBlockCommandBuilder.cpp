@@ -78,6 +78,10 @@ QString insertionWithInlineSplit(QString blockBreak, const QString& source, qsiz
 TextBlockCommandBuilder::TextBlockCommandBuilder(DocumentSession* session, const BlockEditContextResolver* resolver)
     : session_(session), resolver_(resolver) {}
 
+bool TextBlockCommandBuilder::Command::hasLocalEdit() const {
+  return sourceStart >= 0 && removedLength >= 0;
+}
+
 TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
     const BlockEditContext& context,
     Operation operation,
@@ -101,6 +105,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
   switch (operation) {
     case Operation::InsertText:
       nextParagraph.insert(nextOffset, text);
+      command.sourceStart = context.contentRange.byteStart + nextOffset;
+      command.removedLength = 0;
+      command.insertedText = text;
       nextOffset += text.size();
       command.kind = EditTransaction::Kind::InsertText;
       command.label = QStringLiteral("Insert Text");
@@ -112,6 +119,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
         }
         return buildMergeWithPreviousParagraph(context);
       }
+      command.sourceStart = context.contentRange.byteStart + nextOffset - 1;
+      command.removedLength = 1;
+      command.insertedText.clear();
       nextParagraph.remove(nextOffset - 1, 1);
       --nextOffset;
       command.kind = EditTransaction::Kind::DeleteText;
@@ -121,6 +131,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
       if (nextOffset >= nextParagraph.size()) {
         return buildMergeWithNextParagraph(context);
       }
+      command.sourceStart = context.contentRange.byteStart + nextOffset;
+      command.removedLength = 1;
+      command.insertedText.clear();
       nextParagraph.remove(nextOffset, 1);
       command.kind = EditTransaction::Kind::DeleteText;
       command.label = QStringLiteral("Delete");
@@ -138,9 +151,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
       return buildSplitTextBlock(context, context.cursorSourceOffset - context.contentRange.byteStart);
   }
 
-  command.markdownText = session_->markdownText();
   command.fallbackSourceOffset = context.contentRange.byteStart + nextOffset;
-  command.markdownText.replace(context.contentRange.byteStart, context.contentRange.byteEnd - context.contentRange.byteStart, nextParagraph);
   command.nodeHints.push_back(LocalEditNodeHint{
       context.node->id(),
       context.blockRange.byteStart >= 0 ? context.blockRange.byteStart : context.contentRange.byteStart,
@@ -157,8 +168,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildInsertBlockBefore
     return command;
   }
 
-  command.markdownText = session_->markdownText();
-  command.markdownText.insert(insertStart, QStringLiteral("\n\n"));
+  command.sourceStart = insertStart;
+  command.removedLength = 0;
+  command.insertedText = QStringLiteral("\n\n");
   command.kind = EditTransaction::Kind::SplitParagraph;
   command.label = QStringLiteral("Insert Paragraph Before");
   command.preferredCursor = cursorFor(context.node->id(), 0);
@@ -176,8 +188,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildInsertBlockAfter(
     return command;
   }
 
-  command.markdownText = session_->markdownText();
-  command.markdownText.insert(insertEnd, QStringLiteral("\n\n"));
+  command.sourceStart = insertEnd;
+  command.removedLength = 0;
+  command.insertedText = QStringLiteral("\n\n");
   command.kind = EditTransaction::Kind::SplitParagraph;
   command.label = QStringLiteral("Insert Paragraph After");
   command.fallbackSourceOffset = insertEnd + 2;
@@ -206,8 +219,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitTextBlock(
   nextContent.insert(nextOffset, insertion);
   nextOffset += insertion.size();
 
-  command.markdownText = session_->markdownText();
-  command.markdownText.replace(context.contentRange.byteStart, context.contentRange.byteEnd - context.contentRange.byteStart, nextContent);
+  command.sourceStart = context.contentRange.byteStart;
+  command.removedLength = context.contentRange.byteEnd - context.contentRange.byteStart;
+  command.insertedText = nextContent;
   command.kind = EditTransaction::Kind::SplitParagraph;
   command.label = QStringLiteral("Split Paragraph");
   command.fallbackSourceOffset = context.contentRange.byteStart + nextOffset;
@@ -230,7 +244,6 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPrevious
     return command;
   }
 
-  command.markdownText = session_->markdownText();
   const qsizetype separatorStart = previous.contentRange.byteEnd;
   const bool preserveCurrentHeadingPrefix =
       context.blockType == BlockType::Heading && previous.contentText.isEmpty() && context.blockRange.byteStart >= 0 &&
@@ -240,7 +253,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPrevious
   const QString separator = previous.contentText.isEmpty() || context.contentText.isEmpty() ? QString() : QStringLiteral(" ");
   command.fallbackSourceOffset =
       preserveCurrentHeadingPrefix ? context.contentRange.byteStart - separatorLength + separator.size() : previous.contentRange.byteEnd;
-  command.markdownText.replace(separatorStart, separatorLength, separator);
+  command.sourceStart = separatorStart;
+  command.removedLength = separatorLength;
+  command.insertedText = separator;
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Merge Paragraphs");
   command.valid = true;
@@ -261,7 +276,6 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithNextPara
     return command;
   }
 
-  command.markdownText = session_->markdownText();
   const qsizetype separatorStart = context.contentRange.byteEnd;
   const bool preserveNextHeadingPrefix =
       next.blockType == BlockType::Heading && context.contentText.isEmpty() && next.blockRange.byteStart >= 0 &&
@@ -271,7 +285,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithNextPara
   const QString separator = context.contentText.isEmpty() || next.contentText.isEmpty() ? QString() : QStringLiteral(" ");
   command.fallbackSourceOffset =
       preserveNextHeadingPrefix ? next.contentRange.byteStart - separatorLength + separator.size() : context.contentRange.byteEnd;
-  command.markdownText.replace(separatorStart, separatorLength, separator);
+  command.sourceStart = separatorStart;
+  command.removedLength = separatorLength;
+  command.insertedText = separator;
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Merge Paragraphs");
   command.valid = true;
@@ -299,7 +315,6 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(con
     return command;
   }
 
-  command.markdownText = markdown;
   QString nextLineContent = context.contentText;
   qsizetype contentOffset = context.plainInlineEditable ? context.cursorTextOffset : context.cursorSourceOffset - context.contentRange.byteStart;
   const qsizetype splitContentOffset = normalizeSplitOffset(nextLineContent, contentOffset);
@@ -316,8 +331,10 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(con
   }
   QString insertion = QLatin1Char('\n') + QString(markerColumn, QLatin1Char(' ')) + nextMarker;
   insertion = insertionWithInlineSplit(insertion, nextLineContent, splitContentOffset);
-  command.markdownText.replace(context.contentRange.byteStart, context.contentRange.byteEnd - context.contentRange.byteStart, nextLineContent);
-  command.markdownText.insert(splitOffset, insertion);
+  nextLineContent.insert(splitContentOffset, insertion);
+  command.sourceStart = context.contentRange.byteStart;
+  command.removedLength = context.contentRange.byteEnd - context.contentRange.byteStart;
+  command.insertedText = nextLineContent;
   command.kind = EditTransaction::Kind::SplitParagraph;
   command.label = QStringLiteral("Split List Item");
   command.fallbackSourceOffset = splitOffset + insertion.size();
@@ -339,9 +356,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildExitListItem(cons
     return command;
   }
 
-  command.markdownText = session_->markdownText();
-  command.markdownText.remove(lineStart, lineEnd - lineStart);
-  command.markdownText.insert(lineStart, QLatin1Char('\n'));
+  command.sourceStart = lineStart;
+  command.removedLength = lineEnd - lineStart;
+  command.insertedText = QLatin1Char('\n');
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Exit List Item");
   command.fallbackSourceOffset = lineStart;
@@ -363,11 +380,13 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(c
     return command;
   }
 
-  command.markdownText = session_->markdownText();
+  const QString& markdown = session_->markdownText();
   const qsizetype indent =
-      qMax<qsizetype>(0, contentStart - lineStart - resolver_->listMarkerFor(command.markdownText.mid(lineStart, lineEnd - lineStart)).size());
+      qMax<qsizetype>(0, contentStart - lineStart - resolver_->listMarkerFor(markdown.mid(lineStart, lineEnd - lineStart)).size());
   if (indent >= 2) {
-    command.markdownText.remove(lineStart, 2);
+    command.sourceStart = lineStart;
+    command.removedLength = 2;
+    command.insertedText.clear();
     command.kind = EditTransaction::Kind::DeleteText;
     command.label = QStringLiteral("Outdent List Item");
     command.fallbackSourceOffset = qMax<qsizetype>(lineStart, context.contentRange.byteStart + context.cursorTextOffset - 2);
@@ -376,7 +395,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(c
     return command;
   }
 
-  command.markdownText.remove(lineStart, contentStart - lineStart);
+  command.sourceStart = lineStart;
+  command.removedLength = contentStart - lineStart;
+  command.insertedText.clear();
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Exit List Item");
   command.fallbackSourceOffset = lineStart;
@@ -398,8 +419,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildIndentListItem(co
     return command;
   }
 
-  command.markdownText = session_->markdownText();
-  command.markdownText.insert(lineStart, QStringLiteral("  "));
+  command.sourceStart = lineStart;
+  command.removedLength = 0;
+  command.insertedText = QStringLiteral("  ");
   command.kind = EditTransaction::Kind::InsertText;
   command.label = QStringLiteral("Indent List Item");
   command.fallbackSourceOffset = context.contentRange.byteStart + context.cursorTextOffset + 2;

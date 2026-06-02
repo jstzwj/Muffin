@@ -13,13 +13,73 @@ bool containsOffset(qsizetype start, qsizetype end, qsizetype offset) {
   return offset >= start && offset <= end;
 }
 
+bool overlapsRange(qsizetype firstStart, qsizetype firstEnd, qsizetype secondStart, qsizetype secondEnd) {
+  return firstStart >= 0 && firstEnd >= firstStart && secondStart >= 0 && secondEnd >= secondStart && firstStart < secondEnd &&
+         secondStart < firstEnd;
+}
+
 }  // namespace
 
-InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, qsizetype activeSourceOffset)
+bool InlineProjectionState::shouldRevealSourceRange(qsizetype sourceStart, qsizetype sourceEnd) const {
+  if (revealMarkdownMarkers) {
+    return true;
+  }
+  if (cursorSourceOffset >= 0 && containsOffset(sourceStart, sourceEnd, cursorSourceOffset)) {
+    return true;
+  }
+  return overlapsRange(selectionSourceStart, selectionSourceEnd, sourceStart, sourceEnd);
+}
+
+bool InlineProjectionState::shouldRevealVisibleRange(qsizetype visibleStart, qsizetype visibleEnd) const {
+  if (revealMarkdownMarkers) {
+    return true;
+  }
+  if (cursorVisibleOffset >= 0 && containsOffset(visibleStart, visibleEnd, cursorVisibleOffset)) {
+    return true;
+  }
+  return overlapsRange(selectionVisibleStart, selectionVisibleEnd, visibleStart, visibleEnd);
+}
+
+InlineProjectionState InlineProjectionState::forCursor(
+    const CursorPosition& cursor,
+    NodeId blockId,
+    qsizetype contentSourceStart) {
+  SelectionRange selection;
+  selection.anchor = cursor;
+  selection.focus = cursor;
+  return forSelection(selection, blockId, contentSourceStart);
+}
+
+InlineProjectionState InlineProjectionState::forSelection(
+    const SelectionRange& selection,
+    NodeId blockId,
+    qsizetype contentSourceStart) {
+  InlineProjectionState state;
+  if (selection.focus.blockId != blockId) {
+    return state;
+  }
+
+  state.cursorVisibleOffset = selection.focus.text.textOffset;
+  state.cursorSourceOffset =
+      selection.focus.text.sourceOffset >= 0 && contentSourceStart >= 0 ? selection.focus.text.sourceOffset - contentSourceStart : -1;
+
+  if (!selection.isCollapsed() && selection.isSingleBlock()) {
+    state.selectionVisibleStart = qMin(selection.anchor.text.textOffset, selection.focus.text.textOffset);
+    state.selectionVisibleEnd = qMax(selection.anchor.text.textOffset, selection.focus.text.textOffset);
+    if (selection.anchor.text.sourceOffset >= 0 && selection.focus.text.sourceOffset >= 0 && contentSourceStart >= 0) {
+      state.selectionSourceStart = qMin(selection.anchor.text.sourceOffset, selection.focus.text.sourceOffset) - contentSourceStart;
+      state.selectionSourceEnd = qMax(selection.anchor.text.sourceOffset, selection.focus.text.sourceOffset) - contentSourceStart;
+    }
+  }
+
+  return state;
+}
+
+InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState projectionState)
     : sourceText_(std::move(sourceText)), visibleText_(plainTextForInlines(inlines)) {
   BuildState state;
   state.sourceText = &sourceText_;
-  state.activeSourceOffset = activeSourceOffset;
+  state.projectionState = projectionState;
   appendInlines(state, inlines, 0, sourceText_.size());
   displayText_ = state.displayText;
   spans_ = state.spans;
@@ -69,6 +129,13 @@ bool InlineProjection::sourceOffsetForVisibleOffset(qsizetype visibleOffset, qsi
         sourceOffset = span.sourceStart;
       } else if (visibleOffset >= span.visibleEnd) {
         sourceOffset = span.sourceEnd;
+        for (const InlineProjectionSpan& following : spans_) {
+          if (following.visibleStart == visibleOffset && following.visibleEnd == visibleOffset &&
+              following.kind == InlineSpanKind::CloseMarker &&
+              following.sourceStart >= sourceOffset && following.sourceEnd > following.sourceStart) {
+            sourceOffset = following.sourceEnd;
+          }
+        }
       } else {
         sourceOffset = qBound<qsizetype>(
             span.contentSourceStart,
@@ -349,9 +416,11 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
 
 void InlineProjection::appendInline(BuildState& state, const InlineNode& node, qsizetype sourceStart, qsizetype sourceEnd) {
   const QString marker = markerForInline(node);
-  const bool active = state.activeSourceOffset >= 0 && containsOffset(sourceStart, sourceEnd, state.activeSourceOffset);
   const qsizetype displayStart = state.displayOffset;
   const qsizetype visibleStart = state.visibleOffset;
+  const qsizetype visibleEnd = visibleStart + plainTextForInlines(QVector<InlineNode>{node}).size();
+  const bool active = state.projectionState.shouldRevealSourceRange(sourceStart, sourceEnd) ||
+                      state.projectionState.shouldRevealVisibleRange(visibleStart, visibleEnd);
   switch (node.type()) {
     case InlineType::Text:
       appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, node.text(), true);
@@ -425,9 +494,24 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
       }
       break;
     }
-    case InlineType::Image:
-      appendTextSpan(state, node.type(), InlineSpanKind::Atom, sourceStart, sourceEnd, node.alt(), true);
+    case InlineType::Image: {
+      if (!active) {
+        appendTextSpan(state, node.type(), InlineSpanKind::Atom, sourceStart, sourceEnd, node.alt(), true);
+        break;
+      }
+      const QString markdown = state.sourceText->mid(sourceStart, sourceEnd - sourceStart);
+      const qsizetype labelStart = markdown.startsWith(QStringLiteral("![")) ? sourceStart + 2 : sourceStart;
+      const qsizetype labelEndInMarkdown = markdown.indexOf(QLatin1Char(']'));
+      const qsizetype labelEnd = labelEndInMarkdown >= 0 ? sourceStart + labelEndInMarkdown : labelStart;
+      if (labelStart > sourceStart) {
+        appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, labelStart, state.sourceText->mid(sourceStart, labelStart - sourceStart), false);
+      }
+      appendTextSpan(state, node.type(), InlineSpanKind::Atom, sourceStart, sourceEnd, labelStart, labelEnd, node.alt(), true);
+      if (labelEnd < sourceEnd) {
+        appendTextSpan(state, node.type(), InlineSpanKind::HiddenSyntax, labelEnd, sourceEnd, state.sourceText->mid(labelEnd, sourceEnd - labelEnd), false);
+      }
       break;
+    }
     default:
       appendInlines(state, node.children(), sourceStart, sourceEnd);
       break;

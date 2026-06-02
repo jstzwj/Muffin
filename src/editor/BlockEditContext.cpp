@@ -109,7 +109,17 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
           ? selection_->cursorPosition().text.sourceOffset
           : -1;
   context.contentText = markdown.mid(start, end - start);
-  context.inlineProjection = InlineProjection(editable->inlines(), context.contentText, cursorStoredSourceOffset - start);
+  InlineProjectionState projectionState;
+  if (selection_ && selection_->hasCursor()) {
+    projectionState = InlineProjectionState::forSelection(selection_->selection(), displayNode.id(), start);
+  } else {
+    CursorPosition cursor;
+    cursor.blockId = displayNode.id();
+    cursor.text.textOffset = context.cursorTextOffset;
+    cursor.text.sourceOffset = cursorStoredSourceOffset;
+    projectionState = InlineProjectionState::forCursor(cursor, displayNode.id(), start);
+  }
+  context.inlineProjection = InlineProjection(editable->inlines(), context.contentText, projectionState);
   context.visibleText = context.inlineProjection.visibleText();
   context.plainInlineEditable = InlineProjection::isPlainInlineSource(editable->inlines(), context.contentText);
   qsizetype localSourceOffset = -1;

@@ -9,9 +9,11 @@
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
+#include <QElapsedTimer>
 #include <QFileInfo>
 #include <QLabel>
 #include <QLocale>
+#include <QLoggingCategory>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
@@ -22,12 +24,35 @@
 #include <QStackedWidget>
 #include <QStatusBar>
 #include <QTextCursor>
+#include <QTimer>
 #include <QToolButton>
 #include <QUrl>
 #include <QVBoxLayout>
 
 namespace muffin {
 namespace {
+
+Q_LOGGING_CATEGORY(mainWindowPerf, "muffin.perf", QtWarningMsg)
+
+class PerfTimer {
+public:
+  explicit PerfTimer(const char* label) : label_(label), enabled_(mainWindowPerf().isDebugEnabled()) {
+    if (enabled_) {
+      timer_.start();
+    }
+  }
+
+  ~PerfTimer() {
+    if (enabled_) {
+      qCDebug(mainWindowPerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0 << " ms";
+    }
+  }
+
+private:
+  const char* label_;
+  bool enabled_ = false;
+  QElapsedTimer timer_;
+};
 
 int countWords(const QString& text) {
   int count = 0;
@@ -205,6 +230,10 @@ void MainWindow::setupStatusBar() {
   parseLabel_ = new QLabel(this);
   cursorLabel_ = new QLabel(this);
   wordsLabel_ = new QLabel(this);
+  wordCountTimer_ = new QTimer(this);
+  wordCountTimer_->setSingleShot(true);
+  wordCountTimer_->setInterval(250);
+  connect(wordCountTimer_, &QTimer::timeout, this, &MainWindow::updateWordCountNow);
 
   statusBar()->addWidget(sidebarButton_);
   statusBar()->addWidget(sourceModeButton_);
@@ -226,13 +255,29 @@ void MainWindow::setupConnections() {
     editorController_.setCodeFenceLanguage(codeId, language);
   });
 
-  connect(&session_, &DocumentSession::documentTextChanged, editor_, &SourceEditorWidget::setText);
+  connect(&session_, &DocumentSession::documentTextChanged, this, [this](const QString& text) {
+    PerfTimer perf("main.documentTextChanged.consumer");
+    if (sourceModeEnabled()) {
+      editor_->setText(text);
+      sourceEditorDirty_ = false;
+      return;
+    }
+    sourceEditorDirty_ = true;
+  });
+  connect(&session_, &DocumentSession::documentLocallyEdited, this, [this](qsizetype, qsizetype, const QString&) {
+    PerfTimer perf("main.documentLocallyEdited.consumer");
+    sourceEditorDirty_ = true;
+  });
   connect(&session_, &DocumentSession::filePathChanged, this, &MainWindow::updateTitle);
   connect(&session_, &DocumentSession::filePathChanged, this, &MainWindow::updateFileActions);
   connect(&session_, &DocumentSession::modifiedChanged, this, &MainWindow::updateTitle);
   connect(&session_, &DocumentSession::modifiedChanged, this, &MainWindow::updateStatus);
   connect(&session_, &DocumentSession::parsed, this, [this] {
-    renderView_->setDocument(session_.document());
+    PerfTimer perf("main.parsed.consumer");
+    if (!session_.lastParseWasLocalEdit()) {
+      renderView_->setDocument(session_.document());
+    }
+    scheduleWordCountUpdate();
     updateStatus();
   });
   connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateStatus);
@@ -717,9 +762,7 @@ void MainWindow::updateTitle() {
 }
 
 void MainWindow::updateStatus() {
-  const QString text = session_.markdownText();
   parseLabel_->setText(QStringLiteral("解析 %1 ms").arg(session_.lastParseElapsedMs()));
-  wordsLabel_->setText(QStringLiteral("%1 词").arg(countWords(text)));
   if (!sourceModeEnabled() && !renderCursorStatus_.isEmpty()) {
     cursorLabel_->setText(renderCursorStatus_);
   } else {
@@ -765,6 +808,9 @@ void MainWindow::updateViewMode() {
     return;
   }
   const bool sourceMode = sourceModeEnabled();
+  if (sourceMode) {
+    syncSourceEditorIfNeeded();
+  }
   viewStack_->setCurrentWidget(sourceMode ? static_cast<QWidget*>(editor_) : static_cast<QWidget*>(renderView_));
   if (sourceModeButton_) {
     sourceModeButton_->setChecked(sourceMode);
@@ -824,6 +870,29 @@ void MainWindow::updateMathActions() {
   commands_.setEnabled(QStringLiteral("math.enter_edit"), mathActive);
   commands_.setEnabled(QStringLiteral("math.exit_edit"), !sourceModeEnabled() && editorController_.mathBlockController().isEditing());
   commands_.setEnabled(QStringLiteral("math.set_tex"), mathActive || (!sourceModeEnabled() && editorController_.mathBlockController().isEditing()));
+}
+
+void MainWindow::syncSourceEditorIfNeeded() {
+  if (!editor_ || !sourceEditorDirty_) {
+    return;
+  }
+  editor_->setText(session_.markdownText());
+  sourceEditorDirty_ = false;
+}
+
+void MainWindow::scheduleWordCountUpdate() {
+  wordCountDirty_ = true;
+  if (wordCountTimer_ && !wordCountTimer_->isActive()) {
+    wordCountTimer_->start();
+  }
+}
+
+void MainWindow::updateWordCountNow() {
+  if (!wordsLabel_ || !wordCountDirty_) {
+    return;
+  }
+  wordsLabel_->setText(QStringLiteral("%1 词").arg(countWords(session_.markdownText())));
+  wordCountDirty_ = false;
 }
 
 bool MainWindow::sourceModeEnabled() const {

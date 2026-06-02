@@ -1,8 +1,10 @@
 #pragma once
 
 #include "document/InlineNode.h"
+#include "document/TextSelection.h"
 
 #include <QString>
+#include <QtGlobal>
 #include <QVector>
 
 namespace muffin {
@@ -35,10 +37,32 @@ struct InlineProjectionSpan {
   bool editable = true;
 };
 
+struct InlineProjectionState {
+  qsizetype cursorSourceOffset = -1;
+  qsizetype cursorVisibleOffset = -1;
+  qsizetype selectionSourceStart = -1;
+  qsizetype selectionSourceEnd = -1;
+  qsizetype selectionVisibleStart = -1;
+  qsizetype selectionVisibleEnd = -1;
+  bool revealMarkdownMarkers = false;
+
+  bool shouldRevealSourceRange(qsizetype sourceStart, qsizetype sourceEnd) const;
+  bool shouldRevealVisibleRange(qsizetype visibleStart, qsizetype visibleEnd) const;
+
+  static InlineProjectionState forCursor(
+      const CursorPosition& cursor,
+      NodeId blockId,
+      qsizetype contentSourceStart);
+  static InlineProjectionState forSelection(
+      const SelectionRange& selection,
+      NodeId blockId,
+      qsizetype contentSourceStart);
+};
+
 class InlineProjection {
 public:
   InlineProjection() = default;
-  InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, qsizetype activeSourceOffset = -1);
+  InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState state = {});
 
   bool isValid() const;
   QString sourceText() const;
@@ -58,7 +82,7 @@ public:
 private:
   struct BuildState {
     const QString* sourceText = nullptr;
-    qsizetype activeSourceOffset = -1;
+    InlineProjectionState projectionState;
     qsizetype displayOffset = 0;
     qsizetype visibleOffset = 0;
     QString displayText;

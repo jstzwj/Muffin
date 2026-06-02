@@ -74,6 +74,16 @@ private:
   void setCursorOrExtend(CursorPosition cursor, bool extendSelection);
   void applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText, qsizetype nextSourceOffset);
   void applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText, qsizetype nextSourceOffset, bool preferLaterEmptyAtOffset);
+  void applyLocalEdit(
+      EditTransaction::Kind kind,
+      const QString& label,
+      qsizetype sourceStart,
+      qsizetype removedLength,
+      QString insertedText,
+      CursorPosition preferredCursor,
+      qsizetype fallbackSourceOffset,
+      QVector<LocalEditNodeHint> nodeHints = {},
+      bool preferLaterEmptyAtOffset = false);
   void applyEdit(
       EditTransaction::Kind kind,
       const QString& label,

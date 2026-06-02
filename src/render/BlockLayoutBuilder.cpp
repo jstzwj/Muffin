@@ -1,5 +1,7 @@
 #include "render/BlockLayoutBuilder.h"
 
+#include "document/InlineProjection.h"
+
 #include <QFontMetricsF>
 #include <QStringList>
 #include <QTextLayout>
@@ -61,8 +63,12 @@ void BlockLayoutBuilder::setMarkdownText(QString markdownText) {
   markdownText_ = std::move(markdownText);
 }
 
-void BlockLayoutBuilder::setActiveCursor(CursorPosition cursor) {
-  activeCursor_ = cursor;
+void BlockLayoutBuilder::setSelection(SelectionRange selection) {
+  selection_ = selection;
+}
+
+void BlockLayoutBuilder::setInlineGeometryBackend(InlineLayout::InlineGeometryBackend backend) {
+  inlineGeometryBackend_ = backend;
 }
 
 std::unique_ptr<BlockLayout> BlockLayoutBuilder::build(
@@ -111,11 +117,8 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   auto inlineLayout = std::make_unique<InlineLayout>();
   const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
   InlineLayout::BuildOptions options;
-  if (activeCursor_.blockId == node.id()) {
-    options.activeTextOffset = activeCursor_.text.textOffset;
-    options.activeSourceOffset = activeCursor_.text.sourceOffset >= 0 ? activeCursor_.text.sourceOffset - sourceContentStartForEditableNode(node)
-                                                                      : -1;
-  }
+  options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), sourceContentStartForEditableNode(node));
+  options.geometryBackend = inlineGeometryBackend_;
   inlineLayout->build(node.inlines(), sourceTextForEditableNode(node), theme, width, font, options);
   const qreal height = inlineLayout->height();
   layout->setRect(QRectF(x, y, width, height));
@@ -168,17 +171,12 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
 
   auto inlineLayout = std::make_unique<InlineLayout>();
   InlineLayout::BuildOptions options;
-  if (activeCursor_.blockId == node.id()) {
-    options.activeTextOffset = activeCursor_.text.textOffset;
-    if (const MarkdownNode* paragraph = primaryParagraph(node)) {
-      options.activeSourceOffset = activeCursor_.text.sourceOffset >= 0 ? activeCursor_.text.sourceOffset - sourceContentStartForEditableNode(*paragraph)
-                                                                        : -1;
-    }
-  }
+  options.geometryBackend = inlineGeometryBackend_;
   QString listSourceText;
   if (const MarkdownNode* paragraph = primaryParagraph(node)) {
     listSourceText = sourceTextForEditableNode(*paragraph);
     layout->setContentSourceStart(sourceContentStartForEditableNode(*paragraph));
+    options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), sourceContentStartForEditableNode(*paragraph));
   }
   inlineLayout->build(primaryInlinesForListItem(node), listSourceText, theme, contentWidth, theme.paragraphFont(), options);
   layout->setInlineLayout(std::move(inlineLayout));
@@ -278,10 +276,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       cell.alternate = rowIndex % 2 == 1;
       cell.alignment = column < alignments.size() ? alignments.at(column) : TableAlignment::None;
       InlineLayout::BuildOptions options;
-      if (activeCursor_.text.nodeId == cellNode->id()) {
-        options.activeTextOffset = activeCursor_.text.textOffset;
-        options.activeSourceOffset = activeCursor_.text.sourceOffset >= 0 ? activeCursor_.text.sourceOffset - sourceContentStartForEditableNode(*cellNode)
-                                                                          : -1;
+      options.geometryBackend = inlineGeometryBackend_;
+      if (selection_.focus.text.nodeId == cellNode->id()) {
+        options.projectionState = InlineProjectionState::forSelection(selection_, selection_.focus.blockId, sourceContentStartForEditableNode(*cellNode));
       }
       cell.text.build(
           cellNode->inlines(),

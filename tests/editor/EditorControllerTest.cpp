@@ -33,6 +33,21 @@ void require(bool condition, const char* message) {
   }
 }
 
+void require(bool condition, const QString& message) {
+  if (!condition) {
+    std::cerr << message.toStdString() << "\n";
+    std::exit(1);
+  }
+}
+
+EditTransaction requireTextDeltaCommand(UndoStack& stack, const char* message) {
+  require(stack.canUndo(), "expected undo command");
+  EditTransaction transaction = stack.takeUndo();
+  require(transaction.isTextDeltaCommand(), message);
+  require(transaction.textDeltaCommand().isValid(), "text delta command should be valid");
+  return transaction;
+}
+
 void testSelectionController() {
   SelectionController controller;
   HitTestResult hit;
@@ -84,6 +99,35 @@ void testUndoStack() {
   const EditTransaction redo = stack.takeRedo();
   require(redo.after().markdownText == QStringLiteral("alphabet"), "redo snapshot mismatch");
   require(stack.canUndo(), "undo should be available after redo");
+}
+
+void testBrushQueueBatchesRefreshRequests() {
+  BrushQueue queue;
+  QVector<BrushQueue::RefreshRequest> requests;
+  QObject::connect(&queue, &BrushQueue::refreshRequested, [&requests](BrushQueue::RefreshRequest request) {
+    requests.push_back(std::move(request));
+  });
+
+  const NodeId first = NodeId::fromString(QStringLiteral("first"));
+  const NodeId second = NodeId::fromString(QStringLiteral("second"));
+  queue.requestBlockRefresh(first);
+  queue.requestBlocksRefresh({first, second, second});
+  queue.flush();
+
+  require(requests.size() == 1, "brush queue should batch block refresh requests");
+  require(!requests.first().fullLayoutDirty, "batched block refresh should not be full dirty");
+  require(requests.first().layoutDirtyBlocks.size() == 2, "batched block refresh should deduplicate ids");
+  require(requests.first().layoutDirtyBlocks.contains(first), "batched refresh should contain first id");
+  require(requests.first().layoutDirtyBlocks.contains(second), "batched refresh should contain second id");
+
+  queue.requestBlockRefresh(first);
+  queue.requestFullRefresh();
+  queue.requestBlockRefresh(second);
+  queue.flush();
+
+  require(requests.size() == 2, "brush queue should emit full refresh batch");
+  require(requests.last().fullLayoutDirty, "full refresh should dominate batched block refreshes");
+  require(requests.last().layoutDirtyBlocks.isEmpty(), "full refresh should clear block dirty ids");
 }
 
 MarkdownNode* blockAt(const DocumentSession& session, qsizetype index) {
@@ -365,7 +409,9 @@ void testInlineProjectionMarkerSourcePositions() {
   QVector<InlineNode> inlines;
   inlines.push_back(InlineNode::strikethrough(QStringLiteral("~~"), strikeChildren));
 
-  InlineProjection projection(inlines, QStringLiteral("~~through~~"), 1);
+  InlineProjectionState state;
+  state.cursorSourceOffset = 1;
+  InlineProjection projection(inlines, QStringLiteral("~~through~~"), state);
   require(projection.isValid(), "projection should be valid for strikethrough");
   qsizetype displayOffset = -1;
   require(projection.displayOffsetForSourceOffset(1, displayOffset), "projection should map marker source to display");
@@ -373,6 +419,225 @@ void testInlineProjectionMarkerSourcePositions() {
   qsizetype sourceOffset = -1;
   require(projection.sourceOffsetForDisplayOffset(1, sourceOffset), "projection should map marker display to source");
   require(sourceOffset == 1, "projection marker source offset mismatch");
+}
+
+struct ExpectedProjectionSpan {
+  InlineType type = InlineType::Unknown;
+  InlineSpanKind kind = InlineSpanKind::Text;
+  qsizetype sourceStart = 0;
+  qsizetype sourceEnd = 0;
+  qsizetype contentSourceStart = 0;
+  qsizetype contentSourceEnd = 0;
+  qsizetype displayStart = 0;
+  qsizetype displayEnd = 0;
+  qsizetype visibleStart = 0;
+  qsizetype visibleEnd = 0;
+};
+
+void requireSpanContract(const InlineProjectionSpan& span, const ExpectedProjectionSpan& expected, qsizetype index, const char* label) {
+  const QString prefix = QStringLiteral("%1 span %2").arg(QString::fromUtf8(label)).arg(index);
+  require(span.type == expected.type, prefix + QStringLiteral(" type mismatch"));
+  require(span.kind == expected.kind, prefix + QStringLiteral(" kind mismatch"));
+  require(span.sourceStart == expected.sourceStart, prefix + QStringLiteral(" sourceStart mismatch"));
+  require(span.sourceEnd == expected.sourceEnd, prefix + QStringLiteral(" sourceEnd mismatch"));
+  require(span.contentSourceStart == expected.contentSourceStart, prefix + QStringLiteral(" contentSourceStart mismatch"));
+  require(span.contentSourceEnd == expected.contentSourceEnd, prefix + QStringLiteral(" contentSourceEnd mismatch"));
+  require(span.displayStart == expected.displayStart, prefix + QStringLiteral(" displayStart mismatch"));
+  require(span.displayEnd == expected.displayEnd, prefix + QStringLiteral(" displayEnd mismatch"));
+  require(span.visibleStart == expected.visibleStart, prefix + QStringLiteral(" visibleStart mismatch"));
+  require(span.visibleEnd == expected.visibleEnd, prefix + QStringLiteral(" visibleEnd mismatch"));
+}
+
+void requireProjectionSpans(
+    const QVector<InlineNode>& inlines,
+    const QString& markdown,
+    InlineProjectionState state,
+    const QVector<ExpectedProjectionSpan>& expected,
+    const QString& displayText,
+    const QString& visibleText,
+    const char* label) {
+  InlineProjection projection(inlines, markdown, state);
+  require(projection.isValid(), label);
+  require(projection.displayText() == displayText,
+          QStringLiteral("%1 display text mismatch: %2").arg(QString::fromUtf8(label), projection.displayText()));
+  require(projection.visibleText() == visibleText,
+          QStringLiteral("%1 visible text mismatch: %2").arg(QString::fromUtf8(label), projection.visibleText()));
+  require(projection.spans().size() == expected.size(),
+          QStringLiteral("%1 span count mismatch: %2").arg(QString::fromUtf8(label)).arg(projection.spans().size()));
+  for (qsizetype i = 0; i < expected.size(); ++i) {
+    requireSpanContract(projection.spans().at(i), expected.at(i), i, label);
+  }
+}
+
+void testInlineProjectionSpanContracts() {
+  InlineProjectionState inactive;
+  InlineProjectionState activeStrong;
+  activeStrong.cursorSourceOffset = 2;
+  requireProjectionSpans(
+      {InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QStringLiteral("x"))})},
+      QStringLiteral("**x**"),
+      activeStrong,
+      {
+          {InlineType::Strong, InlineSpanKind::OpenMarker, 0, 2, 0, 2, 0, 2, 0, 0},
+          {InlineType::Text, InlineSpanKind::Text, 2, 3, 2, 3, 2, 3, 0, 1},
+          {InlineType::Strong, InlineSpanKind::CloseMarker, 3, 5, 3, 5, 3, 5, 1, 1},
+      },
+      QStringLiteral("**x**"),
+      QStringLiteral("x"),
+      "active strong span contract");
+  requireProjectionSpans(
+      {InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QStringLiteral("x"))})},
+      QStringLiteral("**x**"),
+      inactive,
+      {
+          {InlineType::Text, InlineSpanKind::Text, 0, 5, 2, 3, 0, 1, 0, 1},
+      },
+      QStringLiteral("x"),
+      QStringLiteral("x"),
+      "inactive strong span contract");
+
+  InlineProjectionState activeLink;
+  activeLink.cursorSourceOffset = 1;
+  requireProjectionSpans(
+      {InlineNode::link(QStringLiteral("u"), QString(), {InlineNode::text(QStringLiteral("x"))})},
+      QStringLiteral("[x](u)"),
+      activeLink,
+      {
+          {InlineType::Link, InlineSpanKind::OpenMarker, 0, 1, 0, 1, 0, 1, 0, 0},
+          {InlineType::Text, InlineSpanKind::Text, 1, 2, 1, 2, 1, 2, 0, 1},
+          {InlineType::Link, InlineSpanKind::HiddenSyntax, 2, 6, 2, 6, 2, 6, 1, 1},
+      },
+      QStringLiteral("[x](u)"),
+      QStringLiteral("x"),
+      "active link span contract");
+  requireProjectionSpans(
+      {InlineNode::link(QStringLiteral("u"), QString(), {InlineNode::text(QStringLiteral("x"))})},
+      QStringLiteral("[x](u)"),
+      inactive,
+      {
+          {InlineType::Text, InlineSpanKind::Text, 1, 2, 1, 2, 0, 1, 0, 1},
+      },
+      QStringLiteral("x"),
+      QStringLiteral("x"),
+      "inactive link span contract");
+
+  InlineProjectionState activeImage;
+  activeImage.cursorSourceOffset = 2;
+  requireProjectionSpans(
+      {InlineNode::image(QStringLiteral("u"), QStringLiteral("x"), QString())},
+      QStringLiteral("![x](u)"),
+      activeImage,
+      {
+          {InlineType::Image, InlineSpanKind::OpenMarker, 0, 2, 0, 2, 0, 2, 0, 0},
+          {InlineType::Image, InlineSpanKind::Atom, 0, 7, 2, 3, 2, 3, 0, 1},
+          {InlineType::Image, InlineSpanKind::HiddenSyntax, 3, 7, 3, 7, 3, 7, 1, 1},
+      },
+      QStringLiteral("![x](u)"),
+      QStringLiteral("x"),
+      "active image span contract");
+  requireProjectionSpans(
+      {InlineNode::image(QStringLiteral("u"), QStringLiteral("x"), QString())},
+      QStringLiteral("![x](u)"),
+      inactive,
+      {
+          {InlineType::Image, InlineSpanKind::Atom, 0, 7, 0, 7, 0, 1, 0, 1},
+      },
+      QStringLiteral("x"),
+      QStringLiteral("x"),
+      "inactive image span contract");
+}
+
+void requireProjectionRoundTrip(
+    const QVector<InlineNode>& inlines,
+    const QString& markdown,
+    qsizetype cursorSourceOffset,
+    const QString& visibleText,
+    const QString& displayText,
+    const char* label) {
+  InlineProjectionState state;
+  state.cursorSourceOffset = cursorSourceOffset;
+  InlineProjection projection(inlines, markdown, state);
+  require(projection.isValid(), label);
+  require(projection.visibleText() == visibleText, QStringLiteral("%1 visible text mismatch: %2").arg(QString::fromUtf8(label), projection.visibleText()));
+  require(projection.displayText() == displayText, QStringLiteral("%1 display text mismatch: %2").arg(QString::fromUtf8(label), projection.displayText()));
+
+  for (qsizetype sourceOffset = 0; sourceOffset <= markdown.size(); ++sourceOffset) {
+    qsizetype displayOffset = -1;
+    require(projection.displayOffsetForSourceOffset(sourceOffset, displayOffset), "projection source->display should succeed");
+    qsizetype mappedSourceOffset = -1;
+    require(projection.sourceOffsetForDisplayOffset(displayOffset, mappedSourceOffset), "projection display->source should succeed");
+    require(mappedSourceOffset >= 0 && mappedSourceOffset <= markdown.size(), "projection display round-trip should stay in source");
+  }
+
+  for (qsizetype visibleOffset = 0; visibleOffset <= visibleText.size(); ++visibleOffset) {
+    qsizetype sourceOffset = -1;
+    require(projection.sourceOffsetForVisibleOffset(visibleOffset, sourceOffset), "projection visible->source should succeed");
+    qsizetype mappedVisibleOffset = -1;
+    require(projection.visibleOffsetForSourceOffset(sourceOffset, mappedVisibleOffset), "projection source->visible should succeed");
+    require(mappedVisibleOffset >= 0 && mappedVisibleOffset <= visibleText.size(), "projection visible round-trip should stay in visible text");
+  }
+}
+
+void testInlineProjectionMappingMatrix() {
+  requireProjectionRoundTrip(
+      {InlineNode::emphasis(QStringLiteral("*"), {InlineNode::text(QStringLiteral("x"))})},
+      QStringLiteral("*x*"),
+      1,
+      QStringLiteral("x"),
+      QStringLiteral("*x*"),
+      "emphasis projection should be valid");
+  requireProjectionRoundTrip(
+      {InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QStringLiteral("x"))})},
+      QStringLiteral("**x**"),
+      2,
+      QStringLiteral("x"),
+      QStringLiteral("**x**"),
+      "strong projection should be valid");
+  requireProjectionRoundTrip(
+      {InlineNode::strikethrough(QStringLiteral("~~"), {InlineNode::text(QStringLiteral("x"))})},
+      QStringLiteral("~~x~~"),
+      2,
+      QStringLiteral("x"),
+      QStringLiteral("~~x~~"),
+      "strikethrough projection should be valid");
+  requireProjectionRoundTrip(
+      {InlineNode::code(QStringLiteral("x"))},
+      QStringLiteral("`x`"),
+      1,
+      QStringLiteral("x"),
+      QStringLiteral("`x`"),
+      "code projection should be valid");
+  requireProjectionRoundTrip(
+      {InlineNode::inlineMath(QStringLiteral("x"))},
+      QStringLiteral("$x$"),
+      1,
+      QStringLiteral("x"),
+      QStringLiteral("$x$"),
+      "inline math projection should be valid");
+  requireProjectionRoundTrip(
+      {InlineNode::link(QStringLiteral("https://example.com"), QString(), {InlineNode::text(QStringLiteral("label"))})},
+      QStringLiteral("[label](https://example.com)"),
+      2,
+      QStringLiteral("label"),
+      QStringLiteral("[label](https://example.com)"),
+      "link projection should be valid");
+  requireProjectionRoundTrip(
+      {InlineNode::image(QStringLiteral("https://example.com/image.png"), QStringLiteral("alt"), QString())},
+      QStringLiteral("![alt](https://example.com/image.png)"),
+      2,
+      QStringLiteral("alt"),
+      QStringLiteral("![alt](https://example.com/image.png)"),
+      "image projection should be valid");
+  requireProjectionRoundTrip(
+      {InlineNode::strong(
+          QStringLiteral("**"),
+          {InlineNode::text(QStringLiteral("bold ")),
+           InlineNode::emphasis(QStringLiteral("*"), {InlineNode::text(QStringLiteral("em"))})})},
+      QStringLiteral("**bold *em***"),
+      9,
+      QStringLiteral("bold em"),
+      QStringLiteral("**bold *em***"),
+      "nested inline projection should be valid");
 }
 
 void testHorizontalNavigationEntersInlineMarkers() {
@@ -456,6 +721,402 @@ void testEditorViewHitTestActivatesInlineSourceEditing() {
   require(controller.selection().cursorPosition().text.sourceOffset == 11, "view hit should resolve source offset");
   require(controller.inputController().insertText(QStringLiteral("X")), "typing after view hit should edit inline");
   require(session.markdownText() == QStringLiteral("before **boXld** after"), "view hit inline insert mismatch");
+}
+
+void testEditorViewInlineProjectionStateChanges() {
+  DocumentSession session;
+  EditorView view;
+  view.resize(900, 500);
+  session.setMarkdownText(QStringLiteral("before **bold** after"), false);
+  view.setDocument(session.document());
+
+  MarkdownNode* block = blockAt(session, 0);
+  const QRectF collapsedRect = view.nodeRect(block->id());
+  const InlineLayout* collapsedLayout = view.blockAtViewportPos(collapsedRect.center())->inlineLayout();
+  require(collapsedLayout != nullptr, "collapsed inline layout should exist");
+  const QRectF collapsedCursor = collapsedLayout->cursorRectForSourceOffset(9);
+
+  CursorPosition inside;
+  inside.blockId = block->id();
+  inside.text.nodeId = block->id();
+  inside.text.textOffset = 1;
+  inside.text.sourceOffset = 9;
+  view.setCursorPosition(inside);
+  const QRectF expandedRect = view.nodeRect(block->id());
+  const InlineLayout* expandedLayout = view.blockAtViewportPos(expandedRect.center())->inlineLayout();
+  require(expandedLayout != nullptr, "expanded inline layout should exist");
+  const QRectF expandedCursor = expandedLayout->cursorRectForSourceOffset(9);
+  require(expandedCursor.left() != collapsedCursor.left(), "cursor entering inline should expand marker layout");
+
+  const QPointF expandedDocumentPos = expandedRect.topLeft() + expandedCursor.center();
+  const HitTestResult expandedHit = view.hitTest(expandedDocumentPos);
+  require(expandedHit.isValid() && expandedHit.sourceOffset == 9, "expanded inline hit-test should round-trip source offset");
+
+  CursorPosition outside;
+  outside.blockId = block->id();
+  outside.text.nodeId = block->id();
+  outside.text.textOffset = 0;
+  outside.text.sourceOffset = 0;
+  view.setCursorPosition(outside);
+  const QRectF recollapsedRect = view.nodeRect(block->id());
+  const InlineLayout* recollapsedLayout = view.blockAtViewportPos(recollapsedRect.center())->inlineLayout();
+  require(recollapsedLayout != nullptr, "recollapsed inline layout should exist");
+  require(recollapsedLayout->cursorRectForSourceOffset(9).left() == collapsedCursor.left(), "cursor leaving inline should collapse marker layout");
+
+  SelectionRange selection;
+  selection.anchor = inside;
+  selection.focus = inside;
+  selection.focus.text.textOffset = 3;
+  selection.focus.text.sourceOffset = 11;
+  view.setSelectionRange(selection);
+  const QRectF selectedRect = view.nodeRect(block->id());
+  const InlineLayout* selectedLayout = view.blockAtViewportPos(selectedRect.center())->inlineLayout();
+  require(selectedLayout != nullptr, "selection inline layout should exist");
+  require(selectedLayout->cursorRectForSourceOffset(9).left() != collapsedCursor.left(), "selection touching inline should expand marker layout");
+}
+
+void testEditorViewProbeGeometryBackendSmoke() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.setInlineGeometryBackend(InlineLayout::InlineGeometryBackend::QTextLayout);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("before **bold** after"), false);
+  view.setDocument(session.document());
+  require(view.inlineGeometryBackend() == InlineLayout::InlineGeometryBackend::QTextLayout, "view should use probe geometry backend");
+
+  MarkdownNode* block = blockAt(session, 0);
+  const QRectF blockRect = view.nodeRect(block->id());
+  require(!blockRect.isEmpty(), "probe view should layout inline paragraph");
+  const BlockLayout* blockLayout = view.blockAtViewportPos(blockRect.center());
+  require(blockLayout != nullptr, "probe view should find block layout");
+  const InlineLayout* inlineLayout = blockLayout->inlineLayout();
+  require(inlineLayout != nullptr, "probe view should build inline layout");
+
+  const QPointF textPoint = blockRect.topLeft() + inlineLayout->cursorRectForSourceOffset(11).center();
+  const HitTestResult textHit = view.hitTest(textPoint);
+  require(textHit.isValid() && textHit.zone == HitTestResult::Zone::Text, "probe view hit-test should hit text");
+  require(textHit.sourceOffset == 11, "probe view hit-test source offset mismatch");
+
+  view.setCursorHit(textHit);
+  controller.activateHit(textHit);
+  require(controller.selection().cursorPosition().text.sourceOffset == 11, "probe view activation should keep source offset");
+  const QRectF activatedRect = view.nodeRect(block->id());
+  const BlockLayout* activatedBlock = view.blockAtViewportPos(activatedRect.center());
+  require(activatedBlock != nullptr && activatedBlock->inlineLayout() != nullptr, "probe activated inline layout should exist");
+  const QPointF activatedPoint = activatedRect.topLeft() + activatedBlock->inlineLayout()->cursorRectForSourceOffset(11).center();
+  require(view.hitTest(activatedPoint).sourceOffset == 11, "probe view cursor rect should round-trip through hit-test");
+
+  CursorPosition inside;
+  inside.blockId = block->id();
+  inside.text.nodeId = block->id();
+  inside.text.textOffset = 1;
+  inside.text.sourceOffset = 9;
+  view.setCursorPosition(inside);
+  const QRectF expandedRect = view.nodeRect(block->id());
+  const BlockLayout* expandedBlock = view.blockAtViewportPos(expandedRect.center());
+  require(expandedBlock != nullptr && expandedBlock->inlineLayout() != nullptr, "probe expanded inline layout should exist");
+  const InlineLayout* expandedLayout = expandedBlock->inlineLayout();
+
+  const QPointF markerPoint = expandedRect.topLeft() + expandedLayout->cursorRectForSourceOffset(8).center();
+  const HitTestResult markerHit = view.hitTest(markerPoint);
+  require(markerHit.isValid(), "probe marker hit should be valid");
+  require(markerHit.sourceOffset == 8, "probe active marker source offset should round-trip");
+
+  SelectionRange selection;
+  selection.anchor = inside;
+  selection.focus = inside;
+  selection.focus.text.textOffset = 4;
+  selection.focus.text.sourceOffset = 13;
+  view.setSelectionRange(selection);
+  const QRectF selectedRect = view.nodeRect(block->id());
+  const BlockLayout* selectedBlock = view.blockAtViewportPos(selectedRect.center());
+  require(selectedBlock != nullptr, "probe selected block layout should exist");
+  const QVector<QRectF> selectionRects = selectedBlock->selectionRects(selection, RenderTheme::typoraLike());
+  require(!selectionRects.isEmpty(), "probe view selection rects should be drawable");
+  for (const QRectF& rect : selectionRects) {
+    require(rect.width() > 0 && rect.height() > 0, "probe view selection rect should have area");
+  }
+}
+
+class ScopedEnvironmentVariable {
+public:
+  ScopedEnvironmentVariable(const char* name, QByteArray value) : name_(name), previous_(qgetenv(name)), hadPrevious_(!previous_.isNull()) {
+    if (value.isNull()) {
+      qunsetenv(name_);
+    } else {
+      qputenv(name_, value);
+    }
+  }
+
+  ~ScopedEnvironmentVariable() {
+    if (hadPrevious_) {
+      qputenv(name_, previous_);
+    } else {
+      qunsetenv(name_);
+    }
+  }
+
+private:
+  const char* name_;
+  QByteArray previous_;
+  bool hadPrevious_ = false;
+};
+
+void testEditorViewInlineGeometryBackendConfiguration() {
+  constexpr const char* envName = "MUFFIN_INLINE_GEOMETRY_BACKEND";
+  {
+    ScopedEnvironmentVariable env(envName, QByteArray());
+    EditorView view;
+    require(view.inlineGeometryBackend() == InlineLayout::InlineGeometryBackend::QTextLayout,
+            "default inline geometry backend should use QTextLayout");
+  }
+  {
+    ScopedEnvironmentVariable env(envName, QByteArray("qtextdocument"));
+    EditorView view;
+    require(view.inlineGeometryBackend() == InlineLayout::InlineGeometryBackend::QTextDocument,
+            "env inline geometry backend should allow QTextDocument fallback");
+    view.setInlineGeometryBackend(InlineLayout::InlineGeometryBackend::QTextLayout);
+    require(view.inlineGeometryBackend() == InlineLayout::InlineGeometryBackend::QTextLayout,
+            "manual inline geometry backend setter should override env-configured document backend");
+  }
+  {
+    ScopedEnvironmentVariable env(envName, QByteArray("qtextlayout"));
+    EditorView view;
+    require(view.inlineGeometryBackend() == InlineLayout::InlineGeometryBackend::QTextLayout,
+            "env inline geometry backend should enable QTextLayout");
+  }
+  {
+    ScopedEnvironmentVariable env(envName, QByteArray("qtextlayoutprobe"));
+    EditorView view;
+    require(view.inlineGeometryBackend() == InlineLayout::InlineGeometryBackend::QTextLayout,
+            "legacy probe env value should still enable QTextLayout");
+  }
+}
+
+struct BackendViewPair {
+  DocumentSession session;
+  EditorView documentView;
+  EditorView probeView;
+};
+
+void layoutBackendViews(BackendViewPair& pair, QString markdown, QSize size) {
+  pair.session.setMarkdownText(std::move(markdown), false);
+  pair.documentView.resize(size);
+  pair.probeView.resize(size);
+  pair.probeView.setInlineGeometryBackend(InlineLayout::InlineGeometryBackend::QTextLayout);
+  pair.documentView.setDocument(pair.session.document());
+  pair.probeView.setDocument(pair.session.document());
+}
+
+const BlockLayout* requireViewBlock(EditorView& view, NodeId blockId, const QString& label) {
+  const QRectF blockRect = view.nodeRect(blockId);
+  require(!blockRect.isEmpty(), label + QStringLiteral(" block rect should exist"));
+  const BlockLayout* block = view.blockAtViewportPos(blockRect.center());
+  require(block != nullptr, label + QStringLiteral(" block layout should exist"));
+  return block;
+}
+
+const InlineLayout* requireViewInlineLayout(EditorView& view, NodeId blockId, const QString& label) {
+  const BlockLayout* block = requireViewBlock(view, blockId, label);
+  require(block->inlineLayout() != nullptr, label + QStringLiteral(" inline layout should exist"));
+  return block->inlineLayout();
+}
+
+HitTestResult hitAtTextOffset(EditorView& view, NodeId blockId, qsizetype textOffset, const QString& label) {
+  const QRectF blockRect = view.nodeRect(blockId);
+  const InlineLayout* inlineLayout = requireViewInlineLayout(view, blockId, label);
+  const QRectF cursor = inlineLayout->cursorRect(textOffset);
+  require(!cursor.isEmpty(), label + QStringLiteral(" cursor rect should exist"));
+  return view.hitTest(blockRect.topLeft() + QPointF(cursor.left(), cursor.center().y()));
+}
+
+HitTestResult hitAtSourceOffset(EditorView& view, NodeId blockId, qsizetype sourceOffset, const QString& label) {
+  const QRectF blockRect = view.nodeRect(blockId);
+  const InlineLayout* inlineLayout = requireViewInlineLayout(view, blockId, label);
+  const QRectF cursor = inlineLayout->cursorRectForSourceOffset(sourceOffset);
+  require(!cursor.isEmpty(), label + QStringLiteral(" source cursor rect should exist"));
+  return view.hitTest(blockRect.topLeft() + QPointF(cursor.left(), cursor.center().y()));
+}
+
+CursorPosition inlineCursor(NodeId blockId, qsizetype textOffset, qsizetype sourceOffset) {
+  CursorPosition cursor;
+  cursor.blockId = blockId;
+  cursor.text.nodeId = blockId;
+  cursor.text.textOffset = textOffset;
+  cursor.text.sourceOffset = sourceOffset;
+  return cursor;
+}
+
+SelectionRange inlineSelection(NodeId blockId, qsizetype anchorOffset, qsizetype focusOffset) {
+  SelectionRange selection;
+  selection.anchor = inlineCursor(blockId, anchorOffset, anchorOffset);
+  selection.focus = inlineCursor(blockId, focusOffset, focusOffset);
+  return selection;
+}
+
+void requireSelectionRectsClose(const QVector<QRectF>& documentRects, const QVector<QRectF>& probeRects, const QString& label) {
+  require(!documentRects.isEmpty(), label + QStringLiteral(" document selection rects should exist"));
+  require(!probeRects.isEmpty(), label + QStringLiteral(" probe selection rects should exist"));
+  require(documentRects.size() == probeRects.size(), label + QStringLiteral(" selection rect count mismatch"));
+  for (qsizetype i = 0; i < probeRects.size(); ++i) {
+    require(probeRects.at(i).width() > 0 && probeRects.at(i).height() > 0, label + QStringLiteral(" probe selection rect should have area"));
+    require(qAbs(documentRects.at(i).height() - probeRects.at(i).height()) < qMax(documentRects.at(i).height(), probeRects.at(i).height()),
+            label + QStringLiteral(" selection rect height mismatch"));
+  }
+}
+
+struct CursorLineRange {
+  qsizetype start = 0;
+  qsizetype end = 0;
+  qreal y = 0;
+};
+
+QVector<CursorLineRange> cursorLineRanges(const InlineLayout& layout) {
+  QVector<CursorLineRange> ranges;
+  const qsizetype length = layout.plainText().size();
+  for (qsizetype offset = 0; offset <= length; ++offset) {
+    const QRectF cursor = layout.cursorRect(offset);
+    if (cursor.isEmpty()) {
+      continue;
+    }
+    const qreal y = cursor.center().y();
+    if (ranges.isEmpty() || qAbs(ranges.last().y - y) > 0.5) {
+      CursorLineRange range;
+      range.start = offset;
+      range.end = offset;
+      range.y = y;
+      ranges.push_back(range);
+    } else {
+      ranges.last().end = offset;
+    }
+  }
+  return ranges;
+}
+
+void testEditorViewProbePlainBackendEquivalence() {
+  BackendViewPair pair;
+  layoutBackendViews(pair, QStringLiteral("alpha beta gamma delta epsilon"), QSize(900, 500));
+  const NodeId blockId = blockAt(pair.session, 0)->id();
+
+  const InlineLayout* documentInline = requireViewInlineLayout(pair.documentView, blockId, QStringLiteral("plain document"));
+  const InlineLayout* probeInline = requireViewInlineLayout(pair.probeView, blockId, QStringLiteral("plain probe"));
+  const QVector<qsizetype> offsets{0, 1, 6, 12, documentInline->plainText().size()};
+  for (qsizetype offset : offsets) {
+    const HitTestResult documentHit = hitAtTextOffset(pair.documentView, blockId, offset, QStringLiteral("plain document %1").arg(offset));
+    const HitTestResult probeHit = hitAtTextOffset(pair.probeView, blockId, offset, QStringLiteral("plain probe %1").arg(offset));
+    require(documentHit.textOffset == offset, QStringLiteral("plain document hit offset mismatch"));
+    require(probeHit.textOffset == offset, QStringLiteral("plain probe hit offset mismatch"));
+    require(documentHit.sourceOffset == probeHit.sourceOffset, QStringLiteral("plain source offset backend mismatch"));
+
+    const QRectF documentCursor = documentInline->cursorRect(offset);
+    const QRectF probeCursor = probeInline->cursorRect(offset);
+    require(qAbs(documentCursor.center().y() - probeCursor.center().y()) < qMax(documentCursor.height(), probeCursor.height()),
+            QStringLiteral("plain cursor y should stay on same line"));
+  }
+
+  const SelectionRange selection = inlineSelection(blockId, 1, documentInline->plainText().size() - 1);
+  const QVector<QRectF> documentRects = requireViewBlock(pair.documentView, blockId, QStringLiteral("plain document"))->selectionRects(selection, RenderTheme::typoraLike());
+  const QVector<QRectF> probeRects = requireViewBlock(pair.probeView, blockId, QStringLiteral("plain probe"))->selectionRects(selection, RenderTheme::typoraLike());
+  requireSelectionRectsClose(documentRects, probeRects, QStringLiteral("plain backend"));
+}
+
+void testEditorViewProbeStyledBackendEquivalence() {
+  BackendViewPair pair;
+  layoutBackendViews(pair, QStringLiteral("before **bold** [link](u) `code` after"), QSize(900, 500));
+  const NodeId blockId = blockAt(pair.session, 0)->id();
+
+  const CursorPosition activeCursor = inlineCursor(blockId, 9, 11);
+  pair.documentView.setCursorPosition(activeCursor);
+  pair.probeView.setCursorPosition(activeCursor);
+
+  const HitTestResult documentHit = hitAtSourceOffset(pair.documentView, blockId, 11, QStringLiteral("styled document"));
+  const HitTestResult probeHit = hitAtSourceOffset(pair.probeView, blockId, 11, QStringLiteral("styled probe"));
+  require(documentHit.textOffset == probeHit.textOffset, QStringLiteral("styled active text offset backend mismatch"));
+  require(documentHit.sourceOffset == probeHit.sourceOffset, QStringLiteral("styled active source offset backend mismatch"));
+
+  const InlineLayout* documentInline = requireViewInlineLayout(pair.documentView, blockId, QStringLiteral("styled document"));
+  const InlineLayout* probeInline = requireViewInlineLayout(pair.probeView, blockId, QStringLiteral("styled probe"));
+  const QRectF documentCursor = documentInline->cursorRectForSourceOffset(11);
+  const QRectF probeCursor = probeInline->cursorRectForSourceOffset(11);
+  require(!documentCursor.isEmpty() && !probeCursor.isEmpty(), QStringLiteral("styled active cursor rects should exist"));
+  require(qAbs(documentCursor.center().y() - probeCursor.center().y()) < qMax(documentCursor.height(), probeCursor.height()) * 2.0,
+          QStringLiteral("styled active cursor y should stay close"));
+
+  SelectionRange selection;
+  selection.anchor = inlineCursor(blockId, 7, 9);
+  selection.focus = inlineCursor(blockId, 11, 13);
+  pair.documentView.setSelectionRange(selection);
+  pair.probeView.setSelectionRange(selection);
+  const QVector<QRectF> documentRects = requireViewBlock(pair.documentView, blockId, QStringLiteral("styled document"))->selectionRects(selection, RenderTheme::typoraLike());
+  const QVector<QRectF> probeRects = requireViewBlock(pair.probeView, blockId, QStringLiteral("styled probe"))->selectionRects(selection, RenderTheme::typoraLike());
+  requireSelectionRectsClose(documentRects, probeRects, QStringLiteral("styled backend"));
+}
+
+void testEditorViewProbeWrappedBackendEquivalence() {
+  BackendViewPair pair;
+  layoutBackendViews(
+      pair,
+      QStringLiteral("alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau"),
+      QSize(360, 500));
+  const NodeId blockId = blockAt(pair.session, 0)->id();
+
+  const InlineLayout* probeInline = requireViewInlineLayout(pair.probeView, blockId, QStringLiteral("wrapped probe"));
+  const QVector<CursorLineRange> lines = cursorLineRanges(*probeInline);
+  require(lines.size() >= 2, QStringLiteral("wrapped probe view should create multiple lines"));
+
+  for (const CursorLineRange& line : lines) {
+    QVector<qsizetype> offsets{line.start, (line.start + line.end) / 2, line.end};
+    for (qsizetype offset : offsets) {
+      const HitTestResult hit = hitAtTextOffset(pair.probeView, blockId, offset, QStringLiteral("wrapped probe %1").arg(offset));
+      require(hit.textOffset == offset, QStringLiteral("wrapped probe hit-test should round-trip line offset"));
+      require(hit.sourceOffset == offset, QStringLiteral("wrapped probe source offset should round-trip line offset"));
+    }
+  }
+  for (qsizetype i = 1; i < lines.size(); ++i) {
+    require(lines.at(i).y > lines.at(i - 1).y, QStringLiteral("wrapped probe cursor y should increase by line"));
+    const QRectF previousEnd = probeInline->cursorRect(lines.at(i - 1).end);
+    const QRectF nextStart = probeInline->cursorRect(lines.at(i).start);
+    require(nextStart.left() <= previousEnd.left(), QStringLiteral("wrapped probe line start should return toward x origin"));
+  }
+
+  const SelectionRange selection = inlineSelection(blockId, 0, probeInline->plainText().size());
+  const QVector<QRectF> documentRects = requireViewBlock(pair.documentView, blockId, QStringLiteral("wrapped document"))->selectionRects(selection, RenderTheme::typoraLike());
+  const QVector<QRectF> probeRects = requireViewBlock(pair.probeView, blockId, QStringLiteral("wrapped probe"))->selectionRects(selection, RenderTheme::typoraLike());
+  requireSelectionRectsClose(documentRects, probeRects, QStringLiteral("wrapped backend"));
+  require(probeRects.size() == lines.size(), QStringLiteral("wrapped probe selection rect count should match line count"));
+}
+
+void testEditorViewProbeTableCellBackendEquivalence() {
+  BackendViewPair pair;
+  layoutBackendViews(pair, QStringLiteral("| Name | Value |\n| --- | --- |\n| one | two |"), QSize(900, 500));
+
+  MarkdownNode* table = blockAt(pair.session, 0);
+  MarkdownNode* firstBodyCell = childAt(childAt(table, 1), 0);
+  const BlockLayout* documentTable = requireViewBlock(pair.documentView, table->id(), QStringLiteral("table document"));
+  const BlockLayout* probeTable = requireViewBlock(pair.probeView, table->id(), QStringLiteral("table probe"));
+  require(documentTable->tableRows().size() >= 2 && probeTable->tableRows().size() >= 2, QStringLiteral("table rows should exist"));
+  require(!documentTable->tableRows().at(1).cells.empty() && !probeTable->tableRows().at(1).cells.empty(), QStringLiteral("table cells should exist"));
+
+  const auto& documentCell = documentTable->tableRows().at(1).cells.at(0);
+  const auto& probeCell = probeTable->tableRows().at(1).cells.at(0);
+  require(documentCell.nodeId == firstBodyCell->id() && probeCell.nodeId == firstBodyCell->id(), QStringLiteral("table cell node id mismatch"));
+  require(!documentCell.text.cursorRect(1).isEmpty(), QStringLiteral("document table cell cursor rect should exist"));
+  require(!probeCell.text.cursorRect(1).isEmpty(), QStringLiteral("probe table cell cursor rect should exist"));
+  require(!probeCell.text.selectionRects(0, 3).isEmpty(), QStringLiteral("probe table cell selection rects should exist"));
+
+  const QMarginsF padding = RenderTheme::typoraLike().tableCellPadding();
+  const QPointF documentPoint = documentCell.rect.marginsRemoved(padding).topLeft() + QPointF(documentCell.text.cursorRect(1).left(), documentCell.text.cursorRect(1).center().y());
+  const QPointF probePoint = probeCell.rect.marginsRemoved(padding).topLeft() + QPointF(probeCell.text.cursorRect(1).left(), probeCell.text.cursorRect(1).center().y());
+  const HitTestResult documentHit = pair.documentView.hitTest(documentPoint);
+  const HitTestResult probeHit = pair.probeView.hitTest(probePoint);
+  require(documentHit.zone == HitTestResult::Zone::TableCell && probeHit.zone == HitTestResult::Zone::TableCell,
+          QStringLiteral("table cell hit should use table cell zone"));
+  require(documentHit.textNodeId == firstBodyCell->id() && probeHit.textNodeId == firstBodyCell->id(),
+          QStringLiteral("table cell hit should return cell node id"));
+  require(documentHit.textOffset == probeHit.textOffset, QStringLiteral("table cell text offset backend mismatch"));
 }
 
 void testMixedInlineParagraphHitEditingBeforeAutolink() {
@@ -597,7 +1258,10 @@ void testTextBlockCommandBuilderCreatesStructuralEnterCommands() {
   TextBlockCommandBuilder::Command before =
       builder.buildTextEdit(context, TextBlockCommandBuilder::Operation::Enter);
   require(before.valid && before.handled, "builder should produce heading-start enter command");
-  require(before.markdownText == QStringLiteral("\n\n## Status"), "builder heading-start command text mismatch");
+  require(before.hasLocalEdit(), "builder heading-start command should be local edit");
+  require(before.sourceStart == 0, "builder heading-start source start mismatch");
+  require(before.removedLength == 0, "builder heading-start removed length mismatch");
+  require(before.insertedText == QStringLiteral("\n\n"), "builder heading-start inserted text mismatch");
   require(before.preferredCursor.blockId == blockAt(session, 0)->id(), "builder heading-start cursor should prefer original heading");
   require(before.preferredCursor.text.textOffset == 0, "builder heading-start cursor offset mismatch");
 
@@ -606,7 +1270,10 @@ void testTextBlockCommandBuilderCreatesStructuralEnterCommands() {
   TextBlockCommandBuilder::Command after =
       builder.buildTextEdit(context, TextBlockCommandBuilder::Operation::Enter);
   require(after.valid && after.handled, "builder should produce heading-end enter command");
-  require(after.markdownText == QStringLiteral("## Status\n\n"), "builder heading-end command text mismatch");
+  require(after.hasLocalEdit(), "builder heading-end command should be local edit");
+  require(after.sourceStart == 9, "builder heading-end source start mismatch");
+  require(after.removedLength == 0, "builder heading-end removed length mismatch");
+  require(after.insertedText == QStringLiteral("\n\n"), "builder heading-end inserted text mismatch");
   require(!after.preferredCursor.isValid(), "builder heading-end should use fallback cursor for new block");
 }
 
@@ -624,6 +1291,9 @@ void testInputMergeParagraphs() {
   require(input.deleteBackward(), "backspace at paragraph start should merge previous paragraph");
   require(session.markdownText() == QStringLiteral("alpha beta"), "backspace merge result mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "backspace merge cursor mismatch");
+  EditTransaction mergeUndo = requireTextDeltaCommand(undoStack, "backspace merge should use text delta command");
+  require(mergeUndo.textDeltaCommand().delta.removedText == QStringLiteral("\n\n"), "backspace merge removed text mismatch");
+  require(mergeUndo.textDeltaCommand().delta.insertedText == QStringLiteral(" "), "backspace merge inserted text mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha\n\nbeta"), false);
   setCursor(selection, blockAt(session, 0), 5);
@@ -631,6 +1301,9 @@ void testInputMergeParagraphs() {
   require(input.deleteForward(), "delete at paragraph end should merge next paragraph");
   require(session.markdownText() == QStringLiteral("alpha beta"), "delete merge result mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "delete merge cursor mismatch");
+  mergeUndo = requireTextDeltaCommand(undoStack, "delete merge should use text delta command");
+  require(mergeUndo.textDeltaCommand().delta.removedText == QStringLiteral("\n\n"), "delete merge removed text mismatch");
+  require(mergeUndo.textDeltaCommand().delta.insertedText == QStringLiteral(" "), "delete merge inserted text mismatch");
 }
 
 void testInputBackspaceAtParagraphStartDeletesStructuralBoundary() {
@@ -722,14 +1395,18 @@ void testInputUndoRedoSnapshots() {
   require(input.insertText(QStringLiteral("!")), "insert should create transaction");
 
   const EditTransaction undo = undoStack.takeUndo();
-  session.applyMarkdownText(undo.before().markdownText, true);
-  selection.setCursorPosition(undo.before().cursor);
+  require(undo.isTextDeltaCommand(), "plain insert undo should use text delta");
+  require(undo.textDeltaCommand().delta.start == 5, "plain insert delta start mismatch");
+  require(undo.textDeltaCommand().delta.removedText.isEmpty(), "plain insert delta removed text mismatch");
+  require(undo.textDeltaCommand().delta.insertedText == QStringLiteral("!"), "plain insert delta inserted text mismatch");
+  session.applyTextDelta(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(), undo.textDeltaCommand().delta.removedText, true);
+  selection.setCursorPosition(undo.textDeltaCommand().beforeCursor);
   require(session.markdownText() == QStringLiteral("alpha"), "undo snapshot text mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "undo snapshot cursor mismatch");
 
   const EditTransaction redo = undoStack.takeRedo();
-  session.applyMarkdownText(redo.after().markdownText, true);
-  selection.setCursorPosition(redo.after().cursor);
+  session.applyTextDelta(redo.textDeltaCommand().delta.start, redo.textDeltaCommand().delta.removedText.size(), redo.textDeltaCommand().delta.insertedText, true);
+  selection.setCursorPosition(redo.textDeltaCommand().afterCursor);
   require(session.markdownText() == QStringLiteral("alpha!"), "redo snapshot text mismatch");
   require(selection.cursorPosition().text.textOffset == 6, "redo snapshot cursor mismatch");
 }
@@ -849,6 +1526,10 @@ void testHeadingEnterAtStartInsertsParagraphBeforeBlock() {
   require(blockAt(session, 1)->id() == headingId, "heading start enter should preserve heading id");
   require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "heading start enter cursor should stay on heading");
   require(selection.cursorPosition().text.textOffset == 0, "heading start enter cursor should stay at heading text start");
+  EditTransaction enterUndo = requireTextDeltaCommand(undoStack, "heading start enter should use text delta command");
+  require(enterUndo.textDeltaCommand().delta.start == 0, "heading start enter delta start mismatch");
+  require(enterUndo.textDeltaCommand().delta.removedText.isEmpty(), "heading start enter removed text mismatch");
+  require(enterUndo.textDeltaCommand().delta.insertedText == QStringLiteral("\n\n"), "heading start enter inserted text mismatch");
 
   session.setMarkdownText(QStringLiteral("## Status"), false);
   setCursor(selection, blockAt(session, 0), 6);
@@ -858,6 +1539,8 @@ void testHeadingEnterAtStartInsertsParagraphBeforeBlock() {
   require(session.document().root().children().size() == 2, "heading end enter should create trailing empty paragraph");
   require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "heading end enter cursor should move to empty paragraph");
   require(selection.cursorPosition().text.textOffset == 0, "heading end enter cursor should be at empty paragraph start");
+  enterUndo = requireTextDeltaCommand(undoStack, "heading end enter should use text delta command");
+  require(enterUndo.textDeltaCommand().delta.insertedText == QStringLiteral("\n\n"), "heading end enter inserted text mismatch");
 
   session.setMarkdownText(QStringLiteral("## Headings"), false);
   setCursor(selection, blockAt(session, 0), 3);
@@ -869,6 +1552,8 @@ void testHeadingEnterAtStartInsertsParagraphBeforeBlock() {
   require(blockAt(session, 1)->type() == BlockType::Heading, "heading middle enter second block should be heading");
   require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "heading middle enter cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 0, "heading middle enter cursor should be at second heading start");
+  enterUndo = requireTextDeltaCommand(undoStack, "heading middle enter should use text delta command");
+  require(enterUndo.textDeltaCommand().delta.insertedText.contains(QStringLiteral("\n\n## ")), "heading middle enter delta should insert split marker");
 }
 
 void testListItemInput() {
@@ -910,11 +1595,15 @@ void testListItemEditingCommands() {
   require(session.markdownText() == QStringLiteral("- al\n- pha\n- beta"), "unordered list split mismatch");
   require(selection.cursorPosition().blockId == listItemAt(session, 0, 1)->id(), "unordered split cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 0, "unordered split cursor offset mismatch");
+  EditTransaction listUndo = requireTextDeltaCommand(undoStack, "unordered list split should use text delta command");
+  require(listUndo.textDeltaCommand().delta.insertedText.contains(QStringLiteral("\n- ")), "unordered list split delta inserted text mismatch");
 
   session.setMarkdownText(QStringLiteral("1. alpha\n2. beta"), false);
   setCursor(selection, listItemAt(session, 0, 0), 2);
   require(input.insertParagraphBreak(), "enter should split ordered list item");
   require(session.markdownText() == QStringLiteral("1. al\n2. pha\n2. beta"), "ordered list split mismatch");
+  listUndo = requireTextDeltaCommand(undoStack, "ordered list split should use text delta command");
+  require(listUndo.textDeltaCommand().delta.insertedText.contains(QStringLiteral("\n2. ")), "ordered list split delta inserted text mismatch");
 
   session.setMarkdownText(QStringLiteral("- Plain text can mix **bold**\n- beta"), false);
   setSourceCursor(selection, listItemAt(session, 0, 0), QStringLiteral("Plain text can mix b").size(),
@@ -961,6 +1650,8 @@ void testListItemEditingCommands() {
   setCursor(selection, listItemAt(session, 0, 1), 0);
   require(input.indentListItem(), "tab should indent list item");
   require(session.markdownText() == QStringLiteral("- alpha\n  - beta"), "list item indent mismatch");
+  listUndo = requireTextDeltaCommand(undoStack, "list indent should use text delta command");
+  require(listUndo.textDeltaCommand().delta.insertedText == QStringLiteral("  "), "list indent delta inserted text mismatch");
 
   MarkdownNode* nestedList = firstChildOfType(listItemAt(session, 0, 0), BlockType::List);
   setCursor(selection, childAt(nestedList, 0), 0);
@@ -1455,15 +2146,25 @@ int main(int argc, char** argv) {
   testSelectionController();
   testSelectionControllerRange();
   testUndoStack();
+  testBrushQueueBatchesRefreshRequests();
   testInputInsertAndBackspace();
   testInputEnterMovesCursorToNewParagraph();
   testInputEnterSplitsComplexInlineParagraphs();
   testInputEditsComplexInlineSourcePositions();
   testCodeAndMathCursorAfterSourceInsert();
   testInlineProjectionMarkerSourcePositions();
+  testInlineProjectionSpanContracts();
+  testInlineProjectionMappingMatrix();
   testHorizontalNavigationEntersInlineMarkers();
   testTextHitActivationAddsSourceOffsetForInlineEditing();
   testEditorViewHitTestActivatesInlineSourceEditing();
+  testEditorViewInlineProjectionStateChanges();
+  testEditorViewProbeGeometryBackendSmoke();
+  testEditorViewInlineGeometryBackendConfiguration();
+  testEditorViewProbePlainBackendEquivalence();
+  testEditorViewProbeStyledBackendEquivalence();
+  testEditorViewProbeWrappedBackendEquivalence();
+  testEditorViewProbeTableCellBackendEquivalence();
   testMixedInlineParagraphHitEditingBeforeAutolink();
   testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph();
   testLocalReparsePreservesUntouchedNodeIds();

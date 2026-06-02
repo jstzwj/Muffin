@@ -23,10 +23,14 @@ public:
     bool handled = false;
     EditTransaction::Kind kind = EditTransaction::Kind::InsertText;
     QString label;
-    QString markdownText;
+    qsizetype sourceStart = -1;
+    qsizetype removedLength = 0;
+    QString insertedText;
     CursorPosition preferredCursor;
     qsizetype fallbackSourceOffset = -1;
     QVector<LocalEditNodeHint> nodeHints;
+
+    bool hasLocalEdit() const;
   };
 
   TextBlockCommandBuilder(DocumentSession* session, const BlockEditContextResolver* resolver);

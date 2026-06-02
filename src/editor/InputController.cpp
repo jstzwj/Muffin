@@ -15,11 +15,35 @@
 #include "blocks/table/TableController.h"
 
 #include <QEvent>
+#include <QElapsedTimer>
 #include <QKeyEvent>
+#include <QLoggingCategory>
 #include <QInputMethodEvent>
 
 namespace muffin {
 namespace {
+
+Q_LOGGING_CATEGORY(inputPerf, "muffin.perf", QtWarningMsg)
+
+class PerfTimer {
+public:
+  explicit PerfTimer(const char* label) : label_(label), enabled_(inputPerf().isDebugEnabled()) {
+    if (enabled_) {
+      timer_.start();
+    }
+  }
+
+  ~PerfTimer() {
+    if (enabled_) {
+      qCDebug(inputPerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0 << " ms";
+    }
+  }
+
+private:
+  const char* label_;
+  bool enabled_ = false;
+  QElapsedTimer timer_;
+};
 
 QString plainTextForInlines(const QVector<InlineNode>& inlines) {
   QString text;
@@ -259,6 +283,7 @@ bool InputController::handleInputMethod(QInputMethodEvent* event) {
 }
 
 bool InputController::handleKeyPress(QKeyEvent* event) {
+  PerfTimer perf("input.keypress");
   if (!session_ || !selection_ || !selection_->hasCursor() || !view_ || event->modifiers().testFlag(Qt::ControlModifier) ||
       event->modifiers().testFlag(Qt::AltModifier)) {
     return false;
@@ -330,6 +355,7 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
 }
 
 bool InputController::editParagraph(TextBlockCommandBuilder::Operation operation, QString text) {
+  PerfTimer perf("input.editParagraph.buildCommand");
   BlockEditContextResolver resolver = contextResolver();
   BlockEditContext context;
   if (!resolver.current(context)) {
@@ -349,7 +375,17 @@ bool InputController::applyTextCommand(const TextBlockCommandBuilder::Command& c
     return true;
   }
 
-  applyEdit(command.kind, command.label, command.markdownText, command.preferredCursor, command.fallbackSourceOffset, command.nodeHints);
+  if (command.hasLocalEdit()) {
+    applyLocalEdit(
+        command.kind,
+        command.label,
+        command.sourceStart,
+        command.removedLength,
+        command.insertedText,
+        command.preferredCursor,
+        command.fallbackSourceOffset,
+        command.nodeHints);
+  }
   return true;
 }
 
@@ -601,6 +637,82 @@ void InputController::applyEdit(
   applyEdit(kind, label, std::move(nextText), CursorPosition(), nextSourceOffset, {}, preferLaterEmptyAtOffset);
 }
 
+void InputController::applyLocalEdit(
+    EditTransaction::Kind kind,
+    const QString& label,
+    qsizetype sourceStart,
+    qsizetype removedLength,
+    QString insertedText,
+    CursorPosition preferredCursor,
+    qsizetype fallbackSourceOffset,
+    QVector<LocalEditNodeHint> nodeHints,
+    bool preferLaterEmptyAtOffset) {
+  PerfTimer perf("input.applyLocalEdit");
+  if (!session_ || sourceStart < 0 || removedLength < 0) {
+    return;
+  }
+
+  const CursorPosition beforeCursor = selection_ && selection_->hasCursor() ? selection_->cursorPosition() : CursorPosition();
+  const QString& currentText = session_->markdownText();
+  if (sourceStart + removedLength > currentText.size()) {
+    return;
+  }
+
+  const QString removedText = currentText.mid(sourceStart, removedLength);
+  const bool snapshotUndoLikely = undoStack_ && !beforeCursor.blockId.isValid();
+  QString beforeText = snapshotUndoLikely ? QString(currentText) : QString();
+  bool beforeTextCaptured = snapshotUndoLikely;
+  const bool appliedLocally =
+      session_->applyTextDelta(sourceStart, removedLength, insertedText, true, std::move(nodeHints));
+  QString nextText;
+  if (!appliedLocally) {
+    if (!beforeTextCaptured) {
+      beforeText = currentText;
+      beforeTextCaptured = true;
+    }
+    nextText = beforeText;
+    nextText.replace(sourceStart, removedLength, insertedText);
+    session_->applyMarkdownText(nextText, true);
+  }
+
+  CursorPosition nextCursor = cursorAfterEdit(preferredCursor, fallbackSourceOffset, preferLaterEmptyAtOffset);
+  if (selection_) {
+    if (!nextCursor.isValid()) {
+      nextCursor = cursorForSourceOffset(session_->markdownText().size());
+    }
+    selection_->setCursorPosition(nextCursor);
+  }
+
+  if (undoStack_) {
+    const bool textDeltaUndoEligible = appliedLocally && beforeCursor.isValid() && nextCursor.isValid();
+    if (textDeltaUndoEligible) {
+      QVector<NodeId> affectedNodes;
+      affectedNodes.push_back(nextCursor.blockId);
+      undoStack_->push(EditTransaction(
+          kind,
+          label,
+          TextDeltaCommand{
+              TextDelta{sourceStart, removedText, insertedText},
+              beforeCursor,
+              nextCursor,
+              std::move(affectedNodes)}));
+    } else {
+      if (!beforeTextCaptured) {
+        beforeText = session_->markdownText();
+        beforeText.replace(sourceStart, insertedText.size(), removedText);
+        beforeTextCaptured = true;
+      }
+      if (nextText.isEmpty()) {
+        nextText = session_->markdownText();
+      }
+      undoStack_->push(EditTransaction(kind, label, {beforeText, beforeCursor}, {std::move(nextText), nextCursor}));
+    }
+  }
+  if (brushQueue_) {
+    brushQueue_->requestBlockRefresh(nextCursor.blockId);
+  }
+}
+
 void InputController::applyEdit(
     EditTransaction::Kind kind,
     const QString& label,
@@ -609,6 +721,7 @@ void InputController::applyEdit(
     qsizetype fallbackSourceOffset,
     QVector<LocalEditNodeHint> nodeHints,
     bool preferLaterEmptyAtOffset) {
+  PerfTimer perf("input.applyEdit.diffFallback");
   const CursorPosition beforeCursor = selection_ && selection_->hasCursor() ? selection_->cursorPosition() : CursorPosition();
   const QString beforeText = session_->markdownText();
 
@@ -625,7 +738,7 @@ void InputController::applyEdit(
   }
 
   const bool appliedLocally =
-      session_->applyLocalMarkdownEdit(prefix, beforeSuffix, nextText.mid(prefix, nextSuffix - prefix), true, std::move(nodeHints));
+      session_->applyTextDelta(prefix, beforeSuffix - prefix, nextText.mid(prefix, nextSuffix - prefix), true, std::move(nodeHints));
   if (!appliedLocally) {
     session_->applyMarkdownText(nextText, true);
   }
@@ -637,7 +750,23 @@ void InputController::applyEdit(
     selection_->setCursorPosition(nextCursor);
   }
   if (undoStack_) {
-    undoStack_->push(EditTransaction(kind, label, {beforeText, beforeCursor}, {std::move(nextText), nextCursor}));
+    const QString removedText = beforeText.mid(prefix, beforeSuffix - prefix);
+    const QString insertedText = nextText.mid(prefix, nextSuffix - prefix);
+    const bool textDeltaUndoEligible = appliedLocally && beforeCursor.isValid() && nextCursor.isValid();
+    if (textDeltaUndoEligible) {
+      QVector<NodeId> affectedNodes;
+      affectedNodes.push_back(nextCursor.blockId);
+      undoStack_->push(EditTransaction(
+          kind,
+          label,
+          TextDeltaCommand{
+              TextDelta{prefix, removedText, insertedText},
+              beforeCursor,
+              nextCursor,
+              std::move(affectedNodes)}));
+    } else {
+      undoStack_->push(EditTransaction(kind, label, {beforeText, beforeCursor}, {std::move(nextText), nextCursor}));
+    }
   }
   if (brushQueue_) {
     brushQueue_->requestBlockRefresh(nextCursor.blockId);

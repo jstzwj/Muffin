@@ -1,11 +1,35 @@
 #include "app/DocumentSession.h"
 
 #include <QFileInfo>
+#include <QElapsedTimer>
+#include <QLoggingCategory>
 
 #include <utility>
 
 namespace muffin {
 namespace {
+
+Q_LOGGING_CATEGORY(sessionPerf, "muffin.perf", QtWarningMsg)
+
+class PerfTimer {
+public:
+  explicit PerfTimer(const char* label) : label_(label), enabled_(sessionPerf().isDebugEnabled()) {
+    if (enabled_) {
+      timer_.start();
+    }
+  }
+
+  ~PerfTimer() {
+    if (enabled_) {
+      qCDebug(sessionPerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0 << " ms";
+    }
+  }
+
+private:
+  const char* label_;
+  bool enabled_ = false;
+  QElapsedTimer timer_;
+};
 
 struct TopLevelSlice {
   qsizetype first = -1;
@@ -222,12 +246,16 @@ QString DocumentSession::displayName() const {
   return QFileInfo(filePath_).fileName();
 }
 
-QString DocumentSession::markdownText() const {
+const QString& DocumentSession::markdownText() const {
   return document_.markdownText();
 }
 
 qint64 DocumentSession::lastParseElapsedMs() const {
   return lastParseElapsedMs_;
+}
+
+bool DocumentSession::lastParseWasLocalEdit() const {
+  return lastParseWasLocalEdit_;
 }
 
 void DocumentSession::newDocument() {
@@ -259,25 +287,27 @@ void DocumentSession::applyMarkdownText(QString text, bool modified) {
   emit documentTextChanged(document_.markdownText());
 }
 
-bool DocumentSession::applyLocalMarkdownEdit(
+bool DocumentSession::applyTextDelta(
     qsizetype sourceStart,
-    qsizetype sourceEnd,
-    QString replacementText,
+    qsizetype removedLength,
+    QString insertedText,
     bool modified,
     QVector<LocalEditNodeHint> nodeHints) {
-  if (sourceStart < 0 || sourceEnd < sourceStart || sourceEnd > document_.markdownText().size()) {
+  if (sourceStart < 0 || removedLength < 0 || sourceStart + removedLength > document_.markdownText().size()) {
     return false;
   }
-  if (!tryApplyTopLevelLocalEdit(sourceStart, sourceEnd, std::move(replacementText), modified, nodeHints)) {
+  if (!tryApplyTopLevelLocalEdit(sourceStart, sourceStart + removedLength, insertedText, modified, nodeHints)) {
     return false;
   }
-  emit documentTextChanged(document_.markdownText());
+  emit documentLocallyEdited(sourceStart, removedLength, insertedText);
   return true;
 }
 
 void DocumentSession::parseAndStore(QString text, bool modified) {
+  PerfTimer perf("session.fullParse");
   ParseResult result = parser_.parseDocument(QStringView(text), parseOptions_);
   lastParseElapsedMs_ = result.elapsedMs;
+  lastParseWasLocalEdit_ = false;
   document_.setMarkdownText(std::move(text), std::move(result.root));
   document_.setModified(modified);
   emit parsed(lastParseElapsedMs_);
@@ -286,31 +316,33 @@ void DocumentSession::parseAndStore(QString text, bool modified) {
 bool DocumentSession::tryApplyTopLevelLocalEdit(
     qsizetype sourceStart,
     qsizetype sourceEnd,
-    QString replacementText,
+    const QString& replacementText,
     bool modified,
     const QVector<LocalEditNodeHint>& nodeHints) {
-  const QString oldText = document_.markdownText();
+  PerfTimer perf("session.localParse");
+  const QString& oldText = document_.markdownText();
   TopLevelSlice slice = chooseTopLevelSlice(document_, sourceStart, sourceEnd);
   if (slice.first < 0 || slice.sourceStart < 0 || slice.sourceEnd < slice.sourceStart) {
     return false;
   }
 
-  QString nextText = oldText;
-  nextText.replace(sourceStart, sourceEnd - sourceStart, replacementText);
   const qsizetype editDelta = replacementText.size() - (sourceEnd - sourceStart);
   const qsizetype nextSliceEnd = slice.sourceEnd + editDelta;
-  if (nextSliceEnd < slice.sourceStart || nextSliceEnd > nextText.size()) {
+  const qsizetype nextTextSize = oldText.size() + editDelta;
+  if (nextSliceEnd < slice.sourceStart || nextSliceEnd > nextTextSize) {
     return false;
   }
 
-  const QString sliceMarkdown = nextText.mid(slice.sourceStart, nextSliceEnd - slice.sourceStart);
+  QString sliceMarkdown = oldText.mid(slice.sourceStart, sourceStart - slice.sourceStart);
+  sliceMarkdown += replacementText;
+  sliceMarkdown += oldText.mid(sourceEnd, slice.sourceEnd - sourceEnd);
   ParseResult parsedSlice = parser_.parseDocument(QStringView(sliceMarkdown), parseOptions_);
   if (!parsedSlice.root) {
     return false;
   }
 
   std::vector<std::unique_ptr<MarkdownNode>> replacements;
-  const int sliceLineDelta = lineForOffset(nextText, slice.sourceStart) - 1;
+  const int sliceLineDelta = lineForOffset(oldText, slice.sourceStart) - 1;
   while (!parsedSlice.root->children().empty()) {
     auto child = parsedSlice.root->detachChild(0);
     shiftRanges(*child, slice.sourceStart, sliceLineDelta);
@@ -325,9 +357,10 @@ bool DocumentSession::tryApplyTopLevelLocalEdit(
     shiftRanges(*existingBlocks.at(static_cast<size_t>(i)), editDelta, editLineDelta);
   }
 
-  document_.replaceTopLevelRange(slice.first, slice.count, std::move(replacements), std::move(nextText));
+  document_.replaceTopLevelRange(slice.first, slice.count, std::move(replacements), sourceStart, sourceEnd, replacementText);
   document_.setModified(modified);
   lastParseElapsedMs_ = parsedSlice.elapsedMs;
+  lastParseWasLocalEdit_ = true;
   emit parsed(lastParseElapsedMs_);
   return true;
 }
