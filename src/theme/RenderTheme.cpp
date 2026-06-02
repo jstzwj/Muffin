@@ -61,7 +61,7 @@ qreal RenderTheme::pageWidth() const {
 }
 
 qreal RenderTheme::topMargin() const {
-  return scaled(64.0);
+  return scaled(48.0);
 }
 
 qreal RenderTheme::bottomMargin() const {

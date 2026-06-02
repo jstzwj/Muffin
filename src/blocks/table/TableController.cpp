@@ -23,71 +23,16 @@ struct TableCellSourceRange {
   }
 };
 
-bool isHorizontalPadding(QChar ch) {
-  return ch == QLatin1Char(' ') || ch == QLatin1Char('\t');
-}
-
-qsizetype sourceOffsetForLineColumn(const QString& text, int line, int column) {
-  if (line <= 0 || column <= 0) {
-    return -1;
-  }
-  qsizetype lineStart = 0;
-  for (int currentLine = 1; currentLine < line; ++currentLine) {
-    const qsizetype newline = text.indexOf(QLatin1Char('\n'), lineStart);
-    if (newline < 0) {
-      return -1;
-    }
-    lineStart = newline + 1;
-  }
-  const qsizetype lineEnd = text.indexOf(QLatin1Char('\n'), lineStart);
-  const qsizetype boundedLineEnd = lineEnd < 0 ? text.size() : lineEnd;
-  return qBound<qsizetype>(lineStart, lineStart + column - 1, boundedLineEnd);
-}
-
-qsizetype sourceOffsetForLineEnd(const QString& text, int line) {
-  if (line <= 0) {
-    return -1;
-  }
-  const qsizetype lineStart = sourceOffsetForLineColumn(text, line, 1);
-  if (lineStart < 0) {
-    return -1;
-  }
-  const qsizetype newline = text.indexOf(QLatin1Char('\n'), lineStart);
-  return newline < 0 ? text.size() : newline;
-}
-
 TableCellSourceRange sourceRangeForTableCellContent(const QString& markdown, const MarkdownNode& cell) {
   if (cell.type() != BlockType::TableCell) {
     return {};
   }
 
   const SourceRange range = cell.sourceRange();
-  if (range.lineStart <= 0 || range.lineEnd < range.lineStart || range.columnStart <= 0) {
+  if (range.byteStart < 0 || range.byteEnd < range.byteStart || range.byteEnd > markdown.size()) {
     return {};
   }
-
-  const qsizetype lineEnd = sourceOffsetForLineEnd(markdown, range.lineStart);
-  qsizetype fieldStart = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
-  qsizetype fieldEnd = range.columnEnd >= range.columnStart
-                           ? sourceOffsetForLineColumn(markdown, range.lineStart, range.columnEnd + 1)
-                           : lineEnd;
-  if (fieldStart < 0 || fieldEnd < fieldStart || lineEnd < fieldEnd) {
-    return {};
-  }
-
-  qsizetype contentStart = fieldStart;
-  qsizetype contentEnd = fieldEnd;
-  while (contentStart < contentEnd && isHorizontalPadding(markdown.at(contentStart))) {
-    ++contentStart;
-  }
-  while (contentEnd > contentStart && isHorizontalPadding(markdown.at(contentEnd - 1))) {
-    --contentEnd;
-  }
-  if (contentStart == fieldEnd && fieldEnd > fieldStart) {
-    contentStart = fieldStart + (fieldEnd - fieldStart) / 2;
-    contentEnd = contentStart;
-  }
-  return {contentStart, contentEnd};
+  return {range.byteStart, range.byteEnd};
 }
 
 qsizetype sourceOffsetForTableCellVisibleOffset(const QString& escapedMarkdown, qsizetype visibleOffset) {

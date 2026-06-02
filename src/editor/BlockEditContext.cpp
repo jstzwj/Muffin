@@ -6,6 +6,17 @@
 #include "editor/SelectionController.h"
 
 namespace muffin {
+namespace {
+
+bool isEditableTextBlock(BlockType type) {
+  return type == BlockType::Paragraph || type == BlockType::Heading || type == BlockType::ListItem || type == BlockType::TableCell;
+}
+
+bool isInlineEditableNode(BlockType type) {
+  return type == BlockType::Paragraph || type == BlockType::Heading || type == BlockType::TableCell;
+}
+
+}  // namespace
 
 BlockEditContextResolver::BlockEditContextResolver(DocumentSession* session, SelectionController* selection)
     : session_(session), selection_(selection) {}
@@ -23,8 +34,7 @@ bool BlockEditContextResolver::forBlock(NodeId blockId, BlockEditContext& contex
   }
 
   MarkdownNode* node = session_->document().node(blockId);
-  if (!node ||
-      (node->type() != BlockType::Paragraph && node->type() != BlockType::Heading && node->type() != BlockType::ListItem)) {
+  if (!node || !isEditableTextBlock(node->type())) {
     return false;
   }
 
@@ -67,18 +77,18 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
     }
   }
 
-  if (!editable || (editable->type() != BlockType::Paragraph && editable->type() != BlockType::Heading)) {
+  if (!editable || !isInlineEditableNode(editable->type())) {
     return false;
   }
 
   const SourceRange range = editable->sourceRange();
-  if (range.lineStart <= 0 || range.lineEnd < range.lineStart) {
-    return false;
-  }
-
   const QString markdown = session_->markdownText();
-  qsizetype start = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
-  const qsizetype end = sourceOffsetForLineEnd(markdown, range.lineEnd);
+  qsizetype start = editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+                       ? range.byteStart
+                       : sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
+  const qsizetype end = editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+                            ? range.byteEnd
+                            : sourceOffsetForLineEnd(markdown, range.lineEnd);
   if (start < 0 || end < start) {
     return false;
   }
@@ -283,7 +293,7 @@ MarkdownNode* BlockEditContextResolver::nextEditableTextBlock(const MarkdownNode
 }
 
 MarkdownNode* BlockEditContextResolver::nodeAtContentSourceOffset(MarkdownNode& node, qsizetype sourceOffset) const {
-  if (node.type() == BlockType::Paragraph || node.type() == BlockType::Heading || node.type() == BlockType::ListItem) {
+  if (isEditableTextBlock(node.type())) {
     BlockEditContext context;
     if (fill(node, context) && sourceOffset >= context.contentRange.byteStart && sourceOffset <= context.contentRange.byteEnd) {
       return &node;
@@ -338,7 +348,7 @@ qsizetype BlockEditContextResolver::sourceOffsetForLineEnd(const QString& text, 
 }
 
 MarkdownNode* BlockEditContextResolver::lastEditableDescendant(MarkdownNode& node) const {
-  if (node.type() == BlockType::Paragraph || node.type() == BlockType::Heading || node.type() == BlockType::ListItem) {
+  if (isEditableTextBlock(node.type())) {
     return &node;
   }
   auto& children = node.children();
@@ -351,7 +361,7 @@ MarkdownNode* BlockEditContextResolver::lastEditableDescendant(MarkdownNode& nod
 }
 
 MarkdownNode* BlockEditContextResolver::firstEditableDescendant(MarkdownNode& node) const {
-  if (node.type() == BlockType::Paragraph || node.type() == BlockType::Heading || node.type() == BlockType::ListItem) {
+  if (isEditableTextBlock(node.type())) {
     return &node;
   }
   for (const auto& child : node.children()) {

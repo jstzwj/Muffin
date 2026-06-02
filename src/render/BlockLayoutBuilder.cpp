@@ -57,6 +57,55 @@ const MarkdownNode* primaryParagraph(const MarkdownNode& node) {
   return nullptr;
 }
 
+QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& theme, qreal width) {
+  int columnCount = 0;
+  for (const auto& row : table.children()) {
+    columnCount = qMax(columnCount, static_cast<int>(row->children().size()));
+  }
+  QVector<qreal> widths(columnCount, width / qMax(1, columnCount));
+  if (columnCount == 0) {
+    return widths;
+  }
+
+  const QMarginsF padding = theme.tableCellPadding();
+  qreal preferredTotal = 0.0;
+  for (int column = 0; column < columnCount; ++column) {
+    qreal preferred = 0.0;
+    for (const auto& row : table.children()) {
+      if (column >= static_cast<int>(row->children().size())) {
+        continue;
+      }
+      const MarkdownNode& cell = *row->children().at(static_cast<size_t>(column));
+      const QFont font = row->tableRowIsHeader() ? theme.headingFont(6) : theme.paragraphFont();
+      preferred = qMax(preferred, QFontMetricsF(font).horizontalAdvance(InlineProjection::plainTextForInlines(cell.inlines())));
+    }
+    widths[column] = preferred + padding.left() + padding.right();
+    preferredTotal += widths[column];
+  }
+
+  const qreal minimum = qMax<qreal>(56.0, width * 0.12);
+  for (qreal& columnWidth : widths) {
+    columnWidth = qMax(columnWidth, minimum);
+  }
+
+  preferredTotal = 0.0;
+  for (qreal columnWidth : widths) {
+    preferredTotal += columnWidth;
+  }
+  if (preferredTotal <= 0.0) {
+    return QVector<qreal>(columnCount, width / columnCount);
+  }
+  if (preferredTotal < width) {
+    widths[columnCount - 1] += width - preferredTotal;
+  } else if (preferredTotal > width) {
+    const qreal scale = width / preferredTotal;
+    for (qreal& columnWidth : widths) {
+      columnWidth *= scale;
+    }
+  }
+  return widths;
+}
+
 }  // namespace
 
 void BlockLayoutBuilder::setMarkdownText(QString markdownText) {
@@ -254,7 +303,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
     return layout;
   }
 
-  const qreal columnWidth = width / columnCount;
+  const QVector<qreal> columnWidths = tableColumnWidths(node, theme, width);
   const QMarginsF padding = theme.tableCellPadding();
   const QVector<TableAlignment> alignments = node.tableAlignments();
   std::vector<BlockLayout::TableRowLayout> rows;
@@ -264,8 +313,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
   for (const auto& rowNode : node.children()) {
     std::vector<BlockLayout::TableCellLayout> cells;
     qreal rowHeight = 0;
+    qreal cellX = x;
     int column = 0;
     for (const auto& cellNode : rowNode->children()) {
+      const qreal columnWidth = column < columnWidths.size() ? columnWidths.at(column) : width / columnCount;
       BlockLayout::TableCellLayout cell;
       cell.nodeId = cellNode->id();
       cell.contentSourceStart = sourceContentStartForEditableNode(*cellNode);
@@ -284,18 +335,21 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
           cell.header ? theme.headingFont(6) : theme.paragraphFont(),
           options);
       rowHeight = qMax(rowHeight, cell.text.height() + padding.top() + padding.bottom());
-      cell.rect = QRectF(x + column * columnWidth, cursorY, columnWidth, 0);
+      cell.rect = QRectF(cellX, cursorY, columnWidth, 0);
       cells.push_back(std::move(cell));
+      cellX += columnWidth;
       ++column;
     }
     while (column < columnCount) {
+      const qreal columnWidth = column < columnWidths.size() ? columnWidths.at(column) : width / columnCount;
       BlockLayout::TableCellLayout cell;
       cell.nodeId = rowNode->id();
       cell.alternate = rowIndex % 2 == 1;
       cell.alignment = column < alignments.size() ? alignments.at(column) : TableAlignment::None;
-      cell.rect = QRectF(x + column * columnWidth, cursorY, columnWidth, 0);
+      cell.rect = QRectF(cellX, cursorY, columnWidth, 0);
       rowHeight = qMax(rowHeight, QFontMetricsF(theme.paragraphFont()).height() + padding.top() + padding.bottom());
       cells.push_back(std::move(cell));
+      cellX += columnWidth;
       ++column;
     }
     for (BlockLayout::TableCellLayout& cell : cells) {
@@ -358,7 +412,9 @@ QString BlockLayoutBuilder::sourceTextForEditableNode(const MarkdownNode& node) 
 
 qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNode& node) const {
   const SourceRange range = node.sourceRange();
-  qsizetype start = sourceOffsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
+  qsizetype start = node.type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+                     ? range.byteStart
+                     : sourceOffsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
   const qsizetype end = sourceContentEndForEditableNode(node);
   if (start < 0 || end < start) {
     return -1;
@@ -370,18 +426,14 @@ qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNo
     if (start < end && markdownText_.at(start).isSpace()) {
       ++start;
     }
-  } else if (node.type() == BlockType::TableCell) {
-    while (start < end && markdownText_.at(start).isSpace()) {
-      ++start;
-    }
   }
   return start;
 }
 
 qsizetype BlockLayoutBuilder::sourceContentEndForEditableNode(const MarkdownNode& node) const {
   const SourceRange range = node.sourceRange();
-  qsizetype end = node.type() == BlockType::TableCell
-                    ? sourceOffsetForLineColumn(range.lineEnd, qMax(1, range.columnEnd + 1))
+  qsizetype end = node.type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+                    ? range.byteEnd
                     : sourceOffsetForLineEnd(range.lineEnd);
   const qsizetype start = sourceOffsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
   if (start < 0 || end < start) {

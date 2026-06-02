@@ -79,8 +79,12 @@ bool fillSourceOffsetForTextHit(const DocumentSession& session, HitTestResult& h
 
   const SourceRange range = editable->sourceRange();
   const QString markdown = session.markdownText();
-  qsizetype start = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
-  const qsizetype end = sourceOffsetForLineEnd(markdown, range.lineEnd);
+  qsizetype start = editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+                     ? range.byteStart
+                     : sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
+  const qsizetype end = editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+                         ? range.byteEnd
+                         : sourceOffsetForLineEnd(markdown, range.lineEnd);
   if (start < 0 || end < start) {
     return false;
   }

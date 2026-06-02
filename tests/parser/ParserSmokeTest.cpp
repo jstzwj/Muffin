@@ -44,6 +44,14 @@ int countInlineMath(const MarkdownNode& node) {
   return count;
 }
 
+QString sourceTextForNode(const QString& markdown, const MarkdownNode& node) {
+  const SourceRange range = node.sourceRange();
+  require(range.byteStart >= 0, QStringLiteral("node source range start is invalid"));
+  require(range.byteEnd >= range.byteStart, QStringLiteral("node source range end is invalid"));
+  require(range.byteEnd <= markdown.size(), QStringLiteral("node source range exceeds markdown size"));
+  return markdown.mid(range.byteStart, range.byteEnd - range.byteStart);
+}
+
 bool containsInlineMathText(const QVector<InlineNode>& inlines, const QString& text) {
   for (const InlineNode& inlineNode : inlines) {
     if (inlineNode.type() == InlineType::InlineMath && inlineNode.text() == text) {
@@ -123,6 +131,53 @@ void testBasicParseAndSerialize() {
   require(serialized.contains(QStringLiteral("~~gone~~")), QStringLiteral("Serialized strikethrough missing"));
   require(serialized.contains(QStringLiteral("| :--- | ---: |")),
           QStringLiteral("Serialized table delimiter missing"));
+}
+
+void testTableCellSourceRanges() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QStringLiteral(
+      "| Name | Value | Note |\n"
+      "| --- | --- | --- |\n"
+      "| C++20 | a\\|b | [x](u) |\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for table source range sample"));
+  require(parsed.root->children().size() == 1, QStringLiteral("Unexpected table source range block count"));
+
+  const MarkdownNode& table = childAt(*parsed.root, 0);
+  require(table.type() == BlockType::Table, QStringLiteral("Expected table block for source range sample"));
+  require(table.children().size() == 2, QStringLiteral("Unexpected table row count for source range sample"));
+
+  const MarkdownNode& headerRow = childAt(table, 0);
+  const MarkdownNode& bodyRow = childAt(table, 1);
+  require(sourceTextForNode(markdown, childAt(headerRow, 0)) == QStringLiteral("Name"), QStringLiteral("Header cell source range includes table syntax"));
+  require(sourceTextForNode(markdown, childAt(headerRow, 1)) == QStringLiteral("Value"), QStringLiteral("Second header cell source range mismatch"));
+  require(sourceTextForNode(markdown, childAt(bodyRow, 0)) == QStringLiteral("C++20"), QStringLiteral("Body cell source range mismatch"));
+  require(sourceTextForNode(markdown, childAt(bodyRow, 1)) == QStringLiteral("a\\|b"), QStringLiteral("Escaped pipe cell source range mismatch"));
+  require(sourceTextForNode(markdown, childAt(bodyRow, 2)) == QStringLiteral("[x](u)"), QStringLiteral("Inline markdown cell source range mismatch"));
+}
+
+void testTableCellSourceRangesWithoutOuterPipes() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QStringLiteral(
+      "Name | Value\n"
+      "--- | ---\n"
+      "left | right\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for bare table source range sample"));
+  require(parsed.root->children().size() == 1, QStringLiteral("Unexpected bare table block count"));
+
+  const MarkdownNode& table = childAt(*parsed.root, 0);
+  require(table.type() == BlockType::Table, QStringLiteral("Expected bare table block"));
+  const MarkdownNode& headerRow = childAt(table, 0);
+  const MarkdownNode& bodyRow = childAt(table, 1);
+  require(sourceTextForNode(markdown, childAt(headerRow, 0)) == QStringLiteral("Name"), QStringLiteral("Bare first header source range mismatch"));
+  require(sourceTextForNode(markdown, childAt(headerRow, 1)) == QStringLiteral("Value"), QStringLiteral("Bare second header source range mismatch"));
+  require(sourceTextForNode(markdown, childAt(bodyRow, 0)) == QStringLiteral("left"), QStringLiteral("Bare first body source range mismatch"));
+  require(sourceTextForNode(markdown, childAt(bodyRow, 1)) == QStringLiteral("right"), QStringLiteral("Bare second body source range mismatch"));
 }
 
 void testMathSupport() {
@@ -298,6 +353,8 @@ void testTaskListMetadata() {
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
   testBasicParseAndSerialize();
+  testTableCellSourceRanges();
+  testTableCellSourceRangesWithoutOuterPipes();
   testMathSupport();
   testMathInHeadingsAndTables();
   testMathEdgeCases();

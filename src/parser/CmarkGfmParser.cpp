@@ -6,6 +6,7 @@
 #include <QByteArray>
 #include <QElapsedTimer>
 #include <QStringList>
+#include <QVector>
 
 extern "C" {
 #include "cmark-gfm-core-extensions.h"
@@ -70,6 +71,89 @@ void annotateSourceOffsets(QStringView markdown, MarkdownNode& node) {
   }
 }
 
+struct TableCellFieldRange {
+  qsizetype start = -1;
+  qsizetype end = -1;
+};
+
+bool isHorizontalPadding(QChar ch) {
+  return ch == QLatin1Char(' ') || ch == QLatin1Char('\t');
+}
+
+QVector<TableCellFieldRange> tableRowFieldRanges(QStringView rowText, qsizetype rowStartOffset) {
+  QVector<qsizetype> separators;
+  bool escaped = false;
+  for (qsizetype i = 0; i < rowText.size(); ++i) {
+    const QChar ch = rowText.at(i);
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (ch == QLatin1Char('\\')) {
+      escaped = true;
+      continue;
+    }
+    if (ch == QLatin1Char('|')) {
+      separators.push_back(rowStartOffset + i);
+    }
+  }
+
+  QVector<TableCellFieldRange> ranges;
+  if (separators.isEmpty()) {
+    return ranges;
+  }
+  if (separators.first() != rowStartOffset) {
+    separators.prepend(rowStartOffset - 1);
+  }
+  const qsizetype rowEndOffset = rowStartOffset + rowText.size();
+  if (separators.last() != rowEndOffset - 1) {
+    separators.push_back(rowEndOffset);
+  }
+
+  ranges.reserve(qMax(0, separators.size() - 1));
+  for (qsizetype i = 0; i + 1 < separators.size(); ++i) {
+    qsizetype start = separators.at(i) + 1;
+    qsizetype end = separators.at(i + 1);
+    while (start < end && isHorizontalPadding(rowText.at(start - rowStartOffset))) {
+      ++start;
+    }
+    while (end > start && isHorizontalPadding(rowText.at(end - rowStartOffset - 1))) {
+      --end;
+    }
+    ranges.push_back({start, end});
+  }
+  return ranges;
+}
+
+void annotateTableCellSourceRanges(QStringView markdown, MarkdownNode& node) {
+  if (node.type() == BlockType::TableRow) {
+    const SourceRange rowRange = node.sourceRange();
+    const qsizetype rowStart = sourceOffsetForLineColumn(markdown, rowRange.lineStart, 1);
+    const qsizetype rowEnd = sourceOffsetForLineEnd(markdown, rowRange.lineStart);
+    if (rowStart >= 0 && rowEnd >= rowStart) {
+      const QVector<TableCellFieldRange> fields = tableRowFieldRanges(markdown.mid(rowStart, rowEnd - rowStart), rowStart);
+      int column = 0;
+      for (const auto& child : node.children()) {
+        if (child->type() == BlockType::TableCell && column < fields.size()) {
+          SourceRange range = child->sourceRange();
+          range.lineStart = rowRange.lineStart;
+          range.lineEnd = rowRange.lineStart;
+          range.byteStart = fields.at(column).start;
+          range.byteEnd = fields.at(column).end;
+          range.columnStart = static_cast<int>(range.byteStart - rowStart + 1);
+          range.columnEnd = static_cast<int>(range.byteEnd - rowStart);
+          child->setSourceRange(range);
+        }
+        ++column;
+      }
+    }
+  }
+
+  for (const auto& child : node.children()) {
+    annotateTableCellSourceRanges(markdown, *child);
+  }
+}
+
 }  // namespace
 
 CmarkGfmParser::CmarkGfmParser() {
@@ -91,6 +175,7 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   result.root = adapter.convertBlock(document);
   insertVirtualEmptyParagraphs(markdown, *result.root);
   annotateSourceOffsets(markdown, *result.root);
+  annotateTableCellSourceRanges(markdown, *result.root);
   result.elapsedMs = timer.elapsed();
 
   cmark_node_free(document);
