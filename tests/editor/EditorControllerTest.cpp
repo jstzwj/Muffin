@@ -1354,16 +1354,28 @@ void testInputSelectionReplaceAndDelete() {
   require(input.insertText(QStringLiteral("X")), "typing should replace selection");
   require(session.markdownText() == QStringLiteral("aXa"), "selection replace text mismatch");
   require(selection.cursorPosition().text.textOffset == 2, "selection replace cursor mismatch");
+  EditTransaction replaceUndo = requireTextDeltaCommand(undoStack, "selection replace should use text delta command");
+  require(replaceUndo.textDeltaCommand().delta.start == 1, "selection replace delta start mismatch");
+  require(replaceUndo.textDeltaCommand().delta.removedText == QStringLiteral("lph"), "selection replace removed text mismatch");
+  require(replaceUndo.textDeltaCommand().delta.insertedText == QStringLiteral("X"), "selection replace inserted text mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setSelection(selection, blockAt(session, 0), 1, 4);
   require(input.deleteBackward(), "backspace should delete selection");
   require(session.markdownText() == QStringLiteral("aa"), "backspace selection delete mismatch");
+  EditTransaction backspaceUndo = requireTextDeltaCommand(undoStack, "selection backspace should use text delta command");
+  require(backspaceUndo.textDeltaCommand().delta.start == 1, "selection backspace delta start mismatch");
+  require(backspaceUndo.textDeltaCommand().delta.removedText == QStringLiteral("lph"), "selection backspace removed text mismatch");
+  require(backspaceUndo.textDeltaCommand().delta.insertedText.isEmpty(), "selection backspace inserted text mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setSelection(selection, blockAt(session, 0), 1, 4);
   require(input.deleteForward(), "delete should delete selection");
   require(session.markdownText() == QStringLiteral("aa"), "delete selection mismatch");
+  EditTransaction deleteUndo = requireTextDeltaCommand(undoStack, "selection delete should use text delta command");
+  require(deleteUndo.textDeltaCommand().delta.start == 1, "selection delete delta start mismatch");
+  require(deleteUndo.textDeltaCommand().delta.removedText == QStringLiteral("lph"), "selection delete removed text mismatch");
+  require(deleteUndo.textDeltaCommand().delta.insertedText.isEmpty(), "selection delete inserted text mismatch");
 }
 
 void testInputCrossParagraphSelectionReplaceAndDelete() {
@@ -1383,11 +1395,19 @@ void testInputCrossParagraphSelectionReplaceAndDelete() {
   require(session.markdownText() == QStringLiteral("alXma"), "cross paragraph replace mismatch");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "cross paragraph replace cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 3, "cross paragraph replace cursor offset mismatch");
+  EditTransaction replaceUndo = requireTextDeltaCommand(undoStack, "cross paragraph replace should use text delta command");
+  require(replaceUndo.textDeltaCommand().delta.start == 2, "cross paragraph replace delta start mismatch");
+  require(replaceUndo.textDeltaCommand().delta.removedText == QStringLiteral("pha\n\nbeta\n\ngam"), "cross paragraph replace removed text mismatch");
+  require(replaceUndo.textDeltaCommand().delta.insertedText == QStringLiteral("X"), "cross paragraph replace inserted text mismatch");
 
   session.setMarkdownText(QStringLiteral("# Title\n\n- alpha\n- beta\n\nomega"), false);
   setCrossSelection(selection, blockAt(session, 0), 2, blockAt(session, 2), 2);
   require(input.deleteSelection(), "delete should remove cross block selection");
   require(session.markdownText() == QStringLiteral("# Tiega"), "cross block delete mismatch");
+  EditTransaction deleteUndo = requireTextDeltaCommand(undoStack, "cross block delete should use text delta command");
+  require(deleteUndo.textDeltaCommand().delta.start == 4, "cross block delete delta start mismatch");
+  require(deleteUndo.textDeltaCommand().delta.removedText == QStringLiteral("tle\n\n- alpha\n- beta\n\nom"), "cross block delete removed text mismatch");
+  require(deleteUndo.textDeltaCommand().delta.insertedText.isEmpty(), "cross block delete inserted text mismatch");
 }
 
 void testHeadingInput() {
@@ -2274,7 +2294,11 @@ void testInlineSelectionRects() {
 }  // namespace
 
 int main(int argc, char** argv) {
-  qputenv("QT_QPA_PLATFORM", "offscreen");
+#if !defined(Q_OS_MACOS)
+  if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
+    qputenv("QT_QPA_PLATFORM", "offscreen");
+  }
+#endif
   QApplication app(argc, argv);
   testSelectionController();
   testSelectionControllerRange();
@@ -2337,5 +2361,6 @@ int main(int argc, char** argv) {
   testStructuredNodeCommandModels();
   testSwitchingBetweenCodeBlocksRoutesInputToClickedBlock();
   testInlineSelectionRects();
+  QApplication::clipboard()->clear();
   return 0;
 }

@@ -253,16 +253,29 @@ bool InputController::replaceSelection(QString text, EditTransaction::Kind kind,
     return true;
   }
 
+  const qsizetype insertedLength = text.size();
   BlockEditContextResolver resolver = contextResolver();
   BlockEditContext context;
   qsizetype start = 0;
   qsizetype end = 0;
   if (resolver.selectionContext(context, start, end)) {
-    QString nextParagraph = context.contentText;
-    nextParagraph.replace(start, end - start, text);
-    QString nextDocument = session_->markdownText();
-    nextDocument.replace(context.contentRange.byteStart, context.contentRange.byteEnd - context.contentRange.byteStart, nextParagraph);
-    applyEdit(kind, label, std::move(nextDocument), context.contentRange.byteStart + start + text.size());
+    const qsizetype sourceStart = context.contentRange.byteStart + start;
+    QVector<LocalEditNodeHint> nodeHints;
+    if (context.node) {
+      nodeHints.push_back(LocalEditNodeHint{
+          context.node->id(),
+          context.blockRange.byteStart >= 0 ? context.blockRange.byteStart : context.contentRange.byteStart,
+          context.node->type()});
+    }
+    applyLocalEdit(
+        kind,
+        label,
+        sourceStart,
+        end - start,
+        std::move(text),
+        CursorPosition(),
+        sourceStart + insertedLength,
+        std::move(nodeHints));
     return true;
   }
 
@@ -273,9 +286,23 @@ bool InputController::replaceSelection(QString text, EditTransaction::Kind kind,
     return false;
   }
 
-  QString nextDocument = session_->markdownText();
-  nextDocument.replace(sourceStart, sourceEnd - sourceStart, text);
-  applyEdit(kind, label, std::move(nextDocument), sourceStart + text.size());
+  QVector<LocalEditNodeHint> nodeHints;
+  const SelectionRange range = selection_->selection();
+  if (range.anchor.blockId.isValid()) {
+    nodeHints.push_back(LocalEditNodeHint{range.anchor.blockId, sourceStart, BlockType::Unknown});
+  }
+  if (range.focus.blockId.isValid() && range.focus.blockId != range.anchor.blockId) {
+    nodeHints.push_back(LocalEditNodeHint{range.focus.blockId, sourceEnd, BlockType::Unknown});
+  }
+  applyLocalEdit(
+      kind,
+      label,
+      sourceStart,
+      sourceEnd - sourceStart,
+      std::move(text),
+      CursorPosition(),
+      sourceStart + insertedLength,
+      std::move(nodeHints));
   return true;
 }
 

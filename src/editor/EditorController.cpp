@@ -327,6 +327,51 @@ bool applyTextReplacement(DocumentSession& session, qsizetype replaceStart, qsiz
   return true;
 }
 
+NodeId topLevelBlockIdFor(DocumentSession& session, NodeId nodeId) {
+  if (!nodeId.isValid()) {
+    return {};
+  }
+  const MarkdownNode* node = session.document().node(nodeId);
+  if (!node) {
+    return {};
+  }
+  while (node->parent() && node->parent()->type() != BlockType::Document) {
+    node = node->parent();
+  }
+  return node && node->parent() && node->parent()->type() == BlockType::Document ? node->id() : NodeId();
+}
+
+void addRefreshNode(DocumentSession& session, QVector<NodeId>& refreshNodes, NodeId nodeId) {
+  NodeId topLevelId = topLevelBlockIdFor(session, nodeId);
+  if (!topLevelId.isValid()) {
+    topLevelId = nodeId;
+  }
+  if (topLevelId.isValid() && !refreshNodes.contains(topLevelId)) {
+    refreshNodes.push_back(topLevelId);
+  }
+}
+
+QVector<NodeId> refreshNodesFor(DocumentSession& session, const QVector<NodeId>& affectedNodes, CursorPosition cursor = {}) {
+  QVector<NodeId> refreshNodes;
+  for (NodeId nodeId : affectedNodes) {
+    addRefreshNode(session, refreshNodes, nodeId);
+  }
+  if (cursor.isValid()) {
+    addRefreshNode(session, refreshNodes, cursor.blockId);
+    addRefreshNode(session, refreshNodes, cursor.text.nodeId);
+  }
+  return refreshNodes;
+}
+
+void requestRefreshForNodes(BrushQueue& brushQueue, DocumentSession& session, const QVector<NodeId>& affectedNodes, CursorPosition cursor = {}) {
+  QVector<NodeId> refreshNodes = refreshNodesFor(session, affectedNodes, cursor);
+  if (refreshNodes.isEmpty()) {
+    brushQueue.requestFullRefresh();
+    return;
+  }
+  brushQueue.requestBlocksRefresh(std::move(refreshNodes));
+}
+
 }  // namespace
 
 EditorController::EditorController(QObject* parent) : QObject(parent) {}
@@ -711,18 +756,7 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
       selection_.clear();
     }
     if (applied) {
-      QVector<NodeId> refreshNodes;
-      if (command.tableId.isValid()) {
-        refreshNodes.push_back(command.tableId);
-      }
-      if (cursor.isValid() && !refreshNodes.contains(cursor.blockId)) {
-        refreshNodes.push_back(cursor.blockId);
-      }
-      if (refreshNodes.isEmpty()) {
-        brushQueue_.requestFullRefresh();
-      } else {
-        brushQueue_.requestBlocksRefresh(std::move(refreshNodes));
-      }
+      requestRefreshForNodes(brushQueue_, *session_, QVector<NodeId>{command.tableId}, cursor);
     }
     return;
   }
@@ -748,18 +782,11 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
       selection_.clear();
     }
     if (appliedLocally) {
-      QVector<NodeId> refreshNodes = command.affectedNodes;
-      if (!undo && command.nodeId.isValid() && !refreshNodes.contains(command.nodeId)) {
-        refreshNodes.push_back(command.nodeId);
+      QVector<NodeId> affectedNodes = command.affectedNodes;
+      if (!undo && command.nodeId.isValid() && !affectedNodes.contains(command.nodeId)) {
+        affectedNodes.push_back(command.nodeId);
       }
-      if (cursor.isValid() && !refreshNodes.contains(cursor.blockId)) {
-        refreshNodes.push_back(cursor.blockId);
-      }
-      if (refreshNodes.isEmpty()) {
-        brushQueue_.requestFullRefresh();
-      } else {
-        brushQueue_.requestBlocksRefresh(std::move(refreshNodes));
-      }
+      requestRefreshForNodes(brushQueue_, *session_, affectedNodes, cursor);
     } else {
       brushQueue_.requestFullRefresh();
     }
@@ -784,15 +811,7 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
       selection_.clear();
     }
     if (appliedLocally) {
-      QVector<NodeId> refreshNodes = command.affectedNodes;
-      if (cursor.isValid() && !refreshNodes.contains(cursor.blockId)) {
-        refreshNodes.push_back(cursor.blockId);
-      }
-      if (refreshNodes.isEmpty()) {
-        brushQueue_.requestFullRefresh();
-      } else {
-        brushQueue_.requestBlocksRefresh(std::move(refreshNodes));
-      }
+      requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
     } else {
       brushQueue_.requestFullRefresh();
     }
@@ -812,15 +831,7 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
       selection_.clear();
     }
     if (applied) {
-      QVector<NodeId> refreshNodes = command.affectedNodes;
-      if (cursor.isValid() && !refreshNodes.contains(cursor.blockId)) {
-        refreshNodes.push_back(cursor.blockId);
-      }
-      if (refreshNodes.isEmpty()) {
-        brushQueue_.requestFullRefresh();
-      } else {
-        brushQueue_.requestBlocksRefresh(std::move(refreshNodes));
-      }
+      requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
     }
     return;
   }
@@ -842,15 +853,7 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
       selection_.clear();
     }
     if (appliedLocally) {
-      QVector<NodeId> refreshNodes = command.affectedNodes;
-      if (cursor.isValid() && !refreshNodes.contains(cursor.blockId)) {
-        refreshNodes.push_back(cursor.blockId);
-      }
-      if (refreshNodes.isEmpty()) {
-        brushQueue_.requestFullRefresh();
-      } else {
-        brushQueue_.requestBlocksRefresh(std::move(refreshNodes));
-      }
+      requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
     } else {
       brushQueue_.requestFullRefresh();
     }
@@ -891,16 +894,7 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     session_->applyMarkdownText(std::move(text), true);
     brushQueue_.requestFullRefresh();
   } else {
-    const QVector<NodeId>& affectedNodes = command.affectedNodes;
-    if (affectedNodes.isEmpty()) {
-      brushQueue_.requestFullRefresh();
-    } else {
-      QVector<NodeId> refreshNodes = affectedNodes;
-      if (cursor.isValid() && !refreshNodes.contains(cursor.blockId)) {
-        refreshNodes.push_back(cursor.blockId);
-      }
-      brushQueue_.requestBlocksRefresh(std::move(refreshNodes));
-    }
+    requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
   }
 }
 
