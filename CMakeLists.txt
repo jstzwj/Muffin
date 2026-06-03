@@ -45,20 +45,74 @@ target_include_directories(tree-sitter-runtime
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tree-sitter/lib/src
 )
 
+set(TREE_SITTER_LANGUAGE_SOURCES)
+set(TREE_SITTER_LANGUAGE_INCLUDE_DIRS)
+
+function(add_tree_sitter_grammar GRAMMAR_DIR)
+  set(GRAMMAR_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${GRAMMAR_DIR}")
+  list(APPEND TREE_SITTER_LANGUAGE_SOURCES "${GRAMMAR_PATH}/src/parser.c")
+  foreach(SCANNER scanner.c scanner.cc scanner.cpp)
+    if(EXISTS "${GRAMMAR_PATH}/src/${SCANNER}")
+      list(APPEND TREE_SITTER_LANGUAGE_SOURCES "${GRAMMAR_PATH}/src/${SCANNER}")
+    endif()
+  endforeach()
+  list(APPEND TREE_SITTER_LANGUAGE_INCLUDE_DIRS "${GRAMMAR_PATH}/src")
+  set(TREE_SITTER_LANGUAGE_SOURCES "${TREE_SITTER_LANGUAGE_SOURCES}" PARENT_SCOPE)
+  set(TREE_SITTER_LANGUAGE_INCLUDE_DIRS "${TREE_SITTER_LANGUAGE_INCLUDE_DIRS}" PARENT_SCOPE)
+endfunction()
+
+function(add_tree_sitter_nested_grammar GRAMMAR_DIR SUBDIR)
+  set(GRAMMAR_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${GRAMMAR_DIR}/${SUBDIR}")
+  list(APPEND TREE_SITTER_LANGUAGE_SOURCES "${GRAMMAR_PATH}/src/parser.c")
+  foreach(SCANNER scanner.c scanner.cc scanner.cpp)
+    if(EXISTS "${GRAMMAR_PATH}/src/${SCANNER}")
+      list(APPEND TREE_SITTER_LANGUAGE_SOURCES "${GRAMMAR_PATH}/src/${SCANNER}")
+    endif()
+  endforeach()
+  list(APPEND TREE_SITTER_LANGUAGE_INCLUDE_DIRS "${GRAMMAR_PATH}/src")
+  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${GRAMMAR_DIR}/common")
+    list(APPEND TREE_SITTER_LANGUAGE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/${GRAMMAR_DIR}/common")
+  endif()
+  set(TREE_SITTER_LANGUAGE_SOURCES "${TREE_SITTER_LANGUAGE_SOURCES}" PARENT_SCOPE)
+  set(TREE_SITTER_LANGUAGE_INCLUDE_DIRS "${TREE_SITTER_LANGUAGE_INCLUDE_DIRS}" PARENT_SCOPE)
+endfunction()
+
+add_tree_sitter_grammar(third_party/tree-sitter-bash)
+add_tree_sitter_grammar(third_party/tree-sitter-c)
+add_tree_sitter_grammar(third_party/tree-sitter-cpp)
+add_tree_sitter_grammar(third_party/tree-sitter-c-sharp)
+add_tree_sitter_grammar(third_party/tree-sitter-css)
+add_tree_sitter_grammar(third_party/tree-sitter-go)
+add_tree_sitter_grammar(third_party/tree-sitter-html)
+add_tree_sitter_grammar(third_party/tree-sitter-ini)
+add_tree_sitter_grammar(third_party/tree-sitter-java)
+add_tree_sitter_grammar(third_party/tree-sitter-javascript)
+add_tree_sitter_grammar(third_party/tree-sitter-json)
+add_tree_sitter_grammar(third_party/tree-sitter-lua)
+add_tree_sitter_nested_grammar(third_party/tree-sitter-markdown tree-sitter-markdown)
+add_tree_sitter_grammar(third_party/tree-sitter-objc)
+add_tree_sitter_nested_grammar(third_party/tree-sitter-php php_only)
+add_tree_sitter_grammar(third_party/tree-sitter-powershell)
+add_tree_sitter_grammar(third_party/tree-sitter-python)
+add_tree_sitter_grammar(third_party/tree-sitter-qmljs)
+add_tree_sitter_grammar(third_party/tree-sitter-r)
+add_tree_sitter_grammar(third_party/tree-sitter-ruby)
+add_tree_sitter_grammar(third_party/tree-sitter-rust)
+add_tree_sitter_grammar(third_party/tree-sitter-toml)
+add_tree_sitter_nested_grammar(third_party/tree-sitter-typescript typescript)
+add_tree_sitter_nested_grammar(third_party/tree-sitter-typescript tsx)
+add_tree_sitter_nested_grammar(third_party/tree-sitter-xml xml)
+add_tree_sitter_grammar(third_party/tree-sitter-yaml)
+
 add_library(tree-sitter-languages STATIC
-  third_party/tree-sitter-python/src/parser.c
-  third_party/tree-sitter-python/src/scanner.c
-  third_party/tree-sitter-c/src/parser.c
-  third_party/tree-sitter-cpp/src/parser.c
-  third_party/tree-sitter-cpp/src/scanner.c
+  ${TREE_SITTER_LANGUAGE_SOURCES}
 )
+set_target_properties(tree-sitter-languages PROPERTIES AUTOMOC OFF AUTOUIC OFF AUTORCC OFF)
 target_include_directories(tree-sitter-languages
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tree-sitter/lib/include
   PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tree-sitter-python/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tree-sitter-c/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tree-sitter-cpp/src
+    ${TREE_SITTER_LANGUAGE_INCLUDE_DIRS}
 )
 
 set(MUFFIN_CORE_SOURCES
@@ -123,6 +177,7 @@ add_executable(Muffin
 
 set(MUFFIN_UI_SOURCES
   src/katex_fonts.qrc
+  src/tree_sitter_queries.qrc
   src/blocks/code/CodeFenceController.cpp
   src/blocks/code/CodeFenceController.h
   src/blocks/html/HtmlBlockController.cpp

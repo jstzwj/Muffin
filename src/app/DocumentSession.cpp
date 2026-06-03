@@ -120,7 +120,12 @@ TopLevelSlice chooseTopLevelSlice(const MarkdownDocument& document, qsizetype ed
         --slice.first;
         ++slice.count;
         slice.sourceStart = only.previousSibling()->sourceRange().byteStart;
-        slice.sourceEnd = only.nextSibling() ? only.nextSibling()->sourceRange().byteStart : document.markdownText().size();
+        if (only.nextSibling()) {
+          ++slice.count;
+          slice.sourceEnd = only.nextSibling()->sourceRange().byteEnd;
+        } else {
+          slice.sourceEnd = document.markdownText().size();
+        }
       } else if (only.nextSibling()) {
         ++slice.count;
         slice.sourceStart = 0;
@@ -198,6 +203,45 @@ MarkdownNode* nodeAtSourceOffset(MarkdownNode& node, const LocalEditNodeHint& hi
     }
   }
   return nullptr;
+}
+
+SourceRange stableRangeAfterEdit(SourceRange range, qsizetype editStart, qsizetype editEnd, qsizetype editDelta) {
+  if (range.byteEnd <= editStart) {
+    return range;
+  }
+  if (range.byteStart >= editEnd) {
+    range.byteStart += editDelta;
+    range.byteEnd += editDelta;
+    return range;
+  }
+  range.byteStart = -1;
+  range.byteEnd = -1;
+  return range;
+}
+
+bool sameStableRange(const SourceRange& oldRange, const SourceRange& newRange) {
+  return oldRange.byteStart >= 0 && oldRange.byteEnd >= oldRange.byteStart && oldRange.byteStart == newRange.byteStart &&
+         oldRange.byteEnd == newRange.byteEnd;
+}
+
+void inheritIdsForUnchangedTopLevelBlocks(
+    const MarkdownDocument& document,
+    const TopLevelSlice& slice,
+    const std::vector<std::unique_ptr<MarkdownNode>>& replacements,
+    qsizetype editStart,
+    qsizetype editEnd,
+    qsizetype editDelta) {
+  const auto& oldBlocks = document.root().children();
+  for (qsizetype oldIndex = slice.first; oldIndex < slice.first + slice.count && oldIndex < static_cast<qsizetype>(oldBlocks.size()); ++oldIndex) {
+    const MarkdownNode& oldNode = *oldBlocks.at(static_cast<size_t>(oldIndex));
+    const SourceRange expectedRange = stableRangeAfterEdit(oldNode.sourceRange(), editStart, editEnd, editDelta);
+    for (const auto& replacement : replacements) {
+      if (replacement->type() == oldNode.type() && sameStableRange(expectedRange, replacement->sourceRange())) {
+        inheritIdsByStructure(oldNode, *replacement);
+        break;
+      }
+    }
+  }
 }
 
 void applyNodeHints(
@@ -501,6 +545,7 @@ bool DocumentSession::tryApplyTopLevelLocalEdit(
     shiftRanges(*child, slice.sourceStart, sliceLineDelta);
     replacements.push_back(std::move(child));
   }
+  inheritIdsForUnchangedTopLevelBlocks(document_, slice, replacements, sourceStart, sourceEnd, editDelta);
   applyNodeHints(document_, replacements, nodeHints);
   lastLocalEditChangedTopLevelStructure_ = topLevelStructureChanged(document_.root().children(), slice.first, slice.count, replacements);
 

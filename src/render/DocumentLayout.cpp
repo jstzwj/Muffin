@@ -67,11 +67,18 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
   if (!node) {
     return result;
   }
+  const auto& documentBlocks = document.root().children();
+  if (static_cast<qsizetype>(blocks_.size()) != static_cast<qsizetype>(documentBlocks.size())) {
+    return result;
+  }
   auto indexIt = topLevelIndex_.constFind(node->id());
   if (indexIt == topLevelIndex_.constEnd()) {
     return result;
   }
   const qsizetype index = indexIt.value();
+  if (index < 0 || index >= static_cast<qsizetype>(documentBlocks.size()) || documentBlocks.at(static_cast<size_t>(index))->id() != node->id()) {
+    return result;
+  }
 
   BlockLayoutBuilder builder;
   builder.setMarkdownText(document.markdownText());
@@ -83,7 +90,6 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
   result.newRect = replacement->rect();
 
   qreal newNextTop = replacement->rect().bottom() + spacingAfterBlock(*node, theme);
-  const auto& documentBlocks = document.root().children();
   if (index + 1 < static_cast<qsizetype>(documentBlocks.size())) {
     newNextTop += spacingBeforeBlock(*documentBlocks.at(static_cast<size_t>(index + 1)), theme, newNextTop);
   }

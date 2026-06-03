@@ -67,7 +67,7 @@ private:
   CursorPosition cursorForNode(MarkdownNode& node, qsizetype offset) const;
   CursorPosition cursorForSourceOffset(qsizetype sourceOffset, bool preferLaterEmptyAtOffset = false) const;
   CursorPosition cursorAfterEdit(CursorPosition preferredCursor, qsizetype fallbackSourceOffset, bool preferLaterEmptyAtOffset = false) const;
-  MarkdownNode* paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset) const;
+  MarkdownNode* paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset, bool preferLaterEmptyAtOffset = false) const;
   MarkdownNode* selectableBlockByDirection(NodeId current, int direction) const;
   qsizetype selectableTextLength(const MarkdownNode& node) const;
   bool moveCursorHorizontal(int direction, bool extendSelection);

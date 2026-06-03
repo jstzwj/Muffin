@@ -292,20 +292,30 @@ MarkdownNode* BlockEditContextResolver::nextEditableTextBlock(const MarkdownNode
   return editable && fill(*editable, context) ? context.node : nullptr;
 }
 
-MarkdownNode* BlockEditContextResolver::nodeAtContentSourceOffset(MarkdownNode& node, qsizetype sourceOffset) const {
+MarkdownNode* BlockEditContextResolver::nodeAtContentSourceOffset(
+    MarkdownNode& node,
+    qsizetype sourceOffset,
+    bool preferLaterEmptyAtOffset) const {
+  MarkdownNode* matched = nullptr;
   if (isEditableTextBlock(node.type())) {
     BlockEditContext context;
     if (fill(node, context) && sourceOffset >= context.contentRange.byteStart && sourceOffset <= context.contentRange.byteEnd) {
-      return &node;
+      matched = &node;
+      if (!preferLaterEmptyAtOffset || context.contentRange.byteStart != context.contentRange.byteEnd) {
+        return matched;
+      }
     }
   }
 
   for (const auto& child : node.children()) {
-    if (MarkdownNode* found = nodeAtContentSourceOffset(*child, sourceOffset)) {
-      return found;
+    if (MarkdownNode* found = nodeAtContentSourceOffset(*child, sourceOffset, preferLaterEmptyAtOffset)) {
+      matched = found;
+      if (!preferLaterEmptyAtOffset) {
+        return matched;
+      }
     }
   }
-  return nullptr;
+  return matched;
 }
 
 qsizetype BlockEditContextResolver::sourceOffsetForLineColumn(const QString& text, int line, int column) const {

@@ -29,6 +29,7 @@ public:
     CursorPosition preferredCursor;
     qsizetype fallbackSourceOffset = -1;
     QVector<LocalEditNodeHint> nodeHints;
+    bool preferLaterEmptyAtOffset = false;
 
     bool hasLocalEdit() const;
   };

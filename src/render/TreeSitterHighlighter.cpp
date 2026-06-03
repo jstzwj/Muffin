@@ -3,24 +3,58 @@
 #include <tree_sitter/api.h>
 
 #include <QByteArray>
+#include <QFile>
 #include <QHash>
+#include <QRegularExpression>
+#include <QStringList>
 
 #include <algorithm>
-#include <cstring>
+#include <map>
 #include <memory>
 
+int qInitResources_tree_sitter_queries();
+
 extern "C" {
+const TSLanguage* tree_sitter_bash(void);
 const TSLanguage* tree_sitter_c(void);
 const TSLanguage* tree_sitter_cpp(void);
+const TSLanguage* tree_sitter_c_sharp(void);
+const TSLanguage* tree_sitter_css(void);
+const TSLanguage* tree_sitter_go(void);
+const TSLanguage* tree_sitter_html(void);
+const TSLanguage* tree_sitter_ini(void);
+const TSLanguage* tree_sitter_java(void);
+const TSLanguage* tree_sitter_javascript(void);
+const TSLanguage* tree_sitter_json(void);
+const TSLanguage* tree_sitter_lua(void);
+const TSLanguage* tree_sitter_markdown(void);
+const TSLanguage* tree_sitter_objc(void);
+const TSLanguage* tree_sitter_php_only(void);
+const TSLanguage* tree_sitter_powershell(void);
 const TSLanguage* tree_sitter_python(void);
+const TSLanguage* tree_sitter_qmljs(void);
+const TSLanguage* tree_sitter_r(void);
+const TSLanguage* tree_sitter_ruby(void);
+const TSLanguage* tree_sitter_rust(void);
+const TSLanguage* tree_sitter_toml(void);
+const TSLanguage* tree_sitter_tsx(void);
+const TSLanguage* tree_sitter_typescript(void);
+const TSLanguage* tree_sitter_xml(void);
+const TSLanguage* tree_sitter_yaml(void);
 }
 
 namespace muffin {
 namespace {
 
 struct LanguageSpec {
+  QString canonical;
   const TSLanguage* (*language)();
-  const char* query;
+  QStringList queryPaths;
+};
+
+struct CompiledQuery {
+  QByteArray text;
+  std::unique_ptr<TSQuery, void (*)(TSQuery*)> query{nullptr, ts_query_delete};
 };
 
 struct ParserDeleter {
@@ -35,180 +69,262 @@ struct TreeDeleter {
   }
 };
 
-struct QueryDeleter {
-  void operator()(TSQuery* query) const {
-    ts_query_delete(query);
-  }
-};
-
 struct QueryCursorDeleter {
   void operator()(TSQueryCursor* cursor) const {
     ts_query_cursor_delete(cursor);
   }
 };
 
-constexpr const char* pythonQuery = R"TS(
-(identifier) @variable
-((identifier) @constructor (#match? @constructor "^[A-Z]"))
-((identifier) @constant (#match? @constant "^[A-Z][A-Z_]*$"))
-(decorator) @function
-(call function: (attribute attribute: (identifier) @function.method))
-(call function: (identifier) @function)
-(function_definition name: (identifier) @function)
-(attribute attribute: (identifier) @property)
-(type (identifier) @type)
-[(none) (true) (false)] @constant.builtin
-[(integer) (float)] @number
-(comment) @comment
-(string) @string
-(escape_sequence) @escape
-[
-  "-" "-=" "!=" "*" "**" "**=" "*=" "/" "//" "//=" "/="
-  "&" "&=" "%" "%=" "^" "^=" "+" "->" "+=" "<" "<<"
-  "<<=" "<=" "<>" "=" ":=" "==" ">" ">=" ">>" ">>="
-  "|" "|=" "~" "and" "in" "is" "not" "or" "is not" "not in"
-] @operator
-[
-  "as" "assert" "async" "await" "break" "class" "continue" "def"
-  "del" "elif" "else" "except" "finally" "for" "from" "global"
-  "if" "import" "lambda" "nonlocal" "pass" "raise" "return"
-  "try" "while" "with" "yield"
-] @keyword
-)TS";
+void addLanguage(
+    QHash<QString, LanguageSpec>& specs,
+    QString canonical,
+    const TSLanguage* (*language)(),
+    QStringList queryPaths,
+    std::initializer_list<const char*> aliases) {
+  const LanguageSpec spec{canonical, language, std::move(queryPaths)};
+  specs.insert(canonical, spec);
+  for (const char* alias : aliases) {
+    specs.insert(QString::fromLatin1(alias), spec);
+  }
+}
 
-constexpr const char* cQuery = R"TS(
-(identifier) @variable
-((identifier) @constant (#match? @constant "^[A-Z][A-Z\\d_]*$"))
-[
-  "break" "case" "const" "continue" "default" "do" "else" "enum"
-  "extern" "for" "if" "inline" "return" "sizeof" "static" "struct"
-  "switch" "typedef" "union" "volatile" "while"
-] @keyword
-[
-  "#define" "#elif" "#else" "#endif" "#if" "#ifdef" "#ifndef" "#include"
-] @preprocessor
-(preproc_directive) @preprocessor
-["--" "-" "-=" "->" "=" "!=" "*" "&" "&&" "+" "++" "+=" "<" "==" ">" "||"] @operator
-["." ";" "," ":" "(" ")" "[" "]" "{" "}"] @punctuation
-(string_literal) @string
-(system_lib_string) @string
-(null) @constant
-(number_literal) @number
-(char_literal) @number
-(field_identifier) @property
-(statement_identifier) @label
-(type_identifier) @type
-(primitive_type) @type
-(sized_type_specifier) @type
-(call_expression function: (identifier) @function)
-(call_expression function: (field_expression field: (field_identifier) @function))
-(function_declarator declarator: (identifier) @function)
-(preproc_function_def name: (identifier) @function.special)
-(comment) @comment
-)TS";
-
-constexpr const char* cppQuery = R"TS(
-(identifier) @variable
-((identifier) @constant (#match? @constant "^[A-Z][A-Z\\d_]*$"))
-[
-  "break" "case" "const" "continue" "default" "do" "else" "enum"
-  "extern" "for" "if" "inline" "return" "sizeof" "static" "struct"
-  "switch" "typedef" "union" "volatile" "while"
-] @keyword
-[
-  "#define" "#elif" "#else" "#endif" "#if" "#ifdef" "#ifndef" "#include"
-] @preprocessor
-(preproc_directive) @preprocessor
-["--" "-" "-=" "->" "=" "!=" "*" "&" "&&" "+" "++" "+=" "<" "==" ">" "||"] @operator
-["." ";" "," ":" "(" ")" "[" "]" "{" "}"] @punctuation
-(string_literal) @string
-(system_lib_string) @string
-(null) @constant
-(number_literal) @number
-(char_literal) @number
-(field_identifier) @property
-(statement_identifier) @label
-(type_identifier) @type
-(primitive_type) @type
-(sized_type_specifier) @type
-(call_expression function: (identifier) @function)
-(call_expression function: (field_expression field: (field_identifier) @function))
-(function_declarator declarator: (identifier) @function)
-(preproc_function_def name: (identifier) @function.special)
-(comment) @comment
-(call_expression function: (qualified_identifier name: (identifier) @function))
-(template_function name: (identifier) @function)
-(template_method name: (field_identifier) @function)
-(function_declarator declarator: (qualified_identifier name: (identifier) @function))
-(function_declarator declarator: (field_identifier) @function)
-((namespace_identifier) @type (#match? @type "^[A-Z]"))
-(auto) @type
-(this) @variable.builtin
-(null "nullptr" @constant)
-(module_name (identifier) @module)
-[
- "catch" "class" "co_await" "co_return" "co_yield" "constexpr"
- "constinit" "consteval" "delete" "explicit" "final" "friend"
- "mutable" "namespace" "noexcept" "new" "override" "private"
- "protected" "public" "template" "throw" "try" "typename" "using"
- "concept" "requires" "virtual" "import" "export" "module"
-] @keyword
-(raw_string_literal) @string
-)TS";
+void ensureQueryResourcesRegistered() {
+  static const bool registered = [] {
+    qInitResources_tree_sitter_queries();
+    return true;
+  }();
+  Q_UNUSED(registered);
+}
 
 const QHash<QString, LanguageSpec>& languageSpecs() {
-  static const QHash<QString, LanguageSpec> specs = {
-      {QStringLiteral("py"), {tree_sitter_python, pythonQuery}},
-      {QStringLiteral("python"), {tree_sitter_python, pythonQuery}},
-      {QStringLiteral("c"), {tree_sitter_c, cQuery}},
-      {QStringLiteral("h"), {tree_sitter_c, cQuery}},
-      {QStringLiteral("cpp"), {tree_sitter_cpp, cppQuery}},
-      {QStringLiteral("c++"), {tree_sitter_cpp, cppQuery}},
-      {QStringLiteral("cc"), {tree_sitter_cpp, cppQuery}},
-      {QStringLiteral("cxx"), {tree_sitter_cpp, cppQuery}},
-      {QStringLiteral("hpp"), {tree_sitter_cpp, cppQuery}},
-  };
+  static const QHash<QString, LanguageSpec> specs = [] {
+    QHash<QString, LanguageSpec> result;
+    addLanguage(result, QStringLiteral("bash"), tree_sitter_bash, {QStringLiteral(":/tree-sitter/queries/bash/highlights.scm")}, {"sh", "shell", "zsh"});
+    addLanguage(result, QStringLiteral("c"), tree_sitter_c, {QStringLiteral(":/tree-sitter/queries/c/highlights.scm")}, {"h"});
+    addLanguage(result, QStringLiteral("cpp"), tree_sitter_cpp, {QStringLiteral(":/tree-sitter/queries/c/highlights.scm"), QStringLiteral(":/tree-sitter/queries/cpp/highlights.scm")}, {"c++", "cc", "cxx", "hpp", "hxx"});
+    addLanguage(result, QStringLiteral("csharp"), tree_sitter_c_sharp, {QStringLiteral(":/tree-sitter/queries/csharp/highlights.scm")}, {"cs", "c#"});
+    addLanguage(result, QStringLiteral("css"), tree_sitter_css, {QStringLiteral(":/tree-sitter/queries/css/highlights.scm")}, {});
+    addLanguage(result, QStringLiteral("go"), tree_sitter_go, {QStringLiteral(":/tree-sitter/queries/go/highlights.scm")}, {"golang"});
+    addLanguage(result, QStringLiteral("html"), tree_sitter_html, {QStringLiteral(":/tree-sitter/queries/html/highlights.scm")}, {"htm"});
+    addLanguage(result, QStringLiteral("ini"), tree_sitter_ini, {QStringLiteral(":/tree-sitter/queries/ini/highlights.scm")}, {"conf"});
+    addLanguage(result, QStringLiteral("java"), tree_sitter_java, {QStringLiteral(":/tree-sitter/queries/java/highlights.scm")}, {});
+    addLanguage(result, QStringLiteral("javascript"), tree_sitter_javascript, {QStringLiteral(":/tree-sitter/queries/javascript/highlights.scm")}, {"js", "jsx", "mjs", "cjs"});
+    addLanguage(result, QStringLiteral("json"), tree_sitter_json, {QStringLiteral(":/tree-sitter/queries/json/highlights.scm")}, {});
+    addLanguage(result, QStringLiteral("lua"), tree_sitter_lua, {QStringLiteral(":/tree-sitter/queries/lua/highlights.scm")}, {});
+    addLanguage(result, QStringLiteral("markdown"), tree_sitter_markdown, {QStringLiteral(":/tree-sitter/queries/markdown/highlights.scm")}, {"md"});
+    addLanguage(result, QStringLiteral("objective-c"), tree_sitter_objc, {QStringLiteral(":/tree-sitter/queries/objc/highlights.scm")}, {"objc", "obj-c", "m", "mm"});
+    addLanguage(result, QStringLiteral("php"), tree_sitter_php_only, {QStringLiteral(":/tree-sitter/queries/php/highlights.scm")}, {});
+    addLanguage(result, QStringLiteral("powershell"), tree_sitter_powershell, {QStringLiteral(":/tree-sitter/queries/powershell/highlights.scm")}, {"ps1", "psm1"});
+    addLanguage(result, QStringLiteral("python"), tree_sitter_python, {QStringLiteral(":/tree-sitter/queries/python/highlights.scm")}, {"py"});
+    addLanguage(result, QStringLiteral("qml"), tree_sitter_qmljs, {QStringLiteral(":/tree-sitter/queries/qmljs/highlights.scm")}, {"qmljs"});
+    addLanguage(result, QStringLiteral("r"), tree_sitter_r, {QStringLiteral(":/tree-sitter/queries/r/highlights.scm")}, {});
+    addLanguage(result, QStringLiteral("ruby"), tree_sitter_ruby, {QStringLiteral(":/tree-sitter/queries/ruby/highlights.scm")}, {"rb"});
+    addLanguage(result, QStringLiteral("rust"), tree_sitter_rust, {QStringLiteral(":/tree-sitter/queries/rust/highlights.scm")}, {"rs"});
+    addLanguage(result, QStringLiteral("toml"), tree_sitter_toml, {QStringLiteral(":/tree-sitter/queries/toml/highlights.scm")}, {});
+    addLanguage(result, QStringLiteral("typescript"), tree_sitter_typescript, {QStringLiteral(":/tree-sitter/queries/javascript/highlights.scm"), QStringLiteral(":/tree-sitter/queries/typescript/highlights.scm")}, {"ts"});
+    addLanguage(result, QStringLiteral("tsx"), tree_sitter_tsx, {QStringLiteral(":/tree-sitter/queries/javascript/highlights.scm"), QStringLiteral(":/tree-sitter/queries/typescript/highlights.scm"), QStringLiteral(":/tree-sitter/queries/tsx/highlights.scm")}, {});
+    addLanguage(result, QStringLiteral("xml"), tree_sitter_xml, {QStringLiteral(":/tree-sitter/queries/xml/highlights.scm")}, {});
+    addLanguage(result, QStringLiteral("yaml"), tree_sitter_yaml, {QStringLiteral(":/tree-sitter/queries/yaml/highlights.scm")}, {"yml"});
+    return result;
+  }();
   return specs;
+}
+
+QByteArray readResource(const QString& path) {
+  ensureQueryResourcesRegistered();
+  QFile file(path);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    return {};
+  }
+  return file.readAll();
+}
+
+CompiledQuery* compiledQueryFor(const LanguageSpec& spec) {
+  static std::map<QString, std::unique_ptr<CompiledQuery>> cache;
+  if (auto it = cache.find(spec.canonical); it != cache.end()) {
+    return it->second.get();
+  }
+
+  auto compiled = std::make_unique<CompiledQuery>();
+  for (const QString& queryPath : spec.queryPaths) {
+    const QByteArray queryText = readResource(queryPath);
+    if (queryText.isEmpty()) {
+      return nullptr;
+    }
+    compiled->text += queryText;
+    compiled->text += '\n';
+  }
+  if (compiled->text.isEmpty()) {
+    return nullptr;
+  }
+
+  uint32_t errorOffset = 0;
+  TSQueryError errorType = TSQueryErrorNone;
+  compiled->query.reset(ts_query_new(
+      spec.language(),
+      compiled->text.constData(),
+      static_cast<uint32_t>(compiled->text.size()),
+      &errorOffset,
+      &errorType));
+  if (!compiled->query) {
+    return nullptr;
+  }
+
+  CompiledQuery* result = compiled.get();
+  cache[spec.canonical] = std::move(compiled);
+  return result;
+}
+
+QString nodeText(const QString& text, const QVector<qsizetype>& byteToUtf16, TSNode node) {
+  const qsizetype start = byteToUtf16.at(qBound<int>(0, static_cast<int>(ts_node_start_byte(node)), byteToUtf16.size() - 1));
+  const qsizetype end = byteToUtf16.at(qBound<int>(0, static_cast<int>(ts_node_end_byte(node)), byteToUtf16.size() - 1));
+  return text.mid(start, end - start);
+}
+
+QString queryStringValue(TSQuery* query, uint32_t id) {
+  uint32_t length = 0;
+  const char* value = ts_query_string_value_for_id(query, id, &length);
+  return QString::fromUtf8(value, static_cast<qsizetype>(length));
+}
+
+QString queryCaptureName(TSQuery* query, uint32_t id) {
+  uint32_t length = 0;
+  const char* value = ts_query_capture_name_for_id(query, id, &length);
+  return QString::fromUtf8(value, static_cast<qsizetype>(length));
+}
+
+const TSQueryCapture* captureByName(TSQuery* query, const TSQueryMatch& match, uint32_t captureId) {
+  const QString name = queryCaptureName(query, captureId);
+  for (uint16_t i = 0; i < match.capture_count; ++i) {
+    if (queryCaptureName(query, match.captures[i].index) == name) {
+      return &match.captures[i];
+    }
+  }
+  return nullptr;
+}
+
+bool stringPredicateMatches(
+    const QString& op,
+    TSQuery* query,
+    const TSQueryMatch& match,
+    const QVector<TSQueryPredicateStep>& steps,
+    const QString& text,
+    const QVector<qsizetype>& byteToUtf16) {
+  if (steps.size() < 3 || steps.at(1).type != TSQueryPredicateStepTypeCapture) {
+    return true;
+  }
+  const TSQueryCapture* capture = captureByName(query, match, steps.at(1).value_id);
+  if (!capture) {
+    return false;
+  }
+  const QString capturedText = nodeText(text, byteToUtf16, capture->node);
+
+  if (op == QStringLiteral("eq?") || op == QStringLiteral("not-eq?")) {
+    if (steps.size() < 3 || steps.at(2).type != TSQueryPredicateStepTypeString) {
+      return true;
+    }
+    const bool matched = capturedText == queryStringValue(query, steps.at(2).value_id);
+    return op == QStringLiteral("eq?") ? matched : !matched;
+  }
+
+  if (op == QStringLiteral("match?") || op == QStringLiteral("not-match?")) {
+    if (steps.size() < 3 || steps.at(2).type != TSQueryPredicateStepTypeString) {
+      return true;
+    }
+    const QRegularExpression regex(queryStringValue(query, steps.at(2).value_id));
+    const bool matched = regex.isValid() && regex.match(capturedText).hasMatch();
+    return op == QStringLiteral("match?") ? matched : !matched;
+  }
+
+  if (op == QStringLiteral("any-of?")) {
+    for (qsizetype i = 2; i < steps.size(); ++i) {
+      if (steps.at(i).type == TSQueryPredicateStepTypeString && capturedText == queryStringValue(query, steps.at(i).value_id)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  return true;
+}
+
+bool predicatesMatch(
+    TSQuery* query,
+    const TSQueryMatch& match,
+    const QString& text,
+    const QVector<qsizetype>& byteToUtf16) {
+  uint32_t stepCount = 0;
+  const TSQueryPredicateStep* rawSteps = ts_query_predicates_for_pattern(query, match.pattern_index, &stepCount);
+  QVector<TSQueryPredicateStep> steps;
+  for (uint32_t i = 0; i < stepCount; ++i) {
+    const TSQueryPredicateStep step = rawSteps[i];
+    if (step.type == TSQueryPredicateStepTypeDone) {
+      if (!steps.isEmpty() && steps.first().type == TSQueryPredicateStepTypeString) {
+        const QString op = queryStringValue(query, steps.first().value_id);
+        if (!stringPredicateMatches(op, query, match, steps, text, byteToUtf16)) {
+          return false;
+        }
+      }
+      steps.clear();
+    } else {
+      steps.push_back(step);
+    }
+  }
+  return true;
 }
 
 CodeHighlightRole roleForCapture(QStringView capture) {
   if (capture.startsWith(QStringLiteral("comment"))) {
     return CodeHighlightRole::Comment;
   }
-  if (capture.startsWith(QStringLiteral("keyword"))) {
+  if (capture.startsWith(QStringLiteral("keyword")) || capture.startsWith(QStringLiteral("markup.heading")) ||
+      capture.startsWith(QStringLiteral("markup.quote"))) {
     return CodeHighlightRole::Keyword;
   }
-  if (capture.startsWith(QStringLiteral("string"))) {
-    return CodeHighlightRole::String;
-  }
-  if (capture.startsWith(QStringLiteral("number"))) {
-    return CodeHighlightRole::Number;
-  }
-  if (capture.startsWith(QStringLiteral("function"))) {
-    return CodeHighlightRole::Function;
-  }
-  if (capture.startsWith(QStringLiteral("type")) || capture == QStringLiteral("constructor")) {
+  if (capture.startsWith(QStringLiteral("text.title"))) {
     return CodeHighlightRole::Type;
   }
-  if (capture.startsWith(QStringLiteral("constant"))) {
+  if (capture.startsWith(QStringLiteral("string")) || capture.startsWith(QStringLiteral("character")) ||
+      capture.startsWith(QStringLiteral("text.literal")) || capture.startsWith(QStringLiteral("text.uri")) ||
+      capture.startsWith(QStringLiteral("text.reference")) || capture.startsWith(QStringLiteral("markup.raw")) ||
+      capture.startsWith(QStringLiteral("markup.link"))) {
+    return CodeHighlightRole::String;
+  }
+  if (capture.startsWith(QStringLiteral("number")) || capture.startsWith(QStringLiteral("float"))) {
+    return CodeHighlightRole::Number;
+  }
+  if (capture.startsWith(QStringLiteral("function")) || capture.startsWith(QStringLiteral("method"))) {
+    return CodeHighlightRole::Function;
+  }
+  if (capture.startsWith(QStringLiteral("type")) || capture == QStringLiteral("constructor") ||
+      capture.startsWith(QStringLiteral("tag")) || capture.startsWith(QStringLiteral("module")) ||
+      capture.startsWith(QStringLiteral("namespace"))) {
+    return CodeHighlightRole::Type;
+  }
+  if (capture.startsWith(QStringLiteral("constant")) || capture.startsWith(QStringLiteral("boolean")) ||
+      capture == QStringLiteral("null") || capture == QStringLiteral("none")) {
     return CodeHighlightRole::Constant;
   }
-  if (capture.startsWith(QStringLiteral("property"))) {
+  if (capture.startsWith(QStringLiteral("property")) || capture.startsWith(QStringLiteral("attribute")) ||
+      capture.startsWith(QStringLiteral("label")) || capture.startsWith(QStringLiteral("field"))) {
     return CodeHighlightRole::Property;
   }
   if (capture.startsWith(QStringLiteral("operator"))) {
     return CodeHighlightRole::Operator;
   }
-  if (capture.startsWith(QStringLiteral("punctuation")) || capture.startsWith(QStringLiteral("delimiter"))) {
+  if (capture.startsWith(QStringLiteral("punctuation")) || capture.startsWith(QStringLiteral("delimiter")) ||
+      capture.startsWith(QStringLiteral("markup.list"))) {
     return CodeHighlightRole::Punctuation;
   }
-  if (capture.startsWith(QStringLiteral("preprocessor")) || capture.startsWith(QStringLiteral("include"))) {
+  if (capture.startsWith(QStringLiteral("preprocessor")) || capture.startsWith(QStringLiteral("include")) ||
+      capture.startsWith(QStringLiteral("annotation"))) {
     return CodeHighlightRole::Preprocessor;
   }
   if (capture.startsWith(QStringLiteral("escape"))) {
     return CodeHighlightRole::Escape;
   }
-  if (capture.startsWith(QStringLiteral("variable"))) {
+  if (capture.startsWith(QStringLiteral("variable")) || capture.startsWith(QStringLiteral("identifier")) ||
+      capture.startsWith(QStringLiteral("parameter"))) {
     return CodeHighlightRole::Variable;
   }
   return CodeHighlightRole::Plain;
@@ -353,15 +469,8 @@ QVector<CodeHighlightSpan> TreeSitterHighlighter::highlight(const QString& langu
     return {};
   }
 
-  uint32_t errorOffset = 0;
-  TSQueryError errorType = TSQueryErrorNone;
-  std::unique_ptr<TSQuery, QueryDeleter> query(ts_query_new(
-      tsLanguage,
-      it->query,
-      static_cast<uint32_t>(std::strlen(it->query)),
-      &errorOffset,
-      &errorType));
-  if (!query) {
+  CompiledQuery* query = compiledQueryFor(*it);
+  if (!query || !query->query) {
     return {};
   }
 
@@ -369,16 +478,17 @@ QVector<CodeHighlightSpan> TreeSitterHighlighter::highlight(const QString& langu
   if (!cursor) {
     return {};
   }
-  ts_query_cursor_exec(cursor.get(), query.get(), ts_tree_root_node(tree.get()));
+  ts_query_cursor_exec(cursor.get(), query->query.get(), ts_tree_root_node(tree.get()));
 
   QVector<CodeHighlightSpan> spans;
   TSQueryMatch match;
   while (ts_query_cursor_next_match(cursor.get(), &match)) {
+    if (!predicatesMatch(query->query.get(), match, text, byteToUtf16)) {
+      continue;
+    }
     for (uint16_t i = 0; i < match.capture_count; ++i) {
       const TSQueryCapture& capture = match.captures[i];
-      uint32_t captureNameLength = 0;
-      const char* captureName = ts_query_capture_name_for_id(query.get(), capture.index, &captureNameLength);
-      const QString captureText = QString::fromUtf8(captureName, captureNameLength);
+      const QString captureText = queryCaptureName(query->query.get(), capture.index);
       const CodeHighlightRole role = roleForCapture(QStringView(captureText));
       if (role == CodeHighlightRole::Plain) {
         continue;

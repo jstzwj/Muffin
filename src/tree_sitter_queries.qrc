@@ -1,0 +1,30 @@
+<RCC>
+  <qresource prefix="/tree-sitter/queries">
+    <file alias="bash/highlights.scm">../third_party/tree-sitter-bash/queries/highlights.scm</file>
+    <file alias="c/highlights.scm">../third_party/tree-sitter-c/queries/highlights.scm</file>
+    <file alias="cpp/highlights.scm">../third_party/tree-sitter-cpp/queries/highlights.scm</file>
+    <file alias="csharp/highlights.scm">../third_party/tree-sitter-c-sharp/queries/highlights.scm</file>
+    <file alias="css/highlights.scm">../third_party/tree-sitter-css/queries/highlights.scm</file>
+    <file alias="go/highlights.scm">../third_party/tree-sitter-go/queries/highlights.scm</file>
+    <file alias="html/highlights.scm">../third_party/tree-sitter-html/queries/highlights.scm</file>
+    <file alias="ini/highlights.scm">../third_party/tree-sitter-ini/queries/highlights.scm</file>
+    <file alias="java/highlights.scm">../third_party/tree-sitter-java/queries/highlights.scm</file>
+    <file alias="javascript/highlights.scm">../third_party/tree-sitter-javascript/queries/highlights.scm</file>
+    <file alias="json/highlights.scm">../third_party/tree-sitter-json/queries/highlights.scm</file>
+    <file alias="lua/highlights.scm">../third_party/tree-sitter-lua/queries/highlights.scm</file>
+    <file alias="markdown/highlights.scm">../third_party/tree-sitter-markdown/tree-sitter-markdown/queries/highlights.scm</file>
+    <file alias="objc/highlights.scm">../third_party/tree-sitter-objc/queries/highlights.scm</file>
+    <file alias="php/highlights.scm">../third_party/tree-sitter-php/queries/highlights.scm</file>
+    <file alias="powershell/highlights.scm">../third_party/tree-sitter-powershell/queries/highlights.scm</file>
+    <file alias="python/highlights.scm">../third_party/tree-sitter-python/queries/highlights.scm</file>
+    <file alias="qmljs/highlights.scm">../third_party/tree-sitter-qmljs/queries/highlights.scm</file>
+    <file alias="r/highlights.scm">../third_party/tree-sitter-r/queries/highlights.scm</file>
+    <file alias="ruby/highlights.scm">../third_party/tree-sitter-ruby/queries/highlights.scm</file>
+    <file alias="rust/highlights.scm">../third_party/tree-sitter-rust/queries/highlights.scm</file>
+    <file alias="toml/highlights.scm">../third_party/tree-sitter-toml/queries/highlights.scm</file>
+    <file alias="tsx/highlights.scm">../third_party/tree-sitter-typescript/queries/highlights.scm</file>
+    <file alias="typescript/highlights.scm">../third_party/tree-sitter-typescript/queries/highlights.scm</file>
+    <file alias="xml/highlights.scm">../third_party/tree-sitter-xml/queries/xml/highlights.scm</file>
+    <file alias="yaml/highlights.scm">../third_party/tree-sitter-yaml/queries/highlights.scm</file>
+  </qresource>
+</RCC>

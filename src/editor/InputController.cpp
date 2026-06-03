@@ -519,7 +519,8 @@ bool InputController::applyTextCommand(const TextBlockCommandBuilder::Command& c
         command.insertedText,
         command.preferredCursor,
         command.fallbackSourceOffset,
-        command.nodeHints);
+        command.nodeHints,
+        command.preferLaterEmptyAtOffset);
   }
   return true;
 }
@@ -593,13 +594,13 @@ CursorPosition InputController::cursorForNode(MarkdownNode& node, qsizetype offs
   return cursor;
 }
 
-CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset, bool) const {
+CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset, bool preferLaterEmptyAtOffset) const {
   CursorPosition cursor;
   if (!session_) {
     return cursor;
   }
 
-  MarkdownNode* node = paragraphAtSourceOffset(session_->document().root(), sourceOffset);
+  MarkdownNode* node = paragraphAtSourceOffset(session_->document().root(), sourceOffset, preferLaterEmptyAtOffset);
   if (!node) {
     return cursor;
   }
@@ -630,8 +631,8 @@ CursorPosition InputController::cursorAfterEdit(CursorPosition preferredCursor, 
   return cursorForSourceOffset(fallbackSourceOffset, preferLaterEmptyAtOffset);
 }
 
-MarkdownNode* InputController::paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset) const {
-  return contextResolver().nodeAtContentSourceOffset(node, sourceOffset);
+MarkdownNode* InputController::paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset, bool preferLaterEmptyAtOffset) const {
+  return contextResolver().nodeAtContentSourceOffset(node, sourceOffset, preferLaterEmptyAtOffset);
 }
 
 MarkdownNode* InputController::selectableBlockByDirection(NodeId current, int direction) const {

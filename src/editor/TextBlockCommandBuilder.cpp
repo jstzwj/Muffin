@@ -142,6 +142,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
       if (context.node->type() == BlockType::ListItem) {
         return context.contentText.trimmed().isEmpty() ? buildExitListItem(context) : buildSplitListItem(context);
       }
+      if (context.visibleText.isEmpty()) {
+        return buildInsertBlockAfter(context);
+      }
       if (context.cursorTextOffset <= 0) {
         return buildInsertBlockBefore(context);
       }
@@ -258,6 +261,11 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPrevious
   command.insertedText = separator;
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Merge Paragraphs");
+  if (previous.contentText.isEmpty() && context.contentText.isEmpty()) {
+    command.preferredCursor = cursorFor(context.node->id(), 0);
+    command.nodeHints.push_back(LocalEditNodeHint{context.node->id(), command.fallbackSourceOffset, context.node->type()});
+    command.preferLaterEmptyAtOffset = true;
+  }
   command.valid = true;
   command.handled = true;
   return command;

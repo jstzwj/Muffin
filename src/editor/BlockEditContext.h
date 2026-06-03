@@ -44,7 +44,7 @@ public:
   QString listMarkerFor(const QString& line) const;
   MarkdownNode* previousEditableTextBlock(const MarkdownNode& node, BlockEditContext& context) const;
   MarkdownNode* nextEditableTextBlock(const MarkdownNode& node, BlockEditContext& context) const;
-  MarkdownNode* nodeAtContentSourceOffset(MarkdownNode& node, qsizetype sourceOffset) const;
+  MarkdownNode* nodeAtContentSourceOffset(MarkdownNode& node, qsizetype sourceOffset, bool preferLaterEmptyAtOffset = false) const;
 
   qsizetype sourceOffsetForLineColumn(const QString& text, int line, int column) const;
   qsizetype sourceOffsetForLineEnd(const QString& text, int line) const;
