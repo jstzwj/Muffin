@@ -2,6 +2,15 @@
 #include "document/MarkdownDocument.h"
 #include "parser/CmarkGfmParser.h"
 #include "render/DocumentLayout.h"
+#include "math/MathBuilder.h"
+#include "math/MathDelimiter.h"
+#include "math/MathFontMetrics.h"
+#include "math/MathFunctionRegistry.h"
+#include "math/MathMacroExpander.h"
+#include "math/MathParseError.h"
+#include "math/MathParser.h"
+#include "math/MathSvgGeometry.h"
+#include "math/MathSymbols.h"
 #include "render/TreeSitterHighlighter.h"
 #include "theme/RenderTheme.h"
 
@@ -10,6 +19,8 @@
 #include <QFile>
 #include <QImage>
 #include <QPainter>
+
+#include <functional>
 
 using namespace muffin;
 
@@ -25,6 +36,8 @@ void require(bool condition, const QString& message) {
     fail(message);
   }
 }
+
+int changedPixelCount(const QImage& image, QColor background);
 
 QString readFixture(const QString& path) {
   QFile file(path);
@@ -105,7 +118,8 @@ void testIncrementalBlockRebuildContract() {
   require(session.applyTextDelta(
               5,
               0,
-              QStringLiteral(" alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha"),
+              QStringLiteral(" alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha"
+                             " alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha"),
               true,
               {LocalEditNodeHint{firstParagraphId, 0, BlockType::Paragraph}}),
           QStringLiteral("paragraph local delta should apply"));
@@ -283,6 +297,755 @@ void testInlineLayoutPainting() {
     }
   }
   require(changedPixels > 25, QStringLiteral("inline layout paint should draw visible pixels"));
+}
+
+void testMathRenderingLayout() {
+  RenderTheme theme = RenderTheme::github();
+
+  CmarkGfmParser parser;
+  ParseResult parsed = parser.parseDocument(QStringLiteral("before $x_i^2 + \\frac{a}{b}$ after\n\n$$\n\\sqrt{x} = \\frac{1}{2}\n$$"), {});
+  require(parsed.root != nullptr, QStringLiteral("math render parse should produce document"));
+
+  DocumentLayout documentLayout;
+  MarkdownDocument document;
+  document.setMarkdownText(QStringLiteral("before $x_i^2 + \\frac{a}{b}$ after\n\n$$\n\\sqrt{x} = \\frac{1}{2}\n$$"), std::move(parsed.root));
+  documentLayout.rebuild(document, theme, 800.0);
+
+  const MarkdownNode* mathBlock = findFirstBlock(document.root(), BlockType::MathBlock);
+  require(mathBlock != nullptr, QStringLiteral("math block should parse"));
+  const BlockLayout* mathBlockLayout = documentLayout.block(mathBlock->id());
+  require(mathBlockLayout != nullptr, QStringLiteral("math block layout should exist"));
+  require(mathBlockLayout->mathLayout() != nullptr && mathBlockLayout->mathLayout()->valid(), QStringLiteral("math block should have native math layout"));
+  require(mathBlockLayout->height() >= mathBlockLayout->mathLayout()->size.height(), QStringLiteral("math block height should include math layout"));
+
+  const MarkdownNode* paragraph = findFirstBlock(document.root(), BlockType::Paragraph);
+  require(paragraph != nullptr, QStringLiteral("math inline paragraph should parse"));
+  const BlockLayout* paragraphLayout = documentLayout.block(paragraph->id());
+  require(paragraphLayout != nullptr && paragraphLayout->inlineLayout() != nullptr, QStringLiteral("math inline layout should exist"));
+  require(!paragraphLayout->inlineLayout()->displayText().contains(QStringLiteral("\\frac")), QStringLiteral("collapsed inline math should render as atom"));
+  require(paragraphLayout->inlineLayout()->mathAtomCount() == 1, QStringLiteral("collapsed inline math should create one native math atom"));
+
+  const QString userInlineMathSample =
+      QStringLiteral("行内公式使用单美元符号：$E = mc^2$ 和 $a_1 + b_1 = c_1$。");
+  ParseResult userParsed = parser.parseDocument(userInlineMathSample, {});
+  require(userParsed.root != nullptr, QStringLiteral("user inline math sample should parse"));
+  MarkdownDocument userDocument;
+  userDocument.setMarkdownText(userInlineMathSample, std::move(userParsed.root));
+  DocumentLayout userLayout;
+  userLayout.rebuild(userDocument, theme, 800.0);
+  const MarkdownNode* userParagraph = findFirstBlock(userDocument.root(), BlockType::Paragraph);
+  require(userParagraph != nullptr, QStringLiteral("user inline math sample paragraph should exist"));
+  int inlineMathCount = 0;
+  for (const InlineNode& inlineNode : userParagraph->inlines()) {
+    if (inlineNode.type() == InlineType::InlineMath) {
+      ++inlineMathCount;
+    }
+  }
+  require(inlineMathCount == 2, QStringLiteral("single dollar sample should parse two inline math nodes"));
+  const BlockLayout* userParagraphLayout = userLayout.block(userParagraph->id());
+  require(userParagraphLayout != nullptr && userParagraphLayout->inlineLayout() != nullptr,
+          QStringLiteral("user inline math sample should have inline layout"));
+  require(userParagraphLayout->inlineLayout()->mathAtomCount() == 2,
+          QStringLiteral("single dollar sample should create two native math atoms"));
+  require(!userParagraphLayout->inlineLayout()->displayText().contains(QLatin1Char('$')) &&
+              !userParagraphLayout->inlineLayout()->displayText().contains(QStringLiteral("mc^2")) &&
+              !userParagraphLayout->inlineLayout()->displayText().contains(QStringLiteral("a_1")),
+          QStringLiteral("inactive single dollar math should be collapsed to native atoms"));
+
+  QImage image(QSize(480, qCeil(mathBlockLayout->height()) + 30), QImage::Format_ARGB32);
+  image.fill(theme.backgroundColor());
+  QPainter painter(&image);
+  mathBlockLayout->paint(painter, theme, mathBlockLayout->rect().top() - 10.0);
+  painter.end();
+
+  int changedPixels = 0;
+  const QRgb background = theme.backgroundColor().rgb();
+  for (int y = 0; y < image.height(); ++y) {
+    for (int x = 0; x < image.width(); ++x) {
+      if ((image.pixel(x, y) & 0x00ffffff) != (background & 0x00ffffff)) {
+        ++changedPixels;
+      }
+    }
+  }
+  require(changedPixels > 50, QStringLiteral("math block paint should draw visible pixels"));
+}
+
+void testExtendedMathFunctionRendering() {
+  RenderTheme theme = RenderTheme::github();
+
+  CmarkGfmParser parser;
+  const QString markdown = QStringLiteral(
+      "$$\n\\hat{x}+\\bar{y}+\\vec{v}+\\Bigl(\\operatorname{rank}_A B\\Bigr)+"
+      "\\sum_{i=1}^{n} i+\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}\n$$");
+  ParseResult parsed = parser.parseDocument(markdown, {});
+  require(parsed.root != nullptr, QStringLiteral("extended math parse should produce document"));
+
+  MarkdownDocument document;
+  document.setMarkdownText(markdown, std::move(parsed.root));
+  DocumentLayout layout;
+  layout.rebuild(document, theme, 800.0);
+
+  const MarkdownNode* mathBlock = findFirstBlock(document.root(), BlockType::MathBlock);
+  require(mathBlock != nullptr, QStringLiteral("extended math block should parse"));
+  const BlockLayout* blockLayout = layout.block(mathBlock->id());
+  require(blockLayout != nullptr && blockLayout->mathLayout() != nullptr && blockLayout->mathLayout()->valid(),
+          QStringLiteral("extended math block should have native layout"));
+  require(blockLayout->mathLayout()->size.width() > 120.0, QStringLiteral("extended math layout should include function width"));
+  require(blockLayout->mathLayout()->size.height() > theme.mathFont().pointSizeF() * 2.0,
+          QStringLiteral("extended math layout should include scripts/array height"));
+
+  QImage image(QSize(760, qCeil(blockLayout->height()) + 30), QImage::Format_ARGB32);
+  image.fill(theme.backgroundColor());
+  QPainter painter(&image);
+  blockLayout->paint(painter, theme, blockLayout->rect().top() - 10.0);
+  painter.end();
+
+  int changedPixels = 0;
+  const QRgb background = theme.backgroundColor().rgb();
+  for (int y = 0; y < image.height(); ++y) {
+    for (int x = 0; x < image.width(); ++x) {
+      if ((image.pixel(x, y) & 0x00ffffff) != (background & 0x00ffffff)) {
+        ++changedPixels;
+      }
+    }
+  }
+  require(changedPixels > 100, QStringLiteral("extended math paint should draw visible pixels"));
+}
+
+void testStrictMathGeometryFeatures() {
+  math::MathSettings delimiterSettings;
+  math::MathOptions delimiterOptions(math::MathStyle::display(), 16.0, QColor(QStringLiteral("#111111")), delimiterSettings);
+  std::unique_ptr<math::MathRenderNode> biggParen =
+      math::MathDelimiter::makeSized(QStringLiteral("("), 4, math::MathNodeType::Open, delimiterOptions);
+  require(biggParen != nullptr && biggParen->fontClass == QStringLiteral("size4"),
+          QStringLiteral("Bigg delimiter should use KaTeX Size4 font"));
+  std::unique_ptr<math::MathRenderNode> tallBrace =
+      math::MathDelimiter::makeLeftRight(QStringLiteral("{"), 95.0, 55.0, math::MathNodeType::Open, delimiterOptions);
+  require(tallBrace != nullptr && !tallBrace->children.empty(), QStringLiteral("tall left brace should use stacked delimiter pieces"));
+  require(tallBrace->height + tallBrace->depth > 80.0, QStringLiteral("stacked delimiter should grow to target height"));
+  std::unique_ptr<math::MathRenderNode> tallBracket =
+      math::MathDelimiter::makeLeftRight(QStringLiteral("["), 95.0, 55.0, math::MathNodeType::Open, delimiterOptions);
+  require(tallBracket != nullptr && !tallBracket->svgPath.isEmpty() && tallBracket->viewBox.width() > 0.0,
+          QStringLiteral("tall bracket delimiter should use KaTeX SVG geometry"));
+  require(!math::MathSvgGeometry::tallDelimiterPath(QStringLiteral("lbrack"), 1000).isEmpty(),
+          QStringLiteral("KaTeX tall delimiter SVG path should be generated"));
+  require(!math::MathSvgGeometry::sqrtPath(QStringLiteral("sqrtTall"), 0.0, 3200).isEmpty(),
+          QStringLiteral("KaTeX sqrt SVG path should be generated"));
+
+  const auto requireMathSnippetLayout = [](const QString& tex, const QString& label) {
+    math::MathSettings settings;
+    settings.displayMode = true;
+    math::MathParser mathParser(tex, settings);
+    const QVector<math::MathParseNode> mathTree = mathParser.parse();
+    math::MathOptions mathOptions(math::MathStyle::display(), 16.0, QColor(QStringLiteral("#111111")), settings);
+    math::MathBuilder mathBuilder{mathOptions};
+    std::unique_ptr<math::MathRenderNode> mathRoot = mathBuilder.buildExpression(mathTree);
+    require(mathRoot != nullptr && mathRoot->width > 0.0, label + QStringLiteral(" direct math builder should produce layout"));
+    RenderTheme theme = RenderTheme::github();
+    CmarkGfmParser parser;
+    const QString markdown = QStringLiteral("$$\n%1\n$$").arg(tex);
+    ParseResult parsed = parser.parseDocument(markdown, {});
+    require(parsed.root != nullptr, label + QStringLiteral(" parse should produce document"));
+    MarkdownDocument document;
+    document.setMarkdownText(markdown, std::move(parsed.root));
+    DocumentLayout layout;
+    layout.rebuild(document, theme, 900.0);
+    const MarkdownNode* mathBlock = findFirstBlock(document.root(), BlockType::MathBlock);
+    require(mathBlock != nullptr, label + QStringLiteral(" math block should parse"));
+    const BlockLayout* blockLayout = layout.block(mathBlock->id());
+    require(blockLayout != nullptr && blockLayout->mathLayout() != nullptr && blockLayout->mathLayout()->valid(),
+            label + QStringLiteral(" should have native layout"));
+  };
+  requireMathSnippetLayout(QStringLiteral("\\left\\lbrace\\frac{\\frac{a}{b}}{\\frac{c}{d}}\\right\\rbrace"), QStringLiteral("stacked brace delimiter"));
+  requireMathSnippetLayout(QStringLiteral("\\left[\\begin{matrix}a\\\\\\frac{b}{c}\\\\d\\end{matrix}\\right]"), QStringLiteral("stacked bracket matrix delimiter"));
+  requireMathSnippetLayout(QStringLiteral("\\left|\\frac{a}{\\frac{b}{c}}\\right|+\\left\\langle\\frac{x}{y}\\right\\rangle"), QStringLiteral("vertical and angle delimiter"));
+  requireMathSnippetLayout(QStringLiteral("\\bigl( a \\bigr)+\\Bigl[ b \\Bigr]+\\biggl\\lbrace c \\biggr\\rbrace+\\Biggl| d \\Biggr|"), QStringLiteral("sized delimiter"));
+  requireMathSnippetLayout(QStringLiteral("\\begin{cases}x^2,&x>0\\\\0,&x=0\\end{cases}+\\begin{smallmatrix}a&b\\\\c&d\\end{smallmatrix}"),
+                           QStringLiteral("cases and smallmatrix environments"));
+  requireMathSnippetLayout(QStringLiteral("\\begin{aligned}a&=b+c\\\\d&=e+f\\end{aligned}+\\begin{gathered}x+y\\\\z\\end{gathered}"),
+                           QStringLiteral("aligned and gathered environments"));
+  requireMathSnippetLayout(QStringLiteral("\\begin{array}{|c:rl@{}c|}\\hline\\hdashline a&b&c&d\\cr e&f&g&h\\\\[0.4em]\\hline\\end{array}"),
+                           QStringLiteral("array preamble separators cr and row gap"));
+
+  {
+    math::MathParser parser(QStringLiteral("\\begin{array}{|c:rl@{}c|}\\hline\\hdashline a&b&c&d\\cr e&f&g&h\\\\[0.4em]\\hline\\end{array}"));
+    const QVector<math::MathParseNode> nodes = parser.parse();
+    require(!nodes.isEmpty() && nodes.first().type == math::MathNodeType::Array, QStringLiteral("array parser should produce array node"));
+    const math::MathParseNode& array = nodes.first();
+    int separators = 0;
+    for (const math::MathArrayColumn& column : array.columns) {
+      if (column.type == math::MathArrayColumn::Type::Separator) {
+        ++separators;
+      }
+    }
+    require(separators >= 3, QStringLiteral("array preamble should preserve solid and dashed separators"));
+    require(array.arrayLines.size() == 3 && array.arrayLines.at(1).dashed, QStringLiteral("array should preserve multiple hline and hdashline entries"));
+    require(!array.rowGaps.isEmpty() && array.rowGaps.last() > 0.0, QStringLiteral("array row gap should parse optional newline size"));
+  }
+  {
+    math::MathSettings settings;
+    settings.displayMode = true;
+    math::MathParser parser(QStringLiteral("\\sum\\nolimits_{i=1}^n+\\lim\\limits_{x\\to0}+\\mathop{AB}\\limits^c"));
+    const QVector<math::MathParseNode> nodes = parser.parse();
+    require(!nodes.isEmpty() && nodes.first().type == math::MathNodeType::SupSub,
+            QStringLiteral("sum with nolimits should parse as supsub"));
+    require(!nodes.first().base.isEmpty() && nodes.first().base.first().type == math::MathNodeType::Operator,
+            QStringLiteral("sum supsub base should remain an operator"));
+    require(nodes.first().base.first().explicitLimits && !nodes.first().base.first().limits,
+            QStringLiteral("nolimits should explicitly disable operator limits"));
+
+    bool sawExplicitLim = false;
+    bool sawMathopBody = false;
+    for (const math::MathParseNode& node : nodes) {
+      if (node.type == math::MathNodeType::SupSub && !node.base.isEmpty() && node.base.first().type == math::MathNodeType::Operator) {
+        const math::MathParseNode& op = node.base.first();
+        if (op.label == QStringLiteral("\\lim") && op.explicitLimits && op.limits) {
+          sawExplicitLim = true;
+        }
+        if (op.label == QStringLiteral("\\mathop") && !op.body.isEmpty() && op.explicitLimits && op.limits) {
+          sawMathopBody = true;
+        }
+      }
+    }
+    require(sawExplicitLim && sawMathopBody, QStringLiteral("limits should apply to lim and mathop operators"));
+
+    math::MathOptions displayOptions(math::MathStyle::display(), 16.0, QColor(QStringLiteral("#111111")), settings);
+    std::unique_ptr<math::MathRenderNode> displaySum = math::MathBuilder(displayOptions).buildExpression(
+        QVector<math::MathParseNode>{math::MathParser(QStringLiteral("\\sum"), settings).parse().first()});
+    math::MathOptions textOptions(math::MathStyle::textStyle(), 16.0, QColor(QStringLiteral("#111111")), settings);
+    std::unique_ptr<math::MathRenderNode> textSum = math::MathBuilder(textOptions).buildExpression(
+        QVector<math::MathParseNode>{math::MathParser(QStringLiteral("\\sum"), settings).parse().first()});
+    require(!displaySum->children.empty() && displaySum->children.front()->fontClass == QStringLiteral("size2"),
+            QStringLiteral("display large operator should use KaTeX Size2 font"));
+    require(!textSum->children.empty() && textSum->children.front()->fontClass == QStringLiteral("size1"),
+            QStringLiteral("text large operator should use KaTeX Size1 font"));
+    require(displaySum->height + displaySum->depth > textSum->height + textSum->depth,
+            QStringLiteral("display large operator should be taller than text style operator"));
+  }
+
+  RenderTheme theme = RenderTheme::github();
+  CmarkGfmParser parser;
+  const QString markdown = QStringLiteral(
+      "$$\n"
+      "\\left(\\frac{a}{b}+\\sqrt{\\frac{c}{d}}+\\sqrt{\\frac{\\frac{a}{b}}{\\frac{c}{d}}}\\right)"
+      "+\\widehat{abcdef}+\\widetilde{abcdef}+\\overleftrightarrow{AB}"
+      "+\\begin{array}{rcl}\\hline x&=&1\\\\longname&=&\\frac{a}{b}\\\\\\hline\\end{array}"
+      "+\\begin{cases}x,&x>0\\\\0,&x=0\\end{cases}+\\begin{aligned}a&=b\\\\c&=d\\end{aligned}"
+      "+\\binom{n}{k}+\\underline{text}+\\overline{abc}+\\text{hello}"
+      "+\\underbrace{x+y}_{n}+\\overbrace{a+b}^{m}+\\underleftrightarrow{AB}"
+      "\n$$");
+  ParseResult parsed = parser.parseDocument(markdown, {});
+  require(parsed.root != nullptr, QStringLiteral("strict geometry parse should produce document"));
+
+  MarkdownDocument document;
+  document.setMarkdownText(markdown, std::move(parsed.root));
+  DocumentLayout layout;
+  layout.rebuild(document, theme, 900.0);
+
+  const MarkdownNode* mathBlock = findFirstBlock(document.root(), BlockType::MathBlock);
+  require(mathBlock != nullptr, QStringLiteral("strict geometry math block should parse"));
+  const BlockLayout* blockLayout = layout.block(mathBlock->id());
+  require(blockLayout != nullptr && blockLayout->mathLayout() != nullptr && blockLayout->mathLayout()->valid(),
+          QStringLiteral("strict geometry math block should have native layout"));
+  require(blockLayout->mathLayout()->size.height() > theme.mathFont().pointSizeF() * 3.0,
+          QStringLiteral("left/right and array should increase native math height"));
+
+  QImage image(QSize(860, qCeil(blockLayout->height()) + 40), QImage::Format_ARGB32);
+  image.fill(theme.backgroundColor());
+  QPainter painter(&image);
+  blockLayout->paint(painter, theme, blockLayout->rect().top() - 12.0);
+  painter.end();
+
+  int changedPixels = 0;
+  const QRgb background = theme.backgroundColor().rgb();
+  for (int y = 0; y < image.height(); ++y) {
+    for (int x = 0; x < image.width(); ++x) {
+      if ((image.pixel(x, y) & 0x00ffffff) != (background & 0x00ffffff)) {
+        ++changedPixels;
+      }
+    }
+  }
+  require(changedPixels > 120, QStringLiteral("strict geometry math paint should draw visible pixels"));
+}
+
+void testMathMetricsMacrosAndState() {
+  require(math::MathFontMetrics::loaded(), QStringLiteral("KaTeX font metrics data should load from resources"));
+  require(math::MathFontMetrics::characterMetrics(QStringLiteral("Math-Italic"), QStringLiteral("x")).has_value(),
+          QStringLiteral("KaTeX Math-Italic metrics should include x"));
+  require(math::MathSvgGeometry::loaded(), QStringLiteral("KaTeX SVG geometry data should load from resources"));
+  require(math::MathSvgGeometry::hasPath(QStringLiteral("rightarrow")), QStringLiteral("KaTeX SVG geometry should include rightarrow"));
+  require(!math::MathSvgGeometry::painterPath(QStringLiteral("rightarrow"), QRectF(0.0, 0.0, 40.0, 8.0)).isEmpty(),
+          QStringLiteral("KaTeX SVG geometry should convert rightarrow path to QPainterPath"));
+
+  {
+    math::MathMacroExpander expander;
+    require(expander.expand(QStringLiteral("{\\def\\foo{A}\\foo}+\\foo")) == QStringLiteral("{A}+\\foo"),
+            QStringLiteral("macro expander should restore local definitions at group end"));
+    require(expander.expand(QStringLiteral("{\\global\\def\\bar{B}\\bar}+\\bar")) == QStringLiteral("{B}+B"),
+            QStringLiteral("macro expander should preserve global definitions across groups"));
+    require(expander.expand(QStringLiteral("\\def\\baz#1#2{#2#1}\\baz{A}{B}")) == QStringLiteral("BA"),
+            QStringLiteral("macro expander should substitute primitive macro arguments"));
+    require(expander.expand(QStringLiteral("\\let\\copy\\baz\\copy{C}{D}")) == QStringLiteral("DC"),
+            QStringLiteral("macro expander should support let aliases"));
+    require(expander.expand(QStringLiteral("\\futurelet\\next\\first\\second")) == QStringLiteral("\\first\\second"),
+            QStringLiteral("macro expander should keep futurelet following tokens"));
+    require(expander.expand(QStringLiteral("\\def\\a{A}\\def\\b{B}\\expandafter\\a\\b")) == QStringLiteral("AB"),
+            QStringLiteral("macro expander should support token stack expandafter"));
+    require(expander.expand(QStringLiteral("\\def\\a{A}\\noexpand\\a")) == QStringLiteral("\\relax"),
+            QStringLiteral("macro expander should support noexpand relax treatment"));
+    require(expander.expand(QStringLiteral("\\char`A")) == QStringLiteral("\\text{A}"),
+            QStringLiteral("macro expander should lower char primitive to renderable text"));
+    require(expander.expand(QStringLiteral("\\pmod{n}+\\iff+\\implies+\\And+\\alef")).contains(QStringLiteral("\\Longleftrightarrow")),
+            QStringLiteral("macro expander should include high frequency KaTeX macros"));
+  }
+  {
+    math::MathSettings settings;
+    settings.maxExpand = 8;
+    bool threw = false;
+    try {
+      math::MathMacroExpander expander(settings);
+      expander.expand(QStringLiteral("\\def\\loop{\\loop}\\loop"));
+    } catch (const math::MathParseError& error) {
+      threw = true;
+      require(error.message().contains(QStringLiteral("Too many expansions")), QStringLiteral("recursive macro should throw maxExpand error"));
+      require(error.position() == QStringLiteral("\\def\\loop{\\loop}").size() && error.endPosition() == QStringLiteral("\\def\\loop{\\loop}\\loop").size(),
+              QStringLiteral("recursive macro maxExpand error should preserve macro token source range"));
+    }
+    require(threw, QStringLiteral("macro expander should enforce maxExpand"));
+  }
+
+  RenderTheme theme = RenderTheme::github();
+  CmarkGfmParser parser;
+  const QString markdown = QStringLiteral(
+      "$$\n"
+      "\\newcommand{\\RR}{R}\\RR+\\newcommand{\\pair}[2]{\\left(#1,#2\\right)}\\pair{a}{b}+\\def\\sq#1{#1^2}\\sq{x}+"
+      "{\\def\\local{L}\\local}+\\local+{\\global\\def\\globalMacro{G}\\globalMacro}+\\globalMacro+\\let\\same\\sq\\same{y}+"
+      "\\pmod{n}+\\bmod x+\\iff+\\implies+\\impliedby+\\And+\\alef+\\char`A+\\hbox{box}+\\html@mathml{H}{M}+"
+      "\\mathbb{R}+\\mathcal{C}+\\mathfrak{g}+\\mathscr{S}+\\boldsymbol{x}+\\rm{roman}+"
+      "\\textcolor{red}{\\frac{1}{2}}+\\color{blue} x+y"
+      "+\\scriptstyle \\frac{a}{b}+\\normalsize \\phantom{abc}+\\hphantom{wide}+\\vphantom{\\frac{1}{2}}"
+      "+\\smash[t]{\\frac{1}{2}}+\\rule[0.2em]{1em}{0.1em}+a\\kern1em b+\\mathrel{\\star}"
+      "\n$$");
+  ParseResult parsed = parser.parseDocument(markdown, {});
+  require(parsed.root != nullptr, QStringLiteral("metrics/macro/state math parse should produce document"));
+
+  MarkdownDocument document;
+  document.setMarkdownText(markdown, std::move(parsed.root));
+  DocumentLayout layout;
+  layout.rebuild(document, theme, 800.0);
+
+  const MarkdownNode* mathBlock = findFirstBlock(document.root(), BlockType::MathBlock);
+  require(mathBlock != nullptr, QStringLiteral("metrics/macro/state math block should parse"));
+  const BlockLayout* blockLayout = layout.block(mathBlock->id());
+  require(blockLayout != nullptr && blockLayout->mathLayout() != nullptr && blockLayout->mathLayout()->valid(),
+          QStringLiteral("metrics/macro/state block should have native layout"));
+  require(blockLayout->mathLayout()->size.width() > 40.0, QStringLiteral("metrics/macro/state layout should have measurable width"));
+}
+
+void testRemainingKatexFunctionFamilies() {
+  const math::MathFunctionSpec* fracSpec = math::MathFunctionRegistry::lookup(QStringLiteral("\\frac"));
+  require(fracSpec != nullptr && fracSpec->typeName == QStringLiteral("genfrac") && fracSpec->numArgs == 2,
+          QStringLiteral("function registry should expose genfrac metadata"));
+  require(fracSpec->handlerKind == math::MathFunctionHandlerKind::Fraction &&
+              fracSpec->builderKind == math::MathFunctionBuilderKind::Fraction,
+          QStringLiteral("function registry should map frac to parser and builder kinds"));
+
+  const math::MathFunctionSpec* sqrtSpec = math::MathFunctionRegistry::lookup(QStringLiteral("\\sqrt"));
+  require(sqrtSpec != nullptr && sqrtSpec->numArgs == 1 && sqrtSpec->numOptionalArgs == 1,
+          QStringLiteral("function registry should expose sqrt optional argument metadata"));
+  const math::MathFunctionSpec* genfracSpec = math::MathFunctionRegistry::lookup(QStringLiteral("\\genfrac"));
+  require(genfracSpec != nullptr && genfracSpec->numArgs == 6 && genfracSpec->typeName == QStringLiteral("genfrac"),
+          QStringLiteral("function registry should expose explicit genfrac metadata"));
+  const math::MathFunctionSpec* textbfSpec = math::MathFunctionRegistry::lookup(QStringLiteral("\\textbf"));
+  require(textbfSpec != nullptr && textbfSpec->typeName == QStringLiteral("text"),
+          QStringLiteral("function registry should expose text font commands"));
+
+  const math::MathFunctionSpec* hrefSpec = math::MathFunctionRegistry::lookup(QStringLiteral("\\href"));
+  require(hrefSpec != nullptr && hrefSpec->requiresTrust && hrefSpec->allowedInText &&
+              hrefSpec->argTypes.size() == 2 && hrefSpec->argTypes.first() == math::MathFunctionArgType::Url,
+          QStringLiteral("function registry should expose href trust and argTypes metadata"));
+
+  const math::MathFunctionSpec* htmlSpec = math::MathFunctionRegistry::lookup(QStringLiteral("\\htmlClass"));
+  require(htmlSpec != nullptr && htmlSpec->strictCategory == QStringLiteral("htmlExtension"),
+          QStringLiteral("function registry should expose html strict category"));
+
+  const math::MathFunctionSpec* bigrSpec = math::MathFunctionRegistry::lookup(QStringLiteral("\\bigr"));
+  require(bigrSpec != nullptr && bigrSpec->delimiterSize == 1 && bigrSpec->delimiterNodeType == math::MathNodeType::Close,
+          QStringLiteral("function registry should expose delimiter sizing side metadata"));
+
+  math::MathSettings strictSettings;
+  strictSettings.throwOnError = true;
+  {
+    math::MathParser parser(QStringLiteral("\\sqrt[3]{x}+\\genfrac{[}{]}{0.08em}{0}{a}{b}+\\textbf{B}+\\mathit{x}"));
+    const QVector<math::MathParseNode> nodes = parser.parse();
+    require(!nodes.isEmpty() && nodes.first().type == math::MathNodeType::Sqrt && !nodes.first().rootIndex.isEmpty(),
+            QStringLiteral("sqrt optional root index should parse"));
+    bool sawGenfracWrapper = false;
+    bool sawTextbf = false;
+    for (const math::MathParseNode& node : nodes) {
+      if (node.type == math::MathNodeType::LeftRight && !node.body.isEmpty() && node.body.first().type == math::MathNodeType::Fraction) {
+        sawGenfracWrapper = node.leftDelim == QStringLiteral("[") && node.rightDelim == QStringLiteral("]") &&
+                            node.body.first().lineThickness > 0.0 && node.body.first().style == QStringLiteral("\\displaystyle");
+      }
+      if (node.type == math::MathNodeType::Text && node.fontClass == QStringLiteral("mathbf")) {
+        sawTextbf = true;
+      }
+    }
+    require(sawGenfracWrapper, QStringLiteral("genfrac should parse delimiters line thickness style numerator and denominator"));
+    require(sawTextbf, QStringLiteral("font text command should preserve font class"));
+  }
+  {
+    math::MathSettings settings;
+    math::MathOptions options(math::MathStyle::display(), 16.0, QColor(QStringLiteral("#111111")), settings);
+    auto simpleSqrt = math::MathBuilder(options).buildExpression(math::MathParser(QStringLiteral("\\sqrt{x}"), settings).parse());
+    auto indexedSqrt = math::MathBuilder(options).buildExpression(math::MathParser(QStringLiteral("\\sqrt[123]{x}"), settings).parse());
+    auto tallSqrt = math::MathBuilder(options).buildExpression(
+        math::MathParser(QStringLiteral("\\sqrt{\\frac{\\frac{\\frac{a}{b}}{\\frac{c}{d}}}{\\frac{\\frac{e}{f}}{\\frac{g}{h}}}}"), settings).parse());
+    require(simpleSqrt != nullptr && indexedSqrt != nullptr && tallSqrt != nullptr, QStringLiteral("sqrt builder should produce render nodes"));
+    require(indexedSqrt->width > simpleSqrt->width && indexedSqrt->height >= simpleSqrt->height,
+            QStringLiteral("sqrt root index should add KaTeX-style left kern and vertical raise"));
+    const std::function<bool(const math::MathRenderNode*)> hasTallSqrt = [&](const math::MathRenderNode* node) -> bool {
+      if (node == nullptr) {
+        return false;
+      }
+      if (node->pathName == QStringLiteral("sqrtTall")) {
+        return true;
+      }
+      for (const auto& child : node->children) {
+        if (hasTallSqrt(child.get())) {
+          return true;
+        }
+      }
+      return false;
+    };
+    require(hasTallSqrt(tallSqrt.get()), QStringLiteral("large sqrt should use KaTeX tall sqrt SVG geometry"));
+  }
+  {
+    math::MathParser parser(QStringLiteral("{a+b\\over c+d}+{n\\choose k}+{x\\atop y}+{p\\brace q}+{r\\brack s}+{u\\above 0.08em v}"));
+    const QVector<math::MathParseNode> nodes = parser.parse();
+    int sawFractions = 0;
+    bool sawChooseDelims = false;
+    bool sawBraceDelims = false;
+    bool sawBrackDelims = false;
+    bool sawAtopNoBar = false;
+    bool sawAboveRule = false;
+    const std::function<void(const math::MathParseNode&)> scanInfix = [&](const math::MathParseNode& node) {
+      const math::MathParseNode* candidate = &node;
+      if (node.type == math::MathNodeType::LeftRight && !node.body.isEmpty()) {
+        candidate = &node.body.first();
+        if (node.leftDelim == QStringLiteral("(") && node.rightDelim == QStringLiteral(")")) {
+          sawChooseDelims = true;
+        }
+        if (node.leftDelim == QStringLiteral("\\lbrace") && node.rightDelim == QStringLiteral("\\rbrace")) {
+          sawBraceDelims = true;
+        }
+        if (node.leftDelim == QStringLiteral("[") && node.rightDelim == QStringLiteral("]")) {
+          sawBrackDelims = true;
+        }
+      }
+      if (candidate->type == math::MathNodeType::Fraction) {
+        ++sawFractions;
+        if (candidate->lineThickness == 0.0) {
+          sawAtopNoBar = true;
+        }
+        if (candidate->lineThickness > 0.0) {
+          sawAboveRule = true;
+        }
+      }
+      for (const math::MathParseNode& child : node.body) {
+        scanInfix(child);
+      }
+      for (const math::MathParseNode& child : node.base) {
+        scanInfix(child);
+      }
+    };
+    for (const math::MathParseNode& node : nodes) {
+      scanInfix(node);
+    }
+    require(sawFractions >= 6 && sawChooseDelims && sawBraceDelims && sawBrackDelims && sawAtopNoBar && sawAboveRule,
+            QStringLiteral("infix genfrac commands should rewrite to fractions with KaTeX delimiter and rule semantics"));
+
+    math::MathSettings settings;
+    math::MathOptions options(math::MathStyle::textStyle(), 16.0, QColor(QStringLiteral("#111111")), settings);
+    std::unique_ptr<math::MathRenderNode> noBar = math::MathBuilder(options).buildExpression(
+        QVector<math::MathParseNode>{math::MathParser(QStringLiteral("{x\\atop y}")).parse().first()});
+    const std::function<const math::MathRenderNode*(const math::MathRenderNode*)> findFraction =
+        [&](const math::MathRenderNode* node) -> const math::MathRenderNode* {
+      if (node == nullptr) {
+        return nullptr;
+      }
+      if (node->kind == math::MathRenderKind::Fraction) {
+        return node;
+      }
+      for (const auto& child : node->children) {
+        if (const math::MathRenderNode* found = findFraction(child.get())) {
+          return found;
+        }
+      }
+      return nullptr;
+    };
+    const math::MathRenderNode* noBarFraction = findFraction(noBar.get());
+    require(noBarFraction != nullptr && noBarFraction->children.size() == 2,
+            QStringLiteral("atop fraction should render without a rule child"));
+  }
+  {
+    math::MathParser parser(QStringLiteral("\\@binrel{=}{x}+\\@binrel{+}{y}+\\overset{a}{=}+{ab}+\\boldsymbol{=}"));
+    const QVector<math::MathParseNode> nodes = parser.parse();
+    bool sawRelBinrel = false;
+    bool sawBinBinrel = false;
+    bool sawOversetRel = false;
+    bool sawBoldRel = false;
+    for (const math::MathParseNode& node : nodes) {
+      if (node.type == math::MathNodeType::Class && node.mathClass == QStringLiteral("\\mathrel")) {
+        if (!node.body.isEmpty() && node.body.first().type != math::MathNodeType::SupSub) {
+          sawRelBinrel = true;
+        }
+        if (!node.body.isEmpty() && node.body.first().type == math::MathNodeType::SupSub) {
+          sawOversetRel = true;
+        }
+        if (node.fontClass == QStringLiteral("mathbf")) {
+          sawBoldRel = true;
+        }
+      }
+      if (node.type == math::MathNodeType::Class && node.mathClass == QStringLiteral("\\mathbin")) {
+        sawBinBinrel = true;
+      }
+    }
+    require(sawRelBinrel && sawBinBinrel && sawOversetRel && sawBoldRel,
+            QStringLiteral("mclass binrel and boldsymbol should preserve inferred math classes"));
+  }
+  {
+    math::MathSettings settings;
+    math::MathOptions textOptions(math::MathStyle::textStyle(), 16.0, QColor(QStringLiteral("#111111")), settings);
+    const auto widthForWithOptions = [&](const QString& tex, math::MathOptions options) {
+      math::MathParser parser(tex, settings);
+      return math::MathBuilder(options).buildExpression(parser.parse())->width;
+    };
+    const auto widthFor = [&](const QString& tex) {
+      return widthForWithOptions(tex, textOptions);
+    };
+    const qreal plusBetweenOrd = widthFor(QStringLiteral("a+b"));
+    const qreal plusAtStart = widthFor(QStringLiteral("+b"));
+    const qreal plainOrdPair = widthFor(QStringLiteral("ab"));
+    require(plusBetweenOrd > plusAtStart && plusBetweenOrd > plainOrdPair,
+            QStringLiteral("mbin should keep medium spacing only between compatible atoms"));
+    require(widthFor(QStringLiteral("a=+b")) < widthFor(QStringLiteral("a=b+c")),
+            QStringLiteral("mbin after relation should downgrade to ord spacing"));
+    require(widthFor(QStringLiteral("a,b")) > widthFor(QStringLiteral("ab")),
+            QStringLiteral("mpunct should insert KaTeX thin spacing before following ord"));
+    require(widthFor(QStringLiteral("\\left(x\\right)y")) > widthFor(QStringLiteral("xy")),
+            QStringLiteral("minner should insert KaTeX thin spacing before following ord"));
+    require(widthFor(QStringLiteral("a=b")) > widthFor(QStringLiteral("a{=}b")),
+            QStringLiteral("ordgroup should participate as mord in outer spacing"));
+    math::MathOptions scriptOptions(math::MathStyle::script(), 16.0, QColor(QStringLiteral("#111111")), settings);
+    require(widthForWithOptions(QStringLiteral("a+b"), scriptOptions) < plusBetweenOrd,
+            QStringLiteral("tight script style should suppress binary spacing"));
+  }
+  {
+    const QStringList symbolCommands{
+        QStringLiteral("\\zeta"), QStringLiteral("\\Xi"), QStringLiteral("\\oplus"), QStringLiteral("\\supseteq"),
+        QStringLiteral("\\approx"), QStringLiteral("\\Longleftrightarrow"), QStringLiteral("\\aleph"), QStringLiteral("\\clubsuit"),
+        QStringLiteral("\\nless"), QStringLiteral("\\Finv"), QStringLiteral("\\dashrightarrow")};
+    for (const QString& command : symbolCommands) {
+      const math::MathSymbolInfo symbol = math::lookupSymbol(command);
+    require(symbol.known, QStringLiteral("symbol table should include %1").arg(command));
+    }
+  }
+  {
+    math::MathParser parser(QStringLiteral("\\html@mathml{H}{M}+\\hbox{box}+\\rm roman"));
+    const QVector<math::MathParseNode> nodes = parser.parse();
+    bool sawHtmlBranch = false;
+    bool sawHbox = false;
+    bool sawRmDeclaration = false;
+    for (const math::MathParseNode& node : nodes) {
+      if (node.type == math::MathNodeType::Group && node.label == QStringLiteral("\\html@mathml") && !node.body.isEmpty()) {
+        sawHtmlBranch = true;
+      }
+      if (node.type == math::MathNodeType::Group && node.label == QStringLiteral("\\hbox")) {
+        sawHbox = true;
+      }
+      if (node.type == math::MathNodeType::Text && node.label == QStringLiteral("\\rm") && !node.body.isEmpty()) {
+        sawRmDeclaration = true;
+      }
+    }
+    require(sawHtmlBranch && sawHbox && sawRmDeclaration,
+            QStringLiteral("htmlmathml hbox and old font declarations should preserve KaTeX-like parse semantics"));
+  }
+
+  bool threw = false;
+  try {
+    math::MathParser parser(QStringLiteral("a+\\definitelyUnsupported"), strictSettings);
+    parser.parse();
+  } catch (const math::MathParseError& error) {
+    threw = true;
+    require(error.tokenText() == QStringLiteral("\\definitelyUnsupported"), QStringLiteral("unsupported command error should keep token text"));
+    require(error.position() == 2, QStringLiteral("unsupported command error should keep token position"));
+    require(error.endPosition() == 24, QStringLiteral("unsupported command error should keep token end position"));
+  }
+  require(threw, QStringLiteral("throwOnError should raise MathParseError for unsupported commands"));
+
+  math::MathSettings strictHtmlSettings;
+  strictHtmlSettings.strict = math::MathStrictMode::Error;
+  threw = false;
+  try {
+    math::MathParser parser(QStringLiteral("\\htmlClass{note}{q}"), strictHtmlSettings);
+    parser.parse();
+  } catch (const math::MathParseError& error) {
+    threw = true;
+    require(error.message().contains(QStringLiteral("htmlExtension")), QStringLiteral("strict html extension should report category"));
+    require(error.tokenText() == QStringLiteral("\\htmlClass") && error.position() == 0,
+            QStringLiteral("strict error should include source token position"));
+    require(error.endPosition() == QStringLiteral("\\htmlClass").size(), QStringLiteral("strict error should include source token end position"));
+  }
+  require(threw, QStringLiteral("strict error should throw on nonstrict html extension"));
+
+  math::MathSettings strictUnknownSettings;
+  strictUnknownSettings.strict = math::MathStrictMode::Error;
+  threw = false;
+  try {
+    math::MathParser parser(QStringLiteral("\\notInRegistryYet"), strictUnknownSettings);
+    parser.parse();
+  } catch (const math::MathParseError& error) {
+    threw = true;
+    require(error.message().contains(QStringLiteral("unknownSymbol")), QStringLiteral("unknown command should report unknownSymbol"));
+    require(error.tokenText() == QStringLiteral("\\notInRegistryYet"), QStringLiteral("unknownSymbol should keep command token"));
+  }
+  require(threw, QStringLiteral("strict unknown command should throw unknownSymbol"));
+
+  math::MathSettings strictUnicodeSettings;
+  strictUnicodeSettings.strict = math::MathStrictMode::Error;
+  threw = false;
+  try {
+    math::MathParser parser(QStringLiteral("\u4e2d"), strictUnicodeSettings);
+    parser.parse();
+  } catch (const math::MathParseError& error) {
+    threw = true;
+    require(error.message().contains(QStringLiteral("unicodeTextInMathMode")),
+            QStringLiteral("strict unicode text in math should report category"));
+    require(error.position() == 0, QStringLiteral("unicode strict error should keep token position"));
+  }
+  require(threw, QStringLiteral("strict unicode text in math mode should throw"));
+
+  math::MathSettings strictAccentSettings;
+  strictAccentSettings.strict = math::MathStrictMode::Error;
+  threw = false;
+  try {
+    math::MathParser parser(QStringLiteral("\\'{e}"), strictAccentSettings);
+    parser.parse();
+  } catch (const math::MathParseError& error) {
+    threw = true;
+    require(error.message().contains(QStringLiteral("mathVsTextAccents")),
+            QStringLiteral("text accent in math should report mathVsTextAccents"));
+  }
+  require(threw, QStringLiteral("strict text accent in math should throw"));
+
+  math::MathSettings strictUnitSettings;
+  strictUnitSettings.strict = math::MathStrictMode::Error;
+  threw = false;
+  try {
+    math::MathParser parser(QStringLiteral("\\mkern1em"), strictUnitSettings);
+    parser.parse();
+  } catch (const math::MathParseError& error) {
+    threw = true;
+    require(error.message().contains(QStringLiteral("mathVsTextUnits")), QStringLiteral("mkern em should report mathVsTextUnits"));
+  }
+  require(threw, QStringLiteral("strict mkern with non-mu units should throw"));
+
+  threw = false;
+  try {
+    math::MathParser parser(QStringLiteral("\\kern1mu"), strictUnitSettings);
+    parser.parse();
+  } catch (const math::MathParseError& error) {
+    threw = true;
+    require(error.message().contains(QStringLiteral("mathVsTextUnits")), QStringLiteral("kern mu should report mathVsTextUnits"));
+  }
+  require(threw, QStringLiteral("strict kern with mu units should throw"));
+
+  math::MathSettings untrustedSettings;
+  untrustedSettings.throwOnError = true;
+  threw = false;
+  try {
+    math::MathParser parser(QStringLiteral("\\href{https://example.com}{h}"), untrustedSettings);
+    parser.parse();
+  } catch (const math::MathParseError& error) {
+    threw = true;
+    require(error.message().contains(QStringLiteral("not trusted")), QStringLiteral("untrusted href should throw trust error"));
+    require(error.tokenText() == QStringLiteral("\\href") && error.position() == 0,
+            QStringLiteral("trust error should include href token position"));
+  }
+  require(threw, QStringLiteral("untrusted href should be rejected when throwOnError is enabled"));
+
+  math::MathSettings trustedSettings;
+  trustedSettings.trustHandler = [](const math::MathTrustContext& context) {
+    return context.command == QStringLiteral("\\href") && context.protocol == QStringLiteral("https");
+  };
+  math::MathParser trustedParser(QStringLiteral("\\href{https://example.com}{h}"), trustedSettings);
+  const QVector<math::MathParseNode> trustedTree = trustedParser.parse();
+  require(!trustedTree.isEmpty() && trustedTree.first().type == math::MathNodeType::Href,
+          QStringLiteral("trusted href should parse to href node"));
+
+  bool sawHtmlDataContext = false;
+  math::MathSettings htmlDataTrustSettings;
+  htmlDataTrustSettings.trustHandler = [&sawHtmlDataContext](const math::MathTrustContext& context) {
+    sawHtmlDataContext = context.command == QStringLiteral("\\htmlData") &&
+                         context.attributes.value(QStringLiteral("data-x")).trimmed() == QStringLiteral("1") &&
+                         context.attributes.value(QStringLiteral("data-y")).trimmed() == QStringLiteral("two") &&
+                         context.attribute == QStringLiteral("data-x") &&
+                         context.value.trimmed() == QStringLiteral("1");
+    return sawHtmlDataContext;
+  };
+  math::MathParser htmlDataParser(QStringLiteral("\\htmlData{x=1,y=two}{q}"), htmlDataTrustSettings);
+  const QVector<math::MathParseNode> htmlDataTree = htmlDataParser.parse();
+  require(sawHtmlDataContext && !htmlDataTree.isEmpty() && htmlDataTree.first().type == math::MathNodeType::Html,
+          QStringLiteral("htmlData trust context should expose data attributes"));
+
+  math::MathSettings htmlDataErrorSettings;
+  htmlDataErrorSettings.throwOnError = true;
+  htmlDataErrorSettings.trust = true;
+  threw = false;
+  try {
+    math::MathParser parser(QStringLiteral("\\htmlData{broken}{q}"), htmlDataErrorSettings);
+    parser.parse();
+  } catch (const math::MathParseError& error) {
+    threw = true;
+    require(error.message().contains(QStringLiteral("missing equals sign")), QStringLiteral("htmlData missing equals should throw"));
+  }
+  require(threw, QStringLiteral("htmlData missing equals should match KaTeX error behavior"));
+
+  RenderTheme theme = RenderTheme::github();
+  CmarkGfmParser parser;
+  const QString markdown = QStringLiteral(
+      "$$\n"
+      "\\mathchoice{D}{T}{S}{SS}+\\mathllap{L}x+\\mathrlap{R}y+\\mathclap{C}z"
+      "+\\raisebox{0.35em}{a}+\\vcenter{\\frac{a}{b}}"
+      "+x_i^2+x^{a}_{b}+\\sqrt[3]{\\frac{a}{b}}+\\genfrac{[}{]}{0.08em}{0}{a}{b}+\\boxed{z}+\\textbf{B}+\\mathit{x}+\\mathtt{code}"
+      "+\\@binrel{=}{x}+\\@binrel{+}{y}+\\overset{a}{=}+\\boldsymbol{=}+\\zeta+\\Xi+\\oplus+\\supseteq+\\approx+\\Longleftrightarrow+\\clubsuit"
+      "+\\cancel{x}+\\bcancel{y}+\\xcancel{z}+\\sout{text}+\\fbox{box}+\\colorbox{yellow}{cb}+\\fcolorbox{red}{yellow}{fcb}+\\phase{V}+\\angl{n}"
+      "+\\href{https://example.com}{h}+\\url{https://example.com}+\\htmlClass{note}{q}"
+      "+\\includegraphics[width=1em,height=0.8em,totalheight=1em,alt=img]{missing-file.png}"
+      "+\\verb|a b|+\\verb*|c d|+\\tag{1}"
+      "\n$$");
+  ParseResult parsed = parser.parseDocument(markdown, {});
+  require(parsed.root != nullptr, QStringLiteral("remaining KaTeX function families parse should produce document"));
+
+  MarkdownDocument document;
+  document.setMarkdownText(markdown, std::move(parsed.root));
+  DocumentLayout layout;
+  layout.rebuild(document, theme, 900.0);
+
+  const MarkdownNode* mathBlock = findFirstBlock(document.root(), BlockType::MathBlock);
+  require(mathBlock != nullptr, QStringLiteral("remaining function math block should parse"));
+  const BlockLayout* blockLayout = layout.block(mathBlock->id());
+  require(blockLayout != nullptr && blockLayout->mathLayout() != nullptr && blockLayout->mathLayout()->valid(),
+          QStringLiteral("remaining function block should have native layout"));
+  require(blockLayout->mathLayout()->size.width() > 80.0, QStringLiteral("remaining function layout should have measurable width"));
+
+  QImage image(QSize(880, qCeil(blockLayout->height()) + 50), QImage::Format_ARGB32);
+  image.fill(theme.backgroundColor());
+  QPainter painter(&image);
+  blockLayout->paint(painter, theme, blockLayout->rect().top() - 12.0);
+  painter.end();
+  require(changedPixelCount(image, theme.backgroundColor()) > 160, QStringLiteral("remaining function paint should draw visible pixels"));
 }
 
 void requireTextLayoutCursorRoundTrip(const InlineLayout& layout, qsizetype offset, const QString& label) {
@@ -685,6 +1448,11 @@ int main(int argc, char** argv) {
   testInlineProjectionContract();
   testInlineLayoutGeometryContract();
   testInlineLayoutPainting();
+  testMathRenderingLayout();
+  testExtendedMathFunctionRendering();
+  testStrictMathGeometryFeatures();
+  testMathMetricsMacrosAndState();
+  testRemainingKatexFunctionFamilies();
   testInlineLayoutHitTesting();
   testInlineLayoutCursorRects();
   testInlineLayoutSelectionRects();

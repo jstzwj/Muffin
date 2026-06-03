@@ -192,6 +192,14 @@ const QVector<CodeHighlightSpan>& BlockLayout::codeHighlightSpans() const {
   return codeHighlightSpans_;
 }
 
+void BlockLayout::setMathLayout(std::shared_ptr<math::MathLayoutResult> layout) {
+  mathLayout_ = std::move(layout);
+}
+
+const math::MathLayoutResult* BlockLayout::mathLayout() const {
+  return mathLayout_.get();
+}
+
 void BlockLayout::setHeadingLevel(int level) {
   headingLevel_ = level;
 }
@@ -376,8 +384,25 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
     case BlockType::CodeFence:
       paintCodeFence(painter, theme, viewRect);
       break;
-    case BlockType::HtmlBlock:
     case BlockType::MathBlock: {
+      painter.save();
+      painter.setPen(theme.codeBorderColor());
+      painter.setBrush(theme.codeBackgroundColor());
+      painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
+      if (mathLayout_ && mathLayout_->valid()) {
+        const qreal x = viewRect.left() + qMax<qreal>(theme.codePadding().left(), (viewRect.width() - mathLayout_->size.width()) / 2.0);
+        mathLayout_->paint(painter, QPointF(x, viewRect.top()));
+      } else {
+        painter.setPen(theme.textColor());
+        painter.setFont(theme.mathFont());
+        QTextOption option;
+        option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+        painter.drawText(viewRect.marginsRemoved(theme.codePadding()), literal_, option);
+      }
+      painter.restore();
+      break;
+    }
+    case BlockType::HtmlBlock: {
       painter.save();
       painter.setPen(theme.codeBorderColor());
       painter.setBrush(theme.codeBackgroundColor());

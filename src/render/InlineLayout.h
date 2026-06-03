@@ -3,6 +3,8 @@
 #include "document/InlineNode.h"
 #include "document/InlineProjection.h"
 #include "editor/CursorPosition.h"
+#include "math/MathRenderer.h"
+#include "math/MathRenderNode.h"
 #include "theme/RenderTheme.h"
 
 #include <QColor>
@@ -47,6 +49,7 @@ public:
 
   QString plainText() const;
   QString displayText() const;
+  int mathAtomCount() const;
 
 private:
   struct OffsetMapEntry {
@@ -56,9 +59,20 @@ private:
     qsizetype visibleEnd = 0;
   };
 
+  struct MathAtom {
+    qsizetype displayStart = 0;
+    qsizetype displayEnd = 0;
+    qsizetype visibleStart = 0;
+    qsizetype visibleEnd = 0;
+    std::shared_ptr<math::MathLayoutResult> layout;
+  };
+
   void buildOffsetMapFromProjection();
+  void buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme);
+  QString texForInlineMathVisibleRange(const QVector<InlineNode>& inlines, qsizetype visibleStart, qsizetype visibleEnd) const;
   void buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont);
   void paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) const;
+  void paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) const;
   QVector<QTextLayout::FormatRange> textLayoutFormats(const RenderTheme& theme, const QFont& baseFont) const;
   qsizetype visibleOffsetForDisplayOffset(qsizetype displayOffset) const;
   qsizetype displayOffsetForVisibleOffset(qsizetype visibleOffset) const;
@@ -72,7 +86,9 @@ private:
   QString plainText_;
   QString displayText_;
   QVector<OffsetMapEntry> offsetMap_;
+  QVector<MathAtom> mathAtoms_;
   InlineProjection projection_;
+  math::MathRenderer mathRenderer_;
 };
 
 }  // namespace muffin

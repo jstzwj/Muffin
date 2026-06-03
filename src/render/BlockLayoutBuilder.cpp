@@ -276,7 +276,14 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
     layout->setCodeLanguage(node.codeLanguage());
     layout->setCodeHighlightSpans(codeHighlighter_.highlight(node.codeLanguage(), layout->literal()));
   }
-  const qreal height = textHeight(layout->literal(), node.type() == BlockType::MathBlock ? theme.mathFont() : theme.codeFont(), width, theme.codePadding());
+  qreal height = textHeight(layout->literal(), node.type() == BlockType::MathBlock ? theme.mathFont() : theme.codeFont(), width, theme.codePadding());
+  if (node.type() == BlockType::MathBlock) {
+    auto mathLayout = std::make_shared<math::MathLayoutResult>(mathRenderer_.render(layout->literal(), theme, true, width));
+    if (mathLayout->valid()) {
+      height = qMax(height, std::ceil(mathLayout->size.height()));
+      layout->setMathLayout(std::move(mathLayout));
+    }
+  }
   layout->setRect(QRectF(x, y, width, height));
   return layout;
 }

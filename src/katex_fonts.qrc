@@ -1,0 +1,18 @@
+<RCC>
+  <qresource prefix="/katex/fonts">
+    <file alias="KaTeX_Main-Regular.ttf">../third_party/katex/fonts/KaTeX_Main-Regular.ttf</file>
+    <file alias="KaTeX_Main-Bold.ttf">../third_party/katex/fonts/KaTeX_Main-Bold.ttf</file>
+    <file alias="KaTeX_Main-Italic.ttf">../third_party/katex/fonts/KaTeX_Main-Italic.ttf</file>
+    <file alias="KaTeX_Math-Italic.ttf">../third_party/katex/fonts/KaTeX_Math-Italic.ttf</file>
+    <file alias="KaTeX_AMS-Regular.ttf">../third_party/katex/fonts/KaTeX_AMS-Regular.ttf</file>
+    <file alias="KaTeX_Size1-Regular.ttf">../third_party/katex/fonts/KaTeX_Size1-Regular.ttf</file>
+    <file alias="KaTeX_Size2-Regular.ttf">../third_party/katex/fonts/KaTeX_Size2-Regular.ttf</file>
+    <file alias="KaTeX_Size3-Regular.ttf">../third_party/katex/fonts/KaTeX_Size3-Regular.ttf</file>
+    <file alias="KaTeX_Size4-Regular.ttf">../third_party/katex/fonts/KaTeX_Size4-Regular.ttf</file>
+  </qresource>
+  <qresource prefix="/katex/src">
+    <file alias="fontMetricsData.js">../third_party/katex/src/fontMetricsData.js</file>
+    <file alias="svgGeometry.ts">../third_party/katex/src/svgGeometry.ts</file>
+    <file alias="symbols.ts">../third_party/katex/src/symbols.ts</file>
+  </qresource>
+</RCC>

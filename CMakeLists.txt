@@ -122,6 +122,7 @@ add_executable(Muffin
 )
 
 set(MUFFIN_UI_SOURCES
+  src/katex_fonts.qrc
   src/blocks/code/CodeFenceController.cpp
   src/blocks/code/CodeFenceController.h
   src/blocks/html/HtmlBlockController.cpp
@@ -159,6 +160,39 @@ set(MUFFIN_UI_SOURCES
   src/editor/SelectionController.h
   src/editor/TextBlockCommandBuilder.cpp
   src/editor/TextBlockCommandBuilder.h
+  src/math/MathBuilder.cpp
+  src/math/MathBuilder.h
+  src/math/MathDelimiter.cpp
+  src/math/MathDelimiter.h
+  src/math/MathFontMetrics.cpp
+  src/math/MathFontMetrics.h
+  src/math/MathFontRegistry.cpp
+  src/math/MathFontRegistry.h
+  src/math/MathFunctionRegistry.cpp
+  src/math/MathFunctionRegistry.h
+  src/math/MathLexer.cpp
+  src/math/MathLexer.h
+  src/math/MathMacroExpander.cpp
+  src/math/MathMacroExpander.h
+  src/math/MathOptions.cpp
+  src/math/MathOptions.h
+  src/math/MathParseNode.h
+  src/math/MathParseError.cpp
+  src/math/MathParseError.h
+  src/math/MathParser.cpp
+  src/math/MathParser.h
+  src/math/MathRenderer.cpp
+  src/math/MathRenderer.h
+  src/math/MathRenderNode.cpp
+  src/math/MathRenderNode.h
+  src/math/MathSettings.cpp
+  src/math/MathSettings.h
+  src/math/MathStyle.cpp
+  src/math/MathStyle.h
+  src/math/MathSvgGeometry.cpp
+  src/math/MathSvgGeometry.h
+  src/math/MathSymbols.cpp
+  src/math/MathSymbols.h
   src/render/BlockLayout.cpp
   src/render/BlockLayout.h
   src/render/CodeHighlight.h

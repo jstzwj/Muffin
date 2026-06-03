@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/MarkdownNode.h"
+#include "math/MathRenderer.h"
 #include "render/BlockLayout.h"
 #include "render/TreeSitterHighlighter.h"
 #include "theme/RenderTheme.h"
@@ -71,6 +72,7 @@ private:
   QString markdownText_;
   SelectionRange selection_;
   TreeSitterHighlighter codeHighlighter_;
+  math::MathRenderer mathRenderer_;
 };
 
 }  // namespace muffin

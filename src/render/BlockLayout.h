@@ -2,6 +2,7 @@
 
 #include "document/MarkdownNode.h"
 #include "editor/CursorPosition.h"
+#include "math/MathRenderNode.h"
 #include "render/CodeHighlight.h"
 #include "render/InlineLayout.h"
 #include "theme/RenderTheme.h"
@@ -54,6 +55,8 @@ public:
   QString codeLanguage() const;
   void setCodeHighlightSpans(QVector<CodeHighlightSpan> spans);
   const QVector<CodeHighlightSpan>& codeHighlightSpans() const;
+  void setMathLayout(std::shared_ptr<math::MathLayoutResult> layout);
+  const math::MathLayoutResult* mathLayout() const;
 
   void setHeadingLevel(int level);
   int headingLevel() const;
@@ -101,6 +104,7 @@ private:
   QString literal_;
   QString codeLanguage_;
   QVector<CodeHighlightSpan> codeHighlightSpans_;
+  std::shared_ptr<math::MathLayoutResult> mathLayout_;
   int headingLevel_ = 0;
   QString listMarker_;
   qsizetype contentSourceStart_ = -1;

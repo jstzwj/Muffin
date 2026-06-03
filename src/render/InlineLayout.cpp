@@ -66,11 +66,13 @@ void InlineLayout::build(
     BuildOptions options) {
   plainText_ = flattenPlainText(inlines);
   offsetMap_.clear();
+  mathAtoms_.clear();
   displayText_.clear();
   textLayoutCodeBackgroundColor_ = theme.codeBackgroundColor();
   textLayoutCodeBorderColor_ = theme.codeBorderColor();
   projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState);
   buildOffsetMapFromProjection();
+  buildMathAtoms(inlines, theme);
   buildTextLayout(theme, width, baseFont);
 }
 
@@ -90,6 +92,7 @@ void InlineLayout::paint(QPainter& painter, QPointF origin) const {
   painter.save();
   paintTextLayoutCodeSpans(painter, origin);
   textLayout_->draw(&painter, origin);
+  paintTextLayoutMathAtoms(painter, origin);
   painter.restore();
 }
 
@@ -195,6 +198,10 @@ QString InlineLayout::displayText() const {
   return displayText_;
 }
 
+int InlineLayout::mathAtomCount() const {
+  return mathAtoms_.size();
+}
+
 void InlineLayout::buildOffsetMapFromProjection() {
   displayText_ = projection_.displayText();
   offsetMap_.clear();
@@ -202,6 +209,95 @@ void InlineLayout::buildOffsetMapFromProjection() {
   for (const InlineProjectionSpan& span : projection_.spans()) {
     offsetMap_.push_back(OffsetMapEntry{span.displayStart, span.displayEnd, span.visibleStart, span.visibleEnd});
   }
+}
+
+void InlineLayout::buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme) {
+  const QString projectedDisplay = projection_.displayText();
+  QString rebuiltDisplay;
+  QVector<OffsetMapEntry> rebuiltMap;
+  for (const InlineProjectionSpan& span : projection_.spans()) {
+    if (span.displayEnd <= span.displayStart) {
+      continue;
+    }
+
+    const bool mathText = span.type == InlineType::InlineMath && span.kind == InlineSpanKind::Text;
+    bool hasVisibleMarker = false;
+    if (mathText) {
+      for (const InlineProjectionSpan& marker : projection_.spans()) {
+        if (marker.type == InlineType::InlineMath &&
+            (marker.kind == InlineSpanKind::OpenMarker || marker.kind == InlineSpanKind::CloseMarker) &&
+            marker.sourceStart >= span.sourceStart && marker.sourceEnd <= span.sourceEnd) {
+          hasVisibleMarker = true;
+          break;
+        }
+      }
+    }
+    const bool collapsed = mathText && !hasVisibleMarker;
+    const QString spanText = projectedDisplay.mid(span.displayStart, span.displayEnd - span.displayStart);
+    if (!collapsed) {
+      const qsizetype displayStart = rebuiltDisplay.size();
+      rebuiltDisplay += spanText;
+      rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), span.visibleStart, span.visibleEnd});
+      continue;
+    }
+
+    const QString tex = texForInlineMathVisibleRange(inlines, span.visibleStart, span.visibleEnd);
+    if (tex.isEmpty()) {
+      const qsizetype displayStart = rebuiltDisplay.size();
+      rebuiltDisplay += spanText;
+      rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), span.visibleStart, span.visibleEnd});
+      continue;
+    }
+    auto layout = std::make_shared<math::MathLayoutResult>(mathRenderer_.render(tex, theme, false));
+    if (!layout->valid()) {
+      const qsizetype displayStart = rebuiltDisplay.size();
+      rebuiltDisplay += spanText;
+      rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), span.visibleStart, span.visibleEnd});
+      continue;
+    }
+
+    const QFontMetricsF metrics(theme.mathFont());
+    const int placeholderCount = qMax(1, static_cast<int>(std::ceil(layout->size.width() / qMax<qreal>(1.0, metrics.horizontalAdvance(QLatin1Char(' '))))));
+    const qsizetype displayStart = rebuiltDisplay.size();
+    rebuiltDisplay += QString(placeholderCount, QLatin1Char(' '));
+    MathAtom atom;
+    atom.displayStart = displayStart;
+    atom.displayEnd = rebuiltDisplay.size();
+    atom.visibleStart = span.visibleStart;
+    atom.visibleEnd = span.visibleEnd;
+    atom.layout = std::move(layout);
+    rebuiltMap.push_back(OffsetMapEntry{atom.displayStart, atom.displayEnd, atom.visibleStart, atom.visibleEnd});
+    mathAtoms_.push_back(std::move(atom));
+  }
+  if (!rebuiltDisplay.isEmpty()) {
+    displayText_ = std::move(rebuiltDisplay);
+    offsetMap_ = std::move(rebuiltMap);
+  }
+}
+
+QString InlineLayout::texForInlineMathVisibleRange(const QVector<InlineNode>& inlines, qsizetype visibleStart, qsizetype visibleEnd) const {
+  qsizetype offset = 0;
+  const auto visit = [&](const auto& self, const QVector<InlineNode>& nodes) -> QString {
+    for (const InlineNode& node : nodes) {
+      const QString plain = InlineProjection::plainTextForInlines(QVector<InlineNode>{node});
+      const qsizetype start = offset;
+      const qsizetype end = start + plain.size();
+      if (node.type() == InlineType::InlineMath && start == visibleStart && end == visibleEnd) {
+        return node.text();
+      }
+      offset = end;
+      if (!node.children().isEmpty()) {
+        qsizetype childOffset = start;
+        Q_UNUSED(childOffset);
+        const QString found = self(self, node.children());
+        if (!found.isEmpty()) {
+          return found;
+        }
+      }
+    }
+    return {};
+  };
+  return visit(visit, inlines);
 }
 
 void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont) {
@@ -228,6 +324,20 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
   }
   textLayout_->endLayout();
   size_ = QSizeF(qMin(lineWidth, qMax<qreal>(maxWidth, 1.0)), height);
+}
+
+void InlineLayout::paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) const {
+  if (!textLayout_) {
+    return;
+  }
+  for (const MathAtom& atom : mathAtoms_) {
+    if (!atom.layout || !atom.layout->valid()) {
+      continue;
+    }
+    const QRectF cursor = textLayoutCursorRectForDisplayOffset(atom.displayStart);
+    atom.layout->paint(painter, QPointF(origin.x() + cursor.left(),
+                                        origin.y() + cursor.top() + qMax<qreal>(0.0, (cursor.height() - atom.layout->size.height()) / 2.0)));
+  }
 }
 
 QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTheme& theme, const QFont& baseFont) const {
@@ -283,7 +393,6 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
       default:
         break;
     }
-
     QTextLayout::FormatRange range;
     range.start = static_cast<int>(span.displayStart);
     range.length = static_cast<int>(span.displayEnd - span.displayStart);
