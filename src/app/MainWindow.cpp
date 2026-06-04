@@ -340,7 +340,13 @@ void MainWindow::setupConnections() {
       editorController_.paste();
     }
   });
-  commands_.bind(QStringLiteral("edit.select_all"), [this] { editor_->editor()->selectAll(); });
+  commands_.bind(QStringLiteral("edit.select_all"), [this] {
+    if (sourceModeEnabled()) {
+      editor_->editor()->selectAll();
+    } else {
+      editorController_.selectAll();
+    }
+  });
 
   commands_.bind(QStringLiteral("format.bold"), [this] {
     if (sourceModeEnabled()) {

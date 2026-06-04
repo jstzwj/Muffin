@@ -2850,6 +2850,13 @@ void testInlineLayoutSelectionRects() {
   const QRectF markerEnd = active.cursorRectForSourceOffset(9);
   require(!markerStart.isEmpty() && !markerEnd.isEmpty(), QStringLiteral("inline active marker cursor rects should exist"));
   require(markerEnd.left() > markerStart.left(), QStringLiteral("inline active marker source rect should cover visible marker width"));
+  const QVector<QRectF> openerMarker = active.selectionRectsForSourceOffsets(7, 9);
+  require(openerMarker.size() == 1, QStringLiteral("inline active marker source selection should stay single-line"));
+  requireValidSelectionRects(openerMarker, QStringLiteral("inline active marker source"));
+  require(qAbs(openerMarker.first().left() - markerStart.left()) < 0.5,
+          QStringLiteral("inline active marker source selection should start at opener marker"));
+  require(openerMarker.first().right() >= markerEnd.left() - 0.5,
+          QStringLiteral("inline active marker source selection should cover opener marker width"));
 }
 
 bool hasRole(const QVector<CodeHighlightSpan>& spans, CodeHighlightRole role) {

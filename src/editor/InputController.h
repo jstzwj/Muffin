@@ -53,6 +53,7 @@ public:
 
 signals:
   void unsupportedEditRequested(QString reason);
+  void selectAllRequested();
 
 private:
   bool handleKeyPress(QKeyEvent* event);

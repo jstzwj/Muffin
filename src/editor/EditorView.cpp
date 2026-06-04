@@ -394,6 +394,13 @@ void EditorView::paintEvent(QPaintEvent* event) {
 bool EditorView::event(QEvent* event) {
   if (event->type() == QEvent::KeyPress || event->type() == QEvent::ShortcutOverride) {
     auto* keyEvent = static_cast<QKeyEvent*>(event);
+    if (keyEvent->key() == Qt::Key_A && keyEvent->modifiers().testFlag(Qt::ControlModifier)) {
+      if (event->type() == QEvent::ShortcutOverride) {
+        event->accept();
+        return true;
+      }
+      return QAbstractScrollArea::event(event);
+    }
     if (keyEvent->key() == Qt::Key_Tab || keyEvent->key() == Qt::Key_Backtab) {
       event->accept();
       if (event->type() == QEvent::ShortcutOverride) {

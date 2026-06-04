@@ -761,6 +761,10 @@ void testEditorViewHitTestActivatesInlineSourceEditing() {
   require(session.markdownText() == QStringLiteral("before **boXld** after"), "view hit inline insert mismatch");
 }
 
+const BlockLayout* requireViewBlock(EditorView& view, NodeId blockId, const QString& label);
+const InlineLayout* requireViewInlineLayout(EditorView& view, NodeId blockId, const QString& label);
+CursorPosition inlineCursor(NodeId blockId, qsizetype textOffset, qsizetype sourceOffset);
+
 void testEditorViewInlineProjectionStateChanges() {
   DocumentSession session;
   EditorView view;
@@ -811,6 +815,74 @@ void testEditorViewInlineProjectionStateChanges() {
   const InlineLayout* selectedLayout = view.blockAtViewportPos(selectedRect.center())->inlineLayout();
   require(selectedLayout != nullptr, "selection inline layout should exist");
   require(selectedLayout->cursorRectForSourceOffset(9).left() != collapsedCursor.left(), "selection touching inline should expand marker layout");
+}
+
+void testEditorViewInlineMarkerSourceSelection() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("before **bold** after"), false);
+  view.setDocument(session.document());
+  MarkdownNode* block = blockAt(session, 0);
+  const NodeId blockId = block->id();
+
+  CursorPosition inside = inlineCursor(blockId, QStringLiteral("before b").size(), QStringLiteral("before **b").size());
+  view.setCursorPosition(inside);
+  const QRectF expandedBlockRect = view.nodeRect(blockId);
+  const InlineLayout* expandedLayout = requireViewInlineLayout(view, blockId, QStringLiteral("marker source"));
+
+  const QRectF betweenStarsCursor = expandedLayout->cursorRectForSourceOffset(QStringLiteral("before *").size());
+  require(!betweenStarsCursor.isEmpty(), "cursor between strong opener stars should exist");
+  const HitTestResult betweenStarsHit = view.hitTest(expandedBlockRect.topLeft() + betweenStarsCursor.center());
+  require(betweenStarsHit.isValid(), "hit between strong opener stars should be valid");
+  require(betweenStarsHit.sourceOffset == QStringLiteral("before *").size(), "hit between strong opener stars should keep source offset");
+
+  SelectionRange markerSelection;
+  markerSelection.anchor = inlineCursor(blockId, QStringLiteral("before ").size(), QStringLiteral("before ").size());
+  markerSelection.focus = inlineCursor(blockId, QStringLiteral("before ").size(), QStringLiteral("before **").size());
+  view.setSelectionRange(markerSelection);
+  const BlockLayout* selectedBlock = requireViewBlock(view, blockId, QStringLiteral("marker source selection"));
+  const QVector<QRectF> markerRects = selectedBlock->selectionRects(markerSelection, RenderTheme::typoraLike());
+  require(!markerRects.isEmpty(), "strong opener marker source selection should draw");
+  qreal markerWidth = 0;
+  for (const QRectF& rect : markerRects) {
+    markerWidth += rect.width();
+  }
+  require(markerWidth > 2.0, "strong opener marker source selection should have visible width");
+
+  const QRectF currentBlockRect = view.nodeRect(blockId);
+  const InlineLayout* currentLayout = requireViewInlineLayout(view, blockId, QStringLiteral("marker drag start"));
+  const QPointF dragStart = currentBlockRect.topLeft() + currentLayout->cursorRectForSourceOffset(QStringLiteral("before ").size()).center();
+  QMouseEvent press(
+      QEvent::MouseButtonPress,
+      dragStart,
+      view.viewport()->mapToGlobal(dragStart.toPoint()),
+      Qt::LeftButton,
+      Qt::LeftButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press);
+
+  const QRectF dragBlockRect = view.nodeRect(blockId);
+  const InlineLayout* dragLayout = requireViewInlineLayout(view, blockId, QStringLiteral("marker drag"));
+  const QPointF dragEnd = dragBlockRect.topLeft() + dragLayout->cursorRectForSourceOffset(QStringLiteral("before **bold").size()).center();
+  QMouseEvent move(
+      QEvent::MouseMove,
+      dragEnd,
+      view.viewport()->mapToGlobal(dragEnd.toPoint()),
+      Qt::NoButton,
+      Qt::LeftButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &move);
+  require(!controller.selection().selection().isCollapsed(), "dragging from marker into content should create source selection");
+  const qsizetype expectedAnchorSource = QStringLiteral("before ").size();
+  const qsizetype expectedFocusSource = QStringLiteral("before **bold").size();
+  require(controller.selection().selection().anchor.text.sourceOffset == expectedAnchorSource,
+          "marker drag anchor should stay at opener source offset");
+  require(controller.selection().selection().focus.text.sourceOffset == expectedFocusSource,
+          "marker drag focus should stay at content source offset");
 }
 
 void testEditorViewInlineClickDoesNotSelectAfterMarkerExpansion() {
@@ -2502,6 +2574,78 @@ void testSelectionSerializerCrossComplexInlineEdges() {
   require(plainText == QStringLiteral("bold and code\nMiddle\nTail x+y"), "complex inline cross selection plain text mismatch");
 }
 
+void testSelectAllContextSemantics() {
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("alpha\n\nbeta"), false);
+  view.setDocument(session.document());
+  controller.selection().setCursorPosition(inlineCursor(blockAt(session, 0)->id(), 2, 2));
+  require(controller.selectAll(), "paragraph select all should work");
+  SelectionRange range = controller.selection().selection();
+  require(range.anchor.blockId == blockAt(session, 0)->id(), "paragraph select all anchor should be first block");
+  require(range.focus.blockId == blockAt(session, 1)->id(), "paragraph select all focus should be last block");
+  require(range.focus.text.textOffset == 4, "paragraph select all should end at document text end");
+
+  session.setMarkdownText(QStringLiteral("alpha\n\n```cpp\nreturn 0;\n```\n\nbeta"), false);
+  view.setDocument(session.document());
+  MarkdownNode* code = blockAt(session, 1);
+  HitTestResult codeHit;
+  codeHit.zone = HitTestResult::Zone::Code;
+  codeHit.blockId = code->id();
+  codeHit.textNodeId = code->id();
+  codeHit.textOffset = 2;
+  controller.activateHit(codeHit);
+  require(controller.selectAll(), "code block select all should work");
+  range = controller.selection().selection();
+  require(range.anchor.blockId == code->id() && range.focus.blockId == code->id(), "code select all should stay in code block");
+  require(range.anchor.text.textOffset == 0 && range.focus.text.textOffset == code->literal().size(), "code select all should select literal");
+
+  session.setMarkdownText(QStringLiteral("alpha\n\n$$\nx+y\n$$\n\nbeta"), false);
+  view.setDocument(session.document());
+  MarkdownNode* math = blockAt(session, 1);
+  HitTestResult mathHit;
+  mathHit.zone = HitTestResult::Zone::Math;
+  mathHit.blockId = math->id();
+  mathHit.textNodeId = math->id();
+  mathHit.textOffset = 1;
+  controller.activateHit(mathHit);
+  require(controller.selectAll(), "math block select all should work");
+  range = controller.selection().selection();
+  require(range.anchor.blockId == math->id() && range.focus.blockId == math->id(), "math select all should stay in math block");
+  require(range.anchor.text.textOffset == 0 && range.focus.text.textOffset == math->literal().size(), "math select all should select TeX literal");
+
+  session.setMarkdownText(QStringLiteral("| A | B |\n| --- | --- |\n| one | two |"), false);
+  view.setDocument(session.document());
+  MarkdownNode* table = blockAt(session, 0);
+  MarkdownNode* cell = childAt(childAt(table, 1), 1);
+  CursorPosition cellCursor;
+  cellCursor.blockId = table->id();
+  cellCursor.text.nodeId = cell->id();
+  cellCursor.text.textOffset = 1;
+  controller.selection().setCursorPosition(cellCursor);
+  require(controller.selectAll(), "table cell select all should work");
+  range = controller.selection().selection();
+  require(range.anchor.blockId == table->id() && range.focus.blockId == table->id(), "table cell select all should keep table block id");
+  require(range.anchor.text.nodeId == cell->id() && range.focus.text.nodeId == cell->id(), "table cell select all should target current cell");
+  require(range.anchor.text.textOffset == 0 && range.focus.text.textOffset == 3, "table cell select all should select cell text");
+
+  session.setMarkdownText(QStringLiteral("alpha\n\nbeta"), false);
+  view.setDocument(session.document());
+  controller.selection().setCursorPosition(inlineCursor(blockAt(session, 0)->id(), 1, 1));
+  QKeyEvent shortcut(QEvent::ShortcutOverride, Qt::Key_A, Qt::ControlModifier);
+  QApplication::sendEvent(&view, &shortcut);
+  require(shortcut.isAccepted(), "view should reserve ctrl+a shortcut");
+  QKeyEvent key(QEvent::KeyPress, Qt::Key_A, Qt::ControlModifier);
+  QApplication::sendEvent(&view, &key);
+  range = controller.selection().selection();
+  require(range.anchor.blockId == blockAt(session, 0)->id() && range.focus.blockId == blockAt(session, 1)->id(),
+          "ctrl+a keypress should select whole document from paragraph");
+}
+
 void testClipboardBlockSelectionFallback() {
   DocumentSession session;
   SelectionController selection;
@@ -2962,6 +3106,7 @@ int main(int argc, char** argv) {
   testTextHitActivationAddsSourceOffsetForInlineEditing();
   testEditorViewHitTestActivatesInlineSourceEditing();
   testEditorViewInlineProjectionStateChanges();
+  testEditorViewInlineMarkerSourceSelection();
   testEditorViewInlineClickDoesNotSelectAfterMarkerExpansion();
   testEditorViewDragSelectionContinuesAcrossMoves();
   testEditorViewVerticalDragSelectionHitsWrappedLine();
@@ -3001,6 +3146,7 @@ int main(int argc, char** argv) {
   testClipboardCrossMarkdownPreservesStartPrefix();
   testSelectionSerializerFormats();
   testSelectionSerializerCrossComplexInlineEdges();
+  testSelectAllContextSemantics();
   testClipboardBlockSelectionFallback();
   testCodeFenceSelectionCopyUsesLiteralOffsets();
   testCodeFenceSelectionCutDeletesLiteralOffsets();

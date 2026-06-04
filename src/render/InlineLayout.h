@@ -47,6 +47,7 @@ public:
   QRectF cursorRect(qsizetype textOffset) const;
   QRectF cursorRectForSourceOffset(qsizetype sourceOffset) const;
   QVector<QRectF> selectionRects(qsizetype startOffset, qsizetype endOffset) const;
+  QVector<QRectF> selectionRectsForSourceOffsets(qsizetype startSourceOffset, qsizetype endSourceOffset) const;
 
   QString plainText() const;
   QString displayText() const;
@@ -86,6 +87,7 @@ private:
   TextLayoutPointHit textLayoutHitForPoint(QPointF localPos) const;
   qsizetype textLayoutDisplayOffsetForPoint(QPointF localPos) const;
   QRectF textLayoutCursorRectForDisplayOffset(qsizetype displayOffset) const;
+  QVector<QRectF> selectionRectsForDisplayOffsets(qsizetype startDisplayOffset, qsizetype endDisplayOffset) const;
 
   std::unique_ptr<QTextLayout> textLayout_;
   QSizeF size_;

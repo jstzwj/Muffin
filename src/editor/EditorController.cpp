@@ -60,6 +60,76 @@ MarkdownNode* primaryParagraph(MarkdownNode& node) {
   return &node;
 }
 
+QString plainTextForInlines(const QVector<InlineNode>& inlines) {
+  QString text;
+  for (const InlineNode& inlineNode : inlines) {
+    switch (inlineNode.type()) {
+      case InlineType::Text:
+      case InlineType::Code:
+      case InlineType::InlineMath:
+      case InlineType::HtmlInline:
+        text += inlineNode.text();
+        break;
+      case InlineType::SoftBreak:
+        text += QLatin1Char(' ');
+        break;
+      case InlineType::LineBreak:
+        text += QLatin1Char('\n');
+        break;
+      case InlineType::Image:
+        text += inlineNode.alt();
+        break;
+      default:
+        text += plainTextForInlines(inlineNode.children());
+        break;
+    }
+  }
+  return text;
+}
+
+qsizetype selectableTextLength(const MarkdownNode& node) {
+  switch (node.type()) {
+    case BlockType::Paragraph:
+    case BlockType::Heading:
+    case BlockType::TableCell:
+      return plainTextForInlines(node.inlines()).size();
+    case BlockType::CodeFence:
+    case BlockType::MathBlock:
+    case BlockType::HtmlBlock:
+      return node.literal().size();
+    case BlockType::Table:
+      return 1;
+    default:
+      return 0;
+  }
+}
+
+CursorPosition cursorForNodeText(const MarkdownNode& node, qsizetype offset, NodeId blockId = {}) {
+  CursorPosition cursor;
+  cursor.blockId = blockId.isValid() ? blockId : node.id();
+  cursor.text.nodeId = node.id();
+  cursor.text.textOffset = qBound<qsizetype>(0, offset, selectableTextLength(node));
+  return cursor;
+}
+
+MarkdownNode* firstSelectableBlock(MarkdownNode& root) {
+  for (const auto& child : root.children()) {
+    if (child->type() != BlockType::Unknown) {
+      return child.get();
+    }
+  }
+  return nullptr;
+}
+
+MarkdownNode* lastSelectableBlock(MarkdownNode& root) {
+  for (auto it = root.children().rbegin(); it != root.children().rend(); ++it) {
+    if ((*it)->type() != BlockType::Unknown) {
+      return it->get();
+    }
+  }
+  return nullptr;
+}
+
 qsizetype paragraphContentStartIncludingCommonMarkIndent(const QString& markdown, qsizetype astStart) {
   qsizetype lineStart = astStart;
   while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
@@ -441,6 +511,7 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
     connect(view_, &EditorView::selectionChanged, &selection_, &SelectionController::setSelection);
     connect(view_, &EditorView::textCommitted, &inputController_, &InputController::insertText);
   }
+  connect(&inputController_, &InputController::selectAllRequested, this, &EditorController::selectAll);
   connect(&selection_, &SelectionController::selectionChanged, this, [this](SelectionRange selection, HitTestResult hit) {
     if (view_) {
       if (selection.focus.isValid() && !selection.isCollapsed()) {
@@ -671,6 +742,49 @@ bool EditorController::cut() {
 
 bool EditorController::paste() {
   return clipboardController_.paste();
+}
+
+bool EditorController::selectAll() {
+  if (!session_ || !selection_.hasCursor()) {
+    return false;
+  }
+
+  const CursorPosition cursor = selection_.cursorPosition();
+  MarkdownNode* focusNode = cursor.text.nodeId.isValid() ? session_->document().node(cursor.text.nodeId) : nullptr;
+  MarkdownNode* blockNode = session_->document().node(cursor.blockId);
+  MarkdownNode* target = focusNode ? focusNode : blockNode;
+  if (!target) {
+    return false;
+  }
+
+  if (target->type() == BlockType::TableCell) {
+    SelectionRange range;
+    range.anchor = cursorForNodeText(*target, 0, cursor.blockId);
+    range.focus = cursorForNodeText(*target, selectableTextLength(*target), cursor.blockId);
+    selection_.setSelection(range);
+    return true;
+  }
+
+  if (blockNode && (blockNode->type() == BlockType::CodeFence || blockNode->type() == BlockType::MathBlock ||
+                    blockNode->type() == BlockType::HtmlBlock)) {
+    SelectionRange range;
+    range.anchor = cursorForNodeText(*blockNode, 0);
+    range.focus = cursorForNodeText(*blockNode, selectableTextLength(*blockNode));
+    selection_.setSelection(range);
+    return true;
+  }
+
+  MarkdownNode* first = firstSelectableBlock(session_->document().root());
+  MarkdownNode* last = lastSelectableBlock(session_->document().root());
+  if (!first || !last) {
+    return false;
+  }
+
+  SelectionRange range;
+  range.anchor = cursorForNodeText(*first, 0);
+  range.focus = cursorForNodeText(*last, selectableTextLength(*last));
+  selection_.setSelection(range);
+  return true;
 }
 
 void EditorController::clearHistoryAndSelection() {

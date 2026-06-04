@@ -631,9 +631,17 @@ QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection,
     return rects;
   }
 
-  const qreal textLeft = !listMarker_.isEmpty() ? rect_.left() + theme.listIndent() : rect_.left();
+  const qreal textLeft = hasListMarker() ? rect_.left() + theme.listIndent() : rect_.left();
   const QPointF origin(textLeft, rect_.top());
-  for (QRectF rect : inlineLayout_->selectionRects(selection.startOffset(), selection.endOffset())) {
+  const qsizetype localAnchorSourceOffset =
+      selection.anchor.text.sourceOffset >= 0 && contentSourceStart_ >= 0 ? selection.anchor.text.sourceOffset - contentSourceStart_ : -1;
+  const qsizetype localFocusSourceOffset =
+      selection.focus.text.sourceOffset >= 0 && contentSourceStart_ >= 0 ? selection.focus.text.sourceOffset - contentSourceStart_ : -1;
+  const QVector<QRectF> inlineRects =
+      localAnchorSourceOffset >= 0 && localFocusSourceOffset >= 0
+          ? inlineLayout_->selectionRectsForSourceOffsets(localAnchorSourceOffset, localFocusSourceOffset)
+          : inlineLayout_->selectionRects(selection.startOffset(), selection.endOffset());
+  for (QRectF rect : inlineRects) {
     rect.translate(origin);
     rects.push_back(rect.adjusted(-1.0, 0, 1.0, 0));
   }
@@ -672,7 +680,7 @@ QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset,
     return rects;
   }
 
-  const qreal textLeft = !listMarker_.isEmpty() ? rect_.left() + theme.listIndent() : rect_.left();
+  const qreal textLeft = hasListMarker() ? rect_.left() + theme.listIndent() : rect_.left();
   const QPointF origin(textLeft, rect_.top());
   for (QRectF rect : inlineLayout_->selectionRects(startOffset, endOffset)) {
     rect.translate(origin);

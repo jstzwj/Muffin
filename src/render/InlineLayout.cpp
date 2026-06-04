@@ -164,13 +164,29 @@ QRectF InlineLayout::cursorRectForSourceOffset(qsizetype sourceOffset) const {
 }
 
 QVector<QRectF> InlineLayout::selectionRects(qsizetype startOffset, qsizetype endOffset) const {
+  const qsizetype startDisplayOffset = displayOffsetForVisibleOffset(qMin(startOffset, endOffset));
+  const qsizetype endDisplayOffset = displayOffsetForVisibleOffset(qMax(startOffset, endOffset));
+  return selectionRectsForDisplayOffsets(startDisplayOffset, endDisplayOffset);
+}
+
+QVector<QRectF> InlineLayout::selectionRectsForSourceOffsets(qsizetype startSourceOffset, qsizetype endSourceOffset) const {
+  qsizetype startDisplayOffset = -1;
+  qsizetype endDisplayOffset = -1;
+  if (!projection_.displayOffsetForSourceOffset(qMin(startSourceOffset, endSourceOffset), startDisplayOffset) ||
+      !projection_.displayOffsetForSourceOffset(qMax(startSourceOffset, endSourceOffset), endDisplayOffset)) {
+    return {};
+  }
+  return selectionRectsForDisplayOffsets(startDisplayOffset, endDisplayOffset);
+}
+
+QVector<QRectF> InlineLayout::selectionRectsForDisplayOffsets(qsizetype startDisplayOffset, qsizetype endDisplayOffset) const {
   QVector<QRectF> rects;
   if (!textLayout_) {
     return rects;
   }
 
-  const int start = qBound(0, static_cast<int>(displayOffsetForVisibleOffset(qMin(startOffset, endOffset))), static_cast<int>(displayText_.size()));
-  const int end = qBound(0, static_cast<int>(displayOffsetForVisibleOffset(qMax(startOffset, endOffset))), static_cast<int>(displayText_.size()));
+  const int start = qBound(0, static_cast<int>(qMin(startDisplayOffset, endDisplayOffset)), static_cast<int>(displayText_.size()));
+  const int end = qBound(0, static_cast<int>(qMax(startDisplayOffset, endDisplayOffset)), static_cast<int>(displayText_.size()));
   if (start == end) {
     return rects;
   }

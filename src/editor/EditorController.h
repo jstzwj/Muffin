@@ -73,6 +73,7 @@ public:
   bool copy();
   bool cut();
   bool paste();
+  bool selectAll();
   void clearHistoryAndSelection();
   void activateHit(HitTestResult hit);
 

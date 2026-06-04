@@ -153,6 +153,10 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
   if (watched == view_ || (view_ && watched == view_->viewport())) {
     if (event->type() == QEvent::ShortcutOverride) {
       auto* keyEvent = static_cast<QKeyEvent*>(event);
+      if (keyEvent->key() == Qt::Key_A && keyEvent->modifiers().testFlag(Qt::ControlModifier)) {
+        keyEvent->accept();
+        return true;
+      }
       if (keyEvent->key() == Qt::Key_Tab || keyEvent->key() == Qt::Key_Backtab) {
         keyEvent->accept();
       }
@@ -437,6 +441,12 @@ bool InputController::handleInputMethod(QInputMethodEvent* event) {
 
 bool InputController::handleKeyPress(QKeyEvent* event) {
   PerfTimer perf("input.keypress");
+  if (event && event->key() == Qt::Key_A && event->modifiers().testFlag(Qt::ControlModifier) &&
+      !event->modifiers().testFlag(Qt::AltModifier)) {
+    emit selectAllRequested();
+    return true;
+  }
+
   if (!session_ || !selection_ || !selection_->hasCursor() || !view_ || event->modifiers().testFlag(Qt::ControlModifier) ||
       event->modifiers().testFlag(Qt::AltModifier)) {
     return false;
