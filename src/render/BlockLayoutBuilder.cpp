@@ -10,7 +10,7 @@
 namespace muffin {
 namespace {
 
-qreal layoutTextHeight(const QString& text, const QFont& font, qreal width) {
+qreal layoutTextHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width) {
   QTextLayout layout(text.isEmpty() ? QStringLiteral(" ") : text, font);
   QTextOption option;
   option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
@@ -25,19 +25,19 @@ qreal layoutTextHeight(const QString& text, const QFont& font, qreal width) {
     }
     line.setLineWidth(qMax<qreal>(1.0, width));
     line.setPosition(QPointF(0, height));
-    height += line.height();
+    height += qMax<qreal>(lineHeight, line.height());
   }
   layout.endLayout();
-  return qMax(height, QFontMetricsF(font).height());
+  return qMax(height, lineHeight);
 }
 
-qreal layoutLiteralHeight(const QString& text, const QFont& font, qreal width) {
+qreal layoutLiteralHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width) {
   const QStringList lines = text.isEmpty() ? QStringList{QString()} : text.split(QLatin1Char('\n'));
   qreal height = 0;
   for (const QString& line : lines) {
-    height += layoutTextHeight(line.isEmpty() ? QStringLiteral(" ") : line, font, width);
+    height += layoutTextHeight(line.isEmpty() ? QStringLiteral(" ") : line, font, lineHeight, width);
   }
-  return qMax(height, QFontMetricsF(font).height());
+  return qMax(height, lineHeight);
 }
 
 QString displayLiteralFor(const MarkdownNode& node) {
@@ -294,7 +294,12 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
   }
   const bool editingLiteral = node.type() == BlockType::MathBlock && selectionFocusesNode(selection_, node.id());
   layout->setLiteralEditing(editingLiteral);
-  qreal height = textHeight(layout->literal(), node.type() == BlockType::MathBlock ? theme.mathFont() : theme.codeFont(), width, theme.codePadding());
+  qreal height = textHeight(
+      layout->literal(),
+      node.type() == BlockType::MathBlock ? theme.mathFont() : theme.codeFont(),
+      node.type() == BlockType::MathBlock ? qMax<qreal>(14.0, QFontMetricsF(theme.mathFont()).height()) : theme.codeLineHeight(),
+      width,
+      theme.codePadding());
   if (node.type() == BlockType::MathBlock) {
     auto mathLayout = std::make_shared<math::MathLayoutResult>(mathRenderer_.render(layout->literal(), theme, true, width));
     if (mathLayout->valid()) {
@@ -302,8 +307,8 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
         height = std::ceil(mathLayout->size.height() + theme.codePadding().top() + theme.codePadding().bottom());
       } else {
         const qreal contentWidth = qMax<qreal>(1.0, width - theme.codePadding().left() - theme.codePadding().right());
-        const qreal markerLine = qMax<qreal>(14.0, QFontMetricsF(theme.codeFont()).height());
-        const qreal sourceHeight = textHeight(layout->literal(), theme.codeFont(), contentWidth, QMarginsF());
+        const qreal markerLine = theme.codeLineHeight();
+        const qreal sourceHeight = textHeight(layout->literal(), theme.codeFont(), theme.codeLineHeight(), contentWidth, QMarginsF());
         const qreal previewHeight = mathLayout->size.height();
         height = std::ceil(theme.codePadding().top() + markerLine + sourceHeight + markerLine +
                            theme.codePadding().bottom() + theme.codePadding().top() + previewHeight + theme.codePadding().bottom());
@@ -519,9 +524,9 @@ qsizetype BlockLayoutBuilder::sourceOffsetForLineEnd(int line) const {
   return currentLine == line ? markdownText_.size() : -1;
 }
 
-qreal BlockLayoutBuilder::textHeight(const QString& text, const QFont& font, qreal width, const QMarginsF& padding) const {
+qreal BlockLayoutBuilder::textHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width, const QMarginsF& padding) const {
   const qreal innerWidth = qMax<qreal>(1.0, width - padding.left() - padding.right());
-  return std::ceil(layoutLiteralHeight(text, font, innerWidth) + padding.top() + padding.bottom() + 2.0);
+  return std::ceil(layoutLiteralHeight(text, font, lineHeight, innerWidth) + padding.top() + padding.bottom() + 2.0);
 }
 
 }  // namespace muffin

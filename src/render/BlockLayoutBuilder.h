@@ -67,7 +67,7 @@ private:
   qsizetype sourceContentEndForEditableNode(const MarkdownNode& node) const;
   qsizetype sourceOffsetForLineColumn(int line, int column) const;
   qsizetype sourceOffsetForLineEnd(int line) const;
-  qreal textHeight(const QString& text, const QFont& font, qreal width, const QMarginsF& padding) const;
+  qreal textHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width, const QMarginsF& padding) const;
 
   QString markdownText_;
   SelectionRange selection_;

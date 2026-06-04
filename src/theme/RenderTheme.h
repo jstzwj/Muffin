@@ -29,6 +29,7 @@ public:
   QFont paragraphFont() const;
   QFont headingFont(int level) const;
   QFont codeFont() const;
+  qreal codeLineHeight() const;
   QFont mathFont() const;
 
   QColor backgroundColor() const;

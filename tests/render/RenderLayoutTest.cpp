@@ -47,6 +47,19 @@ void require(bool condition, const QString& message) {
   }
 }
 
+void testThemeCodeFontFallbackOrder() {
+  const RenderTheme theme = RenderTheme::github();
+  const QFont codeFont = theme.codeFont();
+  const QStringList families = codeFont.families();
+  require(families.size() >= 4, QStringLiteral("code font should expose fallback families"));
+  require(families.at(0) == QStringLiteral("Lucida Console"), QStringLiteral("code font first fallback should be Lucida Console"));
+  require(families.at(1) == QStringLiteral("Consolas"), QStringLiteral("code font second fallback should be Consolas"));
+  require(families.at(2) == QStringLiteral("Courier"), QStringLiteral("code font third fallback should be Courier"));
+  require(families.at(3) == QStringLiteral("monospace"), QStringLiteral("code font final fallback should be monospace"));
+  require(qAbs(codeFont.pointSizeF() * 96.0 / 72.0 - 14.4) < 0.01, QStringLiteral("code font should be 14.4 CSS px at 100% zoom"));
+  require(qAbs(theme.codeLineHeight() - 23.04) < 0.01, QStringLiteral("code line height should be 23.04 px at 100% zoom"));
+}
+
 int changedPixelCount(const QImage& image, QColor background);
 QRect imageInkBounds(const QImage& image, QColor background);
 const math::MathRenderNode& nativeInkRoot(const math::MathRenderNode& root);
@@ -1146,10 +1159,10 @@ void testMathRenderingLayout() {
   const BlockLayout* editingMathBlockLayout = editingDocumentLayout.block(mathBlock->id());
   require(editingMathBlockLayout != nullptr && editingMathBlockLayout->literalEditing(),
           QStringLiteral("focused math block should enter literal editing layout"));
-  require(editingMathBlockLayout->height() > mathBlockLayout->height() + QFontMetricsF(theme.codeFont()).height() * 2.0,
+  require(editingMathBlockLayout->height() > mathBlockLayout->height() + theme.codeLineHeight() * 2.0,
           QStringLiteral("focused math block should reserve both TeX source editor and rendered preview"));
   const QPointF editingSourcePoint(editingMathBlockLayout->rect().left() + theme.codePadding().left() + QFontMetricsF(theme.codeFont()).horizontalAdvance(QStringLiteral("\\sqrt")),
-                                   editingMathBlockLayout->rect().top() + theme.codePadding().top() + QFontMetricsF(theme.codeFont()).height() * 1.5);
+                                   editingMathBlockLayout->rect().top() + theme.codePadding().top() + theme.codeLineHeight() * 1.5);
   HitTestResult editingMathHit = editingMathBlockLayout->hitTest(editingSourcePoint, theme);
   require(editingMathHit.zone == HitTestResult::Zone::Math &&
               editingMathHit.cursorRect.left() > editingMathBlockLayout->rect().left() &&
@@ -1313,7 +1326,7 @@ void testLiteralBlockWrappedEditingGeometry() {
   const BlockLayout* codeBlock = codeLayout.block(code->id());
   require(codeBlock != nullptr, QStringLiteral("wrapped code layout should exist"));
   const QRectF codeContent = codeBlock->literalContentRect(theme);
-  const qreal codeLineHeight = qMax<qreal>(14.0, QFontMetricsF(theme.codeFont()).height());
+  const qreal codeLineHeight = theme.codeLineHeight();
   const HitTestResult codeSecondLineHit =
       codeBlock->hitTest(QPointF(codeContent.left() + 30.0, codeContent.top() + codeLineHeight * 1.4), theme);
   require(codeSecondLineHit.textOffset > 10, QStringLiteral("wrapped code hit-test should map into later visual line"));
@@ -3043,6 +3056,7 @@ int main(int argc, char** argv) {
   MarkdownDocument document;
   document.setMarkdownText(markdown, std::move(parsed.root));
 
+  testThemeCodeFontFallbackOrder();
   testInlineMarkerExpansion();
   testInlineProjectionContract();
   testInlineLayoutGeometryContract();

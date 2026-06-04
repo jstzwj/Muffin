@@ -96,10 +96,20 @@ QFont RenderTheme::headingFont(int level) const {
 }
 
 QFont RenderTheme::codeFont() const {
-  QFont font(QStringLiteral("Cascadia Mono"));
+  QFont font;
+  font.setFamilies({
+      QStringLiteral("Lucida Console"),
+      QStringLiteral("Consolas"),
+      QStringLiteral("Courier"),
+      QStringLiteral("monospace"),
+  });
   font.setStyleHint(QFont::Monospace);
-  font.setPointSizeF(scaled(10.5));
+  font.setPointSizeF(scaled(10.8));
   return font;
+}
+
+qreal RenderTheme::codeLineHeight() const {
+  return scaled(23.04);
 }
 
 QFont RenderTheme::mathFont() const {

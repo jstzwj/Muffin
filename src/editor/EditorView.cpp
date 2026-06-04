@@ -71,9 +71,9 @@ QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, cons
   return QRectF(origin.x() + x, origin.y() + line * lineHeight, 1.0, lineHeight);
 }
 
-QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin, qreal width) {
+QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin, qreal width, qreal lineHeight) {
   const QFontMetricsF metrics(font);
-  const qreal fallbackHeight = qMax<qreal>(14.0, metrics.height());
+  const qreal fallbackHeight = qMax<qreal>(14.0, lineHeight);
   offset = qBound<qsizetype>(0, offset, literal.size());
 
   QTextOption option;
@@ -97,12 +97,12 @@ QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, cons
         break;
       }
       textLine.setLineWidth(lineWidth);
-      textLine.setPosition(QPointF(0.0, y));
+      const qreal height = qMax<qreal>(fallbackHeight, textLine.height());
+      textLine.setPosition(QPointF(0.0, y + (height - textLine.height()) * 0.5));
       producedLine = true;
       const qsizetype visualStart = globalStart + textLine.textStart();
       const qsizetype visualLength = qMin<qsizetype>(textLine.textLength(), sourceLine.size() - textLine.textStart());
       const qsizetype visualEnd = visualStart + visualLength;
-      const qreal height = qMax<qreal>(fallbackHeight, textLine.height());
       fallback = QRectF(origin.x() + metrics.horizontalAdvance(sourceLine), origin.y() + y, 1.0, height);
       if (offset >= visualStart && offset <= visualEnd) {
         const qsizetype localOffset = qBound<qsizetype>(visualStart, offset, visualEnd);
@@ -853,7 +853,7 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
       {
         const QRectF contentRect = block->literalContentRect(theme_);
         hit.cursorRect =
-            literalCursorRectForOffset(block->literal(), position.text.textOffset, theme_.codeFont(), contentRect.topLeft(), contentRect.width());
+            literalCursorRectForOffset(block->literal(), position.text.textOffset, theme_.codeFont(), contentRect.topLeft(), contentRect.width(), theme_.codeLineHeight());
       }
       break;
     case BlockType::MathBlock:
@@ -861,7 +861,7 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
       if (block->literalEditing()) {
         const QRectF contentRect = block->literalContentRect(theme_);
         hit.cursorRect =
-            literalCursorRectForOffset(block->literal(), position.text.textOffset, theme_.codeFont(), contentRect.topLeft(), contentRect.width());
+            literalCursorRectForOffset(block->literal(), position.text.textOffset, theme_.codeFont(), contentRect.topLeft(), contentRect.width(), theme_.codeLineHeight());
       } else {
         const qsizetype offset = qBound<qsizetype>(0, position.text.textOffset, block->literal().size());
         const qreal x = offset <= block->literal().size() / 2 ? block->rect().left() : block->rect().right();
@@ -873,7 +873,7 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
       {
         const QRectF contentRect = block->literalContentRect(theme_);
         hit.cursorRect =
-            literalCursorRectForOffset(block->literal(), position.text.textOffset, theme_.codeFont(), contentRect.topLeft(), contentRect.width());
+            literalCursorRectForOffset(block->literal(), position.text.textOffset, theme_.codeFont(), contentRect.topLeft(), contentRect.width(), theme_.codeLineHeight());
       }
       break;
     case BlockType::Table:
