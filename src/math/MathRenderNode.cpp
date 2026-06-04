@@ -63,16 +63,18 @@ void MathRenderNode::paint(QPainter& painter, QPointF origin) const {
       break;
     }
     case MathRenderKind::Rule: {
-      painter.setPen(QPen(color,
-                          qMax<qreal>(1.0, ruleThickness),
-                          text == QStringLiteral("dashed") ? Qt::DashLine : Qt::SolidLine,
-                          Qt::SquareCap,
-                          Qt::MiterJoin));
-      if (shift < 0.0 && !qFuzzyIsNull(height + depth)) {
+      if (qFuzzyIsNull(width) && !qFuzzyIsNull(height + depth)) {
+        painter.setPen(QPen(color,
+                            qMax<qreal>(1.0, ruleThickness),
+                            text == QStringLiteral("dashed") ? Qt::DashLine : Qt::SolidLine,
+                            Qt::SquareCap,
+                            Qt::MiterJoin));
         painter.drawLine(QPointF(origin.x(), origin.y() - height), QPointF(origin.x(), origin.y() + depth));
       } else {
-        const qreal y = origin.y() - shift;
-        painter.drawLine(QPointF(origin.x(), y), QPointF(origin.x() + width, y));
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(color);
+        const qreal thickness = !qFuzzyIsNull(height) ? height : ruleThickness;
+        painter.drawRect(QRectF(origin.x(), origin.y() - thickness, width, thickness));
       }
       break;
     }
@@ -93,7 +95,7 @@ void MathRenderNode::paint(QPainter& painter, QPointF origin) const {
       } else if (qFuzzyIsNull(height) && !qFuzzyIsNull(ruleThickness)) {
         painter.setPen(Qt::NoPen);
         painter.setBrush(color);
-        painter.drawRect(QRectF(origin.x(), origin.y() - ruleThickness - shift, width, ruleThickness));
+        painter.drawRect(QRectF(origin.x(), origin.y() - ruleThickness, width, ruleThickness));
       } else {
         painter.setPen(Qt::NoPen);
         painter.setBrush(color);

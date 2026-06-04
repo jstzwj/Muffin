@@ -9,6 +9,7 @@ namespace muffin::math {
 namespace {
 
 constexpr qreal kKatexRootFontScale = 1.21;
+constexpr qreal kCssPixelsPerPoint = 96.0 / 72.0;
 constexpr qreal kKatexLineBoxHeightEm = 1.13636;
 constexpr qreal kKatexLineBoxHeightAboveBaselineEm = 0.88889;
 constexpr qreal kKatexLineBoxDepthBelowBaselineEm = kKatexLineBoxHeightEm - kKatexLineBoxHeightAboveBaselineEm;
@@ -132,6 +133,11 @@ std::unique_ptr<MathRenderNode> wrapKatexRoot(std::unique_ptr<MathRenderNode> bo
 
 }  // namespace
 
+qreal MathRenderer::katexRootFontPixelSize(const RenderTheme& theme) {
+  const qreal mathPointSize = theme.mathFont().pointSizeF();
+  return mathPointSize * kCssPixelsPerPoint * kKatexRootFontScale;
+}
+
 MathLayoutResult MathRenderer::render(const QString& tex, const RenderTheme& theme, bool displayMode, qreal maxWidth) const {
   Q_UNUSED(maxWidth);
   MathFontRegistry::ensureLoaded();
@@ -153,17 +159,15 @@ MathLayoutResult MathRenderer::render(const QString& tex, const RenderTheme& the
   }
 
   const MathStyle style = displayMode ? MathStyle::display() : MathStyle::textStyle();
-  MathOptions options(style, theme.mathFont().pointSizeF() * kKatexRootFontScale, theme.textColor(), settings);
+  MathOptions options(style, katexRootFontPixelSize(theme), theme.textColor(), settings);
   MathBuilder builder(options);
 
   result.root = wrapKatexRoot(builder.buildExpression(tree), options, displayMode);
   if (!result.root) {
     return result;
   }
-  const qreal horizontalPadding = displayMode ? theme.codePadding().left() + theme.codePadding().right() : 0.0;
-  const qreal verticalPadding = displayMode ? theme.codePadding().top() + theme.codePadding().bottom() : 0.0;
-  result.baseline = result.root->height + (displayMode ? theme.codePadding().top() : 0.0);
-  result.size = QSizeF(result.root->width + horizontalPadding, result.root->height + result.root->depth + verticalPadding);
+  result.baseline = result.root->height;
+  result.size = QSizeF(result.root->width, result.root->height + result.root->depth);
   return result;
 }
 

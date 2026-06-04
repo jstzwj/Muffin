@@ -10,6 +10,7 @@
 #include "math/MathMacroExpander.h"
 #include "math/MathParseError.h"
 #include "math/MathParser.h"
+#include "math/MathRenderer.h"
 #include "math/MathSvgGeometry.h"
 #include "math/MathSymbols.h"
 #include "render/TreeSitterHighlighter.h"
@@ -1085,7 +1086,36 @@ void testMathRenderingLayout() {
   const BlockLayout* mathBlockLayout = documentLayout.block(mathBlock->id());
   require(mathBlockLayout != nullptr, QStringLiteral("math block layout should exist"));
   require(mathBlockLayout->mathLayout() != nullptr && mathBlockLayout->mathLayout()->valid(), QStringLiteral("math block should have native math layout"));
-  require(mathBlockLayout->height() >= mathBlockLayout->mathLayout()->size.height(), QStringLiteral("math block height should include math layout"));
+  require(qAbs(mathBlockLayout->height() -
+               std::ceil(mathBlockLayout->mathLayout()->size.height() + theme.codePadding().top() + theme.codePadding().bottom())) <= 1.0,
+          QStringLiteral("inactive math block height should be native formula height plus block padding"));
+  require(!mathBlockLayout->literalEditing(), QStringLiteral("inactive math block should render native formula instead of literal source"));
+
+  const math::MathLayoutResult blockFormulaLayout = math::MathRenderer().render(QStringLiteral("\\sqrt{x} = \\frac{1}{2}"), theme, true);
+  require(blockFormulaLayout.valid(), QStringLiteral("display math renderer should render sample formula directly"));
+  require(qAbs(blockFormulaLayout.size.width() - blockFormulaLayout.root->width) < 0.01 &&
+              qAbs(blockFormulaLayout.size.height() - (blockFormulaLayout.root->height + blockFormulaLayout.root->depth)) < 0.01,
+          QStringLiteral("display math renderer should expose pure KaTeX root bbox without block padding"));
+
+  HitTestResult inactiveMathHit = mathBlockLayout->hitTest(mathBlockLayout->rect().center(), theme);
+  require(inactiveMathHit.zone == HitTestResult::Zone::Math, QStringLiteral("inactive math block hit should target math zone"));
+  require(inactiveMathHit.cursorRect.left() == mathBlockLayout->rect().right() || inactiveMathHit.cursorRect.left() == mathBlockLayout->rect().left(),
+          QStringLiteral("inactive math block cursor should be atomic at block edge"));
+
+  SelectionRange mathEditingSelection;
+  mathEditingSelection.anchor.blockId = mathBlock->id();
+  mathEditingSelection.anchor.text.nodeId = mathBlock->id();
+  mathEditingSelection.focus = mathEditingSelection.anchor;
+  DocumentLayout editingDocumentLayout;
+  editingDocumentLayout.rebuild(document, theme, 800.0, mathEditingSelection);
+  const BlockLayout* editingMathBlockLayout = editingDocumentLayout.block(mathBlock->id());
+  require(editingMathBlockLayout != nullptr && editingMathBlockLayout->literalEditing(),
+          QStringLiteral("focused math block should enter literal editing layout"));
+  HitTestResult editingMathHit = editingMathBlockLayout->hitTest(editingMathBlockLayout->rect().center(), theme);
+  require(editingMathHit.zone == HitTestResult::Zone::Math &&
+              editingMathHit.cursorRect.left() > editingMathBlockLayout->rect().left() &&
+              editingMathHit.cursorRect.left() < editingMathBlockLayout->rect().right(),
+          QStringLiteral("editing math block cursor should use literal source coordinates"));
 
   const MarkdownNode* paragraph = findFirstBlock(document.root(), BlockType::Paragraph);
   require(paragraph != nullptr, QStringLiteral("math inline paragraph should parse"));
@@ -1178,6 +1208,28 @@ void testMathRenderingLayout() {
             QStringLiteral("inline formula painted ink width should match direct native formula paint"));
     require(qAbs((inlineInk.left() - 16) - (directInk.left() - 16)) <= 2,
             QStringLiteral("inline formula painted ink should keep the same left bearing as direct native paint"));
+  }
+  {
+    math::MathRenderNode rule;
+    rule.kind = math::MathRenderKind::Rule;
+    rule.width = 48.0;
+    rule.height = 2.0;
+    rule.ruleThickness = 2.0;
+    rule.shift = -12.0;
+    rule.color = theme.textColor();
+
+    const QColor transparent(Qt::transparent);
+    QImage ruleImage(QSize(96, 64), QImage::Format_ARGB32);
+    ruleImage.fill(transparent);
+    {
+      QPainter rulePainter(&ruleImage);
+      rule.paint(rulePainter, QPointF(16.0, 32.0));
+    }
+    const QRect ruleInk = imageInkBounds(ruleImage, transparent);
+    require(!ruleInk.isEmpty(), QStringLiteral("horizontal rule paint should produce ink"));
+    require(ruleInk.width() >= 46, QStringLiteral("fraction-style horizontal rule should paint across its full width"));
+    require(qAbs(ruleInk.top() - 30) <= 1,
+            QStringLiteral("horizontal rule paint should not apply node shift a second time"));
   }
 
   QImage image(QSize(480, qCeil(mathBlockLayout->height()) + 30), QImage::Format_ARGB32);
@@ -1656,7 +1708,7 @@ void testMathFixtureRenderTreeDumps(const QString& fixturePath) {
   const QString glyphsPath = katexGlyphsPathForFixture(fixturePath);
   const QMap<QString, QJsonObject> katexGlyphsById = readObjectArrayById(glyphsPath);
   RenderTheme theme = RenderTheme::github();
-  const qreal rootEm = theme.mathFont().pointSizeF() * 1.21;
+  const qreal rootEm = math::MathRenderer::katexRootFontPixelSize(theme);
   QVector<BBoxAuditEntry> bboxAudit;
   const bool auditKatexBBox = qEnvironmentVariableIntValue("MUFFIN_AUDIT_KATEX_BBOX") != 0;
   for (const QJsonValue& value : fixtures) {
@@ -2045,14 +2097,16 @@ void testRemainingKatexFunctionFamilies() {
     RenderTheme theme = RenderTheme::github();
     math::MathSettings settings;
     const qreal rawWidth = math::MathBuilder(math::MathOptions(math::MathStyle::textStyle(),
-                                                              theme.mathFont().pointSizeF(),
+                                                              theme.mathFont().pointSizeF() * 96.0 / 72.0,
                                                               theme.textColor(),
                                                               settings))
                            .buildExpression(math::MathParser(QStringLiteral("E=mc^2"), settings).parse())
                            ->width;
+    require(qAbs(math::MathRenderer::katexRootFontPixelSize(theme) - theme.mathFont().pointSizeF() * 96.0 / 72.0 * 1.21) < 0.001,
+            QStringLiteral("MathRenderer should convert Qt point size to CSS pixels before applying KaTeX root font scale"));
     const math::MathLayoutResult rendered = math::MathRenderer().render(QStringLiteral("E=mc^2"), theme, false);
     require(rendered.valid() && rendered.size.width() > rawWidth * 1.15,
-            QStringLiteral("MathRenderer should apply KaTeX root font scale 1.21"));
+            QStringLiteral("MathRenderer should apply KaTeX root font scale 1.21 after point-to-pixel conversion"));
   }
   {
     const QStringList symbolCommands{

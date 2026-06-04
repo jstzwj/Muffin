@@ -766,8 +766,14 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
       break;
     case BlockType::MathBlock:
       hit.zone = HitTestResult::Zone::Math;
-      hit.cursorRect = literalCursorRectForOffset(block->literal(), position.text.textOffset, theme_.mathFont(),
-                                                  block->rect().marginsRemoved(theme_.codePadding()).topLeft());
+      if (block->literalEditing()) {
+        hit.cursorRect = literalCursorRectForOffset(block->literal(), position.text.textOffset, theme_.mathFont(),
+                                                    block->rect().marginsRemoved(theme_.codePadding()).topLeft());
+      } else {
+        const qsizetype offset = qBound<qsizetype>(0, position.text.textOffset, block->literal().size());
+        const qreal x = offset <= block->literal().size() / 2 ? block->rect().left() : block->rect().right();
+        hit.cursorRect = QRectF(x, block->rect().top(), 1.0, block->rect().height());
+      }
       break;
     case BlockType::HtmlBlock:
       hit.zone = HitTestResult::Zone::Html;

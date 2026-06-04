@@ -200,6 +200,14 @@ const math::MathLayoutResult* BlockLayout::mathLayout() const {
   return mathLayout_.get();
 }
 
+void BlockLayout::setLiteralEditing(bool editing) {
+  literalEditing_ = editing;
+}
+
+bool BlockLayout::literalEditing() const {
+  return literalEditing_;
+}
+
 void BlockLayout::setHeadingLevel(int level) {
   headingLevel_ = level;
 }
@@ -389,15 +397,17 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
       painter.setPen(theme.codeBorderColor());
       painter.setBrush(theme.codeBackgroundColor());
       painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
-      if (mathLayout_ && mathLayout_->valid()) {
-        const qreal x = viewRect.left() + qMax<qreal>(theme.codePadding().left(), (viewRect.width() - mathLayout_->size.width()) / 2.0);
-        mathLayout_->paint(painter, QPointF(x, viewRect.top()));
-      } else {
+      if (literalEditing_ || !mathLayout_ || !mathLayout_->valid()) {
         painter.setPen(theme.textColor());
         painter.setFont(theme.mathFont());
         QTextOption option;
         option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
         painter.drawText(viewRect.marginsRemoved(theme.codePadding()), literal_, option);
+      } else {
+        const QRectF contentRect = viewRect.marginsRemoved(theme.codePadding());
+        const qreal x = contentRect.left() + qMax<qreal>(0.0, (contentRect.width() - mathLayout_->size.width()) / 2.0);
+        const qreal y = contentRect.top() + qMax<qreal>(0.0, (contentRect.height() - mathLayout_->size.height()) / 2.0);
+        mathLayout_->paint(painter, QPointF(x, y));
       }
       painter.restore();
       break;
@@ -445,8 +455,13 @@ QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection,
       break;
     case BlockType::CodeFence:
     case BlockType::HtmlBlock:
-    case BlockType::MathBlock:
       return literalSelectionRects(selection.startOffset(), selection.endOffset(), theme);
+    case BlockType::MathBlock:
+      if (literalEditing_) {
+        return literalSelectionRects(selection.startOffset(), selection.endOffset(), theme);
+      }
+      rects.push_back(rect_.adjusted(-1.0, -1.0, 1.0, 1.0));
+      return rects;
     case BlockType::Table:
       rects.push_back(rect_.adjusted(-1.0, -1.0, 1.0, 1.0));
       return rects;
@@ -477,8 +492,15 @@ QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset,
       break;
     case BlockType::CodeFence:
     case BlockType::HtmlBlock:
-    case BlockType::MathBlock:
       return literalSelectionRects(startOffset, endOffset, theme);
+    case BlockType::MathBlock:
+      if (literalEditing_) {
+        return literalSelectionRects(startOffset, endOffset, theme);
+      }
+      if (startOffset != endOffset) {
+        rects.push_back(rect_.adjusted(-1.0, -1.0, 1.0, 1.0));
+      }
+      return rects;
     case BlockType::Table:
       if (startOffset != endOffset) {
         rects.push_back(rect_.adjusted(-1.0, -1.0, 1.0, 1.0));
@@ -617,9 +639,15 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
     case BlockType::MathBlock:
       result.zone = HitTestResult::Zone::Math;
       {
-        const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
-        result.textOffset = literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.mathFont());
-        result.cursorRect = literalCursorRectForOffset(literal_, result.textOffset, theme.mathFont(), contentRect.topLeft());
+        if (literalEditing_) {
+          const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
+          result.textOffset = literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.mathFont());
+          result.cursorRect = literalCursorRectForOffset(literal_, result.textOffset, theme.mathFont(), contentRect.topLeft());
+        } else {
+          result.textOffset = documentPos.x() < rect_.center().x() ? 0 : literal_.size();
+          const qreal x = result.textOffset == 0 ? rect_.left() : rect_.right();
+          result.cursorRect = QRectF(x, rect_.top(), 1.0, rect_.height());
+        }
       }
       break;
     case BlockType::HtmlBlock:

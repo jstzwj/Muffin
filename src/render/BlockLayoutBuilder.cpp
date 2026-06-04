@@ -57,6 +57,10 @@ const MarkdownNode* primaryParagraph(const MarkdownNode& node) {
   return nullptr;
 }
 
+bool selectionFocusesNode(const SelectionRange& selection, NodeId nodeId) {
+  return nodeId.isValid() && selection.focus.blockId == nodeId && selection.focus.text.nodeId == nodeId;
+}
+
 QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& theme, qreal width) {
   int columnCount = 0;
   for (const auto& row : table.children()) {
@@ -276,11 +280,15 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
     layout->setCodeLanguage(node.codeLanguage());
     layout->setCodeHighlightSpans(codeHighlighter_.highlight(node.codeLanguage(), layout->literal()));
   }
+  const bool editingLiteral = node.type() == BlockType::MathBlock && selectionFocusesNode(selection_, node.id());
+  layout->setLiteralEditing(editingLiteral);
   qreal height = textHeight(layout->literal(), node.type() == BlockType::MathBlock ? theme.mathFont() : theme.codeFont(), width, theme.codePadding());
   if (node.type() == BlockType::MathBlock) {
     auto mathLayout = std::make_shared<math::MathLayoutResult>(mathRenderer_.render(layout->literal(), theme, true, width));
     if (mathLayout->valid()) {
-      height = qMax(height, std::ceil(mathLayout->size.height()));
+      if (!editingLiteral) {
+        height = std::ceil(mathLayout->size.height() + theme.codePadding().top() + theme.codePadding().bottom());
+      }
       layout->setMathLayout(std::move(mathLayout));
     }
   }

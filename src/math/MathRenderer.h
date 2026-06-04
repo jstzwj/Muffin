@@ -10,6 +10,8 @@ namespace muffin::math {
 
 class MathRenderer {
 public:
+  static qreal katexRootFontPixelSize(const RenderTheme& theme);
+
   MathLayoutResult render(const QString& tex, const RenderTheme& theme, bool displayMode, qreal maxWidth = 0.0) const;
 };
 

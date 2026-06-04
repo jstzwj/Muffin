@@ -5,6 +5,8 @@
 namespace muffin::math {
 namespace {
 
+constexpr qreal kPointsPerCssPixel = 72.0 / 96.0;
+
 qreal multiplierForStyle(MathStyle style) {
   switch (style.id()) {
     case MathStyle::Display:
@@ -130,7 +132,7 @@ QFont MathOptions::fontForClass(const QString& fontClass) const {
   }
 
   QFont font(family);
-  font.setPixelSize(qMax(1, qRound(fontPointSize())));
+  font.setPointSizeF(qMax<qreal>(1.0, fontPointSize()) * kPointsPerCssPixel);
   if (fontClass == QStringLiteral("mathbf")) {
     font.setBold(true);
   } else if (fontClass == QStringLiteral("typewriter")) {

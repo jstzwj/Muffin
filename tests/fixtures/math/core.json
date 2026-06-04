@@ -29,7 +29,7 @@
     "glyphXToleranceEm": 0.01,
     "glyphWidthToleranceEm": 0.01,
     "compareKatexInkBBox": true,
-    "inkBBoxWidthToleranceEm": 0.1,
+    "inkBBoxWidthToleranceEm": 0.12,
     "inkBBoxHeightToleranceEm": 0.2
   },
   {

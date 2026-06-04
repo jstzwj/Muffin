@@ -1322,7 +1322,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeFraction(const MathParseNode& n
     auto line = std::make_unique<MathRenderNode>();
     line->kind = MathRenderKind::Rule;
     line->width = width;
-    line->height = 0;
+    line->height = rule;
     line->depth = 0;
     line->ruleThickness = rule;
     line->color = localOptions.color();

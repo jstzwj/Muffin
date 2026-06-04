@@ -57,6 +57,8 @@ public:
   const QVector<CodeHighlightSpan>& codeHighlightSpans() const;
   void setMathLayout(std::shared_ptr<math::MathLayoutResult> layout);
   const math::MathLayoutResult* mathLayout() const;
+  void setLiteralEditing(bool editing);
+  bool literalEditing() const;
 
   void setHeadingLevel(int level);
   int headingLevel() const;
@@ -105,6 +107,7 @@ private:
   QString codeLanguage_;
   QVector<CodeHighlightSpan> codeHighlightSpans_;
   std::shared_ptr<math::MathLayoutResult> mathLayout_;
+  bool literalEditing_ = false;
   int headingLevel_ = 0;
   QString listMarker_;
   qsizetype contentSourceStart_ = -1;
