@@ -456,7 +456,10 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
       if (event->modifiers().testFlag(Qt::ShiftModifier)) {
         return outdentListItem();
       }
-      return indentListItem() || insertText(QStringLiteral("\u200b"));
+      if (shouldIndentListItemFromKeyboard()) {
+        return indentListItem();
+      }
+      return insertText(QStringLiteral("\u200b"));
     case Qt::Key_Backtab:
       if (codeFenceController_ && codeFenceController_->isEditing()) {
         return insertText(QStringLiteral("\t"));
@@ -510,6 +513,37 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
   }
 }
 
+bool InputController::shouldIndentListItemFromKeyboard() const {
+  BlockEditContextResolver resolver = contextResolver();
+  BlockEditContext context;
+  if (!resolver.current(context) || !context.node || context.node->type() != BlockType::ListItem || !selection_ || !selection_->hasCursor()) {
+    return false;
+  }
+
+  const MarkdownNode* previous = context.node->previousSibling();
+  if (!previous || previous->type() != BlockType::ListItem) {
+    return false;
+  }
+
+  const CursorPosition cursor = selection_->cursorPosition();
+  if (cursor.text.inMeta) {
+    return true;
+  }
+
+  qsizetype lineStart = -1;
+  qsizetype contentStart = -1;
+  qsizetype lineEnd = -1;
+  if (!resolver.listItemLineBounds(context, lineStart, contentStart, lineEnd)) {
+    return false;
+  }
+
+  const qsizetype sourceOffset = cursor.text.sourceOffset >= 0 ? cursor.text.sourceOffset : context.cursorSourceOffset;
+  if (sourceOffset >= 0) {
+    return sourceOffset <= contentStart + 1;
+  }
+  return context.cursorTextOffset <= 1;
+}
+
 bool InputController::editParagraph(TextBlockCommandBuilder::Operation operation, QString text) {
   PerfTimer perf("input.editParagraph.buildCommand");
   BlockEditContextResolver resolver = contextResolver();
@@ -541,7 +575,8 @@ bool InputController::applyTextCommand(const TextBlockCommandBuilder::Command& c
         command.preferredCursor,
         command.fallbackSourceOffset,
         command.nodeHints,
-        command.preferLaterEmptyAtOffset);
+        command.preferLaterEmptyAtOffset,
+        command.structureEdit);
   }
   return true;
 }
@@ -803,7 +838,8 @@ void InputController::applyLocalEdit(
     CursorPosition preferredCursor,
     qsizetype fallbackSourceOffset,
     QVector<LocalEditNodeHint> nodeHints,
-    bool preferLaterEmptyAtOffset) {
+    bool preferLaterEmptyAtOffset,
+    bool structureEdit) {
   PerfTimer perf("input.applyLocalEdit");
   if (!session_ || sourceStart < 0 || removedLength < 0) {
     return;
@@ -841,7 +877,7 @@ void InputController::applyLocalEdit(
   }
 
   if (undoStack_) {
-    const bool textDeltaUndoEligible = appliedLocally && beforeCursor.isValid() && nextCursor.isValid();
+    const bool textDeltaUndoEligible = appliedLocally && !structureEdit && beforeCursor.isValid() && nextCursor.isValid();
     if (textDeltaUndoEligible) {
       QVector<NodeId> affectedNodes;
       affectedNodes.push_back(nextCursor.blockId);
@@ -866,7 +902,7 @@ void InputController::applyLocalEdit(
     }
   }
   if (brushQueue_) {
-    if (!appliedLocally || session_->lastLocalEditChangedTopLevelStructure()) {
+    if (structureEdit || !appliedLocally || session_->lastLocalEditChangedTopLevelStructure()) {
       brushQueue_->requestFullRefresh();
     } else {
       brushQueue_->requestBlockRefresh(nextCursor.blockId);

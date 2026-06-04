@@ -56,6 +56,7 @@ signals:
 
 private:
   bool handleKeyPress(QKeyEvent* event);
+  bool shouldIndentListItemFromKeyboard() const;
   bool editParagraph(TextBlockCommandBuilder::Operation operation, QString text = {});
   bool applyTextCommand(const TextBlockCommandBuilder::Command& command);
   bool replaceSelection(QString text, EditTransaction::Kind kind, QString label);
@@ -84,7 +85,8 @@ private:
       CursorPosition preferredCursor,
       qsizetype fallbackSourceOffset,
       QVector<LocalEditNodeHint> nodeHints = {},
-      bool preferLaterEmptyAtOffset = false);
+      bool preferLaterEmptyAtOffset = false,
+      bool structureEdit = false);
   void applyEdit(
       EditTransaction::Kind kind,
       const QString& label,

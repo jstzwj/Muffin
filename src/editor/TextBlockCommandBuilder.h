@@ -30,6 +30,7 @@ public:
     qsizetype fallbackSourceOffset = -1;
     QVector<LocalEditNodeHint> nodeHints;
     bool preferLaterEmptyAtOffset = false;
+    bool structureEdit = false;
 
     bool hasLocalEdit() const;
   };

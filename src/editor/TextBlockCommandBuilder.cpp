@@ -398,6 +398,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(c
     command.kind = EditTransaction::Kind::DeleteText;
     command.label = QStringLiteral("Outdent List Item");
     command.fallbackSourceOffset = qMax<qsizetype>(lineStart, context.contentRange.byteStart + context.cursorTextOffset - 2);
+    command.structureEdit = true;
     command.valid = true;
     command.handled = true;
     return command;
@@ -409,6 +410,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(c
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Exit List Item");
   command.fallbackSourceOffset = lineStart;
+  command.structureEdit = true;
   command.valid = true;
   command.handled = true;
   return command;
@@ -417,6 +419,11 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(c
 TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildIndentListItem(const BlockEditContext& context) const {
   Command command;
   if (!session_ || !resolver_ || !context.node || context.node->type() != BlockType::ListItem) {
+    return command;
+  }
+
+  const MarkdownNode* previous = context.node->previousSibling();
+  if (!previous || previous->type() != BlockType::ListItem) {
     return command;
   }
 
@@ -433,6 +440,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildIndentListItem(co
   command.kind = EditTransaction::Kind::InsertText;
   command.label = QStringLiteral("Indent List Item");
   command.fallbackSourceOffset = context.contentRange.byteStart + context.cursorTextOffset + 2;
+  command.structureEdit = true;
   command.valid = true;
   command.handled = true;
   return command;

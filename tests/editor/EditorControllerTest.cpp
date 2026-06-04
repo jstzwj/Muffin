@@ -162,6 +162,18 @@ MarkdownNode* firstChildOfType(MarkdownNode* node, BlockType type) {
   return nullptr;
 }
 
+MarkdownNode* maybeFirstChildOfType(MarkdownNode* node, BlockType type) {
+  if (!node) {
+    return nullptr;
+  }
+  for (const auto& child : node->children()) {
+    if (child->type() == type) {
+      return child.get();
+    }
+  }
+  return nullptr;
+}
+
 MarkdownNode* firstBlockOfType(const DocumentSession& session, BlockType type) {
   for (const auto& child : session.document().root().children()) {
     if (child->type() == type) {
@@ -170,6 +182,18 @@ MarkdownNode* firstBlockOfType(const DocumentSession& session, BlockType type) {
   }
   require(false, "block type not found");
   return nullptr;
+}
+
+int listDepthForItem(const MarkdownNode* item) {
+  int depth = 0;
+  const MarkdownNode* node = item;
+  while (node) {
+    if (node->type() == BlockType::ListItem) {
+      ++depth;
+    }
+    node = node->parent();
+  }
+  return depth;
 }
 
 void setCursor(SelectionController& selection, MarkdownNode* block, qsizetype offset) {
@@ -1886,13 +1910,19 @@ void testListItemEditingCommands() {
   setCursor(selection, listItemAt(session, 0, 1), 0);
   require(input.indentListItem(), "tab should indent list item");
   require(session.markdownText() == QStringLiteral("- alpha\n  - beta"), "list item indent mismatch");
-  listUndo = requireTextDeltaCommand(undoStack, "list indent should use text delta command");
-  require(listUndo.textDeltaCommand().delta.insertedText == QStringLiteral("  "), "list indent delta inserted text mismatch");
-
   MarkdownNode* nestedList = firstChildOfType(listItemAt(session, 0, 0), BlockType::List);
+  require(nestedList != nullptr && nestedList->children().size() == 1, "list indent should create a nested list");
+  require(undoStack.canUndo(), "list indent should be undoable");
+
+  nestedList = firstChildOfType(listItemAt(session, 0, 0), BlockType::List);
   setCursor(selection, childAt(nestedList, 0), 0);
   require(input.outdentListItem(), "shift-tab should outdent nested list item");
   require(session.markdownText() == QStringLiteral("- alpha\n- beta"), "list item outdent mismatch");
+
+  session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
+  setCursor(selection, listItemAt(session, 0, 0), 0);
+  require(!input.indentListItem(), "first list item should not structurally indent without a previous sibling");
+  require(session.markdownText() == QStringLiteral("- alpha\n- beta"), "first list item structural indent should leave markdown unchanged");
 
   EditorView view;
   input.attach(&view);
@@ -1911,6 +1941,10 @@ void testTabInRenderedTextInsertsZeroWidthSpace() {
   BrushQueue brushQueue;
   InputController input;
   EditorView view;
+  QVector<BrushQueue::RefreshRequest> tabRefreshes;
+  QObject::connect(&brushQueue, &BrushQueue::refreshRequested, [&tabRefreshes](BrushQueue::RefreshRequest request) {
+    tabRefreshes.push_back(std::move(request));
+  });
   wireInput(input, session, selection, undoStack, brushQueue);
   input.attach(&view);
 
@@ -1944,13 +1978,63 @@ void testTabInRenderedTextInsertsZeroWidthSpace() {
   require(input.eventFilter(&view, &listTab), "tab on list item should still indent structurally");
   require(session.markdownText() == QStringLiteral("- alpha\n  - beta"), "list item tab should not fall back to plain spaces");
   require(!session.markdownText().contains(QChar(0x200b)), "unordered list tab should not insert U+200B");
+  brushQueue.flush();
+  require(!tabRefreshes.isEmpty() && tabRefreshes.last().fullLayoutDirty, "unordered list structural tab should request full refresh");
+
+  session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
+  tabRefreshes.clear();
+  setSourceCursor(selection, listItemAt(session, 0, 1), 2, QStringLiteral("- alpha\n- be").size());
+  QKeyEvent listMiddleTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+  require(input.eventFilter(&view, &listMiddleTab), "tab in middle of unordered list item should insert U+200B");
+  require(session.markdownText() == QStringLiteral("- alpha\n- be\u200bta"), "unordered list middle tab should not indent structurally");
+  brushQueue.flush();
+  require(maybeFirstChildOfType(listItemAt(session, 0, 0), BlockType::List) == nullptr,
+          "unordered list middle tab should not create nested list structure");
 
   session.setMarkdownText(QStringLiteral("1. alpha\n2. beta"), false);
-  setCursor(selection, listItemAt(session, 0, 1), 2);
+  tabRefreshes.clear();
+  setSourceCursor(selection, listItemAt(session, 0, 1), 0, QStringLiteral("1. alpha\n2. ").size());
   QKeyEvent orderedListTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
   require(input.eventFilter(&view, &orderedListTab), "tab on ordered list item should indent structurally");
   require(session.markdownText() == QStringLiteral("1. alpha\n  2. beta"), "ordered list tab should add structural leading spaces");
   require(!session.markdownText().contains(QChar(0x200b)), "ordered list tab should not insert U+200B");
+  brushQueue.flush();
+  require(!tabRefreshes.isEmpty() && tabRefreshes.last().fullLayoutDirty, "ordered list structural tab should request full refresh");
+
+  session.setMarkdownText(QStringLiteral("1. alpha\n2. beta"), false);
+  setSourceCursor(selection, listItemAt(session, 0, 1), 2, QStringLiteral("1. alpha\n2. be").size());
+  QKeyEvent orderedListMiddleTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+  require(input.eventFilter(&view, &orderedListMiddleTab), "tab in middle of ordered list item should insert U+200B");
+  require(session.markdownText() == QStringLiteral("1. alpha\n2. be\u200bta"), "ordered list middle tab should not indent structurally");
+
+  session.setMarkdownText(QStringLiteral("- M0/M2 alpha\n- M3 beta"), false);
+  tabRefreshes.clear();
+  setSourceCursor(selection, listItemAt(session, 0, 0), 0, QStringLiteral("- ").size());
+  QKeyEvent firstUnorderedListTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+  require(input.eventFilter(&view, &firstUnorderedListTab), "tab at first unordered item content start should insert U+200B");
+  require(session.markdownText() == QStringLiteral("- \u200bM0/M2 alpha\n- M3 beta"),
+          "first unordered item tab should fall back to content indentation");
+  require(maybeFirstChildOfType(listItemAt(session, 0, 0), BlockType::List) == nullptr,
+          "first unordered item tab should not create impossible nested list structure");
+
+  session.setMarkdownText(QStringLiteral("1. M0/M2 alpha\n2. M3 beta"), false);
+  setSourceCursor(selection, listItemAt(session, 0, 0), 0, QStringLiteral("1. ").size());
+  QKeyEvent firstOrderedListTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+  require(input.eventFilter(&view, &firstOrderedListTab), "tab at first ordered item content start should insert U+200B");
+  require(session.markdownText() == QStringLiteral("1. \u200bM0/M2 alpha\n2. M3 beta"),
+          "first ordered item tab should fall back to content indentation");
+
+  session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
+  setSourceCursor(selection, listItemAt(session, 0, 1), 1, QStringLiteral("- alpha\n- b").size());
+  QKeyEvent unorderedVisualStartTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+  require(input.eventFilter(&view, &unorderedVisualStartTab), "tab near unordered item visual start should indent structurally");
+  require(session.markdownText() == QStringLiteral("- alpha\n  - beta"), "unordered visual-start tab should indent item");
+
+  session.setMarkdownText(QStringLiteral("1. alpha\n2. beta"), false);
+  setSourceCursor(selection, listItemAt(session, 0, 1), 1, QStringLiteral("1. alpha\n2. b").size());
+  QKeyEvent orderedVisualStartTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+  require(input.eventFilter(&view, &orderedVisualStartTab), "tab near ordered item visual start should indent structurally");
+  require(session.markdownText() == QStringLiteral("1. alpha\n  2. beta"), "ordered visual-start tab should indent item");
 
   DocumentSession realSession;
   EditorController controller;
@@ -1966,6 +2050,101 @@ void testTabInRenderedTextInsertsZeroWidthSpace() {
   QKeyEvent realTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
   QApplication::sendEvent(&realView, &realTab);
   require(realSession.markdownText() == QStringLiteral("alpha\u200bbeta"), "real editor tab should insert U+200B in paragraph");
+}
+
+void testListTabFromRenderedClick() {
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  controller.attach(&session, &view);
+  view.resize(720, 420);
+
+  session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
+  view.setDocument(session.document());
+  MarkdownNode* secondItem = listItemAt(session, 0, 1);
+  const QRectF secondRect = view.nodeRect(secondItem->id());
+  const QPointF unorderedStart(secondRect.left() + 4.0, secondRect.center().y());
+  QMouseEvent unorderedPress(
+      QEvent::MouseButtonPress,
+      unorderedStart,
+      view.viewport()->mapToGlobal(unorderedStart.toPoint()),
+      Qt::LeftButton,
+      Qt::LeftButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &unorderedPress);
+  QMouseEvent unorderedRelease(
+      QEvent::MouseButtonRelease,
+      unorderedStart,
+      view.viewport()->mapToGlobal(unorderedStart.toPoint()),
+      Qt::LeftButton,
+      Qt::NoButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &unorderedRelease);
+  QKeyEvent unorderedTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+  QApplication::sendEvent(&view, &unorderedTab);
+  require(session.markdownText() == QStringLiteral("- alpha\n  - beta"), "clicking unordered item start then tab should indent item");
+
+  QKeyEvent unorderedBacktab(QEvent::KeyPress, Qt::Key_Backtab, Qt::ShiftModifier);
+  QApplication::sendEvent(&view, &unorderedBacktab);
+  require(session.markdownText() == QStringLiteral("- alpha\n- beta"), "shift-tab after unordered indent should outdent item");
+
+  session.setMarkdownText(QStringLiteral("1. alpha\n2. beta"), false);
+  view.setDocument(session.document());
+  MarkdownNode* orderedSecond = listItemAt(session, 0, 1);
+  const QRectF orderedRect = view.nodeRect(orderedSecond->id());
+  const QPointF orderedStart(orderedRect.left() + 4.0, orderedRect.center().y());
+  QMouseEvent orderedPress(
+      QEvent::MouseButtonPress,
+      orderedStart,
+      view.viewport()->mapToGlobal(orderedStart.toPoint()),
+      Qt::LeftButton,
+      Qt::LeftButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &orderedPress);
+  QMouseEvent orderedRelease(
+      QEvent::MouseButtonRelease,
+      orderedStart,
+      view.viewport()->mapToGlobal(orderedStart.toPoint()),
+      Qt::LeftButton,
+      Qt::NoButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &orderedRelease);
+  QKeyEvent orderedTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+  QApplication::sendEvent(&view, &orderedTab);
+  require(session.markdownText() == QStringLiteral("1. alpha\n  2. beta"), "clicking ordered item start then tab should indent item");
+
+  session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
+  view.setDocument(session.document());
+  secondItem = listItemAt(session, 0, 1);
+  const QRectF viewportRect = view.nodeRect(secondItem->id());
+  const QPointF viewportStart(viewportRect.left() + 4.0, viewportRect.center().y());
+  QMouseEvent viewportPress(
+      QEvent::MouseButtonPress,
+      viewportStart,
+      view.viewport()->mapToGlobal(viewportStart.toPoint()),
+      Qt::LeftButton,
+      Qt::LeftButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &viewportPress);
+  QMouseEvent viewportRelease(
+      QEvent::MouseButtonRelease,
+      viewportStart,
+      view.viewport()->mapToGlobal(viewportStart.toPoint()),
+      Qt::LeftButton,
+      Qt::NoButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &viewportRelease);
+  QKeyEvent viewportShortcut(QEvent::ShortcutOverride, Qt::Key_Tab, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &viewportShortcut);
+  require(viewportShortcut.isAccepted(), "viewport tab shortcut override should be accepted");
+  QKeyEvent viewportTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &viewportTab);
+  require(session.markdownText() == QStringLiteral("- alpha\n  - beta"), "viewport tab after list click should indent item");
+  MarkdownNode* indentedViewportItem = listItemAt(session, 0, 0)->children().size() > 1
+                                           ? childAt(firstChildOfType(listItemAt(session, 0, 0), BlockType::List), 0)
+                                           : nullptr;
+  require(indentedViewportItem != nullptr, "viewport tab should parse indented unordered item as nested list item");
+  require(listDepthForItem(indentedViewportItem) == 2, "viewport tab should increase unordered list AST depth");
 }
 
 void testSourceEditorPreservesZeroWidthSpaceText() {
@@ -2762,6 +2941,7 @@ int main(int argc, char** argv) {
   testListItemInput();
   testListItemEditingCommands();
   testTabInRenderedTextInsertsZeroWidthSpace();
+  testListTabFromRenderedClick();
   testSourceEditorPreservesZeroWidthSpaceText();
   testStylizeCollapsedSkeletons();
   testTypingIntoCollapsedStyleSkeletons();
