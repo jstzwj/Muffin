@@ -139,10 +139,16 @@ qreal MathRenderer::katexRootFontPixelSize(const RenderTheme& theme) {
 }
 
 MathLayoutResult MathRenderer::render(const QString& tex, const RenderTheme& theme, bool displayMode, qreal maxWidth) const {
+  MathSettings settings;
+  settings.displayMode = displayMode;
+  return render(tex, theme, displayMode, settings, maxWidth);
+}
+
+MathLayoutResult MathRenderer::render(const QString& tex, const RenderTheme& theme, bool displayMode, const MathSettings& inputSettings, qreal maxWidth) const {
   Q_UNUSED(maxWidth);
   MathFontRegistry::ensureLoaded();
 
-  MathSettings settings;
+  MathSettings settings = inputSettings;
   settings.displayMode = displayMode;
   MathLayoutResult result;
   result.source = tex;

@@ -19,6 +19,7 @@ public:
   MathToken next();
   void consume();
   void pushFront(MathToken token);
+  QString readVerbBody(bool& starred, bool& ok, MathToken& delimiter);
   bool atEnd();
 
 private:

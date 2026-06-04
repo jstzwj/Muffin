@@ -48,7 +48,8 @@ MathAtomClass atomClassForNode(const MathParseNode& node) {
     if (node.mathClass == QStringLiteral("\\mathinner")) return MathAtomClass::Inner;
     return MathAtomClass::Ord;
   }
-  if (node.type == MathNodeType::LeftRight || node.type == MathNodeType::Array || node.type == MathNodeType::HorizBrace) {
+  if (node.type == MathNodeType::LeftRight || node.type == MathNodeType::Array || node.type == MathNodeType::HorizBrace ||
+      node.type == MathNodeType::XArrow) {
     return MathAtomClass::Inner;
   }
   if (node.type == MathNodeType::RaiseBox || node.type == MathNodeType::VCenter) {
@@ -308,6 +309,54 @@ bool isExplicitSpacingExpression(const QVector<MathParseNode>& expression) {
     }
   }
   return true;
+}
+
+QString xArrowKey(const QString& label) {
+  QString key = label;
+  if (key.startsWith(QLatin1Char('\\'))) {
+    key.remove(0, 1);
+  }
+  return key;
+}
+
+QString xArrowPathName(const QString& key) {
+  static const QHash<QString, QString> paths{
+      {QStringLiteral("xrightarrow"), QStringLiteral("rightarrow")},
+      {QStringLiteral("xleftarrow"), QStringLiteral("leftarrow")},
+      {QStringLiteral("xRightarrow"), QStringLiteral("doublerightarrow")},
+      {QStringLiteral("xLeftarrow"), QStringLiteral("doubleleftarrow")},
+      {QStringLiteral("xrightharpoondown"), QStringLiteral("rightharpoondown")},
+      {QStringLiteral("xrightharpoonup"), QStringLiteral("rightharpoon")},
+      {QStringLiteral("xleftharpoondown"), QStringLiteral("leftharpoondown")},
+      {QStringLiteral("xleftharpoonup"), QStringLiteral("leftharpoon")},
+      {QStringLiteral("xlongequal"), QStringLiteral("longequal")},
+      {QStringLiteral("xtwoheadrightarrow"), QStringLiteral("twoheadrightarrow")},
+      {QStringLiteral("xtwoheadleftarrow"), QStringLiteral("twoheadleftarrow")}};
+  return paths.value(key, QStringLiteral("rightarrow"));
+}
+
+qreal xArrowMinWidthEm(const QString& key) {
+  static const QHash<QString, qreal> widths{
+      {QStringLiteral("xrightarrow"), 1.469},       {QStringLiteral("xleftarrow"), 1.469},
+      {QStringLiteral("xRightarrow"), 1.526},       {QStringLiteral("xLeftarrow"), 1.526},
+      {QStringLiteral("xleftrightarrow"), 1.75},    {QStringLiteral("xLeftrightarrow"), 1.75},
+      {QStringLiteral("xhookleftarrow"), 1.08},     {QStringLiteral("xhookrightarrow"), 1.08},
+      {QStringLiteral("xmapsto"), 1.5},             {QStringLiteral("xrightleftharpoons"), 1.75},
+      {QStringLiteral("xleftrightharpoons"), 1.75}, {QStringLiteral("xtofrom"), 1.75},
+      {QStringLiteral("xrightleftarrows"), 1.75},   {QStringLiteral("xrightequilibrium"), 1.75},
+      {QStringLiteral("xleftequilibrium"), 1.75}};
+  return widths.value(key, 0.888);
+}
+
+qreal xArrowHeightEm(const QString& key) {
+  static const QHash<QString, qreal> heights{
+      {QStringLiteral("xRightarrow"), 0.560},          {QStringLiteral("xLeftarrow"), 0.560},
+      {QStringLiteral("xLeftrightarrow"), 0.560},      {QStringLiteral("xlongequal"), 0.334},
+      {QStringLiteral("xtwoheadrightarrow"), 0.334},   {QStringLiteral("xtwoheadleftarrow"), 0.334},
+      {QStringLiteral("xrightleftharpoons"), 0.716},   {QStringLiteral("xleftrightharpoons"), 0.716},
+      {QStringLiteral("xtofrom"), 0.528},              {QStringLiteral("xrightleftarrows"), 0.901},
+      {QStringLiteral("xrightequilibrium"), 0.716},    {QStringLiteral("xleftequilibrium"), 0.716}};
+  return heights.value(key, 0.522);
 }
 
 std::unique_ptr<MathRenderNode> makeArrayCellWrapper(std::unique_ptr<MathRenderNode> content,
@@ -598,6 +647,8 @@ std::unique_ptr<MathRenderNode> MathBuilder::buildNode(const MathParseNode& node
       return makeAccentUnder(node);
     case MathNodeType::HorizBrace:
       return makeHorizBrace(node);
+    case MathNodeType::XArrow:
+      return makeXArrow(node);
     case MathNodeType::Underline:
       return makeUnderline(node);
     case MathNodeType::Overline:
@@ -1181,7 +1232,22 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSupSub(const MathParseNode& nod
       return renderNodeFromLayout(*baseLayout);
     }
     limitsLayout->width = width;
-    return renderNodeFromLayout(*limitsLayout);
+    auto limitsNode = renderNodeFromLayout(*limitsLayout);
+    limitsNode->atomClass = QStringLiteral("mop");
+    if (sub && !qFuzzyIsNull(slant) && !node.sub.isEmpty() && !isCharacterBoxNode(node.sub.first())) {
+      auto spacer = std::make_unique<MathRenderNode>();
+      spacer->kind = MathRenderKind::Span;
+      spacer->text = QStringLiteral("op-limits-spacer");
+      spacer->atomClass = QStringLiteral("mspace");
+      spacer->width = slant;
+      std::vector<std::unique_ptr<MathRenderNode>> parts;
+      parts.push_back(std::move(spacer));
+      parts.push_back(std::move(limitsNode));
+      auto wrapper = makeSpan(std::move(parts));
+      wrapper->atomClass = QStringLiteral("mop");
+      return wrapper;
+    }
+    return limitsNode;
   }
 
   const qreal baseWidth = base->width;
@@ -1285,6 +1351,10 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeFraction(const MathParseNode& n
   auto denominator = MathBuilder(localOptions.fracDen()).buildExpression(node.denominator);
   const qreal em = localOptions.fontPointSize();
   const GlobalFontMetrics metrics = MathFontMetrics::globalMetrics(localOptions.style().size());
+  if (node.continuedFraction) {
+    numerator->height = qMax(numerator->height, (8.5 / metrics.ptPerEm) * em);
+    numerator->depth = qMax(numerator->depth, (3.5 / metrics.ptPerEm) * em);
+  }
   const qreal width = qMax(numerator->width, denominator->width);
   const qreal rule = node.lineThickness >= 0.0 ? node.lineThickness * em : ruleThickness(localOptions);
   const bool hasBarLine = rule > 0.0;
@@ -1361,7 +1431,12 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeGenfrac(const MathParseNode& no
 
   children.push_back(std::move(frac));
 
-  if (node.rightDelim.isEmpty() || node.rightDelim == QStringLiteral(".")) {
+  if (node.continuedFraction) {
+    auto rightDelimiter = std::make_unique<MathRenderNode>();
+    rightDelimiter->kind = MathRenderKind::Span;
+    rightDelimiter->text = QStringLiteral("cfrac-right-delimiter");
+    children.push_back(std::move(rightDelimiter));
+  } else if (node.rightDelim.isEmpty() || node.rightDelim == QStringLiteral(".")) {
     auto nullDelimiter = std::make_unique<MathRenderNode>();
     nullDelimiter->kind = MathRenderKind::Span;
     nullDelimiter->text = QStringLiteral("nulldelimiter");
@@ -1480,7 +1555,10 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeAccent(const MathParseNode& nod
 
   if (node.label == QStringLiteral("\\widehat") || node.label == QStringLiteral("\\widetilde") ||
       node.label == QStringLiteral("\\widecheck") || node.label == QStringLiteral("\\overrightarrow") ||
-      node.label == QStringLiteral("\\overleftarrow") || node.label == QStringLiteral("\\overleftrightarrow")) {
+      node.label == QStringLiteral("\\overleftarrow") || node.label == QStringLiteral("\\Overrightarrow") ||
+      node.label == QStringLiteral("\\overleftrightarrow") || node.label == QStringLiteral("\\overgroup") ||
+      node.label == QStringLiteral("\\overlinesegment") || node.label == QStringLiteral("\\overleftharpoon") ||
+      node.label == QStringLiteral("\\overrightharpoon")) {
     accent = makeStretchyAccent(node, *body);
     std::vector<MathVListEntry> entries;
     entries.push_back(makeLayoutVListElem(MathVListChild{layoutFromRenderNode(std::move(body))}));
@@ -1542,17 +1620,23 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeAccent(const MathParseNode& nod
 std::unique_ptr<MathRenderNode> MathBuilder::makeAccentUnder(const MathParseNode& node) {
   auto body = MathBuilder(options_.cramped()).buildExpression(node.base);
   auto accent = makeStretchyAccent(node, *body);
-  const qreal gap = node.label == QStringLiteral("\\utilde") ? options_.fontPointSize() * 0.12 : ruleThickness(options_);
-  auto result = std::make_unique<MathRenderNode>();
-  result->kind = MathRenderKind::Accent;
-  result->width = qMax(body->width, accent->width);
-  body->xOffset = (result->width - body->width) / 2.0;
-  accent->xOffset = (result->width - accent->width) / 2.0;
-  accent->yOffset = body->depth + gap + accent->height;
-  result->height = body->height;
-  result->depth = body->depth + gap + accent->height + accent->depth;
-  result->children.push_back(std::move(body));
-  result->children.push_back(std::move(accent));
+  const qreal kern = node.label == QStringLiteral("\\utilde") ? options_.fontPointSize() * 0.12 : 0.0;
+  const qreal bodyHeight = body->height;
+  const qreal width = qMax(body->width, accent->width);
+  body->xOffset = (width - body->width) / 2.0;
+  accent->xOffset = (width - accent->width) / 2.0;
+
+  std::vector<MathVListEntry> entries;
+  entries.push_back(makeLayoutVListElem(MathVListChild{layoutFromRenderNode(std::move(accent))}));
+  if (!qFuzzyIsNull(kern)) {
+    entries.push_back(makeLayoutVListKern(kern));
+  }
+  entries.push_back(makeLayoutVListElem(MathVListChild{layoutFromRenderNode(std::move(body))}));
+  auto layout = makeLayoutVListTop(bodyHeight, std::move(entries));
+  layout->renderKind = MathRenderKind::Accent;
+  layout->width = width;
+  auto result = renderNodeFromLayout(*layout);
+  result->atomClass = QStringLiteral("mord");
   return result;
 }
 
@@ -1614,6 +1698,59 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeHorizBraceSupSub(const MathPars
   return renderNodeFromLayout(*layout);
 }
 
+std::unique_ptr<MathRenderNode> MathBuilder::makeXArrow(const MathParseNode& node) {
+  const qreal em = options_.fontPointSize();
+  const GlobalFontMetrics metrics = MathFontMetrics::globalMetrics(options_.style().size());
+  auto upperGroup = MathBuilder(options_.sup()).buildExpression(node.body);
+  auto lowerGroup = node.sub.isEmpty() ? nullptr : MathBuilder(options_.sub()).buildExpression(node.sub);
+
+  const qreal pad = 0.3 * em;
+  upperGroup->xOffset = pad;
+  upperGroup->width += 2.0 * pad;
+  if (lowerGroup) {
+    lowerGroup->xOffset = pad;
+    lowerGroup->width += 2.0 * pad;
+  }
+
+  const QString key = xArrowKey(node.label);
+  const qreal arrowWidth = qMax(xArrowMinWidthEm(key) * em, qMax(upperGroup->width, lowerGroup ? lowerGroup->width : 0.0));
+  const qreal arrowHeight = xArrowHeightEm(key) * em;
+
+  auto arrowBody = std::make_unique<MathRenderNode>();
+  arrowBody->kind = MathRenderKind::Stretchy;
+  arrowBody->text = node.label;
+  arrowBody->atomClass = QStringLiteral("x-arrow-body");
+  arrowBody->pathName = xArrowPathName(key);
+  arrowBody->width = arrowWidth;
+  arrowBody->height = arrowHeight;
+  arrowBody->depth = 0.0;
+  arrowBody->ruleThickness = ruleThickness(options_);
+  arrowBody->color = options_.color();
+
+  const qreal arrowShift = -metrics.axisHeight * em + 0.5 * arrowBody->height;
+  qreal upperShift = -metrics.axisHeight * em - 0.5 * arrowBody->height - 0.111 * em;
+  if (upperGroup->depth > 0.25 * em || node.label == QStringLiteral("\\xleftequilibrium")) {
+    upperShift -= upperGroup->depth;
+  }
+
+  upperGroup->xOffset += (arrowWidth - upperGroup->width) / 2.0;
+  arrowBody->xOffset = 0.0;
+  std::vector<MathVListChild> children;
+  children.push_back(MathVListChild{layoutFromRenderNode(std::move(upperGroup)), upperShift});
+  children.push_back(MathVListChild{layoutFromRenderNode(std::move(arrowBody)), arrowShift});
+  if (lowerGroup) {
+    const qreal lowerShift = -metrics.axisHeight * em + lowerGroup->height + 0.5 * arrowHeight + 0.111 * em;
+    lowerGroup->xOffset += (arrowWidth - lowerGroup->width) / 2.0;
+    children.push_back(MathVListChild{layoutFromRenderNode(std::move(lowerGroup)), lowerShift});
+  }
+
+  auto layout = makeLayoutVListIndividualShift(std::move(children));
+  layout->width = arrowWidth;
+  auto result = renderNodeFromLayout(*layout);
+  result->atomClass = QStringLiteral("mrel");
+  return result;
+}
+
 std::unique_ptr<MathRenderNode> MathBuilder::makeStretchyAccent(const MathParseNode& node, const MathRenderNode& body) {
   auto accent = std::make_unique<MathRenderNode>();
   accent->kind = MathRenderKind::Stretchy;
@@ -1652,13 +1789,27 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeStretchyAccent(const MathParseN
     static const QHash<QString, QString> pathNames{
         {QStringLiteral("\\overrightarrow"), QStringLiteral("rightarrow")},
         {QStringLiteral("\\overleftarrow"), QStringLiteral("leftarrow")},
-        {QStringLiteral("\\overleftrightarrow"), QStringLiteral("leftrightarrow")},
         {QStringLiteral("\\underleftarrow"), QStringLiteral("leftarrow")},
-        {QStringLiteral("\\underrightarrow"), QStringLiteral("rightarrow")},
-        {QStringLiteral("\\underleftrightarrow"), QStringLiteral("leftrightarrow")}};
-    accent->pathName = pathNames.value(node.label);
-    accent->width = qMax<qreal>(body.width, em * 0.888);
-    accent->height = em * 0.522;
+        {QStringLiteral("\\underrightarrow"), QStringLiteral("rightarrow")}};
+    static const QHash<QString, qreal> minWidths{
+        {QStringLiteral("\\overbrace"), 1.6},        {QStringLiteral("\\underbrace"), 1.6},
+        {QStringLiteral("\\overbracket"), 1.6},      {QStringLiteral("\\underbracket"), 1.6},
+        {QStringLiteral("\\overrightarrow"), 0.888}, {QStringLiteral("\\overleftarrow"), 0.888},
+        {QStringLiteral("\\overleftrightarrow"), 0.888},
+        {QStringLiteral("\\underleftarrow"), 0.888}, {QStringLiteral("\\underrightarrow"), 0.888},
+        {QStringLiteral("\\underleftrightarrow"), 0.888},
+        {QStringLiteral("\\overlinesegment"), 0.888},
+        {QStringLiteral("\\underlinesegment"), 0.888},
+        {QStringLiteral("\\overgroup"), 0.888},
+        {QStringLiteral("\\undergroup"), 0.888}};
+    static const QHash<QString, qreal> heights{
+        {QStringLiteral("\\Overrightarrow"), 0.560}, {QStringLiteral("\\xRightarrow"), 0.560},
+        {QStringLiteral("\\overbracket"), 0.440},    {QStringLiteral("\\underbracket"), 0.410},
+        {QStringLiteral("\\overgroup"), 0.342},      {QStringLiteral("\\undergroup"), 0.342}};
+    const QString pathName = pathNames.value(node.label);
+    accent->width = qMax<qreal>(body.width, em * minWidths.value(node.label, 0.888));
+    accent->height = em * heights.value(node.label, 0.522);
+    accent->pathName = pathName;
   }
   accent->depth = 0.0;
   accent->ruleThickness = ruleThickness(options_);

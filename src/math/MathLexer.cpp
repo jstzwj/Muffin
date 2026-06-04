@@ -33,6 +33,38 @@ void MathLexer::pushFront(MathToken token) {
   pushed_.push_back(std::move(token));
 }
 
+QString MathLexer::readVerbBody(bool& starred, bool& ok, MathToken& delimiter) {
+  starred = false;
+  ok = false;
+  if (hasLookahead_ || !pushed_.isEmpty() || pos_ >= input_.size()) {
+    delimiter = {QStringLiteral("EOF"), pos_, pos_};
+    return {};
+  }
+  if (input_.at(pos_) == QLatin1Char('*')) {
+    starred = true;
+    ++pos_;
+  }
+  if (pos_ >= input_.size()) {
+    delimiter = {QStringLiteral("EOF"), pos_, pos_};
+    return {};
+  }
+
+  const qsizetype delimiterStart = pos_;
+  const QChar delimiterChar = input_.at(pos_++);
+  delimiter = {QString(delimiterChar), delimiterStart, pos_};
+  const qsizetype bodyStart = pos_;
+  while (pos_ < input_.size() && input_.at(pos_) != delimiterChar && input_.at(pos_) != QLatin1Char('\n')) {
+    ++pos_;
+  }
+  if (pos_ < input_.size() && input_.at(pos_) == delimiterChar) {
+    const QString body = input_.mid(bodyStart, pos_ - bodyStart);
+    ++pos_;
+    ok = true;
+    return body;
+  }
+  return input_.mid(bodyStart, pos_ - bodyStart);
+}
+
 bool MathLexer::atEnd() {
   return peek().text == QStringLiteral("EOF");
 }

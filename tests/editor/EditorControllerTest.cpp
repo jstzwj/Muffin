@@ -2067,6 +2067,38 @@ void testCodeFenceSelectionCopyUsesLiteralOffsets() {
           "code fence plain text copy should use literal offsets");
 }
 
+void testCodeFenceSelectionCutDeletesLiteralOffsets() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+
+  session.setMarkdownText(QStringLiteral("```cpp\nalpha beta gamma\n```"), false);
+  view.setDocument(session.document());
+  MarkdownNode* fence = blockAt(session, 0);
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Code;
+  hit.blockId = fence->id();
+  hit.textNodeId = fence->id();
+  hit.textOffset = 0;
+  controller.activateHit(hit);
+  require(controller.enterCodeFenceEditMode(), "code fence edit mode should activate before cut");
+
+  SelectionRange range;
+  range.anchor.blockId = fence->id();
+  range.anchor.text.nodeId = fence->id();
+  range.anchor.text.textOffset = QStringLiteral("alpha ").size();
+  range.focus.blockId = fence->id();
+  range.focus.text.nodeId = fence->id();
+  range.focus.text.textOffset = QStringLiteral("alpha beta").size();
+  controller.selection().setSelection(range);
+
+  require(controller.cut(), "code fence cut should delete active literal selection");
+  require(QApplication::clipboard()->text().contains(QStringLiteral("beta")), "code fence cut clipboard should contain selected literal text");
+  require(session.markdownText().contains(QStringLiteral("alpha  gamma")), "code fence cut should remove selected literal text");
+  require(!session.markdownText().contains(QStringLiteral("beta")), "code fence cut should not leave selected literal text behind");
+}
+
 void testKeyboardNavigationBasics() {
   DocumentSession session;
   SelectionController selection;
@@ -2474,6 +2506,7 @@ int main(int argc, char** argv) {
   testSelectionSerializerCrossComplexInlineEdges();
   testClipboardBlockSelectionFallback();
   testCodeFenceSelectionCopyUsesLiteralOffsets();
+  testCodeFenceSelectionCutDeletesLiteralOffsets();
   testKeyboardNavigationBasics();
   testComplexBlockActivationRoutesInput();
   testTableStructureUndoUsesTableCommand();

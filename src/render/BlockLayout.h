@@ -59,6 +59,7 @@ public:
   const math::MathLayoutResult* mathLayout() const;
   void setLiteralEditing(bool editing);
   bool literalEditing() const;
+  QRectF literalContentRect(const RenderTheme& theme) const;
 
   void setHeadingLevel(int level);
   int headingLevel() const;
@@ -100,6 +101,7 @@ private:
   QRectF mathEditorSourceRect(const RenderTheme& theme) const;
   QRectF mathPreviewContentRect(const RenderTheme& theme) const;
   void paintCodeFence(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
+  void paintLiteralSource(QPainter& painter, const RenderTheme& theme, QRectF contentRect, const QVector<CodeHighlightSpan>& spans) const;
 
   NodeId id_;
   BlockType type_ = BlockType::Unknown;

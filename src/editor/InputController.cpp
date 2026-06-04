@@ -239,6 +239,15 @@ bool InputController::outdentListItem() {
 }
 
 bool InputController::deleteSelection() {
+  if (codeFenceController_ && codeFenceController_->isEditing()) {
+    return codeFenceController_->deleteSelection();
+  }
+  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
+    return htmlBlockController_->deleteSelection();
+  }
+  if (mathBlockController_ && mathBlockController_->isEditing()) {
+    return mathBlockController_->deleteSelection();
+  }
   return replaceSelection(QString(), EditTransaction::Kind::DeleteText, QStringLiteral("Delete Selection"));
 }
 

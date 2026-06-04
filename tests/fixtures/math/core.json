@@ -754,5 +754,21 @@
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
     "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "display-nested-integral-product-fraction",
+    "tex": "\\int_0^1 x^2\\,dx = \\frac{1}{3}\\cdot\\frac{1}{\\frac{123}{\\sum_1^123}123}",
+    "display": true,
+    "mustContain": [
+      "VList",
+      "Rule",
+      "size2"
+    ],
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.08,
+    "bboxHeightToleranceEm": 0.08,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.06,
+    "glyphWidthToleranceEm": 0.05
   }
 ]

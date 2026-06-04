@@ -69319,5 +69319,3051 @@
         "depth": 0.25
       }
     ]
+  },
+  {
+    "id": "display-nested-integral-product-fraction",
+    "tex": "\\int_0^1 x^2\\,dx = \\frac{1}{3}\\cdot\\frac{1}{\\frac{123}{\\sum_1^123}123}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist\\katex.mjs",
+    "root": {
+      "kind": "Span",
+      "classes": [
+        "katex-display"
+      ],
+      "height": 1.564008,
+      "depth": 1.370335,
+      "maxFontSize": 1,
+      "children": [
+        {
+          "kind": "Span",
+          "classes": [
+            "katex"
+          ],
+          "height": 1.564008,
+          "depth": 1.370335,
+          "maxFontSize": 1,
+          "children": [
+            {
+              "kind": "Span",
+              "classes": [
+                "katex-html"
+              ],
+              "attributes": {
+                "aria-hidden": "true"
+              },
+              "height": 1.564008,
+              "depth": 1.370335,
+              "maxFontSize": 1,
+              "children": [
+                {
+                  "kind": "Span",
+                  "classes": [
+                    "base"
+                  ],
+                  "height": 1.564008,
+                  "depth": 0.91195,
+                  "maxFontSize": 1,
+                  "children": [
+                    {
+                      "kind": "Span",
+                      "classes": [
+                        "strut"
+                      ],
+                      "style": {
+                        "height": "2.476em",
+                        "verticalAlign": "-0.9119em"
+                      },
+                      "height": 0,
+                      "depth": 0,
+                      "maxFontSize": 0
+                    },
+                    {
+                      "kind": "Span",
+                      "classes": [
+                        "mop"
+                      ],
+                      "height": 1.564008,
+                      "depth": 0.91195,
+                      "maxFontSize": 1,
+                      "children": [
+                        {
+                          "kind": "SymbolNode",
+                          "classes": [
+                            "mop",
+                            "op-symbol",
+                            "large-op"
+                          ],
+                          "style": {
+                            "position": "relative",
+                            "top": "-0.0011em"
+                          },
+                          "text": "∫",
+                          "width": 0.55556,
+                          "height": 1.36,
+                          "depth": 0.86225,
+                          "maxFontSize": 1,
+                          "italic": 0.44445,
+                          "skew": 0,
+                          "top": -0.0011,
+                          "shift": -0.0011
+                        },
+                        {
+                          "kind": "Span",
+                          "classes": [
+                            "msupsub"
+                          ],
+                          "height": 1.564008,
+                          "depth": 0.91195,
+                          "maxFontSize": 0.7,
+                          "children": [
+                            {
+                              "kind": "Span",
+                              "classes": [
+                                "vlist-t",
+                                "vlist-t2"
+                              ],
+                              "height": 1.564008,
+                              "depth": 0.91195,
+                              "maxFontSize": 0.7,
+                              "children": [
+                                {
+                                  "kind": "Span",
+                                  "classes": [
+                                    "vlist-r"
+                                  ],
+                                  "height": 0.451108,
+                                  "depth": 0,
+                                  "maxFontSize": 0.7,
+                                  "children": [
+                                    {
+                                      "kind": "Span",
+                                      "classes": [
+                                        "vlist"
+                                      ],
+                                      "style": {
+                                        "height": "1.564em"
+                                      },
+                                      "height": 0.451108,
+                                      "depth": 0,
+                                      "maxFontSize": 0.7,
+                                      "children": [
+                                        {
+                                          "kind": "Span",
+                                          "style": {
+                                            "marginLeft": "-0.4445em",
+                                            "marginRight": "0.05em",
+                                            "top": "-1.7881em"
+                                          },
+                                          "height": 0.451108,
+                                          "depth": 0,
+                                          "maxFontSize": 0.7,
+                                          "top": -1.7881,
+                                          "shift": 0.9119,
+                                          "marginLeft": -0.4445,
+                                          "marginRight": 0.05,
+                                          "children": [
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "pstrut"
+                                              ],
+                                              "style": {
+                                                "height": "2.7em"
+                                              },
+                                              "height": 0,
+                                              "depth": 0,
+                                              "maxFontSize": 0
+                                            },
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "sizing",
+                                                "reset-size6",
+                                                "size3",
+                                                "mtight"
+                                              ],
+                                              "height": 0.451108,
+                                              "depth": 0,
+                                              "maxFontSize": 0.7,
+                                              "children": [
+                                                {
+                                                  "kind": "SymbolNode",
+                                                  "classes": [
+                                                    "mord",
+                                                    "",
+                                                    "",
+                                                    "mtight"
+                                                  ],
+                                                  "text": "0",
+                                                  "width": 0.5,
+                                                  "height": 0.64444,
+                                                  "depth": 0,
+                                                  "maxFontSize": 0.7,
+                                                  "italic": 0,
+                                                  "skew": 0
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "kind": "Span",
+                                          "style": {
+                                            "marginRight": "0.05em",
+                                            "top": "-3.8129em"
+                                          },
+                                          "height": 0.451108,
+                                          "depth": 0,
+                                          "maxFontSize": 0.7,
+                                          "top": -3.8129,
+                                          "shift": -1.1129,
+                                          "marginRight": 0.05,
+                                          "children": [
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "pstrut"
+                                              ],
+                                              "style": {
+                                                "height": "2.7em"
+                                              },
+                                              "height": 0,
+                                              "depth": 0,
+                                              "maxFontSize": 0
+                                            },
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "sizing",
+                                                "reset-size6",
+                                                "size3",
+                                                "mtight"
+                                              ],
+                                              "height": 0.451108,
+                                              "depth": 0,
+                                              "maxFontSize": 0.7,
+                                              "children": [
+                                                {
+                                                  "kind": "SymbolNode",
+                                                  "classes": [
+                                                    "mord",
+                                                    "",
+                                                    "",
+                                                    "mtight"
+                                                  ],
+                                                  "text": "1",
+                                                  "width": 0.5,
+                                                  "height": 0.64444,
+                                                  "depth": 0,
+                                                  "maxFontSize": 0.7,
+                                                  "italic": 0,
+                                                  "skew": 0
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "kind": "Span",
+                                      "classes": [
+                                        "vlist-s"
+                                      ],
+                                      "height": 0,
+                                      "depth": 0,
+                                      "maxFontSize": 0,
+                                      "children": [
+                                        {
+                                          "kind": "SymbolNode",
+                                          "text": "​",
+                                          "width": 0,
+                                          "height": 0,
+                                          "depth": 0,
+                                          "maxFontSize": 0,
+                                          "italic": 0,
+                                          "skew": 0
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "kind": "Span",
+                                  "classes": [
+                                    "vlist-r"
+                                  ],
+                                  "height": 0,
+                                  "depth": 0,
+                                  "maxFontSize": 0,
+                                  "children": [
+                                    {
+                                      "kind": "Span",
+                                      "classes": [
+                                        "vlist"
+                                      ],
+                                      "style": {
+                                        "height": "0.9119em"
+                                      },
+                                      "height": 0,
+                                      "depth": 0,
+                                      "maxFontSize": 0,
+                                      "children": [
+                                        {
+                                          "kind": "Span",
+                                          "height": 0,
+                                          "depth": 0,
+                                          "maxFontSize": 0
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "Span",
+                      "classes": [
+                        "mspace"
+                      ],
+                      "style": {
+                        "marginRight": "0.1667em"
+                      },
+                      "height": 0,
+                      "depth": 0,
+                      "maxFontSize": 0,
+                      "marginRight": 0.1667
+                    },
+                    {
+                      "kind": "Span",
+                      "classes": [
+                        "mord"
+                      ],
+                      "height": 0.864108,
+                      "depth": 0,
+                      "maxFontSize": 1,
+                      "children": [
+                        {
+                          "kind": "SymbolNode",
+                          "classes": [
+                            "mord",
+                            "mathnormal"
+                          ],
+                          "text": "x",
+                          "width": 0.57153,
+                          "height": 0.43056,
+                          "depth": 0,
+                          "maxFontSize": 1,
+                          "italic": 0,
+                          "skew": 0.02778
+                        },
+                        {
+                          "kind": "Span",
+                          "classes": [
+                            "msupsub"
+                          ],
+                          "height": 0.864108,
+                          "depth": 0,
+                          "maxFontSize": 0.7,
+                          "children": [
+                            {
+                              "kind": "Span",
+                              "classes": [
+                                "vlist-t"
+                              ],
+                              "height": 0.864108,
+                              "depth": -0.413,
+                              "maxFontSize": 0.7,
+                              "children": [
+                                {
+                                  "kind": "Span",
+                                  "classes": [
+                                    "vlist-r"
+                                  ],
+                                  "height": 0.451108,
+                                  "depth": 0,
+                                  "maxFontSize": 0.7,
+                                  "children": [
+                                    {
+                                      "kind": "Span",
+                                      "classes": [
+                                        "vlist"
+                                      ],
+                                      "style": {
+                                        "height": "0.8641em"
+                                      },
+                                      "height": 0.451108,
+                                      "depth": 0,
+                                      "maxFontSize": 0.7,
+                                      "children": [
+                                        {
+                                          "kind": "Span",
+                                          "style": {
+                                            "marginRight": "0.05em",
+                                            "top": "-3.113em"
+                                          },
+                                          "height": 0.451108,
+                                          "depth": 0,
+                                          "maxFontSize": 0.7,
+                                          "top": -3.113,
+                                          "shift": -0.413,
+                                          "marginRight": 0.05,
+                                          "children": [
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "pstrut"
+                                              ],
+                                              "style": {
+                                                "height": "2.7em"
+                                              },
+                                              "height": 0,
+                                              "depth": 0,
+                                              "maxFontSize": 0
+                                            },
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "sizing",
+                                                "reset-size6",
+                                                "size3",
+                                                "mtight"
+                                              ],
+                                              "height": 0.451108,
+                                              "depth": 0,
+                                              "maxFontSize": 0.7,
+                                              "children": [
+                                                {
+                                                  "kind": "SymbolNode",
+                                                  "classes": [
+                                                    "mord",
+                                                    "",
+                                                    "",
+                                                    "mtight"
+                                                  ],
+                                                  "text": "2",
+                                                  "width": 0.5,
+                                                  "height": 0.64444,
+                                                  "depth": 0,
+                                                  "maxFontSize": 0.7,
+                                                  "italic": 0,
+                                                  "skew": 0
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "Span",
+                      "classes": [
+                        "mspace"
+                      ],
+                      "style": {
+                        "marginRight": "0.1667em"
+                      },
+                      "height": 0,
+                      "depth": 0,
+                      "maxFontSize": 0,
+                      "marginRight": 0.1667
+                    },
+                    {
+                      "kind": "SymbolNode",
+                      "classes": [
+                        "mord",
+                        "mathnormal"
+                      ],
+                      "text": "d",
+                      "width": 0.52049,
+                      "height": 0.69444,
+                      "depth": 0,
+                      "maxFontSize": 1,
+                      "italic": 0,
+                      "skew": 0.16667
+                    },
+                    {
+                      "kind": "SymbolNode",
+                      "classes": [
+                        "mord",
+                        "mathnormal"
+                      ],
+                      "text": "x",
+                      "width": 0.57153,
+                      "height": 0.43056,
+                      "depth": 0,
+                      "maxFontSize": 1,
+                      "italic": 0,
+                      "skew": 0.02778
+                    },
+                    {
+                      "kind": "Span",
+                      "classes": [
+                        "mspace"
+                      ],
+                      "style": {
+                        "marginRight": "0.2778em"
+                      },
+                      "height": 0,
+                      "depth": 0,
+                      "maxFontSize": 0,
+                      "marginRight": 0.2778
+                    },
+                    {
+                      "kind": "SymbolNode",
+                      "classes": [
+                        "mrel"
+                      ],
+                      "text": "=",
+                      "width": 0.77778,
+                      "height": 0.36687,
+                      "depth": -0.13313,
+                      "maxFontSize": 1,
+                      "italic": 0,
+                      "skew": 0
+                    },
+                    {
+                      "kind": "Span",
+                      "classes": [
+                        "mspace"
+                      ],
+                      "style": {
+                        "marginRight": "0.2778em"
+                      },
+                      "height": 0,
+                      "depth": 0,
+                      "maxFontSize": 0,
+                      "marginRight": 0.2778
+                    }
+                  ]
+                },
+                {
+                  "kind": "Span",
+                  "classes": [
+                    "base"
+                  ],
+                  "height": 1.32144,
+                  "depth": 0.686,
+                  "maxFontSize": 1,
+                  "children": [
+                    {
+                      "kind": "Span",
+                      "classes": [
+                        "strut"
+                      ],
+                      "style": {
+                        "height": "2.0074em",
+                        "verticalAlign": "-0.686em"
+                      },
+                      "height": 0,
+                      "depth": 0,
+                      "maxFontSize": 0
+                    },
+                    {
+                      "kind": "Span",
+                      "classes": [
+                        "mord"
+                      ],
+                      "height": 1.32144,
+                      "depth": 0.686,
+                      "maxFontSize": 1,
+                      "children": [
+                        {
+                          "kind": "Span",
+                          "classes": [
+                            "mopen",
+                            "nulldelimiter"
+                          ],
+                          "height": 0,
+                          "depth": 0,
+                          "maxFontSize": 0
+                        },
+                        {
+                          "kind": "Span",
+                          "classes": [
+                            "mfrac"
+                          ],
+                          "height": 1.32144,
+                          "depth": 0.686,
+                          "maxFontSize": 1,
+                          "children": [
+                            {
+                              "kind": "Span",
+                              "classes": [
+                                "vlist-t",
+                                "vlist-t2"
+                              ],
+                              "height": 1.32144,
+                              "depth": 0.686,
+                              "maxFontSize": 1,
+                              "children": [
+                                {
+                                  "kind": "Span",
+                                  "classes": [
+                                    "vlist-r"
+                                  ],
+                                  "height": 0.64444,
+                                  "depth": 0,
+                                  "maxFontSize": 1,
+                                  "children": [
+                                    {
+                                      "kind": "Span",
+                                      "classes": [
+                                        "vlist"
+                                      ],
+                                      "style": {
+                                        "height": "1.3214em"
+                                      },
+                                      "height": 0.64444,
+                                      "depth": 0,
+                                      "maxFontSize": 1,
+                                      "children": [
+                                        {
+                                          "kind": "Span",
+                                          "style": {
+                                            "top": "-2.314em"
+                                          },
+                                          "height": 0.64444,
+                                          "depth": 0,
+                                          "maxFontSize": 1,
+                                          "top": -2.314,
+                                          "shift": 0.686,
+                                          "children": [
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "pstrut"
+                                              ],
+                                              "style": {
+                                                "height": "3em"
+                                              },
+                                              "height": 0,
+                                              "depth": 0,
+                                              "maxFontSize": 0
+                                            },
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "mord"
+                                              ],
+                                              "height": 0.64444,
+                                              "depth": 0,
+                                              "maxFontSize": 1,
+                                              "children": [
+                                                {
+                                                  "kind": "SymbolNode",
+                                                  "classes": [
+                                                    "mord",
+                                                    "",
+                                                    ""
+                                                  ],
+                                                  "text": "3",
+                                                  "width": 0.5,
+                                                  "height": 0.64444,
+                                                  "depth": 0,
+                                                  "maxFontSize": 1,
+                                                  "italic": 0,
+                                                  "skew": 0
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "kind": "Span",
+                                          "style": {
+                                            "top": "-3.23em"
+                                          },
+                                          "height": 0.04,
+                                          "depth": 0,
+                                          "maxFontSize": 1,
+                                          "top": -3.23,
+                                          "shift": -0.23,
+                                          "children": [
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "pstrut"
+                                              ],
+                                              "style": {
+                                                "height": "3em"
+                                              },
+                                              "height": 0,
+                                              "depth": 0,
+                                              "maxFontSize": 0
+                                            },
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "frac-line"
+                                              ],
+                                              "style": {
+                                                "borderBottomWidth": "0.04em"
+                                              },
+                                              "height": 0.04,
+                                              "depth": 0,
+                                              "maxFontSize": 1
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "kind": "Span",
+                                          "style": {
+                                            "top": "-3.677em"
+                                          },
+                                          "height": 0.64444,
+                                          "depth": 0,
+                                          "maxFontSize": 1,
+                                          "top": -3.677,
+                                          "shift": -0.677,
+                                          "children": [
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "pstrut"
+                                              ],
+                                              "style": {
+                                                "height": "3em"
+                                              },
+                                              "height": 0,
+                                              "depth": 0,
+                                              "maxFontSize": 0
+                                            },
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "mord"
+                                              ],
+                                              "height": 0.64444,
+                                              "depth": 0,
+                                              "maxFontSize": 1,
+                                              "children": [
+                                                {
+                                                  "kind": "SymbolNode",
+                                                  "classes": [
+                                                    "mord",
+                                                    "",
+                                                    ""
+                                                  ],
+                                                  "text": "1",
+                                                  "width": 0.5,
+                                                  "height": 0.64444,
+                                                  "depth": 0,
+                                                  "maxFontSize": 1,
+                                                  "italic": 0,
+                                                  "skew": 0
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "kind": "Span",
+                                      "classes": [
+                                        "vlist-s"
+                                      ],
+                                      "height": 0,
+                                      "depth": 0,
+                                      "maxFontSize": 0,
+                                      "children": [
+                                        {
+                                          "kind": "SymbolNode",
+                                          "text": "​",
+                                          "width": 0,
+                                          "height": 0,
+                                          "depth": 0,
+                                          "maxFontSize": 0,
+                                          "italic": 0,
+                                          "skew": 0
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "kind": "Span",
+                                  "classes": [
+                                    "vlist-r"
+                                  ],
+                                  "height": 0,
+                                  "depth": 0,
+                                  "maxFontSize": 0,
+                                  "children": [
+                                    {
+                                      "kind": "Span",
+                                      "classes": [
+                                        "vlist"
+                                      ],
+                                      "style": {
+                                        "height": "0.686em"
+                                      },
+                                      "height": 0,
+                                      "depth": 0,
+                                      "maxFontSize": 0,
+                                      "children": [
+                                        {
+                                          "kind": "Span",
+                                          "height": 0,
+                                          "depth": 0,
+                                          "maxFontSize": 0
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "Span",
+                          "classes": [
+                            "mclose",
+                            "nulldelimiter"
+                          ],
+                          "height": 0,
+                          "depth": 0,
+                          "maxFontSize": 0
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "Span",
+                      "classes": [
+                        "mspace"
+                      ],
+                      "style": {
+                        "marginRight": "0.2222em"
+                      },
+                      "height": 0,
+                      "depth": 0,
+                      "maxFontSize": 0,
+                      "marginRight": 0.2222
+                    },
+                    {
+                      "kind": "SymbolNode",
+                      "classes": [
+                        "mbin"
+                      ],
+                      "text": "⋅",
+                      "width": 0.27778,
+                      "height": 0.44445,
+                      "depth": -0.05555,
+                      "maxFontSize": 1,
+                      "italic": 0,
+                      "skew": 0
+                    },
+                    {
+                      "kind": "Span",
+                      "classes": [
+                        "mspace"
+                      ],
+                      "style": {
+                        "marginRight": "0.2222em"
+                      },
+                      "height": 0,
+                      "depth": 0,
+                      "maxFontSize": 0,
+                      "marginRight": 0.2222
+                    }
+                  ]
+                },
+                {
+                  "kind": "Span",
+                  "classes": [
+                    "base"
+                  ],
+                  "height": 1.32144,
+                  "depth": 1.370335,
+                  "maxFontSize": 1,
+                  "children": [
+                    {
+                      "kind": "Span",
+                      "classes": [
+                        "strut"
+                      ],
+                      "style": {
+                        "height": "2.6918em",
+                        "verticalAlign": "-1.3703em"
+                      },
+                      "height": 0,
+                      "depth": 0,
+                      "maxFontSize": 0
+                    },
+                    {
+                      "kind": "Span",
+                      "classes": [
+                        "mord"
+                      ],
+                      "height": 1.32144,
+                      "depth": 1.370335,
+                      "maxFontSize": 1,
+                      "children": [
+                        {
+                          "kind": "Span",
+                          "classes": [
+                            "mopen",
+                            "nulldelimiter"
+                          ],
+                          "height": 0,
+                          "depth": 0,
+                          "maxFontSize": 0
+                        },
+                        {
+                          "kind": "Span",
+                          "classes": [
+                            "mfrac"
+                          ],
+                          "height": 1.32144,
+                          "depth": 1.370335,
+                          "maxFontSize": 1,
+                          "children": [
+                            {
+                              "kind": "Span",
+                              "classes": [
+                                "vlist-t",
+                                "vlist-t2"
+                              ],
+                              "height": 1.32144,
+                              "depth": 1.370335,
+                              "maxFontSize": 1,
+                              "children": [
+                                {
+                                  "kind": "Span",
+                                  "classes": [
+                                    "vlist-r"
+                                  ],
+                                  "height": 0.845108,
+                                  "depth": 0.635227,
+                                  "maxFontSize": 1,
+                                  "children": [
+                                    {
+                                      "kind": "Span",
+                                      "classes": [
+                                        "vlist"
+                                      ],
+                                      "style": {
+                                        "height": "1.3214em"
+                                      },
+                                      "height": 0.845108,
+                                      "depth": 0.635227,
+                                      "maxFontSize": 1,
+                                      "children": [
+                                        {
+                                          "kind": "Span",
+                                          "style": {
+                                            "top": "-2.2649em"
+                                          },
+                                          "height": 0.845108,
+                                          "depth": 0.635227,
+                                          "maxFontSize": 1,
+                                          "top": -2.2649,
+                                          "shift": 0.7351,
+                                          "children": [
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "pstrut"
+                                              ],
+                                              "style": {
+                                                "height": "3em"
+                                              },
+                                              "height": 0,
+                                              "depth": 0,
+                                              "maxFontSize": 0
+                                            },
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "mord"
+                                              ],
+                                              "height": 0.845108,
+                                              "depth": 0.635227,
+                                              "maxFontSize": 1,
+                                              "children": [
+                                                {
+                                                  "kind": "Span",
+                                                  "classes": [
+                                                    "mord"
+                                                  ],
+                                                  "height": 0.845108,
+                                                  "depth": 0.635227,
+                                                  "maxFontSize": 1,
+                                                  "children": [
+                                                    {
+                                                      "kind": "Span",
+                                                      "classes": [
+                                                        "mopen",
+                                                        "nulldelimiter"
+                                                      ],
+                                                      "height": 0,
+                                                      "depth": 0,
+                                                      "maxFontSize": 0
+                                                    },
+                                                    {
+                                                      "kind": "Span",
+                                                      "classes": [
+                                                        "mfrac"
+                                                      ],
+                                                      "height": 0.845108,
+                                                      "depth": 0.635227,
+                                                      "maxFontSize": 1,
+                                                      "children": [
+                                                        {
+                                                          "kind": "Span",
+                                                          "classes": [
+                                                            "vlist-t",
+                                                            "vlist-t2"
+                                                          ],
+                                                          "height": 0.845108,
+                                                          "depth": 0.635227,
+                                                          "maxFontSize": 1,
+                                                          "children": [
+                                                            {
+                                                              "kind": "Span",
+                                                              "classes": [
+                                                                "vlist-r"
+                                                              ],
+                                                              "height": 0.60022,
+                                                              "depth": 0.225007,
+                                                              "maxFontSize": 1,
+                                                              "children": [
+                                                                {
+                                                                  "kind": "Span",
+                                                                  "classes": [
+                                                                    "vlist"
+                                                                  ],
+                                                                  "style": {
+                                                                    "height": "0.8451em"
+                                                                  },
+                                                                  "height": 0.60022,
+                                                                  "depth": 0.225007,
+                                                                  "maxFontSize": 1,
+                                                                  "children": [
+                                                                    {
+                                                                      "kind": "Span",
+                                                                      "style": {
+                                                                        "top": "-2.5898em"
+                                                                      },
+                                                                      "height": 0.60022,
+                                                                      "depth": 0.225007,
+                                                                      "maxFontSize": 0.7,
+                                                                      "top": -2.5898,
+                                                                      "shift": 0.4102,
+                                                                      "children": [
+                                                                        {
+                                                                          "kind": "Span",
+                                                                          "classes": [
+                                                                            "pstrut"
+                                                                          ],
+                                                                          "style": {
+                                                                            "height": "3em"
+                                                                          },
+                                                                          "height": 0,
+                                                                          "depth": 0,
+                                                                          "maxFontSize": 0
+                                                                        },
+                                                                        {
+                                                                          "kind": "Span",
+                                                                          "classes": [
+                                                                            "sizing",
+                                                                            "reset-size6",
+                                                                            "size3",
+                                                                            "mtight"
+                                                                          ],
+                                                                          "height": 0.60022,
+                                                                          "depth": 0.225007,
+                                                                          "maxFontSize": 0.7,
+                                                                          "children": [
+                                                                            {
+                                                                              "kind": "Span",
+                                                                              "classes": [
+                                                                                "mord",
+                                                                                "mtight"
+                                                                              ],
+                                                                              "height": 0.857457,
+                                                                              "depth": 0.321439,
+                                                                              "maxFontSize": 0.7,
+                                                                              "children": [
+                                                                                {
+                                                                                  "kind": "Span",
+                                                                                  "classes": [
+                                                                                    "mop",
+                                                                                    "mtight"
+                                                                                  ],
+                                                                                  "height": 0.857457,
+                                                                                  "depth": 0.321439,
+                                                                                  "maxFontSize": 0.7,
+                                                                                  "children": [
+                                                                                    {
+                                                                                      "kind": "SymbolNode",
+                                                                                      "classes": [
+                                                                                        "mop",
+                                                                                        "op-symbol",
+                                                                                        "small-op",
+                                                                                        "mtight"
+                                                                                      ],
+                                                                                      "style": {
+                                                                                        "position": "relative",
+                                                                                        "top": "0em"
+                                                                                      },
+                                                                                      "text": "∑",
+                                                                                      "width": 1.05556,
+                                                                                      "height": 0.75,
+                                                                                      "depth": 0.25001,
+                                                                                      "maxFontSize": 0.7,
+                                                                                      "italic": 0,
+                                                                                      "skew": 0,
+                                                                                      "top": 0,
+                                                                                      "shift": 0
+                                                                                    },
+                                                                                    {
+                                                                                      "kind": "Span",
+                                                                                      "classes": [
+                                                                                        "msupsub"
+                                                                                      ],
+                                                                                      "height": 0.857457,
+                                                                                      "depth": 0.321439,
+                                                                                      "maxFontSize": 0.5,
+                                                                                      "children": [
+                                                                                        {
+                                                                                          "kind": "Span",
+                                                                                          "classes": [
+                                                                                            "vlist-t",
+                                                                                            "vlist-t2"
+                                                                                          ],
+                                                                                          "height": 0.857457,
+                                                                                          "depth": 0.321439,
+                                                                                          "maxFontSize": 0.5,
+                                                                                          "children": [
+                                                                                            {
+                                                                                              "kind": "Span",
+                                                                                              "classes": [
+                                                                                                "vlist-r"
+                                                                                              ],
+                                                                                              "height": 0.460314,
+                                                                                              "depth": 0,
+                                                                                              "maxFontSize": 0.5,
+                                                                                              "children": [
+                                                                                                {
+                                                                                                  "kind": "Span",
+                                                                                                  "classes": [
+                                                                                                    "vlist"
+                                                                                                  ],
+                                                                                                  "style": {
+                                                                                                    "height": "0.8575em"
+                                                                                                  },
+                                                                                                  "height": 0.460314,
+                                                                                                  "depth": 0,
+                                                                                                  "maxFontSize": 0.5,
+                                                                                                  "children": [
+                                                                                                    {
+                                                                                                      "kind": "Span",
+                                                                                                      "style": {
+                                                                                                        "marginLeft": "0em",
+                                                                                                        "marginRight": "0.0714em",
+                                                                                                        "top": "-2.1786em"
+                                                                                                      },
+                                                                                                      "height": 0.460314,
+                                                                                                      "depth": 0,
+                                                                                                      "maxFontSize": 0.5,
+                                                                                                      "top": -2.1786,
+                                                                                                      "shift": 0.3214,
+                                                                                                      "marginLeft": 0,
+                                                                                                      "marginRight": 0.0714,
+                                                                                                      "children": [
+                                                                                                        {
+                                                                                                          "kind": "Span",
+                                                                                                          "classes": [
+                                                                                                            "pstrut"
+                                                                                                          ],
+                                                                                                          "style": {
+                                                                                                            "height": "2.5em"
+                                                                                                          },
+                                                                                                          "height": 0,
+                                                                                                          "depth": 0,
+                                                                                                          "maxFontSize": 0
+                                                                                                        },
+                                                                                                        {
+                                                                                                          "kind": "Span",
+                                                                                                          "classes": [
+                                                                                                            "sizing",
+                                                                                                            "reset-size3",
+                                                                                                            "size1",
+                                                                                                            "mtight"
+                                                                                                          ],
+                                                                                                          "height": 0.460314,
+                                                                                                          "depth": 0,
+                                                                                                          "maxFontSize": 0.5,
+                                                                                                          "children": [
+                                                                                                            {
+                                                                                                              "kind": "SymbolNode",
+                                                                                                              "classes": [
+                                                                                                                "mord",
+                                                                                                                "",
+                                                                                                                "",
+                                                                                                                "mtight"
+                                                                                                              ],
+                                                                                                              "text": "1",
+                                                                                                              "width": 0.5,
+                                                                                                              "height": 0.64444,
+                                                                                                              "depth": 0,
+                                                                                                              "maxFontSize": 0.5,
+                                                                                                              "italic": 0,
+                                                                                                              "skew": 0
+                                                                                                            }
+                                                                                                          ]
+                                                                                                        }
+                                                                                                      ]
+                                                                                                    },
+                                                                                                    {
+                                                                                                      "kind": "Span",
+                                                                                                      "style": {
+                                                                                                        "marginRight": "0.0714em",
+                                                                                                        "top": "-2.8971em"
+                                                                                                      },
+                                                                                                      "height": 0.460314,
+                                                                                                      "depth": 0,
+                                                                                                      "maxFontSize": 0.5,
+                                                                                                      "top": -2.8971,
+                                                                                                      "shift": -0.3971,
+                                                                                                      "marginRight": 0.0714,
+                                                                                                      "children": [
+                                                                                                        {
+                                                                                                          "kind": "Span",
+                                                                                                          "classes": [
+                                                                                                            "pstrut"
+                                                                                                          ],
+                                                                                                          "style": {
+                                                                                                            "height": "2.5em"
+                                                                                                          },
+                                                                                                          "height": 0,
+                                                                                                          "depth": 0,
+                                                                                                          "maxFontSize": 0
+                                                                                                        },
+                                                                                                        {
+                                                                                                          "kind": "Span",
+                                                                                                          "classes": [
+                                                                                                            "sizing",
+                                                                                                            "reset-size3",
+                                                                                                            "size1",
+                                                                                                            "mtight"
+                                                                                                          ],
+                                                                                                          "height": 0.460314,
+                                                                                                          "depth": 0,
+                                                                                                          "maxFontSize": 0.5,
+                                                                                                          "children": [
+                                                                                                            {
+                                                                                                              "kind": "SymbolNode",
+                                                                                                              "classes": [
+                                                                                                                "mord",
+                                                                                                                "",
+                                                                                                                "",
+                                                                                                                "mtight"
+                                                                                                              ],
+                                                                                                              "text": "1",
+                                                                                                              "width": 0.5,
+                                                                                                              "height": 0.64444,
+                                                                                                              "depth": 0,
+                                                                                                              "maxFontSize": 0.5,
+                                                                                                              "italic": 0,
+                                                                                                              "skew": 0
+                                                                                                            }
+                                                                                                          ]
+                                                                                                        }
+                                                                                                      ]
+                                                                                                    }
+                                                                                                  ]
+                                                                                                },
+                                                                                                {
+                                                                                                  "kind": "Span",
+                                                                                                  "classes": [
+                                                                                                    "vlist-s"
+                                                                                                  ],
+                                                                                                  "height": 0,
+                                                                                                  "depth": 0,
+                                                                                                  "maxFontSize": 0,
+                                                                                                  "children": [
+                                                                                                    {
+                                                                                                      "kind": "SymbolNode",
+                                                                                                      "text": "​",
+                                                                                                      "width": 0,
+                                                                                                      "height": 0,
+                                                                                                      "depth": 0,
+                                                                                                      "maxFontSize": 0,
+                                                                                                      "italic": 0,
+                                                                                                      "skew": 0
+                                                                                                    }
+                                                                                                  ]
+                                                                                                }
+                                                                                              ]
+                                                                                            },
+                                                                                            {
+                                                                                              "kind": "Span",
+                                                                                              "classes": [
+                                                                                                "vlist-r"
+                                                                                              ],
+                                                                                              "height": 0,
+                                                                                              "depth": 0,
+                                                                                              "maxFontSize": 0,
+                                                                                              "children": [
+                                                                                                {
+                                                                                                  "kind": "Span",
+                                                                                                  "classes": [
+                                                                                                    "vlist"
+                                                                                                  ],
+                                                                                                  "style": {
+                                                                                                    "height": "0.3214em"
+                                                                                                  },
+                                                                                                  "height": 0,
+                                                                                                  "depth": 0,
+                                                                                                  "maxFontSize": 0,
+                                                                                                  "children": [
+                                                                                                    {
+                                                                                                      "kind": "Span",
+                                                                                                      "height": 0,
+                                                                                                      "depth": 0,
+                                                                                                      "maxFontSize": 0
+                                                                                                    }
+                                                                                                  ]
+                                                                                                }
+                                                                                              ]
+                                                                                            }
+                                                                                          ]
+                                                                                        }
+                                                                                      ]
+                                                                                    }
+                                                                                  ]
+                                                                                },
+                                                                                {
+                                                                                  "kind": "Span",
+                                                                                  "classes": [
+                                                                                    "mspace",
+                                                                                    "mtight"
+                                                                                  ],
+                                                                                  "style": {
+                                                                                    "marginRight": "0.1952em"
+                                                                                  },
+                                                                                  "height": 0,
+                                                                                  "depth": 0,
+                                                                                  "maxFontSize": 0,
+                                                                                  "marginRight": 0.1952
+                                                                                },
+                                                                                {
+                                                                                  "kind": "SymbolNode",
+                                                                                  "classes": [
+                                                                                    "mord",
+                                                                                    "",
+                                                                                    "",
+                                                                                    "mtight"
+                                                                                  ],
+                                                                                  "text": "23",
+                                                                                  "width": 0.5,
+                                                                                  "height": 0.64444,
+                                                                                  "depth": 0,
+                                                                                  "maxFontSize": 0.7,
+                                                                                  "italic": 0,
+                                                                                  "skew": 0
+                                                                                }
+                                                                              ]
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      ]
+                                                                    },
+                                                                    {
+                                                                      "kind": "Span",
+                                                                      "style": {
+                                                                        "top": "-3.23em"
+                                                                      },
+                                                                      "height": 0.04,
+                                                                      "depth": 0,
+                                                                      "maxFontSize": 1,
+                                                                      "top": -3.23,
+                                                                      "shift": -0.23,
+                                                                      "children": [
+                                                                        {
+                                                                          "kind": "Span",
+                                                                          "classes": [
+                                                                            "pstrut"
+                                                                          ],
+                                                                          "style": {
+                                                                            "height": "3em"
+                                                                          },
+                                                                          "height": 0,
+                                                                          "depth": 0,
+                                                                          "maxFontSize": 0
+                                                                        },
+                                                                        {
+                                                                          "kind": "Span",
+                                                                          "classes": [
+                                                                            "frac-line"
+                                                                          ],
+                                                                          "style": {
+                                                                            "borderBottomWidth": "0.04em"
+                                                                          },
+                                                                          "height": 0.04,
+                                                                          "depth": 0,
+                                                                          "maxFontSize": 1
+                                                                        }
+                                                                      ]
+                                                                    },
+                                                                    {
+                                                                      "kind": "Span",
+                                                                      "style": {
+                                                                        "top": "-3.394em"
+                                                                      },
+                                                                      "height": 0.451108,
+                                                                      "depth": 0,
+                                                                      "maxFontSize": 0.7,
+                                                                      "top": -3.394,
+                                                                      "shift": -0.394,
+                                                                      "children": [
+                                                                        {
+                                                                          "kind": "Span",
+                                                                          "classes": [
+                                                                            "pstrut"
+                                                                          ],
+                                                                          "style": {
+                                                                            "height": "3em"
+                                                                          },
+                                                                          "height": 0,
+                                                                          "depth": 0,
+                                                                          "maxFontSize": 0
+                                                                        },
+                                                                        {
+                                                                          "kind": "Span",
+                                                                          "classes": [
+                                                                            "sizing",
+                                                                            "reset-size6",
+                                                                            "size3",
+                                                                            "mtight"
+                                                                          ],
+                                                                          "height": 0.451108,
+                                                                          "depth": 0,
+                                                                          "maxFontSize": 0.7,
+                                                                          "children": [
+                                                                            {
+                                                                              "kind": "Span",
+                                                                              "classes": [
+                                                                                "mord",
+                                                                                "mtight"
+                                                                              ],
+                                                                              "height": 0.64444,
+                                                                              "depth": 0,
+                                                                              "maxFontSize": 0.7,
+                                                                              "children": [
+                                                                                {
+                                                                                  "kind": "SymbolNode",
+                                                                                  "classes": [
+                                                                                    "mord",
+                                                                                    "",
+                                                                                    "",
+                                                                                    "mtight"
+                                                                                  ],
+                                                                                  "text": "123",
+                                                                                  "width": 0.5,
+                                                                                  "height": 0.64444,
+                                                                                  "depth": 0,
+                                                                                  "maxFontSize": 0.7,
+                                                                                  "italic": 0,
+                                                                                  "skew": 0
+                                                                                }
+                                                                              ]
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  ]
+                                                                },
+                                                                {
+                                                                  "kind": "Span",
+                                                                  "classes": [
+                                                                    "vlist-s"
+                                                                  ],
+                                                                  "height": 0,
+                                                                  "depth": 0,
+                                                                  "maxFontSize": 0,
+                                                                  "children": [
+                                                                    {
+                                                                      "kind": "SymbolNode",
+                                                                      "text": "​",
+                                                                      "width": 0,
+                                                                      "height": 0,
+                                                                      "depth": 0,
+                                                                      "maxFontSize": 0,
+                                                                      "italic": 0,
+                                                                      "skew": 0
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              ]
+                                                            },
+                                                            {
+                                                              "kind": "Span",
+                                                              "classes": [
+                                                                "vlist-r"
+                                                              ],
+                                                              "height": 0,
+                                                              "depth": 0,
+                                                              "maxFontSize": 0,
+                                                              "children": [
+                                                                {
+                                                                  "kind": "Span",
+                                                                  "classes": [
+                                                                    "vlist"
+                                                                  ],
+                                                                  "style": {
+                                                                    "height": "0.6352em"
+                                                                  },
+                                                                  "height": 0,
+                                                                  "depth": 0,
+                                                                  "maxFontSize": 0,
+                                                                  "children": [
+                                                                    {
+                                                                      "kind": "Span",
+                                                                      "height": 0,
+                                                                      "depth": 0,
+                                                                      "maxFontSize": 0
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              ]
+                                                            }
+                                                          ]
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "kind": "Span",
+                                                      "classes": [
+                                                        "mclose",
+                                                        "nulldelimiter"
+                                                      ],
+                                                      "height": 0,
+                                                      "depth": 0,
+                                                      "maxFontSize": 0
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "kind": "SymbolNode",
+                                                  "classes": [
+                                                    "mord",
+                                                    "",
+                                                    ""
+                                                  ],
+                                                  "text": "123",
+                                                  "width": 0.5,
+                                                  "height": 0.64444,
+                                                  "depth": 0,
+                                                  "maxFontSize": 1,
+                                                  "italic": 0,
+                                                  "skew": 0
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "kind": "Span",
+                                          "style": {
+                                            "top": "-3.23em"
+                                          },
+                                          "height": 0.04,
+                                          "depth": 0,
+                                          "maxFontSize": 1,
+                                          "top": -3.23,
+                                          "shift": -0.23,
+                                          "children": [
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "pstrut"
+                                              ],
+                                              "style": {
+                                                "height": "3em"
+                                              },
+                                              "height": 0,
+                                              "depth": 0,
+                                              "maxFontSize": 0
+                                            },
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "frac-line"
+                                              ],
+                                              "style": {
+                                                "borderBottomWidth": "0.04em"
+                                              },
+                                              "height": 0.04,
+                                              "depth": 0,
+                                              "maxFontSize": 1
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "kind": "Span",
+                                          "style": {
+                                            "top": "-3.677em"
+                                          },
+                                          "height": 0.64444,
+                                          "depth": 0,
+                                          "maxFontSize": 1,
+                                          "top": -3.677,
+                                          "shift": -0.677,
+                                          "children": [
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "pstrut"
+                                              ],
+                                              "style": {
+                                                "height": "3em"
+                                              },
+                                              "height": 0,
+                                              "depth": 0,
+                                              "maxFontSize": 0
+                                            },
+                                            {
+                                              "kind": "Span",
+                                              "classes": [
+                                                "mord"
+                                              ],
+                                              "height": 0.64444,
+                                              "depth": 0,
+                                              "maxFontSize": 1,
+                                              "children": [
+                                                {
+                                                  "kind": "SymbolNode",
+                                                  "classes": [
+                                                    "mord",
+                                                    "",
+                                                    ""
+                                                  ],
+                                                  "text": "1",
+                                                  "width": 0.5,
+                                                  "height": 0.64444,
+                                                  "depth": 0,
+                                                  "maxFontSize": 1,
+                                                  "italic": 0,
+                                                  "skew": 0
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "kind": "Span",
+                                      "classes": [
+                                        "vlist-s"
+                                      ],
+                                      "height": 0,
+                                      "depth": 0,
+                                      "maxFontSize": 0,
+                                      "children": [
+                                        {
+                                          "kind": "SymbolNode",
+                                          "text": "​",
+                                          "width": 0,
+                                          "height": 0,
+                                          "depth": 0,
+                                          "maxFontSize": 0,
+                                          "italic": 0,
+                                          "skew": 0
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "kind": "Span",
+                                  "classes": [
+                                    "vlist-r"
+                                  ],
+                                  "height": 0,
+                                  "depth": 0,
+                                  "maxFontSize": 0,
+                                  "children": [
+                                    {
+                                      "kind": "Span",
+                                      "classes": [
+                                        "vlist"
+                                      ],
+                                      "style": {
+                                        "height": "1.3703em"
+                                      },
+                                      "height": 0,
+                                      "depth": 0,
+                                      "maxFontSize": 0,
+                                      "children": [
+                                        {
+                                          "kind": "Span",
+                                          "height": 0,
+                                          "depth": 0,
+                                          "maxFontSize": 0
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "Span",
+                          "classes": [
+                            "mclose",
+                            "nulldelimiter"
+                          ],
+                          "height": 0,
+                          "depth": 0,
+                          "maxFontSize": 0
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "flat": [
+      {
+        "path": "",
+        "kind": "Span",
+        "classes": [
+          "katex-display"
+        ],
+        "height": 1.564008,
+        "depth": 1.370335
+      },
+      {
+        "path": "0",
+        "kind": "Span",
+        "classes": [
+          "katex"
+        ],
+        "height": 1.564008,
+        "depth": 1.370335
+      },
+      {
+        "path": "0/0",
+        "kind": "Span",
+        "classes": [
+          "katex-html"
+        ],
+        "height": 1.564008,
+        "depth": 1.370335
+      },
+      {
+        "path": "0/0/0",
+        "kind": "Span",
+        "classes": [
+          "base"
+        ],
+        "height": 1.564008,
+        "depth": 0.91195
+      },
+      {
+        "path": "0/0/0/0",
+        "kind": "Span",
+        "classes": [
+          "strut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/1",
+        "kind": "Span",
+        "classes": [
+          "mop"
+        ],
+        "height": 1.564008,
+        "depth": 0.91195
+      },
+      {
+        "path": "0/0/0/1/0",
+        "kind": "SymbolNode",
+        "classes": [
+          "mop",
+          "op-symbol",
+          "large-op"
+        ],
+        "width": 0.55556,
+        "height": 1.36,
+        "depth": 0.86225,
+        "shift": -0.0011
+      },
+      {
+        "path": "0/0/0/1/1",
+        "kind": "Span",
+        "classes": [
+          "msupsub"
+        ],
+        "height": 1.564008,
+        "depth": 0.91195
+      },
+      {
+        "path": "0/0/0/1/1/0",
+        "kind": "Span",
+        "classes": [
+          "vlist-t",
+          "vlist-t2"
+        ],
+        "height": 1.564008,
+        "depth": 0.91195
+      },
+      {
+        "path": "0/0/0/1/1/0/0",
+        "kind": "Span",
+        "classes": [
+          "vlist-r"
+        ],
+        "height": 0.451108,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/1/1/0/0/0",
+        "kind": "Span",
+        "classes": [
+          "vlist"
+        ],
+        "height": 0.451108,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/1/1/0/0/0/0",
+        "kind": "Span",
+        "classes": [],
+        "height": 0.451108,
+        "depth": 0,
+        "shift": 0.9119
+      },
+      {
+        "path": "0/0/0/1/1/0/0/0/0/0",
+        "kind": "Span",
+        "classes": [
+          "pstrut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/1/1/0/0/0/0/1",
+        "kind": "Span",
+        "classes": [
+          "sizing",
+          "reset-size6",
+          "size3",
+          "mtight"
+        ],
+        "height": 0.451108,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/1/1/0/0/0/0/1/0",
+        "kind": "SymbolNode",
+        "classes": [
+          "mord",
+          "",
+          "",
+          "mtight"
+        ],
+        "width": 0.5,
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/1/1/0/0/0/1",
+        "kind": "Span",
+        "classes": [],
+        "height": 0.451108,
+        "depth": 0,
+        "shift": -1.1129
+      },
+      {
+        "path": "0/0/0/1/1/0/0/0/1/0",
+        "kind": "Span",
+        "classes": [
+          "pstrut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/1/1/0/0/0/1/1",
+        "kind": "Span",
+        "classes": [
+          "sizing",
+          "reset-size6",
+          "size3",
+          "mtight"
+        ],
+        "height": 0.451108,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/1/1/0/0/0/1/1/0",
+        "kind": "SymbolNode",
+        "classes": [
+          "mord",
+          "",
+          "",
+          "mtight"
+        ],
+        "width": 0.5,
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/1/1/0/0/1",
+        "kind": "Span",
+        "classes": [
+          "vlist-s"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/1/1/0/0/1/0",
+        "kind": "SymbolNode",
+        "classes": [],
+        "width": 0,
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/1/1/0/1",
+        "kind": "Span",
+        "classes": [
+          "vlist-r"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/1/1/0/1/0",
+        "kind": "Span",
+        "classes": [
+          "vlist"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/1/1/0/1/0/0",
+        "kind": "Span",
+        "classes": [],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/2",
+        "kind": "Span",
+        "classes": [
+          "mspace"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/3",
+        "kind": "Span",
+        "classes": [
+          "mord"
+        ],
+        "height": 0.864108,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/3/0",
+        "kind": "SymbolNode",
+        "classes": [
+          "mord",
+          "mathnormal"
+        ],
+        "width": 0.57153,
+        "height": 0.43056,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/3/1",
+        "kind": "Span",
+        "classes": [
+          "msupsub"
+        ],
+        "height": 0.864108,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/3/1/0",
+        "kind": "Span",
+        "classes": [
+          "vlist-t"
+        ],
+        "height": 0.864108,
+        "depth": -0.413
+      },
+      {
+        "path": "0/0/0/3/1/0/0",
+        "kind": "Span",
+        "classes": [
+          "vlist-r"
+        ],
+        "height": 0.451108,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/3/1/0/0/0",
+        "kind": "Span",
+        "classes": [
+          "vlist"
+        ],
+        "height": 0.451108,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/3/1/0/0/0/0",
+        "kind": "Span",
+        "classes": [],
+        "height": 0.451108,
+        "depth": 0,
+        "shift": -0.413
+      },
+      {
+        "path": "0/0/0/3/1/0/0/0/0/0",
+        "kind": "Span",
+        "classes": [
+          "pstrut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/3/1/0/0/0/0/1",
+        "kind": "Span",
+        "classes": [
+          "sizing",
+          "reset-size6",
+          "size3",
+          "mtight"
+        ],
+        "height": 0.451108,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/3/1/0/0/0/0/1/0",
+        "kind": "SymbolNode",
+        "classes": [
+          "mord",
+          "",
+          "",
+          "mtight"
+        ],
+        "width": 0.5,
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/4",
+        "kind": "Span",
+        "classes": [
+          "mspace"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/5",
+        "kind": "SymbolNode",
+        "classes": [
+          "mord",
+          "mathnormal"
+        ],
+        "width": 0.52049,
+        "height": 0.69444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/6",
+        "kind": "SymbolNode",
+        "classes": [
+          "mord",
+          "mathnormal"
+        ],
+        "width": 0.57153,
+        "height": 0.43056,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/7",
+        "kind": "Span",
+        "classes": [
+          "mspace"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/0/8",
+        "kind": "SymbolNode",
+        "classes": [
+          "mrel"
+        ],
+        "width": 0.77778,
+        "height": 0.36687,
+        "depth": -0.13313
+      },
+      {
+        "path": "0/0/0/9",
+        "kind": "Span",
+        "classes": [
+          "mspace"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1",
+        "kind": "Span",
+        "classes": [
+          "base"
+        ],
+        "height": 1.32144,
+        "depth": 0.686
+      },
+      {
+        "path": "0/0/1/0",
+        "kind": "Span",
+        "classes": [
+          "strut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1",
+        "kind": "Span",
+        "classes": [
+          "mord"
+        ],
+        "height": 1.32144,
+        "depth": 0.686
+      },
+      {
+        "path": "0/0/1/1/0",
+        "kind": "Span",
+        "classes": [
+          "mopen",
+          "nulldelimiter"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/1",
+        "kind": "Span",
+        "classes": [
+          "mfrac"
+        ],
+        "height": 1.32144,
+        "depth": 0.686
+      },
+      {
+        "path": "0/0/1/1/1/0",
+        "kind": "Span",
+        "classes": [
+          "vlist-t",
+          "vlist-t2"
+        ],
+        "height": 1.32144,
+        "depth": 0.686
+      },
+      {
+        "path": "0/0/1/1/1/0/0",
+        "kind": "Span",
+        "classes": [
+          "vlist-r"
+        ],
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/1/0/0/0",
+        "kind": "Span",
+        "classes": [
+          "vlist"
+        ],
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/1/0/0/0/0",
+        "kind": "Span",
+        "classes": [],
+        "height": 0.64444,
+        "depth": 0,
+        "shift": 0.686
+      },
+      {
+        "path": "0/0/1/1/1/0/0/0/0/0",
+        "kind": "Span",
+        "classes": [
+          "pstrut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/1/0/0/0/0/1",
+        "kind": "Span",
+        "classes": [
+          "mord"
+        ],
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/1/0/0/0/0/1/0",
+        "kind": "SymbolNode",
+        "classes": [
+          "mord",
+          "",
+          ""
+        ],
+        "width": 0.5,
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/1/0/0/0/1",
+        "kind": "Span",
+        "classes": [],
+        "height": 0.04,
+        "depth": 0,
+        "shift": -0.23
+      },
+      {
+        "path": "0/0/1/1/1/0/0/0/1/0",
+        "kind": "Span",
+        "classes": [
+          "pstrut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/1/0/0/0/1/1",
+        "kind": "Span",
+        "classes": [
+          "frac-line"
+        ],
+        "height": 0.04,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/1/0/0/0/2",
+        "kind": "Span",
+        "classes": [],
+        "height": 0.64444,
+        "depth": 0,
+        "shift": -0.677
+      },
+      {
+        "path": "0/0/1/1/1/0/0/0/2/0",
+        "kind": "Span",
+        "classes": [
+          "pstrut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/1/0/0/0/2/1",
+        "kind": "Span",
+        "classes": [
+          "mord"
+        ],
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/1/0/0/0/2/1/0",
+        "kind": "SymbolNode",
+        "classes": [
+          "mord",
+          "",
+          ""
+        ],
+        "width": 0.5,
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/1/0/0/1",
+        "kind": "Span",
+        "classes": [
+          "vlist-s"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/1/0/0/1/0",
+        "kind": "SymbolNode",
+        "classes": [],
+        "width": 0,
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/1/0/1",
+        "kind": "Span",
+        "classes": [
+          "vlist-r"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/1/0/1/0",
+        "kind": "Span",
+        "classes": [
+          "vlist"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/1/0/1/0/0",
+        "kind": "Span",
+        "classes": [],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/1/2",
+        "kind": "Span",
+        "classes": [
+          "mclose",
+          "nulldelimiter"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/2",
+        "kind": "Span",
+        "classes": [
+          "mspace"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/1/3",
+        "kind": "SymbolNode",
+        "classes": [
+          "mbin"
+        ],
+        "width": 0.27778,
+        "height": 0.44445,
+        "depth": -0.05555
+      },
+      {
+        "path": "0/0/1/4",
+        "kind": "Span",
+        "classes": [
+          "mspace"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2",
+        "kind": "Span",
+        "classes": [
+          "base"
+        ],
+        "height": 1.32144,
+        "depth": 1.370335
+      },
+      {
+        "path": "0/0/2/0",
+        "kind": "Span",
+        "classes": [
+          "strut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1",
+        "kind": "Span",
+        "classes": [
+          "mord"
+        ],
+        "height": 1.32144,
+        "depth": 1.370335
+      },
+      {
+        "path": "0/0/2/1/0",
+        "kind": "Span",
+        "classes": [
+          "mopen",
+          "nulldelimiter"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1",
+        "kind": "Span",
+        "classes": [
+          "mfrac"
+        ],
+        "height": 1.32144,
+        "depth": 1.370335
+      },
+      {
+        "path": "0/0/2/1/1/0",
+        "kind": "Span",
+        "classes": [
+          "vlist-t",
+          "vlist-t2"
+        ],
+        "height": 1.32144,
+        "depth": 1.370335
+      },
+      {
+        "path": "0/0/2/1/1/0/0",
+        "kind": "Span",
+        "classes": [
+          "vlist-r"
+        ],
+        "height": 0.845108,
+        "depth": 0.635227
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0",
+        "kind": "Span",
+        "classes": [
+          "vlist"
+        ],
+        "height": 0.845108,
+        "depth": 0.635227
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0",
+        "kind": "Span",
+        "classes": [],
+        "height": 0.845108,
+        "depth": 0.635227,
+        "shift": 0.7351
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/0",
+        "kind": "Span",
+        "classes": [
+          "pstrut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1",
+        "kind": "Span",
+        "classes": [
+          "mord"
+        ],
+        "height": 0.845108,
+        "depth": 0.635227
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0",
+        "kind": "Span",
+        "classes": [
+          "mord"
+        ],
+        "height": 0.845108,
+        "depth": 0.635227
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/0",
+        "kind": "Span",
+        "classes": [
+          "mopen",
+          "nulldelimiter"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1",
+        "kind": "Span",
+        "classes": [
+          "mfrac"
+        ],
+        "height": 0.845108,
+        "depth": 0.635227
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0",
+        "kind": "Span",
+        "classes": [
+          "vlist-t",
+          "vlist-t2"
+        ],
+        "height": 0.845108,
+        "depth": 0.635227
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0",
+        "kind": "Span",
+        "classes": [
+          "vlist-r"
+        ],
+        "height": 0.60022,
+        "depth": 0.225007
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0",
+        "kind": "Span",
+        "classes": [
+          "vlist"
+        ],
+        "height": 0.60022,
+        "depth": 0.225007
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0",
+        "kind": "Span",
+        "classes": [],
+        "height": 0.60022,
+        "depth": 0.225007,
+        "shift": 0.4102
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/0",
+        "kind": "Span",
+        "classes": [
+          "pstrut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1",
+        "kind": "Span",
+        "classes": [
+          "sizing",
+          "reset-size6",
+          "size3",
+          "mtight"
+        ],
+        "height": 0.60022,
+        "depth": 0.225007
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0",
+        "kind": "Span",
+        "classes": [
+          "mord",
+          "mtight"
+        ],
+        "height": 0.857457,
+        "depth": 0.321439
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0",
+        "kind": "Span",
+        "classes": [
+          "mop",
+          "mtight"
+        ],
+        "height": 0.857457,
+        "depth": 0.321439
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/0",
+        "kind": "SymbolNode",
+        "classes": [
+          "mop",
+          "op-symbol",
+          "small-op",
+          "mtight"
+        ],
+        "width": 1.05556,
+        "height": 0.75,
+        "depth": 0.25001,
+        "shift": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1",
+        "kind": "Span",
+        "classes": [
+          "msupsub"
+        ],
+        "height": 0.857457,
+        "depth": 0.321439
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0",
+        "kind": "Span",
+        "classes": [
+          "vlist-t",
+          "vlist-t2"
+        ],
+        "height": 0.857457,
+        "depth": 0.321439
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0/0",
+        "kind": "Span",
+        "classes": [
+          "vlist-r"
+        ],
+        "height": 0.460314,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0/0/0",
+        "kind": "Span",
+        "classes": [
+          "vlist"
+        ],
+        "height": 0.460314,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0/0/0/0",
+        "kind": "Span",
+        "classes": [],
+        "height": 0.460314,
+        "depth": 0,
+        "shift": 0.3214
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0/0/0/0/0",
+        "kind": "Span",
+        "classes": [
+          "pstrut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0/0/0/0/1",
+        "kind": "Span",
+        "classes": [
+          "sizing",
+          "reset-size3",
+          "size1",
+          "mtight"
+        ],
+        "height": 0.460314,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0/0/0/0/1/0",
+        "kind": "SymbolNode",
+        "classes": [
+          "mord",
+          "",
+          "",
+          "mtight"
+        ],
+        "width": 0.5,
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0/0/0/1",
+        "kind": "Span",
+        "classes": [],
+        "height": 0.460314,
+        "depth": 0,
+        "shift": -0.3971
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0/0/0/1/0",
+        "kind": "Span",
+        "classes": [
+          "pstrut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0/0/0/1/1",
+        "kind": "Span",
+        "classes": [
+          "sizing",
+          "reset-size3",
+          "size1",
+          "mtight"
+        ],
+        "height": 0.460314,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0/0/0/1/1/0",
+        "kind": "SymbolNode",
+        "classes": [
+          "mord",
+          "",
+          "",
+          "mtight"
+        ],
+        "width": 0.5,
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0/0/1",
+        "kind": "Span",
+        "classes": [
+          "vlist-s"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0/0/1/0",
+        "kind": "SymbolNode",
+        "classes": [],
+        "width": 0,
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0/1",
+        "kind": "Span",
+        "classes": [
+          "vlist-r"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0/1/0",
+        "kind": "Span",
+        "classes": [
+          "vlist"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/0/1/0/1/0/0",
+        "kind": "Span",
+        "classes": [],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/1",
+        "kind": "Span",
+        "classes": [
+          "mspace",
+          "mtight"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/0/1/0/2",
+        "kind": "SymbolNode",
+        "classes": [
+          "mord",
+          "",
+          "",
+          "mtight"
+        ],
+        "width": 0.5,
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/1",
+        "kind": "Span",
+        "classes": [],
+        "height": 0.04,
+        "depth": 0,
+        "shift": -0.23
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/1/0",
+        "kind": "Span",
+        "classes": [
+          "pstrut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/1/1",
+        "kind": "Span",
+        "classes": [
+          "frac-line"
+        ],
+        "height": 0.04,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/2",
+        "kind": "Span",
+        "classes": [],
+        "height": 0.451108,
+        "depth": 0,
+        "shift": -0.394
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/2/0",
+        "kind": "Span",
+        "classes": [
+          "pstrut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/2/1",
+        "kind": "Span",
+        "classes": [
+          "sizing",
+          "reset-size6",
+          "size3",
+          "mtight"
+        ],
+        "height": 0.451108,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/2/1/0",
+        "kind": "Span",
+        "classes": [
+          "mord",
+          "mtight"
+        ],
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/0/2/1/0/0",
+        "kind": "SymbolNode",
+        "classes": [
+          "mord",
+          "",
+          "",
+          "mtight"
+        ],
+        "width": 0.5,
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/1",
+        "kind": "Span",
+        "classes": [
+          "vlist-s"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/0/1/0",
+        "kind": "SymbolNode",
+        "classes": [],
+        "width": 0,
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/1",
+        "kind": "Span",
+        "classes": [
+          "vlist-r"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/1/0",
+        "kind": "Span",
+        "classes": [
+          "vlist"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/1/0/1/0/0",
+        "kind": "Span",
+        "classes": [],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/0/2",
+        "kind": "Span",
+        "classes": [
+          "mclose",
+          "nulldelimiter"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/0/1/1",
+        "kind": "SymbolNode",
+        "classes": [
+          "mord",
+          "",
+          ""
+        ],
+        "width": 0.5,
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/1",
+        "kind": "Span",
+        "classes": [],
+        "height": 0.04,
+        "depth": 0,
+        "shift": -0.23
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/1/0",
+        "kind": "Span",
+        "classes": [
+          "pstrut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/1/1",
+        "kind": "Span",
+        "classes": [
+          "frac-line"
+        ],
+        "height": 0.04,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/2",
+        "kind": "Span",
+        "classes": [],
+        "height": 0.64444,
+        "depth": 0,
+        "shift": -0.677
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/2/0",
+        "kind": "Span",
+        "classes": [
+          "pstrut"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/2/1",
+        "kind": "Span",
+        "classes": [
+          "mord"
+        ],
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/0/2/1/0",
+        "kind": "SymbolNode",
+        "classes": [
+          "mord",
+          "",
+          ""
+        ],
+        "width": 0.5,
+        "height": 0.64444,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/1",
+        "kind": "Span",
+        "classes": [
+          "vlist-s"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/0/1/0",
+        "kind": "SymbolNode",
+        "classes": [],
+        "width": 0,
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/1",
+        "kind": "Span",
+        "classes": [
+          "vlist-r"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/1/0",
+        "kind": "Span",
+        "classes": [
+          "vlist"
+        ],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/1/0/1/0/0",
+        "kind": "Span",
+        "classes": [],
+        "height": 0,
+        "depth": 0
+      },
+      {
+        "path": "0/0/2/1/2",
+        "kind": "Span",
+        "classes": [
+          "mclose",
+          "nulldelimiter"
+        ],
+        "height": 0,
+        "depth": 0
+      }
+    ]
   }
 ]

@@ -89,17 +89,29 @@ bool MathBlockController::insertText(QString text) {
   }
 
   return mutateCurrentMathBlock(QStringLiteral("Edit Math Block"), EditTransaction::Kind::InsertText,
-                                [text = std::move(text)](MarkdownNode& math, qsizetype& offset) {
+                                [this, text = std::move(text)](MarkdownNode& math, qsizetype& offset) {
                                   QString value = math.literal();
-                                  offset = qBound<qsizetype>(0, offset, value.size());
-                                  value.insert(offset, text);
-                                  offset += text.size();
+                                  qsizetype selectionStart = 0;
+                                  qsizetype selectionEnd = 0;
+                                  if (currentSelectionRange(selectionStart, selectionEnd)) {
+                                    selectionStart = qBound<qsizetype>(0, selectionStart, value.size());
+                                    selectionEnd = qBound<qsizetype>(selectionStart, selectionEnd, value.size());
+                                    value.replace(selectionStart, selectionEnd - selectionStart, text);
+                                    offset = selectionStart + text.size();
+                                  } else {
+                                    offset = qBound<qsizetype>(0, offset, value.size());
+                                    value.insert(offset, text);
+                                    offset += text.size();
+                                  }
                                   math.setLiteral(value);
                                   return true;
                                 });
 }
 
 bool MathBlockController::deleteBackward() {
+  if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
+    return deleteSelection();
+  }
   return mutateCurrentMathBlock(QStringLiteral("Backspace Math Block"), EditTransaction::Kind::DeleteText,
                                 [](MarkdownNode& math, qsizetype& offset) {
                                   QString value = math.literal();
@@ -115,6 +127,9 @@ bool MathBlockController::deleteBackward() {
 }
 
 bool MathBlockController::deleteForward() {
+  if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
+    return deleteSelection();
+  }
   return mutateCurrentMathBlock(QStringLiteral("Delete Math Block Text"), EditTransaction::Kind::DeleteText,
                                 [](MarkdownNode& math, qsizetype& offset) {
                                   QString value = math.literal();
@@ -123,6 +138,24 @@ bool MathBlockController::deleteForward() {
                                     return true;
                                   }
                                   value.remove(offset, 1);
+                                  math.setLiteral(value);
+                                  return true;
+                                });
+}
+
+bool MathBlockController::deleteSelection() {
+  return mutateCurrentMathBlock(QStringLiteral("Delete Math Block Selection"), EditTransaction::Kind::DeleteText,
+                                [this](MarkdownNode& math, qsizetype& offset) {
+                                  qsizetype selectionStart = 0;
+                                  qsizetype selectionEnd = 0;
+                                  if (!currentSelectionRange(selectionStart, selectionEnd)) {
+                                    return false;
+                                  }
+                                  QString value = math.literal();
+                                  selectionStart = qBound<qsizetype>(0, selectionStart, value.size());
+                                  selectionEnd = qBound<qsizetype>(selectionStart, selectionEnd, value.size());
+                                  value.remove(selectionStart, selectionEnd - selectionStart);
+                                  offset = selectionStart;
                                   math.setLiteral(value);
                                   return true;
                                 });
@@ -201,6 +234,21 @@ bool MathBlockController::mutateCurrentMathBlock(
     brushQueue_->requestBlockRefresh(mathId);
   }
   return true;
+}
+
+bool MathBlockController::currentSelectionRange(qsizetype& startOffset, qsizetype& endOffset) const {
+  if (!selection_ || !selection_->hasCursor() || selection_->selection().isCollapsed()) {
+    return false;
+  }
+  const NodeId mathId = currentMathBlockId();
+  const SelectionRange range = selection_->selection();
+  if (mathId != range.anchor.blockId || mathId != range.focus.blockId || range.anchor.text.nodeId != mathId ||
+      range.focus.text.nodeId != mathId) {
+    return false;
+  }
+  startOffset = qMin(range.anchor.text.textOffset, range.focus.text.textOffset);
+  endOffset = qMax(range.anchor.text.textOffset, range.focus.text.textOffset);
+  return startOffset < endOffset;
 }
 
 MarkdownNode* MathBlockController::currentMathBlock() const {

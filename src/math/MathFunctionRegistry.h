@@ -53,7 +53,8 @@ enum class MathFunctionHandlerKind {
   Underline,
   Url,
   VCenter,
-  Verb
+  Verb,
+  XArrow
 };
 
 enum class MathFunctionBuilderKind {
@@ -86,7 +87,8 @@ enum class MathFunctionBuilderKind {
   Text,
   Underline,
   VCenter,
-  Verb
+  Verb,
+  XArrow
 };
 
 struct MathFunctionSpec {

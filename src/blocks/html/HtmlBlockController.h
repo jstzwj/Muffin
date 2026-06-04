@@ -34,6 +34,7 @@ public:
   bool insertText(QString text);
   bool deleteBackward();
   bool deleteForward();
+  bool deleteSelection();
   bool setHtml(QString html);
   QString sanitizedPreview() const;
 
@@ -42,6 +43,7 @@ signals:
 
 private:
   bool mutateCurrentHtmlBlock(QString label, EditTransaction::Kind kind, const std::function<bool(MarkdownNode&, qsizetype&)>& mutate);
+  bool currentSelectionRange(qsizetype& startOffset, qsizetype& endOffset) const;
   MarkdownNode* currentHtmlBlock() const;
   MarkdownNode* htmlBlockById(NodeId id) const;
   MarkdownNode* htmlBlockByIndex(int index) const;

@@ -90,17 +90,29 @@ bool HtmlBlockController::insertText(QString text) {
   }
 
   return mutateCurrentHtmlBlock(QStringLiteral("Edit HTML Block"), EditTransaction::Kind::InsertText,
-                                [text = std::move(text)](MarkdownNode& html, qsizetype& offset) {
+                                [this, text = std::move(text)](MarkdownNode& html, qsizetype& offset) {
                                   QString value = html.literal();
-                                  offset = qBound<qsizetype>(0, offset, value.size());
-                                  value.insert(offset, text);
-                                  offset += text.size();
+                                  qsizetype selectionStart = 0;
+                                  qsizetype selectionEnd = 0;
+                                  if (currentSelectionRange(selectionStart, selectionEnd)) {
+                                    selectionStart = qBound<qsizetype>(0, selectionStart, value.size());
+                                    selectionEnd = qBound<qsizetype>(selectionStart, selectionEnd, value.size());
+                                    value.replace(selectionStart, selectionEnd - selectionStart, text);
+                                    offset = selectionStart + text.size();
+                                  } else {
+                                    offset = qBound<qsizetype>(0, offset, value.size());
+                                    value.insert(offset, text);
+                                    offset += text.size();
+                                  }
                                   html.setLiteral(value);
                                   return true;
                                 });
 }
 
 bool HtmlBlockController::deleteBackward() {
+  if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
+    return deleteSelection();
+  }
   return mutateCurrentHtmlBlock(QStringLiteral("Backspace HTML Block"), EditTransaction::Kind::DeleteText,
                                 [](MarkdownNode& html, qsizetype& offset) {
                                   QString value = html.literal();
@@ -116,6 +128,9 @@ bool HtmlBlockController::deleteBackward() {
 }
 
 bool HtmlBlockController::deleteForward() {
+  if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
+    return deleteSelection();
+  }
   return mutateCurrentHtmlBlock(QStringLiteral("Delete HTML Block Text"), EditTransaction::Kind::DeleteText,
                                 [](MarkdownNode& html, qsizetype& offset) {
                                   QString value = html.literal();
@@ -124,6 +139,24 @@ bool HtmlBlockController::deleteForward() {
                                     return true;
                                   }
                                   value.remove(offset, 1);
+                                  html.setLiteral(value);
+                                  return true;
+                                });
+}
+
+bool HtmlBlockController::deleteSelection() {
+  return mutateCurrentHtmlBlock(QStringLiteral("Delete HTML Block Selection"), EditTransaction::Kind::DeleteText,
+                                [this](MarkdownNode& html, qsizetype& offset) {
+                                  qsizetype selectionStart = 0;
+                                  qsizetype selectionEnd = 0;
+                                  if (!currentSelectionRange(selectionStart, selectionEnd)) {
+                                    return false;
+                                  }
+                                  QString value = html.literal();
+                                  selectionStart = qBound<qsizetype>(0, selectionStart, value.size());
+                                  selectionEnd = qBound<qsizetype>(selectionStart, selectionEnd, value.size());
+                                  value.remove(selectionStart, selectionEnd - selectionStart);
+                                  offset = selectionStart;
                                   html.setLiteral(value);
                                   return true;
                                 });
@@ -207,6 +240,21 @@ bool HtmlBlockController::mutateCurrentHtmlBlock(
     brushQueue_->requestBlockRefresh(htmlId);
   }
   return true;
+}
+
+bool HtmlBlockController::currentSelectionRange(qsizetype& startOffset, qsizetype& endOffset) const {
+  if (!selection_ || !selection_->hasCursor() || selection_->selection().isCollapsed()) {
+    return false;
+  }
+  const NodeId htmlId = currentHtmlBlockId();
+  const SelectionRange range = selection_->selection();
+  if (htmlId != range.anchor.blockId || htmlId != range.focus.blockId || range.anchor.text.nodeId != htmlId ||
+      range.focus.text.nodeId != htmlId) {
+    return false;
+  }
+  startOffset = qMin(range.anchor.text.textOffset, range.focus.text.textOffset);
+  endOffset = qMax(range.anchor.text.textOffset, range.focus.text.textOffset);
+  return startOffset < endOffset;
 }
 
 MarkdownNode* HtmlBlockController::currentHtmlBlock() const {

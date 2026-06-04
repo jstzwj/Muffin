@@ -34,6 +34,7 @@ public:
   bool insertText(QString text);
   bool deleteBackward();
   bool deleteForward();
+  bool deleteSelection();
   bool setTex(QString tex);
 
 signals:
@@ -41,6 +42,7 @@ signals:
 
 private:
   bool mutateCurrentMathBlock(QString label, EditTransaction::Kind kind, const std::function<bool(MarkdownNode&, qsizetype&)>& mutate);
+  bool currentSelectionRange(qsizetype& startOffset, qsizetype& endOffset) const;
   MarkdownNode* currentMathBlock() const;
   MarkdownNode* mathBlockById(NodeId id) const;
   MarkdownNode* mathBlockByIndex(int index) const;

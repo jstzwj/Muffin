@@ -83,22 +83,22 @@ QMap<QString, QJsonObject> readObjectArrayById(const QString& path) {
   return byId;
 }
 
-QString katexMetricsPathForFixture(const QString& fixturePath) {
+QString katexGoldenPathForFixture(const QString& fixturePath, const QString& goldenName, const QString& fileName) {
   QDir testsDir(QFileInfo(fixturePath).absoluteDir());
   require(testsDir.cdUp() && testsDir.cdUp(), QStringLiteral("Could not resolve tests directory from %1").arg(fixturePath));
-  return testsDir.filePath(QStringLiteral("golden/katex/metrics.json"));
+  return testsDir.filePath(QStringLiteral("golden/%1/%2").arg(goldenName, fileName));
 }
 
-QString katexBBoxPathForFixture(const QString& fixturePath) {
-  QDir testsDir(QFileInfo(fixturePath).absoluteDir());
-  require(testsDir.cdUp() && testsDir.cdUp(), QStringLiteral("Could not resolve tests directory from %1").arg(fixturePath));
-  return testsDir.filePath(QStringLiteral("golden/katex/bbox.json"));
+QString katexMetricsPathForFixture(const QString& fixturePath, const QString& goldenName = QStringLiteral("katex")) {
+  return katexGoldenPathForFixture(fixturePath, goldenName, QStringLiteral("metrics.json"));
 }
 
-QString katexGlyphsPathForFixture(const QString& fixturePath) {
-  QDir testsDir(QFileInfo(fixturePath).absoluteDir());
-  require(testsDir.cdUp() && testsDir.cdUp(), QStringLiteral("Could not resolve tests directory from %1").arg(fixturePath));
-  return testsDir.filePath(QStringLiteral("golden/katex/glyphs.json"));
+QString katexBBoxPathForFixture(const QString& fixturePath, const QString& goldenName = QStringLiteral("katex")) {
+  return katexGoldenPathForFixture(fixturePath, goldenName, QStringLiteral("bbox.json"));
+}
+
+QString katexGlyphsPathForFixture(const QString& fixturePath, const QString& goldenName = QStringLiteral("katex")) {
+  return katexGoldenPathForFixture(fixturePath, goldenName, QStringLiteral("glyphs.json"));
 }
 
 const MarkdownNode* findFirstBlock(const MarkdownNode& node, BlockType type) {
@@ -1256,6 +1256,53 @@ void testMathRenderingLayout() {
   require(changedPixels > 50, QStringLiteral("math block paint should draw visible pixels"));
 }
 
+void testLiteralBlockWrappedEditingGeometry() {
+  RenderTheme theme = RenderTheme::github();
+  const QString longLine = QStringLiteral("0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz");
+  const QString markdown = QStringLiteral("```text\n%1\n```\n\n$$\n%1\n$$").arg(longLine);
+
+  CmarkGfmParser parser;
+  ParseResult parsed = parser.parseDocument(markdown, {});
+  require(parsed.root != nullptr, QStringLiteral("wrapped literal parse should produce document"));
+
+  MarkdownDocument document;
+  document.setMarkdownText(markdown, std::move(parsed.root));
+
+  const MarkdownNode* code = findFirstBlock(document.root(), BlockType::CodeFence);
+  const MarkdownNode* math = findFirstBlock(document.root(), BlockType::MathBlock);
+  require(code != nullptr, QStringLiteral("wrapped code block should exist"));
+  require(math != nullptr, QStringLiteral("wrapped math block should exist"));
+
+  DocumentLayout codeLayout;
+  codeLayout.rebuild(document, theme, 360.0);
+  const BlockLayout* codeBlock = codeLayout.block(code->id());
+  require(codeBlock != nullptr, QStringLiteral("wrapped code layout should exist"));
+  const QRectF codeContent = codeBlock->literalContentRect(theme);
+  const qreal codeLineHeight = qMax<qreal>(14.0, QFontMetricsF(theme.codeFont()).height());
+  const HitTestResult codeSecondLineHit =
+      codeBlock->hitTest(QPointF(codeContent.left() + 30.0, codeContent.top() + codeLineHeight * 1.4), theme);
+  require(codeSecondLineHit.textOffset > 10, QStringLiteral("wrapped code hit-test should map into later visual line"));
+  require(codeSecondLineHit.cursorRect.top() > codeContent.top() + codeLineHeight * 0.5,
+          QStringLiteral("wrapped code cursor should move to visual wrapped line"));
+  require(codeBlock->selectionRectsForOffsets(0, longLine.size(), theme).size() > 1,
+          QStringLiteral("wrapped code selection should span multiple visual lines"));
+
+  SelectionRange mathSelection;
+  mathSelection.anchor.blockId = math->id();
+  mathSelection.anchor.text.nodeId = math->id();
+  mathSelection.focus = mathSelection.anchor;
+  DocumentLayout mathEditingLayout;
+  mathEditingLayout.rebuild(document, theme, 360.0, mathSelection);
+  const BlockLayout* mathBlock = mathEditingLayout.block(math->id());
+  require(mathBlock != nullptr && mathBlock->literalEditing(), QStringLiteral("wrapped math block should be editing"));
+  const QRectF mathSource = mathBlock->literalContentRect(theme);
+  const HitTestResult mathSecondLineHit =
+      mathBlock->hitTest(QPointF(mathSource.left() + 30.0, mathSource.top() + codeLineHeight * 1.4), theme);
+  require(mathSecondLineHit.textOffset > 10, QStringLiteral("wrapped math hit-test should map into later visual line"));
+  require(mathSecondLineHit.cursorRect.top() > mathSource.top() + codeLineHeight * 0.5,
+          QStringLiteral("wrapped math cursor should move to visual wrapped line"));
+}
+
 void testExtendedMathFunctionRendering() {
   RenderTheme theme = RenderTheme::github();
 
@@ -1813,6 +1860,102 @@ void testMathFixtureRenderTreeDumps(const QString& fixturePath) {
   }
 }
 
+void testOfficialKatexScreenshotterAudit(const QString& fixturePath) {
+  const QJsonArray fixtures = readJsonArrayFixture(fixturePath);
+  require(fixtures.size() >= 100, QStringLiteral("official KaTeX screenshotter fixture suite should contain broad coverage"));
+
+  const QMap<QString, QJsonObject> katexBBoxById = readObjectArrayById(katexBBoxPathForFixture(fixturePath, QStringLiteral("katex-official")));
+  const QMap<QString, QJsonObject> katexGlyphsById = readObjectArrayById(katexGlyphsPathForFixture(fixturePath, QStringLiteral("katex-official")));
+  RenderTheme theme = RenderTheme::github();
+  math::MathSettings officialSettings;
+  officialSettings.trust = true;
+  const qreal rootEm = math::MathRenderer::katexRootFontPixelSize(theme);
+  QVector<BBoxAuditEntry> bboxAudit;
+  QStringList renderFailures;
+  QStringList glyphCountMismatches;
+  int renderedCount = 0;
+  int bboxComparedCount = 0;
+  int glyphComparedCount = 0;
+
+  for (const QJsonValue& value : fixtures) {
+    const QJsonObject fixture = value.toObject();
+    const QString id = fixture.value(QStringLiteral("id")).toString();
+    const QString tex = fixture.value(QStringLiteral("tex")).toString();
+    const bool display = fixture.value(QStringLiteral("display")).toBool();
+    if (id.isEmpty() || tex.isEmpty()) {
+      continue;
+    }
+
+    const math::MathLayoutResult rendered = math::MathRenderer().render(tex, theme, display, officialSettings);
+    if (!rendered.valid()) {
+      renderFailures.push_back(id);
+      continue;
+    }
+    ++renderedCount;
+
+    const QString dumpOfficial = qEnvironmentVariable("MUFFIN_DUMP_OFFICIAL_KATEX_FIXTURE");
+    if (dumpOfficial == id) {
+      qInfo().noquote() << QStringLiteral("Official native dump for %1:").arg(id);
+      qInfo().noquote() << QString::fromUtf8(QJsonDocument(rendered.root->toJson()).toJson(QJsonDocument::Indented));
+    }
+
+    const auto bboxIt = katexBBoxById.constFind(id);
+    if (bboxIt != katexBBoxById.constEnd() && !bboxIt.value().value(QStringLiteral("error")).toBool()) {
+      bboxAudit.push_back(makeBBoxAuditEntry(id, *rendered.root, bboxIt.value(), rootEm));
+      ++bboxComparedCount;
+    }
+
+    const auto glyphIt = katexGlyphsById.constFind(id);
+    if (glyphIt != katexGlyphsById.constEnd() && !glyphIt.value().value(QStringLiteral("error")).toBool()) {
+      if (dumpOfficial == id) {
+        dumpGlyphDiffs(id, *rendered.root, glyphIt.value(), rootEm);
+      }
+      const int nativeGlyphs = nativeVisibleGlyphItems(*rendered.root, rootEm).size();
+      const int katexGlyphs = katexVisibleGlyphItems(glyphIt.value()).size();
+      if (nativeGlyphs != katexGlyphs) {
+        glyphCountMismatches.push_back(QStringLiteral("%1 native=%2 katex=%3").arg(id).arg(nativeGlyphs).arg(katexGlyphs));
+      }
+      ++glyphComparedCount;
+    }
+  }
+
+  std::sort(bboxAudit.begin(), bboxAudit.end(), [](const BBoxAuditEntry& left, const BBoxAuditEntry& right) {
+    return left.layoutError() > right.layoutError();
+  });
+
+  qInfo().noquote() << QStringLiteral("Official KaTeX screenshotter audit: fixtures=%1 rendered=%2 renderFailures=%3 bboxCompared=%4 glyphCompared=%5 glyphCountMismatches=%6")
+                           .arg(fixtures.size())
+                           .arg(renderedCount)
+                           .arg(renderFailures.size())
+                           .arg(bboxComparedCount)
+                           .arg(glyphComparedCount)
+                           .arg(glyphCountMismatches.size());
+  if (!renderFailures.isEmpty()) {
+    qInfo().noquote() << QStringLiteral("Official render failures first 25: %1").arg(renderFailures.mid(0, 25).join(QStringLiteral(", ")));
+  }
+  if (!glyphCountMismatches.isEmpty()) {
+    qInfo().noquote() << QStringLiteral("Official glyph count mismatches first 25: %1").arg(glyphCountMismatches.mid(0, 25).join(QStringLiteral("; ")));
+  }
+  qInfo().noquote() << "Official KaTeX bbox audit top 25 by layout error:";
+  const int limit = qMin(25, bboxAudit.size());
+  for (int i = 0; i < limit; ++i) {
+    const BBoxAuditEntry& entry = bboxAudit.at(i);
+    qInfo().noquote()
+        << QStringLiteral("%1 layoutErr=%2 inkErr=%3 katexDom=(%4,%5) nativeLayout=(%6,%7) katexInk=(%8,%9) nativeInk=(%10,%11)")
+               .arg(entry.id)
+               .arg(entry.layoutError(), 0, 'f', 4)
+               .arg(entry.inkError(), 0, 'f', 4)
+               .arg(entry.katexWidthEm, 0, 'f', 4)
+               .arg(entry.katexHeightEm, 0, 'f', 4)
+               .arg(entry.nativeLayoutWidthEm, 0, 'f', 4)
+               .arg(entry.nativeLayoutHeightEm, 0, 'f', 4)
+               .arg(entry.katexInkWidthEm, 0, 'f', 4)
+               .arg(entry.katexInkHeightEm, 0, 'f', 4)
+               .arg(entry.nativeInkWidthEm, 0, 'f', 4)
+               .arg(entry.nativeInkHeightEm, 0, 'f', 4);
+  }
+}
+
 void testRemainingKatexFunctionFamilies() {
   const math::MathFunctionSpec* fracSpec = math::MathFunctionRegistry::lookup(QStringLiteral("\\frac"));
   require(fracSpec != nullptr && fracSpec->typeName == QStringLiteral("genfrac") && fracSpec->numArgs == 2,
@@ -2115,6 +2258,31 @@ void testRemainingKatexFunctionFamilies() {
             QStringLiteral("MathRenderer should apply KaTeX root font scale 1.21 after point-to-pixel conversion"));
   }
   {
+    RenderTheme theme = RenderTheme::github();
+    const QString ungrouped =
+        QStringLiteral("\\int_0^1 x^2\\,dx = \\frac{1}{3}\\cdot\\frac{1}{\\frac{123}{\\sum_1^123}123}");
+    const QString grouped =
+        QStringLiteral("\\int_0^1 x^2\\,dx = \\frac{1}{3}\\cdot\\frac{1}{\\frac{123}{\\sum_1^{123}}123}");
+    const math::MathLayoutResult ungroupedLayout = math::MathRenderer().render(ungrouped, theme, true);
+    const math::MathLayoutResult groupedLayout = math::MathRenderer().render(grouped, theme, true);
+    require(ungroupedLayout.valid() && groupedLayout.valid(), QStringLiteral("nested fraction with scripts should render"));
+    require(ungroupedLayout.size.height() > theme.mathFont().pointSizeF() * 2.5,
+            QStringLiteral("nested denominator sum should contribute to display formula layout height"));
+    require(groupedLayout.size.height() >= ungroupedLayout.size.height(),
+            QStringLiteral("braced sum exponent should not collapse nested denominator vlist height"));
+
+    QImage image(QSize(qCeil(groupedLayout.size.width()) + 32, qCeil(groupedLayout.size.height()) + 32), QImage::Format_ARGB32);
+    image.fill(theme.backgroundColor());
+    {
+      QPainter painter(&image);
+      groupedLayout.paint(painter, QPointF(16.0, 16.0));
+    }
+    const QRect ink = imageInkBounds(image, theme.backgroundColor());
+    require(!ink.isEmpty(), QStringLiteral("nested fraction grouped sum should paint visible ink"));
+    require(ink.height() > groupedLayout.size.height() * 0.45,
+            QStringLiteral("nested fraction grouped sum paint should occupy the reserved vertical box"));
+  }
+  {
     const QStringList symbolCommands{
         QStringLiteral("\\zeta"), QStringLiteral("\\Xi"), QStringLiteral("\\oplus"), QStringLiteral("\\supseteq"),
         QStringLiteral("\\approx"), QStringLiteral("\\Longleftrightarrow"), QStringLiteral("\\aleph"), QStringLiteral("\\clubsuit"),
@@ -2143,6 +2311,45 @@ void testRemainingKatexFunctionFamilies() {
     }
     require(sawHtmlBranch && sawHbox && sawRmDeclaration,
             QStringLiteral("htmlmathml hbox and old font declarations should preserve KaTeX-like parse semantics"));
+  }
+  {
+    math::MathParser parser(QStringLiteral("\\begin{matrix}\\text{\\underline{text}}\\end{matrix}"));
+    const QVector<math::MathParseNode> nodes = parser.parse();
+    require(nodes.size() == 1 && nodes.first().type == math::MathNodeType::Array,
+            QStringLiteral("text command inside matrix should not leak the environment terminator"));
+    require(nodes.first().rows.size() == 1 && nodes.first().rows.first().size() == 1,
+            QStringLiteral("matrix containing text should preserve a single cell"));
+
+    math::MathParser oldFontParser(QStringLiteral("\\begin{matrix}\\rm rm & it\\\\ x&y\\end{matrix}"));
+    const QVector<math::MathParseNode> oldFontNodes = oldFontParser.parse();
+    require(oldFontNodes.size() == 1 && oldFontNodes.first().type == math::MathNodeType::Array &&
+                oldFontNodes.first().rows.size() == 2,
+            QStringLiteral("old font declarations should stop at array cell and row boundaries"));
+    math::MathParser colorParser(QStringLiteral("\\begin{matrix}a\\\\\\color{green}{b}\\\\c\\end{matrix}"));
+    const QVector<math::MathParseNode> colorNodes = colorParser.parse();
+    require(colorNodes.size() == 1 && colorNodes.first().type == math::MathNodeType::Array &&
+                colorNodes.first().rows.size() == 3,
+            QStringLiteral("color declarations should stop at array row and environment boundaries"));
+    std::unique_ptr<math::MathRenderNode> colorTree =
+        math::MathBuilder(math::MathOptions(math::MathStyle::display(), 16.0, QColor(QStringLiteral("#111111")), math::MathSettings())).buildExpression(colorNodes);
+    require(colorTree != nullptr && !renderTreeContainsValue(colorTree->toJson(), QStringLiteral("\\end")),
+            QStringLiteral("color declarations should not leak environment delimiters into render tree"));
+  }
+  {
+    const QStringList stretchyAccentLabels = {
+        QStringLiteral("\\overrightarrow"), QStringLiteral("\\overleftarrow"),    QStringLiteral("\\Overrightarrow"),
+        QStringLiteral("\\overleftrightarrow"), QStringLiteral("\\overgroup"),   QStringLiteral("\\overlinesegment"),
+        QStringLiteral("\\overleftharpoon"), QStringLiteral("\\overrightharpoon")};
+    for (const QString& label : stretchyAccentLabels) {
+      math::MathParser parser(QStringLiteral("%1{AB}").arg(label));
+      const QVector<math::MathParseNode> nodes = parser.parse();
+      require(nodes.size() == 1 && nodes.first().type == math::MathNodeType::Accent,
+              QStringLiteral("%1 should parse as a KaTeX stretchy accent").arg(label));
+      std::unique_ptr<math::MathRenderNode> tree =
+          math::MathBuilder(math::MathOptions(math::MathStyle::textStyle(), 16.0, QColor(QStringLiteral("#111111")), math::MathSettings())).buildExpression(nodes);
+      require(tree != nullptr && tree->width < 16.0 * 4.0,
+              QStringLiteral("%1 should render as SVG accent, not fallback command text").arg(label));
+    }
   }
 
   bool threw = false;
@@ -2806,11 +3013,13 @@ int main(int argc, char** argv) {
   testInlineLayoutGeometryContract();
   testInlineLayoutPainting();
   testMathRenderingLayout();
+  testLiteralBlockWrappedEditingGeometry();
   testExtendedMathFunctionRendering();
   testStrictMathGeometryFeatures();
   testMathMetricsMacrosAndState();
   const QFileInfo smokeFixtureInfo(QString::fromLocal8Bit(argv[1]));
   testMathFixtureRenderTreeDumps(smokeFixtureInfo.dir().filePath(QStringLiteral("math/core.json")));
+  testOfficialKatexScreenshotterAudit(smokeFixtureInfo.dir().filePath(QStringLiteral("math/katex-official-screenshotter.json")));
   testRemainingKatexFunctionFamilies();
   testInlineLayoutHitTesting();
   testInlineLayoutCursorRects();

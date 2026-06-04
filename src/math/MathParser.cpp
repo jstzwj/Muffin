@@ -279,7 +279,10 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
       }
       return parseScripts(std::move(frac));
     }
-    if (token.text == QStringLiteral("\\dfrac") || token.text == QStringLiteral("\\dbinom")) {
+    if (token.text == QStringLiteral("\\cfrac")) {
+      frac.style = QStringLiteral("\\displaystyle");
+      frac.continuedFraction = true;
+    } else if (token.text == QStringLiteral("\\dfrac") || token.text == QStringLiteral("\\dbinom")) {
       frac.style = QStringLiteral("\\displaystyle");
     } else if (token.text == QStringLiteral("\\tfrac") || token.text == QStringLiteral("\\tbinom")) {
       frac.style = QStringLiteral("\\textstyle");
@@ -328,6 +331,19 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
     brace.isOver = token.text.contains(QStringLiteral("\\over"));
     brace.base = parseRequiredGroup(token.text);
     return parseScripts(std::move(brace));
+  }
+
+  case MathFunctionHandlerKind::XArrow: {
+    MathParseNode arrow;
+    arrow.type = MathNodeType::XArrow;
+    arrow.label = token.text;
+    if (lexer_.peek().text == QStringLiteral("[")) {
+      lexer_.consume();
+      arrow.sub = parseExpression(QStringLiteral("]"));
+      expect(QStringLiteral("]"), token.text);
+    }
+    arrow.body = parseRequiredGroup(token.text);
+    return parseScripts(std::move(arrow));
   }
 
   case MathFunctionHandlerKind::Underline: {
@@ -504,19 +520,18 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
     MathParseNode verb;
     verb.type = MathNodeType::Verb;
     verb.label = token.text;
-    const MathToken delimiter = lexer_.next();
+    bool starred = false;
+    bool ok = false;
+    MathToken delimiter;
+    const QString body = lexer_.readVerbBody(starred, ok, delimiter);
     if (delimiter.text == QStringLiteral("EOF")) {
       return parseScripts(errorNode(QStringLiteral("\\verb ended by end of line instead of matching delimiter"), &delimiter));
     }
-    QString body;
-    while (lexer_.peek().text != QStringLiteral("EOF") && lexer_.peek().text != delimiter.text) {
-      body += lexer_.next().text;
+    if (!ok) {
+      return parseScripts(errorNode(QStringLiteral("\\verb ended by end of line instead of matching delimiter"), &delimiter));
     }
-    if (lexer_.peek().text == delimiter.text) {
-      lexer_.consume();
-    } else {
-      const MathToken next = lexer_.peek();
-      return parseScripts(errorNode(QStringLiteral("\\verb ended by end of line instead of matching delimiter"), &next));
+    if (starred) {
+      verb.label = QStringLiteral("\\verb*");
     }
     verb.text = body;
     return parseScripts(std::move(verb));
@@ -660,14 +675,19 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
       text.type = MathNodeType::Text;
       text.label = token.text;
       text.fontClass = fontClassForCommand(token.text);
-      text.body = parseExpression();
+      text.body = parseExpressionUntilAny(
+          {QStringLiteral("&"), QStringLiteral("\\\\"), QStringLiteral("\\cr"), QStringLiteral("\\end"), QStringLiteral("\\hline"), QStringLiteral("\\hdashline")});
       return parseScripts(std::move(text));
     }
     MathParseNode text;
     text.type = MathNodeType::Text;
     text.label = token.text;
     text.fontClass = fontClassForCommand(token.text);
-    text.text = parseRawGroupText(token.text);
+    if (function.typeName == QStringLiteral("font")) {
+      text.body = parseRequiredGroup(token.text);
+    } else {
+      text.text = parseRawGroupText(token.text);
+    }
     return parseScripts(std::move(text));
   }
 
@@ -679,7 +699,8 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
       color.body = parseRequiredGroup(token.text);
     } else {
       color.color = parseRawGroupText(token.text);
-      color.body = parseExpression();
+      color.body = parseExpressionUntilAny(
+          {QStringLiteral("&"), QStringLiteral("\\\\"), QStringLiteral("\\cr"), QStringLiteral("\\end"), QStringLiteral("\\hline"), QStringLiteral("\\hdashline")});
     }
     return parseScripts(std::move(color));
   }
@@ -765,11 +786,29 @@ QVector<MathParseNode> MathParser::parseScriptGroup() {
 }
 
 QVector<MathParseNode> MathParser::parseRequiredGroup(const QString& command) {
-  if (lexer_.peek().text != QStringLiteral("{")) {
-    const MathToken token = lexer_.peek();
+  if (lexer_.peek().text == QStringLiteral("{")) {
+    return parseGroup();
+  }
+  const MathToken token = lexer_.peek();
+  if (!canStartRequiredArgument(token)) {
     return QVector<MathParseNode>{errorNode(QStringLiteral("%1 expects a group").arg(command), &token)};
   }
-  return parseGroup();
+  return QVector<MathParseNode>{parseAtom()};
+}
+
+bool MathParser::canStartRequiredArgument(const MathToken& token) const {
+  static const QSet<QString> invalidStarts{
+      QStringLiteral("EOF"),
+      QStringLiteral("}"),
+      QStringLiteral("]"),
+      QStringLiteral("&"),
+      QStringLiteral("\\\\"),
+      QStringLiteral("\\cr"),
+      QStringLiteral("\\end"),
+      QStringLiteral("\\right"),
+      QStringLiteral("^"),
+      QStringLiteral("_")};
+  return !invalidStarts.contains(token.text);
 }
 
 QString MathParser::parseRawGroupText(const QString& command) {
@@ -900,6 +939,7 @@ MathParseNode MathParser::parseBeginEnvironment() {
       name == QStringLiteral("matrix*") || name == QStringLiteral("pmatrix*") || name == QStringLiteral("bmatrix*") ||
       name == QStringLiteral("Bmatrix*") || name == QStringLiteral("vmatrix*") || name == QStringLiteral("Vmatrix*") ||
       name == QStringLiteral("array") || name == QStringLiteral("darray") || name == QStringLiteral("smallmatrix") ||
+      name == QStringLiteral("subarray") ||
       name == QStringLiteral("cases") || name == QStringLiteral("dcases") || name == QStringLiteral("rcases") ||
       name == QStringLiteral("drcases") || name == QStringLiteral("aligned") || name == QStringLiteral("split") ||
       name == QStringLiteral("align") || name == QStringLiteral("align*") || name == QStringLiteral("gathered") ||
@@ -1041,6 +1081,20 @@ MathParseNode MathParser::parseArrayEnvironment(const QString& name) {
   if ((name == QStringLiteral("array") || name == QStringLiteral("darray")) && lexer_.peek().text == QStringLiteral("{")) {
     const QString preamble = parseRawGroupText(QStringLiteral("\\begin{array}"));
     parseArrayPreamble(array, preamble);
+  } else if (name == QStringLiteral("subarray") && lexer_.peek().text == QStringLiteral("{")) {
+    const QString alignment = parseRawGroupText(QStringLiteral("\\begin{subarray}")).trimmed();
+    if (!alignment.isEmpty()) {
+      const QChar align = alignment.at(0);
+      if (align == QLatin1Char('l') || align == QLatin1Char('c')) {
+        array.columns.clear();
+        MathArrayColumn column;
+        column.align = align;
+        column.pregap = 0.0;
+        column.postgap = 0.0;
+        array.columns.push_back(column);
+        array.columnAlignments = QString(align);
+      }
+    }
   } else if (name.endsWith(QLatin1Char('*')) && lexer_.peek().text == QStringLiteral("[")) {
     const QString alignment = parseOptionalBracketText().trimmed();
     if (!alignment.isEmpty()) {
@@ -1077,7 +1131,8 @@ MathParseNode MathParser::parseArrayEnvironment(const QString& name) {
     }
 
     MathArrayCell cell;
-    cell.body = toSharedNodes(parseExpressionUntilAny({QStringLiteral("&"), QStringLiteral("\\\\"), QStringLiteral("\\cr"), QStringLiteral("\\end")}));
+    cell.body = toSharedNodes(parseExpressionUntilAny(
+        {QStringLiteral("&"), QStringLiteral("\\\\"), QStringLiteral("\\cr"), QStringLiteral("\\end"), QStringLiteral("\\hline"), QStringLiteral("\\hdashline")}));
     row.push_back(std::move(cell));
     if (lexer_.peek().text == QStringLiteral("&")) {
       lexer_.consume();
@@ -1089,6 +1144,11 @@ MathParseNode MathParser::parseArrayEnvironment(const QString& name) {
       if (lexer_.peek().text == QStringLiteral("[")) {
         array.rowGaps[array.rowGaps.size() - 1] = sizeTextToEm(parseOptionalBracketText());
       }
+      consumeArrayHLines(array, array.rows.size());
+    } else if (lexer_.peek().text == QStringLiteral("\\hline") || lexer_.peek().text == QStringLiteral("\\hdashline")) {
+      array.rows.push_back(std::move(row));
+      row = {};
+      array.rowGaps.push_back(0.0);
       consumeArrayHLines(array, array.rows.size());
     }
   }
@@ -1239,6 +1299,17 @@ void MathParser::configureArrayEnvironment(MathParseNode& array, const QString& 
     array.arrayStretch = 0.5;
     array.colSeparationType = QStringLiteral("small");
     array.arrayCellStyle = QStringLiteral("script");
+  } else if (baseName == QStringLiteral("subarray")) {
+    array.arrayStretch = 0.5;
+    array.colSeparationType = QStringLiteral("small");
+    array.arrayCellStyle = QStringLiteral("script");
+    array.columns.clear();
+    array.columnAlignments = QStringLiteral("c");
+    MathArrayColumn column;
+    column.align = QLatin1Char('c');
+    column.pregap = 0.0;
+    column.postgap = 0.0;
+    array.columns.push_back(column);
   } else if (baseName == QStringLiteral("cases") || baseName == QStringLiteral("dcases") ||
              baseName == QStringLiteral("rcases") || baseName == QStringLiteral("drcases")) {
     array.arrayStretch = 1.2;

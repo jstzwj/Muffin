@@ -43,6 +43,7 @@ enum class MathNodeType {
   Enclose,
   IncludeGraphics,
   MathChoice,
+  XArrow,
   Href,
   Html,
   Tag,
@@ -124,6 +125,7 @@ struct MathParseNode {
   bool smashHeight = false;
   bool smashDepth = false;
   bool isOver = false;
+  bool continuedFraction = false;
   bool addJot = false;
   bool hskipBeforeAndAfter = false;
   qreal arrayStretch = 1.0;

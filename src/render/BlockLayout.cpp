@@ -6,33 +6,78 @@
 #include <QTextOption>
 
 #include <cmath>
+#include <limits>
 
 namespace muffin {
 namespace {
 
-qsizetype literalOffsetForPoint(const QString& literal, QPointF localPos, const QFont& font) {
-  const QFontMetricsF metrics(font);
-  const qreal lineHeight = qMax<qreal>(1.0, metrics.height());
-  const int targetLine = qMax(0, static_cast<int>(std::floor(localPos.y() / lineHeight)));
+struct LiteralVisualLine {
+  qsizetype start = 0;
+  qsizetype length = 0;
+  QRectF rect;
+};
 
-  qsizetype line = 0;
-  qsizetype lineStart = 0;
-  while (line < targetLine && lineStart < literal.size()) {
-    const qsizetype newline = literal.indexOf(QLatin1Char('\n'), lineStart);
-    if (newline < 0) {
-      lineStart = literal.size();
+QVector<LiteralVisualLine> layoutLiteralVisualLines(const QString& literal, const QFont& font, qreal width) {
+  QVector<LiteralVisualLine> visualLines;
+  const QStringList physicalLines = literal.isEmpty() ? QStringList{QString()} : literal.split(QLatin1Char('\n'));
+  const qreal lineWidth = qMax<qreal>(1.0, width);
+  const QFontMetricsF metrics(font);
+  const qreal fallbackHeight = qMax<qreal>(14.0, metrics.height());
+  QTextOption option;
+  option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+
+  qreal y = 0.0;
+  qsizetype globalStart = 0;
+  for (const QString& sourceLine : physicalLines) {
+    const QString lineText = sourceLine.isEmpty() ? QStringLiteral(" ") : sourceLine;
+    QTextLayout layout(lineText, font);
+    layout.setTextOption(option);
+    layout.beginLayout();
+    bool producedLine = false;
+    while (true) {
+      QTextLine textLine = layout.createLine();
+      if (!textLine.isValid()) {
+        break;
+      }
+      textLine.setLineWidth(lineWidth);
+      textLine.setPosition(QPointF(0.0, y));
+      producedLine = true;
+      visualLines.push_back(LiteralVisualLine{
+          globalStart + textLine.textStart(),
+          qMin<qsizetype>(textLine.textLength(), sourceLine.size() - textLine.textStart()),
+          QRectF(0.0, y, lineWidth, qMax<qreal>(fallbackHeight, textLine.height()))});
+      y += qMax<qreal>(fallbackHeight, textLine.height());
+    }
+    layout.endLayout();
+    if (!producedLine) {
+      visualLines.push_back(LiteralVisualLine{globalStart, 0, QRectF(0.0, y, lineWidth, fallbackHeight)});
+      y += fallbackHeight;
+    }
+    globalStart += sourceLine.size() + 1;
+  }
+  return visualLines;
+}
+
+qsizetype literalOffsetForPoint(const QString& literal, QPointF localPos, const QFont& font, qreal width) {
+  const QFontMetricsF metrics(font);
+  const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal, font, width);
+  const LiteralVisualLine* target = lines.isEmpty() ? nullptr : &lines.first();
+  for (const LiteralVisualLine& line : lines) {
+    if (localPos.y() >= line.rect.top() && localPos.y() <= line.rect.bottom()) {
+      target = &line;
       break;
     }
-    lineStart = newline + 1;
-    ++line;
+    if (localPos.y() >= line.rect.top()) {
+      target = &line;
+    }
+  }
+  if (!target) {
+    return 0;
   }
 
-  qsizetype lineEnd = literal.indexOf(QLatin1Char('\n'), lineStart);
-  if (lineEnd < 0) {
-    lineEnd = literal.size();
-  }
-
-  qsizetype offset = lineStart;
+  const qsizetype lineStart = target->start;
+  const qsizetype lineEnd = qMin<qsizetype>(literal.size(), target->start + target->length);
+  qsizetype offset = lineEnd;
   qreal bestDistance = std::numeric_limits<qreal>::max();
   for (qsizetype candidate = lineStart; candidate <= lineEnd; ++candidate) {
     const qreal x = metrics.horizontalAdvance(literal.mid(lineStart, candidate - lineStart));
@@ -45,22 +90,25 @@ qsizetype literalOffsetForPoint(const QString& literal, QPointF localPos, const 
   return qBound<qsizetype>(0, offset, literal.size());
 }
 
-QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin) {
+QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin, qreal width) {
   const QFontMetricsF metrics(font);
   const qreal lineHeight = qMax<qreal>(14.0, metrics.height());
   offset = qBound<qsizetype>(0, offset, literal.size());
-
-  qsizetype lineStart = 0;
-  int line = 0;
-  for (qsizetype i = 0; i < offset && i < literal.size(); ++i) {
-    if (literal.at(i) == QLatin1Char('\n')) {
-      ++line;
-      lineStart = i + 1;
+  const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal, font, width);
+  const LiteralVisualLine* target = lines.isEmpty() ? nullptr : &lines.last();
+  for (const LiteralVisualLine& line : lines) {
+    const qsizetype lineEnd = line.start + line.length;
+    if (offset >= line.start && offset <= lineEnd) {
+      target = &line;
+      break;
     }
   }
-
-  const qreal x = metrics.horizontalAdvance(literal.mid(lineStart, offset - lineStart));
-  return QRectF(origin.x() + x, origin.y() + line * lineHeight, 1.0, lineHeight);
+  if (!target) {
+    return QRectF(origin.x(), origin.y(), 1.0, lineHeight);
+  }
+  const qsizetype localOffset = qBound<qsizetype>(target->start, offset, target->start + target->length);
+  const qreal x = metrics.horizontalAdvance(literal.mid(target->start, localOffset - target->start));
+  return QRectF(origin.x() + x, origin.y() + target->rect.top(), 1.0, qMax(lineHeight, target->rect.height()));
 }
 
 QVector<QRectF> literalSelectionRectsForRange(
@@ -81,42 +129,71 @@ QVector<QRectF> literalSelectionRectsForRange(
   }
 
   const QFontMetricsF metrics(font);
-  const qreal lineHeight = qMax<qreal>(14.0, metrics.height());
-  qsizetype lineStart = 0;
-  int line = 0;
-  while (lineStart <= literal.size()) {
-    qsizetype lineEnd = literal.indexOf(QLatin1Char('\n'), lineStart);
-    const bool hasNewline = lineEnd >= 0;
-    if (!hasNewline) {
-      lineEnd = literal.size();
-    }
-
-    const qsizetype rangeStart = qMax(startOffset, lineStart);
+  const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal, font, maxWidth);
+  for (const LiteralVisualLine& line : lines) {
+    const qsizetype lineEnd = line.start + line.length;
+    const qsizetype rangeStart = qMax(startOffset, line.start);
     const qsizetype rangeEnd = qMin(endOffset, lineEnd);
     if (rangeStart < rangeEnd) {
-      const qreal x1 = metrics.horizontalAdvance(literal.mid(lineStart, rangeStart - lineStart));
-      const qreal x2 = metrics.horizontalAdvance(literal.mid(lineStart, rangeEnd - lineStart));
-      rects.push_back(QRectF(origin.x() + x1, origin.y() + line * lineHeight, qMax<qreal>(1.0, x2 - x1), lineHeight));
-    } else if (endOffset > lineEnd && startOffset <= lineEnd && hasNewline) {
-      const qreal x = metrics.horizontalAdvance(literal.mid(lineStart, lineEnd - lineStart));
-      rects.push_back(QRectF(origin.x() + x, origin.y() + line * lineHeight, qMax<qreal>(1.0, qMin<qreal>(24.0, maxWidth - x)), lineHeight));
+      const qreal x1 = metrics.horizontalAdvance(literal.mid(line.start, rangeStart - line.start));
+      const qreal x2 = metrics.horizontalAdvance(literal.mid(line.start, rangeEnd - line.start));
+      rects.push_back(QRectF(origin.x() + x1, origin.y() + line.rect.top(), qMax<qreal>(1.0, x2 - x1), line.rect.height()));
+    } else if (endOffset > lineEnd && startOffset <= lineEnd && lineEnd < literal.size() && literal.at(lineEnd) == QLatin1Char('\n')) {
+      const qreal x = metrics.horizontalAdvance(literal.mid(line.start, line.length));
+      rects.push_back(QRectF(origin.x() + x, origin.y() + line.rect.top(), qMax<qreal>(1.0, qMin<qreal>(24.0, maxWidth - x)), line.rect.height()));
     }
-
-    if (!hasNewline) {
-      break;
-    }
-    lineStart = lineEnd + 1;
-    ++line;
   }
   return rects;
 }
 
 qreal literalTextHeight(const QString& literal, const QFont& font, qreal width) {
-  const QFontMetricsF metrics(font);
-  const qreal lineHeight = qMax<qreal>(14.0, metrics.height());
-  const int lineCount = qMax(1, literal.count(QLatin1Char('\n')) + 1);
-  Q_UNUSED(width);
-  return lineHeight * lineCount;
+  const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal, font, width);
+  if (lines.isEmpty()) {
+    return qMax<qreal>(14.0, QFontMetricsF(font).height());
+  }
+  const LiteralVisualLine& last = lines.last();
+  return last.rect.bottom();
+}
+
+QVector<CodeHighlightSpan> highlightMathTex(const QString& text) {
+  QVector<CodeHighlightSpan> spans;
+  qsizetype i = 0;
+  while (i < text.size()) {
+    const QChar ch = text.at(i);
+    if (ch == QLatin1Char('\\')) {
+      qsizetype end = i + 1;
+      while (end < text.size() && text.at(end).isLetter()) {
+        ++end;
+      }
+      if (end == i + 1 && end < text.size()) {
+        ++end;
+      }
+      spans.push_back(CodeHighlightSpan{i, end, CodeHighlightRole::Property});
+      i = end;
+      continue;
+    }
+    if (ch.isDigit()) {
+      qsizetype end = i + 1;
+      while (end < text.size() && (text.at(end).isDigit() || text.at(end) == QLatin1Char('.'))) {
+        ++end;
+      }
+      spans.push_back(CodeHighlightSpan{i, end, CodeHighlightRole::Number});
+      i = end;
+      continue;
+    }
+    if (QStringView(QStringLiteral("{}[]()")).contains(ch)) {
+      spans.push_back(CodeHighlightSpan{i, i + 1, CodeHighlightRole::Punctuation});
+      ++i;
+      continue;
+    }
+    if (QStringView(QStringLiteral("^_+-=*/,:;|&<>")).contains(ch)) {
+      spans.push_back(CodeHighlightSpan{i, i + 1, CodeHighlightRole::Operator});
+      ++i;
+      continue;
+    }
+    ++i;
+  }
+  return spans;
 }
 
 }  // namespace
@@ -214,6 +291,13 @@ void BlockLayout::setLiteralEditing(bool editing) {
 
 bool BlockLayout::literalEditing() const {
   return literalEditing_;
+}
+
+QRectF BlockLayout::literalContentRect(const RenderTheme& theme) const {
+  if (type_ == BlockType::MathBlock && literalEditing_) {
+    return mathEditorSourceRect(theme);
+  }
+  return rect_.marginsRemoved(theme.codePadding());
 }
 
 void BlockLayout::setHeadingLevel(int level) {
@@ -423,7 +507,7 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
         QTextOption option;
         option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
         painter.drawText(QPointF(sourceRect.left(), viewRect.top() + padding.top() + codeMetrics.ascent()), QStringLiteral("$$"));
-        painter.drawText(sourceRect, literal_, option);
+        paintLiteralSource(painter, theme, sourceRect, highlightMathTex(literal_));
         painter.drawText(QPointF(sourceRect.left(), sourceRect.bottom() + codeMetrics.ascent()), QStringLiteral("$$"));
         painter.setPen(QPen(theme.codeBorderColor(), 1));
         const qreal dividerY = sourcePanel.bottom() + 0.5;
@@ -561,7 +645,7 @@ QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset,
 
 QVector<QRectF> BlockLayout::literalSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const {
   QFont font = theme.codeFont();
-  const QRectF contentRect = type_ == BlockType::MathBlock && literalEditing_ ? mathEditorSourceRect(theme) : rect_.marginsRemoved(theme.codePadding());
+  const QRectF contentRect = literalContentRect(theme);
   QVector<QRectF> rects = literalSelectionRectsForRange(literal_, startOffset, endOffset, font, contentRect.topLeft(), contentRect.width());
   for (QRectF& rect : rects) {
     rect = rect.adjusted(-1.0, 0, 1.0, 0).intersected(contentRect.adjusted(0, 0, 1, 0));
@@ -600,8 +684,11 @@ void BlockLayout::paintCodeFence(QPainter& painter, const RenderTheme& theme, QR
   painter.setPen(theme.codeBorderColor());
   painter.setBrush(theme.codeBackgroundColor());
   painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
+  paintLiteralSource(painter, theme, viewRect.marginsRemoved(theme.codePadding()), codeHighlightSpans_);
+  painter.restore();
+}
 
-  const QRectF contentRect = viewRect.marginsRemoved(theme.codePadding());
+void BlockLayout::paintLiteralSource(QPainter& painter, const RenderTheme& theme, QRectF contentRect, const QVector<CodeHighlightSpan>& spans) const {
   const QStringList lines = literal_.isEmpty() ? QStringList{QString()} : literal_.split(QLatin1Char('\n'));
   QTextCharFormat baseFormat;
   baseFormat.setForeground(theme.textColor());
@@ -622,7 +709,7 @@ void BlockLayout::paintCodeFence(QPainter& painter, const RenderTheme& theme, QR
     baseRange.format = baseFormat;
     formats.push_back(baseRange);
 
-    for (const CodeHighlightSpan& span : codeHighlightSpans_) {
+    for (const CodeHighlightSpan& span : spans) {
       const qsizetype lineEndOffset = lineStartOffset + sourceLine.size();
       const qsizetype start = qMax(span.start, lineStartOffset);
       const qsizetype end = qMin(span.end, lineEndOffset);
@@ -658,7 +745,6 @@ void BlockLayout::paintCodeFence(QPainter& painter, const RenderTheme& theme, QR
     y += qMax<qreal>(lineY, QFontMetricsF(theme.codeFont()).height());
     lineStartOffset += sourceLine.size() + 1;
   }
-  painter.restore();
 }
 
 HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme) const {
@@ -691,8 +777,8 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
       result.zone = HitTestResult::Zone::Code;
       {
         const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
-        result.textOffset = literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont());
-        result.cursorRect = literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft());
+        result.textOffset = literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont(), contentRect.width());
+        result.cursorRect = literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft(), contentRect.width());
       }
       break;
     case BlockType::MathBlock:
@@ -700,8 +786,8 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
       {
         if (literalEditing_) {
           const QRectF contentRect = mathEditorSourceRect(theme);
-          result.textOffset = literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont());
-          result.cursorRect = literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft());
+          result.textOffset = literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont(), contentRect.width());
+          result.cursorRect = literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft(), contentRect.width());
         } else {
           result.textOffset = documentPos.x() < rect_.center().x() ? 0 : literal_.size();
           const qreal x = result.textOffset == 0 ? rect_.left() : rect_.right();
@@ -713,8 +799,8 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
       result.zone = HitTestResult::Zone::Html;
       {
         const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
-        result.textOffset = literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont());
-        result.cursorRect = literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft());
+        result.textOffset = literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont(), contentRect.width());
+        result.cursorRect = literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft(), contentRect.width());
       }
       break;
     default:

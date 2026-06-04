@@ -14,6 +14,15 @@ const katexRoot = process.env.KATEX_ROOT || "D:\\github\\KaTeX";
 const fixtures = JSON.parse(await fs.readFile(fixturePath, "utf8"));
 await fs.mkdir(outputDir, {recursive: true});
 
+const katexOptionsForFixture = fixture => ({
+  displayMode: !!fixture.display,
+  throwOnError: fixture.noThrow === undefined ? false : !fixture.noThrow,
+  strict: "ignore",
+  output: "html",
+  macros: fixture.macros || undefined,
+  errorColor: fixture.errorColor || undefined
+});
+
 const exists = async file => {
   try {
     await fs.access(file);
@@ -265,12 +274,7 @@ const writeInternalMetrics = async () => {
   }
 
   const metrics = fixtures.map(fixture => {
-    const root = serializeKatexBuilderNode(renderToHTMLTree(fixture.tex, {
-      displayMode: !!fixture.display,
-      throwOnError: false,
-      strict: "ignore",
-      output: "html"
-    }));
+    const root = serializeKatexBuilderNode(renderToHTMLTree(fixture.tex, katexOptionsForFixture(fixture)));
     return {
       id: fixture.id,
       tex: fixture.tex,
@@ -347,16 +351,24 @@ const writeScreenshots = async () => {
   const bboxes = [];
   const glyphs = [];
   for (const fixture of fixtures) {
-    await page.evaluate(({tex, display}) => {
+    await page.evaluate(({tex, display, throwOnError, macros, errorColor}) => {
       const math = document.getElementById("math");
       math.innerHTML = "";
       katex.render(tex, math, {
         displayMode: display,
-        throwOnError: false,
+        throwOnError,
         strict: "ignore",
-        output: "html"
+        output: "html",
+        macros,
+        errorColor
       });
-    }, {tex: fixture.tex, display: !!fixture.display});
+    }, {
+      tex: fixture.tex,
+      display: !!fixture.display,
+      throwOnError: fixture.noThrow === undefined ? false : !fixture.noThrow,
+      macros: fixture.macros || undefined,
+      errorColor: fixture.errorColor || undefined
+    });
     const fontLoadStatus = await page.evaluate(async () => {
       if (document.fonts) {
         const requiredFonts = [

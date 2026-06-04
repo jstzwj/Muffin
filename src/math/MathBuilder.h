@@ -34,6 +34,7 @@ private:
   std::unique_ptr<MathRenderNode> makeAccentUnder(const MathParseNode& node);
   std::unique_ptr<MathRenderNode> makeHorizBrace(const MathParseNode& node);
   std::unique_ptr<MathRenderNode> makeHorizBraceSupSub(const MathParseNode& node);
+  std::unique_ptr<MathRenderNode> makeXArrow(const MathParseNode& node);
   std::unique_ptr<MathRenderNode> makeUnderline(const MathParseNode& node);
   std::unique_ptr<MathRenderNode> makeOverline(const MathParseNode& node);
   std::unique_ptr<MathRenderNode> makePhantom(const MathParseNode& node);
