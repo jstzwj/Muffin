@@ -797,9 +797,9 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
     case BlockType::Paragraph:
     case BlockType::ListItem:
       if (inlineLayout_) {
-        const qreal textLeft = !listMarker_.isEmpty() ? rect_.left() + theme.listIndent() : rect_.left();
+        const qreal textLeft = hasListMarker() ? rect_.left() + theme.listIndent() : rect_.left();
         const QRectF textRect(textLeft, rect_.top(), qMax<qreal>(1.0, rect_.right() - textLeft), rect_.height());
-        if (!listMarker_.isEmpty() && documentPos.x() < textLeft) {
+        if (hasListMarker() && documentPos.x() < textLeft) {
           result.zone = HitTestResult::Zone::Marker;
           result.cursorRect = QRectF(textLeft, rect_.top(), 1.0, rect_.height());
           return result;

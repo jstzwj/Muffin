@@ -15,6 +15,8 @@ public:
   static RenderTheme github(int zoomPercent = 100);
   static RenderTheme newsprint(int zoomPercent = 100);
   static RenderTheme night(int zoomPercent = 100);
+  static RenderTheme pixyll(int zoomPercent = 100);
+  static RenderTheme whitey(int zoomPercent = 100);
 
   int zoomPercent() const;
   void setZoomPercent(int percent);

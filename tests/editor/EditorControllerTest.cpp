@@ -396,6 +396,9 @@ void testInputEditsComplexInlineSourcePositions() {
   setSourceCursor(selection, blockAt(session, 0), 9, 9);
   require(input.insertText(QStringLiteral("0")), "typing inside inline math should edit markdown source");
   require(session.markdownText() == QStringLiteral("before $x0+y$ after"), "inline math source insert mismatch");
+  require(selection.cursorPosition().text.sourceOffset == QStringLiteral("before $x0").size(), "inline math source cursor should stay after inserted text");
+  require(input.insertText(QStringLiteral("1")), "consecutive typing inside inline math should keep source cursor");
+  require(session.markdownText() == QStringLiteral("before $x01+y$ after"), "consecutive inline math insert should not drift");
 
   session.setMarkdownText(QStringLiteral("before **bold** after"), false);
   setSourceCursor(selection, blockAt(session, 0), 10, 12);
@@ -1174,6 +1177,49 @@ void testEditorViewStyledInlineLayout() {
   view.setSelectionRange(selection);
   const QVector<QRectF> rects = requireViewBlock(view, blockId, QStringLiteral("styled inline"))->selectionRects(selection, RenderTheme::typoraLike());
   require(!rects.isEmpty(), QStringLiteral("styled inline selection rects should exist"));
+}
+
+void testEditorViewListInlineMathHitEditing() {
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+  session.setMarkdownText(QStringLiteral("- before $x+y$ after"), false);
+  view.setDocument(session.document());
+
+  MarkdownNode* item = listItemAt(session, 0, 0);
+  const NodeId blockId = item->id();
+  const qsizetype contentSourceStart = QStringLiteral("- ").size();
+  const qsizetype localMathSourceOffset = QStringLiteral("before $x").size();
+  CursorPosition activeCursor = inlineCursor(blockId, QStringLiteral("before x").size(), contentSourceStart + localMathSourceOffset);
+  view.setCursorPosition(activeCursor);
+
+  MarkdownNode* paragraph = childAt(item, 0);
+  InlineLayout inlineLayout;
+  InlineLayout::BuildOptions options;
+  options.projectionState.cursorVisibleOffset = activeCursor.text.textOffset;
+  options.projectionState.cursorSourceOffset = localMathSourceOffset;
+  const RenderTheme theme = RenderTheme::typoraLike();
+  inlineLayout.build(
+      paragraph->inlines(),
+      QStringLiteral("before $x+y$ after"),
+      theme,
+      qMax<qreal>(1.0, view.nodeRect(blockId).width() - theme.listIndent()),
+      theme.paragraphFont(),
+      options);
+  const QRectF cursor = inlineLayout.cursorRectForSourceOffset(localMathSourceOffset);
+  require(!cursor.isEmpty(), "list inline math source cursor rect should exist");
+  const QPointF hitPoint = view.nodeRect(blockId).topLeft() + QPointF(theme.listIndent() + cursor.left(), cursor.center().y());
+  const HitTestResult hit = view.hitTest(hitPoint);
+  require(hit.isValid() && hit.sourceOffset == contentSourceStart + localMathSourceOffset, "list inline math hit should keep source offset");
+  controller.activateHit(hit);
+  require(controller.inputController().insertText(QStringLiteral("0")), "typing after list inline math hit should edit source");
+  require(session.markdownText() == QStringLiteral("- before $x0+y$ after"), "list inline math hit insert should not drift");
+  require(controller.selection().cursorPosition().text.sourceOffset == QStringLiteral("- before $x0").size(),
+          "list inline math cursor source should stay after inserted text");
+  require(controller.inputController().insertText(QStringLiteral("1")), "consecutive typing after list inline math hit should edit source");
+  require(session.markdownText() == QStringLiteral("- before $x01+y$ after"), "consecutive list inline math insert should not drift");
 }
 
 void testEditorViewWrappedInlineLayout() {
@@ -2922,6 +2968,7 @@ int main(int argc, char** argv) {
   testEditorViewInlineLayoutSmoke();
   testEditorViewPlainInlineLayout();
   testEditorViewStyledInlineLayout();
+  testEditorViewListInlineMathHitEditing();
   testEditorViewWrappedInlineLayout();
   testEditorViewTableCellInlineLayout();
   testMixedInlineParagraphHitEditingBeforeAutolink();

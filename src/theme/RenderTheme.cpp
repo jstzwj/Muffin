@@ -48,6 +48,40 @@ RenderTheme RenderTheme::night(int zoomPercent) {
   return theme;
 }
 
+RenderTheme RenderTheme::pixyll(int zoomPercent) {
+  RenderTheme theme;
+  theme.backgroundColor_ = QColor(QStringLiteral("#ffffff"));
+  theme.textColor_ = QColor(QStringLiteral("#333333"));
+  theme.mutedTextColor_ = QColor(QStringLiteral("#777777"));
+  theme.linkColor_ = QColor(QStringLiteral("#0076df"));
+  theme.codeBackgroundColor_ = QColor(QStringLiteral("#f7f7f7"));
+  theme.codeBorderColor_ = QColor(QStringLiteral("#dddddd"));
+  theme.quoteBorderColor_ = QColor(QStringLiteral("#7a7a7a"));
+  theme.tableBorderColor_ = QColor(QStringLiteral("#dddddd"));
+  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#f7f7f7"));
+  theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#fbfbfb"));
+  theme.selectionColor_ = QColor(QStringLiteral("#cfe8ff"));
+  theme.setZoomPercent(zoomPercent);
+  return theme;
+}
+
+RenderTheme RenderTheme::whitey(int zoomPercent) {
+  RenderTheme theme;
+  theme.backgroundColor_ = QColor(QStringLiteral("#fdfdfd"));
+  theme.textColor_ = QColor(QStringLiteral("#2b2b2b"));
+  theme.mutedTextColor_ = QColor(QStringLiteral("#666666"));
+  theme.linkColor_ = QColor(QStringLiteral("#2a7ae2"));
+  theme.codeBackgroundColor_ = QColor(QStringLiteral("#f3f3f3"));
+  theme.codeBorderColor_ = QColor(QStringLiteral("#e1e4e8"));
+  theme.quoteBorderColor_ = QColor(QStringLiteral("#cccccc"));
+  theme.tableBorderColor_ = QColor(QStringLiteral("#e1e4e8"));
+  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#f5f5f5"));
+  theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#fafafa"));
+  theme.selectionColor_ = QColor(QStringLiteral("#dcecff"));
+  theme.setZoomPercent(zoomPercent);
+  return theme;
+}
+
 int RenderTheme::zoomPercent() const {
   return zoomPercent_;
 }

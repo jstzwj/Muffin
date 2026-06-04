@@ -461,6 +461,8 @@ void MainWindow::setupConnections() {
   commands_.bind(QStringLiteral("theme.github"), [this] { themeManager_.setTheme(QStringLiteral("github")); });
   commands_.bind(QStringLiteral("theme.newsprint"), [this] { themeManager_.setTheme(QStringLiteral("newsprint")); });
   commands_.bind(QStringLiteral("theme.night"), [this] { themeManager_.setTheme(QStringLiteral("night")); });
+  commands_.bind(QStringLiteral("theme.pixyll"), [this] { themeManager_.setTheme(QStringLiteral("pixyll")); });
+  commands_.bind(QStringLiteral("theme.whitey"), [this] { themeManager_.setTheme(QStringLiteral("whitey")); });
 
   connect(sidebarButton_, &QToolButton::clicked, this, [this] {
     if (QAction* action = commands_.action(QStringLiteral("view.sidebar"))) {
@@ -734,11 +736,8 @@ void MainWindow::setupThemeMenu() {
   addCheckAction(theme, QStringLiteral("theme.github"), QStringLiteral("Github"), {}, true);
   addCheckAction(theme, QStringLiteral("theme.newsprint"), QStringLiteral("Newsprint"), {}, false);
   addCheckAction(theme, QStringLiteral("theme.night"), QStringLiteral("Night"), {}, false);
-  addCheckAction(theme, QStringLiteral("theme.pixyll"), QStringLiteral("Pixyll"), {}, false, false);
-  addCheckAction(theme, QStringLiteral("theme.whitey"), QStringLiteral("Whitey"), {}, false, false);
-  theme->addSeparator();
-  addAction(theme, QStringLiteral("theme.open_folder"), QStringLiteral("打开主题文件夹"), {}, false);
-  addAction(theme, QStringLiteral("theme.get"), QStringLiteral("获取主题"), {}, false);
+  addCheckAction(theme, QStringLiteral("theme.pixyll"), QStringLiteral("Pixyll"), {}, false);
+  addCheckAction(theme, QStringLiteral("theme.whitey"), QStringLiteral("Whitey"), {}, false);
 }
 
 void MainWindow::setupHelpMenu() {
@@ -962,6 +961,8 @@ void MainWindow::updateThemeActions() {
   commands_.setChecked(QStringLiteral("theme.github"), current == QStringLiteral("github"));
   commands_.setChecked(QStringLiteral("theme.newsprint"), current == QStringLiteral("newsprint"));
   commands_.setChecked(QStringLiteral("theme.night"), current == QStringLiteral("night"));
+  commands_.setChecked(QStringLiteral("theme.pixyll"), current == QStringLiteral("pixyll"));
+  commands_.setChecked(QStringLiteral("theme.whitey"), current == QStringLiteral("whitey"));
 }
 
 void MainWindow::rebuildRecentFilesMenu() {

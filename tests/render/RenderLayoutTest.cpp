@@ -15,6 +15,7 @@
 #include "math/MathSymbols.h"
 #include "render/TreeSitterHighlighter.h"
 #include "theme/RenderTheme.h"
+#include "theme/ThemeManager.h"
 
 #include <QApplication>
 #include <QDebug>
@@ -3132,6 +3133,24 @@ void testLayoutForTheme(const MarkdownDocument& document, const RenderTheme& the
   require(mathHit.zone == HitTestResult::Zone::Math, QStringLiteral("%1 math hit should be math").arg(themeName));
 }
 
+void testThemeManagerSupportsBuiltInThemes() {
+  ThemeManager manager;
+  const QStringList expectedThemes{
+      QStringLiteral("github"),
+      QStringLiteral("newsprint"),
+      QStringLiteral("night"),
+      QStringLiteral("pixyll"),
+      QStringLiteral("whitey"),
+  };
+
+  require(manager.availableThemes() == expectedThemes, QStringLiteral("Theme manager should expose the five built-in themes"));
+  for (const QString& name : expectedThemes) {
+    require(manager.setTheme(name), QStringLiteral("Theme manager should accept %1").arg(name));
+    require(manager.currentThemeName() == name, QStringLiteral("Theme manager should activate %1").arg(name));
+    require(manager.currentTheme().zoomPercent() == 100, QStringLiteral("%1 theme should be constructible").arg(name));
+  }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -3172,8 +3191,11 @@ int main(int argc, char** argv) {
   testUnorderedListMarkerKindsByDepth();
   testDocumentLayoutInlineLayoutContract();
   testTreeSitterCodeHighlighting();
+  testThemeManagerSupportsBuiltInThemes();
   testLayoutForTheme(document, RenderTheme::github(), QStringLiteral("github"));
   testLayoutForTheme(document, RenderTheme::newsprint(), QStringLiteral("newsprint"));
   testLayoutForTheme(document, RenderTheme::night(), QStringLiteral("night"));
+  testLayoutForTheme(document, RenderTheme::pixyll(), QStringLiteral("pixyll"));
+  testLayoutForTheme(document, RenderTheme::whitey(), QStringLiteral("whitey"));
   return 0;
 }

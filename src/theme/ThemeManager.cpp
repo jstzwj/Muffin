@@ -15,6 +15,12 @@ RenderTheme ThemeManager::currentTheme(int zoomPercent) const {
   if (currentThemeName_ == QStringLiteral("night")) {
     return RenderTheme::night(zoomPercent);
   }
+  if (currentThemeName_ == QStringLiteral("pixyll")) {
+    return RenderTheme::pixyll(zoomPercent);
+  }
+  if (currentThemeName_ == QStringLiteral("whitey")) {
+    return RenderTheme::whitey(zoomPercent);
+  }
   return RenderTheme::github(zoomPercent);
 }
 
@@ -23,6 +29,8 @@ QStringList ThemeManager::availableThemes() const {
       QStringLiteral("github"),
       QStringLiteral("newsprint"),
       QStringLiteral("night"),
+      QStringLiteral("pixyll"),
+      QStringLiteral("whitey"),
   };
 }
 

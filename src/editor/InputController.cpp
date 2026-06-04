@@ -680,6 +680,12 @@ CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset, bo
 
 CursorPosition InputController::cursorAfterEdit(CursorPosition preferredCursor, qsizetype fallbackSourceOffset, bool preferLaterEmptyAtOffset) const {
   if (session_ && preferredCursor.isValid()) {
+    if (preferredCursor.text.sourceOffset >= 0) {
+      CursorPosition sourceCursor = cursorForSourceOffset(preferredCursor.text.sourceOffset, preferLaterEmptyAtOffset);
+      if (sourceCursor.isValid()) {
+        return sourceCursor;
+      }
+    }
     if (MarkdownNode* node = session_->document().node(preferredCursor.blockId)) {
       return cursorFor(node->id(), preferredCursor.text.textOffset);
     }
