@@ -267,7 +267,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
       ++index;
     }
     layout->setListMarker(textForListMarker(*listParent, index));
+    layout->setListMarkerKind(markerKindForListItem(node));
   } else {
+    layout->setListMarkerKind(BlockLayout::ListMarkerKind::BulletDisc);
     layout->setListMarker(QStringLiteral("•"));
   }
   layout->setTaskListItem(node.taskChecked(), node.taskChecked());
@@ -426,6 +428,31 @@ QString BlockLayoutBuilder::textForListMarker(const MarkdownNode& listNode, qsiz
     return QStringLiteral("%1.").arg(listNode.listStart() + static_cast<int>(index));
   }
   return QStringLiteral("•");
+}
+
+BlockLayout::ListMarkerKind BlockLayoutBuilder::markerKindForListItem(const MarkdownNode& itemNode) const {
+  const MarkdownNode* listNode = itemNode.parent();
+  if (!listNode || listNode->type() != BlockType::List) {
+    return BlockLayout::ListMarkerKind::None;
+  }
+  if (listNode->listKind() == ListKind::Ordered) {
+    return BlockLayout::ListMarkerKind::OrderedText;
+  }
+
+  int unorderedDepth = 0;
+  for (const MarkdownNode* node = listNode; node; node = node->parent()) {
+    if (node->type() == BlockType::List && node->listKind() == ListKind::Bullet) {
+      ++unorderedDepth;
+    }
+  }
+  switch (unorderedDepth) {
+    case 1:
+      return BlockLayout::ListMarkerKind::BulletDisc;
+    case 2:
+      return BlockLayout::ListMarkerKind::BulletCircle;
+    default:
+      return BlockLayout::ListMarkerKind::BulletSquare;
+  }
 }
 
 QVector<InlineNode> BlockLayoutBuilder::primaryInlinesForListItem(const MarkdownNode& node) const {

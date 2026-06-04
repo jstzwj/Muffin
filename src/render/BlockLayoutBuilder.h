@@ -61,6 +61,7 @@ private:
       int depth);
 
   QString textForListMarker(const MarkdownNode& listNode, qsizetype index) const;
+  BlockLayout::ListMarkerKind markerKindForListItem(const MarkdownNode& itemNode) const;
   QVector<InlineNode> primaryInlinesForListItem(const MarkdownNode& node) const;
   QString sourceTextForEditableNode(const MarkdownNode& node) const;
   qsizetype sourceContentStartForEditableNode(const MarkdownNode& node) const;

@@ -111,6 +111,28 @@ QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, cons
   return QRectF(origin.x() + x, origin.y() + target->rect.top(), 1.0, qMax(lineHeight, target->rect.height()));
 }
 
+void paintUnorderedListMarker(QPainter& painter, BlockLayout::ListMarkerKind kind, QPointF center, qreal fontHeight, const QColor& color) {
+  const qreal size = qBound<qreal>(4.2, fontHeight * 0.34, 6.2);
+  const QRectF markerRect(center.x() - size * 0.5, center.y() - size * 0.5, size, size);
+  painter.setPen(Qt::NoPen);
+  painter.setBrush(color);
+  switch (kind) {
+    case BlockLayout::ListMarkerKind::BulletDisc:
+      painter.drawEllipse(markerRect);
+      break;
+    case BlockLayout::ListMarkerKind::BulletCircle:
+      painter.setPen(QPen(color, qMax<qreal>(1.1, size * 0.18)));
+      painter.setBrush(Qt::NoBrush);
+      painter.drawEllipse(markerRect);
+      break;
+    case BlockLayout::ListMarkerKind::BulletSquare:
+      painter.drawRect(markerRect);
+      break;
+    default:
+      break;
+  }
+}
+
 QVector<QRectF> literalSelectionRectsForRange(
     const QString& literal,
     qsizetype startOffset,
@@ -317,6 +339,18 @@ QString BlockLayout::listMarker() const {
   return listMarker_;
 }
 
+void BlockLayout::setListMarkerKind(ListMarkerKind kind) {
+  listMarkerKind_ = kind;
+}
+
+BlockLayout::ListMarkerKind BlockLayout::listMarkerKind() const {
+  return listMarkerKind_;
+}
+
+bool BlockLayout::hasListMarker() const {
+  return listMarkerKind_ != ListMarkerKind::None;
+}
+
 void BlockLayout::setContentSourceStart(qsizetype sourceStart) {
   contentSourceStart_ = sourceStart;
 }
@@ -437,7 +471,7 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
     case BlockType::Paragraph:
     case BlockType::ListItem:
       if (inlineLayout_) {
-        if (!listMarker_.isEmpty()) {
+        if (hasListMarker()) {
           painter.save();
           painter.setFont(theme.paragraphFont());
           painter.setPen(theme.textColor());
@@ -457,8 +491,11 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
               painter.drawLine(QPointF(box.left() + 3, box.center().y()), QPointF(box.left() + 5.5, box.bottom() - 3));
               painter.drawLine(QPointF(box.left() + 5.5, box.bottom() - 3), QPointF(box.right() - 3, box.top() + 3));
             }
-          } else {
+          } else if (listMarkerKind_ == ListMarkerKind::OrderedText) {
             painter.drawText(QPointF(markerX, viewRect.top() + metrics.ascent()), listMarker_);
+          } else {
+            const QPointF markerCenter(markerX + metrics.horizontalAdvance(QStringLiteral("0")) * 0.35, viewRect.top() + metrics.ascent() - metrics.xHeight() * 0.45);
+            paintUnorderedListMarker(painter, listMarkerKind_, markerCenter, metrics.height(), theme.textColor());
           }
           painter.restore();
           inlineLayout_->paint(painter, QPointF(viewRect.left() + theme.listIndent(), viewRect.top()));

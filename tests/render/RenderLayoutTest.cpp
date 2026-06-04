@@ -164,6 +164,34 @@ const MarkdownNode* findFirstTableCell(const MarkdownNode& node) {
   return nullptr;
 }
 
+const MarkdownNode* findListItemWithText(const MarkdownNode& node, const QString& text) {
+  if (node.type() == BlockType::ListItem) {
+    if (node.literal().contains(text)) {
+      return &node;
+    }
+    for (const auto& child : node.children()) {
+      if (child->literal().contains(text)) {
+        return &node;
+      }
+    }
+  }
+  for (const auto& child : node.children()) {
+    if (const MarkdownNode* found = findListItemWithText(*child, text)) {
+      return found;
+    }
+  }
+  return nullptr;
+}
+
+void collectListItems(const MarkdownNode& node, QVector<const MarkdownNode*>& items) {
+  if (node.type() == BlockType::ListItem) {
+    items.push_back(&node);
+  }
+  for (const auto& child : node.children()) {
+    collectListItems(*child, items);
+  }
+}
+
 std::unique_ptr<math::MathLayoutNode> makeTestLayoutBox(qreal width, qreal height, qreal depth) {
   auto node = std::make_unique<math::MathLayoutNode>();
   node->kind = math::MathLayoutKind::Span;
@@ -933,6 +961,39 @@ void testIncrementalBlockRebuildContract() {
   require(tableResult.blockId == table->id(), QStringLiteral("table cell rebuild should report table block id"));
   require(tableResult.oldRect == tableBefore, QStringLiteral("table cell rebuild old rect mismatch"));
   require(tableResult.newRect == layout.block(table->id())->rect(), QStringLiteral("table cell rebuild new rect mismatch"));
+}
+
+void testUnorderedListMarkerKindsByDepth() {
+  DocumentSession session;
+  session.setMarkdownText(
+      QStringLiteral("- level one\n"
+                     "    - level two\n"
+                     "        - level three\n"
+                     "            - level four\n"
+                     "\n"
+                     "1. ordered one\n"
+                     "    - ordered child bullet"),
+      false);
+
+  RenderTheme theme = RenderTheme::github();
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+
+  QVector<const MarkdownNode*> items;
+  collectListItems(session.document().root(), items);
+  require(items.size() == 6, QStringLiteral("list marker fixture should parse six list items"));
+  require(layout.block(items.at(0)->id())->listMarkerKind() == BlockLayout::ListMarkerKind::BulletDisc,
+          QStringLiteral("first unordered level should use a filled disc marker"));
+  require(layout.block(items.at(1)->id())->listMarkerKind() == BlockLayout::ListMarkerKind::BulletCircle,
+          QStringLiteral("second unordered level should use a hollow circle marker"));
+  require(layout.block(items.at(2)->id())->listMarkerKind() == BlockLayout::ListMarkerKind::BulletSquare,
+          QStringLiteral("third unordered level should use a filled square marker"));
+  require(layout.block(items.at(3)->id())->listMarkerKind() == BlockLayout::ListMarkerKind::BulletSquare,
+          QStringLiteral("fourth unordered level should continue using a filled square marker"));
+  require(layout.block(items.at(4)->id())->listMarkerKind() == BlockLayout::ListMarkerKind::OrderedText,
+          QStringLiteral("ordered list marker should remain text"));
+  require(layout.block(items.at(5)->id())->listMarkerKind() == BlockLayout::ListMarkerKind::BulletDisc,
+          QStringLiteral("unordered child inside ordered list should start its own bullet depth"));
 }
 
 void testInlineMarkerExpansion() {
@@ -3108,6 +3169,7 @@ int main(int argc, char** argv) {
   testInlineLayoutSelectionRects();
   testInlineLayoutStyleFormats();
   testIncrementalBlockRebuildContract();
+  testUnorderedListMarkerKindsByDepth();
   testDocumentLayoutInlineLayoutContract();
   testTreeSitterCodeHighlighting();
   testLayoutForTheme(document, RenderTheme::github(), QStringLiteral("github"));

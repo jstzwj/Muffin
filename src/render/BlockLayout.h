@@ -17,6 +17,14 @@ namespace muffin {
 
 class BlockLayout {
 public:
+  enum class ListMarkerKind {
+    None,
+    OrderedText,
+    BulletDisc,
+    BulletCircle,
+    BulletSquare,
+  };
+
   struct TableCellLayout {
     NodeId nodeId;
     QRectF rect;
@@ -66,6 +74,9 @@ public:
 
   void setListMarker(QString marker);
   QString listMarker() const;
+  void setListMarkerKind(ListMarkerKind kind);
+  ListMarkerKind listMarkerKind() const;
+  bool hasListMarker() const;
   void setContentSourceStart(qsizetype sourceStart);
   qsizetype contentSourceStart() const;
   void setTaskListItem(bool taskListItem, bool checked);
@@ -114,6 +125,7 @@ private:
   bool literalEditing_ = false;
   int headingLevel_ = 0;
   QString listMarker_;
+  ListMarkerKind listMarkerKind_ = ListMarkerKind::None;
   qsizetype contentSourceStart_ = -1;
   bool taskListItem_ = false;
   bool taskChecked_ = false;

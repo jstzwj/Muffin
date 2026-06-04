@@ -855,7 +855,7 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
     case BlockType::ListItem:
       hit.zone = position.text.inMeta ? HitTestResult::Zone::Marker : HitTestResult::Zone::Text;
       if (const InlineLayout* inlineLayout = block->inlineLayout()) {
-        const qreal textLeft = !block->listMarker().isEmpty() ? block->rect().left() + theme_.listIndent() : block->rect().left();
+        const qreal textLeft = block->hasListMarker() ? block->rect().left() + theme_.listIndent() : block->rect().left();
         const qsizetype localSourceOffset =
             position.text.sourceOffset >= 0 && block->contentSourceStart() >= 0 ? position.text.sourceOffset - block->contentSourceStart() : -1;
         hit.cursorRect = localSourceOffset >= 0
