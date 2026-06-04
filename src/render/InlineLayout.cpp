@@ -12,6 +12,8 @@ namespace muffin {
 namespace {
 
 constexpr QChar kInlineMathPlaceholder(0x00a0);
+constexpr QChar kTabIndentSourceChar(0x200b);
+constexpr QChar kTabIndentLayoutChar(0x00a0);
 
 QString flattenPlainText(const QVector<InlineNode>& inlines) {
   QString text;
@@ -37,6 +39,11 @@ QString flattenPlainText(const QVector<InlineNode>& inlines) {
         break;
     }
   }
+  return text;
+}
+
+QString layoutTextForDisplayText(QString text) {
+  text.replace(kTabIndentSourceChar, kTabIndentLayoutChar);
   return text;
 }
 
@@ -75,6 +82,7 @@ void InlineLayout::build(
   offsetMap_.clear();
   mathAtoms_.clear();
   displayText_.clear();
+  layoutText_.clear();
   textLayoutCodeBackgroundColor_ = theme.codeBackgroundColor();
   textLayoutCodeBorderColor_ = theme.codeBorderColor();
   projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState);
@@ -341,7 +349,8 @@ QString InlineLayout::texForInlineMathVisibleRange(const QVector<InlineNode>& in
 }
 
 void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont) {
-  textLayout_ = std::make_unique<QTextLayout>(displayText_.isEmpty() ? QStringLiteral(" ") : displayText_, baseFont);
+  layoutText_ = layoutTextForDisplayText(displayText_);
+  textLayout_ = std::make_unique<QTextLayout>(layoutText_.isEmpty() ? QStringLiteral(" ") : layoutText_, baseFont);
   QTextOption option;
   option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
   textLayout_->setTextOption(option);
@@ -448,6 +457,25 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     QTextLayout::FormatRange range;
     range.start = static_cast<int>(span.displayStart);
     range.length = static_cast<int>(span.displayEnd - span.displayStart);
+    range.format = format;
+    formats.push_back(range);
+  }
+
+  const QFontMetricsF tabMetrics(baseFont);
+  const qreal tabIndentTargetWidth = qMax<qreal>(1.0, tabMetrics.horizontalAdvance(QStringLiteral("汉汉")));
+  const qreal tabIndentPlaceholderWidth = qMax<qreal>(0.0, tabMetrics.horizontalAdvance(QString(kTabIndentLayoutChar)));
+  for (qsizetype i = 0; i < displayText_.size(); ++i) {
+    if (displayText_.at(i) != kTabIndentSourceChar) {
+      continue;
+    }
+    QFont tabFont = baseFont;
+    tabFont.setLetterSpacing(QFont::AbsoluteSpacing, tabIndentTargetWidth - tabIndentPlaceholderWidth);
+    QTextCharFormat format = baseFormat;
+    format.setFont(tabFont);
+    format.setForeground(QColor(Qt::transparent));
+    QTextLayout::FormatRange range;
+    range.start = static_cast<int>(i);
+    range.length = 1;
     range.format = format;
     formats.push_back(range);
   }

@@ -1902,7 +1902,7 @@ void testListItemEditingCommands() {
   require(session.markdownText() == QStringLiteral("- alpha\n- beta"), "backtab key list outdent mismatch");
 }
 
-void testTabInPlainTextInsertsTabCharacter() {
+void testTabInRenderedTextInsertsZeroWidthSpace() {
   DocumentSession session;
   SelectionController selection;
   UndoStack undoStack;
@@ -1914,38 +1914,41 @@ void testTabInPlainTextInsertsTabCharacter() {
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 0);
+  QKeyEvent shortcutTab(QEvent::ShortcutOverride, Qt::Key_Tab, Qt::NoModifier);
+  require(!input.eventFilter(&view, &shortcutTab), "tab shortcut override should continue to keypress delivery");
+  require(shortcutTab.isAccepted(), "tab shortcut override should reserve tab for rendered editor input");
   QKeyEvent tab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
-  require(input.eventFilter(&view, &tab), "tab at paragraph start should insert a tab character");
-  require(session.markdownText() == QStringLiteral("\talpha"), "paragraph tab should insert U+0009");
+  require(input.eventFilter(&view, &tab), "tab at paragraph start should insert a zero-width space");
+  require(session.markdownText() == QStringLiteral("\u200balpha"), "paragraph tab should insert U+200B");
 
   session.setMarkdownText(QStringLiteral("alphabeta"), false);
   setCursor(selection, blockAt(session, 0), 5);
   QKeyEvent middleTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
-  require(input.eventFilter(&view, &middleTab), "tab in middle of paragraph should insert a tab character");
-  require(session.markdownText() == QStringLiteral("alpha\tbeta"), "middle paragraph tab should insert U+0009");
-  require(selection.cursorPosition().text.sourceOffset == QStringLiteral("alpha\t").size(), "middle paragraph tab source offset mismatch");
+  require(input.eventFilter(&view, &middleTab), "tab in middle of paragraph should insert a zero-width space");
+  require(session.markdownText() == QStringLiteral("alpha\u200bbeta"), "middle paragraph tab should insert U+200B");
+  require(selection.cursorPosition().text.sourceOffset == QStringLiteral("alpha\u200b").size(), "middle paragraph tab source offset mismatch");
   require(input.insertText(QStringLiteral("x")), "typing after middle paragraph tab should keep editing");
-  require(session.markdownText() == QStringLiteral("alpha\txbeta"), "typing after middle paragraph tab should preserve U+0009");
+  require(session.markdownText() == QStringLiteral("alpha\u200bxbeta"), "typing after middle paragraph tab should preserve U+200B");
 
   session.setMarkdownText(QStringLiteral("## Title"), false);
   setCursor(selection, blockAt(session, 0), 2);
   QKeyEvent headingTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
-  require(input.eventFilter(&view, &headingTab), "tab in heading should insert a tab character");
-  require(session.markdownText() == QStringLiteral("## Ti\ttle"), "heading tab should insert U+0009 inside heading content");
+  require(input.eventFilter(&view, &headingTab), "tab in heading should insert a zero-width space");
+  require(session.markdownText() == QStringLiteral("## Ti\u200btle"), "heading tab should insert U+200B inside heading content");
 
   session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
   setCursor(selection, listItemAt(session, 0, 1), 0);
   QKeyEvent listTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
   require(input.eventFilter(&view, &listTab), "tab on list item should still indent structurally");
   require(session.markdownText() == QStringLiteral("- alpha\n  - beta"), "list item tab should not fall back to plain spaces");
-  require(!session.markdownText().contains(QLatin1Char('\t')), "unordered list tab should not insert U+0009");
+  require(!session.markdownText().contains(QChar(0x200b)), "unordered list tab should not insert U+200B");
 
   session.setMarkdownText(QStringLiteral("1. alpha\n2. beta"), false);
   setCursor(selection, listItemAt(session, 0, 1), 2);
   QKeyEvent orderedListTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
   require(input.eventFilter(&view, &orderedListTab), "tab on ordered list item should indent structurally");
   require(session.markdownText() == QStringLiteral("1. alpha\n  2. beta"), "ordered list tab should add structural leading spaces");
-  require(!session.markdownText().contains(QLatin1Char('\t')), "ordered list tab should not insert U+0009");
+  require(!session.markdownText().contains(QChar(0x200b)), "ordered list tab should not insert U+200B");
 }
 
 void testStylizeCollapsedSkeletons() {
@@ -2730,7 +2733,7 @@ int main(int argc, char** argv) {
   testHeadingEnterAtStartInsertsParagraphBeforeBlock();
   testListItemInput();
   testListItemEditingCommands();
-  testTabInPlainTextInsertsTabCharacter();
+  testTabInRenderedTextInsertsZeroWidthSpace();
   testStylizeCollapsedSkeletons();
   testTypingIntoCollapsedStyleSkeletons();
   testStylizeSelectionWrap();

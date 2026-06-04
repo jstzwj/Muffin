@@ -93,6 +93,7 @@ private:
   QColor textLayoutCodeBorderColor_;
   QString plainText_;
   QString displayText_;
+  QString layoutText_;
   QVector<OffsetMapEntry> offsetMap_;
   QVector<MathAtom> mathAtoms_;
   InlineProjection projection_;

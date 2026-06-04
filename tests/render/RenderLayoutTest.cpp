@@ -60,6 +60,20 @@ void testThemeCodeFontFallbackOrder() {
   require(qAbs(theme.codeLineHeight() - 23.04) < 0.01, QStringLiteral("code line height should be 23.04 px at 100% zoom"));
 }
 
+void testThemeCodeHighlightPalette() {
+  const RenderTheme theme = RenderTheme::github();
+  require(theme.codeHighlightColor(CodeHighlightRole::Keyword).name() == QStringLiteral("#9b008b"),
+          QStringLiteral("light code keyword color should match Typora-like purple"));
+  require(theme.codeHighlightColor(CodeHighlightRole::Function).name() == QStringLiteral("#0000a8"),
+          QStringLiteral("light code function color should match Typora-like blue"));
+  require(theme.codeHighlightColor(CodeHighlightRole::String).name() == QStringLiteral("#a31515"),
+          QStringLiteral("light code string color should match Typora-like red"));
+  require(theme.codeHighlightColor(CodeHighlightRole::Preprocessor).name() == theme.textColor().name(),
+          QStringLiteral("light code preprocessor color should stay close to plain text"));
+  require(theme.codeHighlightColor(CodeHighlightRole::Type).name() == QStringLiteral("#008000"),
+          QStringLiteral("light code type color should match Typora-like green"));
+}
+
 int changedPixelCount(const QImage& image, QColor background);
 QRect imageInkBounds(const QImage& image, QColor background);
 const math::MathRenderNode& nativeInkRoot(const math::MathRenderNode& root);
@@ -1044,6 +1058,23 @@ void testInlineLayoutGeometryContract() {
   const qsizetype styledHit = styled.hitTestTextOffset(QPointF(styledCursor.left(), styledCursor.center().y()));
   require(styledHit >= 0 && styledHit <= styled.plainText().size(), QStringLiteral("inline layout hit-test should return a valid styled offset"));
   require(!styled.selectionRects(0, styled.plainText().size()).isEmpty(), QStringLiteral("inline layout should produce styled selection rects"));
+}
+
+void testInlineLayoutZeroWidthTabIndentGeometry() {
+  RenderTheme theme = RenderTheme::github();
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::text(QStringLiteral("\u200balpha")));
+
+  InlineLayout layout;
+  layout.build(inlines, theme, 400.0, theme.paragraphFont());
+  require(layout.displayText() == QStringLiteral("\u200balpha"), QStringLiteral("zero-width tab source should remain in display text"));
+
+  const qreal actualIndent = layout.cursorRect(1).left() - layout.cursorRect(0).left();
+  const qreal expectedIndent = QFontMetricsF(theme.paragraphFont()).horizontalAdvance(QStringLiteral("汉汉"));
+  require(qAbs(actualIndent - expectedIndent) < 1.0,
+          QStringLiteral("zero-width tab indent should render as two CJK characters, actual=%1 expected=%2").arg(actualIndent).arg(expectedIndent));
+  require(actualIndent < QFontMetricsF(theme.paragraphFont()).horizontalAdvance(QStringLiteral("汉汉汉")),
+          QStringLiteral("zero-width tab indent should not expand to a wide editor tab stop"));
 }
 
 void testInlineLayoutStyleFormats() {
@@ -3057,9 +3088,11 @@ int main(int argc, char** argv) {
   document.setMarkdownText(markdown, std::move(parsed.root));
 
   testThemeCodeFontFallbackOrder();
+  testThemeCodeHighlightPalette();
   testInlineMarkerExpansion();
   testInlineProjectionContract();
   testInlineLayoutGeometryContract();
+  testInlineLayoutZeroWidthTabIndentGeometry();
   testInlineLayoutPainting();
   testMathRenderingLayout();
   testLiteralBlockWrappedEditingGeometry();

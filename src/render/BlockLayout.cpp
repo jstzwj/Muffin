@@ -721,9 +721,6 @@ void BlockLayout::paintLiteralSource(QPainter& painter, const RenderTheme& theme
       }
       QTextCharFormat format;
       format.setForeground(theme.codeHighlightColor(span.role));
-      if (span.role == CodeHighlightRole::Keyword || span.role == CodeHighlightRole::Function || span.role == CodeHighlightRole::Type) {
-        format.setFontWeight(QFont::DemiBold);
-      }
       QTextLayout::FormatRange range;
       range.start = static_cast<int>(start - lineStartOffset);
       range.length = static_cast<int>(end - start);

@@ -150,8 +150,17 @@ void InputController::attach(EditorView* view) {
 }
 
 bool InputController::eventFilter(QObject* watched, QEvent* event) {
-  if ((watched == view_ || (view_ && watched == view_->viewport())) && event->type() == QEvent::KeyPress) {
-    return handleKeyPress(static_cast<QKeyEvent*>(event));
+  if (watched == view_ || (view_ && watched == view_->viewport())) {
+    if (event->type() == QEvent::ShortcutOverride) {
+      auto* keyEvent = static_cast<QKeyEvent*>(event);
+      if (keyEvent->key() == Qt::Key_Tab || keyEvent->key() == Qt::Key_Backtab) {
+        keyEvent->accept();
+      }
+      return false;
+    }
+    if (event->type() == QEvent::KeyPress) {
+      return handleKeyPress(static_cast<QKeyEvent*>(event));
+    }
   }
   return QObject::eventFilter(watched, event);
 }
@@ -447,7 +456,7 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
       if (event->modifiers().testFlag(Qt::ShiftModifier)) {
         return outdentListItem();
       }
-      return indentListItem() || insertText(QStringLiteral("\t"));
+      return indentListItem() || insertText(QStringLiteral("\u200b"));
     case Qt::Key_Backtab:
       if (codeFenceController_ && codeFenceController_->isEditing()) {
         return insertText(QStringLiteral("\t"));

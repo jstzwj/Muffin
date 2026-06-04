@@ -166,28 +166,29 @@ QColor RenderTheme::codeHighlightColor(CodeHighlightRole role) const {
   const bool dark = backgroundColor_.lightness() < 128;
   switch (role) {
     case CodeHighlightRole::Comment:
-      return dark ? QColor(QStringLiteral("#8b949e")) : QColor(QStringLiteral("#6a737d"));
+      return dark ? QColor(QStringLiteral("#8b949e")) : QColor(QStringLiteral("#8c8c8c"));
     case CodeHighlightRole::Keyword:
+      return dark ? QColor(QStringLiteral("#ff7b72")) : QColor(QStringLiteral("#9b008b"));
     case CodeHighlightRole::Preprocessor:
-      return dark ? QColor(QStringLiteral("#ff7b72")) : QColor(QStringLiteral("#d73a49"));
+      return dark ? QColor(QStringLiteral("#ff7b72")) : QColor(QStringLiteral("#202124"));
     case CodeHighlightRole::String:
-      return dark ? QColor(QStringLiteral("#a5d6ff")) : QColor(QStringLiteral("#032f62"));
+      return dark ? QColor(QStringLiteral("#a5d6ff")) : QColor(QStringLiteral("#a31515"));
     case CodeHighlightRole::Number:
     case CodeHighlightRole::Constant:
-      return dark ? QColor(QStringLiteral("#79c0ff")) : QColor(QStringLiteral("#005cc5"));
+      return dark ? QColor(QStringLiteral("#79c0ff")) : QColor(QStringLiteral("#1a4fb5"));
     case CodeHighlightRole::Function:
-      return dark ? QColor(QStringLiteral("#d2a8ff")) : QColor(QStringLiteral("#6f42c1"));
+      return dark ? QColor(QStringLiteral("#d2a8ff")) : QColor(QStringLiteral("#0000a8"));
     case CodeHighlightRole::Type:
-      return dark ? QColor(QStringLiteral("#ffa657")) : QColor(QStringLiteral("#e36209"));
+      return dark ? QColor(QStringLiteral("#ffa657")) : QColor(QStringLiteral("#008000"));
     case CodeHighlightRole::Variable:
       return textColor_;
     case CodeHighlightRole::Property:
-      return dark ? QColor(QStringLiteral("#7ee787")) : QColor(QStringLiteral("#22863a"));
+      return dark ? QColor(QStringLiteral("#7ee787")) : QColor(QStringLiteral("#795e26"));
     case CodeHighlightRole::Operator:
     case CodeHighlightRole::Punctuation:
-      return mutedTextColor_;
+      return dark ? mutedTextColor_ : QColor(QStringLiteral("#3f3f3f"));
     case CodeHighlightRole::Escape:
-      return dark ? QColor(QStringLiteral("#f2cc60")) : QColor(QStringLiteral("#b08800"));
+      return dark ? QColor(QStringLiteral("#f2cc60")) : QColor(QStringLiteral("#b000b0"));
     case CodeHighlightRole::Plain:
     default:
       return textColor_;
