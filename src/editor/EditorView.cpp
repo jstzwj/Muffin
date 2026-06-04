@@ -18,6 +18,7 @@
 #include <QFontMetricsF>
 #include <QTextLayout>
 #include <QTextOption>
+#include <QKeyEvent>
 
 namespace muffin {
 namespace {
@@ -388,6 +389,20 @@ void EditorView::paintEvent(QPaintEvent* event) {
   paintSelection(painter);
   paintCurrentTableCell(painter);
   paintInsertionCursor(painter);
+}
+
+bool EditorView::event(QEvent* event) {
+  if (event->type() == QEvent::KeyPress || event->type() == QEvent::ShortcutOverride) {
+    auto* keyEvent = static_cast<QKeyEvent*>(event);
+    if (keyEvent->key() == Qt::Key_Tab || keyEvent->key() == Qt::Key_Backtab) {
+      event->accept();
+      if (event->type() == QEvent::ShortcutOverride) {
+        return true;
+      }
+      return QAbstractScrollArea::event(event);
+    }
+  }
+  return QAbstractScrollArea::event(event);
 }
 
 void EditorView::resizeEvent(QResizeEvent* event) {

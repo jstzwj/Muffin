@@ -11,6 +11,7 @@
 #include "editor/EditorView.h"
 #include "editor/InputController.h"
 #include "editor/SelectionController.h"
+#include "editor/SourceEditorWidget.h"
 #include "editor/TextBlockCommandBuilder.h"
 #include "render/InlineLayout.h"
 #include "theme/RenderTheme.h"
@@ -19,6 +20,7 @@
 #include <QClipboard>
 #include <QKeyEvent>
 #include <QMouseEvent>
+#include <QPlainTextEdit>
 
 #include <cstdlib>
 #include <iostream>
@@ -1949,6 +1951,32 @@ void testTabInRenderedTextInsertsZeroWidthSpace() {
   require(input.eventFilter(&view, &orderedListTab), "tab on ordered list item should indent structurally");
   require(session.markdownText() == QStringLiteral("1. alpha\n  2. beta"), "ordered list tab should add structural leading spaces");
   require(!session.markdownText().contains(QChar(0x200b)), "ordered list tab should not insert U+200B");
+
+  DocumentSession realSession;
+  EditorController controller;
+  EditorView realView;
+  realSession.setMarkdownText(QStringLiteral("alphabeta"), false);
+  realView.resize(640, 360);
+  realView.setDocument(realSession.document());
+  controller.attach(&realSession, &realView);
+  setSourceCursor(controller.selection(), blockAt(realSession, 0), 5, 5);
+  QKeyEvent realShortcut(QEvent::ShortcutOverride, Qt::Key_Tab, Qt::NoModifier);
+  QApplication::sendEvent(&realView, &realShortcut);
+  require(realShortcut.isAccepted(), "real editor view should accept tab shortcut override");
+  QKeyEvent realTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+  QApplication::sendEvent(&realView, &realTab);
+  require(realSession.markdownText() == QStringLiteral("alpha\u200bbeta"), "real editor tab should insert U+200B in paragraph");
+}
+
+void testSourceEditorPreservesZeroWidthSpaceText() {
+  SourceEditorWidget sourceEditor;
+  sourceEditor.setText(QStringLiteral("# Title\n\u200balpha"));
+  require(sourceEditor.text() == QStringLiteral("# Title\n\u200balpha"), "source editor should preserve U+200B source text");
+  sourceEditor.resize(900, 600);
+  sourceEditor.show();
+  QApplication::processEvents();
+  sourceEditor.setZoomPercent(125);
+  require(sourceEditor.text().contains(QChar(0x200b)), "source editor zoom should not rewrite U+200B text");
 }
 
 void testStylizeCollapsedSkeletons() {
@@ -2734,6 +2762,7 @@ int main(int argc, char** argv) {
   testListItemInput();
   testListItemEditingCommands();
   testTabInRenderedTextInsertsZeroWidthSpace();
+  testSourceEditorPreservesZeroWidthSpaceText();
   testStylizeCollapsedSkeletons();
   testTypingIntoCollapsedStyleSkeletons();
   testStylizeSelectionWrap();

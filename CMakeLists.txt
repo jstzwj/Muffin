@@ -169,8 +169,6 @@ add_executable(Muffin
   src/app/CommandRegistry.h
   src/app/MainWindow.cpp
   src/app/MainWindow.h
-  src/editor/SourceEditorWidget.cpp
-  src/editor/SourceEditorWidget.h
   src/io/FileController.cpp
   src/io/FileController.h
 )
@@ -193,6 +191,8 @@ set(MUFFIN_UI_SOURCES
   src/blocks/math/MathRenderer.h
   src/blocks/table/TableController.cpp
   src/blocks/table/TableController.h
+  src/editor/SourceEditorWidget.cpp
+  src/editor/SourceEditorWidget.h
   src/blocks/table/TableModelOps.cpp
   src/blocks/table/TableModelOps.h
   src/commands/StylizeController.cpp

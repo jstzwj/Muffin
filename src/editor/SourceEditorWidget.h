@@ -9,6 +9,7 @@ namespace muffin {
 
 class RenderTheme;
 
+class MarkdownSourceEdit;
 
 class SourceEditorWidget final : public QWidget {
   Q_OBJECT
@@ -37,7 +38,7 @@ private:
   void updateEditorWidth();
   void emitCursorPosition();
 
-  QPlainTextEdit* editor_ = nullptr;
+  MarkdownSourceEdit* editor_ = nullptr;
 };
 
 }  // namespace muffin
