@@ -35,6 +35,9 @@ struct InlineProjectionSpan {
   qsizetype visibleStart = 0;
   qsizetype visibleEnd = 0;
   bool editable = true;
+  bool bold = false;
+  bool italic = false;
+  bool strike = false;
 };
 
 struct InlineProjectionState {
@@ -85,6 +88,9 @@ private:
     InlineProjectionState projectionState;
     qsizetype displayOffset = 0;
     qsizetype visibleOffset = 0;
+    bool bold = false;
+    bool italic = false;
+    bool strike = false;
     QString displayText;
     QString visibleText;
     QVector<InlineProjectionSpan> spans;

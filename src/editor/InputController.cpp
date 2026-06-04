@@ -444,7 +444,10 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
       if (mathBlockController_ && mathBlockController_->isEditing()) {
         return insertText(QStringLiteral("  "));
       }
-      return event->modifiers().testFlag(Qt::ShiftModifier) ? outdentListItem() : indentListItem();
+      if (event->modifiers().testFlag(Qt::ShiftModifier)) {
+        return outdentListItem();
+      }
+      return indentListItem() || insertText(QStringLiteral("\t"));
     case Qt::Key_Backtab:
       if (codeFenceController_ && codeFenceController_->isEditing()) {
         return insertText(QStringLiteral("\t"));

@@ -767,10 +767,11 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
           return result;
         }
         result.zone = HitTestResult::Zone::Text;
-        result.textOffset = inlineLayout_->hitTestTextOffset(documentPos - textRect.topLeft());
-        const qsizetype localSourceOffset = inlineLayout_->hitTestSourceOffset(documentPos - textRect.topLeft());
+        const QPointF localPos = documentPos - textRect.topLeft();
+        result.textOffset = inlineLayout_->hitTestTextOffset(localPos);
+        const qsizetype localSourceOffset = inlineLayout_->hitTestSourceOffset(localPos);
         result.sourceOffset = contentSourceStart_ >= 0 ? contentSourceStart_ + localSourceOffset : localSourceOffset;
-        result.cursorRect = inlineLayout_->cursorRectForSourceOffset(localSourceOffset).translated(textRect.topLeft());
+        result.cursorRect = inlineLayout_->hitTestCursorRect(localPos).translated(textRect.topLeft());
       }
       break;
     case BlockType::CodeFence:

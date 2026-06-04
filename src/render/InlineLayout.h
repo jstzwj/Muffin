@@ -43,6 +43,7 @@ public:
   void paint(QPainter& painter, QPointF origin) const;
   qsizetype hitTestTextOffset(QPointF localPos) const;
   qsizetype hitTestSourceOffset(QPointF localPos) const;
+  QRectF hitTestCursorRect(QPointF localPos) const;
   QRectF cursorRect(qsizetype textOffset) const;
   QRectF cursorRectForSourceOffset(qsizetype sourceOffset) const;
   QVector<QRectF> selectionRects(qsizetype startOffset, qsizetype endOffset) const;
@@ -50,6 +51,7 @@ public:
   QString plainText() const;
   QString displayText() const;
   int mathAtomCount() const;
+  QVector<QTextLayout::FormatRange> debugTextFormats(const RenderTheme& theme, const QFont& baseFont) const;
 
 private:
   struct OffsetMapEntry {
@@ -80,6 +82,8 @@ private:
   QVector<QTextLayout::FormatRange> textLayoutFormats(const RenderTheme& theme, const QFont& baseFont) const;
   qsizetype visibleOffsetForDisplayOffset(qsizetype displayOffset) const;
   qsizetype displayOffsetForVisibleOffset(qsizetype visibleOffset) const;
+  struct TextLayoutPointHit;
+  TextLayoutPointHit textLayoutHitForPoint(QPointF localPos) const;
   qsizetype textLayoutDisplayOffsetForPoint(QPointF localPos) const;
   QRectF textLayoutCursorRectForDisplayOffset(qsizetype displayOffset) const;
 

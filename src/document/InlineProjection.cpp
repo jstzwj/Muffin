@@ -82,6 +82,7 @@ InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString s
   state.projectionState = projectionState;
   appendInlines(state, inlines, 0, sourceText_.size());
   displayText_ = state.displayText;
+  visibleText_ = state.visibleText;
   spans_ = state.spans;
   if (displayText_.isEmpty() && !sourceText_.isEmpty()) {
     appendTextSpan(state, InlineType::Text, InlineSpanKind::Text, 0, sourceText_.size(), sourceText_, true);
@@ -236,23 +237,16 @@ QString InlineProjection::plainTextForInlines(const QVector<InlineNode>& inlines
 }
 
 bool InlineProjection::isPlainInlineSource(const QVector<InlineNode>& inlines, const QString& sourceText) {
-  QString plain;
-  for (const InlineNode& node : inlines) {
-    switch (node.type()) {
-      case InlineType::Text:
-        plain += node.text();
-        break;
-      case InlineType::SoftBreak:
-        plain += QLatin1Char('\n');
-        break;
-      case InlineType::LineBreak:
-        plain += QStringLiteral("  \n");
-        break;
-      default:
-        return false;
+  InlineProjection projection(inlines, sourceText, InlineProjectionState{});
+  if (!projection.isValid()) {
+    return false;
+  }
+  for (const InlineProjectionSpan& span : projection.spans()) {
+    if (span.kind != InlineSpanKind::Text || span.type != InlineType::Text) {
+      return false;
     }
   }
-  return plain == sourceText;
+  return projection.visibleText() == sourceText;
 }
 
 QString InlineProjection::markerForInline(const InlineNode& node) {
@@ -372,6 +366,9 @@ void InlineProjection::appendTextSpan(
   span.visibleStart = state.visibleOffset;
   span.visibleEnd = state.visibleOffset + (visible ? displayText.size() : 0);
   span.editable = editable;
+  span.bold = state.bold;
+  span.italic = state.italic;
+  span.strike = state.strike;
   state.displayText += displayText;
   if (visible) {
     state.visibleText += displayText;
@@ -452,7 +449,20 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
       if (active) {
         appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, contentStart, marker, false);
       }
+      const bool previousBold = state.bold;
+      const bool previousItalic = state.italic;
+      const bool previousStrike = state.strike;
+      if (node.type() == InlineType::Strong) {
+        state.bold = true;
+      } else if (node.type() == InlineType::Emphasis) {
+        state.italic = true;
+      } else if (node.type() == InlineType::Strikethrough) {
+        state.strike = true;
+      }
       appendInlines(state, node.children(), contentStart, contentEnd);
+      state.bold = previousBold;
+      state.italic = previousItalic;
+      state.strike = previousStrike;
       if (contentStart == contentEnd) {
         appendTextSpan(state, node.type(), InlineSpanKind::EmptyContentSlot, contentStart, contentEnd, QString(), false);
       }

@@ -42,6 +42,11 @@ QString flattenPlainText(const QVector<InlineNode>& inlines) {
 
 }  // namespace
 
+struct InlineLayout::TextLayoutPointHit {
+  qsizetype displayOffset = 0;
+  QRectF cursorRect;
+};
+
 void InlineLayout::build(
     const QVector<InlineNode>& inlines,
     const RenderTheme& theme,
@@ -120,6 +125,10 @@ qsizetype InlineLayout::hitTestSourceOffset(QPointF localPos) const {
     return sourceOffset;
   }
   return visibleOffsetForDisplayOffset(position);
+}
+
+QRectF InlineLayout::hitTestCursorRect(QPointF localPos) const {
+  return textLayoutHitForPoint(localPos).cursorRect;
 }
 
 QRectF InlineLayout::cursorRect(qsizetype textOffset) const {
@@ -225,6 +234,10 @@ QString InlineLayout::displayText() const {
 
 int InlineLayout::mathAtomCount() const {
   return mathAtoms_.size();
+}
+
+QVector<QTextLayout::FormatRange> InlineLayout::debugTextFormats(const RenderTheme& theme, const QFont& baseFont) const {
+  return textLayoutFormats(theme, baseFont);
 }
 
 void InlineLayout::buildOffsetMapFromProjection() {
@@ -403,6 +416,15 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
         span.kind == InlineSpanKind::HiddenSyntax || span.kind == InlineSpanKind::EmptyContentSlot) {
       format.setForeground(theme.mutedTextColor());
     }
+    if (span.bold) {
+      format.setFontWeight(QFont::Bold);
+    }
+    if (span.italic) {
+      format.setFontItalic(true);
+    }
+    if (span.strike) {
+      format.setFontStrikeOut(true);
+    }
     switch (span.type) {
       case InlineType::Code:
         format.setFont(theme.codeFont());
@@ -419,15 +441,6 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
           format.setForeground(theme.linkColor());
           format.setFontUnderline(true);
         }
-        break;
-      case InlineType::Strong:
-        format.setFontWeight(QFont::Bold);
-        break;
-      case InlineType::Emphasis:
-        format.setFontItalic(true);
-        break;
-      case InlineType::Strikethrough:
-        format.setFontStrikeOut(true);
         break;
       default:
         break;
@@ -509,31 +522,53 @@ qsizetype InlineLayout::displayOffsetForVisibleOffset(qsizetype visibleOffset) c
 }
 
 qsizetype InlineLayout::textLayoutDisplayOffsetForPoint(QPointF localPos) const {
+  return textLayoutHitForPoint(localPos).displayOffset;
+}
+
+InlineLayout::TextLayoutPointHit InlineLayout::textLayoutHitForPoint(QPointF localPos) const {
+  TextLayoutPointHit hit;
   if (!textLayout_) {
-    return 0;
+    return hit;
   }
 
+  QTextLine targetLine;
   for (int i = 0; i < textLayout_->lineCount(); ++i) {
     const QTextLine line = textLayout_->lineAt(i);
     if (!line.isValid()) {
       continue;
     }
+    if (localPos.y() < line.y()) {
+      break;
+    }
+    targetLine = line;
+    if (localPos.y() <= line.y() + line.height()) {
+      break;
+    }
+  }
+
+  if (!targetLine.isValid() && textLayout_->lineCount() > 0) {
+    targetLine = textLayout_->lineAt(0);
+  }
+
+  if (targetLine.isValid()) {
+    const QTextLine line = targetLine;
     const int lineStart = line.textStart();
     const int lineEnd = lineStart + line.textLength();
     if (lineEnd <= lineStart) {
-      continue;
-    }
-    const QRectF naturalRect(line.x(), line.y(), line.naturalTextWidth(), line.height());
-    const QRectF fullLineRect(0.0, line.y(), qMax(size_.width(), naturalRect.width()), line.height());
-    if (!fullLineRect.contains(localPos) && localPos.y() > fullLineRect.bottom()) {
-      continue;
+      hit.displayOffset = lineStart;
+      hit.cursorRect = QRectF(line.cursorToX(lineStart), line.y(), 1.0, line.height());
+      return hit;
     }
 
     if (localPos.x() <= line.cursorToX(lineStart)) {
-      return lineStart;
+      hit.displayOffset = lineStart;
+      hit.cursorRect = QRectF(line.cursorToX(lineStart), line.y(), 1.0, line.height());
+      return hit;
     }
     if (localPos.x() >= line.cursorToX(lineEnd)) {
-      return lineEnd;
+      hit.displayOffset = lineEnd;
+      hit.cursorRect = QRectF(line.cursorToX(lineEnd), line.y(), 1.0, line.height());
+      return hit;
     }
 
     for (int offset = lineStart; offset < lineEnd; ++offset) {
@@ -541,16 +576,24 @@ qsizetype InlineLayout::textLayoutDisplayOffsetForPoint(QPointF localPos) const 
       const qreal right = line.cursorToX(offset + 1);
       const qreal midpoint = (left + right) / 2.0;
       if (localPos.x() < midpoint) {
-        return offset;
+        hit.displayOffset = offset;
+        hit.cursorRect = QRectF(line.cursorToX(offset), line.y(), 1.0, line.height());
+        return hit;
       }
       if (localPos.x() < right) {
-        return offset + 1;
+        hit.displayOffset = offset + 1;
+        hit.cursorRect = QRectF(line.cursorToX(offset + 1), line.y(), 1.0, line.height());
+        return hit;
       }
     }
-    return lineEnd;
+    hit.displayOffset = lineEnd;
+    hit.cursorRect = QRectF(line.cursorToX(lineEnd), line.y(), 1.0, line.height());
+    return hit;
   }
 
-  return displayText_.size();
+  hit.displayOffset = displayText_.size();
+  hit.cursorRect = textLayoutCursorRectForDisplayOffset(hit.displayOffset);
+  return hit;
 }
 
 QRectF InlineLayout::textLayoutCursorRectForDisplayOffset(qsizetype displayOffset) const {

@@ -16,6 +16,18 @@ bool isInlineEditableNode(BlockType type) {
   return type == BlockType::Paragraph || type == BlockType::Heading || type == BlockType::TableCell;
 }
 
+qsizetype paragraphContentStartIncludingCommonMarkIndent(const QString& markdown, qsizetype astStart) {
+  qsizetype lineStart = astStart;
+  while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
+    --lineStart;
+  }
+  qsizetype start = astStart;
+  while (start > lineStart && astStart - start < 3 && markdown.at(start - 1) == QLatin1Char(' ')) {
+    --start;
+  }
+  return start == lineStart ? start : astStart;
+}
+
 }  // namespace
 
 BlockEditContextResolver::BlockEditContextResolver(DocumentSession* session, SelectionController* selection)
@@ -100,6 +112,8 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
     if (start < end && markdown.at(start).isSpace()) {
       ++start;
     }
+  } else if (editable->type() == BlockType::Paragraph) {
+    start = paragraphContentStartIncludingCommonMarkIndent(markdown, start);
   }
 
   context.node = &displayNode;

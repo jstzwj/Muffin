@@ -18,6 +18,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QKeyEvent>
+#include <QMouseEvent>
 
 #include <cstdlib>
 #include <iostream>
@@ -639,6 +640,13 @@ void testInlineProjectionMappingMatrix() {
       QStringLiteral("bold em"),
       QStringLiteral("**bold *em***"),
       "nested inline projection should be valid");
+  requireProjectionRoundTrip(
+      {InlineNode::text(QStringLiteral("alpha"))},
+      QStringLiteral("  alpha"),
+      0,
+      QStringLiteral("  alpha"),
+      QStringLiteral("  alpha"),
+      "leading spaces omitted by CommonMark AST should remain editable text");
 }
 
 void testHorizontalNavigationEntersInlineMarkers() {
@@ -774,6 +782,186 @@ void testEditorViewInlineProjectionStateChanges() {
   const InlineLayout* selectedLayout = view.blockAtViewportPos(selectedRect.center())->inlineLayout();
   require(selectedLayout != nullptr, "selection inline layout should exist");
   require(selectedLayout->cursorRectForSourceOffset(9).left() != collapsedCursor.left(), "selection touching inline should expand marker layout");
+}
+
+void testEditorViewInlineClickDoesNotSelectAfterMarkerExpansion() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("before **xyz** after"), false);
+  view.setDocument(session.document());
+  MarkdownNode* block = blockAt(session, 0);
+  const QRectF blockRect = view.nodeRect(block->id());
+  const InlineLayout* collapsedLayout = view.blockAtViewportPos(blockRect.center())->inlineLayout();
+  require(collapsedLayout != nullptr, "inline click test collapsed layout should exist");
+
+  const QPointF clickPos = blockRect.topLeft() + collapsedLayout->cursorRectForSourceOffset(11).center();
+  QMouseEvent press(
+      QEvent::MouseButtonPress,
+      clickPos,
+      view.viewport()->mapToGlobal(clickPos.toPoint()),
+      Qt::LeftButton,
+      Qt::LeftButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press);
+  require(controller.selection().hasCursor(), "inline click press should activate cursor");
+  require(controller.selection().selection().isCollapsed(), "inline click press should keep collapsed selection");
+
+  QMouseEvent release(
+      QEvent::MouseButtonRelease,
+      clickPos,
+      view.viewport()->mapToGlobal(clickPos.toPoint()),
+      Qt::LeftButton,
+      Qt::NoButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &release);
+  require(controller.selection().selection().isCollapsed(), "inline click release should not create selection after marker expansion");
+  require(controller.selection().cursorPosition().text.sourceOffset == 11, "inline click release should keep original source cursor");
+}
+
+void testEditorViewDragSelectionContinuesAcrossMoves() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("abcdefghijklmnopqrstuvwxyz"), false);
+  view.setDocument(session.document());
+  MarkdownNode* block = blockAt(session, 0);
+  const QRectF blockRect = view.nodeRect(block->id());
+  const InlineLayout* layout = view.blockAtViewportPos(blockRect.center())->inlineLayout();
+  require(layout != nullptr, "drag selection test inline layout should exist");
+
+  const QPointF startPos = blockRect.topLeft() + layout->cursorRectForSourceOffset(0).center();
+  const QPointF firstMovePos = blockRect.topLeft() + layout->cursorRectForSourceOffset(10).center();
+  const QPointF secondMovePos = blockRect.topLeft() + layout->cursorRectForSourceOffset(20).center();
+
+  QMouseEvent press(
+      QEvent::MouseButtonPress,
+      startPos,
+      view.viewport()->mapToGlobal(startPos.toPoint()),
+      Qt::LeftButton,
+      Qt::LeftButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press);
+
+  QMouseEvent stationaryMove(
+      QEvent::MouseMove,
+      startPos,
+      view.viewport()->mapToGlobal(startPos.toPoint()),
+      Qt::NoButton,
+      Qt::LeftButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &stationaryMove);
+  require(controller.selection().selection().isCollapsed(), "stationary first drag move should keep collapsed cursor");
+
+  QMouseEvent firstMove(
+      QEvent::MouseMove,
+      firstMovePos,
+      view.viewport()->mapToGlobal(firstMovePos.toPoint()),
+      Qt::NoButton,
+      Qt::LeftButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &firstMove);
+  require(!controller.selection().selection().isCollapsed(), "first drag move should create a selection");
+  require(controller.selection().selection().focus.text.sourceOffset == 10, "first drag move focus offset mismatch");
+
+  QMouseEvent secondMove(
+      QEvent::MouseMove,
+      secondMovePos,
+      view.viewport()->mapToGlobal(secondMovePos.toPoint()),
+      Qt::NoButton,
+      Qt::LeftButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &secondMove);
+  require(controller.selection().selection().focus.text.sourceOffset == 20, "second drag move should keep extending selection");
+
+  QMouseEvent release(
+      QEvent::MouseButtonRelease,
+      secondMovePos,
+      view.viewport()->mapToGlobal(secondMovePos.toPoint()),
+      Qt::LeftButton,
+      Qt::NoButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &release);
+  require(controller.selection().selection().focus.text.sourceOffset == 20, "drag release focus offset mismatch");
+}
+
+void testEditorViewVerticalDragSelectionHitsWrappedLine() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(260, 500);
+
+  session.setMarkdownText(QStringLiteral("alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi"), false);
+  view.setDocument(session.document());
+  MarkdownNode* block = blockAt(session, 0);
+  const QRectF blockRect = view.nodeRect(block->id());
+  const InlineLayout* layout = view.blockAtViewportPos(blockRect.center())->inlineLayout();
+  require(layout != nullptr, "vertical drag test inline layout should exist");
+
+  QVector<QRectF> lineStartCursors;
+  qsizetype firstLineOffset = -1;
+  for (qsizetype offset = 0; offset <= layout->plainText().size(); ++offset) {
+    const QRectF cursor = layout->cursorRect(offset);
+    require(!cursor.isEmpty(), QStringLiteral("vertical drag cursor %1 should exist").arg(offset));
+    if (lineStartCursors.isEmpty() || cursor.center().y() > lineStartCursors.last().center().y() + 0.5) {
+      lineStartCursors.push_back(cursor);
+      if (lineStartCursors.size() == 1) {
+        firstLineOffset = offset;
+      } else if (lineStartCursors.size() == 2) {
+        break;
+      }
+    }
+  }
+  require(firstLineOffset == 0, "vertical drag first line should start at offset 0");
+  require(lineStartCursors.size() >= 2, "vertical drag fixture should wrap to a second line");
+
+  const qreal dragX = lineStartCursors.at(0).center().x() + 40.0;
+  const QPointF startPos(blockRect.left() + dragX, blockRect.top() + lineStartCursors.at(0).center().y());
+  const QPointF secondLineSameX(blockRect.left() + dragX, blockRect.top() + lineStartCursors.at(1).center().y());
+
+  QMouseEvent press(
+      QEvent::MouseButtonPress,
+      startPos,
+      view.viewport()->mapToGlobal(startPos.toPoint()),
+      Qt::LeftButton,
+      Qt::LeftButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press);
+
+  QMouseEvent move(
+      QEvent::MouseMove,
+      secondLineSameX,
+      view.viewport()->mapToGlobal(secondLineSameX.toPoint()),
+      Qt::NoButton,
+      Qt::LeftButton,
+      Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &move);
+
+  const QRectF focusCursor = view.hitTest(secondLineSameX).cursorRect;
+  require(qAbs(focusCursor.center().y() - (blockRect.top() + lineStartCursors.at(1).center().y())) < 1.0,
+          QStringLiteral("vertical drag hit should resolve to the second visual line"));
+  require(!controller.selection().selection().isCollapsed(), "vertical drag should create a selection");
+  require(controller.selection().selection().focus.text.sourceOffset == view.hitTest(secondLineSameX).sourceOffset,
+          QStringLiteral("vertical drag focus should follow the second visual line hit"));
+  const BlockLayout* selectedBlock = view.blockAtViewportPos(blockRect.center());
+  require(selectedBlock != nullptr, "vertical drag wrapped paragraph block should stay visible");
+  const QVector<QRectF> selectionRects = selectedBlock->selectionRects(controller.selection().selection(), RenderTheme::typoraLike());
+  require(!selectionRects.isEmpty(), "vertical drag should produce visible selection rects without horizontal pre-drag");
+  bool hasSecondLineRect = false;
+  for (const QRectF& rect : selectionRects) {
+    if (qAbs(rect.center().y() - (blockRect.top() + lineStartCursors.at(1).center().y())) < 1.0) {
+      hasSecondLineRect = true;
+      break;
+    }
+  }
+  require(hasSecondLineRect, "vertical drag selection rects should include the second visual line");
 }
 
 void testEditorViewInlineLayoutSmoke() {
@@ -1714,6 +1902,52 @@ void testListItemEditingCommands() {
   require(session.markdownText() == QStringLiteral("- alpha\n- beta"), "backtab key list outdent mismatch");
 }
 
+void testTabInPlainTextInsertsTabCharacter() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  EditorView view;
+  wireInput(input, session, selection, undoStack, brushQueue);
+  input.attach(&view);
+
+  session.setMarkdownText(QStringLiteral("alpha"), false);
+  setCursor(selection, blockAt(session, 0), 0);
+  QKeyEvent tab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+  require(input.eventFilter(&view, &tab), "tab at paragraph start should insert a tab character");
+  require(session.markdownText() == QStringLiteral("\talpha"), "paragraph tab should insert U+0009");
+
+  session.setMarkdownText(QStringLiteral("alphabeta"), false);
+  setCursor(selection, blockAt(session, 0), 5);
+  QKeyEvent middleTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+  require(input.eventFilter(&view, &middleTab), "tab in middle of paragraph should insert a tab character");
+  require(session.markdownText() == QStringLiteral("alpha\tbeta"), "middle paragraph tab should insert U+0009");
+  require(selection.cursorPosition().text.sourceOffset == QStringLiteral("alpha\t").size(), "middle paragraph tab source offset mismatch");
+  require(input.insertText(QStringLiteral("x")), "typing after middle paragraph tab should keep editing");
+  require(session.markdownText() == QStringLiteral("alpha\txbeta"), "typing after middle paragraph tab should preserve U+0009");
+
+  session.setMarkdownText(QStringLiteral("## Title"), false);
+  setCursor(selection, blockAt(session, 0), 2);
+  QKeyEvent headingTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+  require(input.eventFilter(&view, &headingTab), "tab in heading should insert a tab character");
+  require(session.markdownText() == QStringLiteral("## Ti\ttle"), "heading tab should insert U+0009 inside heading content");
+
+  session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
+  setCursor(selection, listItemAt(session, 0, 1), 0);
+  QKeyEvent listTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+  require(input.eventFilter(&view, &listTab), "tab on list item should still indent structurally");
+  require(session.markdownText() == QStringLiteral("- alpha\n  - beta"), "list item tab should not fall back to plain spaces");
+  require(!session.markdownText().contains(QLatin1Char('\t')), "unordered list tab should not insert U+0009");
+
+  session.setMarkdownText(QStringLiteral("1. alpha\n2. beta"), false);
+  setCursor(selection, listItemAt(session, 0, 1), 2);
+  QKeyEvent orderedListTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+  require(input.eventFilter(&view, &orderedListTab), "tab on ordered list item should indent structurally");
+  require(session.markdownText() == QStringLiteral("1. alpha\n  2. beta"), "ordered list tab should add structural leading spaces");
+  require(!session.markdownText().contains(QLatin1Char('\t')), "ordered list tab should not insert U+0009");
+}
+
 void testStylizeCollapsedSkeletons() {
   DocumentSession session;
   SelectionController selection;
@@ -2472,6 +2706,9 @@ int main(int argc, char** argv) {
   testTextHitActivationAddsSourceOffsetForInlineEditing();
   testEditorViewHitTestActivatesInlineSourceEditing();
   testEditorViewInlineProjectionStateChanges();
+  testEditorViewInlineClickDoesNotSelectAfterMarkerExpansion();
+  testEditorViewDragSelectionContinuesAcrossMoves();
+  testEditorViewVerticalDragSelectionHitsWrappedLine();
   testEditorViewInlineLayoutSmoke();
   testEditorViewPlainInlineLayout();
   testEditorViewStyledInlineLayout();
@@ -2493,6 +2730,7 @@ int main(int argc, char** argv) {
   testHeadingEnterAtStartInsertsParagraphBeforeBlock();
   testListItemInput();
   testListItemEditingCommands();
+  testTabInPlainTextInsertsTabCharacter();
   testStylizeCollapsedSkeletons();
   testTypingIntoCollapsedStyleSkeletons();
   testStylizeSelectionWrap();

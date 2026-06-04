@@ -60,6 +60,18 @@ MarkdownNode* primaryParagraph(MarkdownNode& node) {
   return &node;
 }
 
+qsizetype paragraphContentStartIncludingCommonMarkIndent(const QString& markdown, qsizetype astStart) {
+  qsizetype lineStart = astStart;
+  while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
+    --lineStart;
+  }
+  qsizetype start = astStart;
+  while (start > lineStart && astStart - start < 3 && markdown.at(start - 1) == QLatin1Char(' ')) {
+    --start;
+  }
+  return start == lineStart ? start : astStart;
+}
+
 bool fillSourceOffsetForTextHit(const DocumentSession& session, HitTestResult& hit) {
   if (hit.zone != HitTestResult::Zone::Text && hit.zone != HitTestResult::Zone::Marker &&
       hit.zone != HitTestResult::Zone::TableCell) {
@@ -96,6 +108,8 @@ bool fillSourceOffsetForTextHit(const DocumentSession& session, HitTestResult& h
     if (start < end && markdown.at(start).isSpace()) {
       ++start;
     }
+  } else if (editable->type() == BlockType::Paragraph) {
+    start = paragraphContentStartIncludingCommonMarkIndent(markdown, start);
   }
 
   const QString contentText = markdown.mid(start, end - start);

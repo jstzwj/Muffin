@@ -1033,6 +1033,41 @@ void testInlineLayoutGeometryContract() {
   require(!styled.selectionRects(0, styled.plainText().size()).isEmpty(), QStringLiteral("inline layout should produce styled selection rects"));
 }
 
+void testInlineLayoutStyleFormats() {
+  RenderTheme theme = RenderTheme::github();
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QStringLiteral("bold"))}));
+  inlines.push_back(InlineNode::text(QStringLiteral(" ")));
+  inlines.push_back(InlineNode::emphasis(QStringLiteral("*"), {InlineNode::text(QStringLiteral("em"))}));
+  inlines.push_back(InlineNode::text(QStringLiteral(" ")));
+  inlines.push_back(InlineNode::strikethrough(QStringLiteral("~~"), {InlineNode::text(QStringLiteral("gone"))}));
+  inlines.push_back(InlineNode::text(QStringLiteral(" ")));
+  inlines.push_back(InlineNode::strong(
+      QStringLiteral("**"),
+      {InlineNode::emphasis(QStringLiteral("*"), {InlineNode::text(QStringLiteral("both"))})}));
+
+  InlineLayout layout;
+  layout.build(inlines, QStringLiteral("**bold** *em* ~~gone~~ ***both***"), theme, 500.0, theme.paragraphFont(), InlineLayout::BuildOptions{});
+  require(layout.displayText() == QStringLiteral("bold em gone both"), QStringLiteral("style format fixture display text mismatch"));
+
+  const QVector<QTextLayout::FormatRange> formats = layout.debugTextFormats(theme, theme.paragraphFont());
+  auto formatAt = [&formats](int offset) -> QTextCharFormat {
+    QTextCharFormat result;
+    for (const QTextLayout::FormatRange& range : formats) {
+      if (offset >= range.start && offset < range.start + range.length) {
+        result = range.format;
+      }
+    }
+    return result;
+  };
+
+  require(formatAt(0).fontWeight() >= QFont::Bold, QStringLiteral("strong text should use bold font weight"));
+  require(formatAt(5).fontItalic(), QStringLiteral("emphasis text should use italic font"));
+  require(formatAt(8).fontStrikeOut(), QStringLiteral("strikethrough text should use strikeout font"));
+  require(formatAt(13).fontWeight() >= QFont::Bold && formatAt(13).fontItalic(),
+          QStringLiteral("nested strong/emphasis text should combine style flags"));
+}
+
 void testInlineLayoutPainting() {
   RenderTheme theme = RenderTheme::github();
   QVector<InlineNode> inlines;
@@ -3024,6 +3059,7 @@ int main(int argc, char** argv) {
   testInlineLayoutHitTesting();
   testInlineLayoutCursorRects();
   testInlineLayoutSelectionRects();
+  testInlineLayoutStyleFormats();
   testIncrementalBlockRebuildContract();
   testDocumentLayoutInlineLayoutContract();
   testTreeSitterCodeHighlighting();

@@ -73,6 +73,7 @@ private:
   HitTestResult hitForCursorPosition(CursorPosition position) const;
   QVector<const BlockLayout*> blocksBetween(NodeId first, NodeId last) const;
   bool blockComesBefore(NodeId first, NodeId second) const;
+  void applySelectionRange(SelectionRange selection);
   void updateDragSelection(QPointF viewportPos);
   void updateMouseCursor(QPointF viewportPos);
 
@@ -84,6 +85,8 @@ private:
   HitTestResult cursorHit_;
   bool cursorVisible_ = false;
   bool draggingSelection_ = false;
+  bool dragSelectionPending_ = false;
+  QPointF dragStartViewportPos_;
   HitTestResult dragAnchorHit_;
   QLineEdit* codeLanguageEditor_ = nullptr;
   QCompleter* codeLanguageCompleter_ = nullptr;

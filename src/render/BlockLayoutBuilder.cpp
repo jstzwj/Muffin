@@ -61,6 +61,18 @@ bool selectionFocusesNode(const SelectionRange& selection, NodeId nodeId) {
   return nodeId.isValid() && selection.focus.blockId == nodeId && selection.focus.text.nodeId == nodeId;
 }
 
+qsizetype paragraphContentStartIncludingCommonMarkIndent(const QString& markdown, qsizetype astStart) {
+  qsizetype lineStart = astStart;
+  while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
+    --lineStart;
+  }
+  qsizetype start = astStart;
+  while (start > lineStart && astStart - start < 3 && markdown.at(start - 1) == QLatin1Char(' ')) {
+    --start;
+  }
+  return start == lineStart ? start : astStart;
+}
+
 QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& theme, qreal width) {
   int columnCount = 0;
   for (const auto& row : table.children()) {
@@ -448,6 +460,8 @@ qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNo
     if (start < end && markdownText_.at(start).isSpace()) {
       ++start;
     }
+  } else if (node.type() == BlockType::Paragraph) {
+    start = paragraphContentStartIncludingCommonMarkIndent(markdownText_, start);
   }
   return start;
 }

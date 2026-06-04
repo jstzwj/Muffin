@@ -2,6 +2,7 @@
 
 #include "document/MarkdownDocument.h"
 
+#include <QApplication>
 #include <QCompleter>
 #include <QElapsedTimer>
 #include <QGraphicsDropShadowEffect>
@@ -18,12 +19,19 @@
 #include <QTextLayout>
 #include <QTextOption>
 
-#include <cmath>
-
 namespace muffin {
 namespace {
 
 Q_LOGGING_CATEGORY(viewPerf, "muffin.perf", QtWarningMsg)
+
+bool sameCursorPosition(const CursorPosition& a, const CursorPosition& b) {
+  return a.blockId == b.blockId && a.text.nodeId == b.text.nodeId && a.text.textOffset == b.text.textOffset &&
+         a.text.sourceOffset == b.text.sourceOffset && a.text.inMeta == b.text.inMeta;
+}
+
+bool sameSelectionRange(const SelectionRange& a, const SelectionRange& b) {
+  return sameCursorPosition(a.anchor, b.anchor) && sameCursorPosition(a.focus, b.focus);
+}
 
 class PerfTimer {
 public:
@@ -281,6 +289,8 @@ void EditorView::setTheme(RenderTheme theme) {
 }
 
 void EditorView::setCursorHit(HitTestResult hit) {
+  dragSelectionPending_ = false;
+  draggingSelection_ = false;
   const SelectionRange previousSelection = selection_;
   cursorHit_ = hit;
   cursorPosition_ = hit.cursorPosition();
@@ -290,6 +300,8 @@ void EditorView::setCursorHit(HitTestResult hit) {
 }
 
 void EditorView::setCursorPosition(CursorPosition position) {
+  dragSelectionPending_ = false;
+  draggingSelection_ = false;
   const SelectionRange previousSelection = selection_;
   cursorPosition_ = position;
   selection_.anchor = cursorPosition_;
@@ -298,6 +310,15 @@ void EditorView::setCursorPosition(CursorPosition position) {
 }
 
 void EditorView::setSelectionRange(SelectionRange selection) {
+  if ((dragSelectionPending_ || draggingSelection_) && sameSelectionRange(selection_, selection)) {
+    return;
+  }
+  dragSelectionPending_ = false;
+  draggingSelection_ = false;
+  applySelectionRange(selection);
+}
+
+void EditorView::applySelectionRange(SelectionRange selection) {
   const SelectionRange previousSelection = selection_;
   selection_ = selection;
   cursorPosition_ = selection.focus;
@@ -309,6 +330,8 @@ void EditorView::clearCursor() {
   selection_ = {};
   cursorHit_ = {};
   cursorVisible_ = false;
+  dragSelectionPending_ = false;
+  draggingSelection_ = false;
   updateCodeLanguageEditor();
   viewport()->update();
 }
@@ -395,7 +418,9 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
     emit blockClicked(hit);
     updateCodeLanguageEditor();
     if (hit.isValid() && isSelectableZone(hit.zone)) {
-      draggingSelection_ = true;
+      dragSelectionPending_ = true;
+      draggingSelection_ = false;
+      dragStartViewportPos_ = event->position();
       dragAnchorHit_ = hit;
     }
   }
@@ -403,18 +428,27 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
 }
 
 void EditorView::mouseMoveEvent(QMouseEvent* event) {
-  if (draggingSelection_ && (event->buttons() & Qt::LeftButton)) {
-    updateDragSelection(event->position());
-    event->accept();
-    return;
+  if ((dragSelectionPending_ || draggingSelection_) && (event->buttons() & Qt::LeftButton)) {
+    if (!draggingSelection_) {
+      draggingSelection_ = true;
+      dragSelectionPending_ = false;
+    }
+    if (draggingSelection_) {
+      updateDragSelection(event->position());
+      event->accept();
+      return;
+    }
   }
   updateMouseCursor(event->position());
   QAbstractScrollArea::mouseMoveEvent(event);
 }
 
 void EditorView::mouseReleaseEvent(QMouseEvent* event) {
-  if (event->button() == Qt::LeftButton && draggingSelection_) {
-    updateDragSelection(event->position());
+  if (event->button() == Qt::LeftButton && (dragSelectionPending_ || draggingSelection_)) {
+    if (draggingSelection_) {
+      updateDragSelection(event->position());
+    }
+    dragSelectionPending_ = false;
     draggingSelection_ = false;
     event->accept();
     return;
@@ -959,7 +993,10 @@ void EditorView::updateDragSelection(QPointF viewportPos) {
   SelectionRange range;
   range.anchor = dragAnchorHit_.cursorPosition();
   range.focus = focusHit.cursorPosition();
-  setSelectionRange(range);
+  if (range.isCollapsed()) {
+    return;
+  }
+  applySelectionRange(range);
   emit selectionChanged(range, focusHit);
 }
 
