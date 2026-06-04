@@ -1111,11 +1111,17 @@ void testMathRenderingLayout() {
   const BlockLayout* editingMathBlockLayout = editingDocumentLayout.block(mathBlock->id());
   require(editingMathBlockLayout != nullptr && editingMathBlockLayout->literalEditing(),
           QStringLiteral("focused math block should enter literal editing layout"));
-  HitTestResult editingMathHit = editingMathBlockLayout->hitTest(editingMathBlockLayout->rect().center(), theme);
+  require(editingMathBlockLayout->height() > mathBlockLayout->height() + QFontMetricsF(theme.codeFont()).height() * 2.0,
+          QStringLiteral("focused math block should reserve both TeX source editor and rendered preview"));
+  const QPointF editingSourcePoint(editingMathBlockLayout->rect().left() + theme.codePadding().left() + QFontMetricsF(theme.codeFont()).horizontalAdvance(QStringLiteral("\\sqrt")),
+                                   editingMathBlockLayout->rect().top() + theme.codePadding().top() + QFontMetricsF(theme.codeFont()).height() * 1.5);
+  HitTestResult editingMathHit = editingMathBlockLayout->hitTest(editingSourcePoint, theme);
   require(editingMathHit.zone == HitTestResult::Zone::Math &&
               editingMathHit.cursorRect.left() > editingMathBlockLayout->rect().left() &&
               editingMathHit.cursorRect.left() < editingMathBlockLayout->rect().right(),
           QStringLiteral("editing math block cursor should use literal source coordinates"));
+  require(editingMathHit.textOffset > 0 && editingMathHit.textOffset < editingMathBlockLayout->literal().size(),
+          QStringLiteral("editing math block hit-test should map into TeX content, not decorative dollar delimiters"));
 
   const MarkdownNode* paragraph = findFirstBlock(document.root(), BlockType::Paragraph);
   require(paragraph != nullptr, QStringLiteral("math inline paragraph should parse"));

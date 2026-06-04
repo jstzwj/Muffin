@@ -111,6 +111,14 @@ QVector<QRectF> literalSelectionRectsForRange(
   return rects;
 }
 
+qreal literalTextHeight(const QString& literal, const QFont& font, qreal width) {
+  const QFontMetricsF metrics(font);
+  const qreal lineHeight = qMax<qreal>(14.0, metrics.height());
+  const int lineCount = qMax(1, literal.count(QLatin1Char('\n')) + 1);
+  Q_UNUSED(width);
+  return lineHeight * lineCount;
+}
+
 }  // namespace
 
 BlockLayout::BlockLayout(NodeId id) : id_(std::move(id)) {}
@@ -397,7 +405,35 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
       painter.setPen(theme.codeBorderColor());
       painter.setBrush(theme.codeBackgroundColor());
       painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
-      if (literalEditing_ || !mathLayout_ || !mathLayout_->valid()) {
+      if (literalEditing_) {
+        const QRectF sourceRect = mathEditorSourceRect(theme).translated(0, -scrollY);
+        const QRectF previewRect = mathPreviewContentRect(theme).translated(0, -scrollY);
+        const QMarginsF padding = theme.codePadding();
+        const QFont codeFont = theme.codeFont();
+        const QFontMetricsF codeMetrics(codeFont);
+        const qreal markerHeight = qMax<qreal>(14.0, codeMetrics.height());
+        const qreal sourcePanelBottom = sourceRect.bottom() + markerHeight + padding.bottom();
+        const QRectF sourcePanel(viewRect.left(), viewRect.top(), viewRect.width(), qMax<qreal>(1.0, sourcePanelBottom - viewRect.top()));
+        const QRectF previewPanel(viewRect.left(), sourcePanel.bottom(), viewRect.width(), qMax<qreal>(1.0, viewRect.bottom() - sourcePanel.bottom()));
+
+        painter.fillRect(sourcePanel, theme.codeBackgroundColor());
+        painter.fillRect(previewPanel, theme.backgroundColor());
+        painter.setPen(theme.textColor());
+        painter.setFont(codeFont);
+        QTextOption option;
+        option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+        painter.drawText(QPointF(sourceRect.left(), viewRect.top() + padding.top() + codeMetrics.ascent()), QStringLiteral("$$"));
+        painter.drawText(sourceRect, literal_, option);
+        painter.drawText(QPointF(sourceRect.left(), sourceRect.bottom() + codeMetrics.ascent()), QStringLiteral("$$"));
+        painter.setPen(QPen(theme.codeBorderColor(), 1));
+        const qreal dividerY = sourcePanel.bottom() + 0.5;
+        painter.drawLine(QPointF(viewRect.left(), dividerY), QPointF(viewRect.right(), dividerY));
+        if (mathLayout_ && mathLayout_->valid()) {
+          const qreal x = previewRect.left() + qMax<qreal>(0.0, (previewRect.width() - mathLayout_->size.width()) / 2.0);
+          const qreal y = previewRect.top() + qMax<qreal>(0.0, (previewRect.height() - mathLayout_->size.height()) / 2.0);
+          mathLayout_->paint(painter, QPointF(x, y));
+        }
+      } else if (!mathLayout_ || !mathLayout_->valid()) {
         painter.setPen(theme.textColor());
         painter.setFont(theme.mathFont());
         QTextOption option;
@@ -525,15 +561,38 @@ QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset,
 
 QVector<QRectF> BlockLayout::literalSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const {
   QFont font = theme.codeFont();
-  if (type_ == BlockType::MathBlock) {
-    font = theme.mathFont();
-  }
-  const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
+  const QRectF contentRect = type_ == BlockType::MathBlock && literalEditing_ ? mathEditorSourceRect(theme) : rect_.marginsRemoved(theme.codePadding());
   QVector<QRectF> rects = literalSelectionRectsForRange(literal_, startOffset, endOffset, font, contentRect.topLeft(), contentRect.width());
   for (QRectF& rect : rects) {
     rect = rect.adjusted(-1.0, 0, 1.0, 0).intersected(contentRect.adjusted(0, 0, 1, 0));
   }
   return rects;
+}
+
+QRectF BlockLayout::mathEditorSourceRect(const RenderTheme& theme) const {
+  const QMarginsF padding = theme.codePadding();
+  const QFontMetricsF metrics(theme.codeFont());
+  const qreal markerHeight = qMax<qreal>(14.0, metrics.height());
+  const qreal contentWidth = qMax<qreal>(1.0, rect_.width() - padding.left() - padding.right());
+  return QRectF(rect_.left() + padding.left(),
+                rect_.top() + padding.top() + markerHeight,
+                contentWidth,
+                literalTextHeight(literal_, theme.codeFont(), contentWidth));
+}
+
+QRectF BlockLayout::mathPreviewContentRect(const RenderTheme& theme) const {
+  if (!literalEditing_) {
+    return rect_.marginsRemoved(theme.codePadding());
+  }
+  const QMarginsF padding = theme.codePadding();
+  const QFontMetricsF metrics(theme.codeFont());
+  const qreal markerHeight = qMax<qreal>(14.0, metrics.height());
+  const QRectF sourceRect = mathEditorSourceRect(theme);
+  const qreal previewTop = sourceRect.bottom() + markerHeight + padding.bottom() + padding.top();
+  return QRectF(rect_.left() + padding.left(),
+                previewTop,
+                qMax<qreal>(1.0, rect_.width() - padding.left() - padding.right()),
+                qMax<qreal>(1.0, rect_.bottom() - padding.bottom() - previewTop));
 }
 
 void BlockLayout::paintCodeFence(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
@@ -640,9 +699,9 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
       result.zone = HitTestResult::Zone::Math;
       {
         if (literalEditing_) {
-          const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
-          result.textOffset = literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.mathFont());
-          result.cursorRect = literalCursorRectForOffset(literal_, result.textOffset, theme.mathFont(), contentRect.topLeft());
+          const QRectF contentRect = mathEditorSourceRect(theme);
+          result.textOffset = literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont());
+          result.cursorRect = literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft());
         } else {
           result.textOffset = documentPos.x() < rect_.center().x() ? 0 : literal_.size();
           const qreal x = result.textOffset == 0 ? rect_.left() : rect_.right();

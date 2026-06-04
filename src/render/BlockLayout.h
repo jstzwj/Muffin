@@ -97,6 +97,8 @@ private:
   QVector<QRectF> selectionRectsSelf(const SelectionRange& selection, const RenderTheme& theme) const;
   QVector<QRectF> selectionRectsSelfForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
   QVector<QRectF> literalSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
+  QRectF mathEditorSourceRect(const RenderTheme& theme) const;
+  QRectF mathPreviewContentRect(const RenderTheme& theme) const;
   void paintCodeFence(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
 
   NodeId id_;

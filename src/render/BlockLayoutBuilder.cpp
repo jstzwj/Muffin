@@ -288,6 +288,13 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
     if (mathLayout->valid()) {
       if (!editingLiteral) {
         height = std::ceil(mathLayout->size.height() + theme.codePadding().top() + theme.codePadding().bottom());
+      } else {
+        const qreal contentWidth = qMax<qreal>(1.0, width - theme.codePadding().left() - theme.codePadding().right());
+        const qreal markerLine = qMax<qreal>(14.0, QFontMetricsF(theme.codeFont()).height());
+        const qreal sourceHeight = textHeight(layout->literal(), theme.codeFont(), contentWidth, QMarginsF());
+        const qreal previewHeight = mathLayout->size.height();
+        height = std::ceil(theme.codePadding().top() + markerLine + sourceHeight + markerLine +
+                           theme.codePadding().bottom() + theme.codePadding().top() + previewHeight + theme.codePadding().bottom());
       }
       layout->setMathLayout(std::move(mathLayout));
     }
