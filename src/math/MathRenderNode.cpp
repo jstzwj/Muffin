@@ -4,11 +4,42 @@
 
 #include <QFontMetricsF>
 #include <QImageReader>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPen>
 
+#include <cmath>
+
 namespace muffin::math {
+namespace {
+
+QString renderKindName(MathRenderKind kind) {
+  switch (kind) {
+    case MathRenderKind::Span: return QStringLiteral("Span");
+    case MathRenderKind::Symbol: return QStringLiteral("Symbol");
+    case MathRenderKind::Rule: return QStringLiteral("Rule");
+    case MathRenderKind::Rect: return QStringLiteral("Rect");
+    case MathRenderKind::Sqrt: return QStringLiteral("Sqrt");
+    case MathRenderKind::SupSub: return QStringLiteral("SupSub");
+    case MathRenderKind::Fraction: return QStringLiteral("Fraction");
+    case MathRenderKind::Accent: return QStringLiteral("Accent");
+    case MathRenderKind::Phantom: return QStringLiteral("Phantom");
+    case MathRenderKind::Stretchy: return QStringLiteral("Stretchy");
+    case MathRenderKind::LeftRight: return QStringLiteral("LeftRight");
+    case MathRenderKind::Array: return QStringLiteral("Array");
+    case MathRenderKind::VList: return QStringLiteral("VList");
+    case MathRenderKind::Error: return QStringLiteral("Error");
+  }
+  return QStringLiteral("Unknown");
+}
+
+double rounded(qreal value) {
+  return std::round(value * 10000.0) / 10000.0;
+}
+
+}  // namespace
 
 qreal MathRenderNode::totalHeight() const {
   return height + depth;
@@ -19,6 +50,9 @@ QRectF MathRenderNode::boundsAt(QPointF origin) const {
 }
 
 void MathRenderNode::paint(QPainter& painter, QPointF origin) const {
+  if (phantom) {
+    return;
+  }
   painter.save();
   painter.setPen(color);
   switch (kind) {
@@ -34,7 +68,7 @@ void MathRenderNode::paint(QPainter& painter, QPointF origin) const {
                           text == QStringLiteral("dashed") ? Qt::DashLine : Qt::SolidLine,
                           Qt::SquareCap,
                           Qt::MiterJoin));
-      if (shift < 0.0 && qFuzzyIsNull(width)) {
+      if (shift < 0.0 && !qFuzzyIsNull(height + depth)) {
         painter.drawLine(QPointF(origin.x(), origin.y() - height), QPointF(origin.x(), origin.y() + depth));
       } else {
         const qreal y = origin.y() - shift;
@@ -192,7 +226,8 @@ void MathRenderNode::paint(QPainter& painter, QPointF origin) const {
     case MathRenderKind::Accent:
     case MathRenderKind::Phantom:
     case MathRenderKind::LeftRight:
-    case MathRenderKind::Array: {
+    case MathRenderKind::Array:
+    case MathRenderKind::VList: {
       for (const auto& child : children) {
         child->paint(painter, QPointF(origin.x() + child->xOffset, origin.y() + child->yOffset + child->shift));
       }
@@ -201,13 +236,50 @@ void MathRenderNode::paint(QPainter& painter, QPointF origin) const {
     case MathRenderKind::Span: {
       qreal x = origin.x();
       for (const auto& child : children) {
-        child->paint(painter, QPointF(x, origin.y() + child->shift));
+        child->paint(painter, QPointF(x + child->xOffset, origin.y() + child->yOffset + child->shift));
         x += child->width;
       }
       break;
     }
   }
   painter.restore();
+}
+
+QJsonObject MathRenderNode::toJson() const {
+  QJsonObject object;
+  object.insert(QStringLiteral("kind"), renderKindName(kind));
+  if (!text.isEmpty()) object.insert(QStringLiteral("text"), text);
+  if (!atomClass.isEmpty()) object.insert(QStringLiteral("atomClass"), atomClass);
+  if (!fontClass.isEmpty()) object.insert(QStringLiteral("fontClass"), fontClass);
+  if (!pathName.isEmpty()) object.insert(QStringLiteral("pathName"), pathName);
+  if (!svgPath.isEmpty()) object.insert(QStringLiteral("hasSvgPath"), true);
+  if (!imageSource.isEmpty()) object.insert(QStringLiteral("imageSource"), imageSource);
+  object.insert(QStringLiteral("width"), rounded(width));
+  object.insert(QStringLiteral("height"), rounded(height));
+  object.insert(QStringLiteral("depth"), rounded(depth));
+  object.insert(QStringLiteral("shift"), rounded(shift));
+  object.insert(QStringLiteral("xOffset"), rounded(xOffset));
+  object.insert(QStringLiteral("yOffset"), rounded(yOffset));
+  object.insert(QStringLiteral("ruleThickness"), rounded(ruleThickness));
+  object.insert(QStringLiteral("italic"), rounded(italic));
+  object.insert(QStringLiteral("italicMarginRight"), rounded(italicMarginRight));
+  if (allowBreak) object.insert(QStringLiteral("allowBreak"), true);
+  if (tightSpacing) object.insert(QStringLiteral("tightSpacing"), true);
+  if (phantom) object.insert(QStringLiteral("phantom"), true);
+  if (columns > 0) object.insert(QStringLiteral("columns"), columns);
+  if (rows > 0) object.insert(QStringLiteral("rows"), rows);
+  if (!children.empty()) {
+    QJsonArray childArray;
+    for (const auto& child : children) {
+      childArray.push_back(child->toJson());
+    }
+    object.insert(QStringLiteral("children"), childArray);
+  }
+  return object;
+}
+
+QString MathRenderNode::toJsonString() const {
+  return QString::fromUtf8(QJsonDocument(toJson()).toJson(QJsonDocument::Indented));
 }
 
 bool MathLayoutResult::valid() const {
@@ -224,6 +296,7 @@ std::unique_ptr<MathRenderNode> cloneNode(const MathRenderNode& node) {
   auto copy = std::make_unique<MathRenderNode>();
   copy->kind = node.kind;
   copy->text = node.text;
+  copy->atomClass = node.atomClass;
   copy->fontClass = node.fontClass;
   copy->pathName = node.pathName;
   copy->svgPath = node.svgPath;
@@ -237,8 +310,12 @@ std::unique_ptr<MathRenderNode> cloneNode(const MathRenderNode& node) {
   copy->shift = node.shift;
   copy->ruleThickness = node.ruleThickness;
   copy->italic = node.italic;
+  copy->italicMarginRight = node.italicMarginRight;
   copy->xOffset = node.xOffset;
   copy->yOffset = node.yOffset;
+  copy->allowBreak = node.allowBreak;
+  copy->tightSpacing = node.tightSpacing;
+  copy->phantom = node.phantom;
   copy->columns = node.columns;
   copy->rows = node.rows;
   copy->children.reserve(node.children.size());

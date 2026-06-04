@@ -2,6 +2,7 @@
 
 #include <QColor>
 #include <QFont>
+#include <QJsonObject>
 #include <QRectF>
 #include <QString>
 
@@ -25,12 +26,14 @@ enum class MathRenderKind {
   Stretchy,
   LeftRight,
   Array,
+  VList,
   Error
 };
 
 struct MathRenderNode {
   MathRenderKind kind = MathRenderKind::Span;
   QString text;
+  QString atomClass;
   QString fontClass;
   QString pathName;
   QString svgPath;
@@ -44,8 +47,12 @@ struct MathRenderNode {
   qreal shift = 0.0;
   qreal ruleThickness = 0.0;
   qreal italic = 0.0;
+  qreal italicMarginRight = 0.0;
   qreal xOffset = 0.0;
   qreal yOffset = 0.0;
+  bool allowBreak = false;
+  bool tightSpacing = false;
+  bool phantom = false;
   int columns = 0;
   int rows = 0;
   std::vector<std::unique_ptr<MathRenderNode>> children;
@@ -53,6 +60,8 @@ struct MathRenderNode {
   qreal totalHeight() const;
   QRectF boundsAt(QPointF origin) const;
   void paint(QPainter& painter, QPointF origin) const;
+  QJsonObject toJson() const;
+  QString toJsonString() const;
 };
 
 struct MathLayoutResult {

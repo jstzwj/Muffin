@@ -2,6 +2,7 @@
 
 #include "math/MathParseError.h"
 
+#include <QSet>
 #include <QStringList>
 #include <QtGlobal>
 
@@ -9,6 +10,18 @@
 
 namespace muffin::math {
 namespace {
+
+bool spaceAfterDotsToken(const QString& token) {
+  static const QSet<QString> tokens{
+      QStringLiteral(")"),        QStringLiteral("]"),       QStringLiteral("\\rbrack"),
+      QStringLiteral("\\}"),      QStringLiteral("\\rbrace"), QStringLiteral("\\rangle"),
+      QStringLiteral("\\rceil"),  QStringLiteral("\\rfloor"), QStringLiteral("\\rgroup"),
+      QStringLiteral("\\rmoustache"), QStringLiteral("\\right"), QStringLiteral("\\bigr"),
+      QStringLiteral("\\biggr"),  QStringLiteral("\\Bigr"), QStringLiteral("\\Biggr"),
+      QStringLiteral("$"),        QStringLiteral(";"),       QStringLiteral("."),
+      QStringLiteral(",")};
+  return tokens.contains(token);
+}
 
 using MacroToken = MathMacroExpander::MacroToken;
 
@@ -224,7 +237,10 @@ QVector<MacroToken> applyArgs(QVector<MacroToken> body, const QVector<QVector<Ma
 MathMacroExpander::MathMacroExpander(MathSettings settings) : settings_(std::move(settings)) {
   defineMacro(QStringLiteral("\\lt"), QStringLiteral("<"));
   defineMacro(QStringLiteral("\\gt"), QStringLiteral(">"));
+  defineMacro(QStringLiteral("\\not"), QStringLiteral("\\mathrel{\\mathrlap{\\@not}}"));
+  defineMacro(QStringLiteral("\\neq"), QStringLiteral("\\mathrel{\\not=}"));
   defineMacro(QStringLiteral("\\ne"), QStringLiteral("\\neq"));
+  defineMacro(QString(QChar(0x2260)), QStringLiteral("\\neq"));
   defineMacro(QStringLiteral("\\land"), QStringLiteral("\\wedge"));
   defineMacro(QStringLiteral("\\lor"), QStringLiteral("\\vee"));
   defineMacro(QStringLiteral("\\gets"), QStringLiteral("\\leftarrow"));
@@ -239,18 +255,22 @@ MathMacroExpander::MathMacroExpander(MathSettings settings) : settings_(std::mov
   defineMacro(QStringLiteral("\\AA"), QStringLiteral("\\r A"));
   defineMacro(QStringLiteral("\\alef"), QStringLiteral("\\aleph"));
   defineMacro(QStringLiteral("\\alefsym"), QStringLiteral("\\aleph"));
-  defineMacro(QStringLiteral("\\And"), QStringLiteral("\\mathbin{\\&}"));
   defineMacro(QStringLiteral("\\implies"), QStringLiteral("\\DOTSB\\;\\Longrightarrow\\;"));
   defineMacro(QStringLiteral("\\impliedby"), QStringLiteral("\\DOTSB\\;\\Longleftarrow\\;"));
   defineMacro(QStringLiteral("\\iff"), QStringLiteral("\\DOTSB\\;\\Longleftrightarrow\\;"));
-  defineMacro(QStringLiteral("\\bmod"), QStringLiteral("\\mathbin{\\rm mod}"));
+  defineMacro(QStringLiteral("\\bmod"),
+              QStringLiteral("\\mathchoice{\\mskip1mu}{\\mskip1mu}{\\mskip5mu}{\\mskip5mu}"
+                             "\\mathbin{\\rm mod}"
+                             "\\mathchoice{\\mskip1mu}{\\mskip1mu}{\\mskip5mu}{\\mskip5mu}"));
   defineMacro(QStringLiteral("\\pod"), QStringLiteral("\\allowbreak\\mathchoice{\\mkern18mu}{\\mkern8mu}{\\mkern8mu}{\\mkern8mu}(#1)"), 1);
-  defineMacro(QStringLiteral("\\pmod"), QStringLiteral("\\pod{\\rm mod\\mkern6mu #1}"), 1);
-  defineMacro(QStringLiteral("\\mod"), QStringLiteral("\\allowbreak\\mathchoice{\\mkern18mu}{\\mkern12mu}{\\mkern12mu}{\\mkern12mu}{\\rm mod}\\mkern6mu #1"), 1);
+  defineMacro(QStringLiteral("\\pmod"), QStringLiteral("\\pod{{\\rm mod}\\mkern6mu#1}"), 1);
+  defineMacro(QStringLiteral("\\mod"),
+              QStringLiteral("\\allowbreak\\mathchoice{\\mkern18mu}{\\mkern12mu}{\\mkern12mu}{\\mkern12mu}"
+                             "{\\rm mod}\\,\\,#1"),
+              1);
   defineMacro(QStringLiteral("\\cr"), QStringLiteral("\\\\"));
   defineMacro(QStringLiteral("\\crcr"), QStringLiteral("\\\\"));
   defineMacro(QStringLiteral("\\DOTSB"), QStringLiteral(""));
-  defineMacro(QStringLiteral("\\allowbreak"), QStringLiteral(""));
   defineMacro(QStringLiteral("\\@firstoftwo"), QStringLiteral("#1"), 2);
   defineMacro(QStringLiteral("\\@secondoftwo"), QStringLiteral("#2"), 2);
   defineMacro(QStringLiteral("\\@ifstar"), QStringLiteral("\\@ifnextchar *{\\@firstoftwo{#1}}"), 1);
@@ -504,6 +524,21 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
       setMacro(name, Macro{second.text, 0, false}, globalPrefix);
     }
     stream.pushToken(first);
+    countExpansion(1, token.position, token.endPosition);
+    return true;
+  }
+
+  if (actualCommand == QStringLiteral("\\dotso") || actualCommand == QStringLiteral("\\dotsc") || actualCommand == QStringLiteral("\\cdots")) {
+    const QString next = stream.future().text;
+    QString replacement;
+    if (actualCommand == QStringLiteral("\\cdots")) {
+      replacement = spaceAfterDotsToken(next) ? QStringLiteral("\\@cdots\\,") : QStringLiteral("\\@cdots");
+    } else if (actualCommand == QStringLiteral("\\dotsc")) {
+      replacement = spaceAfterDotsToken(next) && next != QStringLiteral(",") ? QStringLiteral("\\ldots\\,") : QStringLiteral("\\ldots");
+    } else {
+      replacement = spaceAfterDotsToken(next) ? QStringLiteral("\\ldots\\,") : QStringLiteral("\\ldots");
+    }
+    stream.pushTokens(reversedTokensFromString(replacement, token.position));
     countExpansion(1, token.position, token.endPosition);
     return true;
   }

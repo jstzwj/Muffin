@@ -64,6 +64,25 @@ bool overlapsEdit(const SourceRange& range, qsizetype editStart, qsizetype editE
   return range.byteStart <= editEnd && range.byteEnd >= editStart;
 }
 
+bool isVirtualEmptyParagraph(const MarkdownNode& node) {
+  const SourceRange range = node.sourceRange();
+  return node.type() == BlockType::Paragraph && range.byteStart >= 0 && range.byteEnd == range.byteStart;
+}
+
+bool isOnlyNewlines(QStringView text) {
+  for (QChar ch : text) {
+    if (ch != QLatin1Char('\n')) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool isBlankLineStructuralEdit(QStringView removedText, QStringView insertedText) {
+  return isOnlyNewlines(removedText) && isOnlyNewlines(insertedText) &&
+         (removedText.contains(QLatin1Char('\n')) || insertedText.contains(QLatin1Char('\n')));
+}
+
 int countNewlines(QStringView text) {
   int count = 0;
   for (QChar ch : text) {
@@ -85,7 +104,7 @@ int lineForOffset(const QString& text, qsizetype offset) {
   return line;
 }
 
-TopLevelSlice chooseTopLevelSlice(const MarkdownDocument& document, qsizetype editStart, qsizetype editEnd) {
+TopLevelSlice chooseTopLevelSlice(const MarkdownDocument& document, qsizetype editStart, qsizetype editEnd, bool blankLineStructuralEdit) {
   TopLevelSlice slice;
   const auto& blocks = document.root().children();
   if (blocks.empty()) {
@@ -112,28 +131,42 @@ TopLevelSlice chooseTopLevelSlice(const MarkdownDocument& document, qsizetype ed
     }
   }
 
-  if (slice.first >= 0 && slice.count == 1) {
-    const MarkdownNode& only = *blocks.at(static_cast<size_t>(slice.first));
-    const SourceRange range = only.sourceRange();
-    if (only.type() == BlockType::Paragraph && range.byteStart == range.byteEnd) {
-      if (only.previousSibling()) {
-        --slice.first;
-        ++slice.count;
-        slice.sourceStart = only.previousSibling()->sourceRange().byteStart;
-        if (only.nextSibling()) {
-          ++slice.count;
-          slice.sourceEnd = only.nextSibling()->sourceRange().byteEnd;
-        } else {
-          slice.sourceEnd = document.markdownText().size();
-        }
-      } else if (only.nextSibling()) {
-        ++slice.count;
-        slice.sourceStart = 0;
-        slice.sourceEnd = only.nextSibling()->sourceRange().byteEnd;
-      } else {
-        slice.sourceStart = 0;
-        slice.sourceEnd = document.markdownText().size();
+  if (slice.first >= 0) {
+    bool onlyVirtualEmptyParagraphs = slice.count > 0;
+    for (qsizetype i = slice.first; i < slice.first + slice.count; ++i) {
+      if (!isVirtualEmptyParagraph(*blocks.at(static_cast<size_t>(i)))) {
+        onlyVirtualEmptyParagraphs = false;
+        break;
       }
+    }
+
+    if (onlyVirtualEmptyParagraphs) {
+      qsizetype selectedFirst = slice.first;
+      qsizetype selectedEnd = slice.first + slice.count;
+      if (blankLineStructuralEdit) {
+        while (selectedFirst > 0 && isVirtualEmptyParagraph(*blocks.at(static_cast<size_t>(selectedFirst - 1)))) {
+          --selectedFirst;
+        }
+        while (selectedEnd < static_cast<qsizetype>(blocks.size()) && isVirtualEmptyParagraph(*blocks.at(static_cast<size_t>(selectedEnd)))) {
+          ++selectedEnd;
+        }
+      }
+
+      qsizetype expandedFirst = selectedFirst;
+      qsizetype expandedEnd = selectedEnd;
+      if (expandedFirst > 0) {
+        --expandedFirst;
+      }
+      if (expandedEnd < static_cast<qsizetype>(blocks.size())) {
+        ++expandedEnd;
+      }
+
+      slice.first = expandedFirst;
+      slice.count = expandedEnd - expandedFirst;
+      slice.sourceStart = expandedFirst > 0 ? blocks.at(static_cast<size_t>(expandedFirst))->sourceRange().byteStart : 0;
+      slice.sourceEnd = expandedEnd < static_cast<qsizetype>(blocks.size())
+                            ? blocks.at(static_cast<size_t>(expandedEnd - 1))->sourceRange().byteEnd
+                            : document.markdownText().size();
     }
   }
 
@@ -518,7 +551,8 @@ bool DocumentSession::tryApplyTopLevelLocalEdit(
     const QVector<LocalEditNodeHint>& nodeHints) {
   PerfTimer perf("session.localParse");
   const QString& oldText = document_.markdownText();
-  TopLevelSlice slice = chooseTopLevelSlice(document_, sourceStart, sourceEnd);
+  const QStringView removedText = QStringView(oldText).mid(sourceStart, sourceEnd - sourceStart);
+  TopLevelSlice slice = chooseTopLevelSlice(document_, sourceStart, sourceEnd, isBlankLineStructuralEdit(removedText, replacementText));
   if (slice.first < 0 || slice.sourceStart < 0 || slice.sourceEnd < slice.sourceStart) {
     return false;
   }

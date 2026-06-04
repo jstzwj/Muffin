@@ -18,10 +18,12 @@ public:
   qreal sizeMultiplier() const;
   qreal fontPointSize() const;
   QColor color() const;
+  bool phantom() const;
   const MathSettings& settings() const;
 
   MathOptions havingStyle(MathStyle style) const;
   MathOptions withColor(QColor color) const;
+  MathOptions withPhantom() const;
   MathOptions havingSizeScale(qreal scale) const;
   MathOptions sup() const;
   MathOptions sub() const;
@@ -36,6 +38,7 @@ private:
   qreal basePointSize_ = 12.0;
   qreal sizeScale_ = 1.0;
   QColor color_ = Qt::black;
+  bool phantom_ = false;
   MathSettings settings_;
 };
 

@@ -1,0 +1,758 @@
+[
+  {
+    "id": "inline-energy",
+    "tex": "E=mc^2",
+    "display": false,
+    "mustContain": [
+      "Span",
+      "Symbol",
+      "VList"
+    ],
+    "compareKatexMetrics": true,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.01,
+    "glyphWidthToleranceEm": 0.01,
+    "heightToleranceEm": 0.02,
+    "depthToleranceEm": 0.02,
+    "shiftToleranceEm": 0.05
+  },
+  {
+    "id": "inline-scripts-spacing",
+    "tex": "a_1+b_1=c_1",
+    "display": false,
+    "mustContain": [
+      "VList",
+      "glue"
+    ],
+    "compareKatexMetrics": true,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.01,
+    "glyphWidthToleranceEm": 0.01,
+    "compareKatexInkBBox": true,
+    "inkBBoxWidthToleranceEm": 0.1,
+    "inkBBoxHeightToleranceEm": 0.2
+  },
+  {
+    "id": "text-fraction",
+    "tex": "\\frac{1}{3}",
+    "display": false,
+    "mustContain": [
+      "VList",
+      "Rule"
+    ],
+    "compareKatexMetrics": true,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.01,
+    "glyphWidthToleranceEm": 0.01,
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.05,
+    "bboxHeightToleranceEm": 0.06
+  },
+  {
+    "id": "display-integral-fraction",
+    "tex": "\\int_0^1 x^2\\,dx=\\frac{1}{3}",
+    "display": true,
+    "mustContain": [
+      "VList",
+      "Rule",
+      "size2"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "top-level-cr",
+    "tex": "a^2+b^2=c^2\\\\e^{i\\pi}+1=0",
+    "display": true,
+    "mustContain": [
+      "VList"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "aligned-basic",
+    "tex": "\\begin{aligned}a&=b\\\\c&=d\\end{aligned}",
+    "display": true,
+    "mustContain": [
+      "Array",
+      "VList"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "gathered-basic",
+    "tex": "\\begin{gathered}x+y\\\\z\\end{gathered}",
+    "display": true,
+    "mustContain": [
+      "Array",
+      "VList"
+    ],
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.02,
+    "bboxHeightToleranceEm": 0.02,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "cases-basic",
+    "tex": "\\begin{cases}x^2,&x>0\\\\0,&x=0\\end{cases}",
+    "display": true,
+    "mustContain": [
+      "Array",
+      "VList"
+    ],
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.01,
+    "bboxHeightToleranceEm": 0.01,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "pmatrix-basic",
+    "tex": "\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}",
+    "display": true,
+    "mustContain": [
+      "Array",
+      "VList"
+    ],
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.01,
+    "bboxHeightToleranceEm": 0.01,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "array-hline",
+    "tex": "\\begin{array}{|c:rl@{}c|}\\hline\\hdashline a&b&c&d\\cr e&f&g&h\\\\[0.4em]\\hline\\end{array}",
+    "display": true,
+    "mustContain": [
+      "Array",
+      "Rule",
+      "VList"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "sqrt-simple",
+    "tex": "\\sqrt{x}",
+    "display": false,
+    "mustContain": [
+      "VList",
+      "Stretchy"
+    ],
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "heightToleranceEm": 0.01,
+    "depthToleranceEm": 0.01,
+    "shiftToleranceEm": 0.05,
+    "bboxWidthToleranceEm": 0.01,
+    "bboxHeightToleranceEm": 0.1,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "sqrt-indexed",
+    "tex": "\\sqrt[3]{\\frac{a}{b}}",
+    "display": true,
+    "mustContain": [
+      "VList",
+      "Rule",
+      "Stretchy"
+    ],
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "heightToleranceEm": 0.01,
+    "depthToleranceEm": 0.01,
+    "shiftToleranceEm": 0.05,
+    "bboxWidthToleranceEm": 0.04,
+    "bboxHeightToleranceEm": 0.01,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "sum-limits",
+    "tex": "\\sum_{i=1}^{n} i",
+    "display": true,
+    "mustContain": [
+      "VList",
+      "size2"
+    ],
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true,
+    "bboxWidthToleranceEm": 0.01,
+    "bboxHeightToleranceEm": 0.01,
+    "inkBBoxWidthToleranceEm": 0.18,
+    "inkBBoxHeightToleranceEm": 0.18,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "lim-limits",
+    "tex": "\\lim_{x\\to0}\\frac{\\sin x}{x}=1",
+    "display": true,
+    "mustContain": [
+      "VList",
+      "Rule"
+    ],
+    "compareKatexMetrics": true,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.02,
+    "glyphWidthToleranceEm": 0.02,
+    "heightToleranceEm": 0.01,
+    "depthToleranceEm": 0.01,
+    "shiftToleranceEm": 0.01,
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.01,
+    "bboxHeightToleranceEm": 0.01
+  },
+  {
+    "id": "left-right-tall",
+    "tex": "\\left(\\frac{\\frac{a}{b}}{\\frac{c}{d}}\\right)",
+    "display": true,
+    "mustContain": [
+      "LeftRight",
+      "VList",
+      "Rule"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "wide-accent",
+    "tex": "\\widehat{abcdef}+\\widetilde{abcdef}",
+    "display": true,
+    "mustContain": [
+      "Stretchy"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "horiz-brace",
+    "tex": "\\underbrace{x+y}_{n}+\\overbrace{a+b}^{m}",
+    "display": true,
+    "mustContain": [
+      "Stretchy",
+      "VList"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "genfrac-binom",
+    "tex": "\\binom{n}{k}+{x\\atop y}+{p\\brace q}+{r\\brack s}",
+    "display": true,
+    "mustContain": [
+      "VList"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "mclass-spacing",
+    "tex": "\\mathrel{=}+\\mathbin{+}+\\mathinner{\\left(x\\right)}y",
+    "display": false,
+    "mustContain": [
+      "glue",
+      "LeftRight"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "color-text-font",
+    "tex": "\\textcolor{red}{\\frac{1}{2}}+\\mathbf{B}+\\mathit{x}+\\text{hello}",
+    "display": false,
+    "mustContain": [
+      "Rule",
+      "Symbol"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "supsub-both",
+    "tex": "x_i^2+y_{n+1}^{m-1}",
+    "display": false,
+    "mustContain": [
+      "VList"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.02,
+    "glyphWidthToleranceEm": 0.02,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true,
+    "bboxWidthToleranceEm": 0.9,
+    "bboxHeightToleranceEm": 0.5,
+    "inkBBoxWidthToleranceEm": 0.08,
+    "inkBBoxHeightToleranceEm": 0.35
+  },
+  {
+    "id": "nested-scripts",
+    "tex": "a_{b_c}^{d^e}",
+    "display": false,
+    "mustContain": [
+      "VList"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.02,
+    "glyphWidthToleranceEm": 0.02
+  },
+  {
+    "id": "nested-fraction",
+    "tex": "\\frac{\\frac{a}{b}}{c+\\frac{d}{e}}",
+    "display": true,
+    "mustContain": [
+      "VList",
+      "Rule"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "sqrt-nested",
+    "tex": "\\sqrt{1+\\sqrt{x}}",
+    "display": false,
+    "mustContain": [
+      "VList",
+      "Stretchy"
+    ],
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.02,
+    "bboxHeightToleranceEm": 0.11,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "integral-gaussian",
+    "tex": "\\int_{-\\infty}^{\\infty} e^{-x^2}\\,dx",
+    "display": true,
+    "mustContain": [
+      "VList",
+      "size2"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "prod-limits",
+    "tex": "\\prod_{k=1}^{n} k",
+    "display": true,
+    "mustContain": [
+      "VList",
+      "size2"
+    ],
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true,
+    "bboxWidthToleranceEm": 0.01,
+    "bboxHeightToleranceEm": 0.01,
+    "inkBBoxWidthToleranceEm": 0.25,
+    "inkBBoxHeightToleranceEm": 0.2,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "operatorname-rank",
+    "tex": "\\operatorname{rank}_A B+\\lim_{x\\to0}x",
+    "display": true,
+    "mustContain": [
+      "VList",
+      "Symbol"
+    ],
+    "compareKatexMetrics": true,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.02,
+    "glyphWidthToleranceEm": 0.02,
+    "heightToleranceEm": 0.01,
+    "depthToleranceEm": 0.01,
+    "shiftToleranceEm": 0.01
+  },
+  {
+    "id": "norm-delimiters",
+    "tex": "\\left\\lVert \\frac{x}{y}\\right\\rVert",
+    "display": true,
+    "mustContain": [
+      "LeftRight",
+      "VList",
+      "Rule"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "big-delimiters",
+    "tex": "\\Bigl(\\frac{a}{b}\\Bigr)+\\biggl[\\frac{c}{d}\\biggr]",
+    "display": true,
+    "mustContain": [
+      "VList",
+      "Rule"
+    ],
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.01,
+    "bboxHeightToleranceEm": 0.01,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "array-simple",
+    "tex": "\\begin{array}{cc}a&b\\\\c&d\\end{array}",
+    "display": true,
+    "mustContain": [
+      "Array",
+      "VList"
+    ],
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.01,
+    "bboxHeightToleranceEm": 0.01,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "array-lines",
+    "tex": "\\begin{array}{|c|r|}\\hline a&b\\\\\\hline c&d\\\\\\hline\\end{array}",
+    "display": true,
+    "mustContain": [
+      "Array",
+      "Rule",
+      "VList"
+    ],
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.05,
+    "bboxHeightToleranceEm": 0.05,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "smallmatrix-basic",
+    "tex": "\\begin{smallmatrix}1&2\\\\3&4\\end{smallmatrix}",
+    "display": false,
+    "mustContain": [
+      "Array",
+      "VList"
+    ],
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.02,
+    "bboxHeightToleranceEm": 0.13,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "text-fraction-words",
+    "tex": "\\text{rate}=\\frac{\\text{distance}}{\\text{time}}",
+    "display": false,
+    "mustContain": [
+      "Rule",
+      "Symbol"
+    ],
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.02,
+    "bboxHeightToleranceEm": 0.1,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "font-classes",
+    "tex": "\\mathbb{R}+\\mathcal{F}+\\mathfrak{g}+\\mathtt{x}",
+    "display": false,
+    "mustContain": [
+      "Symbol"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "accent-basic",
+    "tex": "\\hat{x}+\\bar{y}+\\vec{z}",
+    "display": false,
+    "mustContain": [
+      "Accent"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "wide-accent-long",
+    "tex": "\\widehat{xyzuvw}+\\widetilde{abcdef}",
+    "display": true,
+    "mustContain": [
+      "Stretchy"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "line-accent",
+    "tex": "\\overline{x+y}+\\underline{a+b}",
+    "display": true,
+    "mustContain": [
+      "Rule"
+    ],
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.02,
+    "bboxHeightToleranceEm": 0.06,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "brace-long",
+    "tex": "\\underbrace{x+\\cdots+x}_{n}+\\overbrace{1+\\cdots+1}^{m}",
+    "display": true,
+    "mustContain": [
+      "Stretchy",
+      "VList"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "binom-choose",
+    "tex": "\\binom{n}{k}={n\\choose k}",
+    "display": true,
+    "mustContain": [
+      "VList"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "genfrac-brackets",
+    "tex": "\\genfrac{[}{]}{0.08em}{0}{a}{b}+\\genfrac{\\{}{}{0pt}{}{x}{y}",
+    "display": true,
+    "mustContain": [
+      "VList",
+      "Rule"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "spacing-commands",
+    "tex": "a\\,b\\;c\\quad d\\!e",
+    "display": false,
+    "mustContain": [
+      "Symbol"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.02,
+    "glyphWidthToleranceEm": 0.02
+  },
+  {
+    "id": "phantom-family",
+    "tex": "a+\\phantom{bbb}+c+\\hphantom{xx}+\\vphantom{\\frac{1}{2}}",
+    "display": false,
+    "mustContain": [
+      "Phantom"
+    ],
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.02,
+    "bboxHeightToleranceEm": 0.06,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "lap-family",
+    "tex": "\\mathllap{a}b+\\mathrlap{c}d+\\mathclap{e}f",
+    "display": false,
+    "mustContain": [
+      "Span"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "raisebox-vcenter",
+    "tex": "\\raisebox{0.2em}{x}+\\vcenter{\\frac{a}{b}}",
+    "display": false,
+    "mustContain": [
+      "VList",
+      "Rule"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "enclose-family",
+    "tex": "\\cancel{x}+\\bcancel{y}+\\boxed{z}",
+    "display": false,
+    "mustContain": [
+      "Stretchy"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "macro-high-frequency",
+    "tex": "\\pmod{n}+\\bmod x+\\iff+\\implies+\\impliedby+\\And+\\alef",
+    "display": false,
+    "mustContain": [
+      "Symbol"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "style-switches",
+    "tex": "\\scriptstyle \\frac{a}{b}+\\displaystyle \\sum_{i=1}^{n}i",
+    "display": true,
+    "mustContain": [
+      "VList",
+      "Rule"
+    ],
+    "compareKatexInkBBox": true,
+    "inkBBoxHeightToleranceEm": 0.15,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "left-right-braces",
+    "tex": "\\left\\{\\begin{array}{cc}a&b\\\\c&d\\end{array}\\right\\}",
+    "display": true,
+    "mustContain": [
+      "LeftRight",
+      "Array",
+      "VList"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "greek-relations",
+    "tex": "\\alpha+\\beta=\\gamma,\\quad x\\le y\\ne z\\to w",
+    "display": false,
+    "mustContain": [
+      "Symbol",
+      "glue"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.03,
+    "glyphWidthToleranceEm": 0.03
+  },
+  {
+    "id": "script-fraction-mix",
+    "tex": "A_{i,j}^{k+1}+\\frac{x_i^2+y_i^2}{z_i}",
+    "display": false,
+    "mustContain": [
+      "VList",
+      "Rule",
+      "glue"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.03,
+    "glyphWidthToleranceEm": 0.02,
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.05,
+    "bboxHeightToleranceEm": 0.08
+  },
+  {
+    "id": "display-bigops-chain",
+    "tex": "\\sum_{i=1}^{n} i^2+\\prod_{j=1}^{m} j+\\lim_{x\\to0}\\frac{\\sin x}{x}",
+    "display": true,
+    "mustContain": [
+      "VList",
+      "Rule",
+      "size2"
+    ],
+    "compareKatexBBox": true,
+    "bboxWidthToleranceEm": 0.05,
+    "bboxHeightToleranceEm": 0.05,
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "matrix-delimiter-fraction",
+    "tex": "\\left[\\begin{matrix}\\frac{a}{b}&c^2\\\\d&e_f\\end{matrix}\\right]",
+    "display": true,
+    "mustContain": [
+      "LeftRight",
+      "Array",
+      "VList",
+      "Rule"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "cases-text-complex",
+    "tex": "f(x)=\\begin{cases}\\frac{x^2-1}{x-1},&x\\ne1\\\\2,&x=1\\end{cases}",
+    "display": true,
+    "mustContain": [
+      "Array",
+      "VList",
+      "Rule"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "accent-sqrt-delim",
+    "tex": "\\left|\\widehat{xy}+\\sqrt{a_b^2+c_d^2}\\right|",
+    "display": true,
+    "mustContain": [
+      "LeftRight",
+      "Stretchy",
+      "VList"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  },
+  {
+    "id": "font-text-operators",
+    "tex": "\\mathbf{F}_{\\text{net}}=m\\mathbf{a},\\quad \\operatorname{tr}(A^TB)",
+    "display": false,
+    "mustContain": [
+      "Symbol",
+      "VList",
+      "glue"
+    ],
+    "compareKatexGlyphs": true,
+    "glyphXToleranceEm": 0.05,
+    "glyphWidthToleranceEm": 0.05
+  }
+]

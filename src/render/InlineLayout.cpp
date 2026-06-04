@@ -11,6 +11,8 @@
 namespace muffin {
 namespace {
 
+constexpr QChar kInlineMathPlaceholder(0x00a0);
+
 QString flattenPlainText(const QVector<InlineNode>& inlines) {
   QString text;
   for (const InlineNode& node : inlines) {
@@ -102,6 +104,17 @@ qsizetype InlineLayout::hitTestTextOffset(QPointF localPos) const {
 
 qsizetype InlineLayout::hitTestSourceOffset(QPointF localPos) const {
   const qsizetype position = textLayoutDisplayOffsetForPoint(localPos);
+  for (const MathAtom& atom : mathAtoms_) {
+    if (position < atom.displayStart || position > atom.displayEnd) {
+      continue;
+    }
+    const QRectF atomRect = textLayoutCursorRectForDisplayOffset(atom.displayStart)
+                                .united(textLayoutCursorRectForDisplayOffset(atom.displayEnd));
+    if (!atomRect.isNull() && localPos.x() > atomRect.center().x()) {
+      return atom.sourceEnd;
+    }
+    return atom.sourceStart;
+  }
   qsizetype sourceOffset = -1;
   if (projection_.sourceOffsetForDisplayOffset(position, sourceOffset)) {
     return sourceOffset;
@@ -110,10 +123,22 @@ qsizetype InlineLayout::hitTestSourceOffset(QPointF localPos) const {
 }
 
 QRectF InlineLayout::cursorRect(qsizetype textOffset) const {
+  for (const MathAtom& atom : mathAtoms_) {
+    if (textOffset > atom.visibleStart && textOffset < atom.visibleEnd) {
+      textOffset = textOffset - atom.visibleStart < atom.visibleEnd - textOffset ? atom.visibleStart : atom.visibleEnd;
+      break;
+    }
+  }
   return textLayoutCursorRectForDisplayOffset(displayOffsetForVisibleOffset(textOffset));
 }
 
 QRectF InlineLayout::cursorRectForSourceOffset(qsizetype sourceOffset) const {
+  for (const MathAtom& atom : mathAtoms_) {
+    if (sourceOffset > atom.sourceStart && sourceOffset < atom.sourceEnd) {
+      const qsizetype displayOffset = sourceOffset - atom.sourceStart < atom.sourceEnd - sourceOffset ? atom.displayStart : atom.displayEnd;
+      return textLayoutCursorRectForDisplayOffset(displayOffset);
+    }
+  }
   qsizetype displayOffset = -1;
   if (!projection_.displayOffsetForSourceOffset(sourceOffset, displayOffset)) {
     return cursorRect(sourceOffset);
@@ -256,13 +281,15 @@ void InlineLayout::buildMathAtoms(const QVector<InlineNode>& inlines, const Rend
       continue;
     }
 
-    const QFontMetricsF metrics(theme.mathFont());
-    const int placeholderCount = qMax(1, static_cast<int>(std::ceil(layout->size.width() / qMax<qreal>(1.0, metrics.horizontalAdvance(QLatin1Char(' '))))));
     const qsizetype displayStart = rebuiltDisplay.size();
-    rebuiltDisplay += QString(placeholderCount, QLatin1Char(' '));
+    rebuiltDisplay += kInlineMathPlaceholder;
     MathAtom atom;
     atom.displayStart = displayStart;
     atom.displayEnd = rebuiltDisplay.size();
+    atom.sourceStart = span.sourceStart;
+    atom.sourceEnd = span.sourceEnd;
+    atom.contentSourceStart = span.contentSourceStart;
+    atom.contentSourceEnd = span.contentSourceEnd;
     atom.visibleStart = span.visibleStart;
     atom.visibleEnd = span.visibleEnd;
     atom.layout = std::move(layout);
@@ -334,9 +361,21 @@ void InlineLayout::paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) c
     if (!atom.layout || !atom.layout->valid()) {
       continue;
     }
-    const QRectF cursor = textLayoutCursorRectForDisplayOffset(atom.displayStart);
-    atom.layout->paint(painter, QPointF(origin.x() + cursor.left(),
-                                        origin.y() + cursor.top() + qMax<qreal>(0.0, (cursor.height() - atom.layout->size.height()) / 2.0)));
+    for (int i = 0; i < textLayout_->lineCount(); ++i) {
+      const QTextLine line = textLayout_->lineAt(i);
+      if (!line.isValid()) {
+        continue;
+      }
+      const int lineStart = line.textStart();
+      const int lineEnd = lineStart + line.textLength();
+      if (atom.displayStart < lineStart || atom.displayStart > lineEnd) {
+        continue;
+      }
+      const qreal x = line.cursorToX(static_cast<int>(atom.displayStart));
+      const qreal baseline = origin.y() + line.y() + line.ascent();
+      atom.layout->paint(painter, QPointF(origin.x() + x, baseline - atom.layout->baseline));
+      break;
+    }
   }
 }
 
@@ -399,6 +438,29 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     range.format = format;
     formats.push_back(range);
   }
+
+  for (const MathAtom& atom : mathAtoms_) {
+    if (!atom.layout || !atom.layout->valid() || atom.displayEnd <= atom.displayStart) {
+      continue;
+    }
+    QFont placeholderFont = baseFont;
+    const QFontMetricsF baseMetrics(baseFont);
+    if (baseMetrics.height() > 0.0 && atom.layout->size.height() > baseMetrics.height() && baseFont.pointSizeF() > 0.0) {
+      placeholderFont.setPointSizeF(baseFont.pointSizeF() * atom.layout->size.height() / baseMetrics.height());
+    }
+    const QFontMetricsF placeholderMetrics(placeholderFont);
+    const qreal placeholderAdvance = placeholderMetrics.horizontalAdvance(kInlineMathPlaceholder);
+    placeholderFont.setLetterSpacing(QFont::AbsoluteSpacing, atom.layout->size.width() - placeholderAdvance);
+
+    QTextCharFormat format = baseFormat;
+    format.setFont(placeholderFont);
+    format.setForeground(QColor(Qt::transparent));
+    QTextLayout::FormatRange range;
+    range.start = static_cast<int>(atom.displayStart);
+    range.length = static_cast<int>(atom.displayEnd - atom.displayStart);
+    range.format = format;
+    formats.push_back(range);
+  }
   return formats;
 }
 
@@ -407,6 +469,11 @@ qsizetype InlineLayout::visibleOffsetForDisplayOffset(qsizetype displayOffset) c
     return qBound<qsizetype>(0, displayOffset, plainText_.size());
   }
   displayOffset = qBound<qsizetype>(0, displayOffset, displayText_.size());
+  for (const MathAtom& atom : mathAtoms_) {
+    if (displayOffset > atom.displayStart && displayOffset < atom.displayEnd) {
+      return atom.visibleEnd;
+    }
+  }
   for (const OffsetMapEntry& entry : offsetMap_) {
     if (displayOffset <= entry.displayEnd) {
       if (entry.visibleEnd <= entry.visibleStart || entry.displayEnd <= entry.displayStart) {
@@ -424,6 +491,11 @@ qsizetype InlineLayout::displayOffsetForVisibleOffset(qsizetype visibleOffset) c
     return qBound<qsizetype>(0, visibleOffset, plainText_.size());
   }
   visibleOffset = qBound<qsizetype>(0, visibleOffset, plainText_.size());
+  for (const MathAtom& atom : mathAtoms_) {
+    if (visibleOffset > atom.visibleStart && visibleOffset < atom.visibleEnd) {
+      return atom.displayEnd;
+    }
+  }
   for (const OffsetMapEntry& entry : offsetMap_) {
     if (visibleOffset <= entry.visibleEnd) {
       if (entry.visibleEnd <= entry.visibleStart || entry.displayEnd <= entry.displayStart) {

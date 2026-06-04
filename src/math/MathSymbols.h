@@ -9,7 +9,7 @@ namespace muffin::math {
 struct MathSymbolInfo {
   QString replacement;
   MathNodeType type = MathNodeType::Ord;
-  QString fontClass = QStringLiteral("mathit");
+  QString fontClass = QStringLiteral("mathnormal");
   bool known = false;
 };
 

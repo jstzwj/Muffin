@@ -19,6 +19,11 @@ struct GlobalFontMetrics {
   qreal xHeight = 0.431;
   qreal quad = 1.0;
   qreal defaultRuleThickness = 0.04;
+  qreal bigOpSpacing1 = 0.111;
+  qreal bigOpSpacing2 = 0.166;
+  qreal bigOpSpacing3 = 0.200;
+  qreal bigOpSpacing4 = 0.600;
+  qreal bigOpSpacing5 = 0.100;
   qreal sqrtRuleThickness = 0.04;
   qreal ptPerEm = 10.0;
   qreal arrayRuleWidth = 0.04;

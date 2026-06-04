@@ -15,6 +15,7 @@ enum class MathNodeType {
   Open,
   Close,
   Punct,
+  Inner,
   Spacing,
   Group,
   SupSub,
@@ -47,6 +48,7 @@ enum class MathNodeType {
   Tag,
   Verb,
   Text,
+  Cr,
   Error
 };
 
@@ -96,6 +98,7 @@ struct MathParseNode {
   QVector<int> horizontalLines;
   QString columnAlignments;
   QString colSeparationType;
+  QString arrayCellStyle;
   QString leftDelim;
   QString rightDelim;
   QString color;

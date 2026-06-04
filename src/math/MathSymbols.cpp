@@ -14,37 +14,37 @@ QHash<QString, MathSymbolInfo> buildSymbols() {
     s.insert(token, MathSymbolInfo{replacement, type, fontClass, true});
   };
 
-  add(QStringLiteral("\\alpha"), QStringLiteral("\u03b1"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\beta"), QStringLiteral("\u03b2"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\gamma"), QStringLiteral("\u03b3"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\delta"), QStringLiteral("\u03b4"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\epsilon"), QStringLiteral("\u03f5"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\varepsilon"), QStringLiteral("\u03b5"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\theta"), QStringLiteral("\u03b8"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\lambda"), QStringLiteral("\u03bb"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\mu"), QStringLiteral("\u03bc"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\pi"), QStringLiteral("\u03c0"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\rho"), QStringLiteral("\u03c1"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\sigma"), QStringLiteral("\u03c3"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\tau"), QStringLiteral("\u03c4"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\phi"), QStringLiteral("\u03d5"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\varphi"), QStringLiteral("\u03c6"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\omega"), QStringLiteral("\u03c9"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\zeta"), QStringLiteral("\u03b6"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\eta"), QStringLiteral("\u03b7"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\iota"), QStringLiteral("\u03b9"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\kappa"), QStringLiteral("\u03ba"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\nu"), QStringLiteral("\u03bd"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\xi"), QStringLiteral("\u03be"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\omicron"), QStringLiteral("\u03bf"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\upsilon"), QStringLiteral("\u03c5"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\chi"), QStringLiteral("\u03c7"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\psi"), QStringLiteral("\u03c8"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\digamma"), QStringLiteral("\u03dd"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\vartheta"), QStringLiteral("\u03d1"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\varpi"), QStringLiteral("\u03d6"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\varrho"), QStringLiteral("\u03f1"), MathNodeType::Ord, QStringLiteral("mathit"));
-  add(QStringLiteral("\\varsigma"), QStringLiteral("\u03c2"), MathNodeType::Ord, QStringLiteral("mathit"));
+  add(QStringLiteral("\\alpha"), QStringLiteral("\u03b1"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\beta"), QStringLiteral("\u03b2"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\gamma"), QStringLiteral("\u03b3"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\delta"), QStringLiteral("\u03b4"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\epsilon"), QStringLiteral("\u03f5"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\varepsilon"), QStringLiteral("\u03b5"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\theta"), QStringLiteral("\u03b8"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\lambda"), QStringLiteral("\u03bb"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\mu"), QStringLiteral("\u03bc"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\pi"), QStringLiteral("\u03c0"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\rho"), QStringLiteral("\u03c1"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\sigma"), QStringLiteral("\u03c3"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\tau"), QStringLiteral("\u03c4"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\phi"), QStringLiteral("\u03d5"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\varphi"), QStringLiteral("\u03c6"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\omega"), QStringLiteral("\u03c9"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\zeta"), QStringLiteral("\u03b6"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\eta"), QStringLiteral("\u03b7"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\iota"), QStringLiteral("\u03b9"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\kappa"), QStringLiteral("\u03ba"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\nu"), QStringLiteral("\u03bd"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\xi"), QStringLiteral("\u03be"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\omicron"), QStringLiteral("\u03bf"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\upsilon"), QStringLiteral("\u03c5"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\chi"), QStringLiteral("\u03c7"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\psi"), QStringLiteral("\u03c8"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\digamma"), QStringLiteral("\u03dd"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\vartheta"), QStringLiteral("\u03d1"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\varpi"), QStringLiteral("\u03d6"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\varrho"), QStringLiteral("\u03f1"), MathNodeType::Ord, QStringLiteral("mathnormal"));
+  add(QStringLiteral("\\varsigma"), QStringLiteral("\u03c2"), MathNodeType::Ord, QStringLiteral("mathnormal"));
   add(QStringLiteral("\\Gamma"), QStringLiteral("\u0393"), MathNodeType::Ord);
   add(QStringLiteral("\\Delta"), QStringLiteral("\u0394"), MathNodeType::Ord);
   add(QStringLiteral("\\Theta"), QStringLiteral("\u0398"), MathNodeType::Ord);
@@ -88,8 +88,8 @@ QHash<QString, MathSymbolInfo> buildSymbols() {
   add(QStringLiteral("\\leq"), QStringLiteral("\u2264"), MathNodeType::Relation);
   add(QStringLiteral("\\ge"), QStringLiteral("\u2265"), MathNodeType::Relation);
   add(QStringLiteral("\\geq"), QStringLiteral("\u2265"), MathNodeType::Relation);
-  add(QStringLiteral("\\ne"), QStringLiteral("\u2260"), MathNodeType::Relation);
-  add(QStringLiteral("\\neq"), QStringLiteral("\u2260"), MathNodeType::Relation);
+  add(QStringLiteral("\\ne"), QStringLiteral("\u2260"), MathNodeType::Relation, QStringLiteral("main"));
+  add(QStringLiteral("\\neq"), QStringLiteral("\u2260"), MathNodeType::Relation, QStringLiteral("main"));
   add(QStringLiteral("\\equiv"), QStringLiteral("\u2261"), MathNodeType::Relation);
   add(QStringLiteral("\\in"), QStringLiteral("\u2208"), MathNodeType::Relation);
   add(QStringLiteral("\\notin"), QStringLiteral("\u2209"), MathNodeType::Relation);
@@ -105,6 +105,7 @@ QHash<QString, MathSymbolInfo> buildSymbols() {
   add(QStringLiteral("\\sim"), QStringLiteral("\u223c"), MathNodeType::Relation);
   add(QStringLiteral("\\simeq"), QStringLiteral("\u2243"), MathNodeType::Relation);
   add(QStringLiteral("\\cong"), QStringLiteral("\u2245"), MathNodeType::Relation);
+  add(QStringLiteral("\\@not"), QString(QChar(0xe020)), MathNodeType::Relation, QStringLiteral("main"));
   add(QStringLiteral("\\propto"), QStringLiteral("\u221d"), MathNodeType::Relation);
   add(QStringLiteral("\\models"), QStringLiteral("\u22a8"), MathNodeType::Relation);
   add(QStringLiteral("\\perp"), QStringLiteral("\u22a5"), MathNodeType::Relation);
@@ -167,9 +168,7 @@ QHash<QString, MathSymbolInfo> buildSymbols() {
   add(QStringLiteral("\\diamondsuit"), QStringLiteral("\u2662"), MathNodeType::Ord);
   add(QStringLiteral("\\heartsuit"), QStringLiteral("\u2661"), MathNodeType::Ord);
   add(QStringLiteral("\\spadesuit"), QStringLiteral("\u2660"), MathNodeType::Ord);
-  add(QStringLiteral("\\dots"), QStringLiteral("\u2026"), MathNodeType::Ord);
-  add(QStringLiteral("\\ldots"), QStringLiteral("\u2026"), MathNodeType::Ord);
-  add(QStringLiteral("\\cdots"), QStringLiteral("\u22ef"), MathNodeType::Ord);
+  add(QStringLiteral("\\ldots"), QStringLiteral("\u2026"), MathNodeType::Inner, QStringLiteral("main"));
 
   add(QStringLiteral("\\sum"), QStringLiteral("\u2211"), MathNodeType::Operator);
   add(QStringLiteral("\\prod"), QStringLiteral("\u220f"), MathNodeType::Operator);
@@ -249,8 +248,16 @@ QHash<QString, MathSymbolInfo> buildSymbols() {
   add(QStringLiteral("\\,"), QStringLiteral(" "), MathNodeType::Spacing);
   add(QStringLiteral("\\;"), QStringLiteral(" "), MathNodeType::Spacing);
   add(QStringLiteral("\\:"), QStringLiteral(" "), MathNodeType::Spacing);
+  add(QStringLiteral("\\!"), QStringLiteral(""), MathNodeType::Spacing);
+  add(QStringLiteral("\\thinspace"), QStringLiteral(" "), MathNodeType::Spacing);
+  add(QStringLiteral("\\medspace"), QStringLiteral(" "), MathNodeType::Spacing);
+  add(QStringLiteral("\\thickspace"), QStringLiteral(" "), MathNodeType::Spacing);
+  add(QStringLiteral("\\negthinspace"), QStringLiteral(""), MathNodeType::Spacing);
+  add(QStringLiteral("\\negmedspace"), QStringLiteral(""), MathNodeType::Spacing);
+  add(QStringLiteral("\\negthickspace"), QStringLiteral(""), MathNodeType::Spacing);
   add(QStringLiteral("\\quad"), QStringLiteral(" "), MathNodeType::Spacing);
   add(QStringLiteral("\\qquad"), QStringLiteral("  "), MathNodeType::Spacing);
+  add(QStringLiteral("\\allowbreak"), QStringLiteral(""), MathNodeType::Spacing);
   return s;
 }
 
@@ -307,11 +314,13 @@ QString resolveSymbolConstant(const QString& value) {
 }
 
 MathNodeType nodeTypeForKatexGroup(const QString& group) {
+  if (group == QStringLiteral("textord")) return MathNodeType::Text;
   if (group == QStringLiteral("bin")) return MathNodeType::Binary;
   if (group == QStringLiteral("rel")) return MathNodeType::Relation;
   if (group == QStringLiteral("open")) return MathNodeType::Open;
   if (group == QStringLiteral("close")) return MathNodeType::Close;
   if (group == QStringLiteral("punct")) return MathNodeType::Punct;
+  if (group == QStringLiteral("inner")) return MathNodeType::Inner;
   if (group == QStringLiteral("spacing")) return MathNodeType::Spacing;
   if (group == QStringLiteral("op-token")) return MathNodeType::Operator;
   return MathNodeType::Ord;
@@ -324,7 +333,7 @@ QString fontClassForKatexFont(const QString& font) {
   if (font == QStringLiteral("main")) {
     return QStringLiteral("main");
   }
-  return QStringLiteral("mathit");
+  return QStringLiteral("mathnormal");
 }
 
 QStringList splitDefineSymbolArgs(const QString& args) {
@@ -389,6 +398,10 @@ void addKatexSymbols(QHash<QString, MathSymbolInfo>& symbols) {
     const QString group = resolveSymbolConstant(args.at(2));
     const QString replacement = unescapeSymbolString(args.at(3));
     const QString name = unescapeSymbolString(args.at(4));
+    if (args.at(3).trimmed() == QStringLiteral("ch") || args.at(3).trimmed() == QStringLiteral("wideChar") ||
+        args.at(4).trimmed() == QStringLiteral("ch") || args.at(4).trimmed() == QStringLiteral("wideChar")) {
+      continue;
+    }
     const bool acceptUnicode = args.size() >= 6 && args.at(5).trimmed() == QStringLiteral("true");
     const MathSymbolInfo info{replacement, nodeTypeForKatexGroup(group), fontClassForKatexFont(font), true};
     symbols.insert(name, info);
@@ -430,7 +443,7 @@ MathSymbolInfo lookupSymbol(const QString& token) {
       return {token, MathNodeType::Ord, QStringLiteral("main"), true};
     }
     if (c.isLetter()) {
-      return {token, MathNodeType::Ord, QStringLiteral("mathit"), true};
+      return {token, MathNodeType::Ord, QStringLiteral("mathnormal"), true};
     }
     return {token, MathNodeType::Ord, QStringLiteral("main"), true};
   }

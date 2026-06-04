@@ -50,6 +50,11 @@ automoc/
 *.pgc
 *.pgd
 
+# ======================== Node / Playwright ========================
+node_modules/
+playwright-report/
+test-results/
+
 # ======================== IDE / Editor ========================
 # Visual Studio
 .vs/

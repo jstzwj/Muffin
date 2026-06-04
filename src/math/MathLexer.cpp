@@ -5,6 +5,9 @@ namespace muffin::math {
 MathLexer::MathLexer(QString input) : input_(std::move(input)) {}
 
 MathToken MathLexer::peek() {
+  if (!pushed_.isEmpty()) {
+    return pushed_.last();
+  }
   if (!hasLookahead_) {
     lookahead_ = readToken();
     hasLookahead_ = true;
@@ -19,7 +22,15 @@ MathToken MathLexer::next() {
 }
 
 void MathLexer::consume() {
+  if (!pushed_.isEmpty()) {
+    pushed_.removeLast();
+    return;
+  }
   hasLookahead_ = false;
+}
+
+void MathLexer::pushFront(MathToken token) {
+  pushed_.push_back(std::move(token));
 }
 
 bool MathLexer::atEnd() {

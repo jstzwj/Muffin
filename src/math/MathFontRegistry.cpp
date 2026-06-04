@@ -18,10 +18,19 @@ void MathFontRegistry::ensureLoaded() {
       QStringLiteral(":/katex/fonts/KaTeX_Main-Italic.ttf"),
       QStringLiteral(":/katex/fonts/KaTeX_Math-Italic.ttf"),
       QStringLiteral(":/katex/fonts/KaTeX_AMS-Regular.ttf"),
+      QStringLiteral(":/katex/fonts/KaTeX_Caligraphic-Bold.ttf"),
+      QStringLiteral(":/katex/fonts/KaTeX_Caligraphic-Regular.ttf"),
+      QStringLiteral(":/katex/fonts/KaTeX_Fraktur-Bold.ttf"),
+      QStringLiteral(":/katex/fonts/KaTeX_Fraktur-Regular.ttf"),
+      QStringLiteral(":/katex/fonts/KaTeX_SansSerif-Bold.ttf"),
+      QStringLiteral(":/katex/fonts/KaTeX_SansSerif-Italic.ttf"),
+      QStringLiteral(":/katex/fonts/KaTeX_SansSerif-Regular.ttf"),
+      QStringLiteral(":/katex/fonts/KaTeX_Script-Regular.ttf"),
       QStringLiteral(":/katex/fonts/KaTeX_Size1-Regular.ttf"),
       QStringLiteral(":/katex/fonts/KaTeX_Size2-Regular.ttf"),
       QStringLiteral(":/katex/fonts/KaTeX_Size3-Regular.ttf"),
       QStringLiteral(":/katex/fonts/KaTeX_Size4-Regular.ttf"),
+      QStringLiteral(":/katex/fonts/KaTeX_Typewriter-Regular.ttf"),
   };
   for (const QString& font : fonts) {
     QFontDatabase::addApplicationFont(font);

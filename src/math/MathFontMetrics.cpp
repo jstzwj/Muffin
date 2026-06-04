@@ -121,6 +121,11 @@ GlobalFontMetrics MathFontMetrics::globalMetrics(int styleSize) {
   metrics.xHeight = 0.431;
   metrics.quad = pick(1.0, 1.171, 1.472);
   metrics.defaultRuleThickness = pick(0.04, 0.049, 0.049);
+  metrics.bigOpSpacing1 = pick(0.111, 0.111, 0.111);
+  metrics.bigOpSpacing2 = pick(0.166, 0.166, 0.166);
+  metrics.bigOpSpacing3 = pick(0.200, 0.200, 0.200);
+  metrics.bigOpSpacing4 = pick(0.600, 0.611, 0.611);
+  metrics.bigOpSpacing5 = pick(0.100, 0.143, 0.143);
   metrics.sqrtRuleThickness = 0.04;
   metrics.ptPerEm = 10.0;
   metrics.arrayRuleWidth = 0.04;
@@ -139,6 +144,8 @@ GlobalFontMetrics MathFontMetrics::globalMetrics(int styleSize) {
   metrics.subDrop = pick(0.050, 0.071, 0.100);
   metrics.delim1 = pick(2.390, 1.700, 1.980);
   metrics.delim2 = pick(1.010, 1.157, 1.420);
+  metrics.fboxsep = 0.3;
+  metrics.fboxrule = 0.04;
   return metrics;
 }
 

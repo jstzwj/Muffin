@@ -140,6 +140,24 @@ QString unitFromSizeText(const QString& sizeText) {
   return sizeText.mid(i + 1).toLower();
 }
 
+bool isKnownSizeUnit(const QString& unit) {
+  static const QSet<QString> units{
+      QStringLiteral("em"), QStringLiteral("ex"), QStringLiteral("mu"), QStringLiteral("pt"), QStringLiteral("mm"),
+      QStringLiteral("cm"), QStringLiteral("in"), QStringLiteral("px"), QStringLiteral("bp"), QStringLiteral("pc"),
+      QStringLiteral("dd"), QStringLiteral("cc"), QStringLiteral("sp")};
+  return units.contains(unit.toLower());
+}
+
+QString longestKnownSizeUnitPrefix(const QString& text) {
+  for (int len = qMin(2, text.size()); len >= 1; --len) {
+    const QString unit = text.left(len).toLower();
+    if (isKnownSizeUnit(unit)) {
+      return text.left(len);
+    }
+  }
+  return {};
+}
+
 qreal sizeTextToEm(const QString& sizeText) {
   static const QHash<QString, qreal> unitToEm{
       {QStringLiteral("em"), 1.0},          {QStringLiteral("ex"), 0.431},       {QStringLiteral("mu"), 1.0 / 18.0},
@@ -211,18 +229,17 @@ MathParseNode MathParser::makeInfixFraction(const MathToken& token,
   }
 
   if (wrap) {
-    MathParseNode wrapped;
-    wrapped.type = MathNodeType::LeftRight;
-    wrapped.leftDelim = leftDelim;
-    wrapped.rightDelim = rightDelim;
-    wrapped.body.push_back(std::move(frac));
-    return parseScripts(std::move(wrapped));
+    frac.leftDelim = leftDelim;
+    frac.rightDelim = rightDelim;
   }
   return parseScripts(std::move(frac));
 }
 
 MathParseNode MathParser::parseAtom() {
   const MathToken token = lexer_.next();
+  if (token.text == QStringLiteral("\\\\")) {
+    return parseCr(token);
+  }
   if (token.text == QStringLiteral("{")) {
     MathParseNode group;
     group.type = MathNodeType::Group;
@@ -257,12 +274,8 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
       frac.numerator = parseRequiredGroup(token.text);
       frac.denominator = parseRequiredGroup(token.text);
       if (!left.isEmpty() || !right.isEmpty()) {
-        MathParseNode wrapped;
-        wrapped.type = MathNodeType::LeftRight;
-        wrapped.leftDelim = left.isEmpty() ? QStringLiteral(".") : left;
-        wrapped.rightDelim = right.isEmpty() ? QStringLiteral(".") : right;
-        wrapped.body.push_back(std::move(frac));
-        return parseScripts(std::move(wrapped));
+        frac.leftDelim = left.isEmpty() ? QStringLiteral(".") : left;
+        frac.rightDelim = right.isEmpty() ? QStringLiteral(".") : right;
       }
       return parseScripts(std::move(frac));
     }
@@ -274,12 +287,8 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
     frac.numerator = parseRequiredGroup(token.text);
     frac.denominator = parseRequiredGroup(token.text);
     if (token.text.contains(QStringLiteral("binom"))) {
-      MathParseNode wrapped;
-      wrapped.type = MathNodeType::LeftRight;
-      wrapped.leftDelim = QStringLiteral("(");
-      wrapped.rightDelim = QStringLiteral(")");
-      wrapped.body.push_back(std::move(frac));
-      return parseScripts(std::move(wrapped));
+      frac.leftDelim = QStringLiteral("(");
+      frac.rightDelim = QStringLiteral(")");
     }
     return parseScripts(std::move(frac));
   }
@@ -623,9 +632,11 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
           command == QStringLiteral("\\bf") || command == QStringLiteral("\\boldsymbol") || command == QStringLiteral("\\bm")) {
         return QStringLiteral("mathbf");
       }
-      if (command == QStringLiteral("\\mathit") || command == QStringLiteral("\\mathnormal") || command == QStringLiteral("\\textit") ||
-          command == QStringLiteral("\\it")) {
+      if (command == QStringLiteral("\\mathit") || command == QStringLiteral("\\textit") || command == QStringLiteral("\\it")) {
         return QStringLiteral("mathit");
+      }
+      if (command == QStringLiteral("\\mathnormal")) {
+        return QStringLiteral("mathnormal");
       }
       if (command == QStringLiteral("\\mathsf") || command == QStringLiteral("\\mathsfit") || command == QStringLiteral("\\sf")) {
         return QStringLiteral("sans");
@@ -637,10 +648,10 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
         return QStringLiteral("amsrm");
       }
       if (command == QStringLiteral("\\mathcal") || command == QStringLiteral("\\cal") || command == QStringLiteral("\\mathscr")) {
-        return QStringLiteral("mathit");
+        return QStringLiteral("mathcal");
       }
       if (command == QStringLiteral("\\mathfrak") || command == QStringLiteral("\\frak")) {
-        return QStringLiteral("amsrm");
+        return QStringLiteral("mathfrak");
       }
       return QStringLiteral("main");
     };
@@ -732,6 +743,27 @@ QVector<MathParseNode> MathParser::parseGroup() {
   return QVector<MathParseNode>{parseAtom()};
 }
 
+QVector<MathParseNode> MathParser::parseScriptGroup() {
+  if (lexer_.peek().text == QStringLiteral("{")) {
+    return parseGroup();
+  }
+
+  const MathToken token = lexer_.next();
+  if (token.text == QStringLiteral("EOF") || token.text == QStringLiteral("^") || token.text == QStringLiteral("_") || token.text == QStringLiteral("}") ||
+      token.text == QStringLiteral("&")) {
+    return QVector<MathParseNode>{errorNode(QStringLiteral("Expected script argument"), &token)};
+  }
+  if (token.text == QStringLiteral("{")) {
+    QVector<MathParseNode> group = parseExpression(QStringLiteral("}"));
+    expect(QStringLiteral("}"), QStringLiteral("script"));
+    return group;
+  }
+  if (const MathFunctionSpec* function = MathFunctionRegistry::lookup(token.text)) {
+    return QVector<MathParseNode>{parseFunction(token, *function)};
+  }
+  return QVector<MathParseNode>{parseSymbol(token)};
+}
+
 QVector<MathParseNode> MathParser::parseRequiredGroup(const QString& command) {
   if (lexer_.peek().text != QStringLiteral("{")) {
     const MathToken token = lexer_.peek();
@@ -797,18 +829,60 @@ QString MathParser::parseSizeText(const QString& command) {
     return parseRawGroupText(command);
   }
   QString text;
+  enum class Part { SignOrNumber, Unit };
+  Part part = Part::SignOrNumber;
+  bool sawDigit = false;
+  bool sawDot = false;
   while (lexer_.peek().text != QStringLiteral("EOF")) {
-    const QString token = lexer_.peek().text;
+    const MathToken next = lexer_.peek();
+    const QString token = next.text;
     if (token.startsWith(QLatin1Char('\\')) || token == QStringLiteral("{") || token == QStringLiteral("}") ||
         token == QStringLiteral("^") || token == QStringLiteral("_") || token == QStringLiteral("&")) {
       break;
     }
     if (token.size() == 1) {
       const QChar ch = token.at(0);
-      if (ch.isLetterOrNumber() || ch == QLatin1Char('.') || ch == QLatin1Char('-') || ch == QLatin1Char('+')) {
+      if (part == Part::SignOrNumber) {
+        if ((ch == QLatin1Char('-') || ch == QLatin1Char('+')) && text.isEmpty()) {
+          text += lexer_.next().text;
+          continue;
+        }
+        if (ch.isDigit()) {
+          sawDigit = true;
+          text += lexer_.next().text;
+          continue;
+        }
+        if (ch == QLatin1Char('.') && !sawDot) {
+          sawDot = true;
+          text += lexer_.next().text;
+          continue;
+        }
+        if (ch.isLetter() && sawDigit) {
+          part = Part::Unit;
+        } else {
+          break;
+        }
+      }
+      if (part == Part::Unit && ch.isLetter()) {
         text += lexer_.next().text;
+        const QString unit = unitFromSizeText(text);
+        if (isKnownSizeUnit(unit)) {
+          break;
+        }
         continue;
       }
+    }
+    if (part == Part::Unit && token.size() > 1 && token.at(0).isLetter()) {
+      const QString unitPrefix = longestKnownSizeUnitPrefix(token);
+      if (!unitPrefix.isEmpty()) {
+        lexer_.consume();
+        text += unitPrefix;
+        const QString remainder = token.mid(unitPrefix.size());
+        if (!remainder.isEmpty()) {
+          lexer_.pushFront(MathToken{remainder, next.position + unitPrefix.size(), next.endPosition});
+        }
+      }
+      break;
     }
     break;
   }
@@ -834,6 +908,21 @@ MathParseNode MathParser::parseBeginEnvironment() {
     return parseArrayEnvironment(name);
   }
   return errorNode(QStringLiteral("Unsupported environment %1").arg(name));
+}
+
+MathParseNode MathParser::parseCr(const MathToken& token) {
+  MathParseNode cr;
+  cr.type = MathNodeType::Cr;
+  cr.label = token.text;
+  if (lexer_.peek().text == QStringLiteral("[")) {
+    cr.height = parseOptionalBracketText();
+  }
+  if (settings_.displayMode) {
+    settings_.shouldApplyStrictBehavior(QStringLiteral("newLineInDisplayMode"),
+                                        QStringLiteral("In LaTeX, \\\\ or \\newline does nothing in display mode"),
+                                        &token);
+  }
+  return cr;
 }
 
 MathParseNode MathParser::parseLeftRight() {
@@ -1007,6 +1096,16 @@ MathParseNode MathParser::parseArrayEnvironment(const QString& name) {
     array.rows.push_back(std::move(row));
   }
 
+  if (array.colSeparationType == QStringLiteral("align") || array.colSeparationType == QStringLiteral("alignat")) {
+    for (QVector<MathArrayCell>& alignedRow : array.rows) {
+      for (int c = 1; c < alignedRow.size(); c += 2) {
+        MathParseNode emptyGroup;
+        emptyGroup.type = MathNodeType::Group;
+        alignedRow[c].body.insert(0, std::make_shared<MathParseNode>(std::move(emptyGroup)));
+      }
+    }
+  }
+
   const int colCount = std::accumulate(array.rows.cbegin(), array.rows.cend(), 0, [](int current, const QVector<MathArrayCell>& cells) {
     return qMax(current, cells.size());
   });
@@ -1113,6 +1212,7 @@ void MathParser::configureArrayEnvironment(MathParseNode& array, const QString& 
   column.align = QLatin1Char('c');
   array.columns.push_back(column);
   array.columnAlignments = QStringLiteral("c");
+  array.arrayCellStyle = baseName.startsWith(QLatin1Char('d')) ? QStringLiteral("display") : QStringLiteral("text");
 
   if (baseName == QStringLiteral("pmatrix")) {
     array.leftDelim = QStringLiteral("(");
@@ -1131,9 +1231,14 @@ void MathParser::configureArrayEnvironment(MathParseNode& array, const QString& 
     array.rightDelim = QStringLiteral("\u2016");
   }
 
+  if (baseName == QStringLiteral("array") || baseName == QStringLiteral("darray")) {
+    array.hskipBeforeAndAfter = true;
+  }
+
   if (baseName == QStringLiteral("smallmatrix")) {
     array.arrayStretch = 0.5;
     array.colSeparationType = QStringLiteral("small");
+    array.arrayCellStyle = QStringLiteral("script");
   } else if (baseName == QStringLiteral("cases") || baseName == QStringLiteral("dcases") ||
              baseName == QStringLiteral("rcases") || baseName == QStringLiteral("drcases")) {
     array.arrayStretch = 1.2;
@@ -1218,6 +1323,7 @@ MathNodeType MathParser::classNodeType(const QString& mathClass) const {
   if (mathClass == QStringLiteral("\\mathopen")) return MathNodeType::Open;
   if (mathClass == QStringLiteral("\\mathclose")) return MathNodeType::Close;
   if (mathClass == QStringLiteral("\\mathpunct")) return MathNodeType::Punct;
+  if (mathClass == QStringLiteral("\\mathinner")) return MathNodeType::Inner;
   return MathNodeType::Ord;
 }
 
@@ -1258,6 +1364,9 @@ MathParseNode MathParser::parseSymbol(const MathToken& token) {
   MathParseNode node;
   node.type = symbol.known ? symbol.type : MathNodeType::Error;
   node.text = symbol.replacement;
+  if (!symbol.known || symbol.type != MathNodeType::Ord) {
+    node.fontClass = symbol.fontClass;
+  }
   node.label = canonicalOperatorName(token.text);
   if (node.type == MathNodeType::Operator) {
     node.opSymbol = isBigOperatorCommand(token.text) || isIntegralOperatorCommand(token.text);
@@ -1319,9 +1428,9 @@ MathParseNode MathParser::parseScripts(MathParseNode base) {
   while (lexer_.peek().text == QStringLiteral("^") || lexer_.peek().text == QStringLiteral("_")) {
     const QString marker = lexer_.next().text;
     if (marker == QStringLiteral("^")) {
-      sup = parseGroup();
+      sup = parseScriptGroup();
     } else {
-      sub = parseGroup();
+      sub = parseScriptGroup();
     }
   }
   if (sup.isEmpty() && sub.isEmpty()) {

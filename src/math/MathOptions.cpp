@@ -47,6 +47,10 @@ QColor MathOptions::color() const {
   return color_;
 }
 
+bool MathOptions::phantom() const {
+  return phantom_;
+}
+
 const MathSettings& MathOptions::settings() const {
   return settings_;
 }
@@ -60,6 +64,12 @@ MathOptions MathOptions::havingStyle(MathStyle style) const {
 MathOptions MathOptions::withColor(QColor color) const {
   MathOptions copy = *this;
   copy.color_ = std::move(color);
+  return copy;
+}
+
+MathOptions MathOptions::withPhantom() const {
+  MathOptions copy = *this;
+  copy.phantom_ = true;
   return copy;
 }
 
@@ -91,16 +101,24 @@ MathOptions MathOptions::cramped() const {
 
 QFont MathOptions::fontForClass(const QString& fontClass) const {
   QString family = QStringLiteral("KaTeX_Main");
-  if (fontClass == QStringLiteral("mathit")) {
+  if (fontClass == QStringLiteral("mathnormal")) {
     family = QStringLiteral("KaTeX_Math");
+  } else if (fontClass == QStringLiteral("mathit")) {
+    family = QStringLiteral("KaTeX_Main");
   } else if (fontClass == QStringLiteral("mathbf")) {
     family = QStringLiteral("KaTeX_Main");
   } else if (fontClass == QStringLiteral("amsrm")) {
     family = QStringLiteral("KaTeX_AMS");
+  } else if (fontClass == QStringLiteral("mathcal")) {
+    family = QStringLiteral("KaTeX_Caligraphic");
+  } else if (fontClass == QStringLiteral("mathfrak")) {
+    family = QStringLiteral("KaTeX_Fraktur");
   } else if (fontClass == QStringLiteral("sans")) {
-    family = QStringLiteral("Arial");
+    family = QStringLiteral("KaTeX_SansSerif");
   } else if (fontClass == QStringLiteral("typewriter")) {
-    family = QStringLiteral("Consolas");
+    family = QStringLiteral("KaTeX_Typewriter");
+  } else if (fontClass == QStringLiteral("script")) {
+    family = QStringLiteral("KaTeX_Script");
   } else if (fontClass == QStringLiteral("sqrt") || fontClass == QStringLiteral("size") || fontClass == QStringLiteral("size1")) {
     family = QStringLiteral("KaTeX_Size1");
   } else if (fontClass == QStringLiteral("size2")) {
@@ -112,10 +130,8 @@ QFont MathOptions::fontForClass(const QString& fontClass) const {
   }
 
   QFont font(family);
-  font.setPointSizeF(fontPointSize());
-  if (fontClass == QStringLiteral("mathit")) {
-    font.setItalic(true);
-  } else if (fontClass == QStringLiteral("mathbf")) {
+  font.setPixelSize(qMax(1, qRound(fontPointSize())));
+  if (fontClass == QStringLiteral("mathbf")) {
     font.setBold(true);
   } else if (fontClass == QStringLiteral("typewriter")) {
     font.setStyleHint(QFont::Monospace);

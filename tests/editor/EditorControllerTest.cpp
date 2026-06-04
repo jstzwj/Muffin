@@ -1126,6 +1126,39 @@ void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
   require(selection.cursorPosition().blockId == blockAt(session, 2)->id(), "trailing empty paragraph repeated enter cursor block mismatch");
   require(input.insertText(QStringLiteral("after")), "typing into trailing empty paragraph should work");
   require(session.markdownText() == QStringLiteral("alpha\n\n\n\nafter"), "typing into trailing empty paragraph text mismatch");
+
+  session.setMarkdownText(QString(12, QLatin1Char('\n')), false);
+  const qsizetype emptyRunCount = session.document().root().children().size();
+  const NodeId thirdEmptyId = blockAt(session, 2)->id();
+  const NodeId fourthEmptyId = blockAt(session, 3)->id();
+  setCursor(selection, blockAt(session, 2), 0);
+  require(input.insertParagraphBreak(), "enter in middle empty paragraph should create immediate empty paragraph");
+  require(session.markdownText() == QString(14, QLatin1Char('\n')), "middle empty paragraph enter text mismatch");
+  require(session.document().root().children().size() == emptyRunCount + 1, "middle empty paragraph enter block count mismatch");
+  require(blockAt(session, 2)->id() == thirdEmptyId, "middle empty paragraph enter should preserve current empty id");
+  require(blockAt(session, 4)->id() == fourthEmptyId, "middle empty paragraph enter should shift old next empty paragraph");
+  require(selection.cursorPosition().blockId == blockAt(session, 3)->id(), "middle empty paragraph enter cursor should move to inserted empty paragraph");
+  require(selection.cursorPosition().text.textOffset == 0, "middle empty paragraph enter cursor offset mismatch");
+
+  session.setMarkdownText(QStringLiteral("alpha") + QString(13, QLatin1Char('\n')) + QStringLiteral("beta"), false);
+  const qsizetype surroundedRunCount = session.document().root().children().size();
+  const NodeId alphaId = blockAt(session, 0)->id();
+  const NodeId surroundedThirdEmptyId = blockAt(session, 3)->id();
+  const NodeId surroundedFourthEmptyId = blockAt(session, 4)->id();
+  const NodeId betaId = blockAt(session, 7)->id();
+  setCursor(selection, blockAt(session, 3), 0);
+  require(input.insertParagraphBreak(), "enter in surrounded middle empty paragraph should create immediate empty paragraph");
+  require(session.markdownText() == QStringLiteral("alpha") + QString(15, QLatin1Char('\n')) + QStringLiteral("beta"),
+          "surrounded middle empty paragraph enter text mismatch");
+  require(session.document().root().children().size() == surroundedRunCount + 1,
+          "surrounded middle empty paragraph enter block count mismatch");
+  require(blockAt(session, 0)->id() == alphaId, "surrounded middle empty paragraph enter should preserve alpha id");
+  require(blockAt(session, 3)->id() == surroundedThirdEmptyId, "surrounded middle empty paragraph enter should preserve current empty id");
+  require(blockAt(session, 5)->id() == surroundedFourthEmptyId, "surrounded middle empty paragraph enter should shift old next empty paragraph");
+  require(blockAt(session, 8)->id() == betaId, "surrounded middle empty paragraph enter should preserve beta id");
+  require(selection.cursorPosition().blockId == blockAt(session, 4)->id(),
+          "surrounded middle empty paragraph enter cursor should move to inserted empty paragraph");
+  require(selection.cursorPosition().text.textOffset == 0, "surrounded middle empty paragraph enter cursor offset mismatch");
 }
 
 void testLocalReparsePreservesUntouchedNodeIds() {
@@ -1205,6 +1238,26 @@ void testTextBlockCommandBuilderCreatesStructuralEnterCommands() {
   require(after.removedLength == 0, "builder heading-end removed length mismatch");
   require(after.insertedText == QStringLiteral("\n\n"), "builder heading-end inserted text mismatch");
   require(!after.preferredCursor.isValid(), "builder heading-end should use fallback cursor for new block");
+
+  session.setMarkdownText(QString(12, QLatin1Char('\n')), false);
+  const NodeId middleEmptyId = blockAt(session, 2)->id();
+  const qsizetype middleEmptyOffset = blockAt(session, 2)->sourceRange().byteEnd;
+  setCursor(selection, blockAt(session, 2), 0);
+  require(resolver.current(context), "builder middle-empty enter context should resolve");
+  TextBlockCommandBuilder::Command middleEmptyEnter =
+      builder.buildTextEdit(context, TextBlockCommandBuilder::Operation::Enter);
+  require(middleEmptyEnter.valid && middleEmptyEnter.handled, "builder should produce middle-empty enter command");
+  require(middleEmptyEnter.hasLocalEdit(), "builder middle-empty enter should be local edit");
+  require(middleEmptyEnter.sourceStart == middleEmptyOffset, "builder middle-empty enter source start mismatch");
+  require(middleEmptyEnter.removedLength == 0, "builder middle-empty enter removed length mismatch");
+  require(middleEmptyEnter.insertedText == QStringLiteral("\n\n"), "builder middle-empty enter inserted text mismatch");
+  require(!middleEmptyEnter.preferredCursor.isValid(), "builder middle-empty enter should use fallback cursor for inserted block");
+  require(middleEmptyEnter.fallbackSourceOffset == middleEmptyOffset + 2, "builder middle-empty enter fallback source offset mismatch");
+  require(middleEmptyEnter.nodeHints.size() == 1, "builder middle-empty enter should provide one node hint");
+  require(middleEmptyEnter.nodeHints.first().nodeId == middleEmptyId, "builder middle-empty enter hint id mismatch");
+  require(middleEmptyEnter.nodeHints.first().targetSourceOffset == blockAt(session, 2)->sourceRange().byteStart,
+          "builder middle-empty enter hint offset mismatch");
+  require(!middleEmptyEnter.preferLaterEmptyAtOffset, "builder middle-empty enter should not prefer later empty fallback");
 
   session.setMarkdownText(QStringLiteral("\n\n\n\nalpha"), false);
   const NodeId currentEmptyId = blockAt(session, 1)->id();

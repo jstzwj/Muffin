@@ -113,10 +113,6 @@ std::unique_ptr<MathRenderNode> MathDelimiter::makeCustom(const QString& delimit
                                                           MathNodeType type,
                                                           const MathOptions& options) {
   const QString normalized = normalizeDelimiter(delimiter);
-  if (normalized == QStringLiteral("\\lbrace") || normalized == QStringLiteral("\\rbrace") || normalized == QStringLiteral("\\{") ||
-      normalized == QStringLiteral("\\}") || normalized == QStringLiteral("{") || normalized == QStringLiteral("}")) {
-    return makeStacked(normalized, targetTotalHeight, center, type, options);
-  }
   const Variant variant = traverseSequence(normalized, targetTotalHeight, options);
   if (variant.kind == VariantKind::Small) {
     return makeSmall(normalized, variant.style, center, type, options);
@@ -224,9 +220,9 @@ MathDelimiter::Variant MathDelimiter::traverseSequence(const QString& delimiter,
     if (variant.kind == VariantKind::Large) {
       fontClass = QStringLiteral("size%1").arg(variant.size);
     } else {
-      multiplier = MathOptions(variant.style, options.basePointSize(), options.color(), options.settings()).sizeMultiplier();
+      multiplier = options.havingStyle(variant.style).sizeMultiplier();
     }
-    const qreal total = metricsTotalHeight(delimiter, fontClass, options.basePointSize()) * multiplier;
+    const qreal total = metricsTotalHeight(delimiter, fontClass, options.basePointSize() * multiplier);
     if (total > targetTotalHeight) {
       return variant;
     }
@@ -295,6 +291,7 @@ std::unique_ptr<MathRenderNode> MathDelimiter::makeStacked(const QString& delimi
   auto stack = std::make_unique<MathRenderNode>();
   stack->kind = MathRenderKind::Accent;
   stack->color = options.color();
+  stack->phantom = options.phantom();
   qreal y = 0.0;
   const qreal lap = em * 0.008;
   for (auto& child : children) {
@@ -334,6 +331,7 @@ std::unique_ptr<MathRenderNode> MathDelimiter::makeTallSvg(const StackParts& par
   node->height = targetTotalHeight / 2.0;
   node->depth = targetTotalHeight - node->height;
   node->color = options.color();
+  node->phantom = options.phantom();
   node->ruleThickness = qMax<qreal>(1.0, em * MathFontMetrics::globalMetrics(options.style().size()).defaultRuleThickness);
   if (center) {
     centerOnAxis(*node, options);
@@ -351,6 +349,7 @@ std::unique_ptr<MathRenderNode> MathDelimiter::makeGlyph(const QString& text,
   node->fontClass = fontClass;
   node->font = options.fontForClass(fontClass);
   node->color = options.color();
+  node->phantom = options.phantom();
   const qreal em = options.fontPointSize();
   const std::optional<CharacterMetrics> metrics = MathFontMetrics::characterMetrics(metricsNameForDelimiterFont(fontClass), node->text);
   if (metrics) {

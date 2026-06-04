@@ -6,6 +6,7 @@
 #include "math/MathDelimiter.h"
 #include "math/MathFontMetrics.h"
 #include "math/MathFunctionRegistry.h"
+#include "math/MathLayoutTree.h"
 #include "math/MathMacroExpander.h"
 #include "math/MathParseError.h"
 #include "math/MathParser.h"
@@ -16,10 +17,17 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QImage>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QMap>
 #include <QPainter>
 
+#include <algorithm>
 #include <functional>
 
 using namespace muffin;
@@ -39,11 +47,57 @@ void require(bool condition, const QString& message) {
 }
 
 int changedPixelCount(const QImage& image, QColor background);
+QRect imageInkBounds(const QImage& image, QColor background);
+const math::MathRenderNode& nativeInkRoot(const math::MathRenderNode& root);
 
 QString readFixture(const QString& path) {
   QFile file(path);
   require(file.open(QIODevice::ReadOnly | QIODevice::Text), QStringLiteral("Could not open fixture: %1").arg(path));
   return QString::fromUtf8(file.readAll());
+}
+
+QJsonArray readJsonArrayFixture(const QString& path) {
+  const QJsonDocument document = QJsonDocument::fromJson(readFixture(path).toUtf8());
+  require(document.isArray(), QStringLiteral("Fixture should be a JSON array: %1").arg(path));
+  return document.array();
+}
+
+QJsonArray readOptionalJsonArrayFixture(const QString& path) {
+  if (!QFileInfo::exists(path)) {
+    return {};
+  }
+  return readJsonArrayFixture(path);
+}
+
+QMap<QString, QJsonObject> readObjectArrayById(const QString& path) {
+  QMap<QString, QJsonObject> byId;
+  const QJsonArray entries = readOptionalJsonArrayFixture(path);
+  for (const QJsonValue& value : entries) {
+    require(value.isObject(), QStringLiteral("Golden metrics entry should be an object: %1").arg(path));
+    const QJsonObject object = value.toObject();
+    const QString id = object.value(QStringLiteral("id")).toString();
+    require(!id.isEmpty(), QStringLiteral("Golden metrics entry should include id: %1").arg(path));
+    byId.insert(id, object);
+  }
+  return byId;
+}
+
+QString katexMetricsPathForFixture(const QString& fixturePath) {
+  QDir testsDir(QFileInfo(fixturePath).absoluteDir());
+  require(testsDir.cdUp() && testsDir.cdUp(), QStringLiteral("Could not resolve tests directory from %1").arg(fixturePath));
+  return testsDir.filePath(QStringLiteral("golden/katex/metrics.json"));
+}
+
+QString katexBBoxPathForFixture(const QString& fixturePath) {
+  QDir testsDir(QFileInfo(fixturePath).absoluteDir());
+  require(testsDir.cdUp() && testsDir.cdUp(), QStringLiteral("Could not resolve tests directory from %1").arg(fixturePath));
+  return testsDir.filePath(QStringLiteral("golden/katex/bbox.json"));
+}
+
+QString katexGlyphsPathForFixture(const QString& fixturePath) {
+  QDir testsDir(QFileInfo(fixturePath).absoluteDir());
+  require(testsDir.cdUp() && testsDir.cdUp(), QStringLiteral("Could not resolve tests directory from %1").arg(fixturePath));
+  return testsDir.filePath(QStringLiteral("golden/katex/glyphs.json"));
 }
 
 const MarkdownNode* findFirstBlock(const MarkdownNode& node, BlockType type) {
@@ -80,6 +134,713 @@ const MarkdownNode* findFirstTableCell(const MarkdownNode& node) {
     }
   }
   return nullptr;
+}
+
+std::unique_ptr<math::MathLayoutNode> makeTestLayoutBox(qreal width, qreal height, qreal depth) {
+  auto node = std::make_unique<math::MathLayoutNode>();
+  node->kind = math::MathLayoutKind::Span;
+  node->renderKind = math::MathRenderKind::Span;
+  node->width = width;
+  node->height = height;
+  node->depth = depth;
+  return node;
+}
+
+bool renderTreeContainsValue(const QJsonObject& node, const QString& value) {
+  for (auto it = node.constBegin(); it != node.constEnd(); ++it) {
+    if (it.value().isString() && it.value().toString() == value) {
+      return true;
+    }
+  }
+  const QJsonArray children = node.value(QStringLiteral("children")).toArray();
+  for (const QJsonValue& child : children) {
+    if (child.isObject() && renderTreeContainsValue(child.toObject(), value)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool renderTreeContainsClass(const QJsonObject& node, const QString& className) {
+  const QJsonArray classes = node.value(QStringLiteral("classes")).toArray();
+  for (const QJsonValue& value : classes) {
+    if (value.toString() == className) {
+      return true;
+    }
+  }
+  const QJsonArray children = node.value(QStringLiteral("children")).toArray();
+  for (const QJsonValue& child : children) {
+    if (child.isObject() && renderTreeContainsClass(child.toObject(), className)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool findRenderTreeText(const QJsonObject& node, const QString& text, QJsonObject& out) {
+  if (node.value(QStringLiteral("text")).toString() == text) {
+    out = node;
+    return true;
+  }
+  const QJsonArray children = node.value(QStringLiteral("children")).toArray();
+  for (const QJsonValue& child : children) {
+    if (!child.isObject()) {
+      continue;
+    }
+    if (findRenderTreeText(child.toObject(), text, out)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool findRenderTreeClass(const QJsonObject& node, const QString& className, QJsonObject& out) {
+  const QJsonArray classes = node.value(QStringLiteral("classes")).toArray();
+  for (const QJsonValue& value : classes) {
+    if (value.toString() == className) {
+      out = node;
+      return true;
+    }
+  }
+  const QJsonArray children = node.value(QStringLiteral("children")).toArray();
+  for (const QJsonValue& child : children) {
+    if (!child.isObject()) {
+      continue;
+    }
+    if (findRenderTreeClass(child.toObject(), className, out)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool jsonHasNumber(const QJsonObject& object, const QString& key) {
+  return object.contains(key) && object.value(key).isDouble();
+}
+
+qreal jsonNumber(const QJsonObject& object, const QString& key) {
+  require(jsonHasNumber(object, key), QStringLiteral("Expected numeric JSON metric: %1").arg(key));
+  return object.value(key).toDouble();
+}
+
+QRectF jsonRect(const QJsonObject& object, const QString& key) {
+  const QJsonObject rect = object.value(key).toObject();
+  require(!rect.isEmpty(), QStringLiteral("Expected JSON rect: %1").arg(key));
+  return QRectF(jsonNumber(rect, QStringLiteral("x")),
+                jsonNumber(rect, QStringLiteral("y")),
+                jsonNumber(rect, QStringLiteral("width")),
+                jsonNumber(rect, QStringLiteral("height")));
+}
+
+void requireCloseMetric(qreal actual, qreal expected, qreal tolerance, const QString& label) {
+  require(qAbs(actual - expected) <= tolerance,
+          QStringLiteral("%1 mismatch: actual=%2 expected=%3 tolerance=%4")
+              .arg(label)
+              .arg(actual, 0, 'f', 6)
+              .arg(expected, 0, 'f', 6)
+              .arg(tolerance, 0, 'f', 6));
+}
+
+qreal maxAbsJsonMetric(const QJsonObject& node, const QString& key) {
+  qreal result = 0.0;
+  if (jsonHasNumber(node, key)) {
+    result = qMax(result, qAbs(node.value(key).toDouble()));
+  }
+  const QJsonArray children = node.value(QStringLiteral("children")).toArray();
+  for (const QJsonValue& child : children) {
+    if (child.isObject()) {
+      result = qMax(result, maxAbsJsonMetric(child.toObject(), key));
+    }
+  }
+  return result;
+}
+
+qreal maxAbsFlatMetric(const QJsonArray& flat, const QString& key) {
+  qreal result = 0.0;
+  for (const QJsonValue& value : flat) {
+    if (!value.isObject()) {
+      continue;
+    }
+    const QJsonObject object = value.toObject();
+    if (jsonHasNumber(object, key)) {
+      result = qMax(result, qAbs(object.value(key).toDouble()));
+    }
+  }
+  return result;
+}
+
+QJsonArray flattenNativeMetrics(const QJsonObject& node, const QString& path = QString()) {
+  QJsonArray result;
+  QJsonObject metric;
+  metric.insert(QStringLiteral("path"), path);
+  metric.insert(QStringLiteral("kind"), node.value(QStringLiteral("kind")).toString());
+  if (node.contains(QStringLiteral("text"))) {
+    metric.insert(QStringLiteral("text"), node.value(QStringLiteral("text")));
+  }
+  for (const QString& key : {QStringLiteral("width"), QStringLiteral("height"), QStringLiteral("depth"), QStringLiteral("shift")}) {
+    if (jsonHasNumber(node, key)) {
+      metric.insert(key, node.value(key));
+    }
+  }
+  result.push_back(metric);
+
+  const QJsonArray children = node.value(QStringLiteral("children")).toArray();
+  for (int i = 0; i < children.size(); ++i) {
+    if (!children.at(i).isObject()) {
+      continue;
+    }
+    const QString childPath = path.isEmpty() ? QString::number(i) : path + QStringLiteral("/") + QString::number(i);
+    const QJsonArray childFlat = flattenNativeMetrics(children.at(i).toObject(), childPath);
+    for (const QJsonValue& childMetric : childFlat) {
+      result.push_back(childMetric);
+    }
+  }
+  return result;
+}
+
+QMap<QString, QJsonObject> flatMetricsByPath(const QJsonArray& flat) {
+  QMap<QString, QJsonObject> result;
+  for (const QJsonValue& value : flat) {
+    if (!value.isObject()) {
+      continue;
+    }
+    const QJsonObject object = value.toObject();
+    result.insert(object.value(QStringLiteral("path")).toString(), object);
+  }
+  return result;
+}
+
+void dumpBuilderMetricDiffs(const QString& id, const QJsonObject& nativeRoot, const QJsonObject& golden, qreal em) {
+  QJsonObject goldenRoot = golden.value(QStringLiteral("root")).toObject();
+  QJsonObject goldenHtml;
+  if (findRenderTreeClass(goldenRoot, QStringLiteral("katex-html"), goldenHtml)) {
+    goldenRoot = goldenHtml;
+  }
+  if (goldenRoot.isEmpty()) {
+    return;
+  }
+  const QMap<QString, QJsonObject> nativeByPath = flatMetricsByPath(flattenNativeMetrics(nativeRoot));
+  const QJsonArray goldenFlat = flattenNativeMetrics(goldenRoot);
+  qreal worstDiff = 0.0;
+  QString worstLine;
+  int compared = 0;
+  for (const QJsonValue& value : goldenFlat) {
+    if (!value.isObject()) {
+      continue;
+    }
+    const QJsonObject goldenNode = value.toObject();
+    const QString path = goldenNode.value(QStringLiteral("path")).toString();
+    const QJsonObject nativeNode = nativeByPath.value(path);
+    if (nativeNode.isEmpty()) {
+      continue;
+    }
+    ++compared;
+    QStringList parts;
+    qreal nodeWorst = 0.0;
+    for (const QString& key : {QStringLiteral("width"), QStringLiteral("height"), QStringLiteral("depth"), QStringLiteral("shift")}) {
+      if (!jsonHasNumber(goldenNode, key) || !jsonHasNumber(nativeNode, key)) {
+        continue;
+      }
+      const qreal nativeValue = jsonNumber(nativeNode, key) / em;
+      const qreal goldenValue = jsonNumber(goldenNode, key);
+      const qreal diff = qAbs(nativeValue - goldenValue);
+      nodeWorst = qMax(nodeWorst, diff);
+      if (diff > 0.02) {
+        parts.push_back(QStringLiteral("%1 native=%2 katex=%3 diff=%4")
+                            .arg(key)
+                            .arg(nativeValue, 0, 'f', 4)
+                            .arg(goldenValue, 0, 'f', 4)
+                            .arg(diff, 0, 'f', 4));
+      }
+    }
+    if (nodeWorst > worstDiff && !parts.isEmpty()) {
+      worstDiff = nodeWorst;
+      worstLine = QStringLiteral("%1 path=%2 nativeKind=%3 katexKind=%4 %5")
+                      .arg(id,
+                           path.isEmpty() ? QStringLiteral("<root>") : path,
+                           nativeNode.value(QStringLiteral("kind")).toString(),
+                           goldenNode.value(QStringLiteral("kind")).toString(),
+                           parts.join(QStringLiteral("; ")));
+    }
+  }
+  if (!worstLine.isEmpty()) {
+    qInfo().noquote() << QStringLiteral("KaTeX builder diff compared=%1 worst=%2").arg(compared).arg(worstLine);
+  }
+}
+
+struct BBoxAuditEntry {
+  QString id;
+  qreal katexWidthEm = 0.0;
+  qreal katexHeightEm = 0.0;
+  qreal katexInkWidthEm = 0.0;
+  qreal katexInkHeightEm = 0.0;
+  qreal nativeLayoutWidthEm = 0.0;
+  qreal nativeLayoutHeightEm = 0.0;
+  qreal nativeInkWidthEm = 0.0;
+  qreal nativeInkHeightEm = 0.0;
+
+  qreal layoutError() const {
+    return qMax(qAbs(nativeLayoutWidthEm - katexWidthEm), qAbs(nativeLayoutHeightEm - katexHeightEm));
+  }
+
+  qreal inkError() const {
+    return qMax(qAbs(nativeInkWidthEm - katexInkWidthEm), qAbs(nativeInkHeightEm - katexInkHeightEm));
+  }
+};
+
+struct GlyphAuditItem {
+  QString kind;
+  QString text;
+  QString atomClass;
+  QString fontClass;
+  QRectF domRect;
+  QRectF inkRect;
+  qreal advanceWidth = 0.0;
+  qreal glyphWidth = 0.0;
+  qreal italicMarginRight = 0.0;
+  bool hasInkRect = false;
+};
+
+QRectF nativeGlyphInkRect(const math::MathRenderNode& node, QPointF origin, qreal em) {
+  constexpr int padding = 16;
+  const QSize imageSize(qMax(1, qCeil(node.width) + padding * 2),
+                        qMax(1, qCeil(node.height + node.depth) + padding * 2));
+  QImage image(imageSize, QImage::Format_ARGB32);
+  const QColor background(Qt::white);
+  image.fill(background);
+
+  QPainter painter(&image);
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  painter.setRenderHint(QPainter::TextAntialiasing, true);
+  node.paint(painter, QPointF(padding, padding + node.height));
+  painter.end();
+
+  const QRect ink = imageInkBounds(image, background);
+  if (ink.isNull()) {
+    return {};
+  }
+
+  return QRectF((origin.x() + ink.x() - padding) / em,
+                (origin.y() - node.height + ink.y() - padding) / em,
+                ink.width() / em,
+                ink.height() / em);
+}
+
+void collectNativeGlyphItems(const math::MathRenderNode& node,
+                             QPointF origin,
+                             qreal em,
+                             QVector<GlyphAuditItem>& out) {
+  const QRectF domRect(origin.x() / em, (origin.y() - node.height) / em, node.width / em, (node.height + node.depth) / em);
+  if (node.kind == math::MathRenderKind::Symbol || node.kind == math::MathRenderKind::Error) {
+    GlyphAuditItem item;
+    item.kind = QStringLiteral("glyph");
+    item.text = node.text;
+    item.atomClass = node.atomClass;
+    item.fontClass = node.fontClass;
+    item.domRect = domRect;
+    item.inkRect = nativeGlyphInkRect(node, origin, em);
+    item.advanceWidth = node.width / em;
+    item.glyphWidth = qMax<qreal>(0.0, node.width - node.italicMarginRight) / em;
+    item.italicMarginRight = node.italicMarginRight / em;
+    item.hasInkRect = !item.inkRect.isNull();
+    out.push_back(item);
+  } else if (node.atomClass == QStringLiteral("mspace") && node.width > 0.0) {
+    GlyphAuditItem item;
+    item.kind = QStringLiteral("space");
+    item.text = node.text.isEmpty() ? QStringLiteral("mspace") : node.text;
+    item.atomClass = node.atomClass;
+    item.fontClass = node.fontClass;
+    item.domRect = domRect;
+    item.advanceWidth = node.width / em;
+    item.glyphWidth = node.width / em;
+    out.push_back(item);
+  }
+
+  switch (node.kind) {
+    case math::MathRenderKind::Span: {
+      qreal x = origin.x();
+      for (const auto& child : node.children) {
+        collectNativeGlyphItems(*child, QPointF(x + child->xOffset, origin.y() + child->yOffset + child->shift), em, out);
+        x += child->width;
+      }
+      return;
+    }
+    case math::MathRenderKind::SupSub: {
+      if (!node.children.empty()) {
+        const auto& base = node.children.at(0);
+        collectNativeGlyphItems(*base, QPointF(origin.x() + base->xOffset, origin.y() + base->yOffset), em, out);
+      }
+      for (size_t i = 1; i < node.children.size(); ++i) {
+        const auto& child = node.children.at(i);
+        collectNativeGlyphItems(*child, QPointF(origin.x() + child->xOffset, origin.y() + child->yOffset + child->shift), em, out);
+      }
+      return;
+    }
+    case math::MathRenderKind::Fraction: {
+      if (node.children.size() == 2) {
+        const auto& numerator = node.children.at(0);
+        const auto& denominator = node.children.at(1);
+        collectNativeGlyphItems(*numerator, QPointF(origin.x() + (node.width - numerator->width) / 2.0, origin.y() + numerator->shift), em, out);
+        collectNativeGlyphItems(*denominator, QPointF(origin.x() + (node.width - denominator->width) / 2.0, origin.y() + denominator->shift), em, out);
+      } else if (node.children.size() >= 3) {
+        const auto& numerator = node.children.at(0);
+        const auto& denominator = node.children.at(2);
+        collectNativeGlyphItems(*numerator, QPointF(origin.x() + (node.width - numerator->width) / 2.0, origin.y() + numerator->shift), em, out);
+        collectNativeGlyphItems(*denominator, QPointF(origin.x() + (node.width - denominator->width) / 2.0, origin.y() + denominator->shift), em, out);
+      }
+      return;
+    }
+    default:
+      break;
+  }
+
+  for (const auto& child : node.children) {
+    collectNativeGlyphItems(*child, QPointF(origin.x() + child->xOffset, origin.y() + child->yOffset + child->shift), em, out);
+  }
+}
+
+QVector<GlyphAuditItem> nativeGlyphItems(const math::MathRenderNode& root, qreal em) {
+  const math::MathRenderNode& htmlRoot = nativeInkRoot(root);
+  QVector<GlyphAuditItem> out;
+  collectNativeGlyphItems(htmlRoot, QPointF(0.0, htmlRoot.height), em, out);
+  return out;
+}
+
+QVector<GlyphAuditItem> nativeVisibleGlyphItems(const math::MathRenderNode& root, qreal em) {
+  const QVector<GlyphAuditItem> all = nativeGlyphItems(root, em);
+  QVector<GlyphAuditItem> glyphs;
+  for (const GlyphAuditItem& item : all) {
+    if (item.kind == QStringLiteral("glyph")) {
+      glyphs.push_back(item);
+    }
+  }
+  return glyphs;
+}
+
+QRectF glyphJsonRect(const QJsonObject& item, const QString& key) {
+  const QJsonObject rect = item.value(key).toObject();
+  return QRectF(rect.value(QStringLiteral("x")).toDouble(),
+                rect.value(QStringLiteral("y")).toDouble(),
+                rect.value(QStringLiteral("width")).toDouble(),
+                rect.value(QStringLiteral("height")).toDouble());
+}
+
+QVector<QJsonObject> katexVisibleGlyphItems(const QJsonObject& golden) {
+  const QJsonArray katexGlyphs = golden.value(QStringLiteral("glyphs")).toArray();
+  QVector<QJsonObject> visible;
+  for (const QJsonValue& value : katexGlyphs) {
+    if (!value.isObject()) {
+      continue;
+    }
+    const QJsonObject item = value.toObject();
+    const QString kind = item.value(QStringLiteral("kind")).toString();
+    const QString text = item.value(QStringLiteral("text")).toString();
+    const QJsonObject rect = item.value(item.contains(QStringLiteral("domRect")) ? QStringLiteral("domRect") : QStringLiteral("rect")).toObject();
+    if (kind == QStringLiteral("glyph") && !text.isEmpty() && text != QString::fromUtf8("\xE2\x80\x8B") &&
+        rect.value(QStringLiteral("width")).toDouble() > 0.0001) {
+      visible.push_back(item);
+    }
+  }
+  return visible;
+}
+
+void compareKatexGlyphs(const QString& id,
+                        const math::MathRenderNode& root,
+                        const QJsonObject& golden,
+                        qreal em,
+                        qreal xTolerance,
+                        qreal widthTolerance) {
+  if (golden.value(QStringLiteral("error")).toBool()) {
+    return;
+  }
+  const QVector<GlyphAuditItem> native = nativeVisibleGlyphItems(root, em);
+  const QVector<QJsonObject> katex = katexVisibleGlyphItems(golden);
+  for (const QJsonObject& item : katex) {
+    const QJsonArray classes = item.value(QStringLiteral("classes")).toArray();
+    for (const QJsonValue& classValue : classes) {
+      if (classValue.toString() == QStringLiteral("katex-error")) {
+        return;
+      }
+    }
+  }
+  require(native.size() == katex.size(),
+          QStringLiteral("KaTeX glyph count for %1 should match native glyph count: native=%2 katex=%3")
+              .arg(id)
+              .arg(native.size())
+              .arg(katex.size()));
+
+  for (int i = 0; i < native.size(); ++i) {
+    const GlyphAuditItem& nativeGlyph = native.at(i);
+    const QJsonObject katexGlyph = katex.at(i);
+    const QString katexText = katexGlyph.value(QStringLiteral("text")).toString();
+    require(nativeGlyph.text == katexText,
+            QStringLiteral("KaTeX glyph text for %1 #%2 should match: native='%3' katex='%4'")
+                .arg(id)
+                .arg(i)
+                .arg(nativeGlyph.text, katexText));
+
+    const QRectF katexRect = glyphJsonRect(katexGlyph, katexGlyph.contains(QStringLiteral("domRect")) ? QStringLiteral("domRect") : QStringLiteral("rect"));
+    requireCloseMetric(nativeGlyph.domRect.x(), katexRect.x(), xTolerance,
+                       QStringLiteral("KaTeX glyph x for %1 #%2 '%3'").arg(id).arg(i).arg(nativeGlyph.text));
+    if (nativeGlyph.text != QString(QChar(0xe020))) {
+      requireCloseMetric(nativeGlyph.glyphWidth, katexRect.width(), widthTolerance,
+                         QStringLiteral("KaTeX glyph width for %1 #%2 '%3'").arg(id).arg(i).arg(nativeGlyph.text));
+    }
+  }
+}
+
+void dumpGlyphDiffs(const QString& id, const math::MathRenderNode& root, const QJsonObject& golden, qreal em) {
+  const QVector<GlyphAuditItem> nativeAll = nativeGlyphItems(root, em);
+  QVector<GlyphAuditItem> nativeGlyphs;
+  QVector<GlyphAuditItem> nativeSpaces;
+  for (const GlyphAuditItem& item : nativeAll) {
+    if (item.kind == QStringLiteral("glyph")) {
+      nativeGlyphs.push_back(item);
+    } else if (item.kind == QStringLiteral("space")) {
+      nativeSpaces.push_back(item);
+    }
+  }
+
+  const QVector<QJsonObject> katexVisibleGlyphs = katexVisibleGlyphItems(golden);
+  const QJsonArray katexGlyphs = golden.value(QStringLiteral("glyphs")).toArray();
+  QVector<QJsonObject> katexSpaces;
+  for (const QJsonValue& value : katexGlyphs) {
+    if (!value.isObject()) {
+      continue;
+    }
+    const QJsonObject item = value.toObject();
+    const QString kind = item.value(QStringLiteral("kind")).toString();
+    if (kind == QStringLiteral("space")) {
+      katexSpaces.push_back(item);
+    }
+  }
+
+  const int count = qMax(nativeGlyphs.size(), katexVisibleGlyphs.size());
+  qInfo().noquote() << QStringLiteral("Glyph diff for %1 nativeGlyphs=%2 katexGlyphs=%3 nativeSpaces=%4 katexSpaces=%5")
+                           .arg(id)
+                           .arg(nativeGlyphs.size())
+                           .arg(katexVisibleGlyphs.size())
+                           .arg(nativeSpaces.size())
+                           .arg(katexSpaces.size());
+  for (int i = 0; i < count; ++i) {
+    QString nativeText;
+    QRectF nativeDomRect;
+    QRectF nativeInkRect;
+    qreal nativeAdvance = 0.0;
+    qreal nativeGlyphWidth = 0.0;
+    qreal nativeItalic = 0.0;
+    bool nativeHasInk = false;
+    if (i < nativeGlyphs.size()) {
+      const GlyphAuditItem& item = nativeGlyphs.at(i);
+      nativeText = item.text;
+      nativeDomRect = item.domRect;
+      nativeInkRect = item.inkRect;
+      nativeAdvance = item.advanceWidth;
+      nativeGlyphWidth = item.glyphWidth;
+      nativeItalic = item.italicMarginRight;
+      nativeHasInk = item.hasInkRect;
+    }
+    QString katexText;
+    QRectF katexDomRect;
+    QRectF katexInkRect;
+    bool katexHasInk = false;
+    if (i < katexVisibleGlyphs.size()) {
+      const QJsonObject item = katexVisibleGlyphs.at(i);
+      katexText = item.value(QStringLiteral("text")).toString();
+      katexDomRect = glyphJsonRect(item, item.contains(QStringLiteral("domRect")) ? QStringLiteral("domRect") : QStringLiteral("rect"));
+      const QJsonValue inkValue = item.value(QStringLiteral("inkRect"));
+      if (inkValue.isObject()) {
+        katexInkRect = glyphJsonRect(item, QStringLiteral("inkRect"));
+        katexHasInk = true;
+      }
+    }
+    qInfo().noquote()
+        << QStringLiteral("#%1 '%2'/'%3' dom native x=%4 w=%5 adv=%6 glyphW=%7 italic=%8 | katex x=%9 w=%10 | dx=%11 dw=%12")
+               .arg(i)
+               .arg(nativeText, katexText)
+               .arg(nativeDomRect.x(), 0, 'f', 4)
+               .arg(nativeDomRect.width(), 0, 'f', 4)
+               .arg(nativeAdvance, 0, 'f', 4)
+               .arg(nativeGlyphWidth, 0, 'f', 4)
+               .arg(nativeItalic, 0, 'f', 4)
+               .arg(katexDomRect.x(), 0, 'f', 4)
+               .arg(katexDomRect.width(), 0, 'f', 4)
+               .arg(nativeDomRect.x() - katexDomRect.x(), 0, 'f', 4)
+               .arg(nativeGlyphWidth - katexDomRect.width(), 0, 'f', 4);
+    if (nativeHasInk || katexHasInk) {
+      qInfo().noquote()
+          << QStringLiteral("   ink native x=%1 y=%2 w=%3 h=%4 | katex x=%5 y=%6 w=%7 h=%8 | dx=%9 dw=%10")
+                 .arg(nativeInkRect.x(), 0, 'f', 4)
+                 .arg(nativeInkRect.y(), 0, 'f', 4)
+                 .arg(nativeInkRect.width(), 0, 'f', 4)
+                 .arg(nativeInkRect.height(), 0, 'f', 4)
+                 .arg(katexInkRect.x(), 0, 'f', 4)
+                 .arg(katexInkRect.y(), 0, 'f', 4)
+                 .arg(katexInkRect.width(), 0, 'f', 4)
+                 .arg(katexInkRect.height(), 0, 'f', 4)
+                 .arg(nativeInkRect.x() - katexInkRect.x(), 0, 'f', 4)
+                 .arg(nativeInkRect.width() - katexInkRect.width(), 0, 'f', 4);
+    }
+  }
+
+  if (!nativeSpaces.empty() || !katexSpaces.empty()) {
+    qInfo().noquote() << QStringLiteral("Glyph glue for %1:").arg(id);
+    for (int i = 0; i < nativeSpaces.size(); ++i) {
+      const GlyphAuditItem& item = nativeSpaces.at(i);
+      qInfo().noquote()
+          << QStringLiteral("  native space #%1 x=%2 w=%3")
+                 .arg(i)
+                 .arg(item.domRect.x(), 0, 'f', 4)
+                 .arg(item.domRect.width(), 0, 'f', 4);
+    }
+  }
+}
+
+QRect nativeInkBounds(const math::MathRenderNode& root) {
+  constexpr int padding = 32;
+  const QSize imageSize(qMax(1, qCeil(root.width) + padding * 2),
+                        qMax(1, qCeil(root.height + root.depth) + padding * 2));
+  QImage image(imageSize, QImage::Format_ARGB32);
+  const QColor background(Qt::white);
+  image.fill(background);
+
+  QPainter painter(&image);
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  painter.setRenderHint(QPainter::TextAntialiasing, true);
+  root.paint(painter, QPointF(padding, padding + root.height));
+  painter.end();
+
+  return imageInkBounds(image, background);
+}
+
+const math::MathRenderNode& nativeInkRoot(const math::MathRenderNode& root) {
+  if (root.text == QStringLiteral("katex") && !root.children.empty()) {
+    const math::MathRenderNode* html = root.children.front().get();
+    if (html != nullptr && html->text == QStringLiteral("katex-html") && !html->children.empty()) {
+      return *html;
+    }
+  }
+  return root;
+}
+
+BBoxAuditEntry makeBBoxAuditEntry(const QString& id,
+                                  const math::MathRenderNode& root,
+                                  const QJsonObject& golden,
+                                  qreal nativeEm) {
+  const qreal katexRootFontPx = golden.value(QStringLiteral("rootFontPx")).toDouble(19.36);
+  require(katexRootFontPx > 0.0, QStringLiteral("KaTeX bbox for %1 should include rootFontPx").arg(id));
+  const QRectF katexBox = jsonRect(golden, QStringLiteral("bbox"));
+  QRectF katexInkBox;
+  if (golden.value(QStringLiteral("inkBBox")).isObject()) {
+    katexInkBox = jsonRect(golden, QStringLiteral("inkBBox"));
+  }
+  const QRect ink = nativeInkBounds(nativeInkRoot(root));
+
+  BBoxAuditEntry entry;
+  entry.id = id;
+  entry.katexWidthEm = katexBox.width() / katexRootFontPx;
+  entry.katexHeightEm = katexBox.height() / katexRootFontPx;
+  entry.katexInkWidthEm = katexInkBox.isEmpty() ? 0.0 : katexInkBox.width() / katexRootFontPx;
+  entry.katexInkHeightEm = katexInkBox.isEmpty() ? 0.0 : katexInkBox.height() / katexRootFontPx;
+  entry.nativeLayoutWidthEm = root.width / nativeEm;
+  entry.nativeLayoutHeightEm = (root.height + root.depth) / nativeEm;
+  entry.nativeInkWidthEm = ink.isEmpty() ? 0.0 : ink.width() / nativeEm;
+  entry.nativeInkHeightEm = ink.isEmpty() ? 0.0 : ink.height() / nativeEm;
+  return entry;
+}
+
+void compareKatexBrowserBBox(const QString& id,
+                             const math::MathRenderNode& root,
+                             const QJsonObject& golden,
+                             qreal nativeEm,
+                             qreal widthTolerance,
+                             qreal heightTolerance) {
+  if (golden.value(QStringLiteral("error")).toBool()) {
+    return;
+  }
+
+  const BBoxAuditEntry entry = makeBBoxAuditEntry(id, root, golden, nativeEm);
+  require(entry.katexWidthEm > 0.0 && entry.katexHeightEm > 0.0,
+          QStringLiteral("KaTeX bbox for %1 should have positive dimensions").arg(id));
+
+  requireCloseMetric(entry.nativeLayoutWidthEm, entry.katexWidthEm, widthTolerance,
+                     QStringLiteral("KaTeX browser layout bbox width for %1").arg(id));
+  requireCloseMetric(entry.nativeLayoutHeightEm, entry.katexHeightEm, heightTolerance,
+                     QStringLiteral("KaTeX browser layout bbox height for %1").arg(id));
+
+  require(entry.nativeInkWidthEm > 0.0 && entry.nativeInkHeightEm > 0.0,
+          QStringLiteral("Native painted ink bbox for %1 should not be empty").arg(id));
+}
+
+void compareKatexInkBBox(const QString& id,
+                         const math::MathRenderNode& root,
+                         const QJsonObject& golden,
+                         qreal nativeEm,
+                         qreal widthTolerance,
+                         qreal heightTolerance) {
+  if (golden.value(QStringLiteral("error")).toBool()) {
+    return;
+  }
+
+  const BBoxAuditEntry entry = makeBBoxAuditEntry(id, root, golden, nativeEm);
+  require(entry.katexInkWidthEm > 0.0 && entry.katexInkHeightEm > 0.0,
+          QStringLiteral("KaTeX ink bbox for %1 should have positive dimensions").arg(id));
+  require(entry.nativeInkWidthEm > 0.0 && entry.nativeInkHeightEm > 0.0,
+          QStringLiteral("Native painted ink bbox for %1 should not be empty").arg(id));
+
+  requireCloseMetric(entry.nativeInkWidthEm, entry.katexInkWidthEm, widthTolerance,
+                     QStringLiteral("KaTeX ink bbox width for %1").arg(id));
+  requireCloseMetric(entry.nativeInkHeightEm, entry.katexInkHeightEm, heightTolerance,
+                     QStringLiteral("KaTeX ink bbox height for %1").arg(id));
+}
+
+void compareKatexBuilderRootMetrics(const QString& id,
+                                    const math::MathRenderNode& root,
+                                    const QJsonObject& nativeDump,
+                                    const QJsonObject& golden,
+                                    qreal em,
+                                    qreal heightTolerance,
+                                    qreal depthTolerance,
+                                    qreal shiftTolerance) {
+  const QJsonObject goldenRoot = golden.value(QStringLiteral("root")).toObject();
+  require(!goldenRoot.isEmpty(), QStringLiteral("KaTeX golden metrics for %1 should include root").arg(id));
+  if (renderTreeContainsClass(goldenRoot, QStringLiteral("katex-error"))) {
+    return;
+  }
+  if (renderTreeContainsClass(goldenRoot, QStringLiteral("newline"))) {
+    return;
+  }
+
+  QJsonObject nativeMetricsRoot = nativeDump;
+  QJsonObject katexHtml;
+  if (findRenderTreeText(nativeDump, QStringLiteral("katex-html"), katexHtml)) {
+    nativeMetricsRoot = katexHtml;
+  }
+  const qreal nativeHeight = jsonHasNumber(nativeMetricsRoot, QStringLiteral("height")) ? jsonNumber(nativeMetricsRoot, QStringLiteral("height")) : root.height;
+  const qreal nativeDepth = jsonHasNumber(nativeMetricsRoot, QStringLiteral("depth")) ? jsonNumber(nativeMetricsRoot, QStringLiteral("depth")) : root.depth;
+  const qreal nativeWidth = jsonHasNumber(nativeMetricsRoot, QStringLiteral("width")) ? jsonNumber(nativeMetricsRoot, QStringLiteral("width")) : root.width;
+  const qreal actualHeight = nativeHeight / em;
+  const qreal actualDepth = nativeDepth / em;
+  if (jsonHasNumber(goldenRoot, QStringLiteral("height"))) {
+    requireCloseMetric(actualHeight, jsonNumber(goldenRoot, QStringLiteral("height")), heightTolerance,
+                       QStringLiteral("KaTeX builder root height for %1").arg(id));
+  }
+  if (jsonHasNumber(goldenRoot, QStringLiteral("depth"))) {
+    requireCloseMetric(actualDepth, jsonNumber(goldenRoot, QStringLiteral("depth")), depthTolerance,
+                       QStringLiteral("KaTeX builder root depth for %1").arg(id));
+  }
+  if (jsonHasNumber(goldenRoot, QStringLiteral("width"))) {
+    requireCloseMetric(nativeWidth / em, jsonNumber(goldenRoot, QStringLiteral("width")), 0.50,
+                       QStringLiteral("KaTeX builder root width for %1").arg(id));
+  }
+
+  const QJsonArray goldenFlat = golden.value(QStringLiteral("flat")).toArray();
+  require(!goldenFlat.isEmpty(), QStringLiteral("KaTeX golden metrics for %1 should include flat nodes").arg(id));
+  const qreal goldenMaxShift = maxAbsFlatMetric(goldenFlat, QStringLiteral("shift"));
+  if (goldenMaxShift > 0.0) {
+    requireCloseMetric(maxAbsJsonMetric(nativeMetricsRoot, QStringLiteral("shift")) / em, goldenMaxShift, shiftTolerance,
+                       QStringLiteral("KaTeX builder max shift for %1").arg(id));
+  }
 }
 
 MarkdownNode* mutableBlockAt(MarkdownDocument& document, qsizetype index) {
@@ -175,8 +936,15 @@ void testInlineMarkerExpansion() {
   InlineLayout::BuildOptions mathOptions;
   mathOptions.projectionState.cursorSourceOffset = 2;
   math.build(mathInlines, QStringLiteral("$a123$"), theme, 400.0, theme.paragraphFont(), mathOptions);
+  require(math.mathAtomCount() == 0 && math.displayText() == QStringLiteral("$a123$"),
+          QStringLiteral("active inline math should expand to editable source text"));
   require(math.hitTestSourceOffset(math.cursorRectForSourceOffset(2).center()) == 2,
           QStringLiteral("math cursor rect should round-trip source offset after first char"));
+
+  InlineLayout inactiveMath;
+  inactiveMath.build(mathInlines, QStringLiteral("$a123$"), theme, 400.0, theme.paragraphFont(), InlineLayout::BuildOptions{});
+  require(inactiveMath.mathAtomCount() == 1 && !inactiveMath.displayText().contains(QStringLiteral("a123")),
+          QStringLiteral("inactive inline math should collapse to a native math atom"));
 
   InlineLayout selectionExpanded;
   InlineLayout::BuildOptions selectionOptions;
@@ -352,6 +1120,65 @@ void testMathRenderingLayout() {
               !userParagraphLayout->inlineLayout()->displayText().contains(QStringLiteral("mc^2")) &&
               !userParagraphLayout->inlineLayout()->displayText().contains(QStringLiteral("a_1")),
           QStringLiteral("inactive single dollar math should be collapsed to native atoms"));
+  {
+    const QString inlineMathSample = QStringLiteral("before $E=mc^2$ after");
+    ParseResult inlineParsed = parser.parseDocument(inlineMathSample, {});
+    require(inlineParsed.root != nullptr, QStringLiteral("inline math exact placeholder sample should parse"));
+    MarkdownDocument inlineDocument;
+    inlineDocument.setMarkdownText(inlineMathSample, std::move(inlineParsed.root));
+    DocumentLayout inlineLayoutDocument;
+    inlineLayoutDocument.rebuild(inlineDocument, theme, 800.0);
+    const MarkdownNode* inlineParagraph = findFirstBlock(inlineDocument.root(), BlockType::Paragraph);
+    require(inlineParagraph != nullptr, QStringLiteral("inline math exact placeholder paragraph should exist"));
+    const BlockLayout* inlineParagraphLayout = inlineLayoutDocument.block(inlineParagraph->id());
+    require(inlineParagraphLayout != nullptr && inlineParagraphLayout->inlineLayout() != nullptr,
+            QStringLiteral("inline math exact placeholder layout should exist"));
+    const qsizetype formulaStart = QStringLiteral("before ").size();
+    const qsizetype formulaEnd = formulaStart + QStringLiteral("E=mc^2").size();
+    const qreal reservedWidth = inlineParagraphLayout->inlineLayout()->cursorRect(formulaEnd).left() -
+                                inlineParagraphLayout->inlineLayout()->cursorRect(formulaStart).left();
+    const math::MathLayoutResult formulaLayout = math::MathRenderer().render(QStringLiteral("E=mc^2"), theme, false);
+    require(formulaLayout.valid() && qAbs(reservedWidth - formulaLayout.size.width()) < 1.5,
+            QStringLiteral("collapsed inline math placeholder should reserve the native math box width exactly"));
+
+    const QColor transparent(Qt::transparent);
+    QImage directImage(QSize(qCeil(formulaLayout.size.width()) + 32, qCeil(formulaLayout.size.height()) + 32), QImage::Format_ARGB32);
+    directImage.fill(transparent);
+    {
+      QPainter painter(&directImage);
+      painter.setRenderHint(QPainter::Antialiasing, true);
+      painter.setRenderHint(QPainter::TextAntialiasing, true);
+      formulaLayout.paint(painter, QPointF(16.0, 16.0));
+    }
+    const QRect directInk = imageInkBounds(directImage, transparent);
+    require(!directInk.isEmpty(), QStringLiteral("direct inline formula paint should produce ink"));
+
+    QVector<InlineNode> mathOnlyInlines;
+    mathOnlyInlines.push_back(InlineNode::inlineMath(QStringLiteral("E=mc^2")));
+    InlineLayout mathOnlyLayout;
+    mathOnlyLayout.build(mathOnlyInlines, QStringLiteral("$E=mc^2$"), theme, 360.0, theme.paragraphFont(), InlineLayout::BuildOptions{});
+    require(mathOnlyLayout.mathAtomCount() == 1, QStringLiteral("isolated inline formula should collapse to one math atom"));
+    require(mathOnlyLayout.displayText().size() == 1, QStringLiteral("isolated inline formula should use a single QTextLayout placeholder"));
+
+    QImage inlineImage(QSize(360, qCeil(mathOnlyLayout.height()) + 32), QImage::Format_ARGB32);
+    inlineImage.fill(transparent);
+    {
+      QPainter painter(&inlineImage);
+      painter.setRenderHint(QPainter::Antialiasing, true);
+      painter.setRenderHint(QPainter::TextAntialiasing, true);
+      mathOnlyLayout.paint(painter, QPointF(16.0, 16.0));
+    }
+    const QRect inlineInk = imageInkBounds(inlineImage, transparent);
+    require(!inlineInk.isEmpty(), QStringLiteral("inline layout formula paint should produce ink"));
+
+    const qreal isolatedReservedWidth = mathOnlyLayout.cursorRect(QStringLiteral("E=mc^2").size()).left() - mathOnlyLayout.cursorRect(0).left();
+    require(qAbs(isolatedReservedWidth - formulaLayout.size.width()) < 1.5,
+            QStringLiteral("isolated inline formula cursor span should match native formula width"));
+    require(qAbs(inlineInk.width() - directInk.width()) <= 2,
+            QStringLiteral("inline formula painted ink width should match direct native formula paint"));
+    require(qAbs((inlineInk.left() - 16) - (directInk.left() - 16)) <= 2,
+            QStringLiteral("inline formula painted ink should keep the same left bearing as direct native paint"));
+  }
 
   QImage image(QSize(480, qCeil(mathBlockLayout->height()) + 30), QImage::Format_ARGB32);
   image.fill(theme.backgroundColor());
@@ -522,6 +1349,177 @@ void testStrictMathGeometryFeatures() {
             QStringLiteral("text large operator should use KaTeX Size1 font"));
     require(displaySum->height + displaySum->depth > textSum->height + textSum->depth,
             QStringLiteral("display large operator should be taller than text style operator"));
+
+    std::vector<math::MathVListChild> individualChildren;
+    individualChildren.push_back(math::MathVListChild{makeTestLayoutBox(4.0, 2.0, 1.0), 3.0});
+    individualChildren.push_back(math::MathVListChild{makeTestLayoutBox(3.0, 1.0, 0.5), -2.0});
+    auto individual = math::makeLayoutVListIndividualShift(std::move(individualChildren));
+    require(individual->children.size() == 2 &&
+                qAbs(individual->children.front()->shift - 3.0) < 0.01 &&
+                qAbs(individual->children.back()->shift + 2.0) < 0.01 &&
+                qAbs(individual->height - 3.0) < 0.01 &&
+                qAbs(individual->depth - 4.0) < 0.01,
+            QStringLiteral("native individualShift VList should match KaTeX getVListChildrenAndDepth semantics"));
+
+    std::vector<math::MathVListEntry> shiftEntries;
+    shiftEntries.push_back(math::makeLayoutVListElem(math::MathVListChild{makeTestLayoutBox(4.0, 2.0, 1.0)}));
+    auto shifted = math::makeLayoutVListShift(0.5, std::move(shiftEntries));
+    require(shifted->children.size() == 1 &&
+                qAbs(shifted->children.front()->shift - 0.5) < 0.01 &&
+                qAbs(shifted->height - 1.5) < 0.01 &&
+                qAbs(shifted->depth - 1.5) < 0.01,
+            QStringLiteral("native shift VList should position baseline relative to first child like KaTeX"));
+
+    std::vector<math::MathVListEntry> bottomEntries;
+    bottomEntries.push_back(math::makeLayoutVListElem(math::MathVListChild{makeTestLayoutBox(4.0, 2.0, 1.0)}));
+    bottomEntries.push_back(math::makeLayoutVListKern(0.5));
+    bottomEntries.push_back(math::makeLayoutVListElem(math::MathVListChild{makeTestLayoutBox(3.0, 1.0, 0.5)}));
+    auto bottom = math::makeLayoutVListBottom(2.2, std::move(bottomEntries));
+    require(qAbs(bottom->height - 2.8) < 0.01 && qAbs(bottom->depth - 2.2) < 0.01,
+            QStringLiteral("native bottom VList should expose KaTeX maxPos/minPos height and depth"));
+
+    std::vector<math::MathVListEntry> topEntries;
+    topEntries.push_back(math::makeLayoutVListElem(math::MathVListChild{makeTestLayoutBox(4.0, 2.0, 1.0)}));
+    topEntries.push_back(math::makeLayoutVListKern(0.5));
+    topEntries.push_back(math::makeLayoutVListElem(math::MathVListChild{makeTestLayoutBox(3.0, 1.0, 0.5)}));
+    auto top = math::makeLayoutVListTop(3.0, std::move(topEntries));
+    require(qAbs(top->height - 3.0) < 0.01 && qAbs(top->depth - 2.0) < 0.01,
+            QStringLiteral("native top VList should derive bottom from total child stack like KaTeX"));
+
+    const QVector<math::MathParseNode> integralNodes = math::MathParser(QStringLiteral("\\int_0^1"), settings).parse();
+    require(!integralNodes.isEmpty() && integralNodes.first().type == math::MathNodeType::SupSub,
+            QStringLiteral("integral limits syntax should parse as supsub"));
+    require(!integralNodes.first().base.isEmpty() && integralNodes.first().base.first().type == math::MathNodeType::Operator,
+            QStringLiteral("integral supsub base should remain an operator"));
+    require(integralNodes.first().base.first().label == QStringLiteral("\\int") &&
+                integralNodes.first().base.first().opSymbol &&
+                !integralNodes.first().base.first().limits,
+            QStringLiteral("integral operators should match KaTeX op.ts no-limits symbol category"));
+
+    std::unique_ptr<math::MathRenderNode> integralSupSub = math::MathBuilder(displayOptions).buildExpression(integralNodes);
+    std::unique_ptr<math::MathRenderNode> sumLimits =
+        math::MathBuilder(displayOptions).buildExpression(math::MathParser(QStringLiteral("\\sum_0^1"), settings).parse());
+    require(integralSupSub != nullptr && !integralSupSub->children.empty() &&
+                integralSupSub->children.front()->kind == math::MathRenderKind::Span &&
+                integralSupSub->children.front()->children.size() == 2 &&
+                integralSupSub->children.front()->children.back()->kind == math::MathRenderKind::VList,
+            QStringLiteral("integral should render side scripts through KaTeX-style base plus msupsub VList"));
+    require(sumLimits != nullptr && !sumLimits->children.empty() &&
+                sumLimits->children.front()->kind == math::MathRenderKind::VList,
+            QStringLiteral("sum should render display limits through native KaTeX VList layout"));
+    const math::MathRenderNode& sumVList = *sumLimits->children.front();
+    require(sumVList.children.size() == 3, QStringLiteral("sum limits VList should contain base, superscript, and subscript"));
+    bool sawLimitBase = false;
+    bool sawUpperLimit = false;
+    bool sawLowerLimit = false;
+    const std::function<bool(const math::MathRenderNode*)> containsSize2 =
+        [&](const math::MathRenderNode* node) -> bool {
+      if (node == nullptr) {
+        return false;
+      }
+      if (node->fontClass == QStringLiteral("size2")) {
+        return true;
+      }
+      for (const auto& child : node->children) {
+        if (containsSize2(child.get())) {
+          return true;
+        }
+      }
+      return false;
+    };
+    for (const auto& child : sumVList.children) {
+      if (containsSize2(child.get())) {
+        sawLimitBase = true;
+      } else if (child->shift < 0.0) {
+        sawUpperLimit = true;
+      } else if (child->shift > 0.0) {
+        sawLowerLimit = true;
+      }
+    }
+    require(sawLimitBase && sawUpperLimit && sawLowerLimit,
+            QStringLiteral("operator limits should preserve KaTeX baseShift and upper/lower individual shifts"));
+    const math::MathRenderNode& integralScripts = *integralSupSub->children.front();
+    const math::MathRenderNode& integralScriptVList = *integralScripts.children.back();
+    require(integralScriptVList.children.size() == 2 &&
+                integralScriptVList.children.front()->shift > 0.0 &&
+                integralScriptVList.children.back()->shift < 0.0,
+            QStringLiteral("ordinary supsub VList should preserve KaTeX sub and sup individual shifts"));
+    require(integralScriptVList.children.front()->xOffset < integralScriptVList.children.back()->xOffset,
+            QStringLiteral("integral side scripts should use KaTeX side-script italic correction"));
+    require(integralScriptVList.width > integralScriptVList.children.back()->xOffset + integralScriptVList.children.back()->width,
+            QStringLiteral("ordinary supsub VList width should include KaTeX scriptspace marginRight"));
+
+    std::unique_ptr<math::MathRenderNode> integralThenOrd =
+        math::MathBuilder(displayOptions).buildExpression(math::MathParser(QStringLiteral("\\int_0^1x"), settings).parse());
+    require(integralThenOrd != nullptr && integralThenOrd->children.size() >= 2,
+            QStringLiteral("integral followed by ord should build adjacent atoms"));
+    require(integralThenOrd->children.front()->width >= integralScripts.width,
+            QStringLiteral("parent hlist should advance past the ordinary supsub script box"));
+
+    std::unique_ptr<math::MathRenderNode> italicSupSub =
+        math::MathBuilder(displayOptions).buildExpression(math::MathParser(QStringLiteral("y_i^2"), settings).parse());
+    require(italicSupSub != nullptr && !italicSupSub->children.empty() &&
+                italicSupSub->children.front()->kind == math::MathRenderKind::Span &&
+                italicSupSub->children.front()->children.size() == 2 &&
+                italicSupSub->children.front()->children.back()->kind == math::MathRenderKind::VList,
+            QStringLiteral("single italic base should render supsub through KaTeX-style msupsub VList"));
+    const math::MathRenderNode& italicScripts = *italicSupSub->children.front();
+    const math::MathRenderNode& italicScriptVList = *italicScripts.children.back();
+    require(italicScriptVList.children.size() == 2 &&
+                italicScriptVList.children.front()->xOffset < italicScriptVList.children.back()->xOffset,
+            QStringLiteral("superscript should include base italic correction while subscript backs it out"));
+
+    std::unique_ptr<math::MathRenderNode> groupedSup =
+        math::MathBuilder(displayOptions).buildExpression(math::MathParser(QStringLiteral("{xy}^2"), settings).parse());
+    std::unique_ptr<math::MathRenderNode> charSup =
+        math::MathBuilder(displayOptions).buildExpression(math::MathParser(QStringLiteral("x^2"), settings).parse());
+    require(groupedSup != nullptr && charSup != nullptr && !groupedSup->children.empty() && !charSup->children.empty(),
+            QStringLiteral("character-box supsub comparison should build"));
+    require(groupedSup->height >= charSup->height,
+            QStringLiteral("non-character-box superscript should apply supDrop-derived shift"));
+  }
+  {
+    math::MathSettings settings;
+    math::MathOptions displayOptions(math::MathStyle::display(), 16.0, QColor(QStringLiteral("#111111")), settings);
+    QVector<math::MathParseNode> topLevelCrNodes = math::MathParser(QStringLiteral("a\\\\b"), settings).parse();
+    require(topLevelCrNodes.size() == 3 && topLevelCrNodes.at(1).type == math::MathNodeType::Cr,
+            QStringLiteral("top-level double backslash should parse as KaTeX cr node"));
+    std::unique_ptr<math::MathRenderNode> topLevelCr =
+        math::MathBuilder(displayOptions).buildExpression(topLevelCrNodes);
+    std::unique_ptr<math::MathRenderNode> topLevelCrGap =
+        math::MathBuilder(displayOptions).buildExpression(math::MathParser(QStringLiteral("a\\\\[0.4em]b"), settings).parse());
+    require(topLevelCr != nullptr && topLevelCr->kind == math::MathRenderKind::VList && topLevelCr->children.size() == 2,
+            QStringLiteral("top-level cr should render as native KaTeX newline VList"));
+    require(topLevelCrGap->height + topLevelCrGap->depth > topLevelCr->height + topLevelCr->depth + displayOptions.fontPointSize() * 0.3,
+            QStringLiteral("top-level cr optional size should increase native newline gap"));
+
+    std::unique_ptr<math::MathRenderNode> defaultArray =
+        math::MathBuilder(displayOptions).buildExpression(math::MathParser(QStringLiteral("\\begin{array}{c}a\\\\b\\end{array}"), settings).parse());
+    std::unique_ptr<math::MathRenderNode> gapArray =
+        math::MathBuilder(displayOptions).buildExpression(math::MathParser(QStringLiteral("\\begin{array}{c}a\\\\[0.4em]b\\end{array}"), settings).parse());
+    require(defaultArray != nullptr && gapArray != nullptr,
+            QStringLiteral("array row gap comparison should build"));
+    require(gapArray->height + gapArray->depth > defaultArray->height + defaultArray->depth + displayOptions.fontPointSize() * 0.3,
+            QStringLiteral("positive array row gap should include KaTeX arstrutDepth plus requested gap"));
+    require(!defaultArray->children.empty() && defaultArray->children.front()->kind == math::MathRenderKind::Array,
+            QStringLiteral("array individualShift comparison should unwrap root hlist"));
+    const math::MathRenderNode& arrayNode = *defaultArray->children.front();
+    require(!arrayNode.children.empty() && arrayNode.children.front()->kind == math::MathRenderKind::VList,
+            QStringLiteral("array should build a KaTeX-style table body VList"));
+    require(!arrayNode.children.front()->children.empty() &&
+                arrayNode.children.front()->children.front()->kind == math::MathRenderKind::Span &&
+                !arrayNode.children.front()->children.front()->children.empty() &&
+                arrayNode.children.front()->children.front()->children.front()->kind == math::MathRenderKind::VList,
+            QStringLiteral("array columns should be native KaTeX column VLists"));
+    const math::MathRenderNode& firstColumn = *arrayNode.children.front()->children.front()->children.front();
+    require(firstColumn.children.size() >= 2,
+            QStringLiteral("array individualShift comparison should find row wrapper cells"));
+    const qreal baselineDelta = firstColumn.children.at(1)->shift - firstColumn.children.at(0)->shift;
+    require(qAbs(baselineDelta - (firstColumn.children.at(0)->depth + firstColumn.children.at(1)->height)) < displayOptions.fontPointSize() * 0.2,
+            QStringLiteral("array row baselines should follow KaTeX makeVList individualShift row.pos-offset semantics"));
+    require(!firstColumn.children.at(0)->children.empty() &&
+                firstColumn.children.at(0)->height > firstColumn.children.at(0)->children.front()->height,
+            QStringLiteral("array row wrapper should keep KaTeX arstrut height separate from real cell content"));
   }
 
   RenderTheme theme = RenderTheme::github();
@@ -573,6 +1571,10 @@ void testMathMetricsMacrosAndState() {
   require(math::MathFontMetrics::loaded(), QStringLiteral("KaTeX font metrics data should load from resources"));
   require(math::MathFontMetrics::characterMetrics(QStringLiteral("Math-Italic"), QStringLiteral("x")).has_value(),
           QStringLiteral("KaTeX Math-Italic metrics should include x"));
+  require(math::MathFontMetrics::characterMetrics(QStringLiteral("Main-Regular"), QStringLiteral("A")).has_value(),
+          QStringLiteral("KaTeX Main-Regular metrics should include A"));
+  require(math::MathFontMetrics::characterMetrics(QStringLiteral("Math-Italic"), QString(QChar(0x03b1))).has_value(),
+          QStringLiteral("KaTeX Math-Italic metrics should include Greek alpha"));
   require(math::MathSvgGeometry::loaded(), QStringLiteral("KaTeX SVG geometry data should load from resources"));
   require(math::MathSvgGeometry::hasPath(QStringLiteral("rightarrow")), QStringLiteral("KaTeX SVG geometry should include rightarrow"));
   require(!math::MathSvgGeometry::painterPath(QStringLiteral("rightarrow"), QRectF(0.0, 0.0, 40.0, 8.0)).isEmpty(),
@@ -643,6 +1645,116 @@ void testMathMetricsMacrosAndState() {
   require(blockLayout->mathLayout()->size.width() > 40.0, QStringLiteral("metrics/macro/state layout should have measurable width"));
 }
 
+void testMathFixtureRenderTreeDumps(const QString& fixturePath) {
+  const QJsonArray fixtures = readJsonArrayFixture(fixturePath);
+  require(fixtures.size() >= 45, QStringLiteral("math fixture suite should contain at least 45 core formulas"));
+
+  const QString metricsPath = katexMetricsPathForFixture(fixturePath);
+  const QMap<QString, QJsonObject> katexMetricsById = readObjectArrayById(metricsPath);
+  const QString bboxPath = katexBBoxPathForFixture(fixturePath);
+  const QMap<QString, QJsonObject> katexBBoxById = readObjectArrayById(bboxPath);
+  const QString glyphsPath = katexGlyphsPathForFixture(fixturePath);
+  const QMap<QString, QJsonObject> katexGlyphsById = readObjectArrayById(glyphsPath);
+  RenderTheme theme = RenderTheme::github();
+  const qreal rootEm = theme.mathFont().pointSizeF() * 1.21;
+  QVector<BBoxAuditEntry> bboxAudit;
+  const bool auditKatexBBox = qEnvironmentVariableIntValue("MUFFIN_AUDIT_KATEX_BBOX") != 0;
+  for (const QJsonValue& value : fixtures) {
+    require(value.isObject(), QStringLiteral("math fixture entry should be an object"));
+    const QJsonObject fixture = value.toObject();
+    const QString id = fixture.value(QStringLiteral("id")).toString();
+    const QString tex = fixture.value(QStringLiteral("tex")).toString();
+    const bool display = fixture.value(QStringLiteral("display")).toBool();
+    require(!id.isEmpty() && !tex.isEmpty(), QStringLiteral("math fixture entry should include id and tex"));
+
+    const math::MathLayoutResult rendered = math::MathRenderer().render(tex, theme, display);
+    require(rendered.valid(), QStringLiteral("math fixture %1 should render").arg(id));
+    require(rendered.root->width > 0.0 && rendered.root->height >= 0.0 && rendered.root->depth >= 0.0,
+            QStringLiteral("math fixture %1 should expose positive root metrics").arg(id));
+    require(rendered.size.width() >= rendered.root->width && rendered.size.height() >= rendered.root->height + rendered.root->depth,
+            QStringLiteral("math fixture %1 layout size should include root box").arg(id));
+
+    const QJsonObject dump = rendered.root->toJson();
+    if (qEnvironmentVariable("MUFFIN_DUMP_MATH_FIXTURE") == id.toUtf8()) {
+      qInfo().noquote() << QString::fromUtf8(QJsonDocument(dump).toJson(QJsonDocument::Indented));
+    }
+    require(dump.value(QStringLiteral("kind")).isString(), QStringLiteral("math fixture %1 JSON dump should include kind").arg(id));
+    require(dump.value(QStringLiteral("width")).toDouble() > 0.0, QStringLiteral("math fixture %1 JSON dump should include width").arg(id));
+    const QJsonDocument reparsed = QJsonDocument::fromJson(rendered.root->toJsonString().toUtf8());
+    require(reparsed.isObject(), QStringLiteral("math fixture %1 JSON dump string should parse").arg(id));
+
+    const QJsonArray mustContain = fixture.value(QStringLiteral("mustContain")).toArray();
+    for (const QJsonValue& expected : mustContain) {
+      const QString expectedValue = expected.toString();
+      require(renderTreeContainsValue(dump, expectedValue),
+              QStringLiteral("math fixture %1 render tree should contain %2").arg(id, expectedValue));
+    }
+
+    const auto goldenIt = katexMetricsById.constFind(id);
+    if (qEnvironmentVariable("MUFFIN_DUMP_KATEX_METRIC_DIFF") == id.toUtf8() && goldenIt != katexMetricsById.constEnd()) {
+      QJsonObject nativeMetricsRoot = dump;
+      QJsonObject katexHtml;
+      if (findRenderTreeText(dump, QStringLiteral("katex-html"), katexHtml)) {
+        nativeMetricsRoot = katexHtml;
+      }
+      dumpBuilderMetricDiffs(id, nativeMetricsRoot, goldenIt.value(), rootEm);
+    }
+    if (fixture.value(QStringLiteral("compareKatexMetrics")).toBool() && goldenIt != katexMetricsById.constEnd()) {
+      const qreal heightTolerance = fixture.value(QStringLiteral("heightToleranceEm")).toDouble(0.35);
+      const qreal depthTolerance = fixture.value(QStringLiteral("depthToleranceEm")).toDouble(0.35);
+      const qreal shiftTolerance = fixture.value(QStringLiteral("shiftToleranceEm")).toDouble(0.75);
+      compareKatexBuilderRootMetrics(id, *rendered.root, dump, goldenIt.value(), rootEm, heightTolerance, depthTolerance, shiftTolerance);
+    }
+
+    const auto glyphIt = katexGlyphsById.constFind(id);
+    if (qEnvironmentVariable("MUFFIN_DUMP_GLYPH_DIFF") == id.toUtf8() && glyphIt != katexGlyphsById.constEnd()) {
+      dumpGlyphDiffs(id, *rendered.root, glyphIt.value(), rootEm);
+    }
+    if (fixture.value(QStringLiteral("compareKatexGlyphs")).toBool() && glyphIt != katexGlyphsById.constEnd()) {
+      const qreal xTolerance = fixture.value(QStringLiteral("glyphXToleranceEm")).toDouble(0.01);
+      const qreal widthTolerance = fixture.value(QStringLiteral("glyphWidthToleranceEm")).toDouble(0.02);
+      compareKatexGlyphs(id, *rendered.root, glyphIt.value(), rootEm, xTolerance, widthTolerance);
+    }
+
+    const auto bboxIt = katexBBoxById.constFind(id);
+    if (auditKatexBBox && bboxIt != katexBBoxById.constEnd() && !bboxIt.value().value(QStringLiteral("error")).toBool()) {
+      bboxAudit.push_back(makeBBoxAuditEntry(id, *rendered.root, bboxIt.value(), rootEm));
+    }
+    if (fixture.value(QStringLiteral("compareKatexBBox")).toBool() && bboxIt != katexBBoxById.constEnd()) {
+      const qreal widthTolerance = fixture.value(QStringLiteral("bboxWidthToleranceEm")).toDouble(0.75);
+      const qreal heightTolerance = fixture.value(QStringLiteral("bboxHeightToleranceEm")).toDouble(0.75);
+      compareKatexBrowserBBox(id, *rendered.root, bboxIt.value(), rootEm, widthTolerance, heightTolerance);
+    }
+    if (fixture.value(QStringLiteral("compareKatexInkBBox")).toBool() && bboxIt != katexBBoxById.constEnd()) {
+      const qreal widthTolerance = fixture.value(QStringLiteral("inkBBoxWidthToleranceEm")).toDouble(0.25);
+      const qreal heightTolerance = fixture.value(QStringLiteral("inkBBoxHeightToleranceEm")).toDouble(0.25);
+      compareKatexInkBBox(id, *rendered.root, bboxIt.value(), rootEm, widthTolerance, heightTolerance);
+    }
+  }
+
+  if (auditKatexBBox) {
+    std::sort(bboxAudit.begin(), bboxAudit.end(), [](const BBoxAuditEntry& left, const BBoxAuditEntry& right) {
+      return left.layoutError() > right.layoutError();
+    });
+    qInfo().noquote() << "KaTeX bbox audit, sorted by layout error:";
+    for (const BBoxAuditEntry& entry : bboxAudit) {
+      qInfo().noquote()
+          << QStringLiteral("%1 layoutErr=%2 inkErr=%3 katexDom=(%4,%5) katexInk=(%6,%7) nativeLayout=(%8,%9) nativeInk=(%10,%11)")
+                 .arg(entry.id)
+                 .arg(entry.layoutError(), 0, 'f', 4)
+                 .arg(entry.inkError(), 0, 'f', 4)
+                 .arg(entry.katexWidthEm, 0, 'f', 4)
+                 .arg(entry.katexHeightEm, 0, 'f', 4)
+                 .arg(entry.katexInkWidthEm, 0, 'f', 4)
+                 .arg(entry.katexInkHeightEm, 0, 'f', 4)
+                 .arg(entry.nativeLayoutWidthEm, 0, 'f', 4)
+                 .arg(entry.nativeLayoutHeightEm, 0, 'f', 4)
+                 .arg(entry.nativeInkWidthEm, 0, 'f', 4)
+                 .arg(entry.nativeInkHeightEm, 0, 'f', 4);
+    }
+  }
+}
+
 void testRemainingKatexFunctionFamilies() {
   const math::MathFunctionSpec* fracSpec = math::MathFunctionRegistry::lookup(QStringLiteral("\\frac"));
   require(fracSpec != nullptr && fracSpec->typeName == QStringLiteral("genfrac") && fracSpec->numArgs == 2,
@@ -681,18 +1793,18 @@ void testRemainingKatexFunctionFamilies() {
     const QVector<math::MathParseNode> nodes = parser.parse();
     require(!nodes.isEmpty() && nodes.first().type == math::MathNodeType::Sqrt && !nodes.first().rootIndex.isEmpty(),
             QStringLiteral("sqrt optional root index should parse"));
-    bool sawGenfracWrapper = false;
+    bool sawGenfrac = false;
     bool sawTextbf = false;
     for (const math::MathParseNode& node : nodes) {
-      if (node.type == math::MathNodeType::LeftRight && !node.body.isEmpty() && node.body.first().type == math::MathNodeType::Fraction) {
-        sawGenfracWrapper = node.leftDelim == QStringLiteral("[") && node.rightDelim == QStringLiteral("]") &&
-                            node.body.first().lineThickness > 0.0 && node.body.first().style == QStringLiteral("\\displaystyle");
+      if (node.type == math::MathNodeType::Fraction) {
+        sawGenfrac = node.leftDelim == QStringLiteral("[") && node.rightDelim == QStringLiteral("]") &&
+                     node.lineThickness > 0.0 && node.style == QStringLiteral("\\displaystyle");
       }
       if (node.type == math::MathNodeType::Text && node.fontClass == QStringLiteral("mathbf")) {
         sawTextbf = true;
       }
     }
-    require(sawGenfracWrapper, QStringLiteral("genfrac should parse delimiters line thickness style numerator and denominator"));
+    require(sawGenfrac, QStringLiteral("genfrac should parse delimiters line thickness style numerator and denominator"));
     require(sawTextbf, QStringLiteral("font text command should preserve font class"));
   }
   {
@@ -705,6 +1817,16 @@ void testRemainingKatexFunctionFamilies() {
     require(simpleSqrt != nullptr && indexedSqrt != nullptr && tallSqrt != nullptr, QStringLiteral("sqrt builder should produce render nodes"));
     require(indexedSqrt->width > simpleSqrt->width && indexedSqrt->height >= simpleSqrt->height,
             QStringLiteral("sqrt root index should add KaTeX-style left kern and vertical raise"));
+    require(simpleSqrt->kind == math::MathRenderKind::Span && simpleSqrt->children.size() == 1 &&
+                simpleSqrt->children.front()->kind == math::MathRenderKind::VList &&
+                simpleSqrt->children.front()->children.size() == 2,
+            QStringLiteral("sqrt body should render through native KaTeX VList span with radical and argument"));
+    require(indexedSqrt->kind == math::MathRenderKind::Span && indexedSqrt->children.size() == 1 &&
+                indexedSqrt->children.front()->kind == math::MathRenderKind::Span &&
+                indexedSqrt->children.front()->children.size() == 2 &&
+                indexedSqrt->children.front()->children.front()->kind == math::MathRenderKind::VList &&
+                indexedSqrt->children.front()->children.back()->kind == math::MathRenderKind::VList,
+            QStringLiteral("indexed sqrt should render root index and body through native KaTeX Span/VList layout"));
     const std::function<bool(const math::MathRenderNode*)> hasTallSqrt = [&](const math::MathRenderNode* node) -> bool {
       if (node == nullptr) {
         return false;
@@ -731,9 +1853,8 @@ void testRemainingKatexFunctionFamilies() {
     bool sawAtopNoBar = false;
     bool sawAboveRule = false;
     const std::function<void(const math::MathParseNode&)> scanInfix = [&](const math::MathParseNode& node) {
-      const math::MathParseNode* candidate = &node;
-      if (node.type == math::MathNodeType::LeftRight && !node.body.isEmpty()) {
-        candidate = &node.body.first();
+      if (node.type == math::MathNodeType::Fraction) {
+        ++sawFractions;
         if (node.leftDelim == QStringLiteral("(") && node.rightDelim == QStringLiteral(")")) {
           sawChooseDelims = true;
         }
@@ -743,13 +1864,10 @@ void testRemainingKatexFunctionFamilies() {
         if (node.leftDelim == QStringLiteral("[") && node.rightDelim == QStringLiteral("]")) {
           sawBrackDelims = true;
         }
-      }
-      if (candidate->type == math::MathNodeType::Fraction) {
-        ++sawFractions;
-        if (candidate->lineThickness == 0.0) {
+        if (node.lineThickness == 0.0) {
           sawAtopNoBar = true;
         }
-        if (candidate->lineThickness > 0.0) {
+        if (node.lineThickness > 0.0) {
           sawAboveRule = true;
         }
       }
@@ -770,24 +1888,22 @@ void testRemainingKatexFunctionFamilies() {
     math::MathOptions options(math::MathStyle::textStyle(), 16.0, QColor(QStringLiteral("#111111")), settings);
     std::unique_ptr<math::MathRenderNode> noBar = math::MathBuilder(options).buildExpression(
         QVector<math::MathParseNode>{math::MathParser(QStringLiteral("{x\\atop y}")).parse().first()});
-    const std::function<const math::MathRenderNode*(const math::MathRenderNode*)> findFraction =
-        [&](const math::MathRenderNode* node) -> const math::MathRenderNode* {
+    const std::function<bool(const math::MathRenderNode*)> hasRule =
+        [&](const math::MathRenderNode* node) -> bool {
       if (node == nullptr) {
-        return nullptr;
+        return false;
       }
-      if (node->kind == math::MathRenderKind::Fraction) {
-        return node;
+      if (node->kind == math::MathRenderKind::Rule) {
+        return true;
       }
       for (const auto& child : node->children) {
-        if (const math::MathRenderNode* found = findFraction(child.get())) {
-          return found;
+        if (hasRule(child.get())) {
+          return true;
         }
       }
-      return nullptr;
+      return false;
     };
-    const math::MathRenderNode* noBarFraction = findFraction(noBar.get());
-    require(noBarFraction != nullptr && noBarFraction->children.size() == 2,
-            QStringLiteral("atop fraction should render without a rule child"));
+    require(noBar != nullptr && !hasRule(noBar.get()), QStringLiteral("atop fraction should render without a rule child"));
   }
   {
     math::MathParser parser(QStringLiteral("\\@binrel{=}{x}+\\@binrel{+}{y}+\\overset{a}{=}+{ab}+\\boldsymbol{=}"));
@@ -825,6 +1941,11 @@ void testRemainingKatexFunctionFamilies() {
     const auto widthFor = [&](const QString& tex) {
       return widthForWithOptions(tex, textOptions);
     };
+    std::unique_ptr<math::MathRenderNode> italicSymbol =
+        math::MathBuilder(textOptions).buildExpression(math::MathParser(QStringLiteral("f"), settings).parse());
+    require(italicSymbol != nullptr && !italicSymbol->children.empty() &&
+                italicSymbol->children.front()->italicMarginRight > 0.0,
+            QStringLiteral("math italic symbol should preserve KaTeX SymbolNode italic margin-right"));
     const qreal plusBetweenOrd = widthFor(QStringLiteral("a+b"));
     const qreal plusAtStart = widthFor(QStringLiteral("+b"));
     const qreal plainOrdPair = widthFor(QStringLiteral("ab"));
@@ -838,9 +1959,100 @@ void testRemainingKatexFunctionFamilies() {
             QStringLiteral("minner should insert KaTeX thin spacing before following ord"));
     require(widthFor(QStringLiteral("a=b")) > widthFor(QStringLiteral("a{=}b")),
             QStringLiteral("ordgroup should participate as mord in outer spacing"));
+    require(widthFor(QStringLiteral("a\\color{red}{+}b")) > widthFor(QStringLiteral("\\color{red}{+}b")),
+            QStringLiteral("partial color group should still participate in KaTeX bin cancellation and spacing"));
+    require(widthFor(QStringLiteral("\\color{red}{a}=b")) > widthFor(QStringLiteral("\\color{red}{ab}")),
+            QStringLiteral("partial color group should expose outer atom class for implicit relation spacing"));
     math::MathOptions scriptOptions(math::MathStyle::script(), 16.0, QColor(QStringLiteral("#111111")), settings);
     require(widthForWithOptions(QStringLiteral("a+b"), scriptOptions) < plusBetweenOrd,
             QStringLiteral("tight script style should suppress binary spacing"));
+    std::unique_ptr<math::MathRenderNode> scriptEquation =
+        math::MathBuilder(textOptions).buildExpression(math::MathParser(QStringLiteral("a_1+b_1=c_1"), settings).parse());
+    require(scriptEquation != nullptr && scriptEquation->children.size() >= 9,
+            QStringLiteral("script equation should build a top-level hlist with atoms and glue"));
+    int mediumGlueCount = 0;
+    int thickGlueCount = 0;
+    qreal summedWidth = 0.0;
+    const qreal mediumGlue = textOptions.fontPointSize() * 4.0 / 18.0;
+    const qreal thickGlue = textOptions.fontPointSize() * 5.0 / 18.0;
+    for (const auto& child : scriptEquation->children) {
+      summedWidth += child->width;
+      if (child->text == QStringLiteral("glue")) {
+        if (qAbs(child->width - mediumGlue) < 0.01) {
+          ++mediumGlueCount;
+        } else if (qAbs(child->width - thickGlue) < 0.01) {
+          ++thickGlueCount;
+        }
+      }
+    }
+    require(mediumGlueCount == 2 && thickGlueCount == 2,
+            QStringLiteral("a_1+b_1=c_1 should contain KaTeX medium glue around bin and thick glue around rel"));
+    require(qAbs(scriptEquation->width - summedWidth) < 0.01,
+            QStringLiteral("spacing glue widths should participate in hlist advance"));
+  }
+  {
+    math::MathSettings fractionSettings;
+    math::MathOptions fractionOptions(math::MathStyle::textStyle(), 16.0, QColor(QStringLiteral("#111111")), fractionSettings);
+    std::unique_ptr<math::MathRenderNode> fraction =
+        math::MathBuilder(fractionOptions).buildExpression(math::MathParser(QStringLiteral("\\frac{a}{b}"), fractionSettings).parse());
+    require(fraction != nullptr && fraction->kind == math::MathRenderKind::Span && !fraction->children.empty(),
+            QStringLiteral("fraction should be built from native KaTeX span/vlist layout instead of a paint-special fraction node"));
+    const std::function<const math::MathRenderNode*(const math::MathRenderNode*)> findFractionVList =
+        [&](const math::MathRenderNode* node) -> const math::MathRenderNode* {
+      if (node == nullptr) {
+        return nullptr;
+      }
+      if (node->kind == math::MathRenderKind::VList && node->children.size() == 3) {
+        return node;
+      }
+      for (const auto& child : node->children) {
+        if (const math::MathRenderNode* found = findFractionVList(child.get())) {
+          return found;
+        }
+      }
+      return nullptr;
+    };
+    const math::MathRenderNode* vlist = findFractionVList(fraction.get());
+    require(vlist != nullptr && vlist->kind == math::MathRenderKind::VList && vlist->children.size() == 3,
+            QStringLiteral("fraction vlist should contain denominator, rule, and numerator children"));
+    require(vlist->height > 0.0 && vlist->depth > 0.0,
+            QStringLiteral("fraction vlist should expose KaTeX height/depth box metrics"));
+    require(vlist->children.at(0)->shift > 0.0 && vlist->children.at(2)->shift < 0.0,
+            QStringLiteral("fraction vlist should use individualShift positions for denominator and numerator"));
+    const auto metrics = math::MathFontMetrics::globalMetrics(fractionOptions.style().size());
+    const qreal em = fractionOptions.fontPointSize();
+    qreal numShift = metrics.num2 * em;
+    qreal denomShift = metrics.denom2 * em;
+    const qreal rule = qMax(metrics.defaultRuleThickness, fractionSettings.minRuleThickness) * em;
+    const qreal axis = metrics.axisHeight * em;
+    const qreal clearance = rule;
+    const math::MathRenderNode* denominator = vlist->children.at(0).get();
+    const math::MathRenderNode* numerator = vlist->children.at(2).get();
+    if ((numShift - numerator->depth) - (axis + 0.5 * rule) < clearance) {
+      numShift += clearance - ((numShift - numerator->depth) - (axis + 0.5 * rule));
+    }
+    if ((axis - 0.5 * rule) - (denominator->height - denomShift) < clearance) {
+      denomShift += clearance - ((axis - 0.5 * rule) - (denominator->height - denomShift));
+    }
+    require(qAbs(vlist->children.at(0)->shift - denomShift) < 0.01 &&
+                qAbs(vlist->children.at(1)->shift - (-(axis - 0.5 * rule))) < 0.01 &&
+                qAbs(vlist->children.at(2)->shift - (-numShift)) < 0.01,
+            QStringLiteral("fraction VList shifts should match KaTeX genfrac.ts without double-applying child shifts"));
+    require(vlist->children.at(1)->kind == math::MathRenderKind::Rule,
+            QStringLiteral("fraction rule should be a normal rule child in the vlist"));
+  }
+  {
+    RenderTheme theme = RenderTheme::github();
+    math::MathSettings settings;
+    const qreal rawWidth = math::MathBuilder(math::MathOptions(math::MathStyle::textStyle(),
+                                                              theme.mathFont().pointSizeF(),
+                                                              theme.textColor(),
+                                                              settings))
+                           .buildExpression(math::MathParser(QStringLiteral("E=mc^2"), settings).parse())
+                           ->width;
+    const math::MathLayoutResult rendered = math::MathRenderer().render(QStringLiteral("E=mc^2"), theme, false);
+    require(rendered.valid() && rendered.size.width() > rawWidth * 1.15,
+            QStringLiteral("MathRenderer should apply KaTeX root font scale 1.21"));
   }
   {
     const QStringList symbolCommands{
@@ -1265,6 +2477,35 @@ int changedPixelCount(const QImage& image, QColor background) {
   return changedPixels;
 }
 
+QRect imageInkBounds(const QImage& image, QColor background) {
+  const bool transparentBackground = background.alpha() == 0;
+  const QRgb backgroundRgb = background.rgb() & 0x00ffffff;
+  int left = image.width();
+  int top = image.height();
+  int right = -1;
+  int bottom = -1;
+  for (int y = 0; y < image.height(); ++y) {
+    for (int x = 0; x < image.width(); ++x) {
+      const QRgb pixel = image.pixel(x, y);
+      if (transparentBackground) {
+        if (qAlpha(pixel) == 0) {
+          continue;
+        }
+      } else if ((pixel & 0x00ffffff) == backgroundRgb) {
+        continue;
+      }
+      left = qMin(left, x);
+      top = qMin(top, y);
+      right = qMax(right, x);
+      bottom = qMax(bottom, y);
+    }
+  }
+  if (right < left || bottom < top) {
+    return {};
+  }
+  return QRect(left, top, right - left + 1, bottom - top + 1);
+}
+
 void testDocumentLayoutInlineLayoutContract() {
   DocumentSession session;
   session.setMarkdownText(
@@ -1508,6 +2749,8 @@ int main(int argc, char** argv) {
   testExtendedMathFunctionRendering();
   testStrictMathGeometryFeatures();
   testMathMetricsMacrosAndState();
+  const QFileInfo smokeFixtureInfo(QString::fromLocal8Bit(argv[1]));
+  testMathFixtureRenderTreeDumps(smokeFixtureInfo.dir().filePath(QStringLiteral("math/core.json")));
   testRemainingKatexFunctionFamilies();
   testInlineLayoutHitTesting();
   testInlineLayoutCursorRects();

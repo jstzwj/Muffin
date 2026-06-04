@@ -62,6 +62,10 @@ private:
   struct MathAtom {
     qsizetype displayStart = 0;
     qsizetype displayEnd = 0;
+    qsizetype sourceStart = 0;
+    qsizetype sourceEnd = 0;
+    qsizetype contentSourceStart = 0;
+    qsizetype contentSourceEnd = 0;
     qsizetype visibleStart = 0;
     qsizetype visibleEnd = 0;
     std::shared_ptr<math::MathLayoutResult> layout;

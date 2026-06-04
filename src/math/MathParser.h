@@ -25,11 +25,13 @@ private:
   MathParseNode parseAtom();
   MathParseNode parseFunction(const MathToken& token, const MathFunctionSpec& function);
   QVector<MathParseNode> parseGroup();
+  QVector<MathParseNode> parseScriptGroup();
   QVector<MathParseNode> parseRequiredGroup(const QString& command);
   QString parseRawGroupText(const QString& command);
   QString parseOptionalBracketText();
   QString parseSizeText(const QString& command);
   MathParseNode parseBeginEnvironment();
+  MathParseNode parseCr(const MathToken& token);
   MathParseNode parseArrayEnvironment(const QString& name);
   void parseArrayPreamble(MathParseNode& array, const QString& preamble);
   void consumeArrayHLines(MathParseNode& array, int beforeRow);

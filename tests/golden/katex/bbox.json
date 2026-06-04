@@ -1,0 +1,1697 @@
+[
+  {
+    "id": "inline-energy",
+    "tex": "E=mc^2",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 74.3438,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 4,
+      "width": 74,
+      "height": 18
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24,
+      "width": 74.3438,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "inline-scripts-spacing",
+    "tex": "a_1+b_1=c_1",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 99.625,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 7,
+      "width": 99,
+      "height": 17
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24,
+      "width": 99.625,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "text-fraction",
+    "tex": "\\frac{1}{3}",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 11.4063,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 6,
+      "y": 3,
+      "width": 7,
+      "height": 26
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24,
+      "width": 11.4063,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "display-integral-fraction",
+    "tex": "\\int_0^1 x^2\\,dx=\\frac{1}{3}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 113.625,
+      "height": 47.9219
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 3,
+      "width": 111,
+      "height": 50
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 113.625,
+      "height": 47.9219
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 113.625,
+      "height": 47.9219
+    }
+  },
+  {
+    "id": "top-level-cr",
+    "tex": "a^2+b^2=c^2\\\\e^{i\\pi}+1=0",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 99.625,
+      "height": 48.4375
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 3,
+      "width": 99,
+      "height": 44
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 99.625,
+      "height": 48.4375
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 99.625,
+      "height": 48.4375
+    }
+  },
+  {
+    "id": "aligned-basic",
+    "tex": "\\begin{aligned}a&=b\\\\c&=d\\end{aligned}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 46.1406,
+      "height": 52.2656
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 6,
+      "width": 47,
+      "height": 44
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 46.1406,
+      "height": 52.2656
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 46.1406,
+      "height": 52.2656
+    }
+  },
+  {
+    "id": "gathered-basic",
+    "tex": "\\begin{gathered}x+y\\\\z\\end{gathered}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 44.9219,
+      "height": 52.2656
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 9,
+      "width": 45,
+      "height": 41
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 44.9219,
+      "height": 52.2656
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 44.9219,
+      "height": 52.2656
+    }
+  },
+  {
+    "id": "cases-basic",
+    "tex": "\\begin{cases}x^2,&x>0\\\\0,&x=0\\end{cases}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 108.0625,
+      "height": 58.0781
+    },
+    "inkBBox": {
+      "x": 6,
+      "y": 4,
+      "width": 103,
+      "height": 58
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 108.0625,
+      "height": 58.0781
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 108.0625,
+      "height": 58.0781
+    }
+  },
+  {
+    "id": "pmatrix-basic",
+    "tex": "\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 68.1719,
+      "height": 46.4531
+    },
+    "inkBBox": {
+      "x": 7,
+      "y": 4,
+      "width": 62,
+      "height": 46
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 68.1719,
+      "height": 46.4531
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 68.1719,
+      "height": 46.4531
+    }
+  },
+  {
+    "id": "array-hline",
+    "tex": "\\begin{array}{|c:rl@{}c|}\\hline\\hdashline a&b&c&d\\cr e&f&g&h\\\\[0.4em]\\hline\\end{array}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 16,
+    "error": true,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 685.7344,
+      "height": 21
+    },
+    "inkBBox": {
+      "x": 3,
+      "y": 8,
+      "width": 687,
+      "height": 17
+    },
+    "katexBBox": null,
+    "displayBBox": null
+  },
+  {
+    "id": "sqrt-simple",
+    "tex": "\\sqrt{x}",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 27.2031,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 5,
+      "y": 6,
+      "width": 26,
+      "height": 20
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24,
+      "width": 27.2031,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "sqrt-indexed",
+    "tex": "\\sqrt[3]{\\frac{a}{b}}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 33.7031,
+      "height": 47.2344
+    },
+    "inkBBox": {
+      "x": 5,
+      "y": 4,
+      "width": 33,
+      "height": 45
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 33.7031,
+      "height": 47.2344
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 33.7031,
+      "height": 47.2344
+    }
+  },
+  {
+    "id": "sum-limits",
+    "tex": "\\sum_{i=1}^{n} i",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 37.875,
+      "height": 56.7031
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 5,
+      "width": 38,
+      "height": 55
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 37.875,
+      "height": 56.7031
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 37.875,
+      "height": 56.7031
+    }
+  },
+  {
+    "id": "lim-limits",
+    "tex": "\\lim_{x\\to0}\\frac{\\sin x}{x}=1",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 109.5469,
+      "height": 39.9063
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 4,
+      "width": 109,
+      "height": 40
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 109.5469,
+      "height": 39.9063
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 109.5469,
+      "height": 39.9063
+    }
+  },
+  {
+    "id": "left-right-tall",
+    "tex": "\\left(\\frac{\\frac{a}{b}}{\\frac{c}{d}}\\right)",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 44.9219,
+      "height": 48.0313
+    },
+    "inkBBox": {
+      "x": 7,
+      "y": 3,
+      "width": 39,
+      "height": 50
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 44.9219,
+      "height": 48.0313
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 44.9219,
+      "height": 48.0313
+    }
+  },
+  {
+    "id": "wide-accent",
+    "tex": "\\widehat{abcdef}+\\widetilde{abcdef}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 138.9063,
+      "height": 27.7969
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 4,
+      "width": 139,
+      "height": 26
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 138.9063,
+      "height": 27.7969
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 138.9063,
+      "height": 27.7969
+    }
+  },
+  {
+    "id": "horiz-brace",
+    "tex": "\\underbrace{x+y}_{n}+\\overbrace{a+b}^{m}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 110.7969,
+      "height": 61.7031
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 3,
+      "width": 111,
+      "height": 64
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 110.7969,
+      "height": 61.7031
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 110.7969,
+      "height": 61.7031
+    }
+  },
+  {
+    "id": "genfrac-binom",
+    "tex": "\\binom{n}{k}+{x\\atop y}+{p\\brace q}+{r\\brack s}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 195.3438,
+      "height": 46.4531
+    },
+    "inkBBox": {
+      "x": 7,
+      "y": 4,
+      "width": 188,
+      "height": 46
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 195.3438,
+      "height": 46.4531
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 195.3438,
+      "height": 46.4531
+    }
+  },
+  {
+    "id": "mclass-spacing",
+    "tex": "\\mathrel{=}+\\mathbin{+}+\\mathinner{\\left(x\\right)}y",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 116.9844,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 6,
+      "width": 117,
+      "height": 20
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24,
+      "width": 116.9844,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "color-text-font",
+    "tex": "\\textcolor{red}{\\frac{1}{2}}+\\mathbf{B}+\\mathit{x}+\\text{hello}",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 25,
+      "width": 147.0156,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 6,
+      "y": 3,
+      "width": 145,
+      "height": 25
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 25,
+      "width": 147.0156,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "supsub-both",
+    "tex": "x_i^2+y_{n+1}^{m-1}",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 82.8438,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 3,
+      "width": 82,
+      "height": 25
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24,
+      "width": 82.8438,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "nested-scripts",
+    "tex": "a_{b_c}^{d^e}",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24.0469,
+      "width": 23.7188,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 3,
+      "width": 22,
+      "height": 26
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24.0469,
+      "width": 23.7188,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "nested-fraction",
+    "tex": "\\frac{\\frac{a}{b}}{c+\\frac{d}{e}}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 48.3438,
+      "height": 49.2656
+    },
+    "inkBBox": {
+      "x": 6,
+      "y": 3,
+      "width": 44,
+      "height": 51
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 48.3438,
+      "height": 49.2656
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 48.3438,
+      "height": 49.2656
+    }
+  },
+  {
+    "id": "sqrt-nested",
+    "tex": "\\sqrt{1+\\sqrt{x}}",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 25.6875,
+      "width": 79.9063,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 6,
+      "y": 3,
+      "width": 78,
+      "height": 24
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 25.6875,
+      "width": 79.9063,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "integral-gaussian",
+    "tex": "\\int_{-\\infty}^{\\infty} e^{-x^2}\\,dx",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 97.5156,
+      "height": 46.1563
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 3,
+      "width": 97,
+      "height": 47
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 97.5156,
+      "height": 46.1563
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 97.5156,
+      "height": 46.1563
+    }
+  },
+  {
+    "id": "prod-limits",
+    "tex": "\\prod_{k=1}^{n} k",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 38.7344,
+      "height": 57.1719
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 5,
+      "width": 38,
+      "height": 55
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 38.7344,
+      "height": 57.1719
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 38.7344,
+      "height": 57.1719
+    }
+  },
+  {
+    "id": "operatorname-rank",
+    "tex": "\\operatorname{rank}_A B+\\lim_{x\\to0}x",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 134.3438,
+      "height": 30.875
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 7,
+      "width": 134,
+      "height": 27
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 134.3438,
+      "height": 30.875
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 134.3438,
+      "height": 30.875
+    }
+  },
+  {
+    "id": "norm-delimiters",
+    "tex": "\\left\\lVert \\frac{x}{y}\\right\\rVert",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 37.2031,
+      "height": 46.4531
+    },
+    "inkBBox": {
+      "x": 6,
+      "y": 4,
+      "width": 32,
+      "height": 46
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 37.2031,
+      "height": 46.4531
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 37.2031,
+      "height": 46.4531
+    }
+  },
+  {
+    "id": "big-delimiters",
+    "tex": "\\Bigl(\\frac{a}{b}\\Bigr)+\\biggl[\\frac{c}{d}\\biggr]",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 96.8281,
+      "height": 46.4531
+    },
+    "inkBBox": {
+      "x": 7,
+      "y": 4,
+      "width": 90,
+      "height": 46
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 96.8281,
+      "height": 46.4531
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 96.8281,
+      "height": 46.4531
+    }
+  },
+  {
+    "id": "array-simple",
+    "tex": "\\begin{array}{cc}a&b\\\\c&d\\end{array}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 59.0156,
+      "height": 46.4531
+    },
+    "inkBBox": {
+      "x": 14,
+      "y": 6,
+      "width": 40,
+      "height": 38
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 59.0156,
+      "height": 46.4531
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 59.0156,
+      "height": 46.4531
+    }
+  },
+  {
+    "id": "array-lines",
+    "tex": "\\begin{array}{|c|r|}\\hline a&b\\\\\\hline c&d\\\\\\hline\\end{array}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 62.7656,
+      "height": 47.2344
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 4,
+      "width": 63,
+      "height": 47
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 62.7656,
+      "height": 47.2344
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 62.7656,
+      "height": 47.2344
+    }
+  },
+  {
+    "id": "smallmatrix-basic",
+    "tex": "\\begin{smallmatrix}1&2\\\\3&4\\end{smallmatrix}",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24.0469,
+      "width": 21.0625,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 3,
+      "width": 22,
+      "height": 23
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24.0469,
+      "width": 21.0625,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "text-fraction-words",
+    "tex": "\\text{rate}=\\frac{\\text{distance}}{\\text{time}}",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24.0313,
+      "width": 112.1094,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 3,
+      "width": 110,
+      "height": 26
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24.0313,
+      "width": 112.1094,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "font-classes",
+    "tex": "\\mathbb{R}+\\mathcal{F}+\\mathfrak{g}+\\mathtt{x}",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 120.7344,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 8,
+      "width": 121,
+      "height": 17
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24,
+      "width": 120.7344,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "accent-basic",
+    "tex": "\\hat{x}+\\bar{y}+\\vec{z}",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 78.4375,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 7,
+      "width": 79,
+      "height": 18
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24,
+      "width": 78.4375,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "wide-accent-long",
+    "tex": "\\widehat{xyzuvw}+\\widetilde{abcdef}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 147.9531,
+      "height": 26.25
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 4,
+      "width": 148,
+      "height": 24
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 147.9531,
+      "height": 26.25
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 147.9531,
+      "height": 26.25
+    }
+  },
+  {
+    "id": "line-accent",
+    "tex": "\\overline{x+y}+\\underline{a+b}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 110.7969,
+      "height": 23.2188
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 6,
+      "width": 111,
+      "height": 20
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 110.7969,
+      "height": 23.2188
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 110.7969,
+      "height": 23.2188
+    }
+  },
+  {
+    "id": "brace-long",
+    "tex": "\\underbrace{x+\\cdots+x}_{n}+\\overbrace{1+\\cdots+1}^{m}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 205.2188,
+      "height": 58.5781
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 3,
+      "width": 205,
+      "height": 61
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 205.2188,
+      "height": 58.5781
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 205.2188,
+      "height": 58.5781
+    }
+  },
+  {
+    "id": "binom-choose",
+    "tex": "\\binom{n}{k}={n\\choose k}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 106.0625,
+      "height": 46.4531
+    },
+    "inkBBox": {
+      "x": 7,
+      "y": 4,
+      "width": 100,
+      "height": 46
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 106.0625,
+      "height": 46.4531
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 106.0625,
+      "height": 46.4531
+    }
+  },
+  {
+    "id": "genfrac-brackets",
+    "tex": "\\genfrac{[}{]}{0.08em}{0}{a}{b}+\\genfrac{\\{}{}{0pt}{}{x}{y}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 82.2969,
+      "height": 46.4531
+    },
+    "inkBBox": {
+      "x": 8,
+      "y": 4,
+      "width": 76,
+      "height": 46
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 82.2969,
+      "height": 46.4531
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 82.2969,
+      "height": 46.4531
+    }
+  },
+  {
+    "id": "spacing-commands",
+    "tex": "a\\,b\\;c\\quad d\\!e",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 70.7969,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 7,
+      "width": 71,
+      "height": 15
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24,
+      "width": 70.7969,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "phantom-family",
+    "tex": "a+\\phantom{bbb}+c+\\hphantom{xx}+\\vphantom{\\frac{1}{2}}",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 160.3438,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 10,
+      "width": 155,
+      "height": 13
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24,
+      "width": 160.3438,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "lap-family",
+    "tex": "\\mathllap{a}b+\\mathrlap{c}d+\\mathclap{e}f",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 77.2813,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 0,
+      "y": 7,
+      "width": 81,
+      "height": 18
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24,
+      "width": 77.2813,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "raisebox-vcenter",
+    "tex": "\\raisebox{0.2em}{x}+\\vcenter{\\frac{a}{b}}",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 37.0938,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 3,
+      "y": 5,
+      "width": 36,
+      "height": 22
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24,
+      "width": 37.0938,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "enclose-family",
+    "tex": "\\cancel{x}+\\bcancel{y}+\\boxed{z}",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 90.0313,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 6,
+      "width": 90,
+      "height": 23
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24,
+      "width": 90.0313,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "macro-high-frequency",
+    "tex": "\\pmod{n}+\\bmod x+\\iff+\\implies+\\impliedby+\\And+\\alef",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 425.9063,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 14,
+      "y": 6,
+      "width": 415,
+      "height": 20
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24,
+      "width": 425.9063,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "style-switches",
+    "tex": "\\scriptstyle \\frac{a}{b}+\\displaystyle \\sum_{i=1}^{n}i",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 63.75,
+      "height": 56.7031
+    },
+    "inkBBox": {
+      "x": 6,
+      "y": 5,
+      "width": 61,
+      "height": 55
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 63.75,
+      "height": 56.7031
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 63.75,
+      "height": 56.7031
+    }
+  },
+  {
+    "id": "left-right-braces",
+    "tex": "\\left\\{\\begin{array}{cc}a&b\\\\c&d\\end{array}\\right\\}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 88.0781,
+      "height": 46.4531
+    },
+    "inkBBox": {
+      "x": 6,
+      "y": 4,
+      "width": 84,
+      "height": 46
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 88.0781,
+      "height": 46.4531
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 88.0781,
+      "height": 46.4531
+    }
+  },
+  {
+    "id": "greek-relations",
+    "tex": "\\alpha+\\beta=\\gamma,\\quad x\\le y\\ne z\\to w",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 24,
+      "width": 240.2344,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 7,
+      "width": 240,
+      "height": 18
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 24,
+      "width": 240.2344,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "script-fraction-mix",
+    "tex": "A_{i,j}^{k+1}+\\frac{x_i^2+y_i^2}{z_i}",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 28.9531,
+      "width": 105.6094,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 0,
+      "width": 103,
+      "height": 30
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 28.9531,
+      "width": 105.6094,
+      "height": 22
+    },
+    "displayBBox": null
+  },
+  {
+    "id": "display-bigops-chain",
+    "tex": "\\sum_{i=1}^{n} i^2+\\prod_{j=1}^{m} j+\\lim_{x\\to0}\\frac{\\sin x}{x}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 204.0156,
+      "height": 59.3281
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 5,
+      "width": 202,
+      "height": 57
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 204.0156,
+      "height": 59.3281
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 204.0156,
+      "height": 59.3281
+    }
+  },
+  {
+    "id": "matrix-delimiter-fraction",
+    "tex": "\\left[\\begin{matrix}\\frac{a}{b}&c^2\\\\d&e_f\\end{matrix}\\right]",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 69.6875,
+      "height": 46.4531
+    },
+    "inkBBox": {
+      "x": 8,
+      "y": 3,
+      "width": 62,
+      "height": 47
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 69.6875,
+      "height": 46.4531
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 69.6875,
+      "height": 46.4531
+    }
+  },
+  {
+    "id": "cases-text-complex",
+    "tex": "f(x)=\\begin{cases}\\frac{x^2-1}{x-1},&x\\ne1\\\\2,&x=1\\end{cases}",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 188.2969,
+      "height": 58.0781
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 4,
+      "width": 185,
+      "height": 58
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 188.2969,
+      "height": 58.0781
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 188.2969,
+      "height": 58.0781
+    }
+  },
+  {
+    "id": "accent-sqrt-delim",
+    "tex": "\\left|\\widehat{xy}+\\sqrt{a_b^2+c_d^2}\\right|",
+    "display": true,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 40,
+      "width": 135.1875,
+      "height": 46.4531
+    },
+    "inkBBox": {
+      "x": 6,
+      "y": 4,
+      "width": 131,
+      "height": 46
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 135.1875,
+      "height": 46.4531
+    },
+    "displayBBox": {
+      "x": 24,
+      "y": 40,
+      "width": 135.1875,
+      "height": 46.4531
+    }
+  },
+  {
+    "id": "font-text-operators",
+    "tex": "\\mathbf{F}_{\\text{net}}=m\\mathbf{a},\\quad \\operatorname{tr}(A^TB)",
+    "display": false,
+    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "rootFontPx": 19.36,
+    "error": false,
+    "fontStatus": "loaded",
+    "bbox": {
+      "x": 24,
+      "y": 25,
+      "width": 186.5625,
+      "height": 22
+    },
+    "inkBBox": {
+      "x": 4,
+      "y": 4,
+      "width": 185,
+      "height": 22
+    },
+    "katexBBox": {
+      "x": 24,
+      "y": 25,
+      "width": 186.5625,
+      "height": 22
+    },
+    "displayBBox": null
+  }
+]

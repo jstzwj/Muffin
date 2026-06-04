@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QString>
+#include <QVector>
 
 namespace muffin::math {
 
@@ -17,6 +18,7 @@ public:
   MathToken peek();
   MathToken next();
   void consume();
+  void pushFront(MathToken token);
   bool atEnd();
 
 private:
@@ -26,6 +28,7 @@ private:
   qsizetype pos_ = 0;
   bool hasLookahead_ = false;
   MathToken lookahead_;
+  QVector<MathToken> pushed_;
 };
 
 }  // namespace muffin::math

@@ -177,6 +177,9 @@ add_executable(Muffin
 
 set(MUFFIN_UI_SOURCES
   src/katex_fonts.qrc
+  third_party/katex/src/fontMetricsData.js
+  third_party/katex/src/svgGeometry.ts
+  third_party/katex/src/symbols.ts
   src/tree_sitter_queries.qrc
   src/blocks/code/CodeFenceController.cpp
   src/blocks/code/CodeFenceController.h
@@ -227,6 +230,8 @@ set(MUFFIN_UI_SOURCES
   src/math/MathFunctionRegistry.h
   src/math/MathLexer.cpp
   src/math/MathLexer.h
+  src/math/MathLayoutTree.cpp
+  src/math/MathLayoutTree.h
   src/math/MathMacroExpander.cpp
   src/math/MathMacroExpander.h
   src/math/MathOptions.cpp
