@@ -85,7 +85,9 @@ QString SelectionSerializer::exportMarkdown(const MarkdownDocument& document, co
     if (selectedEnd <= selectedStart) {
       return {};
     }
-    return markdown.mid(prefixStart, context.sourceStart - prefixStart) + markdown.mid(selectedStart, selectedEnd - selectedStart);
+    const bool includeStructuredPrefix = context.editableNode && context.editableNode->type() != BlockType::TableCell;
+    return (includeStructuredPrefix ? markdown.mid(prefixStart, context.sourceStart - prefixStart) : QString()) +
+           markdown.mid(selectedStart, selectedEnd - selectedStart);
   }
 
   qsizetype literalAnchorOffset = -1;
@@ -160,13 +162,24 @@ bool SelectionSerializer::selectionContext(
     return false;
   }
 
-  const MarkdownNode* node = document.node(selection.focus.blockId);
+  const MarkdownNode* node =
+      document.node(selection.focus.text.nodeId.isValid() ? selection.focus.text.nodeId : selection.focus.blockId);
   if (!node || !editableContextFor(document, *node, context)) {
     return false;
   }
 
-  start = qBound<qsizetype>(0, selection.startOffset(), context.sourceText.size());
-  end = qBound<qsizetype>(0, selection.endOffset(), context.sourceText.size());
+  qsizetype anchorOffset = -1;
+  qsizetype anchorContextStart = -1;
+  qsizetype focusOffset = -1;
+  qsizetype focusContextStart = -1;
+  if (!editableCursorSourceOffset(document, selection.anchor, anchorOffset, anchorContextStart) ||
+      !editableCursorSourceOffset(document, selection.focus, focusOffset, focusContextStart) ||
+      anchorContextStart != context.sourceStart || focusContextStart != context.sourceStart) {
+    return false;
+  }
+
+  start = qBound<qsizetype>(0, qMin(anchorOffset, focusOffset) - context.sourceStart, context.sourceText.size());
+  end = qBound<qsizetype>(0, qMax(anchorOffset, focusOffset) - context.sourceStart, context.sourceText.size());
   return start < end;
 }
 
@@ -194,7 +207,8 @@ bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, c
     }
   }
 
-  if (!editable || (editable->type() != BlockType::Paragraph && editable->type() != BlockType::Heading)) {
+  if (!editable || (editable->type() != BlockType::Paragraph && editable->type() != BlockType::Heading &&
+                    editable->type() != BlockType::TableCell)) {
     return false;
   }
 
@@ -203,8 +217,12 @@ bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, c
     return false;
   }
 
-  qsizetype sourceStart = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
-  const qsizetype sourceEnd = sourceOffsetForLineEnd(markdown, range.lineEnd);
+  qsizetype sourceStart = editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+                               ? range.byteStart
+                               : sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
+  const qsizetype sourceEnd = editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+                                  ? range.byteEnd
+                                  : sourceOffsetForLineEnd(markdown, range.lineEnd);
   if (sourceStart < 0 || sourceEnd < sourceStart) {
     return false;
   }
@@ -235,7 +253,7 @@ bool SelectionSerializer::editableCursorSourceOffset(
     return false;
   }
 
-  const MarkdownNode* node = document.node(cursor.blockId);
+  const MarkdownNode* node = document.node(cursor.text.nodeId.isValid() ? cursor.text.nodeId : cursor.blockId);
   EditableContext context;
   if (!node || !editableContextFor(document, *node, context)) {
     return false;

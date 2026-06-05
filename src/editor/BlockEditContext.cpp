@@ -28,6 +28,18 @@ qsizetype paragraphContentStartIncludingCommonMarkIndent(const QString& markdown
   return start == lineStart ? start : astStart;
 }
 
+bool localSourceOffsetForCursor(const BlockEditContext& context, const CursorPosition& cursor, qsizetype& localSourceOffset) {
+  if (cursor.text.sourceOffset >= context.contentRange.byteStart && cursor.text.sourceOffset <= context.contentRange.byteEnd) {
+    localSourceOffset = cursor.text.sourceOffset - context.contentRange.byteStart;
+    return true;
+  }
+  if (context.plainInlineEditable) {
+    localSourceOffset = qBound<qsizetype>(0, cursor.text.textOffset, context.contentText.size());
+    return true;
+  }
+  return context.inlineProjection.sourceOffsetForVisibleOffset(cursor.text.textOffset, localSourceOffset);
+}
+
 }  // namespace
 
 BlockEditContextResolver::BlockEditContextResolver(DocumentSession* session, SelectionController* selection)
@@ -179,15 +191,18 @@ bool BlockEditContextResolver::selectionContext(BlockEditContext& context, qsize
   if (!range.isSingleBlock() || range.isCollapsed()) {
     return false;
   }
-  if (!forBlock(range.focus.blockId, context)) {
+  const NodeId focusContextId = range.focus.text.nodeId.isValid() ? range.focus.text.nodeId : range.focus.blockId;
+  if (!forBlock(focusContextId, context)) {
     return false;
   }
-  if (!context.plainInlineEditable) {
+  qsizetype anchorOffset = -1;
+  qsizetype focusOffset = -1;
+  if (!localSourceOffsetForCursor(context, range.anchor, anchorOffset) || !localSourceOffsetForCursor(context, range.focus, focusOffset)) {
     return false;
   }
 
-  start = qBound<qsizetype>(0, range.startOffset(), context.contentText.size());
-  end = qBound<qsizetype>(0, range.endOffset(), context.contentText.size());
+  start = qMin(anchorOffset, focusOffset);
+  end = qMax(anchorOffset, focusOffset);
   return start < end;
 }
 
@@ -203,16 +218,20 @@ bool BlockEditContextResolver::selectionSourceRange(qsizetype& start, qsizetype&
 
   BlockEditContext anchor;
   BlockEditContext focus;
-  if (!forBlock(range.anchor.blockId, anchor) || !forBlock(range.focus.blockId, focus)) {
+  const NodeId anchorContextId = range.anchor.text.nodeId.isValid() ? range.anchor.text.nodeId : range.anchor.blockId;
+  const NodeId focusContextId = range.focus.text.nodeId.isValid() ? range.focus.text.nodeId : range.focus.blockId;
+  if (!forBlock(anchorContextId, anchor) || !forBlock(focusContextId, focus)) {
     return false;
   }
 
-  const qsizetype anchorOffset =
-      anchor.contentRange.byteStart + qBound<qsizetype>(0, range.anchor.text.textOffset, anchor.contentText.size());
-  const qsizetype focusOffset =
-      focus.contentRange.byteStart + qBound<qsizetype>(0, range.focus.text.textOffset, focus.contentText.size());
-  start = qMin(anchorOffset, focusOffset);
-  end = qMax(anchorOffset, focusOffset);
+  qsizetype anchorLocalOffset = -1;
+  qsizetype focusLocalOffset = -1;
+  if (!localSourceOffsetForCursor(anchor, range.anchor, anchorLocalOffset) ||
+      !localSourceOffsetForCursor(focus, range.focus, focusLocalOffset)) {
+    return false;
+  }
+  start = qMin(anchor.contentRange.byteStart + anchorLocalOffset, focus.contentRange.byteStart + focusLocalOffset);
+  end = qMax(anchor.contentRange.byteStart + anchorLocalOffset, focus.contentRange.byteStart + focusLocalOffset);
   return start < end;
 }
 

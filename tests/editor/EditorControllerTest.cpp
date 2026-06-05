@@ -253,6 +253,26 @@ void setSelection(SelectionController& selection, MarkdownNode* block, qsizetype
   selection.setSelection(range);
 }
 
+void setSourceSelection(
+    SelectionController& selection,
+    MarkdownNode* block,
+    MarkdownNode* textNode,
+    qsizetype anchorTextOffset,
+    qsizetype anchorSourceOffset,
+    qsizetype focusTextOffset,
+    qsizetype focusSourceOffset) {
+  SelectionRange range;
+  range.anchor.blockId = block->id();
+  range.anchor.text.nodeId = textNode->id();
+  range.anchor.text.textOffset = anchorTextOffset;
+  range.anchor.text.sourceOffset = anchorSourceOffset;
+  range.focus.blockId = block->id();
+  range.focus.text.nodeId = textNode->id();
+  range.focus.text.textOffset = focusTextOffset;
+  range.focus.text.sourceOffset = focusSourceOffset;
+  selection.setSelection(range);
+}
+
 void setCrossSelection(
     SelectionController& selection,
     MarkdownNode* anchorBlock,
@@ -1433,6 +1453,62 @@ void testEditorViewTableCellInlineCodeEndHit() {
           "table inline code end insert source cursor mismatch");
   require(controller.selection().cursorPosition().text.textOffset == QStringLiteral("vendored cmark-gfm!").size(),
           "table inline code end insert text cursor mismatch");
+}
+
+void testTableCellRichInlineSelectionDeleteAndCopyUseSourceOffsets() {
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  controller.attach(&session, &view);
+
+  const QString cellContent = QStringLiteral("vendored `cmark-gfm` tail");
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| %1 |").arg(cellContent), false);
+  view.resize(900, 500);
+  view.setDocument(session.document());
+
+  MarkdownNode* table = blockAt(session, 0);
+  MarkdownNode* cell = childAt(childAt(table, 1), 0);
+  const qsizetype cellStart = cell->sourceRange().byteStart;
+  const qsizetype codeStart = cellContent.indexOf(QStringLiteral("cmark"));
+  const qsizetype codeEnd = codeStart + QStringLiteral("cmark-gfm").size();
+  setSourceSelection(
+      controller.selection(),
+      table,
+      cell,
+      QStringLiteral("vendored ").size(),
+      cellStart + codeStart,
+      QStringLiteral("vendored cmark-gfm").size(),
+      cellStart + codeEnd);
+
+  const QString selectedTablePlain = selectedPlainText(session, controller.selection());
+  const QString selectedTableMarkdown = selectedMarkdown(session, controller.selection());
+  require(selectedTablePlain == QStringLiteral("cmark-gfm"),
+          QStringLiteral("table rich inline selected plain text mismatch: %1").arg(selectedTablePlain));
+  require(selectedTableMarkdown == QStringLiteral("cmark-gfm"),
+          QStringLiteral("table rich inline selected markdown mismatch: %1").arg(selectedTableMarkdown));
+  require(controller.copy(), "table rich inline copy should work");
+  require(QApplication::clipboard()->text() == QStringLiteral("cmark-gfm"), "table rich inline clipboard text mismatch");
+
+  require(controller.inputController().deleteBackward(), "table rich inline selection backspace should delete selection");
+  require(session.markdownText().contains(QStringLiteral("| vendored `` tail |")),
+          "table rich inline selection delete should preserve code markers");
+  require(controller.selection().cursorPosition().text.sourceOffset == cellStart + codeStart,
+          "table rich inline selection delete source cursor mismatch");
+
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| %1 |").arg(cellContent), false);
+  table = blockAt(session, 0);
+  cell = childAt(childAt(table, 1), 0);
+  setSourceSelection(
+      controller.selection(),
+      table,
+      cell,
+      QStringLiteral("vendored ").size(),
+      cell->sourceRange().byteStart + codeStart,
+      QStringLiteral("vendored cmark-gfm").size(),
+      cell->sourceRange().byteStart + codeEnd);
+  require(controller.inputController().deleteForward(), "table rich inline selection delete should delete selection");
+  require(session.markdownText().contains(QStringLiteral("| vendored `` tail |")),
+          "table rich inline delete key should preserve code markers");
 }
 
 void testMixedInlineParagraphHitEditingBeforeAutolink() {
@@ -3267,6 +3343,7 @@ int main(int argc, char** argv) {
   testEditorViewWrappedInlineLayout();
   testEditorViewTableCellInlineLayout();
   testEditorViewTableCellInlineCodeEndHit();
+  testTableCellRichInlineSelectionDeleteAndCopyUseSourceOffsets();
   testMixedInlineParagraphHitEditingBeforeAutolink();
   testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph();
   testLocalReparsePreservesUntouchedNodeIds();

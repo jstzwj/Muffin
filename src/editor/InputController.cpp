@@ -182,11 +182,11 @@ bool InputController::insertText(QString text) {
   if (mathBlockController_ && mathBlockController_->isEditing()) {
     return mathBlockController_->insertText(std::move(text));
   }
-  if (tableController_ && tableController_->currentCell().isValid()) {
-    return tableController_->insertText(std::move(text));
-  }
   if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
     return replaceSelection(std::move(text), EditTransaction::Kind::InsertText, QStringLiteral("Replace Selection"));
+  }
+  if (tableController_ && tableController_->currentCell().isValid()) {
+    return tableController_->insertText(std::move(text));
   }
       return text.isEmpty() ? false : editParagraph(TextBlockCommandBuilder::Operation::InsertText, std::move(text));
 }
@@ -205,11 +205,11 @@ bool InputController::deleteBackward() {
   if (mathBlockController_ && mathBlockController_->isEditing()) {
     return mathBlockController_->deleteBackward();
   }
-  if (tableController_ && tableController_->currentCell().isValid()) {
-    return tableController_->deleteBackward();
-  }
   if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
     return deleteSelection();
+  }
+  if (tableController_ && tableController_->currentCell().isValid()) {
+    return tableController_->deleteBackward();
   }
   return editParagraph(TextBlockCommandBuilder::Operation::Backspace);
 }
@@ -224,11 +224,11 @@ bool InputController::deleteForward() {
   if (mathBlockController_ && mathBlockController_->isEditing()) {
     return mathBlockController_->deleteForward();
   }
-  if (tableController_ && tableController_->currentCell().isValid()) {
-    return tableController_->deleteForward();
-  }
   if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
     return deleteSelection();
+  }
+  if (tableController_ && tableController_->currentCell().isValid()) {
+    return tableController_->deleteForward();
   }
   return editParagraph(TextBlockCommandBuilder::Operation::Delete);
 }
