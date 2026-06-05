@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/MarkdownDocument.h"
+#include "document/TopLevelRangeChange.h"
 #include "parser/CmarkGfmParser.h"
 
 #include <QObject>
@@ -30,6 +31,7 @@ public:
   qint64 lastParseElapsedMs() const;
   bool lastParseWasLocalEdit() const;
   bool lastLocalEditChangedTopLevelStructure() const;
+  TopLevelRangeChange lastLocalTopLevelRangeChange() const;
 
   void newDocument();
   void setFilePath(QString path);
@@ -76,6 +78,7 @@ private:
   qint64 lastParseElapsedMs_ = 0;
   bool lastParseWasLocalEdit_ = false;
   bool lastLocalEditChangedTopLevelStructure_ = false;
+  TopLevelRangeChange lastLocalTopLevelRangeChange_;
 };
 
 }  // namespace muffin

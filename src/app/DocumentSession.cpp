@@ -424,6 +424,10 @@ bool DocumentSession::lastLocalEditChangedTopLevelStructure() const {
   return lastLocalEditChangedTopLevelStructure_;
 }
 
+TopLevelRangeChange DocumentSession::lastLocalTopLevelRangeChange() const {
+  return lastLocalTopLevelRangeChange_;
+}
+
 void DocumentSession::newDocument() {
   filePath_.clear();
   emit filePathChanged(filePath_);
@@ -460,11 +464,13 @@ bool DocumentSession::applyTextDelta(
     bool modified,
     QVector<LocalEditNodeHint> nodeHints) {
   lastLocalEditChangedTopLevelStructure_ = false;
+  lastLocalTopLevelRangeChange_ = {};
   if (sourceStart < 0 || removedLength < 0 || sourceStart + removedLength > document_.markdownText().size()) {
     return false;
   }
   if (!tryApplyTopLevelLocalEdit(sourceStart, sourceStart + removedLength, insertedText, modified, nodeHints)) {
     lastLocalEditChangedTopLevelStructure_ = false;
+    lastLocalTopLevelRangeChange_ = {};
     return false;
   }
   emit documentLocallyEdited(sourceStart, removedLength, insertedText);
@@ -538,6 +544,7 @@ void DocumentSession::parseAndStore(QString text, bool modified) {
   lastParseElapsedMs_ = result.elapsedMs;
   lastParseWasLocalEdit_ = false;
   lastLocalEditChangedTopLevelStructure_ = false;
+  lastLocalTopLevelRangeChange_ = {};
   document_.setMarkdownText(std::move(text), std::move(result.root));
   document_.setModified(modified);
   emit parsed(lastParseElapsedMs_);
@@ -581,6 +588,7 @@ bool DocumentSession::tryApplyTopLevelLocalEdit(
   }
   inheritIdsForUnchangedTopLevelBlocks(document_, slice, replacements, sourceStart, sourceEnd, editDelta);
   applyNodeHints(document_, replacements, nodeHints);
+  const qsizetype replacementCount = static_cast<qsizetype>(replacements.size());
   lastLocalEditChangedTopLevelStructure_ = topLevelStructureChanged(document_.root().children(), slice.first, slice.count, replacements);
 
   const int editLineDelta = countNewlines(QStringView(replacementText)) - countNewlines(QStringView(oldText).mid(sourceStart, sourceEnd - sourceStart));
@@ -591,6 +599,7 @@ bool DocumentSession::tryApplyTopLevelLocalEdit(
   }
 
   document_.replaceTopLevelRange(slice.first, slice.count, std::move(replacements), sourceStart, sourceEnd, replacementText);
+  lastLocalTopLevelRangeChange_ = {slice.first, slice.count, replacementCount, document_.revision()};
   document_.setModified(modified);
   lastParseElapsedMs_ = parsedSlice.elapsedMs;
   lastParseWasLocalEdit_ = true;

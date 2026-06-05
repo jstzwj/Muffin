@@ -1,5 +1,6 @@
 #pragma once
 
+#include "document/TopLevelRangeChange.h"
 #include "render/DocumentLayout.h"
 #include "theme/RenderTheme.h"
 
@@ -28,6 +29,7 @@ public:
   void setDocument(const MarkdownDocument& document);
   bool refreshBlock(NodeId blockId, const MarkdownDocument& document);
   bool refreshBlocks(const QVector<NodeId>& blockIds, const MarkdownDocument& document);
+  bool refreshTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document);
   void setZoomPercent(int percent);
   void setTheme(RenderTheme theme);
   void setCursorHit(HitTestResult hit);

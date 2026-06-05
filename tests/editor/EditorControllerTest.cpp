@@ -44,6 +44,11 @@ void require(bool condition, const QString& message) {
   }
 }
 
+void runTest(const char* name, void (*test)()) {
+  std::cerr << "RUN " << name << "\n";
+  test();
+}
+
 EditTransaction requireTextDeltaCommand(UndoStack& stack, const char* message) {
   require(stack.canUndo(), "expected undo command");
   EditTransaction transaction = stack.takeUndo();
@@ -124,12 +129,36 @@ void testBrushQueueBatchesRefreshRequests() {
   require(requests.first().layoutDirtyBlocks.contains(first), "batched refresh should contain first id");
   require(requests.first().layoutDirtyBlocks.contains(second), "batched refresh should contain second id");
 
+  TopLevelRangeChange range{1, 1, 2, 7};
+  queue.requestTopLevelRangeRefresh(range);
+  queue.requestBlockRefresh(first);
+  queue.flush();
+
+  require(requests.size() == 2, "brush queue should emit top-level range refresh batch");
+  require(!requests.last().fullLayoutDirty, "range refresh should not be full dirty");
+  require(requests.last().topLevelRangeDirty == range, "range refresh should preserve top-level range");
+  require(requests.last().layoutDirtyBlocks.isEmpty(), "range refresh should clear block dirty ids");
+
+  queue.requestTopLevelRangeRefresh(range);
+  queue.requestTopLevelRangeRefresh(TopLevelRangeChange{2, 1, 2, 7});
+  queue.flush();
+
+  require(requests.size() == 3, "incompatible range refreshes should emit one fallback batch");
+  require(requests.last().fullLayoutDirty, "incompatible range refreshes should fall back to full refresh");
+  require(!requests.last().topLevelRangeDirty.isValid(), "full refresh should clear range dirty state");
+
+  queue.requestTopLevelRangeRefresh({});
+  queue.flush();
+
+  require(requests.size() == 4, "invalid range refresh should emit fallback batch");
+  require(requests.last().fullLayoutDirty, "invalid range refresh should become full refresh");
+
   queue.requestBlockRefresh(first);
   queue.requestFullRefresh();
   queue.requestBlockRefresh(second);
   queue.flush();
 
-  require(requests.size() == 2, "brush queue should emit full refresh batch");
+  require(requests.size() == 5, "brush queue should emit full refresh batch");
   require(requests.last().fullLayoutDirty, "full refresh should dominate batched block refreshes");
   require(requests.last().layoutDirtyBlocks.isEmpty(), "full refresh should clear block dirty ids");
 }
@@ -329,6 +358,10 @@ void testInputEnterMovesCursorToNewParagraph() {
   SelectionController selection;
   UndoStack undoStack;
   BrushQueue brushQueue;
+  QVector<BrushQueue::RefreshRequest> requests;
+  QObject::connect(&brushQueue, &BrushQueue::refreshRequested, [&requests](BrushQueue::RefreshRequest request) {
+    requests.push_back(std::move(request));
+  });
   InputController input;
   wireInput(input, session, selection, undoStack, brushQueue);
 
@@ -340,6 +373,13 @@ void testInputEnterMovesCursorToNewParagraph() {
   require(session.document().root().children().size() == 2, "enter should create two paragraphs");
   require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "enter cursor should move to new paragraph");
   require(selection.cursorPosition().text.textOffset == 0, "enter cursor offset should be start of new paragraph");
+  brushQueue.flush();
+  require(requests.size() == 1, "enter split should request one refresh");
+  require(!requests.last().fullLayoutDirty, "enter split should not request full layout refresh");
+  require(requests.last().topLevelRangeDirty.isValid(), "enter split should request top-level range refresh");
+  require(requests.last().topLevelRangeDirty.first == 0, "enter split range first mismatch");
+  require(requests.last().topLevelRangeDirty.oldCount == 1, "enter split range old count mismatch");
+  require(requests.last().topLevelRangeDirty.newCount == 2, "enter split range new count mismatch");
 }
 
 void testInputEnterSplitsComplexInlineParagraphs() {
@@ -923,7 +963,7 @@ void testEditorViewInlineMarkerSourceSelection() {
   QMouseEvent press(
       QEvent::MouseButtonPress,
       dragStart,
-      view.viewport()->mapToGlobal(dragStart.toPoint()),
+      QPointF(dragStart),
       Qt::LeftButton,
       Qt::LeftButton,
       Qt::NoModifier);
@@ -935,7 +975,7 @@ void testEditorViewInlineMarkerSourceSelection() {
   QMouseEvent move(
       QEvent::MouseMove,
       dragEnd,
-      view.viewport()->mapToGlobal(dragEnd.toPoint()),
+      QPointF(dragEnd),
       Qt::NoButton,
       Qt::LeftButton,
       Qt::NoModifier);
@@ -967,7 +1007,7 @@ void testEditorViewInlineClickDoesNotSelectAfterMarkerExpansion() {
   QMouseEvent press(
       QEvent::MouseButtonPress,
       clickPos,
-      view.viewport()->mapToGlobal(clickPos.toPoint()),
+      QPointF(clickPos),
       Qt::LeftButton,
       Qt::LeftButton,
       Qt::NoModifier);
@@ -978,7 +1018,7 @@ void testEditorViewInlineClickDoesNotSelectAfterMarkerExpansion() {
   QMouseEvent release(
       QEvent::MouseButtonRelease,
       clickPos,
-      view.viewport()->mapToGlobal(clickPos.toPoint()),
+      QPointF(clickPos),
       Qt::LeftButton,
       Qt::NoButton,
       Qt::NoModifier);
@@ -1008,7 +1048,7 @@ void testEditorViewDragSelectionContinuesAcrossMoves() {
   QMouseEvent press(
       QEvent::MouseButtonPress,
       startPos,
-      view.viewport()->mapToGlobal(startPos.toPoint()),
+      QPointF(startPos),
       Qt::LeftButton,
       Qt::LeftButton,
       Qt::NoModifier);
@@ -1017,7 +1057,7 @@ void testEditorViewDragSelectionContinuesAcrossMoves() {
   QMouseEvent stationaryMove(
       QEvent::MouseMove,
       startPos,
-      view.viewport()->mapToGlobal(startPos.toPoint()),
+      QPointF(startPos),
       Qt::NoButton,
       Qt::LeftButton,
       Qt::NoModifier);
@@ -1027,7 +1067,7 @@ void testEditorViewDragSelectionContinuesAcrossMoves() {
   QMouseEvent firstMove(
       QEvent::MouseMove,
       firstMovePos,
-      view.viewport()->mapToGlobal(firstMovePos.toPoint()),
+      QPointF(firstMovePos),
       Qt::NoButton,
       Qt::LeftButton,
       Qt::NoModifier);
@@ -1038,7 +1078,7 @@ void testEditorViewDragSelectionContinuesAcrossMoves() {
   QMouseEvent secondMove(
       QEvent::MouseMove,
       secondMovePos,
-      view.viewport()->mapToGlobal(secondMovePos.toPoint()),
+      QPointF(secondMovePos),
       Qt::NoButton,
       Qt::LeftButton,
       Qt::NoModifier);
@@ -1048,7 +1088,7 @@ void testEditorViewDragSelectionContinuesAcrossMoves() {
   QMouseEvent release(
       QEvent::MouseButtonRelease,
       secondMovePos,
-      view.viewport()->mapToGlobal(secondMovePos.toPoint()),
+      QPointF(secondMovePos),
       Qt::LeftButton,
       Qt::NoButton,
       Qt::NoModifier);
@@ -1125,7 +1165,7 @@ void testEditorViewVerticalDragSelectionHitsWrappedLine() {
   QMouseEvent press(
       QEvent::MouseButtonPress,
       startPos,
-      view.viewport()->mapToGlobal(startPos.toPoint()),
+      QPointF(startPos),
       Qt::LeftButton,
       Qt::LeftButton,
       Qt::NoModifier);
@@ -1134,7 +1174,7 @@ void testEditorViewVerticalDragSelectionHitsWrappedLine() {
   QMouseEvent move(
       QEvent::MouseMove,
       secondLineSameX,
-      view.viewport()->mapToGlobal(secondLineSameX.toPoint()),
+      QPointF(secondLineSameX),
       Qt::NoButton,
       Qt::LeftButton,
       Qt::NoModifier);
@@ -1603,8 +1643,12 @@ void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
   require(session.lastLocalEditChangedTopLevelStructure(), "paragraph start enter should mark top-level structure changed");
   brushQueue.flush();
   require(requests.size() == 1, "paragraph start enter should request one refresh");
-  require(requests.last().fullLayoutDirty, "paragraph start enter should request full layout refresh");
-  require(requests.last().layoutDirtyBlocks.isEmpty(), "paragraph start enter full refresh should not keep block dirty ids");
+  require(!requests.last().fullLayoutDirty, "paragraph start enter should not require full layout refresh");
+  require(requests.last().topLevelRangeDirty.isValid(), "paragraph start enter should request top-level range refresh");
+  require(requests.last().topLevelRangeDirty.first == 0, "paragraph start enter range first mismatch");
+  require(requests.last().topLevelRangeDirty.oldCount == 1, "paragraph start enter range old count mismatch");
+  require(requests.last().topLevelRangeDirty.newCount == 2, "paragraph start enter range new count mismatch");
+  require(requests.last().layoutDirtyBlocks.isEmpty(), "paragraph start enter range refresh should not keep block dirty ids");
   require(blockAt(session, 1)->id() == originalAlphaId, "paragraph start enter should preserve original paragraph id");
   require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "paragraph start enter cursor should stay on original paragraph");
   require(selection.cursorPosition().text.textOffset == 0, "paragraph start enter cursor offset mismatch");
@@ -2286,7 +2330,8 @@ void testTabInRenderedTextInsertsZeroWidthSpace() {
   require(session.markdownText() == QStringLiteral("- alpha\n  - beta"), "list item tab should not fall back to plain spaces");
   require(!session.markdownText().contains(QChar(0x200b)), "unordered list tab should not insert U+200B");
   brushQueue.flush();
-  require(!tabRefreshes.isEmpty() && tabRefreshes.last().fullLayoutDirty, "unordered list structural tab should request full refresh");
+  require(!tabRefreshes.isEmpty() && !tabRefreshes.last().fullLayoutDirty, "unordered list structural tab should not request full refresh");
+  require(tabRefreshes.last().topLevelRangeDirty.isValid(), "unordered list structural tab should request top-level range refresh");
 
   session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
   tabRefreshes.clear();
@@ -2306,7 +2351,8 @@ void testTabInRenderedTextInsertsZeroWidthSpace() {
   require(session.markdownText() == QStringLiteral("1. alpha\n  2. beta"), "ordered list tab should add structural leading spaces");
   require(!session.markdownText().contains(QChar(0x200b)), "ordered list tab should not insert U+200B");
   brushQueue.flush();
-  require(!tabRefreshes.isEmpty() && tabRefreshes.last().fullLayoutDirty, "ordered list structural tab should request full refresh");
+  require(!tabRefreshes.isEmpty() && !tabRefreshes.last().fullLayoutDirty, "ordered list structural tab should not request full refresh");
+  require(tabRefreshes.last().topLevelRangeDirty.isValid(), "ordered list structural tab should request top-level range refresh");
 
   session.setMarkdownText(QStringLiteral("1. alpha\n2. beta"), false);
   setSourceCursor(selection, listItemAt(session, 0, 1), 2, QStringLiteral("1. alpha\n2. be").size());
@@ -2374,7 +2420,7 @@ void testListTabFromRenderedClick() {
   QMouseEvent unorderedPress(
       QEvent::MouseButtonPress,
       unorderedStart,
-      view.viewport()->mapToGlobal(unorderedStart.toPoint()),
+      QPointF(unorderedStart),
       Qt::LeftButton,
       Qt::LeftButton,
       Qt::NoModifier);
@@ -2382,7 +2428,7 @@ void testListTabFromRenderedClick() {
   QMouseEvent unorderedRelease(
       QEvent::MouseButtonRelease,
       unorderedStart,
-      view.viewport()->mapToGlobal(unorderedStart.toPoint()),
+      QPointF(unorderedStart),
       Qt::LeftButton,
       Qt::NoButton,
       Qt::NoModifier);
@@ -2403,7 +2449,7 @@ void testListTabFromRenderedClick() {
   QMouseEvent orderedPress(
       QEvent::MouseButtonPress,
       orderedStart,
-      view.viewport()->mapToGlobal(orderedStart.toPoint()),
+      QPointF(orderedStart),
       Qt::LeftButton,
       Qt::LeftButton,
       Qt::NoModifier);
@@ -2411,7 +2457,7 @@ void testListTabFromRenderedClick() {
   QMouseEvent orderedRelease(
       QEvent::MouseButtonRelease,
       orderedStart,
-      view.viewport()->mapToGlobal(orderedStart.toPoint()),
+      QPointF(orderedStart),
       Qt::LeftButton,
       Qt::NoButton,
       Qt::NoModifier);
@@ -2428,7 +2474,7 @@ void testListTabFromRenderedClick() {
   QMouseEvent viewportPress(
       QEvent::MouseButtonPress,
       viewportStart,
-      view.viewport()->mapToGlobal(viewportStart.toPoint()),
+      QPointF(viewportStart),
       Qt::LeftButton,
       Qt::LeftButton,
       Qt::NoModifier);
@@ -2436,7 +2482,7 @@ void testListTabFromRenderedClick() {
   QMouseEvent viewportRelease(
       QEvent::MouseButtonRelease,
       viewportStart,
-      view.viewport()->mapToGlobal(viewportStart.toPoint()),
+      QPointF(viewportStart),
       Qt::LeftButton,
       Qt::NoButton,
       Qt::NoModifier);
@@ -3337,89 +3383,89 @@ void testInlineSelectionRects() {
 }  // namespace
 
 int main(int argc, char** argv) {
-#if !defined(Q_OS_MACOS)
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
   }
-#endif
   QApplication app(argc, argv);
-  testSelectionController();
-  testSelectionControllerRange();
-  testUndoStack();
-  testBrushQueueBatchesRefreshRequests();
-  testInputInsertAndBackspace();
-  testInputEnterMovesCursorToNewParagraph();
-  testInputEnterSplitsComplexInlineParagraphs();
-  testInputEditsComplexInlineSourcePositions();
-  testSecondInlineMathHitMapsToItsSourceOffset();
-  testCodeAndMathCursorAfterSourceInsert();
-  testInlineProjectionMarkerSourcePositions();
-  testInlineProjectionForwardBiasAtInlineEnd();
-  testInlineProjectionSpanContracts();
-  testInlineProjectionMappingMatrix();
-  testHorizontalNavigationEntersInlineMarkers();
-  testTextHitActivationAddsSourceOffsetForInlineEditing();
-  testEditorViewHitTestActivatesInlineSourceEditing();
-  testEditorViewInlineProjectionStateChanges();
-  testEditorViewInlineMarkerSourceSelection();
-  testEditorViewInlineClickDoesNotSelectAfterMarkerExpansion();
-  testEditorViewDragSelectionContinuesAcrossMoves();
-  testEditorViewVerticalDragSelectionHitsWrappedLine();
-  testEditorViewInlineLayoutSmoke();
-  testEditorViewPlainInlineLayout();
-  testEditorViewStyledInlineLayout();
-  testEditorViewListInlineMathHitEditing();
-  testEditorViewWrappedInlineLayout();
-  testEditorViewTableCellInlineLayout();
-  testEditorViewTableCellInlineCodeEndHit();
-  testTableCellRichInlineSelectionDeleteAndCopyUseSourceOffsets();
-  testMixedInlineParagraphHitEditingBeforeAutolink();
-  testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph();
-  testLocalReparsePreservesUntouchedNodeIds();
-  testBlockEditContextSeparatesBlockAndContentRanges();
-  testTextBlockCommandBuilderCreatesStructuralEnterCommands();
-  testInputMergeParagraphs();
-  testInputBackspaceAtParagraphStartDeletesStructuralBoundary();
-  testInputDeleteAtParagraphEndDeletesStructuralBoundary();
-  testInputUndoRedoSnapshots();
-  testControllerUndoRedoRemapsCursorAfterReparse();
-  testInputSelectionReplaceAndDelete();
-  testInputCrossParagraphSelectionReplaceAndDelete();
-  testHeadingInput();
-  testHeadingEnterAtStartInsertsParagraphBeforeBlock();
-  testListItemInput();
-  testListItemEditingCommands();
-  testTabInRenderedTextInsertsZeroWidthSpace();
-  testListTabFromRenderedClick();
-  testSourceEditorPreservesZeroWidthSpaceText();
-  testStylizeCollapsedSkeletons();
-  testTypingIntoCollapsedStyleSkeletons();
-  testStylizeSelectionWrap();
-  testStylizeUndoRedoTextDelta();
-  testHeadingAndListItemStylize();
-  testStylizeCrossParagraphSelectionWrap();
-  testClipboardPlainText();
-  testClipboardMarkdownPreservesLinePrefix();
-  testClipboardCrossMarkdownPreservesStartPrefix();
-  testSelectionSerializerFormats();
-  testSelectionSerializerCrossComplexInlineEdges();
-  testSelectAllContextSemantics();
-  testClipboardBlockSelectionFallback();
-  testCodeFenceSelectionCopyUsesLiteralOffsets();
-  testCodeFenceSelectionCutDeletesLiteralOffsets();
-  testKeyboardNavigationBasics();
-  testComplexBlockActivationRoutesInput();
-  testTableStructureUndoUsesTableCommand();
-  testTableCellTextUndoUsesTextDeltaCommand();
-  testInsertTableUndoUsesInsertNodeCommand();
-  testResizeTableUndoUsesTableCommand();
-  testDeleteTableUndoUsesRemoveNodeCommand();
-  testCodeActivationKeepsClickedOffsetForTyping();
-  testCodeFenceUndoUsesReplaceNodeCommand();
-  testWholeBlockDeleteUsesRemoveNodeCommand();
-  testStructuredNodeCommandModels();
-  testSwitchingBetweenCodeBlocksRoutesInputToClickedBlock();
-  testInlineSelectionRects();
+#define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testSelectionController);
+  RUN_TEST(testSelectionControllerRange);
+  RUN_TEST(testUndoStack);
+  RUN_TEST(testBrushQueueBatchesRefreshRequests);
+  RUN_TEST(testInputInsertAndBackspace);
+  RUN_TEST(testInputEnterMovesCursorToNewParagraph);
+  RUN_TEST(testInputEnterSplitsComplexInlineParagraphs);
+  RUN_TEST(testInputEditsComplexInlineSourcePositions);
+  RUN_TEST(testSecondInlineMathHitMapsToItsSourceOffset);
+  RUN_TEST(testCodeAndMathCursorAfterSourceInsert);
+  RUN_TEST(testInlineProjectionMarkerSourcePositions);
+  RUN_TEST(testInlineProjectionForwardBiasAtInlineEnd);
+  RUN_TEST(testInlineProjectionSpanContracts);
+  RUN_TEST(testInlineProjectionMappingMatrix);
+  RUN_TEST(testHorizontalNavigationEntersInlineMarkers);
+  RUN_TEST(testTextHitActivationAddsSourceOffsetForInlineEditing);
+  RUN_TEST(testEditorViewHitTestActivatesInlineSourceEditing);
+  RUN_TEST(testEditorViewInlineProjectionStateChanges);
+  RUN_TEST(testEditorViewInlineMarkerSourceSelection);
+  RUN_TEST(testEditorViewInlineClickDoesNotSelectAfterMarkerExpansion);
+  RUN_TEST(testEditorViewDragSelectionContinuesAcrossMoves);
+  RUN_TEST(testEditorViewVerticalDragSelectionHitsWrappedLine);
+  RUN_TEST(testEditorViewInlineLayoutSmoke);
+  RUN_TEST(testEditorViewPlainInlineLayout);
+  RUN_TEST(testEditorViewStyledInlineLayout);
+  RUN_TEST(testEditorViewListInlineMathHitEditing);
+  RUN_TEST(testEditorViewWrappedInlineLayout);
+  RUN_TEST(testEditorViewTableCellInlineLayout);
+  RUN_TEST(testEditorViewTableCellInlineCodeEndHit);
+  RUN_TEST(testTableCellRichInlineSelectionDeleteAndCopyUseSourceOffsets);
+  RUN_TEST(testMixedInlineParagraphHitEditingBeforeAutolink);
+  RUN_TEST(testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph);
+  RUN_TEST(testLocalReparsePreservesUntouchedNodeIds);
+  RUN_TEST(testBlockEditContextSeparatesBlockAndContentRanges);
+  RUN_TEST(testTextBlockCommandBuilderCreatesStructuralEnterCommands);
+  RUN_TEST(testInputMergeParagraphs);
+  RUN_TEST(testInputBackspaceAtParagraphStartDeletesStructuralBoundary);
+  RUN_TEST(testInputDeleteAtParagraphEndDeletesStructuralBoundary);
+  RUN_TEST(testInputUndoRedoSnapshots);
+  RUN_TEST(testControllerUndoRedoRemapsCursorAfterReparse);
+  RUN_TEST(testInputSelectionReplaceAndDelete);
+  RUN_TEST(testInputCrossParagraphSelectionReplaceAndDelete);
+  RUN_TEST(testHeadingInput);
+  RUN_TEST(testHeadingEnterAtStartInsertsParagraphBeforeBlock);
+  RUN_TEST(testListItemInput);
+  RUN_TEST(testListItemEditingCommands);
+  RUN_TEST(testTabInRenderedTextInsertsZeroWidthSpace);
+  RUN_TEST(testListTabFromRenderedClick);
+  RUN_TEST(testSourceEditorPreservesZeroWidthSpaceText);
+  RUN_TEST(testStylizeCollapsedSkeletons);
+  RUN_TEST(testTypingIntoCollapsedStyleSkeletons);
+  RUN_TEST(testStylizeSelectionWrap);
+  RUN_TEST(testStylizeUndoRedoTextDelta);
+  RUN_TEST(testHeadingAndListItemStylize);
+  RUN_TEST(testStylizeCrossParagraphSelectionWrap);
+  RUN_TEST(testClipboardPlainText);
+  RUN_TEST(testClipboardMarkdownPreservesLinePrefix);
+  RUN_TEST(testClipboardCrossMarkdownPreservesStartPrefix);
+  RUN_TEST(testSelectionSerializerFormats);
+  RUN_TEST(testSelectionSerializerCrossComplexInlineEdges);
+  RUN_TEST(testSelectAllContextSemantics);
+  RUN_TEST(testClipboardBlockSelectionFallback);
+  RUN_TEST(testCodeFenceSelectionCopyUsesLiteralOffsets);
+  RUN_TEST(testCodeFenceSelectionCutDeletesLiteralOffsets);
+  RUN_TEST(testKeyboardNavigationBasics);
+  RUN_TEST(testComplexBlockActivationRoutesInput);
+  RUN_TEST(testTableStructureUndoUsesTableCommand);
+  RUN_TEST(testTableCellTextUndoUsesTextDeltaCommand);
+  RUN_TEST(testInsertTableUndoUsesInsertNodeCommand);
+  RUN_TEST(testResizeTableUndoUsesTableCommand);
+  RUN_TEST(testDeleteTableUndoUsesRemoveNodeCommand);
+  RUN_TEST(testCodeActivationKeepsClickedOffsetForTyping);
+  RUN_TEST(testCodeFenceUndoUsesReplaceNodeCommand);
+  RUN_TEST(testWholeBlockDeleteUsesRemoveNodeCommand);
+  RUN_TEST(testStructuredNodeCommandModels);
+  RUN_TEST(testSwitchingBetweenCodeBlocksRoutesInputToClickedBlock);
+  RUN_TEST(testInlineSelectionRects);
+#undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;
 }

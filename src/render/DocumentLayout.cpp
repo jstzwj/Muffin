@@ -134,6 +134,22 @@ PageMetrics pageMetricsFor(const RenderTheme& theme, qreal viewportWidth) {
   return {qMax<qreal>(16.0, (viewportWidth - width) / 2.0 - 12.0), width};
 }
 
+QRectF unitedBlockRects(const std::vector<std::unique_ptr<BlockLayout>>& blocks, qsizetype first, qsizetype count) {
+  QRectF rect;
+  for (qsizetype i = 0; i < count; ++i) {
+    rect = rect.united(blocks.at(static_cast<size_t>(first + i))->rect());
+  }
+  return rect;
+}
+
+QRectF unitedOwnedBlockRects(const std::vector<std::unique_ptr<BlockLayout>>& blocks) {
+  QRectF rect;
+  for (const auto& block : blocks) {
+    rect = rect.united(block->rect());
+  }
+  return rect;
+}
+
 }  // namespace
 
 void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth) {
@@ -274,6 +290,97 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
   } else {
     totalHeight_ = qMax(newNextTop + theme.bottomMargin(), theme.topMargin() + theme.bottomMargin());
   }
+
+  rebuildIndexes();
+  result.rebuilt = true;
+  return result;
+}
+
+DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
+    TopLevelRangeChange range,
+    const MarkdownDocument& document,
+    const RenderTheme& theme,
+    SelectionRange selection) {
+  RangeRebuildResult result;
+  result.first = range.first;
+  result.oldCount = range.oldCount;
+  result.newCount = range.newCount;
+  if (!range.isValid() || document_ != &document || viewportWidth_ <= 0) {
+    return result;
+  }
+
+  const auto& documentBlocks = document.root().children();
+  const qsizetype layoutCount = static_cast<qsizetype>(blocks_.size());
+  const qsizetype documentCount = static_cast<qsizetype>(documentBlocks.size());
+  if (range.documentRevision != document.revision() || range.first < 0 || range.oldCount < 0 || range.newCount < 0 || range.first > layoutCount ||
+      range.first > documentCount || range.first + range.oldCount > layoutCount || range.first + range.newCount > documentCount ||
+      layoutCount - range.oldCount + range.newCount != documentCount) {
+    return result;
+  }
+
+  for (qsizetype i = 0; i < range.first; ++i) {
+    if (blocks_.at(static_cast<size_t>(i))->nodeId() != documentBlocks.at(static_cast<size_t>(i))->id()) {
+      return result;
+    }
+  }
+  const qsizetype oldSuffixFirst = range.first + range.oldCount;
+  const qsizetype newSuffixFirst = range.first + range.newCount;
+  for (qsizetype oldIndex = oldSuffixFirst, newIndex = newSuffixFirst; oldIndex < layoutCount && newIndex < documentCount; ++oldIndex, ++newIndex) {
+    if (blocks_.at(static_cast<size_t>(oldIndex))->nodeId() != documentBlocks.at(static_cast<size_t>(newIndex))->id()) {
+      return result;
+    }
+  }
+
+  result.oldRect = unitedBlockRects(blocks_, range.first, range.oldCount);
+
+  BlockLayoutBuilder builder;
+  builder.setMarkdownText(document.markdownText(), document.lineOffsets());
+  builder.setSelection(selection);
+  std::vector<std::unique_ptr<BlockLayout>> replacements;
+  replacements.reserve(static_cast<size_t>(range.newCount));
+
+  qreal cursorY = theme.topMargin();
+  if (range.first > 0) {
+    const MarkdownNode& previousNode = *documentBlocks.at(static_cast<size_t>(range.first - 1));
+    cursorY = blocks_.at(static_cast<size_t>(range.first - 1))->rect().bottom() + spacingAfterBlock(previousNode, theme);
+  }
+  if (range.newCount > 0) {
+    cursorY += spacingBeforeBlock(*documentBlocks.at(static_cast<size_t>(range.first)), theme, cursorY);
+  }
+
+  for (qsizetype i = 0; i < range.newCount; ++i) {
+    const MarkdownNode& node = *documentBlocks.at(static_cast<size_t>(range.first + i));
+    cursorY += i == 0 ? 0 : spacingBeforeBlock(node, theme, cursorY);
+    auto block = builder.build(node, theme, pageLeft_, cursorY, pageWidth_);
+    cursorY = block->rect().bottom() + spacingAfterBlock(node, theme);
+    replacements.push_back(std::move(block));
+  }
+  result.newRect = unitedOwnedBlockRects(replacements);
+
+  qreal newNextTop = cursorY;
+  if (newSuffixFirst < documentCount) {
+    newNextTop += spacingBeforeBlock(*documentBlocks.at(static_cast<size_t>(newSuffixFirst)), theme, newNextTop);
+  }
+
+  const qreal oldNextTop = oldSuffixFirst < layoutCount ? blocks_.at(static_cast<size_t>(oldSuffixFirst))->rect().top() : totalHeight_;
+  const qreal newTotalHeight = qMax(newNextTop + theme.bottomMargin(), theme.topMargin() + theme.bottomMargin());
+  result.heightDelta = oldSuffixFirst < layoutCount ? newNextTop - oldNextTop : newTotalHeight - totalHeight_;
+
+  blocks_.erase(blocks_.begin() + range.first, blocks_.begin() + range.first + range.oldCount);
+  blocks_.insert(
+      blocks_.begin() + range.first,
+      std::make_move_iterator(replacements.begin()),
+      std::make_move_iterator(replacements.end()));
+
+  QRectF shiftedRect;
+  for (qsizetype i = newSuffixFirst; i < static_cast<qsizetype>(blocks_.size()); ++i) {
+    BlockLayout& block = *blocks_.at(static_cast<size_t>(i));
+    const QRectF oldRect = block.rect();
+    block.translateY(result.heightDelta);
+    shiftedRect = shiftedRect.united(oldRect).united(block.rect());
+  }
+  result.shiftedRect = shiftedRect;
+  totalHeight_ = oldSuffixFirst < layoutCount ? totalHeight_ + result.heightDelta : newTotalHeight;
 
   rebuildIndexes();
   result.rebuilt = true;

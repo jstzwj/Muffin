@@ -965,6 +965,49 @@ void testIncrementalBlockRebuildContract() {
   require(tableResult.newRect == layout.block(table->id())->rect(), QStringLiteral("table cell rebuild new rect mismatch"));
 }
 
+void requireSameTopLevelLayout(const DocumentLayout& incremental, const DocumentLayout& full, const MarkdownDocument& document, const QString& label) {
+  require(incremental.blocks().size() == full.blocks().size(), label + QStringLiteral(" block count mismatch"));
+  require(qAbs(incremental.totalHeight() - full.totalHeight()) < 0.01, label + QStringLiteral(" total height mismatch"));
+  for (const auto& child : document.root().children()) {
+    const BlockLayout* incrementalBlock = incremental.block(child->id());
+    const BlockLayout* fullBlock = full.block(child->id());
+    require(incrementalBlock != nullptr, label + QStringLiteral(" incremental block index missing"));
+    require(fullBlock != nullptr, label + QStringLiteral(" full block index missing"));
+    const QRectF incrementalRect = incrementalBlock->rect();
+    const QRectF fullRect = fullBlock->rect();
+    require(qAbs(incrementalRect.left() - fullRect.left()) < 0.01, label + QStringLiteral(" block left mismatch"));
+    require(qAbs(incrementalRect.top() - fullRect.top()) < 0.01, label + QStringLiteral(" block top mismatch"));
+    require(qAbs(incrementalRect.width() - fullRect.width()) < 0.01, label + QStringLiteral(" block width mismatch"));
+    require(qAbs(incrementalRect.height() - fullRect.height()) < 0.01, label + QStringLiteral(" block height mismatch"));
+  }
+}
+
+void testIncrementalTopLevelRangeRebuildContract() {
+  RenderTheme theme = RenderTheme::github();
+
+  auto verifyRangeEdit = [&](const QString& initial, qsizetype sourceStart, qsizetype removedLength, const QString& insertedText, const QString& label) {
+    DocumentSession session;
+    session.setMarkdownText(initial, false);
+    DocumentLayout incremental;
+    incremental.rebuild(session.document(), theme, 800.0);
+
+    require(session.applyTextDelta(sourceStart, removedLength, insertedText, true), label + QStringLiteral(" local edit should apply"));
+    const TopLevelRangeChange range = session.lastLocalTopLevelRangeChange();
+    require(range.isValid(), label + QStringLiteral(" range should be valid"));
+    const DocumentLayout::RangeRebuildResult result = incremental.rebuildTopLevelRange(range, session.document(), theme, {});
+    require(result.rebuilt, label + QStringLiteral(" range rebuild should succeed"));
+
+    DocumentLayout full;
+    full.rebuild(session.document(), theme, 800.0);
+    requireSameTopLevelLayout(incremental, full, session.document(), label);
+  };
+
+  verifyRangeEdit(QStringLiteral("alpha beta\n\ngamma"), 5, 0, QStringLiteral("\n\n"), QStringLiteral("paragraph split"));
+  verifyRangeEdit(QStringLiteral("alpha\n\nbeta\n\ngamma"), 5, 2, QStringLiteral(" "), QStringLiteral("paragraph merge"));
+  verifyRangeEdit(QStringLiteral("# Heading\n\nalpha\n\nbeta"), 9, 0, QStringLiteral("\n\n"), QStringLiteral("heading boundary insert"));
+  verifyRangeEdit(QStringLiteral("alpha\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\nomega"), 5, 0, QStringLiteral("\n\ninserted"), QStringLiteral("table suffix shift"));
+}
+
 void testUnorderedListMarkerKindsByDepth() {
   DocumentSession session;
   session.setMarkdownText(
@@ -3181,11 +3224,9 @@ void testThemeManagerSupportsBuiltInThemes() {
 }  // namespace
 
 int main(int argc, char** argv) {
-#if !defined(Q_OS_MACOS)
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
   }
-#endif
   QApplication app(argc, argv);
   require(argc >= 2, QStringLiteral("Fixture path argument is required"));
 
@@ -3224,6 +3265,7 @@ int main(int argc, char** argv) {
   runTest("testInlineLayoutSelectionRects", [] { testInlineLayoutSelectionRects(); });
   runTest("testInlineLayoutStyleFormats", [] { testInlineLayoutStyleFormats(); });
   runTest("testIncrementalBlockRebuildContract", [] { testIncrementalBlockRebuildContract(); });
+  runTest("testIncrementalTopLevelRangeRebuildContract", [] { testIncrementalTopLevelRangeRebuildContract(); });
   runTest("testUnorderedListMarkerKindsByDepth", [] { testUnorderedListMarkerKindsByDepth(); });
   runTest("testDocumentLayoutInlineLayoutContract", [] { testDocumentLayoutInlineLayoutContract(); });
   runTest("testTreeSitterCodeHighlighting", [] { testTreeSitterCodeHighlighting(); });

@@ -211,6 +211,7 @@ set(MUFFIN_CORE_SOURCES
   src/document/SourceRange.h
   src/document/LineStartOffsetCache.cpp
   src/document/LineStartOffsetCache.h
+  src/document/TopLevelRangeChange.h
   src/document/MarkdownTypes.h
   src/document/InlineNode.cpp
   src/document/InlineNode.h
@@ -462,6 +463,9 @@ if(EXISTS "${MUFFIN_CONAN_QT_BUILD_BIN}")
 endif()
 if(MUFFIN_QT_PLUGIN_DIRS_ARG)
   list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "QT_PLUGIN_PATH=set:${MUFFIN_QT_PLUGIN_DIRS_ARG}")
+endif()
+if(APPLE)
+  list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "QT_QPA_PLATFORM=set:minimal")
 endif()
 
 add_executable(MuffinParserSmokeTest

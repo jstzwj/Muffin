@@ -534,6 +534,12 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
       view_->setDocument(session_->document());
       return;
     }
+    if (request.topLevelRangeDirty.isValid()) {
+      if (request.topLevelRangeDirty.documentRevision != session_->document().revision() || !view_->refreshTopLevelRange(request.topLevelRangeDirty, session_->document())) {
+        view_->setDocument(session_->document());
+      }
+      return;
+    }
     if (request.layoutDirtyBlocks.size() == 1) {
       if (!view_->refreshBlock(request.layoutDirtyBlocks.first(), session_->document())) {
         view_->setDocument(session_->document());

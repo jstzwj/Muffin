@@ -361,12 +361,8 @@ QRect viewportUpdateRect(QRectF documentRect, qreal scrollY, const QSize& viewpo
   return documentRect.adjusted(-4, -4, 4, 4).toAlignedRect().intersected(QRect(QPoint(0, 0), viewportSize));
 }
 
-void addRebuildDirtyRect(
-    QRect& dirty,
-    const DocumentLayout::BlockRebuildResult& result,
-    QRectF documentViewport,
-    qreal scrollY,
-    const QSize& viewportSize) {
+template <typename RebuildResult>
+void addRebuildDirtyRect(QRect& dirty, const RebuildResult& result, QRectF documentViewport, qreal scrollY, const QSize& viewportSize) {
   dirty = dirty.united(viewportUpdateRect(result.oldRect.united(result.newRect), scrollY, viewportSize));
   if (!result.shiftedRect.isEmpty()) {
     dirty = dirty.united(viewportUpdateRect(result.shiftedRect.intersected(documentViewport), scrollY, viewportSize));
@@ -479,6 +475,28 @@ bool EditorView::refreshBlocks(const QVector<NodeId>& blockIds, const MarkdownDo
   }
   updateCursorHitFromPosition();
   updateTableToolbar();
+  viewport()->update(dirty.isEmpty() ? viewport()->rect() : dirty);
+  return true;
+}
+
+bool EditorView::refreshTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document) {
+  PerfTimer perf("view.refreshTopLevelRange");
+  if (!layout_ || document_ != &document) {
+    return false;
+  }
+
+  const DocumentLayout::RangeRebuildResult result = layout_->rebuildTopLevelRange(range, document, theme_, selection_);
+  if (!result.rebuilt) {
+    return false;
+  }
+  if (!qFuzzyIsNull(result.heightDelta)) {
+    updateScrollBars();
+  }
+  updateCursorHitFromPosition();
+  updateCodeLanguageEditor();
+  updateTableToolbar();
+  QRect dirty;
+  addRebuildDirtyRect(dirty, result, documentViewportRect(), scrollY(), viewport()->size());
   viewport()->update(dirty.isEmpty() ? viewport()->rect() : dirty);
   return true;
 }

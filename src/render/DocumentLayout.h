@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/MarkdownDocument.h"
+#include "document/TopLevelRangeChange.h"
 #include "editor/CursorPosition.h"
 #include "render/BlockLayout.h"
 #include "theme/RenderTheme.h"
@@ -25,10 +26,22 @@ public:
     qreal heightDelta = 0;
   };
 
+  struct RangeRebuildResult {
+    bool rebuilt = false;
+    qsizetype first = -1;
+    qsizetype oldCount = 0;
+    qsizetype newCount = 0;
+    QRectF oldRect;
+    QRectF newRect;
+    QRectF shiftedRect;
+    qreal heightDelta = 0;
+  };
+
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth);
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, SelectionRange selection);
   bool relayoutForViewportWidth(const RenderTheme& theme, qreal viewportWidth);
   BlockRebuildResult rebuildBlock(NodeId blockId, const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
+  RangeRebuildResult rebuildTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
 
   qreal pageLeft() const;
   qreal pageWidth() const;

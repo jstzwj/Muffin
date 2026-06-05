@@ -97,6 +97,20 @@ QString plainTextForNode(const MarkdownNode& node) {
   }
 }
 
+NodeId refreshNodeFor(DocumentSession* session, NodeId nodeId) {
+  if (!session || !nodeId.isValid()) {
+    return nodeId;
+  }
+  MarkdownNode* node = session->document().node(nodeId);
+  if (!node) {
+    return nodeId;
+  }
+  while (node->parent() && node->parent()->type() != BlockType::Document) {
+    node = node->parent();
+  }
+  return node->id();
+}
+
 }  // namespace
 
 InputController::InputController(QObject* parent) : QObject(parent) {}
@@ -928,7 +942,7 @@ void InputController::applyLocalEdit(
     const bool textDeltaUndoEligible = appliedLocally && !structureEdit && beforeCursor.isValid() && nextCursor.isValid();
     if (textDeltaUndoEligible) {
       QVector<NodeId> affectedNodes;
-      affectedNodes.push_back(nextCursor.blockId);
+      affectedNodes.push_back(refreshNodeFor(session_, nextCursor.blockId));
       undoStack_->push(EditTransaction(
           kind,
           label,
@@ -950,10 +964,12 @@ void InputController::applyLocalEdit(
     }
   }
   if (brushQueue_) {
-    if (structureEdit || !appliedLocally || session_->lastLocalEditChangedTopLevelStructure()) {
+    if (!appliedLocally) {
       brushQueue_->requestFullRefresh();
+    } else if (structureEdit || session_->lastLocalEditChangedTopLevelStructure()) {
+      brushQueue_->requestTopLevelRangeRefresh(session_->lastLocalTopLevelRangeChange());
     } else {
-      brushQueue_->requestBlockRefresh(nextCursor.blockId);
+      brushQueue_->requestBlockRefresh(refreshNodeFor(session_, nextCursor.blockId));
     }
   }
 }
@@ -1000,7 +1016,7 @@ void InputController::applyEdit(
     const bool textDeltaUndoEligible = appliedLocally && beforeCursor.isValid() && nextCursor.isValid();
     if (textDeltaUndoEligible) {
       QVector<NodeId> affectedNodes;
-      affectedNodes.push_back(nextCursor.blockId);
+      affectedNodes.push_back(refreshNodeFor(session_, nextCursor.blockId));
       undoStack_->push(EditTransaction(
           kind,
           label,
@@ -1014,10 +1030,12 @@ void InputController::applyEdit(
     }
   }
   if (brushQueue_) {
-    if (!appliedLocally || session_->lastLocalEditChangedTopLevelStructure()) {
+    if (!appliedLocally) {
       brushQueue_->requestFullRefresh();
+    } else if (session_->lastLocalEditChangedTopLevelStructure()) {
+      brushQueue_->requestTopLevelRangeRefresh(session_->lastLocalTopLevelRangeChange());
     } else {
-      brushQueue_->requestBlockRefresh(nextCursor.blockId);
+      brushQueue_->requestBlockRefresh(refreshNodeFor(session_, nextCursor.blockId));
     }
   }
 }
