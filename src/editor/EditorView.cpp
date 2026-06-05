@@ -323,6 +323,17 @@ bool isSelectableZone(HitTestResult::Zone zone) {
          zone == HitTestResult::Zone::Html || zone == HitTestResult::Zone::TableCell;
 }
 
+QPointF tableCellTextOrigin(const BlockLayout::TableCellLayout& cell, const RenderTheme& theme) {
+  const QRectF contentRect = cell.rect.marginsRemoved(theme.tableCellPadding());
+  qreal textX = contentRect.left();
+  if (cell.alignment == TableAlignment::Right) {
+    textX = contentRect.right() - cell.text.size().width();
+  } else if (cell.alignment == TableAlignment::Center) {
+    textX = contentRect.left() + (contentRect.width() - cell.text.size().width()) / 2.0;
+  }
+  return QPointF(qMax(contentRect.left(), textX), contentRect.top());
+}
+
 qsizetype selectableLength(const BlockLayout* block) {
   if (!block) {
     return 0;
@@ -1302,12 +1313,12 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
         for (const auto& tableRow : block->tableRows()) {
           for (const auto& cell : tableRow.cells) {
             if (cell.nodeId == hit.textNodeId) {
-              const QRectF contentRect = cell.rect.marginsRemoved(theme_.tableCellPadding());
+              const QPointF textOrigin = tableCellTextOrigin(cell, theme_);
               const qsizetype localSourceOffset =
                   position.text.sourceOffset >= 0 && cell.contentSourceStart >= 0 ? position.text.sourceOffset - cell.contentSourceStart : -1;
               hit.cursorRect = localSourceOffset >= 0
-                                   ? cell.text.cursorRectForSourceOffset(localSourceOffset).translated(contentRect.topLeft())
-                                   : cell.text.cursorRect(position.text.textOffset).translated(contentRect.topLeft());
+                                   ? cell.text.cursorRectForSourceOffset(localSourceOffset).translated(textOrigin)
+                                   : cell.text.cursorRect(position.text.textOffset).translated(textOrigin);
               break;
             }
           }

@@ -118,6 +118,7 @@ jobs:
             libxcb-ewmh-dev \
             libxcb-res0-dev \
             libxcb-cursor-dev \
+            libxcb-util-dev \
             uuid-dev \
             xvfb
 

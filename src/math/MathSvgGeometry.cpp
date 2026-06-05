@@ -5,6 +5,10 @@
 #include <QRegularExpression>
 #include <QtMath>
 
+static void initKatexFontsResource() {
+  Q_INIT_RESOURCE(katex_fonts);
+}
+
 namespace muffin::math {
 namespace {
 
@@ -165,7 +169,7 @@ void MathSvgGeometry::ensureLoaded() {
   if (didLoad()) {
     return;
   }
-  Q_INIT_RESOURCE(katex_fonts);
+  initKatexFontsResource();
   didLoad() = true;
 
   QFile file(QStringLiteral(":/katex/src/svgGeometry.ts"));

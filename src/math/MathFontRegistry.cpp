@@ -3,6 +3,10 @@
 #include <QFontDatabase>
 #include <QStringList>
 
+static void initKatexFontsResource() {
+  Q_INIT_RESOURCE(katex_fonts);
+}
+
 namespace muffin::math {
 
 void MathFontRegistry::ensureLoaded() {
@@ -10,7 +14,7 @@ void MathFontRegistry::ensureLoaded() {
   if (loaded) {
     return;
   }
-  Q_INIT_RESOURCE(katex_fonts);
+  initKatexFontsResource();
   loaded = true;
   const QStringList fonts{
       QStringLiteral(":/katex/fonts/KaTeX_Main-Regular.ttf"),

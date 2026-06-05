@@ -133,6 +133,17 @@ void paintUnorderedListMarker(QPainter& painter, BlockLayout::ListMarkerKind kin
   }
 }
 
+QPointF tableCellTextOrigin(const BlockLayout::TableCellLayout& cell, const RenderTheme& theme) {
+  const QRectF contentRect = cell.rect.marginsRemoved(theme.tableCellPadding());
+  qreal textX = contentRect.left();
+  if (cell.alignment == TableAlignment::Right) {
+    textX = contentRect.right() - cell.text.size().width();
+  } else if (cell.alignment == TableAlignment::Center) {
+    textX = contentRect.left() + (contentRect.width() - cell.text.size().width()) / 2.0;
+  }
+  return QPointF(qMax(contentRect.left(), textX), contentRect.top());
+}
+
 QVector<QRectF> literalSelectionRectsForRange(
     const QString& literal,
     qsizetype startOffset,
@@ -637,7 +648,27 @@ QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection,
       rects.push_back(rect_.adjusted(-1.0, -1.0, 1.0, 1.0));
       return rects;
     case BlockType::Table:
-      rects.push_back(rect_.adjusted(-1.0, -1.0, 1.0, 1.0));
+      for (const TableRowLayout& row : tableRows_) {
+        for (const TableCellLayout& cell : row.cells) {
+          if (cell.nodeId != selection.focus.text.nodeId) {
+            continue;
+          }
+          const qsizetype localAnchorSourceOffset =
+              selection.anchor.text.sourceOffset >= 0 && cell.contentSourceStart >= 0 ? selection.anchor.text.sourceOffset - cell.contentSourceStart : -1;
+          const qsizetype localFocusSourceOffset =
+              selection.focus.text.sourceOffset >= 0 && cell.contentSourceStart >= 0 ? selection.focus.text.sourceOffset - cell.contentSourceStart : -1;
+          const QVector<QRectF> inlineRects =
+              localAnchorSourceOffset >= 0 && localFocusSourceOffset >= 0
+                  ? cell.text.selectionRectsForSourceOffsets(localAnchorSourceOffset, localFocusSourceOffset)
+                  : cell.text.selectionRects(selection.startOffset(), selection.endOffset());
+          const QPointF origin = tableCellTextOrigin(cell, theme);
+          for (QRectF rect : inlineRects) {
+            rect.translate(origin);
+            rects.push_back(rect.adjusted(-1.0, 0, 1.0, 0));
+          }
+          return rects;
+        }
+      }
       return rects;
     default:
       return rects;
@@ -900,13 +931,12 @@ HitTestResult BlockLayout::hitTable(QPointF documentPos, const RenderTheme& them
         result.textNodeId = cell.nodeId.isValid() ? cell.nodeId : id_;
         result.tableRow = rowIndex;
         result.tableColumn = columnIndex;
-        result.textOffset = cell.text.hitTestTextOffset(documentPos - cell.rect.marginsRemoved(theme.tableCellPadding()).topLeft());
-        const qsizetype localSourceOffset = cell.text.hitTestSourceOffset(documentPos - cell.rect.marginsRemoved(theme.tableCellPadding()).topLeft());
+        const QPointF textOrigin = tableCellTextOrigin(cell, theme);
+        const QPointF localPos = documentPos - textOrigin;
+        result.textOffset = cell.text.hitTestTextOffset(localPos);
+        const qsizetype localSourceOffset = cell.text.hitTestSourceOffset(localPos);
         result.sourceOffset = cell.contentSourceStart >= 0 ? cell.contentSourceStart + localSourceOffset : localSourceOffset;
-        if (result.textOffset == 0 && documentPos.x() > cell.rect.center().x()) {
-          result.textOffset = 1;
-        }
-        result.cursorRect = cell.text.cursorRectForSourceOffset(localSourceOffset).translated(cell.rect.marginsRemoved(theme.tableCellPadding()).topLeft());
+        result.cursorRect = cell.text.cursorRectForSourceOffset(localSourceOffset).translated(textOrigin);
         return result;
       }
       ++columnIndex;
@@ -927,14 +957,7 @@ void BlockLayout::paintTable(QPainter& painter, const RenderTheme& theme, qreal 
       painter.setPen(theme.tableBorderColor());
       painter.setBrush(cell.header ? theme.tableHeaderBackgroundColor() : (cell.alternate ? theme.tableAlternateBackgroundColor() : theme.backgroundColor()));
       painter.drawRect(cellRect.adjusted(0.5, 0.5, -0.5, -0.5));
-      QRectF contentRect = cellRect.marginsRemoved(theme.tableCellPadding());
-      qreal textX = contentRect.left();
-      if (cell.alignment == TableAlignment::Right) {
-        textX = contentRect.right() - cell.text.size().width();
-      } else if (cell.alignment == TableAlignment::Center) {
-        textX = contentRect.left() + (contentRect.width() - cell.text.size().width()) / 2.0;
-      }
-      cell.text.paint(painter, QPointF(qMax(contentRect.left(), textX), contentRect.top()));
+      cell.text.paint(painter, tableCellTextOrigin(cell, theme) + QPointF(0, -scrollY));
     }
     Q_UNUSED(rowRect);
   }

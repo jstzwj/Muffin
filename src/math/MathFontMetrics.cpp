@@ -5,6 +5,10 @@
 #include <QRegularExpression>
 #include <QStringList>
 
+static void initKatexFontsResource() {
+  Q_INIT_RESOURCE(katex_fonts);
+}
+
 namespace muffin::math {
 namespace {
 
@@ -75,7 +79,7 @@ void MathFontMetrics::ensureLoaded() {
   if (metricsLoaded()) {
     return;
   }
-  Q_INIT_RESOURCE(katex_fonts);
+  initKatexFontsResource();
   metricsLoaded() = true;
 
   const QString source = fontMetricsResource();
