@@ -2,6 +2,7 @@
 
 #include <QAbstractItemView>
 #include <QDir>
+#include <QEvent>
 #include <QFileInfo>
 #include <QFileSystemModel>
 #include <QHBoxLayout>
@@ -52,8 +53,8 @@ SidebarWidget::SidebarWidget(QWidget* parent) : QWidget(parent) {
   auto* tabLayout = new QHBoxLayout();
   tabLayout->setContentsMargins(18, 12, 18, 0);
   tabLayout->setSpacing(24);
-  filesTabButton_ = createFlatButton(QStringLiteral("文件"), this);
-  outlineTabButton_ = createFlatButton(QStringLiteral("大纲"), this);
+  filesTabButton_ = createFlatButton(QString(), this);
+  outlineTabButton_ = createFlatButton(QString(), this);
   filesTabButton_->setCheckable(true);
   outlineTabButton_->setCheckable(true);
   tabLayout->addStretch(1);
@@ -67,6 +68,7 @@ SidebarWidget::SidebarWidget(QWidget* parent) : QWidget(parent) {
 
   setupFilesPanel();
   setupOutlinePanel();
+  retranslateUi();
   applyThemeName(QStringLiteral("github"));
   setPanel(Panel::Files);
 
@@ -103,7 +105,6 @@ void SidebarWidget::setupFilesPanel() {
   footerLayout->setSpacing(0);
   newFileButton_ = createFlatButton(QStringLiteral("+"), filesPanel_);
   newFileButton_->setObjectName(QStringLiteral("SidebarNewFileButton"));
-  newFileButton_->setToolTip(QStringLiteral("新建文件"));
   footerLayout->addWidget(newFileButton_);
   footerLayout->addStretch(1);
   layout->addLayout(footerLayout);
@@ -129,7 +130,7 @@ void SidebarWidget::setupOutlinePanel() {
   layout->setContentsMargins(0, 12, 0, 0);
   layout->setSpacing(0);
 
-  outlineEmptyLabel_ = new QLabel(QStringLiteral("无标题"), outlinePanel_);
+  outlineEmptyLabel_ = new QLabel(outlinePanel_);
   outlineEmptyLabel_->setObjectName(QStringLiteral("OutlineEmptyLabel"));
   outlineEmptyLabel_->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
 
@@ -227,6 +228,28 @@ void SidebarWidget::setOutline(const QVector<OutlineEntry>& entries) {
 
 void SidebarWidget::applyThemeName(QString name) {
   applyStyle(name == QStringLiteral("night"));
+}
+
+void SidebarWidget::retranslateUi() {
+  if (filesTabButton_) {
+    filesTabButton_->setText(tr("Files"));
+  }
+  if (outlineTabButton_) {
+    outlineTabButton_->setText(tr("Outline"));
+  }
+  if (newFileButton_) {
+    newFileButton_->setToolTip(tr("New File"));
+  }
+  if (outlineEmptyLabel_) {
+    outlineEmptyLabel_->setText(tr("No Headings"));
+  }
+}
+
+void SidebarWidget::changeEvent(QEvent* event) {
+  if (event->type() == QEvent::LanguageChange) {
+    retranslateUi();
+  }
+  QWidget::changeEvent(event);
 }
 
 void SidebarWidget::updateTabButtons() {

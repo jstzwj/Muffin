@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="/i18n">
+    <file alias="muffin_zh_CN.qm">../translations/muffin_zh_CN.qm</file>
+  </qresource>
+</RCC>

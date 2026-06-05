@@ -2,6 +2,7 @@
 
 #include "document/InlineProjection.h"
 
+#include <QCoreApplication>
 #include <QFontMetricsF>
 #include <QStringList>
 #include <QTextLayout>
@@ -180,7 +181,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   layout->setHeadingLevel(node.headingLevel());
   layout->setContentSourceStart(sourceContentStartForEditableNode(node));
   if (isEmptyDocumentParagraph(markdownText_, node)) {
-    layout->setPlaceholderText(QStringLiteral("Start writing..."));
+    layout->setPlaceholderText(QCoreApplication::translate("muffin::BlockLayoutBuilder", "Start writing..."));
   }
 
   auto inlineLayout = std::make_unique<InlineLayout>();

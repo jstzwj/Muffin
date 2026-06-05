@@ -1,7 +1,10 @@
 #include "app/MainWindow.h"
 
+#include "app/LanguageManager.h"
+
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QCoreApplication>
 #include <QDateTime>
 #include <QFile>
 #include <QFileInfo>
@@ -53,12 +56,17 @@ int main(int argc, char *argv[]) {
   QApplication::setApplicationName("Muffin");
   QApplication::setOrganizationName("Muffin");
   QApplication::setApplicationVersion(QStringLiteral(MUFFIN_VERSION));
+  muffin::LanguageManager::instance().initialize();
 
   QCommandLineParser parser;
-  parser.setApplicationDescription("A fast native Markdown editor built with C++ and Qt 6 Widgets.");
+  parser.setApplicationDescription(QCoreApplication::translate(
+      "main",
+      "A fast native Markdown editor built with C++ and Qt 6 Widgets."));
   parser.addHelpOption();
   parser.addVersionOption();
-  parser.addPositionalArgument("file", "Markdown or text file to open.");
+  parser.addPositionalArgument(
+      QStringLiteral("file"),
+      QCoreApplication::translate("main", "Markdown or text file to open."));
   parser.process(app);
 
   muffin::MainWindow window;

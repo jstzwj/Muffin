@@ -33,6 +33,7 @@ public:
 
 protected:
   void closeEvent(QCloseEvent* event) override;
+  void changeEvent(QEvent* event) override;
 
 private:
   QAction* addAction(
@@ -54,7 +55,7 @@ private:
   void setupStatusBar();
   void setupConnections();
   void applyTyporaLikeChrome();
-  void normalizeComplexBlockMenuText();
+  void retranslateUi();
 
   void setupFileMenu();
   void setupEditMenu();
@@ -98,6 +99,7 @@ private:
   QStringList recentFiles() const;
   void setRecentFiles(const QStringList& paths) const;
   void showDocumentProperties();
+  void showPreferences();
   void revealCurrentFile();
   bool maybeSaveChanges();
 

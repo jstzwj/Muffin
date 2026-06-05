@@ -29,6 +29,7 @@ public:
   QString folderRoot() const;
   void setOutline(const QVector<OutlineEntry>& entries);
   void applyThemeName(QString name);
+  void retranslateUi();
 
 signals:
   void newFileRequested();
@@ -38,6 +39,7 @@ signals:
   void outlineActivated(NodeId nodeId, SourceRange sourceRange);
 
 private:
+  void changeEvent(QEvent* event) override;
   void setupFilesPanel();
   void setupOutlinePanel();
   void updateTabButtons();

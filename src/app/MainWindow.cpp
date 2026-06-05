@@ -1,5 +1,7 @@
 #include "app/MainWindow.h"
 
+#include "app/LanguageManager.h"
+#include "app/PreferencesDialog.h"
 #include "app/SidebarWidget.h"
 #include "document/OutlineBuilder.h"
 #include "editor/EditorView.h"
@@ -12,9 +14,11 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QElapsedTimer>
+#include <QEvent>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QLabel>
+#include <QLineEdit>
 #include <QLocale>
 #include <QLoggingCategory>
 #include <QMenu>
@@ -114,6 +118,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
   setupStatusBar();
   setupConnections();
   applyTyporaLikeChrome();
+  retranslateUi();
   updateTitle();
   updateStatus();
   resize(1250, 900);
@@ -142,6 +147,13 @@ void MainWindow::closeEvent(QCloseEvent* event) {
   } else {
     event->ignore();
   }
+}
+
+void MainWindow::changeEvent(QEvent* event) {
+  if (event->type() == QEvent::LanguageChange) {
+    retranslateUi();
+  }
+  QMainWindow::changeEvent(event);
 }
 
 QAction* MainWindow::addAction(
@@ -195,6 +207,8 @@ void MainWindow::setupUi() {
 }
 
 void MainWindow::setupMenuBar() {
+  commands_.clearActions();
+  menuBar()->clear();
   setupFileMenu();
   setupEditMenu();
   setupParagraphMenu();
@@ -206,21 +220,18 @@ void MainWindow::setupMenuBar() {
   setupViewMenu();
   setupThemeMenu();
   setupHelpMenu();
-  normalizeComplexBlockMenuText();
 }
 
 void MainWindow::setupStatusBar() {
   statusBar()->setSizeGripEnabled(false);
 
   sidebarButton_ = new QToolButton(this);
-  sidebarButton_->setText(QStringLiteral("○"));
+  sidebarButton_->setText(QStringLiteral("O"));
   sidebarButton_->setCheckable(true);
-  sidebarButton_->setToolTip(QStringLiteral("显示 / 隐藏侧边栏"));
 
   sourceModeButton_ = new QToolButton(this);
   sourceModeButton_->setText(QStringLiteral("</>"));
   sourceModeButton_->setCheckable(true);
-  sourceModeButton_->setToolTip(QStringLiteral("切换源码 / 渲染模式"));
 
   parseLabel_ = new QLabel(this);
   cursorLabel_ = new QLabel(this);
@@ -238,7 +249,6 @@ void MainWindow::setupStatusBar() {
   statusBar()->addPermanentWidget(cursorLabel_);
   statusBar()->addPermanentWidget(wordsLabel_);
 }
-
 void MainWindow::setupConnections() {
   editorController_.attach(&session_, renderView_);
 
@@ -334,6 +344,12 @@ void MainWindow::setupConnections() {
   connect(&themeManager_, &ThemeManager::themeChanged, this, [this](const QString& name) {
     applyTheme(name);
   });
+  connect(&LanguageManager::instance(), &LanguageManager::languageChanged, this, [this] {
+    retranslateUi();
+    if (sidebar_) {
+      sidebar_->retranslateUi();
+    }
+  });
 
   commands_.bind(QStringLiteral("file.new"), [this] {
     editorController_.clearHistoryAndSelection();
@@ -358,6 +374,7 @@ void MainWindow::setupConnections() {
     }
   });
   commands_.bind(QStringLiteral("file.properties"), [this] { showDocumentProperties(); });
+  commands_.bind(QStringLiteral("file.preferences"), [this] { showPreferences(); });
   commands_.bind(QStringLiteral("file.reveal"), [this] { revealCurrentFile(); });
   commands_.bind(QStringLiteral("file.close"), [this] {
     close();
@@ -589,265 +606,262 @@ void MainWindow::applyTyporaLikeChrome() {
       "QToolButton:checked { color: #111111; background: #e9e9e9; }"));
 }
 
-void MainWindow::normalizeComplexBlockMenuText() {
-  for (QAction* menuAction : menuBar()->actions()) {
-    if (!menuAction || !menuAction->menu()) {
-      continue;
-    }
-    QMenu* menu = menuAction->menu();
-    if (menu->actions().contains(commands_.action(QStringLiteral("math.enter_edit")))) {
-      menuAction->setText(QString::fromUtf8("\xe5\x85\xac\xe5\xbc\x8f(&M)"));
-    }
-    if (menu->actions().contains(commands_.action(QStringLiteral("html.enter_edit")))) {
-      menuAction->setText(QStringLiteral("HTML(&H)"));
-    }
+void MainWindow::retranslateUi() {
+  const bool sidebarChecked = commands_.action(QStringLiteral("view.sidebar")) && commands_.action(QStringLiteral("view.sidebar"))->isChecked();
+  const bool sourceChecked = commands_.action(QStringLiteral("view.source_mode")) && commands_.action(QStringLiteral("view.source_mode"))->isChecked();
+  const bool wordWrapChecked = !commands_.action(QStringLiteral("view.word_wrap")) || commands_.action(QStringLiteral("view.word_wrap"))->isChecked();
+  const bool statusBarChecked = !commands_.action(QStringLiteral("view.status_bar")) || commands_.action(QStringLiteral("view.status_bar"))->isChecked();
+
+  setupMenuBar();
+
+  if (QAction* action = commands_.action(QStringLiteral("view.sidebar"))) {
+    action->setChecked(sidebarChecked);
+  }
+  if (QAction* action = commands_.action(QStringLiteral("view.source_mode"))) {
+    action->setChecked(sourceChecked);
+  }
+  if (QAction* action = commands_.action(QStringLiteral("view.word_wrap"))) {
+    action->setChecked(wordWrapChecked);
+  }
+  if (QAction* action = commands_.action(QStringLiteral("view.status_bar"))) {
+    action->setChecked(statusBarChecked);
   }
 
-  if (QAction* action = commands_.action(QStringLiteral("math.enter_edit"))) {
-    action->setText(QString::fromUtf8("\xe8\xbf\x9b\xe5\x85\xa5\xe7\xbc\x96\xe8\xbe\x91"));
+  if (sidebarButton_) {
+    sidebarButton_->setToolTip(tr("Show / Hide Sidebar"));
   }
-  if (QAction* action = commands_.action(QStringLiteral("math.exit_edit"))) {
-    action->setText(QString::fromUtf8("\xe9\x80\x80\xe5\x87\xba\xe7\xbc\x96\xe8\xbe\x91"));
+  if (sourceModeButton_) {
+    sourceModeButton_->setToolTip(tr("Toggle source / rendered mode"));
   }
-  if (QAction* action = commands_.action(QStringLiteral("math.set_tex"))) {
-    action->setText(QString::fromUtf8("\xe8\xae\xbe\xe7\xbd\xae TeX..."));
+
+  updateFileActions();
+  updateTableActions();
+  updateCodeActions();
+  updateHtmlActions();
+  updateMathActions();
+  updateThemeActions();
+  rebuildRecentFilesMenu();
+  if (renderView_) {
+    renderView_->setDocument(session_.document());
   }
-  if (QAction* action = commands_.action(QStringLiteral("html.enter_edit"))) {
-    action->setText(QString::fromUtf8("\xe8\xbf\x9b\xe5\x85\xa5\xe7\xbc\x96\xe8\xbe\x91"));
-  }
-  if (QAction* action = commands_.action(QStringLiteral("html.exit_edit"))) {
-    action->setText(QString::fromUtf8("\xe9\x80\x80\xe5\x87\xba\xe7\xbc\x96\xe8\xbe\x91"));
-  }
-  if (QAction* action = commands_.action(QStringLiteral("html.set_source"))) {
-    action->setText(QString::fromUtf8("\xe8\xae\xbe\xe7\xbd\xae HTML..."));
-  }
+  updateStatus();
+  wordCountDirty_ = true;
+  updateWordCountNow();
 }
-
 void MainWindow::setupFileMenu() {
-  QMenu* file = menuBar()->addMenu(QStringLiteral("文件(&F)"));
-  addAction(file, QStringLiteral("file.new"), QStringLiteral("新建"), QKeySequence::New);
-  addAction(file, QStringLiteral("file.new_window"), QStringLiteral("新建窗口"), QKeySequence(QStringLiteral("Ctrl+Shift+N")));
-  addAction(file, QStringLiteral("file.open"), QStringLiteral("打开..."), QKeySequence::Open);
-  addAction(file, QStringLiteral("file.open_folder"), QStringLiteral("打开文件夹..."));
-  addAction(file, QStringLiteral("file.quick_open"), QStringLiteral("快速打开..."), {}, false);
-  recentFilesMenu_ = file->addMenu(QStringLiteral("打开最近文件"));
+  QMenu* file = menuBar()->addMenu(tr("File"));
+  addAction(file, QStringLiteral("file.new"), tr("New"), QKeySequence::New);
+  addAction(file, QStringLiteral("file.new_window"), tr("New Window"), QKeySequence(QStringLiteral("Ctrl+Shift+N")));
+  addAction(file, QStringLiteral("file.open"), tr("Open..."), QKeySequence::Open);
+  addAction(file, QStringLiteral("file.open_folder"), tr("Open Folder..."));
+  addAction(file, QStringLiteral("file.quick_open"), tr("Quick Open..."), {}, false);
+  recentFilesMenu_ = file->addMenu(tr("Open Recent"));
   file->addSeparator();
-  addAction(file, QStringLiteral("file.reopen_encoding"), QStringLiteral("选择编码重新打开"), {}, false);
-  addAction(file, QStringLiteral("file.save"), QStringLiteral("保存"), QKeySequence::Save);
-  addAction(file, QStringLiteral("file.save_as"), QStringLiteral("另存为..."), QKeySequence::SaveAs);
-  addAction(file, QStringLiteral("file.move_to"), QStringLiteral("移动到..."), {}, false);
-  addAction(file, QStringLiteral("file.save_all"), QStringLiteral("保存全部打开的文件..."), {}, false);
+  addAction(file, QStringLiteral("file.reopen_encoding"), tr("Reopen with Encoding"), {}, false);
+  addAction(file, QStringLiteral("file.save"), tr("Save"), QKeySequence::Save);
+  addAction(file, QStringLiteral("file.save_as"), tr("Save As..."), QKeySequence::SaveAs);
+  addAction(file, QStringLiteral("file.move_to"), tr("Move To..."), {}, false);
+  addAction(file, QStringLiteral("file.save_all"), tr("Save All Open Files..."), {}, false);
   file->addSeparator();
-  addAction(file, QStringLiteral("file.properties"), QStringLiteral("属性..."));
-  addAction(file, QStringLiteral("file.reveal"), QStringLiteral("打开文件位置..."));
-  addAction(file, QStringLiteral("file.sidebar"), QStringLiteral("在侧边栏中显示"), {}, false);
-  addAction(file, QStringLiteral("file.delete"), QStringLiteral("删除..."), {}, false);
+  addAction(file, QStringLiteral("file.properties"), tr("Properties"));
+  addAction(file, QStringLiteral("file.reveal"), tr("Show in File Manager..."));
+  addAction(file, QStringLiteral("file.sidebar"), tr("Show in Sidebar"), {}, false);
+  addAction(file, QStringLiteral("file.delete"), tr("Delete..."), {}, false);
   file->addSeparator();
-  addAction(file, QStringLiteral("file.import"), QStringLiteral("导入..."), {}, false);
-  addDisabledMenu(file, QStringLiteral("导出"));
-  addAction(file, QStringLiteral("file.print"), QStringLiteral("打印..."), QKeySequence(QStringLiteral("Alt+Shift+P")), false);
+  addAction(file, QStringLiteral("file.import"), tr("Import..."), {}, false);
+  addDisabledMenu(file, tr("Export"));
+  addAction(file, QStringLiteral("file.print"), tr("Print..."), QKeySequence(QStringLiteral("Alt+Shift+P")), false);
   file->addSeparator();
-  addAction(file, QStringLiteral("file.preferences"), QStringLiteral("偏好设置..."), QKeySequence(QStringLiteral("Ctrl+,")), false);
-  addAction(file, QStringLiteral("file.close"), QStringLiteral("关闭"), QKeySequence::Close);
+  addAction(file, QStringLiteral("file.preferences"), tr("Preferences..."), QKeySequence(QStringLiteral("Ctrl+,")));
+  addAction(file, QStringLiteral("file.close"), tr("Close"), QKeySequence::Close);
 }
-
 void MainWindow::setupEditMenu() {
-  QMenu* edit = menuBar()->addMenu(QStringLiteral("编辑(&E)"));
-  addAction(edit, QStringLiteral("edit.undo"), QStringLiteral("撤销"), QKeySequence::Undo);
-  addAction(edit, QStringLiteral("edit.redo"), QStringLiteral("重做"), QKeySequence::Redo);
+  QMenu* edit = menuBar()->addMenu(tr("Edit"));
+  addAction(edit, QStringLiteral("edit.undo"), tr("Undo"), QKeySequence::Undo);
+  addAction(edit, QStringLiteral("edit.redo"), tr("Redo"), QKeySequence::Redo);
   edit->addSeparator();
-  addAction(edit, QStringLiteral("edit.cut"), QStringLiteral("剪切"), QKeySequence::Cut);
-  addAction(edit, QStringLiteral("edit.copy"), QStringLiteral("复制"), QKeySequence::Copy);
-  addAction(edit, QStringLiteral("edit.copy_image"), QStringLiteral("拷贝图片"), {}, false);
-  addAction(edit, QStringLiteral("edit.paste"), QStringLiteral("粘贴"), QKeySequence::Paste);
-  addAction(edit, QStringLiteral("edit.copy_plain"), QStringLiteral("复制为纯文本"), {}, false);
-  addAction(edit, QStringLiteral("edit.copy_markdown"), QStringLiteral("复制为 Markdown"), QKeySequence(QStringLiteral("Ctrl+Shift+C")), false);
-  addAction(edit, QStringLiteral("edit.copy_html"), QStringLiteral("复制为 HTML 代码"), {}, false);
-  addAction(edit, QStringLiteral("edit.paste_plain"), QStringLiteral("粘贴为纯文本"), QKeySequence(QStringLiteral("Ctrl+Shift+V")), false);
+  addAction(edit, QStringLiteral("edit.cut"), tr("Cut"), QKeySequence::Cut);
+  addAction(edit, QStringLiteral("edit.copy"), tr("Copy"), QKeySequence::Copy);
+  addAction(edit, QStringLiteral("edit.copy_image"), tr("Copy Image"), {}, false);
+  addAction(edit, QStringLiteral("edit.paste"), tr("Paste"), QKeySequence::Paste);
+  addAction(edit, QStringLiteral("edit.copy_plain"), tr("Copy as Plain Text"), {}, false);
+  addAction(edit, QStringLiteral("edit.copy_markdown"), tr("Copy as Markdown"), QKeySequence(QStringLiteral("Ctrl+Shift+C")), false);
+  addAction(edit, QStringLiteral("edit.copy_html"), tr("Copy as HTML"), {}, false);
+  addAction(edit, QStringLiteral("edit.paste_plain"), tr("Paste as Plain Text"), QKeySequence(QStringLiteral("Ctrl+Shift+V")), false);
   edit->addSeparator();
-  QMenu* select = edit->addMenu(QStringLiteral("选择"));
-  addAction(select, QStringLiteral("edit.select_all"), QStringLiteral("全选"), QKeySequence::SelectAll);
-  addAction(select, QStringLiteral("edit.select_line"), QStringLiteral("选择当前行"), {}, false);
-  addAction(select, QStringLiteral("edit.select_format"), QStringLiteral("选择当前格式文本"), {}, false);
+  QMenu* select = edit->addMenu(tr("Select"));
+  addAction(select, QStringLiteral("edit.select_all"), tr("Select All"), QKeySequence::SelectAll);
+  addAction(select, QStringLiteral("edit.select_line"), tr("Select Current Line"), {}, false);
+  addAction(select, QStringLiteral("edit.select_format"), tr("Select Current Format Text"), {}, false);
   edit->addSeparator();
-  addAction(edit, QStringLiteral("edit.move_line_up"), QStringLiteral("上移该行"), QKeySequence(QStringLiteral("Alt+Up")), false);
-  addAction(edit, QStringLiteral("edit.move_line_down"), QStringLiteral("下移该行"), QKeySequence(QStringLiteral("Alt+Down")), false);
-  addAction(edit, QStringLiteral("edit.delete"), QStringLiteral("删除"), {}, false);
+  addAction(edit, QStringLiteral("edit.move_line_up"), tr("Move Line Up"), QKeySequence(QStringLiteral("Alt+Up")), false);
+  addAction(edit, QStringLiteral("edit.move_line_down"), tr("Move Line Down"), QKeySequence(QStringLiteral("Alt+Down")), false);
+  addAction(edit, QStringLiteral("edit.delete"), tr("Delete"), {}, false);
   edit->addSeparator();
-  addDisabledMenu(edit, QStringLiteral("删除范围"));
-  addDisabledMenu(edit, QStringLiteral("数学工具"));
-  addDisabledMenu(edit, QStringLiteral("智能标点"));
-  addDisabledMenu(edit, QStringLiteral("换行符"));
-  addDisabledMenu(edit, QStringLiteral("空格与换行"));
-  addAction(edit, QStringLiteral("edit.spellcheck"), QStringLiteral("拼写检查..."), {}, false);
-  addAction(edit, QStringLiteral("edit.find"), QStringLiteral("查找和替换"), QKeySequence::Find, false);
-  addAction(edit, QStringLiteral("edit.symbols"), QStringLiteral("表情与符号"), QKeySequence(QStringLiteral("Ctrl+.")), false);
+  addDisabledMenu(edit, tr("Delete Range"));
+  addDisabledMenu(edit, tr("Math Tools"));
+  addDisabledMenu(edit, tr("Smart Punctuation"));
+  addDisabledMenu(edit, tr("Line Breaks"));
+  addDisabledMenu(edit, tr("Spaces and Line Breaks"));
+  addAction(edit, QStringLiteral("edit.spellcheck"), tr("Spell Check..."), {}, false);
+  addAction(edit, QStringLiteral("edit.find"), tr("Find and Replace"), QKeySequence::Find, false);
+  addAction(edit, QStringLiteral("edit.symbols"), tr("Emoji and Symbols"), QKeySequence(QStringLiteral("Ctrl+.")), false);
 }
-
 void MainWindow::setupParagraphMenu() {
-  QMenu* paragraph = menuBar()->addMenu(QStringLiteral("段落(&P)"));
+  QMenu* paragraph = menuBar()->addMenu(tr("Paragraph"));
   for (int level = 1; level <= 6; ++level) {
     addAction(
         paragraph,
         QStringLiteral("paragraph.heading_%1").arg(level),
-        QStringLiteral("%1级标题").arg(level),
+        tr("Heading %1").arg(level),
         QKeySequence(QStringLiteral("Ctrl+%1").arg(level)),
         false);
   }
-  addCheckAction(paragraph, QStringLiteral("paragraph.paragraph"), QStringLiteral("段落"), QKeySequence(QStringLiteral("Ctrl+0")), true, false);
-  addAction(paragraph, QStringLiteral("paragraph.promote_heading"), QStringLiteral("提升标题级别"), QKeySequence(QStringLiteral("Ctrl+-")), false);
-  addAction(paragraph, QStringLiteral("paragraph.demote_heading"), QStringLiteral("降低标题级别"), QKeySequence(QStringLiteral("Ctrl+=")), false);
+  addCheckAction(paragraph, QStringLiteral("paragraph.paragraph"), tr("Paragraph"), QKeySequence(QStringLiteral("Ctrl+0")), true, false);
+  addAction(paragraph, QStringLiteral("paragraph.promote_heading"), tr("Promote Heading"), QKeySequence(QStringLiteral("Ctrl+-")), false);
+  addAction(paragraph, QStringLiteral("paragraph.demote_heading"), tr("Demote Heading"), QKeySequence(QStringLiteral("Ctrl+=")), false);
   paragraph->addSeparator();
-  addDisabledMenu(paragraph, QStringLiteral("表格"));
-  addAction(paragraph, QStringLiteral("paragraph.math_block"), QStringLiteral("公式块"), QKeySequence(QStringLiteral("Ctrl+Shift+M")), false);
-  addAction(paragraph, QStringLiteral("paragraph.code_block"), QStringLiteral("代码块"), QKeySequence(QStringLiteral("Ctrl+Shift+K")), false);
-  addDisabledMenu(paragraph, QStringLiteral("代码工具"));
-  addDisabledMenu(paragraph, QStringLiteral("警告框"));
+  addDisabledMenu(paragraph, tr("Table"));
+  addAction(paragraph, QStringLiteral("paragraph.math_block"), tr("Formula Block"), QKeySequence(QStringLiteral("Ctrl+Shift+M")), false);
+  addAction(paragraph, QStringLiteral("paragraph.code_block"), tr("Code Block"), QKeySequence(QStringLiteral("Ctrl+Shift+K")), false);
+  addDisabledMenu(paragraph, tr("Code Tools"));
+  addDisabledMenu(paragraph, tr("Alert"));
   paragraph->addSeparator();
-  addAction(paragraph, QStringLiteral("paragraph.quote"), QStringLiteral("引用"), QKeySequence(QStringLiteral("Ctrl+Shift+Q")), false);
-  addAction(paragraph, QStringLiteral("paragraph.ordered_list"), QStringLiteral("有序列表"), QKeySequence(QStringLiteral("Ctrl+Shift+[")), false);
-  addAction(paragraph, QStringLiteral("paragraph.unordered_list"), QStringLiteral("无序列表"), QKeySequence(QStringLiteral("Ctrl+Shift+]")), false);
-  addAction(paragraph, QStringLiteral("paragraph.task_list"), QStringLiteral("任务列表"), QKeySequence(QStringLiteral("Ctrl+Shift+X")), false);
-  addDisabledMenu(paragraph, QStringLiteral("任务状态"));
-  addDisabledMenu(paragraph, QStringLiteral("列表缩进"));
+  addAction(paragraph, QStringLiteral("paragraph.quote"), tr("Quote"), QKeySequence(QStringLiteral("Ctrl+Shift+Q")), false);
+  addAction(paragraph, QStringLiteral("paragraph.ordered_list"), tr("Ordered List"), QKeySequence(QStringLiteral("Ctrl+Shift+[")), false);
+  addAction(paragraph, QStringLiteral("paragraph.unordered_list"), tr("Unordered List"), QKeySequence(QStringLiteral("Ctrl+Shift+]")), false);
+  addAction(paragraph, QStringLiteral("paragraph.task_list"), tr("Task List"), QKeySequence(QStringLiteral("Ctrl+Shift+X")), false);
+  addDisabledMenu(paragraph, tr("Task Status"));
+  addDisabledMenu(paragraph, tr("List Indent"));
   paragraph->addSeparator();
-  addAction(paragraph, QStringLiteral("paragraph.insert_before"), QStringLiteral("在上方插入段落"), {}, false);
-  addAction(paragraph, QStringLiteral("paragraph.insert_after"), QStringLiteral("在下方插入段落"), {}, false);
-  addAction(paragraph, QStringLiteral("paragraph.link_ref"), QStringLiteral("链接引用"), {}, false);
-  addAction(paragraph, QStringLiteral("paragraph.footnote"), QStringLiteral("脚注"), {}, false);
-  addAction(paragraph, QStringLiteral("paragraph.hr"), QStringLiteral("水平分割线"), {}, false);
-  addAction(paragraph, QStringLiteral("paragraph.toc"), QStringLiteral("内容目录"), {}, false);
+  addAction(paragraph, QStringLiteral("paragraph.insert_before"), tr("Insert Paragraph Before"), {}, false);
+  addAction(paragraph, QStringLiteral("paragraph.insert_after"), tr("Insert Paragraph After"), {}, false);
+  addAction(paragraph, QStringLiteral("paragraph.link_ref"), tr("Link Reference"), {}, false);
+  addAction(paragraph, QStringLiteral("paragraph.footnote"), tr("Footnote"), {}, false);
+  addAction(paragraph, QStringLiteral("paragraph.hr"), tr("Horizontal Rule"), {}, false);
+  addAction(paragraph, QStringLiteral("paragraph.toc"), tr("Table of Contents"), {}, false);
   addAction(paragraph, QStringLiteral("paragraph.yaml"), QStringLiteral("YAML Front Matter"), {}, false);
 }
-
 void MainWindow::setupFormatMenu() {
-  QMenu* format = menuBar()->addMenu(QStringLiteral("格式(&O)"));
-  addCheckAction(format, QStringLiteral("format.bold"), QStringLiteral("加粗"), QKeySequence::Bold);
-  addCheckAction(format, QStringLiteral("format.italic"), QStringLiteral("斜体"), QKeySequence::Italic);
-  addCheckAction(format, QStringLiteral("format.underline"), QStringLiteral("下划线"), QKeySequence::Underline, false, false);
-  addCheckAction(format, QStringLiteral("format.code"), QStringLiteral("代码"), QKeySequence(QStringLiteral("Ctrl+Shift+`")));
-  addCheckAction(format, QStringLiteral("format.strike"), QStringLiteral("删除线"), QKeySequence(QStringLiteral("Alt+Shift+5")), false, false);
+  QMenu* format = menuBar()->addMenu(tr("Format"));
+  addCheckAction(format, QStringLiteral("format.bold"), tr("Bold"), QKeySequence::Bold);
+  addCheckAction(format, QStringLiteral("format.italic"), tr("Italic"), QKeySequence::Italic);
+  addCheckAction(format, QStringLiteral("format.underline"), tr("Underline"), QKeySequence::Underline, false, false);
+  addCheckAction(format, QStringLiteral("format.code"), tr("Inline Code"), QKeySequence(QStringLiteral("Ctrl+Shift+`")));
+  addCheckAction(format, QStringLiteral("format.strike"), tr("Strikethrough"), QKeySequence(QStringLiteral("Alt+Shift+5")), false, false);
   format->addSeparator();
-  addAction(format, QStringLiteral("format.comment"), QStringLiteral("注释"), {}, false);
-  addAction(format, QStringLiteral("format.link"), QStringLiteral("超链接"), QKeySequence(QStringLiteral("Ctrl+K")));
-  addDisabledMenu(format, QStringLiteral("链接操作"));
-  addDisabledMenu(format, QStringLiteral("图像"));
-  addAction(format, QStringLiteral("format.clear"), QStringLiteral("清除样式"), QKeySequence(QStringLiteral("Ctrl+\\")), false);
+  addAction(format, QStringLiteral("format.comment"), tr("Comment"), {}, false);
+  addAction(format, QStringLiteral("format.link"), tr("Hyperlink"), QKeySequence(QStringLiteral("Ctrl+K")));
+  addDisabledMenu(format, tr("Link Actions"));
+  addDisabledMenu(format, tr("Image"));
+  addAction(format, QStringLiteral("format.clear"), tr("Clear Style"), QKeySequence(QStringLiteral("Ctrl+\\")), false);
 }
-
 void MainWindow::setupTableMenu() {
-  QMenu* table = menuBar()->addMenu(QStringLiteral("表格(&B)"));
+  QMenu* table = menuBar()->addMenu(tr("Table"));
   table->menuAction()->setVisible(false);
-  addAction(table, QStringLiteral("table.insert_table"), QStringLiteral("插入表格"));
+  addAction(table, QStringLiteral("table.insert_table"), tr("Insert Table"));
   table->addSeparator();
-  addAction(table, QStringLiteral("table.insert_row_before"), QStringLiteral("在上方插入行"));
-  addAction(table, QStringLiteral("table.insert_row_after"), QStringLiteral("在下方插入行"));
-  addAction(table, QStringLiteral("table.delete_row"), QStringLiteral("删除行"));
-  addAction(table, QStringLiteral("table.move_row_up"), QStringLiteral("上移行"));
-  addAction(table, QStringLiteral("table.move_row_down"), QStringLiteral("下移行"));
+  addAction(table, QStringLiteral("table.insert_row_before"), tr("Insert Row Above"));
+  addAction(table, QStringLiteral("table.insert_row_after"), tr("Insert Row Below"));
+  addAction(table, QStringLiteral("table.delete_row"), tr("Delete Row"));
+  addAction(table, QStringLiteral("table.move_row_up"), tr("Move Row Up"));
+  addAction(table, QStringLiteral("table.move_row_down"), tr("Move Row Down"));
   table->addSeparator();
-  addAction(table, QStringLiteral("table.insert_column_before"), QStringLiteral("在左侧插入列"));
-  addAction(table, QStringLiteral("table.insert_column_after"), QStringLiteral("在右侧插入列"));
-  addAction(table, QStringLiteral("table.delete_column"), QStringLiteral("删除列"));
-  addAction(table, QStringLiteral("table.move_column_left"), QStringLiteral("左移列"));
-  addAction(table, QStringLiteral("table.move_column_right"), QStringLiteral("右移列"));
+  addAction(table, QStringLiteral("table.insert_column_before"), tr("Insert Column Left"));
+  addAction(table, QStringLiteral("table.insert_column_after"), tr("Insert Column Right"));
+  addAction(table, QStringLiteral("table.delete_column"), tr("Delete Column"));
+  addAction(table, QStringLiteral("table.move_column_left"), tr("Move Column Left"));
+  addAction(table, QStringLiteral("table.move_column_right"), tr("Move Column Right"));
   table->addSeparator();
-  addAction(table, QStringLiteral("table.align_left"), QStringLiteral("左对齐"));
-  addAction(table, QStringLiteral("table.align_center"), QStringLiteral("居中对齐"));
-  addAction(table, QStringLiteral("table.align_right"), QStringLiteral("右对齐"));
-  addAction(table, QStringLiteral("table.align_none"), QStringLiteral("清除对齐"));
+  addAction(table, QStringLiteral("table.align_left"), tr("Align Left"));
+  addAction(table, QStringLiteral("table.align_center"), tr("Align Center"));
+  addAction(table, QStringLiteral("table.align_right"), tr("Align Right"));
+  addAction(table, QStringLiteral("table.align_none"), tr("Clear Alignment"));
   table->addSeparator();
-  addAction(table, QStringLiteral("table.delete_table"), QStringLiteral("删除表格"));
+  addAction(table, QStringLiteral("table.delete_table"), tr("Delete Table"));
 }
-
 void MainWindow::setupCodeMenu() {
-  QMenu* code = menuBar()->addMenu(QStringLiteral("代码(&C)"));
+  QMenu* code = menuBar()->addMenu(tr("Code"));
   code->menuAction()->setVisible(false);
-  addAction(code, QStringLiteral("code.enter_edit"), QStringLiteral("进入编辑"));
-  addAction(code, QStringLiteral("code.exit_edit"), QStringLiteral("退出编辑"));
-  addAction(code, QStringLiteral("code.set_language"), QStringLiteral("设置语言..."));
+  addAction(code, QStringLiteral("code.enter_edit"), tr("Enter Edit"));
+  addAction(code, QStringLiteral("code.exit_edit"), tr("Exit Edit"));
+  addAction(code, QStringLiteral("code.set_language"), tr("Set Language..."));
 }
-
 void MainWindow::setupMathMenu() {
-  QMenu* math = menuBar()->addMenu(QStringLiteral("å…¬å¼(&M)"));
+  QMenu* math = menuBar()->addMenu(tr("Math"));
   math->menuAction()->setVisible(false);
-  addAction(math, QStringLiteral("math.enter_edit"), QStringLiteral("è¿›å…¥ç¼–è¾‘"));
-  addAction(math, QStringLiteral("math.exit_edit"), QStringLiteral("é€€å‡ºç¼–è¾‘"));
-  addAction(math, QStringLiteral("math.set_tex"), QStringLiteral("è®¾ç½® TeX..."));
+  addAction(math, QStringLiteral("math.enter_edit"), tr("Enter Edit"));
+  addAction(math, QStringLiteral("math.exit_edit"), tr("Exit Edit"));
+  addAction(math, QStringLiteral("math.set_tex"), tr("Set TeX..."));
 }
-
 void MainWindow::setupHtmlMenu() {
   QMenu* html = menuBar()->addMenu(QStringLiteral("HTML(&H)"));
   html->menuAction()->setVisible(false);
-  addAction(html, QStringLiteral("html.enter_edit"), QStringLiteral("è¿›å…¥ç¼–è¾‘"));
-  addAction(html, QStringLiteral("html.exit_edit"), QStringLiteral("é€€å‡ºç¼–è¾‘"));
-  addAction(html, QStringLiteral("html.set_source"), QStringLiteral("è®¾ç½® HTML..."));
+  addAction(html, QStringLiteral("html.enter_edit"), tr("Enter Edit"));
+  addAction(html, QStringLiteral("html.exit_edit"), tr("Exit Edit"));
+  addAction(html, QStringLiteral("html.set_source"), tr("Set HTML..."));
 }
-
 void MainWindow::setupViewMenu() {
-  QMenu* view = menuBar()->addMenu(QStringLiteral("视图(&V)"));
-  addCheckAction(view, QStringLiteral("view.sidebar"), QStringLiteral("显示 / 隐藏侧边栏"), QKeySequence(QStringLiteral("Ctrl+Shift+L")), false);
-  addAction(view, QStringLiteral("view.outline"), QStringLiteral("大纲"), QKeySequence(QStringLiteral("Ctrl+Shift+1")));
-  addAction(view, QStringLiteral("view.document_list"), QStringLiteral("文档列表"), QKeySequence(QStringLiteral("Ctrl+Shift+2")));
-  addAction(view, QStringLiteral("view.file_tree"), QStringLiteral("文件树"), QKeySequence(QStringLiteral("Ctrl+Shift+3")));
-  addAction(view, QStringLiteral("view.search"), QStringLiteral("搜索"), QKeySequence(QStringLiteral("Ctrl+Shift+F")), false);
+  QMenu* view = menuBar()->addMenu(tr("View"));
+  addCheckAction(view, QStringLiteral("view.sidebar"), tr("Show / Hide Sidebar"), QKeySequence(QStringLiteral("Ctrl+Shift+L")), false);
+  addAction(view, QStringLiteral("view.outline"), tr("Outline"), QKeySequence(QStringLiteral("Ctrl+Shift+1")));
+  addAction(view, QStringLiteral("view.document_list"), tr("Document List"), QKeySequence(QStringLiteral("Ctrl+Shift+2")));
+  addAction(view, QStringLiteral("view.file_tree"), tr("File Tree"), QKeySequence(QStringLiteral("Ctrl+Shift+3")));
+  addAction(view, QStringLiteral("view.search"), tr("Search"), QKeySequence(QStringLiteral("Ctrl+Shift+F")), false);
   view->addSeparator();
-  addCheckAction(view, QStringLiteral("view.source_mode"), QStringLiteral("源代码模式"), QKeySequence(QStringLiteral("Ctrl+/")), false);
-  addCheckAction(view, QStringLiteral("view.word_wrap"), QStringLiteral("自动换行"), {}, true);
-  addCheckAction(view, QStringLiteral("view.focus"), QStringLiteral("专注模式"), QKeySequence(QStringLiteral("F8")), false, false);
-  addCheckAction(view, QStringLiteral("view.typewriter"), QStringLiteral("打字机模式"), QKeySequence(QStringLiteral("F9")), false, false);
-  addCheckAction(view, QStringLiteral("view.status_bar"), QStringLiteral("显示状态栏"), {}, true);
+  addCheckAction(view, QStringLiteral("view.source_mode"), tr("Source Code Mode"), QKeySequence(QStringLiteral("Ctrl+/")), false);
+  addCheckAction(view, QStringLiteral("view.word_wrap"), tr("Word Wrap"), {}, true);
+  addCheckAction(view, QStringLiteral("view.focus"), tr("Focus Mode"), QKeySequence(QStringLiteral("F8")), false, false);
+  addCheckAction(view, QStringLiteral("view.typewriter"), tr("Typewriter Mode"), QKeySequence(QStringLiteral("F9")), false, false);
+  addCheckAction(view, QStringLiteral("view.status_bar"), tr("Show Status Bar"), {}, true);
   view->addSeparator();
-  addAction(view, QStringLiteral("view.word_count"), QStringLiteral("字数统计窗口"), {}, false);
-  addAction(view, QStringLiteral("view.diagnostics"), QStringLiteral("渲染诊断"), {}, false);
-  addAction(view, QStringLiteral("view.fullscreen"), QStringLiteral("切换全屏"), QKeySequence(QStringLiteral("F11")));
-  addCheckAction(view, QStringLiteral("view.always_on_top"), QStringLiteral("保持窗口在最前端"), {}, false, false);
+  addAction(view, QStringLiteral("view.word_count"), tr("Word Count Window"), {}, false);
+  addAction(view, QStringLiteral("view.diagnostics"), tr("Render Diagnostics"), {}, false);
+  addAction(view, QStringLiteral("view.fullscreen"), tr("Toggle Full Screen"), QKeySequence(QStringLiteral("F11")));
+  addCheckAction(view, QStringLiteral("view.always_on_top"), tr("Always on Top"), {}, false, false);
   view->addSeparator();
-  addAction(view, QStringLiteral("view.actual_size"), QStringLiteral("实际大小"), QKeySequence(QStringLiteral("Ctrl+Shift+9")));
-  addAction(view, QStringLiteral("view.zoom_in"), QStringLiteral("放大"), QKeySequence(QStringLiteral("Ctrl+Shift+=")));
-  addAction(view, QStringLiteral("view.zoom_out"), QStringLiteral("缩小"), QKeySequence(QStringLiteral("Ctrl+Shift+-")));
-  addAction(view, QStringLiteral("view.window_switch"), QStringLiteral("应用内窗口切换"), QKeySequence(QStringLiteral("Ctrl+Tab")), false);
-  addAction(view, QStringLiteral("view.devtools"), QStringLiteral("开发者工具"), QKeySequence(QStringLiteral("Shift+F12")), false);
+  addAction(view, QStringLiteral("view.actual_size"), tr("Actual Size"), QKeySequence(QStringLiteral("Ctrl+Shift+9")));
+  addAction(view, QStringLiteral("view.zoom_in"), tr("Zoom In"), QKeySequence(QStringLiteral("Ctrl+Shift+=")));
+  addAction(view, QStringLiteral("view.zoom_out"), tr("Zoom Out"), QKeySequence(QStringLiteral("Ctrl+Shift+-")));
+  addAction(view, QStringLiteral("view.window_switch"), tr("Switch Windows"), QKeySequence(QStringLiteral("Ctrl+Tab")), false);
+  addAction(view, QStringLiteral("view.devtools"), tr("Developer Tools"), QKeySequence(QStringLiteral("Shift+F12")), false);
 }
-
 void MainWindow::setupThemeMenu() {
-  QMenu* theme = menuBar()->addMenu(QStringLiteral("主题(&T)"));
+  QMenu* theme = menuBar()->addMenu(tr("Theme"));
   addCheckAction(theme, QStringLiteral("theme.github"), QStringLiteral("Github"), {}, true);
   addCheckAction(theme, QStringLiteral("theme.newsprint"), QStringLiteral("Newsprint"), {}, false);
   addCheckAction(theme, QStringLiteral("theme.night"), QStringLiteral("Night"), {}, false);
   addCheckAction(theme, QStringLiteral("theme.pixyll"), QStringLiteral("Pixyll"), {}, false);
   addCheckAction(theme, QStringLiteral("theme.whitey"), QStringLiteral("Whitey"), {}, false);
 }
-
 void MainWindow::setupHelpMenu() {
-  QMenu* help = menuBar()->addMenu(QStringLiteral("帮助(&H)"));
-  addAction(help, QStringLiteral("help.whats_new"), QStringLiteral("What's New..."), {}, false);
-  addAction(help, QStringLiteral("help.quick_start"), QStringLiteral("Quick Start"), {}, false);
-  addAction(help, QStringLiteral("help.markdown_ref"), QStringLiteral("Markdown Reference"), {}, false);
-  addAction(help, QStringLiteral("help.pandoc"), QStringLiteral("Install and Use Pandoc"), {}, false);
-  addAction(help, QStringLiteral("help.custom_themes"), QStringLiteral("Custom Themes"), {}, false);
-  addAction(help, QStringLiteral("help.images"), QStringLiteral("Use Images in Muffin"), {}, false);
-  addAction(help, QStringLiteral("help.recovery"), QStringLiteral("Data Recovery and Version Control"), {}, false);
+  QMenu* help = menuBar()->addMenu(tr("Help"));
+  addAction(help, QStringLiteral("help.whats_new"), tr("What's New..."), {}, false);
+  addAction(help, QStringLiteral("help.quick_start"), tr("Quick Start"), {}, false);
+  addAction(help, QStringLiteral("help.markdown_ref"), tr("Markdown Reference"), {}, false);
+  addAction(help, QStringLiteral("help.pandoc"), tr("Install and Use Pandoc"), {}, false);
+  addAction(help, QStringLiteral("help.custom_themes"), tr("Custom Themes"), {}, false);
+  addAction(help, QStringLiteral("help.images"), tr("Use Images in Muffin"), {}, false);
+  addAction(help, QStringLiteral("help.recovery"), tr("Data Recovery and Version Control"), {}, false);
   help->addSeparator();
-  addAction(help, QStringLiteral("help.more_themes"), QStringLiteral("更多主题..."), {}, false);
-  addAction(help, QStringLiteral("help.acknowledgements"), QStringLiteral("鸣谢"), {}, false);
-  addAction(help, QStringLiteral("help.changelog"), QStringLiteral("更新日志"), {}, false);
-  addAction(help, QStringLiteral("help.privacy"), QStringLiteral("隐私条款"), {}, false);
-  addAction(help, QStringLiteral("help.website"), QStringLiteral("官方网站"), {}, false);
-  addAction(help, QStringLiteral("help.feedback"), QStringLiteral("反馈"), {}, false);
-  addAction(help, QStringLiteral("help.update"), QStringLiteral("检查更新..."), {}, false);
-  addAction(help, QStringLiteral("help.license"), QStringLiteral("我的许可证..."), {}, false);
+  addAction(help, QStringLiteral("help.more_themes"), tr("More Themes..."), {}, false);
+  addAction(help, QStringLiteral("help.acknowledgements"), tr("Acknowledgements"), {}, false);
+  addAction(help, QStringLiteral("help.changelog"), tr("Changelog"), {}, false);
+  addAction(help, QStringLiteral("help.privacy"), tr("Privacy Policy"), {}, false);
+  addAction(help, QStringLiteral("help.website"), tr("Official Website"), {}, false);
+  addAction(help, QStringLiteral("help.feedback"), tr("Feedback"), {}, false);
+  addAction(help, QStringLiteral("help.update"), tr("Check for Updates..."), {}, false);
+  addAction(help, QStringLiteral("help.license"), tr("My License..."), {}, false);
   help->addSeparator();
-  addAction(help, QStringLiteral("help.about"), QStringLiteral("关于"));
+  addAction(help, QStringLiteral("help.about"), tr("About"));
 }
-
 void MainWindow::updateTitle() {
   const QString marker = session_.document().isModified() ? QStringLiteral(" *") : QString();
   setWindowTitle(QStringLiteral("%1%2 - Muffin").arg(session_.displayName(), marker));
 }
 
 void MainWindow::updateStatus() {
-  parseLabel_->setText(QStringLiteral("解析 %1 ms").arg(session_.lastParseElapsedMs()));
+  parseLabel_->setText(tr("Parse %1 ms").arg(session_.lastParseElapsedMs()));
   if (!sourceModeEnabled() && !renderCursorStatus_.isEmpty()) {
     cursorLabel_->setText(renderCursorStatus_);
   } else {
@@ -865,7 +879,7 @@ void MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {
   if (!hit.isValid()) {
     renderCursorStatus_.clear();
   } else if (hit.zone == HitTestResult::Zone::TableCell) {
-    renderCursorStatus_ = QStringLiteral("表格 %1:%2 offset %3").arg(hit.tableRow + 1).arg(hit.tableColumn + 1).arg(hit.textOffset);
+    renderCursorStatus_ = tr("table %1:%2 offset %3").arg(hit.tableRow + 1).arg(hit.tableColumn + 1).arg(hit.textOffset);
   } else {
     renderCursorStatus_ = QStringLiteral("%1 %2 offset %3")
                               .arg(zoneName(hit.zone), hit.blockId.toString())
@@ -1034,7 +1048,7 @@ void MainWindow::updateWordCountNow() {
   if (!wordsLabel_ || !wordCountDirty_) {
     return;
   }
-  wordsLabel_->setText(QStringLiteral("%1 词").arg(countWords(session_.markdownText())));
+  wordsLabel_->setText(tr("%1 words").arg(countWords(session_.markdownText())));
   wordCountDirty_ = false;
 }
 
@@ -1124,7 +1138,7 @@ void MainWindow::rebuildRecentFilesMenu() {
 
   if (!paths.isEmpty()) {
     recentFilesMenu_->addSeparator();
-    QAction* clearAction = recentFilesMenu_->addAction(QStringLiteral("清除最近文件"));
+    QAction* clearAction = recentFilesMenu_->addAction(tr("Clear Recent Files"));
     connect(clearAction, &QAction::triggered, this, [this] {
       setRecentFiles({});
       rebuildRecentFilesMenu();
@@ -1179,6 +1193,11 @@ void MainWindow::showDocumentProperties() {
                                   QString::number(countWords(session_.markdownText())),
                                   QString::number(session_.lastParseElapsedMs()));
   QMessageBox::information(this, tr("Properties"), message);
+}
+
+void MainWindow::showPreferences() {
+  PreferencesDialog dialog(this);
+  dialog.exec();
 }
 
 void MainWindow::revealCurrentFile() {

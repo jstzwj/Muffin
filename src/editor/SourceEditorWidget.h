@@ -3,6 +3,7 @@
 #include <QWidget>
 
 class QPlainTextEdit;
+class QEvent;
 class QResizeEvent;
 
 namespace muffin {
@@ -28,6 +29,7 @@ public:
 
 protected:
   void resizeEvent(QResizeEvent* event) override;
+  void changeEvent(QEvent* event) override;
 
 signals:
   void textEdited(QString text);
@@ -35,6 +37,7 @@ signals:
 
 private:
   void setupStyle();
+  void retranslateUi();
   void updateEditorWidth();
   void emitCursorPosition();
 

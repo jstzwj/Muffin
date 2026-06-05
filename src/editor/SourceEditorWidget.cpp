@@ -3,6 +3,7 @@
 #include "theme/RenderTheme.h"
 
 #include <QAbstractTextDocumentLayout>
+#include <QEvent>
 #include <QPainter>
 #include <QFont>
 #include <QFontMetricsF>
@@ -336,7 +337,7 @@ SourceEditorWidget::SourceEditorWidget(QWidget* parent) : QWidget(parent) {
   editor_ = new MarkdownSourceEdit(this);
   editor_->setFrameShape(QFrame::NoFrame);
   editor_->setMinimumWidth(0);
-  editor_->setPlaceholderText(tr("Start writing..."));
+  retranslateUi();
   editor_->setTabStopDistance(32);
   editor_->setLineWrapMode(QPlainTextEdit::WidgetWidth);
   editor_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -407,11 +408,24 @@ void SourceEditorWidget::resizeEvent(QResizeEvent* event) {
   updateEditorWidth();
 }
 
+void SourceEditorWidget::changeEvent(QEvent* event) {
+  if (event->type() == QEvent::LanguageChange) {
+    retranslateUi();
+  }
+  QWidget::changeEvent(event);
+}
+
 void SourceEditorWidget::setupStyle() {
   QFont font(QStringLiteral("Microsoft YaHei UI"));
   font.setPointSizeF(12.5);
   editor_->setSourceFont(font);
   setTheme(RenderTheme::github());
+}
+
+void SourceEditorWidget::retranslateUi() {
+  if (editor_) {
+    editor_->setPlaceholderText(tr("Start writing..."));
+  }
 }
 
 void SourceEditorWidget::updateEditorWidth() {

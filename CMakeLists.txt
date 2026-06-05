@@ -28,6 +28,86 @@ if(MSVC)
 endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+set(MUFFIN_QT_LINGUIST_BIN "" CACHE PATH "Optional Qt Linguist tool directory")
+set(MUFFIN_LOCAL_QT_LINGUIST_BIN "C:/Program Files/Qt Linguist/bin")
+if(NOT MUFFIN_QT_LINGUIST_BIN AND WIN32 AND EXISTS "${MUFFIN_LOCAL_QT_LINGUIST_BIN}/lupdate.exe")
+  set(MUFFIN_QT_LINGUIST_BIN "${MUFFIN_LOCAL_QT_LINGUIST_BIN}")
+endif()
+if(MUFFIN_QT_LINGUIST_BIN)
+  find_program(MUFFIN_QT_LINGUIST_LUPDATE_EXECUTABLE NAMES lupdate lupdate6 HINTS "${MUFFIN_QT_LINGUIST_BIN}" NO_DEFAULT_PATH)
+  find_program(MUFFIN_QT_LINGUIST_LRELEASE_EXECUTABLE NAMES lrelease lrelease6 HINTS "${MUFFIN_QT_LINGUIST_BIN}" NO_DEFAULT_PATH)
+endif()
+if(MUFFIN_QT_LINGUIST_LUPDATE_EXECUTABLE)
+  set(MUFFIN_LUPDATE_EXECUTABLE "${MUFFIN_QT_LINGUIST_LUPDATE_EXECUTABLE}")
+else()
+  find_program(MUFFIN_LUPDATE_EXECUTABLE NAMES pyside6-lupdate lupdate lupdate6)
+endif()
+if(MUFFIN_QT_LINGUIST_LRELEASE_EXECUTABLE)
+  set(MUFFIN_LRELEASE_EXECUTABLE "${MUFFIN_QT_LINGUIST_LRELEASE_EXECUTABLE}")
+else()
+  find_program(MUFFIN_LRELEASE_EXECUTABLE NAMES pyside6-lrelease lrelease lrelease6)
+endif()
+
+set(MUFFIN_TRANSLATION_SOURCES
+  translations/muffin_zh_CN.ts
+)
+
+set(MUFFIN_TRANSLATION_BINARY_SOURCES
+  translations/muffin_zh_CN.qm
+)
+
+set(MUFFIN_TRANSLATABLE_SOURCES
+  src/main.cpp
+  src/app/MainWindow.cpp
+  src/app/PreferencesDialog.cpp
+  src/app/SidebarWidget.cpp
+  src/app/DocumentSession.cpp
+  src/editor/SourceEditorWidget.cpp
+  src/render/BlockLayoutBuilder.cpp
+  src/io/FileController.cpp
+)
+
+if(MUFFIN_LUPDATE_EXECUTABLE)
+  add_custom_target(update_translations
+    COMMAND
+      "${MUFFIN_LUPDATE_EXECUTABLE}"
+      ${MUFFIN_TRANSLATABLE_SOURCES}
+      -ts ${MUFFIN_TRANSLATION_SOURCES}
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Update Qt Linguist translation source files"
+    VERBATIM
+  )
+endif()
+
+if(MUFFIN_LRELEASE_EXECUTABLE)
+  add_custom_target(release_translations
+    COMMAND
+      "${MUFFIN_LRELEASE_EXECUTABLE}"
+      ${MUFFIN_TRANSLATION_SOURCES}
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Compile Qt Linguist translation files"
+    VERBATIM
+  )
+endif()
+
+foreach(MUFFIN_TRANSLATION_BINARY_SOURCE IN LISTS MUFFIN_TRANSLATION_BINARY_SOURCES)
+  if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${MUFFIN_TRANSLATION_BINARY_SOURCE}")
+    if(MUFFIN_LRELEASE_EXECUTABLE)
+      message(STATUS "Generating missing translation resource ${MUFFIN_TRANSLATION_BINARY_SOURCE}")
+      execute_process(
+        COMMAND
+          "${MUFFIN_LRELEASE_EXECUTABLE}"
+          ${MUFFIN_TRANSLATION_SOURCES}
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMAND_ERROR_IS_FATAL ANY
+      )
+    else()
+      message(FATAL_ERROR
+        "Missing ${MUFFIN_TRANSLATION_BINARY_SOURCE}. "
+        "Install Qt Linguist tools, provide lrelease on PATH, or commit the generated .qm file.")
+    endif()
+  endif()
+endforeach()
 
 set(CMARK_TESTS OFF CACHE BOOL "" FORCE)
 set(CMARK_STATIC ON CACHE BOOL "" FORCE)
@@ -175,10 +255,15 @@ target_include_directories(MuffinCore
 )
 
 add_executable(Muffin
+  src/translations.qrc
   src/app/CommandRegistry.cpp
   src/app/CommandRegistry.h
+  src/app/LanguageManager.cpp
+  src/app/LanguageManager.h
   src/app/MainWindow.cpp
   src/app/MainWindow.h
+  src/app/PreferencesDialog.cpp
+  src/app/PreferencesDialog.h
   src/io/FileController.cpp
   src/io/FileController.h
 )
@@ -475,3 +560,16 @@ target_link_libraries(MuffinHtmlBlockControllerTest
 
 add_test(NAME MuffinHtmlBlockControllerTest COMMAND MuffinHtmlBlockControllerTest)
 set_tests_properties(MuffinHtmlBlockControllerTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
+
+add_executable(MuffinTranslationResourceTest
+  src/translations.qrc
+  tests/app/TranslationResourceTest.cpp
+)
+
+target_link_libraries(MuffinTranslationResourceTest
+  PRIVATE
+    Qt6::Widgets
+)
+
+add_test(NAME MuffinTranslationResourceTest COMMAND MuffinTranslationResourceTest)
+set_tests_properties(MuffinTranslationResourceTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
