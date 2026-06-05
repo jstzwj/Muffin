@@ -61,6 +61,11 @@ bool selectionFocusesNode(const SelectionRange& selection, NodeId nodeId) {
   return nodeId.isValid() && selection.focus.blockId == nodeId && selection.focus.text.nodeId == nodeId;
 }
 
+bool isEmptyDocumentParagraph(const QString& markdown, const MarkdownNode& node) {
+  const SourceRange range = node.sourceRange();
+  return markdown.isEmpty() && node.type() == BlockType::Paragraph && range.byteStart == 0 && range.byteEnd == 0;
+}
+
 qsizetype paragraphContentStartIncludingCommonMarkIndent(const QString& markdown, qsizetype astStart) {
   qsizetype lineStart = astStart;
   while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
@@ -174,6 +179,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   layout->setDepth(depth);
   layout->setHeadingLevel(node.headingLevel());
   layout->setContentSourceStart(sourceContentStartForEditableNode(node));
+  if (isEmptyDocumentParagraph(markdownText_, node)) {
+    layout->setPlaceholderText(QStringLiteral("Start writing..."));
+  }
 
   auto inlineLayout = std::make_unique<InlineLayout>();
   const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
@@ -485,6 +493,9 @@ qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNo
   if (start < 0 || end < start) {
     return -1;
   }
+  if (isEmptyDocumentParagraph(markdownText_, node)) {
+    return 0;
+  }
   if (node.type() == BlockType::Heading) {
     while (start < end && markdownText_.at(start) == QLatin1Char('#')) {
       ++start;
@@ -504,6 +515,9 @@ qsizetype BlockLayoutBuilder::sourceContentEndForEditableNode(const MarkdownNode
                     ? range.byteEnd
                     : sourceOffsetForLineEnd(range.lineEnd);
   const qsizetype start = sourceOffsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
+  if (isEmptyDocumentParagraph(markdownText_, node)) {
+    return 0;
+  }
   if (start < 0 || end < start) {
     return -1;
   }

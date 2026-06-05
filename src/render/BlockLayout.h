@@ -79,6 +79,8 @@ public:
   bool hasListMarker() const;
   void setContentSourceStart(qsizetype sourceStart);
   qsizetype contentSourceStart() const;
+  void setPlaceholderText(QString text);
+  QString placeholderText() const;
   void setTaskListItem(bool taskListItem, bool checked);
   bool isTaskListItem() const;
   bool taskChecked() const;
@@ -127,6 +129,7 @@ private:
   QString listMarker_;
   ListMarkerKind listMarkerKind_ = ListMarkerKind::None;
   qsizetype contentSourceStart_ = -1;
+  QString placeholderText_;
   bool taskListItem_ = false;
   bool taskChecked_ = false;
   int depth_ = 0;

@@ -206,7 +206,7 @@ void CmarkGfmParser::attachExtensions(cmark_parser* parser, const ParseOptions& 
 }
 
 void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, MarkdownNode& root) const {
-  if (root.type() != BlockType::Document || markdown.isEmpty()) {
+  if (root.type() != BlockType::Document) {
     return;
   }
 
@@ -216,6 +216,10 @@ void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, Markdown
   int previousEndLine = 0;
 
   if (root.children().empty()) {
+    if (markdown.isEmpty()) {
+      root.appendChild(createVirtualEmptyParagraph(1));
+      return;
+    }
     const int emptyCount = lines.size() / 2;
     for (int i = 0; i < emptyCount; ++i) {
       const int emptyLine = 1 + i * 2;
@@ -267,6 +271,8 @@ std::unique_ptr<MarkdownNode> CmarkGfmParser::createVirtualEmptyParagraph(int li
   range.lineEnd = line;
   range.columnStart = 1;
   range.columnEnd = 1;
+  range.byteStart = 0;
+  range.byteEnd = 0;
   paragraph->setSourceRange(range);
   return paragraph;
 }

@@ -1,5 +1,7 @@
 #include "app/MainWindow.h"
 
+#include "app/SidebarWidget.h"
+#include "document/OutlineBuilder.h"
 #include "editor/EditorView.h"
 #include "editor/SourceEditorWidget.h"
 
@@ -10,6 +12,7 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QElapsedTimer>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QLabel>
 #include <QLocale>
@@ -27,7 +30,6 @@
 #include <QTimer>
 #include <QToolButton>
 #include <QUrl>
-#include <QVBoxLayout>
 
 namespace muffin {
 namespace {
@@ -176,14 +178,7 @@ void MainWindow::setupUi() {
   centralSplitter_->setHandleWidth(1);
   centralSplitter_->setStyleSheet(QStringLiteral("QSplitter::handle { background:#f0f0f0; width:1px; }"));
 
-  sidebar_ = new QWidget(centralSplitter_);
-  sidebar_->setMinimumWidth(220);
-  sidebar_->setMaximumWidth(360);
-  sidebar_->setStyleSheet(QStringLiteral("background:#fafafa; border-right:1px solid #eeeeee;"));
-  auto* sidebarLayout = new QVBoxLayout(sidebar_);
-  sidebarLayout->setContentsMargins(16, 12, 16, 12);
-  sidebarLayout->setSpacing(8);
-  sidebarLayout->addStretch(1);
+  sidebar_ = new SidebarWidget(centralSplitter_);
 
   viewStack_ = new QStackedWidget(this);
   renderView_ = new EditorView(viewStack_);
@@ -318,8 +313,10 @@ void MainWindow::setupConnections() {
   });
   connect(&session_, &DocumentSession::filePathChanged, this, &MainWindow::updateTitle);
   connect(&session_, &DocumentSession::filePathChanged, this, &MainWindow::updateFileActions);
+  connect(&session_, &DocumentSession::filePathChanged, this, &MainWindow::refreshSidebarDocumentInfo);
   connect(&session_, &DocumentSession::modifiedChanged, this, &MainWindow::updateTitle);
   connect(&session_, &DocumentSession::modifiedChanged, this, &MainWindow::updateStatus);
+  connect(&session_, &DocumentSession::modifiedChanged, this, &MainWindow::refreshSidebarDocumentInfo);
   connect(&session_, &DocumentSession::parsed, this, [this] {
     PerfTimer perf("main.parsed.consumer");
     if (!session_.lastParseWasLocalEdit()) {
@@ -327,6 +324,7 @@ void MainWindow::setupConnections() {
     }
     scheduleWordCountUpdate();
     updateStatus();
+    refreshSidebarOutline();
   });
   connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateStatus);
   connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateTableActions);
@@ -341,6 +339,8 @@ void MainWindow::setupConnections() {
     editorController_.clearHistoryAndSelection();
     fileController_.newFile(session_, this);
   });
+  commands_.bind(QStringLiteral("file.new_window"), [this] { openNewWindow(); });
+  commands_.bind(QStringLiteral("file.open_folder"), [this] { openFolder(); });
   commands_.bind(QStringLiteral("file.open"), [this] {
     if (fileController_.open(session_, this)) {
       editorController_.clearHistoryAndSelection();
@@ -474,6 +474,9 @@ void MainWindow::setupConnections() {
     editor_->setWordWrapEnabled(commands_.action(QStringLiteral("view.word_wrap"))->isChecked());
   });
   commands_.bind(QStringLiteral("view.sidebar"), [this] { updateSidebarMode(); });
+  commands_.bind(QStringLiteral("view.outline"), [this] { setSidebarPanel(SidebarWidget::Panel::Outline); });
+  commands_.bind(QStringLiteral("view.document_list"), [this] { setSidebarPanel(SidebarWidget::Panel::Files); });
+  commands_.bind(QStringLiteral("view.file_tree"), [this] { setSidebarPanel(SidebarWidget::Panel::Files); });
   commands_.bind(QStringLiteral("view.source_mode"), [this] { updateViewMode(); });
   commands_.bind(QStringLiteral("view.status_bar"), [this] {
     statusBar()->setVisible(commands_.action(QStringLiteral("view.status_bar"))->isChecked());
@@ -527,6 +530,25 @@ void MainWindow::setupConnections() {
       action->trigger();
     }
   });
+  connect(sidebar_, &SidebarWidget::newFileRequested, this, [this] {
+    if (QAction* action = commands_.action(QStringLiteral("file.new"))) {
+      action->trigger();
+    }
+  });
+  connect(sidebar_, &SidebarWidget::newWindowRequested, this, [this] {
+    if (QAction* action = commands_.action(QStringLiteral("file.new_window"))) {
+      action->trigger();
+    }
+  });
+  connect(sidebar_, &SidebarWidget::openFolderRequested, this, [this] {
+    if (QAction* action = commands_.action(QStringLiteral("file.open_folder"))) {
+      action->trigger();
+    }
+  });
+  connect(sidebar_, &SidebarWidget::fileOpenRequested, this, [this](const QString& path) {
+    openFile(path);
+  });
+  connect(sidebar_, &SidebarWidget::outlineActivated, this, &MainWindow::activateOutlineNode);
 
   updateFileActions();
   updateTableActions();
@@ -534,6 +556,8 @@ void MainWindow::setupConnections() {
   updateHtmlActions();
   updateMathActions();
   rebuildRecentFilesMenu();
+  refreshSidebarDocumentInfo();
+  refreshSidebarOutline();
   updateSidebarMode();
   updateViewMode();
   applyTheme(themeManager_.currentThemeName());
@@ -602,9 +626,9 @@ void MainWindow::normalizeComplexBlockMenuText() {
 void MainWindow::setupFileMenu() {
   QMenu* file = menuBar()->addMenu(QStringLiteral("文件(&F)"));
   addAction(file, QStringLiteral("file.new"), QStringLiteral("新建"), QKeySequence::New);
-  addAction(file, QStringLiteral("file.new_window"), QStringLiteral("新建窗口"), QKeySequence(QStringLiteral("Ctrl+Shift+N")), false);
+  addAction(file, QStringLiteral("file.new_window"), QStringLiteral("新建窗口"), QKeySequence(QStringLiteral("Ctrl+Shift+N")));
   addAction(file, QStringLiteral("file.open"), QStringLiteral("打开..."), QKeySequence::Open);
-  addAction(file, QStringLiteral("file.open_folder"), QStringLiteral("打开文件夹..."), {}, false);
+  addAction(file, QStringLiteral("file.open_folder"), QStringLiteral("打开文件夹..."));
   addAction(file, QStringLiteral("file.quick_open"), QStringLiteral("快速打开..."), {}, false);
   recentFilesMenu_ = file->addMenu(QStringLiteral("打开最近文件"));
   file->addSeparator();
@@ -763,9 +787,9 @@ void MainWindow::setupHtmlMenu() {
 void MainWindow::setupViewMenu() {
   QMenu* view = menuBar()->addMenu(QStringLiteral("视图(&V)"));
   addCheckAction(view, QStringLiteral("view.sidebar"), QStringLiteral("显示 / 隐藏侧边栏"), QKeySequence(QStringLiteral("Ctrl+Shift+L")), false);
-  addAction(view, QStringLiteral("view.outline"), QStringLiteral("大纲"), QKeySequence(QStringLiteral("Ctrl+Shift+1")), false);
-  addAction(view, QStringLiteral("view.document_list"), QStringLiteral("文档列表"), QKeySequence(QStringLiteral("Ctrl+Shift+2")), false);
-  addAction(view, QStringLiteral("view.file_tree"), QStringLiteral("文件树"), QKeySequence(QStringLiteral("Ctrl+Shift+3")), false);
+  addAction(view, QStringLiteral("view.outline"), QStringLiteral("大纲"), QKeySequence(QStringLiteral("Ctrl+Shift+1")));
+  addAction(view, QStringLiteral("view.document_list"), QStringLiteral("文档列表"), QKeySequence(QStringLiteral("Ctrl+Shift+2")));
+  addAction(view, QStringLiteral("view.file_tree"), QStringLiteral("文件树"), QKeySequence(QStringLiteral("Ctrl+Shift+3")));
   addAction(view, QStringLiteral("view.search"), QStringLiteral("搜索"), QKeySequence(QStringLiteral("Ctrl+Shift+F")), false);
   view->addSeparator();
   addCheckAction(view, QStringLiteral("view.source_mode"), QStringLiteral("源代码模式"), QKeySequence(QStringLiteral("Ctrl+/")), false);
@@ -862,6 +886,63 @@ void MainWindow::updateSidebarMode() {
   const bool sidebarVisible = action && action->isChecked();
   sidebar_->setVisible(sidebarVisible);
   sidebarButton_->setChecked(sidebarVisible);
+}
+
+void MainWindow::setSidebarPanel(SidebarWidget::Panel panel) {
+  if (!sidebar_) {
+    return;
+  }
+  sidebar_->setPanel(panel);
+  if (QAction* action = commands_.action(QStringLiteral("view.sidebar"))) {
+    action->setChecked(true);
+  }
+  updateSidebarMode();
+}
+
+void MainWindow::refreshSidebarDocumentInfo() {
+  if (!sidebar_) {
+    return;
+  }
+  sidebar_->setCurrentDocument(session_.displayName(), session_.filePath(), session_.document().isModified());
+}
+
+void MainWindow::refreshSidebarOutline() {
+  if (!sidebar_) {
+    return;
+  }
+  sidebar_->setOutline(buildOutline(session_.document()));
+}
+
+void MainWindow::openFolder() {
+  const QString initialPath = sidebarFolderRoot_.isEmpty() ? QFileInfo(session_.filePath()).absolutePath() : sidebarFolderRoot_;
+  const QString path = QFileDialog::getExistingDirectory(this, tr("Open Folder"), initialPath);
+  if (path.isEmpty()) {
+    return;
+  }
+  sidebarFolderRoot_ = path;
+  sidebar_->setFolderRoot(path);
+  setSidebarPanel(SidebarWidget::Panel::Files);
+}
+
+void MainWindow::openNewWindow() {
+  auto* window = new MainWindow();
+  window->setAttribute(Qt::WA_DeleteOnClose);
+  window->show();
+}
+
+void MainWindow::activateOutlineNode(NodeId nodeId, SourceRange sourceRange) {
+  if (sourceModeEnabled()) {
+    syncSourceEditorIfNeeded();
+    QTextCursor cursor = editor_->editor()->textCursor();
+    const int position = qBound(0, static_cast<int>(sourceRange.byteStart), editor_->editor()->document()->characterCount() - 1);
+    cursor.setPosition(position);
+    editor_->editor()->setTextCursor(cursor);
+    editor_->editor()->centerCursor();
+    editor_->editor()->setFocus(Qt::OtherFocusReason);
+    return;
+  }
+  renderView_->scrollToNode(nodeId);
+  renderView_->setFocus(Qt::OtherFocusReason);
 }
 
 void MainWindow::updateViewMode() {
@@ -990,6 +1071,9 @@ void MainWindow::applyTheme(QString name) {
   const RenderTheme theme = themeManager_.currentTheme(zoomPercent_);
   renderView_->setTheme(theme);
   editor_->setTheme(theme);
+  if (sidebar_) {
+    sidebar_->applyThemeName(name);
+  }
   updateThemeActions();
 
   if (name == QStringLiteral("night")) {

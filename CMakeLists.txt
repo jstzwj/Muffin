@@ -135,6 +135,8 @@ set(MUFFIN_CORE_SOURCES
   src/document/NodeIndex.h
   src/document/MarkdownDocument.cpp
   src/document/MarkdownDocument.h
+  src/document/OutlineBuilder.cpp
+  src/document/OutlineBuilder.h
   src/parser/MarkdownParser.h
   src/parser/CmarkNodeAdapter.cpp
   src/parser/CmarkNodeAdapter.h
@@ -192,6 +194,8 @@ set(MUFFIN_UI_SOURCES
   src/blocks/math/MathRenderer.h
   src/blocks/table/TableController.cpp
   src/blocks/table/TableController.h
+  src/app/SidebarWidget.cpp
+  src/app/SidebarWidget.h
   src/editor/SourceEditorWidget.cpp
   src/editor/SourceEditorWidget.h
   src/blocks/table/TableModelOps.cpp
@@ -374,6 +378,18 @@ target_link_libraries(MuffinParserSmokeTest
 
 add_test(NAME MuffinParserSmokeTest COMMAND MuffinParserSmokeTest)
 set_tests_properties(MuffinParserSmokeTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
+
+add_executable(MuffinOutlineBuilderTest
+  tests/document/OutlineBuilderTest.cpp
+)
+
+target_link_libraries(MuffinOutlineBuilderTest
+  PRIVATE
+    MuffinCore
+)
+
+add_test(NAME MuffinOutlineBuilderTest COMMAND MuffinOutlineBuilderTest)
+set_tests_properties(MuffinOutlineBuilderTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
 
 add_executable(MuffinRenderLayoutTest
   tests/render/RenderLayoutTest.cpp

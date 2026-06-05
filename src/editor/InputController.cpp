@@ -170,6 +170,9 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
 }
 
 bool InputController::insertText(QString text) {
+  if (session_ && session_->markdownText().isEmpty()) {
+    return insertIntoEmptyDocument(std::move(text));
+  }
   if (codeFenceController_ && codeFenceController_->isEditing()) {
     return codeFenceController_->insertText(std::move(text));
   }
@@ -447,9 +450,19 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
     return true;
   }
 
-  if (!session_ || !selection_ || !selection_->hasCursor() || !view_ || event->modifiers().testFlag(Qt::ControlModifier) ||
+  if (!session_ || !selection_ || !view_ || event->modifiers().testFlag(Qt::ControlModifier) ||
       event->modifiers().testFlag(Qt::AltModifier)) {
     return false;
+  }
+
+  if (!selection_->hasCursor()) {
+    if (!session_->markdownText().isEmpty()) {
+      return false;
+    }
+    if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+      return insertIntoEmptyDocument(QStringLiteral("\n"));
+    }
+    return insertIntoEmptyDocument(printableText(event));
   }
 
   switch (event->key()) {
@@ -521,6 +534,25 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
       return insertText(text);
     }
   }
+}
+
+bool InputController::insertIntoEmptyDocument(QString text) {
+  if (!session_ || !session_->markdownText().isEmpty() || text.isEmpty()) {
+    return false;
+  }
+  const qsizetype insertedLength = text.size();
+  applyLocalEdit(
+      EditTransaction::Kind::InsertText,
+      QStringLiteral("Insert Text"),
+      0,
+      0,
+      std::move(text),
+      CursorPosition(),
+      insertedLength,
+      {},
+      false,
+      true);
+  return true;
 }
 
 bool InputController::shouldIndentListItemFromKeyboard() const {

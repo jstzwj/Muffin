@@ -57,6 +57,7 @@ signals:
 
 private:
   bool handleKeyPress(QKeyEvent* event);
+  bool insertIntoEmptyDocument(QString text);
   bool shouldIndentListItemFromKeyboard() const;
   bool editParagraph(TextBlockCommandBuilder::Operation operation, QString text = {});
   bool applyTextCommand(const TextBlockCommandBuilder::Command& command);

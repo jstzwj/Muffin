@@ -37,6 +37,7 @@ public:
   void setCodeLanguageSuggestions(QStringList languages);
 
   QRectF nodeRect(NodeId id) const;
+  void scrollToNode(NodeId id);
   const BlockLayout* blockAtViewportPos(QPointF viewportPos) const;
   HitTestResult hitTest(QPointF viewportPos) const;
 

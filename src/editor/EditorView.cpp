@@ -557,6 +557,16 @@ QRectF EditorView::nodeRect(NodeId id) const {
   return block ? block->rect() : QRectF();
 }
 
+void EditorView::scrollToNode(NodeId id) {
+  const QRectF rect = nodeRect(id);
+  if (rect.isNull() || rect.isEmpty()) {
+    return;
+  }
+  QScrollBar* scrollBar = verticalScrollBar();
+  const int target = qBound(scrollBar->minimum(), qRound(rect.top() - 24.0), scrollBar->maximum());
+  scrollBar->setValue(target);
+}
+
 const BlockLayout* EditorView::blockAtViewportPos(QPointF viewportPos) const {
   if (!layout_) {
     return nullptr;

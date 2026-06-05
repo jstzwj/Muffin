@@ -84,6 +84,21 @@ int countMathBlocks(const MarkdownNode& node) {
   return count;
 }
 
+void testEmptyDocumentHasEditableParagraph() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+
+  ParseResult parsed = parser.parseDocument(QString(), options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for empty document"));
+  require(parsed.root->type() == BlockType::Document, QStringLiteral("Empty document root is not a document"));
+  require(parsed.root->children().size() == 1, QStringLiteral("Empty document should contain one editable paragraph"));
+
+  const MarkdownNode& paragraph = childAt(*parsed.root, 0);
+  require(paragraph.type() == BlockType::Paragraph, QStringLiteral("Empty document child is not a paragraph"));
+  require(paragraph.sourceRange().byteStart == 0, QStringLiteral("Empty paragraph source start mismatch"));
+  require(paragraph.sourceRange().byteEnd == 0, QStringLiteral("Empty paragraph source end mismatch"));
+}
+
 void testBasicParseAndSerialize() {
   CmarkGfmParser parser;
   ParseOptions options;
@@ -352,6 +367,7 @@ void testTaskListMetadata() {
 
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
+  testEmptyDocumentHasEditableParagraph();
   testBasicParseAndSerialize();
   testTableCellSourceRanges();
   testTableCellSourceRangesWithoutOuterPipes();

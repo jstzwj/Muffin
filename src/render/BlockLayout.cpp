@@ -359,6 +359,14 @@ qsizetype BlockLayout::contentSourceStart() const {
   return contentSourceStart_;
 }
 
+void BlockLayout::setPlaceholderText(QString text) {
+  placeholderText_ = std::move(text);
+}
+
+QString BlockLayout::placeholderText() const {
+  return placeholderText_;
+}
+
 void BlockLayout::setTaskListItem(bool taskListItem, bool checked) {
   taskListItem_ = taskListItem;
   taskChecked_ = checked;
@@ -501,6 +509,14 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
           inlineLayout_->paint(painter, QPointF(viewRect.left() + theme.listIndent(), viewRect.top()));
         } else {
           inlineLayout_->paint(painter, viewRect.topLeft());
+        }
+        if (!placeholderText_.isEmpty()) {
+          painter.save();
+          painter.setFont(theme.paragraphFont());
+          painter.setPen(theme.mutedTextColor());
+          const QFontMetricsF metrics(painter.font());
+          painter.drawText(QPointF(viewRect.left(), viewRect.top() + metrics.ascent()), placeholderText_);
+          painter.restore();
         }
         if (type_ == BlockType::Heading && headingLevel_ <= 2) {
           painter.save();

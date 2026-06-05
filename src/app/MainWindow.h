@@ -2,6 +2,7 @@
 
 #include "app/CommandRegistry.h"
 #include "app/DocumentSession.h"
+#include "app/SidebarWidget.h"
 #include "editor/EditorController.h"
 #include "io/FileController.h"
 #include "theme/ThemeManager.h"
@@ -74,6 +75,12 @@ private:
   void updateSidebarMode();
   void updateViewMode();
   void updateFileActions();
+  void setSidebarPanel(SidebarWidget::Panel panel);
+  void refreshSidebarDocumentInfo();
+  void refreshSidebarOutline();
+  void openFolder();
+  void openNewWindow();
+  void activateOutlineNode(NodeId nodeId, SourceRange sourceRange);
   void updateTableActions();
   void updateCodeActions();
   void updateHtmlActions();
@@ -100,7 +107,7 @@ private:
   ThemeManager themeManager_;
   EditorController editorController_;
   QSplitter* centralSplitter_ = nullptr;
-  QWidget* sidebar_ = nullptr;
+  SidebarWidget* sidebar_ = nullptr;
   QStackedWidget* viewStack_ = nullptr;
   EditorView* renderView_ = nullptr;
   SourceEditorWidget* editor_ = nullptr;
@@ -114,6 +121,7 @@ private:
   int cursorLine_ = 1;
   int cursorColumn_ = 1;
   QString renderCursorStatus_;
+  QString sidebarFolderRoot_;
   int zoomPercent_ = 100;
   bool sourceEditorDirty_ = false;
   bool wordCountDirty_ = true;
