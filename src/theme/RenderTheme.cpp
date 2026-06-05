@@ -1,8 +1,28 @@
 #include "theme/RenderTheme.h"
 
+#include <QFontDatabase>
+#include <QStringList>
 #include <QtGlobal>
 
+#include <initializer_list>
+
 namespace muffin {
+namespace {
+
+QString firstAvailableFontFamily(std::initializer_list<QString> candidates) {
+  const QStringList availableFamilies = QFontDatabase::families();
+  for (const QString& candidate : candidates) {
+    for (const QString& family : availableFamilies) {
+      if (family.compare(candidate, Qt::CaseInsensitive) == 0) {
+        return family;
+      }
+    }
+  }
+  const QString systemFamily = QFontDatabase::systemFont(QFontDatabase::GeneralFont).family();
+  return systemFamily.isEmpty() ? QStringLiteral("sans-serif") : systemFamily;
+}
+
+}  // namespace
 
 RenderTheme RenderTheme::typoraLike(int zoomPercent) {
   return github(zoomPercent);
@@ -115,7 +135,24 @@ qreal RenderTheme::blockQuoteIndent() const {
 }
 
 QFont RenderTheme::paragraphFont() const {
-  QFont font(QStringLiteral("Microsoft YaHei UI"));
+  static const QString paragraphFamily = firstAvailableFontFamily({
+#if defined(Q_OS_WIN)
+      QStringLiteral("Microsoft YaHei UI"),
+      QStringLiteral("Segoe UI"),
+      QStringLiteral("Arial"),
+#elif defined(Q_OS_MACOS)
+      QStringLiteral("PingFang SC"),
+      QStringLiteral("Hiragino Sans GB"),
+      QStringLiteral("Helvetica Neue"),
+      QStringLiteral("Arial"),
+#else
+      QStringLiteral("Noto Sans CJK SC"),
+      QStringLiteral("Noto Sans"),
+      QStringLiteral("DejaVu Sans"),
+      QStringLiteral("Arial"),
+#endif
+  });
+  QFont font(paragraphFamily);
   font.setStyleStrategy(QFont::PreferDefault);
   font.setPointSizeF(scaled(12.0));
   return font;
@@ -147,7 +184,21 @@ qreal RenderTheme::codeLineHeight() const {
 }
 
 QFont RenderTheme::mathFont() const {
-  QFont font(QStringLiteral("Cambria Math"));
+  static const QString mathFamily = firstAvailableFontFamily({
+#if defined(Q_OS_WIN)
+      QStringLiteral("Cambria Math"),
+      QStringLiteral("Segoe UI Symbol"),
+#elif defined(Q_OS_MACOS)
+      QStringLiteral("STIX Two Math"),
+      QStringLiteral("STIXGeneral"),
+      QStringLiteral("Apple Symbols"),
+#else
+      QStringLiteral("STIX Two Math"),
+      QStringLiteral("Latin Modern Math"),
+      QStringLiteral("DejaVu Math TeX Gyre"),
+#endif
+  });
+  QFont font(mathFamily);
   font.setPointSizeF(scaled(12.5));
   return font;
 }

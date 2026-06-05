@@ -34,6 +34,14 @@ set(CMARK_STATIC ON CACHE BOOL "" FORCE)
 set(CMARK_SHARED OFF CACHE BOOL "" FORCE)
 set(CMARK_LIB_FUZZER OFF CACHE BOOL "" FORCE)
 add_subdirectory(third_party/cmark-gfm EXCLUDE_FROM_ALL)
+if(TARGET libcmark-gfm-extensions_static AND TARGET libcmark-gfm_static)
+  # The vendored static extension archive references symbols from the cmark core
+  # archive. Declare that edge so GNU ld sees the dependent archive first.
+  target_link_libraries(libcmark-gfm-extensions_static
+    INTERFACE
+      libcmark-gfm_static
+  )
+endif()
 
 add_library(tree-sitter-runtime STATIC
   third_party/tree-sitter/lib/src/lib.c
@@ -154,8 +162,8 @@ target_link_libraries(MuffinCore
   PUBLIC
     Qt6::Widgets
   PRIVATE
-    libcmark-gfm_static
     libcmark-gfm-extensions_static
+    libcmark-gfm_static
 )
 
 target_include_directories(MuffinCore

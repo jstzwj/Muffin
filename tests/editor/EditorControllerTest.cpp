@@ -1057,21 +1057,52 @@ void testEditorViewDragSelectionContinuesAcrossMoves() {
 }
 
 void testEditorViewVerticalDragSelectionHitsWrappedLine() {
+  const QString markdown = QStringLiteral(
+      "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau");
   DocumentSession session;
   EditorView view;
   EditorController controller;
   controller.attach(&session, &view);
-  view.resize(180, 500);
+  session.setMarkdownText(markdown, false);
 
-  session.setMarkdownText(QStringLiteral("alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau"), false);
-  view.setDocument(session.document());
+  const auto lineStartCursorsForWidth = [&session, &view](int width, MarkdownNode* block) {
+    view.resize(width, 500);
+    view.setDocument(session.document());
+    const QRectF blockRect = view.nodeRect(block->id());
+    const BlockLayout* blockLayout = view.blockAtViewportPos(blockRect.center());
+    const InlineLayout* layout = blockLayout ? blockLayout->inlineLayout() : nullptr;
+    QVector<QRectF> lineStartCursors;
+    if (!layout) {
+      return lineStartCursors;
+    }
+    for (qsizetype offset = 0; offset <= layout->plainText().size(); ++offset) {
+      const QRectF cursor = layout->cursorRect(offset);
+      require(!cursor.isEmpty(), QStringLiteral("vertical drag cursor %1 should exist").arg(offset));
+      if (lineStartCursors.isEmpty() || cursor.center().y() > lineStartCursors.last().center().y() + 0.5) {
+        lineStartCursors.push_back(cursor);
+        if (lineStartCursors.size() == 2) {
+          break;
+        }
+      }
+    }
+    return lineStartCursors;
+  };
+
   MarkdownNode* block = blockAt(session, 0);
+  QVector<QRectF> lineStartCursors;
+  for (int width : {220, 180, 150, 130, 110}) {
+    lineStartCursors = lineStartCursorsForWidth(width, block);
+    if (lineStartCursors.size() >= 2) {
+      break;
+    }
+  }
+  view.setDocument(session.document());
   const QRectF blockRect = view.nodeRect(block->id());
   const InlineLayout* layout = view.blockAtViewportPos(blockRect.center())->inlineLayout();
   require(layout != nullptr, "vertical drag test inline layout should exist");
 
-  QVector<QRectF> lineStartCursors;
   qsizetype firstLineOffset = -1;
+  lineStartCursors.clear();
   for (qsizetype offset = 0; offset <= layout->plainText().size(); ++offset) {
     const QRectF cursor = layout->cursorRect(offset);
     require(!cursor.isEmpty(), QStringLiteral("vertical drag cursor %1 should exist").arg(offset));
