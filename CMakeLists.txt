@@ -499,7 +499,10 @@ add_test(
   NAME MuffinRenderLayoutTest
   COMMAND MuffinRenderLayoutTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md"
 )
-set_tests_properties(MuffinRenderLayoutTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
+set_tests_properties(MuffinRenderLayoutTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
 
 add_executable(MuffinEditorControllerTest
   tests/editor/EditorControllerTest.cpp
@@ -511,7 +514,10 @@ target_link_libraries(MuffinEditorControllerTest
 )
 
 add_test(NAME MuffinEditorControllerTest COMMAND MuffinEditorControllerTest)
-set_tests_properties(MuffinEditorControllerTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
+set_tests_properties(MuffinEditorControllerTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
 
 add_executable(MuffinTableModelOpsTest
   tests/blocks/TableModelOpsTest.cpp
@@ -572,4 +578,7 @@ target_link_libraries(MuffinTranslationResourceTest
 )
 
 add_test(NAME MuffinTranslationResourceTest COMMAND MuffinTranslationResourceTest)
-set_tests_properties(MuffinTranslationResourceTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
+set_tests_properties(MuffinTranslationResourceTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)

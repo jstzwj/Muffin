@@ -416,7 +416,7 @@ void SourceEditorWidget::changeEvent(QEvent* event) {
 }
 
 void SourceEditorWidget::setupStyle() {
-  QFont font(QStringLiteral("Microsoft YaHei UI"));
+  QFont font = RenderTheme::github().paragraphFont();
   font.setPointSizeF(12.5);
   editor_->setSourceFont(font);
   setTheme(RenderTheme::github());

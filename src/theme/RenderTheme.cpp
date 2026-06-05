@@ -167,13 +167,23 @@ QFont RenderTheme::headingFont(int level) const {
 }
 
 QFont RenderTheme::codeFont() const {
-  QFont font;
-  font.setFamilies({
+  static const QString codeFamily = firstAvailableFontFamily({
+#if defined(Q_OS_WIN)
       QStringLiteral("Lucida Console"),
       QStringLiteral("Consolas"),
       QStringLiteral("Courier"),
+#elif defined(Q_OS_MACOS)
+      QStringLiteral("Menlo"),
+      QStringLiteral("Monaco"),
+      QStringLiteral("Courier New"),
+#else
+      QStringLiteral("DejaVu Sans Mono"),
+      QStringLiteral("Noto Sans Mono"),
+      QStringLiteral("Liberation Mono"),
+#endif
       QStringLiteral("monospace"),
   });
+  QFont font(codeFamily);
   font.setStyleHint(QFont::Monospace);
   font.setPointSizeF(scaled(10.8));
   return font;

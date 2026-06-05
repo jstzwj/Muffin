@@ -8,10 +8,14 @@
 #include <QFileInfo>
 #include <QFontMetricsF>
 #include <QHash>
+#include <QFontDatabase>
 #include <QImageReader>
 #include <QRegularExpression>
 #include <QSet>
+#include <QStringList>
+#include <QtGlobal>
 
+#include <initializer_list>
 #include <memory>
 #include <vector>
 
@@ -31,6 +35,39 @@ enum class MathAtomClass {
   Punct = 6,
   Inner = 7
 };
+
+QString firstAvailableFontFamily(std::initializer_list<QString> candidates) {
+  const QStringList availableFamilies = QFontDatabase::families();
+  for (const QString& candidate : candidates) {
+    for (const QString& family : availableFamilies) {
+      if (family.compare(candidate, Qt::CaseInsensitive) == 0) {
+        return family;
+      }
+    }
+  }
+  const QString systemFamily = QFontDatabase::systemFont(QFontDatabase::FixedFont).family();
+  return systemFamily.isEmpty() ? QStringLiteral("monospace") : systemFamily;
+}
+
+QString verbFontFamily() {
+  static const QString family = firstAvailableFontFamily({
+#if defined(Q_OS_WIN)
+      QStringLiteral("Consolas"),
+      QStringLiteral("Lucida Console"),
+      QStringLiteral("Courier"),
+#elif defined(Q_OS_MACOS)
+      QStringLiteral("Menlo"),
+      QStringLiteral("Monaco"),
+      QStringLiteral("Courier New"),
+#else
+      QStringLiteral("DejaVu Sans Mono"),
+      QStringLiteral("Noto Sans Mono"),
+      QStringLiteral("Liberation Mono"),
+#endif
+      QStringLiteral("monospace"),
+  });
+  return family;
+}
 
 MathAtomClass atomClassForNode(const MathParseNode& node) {
   if (node.type == MathNodeType::SupSub && !node.base.isEmpty()) {
@@ -1037,7 +1074,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeVerb(const MathParseNode& node)
   text.replace(QLatin1Char(' '), node.label == QStringLiteral("\\verb*") ? QChar(0x2423) : QChar(0x00a0));
   auto result = makeSymbol(text, MathNodeType::Text, options_.havingStyle(options_.style().text()));
   result->font.setStyleHint(QFont::Monospace);
-  result->font.setFamily(QStringLiteral("Consolas"));
+  result->font.setFamily(verbFontFamily());
   const QFontMetricsF metrics(result->font);
   result->width = metrics.horizontalAdvance(text);
   result->height = metrics.ascent();

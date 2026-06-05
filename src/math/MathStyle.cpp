@@ -1,6 +1,7 @@
 #include "math/MathStyle.h"
 
 #include <array>
+#include <cstddef>
 
 namespace muffin::math {
 namespace {
@@ -24,7 +25,7 @@ constexpr std::array<int, 8> crampMap{1, 1, 3, 3, 5, 5, 7, 7};
 constexpr std::array<int, 8> textMap{0, 1, 2, 3, 2, 3, 2, 3};
 
 MathStyle mapped(MathStyle::Id id, const std::array<int, 8>& map) {
-  return styles.at(static_cast<size_t>(map.at(static_cast<size_t>(id))));
+  return styles.at(static_cast<std::size_t>(map.at(static_cast<std::size_t>(id))));
 }
 
 }  // namespace

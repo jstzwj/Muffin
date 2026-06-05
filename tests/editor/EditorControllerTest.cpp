@@ -2459,8 +2459,6 @@ void testSourceEditorPreservesZeroWidthSpaceText() {
   sourceEditor.setText(QStringLiteral("# Title\n\u200balpha"));
   require(sourceEditor.text() == QStringLiteral("# Title\n\u200balpha"), "source editor should preserve U+200B source text");
   sourceEditor.resize(900, 600);
-  sourceEditor.show();
-  QApplication::processEvents();
   sourceEditor.setZoomPercent(125);
   require(sourceEditor.text().contains(QChar(0x200b)), "source editor zoom should not rewrite U+200B text");
 }

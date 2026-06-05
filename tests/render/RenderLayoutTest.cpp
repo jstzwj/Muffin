@@ -48,15 +48,16 @@ void require(bool condition, const QString& message) {
   }
 }
 
+void runTest(const char* name, const std::function<void()>& test) {
+  qInfo().noquote() << QStringLiteral("RUN %1").arg(QString::fromUtf8(name));
+  test();
+}
+
 void testThemeCodeFontFallbackOrder() {
   const RenderTheme theme = RenderTheme::github();
   const QFont codeFont = theme.codeFont();
-  const QStringList families = codeFont.families();
-  require(families.size() >= 4, QStringLiteral("code font should expose fallback families"));
-  require(families.at(0) == QStringLiteral("Lucida Console"), QStringLiteral("code font first fallback should be Lucida Console"));
-  require(families.at(1) == QStringLiteral("Consolas"), QStringLiteral("code font second fallback should be Consolas"));
-  require(families.at(2) == QStringLiteral("Courier"), QStringLiteral("code font third fallback should be Courier"));
-  require(families.at(3) == QStringLiteral("monospace"), QStringLiteral("code font final fallback should be monospace"));
+  require(!codeFont.family().isEmpty(), QStringLiteral("code font should resolve to an available family"));
+  require(codeFont.styleHint() == QFont::Monospace, QStringLiteral("code font should keep monospace style hint"));
   require(qAbs(codeFont.pointSizeF() * 96.0 / 72.0 - 14.4) < 0.01, QStringLiteral("code font should be 14.4 CSS px at 100% zoom"));
   require(qAbs(theme.codeLineHeight() - 23.04) < 0.01, QStringLiteral("code line height should be 23.04 px at 100% zoom"));
 }
@@ -3197,36 +3198,40 @@ int main(int argc, char** argv) {
   MarkdownDocument document;
   document.setMarkdownText(markdown, std::move(parsed.root));
 
-  testThemeCodeFontFallbackOrder();
-  testThemeCodeHighlightPalette();
-  testInlineMarkerExpansion();
-  testInlineProjectionContract();
-  testInlineCodeEndSourceHitUsesForwardBias();
-  testInlineLayoutGeometryContract();
-  testInlineLayoutZeroWidthTabIndentGeometry();
-  testInlineLayoutPainting();
-  testMathRenderingLayout();
-  testLiteralBlockWrappedEditingGeometry();
-  testExtendedMathFunctionRendering();
-  testStrictMathGeometryFeatures();
-  testMathMetricsMacrosAndState();
+  runTest("testThemeCodeFontFallbackOrder", [] { testThemeCodeFontFallbackOrder(); });
+  runTest("testThemeCodeHighlightPalette", [] { testThemeCodeHighlightPalette(); });
+  runTest("testInlineMarkerExpansion", [] { testInlineMarkerExpansion(); });
+  runTest("testInlineProjectionContract", [] { testInlineProjectionContract(); });
+  runTest("testInlineCodeEndSourceHitUsesForwardBias", [] { testInlineCodeEndSourceHitUsesForwardBias(); });
+  runTest("testInlineLayoutGeometryContract", [] { testInlineLayoutGeometryContract(); });
+  runTest("testInlineLayoutZeroWidthTabIndentGeometry", [] { testInlineLayoutZeroWidthTabIndentGeometry(); });
+  runTest("testInlineLayoutPainting", [] { testInlineLayoutPainting(); });
+  runTest("testMathRenderingLayout", [] { testMathRenderingLayout(); });
+  runTest("testLiteralBlockWrappedEditingGeometry", [] { testLiteralBlockWrappedEditingGeometry(); });
+  runTest("testExtendedMathFunctionRendering", [] { testExtendedMathFunctionRendering(); });
+  runTest("testStrictMathGeometryFeatures", [] { testStrictMathGeometryFeatures(); });
+  runTest("testMathMetricsMacrosAndState", [] { testMathMetricsMacrosAndState(); });
   const QFileInfo smokeFixtureInfo(QString::fromLocal8Bit(argv[1]));
-  testMathFixtureRenderTreeDumps(smokeFixtureInfo.dir().filePath(QStringLiteral("math/core.json")));
-  testOfficialKatexScreenshotterAudit(smokeFixtureInfo.dir().filePath(QStringLiteral("math/katex-official-screenshotter.json")));
-  testRemainingKatexFunctionFamilies();
-  testInlineLayoutHitTesting();
-  testInlineLayoutCursorRects();
-  testInlineLayoutSelectionRects();
-  testInlineLayoutStyleFormats();
-  testIncrementalBlockRebuildContract();
-  testUnorderedListMarkerKindsByDepth();
-  testDocumentLayoutInlineLayoutContract();
-  testTreeSitterCodeHighlighting();
-  testThemeManagerSupportsBuiltInThemes();
-  testLayoutForTheme(document, RenderTheme::github(), QStringLiteral("github"));
-  testLayoutForTheme(document, RenderTheme::newsprint(), QStringLiteral("newsprint"));
-  testLayoutForTheme(document, RenderTheme::night(), QStringLiteral("night"));
-  testLayoutForTheme(document, RenderTheme::pixyll(), QStringLiteral("pixyll"));
-  testLayoutForTheme(document, RenderTheme::whitey(), QStringLiteral("whitey"));
+  runTest("testMathFixtureRenderTreeDumps", [&] {
+    testMathFixtureRenderTreeDumps(smokeFixtureInfo.dir().filePath(QStringLiteral("math/core.json")));
+  });
+  runTest("testOfficialKatexScreenshotterAudit", [&] {
+    testOfficialKatexScreenshotterAudit(smokeFixtureInfo.dir().filePath(QStringLiteral("math/katex-official-screenshotter.json")));
+  });
+  runTest("testRemainingKatexFunctionFamilies", [] { testRemainingKatexFunctionFamilies(); });
+  runTest("testInlineLayoutHitTesting", [] { testInlineLayoutHitTesting(); });
+  runTest("testInlineLayoutCursorRects", [] { testInlineLayoutCursorRects(); });
+  runTest("testInlineLayoutSelectionRects", [] { testInlineLayoutSelectionRects(); });
+  runTest("testInlineLayoutStyleFormats", [] { testInlineLayoutStyleFormats(); });
+  runTest("testIncrementalBlockRebuildContract", [] { testIncrementalBlockRebuildContract(); });
+  runTest("testUnorderedListMarkerKindsByDepth", [] { testUnorderedListMarkerKindsByDepth(); });
+  runTest("testDocumentLayoutInlineLayoutContract", [] { testDocumentLayoutInlineLayoutContract(); });
+  runTest("testTreeSitterCodeHighlighting", [] { testTreeSitterCodeHighlighting(); });
+  runTest("testThemeManagerSupportsBuiltInThemes", [] { testThemeManagerSupportsBuiltInThemes(); });
+  runTest("testLayoutForTheme/github", [&] { testLayoutForTheme(document, RenderTheme::github(), QStringLiteral("github")); });
+  runTest("testLayoutForTheme/newsprint", [&] { testLayoutForTheme(document, RenderTheme::newsprint(), QStringLiteral("newsprint")); });
+  runTest("testLayoutForTheme/night", [&] { testLayoutForTheme(document, RenderTheme::night(), QStringLiteral("night")); });
+  runTest("testLayoutForTheme/pixyll", [&] { testLayoutForTheme(document, RenderTheme::pixyll(), QStringLiteral("pixyll")); });
+  runTest("testLayoutForTheme/whitey", [&] { testLayoutForTheme(document, RenderTheme::whitey(), QStringLiteral("whitey")); });
   return 0;
 }
