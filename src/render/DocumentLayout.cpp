@@ -2,10 +2,112 @@
 
 #include "render/BlockLayoutBuilder.h"
 
+#include <QElapsedTimer>
+#include <QLoggingCategory>
+
 #include <cmath>
 
 namespace muffin {
 namespace {
+
+Q_LOGGING_CATEGORY(layoutPerf, "muffin.perf", QtWarningMsg)
+
+struct RebuildPerfStats {
+  qint64 totalNs = 0;
+  qint64 buildNs = 0;
+  qint64 indexNs = 0;
+  qint64 paragraphNs = 0;
+  qint64 headingNs = 0;
+  qint64 listNs = 0;
+  qint64 blockQuoteNs = 0;
+  qint64 codeFenceNs = 0;
+  qint64 htmlNs = 0;
+  qint64 mathNs = 0;
+  qint64 tableNs = 0;
+  qint64 otherNs = 0;
+  qsizetype paragraphCount = 0;
+  qsizetype headingCount = 0;
+  qsizetype listCount = 0;
+  qsizetype blockQuoteCount = 0;
+  qsizetype codeFenceCount = 0;
+  qsizetype htmlCount = 0;
+  qsizetype mathCount = 0;
+  qsizetype tableCount = 0;
+  qsizetype otherCount = 0;
+
+  void addBlock(BlockType type, qint64 elapsedNs) {
+    switch (type) {
+      case BlockType::Paragraph:
+        paragraphNs += elapsedNs;
+        ++paragraphCount;
+        break;
+      case BlockType::Heading:
+        headingNs += elapsedNs;
+        ++headingCount;
+        break;
+      case BlockType::List:
+        listNs += elapsedNs;
+        ++listCount;
+        break;
+      case BlockType::BlockQuote:
+        blockQuoteNs += elapsedNs;
+        ++blockQuoteCount;
+        break;
+      case BlockType::CodeFence:
+        codeFenceNs += elapsedNs;
+        ++codeFenceCount;
+        break;
+      case BlockType::HtmlBlock:
+        htmlNs += elapsedNs;
+        ++htmlCount;
+        break;
+      case BlockType::MathBlock:
+        mathNs += elapsedNs;
+        ++mathCount;
+        break;
+      case BlockType::Table:
+        tableNs += elapsedNs;
+        ++tableCount;
+        break;
+      default:
+        otherNs += elapsedNs;
+        ++otherCount;
+        break;
+    }
+  }
+};
+
+qreal nsToMs(qint64 ns) {
+  return ns / 1000000.0;
+}
+
+void logTypeTiming(const char* label, qsizetype count, qint64 elapsedNs) {
+  if (count <= 0) {
+    return;
+  }
+  qCDebug(layoutPerf).nospace() << "layout.rebuild." << label << " count=" << count << " total=" << nsToMs(elapsedNs)
+                                << " ms avg=" << nsToMs(elapsedNs) / count << " ms";
+}
+
+void logRebuildPerf(const RebuildPerfStats& stats, qreal viewportWidth, qreal pageWidth, qreal totalHeight) {
+  if (!layoutPerf().isDebugEnabled()) {
+    return;
+  }
+  const qsizetype blockCount = stats.paragraphCount + stats.headingCount + stats.listCount + stats.blockQuoteCount + stats.codeFenceCount +
+                               stats.htmlCount + stats.mathCount + stats.tableCount + stats.otherCount;
+  qCDebug(layoutPerf).nospace() << "layout.rebuild.summary blocks=" << blockCount << " total=" << nsToMs(stats.totalNs) << " ms build="
+                                << nsToMs(stats.buildNs) << " ms index=" << nsToMs(stats.indexNs) << " ms viewportWidth=" << viewportWidth
+                                << " pageWidth=" << pageWidth << " totalHeight=" << totalHeight;
+  logTypeTiming("paragraph", stats.paragraphCount, stats.paragraphNs);
+  logTypeTiming("heading", stats.headingCount, stats.headingNs);
+  logTypeTiming("list", stats.listCount, stats.listNs);
+  logTypeTiming("blockquote", stats.blockQuoteCount, stats.blockQuoteNs);
+  logTypeTiming("codeFence", stats.codeFenceCount, stats.codeFenceNs);
+  logTypeTiming("html", stats.htmlCount, stats.htmlNs);
+  logTypeTiming("math", stats.mathCount, stats.mathNs);
+  logTypeTiming("table", stats.tableCount, stats.tableNs);
+  logTypeTiming("other", stats.otherCount, stats.otherNs);
+}
 
 qreal spacingAfterBlock(const MarkdownNode& node, const RenderTheme& theme) {
   return node.type() == BlockType::Heading ? theme.blockSpacing() * 0.65 : theme.blockSpacing();
@@ -21,6 +123,17 @@ qreal spacingBeforeBlock(const MarkdownNode& node, const RenderTheme& theme, qre
   return node.headingLevel() < 2 ? theme.blockSpacing() * 1.25 : theme.blockSpacing() * 0.7;
 }
 
+struct PageMetrics {
+  qreal left = 0;
+  qreal width = 0;
+};
+
+PageMetrics pageMetricsFor(const RenderTheme& theme, qreal viewportWidth) {
+  const qreal horizontalInset = qMin<qreal>(64.0, qMax<qreal>(16.0, viewportWidth * 0.08));
+  const qreal width = qMin(theme.pageWidth(), qMax<qreal>(320.0, viewportWidth - horizontalInset * 2.0));
+  return {qMax<qreal>(16.0, (viewportWidth - width) / 2.0 - 12.0), width};
+}
+
 }  // namespace
 
 void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth) {
@@ -28,29 +141,77 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
 }
 
 void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, SelectionRange selection) {
+  QElapsedTimer totalTimer;
+  const bool collectPerf = layoutPerf().isDebugEnabled();
+  RebuildPerfStats perf;
+  if (collectPerf) {
+    totalTimer.start();
+  }
+
   document_ = &document;
   viewportWidth_ = viewportWidth;
   blocks_.clear();
   topLevelIndex_.clear();
   layoutIndex_.clear();
 
-  const qreal horizontalInset = qMin<qreal>(64.0, qMax<qreal>(16.0, viewportWidth * 0.08));
-  pageWidth_ = qMin(theme.pageWidth(), qMax<qreal>(320.0, viewportWidth - horizontalInset * 2.0));
-  pageLeft_ = qMax<qreal>(16.0, (viewportWidth - pageWidth_) / 2.0 - 12.0);
+  const PageMetrics metrics = pageMetricsFor(theme, viewportWidth);
+  pageWidth_ = metrics.width;
+  pageLeft_ = metrics.left;
 
   BlockLayoutBuilder builder;
-  builder.setMarkdownText(document.markdownText());
+  builder.setMarkdownText(document.markdownText(), document.lineOffsets());
   builder.setSelection(selection);
   qreal cursorY = theme.topMargin();
   for (const auto& child : document.root().children()) {
     cursorY += spacingBeforeBlock(*child, theme, cursorY);
+    QElapsedTimer buildTimer;
+    if (collectPerf) {
+      buildTimer.start();
+    }
     auto block = builder.build(*child, theme, pageLeft_, cursorY, pageWidth_);
+    if (collectPerf) {
+      const qint64 elapsedNs = buildTimer.nsecsElapsed();
+      perf.buildNs += elapsedNs;
+      perf.addBlock(child->type(), elapsedNs);
+    }
     cursorY = block->rect().bottom() + spacingAfterBlock(*child, theme);
+    QElapsedTimer indexTimer;
+    if (collectPerf) {
+      indexTimer.start();
+    }
     indexTopLevelBlock(*block, static_cast<qsizetype>(blocks_.size()));
+    if (collectPerf) {
+      perf.indexNs += indexTimer.nsecsElapsed();
+    }
     blocks_.push_back(std::move(block));
   }
 
   totalHeight_ = qMax(cursorY + theme.bottomMargin(), theme.topMargin() + theme.bottomMargin());
+  if (collectPerf) {
+    perf.totalNs = totalTimer.nsecsElapsed();
+    logRebuildPerf(perf, viewportWidth_, pageWidth_, totalHeight_);
+  }
+}
+
+bool DocumentLayout::relayoutForViewportWidth(const RenderTheme& theme, qreal viewportWidth) {
+  if (!document_ || blocks_.empty()) {
+    return false;
+  }
+  const PageMetrics metrics = pageMetricsFor(theme, viewportWidth);
+  if (!qFuzzyCompare(metrics.width + 1.0, pageWidth_ + 1.0)) {
+    return false;
+  }
+  viewportWidth_ = viewportWidth;
+  const qreal dx = metrics.left - pageLeft_;
+  if (qFuzzyIsNull(dx)) {
+    pageLeft_ = metrics.left;
+    return true;
+  }
+  pageLeft_ = metrics.left;
+  for (auto& block : blocks_) {
+    block->translate(dx, 0);
+  }
+  return true;
 }
 
 DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
@@ -81,7 +242,7 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
   }
 
   BlockLayoutBuilder builder;
-  builder.setMarkdownText(document.markdownText());
+  builder.setMarkdownText(document.markdownText(), document.lineOffsets());
   builder.setSelection(selection);
   std::unique_ptr<BlockLayout>& slot = blocks_.at(static_cast<size_t>(index));
   result.blockId = node->id();

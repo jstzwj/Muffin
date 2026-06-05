@@ -48,6 +48,7 @@ public:
 
   QRectF rect() const;
   void setRect(QRectF rect);
+  void translate(qreal dx, qreal dy);
   void translateY(qreal dy);
 
   qreal height() const;

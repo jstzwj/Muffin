@@ -1,5 +1,6 @@
 #pragma once
 
+#include "document/LineStartOffsetCache.h"
 #include "document/NodeIndex.h"
 
 #include <QObject>
@@ -19,6 +20,7 @@ public:
   const NodeIndex& index() const;
 
   const QString& markdownText() const;
+  const LineStartOffsetCache& lineOffsets() const;
   void setMarkdownText(QString text, std::unique_ptr<MarkdownNode> root);
   void replaceTopLevelRange(
       qsizetype first,
@@ -41,6 +43,7 @@ signals:
 
 private:
   QString markdownText_;
+  LineStartOffsetCache lineOffsets_;
   std::unique_ptr<MarkdownNode> root_;
   NodeIndex index_;
   quint64 revision_ = 0;

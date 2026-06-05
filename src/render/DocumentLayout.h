@@ -27,6 +27,7 @@ public:
 
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth);
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, SelectionRange selection);
+  bool relayoutForViewportWidth(const RenderTheme& theme, qreal viewportWidth);
   BlockRebuildResult rebuildBlock(NodeId blockId, const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
 
   qreal pageLeft() const;

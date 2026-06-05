@@ -638,7 +638,20 @@ bool EditorView::event(QEvent* event) {
 
 void EditorView::resizeEvent(QResizeEvent* event) {
   QAbstractScrollArea::resizeEvent(event);
-  rebuildLayout();
+  bool relayouted = false;
+  if (layout_ && document_) {
+    const int oldValue = verticalScrollBar()->value();
+    relayouted = layout_->relayoutForViewportWidth(theme_, viewport()->width());
+    if (relayouted) {
+      updateScrollBars();
+      verticalScrollBar()->setValue(qMin(oldValue, verticalScrollBar()->maximum()));
+      updateCursorHitFromPosition();
+      viewport()->update();
+    }
+  }
+  if (!relayouted) {
+    rebuildLayout();
+  }
   updateCodeLanguageEditor();
   updateTableToolbar();
 }

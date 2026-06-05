@@ -1,3 +1,4 @@
+#include "document/LineStartOffsetCache.h"
 #include "document/MarkdownDocument.h"
 #include "parser/CmarkGfmParser.h"
 #include "parser/MarkdownSerializer.h"
@@ -82,6 +83,51 @@ int countMathBlocks(const MarkdownNode& node) {
     count += countMathBlocks(*child);
   }
   return count;
+}
+
+void testLineStartOffsetCache() {
+  LineStartOffsetCache empty{QStringView(QString())};
+  require(empty.lineCount() == 1, QStringLiteral("Empty text should have one line"));
+  require(empty.offsetForLineColumn(1, 1) == 0, QStringLiteral("Empty text line start mismatch"));
+  require(empty.lineEndOffset(1) == 0, QStringLiteral("Empty text line end mismatch"));
+  require(empty.lineForOffset(0) == 1, QStringLiteral("Empty text offset line mismatch"));
+
+  const QString single = QStringLiteral("abc");
+  LineStartOffsetCache singleLine{QStringView(single)};
+  require(singleLine.lineCount() == 1, QStringLiteral("Single line count mismatch"));
+  require(singleLine.offsetForLineColumn(1, 2) == 1, QStringLiteral("Single line column offset mismatch"));
+  require(singleLine.offsetForLineColumn(1, 99) == single.size(), QStringLiteral("Single line column should clamp to line end"));
+  require(singleLine.lineEndOffset(1) == single.size(), QStringLiteral("Single line end mismatch"));
+
+  const QString multiple = QStringLiteral("ab\ncd\n");
+  LineStartOffsetCache multipleLines{QStringView(multiple)};
+  require(multipleLines.lineCount() == 3, QStringLiteral("Trailing newline should create final empty line"));
+  require(multipleLines.offsetForLineColumn(2, 1) == 3, QStringLiteral("Second line start mismatch"));
+  require(multipleLines.lineEndOffset(2) == 5, QStringLiteral("Second line end mismatch"));
+  require(multipleLines.offsetForLineColumn(3, 1) == multiple.size(), QStringLiteral("Final empty line start mismatch"));
+  require(multipleLines.lineForOffset(4) == 2, QStringLiteral("Offset to line lookup mismatch"));
+
+  const QString unicode = QString::fromUtf8("a😀中\nz");
+  LineStartOffsetCache unicodeLines{QStringView(unicode)};
+  require(unicodeLines.offsetForLineColumn(1, 2) == 1, QStringLiteral("Unicode BMP prefix offset mismatch"));
+  require(unicodeLines.offsetForLineColumn(1, 3) == 2, QStringLiteral("Emoji UTF-16 offset mismatch"));
+  require(unicodeLines.lineEndOffset(1) == unicode.indexOf(QLatin1Char('\n')), QStringLiteral("Unicode line end mismatch"));
+  require(unicodeLines.offsetForLineColumn(2, 1) == unicode.indexOf(QLatin1Char('\n')) + 1, QStringLiteral("Unicode second line start mismatch"));
+}
+
+void testFinalParagraphSourceRangeWithoutTrailingNewline() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QStringLiteral("# Title\n\nLast paragraph");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for final paragraph source range sample"));
+  require(parsed.root->children().size() == 2, QStringLiteral("Unexpected final paragraph block count"));
+
+  const MarkdownNode& paragraph = childAt(*parsed.root, 1);
+  require(paragraph.type() == BlockType::Paragraph, QStringLiteral("Expected final paragraph"));
+  require(paragraph.sourceRange().byteEnd == markdown.size(), QStringLiteral("Final paragraph source range should end at document size"));
+  require(sourceTextForNode(markdown, paragraph) == QStringLiteral("Last paragraph"), QStringLiteral("Final paragraph source text mismatch"));
 }
 
 void testEmptyDocumentHasEditableParagraph() {
@@ -367,6 +413,8 @@ void testTaskListMetadata() {
 
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
+  testLineStartOffsetCache();
+  testFinalParagraphSourceRangeWithoutTrailingNewline();
   testEmptyDocumentHasEditableParagraph();
   testBasicParseAndSerialize();
   testTableCellSourceRanges();

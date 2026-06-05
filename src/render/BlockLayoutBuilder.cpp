@@ -132,6 +132,13 @@ QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& t
 
 void BlockLayoutBuilder::setMarkdownText(QString markdownText) {
   markdownText_ = std::move(markdownText);
+  ownedLineOffsets_.rebuild(QStringView(markdownText_));
+  lineOffsets_ = &ownedLineOffsets_;
+}
+
+void BlockLayoutBuilder::setMarkdownText(QString markdownText, const LineStartOffsetCache& lineOffsets) {
+  markdownText_ = std::move(markdownText);
+  lineOffsets_ = &lineOffsets;
 }
 
 void BlockLayoutBuilder::setSelection(SelectionRange selection) {
@@ -531,39 +538,11 @@ qsizetype BlockLayoutBuilder::sourceContentEndForEditableNode(const MarkdownNode
 }
 
 qsizetype BlockLayoutBuilder::sourceOffsetForLineColumn(int line, int column) const {
-  if (line <= 0 || column <= 0) {
-    return -1;
-  }
-  int currentLine = 1;
-  qsizetype offset = 0;
-  while (currentLine < line && offset < markdownText_.size()) {
-    if (markdownText_.at(offset) == QLatin1Char('\n')) {
-      ++currentLine;
-    }
-    ++offset;
-  }
-  if (currentLine != line) {
-    return -1;
-  }
-  return qMin(offset + column - 1, markdownText_.size());
+  return lineOffsets_ ? lineOffsets_->offsetForLineColumn(line, column) : -1;
 }
 
 qsizetype BlockLayoutBuilder::sourceOffsetForLineEnd(int line) const {
-  if (line <= 0) {
-    return -1;
-  }
-  int currentLine = 1;
-  qsizetype offset = 0;
-  while (offset < markdownText_.size()) {
-    if (currentLine == line && markdownText_.at(offset) == QLatin1Char('\n')) {
-      return offset;
-    }
-    if (markdownText_.at(offset) == QLatin1Char('\n')) {
-      ++currentLine;
-    }
-    ++offset;
-  }
-  return currentLine == line ? markdownText_.size() : -1;
+  return lineOffsets_ ? lineOffsets_->lineEndOffset(line) : -1;
 }
 
 qreal BlockLayoutBuilder::textHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width, const QMarginsF& padding) const {

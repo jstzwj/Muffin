@@ -1,5 +1,6 @@
 #pragma once
 
+#include "document/LineStartOffsetCache.h"
 #include "document/MarkdownNode.h"
 #include "math/MathRenderer.h"
 #include "render/BlockLayout.h"
@@ -13,6 +14,7 @@ namespace muffin {
 class BlockLayoutBuilder {
 public:
   void setMarkdownText(QString markdownText);
+  void setMarkdownText(QString markdownText, const LineStartOffsetCache& lineOffsets);
   void setSelection(SelectionRange selection);
   std::unique_ptr<BlockLayout> build(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth = 0);
 
@@ -71,6 +73,8 @@ private:
   qreal textHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width, const QMarginsF& padding) const;
 
   QString markdownText_;
+  LineStartOffsetCache ownedLineOffsets_;
+  const LineStartOffsetCache* lineOffsets_ = &ownedLineOffsets_;
   SelectionRange selection_;
   TreeSitterHighlighter codeHighlighter_;
   math::MathRenderer mathRenderer_;

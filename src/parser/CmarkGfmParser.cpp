@@ -1,6 +1,7 @@
 #include "parser/CmarkGfmParser.h"
 
 #include "document/InlineNode.h"
+#include "document/LineStartOffsetCache.h"
 #include "parser/CmarkNodeAdapter.h"
 
 #include <QByteArray>
@@ -15,50 +16,11 @@ extern "C" {
 namespace muffin {
 namespace {
 
-qsizetype sourceOffsetForLineColumn(QStringView text, int line, int column) {
-  if (line <= 0 || column <= 0) {
-    return -1;
-  }
-
-  int currentLine = 1;
-  qsizetype offset = 0;
-  while (currentLine < line && offset < text.size()) {
-    if (text.at(offset) == QLatin1Char('\n')) {
-      ++currentLine;
-    }
-    ++offset;
-  }
-
-  if (currentLine != line) {
-    return -1;
-  }
-  return qMin(offset + column - 1, text.size());
-}
-
-qsizetype sourceOffsetForLineEnd(QStringView text, int line) {
-  if (line <= 0) {
-    return -1;
-  }
-
-  int currentLine = 1;
-  qsizetype offset = 0;
-  while (offset < text.size()) {
-    if (currentLine == line && text.at(offset) == QLatin1Char('\n')) {
-      return offset;
-    }
-    if (text.at(offset) == QLatin1Char('\n')) {
-      ++currentLine;
-    }
-    ++offset;
-  }
-  return currentLine == line ? text.size() : -1;
-}
-
-void annotateSourceOffsets(QStringView markdown, MarkdownNode& node) {
+void annotateSourceOffsets(const LineStartOffsetCache& lineOffsets, MarkdownNode& node) {
   SourceRange range = node.sourceRange();
   if (range.lineStart > 0) {
-    const qsizetype start = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
-    const qsizetype end = sourceOffsetForLineEnd(markdown, range.lineEnd);
+    const qsizetype start = lineOffsets.offsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
+    const qsizetype end = lineOffsets.lineEndOffset(range.lineEnd);
     if (start >= 0 && end >= start) {
       range.byteStart = start;
       range.byteEnd = end;
@@ -67,7 +29,7 @@ void annotateSourceOffsets(QStringView markdown, MarkdownNode& node) {
   }
 
   for (const auto& child : node.children()) {
-    annotateSourceOffsets(markdown, *child);
+    annotateSourceOffsets(lineOffsets, *child);
   }
 }
 
@@ -125,11 +87,11 @@ QVector<TableCellFieldRange> tableRowFieldRanges(QStringView rowText, qsizetype 
   return ranges;
 }
 
-void annotateTableCellSourceRanges(QStringView markdown, MarkdownNode& node) {
+void annotateTableCellSourceRanges(QStringView markdown, const LineStartOffsetCache& lineOffsets, MarkdownNode& node) {
   if (node.type() == BlockType::TableRow) {
     const SourceRange rowRange = node.sourceRange();
-    const qsizetype rowStart = sourceOffsetForLineColumn(markdown, rowRange.lineStart, 1);
-    const qsizetype rowEnd = sourceOffsetForLineEnd(markdown, rowRange.lineStart);
+    const qsizetype rowStart = lineOffsets.offsetForLineColumn(rowRange.lineStart, 1);
+    const qsizetype rowEnd = lineOffsets.lineEndOffset(rowRange.lineStart);
     if (rowStart >= 0 && rowEnd >= rowStart) {
       const QVector<TableCellFieldRange> fields = tableRowFieldRanges(markdown.mid(rowStart, rowEnd - rowStart), rowStart);
       int column = 0;
@@ -150,7 +112,7 @@ void annotateTableCellSourceRanges(QStringView markdown, MarkdownNode& node) {
   }
 
   for (const auto& child : node.children()) {
-    annotateTableCellSourceRanges(markdown, *child);
+    annotateTableCellSourceRanges(markdown, lineOffsets, *child);
   }
 }
 
@@ -173,9 +135,10 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   CmarkNodeAdapter adapter;
   ParseResult result;
   result.root = adapter.convertBlock(document);
+  const LineStartOffsetCache lineOffsets(markdown);
   insertVirtualEmptyParagraphs(markdown, *result.root);
-  annotateSourceOffsets(markdown, *result.root);
-  annotateTableCellSourceRanges(markdown, *result.root);
+  annotateSourceOffsets(lineOffsets, *result.root);
+  annotateTableCellSourceRanges(markdown, lineOffsets, *result.root);
   result.elapsedMs = timer.elapsed();
 
   cmark_node_free(document);

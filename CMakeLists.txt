@@ -209,6 +209,8 @@ set(MUFFIN_CORE_SOURCES
   src/document/NodeId.cpp
   src/document/NodeId.h
   src/document/SourceRange.h
+  src/document/LineStartOffsetCache.cpp
+  src/document/LineStartOffsetCache.h
   src/document/MarkdownTypes.h
   src/document/InlineNode.cpp
   src/document/InlineNode.h

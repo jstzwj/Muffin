@@ -29,8 +29,13 @@ const QString& MarkdownDocument::markdownText() const {
   return markdownText_;
 }
 
+const LineStartOffsetCache& MarkdownDocument::lineOffsets() const {
+  return lineOffsets_;
+}
+
 void MarkdownDocument::setMarkdownText(QString text, std::unique_ptr<MarkdownNode> root) {
   markdownText_ = std::move(text);
+  lineOffsets_.rebuild(QStringView(markdownText_));
   replaceRoot(std::move(root));
 }
 
@@ -42,6 +47,7 @@ void MarkdownDocument::replaceTopLevelRange(
     qsizetype sourceEnd,
     const QString& replacementText) {
   markdownText_.replace(sourceStart, sourceEnd - sourceStart, replacementText);
+  lineOffsets_.rebuild(QStringView(markdownText_));
   const qsizetype boundedFirst = qBound<qsizetype>(0, first, root_->children().size());
   const qsizetype boundedCount = qBound<qsizetype>(0, count, root_->children().size() - boundedFirst);
   for (qsizetype i = 0; i < boundedCount; ++i) {

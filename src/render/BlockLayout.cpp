@@ -254,17 +254,21 @@ void BlockLayout::setRect(QRectF rect) {
   rect_ = rect;
 }
 
-void BlockLayout::translateY(qreal dy) {
-  rect_.translate(0, dy);
+void BlockLayout::translate(qreal dx, qreal dy) {
+  rect_.translate(dx, dy);
   for (auto& child : children_) {
-    child->translateY(dy);
+    child->translate(dx, dy);
   }
   for (TableRowLayout& row : tableRows_) {
-    row.rect.translate(0, dy);
+    row.rect.translate(dx, dy);
     for (TableCellLayout& cell : row.cells) {
-      cell.rect.translate(0, dy);
+      cell.rect.translate(dx, dy);
     }
   }
+}
+
+void BlockLayout::translateY(qreal dy) {
+  translate(0, dy);
 }
 
 qreal BlockLayout::height() const {
