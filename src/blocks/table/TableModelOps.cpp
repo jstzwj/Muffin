@@ -198,6 +198,22 @@ void TableModelOps::setAlignment(MarkdownNode& table, int column, TableAlignment
   table.setTableAlignments(std::move(alignments));
 }
 
+void TableModelOps::resize(MarkdownNode& table, int rows, int columns) {
+  if (!isTable(table)) {
+    return;
+  }
+
+  rows = qMax(1, rows);
+  columns = qMax(1, columns);
+  normalize(table, columns, rows);
+  while (rowCount(table) > rows) {
+    table.detachChild(rowCount(table) - 1);
+  }
+  for (int row = 0; row < rowCount(table); ++row) {
+    rowAt(table, row).setTableRowIsHeader(row == 0);
+  }
+}
+
 MarkdownNode* TableModelOps::cellAt(MarkdownNode& table, int row, int column) {
   if (!isTable(table)) {
     return nullptr;

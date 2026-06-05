@@ -59,6 +59,8 @@ public:
   bool moveTableColumnLeft();
   bool moveTableColumnRight();
   bool setTableColumnAlignment(TableAlignment alignment);
+  bool resizeTable(int rows, int columns);
+  bool deleteTable();
   bool insertTable();
   bool enterCodeFenceEditMode();
   bool exitCodeFenceEditMode();

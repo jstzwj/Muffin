@@ -96,6 +96,30 @@ void testMoveRowsAndColumns() {
   require(markdown.contains(QStringLiteral("| C | A | B |")), "move column header mismatch");
 }
 
+void testResizeCropAndPad() {
+  MarkdownDocument document;
+  MarkdownNode& table = parseTable(QStringLiteral("| A | B | C |\n| :--- | :---: | ---: |\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |"), document);
+
+  TableModelOps::resize(table, 2, 2);
+  require(TableModelOps::rowCount(table) == 2, "resize crop row count mismatch");
+  require(TableModelOps::columnCount(table) == 2, "resize crop column count mismatch");
+  require(table.tableAlignments().size() == 2, "resize crop alignment count mismatch");
+  require(table.tableAlignments().at(0) == TableAlignment::Left, "resize crop first alignment mismatch");
+  require(table.tableAlignments().at(1) == TableAlignment::Center, "resize crop second alignment mismatch");
+  QString markdown = serialize(document);
+  require(!markdown.contains(QStringLiteral("C")), "resize crop should remove trailing header");
+  require(!markdown.contains(QStringLiteral("| 4 | 5 |")), "resize crop should remove trailing row");
+
+  TableModelOps::resize(table, 4, 4);
+  require(TableModelOps::rowCount(table) == 4, "resize pad row count mismatch");
+  require(TableModelOps::columnCount(table) == 4, "resize pad column count mismatch");
+  require(table.tableAlignments().at(2) == TableAlignment::None, "resize pad third alignment mismatch");
+  require(table.tableAlignments().at(3) == TableAlignment::None, "resize pad fourth alignment mismatch");
+  markdown = serialize(document);
+  require(markdown.contains(QStringLiteral("| A | B |  |  |")), "resize pad header mismatch");
+  require(markdown.contains(QStringLiteral("|  |  |  |  |")), "resize pad empty row mismatch");
+}
+
 void testTableControllerCommands() {
   DocumentSession session;
   SelectionController selection;
@@ -190,6 +214,72 @@ void testTableControllerCommands() {
   require(!undoStack.canUndo(), "boundary table command should not push undo");
 }
 
+void testTableControllerResize() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  TableController controller;
+  controller.setDocumentSession(&session);
+  controller.setSelectionController(&selection);
+  controller.setUndoStack(&undoStack);
+  controller.setBrushQueue(&brushQueue);
+
+  session.setMarkdownText(QStringLiteral("| A | B | C |\n| --- | --- | --- |\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |"), false);
+  MarkdownNode& table = *session.document().root().children().front();
+  MarkdownNode* cell = TableModelOps::cellAt(table, 2, 2);
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::TableCell;
+  hit.blockId = table.id();
+  hit.textNodeId = cell->id();
+  hit.tableRow = 2;
+  hit.tableColumn = 2;
+  selection.setHitResult(hit);
+
+  require(controller.resizeCurrentTable(2, 2), "controller resize should work");
+  require(session.markdownText().contains(QStringLiteral("| A | B |")), "controller resize header mismatch");
+  require(!session.markdownText().contains(QStringLiteral("C")), "controller resize should crop column");
+  require(!session.markdownText().contains(QStringLiteral("4")), "controller resize should crop row");
+  require(undoStack.canUndo(), "controller resize should push undo");
+  EditTransaction resizeUndo = undoStack.takeUndo();
+  require(resizeUndo.isTableCommand(), "controller resize should use TableCommand undo");
+  require(TableModelOps::columnCount(*resizeUndo.tableCommand().afterTable) == 2, "controller resize after column count mismatch");
+  require(TableModelOps::rowCount(*resizeUndo.tableCommand().afterTable) == 2, "controller resize after row count mismatch");
+}
+
+void testTableControllerDeleteTable() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  TableController controller;
+  controller.setDocumentSession(&session);
+  controller.setSelectionController(&selection);
+  controller.setUndoStack(&undoStack);
+  controller.setBrushQueue(&brushQueue);
+
+  session.setMarkdownText(QStringLiteral("before\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\nafter"), false);
+  MarkdownNode& table = *session.document().root().children().at(1);
+  MarkdownNode* cell = TableModelOps::cellAt(table, 1, 0);
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::TableCell;
+  hit.blockId = table.id();
+  hit.textNodeId = cell->id();
+  hit.tableRow = 1;
+  hit.tableColumn = 0;
+  selection.setHitResult(hit);
+
+  require(controller.deleteCurrentTable(), "controller delete table should work");
+  require(session.markdownText().contains(QStringLiteral("before")), "delete table should keep previous text");
+  require(session.markdownText().contains(QStringLiteral("after")), "delete table should keep next text");
+  require(!session.markdownText().contains(QStringLiteral("| A | B |")), "delete table should remove table markdown");
+  require(undoStack.canUndo(), "delete table should push undo");
+  EditTransaction deleteUndo = undoStack.takeUndo();
+  require(deleteUndo.isRemoveNodeCommand(), "delete table should use RemoveNodeCommand");
+  require(deleteUndo.removeNodeCommand().nodeType == BlockType::Table, "delete table command type mismatch");
+  require(deleteUndo.removeNodeCommand().removedNode != nullptr, "delete table command removed node missing");
+}
+
 void testTableControllerCellTextEditing() {
   DocumentSession session;
   SelectionController selection;
@@ -261,7 +351,10 @@ int main() {
   testInsertDeleteRows();
   testInsertDeleteColumnsAndAlignment();
   testMoveRowsAndColumns();
+  testResizeCropAndPad();
   testTableControllerCommands();
+  testTableControllerResize();
+  testTableControllerDeleteTable();
   testTableControllerCellTextEditing();
   testTableControllerInsertTable();
   return 0;

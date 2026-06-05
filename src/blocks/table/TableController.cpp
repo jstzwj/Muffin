@@ -71,6 +71,28 @@ TableLocation clampedTableLocation(TableLocation location, const MarkdownNode& t
   return location;
 }
 
+int topLevelIndexOf(const MarkdownNode& root, const MarkdownNode& target) {
+  const auto& blocks = root.children();
+  for (int i = 0; i < static_cast<int>(blocks.size()); ++i) {
+    if (blocks.at(static_cast<size_t>(i)).get() == &target) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+CursorPosition cursorForNodeStart(const MarkdownNode* node) {
+  CursorPosition cursor;
+  if (!node) {
+    return cursor;
+  }
+  cursor.blockId = node->id();
+  cursor.text.nodeId = node->id();
+  cursor.text.textOffset = 0;
+  cursor.text.sourceOffset = node->sourceRange().byteStart;
+  return cursor;
+}
+
 }  // namespace
 
 TableController::TableController(QObject* parent) : QObject(parent) {}
@@ -278,6 +300,117 @@ bool TableController::moveCurrentColumnRight() {
     ++location.column;
     return true;
   });
+}
+
+bool TableController::resizeCurrentTable(int rows, int columns) {
+  rows = qMax(1, rows);
+  columns = qMax(1, columns);
+  return mutateCurrentTable(
+      QStringLiteral("Resize Table"),
+      EditTransaction::Kind::ReplaceDocumentText,
+      [rows, columns](MarkdownNode& table, TableLocation& location) {
+        TableModelOps::resize(table, rows, columns);
+        location.row = qMin(location.row, TableModelOps::rowCount(table) - 1);
+        location.column = qMin(location.column, TableModelOps::columnCount(table) - 1);
+        return true;
+      });
+}
+
+bool TableController::deleteCurrentTable() {
+  if (!session_) {
+    return false;
+  }
+
+  const TableLocation beforeLocation = currentCell();
+  if (!beforeLocation.isValid()) {
+    emit tableCommandRejected(QStringLiteral("No table cell is active."));
+    return false;
+  }
+
+  MarkdownNode* table = tableForLocation(beforeLocation);
+  if (!table || !table->parent() || table->parent()->type() != BlockType::Document) {
+    return false;
+  }
+
+  const SourceRange tableRange = table->sourceRange();
+  qsizetype blockStart = tableRange.byteStart;
+  qsizetype blockEnd = tableRange.byteEnd;
+  const QString beforeText = session_->markdownText();
+  if (blockStart < 0 || blockEnd < blockStart || blockEnd > beforeText.size()) {
+    return false;
+  }
+
+  const auto& blocks = session_->document().root().children();
+  const int nodeIndex = topLevelIndexOf(session_->document().root(), *table);
+  if (nodeIndex < 0) {
+    return false;
+  }
+
+  qsizetype deleteStart = blockStart;
+  qsizetype deleteEnd = blockEnd;
+  if (blocks.size() == 1) {
+    deleteStart = 0;
+    deleteEnd = beforeText.size();
+  } else if (nodeIndex + 1 < static_cast<int>(blocks.size())) {
+    deleteEnd = blocks.at(static_cast<size_t>(nodeIndex + 1))->sourceRange().byteStart;
+  } else {
+    deleteStart = blocks.at(static_cast<size_t>(nodeIndex - 1))->sourceRange().byteEnd;
+  }
+  deleteStart = qBound<qsizetype>(0, deleteStart, beforeText.size());
+  deleteEnd = qBound<qsizetype>(deleteStart, deleteEnd, beforeText.size());
+  if (deleteStart >= deleteEnd) {
+    return false;
+  }
+
+  const CursorPosition beforeCursor = selection_ ? selection_->cursorPosition() : CursorPosition();
+  const NodeId removedNodeId = table->id();
+  std::unique_ptr<MarkdownNode> removedNode = table->clone(CloneMode::PreserveIds);
+  const QString removedText = beforeText.mid(deleteStart, deleteEnd - deleteStart);
+
+  QVector<LocalEditNodeHint> nodeHints;
+  nodeHints.push_back(LocalEditNodeHint{removedNodeId, blockStart, BlockType::Table});
+  if (!session_->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
+    return false;
+  }
+
+  const auto& nextBlocks = session_->document().root().children();
+  const MarkdownNode* nextNode = nullptr;
+  if (!nextBlocks.empty()) {
+    const int nextIndex = qBound(0, nodeIndex, static_cast<int>(nextBlocks.size()) - 1);
+    nextNode = nextBlocks.at(static_cast<size_t>(nextIndex)).get();
+  }
+  const CursorPosition nextCursor = cursorForNodeStart(nextNode);
+  if (selection_) {
+    if (nextCursor.isValid()) {
+      selection_->setCursorPosition(nextCursor);
+    } else {
+      selection_->clear();
+    }
+  }
+
+  if (undoStack_ && beforeCursor.isValid()) {
+    QVector<NodeId> affectedNodes{removedNodeId};
+    if (nextCursor.isValid() && !affectedNodes.contains(nextCursor.blockId)) {
+      affectedNodes.push_back(nextCursor.blockId);
+    }
+    undoStack_->push(EditTransaction(
+        EditTransaction::Kind::DeleteText,
+        QStringLiteral("Delete Table"),
+        RemoveNodeCommand{
+            removedNodeId,
+            BlockType::Table,
+            nodeIndex,
+            TextDelta{deleteStart, removedText, QString()},
+            blockStart,
+            std::move(removedNode),
+            beforeCursor,
+            nextCursor,
+            std::move(affectedNodes)}));
+  }
+  if (brushQueue_) {
+    brushQueue_->requestFullRefresh();
+  }
+  return true;
 }
 
 bool TableController::setCurrentColumnAlignment(TableAlignment alignment) {

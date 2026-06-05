@@ -175,6 +175,7 @@ add_executable(Muffin
 
 set(MUFFIN_UI_SOURCES
   src/katex_fonts.qrc
+  src/table_toolbar_icons.qrc
   third_party/katex/src/fontMetricsData.js
   third_party/katex/src/svgGeometry.ts
   third_party/katex/src/symbols.ts

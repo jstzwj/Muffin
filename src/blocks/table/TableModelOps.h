@@ -29,6 +29,7 @@ public:
   static void moveColumn(MarkdownNode& table, int from, int to);
 
   static void setAlignment(MarkdownNode& table, int column, TableAlignment alignment);
+  static void resize(MarkdownNode& table, int rows, int columns);
   static MarkdownNode* cellAt(MarkdownNode& table, int row, int column);
   static const MarkdownNode* cellAt(const MarkdownNode& table, int row, int column);
 

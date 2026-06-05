@@ -2897,6 +2897,72 @@ void testInsertTableUndoUsesInsertNodeCommand() {
   require(controller.tableController().currentCell().isValid(), "insert table redo should restore table cursor");
 }
 
+void testResizeTableUndoUsesTableCommand() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("| A | B | C |\n| --- | --- | --- |\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |"), false);
+  MarkdownNode* table = firstBlockOfType(session, BlockType::Table);
+  MarkdownNode* tableCell = childAt(childAt(table, 2), 2);
+  HitTestResult cellHit;
+  cellHit.zone = HitTestResult::Zone::TableCell;
+  cellHit.blockId = table->id();
+  cellHit.textNodeId = tableCell->id();
+  cellHit.tableRow = 2;
+  cellHit.tableColumn = 2;
+  controller.activateHit(cellHit);
+
+  require(controller.resizeTable(2, 2), "resize table should work");
+  require(session.markdownText() == QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), "resize table crop markdown mismatch");
+  require(controller.undoStack().canUndo(), "resize table should push undo");
+  const EditTransaction transaction = controller.undoStack().takeUndo();
+  require(transaction.isTableCommand(), "resize table should use TableCommand");
+  require(TableModelOps::rowCount(*transaction.tableCommand().afterTable) == 2, "resize table after row count mismatch");
+  require(TableModelOps::columnCount(*transaction.tableCommand().afterTable) == 2, "resize table after column count mismatch");
+  controller.undoStack().push(transaction);
+
+  controller.undo();
+  require(session.markdownText().contains(QStringLiteral("| A | B | C |")), "resize table undo text mismatch");
+  require(controller.selection().hasCursor(), "resize table undo should keep cursor");
+
+  controller.redo();
+  require(session.markdownText() == QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), "resize table redo text mismatch");
+  require(controller.selection().hasCursor(), "resize table redo should keep cursor");
+}
+
+void testDeleteTableUndoUsesRemoveNodeCommand() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("before\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\nafter"), false);
+  MarkdownNode* table = firstBlockOfType(session, BlockType::Table);
+  MarkdownNode* tableCell = childAt(childAt(table, 1), 0);
+  HitTestResult cellHit;
+  cellHit.zone = HitTestResult::Zone::TableCell;
+  cellHit.blockId = table->id();
+  cellHit.textNodeId = tableCell->id();
+  cellHit.tableRow = 1;
+  cellHit.tableColumn = 0;
+  controller.activateHit(cellHit);
+
+  require(controller.deleteTable(), "delete table should work");
+  require(session.markdownText() == QStringLiteral("before\n\nafter"), "delete table markdown mismatch");
+  require(controller.undoStack().canUndo(), "delete table should push undo");
+  const EditTransaction transaction = controller.undoStack().takeUndo();
+  require(transaction.isRemoveNodeCommand(), "delete table should use RemoveNodeCommand");
+  require(transaction.removeNodeCommand().nodeType == BlockType::Table, "delete table command type mismatch");
+  require(transaction.removeNodeCommand().removedNode != nullptr, "delete table command snapshot missing");
+  controller.undoStack().push(transaction);
+
+  controller.undo();
+  require(session.markdownText().contains(QStringLiteral("| A | B |")), "delete table undo text mismatch");
+
+  controller.redo();
+  require(session.markdownText() == QStringLiteral("before\n\nafter"), "delete table redo text mismatch");
+}
+
 void testCodeActivationKeepsClickedOffsetForTyping() {
   DocumentSession session;
   EditorController controller;
@@ -3155,6 +3221,8 @@ int main(int argc, char** argv) {
   testTableStructureUndoUsesTableCommand();
   testTableCellTextUndoUsesTextDeltaCommand();
   testInsertTableUndoUsesInsertNodeCommand();
+  testResizeTableUndoUsesTableCommand();
+  testDeleteTableUndoUsesRemoveNodeCommand();
   testCodeActivationKeepsClickedOffsetForTyping();
   testCodeFenceUndoUsesReplaceNodeCommand();
   testWholeBlockDeleteUsesRemoveNodeCommand();

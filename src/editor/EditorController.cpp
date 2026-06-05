@@ -688,6 +688,14 @@ bool EditorController::setTableColumnAlignment(TableAlignment alignment) {
   return tableController_.setCurrentColumnAlignment(alignment);
 }
 
+bool EditorController::resizeTable(int rows, int columns) {
+  return tableController_.resizeCurrentTable(rows, columns);
+}
+
+bool EditorController::deleteTable() {
+  return tableController_.deleteCurrentTable();
+}
+
 bool EditorController::insertTable() {
   return tableController_.insertTable();
 }

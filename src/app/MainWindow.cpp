@@ -256,6 +256,52 @@ void MainWindow::setupConnections() {
     }
     editorController_.setCodeFenceLanguage(codeId, language);
   });
+  connect(renderView_, &EditorView::tableResizeRequested, this, [this](int rows, int columns) {
+    if (!sourceModeEnabled()) {
+      editorController_.resizeTable(rows, columns);
+    }
+  });
+  connect(renderView_, &EditorView::tableColumnAlignmentRequested, this, [this](TableAlignment alignment) {
+    if (!sourceModeEnabled()) {
+      editorController_.setTableColumnAlignment(alignment);
+    }
+  });
+  connect(renderView_, &EditorView::tableDeleteRequested, this, [this] {
+    if (!sourceModeEnabled()) {
+      editorController_.deleteTable();
+    }
+  });
+  connect(renderView_, &EditorView::tableMoreActionsRequested, this, [this](QPoint globalPos) {
+    if (sourceModeEnabled()) {
+      return;
+    }
+    updateTableActions();
+    QMenu menu(this);
+    const QStringList ids = {
+        QStringLiteral("table.insert_row_before"),
+        QStringLiteral("table.insert_row_after"),
+        QStringLiteral("table.delete_row"),
+        QStringLiteral("table.insert_column_before"),
+        QStringLiteral("table.insert_column_after"),
+        QStringLiteral("table.delete_column"),
+        QStringLiteral("table.move_row_up"),
+        QStringLiteral("table.move_row_down"),
+        QStringLiteral("table.move_column_left"),
+        QStringLiteral("table.move_column_right"),
+        QStringLiteral("table.align_none"),
+        QStringLiteral("table.delete_table"),
+    };
+    for (const QString& id : ids) {
+      if (id == QStringLiteral("table.insert_column_before") || id == QStringLiteral("table.move_row_up") || id == QStringLiteral("table.align_none") ||
+          id == QStringLiteral("table.delete_table")) {
+        menu.addSeparator();
+      }
+      if (QAction* action = commands_.action(id)) {
+        menu.addAction(action);
+      }
+    }
+    menu.exec(globalPos);
+  });
 
   connect(&session_, &DocumentSession::documentTextChanged, this, [this](const QString& text) {
     PerfTimer perf("main.documentTextChanged.consumer");
@@ -391,6 +437,7 @@ void MainWindow::setupConnections() {
   commands_.bind(QStringLiteral("table.align_center"), [this] { editorController_.setTableColumnAlignment(TableAlignment::Center); });
   commands_.bind(QStringLiteral("table.align_right"), [this] { editorController_.setTableColumnAlignment(TableAlignment::Right); });
   commands_.bind(QStringLiteral("table.align_none"), [this] { editorController_.setTableColumnAlignment(TableAlignment::None); });
+  commands_.bind(QStringLiteral("table.delete_table"), [this] { editorController_.deleteTable(); });
   commands_.bind(QStringLiteral("table.insert_table"), [this] { editorController_.insertTable(); });
 
   commands_.bind(QStringLiteral("code.enter_edit"), [this] { editorController_.enterCodeFenceEditMode(); });
@@ -685,6 +732,8 @@ void MainWindow::setupTableMenu() {
   addAction(table, QStringLiteral("table.align_center"), QStringLiteral("居中对齐"));
   addAction(table, QStringLiteral("table.align_right"), QStringLiteral("右对齐"));
   addAction(table, QStringLiteral("table.align_none"), QStringLiteral("清除对齐"));
+  table->addSeparator();
+  addAction(table, QStringLiteral("table.delete_table"), QStringLiteral("删除表格"));
 }
 
 void MainWindow::setupCodeMenu() {
@@ -856,6 +905,7 @@ void MainWindow::updateTableActions() {
       QStringLiteral("table.align_center"),
       QStringLiteral("table.align_right"),
       QStringLiteral("table.align_none"),
+      QStringLiteral("table.delete_table"),
   };
   for (const QString& id : ids) {
     commands_.setEnabled(id, enabled);

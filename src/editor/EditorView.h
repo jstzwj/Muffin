@@ -4,6 +4,7 @@
 #include "theme/RenderTheme.h"
 
 #include <QAbstractScrollArea>
+#include <QPoint>
 #include <QPointer>
 #include <QStringList>
 
@@ -11,6 +12,8 @@
 
 class QCompleter;
 class QLineEdit;
+class QToolButton;
+class QWidget;
 
 namespace muffin {
 
@@ -42,6 +45,10 @@ signals:
   void selectionChanged(SelectionRange selection, HitTestResult focusHit);
   void textCommitted(QString text);
   void codeLanguageCommitted(NodeId codeId, QString language);
+  void tableResizeRequested(int rows, int columns);
+  void tableColumnAlignmentRequested(TableAlignment alignment);
+  void tableDeleteRequested();
+  void tableMoreActionsRequested(QPoint globalPos);
 
 protected:
   bool event(QEvent* event) override;
@@ -65,6 +72,13 @@ private:
   void showCodeLanguageEditor(const BlockLayout& block);
   void hideCodeLanguageEditor();
   void commitCodeLanguageEditor();
+  void ensureTableToolbar();
+  void updateTableToolbar();
+  void showTableToolbar(const BlockLayout& table);
+  void hideTableToolbar();
+  void showTableResizePopup();
+  QPair<int, int> activeTableSize() const;
+  const BlockLayout* activeTableLayout() const;
   void updateCursorHitFromPosition();
   void refreshInlineProjectionForSelectionChange(SelectionRange previousSelection);
   void addSelectionBlocks(QVector<NodeId>& blockIds, const SelectionRange& selection) const;
@@ -94,6 +108,15 @@ private:
   QStringList codeLanguageSuggestions_;
   NodeId codeLanguageNodeId_;
   bool updatingCodeLanguageEditor_ = false;
+  QWidget* tableToolbar_ = nullptr;
+  QToolButton* tableResizeButton_ = nullptr;
+  QToolButton* tableAlignLeftButton_ = nullptr;
+  QToolButton* tableAlignCenterButton_ = nullptr;
+  QToolButton* tableAlignRightButton_ = nullptr;
+  QToolButton* tableMoreButton_ = nullptr;
+  QToolButton* tableDeleteButton_ = nullptr;
+  QWidget* tableResizePopup_ = nullptr;
+  bool updatingTableToolbar_ = false;
 };
 
 }  // namespace muffin

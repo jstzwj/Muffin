@@ -1,0 +1,10 @@
+<RCC>
+  <qresource prefix="/icons/table-toolbar">
+    <file alias="resize.svg">icons/table-toolbar/resize.svg</file>
+    <file alias="align-left.svg">icons/table-toolbar/align-left.svg</file>
+    <file alias="align-center.svg">icons/table-toolbar/align-center.svg</file>
+    <file alias="align-right.svg">icons/table-toolbar/align-right.svg</file>
+    <file alias="more.svg">icons/table-toolbar/more.svg</file>
+    <file alias="delete.svg">icons/table-toolbar/delete.svg</file>
+  </qresource>
+</RCC>

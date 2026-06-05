@@ -57,6 +57,8 @@ public:
   bool moveCurrentColumnLeft();
   bool moveCurrentColumnRight();
   bool setCurrentColumnAlignment(TableAlignment alignment);
+  bool resizeCurrentTable(int rows, int columns);
+  bool deleteCurrentTable();
   bool insertTable(int rows = 2, int columns = 2);
 
 signals:
