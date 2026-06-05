@@ -194,6 +194,8 @@ set(MUFFIN_UI_SOURCES
   src/blocks/math/MathRenderer.h
   src/blocks/table/TableController.cpp
   src/blocks/table/TableController.h
+  src/blocks/table/TableCellSourceEdit.cpp
+  src/blocks/table/TableCellSourceEdit.h
   src/app/SidebarWidget.cpp
   src/app/SidebarWidget.h
   src/editor/SourceEditorWidget.cpp

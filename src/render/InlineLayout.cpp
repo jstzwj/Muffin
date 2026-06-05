@@ -51,6 +51,7 @@ QString layoutTextForDisplayText(QString text) {
 
 struct InlineLayout::TextLayoutPointHit {
   qsizetype displayOffset = 0;
+  InlineProjectionBias bias = InlineProjectionBias::Backward;
   QRectF cursorRect;
 };
 
@@ -116,20 +117,36 @@ qsizetype InlineLayout::hitTestTextOffset(QPointF localPos) const {
 }
 
 qsizetype InlineLayout::hitTestSourceOffset(QPointF localPos) const {
-  const qsizetype position = textLayoutDisplayOffsetForPoint(localPos);
+  const TextLayoutPointHit hit = textLayoutHitForPoint(localPos);
+  const qsizetype position = hit.displayOffset;
   for (const MathAtom& atom : mathAtoms_) {
     if (position < atom.displayStart || position > atom.displayEnd) {
       continue;
     }
-    const QRectF atomRect = textLayoutCursorRectForDisplayOffset(atom.displayStart)
-                                .united(textLayoutCursorRectForDisplayOffset(atom.displayEnd));
-    if (!atomRect.isNull() && localPos.x() > atomRect.center().x()) {
-      return atom.sourceEnd;
+    qreal atomLeft = textLayoutCursorRectForDisplayOffset(atom.displayStart).left();
+    for (int i = 0; i < textLayout_->lineCount(); ++i) {
+      const QTextLine line = textLayout_->lineAt(i);
+      if (!line.isValid()) {
+        continue;
+      }
+      const int lineStart = line.textStart();
+      const int lineEnd = lineStart + line.textLength();
+      if (atom.displayStart >= lineStart && atom.displayStart <= lineEnd) {
+        atomLeft = line.cursorToX(static_cast<int>(atom.displayStart));
+        break;
+      }
     }
-    return atom.sourceStart;
+    const qreal atomWidth = atom.layout && atom.layout->valid() ? atom.layout->size.width() : 0.0;
+    if (atomWidth <= 0.0 || atom.contentSourceEnd <= atom.contentSourceStart) {
+      return localPos.x() > atomLeft ? atom.sourceEnd : atom.sourceStart;
+    }
+    const qreal ratio = qBound<qreal>(0.0, (localPos.x() - atomLeft) / atomWidth, 1.0);
+    const qsizetype contentLength = atom.contentSourceEnd - atom.contentSourceStart;
+    const qsizetype contentOffset = static_cast<qsizetype>(qRound(ratio * contentLength));
+    return atom.contentSourceStart + qBound<qsizetype>(0, contentOffset, contentLength);
   }
   qsizetype sourceOffset = -1;
-  if (projection_.sourceOffsetForDisplayOffset(position, sourceOffset)) {
+  if (projection_.sourceOffsetForDisplayOffset(position, hit.bias, sourceOffset)) {
     return sourceOffset;
   }
   return visibleOffsetForDisplayOffset(position);
@@ -157,7 +174,7 @@ QRectF InlineLayout::cursorRectForSourceOffset(qsizetype sourceOffset) const {
     }
   }
   qsizetype displayOffset = -1;
-  if (!projection_.displayOffsetForSourceOffset(sourceOffset, displayOffset)) {
+  if (!projection_.displayOffsetForSourceOffset(sourceOffset, InlineProjectionBias::Forward, displayOffset)) {
     return cursorRect(sourceOffset);
   }
   return textLayoutCursorRectForDisplayOffset(displayOffset);
@@ -600,6 +617,7 @@ InlineLayout::TextLayoutPointHit InlineLayout::textLayoutHitForPoint(QPointF loc
     const int lineEnd = lineStart + line.textLength();
     if (lineEnd <= lineStart) {
       hit.displayOffset = lineStart;
+      hit.bias = InlineProjectionBias::Backward;
       hit.cursorRect = QRectF(line.cursorToX(lineStart), line.y(), 1.0, line.height());
       return hit;
     }
@@ -611,6 +629,7 @@ InlineLayout::TextLayoutPointHit InlineLayout::textLayoutHitForPoint(QPointF loc
     }
     if (localPos.x() >= line.cursorToX(lineEnd)) {
       hit.displayOffset = lineEnd;
+      hit.bias = InlineProjectionBias::Forward;
       hit.cursorRect = QRectF(line.cursorToX(lineEnd), line.y(), 1.0, line.height());
       return hit;
     }
@@ -621,21 +640,25 @@ InlineLayout::TextLayoutPointHit InlineLayout::textLayoutHitForPoint(QPointF loc
       const qreal midpoint = (left + right) / 2.0;
       if (localPos.x() < midpoint) {
         hit.displayOffset = offset;
+        hit.bias = InlineProjectionBias::Backward;
         hit.cursorRect = QRectF(line.cursorToX(offset), line.y(), 1.0, line.height());
         return hit;
       }
       if (localPos.x() < right) {
         hit.displayOffset = offset + 1;
+        hit.bias = InlineProjectionBias::Forward;
         hit.cursorRect = QRectF(line.cursorToX(offset + 1), line.y(), 1.0, line.height());
         return hit;
       }
     }
     hit.displayOffset = lineEnd;
+    hit.bias = InlineProjectionBias::Forward;
     hit.cursorRect = QRectF(line.cursorToX(lineEnd), line.y(), 1.0, line.height());
     return hit;
   }
 
   hit.displayOffset = displayText_.size();
+  hit.bias = InlineProjectionBias::Forward;
   hit.cursorRect = textLayoutCursorRectForDisplayOffset(hit.displayOffset);
   return hit;
 }

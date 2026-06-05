@@ -1085,6 +1085,25 @@ void testInlineProjectionContract() {
   require(!activeImage.selectionRects(0, 3).isEmpty(), QStringLiteral("active image selection rects should remain valid"));
 }
 
+void testInlineCodeEndSourceHitUsesForwardBias() {
+  RenderTheme theme = RenderTheme::github();
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::text(QStringLiteral("vendored ")));
+  inlines.push_back(InlineNode::code(QStringLiteral("cmark-gfm")));
+  const QString source = QStringLiteral("vendored `cmark-gfm`");
+
+  InlineLayout layout;
+  InlineLayout::BuildOptions options;
+  options.projectionState.cursorSourceOffset = source.size();
+  layout.build(inlines, source, theme, 400.0, theme.paragraphFont(), options);
+
+  const QRectF endCursor = layout.cursorRectForSourceOffset(source.size());
+  require(endCursor.left() >= layout.cursorRectForSourceOffset(source.size() - 1).left(),
+          QStringLiteral("inline code end cursor should be at or after content end"));
+  require(layout.hitTestSourceOffset(QPointF(endCursor.left() + 2.0, endCursor.center().y())) == source.size(),
+          QStringLiteral("inline code end hit should map after closing marker"));
+}
+
 void testInlineLayoutGeometryContract() {
   RenderTheme theme = RenderTheme::github();
   QVector<InlineNode> plainInlines;
@@ -3178,6 +3197,7 @@ int main(int argc, char** argv) {
   testThemeCodeHighlightPalette();
   testInlineMarkerExpansion();
   testInlineProjectionContract();
+  testInlineCodeEndSourceHitUsesForwardBias();
   testInlineLayoutGeometryContract();
   testInlineLayoutZeroWidthTabIndentGeometry();
   testInlineLayoutPainting();

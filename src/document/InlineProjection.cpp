@@ -177,10 +177,37 @@ bool InlineProjection::visibleOffsetForSourceOffset(qsizetype sourceOffset, qsiz
 }
 
 bool InlineProjection::sourceOffsetForDisplayOffset(qsizetype displayOffset, qsizetype& sourceOffset) const {
+  return sourceOffsetForDisplayOffset(displayOffset, InlineProjectionBias::Backward, sourceOffset);
+}
+
+bool InlineProjection::sourceOffsetForDisplayOffset(qsizetype displayOffset, InlineProjectionBias bias, qsizetype& sourceOffset) const {
   if (!valid_) {
     return false;
   }
   displayOffset = qBound<qsizetype>(0, displayOffset, displayText_.size());
+  if (bias == InlineProjectionBias::Forward) {
+    for (qsizetype i = spans_.size() - 1; i >= 0; --i) {
+      const InlineProjectionSpan& span = spans_.at(i);
+      if (displayOffset < span.displayStart || displayOffset > span.displayEnd) {
+        continue;
+      }
+      if (span.displayEnd <= span.displayStart || span.sourceEnd <= span.sourceStart) {
+        sourceOffset = span.sourceEnd;
+      } else if (displayOffset <= span.displayStart) {
+        sourceOffset = span.sourceStart;
+      } else if (displayOffset >= span.displayEnd) {
+        sourceOffset = span.sourceEnd;
+      } else {
+        sourceOffset = qBound<qsizetype>(
+            span.contentSourceStart,
+            span.contentSourceStart + displayOffset - span.displayStart,
+            span.contentSourceEnd);
+      }
+      return true;
+    }
+    sourceOffset = sourceText_.size();
+    return true;
+  }
   for (const InlineProjectionSpan& span : spans_) {
     if (displayOffset <= span.displayEnd) {
       if (span.displayEnd <= span.displayStart || span.sourceEnd <= span.sourceStart) {
@@ -203,10 +230,37 @@ bool InlineProjection::sourceOffsetForDisplayOffset(qsizetype displayOffset, qsi
 }
 
 bool InlineProjection::displayOffsetForSourceOffset(qsizetype sourceOffset, qsizetype& displayOffset) const {
+  return displayOffsetForSourceOffset(sourceOffset, InlineProjectionBias::Backward, displayOffset);
+}
+
+bool InlineProjection::displayOffsetForSourceOffset(qsizetype sourceOffset, InlineProjectionBias bias, qsizetype& displayOffset) const {
   if (!valid_) {
     return false;
   }
   sourceOffset = qBound<qsizetype>(0, sourceOffset, sourceText_.size());
+  if (bias == InlineProjectionBias::Forward) {
+    for (qsizetype i = spans_.size() - 1; i >= 0; --i) {
+      const InlineProjectionSpan& span = spans_.at(i);
+      if (sourceOffset < span.sourceStart || sourceOffset > span.sourceEnd) {
+        continue;
+      }
+      if (span.displayEnd <= span.displayStart || span.sourceEnd <= span.sourceStart) {
+        displayOffset = span.displayEnd;
+      } else if (sourceOffset <= span.contentSourceStart) {
+        displayOffset = span.displayStart;
+      } else if (sourceOffset >= span.contentSourceEnd) {
+        displayOffset = span.displayEnd;
+      } else {
+        displayOffset = qBound<qsizetype>(
+            span.displayStart,
+            span.displayStart + sourceOffset - span.contentSourceStart,
+            span.displayEnd);
+      }
+      return true;
+    }
+    displayOffset = displayText_.size();
+    return true;
+  }
   for (const InlineProjectionSpan& span : spans_) {
     if (sourceOffset <= span.sourceEnd) {
       if (span.displayEnd <= span.displayStart || span.sourceEnd <= span.sourceStart) {

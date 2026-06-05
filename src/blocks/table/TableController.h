@@ -1,5 +1,6 @@
 #pragma once
 
+#include "blocks/table/TableCellSourceEdit.h"
 #include "blocks/table/TableModelOps.h"
 #include "edit/EditTransaction.h"
 #include "editor/CursorPosition.h"
@@ -7,6 +8,7 @@
 #include <QObject>
 
 #include <functional>
+#include <optional>
 
 namespace muffin {
 
@@ -65,7 +67,10 @@ signals:
   void tableCommandRejected(QString reason);
 
 private:
-  bool editCurrentCell(QString label, EditTransaction::Kind kind, const std::function<bool(MarkdownNode&, qsizetype&)>& mutate);
+  bool editCurrentCellSource(
+      QString label,
+      EditTransaction::Kind kind,
+      const std::function<std::optional<TableCellSourceEdit>(const MarkdownNode&, const QString&, qsizetype)>& buildEdit);
   bool mutateCurrentTable(QString label, EditTransaction::Kind kind, const std::function<bool(MarkdownNode&, TableLocation&)>& mutate);
   MarkdownNode* tableForLocation(TableLocation location) const;
   MarkdownNode* cellForLocation(TableLocation location) const;

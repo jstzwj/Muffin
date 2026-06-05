@@ -411,6 +411,29 @@ void testInputEditsComplexInlineSourcePositions() {
   require(session.markdownText() == QStringLiteral("before `cde` after"), "code inline source delete mismatch");
 }
 
+void testSecondInlineMathHitMapsToItsSourceOffset() {
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::text(QStringLiteral("行内公式使用单美元符号：")));
+  inlines.push_back(InlineNode::inlineMath(QStringLiteral("E = mc^2")));
+  inlines.push_back(InlineNode::text(QStringLiteral("  和 ")));
+  inlines.push_back(InlineNode::inlineMath(QStringLiteral("a_1 + b_1 = c_1")));
+  inlines.push_back(InlineNode::text(QStringLiteral("。")));
+
+  const QString source = QStringLiteral("行内公式使用单美元符号：$E = mc^2$  和 $a_1 + b_1 = c_1$。");
+  InlineLayout layout;
+  layout.build(inlines, source, RenderTheme::typoraLike(), 900.0, RenderTheme::typoraLike().paragraphFont(), InlineLayout::BuildOptions{});
+
+  const qsizetype secondMathSourceStart = source.indexOf(QStringLiteral("$a_1"));
+  const qsizetype afterBSourceOffset = source.indexOf(QStringLiteral("b_1")) + 1;
+  const QRectF secondStartCursor = layout.cursorRectForSourceOffset(secondMathSourceStart + 1);
+  const QRectF secondEndCursor = layout.cursorRectForSourceOffset(source.indexOf(QStringLiteral("$。")));
+  const qreal ratio = static_cast<qreal>(afterBSourceOffset - (secondMathSourceStart + 1)) / QStringLiteral("a_1 + b_1 = c_1").size();
+  const QPointF hitPoint(secondStartCursor.left() + (secondEndCursor.left() - secondStartCursor.left()) * ratio, secondStartCursor.center().y());
+
+  const qsizetype hitSourceOffset = layout.hitTestSourceOffset(hitPoint);
+  require(qAbs(hitSourceOffset - afterBSourceOffset) <= 1, QStringLiteral("second inline math hit source mismatch: %1 vs %2").arg(hitSourceOffset).arg(afterBSourceOffset));
+}
+
 void testCodeAndMathCursorAfterSourceInsert() {
   DocumentSession session;
   SelectionController selection;
@@ -450,6 +473,27 @@ void testInlineProjectionMarkerSourcePositions() {
   qsizetype sourceOffset = -1;
   require(projection.sourceOffsetForDisplayOffset(1, sourceOffset), "projection should map marker display to source");
   require(sourceOffset == 1, "projection marker source offset mismatch");
+}
+
+void testInlineProjectionForwardBiasAtInlineEnd() {
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::text(QStringLiteral("vendored ")));
+  inlines.push_back(InlineNode::code(QStringLiteral("cmark-gfm")));
+
+  const QString markdown = QStringLiteral("vendored `cmark-gfm`");
+  InlineProjectionState state;
+  state.cursorSourceOffset = markdown.size();
+  InlineProjection projection(inlines, markdown, state);
+
+  qsizetype displayOffset = -1;
+  require(projection.displayOffsetForSourceOffset(markdown.size(), InlineProjectionBias::Forward, displayOffset),
+          "projection forward display mapping should succeed at inline end");
+  require(displayOffset == projection.displayText().size(), "projection forward display offset should reach inline end");
+
+  qsizetype sourceOffset = -1;
+  require(projection.sourceOffsetForDisplayOffset(displayOffset, InlineProjectionBias::Forward, sourceOffset),
+          "projection forward source mapping should succeed at inline end");
+  require(sourceOffset == markdown.size(), "projection forward source offset should reach inline end");
 }
 
 struct ExpectedProjectionSpan {
@@ -997,9 +1041,9 @@ void testEditorViewVerticalDragSelectionHitsWrappedLine() {
   EditorView view;
   EditorController controller;
   controller.attach(&session, &view);
-  view.resize(260, 500);
+  view.resize(180, 500);
 
-  session.setMarkdownText(QStringLiteral("alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi"), false);
+  session.setMarkdownText(QStringLiteral("alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau"), false);
   view.setDocument(session.document());
   MarkdownNode* block = blockAt(session, 0);
   const QRectF blockRect = view.nodeRect(block->id());
@@ -1351,6 +1395,44 @@ void testEditorViewTableCellInlineLayout() {
   const HitTestResult hit = view.hitTest(point);
   require(hit.zone == HitTestResult::Zone::TableCell, QStringLiteral("table cell hit should use table cell zone"));
   require(hit.textNodeId == firstBodyCell->id(), QStringLiteral("table cell hit should return cell node id"));
+}
+
+void testEditorViewTableCellInlineCodeEndHit() {
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  controller.attach(&session, &view);
+
+  const QString cellContent = QStringLiteral("vendored `cmark-gfm`");
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| %1 |").arg(cellContent), false);
+  view.resize(900, 500);
+  view.setDocument(session.document());
+
+  MarkdownNode* table = blockAt(session, 0);
+  MarkdownNode* cellNode = childAt(childAt(table, 1), 0);
+  const BlockLayout* tableLayout = requireViewBlock(view, table->id(), QStringLiteral("table inline code end"));
+  const auto& cell = tableLayout->tableRows().at(1).cells.at(0);
+  const QMarginsF padding = RenderTheme::typoraLike().tableCellPadding();
+  const QPointF textOrigin = cell.rect.marginsRemoved(padding).topLeft();
+  const QRectF endCursor = cell.text.cursorRectForSourceOffset(cellContent.size());
+  const QPointF point = textOrigin + QPointF(endCursor.left() + 2.0, endCursor.center().y());
+
+  const HitTestResult hit = view.hitTest(point);
+  require(hit.zone == HitTestResult::Zone::TableCell, QStringLiteral("inline code table end hit should use table cell zone"));
+  require(hit.textNodeId == cellNode->id(), QStringLiteral("inline code table end hit should return cell node id"));
+  require(hit.sourceOffset == cellNode->sourceRange().byteStart + cellContent.size(),
+          QStringLiteral("inline code table end hit should map after closing marker"));
+
+  const qsizetype cellSourceStart = cellNode->sourceRange().byteStart;
+  controller.activateHit(hit);
+  require(controller.inputController().insertText(QStringLiteral("!")), "table inline code end insert should work");
+  require(session.markdownText().contains(QStringLiteral("| vendored `cmark-gfm`! |")),
+          "table inline code end insert should append after inline code");
+  require(controller.selection().cursorPosition().text.sourceOffset ==
+              cellSourceStart + cellContent.size() + 1,
+          "table inline code end insert source cursor mismatch");
+  require(controller.selection().cursorPosition().text.textOffset == QStringLiteral("vendored cmark-gfm!").size(),
+          "table inline code end insert text cursor mismatch");
 }
 
 void testMixedInlineParagraphHitEditingBeforeAutolink() {
@@ -3164,8 +3246,10 @@ int main(int argc, char** argv) {
   testInputEnterMovesCursorToNewParagraph();
   testInputEnterSplitsComplexInlineParagraphs();
   testInputEditsComplexInlineSourcePositions();
+  testSecondInlineMathHitMapsToItsSourceOffset();
   testCodeAndMathCursorAfterSourceInsert();
   testInlineProjectionMarkerSourcePositions();
+  testInlineProjectionForwardBiasAtInlineEnd();
   testInlineProjectionSpanContracts();
   testInlineProjectionMappingMatrix();
   testHorizontalNavigationEntersInlineMarkers();
@@ -3182,6 +3266,7 @@ int main(int argc, char** argv) {
   testEditorViewListInlineMathHitEditing();
   testEditorViewWrappedInlineLayout();
   testEditorViewTableCellInlineLayout();
+  testEditorViewTableCellInlineCodeEndHit();
   testMixedInlineParagraphHitEditingBeforeAutolink();
   testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph();
   testLocalReparsePreservesUntouchedNodeIds();

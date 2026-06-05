@@ -35,31 +35,6 @@ TableCellSourceRange sourceRangeForTableCellContent(const QString& markdown, con
   return {range.byteStart, range.byteEnd};
 }
 
-qsizetype sourceOffsetForTableCellVisibleOffset(const QString& escapedMarkdown, qsizetype visibleOffset) {
-  visibleOffset = qMax<qsizetype>(0, visibleOffset);
-  qsizetype visible = 0;
-  qsizetype source = 0;
-  while (source < escapedMarkdown.size()) {
-    if (visible >= visibleOffset) {
-      return source;
-    }
-    if (escapedMarkdown.at(source) == QLatin1Char('\\') && source + 1 < escapedMarkdown.size() &&
-        escapedMarkdown.at(source + 1) == QLatin1Char('|')) {
-      source += 2;
-      ++visible;
-      continue;
-    }
-    if (escapedMarkdown.mid(source, 4) == QStringLiteral("<br>")) {
-      source += 4;
-      ++visible;
-      continue;
-    }
-    ++source;
-    ++visible;
-  }
-  return escapedMarkdown.size();
-}
-
 TableLocation clampedTableLocation(TableLocation location, const MarkdownNode& table) {
   const int rows = TableModelOps::rowCount(table);
   const int columns = TableModelOps::columnCount(table);
@@ -162,44 +137,30 @@ bool TableController::insertText(QString text) {
     return false;
   }
 
-  return editCurrentCell(QStringLiteral("Edit Table Cell"), EditTransaction::Kind::InsertText, [text = std::move(text)](MarkdownNode& cell, qsizetype& offset) {
-    QString value = cell.inlines().isEmpty() ? QString() : cell.inlines().front().text();
-    offset = qBound<qsizetype>(0, offset, value.size());
-    value.insert(offset, text);
-    offset += text.size();
-    cell.inlines().clear();
-    cell.inlines().push_back(InlineNode::text(value));
-    return true;
-  });
+  return editCurrentCellSource(
+      QStringLiteral("Edit Table Cell"),
+      EditTransaction::Kind::InsertText,
+      [text = escapeTableCellInsertedText(std::move(text))](const MarkdownNode& cell, const QString& content, qsizetype sourceOffset) {
+        return buildTableCellInsertEdit(cell, content, sourceOffset, text);
+      });
 }
 
 bool TableController::deleteBackward() {
-  return editCurrentCell(QStringLiteral("Backspace Table Cell"), EditTransaction::Kind::DeleteText, [](MarkdownNode& cell, qsizetype& offset) {
-    QString value = cell.inlines().isEmpty() ? QString() : cell.inlines().front().text();
-    offset = qBound<qsizetype>(0, offset, value.size());
-    if (offset <= 0) {
-      return true;
-    }
-    value.remove(offset - 1, 1);
-    --offset;
-    cell.inlines().clear();
-    cell.inlines().push_back(InlineNode::text(value));
-    return true;
-  });
+  return editCurrentCellSource(
+      QStringLiteral("Backspace Table Cell"),
+      EditTransaction::Kind::DeleteText,
+      [](const MarkdownNode& cell, const QString& content, qsizetype sourceOffset) {
+        return buildTableCellDeleteBackwardEdit(cell, content, sourceOffset);
+      });
 }
 
 bool TableController::deleteForward() {
-  return editCurrentCell(QStringLiteral("Delete Table Cell Text"), EditTransaction::Kind::DeleteText, [](MarkdownNode& cell, qsizetype& offset) {
-    QString value = cell.inlines().isEmpty() ? QString() : cell.inlines().front().text();
-    offset = qBound<qsizetype>(0, offset, value.size());
-    if (offset >= value.size()) {
-      return true;
-    }
-    value.remove(offset, 1);
-    cell.inlines().clear();
-    cell.inlines().push_back(InlineNode::text(value));
-    return true;
-  });
+  return editCurrentCellSource(
+      QStringLiteral("Delete Table Cell Text"),
+      EditTransaction::Kind::DeleteText,
+      [](const MarkdownNode& cell, const QString& content, qsizetype sourceOffset) {
+        return buildTableCellDeleteForwardEdit(cell, content, sourceOffset);
+      });
 }
 
 bool TableController::deleteSelection() {
@@ -580,10 +541,10 @@ bool TableController::insertTable(int rows, int columns) {
   return true;
 }
 
-bool TableController::editCurrentCell(
+bool TableController::editCurrentCellSource(
     QString label,
     EditTransaction::Kind kind,
-    const std::function<bool(MarkdownNode&, qsizetype&)>& mutate) {
+    const std::function<std::optional<TableCellSourceEdit>(const MarkdownNode&, const QString&, qsizetype)>& buildEdit) {
   if (!session_ || !selection_) {
     return false;
   }
@@ -595,7 +556,6 @@ bool TableController::editCurrentCell(
 
   const CursorPosition beforeCursor = selection_->cursorPosition();
   const QString beforeText = session_->markdownText();
-
   MarkdownNode* table = tableForLocation(beforeLocation);
   if (!table) {
     return false;
@@ -604,51 +564,65 @@ bool TableController::editCurrentCell(
   if (!cell) {
     return false;
   }
+
   const NodeId tableId = table->id();
   const NodeId cellId = cell->id();
-
   const TableCellSourceRange contentRange = sourceRangeForTableCellContent(beforeText, *cell);
   if (!contentRange.isValid() || contentRange.end > beforeText.size()) {
     return false;
   }
-  const QString removedText = beforeText.mid(contentRange.start, contentRange.end - contentRange.start);
-  auto nextCell = cell->clone(CloneMode::PreserveIds);
-  qsizetype nextOffset = beforeCursor.text.textOffset;
-  if (!mutate(*nextCell, nextOffset)) {
+  const QString content = beforeText.mid(contentRange.start, contentRange.end - contentRange.start);
+  const qsizetype localSourceOffset = beforeCursor.text.sourceOffset >= contentRange.start && beforeCursor.text.sourceOffset <= contentRange.end
+                                       ? beforeCursor.text.sourceOffset - contentRange.start
+                                       : tableCellSourceOffsetForVisibleOffset(content, beforeCursor.text.textOffset);
+
+  std::optional<TableCellSourceEdit> edit = buildEdit(*cell, content, localSourceOffset);
+  if (!edit.has_value()) {
     return false;
   }
+  edit->replaceStart = qBound<qsizetype>(0, edit->replaceStart, content.size());
+  edit->replaceLength = qBound<qsizetype>(0, edit->replaceLength, content.size() - edit->replaceStart);
+  edit->nextSourceOffset =
+      qBound<qsizetype>(0, edit->nextSourceOffset, content.size() - edit->replaceLength + edit->replacement.size());
 
-  MarkdownSerializer serializer;
-  const QString insertedText = serializer.serializeTableCellContent(*nextCell);
-  if (removedText == insertedText) {
+  const QString removedText = content.mid(edit->replaceStart, edit->replaceLength);
+  if (removedText == edit->replacement) {
     CursorPosition unchangedCursor = cursorForLocation(beforeLocation);
-    unchangedCursor.text.textOffset = nextOffset;
-    unchangedCursor.text.sourceOffset =
-        contentRange.start + sourceOffsetForTableCellVisibleOffset(removedText, nextOffset);
+    unchangedCursor.text.sourceOffset = contentRange.start + edit->nextSourceOffset;
+    unchangedCursor.text.textOffset = tableCellVisibleOffsetForEditCursor(*cell, content, edit->nextSourceOffset);
     selection_->setCursorPosition(unchangedCursor);
     return true;
   }
 
+  const qsizetype absoluteReplaceStart = contentRange.start + edit->replaceStart;
   QVector<LocalEditNodeHint> nodeHints;
   nodeHints.push_back(LocalEditNodeHint{tableId, contentRange.start, BlockType::Table});
-  if (!session_->applyTextDelta(contentRange.start, contentRange.end - contentRange.start, insertedText, true, std::move(nodeHints))) {
+  if (!session_->applyTextDelta(absoluteReplaceStart, edit->replaceLength, edit->replacement, true, std::move(nodeHints))) {
     return false;
   }
+
   CursorPosition nextCursor = cursorForLocation(beforeLocation);
-  nextCursor.text.textOffset = nextOffset;
-  nextCursor.text.sourceOffset = contentRange.start + sourceOffsetForTableCellVisibleOffset(insertedText, nextOffset);
+  nextCursor.text.sourceOffset = contentRange.start + edit->nextSourceOffset;
+  if (MarkdownNode* nextTable = tableForLocation(beforeLocation)) {
+    if (MarkdownNode* nextCell = TableModelOps::cellAt(*nextTable, beforeLocation.row, beforeLocation.column)) {
+      const QString nextContent = content.left(edit->replaceStart) + edit->replacement +
+                                  content.mid(edit->replaceStart + edit->replaceLength);
+      nextCursor.text.nodeId = nextCell->id();
+      nextCursor.text.textOffset = tableCellVisibleOffsetForEditCursor(*nextCell, nextContent, edit->nextSourceOffset);
+    }
+  }
   selection_->setCursorPosition(nextCursor);
+
   if (undoStack_) {
     CursorPosition storedBeforeCursor = beforeCursor;
     storedBeforeCursor.blockId = tableId;
     storedBeforeCursor.text.nodeId = cellId;
-    storedBeforeCursor.text.sourceOffset =
-        contentRange.start + sourceOffsetForTableCellVisibleOffset(removedText, beforeCursor.text.textOffset);
+    storedBeforeCursor.text.sourceOffset = contentRange.start + localSourceOffset;
     undoStack_->push(EditTransaction(
         kind,
         std::move(label),
         TextDeltaCommand{
-            TextDelta{contentRange.start, removedText, insertedText},
+            TextDelta{absoluteReplaceStart, removedText, edit->replacement},
             storedBeforeCursor,
             nextCursor,
             QVector<NodeId>{tableId}}));

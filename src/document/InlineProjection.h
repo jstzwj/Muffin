@@ -76,7 +76,9 @@ public:
   bool sourceOffsetForVisibleOffset(qsizetype visibleOffset, qsizetype& sourceOffset) const;
   bool visibleOffsetForSourceOffset(qsizetype sourceOffset, qsizetype& visibleOffset) const;
   bool sourceOffsetForDisplayOffset(qsizetype displayOffset, qsizetype& sourceOffset) const;
+  bool sourceOffsetForDisplayOffset(qsizetype displayOffset, InlineProjectionBias bias, qsizetype& sourceOffset) const;
   bool displayOffsetForSourceOffset(qsizetype sourceOffset, qsizetype& displayOffset) const;
+  bool displayOffsetForSourceOffset(qsizetype sourceOffset, InlineProjectionBias bias, qsizetype& displayOffset) const;
 
   static QString plainTextForInlines(const QVector<InlineNode>& inlines);
   static QString markdownForInlines(const QVector<InlineNode>& inlines);

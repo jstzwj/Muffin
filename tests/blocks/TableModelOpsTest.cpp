@@ -1,5 +1,6 @@
 #include "blocks/table/TableModelOps.h"
 #include "blocks/table/TableController.h"
+#include "blocks/table/TableCellSourceEdit.h"
 #include "app/DocumentSession.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
@@ -39,6 +40,29 @@ MarkdownNode& parseTable(QString markdown, MarkdownDocument& document) {
 QString serialize(const MarkdownDocument& document) {
   MarkdownSerializer serializer;
   return serializer.serializeDocument(document);
+}
+
+MarkdownNode* setTableCellCursor(
+    DocumentSession& session,
+    SelectionController& selection,
+    int row,
+    int column,
+    qsizetype localSourceOffset,
+    qsizetype textOffset = 0) {
+  MarkdownNode& table = *session.document().root().children().front();
+  MarkdownNode* cell = TableModelOps::cellAt(table, row, column);
+  require(cell != nullptr, "table cell cursor target missing");
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::TableCell;
+  hit.blockId = table.id();
+  hit.textNodeId = cell->id();
+  hit.tableRow = row;
+  hit.tableColumn = column;
+  hit.textOffset = textOffset;
+  hit.sourceOffset = cell->sourceRange().byteStart + localSourceOffset;
+  selection.setHitResult(hit);
+  return cell;
 }
 
 void testNormalizeAndCellAccess() {
@@ -311,14 +335,230 @@ void testTableControllerCellTextEditing() {
   require(undoStack.canUndo(), "table cell insert should push undo");
   EditTransaction cellEditUndo = undoStack.takeUndo();
   require(cellEditUndo.isTextDeltaCommand(), "table cell edit should use TextDeltaCommand");
-  require(cellEditUndo.textDeltaCommand().delta.removedText == QStringLiteral("2"), "table cell removed text mismatch");
-  require(cellEditUndo.textDeltaCommand().delta.insertedText == QStringLiteral("2X"), "table cell inserted text mismatch");
+  require(cellEditUndo.textDeltaCommand().delta.removedText.isEmpty(), "table cell removed text mismatch");
+  require(cellEditUndo.textDeltaCommand().delta.insertedText == QStringLiteral("X"), "table cell inserted text mismatch");
 
   require(tableController.deleteBackward(), "table cell backspace should work");
   require(session.markdownText().contains(QStringLiteral("| 1 | 2 |")), "table cell backspace markdown mismatch");
 
   require(tableController.deleteBackward(), "table cell second backspace should work");
   require(session.markdownText().contains(QStringLiteral("| 1 |  |")), "table cell delete to empty mismatch");
+}
+
+void testTableControllerPreservesInlineCodeOnCellEdit() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  TableController tableController;
+  tableController.setDocumentSession(&session);
+  tableController.setSelectionController(&selection);
+  tableController.setUndoStack(&undoStack);
+  tableController.setBrushQueue(&brushQueue);
+
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| vendored `cmark-gfm` |"), false);
+  MarkdownNode& table = *session.document().root().children().front();
+  MarkdownNode* cell = TableModelOps::cellAt(table, 1, 0);
+  require(cell != nullptr, "inline code cell editing target missing");
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::TableCell;
+  hit.blockId = table.id();
+  hit.textNodeId = cell->id();
+  hit.tableRow = 1;
+  hit.tableColumn = 0;
+  hit.textOffset = QStringLiteral("vendored").size();
+  hit.sourceOffset = cell->sourceRange().byteStart + hit.textOffset;
+  selection.setHitResult(hit);
+
+  require(tableController.insertText(QStringLiteral("1")), "table cell rich inline insert should work");
+  require(session.markdownText().contains(QStringLiteral("vendored1 `cmark-gfm`")), "table cell inline code should be preserved after insert");
+  require(selection.cursorPosition().text.sourceOffset == hit.sourceOffset + 1, "table cell rich inline source cursor mismatch");
+  require(undoStack.canUndo(), "table cell rich inline insert should push undo");
+  EditTransaction cellEditUndo = undoStack.takeUndo();
+  require(cellEditUndo.isTextDeltaCommand(), "table cell rich inline edit should use TextDeltaCommand");
+  require(cellEditUndo.textDeltaCommand().delta.removedText.isEmpty(), "table cell rich inline removed text mismatch");
+  require(cellEditUndo.textDeltaCommand().delta.insertedText == QStringLiteral("1"), "table cell rich inline inserted text mismatch");
+}
+
+void testTableControllerDeletesOnlyEditableInlineContent() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  TableController tableController;
+  tableController.setDocumentSession(&session);
+  tableController.setSelectionController(&selection);
+  tableController.setUndoStack(&undoStack);
+  tableController.setBrushQueue(&brushQueue);
+
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| `code` |"), false);
+  setTableCellCursor(session, selection, 1, 0, 2, 1);
+  require(tableController.deleteBackward(), "inline code backspace inside content should work");
+  require(session.markdownText().contains(QStringLiteral("| `ode` |")), "inline code backspace should preserve markers");
+
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| `code` |"), false);
+  setTableCellCursor(session, selection, 1, 0, 1, 0);
+  require(tableController.deleteBackward(), "inline code start backspace should be handled");
+  require(session.markdownText().contains(QStringLiteral("| `code` |")), "inline code start backspace should not remove opening marker");
+
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| `code` |"), false);
+  setTableCellCursor(session, selection, 1, 0, 5, 4);
+  require(tableController.deleteForward(), "inline code end delete should be handled");
+  require(session.markdownText().contains(QStringLiteral("| `code` |")), "inline code end delete should not remove closing marker");
+
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| `code` |"), false);
+  setTableCellCursor(session, selection, 1, 0, 3, 2);
+  require(tableController.deleteForward(), "inline code delete inside content should work");
+  require(session.markdownText().contains(QStringLiteral("| `coe` |")), "inline code delete should preserve markers");
+}
+
+void testTableControllerPreservesTableEscapesOnCellDelete() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  TableController tableController;
+  tableController.setDocumentSession(&session);
+  tableController.setSelectionController(&selection);
+  tableController.setUndoStack(&undoStack);
+  tableController.setBrushQueue(&brushQueue);
+
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| a \\| b |"), false);
+  setTableCellCursor(session, selection, 1, 0, QStringLiteral("a \\|").size(), 3);
+  require(tableController.deleteBackward(), "escaped pipe backspace should work");
+  require(session.markdownText().contains(QStringLiteral("| a  b |")), "escaped pipe backspace should delete the whole escape");
+  require(TableModelOps::columnCount(*session.document().root().children().front()) == 1, "escaped pipe delete should not split table");
+
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| a \\| b |"), false);
+  setTableCellCursor(session, selection, 1, 0, QStringLiteral("a ").size(), 2);
+  require(tableController.deleteForward(), "escaped pipe delete should work");
+  require(session.markdownText().contains(QStringLiteral("| a  b |")), "escaped pipe delete should delete the whole escape");
+  require(TableModelOps::columnCount(*session.document().root().children().front()) == 1, "escaped pipe forward delete should not split table");
+}
+
+void testTableControllerPreservesInlineContainersOnCellEdit() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  TableController tableController;
+  tableController.setDocumentSession(&session);
+  tableController.setSelectionController(&selection);
+  tableController.setUndoStack(&undoStack);
+  tableController.setBrushQueue(&brushQueue);
+
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| **bold** |"), false);
+  setTableCellCursor(session, selection, 1, 0, QStringLiteral("**bo").size(), 2);
+  require(tableController.insertText(QStringLiteral("X")), "bold insert should work");
+  require(session.markdownText().contains(QStringLiteral("| **boXld** |")), "bold insert should preserve markers");
+
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| [label](url) |"), false);
+  setTableCellCursor(session, selection, 1, 0, QStringLiteral("[la").size(), 2);
+  require(tableController.deleteForward(), "link label delete should work");
+  require(session.markdownText().contains(QStringLiteral("| [lael](url) |")), "link label delete should preserve destination");
+
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| [label](url) |"), false);
+  setTableCellCursor(session, selection, 1, 0, QStringLiteral("[label]").size(), 5);
+  require(tableController.deleteForward(), "link label end delete should be handled");
+  require(session.markdownText().contains(QStringLiteral("| [label](url) |")), "link label end delete should not remove destination syntax");
+}
+
+void testTableControllerDeletesTableBreakAsUnit() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  TableController tableController;
+  tableController.setDocumentSession(&session);
+  tableController.setSelectionController(&selection);
+  tableController.setUndoStack(&undoStack);
+  tableController.setBrushQueue(&brushQueue);
+
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| a<br>b |"), false);
+  setTableCellCursor(session, selection, 1, 0, QStringLiteral("a<br>").size(), 2);
+  require(tableController.deleteBackward(), "table break backspace should work");
+  require(session.markdownText().contains(QStringLiteral("| ab |")), "table break backspace should remove whole break token");
+
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| a<br>b |"), false);
+  setTableCellCursor(session, selection, 1, 0, 1, 1);
+  require(tableController.deleteForward(), "table break delete should work");
+  require(session.markdownText().contains(QStringLiteral("| ab |")), "table break delete should remove whole break token");
+}
+
+void testTableCellSourceEditMixedTableTokensAndInlineMarkers() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  TableController tableController;
+  tableController.setDocumentSession(&session);
+  tableController.setSelectionController(&selection);
+  tableController.setUndoStack(&undoStack);
+  tableController.setBrushQueue(&brushQueue);
+
+  const QString boldContent = QStringLiteral("a \\| b<br> **bold**");
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| %1 |").arg(boldContent), false);
+  MarkdownNode* boldCell = setTableCellCursor(
+      session,
+      selection,
+      1,
+      0,
+      boldContent.indexOf(QStringLiteral("**bold")) + 2,
+      QStringLiteral("a | b\n ").size());
+  require(boldCell != nullptr, "mixed bold cell missing");
+  require(tableCellVisibleOffsetForEditCursor(*boldCell, boldContent, boldContent.indexOf(QStringLiteral("**bold")) + 2) ==
+              QStringLiteral("a | b\n ").size(),
+          "mixed bold marker visible offset should account for table tokens");
+  const qsizetype boldCellSourceStart = boldCell->sourceRange().byteStart;
+  require(tableController.insertText(QStringLiteral("X")), "mixed bold marker insert should work");
+  require(session.markdownText().contains(QStringLiteral("| a \\| b<br> **Xbold** |")), "mixed bold insert markdown mismatch");
+  require(selection.cursorPosition().text.sourceOffset ==
+              boldCellSourceStart + boldContent.indexOf(QStringLiteral("**bold")) + 3,
+          "mixed bold insert source cursor mismatch");
+  require(selection.cursorPosition().text.textOffset == QStringLiteral("a | b\n X").size(), "mixed bold insert text cursor mismatch");
+
+  const QString codeContent = QStringLiteral("a \\| b<br> `code`");
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| %1 |").arg(codeContent), false);
+  MarkdownNode* codeCell = setTableCellCursor(
+      session,
+      selection,
+      1,
+      0,
+      codeContent.indexOf(QStringLiteral("`code")) + 1,
+      QStringLiteral("a | b\n ").size());
+  require(codeCell != nullptr, "mixed code cell missing");
+  require(tableCellVisibleOffsetForEditCursor(*codeCell, codeContent, codeContent.indexOf(QStringLiteral("`code")) + 1) ==
+              QStringLiteral("a | b\n ").size(),
+          "mixed code marker visible offset should account for table tokens");
+  const qsizetype codeCellSourceStart = codeCell->sourceRange().byteStart;
+  require(tableController.deleteBackward(), "mixed code marker backspace should be handled");
+  require(session.markdownText().contains(QStringLiteral("| a \\| b<br> `code` |")), "mixed code marker backspace should preserve markdown");
+  require(selection.cursorPosition().text.sourceOffset ==
+              codeCellSourceStart + codeContent.indexOf(QStringLiteral("`code")) + 1,
+          "mixed code marker backspace source cursor mismatch");
+  require(selection.cursorPosition().text.textOffset == QStringLiteral("a | b\n ").size(), "mixed code marker backspace text cursor mismatch");
+
+  const QString linkContent = QStringLiteral("a \\| b<br> [label](url)");
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| %1 |").arg(linkContent), false);
+  MarkdownNode* linkCell = setTableCellCursor(
+      session,
+      selection,
+      1,
+      0,
+      linkContent.indexOf(QStringLiteral("](url)")),
+      QStringLiteral("a | b\n label").size());
+  require(linkCell != nullptr, "mixed link cell missing");
+  require(tableCellVisibleOffsetForEditCursor(*linkCell, linkContent, linkContent.indexOf(QStringLiteral("](url)"))) ==
+              QStringLiteral("a | b\n label").size(),
+          "mixed link hidden syntax visible offset should account for table tokens");
+  const qsizetype linkCellSourceStart = linkCell->sourceRange().byteStart;
+  require(tableController.deleteForward(), "mixed link hidden syntax delete should be handled");
+  require(session.markdownText().contains(QStringLiteral("| a \\| b<br> [label](url) |")), "mixed link hidden syntax delete should preserve markdown");
+  require(selection.cursorPosition().text.sourceOffset ==
+              linkCellSourceStart + linkContent.indexOf(QStringLiteral("](url)")),
+          "mixed link delete source cursor mismatch");
+  require(selection.cursorPosition().text.textOffset == QStringLiteral("a | b\n label").size(), "mixed link delete text cursor mismatch");
 }
 
 void testTableControllerInsertTable() {
@@ -356,6 +596,12 @@ int main() {
   testTableControllerResize();
   testTableControllerDeleteTable();
   testTableControllerCellTextEditing();
+  testTableControllerPreservesInlineCodeOnCellEdit();
+  testTableControllerDeletesOnlyEditableInlineContent();
+  testTableControllerPreservesTableEscapesOnCellDelete();
+  testTableControllerPreservesInlineContainersOnCellEdit();
+  testTableControllerDeletesTableBreakAsUnit();
+  testTableCellSourceEditMixedTableTokensAndInlineMarkers();
   testTableControllerInsertTable();
   return 0;
 }
