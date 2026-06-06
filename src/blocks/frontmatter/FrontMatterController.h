@@ -1,6 +1,7 @@
 #pragma once
 
 #include "blocks/literal/LiteralBlockController.h"
+#include "document/MarkdownTypes.h"
 #include "document/NodeId.h"
 #include "edit/EditTransaction.h"
 
@@ -16,18 +17,18 @@ class MarkdownNode;
 class SelectionController;
 class UndoStack;
 
-class MathBlockController final : public QObject {
+class FrontMatterController final : public QObject {
   Q_OBJECT
 
 public:
-  explicit MathBlockController(QObject* parent = nullptr);
+  explicit FrontMatterController(QObject* parent = nullptr);
 
   void setDocumentSession(DocumentSession* session);
   void setSelectionController(SelectionController* selection);
   void setUndoStack(UndoStack* undoStack);
   void setBrushQueue(BrushQueue* brushQueue);
 
-  NodeId currentMathBlockId() const;
+  NodeId currentFrontMatterId() const;
   bool isEditing() const;
   bool enterEditMode();
   bool exitEditMode();
@@ -36,14 +37,19 @@ public:
   bool deleteBackward();
   bool deleteForward();
   bool deleteSelection();
-  bool setTex(QString tex);
+  bool setContent(QString content);
+  bool insertFrontMatter(FrontMatterFormat format);
   QString tabText() const;
 
 signals:
-  void mathCommandRejected(QString reason);
+  void frontMatterCommandRejected(QString reason);
 
 private:
   LiteralBlockController literal_;
+  DocumentSession* session_ = nullptr;
+  SelectionController* selection_ = nullptr;
+  UndoStack* undoStack_ = nullptr;
+  BrushQueue* brushQueue_ = nullptr;
 };
 
 }  // namespace muffin

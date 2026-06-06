@@ -2,6 +2,7 @@
 
 #include "app/DocumentSession.h"
 #include "blocks/code/CodeFenceController.h"
+#include "blocks/frontmatter/FrontMatterController.h"
 #include "blocks/html/HtmlBlockController.h"
 #include "blocks/math/MathBlockController.h"
 #include "blocks/table/TableController.h"
@@ -33,6 +34,7 @@ public:
   const UndoStack& undoStack() const;
   InputController& inputController();
   StylizeController& stylizeController();
+  FrontMatterController& frontMatterController();
   CodeFenceController& codeFenceController();
   HtmlBlockController& htmlBlockController();
   MathBlockController& mathBlockController();
@@ -62,6 +64,9 @@ public:
   bool resizeTable(int rows, int columns);
   bool deleteTable();
   bool insertTable();
+  bool insertFrontMatter(FrontMatterFormat format);
+  bool enterFrontMatterEditMode();
+  bool exitFrontMatterEditMode();
   bool enterCodeFenceEditMode();
   bool exitCodeFenceEditMode();
   bool setCodeFenceLanguage(QString language);
@@ -84,6 +89,8 @@ signals:
   void stateChanged();
 
 private:
+  void exitAllLiteralEditModes();
+  bool enterLiteralEditMode(HitTestResult::Zone zone);
   void applySnapshot(const DocumentSnapshot& snapshot);
   void applyTransaction(const EditTransaction& transaction, bool undo);
   CursorPosition remapSnapshotCursor(const CursorPosition& snapshotCursor) const;
@@ -95,6 +102,7 @@ private:
   BrushQueue brushQueue_;
   InputController inputController_;
   StylizeController stylizeController_;
+  FrontMatterController frontMatterController_;
   CodeFenceController codeFenceController_;
   HtmlBlockController htmlBlockController_;
   MathBlockController mathBlockController_;

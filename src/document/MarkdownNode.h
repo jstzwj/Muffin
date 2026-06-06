@@ -59,6 +59,9 @@ public:
   QString codeLanguage() const;
   void setCodeLanguage(QString language);
 
+  FrontMatterFormat frontMatterFormat() const;
+  void setFrontMatterFormat(FrontMatterFormat format);
+
   QVector<TableAlignment> tableAlignments() const;
   void setTableAlignments(QVector<TableAlignment> alignments);
   bool tableRowIsHeader() const;
@@ -84,6 +87,7 @@ private:
   bool listTight_ = false;
   bool taskChecked_ = false;
   QString codeLanguage_;
+  FrontMatterFormat frontMatterFormat_ = FrontMatterFormat::None;
   QVector<TableAlignment> tableAlignments_;
   bool tableRowIsHeader_ = false;
   SourceRange sourceRange_;

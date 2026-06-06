@@ -2988,6 +2988,75 @@ void testKeyboardNavigationBasics() {
   require(!selection.selection().isCollapsed(), "shift-right should create selection");
 }
 
+void testFrontMatterEnterEditsContentAndBlockAfterCreatesParagraph() {
+  {
+    DocumentSession session;
+    EditorController controller;
+    controller.attach(&session, nullptr);
+
+    session.setMarkdownText(QStringLiteral("---\ntitle: 123213\n---\nBody"), false);
+  MarkdownNode* frontMatter = firstBlockOfType(session, BlockType::FrontMatter);
+
+  HitTestResult frontMatterHit;
+  frontMatterHit.zone = HitTestResult::Zone::FrontMatter;
+  frontMatterHit.blockId = frontMatter->id();
+  frontMatterHit.textNodeId = frontMatter->id();
+  frontMatterHit.textOffset = QStringLiteral("title: 123").size();
+  controller.activateHit(frontMatterHit);
+  require(controller.frontMatterController().isEditing(), "front matter click should enter edit mode");
+  require(controller.inputController().insertParagraphBreak(), "enter inside front matter should edit literal content");
+  require(session.markdownText().startsWith(QStringLiteral("---\ntitle: 123\n213\n---")),
+          "first front matter enter should split the current literal line immediately");
+  frontMatter = firstBlockOfType(session, BlockType::FrontMatter);
+  require(frontMatter->literal() == QStringLiteral("title: 123\n213"), "front matter literal should preserve first inserted newline");
+
+  frontMatterHit.blockId = frontMatter->id();
+  frontMatterHit.textNodeId = frontMatter->id();
+  frontMatterHit.textOffset = frontMatter->literal().size();
+  controller.activateHit(frontMatterHit);
+  require(controller.inputController().insertParagraphBreak(), "enter at front matter end should edit literal content");
+  require(session.markdownText().startsWith(QStringLiteral("---\ntitle: 123\n213\n\n---")),
+          "front matter enter at end should preserve a new literal blank line");
+
+  frontMatter = firstBlockOfType(session, BlockType::FrontMatter);
+  HitTestResult blockAfterHit;
+  blockAfterHit.zone = HitTestResult::Zone::BlockAfter;
+  blockAfterHit.blockId = frontMatter->id();
+  blockAfterHit.textNodeId = frontMatter->id();
+  controller.activateHit(blockAfterHit);
+  require(!controller.frontMatterController().isEditing(), "block-after click should leave front matter edit mode");
+  require(controller.selection().currentHit().zone == HitTestResult::Zone::BlockAfter, "block-after click should become current hit");
+  MarkdownNode* blockAfterNode = session.document().node(controller.selection().cursorPosition().blockId);
+  require(blockAfterNode != nullptr, "block-after cursor should reference an existing node");
+  const SourceRange blockAfterRange = blockAfterNode->sourceRange();
+  require(blockAfterRange.byteEnd >= blockAfterRange.byteStart, "block-after cursor node should have a valid source range");
+  require(blockAfterRange.byteEnd <= session.markdownText().size(), "block-after cursor node source range should fit markdown text");
+  require(controller.inputController().insertParagraphBreak(), "enter after front matter block should create a paragraph boundary");
+    require(session.markdownText().startsWith(QStringLiteral("---\ntitle: 123\n213\n\n---\n\n\nBody")),
+            "block-after enter should create an empty paragraph after front matter");
+  }
+
+  {
+    DocumentSession session;
+    EditorController controller;
+    controller.attach(&session, nullptr);
+
+    session.setMarkdownText(QStringLiteral("---\ntitle: 123213\n---"), false);
+    MarkdownNode* frontMatter = firstBlockOfType(session, BlockType::FrontMatter);
+    HitTestResult blockAfterHit;
+    blockAfterHit.zone = HitTestResult::Zone::BlockAfter;
+    blockAfterHit.blockId = frontMatter->id();
+    blockAfterHit.textNodeId = frontMatter->id();
+    controller.activateHit(blockAfterHit);
+
+    require(!controller.frontMatterController().isEditing(), "block-after text click should not enter front matter edit mode");
+    require(controller.inputController().insertText(QStringLiteral("OK")), "typing after front matter should create a paragraph");
+    require(session.markdownText() == QStringLiteral("---\ntitle: 123213\n---\nOK"),
+            "typing after front matter should insert normal paragraph text after the block");
+    require(firstBlockOfType(session, BlockType::Paragraph) != nullptr, "typed block-after text should parse as a paragraph");
+  }
+}
+
 void testComplexBlockActivationRoutesInput() {
   DocumentSession session;
   EditorController controller;
@@ -3454,6 +3523,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testCodeFenceSelectionCopyUsesLiteralOffsets);
   RUN_TEST(testCodeFenceSelectionCutDeletesLiteralOffsets);
   RUN_TEST(testKeyboardNavigationBasics);
+  RUN_TEST(testFrontMatterEnterEditsContentAndBlockAfterCreatesParagraph);
   RUN_TEST(testComplexBlockActivationRoutesInput);
   RUN_TEST(testTableStructureUndoUsesTableCommand);
   RUN_TEST(testTableCellTextUndoUsesTextDeltaCommand);

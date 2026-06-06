@@ -20,6 +20,7 @@ struct ParseOptions {
   bool enableAutolink = true;
   bool enableTaskList = true;
   bool enableMath = true;
+  bool enableFrontMatter = true;
   bool preserveSourceRange = true;
 };
 

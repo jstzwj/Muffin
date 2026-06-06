@@ -38,6 +38,8 @@ QString MarkdownSerializer::serializeBlock(const MarkdownNode& node) const {
       return serializeChildren(node, QStringLiteral("\n"));
     case BlockType::ThematicBreak:
       return QStringLiteral("---");
+    case BlockType::FrontMatter:
+      return serializeFrontMatter(node);
     case BlockType::CodeFence:
       return serializeCodeFence(node);
     case BlockType::HtmlBlock:
@@ -179,6 +181,21 @@ QString MarkdownSerializer::serializeCodeFence(const MarkdownNode& node) const {
   const QString literal = node.literal();
   const QString closingSeparator = literal.endsWith(QLatin1Char('\n')) ? QString() : QStringLiteral("\n");
   return QStringLiteral("```%1\n%2%3```").arg(node.codeLanguage(), literal, closingSeparator);
+}
+
+QString MarkdownSerializer::serializeFrontMatter(const MarkdownNode& node) const {
+  const QString literal = node.literal();
+  switch (node.frontMatterFormat()) {
+    case FrontMatterFormat::Yaml:
+      return QStringLiteral("---\n%1\n---").arg(literal);
+    case FrontMatterFormat::Toml:
+      return QStringLiteral("+++\n%1\n+++").arg(literal);
+    case FrontMatterFormat::Json:
+      return literal;
+    case FrontMatterFormat::None:
+    default:
+      return literal;
+  }
 }
 
 QString MarkdownSerializer::escapeTableCell(QString text) const {

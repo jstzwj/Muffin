@@ -320,7 +320,7 @@ QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, cons
 
 bool isSelectableZone(HitTestResult::Zone zone) {
   return zone == HitTestResult::Zone::Text || zone == HitTestResult::Zone::Code || zone == HitTestResult::Zone::Math ||
-         zone == HitTestResult::Zone::Html || zone == HitTestResult::Zone::TableCell;
+         zone == HitTestResult::Zone::Html || zone == HitTestResult::Zone::FrontMatter || zone == HitTestResult::Zone::TableCell;
 }
 
 QPointF tableCellTextOrigin(const BlockLayout::TableCellLayout& cell, const RenderTheme& theme) {
@@ -342,6 +342,7 @@ qsizetype selectableLength(const BlockLayout* block) {
     return inlineLayout->plainText().size();
   }
   switch (block->type()) {
+    case BlockType::FrontMatter:
     case BlockType::CodeFence:
     case BlockType::MathBlock:
     case BlockType::HtmlBlock:
@@ -1294,8 +1295,9 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
                              : inlineLayout->cursorRect(position.text.textOffset).translated(QPointF(textLeft, block->rect().top()));
       }
       break;
+    case BlockType::FrontMatter:
     case BlockType::CodeFence:
-      hit.zone = HitTestResult::Zone::Code;
+      hit.zone = block->type() == BlockType::FrontMatter ? HitTestResult::Zone::FrontMatter : HitTestResult::Zone::Code;
       {
         const QRectF contentRect = block->literalContentRect(theme_);
         hit.cursorRect =
@@ -1450,7 +1452,8 @@ void EditorView::updateMouseCursor(QPointF viewportPos) {
   const HitTestResult hit = hitTest(viewportPos);
   if (hit.isValid() &&
       (hit.zone == HitTestResult::Zone::Text || hit.zone == HitTestResult::Zone::Code || hit.zone == HitTestResult::Zone::Math ||
-       hit.zone == HitTestResult::Zone::Html || hit.zone == HitTestResult::Zone::TableCell)) {
+       hit.zone == HitTestResult::Zone::Html || hit.zone == HitTestResult::Zone::FrontMatter || hit.zone == HitTestResult::Zone::TableCell ||
+       hit.zone == HitTestResult::Zone::BlockAfter)) {
     viewport()->setCursor(Qt::IBeamCursor);
   } else {
     viewport()->unsetCursor();

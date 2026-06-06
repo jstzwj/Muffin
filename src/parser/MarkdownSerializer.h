@@ -19,6 +19,7 @@ private:
   QString serializeListItem(const MarkdownNode& node, int index, ListKind kind) const;
   QString serializeTable(const MarkdownNode& node) const;
   QString serializeCodeFence(const MarkdownNode& node) const;
+  QString serializeFrontMatter(const MarkdownNode& node) const;
   QString escapeTableCell(QString text) const;
   QString tableDelimiter(TableAlignment alignment) const;
 };

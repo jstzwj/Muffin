@@ -10,6 +10,7 @@
 #include "editor/TextBlockCommandBuilder.h"
 #include "edit/UndoStack.h"
 #include "blocks/code/CodeFenceController.h"
+#include "blocks/frontmatter/FrontMatterController.h"
 #include "blocks/html/HtmlBlockController.h"
 #include "blocks/math/MathBlockController.h"
 #include "blocks/table/TableController.h"
@@ -135,6 +136,10 @@ void InputController::setTableController(TableController* tableController) {
   tableController_ = tableController;
 }
 
+void InputController::setFrontMatterController(FrontMatterController* frontMatterController) {
+  frontMatterController_ = frontMatterController;
+}
+
 void InputController::setCodeFenceController(CodeFenceController* codeFenceController) {
   codeFenceController_ = codeFenceController;
 }
@@ -187,14 +192,8 @@ bool InputController::insertText(QString text) {
   if (session_ && session_->markdownText().isEmpty()) {
     return insertIntoEmptyDocument(std::move(text));
   }
-  if (codeFenceController_ && codeFenceController_->isEditing()) {
-    return codeFenceController_->insertText(std::move(text));
-  }
-  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
-    return htmlBlockController_->insertText(std::move(text));
-  }
-  if (mathBlockController_ && mathBlockController_->isEditing()) {
-    return mathBlockController_->insertText(std::move(text));
+  if (hasActiveLiteralEditor()) {
+    return insertTextIntoActiveLiteral(std::move(text));
   }
   if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
     return replaceSelection(std::move(text), EditTransaction::Kind::InsertText, QStringLiteral("Replace Selection"));
@@ -202,22 +201,62 @@ bool InputController::insertText(QString text) {
   if (tableController_ && tableController_->currentCell().isValid()) {
     return tableController_->insertText(std::move(text));
   }
-      return text.isEmpty() ? false : editParagraph(TextBlockCommandBuilder::Operation::InsertText, std::move(text));
+  if (selection_ && selection_->currentHit().zone == HitTestResult::Zone::BlockAfter) {
+    return insertBlockAfterCurrentBlock(std::move(text));
+  }
+  return text.isEmpty() ? false : editParagraph(TextBlockCommandBuilder::Operation::InsertText, std::move(text));
 }
 
 bool InputController::insertParagraphBreak() {
+  if (hasActiveLiteralEditor()) {
+    return insertTextIntoActiveLiteral(QStringLiteral("\n"));
+  }
+  if (selection_ && selection_->currentHit().zone == HitTestResult::Zone::BlockAfter) {
+    return insertBlockAfterCurrentBlock();
+  }
   return editParagraph(TextBlockCommandBuilder::Operation::Enter);
 }
 
+bool InputController::insertBlockAfterCurrentBlock(QString text) {
+  if (!session_ || !selection_ || !selection_->hasCursor()) {
+    return false;
+  }
+  MarkdownNode* node = session_->document().node(selection_->cursorPosition().blockId);
+  if (!node) {
+    return false;
+  }
+  const SourceRange range = node->sourceRange();
+  if (range.byteEnd < range.byteStart || range.byteEnd > session_->markdownText().size()) {
+    return false;
+  }
+
+  qsizetype insertOffset = range.byteEnd;
+  const QString& markdown = session_->markdownText();
+  if (insertOffset < markdown.size() && markdown.at(insertOffset) == QLatin1Char('\r')) {
+    ++insertOffset;
+  }
+  if (insertOffset < markdown.size() && markdown.at(insertOffset) == QLatin1Char('\n')) {
+    ++insertOffset;
+  }
+
+  const QString insertedText = text.isEmpty() ? QStringLiteral("\n\n") : QStringLiteral("\n%1").arg(text);
+  applyLocalEdit(
+      EditTransaction::Kind::SplitParagraph,
+      text.isEmpty() ? QStringLiteral("Insert Paragraph After") : QStringLiteral("Insert Text After Block"),
+      insertOffset,
+      0,
+      insertedText,
+      CursorPosition(),
+      insertOffset + insertedText.size(),
+      QVector<LocalEditNodeHint>{LocalEditNodeHint{node->id(), range.byteStart, node->type()}},
+      true,
+      true);
+  return true;
+}
+
 bool InputController::deleteBackward() {
-  if (codeFenceController_ && codeFenceController_->isEditing()) {
-    return codeFenceController_->deleteBackward();
-  }
-  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
-    return htmlBlockController_->deleteBackward();
-  }
-  if (mathBlockController_ && mathBlockController_->isEditing()) {
-    return mathBlockController_->deleteBackward();
+  if (hasActiveLiteralEditor()) {
+    return deleteBackwardInActiveLiteral();
   }
   if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
     return deleteSelection();
@@ -229,14 +268,8 @@ bool InputController::deleteBackward() {
 }
 
 bool InputController::deleteForward() {
-  if (codeFenceController_ && codeFenceController_->isEditing()) {
-    return codeFenceController_->deleteForward();
-  }
-  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
-    return htmlBlockController_->deleteForward();
-  }
-  if (mathBlockController_ && mathBlockController_->isEditing()) {
-    return mathBlockController_->deleteForward();
+  if (hasActiveLiteralEditor()) {
+    return deleteForwardInActiveLiteral();
   }
   if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
     return deleteSelection();
@@ -269,14 +302,8 @@ bool InputController::outdentListItem() {
 }
 
 bool InputController::deleteSelection() {
-  if (codeFenceController_ && codeFenceController_->isEditing()) {
-    return codeFenceController_->deleteSelection();
-  }
-  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
-    return htmlBlockController_->deleteSelection();
-  }
-  if (mathBlockController_ && mathBlockController_->isEditing()) {
-    return mathBlockController_->deleteSelection();
+  if (hasActiveLiteralEditor()) {
+    return deleteSelectionInActiveLiteral();
   }
   return replaceSelection(QString(), EditTransaction::Kind::DeleteText, QStringLiteral("Delete Selection"));
 }
@@ -456,6 +483,89 @@ bool InputController::handleInputMethod(QInputMethodEvent* event) {
   return insertText(event->commitString());
 }
 
+bool InputController::hasActiveLiteralEditor() const {
+  return (frontMatterController_ && frontMatterController_->isEditing()) || (codeFenceController_ && codeFenceController_->isEditing()) ||
+         (htmlBlockController_ && htmlBlockController_->isEditing()) || (mathBlockController_ && mathBlockController_->isEditing());
+}
+
+bool InputController::insertTextIntoActiveLiteral(QString text) {
+  if (frontMatterController_ && frontMatterController_->isEditing()) {
+    return frontMatterController_->insertText(std::move(text));
+  }
+  if (codeFenceController_ && codeFenceController_->isEditing()) {
+    return codeFenceController_->insertText(std::move(text));
+  }
+  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
+    return htmlBlockController_->insertText(std::move(text));
+  }
+  return mathBlockController_ && mathBlockController_->isEditing() ? mathBlockController_->insertText(std::move(text)) : false;
+}
+
+bool InputController::deleteBackwardInActiveLiteral() {
+  if (frontMatterController_ && frontMatterController_->isEditing()) {
+    return frontMatterController_->deleteBackward();
+  }
+  if (codeFenceController_ && codeFenceController_->isEditing()) {
+    return codeFenceController_->deleteBackward();
+  }
+  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
+    return htmlBlockController_->deleteBackward();
+  }
+  return mathBlockController_ && mathBlockController_->isEditing() ? mathBlockController_->deleteBackward() : false;
+}
+
+bool InputController::deleteForwardInActiveLiteral() {
+  if (frontMatterController_ && frontMatterController_->isEditing()) {
+    return frontMatterController_->deleteForward();
+  }
+  if (codeFenceController_ && codeFenceController_->isEditing()) {
+    return codeFenceController_->deleteForward();
+  }
+  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
+    return htmlBlockController_->deleteForward();
+  }
+  return mathBlockController_ && mathBlockController_->isEditing() ? mathBlockController_->deleteForward() : false;
+}
+
+bool InputController::deleteSelectionInActiveLiteral() {
+  if (frontMatterController_ && frontMatterController_->isEditing()) {
+    return frontMatterController_->deleteSelection();
+  }
+  if (codeFenceController_ && codeFenceController_->isEditing()) {
+    return codeFenceController_->deleteSelection();
+  }
+  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
+    return htmlBlockController_->deleteSelection();
+  }
+  return mathBlockController_ && mathBlockController_->isEditing() ? mathBlockController_->deleteSelection() : false;
+}
+
+bool InputController::exitActiveLiteralEditor() {
+  if (frontMatterController_ && frontMatterController_->isEditing()) {
+    return frontMatterController_->exitEditMode();
+  }
+  if (codeFenceController_ && codeFenceController_->isEditing()) {
+    return codeFenceController_->exitEditMode();
+  }
+  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
+    return htmlBlockController_->exitEditMode();
+  }
+  return mathBlockController_ && mathBlockController_->isEditing() ? mathBlockController_->exitEditMode() : false;
+}
+
+QString InputController::activeLiteralTabText() const {
+  if (frontMatterController_ && frontMatterController_->isEditing()) {
+    return frontMatterController_->tabText();
+  }
+  if (codeFenceController_ && codeFenceController_->isEditing()) {
+    return codeFenceController_->tabText();
+  }
+  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
+    return htmlBlockController_->tabText();
+  }
+  return mathBlockController_ && mathBlockController_->isEditing() ? mathBlockController_->tabText() : QString();
+}
+
 bool InputController::handleKeyPress(QKeyEvent* event) {
   PerfTimer perf("input.keypress");
   if (event && event->key() == Qt::Key_A && event->modifiers().testFlag(Qt::ControlModifier) &&
@@ -481,14 +591,8 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
 
   switch (event->key()) {
     case Qt::Key_Tab:
-      if (codeFenceController_ && codeFenceController_->isEditing()) {
-        return insertText(QStringLiteral("\t"));
-      }
-      if (htmlBlockController_ && htmlBlockController_->isEditing()) {
-        return insertText(QStringLiteral("  "));
-      }
-      if (mathBlockController_ && mathBlockController_->isEditing()) {
-        return insertText(QStringLiteral("  "));
+      if (hasActiveLiteralEditor()) {
+        return insertTextIntoActiveLiteral(activeLiteralTabText());
       }
       if (event->modifiers().testFlag(Qt::ShiftModifier)) {
         return outdentListItem();
@@ -498,14 +602,8 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
       }
       return insertText(QStringLiteral("\u200b"));
     case Qt::Key_Backtab:
-      if (codeFenceController_ && codeFenceController_->isEditing()) {
-        return insertText(QStringLiteral("\t"));
-      }
-      if (htmlBlockController_ && htmlBlockController_->isEditing()) {
-        return insertText(QStringLiteral("  "));
-      }
-      if (mathBlockController_ && mathBlockController_->isEditing()) {
-        return insertText(QStringLiteral("  "));
+      if (hasActiveLiteralEditor()) {
+        return insertTextIntoActiveLiteral(activeLiteralTabText());
       }
       return outdentListItem();
     case Qt::Key_Backspace:
@@ -521,27 +619,9 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
     case Qt::Key_Down:
       return moveCursorVertical(1, event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_Escape:
-      if (codeFenceController_ && codeFenceController_->isEditing()) {
-        return codeFenceController_->exitEditMode();
-      }
-      if (htmlBlockController_ && htmlBlockController_->isEditing()) {
-        return htmlBlockController_->exitEditMode();
-      }
-      if (mathBlockController_ && mathBlockController_->isEditing()) {
-        return mathBlockController_->exitEditMode();
-      }
-      return false;
+      return exitActiveLiteralEditor();
     case Qt::Key_Return:
     case Qt::Key_Enter:
-      if (codeFenceController_ && codeFenceController_->isEditing()) {
-        return insertText(QStringLiteral("\n"));
-      }
-      if (htmlBlockController_ && htmlBlockController_->isEditing()) {
-        return insertText(QStringLiteral("\n"));
-      }
-      if (mathBlockController_ && mathBlockController_->isEditing()) {
-        return insertText(QStringLiteral("\n"));
-      }
       return insertParagraphBreak();
     default: {
       const QString text = printableText(event);
@@ -778,6 +858,7 @@ qsizetype InputController::selectableTextLength(const MarkdownNode& node) const 
       return plainTextForInlines(node.inlines()).size();
     case BlockType::ListItem:
       return plainTextForNode(node).size();
+    case BlockType::FrontMatter:
     case BlockType::CodeFence:
     case BlockType::MathBlock:
     case BlockType::HtmlBlock:

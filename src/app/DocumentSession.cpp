@@ -46,6 +46,7 @@ bool isEditableTopLevelType(BlockType type) {
     case BlockType::Heading:
     case BlockType::List:
     case BlockType::BlockQuote:
+    case BlockType::FrontMatter:
     case BlockType::CodeFence:
     case BlockType::HtmlBlock:
     case BlockType::MathBlock:
@@ -574,7 +575,9 @@ bool DocumentSession::tryApplyTopLevelLocalEdit(
   QString sliceMarkdown = oldText.mid(slice.sourceStart, sourceStart - slice.sourceStart);
   sliceMarkdown += replacementText;
   sliceMarkdown += oldText.mid(sourceEnd, slice.sourceEnd - sourceEnd);
-  ParseResult parsedSlice = parser_.parseDocument(QStringView(sliceMarkdown), parseOptions_);
+  ParseOptions sliceOptions = parseOptions_;
+  sliceOptions.enableFrontMatter = slice.sourceStart == 0;
+  ParseResult parsedSlice = parser_.parseDocument(QStringView(sliceMarkdown), sliceOptions);
   if (!parsedSlice.root) {
     return false;
   }

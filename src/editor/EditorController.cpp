@@ -93,6 +93,7 @@ qsizetype selectableTextLength(const MarkdownNode& node) {
     case BlockType::Heading:
     case BlockType::TableCell:
       return plainTextForInlines(node.inlines()).size();
+    case BlockType::FrontMatter:
     case BlockType::CodeFence:
     case BlockType::MathBlock:
     case BlockType::HtmlBlock:
@@ -303,6 +304,23 @@ MarkdownNode* nodeBySourceOffset(MarkdownNode& node, BlockType nodeType, qsizety
 
 CursorPosition insertedNodeCursor(DocumentSession& session, const InsertNodeCommand& command, const CursorPosition& storedCursor) {
   CursorPosition cursor;
+  if (command.nodeType == BlockType::FrontMatter) {
+    MarkdownNode* node = session.document().node(command.nodeId);
+    if (!node || node->type() != BlockType::FrontMatter) {
+      node = nodeBySourceOffset(session.document().root(), BlockType::FrontMatter, command.nodeSourceStart);
+    }
+    if (!node) {
+      node = nodeByTopLevelIndex(session, command.nodeIndex, BlockType::FrontMatter);
+    }
+    if (!node) {
+      return cursor;
+    }
+    cursor = storedCursor;
+    cursor.blockId = node->id();
+    cursor.text.nodeId = node->id();
+    cursor.text.textOffset = qBound<qsizetype>(0, storedCursor.text.textOffset, node->literal().size());
+    return cursor;
+  }
   if (command.nodeType != BlockType::Table) {
     return cursor;
   }
@@ -478,6 +496,7 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
   inputController_.setUndoStack(&undoStack_);
   inputController_.setBrushQueue(&brushQueue_);
   inputController_.setTableController(&tableController_);
+  inputController_.setFrontMatterController(&frontMatterController_);
   inputController_.setCodeFenceController(&codeFenceController_);
   inputController_.setHtmlBlockController(&htmlBlockController_);
   inputController_.setMathBlockController(&mathBlockController_);
@@ -486,6 +505,10 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
   stylizeController_.setSelectionController(&selection_);
   stylizeController_.setUndoStack(&undoStack_);
   stylizeController_.setBrushQueue(&brushQueue_);
+  frontMatterController_.setDocumentSession(session_);
+  frontMatterController_.setSelectionController(&selection_);
+  frontMatterController_.setUndoStack(&undoStack_);
+  frontMatterController_.setBrushQueue(&brushQueue_);
   codeFenceController_.setDocumentSession(session_);
   codeFenceController_.setSelectionController(&selection_);
   codeFenceController_.setUndoStack(&undoStack_);
@@ -586,6 +609,10 @@ InputController& EditorController::inputController() {
 
 StylizeController& EditorController::stylizeController() {
   return stylizeController_;
+}
+
+FrontMatterController& EditorController::frontMatterController() {
+  return frontMatterController_;
 }
 
 CodeFenceController& EditorController::codeFenceController() {
@@ -706,6 +733,18 @@ bool EditorController::insertTable() {
   return tableController_.insertTable();
 }
 
+bool EditorController::insertFrontMatter(FrontMatterFormat format) {
+  return frontMatterController_.insertFrontMatter(format);
+}
+
+bool EditorController::enterFrontMatterEditMode() {
+  return frontMatterController_.enterEditMode();
+}
+
+bool EditorController::exitFrontMatterEditMode() {
+  return frontMatterController_.exitEditMode();
+}
+
 bool EditorController::enterCodeFenceEditMode() {
   return codeFenceController_.enterEditMode();
 }
@@ -779,8 +818,8 @@ bool EditorController::selectAll() {
     return true;
   }
 
-  if (blockNode && (blockNode->type() == BlockType::CodeFence || blockNode->type() == BlockType::MathBlock ||
-                    blockNode->type() == BlockType::HtmlBlock)) {
+  if (blockNode && (blockNode->type() == BlockType::FrontMatter || blockNode->type() == BlockType::CodeFence ||
+                    blockNode->type() == BlockType::MathBlock || blockNode->type() == BlockType::HtmlBlock)) {
     SelectionRange range;
     range.anchor = cursorForNodeText(*blockNode, 0);
     range.focus = cursorForNodeText(*blockNode, selectableTextLength(*blockNode));
@@ -804,57 +843,45 @@ bool EditorController::selectAll() {
 void EditorController::clearHistoryAndSelection() {
   undoStack_.clear();
   selection_.clear();
+  exitAllLiteralEditModes();
+}
+
+void EditorController::exitAllLiteralEditModes() {
+  frontMatterController_.exitEditMode();
   codeFenceController_.exitEditMode();
   htmlBlockController_.exitEditMode();
   mathBlockController_.exitEditMode();
 }
 
+bool EditorController::enterLiteralEditMode(HitTestResult::Zone zone) {
+  switch (zone) {
+    case HitTestResult::Zone::FrontMatter:
+      return frontMatterController_.enterEditMode();
+    case HitTestResult::Zone::Code:
+      return codeFenceController_.enterEditMode();
+    case HitTestResult::Zone::Html:
+      return htmlBlockController_.enterEditMode();
+    case HitTestResult::Zone::Math:
+      return mathBlockController_.enterEditMode();
+    default:
+      return false;
+  }
+}
+
 void EditorController::activateHit(HitTestResult hit) {
   if (!hit.isValid()) {
     selection_.clear();
-    codeFenceController_.exitEditMode();
-    htmlBlockController_.exitEditMode();
-    mathBlockController_.exitEditMode();
+    exitAllLiteralEditModes();
     return;
   }
   if (session_) {
     fillSourceOffsetForTextHit(*session_, hit);
   }
 
-  switch (hit.zone) {
-    case HitTestResult::Zone::Code:
-      codeFenceController_.exitEditMode();
-      htmlBlockController_.exitEditMode();
-      mathBlockController_.exitEditMode();
-      selection_.setHitResult(hit);
-      if (codeFenceController_.enterEditMode()) {
-        selection_.setHitResult(hit);
-      }
-      break;
-    case HitTestResult::Zone::Html:
-      codeFenceController_.exitEditMode();
-      htmlBlockController_.exitEditMode();
-      mathBlockController_.exitEditMode();
-      selection_.setHitResult(hit);
-      if (htmlBlockController_.enterEditMode()) {
-        selection_.setHitResult(hit);
-      }
-      break;
-    case HitTestResult::Zone::Math:
-      codeFenceController_.exitEditMode();
-      htmlBlockController_.exitEditMode();
-      mathBlockController_.exitEditMode();
-      selection_.setHitResult(hit);
-      if (mathBlockController_.enterEditMode()) {
-        selection_.setHitResult(hit);
-      }
-      break;
-    default:
-      codeFenceController_.exitEditMode();
-      htmlBlockController_.exitEditMode();
-      mathBlockController_.exitEditMode();
-      selection_.setHitResult(hit);
-      break;
+  exitAllLiteralEditModes();
+  selection_.setHitResult(hit);
+  if (enterLiteralEditMode(hit.zone)) {
+    selection_.setHitResult(hit);
   }
 }
 

@@ -58,6 +58,10 @@ QVector<LiteralVisualLine> layoutLiteralVisualLines(const QString& literal, cons
   return visualLines;
 }
 
+bool isLiteralBlockType(BlockType type) {
+  return type == BlockType::FrontMatter || type == BlockType::CodeFence || type == BlockType::HtmlBlock || type == BlockType::MathBlock;
+}
+
 qsizetype literalOffsetForPoint(const QString& literal, QPointF localPos, const QFont& font, qreal width, qreal lineHeight) {
   const QFontMetricsF metrics(font);
   const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal, font, width, lineHeight);
@@ -449,6 +453,13 @@ bool BlockLayout::intersects(const QRectF& documentViewport) const {
   return rect_.intersects(documentViewport);
 }
 
+bool BlockLayout::containsInteractiveContent(QPointF documentPos, const RenderTheme& theme) const {
+  if (isLiteralBlockType(type_)) {
+    return rect_.adjusted(-2, 0, 2, 0).contains(documentPos);
+  }
+  return rect_.adjusted(-2, -theme.blockSpacing() * 0.5, 2, theme.blockSpacing() * 0.5).contains(documentPos);
+}
+
 HitTestResult BlockLayout::hitTest(QPointF documentPos, const RenderTheme& theme) const {
   for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
     const BlockLayout& child = **it;
@@ -550,6 +561,7 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
       painter.restore();
       break;
     }
+    case BlockType::FrontMatter:
     case BlockType::CodeFence:
       paintCodeFence(painter, theme, viewRect);
       break;
@@ -642,6 +654,7 @@ QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection,
     case BlockType::Paragraph:
     case BlockType::ListItem:
       break;
+    case BlockType::FrontMatter:
     case BlockType::CodeFence:
     case BlockType::HtmlBlock:
       return literalSelectionRects(selection.startOffset(), selection.endOffset(), theme);
@@ -707,6 +720,7 @@ QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset,
     case BlockType::Paragraph:
     case BlockType::ListItem:
       break;
+    case BlockType::FrontMatter:
     case BlockType::CodeFence:
     case BlockType::HtmlBlock:
       return literalSelectionRects(startOffset, endOffset, theme);
@@ -871,8 +885,9 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
         result.cursorRect = inlineLayout_->hitTestCursorRect(localPos).translated(textRect.topLeft());
       }
       break;
+    case BlockType::FrontMatter:
     case BlockType::CodeFence:
-      result.zone = HitTestResult::Zone::Code;
+      result.zone = type_ == BlockType::FrontMatter ? HitTestResult::Zone::FrontMatter : HitTestResult::Zone::Code;
       {
         const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
         result.textOffset =

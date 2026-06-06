@@ -16,6 +16,7 @@ namespace muffin {
 class BrushQueue;
 class CodeFenceController;
 class EditorView;
+class FrontMatterController;
 class HtmlBlockController;
 class MathBlockController;
 class MarkdownNode;
@@ -34,6 +35,7 @@ public:
   void setUndoStack(UndoStack* undoStack);
   void setBrushQueue(BrushQueue* brushQueue);
   void setTableController(TableController* tableController);
+  void setFrontMatterController(FrontMatterController* frontMatterController);
   void setCodeFenceController(CodeFenceController* codeFenceController);
   void setHtmlBlockController(HtmlBlockController* htmlBlockController);
   void setMathBlockController(MathBlockController* mathBlockController);
@@ -41,6 +43,7 @@ public:
 
   bool insertText(QString text);
   bool insertParagraphBreak();
+  bool insertBlockAfterCurrentBlock(QString text = {});
   bool deleteBackward();
   bool deleteForward();
   bool indentListItem();
@@ -57,6 +60,13 @@ signals:
 
 private:
   bool handleKeyPress(QKeyEvent* event);
+  bool hasActiveLiteralEditor() const;
+  bool insertTextIntoActiveLiteral(QString text);
+  bool deleteBackwardInActiveLiteral();
+  bool deleteForwardInActiveLiteral();
+  bool deleteSelectionInActiveLiteral();
+  bool exitActiveLiteralEditor();
+  QString activeLiteralTabText() const;
   bool insertIntoEmptyDocument(QString text);
   bool shouldIndentListItemFromKeyboard() const;
   bool editParagraph(TextBlockCommandBuilder::Operation operation, QString text = {});
@@ -103,6 +113,7 @@ private:
   SelectionController* selection_ = nullptr;
   UndoStack* undoStack_ = nullptr;
   BrushQueue* brushQueue_ = nullptr;
+  FrontMatterController* frontMatterController_ = nullptr;
   CodeFenceController* codeFenceController_ = nullptr;
   HtmlBlockController* htmlBlockController_ = nullptr;
   MathBlockController* mathBlockController_ = nullptr;

@@ -6,6 +6,7 @@
 
 #include <QByteArray>
 #include <QElapsedTimer>
+#include <QJsonDocument>
 #include <QStringList>
 #include <QVector>
 
@@ -38,8 +39,180 @@ struct TableCellFieldRange {
   qsizetype end = -1;
 };
 
+struct FrontMatterScanResult {
+  bool found = false;
+  FrontMatterFormat format = FrontMatterFormat::None;
+  QString literal;
+  qsizetype sourceEnd = 0;
+  int lineEnd = 0;
+};
+
 bool isHorizontalPadding(QChar ch) {
   return ch == QLatin1Char(' ') || ch == QLatin1Char('\t');
+}
+
+qsizetype skipBom(QStringView text) {
+  return !text.isEmpty() && text.front() == QChar(0xFEFF) ? 1 : 0;
+}
+
+qsizetype lineEndOffset(QStringView text, qsizetype lineStart) {
+  const qsizetype newline = text.indexOf(QLatin1Char('\n'), lineStart);
+  return newline < 0 ? text.size() : newline;
+}
+
+qsizetype nextLineStart(QStringView text, qsizetype lineStart) {
+  const qsizetype end = lineEndOffset(text, lineStart);
+  return end < text.size() ? end + 1 : text.size();
+}
+
+QStringView trimmedLine(QStringView text, qsizetype start, qsizetype end) {
+  if (end > start && text.at(end - 1) == QLatin1Char('\r')) {
+    --end;
+  }
+  while (start < end && isHorizontalPadding(text.at(start))) {
+    ++start;
+  }
+  while (end > start && isHorizontalPadding(text.at(end - 1))) {
+    --end;
+  }
+  return text.mid(start, end - start);
+}
+
+bool lineEquals(QStringView text, qsizetype start, QStringView expected) {
+  return trimmedLine(text, start, lineEndOffset(text, start)) == expected;
+}
+
+FrontMatterScanResult scanFencedFrontMatter(QStringView markdown, QStringView fence, FrontMatterFormat format) {
+  const qsizetype start = skipBom(markdown);
+  if (!lineEquals(markdown, start, fence)) {
+    return {};
+  }
+
+  qsizetype contentStart = nextLineStart(markdown, start);
+  qsizetype lineStart = contentStart;
+  int lineNumber = 2;
+  while (lineStart < markdown.size()) {
+    const qsizetype end = lineEndOffset(markdown, lineStart);
+    if (trimmedLine(markdown, lineStart, end) == fence) {
+      FrontMatterScanResult result;
+      result.found = true;
+      result.format = format;
+      result.literal = markdown.mid(contentStart, qMax<qsizetype>(0, lineStart - contentStart)).toString();
+      if (result.literal.endsWith(QLatin1Char('\n'))) {
+        result.literal.chop(1);
+      }
+      if (result.literal.endsWith(QLatin1Char('\r'))) {
+        result.literal.chop(1);
+      }
+      result.sourceEnd = end;
+      result.lineEnd = lineNumber;
+      return result;
+    }
+    lineStart = nextLineStart(markdown, lineStart);
+    ++lineNumber;
+  }
+  return {};
+}
+
+qsizetype scanJsonObjectEnd(QStringView markdown, qsizetype start) {
+  if (start >= markdown.size() || markdown.at(start) != QLatin1Char('{')) {
+    return -1;
+  }
+
+  int depth = 0;
+  bool inString = false;
+  bool escaped = false;
+  for (qsizetype i = start; i < markdown.size(); ++i) {
+    const QChar ch = markdown.at(i);
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch == QLatin1Char('\\')) {
+        escaped = true;
+      } else if (ch == QLatin1Char('"')) {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch == QLatin1Char('"')) {
+      inString = true;
+    } else if (ch == QLatin1Char('{')) {
+      ++depth;
+    } else if (ch == QLatin1Char('}')) {
+      --depth;
+      if (depth == 0) {
+        return i + 1;
+      }
+      if (depth < 0) {
+        return -1;
+      }
+    }
+  }
+  return -1;
+}
+
+FrontMatterScanResult scanJsonFrontMatter(QStringView markdown) {
+  const qsizetype start = skipBom(markdown);
+  if (start >= markdown.size() || markdown.at(start) != QLatin1Char('{')) {
+    return {};
+  }
+
+  const qsizetype end = scanJsonObjectEnd(markdown, start);
+  if (end <= start) {
+    return {};
+  }
+  if (end < markdown.size() && markdown.at(end) != QLatin1Char('\n') && markdown.at(end) != QLatin1Char('\r')) {
+    return {};
+  }
+
+  const QString literal = markdown.mid(start, end - start).toString();
+  QJsonParseError error;
+  const QJsonDocument document = QJsonDocument::fromJson(literal.toUtf8(), &error);
+  if (error.error != QJsonParseError::NoError || !document.isObject()) {
+    return {};
+  }
+
+  FrontMatterScanResult result;
+  result.found = true;
+  result.format = FrontMatterFormat::Json;
+  result.literal = literal;
+  result.sourceEnd = end;
+  result.lineEnd = 1;
+  for (QChar ch : literal) {
+    if (ch == QLatin1Char('\n')) {
+      ++result.lineEnd;
+    }
+  }
+  return result;
+}
+
+FrontMatterScanResult scanFrontMatter(QStringView markdown) {
+  if (FrontMatterScanResult result = scanFencedFrontMatter(markdown, QStringLiteral("---"), FrontMatterFormat::Yaml); result.found) {
+    return result;
+  }
+  if (FrontMatterScanResult result = scanFencedFrontMatter(markdown, QStringLiteral("+++"), FrontMatterFormat::Toml); result.found) {
+    return result;
+  }
+  return scanJsonFrontMatter(markdown);
+}
+
+void shiftSourceRanges(MarkdownNode& node, qsizetype delta, int lineDelta) {
+  SourceRange range = node.sourceRange();
+  if (range.byteStart >= 0 && range.byteEnd >= range.byteStart) {
+    range.byteStart += delta;
+    range.byteEnd += delta;
+    if (range.lineStart > 0) {
+      range.lineStart += lineDelta;
+    }
+    if (range.lineEnd > 0) {
+      range.lineEnd += lineDelta;
+    }
+    node.setSourceRange(range);
+  }
+  for (const auto& child : node.children()) {
+    shiftSourceRanges(*child, delta, lineDelta);
+  }
 }
 
 QVector<TableCellFieldRange> tableRowFieldRanges(QStringView rowText, qsizetype rowStartOffset) {
@@ -126,7 +299,33 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   QElapsedTimer timer;
   timer.start();
 
-  const QByteArray utf8 = markdown.toString().toUtf8();
+  const FrontMatterScanResult frontMatter = options.enableFrontMatter ? scanFrontMatter(markdown) : FrontMatterScanResult{};
+  qsizetype markdownStart = 0;
+  std::unique_ptr<MarkdownNode> frontMatterNode;
+  if (frontMatter.found) {
+    markdownStart = frontMatter.sourceEnd;
+    if (markdownStart < markdown.size() && markdown.at(markdownStart) == QLatin1Char('\r')) {
+      ++markdownStart;
+    }
+    if (markdownStart < markdown.size() && markdown.at(markdownStart) == QLatin1Char('\n')) {
+      ++markdownStart;
+    }
+
+    frontMatterNode = std::make_unique<MarkdownNode>(BlockType::FrontMatter);
+    frontMatterNode->setFrontMatterFormat(frontMatter.format);
+    frontMatterNode->setLiteral(frontMatter.literal);
+    SourceRange range;
+    range.byteStart = 0;
+    range.byteEnd = frontMatter.sourceEnd;
+    range.lineStart = 1;
+    range.lineEnd = frontMatter.lineEnd;
+    range.columnStart = 1;
+    range.columnEnd = 1;
+    frontMatterNode->setSourceRange(range);
+  }
+
+  const QStringView markdownToParse = markdown.mid(markdownStart);
+  const QByteArray utf8 = markdownToParse.toString().toUtf8();
   cmark_parser* parser = cmark_parser_new(CMARK_OPT_DEFAULT | CMARK_OPT_FOOTNOTES);
   attachExtensions(parser, options);
   cmark_parser_feed(parser, utf8.constData(), static_cast<size_t>(utf8.size()));
@@ -135,10 +334,19 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   CmarkNodeAdapter adapter;
   ParseResult result;
   result.root = adapter.convertBlock(document);
-  const LineStartOffsetCache lineOffsets(markdown);
-  insertVirtualEmptyParagraphs(markdown, *result.root);
+  const LineStartOffsetCache lineOffsets(markdownToParse);
+  insertVirtualEmptyParagraphs(markdownToParse, *result.root);
   annotateSourceOffsets(lineOffsets, *result.root);
-  annotateTableCellSourceRanges(markdown, lineOffsets, *result.root);
+  annotateTableCellSourceRanges(markdownToParse, lineOffsets, *result.root);
+
+  if (frontMatterNode) {
+    const int lineDelta = frontMatter.lineEnd;
+    for (const auto& child : result.root->children()) {
+      shiftSourceRanges(*child, markdownStart, lineDelta);
+    }
+    result.root->insertChild(0, std::move(frontMatterNode));
+  }
+
   result.elapsedMs = timer.elapsed();
 
   cmark_node_free(document);

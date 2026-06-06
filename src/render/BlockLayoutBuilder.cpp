@@ -42,11 +42,21 @@ qreal layoutLiteralHeight(const QString& text, const QFont& font, qreal lineHeig
 }
 
 QString displayLiteralFor(const MarkdownNode& node) {
-  QString literal = node.type() == BlockType::CodeFence ? node.literal() : node.literal().trimmed();
-  if (node.type() == BlockType::CodeFence && literal.endsWith(QLatin1Char('\n'))) {
-    literal.chop(1);
+  return (node.type() == BlockType::CodeFence || node.type() == BlockType::FrontMatter) ? node.literal() : node.literal().trimmed();
+}
+
+QString languageForFrontMatter(FrontMatterFormat format) {
+  switch (format) {
+    case FrontMatterFormat::Yaml:
+      return QStringLiteral("yaml");
+    case FrontMatterFormat::Toml:
+      return QStringLiteral("toml");
+    case FrontMatterFormat::Json:
+      return QStringLiteral("json");
+    case FrontMatterFormat::None:
+    default:
+      return {};
   }
-  return literal;
 }
 
 const MarkdownNode* primaryParagraph(const MarkdownNode& node) {
@@ -161,6 +171,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::build(
       return buildContainer(node, theme, x, y, width, depth);
     case BlockType::ListItem:
       return buildListItem(node, theme, x, y, width, depth);
+    case BlockType::FrontMatter:
     case BlockType::CodeFence:
     case BlockType::HtmlBlock:
     case BlockType::MathBlock:
@@ -309,6 +320,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
   if (node.type() == BlockType::CodeFence) {
     layout->setCodeLanguage(node.codeLanguage());
     layout->setCodeHighlightSpans(codeHighlighter_.highlight(node.codeLanguage(), layout->literal()));
+  } else if (node.type() == BlockType::FrontMatter) {
+    const QString language = languageForFrontMatter(node.frontMatterFormat());
+    layout->setCodeLanguage(language);
+    layout->setCodeHighlightSpans(codeHighlighter_.highlight(language, layout->literal()));
   }
   const bool editingLiteral = node.type() == BlockType::MathBlock && selectionFocusesNode(selection_, node.id());
   layout->setLiteralEditing(editingLiteral);

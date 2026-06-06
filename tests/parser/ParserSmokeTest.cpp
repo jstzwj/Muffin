@@ -391,6 +391,122 @@ void testCodeFenceSerializationDoesNotGrowTrailingBlankLines() {
   require(twice == once, QStringLiteral("Code fence repeated serialization added blank lines"));
 }
 
+QString serializeMarkdown(QString markdown) {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  MarkdownSerializer serializer;
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for serialization helper"));
+  MarkdownDocument document;
+  document.setMarkdownText(markdown, std::move(parsed.root));
+  return serializer.serializeDocument(document);
+}
+
+void testYamlFrontMatter() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QStringLiteral(
+      "---\n"
+      "title: Muffin\n"
+      "tags:\n"
+      "  - markdown\n"
+      "---\n"
+      "# Heading\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for YAML front matter"));
+  require(parsed.root->children().size() == 2, QStringLiteral("Unexpected YAML front matter child count"));
+
+  const MarkdownNode& frontMatter = childAt(*parsed.root, 0);
+  require(frontMatter.type() == BlockType::FrontMatter, QStringLiteral("Expected YAML front matter block"));
+  require(frontMatter.frontMatterFormat() == FrontMatterFormat::Yaml, QStringLiteral("YAML front matter format mismatch"));
+  require(frontMatter.literal().contains(QStringLiteral("title: Muffin")), QStringLiteral("YAML front matter literal missing title"));
+  require(frontMatter.sourceRange().byteStart == 0, QStringLiteral("YAML front matter source should start at zero"));
+  require(sourceTextForNode(markdown, frontMatter).startsWith(QStringLiteral("---\n")), QStringLiteral("YAML front matter source missing opening fence"));
+  require(childAt(*parsed.root, 1).type() == BlockType::Heading, QStringLiteral("YAML front matter should preserve following heading"));
+}
+
+void testTomlFrontMatter() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QStringLiteral(
+      "+++\n"
+      "title = \"Muffin\"\n"
+      "draft = false\n"
+      "+++\n"
+      "Body\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for TOML front matter"));
+  require(parsed.root->children().size() == 2, QStringLiteral("Unexpected TOML front matter child count"));
+
+  const MarkdownNode& frontMatter = childAt(*parsed.root, 0);
+  require(frontMatter.type() == BlockType::FrontMatter, QStringLiteral("Expected TOML front matter block"));
+  require(frontMatter.frontMatterFormat() == FrontMatterFormat::Toml, QStringLiteral("TOML front matter format mismatch"));
+  require(frontMatter.literal().contains(QStringLiteral("draft = false")), QStringLiteral("TOML front matter literal missing draft"));
+  require(childAt(*parsed.root, 1).type() == BlockType::Paragraph, QStringLiteral("TOML front matter should preserve following paragraph"));
+}
+
+void testJsonFrontMatter() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QStringLiteral(
+      "{\n"
+      "  \"title\": \"Muffin\",\n"
+      "  \"nested\": { \"ok\": true },\n"
+      "  \"text\": \"brace } in string\"\n"
+      "}\n"
+      "# Heading\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for JSON front matter"));
+  require(parsed.root->children().size() == 2, QStringLiteral("Unexpected JSON front matter child count"));
+
+  const MarkdownNode& frontMatter = childAt(*parsed.root, 0);
+  require(frontMatter.type() == BlockType::FrontMatter, QStringLiteral("Expected JSON front matter block"));
+  require(frontMatter.frontMatterFormat() == FrontMatterFormat::Json, QStringLiteral("JSON front matter format mismatch"));
+  require(frontMatter.literal().contains(QStringLiteral("brace } in string")), QStringLiteral("JSON front matter string scanning failed"));
+  require(childAt(*parsed.root, 1).type() == BlockType::Heading, QStringLiteral("JSON front matter should preserve following heading"));
+}
+
+void testFrontMatterFalsePositives() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+
+  ParseResult leadingBlank = parser.parseDocument(QStringLiteral("\n---\ntitle: x\n---\n"), options);
+  require(leadingBlank.root != nullptr, QStringLiteral("Parser returned null root for leading blank front matter false positive"));
+  require(childAt(*leadingBlank.root, 0).type() != BlockType::FrontMatter, QStringLiteral("Front matter should require absolute document start"));
+
+  ParseResult unclosedYaml = parser.parseDocument(QStringLiteral("---\ntitle: x\n"), options);
+  require(unclosedYaml.root != nullptr, QStringLiteral("Parser returned null root for unclosed YAML front matter"));
+  require(childAt(*unclosedYaml.root, 0).type() != BlockType::FrontMatter, QStringLiteral("Unclosed YAML fence should not be front matter"));
+
+  ParseResult invalidJson = parser.parseDocument(QStringLiteral("{not json}\nBody"), options);
+  require(invalidJson.root != nullptr, QStringLiteral("Parser returned null root for invalid JSON front matter"));
+  require(childAt(*invalidJson.root, 0).type() != BlockType::FrontMatter, QStringLiteral("Invalid JSON should not be front matter"));
+
+  ParseOptions disabledOptions;
+  disabledOptions.enableFrontMatter = false;
+  ParseResult disabled = parser.parseDocument(QStringLiteral("---\ntitle: x\n---\n"), disabledOptions);
+  require(disabled.root != nullptr, QStringLiteral("Parser returned null root for disabled front matter"));
+  require(childAt(*disabled.root, 0).type() != BlockType::FrontMatter, QStringLiteral("Disabled front matter option should leave cmark output"));
+}
+
+void testFrontMatterSerializationDoesNotGrowTrailingBlankLines() {
+  const QVector<QString> samples{
+      QStringLiteral("---\ntitle: Muffin\n---"),
+      QStringLiteral("---\ntitle: Muffin\n\n---"),
+      QStringLiteral("+++\ntitle = \"Muffin\"\n+++"),
+      QStringLiteral("+++\ntitle = \"Muffin\"\n\n+++"),
+      QStringLiteral("{\n  \"title\": \"Muffin\"\n}")};
+  for (const QString& sample : samples) {
+    const QString once = serializeMarkdown(sample);
+    const QString twice = serializeMarkdown(once);
+    require(once == sample, QStringLiteral("Front matter first serialization changed source"));
+    require(twice == once, QStringLiteral("Front matter repeated serialization added blank lines"));
+  }
+}
+
 void testTaskListMetadata() {
   CmarkGfmParser parser;
   ParseOptions options;
@@ -424,6 +540,11 @@ int main(int argc, char** argv) {
   testMathEdgeCases();
   testFencedCodeBlock();
   testCodeFenceSerializationDoesNotGrowTrailingBlankLines();
+  testYamlFrontMatter();
+  testTomlFrontMatter();
+  testJsonFrontMatter();
+  testFrontMatterFalsePositives();
+  testFrontMatterSerializationDoesNotGrowTrailingBlankLines();
   testTaskListMetadata();
   return 0;
 }

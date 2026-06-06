@@ -15,7 +15,9 @@ struct HitTestResult {
     TableCell,
     Code,
     Math,
-    Html
+    Html,
+    FrontMatter,
+    BlockAfter
   };
 
   Zone zone = Zone::None;

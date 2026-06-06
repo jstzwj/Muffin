@@ -22,13 +22,20 @@ PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) {
   resize(1040, 720);
   setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
   setStyleSheet(QStringLiteral(
-      "QDialog { background:#f7f7f7; color:#181818; }"
-      "QComboBox { border:1px solid #b8b8b8; min-height:28px; padding:2px 9px; background:#ffffff; }"
-      "QComboBox:focus { border-color:#4f8fd9; }"
-      "QPushButton { border:1px solid #b9b9b9; background:#ffffff; min-height:30px; padding:0 14px; }"
-      "QPushButton:hover { background:#f0f0f0; }"
-      "QCheckBox { min-height:26px; }"
-      "QListWidget { border:0; outline:0; background:#f7f7f7; }"
+      "QDialog { background:#f3f3f3; color:#181818; }"
+      "QWidget#settingsCard { background:#ffffff; border:1px solid #e6e6e6; border-radius:8px; }"
+      "QPushButton { border:1px solid #c8c8c8; border-radius:4px; background:#ffffff; min-height:30px; padding:0 14px; }"
+      "QPushButton:hover { background:#f5f5f5; border-color:#a8a8a8; }"
+      "QCheckBox { spacing:8px; }"
+      "QCheckBox::indicator { width:15px; height:15px; border:1px solid #a8a8a8; border-radius:3px; background:#ffffff; }"
+      "QCheckBox::indicator:hover { border-color:#6b9bd2; }"
+      "QCheckBox::indicator:checked { border-color:#2f7dd1; background:#2f7dd1; }"
+      "QComboBox QAbstractItemView QScrollBar:vertical { width:10px; background:#f2f2f2; margin:2px; border:0; border-radius:5px; }"
+      "QComboBox QAbstractItemView QScrollBar::handle:vertical { background:#c8c8c8; min-height:28px; border-radius:5px; }"
+      "QComboBox QAbstractItemView QScrollBar::handle:vertical:hover { background:#a8a8a8; }"
+      "QComboBox QAbstractItemView QScrollBar::add-line:vertical, QComboBox QAbstractItemView QScrollBar::sub-line:vertical { height:0; border:0; background:transparent; }"
+      "QComboBox QAbstractItemView QScrollBar::add-page:vertical, QComboBox QAbstractItemView QScrollBar::sub-page:vertical { background:transparent; }"
+      "QListWidget { border:0; outline:0; background:#f3f3f3; }"
       "QListWidget::item { min-height:34px; padding-left:12px; color:#222222; }"
       "QListWidget::item:hover { background:#ececec; }"
       "QListWidget::item:selected { background:#dadada; color:#111111; }"
@@ -61,60 +68,66 @@ PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) {
   auto* generalLayout = qobject_cast<QVBoxLayout*>(generalPage->layout());
   generalTitleLabel_ = pageTitleLabels_.back();
 
-  auto* form = new QGridLayout();
-  form->setColumnMinimumWidth(0, 170);
-  form->setColumnStretch(1, 1);
-  form->setHorizontalSpacing(34);
-  form->setVerticalSpacing(22);
-  generalLayout->addLayout(form);
+  auto* cardContainer = new QWidget(generalPage);
+  cardContainer->setMaximumWidth(640);
+  auto* cardColumn = new QVBoxLayout(cardContainer);
+  cardColumn->setContentsMargins(0, 0, 0, 0);
+  cardColumn->setSpacing(14);
+  generalLayout->addWidget(cardContainer);
 
-  int row = 0;
-  languageLabel_ = makeSectionLabel(generalPage);
-  languageCombo_ = new QComboBox(generalPage);
-  languageCombo_->setFixedWidth(360);
+  auto* languageCard = new QWidget(generalPage);
+  languageCard->setObjectName(QStringLiteral("settingsCard"));
+  auto* languageLayout = new QHBoxLayout(languageCard);
+  languageLayout->setContentsMargins(18, 16, 18, 16);
+  languageLayout->setSpacing(24);
+  languageLabel_ = makeSectionLabel(languageCard);
+  languageCombo_ = new QComboBox(languageCard);
+  languageCombo_->setMinimumWidth(320);
+  languageCombo_->setMaximumWidth(380);
   populateLanguages();
+  languageLayout->addWidget(languageLabel_);
+  languageLayout->addStretch(1);
+  languageLayout->addWidget(languageCombo_);
+  cardColumn->addWidget(languageCard);
 
-  auto* languageTitle = new QWidget(generalPage);
-  auto* languageTitleLayout = new QHBoxLayout(languageTitle);
-  languageTitleLayout->setContentsMargins(0, 0, 0, 0);
-  languageTitleLayout->setSpacing(14);
-  languageTitleLayout->addWidget(languageLabel_);
-  languageTitleLayout->addStretch(1);
-  addSectionRow(form, row++, nullptr, languageCombo_);
-  form->addWidget(languageTitle, row - 1, 0, Qt::AlignTop);
-
-  updateLabel_ = makeSectionLabel(generalPage);
-  auto* updateBox = new QWidget(generalPage);
-  auto* updateLayout = new QVBoxLayout(updateBox);
-  updateLayout->setContentsMargins(0, 0, 0, 0);
-  updateLayout->setSpacing(10);
-  checkUpdateButton_ = makeButton(updateBox);
-  autoUpdateCheck_ = new QCheckBox(updateBox);
-  betaUpdateCheck_ = new QCheckBox(updateBox);
+  auto* updateCard = new QWidget(generalPage);
+  updateCard->setObjectName(QStringLiteral("settingsCard"));
+  auto* updateLayout = new QVBoxLayout(updateCard);
+  updateLayout->setContentsMargins(18, 16, 18, 16);
+  updateLayout->setSpacing(12);
+  updateLabel_ = makeSectionLabel(updateCard);
+  checkUpdateButton_ = makeButton(updateCard);
+  autoUpdateCheck_ = new QCheckBox(updateCard);
+  betaUpdateCheck_ = new QCheckBox(updateCard);
+  updateLayout->addWidget(updateLabel_);
+  updateLayout->addSpacing(2);
   updateLayout->addWidget(checkUpdateButton_, 0, Qt::AlignLeft);
   updateLayout->addWidget(autoUpdateCheck_);
   updateLayout->addWidget(betaUpdateCheck_);
-  addSectionRow(form, row++, updateLabel_, updateBox);
+  cardColumn->addWidget(updateCard);
 
-  advancedLabel_ = makeSectionLabel(generalPage);
-  auto* advancedBox = new QWidget(generalPage);
-  auto* advancedLayout = new QVBoxLayout(advancedBox);
-  advancedLayout->setContentsMargins(0, 0, 0, 0);
-  advancedLayout->setSpacing(10);
-  debugModeCheck_ = new QCheckBox(advancedBox);
-  telemetryCheck_ = new QCheckBox(advancedBox);
+  auto* advancedCard = new QWidget(generalPage);
+  advancedCard->setObjectName(QStringLiteral("settingsCard"));
+  auto* advancedLayout = new QVBoxLayout(advancedCard);
+  advancedLayout->setContentsMargins(18, 16, 18, 16);
+  advancedLayout->setSpacing(12);
+  advancedLabel_ = makeSectionLabel(advancedCard);
+  debugModeCheck_ = new QCheckBox(advancedCard);
+  telemetryCheck_ = new QCheckBox(advancedCard);
   telemetryCheck_->setChecked(true);
   auto* advancedButtons = new QHBoxLayout();
-  advancedButtons->setSpacing(12);
-  openAdvancedButton_ = makeButton(advancedBox);
-  resetAdvancedButton_ = makeButton(advancedBox);
+  advancedButtons->setSpacing(10);
+  openAdvancedButton_ = makeButton(advancedCard);
+  resetAdvancedButton_ = makeButton(advancedCard);
   advancedButtons->addWidget(openAdvancedButton_);
   advancedButtons->addWidget(resetAdvancedButton_);
   advancedButtons->addStretch(1);
+  advancedLayout->addWidget(advancedLabel_);
+  advancedLayout->addSpacing(2);
   advancedLayout->addWidget(debugModeCheck_);
   advancedLayout->addWidget(telemetryCheck_);
   advancedLayout->addLayout(advancedButtons);
-  addSectionRow(form, row++, advancedLabel_, advancedBox);
+  cardColumn->addWidget(advancedCard);
 
   generalLayout->addStretch(1);
 
@@ -218,8 +231,8 @@ QWidget* PreferencesDialog::makePage(QWidget* parent) {
   auto* page = new QWidget(scroll);
   page->setStyleSheet(QStringLiteral("background:#ffffff;"));
   auto* layout = new QVBoxLayout(page);
-  layout->setContentsMargins(34, 30, 46, 30);
-  layout->setSpacing(24);
+  layout->setContentsMargins(38, 34, 46, 34);
+  layout->setSpacing(22);
 
   auto* title = new QLabel(page);
   title->setStyleSheet(QStringLiteral("font-size:26px; font-weight:600; color:#111111;"));

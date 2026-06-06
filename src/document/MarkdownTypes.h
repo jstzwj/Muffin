@@ -10,6 +10,7 @@ enum class BlockType {
   List,
   ListItem,
   ThematicBreak,
+  FrontMatter,
   CodeFence,
   HtmlBlock,
   MathBlock,
@@ -19,6 +20,13 @@ enum class BlockType {
   FootnoteDefinition,
   LinkDefinition,
   Unknown
+};
+
+enum class FrontMatterFormat {
+  None,
+  Yaml,
+  Toml,
+  Json
 };
 
 enum class InlineType {

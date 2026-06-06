@@ -372,7 +372,7 @@ bool SelectionSerializer::literalCursorSourceOffset(const MarkdownDocument& docu
     return false;
   }
   const MarkdownNode* node = document.node(cursor.blockId);
-  if (!node || (node->type() != BlockType::CodeFence && node->type() != BlockType::HtmlBlock && node->type() != BlockType::MathBlock)) {
+  if (!node || (node->type() != BlockType::FrontMatter && node->type() != BlockType::CodeFence && node->type() != BlockType::HtmlBlock && node->type() != BlockType::MathBlock)) {
     return false;
   }
 
@@ -390,7 +390,7 @@ bool SelectionSerializer::literalCursorSourceOffset(const MarkdownDocument& docu
 }
 
 bool SelectionSerializer::literalContentSourceRange(const MarkdownDocument& document, const MarkdownNode& node, qsizetype& start, qsizetype& end) const {
-  if (node.type() != BlockType::CodeFence && node.type() != BlockType::HtmlBlock && node.type() != BlockType::MathBlock) {
+  if (node.type() != BlockType::FrontMatter && node.type() != BlockType::CodeFence && node.type() != BlockType::HtmlBlock && node.type() != BlockType::MathBlock) {
     return false;
   }
   qsizetype blockStart = -1;
@@ -399,7 +399,8 @@ bool SelectionSerializer::literalContentSourceRange(const MarkdownDocument& docu
     return false;
   }
   const QString markdown = document.markdownText();
-  if (node.type() == BlockType::CodeFence || node.type() == BlockType::MathBlock) {
+  if (node.type() == BlockType::CodeFence || node.type() == BlockType::MathBlock ||
+      (node.type() == BlockType::FrontMatter && node.frontMatterFormat() != FrontMatterFormat::Json)) {
     const qsizetype firstNewline = markdown.indexOf(QLatin1Char('\n'), blockStart);
     if (firstNewline < 0 || firstNewline >= blockEnd) {
       return false;
@@ -415,7 +416,10 @@ bool SelectionSerializer::literalContentSourceRange(const MarkdownDocument& docu
     }
     const QString closingLine = markdown.mid(closingStart, end - closingStart).trimmed();
     if ((node.type() == BlockType::CodeFence && closingLine.startsWith(QStringLiteral("```"))) ||
-        (node.type() == BlockType::MathBlock && closingLine == QStringLiteral("$$"))) {
+        (node.type() == BlockType::MathBlock && closingLine == QStringLiteral("$$")) ||
+        (node.type() == BlockType::FrontMatter &&
+         ((node.frontMatterFormat() == FrontMatterFormat::Yaml && closingLine == QStringLiteral("---")) ||
+          (node.frontMatterFormat() == FrontMatterFormat::Toml && closingLine == QStringLiteral("+++"))))) {
       end = qMax(start, closingStart - 1);
     }
     return end >= start;

@@ -1507,6 +1507,33 @@ void testLiteralBlockWrappedEditingGeometry() {
           QStringLiteral("wrapped math cursor should move to visual wrapped line"));
 }
 
+void testFrontMatterLayoutPreservesTrailingLiteralNewline() {
+  RenderTheme theme = RenderTheme::github();
+
+  DocumentSession withoutTrailingNewline;
+  withoutTrailingNewline.setMarkdownText(QStringLiteral("---\ntitle: Muffin\n---"), false);
+  DocumentLayout compactLayout;
+  compactLayout.rebuild(withoutTrailingNewline.document(), theme, 800.0);
+  const MarkdownNode* compactFrontMatter = findFirstBlock(withoutTrailingNewline.document().root(), BlockType::FrontMatter);
+  require(compactFrontMatter != nullptr, QStringLiteral("compact front matter should parse"));
+  const BlockLayout* compactBlock = compactLayout.block(compactFrontMatter->id());
+  require(compactBlock != nullptr, QStringLiteral("compact front matter should layout"));
+
+  DocumentSession withTrailingNewline;
+  withTrailingNewline.setMarkdownText(QStringLiteral("---\ntitle: Muffin\n\n---"), false);
+  DocumentLayout expandedLayout;
+  expandedLayout.rebuild(withTrailingNewline.document(), theme, 800.0);
+  const MarkdownNode* expandedFrontMatter = findFirstBlock(withTrailingNewline.document().root(), BlockType::FrontMatter);
+  require(expandedFrontMatter != nullptr, QStringLiteral("expanded front matter should parse"));
+  const BlockLayout* expandedBlock = expandedLayout.block(expandedFrontMatter->id());
+  require(expandedBlock != nullptr, QStringLiteral("expanded front matter should layout"));
+
+  require(expandedFrontMatter->literal().endsWith(QLatin1Char('\n')), QStringLiteral("expanded front matter literal should include user newline"));
+  require(expandedBlock->literal() == expandedFrontMatter->literal(), QStringLiteral("front matter layout should preserve trailing literal newline"));
+  require(expandedBlock->rect().height() > compactBlock->rect().height() + theme.codeLineHeight() * 0.5,
+          QStringLiteral("front matter trailing newline should reserve a visible empty line"));
+}
+
 void testExtendedMathFunctionRendering() {
   RenderTheme theme = RenderTheme::github();
 
@@ -3153,8 +3180,8 @@ void testLayoutForTheme(const MarkdownDocument& document, const RenderTheme& the
   requireUsableRect(layout.block(table->id())->rect(), QStringLiteral("%1 table").arg(themeName));
   requireUsableRect(layout.block(code->id())->rect(), QStringLiteral("%1 code").arg(themeName));
   requireUsableRect(layout.block(math->id())->rect(), QStringLiteral("%1 math").arg(themeName));
-  require(!layout.block(code->id())->literal().endsWith(QLatin1Char('\n')),
-          QStringLiteral("%1 code display literal should hide structural trailing newline").arg(themeName));
+  require(layout.block(code->id())->literal() == code->literal(),
+          QStringLiteral("%1 code display literal should preserve editable source text").arg(themeName));
   require(!layout.block(code->id())->codeHighlightSpans().isEmpty(),
           QStringLiteral("%1 code block should have syntax highlight spans").arg(themeName));
   require(layout.block(math->id())->rect().height() >= 20.0,
@@ -3251,6 +3278,7 @@ int main(int argc, char** argv) {
   runTest("testInlineLayoutPainting", [] { testInlineLayoutPainting(); });
   runTest("testMathRenderingLayout", [] { testMathRenderingLayout(); });
   runTest("testLiteralBlockWrappedEditingGeometry", [] { testLiteralBlockWrappedEditingGeometry(); });
+  runTest("testFrontMatterLayoutPreservesTrailingLiteralNewline", [] { testFrontMatterLayoutPreservesTrailingLiteralNewline(); });
   runTest("testExtendedMathFunctionRendering", [] { testExtendedMathFunctionRendering(); });
   runTest("testStrictMathGeometryFeatures", [] { testStrictMathGeometryFeatures(); });
   runTest("testMathMetricsMacrosAndState", [] { testMathMetricsMacrosAndState(); });

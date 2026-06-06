@@ -53,6 +53,10 @@ struct RebuildPerfStats {
         blockQuoteNs += elapsedNs;
         ++blockQuoteCount;
         break;
+      case BlockType::FrontMatter:
+        codeFenceNs += elapsedNs;
+        ++codeFenceCount;
+        break;
       case BlockType::CodeFence:
         codeFenceNs += elapsedNs;
         ++codeFenceCount;
@@ -429,7 +433,7 @@ const BlockLayout* DocumentLayout::blockAt(QPointF documentPos) const {
 HitTestResult DocumentLayout::hitTest(QPointF documentPos, const RenderTheme& theme) const {
   for (auto it = blocks_.rbegin(); it != blocks_.rend(); ++it) {
     const BlockLayout& block = **it;
-    if (block.rect().adjusted(0, -theme.blockSpacing(), 0, theme.blockSpacing()).contains(documentPos)) {
+    if (block.containsInteractiveContent(documentPos, theme)) {
       HitTestResult result = block.hitTest(documentPos, theme);
       if (result.isValid()) {
         return result;
@@ -449,6 +453,16 @@ HitTestResult DocumentLayout::hitTest(QPointF documentPos, const RenderTheme& th
       nearest = block.get();
       bestDistance = distance;
     }
+  }
+  if (documentPos.y() > nearest->rect().bottom()) {
+    HitTestResult result;
+    result.blockId = nearest->nodeId();
+    result.textNodeId = nearest->nodeId();
+    result.zone = HitTestResult::Zone::BlockAfter;
+    result.blockRect = nearest->rect();
+    result.textOffset = 0;
+    result.cursorRect = QRectF(nearest->rect().left(), nearest->rect().bottom(), 1.0, theme.codeLineHeight());
+    return result;
   }
   return nearest->hitTest(QPointF(qBound(nearest->rect().left(), documentPos.x(), nearest->rect().right()), nearest->rect().center().y()), theme);
 }

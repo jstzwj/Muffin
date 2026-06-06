@@ -151,6 +151,14 @@ void MarkdownNode::setCodeLanguage(QString language) {
   codeLanguage_ = std::move(language);
 }
 
+FrontMatterFormat MarkdownNode::frontMatterFormat() const {
+  return frontMatterFormat_;
+}
+
+void MarkdownNode::setFrontMatterFormat(FrontMatterFormat format) {
+  frontMatterFormat_ = format;
+}
+
 QVector<TableAlignment> MarkdownNode::tableAlignments() const {
   return tableAlignments_;
 }
@@ -186,6 +194,7 @@ std::unique_ptr<MarkdownNode> MarkdownNode::clone(CloneMode mode) const {
   copy->listTight_ = listTight_;
   copy->taskChecked_ = taskChecked_;
   copy->codeLanguage_ = codeLanguage_;
+  copy->frontMatterFormat_ = frontMatterFormat_;
   copy->tableAlignments_ = tableAlignments_;
   copy->tableRowIsHeader_ = tableRowIsHeader_;
   copy->sourceRange_ = sourceRange_;

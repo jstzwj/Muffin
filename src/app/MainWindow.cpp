@@ -3,6 +3,7 @@
 #include "app/LanguageManager.h"
 #include "app/PreferencesDialog.h"
 #include "app/SidebarWidget.h"
+#include "document/MarkdownTypes.h"
 #include "document/OutlineBuilder.h"
 #include "editor/EditorView.h"
 #include "editor/SourceEditorWidget.h"
@@ -102,8 +103,12 @@ QString zoneName(HitTestResult::Zone zone) {
       return QStringLiteral("math");
     case HitTestResult::Zone::Html:
       return QStringLiteral("html");
+    case HitTestResult::Zone::FrontMatter:
+      return QStringLiteral("front matter");
     case HitTestResult::Zone::Block:
       return QStringLiteral("block");
+    case HitTestResult::Zone::BlockAfter:
+      return QStringLiteral("block after");
     case HitTestResult::Zone::None:
     default:
       return QStringLiteral("none");
@@ -456,6 +461,9 @@ void MainWindow::setupConnections() {
   commands_.bind(QStringLiteral("table.align_none"), [this] { editorController_.setTableColumnAlignment(TableAlignment::None); });
   commands_.bind(QStringLiteral("table.delete_table"), [this] { editorController_.deleteTable(); });
   commands_.bind(QStringLiteral("table.insert_table"), [this] { editorController_.insertTable(); });
+  commands_.bind(QStringLiteral("paragraph.yaml"), [this] { editorController_.insertFrontMatter(FrontMatterFormat::Yaml); });
+  commands_.bind(QStringLiteral("paragraph.toml"), [this] { editorController_.insertFrontMatter(FrontMatterFormat::Toml); });
+  commands_.bind(QStringLiteral("paragraph.json"), [this] { editorController_.insertFrontMatter(FrontMatterFormat::Json); });
 
   commands_.bind(QStringLiteral("code.enter_edit"), [this] { editorController_.enterCodeFenceEditMode(); });
   commands_.bind(QStringLiteral("code.exit_edit"), [this] { editorController_.exitCodeFenceEditMode(); });
@@ -740,7 +748,10 @@ void MainWindow::setupParagraphMenu() {
   addAction(paragraph, QStringLiteral("paragraph.footnote"), tr("Footnote"), {}, false);
   addAction(paragraph, QStringLiteral("paragraph.hr"), tr("Horizontal Rule"), {}, false);
   addAction(paragraph, QStringLiteral("paragraph.toc"), tr("Table of Contents"), {}, false);
-  addAction(paragraph, QStringLiteral("paragraph.yaml"), QStringLiteral("YAML Front Matter"), {}, false);
+  QMenu* frontMatter = paragraph->addMenu(tr("Front Matter"));
+  addAction(frontMatter, QStringLiteral("paragraph.yaml"), tr("YAML"));
+  addAction(frontMatter, QStringLiteral("paragraph.toml"), tr("TOML"));
+  addAction(frontMatter, QStringLiteral("paragraph.json"), tr("JSON"));
 }
 void MainWindow::setupFormatMenu() {
   QMenu* format = menuBar()->addMenu(tr("Format"));

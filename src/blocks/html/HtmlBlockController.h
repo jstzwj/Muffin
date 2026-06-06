@@ -1,5 +1,6 @@
 #pragma once
 
+#include "blocks/literal/LiteralBlockController.h"
 #include "document/NodeId.h"
 #include "edit/EditTransaction.h"
 
@@ -37,26 +38,13 @@ public:
   bool deleteSelection();
   bool setHtml(QString html);
   QString sanitizedPreview() const;
+  QString tabText() const;
 
 signals:
   void htmlCommandRejected(QString reason);
 
 private:
-  bool mutateCurrentHtmlBlock(QString label, EditTransaction::Kind kind, const std::function<bool(MarkdownNode&, qsizetype&)>& mutate);
-  bool currentSelectionRange(qsizetype& startOffset, qsizetype& endOffset) const;
-  MarkdownNode* currentHtmlBlock() const;
-  MarkdownNode* htmlBlockById(NodeId id) const;
-  MarkdownNode* htmlBlockByIndex(int index) const;
-  MarkdownNode* findHtmlBlockById(MarkdownNode& node, NodeId id) const;
-  int htmlBlockIndexFor(NodeId id) const;
-  CursorPosition cursorFor(NodeId htmlId, qsizetype offset) const;
-
-  DocumentSession* session_ = nullptr;
-  SelectionController* selection_ = nullptr;
-  UndoStack* undoStack_ = nullptr;
-  BrushQueue* brushQueue_ = nullptr;
-  NodeId editingHtmlId_;
-  int editingHtmlIndex_ = -1;
+  LiteralBlockController literal_;
 };
 
 }  // namespace muffin

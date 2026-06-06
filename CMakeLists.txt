@@ -307,9 +307,13 @@ set(MUFFIN_UI_SOURCES
   src/tree_sitter_queries.qrc
   src/blocks/code/CodeFenceController.cpp
   src/blocks/code/CodeFenceController.h
+  src/blocks/frontmatter/FrontMatterController.cpp
+  src/blocks/frontmatter/FrontMatterController.h
   src/blocks/html/HtmlBlockController.cpp
   src/blocks/html/HtmlBlockController.h
   src/blocks/html/HtmlSanitizer.cpp
+  src/blocks/literal/LiteralBlockController.cpp
+  src/blocks/literal/LiteralBlockController.h
   src/blocks/html/HtmlSanitizer.h
   src/blocks/math/MathBlockController.cpp
   src/blocks/math/MathBlockController.h
