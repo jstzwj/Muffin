@@ -1237,6 +1237,58 @@ void testInlineLayoutStyleFormats() {
           QStringLiteral("nested strong/emphasis text should combine style flags"));
 }
 
+void testInlineLayoutProjectionDisplayMappingAfterCollapsedMath() {
+  RenderTheme theme = RenderTheme::github();
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::text(QStringLiteral("math ")));
+  inlines.push_back(InlineNode::inlineMath(QStringLiteral("E = mc^2")));
+  inlines.push_back(InlineNode::text(QStringLiteral(" then ")));
+  inlines.push_back(InlineNode::code(QStringLiteral("code")));
+  inlines.push_back(InlineNode::text(QStringLiteral(" and ")));
+  inlines.push_back(InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QStringLiteral("bold"))}));
+
+  InlineLayout layout;
+  layout.build(
+      inlines,
+      QStringLiteral("math $E = mc^2$ then `code` and **bold**"),
+      theme,
+      500.0,
+      theme.paragraphFont(),
+      InlineLayout::BuildOptions{});
+  require(layout.mathAtomCount() == 1, QStringLiteral("mapping fixture should collapse first inline math"));
+  require(layout.displayText().contains(QStringLiteral(" then code and bold")),
+          QStringLiteral("mapping fixture should keep text after collapsed math"));
+
+  const qsizetype codeStart = layout.displayText().indexOf(QStringLiteral("code"));
+  const qsizetype boldStart = layout.displayText().indexOf(QStringLiteral("bold"));
+  require(codeStart >= 0 && boldStart > codeStart, QStringLiteral("mapping fixture display offsets should be discoverable"));
+
+  const QVector<QTextLayout::FormatRange> formats = layout.debugTextFormats(theme, theme.paragraphFont());
+  auto formatAt = [&formats](int offset) -> QTextCharFormat {
+    QTextCharFormat result;
+    for (const QTextLayout::FormatRange& range : formats) {
+      if (offset >= range.start && offset < range.start + range.length) {
+        result = range.format;
+      }
+    }
+    return result;
+  };
+
+  require(formatAt(static_cast<int>(codeStart)).fontFamily() == theme.codeFont().family(),
+          QStringLiteral("code format after collapsed math should use rebuilt display offset"));
+  require(formatAt(static_cast<int>(boldStart)).fontWeight() >= QFont::Bold,
+          QStringLiteral("strong format after collapsed math should use rebuilt display offset"));
+
+  const QVector<QRectF> codeSelection =
+      layout.selectionRectsForSourceOffsets(QStringLiteral("math $E = mc^2$ then `").size(),
+                                            QStringLiteral("math $E = mc^2$ then `code").size());
+  require(codeSelection.size() == 1, QStringLiteral("source selection after collapsed math should select code text"));
+  const QRectF codeCursor = layout.cursorRectForSourceOffset(QStringLiteral("math $E = mc^2$ then `").size());
+  require(!codeCursor.isEmpty(), QStringLiteral("source cursor after collapsed math should exist"));
+  require(qAbs(codeSelection.first().left() - codeCursor.left()) < 1.0,
+          QStringLiteral("source selection after collapsed math should start at rebuilt code cursor"));
+}
+
 void testInlineLayoutPainting() {
   RenderTheme theme = RenderTheme::github();
   QVector<InlineNode> inlines;
@@ -3292,6 +3344,7 @@ int main(int argc, char** argv) {
   runTest("testInlineLayoutCursorRects", [] { testInlineLayoutCursorRects(); });
   runTest("testInlineLayoutSelectionRects", [] { testInlineLayoutSelectionRects(); });
   runTest("testInlineLayoutStyleFormats", [] { testInlineLayoutStyleFormats(); });
+  runTest("testInlineLayoutProjectionDisplayMappingAfterCollapsedMath", [] { testInlineLayoutProjectionDisplayMappingAfterCollapsedMath(); });
   runTest("testIncrementalBlockRebuildContract", [] { testIncrementalBlockRebuildContract(); });
   runTest("testIncrementalTopLevelRangeRebuildContract", [] { testIncrementalTopLevelRangeRebuildContract(); });
   runTest("testUnorderedListMarkerKindsByDepth", [] { testUnorderedListMarkerKindsByDepth(); });

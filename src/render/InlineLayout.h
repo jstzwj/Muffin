@@ -74,6 +74,19 @@ private:
     std::shared_ptr<math::MathLayoutResult> layout;
   };
 
+  struct DisplayOffsetMapEntry {
+    qsizetype projectionStart = 0;
+    qsizetype projectionEnd = 0;
+    qsizetype layoutStart = 0;
+    qsizetype layoutEnd = 0;
+  };
+
+  struct DisplayOffsetRange {
+    qsizetype start = 0;
+    qsizetype end = 0;
+    bool valid = false;
+  };
+
   void buildOffsetMapFromProjection();
   void buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme);
   QString texForInlineMathVisibleRange(const QVector<InlineNode>& inlines, qsizetype visibleStart, qsizetype visibleEnd) const;
@@ -83,6 +96,10 @@ private:
   QVector<QTextLayout::FormatRange> textLayoutFormats(const RenderTheme& theme, const QFont& baseFont) const;
   qsizetype visibleOffsetForDisplayOffset(qsizetype displayOffset) const;
   qsizetype displayOffsetForVisibleOffset(qsizetype visibleOffset) const;
+  qsizetype projectionDisplayOffsetForLayoutOffset(qsizetype layoutOffset, InlineProjectionBias bias) const;
+  qsizetype layoutDisplayOffsetForProjectionOffset(qsizetype projectionOffset, InlineProjectionBias bias) const;
+  bool layoutDisplayOffsetForSourceOffset(qsizetype sourceOffset, InlineProjectionBias bias, qsizetype& layoutOffset) const;
+  DisplayOffsetRange layoutDisplayRangeForProjectionRange(qsizetype projectionStart, qsizetype projectionEnd) const;
   struct TextLayoutPointHit;
   TextLayoutPointHit textLayoutHitForPoint(QPointF localPos) const;
   qsizetype textLayoutDisplayOffsetForPoint(QPointF localPos) const;
@@ -98,6 +115,7 @@ private:
   QString layoutText_;
   QVector<OffsetMapEntry> offsetMap_;
   QVector<MathAtom> mathAtoms_;
+  QVector<DisplayOffsetMapEntry> displayOffsetMap_;
   InlineProjection projection_;
   math::MathRenderer mathRenderer_;
 };

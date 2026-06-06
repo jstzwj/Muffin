@@ -82,6 +82,7 @@ void InlineLayout::build(
   plainText_ = flattenPlainText(inlines);
   offsetMap_.clear();
   mathAtoms_.clear();
+  displayOffsetMap_.clear();
   displayText_.clear();
   layoutText_.clear();
   textLayoutCodeBackgroundColor_ = theme.codeBackgroundColor();
@@ -145,8 +146,9 @@ qsizetype InlineLayout::hitTestSourceOffset(QPointF localPos) const {
     const qsizetype contentOffset = static_cast<qsizetype>(qRound(ratio * contentLength));
     return atom.contentSourceStart + qBound<qsizetype>(0, contentOffset, contentLength);
   }
+  const qsizetype projPosition = projectionDisplayOffsetForLayoutOffset(position, hit.bias);
   qsizetype sourceOffset = -1;
-  if (projection_.sourceOffsetForDisplayOffset(position, hit.bias, sourceOffset)) {
+  if (projection_.sourceOffsetForDisplayOffset(projPosition, hit.bias, sourceOffset)) {
     return sourceOffset;
   }
   return visibleOffsetForDisplayOffset(position);
@@ -174,7 +176,7 @@ QRectF InlineLayout::cursorRectForSourceOffset(qsizetype sourceOffset) const {
     }
   }
   qsizetype displayOffset = -1;
-  if (!projection_.displayOffsetForSourceOffset(sourceOffset, InlineProjectionBias::Forward, displayOffset)) {
+  if (!layoutDisplayOffsetForSourceOffset(sourceOffset, InlineProjectionBias::Forward, displayOffset)) {
     return cursorRect(sourceOffset);
   }
   return textLayoutCursorRectForDisplayOffset(displayOffset);
@@ -189,8 +191,8 @@ QVector<QRectF> InlineLayout::selectionRects(qsizetype startOffset, qsizetype en
 QVector<QRectF> InlineLayout::selectionRectsForSourceOffsets(qsizetype startSourceOffset, qsizetype endSourceOffset) const {
   qsizetype startDisplayOffset = -1;
   qsizetype endDisplayOffset = -1;
-  if (!projection_.displayOffsetForSourceOffset(qMin(startSourceOffset, endSourceOffset), startDisplayOffset) ||
-      !projection_.displayOffsetForSourceOffset(qMax(startSourceOffset, endSourceOffset), endDisplayOffset)) {
+  if (!layoutDisplayOffsetForSourceOffset(qMin(startSourceOffset, endSourceOffset), InlineProjectionBias::Backward, startDisplayOffset) ||
+      !layoutDisplayOffsetForSourceOffset(qMax(startSourceOffset, endSourceOffset), InlineProjectionBias::Forward, endDisplayOffset)) {
     return {};
   }
   return selectionRectsForDisplayOffsets(startDisplayOffset, endDisplayOffset);
@@ -247,8 +249,12 @@ void InlineLayout::paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) c
       }
       const int lineStart = line.textStart();
       const int lineEnd = lineStart + line.textLength();
-      const int rangeStart = qMax(lineStart, static_cast<int>(span.displayStart));
-      const int rangeEnd = qMin(lineEnd, static_cast<int>(span.displayEnd));
+      const DisplayOffsetRange layoutRange = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
+      if (!layoutRange.valid) {
+        continue;
+      }
+      const int rangeStart = qMax(lineStart, static_cast<int>(layoutRange.start));
+      const int rangeEnd = qMin(lineEnd, static_cast<int>(layoutRange.end));
       if (rangeStart >= rangeEnd) {
         continue;
       }
@@ -284,9 +290,12 @@ QVector<QTextLayout::FormatRange> InlineLayout::debugTextFormats(const RenderThe
 void InlineLayout::buildOffsetMapFromProjection() {
   displayText_ = projection_.displayText();
   offsetMap_.clear();
+  displayOffsetMap_.clear();
   offsetMap_.reserve(projection_.spans().size());
+  displayOffsetMap_.reserve(projection_.spans().size());
   for (const InlineProjectionSpan& span : projection_.spans()) {
     offsetMap_.push_back(OffsetMapEntry{span.displayStart, span.displayEnd, span.visibleStart, span.visibleEnd});
+    displayOffsetMap_.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, span.displayStart, span.displayEnd});
   }
 }
 
@@ -294,6 +303,7 @@ void InlineLayout::buildMathAtoms(const QVector<InlineNode>& inlines, const Rend
   const QString projectedDisplay = projection_.displayText();
   QString rebuiltDisplay;
   QVector<OffsetMapEntry> rebuiltMap;
+  QVector<DisplayOffsetMapEntry> rebuiltDisplayMap;
   for (const InlineProjectionSpan& span : projection_.spans()) {
     if (span.displayEnd <= span.displayStart) {
       continue;
@@ -317,6 +327,7 @@ void InlineLayout::buildMathAtoms(const QVector<InlineNode>& inlines, const Rend
       const qsizetype displayStart = rebuiltDisplay.size();
       rebuiltDisplay += spanText;
       rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), span.visibleStart, span.visibleEnd});
+      rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, displayStart, rebuiltDisplay.size()});
       continue;
     }
 
@@ -325,6 +336,7 @@ void InlineLayout::buildMathAtoms(const QVector<InlineNode>& inlines, const Rend
       const qsizetype displayStart = rebuiltDisplay.size();
       rebuiltDisplay += spanText;
       rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), span.visibleStart, span.visibleEnd});
+      rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, displayStart, rebuiltDisplay.size()});
       continue;
     }
     auto layout = std::make_shared<math::MathLayoutResult>(mathRenderer_.render(tex, theme, false));
@@ -332,6 +344,7 @@ void InlineLayout::buildMathAtoms(const QVector<InlineNode>& inlines, const Rend
       const qsizetype displayStart = rebuiltDisplay.size();
       rebuiltDisplay += spanText;
       rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), span.visibleStart, span.visibleEnd});
+      rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, displayStart, rebuiltDisplay.size()});
       continue;
     }
 
@@ -348,11 +361,13 @@ void InlineLayout::buildMathAtoms(const QVector<InlineNode>& inlines, const Rend
     atom.visibleEnd = span.visibleEnd;
     atom.layout = std::move(layout);
     rebuiltMap.push_back(OffsetMapEntry{atom.displayStart, atom.displayEnd, atom.visibleStart, atom.visibleEnd});
+    rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, atom.displayStart, atom.displayEnd});
     mathAtoms_.push_back(std::move(atom));
   }
   if (!rebuiltDisplay.isEmpty()) {
     displayText_ = std::move(rebuiltDisplay);
     offsetMap_ = std::move(rebuiltMap);
+    displayOffsetMap_ = std::move(rebuiltDisplayMap);
   }
 }
 
@@ -487,9 +502,13 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
       default:
         break;
     }
+    const DisplayOffsetRange layoutRange = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
+    if (!layoutRange.valid) {
+      continue;
+    }
     QTextLayout::FormatRange range;
-    range.start = static_cast<int>(span.displayStart);
-    range.length = static_cast<int>(span.displayEnd - span.displayStart);
+    range.start = static_cast<int>(layoutRange.start);
+    range.length = static_cast<int>(layoutRange.end - layoutRange.start);
     range.format = format;
     formats.push_back(range);
   }
@@ -580,6 +599,85 @@ qsizetype InlineLayout::displayOffsetForVisibleOffset(qsizetype visibleOffset) c
     }
   }
   return displayText_.size();
+}
+
+qsizetype InlineLayout::projectionDisplayOffsetForLayoutOffset(qsizetype layoutOffset, InlineProjectionBias bias) const {
+  if (displayOffsetMap_.isEmpty()) {
+    return qBound<qsizetype>(0, layoutOffset, projection_.displayText().size());
+  }
+
+  layoutOffset = qBound<qsizetype>(0, layoutOffset, displayText_.size());
+  for (const DisplayOffsetMapEntry& entry : displayOffsetMap_) {
+    if (layoutOffset < entry.layoutStart || layoutOffset > entry.layoutEnd) {
+      continue;
+    }
+    if (entry.layoutEnd <= entry.layoutStart || entry.projectionEnd <= entry.projectionStart) {
+      return bias == InlineProjectionBias::Forward ? entry.projectionEnd : entry.projectionStart;
+    }
+    if (layoutOffset <= entry.layoutStart) {
+      return entry.projectionStart;
+    }
+    if (layoutOffset >= entry.layoutEnd) {
+      return entry.projectionEnd;
+    }
+    const qsizetype projectionLength = entry.projectionEnd - entry.projectionStart;
+    const qsizetype layoutLength = entry.layoutEnd - entry.layoutStart;
+    const qsizetype delta = (layoutOffset - entry.layoutStart) * projectionLength / layoutLength;
+    return qBound<qsizetype>(entry.projectionStart, entry.projectionStart + delta, entry.projectionEnd);
+  }
+
+  return projection_.displayText().size();
+}
+
+qsizetype InlineLayout::layoutDisplayOffsetForProjectionOffset(qsizetype projectionOffset, InlineProjectionBias bias) const {
+  if (displayOffsetMap_.isEmpty()) {
+    return qBound<qsizetype>(0, projectionOffset, displayText_.size());
+  }
+
+  projectionOffset = qBound<qsizetype>(0, projectionOffset, projection_.displayText().size());
+  for (const DisplayOffsetMapEntry& entry : displayOffsetMap_) {
+    if (projectionOffset < entry.projectionStart || projectionOffset > entry.projectionEnd) {
+      continue;
+    }
+    if (entry.layoutEnd <= entry.layoutStart || entry.projectionEnd <= entry.projectionStart) {
+      return bias == InlineProjectionBias::Forward ? entry.layoutEnd : entry.layoutStart;
+    }
+    if (projectionOffset <= entry.projectionStart) {
+      return entry.layoutStart;
+    }
+    if (projectionOffset >= entry.projectionEnd) {
+      return entry.layoutEnd;
+    }
+    const qsizetype projectionLength = entry.projectionEnd - entry.projectionStart;
+    const qsizetype layoutLength = entry.layoutEnd - entry.layoutStart;
+    const qsizetype delta = (projectionOffset - entry.projectionStart) * layoutLength / projectionLength;
+    const qsizetype snapped = bias == InlineProjectionBias::Forward && delta == 0 ? 1 : delta;
+    return qBound<qsizetype>(entry.layoutStart, entry.layoutStart + snapped, entry.layoutEnd);
+  }
+
+  return displayText_.size();
+}
+
+bool InlineLayout::layoutDisplayOffsetForSourceOffset(qsizetype sourceOffset, InlineProjectionBias bias, qsizetype& layoutOffset) const {
+  qsizetype projectionOffset = -1;
+  if (!projection_.displayOffsetForSourceOffset(sourceOffset, bias, projectionOffset)) {
+    return false;
+  }
+  layoutOffset = layoutDisplayOffsetForProjectionOffset(projectionOffset, bias);
+  return true;
+}
+
+InlineLayout::DisplayOffsetRange InlineLayout::layoutDisplayRangeForProjectionRange(qsizetype projectionStart, qsizetype projectionEnd) const {
+  DisplayOffsetRange range;
+  if (projectionEnd <= projectionStart) {
+    return range;
+  }
+  range.start = layoutDisplayOffsetForProjectionOffset(projectionStart, InlineProjectionBias::Backward);
+  range.end = layoutDisplayOffsetForProjectionOffset(projectionEnd, InlineProjectionBias::Forward);
+  range.start = qBound<qsizetype>(0, range.start, displayText_.size());
+  range.end = qBound<qsizetype>(0, range.end, displayText_.size());
+  range.valid = range.end > range.start;
+  return range;
 }
 
 qsizetype InlineLayout::textLayoutDisplayOffsetForPoint(QPointF localPos) const {

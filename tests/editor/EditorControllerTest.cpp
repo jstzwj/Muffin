@@ -494,6 +494,40 @@ void testSecondInlineMathHitMapsToItsSourceOffset() {
   require(qAbs(hitSourceOffset - afterBSourceOffset) <= 1, QStringLiteral("second inline math hit source mismatch: %1 vs %2").arg(hitSourceOffset).arg(afterBSourceOffset));
 }
 
+void testSecondInlineMathHitInsertAfterEquals() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  const QString source = QStringLiteral("Inline math uses single dollar delimiters: $E = mc^2$ and $a_1 + b_1 = c_1$.");
+  session.setMarkdownText(source, false);
+  MarkdownNode* block = blockAt(session, 0);
+
+  InlineLayout layout;
+  layout.build(block->inlines(), source, RenderTheme::typoraLike(), 900.0, RenderTheme::typoraLike().paragraphFont(), InlineLayout::BuildOptions{});
+  require(layout.mathAtomCount() == 2, "two inactive inline math runs should collapse");
+
+  const QString secondMath = QStringLiteral("a_1 + b_1 = c_1");
+  const qsizetype secondMathSourceStart = source.indexOf(QStringLiteral("$a_1"));
+  const qsizetype equalsSourceOffset = source.indexOf(QStringLiteral("= c_1"));
+  const qsizetype insertSourceOffset = equalsSourceOffset + 1;
+  const QRectF secondStartCursor = layout.cursorRectForSourceOffset(secondMathSourceStart + 1);
+  const QRectF secondEndCursor = layout.cursorRectForSourceOffset(source.indexOf(QStringLiteral("$.")));
+  const qreal ratio = static_cast<qreal>(insertSourceOffset - (secondMathSourceStart + 1)) / secondMath.size();
+  const QPointF hitPoint(secondStartCursor.left() + (secondEndCursor.left() - secondStartCursor.left()) * ratio, secondStartCursor.center().y());
+  const qsizetype hitSourceOffset = layout.hitTestSourceOffset(hitPoint);
+  require(qAbs(hitSourceOffset - insertSourceOffset) <= 1,
+          QStringLiteral("second inline math equals hit source mismatch: %1 vs %2").arg(hitSourceOffset).arg(insertSourceOffset));
+
+  setSourceCursor(selection, block, QStringLiteral("Inline math uses single dollar delimiters: E = mc^2 and a_1 + b_1 =").size(), hitSourceOffset);
+  require(input.insertText(QStringLiteral("d")), "typing after second inline math equals should edit source");
+  require(session.markdownText() == QStringLiteral("Inline math uses single dollar delimiters: $E = mc^2$ and $a_1 + b_1 =d c_1$."),
+          "second inline math insert should stay after equals");
+}
+
 void testCodeAndMathCursorAfterSourceInsert() {
   DocumentSession session;
   SelectionController selection;
@@ -3467,6 +3501,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testInputEnterSplitsComplexInlineParagraphs);
   RUN_TEST(testInputEditsComplexInlineSourcePositions);
   RUN_TEST(testSecondInlineMathHitMapsToItsSourceOffset);
+  RUN_TEST(testSecondInlineMathHitInsertAfterEquals);
   RUN_TEST(testCodeAndMathCursorAfterSourceInsert);
   RUN_TEST(testInlineProjectionMarkerSourcePositions);
   RUN_TEST(testInlineProjectionForwardBiasAtInlineEnd);
