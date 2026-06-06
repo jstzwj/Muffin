@@ -976,6 +976,31 @@ Parse time: %6 ms</source>
             <source>Reset Advanced Settings</source>
             <translation>重設進階設定</translation>
         </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="235" />
+            <source>Theme</source>
+            <translation>主題</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="236" />
+            <source>Zoom</source>
+            <translation>縮放</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="238" />
+            <source>Text Size</source>
+            <translation>文字大小</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="239" />
+            <source>Status Bar</source>
+            <translation>狀態列</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="240" />
+            <source>Show status bar</source>
+            <translation>顯示狀態列</translation>
+        </message>
     </context>
     <context>
         <name>muffin::SidebarWidget</name>

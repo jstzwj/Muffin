@@ -372,12 +372,13 @@ void SourceEditorWidget::setWordWrapEnabled(bool enabled) {
 }
 
 void SourceEditorWidget::setZoomPercent(int percent) {
-  QFont font = editor_->font();
-  font.setPointSizeF(qMax(8.0, 13.0 * percent / 100.0));
-  editor_->setSourceFont(font);
-  QFont lineNumberFont = font;
-  lineNumberFont.setPointSizeF(qMax(8.0, 10.0 * percent / 100.0));
-  editor_->setLineNumberFont(lineNumberFont);
+  zoomPercent_ = qBound(60, percent, 200);
+  applyFontSize();
+}
+
+void SourceEditorWidget::setFontSizePx(int px) {
+  fontSizePx_ = qBound(12, px, 24);
+  applyFontSize();
 }
 
 void SourceEditorWidget::setTheme(const RenderTheme& theme) {
@@ -416,9 +417,7 @@ void SourceEditorWidget::changeEvent(QEvent* event) {
 }
 
 void SourceEditorWidget::setupStyle() {
-  QFont font = RenderTheme::github().paragraphFont();
-  font.setPointSizeF(12.5);
-  editor_->setSourceFont(font);
+  applyFontSize();
   setTheme(RenderTheme::github());
 }
 
@@ -426,6 +425,17 @@ void SourceEditorWidget::retranslateUi() {
   if (editor_) {
     editor_->setPlaceholderText(tr("Start writing..."));
   }
+}
+
+void SourceEditorWidget::applyFontSize() {
+  const QSignalBlocker blocker(editor_);
+  QFont font = editor_->font();
+  const qreal scale = static_cast<qreal>(zoomPercent_) / 100.0 * static_cast<qreal>(fontSizePx_) / 16.0;
+  font.setPointSizeF(qMax(8.0, 13.0 * scale));
+  editor_->setSourceFont(font);
+  QFont lineNumberFont = font;
+  lineNumberFont.setPointSizeF(qMax(8.0, 10.0 * scale));
+  editor_->setLineNumberFont(lineNumberFont);
 }
 
 void SourceEditorWidget::updateEditorWidth() {

@@ -975,6 +975,31 @@ Thời gian phân tích: %6 ms</translation>
             <source>Reset Advanced Settings</source>
             <translation>Đặt lại cài đặt nâng cao</translation>
         </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="235" />
+            <source>Theme</source>
+            <translation>Chủ đề</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="236" />
+            <source>Zoom</source>
+            <translation>Thu phóng</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="238" />
+            <source>Text Size</source>
+            <translation>Cỡ chữ</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="239" />
+            <source>Status Bar</source>
+            <translation>Thanh trạng thái</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="240" />
+            <source>Show status bar</source>
+            <translation>Hiển thị thanh trạng thái</translation>
+        </message>
     </context>
     <context>
         <name>muffin::SidebarWidget</name>

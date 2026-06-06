@@ -976,6 +976,31 @@ Tempo de análise: %6 ms</translation>
             <source>Reset Advanced Settings</source>
             <translation>Redefinir configurações avançadas</translation>
         </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="235" />
+            <source>Theme</source>
+            <translation>Tema</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="236" />
+            <source>Zoom</source>
+            <translation>Zoom</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="238" />
+            <source>Text Size</source>
+            <translation>Tamanho do texto</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="239" />
+            <source>Status Bar</source>
+            <translation>Barra de status</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="240" />
+            <source>Show status bar</source>
+            <translation>Mostrar barra de status</translation>
+        </message>
     </context>
     <context>
         <name>muffin::SidebarWidget</name>

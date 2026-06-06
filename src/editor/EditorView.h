@@ -31,6 +31,7 @@ public:
   bool refreshBlocks(const QVector<NodeId>& blockIds, const MarkdownDocument& document);
   bool refreshTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document);
   void setZoomPercent(int percent);
+  void setFontSizePx(int px);
   void setTheme(RenderTheme theme);
   void setCursorHit(HitTestResult hit);
   void setCursorPosition(CursorPosition position);

@@ -1,11 +1,11 @@
 #pragma once
 
 #include <QDialog>
+#include <QStringList>
 #include <QVector>
 
 class QCheckBox;
 class QComboBox;
-class QGridLayout;
 class QLabel;
 class QListWidget;
 class QPushButton;
@@ -21,6 +21,18 @@ class PreferencesDialog final : public QDialog {
 public:
   explicit PreferencesDialog(QWidget* parent = nullptr);
 
+  void setAvailableThemes(const QStringList& themes);
+  void setCurrentThemeName(const QString& name);
+  void setStatusBarVisible(bool visible);
+  void setZoomPercent(int percent);
+  void setFontSizePx(int px);
+
+signals:
+  void themeRequested(QString name);
+  void statusBarVisibleRequested(bool visible);
+  void zoomPercentRequested(int percent);
+  void fontSizePxRequested(int px);
+
 protected:
   void changeEvent(QEvent* event) override;
 
@@ -31,13 +43,27 @@ private:
   QLabel* makeSectionLabel(QWidget* parent) const;
   QLabel* makeMutedLabel(QWidget* parent) const;
   QPushButton* makeButton(QWidget* parent) const;
-  void addSectionRow(QGridLayout* grid, int row, QLabel* label, QWidget* field);
+  QString themeDisplayName(const QString& name) const;
+  void addNumberItems(QComboBox* combo, const QVector<int>& values, const QString& suffix);
+  void setNumberComboValue(QComboBox* combo, int value);
   void addPlaceholderPage();
+  void buildAppearancePage();
 
   QListWidget* categoryList_ = nullptr;
   QStackedWidget* contentStack_ = nullptr;
   QVector<QLabel*> pageTitleLabels_;
   QVector<QLabel*> placeholderLabels_;
+
+  QLabel* appearanceTitleLabel_ = nullptr;
+  QLabel* themeLabel_ = nullptr;
+  QComboBox* themeCombo_ = nullptr;
+  QLabel* zoomLabel_ = nullptr;
+  QComboBox* zoomCombo_ = nullptr;
+  QPushButton* resetZoomButton_ = nullptr;
+  QLabel* fontSizeLabel_ = nullptr;
+  QComboBox* fontSizeCombo_ = nullptr;
+  QLabel* statusBarLabel_ = nullptr;
+  QCheckBox* showStatusBarCheck_ = nullptr;
 
   QLabel* generalTitleLabel_ = nullptr;
   QLabel* languageLabel_ = nullptr;

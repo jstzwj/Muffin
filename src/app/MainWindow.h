@@ -76,6 +76,16 @@ private:
   void updateSidebarMode();
   void updateViewMode();
   void updateFileActions();
+  int zoomPercent() const;
+  void setZoomPercent(int percent);
+  int fontSizePx() const;
+  void setFontSizePx(int px);
+  void setStatusBarVisible(bool visible);
+  void loadAppearanceSettings();
+  void saveAppearanceTheme(const QString& name) const;
+  void saveAppearanceStatusBarVisible(bool visible) const;
+  void saveAppearanceZoomPercent(int percent) const;
+  void saveAppearanceFontSizePx(int px) const;
   void setSidebarPanel(SidebarWidget::Panel panel);
   void refreshSidebarDocumentInfo();
   void refreshSidebarOutline();
@@ -125,6 +135,7 @@ private:
   QString renderCursorStatus_;
   QString sidebarFolderRoot_;
   int zoomPercent_ = 100;
+  int fontSizePx_ = 16;
   bool sourceEditorDirty_ = false;
   bool wordCountDirty_ = true;
 };

@@ -110,6 +110,14 @@ void RenderTheme::setZoomPercent(int percent) {
   zoomPercent_ = qBound(60, percent, 200);
 }
 
+int RenderTheme::fontSizePx() const {
+  return fontSizePx_;
+}
+
+void RenderTheme::setFontSizePx(int px) {
+  fontSizePx_ = qBound(12, px, 24);
+}
+
 qreal RenderTheme::pageWidth() const {
   return scaled(800.0);
 }
@@ -154,7 +162,7 @@ QFont RenderTheme::paragraphFont() const {
   });
   QFont font(paragraphFamily);
   font.setStyleStrategy(QFont::PreferDefault);
-  font.setPointSizeF(scaled(12.0));
+  font.setPointSizeF(scaledFont(12.0));
   return font;
 }
 
@@ -162,7 +170,7 @@ QFont RenderTheme::headingFont(int level) const {
   static constexpr qreal sizes[] = {24.0, 19.0, 16.0, 14.0, 12.5, 12.0};
   QFont font = paragraphFont();
   font.setBold(true);
-  font.setPointSizeF(scaled(sizes[qBound(0, level - 1, 5)]));
+  font.setPointSizeF(scaledFont(sizes[qBound(0, level - 1, 5)]));
   return font;
 }
 
@@ -185,12 +193,12 @@ QFont RenderTheme::codeFont() const {
   });
   QFont font(codeFamily);
   font.setStyleHint(QFont::Monospace);
-  font.setPointSizeF(scaled(10.8));
+  font.setPointSizeF(scaledFont(10.8));
   return font;
 }
 
 qreal RenderTheme::codeLineHeight() const {
-  return scaled(23.04);
+  return scaledFont(23.04);
 }
 
 QFont RenderTheme::mathFont() const {
@@ -209,7 +217,7 @@ QFont RenderTheme::mathFont() const {
 #endif
   });
   QFont font(mathFamily);
-  font.setPointSizeF(scaled(12.5));
+  font.setPointSizeF(scaledFont(12.5));
   return font;
 }
 
@@ -300,6 +308,10 @@ QMarginsF RenderTheme::tableCellPadding() const {
 
 qreal RenderTheme::scaled(qreal value) const {
   return value * static_cast<qreal>(zoomPercent_) / 100.0;
+}
+
+qreal RenderTheme::scaledFont(qreal value) const {
+  return scaled(value) * static_cast<qreal>(fontSizePx_) / 16.0;
 }
 
 }  // namespace muffin

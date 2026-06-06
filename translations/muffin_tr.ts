@@ -976,6 +976,31 @@ Ayrıştırma süresi: %6 ms</translation>
             <source>Reset Advanced Settings</source>
             <translation>Gelişmiş Ayarları Sıfırla</translation>
         </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="235" />
+            <source>Theme</source>
+            <translation>Tema</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="236" />
+            <source>Zoom</source>
+            <translation>Yakınlaştırma</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="238" />
+            <source>Text Size</source>
+            <translation>Metin boyutu</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="239" />
+            <source>Status Bar</source>
+            <translation>Durum çubuğu</translation>
+        </message>
+        <message>
+            <location filename="../src/app/PreferencesDialog.cpp" line="240" />
+            <source>Show status bar</source>
+            <translation>Durum çubuğunu göster</translation>
+        </message>
     </context>
     <context>
         <name>muffin::SidebarWidget</name>

@@ -8,20 +8,21 @@ QString ThemeManager::currentThemeName() const {
   return currentThemeName_;
 }
 
-RenderTheme ThemeManager::currentTheme(int zoomPercent) const {
+RenderTheme ThemeManager::currentTheme(int zoomPercent, int fontSizePx) const {
+  RenderTheme theme;
   if (currentThemeName_ == QStringLiteral("newsprint")) {
-    return RenderTheme::newsprint(zoomPercent);
+    theme = RenderTheme::newsprint(zoomPercent);
+  } else if (currentThemeName_ == QStringLiteral("night")) {
+    theme = RenderTheme::night(zoomPercent);
+  } else if (currentThemeName_ == QStringLiteral("pixyll")) {
+    theme = RenderTheme::pixyll(zoomPercent);
+  } else if (currentThemeName_ == QStringLiteral("whitey")) {
+    theme = RenderTheme::whitey(zoomPercent);
+  } else {
+    theme = RenderTheme::github(zoomPercent);
   }
-  if (currentThemeName_ == QStringLiteral("night")) {
-    return RenderTheme::night(zoomPercent);
-  }
-  if (currentThemeName_ == QStringLiteral("pixyll")) {
-    return RenderTheme::pixyll(zoomPercent);
-  }
-  if (currentThemeName_ == QStringLiteral("whitey")) {
-    return RenderTheme::whitey(zoomPercent);
-  }
-  return RenderTheme::github(zoomPercent);
+  theme.setFontSizePx(fontSizePx);
+  return theme;
 }
 
 QStringList ThemeManager::availableThemes() const {

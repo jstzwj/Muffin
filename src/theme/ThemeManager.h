@@ -14,7 +14,7 @@ public:
   explicit ThemeManager(QObject* parent = nullptr);
 
   QString currentThemeName() const;
-  RenderTheme currentTheme(int zoomPercent = 100) const;
+  RenderTheme currentTheme(int zoomPercent = 100, int fontSizePx = 16) const;
   QStringList availableThemes() const;
 
   bool setTheme(QString name);

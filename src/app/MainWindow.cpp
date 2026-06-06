@@ -123,6 +123,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
   setupStatusBar();
   setupConnections();
   applyTyporaLikeChrome();
+  loadAppearanceSettings();
   retranslateUi();
   updateTitle();
   updateStatus();
@@ -504,31 +505,24 @@ void MainWindow::setupConnections() {
   commands_.bind(QStringLiteral("view.file_tree"), [this] { setSidebarPanel(SidebarWidget::Panel::Files); });
   commands_.bind(QStringLiteral("view.source_mode"), [this] { updateViewMode(); });
   commands_.bind(QStringLiteral("view.status_bar"), [this] {
-    statusBar()->setVisible(commands_.action(QStringLiteral("view.status_bar"))->isChecked());
+    const bool visible = commands_.action(QStringLiteral("view.status_bar"))->isChecked();
+    setStatusBarVisible(visible);
+    saveAppearanceStatusBarVisible(visible);
   });
   commands_.bind(QStringLiteral("view.fullscreen"), [this] {
     isFullScreen() ? showNormal() : showFullScreen();
   });
   commands_.bind(QStringLiteral("view.zoom_in"), [this] {
-    zoomPercent_ = qMin(200, zoomPercent_ + 10);
-    editor_->setZoomPercent(zoomPercent_);
-    renderView_->setZoomPercent(zoomPercent_);
-    renderView_->setDocument(session_.document());
-    updateStatus();
+    setZoomPercent(zoomPercent_ + 10);
+    saveAppearanceZoomPercent(zoomPercent_);
   });
   commands_.bind(QStringLiteral("view.zoom_out"), [this] {
-    zoomPercent_ = qMax(60, zoomPercent_ - 10);
-    editor_->setZoomPercent(zoomPercent_);
-    renderView_->setZoomPercent(zoomPercent_);
-    renderView_->setDocument(session_.document());
-    updateStatus();
+    setZoomPercent(zoomPercent_ - 10);
+    saveAppearanceZoomPercent(zoomPercent_);
   });
   commands_.bind(QStringLiteral("view.actual_size"), [this] {
-    zoomPercent_ = 100;
-    editor_->setZoomPercent(zoomPercent_);
-    renderView_->setZoomPercent(zoomPercent_);
-    renderView_->setDocument(session_.document());
-    updateStatus();
+    setZoomPercent(100);
+    saveAppearanceZoomPercent(zoomPercent_);
   });
 
   commands_.bind(QStringLiteral("help.about"), [this] {
@@ -539,11 +533,31 @@ void MainWindow::setupConnections() {
             .arg(QApplication::applicationVersion()));
   });
 
-  commands_.bind(QStringLiteral("theme.github"), [this] { themeManager_.setTheme(QStringLiteral("github")); });
-  commands_.bind(QStringLiteral("theme.newsprint"), [this] { themeManager_.setTheme(QStringLiteral("newsprint")); });
-  commands_.bind(QStringLiteral("theme.night"), [this] { themeManager_.setTheme(QStringLiteral("night")); });
-  commands_.bind(QStringLiteral("theme.pixyll"), [this] { themeManager_.setTheme(QStringLiteral("pixyll")); });
-  commands_.bind(QStringLiteral("theme.whitey"), [this] { themeManager_.setTheme(QStringLiteral("whitey")); });
+  commands_.bind(QStringLiteral("theme.github"), [this] {
+    if (themeManager_.setTheme(QStringLiteral("github"))) {
+      saveAppearanceTheme(themeManager_.currentThemeName());
+    }
+  });
+  commands_.bind(QStringLiteral("theme.newsprint"), [this] {
+    if (themeManager_.setTheme(QStringLiteral("newsprint"))) {
+      saveAppearanceTheme(themeManager_.currentThemeName());
+    }
+  });
+  commands_.bind(QStringLiteral("theme.night"), [this] {
+    if (themeManager_.setTheme(QStringLiteral("night"))) {
+      saveAppearanceTheme(themeManager_.currentThemeName());
+    }
+  });
+  commands_.bind(QStringLiteral("theme.pixyll"), [this] {
+    if (themeManager_.setTheme(QStringLiteral("pixyll"))) {
+      saveAppearanceTheme(themeManager_.currentThemeName());
+    }
+  });
+  commands_.bind(QStringLiteral("theme.whitey"), [this] {
+    if (themeManager_.setTheme(QStringLiteral("whitey"))) {
+      saveAppearanceTheme(themeManager_.currentThemeName());
+    }
+  });
 
   connect(sidebarButton_, &QToolButton::clicked, this, [this] {
     if (QAction* action = commands_.action(QStringLiteral("view.sidebar"))) {
@@ -994,6 +1008,64 @@ void MainWindow::updateFileActions() {
   commands_.setEnabled(QStringLiteral("file.reveal"), hasFile);
 }
 
+int MainWindow::zoomPercent() const {
+  return zoomPercent_;
+}
+
+void MainWindow::setZoomPercent(int percent) {
+  zoomPercent_ = qBound(60, percent, 200);
+  editor_->setZoomPercent(zoomPercent_);
+  renderView_->setZoomPercent(zoomPercent_);
+  updateStatus();
+}
+
+int MainWindow::fontSizePx() const {
+  return fontSizePx_;
+}
+
+void MainWindow::setFontSizePx(int px) {
+  fontSizePx_ = qBound(12, px, 24);
+  editor_->setFontSizePx(fontSizePx_);
+  renderView_->setFontSizePx(fontSizePx_);
+  updateStatus();
+}
+
+void MainWindow::setStatusBarVisible(bool visible) {
+  if (QAction* action = commands_.action(QStringLiteral("view.status_bar"))) {
+    action->setChecked(visible);
+  }
+  statusBar()->setVisible(visible);
+}
+
+void MainWindow::loadAppearanceSettings() {
+  QSettings settings;
+  const QString themeName = settings.value(QStringLiteral("appearance/themeName"), themeManager_.currentThemeName()).toString();
+  themeManager_.setTheme(themeName);
+  setStatusBarVisible(settings.value(QStringLiteral("appearance/showStatusBar"), true).toBool());
+  setZoomPercent(settings.value(QStringLiteral("appearance/zoomPercent"), 100).toInt());
+  setFontSizePx(settings.value(QStringLiteral("appearance/fontSizePx"), 16).toInt());
+}
+
+void MainWindow::saveAppearanceTheme(const QString& name) const {
+  QSettings settings;
+  settings.setValue(QStringLiteral("appearance/themeName"), name);
+}
+
+void MainWindow::saveAppearanceStatusBarVisible(bool visible) const {
+  QSettings settings;
+  settings.setValue(QStringLiteral("appearance/showStatusBar"), visible);
+}
+
+void MainWindow::saveAppearanceZoomPercent(int percent) const {
+  QSettings settings;
+  settings.setValue(QStringLiteral("appearance/zoomPercent"), qBound(60, percent, 200));
+}
+
+void MainWindow::saveAppearanceFontSizePx(int px) const {
+  QSettings settings;
+  settings.setValue(QStringLiteral("appearance/fontSizePx"), qBound(12, px, 24));
+}
+
 void MainWindow::updateTableActions() {
   const bool enabled = !sourceModeEnabled() && editorController_.tableController().currentCell().isValid();
   const QStringList ids = {
@@ -1093,7 +1165,7 @@ void MainWindow::redoEdit() {
 }
 
 void MainWindow::applyTheme(QString name) {
-  const RenderTheme theme = themeManager_.currentTheme(zoomPercent_);
+  const RenderTheme theme = themeManager_.currentTheme(zoomPercent_, fontSizePx_);
   renderView_->setTheme(theme);
   editor_->setTheme(theme);
   if (sidebar_) {
@@ -1208,6 +1280,30 @@ void MainWindow::showDocumentProperties() {
 
 void MainWindow::showPreferences() {
   PreferencesDialog dialog(this);
+  dialog.setAvailableThemes(themeManager_.availableThemes());
+  dialog.setCurrentThemeName(themeManager_.currentThemeName());
+  dialog.setStatusBarVisible(statusBar()->isVisible());
+  dialog.setZoomPercent(zoomPercent());
+  dialog.setFontSizePx(fontSizePx());
+
+  connect(&dialog, &PreferencesDialog::themeRequested, this, [this](const QString& name) {
+    if (themeManager_.setTheme(name)) {
+      saveAppearanceTheme(themeManager_.currentThemeName());
+    }
+  });
+  connect(&dialog, &PreferencesDialog::statusBarVisibleRequested, this, [this](bool visible) {
+    setStatusBarVisible(visible);
+    saveAppearanceStatusBarVisible(visible);
+  });
+  connect(&dialog, &PreferencesDialog::zoomPercentRequested, this, [this](int percent) {
+    setZoomPercent(percent);
+    saveAppearanceZoomPercent(zoomPercent_);
+  });
+  connect(&dialog, &PreferencesDialog::fontSizePxRequested, this, [this](int px) {
+    setFontSizePx(px);
+    saveAppearanceFontSizePx(fontSizePx_);
+  });
+
   dialog.exec();
 }
 

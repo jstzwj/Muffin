@@ -20,6 +20,8 @@ public:
 
   int zoomPercent() const;
   void setZoomPercent(int percent);
+  int fontSizePx() const;
+  void setFontSizePx(int px);
 
   qreal pageWidth() const;
   qreal topMargin() const;
@@ -52,8 +54,10 @@ public:
 
 private:
   qreal scaled(qreal value) const;
+  qreal scaledFont(qreal value) const;
 
   int zoomPercent_ = 100;
+  int fontSizePx_ = 16;
   QColor backgroundColor_ = QColor(QStringLiteral("#ffffff"));
   QColor textColor_ = QColor(QStringLiteral("#202124"));
   QColor mutedTextColor_ = QColor(QStringLiteral("#57606a"));
