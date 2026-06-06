@@ -372,26 +372,22 @@ void InlineLayout::buildMathAtoms(const QVector<InlineNode>& inlines, const Rend
 }
 
 QString InlineLayout::texForInlineMathVisibleRange(const QVector<InlineNode>& inlines, qsizetype visibleStart, qsizetype visibleEnd) const {
-  qsizetype offset = 0;
+  // Extract the expected math content from the projected display text
+  const QString expected = projection_.displayText().mid(visibleStart, visibleEnd - visibleStart);
+  // Find the matching InlineMath node by DFS — text content must match
   const auto visit = [&](const auto& self, const QVector<InlineNode>& nodes) -> QString {
     for (const InlineNode& node : nodes) {
-      const QString plain = InlineProjection::plainTextForInlines(QVector<InlineNode>{node});
-      const qsizetype start = offset;
-      const qsizetype end = start + plain.size();
-      if (node.type() == InlineType::InlineMath && start == visibleStart && end == visibleEnd) {
+      if (node.type() == InlineType::InlineMath && node.text() == expected) {
         return node.text();
       }
-      offset = end;
       if (!node.children().isEmpty()) {
-        qsizetype childOffset = start;
-        Q_UNUSED(childOffset);
         const QString found = self(self, node.children());
         if (!found.isEmpty()) {
           return found;
         }
       }
     }
-    return {};
+    return QString();
   };
   return visit(visit, inlines);
 }

@@ -28,6 +28,7 @@ if(MSVC)
 endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets Svg)
+find_package(ICU REQUIRED COMPONENTS uc i18n)
 set(MUFFIN_QT_LINGUIST_BIN "" CACHE PATH "Optional Qt Linguist tool directory")
 set(MUFFIN_LOCAL_QT_LINGUIST_BIN "C:/Program Files/Qt Linguist/bin")
 if(NOT MUFFIN_QT_LINGUIST_BIN AND WIN32 AND EXISTS "${MUFFIN_LOCAL_QT_LINGUIST_BIN}/lupdate.exe")
@@ -431,6 +432,8 @@ target_link_libraries(Muffin
   PRIVATE
     Qt6::Widgets
     Qt6::Svg
+    ICU::uc
+    ICU::i18n
     MuffinCore
     MuffinUi
 )

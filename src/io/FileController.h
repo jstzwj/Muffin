@@ -19,10 +19,13 @@ public:
   bool open(DocumentSession& session, QWidget* parent, QString path = {});
   bool save(DocumentSession& session, QWidget* parent);
   bool saveAs(DocumentSession& session, QWidget* parent);
+  bool reopenWithEncoding(DocumentSession& session, QWidget* parent, const QString& encodingName);
+  bool moveTo(DocumentSession& session, QWidget* parent);
 
 private:
   bool confirmDiscardIfModified(DocumentSession& session, QWidget* parent);
   bool readTextFile(const QString& path, QString* out, QWidget* parent) const;
+  bool readTextFileWithEncoding(const QString& path, QString* out, QWidget* parent, const QString& encodingName) const;
   bool writeTextFile(const QString& path, const QString& text, QWidget* parent) const;
 };
 

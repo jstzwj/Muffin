@@ -449,6 +449,10 @@ void MainWindow::setupConnections() {
   commands_.bind(QStringLiteral("file.close"), [this] {
     close();
   });
+  commands_.bind(QStringLiteral("file.move_to"), [this] { moveToFile(); });
+  commands_.bind(QStringLiteral("file.save_all"), [this] { saveAllOpenFiles(); });
+  commands_.bind(QStringLiteral("file.sidebar"), [this] { showInSidebar(); });
+  commands_.bind(QStringLiteral("file.delete"), [this] { deleteFile(); });
 
   commands_.bind(QStringLiteral("edit.undo"), [this] { undoEdit(); });
   commands_.bind(QStringLiteral("edit.redo"), [this] { redoEdit(); });
@@ -728,6 +732,7 @@ void MainWindow::retranslateUi() {
   updateMathActions();
   updateThemeActions();
   rebuildRecentFilesMenu();
+  buildReopenEncodingMenu();
   if (renderView_) {
     renderView_->setDocument(session_.document());
   }
@@ -744,7 +749,8 @@ void MainWindow::setupFileMenu() {
   addAction(file, QStringLiteral("file.quick_open"), tr("Quick Open..."), {}, false);
   recentFilesMenu_ = file->addMenu(tr("Open Recent"));
   file->addSeparator();
-  addAction(file, QStringLiteral("file.reopen_encoding"), tr("Reopen with Encoding"), {}, false);
+  reopenEncodingMenu_ = file->addMenu(tr("Reopen with Encoding"));
+  reopenEncodingMenu_->setEnabled(false);
   addAction(file, QStringLiteral("file.save"), tr("Save"), QKeySequence::Save);
   addAction(file, QStringLiteral("file.save_as"), tr("Save As..."), QKeySequence::SaveAs);
   addAction(file, QStringLiteral("file.move_to"), tr("Move To..."), {}, false);
@@ -1099,6 +1105,13 @@ void MainWindow::updateFileActions() {
   const bool hasFile = !session_.filePath().isEmpty();
   commands_.setEnabled(QStringLiteral("file.properties"), hasFile);
   commands_.setEnabled(QStringLiteral("file.reveal"), hasFile);
+  if (reopenEncodingMenu_) {
+    reopenEncodingMenu_->setEnabled(hasFile);
+  }
+  commands_.setEnabled(QStringLiteral("file.move_to"), hasFile);
+  commands_.setEnabled(QStringLiteral("file.save_all"), true);
+  commands_.setEnabled(QStringLiteral("file.sidebar"), hasFile);
+  commands_.setEnabled(QStringLiteral("file.delete"), hasFile);
 }
 
 int MainWindow::zoomPercent() const {
@@ -1415,6 +1428,221 @@ void MainWindow::revealCurrentFile() {
   }
   const QFileInfo info(session_.filePath());
   QDesktopServices::openUrl(QUrl::fromLocalFile(info.absolutePath()));
+}
+
+bool MainWindow::saveCurrentDocument() {
+  if (fileController_.save(session_, this)) {
+    addRecentFile(session_.filePath());
+    return true;
+  }
+  return false;
+}
+
+bool MainWindow::isDocumentModified() const {
+  return session_.document().isModified();
+}
+
+void MainWindow::buildReopenEncodingMenu() {
+  if (!reopenEncodingMenu_) {
+    return;
+  }
+
+  reopenEncodingMenu_->clear();
+
+  // name = ICU canonical name, label = display text
+  struct Entry {
+    const char* name;
+    const char* label;
+  };
+
+  struct Group {
+    const char* title;
+    std::vector<Entry> entries;
+  };
+
+  static const Group groups[] = {
+      {QT_TRANSLATE_NOOP("MainWindow", "Unicode"),
+       {
+           {"UTF-8", QT_TRANSLATE_NOOP("MainWindow", "UTF-8")},
+           {"UTF-16LE", QT_TRANSLATE_NOOP("MainWindow", "UTF-16 LE")},
+           {"UTF-16BE", QT_TRANSLATE_NOOP("MainWindow", "UTF-16 BE")},
+       }},
+      {QT_TRANSLATE_NOOP("MainWindow", "Western"),
+       {
+           {"windows-1252", QT_TRANSLATE_NOOP("MainWindow", "Western (Windows-1252)")},
+       }},
+      {QT_TRANSLATE_NOOP("MainWindow", "Cyrillic"),
+       {
+           {"windows-1251", QT_TRANSLATE_NOOP("MainWindow", "Cyrillic (Windows-1251)")},
+           {"ISO-8859-5", QT_TRANSLATE_NOOP("MainWindow", "Cyrillic (ISO-8859-5)")},
+           {"IBM866", QT_TRANSLATE_NOOP("MainWindow", "Cyrillic (IBM866)")},
+           {"IBM855", QT_TRANSLATE_NOOP("MainWindow", "Cyrillic (IBM855)")},
+           {"KOI8-R", QT_TRANSLATE_NOOP("MainWindow", "Cyrillic (KOI8-R)")},
+           {"x-mac-cyrillic", QT_TRANSLATE_NOOP("MainWindow", "Cyrillic (Mac)")},
+       }},
+      {QT_TRANSLATE_NOOP("MainWindow", "Central European"),
+       {
+           {"windows-1250", QT_TRANSLATE_NOOP("MainWindow", "Central European (Windows-1250)")},
+           {"ISO-8859-2", QT_TRANSLATE_NOOP("MainWindow", "Central European (ISO-8859-2)")},
+       }},
+      {QT_TRANSLATE_NOOP("MainWindow", "Greek"),
+       {
+           {"windows-1253", QT_TRANSLATE_NOOP("MainWindow", "Greek (Windows-1253)")},
+           {"ISO-8859-7", QT_TRANSLATE_NOOP("MainWindow", "Greek (ISO-8859-7)")},
+       }},
+      {QT_TRANSLATE_NOOP("MainWindow", "Hebrew"),
+       {
+           {"windows-1255", QT_TRANSLATE_NOOP("MainWindow", "Hebrew (Windows-1255)")},
+           {"ISO-8859-8", QT_TRANSLATE_NOOP("MainWindow", "Hebrew (ISO-8859-8)")},
+       }},
+      {QT_TRANSLATE_NOOP("MainWindow", "Chinese Simplified"),
+       {
+           {"GB2312", QT_TRANSLATE_NOOP("MainWindow", "Chinese Simplified (GB2312)")},
+           {"GB18030", QT_TRANSLATE_NOOP("MainWindow", "Chinese Simplified (GB18030)")},
+       }},
+      {QT_TRANSLATE_NOOP("MainWindow", "Chinese Traditional"),
+       {
+           {"Big5", QT_TRANSLATE_NOOP("MainWindow", "Chinese Traditional (Big5)")},
+       }},
+      {QT_TRANSLATE_NOOP("MainWindow", "Japanese"),
+       {
+           {"Shift_JIS", QT_TRANSLATE_NOOP("MainWindow", "Japanese (Shift_JIS)")},
+           {"EUC-JP", QT_TRANSLATE_NOOP("MainWindow", "Japanese (EUC-JP)")},
+       }},
+      {QT_TRANSLATE_NOOP("MainWindow", "Korean"),
+       {
+           {"EUC-KR", QT_TRANSLATE_NOOP("MainWindow", "Korean (EUC-KR)")},
+       }},
+      {QT_TRANSLATE_NOOP("MainWindow", "Thai"),
+       {
+           {"TIS-620", QT_TRANSLATE_NOOP("MainWindow", "Thai (TIS-620)")},
+       }},
+  };
+
+  for (const auto& group : groups) {
+    for (const auto& entry : group.entries) {
+      QAction* action = reopenEncodingMenu_->addAction(tr(entry.label));
+      const QString encodingName = QString::fromLatin1(entry.name);
+      connect(action, &QAction::triggered, this, [this, encodingName] {
+        reopenWithEncoding(encodingName);
+      });
+    }
+    reopenEncodingMenu_->addSeparator();
+  }
+}
+
+void MainWindow::reopenWithEncoding(const QString& encodingName) {
+  if (session_.filePath().isEmpty()) {
+    return;
+  }
+
+  if (fileController_.reopenWithEncoding(session_, this, encodingName)) {
+    editorController_.clearHistoryAndSelection();
+  }
+}
+
+void MainWindow::moveToFile() {
+  if (session_.filePath().isEmpty()) {
+    return;
+  }
+
+  const QString oldPath = session_.filePath();
+  if (!fileController_.moveTo(session_, this)) {
+    return;
+  }
+
+  QStringList recent = recentFiles();
+  recent.removeAll(QFileInfo(oldPath).absoluteFilePath());
+  setRecentFiles(recent);
+  addRecentFile(session_.filePath());
+  editorController_.clearHistoryAndSelection();
+}
+
+void MainWindow::saveAllOpenFiles() {
+  int savedCount = 0;
+  int failedCount = 0;
+
+  for (QWidget* widget : QApplication::topLevelWidgets()) {
+    auto* window = qobject_cast<MainWindow*>(widget);
+    if (!window) {
+      continue;
+    }
+    if (window->isDocumentModified()) {
+      if (window->saveCurrentDocument()) {
+        ++savedCount;
+      } else {
+        ++failedCount;
+      }
+    }
+  }
+
+  if (failedCount > 0) {
+    QMessageBox::warning(this, tr("Save All"),
+                         tr("Saved %1 file(s). %2 file(s) could not be saved.")
+                             .arg(savedCount)
+                             .arg(failedCount));
+  }
+}
+
+void MainWindow::showInSidebar() {
+  if (session_.filePath().isEmpty()) {
+    return;
+  }
+  setSidebarPanel(SidebarWidget::Panel::Files);
+  sidebar_->setCurrentDocument(
+      session_.displayName(), session_.filePath(),
+      session_.document().isModified());
+}
+
+void MainWindow::deleteFile() {
+  if (session_.filePath().isEmpty()) {
+    return;
+  }
+
+  const QString filePath = session_.filePath();
+  const QString fileName = QFileInfo(filePath).fileName();
+
+  const QMessageBox::StandardButton confirm = QMessageBox::warning(
+      this, tr("Delete File"),
+      tr("Are you sure you want to move \"%1\" to the trash?\n\n"
+         "This action cannot be undone.")
+          .arg(fileName),
+      QMessageBox::Yes | QMessageBox::No,
+      QMessageBox::No);
+
+  if (confirm != QMessageBox::Yes) {
+    return;
+  }
+
+  bool trashed = QFile::moveToTrash(filePath);
+
+  if (!trashed) {
+    const QMessageBox::StandardButton confirm2 = QMessageBox::critical(
+        this, tr("Delete File"),
+        tr("Could not move to trash. Permanently delete \"%1\"?\n\n"
+           "This action cannot be undone.")
+            .arg(fileName),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);
+
+    if (confirm2 != QMessageBox::Yes) {
+      return;
+    }
+
+    if (!QFile::remove(filePath)) {
+      QMessageBox::critical(this, tr("Delete Failed"),
+                            tr("Could not delete file:\n%1").arg(filePath));
+      return;
+    }
+  }
+
+  fileController_.newFile(session_, this);
+  editorController_.clearHistoryAndSelection();
+
+  QStringList recent = recentFiles();
+  recent.removeAll(QFileInfo(filePath).absoluteFilePath());
+  setRecentFiles(recent);
+  rebuildRecentFilesMenu();
 }
 
 bool MainWindow::maybeSaveChanges() {

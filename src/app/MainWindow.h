@@ -30,6 +30,8 @@ public:
   explicit MainWindow(QWidget* parent = nullptr);
 
   bool openFile(QString path);
+  bool saveCurrentDocument();
+  bool isDocumentModified() const;
 
 protected:
   void closeEvent(QCloseEvent* event) override;
@@ -112,6 +114,12 @@ private:
   void showPreferences();
   void revealCurrentFile();
   bool maybeSaveChanges();
+  void reopenWithEncoding(const QString& encodingName);
+  void buildReopenEncodingMenu();
+  void moveToFile();
+  void saveAllOpenFiles();
+  void showInSidebar();
+  void deleteFile();
 
   DocumentSession session_;
   FileController fileController_;
@@ -130,6 +138,7 @@ private:
   QLabel* wordsLabel_ = nullptr;
   QTimer* wordCountTimer_ = nullptr;
   QMenu* recentFilesMenu_ = nullptr;
+  QMenu* reopenEncodingMenu_ = nullptr;
   int cursorLine_ = 1;
   int cursorColumn_ = 1;
   QString renderCursorStatus_;

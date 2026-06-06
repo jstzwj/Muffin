@@ -1,10 +1,12 @@
 [requires]
 qt/6.11.1
+icu/78.2
 
 [options]
 qt/*:shared=True
 qt/*:widgets=True
 qt/*:gui=True
+qt/*:qtsvg=True
 qt/*:qtdeclarative=False
 qt/*:with_odbc=False
 qt/*:with_pq=False
