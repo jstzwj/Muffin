@@ -361,6 +361,10 @@ set(MUFFIN_UI_SOURCES
   src/editor/EditorController.h
   src/editor/EditorView.cpp
   src/editor/EditorView.h
+  src/editor/CodeLanguageEditor.cpp
+  src/editor/CodeLanguageEditor.h
+  src/editor/TableToolbar.cpp
+  src/editor/TableToolbar.h
   src/editor/InputController.cpp
   src/editor/InputController.h
   src/editor/SelectionController.cpp

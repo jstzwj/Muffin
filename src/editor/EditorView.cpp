@@ -1,22 +1,14 @@
 #include "editor/EditorView.h"
 
 #include "document/MarkdownDocument.h"
+#include "editor/CodeLanguageEditor.h"
+#include "editor/TableToolbar.h"
 
 #include <QApplication>
-#include <QCompleter>
 #include <QElapsedTimer>
-#include <QFrame>
-#include <QGraphicsDropShadowEffect>
-#include <QHBoxLayout>
-#include <QIcon>
 #include <QPainter>
-#include <QPixmap>
-#include <QLineEdit>
-#include <QListView>
 #include <QLoggingCategory>
 #include <QScrollBar>
-#include <QStringListModel>
-#include <QToolButton>
 #include <QVector>
 #include <QWheelEvent>
 #include <QMouseEvent>
@@ -25,8 +17,6 @@
 #include <QTextLayout>
 #include <QTextOption>
 #include <QKeyEvent>
-
-#include <functional>
 
 namespace muffin {
 namespace {
@@ -40,91 +30,6 @@ bool sameCursorPosition(const CursorPosition& a, const CursorPosition& b) {
 
 bool sameSelectionRange(const SelectionRange& a, const SelectionRange& b) {
   return sameCursorPosition(a.anchor, b.anchor) && sameCursorPosition(a.focus, b.focus);
-}
-
-enum class TableToolbarIconKind {
-  Resize,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  More,
-  Delete,
-};
-
-QIcon tableToolbarIcon(TableToolbarIconKind kind) {
-  constexpr int iconSize = 16;
-  const QColor ink(17, 24, 39);
-  const QColor mutedInk(17, 24, 39, 150);
-  QPixmap pixmap(iconSize, iconSize);
-  pixmap.fill(Qt::transparent);
-
-  QPainter painter(&pixmap);
-  painter.setRenderHint(QPainter::Antialiasing, true);
-  painter.setPen(QPen(ink, 1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-
-  auto drawAlignmentLines = [&](const QVector<QLineF>& lines) {
-    for (const QLineF& line : lines) {
-      painter.drawLine(line);
-    }
-  };
-
-  switch (kind) {
-    case TableToolbarIconKind::Resize:
-      painter.drawRoundedRect(QRectF(2.5, 2.5, 11.0, 11.0), 1.2, 1.2);
-      painter.setPen(QPen(mutedInk, 1.2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-      painter.drawLine(QLineF(6.0, 2.7, 6.0, 13.3));
-      painter.drawLine(QLineF(10.0, 2.7, 10.0, 13.3));
-      painter.drawLine(QLineF(2.7, 6.0, 13.3, 6.0));
-      painter.drawLine(QLineF(2.7, 10.0, 13.3, 10.0));
-      painter.setPen(QPen(ink, 1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-      painter.drawLine(QLineF(5.2, 5.2, 3.8, 3.8));
-      painter.drawLine(QLineF(3.8, 3.8, 3.8, 5.1));
-      painter.drawLine(QLineF(3.8, 3.8, 5.1, 3.8));
-      painter.drawLine(QLineF(10.8, 10.8, 12.2, 12.2));
-      painter.drawLine(QLineF(12.2, 12.2, 12.2, 10.9));
-      painter.drawLine(QLineF(12.2, 12.2, 10.9, 12.2));
-      break;
-    case TableToolbarIconKind::AlignLeft:
-      drawAlignmentLines({QLineF(2.5, 3.0, 13.5, 3.0), QLineF(2.5, 6.0, 10.0, 6.0), QLineF(2.5, 9.0, 13.5, 9.0),
-                          QLineF(2.5, 12.0, 9.5, 12.0)});
-      break;
-    case TableToolbarIconKind::AlignCenter:
-      drawAlignmentLines({QLineF(2.5, 3.0, 13.5, 3.0), QLineF(4.5, 6.0, 11.5, 6.0), QLineF(2.5, 9.0, 13.5, 9.0),
-                          QLineF(5.0, 12.0, 11.0, 12.0)});
-      break;
-    case TableToolbarIconKind::AlignRight:
-      drawAlignmentLines({QLineF(2.5, 3.0, 13.5, 3.0), QLineF(6.0, 6.0, 13.5, 6.0), QLineF(2.5, 9.0, 13.5, 9.0),
-                          QLineF(6.5, 12.0, 13.5, 12.0)});
-      break;
-    case TableToolbarIconKind::More:
-      painter.setPen(Qt::NoPen);
-      painter.setBrush(ink);
-      painter.drawEllipse(QPointF(8.0, 3.5), 1.35, 1.35);
-      painter.drawEllipse(QPointF(8.0, 8.0), 1.35, 1.35);
-      painter.drawEllipse(QPointF(8.0, 12.5), 1.35, 1.35);
-      break;
-    case TableToolbarIconKind::Delete:
-      painter.drawLine(QLineF(3.0, 4.5, 13.0, 4.5));
-      painter.drawLine(QLineF(6.2, 4.5, 6.2, 3.1));
-      painter.drawLine(QLineF(6.2, 3.1, 9.8, 3.1));
-      painter.drawLine(QLineF(9.8, 3.1, 9.8, 4.5));
-      painter.drawLine(QLineF(4.3, 4.5, 4.9, 12.9));
-      painter.drawLine(QLineF(11.7, 4.5, 11.1, 12.9));
-      painter.drawLine(QLineF(4.9, 12.9, 6.2, 14.0));
-      painter.drawLine(QLineF(11.1, 12.9, 9.8, 14.0));
-      painter.drawLine(QLineF(6.2, 14.0, 9.8, 14.0));
-      painter.drawLine(QLineF(6.8, 7.2, 6.8, 11.4));
-      painter.drawLine(QLineF(9.2, 7.2, 9.2, 11.4));
-      break;
-  }
-  painter.end();
-
-  QIcon icon;
-  icon.addPixmap(pixmap, QIcon::Normal, QIcon::Off);
-  icon.addPixmap(pixmap, QIcon::Active, QIcon::Off);
-  icon.addPixmap(pixmap, QIcon::Selected, QIcon::Off);
-  icon.addPixmap(pixmap, QIcon::Disabled, QIcon::Off);
-  return icon;
 }
 
 class PerfTimer {
@@ -145,106 +50,6 @@ private:
   const char* label_;
   bool enabled_ = false;
   QElapsedTimer timer_;
-};
-
-class TableResizePopup final : public QFrame {
-public:
-  explicit TableResizePopup(QWidget* parent = nullptr) : QFrame(parent, Qt::Popup) {
-    setMouseTracking(true);
-    setFrameShape(QFrame::NoFrame);
-    setFixedSize(gridColumns_ * cellSize_ + 24, gridRows_ * cellSize_ + 56);
-  }
-
-  void setCurrentSize(int rows, int columns) {
-    currentRows_ = qMax(1, rows);
-    currentColumns_ = qMax(1, columns);
-    hoverRows_ = currentRows_;
-    hoverColumns_ = currentColumns_;
-    gridRows_ = qBound(10, currentRows_ + 3, 20);
-    gridColumns_ = qBound(10, currentColumns_ + 3, 20);
-    setFixedSize(gridColumns_ * cellSize_ + 24, gridRows_ * cellSize_ + 56);
-    update();
-  }
-
-  void setResizeCallback(std::function<void(int, int)> callback) {
-    callback_ = std::move(callback);
-  }
-
-protected:
-  void paintEvent(QPaintEvent*) override {
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.fillRect(rect(), QColor(255, 255, 255));
-    painter.setPen(QPen(QColor(215, 220, 226)));
-    painter.setBrush(Qt::NoBrush);
-    painter.drawRoundedRect(rect().adjusted(0, 0, -1, -1), 5, 5);
-
-    const QColor selectedFill(79, 143, 247, 64);
-    const QColor currentBorder(150, 150, 150);
-    const int left = 12;
-    const int top = 12;
-    for (int row = 0; row < gridRows_; ++row) {
-      for (int column = 0; column < gridColumns_; ++column) {
-        const QRect cell(left + column * cellSize_, top + row * cellSize_, cellSize_ - 2, cellSize_ - 2);
-        const bool selected = row < hoverRows_ && column < hoverColumns_;
-        const bool current = row < currentRows_ && column < currentColumns_;
-        painter.setPen(current ? QPen(currentBorder) : QPen(QColor(206, 211, 217)));
-        painter.setBrush(selected ? selectedFill : QColor(248, 249, 250));
-        painter.drawRect(cell);
-      }
-    }
-
-    painter.setPen(QColor(68, 68, 68));
-    painter.drawText(QRect(0, height() - 34, width(), 24), Qt::AlignCenter, QStringLiteral("%1 x %2").arg(hoverColumns_).arg(hoverRows_));
-  }
-
-  void mouseMoveEvent(QMouseEvent* event) override {
-    updateHover(event->position().toPoint());
-  }
-
-  void mousePressEvent(QMouseEvent* event) override {
-    if (event->button() != Qt::LeftButton) {
-      QFrame::mousePressEvent(event);
-      return;
-    }
-    if (updateHover(event->position().toPoint()) && callback_) {
-      callback_(hoverRows_, hoverColumns_);
-      hide();
-      event->accept();
-      return;
-    }
-    QFrame::mousePressEvent(event);
-  }
-
-  void leaveEvent(QEvent*) override {
-    hoverRows_ = currentRows_;
-    hoverColumns_ = currentColumns_;
-    update();
-  }
-
-private:
-  bool updateHover(QPoint pos) {
-    const int left = 12;
-    const int top = 12;
-    const int column = (pos.x() - left) / cellSize_;
-    const int row = (pos.y() - top) / cellSize_;
-    if (pos.x() < left || pos.y() < top || column < 0 || row < 0 || column >= gridColumns_ || row >= gridRows_) {
-      return false;
-    }
-    hoverRows_ = row + 1;
-    hoverColumns_ = column + 1;
-    update();
-    return true;
-  }
-
-  int currentRows_ = 1;
-  int currentColumns_ = 1;
-  int hoverRows_ = 1;
-  int hoverColumns_ = 1;
-  int gridRows_ = 10;
-  int gridColumns_ = 10;
-  const int cellSize_ = 15;
-  std::function<void(int, int)> callback_;
 };
 
 QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin) {
@@ -382,11 +187,9 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
   viewport()->setAutoFillBackground(false);
   setBackgroundRole(QPalette::Base);
   applyScrollBarStyle();
-  connect(verticalScrollBar(), &QScrollBar::valueChanged, this, [this] {
-    updateCodeLanguageEditor();
-    updateTableToolbar();
-  });
-  setCodeLanguageSuggestions({
+
+  codeLanguageEditor_ = new CodeLanguageEditor(viewport(), this);
+  codeLanguageEditor_->setSuggestions({
       QStringLiteral("bash"),
       QStringLiteral("c"),
       QStringLiteral("cpp"),
@@ -422,6 +225,18 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
       QStringLiteral("typescript"),
       QStringLiteral("xml"),
       QStringLiteral("yaml"),
+  });
+  connect(codeLanguageEditor_, &CodeLanguageEditor::languageCommitted, this, &EditorView::codeLanguageCommitted);
+
+  tableToolbar_ = new TableToolbar(viewport(), this);
+  connect(tableToolbar_, &TableToolbar::columnAlignmentRequested, this, &EditorView::tableColumnAlignmentRequested);
+  connect(tableToolbar_, &TableToolbar::moreActionsRequested, this, &EditorView::tableMoreActionsRequested);
+  connect(tableToolbar_, &TableToolbar::deleteRequested, this, &EditorView::tableDeleteRequested);
+  connect(tableToolbar_, &TableToolbar::resizeRequested, this, &EditorView::tableResizeRequested);
+
+  connect(verticalScrollBar(), &QScrollBar::valueChanged, this, [this] {
+    updateCodeLanguageEditor();
+    updateTableToolbar();
   });
 }
 
@@ -578,11 +393,8 @@ void EditorView::clearCursor() {
 }
 
 void EditorView::setCodeLanguageSuggestions(QStringList languages) {
-  languages.removeDuplicates();
-  languages.sort(Qt::CaseInsensitive);
-  codeLanguageSuggestions_ = std::move(languages);
-  if (codeLanguageCompleter_) {
-    codeLanguageCompleter_->setModel(new QStringListModel(codeLanguageSuggestions_, codeLanguageCompleter_));
+  if (codeLanguageEditor_) {
+    codeLanguageEditor_->setSuggestions(std::move(languages));
   }
 }
 
@@ -927,320 +739,18 @@ void EditorView::applyScrollBarStyle() {
                     .arg(background));
 }
 
-void EditorView::ensureCodeLanguageEditor() {
-  if (codeLanguageEditor_) {
-    return;
-  }
-
-  codeLanguageEditor_ = new QLineEdit(viewport());
-  codeLanguageEditor_->setObjectName(QStringLiteral("codeLanguageEditor"));
-  codeLanguageEditor_->setPlaceholderText(QStringLiteral("text"));
-  codeLanguageEditor_->setClearButtonEnabled(false);
-  codeLanguageEditor_->setFrame(false);
-  codeLanguageEditor_->setFixedWidth(116);
-  codeLanguageEditor_->hide();
-  codeLanguageEditor_->setStyleSheet(QStringLiteral(
-      "QLineEdit#codeLanguageEditor {"
-      "  background:rgba(255,255,255,235);"
-      "  color:#222222;"
-      "  border:1px solid #d7dce2;"
-      "  border-radius:4px;"
-      "  padding:2px 8px;"
-      "  selection-background-color:#2f80ed;"
-      "  selection-color:#ffffff;"
-      "  font-size:12px;"
-      "}"));
-  auto* shadow = new QGraphicsDropShadowEffect(codeLanguageEditor_);
-  shadow->setBlurRadius(14.0);
-  shadow->setOffset(0.0, 3.0);
-  shadow->setColor(QColor(15, 23, 42, 35));
-  codeLanguageEditor_->setGraphicsEffect(shadow);
-
-  codeLanguageCompleter_ = new QCompleter(codeLanguageSuggestions_, codeLanguageEditor_);
-  codeLanguageCompleter_->setCaseSensitivity(Qt::CaseInsensitive);
-  codeLanguageCompleter_->setFilterMode(Qt::MatchContains);
-  codeLanguageCompleter_->setCompletionMode(QCompleter::PopupCompletion);
-  auto* popup = new QListView(codeLanguageEditor_);
-  popup->setObjectName(QStringLiteral("codeLanguagePopup"));
-  popup->setUniformItemSizes(true);
-  popup->setAlternatingRowColors(false);
-  popup->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  popup->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  popup->setStyleSheet(QStringLiteral(
-      "QListView#codeLanguagePopup {"
-      "  background:#ffffff;"
-      "  color:#333333;"
-      "  border:1px solid #e1e4e8;"
-      "  border-radius:5px;"
-      "  padding:6px 0;"
-      "  outline:0;"
-      "  font-size:13px;"
-      "}"
-      "QListView#codeLanguagePopup::item {"
-      "  min-height:28px;"
-      "  padding:4px 12px;"
-      "}"
-      "QListView#codeLanguagePopup::item:selected {"
-      "  background:#f1f6ff;"
-      "  color:#111111;"
-      "}"));
-  codeLanguageCompleter_->setPopup(popup);
-  codeLanguageEditor_->setCompleter(codeLanguageCompleter_);
-
-  connect(codeLanguageEditor_, &QLineEdit::editingFinished, this, &EditorView::commitCodeLanguageEditor);
-  connect(codeLanguageEditor_, &QLineEdit::returnPressed, this, &EditorView::commitCodeLanguageEditor);
-  connect(codeLanguageEditor_, &QLineEdit::textEdited, this, [this] {
-    if (codeLanguageCompleter_) {
-      QRect rect = codeLanguageEditor_->rect();
-      rect.setWidth(140);
-      codeLanguageCompleter_->complete(rect);
-    }
-  });
-}
-
 void EditorView::updateCodeLanguageEditor() {
-  if (updatingCodeLanguageEditor_) {
+  if (!codeLanguageEditor_) {
     return;
   }
-
-  if (!layout_ || !document_ || !cursorPosition_.isValid() || cursorPosition_.blockId != cursorHit_.blockId ||
-      cursorHit_.zone != HitTestResult::Zone::Code) {
-    hideCodeLanguageEditor();
-    return;
-  }
-
-  const BlockLayout* block = layout_->block(cursorPosition_.blockId);
-  if (!block || block->type() != BlockType::CodeFence) {
-    hideCodeLanguageEditor();
-    return;
-  }
-  showCodeLanguageEditor(*block);
-}
-
-void EditorView::showCodeLanguageEditor(const BlockLayout& block) {
-  ensureCodeLanguageEditor();
-  if (!codeLanguageEditor_ || !document_) {
-    return;
-  }
-
-  const MarkdownNode* node = document_->node(block.nodeId());
-  if (!node || node->type() != BlockType::CodeFence) {
-    hideCodeLanguageEditor();
-    return;
-  }
-
-  updatingCodeLanguageEditor_ = true;
-  codeLanguageNodeId_ = block.nodeId();
-  if (!codeLanguageEditor_->hasFocus()) {
-    const QString language = node->codeLanguage().isEmpty() ? QStringLiteral("text") : node->codeLanguage();
-    if (codeLanguageEditor_->text() != language) {
-      codeLanguageEditor_->setText(language);
-    }
-    codeLanguageEditor_->deselect();
-    codeLanguageEditor_->setCursorPosition(codeLanguageEditor_->text().size());
-  }
-
-  const QRectF blockRect = block.rect().translated(0, -scrollY());
-  codeLanguageEditor_->resize(116, 26);
-  const int margin = 10;
-  const int x = qRound(blockRect.right()) - codeLanguageEditor_->width() - margin;
-  int y = qRound(blockRect.bottom()) - codeLanguageEditor_->height() / 2;
-  if (y + codeLanguageEditor_->height() + margin > viewport()->height()) {
-    y = qRound(blockRect.bottom()) - codeLanguageEditor_->height() - margin;
-  }
-  codeLanguageEditor_->move(qMax(0, x), qMax(0, y));
-  codeLanguageEditor_->show();
-  codeLanguageEditor_->raise();
-  updatingCodeLanguageEditor_ = false;
-}
-
-void EditorView::hideCodeLanguageEditor() {
-  codeLanguageNodeId_ = {};
-  if (codeLanguageEditor_) {
-    codeLanguageEditor_->hide();
-  }
-}
-
-void EditorView::commitCodeLanguageEditor() {
-  if (updatingCodeLanguageEditor_ || !codeLanguageEditor_ || !codeLanguageEditor_->isVisible() || !codeLanguageNodeId_.isValid()) {
-    return;
-  }
-  QString language = codeLanguageEditor_->text().trimmed();
-  if (language == QStringLiteral("text")) {
-    language.clear();
-  }
-  if (document_) {
-    const MarkdownNode* node = document_->node(codeLanguageNodeId_);
-    if (node && node->codeLanguage() == language) {
-      return;
-    }
-  }
-  emit codeLanguageCommitted(codeLanguageNodeId_, language);
-}
-
-void EditorView::ensureTableToolbar() {
-  if (tableToolbar_) {
-    return;
-  }
-
-  tableToolbar_ = new QWidget(viewport());
-  tableToolbar_->setObjectName(QStringLiteral("tableFloatingToolbar"));
-  tableToolbar_->setFocusPolicy(Qt::NoFocus);
-  tableToolbar_->hide();
-  auto* layout = new QHBoxLayout(tableToolbar_);
-  layout->setContentsMargins(4, 3, 4, 3);
-  layout->setSpacing(1);
-
-  auto makeButton = [this, layout](TableToolbarIconKind iconKind, const QString& tooltip) {
-    auto* button = new QToolButton(tableToolbar_);
-    button->setIcon(tableToolbarIcon(iconKind));
-    button->setIconSize(QSize(16, 16));
-    button->setToolTip(tooltip);
-    button->setAutoRaise(true);
-    button->setFocusPolicy(Qt::NoFocus);
-    button->setCursor(Qt::PointingHandCursor);
-    button->setFixedSize(24, 22);
-    layout->addWidget(button);
-    return button;
-  };
-
-  tableResizeButton_ = makeButton(TableToolbarIconKind::Resize, QStringLiteral("调整表格大小"));
-  tableAlignLeftButton_ = makeButton(TableToolbarIconKind::AlignLeft, QStringLiteral("左对齐"));
-  tableAlignCenterButton_ = makeButton(TableToolbarIconKind::AlignCenter, QStringLiteral("居中对齐"));
-  tableAlignRightButton_ = makeButton(TableToolbarIconKind::AlignRight, QStringLiteral("右对齐"));
-  tableMoreButton_ = makeButton(TableToolbarIconKind::More, QStringLiteral("更多操作"));
-  tableDeleteButton_ = makeButton(TableToolbarIconKind::Delete, QStringLiteral("删除表格"));
-
-  tableToolbar_->setStyleSheet(QStringLiteral(
-      "QWidget#tableFloatingToolbar {"
-      "  background:rgba(244,246,248,248);"
-      "  border:1px solid #c9d0d8;"
-      "  border-radius:5px;"
-      "}"
-      "QToolButton {"
-      "  background:rgba(255,255,255,0);"
-      "  border:0;"
-      "  color:#111827;"
-      "  font-size:13px;"
-      "}"
-      "QToolButton:hover {"
-      "  background:#dbeafe;"
-      "  border-radius:3px;"
-      "}"
-      "QToolButton:pressed {"
-      "  background:#bfdbfe;"
-      "  border-radius:3px;"
-      "}"));
-  auto* shadow = new QGraphicsDropShadowEffect(tableToolbar_);
-  shadow->setBlurRadius(12.0);
-  shadow->setOffset(0.0, 2.0);
-  shadow->setColor(QColor(15, 23, 42, 28));
-  tableToolbar_->setGraphicsEffect(shadow);
-
-  connect(tableResizeButton_, &QToolButton::clicked, this, &EditorView::showTableResizePopup);
-  connect(tableAlignLeftButton_, &QToolButton::clicked, this, [this] { emit tableColumnAlignmentRequested(TableAlignment::Left); });
-  connect(tableAlignCenterButton_, &QToolButton::clicked, this, [this] { emit tableColumnAlignmentRequested(TableAlignment::Center); });
-  connect(tableAlignRightButton_, &QToolButton::clicked, this, [this] { emit tableColumnAlignmentRequested(TableAlignment::Right); });
-  connect(tableMoreButton_, &QToolButton::clicked, this, [this] {
-    emit tableMoreActionsRequested(tableMoreButton_->mapToGlobal(QPoint(0, tableMoreButton_->height())));
-  });
-  connect(tableDeleteButton_, &QToolButton::clicked, this, [this] { emit tableDeleteRequested(); });
+  codeLanguageEditor_->update(cursorPosition_, cursorHit_, layout_.get(), document_.data(), scrollY(), viewport()->height());
 }
 
 void EditorView::updateTableToolbar() {
-  if (updatingTableToolbar_) {
-    return;
-  }
-  const BlockLayout* table = activeTableLayout();
-  if (!table) {
-    hideTableToolbar();
-    return;
-  }
-  showTableToolbar(*table);
-}
-
-void EditorView::showTableToolbar(const BlockLayout& table) {
-  ensureTableToolbar();
   if (!tableToolbar_) {
     return;
   }
-
-  QRectF tableRect = table.rect().translated(0, -scrollY());
-  if (!tableRect.intersects(QRectF(viewport()->rect()).adjusted(0, -40, 0, 40))) {
-    hideTableToolbar();
-    return;
-  }
-
-  updatingTableToolbar_ = true;
-  tableToolbar_->adjustSize();
-  int x = qRound(tableRect.left());
-  int y = qRound(tableRect.top()) - tableToolbar_->height() - 6;
-  if (y < 4) {
-    y = qRound(tableRect.top()) + 4;
-  }
-  x = qBound(4, x, qMax(4, viewport()->width() - tableToolbar_->width() - 4));
-  y = qBound(4, y, qMax(4, viewport()->height() - tableToolbar_->height() - 4));
-  tableToolbar_->move(x, y);
-  tableToolbar_->show();
-  tableToolbar_->raise();
-  updatingTableToolbar_ = false;
-}
-
-void EditorView::hideTableToolbar() {
-  if (tableToolbar_) {
-    tableToolbar_->hide();
-  }
-  if (tableResizePopup_) {
-    tableResizePopup_->hide();
-  }
-}
-
-void EditorView::showTableResizePopup() {
-  ensureTableToolbar();
-  if (!tableResizeButton_) {
-    return;
-  }
-
-  if (!tableResizePopup_) {
-    auto* popup = new TableResizePopup(this);
-    popup->setResizeCallback([this](int rows, int columns) { emit tableResizeRequested(rows, columns); });
-    tableResizePopup_ = popup;
-  }
-
-  auto* popup = static_cast<TableResizePopup*>(tableResizePopup_);
-  const auto [rows, columns] = activeTableSize();
-  popup->setCurrentSize(rows, columns);
-  popup->move(tableResizeButton_->mapToGlobal(QPoint(0, tableResizeButton_->height() + 3)));
-  popup->show();
-  popup->raise();
-}
-
-QPair<int, int> EditorView::activeTableSize() const {
-  const BlockLayout* table = activeTableLayout();
-  if (!table) {
-    return {1, 1};
-  }
-  int rows = static_cast<int>(table->tableRows().size());
-  int columns = 1;
-  for (const BlockLayout::TableRowLayout& row : table->tableRows()) {
-    columns = qMax(columns, static_cast<int>(row.cells.size()));
-  }
-  return {qMax(1, rows), columns};
-}
-
-const BlockLayout* EditorView::activeTableLayout() const {
-  if (!layout_ || !document_ || cursorHit_.zone != HitTestResult::Zone::TableCell || cursorHit_.tableRow < 0 || cursorHit_.tableColumn < 0) {
-    return nullptr;
-  }
-  const BlockLayout* table = layout_->block(cursorHit_.blockId);
-  if (!table || table->type() != BlockType::Table || cursorHit_.tableRow >= static_cast<int>(table->tableRows().size())) {
-    return nullptr;
-  }
-  const auto& row = table->tableRows().at(static_cast<size_t>(cursorHit_.tableRow));
-  if (cursorHit_.tableColumn >= static_cast<int>(row.cells.size())) {
-    return nullptr;
-  }
-  return table;
+  tableToolbar_->update(cursorHit_, layout_.get(), scrollY(), viewport()->rect());
 }
 
 void EditorView::updateCursorHitFromPosition() {
