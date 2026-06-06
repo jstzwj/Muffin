@@ -495,6 +495,9 @@ endif()
 if(MUFFIN_QT_PLUGIN_DIRS_ARG)
   list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "QT_PLUGIN_PATH=set:${MUFFIN_QT_PLUGIN_DIRS_ARG}")
 endif()
+if(APPLE)
+  list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "QT_QPA_PLATFORM=set:offscreen")
+endif()
 add_executable(MuffinParserSmokeTest
   tests/parser/ParserSmokeTest.cpp
 )
