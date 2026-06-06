@@ -66,4 +66,69 @@ bool ClipboardController::paste() {
   return text.isEmpty() ? false : inputController_->insertText(text);
 }
 
+bool ClipboardController::copyAsPlainText() {
+  if (!session_ || !selectionController_ || !selectionController_->hasCursor() ||
+      selectionController_->selection().isCollapsed()) {
+    return false;
+  }
+
+  const SelectionExportResult result = selectionSerializer_.exportSelection(
+      SelectionExportRequest{&session_->document(), selectionController_->selection(), SelectionExportFormat::PlainText});
+  if (result.text.isEmpty()) {
+    return false;
+  }
+
+  auto* mimeData = new QMimeData();
+  mimeData->setText(result.text);
+  QApplication::clipboard()->setMimeData(mimeData);
+  return true;
+}
+
+bool ClipboardController::copyAsMarkdown() {
+  if (!session_ || !selectionController_ || !selectionController_->hasCursor() ||
+      selectionController_->selection().isCollapsed()) {
+    return false;
+  }
+
+  const SelectionExportResult result = selectionSerializer_.exportSelection(
+      SelectionExportRequest{&session_->document(), selectionController_->selection(), SelectionExportFormat::Markdown});
+  if (result.text.isEmpty()) {
+    return false;
+  }
+
+  auto* mimeData = new QMimeData();
+  mimeData->setText(result.text);
+  mimeData->setData(QStringLiteral("text/markdown"), result.mimeData);
+  QApplication::clipboard()->setMimeData(mimeData);
+  return true;
+}
+
+bool ClipboardController::copyAsHtml() {
+  if (!session_ || !selectionController_ || !selectionController_->hasCursor() ||
+      selectionController_->selection().isCollapsed()) {
+    return false;
+  }
+
+  const SelectionExportResult result = selectionSerializer_.exportSelection(
+      SelectionExportRequest{&session_->document(), selectionController_->selection(), SelectionExportFormat::Html});
+  if (result.text.isEmpty()) {
+    return false;
+  }
+
+  auto* mimeData = new QMimeData();
+  mimeData->setHtml(result.text);
+  mimeData->setText(result.text);
+  QApplication::clipboard()->setMimeData(mimeData);
+  return true;
+}
+
+bool ClipboardController::pasteAsPlainText() {
+  if (!inputController_) {
+    return false;
+  }
+
+  const QString text = QApplication::clipboard()->text();
+  return text.isEmpty() ? false : inputController_->insertText(text);
+}
+
 }  // namespace muffin

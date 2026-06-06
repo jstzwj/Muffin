@@ -40,6 +40,8 @@ public:
   QString exportPlainText(const MarkdownDocument& document, const SelectionRange& selection) const;
   QString exportHtml(const MarkdownDocument& document, const SelectionRange& selection) const;
 
+  static QString renderMarkdownToHtml(const QString& markdown);
+
 private:
   struct EditableContext {
     const MarkdownNode* node = nullptr;

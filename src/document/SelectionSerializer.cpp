@@ -6,6 +6,10 @@
 #include "document/MarkdownNode.h"
 #include "parser/CmarkGfmParser.h"
 
+extern "C" {
+#include "cmark-gfm-core-extensions.h"
+}
+
 #include <QStringList>
 
 namespace muffin {
@@ -149,7 +153,34 @@ QString SelectionSerializer::exportPlainText(const MarkdownDocument& document, c
 
 QString SelectionSerializer::exportHtml(const MarkdownDocument& document, const SelectionRange& selection) const {
   const QString markdown = exportMarkdown(document, selection);
-  return markdown.toHtmlEscaped().replace(QLatin1Char('\n'), QStringLiteral("<br>\n"));
+  return renderMarkdownToHtml(markdown);
+}
+
+QString SelectionSerializer::renderMarkdownToHtml(const QString& markdown) {
+  if (markdown.isEmpty()) {
+    return {};
+  }
+  const QByteArray utf8 = markdown.toUtf8();
+  cmark_parser* parser = cmark_parser_new(CMARK_OPT_DEFAULT | CMARK_OPT_FOOTNOTES);
+  cmark_gfm_core_extensions_ensure_registered();
+  const auto attach = [parser](const char* name) {
+    if (cmark_syntax_extension* extension = cmark_find_syntax_extension(name)) {
+      cmark_parser_attach_syntax_extension(parser, extension);
+    }
+  };
+  attach("table");
+  attach("strikethrough");
+  attach("autolink");
+  attach("tasklist");
+  attach("math");
+  cmark_parser_feed(parser, utf8.constData(), static_cast<size_t>(utf8.size()));
+  cmark_node* doc = cmark_parser_finish(parser);
+  char* html = cmark_render_html(doc, CMARK_OPT_DEFAULT, cmark_parser_get_syntax_extensions(parser));
+  QString result = QString::fromUtf8(html);
+  free(html);
+  cmark_node_free(doc);
+  cmark_parser_free(parser);
+  return result;
 }
 
 bool SelectionSerializer::selectionContext(

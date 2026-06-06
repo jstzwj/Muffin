@@ -3,6 +3,7 @@
 #include "blocks/table/TableModelOps.h"
 #include "document/InlineProjection.h"
 #include "document/MarkdownNode.h"
+#include "editor/BlockEditContext.h"
 #include "editor/EditorView.h"
 
 #include <utility>
@@ -801,6 +802,22 @@ bool EditorController::paste() {
   return clipboardController_.paste();
 }
 
+bool EditorController::copyAsPlainText() {
+  return clipboardController_.copyAsPlainText();
+}
+
+bool EditorController::copyAsMarkdown() {
+  return clipboardController_.copyAsMarkdown();
+}
+
+bool EditorController::copyAsHtml() {
+  return clipboardController_.copyAsHtml();
+}
+
+bool EditorController::pasteAsPlainText() {
+  return clipboardController_.pasteAsPlainText();
+}
+
 ParagraphController& EditorController::paragraphController() {
   return paragraphController_;
 }
@@ -900,6 +917,229 @@ void EditorController::clearHistoryAndSelection() {
   undoStack_.clear();
   selection_.clear();
   exitAllLiteralEditModes();
+}
+
+bool EditorController::selectCurrentBlock() {
+  if (!session_ || !selection_.hasCursor()) {
+    return false;
+  }
+
+  const CursorPosition cursor = selection_.cursorPosition();
+  MarkdownNode* blockNode = session_->document().node(cursor.blockId);
+  if (!blockNode) {
+    return false;
+  }
+
+  // For list items, select the primary paragraph content
+  MarkdownNode* target = blockNode;
+  if (blockNode->type() == BlockType::ListItem) {
+    for (const auto& child : blockNode->children()) {
+      if (child->type() == BlockType::Paragraph || child->type() == BlockType::Heading) {
+        target = child.get();
+        break;
+      }
+    }
+  }
+
+  SelectionRange range;
+  range.anchor = cursorForNodeText(*target, 0, cursor.blockId);
+  range.focus = cursorForNodeText(*target, selectableTextLength(*target), cursor.blockId);
+  selection_.setSelection(range);
+  return true;
+}
+
+bool EditorController::selectCurrentFormatSpan() {
+  if (!session_ || !selection_.hasCursor()) {
+    return false;
+  }
+
+  BlockEditContextResolver resolver(const_cast<DocumentSession*>(session_), const_cast<SelectionController*>(&selection_));
+  BlockEditContext context;
+  if (!resolver.current(context)) {
+    return false;
+  }
+
+  // For literal blocks, select the whole block
+  if (context.blockType == BlockType::FrontMatter || context.blockType == BlockType::CodeFence ||
+      context.blockType == BlockType::MathBlock || context.blockType == BlockType::HtmlBlock) {
+    MarkdownNode* blockNode = session_->document().node(selection_.cursorPosition().blockId);
+    if (!blockNode) {
+      return false;
+    }
+    SelectionRange range;
+    range.anchor = cursorForNodeText(*blockNode, 0);
+    range.focus = cursorForNodeText(*blockNode, selectableTextLength(*blockNode));
+    selection_.setSelection(range);
+    return true;
+  }
+
+  // For paragraph/heading/table cell: find the InlineProjection span at cursor
+  if (!context.inlineProjection.isValid() || !context.editableNode) {
+    // Fallback: select word at cursor
+    return selectWordAtCursor(context);
+  }
+
+  const qsizetype offset = context.cursorTextOffset;
+  const auto& spans = context.inlineProjection.spans();
+
+  // Walk spans to find the innermost content span containing the cursor
+  const InlineProjectionSpan* bestSpan = nullptr;
+  for (const auto& span : spans) {
+    if (span.kind == InlineSpanKind::OpenMarker || span.kind == InlineSpanKind::CloseMarker ||
+        span.kind == InlineSpanKind::HiddenSyntax) {
+      continue;
+    }
+    // Check if cursor is within this span's visible range
+    if (offset >= span.visibleStart && offset <= span.visibleEnd) {
+      // Prefer innermost (non-Text) spans, or the last Text span
+      if (span.kind != InlineSpanKind::Text || !bestSpan) {
+        bestSpan = &span;
+      }
+    }
+  }
+
+  if (bestSpan && bestSpan->visibleStart < bestSpan->visibleEnd) {
+    SelectionRange range;
+    range.anchor.blockId = context.blockId;
+    range.anchor.text.nodeId = context.editableNode->id();
+    range.anchor.text.textOffset = bestSpan->visibleStart;
+    range.focus.blockId = context.blockId;
+    range.focus.text.nodeId = context.editableNode->id();
+    range.focus.text.textOffset = bestSpan->visibleEnd;
+    selection_.setSelection(range);
+    return true;
+  }
+
+  return selectWordAtCursor(context);
+}
+
+bool EditorController::selectWordAtCursor(const BlockEditContext& context) {
+  const QString& visible = context.visibleText;
+  const qsizetype offset = qBound<qsizetype>(0, context.cursorTextOffset, visible.size());
+
+  qsizetype wordStart = offset;
+  qsizetype wordEnd = offset;
+  while (wordStart > 0 && visible.at(wordStart - 1).isLetterOrNumber()) {
+    --wordStart;
+  }
+  while (wordEnd < visible.size() && visible.at(wordEnd).isLetterOrNumber()) {
+    ++wordEnd;
+  }
+  if (wordStart >= wordEnd) {
+    return false;
+  }
+
+  SelectionRange range;
+  range.anchor.blockId = context.blockId;
+  range.anchor.text.nodeId = context.editableNode ? context.editableNode->id() : context.node->id();
+  range.anchor.text.textOffset = wordStart;
+  range.focus.blockId = context.blockId;
+  range.focus.text.nodeId = context.editableNode ? context.editableNode->id() : context.node->id();
+  range.focus.text.textOffset = wordEnd;
+  selection_.setSelection(range);
+  return true;
+}
+
+bool EditorController::moveBlockUp() {
+  if (!session_ || !selection_.hasCursor()) {
+    return false;
+  }
+
+  const CursorPosition cursor = selection_.cursorPosition();
+  MarkdownNode* current = session_->document().node(cursor.blockId);
+  if (!current) {
+    return false;
+  }
+
+  // Walk up to top-level child of Document
+  while (current->parent() && current->parent()->type() != BlockType::Document) {
+    current = current->parent();
+  }
+  if (!current || !current->parent() || current->parent()->type() != BlockType::Document) {
+    return false;
+  }
+
+  MarkdownNode* prev = current->previousSibling();
+  if (!prev) {
+    return false;
+  }
+
+  return swapTopLevelBlocks(*prev, *current);
+}
+
+bool EditorController::moveBlockDown() {
+  if (!session_ || !selection_.hasCursor()) {
+    return false;
+  }
+
+  const CursorPosition cursor = selection_.cursorPosition();
+  MarkdownNode* current = session_->document().node(cursor.blockId);
+  if (!current) {
+    return false;
+  }
+
+  // Walk up to top-level child of Document
+  while (current->parent() && current->parent()->type() != BlockType::Document) {
+    current = current->parent();
+  }
+  if (!current || !current->parent() || current->parent()->type() != BlockType::Document) {
+    return false;
+  }
+
+  MarkdownNode* next = current->nextSibling();
+  if (!next) {
+    return false;
+  }
+
+  return swapTopLevelBlocks(*current, *next);
+}
+
+bool EditorController::swapTopLevelBlocks(MarkdownNode& upper, MarkdownNode& lower) {
+  const QString& markdown = session_->markdownText();
+  const SourceRange upperRange = upper.sourceRange();
+  const SourceRange lowerRange = lower.sourceRange();
+
+  qsizetype upperStart = upperRange.byteStart;
+  qsizetype lowerEnd = lowerRange.byteEnd;
+
+  // Extend lowerEnd to include trailing newline for clean swap
+  while (lowerEnd < markdown.size() && markdown.at(lowerEnd) == QLatin1Char('\n')) {
+    ++lowerEnd;
+  }
+
+  const QString upperText = markdown.mid(upperStart, lowerRange.byteStart - upperStart);
+  const QString lowerText = markdown.mid(lowerRange.byteStart, lowerEnd - lowerRange.byteStart);
+
+  // Compute new cursor source offset: same relative position within the moved block
+  const qsizetype cursorSrcOff = selection_.cursorPosition().text.sourceOffset;
+  qsizetype newCursorOffset = cursorSrcOff;
+
+  // The block moves by the difference in text lengths
+  // Current block text (upperText) gets replaced by lowerText, then upperText
+  // If cursor was in the upper block, it shifts by (lowerText.size() - 0) = lowerText.size()
+  // If cursor was in the lower block, it shifts by -(upperText.size())
+  const qsizetype upperBlockEnd = lowerRange.byteStart;
+  if (cursorSrcOff >= upperStart && cursorSrcOff < upperBlockEnd) {
+    // Cursor was in upper block, it shifts down by lowerText.size()
+    newCursorOffset = cursorSrcOff + lowerText.size();
+  } else if (cursorSrcOff >= lowerRange.byteStart && cursorSrcOff <= lowerEnd) {
+    // Cursor was in lower block, it shifts up by upperText.size()
+    newCursorOffset = cursorSrcOff - upperText.size();
+  }
+
+  const QString combined = lowerText + upperText;
+  inputController_.performLocalEdit(
+      EditTransaction::Kind::ReplaceDocumentText,
+      QStringLiteral("Move Block"),
+      upperStart,
+      lowerEnd - upperStart,
+      combined,
+      CursorPosition{},
+      newCursorOffset,
+      {},
+      false,
+      true);
+  return true;
 }
 
 void EditorController::exitAllLiteralEditModes() {

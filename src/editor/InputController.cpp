@@ -1097,6 +1097,21 @@ void InputController::applyEdit(
   applyEdit(kind, label, std::move(nextText), CursorPosition(), nextSourceOffset, {}, preferLaterEmptyAtOffset);
 }
 
+void InputController::performLocalEdit(
+    EditTransaction::Kind kind,
+    const QString& label,
+    qsizetype sourceStart,
+    qsizetype removedLength,
+    QString insertedText,
+    CursorPosition preferredCursor,
+    qsizetype fallbackSourceOffset,
+    QVector<LocalEditNodeHint> nodeHints,
+    bool preferLaterEmptyAtOffset,
+    bool structureEdit) {
+  applyLocalEdit(kind, label, sourceStart, removedLength, std::move(insertedText), std::move(preferredCursor),
+                 fallbackSourceOffset, std::move(nodeHints), preferLaterEmptyAtOffset, structureEdit);
+}
+
 void InputController::applyLocalEdit(
     EditTransaction::Kind kind,
     const QString& label,

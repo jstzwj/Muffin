@@ -21,6 +21,7 @@ class QWidget;
 namespace muffin {
 
 class EditorView;
+class FindBarWidget;
 class SourceEditorWidget;
 
 class MainWindow final : public QMainWindow {
@@ -94,6 +95,7 @@ private:
   void openFolder();
   void openNewWindow();
   void activateOutlineNode(NodeId nodeId, SourceRange sourceRange);
+  void updateEditActions();
   void updateTableActions();
   void updateParagraphActions();
   void updateCodeActions();
@@ -122,6 +124,16 @@ private:
   void showInSidebar();
   void deleteFile();
 
+  void moveSourceLineUp();
+  void moveSourceLineDown();
+  void showFindBar();
+  void hideFindBar();
+  void performFind(const QString& text, bool forward);
+  void performFindNext();
+  void performFindPrevious();
+  void performReplace(const QString& findText, const QString& replaceText);
+  void performReplaceAll(const QString& findText, const QString& replaceText);
+
   DocumentSession session_;
   FileController fileController_;
   CommandRegistry commands_;
@@ -132,6 +144,7 @@ private:
   QStackedWidget* viewStack_ = nullptr;
   EditorView* renderView_ = nullptr;
   SourceEditorWidget* editor_ = nullptr;
+  FindBarWidget* findBar_ = nullptr;
   QToolButton* sidebarButton_ = nullptr;
   QToolButton* sourceModeButton_ = nullptr;
   QLabel* parseLabel_ = nullptr;

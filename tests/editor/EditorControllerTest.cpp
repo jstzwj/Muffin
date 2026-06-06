@@ -633,7 +633,7 @@ void testSelectionSerializerFormats() {
   SelectionExportResult html =
       serializer.exportSelection(SelectionExportRequest{&session.document(), selection.selection(), SelectionExportFormat::Html});
   require(html.mimeType == QStringLiteral("text/html"), "html export mime mismatch");
-  require(html.text.contains(QStringLiteral("## eadings")), "html export should be based on markdown fragment");
+  require(html.text.contains(QStringLiteral("<h2>eadings</h2>")), "html export should render markdown to HTML");
 }
 
 void testSelectionSerializerCrossComplexInlineEdges() {

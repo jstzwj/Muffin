@@ -23,6 +23,10 @@ public:
   bool copy();
   bool cut();
   bool paste();
+  bool copyAsPlainText();
+  bool copyAsMarkdown();
+  bool copyAsHtml();
+  bool pasteAsPlainText();
 
 private:
   DocumentSession* session_ = nullptr;

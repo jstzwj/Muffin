@@ -97,7 +97,15 @@ public:
   bool copy();
   bool cut();
   bool paste();
+  bool copyAsPlainText();
+  bool copyAsMarkdown();
+  bool copyAsHtml();
+  bool pasteAsPlainText();
   bool selectAll();
+  bool selectCurrentBlock();
+  bool selectCurrentFormatSpan();
+  bool moveBlockUp();
+  bool moveBlockDown();
   void clearHistoryAndSelection();
   void activateHit(HitTestResult hit);
 
@@ -111,6 +119,8 @@ private:
   void applySnapshot(const DocumentSnapshot& snapshot);
   void applyTransaction(const EditTransaction& transaction, bool undo);
   CursorPosition remapSnapshotCursor(const CursorPosition& snapshotCursor) const;
+  bool selectWordAtCursor(const BlockEditContext& context);
+  bool swapTopLevelBlocks(MarkdownNode& upper, MarkdownNode& lower);
 
   DocumentSession* session_ = nullptr;
   EditorView* view_ = nullptr;

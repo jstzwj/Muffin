@@ -52,6 +52,18 @@ public:
   bool hasEditableSelection() const;
   bool handleInputMethod(QInputMethodEvent* event);
 
+  void performLocalEdit(
+      EditTransaction::Kind kind,
+      const QString& label,
+      qsizetype sourceStart,
+      qsizetype removedLength,
+      QString insertedText,
+      CursorPosition preferredCursor,
+      qsizetype fallbackSourceOffset,
+      QVector<LocalEditNodeHint> nodeHints = {},
+      bool preferLaterEmptyAtOffset = false,
+      bool structureEdit = false);
+
   bool eventFilter(QObject* watched, QEvent* event) override;
 
 signals:

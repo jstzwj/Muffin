@@ -91,6 +91,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/SidebarWidget.cpp
   src/app/DocumentSession.cpp
   src/editor/SourceEditorWidget.cpp
+  src/editor/FindBarWidget.cpp
   src/render/BlockLayoutBuilder.cpp
   src/io/FileController.cpp
 )
@@ -329,6 +330,8 @@ set(MUFFIN_UI_SOURCES
   src/app/SidebarWidget.h
   src/editor/SourceEditorWidget.cpp
   src/editor/SourceEditorWidget.h
+  src/editor/FindBarWidget.cpp
+  src/editor/FindBarWidget.h
   src/blocks/table/TableModelOps.cpp
   src/blocks/table/TableModelOps.h
   src/commands/ParagraphController.cpp

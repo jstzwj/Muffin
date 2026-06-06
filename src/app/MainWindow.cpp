@@ -5,11 +5,14 @@
 #include "app/SidebarWidget.h"
 #include "document/MarkdownTypes.h"
 #include "document/OutlineBuilder.h"
+#include "document/SelectionSerializer.h"
 #include "editor/EditorView.h"
+#include "editor/FindBarWidget.h"
 #include "editor/SourceEditorWidget.h"
 
 #include <QAction>
 #include <QApplication>
+#include <QClipboard>
 #include <QCloseEvent>
 #include <QDateTime>
 #include <QDesktopServices>
@@ -26,12 +29,15 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QInputDialog>
+#include <QMimeData>
 #include <QPlainTextEdit>
 #include <QSettings>
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QStatusBar>
+#include <QTextBlock>
 #include <QTextCursor>
+#include <QTextDocument>
 #include <QTimer>
 #include <QFile>
 #include <QIcon>
@@ -40,6 +46,7 @@
 #include <QSvgRenderer>
 #include <QToolButton>
 #include <QUrl>
+#include <QVBoxLayout>
 
 namespace muffin {
 namespace {
@@ -254,14 +261,25 @@ void MainWindow::setupUi() {
 
   sidebar_ = new SidebarWidget(centralSplitter_);
 
-  viewStack_ = new QStackedWidget(this);
+  auto* editorContainer = new QWidget(this);
+  auto* editorLayout = new QVBoxLayout(editorContainer);
+  editorLayout->setContentsMargins(0, 0, 0, 0);
+  editorLayout->setSpacing(0);
+
+  viewStack_ = new QStackedWidget(editorContainer);
   renderView_ = new EditorView(viewStack_);
-  editor_ = new SourceEditorWidget(this);
+  editor_ = new SourceEditorWidget(editorContainer);
   viewStack_->addWidget(renderView_);
   viewStack_->addWidget(editor_);
 
+  findBar_ = new FindBarWidget(editorContainer);
+  findBar_->setVisible(false);
+
+  editorLayout->addWidget(findBar_);
+  editorLayout->addWidget(viewStack_, 1);
+
   centralSplitter_->addWidget(sidebar_);
-  centralSplitter_->addWidget(viewStack_);
+  centralSplitter_->addWidget(editorContainer);
   centralSplitter_->setStretchFactor(0, 0);
   centralSplitter_->setStretchFactor(1, 1);
   sidebar_->setVisible(false);
@@ -324,6 +342,7 @@ void MainWindow::setupConnections() {
 
   connect(editor_, &SourceEditorWidget::textEdited, &session_, &DocumentSession::updateFromEditor);
   connect(editor_, &SourceEditorWidget::cursorPositionChanged, this, &MainWindow::updateCursorStatus);
+  connect(editor_, &SourceEditorWidget::cursorPositionChanged, this, [this](int, int) { updateEditActions(); });
   connect(&editorController_, &EditorController::cursorChanged, this, &MainWindow::updateRenderCursorStatus);
   connect(renderView_, &EditorView::codeLanguageCommitted, this, [this](NodeId codeId, const QString& language) {
     if (sourceModeEnabled()) {
@@ -408,6 +427,7 @@ void MainWindow::setupConnections() {
     refreshSidebarOutline();
   });
   connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateStatus);
+  connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateEditActions);
   connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateTableActions);
   connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateParagraphActions);
   connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateCodeActions);
@@ -486,6 +506,119 @@ void MainWindow::setupConnections() {
       editorController_.selectAll();
     }
   });
+
+  commands_.bind(QStringLiteral("edit.delete"), [this] {
+    if (sourceModeEnabled()) {
+      QTextCursor cursor = editor_->editor()->textCursor();
+      if (cursor.hasSelection()) {
+        cursor.removeSelectedText();
+      } else {
+        cursor.deleteChar();
+      }
+      editor_->editor()->setTextCursor(cursor);
+    } else {
+      editorController_.inputController().deleteForward();
+    }
+  });
+
+  commands_.bind(QStringLiteral("edit.copy_plain"), [this] {
+    if (sourceModeEnabled()) {
+      const QTextCursor cursor = editor_->editor()->textCursor();
+      if (cursor.hasSelection()) {
+        QApplication::clipboard()->setText(cursor.selectedText());
+      }
+    } else {
+      editorController_.copyAsPlainText();
+    }
+  });
+
+  commands_.bind(QStringLiteral("edit.copy_markdown"), [this] {
+    if (sourceModeEnabled()) {
+      const QTextCursor cursor = editor_->editor()->textCursor();
+      if (cursor.hasSelection()) {
+        auto* mimeData = new QMimeData();
+        mimeData->setText(cursor.selectedText());
+        mimeData->setData(QStringLiteral("text/markdown"), cursor.selectedText().toUtf8());
+        QApplication::clipboard()->setMimeData(mimeData);
+      }
+    } else {
+      editorController_.copyAsMarkdown();
+    }
+  });
+
+  commands_.bind(QStringLiteral("edit.copy_html"), [this] {
+    if (sourceModeEnabled()) {
+      const QTextCursor cursor = editor_->editor()->textCursor();
+      if (cursor.hasSelection()) {
+        const QString html = SelectionSerializer::renderMarkdownToHtml(cursor.selectedText());
+        if (!html.isEmpty()) {
+          auto* mimeData = new QMimeData();
+          mimeData->setHtml(html);
+          mimeData->setText(html);
+          QApplication::clipboard()->setMimeData(mimeData);
+        }
+      }
+    } else {
+      editorController_.copyAsHtml();
+    }
+  });
+
+  commands_.bind(QStringLiteral("edit.paste_plain"), [this] {
+    if (sourceModeEnabled()) {
+      const QString text = QApplication::clipboard()->text();
+      if (!text.isEmpty()) {
+        editor_->editor()->insertPlainText(text);
+      }
+    } else {
+      editorController_.pasteAsPlainText();
+    }
+  });
+
+  commands_.bind(QStringLiteral("edit.select_line"), [this] {
+    if (sourceModeEnabled()) {
+      QTextCursor cursor = editor_->editor()->textCursor();
+      cursor.movePosition(QTextCursor::StartOfBlock);
+      cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+      editor_->editor()->setTextCursor(cursor);
+    } else {
+      editorController_.selectCurrentBlock();
+    }
+  });
+
+  commands_.bind(QStringLiteral("edit.select_format"), [this] {
+    if (sourceModeEnabled()) {
+      QTextCursor cursor = editor_->editor()->textCursor();
+      cursor.select(QTextCursor::WordUnderCursor);
+      editor_->editor()->setTextCursor(cursor);
+    } else {
+      editorController_.selectCurrentFormatSpan();
+    }
+  });
+
+  commands_.bind(QStringLiteral("edit.move_line_up"), [this] {
+    if (sourceModeEnabled()) {
+      moveSourceLineUp();
+    } else {
+      editorController_.moveBlockUp();
+    }
+  });
+
+  commands_.bind(QStringLiteral("edit.move_line_down"), [this] {
+    if (sourceModeEnabled()) {
+      moveSourceLineDown();
+    } else {
+      editorController_.moveBlockDown();
+    }
+  });
+
+  commands_.bind(QStringLiteral("edit.find"), [this] {
+    showFindBar();
+  });
+
+  connect(findBar_, &FindBarWidget::findRequested, this, &MainWindow::performFind);
+  connect(findBar_, &FindBarWidget::closed, this, &MainWindow::hideFindBar);
+  connect(findBar_, &FindBarWidget::replaceRequested, this, &MainWindow::performReplace);
+  connect(findBar_, &FindBarWidget::replaceAllRequested, this, &MainWindow::performReplaceAll);
 
   commands_.bind(QStringLiteral("format.bold"), [this] {
     if (sourceModeEnabled()) {
@@ -707,6 +840,7 @@ void MainWindow::setupConnections() {
   connect(sidebar_, &SidebarWidget::outlineActivated, this, &MainWindow::activateOutlineNode);
 
   updateFileActions();
+  updateEditActions();
   updateTableActions();
   updateParagraphActions();
   updateCodeActions();
@@ -1033,11 +1167,13 @@ void MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {
                               .arg(zoneName(hit.zone), hit.blockId.toString())
                               .arg(hit.textOffset);
   }
+  updateEditActions();
   updateTableActions();
   updateParagraphActions();
   updateCodeActions();
   updateHtmlActions();
-  updateMathActions();  updateStatus();
+  updateMathActions();
+  updateStatus();
 }
 
 void MainWindow::updateSidebarMode() {
@@ -1222,6 +1358,25 @@ void MainWindow::saveAppearanceZoomPercent(int percent) const {
 void MainWindow::saveAppearanceFontSizePx(int px) const {
   QSettings settings;
   settings.setValue(QStringLiteral("appearance/fontSizePx"), qBound(12, px, 24));
+}
+
+void MainWindow::updateEditActions() {
+  const bool src = sourceModeEnabled();
+  const bool hasCursor = src ? true : editorController_.selection().hasCursor();
+  const bool hasSelection = src
+      ? editor_->editor()->textCursor().hasSelection()
+      : hasCursor && !editorController_.selection().selection().isCollapsed();
+
+  commands_.setEnabled(QStringLiteral("edit.delete"), hasCursor);
+  commands_.setEnabled(QStringLiteral("edit.copy_plain"), hasSelection);
+  commands_.setEnabled(QStringLiteral("edit.copy_markdown"), hasSelection);
+  commands_.setEnabled(QStringLiteral("edit.copy_html"), hasSelection);
+  commands_.setEnabled(QStringLiteral("edit.paste_plain"), true);
+  commands_.setEnabled(QStringLiteral("edit.select_line"), hasCursor);
+  commands_.setEnabled(QStringLiteral("edit.select_format"), hasCursor);
+  commands_.setEnabled(QStringLiteral("edit.move_line_up"), hasCursor);
+  commands_.setEnabled(QStringLiteral("edit.move_line_down"), hasCursor);
+  commands_.setEnabled(QStringLiteral("edit.find"), true);
 }
 
 void MainWindow::updateTableActions() {
@@ -1752,6 +1907,184 @@ bool MainWindow::maybeSaveChanges() {
     return fileController_.save(session_, this);
   }
   return true;
+}
+
+void MainWindow::moveSourceLineUp() {
+  QTextCursor cursor = editor_->editor()->textCursor();
+  QTextBlock currentBlock = cursor.block();
+  QTextBlock prevBlock = currentBlock.previous();
+  if (!prevBlock.isValid()) {
+    return;
+  }
+
+  const int cursorPosInBlock = cursor.position() - currentBlock.position();
+  cursor.beginEditBlock();
+  // Select previous block
+  cursor.movePosition(QTextCursor::StartOfBlock);
+  cursor.movePosition(QTextCursor::PreviousBlock);
+  cursor.movePosition(QTextCursor::StartOfBlock);
+  // Select both blocks
+  cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
+  cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+  const QString currentText = currentBlock.text();
+  const QString prevText = prevBlock.text();
+  cursor.insertText(currentText + QLatin1Char('\n') + prevText);
+  cursor.endEditBlock();
+
+  // Position cursor in the moved (now upper) block
+  cursor.movePosition(QTextCursor::StartOfBlock);
+  const int newPos = qMin(cursorPosInBlock, currentText.size());
+  cursor.setPosition(cursor.block().position() + newPos);
+  editor_->editor()->setTextCursor(cursor);
+}
+
+void MainWindow::moveSourceLineDown() {
+  QTextCursor cursor = editor_->editor()->textCursor();
+  QTextBlock currentBlock = cursor.block();
+  QTextBlock nextBlock = currentBlock.next();
+  if (!nextBlock.isValid()) {
+    return;
+  }
+
+  const int cursorPosInBlock = cursor.position() - currentBlock.position();
+  cursor.beginEditBlock();
+  cursor.movePosition(QTextCursor::StartOfBlock);
+  // Select both blocks: current + next
+  cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+  cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
+  cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+  const QString currentText = currentBlock.text();
+  const QString nextText = nextBlock.text();
+  cursor.insertText(nextText + QLatin1Char('\n') + currentText);
+  cursor.endEditBlock();
+
+  // Position cursor in the moved (now lower) block
+  cursor.movePosition(QTextCursor::StartOfBlock);
+  cursor.movePosition(QTextCursor::EndOfBlock);
+  const int newPos = qMin(cursorPosInBlock, currentText.size());
+  cursor.setPosition(cursor.block().position() + newPos);
+  editor_->editor()->setTextCursor(cursor);
+}
+
+void MainWindow::showFindBar() {
+  if (!findBar_) {
+    return;
+  }
+  // Pre-fill with selected text if any
+  if (sourceModeEnabled()) {
+    const QTextCursor cursor = editor_->editor()->textCursor();
+    if (cursor.hasSelection()) {
+      findBar_->setSearchText(cursor.selectedText());
+    }
+  }
+  findBar_->setVisible(true);
+  findBar_->activateFind();
+}
+
+void MainWindow::hideFindBar() {
+  if (!findBar_) {
+    return;
+  }
+  findBar_->setVisible(false);
+}
+
+void MainWindow::performFind(const QString& text, bool forward) {
+  if (text.isEmpty()) {
+    return;
+  }
+  if (sourceModeEnabled()) {
+    QTextDocument::FindFlags flags;
+    if (!forward) {
+      flags |= QTextDocument::FindBackward;
+    }
+    editor_->editor()->find(text, flags);
+  } else {
+    // Render mode: search the markdown source text
+    const QString& markdown = session_.markdownText();
+    QTextDocument doc(markdown);
+    QTextCursor searchCursor(&doc);
+
+    // Start from current cursor's source offset
+    qsizetype startOffset = 0;
+    if (editorController_.selection().hasCursor()) {
+      startOffset = qMax<qsizetype>(0, editorController_.selection().cursorPosition().text.sourceOffset);
+    }
+    searchCursor.setPosition(static_cast<int>(qMin<qsizetype>(startOffset, markdown.size())));
+
+    QTextDocument::FindFlags flags;
+    if (!forward) {
+      flags |= QTextDocument::FindBackward;
+    }
+
+    const QTextCursor found = doc.find(text, searchCursor, flags);
+    if (!found.isNull()) {
+      const qsizetype matchOffset = found.selectionStart();
+      MarkdownNode* block = session_.document().topLevelBlockAtOffset(matchOffset);
+      if (block) {
+        renderView_->scrollToNode(block->id());
+      }
+      findBar_->setResultInfo(0, 0);
+    } else {
+      findBar_->setResultInfo(-1, 0);
+    }
+  }
+}
+
+void MainWindow::performFindNext() {
+  if (!findBar_) {
+    return;
+  }
+  performFind(findBar_->searchText(), true);
+}
+
+void MainWindow::performFindPrevious() {
+  if (!findBar_) {
+    return;
+  }
+  performFind(findBar_->searchText(), false);
+}
+
+void MainWindow::performReplace(const QString& findText, const QString& replaceText) {
+  if (findText.isEmpty()) {
+    return;
+  }
+  if (sourceModeEnabled()) {
+    QTextCursor cursor = editor_->editor()->textCursor();
+    if (cursor.hasSelection() && cursor.selectedText() == findText) {
+      cursor.insertText(replaceText);
+      editor_->editor()->setTextCursor(cursor);
+    }
+    // Find next occurrence
+    editor_->editor()->find(findText);
+  } else {
+    // Render mode: find and replace via source text
+    const QString& markdown = session_.markdownText();
+    qsizetype startOffset = 0;
+    if (editorController_.selection().hasCursor()) {
+      startOffset = qMax<qsizetype>(0, editorController_.selection().cursorPosition().text.sourceOffset);
+    }
+    const int idx = markdown.indexOf(findText, startOffset);
+    if (idx >= 0) {
+      QString newText = markdown;
+      newText.replace(idx, findText.size(), replaceText);
+      session_.applyMarkdownText(newText, true);
+    }
+  }
+}
+
+void MainWindow::performReplaceAll(const QString& findText, const QString& replaceText) {
+  if (findText.isEmpty()) {
+    return;
+  }
+  if (sourceModeEnabled()) {
+    QString text = editor_->editor()->toPlainText();
+    text.replace(findText, replaceText);
+    editor_->editor()->setPlainText(text);
+  } else {
+    QString text = session_.markdownText();
+    text.replace(findText, replaceText);
+    session_.applyMarkdownText(text, true);
+  }
 }
 
 }  // namespace muffin
