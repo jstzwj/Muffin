@@ -932,11 +932,6 @@ Ayrıştırma süresi: %6 ms</translation>
             <translation>Dil</translation>
         </message>
         <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="240" />
-            <source>(restart Muffin to fully apply)</source>
-            <translation>(tam olarak uygulamak için Muffin'i yeniden başlatın)</translation>
-        </message>
-        <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="241" />
             <source>Update</source>
             <translation>Güncelleme</translation>

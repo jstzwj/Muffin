@@ -70,7 +70,6 @@ PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) {
 
   int row = 0;
   languageLabel_ = makeSectionLabel(generalPage);
-  languageRestartLabel_ = makeMutedLabel(generalPage);
   languageCombo_ = new QComboBox(generalPage);
   languageCombo_->setFixedWidth(360);
   populateLanguages();
@@ -80,7 +79,6 @@ PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) {
   languageTitleLayout->setContentsMargins(0, 0, 0, 0);
   languageTitleLayout->setSpacing(14);
   languageTitleLayout->addWidget(languageLabel_);
-  languageTitleLayout->addWidget(languageRestartLabel_);
   languageTitleLayout->addStretch(1);
   addSectionRow(form, row++, nullptr, languageCombo_);
   form->addWidget(languageTitle, row - 1, 0, Qt::AlignTop);
@@ -177,7 +175,6 @@ void PreferencesDialog::retranslateUi() {
 
   generalTitleLabel_->setText(tr("General"));
   languageLabel_->setText(tr("Language"));
-  languageRestartLabel_->setText(tr("(restart Muffin to fully apply)"));
   updateLabel_->setText(tr("Update"));
   checkUpdateButton_->setText(tr("Check for Updates"));
   autoUpdateCheck_->setText(tr("Automatically check for updates"));

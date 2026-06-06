@@ -931,11 +931,6 @@ Thời gian phân tích: %6 ms</translation>
             <translation>Ngôn ngữ</translation>
         </message>
         <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="186" />
-            <source>(restart Muffin to fully apply)</source>
-            <translation>(khởi động lại Muffin để áp dụng đầy đủ)</translation>
-        </message>
-        <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="187" />
             <source>Update</source>
             <translation>Cập nhật</translation>

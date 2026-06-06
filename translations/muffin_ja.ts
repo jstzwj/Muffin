@@ -931,11 +931,6 @@ Parse time: %6 ms</source>
             <translation>言語</translation>
         </message>
         <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="186" />
-            <source>(restart Muffin to fully apply)</source>
-            <translation>（完全に適用するには Muffin を再起動してください）</translation>
-        </message>
-        <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="187" />
             <source>Update</source>
             <translation>更新</translation>

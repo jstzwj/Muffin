@@ -3224,9 +3224,11 @@ void testThemeManagerSupportsBuiltInThemes() {
 }  // namespace
 
 int main(int argc, char** argv) {
+#if !defined(Q_OS_MACOS)
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
   }
+#endif
   QApplication app(argc, argv);
   require(argc >= 2, QStringLiteral("Fixture path argument is required"));
 

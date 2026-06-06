@@ -932,11 +932,6 @@ Parseertijd: %6 ms</translation>
             <translation>Taal</translation>
         </message>
         <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="240" />
-            <source>(restart Muffin to fully apply)</source>
-            <translation>(herstart Muffin om volledig toe te passen)</translation>
-        </message>
-        <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="241" />
             <source>Update</source>
             <translation>Update</translation>

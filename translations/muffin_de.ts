@@ -932,11 +932,6 @@ Analysezeit: %6 ms</translation>
             <translation>Sprache</translation>
         </message>
         <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="240" />
-            <source>(restart Muffin to fully apply)</source>
-            <translation>(Muffin neu starten, um vollständig anzuwenden)</translation>
-        </message>
-        <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="241" />
             <source>Update</source>
             <translation>Update</translation>

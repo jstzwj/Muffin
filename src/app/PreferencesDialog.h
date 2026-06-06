@@ -41,7 +41,6 @@ private:
 
   QLabel* generalTitleLabel_ = nullptr;
   QLabel* languageLabel_ = nullptr;
-  QLabel* languageRestartLabel_ = nullptr;
   QComboBox* languageCombo_ = nullptr;
   QLabel* updateLabel_ = nullptr;
   QPushButton* checkUpdateButton_ = nullptr;

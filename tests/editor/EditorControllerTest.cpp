@@ -3072,6 +3072,7 @@ void testTableCellTextUndoUsesTextDeltaCommand() {
 
   session.setMarkdownText(QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), false);
   MarkdownNode* table = firstBlockOfType(session, BlockType::Table);
+  const NodeId tableId = table->id();
   MarkdownNode* tableCell = childAt(childAt(table, 1), 1);
 
   HitTestResult cellHit;
@@ -3089,7 +3090,7 @@ void testTableCellTextUndoUsesTextDeltaCommand() {
 
   const EditTransaction transaction = controller.undoStack().takeUndo();
   require(transaction.isTextDeltaCommand(), "table cell text undo should use TextDeltaCommand");
-  require(transaction.textDeltaCommand().affectedNodes.contains(table->id()), "table cell text delta should refresh table");
+  require(transaction.textDeltaCommand().affectedNodes.contains(tableId), "table cell text delta should refresh table");
   controller.undoStack().push(transaction);
 
   controller.undo();
