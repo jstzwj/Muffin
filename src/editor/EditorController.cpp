@@ -505,6 +505,10 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
   stylizeController_.setSelectionController(&selection_);
   stylizeController_.setUndoStack(&undoStack_);
   stylizeController_.setBrushQueue(&brushQueue_);
+  paragraphController_.setDocumentSession(session_);
+  paragraphController_.setSelectionController(&selection_);
+  paragraphController_.setUndoStack(&undoStack_);
+  paragraphController_.setBrushQueue(&brushQueue_);
   frontMatterController_.setDocumentSession(session_);
   frontMatterController_.setSelectionController(&selection_);
   frontMatterController_.setUndoStack(&undoStack_);
@@ -795,6 +799,58 @@ bool EditorController::cut() {
 
 bool EditorController::paste() {
   return clipboardController_.paste();
+}
+
+ParagraphController& EditorController::paragraphController() {
+  return paragraphController_;
+}
+
+bool EditorController::setHeadingLevel(int level) {
+  return paragraphController_.setHeadingLevel(level);
+}
+
+bool EditorController::promoteHeading() {
+  return paragraphController_.promoteHeading();
+}
+
+bool EditorController::demoteHeading() {
+  return paragraphController_.demoteHeading();
+}
+
+bool EditorController::insertFormulaBlock() {
+  return paragraphController_.insertFormulaBlock();
+}
+
+bool EditorController::insertCodeBlock() {
+  return paragraphController_.insertCodeBlock();
+}
+
+bool EditorController::insertLinkReference() {
+  return paragraphController_.insertLinkReference();
+}
+
+bool EditorController::toggleQuote() {
+  return paragraphController_.toggleQuote();
+}
+
+bool EditorController::convertToOrderedList() {
+  return paragraphController_.convertToOrderedList();
+}
+
+bool EditorController::convertToUnorderedList() {
+  return paragraphController_.convertToUnorderedList();
+}
+
+bool EditorController::convertToTaskList() {
+  return paragraphController_.convertToTaskList();
+}
+
+bool EditorController::insertParagraphBefore() {
+  return paragraphController_.insertParagraphBefore();
+}
+
+bool EditorController::insertParagraphAfter() {
+  return paragraphController_.insertParagraphAfter();
 }
 
 bool EditorController::selectAll() {

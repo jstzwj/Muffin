@@ -6,6 +6,7 @@
 #include "blocks/html/HtmlBlockController.h"
 #include "blocks/math/MathBlockController.h"
 #include "blocks/table/TableController.h"
+#include "commands/ParagraphController.h"
 #include "commands/StylizeController.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
@@ -77,6 +78,22 @@ public:
   bool enterMathBlockEditMode();
   bool exitMathBlockEditMode();
   bool setMathBlockTex(QString tex);
+
+  // Paragraph-level commands
+  ParagraphController& paragraphController();
+  bool setHeadingLevel(int level);
+  bool promoteHeading();
+  bool demoteHeading();
+  bool insertFormulaBlock();
+  bool insertCodeBlock();
+  bool insertLinkReference();
+  bool toggleQuote();
+  bool convertToOrderedList();
+  bool convertToUnorderedList();
+  bool convertToTaskList();
+  bool insertParagraphBefore();
+  bool insertParagraphAfter();
+
   bool copy();
   bool cut();
   bool paste();
@@ -102,6 +119,7 @@ private:
   BrushQueue brushQueue_;
   InputController inputController_;
   StylizeController stylizeController_;
+  ParagraphController paragraphController_;
   FrontMatterController frontMatterController_;
   CodeFenceController codeFenceController_;
   HtmlBlockController htmlBlockController_;

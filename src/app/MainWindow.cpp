@@ -351,6 +351,7 @@ void MainWindow::setupConnections() {
       return;
     }
     updateTableActions();
+    updateParagraphActions();
     QMenu menu(this);
     const QStringList ids = {
         QStringLiteral("table.insert_row_before"),
@@ -408,6 +409,7 @@ void MainWindow::setupConnections() {
   });
   connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateStatus);
   connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateTableActions);
+  connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateParagraphActions);
   connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateCodeActions);
   connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateHtmlActions);
   connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateMathActions);
@@ -534,6 +536,53 @@ void MainWindow::setupConnections() {
   commands_.bind(QStringLiteral("paragraph.toml"), [this] { editorController_.insertFrontMatter(FrontMatterFormat::Toml); });
   commands_.bind(QStringLiteral("paragraph.json"), [this] { editorController_.insertFrontMatter(FrontMatterFormat::Json); });
 
+  // Heading commands
+  for (int level = 1; level <= 6; ++level) {
+    commands_.bind(QStringLiteral("paragraph.heading_%1").arg(level), [this, level] {
+      if (!sourceModeEnabled()) editorController_.setHeadingLevel(level);
+    });
+  }
+  commands_.bind(QStringLiteral("paragraph.paragraph"), [this] {
+    if (!sourceModeEnabled()) editorController_.setHeadingLevel(0);
+  });
+  commands_.bind(QStringLiteral("paragraph.promote_heading"), [this] {
+    if (!sourceModeEnabled()) editorController_.promoteHeading();
+  });
+  commands_.bind(QStringLiteral("paragraph.demote_heading"), [this] {
+    if (!sourceModeEnabled()) editorController_.demoteHeading();
+  });
+
+  // Block insert commands
+  commands_.bind(QStringLiteral("paragraph.math_block"), [this] {
+    if (!sourceModeEnabled()) editorController_.insertFormulaBlock();
+  });
+  commands_.bind(QStringLiteral("paragraph.code_block"), [this] {
+    if (!sourceModeEnabled()) editorController_.insertCodeBlock();
+  });
+  commands_.bind(QStringLiteral("paragraph.insert_before"), [this] {
+    if (!sourceModeEnabled()) editorController_.insertParagraphBefore();
+  });
+  commands_.bind(QStringLiteral("paragraph.insert_after"), [this] {
+    if (!sourceModeEnabled()) editorController_.insertParagraphAfter();
+  });
+  commands_.bind(QStringLiteral("paragraph.link_ref"), [this] {
+    if (!sourceModeEnabled()) editorController_.insertLinkReference();
+  });
+
+  // Block conversion commands
+  commands_.bind(QStringLiteral("paragraph.quote"), [this] {
+    if (!sourceModeEnabled()) editorController_.toggleQuote();
+  });
+  commands_.bind(QStringLiteral("paragraph.ordered_list"), [this] {
+    if (!sourceModeEnabled()) editorController_.convertToOrderedList();
+  });
+  commands_.bind(QStringLiteral("paragraph.unordered_list"), [this] {
+    if (!sourceModeEnabled()) editorController_.convertToUnorderedList();
+  });
+  commands_.bind(QStringLiteral("paragraph.task_list"), [this] {
+    if (!sourceModeEnabled()) editorController_.convertToTaskList();
+  });
+
   commands_.bind(QStringLiteral("code.enter_edit"), [this] { editorController_.enterCodeFenceEditMode(); });
   commands_.bind(QStringLiteral("code.exit_edit"), [this] { editorController_.exitCodeFenceEditMode(); });
   commands_.bind(QStringLiteral("code.set_language"), [this] {
@@ -659,6 +708,7 @@ void MainWindow::setupConnections() {
 
   updateFileActions();
   updateTableActions();
+  updateParagraphActions();
   updateCodeActions();
   updateHtmlActions();
   updateMathActions();
@@ -727,6 +777,7 @@ void MainWindow::retranslateUi() {
 
   updateFileActions();
   updateTableActions();
+  updateParagraphActions();
   updateCodeActions();
   updateHtmlActions();
   updateMathActions();
@@ -803,11 +854,12 @@ void MainWindow::setupEditMenu() {
 void MainWindow::setupParagraphMenu() {
   QMenu* paragraph = menuBar()->addMenu(tr("Paragraph"));
   for (int level = 1; level <= 6; ++level) {
-    addAction(
+    addCheckAction(
         paragraph,
         QStringLiteral("paragraph.heading_%1").arg(level),
         tr("Heading %1").arg(level),
         QKeySequence(QStringLiteral("Ctrl+%1").arg(level)),
+        false,
         false);
   }
   addCheckAction(paragraph, QStringLiteral("paragraph.paragraph"), tr("Paragraph"), QKeySequence(QStringLiteral("Ctrl+0")), true, false);
@@ -982,10 +1034,10 @@ void MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {
                               .arg(hit.textOffset);
   }
   updateTableActions();
+  updateParagraphActions();
   updateCodeActions();
   updateHtmlActions();
-  updateMathActions();
-  updateStatus();
+  updateMathActions();  updateStatus();
 }
 
 void MainWindow::updateSidebarMode() {
@@ -1195,6 +1247,42 @@ void MainWindow::updateTableActions() {
     commands_.setEnabled(id, enabled);
   }
   commands_.setEnabled(QStringLiteral("table.insert_table"), !sourceModeEnabled());
+}
+
+void MainWindow::updateParagraphActions() {
+  const bool sourceMode = sourceModeEnabled();
+  const bool editable = !sourceMode && editorController_.paragraphController().isOnEditableBlock();
+  const int headingLevel = sourceMode ? -1 : editorController_.paragraphController().currentHeadingLevel();
+
+  // Heading commands: enabled when on an editable block (paragraph or heading)
+  for (int level = 1; level <= 6; ++level) {
+    const QString id = QStringLiteral("paragraph.heading_%1").arg(level);
+    commands_.setEnabled(id, editable);
+    commands_.setChecked(id, headingLevel == level);
+  }
+
+  // Paragraph (Ctrl+0): always enabled in WYSIWYG mode, checked when not a heading
+  commands_.setEnabled(QStringLiteral("paragraph.paragraph"), editable);
+  commands_.setChecked(QStringLiteral("paragraph.paragraph"), headingLevel == 0 && editable);
+
+  // Promote: enabled only on headings > level 1
+  commands_.setEnabled(QStringLiteral("paragraph.promote_heading"), editable && headingLevel > 1);
+  // Demote: enabled only on headings < level 6
+  commands_.setEnabled(QStringLiteral("paragraph.demote_heading"), editable && headingLevel > 0 && headingLevel < 6);
+
+  // Block insert commands: enabled in any WYSIWYG mode
+  const bool wysiwyg = !sourceMode;
+  commands_.setEnabled(QStringLiteral("paragraph.math_block"), wysiwyg);
+  commands_.setEnabled(QStringLiteral("paragraph.code_block"), wysiwyg);
+  commands_.setEnabled(QStringLiteral("paragraph.insert_before"), editable);
+  commands_.setEnabled(QStringLiteral("paragraph.insert_after"), editable);
+  commands_.setEnabled(QStringLiteral("paragraph.link_ref"), wysiwyg);
+
+  // Block conversions: enabled when on editable block
+  commands_.setEnabled(QStringLiteral("paragraph.quote"), editable);
+  commands_.setEnabled(QStringLiteral("paragraph.ordered_list"), editable);
+  commands_.setEnabled(QStringLiteral("paragraph.unordered_list"), editable);
+  commands_.setEnabled(QStringLiteral("paragraph.task_list"), editable);
 }
 
 void MainWindow::updateCodeActions() {

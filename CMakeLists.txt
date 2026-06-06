@@ -331,6 +331,8 @@ set(MUFFIN_UI_SOURCES
   src/editor/SourceEditorWidget.h
   src/blocks/table/TableModelOps.cpp
   src/blocks/table/TableModelOps.h
+  src/commands/ParagraphController.cpp
+  src/commands/ParagraphController.h
   src/commands/StylizeController.cpp
   src/commands/StylizeController.h
   src/edit/EditTransaction.cpp
@@ -556,6 +558,21 @@ target_link_libraries(MuffinEditorControllerTest
 
 add_test(NAME MuffinEditorControllerTest COMMAND MuffinEditorControllerTest)
 set_tests_properties(MuffinEditorControllerTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinParagraphControllerTest
+  tests/commands/ParagraphControllerTest.cpp
+)
+
+target_link_libraries(MuffinParagraphControllerTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinParagraphControllerTest COMMAND MuffinParagraphControllerTest)
+set_tests_properties(MuffinParagraphControllerTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
   RESOURCE_LOCK MuffinQtGui
 )

@@ -95,6 +95,7 @@ private:
   void openNewWindow();
   void activateOutlineNode(NodeId nodeId, SourceRange sourceRange);
   void updateTableActions();
+  void updateParagraphActions();
   void updateCodeActions();
   void updateHtmlActions();
   void updateMathActions();
