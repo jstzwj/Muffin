@@ -1173,7 +1173,7 @@ void testTableCellRichInlineSelectionDeleteAndCopyUseSourceOffsets() {
           QStringLiteral("table rich inline selected plain text mismatch: %1").arg(selectedTablePlain));
   require(selectedTableMarkdown == QStringLiteral("cmark-gfm"),
           QStringLiteral("table rich inline selected markdown mismatch: %1").arg(selectedTableMarkdown));
-  require(controller.copy(), "table rich inline copy should work");
+  require(controller.clipboardController().copy(), "table rich inline copy should work");
   require(QApplication::clipboard()->text() == QStringLiteral("cmark-gfm"), "table rich inline clipboard text mismatch");
 
   require(controller.inputController().deleteBackward(), "table rich inline selection backspace should delete selection");

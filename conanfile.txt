@@ -1,6 +1,6 @@
 [requires]
 qt/6.11.1
-icu/78.2
+icu/74.2
 
 [options]
 qt/*:shared=True

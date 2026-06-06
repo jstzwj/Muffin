@@ -274,7 +274,7 @@ void testInsertTableUndoUsesInsertNodeCommand() {
   MarkdownNode* paragraph = blockAt(session, 0);
   setCursor(controller.selection(), paragraph, 5);
 
-  require(controller.insertTable(), "insert table should work");
+  require(controller.tableController().insertTable(), "insert table should work");
   require(session.markdownText().startsWith(QStringLiteral("alpha\n\n| Header | Header |")), "insert table text mismatch");
   require(controller.undoStack().canUndo(), "insert table should push undo");
 
@@ -309,7 +309,7 @@ void testResizeTableUndoUsesTableCommand() {
   cellHit.tableColumn = 2;
   controller.activateHit(cellHit);
 
-  require(controller.resizeTable(2, 2), "resize table should work");
+  require(controller.tableController().resizeCurrentTable(2, 2), "resize table should work");
   require(session.markdownText() == QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), "resize table crop markdown mismatch");
   require(controller.undoStack().canUndo(), "resize table should push undo");
   const EditTransaction transaction = controller.undoStack().takeUndo();
@@ -343,7 +343,7 @@ void testDeleteTableUndoUsesRemoveNodeCommand() {
   cellHit.tableColumn = 0;
   controller.activateHit(cellHit);
 
-  require(controller.deleteTable(), "delete table should work");
+  require(controller.tableController().deleteCurrentTable(), "delete table should work");
   require(session.markdownText() == QStringLiteral("before\n\nafter"), "delete table markdown mismatch");
   require(controller.undoStack().canUndo(), "delete table should push undo");
   const EditTransaction transaction = controller.undoStack().takeUndo();

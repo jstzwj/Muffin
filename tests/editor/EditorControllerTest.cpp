@@ -793,7 +793,7 @@ void testCodeFenceSelectionCutDeletesLiteralOffsets() {
   hit.textNodeId = fence->id();
   hit.textOffset = 0;
   controller.activateHit(hit);
-  require(controller.enterCodeFenceEditMode(), "code fence edit mode should activate before cut");
+  require(controller.codeFenceController().enterEditMode(), "code fence edit mode should activate before cut");
 
   SelectionRange range;
   range.anchor.blockId = fence->id();
@@ -804,7 +804,7 @@ void testCodeFenceSelectionCutDeletesLiteralOffsets() {
   range.focus.text.textOffset = QStringLiteral("alpha beta").size();
   controller.selection().setSelection(range);
 
-  require(controller.cut(), "code fence cut should delete active literal selection");
+  require(controller.clipboardController().cut(), "code fence cut should delete active literal selection");
   require(QApplication::clipboard()->text().contains(QStringLiteral("beta")), "code fence cut clipboard should contain selected literal text");
   require(session.markdownText().contains(QStringLiteral("alpha  gamma")), "code fence cut should remove selected literal text");
   require(!session.markdownText().contains(QStringLiteral("beta")), "code fence cut should not leave selected literal text behind");

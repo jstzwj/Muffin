@@ -87,6 +87,10 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/main.cpp
   src/app/LanguageManager.cpp
   src/app/MainWindow.cpp
+  src/app/MainWindowMenus.cpp
+  src/app/MainWindowActions.cpp
+  src/app/MainWindowFileOps.cpp
+  src/app/MainWindowFind.cpp
   src/app/PreferencesDialog.cpp
   src/app/SidebarWidget.cpp
   src/app/DocumentSession.cpp
@@ -294,6 +298,10 @@ add_executable(Muffin
   src/app/LanguageManager.h
   src/app/MainWindow.cpp
   src/app/MainWindow.h
+  src/app/MainWindowMenus.cpp
+  src/app/MainWindowActions.cpp
+  src/app/MainWindowFileOps.cpp
+  src/app/MainWindowFind.cpp
   src/app/PreferencesDialog.cpp
   src/app/PreferencesDialog.h
   src/io/FileController.cpp
