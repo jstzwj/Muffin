@@ -547,6 +547,21 @@ set_tests_properties(MuffinRenderLayoutTest PROPERTIES
   RESOURCE_LOCK MuffinQtGui
 )
 
+add_executable(MuffinEditorViewInlineTest
+  tests/render/EditorViewInlineTest.cpp
+)
+
+target_link_libraries(MuffinEditorViewInlineTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinEditorViewInlineTest COMMAND MuffinEditorViewInlineTest)
+set_tests_properties(MuffinEditorViewInlineTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
 add_executable(MuffinEditorControllerTest
   tests/editor/EditorControllerTest.cpp
 )
@@ -558,6 +573,21 @@ target_link_libraries(MuffinEditorControllerTest
 
 add_test(NAME MuffinEditorControllerTest COMMAND MuffinEditorControllerTest)
 set_tests_properties(MuffinEditorControllerTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinInputControllerTest
+  tests/editor/InputControllerTest.cpp
+)
+
+target_link_libraries(MuffinInputControllerTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinInputControllerTest COMMAND MuffinInputControllerTest)
+set_tests_properties(MuffinInputControllerTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
   RESOURCE_LOCK MuffinQtGui
 )
@@ -624,6 +654,21 @@ target_link_libraries(MuffinHtmlBlockControllerTest
 
 add_test(NAME MuffinHtmlBlockControllerTest COMMAND MuffinHtmlBlockControllerTest)
 set_tests_properties(MuffinHtmlBlockControllerTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
+
+add_executable(MuffinBlockControllerTest
+  tests/blocks/BlockControllerTest.cpp
+)
+
+target_link_libraries(MuffinBlockControllerTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinBlockControllerTest COMMAND MuffinBlockControllerTest)
+set_tests_properties(MuffinBlockControllerTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
 
 add_executable(MuffinTranslationResourceTest
   src/translations.qrc
