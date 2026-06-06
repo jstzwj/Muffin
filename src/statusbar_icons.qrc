@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/icons/statusbar">
+    <file alias="sidebar-toggle.svg">icons/statusbar/sidebar-toggle.svg</file>
+    <file alias="code-brackets.svg">icons/statusbar/code-brackets.svg</file>
+  </qresource>
+</RCC>

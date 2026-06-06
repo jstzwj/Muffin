@@ -80,7 +80,6 @@ void MathFontMetrics::ensureLoaded() {
     return;
   }
   initKatexFontsResource();
-  metricsLoaded() = true;
 
   const QString source = fontMetricsResource();
   if (source.isEmpty()) {
@@ -97,6 +96,7 @@ void MathFontMetrics::ensureLoaded() {
       parseFontBlock(fontName, block);
     }
   }
+  metricsLoaded() = true;
 }
 
 std::optional<CharacterMetrics> MathFontMetrics::characterMetrics(const QString& fontName, const QString& character) {

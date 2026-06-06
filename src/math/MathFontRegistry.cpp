@@ -15,7 +15,6 @@ void MathFontRegistry::ensureLoaded() {
     return;
   }
   initKatexFontsResource();
-  loaded = true;
   const QStringList fonts{
       QStringLiteral(":/katex/fonts/KaTeX_Main-Regular.ttf"),
       QStringLiteral(":/katex/fonts/KaTeX_Main-Bold.ttf"),
@@ -39,6 +38,7 @@ void MathFontRegistry::ensureLoaded() {
   for (const QString& font : fonts) {
     QFontDatabase::addApplicationFont(font);
   }
+  loaded = true;
 }
 
 }  // namespace muffin::math

@@ -33,9 +33,11 @@
 #include <QStatusBar>
 #include <QTextCursor>
 #include <QTimer>
+#include <QFile>
 #include <QIcon>
 #include <QPainter>
 #include <QPixmap>
+#include <QSvgRenderer>
 #include <QToolButton>
 #include <QUrl>
 
@@ -95,40 +97,44 @@ QMenu* addDisabledMenu(QMenu* parent, const QString& title) {
 enum class StatusBarIconKind { Sidebar, SourceMode };
 
 QIcon statusBarIcon(StatusBarIconKind kind, const QColor& ink) {
-  constexpr int iconSize = 16;
-  QPixmap pixmap(iconSize, iconSize);
-  pixmap.fill(Qt::transparent);
-
-  QPainter painter(&pixmap);
-  painter.setRenderHint(QPainter::Antialiasing, true);
-  painter.setPen(QPen(ink, 1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-
+  const char* resourcePath = nullptr;
   switch (kind) {
-    case StatusBarIconKind::Sidebar: {
-      // Rounded rectangle with vertical divider suggesting sidebar + content
-      painter.drawRoundedRect(QRectF(2.0, 2.5, 12.0, 11.0), 1.5, 1.5);
-      painter.drawLine(QLineF(6.0, 3.5, 6.0, 12.5));
+    case StatusBarIconKind::Sidebar:
+      resourcePath = ":/icons/statusbar/sidebar-toggle.svg";
       break;
-    }
-    case StatusBarIconKind::SourceMode: {
-      // Left angle bracket <
-      painter.drawLine(QLineF(5.0, 3.5, 2.5, 8.0));
-      painter.drawLine(QLineF(2.5, 8.0, 5.0, 12.5));
-      // Slash /
-      painter.drawLine(QLineF(7.0, 3.5, 9.0, 12.5));
-      // Right angle bracket >
-      painter.drawLine(QLineF(11.0, 3.5, 13.5, 8.0));
-      painter.drawLine(QLineF(13.5, 8.0, 11.0, 12.5));
+    case StatusBarIconKind::SourceMode:
+      resourcePath = ":/icons/statusbar/code-brackets.svg";
       break;
-    }
   }
-  painter.end();
 
+  // Load SVG bytes and recolor
+  QFile svgFile(QString::fromLatin1(resourcePath));
+  if (!svgFile.open(QIODevice::ReadOnly)) {
+    return QIcon();
+  }
+  QByteArray svgData = svgFile.readAll();
+  svgFile.close();
+  svgData.replace("#000000", ink.name(QColor::HexRgb).toUtf8());
+
+  // Render SVG via QSvgRenderer directly — no imageformat plugin needed
+  QSvgRenderer renderer(svgData);
+  if (!renderer.isValid()) {
+    return QIcon();
+  }
+
+  const qreal dpr = qApp->devicePixelRatio();
   QIcon icon;
-  icon.addPixmap(pixmap, QIcon::Normal, QIcon::Off);
-  icon.addPixmap(pixmap, QIcon::Active, QIcon::Off);
-  icon.addPixmap(pixmap, QIcon::Selected, QIcon::Off);
-  icon.addPixmap(pixmap, QIcon::Disabled, QIcon::Off);
+  constexpr int sizes[] = {16, 24, 32};
+  for (const int sz : sizes) {
+    QPixmap px(static_cast<int>(sz * dpr), static_cast<int>(sz * dpr));
+    px.setDevicePixelRatio(dpr);
+    px.fill(Qt::transparent);
+    QPainter p(&px);
+    p.setRenderHint(QPainter::Antialiasing);
+    renderer.render(&p);
+    p.end();
+    icon.addPixmap(px);
+  }
   return icon;
 }
 
@@ -279,6 +285,8 @@ void MainWindow::setupMenuBar() {
 }
 
 void MainWindow::setupStatusBar() {
+  // Ensure QRC resources from static library are registered
+  Q_INIT_RESOURCE(statusbar_icons);
   statusBar()->setSizeGripEnabled(false);
 
   const QColor ink = statusBarIconInk(themeManager_.currentThemeName());

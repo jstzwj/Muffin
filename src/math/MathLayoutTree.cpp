@@ -55,11 +55,19 @@ std::vector<MathVListEntry> entriesFromIndividualShift(std::vector<MathVListChil
     return entries;
   }
 
+  if (!children.front().elem) {
+    depth = 0.0;
+    return entries;
+  }
+
   depth = -children.front().shift - children.front().elem->depth;
   qreal currPos = depth;
   qreal previousHeightDepth = children.front().elem->height + children.front().elem->depth;
   entries.push_back(makeLayoutVListElem(std::move(children.front())));
   for (size_t i = 1; i < children.size(); ++i) {
+    if (!children.at(i).elem) {
+      continue;
+    }
     const qreal diff = -children.at(i).shift - currPos - children.at(i).elem->depth;
     const qreal size = diff - previousHeightDepth;
     currPos += diff;

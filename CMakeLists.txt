@@ -27,7 +27,7 @@ if(MSVC)
   add_compile_options(/utf-8)
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Svg)
 set(MUFFIN_QT_LINGUIST_BIN "" CACHE PATH "Optional Qt Linguist tool directory")
 set(MUFFIN_LOCAL_QT_LINGUIST_BIN "C:/Program Files/Qt Linguist/bin")
 if(NOT MUFFIN_QT_LINGUIST_BIN AND WIN32 AND EXISTS "${MUFFIN_LOCAL_QT_LINGUIST_BIN}/lupdate.exe")
@@ -301,6 +301,7 @@ add_executable(Muffin
 set(MUFFIN_UI_SOURCES
   src/katex_fonts.qrc
   src/table_toolbar_icons.qrc
+  src/statusbar_icons.qrc
   third_party/katex/src/fontMetricsData.js
   third_party/katex/src/svgGeometry.ts
   third_party/katex/src/symbols.ts
@@ -429,6 +430,7 @@ target_sources(Muffin
 target_link_libraries(Muffin
   PRIVATE
     Qt6::Widgets
+    Qt6::Svg
     MuffinCore
     MuffinUi
 )
