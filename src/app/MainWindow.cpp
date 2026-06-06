@@ -1121,19 +1121,13 @@ void MainWindow::setupHelpMenu() {
   addAction(help, QStringLiteral("help.whats_new"), tr("What's New..."), {}, false);
   addAction(help, QStringLiteral("help.quick_start"), tr("Quick Start"), {}, false);
   addAction(help, QStringLiteral("help.markdown_ref"), tr("Markdown Reference"), {}, false);
-  addAction(help, QStringLiteral("help.pandoc"), tr("Install and Use Pandoc"), {}, false);
   addAction(help, QStringLiteral("help.custom_themes"), tr("Custom Themes"), {}, false);
-  addAction(help, QStringLiteral("help.images"), tr("Use Images in Muffin"), {}, false);
-  addAction(help, QStringLiteral("help.recovery"), tr("Data Recovery and Version Control"), {}, false);
   help->addSeparator();
-  addAction(help, QStringLiteral("help.more_themes"), tr("More Themes..."), {}, false);
   addAction(help, QStringLiteral("help.acknowledgements"), tr("Acknowledgements"), {}, false);
   addAction(help, QStringLiteral("help.changelog"), tr("Changelog"), {}, false);
-  addAction(help, QStringLiteral("help.privacy"), tr("Privacy Policy"), {}, false);
   addAction(help, QStringLiteral("help.website"), tr("Official Website"), {}, false);
   addAction(help, QStringLiteral("help.feedback"), tr("Feedback"), {}, false);
   addAction(help, QStringLiteral("help.update"), tr("Check for Updates..."), {}, false);
-  addAction(help, QStringLiteral("help.license"), tr("My License..."), {}, false);
   help->addSeparator();
   addAction(help, QStringLiteral("help.about"), tr("About"));
 }
