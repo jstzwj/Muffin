@@ -8,7 +8,6 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QLineEdit>
 #include <QListWidget>
 #include <QPushButton>
 #include <QScrollArea>
@@ -24,8 +23,8 @@ PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) {
   setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
   setStyleSheet(QStringLiteral(
       "QDialog { background:#f7f7f7; color:#181818; }"
-      "QLineEdit, QComboBox { border:1px solid #b8b8b8; min-height:28px; padding:2px 9px; background:#ffffff; }"
-      "QLineEdit:focus, QComboBox:focus { border-color:#4f8fd9; }"
+      "QComboBox { border:1px solid #b8b8b8; min-height:28px; padding:2px 9px; background:#ffffff; }"
+      "QComboBox:focus { border-color:#4f8fd9; }"
       "QPushButton { border:1px solid #b9b9b9; background:#ffffff; min-height:30px; padding:0 14px; }"
       "QPushButton:hover { background:#f0f0f0; }"
       "QCheckBox { min-height:26px; }"
@@ -44,10 +43,6 @@ PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) {
   auto* sidebarLayout = new QVBoxLayout(sidebar);
   sidebarLayout->setContentsMargins(0, 0, 0, 0);
   sidebarLayout->setSpacing(16);
-
-  searchEdit_ = new QLineEdit(sidebar);
-  searchEdit_->setFixedHeight(28);
-  sidebarLayout->addWidget(searchEdit_);
 
   categoryList_ = new QListWidget(sidebar);
   categoryList_->setFocusPolicy(Qt::NoFocus);
@@ -150,7 +145,6 @@ void PreferencesDialog::changeEvent(QEvent* event) {
 
 void PreferencesDialog::retranslateUi() {
   setWindowTitle(tr("Preferences"));
-  searchEdit_->setPlaceholderText(tr("Search..."));
 
   const QStringList categories = {
       tr("Files"),

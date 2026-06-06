@@ -7,7 +7,6 @@ class QCheckBox;
 class QComboBox;
 class QGridLayout;
 class QLabel;
-class QLineEdit;
 class QListWidget;
 class QPushButton;
 class QStackedWidget;
@@ -35,7 +34,6 @@ private:
   void addSectionRow(QGridLayout* grid, int row, QLabel* label, QWidget* field);
   void addPlaceholderPage();
 
-  QLineEdit* searchEdit_ = nullptr;
   QListWidget* categoryList_ = nullptr;
   QStackedWidget* contentStack_ = nullptr;
   QVector<QLabel*> pageTitleLabels_;

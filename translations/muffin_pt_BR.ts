@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
-<TS version="2.1" language="zh_CN">
+<TS version="2.1" language="pt_BR">
     <context>
         <name>muffin::DocumentSession</name>
         <message>
             <location filename="../src/app/DocumentSession.cpp" line="406" />
             <source>Untitled</source>
-            <translation>无标题</translation>
+            <translation>Sem título</translation>
         </message>
     </context>
     <context>
@@ -13,22 +13,22 @@
         <message>
             <location filename="../src/io/FileController.cpp" line="33" />
             <source>Open</source>
-            <translation>打开</translation>
+            <translation>Abrir</translation>
         </message>
         <message>
             <location filename="../src/io/FileController.cpp" line="35" />
             <source>Markdown and text files (*.md *.markdown *.mdown *.txt);;All files (*.*)</source>
-            <translation>Markdown 和文本文件 (*.md *.markdown *.mdown *.txt);;所有文件 (*.*)</translation>
+            <translation>Arquivos Markdown e de texto (*.md *.markdown *.mdown *.txt);;Todos os arquivos (*.*)</translation>
         </message>
         <message>
             <location filename="../src/io/FileController.cpp" line="65" />
             <source>Save As</source>
-            <translation>另存为</translation>
+            <translation>Salvar como</translation>
         </message>
         <message>
             <location filename="../src/io/FileController.cpp" line="67" />
             <source>Markdown files (*.md);;Text files (*.txt);;All files (*.*)</source>
-            <translation>Markdown 文件 (*.md);;文本文件 (*.txt);;所有文件 (*.*)</translation>
+            <translation>Arquivos Markdown (*.md);;Arquivos de texto (*.txt);;Todos os arquivos (*.*)</translation>
         </message>
         <message>
             <location filename="../src/io/FileController.cpp" line="86" />
@@ -38,18 +38,18 @@
         <message>
             <location filename="../src/io/FileController.cpp" line="87" />
             <source>The current document has unsaved changes.</source>
-            <translation>当前文档有未保存的更改。</translation>
+            <translation>O documento atual tem alterações não salvas.</translation>
         </message>
         <message>
             <location filename="../src/io/FileController.cpp" line="103" />
             <source>Open Failed</source>
-            <translation>打开失败</translation>
+            <translation>Falha ao abrir</translation>
         </message>
         <message>
             <location filename="../src/io/FileController.cpp" line="116" />
             <location filename="../src/io/FileController.cpp" line="124" />
             <source>Save Failed</source>
-            <translation>保存失败</translation>
+            <translation>Falha ao salvar</translation>
         </message>
     </context>
     <context>
@@ -57,7 +57,7 @@
         <message>
             <location filename="../src/app/LanguageManager.cpp" line="18" />
             <source>System Default</source>
-            <translation>系统默认</translation>
+            <translation>Padrão do sistema</translation>
         </message>
     </context>
     <context>
@@ -65,49 +65,49 @@
         <message>
             <location filename="../src/app/MainWindow.cpp" line="133" />
             <source>Open Failed</source>
-            <translation>打开失败</translation>
+            <translation>Falha ao abrir</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="133" />
             <source>File does not exist:
 %1</source>
-            <translation>文件不存在：
+            <translation>O arquivo não existe:
 %1</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="464" />
             <source>Code Language</source>
-            <translation>代码语言</translation>
+            <translation>Linguagem do código</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="464" />
             <source>Language:</source>
-            <translation>语言：</translation>
+            <translation>Idioma:</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="474" />
             <source>HTML Source</source>
-            <translation>HTML 源码</translation>
+            <translation>Código-fonte HTML</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="474" />
             <source>HTML:</source>
-            <translation>HTML：</translation>
+            <translation>HTML:</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="484" />
             <source>Math TeX</source>
-            <translation>数学 TeX</translation>
+            <translation>TeX matemático</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="484" />
             <source>TeX:</source>
-            <translation>TeX：</translation>
+            <translation>TeX:</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="529" />
             <source>About Muffin</source>
-            <translation>关于 Muffin</translation>
+            <translation>Sobre o Muffin</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="530" />
@@ -116,745 +116,745 @@
 A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
             <translation>Muffin %1
 
-一款使用 C++ 和 Qt 6 Widgets 构建的快速、轻量级原生 Markdown 编辑器。</translation>
+Um editor Markdown nativo rápido e leve, criado com C++ e Qt 6 Widgets.</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="631" />
             <location filename="../src/app/MainWindow.cpp" line="806" />
             <source>Show / Hide Sidebar</source>
-            <translation>显示 / 隐藏侧边栏</translation>
+            <translation>Mostrar / ocultar barra lateral</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="634" />
             <source>Toggle source / rendered mode</source>
-            <translation>切换源码 / 渲染模式</translation>
+            <translation>Alternar entre modo de código-fonte e renderizado</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="652" />
             <source>File</source>
-            <translation>文件(&amp;F)</translation>
+            <translation>Arquivo</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="653" />
             <source>New</source>
-            <translation>新建</translation>
+            <translation>Novo</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="654" />
             <source>New Window</source>
-            <translation>新建窗口</translation>
+            <translation>Nova janela</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="655" />
             <source>Open...</source>
-            <translation>打开...</translation>
+            <translation>Abrir...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="656" />
             <source>Open Folder...</source>
-            <translation>打开文件夹...</translation>
+            <translation>Abrir pasta...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="657" />
             <source>Quick Open...</source>
-            <translation>快速打开...</translation>
+            <translation>Abertura rápida...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="658" />
             <source>Open Recent</source>
-            <translation>打开最近文件</translation>
+            <translation>Abrir recente</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="660" />
             <source>Reopen with Encoding</source>
-            <translation>以指定编码重新打开</translation>
+            <translation>Reabrir com codificação</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="661" />
             <source>Save</source>
-            <translation>保存</translation>
+            <translation>Salvar</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="662" />
             <source>Save As...</source>
-            <translation>另存为...</translation>
+            <translation>Salvar como...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="663" />
             <source>Move To...</source>
-            <translation>移动到...</translation>
+            <translation>Mover para...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="664" />
             <source>Save All Open Files...</source>
-            <translation>保存所有打开的文件...</translation>
+            <translation>Salvar todos os arquivos abertos...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="666" />
             <location filename="../src/app/MainWindow.cpp" line="1195" />
             <source>Properties</source>
-            <translation>属性</translation>
+            <translation>Propriedades</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="667" />
             <source>Show in File Manager...</source>
-            <translation>在文件管理器中显示...</translation>
+            <translation>Mostrar no Windows Explorer...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="668" />
             <source>Show in Sidebar</source>
-            <translation>在侧边栏中显示</translation>
+            <translation>Mostrar na barra lateral</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="669" />
             <source>Delete...</source>
-            <translation>删除...</translation>
+            <translation>Excluir...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="671" />
             <source>Import...</source>
-            <translation>导入...</translation>
+            <translation>Importar...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="672" />
             <source>Export</source>
-            <translation>导出</translation>
+            <translation>Exportar</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="673" />
             <source>Print...</source>
-            <translation>打印...</translation>
+            <translation>Imprimir...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="675" />
             <source>Preferences...</source>
-            <translation>偏好设置...</translation>
+            <translation>Preferências...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="676" />
             <source>Close</source>
-            <translation>关闭</translation>
+            <translation>Fechar</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="679" />
             <source>Edit</source>
-            <translation>编辑(&amp;E)</translation>
+            <translation>Editar</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="680" />
             <source>Undo</source>
-            <translation>撤销</translation>
+            <translation>Desfazer</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="681" />
             <source>Redo</source>
-            <translation>重做</translation>
+            <translation>Refazer</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="683" />
             <source>Cut</source>
-            <translation>剪切</translation>
+            <translation>Recortar</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="684" />
             <source>Copy</source>
-            <translation>复制</translation>
+            <translation>Copiar</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="685" />
             <source>Copy Image</source>
-            <translation>复制图片</translation>
+            <translation>Copiar imagem</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="686" />
             <source>Paste</source>
-            <translation>粘贴</translation>
+            <translation>Colar</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="687" />
             <source>Copy as Plain Text</source>
-            <translation>复制为纯文本</translation>
+            <translation>Copiar como texto sem formatação</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="688" />
             <source>Copy as Markdown</source>
-            <translation>复制为 Markdown</translation>
+            <translation>Copiar como Markdown</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="689" />
             <source>Copy as HTML</source>
-            <translation>复制为 HTML</translation>
+            <translation>Copiar como HTML</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="690" />
             <source>Paste as Plain Text</source>
-            <translation>粘贴为纯文本</translation>
+            <translation>Colar como texto sem formatação</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="692" />
             <source>Select</source>
-            <translation>选择</translation>
+            <translation>Selecionar</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="693" />
             <source>Select All</source>
-            <translation>全选</translation>
+            <translation>Selecionar tudo</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="694" />
             <source>Select Current Line</source>
-            <translation>选择当前行</translation>
+            <translation>Selecionar linha atual</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="695" />
             <source>Select Current Format Text</source>
-            <translation>选择当前格式的文本</translation>
+            <translation>Selecionar texto com formatação atual</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="697" />
             <source>Move Line Up</source>
-            <translation>上移当前行</translation>
+            <translation>Mover linha para cima</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="698" />
             <source>Move Line Down</source>
-            <translation>下移当前行</translation>
+            <translation>Mover linha para baixo</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="699" />
             <source>Delete</source>
-            <translation>删除</translation>
+            <translation>Excluir</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="701" />
             <source>Delete Range</source>
-            <translation>删除选区</translation>
+            <translation>Excluir intervalo</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="702" />
             <source>Math Tools</source>
-            <translation>数学工具</translation>
+            <translation>Ferramentas matemáticas</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="703" />
             <source>Smart Punctuation</source>
-            <translation>智能标点</translation>
+            <translation>Pontuação inteligente</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="704" />
             <source>Line Breaks</source>
-            <translation>换行</translation>
+            <translation>Quebras de linha</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="705" />
             <source>Spaces and Line Breaks</source>
-            <translation>空格和换行</translation>
+            <translation>Espaços e quebras de linha</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="706" />
             <source>Spell Check...</source>
-            <translation>拼写检查...</translation>
+            <translation>Verificação ortográfica...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="707" />
             <source>Find and Replace</source>
-            <translation>查找和替换</translation>
+            <translation>Localizar e substituir</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="708" />
             <source>Emoji and Symbols</source>
-            <translation>表情符号与符号</translation>
+            <translation>Emoji e símbolos</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="711" />
             <location filename="../src/app/MainWindow.cpp" line="720" />
             <source>Paragraph</source>
-            <translation>段落(&amp;P)</translation>
+            <translation>Parágrafo</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="716" />
             <source>Heading %1</source>
-            <translation>%1 级标题</translation>
+            <translation>Título %1</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="721" />
             <source>Promote Heading</source>
-            <translation>提升标题级别</translation>
+            <translation>Promover título</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="722" />
             <source>Demote Heading</source>
-            <translation>降低标题级别</translation>
+            <translation>Rebaixar título</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="724" />
             <location filename="../src/app/MainWindow.cpp" line="760" />
             <source>Table</source>
-            <translation>表格(&amp;B)</translation>
+            <translation>Tabela</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="725" />
             <source>Formula Block</source>
-            <translation>公式块</translation>
+            <translation>Bloco de fórmula</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="726" />
             <source>Code Block</source>
-            <translation>代码块</translation>
+            <translation>Bloco de código</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="727" />
             <source>Code Tools</source>
-            <translation>代码工具</translation>
+            <translation>Ferramentas de código</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="728" />
             <source>Alert</source>
-            <translation>警示块</translation>
+            <translation>Alerta</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="730" />
             <source>Quote</source>
-            <translation>引用</translation>
+            <translation>Citação</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="731" />
             <source>Ordered List</source>
-            <translation>有序列表</translation>
+            <translation>Lista ordenada</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="732" />
             <source>Unordered List</source>
-            <translation>无序列表</translation>
+            <translation>Lista não ordenada</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="733" />
             <source>Task List</source>
-            <translation>任务列表</translation>
+            <translation>Lista de tarefas</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="734" />
             <source>Task Status</source>
-            <translation>任务状态</translation>
+            <translation>Status da tarefa</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="735" />
             <source>List Indent</source>
-            <translation>列表缩进</translation>
+            <translation>Recuo da lista</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="737" />
             <source>Insert Paragraph Before</source>
-            <translation>在前面插入段落</translation>
+            <translation>Inserir parágrafo antes</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="738" />
             <source>Insert Paragraph After</source>
-            <translation>在后面插入段落</translation>
+            <translation>Inserir parágrafo depois</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="739" />
             <source>Link Reference</source>
-            <translation>链接引用</translation>
+            <translation>Referência de link</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="740" />
             <source>Footnote</source>
-            <translation>脚注</translation>
+            <translation>Nota de rodapé</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="741" />
             <source>Horizontal Rule</source>
-            <translation>水平分隔线</translation>
+            <translation>Linha horizontal</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="742" />
             <source>Table of Contents</source>
-            <translation>目录</translation>
+            <translation>Sumário</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="746" />
             <source>Format</source>
-            <translation>格式(&amp;O)</translation>
+            <translation>Formatar</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="747" />
             <source>Bold</source>
-            <translation>加粗</translation>
+            <translation>Negrito</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="748" />
             <source>Italic</source>
-            <translation>斜体</translation>
+            <translation>Itálico</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="749" />
             <source>Underline</source>
-            <translation>下划线</translation>
+            <translation>Sublinhado</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="750" />
             <source>Inline Code</source>
-            <translation>行内代码</translation>
+            <translation>Código embutido</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="751" />
             <source>Strikethrough</source>
-            <translation>删除线</translation>
+            <translation>Tachado</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="753" />
             <source>Comment</source>
-            <translation>注释</translation>
+            <translation>Comentário</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="754" />
             <source>Hyperlink</source>
-            <translation>超链接</translation>
+            <translation>Hiperlink</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="755" />
             <source>Link Actions</source>
-            <translation>链接操作</translation>
+            <translation>Ações de link</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="756" />
             <source>Image</source>
-            <translation>图像</translation>
+            <translation>Imagem</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="757" />
             <source>Clear Style</source>
-            <translation>清除样式</translation>
+            <translation>Limpar estilo</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="762" />
             <source>Insert Table</source>
-            <translation>插入表格</translation>
+            <translation>Inserir tabela</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="764" />
             <source>Insert Row Above</source>
-            <translation>在上方插入行</translation>
+            <translation>Inserir linha acima</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="765" />
             <source>Insert Row Below</source>
-            <translation>在下方插入行</translation>
+            <translation>Inserir linha abaixo</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="766" />
             <source>Delete Row</source>
-            <translation>删除行</translation>
+            <translation>Excluir linha</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="767" />
             <source>Move Row Up</source>
-            <translation>上移行</translation>
+            <translation>Mover linha para cima</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="768" />
             <source>Move Row Down</source>
-            <translation>下移行</translation>
+            <translation>Mover linha para baixo</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="770" />
             <source>Insert Column Left</source>
-            <translation>在左侧插入列</translation>
+            <translation>Inserir coluna à esquerda</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="771" />
             <source>Insert Column Right</source>
-            <translation>在右侧插入列</translation>
+            <translation>Inserir coluna à direita</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="772" />
             <source>Delete Column</source>
-            <translation>删除列</translation>
+            <translation>Excluir coluna</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="773" />
             <source>Move Column Left</source>
-            <translation>左移列</translation>
+            <translation>Mover coluna para a esquerda</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="774" />
             <source>Move Column Right</source>
-            <translation>右移列</translation>
+            <translation>Mover coluna para a direita</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="776" />
             <source>Align Left</source>
-            <translation>左对齐</translation>
+            <translation>Alinhar à esquerda</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="777" />
             <source>Align Center</source>
-            <translation>居中对齐</translation>
+            <translation>Centralizar</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="778" />
             <source>Align Right</source>
-            <translation>右对齐</translation>
+            <translation>Alinhar à direita</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="779" />
             <source>Clear Alignment</source>
-            <translation>清除对齐方式</translation>
+            <translation>Limpar alinhamento</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="781" />
             <source>Delete Table</source>
-            <translation>删除表格</translation>
+            <translation>Excluir tabela</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="784" />
             <source>Code</source>
-            <translation>代码(&amp;C)</translation>
+            <translation>Código</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="786" />
             <location filename="../src/app/MainWindow.cpp" line="793" />
             <location filename="../src/app/MainWindow.cpp" line="800" />
             <source>Enter Edit</source>
-            <translation>进入编辑模式</translation>
+            <translation>Entrar na edição</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="787" />
             <location filename="../src/app/MainWindow.cpp" line="794" />
             <location filename="../src/app/MainWindow.cpp" line="801" />
             <source>Exit Edit</source>
-            <translation>退出编辑模式</translation>
+            <translation>Sair da edição</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="788" />
             <source>Set Language...</source>
-            <translation>设置语言...</translation>
+            <translation>Definir linguagem...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="791" />
             <source>Math</source>
-            <translation>公式(&amp;M)</translation>
+            <translation>Matemática</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="795" />
             <source>Set TeX...</source>
-            <translation>设置 TeX...</translation>
+            <translation>Definir TeX...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="802" />
             <source>Set HTML...</source>
-            <translation>设置 HTML...</translation>
+            <translation>Definir HTML...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="805" />
             <source>View</source>
-            <translation>视图(&amp;V)</translation>
+            <translation>Exibir</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="807" />
             <source>Outline</source>
-            <translation>大纲</translation>
+            <translation>Estrutura de tópicos</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="808" />
             <source>Document List</source>
-            <translation>文档列表</translation>
+            <translation>Lista de documentos</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="809" />
             <source>File Tree</source>
-            <translation>文件树</translation>
+            <translation>Árvore de arquivos</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="810" />
             <source>Search</source>
-            <translation>搜索</translation>
+            <translation>Pesquisar</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="812" />
             <source>Source Code Mode</source>
-            <translation>源码模式</translation>
+            <translation>Modo de código-fonte</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="813" />
             <source>Word Wrap</source>
-            <translation>自动换行</translation>
+            <translation>Quebra automática de linha</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="814" />
             <source>Focus Mode</source>
-            <translation>专注模式</translation>
+            <translation>Modo foco</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="815" />
             <source>Typewriter Mode</source>
-            <translation>打字机模式</translation>
+            <translation>Modo máquina de escrever</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="816" />
             <source>Show Status Bar</source>
-            <translation>显示状态栏</translation>
+            <translation>Mostrar barra de status</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="818" />
             <source>Word Count Window</source>
-            <translation>字数统计窗口</translation>
+            <translation>Janela de contagem de palavras</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="819" />
             <source>Render Diagnostics</source>
-            <translation>渲染诊断</translation>
+            <translation>Diagnóstico de renderização</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="820" />
             <source>Toggle Full Screen</source>
-            <translation>切换全屏</translation>
+            <translation>Alternar tela cheia</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="821" />
             <source>Always on Top</source>
-            <translation>保持窗口在最前端</translation>
+            <translation>Sempre em primeiro plano</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="823" />
             <source>Actual Size</source>
-            <translation>实际大小</translation>
+            <translation>Tamanho real</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="824" />
             <source>Zoom In</source>
-            <translation>放大</translation>
+            <translation>Aumentar zoom</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="825" />
             <source>Zoom Out</source>
-            <translation>缩小</translation>
+            <translation>Diminuir zoom</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="826" />
             <source>Switch Windows</source>
-            <translation>切换窗口</translation>
+            <translation>Alternar janelas</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="827" />
             <source>Developer Tools</source>
-            <translation>开发者工具</translation>
+            <translation>Ferramentas de desenvolvedor</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="830" />
             <source>Theme</source>
-            <translation>主题(&amp;T)</translation>
+            <translation>Tema</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="838" />
             <source>Help</source>
-            <translation>帮助(&amp;H)</translation>
+            <translation>Ajuda</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="839" />
             <source>What's New...</source>
-            <translation>新增功能...</translation>
+            <translation>Novidades...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="840" />
             <source>Quick Start</source>
-            <translation>快速入门</translation>
+            <translation>Início rápido</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="841" />
             <source>Markdown Reference</source>
-            <translation>Markdown 参考</translation>
+            <translation>Referência de Markdown</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="842" />
             <source>Install and Use Pandoc</source>
-            <translation>安装并使用 Pandoc</translation>
+            <translation>Instalar e usar Pandoc</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="843" />
             <source>Custom Themes</source>
-            <translation>自定义主题</translation>
+            <translation>Temas personalizados</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="844" />
             <source>Use Images in Muffin</source>
-            <translation>在 Muffin 中使用图片</translation>
+            <translation>Usar imagens no Muffin</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="845" />
             <source>Data Recovery and Version Control</source>
-            <translation>数据恢复与版本控制</translation>
+            <translation>Recuperação de dados e controle de versão</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="847" />
             <source>More Themes...</source>
-            <translation>更多主题...</translation>
+            <translation>Mais temas...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="848" />
             <source>Acknowledgements</source>
-            <translation>致谢</translation>
+            <translation>Agradecimentos</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="849" />
             <source>Changelog</source>
-            <translation>更新日志</translation>
+            <translation>Registro de alterações</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="850" />
             <source>Privacy Policy</source>
-            <translation>隐私政策</translation>
+            <translation>Política de privacidade</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="851" />
             <source>Official Website</source>
-            <translation>官方网站</translation>
+            <translation>Site oficial</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="852" />
             <source>Feedback</source>
-            <translation>反馈</translation>
+            <translation>Feedback</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="853" />
             <source>Check for Updates...</source>
-            <translation>检查更新...</translation>
+            <translation>Verificar atualizações...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="854" />
             <source>My License...</source>
-            <translation>我的许可证...</translation>
+            <translation>Minha licença...</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="856" />
             <source>About</source>
-            <translation>关于</translation>
+            <translation>Sobre</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="864" />
             <source>Parse %1 ms</source>
-            <translation>解析 %1 ms</translation>
+            <translation>Análise %1 ms</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="882" />
             <source>table %1:%2 offset %3</source>
-            <translation>表格 %1:%2 偏移 %3</translation>
+            <translation>tabela %1:%2 deslocamento %3</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="932" />
             <source>Open Folder</source>
-            <translation>打开文件夹</translation>
+            <translation>Abrir pasta</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="1051" />
             <source>%1 words</source>
-            <translation>%1 个词</translation>
+            <translation>%1 palavras</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="1141" />
             <source>Clear Recent Files</source>
-            <translation>清除最近文件</translation>
+            <translation>Limpar arquivos recentes</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="1181" />
@@ -864,12 +864,12 @@ Size: %3 bytes
 Modified: %4
 Words: %5
 Parse time: %6 ms</source>
-            <translation>名称：%1
-位置：%2
-大小：%3 字节
-修改时间：%4
-词数：%5
-解析耗时：%6 ms</translation>
+            <translation>Nome: %1
+Local: %2
+Tamanho: %3 bytes
+Modificado: %4
+Palavras: %5
+Tempo de análise: %6 ms</translation>
         </message>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="1218" />
@@ -879,7 +879,7 @@ Parse time: %6 ms</source>
         <message>
             <location filename="../src/app/MainWindow.cpp" line="1219" />
             <source>The current document has unsaved changes.</source>
-            <translation>当前文档有未保存的更改。</translation>
+            <translation>O documento atual tem alterações não salvas.</translation>
         </message>
     </context>
     <context>
@@ -888,98 +888,98 @@ Parse time: %6 ms</source>
             <location filename="../src/app/PreferencesDialog.cpp" line="219" />
             <location filename="../src/app/PreferencesDialog.cpp" line="220" />
             <source>Preferences</source>
-            <translation>偏好设置</translation>
+            <translation>Preferências</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="224" />
             <source>Files</source>
-            <translation>文件</translation>
+            <translation>Arquivos</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="225" />
             <source>Editor</source>
-            <translation>编辑器</translation>
+            <translation>Editor</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="226" />
             <source>Image</source>
-            <translation>图像</translation>
+            <translation>Imagem</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="228" />
             <source>Export</source>
-            <translation>导出</translation>
+            <translation>Exportar</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="229" />
             <source>Appearance</source>
-            <translation>外观</translation>
+            <translation>Aparência</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="230" />
             <location filename="../src/app/PreferencesDialog.cpp" line="238" />
             <source>General</source>
-            <translation>常规</translation>
+            <translation>Geral</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="181" />
             <source>No settings available.</source>
-            <translation>没有可用设置。</translation>
+            <translation>Nenhuma configuração disponível.</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="239" />
             <source>Language</source>
-            <translation>语言</translation>
+            <translation>Idioma</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="240" />
             <source>(restart Muffin to fully apply)</source>
-            <translation>（重启 Muffin 后完全生效）</translation>
+            <translation>(reinicie o Muffin para aplicar completamente)</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="241" />
             <source>Update</source>
-            <translation>更新</translation>
+            <translation>Atualização</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="242" />
             <source>Check for Updates</source>
-            <translation>检查更新</translation>
+            <translation>Verificar atualizações</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="243" />
             <source>Automatically check for updates</source>
-            <translation>自动检查更新</translation>
+            <translation>Verificar atualizações automaticamente</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="244" />
             <source>Include beta updates</source>
-            <translation>包含 Beta 更新</translation>
+            <translation>Incluir atualizações beta</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="256" />
             <source>Advanced</source>
-            <translation>高级</translation>
+            <translation>Avançado</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="257" />
             <source>Enable debug mode</source>
-            <translation>开启调试模式</translation>
+            <translation>Ativar modo de depuração</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="258" />
             <source>Send anonymous usage data</source>
-            <translation>发送匿名使用数据</translation>
+            <translation>Enviar dados de uso anônimos</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="259" />
             <source>Open Advanced Settings</source>
-            <translation>打开高级设置</translation>
+            <translation>Abrir configurações avançadas</translation>
         </message>
         <message>
             <location filename="../src/app/PreferencesDialog.cpp" line="260" />
             <source>Reset Advanced Settings</source>
-            <translation>重置高级设置</translation>
+            <translation>Redefinir configurações avançadas</translation>
         </message>
     </context>
     <context>
@@ -987,22 +987,22 @@ Parse time: %6 ms</source>
         <message>
             <location filename="../src/app/SidebarWidget.cpp" line="235" />
             <source>Files</source>
-            <translation>文件</translation>
+            <translation>Arquivos</translation>
         </message>
         <message>
             <location filename="../src/app/SidebarWidget.cpp" line="238" />
             <source>Outline</source>
-            <translation>大纲</translation>
+            <translation>Estrutura de tópicos</translation>
         </message>
         <message>
             <location filename="../src/app/SidebarWidget.cpp" line="241" />
             <source>New File</source>
-            <translation>新建文件</translation>
+            <translation>Novo arquivo</translation>
         </message>
         <message>
             <location filename="../src/app/SidebarWidget.cpp" line="244" />
             <source>No Headings</source>
-            <translation>没有标题</translation>
+            <translation>Sem títulos</translation>
         </message>
     </context>
     <context>
@@ -1010,7 +1010,7 @@ Parse time: %6 ms</source>
         <message>
             <location filename="../src/editor/SourceEditorWidget.cpp" line="427" />
             <source>Start writing...</source>
-            <translation>开始写作...</translation>
+            <translation>Comece a escrever...</translation>
         </message>
     </context>
     <context>
@@ -1018,12 +1018,12 @@ Parse time: %6 ms</source>
         <message>
             <location filename="../src/main.cpp" line="62" />
             <source>A fast native Markdown editor built with C++ and Qt 6 Widgets.</source>
-            <translation>一款使用 C++ 和 Qt 6 Widgets 构建的快速原生 Markdown 编辑器。</translation>
+            <translation>Um editor Markdown nativo rápido, criado com C++ e Qt 6 Widgets.</translation>
         </message>
         <message>
             <location filename="../src/main.cpp" line="69" />
             <source>Markdown or text file to open.</source>
-            <translation>要打开的 Markdown 或文本文件。</translation>
+            <translation>Arquivo Markdown ou de texto a abrir.</translation>
         </message>
     </context>
     <context>
@@ -1031,7 +1031,7 @@ Parse time: %6 ms</source>
         <message>
             <location filename="../src/render/BlockLayoutBuilder.cpp" line="184" />
             <source>Start writing...</source>
-            <translation>开始写作...</translation>
+            <translation>Comece a escrever...</translation>
         </message>
     </context>
 </TS>

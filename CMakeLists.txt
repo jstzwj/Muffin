@@ -49,15 +49,42 @@ else()
 endif()
 
 set(MUFFIN_TRANSLATION_SOURCES
+  translations/muffin_ja.ts
   translations/muffin_zh_CN.ts
+  translations/muffin_vi.ts
+  translations/muffin_fr.ts
+  translations/muffin_es.ts
+  translations/muffin_ru.ts
+  translations/muffin_de.ts
+  translations/muffin_pt_BR.ts
+  translations/muffin_ko.ts
+  translations/muffin_it.ts
+  translations/muffin_zh_TW.ts
+  translations/muffin_tr.ts
+  translations/muffin_pl.ts
+  translations/muffin_nl.ts
 )
 
 set(MUFFIN_TRANSLATION_BINARY_SOURCES
+  translations/muffin_ja.qm
   translations/muffin_zh_CN.qm
+  translations/muffin_vi.qm
+  translations/muffin_fr.qm
+  translations/muffin_es.qm
+  translations/muffin_ru.qm
+  translations/muffin_de.qm
+  translations/muffin_pt_BR.qm
+  translations/muffin_ko.qm
+  translations/muffin_it.qm
+  translations/muffin_zh_TW.qm
+  translations/muffin_tr.qm
+  translations/muffin_pl.qm
+  translations/muffin_nl.qm
 )
 
 set(MUFFIN_TRANSLATABLE_SOURCES
   src/main.cpp
+  src/app/LanguageManager.cpp
   src/app/MainWindow.cpp
   src/app/PreferencesDialog.cpp
   src/app/SidebarWidget.cpp

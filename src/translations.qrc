@@ -1,5 +1,18 @@
 <RCC>
   <qresource prefix="/i18n">
+    <file alias="muffin_ja.qm">../translations/muffin_ja.qm</file>
     <file alias="muffin_zh_CN.qm">../translations/muffin_zh_CN.qm</file>
+    <file alias="muffin_vi.qm">../translations/muffin_vi.qm</file>
+    <file alias="muffin_fr.qm">../translations/muffin_fr.qm</file>
+    <file alias="muffin_es.qm">../translations/muffin_es.qm</file>
+    <file alias="muffin_ru.qm">../translations/muffin_ru.qm</file>
+    <file alias="muffin_de.qm">../translations/muffin_de.qm</file>
+    <file alias="muffin_pt_BR.qm">../translations/muffin_pt_BR.qm</file>
+    <file alias="muffin_ko.qm">../translations/muffin_ko.qm</file>
+    <file alias="muffin_it.qm">../translations/muffin_it.qm</file>
+    <file alias="muffin_zh_TW.qm">../translations/muffin_zh_TW.qm</file>
+    <file alias="muffin_tr.qm">../translations/muffin_tr.qm</file>
+    <file alias="muffin_pl.qm">../translations/muffin_pl.qm</file>
+    <file alias="muffin_nl.qm">../translations/muffin_nl.qm</file>
   </qresource>
 </RCC>
