@@ -171,10 +171,15 @@ void CmarkNodeAdapter::readBlockMetadata(cmark_node* cmarkNode, MarkdownNode& mu
     case BlockType::ListItem:
       muffinNode.setTaskChecked(cmark_gfm_extensions_get_tasklist_item_checked(cmarkNode));
       break;
-    case BlockType::CodeFence:
-      muffinNode.setLiteral(fromUtf8(cmark_node_get_literal(cmarkNode)));
+    case BlockType::CodeFence: {
+      QString codeLiteral = fromUtf8(cmark_node_get_literal(cmarkNode));
+      if (codeLiteral.endsWith(QLatin1Char('\n'))) {
+        codeLiteral.chop(1);
+      }
+      muffinNode.setLiteral(codeLiteral);
       muffinNode.setCodeLanguage(fromUtf8(cmark_node_get_fence_info(cmarkNode)).section(' ', 0, 0));
       break;
+    }
     case BlockType::HtmlBlock:
       muffinNode.setLiteral(fromUtf8(cmark_node_get_literal(cmarkNode)));
       break;

@@ -1,4 +1,6 @@
 #include "app/DocumentSession.h"
+#include "blocks/code/CodeFenceController.h"
+#include "blocks/math/MathBlockController.h"
 #include "document/InlineProjection.h"
 #include "document/MarkdownNode.h"
 #include "document/SelectionSerializer.h"
@@ -1289,6 +1291,136 @@ void testListTabFromRenderedClick() {
   require(listDepthForItem(indentedViewportItem) == 2, "viewport tab should increase unordered list AST depth");
 }
 
+void testInputEmptyCodeFenceBackspaceRemovesBlock() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  CodeFenceController codeFence;
+  MathBlockController mathBlock;
+  codeFence.setDocumentSession(&session);
+  codeFence.setSelectionController(&selection);
+  codeFence.setUndoStack(&undoStack);
+  codeFence.setBrushQueue(&brushQueue);
+  mathBlock.setDocumentSession(&session);
+  mathBlock.setSelectionController(&selection);
+  mathBlock.setUndoStack(&undoStack);
+  mathBlock.setBrushQueue(&brushQueue);
+
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+  input.setCodeFenceController(&codeFence);
+  input.setMathBlockController(&mathBlock);
+
+  // Empty code fence between paragraphs
+  session.setMarkdownText(QStringLiteral("before\n\n```cpp\n```\n\nafter"), false);
+  require(session.document().root().children().size() == 3, "expected 3 blocks: para, code, para");
+  MarkdownNode* code = blockAt(session, 1);
+  require(code->type() == BlockType::CodeFence, "second block should be code fence");
+  require(code->literal().isEmpty(), "code fence literal should be empty");
+
+  // Set cursor in code block and enter edit mode
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Code;
+  hit.blockId = code->id();
+  hit.textNodeId = code->id();
+  hit.textOffset = 0;
+  selection.setHitResult(hit);
+  require(codeFence.enterEditMode(), "enter code edit should work");
+  require(codeFence.isEditing(), "code fence should be editing");
+
+  // Backspace on empty code fence should remove the block
+  require(input.deleteBackward(), "backspace on empty code fence should succeed");
+  require(!session.markdownText().contains(QStringLiteral("```")), "empty code fence should be removed after backspace");
+  // "before" and "after" paragraphs remain (they may be merged into one paragraph)
+  require(session.document().root().children().size() >= 1, "should have at least 1 block after removing code fence");
+  require(!codeFence.isEditing(), "code fence should no longer be editing after removal");
+
+  // Undo entry should be a RemoveNodeCommand
+  require(undoStack.canUndo(), "removing empty code fence should push undo");
+  EditTransaction undo = undoStack.takeUndo();
+  require(undo.isRemoveNodeCommand(), "expected RemoveNodeCommand for empty block removal");
+  require(undo.removeNodeCommand().nodeType == BlockType::CodeFence, "removed node type should be CodeFence");
+}
+
+void testInputEmptyCodeFenceDeleteRemovesBlock() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  CodeFenceController codeFence;
+  MathBlockController mathBlock;
+  codeFence.setDocumentSession(&session);
+  codeFence.setSelectionController(&selection);
+  codeFence.setUndoStack(&undoStack);
+  codeFence.setBrushQueue(&brushQueue);
+  mathBlock.setDocumentSession(&session);
+  mathBlock.setSelectionController(&selection);
+  mathBlock.setUndoStack(&undoStack);
+  mathBlock.setBrushQueue(&brushQueue);
+
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+  input.setCodeFenceController(&codeFence);
+  input.setMathBlockController(&mathBlock);
+
+  session.setMarkdownText(QStringLiteral("```cpp\n```"), false);
+  require(session.document().root().children().size() == 1, "expected 1 code fence block");
+  MarkdownNode* code = blockAt(session, 0);
+  require(code->type() == BlockType::CodeFence, "first block should be code fence");
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Code;
+  hit.blockId = code->id();
+  hit.textNodeId = code->id();
+  hit.textOffset = 0;
+  selection.setHitResult(hit);
+  require(codeFence.enterEditMode(), "enter code edit should work");
+
+  // Delete on empty code fence should remove the block
+  require(input.deleteForward(), "delete on empty code fence should succeed");
+  require(!session.markdownText().contains(QStringLiteral("```")), "empty code fence should be removed after delete");
+}
+
+void testInputNonEmptyCodeFenceBackspaceDoesNotRemoveBlock() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  CodeFenceController codeFence;
+  MathBlockController mathBlock;
+  codeFence.setDocumentSession(&session);
+  codeFence.setSelectionController(&selection);
+  codeFence.setUndoStack(&undoStack);
+  codeFence.setBrushQueue(&brushQueue);
+  mathBlock.setDocumentSession(&session);
+  mathBlock.setSelectionController(&selection);
+  mathBlock.setUndoStack(&undoStack);
+  mathBlock.setBrushQueue(&brushQueue);
+
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+  input.setCodeFenceController(&codeFence);
+  input.setMathBlockController(&mathBlock);
+
+  session.setMarkdownText(QStringLiteral("```cpp\nhello\n```"), false);
+  MarkdownNode* code = blockAt(session, 0);
+  require(code->type() == BlockType::CodeFence, "first block should be code fence");
+  require(!code->literal().isEmpty(), "code fence should have content");
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Code;
+  hit.blockId = code->id();
+  hit.textNodeId = code->id();
+  hit.textOffset = 0;
+  selection.setHitResult(hit);
+  require(codeFence.enterEditMode(), "enter code edit should work");
+
+  // Backspace on non-empty code fence should delete character, not remove block
+  require(input.deleteBackward(), "backspace should succeed");
+  require(session.markdownText().contains(QStringLiteral("```cpp")), "non-empty code fence should not be removed");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -1321,6 +1453,9 @@ int main(int argc, char** argv) {
   RUN_TEST(testListItemEditingCommands);
   RUN_TEST(testTabInRenderedTextInsertsZeroWidthSpace);
   RUN_TEST(testListTabFromRenderedClick);
+  RUN_TEST(testInputEmptyCodeFenceBackspaceRemovesBlock);
+  RUN_TEST(testInputEmptyCodeFenceDeleteRemovesBlock);
+  RUN_TEST(testInputNonEmptyCodeFenceBackspaceDoesNotRemoveBlock);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

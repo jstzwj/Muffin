@@ -51,6 +51,7 @@ public:
 
   QString plainText() const;
   QString displayText() const;
+  QString visibleText() const;
   int mathAtomCount() const;
   QVector<QTextLayout::FormatRange> debugTextFormats(const RenderTheme& theme, const QFont& baseFont) const;
 

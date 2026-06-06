@@ -743,6 +743,114 @@ void EditorView::mouseReleaseEvent(QMouseEvent* event) {
   QAbstractScrollArea::mouseReleaseEvent(event);
 }
 
+namespace {
+
+auto isWordChar(QChar ch) -> bool {
+  return ch.isLetterOrNumber() || ch == QLatin1Char('_');
+}
+
+QPair<qsizetype, qsizetype> wordRangeAtOffset(const QString& text, qsizetype offset) {
+  if (text.isEmpty() || offset < 0 || offset >= text.size()) {
+    return {qMax<qsizetype>(0, offset), qMax<qsizetype>(0, offset)};
+  }
+
+  const QChar c = text[offset];
+  qsizetype start = offset;
+  qsizetype end = offset + 1;
+
+  if (isWordChar(c)) {
+    while (start > 0 && isWordChar(text[start - 1])) {
+      --start;
+    }
+    while (end < text.size() && isWordChar(text[end])) {
+      ++end;
+    }
+  } else if (c.isSpace()) {
+    while (start > 0 && text[start - 1].isSpace()) {
+      --start;
+    }
+    while (end < text.size() && text[end].isSpace()) {
+      ++end;
+    }
+  }
+
+  return {start, end};
+}
+
+}  // namespace
+
+void EditorView::mouseDoubleClickEvent(QMouseEvent* event) {
+  if (event->button() != Qt::LeftButton) {
+    QAbstractScrollArea::mouseDoubleClickEvent(event);
+    return;
+  }
+
+  setFocus(Qt::MouseFocusReason);
+  const HitTestResult hit = hitTest(event->position());
+  if (!hit.isValid() || !isSelectableZone(hit.zone)) {
+    QAbstractScrollArea::mouseDoubleClickEvent(event);
+    return;
+  }
+
+  // Find the block layout to get the text for word boundary detection.
+  const BlockLayout* block = layout_ ? layout_->block(hit.blockId) : nullptr;
+  if (!block) {
+    QAbstractScrollArea::mouseDoubleClickEvent(event);
+    return;
+  }
+
+  QString text;
+  if (hit.zone == HitTestResult::Zone::TableCell) {
+    const auto& rows = block->tableRows();
+    if (hit.tableRow >= 0 && hit.tableRow < static_cast<int>(rows.size()) &&
+        hit.tableColumn >= 0 && hit.tableColumn < static_cast<int>(rows[hit.tableRow].cells.size())) {
+      const InlineLayout* cellLayout = &rows[hit.tableRow].cells[hit.tableColumn].text;
+      text = cellLayout->visibleText();
+    }
+  } else if (hit.zone == HitTestResult::Zone::Text) {
+    if (const InlineLayout* inlineLayout = block->inlineLayout()) {
+      text = inlineLayout->visibleText();
+    }
+  } else {
+    // Code, Math, Html, FrontMatter — literal text.
+    text = block->literal();
+  }
+
+  if (text.isEmpty()) {
+    QAbstractScrollArea::mouseDoubleClickEvent(event);
+    return;
+  }
+
+  const auto [wordStart, wordEnd] = wordRangeAtOffset(text, hit.textOffset);
+  if (wordStart >= wordEnd) {
+    QAbstractScrollArea::mouseDoubleClickEvent(event);
+    return;
+  }
+
+  // Build selection from word boundaries.
+  CursorPosition anchor = hit.cursorPosition();
+  anchor.text.textOffset = wordStart;
+  anchor.text.sourceOffset = -1;
+
+  CursorPosition focus = hit.cursorPosition();
+  focus.text.textOffset = wordEnd;
+  focus.text.sourceOffset = -1;
+
+  SelectionRange range;
+  range.anchor = anchor;
+  range.focus = focus;
+
+  applySelectionRange(range);
+  emit blockClicked(hit);
+  emit selectionChanged(range, hit);
+
+  // Prevent drag from overriding the word selection.
+  dragSelectionPending_ = false;
+  draggingSelection_ = false;
+
+  event->accept();
+}
+
 void EditorView::inputMethodEvent(QInputMethodEvent* event) {
   if (!event->commitString().isEmpty()) {
     emit textCommitted(event->commitString());

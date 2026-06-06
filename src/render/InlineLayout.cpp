@@ -275,6 +275,10 @@ QString InlineLayout::plainText() const {
   return plainText_;
 }
 
+QString InlineLayout::visibleText() const {
+  return projection_.visibleText();
+}
+
 QString InlineLayout::displayText() const {
   return displayText_;
 }

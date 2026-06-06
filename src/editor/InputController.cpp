@@ -501,7 +501,128 @@ bool InputController::insertTextIntoActiveLiteral(QString text) {
   return mathBlockController_ && mathBlockController_->isEditing() ? mathBlockController_->insertText(std::move(text)) : false;
 }
 
+bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, const QString& label) {
+  if (!session_ || !selection_ || !selection_->hasCursor()) {
+    return false;
+  }
+
+  // Only applicable to code fence and math block
+  NodeId blockId;
+  if (codeFenceController_ && codeFenceController_->isEditing()) {
+    blockId = codeFenceController_->currentCodeFenceId();
+  } else if (mathBlockController_ && mathBlockController_->isEditing()) {
+    blockId = mathBlockController_->currentMathBlockId();
+  }
+  if (!blockId.isValid()) {
+    return false;
+  }
+
+  MarkdownNode* node = session_->document().node(blockId);
+  if (!node || !node->literal().isEmpty()) {
+    return false;
+  }
+  if (!node->parent() || node->parent()->type() != BlockType::Document) {
+    return false;
+  }
+  const BlockType nodeType = node->type();
+  if (nodeType != BlockType::CodeFence && nodeType != BlockType::MathBlock) {
+    return false;
+  }
+
+  qsizetype blockStart = -1;
+  qsizetype blockEnd = -1;
+  BlockEditContextResolver resolver = contextResolver();
+  if (!resolver.blockSourceRange(*node, blockStart, blockEnd)) {
+    return false;
+  }
+
+  const auto& blocks = session_->document().root().children();
+  int nodeIndex = -1;
+  for (int i = 0; i < static_cast<int>(blocks.size()); ++i) {
+    if (blocks.at(static_cast<size_t>(i)).get() == node) {
+      nodeIndex = i;
+      break;
+    }
+  }
+  if (nodeIndex < 0) {
+    return false;
+  }
+
+  qsizetype deleteStart = blockStart;
+  qsizetype deleteEnd = blockEnd;
+  if (blocks.size() == 1) {
+    deleteStart = 0;
+    deleteEnd = session_->markdownText().size();
+  } else if (nodeIndex + 1 < static_cast<int>(blocks.size())) {
+    deleteEnd = blocks.at(static_cast<size_t>(nodeIndex + 1))->sourceRange().byteStart;
+  } else {
+    deleteStart = blocks.at(static_cast<size_t>(nodeIndex - 1))->sourceRange().byteEnd;
+  }
+  deleteStart = qBound<qsizetype>(0, deleteStart, session_->markdownText().size());
+  deleteEnd = qBound<qsizetype>(deleteStart, deleteEnd, session_->markdownText().size());
+  if (deleteStart >= deleteEnd) {
+    return false;
+  }
+
+  const CursorPosition beforeCursor = selection_->cursorPosition();
+  const QString removedText = session_->markdownText().mid(deleteStart, deleteEnd - deleteStart);
+  std::unique_ptr<MarkdownNode> removedNode = node->clone(CloneMode::PreserveIds);
+  const NodeId removedNodeId = node->id();
+
+  // Exit edit mode before removing the block to clear stale editing state
+  if (codeFenceController_ && codeFenceController_->isEditing()) {
+    codeFenceController_->exitEditMode();
+  } else if (mathBlockController_ && mathBlockController_->isEditing()) {
+    mathBlockController_->exitEditMode();
+  }
+
+  QVector<LocalEditNodeHint> nodeHints;
+  nodeHints.push_back(LocalEditNodeHint{removedNodeId, blockStart, nodeType});
+  if (!session_->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
+    return false;
+  }
+
+  CursorPosition nextCursor = cursorAfterEdit(CursorPosition(), deleteStart, true);
+  if (nextCursor.isValid()) {
+    selection_->setCursorPosition(nextCursor);
+  } else {
+    selection_->clear();
+  }
+
+  if (undoStack_) {
+    QVector<NodeId> affectedNodes{removedNodeId};
+    if (nextCursor.isValid() && !affectedNodes.contains(nextCursor.blockId)) {
+      affectedNodes.push_back(nextCursor.blockId);
+    }
+    undoStack_->push(EditTransaction(
+        kind,
+        label,
+        RemoveNodeCommand{
+            removedNodeId,
+            nodeType,
+            nodeIndex,
+            TextDelta{deleteStart, removedText, QString()},
+            blockStart,
+            std::move(removedNode),
+            beforeCursor,
+            nextCursor,
+            std::move(affectedNodes)}));
+  }
+  if (brushQueue_) {
+    if (nextCursor.isValid()) {
+      brushQueue_->requestBlockRefresh(nextCursor.blockId);
+    } else {
+      brushQueue_->requestFullRefresh();
+    }
+  }
+  return true;
+}
+
 bool InputController::deleteBackwardInActiveLiteral() {
+  if (tryRemoveEmptyLiteralBlock(EditTransaction::Kind::DeleteText,
+                                  QStringLiteral("Backspace Empty Block"))) {
+    return true;
+  }
   if (frontMatterController_ && frontMatterController_->isEditing()) {
     return frontMatterController_->deleteBackward();
   }
@@ -515,6 +636,10 @@ bool InputController::deleteBackwardInActiveLiteral() {
 }
 
 bool InputController::deleteForwardInActiveLiteral() {
+  if (tryRemoveEmptyLiteralBlock(EditTransaction::Kind::DeleteText,
+                                  QStringLiteral("Delete Empty Block"))) {
+    return true;
+  }
   if (frontMatterController_ && frontMatterController_->isEditing()) {
     return frontMatterController_->deleteForward();
   }

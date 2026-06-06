@@ -492,6 +492,34 @@ void testFrontMatterFalsePositives() {
   require(childAt(*disabled.root, 0).type() != BlockType::FrontMatter, QStringLiteral("Disabled front matter option should leave cmark output"));
 }
 
+void testCodeFenceEmptySerializationIsIdempotent() {
+  // Verify code fence literal does not include cmark's trailing newline
+  CmarkGfmParser parser;
+  ParseOptions options;
+
+  const QString markdown = QStringLiteral("```cpp\nreturn 0;\n```");
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for code fence literal test"));
+  require(parsed.root->children().size() == 1, QStringLiteral("Expected one child for code fence literal test"));
+  const MarkdownNode& codeBlock = childAt(*parsed.root, 0);
+  require(codeBlock.type() == BlockType::CodeFence, QStringLiteral("Expected CodeFence block"));
+  require(codeBlock.literal() == QStringLiteral("return 0;"),
+          QStringLiteral("Code fence literal should not include trailing newline, got: '%1'").arg(codeBlock.literal()));
+
+  // Verify serialization round-trips for various code fence shapes
+  const QVector<QString> samples{
+      QStringLiteral("```cpp\nreturn 0;\n```"),
+      QStringLiteral("```\nhello\n```"),
+      QStringLiteral("```\nhello\n\nworld\n```"),
+  };
+  for (const QString& sample : samples) {
+    const QString first = serializeMarkdown(sample);
+    const QString second = serializeMarkdown(first);
+    require(first == sample, QStringLiteral("Code fence first serialization changed source: '%1' -> '%2'").arg(sample, first));
+    require(second == first, QStringLiteral("Code fence repeated serialization is not stable: '%1' -> '%2'").arg(first, second));
+  }
+}
+
 void testFrontMatterSerializationDoesNotGrowTrailingBlankLines() {
   const QVector<QString> samples{
       QStringLiteral("---\ntitle: Muffin\n---"),
@@ -540,6 +568,7 @@ int main(int argc, char** argv) {
   testMathEdgeCases();
   testFencedCodeBlock();
   testCodeFenceSerializationDoesNotGrowTrailingBlankLines();
+  testCodeFenceEmptySerializationIsIdempotent();
   testYamlFrontMatter();
   testTomlFrontMatter();
   testJsonFrontMatter();
