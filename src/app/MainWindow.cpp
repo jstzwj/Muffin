@@ -991,12 +991,40 @@ void MainWindow::updateViewMode() {
   const bool sourceMode = sourceModeEnabled();
   if (sourceMode) {
     syncSourceEditorIfNeeded();
+
+    // Render → Source: sync cursor/viewport position
+    qsizetype targetOffset = -1;
+    if (editorController_.selection().hasCursor()) {
+      targetOffset = editorController_.selection().cursorPosition().text.sourceOffset;
+    }
+    if (targetOffset < 0) {
+      const BlockLayout* topBlock = renderView_->blockAtViewportPos(QPointF(0, 0));
+      if (topBlock) {
+        MarkdownNode* node = session_.document().node(topBlock->nodeId());
+        if (node) {
+          targetOffset = node->sourceRange().byteStart;
+        }
+      }
+    }
+    if (targetOffset >= 0) {
+      QTextCursor cursor = editor_->editor()->textCursor();
+      const int maxPos = qMax(0, editor_->editor()->document()->characterCount() - 1);
+      cursor.setPosition(qBound(0, static_cast<int>(targetOffset), maxPos));
+      editor_->editor()->setTextCursor(cursor);
+      editor_->editor()->centerCursor();
+    }
   }
   viewStack_->setCurrentWidget(sourceMode ? static_cast<QWidget*>(editor_) : static_cast<QWidget*>(renderView_));
   if (sourceModeButton_) {
     sourceModeButton_->setChecked(sourceMode);
   }
   if (!sourceMode) {
+    // Source → Render: scroll to the block at the source cursor position
+    const int sourcePos = editor_->editor()->textCursor().position();
+    MarkdownNode* block = session_.document().topLevelBlockAtOffset(static_cast<qsizetype>(sourcePos));
+    if (block) {
+      renderView_->scrollToNode(block->id());
+    }
     renderView_->setFocus(Qt::OtherFocusReason);
   }
   updateStatus();

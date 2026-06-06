@@ -503,7 +503,7 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
         break;
     }
     const DisplayOffsetRange layoutRange = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
-    if (!layoutRange.valid) {
+    if (!layoutRange.valid || layoutRange.end > displayText_.size()) {
       continue;
     }
     QTextLayout::FormatRange range;

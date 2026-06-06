@@ -83,6 +83,18 @@ MarkdownNode* MarkdownDocument::node(NodeId id) const {
   return index_.find(id);
 }
 
+MarkdownNode* MarkdownDocument::topLevelBlockAtOffset(qsizetype offset) const {
+  for (const auto& child : root_->children()) {
+    if (child->sourceRange().containsByte(offset)) {
+      return child.get();
+    }
+  }
+  if (!root_->children().empty()) {
+    return root_->children().back().get();
+  }
+  return nullptr;
+}
+
 void MarkdownDocument::replaceRoot(std::unique_ptr<MarkdownNode> root) {
   root_ = std::move(root);
   if (!root_) {

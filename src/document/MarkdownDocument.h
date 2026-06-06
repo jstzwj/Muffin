@@ -35,6 +35,7 @@ public:
   void setModified(bool modified);
 
   MarkdownNode* node(NodeId id) const;
+  MarkdownNode* topLevelBlockAtOffset(qsizetype offset) const;
   void replaceRoot(std::unique_ptr<MarkdownNode> root);
 
 signals:
