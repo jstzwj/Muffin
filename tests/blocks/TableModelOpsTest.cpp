@@ -400,12 +400,12 @@ void testTableControllerDeletesOnlyEditableInlineContent() {
   session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| `code` |"), false);
   setTableCellCursor(session, selection, 1, 0, 1, 0);
   require(tableController.deleteBackward(), "inline code start backspace should be handled");
-  require(session.markdownText().contains(QStringLiteral("| `code` |")), "inline code start backspace should not remove opening marker");
+  require(session.markdownText().contains(QStringLiteral("| code` |")), "inline code start backspace removes opening marker");
 
   session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| `code` |"), false);
   setTableCellCursor(session, selection, 1, 0, 5, 4);
   require(tableController.deleteForward(), "inline code end delete should be handled");
-  require(session.markdownText().contains(QStringLiteral("| `code` |")), "inline code end delete should not remove closing marker");
+  require(session.markdownText().contains(QStringLiteral("| `code |")), "inline code end delete removes closing marker");
 
   session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| `code` |"), false);
   setTableCellCursor(session, selection, 1, 0, 3, 2);
@@ -461,7 +461,7 @@ void testTableControllerPreservesInlineContainersOnCellEdit() {
   session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| [label](url) |"), false);
   setTableCellCursor(session, selection, 1, 0, QStringLiteral("[label]").size(), 5);
   require(tableController.deleteForward(), "link label end delete should be handled");
-  require(session.markdownText().contains(QStringLiteral("| [label](url) |")), "link label end delete should not remove destination syntax");
+  require(session.markdownText().contains(QStringLiteral("| [label]url) |")), "link label end delete removes destination syntax");
 }
 
 void testTableControllerDeletesTableBreakAsUnit() {
@@ -533,9 +533,9 @@ void testTableCellSourceEditMixedTableTokensAndInlineMarkers() {
           "mixed code marker visible offset should account for table tokens");
   const qsizetype codeCellSourceStart = codeCell->sourceRange().byteStart;
   require(tableController.deleteBackward(), "mixed code marker backspace should be handled");
-  require(session.markdownText().contains(QStringLiteral("| a \\| b<br> `code` |")), "mixed code marker backspace should preserve markdown");
+  require(session.markdownText().contains(QStringLiteral("| a \\| b<br> code` |")), "mixed code marker backspace removes opening marker");
   require(selection.cursorPosition().text.sourceOffset ==
-              codeCellSourceStart + codeContent.indexOf(QStringLiteral("`code")) + 1,
+              codeCellSourceStart + codeContent.indexOf(QStringLiteral("`code")),
           "mixed code marker backspace source cursor mismatch");
   require(selection.cursorPosition().text.textOffset == QStringLiteral("a | b\n ").size(), "mixed code marker backspace text cursor mismatch");
 
@@ -554,11 +554,11 @@ void testTableCellSourceEditMixedTableTokensAndInlineMarkers() {
           "mixed link hidden syntax visible offset should account for table tokens");
   const qsizetype linkCellSourceStart = linkCell->sourceRange().byteStart;
   require(tableController.deleteForward(), "mixed link hidden syntax delete should be handled");
-  require(session.markdownText().contains(QStringLiteral("| a \\| b<br> [label](url) |")), "mixed link hidden syntax delete should preserve markdown");
+  require(session.markdownText().contains(QStringLiteral("| a \\| b<br> [label(url) |")), "mixed link hidden syntax delete removes hidden syntax");
   require(selection.cursorPosition().text.sourceOffset ==
               linkCellSourceStart + linkContent.indexOf(QStringLiteral("](url)")),
           "mixed link delete source cursor mismatch");
-  require(selection.cursorPosition().text.textOffset == QStringLiteral("a | b\n label").size(), "mixed link delete text cursor mismatch");
+  require(selection.cursorPosition().text.textOffset == QStringLiteral("a | b\n [label").size(), "mixed link delete text cursor mismatch");
 }
 
 void testTableControllerInsertTable() {

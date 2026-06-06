@@ -33,6 +33,9 @@
 #include <QStatusBar>
 #include <QTextCursor>
 #include <QTimer>
+#include <QIcon>
+#include <QPainter>
+#include <QPixmap>
 #include <QToolButton>
 #include <QUrl>
 
@@ -87,6 +90,53 @@ QMenu* addDisabledMenu(QMenu* parent, const QString& title) {
   QMenu* menu = parent->addMenu(title);
   menu->setEnabled(false);
   return menu;
+}
+
+enum class StatusBarIconKind { Sidebar, SourceMode };
+
+QIcon statusBarIcon(StatusBarIconKind kind, const QColor& ink) {
+  constexpr int iconSize = 16;
+  QPixmap pixmap(iconSize, iconSize);
+  pixmap.fill(Qt::transparent);
+
+  QPainter painter(&pixmap);
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  painter.setPen(QPen(ink, 1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+
+  switch (kind) {
+    case StatusBarIconKind::Sidebar: {
+      // Rounded rectangle with vertical divider suggesting sidebar + content
+      painter.drawRoundedRect(QRectF(2.0, 2.5, 12.0, 11.0), 1.5, 1.5);
+      painter.drawLine(QLineF(6.0, 3.5, 6.0, 12.5));
+      break;
+    }
+    case StatusBarIconKind::SourceMode: {
+      // Left angle bracket <
+      painter.drawLine(QLineF(5.0, 3.5, 2.5, 8.0));
+      painter.drawLine(QLineF(2.5, 8.0, 5.0, 12.5));
+      // Slash /
+      painter.drawLine(QLineF(7.0, 3.5, 9.0, 12.5));
+      // Right angle bracket >
+      painter.drawLine(QLineF(11.0, 3.5, 13.5, 8.0));
+      painter.drawLine(QLineF(13.5, 8.0, 11.0, 12.5));
+      break;
+    }
+  }
+  painter.end();
+
+  QIcon icon;
+  icon.addPixmap(pixmap, QIcon::Normal, QIcon::Off);
+  icon.addPixmap(pixmap, QIcon::Active, QIcon::Off);
+  icon.addPixmap(pixmap, QIcon::Selected, QIcon::Off);
+  icon.addPixmap(pixmap, QIcon::Disabled, QIcon::Off);
+  return icon;
+}
+
+QColor statusBarIconInk(const QString& themeName) {
+  if (themeName == QStringLiteral("night")) {
+    return QColor(0x9a, 0xa4, 0xaf);
+  }
+  return QColor(0x55, 0x55, 0x55);
 }
 
 QString zoneName(HitTestResult::Zone zone) {
@@ -231,13 +281,19 @@ void MainWindow::setupMenuBar() {
 void MainWindow::setupStatusBar() {
   statusBar()->setSizeGripEnabled(false);
 
+  const QColor ink = statusBarIconInk(themeManager_.currentThemeName());
+
   sidebarButton_ = new QToolButton(this);
-  sidebarButton_->setText(QStringLiteral("O"));
+  sidebarButton_->setIcon(statusBarIcon(StatusBarIconKind::Sidebar, ink));
+  sidebarButton_->setIconSize(QSize(16, 16));
   sidebarButton_->setCheckable(true);
+  sidebarButton_->setAutoRaise(true);
 
   sourceModeButton_ = new QToolButton(this);
-  sourceModeButton_->setText(QStringLiteral("</>"));
+  sourceModeButton_->setIcon(statusBarIcon(StatusBarIconKind::SourceMode, ink));
+  sourceModeButton_->setIconSize(QSize(16, 16));
   sourceModeButton_->setCheckable(true);
+  sourceModeButton_->setAutoRaise(true);
 
   parseLabel_ = new QLabel(this);
   cursorLabel_ = new QLabel(this);
@@ -615,6 +671,7 @@ void MainWindow::applyTyporaLikeChrome() {
       "QMenu::item:disabled { color: #999999; }"
       "QStatusBar { background: #ffffff; color: #555555; border: 0; font-size: 12px; }"
       "QStatusBar::item { border: 0; }"
+      "QStatusBar QLabel { padding: 0 8px; }"
       "QToolButton {"
       "  background: transparent;"
       "  border: 0;"
@@ -1213,11 +1270,20 @@ void MainWindow::applyTheme(QString name) {
         "QMenu::item:disabled { color:#6e7681; }"
         "QStatusBar { background:#1f2328; color:#9aa4af; border:0; font-size:12px; }"
         "QStatusBar::item { border:0; }"
+        "QStatusBar QLabel { padding:0 8px; }"
         "QToolButton { background:transparent; border:0; color:#9aa4af; padding:0 8px; min-width:22px; min-height:18px; font-size:12px; }"
         "QToolButton:hover { background:#2b3138; }"
         "QToolButton:checked { color:#e6edf3; background:#30363d; }"));
   } else {
     applyTyporaLikeChrome();
+  }
+
+  const QColor ink = statusBarIconInk(name);
+  if (sidebarButton_) {
+    sidebarButton_->setIcon(statusBarIcon(StatusBarIconKind::Sidebar, ink));
+  }
+  if (sourceModeButton_) {
+    sourceModeButton_->setIcon(statusBarIcon(StatusBarIconKind::SourceMode, ink));
   }
 }
 

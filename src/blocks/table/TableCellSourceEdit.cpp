@@ -122,7 +122,7 @@ qsizetype normalizedTableCellInsertOffset(const MarkdownNode& cell, const QStrin
 }
 
 std::optional<TableCellSourceEdit> tableCellDeleteEdit(
-    const MarkdownNode& cell,
+    const MarkdownNode& /*cell*/,
     const QString& content,
     qsizetype sourceOffset,
     DeleteDirection direction) {
@@ -134,63 +134,18 @@ std::optional<TableCellSourceEdit> tableCellDeleteEdit(
     return TableCellSourceEdit{unitStart, unitEnd - unitStart, QString(), unitStart};
   }
 
-  InlineProjection projection(cell.inlines(), content, InlineProjectionState{});
-  for (const InlineProjectionSpan& span : projection.spans()) {
-    if (!span.editable) {
-      continue;
-    }
-    if (direction == DeleteDirection::Backward && span.sourceStart < span.contentSourceStart && sourceOffset > span.sourceStart &&
-        sourceOffset <= span.contentSourceStart) {
-      return TableCellSourceEdit{sourceOffset, 0, QString(), sourceOffset};
-    }
-    if (direction == DeleteDirection::Forward && span.contentSourceEnd < span.sourceEnd && sourceOffset >= span.contentSourceEnd &&
-        sourceOffset < span.sourceEnd) {
-      return TableCellSourceEdit{sourceOffset, 0, QString(), sourceOffset};
-    }
+  // Delete the source character directly, matching regular paragraph behavior.
+  // The InlineProjection marker protection that was here previously was too
+  // aggressive: it blocked forward delete at closing marker boundaries and
+  // backspace at opening marker boundaries, and caused backspace to skip
+  // markers and delete content characters instead.
+  if (direction == DeleteDirection::Backward && sourceOffset > 0) {
+    return TableCellSourceEdit{sourceOffset - 1, 1, QString(), sourceOffset - 1};
   }
-
-  qsizetype replaceStart = -1;
-  qsizetype replaceEnd = -1;
-
-  for (const InlineProjectionSpan& span : projection.spans()) {
-    if (!span.editable || span.visibleEnd <= span.visibleStart || span.contentSourceEnd <= span.contentSourceStart) {
-      continue;
-    }
-
-    if (direction == DeleteDirection::Backward) {
-      qsizetype effectiveEnd = -1;
-      if (sourceOffset > span.contentSourceStart && sourceOffset <= span.contentSourceEnd) {
-        effectiveEnd = sourceOffset;
-      } else if (sourceOffset > span.contentSourceEnd && sourceOffset <= span.sourceEnd) {
-        effectiveEnd = span.contentSourceEnd;
-      } else if (sourceOffset > span.sourceEnd) {
-        effectiveEnd = span.contentSourceEnd;
-      }
-      if (effectiveEnd > span.contentSourceStart && (replaceEnd < 0 || effectiveEnd > replaceEnd)) {
-        replaceEnd = effectiveEnd;
-        replaceStart = effectiveEnd - 1;
-      }
-    } else {
-      qsizetype effectiveStart = -1;
-      if (sourceOffset >= span.contentSourceStart && sourceOffset < span.contentSourceEnd) {
-        effectiveStart = sourceOffset;
-      } else if (sourceOffset >= span.sourceStart && sourceOffset < span.contentSourceStart) {
-        effectiveStart = span.contentSourceStart;
-      } else if (sourceOffset < span.sourceStart) {
-        effectiveStart = span.contentSourceStart;
-      }
-      if (effectiveStart >= span.contentSourceStart && effectiveStart < span.contentSourceEnd &&
-          (replaceStart < 0 || effectiveStart < replaceStart)) {
-        replaceStart = effectiveStart;
-        replaceEnd = effectiveStart + 1;
-      }
-    }
+  if (direction == DeleteDirection::Forward && sourceOffset < content.size()) {
+    return TableCellSourceEdit{sourceOffset, 1, QString(), sourceOffset};
   }
-
-  if (replaceStart < 0 || replaceEnd <= replaceStart) {
-    return TableCellSourceEdit{sourceOffset, 0, QString(), sourceOffset};
-  }
-  return TableCellSourceEdit{replaceStart, replaceEnd - replaceStart, QString(), replaceStart};
+  return TableCellSourceEdit{sourceOffset, 0, QString(), sourceOffset};
 }
 
 }  // namespace
