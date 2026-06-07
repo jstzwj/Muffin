@@ -5,6 +5,29 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-06-08
+
+### Added
+- **Footnote and link definition blocks** - Full support for footnote definitions (`[^id]: text`) and link reference definitions (`[id]: url "title"`) with rendering, editing, insertion commands, and deletion
+- **Heading badges** - Visual H3–H6 level badges painted on the left side of headings for quick hierarchy identification
+- **Document printing** - Print the current document via File → Print (Ctrl+P), powered by Qt PrintSupport
+- **Table copy and format** - `copyCurrentTable` and `formatCurrentTableSource` commands for copying and reformatting table Markdown source
+- **Insert Table dialog** - Dialog for inserting a new table with configurable row and column count
+- **Table submenu** - Dedicated Table submenu in the Edit menu with keyboard shortcuts for table operations
+
+### Changed
+- **Definition block parsing and serialization** - Rewrote definition block (link references, footnotes) token model with syntax/editable slot separation, multi-line footnote support, and format-preserving serialization
+- **Hit testing for definition blocks** - Token-based hit testing for precise cursor positioning and interaction within definition blocks
+- **Table header defaults** - Default table headers are now empty strings instead of "Header"
+- **Table theme colors** - Adjusted table header background colors across all built-in themes (GitHub, Newsprint, Night, Pixyll, Whitey)
+- **Heading badge vertical centering** - Fixed badge vertical alignment calculation
+
+### Fixed
+- **macOS macdeployqt lookup** - Fixed Qt tool discovery on macOS by traversing upward from the framework library to find the Qt installation prefix
+- **Placeholder text translation context** - Fixed placeholder text using incorrect translation context
+- **File menu print action** - Corrected print action parameters and removed extraneous boolean argument
+- **Removed stale menu binding** - Removed obsolete `document_list` menu item binding, unified to `file_tree`
+
 ## [0.1.2] - 2026-06-07
 
 ### Added
@@ -91,6 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.1.3]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.3
 [0.1.2]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.2
 [0.1.1]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.1
 [0.1.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.0

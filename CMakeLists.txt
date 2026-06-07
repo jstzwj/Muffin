@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
 project(Muffin
-  VERSION 0.1.2
+  VERSION 0.1.3
   DESCRIPTION "A fast native Markdown WYSIWYG editor built with C++ and Qt 6 Widgets"
   LANGUAGES C CXX
 )
