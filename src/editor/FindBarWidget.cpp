@@ -1,5 +1,6 @@
 #include "editor/FindBarWidget.h"
 
+#include <QEvent>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
@@ -21,7 +22,6 @@ void muffin::FindBarWidget::setupUi() {
   findRow->setSpacing(4);
 
   findEdit_ = new QLineEdit(this);
-  findEdit_->setPlaceholderText(tr("Find"));
   findEdit_->setMinimumWidth(180);
   connect(findEdit_, &QLineEdit::textChanged, this, [this](const QString& text) {
     Q_UNUSED(text)
@@ -31,24 +31,24 @@ void muffin::FindBarWidget::setupUi() {
     emit findRequested(findEdit_->text(), true);
   });
 
-  prevButton_ = new QPushButton(tr("Previous"), this);
+  prevButton_ = new QPushButton(this);
   connect(prevButton_, &QPushButton::clicked, this, [this] { emit findRequested(findEdit_->text(), false); });
 
-  nextButton_ = new QPushButton(tr("Next"), this);
+  nextButton_ = new QPushButton(this);
   connect(nextButton_, &QPushButton::clicked, this, [this] { emit findRequested(findEdit_->text(), true); });
 
   resultLabel_ = new QLabel(this);
   resultLabel_->setMinimumWidth(60);
 
-  auto* closeButton = new QPushButton(tr("Close"), this);
-  connect(closeButton, &QPushButton::clicked, this, &FindBarWidget::closed);
+  closeButton_ = new QPushButton(this);
+  connect(closeButton_, &QPushButton::clicked, this, &FindBarWidget::closed);
 
   findRow->addWidget(findEdit_);
   findRow->addWidget(prevButton_);
   findRow->addWidget(nextButton_);
   findRow->addWidget(resultLabel_);
   findRow->addStretch();
-  findRow->addWidget(closeButton);
+  findRow->addWidget(closeButton_);
 
   mainLayout->addLayout(findRow);
 
@@ -59,15 +59,14 @@ void muffin::FindBarWidget::setupUi() {
   replaceLayout->setSpacing(4);
 
   replaceEdit_ = new QLineEdit(replaceRow_);
-  replaceEdit_->setPlaceholderText(tr("Replace"));
   replaceEdit_->setMinimumWidth(180);
 
-  replaceButton_ = new QPushButton(tr("Replace"), replaceRow_);
+  replaceButton_ = new QPushButton(replaceRow_);
   connect(replaceButton_, &QPushButton::clicked, this, [this] {
     emit replaceRequested(findEdit_->text(), replaceEdit_->text());
   });
 
-  replaceAllButton_ = new QPushButton(tr("Replace All"), replaceRow_);
+  replaceAllButton_ = new QPushButton(replaceRow_);
   connect(replaceAllButton_, &QPushButton::clicked, this, [this] {
     emit replaceAllRequested(findEdit_->text(), replaceEdit_->text());
   });
@@ -79,6 +78,18 @@ void muffin::FindBarWidget::setupUi() {
 
   replaceRow_->setVisible(false);
   mainLayout->addWidget(replaceRow_);
+
+  retranslateUi();
+}
+
+void muffin::FindBarWidget::retranslateUi() {
+  findEdit_->setPlaceholderText(tr("Find"));
+  prevButton_->setText(tr("Previous"));
+  nextButton_->setText(tr("Next"));
+  closeButton_->setText(tr("Close"));
+  replaceEdit_->setPlaceholderText(tr("Replace"));
+  replaceButton_->setText(tr("Replace"));
+  replaceAllButton_->setText(tr("Replace All"));
 }
 
 void muffin::FindBarWidget::setSearchText(const QString& text) {
@@ -133,4 +144,11 @@ void muffin::FindBarWidget::keyPressEvent(QKeyEvent* event) {
 void muffin::FindBarWidget::showEvent(QShowEvent* event) {
   QWidget::showEvent(event);
   activateFind();
+}
+
+void muffin::FindBarWidget::changeEvent(QEvent* event) {
+  if (event->type() == QEvent::LanguageChange) {
+    retranslateUi();
+  }
+  QWidget::changeEvent(event);
 }

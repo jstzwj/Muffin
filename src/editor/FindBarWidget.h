@@ -32,13 +32,17 @@ signals:
 protected:
   void keyPressEvent(QKeyEvent* event) override;
   void showEvent(QShowEvent* event) override;
+  void changeEvent(QEvent* event) override;
 
 private:
   void setupUi();
+  void retranslateUi();
+
   QLineEdit* findEdit_ = nullptr;
   QLineEdit* replaceEdit_ = nullptr;
-  QPushButton* nextButton_ = nullptr;
   QPushButton* prevButton_ = nullptr;
+  QPushButton* nextButton_ = nullptr;
+  QPushButton* closeButton_ = nullptr;
   QPushButton* replaceButton_ = nullptr;
   QPushButton* replaceAllButton_ = nullptr;
   QLabel* resultLabel_ = nullptr;
