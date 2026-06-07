@@ -111,6 +111,10 @@ jobs:
       - name: Install dependencies
         run: conan install . -s build_type=Release -s compiler.cppstd=${{ matrix.conan-cppstd }} --build=missing
 
+      - name: Clean Conan source to reduce cache size
+        run: conan remove "*" -s -f
+        shell: bash
+
       - name: Configure
         run: cmake --preset ${{ matrix.configure-preset }}
 
