@@ -45,3 +45,25 @@ The packaged executable is:
 ```
 
 If `build\dist\Muffin.exe` is older than `build\Release\Muffin.exe`, run the dist target again before testing the packaged app.
+
+## Translation (i18n)
+
+### lupdate namespace context bug
+
+`lupdate` fails to track namespace prefixes across `namespace muffin { }` wrappers in `.cpp` files. It generates context `ClassName` instead of the correct `muffin::ClassName`, causing translations to never match at runtime (where `tr()` uses `metaObject()->className()` = `muffin::ClassName`).
+
+**Rule:** All `.cpp` files in `MUFFIN_TRANSLATABLE_SOURCES` that contain `tr()` calls MUST use fully qualified method names (e.g. `muffin::MainWindow::setupFileMenu()`) instead of `namespace muffin { }` wrapping. Free functions and anonymous namespaces that don't use `tr()` may remain inside `namespace muffin { }` or at file scope.
+
+When adding a new `.cpp` file with `tr()` calls to the translatable sources, do NOT wrap it in `namespace muffin { }`. Use `muffin::ClassName::method()` for all method definitions instead.
+
+### Updating translations
+
+After modifying translatable strings:
+
+```powershell
+cmake --build --preset conan-release --target update_translations
+cmake --build --preset conan-release --target release_translations
+cmake --build --preset conan-release --target dist
+```
+
+Use subagents to modify `.ts` files in parallel — avoid bulk Python/sed scripts for XML manipulation as they are error-prone (losing closing tags, removing valid entries, etc.).

@@ -66,8 +66,36 @@
 <context>
     <name>muffin::FindBarWidget</name>
     <message>
+        <source>Find</source>
+        <translation>Tìm kiếm</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>Trước</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>Tiếp</translation>
+    </message>
+    <message>
         <source>Close</source>
         <translation>Đóng</translation>
+    </message>
+    <message>
+        <source>Replace</source>
+        <translation>Thay thế</translation>
+    </message>
+    <message>
+        <source>Replace All</source>
+        <translation>Thay thế tất cả</translation>
+    </message>
+    <message>
+        <source>Not found</source>
+        <translation>Không tìm thấy</translation>
+    </message>
+    <message>
+        <source>%1/%2</source>
+        <translation>%1/%2</translation>
     </message>
 </context>
 <context>
@@ -644,14 +672,6 @@
         <translation>Giới thiệu Muffin</translation>
     </message>
     <message>
-        <source>Muffin %1
-
-A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
-        <translation>Muffin %1
-
-Trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằng C++ và Qt 6 Widgets.</translation>
-    </message>
-    <message>
         <source>table %1:%2 offset %3</source>
         <translation>bảng %1:%2 vị trí %3</translation>
     </message>
@@ -664,20 +684,6 @@ Trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằng C++
         <translation>Xóa tệp gần đây</translation>
     </message>
     <message>
-        <source>Name: %1
-Location: %2
-Size: %3 bytes
-Modified: %4
-Words: %5
-Parse time: %6 ms</source>
-        <translation>Tên: %1
-Vị trí: %2
-Kích thước: %3 byte
-Đã sửa đổi: %4
-Số từ: %5
-Thời gian phân tích: %6 ms</translation>
-    </message>
-    <message>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
@@ -688,12 +694,6 @@ Thời gian phân tích: %6 ms</translation>
     <message>
         <source>Open Failed</source>
         <translation>Mở thất bại</translation>
-    </message>
-    <message>
-        <source>File does not exist:
-%1</source>
-        <translation>Tệp không tồn tại:
-%1</translation>
     </message>
     <message>
         <source>Render Diagnostics</source>
@@ -730,6 +730,22 @@ Thời gian phân tích: %6 ms</translation>
     <message>
         <source>My License...</source>
         <translation>Giấy phép của tôi...</translation>
+    </message>
+    <message>
+        <source>Find...</source>
+        <translation>Tìm kiếm...</translation>
+    </message>
+    <message>
+        <source>Replace...</source>
+        <translation>Thay thế...</translation>
+    </message>
+    <message>
+        <source>Find Next</source>
+        <translation>Tìm tiếp</translation>
+    </message>
+    <message>
+        <source>Find Previous</source>
+        <translation>Tìm trước</translation>
     </message>
 </context>
 <context>
@@ -1358,4 +1374,5 @@ Thời gian phân tích: %6 ms</translation>
         <translation>Bắt đầu viết...</translation>
     </message>
 </context>
+
 </TS>

@@ -69,6 +69,34 @@
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
+    <message>
+        <source>Find</source>
+        <translation>Найти</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>Предыдущий</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>Следующий</translation>
+    </message>
+    <message>
+        <source>Replace</source>
+        <translation>Заменить</translation>
+    </message>
+    <message>
+        <source>Replace All</source>
+        <translation>Заменить все</translation>
+    </message>
+    <message>
+        <source>Not found</source>
+        <translation>Не найдено</translation>
+    </message>
+    <message>
+        <source>%1/%2</source>
+        <translation>%1/%2</translation>
+    </message>
 </context>
 <context>
     <name>muffin::LanguageManager</name>
@@ -644,14 +672,6 @@
         <translation>О Muffin</translation>
     </message>
     <message>
-        <source>Muffin %1
-
-A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
-        <translation>Muffin %1
-
-Быстрый лёгкий нативный редактор Markdown, созданный на C++ и Qt 6 Widgets.</translation>
-    </message>
-    <message>
         <source>table %1:%2 offset %3</source>
         <translation>таблица %1:%2 смещение %3</translation>
     </message>
@@ -664,20 +684,6 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>Очистить недавние файлы</translation>
     </message>
     <message>
-        <source>Name: %1
-Location: %2
-Size: %3 bytes
-Modified: %4
-Words: %5
-Parse time: %6 ms</source>
-        <translation>Имя: %1
-Расположение: %2
-Размер: %3 байт
-Изменено: %4
-Слов: %5
-Время разбора: %6 мс</translation>
-    </message>
-    <message>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
@@ -688,12 +694,6 @@ Parse time: %6 ms</source>
     <message>
         <source>Open Failed</source>
         <translation>Не удалось открыть</translation>
-    </message>
-    <message>
-        <source>File does not exist:
-%1</source>
-        <translation>Файл не существует:
-%1</translation>
     </message>
     <message>
         <source>Render Diagnostics</source>
@@ -730,6 +730,22 @@ Parse time: %6 ms</source>
     <message>
         <source>My License...</source>
         <translation>Моя лицензия...</translation>
+    </message>
+    <message>
+        <source>Find...</source>
+        <translation>Найти...</translation>
+    </message>
+    <message>
+        <source>Replace...</source>
+        <translation>Заменить...</translation>
+    </message>
+    <message>
+        <source>Find Next</source>
+        <translation>Найти далее</translation>
+    </message>
+    <message>
+        <source>Find Previous</source>
+        <translation>Найти ранее</translation>
     </message>
 </context>
 <context>
@@ -1358,4 +1374,5 @@ Parse time: %6 ms</source>
         <translation>Начните писать...</translation>
     </message>
 </context>
+
 </TS>

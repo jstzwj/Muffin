@@ -131,6 +131,7 @@ private:
   void moveSourceLineUp();
   void moveSourceLineDown();
   void showFindBar();
+  void showReplaceBar();
   void hideFindBar();
   void performFind(const QString& text, bool forward);
   void performFindNext();
@@ -167,6 +168,8 @@ private:
   bool wordCountDirty_ = true;
   bool focusMode_ = false;
   bool typewriterMode_ = false;
+  QString lastFindText_;
+  qsizetype lastFindOffset_ = -1;
 };
 
 }  // namespace muffin

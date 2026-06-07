@@ -17,9 +17,7 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
-namespace muffin {
-
-PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) {
+muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) {
   setModal(true);
   setMinimumSize(880, 620);
   resize(1040, 720);
@@ -164,44 +162,44 @@ PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) {
   retranslateUi();
 }
 
-void PreferencesDialog::setAvailableThemes(const QStringList& themes) {
+void muffin::PreferencesDialog::setAvailableThemes(const QStringList& themes) {
   if (appearancePage_) {
     appearancePage_->setAvailableThemes(themes);
   }
 }
 
-void PreferencesDialog::setCurrentThemeName(const QString& name) {
+void muffin::PreferencesDialog::setCurrentThemeName(const QString& name) {
   if (appearancePage_) {
     appearancePage_->setCurrentThemeName(name);
   }
 }
 
-void PreferencesDialog::setStatusBarVisible(bool visible) {
+void muffin::PreferencesDialog::setStatusBarVisible(bool visible) {
   if (appearancePage_) {
     appearancePage_->setStatusBarVisible(visible);
   }
 }
 
-void PreferencesDialog::setZoomPercent(int percent) {
+void muffin::PreferencesDialog::setZoomPercent(int percent) {
   if (appearancePage_) {
     appearancePage_->setZoomPercent(percent);
   }
 }
 
-void PreferencesDialog::setFontSizePx(int px) {
+void muffin::PreferencesDialog::setFontSizePx(int px) {
   if (appearancePage_) {
     appearancePage_->setFontSizePx(px);
   }
 }
 
-void PreferencesDialog::changeEvent(QEvent* event) {
+void muffin::PreferencesDialog::changeEvent(QEvent* event) {
   if (event->type() == QEvent::LanguageChange) {
     retranslateUi();
   }
   QDialog::changeEvent(event);
 }
 
-void PreferencesDialog::retranslateUi() {
+void muffin::PreferencesDialog::retranslateUi() {
   setWindowTitle(tr("Preferences"));
 
   const QStringList categories = {
@@ -256,7 +254,7 @@ void PreferencesDialog::retranslateUi() {
   // General page handles its own retranslation via LanguageManager
 }
 
-QWidget* PreferencesDialog::makePage(QWidget* parent) {
+QWidget* muffin::PreferencesDialog::makePage(QWidget* parent) {
   auto* scroll = new QScrollArea(parent);
   scroll->setWidgetResizable(true);
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -277,7 +275,7 @@ QWidget* PreferencesDialog::makePage(QWidget* parent) {
   return page;
 }
 
-void PreferencesDialog::addPlaceholderPage() {
+void muffin::PreferencesDialog::addPlaceholderPage() {
   auto* page = makePage(contentStack_);
   auto* layout = qobject_cast<QVBoxLayout*>(page->layout());
   auto* label = new QLabel(page);
@@ -288,5 +286,3 @@ void PreferencesDialog::addPlaceholderPage() {
   layout->addStretch(1);
   placeholderLabels_.append(label);
 }
-
-}  // namespace muffin

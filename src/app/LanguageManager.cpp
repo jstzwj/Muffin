@@ -4,16 +4,14 @@
 #include <QLocale>
 #include <QSettings>
 
-namespace muffin {
-
-LanguageManager& LanguageManager::instance() {
-  static LanguageManager manager;
+muffin::LanguageManager& muffin::LanguageManager::instance() {
+  static muffin::LanguageManager manager;
   return manager;
 }
 
-LanguageManager::LanguageManager(QObject* parent) : QObject(parent) {}
+muffin::LanguageManager::LanguageManager(QObject* parent) : QObject(parent) {}
 
-QVector<LanguageInfo> LanguageManager::availableLanguages() const {
+QVector<muffin::LanguageInfo> muffin::LanguageManager::availableLanguages() const {
   return {
       {QStringLiteral("system"), tr("System Default"), QStringLiteral("System Default")},
       {QStringLiteral("en"), QStringLiteral("English"), QStringLiteral("English")},
@@ -34,16 +32,16 @@ QVector<LanguageInfo> LanguageManager::availableLanguages() const {
   };
 }
 
-QString LanguageManager::currentLanguageCode() const {
+QString muffin::LanguageManager::currentLanguageCode() const {
   return selectedCode_;
 }
 
-void LanguageManager::initialize() {
+void muffin::LanguageManager::initialize() {
   QSettings settings;
   setLanguage(settings.value(settingsKey(), QStringLiteral("system")).toString());
 }
 
-bool LanguageManager::setLanguage(QString code) {
+bool muffin::LanguageManager::setLanguage(QString code) {
   const QString selectedCode = code.isEmpty() ? QStringLiteral("system") : std::move(code);
   const QString resolved = resolvedCode(selectedCode);
   if (selectedCode == selectedCode_ && resolved == currentCode_) {
@@ -62,15 +60,15 @@ bool LanguageManager::setLanguage(QString code) {
   return true;
 }
 
-QString LanguageManager::settingsKey() {
+QString muffin::LanguageManager::settingsKey() {
   return QStringLiteral("language");
 }
 
-QString LanguageManager::normalizedCode(QString code) {
+QString muffin::LanguageManager::normalizedCode(QString code) {
   return resolvedCode(code);
 }
 
-QString LanguageManager::resolvedCode(const QString& code) {
+QString muffin::LanguageManager::resolvedCode(const QString& code) {
   if (code.isEmpty() || code == QStringLiteral("system")) {
     const QString system = resolvedCode(QLocale::system().name());
     return system;
@@ -103,7 +101,7 @@ QString LanguageManager::resolvedCode(const QString& code) {
   return QStringLiteral("en");
 }
 
-bool LanguageManager::installTranslator(const QString& code) {
+bool muffin::LanguageManager::installTranslator(const QString& code) {
   if (translator_) {
     QApplication::removeTranslator(translator_.get());
     translator_.reset();
@@ -123,5 +121,3 @@ bool LanguageManager::installTranslator(const QString& code) {
   translator_ = std::move(translator);
   return true;
 }
-
-}  // namespace muffin

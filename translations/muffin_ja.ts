@@ -69,6 +69,34 @@
         <source>Close</source>
         <translation>閉じる</translation>
     </message>
+    <message>
+        <source>Find</source>
+        <translation>検索</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>前へ</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>次へ</translation>
+    </message>
+    <message>
+        <source>Replace</source>
+        <translation>置換</translation>
+    </message>
+    <message>
+        <source>Replace All</source>
+        <translation>すべて置換</translation>
+    </message>
+    <message>
+        <source>Not found</source>
+        <translation>見つかりません</translation>
+    </message>
+    <message>
+        <source>%1/%2</source>
+        <translation>%1/%2</translation>
+    </message>
 </context>
 <context>
     <name>muffin::LanguageManager</name>
@@ -644,14 +672,6 @@
         <translation>Muffin について</translation>
     </message>
     <message>
-        <source>Muffin %1
-
-A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
-        <translation>Muffin %1
-
-C++ と Qt 6 Widgets で構築された、高速で軽量なネイティブ Markdown エディターです。</translation>
-    </message>
-    <message>
         <source>table %1:%2 offset %3</source>
         <translation>表 %1:%2 オフセット %3</translation>
     </message>
@@ -664,20 +684,6 @@ C++ と Qt 6 Widgets で構築された、高速で軽量なネイティブ Mark
         <translation>最近使ったファイルを消去</translation>
     </message>
     <message>
-        <source>Name: %1
-Location: %2
-Size: %3 bytes
-Modified: %4
-Words: %5
-Parse time: %6 ms</source>
-        <translation>名前: %1
-場所: %2
-サイズ: %3 バイト
-更新日時: %4
-単語数: %5
-解析時間: %6 ms</translation>
-    </message>
-    <message>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
@@ -688,12 +694,6 @@ Parse time: %6 ms</source>
     <message>
         <source>Open Failed</source>
         <translation>開くことができませんでした</translation>
-    </message>
-    <message>
-        <source>File does not exist:
-%1</source>
-        <translation>ファイルが存在しません:
-%1</translation>
     </message>
     <message>
         <source>Render Diagnostics</source>
@@ -730,6 +730,22 @@ Parse time: %6 ms</source>
     <message>
         <source>My License...</source>
         <translation>自分のライセンス...</translation>
+    </message>
+    <message>
+        <source>Find...</source>
+        <translation>検索...</translation>
+    </message>
+    <message>
+        <source>Replace...</source>
+        <translation>置換...</translation>
+    </message>
+    <message>
+        <source>Find Next</source>
+        <translation>次を検索</translation>
+    </message>
+    <message>
+        <source>Find Previous</source>
+        <translation>前を検索</translation>
     </message>
 </context>
 <context>
@@ -1358,4 +1374,5 @@ Parse time: %6 ms</source>
         <translation>書き始める...</translation>
     </message>
 </context>
+
 </TS>

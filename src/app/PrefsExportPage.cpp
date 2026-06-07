@@ -11,9 +11,7 @@
 #include <QSettings>
 #include <QVBoxLayout>
 
-namespace muffin {
-
-PrefsExportPage::PrefsExportPage(QWidget* parent) : PreferencesPage(parent) {
+muffin::PrefsExportPage::PrefsExportPage(QWidget* parent) : PreferencesPage(parent) {
   auto* rootLayout = new QHBoxLayout(this);
   rootLayout->setContentsMargins(0, 0, 0, 0);
   rootLayout->setSpacing(0);
@@ -111,7 +109,7 @@ PrefsExportPage::PrefsExportPage(QWidget* parent) : PreferencesPage(parent) {
   });
 }
 
-void PrefsExportPage::retranslateUi() {
+void muffin::PrefsExportPage::retranslateUi() {
   // Left sidebar format list
   {
     const int cur = formatList_->currentRow();
@@ -174,7 +172,7 @@ void PrefsExportPage::retranslateUi() {
   openAfterExportCheck_->setText(tr("Open the exported file directory"));
 }
 
-void PrefsExportPage::loadSettings() {
+void muffin::PrefsExportPage::loadSettings() {
   QSettings settings;
 
   const int folder = settings.value(QStringLiteral("export/defaultFolder"), 0).toInt();
@@ -192,5 +190,3 @@ void PrefsExportPage::loadSettings() {
   openAfterExportCheck_->setChecked(settings.value(QStringLiteral("export/openAfterExport"), false).toBool());
   openAfterExportCheck_->blockSignals(false);
 }
-
-}  // namespace muffin

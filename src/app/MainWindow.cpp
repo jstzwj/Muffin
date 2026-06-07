@@ -32,32 +32,31 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-namespace muffin {
 namespace {
 
 Q_LOGGING_CATEGORY(mainWindowPerf, "muffin.perf", QtWarningMsg)
 
-QString zoneName(HitTestResult::Zone zone) {
+QString zoneName(muffin::HitTestResult::Zone zone) {
   switch (zone) {
-    case HitTestResult::Zone::Text:
+    case muffin::HitTestResult::Zone::Text:
       return QStringLiteral("text");
-    case HitTestResult::Zone::Marker:
+    case muffin::HitTestResult::Zone::Marker:
       return QStringLiteral("marker");
-    case HitTestResult::Zone::TableCell:
+    case muffin::HitTestResult::Zone::TableCell:
       return QStringLiteral("table");
-    case HitTestResult::Zone::Code:
+    case muffin::HitTestResult::Zone::Code:
       return QStringLiteral("code");
-    case HitTestResult::Zone::Math:
+    case muffin::HitTestResult::Zone::Math:
       return QStringLiteral("math");
-    case HitTestResult::Zone::Html:
+    case muffin::HitTestResult::Zone::Html:
       return QStringLiteral("html");
-    case HitTestResult::Zone::FrontMatter:
+    case muffin::HitTestResult::Zone::FrontMatter:
       return QStringLiteral("front matter");
-    case HitTestResult::Zone::Block:
+    case muffin::HitTestResult::Zone::Block:
       return QStringLiteral("block");
-    case HitTestResult::Zone::BlockAfter:
+    case muffin::HitTestResult::Zone::BlockAfter:
       return QStringLiteral("block after");
-    case HitTestResult::Zone::None:
+    case muffin::HitTestResult::Zone::None:
     default:
       return QStringLiteral("none");
   }
@@ -129,7 +128,7 @@ QColor statusBarIconInk(const QString& themeName) {
 
 }  // namespace
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+muffin::MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
   setupUi();
   setupMenuBar();
   setupStatusBar();
@@ -138,7 +137,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
   loadAppearanceSettings();
 }
 
-bool MainWindow::openFile(QString path) {
+bool muffin::MainWindow::openFile(QString path) {
   if (fileController_.open(session_, this, path)) {
     editorController_.clearHistoryAndSelection();
     addRecentFile(session_.filePath());
@@ -147,7 +146,7 @@ bool MainWindow::openFile(QString path) {
   return false;
 }
 
-void MainWindow::closeEvent(QCloseEvent* event) {
+void muffin::MainWindow::closeEvent(QCloseEvent* event) {
   if (maybeSaveChanges()) {
     QSettings settings;
     settings.setValue(QStringLiteral("window/geometry"), saveGeometry());
@@ -157,14 +156,14 @@ void MainWindow::closeEvent(QCloseEvent* event) {
   }
 }
 
-void MainWindow::changeEvent(QEvent* event) {
+void muffin::MainWindow::changeEvent(QEvent* event) {
   if (event->type() == QEvent::LanguageChange) {
     retranslateUi();
   }
   QMainWindow::changeEvent(event);
 }
 
-void MainWindow::setupUi() {
+void muffin::MainWindow::setupUi() {
   centralSplitter_ = new QSplitter(Qt::Horizontal, this);
   centralSplitter_->setChildrenCollapsible(false);
   centralSplitter_->setHandleWidth(1);
@@ -197,7 +196,7 @@ void MainWindow::setupUi() {
   setCentralWidget(centralSplitter_);
 }
 
-void MainWindow::setupMenuBar() {
+void muffin::MainWindow::setupMenuBar() {
   commands_.clearActions();
   menuBar()->clear();
   setupFileMenu();
@@ -213,7 +212,7 @@ void MainWindow::setupMenuBar() {
   setupHelpMenu();
 }
 
-void MainWindow::setupStatusBar() {
+void muffin::MainWindow::setupStatusBar() {
   statusBar()->setSizeGripEnabled(false);
 
   const QColor ink = statusBarIconInk(themeManager_.currentThemeName());
@@ -236,7 +235,7 @@ void MainWindow::setupStatusBar() {
   wordCountTimer_ = new QTimer(this);
   wordCountTimer_->setSingleShot(true);
   wordCountTimer_->setInterval(250);
-  connect(wordCountTimer_, &QTimer::timeout, this, &MainWindow::updateWordCountNow);
+  connect(wordCountTimer_, &QTimer::timeout, this, &muffin::MainWindow::updateWordCountNow);
 
   statusBar()->addWidget(sidebarButton_);
   statusBar()->addWidget(sourceModeButton_);
@@ -245,7 +244,7 @@ void MainWindow::setupStatusBar() {
   statusBar()->addPermanentWidget(wordsLabel_);
 }
 
-void MainWindow::applyTyporaLikeChrome() {
+void muffin::MainWindow::applyTyporaLikeChrome() {
   setStyleSheet(QStringLiteral(
       "QMainWindow { background: #ffffff; }"
       "QMenuBar { background: #ffffff; color: #111111; padding: 0; }"
@@ -271,12 +270,12 @@ void MainWindow::applyTyporaLikeChrome() {
       "QToolButton:checked { color: #111111; background: #e9e9e9; }"));
 }
 
-void MainWindow::updateTitle() {
+void muffin::MainWindow::updateTitle() {
   const QString marker = session_.document().isModified() ? QStringLiteral(" *") : QString();
   setWindowTitle(QStringLiteral("%1%2 - Muffin").arg(session_.displayName(), marker));
 }
 
-void MainWindow::updateStatus() {
+void muffin::MainWindow::updateStatus() {
   parseLabel_->setText(tr("Parse %1 ms").arg(session_.lastParseElapsedMs()));
   if (!sourceModeEnabled() && !renderCursorStatus_.isEmpty()) {
     cursorLabel_->setText(renderCursorStatus_);
@@ -285,13 +284,13 @@ void MainWindow::updateStatus() {
   }
 }
 
-void MainWindow::updateCursorStatus(int line, int column) {
+void muffin::MainWindow::updateCursorStatus(int line, int column) {
   cursorLine_ = line;
   cursorColumn_ = column;
   updateStatus();
 }
 
-void MainWindow::updateSidebarMode() {
+void muffin::MainWindow::updateSidebarMode() {
   if (!sidebar_ || !sidebarButton_) {
     return;
   }
@@ -301,7 +300,7 @@ void MainWindow::updateSidebarMode() {
   sidebarButton_->setChecked(sidebarVisible);
 }
 
-void MainWindow::setSidebarPanel(SidebarWidget::Panel panel) {
+void muffin::MainWindow::setSidebarPanel(SidebarWidget::Panel panel) {
   if (!sidebar_) {
     return;
   }
@@ -312,21 +311,21 @@ void MainWindow::setSidebarPanel(SidebarWidget::Panel panel) {
   updateSidebarMode();
 }
 
-void MainWindow::refreshSidebarDocumentInfo() {
+void muffin::MainWindow::refreshSidebarDocumentInfo() {
   if (!sidebar_) {
     return;
   }
   sidebar_->setCurrentDocument(session_.displayName(), session_.filePath(), session_.document().isModified());
 }
 
-void MainWindow::refreshSidebarOutline() {
+void muffin::MainWindow::refreshSidebarOutline() {
   if (!sidebar_) {
     return;
   }
   sidebar_->setOutline(buildOutline(session_.document()));
 }
 
-void MainWindow::openFolder() {
+void muffin::MainWindow::openFolder() {
   const QString initialPath = sidebarFolderRoot_.isEmpty() ? QFileInfo(session_.filePath()).absolutePath() : sidebarFolderRoot_;
   const QString path = QFileDialog::getExistingDirectory(this, tr("Open Folder"), initialPath);
   if (path.isEmpty()) {
@@ -337,13 +336,13 @@ void MainWindow::openFolder() {
   setSidebarPanel(SidebarWidget::Panel::Files);
 }
 
-void MainWindow::openNewWindow() {
+void muffin::MainWindow::openNewWindow() {
   auto* window = new MainWindow();
   window->setAttribute(Qt::WA_DeleteOnClose);
   window->show();
 }
 
-void MainWindow::activateOutlineNode(NodeId nodeId, SourceRange sourceRange) {
+void muffin::MainWindow::activateOutlineNode(NodeId nodeId, SourceRange sourceRange) {
   if (sourceModeEnabled()) {
     syncSourceEditorIfNeeded();
     QTextCursor cursor = editor_->editor()->textCursor();
@@ -358,7 +357,7 @@ void MainWindow::activateOutlineNode(NodeId nodeId, SourceRange sourceRange) {
   renderView_->setFocus(Qt::OtherFocusReason);
 }
 
-void MainWindow::updateViewMode() {
+void muffin::MainWindow::updateViewMode() {
   if (!viewStack_ || !renderView_ || !editor_) {
     return;
   }
@@ -404,7 +403,7 @@ void MainWindow::updateViewMode() {
   updateStatus();
 }
 
-void MainWindow::updateFileActions() {
+void muffin::MainWindow::updateFileActions() {
   const bool hasFile = !session_.filePath().isEmpty();
   commands_.setEnabled(QStringLiteral("file.properties"), hasFile);
   commands_.setEnabled(QStringLiteral("file.reveal"), hasFile);
@@ -417,36 +416,36 @@ void MainWindow::updateFileActions() {
   commands_.setEnabled(QStringLiteral("file.delete"), hasFile);
 }
 
-int MainWindow::zoomPercent() const {
+int muffin::MainWindow::zoomPercent() const {
   return zoomPercent_;
 }
 
-void MainWindow::setZoomPercent(int percent) {
+void muffin::MainWindow::setZoomPercent(int percent) {
   zoomPercent_ = qBound(60, percent, 200);
   editor_->setZoomPercent(zoomPercent_);
   renderView_->setZoomPercent(zoomPercent_);
   updateStatus();
 }
 
-int MainWindow::fontSizePx() const {
+int muffin::MainWindow::fontSizePx() const {
   return fontSizePx_;
 }
 
-void MainWindow::setFontSizePx(int px) {
+void muffin::MainWindow::setFontSizePx(int px) {
   fontSizePx_ = qBound(12, px, 24);
   editor_->setFontSizePx(fontSizePx_);
   renderView_->setFontSizePx(fontSizePx_);
   updateStatus();
 }
 
-void MainWindow::setStatusBarVisible(bool visible) {
+void muffin::MainWindow::setStatusBarVisible(bool visible) {
   if (QAction* action = commands_.action(QStringLiteral("view.status_bar"))) {
     action->setChecked(visible);
   }
   statusBar()->setVisible(visible);
 }
 
-void MainWindow::setFocusMode(bool enabled) {
+void muffin::MainWindow::setFocusMode(bool enabled) {
   focusMode_ = enabled;
 
   if (renderView_) {
@@ -458,7 +457,7 @@ void MainWindow::setFocusMode(bool enabled) {
   }
 }
 
-void MainWindow::setTypewriterMode(bool enabled) {
+void muffin::MainWindow::setTypewriterMode(bool enabled) {
   typewriterMode_ = enabled;
 
   if (renderView_) {
@@ -479,7 +478,7 @@ void MainWindow::setTypewriterMode(bool enabled) {
   }
 }
 
-void MainWindow::loadAppearanceSettings() {
+void muffin::MainWindow::loadAppearanceSettings() {
   QSettings settings;
 
   // Restore window geometry (never fullscreen)
@@ -552,37 +551,37 @@ void MainWindow::loadAppearanceSettings() {
   }
 }
 
-void MainWindow::saveAppearanceTheme(const QString& name) const {
+void muffin::MainWindow::saveAppearanceTheme(const QString& name) const {
   QSettings settings;
   settings.setValue(QStringLiteral("appearance/themeName"), name);
 }
 
-void MainWindow::saveAppearanceStatusBarVisible(bool visible) const {
+void muffin::MainWindow::saveAppearanceStatusBarVisible(bool visible) const {
   QSettings settings;
   settings.setValue(QStringLiteral("appearance/showStatusBar"), visible);
 }
 
-void MainWindow::saveAppearanceZoomPercent(int percent) const {
+void muffin::MainWindow::saveAppearanceZoomPercent(int percent) const {
   QSettings settings;
   settings.setValue(QStringLiteral("appearance/zoomPercent"), qBound(60, percent, 200));
 }
 
-void MainWindow::saveAppearanceFontSizePx(int px) const {
+void muffin::MainWindow::saveAppearanceFontSizePx(int px) const {
   QSettings settings;
   settings.setValue(QStringLiteral("appearance/fontSizePx"), qBound(12, px, 24));
 }
 
-void MainWindow::saveAppearanceFocusMode(bool enabled) const {
+void muffin::MainWindow::saveAppearanceFocusMode(bool enabled) const {
   QSettings settings;
   settings.setValue(QStringLiteral("appearance/focusMode"), enabled);
 }
 
-void MainWindow::saveAppearanceTypewriterMode(bool enabled) const {
+void muffin::MainWindow::saveAppearanceTypewriterMode(bool enabled) const {
   QSettings settings;
   settings.setValue(QStringLiteral("appearance/typewriterMode"), enabled);
 }
 
-void MainWindow::applyTheme(QString name) {
+void muffin::MainWindow::applyTheme(QString name) {
   const RenderTheme theme = themeManager_.currentTheme(zoomPercent_, fontSizePx_);
   renderView_->setTheme(theme);
   editor_->setTheme(theme);
@@ -620,7 +619,7 @@ void MainWindow::applyTheme(QString name) {
   }
 }
 
-void MainWindow::updateThemeActions() {
+void muffin::MainWindow::updateThemeActions() {
   const QString current = themeManager_.currentThemeName();
   commands_.setChecked(QStringLiteral("theme.github"), current == QStringLiteral("github"));
   commands_.setChecked(QStringLiteral("theme.newsprint"), current == QStringLiteral("newsprint"));
@@ -628,5 +627,3 @@ void MainWindow::updateThemeActions() {
   commands_.setChecked(QStringLiteral("theme.pixyll"), current == QStringLiteral("pixyll"));
   commands_.setChecked(QStringLiteral("theme.whitey"), current == QStringLiteral("whitey"));
 }
-
-}  // namespace muffin

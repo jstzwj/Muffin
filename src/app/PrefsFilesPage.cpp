@@ -8,9 +8,7 @@
 #include <QSettings>
 #include <QVBoxLayout>
 
-namespace muffin {
-
-PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent) {
+muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(38, 34, 46, 34);
   layout->setSpacing(22);
@@ -176,10 +174,10 @@ PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent) {
           [](int index) { QSettings().setValue(QStringLiteral("files/dropMarkdown"), index); });
   connect(dropImportCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           [](int index) { QSettings().setValue(QStringLiteral("files/dropImportable"), index); });
-  connect(clearHistoryButton_, &QPushButton::clicked, this, &PrefsFilesPage::clearRecentFilesRequested);
+  connect(clearHistoryButton_, &QPushButton::clicked, this, &muffin::PrefsFilesPage::clearRecentFilesRequested);
 }
 
-void PrefsFilesPage::retranslateUi() {
+void muffin::PrefsFilesPage::retranslateUi() {
   startupLabel_->setText(tr("Startup"));
   {
     const int cur = startupCombo_->currentIndex();
@@ -248,7 +246,7 @@ void PrefsFilesPage::retranslateUi() {
   }
 }
 
-void PrefsFilesPage::loadSettings() {
+void muffin::PrefsFilesPage::loadSettings() {
   QSettings settings;
 
   const int startup = settings.value(QStringLiteral("files/startupBehavior"), 0).toInt();
@@ -302,5 +300,3 @@ void PrefsFilesPage::loadSettings() {
     dropImportCombo_->blockSignals(false);
   }
 }
-
-}  // namespace muffin

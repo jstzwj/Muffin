@@ -9,7 +9,6 @@
 
 #include <utility>
 
-namespace muffin {
 namespace {
 
 Q_LOGGING_CATEGORY(sessionPerf, "muffin.perf", QtWarningMsg)
@@ -41,34 +40,34 @@ struct TopLevelSlice {
   qsizetype sourceEnd = -1;
 };
 
-bool isEditableTopLevelType(BlockType type) {
+bool isEditableTopLevelType(muffin::BlockType type) {
   switch (type) {
-    case BlockType::Paragraph:
-    case BlockType::Heading:
-    case BlockType::List:
-    case BlockType::BlockQuote:
-    case BlockType::FrontMatter:
-    case BlockType::CodeFence:
-    case BlockType::HtmlBlock:
-    case BlockType::MathBlock:
-    case BlockType::Table:
+    case muffin::BlockType::Paragraph:
+    case muffin::BlockType::Heading:
+    case muffin::BlockType::List:
+    case muffin::BlockType::BlockQuote:
+    case muffin::BlockType::FrontMatter:
+    case muffin::BlockType::CodeFence:
+    case muffin::BlockType::HtmlBlock:
+    case muffin::BlockType::MathBlock:
+    case muffin::BlockType::Table:
       return true;
     default:
       return false;
   }
 }
 
-SourceRange usableRange(const MarkdownNode& node) {
+muffin::SourceRange usableRange(const muffin::MarkdownNode& node) {
   return node.sourceRange();
 }
 
-bool overlapsEdit(const SourceRange& range, qsizetype editStart, qsizetype editEnd) {
+bool overlapsEdit(const muffin::SourceRange& range, qsizetype editStart, qsizetype editEnd) {
   return range.byteStart <= editEnd && range.byteEnd >= editStart;
 }
 
-bool isVirtualEmptyParagraph(const MarkdownNode& node) {
-  const SourceRange range = node.sourceRange();
-  return node.type() == BlockType::Paragraph && range.byteStart >= 0 && range.byteEnd == range.byteStart;
+bool isVirtualEmptyParagraph(const muffin::MarkdownNode& node) {
+  const muffin::SourceRange range = node.sourceRange();
+  return node.type() == muffin::BlockType::Paragraph && range.byteStart >= 0 && range.byteEnd == range.byteStart;
 }
 
 bool isOnlyNewlines(QStringView text) {
@@ -106,7 +105,7 @@ int lineForOffset(const QString& text, qsizetype offset) {
   return line;
 }
 
-TopLevelSlice chooseTopLevelSlice(const MarkdownDocument& document, qsizetype editStart, qsizetype editEnd, bool blankLineStructuralEdit) {
+TopLevelSlice chooseTopLevelSlice(const muffin::MarkdownDocument& document, qsizetype editStart, qsizetype editEnd, bool blankLineStructuralEdit) {
   TopLevelSlice slice;
   const auto& blocks = document.root().children();
   if (blocks.empty()) {
@@ -118,8 +117,8 @@ TopLevelSlice chooseTopLevelSlice(const MarkdownDocument& document, qsizetype ed
   }
 
   for (qsizetype i = 0; i < static_cast<qsizetype>(blocks.size()); ++i) {
-    const MarkdownNode& block = *blocks.at(static_cast<size_t>(i));
-    const SourceRange range = usableRange(block);
+    const muffin::MarkdownNode& block = *blocks.at(static_cast<size_t>(i));
+    const muffin::SourceRange range = usableRange(block);
     if (range.byteStart < 0 || range.byteEnd < range.byteStart || !isEditableTopLevelType(block.type())) {
       continue;
     }
@@ -177,7 +176,7 @@ TopLevelSlice chooseTopLevelSlice(const MarkdownDocument& document, qsizetype ed
   }
 
   for (qsizetype i = 0; i < static_cast<qsizetype>(blocks.size()); ++i) {
-    const SourceRange range = usableRange(*blocks.at(static_cast<size_t>(i)));
+    const muffin::SourceRange range = usableRange(*blocks.at(static_cast<size_t>(i)));
     if (editStart < range.byteStart) {
       slice.first = i;
       slice.count = 0;
@@ -194,8 +193,8 @@ TopLevelSlice chooseTopLevelSlice(const MarkdownDocument& document, qsizetype ed
   return slice;
 }
 
-void shiftRanges(MarkdownNode& node, qsizetype delta, int lineDelta) {
-  SourceRange range = node.sourceRange();
+void shiftRanges(muffin::MarkdownNode& node, qsizetype delta, int lineDelta) {
+  muffin::SourceRange range = node.sourceRange();
   if (range.byteStart >= 0 && range.byteEnd >= range.byteStart) {
     range.byteStart += delta;
     range.byteEnd += delta;
@@ -212,7 +211,7 @@ void shiftRanges(MarkdownNode& node, qsizetype delta, int lineDelta) {
   }
 }
 
-void inheritIdsByStructure(const MarkdownNode& oldNode, MarkdownNode& newNode) {
+void inheritIdsByStructure(const muffin::MarkdownNode& oldNode, muffin::MarkdownNode& newNode) {
   if (oldNode.type() != newNode.type()) {
     return;
   }
@@ -223,24 +222,24 @@ void inheritIdsByStructure(const MarkdownNode& oldNode, MarkdownNode& newNode) {
   }
 }
 
-MarkdownNode* nodeAtSourceOffset(MarkdownNode& node, const LocalEditNodeHint& hint) {
+muffin::MarkdownNode* nodeAtSourceOffset(muffin::MarkdownNode& node, const muffin::LocalEditNodeHint& hint) {
   if (hint.targetSourceOffset < 0) {
     return nullptr;
   }
-  const SourceRange range = node.sourceRange();
-  if ((hint.type == BlockType::Unknown || node.type() == hint.type) &&
+  const muffin::SourceRange range = node.sourceRange();
+  if ((hint.type == muffin::BlockType::Unknown || node.type() == hint.type) &&
       range.byteStart <= hint.targetSourceOffset && range.byteEnd >= hint.targetSourceOffset) {
     return &node;
   }
   for (const auto& child : node.children()) {
-    if (MarkdownNode* found = nodeAtSourceOffset(*child, hint)) {
+    if (muffin::MarkdownNode* found = nodeAtSourceOffset(*child, hint)) {
       return found;
     }
   }
   return nullptr;
 }
 
-SourceRange stableRangeAfterEdit(SourceRange range, qsizetype editStart, qsizetype editEnd, qsizetype editDelta) {
+muffin::SourceRange stableRangeAfterEdit(muffin::SourceRange range, qsizetype editStart, qsizetype editEnd, qsizetype editDelta) {
   if (range.byteEnd <= editStart) {
     return range;
   }
@@ -254,22 +253,22 @@ SourceRange stableRangeAfterEdit(SourceRange range, qsizetype editStart, qsizety
   return range;
 }
 
-bool sameStableRange(const SourceRange& oldRange, const SourceRange& newRange) {
+bool sameStableRange(const muffin::SourceRange& oldRange, const muffin::SourceRange& newRange) {
   return oldRange.byteStart >= 0 && oldRange.byteEnd >= oldRange.byteStart && oldRange.byteStart == newRange.byteStart &&
          oldRange.byteEnd == newRange.byteEnd;
 }
 
 void inheritIdsForUnchangedTopLevelBlocks(
-    const MarkdownDocument& document,
+    const muffin::MarkdownDocument& document,
     const TopLevelSlice& slice,
-    const std::vector<std::unique_ptr<MarkdownNode>>& replacements,
+    const std::vector<std::unique_ptr<muffin::MarkdownNode>>& replacements,
     qsizetype editStart,
     qsizetype editEnd,
     qsizetype editDelta) {
   const auto& oldBlocks = document.root().children();
   for (qsizetype oldIndex = slice.first; oldIndex < slice.first + slice.count && oldIndex < static_cast<qsizetype>(oldBlocks.size()); ++oldIndex) {
-    const MarkdownNode& oldNode = *oldBlocks.at(static_cast<size_t>(oldIndex));
-    const SourceRange expectedRange = stableRangeAfterEdit(oldNode.sourceRange(), editStart, editEnd, editDelta);
+    const muffin::MarkdownNode& oldNode = *oldBlocks.at(static_cast<size_t>(oldIndex));
+    const muffin::SourceRange expectedRange = stableRangeAfterEdit(oldNode.sourceRange(), editStart, editEnd, editDelta);
     for (const auto& replacement : replacements) {
       if (replacement->type() == oldNode.type() && sameStableRange(expectedRange, replacement->sourceRange())) {
         inheritIdsByStructure(oldNode, *replacement);
@@ -280,19 +279,19 @@ void inheritIdsForUnchangedTopLevelBlocks(
 }
 
 void applyNodeHints(
-    const MarkdownDocument& document,
-    std::vector<std::unique_ptr<MarkdownNode>>& replacements,
-    const QVector<LocalEditNodeHint>& nodeHints) {
-  for (const LocalEditNodeHint& hint : nodeHints) {
+    const muffin::MarkdownDocument& document,
+    std::vector<std::unique_ptr<muffin::MarkdownNode>>& replacements,
+    const QVector<muffin::LocalEditNodeHint>& nodeHints) {
+  for (const muffin::LocalEditNodeHint& hint : nodeHints) {
     if (!hint.nodeId.isValid()) {
       continue;
     }
-    MarkdownNode* oldNode = document.node(hint.nodeId);
+    muffin::MarkdownNode* oldNode = document.node(hint.nodeId);
     if (!oldNode) {
       continue;
     }
     for (auto& replacement : replacements) {
-      MarkdownNode* candidate = nodeAtSourceOffset(*replacement, hint);
+      muffin::MarkdownNode* candidate = nodeAtSourceOffset(*replacement, hint);
       if (candidate && candidate->type() == oldNode->type()) {
         inheritIdsByStructure(*oldNode, *candidate);
         break;
@@ -301,10 +300,10 @@ void applyNodeHints(
   }
 }
 
-MarkdownNode* tableByIdOrIndex(MarkdownDocument& document, NodeId tableId, int tableIndex) {
+muffin::MarkdownNode* tableByIdOrIndex(muffin::MarkdownDocument& document, muffin::NodeId tableId, int tableIndex) {
   if (tableId.isValid()) {
-    if (MarkdownNode* table = document.node(tableId)) {
-      if (table->type() == BlockType::Table) {
+    if (muffin::MarkdownNode* table = document.node(tableId)) {
+      if (table->type() == muffin::BlockType::Table) {
         return table;
       }
     }
@@ -315,15 +314,15 @@ MarkdownNode* tableByIdOrIndex(MarkdownDocument& document, NodeId tableId, int t
   }
 
   int index = 0;
-  const auto visit = [&](const auto& self, MarkdownNode& node) -> MarkdownNode* {
-    if (node.type() == BlockType::Table) {
+  const auto visit = [&](const auto& self, muffin::MarkdownNode& node) -> muffin::MarkdownNode* {
+    if (node.type() == muffin::BlockType::Table) {
       if (index == tableIndex) {
         return &node;
       }
       ++index;
     }
     for (const auto& child : node.children()) {
-      if (MarkdownNode* found = self(self, *child)) {
+      if (muffin::MarkdownNode* found = self(self, *child)) {
         return found;
       }
     }
@@ -333,16 +332,16 @@ MarkdownNode* tableByIdOrIndex(MarkdownDocument& document, NodeId tableId, int t
 }
 
 bool topLevelStructureChanged(
-    const std::vector<std::unique_ptr<MarkdownNode>>& oldBlocks,
+    const std::vector<std::unique_ptr<muffin::MarkdownNode>>& oldBlocks,
     qsizetype first,
     qsizetype count,
-    const std::vector<std::unique_ptr<MarkdownNode>>& replacements) {
+    const std::vector<std::unique_ptr<muffin::MarkdownNode>>& replacements) {
   if (count != static_cast<qsizetype>(replacements.size())) {
     return true;
   }
   for (qsizetype i = 0; i < count; ++i) {
-    const MarkdownNode& oldNode = *oldBlocks.at(static_cast<size_t>(first + i));
-    const MarkdownNode& newNode = *replacements.at(static_cast<size_t>(i));
+    const muffin::MarkdownNode& oldNode = *oldBlocks.at(static_cast<size_t>(first + i));
+    const muffin::MarkdownNode& newNode = *replacements.at(static_cast<size_t>(i));
     if (oldNode.id() != newNode.id() || oldNode.type() != newNode.type()) {
       return true;
     }
@@ -350,13 +349,13 @@ bool topLevelStructureChanged(
   return false;
 }
 
-MarkdownNode* nodeByTypeIndex(MarkdownDocument& document, BlockType type, int targetIndex) {
-  if (type == BlockType::Unknown || targetIndex < 0) {
+muffin::MarkdownNode* nodeByTypeIndex(muffin::MarkdownDocument& document, muffin::BlockType type, int targetIndex) {
+  if (type == muffin::BlockType::Unknown || targetIndex < 0) {
     return nullptr;
   }
 
   int index = 0;
-  const auto visit = [&](const auto& self, MarkdownNode& node) -> MarkdownNode* {
+  const auto visit = [&](const auto& self, muffin::MarkdownNode& node) -> muffin::MarkdownNode* {
     if (node.type() == type) {
       if (index == targetIndex) {
         return &node;
@@ -364,7 +363,7 @@ MarkdownNode* nodeByTypeIndex(MarkdownDocument& document, BlockType type, int ta
       ++index;
     }
     for (const auto& child : node.children()) {
-      if (MarkdownNode* found = self(self, *child)) {
+      if (muffin::MarkdownNode* found = self(self, *child)) {
         return found;
       }
     }
@@ -373,9 +372,9 @@ MarkdownNode* nodeByTypeIndex(MarkdownDocument& document, BlockType type, int ta
   return visit(visit, document.root());
 }
 
-MarkdownNode* nodeByIdOrTypeIndex(MarkdownDocument& document, NodeId nodeId, BlockType type, int nodeIndex) {
+muffin::MarkdownNode* nodeByIdOrTypeIndex(muffin::MarkdownDocument& document, muffin::NodeId nodeId, muffin::BlockType type, int nodeIndex) {
   if (nodeId.isValid()) {
-    if (MarkdownNode* node = document.node(nodeId)) {
+    if (muffin::MarkdownNode* node = document.node(nodeId)) {
       if (node->type() == type) {
         return node;
       }
@@ -386,58 +385,58 @@ MarkdownNode* nodeByIdOrTypeIndex(MarkdownDocument& document, NodeId nodeId, Blo
 
 }  // namespace
 
-DocumentSession::DocumentSession(QObject* parent) : QObject(parent) {
+muffin::DocumentSession::DocumentSession(QObject* parent) : QObject(parent) {
   connect(&document_, &MarkdownDocument::modifiedChanged, this, &DocumentSession::modifiedChanged);
   newDocument();
 }
 
-MarkdownDocument& DocumentSession::document() {
+muffin::MarkdownDocument& muffin::DocumentSession::document() {
   return document_;
 }
 
-const MarkdownDocument& DocumentSession::document() const {
+const muffin::MarkdownDocument& muffin::DocumentSession::document() const {
   return document_;
 }
 
-QString DocumentSession::filePath() const {
+QString muffin::DocumentSession::filePath() const {
   return filePath_;
 }
 
-QString DocumentSession::displayName() const {
+QString muffin::DocumentSession::displayName() const {
   if (filePath_.isEmpty()) {
     return tr("Untitled");
   }
   return QFileInfo(filePath_).fileName();
 }
 
-const QString& DocumentSession::markdownText() const {
+const QString& muffin::DocumentSession::markdownText() const {
   return document_.markdownText();
 }
 
-qint64 DocumentSession::lastParseElapsedMs() const {
+qint64 muffin::DocumentSession::lastParseElapsedMs() const {
   return lastParseElapsedMs_;
 }
 
-bool DocumentSession::lastParseWasLocalEdit() const {
+bool muffin::DocumentSession::lastParseWasLocalEdit() const {
   return lastParseWasLocalEdit_;
 }
 
-bool DocumentSession::lastLocalEditChangedTopLevelStructure() const {
+bool muffin::DocumentSession::lastLocalEditChangedTopLevelStructure() const {
   return lastLocalEditChangedTopLevelStructure_;
 }
 
-TopLevelRangeChange DocumentSession::lastLocalTopLevelRangeChange() const {
+muffin::TopLevelRangeChange muffin::DocumentSession::lastLocalTopLevelRangeChange() const {
   return lastLocalTopLevelRangeChange_;
 }
 
-void DocumentSession::newDocument() {
+void muffin::DocumentSession::newDocument() {
   filePath_.clear();
   emit filePathChanged(filePath_);
   parseAndStore(QString(), false);
   emit documentTextChanged(QString());
 }
 
-void DocumentSession::setFilePath(QString path) {
+void muffin::DocumentSession::setFilePath(QString path) {
   if (filePath_ == path) {
     return;
   }
@@ -445,21 +444,21 @@ void DocumentSession::setFilePath(QString path) {
   emit filePathChanged(filePath_);
 }
 
-void DocumentSession::setMarkdownText(QString text, bool modified) {
+void muffin::DocumentSession::setMarkdownText(QString text, bool modified) {
   parseAndStore(std::move(text), modified);
   emit documentTextChanged(document_.markdownText());
 }
 
-void DocumentSession::updateFromEditor(QString text) {
+void muffin::DocumentSession::updateFromEditor(QString text) {
   parseAndStore(std::move(text), true);
 }
 
-void DocumentSession::applyMarkdownText(QString text, bool modified) {
+void muffin::DocumentSession::applyMarkdownText(QString text, bool modified) {
   parseAndStore(std::move(text), modified);
   emit documentTextChanged(document_.markdownText());
 }
 
-bool DocumentSession::applyTextDelta(
+bool muffin::DocumentSession::applyTextDelta(
     qsizetype sourceStart,
     qsizetype removedLength,
     QString insertedText,
@@ -479,7 +478,7 @@ bool DocumentSession::applyTextDelta(
   return true;
 }
 
-bool DocumentSession::applyTableSnapshot(NodeId tableId, int tableIndex, const MarkdownNode& tableSnapshot, bool modified) {
+bool muffin::DocumentSession::applyTableSnapshot(NodeId tableId, int tableIndex, const MarkdownNode& tableSnapshot, bool modified) {
   if (tableSnapshot.type() != BlockType::Table) {
     return false;
   }
@@ -500,7 +499,7 @@ bool DocumentSession::applyTableSnapshot(NodeId tableId, int tableIndex, const M
   return applyTextDelta(range.byteStart, range.byteEnd - range.byteStart, replacementText, modified, std::move(nodeHints));
 }
 
-bool DocumentSession::applyNodeSnapshot(NodeId nodeId, BlockType nodeType, int nodeIndex, const MarkdownNode& nodeSnapshot, bool modified) {
+bool muffin::DocumentSession::applyNodeSnapshot(NodeId nodeId, BlockType nodeType, int nodeIndex, const MarkdownNode& nodeSnapshot, bool modified) {
   if (nodeType == BlockType::Unknown || nodeSnapshot.type() != nodeType) {
     return false;
   }
@@ -521,7 +520,7 @@ bool DocumentSession::applyNodeSnapshot(NodeId nodeId, BlockType nodeType, int n
   return applyTextDelta(range.byteStart, range.byteEnd - range.byteStart, replacementText, modified, std::move(nodeHints));
 }
 
-bool DocumentSession::applyInsertedNode(
+bool muffin::DocumentSession::applyInsertedNode(
     NodeId nodeId,
     BlockType nodeType,
     qsizetype sourceStart,
@@ -540,7 +539,7 @@ bool DocumentSession::applyInsertedNode(
   return applyTextDelta(sourceStart, removedLength, std::move(insertedText), modified, std::move(nodeHints));
 }
 
-void DocumentSession::parseAndStore(QString text, bool modified) {
+void muffin::DocumentSession::parseAndStore(QString text, bool modified) {
   PerfTimer perf("session.fullParse");
   ParseResult result = parser_.parseDocument(QStringView(text), parseOptions_);
   lastParseElapsedMs_ = result.elapsedMs;
@@ -552,7 +551,7 @@ void DocumentSession::parseAndStore(QString text, bool modified) {
   emit parsed(lastParseElapsedMs_);
 }
 
-bool DocumentSession::tryApplyTopLevelLocalEdit(
+bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
     qsizetype sourceStart,
     qsizetype sourceEnd,
     const QString& replacementText,
@@ -610,5 +609,3 @@ bool DocumentSession::tryApplyTopLevelLocalEdit(
   emit parsed(lastParseElapsedMs_);
   return true;
 }
-
-}  // namespace muffin

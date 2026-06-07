@@ -69,6 +69,34 @@
         <source>Close</source>
         <translation>關閉</translation>
     </message>
+    <message>
+        <source>Find</source>
+        <translation>尋找</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>上一個</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>下一個</translation>
+    </message>
+    <message>
+        <source>Replace</source>
+        <translation>取代</translation>
+    </message>
+    <message>
+        <source>Replace All</source>
+        <translation>全部取代</translation>
+    </message>
+    <message>
+        <source>Not found</source>
+        <translation>找不到</translation>
+    </message>
+    <message>
+        <source>%1/%2</source>
+        <translation>%1/%2</translation>
+    </message>
 </context>
 <context>
     <name>muffin::LanguageManager</name>
@@ -644,14 +672,6 @@
         <translation>關於 Muffin</translation>
     </message>
     <message>
-        <source>Muffin %1
-
-A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
-        <translation>Muffin %1
-
-一款以 C++ 和 Qt 6 Widgets 建置的快速、輕量級原生 Markdown 編輯器。</translation>
-    </message>
-    <message>
         <source>table %1:%2 offset %3</source>
         <translation>表格 %1:%2 偏移 %3</translation>
     </message>
@@ -664,20 +684,6 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>清除最近使用的檔案</translation>
     </message>
     <message>
-        <source>Name: %1
-Location: %2
-Size: %3 bytes
-Modified: %4
-Words: %5
-Parse time: %6 ms</source>
-        <translation>名稱：%1
-位置：%2
-大小：%3 位元組
-修改時間：%4
-字數：%5
-解析時間：%6 ms</translation>
-    </message>
-    <message>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
@@ -688,12 +694,6 @@ Parse time: %6 ms</source>
     <message>
         <source>Open Failed</source>
         <translation>開啟失敗</translation>
-    </message>
-    <message>
-        <source>File does not exist:
-%1</source>
-        <translation>檔案不存在：
-%1</translation>
     </message>
     <message>
         <source>Render Diagnostics</source>
@@ -730,6 +730,22 @@ Parse time: %6 ms</source>
     <message>
         <source>My License...</source>
         <translation>我的授權...</translation>
+    </message>
+    <message>
+        <source>Find...</source>
+        <translation>尋找...</translation>
+    </message>
+    <message>
+        <source>Replace...</source>
+        <translation>取代...</translation>
+    </message>
+    <message>
+        <source>Find Next</source>
+        <translation>尋找下一個</translation>
+    </message>
+    <message>
+        <source>Find Previous</source>
+        <translation>尋找上一個</translation>
     </message>
 </context>
 <context>
@@ -1358,4 +1374,5 @@ Parse time: %6 ms</source>
         <translation>開始撰寫...</translation>
     </message>
 </context>
+
 </TS>

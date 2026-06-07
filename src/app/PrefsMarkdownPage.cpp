@@ -8,9 +8,7 @@
 #include <QSettings>
 #include <QVBoxLayout>
 
-namespace muffin {
-
-PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(parent) {
+muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(38, 34, 46, 34);
   layout->setSpacing(22);
@@ -264,7 +262,7 @@ PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(parent) 
           [](int index) { QSettings().setValue(QStringLiteral("markdown/autoCodeLang"), index); });
 }
 
-void PrefsMarkdownPage::retranslateUi() {
+void muffin::PrefsMarkdownPage::retranslateUi() {
   // Card 1: Syntax Preferences
   syntaxLabel_->setText(tr("Markdown Syntax Preferences"));
   strictModeCheck_->setText(tr("Strict Mode"));
@@ -388,7 +386,7 @@ void PrefsMarkdownPage::retranslateUi() {
   }
 }
 
-void PrefsMarkdownPage::loadSettings() {
+void muffin::PrefsMarkdownPage::loadSettings() {
   QSettings s;
 
   strictModeCheck_->blockSignals(true);
@@ -434,5 +432,3 @@ void PrefsMarkdownPage::loadSettings() {
   setCombo(defaultLangCombo_, QStringLiteral("markdown/defaultCodeLang"), 0);
   setCombo(autoLangCombo_, QStringLiteral("markdown/autoCodeLang"), 0);
 }
-
-}  // namespace muffin

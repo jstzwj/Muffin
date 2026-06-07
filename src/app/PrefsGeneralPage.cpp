@@ -9,9 +9,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-namespace muffin {
-
-PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(parent) {
+muffin::PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(38, 34, 46, 34);
   layout->setSpacing(22);
@@ -94,7 +92,7 @@ PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(parent) {
   });
 }
 
-void PrefsGeneralPage::retranslateUi() {
+void muffin::PrefsGeneralPage::retranslateUi() {
   languageLabel_->setText(tr("Language"));
   updateLabel_->setText(tr("Update"));
   checkUpdateButton_->setText(tr("Check for Updates"));
@@ -106,7 +104,7 @@ void PrefsGeneralPage::retranslateUi() {
   resetAdvancedButton_->setText(tr("Reset Advanced Settings"));
 }
 
-void PrefsGeneralPage::populateLanguages() {
+void muffin::PrefsGeneralPage::populateLanguages() {
   if (!languageCombo_) {
     return;
   }
@@ -129,5 +127,3 @@ void PrefsGeneralPage::populateLanguages() {
   languageCombo_->setCurrentIndex(currentIndex);
   languageCombo_->blockSignals(false);
 }
-
-}  // namespace muffin

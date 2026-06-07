@@ -8,9 +8,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-namespace muffin {
-
-PrefsAppearancePage::PrefsAppearancePage(QWidget* parent) : PreferencesPage(parent) {
+muffin::PrefsAppearancePage::PrefsAppearancePage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(38, 34, 46, 34);
   layout->setSpacing(22);
@@ -82,7 +80,7 @@ PrefsAppearancePage::PrefsAppearancePage(QWidget* parent) : PreferencesPage(pare
   connect(showStatusBarCheck_, &QCheckBox::toggled, this, &PrefsAppearancePage::statusBarVisibleRequested);
 }
 
-void PrefsAppearancePage::retranslateUi() {
+void muffin::PrefsAppearancePage::retranslateUi() {
   themeLabel_->setText(tr("Theme"));
   zoomLabel_->setText(tr("Zoom"));
   resetZoomButton_->setText(tr("Reset"));
@@ -94,7 +92,7 @@ void PrefsAppearancePage::retranslateUi() {
   }
 }
 
-void PrefsAppearancePage::setAvailableThemes(const QStringList& themes) {
+void muffin::PrefsAppearancePage::setAvailableThemes(const QStringList& themes) {
   const QString current = themeCombo_->currentData().toString();
   themeCombo_->blockSignals(true);
   themeCombo_->clear();
@@ -108,7 +106,7 @@ void PrefsAppearancePage::setAvailableThemes(const QStringList& themes) {
   themeCombo_->blockSignals(false);
 }
 
-void PrefsAppearancePage::setCurrentThemeName(const QString& name) {
+void muffin::PrefsAppearancePage::setCurrentThemeName(const QString& name) {
   const int index = themeCombo_->findData(name.toLower());
   if (index >= 0) {
     themeCombo_->blockSignals(true);
@@ -117,21 +115,21 @@ void PrefsAppearancePage::setCurrentThemeName(const QString& name) {
   }
 }
 
-void PrefsAppearancePage::setStatusBarVisible(bool visible) {
+void muffin::PrefsAppearancePage::setStatusBarVisible(bool visible) {
   showStatusBarCheck_->blockSignals(true);
   showStatusBarCheck_->setChecked(visible);
   showStatusBarCheck_->blockSignals(false);
 }
 
-void PrefsAppearancePage::setZoomPercent(int percent) {
+void muffin::PrefsAppearancePage::setZoomPercent(int percent) {
   setNumberComboValue(zoomCombo_, percent);
 }
 
-void PrefsAppearancePage::setFontSizePx(int px) {
+void muffin::PrefsAppearancePage::setFontSizePx(int px) {
   setNumberComboValue(fontSizeCombo_, px);
 }
 
-QString PrefsAppearancePage::themeDisplayName(const QString& name) {
+QString muffin::PrefsAppearancePage::themeDisplayName(const QString& name) {
   if (name == QStringLiteral("github")) {
     return QStringLiteral("Github");
   }
@@ -150,14 +148,14 @@ QString PrefsAppearancePage::themeDisplayName(const QString& name) {
   return name;
 }
 
-void PrefsAppearancePage::addNumberItems(QComboBox* combo, const QVector<int>& values, const QString& suffix) {
+void muffin::PrefsAppearancePage::addNumberItems(QComboBox* combo, const QVector<int>& values, const QString& suffix) {
   combo->clear();
   for (int value : values) {
     combo->addItem(QStringLiteral("%1%2").arg(value).arg(suffix), value);
   }
 }
 
-void PrefsAppearancePage::setNumberComboValue(QComboBox* combo, int value) {
+void muffin::PrefsAppearancePage::setNumberComboValue(QComboBox* combo, int value) {
   if (!combo) {
     return;
   }
@@ -172,5 +170,3 @@ void PrefsAppearancePage::setNumberComboValue(QComboBox* combo, int value) {
   combo->setCurrentIndex(index < 0 ? 0 : index);
   combo->blockSignals(false);
 }
-
-}  // namespace muffin

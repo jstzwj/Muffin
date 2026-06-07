@@ -72,6 +72,7 @@ void MainWindow::showFindBar() {
   if (!findBar_) {
     return;
   }
+  findBar_->setReplaceVisible(false);
   // Pre-fill with selected text if any
   if (sourceModeEnabled()) {
     const QTextCursor cursor = editor_->editor()->textCursor();
@@ -79,8 +80,28 @@ void MainWindow::showFindBar() {
       findBar_->setSearchText(cursor.selectedText());
     }
   }
+  lastFindOffset_ = -1;
+  lastFindText_.clear();
   findBar_->setVisible(true);
   findBar_->activateFind();
+}
+
+void MainWindow::showReplaceBar() {
+  if (!findBar_) {
+    return;
+  }
+  findBar_->setReplaceVisible(true);
+  // Pre-fill with selected text if any
+  if (sourceModeEnabled()) {
+    const QTextCursor cursor = editor_->editor()->textCursor();
+    if (cursor.hasSelection()) {
+      findBar_->setSearchText(cursor.selectedText());
+    }
+  }
+  lastFindOffset_ = -1;
+  lastFindText_.clear();
+  findBar_->setVisible(true);
+  findBar_->activateReplace();
 }
 
 void MainWindow::hideFindBar() {
@@ -94,41 +115,71 @@ void MainWindow::performFind(const QString& text, bool forward) {
   if (text.isEmpty()) {
     return;
   }
+
+  // Reset search state if the query changed
+  if (text != lastFindText_) {
+    lastFindText_ = text;
+    lastFindOffset_ = -1;
+  }
+
   if (sourceModeEnabled()) {
     QTextDocument::FindFlags flags;
     if (!forward) {
       flags |= QTextDocument::FindBackward;
     }
     editor_->editor()->find(text, flags);
+    return;
+  }
+
+  // Render mode: search the full markdown source text
+  const QString& markdown = session_.markdownText();
+
+  // Determine start position
+  int startPos = 0;
+  if (lastFindOffset_ >= 0) {
+    // Continue from last match position
+    startPos = forward ? static_cast<int>(lastFindOffset_) + 1
+                       : static_cast<int>(lastFindOffset_) - 1;
   } else {
-    // Render mode: search the markdown source text
-    const QString& markdown = session_.markdownText();
-    QTextDocument doc(markdown);
-    QTextCursor searchCursor(&doc);
-
-    // Start from current cursor's source offset
-    qsizetype startOffset = 0;
+    // First search: start from current cursor position
     if (editorController_.selection().hasCursor()) {
-      startOffset = qMax<qsizetype>(0, editorController_.selection().cursorPosition().text.sourceOffset);
+      startPos = static_cast<int>(
+          qMin<qsizetype>(editorController_.selection().cursorPosition().text.sourceOffset,
+                          markdown.size()));
     }
-    searchCursor.setPosition(static_cast<int>(qMin<qsizetype>(startOffset, markdown.size())));
+    if (!forward && startPos == 0) {
+      startPos = markdown.size() - 1;
+    }
+  }
 
-    QTextDocument::FindFlags flags;
-    if (!forward) {
-      flags |= QTextDocument::FindBackward;
+  int idx = -1;
+  if (forward) {
+    startPos = qMax(0, startPos);
+    if (startPos < markdown.size()) {
+      idx = markdown.indexOf(text, startPos);
     }
+    if (idx < 0) {
+      // Wrap around from the beginning
+      idx = markdown.indexOf(text, 0);
+    }
+  } else {
+    startPos = qBound(0, startPos, markdown.size() - 1);
+    idx = markdown.lastIndexOf(text, startPos);
+    if (idx < 0) {
+      // Wrap around from the end
+      idx = markdown.lastIndexOf(text, markdown.size() - 1);
+    }
+  }
 
-    const QTextCursor found = doc.find(text, searchCursor, flags);
-    if (!found.isNull()) {
-      const qsizetype matchOffset = found.selectionStart();
-      MarkdownNode* block = session_.document().topLevelBlockAtOffset(matchOffset);
-      if (block) {
-        renderView_->scrollToNode(block->id());
-      }
-      findBar_->setResultInfo(0, 0);
-    } else {
-      findBar_->setResultInfo(-1, 0);
+  if (idx >= 0) {
+    lastFindOffset_ = idx;
+    MarkdownNode* block = session_.document().topLevelBlockAtOffset(idx);
+    if (block) {
+      renderView_->scrollToNode(block->id());
     }
+    findBar_->setResultInfo(0, 0);
+  } else {
+    findBar_->setResultInfo(-1, 0);
   }
 }
 
@@ -170,6 +221,7 @@ void MainWindow::performReplace(const QString& findText, const QString& replaceT
       QString newText = markdown;
       newText.replace(idx, findText.size(), replaceText);
       session_.applyMarkdownText(newText, true);
+      lastFindOffset_ = idx + replaceText.size();
     }
   }
 }
@@ -187,6 +239,7 @@ void MainWindow::performReplaceAll(const QString& findText, const QString& repla
     text.replace(findText, replaceText);
     session_.applyMarkdownText(text, true);
   }
+  lastFindOffset_ = -1;
 }
 
 }  // namespace muffin

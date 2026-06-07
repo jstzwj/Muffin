@@ -18,7 +18,6 @@
 
 #include <utility>
 
-namespace muffin {
 namespace {
 
 enum OutlineRole {
@@ -41,7 +40,7 @@ QToolButton* createFlatButton(const QString& text, QWidget* parent) {
 
 }  // namespace
 
-SidebarWidget::SidebarWidget(QWidget* parent) : QWidget(parent) {
+muffin::SidebarWidget::SidebarWidget(QWidget* parent) : QWidget(parent) {
   setObjectName(QStringLiteral("MuffinSidebar"));
   setMinimumWidth(220);
   setMaximumWidth(360);
@@ -76,7 +75,7 @@ SidebarWidget::SidebarWidget(QWidget* parent) : QWidget(parent) {
   connect(outlineTabButton_, &QToolButton::clicked, this, [this] { setPanel(Panel::Outline); });
 }
 
-void SidebarWidget::setupFilesPanel() {
+void muffin::SidebarWidget::setupFilesPanel() {
   filesPanel_ = new QWidget(this);
   auto* layout = new QVBoxLayout(filesPanel_);
   layout->setContentsMargins(0, 12, 0, 0);
@@ -124,7 +123,7 @@ void SidebarWidget::setupFilesPanel() {
   stack_->addWidget(filesPanel_);
 }
 
-void SidebarWidget::setupOutlinePanel() {
+void muffin::SidebarWidget::setupOutlinePanel() {
   outlinePanel_ = new QWidget(this);
   auto* layout = new QVBoxLayout(outlinePanel_);
   layout->setContentsMargins(0, 12, 0, 0);
@@ -164,17 +163,17 @@ void SidebarWidget::setupOutlinePanel() {
   stack_->addWidget(outlinePanel_);
 }
 
-void SidebarWidget::setPanel(Panel panel) {
+void muffin::SidebarWidget::setPanel(Panel panel) {
   panel_ = panel;
   stack_->setCurrentWidget(panel == Panel::Files ? filesPanel_ : outlinePanel_);
   updateTabButtons();
 }
 
-SidebarWidget::Panel SidebarWidget::panel() const {
+muffin::SidebarWidget::Panel muffin::SidebarWidget::panel() const {
   return panel_;
 }
 
-void SidebarWidget::setCurrentDocument(QString displayName, QString filePath, bool modified) {
+void muffin::SidebarWidget::setCurrentDocument(QString displayName, QString filePath, bool modified) {
   Q_UNUSED(displayName);
   Q_UNUSED(modified);
   currentFilePath_ = std::move(filePath);
@@ -190,7 +189,7 @@ void SidebarWidget::setCurrentDocument(QString displayName, QString filePath, bo
   }
 }
 
-void SidebarWidget::setFolderRoot(QString path) {
+void muffin::SidebarWidget::setFolderRoot(QString path) {
   folderRoot_ = std::move(path);
   if (folderRoot_.isEmpty()) {
     fileTree_->setRootIndex({});
@@ -206,11 +205,11 @@ void SidebarWidget::setFolderRoot(QString path) {
   }
 }
 
-QString SidebarWidget::folderRoot() const {
+QString muffin::SidebarWidget::folderRoot() const {
   return folderRoot_;
 }
 
-void SidebarWidget::setOutline(const QVector<OutlineEntry>& entries) {
+void muffin::SidebarWidget::setOutline(const QVector<OutlineEntry>& entries) {
   outlineTree_->clear();
   QVector<QTreeWidgetItem*> items;
   items.reserve(entries.size());
@@ -226,11 +225,11 @@ void SidebarWidget::setOutline(const QVector<OutlineEntry>& entries) {
   outlineTree_->setVisible(!empty);
 }
 
-void SidebarWidget::applyThemeName(QString name) {
+void muffin::SidebarWidget::applyThemeName(QString name) {
   applyStyle(name == QStringLiteral("night"));
 }
 
-void SidebarWidget::retranslateUi() {
+void muffin::SidebarWidget::retranslateUi() {
   if (filesTabButton_) {
     filesTabButton_->setText(tr("Files"));
   }
@@ -245,19 +244,19 @@ void SidebarWidget::retranslateUi() {
   }
 }
 
-void SidebarWidget::changeEvent(QEvent* event) {
+void muffin::SidebarWidget::changeEvent(QEvent* event) {
   if (event->type() == QEvent::LanguageChange) {
     retranslateUi();
   }
   QWidget::changeEvent(event);
 }
 
-void SidebarWidget::updateTabButtons() {
+void muffin::SidebarWidget::updateTabButtons() {
   filesTabButton_->setChecked(panel_ == Panel::Files);
   outlineTabButton_->setChecked(panel_ == Panel::Outline);
 }
 
-void SidebarWidget::applyStyle(bool night) {
+void muffin::SidebarWidget::applyStyle(bool night) {
   if (night) {
     setStyleSheet(QStringLiteral(
         "#MuffinSidebar { background:#1f2328; border-right:1px solid #3d444d; }"
@@ -287,7 +286,7 @@ void SidebarWidget::applyStyle(bool night) {
   }
 }
 
-QTreeWidgetItem* SidebarWidget::addOutlineItem(const OutlineEntry& entry, QTreeWidgetItem* parent) {
+QTreeWidgetItem* muffin::SidebarWidget::addOutlineItem(const OutlineEntry& entry, QTreeWidgetItem* parent) {
   auto* item = parent ? new QTreeWidgetItem(parent) : new QTreeWidgetItem(outlineTree_);
   item->setText(0, entry.title);
   item->setData(0, NodeIdRole, entry.nodeId.toString());
@@ -303,7 +302,7 @@ QTreeWidgetItem* SidebarWidget::addOutlineItem(const OutlineEntry& entry, QTreeW
   return item;
 }
 
-void SidebarWidget::emitOutlineItem(QTreeWidgetItem* item) {
+void muffin::SidebarWidget::emitOutlineItem(QTreeWidgetItem* item) {
   if (!item) {
     return;
   }
@@ -316,5 +315,3 @@ void SidebarWidget::emitOutlineItem(QTreeWidgetItem* item) {
   range.columnEnd = item->data(0, ColumnEndRole).toInt();
   emit outlineActivated(NodeId::fromString(item->data(0, NodeIdRole).toString()), range);
 }
-
-}  // namespace muffin

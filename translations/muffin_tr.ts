@@ -66,8 +66,36 @@
 <context>
     <name>muffin::FindBarWidget</name>
     <message>
+        <source>Find</source>
+        <translation>Bul</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>Önceki</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>Sonraki</translation>
+    </message>
+    <message>
         <source>Close</source>
         <translation>Kapat</translation>
+    </message>
+    <message>
+        <source>Replace</source>
+        <translation>Değiştir</translation>
+    </message>
+    <message>
+        <source>Replace All</source>
+        <translation>Tümünü değiştir</translation>
+    </message>
+    <message>
+        <source>Not found</source>
+        <translation>Bulunamadı</translation>
+    </message>
+    <message>
+        <source>%1/%2</source>
+        <translation>%1/%2</translation>
     </message>
 </context>
 <context>
@@ -644,14 +672,6 @@
         <translation>Muffin Hakkında</translation>
     </message>
     <message>
-        <source>Muffin %1
-
-A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
-        <translation>Muffin %1
-
-C++ ve Qt 6 Widgets ile oluşturulmuş hızlı, hafif bir yerel Markdown düzenleyici.</translation>
-    </message>
-    <message>
         <source>table %1:%2 offset %3</source>
         <translation>tablo %1:%2 ofset %3</translation>
     </message>
@@ -664,20 +684,6 @@ C++ ve Qt 6 Widgets ile oluşturulmuş hızlı, hafif bir yerel Markdown düzenl
         <translation>Son Kullanılan Dosyaları Temizle</translation>
     </message>
     <message>
-        <source>Name: %1
-Location: %2
-Size: %3 bytes
-Modified: %4
-Words: %5
-Parse time: %6 ms</source>
-        <translation>Ad: %1
-Konum: %2
-Boyut: %3 bayt
-Değiştirilme: %4
-Sözcükler: %5
-Ayrıştırma süresi: %6 ms</translation>
-    </message>
-    <message>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
@@ -688,12 +694,6 @@ Ayrıştırma süresi: %6 ms</translation>
     <message>
         <source>Open Failed</source>
         <translation>Açma Başarısız</translation>
-    </message>
-    <message>
-        <source>File does not exist:
-%1</source>
-        <translation>Dosya yok:
-%1</translation>
     </message>
     <message>
         <source>Render Diagnostics</source>
@@ -730,6 +730,22 @@ Ayrıştırma süresi: %6 ms</translation>
     <message>
         <source>My License...</source>
         <translation>Lisansım...</translation>
+    </message>
+    <message>
+        <source>Find...</source>
+        <translation>Bul...</translation>
+    </message>
+    <message>
+        <source>Replace...</source>
+        <translation>Değiştir...</translation>
+    </message>
+    <message>
+        <source>Find Next</source>
+        <translation>Sonrakini bul</translation>
+    </message>
+    <message>
+        <source>Find Previous</source>
+        <translation>Öncekini bul</translation>
     </message>
 </context>
 <context>
@@ -1358,4 +1374,5 @@ Ayrıştırma süresi: %6 ms</translation>
         <translation>Yazmaya başlayın...</translation>
     </message>
 </context>
+
 </TS>

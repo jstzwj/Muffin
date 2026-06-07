@@ -16,7 +16,6 @@
 #include <QStatusBar>
 #include <QUrl>
 
-namespace muffin {
 namespace {
 
 int countWords(const QString& text) {
@@ -43,7 +42,7 @@ QString elidedPath(const QString& path) {
 
 }  // namespace
 
-void MainWindow::rebuildRecentFilesMenu() {
+void muffin::MainWindow::rebuildRecentFilesMenu() {
   if (!recentFilesMenu_) {
     return;
   }
@@ -70,7 +69,7 @@ void MainWindow::rebuildRecentFilesMenu() {
   }
 }
 
-void MainWindow::addRecentFile(QString path) {
+void muffin::MainWindow::addRecentFile(QString path) {
   if (path.isEmpty()) {
     return;
   }
@@ -86,17 +85,17 @@ void MainWindow::addRecentFile(QString path) {
   rebuildRecentFilesMenu();
 }
 
-QStringList MainWindow::recentFiles() const {
+QStringList muffin::MainWindow::recentFiles() const {
   QSettings settings;
   return settings.value(QStringLiteral("recentFiles")).toStringList();
 }
 
-void MainWindow::setRecentFiles(const QStringList& paths) const {
+void muffin::MainWindow::setRecentFiles(const QStringList& paths) const {
   QSettings settings;
   settings.setValue(QStringLiteral("recentFiles"), paths);
 }
 
-void MainWindow::showDocumentProperties() {
+void muffin::MainWindow::showDocumentProperties() {
   if (session_.filePath().isEmpty()) {
     return;
   }
@@ -119,7 +118,7 @@ void MainWindow::showDocumentProperties() {
   QMessageBox::information(this, tr("Properties"), message);
 }
 
-void MainWindow::showPreferences() {
+void muffin::MainWindow::showPreferences() {
   PreferencesDialog dialog(this);
   dialog.setAvailableThemes(themeManager_.availableThemes());
   dialog.setCurrentThemeName(themeManager_.currentThemeName());
@@ -158,7 +157,7 @@ void MainWindow::showPreferences() {
   dialog.exec();
 }
 
-void MainWindow::revealCurrentFile() {
+void muffin::MainWindow::revealCurrentFile() {
   if (session_.filePath().isEmpty()) {
     return;
   }
@@ -166,7 +165,7 @@ void MainWindow::revealCurrentFile() {
   QDesktopServices::openUrl(QUrl::fromLocalFile(info.absolutePath()));
 }
 
-bool MainWindow::saveCurrentDocument() {
+bool muffin::MainWindow::saveCurrentDocument() {
   if (fileController_.save(session_, this)) {
     addRecentFile(session_.filePath());
     return true;
@@ -174,11 +173,11 @@ bool MainWindow::saveCurrentDocument() {
   return false;
 }
 
-bool MainWindow::isDocumentModified() const {
+bool muffin::MainWindow::isDocumentModified() const {
   return session_.document().isModified();
 }
 
-void MainWindow::buildReopenEncodingMenu() {
+void muffin::MainWindow::buildReopenEncodingMenu() {
   if (!reopenEncodingMenu_) {
     return;
   }
@@ -267,7 +266,7 @@ void MainWindow::buildReopenEncodingMenu() {
   }
 }
 
-void MainWindow::reopenWithEncoding(const QString& encodingName) {
+void muffin::MainWindow::reopenWithEncoding(const QString& encodingName) {
   if (session_.filePath().isEmpty()) {
     return;
   }
@@ -277,7 +276,7 @@ void MainWindow::reopenWithEncoding(const QString& encodingName) {
   }
 }
 
-void MainWindow::moveToFile() {
+void muffin::MainWindow::moveToFile() {
   if (session_.filePath().isEmpty()) {
     return;
   }
@@ -294,7 +293,7 @@ void MainWindow::moveToFile() {
   editorController_.clearHistoryAndSelection();
 }
 
-void MainWindow::saveAllOpenFiles() {
+void muffin::MainWindow::saveAllOpenFiles() {
   int savedCount = 0;
   int failedCount = 0;
 
@@ -320,7 +319,7 @@ void MainWindow::saveAllOpenFiles() {
   }
 }
 
-void MainWindow::showInSidebar() {
+void muffin::MainWindow::showInSidebar() {
   if (session_.filePath().isEmpty()) {
     return;
   }
@@ -330,7 +329,7 @@ void MainWindow::showInSidebar() {
       session_.document().isModified());
 }
 
-void MainWindow::deleteFile() {
+void muffin::MainWindow::deleteFile() {
   if (session_.filePath().isEmpty()) {
     return;
   }
@@ -381,7 +380,7 @@ void MainWindow::deleteFile() {
   rebuildRecentFilesMenu();
 }
 
-bool MainWindow::maybeSaveChanges() {
+bool muffin::MainWindow::maybeSaveChanges() {
   if (!session_.document().isModified()) {
     return true;
   }
@@ -401,5 +400,3 @@ bool MainWindow::maybeSaveChanges() {
   }
   return true;
 }
-
-}  // namespace muffin

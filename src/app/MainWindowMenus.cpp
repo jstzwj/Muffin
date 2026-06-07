@@ -162,7 +162,12 @@ void muffin::MainWindow::setupEditMenu() {
   lineBreaks->addSeparator();
   addCheckAction(lineBreaks, QStringLiteral("edit.trailing_newline"), tr("Ensure Trailing Newline on Save"), {}, true);
   addAction(edit, QStringLiteral("edit.spellcheck"), tr("Spell Check..."), {}, false);
-  addAction(edit, QStringLiteral("edit.find"), tr("Find and Replace"), QKeySequence::Find, false);
+  QMenu* findMenu = edit->addMenu(tr("Find and Replace"));
+  addAction(findMenu, QStringLiteral("edit.find"), tr("Find..."), QKeySequence::Find);
+  addAction(findMenu, QStringLiteral("edit.replace"), tr("Replace..."), QKeySequence(QStringLiteral("Ctrl+H")));
+  findMenu->addSeparator();
+  addAction(findMenu, QStringLiteral("edit.find_next"), tr("Find Next"), QKeySequence(QStringLiteral("F3")));
+  addAction(findMenu, QStringLiteral("edit.find_previous"), tr("Find Previous"), QKeySequence(QStringLiteral("Shift+F3")));
   addAction(edit, QStringLiteral("edit.symbols"), tr("Emoji and Symbols"), QKeySequence(QStringLiteral("Ctrl+.")), false);
 }
 

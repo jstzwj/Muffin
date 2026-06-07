@@ -3,13 +3,12 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QHBoxLayout>
+#include <QOverload>
 #include <QLabel>
 #include <QSettings>
 #include <QVBoxLayout>
 
-namespace muffin {
-
-PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent) {
+muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(38, 34, 46, 34);
   layout->setSpacing(22);
@@ -143,7 +142,7 @@ PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent) {
           [](int index) { QSettings().setValue(QStringLiteral("image/uploadService"), index); });
 }
 
-void PrefsImagePage::retranslateUi() {
+void muffin::PrefsImagePage::retranslateUi() {
   // Card 1: Insert images
   insertLabel_->setText(tr("When Inserting Images"));
   {
@@ -184,7 +183,7 @@ void PrefsImagePage::retranslateUi() {
   }
 }
 
-void PrefsImagePage::loadSettings() {
+void muffin::PrefsImagePage::loadSettings() {
   QSettings settings;
 
   const int insert = settings.value(QStringLiteral("image/insertAction"), 0).toInt();
@@ -227,5 +226,3 @@ void PrefsImagePage::loadSettings() {
     uploadServiceCombo_->blockSignals(false);
   }
 }
-
-}  // namespace muffin

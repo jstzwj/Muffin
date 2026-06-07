@@ -27,7 +27,6 @@
 #include <QToolButton>
 #include <QUrl>
 
-namespace muffin {
 namespace {
 
 Q_LOGGING_CATEGORY(mainWindowPerf, "muffin.perf", QtWarningMsg)
@@ -53,6 +52,8 @@ private:
 };
 
 }  // namespace
+
+namespace muffin {
 
 int countWords(const QString& text) {
   int count = 0;
@@ -93,7 +94,9 @@ QString zoneName(HitTestResult::Zone zone) {
   }
 }
 
-void MainWindow::setupConnections() {
+}  // namespace muffin
+
+void muffin::MainWindow::setupConnections() {
   editorController_.attach(&session_, renderView_);
 
   connect(editor_, &SourceEditorWidget::textEdited, &session_, &DocumentSession::updateFromEditor);
@@ -379,6 +382,24 @@ void MainWindow::setupConnections() {
 
   commands_.bind(QStringLiteral("edit.find"), [this] {
     showFindBar();
+  });
+
+  commands_.bind(QStringLiteral("edit.replace"), [this] {
+    showReplaceBar();
+  });
+
+  commands_.bind(QStringLiteral("edit.find_next"), [this] {
+    if (!findBar_ || !findBar_->isVisible()) {
+      showFindBar();
+    }
+    performFindNext();
+  });
+
+  commands_.bind(QStringLiteral("edit.find_previous"), [this] {
+    if (!findBar_ || !findBar_->isVisible()) {
+      showFindBar();
+    }
+    performFindPrevious();
   });
 
   connect(findBar_, &FindBarWidget::findRequested, this, &MainWindow::performFind);
@@ -669,7 +690,7 @@ void MainWindow::setupConnections() {
   renderView_->setDocument(session_.document());
 }
 
-void MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {
+void muffin::MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {
   if (!hit.isValid()) {
     renderCursorStatus_.clear();
   } else if (hit.zone == HitTestResult::Zone::TableCell) {
@@ -688,7 +709,7 @@ void MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {
   updateStatus();
 }
 
-void MainWindow::updateEditActions() {
+void muffin::MainWindow::updateEditActions() {
   const bool src = sourceModeEnabled();
   const bool hasCursor = src ? true : editorController_.selection().hasCursor();
   const bool hasSelection = src
@@ -705,9 +726,12 @@ void MainWindow::updateEditActions() {
   commands_.setEnabled(QStringLiteral("edit.move_line_up"), hasCursor);
   commands_.setEnabled(QStringLiteral("edit.move_line_down"), hasCursor);
   commands_.setEnabled(QStringLiteral("edit.find"), true);
+  commands_.setEnabled(QStringLiteral("edit.replace"), true);
+  commands_.setEnabled(QStringLiteral("edit.find_next"), true);
+  commands_.setEnabled(QStringLiteral("edit.find_previous"), true);
 }
 
-void MainWindow::updateTableActions() {
+void muffin::MainWindow::updateTableActions() {
   const bool enabled = !sourceModeEnabled() && editorController_.tableController().currentCell().isValid();
   const QStringList ids = {
       QStringLiteral("table.insert_row_before"),
@@ -732,7 +756,7 @@ void MainWindow::updateTableActions() {
   commands_.setEnabled(QStringLiteral("table.insert_table"), !sourceModeEnabled());
 }
 
-void MainWindow::updateParagraphActions() {
+void muffin::MainWindow::updateParagraphActions() {
   const bool sourceMode = sourceModeEnabled();
   const bool editable = !sourceMode && editorController_.paragraphController().isOnEditableBlock();
   const int headingLevel = sourceMode ? -1 : editorController_.paragraphController().currentHeadingLevel();
@@ -772,28 +796,28 @@ void MainWindow::updateParagraphActions() {
   commands_.setEnabled(QStringLiteral("paragraph.task_list"), editable);
 }
 
-void MainWindow::updateCodeActions() {
+void muffin::MainWindow::updateCodeActions() {
   const bool codeActive = !sourceModeEnabled() && editorController_.codeFenceController().currentCodeFenceId().isValid();
   commands_.setEnabled(QStringLiteral("code.enter_edit"), codeActive);
   commands_.setEnabled(QStringLiteral("code.exit_edit"), !sourceModeEnabled() && editorController_.codeFenceController().isEditing());
   commands_.setEnabled(QStringLiteral("code.set_language"), codeActive || (!sourceModeEnabled() && editorController_.codeFenceController().isEditing()));
 }
 
-void MainWindow::updateHtmlActions() {
+void muffin::MainWindow::updateHtmlActions() {
   const bool htmlActive = !sourceModeEnabled() && editorController_.htmlBlockController().currentHtmlBlockId().isValid();
   commands_.setEnabled(QStringLiteral("html.enter_edit"), htmlActive);
   commands_.setEnabled(QStringLiteral("html.exit_edit"), !sourceModeEnabled() && editorController_.htmlBlockController().isEditing());
   commands_.setEnabled(QStringLiteral("html.set_source"), htmlActive || (!sourceModeEnabled() && editorController_.htmlBlockController().isEditing()));
 }
 
-void MainWindow::updateMathActions() {
+void muffin::MainWindow::updateMathActions() {
   const bool mathActive = !sourceModeEnabled() && editorController_.mathBlockController().currentMathBlockId().isValid();
   commands_.setEnabled(QStringLiteral("math.enter_edit"), mathActive);
   commands_.setEnabled(QStringLiteral("math.exit_edit"), !sourceModeEnabled() && editorController_.mathBlockController().isEditing());
   commands_.setEnabled(QStringLiteral("math.set_tex"), mathActive || (!sourceModeEnabled() && editorController_.mathBlockController().isEditing()));
 }
 
-void MainWindow::syncSourceEditorIfNeeded() {
+void muffin::MainWindow::syncSourceEditorIfNeeded() {
   if (!editor_ || !sourceEditorDirty_) {
     return;
   }
@@ -801,27 +825,27 @@ void MainWindow::syncSourceEditorIfNeeded() {
   sourceEditorDirty_ = false;
 }
 
-void MainWindow::scheduleWordCountUpdate() {
+void muffin::MainWindow::scheduleWordCountUpdate() {
   wordCountDirty_ = true;
   if (wordCountTimer_ && !wordCountTimer_->isActive()) {
     wordCountTimer_->start();
   }
 }
 
-void MainWindow::updateWordCountNow() {
+void muffin::MainWindow::updateWordCountNow() {
   if (!wordsLabel_ || !wordCountDirty_) {
     return;
   }
-  wordsLabel_->setText(tr("%1 words").arg(countWords(session_.markdownText())));
+  wordsLabel_->setText(tr("%1 words").arg(muffin::countWords(session_.markdownText())));
   wordCountDirty_ = false;
 }
 
-bool MainWindow::sourceModeEnabled() const {
+bool muffin::MainWindow::sourceModeEnabled() const {
   const QAction* action = commands_.action(QStringLiteral("view.source_mode"));
   return action && action->isChecked();
 }
 
-void MainWindow::undoEdit() {
+void muffin::MainWindow::undoEdit() {
   if (sourceModeEnabled()) {
     if (editor_->editor()->document()->isUndoAvailable()) {
       editor_->editor()->undo();
@@ -834,7 +858,7 @@ void MainWindow::undoEdit() {
   editorController_.undo();
 }
 
-void MainWindow::redoEdit() {
+void muffin::MainWindow::redoEdit() {
   if (sourceModeEnabled()) {
     if (editor_->editor()->document()->isRedoAvailable()) {
       editor_->editor()->redo();
@@ -846,5 +870,3 @@ void MainWindow::redoEdit() {
   }
   editorController_.redo();
 }
-
-}  // namespace muffin

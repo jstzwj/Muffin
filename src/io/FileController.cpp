@@ -15,11 +15,9 @@
 #include <unicode/ucnv.h>
 #include <unicode/ustring.h>
 
-namespace muffin {
+muffin::FileController::FileController(QObject* parent) : QObject(parent) {}
 
-FileController::FileController(QObject* parent) : QObject(parent) {}
-
-bool FileController::newFile(DocumentSession& session, QWidget* parent) {
+bool muffin::FileController::newFile(DocumentSession& session, QWidget* parent) {
   if (!confirmDiscardIfModified(session, parent)) {
     return false;
   }
@@ -27,7 +25,7 @@ bool FileController::newFile(DocumentSession& session, QWidget* parent) {
   return true;
 }
 
-bool FileController::open(DocumentSession& session, QWidget* parent, QString path) {
+bool muffin::FileController::open(DocumentSession& session, QWidget* parent, QString path) {
   if (!confirmDiscardIfModified(session, parent)) {
     return false;
   }
@@ -53,7 +51,7 @@ bool FileController::open(DocumentSession& session, QWidget* parent, QString pat
   return true;
 }
 
-bool FileController::save(DocumentSession& session, QWidget* parent) {
+bool muffin::FileController::save(DocumentSession& session, QWidget* parent) {
   if (session.filePath().isEmpty()) {
     return saveAs(session, parent);
   }
@@ -64,7 +62,7 @@ bool FileController::save(DocumentSession& session, QWidget* parent) {
   return true;
 }
 
-bool FileController::saveAs(DocumentSession& session, QWidget* parent) {
+bool muffin::FileController::saveAs(DocumentSession& session, QWidget* parent) {
   QString path = QFileDialog::getSaveFileName(
       parent,
       tr("Save As"),
@@ -81,7 +79,7 @@ bool FileController::saveAs(DocumentSession& session, QWidget* parent) {
   return true;
 }
 
-bool FileController::confirmDiscardIfModified(DocumentSession& session, QWidget* parent) {
+bool muffin::FileController::confirmDiscardIfModified(DocumentSession& session, QWidget* parent) {
   if (!session.document().isModified()) {
     return true;
   }
@@ -102,7 +100,7 @@ bool FileController::confirmDiscardIfModified(DocumentSession& session, QWidget*
   return true;
 }
 
-bool FileController::readTextFile(const QString& path, QString* out, QWidget* parent) const {
+bool muffin::FileController::readTextFile(const QString& path, QString* out, QWidget* parent) const {
   QFile file(path);
   if (!file.open(QIODevice::ReadOnly)) {
     QMessageBox::critical(parent, tr("Open Failed"), file.errorString());
@@ -119,7 +117,7 @@ bool FileController::readTextFile(const QString& path, QString* out, QWidget* pa
   return true;
 }
 
-bool FileController::writeTextFile(const QString& path, const QString& text, QWidget* parent) const {
+bool muffin::FileController::writeTextFile(const QString& path, const QString& text, QWidget* parent) const {
   QSaveFile file(path);
   if (!file.open(QIODevice::WriteOnly)) {
     QMessageBox::critical(parent, tr("Save Failed"), file.errorString());
@@ -152,7 +150,7 @@ bool FileController::writeTextFile(const QString& path, const QString& text, QWi
   return true;
 }
 
-bool FileController::readTextFileWithEncoding(
+bool muffin::FileController::readTextFileWithEncoding(
     const QString& path, QString* out, QWidget* parent,
     const QString& encodingName) const {
   QFile file(path);
@@ -200,7 +198,7 @@ bool FileController::readTextFileWithEncoding(
   return true;
 }
 
-bool FileController::reopenWithEncoding(
+bool muffin::FileController::reopenWithEncoding(
     DocumentSession& session, QWidget* parent,
     const QString& encodingName) {
   if (session.filePath().isEmpty()) {
@@ -232,7 +230,7 @@ bool FileController::reopenWithEncoding(
   return true;
 }
 
-bool FileController::moveTo(DocumentSession& session, QWidget* parent) {
+bool muffin::FileController::moveTo(DocumentSession& session, QWidget* parent) {
   if (session.filePath().isEmpty()) {
     return false;
   }
@@ -261,5 +259,3 @@ bool FileController::moveTo(DocumentSession& session, QWidget* parent) {
   session.document().setModified(false);
   return true;
 }
-
-}  // namespace muffin

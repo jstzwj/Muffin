@@ -7,29 +7,27 @@
 #include <QPixmap>
 #include <QPushButton>
 
-namespace muffin {
-
-PreferencesPage::PreferencesPage(QWidget* parent) : QWidget(parent) {
+muffin::PreferencesPage::PreferencesPage(QWidget* parent) : QWidget(parent) {
   setStyleSheet(QStringLiteral("background:#ffffff;"));
 }
 
-QLabel* PreferencesPage::makeSectionLabel(QWidget* parent) const {
+QLabel* muffin::PreferencesPage::makeSectionLabel(QWidget* parent) const {
   auto* label = new QLabel(parent);
   label->setStyleSheet(QStringLiteral("font-weight:600; color:#111111;"));
   return label;
 }
 
-QLabel* PreferencesPage::makeMutedLabel(QWidget* parent) const {
+QLabel* muffin::PreferencesPage::makeMutedLabel(QWidget* parent) const {
   auto* label = new QLabel(parent);
   label->setStyleSheet(QStringLiteral("color:#666666;"));
   return label;
 }
 
-QPushButton* PreferencesPage::makeButton(QWidget* parent) const {
+QPushButton* muffin::PreferencesPage::makeButton(QWidget* parent) const {
   return new QPushButton(parent);
 }
 
-QLabel* PreferencesPage::makeInfoIcon(QWidget* parent) const {
+QLabel* muffin::PreferencesPage::makeInfoIcon(QWidget* parent) const {
   auto* label = new QLabel(parent);
   const qreal dpr = qApp->devicePixelRatio();
   const int sz = 14;
@@ -51,5 +49,3 @@ QLabel* PreferencesPage::makeInfoIcon(QWidget* parent) const {
   label->setPixmap(px);
   return label;
 }
-
-}  // namespace muffin

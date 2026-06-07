@@ -20,7 +20,6 @@
 #include <QTextDocument>
 #include <utility>
 
-namespace muffin {
 namespace {
 
 constexpr int kContentWidth = 800;
@@ -154,7 +153,7 @@ private:
 
 }  // namespace
 
-class MarkdownSourceEdit;
+namespace muffin {
 
 class LineNumberArea final : public QWidget {
 public:
@@ -329,7 +328,9 @@ void LineNumberArea::paintEvent(QPaintEvent* event) {
   editor_->paintLineNumberArea(event);
 }
 
-SourceEditorWidget::SourceEditorWidget(QWidget* parent) : QWidget(parent) {
+}  // namespace muffin
+
+muffin::SourceEditorWidget::SourceEditorWidget(QWidget* parent) : QWidget(parent) {
   auto* layout = new QHBoxLayout(this);
   layout->setContentsMargins(0, 46, 0, 0);
   layout->setSpacing(0);
@@ -356,32 +357,32 @@ SourceEditorWidget::SourceEditorWidget(QWidget* parent) : QWidget(parent) {
   connect(editor_, &QPlainTextEdit::cursorPositionChanged, this, &SourceEditorWidget::emitCursorPosition);
 }
 
-QString SourceEditorWidget::text() const {
+QString muffin::SourceEditorWidget::text() const {
   return editor_->toPlainText();
 }
 
-void SourceEditorWidget::setText(const QString& text) {
+void muffin::SourceEditorWidget::setText(const QString& text) {
   const QSignalBlocker blocker(editor_);
   editor_->setPlainText(text);
   editor_->setSourceFont(editor_->font());
   emitCursorPosition();
 }
 
-void SourceEditorWidget::setWordWrapEnabled(bool enabled) {
+void muffin::SourceEditorWidget::setWordWrapEnabled(bool enabled) {
   editor_->setLineWrapMode(enabled ? QPlainTextEdit::WidgetWidth : QPlainTextEdit::NoWrap);
 }
 
-void SourceEditorWidget::setZoomPercent(int percent) {
+void muffin::SourceEditorWidget::setZoomPercent(int percent) {
   zoomPercent_ = qBound(60, percent, 200);
   applyFontSize();
 }
 
-void SourceEditorWidget::setFontSizePx(int px) {
+void muffin::SourceEditorWidget::setFontSizePx(int px) {
   fontSizePx_ = qBound(12, px, 24);
   applyFontSize();
 }
 
-void SourceEditorWidget::setTheme(const RenderTheme& theme) {
+void muffin::SourceEditorWidget::setTheme(const RenderTheme& theme) {
   setStyleSheet(QStringLiteral(
                     "SourceEditorWidget { background:%1; }"
                     "QPlainTextEdit {"
@@ -396,38 +397,38 @@ void SourceEditorWidget::setTheme(const RenderTheme& theme) {
                         theme.selectionColor().name(QColor::HexRgb)));
 }
 
-QPlainTextEdit* SourceEditorWidget::editor() {
+QPlainTextEdit* muffin::SourceEditorWidget::editor() {
   return editor_;
 }
 
-const QPlainTextEdit* SourceEditorWidget::editor() const {
+const QPlainTextEdit* muffin::SourceEditorWidget::editor() const {
   return editor_;
 }
 
-void SourceEditorWidget::resizeEvent(QResizeEvent* event) {
+void muffin::SourceEditorWidget::resizeEvent(QResizeEvent* event) {
   QWidget::resizeEvent(event);
   updateEditorWidth();
 }
 
-void SourceEditorWidget::changeEvent(QEvent* event) {
+void muffin::SourceEditorWidget::changeEvent(QEvent* event) {
   if (event->type() == QEvent::LanguageChange) {
     retranslateUi();
   }
   QWidget::changeEvent(event);
 }
 
-void SourceEditorWidget::setupStyle() {
+void muffin::SourceEditorWidget::setupStyle() {
   applyFontSize();
   setTheme(RenderTheme::github());
 }
 
-void SourceEditorWidget::retranslateUi() {
+void muffin::SourceEditorWidget::retranslateUi() {
   if (editor_) {
     editor_->setPlaceholderText(tr("Start writing..."));
   }
 }
 
-void SourceEditorWidget::applyFontSize() {
+void muffin::SourceEditorWidget::applyFontSize() {
   const QSignalBlocker blocker(editor_);
   QFont font = editor_->font();
   const qreal scale = static_cast<qreal>(zoomPercent_) / 100.0 * static_cast<qreal>(fontSizePx_) / 16.0;
@@ -438,7 +439,7 @@ void SourceEditorWidget::applyFontSize() {
   editor_->setLineNumberFont(lineNumberFont);
 }
 
-void SourceEditorWidget::updateEditorWidth() {
+void muffin::SourceEditorWidget::updateEditorWidth() {
   if (!editor_) {
     return;
   }
@@ -447,9 +448,7 @@ void SourceEditorWidget::updateEditorWidth() {
   editor_->setFixedWidth(targetWidth);
 }
 
-void SourceEditorWidget::emitCursorPosition() {
+void muffin::SourceEditorWidget::emitCursorPosition() {
   const QTextCursor cursor = editor_->textCursor();
   emit cursorPositionChanged(cursor.blockNumber() + 1, cursor.positionInBlock() + 1);
 }
-
-}  // namespace muffin

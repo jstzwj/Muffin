@@ -9,9 +9,7 @@
 #include <QSettings>
 #include <QVBoxLayout>
 
-namespace muffin {
-
-PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(parent) {
+muffin::PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(38, 34, 46, 34);
   layout->setSpacing(22);
@@ -186,10 +184,10 @@ PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(parent) {
   connect(typewriterCursorMiddleCheck_, &QCheckBox::toggled, this,
           [](bool checked) { QSettings().setValue(QStringLiteral("editor/typewriterCursorMiddle"), checked); });
   connect(disableTypewriterFocusButton_, &QPushButton::clicked, this,
-          &PrefsEditorPage::disableTypewriterFocusRequested);
+          &muffin::PrefsEditorPage::disableTypewriterFocusRequested);
 }
 
-void PrefsEditorPage::retranslateUi() {
+void muffin::PrefsEditorPage::retranslateUi() {
   indentLabel_->setText(tr("Default Indent"));
   indentDescLabel_->setText(tr("Only effective for references and lists generated via menu bar or shortcuts"));
   {
@@ -241,7 +239,7 @@ void PrefsEditorPage::retranslateUi() {
   disableTypewriterFocusButton_->setText(tr("Disable Typewriter / Focus Mode"));
 }
 
-void PrefsEditorPage::loadSettings() {
+void muffin::PrefsEditorPage::loadSettings() {
   QSettings settings;
 
   const int indent = settings.value(QStringLiteral("editor/indentSize"), 0).toInt();
@@ -298,5 +296,3 @@ void PrefsEditorPage::loadSettings() {
   typewriterCursorMiddleCheck_->setChecked(settings.value(QStringLiteral("editor/typewriterCursorMiddle"), true).toBool());
   typewriterCursorMiddleCheck_->blockSignals(false);
 }
-
-}  // namespace muffin

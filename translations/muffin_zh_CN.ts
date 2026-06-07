@@ -69,6 +69,34 @@
         <source>Close</source>
         <translation>关闭</translation>
     </message>
+    <message>
+        <source>Find</source>
+        <translation>查找</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>上一个</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>下一个</translation>
+    </message>
+    <message>
+        <source>Replace</source>
+        <translation>替换</translation>
+    </message>
+    <message>
+        <source>Replace All</source>
+        <translation>全部替换</translation>
+    </message>
+    <message>
+        <source>Not found</source>
+        <translation>未找到</translation>
+    </message>
+    <message>
+        <source>%1/%2</source>
+        <translation>%1/%2</translation>
+    </message>
 </context>
 <context>
     <name>muffin::LanguageManager</name>
@@ -644,14 +672,6 @@
         <translation>关于 Muffin</translation>
     </message>
     <message>
-        <source>Muffin %1
-
-A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
-        <translation>Muffin %1
-
-一款使用 C++ 和 Qt 6 Widgets 构建的快速、轻量级原生 Markdown 编辑器。</translation>
-    </message>
-    <message>
         <source>table %1:%2 offset %3</source>
         <translation>表格 %1:%2 偏移 %3</translation>
     </message>
@@ -664,20 +684,6 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>清除最近文件</translation>
     </message>
     <message>
-        <source>Name: %1
-Location: %2
-Size: %3 bytes
-Modified: %4
-Words: %5
-Parse time: %6 ms</source>
-        <translation>名称：%1
-位置：%2
-大小：%3 字节
-修改时间：%4
-词数：%5
-解析耗时：%6 ms</translation>
-    </message>
-    <message>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
@@ -688,12 +694,6 @@ Parse time: %6 ms</source>
     <message>
         <source>Open Failed</source>
         <translation>打开失败</translation>
-    </message>
-    <message>
-        <source>File does not exist:
-%1</source>
-        <translation>文件不存在：
-%1</translation>
     </message>
     <message>
         <source>Render Diagnostics</source>
@@ -731,7 +731,26 @@ Parse time: %6 ms</source>
         <source>My License...</source>
         <translation>我的许可证...</translation>
     </message>
-<message><location filename="../src/app/MainWindowMenus.cpp" line="0" /><source>Windows (CRLF)</source><translation>Windows 换行符 (CRLF)</translation></message><message><location filename="../src/app/MainWindowMenus.cpp" line="0" /><source>Unix (LF)</source><translation>Unix 换行符 (LF)</translation></message><message><location filename="../src/app/MainWindowMenus.cpp" line="0" /><source>Ensure Trailing Newline on Save</source><translation>保存时在文末添加空行</translation></message></context>
+    <message><location filename="../src/app/MainWindowMenus.cpp" line="0" /><source>Windows (CRLF)</source><translation>Windows 换行符 (CRLF)</translation></message>
+    <message><location filename="../src/app/MainWindowMenus.cpp" line="0" /><source>Unix (LF)</source><translation>Unix 换行符 (LF)</translation></message>
+    <message><location filename="../src/app/MainWindowMenus.cpp" line="0" /><source>Ensure Trailing Newline on Save</source><translation>保存时在文末添加空行</translation></message>
+    <message>
+        <source>Find...</source>
+        <translation>查找...</translation>
+    </message>
+    <message>
+        <source>Replace...</source>
+        <translation>替换...</translation>
+    </message>
+    <message>
+        <source>Find Next</source>
+        <translation>查找下一个</translation>
+    </message>
+    <message>
+        <source>Find Previous</source>
+        <translation>查找上一个</translation>
+    </message>
+</context>
 <context>
     <name>muffin::PreferencesDialog</name>
     <message>
@@ -1358,4 +1377,5 @@ Parse time: %6 ms</source>
         <translation>开始写作...</translation>
     </message>
 </context>
+
 </TS>

@@ -69,6 +69,34 @@
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
+    <message>
+        <source>Find</source>
+        <translation>Rechercher</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>Précédent</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>Suivant</translation>
+    </message>
+    <message>
+        <source>Replace</source>
+        <translation>Remplacer</translation>
+    </message>
+    <message>
+        <source>Replace All</source>
+        <translation>Tout remplacer</translation>
+    </message>
+    <message>
+        <source>Not found</source>
+        <translation>Non trouvé</translation>
+    </message>
+    <message>
+        <source>%1/%2</source>
+        <translation>%1/%2</translation>
+    </message>
 </context>
 <context>
     <name>muffin::LanguageManager</name>
@@ -644,14 +672,6 @@
         <translation>À propos de Muffin</translation>
     </message>
     <message>
-        <source>Muffin %1
-
-A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
-        <translation>Muffin %1
-
-Un éditeur Markdown natif rapide et léger construit avec C++ et Qt 6 Widgets.</translation>
-    </message>
-    <message>
         <source>table %1:%2 offset %3</source>
         <translation>tableau %1:%2 décalage %3</translation>
     </message>
@@ -664,20 +684,6 @@ Un éditeur Markdown natif rapide et léger construit avec C++ et Qt 6 Widgets.<
         <translation>Effacer les fichiers récents</translation>
     </message>
     <message>
-        <source>Name: %1
-Location: %2
-Size: %3 bytes
-Modified: %4
-Words: %5
-Parse time: %6 ms</source>
-        <translation>Nom : %1
-Emplacement : %2
-Taille : %3 octets
-Modifié : %4
-Mots : %5
-Temps d'analyse : %6 ms</translation>
-    </message>
-    <message>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
@@ -688,12 +694,6 @@ Temps d'analyse : %6 ms</translation>
     <message>
         <source>Open Failed</source>
         <translation>Échec de l'ouverture</translation>
-    </message>
-    <message>
-        <source>File does not exist:
-%1</source>
-        <translation>Le fichier n'existe pas :
-%1</translation>
     </message>
     <message>
         <source>Render Diagnostics</source>
@@ -730,6 +730,22 @@ Temps d'analyse : %6 ms</translation>
     <message>
         <source>My License...</source>
         <translation>Ma licence...</translation>
+    </message>
+    <message>
+        <source>Find...</source>
+        <translation>Rechercher...</translation>
+    </message>
+    <message>
+        <source>Replace...</source>
+        <translation>Remplacer...</translation>
+    </message>
+    <message>
+        <source>Find Next</source>
+        <translation>Rechercher le suivant</translation>
+    </message>
+    <message>
+        <source>Find Previous</source>
+        <translation>Rechercher le précédent</translation>
     </message>
 </context>
 <context>
@@ -1358,4 +1374,5 @@ Temps d'analyse : %6 ms</translation>
         <translation>Commencez à écrire...</translation>
     </message>
 </context>
+
 </TS>

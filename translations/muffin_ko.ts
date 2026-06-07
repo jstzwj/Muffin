@@ -69,6 +69,34 @@
         <source>Close</source>
         <translation>닫기</translation>
     </message>
+    <message>
+        <source>Find</source>
+        <translation>찾기</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>이전</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>다음</translation>
+    </message>
+    <message>
+        <source>Replace</source>
+        <translation>바꾸기</translation>
+    </message>
+    <message>
+        <source>Replace All</source>
+        <translation>모두 바꾸기</translation>
+    </message>
+    <message>
+        <source>Not found</source>
+        <translation>찾을 수 없음</translation>
+    </message>
+    <message>
+        <source>%1/%2</source>
+        <translation>%1/%2</translation>
+    </message>
 </context>
 <context>
     <name>muffin::LanguageManager</name>
@@ -644,14 +672,6 @@
         <translation>Muffin 정보</translation>
     </message>
     <message>
-        <source>Muffin %1
-
-A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
-        <translation>Muffin %1
-
-C++ 및 Qt 6 Widgets로 만든 빠르고 가벼운 네이티브 Markdown 편집기입니다.</translation>
-    </message>
-    <message>
         <source>table %1:%2 offset %3</source>
         <translation>표 %1:%2 오프셋 %3</translation>
     </message>
@@ -664,20 +684,6 @@ C++ 및 Qt 6 Widgets로 만든 빠르고 가벼운 네이티브 Markdown 편집�
         <translation>최근 파일 지우기</translation>
     </message>
     <message>
-        <source>Name: %1
-Location: %2
-Size: %3 bytes
-Modified: %4
-Words: %5
-Parse time: %6 ms</source>
-        <translation>이름: %1
-위치: %2
-크기: %3바이트
-수정됨: %4
-단어: %5
-구문 분석 시간: %6 ms</translation>
-    </message>
-    <message>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
@@ -688,12 +694,6 @@ Parse time: %6 ms</source>
     <message>
         <source>Open Failed</source>
         <translation>열기 실패</translation>
-    </message>
-    <message>
-        <source>File does not exist:
-%1</source>
-        <translation>파일이 없습니다:
-%1</translation>
     </message>
     <message>
         <source>Render Diagnostics</source>
@@ -730,6 +730,22 @@ Parse time: %6 ms</source>
     <message>
         <source>My License...</source>
         <translation>내 라이선스...</translation>
+    </message>
+    <message>
+        <source>Find...</source>
+        <translation>찾기...</translation>
+    </message>
+    <message>
+        <source>Replace...</source>
+        <translation>바꾸기...</translation>
+    </message>
+    <message>
+        <source>Find Next</source>
+        <translation>다음 찾기</translation>
+    </message>
+    <message>
+        <source>Find Previous</source>
+        <translation>이전 찾기</translation>
     </message>
 </context>
 <context>
@@ -1358,4 +1374,5 @@ Parse time: %6 ms</source>
         <translation>쓰기 시작...</translation>
     </message>
 </context>
+
 </TS>

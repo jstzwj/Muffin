@@ -7,13 +7,11 @@
 #include <QPushButton>
 #include <QShowEvent>
 
-namespace muffin {
-
-FindBarWidget::FindBarWidget(QWidget* parent) : QWidget(parent) {
+muffin::FindBarWidget::FindBarWidget(QWidget* parent) : QWidget(parent) {
   setupUi();
 }
 
-void FindBarWidget::setupUi() {
+void muffin::FindBarWidget::setupUi() {
   auto* mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(6, 4, 6, 4);
   mainLayout->setSpacing(2);
@@ -83,31 +81,31 @@ void FindBarWidget::setupUi() {
   mainLayout->addWidget(replaceRow_);
 }
 
-void FindBarWidget::setSearchText(const QString& text) {
+void muffin::FindBarWidget::setSearchText(const QString& text) {
   findEdit_->setText(text);
   findEdit_->selectAll();
 }
 
-QString FindBarWidget::searchText() const {
+QString muffin::FindBarWidget::searchText() const {
   return findEdit_->text();
 }
 
-void FindBarWidget::setReplaceVisible(bool visible) {
+void muffin::FindBarWidget::setReplaceVisible(bool visible) {
   replaceRow_->setVisible(visible);
 }
 
-void FindBarWidget::activateFind() {
+void muffin::FindBarWidget::activateFind() {
   findEdit_->setFocus();
   findEdit_->selectAll();
 }
 
-void FindBarWidget::activateReplace() {
+void muffin::FindBarWidget::activateReplace() {
   replaceRow_->setVisible(true);
   findEdit_->setFocus();
   findEdit_->selectAll();
 }
 
-void FindBarWidget::setResultInfo(int current, int total) {
+void muffin::FindBarWidget::setResultInfo(int current, int total) {
   if (current < 0) {
     resultLabel_->setText(tr("Not found"));
   } else if (total > 0) {
@@ -117,7 +115,7 @@ void FindBarWidget::setResultInfo(int current, int total) {
   }
 }
 
-void FindBarWidget::keyPressEvent(QKeyEvent* event) {
+void muffin::FindBarWidget::keyPressEvent(QKeyEvent* event) {
   if (event->key() == Qt::Key_Escape) {
     emit closed();
     event->accept();
@@ -132,9 +130,7 @@ void FindBarWidget::keyPressEvent(QKeyEvent* event) {
   QWidget::keyPressEvent(event);
 }
 
-void FindBarWidget::showEvent(QShowEvent* event) {
+void muffin::FindBarWidget::showEvent(QShowEvent* event) {
   QWidget::showEvent(event);
   activateFind();
 }
-
-}  // namespace muffin

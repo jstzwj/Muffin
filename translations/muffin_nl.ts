@@ -69,6 +69,34 @@
         <source>Close</source>
         <translation>Sluiten</translation>
     </message>
+    <message>
+        <source>Find</source>
+        <translation>Zoeken</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>Vorige</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>Volgende</translation>
+    </message>
+    <message>
+        <source>Replace</source>
+        <translation>Vervangen</translation>
+    </message>
+    <message>
+        <source>Replace All</source>
+        <translation>Alles vervangen</translation>
+    </message>
+    <message>
+        <source>Not found</source>
+        <translation>Niet gevonden</translation>
+    </message>
+    <message>
+        <source>%1/%2</source>
+        <translation>%1/%2</translation>
+    </message>
 </context>
 <context>
     <name>muffin::LanguageManager</name>
@@ -644,14 +672,6 @@
         <translation>Over Muffin</translation>
     </message>
     <message>
-        <source>Muffin %1
-
-A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
-        <translation>Muffin %1
-
-Een snelle, lichte native Markdown-editor gebouwd met C++ en Qt 6 Widgets.</translation>
-    </message>
-    <message>
         <source>table %1:%2 offset %3</source>
         <translation>tabel %1:%2 offset %3</translation>
     </message>
@@ -664,20 +684,6 @@ Een snelle, lichte native Markdown-editor gebouwd met C++ en Qt 6 Widgets.</tran
         <translation>Recente bestanden wissen</translation>
     </message>
     <message>
-        <source>Name: %1
-Location: %2
-Size: %3 bytes
-Modified: %4
-Words: %5
-Parse time: %6 ms</source>
-        <translation>Naam: %1
-Locatie: %2
-Grootte: %3 bytes
-Gewijzigd: %4
-Woorden: %5
-Parseertijd: %6 ms</translation>
-    </message>
-    <message>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
@@ -688,12 +694,6 @@ Parseertijd: %6 ms</translation>
     <message>
         <source>Open Failed</source>
         <translation>Openen mislukt</translation>
-    </message>
-    <message>
-        <source>File does not exist:
-%1</source>
-        <translation>Bestand bestaat niet:
-%1</translation>
     </message>
     <message>
         <source>Render Diagnostics</source>
@@ -730,6 +730,22 @@ Parseertijd: %6 ms</translation>
     <message>
         <source>My License...</source>
         <translation>Mijn licentie...</translation>
+    </message>
+    <message>
+        <source>Find...</source>
+        <translation>Zoeken...</translation>
+    </message>
+    <message>
+        <source>Replace...</source>
+        <translation>Vervangen...</translation>
+    </message>
+    <message>
+        <source>Find Next</source>
+        <translation>Volgende zoeken</translation>
+    </message>
+    <message>
+        <source>Find Previous</source>
+        <translation>Vorige zoeken</translation>
     </message>
 </context>
 <context>
@@ -1358,4 +1374,5 @@ Parseertijd: %6 ms</translation>
         <translation>Begin met schrijven...</translation>
     </message>
 </context>
+
 </TS>
