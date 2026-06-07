@@ -139,9 +139,11 @@ jobs:
 
       - name: Configure
         shell: bash
-        run: cmake --preset ${{ matrix.configure-preset }} -DMUFFIN_VERSION_OVERRIDE=${{ env.MUFFIN_RELEASE_VERSION }} ${{ matrix.cmake-args }}
-        env:
-          PATH: ${{ runner.os == 'Windows' && format('{0}:{1}', env.PATH, '$HOME/.dotnet/tools') || env.PATH }}
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            export PATH="$PATH:$HOME/.dotnet/tools"
+          fi
+          cmake --preset ${{ matrix.configure-preset }} -DMUFFIN_VERSION_OVERRIDE=${{ env.MUFFIN_RELEASE_VERSION }} ${{ matrix.cmake-args }}
 
       - name: Build
         run: cmake --build --preset conan-release
