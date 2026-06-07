@@ -70,7 +70,7 @@ Muffin.exe path\to\file.md
 
 ## 主题(&T)
 
-主题菜单已保留 Github、Newsprint、Night、Pixyll、Whitey、打开主题文件夹、获取主题等入口。M2 阶段主题系统尚未实现，入口暂禁用。
+主题菜单仅保留 Github、Newsprint、Night、Pixyll、Whitey 五个内置主题入口。
 
 ## 帮助(&H)
 

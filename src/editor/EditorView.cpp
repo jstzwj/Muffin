@@ -157,6 +157,19 @@ qsizetype selectableLength(const BlockLayout* block) {
       return block->literal().size();
     case BlockType::Table:
       return 1;
+    case BlockType::LinkDefinition:
+    case BlockType::FootnoteDefinition: {
+      const DefinitionBlock& def = block->definition();
+      if (!def.markerRange.isValid()) {
+        return 0;
+      }
+      const qsizetype end = def.sourceRange.isValid()
+                                ? def.sourceRange.end
+                                : qMax(def.markerRange.end,
+                                       qMax(def.destinationRange.end,
+                                            qMax(def.titleRange.end, def.noteRange.end)));
+      return qMax<qsizetype>(0, end - def.markerRange.start);
+    }
     default:
       return 0;
   }
