@@ -478,64 +478,179 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildDefinition(
   const QFontMetricsF metrics(font);
   const qreal lineHeight = std::ceil(metrics.height() * 1.16);
   qreal cursorX = x;
-  auto advance = [&](const QString& text) {
-    cursorX += metrics.horizontalAdvance(text);
+  QVector<BlockLayout::DefinitionTokenLayout> definitionTokens;
+  auto syntax = [&](const QString& text) {
+    BlockLayout::DefinitionTokenLayout token;
+    token.kind = BlockLayout::DefinitionTokenLayout::Kind::Syntax;
+    token.text = text;
+    token.rect = QRectF(cursorX, y, qMax<qreal>(1.0, metrics.horizontalAdvance(text)), lineHeight);
+    token.sourceStart = -1;
+    token.sourceEnd = -1;
+    token.editable = false;
+    definitionTokens.push_back(token);
+    cursorX = token.rect.right();
   };
   auto slot = [&](BlockLayout::DefinitionSlotLayout::Field field,
                   const DefinitionFieldRange& sourceRange,
                   const QString& text,
                   const QString& placeholder) {
-    BlockLayout::DefinitionSlotLayout result;
-    result.field = field;
-    result.text = text;
-    result.placeholder = placeholder;
-    result.sourceStart = sourceRange.start;
-    result.sourceEnd = sourceRange.end;
+    BlockLayout::DefinitionTokenLayout token;
+    token.kind = BlockLayout::DefinitionTokenLayout::Kind::Slot;
+    token.field = field;
+    token.text = text;
+    token.placeholder = placeholder;
+    token.sourceStart = sourceRange.start;
+    token.sourceEnd = sourceRange.end;
+    token.editable = true;
     const CursorPosition focus = selection_.focus;
-    result.focused = selection_.isCollapsed() && focus.blockId == node.id() &&
-                     focus.text.sourceOffset >= result.sourceStart && focus.text.sourceOffset <= result.sourceEnd;
+    token.focused = selection_.isCollapsed() && focus.blockId == node.id() &&
+                    focus.text.sourceOffset >= token.sourceStart && focus.text.sourceOffset <= token.sourceEnd;
     const QString display = text.isEmpty() ? placeholder : text;
-    const qreal displayWidth = text.isEmpty() && result.focused ? 1.0 : metrics.horizontalAdvance(display);
-    result.rect = QRectF(cursorX, y, qMax<qreal>(1.0, displayWidth), lineHeight);
-    cursorX = result.rect.right();
-    return result;
+    const qreal displayWidth = text.isEmpty() && token.focused ? 1.0 : metrics.horizontalAdvance(display);
+    token.rect = QRectF(cursorX, y, qMax<qreal>(1.0, displayWidth), lineHeight);
+    cursorX = token.rect.right();
+    definitionTokens.push_back(token);
+  };
+  auto titleOpeningSyntax = [&definition]() {
+    switch (definition.titleDelimiter) {
+      case DefinitionBlock::TitleDelimiter::SingleQuote:
+        return QStringLiteral("  '");
+      case DefinitionBlock::TitleDelimiter::Parentheses:
+        return QStringLiteral("  (");
+      case DefinitionBlock::TitleDelimiter::DoubleQuote:
+      case DefinitionBlock::TitleDelimiter::None:
+      default:
+        return QStringLiteral("  \"");
+    }
+  };
+  auto titleClosingSyntax = [&definition]() {
+    switch (definition.titleDelimiter) {
+      case DefinitionBlock::TitleDelimiter::SingleQuote:
+        return QStringLiteral("'");
+      case DefinitionBlock::TitleDelimiter::Parentheses:
+        return QStringLiteral(")");
+      case DefinitionBlock::TitleDelimiter::DoubleQuote:
+      case DefinitionBlock::TitleDelimiter::None:
+      default:
+        return QStringLiteral("\"");
+    }
   };
 
-  QVector<BlockLayout::DefinitionSlotLayout> definitionSlots;
-  advance(QStringLiteral("["));
+  syntax(QStringLiteral("["));
   if (definition.kind == DefinitionBlock::Kind::Footnote) {
-    advance(QStringLiteral("^"));
+    syntax(QStringLiteral("^"));
   }
-  definitionSlots.push_back(slot(BlockLayout::DefinitionSlotLayout::Field::Label,
-                                 definition.labelRange,
-                                 definition.label,
-                                 QStringLiteral("name")));
-  advance(QStringLiteral("]:"));
+  slot(BlockLayout::DefinitionSlotLayout::Field::Label,
+       definition.labelRange,
+       definition.label,
+       QStringLiteral("name"));
+  syntax(QStringLiteral("]:"));
 
   if (definition.kind == DefinitionBlock::Kind::Footnote) {
-    advance(QStringLiteral(" "));
-    definitionSlots.push_back(slot(BlockLayout::DefinitionSlotLayout::Field::Note,
-                                   definition.noteRange,
-                                   definition.note,
-                                   QStringLiteral("input description here")));
+    syntax(QStringLiteral(" "));
+    slot(BlockLayout::DefinitionSlotLayout::Field::Note,
+         definition.noteRange,
+         definition.note,
+         QStringLiteral("input description here"));
+
+    // Extract continuation lines for multi-line footnotes
+    if (definition.sourceRange.isValid() && definition.noteRange.isValid() &&
+        definition.sourceRange.end > definition.noteRange.end && !markdownText_.isEmpty()) {
+      // Find end of the first line in the source range
+      const qsizetype srcStart = definition.sourceRange.start;
+      const qsizetype firstLineEnd = markdownText_.indexOf(
+          QLatin1Char('\n'), definition.noteRange.end);
+      if (firstLineEnd >= 0 && firstLineEnd < definition.sourceRange.end) {
+        QString continuation;
+        qsizetype pos = firstLineEnd + 1;
+        while (pos < definition.sourceRange.end) {
+          // Strip leading indentation (up to 4 spaces or 1 tab)
+          int indent = 0;
+          while (pos < definition.sourceRange.end && indent < 4 &&
+                 markdownText_.at(pos) == QLatin1Char(' ')) {
+            ++pos;
+            ++indent;
+          }
+          if (pos < definition.sourceRange.end && indent < 4 &&
+              markdownText_.at(pos) == QLatin1Char('\t')) {
+            ++pos;
+          }
+          // Read to end of line
+          const qsizetype contentStart = pos;
+          while (pos < definition.sourceRange.end &&
+                 markdownText_.at(pos) != QLatin1Char('\n') &&
+                 markdownText_.at(pos) != QLatin1Char('\r')) {
+            ++pos;
+          }
+          if (!continuation.isEmpty()) {
+            continuation += QLatin1Char('\n');
+          }
+          continuation += markdownText_.mid(contentStart, pos - contentStart);
+          if (pos < definition.sourceRange.end &&
+              markdownText_.at(pos) == QLatin1Char('\r')) {
+            ++pos;
+          }
+          if (pos < definition.sourceRange.end &&
+              markdownText_.at(pos) == QLatin1Char('\n')) {
+            ++pos;
+          }
+        }
+        if (!continuation.isEmpty()) {
+          layout->setLiteral(continuation);
+        }
+      }
+    }
   } else {
-    advance(QStringLiteral("  "));
-    definitionSlots.push_back(slot(BlockLayout::DefinitionSlotLayout::Field::Destination,
-                                   definition.destinationRange,
-                                   definition.destination,
-                                   QStringLiteral("input link url here")));
-    if (!definition.title.isEmpty() || definitionFocused) {
-      advance(QStringLiteral("  \""));
-      definitionSlots.push_back(slot(BlockLayout::DefinitionSlotLayout::Field::Title,
-                                     definition.titleRange,
-                                     definition.title,
-                                     QStringLiteral("title (optional)")));
-      advance(QStringLiteral("\""));
+    syntax(QStringLiteral("  "));
+    slot(BlockLayout::DefinitionSlotLayout::Field::Destination,
+         definition.destinationRange,
+         definition.destination,
+         QStringLiteral("input link url here"));
+    if (definition.titleDelimiter != DefinitionBlock::TitleDelimiter::None || definitionFocused) {
+      const bool explicitEmptyTitle = definition.titleDelimiter != DefinitionBlock::TitleDelimiter::None &&
+                                      definition.title.isEmpty();
+      syntax(titleOpeningSyntax());
+      slot(BlockLayout::DefinitionSlotLayout::Field::Title,
+           definition.titleRange,
+           definition.title,
+           explicitEmptyTitle ? QString() : QStringLiteral("title (optional)"));
+      syntax(titleClosingSyntax());
     }
   }
 
+  QVector<BlockLayout::DefinitionSlotLayout> definitionSlots;
+  for (const BlockLayout::DefinitionTokenLayout& token : definitionTokens) {
+    if (token.kind != BlockLayout::DefinitionTokenLayout::Kind::Slot) {
+      continue;
+    }
+    BlockLayout::DefinitionSlotLayout slotLayout;
+    slotLayout.field = token.field;
+    slotLayout.rect = token.rect;
+    slotLayout.text = token.text;
+    slotLayout.placeholder = token.placeholder;
+    slotLayout.sourceStart = token.sourceStart;
+    slotLayout.sourceEnd = token.sourceEnd;
+    slotLayout.focused = token.focused;
+    definitionSlots.push_back(slotLayout);
+  }
   layout->setDefinitionSlots(std::move(definitionSlots));
-  layout->setRect(QRectF(x, y, width, lineHeight));
+  layout->setDefinitionTokens(std::move(definitionTokens));
+
+  // Compute total height including footnote continuation lines
+  qreal totalHeight = lineHeight;
+  if (!layout->literal().isEmpty() && definition.kind == DefinitionBlock::Kind::Footnote) {
+    // Find the note slot's X position for continuation indentation
+    qreal noteX = cursorX;
+    for (const auto& token : definitionTokens) {
+      if (token.field == BlockLayout::DefinitionSlotLayout::Field::Note) {
+        noteX = token.rect.left();
+        break;
+      }
+    }
+    const qreal continuationWidth = qMax<qreal>(1.0, x + width - noteX);
+    totalHeight += layoutTextHeight(layout->literal(), font, lineHeight, continuationWidth);
+  }
+  layout->setRect(QRectF(x, y, width, totalHeight));
   return layout;
 }
 

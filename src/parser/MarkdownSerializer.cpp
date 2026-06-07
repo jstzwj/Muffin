@@ -1,5 +1,7 @@
 #include "parser/MarkdownSerializer.h"
 
+#include "document/DefinitionBlock.h"
+
 #include <QStringList>
 
 namespace muffin {
@@ -9,6 +11,54 @@ QString repeated(QString value, int count) {
   QString out;
   for (int i = 0; i < count; ++i) out += value;
   return out;
+}
+
+bool definitionSourceTextMatchesFields(const DefinitionBlock& definition) {
+  if (definition.sourceText.isEmpty()) {
+    return false;
+  }
+  const QVector<DefinitionParseResult> parsedDefinitions = scanDefinitionBlocks(QStringView(definition.sourceText));
+  if (parsedDefinitions.size() != 1 || !parsedDefinitions.front().isRecognized()) {
+    return false;
+  }
+  const DefinitionBlock& reparsed = parsedDefinitions.front().definition;
+  return reparsed.kind == definition.kind &&
+         reparsed.label == definition.label &&
+         reparsed.destination == definition.destination &&
+         reparsed.title == definition.title &&
+         reparsed.note == definition.note &&
+         reparsed.destinationDelimiter == definition.destinationDelimiter &&
+         reparsed.titleDelimiter == definition.titleDelimiter;
+}
+
+QString serializeDefinitionDestination(const DefinitionBlock& definition) {
+  if (definition.destinationDelimiter == DefinitionBlock::DestinationDelimiter::Angle) {
+    return QStringLiteral("<%1>").arg(definition.destination);
+  }
+  return definition.destination;
+}
+
+DefinitionBlock::TitleDelimiter titleDelimiterForSerialization(const DefinitionBlock& definition) {
+  if (definition.titleDelimiter != DefinitionBlock::TitleDelimiter::None) {
+    return definition.titleDelimiter;
+  }
+  return definition.title.isEmpty()
+             ? DefinitionBlock::TitleDelimiter::None
+             : DefinitionBlock::TitleDelimiter::DoubleQuote;
+}
+
+QString serializeDefinitionTitle(const DefinitionBlock& definition) {
+  switch (titleDelimiterForSerialization(definition)) {
+    case DefinitionBlock::TitleDelimiter::DoubleQuote:
+      return QStringLiteral(" \"%1\"").arg(definition.title);
+    case DefinitionBlock::TitleDelimiter::SingleQuote:
+      return QStringLiteral(" '%1'").arg(definition.title);
+    case DefinitionBlock::TitleDelimiter::Parentheses:
+      return QStringLiteral(" (%1)").arg(definition.title);
+    case DefinitionBlock::TitleDelimiter::None:
+    default:
+      return QString();
+  }
 }
 
 }  // namespace
@@ -50,13 +100,19 @@ QString MarkdownSerializer::serializeBlock(const MarkdownNode& node) const {
       return serializeTable(node);
     case BlockType::LinkDefinition: {
       const DefinitionBlock definition = node.definition();
+      if (definitionSourceTextMatchesFields(definition)) {
+        return definition.sourceText;
+      }
       return QStringLiteral("[%1]: %2%3").arg(
           definition.label,
-          definition.destination,
-          definition.title.isEmpty() ? QString() : QStringLiteral(" \"%1\"").arg(definition.title));
+          serializeDefinitionDestination(definition),
+          serializeDefinitionTitle(definition));
     }
     case BlockType::FootnoteDefinition: {
       const DefinitionBlock definition = node.definition();
+      if (definitionSourceTextMatchesFields(definition)) {
+        return definition.sourceText;
+      }
       return QStringLiteral("[^%1]: %2").arg(definition.label, definition.note);
     }
     default:

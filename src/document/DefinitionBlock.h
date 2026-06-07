@@ -26,25 +26,56 @@ struct DefinitionBlock {
     Footnote
   };
 
+  enum class DestinationDelimiter {
+    Bare,
+    Angle
+  };
+
+  enum class TitleDelimiter {
+    None,
+    DoubleQuote,
+    SingleQuote,
+    Parentheses
+  };
+
   Kind kind = Kind::None;
   QString label;
   QString destination;
   QString title;
   QString note;
+  QString sourceText;
   DefinitionFieldRange labelRange;
   DefinitionFieldRange destinationRange;
   DefinitionFieldRange titleRange;
   DefinitionFieldRange noteRange;
   DefinitionFieldRange markerRange;
   DefinitionFieldRange sourceRange;
+  DestinationDelimiter destinationDelimiter = DestinationDelimiter::Bare;
+  TitleDelimiter titleDelimiter = TitleDelimiter::None;
   bool titleQuoted = false;
+  bool virtualTemplate = false;
 
   bool isValid() const {
     return kind != Kind::None && markerRange.isValid();
   }
 };
 
-QVector<DefinitionBlock> scanDefinitionBlocks(QStringView markdown);
-bool parseDefinitionBlockLine(QStringView line, qsizetype sourceStart, DefinitionBlock& definition);
+enum class DefinitionParseClassification {
+  Invalid,
+  ValidMarkdownDefinition,
+  VirtualTemplate
+};
+
+struct DefinitionParseResult {
+  DefinitionParseClassification classification = DefinitionParseClassification::Invalid;
+  DefinitionBlock definition;
+
+  bool isRecognized() const {
+    return classification != DefinitionParseClassification::Invalid && definition.isValid();
+  }
+};
+
+QVector<DefinitionParseResult> scanDefinitionBlocks(QStringView markdown);
+DefinitionParseResult parseDefinitionBlockLine(QStringView line, qsizetype sourceStart);
 
 }  // namespace muffin

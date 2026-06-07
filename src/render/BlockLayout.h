@@ -58,6 +58,23 @@ public:
     bool focused = false;
   };
 
+  struct DefinitionTokenLayout {
+    enum class Kind {
+      Syntax,
+      Slot
+    };
+
+    Kind kind = Kind::Syntax;
+    DefinitionSlotLayout::Field field = DefinitionSlotLayout::Field::Label;
+    QRectF rect;
+    QString text;
+    QString placeholder;
+    qsizetype sourceStart = -1;
+    qsizetype sourceEnd = -1;
+    bool editable = false;
+    bool focused = false;
+  };
+
   explicit BlockLayout(NodeId id = {});
 
   NodeId nodeId() const;
@@ -104,6 +121,8 @@ public:
   DefinitionBlock definition() const;
   void setDefinitionSlots(QVector<DefinitionSlotLayout> definitionSlots);
   const QVector<DefinitionSlotLayout>& definitionSlots() const;
+  void setDefinitionTokens(QVector<DefinitionTokenLayout> definitionTokens);
+  const QVector<DefinitionTokenLayout>& definitionTokens() const;
   QRectF definitionCursorRectForSourceOffset(qsizetype sourceOffset, const RenderTheme& theme) const;
   void setTaskListItem(bool taskListItem, bool checked);
   bool isTaskListItem() const;
@@ -161,6 +180,7 @@ private:
   QString placeholderText_;
   DefinitionBlock definition_;
   QVector<DefinitionSlotLayout> definitionSlots_;
+  QVector<DefinitionTokenLayout> definitionTokens_;
   bool taskListItem_ = false;
   bool taskChecked_ = false;
   int depth_ = 0;

@@ -37,9 +37,10 @@ void annotateSourceOffsets(const LineStartOffsetCache& lineOffsets, MarkdownNode
 
 void annotateDefinitionBlocks(
     MarkdownNode& root,
-    const QVector<DefinitionBlock>& definitions,
+    const QVector<DefinitionParseResult>& definitions,
     const LineStartOffsetCache& lineOffsets) {
-  for (const DefinitionBlock& definition : definitions) {
+  for (const DefinitionParseResult& parsedDefinition : definitions) {
+    const DefinitionBlock& definition = parsedDefinition.definition;
     const auto visit = [&](const auto& self, MarkdownNode& node) -> bool {
       const SourceRange range = node.sourceRange();
       const bool matchesRange = range.byteStart == definition.markerRange.start &&
@@ -48,8 +49,12 @@ void annotateDefinitionBlocks(
           (definition.kind == DefinitionBlock::Kind::Footnote && node.type() == BlockType::FootnoteDefinition) ||
           (definition.kind == DefinitionBlock::Kind::Link && node.type() == BlockType::LinkDefinition);
       if (matchesRange && matchesType) {
-        node.setDefinition(definition);
-        if (definition.sourceRange.isValid()) {
+        DefinitionBlock annotated = definition;
+        if (node.type() == BlockType::FootnoteDefinition) {
+          annotated.sourceRange = {range.byteStart, range.byteEnd};
+        }
+        node.setDefinition(annotated);
+        if (definition.sourceRange.isValid() && node.type() != BlockType::FootnoteDefinition) {
           SourceRange preciseRange = node.sourceRange();
           preciseRange.byteStart = definition.sourceRange.start;
           preciseRange.byteEnd = definition.sourceRange.end;
@@ -59,9 +64,6 @@ void annotateDefinitionBlocks(
           preciseRange.columnStart = lineStart >= 0 ? static_cast<int>(preciseRange.byteStart - lineStart + 1) : 1;
           preciseRange.columnEnd = lineStart >= 0 ? static_cast<int>(preciseRange.byteEnd - lineStart + 1) : preciseRange.columnStart;
           node.setSourceRange(preciseRange);
-        }
-        if (node.type() == BlockType::FootnoteDefinition) {
-          node.setLiteral(definition.note);
         }
         return true;
       }
@@ -85,6 +87,11 @@ bool hasDefinitionBlockStartingAt(const MarkdownNode& root, const DefinitionBloc
     }
   }
   return false;
+}
+
+bool shouldInsertSyntheticDefinition(const DefinitionParseResult& parsedDefinition) {
+  return parsedDefinition.classification == DefinitionParseClassification::ValidMarkdownDefinition ||
+         parsedDefinition.classification == DefinitionParseClassification::VirtualTemplate;
 }
 
 std::unique_ptr<MarkdownNode> createDefinitionNode(const DefinitionBlock& definition, const LineStartOffsetCache& lineOffsets) {
@@ -122,11 +129,15 @@ bool isDefinitionSourceParagraph(const MarkdownNode& node, const DefinitionBlock
   return range.byteStart == definition.sourceRange.start && range.byteEnd == definition.sourceRange.end;
 }
 
-void insertMissingDefinitions(MarkdownNode& root, const QVector<DefinitionBlock>& definitions, const LineStartOffsetCache& lineOffsets) {
+void insertMissingDefinitions(MarkdownNode& root, const QVector<DefinitionParseResult>& definitions, const LineStartOffsetCache& lineOffsets) {
   if (root.type() != BlockType::Document) {
     return;
   }
-  for (const DefinitionBlock& definition : definitions) {
+  for (const DefinitionParseResult& parsedDefinition : definitions) {
+    if (!shouldInsertSyntheticDefinition(parsedDefinition)) {
+      continue;
+    }
+    const DefinitionBlock& definition = parsedDefinition.definition;
     if (hasDefinitionBlockStartingAt(root, definition)) {
       continue;
     }
@@ -149,14 +160,15 @@ void insertMissingDefinitions(MarkdownNode& root, const QVector<DefinitionBlock>
 void insertTrailingEmptyParagraphAfterDefinition(
     QStringView markdown,
     MarkdownNode& root,
-    const QVector<DefinitionBlock>& definitions,
+    const QVector<DefinitionParseResult>& definitions,
     const LineStartOffsetCache& lineOffsets) {
   if (root.type() != BlockType::Document || definitions.isEmpty()) {
     return;
   }
 
   const DefinitionBlock* trailingDefinition = nullptr;
-  for (const DefinitionBlock& definition : definitions) {
+  for (const DefinitionParseResult& parsedDefinition : definitions) {
+    const DefinitionBlock& definition = parsedDefinition.definition;
     if (!definition.sourceRange.isValid()) {
       continue;
     }
@@ -509,7 +521,7 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
 
   const QStringView markdownToParse = markdown.mid(markdownStart);
   const QByteArray utf8 = markdownToParse.toString().toUtf8();
-  const QVector<DefinitionBlock> definitions = scanDefinitionBlocks(markdownToParse);
+  const QVector<DefinitionParseResult> definitions = scanDefinitionBlocks(markdownToParse);
   cmark_parser* parser = cmark_parser_new(CMARK_OPT_DEFAULT | CMARK_OPT_FOOTNOTES);
   attachExtensions(parser, options);
   cmark_parser_feed(parser, utf8.constData(), static_cast<size_t>(utf8.size()));

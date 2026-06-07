@@ -1051,7 +1051,10 @@ QRectF EditorView::headingBadgeViewportRectForBlock(NodeId blockId) const {
   const qreal badgeWidth = metrics.horizontalAdvance(QStringLiteral("H%1").arg(level)) + 6.0;
   const qreal badgeHeight = metrics.height() + 2.0;
   const QRectF blockRect = block->rect();
-  return QRectF(blockRect.left() - badgeWidth - 4.0, blockRect.top() - scrollY(), badgeWidth, badgeHeight);
+  const QFontMetricsF headingMetrics(theme_.headingFont(level));
+  const qreal lineCenterY = blockRect.top() + headingMetrics.height() / 2.0;
+  const qreal badgeY = lineCenterY - badgeHeight / 2.0 - scrollY();
+  return QRectF(blockRect.left() - badgeWidth - 4.0, badgeY, badgeWidth, badgeHeight);
 }
 
 void EditorView::paintHeadingBadge(QPainter& painter) const {

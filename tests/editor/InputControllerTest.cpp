@@ -164,6 +164,26 @@ void setSelection(SelectionController& selection, MarkdownNode* block, qsizetype
   selection.setSelection(range);
 }
 
+void setSourceSelection(
+    SelectionController& selection,
+    MarkdownNode* block,
+    MarkdownNode* textNode,
+    qsizetype anchorTextOffset,
+    qsizetype anchorSourceOffset,
+    qsizetype focusTextOffset,
+    qsizetype focusSourceOffset) {
+  SelectionRange range;
+  range.anchor.blockId = block->id();
+  range.anchor.text.nodeId = textNode->id();
+  range.anchor.text.textOffset = anchorTextOffset;
+  range.anchor.text.sourceOffset = anchorSourceOffset;
+  range.focus.blockId = block->id();
+  range.focus.text.nodeId = textNode->id();
+  range.focus.text.textOffset = focusTextOffset;
+  range.focus.text.sourceOffset = focusSourceOffset;
+  selection.setSelection(range);
+}
+
 void setCrossSelection(
     SelectionController& selection,
     MarkdownNode* anchorBlock,
@@ -1513,6 +1533,62 @@ void testOptionalLinkDefinitionTitleInsertionAddsQuotes() {
           QStringLiteral("optional title insertion mismatch: '%1'").arg(session.markdownText()));
 }
 
+void testDefinitionDestinationEditDoesNotRestoreStaleSourceText() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("[ref]: <https://old.example/a b> \"\""), false);
+  MarkdownNode* link = blockAt(session, 0);
+  require(link->type() == BlockType::LinkDefinition, "link definition should parse");
+  const DefinitionBlock definition = link->definition();
+  setSourceSelection(
+      selection,
+      link,
+      link,
+      definition.destinationRange.start - definition.markerRange.start,
+      definition.destinationRange.start,
+      definition.destinationRange.end - definition.markerRange.start,
+      definition.destinationRange.end);
+
+  require(input.insertText(QStringLiteral("https://new.example/path")), "replacing destination should edit definition");
+  require(session.markdownText() == QStringLiteral("[ref]: <https://new.example/path> \"\""),
+          QStringLiteral("edited destination should keep angle destination and empty title shape: '%1'").arg(session.markdownText()));
+  require(!session.markdownText().contains(QStringLiteral("https://old.example/a b")),
+          QStringLiteral("stale sourceText destination should not be restored: '%1'").arg(session.markdownText()));
+}
+
+void testDefinitionTitleEditDoesNotRestoreSingleQuotedSourceText() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("[ref]: url 'old title'"), false);
+  MarkdownNode* link = blockAt(session, 0);
+  require(link->type() == BlockType::LinkDefinition, "single quoted title definition should parse");
+  const DefinitionBlock definition = link->definition();
+  setSourceSelection(
+      selection,
+      link,
+      link,
+      definition.titleRange.start - definition.markerRange.start,
+      definition.titleRange.start,
+      definition.titleRange.end - definition.markerRange.start,
+      definition.titleRange.end);
+
+  require(input.insertText(QStringLiteral("new title")), "replacing title should edit definition");
+  require(session.markdownText() == QStringLiteral("[ref]: url 'new title'"),
+          QStringLiteral("edited title should keep single quote shape: '%1'").arg(session.markdownText()));
+  require(!session.markdownText().contains(QStringLiteral("old title")),
+          QStringLiteral("stale single-quoted title should not be restored: '%1'").arg(session.markdownText()));
+}
+
 void testFootnoteDefinitionEnterAtNoteEndCreatesParagraphAfter() {
   DocumentSession session;
   SelectionController selection;
@@ -1573,6 +1649,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testDefinitionBlockFieldEditing);
   RUN_TEST(testEmptyDefinitionBackspaceDeletesBlock);
   RUN_TEST(testOptionalLinkDefinitionTitleInsertionAddsQuotes);
+  RUN_TEST(testDefinitionDestinationEditDoesNotRestoreStaleSourceText);
+  RUN_TEST(testDefinitionTitleEditDoesNotRestoreSingleQuotedSourceText);
   RUN_TEST(testFootnoteDefinitionEnterAtNoteEndCreatesParagraphAfter);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
