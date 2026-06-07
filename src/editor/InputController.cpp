@@ -204,6 +204,9 @@ bool InputController::insertText(QString text) {
   if (selection_ && selection_->currentHit().zone == HitTestResult::Zone::BlockAfter) {
     return insertBlockAfterCurrentBlock(std::move(text));
   }
+  if (tryInsertOptionalDefinitionTitle(text)) {
+    return true;
+  }
   return text.isEmpty() ? false : editParagraph(TextBlockCommandBuilder::Operation::InsertText, std::move(text));
 }
 
@@ -261,6 +264,9 @@ bool InputController::deleteBackward() {
   if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
     return deleteSelection();
   }
+  if (tryRemoveEmptyDefinitionBlock(EditTransaction::Kind::DeleteText, QStringLiteral("Backspace Empty Definition"))) {
+    return true;
+  }
   if (tableController_ && tableController_->currentCell().isValid()) {
     return tableController_->deleteBackward();
   }
@@ -273,6 +279,9 @@ bool InputController::deleteForward() {
   }
   if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
     return deleteSelection();
+  }
+  if (tryRemoveEmptyDefinitionBlock(EditTransaction::Kind::DeleteText, QStringLiteral("Delete Empty Definition"))) {
+    return true;
   }
   if (tableController_ && tableController_->currentCell().isValid()) {
     return tableController_->deleteForward();
@@ -582,6 +591,45 @@ bool InputController::insertTextIntoActiveLiteral(QString text) {
   return mathBlockController_ && mathBlockController_->isEditing() ? mathBlockController_->insertText(std::move(text)) : false;
 }
 
+bool InputController::tryInsertOptionalDefinitionTitle(QString text) {
+  if (text.isEmpty() || !session_ || !selection_ || !selection_->hasCursor() || !selection_->selection().isCollapsed()) {
+    return false;
+  }
+
+  const CursorPosition cursor = selection_->cursorPosition();
+  if (selection_->currentHit().definitionField != HitTestResult::DefinitionField::Title) {
+    return false;
+  }
+  MarkdownNode* node = session_->document().node(cursor.blockId);
+  if (!node || node->type() != BlockType::LinkDefinition) {
+    return false;
+  }
+
+  const DefinitionBlock definition = node->definition();
+  if (!definition.title.isEmpty() || !definition.titleRange.isValid() ||
+      cursor.text.sourceOffset != definition.titleRange.start) {
+    return false;
+  }
+
+  const QString inserted = definition.titleQuoted ? text : QStringLiteral("  \"%1\"").arg(text);
+  const qsizetype titleSourceStart = definition.titleQuoted ? definition.titleRange.start : definition.titleRange.start + 3;
+  CursorPosition preferredCursor;
+  preferredCursor.blockId = node->id();
+  preferredCursor.text.nodeId = node->id();
+  preferredCursor.text.sourceOffset = titleSourceStart + text.size();
+  preferredCursor.text.textOffset = preferredCursor.text.sourceOffset - definition.markerRange.start;
+  applyLocalEdit(
+      EditTransaction::Kind::InsertText,
+      QStringLiteral("Insert Link Definition Title"),
+      definition.titleRange.start,
+      0,
+      inserted,
+      preferredCursor,
+      preferredCursor.text.sourceOffset,
+      QVector<LocalEditNodeHint>{LocalEditNodeHint{node->id(), node->sourceRange().byteStart, node->type()}});
+  return true;
+}
+
 bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, const QString& label) {
   if (!session_ || !selection_ || !selection_->hasCursor()) {
     return false;
@@ -681,6 +729,126 @@ bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, con
         RemoveNodeCommand{
             removedNodeId,
             nodeType,
+            nodeIndex,
+            TextDelta{deleteStart, removedText, QString()},
+            blockStart,
+            std::move(removedNode),
+            beforeCursor,
+            nextCursor,
+            std::move(affectedNodes)}));
+  }
+  if (brushQueue_) {
+    if (nextCursor.isValid()) {
+      brushQueue_->requestBlockRefresh(nextCursor.blockId);
+    } else {
+      brushQueue_->requestFullRefresh();
+    }
+  }
+  return true;
+}
+
+bool InputController::tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, const QString& label) {
+  if (!session_ || !selection_ || !selection_->hasCursor()) {
+    return false;
+  }
+
+  MarkdownNode* node = session_->document().node(selection_->cursorPosition().blockId);
+  if (!node || (node->type() != BlockType::LinkDefinition && node->type() != BlockType::FootnoteDefinition)) {
+    return false;
+  }
+  const DefinitionBlock definition = node->definition();
+  const bool empty = node->type() == BlockType::LinkDefinition
+                         ? definition.label.isEmpty() && definition.destination.isEmpty() && definition.title.isEmpty()
+                         : definition.label.isEmpty() && definition.note.isEmpty();
+  if (!empty || !node->parent() || node->parent()->type() != BlockType::Document) {
+    return false;
+  }
+
+  qsizetype blockStart = -1;
+  qsizetype blockEnd = -1;
+  BlockEditContextResolver resolver = contextResolver();
+  if (!resolver.blockSourceRange(*node, blockStart, blockEnd)) {
+    return false;
+  }
+
+  const auto& blocks = session_->document().root().children();
+  int nodeIndex = -1;
+  for (int i = 0; i < static_cast<int>(blocks.size()); ++i) {
+    if (blocks.at(static_cast<size_t>(i)).get() == node) {
+      nodeIndex = i;
+      break;
+    }
+  }
+  if (nodeIndex < 0) {
+    return false;
+  }
+
+  qsizetype deleteStart = blockStart;
+  qsizetype deleteEnd = blockEnd;
+  if (blocks.size() == 1) {
+    deleteStart = 0;
+    deleteEnd = session_->markdownText().size();
+  } else {
+    for (int i = nodeIndex + 1; i < static_cast<int>(blocks.size()); ++i) {
+      const qsizetype nextStart = blocks.at(static_cast<size_t>(i))->sourceRange().byteStart;
+      if (nextStart > blockStart) {
+        deleteEnd = nextStart;
+        break;
+      }
+    }
+  }
+  if (nodeIndex > 0) {
+    qsizetype previousEnd = 0;
+    for (int i = nodeIndex - 1; i >= 0; --i) {
+      const qsizetype candidateEnd = blocks.at(static_cast<size_t>(i))->sourceRange().byteEnd;
+      if (candidateEnd <= blockStart) {
+        previousEnd = candidateEnd;
+        break;
+      }
+    }
+    deleteStart = blockStart;
+    while (deleteStart > previousEnd &&
+           (session_->markdownText().at(deleteStart - 1) == QLatin1Char('\n') ||
+            session_->markdownText().at(deleteStart - 1) == QLatin1Char('\r'))) {
+      --deleteStart;
+    }
+  }
+  deleteStart = qBound<qsizetype>(0, deleteStart, session_->markdownText().size());
+  deleteEnd = qBound<qsizetype>(deleteStart, deleteEnd, session_->markdownText().size());
+  if (deleteStart >= deleteEnd) {
+    return false;
+  }
+
+  const CursorPosition beforeCursor = selection_->cursorPosition();
+  const QString removedText = session_->markdownText().mid(deleteStart, deleteEnd - deleteStart);
+  std::unique_ptr<MarkdownNode> removedNode = node->clone(CloneMode::PreserveIds);
+  const NodeId removedNodeId = node->id();
+  const BlockType removedNodeType = node->type();
+
+  QVector<LocalEditNodeHint> nodeHints;
+  nodeHints.push_back(LocalEditNodeHint{removedNodeId, blockStart, removedNodeType});
+  if (!session_->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
+    return false;
+  }
+
+  CursorPosition nextCursor = cursorAfterEdit(CursorPosition(), deleteStart, true);
+  if (nextCursor.isValid()) {
+    selection_->setCursorPosition(nextCursor);
+  } else {
+    selection_->clear();
+  }
+
+  if (undoStack_) {
+    QVector<NodeId> affectedNodes{removedNodeId};
+    if (nextCursor.isValid() && !affectedNodes.contains(nextCursor.blockId)) {
+      affectedNodes.push_back(nextCursor.blockId);
+    }
+    undoStack_->push(EditTransaction(
+        kind,
+        label,
+        RemoveNodeCommand{
+            removedNodeId,
+            removedNodeType,
             nodeIndex,
             TextDelta{deleteStart, removedText, QString()},
             blockStart,
@@ -987,6 +1155,19 @@ qsizetype InputController::selectableTextLength(const MarkdownNode& node) const 
     case BlockType::MathBlock:
     case BlockType::HtmlBlock:
       return node.literal().size();
+    case BlockType::LinkDefinition:
+    case BlockType::FootnoteDefinition: {
+      const DefinitionBlock definition = node.definition();
+      if (!definition.markerRange.isValid()) {
+        return 0;
+      }
+      const qsizetype end = definition.sourceRange.isValid()
+                                 ? definition.sourceRange.end
+                                 : qMax(definition.markerRange.end,
+                                        qMax(definition.destinationRange.end,
+                                             qMax(definition.titleRange.end, definition.noteRange.end)));
+      return qMax<qsizetype>(0, end - definition.markerRange.start);
+    }
     case BlockType::Table:
       return 1;
     default:

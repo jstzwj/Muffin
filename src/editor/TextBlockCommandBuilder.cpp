@@ -69,6 +69,14 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
       command.label = QStringLiteral("Delete");
       break;
     case Operation::Enter:
+      if (context.node->type() == BlockType::LinkDefinition || context.node->type() == BlockType::FootnoteDefinition) {
+        const DefinitionBlock definition = context.node->definition();
+        const DefinitionFieldRange finalField =
+            context.node->type() == BlockType::FootnoteDefinition ? definition.noteRange : definition.titleRange;
+        if (finalField.isValid() && context.cursorSourceOffset >= finalField.end) {
+          return buildInsertBlockAfter(context);
+        }
+      }
       if (context.node->type() == BlockType::ListItem) {
         return context.contentText.trimmed().isEmpty() ? buildExitListItem(context) : buildSplitListItem(context);
       }

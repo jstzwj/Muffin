@@ -61,6 +61,13 @@ private:
       qreal y,
       qreal width,
       int depth);
+  std::unique_ptr<BlockLayout> buildDefinition(
+      const MarkdownNode& node,
+      const RenderTheme& theme,
+      qreal x,
+      qreal y,
+      qreal width,
+      int depth);
 
   QString textForListMarker(const MarkdownNode& listNode, qsizetype index) const;
   BlockLayout::ListMarkerKind markerKindForListItem(const MarkdownNode& itemNode) const;

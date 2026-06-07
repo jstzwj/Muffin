@@ -14,6 +14,7 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QFontMetricsF>
 #include <QKeyEvent>
 #include <QMouseEvent>
 
@@ -509,6 +510,188 @@ void testTextHitActivationAddsSourceOffsetForInlineEditing() {
   require(controller.selection().cursorPosition().text.sourceOffset == 11, "text hit should resolve strong source offset");
   require(controller.inputController().insertText(QStringLiteral("X")), "typing after text hit should edit strong inline");
   require(session.markdownText() == QStringLiteral("before **boXld** after"), "text hit inline insert mismatch");
+}
+
+void testDefinitionPlaceholderHitKeepsCursorInSlot() {
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  controller.attach(&session, &view);
+
+  session.setMarkdownText(QStringLiteral("[]: "), false);
+  view.resize(800, 240);
+  view.setDocument(session.document());
+
+  MarkdownNode* link = blockAt(session, 0);
+  const DefinitionBlock definition = link->definition();
+  CursorPosition focusedCursor;
+  focusedCursor.blockId = link->id();
+  focusedCursor.text.nodeId = link->id();
+  focusedCursor.text.textOffset = definition.destinationRange.start - definition.markerRange.start;
+  focusedCursor.text.sourceOffset = definition.destinationRange.start;
+  SelectionRange focusedSelection;
+  focusedSelection.anchor = focusedCursor;
+  focusedSelection.focus = focusedCursor;
+  view.setSelectionRange(focusedSelection);
+
+  const BlockLayout* block = requireViewBlock(view, link->id(), QStringLiteral("definition"));
+  const auto& definitionSlotLayouts = block->definitionSlots();
+  const BlockLayout::DefinitionSlotLayout* destination = nullptr;
+  for (const BlockLayout::DefinitionSlotLayout& slot : definitionSlotLayouts) {
+    if (slot.field == BlockLayout::DefinitionSlotLayout::Field::Destination) {
+      destination = &slot;
+      break;
+    }
+  }
+  require(destination != nullptr, "definition destination slot should exist");
+
+  const QPointF clickPoint(destination->rect.right() - 2.0, destination->rect.center().y());
+  HitTestResult hit = view.hitTest(clickPoint);
+  require(hit.blockId == link->id(), "definition placeholder hit block mismatch");
+  require(hit.sourceOffset == definition.destinationRange.start, "definition placeholder hit should target destination slot");
+  require(hit.definitionField == HitTestResult::DefinitionField::Destination, "definition placeholder hit should target destination field");
+  require(hit.cursorRect.left() >= destination->rect.left(), "definition placeholder hit cursor should stay in destination slot");
+  require(hit.cursorRect.left() < destination->rect.right(), "definition placeholder hit cursor should not jump to optional title end");
+  require(!block->definitionCursorRectForSourceOffset(hit.sourceOffset, RenderTheme::typoraLike()).isEmpty(),
+          "definition source cursor rect should rebuild from source offset");
+
+  controller.activateHit(hit);
+  require(controller.inputController().insertText(QStringLiteral("123")), "typing after definition placeholder hit should insert destination");
+  require(session.markdownText() == QStringLiteral("[]: 123"), "definition placeholder input markdown mismatch");
+}
+
+void testEmptyLinkDefinitionTitlePlaceholderOnlyWhenFocused() {
+  DocumentSession session;
+  EditorView view;
+
+  session.setMarkdownText(QStringLiteral("[1]: url"), false);
+  view.resize(800, 240);
+  view.setDocument(session.document());
+
+  MarkdownNode* link = blockAt(session, 0);
+  const BlockLayout* block = requireViewBlock(view, link->id(), QStringLiteral("unfocused link definition"));
+  bool hasTitleSlot = false;
+  for (const BlockLayout::DefinitionSlotLayout& slot : block->definitionSlots()) {
+    if (slot.field == BlockLayout::DefinitionSlotLayout::Field::Title) {
+      hasTitleSlot = true;
+    }
+  }
+  require(!hasTitleSlot, "unfocused empty link definition should hide optional title slot");
+
+  session.setMarkdownText(QStringLiteral("[1]: url \"\""), false);
+  view.setDocument(session.document());
+  link = blockAt(session, 0);
+  block = requireViewBlock(view, link->id(), QStringLiteral("unfocused legacy empty-title link definition"));
+  hasTitleSlot = false;
+  for (const BlockLayout::DefinitionSlotLayout& slot : block->definitionSlots()) {
+    if (slot.field == BlockLayout::DefinitionSlotLayout::Field::Title) {
+      hasTitleSlot = true;
+    }
+  }
+  require(!hasTitleSlot, "unfocused legacy empty-title link definition should hide optional title slot");
+
+  const DefinitionBlock definition = link->definition();
+  CursorPosition cursor;
+  cursor.blockId = link->id();
+  cursor.text.nodeId = link->id();
+  cursor.text.textOffset = definition.titleRange.start - definition.markerRange.start;
+  cursor.text.sourceOffset = definition.titleRange.start;
+  SelectionRange selection;
+  selection.anchor = cursor;
+  selection.focus = cursor;
+  view.setSelectionRange(selection);
+
+  block = requireViewBlock(view, link->id(), QStringLiteral("focused link definition"));
+  hasTitleSlot = false;
+  for (const BlockLayout::DefinitionSlotLayout& slot : block->definitionSlots()) {
+    if (slot.field == BlockLayout::DefinitionSlotLayout::Field::Title) {
+      hasTitleSlot = true;
+      require(slot.text.isEmpty(), "focused optional title slot should be empty");
+      require(slot.placeholder == QStringLiteral("title (optional)"), "focused optional title placeholder mismatch");
+    }
+  }
+  require(hasTitleSlot, "focused empty link definition should show optional title slot");
+}
+
+void testDefinitionBoundaryHitPlacesCursorAtSourceEdges() {
+  DocumentSession session;
+  EditorView view;
+
+  const QString markdown = QStringLiteral("[1]: 测试 \"标题\"");
+  session.setMarkdownText(markdown, false);
+  view.resize(800, 240);
+  view.setDocument(session.document());
+
+  MarkdownNode* link = blockAt(session, 0);
+  const DefinitionBlock definition = link->definition();
+  const BlockLayout* block = requireViewBlock(view, link->id(), QStringLiteral("definition edge"));
+  const QRectF startCursor = block->definitionCursorRectForSourceOffset(definition.sourceRange.start, RenderTheme::typoraLike());
+  const QRectF endCursor = block->definitionCursorRectForSourceOffset(definition.sourceRange.end, RenderTheme::typoraLike());
+  require(!startCursor.isEmpty(), "definition start cursor rect should exist");
+  require(!endCursor.isEmpty(), "definition end cursor rect should exist");
+
+  const HitTestResult startHit = view.hitTest(QPointF(startCursor.left() - 3.0, startCursor.center().y()));
+  require(startHit.sourceOffset == definition.sourceRange.start, "definition left edge hit should target source start");
+  require(startHit.cursorRect.left() == startCursor.left(), "definition left edge cursor rect mismatch");
+
+  const HitTestResult endHit = view.hitTest(QPointF(endCursor.left() + 3.0, endCursor.center().y()));
+  require(endHit.sourceOffset == definition.sourceRange.end, "definition right edge hit should target source end");
+  require(endHit.cursorRect.left() == endCursor.left(), "definition right edge cursor rect mismatch");
+}
+
+void testFocusedEmptyFootnoteDefinitionSlotSuppressesPlaceholder() {
+  DocumentSession session;
+  EditorView view;
+  const RenderTheme theme = RenderTheme::typoraLike();
+  const QFontMetricsF metrics(theme.paragraphFont());
+
+  session.setMarkdownText(QStringLiteral("[^]: "), false);
+  MarkdownNode* footnote = blockAt(session, 0);
+  const DefinitionBlock definition = footnote->definition();
+  CursorPosition cursor;
+  cursor.blockId = footnote->id();
+  cursor.text.nodeId = footnote->id();
+  cursor.text.textOffset = definition.labelRange.start - definition.markerRange.start;
+  cursor.text.sourceOffset = definition.labelRange.start;
+  SelectionRange selection;
+  selection.anchor = cursor;
+  selection.focus = cursor;
+
+  view.resize(800, 240);
+  view.setDocument(session.document());
+  view.setSelectionRange(selection);
+
+  const BlockLayout* block = requireViewBlock(view, footnote->id(), QStringLiteral("focused footnote"));
+  bool sawFocusedLabel = false;
+  bool sawFocusedNote = false;
+  for (const BlockLayout::DefinitionSlotLayout& slot : block->definitionSlots()) {
+    if (slot.field == BlockLayout::DefinitionSlotLayout::Field::Label) {
+      sawFocusedLabel = slot.focused && slot.text.isEmpty();
+      require(slot.rect.width() < metrics.horizontalAdvance(QStringLiteral("name")),
+              "focused empty footnote label slot should collapse placeholder width");
+    }
+    if (slot.field == BlockLayout::DefinitionSlotLayout::Field::Note) {
+      sawFocusedNote = slot.focused;
+    }
+  }
+  require(sawFocusedLabel, "focused empty footnote label slot should suppress placeholder");
+  require(!sawFocusedNote, "unfocused empty footnote note slot should keep placeholder");
+
+  cursor.text.textOffset = definition.noteRange.start - definition.markerRange.start;
+  cursor.text.sourceOffset = definition.noteRange.start;
+  selection.anchor = cursor;
+  selection.focus = cursor;
+  view.setSelectionRange(selection);
+  block = requireViewBlock(view, footnote->id(), QStringLiteral("focused footnote note"));
+  sawFocusedNote = false;
+  for (const BlockLayout::DefinitionSlotLayout& slot : block->definitionSlots()) {
+    if (slot.field == BlockLayout::DefinitionSlotLayout::Field::Note) {
+      sawFocusedNote = slot.focused && slot.text.isEmpty();
+      require(slot.rect.width() < metrics.horizontalAdvance(QStringLiteral("input description here")),
+              "focused empty footnote note slot should collapse placeholder width");
+    }
+  }
+  require(sawFocusedNote, "focused empty footnote note slot should suppress placeholder");
 }
 
 void testEditorViewHitTestActivatesInlineSourceEditing() {
@@ -1271,6 +1454,10 @@ int main(int argc, char** argv) {
   RUN_TEST(testInlineProjectionMappingMatrix);
   RUN_TEST(testHorizontalNavigationEntersInlineMarkers);
   RUN_TEST(testTextHitActivationAddsSourceOffsetForInlineEditing);
+  RUN_TEST(testDefinitionPlaceholderHitKeepsCursorInSlot);
+  RUN_TEST(testEmptyLinkDefinitionTitlePlaceholderOnlyWhenFocused);
+  RUN_TEST(testDefinitionBoundaryHitPlacesCursorAtSourceEdges);
+  RUN_TEST(testFocusedEmptyFootnoteDefinitionSlotSuppressesPlaceholder);
   RUN_TEST(testEditorViewHitTestActivatesInlineSourceEditing);
   RUN_TEST(testEditorViewInlineProjectionStateChanges);
   RUN_TEST(testEditorViewInlineMarkerSourceSelection);

@@ -9,11 +9,16 @@ namespace muffin {
 namespace {
 
 bool isEditableTextBlock(BlockType type) {
-  return type == BlockType::Paragraph || type == BlockType::Heading || type == BlockType::ListItem || type == BlockType::TableCell;
+  return type == BlockType::Paragraph || type == BlockType::Heading || type == BlockType::ListItem || type == BlockType::TableCell ||
+         type == BlockType::LinkDefinition || type == BlockType::FootnoteDefinition;
 }
 
 bool isInlineEditableNode(BlockType type) {
   return type == BlockType::Paragraph || type == BlockType::Heading || type == BlockType::TableCell;
+}
+
+bool isDefinitionBlock(BlockType type) {
+  return type == BlockType::LinkDefinition || type == BlockType::FootnoteDefinition;
 }
 
 qsizetype paragraphContentStartIncludingCommonMarkIndent(const QString& markdown, qsizetype astStart) {
@@ -71,6 +76,47 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
   }
 
   MarkdownNode* editable = &displayNode;
+  if (isDefinitionBlock(displayNode.type())) {
+    const DefinitionBlock definition = displayNode.definition();
+    const SourceRange range = displayNode.sourceRange();
+    if (!definition.markerRange.isValid()) {
+      return false;
+    }
+    context.node = &displayNode;
+    context.editableNode = &displayNode;
+    context.blockId = displayNode.id();
+    context.blockType = displayNode.type();
+    context.blockRange = range;
+    context.blockRange.byteStart = range.byteStart;
+    context.blockRange.byteEnd = range.byteEnd;
+    context.contentRange.byteStart = definition.markerRange.start;
+    context.contentRange.byteEnd = definition.sourceRange.isValid()
+                                       ? definition.sourceRange.end
+                                       : qMax(definition.markerRange.end,
+                                              qMax(definition.destinationRange.end,
+                                                   qMax(definition.titleRange.end, definition.noteRange.end)));
+    context.cursorTextOffset = selection_ && selection_->hasCursor() && selection_->cursorPosition().blockId == displayNode.id()
+                                ? selection_->cursorPosition().text.textOffset
+                                : 0;
+    const qsizetype cursorStoredSourceOffset =
+        selection_ && selection_->hasCursor() && selection_->cursorPosition().blockId == displayNode.id()
+            ? selection_->cursorPosition().text.sourceOffset
+            : -1;
+    context.contentText = session_->markdownText().mid(context.contentRange.byteStart,
+                                                       context.contentRange.byteEnd - context.contentRange.byteStart);
+    context.visibleText = context.contentText;
+    context.plainInlineEditable = true;
+    context.supportsVisibleOffsetMapping = true;
+    if (cursorStoredSourceOffset >= context.contentRange.byteStart && cursorStoredSourceOffset <= context.contentRange.byteEnd) {
+      context.cursorSourceOffset = cursorStoredSourceOffset;
+      context.cursorTextOffset = cursorStoredSourceOffset - context.contentRange.byteStart;
+    } else {
+      context.cursorSourceOffset =
+          context.contentRange.byteStart + qBound<qsizetype>(0, context.cursorTextOffset, context.contentText.size());
+    }
+    return true;
+  }
+
   if (displayNode.type() == BlockType::ListItem) {
     editable = primaryParagraph(displayNode);
     if (!editable) {

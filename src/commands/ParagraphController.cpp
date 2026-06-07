@@ -186,8 +186,8 @@ bool ParagraphController::applyBlockDelta(
   }
 
   if (brushQueue_) {
-    if (structureEdit) {
-      brushQueue_->requestFullRefresh();
+    if (structureEdit || session_->lastLocalEditChangedTopLevelStructure()) {
+      brushQueue_->requestTopLevelRangeRefresh(session_->lastLocalTopLevelRangeChange());
     } else if (!affectedNodes.isEmpty()) {
       brushQueue_->requestBlocksRefresh(std::move(affectedNodes));
     } else {
@@ -252,7 +252,8 @@ MarkdownNode* ParagraphController::paragraphAtSourceOffset(MarkdownNode& node, q
     return nullptr;
   }
 
-  if (node.type() == BlockType::Paragraph || node.type() == BlockType::Heading) {
+  if (node.type() == BlockType::Paragraph || node.type() == BlockType::Heading ||
+      node.type() == BlockType::LinkDefinition || node.type() == BlockType::FootnoteDefinition) {
     return &node;
   }
 
@@ -429,23 +430,75 @@ bool ParagraphController::insertLinkReference() {
       return false;
     }
     const QString markdown = session_->markdownText();
-    const QString inserted = markdown.isEmpty() ? QStringLiteral("[label]: url") : QStringLiteral("\n\n[label]: url");
+    const QString inserted = markdown.isEmpty() ? QStringLiteral("[]: ") : QStringLiteral("\n\n[]: ");
     const qsizetype offset = markdown.size();
     return applyBlockDelta(
         EditTransaction::Kind::InsertText,
         QStringLiteral("Insert Link Reference"),
         offset, 0, inserted,
-        offset + (markdown.isEmpty() ? 1 : 3),  // cursor at "label"
+        offset + (markdown.isEmpty() ? 1 : 3),
         {}, true);
   }
 
-  const QString inserted = QStringLiteral("\n\n[label]: url");
-  const qsizetype nextCursor = context.blockEnd + 3;  // cursor at "label"
+  const QString inserted = QStringLiteral("\n\n[]: ");
+  const qsizetype nextCursor = context.blockEnd + 3;
   return applyBlockDelta(
       EditTransaction::Kind::InsertText,
       QStringLiteral("Insert Link Reference"),
       context.blockEnd, 0, inserted,
       nextCursor, {}, true);
+}
+
+bool ParagraphController::insertFootnoteDefinition() {
+  BlockContext context;
+  if (!resolveBlockContext(context)) {
+    if (!session_) {
+      return false;
+    }
+    const QString markdown = session_->markdownText();
+    const QString inserted = markdown.isEmpty() ? QStringLiteral("[^]: ") : QStringLiteral("\n\n[^]: ");
+    const qsizetype offset = markdown.size();
+    return applyBlockDelta(
+        EditTransaction::Kind::InsertText,
+        QStringLiteral("Insert Footnote"),
+        offset, 0, inserted,
+        offset + (markdown.isEmpty() ? 2 : 4),
+        {}, true);
+  }
+
+  const QString inserted = QStringLiteral("\n\n[^]: ");
+  const qsizetype nextCursor = context.blockEnd + 4;
+  return applyBlockDelta(
+      EditTransaction::Kind::InsertText,
+      QStringLiteral("Insert Footnote"),
+      context.blockEnd, 0, inserted,
+      nextCursor, {}, true);
+}
+
+bool ParagraphController::insertHorizontalRule() {
+  BlockContext context;
+  if (!resolveBlockContext(context)) {
+    if (!session_) {
+      return false;
+    }
+    const QString markdown = session_->markdownText();
+    const QString inserted = markdown.isEmpty() ? QStringLiteral("---\n\n") : QStringLiteral("\n\n---\n\n");
+    const qsizetype offset = markdown.size();
+    return applyBlockDelta(
+        EditTransaction::Kind::InsertText,
+        QStringLiteral("Insert Horizontal Rule"),
+        offset, 0, inserted,
+        offset + inserted.size(),
+        {}, true);
+  }
+
+  const QString inserted = QStringLiteral("\n\n---\n\n");
+  return applyBlockDelta(
+      EditTransaction::Kind::InsertText,
+      QStringLiteral("Insert Horizontal Rule"),
+      context.blockEnd, 0, inserted,
+      context.blockEnd + inserted.size(),
+      {}, true);
 }
 
 // ---------------------------------------------------------------------------

@@ -201,8 +201,10 @@ void muffin::MainWindow::setupParagraphMenu() {
   paragraph->addSeparator();
   addAction(paragraph, QStringLiteral("paragraph.insert_before"), tr("Insert Paragraph Before"), {}, false);
   addAction(paragraph, QStringLiteral("paragraph.insert_after"), tr("Insert Paragraph After"), {}, false);
+  paragraph->addSeparator();
   addAction(paragraph, QStringLiteral("paragraph.link_ref"), tr("Link Reference"), {}, false);
   addAction(paragraph, QStringLiteral("paragraph.footnote"), tr("Footnote"), {}, false);
+  paragraph->addSeparator();
   addAction(paragraph, QStringLiteral("paragraph.hr"), tr("Horizontal Rule"), {}, false);
   addAction(paragraph, QStringLiteral("paragraph.toc"), tr("Table of Contents"), {}, false);
   QMenu* frontMatter = paragraph->addMenu(tr("Front Matter"));

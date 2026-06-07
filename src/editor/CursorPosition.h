@@ -7,6 +7,14 @@
 namespace muffin {
 
 struct HitTestResult {
+  enum class DefinitionField {
+    None,
+    Label,
+    Destination,
+    Title,
+    Note
+  };
+
   enum class Zone {
     None,
     Block,
@@ -29,6 +37,7 @@ struct HitTestResult {
   QRectF cursorRect;
   int tableRow = -1;
   int tableColumn = -1;
+  DefinitionField definitionField = DefinitionField::None;
   QString linkHref;
 
   bool isValid() const {

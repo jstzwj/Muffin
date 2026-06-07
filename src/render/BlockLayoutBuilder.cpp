@@ -8,6 +8,8 @@
 #include <QTextLayout>
 #include <QTextOption>
 
+#include <utility>
+
 namespace muffin {
 namespace {
 
@@ -180,6 +182,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::build(
       return buildTable(node, theme, x, y, width, depth);
     case BlockType::ThematicBreak:
       return buildThematicBreak(node, theme, x, y, width, depth);
+    case BlockType::LinkDefinition:
+    case BlockType::FootnoteDefinition:
+      return buildDefinition(node, theme, x, y, width, depth);
     case BlockType::Document:
     default:
       return buildContainer(node, theme, x, y, width, depth);
@@ -451,6 +456,86 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildThematicBreak(
   layout->setType(BlockType::ThematicBreak);
   layout->setDepth(depth);
   layout->setRect(QRectF(x, y, width, theme.blockSpacing() * 2.0));
+  return layout;
+}
+
+std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildDefinition(
+    const MarkdownNode& node,
+    const RenderTheme& theme,
+    qreal x,
+    qreal y,
+    qreal width,
+    int depth) {
+  auto layout = std::make_unique<BlockLayout>(node.id());
+  layout->setType(node.type());
+  layout->setDepth(depth);
+  const DefinitionBlock definition = node.definition();
+  layout->setDefinition(definition);
+  layout->setContentSourceStart(definition.markerRange.isValid() ? definition.markerRange.start : node.sourceRange().byteStart);
+  const bool definitionFocused = selection_.isCollapsed() && selection_.focus.blockId == node.id();
+
+  const QFont font = theme.paragraphFont();
+  const QFontMetricsF metrics(font);
+  const qreal lineHeight = std::ceil(metrics.height() * 1.16);
+  qreal cursorX = x;
+  auto advance = [&](const QString& text) {
+    cursorX += metrics.horizontalAdvance(text);
+  };
+  auto slot = [&](BlockLayout::DefinitionSlotLayout::Field field,
+                  const DefinitionFieldRange& sourceRange,
+                  const QString& text,
+                  const QString& placeholder) {
+    BlockLayout::DefinitionSlotLayout result;
+    result.field = field;
+    result.text = text;
+    result.placeholder = placeholder;
+    result.sourceStart = sourceRange.start;
+    result.sourceEnd = sourceRange.end;
+    const CursorPosition focus = selection_.focus;
+    result.focused = selection_.isCollapsed() && focus.blockId == node.id() &&
+                     focus.text.sourceOffset >= result.sourceStart && focus.text.sourceOffset <= result.sourceEnd;
+    const QString display = text.isEmpty() ? placeholder : text;
+    const qreal displayWidth = text.isEmpty() && result.focused ? 1.0 : metrics.horizontalAdvance(display);
+    result.rect = QRectF(cursorX, y, qMax<qreal>(1.0, displayWidth), lineHeight);
+    cursorX = result.rect.right();
+    return result;
+  };
+
+  QVector<BlockLayout::DefinitionSlotLayout> definitionSlots;
+  advance(QStringLiteral("["));
+  if (definition.kind == DefinitionBlock::Kind::Footnote) {
+    advance(QStringLiteral("^"));
+  }
+  definitionSlots.push_back(slot(BlockLayout::DefinitionSlotLayout::Field::Label,
+                                 definition.labelRange,
+                                 definition.label,
+                                 QStringLiteral("name")));
+  advance(QStringLiteral("]:"));
+
+  if (definition.kind == DefinitionBlock::Kind::Footnote) {
+    advance(QStringLiteral(" "));
+    definitionSlots.push_back(slot(BlockLayout::DefinitionSlotLayout::Field::Note,
+                                   definition.noteRange,
+                                   definition.note,
+                                   QStringLiteral("input description here")));
+  } else {
+    advance(QStringLiteral("  "));
+    definitionSlots.push_back(slot(BlockLayout::DefinitionSlotLayout::Field::Destination,
+                                   definition.destinationRange,
+                                   definition.destination,
+                                   QStringLiteral("input link url here")));
+    if (!definition.title.isEmpty() || definitionFocused) {
+      advance(QStringLiteral("  \""));
+      definitionSlots.push_back(slot(BlockLayout::DefinitionSlotLayout::Field::Title,
+                                     definition.titleRange,
+                                     definition.title,
+                                     QStringLiteral("title (optional)")));
+      advance(QStringLiteral("\""));
+    }
+  }
+
+  layout->setDefinitionSlots(std::move(definitionSlots));
+  layout->setRect(QRectF(x, y, width, lineHeight));
   return layout;
 }
 

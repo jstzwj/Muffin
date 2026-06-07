@@ -96,6 +96,19 @@ qsizetype selectableTextLength(const MarkdownNode& node) {
     case BlockType::MathBlock:
     case BlockType::HtmlBlock:
       return node.literal().size();
+    case BlockType::LinkDefinition:
+    case BlockType::FootnoteDefinition: {
+      const DefinitionBlock definition = node.definition();
+      if (!definition.markerRange.isValid()) {
+        return 0;
+      }
+      const qsizetype end = definition.sourceRange.isValid()
+                                 ? definition.sourceRange.end
+                                 : qMax(definition.markerRange.end,
+                                        qMax(definition.destinationRange.end,
+                                             qMax(definition.titleRange.end, definition.noteRange.end)));
+      return qMax<qsizetype>(0, end - definition.markerRange.start);
+    }
     case BlockType::Table:
       return 1;
     default:
@@ -108,6 +121,12 @@ CursorPosition cursorForNodeText(const MarkdownNode& node, qsizetype offset, Nod
   cursor.blockId = blockId.isValid() ? blockId : node.id();
   cursor.text.nodeId = node.id();
   cursor.text.textOffset = qBound<qsizetype>(0, offset, selectableTextLength(node));
+  if (node.type() == BlockType::LinkDefinition || node.type() == BlockType::FootnoteDefinition) {
+    const DefinitionBlock definition = node.definition();
+    if (definition.markerRange.isValid()) {
+      cursor.text.sourceOffset = definition.markerRange.start + cursor.text.textOffset;
+    }
+  }
   return cursor;
 }
 
@@ -150,6 +169,14 @@ bool fillSourceOffsetForTextHit(const DocumentSession& session, HitTestResult& h
   MarkdownNode* node = session.document().node(hit.zone == HitTestResult::Zone::TableCell ? hit.textNodeId : hit.blockId);
   if (!node) {
     return false;
+  }
+
+  if ((node->type() == BlockType::LinkDefinition || node->type() == BlockType::FootnoteDefinition) && hit.sourceOffset >= 0) {
+    const DefinitionBlock definition = node->definition();
+    const qsizetype blockStart = definition.markerRange.isValid() ? definition.markerRange.start : node->sourceRange().byteStart;
+    hit.textNodeId = node->id();
+    hit.textOffset = qMax<qsizetype>(0, hit.sourceOffset - blockStart);
+    return true;
   }
 
   MarkdownNode* editable = primaryParagraph(*node);

@@ -159,6 +159,14 @@ void MarkdownNode::setFrontMatterFormat(FrontMatterFormat format) {
   frontMatterFormat_ = format;
 }
 
+DefinitionBlock MarkdownNode::definition() const {
+  return definition_;
+}
+
+void MarkdownNode::setDefinition(DefinitionBlock definition) {
+  definition_ = std::move(definition);
+}
+
 QVector<TableAlignment> MarkdownNode::tableAlignments() const {
   return tableAlignments_;
 }
@@ -195,6 +203,7 @@ std::unique_ptr<MarkdownNode> MarkdownNode::clone(CloneMode mode) const {
   copy->taskChecked_ = taskChecked_;
   copy->codeLanguage_ = codeLanguage_;
   copy->frontMatterFormat_ = frontMatterFormat_;
+  copy->definition_ = definition_;
   copy->tableAlignments_ = tableAlignments_;
   copy->tableRowIsHeader_ = tableRowIsHeader_;
   copy->sourceRange_ = sourceRange_;

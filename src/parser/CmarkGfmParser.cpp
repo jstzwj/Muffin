@@ -1,5 +1,6 @@
 #include "parser/CmarkGfmParser.h"
 
+#include "document/DefinitionBlock.h"
 #include "document/InlineNode.h"
 #include "document/LineStartOffsetCache.h"
 #include "parser/CmarkNodeAdapter.h"
@@ -32,6 +33,172 @@ void annotateSourceOffsets(const LineStartOffsetCache& lineOffsets, MarkdownNode
   for (const auto& child : node.children()) {
     annotateSourceOffsets(lineOffsets, *child);
   }
+}
+
+void annotateDefinitionBlocks(
+    MarkdownNode& root,
+    const QVector<DefinitionBlock>& definitions,
+    const LineStartOffsetCache& lineOffsets) {
+  for (const DefinitionBlock& definition : definitions) {
+    const auto visit = [&](const auto& self, MarkdownNode& node) -> bool {
+      const SourceRange range = node.sourceRange();
+      const bool matchesRange = range.byteStart == definition.markerRange.start &&
+                                range.byteEnd >= definition.markerRange.end;
+      const bool matchesType =
+          (definition.kind == DefinitionBlock::Kind::Footnote && node.type() == BlockType::FootnoteDefinition) ||
+          (definition.kind == DefinitionBlock::Kind::Link && node.type() == BlockType::LinkDefinition);
+      if (matchesRange && matchesType) {
+        node.setDefinition(definition);
+        if (definition.sourceRange.isValid()) {
+          SourceRange preciseRange = node.sourceRange();
+          preciseRange.byteStart = definition.sourceRange.start;
+          preciseRange.byteEnd = definition.sourceRange.end;
+          preciseRange.lineStart = lineOffsets.lineForOffset(preciseRange.byteStart);
+          preciseRange.lineEnd = lineOffsets.lineForOffset(preciseRange.byteEnd);
+          const qsizetype lineStart = lineOffsets.offsetForLineColumn(preciseRange.lineStart, 1);
+          preciseRange.columnStart = lineStart >= 0 ? static_cast<int>(preciseRange.byteStart - lineStart + 1) : 1;
+          preciseRange.columnEnd = lineStart >= 0 ? static_cast<int>(preciseRange.byteEnd - lineStart + 1) : preciseRange.columnStart;
+          node.setSourceRange(preciseRange);
+        }
+        if (node.type() == BlockType::FootnoteDefinition) {
+          node.setLiteral(definition.note);
+        }
+        return true;
+      }
+      for (const auto& child : node.children()) {
+        if (self(self, *child)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    visit(visit, root);
+  }
+}
+
+bool hasDefinitionBlockStartingAt(const MarkdownNode& root, const DefinitionBlock& definition) {
+  const BlockType expectedType =
+      definition.kind == DefinitionBlock::Kind::Footnote ? BlockType::FootnoteDefinition : BlockType::LinkDefinition;
+  for (const auto& child : root.children()) {
+    if (child->type() == expectedType && child->sourceRange().byteStart == definition.markerRange.start) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::unique_ptr<MarkdownNode> createDefinitionNode(const DefinitionBlock& definition, const LineStartOffsetCache& lineOffsets) {
+  const BlockType type =
+      definition.kind == DefinitionBlock::Kind::Footnote ? BlockType::FootnoteDefinition : BlockType::LinkDefinition;
+  auto node = std::make_unique<MarkdownNode>(type);
+  node->setDefinition(definition);
+  node->setLiteral(definition.kind == DefinitionBlock::Kind::Footnote ? definition.note : definition.destination);
+
+  SourceRange range;
+  range.byteStart = definition.sourceRange.isValid() ? definition.sourceRange.start : definition.markerRange.start;
+  range.byteEnd = definition.sourceRange.isValid()
+                      ? definition.sourceRange.end
+                      : qMax(definition.markerRange.end,
+                             qMax(definition.destinationRange.end, qMax(definition.titleRange.end, definition.noteRange.end)));
+  range.lineStart = lineOffsets.lineForOffset(range.byteStart);
+  range.lineEnd = lineOffsets.lineForOffset(range.byteEnd);
+  const qsizetype lineStart = lineOffsets.offsetForLineColumn(range.lineStart, 1);
+  range.columnStart = lineStart >= 0 ? static_cast<int>(range.byteStart - lineStart + 1) : 1;
+  range.columnEnd = lineStart >= 0 ? static_cast<int>(range.byteEnd - lineStart + 1) : range.columnStart;
+  node->setSourceRange(range);
+  return node;
+}
+
+bool isVirtualEmptyParagraph(const MarkdownNode& node) {
+  const SourceRange range = node.sourceRange();
+  return node.type() == BlockType::Paragraph && range.byteStart >= 0 && range.byteEnd == range.byteStart;
+}
+
+bool isDefinitionSourceParagraph(const MarkdownNode& node, const DefinitionBlock& definition) {
+  if (node.type() != BlockType::Paragraph || !definition.sourceRange.isValid()) {
+    return false;
+  }
+  const SourceRange range = node.sourceRange();
+  return range.byteStart == definition.sourceRange.start && range.byteEnd == definition.sourceRange.end;
+}
+
+void insertMissingDefinitions(MarkdownNode& root, const QVector<DefinitionBlock>& definitions, const LineStartOffsetCache& lineOffsets) {
+  if (root.type() != BlockType::Document) {
+    return;
+  }
+  for (const DefinitionBlock& definition : definitions) {
+    if (hasDefinitionBlockStartingAt(root, definition)) {
+      continue;
+    }
+
+    qsizetype insertAt = 0;
+    while (insertAt < root.children().size() &&
+           root.children().at(static_cast<size_t>(insertAt))->sourceRange().byteStart < definition.markerRange.start) {
+      ++insertAt;
+    }
+    if (insertAt < root.children().size() &&
+        (isDefinitionSourceParagraph(*root.children().at(static_cast<size_t>(insertAt)), definition) ||
+         (isVirtualEmptyParagraph(*root.children().at(static_cast<size_t>(insertAt))) &&
+          root.children().at(static_cast<size_t>(insertAt))->sourceRange().byteStart == definition.markerRange.start))) {
+      root.detachChild(insertAt);
+    }
+    root.insertChild(insertAt, createDefinitionNode(definition, lineOffsets));
+  }
+}
+
+void insertTrailingEmptyParagraphAfterDefinition(
+    QStringView markdown,
+    MarkdownNode& root,
+    const QVector<DefinitionBlock>& definitions,
+    const LineStartOffsetCache& lineOffsets) {
+  if (root.type() != BlockType::Document || definitions.isEmpty()) {
+    return;
+  }
+
+  const DefinitionBlock* trailingDefinition = nullptr;
+  for (const DefinitionBlock& definition : definitions) {
+    if (!definition.sourceRange.isValid()) {
+      continue;
+    }
+    qsizetype cursor = definition.sourceRange.end;
+    while (cursor < markdown.size() && markdown.at(cursor) == QLatin1Char('\r')) {
+      ++cursor;
+    }
+    int newlineCount = 0;
+    while (cursor < markdown.size() && markdown.at(cursor) == QLatin1Char('\n')) {
+      ++newlineCount;
+      ++cursor;
+      if (cursor < markdown.size() && markdown.at(cursor) == QLatin1Char('\r')) {
+        ++cursor;
+      }
+    }
+    if (cursor == markdown.size() && newlineCount >= 2) {
+      trailingDefinition = &definition;
+    }
+  }
+  if (!trailingDefinition) {
+    return;
+  }
+
+  for (const auto& child : root.children()) {
+    if (isVirtualEmptyParagraph(*child) && child->sourceRange().byteStart >= trailingDefinition->sourceRange.end) {
+      return;
+    }
+  }
+
+  const int emptyLine = lineOffsets.lineForOffset(trailingDefinition->sourceRange.end) + 2;
+  auto paragraph = std::make_unique<MarkdownNode>(BlockType::Paragraph);
+  paragraph->inlines().push_back(InlineNode::text(QString()));
+
+  SourceRange range;
+  range.lineStart = emptyLine;
+  range.lineEnd = emptyLine;
+  range.columnStart = 1;
+  range.columnEnd = 1;
+  range.byteStart = markdown.size();
+  range.byteEnd = markdown.size();
+  paragraph->setSourceRange(range);
+  root.appendChild(std::move(paragraph));
 }
 
 struct TableCellFieldRange {
@@ -210,6 +377,22 @@ void shiftSourceRanges(MarkdownNode& node, qsizetype delta, int lineDelta) {
     }
     node.setSourceRange(range);
   }
+  DefinitionBlock definition = node.definition();
+  if (definition.isValid()) {
+    auto shiftField = [delta](DefinitionFieldRange& field) {
+      if (field.isValid()) {
+        field.start += delta;
+        field.end += delta;
+      }
+    };
+    shiftField(definition.labelRange);
+    shiftField(definition.destinationRange);
+    shiftField(definition.titleRange);
+    shiftField(definition.noteRange);
+    shiftField(definition.markerRange);
+    shiftField(definition.sourceRange);
+    node.setDefinition(definition);
+  }
   for (const auto& child : node.children()) {
     shiftSourceRanges(*child, delta, lineDelta);
   }
@@ -326,6 +509,7 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
 
   const QStringView markdownToParse = markdown.mid(markdownStart);
   const QByteArray utf8 = markdownToParse.toString().toUtf8();
+  const QVector<DefinitionBlock> definitions = scanDefinitionBlocks(markdownToParse);
   cmark_parser* parser = cmark_parser_new(CMARK_OPT_DEFAULT | CMARK_OPT_FOOTNOTES);
   attachExtensions(parser, options);
   cmark_parser_feed(parser, utf8.constData(), static_cast<size_t>(utf8.size()));
@@ -337,6 +521,9 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   const LineStartOffsetCache lineOffsets(markdownToParse);
   insertVirtualEmptyParagraphs(markdownToParse, *result.root);
   annotateSourceOffsets(lineOffsets, *result.root);
+  insertMissingDefinitions(*result.root, definitions, lineOffsets);
+  annotateDefinitionBlocks(*result.root, definitions, lineOffsets);
+  insertTrailingEmptyParagraphAfterDefinition(markdownToParse, *result.root, definitions, lineOffsets);
   annotateTableCellSourceRanges(markdownToParse, lineOffsets, *result.root);
 
   if (frontMatterNode) {

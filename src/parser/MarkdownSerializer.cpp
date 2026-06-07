@@ -48,6 +48,17 @@ QString MarkdownSerializer::serializeBlock(const MarkdownNode& node) const {
       return QStringLiteral("$$\n%1\n$$").arg(node.literal());
     case BlockType::Table:
       return serializeTable(node);
+    case BlockType::LinkDefinition: {
+      const DefinitionBlock definition = node.definition();
+      return QStringLiteral("[%1]: %2%3").arg(
+          definition.label,
+          definition.destination,
+          definition.title.isEmpty() ? QString() : QStringLiteral(" \"%1\"").arg(definition.title));
+    }
+    case BlockType::FootnoteDefinition: {
+      const DefinitionBlock definition = node.definition();
+      return QStringLiteral("[^%1]: %2").arg(definition.label, definition.note);
+    }
     default:
       return serializeChildren(node, QStringLiteral("\n\n"));
   }

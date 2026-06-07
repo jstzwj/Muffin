@@ -51,6 +51,8 @@ bool isEditableTopLevelType(muffin::BlockType type) {
     case muffin::BlockType::HtmlBlock:
     case muffin::BlockType::MathBlock:
     case muffin::BlockType::Table:
+    case muffin::BlockType::LinkDefinition:
+    case muffin::BlockType::FootnoteDefinition:
       return true;
     default:
       return false;
@@ -205,6 +207,22 @@ void shiftRanges(muffin::MarkdownNode& node, qsizetype delta, int lineDelta) {
       range.lineEnd += lineDelta;
     }
     node.setSourceRange(range);
+  }
+  muffin::DefinitionBlock definition = node.definition();
+  if (definition.isValid()) {
+    auto shiftField = [delta](muffin::DefinitionFieldRange& field) {
+      if (field.isValid()) {
+        field.start += delta;
+        field.end += delta;
+      }
+    };
+    shiftField(definition.labelRange);
+    shiftField(definition.destinationRange);
+    shiftField(definition.titleRange);
+    shiftField(definition.noteRange);
+    shiftField(definition.markerRange);
+    shiftField(definition.sourceRange);
+    node.setDefinition(definition);
   }
   for (const auto& child : node.children()) {
     shiftRanges(*child, delta, lineDelta);

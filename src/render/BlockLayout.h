@@ -9,6 +9,7 @@
 
 #include <QRectF>
 #include <QString>
+#include <QVector>
 
 #include <memory>
 #include <vector>
@@ -38,6 +39,23 @@ public:
   struct TableRowLayout {
     QRectF rect;
     std::vector<TableCellLayout> cells;
+  };
+
+  struct DefinitionSlotLayout {
+    enum class Field {
+      Label,
+      Destination,
+      Title,
+      Note
+    };
+
+    Field field = Field::Label;
+    QRectF rect;
+    QString text;
+    QString placeholder;
+    qsizetype sourceStart = -1;
+    qsizetype sourceEnd = -1;
+    bool focused = false;
   };
 
   explicit BlockLayout(NodeId id = {});
@@ -82,6 +100,11 @@ public:
   qsizetype contentSourceStart() const;
   void setPlaceholderText(QString text);
   QString placeholderText() const;
+  void setDefinition(const DefinitionBlock& definition);
+  DefinitionBlock definition() const;
+  void setDefinitionSlots(QVector<DefinitionSlotLayout> definitionSlots);
+  const QVector<DefinitionSlotLayout>& definitionSlots() const;
+  QRectF definitionCursorRectForSourceOffset(qsizetype sourceOffset, const RenderTheme& theme) const;
   void setTaskListItem(bool taskListItem, bool checked);
   bool isTaskListItem() const;
   bool taskChecked() const;
@@ -118,6 +141,9 @@ private:
   QRectF mathPreviewContentRect(const RenderTheme& theme) const;
   void paintCodeFence(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
   void paintLiteralSource(QPainter& painter, const RenderTheme& theme, QRectF contentRect, const QVector<CodeHighlightSpan>& spans) const;
+  void paintDefinition(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
+  HitTestResult hitDefinition(QPointF documentPos, const RenderTheme& theme) const;
+  QVector<QRectF> definitionSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
 
   NodeId id_;
   BlockType type_ = BlockType::Unknown;
@@ -133,6 +159,8 @@ private:
   ListMarkerKind listMarkerKind_ = ListMarkerKind::None;
   qsizetype contentSourceStart_ = -1;
   QString placeholderText_;
+  DefinitionBlock definition_;
+  QVector<DefinitionSlotLayout> definitionSlots_;
   bool taskListItem_ = false;
   bool taskChecked_ = false;
   int depth_ = 0;

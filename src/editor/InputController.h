@@ -75,6 +75,7 @@ private:
   bool hasActiveLiteralEditor() const;
   void syncLiteralEditMode(NodeId newBlockId);
   bool insertTextIntoActiveLiteral(QString text);
+  bool tryInsertOptionalDefinitionTitle(QString text);
   bool deleteBackwardInActiveLiteral();
   bool deleteForwardInActiveLiteral();
   bool deleteSelectionInActiveLiteral();
@@ -87,6 +88,7 @@ private:
   bool replaceSelection(QString text, EditTransaction::Kind kind, QString label);
   bool tryRemoveExactWholeBlockSelection(EditTransaction::Kind kind, const QString& label);
   bool tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, const QString& label);
+  bool tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, const QString& label);
   bool selectionSourceRange(qsizetype& start, qsizetype& end) const;
   bool blockSelectionSourceRange(qsizetype& start, qsizetype& end) const;
   BlockEditContextResolver contextResolver() const;

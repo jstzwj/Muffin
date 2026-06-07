@@ -73,6 +73,11 @@ struct RebuildPerfStats {
         tableNs += elapsedNs;
         ++tableCount;
         break;
+      case BlockType::LinkDefinition:
+      case BlockType::FootnoteDefinition:
+        paragraphNs += elapsedNs;
+        ++paragraphCount;
+        break;
       default:
         otherNs += elapsedNs;
         ++otherCount;

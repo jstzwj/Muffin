@@ -1421,6 +1421,120 @@ void testInputNonEmptyCodeFenceBackspaceDoesNotRemoveBlock() {
   require(session.markdownText().contains(QStringLiteral("```cpp")), "non-empty code fence should not be removed");
 }
 
+void testDefinitionBlockFieldEditing() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("[]: "), false);
+  MarkdownNode* link = blockAt(session, 0);
+  require(link->type() == BlockType::LinkDefinition, "empty link template should parse as link definition");
+  const DefinitionBlock emptyLink = link->definition();
+  setSourceCursor(selection, link, emptyLink.labelRange.start - emptyLink.markerRange.start, emptyLink.labelRange.start);
+  require(input.insertText(QStringLiteral("1")), "typing label should edit link definition");
+  link = blockAt(session, 0);
+  const DefinitionBlock labeledLink = link->definition();
+  require(labeledLink.label == QStringLiteral("1"), "link label should update");
+
+  setSourceCursor(selection, link, labeledLink.destinationRange.start - labeledLink.markerRange.start, labeledLink.destinationRange.start);
+  require(input.insertText(QStringLiteral("https://example.com")), "typing url should edit link definition");
+  link = blockAt(session, 0);
+  const DefinitionBlock urlLink = link->definition();
+  require(urlLink.destination == QStringLiteral("https://example.com"), "link destination should update");
+
+  HitTestResult titleHit;
+  titleHit.blockId = link->id();
+  titleHit.textNodeId = link->id();
+  titleHit.textOffset = urlLink.titleRange.start - urlLink.markerRange.start;
+  titleHit.sourceOffset = urlLink.titleRange.start;
+  titleHit.zone = HitTestResult::Zone::Text;
+  titleHit.definitionField = HitTestResult::DefinitionField::Title;
+  selection.setHitResult(titleHit);
+  require(input.insertText(QStringLiteral("Example")), "typing title should edit link definition");
+  require(session.markdownText() == QStringLiteral("[1]: https://example.com  \"Example\""), "link definition markdown mismatch");
+
+  session.setMarkdownText(QStringLiteral("[^]: "), false);
+  MarkdownNode* footnote = blockAt(session, 0);
+  require(footnote->type() == BlockType::FootnoteDefinition, "empty footnote template should parse as footnote definition");
+  const DefinitionBlock emptyFootnote = footnote->definition();
+  setSourceCursor(selection, footnote, emptyFootnote.noteRange.start - emptyFootnote.markerRange.start, emptyFootnote.noteRange.start);
+  require(input.insertText(QStringLiteral("note")), "typing note should edit footnote definition");
+  require(session.markdownText() == QStringLiteral("[^]: note"), "footnote markdown mismatch");
+}
+
+void testEmptyDefinitionBackspaceDeletesBlock() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("alpha\n\n[]: "), false);
+  MarkdownNode* link = firstBlockOfType(session, BlockType::LinkDefinition);
+  require(link->type() == BlockType::LinkDefinition, "document should contain link definition");
+  require(link->definition().label.isEmpty(), QStringLiteral("empty link label expected: '%1'").arg(link->definition().label));
+  require(link->definition().destination.isEmpty(), QStringLiteral("empty link destination expected: '%1'").arg(link->definition().destination));
+  require(link->definition().title.isEmpty(), QStringLiteral("empty link title expected: '%1'").arg(link->definition().title));
+  setSourceCursor(selection, link, 0, link->definition().markerRange.start);
+  require(input.deleteBackward(), "backspace should delete empty link definition");
+  require(session.markdownText() == QStringLiteral("alpha"),
+          QStringLiteral("empty link definition deletion mismatch: '%1'").arg(session.markdownText()));
+}
+
+void testOptionalLinkDefinitionTitleInsertionAddsQuotes() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("[1]: url"), false);
+  MarkdownNode* link = blockAt(session, 0);
+  require(link->type() == BlockType::LinkDefinition, "link definition should parse");
+  const DefinitionBlock definition = link->definition();
+  require(definition.title.isEmpty(), "link definition should start without title");
+  require(!definition.titleQuoted, "link definition should start without title quotes");
+  HitTestResult titleHit;
+  titleHit.blockId = link->id();
+  titleHit.textNodeId = link->id();
+  titleHit.textOffset = definition.titleRange.start - definition.markerRange.start;
+  titleHit.sourceOffset = definition.titleRange.start;
+  titleHit.zone = HitTestResult::Zone::Text;
+  titleHit.definitionField = HitTestResult::DefinitionField::Title;
+  selection.setHitResult(titleHit);
+
+  require(input.insertText(QStringLiteral("Example")), "typing optional title should add quoted title");
+  require(session.markdownText() == QStringLiteral("[1]: url  \"Example\""),
+          QStringLiteral("optional title insertion mismatch: '%1'").arg(session.markdownText()));
+}
+
+void testFootnoteDefinitionEnterAtNoteEndCreatesParagraphAfter() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("[^1]: note"), false);
+  MarkdownNode* footnote = blockAt(session, 0);
+  require(footnote->type() == BlockType::FootnoteDefinition, "footnote should parse as definition block");
+  const DefinitionBlock definition = footnote->definition();
+  setSourceCursor(selection, footnote, definition.noteRange.end - definition.markerRange.start, definition.noteRange.end);
+
+  require(input.insertParagraphBreak(), "enter at footnote note end should create paragraph after definition");
+  require(session.markdownText() == QStringLiteral("[^1]: note\n\n"),
+          QStringLiteral("footnote enter markdown mismatch: '%1'").arg(session.markdownText()));
+  require(session.document().root().children().size() == 2, "footnote enter should create trailing empty paragraph");
+  require(blockAt(session, 1)->type() == BlockType::Paragraph, "footnote enter should focus trailing paragraph");
+  require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "footnote enter cursor should move to trailing paragraph");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -1456,6 +1570,10 @@ int main(int argc, char** argv) {
   RUN_TEST(testInputEmptyCodeFenceBackspaceRemovesBlock);
   RUN_TEST(testInputEmptyCodeFenceDeleteRemovesBlock);
   RUN_TEST(testInputNonEmptyCodeFenceBackspaceDoesNotRemoveBlock);
+  RUN_TEST(testDefinitionBlockFieldEditing);
+  RUN_TEST(testEmptyDefinitionBackspaceDeletesBlock);
+  RUN_TEST(testOptionalLinkDefinitionTitleInsertionAddsQuotes);
+  RUN_TEST(testFootnoteDefinitionEnterAtNoteEndCreatesParagraphAfter);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

@@ -488,6 +488,12 @@ void muffin::MainWindow::setupConnections() {
   commands_.bind(QStringLiteral("paragraph.link_ref"), [this] {
     if (!sourceModeEnabled()) editorController_.paragraphController().insertLinkReference();
   });
+  commands_.bind(QStringLiteral("paragraph.footnote"), [this] {
+    if (!sourceModeEnabled()) editorController_.paragraphController().insertFootnoteDefinition();
+  });
+  commands_.bind(QStringLiteral("paragraph.hr"), [this] {
+    if (!sourceModeEnabled()) editorController_.paragraphController().insertHorizontalRule();
+  });
 
   // Block conversion commands
   commands_.bind(QStringLiteral("paragraph.quote"), [this] {
@@ -788,6 +794,8 @@ void muffin::MainWindow::updateParagraphActions() {
   commands_.setEnabled(QStringLiteral("paragraph.insert_before"), editable);
   commands_.setEnabled(QStringLiteral("paragraph.insert_after"), editable);
   commands_.setEnabled(QStringLiteral("paragraph.link_ref"), wysiwyg);
+  commands_.setEnabled(QStringLiteral("paragraph.footnote"), wysiwyg);
+  commands_.setEnabled(QStringLiteral("paragraph.hr"), wysiwyg);
 
   // Block conversions: enabled when on editable block
   commands_.setEnabled(QStringLiteral("paragraph.quote"), editable);

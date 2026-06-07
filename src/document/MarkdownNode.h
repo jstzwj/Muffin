@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/InlineNode.h"
+#include "document/DefinitionBlock.h"
 #include "document/NodeId.h"
 #include "document/SourceRange.h"
 
@@ -62,6 +63,9 @@ public:
   FrontMatterFormat frontMatterFormat() const;
   void setFrontMatterFormat(FrontMatterFormat format);
 
+  DefinitionBlock definition() const;
+  void setDefinition(DefinitionBlock definition);
+
   QVector<TableAlignment> tableAlignments() const;
   void setTableAlignments(QVector<TableAlignment> alignments);
   bool tableRowIsHeader() const;
@@ -88,6 +92,7 @@ private:
   bool taskChecked_ = false;
   QString codeLanguage_;
   FrontMatterFormat frontMatterFormat_ = FrontMatterFormat::None;
+  DefinitionBlock definition_;
   QVector<TableAlignment> tableAlignments_;
   bool tableRowIsHeader_ = false;
   SourceRange sourceRange_;

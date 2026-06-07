@@ -38,6 +38,8 @@ public:
   bool insertFormulaBlock();
   bool insertCodeBlock();
   bool insertLinkReference();
+  bool insertFootnoteDefinition();
+  bool insertHorizontalRule();
 
   // Toggle commands (Typora-style)
   bool toggleCodeBlock();

@@ -351,8 +351,61 @@ void testInsertLinkReference() {
   require(paragraph.insertLinkReference(), "insert link reference should succeed");
 
   const QString md = session.markdownText();
-  require(md.contains(QLatin1String("[label]: url")), "link reference should contain template");
+  require(md.contains(QLatin1String("[]: ")), "link reference should contain empty template");
   require(md.startsWith(QLatin1String("Hello")), "link reference should preserve original text");
+  require(blockAt(session, 1)->type() == BlockType::LinkDefinition, "link reference should parse as a rendered definition block");
+}
+
+void testInsertLinkReferenceIntoEmptyDocument() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QString(), false);
+  require(paragraph.insertLinkReference(), "insert link reference into empty document should succeed");
+
+  require(session.markdownText() == QStringLiteral("[]: "), "empty document link reference markdown mismatch");
+  require(session.document().root().children().size() == 1, "empty document link reference should render as one block");
+  require(blockAt(session, 0)->type() == BlockType::LinkDefinition, "empty document link reference should parse as definition block");
+}
+
+void testInsertFootnoteDefinition() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("Hello"), false);
+  setCursor(selection, blockAt(session, 0), 3);
+  require(paragraph.insertFootnoteDefinition(), "insert footnote should succeed");
+
+  const QString md = session.markdownText();
+  require(md.contains(QLatin1String("[^]: ")), "footnote should contain empty template");
+  require(md.startsWith(QLatin1String("Hello")), "footnote should preserve original text");
+  require(blockAt(session, 1)->type() == BlockType::FootnoteDefinition, "footnote should parse as a rendered definition block");
+}
+
+void testInsertHorizontalRule() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("Hello"), false);
+  setCursor(selection, blockAt(session, 0), 3);
+  require(paragraph.insertHorizontalRule(), "insert horizontal rule should succeed");
+
+  const QString md = session.markdownText();
+  require(md.contains(QLatin1String("---")), "horizontal rule should contain thematic break markdown");
+  require(md.startsWith(QLatin1String("Hello")), "horizontal rule should preserve original text");
+  require(blockAt(session, 1)->type() == BlockType::ThematicBreak, "horizontal rule should parse as a thematic break block");
 }
 
 void testInsertParagraphBeforeAndAfter() {
@@ -971,6 +1024,9 @@ int main(int argc, char** argv) {
   RUN_TEST(testInsertCodeBlock);
   RUN_TEST(testInsertFormulaBlock);
   RUN_TEST(testInsertLinkReference);
+  RUN_TEST(testInsertLinkReferenceIntoEmptyDocument);
+  RUN_TEST(testInsertFootnoteDefinition);
+  RUN_TEST(testInsertHorizontalRule);
   RUN_TEST(testInsertParagraphBeforeAndAfter);
   RUN_TEST(testInsertIntoEmptyDocument);
   RUN_TEST(testToggleQuote);

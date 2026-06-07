@@ -26,6 +26,16 @@ const MarkdownNode& childAt(const MarkdownNode& node, qsizetype index) {
   return *node.children()[index];
 }
 
+const MarkdownNode& definitionByLabel(const MarkdownNode& root, BlockType type, const QString& label) {
+  for (const auto& child : root.children()) {
+    if (child->type() == type && child->definition().label == label) {
+      return *child;
+    }
+  }
+  fail(QStringLiteral("definition block not found"));
+  return root;
+}
+
 int countInlineMath(const QVector<InlineNode>& inlines) {
   int count = 0;
   for (const InlineNode& inlineNode : inlines) {
@@ -217,6 +227,45 @@ void testTableCellSourceRanges() {
   require(sourceTextForNode(markdown, childAt(bodyRow, 0)) == QStringLiteral("C++20"), QStringLiteral("Body cell source range mismatch"));
   require(sourceTextForNode(markdown, childAt(bodyRow, 1)) == QStringLiteral("a\\|b"), QStringLiteral("Escaped pipe cell source range mismatch"));
   require(sourceTextForNode(markdown, childAt(bodyRow, 2)) == QStringLiteral("[x](u)"), QStringLiteral("Inline markdown cell source range mismatch"));
+}
+
+void testDefinitionBlocks() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QStringLiteral(
+      "[1]: 2324222 \"1232\"\n\n"
+      "[2]:\n"
+      "  2324222\n\n"
+      "[^1]: This is the note.\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for definition sample"));
+  const MarkdownNode& linkOne = definitionByLabel(*parsed.root, BlockType::LinkDefinition, QStringLiteral("1"));
+  require(linkOne.type() == BlockType::LinkDefinition, QStringLiteral("First definition should be link definition"));
+  require(linkOne.definition().label == QStringLiteral("1"), QStringLiteral("Link definition label mismatch"));
+  require(linkOne.definition().destination == QStringLiteral("2324222"), QStringLiteral("Link definition destination mismatch"));
+  require(linkOne.definition().title == QStringLiteral("1232"), QStringLiteral("Link definition title mismatch"));
+
+  const MarkdownNode& linkTwo = definitionByLabel(*parsed.root, BlockType::LinkDefinition, QStringLiteral("2"));
+  require(linkTwo.type() == BlockType::LinkDefinition, QStringLiteral("Second definition should be link definition"));
+  require(linkTwo.definition().label == QStringLiteral("2"), QStringLiteral("Continuation link definition label mismatch"));
+  require(linkTwo.definition().destination == QStringLiteral("2324222"), QStringLiteral("Continuation link destination mismatch"));
+
+  const MarkdownNode& footnote = definitionByLabel(*parsed.root, BlockType::FootnoteDefinition, QStringLiteral("1"));
+  require(footnote.type() == BlockType::FootnoteDefinition, QStringLiteral("Third definition should be footnote definition"));
+  require(footnote.definition().label == QStringLiteral("1"), QStringLiteral("Footnote label mismatch"));
+  require(footnote.definition().note == QStringLiteral("This is the note."), QStringLiteral("Footnote text mismatch"));
+
+  ParseResult emptyTemplate = parser.parseDocument(QStringLiteral("[]:  \"\""), options);
+  require(emptyTemplate.root != nullptr, QStringLiteral("Parser returned null root for empty definition template"));
+  require(emptyTemplate.root->children().size() == 1, QStringLiteral("Empty link definition template should render as one block"));
+  const MarkdownNode& emptyLink = childAt(*emptyTemplate.root, 0);
+  require(emptyLink.type() == BlockType::LinkDefinition, QStringLiteral("Empty link definition template should not render as paragraph"));
+  require(emptyLink.definition().label.isEmpty(), QStringLiteral("Empty template label should stay empty"));
+  require(emptyLink.definition().destination.isEmpty(), QStringLiteral("Empty template destination should stay empty"));
+  require(emptyLink.definition().title.isEmpty(), QStringLiteral("Empty template title should stay empty"));
+  require(emptyLink.sourceRange().byteEnd == QStringLiteral("[]:  \"\"").size(),
+          QStringLiteral("Empty template source range should include trailing quotes"));
 }
 
 void testTableCellSourceRangesWithoutOuterPipes() {
@@ -562,6 +611,7 @@ int main(int argc, char** argv) {
   testEmptyDocumentHasEditableParagraph();
   testBasicParseAndSerialize();
   testTableCellSourceRanges();
+  testDefinitionBlocks();
   testTableCellSourceRangesWithoutOuterPipes();
   testMathSupport();
   testMathInHeadingsAndTables();

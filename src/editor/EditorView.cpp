@@ -1107,6 +1107,11 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
         }
       }
       break;
+    case BlockType::LinkDefinition:
+    case BlockType::FootnoteDefinition:
+      hit.zone = HitTestResult::Zone::Text;
+      hit.cursorRect = block->definitionCursorRectForSourceOffset(position.text.sourceOffset, theme_);
+      break;
     default:
       break;
   }
