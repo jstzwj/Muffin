@@ -424,7 +424,7 @@ void muffin::SourceEditorWidget::setupStyle() {
 
 void muffin::SourceEditorWidget::retranslateUi() {
   if (editor_) {
-    editor_->setPlaceholderText(tr("Start writing..."));
+    editor_->setPlaceholderText(QCoreApplication::translate("muffin::SourceEditorWidget", "Start writing..."));
   }
 }
 

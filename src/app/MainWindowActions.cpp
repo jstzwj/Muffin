@@ -236,6 +236,7 @@ void muffin::MainWindow::setupConnections() {
   });
   commands_.bind(QStringLiteral("file.properties"), [this] { showDocumentProperties(); });
   commands_.bind(QStringLiteral("file.preferences"), [this] { showPreferences(); });
+  commands_.bind(QStringLiteral("file.print"), [this] { printDocument(); });
   commands_.bind(QStringLiteral("file.reveal"), [this] { revealCurrentFile(); });
   commands_.bind(QStringLiteral("file.close"), [this] {
     close();
@@ -566,7 +567,6 @@ void muffin::MainWindow::setupConnections() {
         commands_.action(QStringLiteral("view.sidebar"))->isChecked());
   });
   commands_.bind(QStringLiteral("view.outline"), [this] { setSidebarPanel(SidebarWidget::Panel::Outline); });
-  commands_.bind(QStringLiteral("view.document_list"), [this] { setSidebarPanel(SidebarWidget::Panel::Files); });
   commands_.bind(QStringLiteral("view.file_tree"), [this] { setSidebarPanel(SidebarWidget::Panel::Files); });
   commands_.bind(QStringLiteral("view.source_mode"), [this] {
     updateViewMode();

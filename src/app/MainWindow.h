@@ -119,6 +119,7 @@ private:
   void setRecentFiles(const QStringList& paths) const;
   void showDocumentProperties();
   void showPreferences();
+  void printDocument();
   void revealCurrentFile();
   bool maybeSaveChanges();
   void reopenWithEncoding(const QString& encodingName);

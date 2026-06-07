@@ -124,7 +124,7 @@ void muffin::MainWindow::setupFileMenu() {
   file->addSeparator();
   addAction(file, QStringLiteral("file.import"), tr("Import..."), {}, false);
   addDisabledMenu(file, tr("Export"));
-  addAction(file, QStringLiteral("file.print"), tr("Print..."), QKeySequence(QStringLiteral("Alt+Shift+P")), false);
+  addAction(file, QStringLiteral("file.print"), tr("Print..."), QKeySequence(QStringLiteral("Alt+Shift+P")));
   file->addSeparator();
   addAction(file, QStringLiteral("file.preferences"), tr("Preferences..."), QKeySequence(QStringLiteral("Ctrl+,")));
   addAction(file, QStringLiteral("file.close"), tr("Close"), QKeySequence::Close);
@@ -281,7 +281,6 @@ void muffin::MainWindow::setupViewMenu() {
   QMenu* view = menuBar()->addMenu(tr("View"));
   addCheckAction(view, QStringLiteral("view.sidebar"), tr("Show / Hide Sidebar"), QKeySequence(QStringLiteral("Ctrl+Shift+L")), false);
   addAction(view, QStringLiteral("view.outline"), tr("Outline"), QKeySequence(QStringLiteral("Ctrl+Shift+1")));
-  addAction(view, QStringLiteral("view.document_list"), tr("Document List"), QKeySequence(QStringLiteral("Ctrl+Shift+2")));
   addAction(view, QStringLiteral("view.file_tree"), tr("File Tree"), QKeySequence(QStringLiteral("Ctrl+Shift+3")));
   addAction(view, QStringLiteral("view.search"), tr("Search"), QKeySequence(QStringLiteral("Ctrl+Shift+F")), false);
   view->addSeparator();

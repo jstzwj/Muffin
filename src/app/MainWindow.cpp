@@ -26,6 +26,8 @@
 #include <QStatusBar>
 #include <QSvgRenderer>
 #include <QPlainTextEdit>
+#include <QPrintDialog>
+#include <QPrinter>
 #include <QTextBlock>
 #include <QTextCursor>
 #include <QTimer>
@@ -414,6 +416,50 @@ void muffin::MainWindow::updateFileActions() {
   commands_.setEnabled(QStringLiteral("file.save_all"), true);
   commands_.setEnabled(QStringLiteral("file.sidebar"), hasFile);
   commands_.setEnabled(QStringLiteral("file.delete"), hasFile);
+  commands_.setEnabled(QStringLiteral("file.print"), hasFile);
+}
+
+void muffin::MainWindow::printDocument() {
+  if (session_.filePath().isEmpty()) {
+    return;
+  }
+
+  QPrintDialog dialog(this);
+  if (dialog.exec() != QDialog::Accepted) {
+    return;
+  }
+
+  QPrinter* printer = dialog.printer();
+  if (!printer) {
+    return;
+  }
+
+  const RenderTheme theme = themeManager_.currentTheme(zoomPercent_, fontSizePx_);
+  const QRectF page = printer->pageRect(QPrinter::DevicePixel);
+
+  DocumentLayout layout;
+  layout.rebuild(session_.document(), theme, page.width());
+
+  QPainter painter(printer);
+  if (!painter.isActive()) {
+    return;
+  }
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  painter.setRenderHint(QPainter::TextAntialiasing, true);
+  painter.translate(page.topLeft());
+
+  const qreal pageHeight = page.height();
+  qreal pageTop = 0;
+
+  for (const auto& block : layout.blocks()) {
+    if (block->rect().bottom() > pageTop + pageHeight && block->rect().top() > pageTop) {
+      printer->newPage();
+      pageTop = block->rect().top();
+    }
+    block->paint(painter, theme, pageTop);
+  }
+
+  painter.end();
 }
 
 int muffin::MainWindow::zoomPercent() const {

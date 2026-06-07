@@ -27,7 +27,7 @@ if(MSVC)
   add_compile_options(/utf-8)
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Svg)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Svg PrintSupport)
 find_package(ICU REQUIRED COMPONENTS uc i18n)
 set(MUFFIN_QT_LINGUIST_BIN "" CACHE PATH "Optional Qt Linguist tool directory")
 set(MUFFIN_LOCAL_QT_LINGUIST_BIN "C:/Program Files/Qt Linguist/bin")
@@ -482,6 +482,7 @@ target_link_libraries(Muffin
   PRIVATE
     Qt6::Widgets
     Qt6::Svg
+    Qt6::PrintSupport
     ICU::uc
     ICU::i18n
     MuffinCore
