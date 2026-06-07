@@ -4,6 +4,7 @@
 #include "document/MarkdownTypes.h"
 #include "document/NodeId.h"
 #include "document/SourceRange.h"
+#include "document/SourceRangeUtil.h"
 
 #include <QString>
 
@@ -41,18 +42,13 @@ public:
   bool blockSourceRange(const MarkdownNode& node, qsizetype& start, qsizetype& end) const;
   bool listItemLineBounds(const BlockEditContext& context, qsizetype& lineStart, qsizetype& contentStart, qsizetype& lineEnd) const;
 
-  QString listMarkerFor(const QString& line) const;
   MarkdownNode* previousEditableTextBlock(const MarkdownNode& node, BlockEditContext& context) const;
   MarkdownNode* nextEditableTextBlock(const MarkdownNode& node, BlockEditContext& context) const;
   MarkdownNode* nodeAtContentSourceOffset(MarkdownNode& node, qsizetype sourceOffset, bool preferLaterEmptyAtOffset = false) const;
 
-  qsizetype sourceOffsetForLineColumn(const QString& text, int line, int column) const;
-  qsizetype sourceOffsetForLineEnd(const QString& text, int line) const;
-
 private:
   MarkdownNode* lastEditableDescendant(MarkdownNode& node) const;
   MarkdownNode* firstEditableDescendant(MarkdownNode& node) const;
-  MarkdownNode* primaryParagraph(MarkdownNode& node) const;
 
   DocumentSession* session_ = nullptr;
   SelectionController* selection_ = nullptr;

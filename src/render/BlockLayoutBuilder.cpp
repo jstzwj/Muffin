@@ -1,6 +1,7 @@
 #include "render/BlockLayoutBuilder.h"
 
 #include "document/InlineProjection.h"
+#include "document/SourceRangeUtil.h"
 
 #include <QCoreApplication>
 #include <QFontMetricsF>
@@ -59,15 +60,6 @@ QString languageForFrontMatter(FrontMatterFormat format) {
     default:
       return {};
   }
-}
-
-const MarkdownNode* primaryParagraph(const MarkdownNode& node) {
-  for (const auto& child : node.children()) {
-    if (child->type() == BlockType::Paragraph) {
-      return child.get();
-    }
-  }
-  return nullptr;
 }
 
 bool selectionFocusesNode(const SelectionRange& selection, NodeId nodeId) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/InlineNode.h"
+#include "document/SourceRangeUtil.h"
 #include "document/TextSelection.h"
 
 #include <QByteArray>
@@ -63,10 +64,6 @@ private:
   bool literalContentSourceRange(const MarkdownDocument& document, const MarkdownNode& node, qsizetype& start, qsizetype& end) const;
   QString literalMarkdownPrefix(const MarkdownDocument& document, const MarkdownNode& node) const;
   qsizetype structuredLineStart(const QString& markdown, qsizetype contextSourceStart) const;
-  qsizetype sourceOffsetForLineColumn(const QString& text, int line, int column) const;
-  qsizetype sourceOffsetForLineEnd(const QString& text, int line) const;
-  const MarkdownNode* primaryParagraph(const MarkdownNode& node) const;
-  QString listMarkerFor(const QString& line) const;
   bool listItemLineBounds(const QString& markdown, const EditableContext& context, qsizetype& lineStart, qsizetype& contentStart,
                           qsizetype& lineEnd) const;
   bool isPlainInlineEditable(const MarkdownNode& node, const QString& sourceText) const;

@@ -2,52 +2,14 @@
 
 #include "document/InlineProjection.h"
 #include "document/MarkdownNode.h"
+#include "document/SourceRangeUtil.h"
 #include "editor/BlockEditContext.h"
 #include "editor/EditorView.h"
 
 namespace muffin {
 namespace {
 
-qsizetype sourceOffsetForLineColumn(const QString& text, int line, int column) {
-  if (line <= 0 || column <= 0) {
-    return -1;
-  }
-
-  int currentLine = 1;
-  qsizetype offset = 0;
-  while (currentLine < line && offset < text.size()) {
-    if (text.at(offset) == QLatin1Char('\n')) {
-      ++currentLine;
-    }
-    ++offset;
-  }
-
-  if (currentLine != line) {
-    return -1;
-  }
-  return qMin(offset + column - 1, text.size());
-}
-
-qsizetype sourceOffsetForLineEnd(const QString& text, int line) {
-  if (line <= 0) {
-    return -1;
-  }
-
-  int currentLine = 1;
-  qsizetype offset = 0;
-  while (offset < text.size()) {
-    if (currentLine == line && text.at(offset) == QLatin1Char('\n')) {
-      return offset;
-    }
-    if (text.at(offset) == QLatin1Char('\n')) {
-      ++currentLine;
-    }
-    ++offset;
-  }
-  return currentLine == line ? text.size() : -1;
-}
-
-MarkdownNode* primaryParagraph(MarkdownNode& node) {
+MarkdownNode* primaryParagraphOrSelf(MarkdownNode& node) {
   if (node.type() == BlockType::ListItem) {
     for (const auto& child : node.children()) {
       if (child->type() == BlockType::Paragraph) {
@@ -58,39 +20,12 @@ MarkdownNode* primaryParagraph(MarkdownNode& node) {
   return &node;
 }
 
-QString plainTextForInlines(const QVector<InlineNode>& inlines) {
-  QString text;
-  for (const InlineNode& inlineNode : inlines) {
-    switch (inlineNode.type()) {
-      case InlineType::Text:
-      case InlineType::Code:
-      case InlineType::InlineMath:
-      case InlineType::HtmlInline:
-        text += inlineNode.text();
-        break;
-      case InlineType::SoftBreak:
-        text += QLatin1Char(' ');
-        break;
-      case InlineType::LineBreak:
-        text += QLatin1Char('\n');
-        break;
-      case InlineType::Image:
-        text += inlineNode.alt();
-        break;
-      default:
-        text += plainTextForInlines(inlineNode.children());
-        break;
-    }
-  }
-  return text;
-}
-
 qsizetype selectableTextLength(const MarkdownNode& node) {
   switch (node.type()) {
     case BlockType::Paragraph:
     case BlockType::Heading:
     case BlockType::TableCell:
-      return plainTextForInlines(node.inlines()).size();
+      return InlineProjection::plainTextForInlines(node.inlines()).size();
     case BlockType::FrontMatter:
     case BlockType::CodeFence:
     case BlockType::MathBlock:
@@ -179,7 +114,7 @@ bool fillSourceOffsetForTextHit(const DocumentSession& session, HitTestResult& h
     return true;
   }
 
-  MarkdownNode* editable = primaryParagraph(*node);
+  MarkdownNode* editable = primaryParagraphOrSelf(*node);
   if (!editable || (editable->type() != BlockType::Paragraph && editable->type() != BlockType::Heading &&
                     editable->type() != BlockType::TableCell)) {
     return false;

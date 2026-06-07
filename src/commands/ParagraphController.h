@@ -2,6 +2,7 @@
 
 #include "app/DocumentSession.h"
 #include "document/MarkdownTypes.h"
+#include "document/SourceRangeUtil.h"
 #include "edit/EditTransaction.h"
 #include "editor/EditorContext.h"
 
@@ -84,9 +85,6 @@ private:
       bool structureEdit = false);
   CursorPosition cursorForSourceOffset(qsizetype sourceOffset) const;
   MarkdownNode* paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset) const;
-  MarkdownNode* primaryParagraph(MarkdownNode& node) const;
-  qsizetype sourceOffsetForLineColumn(const QString& text, int line, int column) const;
-  qsizetype sourceOffsetForLineEnd(const QString& text, int line) const;
 
   EditorContext ctx_;
 };

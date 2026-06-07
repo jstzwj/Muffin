@@ -59,7 +59,8 @@ protected:
       return;
     }
 
-    QRegularExpressionMatch heading = QRegularExpression(QStringLiteral("^(#{1,6})(\\s.*)?$")).match(text);
+    static const QRegularExpression headingRe(QStringLiteral("^(#{1,6})(\\s.*)?$"));
+    QRegularExpressionMatch heading = headingRe.match(text);
     if (heading.hasMatch()) {
       const int level = qBound(1, heading.capturedLength(1), 6);
       setFormat(0, text.size(), headingFormats_[level - 1]);
@@ -67,20 +68,25 @@ protected:
       return;
     }
 
-    QRegularExpressionMatch quote = QRegularExpression(QStringLiteral("^\\s*>+")).match(text);
+    static const QRegularExpression quoteRe(QStringLiteral("^\\s*>+"));
+    QRegularExpressionMatch quote = quoteRe.match(text);
     if (quote.hasMatch()) {
       setFormat(quote.capturedStart(0), quote.capturedLength(0), quoteFormat_);
     }
 
-    QRegularExpressionMatch list = QRegularExpression(QStringLiteral("^\\s*(?:[-+*]|\\d+[.)])\\s+")).match(text);
+    static const QRegularExpression listRe(QStringLiteral("^\\s*(?:[-+*]|\\d+[.)])\\s+"));
+    QRegularExpressionMatch list = listRe.match(text);
     if (list.hasMatch()) {
       setFormat(list.capturedStart(0), list.capturedLength(0), markerFormat_);
     }
 
-    applyRegex(text, QRegularExpression(QStringLiteral("`[^`]*`")), codeFormat_);
+    static const QRegularExpression codeRe(QStringLiteral("`[^`]*`"));
+    applyRegex(text, codeRe, codeFormat_);
     applyLinks(text);
-    applyRegex(text, QRegularExpression(QStringLiteral("(\\*\\*|__|\\*|_|~~)")), emphasisFormat_);
-    applyRegex(text, QRegularExpression(QStringLiteral("\\|")), tableFormat_);
+    static const QRegularExpression emphasisRe(QStringLiteral("(\\*\\*|__|\\*|_|~~)"));
+    applyRegex(text, emphasisRe, emphasisFormat_);
+    static const QRegularExpression tableRe(QStringLiteral("\\|"));
+    applyRegex(text, tableRe, tableFormat_);
     applyZeroWidthSpaces(text);
   }
 
@@ -124,8 +130,8 @@ private:
   }
 
   void applyLinks(const QString& text) {
-    QRegularExpressionMatchIterator it =
-        QRegularExpression(QStringLiteral("!?\\[([^\\]]*)\\]\\(([^\\)]*)\\)")).globalMatch(text);
+    static const QRegularExpression linkRe(QStringLiteral("!?\\[([^\\]]*)\\]\\(([^\\)]*)\\)"));
+    QRegularExpressionMatchIterator it = linkRe.globalMatch(text);
     while (it.hasNext()) {
       const QRegularExpressionMatch match = it.next();
       setFormat(match.capturedStart(), match.capturedLength(), linkTargetFormat_);

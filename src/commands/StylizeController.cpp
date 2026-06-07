@@ -298,54 +298,6 @@ bool StylizeController::isPlainInlineEditable(const MarkdownNode& node, const QS
   return plain == sourceText;
 }
 
-MarkdownNode* StylizeController::primaryParagraph(MarkdownNode& node) const {
-  for (const auto& child : node.children()) {
-    if (child->type() == BlockType::Paragraph) {
-      return child.get();
-    }
-  }
-  return nullptr;
-}
-
-qsizetype StylizeController::sourceOffsetForLineColumn(const QString& text, int line, int column) const {
-  if (line <= 0 || column <= 0) {
-    return -1;
-  }
-
-  int currentLine = 1;
-  qsizetype offset = 0;
-  while (currentLine < line && offset < text.size()) {
-    if (text.at(offset) == QLatin1Char('\n')) {
-      ++currentLine;
-    }
-    ++offset;
-  }
-
-  if (currentLine != line) {
-    return -1;
-  }
-  return qMin(offset + column - 1, text.size());
-}
-
-qsizetype StylizeController::sourceOffsetForLineEnd(const QString& text, int line) const {
-  if (line <= 0) {
-    return -1;
-  }
-
-  int currentLine = 1;
-  qsizetype offset = 0;
-  while (offset < text.size()) {
-    if (currentLine == line && text.at(offset) == QLatin1Char('\n')) {
-      return offset;
-    }
-    if (text.at(offset) == QLatin1Char('\n')) {
-      ++currentLine;
-    }
-    ++offset;
-  }
-  return currentLine == line ? text.size() : -1;
-}
-
 bool StylizeController::applyStyleDelta(
     EditTransaction::Kind kind,
     const QString& label,

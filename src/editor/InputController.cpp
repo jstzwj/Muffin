@@ -46,33 +46,6 @@ private:
   QElapsedTimer timer_;
 };
 
-QString plainTextForInlines(const QVector<InlineNode>& inlines) {
-  QString text;
-  for (const InlineNode& inlineNode : inlines) {
-    switch (inlineNode.type()) {
-      case InlineType::Text:
-      case InlineType::Code:
-      case InlineType::InlineMath:
-      case InlineType::HtmlInline:
-        text += inlineNode.text();
-        break;
-      case InlineType::SoftBreak:
-        text += QLatin1Char(' ');
-        break;
-      case InlineType::LineBreak:
-        text += QLatin1Char('\n');
-        break;
-      case InlineType::Image:
-        text += inlineNode.alt();
-        break;
-      default:
-        text += plainTextForInlines(inlineNode.children());
-        break;
-    }
-  }
-  return text;
-}
-
 QString plainTextForNode(const MarkdownNode& node) {
   QString text;
   switch (node.type()) {
@@ -92,7 +65,7 @@ QString plainTextForNode(const MarkdownNode& node) {
     case BlockType::Paragraph:
     case BlockType::Heading:
     case BlockType::TableCell:
-      return plainTextForInlines(node.inlines());
+      return InlineProjection::plainTextForInlines(node.inlines());
     default:
       return node.literal();
   }
@@ -1135,7 +1108,7 @@ qsizetype InputController::selectableTextLength(const MarkdownNode& node) const 
   switch (node.type()) {
     case BlockType::Paragraph:
     case BlockType::Heading:
-      return plainTextForInlines(node.inlines()).size();
+      return InlineProjection::plainTextForInlines(node.inlines()).size();
     case BlockType::ListItem:
       return plainTextForNode(node).size();
     case BlockType::FrontMatter:

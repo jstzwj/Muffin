@@ -256,7 +256,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(con
 
   const QString markdown = session_->markdownText();
   const QString line = markdown.mid(lineStart, lineEnd - lineStart);
-  const QString marker = resolver_->listMarkerFor(line);
+  const QString marker = listMarkerFor(line);
   if (marker.isEmpty()) {
     return command;
   }
@@ -328,7 +328,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(c
 
   const QString& markdown = session_->markdownText();
   const qsizetype indent =
-      qMax<qsizetype>(0, contentStart - lineStart - resolver_->listMarkerFor(markdown.mid(lineStart, lineEnd - lineStart)).size());
+      qMax<qsizetype>(0, contentStart - lineStart - listMarkerFor(markdown.mid(lineStart, lineEnd - lineStart)).size());
   if (indent >= 2) {
     command.sourceStart = lineStart;
     command.removedLength = 2;

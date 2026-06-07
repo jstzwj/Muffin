@@ -326,27 +326,6 @@ bool BlockEditContextResolver::listItemLineBounds(
   return contentStart >= lineStart && contentStart <= lineEnd;
 }
 
-QString BlockEditContextResolver::listMarkerFor(const QString& line) const {
-  qsizetype index = 0;
-  while (index < line.size() && line.at(index) == QLatin1Char(' ')) {
-    ++index;
-  }
-  if (index + 2 <= line.size() && (line.at(index) == QLatin1Char('-') || line.at(index) == QLatin1Char('*') ||
-                                   line.at(index) == QLatin1Char('+')) &&
-      line.at(index + 1).isSpace()) {
-    return line.mid(index, 2);
-  }
-
-  qsizetype numberStart = index;
-  while (index < line.size() && line.at(index).isDigit()) {
-    ++index;
-  }
-  if (index > numberStart && index + 2 <= line.size() && line.at(index) == QLatin1Char('.') && line.at(index + 1).isSpace()) {
-    return line.mid(numberStart, index - numberStart + 2);
-  }
-  return {};
-}
-
 MarkdownNode* BlockEditContextResolver::previousEditableTextBlock(const MarkdownNode& node, BlockEditContext& context) const {
   MarkdownNode* candidate = node.previousSibling() ? const_cast<MarkdownNode*>(node.previousSibling()) : nullptr;
   if (!candidate && node.parent() && node.parent()->type() == BlockType::ListItem) {
@@ -397,45 +376,6 @@ MarkdownNode* BlockEditContextResolver::nodeAtContentSourceOffset(
   return matched;
 }
 
-qsizetype BlockEditContextResolver::sourceOffsetForLineColumn(const QString& text, int line, int column) const {
-  if (line <= 0 || column <= 0) {
-    return -1;
-  }
-
-  int currentLine = 1;
-  qsizetype offset = 0;
-  while (currentLine < line && offset < text.size()) {
-    if (text.at(offset) == QLatin1Char('\n')) {
-      ++currentLine;
-    }
-    ++offset;
-  }
-
-  if (currentLine != line) {
-    return -1;
-  }
-  return qMin(offset + column - 1, text.size());
-}
-
-qsizetype BlockEditContextResolver::sourceOffsetForLineEnd(const QString& text, int line) const {
-  if (line <= 0) {
-    return -1;
-  }
-
-  int currentLine = 1;
-  qsizetype offset = 0;
-  while (offset < text.size()) {
-    if (currentLine == line && text.at(offset) == QLatin1Char('\n')) {
-      return offset;
-    }
-    if (text.at(offset) == QLatin1Char('\n')) {
-      ++currentLine;
-    }
-    ++offset;
-  }
-  return currentLine == line ? text.size() : -1;
-}
-
 MarkdownNode* BlockEditContextResolver::lastEditableDescendant(MarkdownNode& node) const {
   if (isEditableTextBlock(node.type())) {
     return &node;
@@ -456,15 +396,6 @@ MarkdownNode* BlockEditContextResolver::firstEditableDescendant(MarkdownNode& no
   for (const auto& child : node.children()) {
     if (MarkdownNode* found = firstEditableDescendant(*child)) {
       return found;
-    }
-  }
-  return nullptr;
-}
-
-MarkdownNode* BlockEditContextResolver::primaryParagraph(MarkdownNode& node) const {
-  for (const auto& child : node.children()) {
-    if (child->type() == BlockType::Paragraph) {
-      return child.get();
     }
   }
   return nullptr;

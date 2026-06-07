@@ -200,13 +200,15 @@ void muffin::MainWindow::setupConnections() {
     updateStatus();
     refreshSidebarOutline();
   });
-  connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateStatus);
-  connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateEditActions);
-  connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateTableActions);
-  connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateParagraphActions);
-  connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateCodeActions);
-  connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateHtmlActions);
-  connect(&editorController_, &EditorController::stateChanged, this, &MainWindow::updateMathActions);
+  connect(&editorController_, &EditorController::stateChanged, this, [this] {
+    updateStatus();
+    updateEditActions();
+    updateTableActions();
+    updateParagraphActions();
+    updateCodeActions();
+    updateHtmlActions();
+    updateMathActions();
+  });
   connect(&themeManager_, &ThemeManager::themeChanged, this, [this](const QString& name) {
     applyTheme(name);
   });

@@ -2,6 +2,7 @@
 
 #include "app/DocumentSession.h"
 #include "document/MarkdownTypes.h"
+#include "document/SourceRangeUtil.h"
 #include "edit/EditTransaction.h"
 #include "editor/EditorContext.h"
 
@@ -48,9 +49,6 @@ private:
       ParagraphStyleContext& context,
       bool requirePlainInline = true) const;
   bool isPlainInlineEditable(const MarkdownNode& node, const QString& sourceText) const;
-  MarkdownNode* primaryParagraph(MarkdownNode& node) const;
-  qsizetype sourceOffsetForLineColumn(const QString& text, int line, int column) const;
-  qsizetype sourceOffsetForLineEnd(const QString& text, int line) const;
   bool applyStyleDelta(
       EditTransaction::Kind kind,
       const QString& label,
