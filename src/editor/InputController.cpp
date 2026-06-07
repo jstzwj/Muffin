@@ -10,9 +10,7 @@
 #include "editor/TextBlockCommandBuilder.h"
 #include "edit/UndoStack.h"
 #include "blocks/code/CodeFenceController.h"
-#include "blocks/frontmatter/FrontMatterController.h"
-#include "blocks/html/HtmlBlockController.h"
-#include "blocks/math/MathBlockController.h"
+#include "blocks/literal/LiteralBlockController.h"
 #include "blocks/table/TableController.h"
 
 #include <QEvent>
@@ -97,20 +95,20 @@ void InputController::setTableController(TableController* tableController) {
   tableController_ = tableController;
 }
 
-void InputController::setFrontMatterController(FrontMatterController* frontMatterController) {
-  frontMatterController_ = frontMatterController;
+void InputController::setFrontMatterLiteral(LiteralBlockController* frontMatter) {
+  frontMatterLiteral_ = frontMatter;
 }
 
 void InputController::setCodeFenceController(CodeFenceController* codeFenceController) {
   codeFenceController_ = codeFenceController;
 }
 
-void InputController::setHtmlBlockController(HtmlBlockController* htmlBlockController) {
-  htmlBlockController_ = htmlBlockController;
+void InputController::setHtmlLiteral(LiteralBlockController* html) {
+  htmlLiteral_ = html;
 }
 
-void InputController::setMathBlockController(MathBlockController* mathBlockController) {
-  mathBlockController_ = mathBlockController;
+void InputController::setMathLiteral(LiteralBlockController* math) {
+  mathLiteral_ = math;
 }
 
 void InputController::attach(EditorView* view) {
@@ -454,8 +452,23 @@ bool InputController::handleInputMethod(QInputMethodEvent* event) {
 }
 
 bool InputController::hasActiveLiteralEditor() const {
-  return (frontMatterController_ && frontMatterController_->isEditing()) || (codeFenceController_ && codeFenceController_->isEditing()) ||
-         (htmlBlockController_ && htmlBlockController_->isEditing()) || (mathBlockController_ && mathBlockController_->isEditing());
+  return (frontMatterLiteral_ && frontMatterLiteral_->isEditing()) ||
+         (codeFenceController_ && codeFenceController_->isEditing()) ||
+         (htmlLiteral_ && htmlLiteral_->isEditing()) ||
+         (mathLiteral_ && mathLiteral_->isEditing());
+}
+
+LiteralBlockController* InputController::activeLiteralEditor() const {
+  if (frontMatterLiteral_ && frontMatterLiteral_->isEditing()) {
+    return frontMatterLiteral_;
+  }
+  if (htmlLiteral_ && htmlLiteral_->isEditing()) {
+    return htmlLiteral_;
+  }
+  if (mathLiteral_ && mathLiteral_->isEditing()) {
+    return mathLiteral_;
+  }
+  return nullptr;
 }
 
 void InputController::syncLiteralEditMode(NodeId newBlockId) {
@@ -471,17 +484,17 @@ void InputController::syncLiteralEditMode(NodeId newBlockId) {
   const bool isLiteral = type == BlockType::CodeFence || type == BlockType::MathBlock || type == BlockType::HtmlBlock || type == BlockType::FrontMatter;
 
   const auto exitAllLiteralEditors = [this]() {
-    if (frontMatterController_) {
-      frontMatterController_->exitEditMode();
+    if (frontMatterLiteral_) {
+      frontMatterLiteral_->exitEditMode();
     }
     if (codeFenceController_) {
       codeFenceController_->exitEditMode();
     }
-    if (htmlBlockController_) {
-      htmlBlockController_->exitEditMode();
+    if (htmlLiteral_) {
+      htmlLiteral_->exitEditMode();
     }
-    if (mathBlockController_) {
-      mathBlockController_->exitEditMode();
+    if (mathLiteral_) {
+      mathLiteral_->exitEditMode();
     }
   };
 
@@ -498,14 +511,13 @@ void InputController::syncLiteralEditMode(NodeId newBlockId) {
       alreadyEditingTarget = codeFenceController_ && codeFenceController_->isEditing() && codeFenceController_->currentCodeFenceId() == newBlockId;
       break;
     case BlockType::MathBlock:
-      alreadyEditingTarget = mathBlockController_ && mathBlockController_->isEditing() && mathBlockController_->currentMathBlockId() == newBlockId;
+      alreadyEditingTarget = mathLiteral_ && mathLiteral_->isEditing() && mathLiteral_->currentBlockId() == newBlockId;
       break;
     case BlockType::HtmlBlock:
-      alreadyEditingTarget = htmlBlockController_ && htmlBlockController_->isEditing() && htmlBlockController_->currentHtmlBlockId() == newBlockId;
+      alreadyEditingTarget = htmlLiteral_ && htmlLiteral_->isEditing() && htmlLiteral_->currentBlockId() == newBlockId;
       break;
     case BlockType::FrontMatter:
-      alreadyEditingTarget =
-          frontMatterController_ && frontMatterController_->isEditing() && frontMatterController_->currentFrontMatterId() == newBlockId;
+      alreadyEditingTarget = frontMatterLiteral_ && frontMatterLiteral_->isEditing() && frontMatterLiteral_->currentBlockId() == newBlockId;
       break;
     default:
       break;
@@ -523,13 +535,13 @@ void InputController::syncLiteralEditMode(NodeId newBlockId) {
       entered = codeFenceController_ && codeFenceController_->enterEditMode();
       break;
     case BlockType::MathBlock:
-      entered = mathBlockController_ && mathBlockController_->enterEditMode();
+      entered = mathLiteral_ && mathLiteral_->enterEditMode();
       break;
     case BlockType::HtmlBlock:
-      entered = htmlBlockController_ && htmlBlockController_->enterEditMode();
+      entered = htmlLiteral_ && htmlLiteral_->enterEditMode();
       break;
     case BlockType::FrontMatter:
-      entered = frontMatterController_ && frontMatterController_->enterEditMode();
+      entered = frontMatterLiteral_ && frontMatterLiteral_->enterEditMode();
       break;
     default:
       break;
@@ -540,16 +552,13 @@ void InputController::syncLiteralEditMode(NodeId newBlockId) {
 }
 
 bool InputController::insertTextIntoActiveLiteral(QString text) {
-  if (frontMatterController_ && frontMatterController_->isEditing()) {
-    return frontMatterController_->insertText(std::move(text));
+  if (LiteralBlockController* active = activeLiteralEditor()) {
+    return active->insertText(std::move(text));
   }
   if (codeFenceController_ && codeFenceController_->isEditing()) {
     return codeFenceController_->insertText(std::move(text));
   }
-  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
-    return htmlBlockController_->insertText(std::move(text));
-  }
-  return mathBlockController_ && mathBlockController_->isEditing() ? mathBlockController_->insertText(std::move(text)) : false;
+  return false;
 }
 
 bool InputController::tryInsertOptionalDefinitionTitle(QString text) {
@@ -600,8 +609,8 @@ bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, con
   NodeId blockId;
   if (codeFenceController_ && codeFenceController_->isEditing()) {
     blockId = codeFenceController_->currentCodeFenceId();
-  } else if (mathBlockController_ && mathBlockController_->isEditing()) {
-    blockId = mathBlockController_->currentMathBlockId();
+  } else if (mathLiteral_ && mathLiteral_->isEditing()) {
+    blockId = mathLiteral_->currentBlockId();
   }
   if (!blockId.isValid()) {
     return false;
@@ -662,8 +671,8 @@ bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, con
   // Exit edit mode before removing the block to clear stale editing state
   if (codeFenceController_ && codeFenceController_->isEditing()) {
     codeFenceController_->exitEditMode();
-  } else if (mathBlockController_ && mathBlockController_->isEditing()) {
-    mathBlockController_->exitEditMode();
+  } else if (mathLiteral_ && mathLiteral_->isEditing()) {
+    mathLiteral_->exitEditMode();
   }
 
   QVector<LocalEditNodeHint> nodeHints;
@@ -833,16 +842,13 @@ bool InputController::deleteBackwardInActiveLiteral() {
                                   QStringLiteral("Backspace Empty Block"))) {
     return true;
   }
-  if (frontMatterController_ && frontMatterController_->isEditing()) {
-    return frontMatterController_->deleteBackward();
+  if (LiteralBlockController* active = activeLiteralEditor()) {
+    return active->deleteBackward();
   }
   if (codeFenceController_ && codeFenceController_->isEditing()) {
     return codeFenceController_->deleteBackward();
   }
-  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
-    return htmlBlockController_->deleteBackward();
-  }
-  return mathBlockController_ && mathBlockController_->isEditing() ? mathBlockController_->deleteBackward() : false;
+  return false;
 }
 
 bool InputController::deleteForwardInActiveLiteral() {
@@ -850,55 +856,43 @@ bool InputController::deleteForwardInActiveLiteral() {
                                   QStringLiteral("Delete Empty Block"))) {
     return true;
   }
-  if (frontMatterController_ && frontMatterController_->isEditing()) {
-    return frontMatterController_->deleteForward();
+  if (LiteralBlockController* active = activeLiteralEditor()) {
+    return active->deleteForward();
   }
   if (codeFenceController_ && codeFenceController_->isEditing()) {
     return codeFenceController_->deleteForward();
   }
-  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
-    return htmlBlockController_->deleteForward();
-  }
-  return mathBlockController_ && mathBlockController_->isEditing() ? mathBlockController_->deleteForward() : false;
+  return false;
 }
 
 bool InputController::deleteSelectionInActiveLiteral() {
-  if (frontMatterController_ && frontMatterController_->isEditing()) {
-    return frontMatterController_->deleteSelection();
+  if (LiteralBlockController* active = activeLiteralEditor()) {
+    return active->deleteSelection();
   }
   if (codeFenceController_ && codeFenceController_->isEditing()) {
     return codeFenceController_->deleteSelection();
   }
-  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
-    return htmlBlockController_->deleteSelection();
-  }
-  return mathBlockController_ && mathBlockController_->isEditing() ? mathBlockController_->deleteSelection() : false;
+  return false;
 }
 
 bool InputController::exitActiveLiteralEditor() {
-  if (frontMatterController_ && frontMatterController_->isEditing()) {
-    return frontMatterController_->exitEditMode();
+  if (LiteralBlockController* active = activeLiteralEditor()) {
+    return active->exitEditMode();
   }
   if (codeFenceController_ && codeFenceController_->isEditing()) {
     return codeFenceController_->exitEditMode();
   }
-  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
-    return htmlBlockController_->exitEditMode();
-  }
-  return mathBlockController_ && mathBlockController_->isEditing() ? mathBlockController_->exitEditMode() : false;
+  return false;
 }
 
 QString InputController::activeLiteralTabText() const {
-  if (frontMatterController_ && frontMatterController_->isEditing()) {
-    return frontMatterController_->tabText();
+  if (LiteralBlockController* active = activeLiteralEditor()) {
+    return active->tabText();
   }
   if (codeFenceController_ && codeFenceController_->isEditing()) {
     return codeFenceController_->tabText();
   }
-  if (htmlBlockController_ && htmlBlockController_->isEditing()) {
-    return htmlBlockController_->tabText();
-  }
-  return mathBlockController_ && mathBlockController_->isEditing() ? mathBlockController_->tabText() : QString();
+  return QString();
 }
 
 bool InputController::handleKeyPress(QKeyEvent* event) {

@@ -5,79 +5,19 @@
 #include "editor/SourceEditorWidget.h"
 
 #include <QPlainTextEdit>
-#include <QTextBlock>
 #include <QTextCursor>
-#include <QTextDocument>
 
 namespace muffin {
-
-void MainWindow::moveSourceLineUp() {
-  QTextCursor cursor = editor_->editor()->textCursor();
-  QTextBlock currentBlock = cursor.block();
-  QTextBlock prevBlock = currentBlock.previous();
-  if (!prevBlock.isValid()) {
-    return;
-  }
-
-  const int cursorPosInBlock = cursor.position() - currentBlock.position();
-  cursor.beginEditBlock();
-  // Select previous block
-  cursor.movePosition(QTextCursor::StartOfBlock);
-  cursor.movePosition(QTextCursor::PreviousBlock);
-  cursor.movePosition(QTextCursor::StartOfBlock);
-  // Select both blocks
-  cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
-  cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
-  const QString currentText = currentBlock.text();
-  const QString prevText = prevBlock.text();
-  cursor.insertText(currentText + QLatin1Char('\n') + prevText);
-  cursor.endEditBlock();
-
-  // Position cursor in the moved (now upper) block
-  cursor.movePosition(QTextCursor::StartOfBlock);
-  const int newPos = qMin(cursorPosInBlock, currentText.size());
-  cursor.setPosition(cursor.block().position() + newPos);
-  editor_->editor()->setTextCursor(cursor);
-}
-
-void MainWindow::moveSourceLineDown() {
-  QTextCursor cursor = editor_->editor()->textCursor();
-  QTextBlock currentBlock = cursor.block();
-  QTextBlock nextBlock = currentBlock.next();
-  if (!nextBlock.isValid()) {
-    return;
-  }
-
-  const int cursorPosInBlock = cursor.position() - currentBlock.position();
-  cursor.beginEditBlock();
-  cursor.movePosition(QTextCursor::StartOfBlock);
-  // Select both blocks: current + next
-  cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
-  cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
-  cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
-  const QString currentText = currentBlock.text();
-  const QString nextText = nextBlock.text();
-  cursor.insertText(nextText + QLatin1Char('\n') + currentText);
-  cursor.endEditBlock();
-
-  // Position cursor in the moved (now lower) block
-  cursor.movePosition(QTextCursor::StartOfBlock);
-  cursor.movePosition(QTextCursor::EndOfBlock);
-  const int newPos = qMin(cursorPosInBlock, currentText.size());
-  cursor.setPosition(cursor.block().position() + newPos);
-  editor_->editor()->setTextCursor(cursor);
-}
 
 void MainWindow::showFindBar() {
   if (!findBar_) {
     return;
   }
   findBar_->setReplaceVisible(false);
-  // Pre-fill with selected text if any
-  if (sourceModeEnabled()) {
-    const QTextCursor cursor = editor_->editor()->textCursor();
-    if (cursor.hasSelection()) {
-      findBar_->setSearchText(cursor.selectedText());
+  if (backend_->isSourceMode()) {
+    const QString sel = backend_->selectedText();
+    if (!sel.isEmpty()) {
+      findBar_->setSearchText(sel);
     }
   }
   lastFindOffset_ = -1;
@@ -91,11 +31,10 @@ void MainWindow::showReplaceBar() {
     return;
   }
   findBar_->setReplaceVisible(true);
-  // Pre-fill with selected text if any
-  if (sourceModeEnabled()) {
-    const QTextCursor cursor = editor_->editor()->textCursor();
-    if (cursor.hasSelection()) {
-      findBar_->setSearchText(cursor.selectedText());
+  if (backend_->isSourceMode()) {
+    const QString sel = backend_->selectedText();
+    if (!sel.isEmpty()) {
+      findBar_->setSearchText(sel);
     }
   }
   lastFindOffset_ = -1;
@@ -116,32 +55,24 @@ void MainWindow::performFind(const QString& text, bool forward) {
     return;
   }
 
-  // Reset search state if the query changed
   if (text != lastFindText_) {
     lastFindText_ = text;
     lastFindOffset_ = -1;
   }
 
-  if (sourceModeEnabled()) {
-    QTextDocument::FindFlags flags;
-    if (!forward) {
-      flags |= QTextDocument::FindBackward;
-    }
-    editor_->editor()->find(text, flags);
+  if (backend_->isSourceMode()) {
+    backend_->find(text, forward);
     return;
   }
 
   // Render mode: search the full markdown source text
   const QString& markdown = session_.markdownText();
 
-  // Determine start position
   int startPos = 0;
   if (lastFindOffset_ >= 0) {
-    // Continue from last match position
     startPos = forward ? static_cast<int>(lastFindOffset_) + 1
                        : static_cast<int>(lastFindOffset_) - 1;
   } else {
-    // First search: start from current cursor position
     if (editorController_.selection().hasCursor()) {
       startPos = static_cast<int>(
           qMin<qsizetype>(editorController_.selection().cursorPosition().text.sourceOffset,
@@ -159,14 +90,12 @@ void MainWindow::performFind(const QString& text, bool forward) {
       idx = markdown.indexOf(text, startPos);
     }
     if (idx < 0) {
-      // Wrap around from the beginning
       idx = markdown.indexOf(text, 0);
     }
   } else {
     startPos = qBound(0, startPos, markdown.size() - 1);
     idx = markdown.lastIndexOf(text, startPos);
     if (idx < 0) {
-      // Wrap around from the end
       idx = markdown.lastIndexOf(text, markdown.size() - 1);
     }
   }
@@ -201,16 +130,14 @@ void MainWindow::performReplace(const QString& findText, const QString& replaceT
   if (findText.isEmpty()) {
     return;
   }
-  if (sourceModeEnabled()) {
+  if (backend_->isSourceMode()) {
     QTextCursor cursor = editor_->editor()->textCursor();
     if (cursor.hasSelection() && cursor.selectedText() == findText) {
       cursor.insertText(replaceText);
       editor_->editor()->setTextCursor(cursor);
     }
-    // Find next occurrence
     editor_->editor()->find(findText);
   } else {
-    // Render mode: find and replace via source text
     const QString& markdown = session_.markdownText();
     qsizetype startOffset = 0;
     if (editorController_.selection().hasCursor()) {
@@ -230,15 +157,9 @@ void MainWindow::performReplaceAll(const QString& findText, const QString& repla
   if (findText.isEmpty()) {
     return;
   }
-  if (sourceModeEnabled()) {
-    QString text = editor_->editor()->toPlainText();
-    text.replace(findText, replaceText);
-    editor_->editor()->setPlainText(text);
-  } else {
-    QString text = session_.markdownText();
-    text.replace(findText, replaceText);
-    session_.applyMarkdownText(text, true);
-  }
+  QString text = backend_->fullText();
+  text.replace(findText, replaceText);
+  backend_->setFullText(text);
   lastFindOffset_ = -1;
 }
 

@@ -1,6 +1,6 @@
 #include "app/DocumentSession.h"
 #include "blocks/code/CodeFenceController.h"
-#include "blocks/math/MathBlockController.h"
+#include "blocks/literal/LiteralBlockController.h"
 #include "document/InlineProjection.h"
 #include "document/MarkdownNode.h"
 #include "document/SelectionSerializer.h"
@@ -1314,14 +1314,22 @@ void testInputEmptyCodeFenceBackspaceRemovesBlock() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   CodeFenceController codeFence;
-  MathBlockController mathBlock;
+  LiteralBlockController mathBlock(LiteralBlockSpec{
+      BlockType::MathBlock, HitTestResult::Zone::Math,
+      QStringLiteral("No math block is active."),
+      QStringLiteral("Edit Math Block"),
+      QStringLiteral("Backspace Math Block"),
+      QStringLiteral("Delete Math Block Text"),
+      QStringLiteral("Delete Math Block Selection"),
+      QStringLiteral("Set Math Block TeX"),
+      QStringLiteral("  ")});
   codeFence.setContext({&session, &selection, &undoStack, &brushQueue});
   mathBlock.setContext({&session, &selection, &undoStack, &brushQueue});
 
   InputController input;
   wireInput(input, session, selection, undoStack, brushQueue);
   input.setCodeFenceController(&codeFence);
-  input.setMathBlockController(&mathBlock);
+  input.setMathLiteral(&mathBlock);
 
   // Empty code fence between paragraphs
   session.setMarkdownText(QStringLiteral("before\n\n```cpp\n```\n\nafter"), false);
@@ -1360,14 +1368,22 @@ void testInputEmptyCodeFenceDeleteRemovesBlock() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   CodeFenceController codeFence;
-  MathBlockController mathBlock;
+  LiteralBlockController mathBlock(LiteralBlockSpec{
+      BlockType::MathBlock, HitTestResult::Zone::Math,
+      QStringLiteral("No math block is active."),
+      QStringLiteral("Edit Math Block"),
+      QStringLiteral("Backspace Math Block"),
+      QStringLiteral("Delete Math Block Text"),
+      QStringLiteral("Delete Math Block Selection"),
+      QStringLiteral("Set Math Block TeX"),
+      QStringLiteral("  ")});
   codeFence.setContext({&session, &selection, &undoStack, &brushQueue});
   mathBlock.setContext({&session, &selection, &undoStack, &brushQueue});
 
   InputController input;
   wireInput(input, session, selection, undoStack, brushQueue);
   input.setCodeFenceController(&codeFence);
-  input.setMathBlockController(&mathBlock);
+  input.setMathLiteral(&mathBlock);
 
   session.setMarkdownText(QStringLiteral("```cpp\n```"), false);
   require(session.document().root().children().size() == 1, "expected 1 code fence block");
@@ -1393,14 +1409,22 @@ void testInputNonEmptyCodeFenceBackspaceDoesNotRemoveBlock() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   CodeFenceController codeFence;
-  MathBlockController mathBlock;
+  LiteralBlockController mathBlock(LiteralBlockSpec{
+      BlockType::MathBlock, HitTestResult::Zone::Math,
+      QStringLiteral("No math block is active."),
+      QStringLiteral("Edit Math Block"),
+      QStringLiteral("Backspace Math Block"),
+      QStringLiteral("Delete Math Block Text"),
+      QStringLiteral("Delete Math Block Selection"),
+      QStringLiteral("Set Math Block TeX"),
+      QStringLiteral("  ")});
   codeFence.setContext({&session, &selection, &undoStack, &brushQueue});
   mathBlock.setContext({&session, &selection, &undoStack, &brushQueue});
 
   InputController input;
   wireInput(input, session, selection, undoStack, brushQueue);
   input.setCodeFenceController(&codeFence);
-  input.setMathBlockController(&mathBlock);
+  input.setMathLiteral(&mathBlock);
 
   session.setMarkdownText(QStringLiteral("```cpp\nhello\n```"), false);
   MarkdownNode* code = blockAt(session, 0);

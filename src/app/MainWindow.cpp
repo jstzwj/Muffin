@@ -1,7 +1,9 @@
 #include "app/MainWindow.h"
 
 #include "app/LanguageManager.h"
+#include "app/RenderEditorBackend.h"
 #include "app/SidebarWidget.h"
+#include "app/SourceEditorBackend.h"
 #include "document/OutlineBuilder.h"
 #include "editor/EditorView.h"
 #include "editor/FindBarWidget.h"
@@ -184,6 +186,9 @@ void muffin::MainWindow::setupUi() {
   viewStack_->addWidget(renderView_);
   viewStack_->addWidget(editor_);
 
+  // Initialize backend to render mode (default)
+  backend_ = std::make_unique<RenderEditorBackend>(editorController_, session_, renderView_);
+
   findBar_ = new FindBarWidget(editorContainer);
   findBar_->setVisible(false);
 
@@ -279,7 +284,7 @@ void muffin::MainWindow::updateTitle() {
 
 void muffin::MainWindow::updateStatus() {
   parseLabel_->setText(tr("Parse %1 ms").arg(session_.lastParseElapsedMs()));
-  if (!sourceModeEnabled() && !renderCursorStatus_.isEmpty()) {
+  if (!backend_->isSourceMode() && !renderCursorStatus_.isEmpty()) {
     cursorLabel_->setText(renderCursorStatus_);
   } else {
     cursorLabel_->setText(QStringLiteral("%1:%2").arg(cursorLine_).arg(cursorColumn_));
@@ -345,7 +350,7 @@ void muffin::MainWindow::openNewWindow() {
 }
 
 void muffin::MainWindow::activateOutlineNode(NodeId nodeId, SourceRange sourceRange) {
-  if (sourceModeEnabled()) {
+  if (backend_->isSourceMode()) {
     syncSourceEditorIfNeeded();
     QTextCursor cursor = editor_->editor()->textCursor();
     const int position = qBound(0, static_cast<int>(sourceRange.byteStart), editor_->editor()->document()->characterCount() - 1);
@@ -363,7 +368,16 @@ void muffin::MainWindow::updateViewMode() {
   if (!viewStack_ || !renderView_ || !editor_) {
     return;
   }
-  const bool sourceMode = sourceModeEnabled();
+  const QAction* action = commands_.action(QStringLiteral("view.source_mode"));
+  const bool sourceMode = action && action->isChecked();
+
+  // Switch backend
+  if (sourceMode) {
+    backend_ = std::make_unique<SourceEditorBackend>(editor_);
+  } else {
+    backend_ = std::make_unique<RenderEditorBackend>(editorController_, session_, renderView_);
+  }
+
   if (sourceMode) {
     syncSourceEditorIfNeeded();
 
@@ -515,12 +529,8 @@ void muffin::MainWindow::setTypewriterMode(bool enabled) {
   }
 
   // Apply immediately if just enabled
-  if (enabled) {
-    if (!sourceModeEnabled() && renderView_) {
-      renderView_->scrollToCursorCentered();
-    } else if (sourceModeEnabled() && editor_) {
-      editor_->editor()->centerCursor();
-    }
+  if (enabled && backend_) {
+    backend_->centerCursor();
   }
 }
 

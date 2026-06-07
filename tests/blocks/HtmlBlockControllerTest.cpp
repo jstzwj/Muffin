@@ -1,6 +1,7 @@
 #include "app/DocumentSession.h"
-#include "blocks/html/HtmlBlockController.h"
 #include "blocks/html/HtmlSanitizer.h"
+#include "blocks/literal/LiteralBlockController.h"
+#include "blocks/literal/LiteralBlockUtil.h"
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
@@ -30,6 +31,19 @@ MarkdownNode* firstHtmlBlock(DocumentSession& session) {
   return nullptr;
 }
 
+LiteralBlockSpec htmlSpec() {
+  return LiteralBlockSpec{
+      BlockType::HtmlBlock,
+      HitTestResult::Zone::Html,
+      QStringLiteral("No HTML block is active."),
+      QStringLiteral("Edit HTML Block"),
+      QStringLiteral("Backspace HTML Block"),
+      QStringLiteral("Delete HTML Block Text"),
+      QStringLiteral("Delete HTML Block Selection"),
+      QStringLiteral("Set HTML Block"),
+      QStringLiteral("  ")};
+}
+
 void setHtmlHit(SelectionController& selection, MarkdownNode* html, qsizetype offset = 0) {
   HitTestResult hit;
   hit.zone = HitTestResult::Zone::Html;
@@ -44,7 +58,7 @@ void testEnterEditAndTextEditing() {
   SelectionController selection;
   UndoStack undoStack;
   BrushQueue brushQueue;
-  HtmlBlockController controller;
+  LiteralBlockController controller(htmlSpec());
   controller.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("<div>alpha</div>"), false);
@@ -72,7 +86,7 @@ void testSetHtmlRoundtripAndSanitizer() {
   SelectionController selection;
   UndoStack undoStack;
   BrushQueue brushQueue;
-  HtmlBlockController controller;
+  LiteralBlockController controller(htmlSpec());
   controller.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("<section>old</section>"), false);
@@ -82,13 +96,13 @@ void testSetHtmlRoundtripAndSanitizer() {
 
   require(controller.enterEditMode(), "enter html edit should work for set html test");
   const QString source = QStringLiteral("<div onclick=\"evil()\"><a href=\"javascript:alert(1)\">x</a><script>alert(2)</script></div>");
-  require(controller.setHtml(source), "set html should work");
+  require(controller.setContent(source), "set html should work");
   require(session.markdownText().contains(QStringLiteral("onclick=\"evil()\"")), "raw html roundtrip mismatch");
   require(undoStack.canUndo(), "set html should push undo");
   EditTransaction setHtmlUndo = undoStack.takeUndo();
   require(setHtmlUndo.isReplaceNodeCommand(), "set html should use ReplaceNodeCommand");
 
-  const QString preview = controller.sanitizedPreview();
+  const QString preview = sanitizedHtmlPreview(controller);
   require(!preview.contains(QStringLiteral("<script"), Qt::CaseInsensitive), "script tag should be removed");
   require(!preview.contains(QStringLiteral("onclick"), Qt::CaseInsensitive), "event attribute should be removed");
   require(!preview.contains(QStringLiteral("javascript:"), Qt::CaseInsensitive), "javascript URL should be removed");

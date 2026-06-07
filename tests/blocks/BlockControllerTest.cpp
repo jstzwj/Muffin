@@ -101,7 +101,7 @@ void testFrontMatterEnterEditsContentAndBlockAfterCreatesParagraph() {
   frontMatterHit.textNodeId = frontMatter->id();
   frontMatterHit.textOffset = QStringLiteral("title: 123").size();
   controller.activateHit(frontMatterHit);
-  require(controller.frontMatterController().isEditing(), "front matter click should enter edit mode");
+  require(controller.frontMatterLiteral().isEditing(), "front matter click should enter edit mode");
   require(controller.inputController().insertParagraphBreak(), "enter inside front matter should edit literal content");
   require(session.markdownText().startsWith(QStringLiteral("---\ntitle: 123\n213\n---")),
           "first front matter enter should split the current literal line immediately");
@@ -122,7 +122,7 @@ void testFrontMatterEnterEditsContentAndBlockAfterCreatesParagraph() {
   blockAfterHit.blockId = frontMatter->id();
   blockAfterHit.textNodeId = frontMatter->id();
   controller.activateHit(blockAfterHit);
-  require(!controller.frontMatterController().isEditing(), "block-after click should leave front matter edit mode");
+  require(!controller.frontMatterLiteral().isEditing(), "block-after click should leave front matter edit mode");
   require(controller.selection().currentHit().zone == HitTestResult::Zone::BlockAfter, "block-after click should become current hit");
   MarkdownNode* blockAfterNode = session.document().node(controller.selection().cursorPosition().blockId);
   require(blockAfterNode != nullptr, "block-after cursor should reference an existing node");
@@ -147,7 +147,7 @@ void testFrontMatterEnterEditsContentAndBlockAfterCreatesParagraph() {
     blockAfterHit.textNodeId = frontMatter->id();
     controller.activateHit(blockAfterHit);
 
-    require(!controller.frontMatterController().isEditing(), "block-after text click should not enter front matter edit mode");
+    require(!controller.frontMatterLiteral().isEditing(), "block-after text click should not enter front matter edit mode");
     require(controller.inputController().insertText(QStringLiteral("OK")), "typing after front matter should create a paragraph");
     require(session.markdownText() == QStringLiteral("---\ntitle: 123213\n---\nOK"),
             "typing after front matter should insert normal paragraph text after the block");

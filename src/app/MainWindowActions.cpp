@@ -103,40 +103,40 @@ void muffin::MainWindow::setupConnections() {
   connect(editor_, &SourceEditorWidget::textEdited, &session_, &DocumentSession::updateFromEditor);
   connect(editor_, &SourceEditorWidget::cursorPositionChanged, this, [this](int line, int column) {
     updateCursorStatus(line, column);
-    if (typewriterMode_ && sourceModeEnabled()) {
-      editor_->editor()->centerCursor();
+    if (typewriterMode_ && backend_->isSourceMode()) {
+      backend_->centerCursor();
     }
   });
   connect(editor_, &SourceEditorWidget::cursorPositionChanged, this, [this](int, int) { updateEditActions(); });
   connect(&editorController_, &EditorController::cursorChanged, this, [this](const HitTestResult& hit) {
     updateRenderCursorStatus(hit);
-    if (typewriterMode_ && !sourceModeEnabled()) {
+    if (typewriterMode_ && !backend_->isSourceMode()) {
       renderView_->scrollToCursorCenteredAnimated();
     }
   });
   connect(renderView_, &EditorView::codeLanguageCommitted, this, [this](NodeId codeId, const QString& language) {
-    if (sourceModeEnabled()) {
+    if (backend_->isSourceMode()) {
       return;
     }
     editorController_.codeFenceController().setLanguageFor(codeId, language);
   });
   connect(renderView_, &EditorView::tableResizeRequested, this, [this](int rows, int columns) {
-    if (!sourceModeEnabled()) {
+    if (!backend_->isSourceMode()) {
       editorController_.tableController().resizeCurrentTable(rows, columns);
     }
   });
   connect(renderView_, &EditorView::tableColumnAlignmentRequested, this, [this](TableAlignment alignment) {
-    if (!sourceModeEnabled()) {
+    if (!backend_->isSourceMode()) {
       editorController_.tableController().setCurrentColumnAlignment(alignment);
     }
   });
   connect(renderView_, &EditorView::tableDeleteRequested, this, [this] {
-    if (!sourceModeEnabled()) {
+    if (!backend_->isSourceMode()) {
       editorController_.tableController().deleteCurrentTable();
     }
   });
   connect(renderView_, &EditorView::tableMoreActionsRequested, this, [this](QPoint globalPos) {
-    if (sourceModeEnabled()) {
+    if (backend_->isSourceMode()) {
       return;
     }
     updateTableActions();
@@ -174,7 +174,7 @@ void muffin::MainWindow::setupConnections() {
 
   connect(&session_, &DocumentSession::documentTextChanged, this, [this](const QString& text) {
     PerfTimer perf("main.documentTextChanged.consumer");
-    if (sourceModeEnabled()) {
+    if (backend_->isSourceMode()) {
       editor_->setText(text);
       sourceEditorDirty_ = false;
       return;
@@ -255,138 +255,19 @@ void muffin::MainWindow::setupConnections() {
 
   commands_.bind(QStringLiteral("edit.undo"), [this] { undoEdit(); });
   commands_.bind(QStringLiteral("edit.redo"), [this] { redoEdit(); });
-  commands_.bind(QStringLiteral("edit.cut"), [this] {
-    if (sourceModeEnabled()) {
-      editor_->editor()->cut();
-    } else {
-      editorController_.clipboardController().cut();
-    }
-  });
-  commands_.bind(QStringLiteral("edit.copy"), [this] {
-    if (sourceModeEnabled()) {
-      editor_->editor()->copy();
-    } else {
-      editorController_.clipboardController().copy();
-    }
-  });
-  commands_.bind(QStringLiteral("edit.paste"), [this] {
-    if (sourceModeEnabled()) {
-      editor_->editor()->paste();
-    } else {
-      editorController_.clipboardController().paste();
-    }
-  });
-  commands_.bind(QStringLiteral("edit.select_all"), [this] {
-    if (sourceModeEnabled()) {
-      editor_->editor()->selectAll();
-    } else {
-      editorController_.selectAll();
-    }
-  });
-
-  commands_.bind(QStringLiteral("edit.delete"), [this] {
-    if (sourceModeEnabled()) {
-      QTextCursor cursor = editor_->editor()->textCursor();
-      if (cursor.hasSelection()) {
-        cursor.removeSelectedText();
-      } else {
-        cursor.deleteChar();
-      }
-      editor_->editor()->setTextCursor(cursor);
-    } else {
-      editorController_.inputController().deleteForward();
-    }
-  });
-
-  commands_.bind(QStringLiteral("edit.copy_plain"), [this] {
-    if (sourceModeEnabled()) {
-      const QTextCursor cursor = editor_->editor()->textCursor();
-      if (cursor.hasSelection()) {
-        QApplication::clipboard()->setText(cursor.selectedText());
-      }
-    } else {
-      editorController_.clipboardController().copyAsPlainText();
-    }
-  });
-
-  commands_.bind(QStringLiteral("edit.copy_markdown"), [this] {
-    if (sourceModeEnabled()) {
-      const QTextCursor cursor = editor_->editor()->textCursor();
-      if (cursor.hasSelection()) {
-        auto* mimeData = new QMimeData();
-        mimeData->setText(cursor.selectedText());
-        mimeData->setData(QStringLiteral("text/markdown"), cursor.selectedText().toUtf8());
-        QApplication::clipboard()->setMimeData(mimeData);
-      }
-    } else {
-      editorController_.clipboardController().copyAsMarkdown();
-    }
-  });
-
-  commands_.bind(QStringLiteral("edit.copy_html"), [this] {
-    if (sourceModeEnabled()) {
-      const QTextCursor cursor = editor_->editor()->textCursor();
-      if (cursor.hasSelection()) {
-        const QString html = SelectionSerializer::renderMarkdownToHtml(cursor.selectedText());
-        if (!html.isEmpty()) {
-          auto* mimeData = new QMimeData();
-          mimeData->setHtml(html);
-          mimeData->setText(html);
-          QApplication::clipboard()->setMimeData(mimeData);
-        }
-      }
-    } else {
-      editorController_.clipboardController().copyAsHtml();
-    }
-  });
-
-  commands_.bind(QStringLiteral("edit.paste_plain"), [this] {
-    if (sourceModeEnabled()) {
-      const QString text = QApplication::clipboard()->text();
-      if (!text.isEmpty()) {
-        editor_->editor()->insertPlainText(text);
-      }
-    } else {
-      editorController_.clipboardController().pasteAsPlainText();
-    }
-  });
-
-  commands_.bind(QStringLiteral("edit.select_line"), [this] {
-    if (sourceModeEnabled()) {
-      QTextCursor cursor = editor_->editor()->textCursor();
-      cursor.movePosition(QTextCursor::StartOfBlock);
-      cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
-      editor_->editor()->setTextCursor(cursor);
-    } else {
-      editorController_.selectCurrentBlock();
-    }
-  });
-
-  commands_.bind(QStringLiteral("edit.select_format"), [this] {
-    if (sourceModeEnabled()) {
-      QTextCursor cursor = editor_->editor()->textCursor();
-      cursor.select(QTextCursor::WordUnderCursor);
-      editor_->editor()->setTextCursor(cursor);
-    } else {
-      editorController_.selectCurrentFormatSpan();
-    }
-  });
-
-  commands_.bind(QStringLiteral("edit.move_line_up"), [this] {
-    if (sourceModeEnabled()) {
-      moveSourceLineUp();
-    } else {
-      editorController_.moveBlockUp();
-    }
-  });
-
-  commands_.bind(QStringLiteral("edit.move_line_down"), [this] {
-    if (sourceModeEnabled()) {
-      moveSourceLineDown();
-    } else {
-      editorController_.moveBlockDown();
-    }
-  });
+  commands_.bind(QStringLiteral("edit.cut"), [this] { backend_->cut(); });
+  commands_.bind(QStringLiteral("edit.copy"), [this] { backend_->copy(); });
+  commands_.bind(QStringLiteral("edit.paste"), [this] { backend_->paste(); });
+  commands_.bind(QStringLiteral("edit.select_all"), [this] { backend_->selectAll(); });
+  commands_.bind(QStringLiteral("edit.delete"), [this] { backend_->deleteForward(); });
+  commands_.bind(QStringLiteral("edit.copy_plain"), [this] { backend_->copyAsPlainText(); });
+  commands_.bind(QStringLiteral("edit.copy_markdown"), [this] { backend_->copyAsMarkdown(); });
+  commands_.bind(QStringLiteral("edit.copy_html"), [this] { backend_->copyAsHtml(); });
+  commands_.bind(QStringLiteral("edit.paste_plain"), [this] { backend_->pasteAsPlainText(); });
+  commands_.bind(QStringLiteral("edit.select_line"), [this] { backend_->selectLine(); });
+  commands_.bind(QStringLiteral("edit.select_format"), [this] { backend_->selectFormatSpan(); });
+  commands_.bind(QStringLiteral("edit.move_line_up"), [this] { backend_->moveLineUp(); });
+  commands_.bind(QStringLiteral("edit.move_line_down"), [this] { backend_->moveLineDown(); });
 
   commands_.bind(QStringLiteral("edit.find"), [this] {
     showFindBar();
@@ -415,34 +296,10 @@ void muffin::MainWindow::setupConnections() {
   connect(findBar_, &FindBarWidget::replaceRequested, this, &MainWindow::performReplace);
   connect(findBar_, &FindBarWidget::replaceAllRequested, this, &MainWindow::performReplaceAll);
 
-  commands_.bind(QStringLiteral("format.bold"), [this] {
-    if (sourceModeEnabled()) {
-      editor_->editor()->insertPlainText(QStringLiteral("****"));
-    } else {
-      editorController_.stylizeController().toggleBold();
-    }
-  });
-  commands_.bind(QStringLiteral("format.italic"), [this] {
-    if (sourceModeEnabled()) {
-      editor_->editor()->insertPlainText(QStringLiteral("**"));
-    } else {
-      editorController_.stylizeController().toggleItalic();
-    }
-  });
-  commands_.bind(QStringLiteral("format.code"), [this] {
-    if (sourceModeEnabled()) {
-      editor_->editor()->insertPlainText(QStringLiteral("``"));
-    } else {
-      editorController_.stylizeController().toggleCode();
-    }
-  });
-  commands_.bind(QStringLiteral("format.link"), [this] {
-    if (sourceModeEnabled()) {
-      editor_->editor()->insertPlainText(QStringLiteral("[](url)"));
-    } else {
-      editorController_.stylizeController().insertLink();
-    }
-  });
+  commands_.bind(QStringLiteral("format.bold"), [this] { backend_->toggleBold(); });
+  commands_.bind(QStringLiteral("format.italic"), [this] { backend_->toggleItalic(); });
+  commands_.bind(QStringLiteral("format.code"), [this] { backend_->toggleCode(); });
+  commands_.bind(QStringLiteral("format.link"), [this] { backend_->insertLink(); });
 
   commands_.bind(QStringLiteral("table.insert_row_before"), [this] { editorController_.tableController().insertRowBefore(); });
   commands_.bind(QStringLiteral("table.insert_row_after"), [this] { editorController_.tableController().insertRowAfter(); });
@@ -462,61 +319,61 @@ void muffin::MainWindow::setupConnections() {
   commands_.bind(QStringLiteral("table.format_source"), [this] { editorController_.tableController().formatCurrentTableSource(); });
   commands_.bind(QStringLiteral("table.delete_table"), [this] { editorController_.tableController().deleteCurrentTable(); });
   commands_.bind(QStringLiteral("table.insert_table"), [this] { insertTableWithDialog(); });
-  commands_.bind(QStringLiteral("paragraph.yaml"), [this] { editorController_.frontMatterController().insertFrontMatter(FrontMatterFormat::Yaml); });
-  commands_.bind(QStringLiteral("paragraph.toml"), [this] { editorController_.frontMatterController().insertFrontMatter(FrontMatterFormat::Toml); });
-  commands_.bind(QStringLiteral("paragraph.json"), [this] { editorController_.frontMatterController().insertFrontMatter(FrontMatterFormat::Json); });
+  commands_.bind(QStringLiteral("paragraph.yaml"), [this] { editorController_.insertFrontMatter(FrontMatterFormat::Yaml); });
+  commands_.bind(QStringLiteral("paragraph.toml"), [this] { editorController_.insertFrontMatter(FrontMatterFormat::Toml); });
+  commands_.bind(QStringLiteral("paragraph.json"), [this] { editorController_.insertFrontMatter(FrontMatterFormat::Json); });
 
   // Heading commands
   for (int level = 1; level <= 6; ++level) {
     commands_.bind(QStringLiteral("paragraph.heading_%1").arg(level), [this, level] {
-      if (!sourceModeEnabled()) editorController_.paragraphController().setHeadingLevel(level);
+      if (!backend_->isSourceMode()) editorController_.paragraphController().setHeadingLevel(level);
     });
   }
   commands_.bind(QStringLiteral("paragraph.paragraph"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().setHeadingLevel(0);
+    if (!backend_->isSourceMode()) editorController_.paragraphController().setHeadingLevel(0);
   });
   commands_.bind(QStringLiteral("paragraph.promote_heading"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().promoteHeading();
+    if (!backend_->isSourceMode()) editorController_.paragraphController().promoteHeading();
   });
   commands_.bind(QStringLiteral("paragraph.demote_heading"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().demoteHeading();
+    if (!backend_->isSourceMode()) editorController_.paragraphController().demoteHeading();
   });
 
   // Toggle code/math block commands
   commands_.bind(QStringLiteral("paragraph.math_block"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().toggleFormulaBlock();
+    if (!backend_->isSourceMode()) editorController_.paragraphController().toggleFormulaBlock();
   });
   commands_.bind(QStringLiteral("paragraph.code_block"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().toggleCodeBlock();
+    if (!backend_->isSourceMode()) editorController_.paragraphController().toggleCodeBlock();
   });
   commands_.bind(QStringLiteral("paragraph.insert_before"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().insertParagraphBefore();
+    if (!backend_->isSourceMode()) editorController_.paragraphController().insertParagraphBefore();
   });
   commands_.bind(QStringLiteral("paragraph.insert_after"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().insertParagraphAfter();
+    if (!backend_->isSourceMode()) editorController_.paragraphController().insertParagraphAfter();
   });
   commands_.bind(QStringLiteral("paragraph.link_ref"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().insertLinkReference();
+    if (!backend_->isSourceMode()) editorController_.paragraphController().insertLinkReference();
   });
   commands_.bind(QStringLiteral("paragraph.footnote"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().insertFootnoteDefinition();
+    if (!backend_->isSourceMode()) editorController_.paragraphController().insertFootnoteDefinition();
   });
   commands_.bind(QStringLiteral("paragraph.hr"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().insertHorizontalRule();
+    if (!backend_->isSourceMode()) editorController_.paragraphController().insertHorizontalRule();
   });
 
   // Block conversion commands
   commands_.bind(QStringLiteral("paragraph.quote"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().toggleQuote();
+    if (!backend_->isSourceMode()) editorController_.paragraphController().toggleQuote();
   });
   commands_.bind(QStringLiteral("paragraph.ordered_list"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().convertToOrderedList();
+    if (!backend_->isSourceMode()) editorController_.paragraphController().convertToOrderedList();
   });
   commands_.bind(QStringLiteral("paragraph.unordered_list"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().convertToUnorderedList();
+    if (!backend_->isSourceMode()) editorController_.paragraphController().convertToUnorderedList();
   });
   commands_.bind(QStringLiteral("paragraph.task_list"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().convertToTaskList();
+    if (!backend_->isSourceMode()) editorController_.paragraphController().convertToTaskList();
   });
 
   commands_.bind(QStringLiteral("code.enter_edit"), [this] { editorController_.codeFenceController().enterEditMode(); });
@@ -529,23 +386,23 @@ void muffin::MainWindow::setupConnections() {
     }
   });
 
-  commands_.bind(QStringLiteral("html.enter_edit"), [this] { editorController_.htmlBlockController().enterEditMode(); });
-  commands_.bind(QStringLiteral("html.exit_edit"), [this] { editorController_.htmlBlockController().exitEditMode(); });
+  commands_.bind(QStringLiteral("html.enter_edit"), [this] { editorController_.htmlLiteral().enterEditMode(); });
+  commands_.bind(QStringLiteral("html.exit_edit"), [this] { editorController_.htmlLiteral().exitEditMode(); });
   commands_.bind(QStringLiteral("html.set_source"), [this] {
     bool ok = false;
     const QString html = QInputDialog::getMultiLineText(this, tr("HTML Source"), tr("HTML:"), QString(), &ok);
     if (ok) {
-      editorController_.htmlBlockController().setHtml(html);
+      editorController_.htmlLiteral().setContent(html);
     }
   });
 
-  commands_.bind(QStringLiteral("math.enter_edit"), [this] { editorController_.mathBlockController().enterEditMode(); });
-  commands_.bind(QStringLiteral("math.exit_edit"), [this] { editorController_.mathBlockController().exitEditMode(); });
+  commands_.bind(QStringLiteral("math.enter_edit"), [this] { editorController_.mathLiteral().enterEditMode(); });
+  commands_.bind(QStringLiteral("math.exit_edit"), [this] { editorController_.mathLiteral().exitEditMode(); });
   commands_.bind(QStringLiteral("math.set_tex"), [this] {
     bool ok = false;
     const QString tex = QInputDialog::getMultiLineText(this, tr("Math TeX"), tr("TeX:"), QString(), &ok);
     if (ok) {
-      editorController_.mathBlockController().setTex(tex);
+      editorController_.mathLiteral().setContent(tex);
     }
   });
 
@@ -725,7 +582,7 @@ void muffin::MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {
 }
 
 void muffin::MainWindow::updateEditActions() {
-  const bool src = sourceModeEnabled();
+  const bool src = backend_->isSourceMode();
   const bool hasCursor = src ? true : editorController_.selection().hasCursor();
   const bool hasSelection = src
       ? editor_->editor()->textCursor().hasSelection()
@@ -747,7 +604,7 @@ void muffin::MainWindow::updateEditActions() {
 }
 
 void muffin::MainWindow::updateTableActions() {
-  const bool enabled = !sourceModeEnabled() && editorController_.tableController().currentCell().isValid();
+  const bool enabled = !backend_->isSourceMode() && editorController_.tableController().currentCell().isValid();
   const QStringList ids = {
       QStringLiteral("table.insert_row_before"),
       QStringLiteral("table.insert_row_after"),
@@ -770,11 +627,11 @@ void muffin::MainWindow::updateTableActions() {
   for (const QString& id : ids) {
     commands_.setEnabled(id, enabled);
   }
-  commands_.setEnabled(QStringLiteral("table.insert_table"), !sourceModeEnabled());
+  commands_.setEnabled(QStringLiteral("table.insert_table"), !backend_->isSourceMode());
 }
 
 void muffin::MainWindow::updateParagraphActions() {
-  const bool sourceMode = sourceModeEnabled();
+  const bool sourceMode = backend_->isSourceMode();
   const bool editable = !sourceMode && editorController_.paragraphController().isOnEditableBlock();
   const int headingLevel = sourceMode ? -1 : editorController_.paragraphController().currentHeadingLevel();
 
@@ -797,7 +654,7 @@ void muffin::MainWindow::updateParagraphActions() {
   // Block insert commands: enabled in any WYSIWYG mode
   const bool wysiwyg = !sourceMode;
   const bool inCodeBlock = wysiwyg && editorController_.codeFenceController().currentCodeFenceId().isValid();
-  const bool inMathBlock = wysiwyg && editorController_.mathBlockController().currentMathBlockId().isValid();
+  const bool inMathBlock = wysiwyg && editorController_.mathLiteral().currentBlockId().isValid();
   commands_.setEnabled(QStringLiteral("paragraph.math_block"), wysiwyg);
   commands_.setEnabled(QStringLiteral("paragraph.code_block"), wysiwyg);
   commands_.setChecked(QStringLiteral("paragraph.code_block"), inCodeBlock);
@@ -816,24 +673,24 @@ void muffin::MainWindow::updateParagraphActions() {
 }
 
 void muffin::MainWindow::updateCodeActions() {
-  const bool codeActive = !sourceModeEnabled() && editorController_.codeFenceController().currentCodeFenceId().isValid();
+  const bool codeActive = !backend_->isSourceMode() && editorController_.codeFenceController().currentCodeFenceId().isValid();
   commands_.setEnabled(QStringLiteral("code.enter_edit"), codeActive);
-  commands_.setEnabled(QStringLiteral("code.exit_edit"), !sourceModeEnabled() && editorController_.codeFenceController().isEditing());
-  commands_.setEnabled(QStringLiteral("code.set_language"), codeActive || (!sourceModeEnabled() && editorController_.codeFenceController().isEditing()));
+  commands_.setEnabled(QStringLiteral("code.exit_edit"), !backend_->isSourceMode() && editorController_.codeFenceController().isEditing());
+  commands_.setEnabled(QStringLiteral("code.set_language"), codeActive || (!backend_->isSourceMode() && editorController_.codeFenceController().isEditing()));
 }
 
 void muffin::MainWindow::updateHtmlActions() {
-  const bool htmlActive = !sourceModeEnabled() && editorController_.htmlBlockController().currentHtmlBlockId().isValid();
+  const bool htmlActive = !backend_->isSourceMode() && editorController_.htmlLiteral().currentBlockId().isValid();
   commands_.setEnabled(QStringLiteral("html.enter_edit"), htmlActive);
-  commands_.setEnabled(QStringLiteral("html.exit_edit"), !sourceModeEnabled() && editorController_.htmlBlockController().isEditing());
-  commands_.setEnabled(QStringLiteral("html.set_source"), htmlActive || (!sourceModeEnabled() && editorController_.htmlBlockController().isEditing()));
+  commands_.setEnabled(QStringLiteral("html.exit_edit"), !backend_->isSourceMode() && editorController_.htmlLiteral().isEditing());
+  commands_.setEnabled(QStringLiteral("html.set_source"), htmlActive || (!backend_->isSourceMode() && editorController_.htmlLiteral().isEditing()));
 }
 
 void muffin::MainWindow::updateMathActions() {
-  const bool mathActive = !sourceModeEnabled() && editorController_.mathBlockController().currentMathBlockId().isValid();
+  const bool mathActive = !backend_->isSourceMode() && editorController_.mathLiteral().currentBlockId().isValid();
   commands_.setEnabled(QStringLiteral("math.enter_edit"), mathActive);
-  commands_.setEnabled(QStringLiteral("math.exit_edit"), !sourceModeEnabled() && editorController_.mathBlockController().isEditing());
-  commands_.setEnabled(QStringLiteral("math.set_tex"), mathActive || (!sourceModeEnabled() && editorController_.mathBlockController().isEditing()));
+  commands_.setEnabled(QStringLiteral("math.exit_edit"), !backend_->isSourceMode() && editorController_.mathLiteral().isEditing());
+  commands_.setEnabled(QStringLiteral("math.set_tex"), mathActive || (!backend_->isSourceMode() && editorController_.mathLiteral().isEditing()));
 }
 
 void muffin::MainWindow::syncSourceEditorIfNeeded() {
@@ -859,13 +716,8 @@ void muffin::MainWindow::updateWordCountNow() {
   wordCountDirty_ = false;
 }
 
-bool muffin::MainWindow::sourceModeEnabled() const {
-  const QAction* action = commands_.action(QStringLiteral("view.source_mode"));
-  return action && action->isChecked();
-}
-
 void muffin::MainWindow::insertTableWithDialog() {
-  if (sourceModeEnabled()) {
+  if (backend_->isSourceMode()) {
     return;
   }
 
@@ -907,27 +759,13 @@ void muffin::MainWindow::insertTableWithDialog() {
 }
 
 void muffin::MainWindow::undoEdit() {
-  if (sourceModeEnabled()) {
-    if (editor_->editor()->document()->isUndoAvailable()) {
-      editor_->editor()->undo();
-    }
-    return;
+  if (backend_->canUndo()) {
+    backend_->undo();
   }
-  if (!editorController_.canUndo()) {
-    return;
-  }
-  editorController_.undo();
 }
 
 void muffin::MainWindow::redoEdit() {
-  if (sourceModeEnabled()) {
-    if (editor_->editor()->document()->isRedoAvailable()) {
-      editor_->editor()->redo();
-    }
-    return;
+  if (backend_->canRedo()) {
+    backend_->redo();
   }
-  if (!editorController_.canRedo()) {
-    return;
-  }
-  editorController_.redo();
 }

@@ -16,9 +16,7 @@ namespace muffin {
 
 class CodeFenceController;
 class EditorView;
-class FrontMatterController;
-class HtmlBlockController;
-class MathBlockController;
+class LiteralBlockController;
 class MarkdownNode;
 class SelectionController;
 class TableController;
@@ -31,10 +29,10 @@ public:
 
   void setContext(const EditorContext& ctx);
   void setTableController(TableController* tableController);
-  void setFrontMatterController(FrontMatterController* frontMatterController);
+  void setFrontMatterLiteral(LiteralBlockController* frontMatter);
   void setCodeFenceController(CodeFenceController* codeFenceController);
-  void setHtmlBlockController(HtmlBlockController* htmlBlockController);
-  void setMathBlockController(MathBlockController* mathBlockController);
+  void setHtmlLiteral(LiteralBlockController* html);
+  void setMathLiteral(LiteralBlockController* math);
   void attach(EditorView* view);
 
   bool insertText(QString text);
@@ -121,11 +119,13 @@ private:
       bool preferLaterEmptyAtOffset = false);
   QString printableText(QKeyEvent* event) const;
 
+  LiteralBlockController* activeLiteralEditor() const;
+
   EditorContext ctx_;
-  FrontMatterController* frontMatterController_ = nullptr;
+  LiteralBlockController* frontMatterLiteral_ = nullptr;
   CodeFenceController* codeFenceController_ = nullptr;
-  HtmlBlockController* htmlBlockController_ = nullptr;
-  MathBlockController* mathBlockController_ = nullptr;
+  LiteralBlockController* htmlLiteral_ = nullptr;
+  LiteralBlockController* mathLiteral_ = nullptr;
   TableController* tableController_ = nullptr;
   EditorView* view_ = nullptr;
 };

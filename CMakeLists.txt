@@ -260,13 +260,9 @@ set(MUFFIN_CORE_SOURCES
   src/document/DefinitionBlock.h
   src/document/InlineNode.cpp
   src/document/InlineNode.h
-  src/document/InlineProjection.cpp
-  src/document/InlineProjection.h
   src/document/MarkdownNode.cpp
   src/document/MarkdownNode.h
   src/document/TextSelection.h
-  src/document/SelectionSerializer.cpp
-  src/document/SelectionSerializer.h
   src/document/NodeIndex.cpp
   src/document/NodeIndex.h
   src/document/MarkdownDocument.cpp
@@ -307,6 +303,7 @@ add_executable(Muffin
   src/statusbar_icons.qrc
   src/app/CommandRegistry.cpp
   src/app/CommandRegistry.h
+  src/app/EditorBackend.h
   src/app/LanguageManager.cpp
   src/app/LanguageManager.h
   src/app/MainWindow.cpp
@@ -315,6 +312,10 @@ add_executable(Muffin
   src/app/MainWindowActions.cpp
   src/app/MainWindowFileOps.cpp
   src/app/MainWindowFind.cpp
+  src/app/RenderEditorBackend.cpp
+  src/app/RenderEditorBackend.h
+  src/app/SourceEditorBackend.cpp
+  src/app/SourceEditorBackend.h
   src/app/PreferencesDialog.cpp
   src/app/PreferencesDialog.h
   src/app/PreferencesPage.cpp
@@ -344,18 +345,18 @@ set(MUFFIN_UI_SOURCES
   third_party/katex/src/svgGeometry.ts
   third_party/katex/src/symbols.ts
   src/tree_sitter_queries.qrc
+  src/document/InlineProjection.cpp
+  src/document/InlineProjection.h
+  src/document/SelectionSerializer.cpp
+  src/document/SelectionSerializer.h
   src/blocks/code/CodeFenceController.cpp
   src/blocks/code/CodeFenceController.h
-  src/blocks/frontmatter/FrontMatterController.cpp
-  src/blocks/frontmatter/FrontMatterController.h
-  src/blocks/html/HtmlBlockController.cpp
-  src/blocks/html/HtmlBlockController.h
   src/blocks/html/HtmlSanitizer.cpp
   src/blocks/literal/LiteralBlockController.cpp
   src/blocks/literal/LiteralBlockController.h
+  src/blocks/literal/LiteralBlockUtil.cpp
+  src/blocks/literal/LiteralBlockUtil.h
   src/blocks/html/HtmlSanitizer.h
-  src/blocks/math/MathBlockController.cpp
-  src/blocks/math/MathBlockController.h
   src/blocks/math/MathRenderer.cpp
   src/blocks/math/MathRenderer.h
   src/blocks/table/TableController.cpp

@@ -1,5 +1,6 @@
 #include "editor/EditorController.h"
 
+#include "blocks/literal/LiteralBlockUtil.h"
 #include "document/InlineProjection.h"
 #include "document/MarkdownNode.h"
 #include "document/SourceRangeUtil.h"
@@ -8,6 +9,45 @@
 
 namespace muffin {
 namespace {
+
+LiteralBlockSpec frontMatterSpec() {
+  return LiteralBlockSpec{
+      BlockType::FrontMatter,
+      HitTestResult::Zone::FrontMatter,
+      QStringLiteral("No front matter is active."),
+      QStringLiteral("Edit Front Matter"),
+      QStringLiteral("Backspace Front Matter"),
+      QStringLiteral("Delete Front Matter Text"),
+      QStringLiteral("Delete Front Matter Selection"),
+      QStringLiteral("Set Front Matter Content"),
+      QStringLiteral("  ")};
+}
+
+LiteralBlockSpec htmlSpec() {
+  return LiteralBlockSpec{
+      BlockType::HtmlBlock,
+      HitTestResult::Zone::Html,
+      QStringLiteral("No HTML block is active."),
+      QStringLiteral("Edit HTML Block"),
+      QStringLiteral("Backspace HTML Block"),
+      QStringLiteral("Delete HTML Block Text"),
+      QStringLiteral("Delete HTML Block Selection"),
+      QStringLiteral("Set HTML Block"),
+      QStringLiteral("  ")};
+}
+
+LiteralBlockSpec mathSpec() {
+  return LiteralBlockSpec{
+      BlockType::MathBlock,
+      HitTestResult::Zone::Math,
+      QStringLiteral("No math block is active."),
+      QStringLiteral("Edit Math Block"),
+      QStringLiteral("Backspace Math Block"),
+      QStringLiteral("Delete Math Block Text"),
+      QStringLiteral("Delete Math Block Selection"),
+      QStringLiteral("Set Math Block TeX"),
+      QStringLiteral("  ")};
+}
 
 MarkdownNode* primaryParagraphOrSelf(MarkdownNode& node) {
   if (node.type() == BlockType::ListItem) {
@@ -161,7 +201,15 @@ bool fillSourceOffsetForTextHit(const DocumentSession& session, HitTestResult& h
 
 }  // namespace
 
-EditorController::EditorController(QObject* parent) : QObject(parent) {}
+EditorController::EditorController(QObject* parent)
+    : QObject(parent),
+      frontMatterLiteral_(frontMatterSpec()),
+      htmlLiteral_(htmlSpec()),
+      mathLiteral_(mathSpec()) {
+  frontMatterLiteral_.setRejectedHandler([this](QString reason) { emit frontMatterCommandRejected(std::move(reason)); });
+  htmlLiteral_.setRejectedHandler([this](QString reason) { emit htmlCommandRejected(std::move(reason)); });
+  mathLiteral_.setRejectedHandler([this](QString reason) { emit mathCommandRejected(std::move(reason)); });
+}
 
 void EditorController::attach(DocumentSession* session, EditorView* view) {
   if (session_ == session && view_ == view) {
@@ -176,17 +224,17 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
 
   inputController_.setContext(ctx);
   inputController_.setTableController(&tableController_);
-  inputController_.setFrontMatterController(&frontMatterController_);
+  inputController_.setFrontMatterLiteral(&frontMatterLiteral_);
   inputController_.setCodeFenceController(&codeFenceController_);
-  inputController_.setHtmlBlockController(&htmlBlockController_);
-  inputController_.setMathBlockController(&mathBlockController_);
+  inputController_.setHtmlLiteral(&htmlLiteral_);
+  inputController_.setMathLiteral(&mathLiteral_);
   inputController_.attach(view_);
   stylizeController_.setContext(ctx);
   paragraphController_.setContext(ctx);
-  frontMatterController_.setContext(ctx);
+  frontMatterLiteral_.setContext(ctx);
   codeFenceController_.setContext(ctx);
-  htmlBlockController_.setContext(ctx);
-  mathBlockController_.setContext(ctx);
+  htmlLiteral_.setContext(ctx);
+  mathLiteral_.setContext(ctx);
   tableController_.setContext(ctx);
   clipboardController_.setContext(ctx);
   clipboardController_.setInputController(&inputController_);
@@ -287,20 +335,20 @@ StylizeController& EditorController::stylizeController() {
   return stylizeController_;
 }
 
-FrontMatterController& EditorController::frontMatterController() {
-  return frontMatterController_;
+LiteralBlockController& EditorController::frontMatterLiteral() {
+  return frontMatterLiteral_;
 }
 
 CodeFenceController& EditorController::codeFenceController() {
   return codeFenceController_;
 }
 
-HtmlBlockController& EditorController::htmlBlockController() {
-  return htmlBlockController_;
+LiteralBlockController& EditorController::htmlLiteral() {
+  return htmlLiteral_;
 }
 
-MathBlockController& EditorController::mathBlockController() {
-  return mathBlockController_;
+LiteralBlockController& EditorController::mathLiteral() {
+  return mathLiteral_;
 }
 
 TableController& EditorController::tableController() {
@@ -614,25 +662,43 @@ bool EditorController::swapTopLevelBlocks(MarkdownNode& upper, MarkdownNode& low
 }
 
 void EditorController::exitAllLiteralEditModes() {
-  frontMatterController_.exitEditMode();
+  frontMatterLiteral_.exitEditMode();
   codeFenceController_.exitEditMode();
-  htmlBlockController_.exitEditMode();
-  mathBlockController_.exitEditMode();
+  htmlLiteral_.exitEditMode();
+  mathLiteral_.exitEditMode();
 }
 
 bool EditorController::enterLiteralEditMode(HitTestResult::Zone zone) {
   switch (zone) {
-    case HitTestResult::Zone::FrontMatter:
-      return frontMatterController_.enterEditMode();
     case HitTestResult::Zone::Code:
       return codeFenceController_.enterEditMode();
-    case HitTestResult::Zone::Html:
-      return htmlBlockController_.enterEditMode();
-    case HitTestResult::Zone::Math:
-      return mathBlockController_.enterEditMode();
-    default:
-      return false;
+    default: {
+      LiteralBlockController* ctrl = literalForZone(zone);
+      return ctrl ? ctrl->enterEditMode() : false;
+    }
   }
+}
+
+LiteralBlockController* EditorController::literalForZone(HitTestResult::Zone zone) {
+  switch (zone) {
+    case HitTestResult::Zone::FrontMatter:
+      return &frontMatterLiteral_;
+    case HitTestResult::Zone::Html:
+      return &htmlLiteral_;
+    case HitTestResult::Zone::Math:
+      return &mathLiteral_;
+    default:
+      return nullptr;
+  }
+}
+
+bool EditorController::insertFrontMatter(FrontMatterFormat format) {
+  const EditorContext ctx{session_, &selection_, &undoStack_, &brushQueue_};
+  return muffin::insertFrontMatter(ctx, frontMatterLiteral_, format);
+}
+
+QString EditorController::sanitizedHtmlPreview() const {
+  return muffin::sanitizedHtmlPreview(htmlLiteral_);
 }
 
 void EditorController::activateHit(HitTestResult hit) {

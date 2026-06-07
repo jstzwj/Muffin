@@ -1,5 +1,5 @@
 #include "app/DocumentSession.h"
-#include "blocks/math/MathBlockController.h"
+#include "blocks/literal/LiteralBlockController.h"
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
@@ -29,6 +29,19 @@ MarkdownNode* firstMathBlock(DocumentSession& session) {
   return nullptr;
 }
 
+LiteralBlockSpec mathSpec() {
+  return LiteralBlockSpec{
+      BlockType::MathBlock,
+      HitTestResult::Zone::Math,
+      QStringLiteral("No math block is active."),
+      QStringLiteral("Edit Math Block"),
+      QStringLiteral("Backspace Math Block"),
+      QStringLiteral("Delete Math Block Text"),
+      QStringLiteral("Delete Math Block Selection"),
+      QStringLiteral("Set Math Block TeX"),
+      QStringLiteral("  ")};
+}
+
 void setMathHit(SelectionController& selection, MarkdownNode* math, qsizetype offset = 0) {
   HitTestResult hit;
   hit.zone = HitTestResult::Zone::Math;
@@ -43,7 +56,7 @@ void testEnterEditAndTextEditing() {
   SelectionController selection;
   UndoStack undoStack;
   BrushQueue brushQueue;
-  MathBlockController controller;
+  LiteralBlockController controller(mathSpec());
   controller.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("$$\na=b\n$$"), false);
@@ -71,7 +84,7 @@ void testSetTexAndRoundtripFence() {
   SelectionController selection;
   UndoStack undoStack;
   BrushQueue brushQueue;
-  MathBlockController controller;
+  LiteralBlockController controller(mathSpec());
   controller.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("before\n\n$$\nx^2\n$$\n\nafter"), false);
@@ -80,7 +93,7 @@ void testSetTexAndRoundtripFence() {
   setMathHit(selection, math, 0);
 
   require(controller.enterEditMode(), "enter math edit should work for set tex test");
-  require(controller.setTex(QStringLiteral("E = mc^2\n\\\\int_0^1 x dx")), "set tex should work");
+  require(controller.setContent(QStringLiteral("E = mc^2\n\\\\int_0^1 x dx")), "set tex should work");
   require(session.markdownText().contains(QStringLiteral("$$\nE = mc^2\n\\\\int_0^1 x dx\n$$")), "math fence roundtrip mismatch");
   require(undoStack.canUndo(), "set tex should push undo");
   EditTransaction setTexUndo = undoStack.takeUndo();

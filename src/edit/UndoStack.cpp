@@ -2,7 +2,9 @@
 
 namespace muffin {
 
-UndoStack::UndoStack(QObject* parent) : QObject(parent) {}
+UndoStack::UndoStack(QObject* parent) : QObject(parent) {
+  lastPushTime_.start();
+}
 
 bool UndoStack::canUndo() const {
   return !undo_.isEmpty();
@@ -25,8 +27,16 @@ void UndoStack::push(EditTransaction transaction) {
     return;
   }
 
-  undo_.push_back(std::move(transaction));
+  if (!tryMergeWithLast(transaction)) {
+    undo_.push_back(std::move(transaction));
+  }
   redo_.clear();
+
+  while (undo_.size() > kMaxUndoDepth) {
+    undo_.removeFirst();
+  }
+
+  lastPushTime_.restart();
   emit stateChanged();
 }
 
@@ -60,6 +70,41 @@ void UndoStack::clear() {
   undo_.clear();
   redo_.clear();
   emit stateChanged();
+}
+
+bool UndoStack::tryMergeWithLast(EditTransaction& next) {
+  if (undo_.isEmpty()) {
+    return false;
+  }
+  if (lastPushTime_.elapsed() > kMergeIntervalMs) {
+    return false;
+  }
+
+  EditTransaction& prev = undo_.last();
+  if (prev.storage() != EditTransaction::Storage::TextDeltaCommand ||
+      next.storage() != EditTransaction::Storage::TextDeltaCommand) {
+    return false;
+  }
+  if (prev.kind() != next.kind()) {
+    return false;
+  }
+
+  const TextDelta& prevDelta = prev.textDeltaCommand().delta;
+  const TextDelta& nextDelta = next.textDeltaCommand().delta;
+
+  bool mergeable = false;
+  if (prev.kind() == EditTransaction::Kind::InsertText) {
+    mergeable = nextDelta.start == prevDelta.start + prevDelta.insertedText.size();
+  } else if (prev.kind() == EditTransaction::Kind::DeleteText) {
+    mergeable = nextDelta.start + nextDelta.removedText.size() == prevDelta.start;
+  }
+
+  if (!mergeable) {
+    return false;
+  }
+
+  prev.mergeTextDelta(next.textDeltaCommand());
+  return true;
 }
 
 }  // namespace muffin

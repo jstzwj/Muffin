@@ -462,4 +462,22 @@ bool EditTransaction::isValid() const {
   return false;
 }
 
+void EditTransaction::mergeTextDelta(const TextDeltaCommand& next) {
+  TextDelta& prevDelta = textDeltaCommand_.delta;
+  const TextDelta& nextDelta = next.delta;
+  prevDelta.insertedText += nextDelta.insertedText;
+  prevDelta.removedText = nextDelta.removedText + prevDelta.removedText;
+  updateAfterCursor(next.afterCursor);
+}
+
+void EditTransaction::updateAfterCursor(const CursorPosition& cursor) {
+  if (isTextDeltaCommand()) {
+    textDeltaCommand_.afterCursor = cursor;
+  }
+}
+
+TextDeltaCommand& EditTransaction::textDeltaCommandMut() {
+  return textDeltaCommand_;
+}
+
 }  // namespace muffin

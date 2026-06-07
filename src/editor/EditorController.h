@@ -2,12 +2,11 @@
 
 #include "app/DocumentSession.h"
 #include "blocks/code/CodeFenceController.h"
-#include "blocks/frontmatter/FrontMatterController.h"
-#include "blocks/html/HtmlBlockController.h"
-#include "blocks/math/MathBlockController.h"
+#include "blocks/literal/LiteralBlockController.h"
 #include "blocks/table/TableController.h"
 #include "commands/ParagraphController.h"
 #include "commands/StylizeController.h"
+#include "document/MarkdownTypes.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
 #include "editor/ClipboardController.h"
@@ -35,10 +34,10 @@ public:
   const UndoStack& undoStack() const;
   InputController& inputController();
   StylizeController& stylizeController();
-  FrontMatterController& frontMatterController();
+  LiteralBlockController& frontMatterLiteral();
   CodeFenceController& codeFenceController();
-  HtmlBlockController& htmlBlockController();
-  MathBlockController& mathBlockController();
+  LiteralBlockController& htmlLiteral();
+  LiteralBlockController& mathLiteral();
   TableController& tableController();
   ClipboardController& clipboardController();
   ParagraphController& paragraphController();
@@ -56,13 +55,20 @@ public:
   void clearHistoryAndSelection();
   void activateHit(HitTestResult hit);
 
+  bool insertFrontMatter(FrontMatterFormat format);
+  QString sanitizedHtmlPreview() const;
+
 signals:
   void cursorChanged(HitTestResult hit);
   void stateChanged();
+  void frontMatterCommandRejected(QString reason);
+  void htmlCommandRejected(QString reason);
+  void mathCommandRejected(QString reason);
 
 private:
   void exitAllLiteralEditModes();
   bool enterLiteralEditMode(HitTestResult::Zone zone);
+  LiteralBlockController* literalForZone(HitTestResult::Zone zone);
   void applySnapshot(const DocumentSnapshot& snapshot);
   void applyTransaction(const EditTransaction& transaction, bool undo);
   CursorPosition remapSnapshotCursor(const CursorPosition& snapshotCursor) const;
@@ -77,10 +83,10 @@ private:
   InputController inputController_;
   StylizeController stylizeController_;
   ParagraphController paragraphController_;
-  FrontMatterController frontMatterController_;
+  LiteralBlockController frontMatterLiteral_;
   CodeFenceController codeFenceController_;
-  HtmlBlockController htmlBlockController_;
-  MathBlockController mathBlockController_;
+  LiteralBlockController htmlLiteral_;
+  LiteralBlockController mathLiteral_;
   TableController tableController_;
   ClipboardController clipboardController_;
 };

@@ -2,6 +2,7 @@
 
 #include "app/CommandRegistry.h"
 #include "app/DocumentSession.h"
+#include "app/EditorBackend.h"
 #include "app/SidebarWidget.h"
 #include "editor/EditorController.h"
 #include "io/FileController.h"
@@ -9,6 +10,7 @@
 
 #include <QMainWindow>
 #include <QString>
+#include <memory>
 
 class QLabel;
 class QMenu;
@@ -109,7 +111,6 @@ private:
   void syncSourceEditorIfNeeded();
   void scheduleWordCountUpdate();
   void updateWordCountNow();
-  bool sourceModeEnabled() const;
   void undoEdit();
   void redoEdit();
   void applyTheme(QString name);
@@ -131,8 +132,6 @@ private:
   void deleteFile();
   void insertTableWithDialog();
 
-  void moveSourceLineUp();
-  void moveSourceLineDown();
   void showFindBar();
   void showReplaceBar();
   void hideFindBar();
@@ -169,6 +168,7 @@ private:
   int fontSizePx_ = 16;
   bool sourceEditorDirty_ = false;
   bool wordCountDirty_ = true;
+  std::unique_ptr<EditorBackend> backend_;
   bool focusMode_ = false;
   bool typewriterMode_ = false;
   QString lastFindText_;

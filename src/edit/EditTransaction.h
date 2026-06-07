@@ -265,6 +265,11 @@ public:
   const SetNodeAttrCommand& setNodeAttrCommand() const;
   bool isValid() const;
 
+  void mergeTextDelta(const TextDeltaCommand& next);
+  void updateAfterCursor(const CursorPosition& cursor);
+
+  TextDeltaCommand& textDeltaCommandMut();
+
 private:
   Storage storage_ = Storage::Invalid;
   Kind kind_ = Kind::ReplaceDocumentText;
