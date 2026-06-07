@@ -287,6 +287,20 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
     if (request.topLevelRangeDirty.isValid()) {
       if (request.topLevelRangeDirty.documentRevision != session_->document().revision() || !view_->refreshTopLevelRange(request.topLevelRangeDirty, session_->document())) {
         view_->setDocument(session_->document());
+        return;
+      }
+      // The range refresh handled structural changes.  Still refresh any
+      // blocks that were marked dirty before the range arrived — they may
+      // fall outside the structural-change range and would otherwise be
+      // silently dropped.
+      if (!request.layoutDirtyBlocks.isEmpty()) {
+        if (request.layoutDirtyBlocks.size() == 1) {
+          if (!view_->refreshBlock(request.layoutDirtyBlocks.first(), session_->document())) {
+            view_->setDocument(session_->document());
+          }
+        } else if (!view_->refreshBlocks(request.layoutDirtyBlocks, session_->document())) {
+          view_->setDocument(session_->document());
+        }
       }
       return;
     }

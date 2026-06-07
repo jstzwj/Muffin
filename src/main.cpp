@@ -15,18 +15,18 @@
 
 namespace {
 
-QFile* perfLogFile = nullptr;
+QFile perfLogFile;
 QMutex perfLogMutex;
 
 void muffinMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString& message) {
   Q_UNUSED(type);
 
-  if (!perfLogFile || !perfLogFile->isOpen() || QStringView(QString::fromUtf8(context.category)) != QStringLiteral("muffin.perf")) {
+  if (!perfLogFile.isOpen() || QStringView(QString::fromUtf8(context.category)) != QStringLiteral("muffin.perf")) {
     return;
   }
 
   QMutexLocker locker(&perfLogMutex);
-  QTextStream stream(perfLogFile);
+  QTextStream stream(&perfLogFile);
   stream << QDateTime::currentDateTime().toString(QStringLiteral("hh:mm:ss.zzz")) << ' ' << message << '\n';
   stream.flush();
 }
@@ -37,10 +37,8 @@ void installPerfFileLogger() {
     return;
   }
 
-  perfLogFile = new QFile(QString::fromLocal8Bit(logPath));
-  if (!perfLogFile->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-    delete perfLogFile;
-    perfLogFile = nullptr;
+  perfLogFile.setFileName(QString::fromLocal8Bit(logPath));
+  if (!perfLogFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
     return;
   }
 

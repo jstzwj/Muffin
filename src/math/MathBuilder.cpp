@@ -1497,7 +1497,7 @@ qreal MathBuilder::dimensionToPoints(const QString& value) const {
     return 0.0;
   }
   const qreal number = match.captured(1).toDouble();
-  const QString unit = match.captured(2).isEmpty() ? QStringLiteral("em") : match.captured(2);
+  const QString unit = match.captured(2).isEmpty() ? QStringLiteral("em") : match.captured(2).toLower();
   const qreal em = options_.fontPointSize();
   if (unit == QStringLiteral("em")) return number * em;
   if (unit == QStringLiteral("ex")) return number * em * 0.431;

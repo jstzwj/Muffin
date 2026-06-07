@@ -60,8 +60,11 @@ void BrushQueue::requestTopLevelRangeRefresh(TopLevelRangeChange range) {
     requestFullRefresh();
     return;
   }
+  // Preserve any pending block-level refreshes.  The downstream handler
+  // processes both the top-level range and remaining dirty blocks so that
+  // visual updates for blocks outside the structural-change range are not
+  // silently lost.
   pending_.topLevelRangeDirty = range;
-  pending_.layoutDirtyBlocks.clear();
   scheduleFlush();
 }
 

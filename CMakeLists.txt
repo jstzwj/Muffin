@@ -412,6 +412,8 @@ set(MUFFIN_UI_SOURCES
   src/math/MathFontMetrics.h
   src/math/MathFontRegistry.cpp
   src/math/MathFontRegistry.h
+  src/math/MathDimension.cpp
+  src/math/MathDimension.h
   src/math/MathFunctionRegistry.cpp
   src/math/MathFunctionRegistry.h
   src/math/MathLexer.cpp

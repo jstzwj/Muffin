@@ -451,6 +451,33 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
     const QString markdown = markdownForInline(node);
     const qsizetype nodeStart = findMarkdown(*state.sourceText, markdown, searchFrom, sourceEnd);
     if (nodeStart < 0) {
+      // Fallback: the reconstructed markdown didn't match the source text exactly
+      // (e.g. different marker characters like __ vs **). Try locating the node's
+      // plain text content within the remaining source range so it isn't silently
+      // dropped from the projection.
+      const QString plainText = plainTextForInline(node);
+      const qsizetype textPos = plainText.isEmpty() ? qsizetype(-1) : state.sourceText->indexOf(plainText, searchFrom);
+      if (textPos >= 0 && textPos + plainText.size() <= sourceEnd) {
+        if (textPos > searchFrom) {
+          appendTextSpan(
+              state,
+              InlineType::Text,
+              InlineSpanKind::Text,
+              searchFrom,
+              textPos,
+              state.sourceText->mid(searchFrom, textPos - searchFrom),
+              true);
+        }
+        appendTextSpan(
+            state,
+            node.type(),
+            InlineSpanKind::Text,
+            textPos,
+            textPos + plainText.size(),
+            plainText,
+            true);
+        searchFrom = textPos + plainText.size();
+      }
       continue;
     }
     if (nodeStart > searchFrom) {
