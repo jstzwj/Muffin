@@ -3,6 +3,7 @@
 #include "blocks/literal/LiteralBlockController.h"
 #include "document/NodeId.h"
 #include "edit/EditTransaction.h"
+#include "editor/EditorContext.h"
 
 #include <QObject>
 
@@ -10,22 +11,13 @@
 
 namespace muffin {
 
-class BrushQueue;
-class DocumentSession;
-class MarkdownNode;
-class SelectionController;
-class UndoStack;
-
 class HtmlBlockController final : public QObject {
   Q_OBJECT
 
 public:
   explicit HtmlBlockController(QObject* parent = nullptr);
 
-  void setDocumentSession(DocumentSession* session);
-  void setSelectionController(SelectionController* selection);
-  void setUndoStack(UndoStack* undoStack);
-  void setBrushQueue(BrushQueue* brushQueue);
+  void setContext(const EditorContext& ctx);
 
   NodeId currentHtmlBlockId() const;
   bool isEditing() const;

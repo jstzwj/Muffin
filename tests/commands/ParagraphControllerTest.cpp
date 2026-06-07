@@ -3,6 +3,7 @@
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
+#include "editor/EditorContext.h"
 #include "editor/SelectionController.h"
 
 #include <QApplication>
@@ -100,10 +101,12 @@ void wireParagraph(
     SelectionController& selection,
     UndoStack& undoStack,
     BrushQueue& brushQueue) {
-  paragraph.setDocumentSession(&session);
-  paragraph.setSelectionController(&selection);
-  paragraph.setUndoStack(&undoStack);
-  paragraph.setBrushQueue(&brushQueue);
+  EditorContext ctx;
+  ctx.session = &session;
+  ctx.selection = &selection;
+  ctx.undoStack = &undoStack;
+  ctx.brushQueue = &brushQueue;
+  paragraph.setContext(ctx);
 }
 
 // ---------------------------------------------------------------------------

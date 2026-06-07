@@ -116,20 +116,8 @@ NodeId refreshNodeFor(DocumentSession* session, NodeId nodeId) {
 
 InputController::InputController(QObject* parent) : QObject(parent) {}
 
-void InputController::setDocumentSession(DocumentSession* session) {
-  session_ = session;
-}
-
-void InputController::setSelectionController(SelectionController* selection) {
-  selection_ = selection;
-}
-
-void InputController::setUndoStack(UndoStack* undoStack) {
-  undoStack_ = undoStack;
-}
-
-void InputController::setBrushQueue(BrushQueue* brushQueue) {
-  brushQueue_ = brushQueue;
+void InputController::setContext(const EditorContext& ctx) {
+  ctx_ = ctx;
 }
 
 void InputController::setTableController(TableController* tableController) {
@@ -189,19 +177,19 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
 }
 
 bool InputController::insertText(QString text) {
-  if (session_ && session_->markdownText().isEmpty()) {
+  if (ctx_.session && ctx_.session->markdownText().isEmpty()) {
     return insertIntoEmptyDocument(std::move(text));
   }
   if (hasActiveLiteralEditor()) {
     return insertTextIntoActiveLiteral(std::move(text));
   }
-  if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
+  if (ctx_.selection && ctx_.selection->hasCursor() && !ctx_.selection->selection().isCollapsed()) {
     return replaceSelection(std::move(text), EditTransaction::Kind::InsertText, QStringLiteral("Replace Selection"));
   }
   if (tableController_ && tableController_->currentCell().isValid()) {
     return tableController_->insertText(std::move(text));
   }
-  if (selection_ && selection_->currentHit().zone == HitTestResult::Zone::BlockAfter) {
+  if (ctx_.selection && ctx_.selection->currentHit().zone == HitTestResult::Zone::BlockAfter) {
     return insertBlockAfterCurrentBlock(std::move(text));
   }
   if (tryInsertOptionalDefinitionTitle(text)) {
@@ -214,27 +202,27 @@ bool InputController::insertParagraphBreak() {
   if (hasActiveLiteralEditor()) {
     return insertTextIntoActiveLiteral(QStringLiteral("\n"));
   }
-  if (selection_ && selection_->currentHit().zone == HitTestResult::Zone::BlockAfter) {
+  if (ctx_.selection && ctx_.selection->currentHit().zone == HitTestResult::Zone::BlockAfter) {
     return insertBlockAfterCurrentBlock();
   }
   return editParagraph(TextBlockCommandBuilder::Operation::Enter);
 }
 
 bool InputController::insertBlockAfterCurrentBlock(QString text) {
-  if (!session_ || !selection_ || !selection_->hasCursor()) {
+  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor()) {
     return false;
   }
-  MarkdownNode* node = session_->document().node(selection_->cursorPosition().blockId);
+  MarkdownNode* node = ctx_.session->document().node(ctx_.selection->cursorPosition().blockId);
   if (!node) {
     return false;
   }
   const SourceRange range = node->sourceRange();
-  if (range.byteEnd < range.byteStart || range.byteEnd > session_->markdownText().size()) {
+  if (range.byteEnd < range.byteStart || range.byteEnd > ctx_.session->markdownText().size()) {
     return false;
   }
 
   qsizetype insertOffset = range.byteEnd;
-  const QString& markdown = session_->markdownText();
+  const QString& markdown = ctx_.session->markdownText();
   if (insertOffset < markdown.size() && markdown.at(insertOffset) == QLatin1Char('\r')) {
     ++insertOffset;
   }
@@ -261,7 +249,7 @@ bool InputController::deleteBackward() {
   if (hasActiveLiteralEditor()) {
     return deleteBackwardInActiveLiteral();
   }
-  if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
+  if (ctx_.selection && ctx_.selection->hasCursor() && !ctx_.selection->selection().isCollapsed()) {
     return deleteSelection();
   }
   if (tryRemoveEmptyDefinitionBlock(EditTransaction::Kind::DeleteText, QStringLiteral("Backspace Empty Definition"))) {
@@ -277,7 +265,7 @@ bool InputController::deleteForward() {
   if (hasActiveLiteralEditor()) {
     return deleteForwardInActiveLiteral();
   }
-  if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
+  if (ctx_.selection && ctx_.selection->hasCursor() && !ctx_.selection->selection().isCollapsed()) {
     return deleteSelection();
   }
   if (tryRemoveEmptyDefinitionBlock(EditTransaction::Kind::DeleteText, QStringLiteral("Delete Empty Definition"))) {
@@ -296,7 +284,7 @@ bool InputController::indentListItem() {
     return false;
   }
 
-  const TextBlockCommandBuilder builder(session_, &resolver);
+  const TextBlockCommandBuilder builder(ctx_.session, &resolver);
   return applyTextCommand(builder.buildIndentListItem(context));
 }
 
@@ -306,7 +294,7 @@ bool InputController::outdentListItem() {
   if (!resolver.current(context) || !context.node || context.node->type() != BlockType::ListItem) {
     return false;
   }
-  const TextBlockCommandBuilder builder(session_, &resolver);
+  const TextBlockCommandBuilder builder(ctx_.session, &resolver);
   return applyTextCommand(builder.buildOutdentListItem(context));
 }
 
@@ -362,7 +350,7 @@ bool InputController::replaceSelection(QString text, EditTransaction::Kind kind,
   }
 
   QVector<LocalEditNodeHint> nodeHints;
-  const SelectionRange range = selection_->selection();
+  const SelectionRange range = ctx_.selection->selection();
   if (range.anchor.blockId.isValid()) {
     nodeHints.push_back(LocalEditNodeHint{range.anchor.blockId, sourceStart, BlockType::Unknown});
   }
@@ -382,16 +370,16 @@ bool InputController::replaceSelection(QString text, EditTransaction::Kind kind,
 }
 
 bool InputController::tryRemoveExactWholeBlockSelection(EditTransaction::Kind kind, const QString& label) {
-  if (!session_ || !selection_ || !selection_->hasCursor() || selection_->selection().isCollapsed()) {
+  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor() || ctx_.selection->selection().isCollapsed()) {
     return false;
   }
 
-  const SelectionRange range = selection_->selection();
+  const SelectionRange range = ctx_.selection->selection();
   if (range.anchor.blockId != range.focus.blockId) {
     return false;
   }
 
-  MarkdownNode* node = session_->document().node(range.anchor.blockId);
+  MarkdownNode* node = ctx_.session->document().node(range.anchor.blockId);
   if (!node || !node->parent() || node->parent()->type() != BlockType::Document) {
     return false;
   }
@@ -409,7 +397,7 @@ bool InputController::tryRemoveExactWholeBlockSelection(EditTransaction::Kind ki
     return false;
   }
 
-  const auto& blocks = session_->document().root().children();
+  const auto& blocks = ctx_.session->document().root().children();
   int nodeIndex = -1;
   for (int i = 0; i < static_cast<int>(blocks.size()); ++i) {
     if (blocks.at(static_cast<size_t>(i)).get() == node) {
@@ -425,43 +413,43 @@ bool InputController::tryRemoveExactWholeBlockSelection(EditTransaction::Kind ki
   qsizetype deleteEnd = blockEnd;
   if (blocks.size() == 1) {
     deleteStart = 0;
-    deleteEnd = session_->markdownText().size();
+    deleteEnd = ctx_.session->markdownText().size();
   } else if (nodeIndex + 1 < static_cast<int>(blocks.size())) {
     deleteEnd = blocks.at(static_cast<size_t>(nodeIndex + 1))->sourceRange().byteStart;
   } else {
     deleteStart = blocks.at(static_cast<size_t>(nodeIndex - 1))->sourceRange().byteEnd;
   }
-  deleteStart = qBound<qsizetype>(0, deleteStart, session_->markdownText().size());
-  deleteEnd = qBound<qsizetype>(deleteStart, deleteEnd, session_->markdownText().size());
+  deleteStart = qBound<qsizetype>(0, deleteStart, ctx_.session->markdownText().size());
+  deleteEnd = qBound<qsizetype>(deleteStart, deleteEnd, ctx_.session->markdownText().size());
   if (deleteStart >= deleteEnd) {
     return false;
   }
 
-  const CursorPosition beforeCursor = selection_->cursorPosition();
-  const QString removedText = session_->markdownText().mid(deleteStart, deleteEnd - deleteStart);
+  const CursorPosition beforeCursor = ctx_.selection->cursorPosition();
+  const QString removedText = ctx_.session->markdownText().mid(deleteStart, deleteEnd - deleteStart);
   std::unique_ptr<MarkdownNode> removedNode = node->clone(CloneMode::PreserveIds);
   const NodeId removedNodeId = node->id();
   const BlockType removedNodeType = node->type();
 
   QVector<LocalEditNodeHint> nodeHints;
   nodeHints.push_back(LocalEditNodeHint{removedNodeId, blockStart, removedNodeType});
-  if (!session_->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
+  if (!ctx_.session->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
     return false;
   }
 
   CursorPosition nextCursor = cursorAfterEdit(CursorPosition(), deleteStart, true);
   if (nextCursor.isValid()) {
-    selection_->setCursorPosition(nextCursor);
+    ctx_.selection->setCursorPosition(nextCursor);
   } else {
-    selection_->clear();
+    ctx_.selection->clear();
   }
 
-  if (undoStack_) {
+  if (ctx_.undoStack) {
     QVector<NodeId> affectedNodes{removedNodeId};
     if (nextCursor.isValid() && !affectedNodes.contains(nextCursor.blockId)) {
       affectedNodes.push_back(nextCursor.blockId);
     }
-    undoStack_->push(EditTransaction(
+    ctx_.undoStack->push(EditTransaction(
         kind,
         label,
         RemoveNodeCommand{
@@ -475,11 +463,11 @@ bool InputController::tryRemoveExactWholeBlockSelection(EditTransaction::Kind ki
             nextCursor,
             std::move(affectedNodes)}));
   }
-  if (brushQueue_) {
+  if (ctx_.brushQueue) {
     if (nextCursor.isValid()) {
-      brushQueue_->requestBlockRefresh(nextCursor.blockId);
+      ctx_.brushQueue->requestBlockRefresh(nextCursor.blockId);
     } else {
-      brushQueue_->requestFullRefresh();
+      ctx_.brushQueue->requestFullRefresh();
     }
   }
   return true;
@@ -498,10 +486,10 @@ bool InputController::hasActiveLiteralEditor() const {
 }
 
 void InputController::syncLiteralEditMode(NodeId newBlockId) {
-  if (!session_ || !selection_) {
+  if (!ctx_.session || !ctx_.selection) {
     return;
   }
-  MarkdownNode* node = session_->document().node(newBlockId);
+  MarkdownNode* node = ctx_.session->document().node(newBlockId);
   if (!node) {
     return;
   }
@@ -553,7 +541,7 @@ void InputController::syncLiteralEditMode(NodeId newBlockId) {
     return;
   }
 
-  const CursorPosition savedCursor = selection_->cursorPosition();
+  const CursorPosition savedCursor = ctx_.selection->cursorPosition();
   exitAllLiteralEditors();
 
   bool entered = false;
@@ -574,7 +562,7 @@ void InputController::syncLiteralEditMode(NodeId newBlockId) {
       break;
   }
   if (entered) {
-    selection_->setCursorPosition(savedCursor);
+    ctx_.selection->setCursorPosition(savedCursor);
   }
 }
 
@@ -592,15 +580,15 @@ bool InputController::insertTextIntoActiveLiteral(QString text) {
 }
 
 bool InputController::tryInsertOptionalDefinitionTitle(QString text) {
-  if (text.isEmpty() || !session_ || !selection_ || !selection_->hasCursor() || !selection_->selection().isCollapsed()) {
+  if (text.isEmpty() || !ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor() || !ctx_.selection->selection().isCollapsed()) {
     return false;
   }
 
-  const CursorPosition cursor = selection_->cursorPosition();
-  if (selection_->currentHit().definitionField != HitTestResult::DefinitionField::Title) {
+  const CursorPosition cursor = ctx_.selection->cursorPosition();
+  if (ctx_.selection->currentHit().definitionField != HitTestResult::DefinitionField::Title) {
     return false;
   }
-  MarkdownNode* node = session_->document().node(cursor.blockId);
+  MarkdownNode* node = ctx_.session->document().node(cursor.blockId);
   if (!node || node->type() != BlockType::LinkDefinition) {
     return false;
   }
@@ -631,7 +619,7 @@ bool InputController::tryInsertOptionalDefinitionTitle(QString text) {
 }
 
 bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, const QString& label) {
-  if (!session_ || !selection_ || !selection_->hasCursor()) {
+  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor()) {
     return false;
   }
 
@@ -646,7 +634,7 @@ bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, con
     return false;
   }
 
-  MarkdownNode* node = session_->document().node(blockId);
+  MarkdownNode* node = ctx_.session->document().node(blockId);
   if (!node || !node->literal().isEmpty()) {
     return false;
   }
@@ -665,7 +653,7 @@ bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, con
     return false;
   }
 
-  const auto& blocks = session_->document().root().children();
+  const auto& blocks = ctx_.session->document().root().children();
   int nodeIndex = -1;
   for (int i = 0; i < static_cast<int>(blocks.size()); ++i) {
     if (blocks.at(static_cast<size_t>(i)).get() == node) {
@@ -681,20 +669,20 @@ bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, con
   qsizetype deleteEnd = blockEnd;
   if (blocks.size() == 1) {
     deleteStart = 0;
-    deleteEnd = session_->markdownText().size();
+    deleteEnd = ctx_.session->markdownText().size();
   } else if (nodeIndex + 1 < static_cast<int>(blocks.size())) {
     deleteEnd = blocks.at(static_cast<size_t>(nodeIndex + 1))->sourceRange().byteStart;
   } else {
     deleteStart = blocks.at(static_cast<size_t>(nodeIndex - 1))->sourceRange().byteEnd;
   }
-  deleteStart = qBound<qsizetype>(0, deleteStart, session_->markdownText().size());
-  deleteEnd = qBound<qsizetype>(deleteStart, deleteEnd, session_->markdownText().size());
+  deleteStart = qBound<qsizetype>(0, deleteStart, ctx_.session->markdownText().size());
+  deleteEnd = qBound<qsizetype>(deleteStart, deleteEnd, ctx_.session->markdownText().size());
   if (deleteStart >= deleteEnd) {
     return false;
   }
 
-  const CursorPosition beforeCursor = selection_->cursorPosition();
-  const QString removedText = session_->markdownText().mid(deleteStart, deleteEnd - deleteStart);
+  const CursorPosition beforeCursor = ctx_.selection->cursorPosition();
+  const QString removedText = ctx_.session->markdownText().mid(deleteStart, deleteEnd - deleteStart);
   std::unique_ptr<MarkdownNode> removedNode = node->clone(CloneMode::PreserveIds);
   const NodeId removedNodeId = node->id();
 
@@ -707,23 +695,23 @@ bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, con
 
   QVector<LocalEditNodeHint> nodeHints;
   nodeHints.push_back(LocalEditNodeHint{removedNodeId, blockStart, nodeType});
-  if (!session_->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
+  if (!ctx_.session->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
     return false;
   }
 
   CursorPosition nextCursor = cursorAfterEdit(CursorPosition(), deleteStart, true);
   if (nextCursor.isValid()) {
-    selection_->setCursorPosition(nextCursor);
+    ctx_.selection->setCursorPosition(nextCursor);
   } else {
-    selection_->clear();
+    ctx_.selection->clear();
   }
 
-  if (undoStack_) {
+  if (ctx_.undoStack) {
     QVector<NodeId> affectedNodes{removedNodeId};
     if (nextCursor.isValid() && !affectedNodes.contains(nextCursor.blockId)) {
       affectedNodes.push_back(nextCursor.blockId);
     }
-    undoStack_->push(EditTransaction(
+    ctx_.undoStack->push(EditTransaction(
         kind,
         label,
         RemoveNodeCommand{
@@ -737,22 +725,22 @@ bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, con
             nextCursor,
             std::move(affectedNodes)}));
   }
-  if (brushQueue_) {
+  if (ctx_.brushQueue) {
     if (nextCursor.isValid()) {
-      brushQueue_->requestBlockRefresh(nextCursor.blockId);
+      ctx_.brushQueue->requestBlockRefresh(nextCursor.blockId);
     } else {
-      brushQueue_->requestFullRefresh();
+      ctx_.brushQueue->requestFullRefresh();
     }
   }
   return true;
 }
 
 bool InputController::tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, const QString& label) {
-  if (!session_ || !selection_ || !selection_->hasCursor()) {
+  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor()) {
     return false;
   }
 
-  MarkdownNode* node = session_->document().node(selection_->cursorPosition().blockId);
+  MarkdownNode* node = ctx_.session->document().node(ctx_.selection->cursorPosition().blockId);
   if (!node || (node->type() != BlockType::LinkDefinition && node->type() != BlockType::FootnoteDefinition)) {
     return false;
   }
@@ -771,7 +759,7 @@ bool InputController::tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, 
     return false;
   }
 
-  const auto& blocks = session_->document().root().children();
+  const auto& blocks = ctx_.session->document().root().children();
   int nodeIndex = -1;
   for (int i = 0; i < static_cast<int>(blocks.size()); ++i) {
     if (blocks.at(static_cast<size_t>(i)).get() == node) {
@@ -787,7 +775,7 @@ bool InputController::tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, 
   qsizetype deleteEnd = blockEnd;
   if (blocks.size() == 1) {
     deleteStart = 0;
-    deleteEnd = session_->markdownText().size();
+    deleteEnd = ctx_.session->markdownText().size();
   } else {
     for (int i = nodeIndex + 1; i < static_cast<int>(blocks.size()); ++i) {
       const qsizetype nextStart = blocks.at(static_cast<size_t>(i))->sourceRange().byteStart;
@@ -808,42 +796,42 @@ bool InputController::tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, 
     }
     deleteStart = blockStart;
     while (deleteStart > previousEnd &&
-           (session_->markdownText().at(deleteStart - 1) == QLatin1Char('\n') ||
-            session_->markdownText().at(deleteStart - 1) == QLatin1Char('\r'))) {
+           (ctx_.session->markdownText().at(deleteStart - 1) == QLatin1Char('\n') ||
+            ctx_.session->markdownText().at(deleteStart - 1) == QLatin1Char('\r'))) {
       --deleteStart;
     }
   }
-  deleteStart = qBound<qsizetype>(0, deleteStart, session_->markdownText().size());
-  deleteEnd = qBound<qsizetype>(deleteStart, deleteEnd, session_->markdownText().size());
+  deleteStart = qBound<qsizetype>(0, deleteStart, ctx_.session->markdownText().size());
+  deleteEnd = qBound<qsizetype>(deleteStart, deleteEnd, ctx_.session->markdownText().size());
   if (deleteStart >= deleteEnd) {
     return false;
   }
 
-  const CursorPosition beforeCursor = selection_->cursorPosition();
-  const QString removedText = session_->markdownText().mid(deleteStart, deleteEnd - deleteStart);
+  const CursorPosition beforeCursor = ctx_.selection->cursorPosition();
+  const QString removedText = ctx_.session->markdownText().mid(deleteStart, deleteEnd - deleteStart);
   std::unique_ptr<MarkdownNode> removedNode = node->clone(CloneMode::PreserveIds);
   const NodeId removedNodeId = node->id();
   const BlockType removedNodeType = node->type();
 
   QVector<LocalEditNodeHint> nodeHints;
   nodeHints.push_back(LocalEditNodeHint{removedNodeId, blockStart, removedNodeType});
-  if (!session_->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
+  if (!ctx_.session->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
     return false;
   }
 
   CursorPosition nextCursor = cursorAfterEdit(CursorPosition(), deleteStart, true);
   if (nextCursor.isValid()) {
-    selection_->setCursorPosition(nextCursor);
+    ctx_.selection->setCursorPosition(nextCursor);
   } else {
-    selection_->clear();
+    ctx_.selection->clear();
   }
 
-  if (undoStack_) {
+  if (ctx_.undoStack) {
     QVector<NodeId> affectedNodes{removedNodeId};
     if (nextCursor.isValid() && !affectedNodes.contains(nextCursor.blockId)) {
       affectedNodes.push_back(nextCursor.blockId);
     }
-    undoStack_->push(EditTransaction(
+    ctx_.undoStack->push(EditTransaction(
         kind,
         label,
         RemoveNodeCommand{
@@ -857,11 +845,11 @@ bool InputController::tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, 
             nextCursor,
             std::move(affectedNodes)}));
   }
-  if (brushQueue_) {
+  if (ctx_.brushQueue) {
     if (nextCursor.isValid()) {
-      brushQueue_->requestBlockRefresh(nextCursor.blockId);
+      ctx_.brushQueue->requestBlockRefresh(nextCursor.blockId);
     } else {
-      brushQueue_->requestFullRefresh();
+      ctx_.brushQueue->requestFullRefresh();
     }
   }
   return true;
@@ -948,13 +936,13 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
     return true;
   }
 
-  if (!session_ || !selection_ || !view_ || event->modifiers().testFlag(Qt::ControlModifier) ||
+  if (!ctx_.session || !ctx_.selection || !view_ || event->modifiers().testFlag(Qt::ControlModifier) ||
       event->modifiers().testFlag(Qt::AltModifier)) {
     return false;
   }
 
-  if (!selection_->hasCursor()) {
-    if (!session_->markdownText().isEmpty()) {
+  if (!ctx_.selection->hasCursor()) {
+    if (!ctx_.session->markdownText().isEmpty()) {
       return false;
     }
     if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
@@ -1005,7 +993,7 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
 }
 
 bool InputController::insertIntoEmptyDocument(QString text) {
-  if (!session_ || !session_->markdownText().isEmpty() || text.isEmpty()) {
+  if (!ctx_.session || !ctx_.session->markdownText().isEmpty() || text.isEmpty()) {
     return false;
   }
   const qsizetype insertedLength = text.size();
@@ -1026,7 +1014,7 @@ bool InputController::insertIntoEmptyDocument(QString text) {
 bool InputController::shouldIndentListItemFromKeyboard() const {
   BlockEditContextResolver resolver = contextResolver();
   BlockEditContext context;
-  if (!resolver.current(context) || !context.node || context.node->type() != BlockType::ListItem || !selection_ || !selection_->hasCursor()) {
+  if (!resolver.current(context) || !context.node || context.node->type() != BlockType::ListItem || !ctx_.selection || !ctx_.selection->hasCursor()) {
     return false;
   }
 
@@ -1035,7 +1023,7 @@ bool InputController::shouldIndentListItemFromKeyboard() const {
     return false;
   }
 
-  const CursorPosition cursor = selection_->cursorPosition();
+  const CursorPosition cursor = ctx_.selection->cursorPosition();
   if (cursor.text.inMeta) {
     return true;
   }
@@ -1080,11 +1068,11 @@ CursorPosition InputController::cursorForNode(MarkdownNode& node, qsizetype offs
 
 CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset, bool preferLaterEmptyAtOffset) const {
   CursorPosition cursor;
-  if (!session_) {
+  if (!ctx_.session) {
     return cursor;
   }
 
-  MarkdownNode* node = paragraphAtSourceOffset(session_->document().root(), sourceOffset, preferLaterEmptyAtOffset);
+  MarkdownNode* node = paragraphAtSourceOffset(ctx_.session->document().root(), sourceOffset, preferLaterEmptyAtOffset);
   if (!node) {
     return cursor;
   }
@@ -1107,14 +1095,14 @@ CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset, bo
 }
 
 CursorPosition InputController::cursorAfterEdit(CursorPosition preferredCursor, qsizetype fallbackSourceOffset, bool preferLaterEmptyAtOffset) const {
-  if (session_ && preferredCursor.isValid()) {
+  if (ctx_.session && preferredCursor.isValid()) {
     if (preferredCursor.text.sourceOffset >= 0) {
       CursorPosition sourceCursor = cursorForSourceOffset(preferredCursor.text.sourceOffset, preferLaterEmptyAtOffset);
       if (sourceCursor.isValid()) {
         return sourceCursor;
       }
     }
-    if (MarkdownNode* node = session_->document().node(preferredCursor.blockId)) {
+    if (MarkdownNode* node = ctx_.session->document().node(preferredCursor.blockId)) {
       return cursorFor(node->id(), preferredCursor.text.textOffset);
     }
   }
@@ -1126,10 +1114,10 @@ MarkdownNode* InputController::paragraphAtSourceOffset(MarkdownNode& node, qsize
 }
 
 MarkdownNode* InputController::selectableBlockByDirection(NodeId current, int direction) const {
-  if (!session_) {
+  if (!ctx_.session) {
     return nullptr;
   }
-  const auto& blocks = session_->document().root().children();
+  const auto& blocks = ctx_.session->document().root().children();
   for (qsizetype i = 0; i < blocks.size(); ++i) {
     if (blocks.at(i)->id() != current) {
       continue;
@@ -1176,12 +1164,12 @@ qsizetype InputController::selectableTextLength(const MarkdownNode& node) const 
 }
 
 bool InputController::moveCursorHorizontal(int direction, bool extendSelection) {
-  if (!selection_ || !selection_->hasCursor() || !session_ || direction == 0) {
+  if (!ctx_.selection || !ctx_.selection->hasCursor() || !ctx_.session || direction == 0) {
     return false;
   }
 
-  CursorPosition current = selection_->cursorPosition();
-  MarkdownNode* node = session_->document().node(current.blockId);
+  CursorPosition current = ctx_.selection->cursorPosition();
+  MarkdownNode* node = ctx_.session->document().node(current.blockId);
   if (!node) {
     return false;
   }
@@ -1232,10 +1220,10 @@ bool InputController::moveCursorHorizontal(int direction, bool extendSelection) 
 }
 
 bool InputController::moveCursorVertical(int direction, bool extendSelection) {
-  if (!selection_ || !selection_->hasCursor() || !session_ || direction == 0) {
+  if (!ctx_.selection || !ctx_.selection->hasCursor() || !ctx_.session || direction == 0) {
     return false;
   }
-  MarkdownNode* target = selectableBlockByDirection(selection_->cursorPosition().blockId, direction);
+  MarkdownNode* target = selectableBlockByDirection(ctx_.selection->cursorPosition().blockId, direction);
   if (!target) {
     return false;
   }
@@ -1245,20 +1233,20 @@ bool InputController::moveCursorVertical(int direction, bool extendSelection) {
 }
 
 void InputController::setCursorOrExtend(CursorPosition cursor, bool extendSelection) {
-  if (!selection_ || !cursor.isValid()) {
+  if (!ctx_.selection || !cursor.isValid()) {
     return;
   }
   if (!extendSelection) {
-    selection_->setCursorPosition(cursor);
+    ctx_.selection->setCursorPosition(cursor);
     syncLiteralEditMode(cursor.blockId);
     return;
   }
-  SelectionRange range = selection_->selection();
+  SelectionRange range = ctx_.selection->selection();
   if (!range.anchor.isValid()) {
-    range.anchor = selection_->cursorPosition();
+    range.anchor = ctx_.selection->cursorPosition();
   }
   range.focus = cursor;
-  selection_->setSelection(range);
+  ctx_.selection->setSelection(range);
 }
 
 QString InputController::printableText(QKeyEvent* event) const {

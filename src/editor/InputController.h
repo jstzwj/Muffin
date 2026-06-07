@@ -3,6 +3,7 @@
 #include "app/DocumentSession.h"
 #include "document/NodeId.h"
 #include "edit/EditTransaction.h"
+#include "editor/EditorContext.h"
 #include "editor/TextBlockCommandBuilder.h"
 
 #include <QObject>
@@ -13,7 +14,6 @@ class QInputMethodEvent;
 
 namespace muffin {
 
-class BrushQueue;
 class CodeFenceController;
 class EditorView;
 class FrontMatterController;
@@ -22,7 +22,6 @@ class MathBlockController;
 class MarkdownNode;
 class SelectionController;
 class TableController;
-class UndoStack;
 
 class InputController final : public QObject {
   Q_OBJECT
@@ -30,10 +29,7 @@ class InputController final : public QObject {
 public:
   explicit InputController(QObject* parent = nullptr);
 
-  void setDocumentSession(DocumentSession* session);
-  void setSelectionController(SelectionController* selection);
-  void setUndoStack(UndoStack* undoStack);
-  void setBrushQueue(BrushQueue* brushQueue);
+  void setContext(const EditorContext& ctx);
   void setTableController(TableController* tableController);
   void setFrontMatterController(FrontMatterController* frontMatterController);
   void setCodeFenceController(CodeFenceController* codeFenceController);
@@ -125,10 +121,7 @@ private:
       bool preferLaterEmptyAtOffset = false);
   QString printableText(QKeyEvent* event) const;
 
-  DocumentSession* session_ = nullptr;
-  SelectionController* selection_ = nullptr;
-  UndoStack* undoStack_ = nullptr;
-  BrushQueue* brushQueue_ = nullptr;
+  EditorContext ctx_;
   FrontMatterController* frontMatterController_ = nullptr;
   CodeFenceController* codeFenceController_ = nullptr;
   HtmlBlockController* htmlBlockController_ = nullptr;

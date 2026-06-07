@@ -13,21 +13,7 @@ namespace muffin {
 
 StylizeController::StylizeController(QObject* parent) : QObject(parent) {}
 
-void StylizeController::setDocumentSession(DocumentSession* session) {
-  session_ = session;
-}
-
-void StylizeController::setSelectionController(SelectionController* selection) {
-  selection_ = selection;
-}
-
-void StylizeController::setUndoStack(UndoStack* undoStack) {
-  undoStack_ = undoStack;
-}
-
-void StylizeController::setBrushQueue(BrushQueue* brushQueue) {
-  brushQueue_ = brushQueue;
-}
+void StylizeController::setContext(const EditorContext& ctx) { ctx_ = ctx; }
 
 bool StylizeController::toggleBold() {
   return wrapOrInsert(QStringLiteral("**"), QStringLiteral("**"), QString(), EditTransaction::Kind::InsertText, QStringLiteral("Bold"));
@@ -51,8 +37,8 @@ bool StylizeController::wrapOrInsert(
     QString placeholder,
     EditTransaction::Kind kind,
     QString label) {
-  if (selection_ && selection_->hasCursor()) {
-    const SelectionRange selection = selection_->selection();
+  if (ctx_.selection && ctx_.selection->hasCursor()) {
+    const SelectionRange selection = ctx_.selection->selection();
     if (selection.anchor.isValid() && selection.focus.isValid() && selection.anchor.blockId != selection.focus.blockId) {
       if (placeholder.isEmpty()) {
         return wrapMultiBlockSelection(std::move(openMarker), std::move(closeMarker), kind, std::move(label));
@@ -106,11 +92,11 @@ bool StylizeController::wrapMultiBlockSelection(
     QString closeMarker,
     EditTransaction::Kind kind,
     QString label) {
-  if (!session_ || !selection_ || !selection_->hasCursor()) {
+  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor()) {
     return false;
   }
 
-  const SelectionRange selection = selection_->selection();
+  const SelectionRange selection = ctx_.selection->selection();
   if (selection.isCollapsed() || !selection.anchor.isValid() || !selection.focus.isValid() ||
       selection.anchor.blockId == selection.focus.blockId) {
     return false;
@@ -172,7 +158,7 @@ bool StylizeController::wrapMultiBlockSelection(
       self(self, *child);
     }
   };
-  collect(collect, session_->document().root());
+  collect(collect, ctx_.session->document().root());
 
   if (spans.isEmpty()) {
     emit unsupportedStyleRequested(QStringLiteral("No editable text is selected."));
@@ -183,7 +169,7 @@ bool StylizeController::wrapMultiBlockSelection(
     return a.sourceStart > b.sourceStart;
   });
 
-  const QString beforeText = session_->markdownText();
+  const QString beforeText = ctx_.session->markdownText();
   const qsizetype sourceStart = spans.last().sourceStart;
   const qsizetype sourceEnd = spans.first().sourceEnd;
   QString replacement = beforeText.mid(sourceStart, sourceEnd - sourceStart);
@@ -214,11 +200,11 @@ bool StylizeController::wrapMultiBlockSelection(
 }
 
 bool StylizeController::paragraphContext(ParagraphStyleContext& context) const {
-  if (!session_ || !selection_ || !selection_->hasCursor()) {
+  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor()) {
     return false;
   }
 
-  const SelectionRange selection = selection_->selection();
+  const SelectionRange selection = ctx_.selection->selection();
   if (!selection.anchor.isValid() || !selection.focus.isValid()) {
     return false;
   }
@@ -234,11 +220,11 @@ bool StylizeController::paragraphContextFor(
     const SelectionRange& selection,
     ParagraphStyleContext& context,
     bool requirePlainInline) const {
-  if (!session_) {
+  if (!ctx_.session) {
     return false;
   }
 
-  MarkdownNode* node = session_->document().node(blockId);
+  MarkdownNode* node = ctx_.session->document().node(blockId);
   if (!node ||
       (node->type() != BlockType::Paragraph && node->type() != BlockType::Heading && node->type() != BlockType::ListItem)) {
     return false;
@@ -266,7 +252,7 @@ bool StylizeController::fillEditableContext(
     return false;
   }
 
-  const QString markdown = session_->markdownText();
+  const QString markdown = ctx_.session->markdownText();
   qsizetype sourceStart = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
   const qsizetype sourceEnd = sourceOffsetForLineEnd(markdown, range.lineEnd);
   if (sourceStart < 0 || sourceEnd < sourceStart) {
@@ -369,27 +355,27 @@ bool StylizeController::applyStyleDelta(
     qsizetype nextAnchorSourceOffset,
     qsizetype nextFocusSourceOffset,
     QVector<LocalEditNodeHint> nodeHints) {
-  if (!session_ || sourceStart < 0 || removedLength < 0 || sourceStart + removedLength > session_->markdownText().size()) {
+  if (!ctx_.session || sourceStart < 0 || removedLength < 0 || sourceStart + removedLength > ctx_.session->markdownText().size()) {
     return false;
   }
 
-  const CursorPosition beforeCursor = selection_ && selection_->hasCursor() ? selection_->cursorPosition() : CursorPosition();
-  const QString removedText = session_->markdownText().mid(sourceStart, removedLength);
+  const CursorPosition beforeCursor = ctx_.selection && ctx_.selection->hasCursor() ? ctx_.selection->cursorPosition() : CursorPosition();
+  const QString removedText = ctx_.session->markdownText().mid(sourceStart, removedLength);
   QVector<NodeId> affectedNodes;
   for (const LocalEditNodeHint& hint : nodeHints) {
     if (hint.nodeId.isValid() && !affectedNodes.contains(hint.nodeId)) {
       affectedNodes.push_back(hint.nodeId);
     }
   }
-  if (!session_->applyTextDelta(sourceStart, removedLength, insertedText, true, std::move(nodeHints))) {
+  if (!ctx_.session->applyTextDelta(sourceStart, removedLength, insertedText, true, std::move(nodeHints))) {
     return false;
   }
 
   SelectionRange nextSelection;
   nextSelection.anchor = cursorForSourceOffset(nextAnchorSourceOffset);
   nextSelection.focus = cursorForSourceOffset(nextFocusSourceOffset);
-  if (selection_ && nextSelection.focus.isValid()) {
-    selection_->setSelection(nextSelection);
+  if (ctx_.selection && nextSelection.focus.isValid()) {
+    ctx_.selection->setSelection(nextSelection);
   }
   if (nextSelection.anchor.blockId.isValid() && !affectedNodes.contains(nextSelection.anchor.blockId)) {
     affectedNodes.push_back(nextSelection.anchor.blockId);
@@ -397,8 +383,8 @@ bool StylizeController::applyStyleDelta(
   if (nextSelection.focus.blockId.isValid() && !affectedNodes.contains(nextSelection.focus.blockId)) {
     affectedNodes.push_back(nextSelection.focus.blockId);
   }
-  if (undoStack_ && beforeCursor.isValid() && nextSelection.focus.isValid()) {
-    undoStack_->push(EditTransaction(
+  if (ctx_.undoStack && beforeCursor.isValid() && nextSelection.focus.isValid()) {
+    ctx_.undoStack->push(EditTransaction(
         kind,
         label,
         TextDeltaCommand{
@@ -407,11 +393,11 @@ bool StylizeController::applyStyleDelta(
             nextSelection.focus,
             std::move(affectedNodes)}));
   }
-  if (brushQueue_) {
+  if (ctx_.brushQueue) {
     if (!affectedNodes.isEmpty()) {
-      brushQueue_->requestBlocksRefresh(std::move(affectedNodes));
+      ctx_.brushQueue->requestBlocksRefresh(std::move(affectedNodes));
     } else {
-      brushQueue_->requestFullRefresh();
+      ctx_.brushQueue->requestFullRefresh();
     }
   }
   return true;
@@ -419,16 +405,16 @@ bool StylizeController::applyStyleDelta(
 
 CursorPosition StylizeController::cursorForSourceOffset(qsizetype sourceOffset) const {
   CursorPosition cursor;
-  if (!session_) {
+  if (!ctx_.session) {
     return cursor;
   }
 
-  MarkdownNode* node = paragraphAtSourceOffset(session_->document().root(), sourceOffset);
+  MarkdownNode* node = paragraphAtSourceOffset(ctx_.session->document().root(), sourceOffset);
   if (!node) {
     return cursor;
   }
 
-  const QString markdown = session_->markdownText();
+  const QString markdown = ctx_.session->markdownText();
   ParagraphStyleContext context;
   SelectionRange selection;
   selection.anchor.blockId = node->id();

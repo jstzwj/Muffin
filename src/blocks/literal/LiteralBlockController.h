@@ -4,6 +4,7 @@
 #include "document/NodeId.h"
 #include "edit/EditTransaction.h"
 #include "editor/CursorPosition.h"
+#include "editor/EditorContext.h"
 
 #include <QString>
 
@@ -11,11 +12,7 @@
 
 namespace muffin {
 
-class BrushQueue;
-class DocumentSession;
 class MarkdownNode;
-class SelectionController;
-class UndoStack;
 
 struct LiteralBlockSpec {
   BlockType blockType = BlockType::Unknown;
@@ -36,10 +33,7 @@ public:
 
   explicit LiteralBlockController(LiteralBlockSpec spec);
 
-  void setDocumentSession(DocumentSession* session);
-  void setSelectionController(SelectionController* selection);
-  void setUndoStack(UndoStack* undoStack);
-  void setBrushQueue(BrushQueue* brushQueue);
+  void setContext(const EditorContext& ctx);
   void setRejectedHandler(RejectedFn handler);
 
   BlockType blockType() const;
@@ -70,10 +64,7 @@ public:
 private:
   LiteralBlockSpec spec_;
   RejectedFn rejectedHandler_;
-  DocumentSession* session_ = nullptr;
-  SelectionController* selection_ = nullptr;
-  UndoStack* undoStack_ = nullptr;
-  BrushQueue* brushQueue_ = nullptr;
+  EditorContext ctx_;
   NodeId editingId_;
   int editingIndex_ = -1;
 };

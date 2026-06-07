@@ -54,7 +54,7 @@ NodeId refreshNodeFor(DocumentSession* session, NodeId nodeId) {
 }  // namespace
 
 BlockEditContextResolver InputController::contextResolver() const {
-  return BlockEditContextResolver(session_, selection_);
+  return BlockEditContextResolver(ctx_.session, ctx_.selection);
 }
 
 bool InputController::selectionSourceRange(qsizetype& start, qsizetype& end) const {
@@ -62,13 +62,13 @@ bool InputController::selectionSourceRange(qsizetype& start, qsizetype& end) con
 }
 
 bool InputController::blockSelectionSourceRange(qsizetype& start, qsizetype& end) const {
-  if (!selection_ || !selection_->hasCursor() || !session_ || selection_->selection().isCollapsed()) {
+  if (!ctx_.selection || !ctx_.selection->hasCursor() || !ctx_.session || ctx_.selection->selection().isCollapsed()) {
     return false;
   }
 
-  const SelectionRange range = selection_->selection();
-  MarkdownNode* anchorNode = session_->document().node(range.anchor.blockId);
-  MarkdownNode* focusNode = session_->document().node(range.focus.blockId);
+  const SelectionRange range = ctx_.selection->selection();
+  MarkdownNode* anchorNode = ctx_.session->document().node(range.anchor.blockId);
+  MarkdownNode* focusNode = ctx_.session->document().node(range.focus.blockId);
   if (!anchorNode || !focusNode) {
     return false;
   }
@@ -107,7 +107,7 @@ bool InputController::editParagraph(TextBlockCommandBuilder::Operation operation
     return false;
   }
 
-  const TextBlockCommandBuilder builder(session_, &resolver);
+  const TextBlockCommandBuilder builder(ctx_.session, &resolver);
   return applyTextCommand(builder.buildTextEdit(context, operation, std::move(text)));
 }
 
@@ -162,22 +162,22 @@ void InputController::applyLocalEdit(
     bool preferLaterEmptyAtOffset,
     bool structureEdit) {
   PerfTimer perf("input.applyLocalEdit");
-  if (!session_ || sourceStart < 0 || removedLength < 0) {
+  if (!ctx_.session || sourceStart < 0 || removedLength < 0) {
     return;
   }
 
-  const CursorPosition beforeCursor = selection_ && selection_->hasCursor() ? selection_->cursorPosition() : CursorPosition();
-  const QString& currentText = session_->markdownText();
+  const CursorPosition beforeCursor = ctx_.selection && ctx_.selection->hasCursor() ? ctx_.selection->cursorPosition() : CursorPosition();
+  const QString& currentText = ctx_.session->markdownText();
   if (sourceStart + removedLength > currentText.size()) {
     return;
   }
 
   const QString removedText = currentText.mid(sourceStart, removedLength);
-  const bool snapshotUndoLikely = undoStack_ && !beforeCursor.blockId.isValid();
+  const bool snapshotUndoLikely = ctx_.undoStack && !beforeCursor.blockId.isValid();
   QString beforeText = snapshotUndoLikely ? QString(currentText) : QString();
   bool beforeTextCaptured = snapshotUndoLikely;
   const bool appliedLocally =
-      session_->applyTextDelta(sourceStart, removedLength, insertedText, true, std::move(nodeHints));
+      ctx_.session->applyTextDelta(sourceStart, removedLength, insertedText, true, std::move(nodeHints));
   QString nextText;
   if (!appliedLocally) {
     if (!beforeTextCaptured) {
@@ -186,23 +186,23 @@ void InputController::applyLocalEdit(
     }
     nextText = beforeText;
     nextText.replace(sourceStart, removedLength, insertedText);
-    session_->applyMarkdownText(nextText, true);
+    ctx_.session->applyMarkdownText(nextText, true);
   }
 
   CursorPosition nextCursor = cursorAfterEdit(preferredCursor, fallbackSourceOffset, preferLaterEmptyAtOffset);
-  if (selection_) {
+  if (ctx_.selection) {
     if (!nextCursor.isValid()) {
-      nextCursor = cursorForSourceOffset(session_->markdownText().size());
+      nextCursor = cursorForSourceOffset(ctx_.session->markdownText().size());
     }
-    selection_->setCursorPosition(nextCursor);
+    ctx_.selection->setCursorPosition(nextCursor);
   }
 
-  if (undoStack_) {
+  if (ctx_.undoStack) {
     const bool textDeltaUndoEligible = appliedLocally && !structureEdit && beforeCursor.isValid() && nextCursor.isValid();
     if (textDeltaUndoEligible) {
       QVector<NodeId> affectedNodes;
-      affectedNodes.push_back(refreshNodeFor(session_, nextCursor.blockId));
-      undoStack_->push(EditTransaction(
+      affectedNodes.push_back(refreshNodeFor(ctx_.session, nextCursor.blockId));
+      ctx_.undoStack->push(EditTransaction(
           kind,
           label,
           TextDeltaCommand{
@@ -212,23 +212,23 @@ void InputController::applyLocalEdit(
               std::move(affectedNodes)}));
     } else {
       if (!beforeTextCaptured) {
-        beforeText = session_->markdownText();
+        beforeText = ctx_.session->markdownText();
         beforeText.replace(sourceStart, insertedText.size(), removedText);
         beforeTextCaptured = true;
       }
       if (nextText.isEmpty()) {
-        nextText = session_->markdownText();
+        nextText = ctx_.session->markdownText();
       }
-      undoStack_->push(EditTransaction(kind, label, {beforeText, beforeCursor}, {std::move(nextText), nextCursor}));
+      ctx_.undoStack->push(EditTransaction(kind, label, {beforeText, beforeCursor}, {std::move(nextText), nextCursor}));
     }
   }
-  if (brushQueue_) {
+  if (ctx_.brushQueue) {
     if (!appliedLocally) {
-      brushQueue_->requestFullRefresh();
-    } else if (structureEdit || session_->lastLocalEditChangedTopLevelStructure()) {
-      brushQueue_->requestTopLevelRangeRefresh(session_->lastLocalTopLevelRangeChange());
+      ctx_.brushQueue->requestFullRefresh();
+    } else if (structureEdit || ctx_.session->lastLocalEditChangedTopLevelStructure()) {
+      ctx_.brushQueue->requestTopLevelRangeRefresh(ctx_.session->lastLocalTopLevelRangeChange());
     } else {
-      brushQueue_->requestBlockRefresh(refreshNodeFor(session_, nextCursor.blockId));
+      ctx_.brushQueue->requestBlockRefresh(refreshNodeFor(ctx_.session, nextCursor.blockId));
     }
   }
 }
@@ -259,8 +259,8 @@ void InputController::applyEdit(
     QVector<LocalEditNodeHint> nodeHints,
     bool preferLaterEmptyAtOffset) {
   PerfTimer perf("input.applyEdit.diffFallback");
-  const CursorPosition beforeCursor = selection_ && selection_->hasCursor() ? selection_->cursorPosition() : CursorPosition();
-  const QString beforeText = session_->markdownText();
+  const CursorPosition beforeCursor = ctx_.selection && ctx_.selection->hasCursor() ? ctx_.selection->cursorPosition() : CursorPosition();
+  const QString beforeText = ctx_.session->markdownText();
 
   qsizetype prefix = 0;
   const qsizetype minSize = qMin(beforeText.size(), nextText.size());
@@ -275,25 +275,25 @@ void InputController::applyEdit(
   }
 
   const bool appliedLocally =
-      session_->applyTextDelta(prefix, beforeSuffix - prefix, nextText.mid(prefix, nextSuffix - prefix), true, std::move(nodeHints));
+      ctx_.session->applyTextDelta(prefix, beforeSuffix - prefix, nextText.mid(prefix, nextSuffix - prefix), true, std::move(nodeHints));
   if (!appliedLocally) {
-    session_->applyMarkdownText(nextText, true);
+    ctx_.session->applyMarkdownText(nextText, true);
   }
   CursorPosition nextCursor = cursorAfterEdit(preferredCursor, fallbackSourceOffset, preferLaterEmptyAtOffset);
-  if (selection_) {
+  if (ctx_.selection) {
     if (!nextCursor.isValid()) {
-      nextCursor = cursorForSourceOffset(session_->markdownText().size());
+      nextCursor = cursorForSourceOffset(ctx_.session->markdownText().size());
     }
-    selection_->setCursorPosition(nextCursor);
+    ctx_.selection->setCursorPosition(nextCursor);
   }
-  if (undoStack_) {
+  if (ctx_.undoStack) {
     const QString removedText = beforeText.mid(prefix, beforeSuffix - prefix);
     const QString insertedText = nextText.mid(prefix, nextSuffix - prefix);
     const bool textDeltaUndoEligible = appliedLocally && beforeCursor.isValid() && nextCursor.isValid();
     if (textDeltaUndoEligible) {
       QVector<NodeId> affectedNodes;
-      affectedNodes.push_back(refreshNodeFor(session_, nextCursor.blockId));
-      undoStack_->push(EditTransaction(
+      affectedNodes.push_back(refreshNodeFor(ctx_.session, nextCursor.blockId));
+      ctx_.undoStack->push(EditTransaction(
           kind,
           label,
           TextDeltaCommand{
@@ -302,16 +302,16 @@ void InputController::applyEdit(
               nextCursor,
               std::move(affectedNodes)}));
     } else {
-      undoStack_->push(EditTransaction(kind, label, {beforeText, beforeCursor}, {std::move(nextText), nextCursor}));
+      ctx_.undoStack->push(EditTransaction(kind, label, {beforeText, beforeCursor}, {std::move(nextText), nextCursor}));
     }
   }
-  if (brushQueue_) {
+  if (ctx_.brushQueue) {
     if (!appliedLocally) {
-      brushQueue_->requestFullRefresh();
-    } else if (session_->lastLocalEditChangedTopLevelStructure()) {
-      brushQueue_->requestTopLevelRangeRefresh(session_->lastLocalTopLevelRangeChange());
+      ctx_.brushQueue->requestFullRefresh();
+    } else if (ctx_.session->lastLocalEditChangedTopLevelStructure()) {
+      ctx_.brushQueue->requestTopLevelRangeRefresh(ctx_.session->lastLocalTopLevelRangeChange());
     } else {
-      brushQueue_->requestBlockRefresh(refreshNodeFor(session_, nextCursor.blockId));
+      ctx_.brushQueue->requestBlockRefresh(refreshNodeFor(ctx_.session, nextCursor.blockId));
     }
   }
 }

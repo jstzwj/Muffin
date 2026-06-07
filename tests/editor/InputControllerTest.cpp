@@ -8,6 +8,7 @@
 #include "editor/BlockEditContext.h"
 #include "editor/BrushQueue.h"
 #include "editor/ClipboardController.h"
+#include "editor/EditorContext.h"
 #include "editor/EditorController.h"
 #include "editor/EditorView.h"
 #include "editor/InputController.h"
@@ -147,10 +148,7 @@ void wireInput(
     SelectionController& selection,
     UndoStack& undoStack,
     BrushQueue& brushQueue) {
-  input.setDocumentSession(&session);
-  input.setSelectionController(&selection);
-  input.setUndoStack(&undoStack);
-  input.setBrushQueue(&brushQueue);
+  input.setContext({&session, &selection, &undoStack, &brushQueue});
 }
 
 void setSelection(SelectionController& selection, MarkdownNode* block, qsizetype anchor, qsizetype focus) {
@@ -209,8 +207,7 @@ QString selectedPlainText(const DocumentSession& session, const SelectionControl
 }
 
 void wireClipboard(ClipboardController& clipboard, DocumentSession& session, SelectionController& selection, InputController& input) {
-  clipboard.setDocumentSession(&session);
-  clipboard.setSelectionController(&selection);
+  clipboard.setContext({&session, &selection, nullptr, nullptr});
   clipboard.setInputController(&input);
 }
 
@@ -1318,14 +1315,8 @@ void testInputEmptyCodeFenceBackspaceRemovesBlock() {
   BrushQueue brushQueue;
   CodeFenceController codeFence;
   MathBlockController mathBlock;
-  codeFence.setDocumentSession(&session);
-  codeFence.setSelectionController(&selection);
-  codeFence.setUndoStack(&undoStack);
-  codeFence.setBrushQueue(&brushQueue);
-  mathBlock.setDocumentSession(&session);
-  mathBlock.setSelectionController(&selection);
-  mathBlock.setUndoStack(&undoStack);
-  mathBlock.setBrushQueue(&brushQueue);
+  codeFence.setContext({&session, &selection, &undoStack, &brushQueue});
+  mathBlock.setContext({&session, &selection, &undoStack, &brushQueue});
 
   InputController input;
   wireInput(input, session, selection, undoStack, brushQueue);
@@ -1370,14 +1361,8 @@ void testInputEmptyCodeFenceDeleteRemovesBlock() {
   BrushQueue brushQueue;
   CodeFenceController codeFence;
   MathBlockController mathBlock;
-  codeFence.setDocumentSession(&session);
-  codeFence.setSelectionController(&selection);
-  codeFence.setUndoStack(&undoStack);
-  codeFence.setBrushQueue(&brushQueue);
-  mathBlock.setDocumentSession(&session);
-  mathBlock.setSelectionController(&selection);
-  mathBlock.setUndoStack(&undoStack);
-  mathBlock.setBrushQueue(&brushQueue);
+  codeFence.setContext({&session, &selection, &undoStack, &brushQueue});
+  mathBlock.setContext({&session, &selection, &undoStack, &brushQueue});
 
   InputController input;
   wireInput(input, session, selection, undoStack, brushQueue);
@@ -1409,14 +1394,8 @@ void testInputNonEmptyCodeFenceBackspaceDoesNotRemoveBlock() {
   BrushQueue brushQueue;
   CodeFenceController codeFence;
   MathBlockController mathBlock;
-  codeFence.setDocumentSession(&session);
-  codeFence.setSelectionController(&selection);
-  codeFence.setUndoStack(&undoStack);
-  codeFence.setBrushQueue(&brushQueue);
-  mathBlock.setDocumentSession(&session);
-  mathBlock.setSelectionController(&selection);
-  mathBlock.setUndoStack(&undoStack);
-  mathBlock.setBrushQueue(&brushQueue);
+  codeFence.setContext({&session, &selection, &undoStack, &brushQueue});
+  mathBlock.setContext({&session, &selection, &undoStack, &brushQueue});
 
   InputController input;
   wireInput(input, session, selection, undoStack, brushQueue);

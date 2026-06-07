@@ -4,9 +4,10 @@
 #include "document/InlineProjection.h"
 #include "document/SelectionSerializer.h"
 #include "edit/UndoStack.h"
-#include "editor/BrushQueue.h"
 #include "editor/BlockEditContext.h"
+#include "editor/BrushQueue.h"
 #include "editor/ClipboardController.h"
+#include "editor/EditorContext.h"
 #include "editor/EditorController.h"
 #include "editor/EditorView.h"
 #include "editor/InputController.h"
@@ -253,10 +254,7 @@ void wireInput(
     SelectionController& selection,
     UndoStack& undoStack,
     BrushQueue& brushQueue) {
-  input.setDocumentSession(&session);
-  input.setSelectionController(&selection);
-  input.setUndoStack(&undoStack);
-  input.setBrushQueue(&brushQueue);
+  input.setContext({&session, &selection, &undoStack, &brushQueue});
 }
 
 void wireStyle(
@@ -265,10 +263,7 @@ void wireStyle(
     SelectionController& selection,
     UndoStack& undoStack,
     BrushQueue& brushQueue) {
-  stylize.setDocumentSession(&session);
-  stylize.setSelectionController(&selection);
-  stylize.setUndoStack(&undoStack);
-  stylize.setBrushQueue(&brushQueue);
+  stylize.setContext({&session, &selection, &undoStack, &brushQueue});
 }
 
 CursorPosition inlineCursor(NodeId blockId, qsizetype textOffset, qsizetype sourceOffset) {
@@ -336,8 +331,7 @@ QString selectedPlainText(const DocumentSession& session, const SelectionControl
 }
 
 void wireClipboard(ClipboardController& clipboard, DocumentSession& session, SelectionController& selection, InputController& input) {
-  clipboard.setDocumentSession(&session);
-  clipboard.setSelectionController(&selection);
+  clipboard.setContext({&session, &selection, nullptr, nullptr});
   clipboard.setInputController(&input);
 }
 

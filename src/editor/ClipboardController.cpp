@@ -12,12 +12,8 @@ namespace muffin {
 
 ClipboardController::ClipboardController(QObject* parent) : QObject(parent) {}
 
-void ClipboardController::setDocumentSession(DocumentSession* session) {
-  session_ = session;
-}
-
-void ClipboardController::setSelectionController(SelectionController* selectionController) {
-  selectionController_ = selectionController;
+void ClipboardController::setContext(const EditorContext& ctx) {
+  ctx_ = ctx;
 }
 
 void ClipboardController::setInputController(InputController* inputController) {
@@ -25,15 +21,15 @@ void ClipboardController::setInputController(InputController* inputController) {
 }
 
 bool ClipboardController::copy() {
-  if (!session_ || !selectionController_ || !selectionController_->hasCursor() ||
-      selectionController_->selection().isCollapsed()) {
+  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor() ||
+      ctx_.selection->selection().isCollapsed()) {
     return false;
   }
 
   const SelectionExportResult markdown = selectionSerializer_.exportSelection(
-      SelectionExportRequest{&session_->document(), selectionController_->selection(), SelectionExportFormat::Markdown});
+      SelectionExportRequest{&ctx_.session->document(), ctx_.selection->selection(), SelectionExportFormat::Markdown});
   const SelectionExportResult plainText = selectionSerializer_.exportSelection(
-      SelectionExportRequest{&session_->document(), selectionController_->selection(), SelectionExportFormat::PlainText});
+      SelectionExportRequest{&ctx_.session->document(), ctx_.selection->selection(), SelectionExportFormat::PlainText});
   if (markdown.text.isEmpty() && plainText.text.isEmpty()) {
     return false;
   }
@@ -67,13 +63,13 @@ bool ClipboardController::paste() {
 }
 
 bool ClipboardController::copyAsPlainText() {
-  if (!session_ || !selectionController_ || !selectionController_->hasCursor() ||
-      selectionController_->selection().isCollapsed()) {
+  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor() ||
+      ctx_.selection->selection().isCollapsed()) {
     return false;
   }
 
   const SelectionExportResult result = selectionSerializer_.exportSelection(
-      SelectionExportRequest{&session_->document(), selectionController_->selection(), SelectionExportFormat::PlainText});
+      SelectionExportRequest{&ctx_.session->document(), ctx_.selection->selection(), SelectionExportFormat::PlainText});
   if (result.text.isEmpty()) {
     return false;
   }
@@ -85,13 +81,13 @@ bool ClipboardController::copyAsPlainText() {
 }
 
 bool ClipboardController::copyAsMarkdown() {
-  if (!session_ || !selectionController_ || !selectionController_->hasCursor() ||
-      selectionController_->selection().isCollapsed()) {
+  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor() ||
+      ctx_.selection->selection().isCollapsed()) {
     return false;
   }
 
   const SelectionExportResult result = selectionSerializer_.exportSelection(
-      SelectionExportRequest{&session_->document(), selectionController_->selection(), SelectionExportFormat::Markdown});
+      SelectionExportRequest{&ctx_.session->document(), ctx_.selection->selection(), SelectionExportFormat::Markdown});
   if (result.text.isEmpty()) {
     return false;
   }
@@ -104,13 +100,13 @@ bool ClipboardController::copyAsMarkdown() {
 }
 
 bool ClipboardController::copyAsHtml() {
-  if (!session_ || !selectionController_ || !selectionController_->hasCursor() ||
-      selectionController_->selection().isCollapsed()) {
+  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor() ||
+      ctx_.selection->selection().isCollapsed()) {
     return false;
   }
 
   const SelectionExportResult result = selectionSerializer_.exportSelection(
-      SelectionExportRequest{&session_->document(), selectionController_->selection(), SelectionExportFormat::Html});
+      SelectionExportRequest{&ctx_.session->document(), ctx_.selection->selection(), SelectionExportFormat::Html});
   if (result.text.isEmpty()) {
     return false;
   }

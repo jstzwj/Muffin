@@ -384,6 +384,7 @@ set(MUFFIN_UI_SOURCES
   src/editor/BlockEditContext.h
   src/editor/ClipboardController.cpp
   src/editor/ClipboardController.h
+  src/editor/EditorContext.h
   src/editor/CursorPosition.h
   src/editor/EditorController.cpp
   src/editor/EditorController.h

@@ -3,16 +3,13 @@
 #include "app/DocumentSession.h"
 #include "document/MarkdownTypes.h"
 #include "edit/EditTransaction.h"
+#include "editor/EditorContext.h"
 
 #include <QObject>
 
 namespace muffin {
 
-class BrushQueue;
-class DocumentSession;
 class MarkdownNode;
-class SelectionController;
-class UndoStack;
 
 class StylizeController final : public QObject {
   Q_OBJECT
@@ -20,10 +17,7 @@ class StylizeController final : public QObject {
 public:
   explicit StylizeController(QObject* parent = nullptr);
 
-  void setDocumentSession(DocumentSession* session);
-  void setSelectionController(SelectionController* selection);
-  void setUndoStack(UndoStack* undoStack);
-  void setBrushQueue(BrushQueue* brushQueue);
+  void setContext(const EditorContext& ctx);
 
   bool toggleBold();
   bool toggleItalic();
@@ -69,10 +63,7 @@ private:
   CursorPosition cursorForSourceOffset(qsizetype sourceOffset) const;
   MarkdownNode* paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset) const;
 
-  DocumentSession* session_ = nullptr;
-  SelectionController* selection_ = nullptr;
-  UndoStack* undoStack_ = nullptr;
-  BrushQueue* brushQueue_ = nullptr;
+  EditorContext ctx_;
 };
 
 }  // namespace muffin

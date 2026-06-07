@@ -6,6 +6,7 @@
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
+#include "editor/EditorContext.h"
 #include "editor/SelectionController.h"
 #include "parser/CmarkGfmParser.h"
 #include "parser/MarkdownSerializer.h"
@@ -150,10 +151,7 @@ void testTableControllerCommands() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   TableController controller;
-  controller.setDocumentSession(&session);
-  controller.setSelectionController(&selection);
-  controller.setUndoStack(&undoStack);
-  controller.setBrushQueue(&brushQueue);
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), false);
   MarkdownNode& table = *session.document().root().children().front();
@@ -244,10 +242,7 @@ void testTableControllerResize() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   TableController controller;
-  controller.setDocumentSession(&session);
-  controller.setSelectionController(&selection);
-  controller.setUndoStack(&undoStack);
-  controller.setBrushQueue(&brushQueue);
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("| A | B | C |\n| --- | --- | --- |\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |"), false);
   MarkdownNode& table = *session.document().root().children().front();
@@ -277,10 +272,7 @@ void testTableControllerDeleteTable() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   TableController controller;
-  controller.setDocumentSession(&session);
-  controller.setSelectionController(&selection);
-  controller.setUndoStack(&undoStack);
-  controller.setBrushQueue(&brushQueue);
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("before\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\nafter"), false);
   MarkdownNode& table = *session.document().root().children().at(1);
@@ -310,10 +302,7 @@ void testTableControllerCellTextEditing() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   TableController tableController;
-  tableController.setDocumentSession(&session);
-  tableController.setSelectionController(&selection);
-  tableController.setUndoStack(&undoStack);
-  tableController.setBrushQueue(&brushQueue);
+  tableController.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), false);
   MarkdownNode& table = *session.document().root().children().front();
@@ -351,10 +340,7 @@ void testTableControllerPreservesInlineCodeOnCellEdit() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   TableController tableController;
-  tableController.setDocumentSession(&session);
-  tableController.setSelectionController(&selection);
-  tableController.setUndoStack(&undoStack);
-  tableController.setBrushQueue(&brushQueue);
+  tableController.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| vendored `cmark-gfm` |"), false);
   MarkdownNode& table = *session.document().root().children().front();
@@ -387,10 +373,7 @@ void testTableControllerDeletesOnlyEditableInlineContent() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   TableController tableController;
-  tableController.setDocumentSession(&session);
-  tableController.setSelectionController(&selection);
-  tableController.setUndoStack(&undoStack);
-  tableController.setBrushQueue(&brushQueue);
+  tableController.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| `code` |"), false);
   setTableCellCursor(session, selection, 1, 0, 2, 1);
@@ -419,10 +402,7 @@ void testTableControllerPreservesTableEscapesOnCellDelete() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   TableController tableController;
-  tableController.setDocumentSession(&session);
-  tableController.setSelectionController(&selection);
-  tableController.setUndoStack(&undoStack);
-  tableController.setBrushQueue(&brushQueue);
+  tableController.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| a \\| b |"), false);
   setTableCellCursor(session, selection, 1, 0, QStringLiteral("a \\|").size(), 3);
@@ -443,10 +423,7 @@ void testTableControllerPreservesInlineContainersOnCellEdit() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   TableController tableController;
-  tableController.setDocumentSession(&session);
-  tableController.setSelectionController(&selection);
-  tableController.setUndoStack(&undoStack);
-  tableController.setBrushQueue(&brushQueue);
+  tableController.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| **bold** |"), false);
   setTableCellCursor(session, selection, 1, 0, QStringLiteral("**bo").size(), 2);
@@ -470,10 +447,7 @@ void testTableControllerDeletesTableBreakAsUnit() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   TableController tableController;
-  tableController.setDocumentSession(&session);
-  tableController.setSelectionController(&selection);
-  tableController.setUndoStack(&undoStack);
-  tableController.setBrushQueue(&brushQueue);
+  tableController.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| a<br>b |"), false);
   setTableCellCursor(session, selection, 1, 0, QStringLiteral("a<br>").size(), 2);
@@ -492,10 +466,7 @@ void testTableCellSourceEditMixedTableTokensAndInlineMarkers() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   TableController tableController;
-  tableController.setDocumentSession(&session);
-  tableController.setSelectionController(&selection);
-  tableController.setUndoStack(&undoStack);
-  tableController.setBrushQueue(&brushQueue);
+  tableController.setContext({&session, &selection, &undoStack, &brushQueue});
 
   const QString boldContent = QStringLiteral("a \\| b<br> **bold**");
   session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| %1 |").arg(boldContent), false);
@@ -567,10 +538,7 @@ void testTableControllerInsertTable() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   TableController tableController;
-  tableController.setDocumentSession(&session);
-  tableController.setSelectionController(&selection);
-  tableController.setUndoStack(&undoStack);
-  tableController.setBrushQueue(&brushQueue);
+  tableController.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   require(tableController.insertTable(), "insert table should work");
@@ -590,10 +558,7 @@ void testTableControllerFormatSource() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   TableController tableController;
-  tableController.setDocumentSession(&session);
-  tableController.setSelectionController(&selection);
-  tableController.setUndoStack(&undoStack);
-  tableController.setBrushQueue(&brushQueue);
+  tableController.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("| A|B |\n|---|:---:|\n| 1| 2 |"), false);
   MarkdownNode& table = *session.document().root().children().front();

@@ -23,20 +23,8 @@ MathBlockController::MathBlockController(QObject* parent) : QObject(parent), lit
   literal_.setRejectedHandler([this](QString reason) { emit mathCommandRejected(std::move(reason)); });
 }
 
-void MathBlockController::setDocumentSession(DocumentSession* session) {
-  literal_.setDocumentSession(session);
-}
-
-void MathBlockController::setSelectionController(SelectionController* selection) {
-  literal_.setSelectionController(selection);
-}
-
-void MathBlockController::setUndoStack(UndoStack* undoStack) {
-  literal_.setUndoStack(undoStack);
-}
-
-void MathBlockController::setBrushQueue(BrushQueue* brushQueue) {
-  literal_.setBrushQueue(brushQueue);
+void MathBlockController::setContext(const EditorContext& ctx) {
+  literal_.setContext(ctx);
 }
 
 NodeId MathBlockController::currentMathBlockId() const {

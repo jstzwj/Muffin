@@ -3,6 +3,7 @@
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
+#include "editor/EditorContext.h"
 #include "editor/SelectionController.h"
 
 #include <cstdlib>
@@ -68,10 +69,7 @@ void testEnterEditAndTextEditing() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   CodeFenceController controller;
-  controller.setDocumentSession(&session);
-  controller.setSelectionController(&selection);
-  controller.setUndoStack(&undoStack);
-  controller.setBrushQueue(&brushQueue);
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("```cpp\nreturn 0;\n```"), false);
   MarkdownNode* code = firstCodeFence(session);
@@ -99,10 +97,7 @@ void testSetLanguageAndContent() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   CodeFenceController controller;
-  controller.setDocumentSession(&session);
-  controller.setSelectionController(&selection);
-  controller.setUndoStack(&undoStack);
-  controller.setBrushQueue(&brushQueue);
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("```\nalpha\n```"), false);
   MarkdownNode* code = firstCodeFence(session);
@@ -130,10 +125,7 @@ void testSetLanguageForSpecificFenceKeepsCursor() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   CodeFenceController controller;
-  controller.setDocumentSession(&session);
-  controller.setSelectionController(&selection);
-  controller.setUndoStack(&undoStack);
-  controller.setBrushQueue(&brushQueue);
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("```cpp\nfirst\n```\n\n```\nsecond\n```"), false);
   MarkdownNode* first = codeFenceAt(session, 0);
@@ -158,10 +150,7 @@ void testSelectionReplaceAndDelete() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   CodeFenceController controller;
-  controller.setDocumentSession(&session);
-  controller.setSelectionController(&selection);
-  controller.setUndoStack(&undoStack);
-  controller.setBrushQueue(&brushQueue);
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("```cpp\nabcdef\n```"), false);
   MarkdownNode* code = firstCodeFence(session);

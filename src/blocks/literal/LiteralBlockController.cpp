@@ -12,20 +12,8 @@ namespace muffin {
 
 LiteralBlockController::LiteralBlockController(LiteralBlockSpec spec) : spec_(std::move(spec)) {}
 
-void LiteralBlockController::setDocumentSession(DocumentSession* session) {
-  session_ = session;
-}
-
-void LiteralBlockController::setSelectionController(SelectionController* selection) {
-  selection_ = selection;
-}
-
-void LiteralBlockController::setUndoStack(UndoStack* undoStack) {
-  undoStack_ = undoStack;
-}
-
-void LiteralBlockController::setBrushQueue(BrushQueue* brushQueue) {
-  brushQueue_ = brushQueue;
+void LiteralBlockController::setContext(const EditorContext& ctx) {
+  ctx_ = ctx;
 }
 
 void LiteralBlockController::setRejectedHandler(RejectedFn handler) {
@@ -45,7 +33,7 @@ QString LiteralBlockController::tabText() const {
 }
 
 NodeId LiteralBlockController::currentBlockId() const {
-  if (!session_ || !selection_) {
+  if (!ctx_.session || !ctx_.selection) {
     return {};
   }
 
@@ -56,14 +44,14 @@ NodeId LiteralBlockController::currentBlockId() const {
     return editingNode->id();
   }
 
-  const HitTestResult hit = selection_->currentHit();
+  const HitTestResult hit = ctx_.selection->currentHit();
   if (hit.zone == spec_.hitZone && hit.blockId.isValid()) {
     return hit.blockId;
   }
 
-  if (selection_->hasCursor()) {
-    const CursorPosition cursor = selection_->cursorPosition();
-    MarkdownNode* node = session_->document().node(cursor.blockId);
+  if (ctx_.selection->hasCursor()) {
+    const CursorPosition cursor = ctx_.selection->cursorPosition();
+    MarkdownNode* node = ctx_.session->document().node(cursor.blockId);
     if (node && node->type() == spec_.blockType) {
       return node->id();
     }
@@ -90,8 +78,8 @@ bool LiteralBlockController::enterEditMode() {
   }
   editingId_ = id;
   editingIndex_ = blockIndexFor(id);
-  if (selection_) {
-    selection_->setCursorPosition(cursorFor(id, node->literal().size()));
+  if (ctx_.selection) {
+    ctx_.selection->setCursorPosition(cursorFor(id, node->literal().size()));
   }
   return true;
 }
@@ -127,7 +115,7 @@ bool LiteralBlockController::insertText(QString text) {
 }
 
 bool LiteralBlockController::deleteBackward() {
-  if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
+  if (ctx_.selection && ctx_.selection->hasCursor() && !ctx_.selection->selection().isCollapsed()) {
     return deleteSelection();
   }
   return mutateCurrentBlock(spec_.backspaceLabel, EditTransaction::Kind::DeleteText,
@@ -145,7 +133,7 @@ bool LiteralBlockController::deleteBackward() {
 }
 
 bool LiteralBlockController::deleteForward() {
-  if (selection_ && selection_->hasCursor() && !selection_->selection().isCollapsed()) {
+  if (ctx_.selection && ctx_.selection->hasCursor() && !ctx_.selection->selection().isCollapsed()) {
     return deleteSelection();
   }
   return mutateCurrentBlock(spec_.deleteLabel, EditTransaction::Kind::DeleteText,
@@ -194,7 +182,7 @@ bool LiteralBlockController::mutateCurrentBlock(QString label, EditTransaction::
 }
 
 bool LiteralBlockController::mutateBlock(NodeId requestedId, QString label, EditTransaction::Kind kind, const MutateFn& mutate) {
-  if (!session_ || !selection_) {
+  if (!ctx_.session || !ctx_.selection) {
     return false;
   }
 
@@ -206,7 +194,7 @@ bool LiteralBlockController::mutateBlock(NodeId requestedId, QString label, Edit
   NodeId nodeId = active->id();
   const NodeId originalId = nodeId;
   const int nodeIndex = blockIndexFor(nodeId);
-  const CursorPosition beforeCursor = selection_->hasCursor() ? selection_->cursorPosition() : cursorFor(nodeId, 0);
+  const CursorPosition beforeCursor = ctx_.selection->hasCursor() ? ctx_.selection->cursorPosition() : cursorFor(nodeId, 0);
   const int beforeCursorIndex = blockIndexFor(beforeCursor.blockId);
   const bool cursorWasInTarget = beforeCursor.blockId == nodeId || (wasEditing && beforeCursor.blockId == editingId_);
   std::unique_ptr<MarkdownNode> beforeNode = active->clone(CloneMode::PreserveIds);
@@ -220,7 +208,7 @@ bool LiteralBlockController::mutateBlock(NodeId requestedId, QString label, Edit
     return true;
   }
 
-  if (!session_->applyNodeSnapshot(nodeId, spec_.blockType, nodeIndex, *afterNode, true)) {
+  if (!ctx_.session->applyNodeSnapshot(nodeId, spec_.blockType, nodeIndex, *afterNode, true)) {
     return false;
   }
   if (MarkdownNode* reparsed = blockByIndex(nodeIndex)) {
@@ -235,16 +223,16 @@ bool LiteralBlockController::mutateBlock(NodeId requestedId, QString label, Edit
     nextCursor = cursorFor(nodeId, nextOffset);
   } else if (MarkdownNode* reparsedCursorNode = blockByIndex(beforeCursorIndex)) {
     nextCursor = cursorFor(reparsedCursorNode->id(), beforeCursor.text.textOffset);
-  } else if (MarkdownNode* reparsedNode = session_->document().node(beforeCursor.blockId)) {
+  } else if (MarkdownNode* reparsedNode = ctx_.session->document().node(beforeCursor.blockId)) {
     nextCursor = beforeCursor;
     nextCursor.blockId = reparsedNode->id();
     nextCursor.text.nodeId = reparsedNode->id();
   }
-  if (selection_ && nextCursor.isValid()) {
-    selection_->setCursorPosition(nextCursor);
+  if (ctx_.selection && nextCursor.isValid()) {
+    ctx_.selection->setCursorPosition(nextCursor);
   }
-  if (undoStack_) {
-    undoStack_->push(EditTransaction(
+  if (ctx_.undoStack) {
+    ctx_.undoStack->push(EditTransaction(
         kind,
         std::move(label),
         ReplaceNodeCommand{
@@ -257,8 +245,8 @@ bool LiteralBlockController::mutateBlock(NodeId requestedId, QString label, Edit
             nextCursor,
             QVector<NodeId>{originalId}}));
   }
-  if (brushQueue_) {
-    brushQueue_->requestBlockRefresh(nodeId);
+  if (ctx_.brushQueue) {
+    ctx_.brushQueue->requestBlockRefresh(nodeId);
   }
   return true;
 }
@@ -276,15 +264,15 @@ MarkdownNode* LiteralBlockController::currentBlock() const {
 }
 
 MarkdownNode* LiteralBlockController::blockById(NodeId id) const {
-  if (!session_ || !id.isValid()) {
+  if (!ctx_.session || !id.isValid()) {
     return nullptr;
   }
-  MarkdownNode* node = session_->document().node(id);
+  MarkdownNode* node = ctx_.session->document().node(id);
   return node && node->type() == spec_.blockType ? node : nullptr;
 }
 
 MarkdownNode* LiteralBlockController::blockByIndex(int targetIndex) const {
-  if (!session_ || targetIndex < 0) {
+  if (!ctx_.session || targetIndex < 0) {
     return nullptr;
   }
   int index = 0;
@@ -302,11 +290,11 @@ MarkdownNode* LiteralBlockController::blockByIndex(int targetIndex) const {
     }
     return nullptr;
   };
-  return visit(visit, session_->document().root());
+  return visit(visit, ctx_.session->document().root());
 }
 
 int LiteralBlockController::blockIndexFor(NodeId id) const {
-  if (!session_ || !id.isValid()) {
+  if (!ctx_.session || !id.isValid()) {
     return -1;
   }
   int index = 0;
@@ -325,7 +313,7 @@ int LiteralBlockController::blockIndexFor(NodeId id) const {
     }
     return -1;
   };
-  return visit(visit, session_->document().root());
+  return visit(visit, ctx_.session->document().root());
 }
 
 CursorPosition LiteralBlockController::cursorFor(NodeId id, qsizetype offset) const {
@@ -341,10 +329,10 @@ CursorPosition LiteralBlockController::cursorFor(NodeId id, qsizetype offset) co
 }
 
 bool LiteralBlockController::currentSelectionRange(qsizetype& startOffset, qsizetype& endOffset) const {
-  if (!selection_ || !selection_->hasCursor() || selection_->selection().isCollapsed()) {
+  if (!ctx_.selection || !ctx_.selection->hasCursor() || ctx_.selection->selection().isCollapsed()) {
     return false;
   }
-  const SelectionRange range = selection_->selection();
+  const SelectionRange range = ctx_.selection->selection();
   const NodeId id = currentBlockId();
   if (!id.isValid() || range.anchor.blockId != id || range.focus.blockId != id) {
     return false;

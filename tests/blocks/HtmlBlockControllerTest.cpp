@@ -4,6 +4,7 @@
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
+#include "editor/EditorContext.h"
 #include "editor/SelectionController.h"
 
 #include <cstdlib>
@@ -44,10 +45,7 @@ void testEnterEditAndTextEditing() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   HtmlBlockController controller;
-  controller.setDocumentSession(&session);
-  controller.setSelectionController(&selection);
-  controller.setUndoStack(&undoStack);
-  controller.setBrushQueue(&brushQueue);
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("<div>alpha</div>"), false);
   MarkdownNode* html = firstHtmlBlock(session);
@@ -75,10 +73,7 @@ void testSetHtmlRoundtripAndSanitizer() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   HtmlBlockController controller;
-  controller.setDocumentSession(&session);
-  controller.setSelectionController(&selection);
-  controller.setUndoStack(&undoStack);
-  controller.setBrushQueue(&brushQueue);
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("<section>old</section>"), false);
   MarkdownNode* html = firstHtmlBlock(session);

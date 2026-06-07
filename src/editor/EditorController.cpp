@@ -237,46 +237,23 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
   session_ = session;
   view_ = view;
 
-  inputController_.setDocumentSession(session_);
-  inputController_.setSelectionController(&selection_);
-  inputController_.setUndoStack(&undoStack_);
-  inputController_.setBrushQueue(&brushQueue_);
+  const EditorContext ctx{session_, &selection_, &undoStack_, &brushQueue_};
+
+  inputController_.setContext(ctx);
   inputController_.setTableController(&tableController_);
   inputController_.setFrontMatterController(&frontMatterController_);
   inputController_.setCodeFenceController(&codeFenceController_);
   inputController_.setHtmlBlockController(&htmlBlockController_);
   inputController_.setMathBlockController(&mathBlockController_);
   inputController_.attach(view_);
-  stylizeController_.setDocumentSession(session_);
-  stylizeController_.setSelectionController(&selection_);
-  stylizeController_.setUndoStack(&undoStack_);
-  stylizeController_.setBrushQueue(&brushQueue_);
-  paragraphController_.setDocumentSession(session_);
-  paragraphController_.setSelectionController(&selection_);
-  paragraphController_.setUndoStack(&undoStack_);
-  paragraphController_.setBrushQueue(&brushQueue_);
-  frontMatterController_.setDocumentSession(session_);
-  frontMatterController_.setSelectionController(&selection_);
-  frontMatterController_.setUndoStack(&undoStack_);
-  frontMatterController_.setBrushQueue(&brushQueue_);
-  codeFenceController_.setDocumentSession(session_);
-  codeFenceController_.setSelectionController(&selection_);
-  codeFenceController_.setUndoStack(&undoStack_);
-  codeFenceController_.setBrushQueue(&brushQueue_);
-  htmlBlockController_.setDocumentSession(session_);
-  htmlBlockController_.setSelectionController(&selection_);
-  htmlBlockController_.setUndoStack(&undoStack_);
-  htmlBlockController_.setBrushQueue(&brushQueue_);
-  mathBlockController_.setDocumentSession(session_);
-  mathBlockController_.setSelectionController(&selection_);
-  mathBlockController_.setUndoStack(&undoStack_);
-  mathBlockController_.setBrushQueue(&brushQueue_);
-  tableController_.setDocumentSession(session_);
-  tableController_.setSelectionController(&selection_);
-  tableController_.setUndoStack(&undoStack_);
-  tableController_.setBrushQueue(&brushQueue_);
-  clipboardController_.setDocumentSession(session_);
-  clipboardController_.setSelectionController(&selection_);
+  stylizeController_.setContext(ctx);
+  paragraphController_.setContext(ctx);
+  frontMatterController_.setContext(ctx);
+  codeFenceController_.setContext(ctx);
+  htmlBlockController_.setContext(ctx);
+  mathBlockController_.setContext(ctx);
+  tableController_.setContext(ctx);
+  clipboardController_.setContext(ctx);
   clipboardController_.setInputController(&inputController_);
 
   if (view_) {

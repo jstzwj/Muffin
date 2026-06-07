@@ -26,20 +26,8 @@ HtmlBlockController::HtmlBlockController(QObject* parent) : QObject(parent), lit
   literal_.setRejectedHandler([this](QString reason) { emit htmlCommandRejected(std::move(reason)); });
 }
 
-void HtmlBlockController::setDocumentSession(DocumentSession* session) {
-  literal_.setDocumentSession(session);
-}
-
-void HtmlBlockController::setSelectionController(SelectionController* selection) {
-  literal_.setSelectionController(selection);
-}
-
-void HtmlBlockController::setUndoStack(UndoStack* undoStack) {
-  literal_.setUndoStack(undoStack);
-}
-
-void HtmlBlockController::setBrushQueue(BrushQueue* brushQueue) {
-  literal_.setBrushQueue(brushQueue);
+void HtmlBlockController::setContext(const EditorContext& ctx) {
+  literal_.setContext(ctx);
 }
 
 NodeId HtmlBlockController::currentHtmlBlockId() const {

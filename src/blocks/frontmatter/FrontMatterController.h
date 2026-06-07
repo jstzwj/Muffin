@@ -4,6 +4,7 @@
 #include "document/MarkdownTypes.h"
 #include "document/NodeId.h"
 #include "edit/EditTransaction.h"
+#include "editor/EditorContext.h"
 
 #include <QObject>
 
@@ -11,22 +12,13 @@
 
 namespace muffin {
 
-class BrushQueue;
-class DocumentSession;
-class MarkdownNode;
-class SelectionController;
-class UndoStack;
-
 class FrontMatterController final : public QObject {
   Q_OBJECT
 
 public:
   explicit FrontMatterController(QObject* parent = nullptr);
 
-  void setDocumentSession(DocumentSession* session);
-  void setSelectionController(SelectionController* selection);
-  void setUndoStack(UndoStack* undoStack);
-  void setBrushQueue(BrushQueue* brushQueue);
+  void setContext(const EditorContext& ctx);
 
   NodeId currentFrontMatterId() const;
   bool isEditing() const;
@@ -46,10 +38,7 @@ signals:
 
 private:
   LiteralBlockController literal_;
-  DocumentSession* session_ = nullptr;
-  SelectionController* selection_ = nullptr;
-  UndoStack* undoStack_ = nullptr;
-  BrushQueue* brushQueue_ = nullptr;
+  EditorContext ctx_;
 };
 
 }  // namespace muffin

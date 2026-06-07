@@ -5,6 +5,7 @@
 #include "document/SelectionSerializer.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
+#include "editor/EditorContext.h"
 #include "editor/EditorController.h"
 #include "editor/EditorView.h"
 #include "editor/InputController.h"
@@ -90,10 +91,7 @@ void wireInput(
     SelectionController& selection,
     UndoStack& undoStack,
     BrushQueue& brushQueue) {
-  input.setDocumentSession(&session);
-  input.setSelectionController(&selection);
-  input.setUndoStack(&undoStack);
-  input.setBrushQueue(&brushQueue);
+  input.setContext({&session, &selection, &undoStack, &brushQueue});
 }
 
 void setSelection(SelectionController& selection, MarkdownNode* block, qsizetype anchor, qsizetype focus) {

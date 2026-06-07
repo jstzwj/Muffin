@@ -44,24 +44,9 @@ FrontMatterController::FrontMatterController(QObject* parent) : QObject(parent),
   literal_.setRejectedHandler([this](QString reason) { emit frontMatterCommandRejected(std::move(reason)); });
 }
 
-void FrontMatterController::setDocumentSession(DocumentSession* session) {
-  session_ = session;
-  literal_.setDocumentSession(session);
-}
-
-void FrontMatterController::setSelectionController(SelectionController* selection) {
-  selection_ = selection;
-  literal_.setSelectionController(selection);
-}
-
-void FrontMatterController::setUndoStack(UndoStack* undoStack) {
-  undoStack_ = undoStack;
-  literal_.setUndoStack(undoStack);
-}
-
-void FrontMatterController::setBrushQueue(BrushQueue* brushQueue) {
-  brushQueue_ = brushQueue;
-  literal_.setBrushQueue(brushQueue);
+void FrontMatterController::setContext(const EditorContext& ctx) {
+  ctx_ = ctx;
+  literal_.setContext(ctx);
 }
 
 NodeId FrontMatterController::currentFrontMatterId() const {
@@ -101,24 +86,24 @@ bool FrontMatterController::setContent(QString content) {
 }
 
 bool FrontMatterController::insertFrontMatter(FrontMatterFormat format) {
-  if (!session_ || format == FrontMatterFormat::None) {
+  if (!ctx_.session || format == FrontMatterFormat::None) {
     return false;
   }
 
-  const auto& blocks = session_->document().root().children();
+  const auto& blocks = ctx_.session->document().root().children();
   if (!blocks.empty() && blocks.front()->type() == BlockType::FrontMatter) {
     literal_.setEditingBlock(blocks.front()->id(), 0);
-    if (selection_) {
-      selection_->setCursorPosition(literal_.cursorFor(blocks.front()->id(), blocks.front()->literal().size()));
+    if (ctx_.selection) {
+      ctx_.selection->setCursorPosition(literal_.cursorFor(blocks.front()->id(), blocks.front()->literal().size()));
     }
-    if (brushQueue_) {
-      brushQueue_->requestBlockRefresh(blocks.front()->id());
+    if (ctx_.brushQueue) {
+      ctx_.brushQueue->requestBlockRefresh(blocks.front()->id());
     }
     return true;
   }
 
-  const CursorPosition beforeCursor = selection_ ? selection_->cursorPosition() : CursorPosition();
-  const bool documentWasEmpty = session_->markdownText().isEmpty();
+  const CursorPosition beforeCursor = ctx_.selection ? ctx_.selection->cursorPosition() : CursorPosition();
+  const bool documentWasEmpty = ctx_.session->markdownText().isEmpty();
   auto node = std::make_unique<MarkdownNode>(BlockType::FrontMatter);
   node->setFrontMatterFormat(format);
   node->setLiteral(defaultLiteralFor(format));
@@ -131,17 +116,17 @@ bool FrontMatterController::insertFrontMatter(FrontMatterFormat format) {
     insertedText += QStringLiteral("\n\n");
   }
 
-  if (!session_->applyInsertedNode(insertedId, BlockType::FrontMatter, 0, 0, 0, insertedText, true)) {
+  if (!ctx_.session->applyInsertedNode(insertedId, BlockType::FrontMatter, 0, 0, 0, insertedText, true)) {
     return false;
   }
 
   literal_.setEditingBlock(insertedId, 0);
   const CursorPosition nextCursor = literal_.cursorFor(insertedId, commandNode->literal().size());
-  if (selection_ && nextCursor.isValid()) {
-    selection_->setCursorPosition(nextCursor);
+  if (ctx_.selection && nextCursor.isValid()) {
+    ctx_.selection->setCursorPosition(nextCursor);
   }
-  if (undoStack_) {
-    undoStack_->push(EditTransaction(
+  if (ctx_.undoStack) {
+    ctx_.undoStack->push(EditTransaction(
         EditTransaction::Kind::InsertText,
         QStringLiteral("Insert Front Matter"),
         InsertNodeCommand{
@@ -155,8 +140,8 @@ bool FrontMatterController::insertFrontMatter(FrontMatterFormat format) {
             nextCursor,
             QVector<NodeId>{insertedId}}));
   }
-  if (brushQueue_) {
-    brushQueue_->requestBlockRefresh(insertedId);
+  if (ctx_.brushQueue) {
+    ctx_.brushQueue->requestBlockRefresh(insertedId);
   }
   return true;
 }

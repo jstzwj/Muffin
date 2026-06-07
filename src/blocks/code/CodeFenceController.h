@@ -3,6 +3,7 @@
 #include "blocks/literal/LiteralBlockController.h"
 #include "document/NodeId.h"
 #include "edit/EditTransaction.h"
+#include "editor/EditorContext.h"
 
 #include <QObject>
 
@@ -10,22 +11,13 @@
 
 namespace muffin {
 
-class BrushQueue;
-class DocumentSession;
-class MarkdownNode;
-class SelectionController;
-class UndoStack;
-
 class CodeFenceController final : public QObject {
   Q_OBJECT
 
 public:
   explicit CodeFenceController(QObject* parent = nullptr);
 
-  void setDocumentSession(DocumentSession* session);
-  void setSelectionController(SelectionController* selection);
-  void setUndoStack(UndoStack* undoStack);
-  void setBrushQueue(BrushQueue* brushQueue);
+  void setContext(const EditorContext& ctx);
 
   NodeId currentCodeFenceId() const;
   bool isEditing() const;
@@ -48,10 +40,7 @@ private:
   bool setLanguageForCodeFence(NodeId requestedCodeId, QString language);
 
   LiteralBlockController literal_;
-  DocumentSession* session_ = nullptr;
-  SelectionController* selection_ = nullptr;
-  UndoStack* undoStack_ = nullptr;
-  BrushQueue* brushQueue_ = nullptr;
+  EditorContext ctx_;
 };
 
 }  // namespace muffin

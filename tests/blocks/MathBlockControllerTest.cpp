@@ -3,6 +3,7 @@
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
+#include "editor/EditorContext.h"
 #include "editor/SelectionController.h"
 
 #include <cstdlib>
@@ -43,10 +44,7 @@ void testEnterEditAndTextEditing() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   MathBlockController controller;
-  controller.setDocumentSession(&session);
-  controller.setSelectionController(&selection);
-  controller.setUndoStack(&undoStack);
-  controller.setBrushQueue(&brushQueue);
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("$$\na=b\n$$"), false);
   MarkdownNode* math = firstMathBlock(session);
@@ -74,10 +72,7 @@ void testSetTexAndRoundtripFence() {
   UndoStack undoStack;
   BrushQueue brushQueue;
   MathBlockController controller;
-  controller.setDocumentSession(&session);
-  controller.setSelectionController(&selection);
-  controller.setUndoStack(&undoStack);
-  controller.setBrushQueue(&brushQueue);
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("before\n\n$$\nx^2\n$$\n\nafter"), false);
   MarkdownNode* math = firstMathBlock(session);

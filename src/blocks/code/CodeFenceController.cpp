@@ -29,24 +29,9 @@ CodeFenceController::CodeFenceController(QObject* parent) : QObject(parent), lit
   literal_.setRejectedHandler([this](QString reason) { emit codeCommandRejected(std::move(reason)); });
 }
 
-void CodeFenceController::setDocumentSession(DocumentSession* session) {
-  session_ = session;
-  literal_.setDocumentSession(session);
-}
-
-void CodeFenceController::setSelectionController(SelectionController* selection) {
-  selection_ = selection;
-  literal_.setSelectionController(selection);
-}
-
-void CodeFenceController::setUndoStack(UndoStack* undoStack) {
-  undoStack_ = undoStack;
-  literal_.setUndoStack(undoStack);
-}
-
-void CodeFenceController::setBrushQueue(BrushQueue* brushQueue) {
-  brushQueue_ = brushQueue;
-  literal_.setBrushQueue(brushQueue);
+void CodeFenceController::setContext(const EditorContext& ctx) {
+  ctx_ = ctx;
+  literal_.setContext(ctx);
 }
 
 NodeId CodeFenceController::currentCodeFenceId() const {
@@ -99,7 +84,7 @@ QString CodeFenceController::tabText() const {
 }
 
 bool CodeFenceController::setLanguageForCodeFence(NodeId requestedCodeId, QString language) {
-  if (!session_ || !selection_) {
+  if (!ctx_.session || !ctx_.selection) {
     return false;
   }
 
@@ -117,13 +102,13 @@ bool CodeFenceController::setLanguageForCodeFence(NodeId requestedCodeId, QStrin
   NodeId codeId = activeCode->id();
   const NodeId originalCodeId = codeId;
   const int codeIndex = literal_.blockIndexFor(codeId);
-  const CursorPosition beforeCursor = selection_->hasCursor() ? selection_->cursorPosition() : literal_.cursorFor(codeId, 0);
+  const CursorPosition beforeCursor = ctx_.selection->hasCursor() ? ctx_.selection->cursorPosition() : literal_.cursorFor(codeId, 0);
   const int beforeCursorCodeIndex = literal_.blockIndexFor(beforeCursor.blockId);
   const bool cursorWasInTarget = beforeCursor.blockId == codeId || (wasEditing && beforeCursor.blockId == literal_.currentBlockId());
   auto afterNode = activeCode->clone(CloneMode::PreserveIds);
   afterNode->setCodeLanguage(language);
 
-  if (!session_->applyNodeSnapshot(codeId, BlockType::CodeFence, codeIndex, *afterNode, true)) {
+  if (!ctx_.session->applyNodeSnapshot(codeId, BlockType::CodeFence, codeIndex, *afterNode, true)) {
     return false;
   }
   if (MarkdownNode* reparsed = literal_.blockByIndex(codeIndex)) {
@@ -138,16 +123,16 @@ bool CodeFenceController::setLanguageForCodeFence(NodeId requestedCodeId, QStrin
     nextCursor = literal_.cursorFor(codeId, beforeCursor.text.textOffset);
   } else if (MarkdownNode* reparsedCursorCode = literal_.blockByIndex(beforeCursorCodeIndex)) {
     nextCursor = literal_.cursorFor(reparsedCursorCode->id(), beforeCursor.text.textOffset);
-  } else if (MarkdownNode* reparsedCursorNode = session_->document().node(beforeCursor.blockId)) {
+  } else if (MarkdownNode* reparsedCursorNode = ctx_.session->document().node(beforeCursor.blockId)) {
     nextCursor = beforeCursor;
     nextCursor.blockId = reparsedCursorNode->id();
     nextCursor.text.nodeId = reparsedCursorNode->id();
   }
-  if (selection_ && nextCursor.isValid()) {
-    selection_->setCursorPosition(nextCursor);
+  if (ctx_.selection && nextCursor.isValid()) {
+    ctx_.selection->setCursorPosition(nextCursor);
   }
-  if (undoStack_ && nextCursor.isValid()) {
-    undoStack_->push(EditTransaction(
+  if (ctx_.undoStack && nextCursor.isValid()) {
+    ctx_.undoStack->push(EditTransaction(
         EditTransaction::Kind::ReplaceDocumentText,
         QStringLiteral("Set Code Fence Language"),
         SetNodeAttrCommand{
@@ -161,8 +146,8 @@ bool CodeFenceController::setLanguageForCodeFence(NodeId requestedCodeId, QStrin
             nextCursor,
             QVector<NodeId>{originalCodeId}}));
   }
-  if (brushQueue_) {
-    brushQueue_->requestBlockRefresh(codeId);
+  if (ctx_.brushQueue) {
+    ctx_.brushQueue->requestBlockRefresh(codeId);
   }
   return true;
 }
