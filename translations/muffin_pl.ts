@@ -2,101 +2,101 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="pl_PL">
 <context>
-    <name>muffin::DocumentSession</name>
+    <name>DocumentSession</name>
     <message>
         <location filename="../src/app/DocumentSession.cpp" line="408"/>
         <source>Untitled</source>
-        <translation>Bez tytułu</translation>
+        <translation type="unfinished">Bez tytułu</translation>
     </message>
 </context>
 <context>
-    <name>muffin::FileController</name>
+    <name>FileController</name>
     <message>
-        <location filename="../src/io/FileController.cpp" line="37"/>
+        <location filename="../src/io/FileController.cpp" line="38"/>
         <source>Open</source>
-        <translation>Otwórz</translation>
+        <translation type="unfinished">Otwórz</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="39"/>
+        <location filename="../src/io/FileController.cpp" line="40"/>
         <source>Markdown and text files (*.md *.markdown *.mdown *.txt);;All files (*.*)</source>
-        <translation>Pliki Markdown i tekstowe (*.md *.markdown *.mdown *.txt);;Wszystkie pliki (*.*)</translation>
+        <translation type="unfinished">Pliki Markdown i tekstowe (*.md *.markdown *.mdown *.txt);;Wszystkie pliki (*.*)</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="69"/>
+        <location filename="../src/io/FileController.cpp" line="70"/>
         <source>Save As</source>
-        <translation>Zapisz jako</translation>
+        <translation type="unfinished">Zapisz jako</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="71"/>
-        <location filename="../src/io/FileController.cpp" line="228"/>
+        <location filename="../src/io/FileController.cpp" line="72"/>
+        <location filename="../src/io/FileController.cpp" line="249"/>
         <source>Markdown files (*.md);;Text files (*.txt);;All files (*.*)</source>
-        <translation>Pliki Markdown (*.md);;Pliki tekstowe (*.txt);;Wszystkie pliki (*.*)</translation>
-    </message>
-    <message>
-        <location filename="../src/io/FileController.cpp" line="90"/>
-        <location filename="../src/io/FileController.cpp" line="191"/>
-        <source>Muffin</source>
-        <translation>Muffin</translation>
+        <translation type="unfinished">Pliki Markdown (*.md);;Pliki tekstowe (*.txt);;Wszystkie pliki (*.*)</translation>
     </message>
     <message>
         <location filename="../src/io/FileController.cpp" line="91"/>
+        <location filename="../src/io/FileController.cpp" line="212"/>
+        <source>Muffin</source>
+        <translation type="unfinished">Muffin</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="92"/>
         <source>The current document has unsaved changes.</source>
-        <translation>Bieżący dokument ma niezapisane zmiany.</translation>
+        <translation type="unfinished">Bieżący dokument ma niezapisane zmiany.</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="107"/>
-        <location filename="../src/io/FileController.cpp" line="139"/>
-        <source>Open Failed</source>
-        <translation>Nie udało się otworzyć</translation>
-    </message>
-    <message>
-        <location filename="../src/io/FileController.cpp" line="120"/>
-        <location filename="../src/io/FileController.cpp" line="128"/>
-        <source>Save Failed</source>
-        <translation>Nie udało się zapisać</translation>
-    </message>
-    <message>
-        <location filename="../src/io/FileController.cpp" line="148"/>
+        <location filename="../src/io/FileController.cpp" line="108"/>
         <location filename="../src/io/FileController.cpp" line="160"/>
-        <location filename="../src/io/FileController.cpp" line="173"/>
+        <source>Open Failed</source>
+        <translation type="unfinished">Nie udało się otworzyć</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="125"/>
+        <location filename="../src/io/FileController.cpp" line="149"/>
+        <source>Save Failed</source>
+        <translation type="unfinished">Nie udało się zapisać</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="169"/>
+        <location filename="../src/io/FileController.cpp" line="181"/>
+        <location filename="../src/io/FileController.cpp" line="194"/>
         <source>Encoding Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="149"/>
+        <location filename="../src/io/FileController.cpp" line="170"/>
         <source>Unsupported encoding: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="161"/>
-        <location filename="../src/io/FileController.cpp" line="174"/>
+        <location filename="../src/io/FileController.cpp" line="182"/>
+        <location filename="../src/io/FileController.cpp" line="195"/>
         <source>Failed to decode file with encoding: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="192"/>
+        <location filename="../src/io/FileController.cpp" line="213"/>
         <source>The document has unsaved changes. Save before reopening with a new encoding?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="226"/>
+        <location filename="../src/io/FileController.cpp" line="247"/>
         <source>Move To</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="234"/>
+        <location filename="../src/io/FileController.cpp" line="255"/>
         <source>Move Failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="235"/>
+        <location filename="../src/io/FileController.cpp" line="256"/>
         <source>Could not move file to:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>muffin::FindBarWidget</name>
+    <name>FindBarWidget</name>
     <message>
         <location filename="../src/editor/FindBarWidget.cpp" line="26"/>
         <source>Find</source>
@@ -115,7 +115,7 @@
     <message>
         <location filename="../src/editor/FindBarWidget.cpp" line="45"/>
         <source>Close</source>
-        <translation>Zamknij</translation>
+        <translation type="unfinished">Zamknij</translation>
     </message>
     <message>
         <location filename="../src/editor/FindBarWidget.cpp" line="64"/>
@@ -140,246 +140,246 @@
     </message>
 </context>
 <context>
-    <name>muffin::LanguageManager</name>
+    <name>LanguageManager</name>
     <message>
         <location filename="../src/app/LanguageManager.cpp" line="18"/>
         <source>System Default</source>
-        <translation>Domyślny systemowy</translation>
+        <translation type="unfinished">Domyślny systemowy</translation>
     </message>
 </context>
 <context>
-    <name>muffin::MainWindow</name>
+    <name>MainWindow</name>
     <message>
         <location filename="../src/app/MainWindow.cpp" line="280"/>
         <source>Parse %1 ms</source>
-        <translation>Analiza %1 ms</translation>
+        <translation type="unfinished">Analiza %1 ms</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindow.cpp" line="331"/>
         <source>Open Folder</source>
-        <translation>Otwórz folder</translation>
+        <translation type="unfinished">Otwórz folder</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="82"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="273"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="276"/>
         <source>Show / Hide Sidebar</source>
-        <translation>Pokaż / ukryj pasek boczny</translation>
+        <translation type="unfinished">Pokaż / ukryj pasek boczny</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="85"/>
         <source>Toggle source / rendered mode</source>
-        <translation>Przełącz tryb źródła / renderowania</translation>
+        <translation type="unfinished">Przełącz tryb źródła / renderowania</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="106"/>
         <source>File</source>
-        <translation>Plik</translation>
+        <translation type="unfinished">Plik</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="107"/>
         <source>New</source>
-        <translation>Nowy</translation>
+        <translation type="unfinished">Nowy</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="108"/>
         <source>New Window</source>
-        <translation>Nowe okno</translation>
+        <translation type="unfinished">Nowe okno</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="109"/>
         <source>Open...</source>
-        <translation>Otwórz...</translation>
+        <translation type="unfinished">Otwórz...</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="110"/>
         <source>Open Folder...</source>
-        <translation>Otwórz folder...</translation>
+        <translation type="unfinished">Otwórz folder...</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="111"/>
         <source>Quick Open...</source>
-        <translation>Szybkie otwieranie...</translation>
+        <translation type="unfinished">Szybkie otwieranie...</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="112"/>
         <source>Open Recent</source>
-        <translation>Otwórz ostatnie</translation>
+        <translation type="unfinished">Otwórz ostatnie</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="114"/>
         <source>Reopen with Encoding</source>
-        <translation>Otwórz ponownie z kodowaniem</translation>
+        <translation type="unfinished">Otwórz ponownie z kodowaniem</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="116"/>
         <source>Save</source>
-        <translation>Zapisz</translation>
+        <translation type="unfinished">Zapisz</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="117"/>
         <source>Save As...</source>
-        <translation>Zapisz jako...</translation>
+        <translation type="unfinished">Zapisz jako...</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="118"/>
         <source>Move To...</source>
-        <translation>Przenieś do...</translation>
+        <translation type="unfinished">Przenieś do...</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="119"/>
         <source>Save All Open Files...</source>
-        <translation>Zapisz wszystkie otwarte pliki...</translation>
+        <translation type="unfinished">Zapisz wszystkie otwarte pliki...</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="121"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="119"/>
         <source>Properties</source>
-        <translation>Właściwości</translation>
+        <translation type="unfinished">Właściwości</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="122"/>
         <source>Show in File Manager...</source>
-        <translation>Pokaż w menedżerze plików...</translation>
+        <translation type="unfinished">Pokaż w menedżerze plików...</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="123"/>
         <source>Show in Sidebar</source>
-        <translation>Pokaż na pasku bocznym</translation>
+        <translation type="unfinished">Pokaż na pasku bocznym</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="124"/>
         <source>Delete...</source>
-        <translation>Usuń...</translation>
+        <translation type="unfinished">Usuń...</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="126"/>
         <source>Import...</source>
-        <translation>Importuj...</translation>
+        <translation type="unfinished">Importuj...</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="127"/>
         <source>Export</source>
-        <translation>Eksportuj</translation>
+        <translation type="unfinished">Eksportuj</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="128"/>
         <source>Print...</source>
-        <translation>Drukuj...</translation>
+        <translation type="unfinished">Drukuj...</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="130"/>
         <source>Preferences...</source>
-        <translation>Preferencje...</translation>
+        <translation type="unfinished">Preferencje...</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="131"/>
         <source>Close</source>
-        <translation>Zamknij</translation>
+        <translation type="unfinished">Zamknij</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="135"/>
         <source>Edit</source>
-        <translation>Edycja</translation>
+        <translation type="unfinished">Edycja</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="136"/>
         <source>Undo</source>
-        <translation>Cofnij</translation>
+        <translation type="unfinished">Cofnij</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="137"/>
         <source>Redo</source>
-        <translation>Ponów</translation>
+        <translation type="unfinished">Ponów</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="139"/>
         <source>Cut</source>
-        <translation>Wytnij</translation>
+        <translation type="unfinished">Wytnij</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="140"/>
         <source>Copy</source>
-        <translation>Kopiuj</translation>
+        <translation type="unfinished">Kopiuj</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="141"/>
         <source>Copy Image</source>
-        <translation>Kopiuj obraz</translation>
+        <translation type="unfinished">Kopiuj obraz</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="142"/>
         <source>Paste</source>
-        <translation>Wklej</translation>
+        <translation type="unfinished">Wklej</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="143"/>
         <source>Copy as Plain Text</source>
-        <translation>Kopiuj jako zwykły tekst</translation>
+        <translation type="unfinished">Kopiuj jako zwykły tekst</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="144"/>
         <source>Copy as Markdown</source>
-        <translation>Kopiuj jako Markdown</translation>
+        <translation type="unfinished">Kopiuj jako Markdown</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="145"/>
         <source>Copy as HTML</source>
-        <translation>Kopiuj jako HTML</translation>
+        <translation type="unfinished">Kopiuj jako HTML</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="146"/>
         <source>Paste as Plain Text</source>
-        <translation>Wklej jako zwykły tekst</translation>
+        <translation type="unfinished">Wklej jako zwykły tekst</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="148"/>
         <source>Select</source>
-        <translation>Zaznacz</translation>
+        <translation type="unfinished">Zaznacz</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="149"/>
         <source>Select All</source>
-        <translation>Zaznacz wszystko</translation>
+        <translation type="unfinished">Zaznacz wszystko</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="150"/>
         <source>Select Current Line</source>
-        <translation>Zaznacz bieżący wiersz</translation>
+        <translation type="unfinished">Zaznacz bieżący wiersz</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="151"/>
         <source>Select Current Format Text</source>
-        <translation>Zaznacz tekst o bieżącym formacie</translation>
+        <translation type="unfinished">Zaznacz tekst o bieżącym formacie</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="153"/>
         <source>Move Line Up</source>
-        <translation>Przenieś wiersz w górę</translation>
+        <translation type="unfinished">Przenieś wiersz w górę</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="154"/>
         <source>Move Line Down</source>
-        <translation>Przenieś wiersz w dół</translation>
+        <translation type="unfinished">Przenieś wiersz w dół</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="155"/>
         <source>Delete</source>
-        <translation>Usuń</translation>
+        <translation type="unfinished">Usuń</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="157"/>
         <source>Delete Range</source>
-        <translation>Usuń zakres</translation>
+        <translation type="unfinished">Usuń zakres</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="158"/>
         <source>Math Tools</source>
-        <translation>Narzędzia matematyczne</translation>
+        <translation type="unfinished">Narzędzia matematyczne</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="159"/>
         <source>Smart Punctuation</source>
-        <translation>Inteligentna interpunkcja</translation>
+        <translation type="unfinished">Inteligentna interpunkcja</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="160"/>
@@ -388,502 +388,512 @@
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="161"/>
-        <source>Spaces and Line Breaks</source>
-        <translation>Spacje i podziały wierszy</translation>
+        <source>Windows (CRLF)</source>
+        <translation>Windows (CRLF)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="162"/>
-        <source>Spell Check...</source>
-        <translation>Sprawdzanie pisowni...</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="163"/>
-        <source>Find and Replace</source>
-        <translation>Znajdź i zamień</translation>
+        <source>Unix (LF)</source>
+        <translation>Unix (LF)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="164"/>
+        <source>Ensure Trailing Newline on Save</source>
+        <translation>Dodaj pusty wiersz na końcu przy zapisie</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="165"/>
+        <source>Spell Check...</source>
+        <translation type="unfinished">Sprawdzanie pisowni...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="166"/>
+        <source>Find and Replace</source>
+        <translation type="unfinished">Znajdź i zamień</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="167"/>
         <source>Emoji and Symbols</source>
-        <translation>Emoji i symbole</translation>
+        <translation type="unfinished">Emoji i symbole</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="168"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="178"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="171"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="181"/>
         <source>Paragraph</source>
-        <translation>Akapit</translation>
+        <translation type="unfinished">Akapit</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="173"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="176"/>
         <source>Heading %1</source>
-        <translation>Nagłówek %1</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="179"/>
-        <source>Promote Heading</source>
-        <translation>Awansuj nagłówek</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="180"/>
-        <source>Demote Heading</source>
-        <translation>Obniż poziom nagłówka</translation>
+        <translation type="unfinished">Nagłówek %1</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="182"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="223"/>
-        <source>Table</source>
-        <translation>Tabela</translation>
+        <source>Promote Heading</source>
+        <translation type="unfinished">Awansuj nagłówek</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="183"/>
-        <source>Formula Block</source>
-        <translation>Blok formuły</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="184"/>
-        <source>Code Block</source>
-        <translation>Blok kodu</translation>
+        <source>Demote Heading</source>
+        <translation type="unfinished">Obniż poziom nagłówka</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="185"/>
-        <source>Code Tools</source>
-        <translation>Narzędzia kodu</translation>
+        <location filename="../src/app/MainWindowMenus.cpp" line="226"/>
+        <source>Table</source>
+        <translation type="unfinished">Tabela</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="186"/>
-        <source>Alert</source>
-        <translation>Alert</translation>
+        <source>Formula Block</source>
+        <translation type="unfinished">Blok formuły</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="187"/>
+        <source>Code Block</source>
+        <translation type="unfinished">Blok kodu</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="188"/>
-        <source>Quote</source>
-        <translation>Cytat</translation>
+        <source>Code Tools</source>
+        <translation type="unfinished">Narzędzia kodu</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="189"/>
-        <source>Ordered List</source>
-        <translation>Lista numerowana</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="190"/>
-        <source>Unordered List</source>
-        <translation>Lista nienumerowana</translation>
+        <source>Alert</source>
+        <translation type="unfinished">Alert</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="191"/>
-        <source>Task List</source>
-        <translation>Lista zadań</translation>
+        <source>Quote</source>
+        <translation type="unfinished">Cytat</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="192"/>
-        <source>Task Status</source>
-        <translation>Stan zadania</translation>
+        <source>Ordered List</source>
+        <translation type="unfinished">Lista numerowana</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="193"/>
-        <source>List Indent</source>
-        <translation>Wcięcie listy</translation>
+        <source>Unordered List</source>
+        <translation type="unfinished">Lista nienumerowana</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="194"/>
+        <source>Task List</source>
+        <translation type="unfinished">Lista zadań</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="195"/>
-        <source>Insert Paragraph Before</source>
-        <translation>Wstaw akapit przed</translation>
+        <source>Task Status</source>
+        <translation type="unfinished">Stan zadania</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="196"/>
-        <source>Insert Paragraph After</source>
-        <translation>Wstaw akapit po</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="197"/>
-        <source>Link Reference</source>
-        <translation>Odwołanie do linku</translation>
+        <source>List Indent</source>
+        <translation type="unfinished">Wcięcie listy</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="198"/>
-        <source>Footnote</source>
-        <translation>Przypis</translation>
+        <source>Insert Paragraph Before</source>
+        <translation type="unfinished">Wstaw akapit przed</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="199"/>
-        <source>Horizontal Rule</source>
-        <translation>Linia pozioma</translation>
+        <source>Insert Paragraph After</source>
+        <translation type="unfinished">Wstaw akapit po</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="200"/>
-        <source>Table of Contents</source>
-        <translation>Spis treści</translation>
+        <source>Link Reference</source>
+        <translation type="unfinished">Odwołanie do linku</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="201"/>
+        <source>Footnote</source>
+        <translation type="unfinished">Przypis</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="202"/>
+        <source>Horizontal Rule</source>
+        <translation type="unfinished">Linia pozioma</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="203"/>
+        <source>Table of Contents</source>
+        <translation type="unfinished">Spis treści</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="204"/>
         <source>Front Matter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="202"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="205"/>
         <source>YAML</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="203"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="206"/>
         <source>TOML</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="204"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="207"/>
         <source>JSON</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="208"/>
-        <source>Format</source>
-        <translation>Format</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="209"/>
-        <source>Bold</source>
-        <translation>Pogrubienie</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="210"/>
-        <source>Italic</source>
-        <translation>Kursywa</translation>
-    </message>
-    <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="211"/>
-        <source>Underline</source>
-        <translation>Podkreślenie</translation>
+        <source>Format</source>
+        <translation type="unfinished">Format</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="212"/>
-        <source>Inline Code</source>
-        <translation>Kod w wierszu</translation>
+        <source>Bold</source>
+        <translation type="unfinished">Pogrubienie</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="213"/>
-        <source>Strikethrough</source>
-        <translation>Przekreślenie</translation>
+        <source>Italic</source>
+        <translation type="unfinished">Kursywa</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="214"/>
+        <source>Underline</source>
+        <translation type="unfinished">Podkreślenie</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="215"/>
-        <source>Comment</source>
-        <translation>Komentarz</translation>
+        <source>Inline Code</source>
+        <translation type="unfinished">Kod w wierszu</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="216"/>
-        <source>Hyperlink</source>
-        <translation>Hiperłącze</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="217"/>
-        <source>Link Actions</source>
-        <translation>Akcje linku</translation>
+        <source>Strikethrough</source>
+        <translation type="unfinished">Przekreślenie</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="218"/>
-        <source>Image</source>
-        <translation>Obraz</translation>
+        <source>Comment</source>
+        <translation type="unfinished">Komentarz</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="219"/>
+        <source>Hyperlink</source>
+        <translation type="unfinished">Hiperłącze</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="220"/>
+        <source>Link Actions</source>
+        <translation type="unfinished">Akcje linku</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="221"/>
+        <source>Image</source>
+        <translation type="unfinished">Obraz</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="222"/>
         <source>Clear Style</source>
-        <translation>Wyczyść styl</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="225"/>
-        <source>Insert Table</source>
-        <translation>Wstaw tabelę</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="227"/>
-        <source>Insert Row Above</source>
-        <translation>Wstaw wiersz powyżej</translation>
+        <translation type="unfinished">Wyczyść styl</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="228"/>
-        <source>Insert Row Below</source>
-        <translation>Wstaw wiersz poniżej</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="229"/>
-        <source>Delete Row</source>
-        <translation>Usuń wiersz</translation>
+        <source>Insert Table</source>
+        <translation type="unfinished">Wstaw tabelę</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="230"/>
-        <source>Move Row Up</source>
-        <translation>Przenieś wiersz w górę</translation>
+        <source>Insert Row Above</source>
+        <translation type="unfinished">Wstaw wiersz powyżej</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="231"/>
-        <source>Move Row Down</source>
-        <translation>Przenieś wiersz w dół</translation>
+        <source>Insert Row Below</source>
+        <translation type="unfinished">Wstaw wiersz poniżej</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="232"/>
+        <source>Delete Row</source>
+        <translation type="unfinished">Usuń wiersz</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="233"/>
-        <source>Insert Column Left</source>
-        <translation>Wstaw kolumnę z lewej</translation>
+        <source>Move Row Up</source>
+        <translation type="unfinished">Przenieś wiersz w górę</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="234"/>
-        <source>Insert Column Right</source>
-        <translation>Wstaw kolumnę z prawej</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="235"/>
-        <source>Delete Column</source>
-        <translation>Usuń kolumnę</translation>
+        <source>Move Row Down</source>
+        <translation type="unfinished">Przenieś wiersz w dół</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="236"/>
-        <source>Move Column Left</source>
-        <translation>Przenieś kolumnę w lewo</translation>
+        <source>Insert Column Left</source>
+        <translation type="unfinished">Wstaw kolumnę z lewej</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="237"/>
-        <source>Move Column Right</source>
-        <translation>Przenieś kolumnę w prawo</translation>
+        <source>Insert Column Right</source>
+        <translation type="unfinished">Wstaw kolumnę z prawej</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="238"/>
+        <source>Delete Column</source>
+        <translation type="unfinished">Usuń kolumnę</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="239"/>
-        <source>Align Left</source>
-        <translation>Wyrównaj do lewej</translation>
+        <source>Move Column Left</source>
+        <translation type="unfinished">Przenieś kolumnę w lewo</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="240"/>
-        <source>Align Center</source>
-        <translation>Wyśrodkuj</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="241"/>
-        <source>Align Right</source>
-        <translation>Wyrównaj do prawej</translation>
+        <source>Move Column Right</source>
+        <translation type="unfinished">Przenieś kolumnę w prawo</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="242"/>
-        <source>Clear Alignment</source>
-        <translation>Wyczyść wyrównanie</translation>
+        <source>Align Left</source>
+        <translation type="unfinished">Wyrównaj do lewej</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="243"/>
+        <source>Align Center</source>
+        <translation type="unfinished">Wyśrodkuj</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="244"/>
+        <source>Align Right</source>
+        <translation type="unfinished">Wyrównaj do prawej</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="245"/>
+        <source>Clear Alignment</source>
+        <translation type="unfinished">Wyczyść wyrównanie</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="247"/>
         <source>Delete Table</source>
-        <translation>Usuń tabelę</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="248"/>
-        <source>Code</source>
-        <translation>Kod</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="250"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="258"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="266"/>
-        <source>Enter Edit</source>
-        <translation>Wejdź w edycję</translation>
+        <translation type="unfinished">Usuń tabelę</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="251"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="259"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="267"/>
+        <source>Code</source>
+        <translation type="unfinished">Kod</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="253"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="261"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="269"/>
+        <source>Enter Edit</source>
+        <translation type="unfinished">Wejdź w edycję</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="254"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="262"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="270"/>
         <source>Exit Edit</source>
-        <translation>Zakończ edycję</translation>
+        <translation type="unfinished">Zakończ edycję</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="252"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="255"/>
         <source>Set Language...</source>
-        <translation>Ustaw język...</translation>
+        <translation type="unfinished">Ustaw język...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="256"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="259"/>
         <source>Math</source>
-        <translation>Matematyka</translation>
+        <translation type="unfinished">Matematyka</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="260"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="263"/>
         <source>Set TeX...</source>
-        <translation>Ustaw TeX...</translation>
+        <translation type="unfinished">Ustaw TeX...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="268"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="271"/>
         <source>Set HTML...</source>
-        <translation>Ustaw HTML...</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="272"/>
-        <source>View</source>
-        <translation>Widok</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="274"/>
-        <source>Outline</source>
-        <translation>Konspekt</translation>
+        <translation type="unfinished">Ustaw HTML...</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="275"/>
-        <source>Document List</source>
-        <translation>Lista dokumentów</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="276"/>
-        <source>File Tree</source>
-        <translation>Drzewo plików</translation>
+        <source>View</source>
+        <translation type="unfinished">Widok</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="277"/>
-        <source>Search</source>
-        <translation>Szukaj</translation>
+        <source>Outline</source>
+        <translation type="unfinished">Konspekt</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="278"/>
+        <source>Document List</source>
+        <translation type="unfinished">Lista dokumentów</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="279"/>
-        <source>Source Code Mode</source>
-        <translation>Tryb kodu źródłowego</translation>
+        <source>File Tree</source>
+        <translation type="unfinished">Drzewo plików</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="280"/>
-        <source>Word Wrap</source>
-        <translation>Zawijanie wyrazów</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="281"/>
-        <source>Focus Mode</source>
-        <translation>Tryb skupienia</translation>
+        <source>Search</source>
+        <translation type="unfinished">Szukaj</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="282"/>
-        <source>Typewriter Mode</source>
-        <translation>Tryb maszyny do pisania</translation>
+        <source>Source Code Mode</source>
+        <translation type="unfinished">Tryb kodu źródłowego</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="283"/>
-        <source>Show Status Bar</source>
-        <translation>Pokaż pasek stanu</translation>
+        <source>Word Wrap</source>
+        <translation type="unfinished">Zawijanie wyrazów</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="284"/>
+        <source>Focus Mode</source>
+        <translation type="unfinished">Tryb skupienia</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="285"/>
-        <source>Word Count Window</source>
-        <translation>Okno liczby słów</translation>
+        <source>Typewriter Mode</source>
+        <translation type="unfinished">Tryb maszyny do pisania</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="286"/>
-        <source>Toggle Full Screen</source>
-        <translation>Przełącz pełny ekran</translation>
+        <source>Show Status Bar</source>
+        <translation type="unfinished">Pokaż pasek stanu</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="287"/>
-        <source>Always on Top</source>
-        <translation>Zawsze na wierzchu</translation>
+        <location filename="../src/app/MainWindowMenus.cpp" line="288"/>
+        <source>Word Count Window</source>
+        <translation type="unfinished">Okno liczby słów</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="289"/>
-        <source>Actual Size</source>
-        <translation>Rzeczywisty rozmiar</translation>
+        <source>Toggle Full Screen</source>
+        <translation type="unfinished">Przełącz pełny ekran</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="290"/>
-        <source>Zoom In</source>
-        <translation>Powiększ</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="291"/>
-        <source>Zoom Out</source>
-        <translation>Pomniejsz</translation>
+        <source>Always on Top</source>
+        <translation type="unfinished">Zawsze na wierzchu</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="292"/>
+        <source>Actual Size</source>
+        <translation type="unfinished">Rzeczywisty rozmiar</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="293"/>
+        <source>Zoom In</source>
+        <translation type="unfinished">Powiększ</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="294"/>
+        <source>Zoom Out</source>
+        <translation type="unfinished">Pomniejsz</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="295"/>
         <source>Switch Windows</source>
-        <translation>Przełącz okna</translation>
+        <translation type="unfinished">Przełącz okna</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="296"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="299"/>
         <source>Theme</source>
-        <translation>Motyw</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="305"/>
-        <source>Help</source>
-        <translation>Pomoc</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="306"/>
-        <source>Quick Start</source>
-        <translation>Szybki start</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="307"/>
-        <source>Markdown Reference</source>
-        <translation>Dokumentacja Markdown</translation>
+        <translation type="unfinished">Motyw</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="308"/>
-        <source>Custom Themes</source>
-        <translation>Motywy niestandardowe</translation>
+        <source>Help</source>
+        <translation type="unfinished">Pomoc</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="309"/>
+        <source>Quick Start</source>
+        <translation type="unfinished">Szybki start</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="310"/>
-        <source>Acknowledgements</source>
-        <translation>Podziękowania</translation>
+        <source>Markdown Reference</source>
+        <translation type="unfinished">Dokumentacja Markdown</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="311"/>
-        <source>Changelog</source>
-        <translation>Dziennik zmian</translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="312"/>
-        <source>Official Website</source>
-        <translation>Oficjalna strona</translation>
+        <source>Custom Themes</source>
+        <translation type="unfinished">Motywy niestandardowe</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="313"/>
-        <source>Feedback</source>
-        <translation>Opinie</translation>
+        <source>Acknowledgements</source>
+        <translation type="unfinished">Podziękowania</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="314"/>
-        <source>Check for Updates...</source>
-        <translation>Sprawdź aktualizacje...</translation>
+        <source>Changelog</source>
+        <translation type="unfinished">Dziennik zmian</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="315"/>
+        <source>Official Website</source>
+        <translation type="unfinished">Oficjalna strona</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="316"/>
+        <source>Feedback</source>
+        <translation type="unfinished">Opinie</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="317"/>
+        <source>Check for Updates...</source>
+        <translation type="unfinished">Sprawdź aktualizacje...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="319"/>
         <source>About</source>
-        <translation>O programie</translation>
+        <translation type="unfinished">O programie</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowActions.cpp" line="489"/>
         <source>Code Language</source>
-        <translation>Język kodu</translation>
+        <translation type="unfinished">Język kodu</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowActions.cpp" line="489"/>
         <source>Language:</source>
-        <translation>Język:</translation>
+        <translation type="unfinished">Język:</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowActions.cpp" line="499"/>
         <source>HTML Source</source>
-        <translation>Źródło HTML</translation>
+        <translation type="unfinished">Źródło HTML</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowActions.cpp" line="499"/>
         <source>HTML:</source>
-        <translation>HTML:</translation>
+        <translation type="unfinished">HTML:</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowActions.cpp" line="509"/>
         <source>Math TeX</source>
-        <translation>Matematyka TeX</translation>
+        <translation type="unfinished">Matematyka TeX</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowActions.cpp" line="509"/>
         <source>TeX:</source>
-        <translation>TeX:</translation>
+        <translation type="unfinished">TeX:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="579"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="595"/>
         <source>About Muffin</source>
-        <translation>O Muffin</translation>
+        <translation type="unfinished">O Muffin</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="580"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="596"/>
         <source>Muffin %1
 
 A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
@@ -892,19 +902,19 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
 Szybki, lekki natywny edytor Markdown zbudowany przy użyciu C++ i Qt 6 Widgets.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="660"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="676"/>
         <source>table %1:%2 offset %3</source>
-        <translation>tabela %1:%2 przesunięcie %3</translation>
+        <translation type="unfinished">tabela %1:%2 przesunięcie %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="799"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="815"/>
         <source>%1 words</source>
-        <translation>%1 słów</translation>
+        <translation type="unfinished">%1 słów</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="65"/>
         <source>Clear Recent Files</source>
-        <translation>Wyczyść ostatnie pliki</translation>
+        <translation type="unfinished">Wyczyść ostatnie pliki</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="105"/>
@@ -1135,717 +1145,717 @@ This action cannot be undone.</source>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="391"/>
         <source>Muffin</source>
-        <translation>Muffin</translation>
+        <translation type="unfinished">Muffin</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="392"/>
         <source>The current document has unsaved changes.</source>
-        <translation>Bieżący dokument ma niezapisane zmiany.</translation>
+        <translation type="unfinished">Bieżący dokument ma niezapisane zmiany.</translation>
     </message>
 </context>
 <context>
-    <name>muffin::PreferencesDialog</name>
+    <name>PreferencesDialog</name>
     <message>
         <location filename="../src/app/PreferencesDialog.cpp" line="206"/>
         <source>Preferences</source>
-        <translation>Preferencje</translation>
+        <translation type="unfinished">Preferencje</translation>
     </message>
     <message>
         <location filename="../src/app/PreferencesDialog.cpp" line="209"/>
         <source>Files</source>
-        <translation>Pliki</translation>
+        <translation type="unfinished">Pliki</translation>
     </message>
     <message>
         <location filename="../src/app/PreferencesDialog.cpp" line="210"/>
         <source>Editor</source>
-        <translation>Edytor</translation>
+        <translation type="unfinished">Edytor</translation>
     </message>
     <message>
         <location filename="../src/app/PreferencesDialog.cpp" line="211"/>
         <source>Image</source>
-        <translation>Obraz</translation>
+        <translation type="unfinished">Obraz</translation>
     </message>
     <message>
         <location filename="../src/app/PreferencesDialog.cpp" line="213"/>
         <source>Export</source>
-        <translation>Eksportuj</translation>
+        <translation type="unfinished">Eksportuj</translation>
     </message>
     <message>
         <location filename="../src/app/PreferencesDialog.cpp" line="214"/>
         <source>Appearance</source>
-        <translation>Wygląd</translation>
+        <translation type="unfinished">Wygląd</translation>
     </message>
     <message>
         <location filename="../src/app/PreferencesDialog.cpp" line="215"/>
         <source>General</source>
-        <translation>Ogólne</translation>
+        <translation type="unfinished">Ogólne</translation>
     </message>
     <message>
         <location filename="../src/app/PreferencesDialog.cpp" line="235"/>
         <source>No settings available.</source>
-        <translation>Brak dostępnych ustawień.</translation>
+        <translation type="unfinished">Brak dostępnych ustawień.</translation>
     </message>
 </context>
 <context>
-    <name>muffin::PrefsAppearancePage</name>
+    <name>PrefsAppearancePage</name>
     <message>
         <location filename="../src/app/PrefsAppearancePage.cpp" line="86"/>
         <source>Theme</source>
-        <translation>Motyw</translation>
+        <translation type="unfinished">Motyw</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsAppearancePage.cpp" line="87"/>
         <source>Zoom</source>
-        <translation>Powiększenie</translation>
+        <translation type="unfinished">Powiększenie</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsAppearancePage.cpp" line="88"/>
         <source>Reset</source>
-        <translation>Resetuj</translation>
+        <translation type="unfinished">Resetuj</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsAppearancePage.cpp" line="89"/>
         <source>Text Size</source>
-        <translation>Rozmiar tekstu</translation>
+        <translation type="unfinished">Rozmiar tekstu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsAppearancePage.cpp" line="90"/>
         <source>Status Bar</source>
-        <translation>Pasek stanu</translation>
+        <translation type="unfinished">Pasek stanu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsAppearancePage.cpp" line="91"/>
         <source>Show status bar</source>
-        <translation>Pokaż pasek stanu</translation>
+        <translation type="unfinished">Pokaż pasek stanu</translation>
     </message>
 </context>
 <context>
-    <name>muffin::PrefsEditorPage</name>
+    <name>PrefsEditorPage</name>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="193"/>
         <source>Default Indent</source>
-        <translation>Domyślne wcięcie</translation>
+        <translation type="unfinished">Domyślne wcięcie</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="194"/>
         <source>Only effective for references and lists generated via menu bar or shortcuts</source>
-        <translation>Dotyczy tylko odnośników i list utworzonych przez pasek menu lub skróty klawiszowe</translation>
+        <translation type="unfinished">Dotyczy tylko odnośników i list utworzonych przez pasek menu lub skróty klawiszowe</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="205"/>
         <source>Align Indent</source>
-        <translation>Wyrównaj wcięcie</translation>
+        <translation type="unfinished">Wyrównaj wcięcie</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="207"/>
         <source>Use Paired Symbols</source>
-        <translation>Używaj sparowanych symboli</translation>
+        <translation type="unfinished">Używaj sparowanych symboli</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="208"/>
         <source>Match brackets and quotes</source>
-        <translation>Dopasowuj nawiasy i cudzysłowy</translation>
+        <translation type="unfinished">Dopasowuj nawiasy i cudzysłowy</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="209"/>
         <source>Match Markdown characters</source>
-        <translation>Dopasowuj znaki Markdown</translation>
+        <translation type="unfinished">Dopasowuj znaki Markdown</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="211"/>
         <source>Autocomplete</source>
-        <translation>Autouzupełnianie</translation>
+        <translation type="unfinished">Autouzupełnianie</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="212"/>
         <source>Enable Emoji autocomplete</source>
-        <translation>Włącz autouzupełnianie emoji</translation>
+        <translation type="unfinished">Włącz autouzupełnianie emoji</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="214"/>
         <source>Live Rendering</source>
-        <translation>Renderowanie na żywo</translation>
+        <translation type="unfinished">Renderowanie na żywo</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="215"/>
         <source>Show Markdown source of the current block element</source>
-        <translation>Pokazuj źródło Markdown bieżącego elementu blokowego</translation>
+        <translation type="unfinished">Pokazuj źródło Markdown bieżącego elementu blokowego</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="217"/>
         <source>Default Copy Behavior</source>
-        <translation>Domyślne zachowanie kopiowania</translation>
+        <translation type="unfinished">Domyślne zachowanie kopiowania</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="218"/>
         <source>Copy Markdown source when copying plain text</source>
-        <translation>Kopiuj źródło Markdown przy kopiowaniu zwykłego tekstu</translation>
+        <translation type="unfinished">Kopiuj źródło Markdown przy kopiowaniu zwykłego tekstu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="219"/>
         <source>Copy or cut the entire line when no text is selected</source>
-        <translation>Kopiuj lub wycinaj cały wiersz, gdy nie zaznaczono tekstu</translation>
+        <translation type="unfinished">Kopiuj lub wycinaj cały wiersz, gdy nie zaznaczono tekstu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="221"/>
         <source>Default Line Break</source>
-        <translation>Domyślny podział wiersza</translation>
+        <translation type="unfinished">Domyślny podział wiersza</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="222"/>
         <source>Default line break for new files</source>
-        <translation>Domyślny podział wiersza dla nowych plików</translation>
+        <translation type="unfinished">Domyślny podział wiersza dla nowych plików</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="223"/>
         <source>LF (Unix Style)</source>
-        <translation>LF (styl Unix)</translation>
+        <translation type="unfinished">LF (styl Unix)</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="224"/>
         <source>CRLF (Windows Style)</source>
-        <translation>CRLF (styl Windows)</translation>
+        <translation type="unfinished">CRLF (styl Windows)</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="226"/>
         <source>Spell Check</source>
-        <translation>Sprawdzanie pisowni</translation>
+        <translation type="unfinished">Sprawdzanie pisowni</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="231"/>
         <source>Auto-detect language</source>
-        <translation>Automatycznie wykrywaj język</translation>
+        <translation type="unfinished">Automatycznie wykrywaj język</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="234"/>
         <source>Chinese (Simplified)</source>
-        <translation>Chiński (uproszczony)</translation>
+        <translation type="unfinished">Chiński (uproszczony)</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="239"/>
         <source>Typewriter Mode</source>
-        <translation>Tryb maszyny do pisania</translation>
+        <translation type="unfinished">Tryb maszyny do pisania</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="240"/>
         <source>Always keep the cursor in the middle of the screen</source>
-        <translation>Zawsze utrzymuj kursor na środku ekranu</translation>
+        <translation type="unfinished">Zawsze utrzymuj kursor na środku ekranu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="241"/>
         <source>Disable Typewriter / Focus Mode</source>
-        <translation>Wyłącz tryb maszyny do pisania / tryb skupienia</translation>
+        <translation type="unfinished">Wyłącz tryb maszyny do pisania / tryb skupienia</translation>
     </message>
 </context>
 <context>
-    <name>muffin::PrefsExportPage</name>
+    <name>PrefsExportPage</name>
     <message>
         <location filename="../src/app/PrefsExportPage.cpp" line="106"/>
         <source>Select Pandoc Executable</source>
-        <translation>Wybierz plik wykonywalny Pandoc</translation>
+        <translation type="unfinished">Wybierz plik wykonywalny Pandoc</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsExportPage.cpp" line="107"/>
         <source>Executables (*.exe);;All Files (*)</source>
-        <translation>Pliki wykonywalne (*.exe);;Wszystkie pliki (*)</translation>
+        <translation type="unfinished">Pliki wykonywalne (*.exe);;Wszystkie pliki (*)</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsExportPage.cpp" line="122"/>
         <location filename="../src/app/PrefsExportPage.cpp" line="152"/>
         <source>General</source>
-        <translation>Ogólne</translation>
+        <translation type="unfinished">Ogólne</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsExportPage.cpp" line="130"/>
         <source>HTML (without Styles)</source>
-        <translation>HTML (bez stylów)</translation>
+        <translation type="unfinished">HTML (bez stylów)</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsExportPage.cpp" line="131"/>
         <source>Image</source>
-        <translation>Obraz</translation>
+        <translation type="unfinished">Obraz</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsExportPage.cpp" line="156"/>
         <source>Default Export Folder</source>
-        <translation>Domyślny folder eksportu</translation>
+        <translation type="unfinished">Domyślny folder eksportu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsExportPage.cpp" line="161"/>
         <source>Auto</source>
-        <translation>Automatycznie</translation>
+        <translation type="unfinished">Automatycznie</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsExportPage.cpp" line="162"/>
         <source>Same folder as current file</source>
-        <translation>Ten sam folder co bieżący plik</translation>
+        <translation type="unfinished">Ten sam folder co bieżący plik</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsExportPage.cpp" line="163"/>
         <source>Custom...</source>
-        <translation>Niestandardowy...</translation>
+        <translation type="unfinished">Niestandardowy...</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsExportPage.cpp" line="168"/>
         <source>Pandoc Path</source>
-        <translation>Ścieżka Pandoc</translation>
+        <translation type="unfinished">Ścieżka Pandoc</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsExportPage.cpp" line="170"/>
         <source>(Auto-detect)</source>
-        <translation>(Automatyczne wykrywanie)</translation>
+        <translation type="unfinished">(Automatyczne wykrywanie)</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsExportPage.cpp" line="173"/>
         <source>After Export</source>
-        <translation>Po eksporcie</translation>
+        <translation type="unfinished">Po eksporcie</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsExportPage.cpp" line="174"/>
         <source>Open the exported file directory</source>
-        <translation>Otwórz katalog wyeksportowanego pliku</translation>
+        <translation type="unfinished">Otwórz katalog wyeksportowanego pliku</translation>
     </message>
 </context>
 <context>
-    <name>muffin::PrefsFilesPage</name>
+    <name>PrefsFilesPage</name>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="183"/>
         <source>Startup</source>
-        <translation>Uruchamianie</translation>
+        <translation type="unfinished">Uruchamianie</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="188"/>
         <source>Open new file</source>
-        <translation>Otwórz nowy plik</translation>
+        <translation type="unfinished">Otwórz nowy plik</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="189"/>
         <source>Reopen last file</source>
-        <translation>Otwórz ponownie ostatni plik</translation>
+        <translation type="unfinished">Otwórz ponownie ostatni plik</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="194"/>
         <source>Outline</source>
-        <translation>Konspekt</translation>
+        <translation type="unfinished">Konspekt</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="195"/>
         <source>Allow collapsing and expanding the outline view in the sidebar</source>
-        <translation>Zezwalaj na zwijanie i rozwijanie widoku konspektu na pasku bocznym</translation>
+        <translation type="unfinished">Zezwalaj na zwijanie i rozwijanie widoku konspektu na pasku bocznym</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="197"/>
         <source>Default File Type / Extension</source>
-        <translation>Domyślny typ pliku / rozszerzenie</translation>
+        <translation type="unfinished">Domyślny typ pliku / rozszerzenie</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="204"/>
         <source>Plain Text (.txt)</source>
-        <translation>Zwykły tekst (.txt)</translation>
+        <translation type="unfinished">Zwykły tekst (.txt)</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="209"/>
         <source>Save &amp; Restore</source>
-        <translation>Zapisz i przywróć</translation>
+        <translation type="unfinished">Zapisz i przywróć</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="210"/>
         <source>Auto Save</source>
-        <translation>Autozapis</translation>
+        <translation type="unfinished">Autozapis</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="211"/>
         <source>Auto-save changes to the previous file when switching files</source>
-        <translation>Automatycznie zapisuj zmiany w poprzednim pliku przy przełączaniu plików</translation>
+        <translation type="unfinished">Automatycznie zapisuj zmiany w poprzednim pliku przy przełączaniu plików</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="212"/>
         <source>Restore Unsaved Drafts</source>
-        <translation>Przywracaj niezapisane szkice</translation>
+        <translation type="unfinished">Przywracaj niezapisane szkice</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="214"/>
         <source>Recently Used Files</source>
-        <translation>Ostatnio używane pliki</translation>
+        <translation type="unfinished">Ostatnio używane pliki</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="215"/>
         <source>Record history files and folders</source>
-        <translation>Zapisuj historię plików i folderów</translation>
+        <translation type="unfinished">Zapisuj historię plików i folderów</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="216"/>
         <source>Clear History</source>
-        <translation>Wyczyść historię</translation>
+        <translation type="unfinished">Wyczyść historię</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="218"/>
         <source>When dragging files/folders into the window</source>
-        <translation>Podczas przeciągania plików/folderów do okna</translation>
+        <translation type="unfinished">Podczas przeciągania plików/folderów do okna</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="219"/>
         <source>When dragging a folder</source>
-        <translation>Podczas przeciągania folderu</translation>
+        <translation type="unfinished">Podczas przeciągania folderu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="224"/>
         <location filename="../src/app/PrefsFilesPage.cpp" line="234"/>
         <location filename="../src/app/PrefsFilesPage.cpp" line="245"/>
         <source>Open in Muffin</source>
-        <translation>Otwórz w Muffin</translation>
+        <translation type="unfinished">Otwórz w Muffin</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="225"/>
         <source>Open in File Manager</source>
-        <translation>Otwórz w menedżerze plików</translation>
+        <translation type="unfinished">Otwórz w menedżerze plików</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="229"/>
         <source>When dragging a Markdown file</source>
-        <translation>Podczas przeciągania pliku Markdown</translation>
+        <translation type="unfinished">Podczas przeciągania pliku Markdown</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="235"/>
         <location filename="../src/app/PrefsFilesPage.cpp" line="244"/>
         <source>Import File</source>
-        <translation>Importuj plik</translation>
+        <translation type="unfinished">Importuj plik</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsFilesPage.cpp" line="239"/>
         <source>When dragging an importable file</source>
-        <translation>Podczas przeciągania pliku możliwego do zaimportowania</translation>
+        <translation type="unfinished">Podczas przeciągania pliku możliwego do zaimportowania</translation>
     </message>
 </context>
 <context>
-    <name>muffin::PrefsGeneralPage</name>
+    <name>PrefsGeneralPage</name>
     <message>
         <location filename="../src/app/PrefsGeneralPage.cpp" line="98"/>
         <source>Language</source>
-        <translation>Język</translation>
+        <translation type="unfinished">Język</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsGeneralPage.cpp" line="99"/>
         <source>Update</source>
-        <translation>Aktualizacja</translation>
+        <translation type="unfinished">Aktualizacja</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsGeneralPage.cpp" line="100"/>
         <source>Check for Updates</source>
-        <translation>Sprawdź aktualizacje</translation>
+        <translation type="unfinished">Sprawdź aktualizacje</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsGeneralPage.cpp" line="101"/>
         <source>Automatically check for updates</source>
-        <translation>Automatycznie sprawdzaj aktualizacje</translation>
+        <translation type="unfinished">Automatycznie sprawdzaj aktualizacje</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsGeneralPage.cpp" line="102"/>
         <source>Advanced</source>
-        <translation>Zaawansowane</translation>
+        <translation type="unfinished">Zaawansowane</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsGeneralPage.cpp" line="103"/>
         <source>Enable debug mode</source>
-        <translation>Włącz tryb debugowania</translation>
+        <translation type="unfinished">Włącz tryb debugowania</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsGeneralPage.cpp" line="104"/>
         <source>Send anonymous usage data</source>
-        <translation>Wysyłaj anonimowe dane użytkowania</translation>
+        <translation type="unfinished">Wysyłaj anonimowe dane użytkowania</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsGeneralPage.cpp" line="105"/>
         <source>Open Advanced Settings</source>
-        <translation>Otwórz ustawienia zaawansowane</translation>
+        <translation type="unfinished">Otwórz ustawienia zaawansowane</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsGeneralPage.cpp" line="106"/>
         <source>Reset Advanced Settings</source>
-        <translation>Resetuj ustawienia zaawansowane</translation>
+        <translation type="unfinished">Resetuj ustawienia zaawansowane</translation>
     </message>
 </context>
 <context>
-    <name>muffin::PrefsImagePage</name>
+    <name>PrefsImagePage</name>
     <message>
         <location filename="../src/app/PrefsImagePage.cpp" line="148"/>
         <source>When Inserting Images</source>
-        <translation>Podczas wstawiania obrazów</translation>
+        <translation type="unfinished">Podczas wstawiania obrazów</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsImagePage.cpp" line="150"/>
         <source>Learn more...</source>
-        <translation>Dowiedz się więcej...</translation>
+        <translation type="unfinished">Dowiedz się więcej...</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsImagePage.cpp" line="154"/>
         <source>No special operation</source>
-        <translation>Brak specjalnej operacji</translation>
+        <translation type="unfinished">Brak specjalnej operacji</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsImagePage.cpp" line="155"/>
         <source>Copy to custom folder</source>
-        <translation>Kopiuj do folderu niestandardowego</translation>
+        <translation type="unfinished">Kopiuj do folderu niestandardowego</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsImagePage.cpp" line="156"/>
         <source>Upload image</source>
-        <translation>Wyślij obraz</translation>
+        <translation type="unfinished">Wyślij obraz</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsImagePage.cpp" line="164"/>
         <source>Apply the above rules to local images</source>
-        <translation>Zastosuj powyższe reguły do lokalnych obrazów</translation>
+        <translation type="unfinished">Zastosuj powyższe reguły do lokalnych obrazów</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsImagePage.cpp" line="165"/>
         <source>Apply the above rules to network images</source>
-        <translation>Zastosuj powyższe reguły do obrazów sieciowych</translation>
+        <translation type="unfinished">Zastosuj powyższe reguły do obrazów sieciowych</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsImagePage.cpp" line="166"/>
         <source>Allow automatic image upload based on YAML settings</source>
-        <translation>Zezwalaj na automatyczne wysyłanie obrazów na podstawie ustawień YAML</translation>
+        <translation type="unfinished">Zezwalaj na automatyczne wysyłanie obrazów na podstawie ustawień YAML</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsImagePage.cpp" line="169"/>
         <source>Image Syntax Preferences</source>
-        <translation>Preferencje składni obrazów</translation>
+        <translation type="unfinished">Preferencje składni obrazów</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsImagePage.cpp" line="170"/>
         <source>Prefer relative paths</source>
-        <translation>Preferuj ścieżki względne</translation>
+        <translation type="unfinished">Preferuj ścieżki względne</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsImagePage.cpp" line="171"/>
         <source>Add / to relative paths</source>
-        <translation>Dodaj / do ścieżek względnych</translation>
+        <translation type="unfinished">Dodaj / do ścieżek względnych</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsImagePage.cpp" line="172"/>
         <source>Auto-escape image URLs on insertion</source>
-        <translation>Automatycznie escapuj adresy URL obrazów przy wstawianiu</translation>
+        <translation type="unfinished">Automatycznie escapuj adresy URL obrazów przy wstawianiu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsImagePage.cpp" line="175"/>
         <source>Upload Service Settings</source>
-        <translation>Ustawienia usługi wysyłania</translation>
+        <translation type="unfinished">Ustawienia usługi wysyłania</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsImagePage.cpp" line="176"/>
         <source>Upload Service</source>
-        <translation>Usługa wysyłania</translation>
+        <translation type="unfinished">Usługa wysyłania</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsImagePage.cpp" line="181"/>
         <source>None</source>
-        <translation>Brak</translation>
+        <translation type="unfinished">Brak</translation>
     </message>
 </context>
 <context>
-    <name>muffin::PrefsMarkdownPage</name>
+    <name>PrefsMarkdownPage</name>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="269"/>
         <source>Markdown Syntax Preferences</source>
-        <translation>Preferencje składni Markdown</translation>
+        <translation type="unfinished">Preferencje składni Markdown</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="270"/>
         <source>Strict Mode</source>
-        <translation>Tryb ścisły</translation>
+        <translation type="unfinished">Tryb ścisły</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="271"/>
         <source>Heading Style</source>
-        <translation>Styl nagłówków</translation>
+        <translation type="unfinished">Styl nagłówków</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="281"/>
         <source>Unordered List</source>
-        <translation>Lista nienumerowana</translation>
+        <translation type="unfinished">Lista nienumerowana</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="292"/>
         <source>Ordered List</source>
-        <translation>Lista numerowana</translation>
+        <translation type="unfinished">Lista numerowana</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="297"/>
         <source>1. ... 2. ... 3. ...</source>
-        <translation>1. ... 2. ... 3. ...</translation>
+        <translation type="unfinished">1. ... 2. ... 3. ...</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="298"/>
         <source>1. ... 1. ... 1. ...</source>
-        <translation>1. ... 1. ... 1. ...</translation>
+        <translation type="unfinished">1. ... 1. ... 1. ...</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="304"/>
         <source>Markdown Extended Syntax</source>
-        <translation>Rozszerzona składnia Markdown</translation>
+        <translation type="unfinished">Rozszerzona składnia Markdown</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="305"/>
         <source>Auto Recognize Links</source>
-        <translation>Automatycznie rozpoznawaj linki</translation>
+        <translation type="unfinished">Automatycznie rozpoznawaj linki</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="306"/>
         <source>Inline Formula</source>
-        <translation>Formuła w wierszu</translation>
+        <translation type="unfinished">Formuła w wierszu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="307"/>
         <source>Subscript</source>
-        <translation>Indeks dolny</translation>
+        <translation type="unfinished">Indeks dolny</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="308"/>
         <source>Superscript</source>
-        <translation>Indeks górny</translation>
+        <translation type="unfinished">Indeks górny</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="309"/>
         <source>Highlight</source>
-        <translation>Wyróżnienie</translation>
+        <translation type="unfinished">Wyróżnienie</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="310"/>
         <source>Github Style Alert Box</source>
-        <translation>Pole alertu w stylu GitHub</translation>
+        <translation type="unfinished">Pole alertu w stylu GitHub</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="311"/>
         <source>Diagrams (Sequence, Flowchart, Mermaid)</source>
-        <translation>Diagramy (Sequence, Flowchart, Mermaid)</translation>
+        <translation type="unfinished">Diagramy (Sequence, Flowchart, Mermaid)</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="312"/>
         <source>Diagram Options</source>
-        <translation>Opcje diagramów</translation>
+        <translation type="unfinished">Opcje diagramów</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="315"/>
         <source>Smart Punctuation</source>
-        <translation>Inteligentna interpunkcja</translation>
+        <translation type="unfinished">Inteligentna interpunkcja</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="316"/>
         <source>Convert on Input</source>
-        <translation>Konwertuj przy wprowadzaniu</translation>
+        <translation type="unfinished">Konwertuj przy wprowadzaniu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="321"/>
         <source>No conversion</source>
-        <translation>Bez konwersji</translation>
+        <translation type="unfinished">Bez konwersji</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="322"/>
         <source>When typing</source>
-        <translation>Podczas pisania</translation>
+        <translation type="unfinished">Podczas pisania</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="323"/>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="384"/>
         <source>Always</source>
-        <translation>Zawsze</translation>
+        <translation type="unfinished">Zawsze</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="327"/>
         <source>Smart Quotes</source>
-        <translation>Inteligentne cudzysłowy</translation>
+        <translation type="unfinished">Inteligentne cudzysłowy</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="346"/>
         <source>Smart Dashes</source>
-        <translation>Inteligentne myślniki</translation>
+        <translation type="unfinished">Inteligentne myślniki</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="347"/>
         <source>Allow and convert Unicode punctuation when parsing Markdown</source>
-        <translation>Zezwalaj na interpunkcję Unicode i konwertuj ją podczas analizy Markdown</translation>
+        <translation type="unfinished">Zezwalaj na interpunkcję Unicode i konwertuj ją podczas analizy Markdown</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="350"/>
         <source>Code Blocks</source>
-        <translation>Bloki kodu</translation>
+        <translation type="unfinished">Bloki kodu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="351"/>
         <source>Show Line Numbers</source>
-        <translation>Pokazuj numery wierszy</translation>
+        <translation type="unfinished">Pokazuj numery wierszy</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="352"/>
         <source>Code Blocks Auto Wrap</source>
-        <translation>Automatyczne zawijanie bloków kodu</translation>
+        <translation type="unfinished">Automatyczne zawijanie bloków kodu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="353"/>
         <source>Use Shift+Tab to auto adjust indent of selected code</source>
-        <translation>Użyj Shift+Tab, aby automatycznie dostosować wcięcie zaznaczonego kodu</translation>
+        <translation type="unfinished">Użyj Shift+Tab, aby automatycznie dostosować wcięcie zaznaczonego kodu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="354"/>
         <source>Code Indent</source>
-        <translation>Wcięcie kodu</translation>
+        <translation type="unfinished">Wcięcie kodu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="365"/>
         <source>Default Code Block Language</source>
-        <translation>Domyślny język bloku kodu</translation>
+        <translation type="unfinished">Domyślny język bloku kodu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="370"/>
         <source>(empty)</source>
-        <translation>(puste)</translation>
+        <translation type="unfinished">(puste)</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="378"/>
         <source>Automatically add code block language</source>
-        <translation>Automatycznie dodawaj język bloku kodu</translation>
+        <translation type="unfinished">Automatycznie dodawaj język bloku kodu</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="383"/>
         <source>When inserting code blocks via Markdown code</source>
-        <translation>Podczas wstawiania bloków kodu przez kod Markdown</translation>
+        <translation type="unfinished">Podczas wstawiania bloków kodu przez kod Markdown</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="385"/>
         <source>Never</source>
-        <translation>Nigdy</translation>
+        <translation type="unfinished">Nigdy</translation>
     </message>
 </context>
 <context>
-    <name>muffin::SidebarWidget</name>
+    <name>SidebarWidget</name>
     <message>
         <location filename="../src/app/SidebarWidget.cpp" line="235"/>
         <source>Files</source>
-        <translation>Pliki</translation>
+        <translation type="unfinished">Pliki</translation>
     </message>
     <message>
         <location filename="../src/app/SidebarWidget.cpp" line="238"/>
         <source>Outline</source>
-        <translation>Konspekt</translation>
+        <translation type="unfinished">Konspekt</translation>
     </message>
     <message>
         <location filename="../src/app/SidebarWidget.cpp" line="241"/>
         <source>New File</source>
-        <translation>Nowy plik</translation>
+        <translation type="unfinished">Nowy plik</translation>
     </message>
     <message>
         <location filename="../src/app/SidebarWidget.cpp" line="244"/>
         <source>No Headings</source>
-        <translation>Brak nagłówków</translation>
+        <translation type="unfinished">Brak nagłówków</translation>
     </message>
 </context>
 <context>
-    <name>muffin::SourceEditorWidget</name>
+    <name>SourceEditorWidget</name>
     <message>
         <location filename="../src/editor/SourceEditorWidget.cpp" line="426"/>
         <source>Start writing...</source>
-        <translation>Zacznij pisać...</translation>
+        <translation type="unfinished">Zacznij pisać...</translation>
     </message>
 </context>
 <context>
@@ -1912,6 +1922,13 @@ This action cannot be undone.</source>
     </message>
 </context>
 <context>
+    <name>muffin::FindBarWidget</name>
+    <message>
+        <source>Close</source>
+        <translation type="vanished">Zamknij</translation>
+    </message>
+</context>
+<context>
     <name>muffin::LanguageManager</name>
     <message>
         <source>System Default</source>
@@ -1921,50 +1938,12 @@ This action cannot be undone.</source>
 <context>
     <name>muffin::MainWindow</name>
     <message>
-        <source>Open Failed</source>
-        <translation type="vanished">Nie udało się otworzyć</translation>
+        <source>Parse %1 ms</source>
+        <translation type="vanished">Analiza %1 ms</translation>
     </message>
     <message>
-        <source>File does not exist:
-%1</source>
-        <translation type="vanished">Plik nie istnieje:
-%1</translation>
-    </message>
-    <message>
-        <source>Code Language</source>
-        <translation type="vanished">Język kodu</translation>
-    </message>
-    <message>
-        <source>Language:</source>
-        <translation type="vanished">Język:</translation>
-    </message>
-    <message>
-        <source>HTML Source</source>
-        <translation type="vanished">Źródło HTML</translation>
-    </message>
-    <message>
-        <source>HTML:</source>
-        <translation type="vanished">HTML:</translation>
-    </message>
-    <message>
-        <source>Math TeX</source>
-        <translation type="vanished">Matematyka TeX</translation>
-    </message>
-    <message>
-        <source>TeX:</source>
-        <translation type="vanished">TeX:</translation>
-    </message>
-    <message>
-        <source>About Muffin</source>
-        <translation type="vanished">O Muffin</translation>
-    </message>
-    <message>
-        <source>Muffin %1
-
-A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
-        <translation type="vanished">Muffin %1
-
-Szybki, lekki natywny edytor Markdown zbudowany przy użyciu C++ i Qt 6 Widgets.</translation>
+        <source>Open Folder</source>
+        <translation type="vanished">Otwórz folder</translation>
     </message>
     <message>
         <source>Show / Hide Sidebar</source>
@@ -2427,10 +2406,6 @@ Szybki, lekki natywny edytor Markdown zbudowany przy użyciu C++ i Qt 6 Widgets.
         <translation type="vanished">Okno liczby słów</translation>
     </message>
     <message>
-        <source>Render Diagnostics</source>
-        <translation type="vanished">Diagnostyka renderowania</translation>
-    </message>
-    <message>
         <source>Toggle Full Screen</source>
         <translation type="vanished">Przełącz pełny ekran</translation>
     </message>
@@ -2455,20 +2430,12 @@ Szybki, lekki natywny edytor Markdown zbudowany przy użyciu C++ i Qt 6 Widgets.
         <translation type="vanished">Przełącz okna</translation>
     </message>
     <message>
-        <source>Developer Tools</source>
-        <translation type="vanished">Narzędzia deweloperskie</translation>
-    </message>
-    <message>
         <source>Theme</source>
         <translation type="vanished">Motyw</translation>
     </message>
     <message>
         <source>Help</source>
         <translation type="vanished">Pomoc</translation>
-    </message>
-    <message>
-        <source>What&apos;s New...</source>
-        <translation type="vanished">Co nowego...</translation>
     </message>
     <message>
         <source>Quick Start</source>
@@ -2479,24 +2446,8 @@ Szybki, lekki natywny edytor Markdown zbudowany przy użyciu C++ i Qt 6 Widgets.
         <translation type="vanished">Dokumentacja Markdown</translation>
     </message>
     <message>
-        <source>Install and Use Pandoc</source>
-        <translation type="vanished">Zainstaluj i używaj Pandoc</translation>
-    </message>
-    <message>
         <source>Custom Themes</source>
         <translation type="vanished">Motywy niestandardowe</translation>
-    </message>
-    <message>
-        <source>Use Images in Muffin</source>
-        <translation type="vanished">Używanie obrazów w Muffin</translation>
-    </message>
-    <message>
-        <source>Data Recovery and Version Control</source>
-        <translation type="vanished">Odzyskiwanie danych i kontrola wersji</translation>
-    </message>
-    <message>
-        <source>More Themes...</source>
-        <translation type="vanished">Więcej motywów...</translation>
     </message>
     <message>
         <source>Acknowledgements</source>
@@ -2505,10 +2456,6 @@ Szybki, lekki natywny edytor Markdown zbudowany przy użyciu C++ i Qt 6 Widgets.
     <message>
         <source>Changelog</source>
         <translation type="vanished">Dziennik zmian</translation>
-    </message>
-    <message>
-        <source>Privacy Policy</source>
-        <translation type="vanished">Polityka prywatności</translation>
     </message>
     <message>
         <source>Official Website</source>
@@ -2523,24 +2470,48 @@ Szybki, lekki natywny edytor Markdown zbudowany przy użyciu C++ i Qt 6 Widgets.
         <translation type="vanished">Sprawdź aktualizacje...</translation>
     </message>
     <message>
-        <source>My License...</source>
-        <translation type="vanished">Moja licencja...</translation>
-    </message>
-    <message>
         <source>About</source>
         <translation type="vanished">O programie</translation>
     </message>
     <message>
-        <source>Parse %1 ms</source>
-        <translation type="vanished">Analiza %1 ms</translation>
+        <source>Code Language</source>
+        <translation type="vanished">Język kodu</translation>
+    </message>
+    <message>
+        <source>Language:</source>
+        <translation type="vanished">Język:</translation>
+    </message>
+    <message>
+        <source>HTML Source</source>
+        <translation type="vanished">Źródło HTML</translation>
+    </message>
+    <message>
+        <source>HTML:</source>
+        <translation type="vanished">HTML:</translation>
+    </message>
+    <message>
+        <source>Math TeX</source>
+        <translation type="vanished">Matematyka TeX</translation>
+    </message>
+    <message>
+        <source>TeX:</source>
+        <translation type="vanished">TeX:</translation>
+    </message>
+    <message>
+        <source>About Muffin</source>
+        <translation type="vanished">O Muffin</translation>
+    </message>
+    <message>
+        <source>Muffin %1
+
+A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
+        <translation type="obsolete">Muffin %1
+
+Szybki, lekki natywny edytor Markdown zbudowany przy użyciu C++ i Qt 6 Widgets.</translation>
     </message>
     <message>
         <source>table %1:%2 offset %3</source>
         <translation type="vanished">tabela %1:%2 przesunięcie %3</translation>
-    </message>
-    <message>
-        <source>Open Folder</source>
-        <translation type="vanished">Otwórz folder</translation>
     </message>
     <message>
         <source>%1 words</source>
@@ -2557,7 +2528,7 @@ Size: %3 bytes
 Modified: %4
 Words: %5
 Parse time: %6 ms</source>
-        <translation type="vanished">Nazwa: %1
+        <translation type="obsolete">Nazwa: %1
 Lokalizacja: %2
 Rozmiar: %3 bajtów
 Zmodyfikowano: %4
@@ -2571,6 +2542,52 @@ Czas analizy: %6 ms</translation>
     <message>
         <source>The current document has unsaved changes.</source>
         <translation type="vanished">Bieżący dokument ma niezapisane zmiany.</translation>
+    </message>
+    <message>
+        <source>Open Failed</source>
+        <translation type="vanished">Nie udało się otworzyć</translation>
+    </message>
+    <message>
+        <source>File does not exist:
+%1</source>
+        <translation type="vanished">Plik nie istnieje:
+%1</translation>
+    </message>
+    <message>
+        <source>Render Diagnostics</source>
+        <translation type="vanished">Diagnostyka renderowania</translation>
+    </message>
+    <message>
+        <source>Developer Tools</source>
+        <translation type="vanished">Narzędzia deweloperskie</translation>
+    </message>
+    <message>
+        <source>What&apos;s New...</source>
+        <translation type="vanished">Co nowego...</translation>
+    </message>
+    <message>
+        <source>Install and Use Pandoc</source>
+        <translation type="vanished">Zainstaluj i używaj Pandoc</translation>
+    </message>
+    <message>
+        <source>Use Images in Muffin</source>
+        <translation type="vanished">Używanie obrazów w Muffin</translation>
+    </message>
+    <message>
+        <source>Data Recovery and Version Control</source>
+        <translation type="vanished">Odzyskiwanie danych i kontrola wersji</translation>
+    </message>
+    <message>
+        <source>More Themes...</source>
+        <translation type="vanished">Więcej motywów...</translation>
+    </message>
+    <message>
+        <source>Privacy Policy</source>
+        <translation type="vanished">Polityka prywatności</translation>
+    </message>
+    <message>
+        <source>My License...</source>
+        <translation type="vanished">Moja licencja...</translation>
     </message>
 </context>
 <context>
@@ -2666,6 +2683,511 @@ Czas analizy: %6 ms</translation>
     <message>
         <source>Show status bar</source>
         <translation type="vanished">Pokaż pasek stanu</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PrefsAppearancePage</name>
+    <message>
+        <source>Theme</source>
+        <translation type="vanished">Motyw</translation>
+    </message>
+    <message>
+        <source>Zoom</source>
+        <translation type="vanished">Powiększenie</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="vanished">Resetuj</translation>
+    </message>
+    <message>
+        <source>Text Size</source>
+        <translation type="vanished">Rozmiar tekstu</translation>
+    </message>
+    <message>
+        <source>Status Bar</source>
+        <translation type="vanished">Pasek stanu</translation>
+    </message>
+    <message>
+        <source>Show status bar</source>
+        <translation type="vanished">Pokaż pasek stanu</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PrefsEditorPage</name>
+    <message>
+        <source>Default Indent</source>
+        <translation type="vanished">Domyślne wcięcie</translation>
+    </message>
+    <message>
+        <source>Only effective for references and lists generated via menu bar or shortcuts</source>
+        <translation type="vanished">Dotyczy tylko odnośników i list utworzonych przez pasek menu lub skróty klawiszowe</translation>
+    </message>
+    <message>
+        <source>Align Indent</source>
+        <translation type="vanished">Wyrównaj wcięcie</translation>
+    </message>
+    <message>
+        <source>Use Paired Symbols</source>
+        <translation type="vanished">Używaj sparowanych symboli</translation>
+    </message>
+    <message>
+        <source>Match brackets and quotes</source>
+        <translation type="vanished">Dopasowuj nawiasy i cudzysłowy</translation>
+    </message>
+    <message>
+        <source>Match Markdown characters</source>
+        <translation type="vanished">Dopasowuj znaki Markdown</translation>
+    </message>
+    <message>
+        <source>Autocomplete</source>
+        <translation type="vanished">Autouzupełnianie</translation>
+    </message>
+    <message>
+        <source>Enable Emoji autocomplete</source>
+        <translation type="vanished">Włącz autouzupełnianie emoji</translation>
+    </message>
+    <message>
+        <source>Live Rendering</source>
+        <translation type="vanished">Renderowanie na żywo</translation>
+    </message>
+    <message>
+        <source>Show Markdown source of the current block element</source>
+        <translation type="vanished">Pokazuj źródło Markdown bieżącego elementu blokowego</translation>
+    </message>
+    <message>
+        <source>Default Copy Behavior</source>
+        <translation type="vanished">Domyślne zachowanie kopiowania</translation>
+    </message>
+    <message>
+        <source>Copy Markdown source when copying plain text</source>
+        <translation type="vanished">Kopiuj źródło Markdown przy kopiowaniu zwykłego tekstu</translation>
+    </message>
+    <message>
+        <source>Copy or cut the entire line when no text is selected</source>
+        <translation type="vanished">Kopiuj lub wycinaj cały wiersz, gdy nie zaznaczono tekstu</translation>
+    </message>
+    <message>
+        <source>Default Line Break</source>
+        <translation type="vanished">Domyślny podział wiersza</translation>
+    </message>
+    <message>
+        <source>Default line break for new files</source>
+        <translation type="vanished">Domyślny podział wiersza dla nowych plików</translation>
+    </message>
+    <message>
+        <source>LF (Unix Style)</source>
+        <translation type="vanished">LF (styl Unix)</translation>
+    </message>
+    <message>
+        <source>CRLF (Windows Style)</source>
+        <translation type="vanished">CRLF (styl Windows)</translation>
+    </message>
+    <message>
+        <source>Spell Check</source>
+        <translation type="vanished">Sprawdzanie pisowni</translation>
+    </message>
+    <message>
+        <source>Auto-detect language</source>
+        <translation type="vanished">Automatycznie wykrywaj język</translation>
+    </message>
+    <message>
+        <source>Chinese (Simplified)</source>
+        <translation type="vanished">Chiński (uproszczony)</translation>
+    </message>
+    <message>
+        <source>Typewriter Mode</source>
+        <translation type="vanished">Tryb maszyny do pisania</translation>
+    </message>
+    <message>
+        <source>Always keep the cursor in the middle of the screen</source>
+        <translation type="vanished">Zawsze utrzymuj kursor na środku ekranu</translation>
+    </message>
+    <message>
+        <source>Disable Typewriter / Focus Mode</source>
+        <translation type="vanished">Wyłącz tryb maszyny do pisania / tryb skupienia</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PrefsExportPage</name>
+    <message>
+        <source>Select Pandoc Executable</source>
+        <translation type="vanished">Wybierz plik wykonywalny Pandoc</translation>
+    </message>
+    <message>
+        <source>Executables (*.exe);;All Files (*)</source>
+        <translation type="vanished">Pliki wykonywalne (*.exe);;Wszystkie pliki (*)</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <translation type="vanished">Ogólne</translation>
+    </message>
+    <message>
+        <source>HTML (without Styles)</source>
+        <translation type="vanished">HTML (bez stylów)</translation>
+    </message>
+    <message>
+        <source>Image</source>
+        <translation type="vanished">Obraz</translation>
+    </message>
+    <message>
+        <source>Default Export Folder</source>
+        <translation type="vanished">Domyślny folder eksportu</translation>
+    </message>
+    <message>
+        <source>Auto</source>
+        <translation type="vanished">Automatycznie</translation>
+    </message>
+    <message>
+        <source>Same folder as current file</source>
+        <translation type="vanished">Ten sam folder co bieżący plik</translation>
+    </message>
+    <message>
+        <source>Custom...</source>
+        <translation type="vanished">Niestandardowy...</translation>
+    </message>
+    <message>
+        <source>Pandoc Path</source>
+        <translation type="vanished">Ścieżka Pandoc</translation>
+    </message>
+    <message>
+        <source>(Auto-detect)</source>
+        <translation type="vanished">(Automatyczne wykrywanie)</translation>
+    </message>
+    <message>
+        <source>After Export</source>
+        <translation type="vanished">Po eksporcie</translation>
+    </message>
+    <message>
+        <source>Open the exported file directory</source>
+        <translation type="vanished">Otwórz katalog wyeksportowanego pliku</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PrefsFilesPage</name>
+    <message>
+        <source>Startup</source>
+        <translation type="vanished">Uruchamianie</translation>
+    </message>
+    <message>
+        <source>Open new file</source>
+        <translation type="vanished">Otwórz nowy plik</translation>
+    </message>
+    <message>
+        <source>Reopen last file</source>
+        <translation type="vanished">Otwórz ponownie ostatni plik</translation>
+    </message>
+    <message>
+        <source>Outline</source>
+        <translation type="vanished">Konspekt</translation>
+    </message>
+    <message>
+        <source>Allow collapsing and expanding the outline view in the sidebar</source>
+        <translation type="vanished">Zezwalaj na zwijanie i rozwijanie widoku konspektu na pasku bocznym</translation>
+    </message>
+    <message>
+        <source>Default File Type / Extension</source>
+        <translation type="vanished">Domyślny typ pliku / rozszerzenie</translation>
+    </message>
+    <message>
+        <source>Plain Text (.txt)</source>
+        <translation type="vanished">Zwykły tekst (.txt)</translation>
+    </message>
+    <message>
+        <source>Save &amp; Restore</source>
+        <translation type="vanished">Zapisz i przywróć</translation>
+    </message>
+    <message>
+        <source>Auto Save</source>
+        <translation type="vanished">Autozapis</translation>
+    </message>
+    <message>
+        <source>Auto-save changes to the previous file when switching files</source>
+        <translation type="vanished">Automatycznie zapisuj zmiany w poprzednim pliku przy przełączaniu plików</translation>
+    </message>
+    <message>
+        <source>Restore Unsaved Drafts</source>
+        <translation type="vanished">Przywracaj niezapisane szkice</translation>
+    </message>
+    <message>
+        <source>Recently Used Files</source>
+        <translation type="vanished">Ostatnio używane pliki</translation>
+    </message>
+    <message>
+        <source>Record history files and folders</source>
+        <translation type="vanished">Zapisuj historię plików i folderów</translation>
+    </message>
+    <message>
+        <source>Clear History</source>
+        <translation type="vanished">Wyczyść historię</translation>
+    </message>
+    <message>
+        <source>When dragging files/folders into the window</source>
+        <translation type="vanished">Podczas przeciągania plików/folderów do okna</translation>
+    </message>
+    <message>
+        <source>When dragging a folder</source>
+        <translation type="vanished">Podczas przeciągania folderu</translation>
+    </message>
+    <message>
+        <source>Open in Muffin</source>
+        <translation type="vanished">Otwórz w Muffin</translation>
+    </message>
+    <message>
+        <source>Open in File Manager</source>
+        <translation type="vanished">Otwórz w menedżerze plików</translation>
+    </message>
+    <message>
+        <source>When dragging a Markdown file</source>
+        <translation type="vanished">Podczas przeciągania pliku Markdown</translation>
+    </message>
+    <message>
+        <source>Import File</source>
+        <translation type="vanished">Importuj plik</translation>
+    </message>
+    <message>
+        <source>When dragging an importable file</source>
+        <translation type="vanished">Podczas przeciągania pliku możliwego do zaimportowania</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PrefsGeneralPage</name>
+    <message>
+        <source>Language</source>
+        <translation type="vanished">Język</translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation type="vanished">Aktualizacja</translation>
+    </message>
+    <message>
+        <source>Check for Updates</source>
+        <translation type="vanished">Sprawdź aktualizacje</translation>
+    </message>
+    <message>
+        <source>Automatically check for updates</source>
+        <translation type="vanished">Automatycznie sprawdzaj aktualizacje</translation>
+    </message>
+    <message>
+        <source>Advanced</source>
+        <translation type="vanished">Zaawansowane</translation>
+    </message>
+    <message>
+        <source>Enable debug mode</source>
+        <translation type="vanished">Włącz tryb debugowania</translation>
+    </message>
+    <message>
+        <source>Send anonymous usage data</source>
+        <translation type="vanished">Wysyłaj anonimowe dane użytkowania</translation>
+    </message>
+    <message>
+        <source>Open Advanced Settings</source>
+        <translation type="vanished">Otwórz ustawienia zaawansowane</translation>
+    </message>
+    <message>
+        <source>Reset Advanced Settings</source>
+        <translation type="vanished">Resetuj ustawienia zaawansowane</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PrefsImagePage</name>
+    <message>
+        <source>When Inserting Images</source>
+        <translation type="vanished">Podczas wstawiania obrazów</translation>
+    </message>
+    <message>
+        <source>Learn more...</source>
+        <translation type="vanished">Dowiedz się więcej...</translation>
+    </message>
+    <message>
+        <source>No special operation</source>
+        <translation type="vanished">Brak specjalnej operacji</translation>
+    </message>
+    <message>
+        <source>Copy to custom folder</source>
+        <translation type="vanished">Kopiuj do folderu niestandardowego</translation>
+    </message>
+    <message>
+        <source>Upload image</source>
+        <translation type="vanished">Wyślij obraz</translation>
+    </message>
+    <message>
+        <source>Apply the above rules to local images</source>
+        <translation type="vanished">Zastosuj powyższe reguły do lokalnych obrazów</translation>
+    </message>
+    <message>
+        <source>Apply the above rules to network images</source>
+        <translation type="vanished">Zastosuj powyższe reguły do obrazów sieciowych</translation>
+    </message>
+    <message>
+        <source>Allow automatic image upload based on YAML settings</source>
+        <translation type="vanished">Zezwalaj na automatyczne wysyłanie obrazów na podstawie ustawień YAML</translation>
+    </message>
+    <message>
+        <source>Image Syntax Preferences</source>
+        <translation type="vanished">Preferencje składni obrazów</translation>
+    </message>
+    <message>
+        <source>Prefer relative paths</source>
+        <translation type="vanished">Preferuj ścieżki względne</translation>
+    </message>
+    <message>
+        <source>Add / to relative paths</source>
+        <translation type="vanished">Dodaj / do ścieżek względnych</translation>
+    </message>
+    <message>
+        <source>Auto-escape image URLs on insertion</source>
+        <translation type="vanished">Automatycznie escapuj adresy URL obrazów przy wstawianiu</translation>
+    </message>
+    <message>
+        <source>Upload Service Settings</source>
+        <translation type="vanished">Ustawienia usługi wysyłania</translation>
+    </message>
+    <message>
+        <source>Upload Service</source>
+        <translation type="vanished">Usługa wysyłania</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation type="vanished">Brak</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PrefsMarkdownPage</name>
+    <message>
+        <source>Markdown Syntax Preferences</source>
+        <translation type="vanished">Preferencje składni Markdown</translation>
+    </message>
+    <message>
+        <source>Strict Mode</source>
+        <translation type="vanished">Tryb ścisły</translation>
+    </message>
+    <message>
+        <source>Heading Style</source>
+        <translation type="vanished">Styl nagłówków</translation>
+    </message>
+    <message>
+        <source>Unordered List</source>
+        <translation type="vanished">Lista nienumerowana</translation>
+    </message>
+    <message>
+        <source>Ordered List</source>
+        <translation type="vanished">Lista numerowana</translation>
+    </message>
+    <message>
+        <source>1. ... 2. ... 3. ...</source>
+        <translation type="vanished">1. ... 2. ... 3. ...</translation>
+    </message>
+    <message>
+        <source>1. ... 1. ... 1. ...</source>
+        <translation type="vanished">1. ... 1. ... 1. ...</translation>
+    </message>
+    <message>
+        <source>Markdown Extended Syntax</source>
+        <translation type="vanished">Rozszerzona składnia Markdown</translation>
+    </message>
+    <message>
+        <source>Auto Recognize Links</source>
+        <translation type="vanished">Automatycznie rozpoznawaj linki</translation>
+    </message>
+    <message>
+        <source>Inline Formula</source>
+        <translation type="vanished">Formuła w wierszu</translation>
+    </message>
+    <message>
+        <source>Subscript</source>
+        <translation type="vanished">Indeks dolny</translation>
+    </message>
+    <message>
+        <source>Superscript</source>
+        <translation type="vanished">Indeks górny</translation>
+    </message>
+    <message>
+        <source>Highlight</source>
+        <translation type="vanished">Wyróżnienie</translation>
+    </message>
+    <message>
+        <source>Github Style Alert Box</source>
+        <translation type="vanished">Pole alertu w stylu GitHub</translation>
+    </message>
+    <message>
+        <source>Diagrams (Sequence, Flowchart, Mermaid)</source>
+        <translation type="vanished">Diagramy (Sequence, Flowchart, Mermaid)</translation>
+    </message>
+    <message>
+        <source>Diagram Options</source>
+        <translation type="vanished">Opcje diagramów</translation>
+    </message>
+    <message>
+        <source>Smart Punctuation</source>
+        <translation type="vanished">Inteligentna interpunkcja</translation>
+    </message>
+    <message>
+        <source>Convert on Input</source>
+        <translation type="vanished">Konwertuj przy wprowadzaniu</translation>
+    </message>
+    <message>
+        <source>No conversion</source>
+        <translation type="vanished">Bez konwersji</translation>
+    </message>
+    <message>
+        <source>When typing</source>
+        <translation type="vanished">Podczas pisania</translation>
+    </message>
+    <message>
+        <source>Always</source>
+        <translation type="vanished">Zawsze</translation>
+    </message>
+    <message>
+        <source>Smart Quotes</source>
+        <translation type="vanished">Inteligentne cudzysłowy</translation>
+    </message>
+    <message>
+        <source>Smart Dashes</source>
+        <translation type="vanished">Inteligentne myślniki</translation>
+    </message>
+    <message>
+        <source>Allow and convert Unicode punctuation when parsing Markdown</source>
+        <translation type="vanished">Zezwalaj na interpunkcję Unicode i konwertuj ją podczas analizy Markdown</translation>
+    </message>
+    <message>
+        <source>Code Blocks</source>
+        <translation type="vanished">Bloki kodu</translation>
+    </message>
+    <message>
+        <source>Show Line Numbers</source>
+        <translation type="vanished">Pokazuj numery wierszy</translation>
+    </message>
+    <message>
+        <source>Code Blocks Auto Wrap</source>
+        <translation type="vanished">Automatyczne zawijanie bloków kodu</translation>
+    </message>
+    <message>
+        <source>Use Shift+Tab to auto adjust indent of selected code</source>
+        <translation type="vanished">Użyj Shift+Tab, aby automatycznie dostosować wcięcie zaznaczonego kodu</translation>
+    </message>
+    <message>
+        <source>Code Indent</source>
+        <translation type="vanished">Wcięcie kodu</translation>
+    </message>
+    <message>
+        <source>Default Code Block Language</source>
+        <translation type="vanished">Domyślny język bloku kodu</translation>
+    </message>
+    <message>
+        <source>(empty)</source>
+        <translation type="vanished">(puste)</translation>
+    </message>
+    <message>
+        <source>Automatically add code block language</source>
+        <translation type="vanished">Automatycznie dodawaj język bloku kodu</translation>
+    </message>
+    <message>
+        <source>When inserting code blocks via Markdown code</source>
+        <translation type="vanished">Podczas wstawiania bloków kodu przez kod Markdown</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation type="vanished">Nigdy</translation>
     </message>
 </context>
 <context>

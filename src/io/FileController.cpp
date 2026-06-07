@@ -3,6 +3,7 @@
 #include "app/DocumentSession.h"
 
 #include <QFile>
+#include <QSettings>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
@@ -103,27 +104,47 @@ bool FileController::confirmDiscardIfModified(DocumentSession& session, QWidget*
 
 bool FileController::readTextFile(const QString& path, QString* out, QWidget* parent) const {
   QFile file(path);
-  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+  if (!file.open(QIODevice::ReadOnly)) {
     QMessageBox::critical(parent, tr("Open Failed"), file.errorString());
     return false;
   }
 
   QTextStream stream(&file);
   stream.setEncoding(QStringConverter::Utf8);
-  *out = stream.readAll();
+  QString text = stream.readAll();
+  // Normalize line endings to LF for internal use
+  text.replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
+  text.replace(QLatin1Char('\r'), QLatin1Char('\n'));
+  *out = text;
   return true;
 }
 
 bool FileController::writeTextFile(const QString& path, const QString& text, QWidget* parent) const {
   QSaveFile file(path);
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+  if (!file.open(QIODevice::WriteOnly)) {
     QMessageBox::critical(parent, tr("Save Failed"), file.errorString());
     return false;
   }
 
+  QSettings settings;
+  QString content = text;
+
+  // Ensure trailing newline
+  if (settings.value(QStringLiteral("editor/trailingNewline"), true).toBool()) {
+    if (!content.isEmpty() && !content.endsWith(QLatin1Char('\n'))) {
+      content += QLatin1Char('\n');
+    }
+  }
+
+  // Apply line endings (internal text is always LF)
+  const int lb = settings.value(QStringLiteral("editor/defaultLineBreak"), 1).toInt();
+  if (lb == 1) {
+    content.replace(QLatin1Char('\n'), QStringLiteral("\r\n"));
+  }
+
   QTextStream stream(&file);
   stream.setEncoding(QStringConverter::Utf8);
-  stream << text;
+  stream << content;
   if (!file.commit()) {
     QMessageBox::critical(parent, tr("Save Failed"), file.errorString());
     return false;

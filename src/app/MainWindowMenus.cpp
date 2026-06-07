@@ -157,8 +157,11 @@ void MainWindow::setupEditMenu() {
   addDisabledMenu(edit, tr("Delete Range"));
   addDisabledMenu(edit, tr("Math Tools"));
   addDisabledMenu(edit, tr("Smart Punctuation"));
-  addDisabledMenu(edit, tr("Line Breaks"));
-  addDisabledMenu(edit, tr("Spaces and Line Breaks"));
+  QMenu* lineBreaks = edit->addMenu(tr("Line Breaks"));
+  addCheckAction(lineBreaks, QStringLiteral("edit.linebreak_crlf"), tr("Windows (CRLF)"), {}, true);
+  addCheckAction(lineBreaks, QStringLiteral("edit.linebreak_lf"), tr("Unix (LF)"), {}, false);
+  lineBreaks->addSeparator();
+  addCheckAction(lineBreaks, QStringLiteral("edit.trailing_newline"), tr("Ensure Trailing Newline on Save"), {}, true);
   addAction(edit, QStringLiteral("edit.spellcheck"), tr("Spell Check..."), {}, false);
   addAction(edit, QStringLiteral("edit.find"), tr("Find and Replace"), QKeySequence::Find, false);
   addAction(edit, QStringLiteral("edit.symbols"), tr("Emoji and Symbols"), QKeySequence(QStringLiteral("Ctrl+.")), false);

@@ -538,6 +538,18 @@ void MainWindow::loadAppearanceSettings() {
       action->setChecked(true);
     }
   }
+
+  // Restore line break and trailing newline settings
+  const int lb = settings.value(QStringLiteral("editor/defaultLineBreak"), 1).toInt();
+  if (QAction* crlf = commands_.action(QStringLiteral("edit.linebreak_crlf"))) {
+    crlf->setChecked(lb == 1);
+  }
+  if (QAction* lf = commands_.action(QStringLiteral("edit.linebreak_lf"))) {
+    lf->setChecked(lb == 0);
+  }
+  if (QAction* tn = commands_.action(QStringLiteral("edit.trailing_newline"))) {
+    tn->setChecked(settings.value(QStringLiteral("editor/trailingNewline"), true).toBool());
+  }
 }
 
 void MainWindow::saveAppearanceTheme(const QString& name) const {

@@ -517,6 +517,22 @@ void MainWindow::setupConnections() {
     editor_->setWordWrapEnabled(enabled);
     QSettings().setValue(QStringLiteral("view/wordWrap"), enabled);
   });
+
+  commands_.bind(QStringLiteral("edit.linebreak_crlf"), [this] {
+    commands_.setChecked(QStringLiteral("edit.linebreak_crlf"), true);
+    commands_.setChecked(QStringLiteral("edit.linebreak_lf"), false);
+    QSettings().setValue(QStringLiteral("editor/defaultLineBreak"), 1);
+  });
+  commands_.bind(QStringLiteral("edit.linebreak_lf"), [this] {
+    commands_.setChecked(QStringLiteral("edit.linebreak_lf"), true);
+    commands_.setChecked(QStringLiteral("edit.linebreak_crlf"), false);
+    QSettings().setValue(QStringLiteral("editor/defaultLineBreak"), 0);
+  });
+  commands_.bind(QStringLiteral("edit.trailing_newline"), [this] {
+    const bool checked = commands_.action(QStringLiteral("edit.trailing_newline"))->isChecked();
+    QSettings().setValue(QStringLiteral("editor/trailingNewline"), checked);
+  });
+
   commands_.bind(QStringLiteral("view.sidebar"), [this] {
     updateSidebarMode();
     QSettings().setValue(QStringLiteral("view/sidebarVisible"),
