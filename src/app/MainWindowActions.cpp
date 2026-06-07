@@ -450,12 +450,12 @@ void MainWindow::setupConnections() {
     if (!sourceModeEnabled()) editorController_.paragraphController().demoteHeading();
   });
 
-  // Block insert commands
+  // Toggle code/math block commands
   commands_.bind(QStringLiteral("paragraph.math_block"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().insertFormulaBlock();
+    if (!sourceModeEnabled()) editorController_.paragraphController().toggleFormulaBlock();
   });
   commands_.bind(QStringLiteral("paragraph.code_block"), [this] {
-    if (!sourceModeEnabled()) editorController_.paragraphController().insertCodeBlock();
+    if (!sourceModeEnabled()) editorController_.paragraphController().toggleCodeBlock();
   });
   commands_.bind(QStringLiteral("paragraph.insert_before"), [this] {
     if (!sourceModeEnabled()) editorController_.paragraphController().insertParagraphBefore();
@@ -724,8 +724,12 @@ void MainWindow::updateParagraphActions() {
 
   // Block insert commands: enabled in any WYSIWYG mode
   const bool wysiwyg = !sourceMode;
+  const bool inCodeBlock = wysiwyg && editorController_.codeFenceController().currentCodeFenceId().isValid();
+  const bool inMathBlock = wysiwyg && editorController_.mathBlockController().currentMathBlockId().isValid();
   commands_.setEnabled(QStringLiteral("paragraph.math_block"), wysiwyg);
   commands_.setEnabled(QStringLiteral("paragraph.code_block"), wysiwyg);
+  commands_.setChecked(QStringLiteral("paragraph.code_block"), inCodeBlock);
+  commands_.setChecked(QStringLiteral("paragraph.math_block"), inMathBlock);
   commands_.setEnabled(QStringLiteral("paragraph.insert_before"), editable);
   commands_.setEnabled(QStringLiteral("paragraph.insert_after"), editable);
   commands_.setEnabled(QStringLiteral("paragraph.link_ref"), wysiwyg);

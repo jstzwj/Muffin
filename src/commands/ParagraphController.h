@@ -39,6 +39,10 @@ public:
   bool insertCodeBlock();
   bool insertLinkReference();
 
+  // Toggle commands (Typora-style)
+  bool toggleCodeBlock();
+  bool toggleFormulaBlock();
+
   // Block conversion commands
   bool toggleQuote();
   bool convertToOrderedList();
@@ -65,6 +69,14 @@ private:
   };
 
   bool resolveBlockContext(BlockContext& context) const;
+  qsizetype nodeSourceStart(const MarkdownNode& node) const;
+  qsizetype nodeSourceEnd(const MarkdownNode& node) const;
+  bool convertLiteralBlockToParagraph(MarkdownNode& node);
+  bool convertLiteralBlockToType(MarkdownNode& node, BlockType targetType);
+  bool insertCodeBlockWithSplit();
+  bool insertFormulaBlockWithSplit();
+  bool insertBlockAfterNode(MarkdownNode& node, const QString& blockSource,
+                            qsizetype cursorInBlock, const QString& label);
   bool applyBlockDelta(
       EditTransaction::Kind kind,
       const QString& label,

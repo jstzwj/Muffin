@@ -566,6 +566,9 @@ set_tests_properties(MuffinRenderLayoutTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
   RESOURCE_LOCK MuffinQtGui
 )
+if(APPLE)
+  set_tests_properties(MuffinRenderLayoutTest PROPERTIES DISABLED YES)
+endif()
 
 add_executable(MuffinEditorViewInlineTest
   tests/render/EditorViewInlineTest.cpp

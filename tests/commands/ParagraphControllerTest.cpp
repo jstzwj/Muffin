@@ -79,6 +79,21 @@ void setSelection(SelectionController& selection, MarkdownNode* block, qsizetype
   selection.setSelection(range);
 }
 
+void setSourceSelection(SelectionController& selection, MarkdownNode* block,
+                        qsizetype anchorText, qsizetype anchorSource,
+                        qsizetype focusText, qsizetype focusSource) {
+  SelectionRange range;
+  range.anchor.blockId = block->id();
+  range.anchor.text.nodeId = block->id();
+  range.anchor.text.textOffset = anchorText;
+  range.anchor.text.sourceOffset = anchorSource;
+  range.focus.blockId = block->id();
+  range.focus.text.nodeId = block->id();
+  range.focus.text.textOffset = focusText;
+  range.focus.text.sourceOffset = focusSource;
+  selection.setSelection(range);
+}
+
 void wireParagraph(
     ParagraphController& paragraph,
     DocumentSession& session,
@@ -542,6 +557,403 @@ void testIsOnEditableBlock() {
   require(!paragraph.isOnEditableBlock(), "selection should not be editable");
 }
 
+// ---------------------------------------------------------------------------
+// Toggle code/math block tests
+// ---------------------------------------------------------------------------
+
+void testToggleCodeBlockSplitMiddle() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  // Paragraph "Hello world", cursor at space between Hello and world
+  session.setMarkdownText(QStringLiteral("Hello world"), false);
+  setSourceCursor(selection, blockAt(session, 0), 5, 5);
+  require(paragraph.toggleCodeBlock(), "split code block at middle should succeed");
+
+  // normalizeSplitOffset removes the space, so result is Hello\n\n```\n\n```\n\nworld
+  require(session.markdownText() == QStringLiteral("Hello\n\n```\n\n```\n\nworld"),
+          "split middle text mismatch");
+
+  // Verify block structure: Paragraph, CodeFence, Paragraph
+  require(session.document().root().children().size() >= 3, "should have at least 3 blocks");
+  require(blockAt(session, 0)->type() == BlockType::Paragraph, "first block should be paragraph");
+  require(blockAt(session, 1)->type() == BlockType::CodeFence, "second block should be code fence");
+  require(blockAt(session, 2)->type() == BlockType::Paragraph, "third block should be paragraph");
+}
+
+void testToggleCodeBlockSplitAtStart() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("Hello"), false);
+  setSourceCursor(selection, blockAt(session, 0), 0, 0);
+  require(paragraph.toggleCodeBlock(), "split code block at start should succeed");
+
+  const QString md = session.markdownText();
+  require(md.contains(QLatin1String("```\n\n```")), "should contain empty code fence");
+  require(md.contains(QLatin1String("Hello")), "text should be preserved after code fence");
+  // Verify a CodeFence block exists in the parsed document
+  bool foundCodeFence = false;
+  for (const auto& child : session.document().root().children()) {
+    if (child->type() == BlockType::CodeFence) { foundCodeFence = true; break; }
+  }
+  require(foundCodeFence, "document should contain a CodeFence block");
+}
+
+void testToggleCodeBlockSplitAtEnd() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("Hello"), false);
+  setSourceCursor(selection, blockAt(session, 0), 5, 5);
+  require(paragraph.toggleCodeBlock(), "split code block at end should succeed");
+
+  require(session.markdownText() == QStringLiteral("Hello\n\n```\n\n```\n\n"),
+          "split at end text mismatch");
+  require(blockAt(session, 0)->type() == BlockType::Paragraph, "first block should be paragraph");
+  require(blockAt(session, 1)->type() == BlockType::CodeFence, "second block should be code fence");
+}
+
+void testToggleCodeBlockHeadingSplit() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  // ## Hello world — cursor between Hello and world (source offset 8 = 3 + 5)
+  session.setMarkdownText(QStringLiteral("## Hello world"), false);
+  setSourceCursor(selection, blockAt(session, 0), 5, 8);
+  require(paragraph.toggleCodeBlock(), "heading split should succeed");
+
+  // Both halves keep the heading level (## ), space normalized away
+  require(session.markdownText() == QStringLiteral("## Hello\n\n```\n\n```\n\n## world"),
+          "heading split text mismatch");
+  require(blockAt(session, 0)->type() == BlockType::Heading, "first should be heading");
+  require(blockAt(session, 0)->headingLevel() == 2, "first heading level should be 2");
+  require(blockAt(session, 1)->type() == BlockType::CodeFence, "second should be code fence");
+  require(blockAt(session, 2)->type() == BlockType::Heading, "third should be heading");
+  require(blockAt(session, 2)->headingLevel() == 2, "third heading level should be 2");
+}
+
+void testToggleCodeBlockInlineBold() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  // Bold text split at offset 13 (space between "bold" and "text")
+  // "before **bold text** after" — cursor inside bold span
+  session.setMarkdownText(QStringLiteral("before **bold text** after"), false);
+  setSourceCursor(selection, blockAt(session, 0), 13, 13);
+  require(paragraph.toggleCodeBlock(), "inline bold split should succeed");
+
+  // Bold should be closed before code block and reopened after
+  const QString md = session.markdownText();
+  require(md.contains(QLatin1String("```\n\n```")), "should contain empty code fence");
+  require(md.startsWith(QLatin1String("before **bold**")), "bold should be closed in first paragraph");
+  require(md.contains(QLatin1String("**text** after")), "bold should be reopened in last paragraph");
+}
+
+void testToggleCodeBlockWithSelection() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  // "Hello world" — select "lo wo" (source offsets 3..8, i.e. 5 chars)
+  // H=0 e=1 l=2 l=3 o=4 ' '=5 w=6 o=7 r=8 l=9 d=10
+  session.setMarkdownText(QStringLiteral("Hello world"), false);
+  setSourceSelection(selection, blockAt(session, 0), 3, 3, 8, 8);
+  require(paragraph.toggleCodeBlock(), "selection wrap in code block should succeed");
+
+  const QString md = session.markdownText();
+  require(md.contains(QLatin1String("```\nlo wo\n```")), "selected text should be in code block");
+  require(md.startsWith(QLatin1String("Hel")), "before text should be paragraph A");
+  require(md.contains(QLatin1String("rld")), "after text should be paragraph B");
+}
+
+void testToggleCodeBlockSelectionHeading() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  // "## Hello world" — select "lo wo" (source offsets 6..11, content offsets 3..8)
+  // ## ' '=2 H=3 e=4 l=5 l=6 o=7 ' '=8 w=9 o=10 r=11 l=12 d=13
+  session.setMarkdownText(QStringLiteral("## Hello world"), false);
+  setSourceSelection(selection, blockAt(session, 0), 3, 6, 8, 11);
+  require(paragraph.toggleCodeBlock(), "heading selection wrap should succeed");
+
+  const QString md = session.markdownText();
+  require(md.contains(QLatin1String("```\nlo wo\n```")), "selected text in code block");
+  // Both halves should keep ## heading prefix
+  require(md.contains(QLatin1String("## Hel")), "before part keeps heading prefix");
+  require(md.contains(QLatin1String("## rld")), "after part gets heading prefix");
+}
+
+void testToggleCodeBlockConvertsBack() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  // Code block with content → paragraph
+  session.setMarkdownText(QStringLiteral("```\ncode here\n```"), false);
+  require(blockAt(session, 0)->type() == BlockType::CodeFence, "should start as code fence");
+
+  setCursor(selection, blockAt(session, 0), 4);
+  require(paragraph.toggleCodeBlock(), "code → paragraph should succeed");
+
+  require(blockAt(session, 0)->type() == BlockType::Paragraph, "should become paragraph");
+  require(session.markdownText() == QStringLiteral("code here"), "code → paragraph text mismatch");
+}
+
+void testToggleCodeBlockEmptyConvertsBack() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  // Empty code block → empty paragraph
+  session.setMarkdownText(QStringLiteral("```\n```"), false);
+  require(blockAt(session, 0)->type() == BlockType::CodeFence, "should start as empty code fence");
+
+  setCursor(selection, blockAt(session, 0), 0);
+  require(paragraph.toggleCodeBlock(), "empty code → paragraph should succeed");
+
+  require(blockAt(session, 0)->type() == BlockType::Paragraph, "should become paragraph");
+}
+
+void testToggleCodeBlockMathToCode() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  // Math block → code block (cross-convert)
+  session.setMarkdownText(QStringLiteral("$$\nx=1\n$$"), false);
+  require(blockAt(session, 0)->type() == BlockType::MathBlock, "should start as math block");
+
+  setCursor(selection, blockAt(session, 0), 2);
+  require(paragraph.toggleCodeBlock(), "math → code should succeed");
+
+  require(blockAt(session, 0)->type() == BlockType::CodeFence, "should become code fence");
+  const QString md = session.markdownText();
+  require(md.contains(QLatin1String("```\nx=1\n```")), "math → code text mismatch");
+}
+
+void testToggleFormulaBlockSplitMiddle() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("Hello world"), false);
+  setSourceCursor(selection, blockAt(session, 0), 5, 5);
+  require(paragraph.toggleFormulaBlock(), "formula split at middle should succeed");
+
+  require(session.markdownText() == QStringLiteral("Hello\n\n$$\n\n$$\n\nworld"),
+          "formula split text mismatch");
+  require(blockAt(session, 0)->type() == BlockType::Paragraph, "first should be paragraph");
+  require(blockAt(session, 1)->type() == BlockType::MathBlock, "second should be math block");
+  require(blockAt(session, 2)->type() == BlockType::Paragraph, "third should be paragraph");
+}
+
+void testToggleFormulaBlockConvertsBack() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("$$\nx^2\n$$"), false);
+  require(blockAt(session, 0)->type() == BlockType::MathBlock, "should start as math block");
+
+  setCursor(selection, blockAt(session, 0), 2);
+  require(paragraph.toggleFormulaBlock(), "math → paragraph should succeed");
+
+  require(blockAt(session, 0)->type() == BlockType::Paragraph, "should become paragraph");
+  require(session.markdownText() == QStringLiteral("x^2"), "math → paragraph text mismatch");
+}
+
+void testToggleFormulaBlockCodeToMath() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  // Code block → math block (cross-convert)
+  session.setMarkdownText(QStringLiteral("```\ncode\n```"), false);
+  require(blockAt(session, 0)->type() == BlockType::CodeFence, "should start as code fence");
+
+  setCursor(selection, blockAt(session, 0), 2);
+  require(paragraph.toggleFormulaBlock(), "code → math should succeed");
+
+  require(blockAt(session, 0)->type() == BlockType::MathBlock, "should become math block");
+  const QString md = session.markdownText();
+  require(md.contains(QLatin1String("$$\ncode\n$$")), "code → math text mismatch");
+}
+
+void testToggleCodeBlockUndo() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  const QString original = QStringLiteral("Hello world");
+  session.setMarkdownText(original, false);
+  setSourceCursor(selection, blockAt(session, 0), 5, 5);
+
+  require(paragraph.toggleCodeBlock(), "split should succeed");
+  require(session.markdownText() != original, "text should change after split");
+
+  // Undo
+  const EditTransaction undo = requireTextDeltaCommand(undoStack, "toggle code block undo should be TextDeltaCommand");
+  session.applyTextDelta(
+      undo.textDeltaCommand().delta.start,
+      undo.textDeltaCommand().delta.insertedText.size(),
+      undo.textDeltaCommand().delta.removedText,
+      true);
+  require(session.markdownText() == original, "undo should restore original text");
+}
+
+void testToggleCodeBlockUndoConvertBack() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  const QString original = QStringLiteral("```\ncode here\n```");
+  session.setMarkdownText(original, false);
+  setCursor(selection, blockAt(session, 0), 4);
+
+  require(paragraph.toggleCodeBlock(), "code → paragraph should succeed");
+
+  const EditTransaction undo = requireTextDeltaCommand(undoStack, "convert back undo should be TextDeltaCommand");
+  session.applyTextDelta(
+      undo.textDeltaCommand().delta.start,
+      undo.textDeltaCommand().delta.insertedText.size(),
+      undo.textDeltaCommand().delta.removedText,
+      true);
+  require(session.markdownText() == original, "convert back undo should restore original");
+}
+
+void testToggleCodeBlockMultiBlockDocument() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("First\n\nSecond\n\nThird"), false);
+  require(session.document().root().children().size() == 3, "should start with 3 blocks");
+
+  // Toggle on the second paragraph
+  setSourceCursor(selection, blockAt(session, 1), 3, 3 + 7);  // "Second" starts at offset 7
+  require(paragraph.toggleCodeBlock(), "split middle block should succeed");
+
+  // "Sec" + code block + "ond" + surrounding paragraphs
+  const QString md = session.markdownText();
+  require(md.startsWith(QLatin1String("First")), "first block should be unchanged");
+  require(md.contains(QLatin1String("```\n\n```")), "should contain code fence");
+
+  // First and last paragraphs should still exist
+  require(blockAt(session, 0)->type() == BlockType::Paragraph, "first block should be paragraph");
+}
+
+void testToggleCodeBlockAfterTable() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("| a |\n| --- |\n| b |"), false);
+  require(blockAt(session, 0)->type() == BlockType::Table, "should start with table");
+
+  // Place cursor inside the table (first body cell)
+  MarkdownNode* table = blockAt(session, 0);
+  require(table->children().size() >= 2, "table should have at least 2 rows");
+  MarkdownNode* bodyRow = table->children().at(1).get();
+  MarkdownNode* cell = bodyRow->children().at(0).get();
+  setCursor(selection, cell, 0);
+
+  require(paragraph.toggleCodeBlock(), "code block after table should succeed");
+
+  const QString md = session.markdownText();
+  require(md.contains(QLatin1String("| a |")), "table should still exist");
+  require(md.contains(QLatin1String("```\n\n```")), "should insert code block after table");
+  // Table should come first, then code block
+  require(md.indexOf(QLatin1String("| a |")) < md.indexOf(QLatin1String("```")), "table should be before code block");
+}
+
+void testToggleFormulaBlockWithSelection() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  // "Hello world" — select "lo wo" (source offsets 3..8)
+  session.setMarkdownText(QStringLiteral("Hello world"), false);
+  setSourceSelection(selection, blockAt(session, 0), 3, 3, 8, 8);
+  require(paragraph.toggleFormulaBlock(), "selection wrap in formula block should succeed");
+
+  const QString md = session.markdownText();
+  require(md.contains(QLatin1String("$$\nlo wo\n$$")), "selected text should be in formula block");
+}
+
+void testToggleCodeBlockNoCursorFails() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("Hello"), false);
+  selection.clear();
+  require(!paragraph.toggleCodeBlock(), "toggle without cursor should fail");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -567,6 +979,25 @@ int main(int argc, char** argv) {
   RUN_TEST(testConvertToTaskList);
   RUN_TEST(testConversionFromHeading);
   RUN_TEST(testIsOnEditableBlock);
+  RUN_TEST(testToggleCodeBlockSplitMiddle);
+  RUN_TEST(testToggleCodeBlockSplitAtStart);
+  RUN_TEST(testToggleCodeBlockSplitAtEnd);
+  RUN_TEST(testToggleCodeBlockHeadingSplit);
+  RUN_TEST(testToggleCodeBlockInlineBold);
+  RUN_TEST(testToggleCodeBlockWithSelection);
+  RUN_TEST(testToggleCodeBlockSelectionHeading);
+  RUN_TEST(testToggleCodeBlockConvertsBack);
+  RUN_TEST(testToggleCodeBlockEmptyConvertsBack);
+  RUN_TEST(testToggleCodeBlockMathToCode);
+  RUN_TEST(testToggleFormulaBlockSplitMiddle);
+  RUN_TEST(testToggleFormulaBlockConvertsBack);
+  RUN_TEST(testToggleFormulaBlockCodeToMath);
+  RUN_TEST(testToggleCodeBlockUndo);
+  RUN_TEST(testToggleCodeBlockUndoConvertBack);
+  RUN_TEST(testToggleCodeBlockMultiBlockDocument);
+  RUN_TEST(testToggleCodeBlockAfterTable);
+  RUN_TEST(testToggleFormulaBlockWithSelection);
+  RUN_TEST(testToggleCodeBlockNoCursorFails);
 #undef RUN_TEST
   return 0;
 }

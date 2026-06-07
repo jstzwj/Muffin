@@ -180,8 +180,8 @@ void MainWindow::setupParagraphMenu() {
   addAction(paragraph, QStringLiteral("paragraph.demote_heading"), tr("Demote Heading"), QKeySequence(QStringLiteral("Ctrl+=")), false);
   paragraph->addSeparator();
   addDisabledMenu(paragraph, tr("Table"));
-  addAction(paragraph, QStringLiteral("paragraph.math_block"), tr("Formula Block"), QKeySequence(QStringLiteral("Ctrl+Shift+M")), false);
-  addAction(paragraph, QStringLiteral("paragraph.code_block"), tr("Code Block"), QKeySequence(QStringLiteral("Ctrl+Shift+K")), false);
+  addCheckAction(paragraph, QStringLiteral("paragraph.math_block"), tr("Formula Block"), QKeySequence(QStringLiteral("Ctrl+Shift+M")), false, false);
+  addCheckAction(paragraph, QStringLiteral("paragraph.code_block"), tr("Code Block"), QKeySequence(QStringLiteral("Ctrl+Shift+K")), false, false);
   addDisabledMenu(paragraph, tr("Code Tools"));
   addDisabledMenu(paragraph, tr("Alert"));
   paragraph->addSeparator();

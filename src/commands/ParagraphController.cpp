@@ -4,6 +4,7 @@
 #include "document/MarkdownNode.h"
 #include "editor/BlockEditContext.h"
 #include "editor/BrushQueue.h"
+#include "editor/InlineSplit.h"
 #include "editor/SelectionController.h"
 #include "edit/UndoStack.h"
 
@@ -634,6 +635,331 @@ bool ParagraphController::insertParagraphAfter() {
       context.blockEnd + 1,
       {LocalEditNodeHint{context.blockId, context.blockStart, context.blockType}},
       true);
+}
+
+// ---------------------------------------------------------------------------
+// Toggle commands (Typora-style)
+// ---------------------------------------------------------------------------
+
+qsizetype ParagraphController::nodeSourceStart(const MarkdownNode& node) const {
+  const SourceRange range = node.sourceRange();
+  return sourceOffsetForLineColumn(session_->markdownText(), range.lineStart, qMax(1, range.columnStart));
+}
+
+qsizetype ParagraphController::nodeSourceEnd(const MarkdownNode& node) const {
+  return sourceOffsetForLineEnd(session_->markdownText(), node.sourceRange().lineEnd);
+}
+
+bool ParagraphController::convertLiteralBlockToParagraph(MarkdownNode& node) {
+  const qsizetype start = nodeSourceStart(node);
+  qsizetype end = nodeSourceEnd(node);
+
+  // Math blocks' cmark source range may exclude the closing $$ delimiter.
+  // Extend past any trailing "\n$$" to cover the full block source.
+  if (node.type() == BlockType::MathBlock && session_) {
+    const QString md = session_->markdownText();
+    if (end + 3 <= md.size() && md.mid(end, 3) == QStringLiteral("\n$$")) {
+      end += 3;
+    } else if (end + 2 <= md.size() && md.mid(end, 2) == QStringLiteral("$$")) {
+      end += 2;
+    }
+  }
+
+  if (start < 0 || end < start) return false;
+
+  const QString content = node.literal();
+  const qsizetype cursorOffset = qBound<qsizetype>(0,
+      selection_->cursorPosition().text.textOffset, content.size());
+
+  return applyBlockDelta(
+      EditTransaction::Kind::ReplaceDocumentText,
+      QStringLiteral("Convert to Paragraph"),
+      start, end - start, content,
+      start + cursorOffset,
+      {LocalEditNodeHint{node.id(), start, BlockType::Paragraph}},
+      true);
+}
+
+bool ParagraphController::convertLiteralBlockToType(MarkdownNode& node, BlockType targetType) {
+  const qsizetype start = nodeSourceStart(node);
+  qsizetype end = nodeSourceEnd(node);
+
+  // Math blocks' cmark source range may exclude the closing $$ delimiter.
+  if (node.type() == BlockType::MathBlock && session_) {
+    const QString md = session_->markdownText();
+    if (end + 3 <= md.size() && md.mid(end, 3) == QStringLiteral("\n$$")) {
+      end += 3;
+    } else if (end + 2 <= md.size() && md.mid(end, 2) == QStringLiteral("$$")) {
+      end += 2;
+    }
+  }
+
+  if (start < 0 || end < start) return false;
+
+  const QString content = node.literal();
+  QString blockSource;
+  qsizetype contentOffset;
+  if (targetType == BlockType::CodeFence) {
+    blockSource = content.isEmpty()
+                      ? QStringLiteral("```\n```")
+                      : QStringLiteral("```\n%1\n```").arg(content);
+    contentOffset = 4;  // past "```\n"
+  } else {
+    blockSource = content.isEmpty()
+                      ? QStringLiteral("$$\n$$")
+                      : QStringLiteral("$$\n%1\n$$").arg(content);
+    contentOffset = 3;  // past "$$\n"
+  }
+
+  const qsizetype cursorOffset = qBound<qsizetype>(0,
+      selection_->cursorPosition().text.textOffset, content.size());
+
+  return applyBlockDelta(
+      EditTransaction::Kind::ReplaceDocumentText,
+      targetType == BlockType::CodeFence
+          ? QStringLiteral("Convert to Code Block")
+          : QStringLiteral("Convert to Formula Block"),
+      start, end - start, blockSource,
+      start + contentOffset + cursorOffset,
+      {LocalEditNodeHint{node.id(), start, targetType}},
+      true);
+}
+
+bool ParagraphController::insertBlockAfterNode(
+    MarkdownNode& node,
+    const QString& blockSource,
+    qsizetype cursorInBlock,
+    const QString& label) {
+  const qsizetype end = nodeSourceEnd(node);
+  if (end < 0) return false;
+
+  const QString inserted = QStringLiteral("\n\n") + blockSource;
+  return applyBlockDelta(
+      EditTransaction::Kind::InsertText, label,
+      end, 0, inserted,
+      end + 2 + cursorInBlock,
+      {}, true);
+}
+
+bool ParagraphController::insertCodeBlockWithSplit() {
+  BlockContext context;
+  if (!resolveBlockContext(context)) return false;
+
+  const QString markdown = session_->markdownText();
+  const SelectionRange sel = selection_->selection();
+
+  // Extract heading prefix for the second paragraph (same as buildSplitTextBlock)
+  QString headingPrefix;
+  if (context.blockType == BlockType::Heading && context.blockStart >= 0 &&
+      context.blockStart < context.contentStart) {
+    headingPrefix = markdown.mid(context.blockStart, context.contentStart - context.blockStart);
+  }
+
+  // Work with content text (same pattern as buildSplitTextBlock)
+  QString nextContent = context.contentText;
+
+  if (sel.isCollapsed()) {
+    // No selection: split at cursor — same as buildSplitTextBlock with code block in between
+    qsizetype contentOffset = context.cursorSourceOffset - context.contentStart;
+    qsizetype nextOffset = normalizeSplitOffset(nextContent, contentOffset);
+
+    // blockBreak: paragraph-break + code-block + paragraph-break + heading-prefix
+    QString blockBreak = QStringLiteral("\n\n```\n\n```\n\n") + headingPrefix;
+    blockBreak = insertionWithInlineSplit(blockBreak, nextContent, nextOffset);
+    nextContent.insert(nextOffset, blockBreak);
+
+    // Cursor inside the empty code block content area
+    const qsizetype codeContentPos = blockBreak.indexOf(QStringLiteral("```\n")) + 4;
+    const qsizetype nextCursor = context.contentStart + nextOffset + codeContentPos;
+
+    return applyBlockDelta(
+        EditTransaction::Kind::ReplaceDocumentText,
+        QStringLiteral("Insert Code Block"),
+        context.contentStart,
+        context.blockEnd - context.contentStart,
+        nextContent, nextCursor,
+        {LocalEditNodeHint{context.blockId, context.blockStart, BlockType::CodeFence}},
+        true);
+  }
+
+  // With selection: selected text goes into the code block
+  const qsizetype selStart = qMin(sel.anchor.text.sourceOffset, sel.focus.text.sourceOffset);
+  const qsizetype selEnd = qMax(sel.anchor.text.sourceOffset, sel.focus.text.sourceOffset);
+  const qsizetype selContentStart = qBound<qsizetype>(0, selStart - context.contentStart, nextContent.size());
+  const qsizetype selContentEnd = qBound<qsizetype>(0, selEnd - context.contentStart, nextContent.size());
+
+  const QString selectedText = nextContent.mid(selContentStart, selContentEnd - selContentStart);
+
+  // Remove selected text, then split at the removal point (same as collapsed case)
+  nextContent.remove(selContentStart, selContentEnd - selContentStart);
+  qsizetype nextOffset = selContentStart;
+  nextOffset = normalizeSplitOffset(nextContent, nextOffset);
+
+  QString blockBreak = QStringLiteral("\n\n```\n%1\n```\n\n").arg(selectedText) + headingPrefix;
+  blockBreak = insertionWithInlineSplit(blockBreak, nextContent, nextOffset);
+  nextContent.insert(nextOffset, blockBreak);
+
+  // Cursor at the end of selected text inside the code block
+  const qsizetype codeContentPos = blockBreak.indexOf(QStringLiteral("```\n")) + 4;
+  const qsizetype nextCursor = context.contentStart + nextOffset + codeContentPos + selectedText.size();
+
+  return applyBlockDelta(
+      EditTransaction::Kind::ReplaceDocumentText,
+      QStringLiteral("Insert Code Block"),
+      context.contentStart,
+      context.blockEnd - context.contentStart,
+      nextContent, nextCursor,
+      {LocalEditNodeHint{context.blockId, context.blockStart, BlockType::CodeFence}},
+      true);
+}
+
+bool ParagraphController::insertFormulaBlockWithSplit() {
+  BlockContext context;
+  if (!resolveBlockContext(context)) return false;
+
+  const QString markdown = session_->markdownText();
+  const SelectionRange sel = selection_->selection();
+
+  QString headingPrefix;
+  if (context.blockType == BlockType::Heading && context.blockStart >= 0 &&
+      context.blockStart < context.contentStart) {
+    headingPrefix = markdown.mid(context.blockStart, context.contentStart - context.blockStart);
+  }
+
+  QString nextContent = context.contentText;
+
+  if (sel.isCollapsed()) {
+    qsizetype contentOffset = context.cursorSourceOffset - context.contentStart;
+    qsizetype nextOffset = normalizeSplitOffset(nextContent, contentOffset);
+
+    QString blockBreak = QStringLiteral("\n\n$$\n\n$$\n\n") + headingPrefix;
+    blockBreak = insertionWithInlineSplit(blockBreak, nextContent, nextOffset);
+    nextContent.insert(nextOffset, blockBreak);
+
+    const qsizetype codeContentPos = blockBreak.indexOf(QStringLiteral("$$\n")) + 3;
+    const qsizetype nextCursor = context.contentStart + nextOffset + codeContentPos;
+
+    return applyBlockDelta(
+        EditTransaction::Kind::ReplaceDocumentText,
+        QStringLiteral("Insert Formula Block"),
+        context.contentStart,
+        context.blockEnd - context.contentStart,
+        nextContent, nextCursor,
+        {LocalEditNodeHint{context.blockId, context.blockStart, BlockType::MathBlock}},
+        true);
+  }
+
+  const qsizetype selStart = qMin(sel.anchor.text.sourceOffset, sel.focus.text.sourceOffset);
+  const qsizetype selEnd = qMax(sel.anchor.text.sourceOffset, sel.focus.text.sourceOffset);
+  const qsizetype selContentStart = qBound<qsizetype>(0, selStart - context.contentStart, nextContent.size());
+  const qsizetype selContentEnd = qBound<qsizetype>(0, selEnd - context.contentStart, nextContent.size());
+
+  const QString selectedText = nextContent.mid(selContentStart, selContentEnd - selContentStart);
+
+  nextContent.remove(selContentStart, selContentEnd - selContentStart);
+  qsizetype nextOffset = selContentStart;
+  nextOffset = normalizeSplitOffset(nextContent, nextOffset);
+
+  QString blockBreak = QStringLiteral("\n\n$$\n%1\n$$\n\n").arg(selectedText) + headingPrefix;
+  blockBreak = insertionWithInlineSplit(blockBreak, nextContent, nextOffset);
+  nextContent.insert(nextOffset, blockBreak);
+
+  const qsizetype codeContentPos = blockBreak.indexOf(QStringLiteral("$$\n")) + 3;
+  const qsizetype nextCursor = context.contentStart + nextOffset + codeContentPos + selectedText.size();
+
+  return applyBlockDelta(
+      EditTransaction::Kind::ReplaceDocumentText,
+      QStringLiteral("Insert Formula Block"),
+      context.contentStart,
+      context.blockEnd - context.contentStart,
+      nextContent, nextCursor,
+      {LocalEditNodeHint{context.blockId, context.blockStart, BlockType::MathBlock}},
+      true);
+}
+
+bool ParagraphController::toggleCodeBlock() {
+  if (!session_ || !selection_ || !selection_->hasCursor()) return false;
+
+  const NodeId blockId = selection_->cursorPosition().blockId;
+  if (!blockId.isValid()) return false;
+
+  MarkdownNode* node = session_->document().node(blockId);
+  if (!node) return false;
+
+  const BlockType type = node->type();
+
+  // Table cells/rows: walk up to Table, insert after it
+  if (type == BlockType::TableCell || type == BlockType::TableRow) {
+    MarkdownNode* t = node;
+    while (t && t->type() != BlockType::Table) {
+      t = t->parent();
+    }
+    if (t) {
+      return insertBlockAfterNode(*t, QStringLiteral("```\n\n```"), 6,
+                                  QStringLiteral("Insert Code Block"));
+    }
+    return insertCodeBlock();
+  }
+
+  switch (type) {
+    case BlockType::CodeFence:
+      return convertLiteralBlockToParagraph(*node);
+    case BlockType::MathBlock:
+      return convertLiteralBlockToType(*node, BlockType::CodeFence);
+    case BlockType::Paragraph:
+    case BlockType::Heading: {
+      // Only split for top-level paragraphs/headings
+      MarkdownNode* parent = node->parent();
+      if (parent && parent->type() == BlockType::Document) {
+        return insertCodeBlockWithSplit();
+      }
+      return insertCodeBlock();  // nested paragraph (blockquote/list) -> fallback
+    }
+    default:
+      return insertCodeBlock();  // fallback
+  }
+}
+
+bool ParagraphController::toggleFormulaBlock() {
+  if (!session_ || !selection_ || !selection_->hasCursor()) return false;
+
+  const NodeId blockId = selection_->cursorPosition().blockId;
+  if (!blockId.isValid()) return false;
+
+  MarkdownNode* node = session_->document().node(blockId);
+  if (!node) return false;
+
+  const BlockType type = node->type();
+
+  // Table cells/rows: walk up to Table, insert after it
+  if (type == BlockType::TableCell || type == BlockType::TableRow) {
+    MarkdownNode* t = node;
+    while (t && t->type() != BlockType::Table) {
+      t = t->parent();
+    }
+    if (t) {
+      return insertBlockAfterNode(*t, QStringLiteral("$$\n\n$$"), 5,
+                                  QStringLiteral("Insert Formula Block"));
+    }
+    return insertFormulaBlock();
+  }
+
+  switch (type) {
+    case BlockType::MathBlock:
+      return convertLiteralBlockToParagraph(*node);
+    case BlockType::CodeFence:
+      return convertLiteralBlockToType(*node, BlockType::MathBlock);
+    case BlockType::Paragraph:
+    case BlockType::Heading: {
+      MarkdownNode* parent = node->parent();
+      if (parent && parent->type() == BlockType::Document) {
+        return insertFormulaBlockWithSplit();
+      }
+      return insertFormulaBlock();
+    }
+    default:
+      return insertFormulaBlock();
+  }
 }
 
 }  // namespace muffin
