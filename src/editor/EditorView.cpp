@@ -269,6 +269,10 @@ bool EditorView::refreshBlock(NodeId blockId, const MarkdownDocument& document) 
   updateTableToolbar();
   QRect dirty;
   addRebuildDirtyRect(dirty, result, documentViewportRect(), scrollY(), viewport()->size());
+  const QRectF badgeRect = headingBadgeViewportRectForBlock(cursorPosition_.blockId);
+  if (!badgeRect.isEmpty()) {
+    dirty = dirty.united(badgeRect.adjusted(-2, -2, 2, 2).toAlignedRect());
+  }
   if (dirty.isEmpty()) {
     dirty = viewport()->rect();
   }
@@ -291,6 +295,10 @@ bool EditorView::refreshBlocks(const QVector<NodeId>& blockIds, const MarkdownDo
     }
     scrollbarDirty = scrollbarDirty || !qFuzzyIsNull(result.heightDelta);
     addRebuildDirtyRect(dirty, result, documentViewportRect(), scrollY(), viewport()->size());
+  }
+  const QRectF badgeRect = headingBadgeViewportRectForBlock(cursorPosition_.blockId);
+  if (!badgeRect.isEmpty()) {
+    dirty = dirty.united(badgeRect.adjusted(-2, -2, 2, 2).toAlignedRect());
   }
   if (scrollbarDirty) {
     updateScrollBars();
@@ -319,6 +327,10 @@ bool EditorView::refreshTopLevelRange(TopLevelRangeChange range, const MarkdownD
   updateTableToolbar();
   QRect dirty;
   addRebuildDirtyRect(dirty, result, documentViewportRect(), scrollY(), viewport()->size());
+  const QRectF badgeRect = headingBadgeViewportRectForBlock(cursorPosition_.blockId);
+  if (!badgeRect.isEmpty()) {
+    dirty = dirty.united(badgeRect.adjusted(-2, -2, 2, 2).toAlignedRect());
+  }
   viewport()->update(dirty.isEmpty() ? viewport()->rect() : dirty);
   return true;
 }
@@ -553,6 +565,7 @@ void EditorView::paintEvent(QPaintEvent* event) {
   paintSelection(painter);
   paintCurrentTableCell(painter);
   paintInsertionCursor(painter);
+  paintHeadingBadge(painter);
 }
 
 bool EditorView::event(QEvent* event) {
@@ -896,6 +909,13 @@ void EditorView::refreshInlineProjectionForSelectionChange(SelectionRange previo
     viewport()->update();
   } else {
     cursorVisible_ = selection_.isCollapsed() && cursorHit_.isValid();
+    // Erase old heading badge if cursor moved away from a heading block
+    if (previousSelection.focus.blockId != cursorPosition_.blockId) {
+      const QRectF oldBadge = headingBadgeViewportRectForBlock(previousSelection.focus.blockId);
+      if (!oldBadge.isEmpty()) {
+        viewport()->update(oldBadge.adjusted(-2, -2, 2, 2).toAlignedRect());
+      }
+    }
   }
 }
 
@@ -1006,6 +1026,57 @@ void EditorView::paintInsertionCursor(QPainter& painter) const {
   painter.setPen(Qt::NoPen);
   painter.setBrush(theme_.linkColor());
   painter.drawRect(visibleCursor);
+  painter.restore();
+}
+
+QRectF EditorView::headingBadgeViewportRectForBlock(NodeId blockId) const {
+  if (!layout_ || !blockId.isValid()) {
+    return {};
+  }
+
+  const NodeId topId = layout_->topLevelBlockIdFor(blockId);
+  if (!topId.isValid()) {
+    return {};
+  }
+
+  const BlockLayout* block = layout_->block(topId);
+  if (!block || block->type() != BlockType::Heading || block->headingLevel() < 3 || block->headingLevel() > 6) {
+    return {};
+  }
+
+  const int level = block->headingLevel();
+  QFont badgeFont = theme_.paragraphFont();
+  badgeFont.setPointSizeF(badgeFont.pointSizeF() * 0.8);
+  const QFontMetricsF metrics(badgeFont);
+  const qreal badgeWidth = metrics.horizontalAdvance(QStringLiteral("H%1").arg(level)) + 6.0;
+  const qreal badgeHeight = metrics.height() + 2.0;
+  const QRectF blockRect = block->rect();
+  return QRectF(blockRect.left() - badgeWidth - 4.0, blockRect.top() - scrollY(), badgeWidth, badgeHeight);
+}
+
+void EditorView::paintHeadingBadge(QPainter& painter) const {
+  const QRectF badgeRect = headingBadgeViewportRectForBlock(cursorPosition_.blockId);
+  if (badgeRect.isEmpty()) {
+    return;
+  }
+
+  if (!viewport()->rect().intersects(badgeRect.toAlignedRect())) {
+    return;
+  }
+
+  const NodeId topId = layout_->topLevelBlockIdFor(cursorPosition_.blockId);
+  const BlockLayout* block = layout_->block(topId);
+  const QString badgeText = QStringLiteral("H%1").arg(block->headingLevel());
+
+  painter.save();
+  painter.setPen(QPen(theme_.codeBorderColor(), 1));
+  painter.setBrush(theme_.backgroundColor());
+  painter.drawRoundedRect(badgeRect, 3.0, 3.0);
+  QFont badgeFont = theme_.paragraphFont();
+  badgeFont.setPointSizeF(badgeFont.pointSizeF() * 0.8);
+  painter.setFont(badgeFont);
+  painter.setPen(QColor(theme_.mutedTextColor().red(), theme_.mutedTextColor().green(), theme_.mutedTextColor().blue(), 140));
+  painter.drawText(badgeRect, Qt::AlignCenter, badgeText);
   painter.restore();
 }
 

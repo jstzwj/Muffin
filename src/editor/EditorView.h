@@ -83,6 +83,8 @@ private:
   void paintCurrentTableCell(QPainter& painter) const;
   void paintSelection(QPainter& painter) const;
   void paintInsertionCursor(QPainter& painter) const;
+  void paintHeadingBadge(QPainter& painter) const;
+  QRectF headingBadgeViewportRectForBlock(NodeId blockId) const;
   HitTestResult hitForCursorPosition(CursorPosition position) const;
   QVector<const BlockLayout*> blocksBetween(NodeId first, NodeId last) const;
   bool blockComesBefore(NodeId first, NodeId second) const;
