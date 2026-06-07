@@ -15,7 +15,10 @@ namespace muffin {
 
 class PrefsAppearancePage;
 class PrefsEditorPage;
+class PrefsExportPage;
 class PrefsFilesPage;
+class PrefsImagePage;
+class PrefsMarkdownPage;
 
 class PreferencesDialog final : public QDialog {
   Q_OBJECT
@@ -52,6 +55,9 @@ private:
 
   PrefsFilesPage* filesPage_ = nullptr;
   PrefsEditorPage* editorPage_ = nullptr;
+  PrefsImagePage* imagePage_ = nullptr;
+  PrefsMarkdownPage* markdownPage_ = nullptr;
+  PrefsExportPage* exportPage_ = nullptr;
   PrefsAppearancePage* appearancePage_ = nullptr;
 };
 

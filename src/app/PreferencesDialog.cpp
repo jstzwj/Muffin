@@ -101,9 +101,8 @@ PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) {
     auto* scroll = new QScrollArea(contentStack_);
     scroll->setWidgetResizable(true);
     scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    auto* imagePage = new PrefsImagePage(scroll);
-    scroll->setWidget(imagePage);
-    contentStack_->addWidget(scroll);
+    imagePage_ = new PrefsImagePage(scroll);
+    scroll->setWidget(imagePage_);    contentStack_->addWidget(scroll);
   }
 
   // Page 3: Markdown
@@ -111,8 +110,8 @@ PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) {
     auto* scroll = new QScrollArea(contentStack_);
     scroll->setWidgetResizable(true);
     scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    auto* markdownPage = new PrefsMarkdownPage(scroll);
-    scroll->setWidget(markdownPage);
+    markdownPage_ = new PrefsMarkdownPage(scroll);
+    scroll->setWidget(markdownPage_);
     contentStack_->addWidget(scroll);
   }
 
@@ -121,8 +120,8 @@ PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) {
     auto* scroll = new QScrollArea(contentStack_);
     scroll->setWidgetResizable(true);
     scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    auto* exportPage = new PrefsExportPage(scroll);
-    scroll->setWidget(exportPage);
+    exportPage_ = new PrefsExportPage(scroll);
+    scroll->setWidget(exportPage_);
     contentStack_->addWidget(scroll);
   }
 
@@ -242,10 +241,19 @@ void PreferencesDialog::retranslateUi() {
   if (editorPage_) {
     editorPage_->retranslateUi();
   }
+  if (imagePage_) {
+    imagePage_->retranslateUi();
+  }
+  if (markdownPage_) {
+    markdownPage_->retranslateUi();
+  }
+  if (exportPage_) {
+    exportPage_->retranslateUi();
+  }
   if (appearancePage_) {
     appearancePage_->retranslateUi();
   }
-  // General and Image pages handle their own retranslation via LanguageManager
+  // General page handles its own retranslation via LanguageManager
 }
 
 QWidget* PreferencesDialog::makePage(QWidget* parent) {

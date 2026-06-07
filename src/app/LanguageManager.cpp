@@ -17,18 +17,18 @@ QVector<LanguageInfo> LanguageManager::availableLanguages() const {
   return {
       {QStringLiteral("system"), tr("System Default"), QStringLiteral("System Default")},
       {QStringLiteral("en"), QStringLiteral("English"), QStringLiteral("English")},
-      {QStringLiteral("ja"), QStringLiteral("\u65E5\u672C\u8A9E"), QStringLiteral("Japanese")},
-      {QStringLiteral("zh_CN"), QStringLiteral("\u7B80\u4F53\u4E2D\u6587"), QStringLiteral("Simplified Chinese")},
-      {QStringLiteral("vi"), QStringLiteral("Ti\u1EBFng Vi\u1EC7t"), QStringLiteral("Vietnamese")},
-      {QStringLiteral("fr"), QStringLiteral("Fran\u00E7ais"), QStringLiteral("French")},
-      {QStringLiteral("es"), QStringLiteral("Espa\u00F1ol"), QStringLiteral("Spanish")},
-      {QStringLiteral("ru"), QStringLiteral("\u0420\u0443\u0441\u0441\u043A\u0438\u0439"), QStringLiteral("Russian")},
+      {QStringLiteral("ja"), QStringLiteral("日本語"), QStringLiteral("Japanese")},
+      {QStringLiteral("zh_CN"), QStringLiteral("简体中文"), QStringLiteral("Simplified Chinese")},
+      {QStringLiteral("vi"), QStringLiteral("Tiếng Việt"), QStringLiteral("Vietnamese")},
+      {QStringLiteral("fr"), QStringLiteral("Français"), QStringLiteral("French")},
+      {QStringLiteral("es"), QStringLiteral("Español"), QStringLiteral("Spanish")},
+      {QStringLiteral("ru"), QStringLiteral("Русский"), QStringLiteral("Russian")},
       {QStringLiteral("de"), QStringLiteral("Deutsch"), QStringLiteral("German")},
-      {QStringLiteral("pt_BR"), QStringLiteral("Portugu\u00EAs (Brasil)"), QStringLiteral("Portuguese (Brazil)")},
-      {QStringLiteral("ko"), QStringLiteral("\uD55C\uAD6D\uC5B4"), QStringLiteral("Korean")},
+      {QStringLiteral("pt_BR"), QStringLiteral("Português (Brasil)"), QStringLiteral("Portuguese (Brazil)")},
+      {QStringLiteral("ko"), QStringLiteral("한국어"), QStringLiteral("Korean")},
       {QStringLiteral("it"), QStringLiteral("Italiano"), QStringLiteral("Italian")},
-      {QStringLiteral("zh_TW"), QStringLiteral("\u7E41\u9AD4\u4E2D\u6587"), QStringLiteral("Traditional Chinese")},
-      {QStringLiteral("tr"), QStringLiteral("T\u00FCrk\u00E7e"), QStringLiteral("Turkish")},
+      {QStringLiteral("zh_TW"), QStringLiteral("繁體中文"), QStringLiteral("Traditional Chinese")},
+      {QStringLiteral("tr"), QStringLiteral("Türkçe"), QStringLiteral("Turkish")},
       {QStringLiteral("pl"), QStringLiteral("Polski"), QStringLiteral("Polish")},
       {QStringLiteral("nl"), QStringLiteral("Nederlands"), QStringLiteral("Dutch")},
   };
@@ -113,8 +113,9 @@ bool LanguageManager::installTranslator(const QString& code) {
     return true;
   }
 
+  const QString qmPath = QStringLiteral(":/i18n/muffin_%1.qm").arg(code);
   auto translator = std::make_unique<QTranslator>();
-  if (!translator->load(QStringLiteral(":/i18n/muffin_%1.qm").arg(code))) {
+  if (!translator->load(qmPath)) {
     return false;
   }
 

@@ -24,13 +24,13 @@ jobs:
             conan-cppstd: 17
             cmake-args: ''
             test-command: ctest --preset conan-release --output-on-failure
-          - name: macOS x64
-            runner: macos-13
-            artifact-suffix: macos-x64
-            conan-arch: x86_64
+          - name: macOS ARM64
+            runner: macos-latest
+            artifact-suffix: macos-arm64
+            conan-arch: armv8
             configure-preset: conan-release
             conan-cppstd: 17
-            cmake-args: -DCMAKE_OSX_ARCHITECTURES=x86_64
+            cmake-args: ''
             test-command: ctest --preset conan-release --output-on-failure
           - name: Linux x64
             runner: ubuntu-latest
@@ -134,6 +134,7 @@ jobs:
         run: conan install . -s build_type=Release -s compiler.cppstd=${{ matrix.conan-cppstd }} -s arch=${{ matrix.conan-arch }} --build=missing
 
       - name: Configure
+        shell: bash
         run: cmake --preset ${{ matrix.configure-preset }} -DMUFFIN_VERSION_OVERRIDE=${{ env.MUFFIN_RELEASE_VERSION }} ${{ matrix.cmake-args }}
 
       - name: Build
@@ -189,8 +190,8 @@ jobs:
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
-          name: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-macos-x64-dmg
-          path: build/Release/Muffin-*-macos-x64.dmg
+          name: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-macos-arm64-dmg
+          path: build/Release/Muffin-*-macos-arm64.dmg
           if-no-files-found: error
 
   publish:

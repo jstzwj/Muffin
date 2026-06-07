@@ -53,7 +53,7 @@ execute_process(
 )
 
 # Create the DMG
-set(DMG_OUTPUT "${CMAKE_BINARY_DIR}/Muffin-${MUFFIN_VERSION}-macos-x64.dmg")
+set(DMG_OUTPUT "${CMAKE_BINARY_DIR}/Muffin-${MUFFIN_VERSION}-macos-arm64.dmg")
 execute_process(
   COMMAND hdiutil create
     -volname "Muffin"

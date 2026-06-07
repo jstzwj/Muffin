@@ -5,7 +5,6 @@
 #include <QMenuBar>
 #include <QToolButton>
 
-namespace muffin {
 namespace {
 
 QMenu* addDisabledMenu(QMenu* parent, const QString& title) {
@@ -16,7 +15,7 @@ QMenu* addDisabledMenu(QMenu* parent, const QString& title) {
 
 }  // namespace
 
-QAction* MainWindow::addAction(
+QAction* muffin::MainWindow::addAction(
     QMenu* menu,
     const QString& id,
     const QString& text,
@@ -31,7 +30,7 @@ QAction* MainWindow::addAction(
   return action;
 }
 
-QAction* MainWindow::addCheckAction(
+QAction* muffin::MainWindow::addCheckAction(
     QMenu* menu,
     const QString& id,
     const QString& text,
@@ -44,7 +43,7 @@ QAction* MainWindow::addCheckAction(
   return action;
 }
 
-void MainWindow::retranslateUi() {
+void muffin::MainWindow::retranslateUi() {
   const bool sidebarChecked = commands_.action(QStringLiteral("view.sidebar")) && commands_.action(QStringLiteral("view.sidebar"))->isChecked();
   const bool sourceChecked = commands_.action(QStringLiteral("view.source_mode")) && commands_.action(QStringLiteral("view.source_mode"))->isChecked();
   const bool wordWrapChecked = !commands_.action(QStringLiteral("view.word_wrap")) || commands_.action(QStringLiteral("view.word_wrap"))->isChecked();
@@ -102,7 +101,7 @@ void MainWindow::retranslateUi() {
   updateWordCountNow();
 }
 
-void MainWindow::setupFileMenu() {
+void muffin::MainWindow::setupFileMenu() {
   QMenu* file = menuBar()->addMenu(tr("File"));
   addAction(file, QStringLiteral("file.new"), tr("New"), QKeySequence::New);
   addAction(file, QStringLiteral("file.new_window"), tr("New Window"), QKeySequence(QStringLiteral("Ctrl+Shift+N")));
@@ -131,7 +130,7 @@ void MainWindow::setupFileMenu() {
   addAction(file, QStringLiteral("file.close"), tr("Close"), QKeySequence::Close);
 }
 
-void MainWindow::setupEditMenu() {
+void muffin::MainWindow::setupEditMenu() {
   QMenu* edit = menuBar()->addMenu(tr("Edit"));
   addAction(edit, QStringLiteral("edit.undo"), tr("Undo"), QKeySequence::Undo);
   addAction(edit, QStringLiteral("edit.redo"), tr("Redo"), QKeySequence::Redo);
@@ -167,7 +166,7 @@ void MainWindow::setupEditMenu() {
   addAction(edit, QStringLiteral("edit.symbols"), tr("Emoji and Symbols"), QKeySequence(QStringLiteral("Ctrl+.")), false);
 }
 
-void MainWindow::setupParagraphMenu() {
+void muffin::MainWindow::setupParagraphMenu() {
   QMenu* paragraph = menuBar()->addMenu(tr("Paragraph"));
   for (int level = 1; level <= 6; ++level) {
     addCheckAction(
@@ -207,7 +206,7 @@ void MainWindow::setupParagraphMenu() {
   addAction(frontMatter, QStringLiteral("paragraph.json"), tr("JSON"));
 }
 
-void MainWindow::setupFormatMenu() {
+void muffin::MainWindow::setupFormatMenu() {
   QMenu* format = menuBar()->addMenu(tr("Format"));
   addCheckAction(format, QStringLiteral("format.bold"), tr("Bold"), QKeySequence::Bold);
   addCheckAction(format, QStringLiteral("format.italic"), tr("Italic"), QKeySequence::Italic);
@@ -222,7 +221,7 @@ void MainWindow::setupFormatMenu() {
   addAction(format, QStringLiteral("format.clear"), tr("Clear Style"), QKeySequence(QStringLiteral("Ctrl+\\")), false);
 }
 
-void MainWindow::setupTableMenu() {
+void muffin::MainWindow::setupTableMenu() {
   QMenu* table = menuBar()->addMenu(tr("Table"));
   table->menuAction()->setVisible(false);
   addAction(table, QStringLiteral("table.insert_table"), tr("Insert Table"));
@@ -247,7 +246,7 @@ void MainWindow::setupTableMenu() {
   addAction(table, QStringLiteral("table.delete_table"), tr("Delete Table"));
 }
 
-void MainWindow::setupCodeMenu() {
+void muffin::MainWindow::setupCodeMenu() {
   QMenu* code = menuBar()->addMenu(tr("Code"));
   code->menuAction()->setVisible(false);
   addAction(code, QStringLiteral("code.enter_edit"), tr("Enter Edit"));
@@ -255,7 +254,7 @@ void MainWindow::setupCodeMenu() {
   addAction(code, QStringLiteral("code.set_language"), tr("Set Language..."));
 }
 
-void MainWindow::setupMathMenu() {
+void muffin::MainWindow::setupMathMenu() {
   QMenu* math = menuBar()->addMenu(tr("Math"));
   math->menuAction()->setVisible(false);
   addAction(math, QStringLiteral("math.enter_edit"), tr("Enter Edit"));
@@ -263,7 +262,7 @@ void MainWindow::setupMathMenu() {
   addAction(math, QStringLiteral("math.set_tex"), tr("Set TeX..."));
 }
 
-void MainWindow::setupHtmlMenu() {
+void muffin::MainWindow::setupHtmlMenu() {
   QMenu* html = menuBar()->addMenu(QStringLiteral("HTML(&H)"));
   html->menuAction()->setVisible(false);
   addAction(html, QStringLiteral("html.enter_edit"), tr("Enter Edit"));
@@ -271,7 +270,7 @@ void MainWindow::setupHtmlMenu() {
   addAction(html, QStringLiteral("html.set_source"), tr("Set HTML..."));
 }
 
-void MainWindow::setupViewMenu() {
+void muffin::MainWindow::setupViewMenu() {
   QMenu* view = menuBar()->addMenu(tr("View"));
   addCheckAction(view, QStringLiteral("view.sidebar"), tr("Show / Hide Sidebar"), QKeySequence(QStringLiteral("Ctrl+Shift+L")), false);
   addAction(view, QStringLiteral("view.outline"), tr("Outline"), QKeySequence(QStringLiteral("Ctrl+Shift+1")));
@@ -295,7 +294,7 @@ void MainWindow::setupViewMenu() {
   addAction(view, QStringLiteral("view.window_switch"), tr("Switch Windows"), QKeySequence(QStringLiteral("Ctrl+Tab")), false);
 }
 
-void MainWindow::setupThemeMenu() {
+void muffin::MainWindow::setupThemeMenu() {
   QMenu* theme = menuBar()->addMenu(tr("Theme"));
   addCheckAction(theme, QStringLiteral("theme.github"), QStringLiteral("Github"), {}, true);
   addCheckAction(theme, QStringLiteral("theme.newsprint"), QStringLiteral("Newsprint"), {}, false);
@@ -304,7 +303,7 @@ void MainWindow::setupThemeMenu() {
   addCheckAction(theme, QStringLiteral("theme.whitey"), QStringLiteral("Whitey"), {}, false);
 }
 
-void MainWindow::setupHelpMenu() {
+void muffin::MainWindow::setupHelpMenu() {
   QMenu* help = menuBar()->addMenu(tr("Help"));
   addAction(help, QStringLiteral("help.quick_start"), tr("Quick Start"), {}, false);
   addAction(help, QStringLiteral("help.markdown_ref"), tr("Markdown Reference"), {}, false);
@@ -318,5 +317,3 @@ void MainWindow::setupHelpMenu() {
   help->addSeparator();
   addAction(help, QStringLiteral("help.about"), tr("About"));
 }
-
-}  // namespace muffin
