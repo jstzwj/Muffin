@@ -5,6 +5,19 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-06-07
+
+### Added
+- **Replace submenu** - Edit → Find and Replace submenu with separate Find (Ctrl+F), Replace (Ctrl+H), Find Next (F3), and Find Previous (Shift+F3) actions
+- **Render-mode find improvements** - Find now searches the entire Markdown document with wrap-around support and cursor position tracking across consecutive searches
+- **Replace bar UI** - Replace row in the find bar with Replace and Replace All buttons, toggled by the Replace menu action
+- **Dynamic language switching for find bar** - FindBarWidget immediately updates all button texts and placeholders when the application language changes
+
+### Changed
+- **FindBarWidget i18n architecture** - Extracted all `tr()` calls into a dedicated `retranslateUi()` method with `changeEvent()` override for `QEvent::LanguageChange`
+- **lupdate namespace context fix** - Fixed `lupdate` context name generation across 17 `.cpp` files by replacing `namespace muffin { }` wrapping with fully qualified `muffin::ClassName::method()` definitions, ensuring runtime translation context matches the generated `.ts` context
+- **Translation files updated** - All 14 language `.ts` files updated with correct `muffin::` prefixed contexts and complete Find/Replace string translations
+
 ## [0.1.1] - 2026-06-07
 
 ### Added
@@ -78,5 +91,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.1.2]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.2
 [0.1.1]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.1
 [0.1.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.0
