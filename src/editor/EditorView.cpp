@@ -442,8 +442,13 @@ void EditorView::scrollToCursorCentered() {
 
 void EditorView::setTypewriterMode(bool enabled) {
   typewriterMode_ = enabled;
+  updateScrollBars();
   if (enabled && cursorHit_.isValid()) {
     scrollToCursorCentered();
+  } else if (!enabled) {
+    // Clamp scroll back to normal range [0, normalMax].
+    QScrollBar* sb = verticalScrollBar();
+    sb->setValue(qBound(sb->minimum(), sb->value(), sb->maximum()));
   }
 }
 
@@ -577,7 +582,7 @@ void EditorView::resizeEvent(QResizeEvent* event) {
     relayouted = layout_->relayoutForViewportWidth(theme_, viewport()->width());
     if (relayouted) {
       updateScrollBars();
-      verticalScrollBar()->setValue(qMin(oldValue, verticalScrollBar()->maximum()));
+      verticalScrollBar()->setValue(qBound(verticalScrollBar()->minimum(), oldValue, verticalScrollBar()->maximum()));
       updateCursorHitFromPosition();
       viewport()->update();
     }
@@ -791,7 +796,7 @@ void EditorView::rebuildLayout() {
     const int oldValue = verticalScrollBar()->value();
     layout_->rebuild(*document_, theme_, viewport()->width(), selection_);
     updateScrollBars();
-    verticalScrollBar()->setValue(qMin(oldValue, verticalScrollBar()->maximum()));
+    verticalScrollBar()->setValue(qBound(verticalScrollBar()->minimum(), oldValue, verticalScrollBar()->maximum()));
     if (cursorPosition_.isValid()) {
       cursorHit_ = hitForCursorPosition(cursorPosition_);
       cursorVisible_ = cursorHit_.isValid();
@@ -807,10 +812,20 @@ void EditorView::rebuildLayout() {
 
 void EditorView::updateScrollBars() {
   const int pageStep = qMax(1, viewport()->height());
-  const int maximum = layout_ ? qMax(0, static_cast<int>(std::ceil(layout_->totalHeight() - viewport()->height()))) : 0;
+  const int vh = viewport()->height();
+  const int normalMax = layout_ ? qMax(0, static_cast<int>(std::ceil(layout_->totalHeight() - vh))) : 0;
   verticalScrollBar()->setPageStep(pageStep);
   verticalScrollBar()->setSingleStep(qMax(16, pageStep / 12));
-  verticalScrollBar()->setRange(0, maximum);
+  if (typewriterMode_) {
+    // Allow scrolling past document boundaries so the cursor can always be
+    // centered: negative scroll (empty space above) and extra range (empty
+    // space below).  Half a viewport on each side is enough to center the
+    // cursor at the very first or last line.
+    const int halfVh = vh / 2;
+    verticalScrollBar()->setRange(-halfVh, normalMax + halfVh);
+  } else {
+    verticalScrollBar()->setRange(0, normalMax);
+  }
 }
 
 QRectF EditorView::documentViewportRect() const {

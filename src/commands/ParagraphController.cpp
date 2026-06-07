@@ -2,6 +2,7 @@
 
 #include "app/DocumentSession.h"
 #include "document/MarkdownNode.h"
+#include "document/SourceRangeUtil.h"
 #include "editor/BlockEditContext.h"
 #include "editor/BrushQueue.h"
 #include "editor/InlineSplit.h"
@@ -642,28 +643,24 @@ bool ParagraphController::insertParagraphAfter() {
 // ---------------------------------------------------------------------------
 
 qsizetype ParagraphController::nodeSourceStart(const MarkdownNode& node) const {
-  const SourceRange range = node.sourceRange();
+  const SourceRange range = fullBlockSourceRange(node, session_->markdownText());
+  if (range.byteStart >= 0) {
+    return range.byteStart;
+  }
   return sourceOffsetForLineColumn(session_->markdownText(), range.lineStart, qMax(1, range.columnStart));
 }
 
 qsizetype ParagraphController::nodeSourceEnd(const MarkdownNode& node) const {
+  const SourceRange range = fullBlockSourceRange(node, session_->markdownText());
+  if (range.byteEnd >= 0) {
+    return range.byteEnd;
+  }
   return sourceOffsetForLineEnd(session_->markdownText(), node.sourceRange().lineEnd);
 }
 
 bool ParagraphController::convertLiteralBlockToParagraph(MarkdownNode& node) {
   const qsizetype start = nodeSourceStart(node);
   qsizetype end = nodeSourceEnd(node);
-
-  // Math blocks' cmark source range may exclude the closing $$ delimiter.
-  // Extend past any trailing "\n$$" to cover the full block source.
-  if (node.type() == BlockType::MathBlock && session_) {
-    const QString md = session_->markdownText();
-    if (end + 3 <= md.size() && md.mid(end, 3) == QStringLiteral("\n$$")) {
-      end += 3;
-    } else if (end + 2 <= md.size() && md.mid(end, 2) == QStringLiteral("$$")) {
-      end += 2;
-    }
-  }
 
   if (start < 0 || end < start) return false;
 
@@ -683,16 +680,6 @@ bool ParagraphController::convertLiteralBlockToParagraph(MarkdownNode& node) {
 bool ParagraphController::convertLiteralBlockToType(MarkdownNode& node, BlockType targetType) {
   const qsizetype start = nodeSourceStart(node);
   qsizetype end = nodeSourceEnd(node);
-
-  // Math blocks' cmark source range may exclude the closing $$ delimiter.
-  if (node.type() == BlockType::MathBlock && session_) {
-    const QString md = session_->markdownText();
-    if (end + 3 <= md.size() && md.mid(end, 3) == QStringLiteral("\n$$")) {
-      end += 3;
-    } else if (end + 2 <= md.size() && md.mid(end, 2) == QStringLiteral("$$")) {
-      end += 2;
-    }
-  }
 
   if (start < 0 || end < start) return false;
 

@@ -182,8 +182,7 @@ QString MarkdownSerializer::serializeCodeFence(const MarkdownNode& node) const {
   if (literal.isEmpty()) {
     return QStringLiteral("```%1\n```").arg(node.codeLanguage());
   }
-  const QString closingSeparator = literal.endsWith(QLatin1Char('\n')) ? QString() : QStringLiteral("\n");
-  return QStringLiteral("```%1\n%2%3```").arg(node.codeLanguage(), literal, closingSeparator);
+  return QStringLiteral("```%1\n%2\n```").arg(node.codeLanguage(), literal);
 }
 
 QString MarkdownSerializer::serializeFrontMatter(const MarkdownNode& node) const {

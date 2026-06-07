@@ -73,6 +73,7 @@ signals:
 private:
   bool handleKeyPress(QKeyEvent* event);
   bool hasActiveLiteralEditor() const;
+  void syncLiteralEditMode(NodeId newBlockId);
   bool insertTextIntoActiveLiteral(QString text);
   bool deleteBackwardInActiveLiteral();
   bool deleteForwardInActiveLiteral();

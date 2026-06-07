@@ -1,5 +1,6 @@
 #include "app/DocumentSession.h"
 
+#include "document/SourceRangeUtil.h"
 #include "parser/MarkdownSerializer.h"
 
 #include <QFileInfo>
@@ -509,7 +510,7 @@ bool DocumentSession::applyNodeSnapshot(NodeId nodeId, BlockType nodeType, int n
     return false;
   }
 
-  const SourceRange range = currentNode->sourceRange();
+  const SourceRange range = fullBlockSourceRange(*currentNode, document_.markdownText());
   if (range.byteStart < 0 || range.byteEnd < range.byteStart || range.byteEnd > document_.markdownText().size()) {
     return false;
   }

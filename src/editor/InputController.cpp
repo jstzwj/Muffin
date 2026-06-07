@@ -488,6 +488,87 @@ bool InputController::hasActiveLiteralEditor() const {
          (htmlBlockController_ && htmlBlockController_->isEditing()) || (mathBlockController_ && mathBlockController_->isEditing());
 }
 
+void InputController::syncLiteralEditMode(NodeId newBlockId) {
+  if (!session_ || !selection_) {
+    return;
+  }
+  MarkdownNode* node = session_->document().node(newBlockId);
+  if (!node) {
+    return;
+  }
+
+  const BlockType type = node->type();
+  const bool isLiteral = type == BlockType::CodeFence || type == BlockType::MathBlock || type == BlockType::HtmlBlock || type == BlockType::FrontMatter;
+
+  const auto exitAllLiteralEditors = [this]() {
+    if (frontMatterController_) {
+      frontMatterController_->exitEditMode();
+    }
+    if (codeFenceController_) {
+      codeFenceController_->exitEditMode();
+    }
+    if (htmlBlockController_) {
+      htmlBlockController_->exitEditMode();
+    }
+    if (mathBlockController_) {
+      mathBlockController_->exitEditMode();
+    }
+  };
+
+  if (!isLiteral) {
+    if (hasActiveLiteralEditor()) {
+      exitAllLiteralEditors();
+    }
+    return;
+  }
+
+  bool alreadyEditingTarget = false;
+  switch (type) {
+    case BlockType::CodeFence:
+      alreadyEditingTarget = codeFenceController_ && codeFenceController_->isEditing() && codeFenceController_->currentCodeFenceId() == newBlockId;
+      break;
+    case BlockType::MathBlock:
+      alreadyEditingTarget = mathBlockController_ && mathBlockController_->isEditing() && mathBlockController_->currentMathBlockId() == newBlockId;
+      break;
+    case BlockType::HtmlBlock:
+      alreadyEditingTarget = htmlBlockController_ && htmlBlockController_->isEditing() && htmlBlockController_->currentHtmlBlockId() == newBlockId;
+      break;
+    case BlockType::FrontMatter:
+      alreadyEditingTarget =
+          frontMatterController_ && frontMatterController_->isEditing() && frontMatterController_->currentFrontMatterId() == newBlockId;
+      break;
+    default:
+      break;
+  }
+  if (alreadyEditingTarget) {
+    return;
+  }
+
+  const CursorPosition savedCursor = selection_->cursorPosition();
+  exitAllLiteralEditors();
+
+  bool entered = false;
+  switch (type) {
+    case BlockType::CodeFence:
+      entered = codeFenceController_ && codeFenceController_->enterEditMode();
+      break;
+    case BlockType::MathBlock:
+      entered = mathBlockController_ && mathBlockController_->enterEditMode();
+      break;
+    case BlockType::HtmlBlock:
+      entered = htmlBlockController_ && htmlBlockController_->enterEditMode();
+      break;
+    case BlockType::FrontMatter:
+      entered = frontMatterController_ && frontMatterController_->enterEditMode();
+      break;
+    default:
+      break;
+  }
+  if (entered) {
+    selection_->setCursorPosition(savedCursor);
+  }
+}
+
 bool InputController::insertTextIntoActiveLiteral(QString text) {
   if (frontMatterController_ && frontMatterController_->isEditing()) {
     return frontMatterController_->insertText(std::move(text));
@@ -988,6 +1069,7 @@ void InputController::setCursorOrExtend(CursorPosition cursor, bool extendSelect
   }
   if (!extendSelection) {
     selection_->setCursorPosition(cursor);
+    syncLiteralEditMode(cursor.blockId);
     return;
   }
   SelectionRange range = selection_->selection();

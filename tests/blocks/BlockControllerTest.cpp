@@ -81,6 +81,11 @@ void setSelection(SelectionController& selection, MarkdownNode* block, qsizetype
   selection.setSelection(range);
 }
 
+void sendKey(QWidget* target, int key, Qt::KeyboardModifiers modifiers = Qt::NoModifier) {
+  QKeyEvent event(QEvent::KeyPress, key, modifiers);
+  QApplication::sendEvent(target, &event);
+}
+
 void testFrontMatterEnterEditsContentAndBlockAfterCreatesParagraph() {
   {
     DocumentSession session;
@@ -524,6 +529,99 @@ void testSwitchingBetweenCodeBlocksRoutesInputToClickedBlock() {
   require(!session.markdownText().contains(QStringLiteral("BAfirst")), "second code input should not write into first code block");
 }
 
+void testCodeFenceEnterInsertsNewline() {
+  // Scenario: code block with "123", cursor at end, press Enter
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  // 1. Click into the code block (standard path via activateHit)
+  session.setMarkdownText(QStringLiteral("```\n123\n```"), false);
+  MarkdownNode* code = firstBlockOfType(session, BlockType::CodeFence);
+  require(code->literal() == QStringLiteral("123"), "code block literal should be '123'");
+
+  HitTestResult codeHit;
+  codeHit.zone = HitTestResult::Zone::Code;
+  codeHit.blockId = code->id();
+  codeHit.textNodeId = code->id();
+  codeHit.textOffset = code->literal().size();  // cursor at end of "123"
+  controller.activateHit(codeHit);
+  require(controller.codeFenceController().isEditing(), "clicking code block should enter edit mode");
+  require(controller.selection().cursorPosition().text.textOffset == code->literal().size(),
+          "cursor should be at end of literal after click");
+
+  // 2. Press Enter
+  require(controller.inputController().insertParagraphBreak(), "enter at end of code block content should succeed");
+  code = firstBlockOfType(session, BlockType::CodeFence);
+  require(code != nullptr, "code block should still exist after enter");
+  require(code->literal() == QStringLiteral("123\n"), "enter should append newline to literal");
+}
+
+void testCodeFenceArrowKeyEnterInsertsNewline() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("hello\n\n```\n123\n```"), false);
+  view.setDocument(session.document());
+  MarkdownNode* paragraph = blockAt(session, 0);
+  MarkdownNode* code = firstBlockOfType(session, BlockType::CodeFence);
+  require(paragraph->type() == BlockType::Paragraph, "first block should be paragraph");
+  require(code != nullptr, "code block should exist");
+  require(code->literal() == QStringLiteral("123"), "code block literal should be '123'");
+
+  setCursor(controller.selection(), paragraph, paragraph->literal().size());
+  sendKey(&view, Qt::Key_Down);
+  require(controller.codeFenceController().isEditing(), "keyboard navigation should enter code edit mode");
+  require(controller.selection().cursorPosition().blockId == code->id(), "cursor should move to code block");
+  require(controller.selection().cursorPosition().text.textOffset == 0, "down arrow should land at start of code block literal");
+
+  sendKey(&view, Qt::Key_Right);
+  sendKey(&view, Qt::Key_Right);
+  sendKey(&view, Qt::Key_Right);
+  require(controller.selection().cursorPosition().text.textOffset == code->literal().size(), "cursor should be at end of code literal");
+
+  require(controller.inputController().insertParagraphBreak(), "enter at end of code block should succeed");
+  code = firstBlockOfType(session, BlockType::CodeFence);
+  require(code != nullptr, "code block should still exist");
+  require(code->literal() == QStringLiteral("123\n"), "enter should append newline to literal");
+}
+
+void testKeyboardSwitchingBetweenCodeBlocksRoutesInputToTargetBlock() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("```\nfirst\n```\n\n```\nsecond\n```"), false);
+  view.setDocument(session.document());
+  MarkdownNode* firstCode = blockAt(session, 0);
+  MarkdownNode* secondCode = blockAt(session, 1);
+  require(firstCode->type() == BlockType::CodeFence, "first block should be code fence");
+  require(secondCode->type() == BlockType::CodeFence, "second block should be code fence");
+
+  HitTestResult firstHit;
+  firstHit.zone = HitTestResult::Zone::Code;
+  firstHit.blockId = firstCode->id();
+  firstHit.textNodeId = firstCode->id();
+  firstHit.textOffset = 0;
+  controller.activateHit(firstHit);
+  require(controller.inputController().insertText(QStringLiteral("A")), "first code input should work");
+
+  sendKey(&view, Qt::Key_Down);
+  secondCode = blockAt(session, 1);
+  require(controller.selection().cursorPosition().blockId == secondCode->id(), "cursor should move to second code block");
+  require(controller.codeFenceController().currentCodeFenceId() == secondCode->id(), "active code editor should switch to second block");
+  require(controller.inputController().insertText(QStringLiteral("B")), "second code input should work after keyboard switch");
+
+  require(session.markdownText().contains(QStringLiteral("Afirst")), "first code edit should remain in first code block");
+  require(session.markdownText().contains(QStringLiteral("Bsecond")), "second code edit should target second code block");
+  require(!session.markdownText().contains(QStringLiteral("BAfirst")), "second keyboard-routed input should not write into first code block");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -544,6 +642,9 @@ int main(int argc, char** argv) {
   RUN_TEST(testWholeBlockDeleteUsesRemoveNodeCommand);
   RUN_TEST(testStructuredNodeCommandModels);
   RUN_TEST(testSwitchingBetweenCodeBlocksRoutesInputToClickedBlock);
+  RUN_TEST(testCodeFenceEnterInsertsNewline);
+  RUN_TEST(testCodeFenceArrowKeyEnterInsertsNewline);
+  RUN_TEST(testKeyboardSwitchingBetweenCodeBlocksRoutesInputToTargetBlock);
 #undef RUN_TEST
   return 0;
 }

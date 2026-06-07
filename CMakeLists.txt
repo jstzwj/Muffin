@@ -242,6 +242,8 @@ set(MUFFIN_CORE_SOURCES
   src/document/NodeId.cpp
   src/document/NodeId.h
   src/document/SourceRange.h
+  src/document/SourceRangeUtil.cpp
+  src/document/SourceRangeUtil.h
   src/document/LineStartOffsetCache.cpp
   src/document/LineStartOffsetCache.h
   src/document/TopLevelRangeChange.h
