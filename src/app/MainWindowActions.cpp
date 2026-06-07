@@ -21,6 +21,7 @@
 #include <QMimeData>
 #include <QMessageBox>
 #include <QPlainTextEdit>
+#include <QSettings>
 #include <QTextCursor>
 #include <QTimer>
 #include <QToolButton>
@@ -512,13 +513,23 @@ void MainWindow::setupConnections() {
   });
 
   commands_.bind(QStringLiteral("view.word_wrap"), [this] {
-    editor_->setWordWrapEnabled(commands_.action(QStringLiteral("view.word_wrap"))->isChecked());
+    const bool enabled = commands_.action(QStringLiteral("view.word_wrap"))->isChecked();
+    editor_->setWordWrapEnabled(enabled);
+    QSettings().setValue(QStringLiteral("view/wordWrap"), enabled);
   });
-  commands_.bind(QStringLiteral("view.sidebar"), [this] { updateSidebarMode(); });
+  commands_.bind(QStringLiteral("view.sidebar"), [this] {
+    updateSidebarMode();
+    QSettings().setValue(QStringLiteral("view/sidebarVisible"),
+        commands_.action(QStringLiteral("view.sidebar"))->isChecked());
+  });
   commands_.bind(QStringLiteral("view.outline"), [this] { setSidebarPanel(SidebarWidget::Panel::Outline); });
   commands_.bind(QStringLiteral("view.document_list"), [this] { setSidebarPanel(SidebarWidget::Panel::Files); });
   commands_.bind(QStringLiteral("view.file_tree"), [this] { setSidebarPanel(SidebarWidget::Panel::Files); });
-  commands_.bind(QStringLiteral("view.source_mode"), [this] { updateViewMode(); });
+  commands_.bind(QStringLiteral("view.source_mode"), [this] {
+    updateViewMode();
+    QSettings().setValue(QStringLiteral("view/sourceMode"),
+        commands_.action(QStringLiteral("view.source_mode"))->isChecked());
+  });
   commands_.bind(QStringLiteral("view.status_bar"), [this] {
     const bool visible = commands_.action(QStringLiteral("view.status_bar"))->isChecked();
     setStatusBarVisible(visible);

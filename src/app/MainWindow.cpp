@@ -149,6 +149,8 @@ bool MainWindow::openFile(QString path) {
 
 void MainWindow::closeEvent(QCloseEvent* event) {
   if (maybeSaveChanges()) {
+    QSettings settings;
+    settings.setValue(QStringLiteral("window/geometry"), saveGeometry());
     event->accept();
   } else {
     event->ignore();
@@ -479,11 +481,46 @@ void MainWindow::setTypewriterMode(bool enabled) {
 
 void MainWindow::loadAppearanceSettings() {
   QSettings settings;
+
+  // Restore window geometry (never fullscreen)
+  const QByteArray geo = settings.value(QStringLiteral("window/geometry")).toByteArray();
+  if (!geo.isEmpty()) {
+    restoreGeometry(geo);
+    if (isFullScreen()) {
+      showNormal();
+    }
+  }
+
   const QString themeName = settings.value(QStringLiteral("appearance/themeName"), themeManager_.currentThemeName()).toString();
   themeManager_.setTheme(themeName);
   setStatusBarVisible(settings.value(QStringLiteral("appearance/showStatusBar"), true).toBool());
   setZoomPercent(settings.value(QStringLiteral("appearance/zoomPercent"), 100).toInt());
   setFontSizePx(settings.value(QStringLiteral("appearance/fontSizePx"), 16).toInt());
+
+  // Restore word wrap
+  const bool wordWrap = settings.value(QStringLiteral("view/wordWrap"), true).toBool();
+  if (!wordWrap) {
+    editor_->setWordWrapEnabled(false);
+    if (QAction* action = commands_.action(QStringLiteral("view.word_wrap"))) {
+      action->setChecked(false);
+    }
+  }
+
+  // Restore sidebar visibility
+  if (settings.value(QStringLiteral("view/sidebarVisible"), false).toBool()) {
+    if (QAction* action = commands_.action(QStringLiteral("view.sidebar"))) {
+      action->setChecked(true);
+    }
+    updateSidebarMode();
+  }
+
+  // Restore source mode
+  if (settings.value(QStringLiteral("view/sourceMode"), false).toBool()) {
+    if (QAction* action = commands_.action(QStringLiteral("view.source_mode"))) {
+      action->setChecked(true);
+    }
+    updateViewMode();
+  }
 
   // Restore typewriter mode (applied immediately)
   const bool typewriterMode = settings.value(QStringLiteral("appearance/typewriterMode"), false).toBool();
