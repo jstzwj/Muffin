@@ -153,7 +153,7 @@ jobs:
       - name: Archive Unix distribution
         if: runner.os != 'Windows'
         shell: bash
-        run: tar -czf "Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}.tar.gz" -C build/dist .
+        run: tar -czf "Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}.tar.gz" -C build/Release/dist .
 
       - name: Upload distribution artifact
         uses: actions/upload-artifact@v4
@@ -190,7 +190,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-macos-x64-dmg
-          path: build/Muffin-*-macos-x64.dmg
+          path: build/Release/Muffin-*-macos-x64.dmg
           if-no-files-found: error
 
   publish:
