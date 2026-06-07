@@ -292,6 +292,7 @@ target_include_directories(MuffinCore
 
 add_executable(Muffin
   src/translations.qrc
+  src/statusbar_icons.qrc
   src/app/CommandRegistry.cpp
   src/app/CommandRegistry.h
   src/app/LanguageManager.cpp
@@ -311,7 +312,6 @@ add_executable(Muffin
 set(MUFFIN_UI_SOURCES
   src/katex_fonts.qrc
   src/table_toolbar_icons.qrc
-  src/statusbar_icons.qrc
   third_party/katex/src/fontMetricsData.js
   third_party/katex/src/svgGeometry.ts
   third_party/katex/src/symbols.ts
@@ -359,6 +359,7 @@ set(MUFFIN_UI_SOURCES
   src/editor/CursorPosition.h
   src/editor/EditorController.cpp
   src/editor/EditorController.h
+  src/editor/EditorControllerUndo.cpp
   src/editor/EditorView.cpp
   src/editor/EditorView.h
   src/editor/CodeLanguageEditor.cpp
@@ -367,12 +368,15 @@ set(MUFFIN_UI_SOURCES
   src/editor/TableToolbar.h
   src/editor/InputController.cpp
   src/editor/InputController.h
+  src/editor/InputControllerEdit.cpp
   src/editor/SelectionController.cpp
   src/editor/SelectionController.h
   src/editor/TextBlockCommandBuilder.cpp
   src/editor/TextBlockCommandBuilder.h
   src/math/MathBuilder.cpp
   src/math/MathBuilder.h
+  src/math/MathBuilderArray.cpp
+  src/math/MathBuilderSpacing.cpp
   src/math/MathDelimiter.cpp
   src/math/MathDelimiter.h
   src/math/MathFontMetrics.cpp
@@ -394,6 +398,7 @@ set(MUFFIN_UI_SOURCES
   src/math/MathParseError.h
   src/math/MathParser.cpp
   src/math/MathParser.h
+  src/math/MathParserEnvironment.cpp
   src/math/MathRenderer.cpp
   src/math/MathRenderer.h
   src/math/MathRenderNode.cpp

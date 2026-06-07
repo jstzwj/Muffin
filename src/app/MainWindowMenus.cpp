@@ -270,7 +270,6 @@ void MainWindow::setupViewMenu() {
   addCheckAction(view, QStringLiteral("view.status_bar"), tr("Show Status Bar"), {}, true);
   view->addSeparator();
   addAction(view, QStringLiteral("view.word_count"), tr("Word Count Window"), {}, false);
-  addAction(view, QStringLiteral("view.diagnostics"), tr("Render Diagnostics"), {}, false);
   addAction(view, QStringLiteral("view.fullscreen"), tr("Toggle Full Screen"), QKeySequence(QStringLiteral("F11")));
   addCheckAction(view, QStringLiteral("view.always_on_top"), tr("Always on Top"), {}, false, false);
   view->addSeparator();

@@ -11,6 +11,7 @@
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
+#include <QDesktopServices>
 #include <QElapsedTimer>
 #include <QInputDialog>
 #include <QLabel>
@@ -23,6 +24,7 @@
 #include <QTextCursor>
 #include <QTimer>
 #include <QToolButton>
+#include <QUrl>
 
 namespace muffin {
 namespace {
@@ -526,6 +528,14 @@ void MainWindow::setupConnections() {
   commands_.bind(QStringLiteral("view.actual_size"), [this] {
     setZoomPercent(100);
     saveAppearanceZoomPercent(zoomPercent_);
+  });
+
+  commands_.bind(QStringLiteral("help.website"), [] {
+    QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/jstzwj/Muffin")));
+  });
+
+  commands_.bind(QStringLiteral("help.feedback"), [] {
+    QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/jstzwj/Muffin/issues")));
   });
 
   commands_.bind(QStringLiteral("help.about"), [this] {
