@@ -1,1057 +1,2697 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE TS>
 <TS version="2.1" language="it_IT">
-    <context>
-        <name>muffin::DocumentSession</name>
-        <message>
-            <location filename="../src/app/DocumentSession.cpp" line="406" />
-            <source>Untitled</source>
-            <translation>Senza titolo</translation>
-        </message>
-    </context>
-    <context>
-        <name>muffin::FileController</name>
-        <message>
-            <location filename="../src/io/FileController.cpp" line="33" />
-            <source>Open</source>
-            <translation>Apri</translation>
-        </message>
-        <message>
-            <location filename="../src/io/FileController.cpp" line="35" />
-            <source>Markdown and text files (*.md *.markdown *.mdown *.txt);;All files (*.*)</source>
-            <translation>File Markdown e di testo (*.md *.markdown *.mdown *.txt);;Tutti i file (*.*)</translation>
-        </message>
-        <message>
-            <location filename="../src/io/FileController.cpp" line="65" />
-            <source>Save As</source>
-            <translation>Salva con nome</translation>
-        </message>
-        <message>
-            <location filename="../src/io/FileController.cpp" line="67" />
-            <source>Markdown files (*.md);;Text files (*.txt);;All files (*.*)</source>
-            <translation>File Markdown (*.md);;File di testo (*.txt);;Tutti i file (*.*)</translation>
-        </message>
-        <message>
-            <location filename="../src/io/FileController.cpp" line="86" />
-            <source>Muffin</source>
-            <translation>Muffin</translation>
-        </message>
-        <message>
-            <location filename="../src/io/FileController.cpp" line="87" />
-            <source>The current document has unsaved changes.</source>
-            <translation>Il documento corrente contiene modifiche non salvate.</translation>
-        </message>
-        <message>
-            <location filename="../src/io/FileController.cpp" line="103" />
-            <source>Open Failed</source>
-            <translation>Apertura non riuscita</translation>
-        </message>
-        <message>
-            <location filename="../src/io/FileController.cpp" line="116" />
-            <location filename="../src/io/FileController.cpp" line="124" />
-            <source>Save Failed</source>
-            <translation>Salvataggio non riuscito</translation>
-        </message>
-    </context>
-    <context>
-        <name>muffin::LanguageManager</name>
-        <message>
-            <location filename="../src/app/LanguageManager.cpp" line="18" />
-            <source>System Default</source>
-            <translation>Predefinito di sistema</translation>
-        </message>
-    </context>
-    <context>
-        <name>muffin::MainWindow</name>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="133" />
-            <source>Open Failed</source>
-            <translation>Apertura non riuscita</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="133" />
-            <source>File does not exist:
+<context>
+    <name>muffin::DocumentSession</name>
+    <message>
+        <location filename="../src/app/DocumentSession.cpp" line="408"/>
+        <source>Untitled</source>
+        <translation>Senza titolo</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::FileController</name>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="37"/>
+        <source>Open</source>
+        <translation>Apri</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="39"/>
+        <source>Markdown and text files (*.md *.markdown *.mdown *.txt);;All files (*.*)</source>
+        <translation>File Markdown e di testo (*.md *.markdown *.mdown *.txt);;Tutti i file (*.*)</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="69"/>
+        <source>Save As</source>
+        <translation>Salva con nome</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="71"/>
+        <location filename="../src/io/FileController.cpp" line="228"/>
+        <source>Markdown files (*.md);;Text files (*.txt);;All files (*.*)</source>
+        <translation>File Markdown (*.md);;File di testo (*.txt);;Tutti i file (*.*)</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="90"/>
+        <location filename="../src/io/FileController.cpp" line="191"/>
+        <source>Muffin</source>
+        <translation>Muffin</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="91"/>
+        <source>The current document has unsaved changes.</source>
+        <translation>Il documento corrente contiene modifiche non salvate.</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="107"/>
+        <location filename="../src/io/FileController.cpp" line="139"/>
+        <source>Open Failed</source>
+        <translation>Apertura non riuscita</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="120"/>
+        <location filename="../src/io/FileController.cpp" line="128"/>
+        <source>Save Failed</source>
+        <translation>Salvataggio non riuscito</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="148"/>
+        <location filename="../src/io/FileController.cpp" line="160"/>
+        <location filename="../src/io/FileController.cpp" line="173"/>
+        <source>Encoding Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="149"/>
+        <source>Unsupported encoding: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="161"/>
+        <location filename="../src/io/FileController.cpp" line="174"/>
+        <source>Failed to decode file with encoding: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="192"/>
+        <source>The document has unsaved changes. Save before reopening with a new encoding?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="226"/>
+        <source>Move To</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="234"/>
+        <source>Move Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/io/FileController.cpp" line="235"/>
+        <source>Could not move file to:
 %1</source>
-            <translation>Il file non esiste:
-%1</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="464" />
-            <source>Code Language</source>
-            <translation>Linguaggio del codice</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="464" />
-            <source>Language:</source>
-            <translation>Lingua:</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="474" />
-            <source>HTML Source</source>
-            <translation>Sorgente HTML</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="474" />
-            <source>HTML:</source>
-            <translation>HTML:</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="484" />
-            <source>Math TeX</source>
-            <translation>TeX matematico</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="484" />
-            <source>TeX:</source>
-            <translation>TeX:</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="529" />
-            <source>About Muffin</source>
-            <translation>Informazioni su Muffin</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="530" />
-            <source>Muffin %1
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>muffin::FindBarWidget</name>
+    <message>
+        <location filename="../src/editor/FindBarWidget.cpp" line="26"/>
+        <source>Find</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/editor/FindBarWidget.cpp" line="36"/>
+        <source>Previous</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/editor/FindBarWidget.cpp" line="39"/>
+        <source>Next</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/editor/FindBarWidget.cpp" line="45"/>
+        <source>Close</source>
+        <translation>Chiudi</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/FindBarWidget.cpp" line="64"/>
+        <location filename="../src/editor/FindBarWidget.cpp" line="67"/>
+        <source>Replace</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/editor/FindBarWidget.cpp" line="72"/>
+        <source>Replace All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/editor/FindBarWidget.cpp" line="112"/>
+        <source>Not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/editor/FindBarWidget.cpp" line="114"/>
+        <source>%1/%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>muffin::LanguageManager</name>
+    <message>
+        <location filename="../src/app/LanguageManager.cpp" line="18"/>
+        <source>System Default</source>
+        <translation>Predefinito di sistema</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::MainWindow</name>
+    <message>
+        <location filename="../src/app/MainWindow.cpp" line="280"/>
+        <source>Parse %1 ms</source>
+        <translation>Analisi %1 ms</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindow.cpp" line="331"/>
+        <source>Open Folder</source>
+        <translation>Apri cartella</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="82"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="273"/>
+        <source>Show / Hide Sidebar</source>
+        <translation>Mostra / nascondi barra laterale</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="85"/>
+        <source>Toggle source / rendered mode</source>
+        <translation>Commuta modalità sorgente / rendering</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="106"/>
+        <source>File</source>
+        <translation>File</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="107"/>
+        <source>New</source>
+        <translation>Nuovo</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="108"/>
+        <source>New Window</source>
+        <translation>Nuova finestra</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="109"/>
+        <source>Open...</source>
+        <translation>Apri...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="110"/>
+        <source>Open Folder...</source>
+        <translation>Apri cartella...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="111"/>
+        <source>Quick Open...</source>
+        <translation>Apertura rapida...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="112"/>
+        <source>Open Recent</source>
+        <translation>Apri recenti</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="114"/>
+        <source>Reopen with Encoding</source>
+        <translation>Riapri con codifica</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="116"/>
+        <source>Save</source>
+        <translation>Salva</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="117"/>
+        <source>Save As...</source>
+        <translation>Salva con nome...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="118"/>
+        <source>Move To...</source>
+        <translation>Sposta in...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="119"/>
+        <source>Save All Open Files...</source>
+        <translation>Salva tutti i file aperti...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="121"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="119"/>
+        <source>Properties</source>
+        <translation>Proprietà</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="122"/>
+        <source>Show in File Manager...</source>
+        <translation>Mostra nel file manager...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="123"/>
+        <source>Show in Sidebar</source>
+        <translation>Mostra nella barra laterale</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="124"/>
+        <source>Delete...</source>
+        <translation>Elimina...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="126"/>
+        <source>Import...</source>
+        <translation>Importa...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="127"/>
+        <source>Export</source>
+        <translation>Esporta</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="128"/>
+        <source>Print...</source>
+        <translation>Stampa...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="130"/>
+        <source>Preferences...</source>
+        <translation>Preferenze...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="131"/>
+        <source>Close</source>
+        <translation>Chiudi</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="135"/>
+        <source>Edit</source>
+        <translation>Modifica</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="136"/>
+        <source>Undo</source>
+        <translation>Annulla</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="137"/>
+        <source>Redo</source>
+        <translation>Ripeti</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="139"/>
+        <source>Cut</source>
+        <translation>Taglia</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="140"/>
+        <source>Copy</source>
+        <translation>Copia</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="141"/>
+        <source>Copy Image</source>
+        <translation>Copia immagine</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="142"/>
+        <source>Paste</source>
+        <translation>Incolla</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="143"/>
+        <source>Copy as Plain Text</source>
+        <translation>Copia come testo normale</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="144"/>
+        <source>Copy as Markdown</source>
+        <translation>Copia come Markdown</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="145"/>
+        <source>Copy as HTML</source>
+        <translation>Copia come HTML</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="146"/>
+        <source>Paste as Plain Text</source>
+        <translation>Incolla come testo normale</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="148"/>
+        <source>Select</source>
+        <translation>Seleziona</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="149"/>
+        <source>Select All</source>
+        <translation>Seleziona tutto</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="150"/>
+        <source>Select Current Line</source>
+        <translation>Seleziona riga corrente</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="151"/>
+        <source>Select Current Format Text</source>
+        <translation>Seleziona testo con formato corrente</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="153"/>
+        <source>Move Line Up</source>
+        <translation>Sposta riga su</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="154"/>
+        <source>Move Line Down</source>
+        <translation>Sposta riga giù</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="155"/>
+        <source>Delete</source>
+        <translation>Elimina</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="157"/>
+        <source>Delete Range</source>
+        <translation>Elimina intervallo</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="158"/>
+        <source>Math Tools</source>
+        <translation>Strumenti matematici</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="159"/>
+        <source>Smart Punctuation</source>
+        <translation>Punteggiatura intelligente</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="160"/>
+        <source>Line Breaks</source>
+        <translation>Interruzioni di riga</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="161"/>
+        <source>Spaces and Line Breaks</source>
+        <translation>Spazi e interruzioni di riga</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="162"/>
+        <source>Spell Check...</source>
+        <translation>Controllo ortografico...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="163"/>
+        <source>Find and Replace</source>
+        <translation>Trova e sostituisci</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="164"/>
+        <source>Emoji and Symbols</source>
+        <translation>Emoji e simboli</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="168"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="178"/>
+        <source>Paragraph</source>
+        <translation>Paragrafo</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="173"/>
+        <source>Heading %1</source>
+        <translation>Intestazione %1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="179"/>
+        <source>Promote Heading</source>
+        <translation>Promuovi intestazione</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="180"/>
+        <source>Demote Heading</source>
+        <translation>Retrocedi intestazione</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="182"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="223"/>
+        <source>Table</source>
+        <translation>Tabella</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="183"/>
+        <source>Formula Block</source>
+        <translation>Blocco formula</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="184"/>
+        <source>Code Block</source>
+        <translation>Blocco codice</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="185"/>
+        <source>Code Tools</source>
+        <translation>Strumenti codice</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="186"/>
+        <source>Alert</source>
+        <translation>Avviso</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="188"/>
+        <source>Quote</source>
+        <translation>Citazione</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="189"/>
+        <source>Ordered List</source>
+        <translation>Elenco ordinato</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="190"/>
+        <source>Unordered List</source>
+        <translation>Elenco non ordinato</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="191"/>
+        <source>Task List</source>
+        <translation>Elenco attività</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="192"/>
+        <source>Task Status</source>
+        <translation>Stato attività</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="193"/>
+        <source>List Indent</source>
+        <translation>Rientro elenco</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="195"/>
+        <source>Insert Paragraph Before</source>
+        <translation>Inserisci paragrafo prima</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="196"/>
+        <source>Insert Paragraph After</source>
+        <translation>Inserisci paragrafo dopo</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="197"/>
+        <source>Link Reference</source>
+        <translation>Riferimento link</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="198"/>
+        <source>Footnote</source>
+        <translation>Nota a piè di pagina</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="199"/>
+        <source>Horizontal Rule</source>
+        <translation>Linea orizzontale</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="200"/>
+        <source>Table of Contents</source>
+        <translation>Sommario</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="201"/>
+        <source>Front Matter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="202"/>
+        <source>YAML</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="203"/>
+        <source>TOML</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="204"/>
+        <source>JSON</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="208"/>
+        <source>Format</source>
+        <translation>Formato</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="209"/>
+        <source>Bold</source>
+        <translation>Grassetto</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="210"/>
+        <source>Italic</source>
+        <translation>Corsivo</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="211"/>
+        <source>Underline</source>
+        <translation>Sottolineato</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="212"/>
+        <source>Inline Code</source>
+        <translation>Codice inline</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="213"/>
+        <source>Strikethrough</source>
+        <translation>Barrato</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="215"/>
+        <source>Comment</source>
+        <translation>Commento</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="216"/>
+        <source>Hyperlink</source>
+        <translation>Collegamento ipertestuale</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="217"/>
+        <source>Link Actions</source>
+        <translation>Azioni link</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="218"/>
+        <source>Image</source>
+        <translation>Immagine</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="219"/>
+        <source>Clear Style</source>
+        <translation>Cancella stile</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="225"/>
+        <source>Insert Table</source>
+        <translation>Inserisci tabella</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="227"/>
+        <source>Insert Row Above</source>
+        <translation>Inserisci riga sopra</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="228"/>
+        <source>Insert Row Below</source>
+        <translation>Inserisci riga sotto</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="229"/>
+        <source>Delete Row</source>
+        <translation>Elimina riga</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="230"/>
+        <source>Move Row Up</source>
+        <translation>Sposta riga su</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="231"/>
+        <source>Move Row Down</source>
+        <translation>Sposta riga giù</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="233"/>
+        <source>Insert Column Left</source>
+        <translation>Inserisci colonna a sinistra</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="234"/>
+        <source>Insert Column Right</source>
+        <translation>Inserisci colonna a destra</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="235"/>
+        <source>Delete Column</source>
+        <translation>Elimina colonna</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="236"/>
+        <source>Move Column Left</source>
+        <translation>Sposta colonna a sinistra</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="237"/>
+        <source>Move Column Right</source>
+        <translation>Sposta colonna a destra</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="239"/>
+        <source>Align Left</source>
+        <translation>Allinea a sinistra</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="240"/>
+        <source>Align Center</source>
+        <translation>Allinea al centro</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="241"/>
+        <source>Align Right</source>
+        <translation>Allinea a destra</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="242"/>
+        <source>Clear Alignment</source>
+        <translation>Cancella allineamento</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="244"/>
+        <source>Delete Table</source>
+        <translation>Elimina tabella</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="248"/>
+        <source>Code</source>
+        <translation>Codice</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="250"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="258"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="266"/>
+        <source>Enter Edit</source>
+        <translation>Entra in modifica</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="251"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="259"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="267"/>
+        <source>Exit Edit</source>
+        <translation>Esci da modifica</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="252"/>
+        <source>Set Language...</source>
+        <translation>Imposta lingua...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="256"/>
+        <source>Math</source>
+        <translation>Matematica</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="260"/>
+        <source>Set TeX...</source>
+        <translation>Imposta TeX...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="268"/>
+        <source>Set HTML...</source>
+        <translation>Imposta HTML...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="272"/>
+        <source>View</source>
+        <translation>Visualizza</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="274"/>
+        <source>Outline</source>
+        <translation>Struttura</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="275"/>
+        <source>Document List</source>
+        <translation>Elenco documenti</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="276"/>
+        <source>File Tree</source>
+        <translation>Albero file</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="277"/>
+        <source>Search</source>
+        <translation>Cerca</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="279"/>
+        <source>Source Code Mode</source>
+        <translation>Modalità codice sorgente</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="280"/>
+        <source>Word Wrap</source>
+        <translation>A capo automatico</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="281"/>
+        <source>Focus Mode</source>
+        <translation>Modalità concentrazione</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="282"/>
+        <source>Typewriter Mode</source>
+        <translation>Modalità macchina da scrivere</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="283"/>
+        <source>Show Status Bar</source>
+        <translation>Mostra barra di stato</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="285"/>
+        <source>Word Count Window</source>
+        <translation>Finestra conteggio parole</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="286"/>
+        <source>Toggle Full Screen</source>
+        <translation>Commuta schermo intero</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="287"/>
+        <source>Always on Top</source>
+        <translation>Sempre in primo piano</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="289"/>
+        <source>Actual Size</source>
+        <translation>Dimensioni effettive</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="290"/>
+        <source>Zoom In</source>
+        <translation>Ingrandisci</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="291"/>
+        <source>Zoom Out</source>
+        <translation>Riduci</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="292"/>
+        <source>Switch Windows</source>
+        <translation>Cambia finestra</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="296"/>
+        <source>Theme</source>
+        <translation>Tema</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="305"/>
+        <source>Help</source>
+        <translation>Aiuto</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="306"/>
+        <source>Quick Start</source>
+        <translation>Avvio rapido</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="307"/>
+        <source>Markdown Reference</source>
+        <translation>Riferimento Markdown</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="308"/>
+        <source>Custom Themes</source>
+        <translation>Temi personalizzati</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="310"/>
+        <source>Acknowledgements</source>
+        <translation>Ringraziamenti</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="311"/>
+        <source>Changelog</source>
+        <translation>Registro modifiche</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="312"/>
+        <source>Official Website</source>
+        <translation>Sito ufficiale</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="313"/>
+        <source>Feedback</source>
+        <translation>Feedback</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="314"/>
+        <source>Check for Updates...</source>
+        <translation>Controlla aggiornamenti...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="316"/>
+        <source>About</source>
+        <translation>Informazioni</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="489"/>
+        <source>Code Language</source>
+        <translation>Linguaggio del codice</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="489"/>
+        <source>Language:</source>
+        <translation>Lingua:</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="499"/>
+        <source>HTML Source</source>
+        <translation>Sorgente HTML</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="499"/>
+        <source>HTML:</source>
+        <translation>HTML:</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="509"/>
+        <source>Math TeX</source>
+        <translation>TeX matematico</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="509"/>
+        <source>TeX:</source>
+        <translation>TeX:</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="579"/>
+        <source>About Muffin</source>
+        <translation>Informazioni su Muffin</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="580"/>
+        <source>Muffin %1
 
 A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
-            <translation>Muffin %1
+        <translation type="unfinished">Muffin %1
 
 Un editor Markdown nativo veloce e leggero creato con C++ e Qt 6 Widgets.</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="631" />
-            <location filename="../src/app/MainWindow.cpp" line="806" />
-            <source>Show / Hide Sidebar</source>
-            <translation>Mostra / nascondi barra laterale</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="634" />
-            <source>Toggle source / rendered mode</source>
-            <translation>Commuta modalità sorgente / rendering</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="652" />
-            <source>File</source>
-            <translation>File</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="653" />
-            <source>New</source>
-            <translation>Nuovo</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="654" />
-            <source>New Window</source>
-            <translation>Nuova finestra</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="655" />
-            <source>Open...</source>
-            <translation>Apri...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="656" />
-            <source>Open Folder...</source>
-            <translation>Apri cartella...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="657" />
-            <source>Quick Open...</source>
-            <translation>Apertura rapida...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="658" />
-            <source>Open Recent</source>
-            <translation>Apri recenti</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="660" />
-            <source>Reopen with Encoding</source>
-            <translation>Riapri con codifica</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="661" />
-            <source>Save</source>
-            <translation>Salva</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="662" />
-            <source>Save As...</source>
-            <translation>Salva con nome...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="663" />
-            <source>Move To...</source>
-            <translation>Sposta in...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="664" />
-            <source>Save All Open Files...</source>
-            <translation>Salva tutti i file aperti...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="666" />
-            <location filename="../src/app/MainWindow.cpp" line="1195" />
-            <source>Properties</source>
-            <translation>Proprietà</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="667" />
-            <source>Show in File Manager...</source>
-            <translation>Mostra nel file manager...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="668" />
-            <source>Show in Sidebar</source>
-            <translation>Mostra nella barra laterale</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="669" />
-            <source>Delete...</source>
-            <translation>Elimina...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="671" />
-            <source>Import...</source>
-            <translation>Importa...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="672" />
-            <source>Export</source>
-            <translation>Esporta</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="673" />
-            <source>Print...</source>
-            <translation>Stampa...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="675" />
-            <source>Preferences...</source>
-            <translation>Preferenze...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="676" />
-            <source>Close</source>
-            <translation>Chiudi</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="679" />
-            <source>Edit</source>
-            <translation>Modifica</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="680" />
-            <source>Undo</source>
-            <translation>Annulla</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="681" />
-            <source>Redo</source>
-            <translation>Ripeti</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="683" />
-            <source>Cut</source>
-            <translation>Taglia</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="684" />
-            <source>Copy</source>
-            <translation>Copia</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="685" />
-            <source>Copy Image</source>
-            <translation>Copia immagine</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="686" />
-            <source>Paste</source>
-            <translation>Incolla</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="687" />
-            <source>Copy as Plain Text</source>
-            <translation>Copia come testo normale</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="688" />
-            <source>Copy as Markdown</source>
-            <translation>Copia come Markdown</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="689" />
-            <source>Copy as HTML</source>
-            <translation>Copia come HTML</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="690" />
-            <source>Paste as Plain Text</source>
-            <translation>Incolla come testo normale</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="692" />
-            <source>Select</source>
-            <translation>Seleziona</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="693" />
-            <source>Select All</source>
-            <translation>Seleziona tutto</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="694" />
-            <source>Select Current Line</source>
-            <translation>Seleziona riga corrente</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="695" />
-            <source>Select Current Format Text</source>
-            <translation>Seleziona testo con formato corrente</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="697" />
-            <source>Move Line Up</source>
-            <translation>Sposta riga su</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="698" />
-            <source>Move Line Down</source>
-            <translation>Sposta riga giù</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="699" />
-            <source>Delete</source>
-            <translation>Elimina</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="701" />
-            <source>Delete Range</source>
-            <translation>Elimina intervallo</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="702" />
-            <source>Math Tools</source>
-            <translation>Strumenti matematici</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="703" />
-            <source>Smart Punctuation</source>
-            <translation>Punteggiatura intelligente</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="704" />
-            <source>Line Breaks</source>
-            <translation>Interruzioni di riga</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="705" />
-            <source>Spaces and Line Breaks</source>
-            <translation>Spazi e interruzioni di riga</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="706" />
-            <source>Spell Check...</source>
-            <translation>Controllo ortografico...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="707" />
-            <source>Find and Replace</source>
-            <translation>Trova e sostituisci</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="708" />
-            <source>Emoji and Symbols</source>
-            <translation>Emoji e simboli</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="711" />
-            <location filename="../src/app/MainWindow.cpp" line="720" />
-            <source>Paragraph</source>
-            <translation>Paragrafo</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="716" />
-            <source>Heading %1</source>
-            <translation>Intestazione %1</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="721" />
-            <source>Promote Heading</source>
-            <translation>Promuovi intestazione</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="722" />
-            <source>Demote Heading</source>
-            <translation>Retrocedi intestazione</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="724" />
-            <location filename="../src/app/MainWindow.cpp" line="760" />
-            <source>Table</source>
-            <translation>Tabella</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="725" />
-            <source>Formula Block</source>
-            <translation>Blocco formula</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="726" />
-            <source>Code Block</source>
-            <translation>Blocco codice</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="727" />
-            <source>Code Tools</source>
-            <translation>Strumenti codice</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="728" />
-            <source>Alert</source>
-            <translation>Avviso</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="730" />
-            <source>Quote</source>
-            <translation>Citazione</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="731" />
-            <source>Ordered List</source>
-            <translation>Elenco ordinato</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="732" />
-            <source>Unordered List</source>
-            <translation>Elenco non ordinato</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="733" />
-            <source>Task List</source>
-            <translation>Elenco attività</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="734" />
-            <source>Task Status</source>
-            <translation>Stato attività</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="735" />
-            <source>List Indent</source>
-            <translation>Rientro elenco</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="737" />
-            <source>Insert Paragraph Before</source>
-            <translation>Inserisci paragrafo prima</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="738" />
-            <source>Insert Paragraph After</source>
-            <translation>Inserisci paragrafo dopo</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="739" />
-            <source>Link Reference</source>
-            <translation>Riferimento link</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="740" />
-            <source>Footnote</source>
-            <translation>Nota a piè di pagina</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="741" />
-            <source>Horizontal Rule</source>
-            <translation>Linea orizzontale</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="742" />
-            <source>Table of Contents</source>
-            <translation>Sommario</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="746" />
-            <source>Format</source>
-            <translation>Formato</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="747" />
-            <source>Bold</source>
-            <translation>Grassetto</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="748" />
-            <source>Italic</source>
-            <translation>Corsivo</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="749" />
-            <source>Underline</source>
-            <translation>Sottolineato</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="750" />
-            <source>Inline Code</source>
-            <translation>Codice inline</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="751" />
-            <source>Strikethrough</source>
-            <translation>Barrato</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="753" />
-            <source>Comment</source>
-            <translation>Commento</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="754" />
-            <source>Hyperlink</source>
-            <translation>Collegamento ipertestuale</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="755" />
-            <source>Link Actions</source>
-            <translation>Azioni link</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="756" />
-            <source>Image</source>
-            <translation>Immagine</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="757" />
-            <source>Clear Style</source>
-            <translation>Cancella stile</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="762" />
-            <source>Insert Table</source>
-            <translation>Inserisci tabella</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="764" />
-            <source>Insert Row Above</source>
-            <translation>Inserisci riga sopra</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="765" />
-            <source>Insert Row Below</source>
-            <translation>Inserisci riga sotto</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="766" />
-            <source>Delete Row</source>
-            <translation>Elimina riga</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="767" />
-            <source>Move Row Up</source>
-            <translation>Sposta riga su</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="768" />
-            <source>Move Row Down</source>
-            <translation>Sposta riga giù</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="770" />
-            <source>Insert Column Left</source>
-            <translation>Inserisci colonna a sinistra</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="771" />
-            <source>Insert Column Right</source>
-            <translation>Inserisci colonna a destra</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="772" />
-            <source>Delete Column</source>
-            <translation>Elimina colonna</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="773" />
-            <source>Move Column Left</source>
-            <translation>Sposta colonna a sinistra</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="774" />
-            <source>Move Column Right</source>
-            <translation>Sposta colonna a destra</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="776" />
-            <source>Align Left</source>
-            <translation>Allinea a sinistra</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="777" />
-            <source>Align Center</source>
-            <translation>Allinea al centro</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="778" />
-            <source>Align Right</source>
-            <translation>Allinea a destra</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="779" />
-            <source>Clear Alignment</source>
-            <translation>Cancella allineamento</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="781" />
-            <source>Delete Table</source>
-            <translation>Elimina tabella</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="784" />
-            <source>Code</source>
-            <translation>Codice</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="786" />
-            <location filename="../src/app/MainWindow.cpp" line="793" />
-            <location filename="../src/app/MainWindow.cpp" line="800" />
-            <source>Enter Edit</source>
-            <translation>Entra in modifica</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="787" />
-            <location filename="../src/app/MainWindow.cpp" line="794" />
-            <location filename="../src/app/MainWindow.cpp" line="801" />
-            <source>Exit Edit</source>
-            <translation>Esci da modifica</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="788" />
-            <source>Set Language...</source>
-            <translation>Imposta lingua...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="791" />
-            <source>Math</source>
-            <translation>Matematica</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="795" />
-            <source>Set TeX...</source>
-            <translation>Imposta TeX...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="802" />
-            <source>Set HTML...</source>
-            <translation>Imposta HTML...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="805" />
-            <source>View</source>
-            <translation>Visualizza</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="807" />
-            <source>Outline</source>
-            <translation>Struttura</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="808" />
-            <source>Document List</source>
-            <translation>Elenco documenti</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="809" />
-            <source>File Tree</source>
-            <translation>Albero file</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="810" />
-            <source>Search</source>
-            <translation>Cerca</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="812" />
-            <source>Source Code Mode</source>
-            <translation>Modalità codice sorgente</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="813" />
-            <source>Word Wrap</source>
-            <translation>A capo automatico</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="814" />
-            <source>Focus Mode</source>
-            <translation>Modalità concentrazione</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="815" />
-            <source>Typewriter Mode</source>
-            <translation>Modalità macchina da scrivere</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="816" />
-            <source>Show Status Bar</source>
-            <translation>Mostra barra di stato</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="818" />
-            <source>Word Count Window</source>
-            <translation>Finestra conteggio parole</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="819" />
-            <source>Render Diagnostics</source>
-            <translation>Diagnostica rendering</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="820" />
-            <source>Toggle Full Screen</source>
-            <translation>Commuta schermo intero</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="821" />
-            <source>Always on Top</source>
-            <translation>Sempre in primo piano</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="823" />
-            <source>Actual Size</source>
-            <translation>Dimensioni effettive</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="824" />
-            <source>Zoom In</source>
-            <translation>Ingrandisci</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="825" />
-            <source>Zoom Out</source>
-            <translation>Riduci</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="826" />
-            <source>Switch Windows</source>
-            <translation>Cambia finestra</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="827" />
-            <source>Developer Tools</source>
-            <translation>Strumenti per sviluppatori</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="830" />
-            <source>Theme</source>
-            <translation>Tema</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="838" />
-            <source>Help</source>
-            <translation>Aiuto</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="839" />
-            <source>What's New...</source>
-            <translation>Novità...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="840" />
-            <source>Quick Start</source>
-            <translation>Avvio rapido</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="841" />
-            <source>Markdown Reference</source>
-            <translation>Riferimento Markdown</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="842" />
-            <source>Install and Use Pandoc</source>
-            <translation>Installa e usa Pandoc</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="843" />
-            <source>Custom Themes</source>
-            <translation>Temi personalizzati</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="844" />
-            <source>Use Images in Muffin</source>
-            <translation>Usa immagini in Muffin</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="845" />
-            <source>Data Recovery and Version Control</source>
-            <translation>Recupero dati e controllo versione</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="847" />
-            <source>More Themes...</source>
-            <translation>Altri temi...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="848" />
-            <source>Acknowledgements</source>
-            <translation>Ringraziamenti</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="849" />
-            <source>Changelog</source>
-            <translation>Registro modifiche</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="850" />
-            <source>Privacy Policy</source>
-            <translation>Informativa sulla privacy</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="851" />
-            <source>Official Website</source>
-            <translation>Sito ufficiale</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="852" />
-            <source>Feedback</source>
-            <translation>Feedback</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="853" />
-            <source>Check for Updates...</source>
-            <translation>Controlla aggiornamenti...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="854" />
-            <source>My License...</source>
-            <translation>La mia licenza...</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="856" />
-            <source>About</source>
-            <translation>Informazioni</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="864" />
-            <source>Parse %1 ms</source>
-            <translation>Analisi %1 ms</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="882" />
-            <source>table %1:%2 offset %3</source>
-            <translation>tabella %1:%2 offset %3</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="932" />
-            <source>Open Folder</source>
-            <translation>Apri cartella</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="1051" />
-            <source>%1 words</source>
-            <translation>%1 parole</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="1141" />
-            <source>Clear Recent Files</source>
-            <translation>Cancella file recenti</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="1181" />
-            <source>Name: %1
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="660"/>
+        <source>table %1:%2 offset %3</source>
+        <translation>tabella %1:%2 offset %3</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="799"/>
+        <source>%1 words</source>
+        <translation>%1 parole</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="65"/>
+        <source>Clear Recent Files</source>
+        <translation>Cancella file recenti</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="105"/>
+        <source>Name: %1
 Location: %2
 Size: %3 bytes
 Modified: %4
 Words: %5
 Parse time: %6 ms</source>
-            <translation>Nome: %1
+        <translation type="unfinished">Nome: %1
 Posizione: %2
 Dimensione: %3 byte
 Modificato: %4
 Parole: %5
 Tempo di analisi: %6 ms</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="1218" />
-            <source>Muffin</source>
-            <translation>Muffin</translation>
-        </message>
-        <message>
-            <location filename="../src/app/MainWindow.cpp" line="1219" />
-            <source>The current document has unsaved changes.</source>
-            <translation>Il documento corrente contiene modifiche non salvate.</translation>
-        </message>
-    </context>
-    <context>
-        <name>muffin::PreferencesDialog</name>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="219" />
-            <location filename="../src/app/PreferencesDialog.cpp" line="220" />
-            <source>Preferences</source>
-            <translation>Preferenze</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="224" />
-            <source>Files</source>
-            <translation>File</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="225" />
-            <source>Editor</source>
-            <translation>Editor</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="226" />
-            <source>Image</source>
-            <translation>Immagine</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="228" />
-            <source>Export</source>
-            <translation>Esporta</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="229" />
-            <source>Appearance</source>
-            <translation>Aspetto</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="230" />
-            <location filename="../src/app/PreferencesDialog.cpp" line="238" />
-            <source>General</source>
-            <translation>Generale</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="181" />
-            <source>No settings available.</source>
-            <translation>Nessuna impostazione disponibile.</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="239" />
-            <source>Language</source>
-            <translation>Lingua</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="241" />
-            <source>Update</source>
-            <translation>Aggiorna</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="242" />
-            <source>Check for Updates</source>
-            <translation>Controlla aggiornamenti</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="243" />
-            <source>Automatically check for updates</source>
-            <translation>Controlla automaticamente gli aggiornamenti</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="244" />
-            <source>Include beta updates</source>
-            <translation>Includi aggiornamenti beta</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="256" />
-            <source>Advanced</source>
-            <translation>Avanzate</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="257" />
-            <source>Enable debug mode</source>
-            <translation>Abilita modalità debug</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="258" />
-            <source>Send anonymous usage data</source>
-            <translation>Invia dati di utilizzo anonimi</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="259" />
-            <source>Open Advanced Settings</source>
-            <translation>Apri impostazioni avanzate</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="260" />
-            <source>Reset Advanced Settings</source>
-            <translation>Ripristina impostazioni avanzate</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="235" />
-            <source>Theme</source>
-            <translation>Tema</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="236" />
-            <source>Zoom</source>
-            <translation>Zoom</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="238" />
-            <source>Text Size</source>
-            <translation>Dimensione testo</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="239" />
-            <source>Status Bar</source>
-            <translation>Barra di stato</translation>
-        </message>
-        <message>
-            <location filename="../src/app/PreferencesDialog.cpp" line="240" />
-            <source>Show status bar</source>
-            <translation>Mostra barra di stato</translation>
-        </message>
-    </context>
-    <context>
-        <name>muffin::SidebarWidget</name>
-        <message>
-            <location filename="../src/app/SidebarWidget.cpp" line="235" />
-            <source>Files</source>
-            <translation>File</translation>
-        </message>
-        <message>
-            <location filename="../src/app/SidebarWidget.cpp" line="238" />
-            <source>Outline</source>
-            <translation>Struttura</translation>
-        </message>
-        <message>
-            <location filename="../src/app/SidebarWidget.cpp" line="241" />
-            <source>New File</source>
-            <translation>Nuovo file</translation>
-        </message>
-        <message>
-            <location filename="../src/app/SidebarWidget.cpp" line="244" />
-            <source>No Headings</source>
-            <translation>Nessuna intestazione</translation>
-        </message>
-    </context>
-    <context>
-        <name>muffin::SourceEditorWidget</name>
-        <message>
-            <location filename="../src/editor/SourceEditorWidget.cpp" line="427" />
-            <source>Start writing...</source>
-            <translation>Inizia a scrivere...</translation>
-        </message>
-    </context>
-    <context>
-        <name>main</name>
-        <message>
-            <location filename="../src/main.cpp" line="62" />
-            <source>A fast native Markdown editor built with C++ and Qt 6 Widgets.</source>
-            <translation>Un editor Markdown nativo veloce creato con C++ e Qt 6 Widgets.</translation>
-        </message>
-        <message>
-            <location filename="../src/main.cpp" line="69" />
-            <source>Markdown or text file to open.</source>
-            <translation>File Markdown o di testo da aprire.</translation>
-        </message>
-    </context>
-    <context>
-        <name>muffin::BlockLayoutBuilder</name>
-        <message>
-            <location filename="../src/render/BlockLayoutBuilder.cpp" line="184" />
-            <source>Start writing...</source>
-            <translation>Inizia a scrivere...</translation>
-        </message>
-    </context>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="200"/>
+        <source>Unicode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="202"/>
+        <source>UTF-8</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="203"/>
+        <source>UTF-16 LE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="204"/>
+        <source>UTF-16 BE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="206"/>
+        <source>Western</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="208"/>
+        <source>Western (Windows-1252)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="210"/>
+        <source>Cyrillic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="212"/>
+        <source>Cyrillic (Windows-1251)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="213"/>
+        <source>Cyrillic (ISO-8859-5)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="214"/>
+        <source>Cyrillic (IBM866)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="215"/>
+        <source>Cyrillic (IBM855)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="216"/>
+        <source>Cyrillic (KOI8-R)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="217"/>
+        <source>Cyrillic (Mac)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="219"/>
+        <source>Central European</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="221"/>
+        <source>Central European (Windows-1250)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="222"/>
+        <source>Central European (ISO-8859-2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="224"/>
+        <source>Greek</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="226"/>
+        <source>Greek (Windows-1253)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="227"/>
+        <source>Greek (ISO-8859-7)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="229"/>
+        <source>Hebrew</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="231"/>
+        <source>Hebrew (Windows-1255)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="232"/>
+        <source>Hebrew (ISO-8859-8)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="234"/>
+        <source>Chinese Simplified</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="236"/>
+        <source>Chinese Simplified (GB2312)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="237"/>
+        <source>Chinese Simplified (GB18030)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="239"/>
+        <source>Chinese Traditional</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="241"/>
+        <source>Chinese Traditional (Big5)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="243"/>
+        <source>Japanese</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="245"/>
+        <source>Japanese (Shift_JIS)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="246"/>
+        <source>Japanese (EUC-JP)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="248"/>
+        <source>Korean</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="250"/>
+        <source>Korean (EUC-KR)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="252"/>
+        <source>Thai</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="254"/>
+        <source>Thai (TIS-620)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="316"/>
+        <source>Save All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="317"/>
+        <source>Saved %1 file(s). %2 file(s) could not be saved.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="342"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="357"/>
+        <source>Delete File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="343"/>
+        <source>Are you sure you want to move &quot;%1&quot; to the trash?
+
+This action cannot be undone.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="358"/>
+        <source>Could not move to trash. Permanently delete &quot;%1&quot;?
+
+This action cannot be undone.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="369"/>
+        <source>Delete Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="370"/>
+        <source>Could not delete file:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="391"/>
+        <source>Muffin</source>
+        <translation>Muffin</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="392"/>
+        <source>The current document has unsaved changes.</source>
+        <translation>Il documento corrente contiene modifiche non salvate.</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PreferencesDialog</name>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="206"/>
+        <source>Preferences</source>
+        <translation>Preferenze</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="209"/>
+        <source>Files</source>
+        <translation>File</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="210"/>
+        <source>Editor</source>
+        <translation>Editor</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="211"/>
+        <source>Image</source>
+        <translation>Immagine</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="213"/>
+        <source>Export</source>
+        <translation>Esportazione</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="214"/>
+        <source>Appearance</source>
+        <translation>Aspetto</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="215"/>
+        <source>General</source>
+        <translation>Generale</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="235"/>
+        <source>No settings available.</source>
+        <translation>Nessuna impostazione disponibile.</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PrefsAppearancePage</name>
+    <message>
+        <location filename="../src/app/PrefsAppearancePage.cpp" line="86"/>
+        <source>Theme</source>
+        <translation>Tema</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsAppearancePage.cpp" line="87"/>
+        <source>Zoom</source>
+        <translation>Zoom</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsAppearancePage.cpp" line="88"/>
+        <source>Reset</source>
+        <translation>Ripristina</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsAppearancePage.cpp" line="89"/>
+        <source>Text Size</source>
+        <translation>Dimensione testo</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsAppearancePage.cpp" line="90"/>
+        <source>Status Bar</source>
+        <translation>Barra di stato</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsAppearancePage.cpp" line="91"/>
+        <source>Show status bar</source>
+        <translation>Mostra barra di stato</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PrefsEditorPage</name>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="193"/>
+        <source>Default Indent</source>
+        <translation>Rientro predefinito</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="194"/>
+        <source>Only effective for references and lists generated via menu bar or shortcuts</source>
+        <translation>Effettivo solo per riferimenti ed elenchi generati tramite barra dei menu o scorciatoie</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="205"/>
+        <source>Align Indent</source>
+        <translation>Allinea rientro</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="207"/>
+        <source>Use Paired Symbols</source>
+        <translation>Usa simboli accoppiati</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="208"/>
+        <source>Match brackets and quotes</source>
+        <translation>Corrispondenza parentesi e virgolette</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="209"/>
+        <source>Match Markdown characters</source>
+        <translation>Corrispondenza caratteri Markdown</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="211"/>
+        <source>Autocomplete</source>
+        <translation>Completamento automatico</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="212"/>
+        <source>Enable Emoji autocomplete</source>
+        <translation>Abilita completamento automatico Emoji</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="214"/>
+        <source>Live Rendering</source>
+        <translation>Rendering in tempo reale</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="215"/>
+        <source>Show Markdown source of the current block element</source>
+        <translation>Mostra sorgente Markdown dell'elemento blocco corrente</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="217"/>
+        <source>Default Copy Behavior</source>
+        <translation>Comportamento predefinito di copia</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="218"/>
+        <source>Copy Markdown source when copying plain text</source>
+        <translation>Copia sorgente Markdown quando si copia testo normale</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="219"/>
+        <source>Copy or cut the entire line when no text is selected</source>
+        <translation>Copia o taglia l'intera riga quando nessun testo è selezionato</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="221"/>
+        <source>Default Line Break</source>
+        <translation>Interruzione di riga predefinita</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="222"/>
+        <source>Default line break for new files</source>
+        <translation>Interruzione di riga predefinita per i nuovi file</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="223"/>
+        <source>LF (Unix Style)</source>
+        <translation>LF (stile Unix)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="224"/>
+        <source>CRLF (Windows Style)</source>
+        <translation>CRLF (stile Windows)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="226"/>
+        <source>Spell Check</source>
+        <translation>Controllo ortografico</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="231"/>
+        <source>Auto-detect language</source>
+        <translation>Rileva automaticamente la lingua</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="234"/>
+        <source>Chinese (Simplified)</source>
+        <translation>Cinese (semplificato)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="239"/>
+        <source>Typewriter Mode</source>
+        <translation>Modalità macchina da scrivere</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="240"/>
+        <source>Always keep the cursor in the middle of the screen</source>
+        <translation>Mantieni sempre il cursore al centro dello schermo</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="241"/>
+        <source>Disable Typewriter / Focus Mode</source>
+        <translation>Disabilita modalità macchina da scrivere / concentrazione</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PrefsExportPage</name>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="106"/>
+        <source>Select Pandoc Executable</source>
+        <translation>Seleziona eseguibile Pandoc</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="107"/>
+        <source>Executables (*.exe);;All Files (*)</source>
+        <translation>Eseguibili (*.exe);;Tutti i file (*)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="122"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="152"/>
+        <source>General</source>
+        <translation>Generale</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="130"/>
+        <source>HTML (without Styles)</source>
+        <translation>HTML (senza stili)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="131"/>
+        <source>Image</source>
+        <translation>Immagine</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="156"/>
+        <source>Default Export Folder</source>
+        <translation>Cartella predefinita per l'esportazione</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="161"/>
+        <source>Auto</source>
+        <translation>Automatico</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="162"/>
+        <source>Same folder as current file</source>
+        <translation>Stessa cartella del file corrente</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="163"/>
+        <source>Custom...</source>
+        <translation>Personalizzata...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="168"/>
+        <source>Pandoc Path</source>
+        <translation>Percorso Pandoc</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="170"/>
+        <source>(Auto-detect)</source>
+        <translation>(Rilevamento automatico)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="173"/>
+        <source>After Export</source>
+        <translation>Dopo l'esportazione</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="174"/>
+        <source>Open the exported file directory</source>
+        <translation>Apri la cartella del file esportato</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PrefsFilesPage</name>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="183"/>
+        <source>Startup</source>
+        <translation>Avvio</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="188"/>
+        <source>Open new file</source>
+        <translation>Apri nuovo file</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="189"/>
+        <source>Reopen last file</source>
+        <translation>Riapri ultimo file</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="194"/>
+        <source>Outline</source>
+        <translation>Struttura</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="195"/>
+        <source>Allow collapsing and expanding the outline view in the sidebar</source>
+        <translation>Consenti comprimere ed espandere la vista struttura nella barra laterale</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="197"/>
+        <source>Default File Type / Extension</source>
+        <translation>Tipo di file / estensione predefinita</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="204"/>
+        <source>Plain Text (.txt)</source>
+        <translation>Testo normale (.txt)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="209"/>
+        <source>Save &amp; Restore</source>
+        <translation>Salva e ripristina</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="210"/>
+        <source>Auto Save</source>
+        <translation>Salvataggio automatico</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="211"/>
+        <source>Auto-save changes to the previous file when switching files</source>
+        <translation>Salva automaticamente le modifiche al file precedente durante il cambio di file</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="212"/>
+        <source>Restore Unsaved Drafts</source>
+        <translation>Ripristina bozze non salvate</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="214"/>
+        <source>Recently Used Files</source>
+        <translation>File utilizzati di recente</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="215"/>
+        <source>Record history files and folders</source>
+        <translation>Registra cronologia di file e cartelle</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="216"/>
+        <source>Clear History</source>
+        <translation>Cancella cronologia</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="218"/>
+        <source>When dragging files/folders into the window</source>
+        <translation>Quando si trascinano file/cartelle nella finestra</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="219"/>
+        <source>When dragging a folder</source>
+        <translation>Quando si trascina una cartella</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="224"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="234"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="245"/>
+        <source>Open in Muffin</source>
+        <translation>Apri in Muffin</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="225"/>
+        <source>Open in File Manager</source>
+        <translation>Apri nel file manager</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="229"/>
+        <source>When dragging a Markdown file</source>
+        <translation>Quando si trascina un file Markdown</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="235"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="244"/>
+        <source>Import File</source>
+        <translation>Importa file</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="239"/>
+        <source>When dragging an importable file</source>
+        <translation>Quando si trascina un file importabile</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PrefsGeneralPage</name>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="98"/>
+        <source>Language</source>
+        <translation>Lingua</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="99"/>
+        <source>Update</source>
+        <translation>Aggiornamento</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="100"/>
+        <source>Check for Updates</source>
+        <translation>Verifica aggiornamenti</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="101"/>
+        <source>Automatically check for updates</source>
+        <translation>Verifica automaticamente gli aggiornamenti</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="102"/>
+        <source>Advanced</source>
+        <translation>Avanzate</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="103"/>
+        <source>Enable debug mode</source>
+        <translation>Abilita modalità debug</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="104"/>
+        <source>Send anonymous usage data</source>
+        <translation>Invia dati di utilizzo anonimi</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="105"/>
+        <source>Open Advanced Settings</source>
+        <translation>Apri impostazioni avanzate</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="106"/>
+        <source>Reset Advanced Settings</source>
+        <translation>Ripristina impostazioni avanzate</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PrefsImagePage</name>
+    <message>
+        <location filename="../src/app/PrefsImagePage.cpp" line="148"/>
+        <source>When Inserting Images</source>
+        <translation>Quando si inseriscono immagini</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsImagePage.cpp" line="150"/>
+        <source>Learn more...</source>
+        <translation>Scopri di più...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsImagePage.cpp" line="154"/>
+        <source>No special operation</source>
+        <translation>Nessuna operazione speciale</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsImagePage.cpp" line="155"/>
+        <source>Copy to custom folder</source>
+        <translation>Copia in cartella personalizzata</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsImagePage.cpp" line="156"/>
+        <source>Upload image</source>
+        <translation>Carica immagine</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsImagePage.cpp" line="164"/>
+        <source>Apply the above rules to local images</source>
+        <translation>Applica le regole sopra alle immagini locali</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsImagePage.cpp" line="165"/>
+        <source>Apply the above rules to network images</source>
+        <translation>Applica le regole sopra alle immagini di rete</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsImagePage.cpp" line="166"/>
+        <source>Allow automatic image upload based on YAML settings</source>
+        <translation>Consenti caricamento automatico delle immagini in base alle impostazioni YAML</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsImagePage.cpp" line="169"/>
+        <source>Image Syntax Preferences</source>
+        <translation>Preferenze sintassi immagine</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsImagePage.cpp" line="170"/>
+        <source>Prefer relative paths</source>
+        <translation>Preferisci percorsi relativi</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsImagePage.cpp" line="171"/>
+        <source>Add / to relative paths</source>
+        <translation>Aggiungi / ai percorsi relativi</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsImagePage.cpp" line="172"/>
+        <source>Auto-escape image URLs on insertion</source>
+        <translation>Escape automatico degli URL delle immagini all'inserimento</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsImagePage.cpp" line="175"/>
+        <source>Upload Service Settings</source>
+        <translation>Impostazioni servizio di caricamento</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsImagePage.cpp" line="176"/>
+        <source>Upload Service</source>
+        <translation>Servizio di caricamento</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsImagePage.cpp" line="181"/>
+        <source>None</source>
+        <translation>Nessuno</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PrefsMarkdownPage</name>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="269"/>
+        <source>Markdown Syntax Preferences</source>
+        <translation>Preferenze sintassi Markdown</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="270"/>
+        <source>Strict Mode</source>
+        <translation>Modalità rigorosa</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="271"/>
+        <source>Heading Style</source>
+        <translation>Stile intestazione</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="281"/>
+        <source>Unordered List</source>
+        <translation>Elenco non ordinato</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="292"/>
+        <source>Ordered List</source>
+        <translation>Elenco ordinato</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="297"/>
+        <source>1. ... 2. ... 3. ...</source>
+        <translation>1. ... 2. ... 3. ...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="298"/>
+        <source>1. ... 1. ... 1. ...</source>
+        <translation>1. ... 1. ... 1. ...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="304"/>
+        <source>Markdown Extended Syntax</source>
+        <translation>Sintassi estesa Markdown</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="305"/>
+        <source>Auto Recognize Links</source>
+        <translation>Riconoscimento automatico collegamenti</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="306"/>
+        <source>Inline Formula</source>
+        <translation>Formula in linea</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="307"/>
+        <source>Subscript</source>
+        <translation>Pedice</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="308"/>
+        <source>Superscript</source>
+        <translation>Apice</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="309"/>
+        <source>Highlight</source>
+        <translation>Evidenziazione</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="310"/>
+        <source>Github Style Alert Box</source>
+        <translation>Riquadro avviso stile GitHub</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="311"/>
+        <source>Diagrams (Sequence, Flowchart, Mermaid)</source>
+        <translation>Diagrammi (Sequenza, Diagramma di flusso, Mermaid)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="312"/>
+        <source>Diagram Options</source>
+        <translation>Opzioni diagramma</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="315"/>
+        <source>Smart Punctuation</source>
+        <translation>Punteggiatura intelligente</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="316"/>
+        <source>Convert on Input</source>
+        <translation>Converti durante la digitazione</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="321"/>
+        <source>No conversion</source>
+        <translation>Nessuna conversione</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="322"/>
+        <source>When typing</source>
+        <translation>Durante la digitazione</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="323"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="384"/>
+        <source>Always</source>
+        <translation>Sempre</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="327"/>
+        <source>Smart Quotes</source>
+        <translation>Virgolette intelligenti</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="346"/>
+        <source>Smart Dashes</source>
+        <translation>Trattini intelligenti</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="347"/>
+        <source>Allow and convert Unicode punctuation when parsing Markdown</source>
+        <translation>Consenti e converti punteggiatura Unicode durante l'analisi Markdown</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="350"/>
+        <source>Code Blocks</source>
+        <translation>Blocchi di codice</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="351"/>
+        <source>Show Line Numbers</source>
+        <translation>Mostra numeri di riga</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="352"/>
+        <source>Code Blocks Auto Wrap</source>
+        <translation>A capo automatico nei blocchi di codice</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="353"/>
+        <source>Use Shift+Tab to auto adjust indent of selected code</source>
+        <translation>Usa Shift+Tab per regolare automaticamente il rientro del codice selezionato</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="354"/>
+        <source>Code Indent</source>
+        <translation>Rientro del codice</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="365"/>
+        <source>Default Code Block Language</source>
+        <translation>Linguaggio predefinito blocco di codice</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="370"/>
+        <source>(empty)</source>
+        <translation>(vuoto)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="378"/>
+        <source>Automatically add code block language</source>
+        <translation>Aggiungi automaticamente il linguaggio al blocco di codice</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="383"/>
+        <source>When inserting code blocks via Markdown code</source>
+        <translation>Quando si inseriscono blocchi di codice tramite codice Markdown</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="385"/>
+        <source>Never</source>
+        <translation>Mai</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::SidebarWidget</name>
+    <message>
+        <location filename="../src/app/SidebarWidget.cpp" line="235"/>
+        <source>Files</source>
+        <translation>File</translation>
+    </message>
+    <message>
+        <location filename="../src/app/SidebarWidget.cpp" line="238"/>
+        <source>Outline</source>
+        <translation>Struttura</translation>
+    </message>
+    <message>
+        <location filename="../src/app/SidebarWidget.cpp" line="241"/>
+        <source>New File</source>
+        <translation>Nuovo file</translation>
+    </message>
+    <message>
+        <location filename="../src/app/SidebarWidget.cpp" line="244"/>
+        <source>No Headings</source>
+        <translation>Nessuna intestazione</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::SourceEditorWidget</name>
+    <message>
+        <location filename="../src/editor/SourceEditorWidget.cpp" line="426"/>
+        <source>Start writing...</source>
+        <translation>Inizia a scrivere...</translation>
+    </message>
+</context>
+<context>
+    <name>main</name>
+    <message>
+        <location filename="../src/main.cpp" line="62"/>
+        <source>A fast native Markdown editor built with C++ and Qt 6 Widgets.</source>
+        <translation>Un editor Markdown nativo veloce creato con C++ e Qt 6 Widgets.</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="69"/>
+        <source>Markdown or text file to open.</source>
+        <translation>File Markdown o di testo da aprire.</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::BlockLayoutBuilder</name>
+    <message>
+        <location filename="../src/render/BlockLayoutBuilder.cpp" line="202"/>
+        <source>Start writing...</source>
+        <translation>Inizia a scrivere...</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::DocumentSession</name>
+    <message>
+        <source>Untitled</source>
+        <translation type="vanished">Senza titolo</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::FileController</name>
+    <message>
+        <source>Open</source>
+        <translation type="vanished">Apri</translation>
+    </message>
+    <message>
+        <source>Markdown and text files (*.md *.markdown *.mdown *.txt);;All files (*.*)</source>
+        <translation type="vanished">File Markdown e di testo (*.md *.markdown *.mdown *.txt);;Tutti i file (*.*)</translation>
+    </message>
+    <message>
+        <source>Save As</source>
+        <translation type="vanished">Salva con nome</translation>
+    </message>
+    <message>
+        <source>Markdown files (*.md);;Text files (*.txt);;All files (*.*)</source>
+        <translation type="vanished">File Markdown (*.md);;File di testo (*.txt);;Tutti i file (*.*)</translation>
+    </message>
+    <message>
+        <source>Muffin</source>
+        <translation type="vanished">Muffin</translation>
+    </message>
+    <message>
+        <source>The current document has unsaved changes.</source>
+        <translation type="vanished">Il documento corrente contiene modifiche non salvate.</translation>
+    </message>
+    <message>
+        <source>Open Failed</source>
+        <translation type="vanished">Apertura non riuscita</translation>
+    </message>
+    <message>
+        <source>Save Failed</source>
+        <translation type="vanished">Salvataggio non riuscito</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::LanguageManager</name>
+    <message>
+        <source>System Default</source>
+        <translation type="vanished">Predefinito di sistema</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::MainWindow</name>
+    <message>
+        <source>Open Failed</source>
+        <translation type="vanished">Apertura non riuscita</translation>
+    </message>
+    <message>
+        <source>File does not exist:
+%1</source>
+        <translation type="vanished">Il file non esiste:
+%1</translation>
+    </message>
+    <message>
+        <source>Code Language</source>
+        <translation type="vanished">Linguaggio del codice</translation>
+    </message>
+    <message>
+        <source>Language:</source>
+        <translation type="vanished">Lingua:</translation>
+    </message>
+    <message>
+        <source>HTML Source</source>
+        <translation type="vanished">Sorgente HTML</translation>
+    </message>
+    <message>
+        <source>HTML:</source>
+        <translation type="vanished">HTML:</translation>
+    </message>
+    <message>
+        <source>Math TeX</source>
+        <translation type="vanished">TeX matematico</translation>
+    </message>
+    <message>
+        <source>TeX:</source>
+        <translation type="vanished">TeX:</translation>
+    </message>
+    <message>
+        <source>About Muffin</source>
+        <translation type="vanished">Informazioni su Muffin</translation>
+    </message>
+    <message>
+        <source>Muffin %1
+
+A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
+        <translation type="vanished">Muffin %1
+
+Un editor Markdown nativo veloce e leggero creato con C++ e Qt 6 Widgets.</translation>
+    </message>
+    <message>
+        <source>Show / Hide Sidebar</source>
+        <translation type="vanished">Mostra / nascondi barra laterale</translation>
+    </message>
+    <message>
+        <source>Toggle source / rendered mode</source>
+        <translation type="vanished">Commuta modalità sorgente / rendering</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation type="vanished">File</translation>
+    </message>
+    <message>
+        <source>New</source>
+        <translation type="vanished">Nuovo</translation>
+    </message>
+    <message>
+        <source>New Window</source>
+        <translation type="vanished">Nuova finestra</translation>
+    </message>
+    <message>
+        <source>Open...</source>
+        <translation type="vanished">Apri...</translation>
+    </message>
+    <message>
+        <source>Open Folder...</source>
+        <translation type="vanished">Apri cartella...</translation>
+    </message>
+    <message>
+        <source>Quick Open...</source>
+        <translation type="vanished">Apertura rapida...</translation>
+    </message>
+    <message>
+        <source>Open Recent</source>
+        <translation type="vanished">Apri recenti</translation>
+    </message>
+    <message>
+        <source>Reopen with Encoding</source>
+        <translation type="vanished">Riapri con codifica</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="vanished">Salva</translation>
+    </message>
+    <message>
+        <source>Save As...</source>
+        <translation type="vanished">Salva con nome...</translation>
+    </message>
+    <message>
+        <source>Move To...</source>
+        <translation type="vanished">Sposta in...</translation>
+    </message>
+    <message>
+        <source>Save All Open Files...</source>
+        <translation type="vanished">Salva tutti i file aperti...</translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="vanished">Proprietà</translation>
+    </message>
+    <message>
+        <source>Show in File Manager...</source>
+        <translation type="vanished">Mostra nel file manager...</translation>
+    </message>
+    <message>
+        <source>Show in Sidebar</source>
+        <translation type="vanished">Mostra nella barra laterale</translation>
+    </message>
+    <message>
+        <source>Delete...</source>
+        <translation type="vanished">Elimina...</translation>
+    </message>
+    <message>
+        <source>Import...</source>
+        <translation type="vanished">Importa...</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation type="vanished">Esporta</translation>
+    </message>
+    <message>
+        <source>Print...</source>
+        <translation type="vanished">Stampa...</translation>
+    </message>
+    <message>
+        <source>Preferences...</source>
+        <translation type="vanished">Preferenze...</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="vanished">Chiudi</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation type="vanished">Modifica</translation>
+    </message>
+    <message>
+        <source>Undo</source>
+        <translation type="vanished">Annulla</translation>
+    </message>
+    <message>
+        <source>Redo</source>
+        <translation type="vanished">Ripeti</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="vanished">Taglia</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="vanished">Copia</translation>
+    </message>
+    <message>
+        <source>Copy Image</source>
+        <translation type="vanished">Copia immagine</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="vanished">Incolla</translation>
+    </message>
+    <message>
+        <source>Copy as Plain Text</source>
+        <translation type="vanished">Copia come testo normale</translation>
+    </message>
+    <message>
+        <source>Copy as Markdown</source>
+        <translation type="vanished">Copia come Markdown</translation>
+    </message>
+    <message>
+        <source>Copy as HTML</source>
+        <translation type="vanished">Copia come HTML</translation>
+    </message>
+    <message>
+        <source>Paste as Plain Text</source>
+        <translation type="vanished">Incolla come testo normale</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation type="vanished">Seleziona</translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation type="vanished">Seleziona tutto</translation>
+    </message>
+    <message>
+        <source>Select Current Line</source>
+        <translation type="vanished">Seleziona riga corrente</translation>
+    </message>
+    <message>
+        <source>Select Current Format Text</source>
+        <translation type="vanished">Seleziona testo con formato corrente</translation>
+    </message>
+    <message>
+        <source>Move Line Up</source>
+        <translation type="vanished">Sposta riga su</translation>
+    </message>
+    <message>
+        <source>Move Line Down</source>
+        <translation type="vanished">Sposta riga giù</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="vanished">Elimina</translation>
+    </message>
+    <message>
+        <source>Delete Range</source>
+        <translation type="vanished">Elimina intervallo</translation>
+    </message>
+    <message>
+        <source>Math Tools</source>
+        <translation type="vanished">Strumenti matematici</translation>
+    </message>
+    <message>
+        <source>Smart Punctuation</source>
+        <translation type="vanished">Punteggiatura intelligente</translation>
+    </message>
+    <message>
+        <source>Line Breaks</source>
+        <translation type="vanished">Interruzioni di riga</translation>
+    </message>
+    <message>
+        <source>Spaces and Line Breaks</source>
+        <translation type="vanished">Spazi e interruzioni di riga</translation>
+    </message>
+    <message>
+        <source>Spell Check...</source>
+        <translation type="vanished">Controllo ortografico...</translation>
+    </message>
+    <message>
+        <source>Find and Replace</source>
+        <translation type="vanished">Trova e sostituisci</translation>
+    </message>
+    <message>
+        <source>Emoji and Symbols</source>
+        <translation type="vanished">Emoji e simboli</translation>
+    </message>
+    <message>
+        <source>Paragraph</source>
+        <translation type="vanished">Paragrafo</translation>
+    </message>
+    <message>
+        <source>Heading %1</source>
+        <translation type="vanished">Intestazione %1</translation>
+    </message>
+    <message>
+        <source>Promote Heading</source>
+        <translation type="vanished">Promuovi intestazione</translation>
+    </message>
+    <message>
+        <source>Demote Heading</source>
+        <translation type="vanished">Retrocedi intestazione</translation>
+    </message>
+    <message>
+        <source>Table</source>
+        <translation type="vanished">Tabella</translation>
+    </message>
+    <message>
+        <source>Formula Block</source>
+        <translation type="vanished">Blocco formula</translation>
+    </message>
+    <message>
+        <source>Code Block</source>
+        <translation type="vanished">Blocco codice</translation>
+    </message>
+    <message>
+        <source>Code Tools</source>
+        <translation type="vanished">Strumenti codice</translation>
+    </message>
+    <message>
+        <source>Alert</source>
+        <translation type="vanished">Avviso</translation>
+    </message>
+    <message>
+        <source>Quote</source>
+        <translation type="vanished">Citazione</translation>
+    </message>
+    <message>
+        <source>Ordered List</source>
+        <translation type="vanished">Elenco ordinato</translation>
+    </message>
+    <message>
+        <source>Unordered List</source>
+        <translation type="vanished">Elenco non ordinato</translation>
+    </message>
+    <message>
+        <source>Task List</source>
+        <translation type="vanished">Elenco attività</translation>
+    </message>
+    <message>
+        <source>Task Status</source>
+        <translation type="vanished">Stato attività</translation>
+    </message>
+    <message>
+        <source>List Indent</source>
+        <translation type="vanished">Rientro elenco</translation>
+    </message>
+    <message>
+        <source>Insert Paragraph Before</source>
+        <translation type="vanished">Inserisci paragrafo prima</translation>
+    </message>
+    <message>
+        <source>Insert Paragraph After</source>
+        <translation type="vanished">Inserisci paragrafo dopo</translation>
+    </message>
+    <message>
+        <source>Link Reference</source>
+        <translation type="vanished">Riferimento link</translation>
+    </message>
+    <message>
+        <source>Footnote</source>
+        <translation type="vanished">Nota a piè di pagina</translation>
+    </message>
+    <message>
+        <source>Horizontal Rule</source>
+        <translation type="vanished">Linea orizzontale</translation>
+    </message>
+    <message>
+        <source>Table of Contents</source>
+        <translation type="vanished">Sommario</translation>
+    </message>
+    <message>
+        <source>Format</source>
+        <translation type="vanished">Formato</translation>
+    </message>
+    <message>
+        <source>Bold</source>
+        <translation type="vanished">Grassetto</translation>
+    </message>
+    <message>
+        <source>Italic</source>
+        <translation type="vanished">Corsivo</translation>
+    </message>
+    <message>
+        <source>Underline</source>
+        <translation type="vanished">Sottolineato</translation>
+    </message>
+    <message>
+        <source>Inline Code</source>
+        <translation type="vanished">Codice inline</translation>
+    </message>
+    <message>
+        <source>Strikethrough</source>
+        <translation type="vanished">Barrato</translation>
+    </message>
+    <message>
+        <source>Comment</source>
+        <translation type="vanished">Commento</translation>
+    </message>
+    <message>
+        <source>Hyperlink</source>
+        <translation type="vanished">Collegamento ipertestuale</translation>
+    </message>
+    <message>
+        <source>Link Actions</source>
+        <translation type="vanished">Azioni link</translation>
+    </message>
+    <message>
+        <source>Image</source>
+        <translation type="vanished">Immagine</translation>
+    </message>
+    <message>
+        <source>Clear Style</source>
+        <translation type="vanished">Cancella stile</translation>
+    </message>
+    <message>
+        <source>Insert Table</source>
+        <translation type="vanished">Inserisci tabella</translation>
+    </message>
+    <message>
+        <source>Insert Row Above</source>
+        <translation type="vanished">Inserisci riga sopra</translation>
+    </message>
+    <message>
+        <source>Insert Row Below</source>
+        <translation type="vanished">Inserisci riga sotto</translation>
+    </message>
+    <message>
+        <source>Delete Row</source>
+        <translation type="vanished">Elimina riga</translation>
+    </message>
+    <message>
+        <source>Move Row Up</source>
+        <translation type="vanished">Sposta riga su</translation>
+    </message>
+    <message>
+        <source>Move Row Down</source>
+        <translation type="vanished">Sposta riga giù</translation>
+    </message>
+    <message>
+        <source>Insert Column Left</source>
+        <translation type="vanished">Inserisci colonna a sinistra</translation>
+    </message>
+    <message>
+        <source>Insert Column Right</source>
+        <translation type="vanished">Inserisci colonna a destra</translation>
+    </message>
+    <message>
+        <source>Delete Column</source>
+        <translation type="vanished">Elimina colonna</translation>
+    </message>
+    <message>
+        <source>Move Column Left</source>
+        <translation type="vanished">Sposta colonna a sinistra</translation>
+    </message>
+    <message>
+        <source>Move Column Right</source>
+        <translation type="vanished">Sposta colonna a destra</translation>
+    </message>
+    <message>
+        <source>Align Left</source>
+        <translation type="vanished">Allinea a sinistra</translation>
+    </message>
+    <message>
+        <source>Align Center</source>
+        <translation type="vanished">Allinea al centro</translation>
+    </message>
+    <message>
+        <source>Align Right</source>
+        <translation type="vanished">Allinea a destra</translation>
+    </message>
+    <message>
+        <source>Clear Alignment</source>
+        <translation type="vanished">Cancella allineamento</translation>
+    </message>
+    <message>
+        <source>Delete Table</source>
+        <translation type="vanished">Elimina tabella</translation>
+    </message>
+    <message>
+        <source>Code</source>
+        <translation type="vanished">Codice</translation>
+    </message>
+    <message>
+        <source>Enter Edit</source>
+        <translation type="vanished">Entra in modifica</translation>
+    </message>
+    <message>
+        <source>Exit Edit</source>
+        <translation type="vanished">Esci da modifica</translation>
+    </message>
+    <message>
+        <source>Set Language...</source>
+        <translation type="vanished">Imposta lingua...</translation>
+    </message>
+    <message>
+        <source>Math</source>
+        <translation type="vanished">Matematica</translation>
+    </message>
+    <message>
+        <source>Set TeX...</source>
+        <translation type="vanished">Imposta TeX...</translation>
+    </message>
+    <message>
+        <source>Set HTML...</source>
+        <translation type="vanished">Imposta HTML...</translation>
+    </message>
+    <message>
+        <source>View</source>
+        <translation type="vanished">Visualizza</translation>
+    </message>
+    <message>
+        <source>Outline</source>
+        <translation type="vanished">Struttura</translation>
+    </message>
+    <message>
+        <source>Document List</source>
+        <translation type="vanished">Elenco documenti</translation>
+    </message>
+    <message>
+        <source>File Tree</source>
+        <translation type="vanished">Albero file</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation type="vanished">Cerca</translation>
+    </message>
+    <message>
+        <source>Source Code Mode</source>
+        <translation type="vanished">Modalità codice sorgente</translation>
+    </message>
+    <message>
+        <source>Word Wrap</source>
+        <translation type="vanished">A capo automatico</translation>
+    </message>
+    <message>
+        <source>Focus Mode</source>
+        <translation type="vanished">Modalità concentrazione</translation>
+    </message>
+    <message>
+        <source>Typewriter Mode</source>
+        <translation type="vanished">Modalità macchina da scrivere</translation>
+    </message>
+    <message>
+        <source>Show Status Bar</source>
+        <translation type="vanished">Mostra barra di stato</translation>
+    </message>
+    <message>
+        <source>Word Count Window</source>
+        <translation type="vanished">Finestra conteggio parole</translation>
+    </message>
+    <message>
+        <source>Render Diagnostics</source>
+        <translation type="vanished">Diagnostica rendering</translation>
+    </message>
+    <message>
+        <source>Toggle Full Screen</source>
+        <translation type="vanished">Commuta schermo intero</translation>
+    </message>
+    <message>
+        <source>Always on Top</source>
+        <translation type="vanished">Sempre in primo piano</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation type="vanished">Dimensioni effettive</translation>
+    </message>
+    <message>
+        <source>Zoom In</source>
+        <translation type="vanished">Ingrandisci</translation>
+    </message>
+    <message>
+        <source>Zoom Out</source>
+        <translation type="vanished">Riduci</translation>
+    </message>
+    <message>
+        <source>Switch Windows</source>
+        <translation type="vanished">Cambia finestra</translation>
+    </message>
+    <message>
+        <source>Developer Tools</source>
+        <translation type="vanished">Strumenti per sviluppatori</translation>
+    </message>
+    <message>
+        <source>Theme</source>
+        <translation type="vanished">Tema</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation type="vanished">Aiuto</translation>
+    </message>
+    <message>
+        <source>What&apos;s New...</source>
+        <translation type="vanished">Novità...</translation>
+    </message>
+    <message>
+        <source>Quick Start</source>
+        <translation type="vanished">Avvio rapido</translation>
+    </message>
+    <message>
+        <source>Markdown Reference</source>
+        <translation type="vanished">Riferimento Markdown</translation>
+    </message>
+    <message>
+        <source>Install and Use Pandoc</source>
+        <translation type="vanished">Installa e usa Pandoc</translation>
+    </message>
+    <message>
+        <source>Custom Themes</source>
+        <translation type="vanished">Temi personalizzati</translation>
+    </message>
+    <message>
+        <source>Use Images in Muffin</source>
+        <translation type="vanished">Usa immagini in Muffin</translation>
+    </message>
+    <message>
+        <source>Data Recovery and Version Control</source>
+        <translation type="vanished">Recupero dati e controllo versione</translation>
+    </message>
+    <message>
+        <source>More Themes...</source>
+        <translation type="vanished">Altri temi...</translation>
+    </message>
+    <message>
+        <source>Acknowledgements</source>
+        <translation type="vanished">Ringraziamenti</translation>
+    </message>
+    <message>
+        <source>Changelog</source>
+        <translation type="vanished">Registro modifiche</translation>
+    </message>
+    <message>
+        <source>Privacy Policy</source>
+        <translation type="vanished">Informativa sulla privacy</translation>
+    </message>
+    <message>
+        <source>Official Website</source>
+        <translation type="vanished">Sito ufficiale</translation>
+    </message>
+    <message>
+        <source>Feedback</source>
+        <translation type="vanished">Feedback</translation>
+    </message>
+    <message>
+        <source>Check for Updates...</source>
+        <translation type="vanished">Controlla aggiornamenti...</translation>
+    </message>
+    <message>
+        <source>My License...</source>
+        <translation type="vanished">La mia licenza...</translation>
+    </message>
+    <message>
+        <source>About</source>
+        <translation type="vanished">Informazioni</translation>
+    </message>
+    <message>
+        <source>Parse %1 ms</source>
+        <translation type="vanished">Analisi %1 ms</translation>
+    </message>
+    <message>
+        <source>table %1:%2 offset %3</source>
+        <translation type="vanished">tabella %1:%2 offset %3</translation>
+    </message>
+    <message>
+        <source>Open Folder</source>
+        <translation type="vanished">Apri cartella</translation>
+    </message>
+    <message>
+        <source>%1 words</source>
+        <translation type="vanished">%1 parole</translation>
+    </message>
+    <message>
+        <source>Clear Recent Files</source>
+        <translation type="vanished">Cancella file recenti</translation>
+    </message>
+    <message>
+        <source>Name: %1
+Location: %2
+Size: %3 bytes
+Modified: %4
+Words: %5
+Parse time: %6 ms</source>
+        <translation type="vanished">Nome: %1
+Posizione: %2
+Dimensione: %3 byte
+Modificato: %4
+Parole: %5
+Tempo di analisi: %6 ms</translation>
+    </message>
+    <message>
+        <source>Muffin</source>
+        <translation type="vanished">Muffin</translation>
+    </message>
+    <message>
+        <source>The current document has unsaved changes.</source>
+        <translation type="vanished">Il documento corrente contiene modifiche non salvate.</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::PreferencesDialog</name>
+    <message>
+        <source>Preferences</source>
+        <translation type="vanished">Preferenze</translation>
+    </message>
+    <message>
+        <source>Files</source>
+        <translation type="vanished">File</translation>
+    </message>
+    <message>
+        <source>Editor</source>
+        <translation type="vanished">Editor</translation>
+    </message>
+    <message>
+        <source>Image</source>
+        <translation type="vanished">Immagine</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation type="vanished">Esporta</translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation type="vanished">Aspetto</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <translation type="vanished">Generale</translation>
+    </message>
+    <message>
+        <source>No settings available.</source>
+        <translation type="vanished">Nessuna impostazione disponibile.</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation type="vanished">Lingua</translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation type="vanished">Aggiorna</translation>
+    </message>
+    <message>
+        <source>Check for Updates</source>
+        <translation type="vanished">Controlla aggiornamenti</translation>
+    </message>
+    <message>
+        <source>Automatically check for updates</source>
+        <translation type="vanished">Controlla automaticamente gli aggiornamenti</translation>
+    </message>
+    <message>
+        <source>Include beta updates</source>
+        <translation type="vanished">Includi aggiornamenti beta</translation>
+    </message>
+    <message>
+        <source>Advanced</source>
+        <translation type="vanished">Avanzate</translation>
+    </message>
+    <message>
+        <source>Enable debug mode</source>
+        <translation type="vanished">Abilita modalità debug</translation>
+    </message>
+    <message>
+        <source>Send anonymous usage data</source>
+        <translation type="vanished">Invia dati di utilizzo anonimi</translation>
+    </message>
+    <message>
+        <source>Open Advanced Settings</source>
+        <translation type="vanished">Apri impostazioni avanzate</translation>
+    </message>
+    <message>
+        <source>Reset Advanced Settings</source>
+        <translation type="vanished">Ripristina impostazioni avanzate</translation>
+    </message>
+    <message>
+        <source>Theme</source>
+        <translation type="vanished">Tema</translation>
+    </message>
+    <message>
+        <source>Zoom</source>
+        <translation type="vanished">Zoom</translation>
+    </message>
+    <message>
+        <source>Text Size</source>
+        <translation type="vanished">Dimensione testo</translation>
+    </message>
+    <message>
+        <source>Status Bar</source>
+        <translation type="vanished">Barra di stato</translation>
+    </message>
+    <message>
+        <source>Show status bar</source>
+        <translation type="vanished">Mostra barra di stato</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::SidebarWidget</name>
+    <message>
+        <source>Files</source>
+        <translation type="vanished">File</translation>
+    </message>
+    <message>
+        <source>Outline</source>
+        <translation type="vanished">Struttura</translation>
+    </message>
+    <message>
+        <source>New File</source>
+        <translation type="vanished">Nuovo file</translation>
+    </message>
+    <message>
+        <source>No Headings</source>
+        <translation type="vanished">Nessuna intestazione</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::SourceEditorWidget</name>
+    <message>
+        <source>Start writing...</source>
+        <translation type="vanished">Inizia a scrivere...</translation>
+    </message>
+</context>
 </TS>

@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
 #endif
   QApplication app(argc, argv);
 
-  verifyTranslationResource(QStringLiteral("ja"), QStringLiteral("\u30D5\u30A1\u30A4\u30EB"), QStringLiteral("\u74B0\u5883\u8A2D\u5B9A"));
+  verifyTranslationResource(QStringLiteral("ja"), QStringLiteral("\u30D5\u30A1\u30A4\u30EB"), QStringLiteral("\u8A2D\u5B9A"));
 
   QTranslator translator;
   require(translator.load(QStringLiteral(":/i18n/muffin_zh_CN.qm")), "zh_CN translation resource should load");
@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
   requireTranslation("muffin::FileController", "Open", QStringLiteral("\u6253\u5F00"));
   QCoreApplication::removeTranslator(&translator);
 
-  verifyTranslationResource(QStringLiteral("vi"), QStringLiteral("T\u1EC7p"), QStringLiteral("T\u00F9y ch\u1ECDn"));
+  verifyTranslationResource(QStringLiteral("vi"), QStringLiteral("T\u1EC7p"), QStringLiteral("T\u00F9y ch\u1EC9nh"));
   verifyTranslationResource(QStringLiteral("fr"), QStringLiteral("Fichier"), QStringLiteral("Pr\u00E9f\u00E9rences"));
   verifyTranslationResource(QStringLiteral("es"), QStringLiteral("Archivo"), QStringLiteral("Preferencias"));
   verifyTranslationResource(QStringLiteral("ru"), QStringLiteral("\u0424\u0430\u0439\u043B"), QStringLiteral("\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438"));

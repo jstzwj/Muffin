@@ -92,6 +92,14 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/MainWindowFileOps.cpp
   src/app/MainWindowFind.cpp
   src/app/PreferencesDialog.cpp
+  src/app/PreferencesPage.cpp
+  src/app/PrefsFilesPage.cpp
+  src/app/PrefsEditorPage.cpp
+  src/app/PrefsImagePage.cpp
+  src/app/PrefsMarkdownPage.cpp
+  src/app/PrefsExportPage.cpp
+  src/app/PrefsAppearancePage.cpp
+  src/app/PrefsGeneralPage.cpp
   src/app/SidebarWidget.cpp
   src/app/DocumentSession.cpp
   src/editor/SourceEditorWidget.cpp
@@ -307,6 +315,22 @@ add_executable(Muffin
   src/app/MainWindowFind.cpp
   src/app/PreferencesDialog.cpp
   src/app/PreferencesDialog.h
+  src/app/PreferencesPage.cpp
+  src/app/PreferencesPage.h
+  src/app/PrefsFilesPage.cpp
+  src/app/PrefsFilesPage.h
+  src/app/PrefsEditorPage.cpp
+  src/app/PrefsEditorPage.h
+  src/app/PrefsImagePage.cpp
+  src/app/PrefsImagePage.h
+  src/app/PrefsMarkdownPage.cpp
+  src/app/PrefsMarkdownPage.h
+  src/app/PrefsExportPage.cpp
+  src/app/PrefsExportPage.h
+  src/app/PrefsAppearancePage.cpp
+  src/app/PrefsAppearancePage.h
+  src/app/PrefsGeneralPage.cpp
+  src/app/PrefsGeneralPage.h
   src/io/FileController.cpp
   src/io/FileController.h
 )

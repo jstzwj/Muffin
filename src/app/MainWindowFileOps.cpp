@@ -144,6 +144,16 @@ void MainWindow::showPreferences() {
     setFontSizePx(px);
     saveAppearanceFontSizePx(fontSizePx_);
   });
+  connect(&dialog, &PreferencesDialog::clearRecentFilesRequested, this, [this] {
+    setRecentFiles({});
+    rebuildRecentFilesMenu();
+  });
+  connect(&dialog, &PreferencesDialog::disableTypewriterFocusRequested, this, [this] {
+    setTypewriterMode(false);
+    setFocusMode(false);
+    saveAppearanceTypewriterMode(false);
+    saveAppearanceFocusMode(false);
+  });
 
   dialog.exec();
 }
