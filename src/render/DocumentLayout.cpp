@@ -421,6 +421,23 @@ const BlockLayout* DocumentLayout::block(NodeId id) const {
   return layoutIndex_.value(id, nullptr);
 }
 
+NodeId DocumentLayout::topLevelBlockIdFor(NodeId id) const {
+  if (!id.isValid()) {
+    return {};
+  }
+  // Fast path: id is itself a top-level block
+  if (topLevelIndex_.contains(id)) {
+    return id;
+  }
+  // Slow path: search top-level blocks for one that contains this node
+  for (const auto& block : blocks_) {
+    if (block->containsNode(id)) {
+      return block->nodeId();
+    }
+  }
+  return {};
+}
+
 const BlockLayout* DocumentLayout::blockAt(QPointF documentPos) const {
   for (const auto& block : blocks_) {
     if (block->rect().contains(documentPos)) {

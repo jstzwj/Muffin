@@ -453,6 +453,18 @@ bool BlockLayout::intersects(const QRectF& documentViewport) const {
   return rect_.intersects(documentViewport);
 }
 
+bool BlockLayout::containsNode(NodeId id) const {
+  if (id_ == id) {
+    return true;
+  }
+  for (const auto& child : children_) {
+    if (child->containsNode(id)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool BlockLayout::containsInteractiveContent(QPointF documentPos, const RenderTheme& theme) const {
   if (isLiteralBlockType(type_)) {
     return rect_.adjusted(-2, 0, 2, 0).contains(documentPos);

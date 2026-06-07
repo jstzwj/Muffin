@@ -96,9 +96,19 @@ void MainWindow::setupConnections() {
   editorController_.attach(&session_, renderView_);
 
   connect(editor_, &SourceEditorWidget::textEdited, &session_, &DocumentSession::updateFromEditor);
-  connect(editor_, &SourceEditorWidget::cursorPositionChanged, this, &MainWindow::updateCursorStatus);
+  connect(editor_, &SourceEditorWidget::cursorPositionChanged, this, [this](int line, int column) {
+    updateCursorStatus(line, column);
+    if (typewriterMode_ && sourceModeEnabled()) {
+      editor_->editor()->centerCursor();
+    }
+  });
   connect(editor_, &SourceEditorWidget::cursorPositionChanged, this, [this](int, int) { updateEditActions(); });
-  connect(&editorController_, &EditorController::cursorChanged, this, &MainWindow::updateRenderCursorStatus);
+  connect(&editorController_, &EditorController::cursorChanged, this, [this](const HitTestResult& hit) {
+    updateRenderCursorStatus(hit);
+    if (typewriterMode_ && !sourceModeEnabled()) {
+      renderView_->scrollToCursorCentered();
+    }
+  });
   connect(renderView_, &EditorView::codeLanguageCommitted, this, [this](NodeId codeId, const QString& language) {
     if (sourceModeEnabled()) {
       return;
@@ -516,6 +526,16 @@ void MainWindow::setupConnections() {
   });
   commands_.bind(QStringLiteral("view.fullscreen"), [this] {
     isFullScreen() ? showNormal() : showFullScreen();
+  });
+  commands_.bind(QStringLiteral("view.focus"), [this] {
+    const bool checked = commands_.action(QStringLiteral("view.focus"))->isChecked();
+    setFocusMode(checked);
+    saveAppearanceFocusMode(checked);
+  });
+  commands_.bind(QStringLiteral("view.typewriter"), [this] {
+    const bool checked = commands_.action(QStringLiteral("view.typewriter"))->isChecked();
+    setTypewriterMode(checked);
+    saveAppearanceTypewriterMode(checked);
   });
   commands_.bind(QStringLiteral("view.zoom_in"), [this] {
     setZoomPercent(zoomPercent_ + 10);

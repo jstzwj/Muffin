@@ -50,6 +50,7 @@ public:
   const std::vector<std::unique_ptr<BlockLayout>>& blocks() const;
   QVector<const BlockLayout*> visibleBlocks(QRectF documentViewport) const;
   const BlockLayout* block(NodeId id) const;
+  NodeId topLevelBlockIdFor(NodeId id) const;
   const BlockLayout* blockAt(QPointF documentPos) const;
   HitTestResult hitTest(QPointF documentPos, const RenderTheme& theme) const;
 

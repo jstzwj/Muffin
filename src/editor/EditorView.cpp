@@ -416,6 +416,38 @@ void EditorView::scrollToNode(NodeId id) {
   scrollBar->setValue(target);
 }
 
+void EditorView::scrollToCursorCentered() {
+  if (!cursorHit_.isValid()) {
+    return;
+  }
+
+  QRectF cursor = cursorHit_.cursorRect;
+  if (cursor.isEmpty()) {
+    cursor = QRectF(cursorHit_.blockRect.left(), cursorHit_.blockRect.top(), 1.0, cursorHit_.blockRect.height());
+  }
+  if (cursor.isEmpty()) {
+    return;
+  }
+
+  QScrollBar* scrollBar = verticalScrollBar();
+  const qreal cursorCenterY = cursor.center().y();
+  const qreal viewportHeight = static_cast<qreal>(viewport()->height());
+  const int target = qBound(scrollBar->minimum(), qRound(cursorCenterY - viewportHeight / 2.0), scrollBar->maximum());
+  scrollBar->setValue(target);
+}
+
+void EditorView::setTypewriterMode(bool enabled) {
+  typewriterMode_ = enabled;
+  if (enabled && cursorHit_.isValid()) {
+    scrollToCursorCentered();
+  }
+}
+
+void EditorView::setFocusMode(bool enabled) {
+  focusMode_ = enabled;
+  viewport()->update();
+}
+
 const BlockLayout* EditorView::blockAtViewportPos(QPointF viewportPos) const {
   if (!layout_) {
     return nullptr;
@@ -445,8 +477,19 @@ void EditorView::paintEvent(QPaintEvent* event) {
   const QVector<const BlockLayout*> blocks = layout_->visibleBlocks(visible.adjusted(0, -80, 0, 80));
   painter.setRenderHint(QPainter::Antialiasing, true);
   painter.setRenderHint(QPainter::TextAntialiasing, true);
+
+  const NodeId activeTopLevel =
+      (focusMode_ && cursorPosition_.isValid()) ? layout_->topLevelBlockIdFor(cursorPosition_.blockId) : NodeId();
+
   for (const BlockLayout* block : blocks) {
-    block->paint(painter, theme_, scrollY());
+    if (focusMode_ && activeTopLevel.isValid() && block->nodeId() != activeTopLevel) {
+      painter.save();
+      painter.setOpacity(0.35);
+      block->paint(painter, theme_, scrollY());
+      painter.restore();
+    } else {
+      block->paint(painter, theme_, scrollY());
+    }
   }
   paintSelection(painter);
   paintCurrentTableCell(painter);
@@ -492,6 +535,9 @@ void EditorView::resizeEvent(QResizeEvent* event) {
   }
   updateCodeLanguageEditor();
   updateTableToolbar();
+  if (typewriterMode_ && cursorHit_.isValid()) {
+    scrollToCursorCentered();
+  }
 }
 
 void EditorView::wheelEvent(QWheelEvent* event) {

@@ -1274,7 +1274,7 @@ void testInlineLayoutProjectionDisplayMappingAfterCollapsedMath() {
     return result;
   };
 
-  require(formatAt(static_cast<int>(codeStart)).fontFamily() == theme.codeFont().family(),
+  require(formatAt(static_cast<int>(codeStart)).fontFamilies().toStringList().first() == theme.codeFont().family(),
           QStringLiteral("code format after collapsed math should use rebuilt display offset"));
   require(formatAt(static_cast<int>(boldStart)).fontWeight() >= QFont::Bold,
           QStringLiteral("strong format after collapsed math should use rebuilt display offset"));

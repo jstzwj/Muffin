@@ -89,6 +89,10 @@ private:
   void saveAppearanceStatusBarVisible(bool visible) const;
   void saveAppearanceZoomPercent(int percent) const;
   void saveAppearanceFontSizePx(int px) const;
+  void setFocusMode(bool enabled);
+  void setTypewriterMode(bool enabled);
+  void saveAppearanceFocusMode(bool enabled) const;
+  void saveAppearanceTypewriterMode(bool enabled) const;
   void setSidebarPanel(SidebarWidget::Panel panel);
   void refreshSidebarDocumentInfo();
   void refreshSidebarOutline();
@@ -161,6 +165,8 @@ private:
   int fontSizePx_ = 16;
   bool sourceEditorDirty_ = false;
   bool wordCountDirty_ = true;
+  bool focusMode_ = false;
+  bool typewriterMode_ = false;
 };
 
 }  // namespace muffin

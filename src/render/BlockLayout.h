@@ -100,6 +100,7 @@ public:
 
   void paint(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
   bool intersects(const QRectF& documentViewport) const;
+  bool containsNode(NodeId id) const;
   bool containsInteractiveContent(QPointF documentPos, const RenderTheme& theme) const;
   HitTestResult hitTest(QPointF documentPos, const RenderTheme& theme) const;
   QVector<QRectF> selectionRects(const SelectionRange& selection, const RenderTheme& theme) const;

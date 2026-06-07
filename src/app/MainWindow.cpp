@@ -212,8 +212,6 @@ void MainWindow::setupMenuBar() {
 }
 
 void MainWindow::setupStatusBar() {
-  // Ensure QRC resources from static library are registered
-  Q_INIT_RESOURCE(statusbar_icons);
   statusBar()->setSizeGripEnabled(false);
 
   const QColor ink = statusBarIconInk(themeManager_.currentThemeName());
@@ -238,8 +236,8 @@ void MainWindow::setupStatusBar() {
   wordCountTimer_->setInterval(250);
   connect(wordCountTimer_, &QTimer::timeout, this, &MainWindow::updateWordCountNow);
 
-  statusBar()->addPermanentWidget(sidebarButton_);
-  statusBar()->addPermanentWidget(sourceModeButton_);
+  statusBar()->addWidget(sidebarButton_);
+  statusBar()->addWidget(sourceModeButton_);
   statusBar()->addPermanentWidget(parseLabel_);
   statusBar()->addPermanentWidget(cursorLabel_);
   statusBar()->addPermanentWidget(wordsLabel_);
@@ -446,6 +444,39 @@ void MainWindow::setStatusBarVisible(bool visible) {
   statusBar()->setVisible(visible);
 }
 
+void MainWindow::setFocusMode(bool enabled) {
+  focusMode_ = enabled;
+
+  if (renderView_) {
+    renderView_->setFocusMode(enabled);
+  }
+
+  if (QAction* action = commands_.action(QStringLiteral("view.focus"))) {
+    action->setChecked(enabled);
+  }
+}
+
+void MainWindow::setTypewriterMode(bool enabled) {
+  typewriterMode_ = enabled;
+
+  if (renderView_) {
+    renderView_->setTypewriterMode(enabled);
+  }
+
+  if (QAction* action = commands_.action(QStringLiteral("view.typewriter"))) {
+    action->setChecked(enabled);
+  }
+
+  // Apply immediately if just enabled
+  if (enabled) {
+    if (!sourceModeEnabled() && renderView_) {
+      renderView_->scrollToCursorCentered();
+    } else if (sourceModeEnabled() && editor_) {
+      editor_->editor()->centerCursor();
+    }
+  }
+}
+
 void MainWindow::loadAppearanceSettings() {
   QSettings settings;
   const QString themeName = settings.value(QStringLiteral("appearance/themeName"), themeManager_.currentThemeName()).toString();
@@ -453,6 +484,23 @@ void MainWindow::loadAppearanceSettings() {
   setStatusBarVisible(settings.value(QStringLiteral("appearance/showStatusBar"), true).toBool());
   setZoomPercent(settings.value(QStringLiteral("appearance/zoomPercent"), 100).toInt());
   setFontSizePx(settings.value(QStringLiteral("appearance/fontSizePx"), 16).toInt());
+
+  // Restore typewriter mode (applied immediately)
+  const bool typewriterMode = settings.value(QStringLiteral("appearance/typewriterMode"), false).toBool();
+  if (typewriterMode) {
+    setTypewriterMode(true);
+    if (QAction* action = commands_.action(QStringLiteral("view.typewriter"))) {
+      action->setChecked(true);
+    }
+  }
+
+  // Focus mode checked state is restored in retranslateUi() after menu rebuild
+  const bool focusMode = settings.value(QStringLiteral("appearance/focusMode"), false).toBool();
+  if (focusMode) {
+    if (QAction* action = commands_.action(QStringLiteral("view.focus"))) {
+      action->setChecked(true);
+    }
+  }
 }
 
 void MainWindow::saveAppearanceTheme(const QString& name) const {
@@ -473,6 +521,16 @@ void MainWindow::saveAppearanceZoomPercent(int percent) const {
 void MainWindow::saveAppearanceFontSizePx(int px) const {
   QSettings settings;
   settings.setValue(QStringLiteral("appearance/fontSizePx"), qBound(12, px, 24));
+}
+
+void MainWindow::saveAppearanceFocusMode(bool enabled) const {
+  QSettings settings;
+  settings.setValue(QStringLiteral("appearance/focusMode"), enabled);
+}
+
+void MainWindow::saveAppearanceTypewriterMode(bool enabled) const {
+  QSettings settings;
+  settings.setValue(QStringLiteral("appearance/typewriterMode"), enabled);
 }
 
 void MainWindow::applyTheme(QString name) {

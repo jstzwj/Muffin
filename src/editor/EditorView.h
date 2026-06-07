@@ -39,6 +39,9 @@ public:
 
   QRectF nodeRect(NodeId id) const;
   void scrollToNode(NodeId id);
+  void scrollToCursorCentered();
+  void setTypewriterMode(bool enabled);
+  void setFocusMode(bool enabled);
   const BlockLayout* blockAtViewportPos(QPointF viewportPos) const;
   HitTestResult hitTest(QPointF viewportPos) const;
 
@@ -98,6 +101,8 @@ private:
   HitTestResult dragAnchorHit_;
   CodeLanguageEditor* codeLanguageEditor_ = nullptr;
   TableToolbar* tableToolbar_ = nullptr;
+  bool typewriterMode_ = false;
+  bool focusMode_ = false;
 };
 
 }  // namespace muffin

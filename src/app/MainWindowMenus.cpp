@@ -49,6 +49,8 @@ void MainWindow::retranslateUi() {
   const bool sourceChecked = commands_.action(QStringLiteral("view.source_mode")) && commands_.action(QStringLiteral("view.source_mode"))->isChecked();
   const bool wordWrapChecked = !commands_.action(QStringLiteral("view.word_wrap")) || commands_.action(QStringLiteral("view.word_wrap"))->isChecked();
   const bool statusBarChecked = !commands_.action(QStringLiteral("view.status_bar")) || commands_.action(QStringLiteral("view.status_bar"))->isChecked();
+  const bool focusChecked = commands_.action(QStringLiteral("view.focus")) && commands_.action(QStringLiteral("view.focus"))->isChecked();
+  const bool typewriterChecked = commands_.action(QStringLiteral("view.typewriter")) && commands_.action(QStringLiteral("view.typewriter"))->isChecked();
 
   setupMenuBar();
 
@@ -64,6 +66,17 @@ void MainWindow::retranslateUi() {
   if (QAction* action = commands_.action(QStringLiteral("view.status_bar"))) {
     action->setChecked(statusBarChecked);
   }
+  if (QAction* action = commands_.action(QStringLiteral("view.focus"))) {
+    action->setChecked(focusChecked);
+  }
+  if (QAction* action = commands_.action(QStringLiteral("view.typewriter"))) {
+    action->setChecked(typewriterChecked);
+  }
+
+  // Re-apply focus/typewriter mode state after menu rebuild
+  setFocusMode(focusChecked);
+  focusMode_ = focusChecked;
+  setTypewriterMode(typewriterChecked);
 
   if (sidebarButton_) {
     sidebarButton_->setToolTip(tr("Show / Hide Sidebar"));
@@ -265,8 +278,8 @@ void MainWindow::setupViewMenu() {
   view->addSeparator();
   addCheckAction(view, QStringLiteral("view.source_mode"), tr("Source Code Mode"), QKeySequence(QStringLiteral("Ctrl+/")), false);
   addCheckAction(view, QStringLiteral("view.word_wrap"), tr("Word Wrap"), {}, true);
-  addCheckAction(view, QStringLiteral("view.focus"), tr("Focus Mode"), QKeySequence(QStringLiteral("F8")), false, false);
-  addCheckAction(view, QStringLiteral("view.typewriter"), tr("Typewriter Mode"), QKeySequence(QStringLiteral("F9")), false, false);
+  addCheckAction(view, QStringLiteral("view.focus"), tr("Focus Mode"), QKeySequence(QStringLiteral("F8")), false);
+  addCheckAction(view, QStringLiteral("view.typewriter"), tr("Typewriter Mode"), QKeySequence(QStringLiteral("F9")), false);
   addCheckAction(view, QStringLiteral("view.status_bar"), tr("Show Status Bar"), {}, true);
   view->addSeparator();
   addAction(view, QStringLiteral("view.word_count"), tr("Word Count Window"), {}, false);
@@ -277,7 +290,6 @@ void MainWindow::setupViewMenu() {
   addAction(view, QStringLiteral("view.zoom_in"), tr("Zoom In"), QKeySequence(QStringLiteral("Ctrl+Shift+=")));
   addAction(view, QStringLiteral("view.zoom_out"), tr("Zoom Out"), QKeySequence(QStringLiteral("Ctrl+Shift+-")));
   addAction(view, QStringLiteral("view.window_switch"), tr("Switch Windows"), QKeySequence(QStringLiteral("Ctrl+Tab")), false);
-  addAction(view, QStringLiteral("view.devtools"), tr("Developer Tools"), QKeySequence(QStringLiteral("Shift+F12")), false);
 }
 
 void MainWindow::setupThemeMenu() {
@@ -298,8 +310,8 @@ void MainWindow::setupHelpMenu() {
   help->addSeparator();
   addAction(help, QStringLiteral("help.acknowledgements"), tr("Acknowledgements"), {}, false);
   addAction(help, QStringLiteral("help.changelog"), tr("Changelog"), {}, false);
-  addAction(help, QStringLiteral("help.website"), tr("Official Website"), {}, false);
-  addAction(help, QStringLiteral("help.feedback"), tr("Feedback"), {}, false);
+  addAction(help, QStringLiteral("help.website"), tr("Official Website"));
+  addAction(help, QStringLiteral("help.feedback"), tr("Feedback"));
   addAction(help, QStringLiteral("help.update"), tr("Check for Updates..."), {}, false);
   help->addSeparator();
   addAction(help, QStringLiteral("help.about"), tr("About"));
