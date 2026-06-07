@@ -154,6 +154,37 @@ jobs:
           path: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}.*
           if-no-files-found: error
 
+      - name: Install WiX Toolset
+        if: runner.os == 'Windows'
+        run: dotnet tool install --global wix --version 4.0.5
+
+      - name: Build MSI installer
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          cmake --build --preset conan-release --target msi
+
+      - name: Upload MSI artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-windows-x64-msi
+          path: build/Muffin-*-windows-x64.msi
+          if-no-files-found: error
+
+      - name: Build DMG disk image
+        if: runner.os == 'macOS'
+        run: cmake --build --preset conan-release --target dmg
+
+      - name: Upload DMG artifact
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-macos-x64-dmg
+          path: build/Muffin-*-macos-x64.dmg
+          if-no-files-found: error
+
   publish:
     name: Publish GitHub Release
     needs: build
@@ -174,3 +205,5 @@ jobs:
           files: |
             release-artifacts/**/*.zip
             release-artifacts/**/*.tar.gz
+            release-artifacts/**/*.msi
+            release-artifacts/**/*.dmg

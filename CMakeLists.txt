@@ -474,6 +474,13 @@ if(WIN32)
   set_target_properties(Muffin PROPERTIES WIN32_EXECUTABLE TRUE)
 endif()
 
+if(APPLE)
+  set_target_properties(Muffin PROPERTIES
+    MACOSX_BUNDLE TRUE
+    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Info.plist.in"
+  )
+endif()
+
 set(MUFFIN_DIST_DIR "${CMAKE_BINARY_DIR}/dist" CACHE PATH "Muffin distribution output directory")
 
 set(MUFFIN_QT_PLUGIN_DIRS)
@@ -507,6 +514,53 @@ add_custom_target(dist
   COMMENT "Create Muffin distribution directory"
   VERBATIM
 )
+
+# --- Windows MSI installer target ---
+if(WIN32)
+  find_program(WIX_COMMAND wix)
+  if(WIX_COMMAND)
+    add_custom_target(msi
+      COMMAND ${CMAKE_COMMAND}
+        "-DDIST_DIR=${MUFFIN_DIST_DIR}"
+        "-DWIX_COMMAND=${WIX_COMMAND}"
+        "-DMUFFIN_VERSION=${MUFFIN_EFFECTIVE_VERSION}"
+        "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildMSI.cmake"
+      DEPENDS dist
+      COMMENT "Build Muffin MSI installer"
+      VERBATIM
+    )
+  endif()
+endif()
+
+# --- macOS DMG target ---
+if(APPLE)
+  # Locate macdeployqt relative to Qt6::Core
+  set(_muffin_macdeployqt "")
+  if(MUFFIN_QT_CORE_LOCATION_RELEASE)
+    get_filename_component(_qt_bin_dir "${MUFFIN_QT_CORE_LOCATION_RELEASE}" DIRECTORY)
+    if(EXISTS "${_qt_bin_dir}/macdeployqt")
+      set(_muffin_macdeployqt "${_qt_bin_dir}/macdeployqt")
+    endif()
+  endif()
+  if(NOT _muffin_macdeployqt)
+    find_program(_muffin_macdeployqt macdeployqt)
+  endif()
+
+  if(_muffin_macdeployqt)
+    add_custom_target(dmg
+      COMMAND ${CMAKE_COMMAND}
+        "-DDIST_DIR=${MUFFIN_DIST_DIR}"
+        "-DMUFFIN_VERSION=${MUFFIN_EFFECTIVE_VERSION}"
+        "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+        "-DMACDEPLOYQT=${_muffin_macdeployqt}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildDMG.cmake"
+      DEPENDS dist
+      COMMENT "Build Muffin DMG disk image"
+      VERBATIM
+    )
+  endif()
+endif()
 
 enable_testing()
 

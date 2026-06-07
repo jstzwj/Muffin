@@ -8,51 +8,72 @@ endif()
 
 file(REMOVE_RECURSE "${DIST_DIR}")
 file(MAKE_DIRECTORY "${DIST_DIR}")
-file(COPY "${APP_FILE}" DESTINATION "${DIST_DIR}")
 
-set(runtime_dlls "")
-if(DEFINED RUNTIME_DLLS AND NOT RUNTIME_DLLS STREQUAL "")
-  string(REPLACE "|" ";" runtime_dlls "${RUNTIME_DLLS}")
-endif()
+if(APPLE)
+  # --- macOS: copy the entire .app bundle ---
+  # When MACOSX_BUNDLE is set, APP_FILE points to Muffin.app/Contents/MacOS/Muffin.
+  # Walk up to find the .app bundle root and copy it wholesale.
+  get_filename_component(APP_MACOS_DIR "${APP_FILE}" DIRECTORY)       # Contents/MacOS
+  get_filename_component(APP_CONTENTS_DIR "${APP_MACOS_DIR}" DIRECTORY) # Contents
+  get_filename_component(APP_BUNDLE_DIR "${APP_CONTENTS_DIR}" DIRECTORY) # Muffin.app
 
-foreach(dll IN LISTS runtime_dlls)
-  if(EXISTS "${dll}")
-    file(COPY "${dll}" DESTINATION "${DIST_DIR}")
+  if(NOT EXISTS "${APP_BUNDLE_DIR}" OR NOT IS_DIRECTORY "${APP_BUNDLE_DIR}")
+    message(FATAL_ERROR
+      "Expected macOS app bundle at ${APP_BUNDLE_DIR} but it was not found. "
+      "Ensure MACOSX_BUNDLE is set on the target.")
   endif()
-endforeach()
 
-set(plugin_dirs "")
-if(DEFINED QT_PLUGIN_DIRS AND NOT QT_PLUGIN_DIRS STREQUAL "")
-  string(REPLACE "|" ";" plugin_dirs "${QT_PLUGIN_DIRS}")
-endif()
+  file(COPY "${APP_BUNDLE_DIR}" DESTINATION "${DIST_DIR}")
+  message(STATUS "Muffin macOS dist written to ${DIST_DIR}/Muffin.app")
 
-foreach(dll IN LISTS runtime_dlls)
-  get_filename_component(dll_name "${dll}" NAME)
-  if(dll_name MATCHES "^Qt6.*\\.dll$")
-    get_filename_component(qt_bin_dir "${dll}" DIRECTORY)
-    get_filename_component(qt_root_dir "${qt_bin_dir}" DIRECTORY)
-    foreach(plugin_subdir platforms styles imageformats)
-      if(EXISTS "${qt_root_dir}/plugins/${plugin_subdir}")
-        list(APPEND plugin_dirs "${qt_root_dir}/plugins/${plugin_subdir}")
-      endif()
-    endforeach()
+else()
+  # --- Windows (and Linux): flat directory layout ---
+  file(COPY "${APP_FILE}" DESTINATION "${DIST_DIR}")
+
+  set(runtime_dlls "")
+  if(DEFINED RUNTIME_DLLS AND NOT RUNTIME_DLLS STREQUAL "")
+    string(REPLACE "|" ";" runtime_dlls "${RUNTIME_DLLS}")
   endif()
-endforeach()
 
-if(plugin_dirs)
-  list(REMOVE_DUPLICATES plugin_dirs)
-endif()
-
-foreach(plugin_dir IN LISTS plugin_dirs)
-  if(EXISTS "${plugin_dir}")
-    get_filename_component(plugin_name "${plugin_dir}" NAME)
-    file(GLOB plugin_dlls "${plugin_dir}/*.dll")
-    if(plugin_dlls)
-      file(MAKE_DIRECTORY "${DIST_DIR}/${plugin_name}")
-      file(COPY ${plugin_dlls} DESTINATION "${DIST_DIR}/${plugin_name}")
+  foreach(dll IN LISTS runtime_dlls)
+    if(EXISTS "${dll}")
+      file(COPY "${dll}" DESTINATION "${DIST_DIR}")
     endif()
-  endif()
-endforeach()
+  endforeach()
 
-file(WRITE "${DIST_DIR}/qt.conf" "[Paths]\nPlugins = .\n")
-message(STATUS "Muffin dist written to ${DIST_DIR}")
+  set(plugin_dirs "")
+  if(DEFINED QT_PLUGIN_DIRS AND NOT QT_PLUGIN_DIRS STREQUAL "")
+    string(REPLACE "|" ";" plugin_dirs "${QT_PLUGIN_DIRS}")
+  endif()
+
+  foreach(dll IN LISTS runtime_dlls)
+    get_filename_component(dll_name "${dll}" NAME)
+    if(dll_name MATCHES "^Qt6.*\\.dll$")
+      get_filename_component(qt_bin_dir "${dll}" DIRECTORY)
+      get_filename_component(qt_root_dir "${qt_bin_dir}" DIRECTORY)
+      foreach(plugin_subdir platforms styles imageformats)
+        if(EXISTS "${qt_root_dir}/plugins/${plugin_subdir}")
+          list(APPEND plugin_dirs "${qt_root_dir}/plugins/${plugin_subdir}")
+        endif()
+      endforeach()
+    endif()
+  endforeach()
+
+  if(plugin_dirs)
+    list(REMOVE_DUPLICATES plugin_dirs)
+  endif()
+
+  foreach(plugin_dir IN LISTS plugin_dirs)
+    if(EXISTS "${plugin_dir}")
+      get_filename_component(plugin_name "${plugin_dir}" NAME)
+      file(GLOB plugin_dlls "${plugin_dir}/*.dll")
+      if(plugin_dlls)
+        file(MAKE_DIRECTORY "${DIST_DIR}/${plugin_name}")
+        file(COPY ${plugin_dlls} DESTINATION "${DIST_DIR}/${plugin_name}")
+      endif()
+    endif()
+  endforeach()
+
+  file(WRITE "${DIST_DIR}/qt.conf" "[Paths]\nPlugins = .\n")
+  message(STATUS "Muffin dist written to ${DIST_DIR}")
+endif()
