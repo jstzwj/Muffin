@@ -4,56 +4,44 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="517"/>
         <source>Code Language</source>
-        <translation type="unfinished">Ngôn ngữ mã</translation>
+        <translation type="obsolete">Ngôn ngữ mã</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="517"/>
         <source>Language:</source>
-        <translation type="unfinished">Ngôn ngữ:</translation>
+        <translation type="obsolete">Ngôn ngữ:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="527"/>
         <source>HTML Source</source>
-        <translation type="unfinished">Nguồn HTML</translation>
+        <translation type="obsolete">Nguồn HTML</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="527"/>
         <source>HTML:</source>
-        <translation type="unfinished">HTML:</translation>
+        <translation type="obsolete">HTML:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="537"/>
         <source>Math TeX</source>
-        <translation type="unfinished">TeX toán học</translation>
+        <translation type="obsolete">TeX toán học</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="537"/>
         <source>TeX:</source>
-        <translation type="unfinished">TeX:</translation>
+        <translation type="obsolete">TeX:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="622"/>
         <source>About Muffin</source>
-        <translation type="unfinished">Giới thiệu Muffin</translation>
+        <translation type="obsolete">Giới thiệu Muffin</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="623"/>
-        <source>Muffin %1
-
-A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="703"/>
         <source>table %1:%2 offset %3</source>
-        <translation type="unfinished">bảng %1:%2 vị trí %3</translation>
+        <translation type="obsolete">bảng %1:%2 vị trí %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="847"/>
         <source>%1 words</source>
-        <translation type="unfinished">%1 từ</translation>
+        <translation type="obsolete">%1 từ</translation>
+    </message>
+    <message>
+        <source>Insert Table</source>
+        <translation type="obsolete">Chèn bảng</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="199"/>
@@ -407,7 +395,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="81"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="282"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="290"/>
         <source>Show / Hide Sidebar</source>
         <translation>Hiện / ẩn thanh bên</translation>
     </message>
@@ -689,454 +677,501 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="189"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="232"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="256"/>
         <source>Table</source>
         <translation>Bảng</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="190"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="191"/>
         <source>Formula Block</source>
         <translation>Khối công thức</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="191"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="192"/>
         <source>Code Block</source>
         <translation>Khối mã</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="192"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="193"/>
         <source>Code Tools</source>
         <translation>Công cụ mã</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="193"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="194"/>
         <source>Alert</source>
         <translation>Cảnh báo</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="195"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="196"/>
         <source>Quote</source>
         <translation>Trích dẫn</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="196"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="197"/>
         <source>Ordered List</source>
         <translation>Danh sách có thứ tự</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="197"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="198"/>
         <source>Unordered List</source>
         <translation>Danh sách không thứ tự</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="198"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="199"/>
         <source>Task List</source>
         <translation>Danh sách tác vụ</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="199"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="200"/>
         <source>Task Status</source>
         <translation>Trạng thái tác vụ</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="200"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="201"/>
         <source>List Indent</source>
         <translation>Thụt lề danh sách</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="202"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="203"/>
         <source>Insert Paragraph Before</source>
         <translation>Chèn đoạn văn trước</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="203"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="204"/>
         <source>Insert Paragraph After</source>
         <translation>Chèn đoạn văn sau</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="205"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="206"/>
         <source>Link Reference</source>
         <translation>Tham chiếu liên kết</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="206"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="207"/>
         <source>Footnote</source>
         <translation>Chú thích cuối trang</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="208"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="209"/>
         <source>Horizontal Rule</source>
         <translation>Đường ngang</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="209"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="210"/>
         <source>Table of Contents</source>
         <translation>Mục lục</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="210"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="211"/>
         <source>Front Matter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="211"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="212"/>
         <source>YAML</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="212"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="213"/>
         <source>TOML</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="213"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="214"/>
         <source>JSON</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="217"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="218"/>
         <source>Format</source>
         <translation>Định dạng</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="218"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="219"/>
         <source>Bold</source>
         <translation>Đậm</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="219"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="220"/>
         <source>Italic</source>
         <translation>Nghiêng</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="220"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="221"/>
         <source>Underline</source>
         <translation>Gạch chân</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="221"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="222"/>
         <source>Inline Code</source>
         <translation>Mã nội tuyến</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="222"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="223"/>
         <source>Strikethrough</source>
         <translation>Gạch ngang</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="224"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="225"/>
         <source>Comment</source>
         <translation>Chú thích</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="225"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="226"/>
         <source>Hyperlink</source>
         <translation>Siêu liên kết</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="226"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="227"/>
         <source>Link Actions</source>
         <translation>Thao tác liên kết</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="227"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="228"/>
         <source>Image</source>
         <translation>Hình ảnh</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="228"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="229"/>
         <source>Clear Style</source>
         <translation>Xóa kiểu</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="234"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="233"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="871"/>
         <source>Insert Table</source>
         <translation>Chèn bảng</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="236"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="235"/>
         <source>Insert Row Above</source>
         <translation>Chèn hàng phía trên</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="237"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="236"/>
         <source>Insert Row Below</source>
         <translation>Chèn hàng phía dưới</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="238"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="246"/>
         <source>Delete Row</source>
         <translation>Xóa hàng</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="239"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="241"/>
         <source>Move Row Up</source>
         <translation>Di chuyển hàng lên</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="240"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="242"/>
         <source>Move Row Down</source>
         <translation>Di chuyển hàng xuống</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="242"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="238"/>
         <source>Insert Column Left</source>
         <translation>Chèn cột bên trái</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="243"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="239"/>
         <source>Insert Column Right</source>
         <translation>Chèn cột bên phải</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="244"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="247"/>
         <source>Delete Column</source>
         <translation>Xóa cột</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="245"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="243"/>
         <source>Move Column Left</source>
         <translation>Di chuyển cột sang trái</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="246"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="244"/>
         <source>Move Column Right</source>
         <translation>Di chuyển cột sang phải</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="248"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="258"/>
         <source>Align Left</source>
         <translation>Căn trái</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="249"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="259"/>
         <source>Align Center</source>
         <translation>Căn giữa</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="250"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="260"/>
         <source>Align Right</source>
         <translation>Căn phải</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="251"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="261"/>
         <source>Clear Alignment</source>
         <translation>Xóa căn chỉnh</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="253"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="252"/>
         <source>Delete Table</source>
         <translation>Xóa bảng</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="257"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="249"/>
+        <source>Copy Table</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="250"/>
+        <source>Format Table Source</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="265"/>
         <source>Code</source>
         <translation>Mã</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="259"/>
         <location filename="../src/app/MainWindowMenus.cpp" line="267"/>
         <location filename="../src/app/MainWindowMenus.cpp" line="275"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="283"/>
         <source>Enter Edit</source>
         <translation>Vào chỉnh sửa</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="260"/>
         <location filename="../src/app/MainWindowMenus.cpp" line="268"/>
         <location filename="../src/app/MainWindowMenus.cpp" line="276"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="284"/>
         <source>Exit Edit</source>
         <translation>Thoát chỉnh sửa</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="261"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="269"/>
         <source>Set Language...</source>
         <translation>Đặt ngôn ngữ...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="265"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="273"/>
         <source>Math</source>
         <translation>Toán học</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="269"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="277"/>
         <source>Set TeX...</source>
         <translation>Đặt TeX...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="277"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="285"/>
         <source>Set HTML...</source>
         <translation>Đặt HTML...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="281"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="289"/>
         <source>View</source>
         <translation>Xem</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="283"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="291"/>
         <source>Outline</source>
         <translation>Dàn ý</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="284"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="292"/>
         <source>File Tree</source>
         <translation>Cây tệp</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="285"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="293"/>
         <source>Search</source>
         <translation>Tìm kiếm</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="287"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="295"/>
         <source>Source Code Mode</source>
         <translation>Chế độ mã nguồn</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="288"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="296"/>
         <source>Word Wrap</source>
         <translation>Tự động xuống dòng</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="289"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="297"/>
         <source>Focus Mode</source>
         <translation>Chế độ tập trung</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="290"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="298"/>
         <source>Typewriter Mode</source>
         <translation>Chế độ máy đánh chữ</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="291"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="299"/>
         <source>Show Status Bar</source>
         <translation>Hiện thanh trạng thái</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="293"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="301"/>
         <source>Word Count Window</source>
         <translation>Cửa sổ đếm từ</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="294"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="302"/>
         <source>Toggle Full Screen</source>
         <translation>Bật/tắt toàn màn hình</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="295"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="303"/>
         <source>Always on Top</source>
         <translation>Luôn ở trên cùng</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="297"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="305"/>
         <source>Actual Size</source>
         <translation>Kích thước thực</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="298"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="306"/>
         <source>Zoom In</source>
         <translation>Phóng to</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="299"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="307"/>
         <source>Zoom Out</source>
         <translation>Thu nhỏ</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="300"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="308"/>
         <source>Switch Windows</source>
         <translation>Chuyển cửa sổ</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="304"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="312"/>
         <source>Theme</source>
         <translation>Chủ đề</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="313"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="321"/>
         <source>Help</source>
         <translation>Trợ giúp</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="314"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="322"/>
         <source>Quick Start</source>
         <translation>Bắt đầu nhanh</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="315"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="323"/>
         <source>Markdown Reference</source>
         <translation>Tham khảo Markdown</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="316"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="324"/>
         <source>Custom Themes</source>
         <translation>Chủ đề tùy chỉnh</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="318"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="326"/>
         <source>Acknowledgements</source>
         <translation>Lời cảm ơn</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="319"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="327"/>
         <source>Changelog</source>
         <translation>Nhật ký thay đổi</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="320"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="328"/>
         <source>Official Website</source>
         <translation>Trang web chính thức</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="321"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="329"/>
         <source>Feedback</source>
         <translation>Phản hồi</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="322"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="330"/>
         <source>Check for Updates...</source>
         <translation>Kiểm tra cập nhật...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="324"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="332"/>
         <source>About</source>
         <translation>Giới thiệu</translation>
     </message>
     <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="524"/>
         <source>Code Language</source>
-        <translation type="vanished">Ngôn ngữ mã</translation>
+        <translation>Ngôn ngữ mã</translation>
     </message>
     <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="524"/>
         <source>Language:</source>
-        <translation type="vanished">Ngôn ngữ:</translation>
+        <translation>Ngôn ngữ:</translation>
     </message>
     <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="534"/>
         <source>HTML Source</source>
-        <translation type="vanished">Nguồn HTML</translation>
+        <translation>Nguồn HTML</translation>
     </message>
     <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="534"/>
         <source>HTML:</source>
-        <translation type="vanished">HTML:</translation>
+        <translation>HTML:</translation>
     </message>
     <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="544"/>
         <source>Math TeX</source>
-        <translation type="vanished">TeX toán học</translation>
+        <translation>TeX toán học</translation>
     </message>
     <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="544"/>
         <source>TeX:</source>
-        <translation type="vanished">TeX:</translation>
+        <translation>TeX:</translation>
     </message>
     <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="629"/>
         <source>About Muffin</source>
-        <translation type="vanished">Giới thiệu Muffin</translation>
+        <translation>Giới thiệu Muffin</translation>
     </message>
     <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="630"/>
+        <source>Muffin %1
+
+A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="710"/>
         <source>table %1:%2 offset %3</source>
-        <translation type="vanished">bảng %1:%2 vị trí %3</translation>
+        <translation>bảng %1:%2 vị trí %3</translation>
     </message>
     <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="856"/>
         <source>%1 words</source>
-        <translation type="vanished">%1 từ</translation>
+        <translation>%1 từ</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="887"/>
+        <source>Rows:</source>
+        <translation>Số hàng:</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="888"/>
+        <source>Columns:</source>
+        <translation>Số cột:</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="891"/>
+        <source>OK</source>
+        <translation>OK</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowActions.cpp" line="892"/>
+        <source>Cancel</source>
+        <translation>Hủy</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="64"/>

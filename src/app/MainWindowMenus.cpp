@@ -186,7 +186,8 @@ void muffin::MainWindow::setupParagraphMenu() {
   addAction(paragraph, QStringLiteral("paragraph.promote_heading"), tr("Promote Heading"), QKeySequence(QStringLiteral("Ctrl+-")), false);
   addAction(paragraph, QStringLiteral("paragraph.demote_heading"), tr("Demote Heading"), QKeySequence(QStringLiteral("Ctrl+=")), false);
   paragraph->addSeparator();
-  addDisabledMenu(paragraph, tr("Table"));
+  QMenu* table = paragraph->addMenu(tr("Table"));
+  populateTableMenu(table);
   addCheckAction(paragraph, QStringLiteral("paragraph.math_block"), tr("Formula Block"), QKeySequence(QStringLiteral("Ctrl+Shift+M")), false, false);
   addCheckAction(paragraph, QStringLiteral("paragraph.code_block"), tr("Code Block"), QKeySequence(QStringLiteral("Ctrl+Shift+K")), false, false);
   addDisabledMenu(paragraph, tr("Code Tools"));
@@ -228,29 +229,36 @@ void muffin::MainWindow::setupFormatMenu() {
   addAction(format, QStringLiteral("format.clear"), tr("Clear Style"), QKeySequence(QStringLiteral("Ctrl+\\")), false);
 }
 
-void muffin::MainWindow::setupTableMenu() {
-  QMenu* table = menuBar()->addMenu(tr("Table"));
-  table->menuAction()->setVisible(false);
-  addAction(table, QStringLiteral("table.insert_table"), tr("Insert Table"));
+void muffin::MainWindow::populateTableMenu(QMenu* table) {
+  addAction(table, QStringLiteral("table.insert_table"), tr("Insert Table"), QKeySequence(QStringLiteral("Ctrl+T")));
   table->addSeparator();
   addAction(table, QStringLiteral("table.insert_row_before"), tr("Insert Row Above"));
-  addAction(table, QStringLiteral("table.insert_row_after"), tr("Insert Row Below"));
-  addAction(table, QStringLiteral("table.delete_row"), tr("Delete Row"));
-  addAction(table, QStringLiteral("table.move_row_up"), tr("Move Row Up"));
-  addAction(table, QStringLiteral("table.move_row_down"), tr("Move Row Down"));
+  addAction(table, QStringLiteral("table.insert_row_after"), tr("Insert Row Below"), QKeySequence(QStringLiteral("Ctrl+Enter")));
   table->addSeparator();
   addAction(table, QStringLiteral("table.insert_column_before"), tr("Insert Column Left"));
   addAction(table, QStringLiteral("table.insert_column_after"), tr("Insert Column Right"));
-  addAction(table, QStringLiteral("table.delete_column"), tr("Delete Column"));
-  addAction(table, QStringLiteral("table.move_column_left"), tr("Move Column Left"));
-  addAction(table, QStringLiteral("table.move_column_right"), tr("Move Column Right"));
   table->addSeparator();
+  addAction(table, QStringLiteral("table.move_row_up"), tr("Move Row Up"));
+  addAction(table, QStringLiteral("table.move_row_down"), tr("Move Row Down"));
+  addAction(table, QStringLiteral("table.move_column_left"), tr("Move Column Left"), QKeySequence(QStringLiteral("Alt+Left")));
+  addAction(table, QStringLiteral("table.move_column_right"), tr("Move Column Right"), QKeySequence(QStringLiteral("Alt+Right")));
+  table->addSeparator();
+  addAction(table, QStringLiteral("table.delete_row"), tr("Delete Row"), QKeySequence(QStringLiteral("Ctrl+Shift+Backspace")));
+  addAction(table, QStringLiteral("table.delete_column"), tr("Delete Column"));
+  table->addSeparator();
+  addAction(table, QStringLiteral("table.copy_table"), tr("Copy Table"));
+  addAction(table, QStringLiteral("table.format_source"), tr("Format Table Source"));
+  table->addSeparator();
+  addAction(table, QStringLiteral("table.delete_table"), tr("Delete Table"));
+}
+
+void muffin::MainWindow::setupTableMenu() {
+  QMenu* table = menuBar()->addMenu(tr("Table"));
+  table->menuAction()->setVisible(false);
   addAction(table, QStringLiteral("table.align_left"), tr("Align Left"));
   addAction(table, QStringLiteral("table.align_center"), tr("Align Center"));
   addAction(table, QStringLiteral("table.align_right"), tr("Align Right"));
   addAction(table, QStringLiteral("table.align_none"), tr("Clear Alignment"));
-  table->addSeparator();
-  addAction(table, QStringLiteral("table.delete_table"), tr("Delete Table"));
 }
 
 void muffin::MainWindow::setupCodeMenu() {

@@ -574,7 +574,7 @@ void testTableControllerInsertTable() {
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   require(tableController.insertTable(), "insert table should work");
-  require(session.markdownText().contains(QStringLiteral("| Header | Header |")), "insert table header mismatch");
+  require(session.markdownText().contains(QStringLiteral("|  |  |")), "insert table header mismatch");
   require(session.markdownText().contains(QStringLiteral("| --- | --- |")), "insert table delimiter mismatch");
   require(undoStack.canUndo(), "insert table should push undo");
   EditTransaction insertTableUndo = undoStack.takeUndo();
@@ -582,6 +582,39 @@ void testTableControllerInsertTable() {
   require(insertTableUndo.insertNodeCommand().nodeType == BlockType::Table, "insert table command type mismatch");
   require(insertTableUndo.insertNodeCommand().insertedNode != nullptr, "insert table command node missing");
   require(!insertTableUndo.insertNodeCommand().delta.insertedText.isEmpty(), "insert table command delta missing");
+}
+
+void testTableControllerFormatSource() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  TableController tableController;
+  tableController.setDocumentSession(&session);
+  tableController.setSelectionController(&selection);
+  tableController.setUndoStack(&undoStack);
+  tableController.setBrushQueue(&brushQueue);
+
+  session.setMarkdownText(QStringLiteral("| A|B |\n|---|:---:|\n| 1| 2 |"), false);
+  MarkdownNode& table = *session.document().root().children().front();
+  MarkdownNode* cell = TableModelOps::cellAt(table, 1, 1);
+  require(cell != nullptr, "format source target cell missing");
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::TableCell;
+  hit.blockId = table.id();
+  hit.textNodeId = cell->id();
+  hit.tableRow = 1;
+  hit.tableColumn = 1;
+  selection.setHitResult(hit);
+
+  require(tableController.formatCurrentTableSource(), "format table source should work");
+  require(session.markdownText() == QStringLiteral("| A | B |\n| --- | :---: |\n| 1 | 2 |"), "format table source markdown mismatch");
+  require(undoStack.canUndo(), "format table source should push undo");
+  EditTransaction formatUndo = undoStack.takeUndo();
+  require(formatUndo.isTextDeltaCommand(), "format table source should use TextDeltaCommand");
+  require(formatUndo.label() == QStringLiteral("Format Table Source"), "format table source undo label mismatch");
+  require(selection.cursorPosition().blockId.isValid(), "format table source should keep a table cursor");
 }
 
 }  // namespace
@@ -603,5 +636,6 @@ int main() {
   testTableControllerDeletesTableBreakAsUnit();
   testTableCellSourceEditMixedTableTokensAndInlineMarkers();
   testTableControllerInsertTable();
+  testTableControllerFormatSource();
   return 0;
 }

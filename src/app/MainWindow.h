@@ -64,6 +64,7 @@ private:
   void setupEditMenu();
   void setupParagraphMenu();
   void setupTableMenu();
+  void populateTableMenu(QMenu* menu);
   void setupCodeMenu();
   void setupHtmlMenu();
   void setupMathMenu();
@@ -128,6 +129,7 @@ private:
   void saveAllOpenFiles();
   void showInSidebar();
   void deleteFile();
+  void insertTableWithDialog();
 
   void moveSourceLineUp();
   void moveSourceLineDown();

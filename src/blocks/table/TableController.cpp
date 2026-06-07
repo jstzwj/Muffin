@@ -9,7 +9,11 @@
 #include "editor/SelectionController.h"
 #include "parser/MarkdownSerializer.h"
 
+#include <QApplication>
+#include <QClipboard>
+
 #include <memory>
+#include <utility>
 
 namespace muffin {
 namespace {
@@ -277,6 +281,91 @@ bool TableController::resizeCurrentTable(int rows, int columns) {
       });
 }
 
+bool TableController::copyCurrentTable() const {
+  if (!session_) {
+    return false;
+  }
+
+  const TableLocation location = currentCell();
+  if (!location.isValid()) {
+    return false;
+  }
+
+  const MarkdownNode* table = tableForLocation(location);
+  if (!table) {
+    return false;
+  }
+
+  const SourceRange range = table->sourceRange();
+  const QString& markdown = session_->markdownText();
+  if (range.byteStart < 0 || range.byteEnd < range.byteStart || range.byteEnd > markdown.size()) {
+    return false;
+  }
+
+  QApplication::clipboard()->setText(markdown.mid(range.byteStart, range.byteEnd - range.byteStart));
+  return true;
+}
+
+bool TableController::formatCurrentTableSource() {
+  if (!session_) {
+    return false;
+  }
+
+  const TableLocation beforeLocation = currentCell();
+  if (!beforeLocation.isValid()) {
+    emit tableCommandRejected(QStringLiteral("No table cell is active."));
+    return false;
+  }
+
+  MarkdownNode* table = tableForLocation(beforeLocation);
+  if (!table) {
+    return false;
+  }
+
+  const SourceRange range = table->sourceRange();
+  const QString beforeText = session_->markdownText();
+  if (range.byteStart < 0 || range.byteEnd < range.byteStart || range.byteEnd > beforeText.size()) {
+    return false;
+  }
+
+  MarkdownSerializer serializer;
+  const QString replacementText = serializer.serializeBlock(*table);
+  const QString removedText = beforeText.mid(range.byteStart, range.byteEnd - range.byteStart);
+  if (removedText == replacementText) {
+    return false;
+  }
+
+  const CursorPosition beforeCursor = selection_ ? selection_->cursorPosition() : CursorPosition();
+  QVector<LocalEditNodeHint> nodeHints{LocalEditNodeHint{beforeLocation.tableId, range.byteStart, BlockType::Table}};
+  if (!session_->applyTextDelta(range.byteStart, range.byteEnd - range.byteStart, replacementText, true, std::move(nodeHints))) {
+    return false;
+  }
+
+  TableLocation afterLocation = beforeLocation;
+  if (MarkdownNode* reparsedTable = tableForLocation(beforeLocation)) {
+    afterLocation.tableId = reparsedTable->id();
+    afterLocation.tableIndex = tableIndexFor(*reparsedTable);
+  }
+  const CursorPosition nextCursor = cursorForLocation(afterLocation);
+  if (selection_ && nextCursor.isValid()) {
+    selection_->setCursorPosition(nextCursor);
+  }
+  if (undoStack_) {
+    undoStack_->push(EditTransaction(
+        EditTransaction::Kind::ReplaceDocumentText,
+        QStringLiteral("Format Table Source"),
+        TextDeltaCommand{
+            TextDelta{range.byteStart, removedText, replacementText},
+            beforeCursor,
+            nextCursor,
+            QVector<NodeId>{beforeLocation.tableId}}));
+  }
+  if (brushQueue_) {
+    brushQueue_->requestBlockRefresh(afterLocation.tableId.isValid() ? afterLocation.tableId : beforeLocation.tableId);
+  }
+  return true;
+}
+
 bool TableController::deleteCurrentTable() {
   if (!session_) {
     return false;
@@ -467,7 +556,7 @@ bool TableController::insertTable(int rows, int columns) {
     rowNode->setTableRowIsHeader(row == 0);
     for (int column = 0; column < columns; ++column) {
       auto cell = std::make_unique<MarkdownNode>(BlockType::TableCell);
-      cell->inlines().push_back(InlineNode::text(row == 0 ? QStringLiteral("Header") : QString()));
+      cell->inlines().push_back(InlineNode::text(QString()));
       rowNode->appendChild(std::move(cell));
     }
     table->appendChild(std::move(rowNode));

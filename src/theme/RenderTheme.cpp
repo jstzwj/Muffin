@@ -44,7 +44,7 @@ RenderTheme RenderTheme::newsprint(int zoomPercent) {
   theme.codeBorderColor_ = QColor(QStringLiteral("#ded8cc"));
   theme.quoteBorderColor_ = QColor(QStringLiteral("#c8bfae"));
   theme.tableBorderColor_ = QColor(QStringLiteral("#d8d0c2"));
-  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#eee9df"));
+  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#efe3ce"));
   theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#f6f3ed"));
   theme.selectionColor_ = QColor(QStringLiteral("#d9e8ef"));
   theme.setZoomPercent(zoomPercent);
@@ -61,7 +61,7 @@ RenderTheme RenderTheme::night(int zoomPercent) {
   theme.codeBorderColor_ = QColor(QStringLiteral("#3d444d"));
   theme.quoteBorderColor_ = QColor(QStringLiteral("#56616d"));
   theme.tableBorderColor_ = QColor(QStringLiteral("#3d444d"));
-  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#2b3138"));
+  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#303b4a"));
   theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#242a31"));
   theme.selectionColor_ = QColor(QStringLiteral("#264f78"));
   theme.setZoomPercent(zoomPercent);
@@ -78,7 +78,7 @@ RenderTheme RenderTheme::pixyll(int zoomPercent) {
   theme.codeBorderColor_ = QColor(QStringLiteral("#dddddd"));
   theme.quoteBorderColor_ = QColor(QStringLiteral("#7a7a7a"));
   theme.tableBorderColor_ = QColor(QStringLiteral("#dddddd"));
-  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#f7f7f7"));
+  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#eef6ff"));
   theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#fbfbfb"));
   theme.selectionColor_ = QColor(QStringLiteral("#cfe8ff"));
   theme.setZoomPercent(zoomPercent);
@@ -95,7 +95,7 @@ RenderTheme RenderTheme::whitey(int zoomPercent) {
   theme.codeBorderColor_ = QColor(QStringLiteral("#e1e4e8"));
   theme.quoteBorderColor_ = QColor(QStringLiteral("#cccccc"));
   theme.tableBorderColor_ = QColor(QStringLiteral("#e1e4e8"));
-  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#f5f5f5"));
+  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#eef5ff"));
   theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#fafafa"));
   theme.selectionColor_ = QColor(QStringLiteral("#dcecff"));
   theme.setZoomPercent(zoomPercent);

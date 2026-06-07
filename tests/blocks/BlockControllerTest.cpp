@@ -280,7 +280,7 @@ void testInsertTableUndoUsesInsertNodeCommand() {
   setCursor(controller.selection(), paragraph, 5);
 
   require(controller.tableController().insertTable(), "insert table should work");
-  require(session.markdownText().startsWith(QStringLiteral("alpha\n\n| Header | Header |")), "insert table text mismatch");
+  require(session.markdownText().startsWith(QStringLiteral("alpha\n\n|  |  |")), "insert table text mismatch");
   require(controller.undoStack().canUndo(), "insert table should push undo");
 
   const EditTransaction transaction = controller.undoStack().takeUndo();
@@ -293,7 +293,7 @@ void testInsertTableUndoUsesInsertNodeCommand() {
   require(session.markdownText() == QStringLiteral("alpha"), "insert table undo text mismatch");
 
   controller.redo();
-  require(session.markdownText().startsWith(QStringLiteral("alpha\n\n| Header | Header |")), "insert table redo text mismatch");
+  require(session.markdownText().startsWith(QStringLiteral("alpha\n\n|  |  |")), "insert table redo text mismatch");
   require(controller.selection().hasCursor(), "insert table redo should keep cursor");
   require(controller.tableController().currentCell().isValid(), "insert table redo should restore table cursor");
 }

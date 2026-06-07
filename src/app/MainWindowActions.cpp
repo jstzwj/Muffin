@@ -12,7 +12,10 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QDesktopServices>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QElapsedTimer>
+#include <QFormLayout>
 #include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
@@ -21,7 +24,9 @@
 #include <QMimeData>
 #include <QMessageBox>
 #include <QPlainTextEdit>
+#include <QPushButton>
 #include <QSettings>
+#include <QSpinBox>
 #include <QTextCursor>
 #include <QTimer>
 #include <QToolButton>
@@ -51,10 +56,6 @@ private:
   QElapsedTimer timer_;
 };
 
-}  // namespace
-
-namespace muffin {
-
 int countWords(const QString& text) {
   int count = 0;
   bool inWord = false;
@@ -68,33 +69,33 @@ int countWords(const QString& text) {
   return count;
 }
 
-QString zoneName(HitTestResult::Zone zone) {
+QString zoneName(muffin::HitTestResult::Zone zone) {
   switch (zone) {
-    case HitTestResult::Zone::Text:
+    case muffin::HitTestResult::Zone::Text:
       return QStringLiteral("text");
-    case HitTestResult::Zone::Marker:
+    case muffin::HitTestResult::Zone::Marker:
       return QStringLiteral("marker");
-    case HitTestResult::Zone::TableCell:
+    case muffin::HitTestResult::Zone::TableCell:
       return QStringLiteral("table");
-    case HitTestResult::Zone::Code:
+    case muffin::HitTestResult::Zone::Code:
       return QStringLiteral("code");
-    case HitTestResult::Zone::Math:
+    case muffin::HitTestResult::Zone::Math:
       return QStringLiteral("math");
-    case HitTestResult::Zone::Html:
+    case muffin::HitTestResult::Zone::Html:
       return QStringLiteral("html");
-    case HitTestResult::Zone::FrontMatter:
+    case muffin::HitTestResult::Zone::FrontMatter:
       return QStringLiteral("front matter");
-    case HitTestResult::Zone::Block:
+    case muffin::HitTestResult::Zone::Block:
       return QStringLiteral("block");
-    case HitTestResult::Zone::BlockAfter:
+    case muffin::HitTestResult::Zone::BlockAfter:
       return QStringLiteral("block after");
-    case HitTestResult::Zone::None:
+    case muffin::HitTestResult::Zone::None:
     default:
       return QStringLiteral("none");
   }
 }
 
-}  // namespace muffin
+}  // namespace
 
 void muffin::MainWindow::setupConnections() {
   editorController_.attach(&session_, renderView_);
@@ -142,21 +143,25 @@ void muffin::MainWindow::setupConnections() {
     updateParagraphActions();
     QMenu menu(this);
     const QStringList ids = {
+        QStringLiteral("table.insert_table"),
         QStringLiteral("table.insert_row_before"),
         QStringLiteral("table.insert_row_after"),
-        QStringLiteral("table.delete_row"),
         QStringLiteral("table.insert_column_before"),
         QStringLiteral("table.insert_column_after"),
-        QStringLiteral("table.delete_column"),
         QStringLiteral("table.move_row_up"),
         QStringLiteral("table.move_row_down"),
         QStringLiteral("table.move_column_left"),
         QStringLiteral("table.move_column_right"),
+        QStringLiteral("table.delete_row"),
+        QStringLiteral("table.delete_column"),
+        QStringLiteral("table.copy_table"),
+        QStringLiteral("table.format_source"),
         QStringLiteral("table.align_none"),
         QStringLiteral("table.delete_table"),
     };
     for (const QString& id : ids) {
-      if (id == QStringLiteral("table.insert_column_before") || id == QStringLiteral("table.move_row_up") || id == QStringLiteral("table.align_none") ||
+      if (id == QStringLiteral("table.insert_row_before") || id == QStringLiteral("table.insert_column_before") || id == QStringLiteral("table.move_row_up") ||
+          id == QStringLiteral("table.delete_row") || id == QStringLiteral("table.copy_table") || id == QStringLiteral("table.align_none") ||
           id == QStringLiteral("table.delete_table")) {
         menu.addSeparator();
       }
@@ -451,8 +456,10 @@ void muffin::MainWindow::setupConnections() {
   commands_.bind(QStringLiteral("table.align_center"), [this] { editorController_.tableController().setCurrentColumnAlignment(TableAlignment::Center); });
   commands_.bind(QStringLiteral("table.align_right"), [this] { editorController_.tableController().setCurrentColumnAlignment(TableAlignment::Right); });
   commands_.bind(QStringLiteral("table.align_none"), [this] { editorController_.tableController().setCurrentColumnAlignment(TableAlignment::None); });
+  commands_.bind(QStringLiteral("table.copy_table"), [this] { editorController_.tableController().copyCurrentTable(); });
+  commands_.bind(QStringLiteral("table.format_source"), [this] { editorController_.tableController().formatCurrentTableSource(); });
   commands_.bind(QStringLiteral("table.delete_table"), [this] { editorController_.tableController().deleteCurrentTable(); });
-  commands_.bind(QStringLiteral("table.insert_table"), [this] { editorController_.tableController().insertTable(); });
+  commands_.bind(QStringLiteral("table.insert_table"), [this] { insertTableWithDialog(); });
   commands_.bind(QStringLiteral("paragraph.yaml"), [this] { editorController_.frontMatterController().insertFrontMatter(FrontMatterFormat::Yaml); });
   commands_.bind(QStringLiteral("paragraph.toml"), [this] { editorController_.frontMatterController().insertFrontMatter(FrontMatterFormat::Toml); });
   commands_.bind(QStringLiteral("paragraph.json"), [this] { editorController_.frontMatterController().insertFrontMatter(FrontMatterFormat::Json); });
@@ -754,6 +761,8 @@ void muffin::MainWindow::updateTableActions() {
       QStringLiteral("table.align_center"),
       QStringLiteral("table.align_right"),
       QStringLiteral("table.align_none"),
+      QStringLiteral("table.copy_table"),
+      QStringLiteral("table.format_source"),
       QStringLiteral("table.delete_table"),
   };
   for (const QString& id : ids) {
@@ -844,13 +853,55 @@ void muffin::MainWindow::updateWordCountNow() {
   if (!wordsLabel_ || !wordCountDirty_) {
     return;
   }
-  wordsLabel_->setText(tr("%1 words").arg(muffin::countWords(session_.markdownText())));
+  wordsLabel_->setText(tr("%1 words").arg(countWords(session_.markdownText())));
   wordCountDirty_ = false;
 }
 
 bool muffin::MainWindow::sourceModeEnabled() const {
   const QAction* action = commands_.action(QStringLiteral("view.source_mode"));
   return action && action->isChecked();
+}
+
+void muffin::MainWindow::insertTableWithDialog() {
+  if (sourceModeEnabled()) {
+    return;
+  }
+
+  QDialog dialog(this);
+  dialog.setWindowTitle(tr("Insert Table"));
+
+  auto* layout = new QFormLayout(&dialog);
+  layout->setContentsMargins(18, 16, 18, 14);
+  layout->setSpacing(10);
+
+  auto* rowSpin = new QSpinBox(&dialog);
+  rowSpin->setRange(1, 99);
+  rowSpin->setValue(2);
+  rowSpin->setAccelerated(true);
+
+  auto* columnSpin = new QSpinBox(&dialog);
+  columnSpin->setRange(1, 99);
+  columnSpin->setValue(2);
+  columnSpin->setAccelerated(true);
+
+  layout->addRow(tr("Rows:"), rowSpin);
+  layout->addRow(tr("Columns:"), columnSpin);
+
+  auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+  buttons->button(QDialogButtonBox::Ok)->setText(tr("OK"));
+  buttons->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
+  layout->addRow(buttons);
+  connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+  connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+  rowSpin->selectAll();
+  rowSpin->setFocus(Qt::OtherFocusReason);
+
+  if (dialog.exec() != QDialog::Accepted) {
+    return;
+  }
+
+  editorController_.tableController().insertTable(rowSpin->value(), columnSpin->value());
 }
 
 void muffin::MainWindow::undoEdit() {

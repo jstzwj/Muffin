@@ -66,7 +66,7 @@ private:
   QColor codeBorderColor_ = QColor(QStringLiteral("#e5e7eb"));
   QColor quoteBorderColor_ = QColor(QStringLiteral("#d0d7de"));
   QColor tableBorderColor_ = QColor(QStringLiteral("#dfe2e5"));
-  QColor tableHeaderBackgroundColor_ = QColor(QStringLiteral("#f6f8fa"));
+  QColor tableHeaderBackgroundColor_ = QColor(QStringLiteral("#edf4ff"));
   QColor tableAlternateBackgroundColor_ = QColor(QStringLiteral("#f6f8fa"));
   QColor selectionColor_ = QColor(QStringLiteral("#d7e8ff"));
 };
