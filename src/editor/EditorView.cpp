@@ -5,6 +5,7 @@
 #include "editor/TableToolbar.h"
 
 #include <QApplication>
+#include <QDesktopServices>
 #include <QElapsedTimer>
 #include <QPainter>
 #include <QLoggingCategory>
@@ -17,6 +18,7 @@
 #include <QFontMetricsF>
 #include <QTextLayout>
 #include <QTextOption>
+#include <QUrl>
 #include <QKeyEvent>
 
 namespace muffin {
@@ -608,6 +610,11 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     setFocus(Qt::MouseFocusReason);
     const HitTestResult hit = hitTest(event->position());
+    if (event->modifiers().testFlag(Qt::ControlModifier) && hit.isValid() && !hit.linkHref.isEmpty()) {
+      QDesktopServices::openUrl(QUrl(hit.linkHref));
+      event->accept();
+      return;
+    }
     if (event->modifiers().testFlag(Qt::ShiftModifier) && hit.isValid() && isSelectableZone(hit.zone) && cursorPosition_.isValid()) {
       SelectionRange range;
       range.anchor = selection_.anchor.isValid() ? selection_.anchor : cursorPosition_;
@@ -1189,7 +1196,9 @@ void EditorView::updateDragSelection(QPointF viewportPos) {
 
 void EditorView::updateMouseCursor(QPointF viewportPos) {
   const HitTestResult hit = hitTest(viewportPos);
-  if (hit.isValid() &&
+  if (hit.isValid() && !hit.linkHref.isEmpty()) {
+    viewport()->setCursor(Qt::PointingHandCursor);
+  } else if (hit.isValid() &&
       (hit.zone == HitTestResult::Zone::Text || hit.zone == HitTestResult::Zone::Code || hit.zone == HitTestResult::Zone::Math ||
        hit.zone == HitTestResult::Zone::Html || hit.zone == HitTestResult::Zone::FrontMatter || hit.zone == HitTestResult::Zone::TableCell ||
        hit.zone == HitTestResult::Zone::BlockAfter)) {

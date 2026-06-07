@@ -29,6 +29,7 @@ struct HitTestResult {
   QRectF cursorRect;
   int tableRow = -1;
   int tableColumn = -1;
+  QString linkHref;
 
   bool isValid() const {
     return blockId.isValid();

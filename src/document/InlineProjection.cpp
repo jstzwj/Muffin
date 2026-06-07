@@ -84,6 +84,7 @@ InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString s
   displayText_ = state.displayText;
   visibleText_ = state.visibleText;
   spans_ = state.spans;
+  linkRanges_ = state.linkRanges;
   if (displayText_.isEmpty() && !sourceText_.isEmpty()) {
     appendTextSpan(state, InlineType::Text, InlineSpanKind::Text, 0, sourceText_.size(), sourceText_, true);
     displayText_ = state.displayText;
@@ -113,6 +114,18 @@ QString InlineProjection::visibleText() const {
 
 const QVector<InlineProjectionSpan>& InlineProjection::spans() const {
   return spans_;
+}
+
+QString InlineProjection::linkHrefAtDisplayOffset(qsizetype displayOffset) const {
+  if (!valid_ || linkRanges_.isEmpty()) {
+    return {};
+  }
+  for (const LinkRange& range : linkRanges_) {
+    if (displayOffset >= range.displayStart && displayOffset < range.displayEnd) {
+      return range.href;
+    }
+  }
+  return {};
 }
 
 bool InlineProjection::sourceOffsetForVisibleOffset(qsizetype visibleOffset, qsizetype& sourceOffset) const {
@@ -543,6 +556,7 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
       const QString label = markdownForInlines(node.children());
       if (isAutolinkInline(node, label)) {
         appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, label, true);
+        state.linkRanges.push_back({displayStart, state.displayOffset, node.href()});
         break;
       }
       const QString markdown = state.sourceText->mid(sourceStart, sourceEnd - sourceStart);
@@ -558,6 +572,7 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
           span.type = InlineType::Link;
         }
       }
+      state.linkRanges.push_back({displayStart, state.displayOffset, node.href()});
       if (active) {
         appendTextSpan(state, node.type(), InlineSpanKind::HiddenSyntax, contentEnd, sourceEnd, state.sourceText->mid(contentEnd, sourceEnd - contentEnd), false);
       }

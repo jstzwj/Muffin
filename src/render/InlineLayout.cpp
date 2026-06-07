@@ -158,6 +158,13 @@ QRectF InlineLayout::hitTestCursorRect(QPointF localPos) const {
   return textLayoutHitForPoint(localPos).cursorRect;
 }
 
+QString InlineLayout::linkHrefAtLocalPos(QPointF localPos) const {
+  if (!textLayout_) return {};
+  const qsizetype layoutOffset = textLayoutDisplayOffsetForPoint(localPos);
+  const qsizetype projOffset = projectionDisplayOffsetForLayoutOffset(layoutOffset, InlineProjectionBias::Backward);
+  return projection_.linkHrefAtDisplayOffset(projOffset);
+}
+
 QRectF InlineLayout::cursorRect(qsizetype textOffset) const {
   for (const MathAtom& atom : mathAtoms_) {
     if (textOffset > atom.visibleStart && textOffset < atom.visibleEnd) {

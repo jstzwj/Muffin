@@ -23,6 +23,12 @@ enum class InlineSpanKind {
   Atom
 };
 
+struct LinkRange {
+  qsizetype displayStart = 0;
+  qsizetype displayEnd = 0;
+  QString href;
+};
+
 struct InlineProjectionSpan {
   InlineType type = InlineType::Unknown;
   InlineSpanKind kind = InlineSpanKind::Text;
@@ -72,6 +78,7 @@ public:
   QString displayText() const;
   QString visibleText() const;
   const QVector<InlineProjectionSpan>& spans() const;
+  QString linkHrefAtDisplayOffset(qsizetype displayOffset) const;
 
   bool sourceOffsetForVisibleOffset(qsizetype visibleOffset, qsizetype& sourceOffset) const;
   bool visibleOffsetForSourceOffset(qsizetype sourceOffset, qsizetype& visibleOffset) const;
@@ -96,6 +103,7 @@ private:
     QString displayText;
     QString visibleText;
     QVector<InlineProjectionSpan> spans;
+    QVector<LinkRange> linkRanges;
   };
 
   static QString markerForInline(const InlineNode& node);
@@ -115,6 +123,7 @@ private:
   QString displayText_;
   QString visibleText_;
   QVector<InlineProjectionSpan> spans_;
+  QVector<LinkRange> linkRanges_;
   bool valid_ = false;
 };
 

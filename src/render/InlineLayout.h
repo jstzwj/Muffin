@@ -44,6 +44,7 @@ public:
   qsizetype hitTestTextOffset(QPointF localPos) const;
   qsizetype hitTestSourceOffset(QPointF localPos) const;
   QRectF hitTestCursorRect(QPointF localPos) const;
+  QString linkHrefAtLocalPos(QPointF localPos) const;
   QRectF cursorRect(qsizetype textOffset) const;
   QRectF cursorRectForSourceOffset(qsizetype sourceOffset) const;
   QVector<QRectF> selectionRects(qsizetype startOffset, qsizetype endOffset) const;
