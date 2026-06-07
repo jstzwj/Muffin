@@ -303,13 +303,12 @@ void MainWindow::setupThemeMenu() {
 
 void MainWindow::setupHelpMenu() {
   QMenu* help = menuBar()->addMenu(tr("Help"));
-  addAction(help, QStringLiteral("help.whats_new"), tr("What's New..."), {}, false);
   addAction(help, QStringLiteral("help.quick_start"), tr("Quick Start"), {}, false);
   addAction(help, QStringLiteral("help.markdown_ref"), tr("Markdown Reference"), {}, false);
   addAction(help, QStringLiteral("help.custom_themes"), tr("Custom Themes"), {}, false);
   help->addSeparator();
   addAction(help, QStringLiteral("help.acknowledgements"), tr("Acknowledgements"), {}, false);
-  addAction(help, QStringLiteral("help.changelog"), tr("Changelog"), {}, false);
+  addAction(help, QStringLiteral("help.changelog"), tr("Changelog"));
   addAction(help, QStringLiteral("help.website"), tr("Official Website"));
   addAction(help, QStringLiteral("help.feedback"), tr("Feedback"));
   addAction(help, QStringLiteral("help.update"), tr("Check for Updates..."), {}, false);

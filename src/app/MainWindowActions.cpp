@@ -554,6 +554,10 @@ void MainWindow::setupConnections() {
     QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/jstzwj/Muffin")));
   });
 
+  commands_.bind(QStringLiteral("help.changelog"), [] {
+    QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/jstzwj/Muffin/blob/main/CHANGELOG.md")));
+  });
+
   commands_.bind(QStringLiteral("help.feedback"), [] {
     QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/jstzwj/Muffin/issues")));
   });
