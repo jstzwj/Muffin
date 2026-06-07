@@ -5,7 +5,29 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2026-06-07
+## [0.1.1] - 2026-06-07
+
+### Added
+- **Link hover cursor** - Mouse cursor changes to pointing hand when hovering over inline links, reference links, and autolinks in the rendered view
+- **Ctrl+Click link navigation** - Ctrl+Left-click on any link (inline `[text](url)`, reference `[text][ref]`, autolink `<url>`) opens it in the system browser via `QDesktopServices::openUrl()`
+- **Line break menu** - Edit → Line Breaks submenu with Windows (CRLF) / Unix (LF) radio selection, controlling the line ending style used when saving files
+- **Trailing newline on save** - Optional "Ensure Trailing Newline on Save" checkbox in the Line Breaks submenu, ensuring saved files always end with a newline character
+- **Changelog menu action** - Help → Changelog now opens the GitHub changelog page in the browser
+
+### Changed
+- **File save pipeline** - Removed `QIODevice::Text` flag from file I/O; line endings are now explicitly controlled by the user's Line Breaks preference instead of platform-dependent Qt translation
+- **File read pipeline** - All line endings are normalized to LF on load, regardless of the file's original line ending style
+- **Typewriter mode scrolling** - Extended scroll bar range when typewriter mode is enabled, allowing the cursor to be vertically centered even in blank or short documents
+- **Preferences dialog** - Restructured into multi-page layout with Files, Editor, Image, Markdown, Export, Appearance, and General pages
+
+### Removed
+- **"What's New..." menu item** - Removed from the Help menu
+- **"Include beta updates" checkbox** - Removed from the General preferences page
+
+### Fixed
+- **Typewriter mode in short documents** - Fixed cursor not centering vertically when the document is shorter than the viewport
+
+[0.1.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.0
 
 ### Added
 - **WYSIWYG Markdown editor** - Single-pane editing with live rendered output, keeping Markdown as the source of truth
@@ -56,4 +78,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.1.1]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.1
 [0.1.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.0
