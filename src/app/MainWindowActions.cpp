@@ -106,7 +106,7 @@ void MainWindow::setupConnections() {
   connect(&editorController_, &EditorController::cursorChanged, this, [this](const HitTestResult& hit) {
     updateRenderCursorStatus(hit);
     if (typewriterMode_ && !sourceModeEnabled()) {
-      renderView_->scrollToCursorCentered();
+      renderView_->scrollToCursorCenteredAnimated();
     }
   });
   connect(renderView_, &EditorView::codeLanguageCommitted, this, [this](NodeId codeId, const QString& language) {

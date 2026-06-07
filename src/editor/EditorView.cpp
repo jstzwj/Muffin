@@ -9,6 +9,7 @@
 #include <QPainter>
 #include <QLoggingCategory>
 #include <QScrollBar>
+#include <QPropertyAnimation>
 #include <QVector>
 #include <QWheelEvent>
 #include <QMouseEvent>
@@ -238,6 +239,9 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
     updateCodeLanguageEditor();
     updateTableToolbar();
   });
+  connect(verticalScrollBar(), &QScrollBar::sliderPressed, this, [this] {
+    stopScrollAnimation();
+  });
 }
 
 void EditorView::setDocument(const MarkdownDocument& document) {
@@ -448,6 +452,54 @@ void EditorView::setFocusMode(bool enabled) {
   viewport()->update();
 }
 
+void EditorView::ensureScrollAnimation() {
+  if (!scrollAnimation_) {
+    scrollAnimation_ = new QPropertyAnimation(verticalScrollBar(), QByteArrayLiteral("value"), this);
+    scrollAnimation_->setEasingCurve(QEasingCurve(QEasingCurve::OutCubic));
+  }
+}
+
+void EditorView::stopScrollAnimation() {
+  if (scrollAnimation_ && scrollAnimation_->state() == QAbstractAnimation::Running) {
+    scrollAnimation_->stop();
+  }
+}
+
+void EditorView::scrollToCursorCenteredAnimated() {
+  if (!cursorHit_.isValid()) {
+    return;
+  }
+
+  QRectF cursor = cursorHit_.cursorRect;
+  if (cursor.isEmpty()) {
+    cursor = QRectF(cursorHit_.blockRect.left(), cursorHit_.blockRect.top(), 1.0, cursorHit_.blockRect.height());
+  }
+  if (cursor.isEmpty()) {
+    return;
+  }
+
+  QScrollBar* scrollBar = verticalScrollBar();
+  const qreal cursorCenterY = cursor.center().y();
+  const qreal viewportHeight = static_cast<qreal>(viewport()->height());
+  const int target = qBound(scrollBar->minimum(), qRound(cursorCenterY - viewportHeight / 2.0), scrollBar->maximum());
+
+  const int current = scrollBar->value();
+  if (current == target) {
+    return;
+  }
+
+  ensureScrollAnimation();
+  stopScrollAnimation();
+
+  const int delta = qAbs(target - current);
+  const int duration = qBound(100, delta / 2, 300);
+
+  scrollAnimation_->setDuration(duration);
+  scrollAnimation_->setStartValue(current);
+  scrollAnimation_->setEndValue(target);
+  scrollAnimation_->start();
+}
+
 const BlockLayout* EditorView::blockAtViewportPos(QPointF viewportPos) const {
   if (!layout_) {
     return nullptr;
@@ -541,6 +593,7 @@ void EditorView::resizeEvent(QResizeEvent* event) {
 }
 
 void EditorView::wheelEvent(QWheelEvent* event) {
+  stopScrollAnimation();
   QAbstractScrollArea::wheelEvent(event);
   updateCodeLanguageEditor();
   updateTableToolbar();

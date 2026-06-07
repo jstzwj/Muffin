@@ -10,6 +10,7 @@
 
 #include <memory>
 
+class QPropertyAnimation;
 class QWidget;
 
 namespace muffin {
@@ -40,6 +41,7 @@ public:
   QRectF nodeRect(NodeId id) const;
   void scrollToNode(NodeId id);
   void scrollToCursorCentered();
+  void scrollToCursorCenteredAnimated();
   void setTypewriterMode(bool enabled);
   void setFocusMode(bool enabled);
   const BlockLayout* blockAtViewportPos(QPointF viewportPos) const;
@@ -87,6 +89,8 @@ private:
   void applySelectionRange(SelectionRange selection);
   void updateDragSelection(QPointF viewportPos);
   void updateMouseCursor(QPointF viewportPos);
+  void ensureScrollAnimation();
+  void stopScrollAnimation();
 
   QPointer<const MarkdownDocument> document_;
   RenderTheme theme_ = RenderTheme::typoraLike();
@@ -103,6 +107,7 @@ private:
   TableToolbar* tableToolbar_ = nullptr;
   bool typewriterMode_ = false;
   bool focusMode_ = false;
+  QPropertyAnimation* scrollAnimation_ = nullptr;
 };
 
 }  // namespace muffin
