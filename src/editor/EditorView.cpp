@@ -3,6 +3,7 @@
 #include "document/MarkdownDocument.h"
 #include "editor/CodeLanguageEditor.h"
 #include "editor/TableToolbar.h"
+#include "render/ImageLoader.h"
 
 #include <QApplication>
 #include <QDesktopServices>
@@ -253,6 +254,12 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
   connect(tableToolbar_, &TableToolbar::moreActionsRequested, this, &EditorView::tableMoreActionsRequested);
   connect(tableToolbar_, &TableToolbar::deleteRequested, this, &EditorView::tableDeleteRequested);
   connect(tableToolbar_, &TableToolbar::resizeRequested, this, &EditorView::tableResizeRequested);
+
+  connect(&ImageLoader::instance(), &ImageLoader::imageReady, this, [this](const QString&) {
+    if (document_) {
+      setDocument(*document_);
+    }
+  });
 
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this, [this] {
     updateCodeLanguageEditor();

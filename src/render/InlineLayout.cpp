@@ -1,5 +1,7 @@
 #include "render/InlineLayout.h"
 
+#include "render/ImageLoader.h"
+
 #include <QPainter>
 #include <QPen>
 #include <QTextCharFormat>
@@ -468,10 +470,11 @@ QString InlineLayout::imageSrcForVisibleRange(const QVector<InlineNode>& inlines
 void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width) {
   Q_UNUSED(theme);
   Q_UNUSED(width);
+
   // Quick check: are there any image Atom spans at all?
   bool hasImageAtom = false;
   for (const InlineProjectionSpan& span : projection_.spans()) {
-    if (span.type == InlineType::Image && span.kind == InlineSpanKind::Atom && span.visibleEnd > span.visibleStart) {
+    if (span.type == InlineType::Image && span.kind == InlineSpanKind::Atom && span.displayEnd > span.displayStart) {
       hasImageAtom = true;
       break;
     }
@@ -480,57 +483,56 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
     return;
   }
 
-  // Rebuild displayText_ and offsetMap_ to replace image Atom spans with image placeholders.
-  // This follows the same pattern as buildMathAtoms().
-  const QString currentDisplay = displayText_;
+  // Iterate projection spans directly (same pattern as buildMathAtoms).
+  // Read text from projection_.displayText() (not the math-rebuilt displayText_)
+  // because span.displayStart/displayEnd are projection coordinates.
+  const QString projectedDisplay = projection_.displayText();
   QString rebuiltDisplay;
   QVector<OffsetMapEntry> rebuiltMap;
   QVector<DisplayOffsetMapEntry> rebuiltDisplayMap;
 
-  for (const OffsetMapEntry& entry : offsetMap_) {
-    if (entry.displayEnd <= entry.displayStart) {
+  for (const InlineProjectionSpan& span : projection_.spans()) {
+    if (span.displayEnd <= span.displayStart) {
       continue;
     }
 
-    // Check if this entry's visible range corresponds to an image Atom in the projection
-    bool isImage = false;
-    qsizetype imgSourceStart = 0, imgSourceEnd = 0;
-    for (const InlineProjectionSpan& span : projection_.spans()) {
-      if (span.type == InlineType::Image && span.kind == InlineSpanKind::Atom &&
-          span.visibleStart == entry.visibleStart && span.visibleEnd == entry.visibleEnd) {
-        isImage = true;
-        imgSourceStart = span.sourceStart;
-        imgSourceEnd = span.sourceEnd;
-        break;
-      }
-    }
+    const bool isImageAtom = span.type == InlineType::Image && span.kind == InlineSpanKind::Atom;
+    const QString spanText = projectedDisplay.mid(span.displayStart, span.displayEnd - span.displayStart);
 
-    const QString spanText = currentDisplay.mid(entry.displayStart, entry.displayEnd - entry.displayStart);
-
-    if (!isImage) {
+    if (!isImageAtom) {
       const qsizetype displayStart = rebuiltDisplay.size();
       rebuiltDisplay += spanText;
-      rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), entry.visibleStart, entry.visibleEnd});
-      rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{entry.displayStart, entry.displayEnd, displayStart, rebuiltDisplay.size()});
+      rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), span.visibleStart, span.visibleEnd});
+      rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, displayStart, rebuiltDisplay.size()});
       continue;
     }
 
-    // Extract image src URL from the inline nodes using visible range
-    const QString srcUrl = imageSrcForVisibleRange(inlines, entry.visibleStart, entry.visibleEnd);
+    // Extract image src URL from the inline nodes
+    const QString srcUrl = imageSrcForVisibleRange(inlines, span.visibleStart, span.visibleEnd);
     if (srcUrl.isEmpty()) {
       const qsizetype displayStart = rebuiltDisplay.size();
       rebuiltDisplay += spanText;
-      rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), entry.visibleStart, entry.visibleEnd});
-      rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{entry.displayStart, entry.displayEnd, displayStart, rebuiltDisplay.size()});
+      rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), span.visibleStart, span.visibleEnd});
+      rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, displayStart, rebuiltDisplay.size()});
       continue;
     }
 
-    // Try to load the image
+    // Try to load the image — local files directly, remote URLs via async cache
     QImage image;
     constexpr qreal kMaxImageHeight = 200.0;
     QSizeF displaySize;
 
-    if (image.load(srcUrl)) {
+    const bool isRemote = srcUrl.startsWith(QStringLiteral("http:")) || srcUrl.startsWith(QStringLiteral("https:"));
+    if (isRemote) {
+      image = ImageLoader::instance().cached(srcUrl);
+      if (image.isNull()) {
+        ImageLoader::instance().request(srcUrl);
+      }
+    } else {
+      image.load(srcUrl);
+    }
+
+    if (!image.isNull()) {
       if (image.height() > kMaxImageHeight) {
         const qreal scale = kMaxImageHeight / image.height();
         displaySize = QSizeF(image.width() * scale, kMaxImageHeight);
@@ -543,8 +545,8 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
       // Failed to load — keep the alt text as-is
       const qsizetype displayStart = rebuiltDisplay.size();
       rebuiltDisplay += spanText;
-      rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), entry.visibleStart, entry.visibleEnd});
-      rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{entry.displayStart, entry.displayEnd, displayStart, rebuiltDisplay.size()});
+      rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), span.visibleStart, span.visibleEnd});
+      rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, displayStart, rebuiltDisplay.size()});
       continue;
     }
 
@@ -555,17 +557,17 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
     ImageAtom atom;
     atom.displayStart = displayStart;
     atom.displayEnd = rebuiltDisplay.size();
-    atom.sourceStart = imgSourceStart;
-    atom.sourceEnd = imgSourceEnd;
-    atom.visibleStart = entry.visibleStart;
-    atom.visibleEnd = entry.visibleEnd;
+    atom.sourceStart = span.sourceStart;
+    atom.sourceEnd = span.sourceEnd;
+    atom.visibleStart = span.visibleStart;
+    atom.visibleEnd = span.visibleEnd;
     atom.srcUrl = srcUrl;
     atom.displaySize = displaySize;
     atom.image = image;
     atom.loaded = true;
 
     rebuiltMap.push_back(OffsetMapEntry{atom.displayStart, atom.displayEnd, atom.visibleStart, atom.visibleEnd});
-    rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{entry.displayStart, entry.displayEnd, atom.displayStart, atom.displayEnd});
+    rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, atom.displayStart, atom.displayEnd});
     imageAtoms_.push_back(std::move(atom));
   }
 

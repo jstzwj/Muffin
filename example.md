@@ -74,9 +74,25 @@ Autolink: https://www.qt.io
 
 Email autolink: <hello@example.com>
 
-Image syntax:
+### Images
 
-![Muffin placeholder](docs/muffin-placeholder.png "Muffin")
+Image with title:
+
+![Test](https://raw.githubusercontent.com/github/markup/master/readme.png "Test Image")
+
+Image without title:
+
+![Octocat](https://github.githubassets.com/favicons/favicon.png)
+
+WebP images (require Qt WebP plugin):
+
+![San Juan Mountains](https://www.markdownguide.org/assets/images/generated/assets/images/san-juan-mountains-1080.webp "San Juan Mountains")
+
+![Shiprock](https://www.markdownguide.org/assets/images/generated/assets/images/shiprock-1080.webp)
+
+Image in a paragraph with surrounding text. The image ![icon](https://github.githubassets.com/favicons/favicon.png) appears inline.
+
+Multiple images in sequence: ![first](https://github.githubassets.com/favicons/favicon.png) ![second](https://github.githubassets.com/favicons/favicon.png) ![third](https://github.githubassets.com/favicons/favicon.png)
 
 [qt-link]: https://www.qt.io
 

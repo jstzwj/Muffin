@@ -27,7 +27,7 @@ if(MSVC)
   add_compile_options(/utf-8)
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg PrintSupport)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg PrintSupport Network)
 find_package(ICU REQUIRED COMPONENTS uc i18n)
 set(MUFFIN_QT_LINGUIST_BIN "" CACHE PATH "Optional Qt Linguist tool directory")
 set(MUFFIN_LOCAL_QT_LINGUIST_BIN "C:/Program Files/Qt Linguist/bin")
@@ -461,6 +461,8 @@ set(MUFFIN_UI_SOURCES
   src/render/BlockLayoutBuilder.h
   src/render/DocumentLayout.cpp
   src/render/DocumentLayout.h
+  src/render/ImageLoader.cpp
+  src/render/ImageLoader.h
   src/render/InlineLayout.cpp
   src/render/InlineLayout.h
   src/render/TreeSitterHighlighter.cpp
@@ -478,6 +480,7 @@ add_library(MuffinUi STATIC
 target_link_libraries(MuffinUi
   PUBLIC
     Qt6::Widgets
+    Qt6::Network
     MuffinCore
     tree-sitter-runtime
     tree-sitter-languages
