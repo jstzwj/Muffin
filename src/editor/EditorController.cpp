@@ -220,15 +220,14 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
   session_ = session;
   view_ = view;
 
-  const EditorContext ctx{session_, &selection_, &undoStack_, &brushQueue_};
+  const EditorContext ctx{session_, &selection_, &undoStack_, &brushQueue_, view_,
+      {{static_cast<int>(BlockType::FrontMatter), &frontMatterLiteral_},
+       {static_cast<int>(BlockType::HtmlBlock),   &htmlLiteral_},
+       {static_cast<int>(BlockType::MathBlock),   &mathLiteral_}}};
 
   inputController_.setContext(ctx);
-  inputController_.setTableController(&tableController_);
-  inputController_.setFrontMatterLiteral(&frontMatterLiteral_);
   inputController_.setCodeFenceController(&codeFenceController_);
-  inputController_.setHtmlLiteral(&htmlLiteral_);
-  inputController_.setMathLiteral(&mathLiteral_);
-  inputController_.attach(view_);
+  inputController_.setTableController(&tableController_);
   stylizeController_.setContext(ctx);
   paragraphController_.setContext(ctx);
   frontMatterLiteral_.setContext(ctx);
@@ -306,7 +305,7 @@ void EditorController::detach() {
   selection_.disconnect(this);
   undoStack_.disconnect(this);
   brushQueue_.disconnect(this);
-  inputController_.attach(nullptr);
+  inputController_.setContext(EditorContext{});
   session_ = nullptr;
   view_ = nullptr;
 }

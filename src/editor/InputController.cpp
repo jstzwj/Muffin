@@ -88,47 +88,30 @@ NodeId refreshNodeFor(DocumentSession* session, NodeId nodeId) {
 InputController::InputController(QObject* parent) : QObject(parent) {}
 
 void InputController::setContext(const EditorContext& ctx) {
+  EditorView* const oldView = ctx_.view;
   ctx_ = ctx;
+  if (oldView != ctx_.view) {
+    if (oldView) {
+      oldView->removeEventFilter(this);
+      oldView->viewport()->removeEventFilter(this);
+    }
+    if (ctx_.view) {
+      ctx_.view->installEventFilter(this);
+      ctx_.view->viewport()->installEventFilter(this);
+    }
+  }
 }
 
 void InputController::setTableController(TableController* tableController) {
   tableController_ = tableController;
 }
 
-void InputController::setFrontMatterLiteral(LiteralBlockController* frontMatter) {
-  frontMatterLiteral_ = frontMatter;
-}
-
 void InputController::setCodeFenceController(CodeFenceController* codeFenceController) {
   codeFenceController_ = codeFenceController;
 }
 
-void InputController::setHtmlLiteral(LiteralBlockController* html) {
-  htmlLiteral_ = html;
-}
-
-void InputController::setMathLiteral(LiteralBlockController* math) {
-  mathLiteral_ = math;
-}
-
-void InputController::attach(EditorView* view) {
-  if (view_ == view) {
-    return;
-  }
-  if (view_) {
-    view_->removeEventFilter(this);
-    view_->viewport()->removeEventFilter(this);
-  }
-
-  view_ = view;
-  if (view_) {
-    view_->installEventFilter(this);
-    view_->viewport()->installEventFilter(this);
-  }
-}
-
 bool InputController::eventFilter(QObject* watched, QEvent* event) {
-  if (watched == view_ || (view_ && watched == view_->viewport())) {
+  if (watched == ctx_.view || (ctx_.view && watched == ctx_.view->viewport())) {
     if (event->type() == QEvent::ShortcutOverride) {
       auto* keyEvent = static_cast<QKeyEvent*>(event);
       if (keyEvent->key() == Qt::Key_A && keyEvent->modifiers().testFlag(Qt::ControlModifier)) {
@@ -452,21 +435,19 @@ bool InputController::handleInputMethod(QInputMethodEvent* event) {
 }
 
 bool InputController::hasActiveLiteralEditor() const {
-  return (frontMatterLiteral_ && frontMatterLiteral_->isEditing()) ||
-         (codeFenceController_ && codeFenceController_->isEditing()) ||
-         (htmlLiteral_ && htmlLiteral_->isEditing()) ||
-         (mathLiteral_ && mathLiteral_->isEditing());
+  for (auto it = ctx_.literalEditors.constBegin(); it != ctx_.literalEditors.constEnd(); ++it) {
+    if (it.value() && it.value()->isEditing()) {
+      return true;
+    }
+  }
+  return codeFenceController_ && codeFenceController_->isEditing();
 }
 
 LiteralBlockController* InputController::activeLiteralEditor() const {
-  if (frontMatterLiteral_ && frontMatterLiteral_->isEditing()) {
-    return frontMatterLiteral_;
-  }
-  if (htmlLiteral_ && htmlLiteral_->isEditing()) {
-    return htmlLiteral_;
-  }
-  if (mathLiteral_ && mathLiteral_->isEditing()) {
-    return mathLiteral_;
+  for (auto it = ctx_.literalEditors.constBegin(); it != ctx_.literalEditors.constEnd(); ++it) {
+    if (it.value() && it.value()->isEditing()) {
+      return it.value();
+    }
   }
   return nullptr;
 }
@@ -484,17 +465,13 @@ void InputController::syncLiteralEditMode(NodeId newBlockId) {
   const bool isLiteral = type == BlockType::CodeFence || type == BlockType::MathBlock || type == BlockType::HtmlBlock || type == BlockType::FrontMatter;
 
   const auto exitAllLiteralEditors = [this]() {
-    if (frontMatterLiteral_) {
-      frontMatterLiteral_->exitEditMode();
+    for (auto it = ctx_.literalEditors.constBegin(); it != ctx_.literalEditors.constEnd(); ++it) {
+      if (it.value()) {
+        it.value()->exitEditMode();
+      }
     }
     if (codeFenceController_) {
       codeFenceController_->exitEditMode();
-    }
-    if (htmlLiteral_) {
-      htmlLiteral_->exitEditMode();
-    }
-    if (mathLiteral_) {
-      mathLiteral_->exitEditMode();
     }
   };
 
@@ -506,21 +483,10 @@ void InputController::syncLiteralEditMode(NodeId newBlockId) {
   }
 
   bool alreadyEditingTarget = false;
-  switch (type) {
-    case BlockType::CodeFence:
-      alreadyEditingTarget = codeFenceController_ && codeFenceController_->isEditing() && codeFenceController_->currentCodeFenceId() == newBlockId;
-      break;
-    case BlockType::MathBlock:
-      alreadyEditingTarget = mathLiteral_ && mathLiteral_->isEditing() && mathLiteral_->currentBlockId() == newBlockId;
-      break;
-    case BlockType::HtmlBlock:
-      alreadyEditingTarget = htmlLiteral_ && htmlLiteral_->isEditing() && htmlLiteral_->currentBlockId() == newBlockId;
-      break;
-    case BlockType::FrontMatter:
-      alreadyEditingTarget = frontMatterLiteral_ && frontMatterLiteral_->isEditing() && frontMatterLiteral_->currentBlockId() == newBlockId;
-      break;
-    default:
-      break;
+  if (type == BlockType::CodeFence) {
+    alreadyEditingTarget = codeFenceController_ && codeFenceController_->isEditing() && codeFenceController_->currentCodeFenceId() == newBlockId;
+  } else if (LiteralBlockController* ctrl = ctx_.literalEditors.value(static_cast<int>(type))) {
+    alreadyEditingTarget = ctrl->isEditing() && ctrl->currentBlockId() == newBlockId;
   }
   if (alreadyEditingTarget) {
     return;
@@ -530,21 +496,10 @@ void InputController::syncLiteralEditMode(NodeId newBlockId) {
   exitAllLiteralEditors();
 
   bool entered = false;
-  switch (type) {
-    case BlockType::CodeFence:
-      entered = codeFenceController_ && codeFenceController_->enterEditMode();
-      break;
-    case BlockType::MathBlock:
-      entered = mathLiteral_ && mathLiteral_->enterEditMode();
-      break;
-    case BlockType::HtmlBlock:
-      entered = htmlLiteral_ && htmlLiteral_->enterEditMode();
-      break;
-    case BlockType::FrontMatter:
-      entered = frontMatterLiteral_ && frontMatterLiteral_->enterEditMode();
-      break;
-    default:
-      break;
+  if (type == BlockType::CodeFence) {
+    entered = codeFenceController_ && codeFenceController_->enterEditMode();
+  } else if (LiteralBlockController* ctrl = ctx_.literalEditors.value(static_cast<int>(type))) {
+    entered = ctrl->enterEditMode();
   }
   if (entered) {
     ctx_.selection->setCursorPosition(savedCursor);
@@ -609,8 +564,10 @@ bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, con
   NodeId blockId;
   if (codeFenceController_ && codeFenceController_->isEditing()) {
     blockId = codeFenceController_->currentCodeFenceId();
-  } else if (mathLiteral_ && mathLiteral_->isEditing()) {
-    blockId = mathLiteral_->currentBlockId();
+  } else if (LiteralBlockController* math = ctx_.literalEditors.value(static_cast<int>(BlockType::MathBlock))) {
+    if (math->isEditing()) {
+      blockId = math->currentBlockId();
+    }
   }
   if (!blockId.isValid()) {
     return false;
@@ -671,8 +628,10 @@ bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, con
   // Exit edit mode before removing the block to clear stale editing state
   if (codeFenceController_ && codeFenceController_->isEditing()) {
     codeFenceController_->exitEditMode();
-  } else if (mathLiteral_ && mathLiteral_->isEditing()) {
-    mathLiteral_->exitEditMode();
+  } else if (LiteralBlockController* math = ctx_.literalEditors.value(static_cast<int>(BlockType::MathBlock))) {
+    if (math->isEditing()) {
+      math->exitEditMode();
+    }
   }
 
   QVector<LocalEditNodeHint> nodeHints;
@@ -903,7 +862,7 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
     return true;
   }
 
-  if (!ctx_.session || !ctx_.selection || !view_ || event->modifiers().testFlag(Qt::ControlModifier) ||
+  if (!ctx_.session || !ctx_.selection || !ctx_.view || event->modifiers().testFlag(Qt::ControlModifier) ||
       event->modifiers().testFlag(Qt::AltModifier)) {
     return false;
   }

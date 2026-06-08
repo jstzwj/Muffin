@@ -253,8 +253,10 @@ void wireInput(
     DocumentSession& session,
     SelectionController& selection,
     UndoStack& undoStack,
-    BrushQueue& brushQueue) {
-  input.setContext({&session, &selection, &undoStack, &brushQueue});
+    BrushQueue& brushQueue,
+    EditorView* view = nullptr,
+    QHash<int, LiteralBlockController*> literalEditors = {}) {
+  input.setContext({&session, &selection, &undoStack, &brushQueue, view, literalEditors});
 }
 
 void wireStyle(
@@ -811,8 +813,7 @@ void testKeyboardNavigationBasics() {
   BrushQueue brushQueue;
   InputController input;
   EditorView view;
-  wireInput(input, session, selection, undoStack, brushQueue);
-  input.attach(&view);
+  wireInput(input, session, selection, undoStack, brushQueue, &view);
 
   session.setMarkdownText(QStringLiteral("alpha\n\nbeta"), false);
   setCursor(selection, blockAt(session, 0), 5);

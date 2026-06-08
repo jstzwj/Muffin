@@ -29,11 +29,7 @@ public:
 
   void setContext(const EditorContext& ctx);
   void setTableController(TableController* tableController);
-  void setFrontMatterLiteral(LiteralBlockController* frontMatter);
   void setCodeFenceController(CodeFenceController* codeFenceController);
-  void setHtmlLiteral(LiteralBlockController* html);
-  void setMathLiteral(LiteralBlockController* math);
-  void attach(EditorView* view);
 
   bool insertText(QString text);
   bool insertParagraphBreak();
@@ -122,12 +118,8 @@ private:
   LiteralBlockController* activeLiteralEditor() const;
 
   EditorContext ctx_;
-  LiteralBlockController* frontMatterLiteral_ = nullptr;
   CodeFenceController* codeFenceController_ = nullptr;
-  LiteralBlockController* htmlLiteral_ = nullptr;
-  LiteralBlockController* mathLiteral_ = nullptr;
   TableController* tableController_ = nullptr;
-  EditorView* view_ = nullptr;
 };
 
 }  // namespace muffin

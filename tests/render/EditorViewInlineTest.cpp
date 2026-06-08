@@ -90,8 +90,10 @@ void wireInput(
     DocumentSession& session,
     SelectionController& selection,
     UndoStack& undoStack,
-    BrushQueue& brushQueue) {
-  input.setContext({&session, &selection, &undoStack, &brushQueue});
+    BrushQueue& brushQueue,
+    EditorView* view = nullptr,
+    QHash<int, LiteralBlockController*> literalEditors = {}) {
+  input.setContext({&session, &selection, &undoStack, &brushQueue, view, literalEditors});
 }
 
 void setSelection(SelectionController& selection, MarkdownNode* block, qsizetype anchor, qsizetype focus) {
@@ -461,7 +463,7 @@ void testHorizontalNavigationEntersInlineMarkers() {
   InputController input;
   wireInput(input, session, selection, undoStack, brushQueue);
   EditorView view;
-  input.attach(&view);
+  wireInput(input, session, selection, undoStack, brushQueue, &view);
 
   session.setMarkdownText(QStringLiteral("**bold**"), false);
   setSourceCursor(selection, blockAt(session, 0), 0, 0);

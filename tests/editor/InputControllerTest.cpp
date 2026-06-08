@@ -147,8 +147,10 @@ void wireInput(
     DocumentSession& session,
     SelectionController& selection,
     UndoStack& undoStack,
-    BrushQueue& brushQueue) {
-  input.setContext({&session, &selection, &undoStack, &brushQueue});
+    BrushQueue& brushQueue,
+    EditorView* view = nullptr,
+    QHash<int, LiteralBlockController*> literalEditors = {}) {
+  input.setContext({&session, &selection, &undoStack, &brushQueue, view, literalEditors});
 }
 
 void setSelection(SelectionController& selection, MarkdownNode* block, qsizetype anchor, qsizetype focus) {
@@ -1084,7 +1086,7 @@ void testListItemEditingCommands() {
   require(session.markdownText() == QStringLiteral("- alpha\n- beta"), "first list item structural indent should leave markdown unchanged");
 
   EditorView view;
-  input.attach(&view);
+  wireInput(input, session, selection, undoStack, brushQueue, &view);
   session.setMarkdownText(QStringLiteral("- alpha\n  - beta"), false);
   nestedList = firstChildOfType(listItemAt(session, 0, 0), BlockType::List);
   setCursor(selection, childAt(nestedList, 0), 0);
@@ -1104,8 +1106,7 @@ void testTabInRenderedTextInsertsZeroWidthSpace() {
   QObject::connect(&brushQueue, &BrushQueue::refreshRequested, [&tabRefreshes](BrushQueue::RefreshRequest request) {
     tabRefreshes.push_back(std::move(request));
   });
-  wireInput(input, session, selection, undoStack, brushQueue);
-  input.attach(&view);
+  wireInput(input, session, selection, undoStack, brushQueue, &view);
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 0);
@@ -1327,9 +1328,9 @@ void testInputEmptyCodeFenceBackspaceRemovesBlock() {
   mathBlock.setContext({&session, &selection, &undoStack, &brushQueue});
 
   InputController input;
-  wireInput(input, session, selection, undoStack, brushQueue);
+  wireInput(input, session, selection, undoStack, brushQueue, nullptr,
+      {{static_cast<int>(BlockType::MathBlock), &mathBlock}});
   input.setCodeFenceController(&codeFence);
-  input.setMathLiteral(&mathBlock);
 
   // Empty code fence between paragraphs
   session.setMarkdownText(QStringLiteral("before\n\n```cpp\n```\n\nafter"), false);
@@ -1381,9 +1382,9 @@ void testInputEmptyCodeFenceDeleteRemovesBlock() {
   mathBlock.setContext({&session, &selection, &undoStack, &brushQueue});
 
   InputController input;
-  wireInput(input, session, selection, undoStack, brushQueue);
+  wireInput(input, session, selection, undoStack, brushQueue, nullptr,
+      {{static_cast<int>(BlockType::MathBlock), &mathBlock}});
   input.setCodeFenceController(&codeFence);
-  input.setMathLiteral(&mathBlock);
 
   session.setMarkdownText(QStringLiteral("```cpp\n```"), false);
   require(session.document().root().children().size() == 1, "expected 1 code fence block");
@@ -1422,9 +1423,9 @@ void testInputNonEmptyCodeFenceBackspaceDoesNotRemoveBlock() {
   mathBlock.setContext({&session, &selection, &undoStack, &brushQueue});
 
   InputController input;
-  wireInput(input, session, selection, undoStack, brushQueue);
+  wireInput(input, session, selection, undoStack, brushQueue, nullptr,
+      {{static_cast<int>(BlockType::MathBlock), &mathBlock}});
   input.setCodeFenceController(&codeFence);
-  input.setMathLiteral(&mathBlock);
 
   session.setMarkdownText(QStringLiteral("```cpp\nhello\n```"), false);
   MarkdownNode* code = blockAt(session, 0);
