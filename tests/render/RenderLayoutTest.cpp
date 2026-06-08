@@ -569,7 +569,11 @@ QVector<GlyphAuditItem> nativeVisibleGlyphItems(const math::MathRenderNode& root
   const QVector<GlyphAuditItem> all = nativeGlyphItems(root, em);
   QVector<GlyphAuditItem> glyphs;
   for (const GlyphAuditItem& item : all) {
-    if (item.kind == QStringLiteral("glyph")) {
+    // Match KaTeX's katexVisibleGlyphItems filters: exclude empty text and
+    // zero-width space (U+200B).  The width-based filter is NOT applied here
+    // because native domRect.width and browser rect.width differ in origin.
+    if (item.kind == QStringLiteral("glyph") && !item.text.isEmpty() &&
+        item.text != QString::fromUtf8("\xE2\x80\x8B")) {
       glyphs.push_back(item);
     }
   }
@@ -2248,7 +2252,7 @@ void testOfficialKatexScreenshotterAudit(const QString& fixturePath) {
     qInfo().noquote() << QStringLiteral("Official render failures first 25: %1").arg(renderFailures.mid(0, 25).join(QStringLiteral(", ")));
   }
   if (!glyphCountMismatches.isEmpty()) {
-    qInfo().noquote() << QStringLiteral("Official glyph count mismatches first 25: %1").arg(glyphCountMismatches.mid(0, 25).join(QStringLiteral("; ")));
+    qInfo().noquote() << QStringLiteral("Official glyph count mismatches (%1): %2").arg(glyphCountMismatches.size()).arg(glyphCountMismatches.join(QStringLiteral("; ")));
   }
   qInfo().noquote() << "Official KaTeX bbox audit top 25 by layout error:";
   const int limit = qMin(25, bboxAudit.size());
@@ -2568,8 +2572,8 @@ void testRemainingKatexFunctionFamilies() {
     };
     require(qAbs(widthFor(QStringLiteral("\\rule{1em}{1em}"), textOptions) - 20.0) < 0.01,
             QStringLiteral("1em rule width should scale with current font size"));
-    require(qAbs(widthFor(QStringLiteral("\\scriptstyle\\rule{1em}{1em}"), scriptOptions) - 14.0) < 0.01,
-            QStringLiteral("1em rule width should scale with script font size"));
+    require(qAbs(widthFor(QStringLiteral("\\scriptstyle\\rule{1em}{1em}"), scriptOptions) - 20.0) < 0.01,
+            QStringLiteral("1em rule width should use text-style font in script context (KaTeX units.ts:67-75)"));
     require(qAbs(widthFor(QStringLiteral("\\rule{1pt}{1pt}"), textOptions) - 2.0) < 0.01,
             QStringLiteral("1pt rule width should match KaTeX ptPerEm conversion"));
     require(qAbs(widthFor(QStringLiteral("\\scriptstyle\\rule{1pt}{1pt}"), scriptOptions) - 2.0) < 0.01,

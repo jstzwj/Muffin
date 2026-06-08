@@ -126,7 +126,11 @@ void MathRenderNode::paint(QPainter& painter, QPointF origin) const {
       } else if (!svgPath.isEmpty()) {
         painter.setPen(Qt::NoPen);
         painter.setBrush(color);
-        painter.drawPath(MathSvgGeometry::painterPathFromSvgPath(svgPath, viewBox, QRectF(left, origin.y() - height, width, height + depth)));
+        // yOffset < 0 means the SVG paint region extends above the layout height
+        // (e.g. sqrt emPad padding). KaTeX uses span.style.height = texHeight + 0.08
+        // for rendering but span.height = texHeight for layout.
+        const qreal paintPad = qMin<qreal>(0.0, yOffset);
+        painter.drawPath(MathSvgGeometry::painterPathFromSvgPath(svgPath, viewBox, QRectF(left, origin.y() - height + paintPad, width, height + depth - paintPad)));
       } else if (text == QStringLiteral("\\cancel") || text == QStringLiteral("\\bcancel") || text == QStringLiteral("\\xcancel") ||
                  text == QStringLiteral("\\sout") || text == QStringLiteral("\\fbox") || text == QStringLiteral("\\colorbox") ||
                  text == QStringLiteral("\\fcolorbox") || text == QStringLiteral("\\phase") || text == QStringLiteral("\\angl")) {

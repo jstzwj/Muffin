@@ -235,12 +235,9 @@ QVector<MacroToken> applyArgs(QVector<MacroToken> body, const QVector<QVector<Ma
 }  // namespace
 
 MathMacroExpander::MathMacroExpander(MathSettings settings) : settings_(std::move(settings)) {
+  // Simple aliases (not duplicated in sections below)
   defineMacro(QStringLiteral("\\lt"), QStringLiteral("<"));
   defineMacro(QStringLiteral("\\gt"), QStringLiteral(">"));
-  defineMacro(QStringLiteral("\\not"), QStringLiteral("\\mathrel{\\mathrlap{\\@not}}"));
-  defineMacro(QStringLiteral("\\neq"), QStringLiteral("\\mathrel{\\not=}"));
-  defineMacro(QStringLiteral("\\ne"), QStringLiteral("\\neq"));
-  defineMacro(QString(QChar(0x2260)), QStringLiteral("\\neq"));
   defineMacro(QStringLiteral("\\land"), QStringLiteral("\\wedge"));
   defineMacro(QStringLiteral("\\lor"), QStringLiteral("\\vee"));
   defineMacro(QStringLiteral("\\gets"), QStringLiteral("\\leftarrow"));
@@ -249,15 +246,89 @@ MathMacroExpander::MathMacroExpander(MathSettings settings) : settings_(std::mov
   defineMacro(QStringLiteral("\\nonumber"), QStringLiteral(""));
   defineMacro(QStringLiteral("\\bgroup"), QStringLiteral("{"));
   defineMacro(QStringLiteral("\\egroup"), QStringLiteral("}"));
+  defineMacro(QStringLiteral("\\cr"), QStringLiteral("\\\\"));
+  defineMacro(QStringLiteral("\\crcr"), QStringLiteral("\\\\"));
+  defineMacro(QStringLiteral("\\DOTSB"), QStringLiteral(""));
+  defineMacro(QStringLiteral("\\DOTSI"), QStringLiteral(""));
+  defineMacro(QStringLiteral("\\DOTSX"), QStringLiteral(""));
+  defineMacro(QStringLiteral("\\@firstoftwo"), QStringLiteral("#1"), 2);
+  defineMacro(QStringLiteral("\\@secondoftwo"), QStringLiteral("#2"), 2);
+  defineMacro(QStringLiteral("\\@ifstar"), QStringLiteral("\\@ifnextchar *{\\@firstoftwo{#1}}"), 1);
+
+  //////////////////////////////////////////////////////////////////////
+  // \html@mathml — NOT defined as a macro here.
+  // In KaTeX, \html@mathml{HTML}{MATHML} renders only the HTML part.
+  // Our function registry already handles it with numArgs=1 (text handler).
+  // Defining it as a 2-arg macro here would conflict with the function
+  // registry and break fixtures that use \html@mathml directly.
+
+  // \TextOrMath{TEXT}{MATH} — not supported; macros that need it
+  // should be defined with just the math-mode branch.
+
+  // No-op directives
+  defineMacro(QStringLiteral("\\nobreak"), QStringLiteral(""));
+  defineMacro(QStringLiteral("\\relax"), QStringLiteral(""));
+
+  //////////////////////////////////////////////////////////////////////
+  // Grouping (KaTeX macros.ts:229-243)
+  // NOTE: ~ is NOT defined as a macro here — it's handled directly by
+  // the builder (MathBuilder.cpp) as a 0.25em space. Defining it as
+  // \nobreakspace would require \nobreakspace to be in the symbol table,
+  // and may conflict with text-mode ~ handling.
   defineMacro(QStringLiteral("\\lq"), QStringLiteral("`"));
   defineMacro(QStringLiteral("\\rq"), QStringLiteral("'"));
   defineMacro(QStringLiteral("\\aa"), QStringLiteral("\\r a"));
   defineMacro(QStringLiteral("\\AA"), QStringLiteral("\\r A"));
-  defineMacro(QStringLiteral("\\alef"), QStringLiteral("\\aleph"));
-  defineMacro(QStringLiteral("\\alefsym"), QStringLiteral("\\aleph"));
+
+  //////////////////////////////////////////////////////////////////////
+  // Copyright/registered (KaTeX macros.ts:250-254)
+  defineMacro(QStringLiteral("\\textcopyright"), QStringLiteral("\\textcircled{c}"));
+  defineMacro(QStringLiteral("\\copyright"), QStringLiteral("\\text{\\textcircled{c}}"));
+  defineMacro(QStringLiteral("\\textregistered"), QStringLiteral("\\textcircled{\\scriptsize R}"));
+
+  //////////////////////////////////////////////////////////////////////
+  // Negation (KaTeX macros.ts:288-301)
+  defineMacro(QStringLiteral("\\not"), QStringLiteral("\\mathrel{\\mathrlap\\@not}"));
+  defineMacro(QStringLiteral("\\neq"), QStringLiteral("\\mathrel{\\not=}"));
+  defineMacro(QStringLiteral("\\ne"), QStringLiteral("\\neq"));
+  defineMacro(QString(QChar(0x2260)), QStringLiteral("\\neq"));
+  defineMacro(QStringLiteral("\\notin"), QStringLiteral("\\mathrel{{\\in}\\mathllap{/\\mskip1mu}}"));
+  defineMacro(QString(QChar(0x2209)), QStringLiteral("\\notin"));
+
+  //////////////////////////////////////////////////////////////////////
+  // \vdots (KaTeX macros.ts:348)
+  defineMacro(QStringLiteral("\\vdots"), QStringLiteral("{\\varvdots\\rule{0pt}{15pt}}"));
+  defineMacro(QString(QChar(0x22EE)), QStringLiteral("\\vdots"));
+
+  //////////////////////////////////////////////////////////////////////
+  // Italic Greek capitals (KaTeX macros.ts:357-367)
+  defineMacro(QStringLiteral("\\varGamma"), QStringLiteral("\\mathit{\\Gamma}"));
+  defineMacro(QStringLiteral("\\varDelta"), QStringLiteral("\\mathit{\\Delta}"));
+  defineMacro(QStringLiteral("\\varTheta"), QStringLiteral("\\mathit{\\Theta}"));
+  defineMacro(QStringLiteral("\\varLambda"), QStringLiteral("\\mathit{\\Lambda}"));
+  defineMacro(QStringLiteral("\\varXi"), QStringLiteral("\\mathit{\\Xi}"));
+  defineMacro(QStringLiteral("\\varPi"), QStringLiteral("\\mathit{\\Pi}"));
+  defineMacro(QStringLiteral("\\varSigma"), QStringLiteral("\\mathit{\\Sigma}"));
+  defineMacro(QStringLiteral("\\varUpsilon"), QStringLiteral("\\mathit{\\Upsilon}"));
+  defineMacro(QStringLiteral("\\varPhi"), QStringLiteral("\\mathit{\\Phi}"));
+  defineMacro(QStringLiteral("\\varPsi"), QStringLiteral("\\mathit{\\Psi}"));
+  defineMacro(QStringLiteral("\\varOmega"), QStringLiteral("\\mathit{\\Omega}"));
+
+  //////////////////////////////////////////////////////////////////////
+  // amsmath (KaTeX macros.ts:369-540)
+  defineMacro(QStringLiteral("\\substack"), QStringLiteral("\\begin{subarray}{c}#1\\end{subarray}"), 1);
+  defineMacro(QStringLiteral("\\colon"),
+              QStringLiteral("\\nobreak\\mskip2mu\\mathpunct{}"
+                             "\\mathchoice{\\mkern-3mu}{\\mkern-3mu}{}{}{:}\\mskip6mu"));
+  defineMacro(QStringLiteral("\\iff"), QStringLiteral("\\DOTSB\\;\\Longleftrightarrow\\;"));
   defineMacro(QStringLiteral("\\implies"), QStringLiteral("\\DOTSB\\;\\Longrightarrow\\;"));
   defineMacro(QStringLiteral("\\impliedby"), QStringLiteral("\\DOTSB\\;\\Longleftarrow\\;"));
-  defineMacro(QStringLiteral("\\iff"), QStringLiteral("\\DOTSB\\;\\Longleftrightarrow\\;"));
+  defineMacro(QStringLiteral("\\dddot"), QStringLiteral("{\\overset{\\raisebox{-0.1ex}{\\normalsize ...}}{#1}}"), 1);
+  defineMacro(QStringLiteral("\\ddddot"), QStringLiteral("{\\overset{\\raisebox{-0.1ex}{\\normalsize ....}}{#1}}"), 1);
+  defineMacro(QStringLiteral("\\dotsb"), QStringLiteral("\\cdots"));
+  defineMacro(QStringLiteral("\\dotsm"), QStringLiteral("\\cdots"));
+  defineMacro(QStringLiteral("\\dotsi"), QStringLiteral("\\!\\cdots"));
+  defineMacro(QStringLiteral("\\dotsx"), QStringLiteral("\\ldots\\,"));
   defineMacro(QStringLiteral("\\bmod"),
               QStringLiteral("\\mathchoice{\\mskip1mu}{\\mskip1mu}{\\mskip5mu}{\\mskip5mu}"
                              "\\mathbin{\\rm mod}"
@@ -268,12 +339,182 @@ MathMacroExpander::MathMacroExpander(MathSettings settings) : settings_(std::mov
               QStringLiteral("\\allowbreak\\mathchoice{\\mkern18mu}{\\mkern12mu}{\\mkern12mu}{\\mkern12mu}"
                              "{\\rm mod}\\,\\,#1"),
               1);
-  defineMacro(QStringLiteral("\\cr"), QStringLiteral("\\\\"));
-  defineMacro(QStringLiteral("\\crcr"), QStringLiteral("\\\\"));
-  defineMacro(QStringLiteral("\\DOTSB"), QStringLiteral(""));
-  defineMacro(QStringLiteral("\\@firstoftwo"), QStringLiteral("#1"), 2);
-  defineMacro(QStringLiteral("\\@secondoftwo"), QStringLiteral("#2"), 2);
-  defineMacro(QStringLiteral("\\@ifstar"), QStringLiteral("\\@ifnextchar *{\\@firstoftwo{#1}}"), 1);
+
+  //////////////////////////////////////////////////////////////////////
+  // LaTeX source2e (KaTeX macros.ts:618)
+  defineMacro(QStringLiteral("\\newline"), QStringLiteral("\\\\\\relax"));
+
+  //////////////////////////////////////////////////////////////////////
+  // \hspace and helpers (KaTeX macros.ts:653-659)
+  defineMacro(QStringLiteral("\\hspace"), QStringLiteral("\\@ifstar\\@hspacer\\@hspace"));
+  defineMacro(QStringLiteral("\\@hspace"), QStringLiteral("\\hskip #1\\relax"), 1);
+  defineMacro(QStringLiteral("\\@hspacer"), QStringLiteral("\\rule{0pt}{0pt}\\hskip #1\\relax"), 1);
+
+  //////////////////////////////////////////////////////////////////////
+  // \underbar, \mathstrut, \llap/\rlap/\clap (KaTeX macros.ts:273-281)
+  defineMacro(QStringLiteral("\\underbar"), QStringLiteral("\\underline{\\text{#1}}"), 1);
+  defineMacro(QStringLiteral("\\mathstrut"), QStringLiteral("\\vphantom{(}"));
+  defineMacro(QStringLiteral("\\llap"), QStringLiteral("\\mathllap{\\textrm{#1}}"), 1);
+  defineMacro(QStringLiteral("\\rlap"), QStringLiteral("\\mathrlap{\\textrm{#1}}"), 1);
+  defineMacro(QStringLiteral("\\clap"), QStringLiteral("\\mathclap{\\textrm{#1}}"), 1);
+
+  //////////////////////////////////////////////////////////////////////
+  // \Bbbk (KaTeX macros.ts:270)
+  defineMacro(QStringLiteral("\\Bbbk"), QStringLiteral("\\Bbb{k}"));
+
+  //////////////////////////////////////////////////////////////////////
+  // Custom Khan Academy colors (KaTeX macros.ts:976-1032)
+  defineMacro(QStringLiteral("\\blue"), QStringLiteral("\\textcolor{##6495ed}{#1}"), 1);
+  defineMacro(QStringLiteral("\\orange"), QStringLiteral("\\textcolor{##ffa500}{#1}"), 1);
+  defineMacro(QStringLiteral("\\pink"), QStringLiteral("\\textcolor{##ff00af}{#1}"), 1);
+  defineMacro(QStringLiteral("\\red"), QStringLiteral("\\textcolor{##df0030}{#1}"), 1);
+  defineMacro(QStringLiteral("\\green"), QStringLiteral("\\textcolor{##28ae7b}{#1}"), 1);
+  defineMacro(QStringLiteral("\\gray"), QStringLiteral("\\textcolor{gray}{#1}"), 1);
+  defineMacro(QStringLiteral("\\purple"), QStringLiteral("\\textcolor{##9d38bd}{#1}"), 1);
+  defineMacro(QStringLiteral("\\blueA"), QStringLiteral("\\textcolor{##ccfaff}{#1}"), 1);
+  defineMacro(QStringLiteral("\\blueB"), QStringLiteral("\\textcolor{##80f6ff}{#1}"), 1);
+  defineMacro(QStringLiteral("\\blueC"), QStringLiteral("\\textcolor{##63d9ea}{#1}"), 1);
+  defineMacro(QStringLiteral("\\blueD"), QStringLiteral("\\textcolor{##11accd}{#1}"), 1);
+  defineMacro(QStringLiteral("\\blueE"), QStringLiteral("\\textcolor{##0c7f99}{#1}"), 1);
+  defineMacro(QStringLiteral("\\tealA"), QStringLiteral("\\textcolor{##94fff5}{#1}"), 1);
+  defineMacro(QStringLiteral("\\tealB"), QStringLiteral("\\textcolor{##26edd5}{#1}"), 1);
+  defineMacro(QStringLiteral("\\tealC"), QStringLiteral("\\textcolor{##01d1c1}{#1}"), 1);
+  defineMacro(QStringLiteral("\\tealD"), QStringLiteral("\\textcolor{##01a995}{#1}"), 1);
+  defineMacro(QStringLiteral("\\tealE"), QStringLiteral("\\textcolor{##208170}{#1}"), 1);
+  defineMacro(QStringLiteral("\\greenA"), QStringLiteral("\\textcolor{##b6ffb0}{#1}"), 1);
+  defineMacro(QStringLiteral("\\greenB"), QStringLiteral("\\textcolor{##8af281}{#1}"), 1);
+  defineMacro(QStringLiteral("\\greenC"), QStringLiteral("\\textcolor{##74cf70}{#1}"), 1);
+  defineMacro(QStringLiteral("\\greenD"), QStringLiteral("\\textcolor{##1fab54}{#1}"), 1);
+  defineMacro(QStringLiteral("\\greenE"), QStringLiteral("\\textcolor{##0d923f}{#1}"), 1);
+  defineMacro(QStringLiteral("\\goldA"), QStringLiteral("\\textcolor{##ffd0a9}{#1}"), 1);
+  defineMacro(QStringLiteral("\\goldB"), QStringLiteral("\\textcolor{##ffbb71}{#1}"), 1);
+  defineMacro(QStringLiteral("\\goldC"), QStringLiteral("\\textcolor{##ff9c39}{#1}"), 1);
+  defineMacro(QStringLiteral("\\goldD"), QStringLiteral("\\textcolor{##e07d10}{#1}"), 1);
+  defineMacro(QStringLiteral("\\goldE"), QStringLiteral("\\textcolor{##a75a05}{#1}"), 1);
+  defineMacro(QStringLiteral("\\redA"), QStringLiteral("\\textcolor{##fca9a9}{#1}"), 1);
+  defineMacro(QStringLiteral("\\redB"), QStringLiteral("\\textcolor{##ff8482}{#1}"), 1);
+  defineMacro(QStringLiteral("\\redC"), QStringLiteral("\\textcolor{##f9685d}{#1}"), 1);
+  defineMacro(QStringLiteral("\\redD"), QStringLiteral("\\textcolor{##e84d39}{#1}"), 1);
+  defineMacro(QStringLiteral("\\redE"), QStringLiteral("\\textcolor{##bc2612}{#1}"), 1);
+  defineMacro(QStringLiteral("\\maroonA"), QStringLiteral("\\textcolor{##ffbde0}{#1}"), 1);
+  defineMacro(QStringLiteral("\\maroonB"), QStringLiteral("\\textcolor{##ff92c6}{#1}"), 1);
+  defineMacro(QStringLiteral("\\maroonC"), QStringLiteral("\\textcolor{##ed5fa6}{#1}"), 1);
+  defineMacro(QStringLiteral("\\maroonD"), QStringLiteral("\\textcolor{##ca337c}{#1}"), 1);
+  defineMacro(QStringLiteral("\\maroonE"), QStringLiteral("\\textcolor{##9e034e}{#1}"), 1);
+  defineMacro(QStringLiteral("\\purpleA"), QStringLiteral("\\textcolor{##ddd7ff}{#1}"), 1);
+  defineMacro(QStringLiteral("\\purpleB"), QStringLiteral("\\textcolor{##c6b9fc}{#1}"), 1);
+  defineMacro(QStringLiteral("\\purpleC"), QStringLiteral("\\textcolor{##aa87ff}{#1}"), 1);
+  defineMacro(QStringLiteral("\\purpleD"), QStringLiteral("\\textcolor{##7854ab}{#1}"), 1);
+  defineMacro(QStringLiteral("\\purpleE"), QStringLiteral("\\textcolor{##543b78}{#1}"), 1);
+  defineMacro(QStringLiteral("\\mintA"), QStringLiteral("\\textcolor{##f5f9e8}{#1}"), 1);
+  defineMacro(QStringLiteral("\\mintB"), QStringLiteral("\\textcolor{##edf2df}{#1}"), 1);
+  defineMacro(QStringLiteral("\\mintC"), QStringLiteral("\\textcolor{##e0e5cc}{#1}"), 1);
+  defineMacro(QStringLiteral("\\grayA"), QStringLiteral("\\textcolor{##f6f7f7}{#1}"), 1);
+  defineMacro(QStringLiteral("\\grayB"), QStringLiteral("\\textcolor{##f0f1f2}{#1}"), 1);
+  defineMacro(QStringLiteral("\\grayC"), QStringLiteral("\\textcolor{##e3e5e6}{#1}"), 1);
+  defineMacro(QStringLiteral("\\grayD"), QStringLiteral("\\textcolor{##d6d8da}{#1}"), 1);
+  defineMacro(QStringLiteral("\\grayE"), QStringLiteral("\\textcolor{##babec2}{#1}"), 1);
+  defineMacro(QStringLiteral("\\grayF"), QStringLiteral("\\textcolor{##888d93}{#1}"), 1);
+  defineMacro(QStringLiteral("\\grayG"), QStringLiteral("\\textcolor{##626569}{#1}"), 1);
+  defineMacro(QStringLiteral("\\grayH"), QStringLiteral("\\textcolor{##3b3e40}{#1}"), 1);
+  defineMacro(QStringLiteral("\\grayI"), QStringLiteral("\\textcolor{##21242c}{#1}"), 1);
+  defineMacro(QStringLiteral("\\kaBlue"), QStringLiteral("\\textcolor{##314453}{#1}"), 1);
+  defineMacro(QStringLiteral("\\kaGreen"), QStringLiteral("\\textcolor{##71B307}{#1}"), 1);
+
+  //////////////////////////////////////////////////////////////////////
+  // statmath.sty (KaTeX macros.ts:906-908)
+  defineMacro(QStringLiteral("\\argmin"), QStringLiteral("\\DOTSB\\operatorname*{arg\\,min}"));
+  defineMacro(QStringLiteral("\\argmax"), QStringLiteral("\\DOTSB\\operatorname*{arg\\,max}"));
+  defineMacro(QStringLiteral("\\plim"), QStringLiteral("\\DOTSB\\mathop{\\operatorname{plim}}\\limits"));
+
+  //////////////////////////////////////////////////////////////////////
+  // amsopn.sty (KaTeX macros.ts:765-770)
+  defineMacro(QStringLiteral("\\limsup"), QStringLiteral("\\DOTSB\\operatorname*{lim\\,sup}"));
+  defineMacro(QStringLiteral("\\liminf"), QStringLiteral("\\DOTSB\\operatorname*{lim\\,inf}"));
+  defineMacro(QStringLiteral("\\injlim"), QStringLiteral("\\DOTSB\\operatorname*{inj\\,lim}"));
+  defineMacro(QStringLiteral("\\projlim"), QStringLiteral("\\DOTSB\\operatorname*{proj\\,lim}"));
+  defineMacro(QStringLiteral("\\varlimsup"), QStringLiteral("\\DOTSB\\operatorname*{\\overline{lim}}"));
+  defineMacro(QStringLiteral("\\varliminf"), QStringLiteral("\\DOTSB\\operatorname*{\\underline{lim}}"));
+  defineMacro(QStringLiteral("\\varinjlim"), QStringLiteral("\\DOTSB\\operatorname*{\\underrightarrow{lim}}"));
+  defineMacro(QStringLiteral("\\varprojlim"), QStringLiteral("\\DOTSB\\operatorname*{\\underleftarrow{lim}}"));
+
+  //////////////////////////////////////////////////////////////////////
+  // texvc.sty aliases (KaTeX macros.ts:837-900)
+  defineMacro(QStringLiteral("\\darr"), QStringLiteral("\\downarrow"));
+  defineMacro(QStringLiteral("\\dArr"), QStringLiteral("\\Downarrow"));
+  defineMacro(QStringLiteral("\\Darr"), QStringLiteral("\\Downarrow"));
+  defineMacro(QStringLiteral("\\lang"), QStringLiteral("\\langle"));
+  defineMacro(QStringLiteral("\\rang"), QStringLiteral("\\rangle"));
+  defineMacro(QStringLiteral("\\uarr"), QStringLiteral("\\uparrow"));
+  defineMacro(QStringLiteral("\\uArr"), QStringLiteral("\\Uparrow"));
+  defineMacro(QStringLiteral("\\Uarr"), QStringLiteral("\\Uparrow"));
+  defineMacro(QStringLiteral("\\N"), QStringLiteral("\\mathbb{N}"));
+  defineMacro(QStringLiteral("\\R"), QStringLiteral("\\mathbb{R}"));
+  defineMacro(QStringLiteral("\\Z"), QStringLiteral("\\mathbb{Z}"));
+  defineMacro(QStringLiteral("\\alef"), QStringLiteral("\\aleph"));
+  defineMacro(QStringLiteral("\\alefsym"), QStringLiteral("\\aleph"));
+  defineMacro(QStringLiteral("\\Alpha"), QStringLiteral("\\mathrm{A}"));
+  defineMacro(QStringLiteral("\\Beta"), QStringLiteral("\\mathrm{B}"));
+  defineMacro(QStringLiteral("\\bull"), QStringLiteral("\\bullet"));
+  defineMacro(QStringLiteral("\\Chi"), QStringLiteral("\\mathrm{X}"));
+  defineMacro(QStringLiteral("\\clubs"), QStringLiteral("\\clubsuit"));
+  defineMacro(QStringLiteral("\\cnums"), QStringLiteral("\\mathbb{C}"));
+  defineMacro(QStringLiteral("\\Complex"), QStringLiteral("\\mathbb{C}"));
+  defineMacro(QStringLiteral("\\Dagger"), QStringLiteral("\\ddagger"));
+  defineMacro(QStringLiteral("\\diamonds"), QStringLiteral("\\diamondsuit"));
+  defineMacro(QStringLiteral("\\empty"), QStringLiteral("\\emptyset"));
+  defineMacro(QStringLiteral("\\Epsilon"), QStringLiteral("\\mathrm{E}"));
+  defineMacro(QStringLiteral("\\Eta"), QStringLiteral("\\mathrm{H}"));
+  defineMacro(QStringLiteral("\\exist"), QStringLiteral("\\exists"));
+  defineMacro(QStringLiteral("\\harr"), QStringLiteral("\\leftrightarrow"));
+  defineMacro(QStringLiteral("\\hArr"), QStringLiteral("\\Leftrightarrow"));
+  defineMacro(QStringLiteral("\\Harr"), QStringLiteral("\\Leftrightarrow"));
+  defineMacro(QStringLiteral("\\hearts"), QStringLiteral("\\heartsuit"));
+  defineMacro(QStringLiteral("\\image"), QStringLiteral("\\Im"));
+  defineMacro(QStringLiteral("\\infin"), QStringLiteral("\\infty"));
+  defineMacro(QStringLiteral("\\Iota"), QStringLiteral("\\mathrm{I}"));
+  defineMacro(QStringLiteral("\\isin"), QStringLiteral("\\in"));
+  defineMacro(QStringLiteral("\\Kappa"), QStringLiteral("\\mathrm{K}"));
+  defineMacro(QStringLiteral("\\larr"), QStringLiteral("\\leftarrow"));
+  defineMacro(QStringLiteral("\\lArr"), QStringLiteral("\\Leftarrow"));
+  defineMacro(QStringLiteral("\\Larr"), QStringLiteral("\\Leftarrow"));
+  defineMacro(QStringLiteral("\\lrarr"), QStringLiteral("\\leftrightarrow"));
+  defineMacro(QStringLiteral("\\lrArr"), QStringLiteral("\\Leftrightarrow"));
+  defineMacro(QStringLiteral("\\Lrarr"), QStringLiteral("\\Leftrightarrow"));
+  defineMacro(QStringLiteral("\\Mu"), QStringLiteral("\\mathrm{M}"));
+  defineMacro(QStringLiteral("\\natnums"), QStringLiteral("\\mathbb{N}"));
+  defineMacro(QStringLiteral("\\Nu"), QStringLiteral("\\mathrm{N}"));
+  defineMacro(QStringLiteral("\\Omicron"), QStringLiteral("\\mathrm{O}"));
+  defineMacro(QStringLiteral("\\plusmn"), QStringLiteral("\\pm"));
+  defineMacro(QStringLiteral("\\rarr"), QStringLiteral("\\rightarrow"));
+  defineMacro(QStringLiteral("\\rArr"), QStringLiteral("\\Rightarrow"));
+  defineMacro(QStringLiteral("\\Rarr"), QStringLiteral("\\Rightarrow"));
+  defineMacro(QStringLiteral("\\real"), QStringLiteral("\\Re"));
+  defineMacro(QStringLiteral("\\reals"), QStringLiteral("\\mathbb{R}"));
+  defineMacro(QStringLiteral("\\Reals"), QStringLiteral("\\mathbb{R}"));
+  defineMacro(QStringLiteral("\\Rho"), QStringLiteral("\\mathrm{P}"));
+  defineMacro(QStringLiteral("\\sdot"), QStringLiteral("\\cdot"));
+  defineMacro(QStringLiteral("\\sect"), QStringLiteral("\\S"));
+  defineMacro(QStringLiteral("\\spades"), QStringLiteral("\\spadesuit"));
+  defineMacro(QStringLiteral("\\sub"), QStringLiteral("\\subset"));
+  defineMacro(QStringLiteral("\\sube"), QStringLiteral("\\subseteq"));
+  defineMacro(QStringLiteral("\\supe"), QStringLiteral("\\supseteq"));
+  defineMacro(QStringLiteral("\\Tau"), QStringLiteral("\\mathrm{T}"));
+  defineMacro(QStringLiteral("\\thetasym"), QStringLiteral("\\vartheta"));
+  defineMacro(QStringLiteral("\\weierp"), QStringLiteral("\\wp"));
+  defineMacro(QStringLiteral("\\Zeta"), QStringLiteral("\\mathrm{Z}"));
+
+  // Logo macros, matching KaTeX src/macros.ts:624-651.
+  // Use \mathrm (typeName="font" → parseRequiredGroup) so nested \kern/\raisebox
+  // are properly parsed. KaTeX uses \textrm{\html@mathml{...}{...}} but our
+  // \textrm handler uses parseRawGroupText which doesn't parse commands.
+  // latexRaiseA = Main-Regular T.height - 0.7*A.height ≈ 0.205em.
+  defineMacro(QStringLiteral("\\TeX"),
+              QStringLiteral("\\mathrm{T\\kern-.1667em\\raisebox{-.5ex}{E}\\kern-.125emX}"));
+  defineMacro(QStringLiteral("\\LaTeX"),
+              QStringLiteral("\\mathrm{L\\kern-.36em\\raisebox{0.205em}{\\scriptstyle A}\\kern-.15em\\TeX}"));
+  defineMacro(QStringLiteral("\\KaTeX"),
+              QStringLiteral("\\mathrm{K\\kern-.17em\\raisebox{0.205em}{\\scriptstyle A}\\kern-.15em\\TeX}"));
 
   builtins_ = macros_;
 }

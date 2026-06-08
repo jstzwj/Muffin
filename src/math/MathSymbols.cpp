@@ -258,6 +258,31 @@ QHash<QString, MathSymbolInfo> buildSymbols() {
   add(QStringLiteral("\\quad"), QStringLiteral(" "), MathNodeType::Spacing);
   add(QStringLiteral("\\qquad"), QStringLiteral("  "), MathNodeType::Spacing);
   add(QStringLiteral("\\allowbreak"), QStringLiteral(""), MathNodeType::Spacing);
+
+  // Symbols used by macro expansions
+  add(QStringLiteral("\\@cdots"), QStringLiteral("⋯"), MathNodeType::Inner, QStringLiteral("main"));
+  add(QStringLiteral("\\varvdots"), QStringLiteral("⋮"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\nobreakspace"), QStringLiteral(" "), MathNodeType::Spacing, QStringLiteral("main"));
+
+  // Text-mode symbols (KaTeX symbols.js text-mode entries)
+  add(QStringLiteral("\\textendash"), QStringLiteral("–"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textemdash"), QStringLiteral("—"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textquoteleft"), QStringLiteral("‘"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textquoteright"), QStringLiteral("’"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textquotedblleft"), QStringLiteral("“"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textquotedblright"), QStringLiteral("”"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textdollar"), QStringLiteral("$"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textbackslash"), QStringLiteral("\x5c"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textasciicircum"), QStringLiteral("^"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textasciitilde"), QStringLiteral("~"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textbraceleft"), QStringLiteral("{"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textbraceright"), QStringLiteral("}"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textunderscore"), QStringLiteral("_"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textbullet"), QStringLiteral("•"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textperiodcentered"), QStringLiteral("·"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textasteriskcentered"), QStringLiteral("∗"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\And"), QStringLiteral("&"), MathNodeType::Binary, QStringLiteral("main"));
+
   return s;
 }
 

@@ -29,6 +29,8 @@ private:
   QVector<MathParseNode> parseRequiredGroup(const QString& command);
   bool canStartRequiredArgument(const MathToken& token) const;
   QString parseRawGroupText(const QString& command);
+  QString parseRawGroupTextArgument();
+  QString applyTextAccent(const QString& accent, const QString& base) const;
   QString parseOptionalBracketText();
   QString parseSizeText(const QString& command);
   MathParseNode parseBeginEnvironment();

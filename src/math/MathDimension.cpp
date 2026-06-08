@@ -47,7 +47,7 @@ qreal sizeTextToEm(const QString& sizeText) {
   return 0.0;
 }
 
-qreal dimensionToPoints(const QString& sizeText, qreal fontPointSize, qreal absoluteReferencePointSize) {
+qreal dimensionToPoints(const QString& sizeText, qreal fontPointSize, qreal absoluteReferencePointSize, qreal textFontPointSize) {
   static const QHash<QString, qreal> relativeToEm{
       {QStringLiteral("em"), 1.0},
       {QStringLiteral("ex"), 0.431},
@@ -65,8 +65,14 @@ qreal dimensionToPoints(const QString& sizeText, qreal fontPointSize, qreal abso
     const qreal reference = absoluteReferencePointSize > 0.0 ? absoluteReferencePointSize : fontPointSize;
     return number * texPtPerUnit().value(unit) * reference / 10.0;
   }
-  if (relativeToEm.contains(unit)) {
+  if (unit == QStringLiteral("mu")) {
+    // mu units scale with the current style (script/scriptscript)
     return number * relativeToEm.value(unit) * fontPointSize;
+  }
+  if (relativeToEm.contains(unit)) {
+    // em and ex units always refer to the text-style font per KaTeX units.ts:67-75.
+    const qreal textPt = textFontPointSize > 0.0 ? textFontPointSize : fontPointSize;
+    return number * relativeToEm.value(unit) * textPt;
   }
   return 0.0;
 }

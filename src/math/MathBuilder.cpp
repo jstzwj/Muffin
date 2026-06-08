@@ -1002,21 +1002,47 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeFraction(const MathParseNode& n
   auto fracLayout = makeLayoutVListIndividualShift(std::move(vlistChildren));
   fracLayout->width = width;
   auto frac = renderNodeFromLayout(*fracLayout);
+
+  // Rescale frac from forced-style units to parent-style units.
+  // KaTeX does: frac.height *= newOptions.sizeMultiplier / options.sizeMultiplier
+  // This is needed when \dfrac/\dbinom forces display style inside text style.
+  if (localOptions.style().size() != options_.style().size()) {
+    const qreal rescale = options_.sizeMultiplier() / localOptions.sizeMultiplier();
+    frac->height *= rescale;
+    frac->depth *= rescale;
+  }
+
   return makeGenfrac(node, std::move(frac));
 }
 
 std::unique_ptr<MathRenderNode> MathBuilder::makeGenfrac(const MathParseNode& node, std::unique_ptr<MathRenderNode> frac) {
   const GlobalFontMetrics metrics = MathFontMetrics::globalMetrics(options_.style().size());
+
+  // Determine the forced style for delimiter sizing, matching KaTeX genfrac.ts:132-139.
+  // KaTeX uses `style` (the forced style) to select delim1 vs delim2, but reads metrics
+  // from the parent options. Delimiters are created with `options.havingStyle(style)`.
+  MathStyle forcedStyle = options_.style();
+  if (node.style == QStringLiteral("\\displaystyle")) {
+    forcedStyle = MathStyle::display();
+  } else if (node.style == QStringLiteral("\\textstyle")) {
+    forcedStyle = MathStyle::textStyle();
+  } else if (node.style == QStringLiteral("\\scriptstyle")) {
+    forcedStyle = MathStyle::script();
+  } else if (node.style == QStringLiteral("\\scriptscriptstyle")) {
+    forcedStyle = MathStyle::scriptScript();
+  }
+
   qreal delimiterSize = 0.0;
-  if (options_.style().size() == MathStyle::display().size()) {
+  if (forcedStyle.size() == MathStyle::display().size()) {
     delimiterSize = metrics.delim1 * options_.fontPointSize();
-  } else if (options_.style().size() == MathStyle::scriptScript().size()) {
+  } else if (forcedStyle.size() == MathStyle::scriptScript().size()) {
     delimiterSize = MathFontMetrics::globalMetrics(MathStyle::script().size()).delim2 * options_.fontPointSize();
   } else {
     delimiterSize = metrics.delim2 * options_.fontPointSize();
   }
 
   const qreal nullDelimiterWidth = (1.2 / metrics.ptPerEm) * options_.basePointSize();
+  const MathOptions delimOptions = options_.havingStyle(forcedStyle);
   std::vector<std::unique_ptr<MathRenderNode>> children;
 
   if (node.leftDelim.isEmpty() || node.leftDelim == QStringLiteral(".")) {
@@ -1026,7 +1052,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeGenfrac(const MathParseNode& no
     nullDelimiter->width = nullDelimiterWidth;
     children.push_back(std::move(nullDelimiter));
   } else {
-    children.push_back(MathDelimiter::makeCustom(node.leftDelim, delimiterSize, true, MathNodeType::Open, options_));
+    children.push_back(MathDelimiter::makeCustom(node.leftDelim, delimiterSize, true, MathNodeType::Open, delimOptions));
   }
 
   children.push_back(std::move(frac));
@@ -1043,7 +1069,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeGenfrac(const MathParseNode& no
     nullDelimiter->width = nullDelimiterWidth;
     children.push_back(std::move(nullDelimiter));
   } else {
-    children.push_back(MathDelimiter::makeCustom(node.rightDelim, delimiterSize, true, MathNodeType::Close, options_));
+    children.push_back(MathDelimiter::makeCustom(node.rightDelim, delimiterSize, true, MathNodeType::Close, delimOptions));
   }
 
   return makeSpan(std::move(children));
@@ -1114,6 +1140,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSqrt(const MathParseNode& node)
   radical->height = texHeightEm * em;
   radical->depth = 0.0;
   radical->ruleThickness = rule;
+  radical->yOffset = -pad;  // KaTeX span.style.height = texHeight + emPad; paint taller
   radical->color = options_.color();
 
   body->xOffset = advanceWidthEm * em;
@@ -1491,7 +1518,10 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeError(const QString& text, cons
 }
 
 qreal MathBuilder::dimensionToPoints(const QString& value) const {
-  return math::dimensionToPoints(value, options_.fontPointSize(), options_.basePointSize());
+  // KaTeX units.ts:67-75: em/ex units refer to the text-style font in the
+  // current size. In tight (script/scriptscript) style, use text-style font.
+  const qreal textFontPt = options_.havingStyle(options_.style().text()).fontPointSize();
+  return math::dimensionToPoints(value, options_.fontPointSize(), options_.basePointSize(), textFontPt);
 }
 
 }  // namespace muffin::math

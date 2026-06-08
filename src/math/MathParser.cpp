@@ -794,23 +794,93 @@ QString MathParser::parseRawGroupText(const QString& command) {
   QString text;
   int depth = 1;
   while (depth > 0 && lexer_.peek().text != QStringLiteral("EOF")) {
-    const QString token = lexer_.next().text;
-    if (token == QStringLiteral("{")) {
+    const MathToken token = lexer_.next();
+    if (token.text == QStringLiteral("{")) {
       ++depth;
-      text += token;
-    } else if (token == QStringLiteral("}")) {
+      text += token.text;
+    } else if (token.text == QStringLiteral("}")) {
       --depth;
       if (depth > 0) {
-        text += token;
+        text += token.text;
       }
-    } else if (token.startsWith(QLatin1Char('\\'))) {
-      const MathSymbolInfo symbol = lookupSymbol(token);
-      text += symbol.known ? symbol.replacement : token.mid(1);
+    } else if (token.text.startsWith(QLatin1Char('\\'))) {
+      // Check if this is a registered function that needs special handling
+      if (const MathFunctionSpec* func = MathFunctionRegistry::lookup(token.text)) {
+        if (func->handlerKind == MathFunctionHandlerKind::Accent && func->numArgs == 1) {
+          // Text accent: consume argument but output accent mark + base text
+          // separately (KaTeX renders them as separate glyph elements)
+          const QString accentChar = lookupSymbol(token.text).known
+              ? lookupSymbol(token.text).replacement
+              : token.text.mid(1);
+          text += accentChar;
+          text += parseRawGroupTextArgument();
+          continue;
+        }
+        if (func->numArgs == 0 && (func->typeName == QStringLiteral("text") ||
+                                    func->typeName == QStringLiteral("font") ||
+                                    func->typeName == QStringLiteral("sizing") ||
+                                    func->typeName == QStringLiteral("styling"))) {
+          // Font/style/sizing declaration (\rm, \it, \bf, \sf, \tt, \tiny, etc.)
+          // In flat text extraction these are no-ops — skip
+          continue;
+        }
+        if (func->numArgs >= 1 && (func->typeName == QStringLiteral("text") ||
+                                    func->typeName == QStringLiteral("font"))) {
+          // Nested text/font command (\textbf{...}, \mathrm{...}) inside \text{...}
+          // Recursively extract the text content
+          text += parseRawGroupText(token.text);
+          continue;
+        }
+      }
+      const MathSymbolInfo symbol = lookupSymbol(token.text);
+      text += symbol.known ? symbol.replacement : token.text.mid(1);
     } else {
-      text += token;
+      text += token.text;
     }
   }
+  // Form text ligatures (matching KaTeX's formLigatures in Parser.ts)
+  text.replace(QStringLiteral("---"), QString(QChar(0x2014)));  // em dash
+  text.replace(QStringLiteral("--"), QString(QChar(0x2013)));   // en dash
+  text.replace(QStringLiteral("``"), QString(QChar(0x201C)));   // left double quote
+  text.replace(QStringLiteral("''"), QString(QChar(0x201D)));   // right double quote
   return text;
+}
+
+QString MathParser::parseRawGroupTextArgument() {
+  if (lexer_.peek().text == QStringLiteral("{")) {
+    return parseRawGroupText(QStringLiteral("accent"));
+  }
+  const MathToken token = lexer_.next();
+  if (token.text.startsWith(QLatin1Char('\\'))) {
+    const MathSymbolInfo symbol = lookupSymbol(token.text);
+    return symbol.known ? symbol.replacement : token.text.mid(1);
+  }
+  return token.text;
+}
+
+QString MathParser::applyTextAccent(const QString& accent, const QString& base) const {
+  // Map accent commands to Unicode combining characters
+  static const QHash<QString, QChar> combining{
+      {QStringLiteral("\\'"), QChar(0x0301)},  // combining acute
+      {QStringLiteral("\\`"), QChar(0x0300)},  // combining grave
+      {QStringLiteral("\\^"), QChar(0x0302)},  // combining circumflex
+      {QStringLiteral("\\~"), QChar(0x0303)},  // combining tilde
+      {QStringLiteral("\\="), QChar(0x0304)},  // combining macron
+      {QStringLiteral("\\u"), QChar(0x0306)},  // combining breve
+      {QStringLiteral("\\."), QChar(0x0307)},  // combining dot above
+      {QStringLiteral("\\\""), QChar(0x0308)}, // combining diaeresis
+      {QStringLiteral("\\c"), QChar(0x0327)},  // combining cedilla
+      {QStringLiteral("\\r"), QChar(0x030A)},  // combining ring above
+      {QStringLiteral("\\H"), QChar(0x030B)},  // combining double acute
+      {QStringLiteral("\\v"), QChar(0x030C)},  // combining caron
+  };
+  const auto it = combining.constFind(accent);
+  if (it != combining.constEnd() && !base.isEmpty()) {
+    QString result = base + QString(it.value());
+    // Normalize to NFC for precomposed characters where available
+    return result.normalized(QString::NormalizationForm_C);
+  }
+  return base;
 }
 
 QString MathParser::parseOptionalBracketText() {

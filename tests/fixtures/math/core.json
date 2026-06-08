@@ -14,7 +14,9 @@
     "glyphWidthToleranceEm": 0.01,
     "heightToleranceEm": 0.02,
     "depthToleranceEm": 0.02,
-    "shiftToleranceEm": 0.05
+    "shiftToleranceEm": 0.05,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "inline-scripts-spacing",
@@ -30,7 +32,8 @@
     "glyphWidthToleranceEm": 0.01,
     "compareKatexInkBBox": true,
     "inkBBoxWidthToleranceEm": 0.12,
-    "inkBBoxHeightToleranceEm": 0.2
+    "inkBBoxHeightToleranceEm": 0.2,
+    "compareKatexBBox": true
   },
   {
     "id": "text-fraction",
@@ -46,7 +49,8 @@
     "glyphWidthToleranceEm": 0.01,
     "compareKatexBBox": true,
     "bboxWidthToleranceEm": 0.05,
-    "bboxHeightToleranceEm": 0.06
+    "bboxHeightToleranceEm": 0.06,
+    "compareKatexInkBBox": true
   },
   {
     "id": "display-integral-fraction",
@@ -59,7 +63,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "top-level-cr",
@@ -70,7 +77,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "aligned-basic",
@@ -82,7 +92,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "gathered-basic",
@@ -97,7 +110,9 @@
     "bboxHeightToleranceEm": 0.02,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "cases-basic",
@@ -112,7 +127,9 @@
     "bboxHeightToleranceEm": 0.01,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "pmatrix-basic",
@@ -127,7 +144,9 @@
     "bboxHeightToleranceEm": 0.01,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "array-hline",
@@ -140,7 +159,9 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true
   },
   {
     "id": "sqrt-simple",
@@ -159,7 +180,8 @@
     "bboxHeightToleranceEm": 0.1,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexInkBBox": true
   },
   {
     "id": "sqrt-indexed",
@@ -179,7 +201,8 @@
     "bboxHeightToleranceEm": 0.01,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexInkBBox": true
   },
   {
     "id": "sum-limits",
@@ -197,7 +220,8 @@
     "inkBBoxHeightToleranceEm": 0.18,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true
   },
   {
     "id": "lim-limits",
@@ -216,7 +240,8 @@
     "shiftToleranceEm": 0.01,
     "compareKatexBBox": true,
     "bboxWidthToleranceEm": 0.01,
-    "bboxHeightToleranceEm": 0.01
+    "bboxHeightToleranceEm": 0.01,
+    "compareKatexInkBBox": true
   },
   {
     "id": "left-right-tall",
@@ -229,7 +254,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "wide-accent",
@@ -240,7 +268,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "horiz-brace",
@@ -252,7 +283,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "genfrac-binom",
@@ -263,7 +297,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "mclass-spacing",
@@ -275,7 +312,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "color-text-font",
@@ -287,7 +327,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "supsub-both",
@@ -304,7 +347,8 @@
     "bboxWidthToleranceEm": 0.9,
     "bboxHeightToleranceEm": 0.5,
     "inkBBoxWidthToleranceEm": 0.08,
-    "inkBBoxHeightToleranceEm": 0.35
+    "inkBBoxHeightToleranceEm": 0.35,
+    "compareKatexMetrics": true
   },
   {
     "id": "nested-scripts",
@@ -315,7 +359,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.02,
-    "glyphWidthToleranceEm": 0.02
+    "glyphWidthToleranceEm": 0.02,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "nested-fraction",
@@ -327,7 +374,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "sqrt-nested",
@@ -342,7 +392,9 @@
     "bboxHeightToleranceEm": 0.11,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "integral-gaussian",
@@ -354,7 +406,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "prod-limits",
@@ -372,7 +427,8 @@
     "inkBBoxHeightToleranceEm": 0.2,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true
   },
   {
     "id": "operatorname-rank",
@@ -388,7 +444,9 @@
     "glyphWidthToleranceEm": 0.02,
     "heightToleranceEm": 0.01,
     "depthToleranceEm": 0.01,
-    "shiftToleranceEm": 0.01
+    "shiftToleranceEm": 0.01,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "norm-delimiters",
@@ -401,7 +459,11 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true,
+    "inkBBoxHeightToleranceEm": 0.4
   },
   {
     "id": "big-delimiters",
@@ -416,7 +478,9 @@
     "bboxHeightToleranceEm": 0.01,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "array-simple",
@@ -431,7 +495,9 @@
     "bboxHeightToleranceEm": 0.01,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "array-lines",
@@ -447,7 +513,9 @@
     "bboxHeightToleranceEm": 0.05,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "smallmatrix-basic",
@@ -462,7 +530,9 @@
     "bboxHeightToleranceEm": 0.13,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "text-fraction-words",
@@ -477,7 +547,9 @@
     "bboxHeightToleranceEm": 0.1,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "font-classes",
@@ -488,7 +560,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "accent-basic",
@@ -499,7 +574,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "wide-accent-long",
@@ -510,7 +588,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "line-accent",
@@ -524,7 +605,9 @@
     "bboxHeightToleranceEm": 0.06,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "brace-long",
@@ -536,7 +619,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "binom-choose",
@@ -547,7 +633,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "genfrac-brackets",
@@ -559,7 +648,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "spacing-commands",
@@ -570,7 +662,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.02,
-    "glyphWidthToleranceEm": 0.02
+    "glyphWidthToleranceEm": 0.02,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "phantom-family",
@@ -584,7 +679,9 @@
     "bboxHeightToleranceEm": 0.06,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "lap-family",
@@ -595,7 +692,11 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true,
+    "inkBBoxWidthToleranceEm": 0.3
   },
   {
     "id": "raisebox-vcenter",
@@ -607,7 +708,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "enclose-family",
@@ -618,7 +722,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "macro-high-frequency",
@@ -629,7 +736,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "style-switches",
@@ -643,7 +753,9 @@
     "inkBBoxHeightToleranceEm": 0.15,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true
   },
   {
     "id": "left-right-braces",
@@ -656,7 +768,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "greek-relations",
@@ -668,7 +783,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.03,
-    "glyphWidthToleranceEm": 0.03
+    "glyphWidthToleranceEm": 0.03,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "script-fraction-mix",
@@ -684,7 +802,9 @@
     "glyphWidthToleranceEm": 0.02,
     "compareKatexBBox": true,
     "bboxWidthToleranceEm": 0.05,
-    "bboxHeightToleranceEm": 0.08
+    "bboxHeightToleranceEm": 0.08,
+    "compareKatexMetrics": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "display-bigops-chain",
@@ -700,7 +820,9 @@
     "bboxHeightToleranceEm": 0.05,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "matrix-delimiter-fraction",
@@ -714,7 +836,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "cases-text-complex",
@@ -727,7 +852,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "accent-sqrt-delim",
@@ -740,7 +868,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "font-text-operators",
@@ -753,7 +884,10 @@
     ],
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.05,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexBBox": true,
+    "compareKatexInkBBox": true
   },
   {
     "id": "display-nested-integral-product-fraction",
@@ -769,6 +903,8 @@
     "bboxHeightToleranceEm": 0.08,
     "compareKatexGlyphs": true,
     "glyphXToleranceEm": 0.06,
-    "glyphWidthToleranceEm": 0.05
+    "glyphWidthToleranceEm": 0.05,
+    "compareKatexMetrics": true,
+    "compareKatexInkBBox": true
   }
 ]

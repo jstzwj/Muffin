@@ -264,19 +264,31 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeArray(const MathParseNode& node
   }
 
   tableBody->xOffset = xOffset;
-  array->children.push_back(std::move(tableBody));
 
-  for (int i = 0; i < node.arrayLines.size(); ++i) {
-    const MathArrayLine& arrayLine = node.arrayLines.at(i);
-    auto line = std::make_unique<MathRenderNode>();
-    line->kind = MathRenderKind::Rule;
-    line->width = bodyWidth;
-    line->ruleThickness = rule;
-    line->color = options_.color();
-    line->xOffset = xOffset;
-    line->yOffset = hlinePositions.value(i) - baseline;
-    line->text = arrayLine.dashed ? QStringLiteral("dashed") : QString();
-    array->children.push_back(std::move(line));
+  // Wrap tableBody and hlines into a VList, matching KaTeX's approach where
+  // hlines are VList children with individualShift (see array.ts:525-539).
+  if (!node.arrayLines.isEmpty()) {
+    std::vector<MathVListChild> wrapChildren;
+    auto tableLayout = layoutFromRenderNode(std::move(tableBody));
+    wrapChildren.push_back(MathVListChild{std::move(tableLayout), 0.0});
+    for (int i = 0; i < node.arrayLines.size(); ++i) {
+      const MathArrayLine& arrayLine = node.arrayLines.at(i);
+      auto line = std::make_unique<MathRenderNode>();
+      line->kind = MathRenderKind::Rule;
+      line->width = bodyWidth;
+      line->ruleThickness = rule;
+      line->color = options_.color();
+      line->xOffset = xOffset;
+      line->text = arrayLine.dashed ? QStringLiteral("dashed") : QString();
+      wrapChildren.push_back(MathVListChild{layoutFromRenderNode(std::move(line)),
+                                            hlinePositions.value(i) - baseline});
+    }
+    auto wrapLayout = makeLayoutVListIndividualShift(std::move(wrapChildren));
+    auto wrapped = renderNodeFromLayout(*wrapLayout);
+    wrapped->width = bodyWidth;
+    array->children.push_back(std::move(wrapped));
+  } else {
+    array->children.push_back(std::move(tableBody));
   }
 
   for (const PlacedSeparator& separator : verticalSeparators) {
