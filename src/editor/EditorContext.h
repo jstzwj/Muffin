@@ -4,6 +4,7 @@
 
 namespace muffin {
 
+class BlockEditContextResolver;
 class DocumentSession;
 class SelectionController;
 class UndoStack;
@@ -18,6 +19,8 @@ struct EditorContext {
   BrushQueue* brushQueue = nullptr;
   EditorView* view = nullptr;
   QHash<int, LiteralBlockController*> literalEditors;
+
+  BlockEditContextResolver contextResolver() const;
 };
 
 }  // namespace muffin

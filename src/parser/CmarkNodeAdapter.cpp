@@ -1,5 +1,8 @@
 #include "parser/CmarkNodeAdapter.h"
 
+#include "document/InlineNode.h"
+#include "document/LineStartOffsetCache.h"
+
 #include <QString>
 
 extern "C" {
@@ -35,6 +38,9 @@ bool isBlockType(cmark_node_type type) {
 
 }  // namespace
 
+CmarkNodeAdapter::CmarkNodeAdapter(const LineStartOffsetCache* lineOffsets)
+    : lineOffsets_(lineOffsets) {}
+
 std::unique_ptr<MarkdownNode> CmarkNodeAdapter::convertBlock(cmark_node* node) {
   auto result = std::make_unique<MarkdownNode>(mapBlockType(node));
   result->setSourceRange(readSourceRange(node));
@@ -56,7 +62,8 @@ std::unique_ptr<MarkdownNode> CmarkNodeAdapter::convertBlock(cmark_node* node) {
 }
 
 InlineNode CmarkNodeAdapter::convertInline(cmark_node* node) {
-  switch (mapInlineType(node)) {
+  InlineNode result = [this, node]() -> InlineNode {
+    switch (mapInlineType(node)) {
     case InlineType::Text:
       return InlineNode::text(fromUtf8(cmark_node_get_literal(node)));
     case InlineType::SoftBreak:
@@ -99,7 +106,11 @@ InlineNode CmarkNodeAdapter::convertInline(cmark_node* node) {
       unknown.setText(fromUtf8(cmark_node_get_literal(node)));
       return unknown;
     }
-  }
+    }
+  }();
+
+  annotateInlineSource(node, result);
+  return result;
 }
 
 BlockType CmarkNodeAdapter::mapBlockType(cmark_node* node) const {
@@ -144,6 +155,22 @@ SourceRange CmarkNodeAdapter::readSourceRange(cmark_node* node) const {
   range.columnStart = cmark_node_get_start_column(node);
   range.columnEnd = cmark_node_get_end_column(node);
   return range;
+}
+
+void CmarkNodeAdapter::annotateInlineSource(cmark_node* cmarkNode, InlineNode& inlineNode) const {
+  if (!lineOffsets_) {
+    return;
+  }
+  const SourceRange range = readSourceRange(cmarkNode);
+  if (range.lineStart <= 0) {
+    return;
+  }
+  const qsizetype start = lineOffsets_->offsetForLineByteColumn(range.lineStart, qMax(1, range.columnStart));
+  const qsizetype end = lineOffsets_->offsetForLineByteColumn(range.lineEnd, qMax(1, range.columnEnd + 1));
+  if (start >= 0 && end >= start) {
+    inlineNode.setSourceStart(start);
+    inlineNode.setSourceEnd(end);
+  }
 }
 
 QVector<InlineNode> CmarkNodeAdapter::convertInlineChildren(cmark_node* node) {

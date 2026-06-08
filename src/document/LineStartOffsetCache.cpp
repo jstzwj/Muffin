@@ -4,6 +4,23 @@
 
 namespace muffin {
 
+namespace {
+
+qsizetype utf8ByteLength(uint ucs4) {
+  if (ucs4 <= 0x7F) {
+    return 1;
+  }
+  if (ucs4 <= 0x7FF) {
+    return 2;
+  }
+  if (ucs4 <= 0xFFFF) {
+    return 3;
+  }
+  return 4;
+}
+
+}  // namespace
+
 LineStartOffsetCache::LineStartOffsetCache() {
   rebuild(QStringView());
 }
@@ -13,6 +30,7 @@ LineStartOffsetCache::LineStartOffsetCache(QStringView text) {
 }
 
 void LineStartOffsetCache::rebuild(QStringView text) {
+  text_ = text.toString();
   textSize_ = text.size();
   lineStarts_.clear();
   lineStarts_.reserve(qMax<qsizetype>(1, text.size() / 48));
@@ -34,6 +52,32 @@ qsizetype LineStartOffsetCache::offsetForLineColumn(int line, int column) const 
     return -1;
   }
   return qMin(start + column - 1, end);
+}
+
+qsizetype LineStartOffsetCache::offsetForLineByteColumn(int line, int column) const {
+  if (line <= 0 || column <= 0 || line > lineStarts_.size()) {
+    return -1;
+  }
+  const qsizetype start = lineStarts_.at(line - 1);
+  const qsizetype end = lineEndOffset(line);
+  if (end < start) {
+    return -1;
+  }
+
+  qsizetype offset = start;
+  qsizetype byteColumn = 1;
+  while (offset < end && byteColumn < column) {
+    const uint ucs4 = text_.at(offset).isHighSurrogate() && offset + 1 < end && text_.at(offset + 1).isLowSurrogate()
+                          ? QChar::surrogateToUcs4(text_.at(offset), text_.at(offset + 1))
+                          : text_.at(offset).unicode();
+    const qsizetype nextByteColumn = byteColumn + utf8ByteLength(ucs4);
+    if (column < nextByteColumn) {
+      break;
+    }
+    byteColumn = nextByteColumn;
+    offset += ucs4 > 0xFFFF ? 2 : 1;
+  }
+  return qMin(offset, end);
 }
 
 qsizetype LineStartOffsetCache::lineEndOffset(int line) const {

@@ -3,6 +3,7 @@
 #include "app/DocumentSession.h"
 #include "document/InlineNode.h"
 #include "document/MarkdownNode.h"
+#include "editor/BlockEditContext.h"
 #include "editor/BrushQueue.h"
 #include "editor/SelectionController.h"
 #include "edit/UndoStack.h"
@@ -361,46 +362,24 @@ CursorPosition StylizeController::cursorForSourceOffset(qsizetype sourceOffset) 
     return cursor;
   }
 
-  MarkdownNode* node = paragraphAtSourceOffset(ctx_.session->document().root(), sourceOffset);
+  auto resolver = ctx_.contextResolver();
+  MarkdownNode* node = resolver.nodeAtContentSourceOffset(
+      ctx_.session->document().root(), sourceOffset);
   if (!node) {
     return cursor;
   }
 
-  const QString markdown = ctx_.session->markdownText();
-  ParagraphStyleContext context;
-  SelectionRange selection;
-  selection.anchor.blockId = node->id();
-  selection.anchor.text.nodeId = node->id();
-  selection.focus = selection.anchor;
-  if (!fillEditableContext(*node, selection, context, false)) {
+  BlockEditContext context;
+  if (!resolver.fill(*node, context)) {
     return cursor;
   }
+
   cursor.blockId = node->id();
-  cursor.text.nodeId = node->id();
-  cursor.text.textOffset = qBound<qsizetype>(0, sourceOffset - context.sourceStart, context.sourceText.size());
+  cursor.text.nodeId = context.editableNode ? context.editableNode->id() : node->id();
+  cursor.text.textOffset = qBound<qsizetype>(
+      0, sourceOffset - context.contentRange.byteStart, context.contentText.size());
   cursor.text.sourceOffset = sourceOffset;
   return cursor;
-}
-
-MarkdownNode* StylizeController::paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset) const {
-  if (node.type() == BlockType::Paragraph || node.type() == BlockType::Heading || node.type() == BlockType::ListItem) {
-    SelectionRange selection;
-    selection.anchor.blockId = node.id();
-    selection.anchor.text.nodeId = node.id();
-    selection.focus = selection.anchor;
-    ParagraphStyleContext context;
-    if (fillEditableContext(node, selection, context, false) && sourceOffset >= context.sourceStart &&
-        sourceOffset <= context.sourceEnd) {
-      return &node;
-    }
-  }
-
-  for (const auto& child : node.children()) {
-    if (MarkdownNode* found = paragraphAtSourceOffset(*child, sourceOffset)) {
-      return found;
-    }
-  }
-  return nullptr;
 }
 
 }  // namespace muffin

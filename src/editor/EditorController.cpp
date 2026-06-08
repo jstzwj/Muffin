@@ -189,7 +189,7 @@ bool fillSourceOffsetForTextHit(const DocumentSession& session, HitTestResult& h
   cursor.text.textOffset = hit.textOffset;
   cursor.text.sourceOffset = hit.sourceOffset;
   InlineProjectionState projectionState = InlineProjectionState::forCursor(cursor, hit.blockId, start);
-  InlineProjection projection(editable->inlines(), contentText, projectionState);
+  InlineProjection projection(editable->inlines(), contentText, projectionState, start);
   if (hit.sourceOffset >= 0) {
     localSourceOffset = qBound<qsizetype>(0, hit.sourceOffset - start, contentText.size());
   } else if (!projection.sourceOffsetForVisibleOffset(hit.textOffset, localSourceOffset)) {

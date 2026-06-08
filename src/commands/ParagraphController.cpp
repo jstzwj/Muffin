@@ -2,6 +2,7 @@
 
 #include "app/DocumentSession.h"
 #include "document/MarkdownNode.h"
+#include "editor/BlockEditContext.h"
 #include "document/SourceRangeUtil.h"
 #include "editor/BlockEditContext.h"
 #include "editor/BrushQueue.h"
@@ -186,8 +187,7 @@ bool ParagraphController::applyBlockDelta(
 }
 
 // ---------------------------------------------------------------------------
-// cursorForSourceOffset / paragraphAtSourceOffset
-// (mirrors StylizeController's implementation)
+// cursorForSourceOffset
 // ---------------------------------------------------------------------------
 
 CursorPosition ParagraphController::cursorForSourceOffset(qsizetype sourceOffset) const {
@@ -196,61 +196,24 @@ CursorPosition ParagraphController::cursorForSourceOffset(qsizetype sourceOffset
     return cursor;
   }
 
-  MarkdownNode* node = paragraphAtSourceOffset(ctx_.session->document().root(), sourceOffset);
+  auto resolver = ctx_.contextResolver();
+  MarkdownNode* node = resolver.nodeAtContentSourceOffset(
+      ctx_.session->document().root(), sourceOffset);
   if (!node) {
     return cursor;
   }
 
-  MarkdownNode* editable = node;
-  if (node->type() == BlockType::ListItem) {
-    editable = primaryParagraph(*node);
-  }
-  if (!editable) {
+  BlockEditContext context;
+  if (!resolver.fill(*node, context)) {
     return cursor;
-  }
-
-  const SourceRange range = editable->sourceRange();
-  const QString markdown = ctx_.session->markdownText();
-  qsizetype contentStart = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
-  const qsizetype contentEnd = sourceOffsetForLineEnd(markdown, range.lineEnd);
-  if (contentStart < 0 || contentEnd < contentStart) {
-    return cursor;
-  }
-
-  if (editable->type() == BlockType::Heading) {
-    while (contentStart < contentEnd && markdown.at(contentStart) == QLatin1Char('#')) {
-      ++contentStart;
-    }
-    if (contentStart < contentEnd && markdown.at(contentStart).isSpace()) {
-      ++contentStart;
-    }
   }
 
   cursor.blockId = node->id();
-  cursor.text.nodeId = editable->id();
-  cursor.text.textOffset = qBound<qsizetype>(0, sourceOffset - contentStart, contentEnd - contentStart);
+  cursor.text.nodeId = context.editableNode ? context.editableNode->id() : node->id();
+  cursor.text.textOffset = qBound<qsizetype>(
+      0, sourceOffset - context.contentRange.byteStart, context.contentText.size());
   cursor.text.sourceOffset = sourceOffset;
   return cursor;
-}
-
-MarkdownNode* ParagraphController::paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset) const {
-  const SourceRange range = node.sourceRange();
-  if (range.byteStart >= 0 && range.byteEnd >= range.byteStart &&
-      (sourceOffset < range.byteStart || sourceOffset > range.byteEnd)) {
-    return nullptr;
-  }
-
-  if (node.type() == BlockType::Paragraph || node.type() == BlockType::Heading ||
-      node.type() == BlockType::LinkDefinition || node.type() == BlockType::FootnoteDefinition) {
-    return &node;
-  }
-
-  for (const auto& child : node.children()) {
-    if (MarkdownNode* found = paragraphAtSourceOffset(*child, sourceOffset)) {
-      return found;
-    }
-  }
-  return nullptr;
 }
 
 // ---------------------------------------------------------------------------

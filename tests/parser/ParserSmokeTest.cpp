@@ -125,6 +125,31 @@ void testLineStartOffsetCache() {
   require(unicodeLines.offsetForLineColumn(1, 3) == 2, QStringLiteral("Emoji UTF-16 offset mismatch"));
   require(unicodeLines.lineEndOffset(1) == unicode.indexOf(QLatin1Char('\n')), QStringLiteral("Unicode line end mismatch"));
   require(unicodeLines.offsetForLineColumn(2, 1) == unicode.indexOf(QLatin1Char('\n')) + 1, QStringLiteral("Unicode second line start mismatch"));
+  require(unicodeLines.offsetForLineByteColumn(1, 2) == 1, QStringLiteral("Unicode byte column ASCII offset mismatch"));
+  require(unicodeLines.offsetForLineByteColumn(1, 3) == 1, QStringLiteral("Unicode byte column inside emoji should snap to emoji start"));
+  require(unicodeLines.offsetForLineByteColumn(1, 6) == 3, QStringLiteral("Unicode byte column CJK start mismatch"));
+  require(unicodeLines.offsetForLineByteColumn(1, 9) == unicode.indexOf(QLatin1Char('\n')), QStringLiteral("Unicode byte column line end mismatch"));
+}
+
+void testInlineSourceRangesUseUtf8Columns() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QString::fromUtf8("a😀 **中** again\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for inline source range sample"));
+  require(parsed.root->children().size() == 1, QStringLiteral("Unexpected inline source range block count"));
+
+  const MarkdownNode& paragraph = childAt(*parsed.root, 0);
+  require(paragraph.type() == BlockType::Paragraph, QStringLiteral("Expected paragraph for inline source range sample"));
+  require(paragraph.inlines().size() >= 2, QStringLiteral("Expected styled inline source range sample"));
+  const InlineNode& strong = paragraph.inlines().at(1);
+  require(strong.type() == InlineType::Strong, QStringLiteral("Expected strong inline in source range sample"));
+
+  const qsizetype expectedStart = markdown.indexOf(QStringLiteral("**"));
+  const qsizetype expectedEnd = expectedStart + QStringLiteral("**中**").size();
+  require(strong.sourceStart() == expectedStart, QStringLiteral("Strong inline source start should use QString offset"));
+  require(strong.sourceEnd() == expectedEnd, QStringLiteral("Strong inline source end should be half-open QString offset"));
 }
 
 void testFinalParagraphSourceRangeWithoutTrailingNewline() {
@@ -819,6 +844,7 @@ void testTaskListMetadata() {
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
   testLineStartOffsetCache();
+  testInlineSourceRangesUseUtf8Columns();
   testFinalParagraphSourceRangeWithoutTrailingNewline();
   testEmptyDocumentHasEditableParagraph();
   testBasicParseAndSerialize();

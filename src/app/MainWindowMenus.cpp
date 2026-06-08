@@ -85,11 +85,7 @@ void muffin::MainWindow::retranslateUi() {
   }
 
   updateFileActions();
-  updateTableActions();
-  updateParagraphActions();
-  updateCodeActions();
-  updateHtmlActions();
-  updateMathActions();
+  updateContextActions();
   updateThemeActions();
   rebuildRecentFilesMenu();
   buildReopenEncodingMenu();

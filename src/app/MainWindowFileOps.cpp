@@ -18,19 +18,6 @@
 
 namespace {
 
-int countWords(const QString& text) {
-  int count = 0;
-  bool inWord = false;
-  for (const QChar ch : text) {
-    const bool wordChar = ch.isLetterOrNumber() || ch == QLatin1Char('_');
-    if (wordChar && !inWord) {
-      ++count;
-    }
-    inWord = wordChar;
-  }
-  return count;
-}
-
 QString elidedPath(const QString& path) {
   const QString nativePath = QDir::toNativeSeparators(path);
   constexpr qsizetype maxLength = 72;
@@ -113,7 +100,7 @@ void muffin::MainWindow::showDocumentProperties() {
                                   QDir::toNativeSeparators(info.absolutePath()),
                                   QString::number(info.size()),
                                   QLocale().toString(info.lastModified(), QLocale::ShortFormat),
-                                  QString::number(countWords(session_.markdownText())),
+                                  QString::number(MainWindow::countWords(session_.markdownText())),
                                   QString::number(session_.lastParseElapsedMs()));
   QMessageBox::information(this, tr("Properties"), message);
 }

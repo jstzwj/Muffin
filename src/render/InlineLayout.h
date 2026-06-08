@@ -25,6 +25,7 @@ class InlineLayout {
 public:
   struct BuildOptions {
     InlineProjectionState projectionState;
+    qsizetype sourceBase = -1;
   };
 
   InlineLayout() = default;

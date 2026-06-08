@@ -12,11 +12,13 @@ public:
 
   void rebuild(QStringView text);
   qsizetype offsetForLineColumn(int line, int column) const;
+  qsizetype offsetForLineByteColumn(int line, int column) const;
   qsizetype lineEndOffset(int line) const;
   int lineForOffset(qsizetype offset) const;
   int lineCount() const;
 
 private:
+  QString text_;
   QVector<qsizetype> lineStarts_;
   qsizetype textSize_ = 0;
 };

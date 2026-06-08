@@ -56,19 +56,6 @@ private:
   QElapsedTimer timer_;
 };
 
-int countWords(const QString& text) {
-  int count = 0;
-  bool inWord = false;
-  for (const QChar ch : text) {
-    const bool wordChar = ch.isLetterOrNumber() || ch == QLatin1Char('_');
-    if (wordChar && !inWord) {
-      ++count;
-    }
-    inWord = wordChar;
-  }
-  return count;
-}
-
 QString zoneName(muffin::HitTestResult::Zone zone) {
   switch (zone) {
     case muffin::HitTestResult::Zone::Text:
@@ -202,12 +189,7 @@ void muffin::MainWindow::setupConnections() {
   });
   connect(&editorController_, &EditorController::stateChanged, this, [this] {
     updateStatus();
-    updateEditActions();
-    updateTableActions();
-    updateParagraphActions();
-    updateCodeActions();
-    updateHtmlActions();
-    updateMathActions();
+    updateContextActions();
   });
   connect(&themeManager_, &ThemeManager::themeChanged, this, [this](const QString& name) {
     applyTheme(name);
@@ -547,12 +529,7 @@ void muffin::MainWindow::setupConnections() {
   connect(sidebar_, &SidebarWidget::outlineActivated, this, &MainWindow::activateOutlineNode);
 
   updateFileActions();
-  updateEditActions();
-  updateTableActions();
-  updateParagraphActions();
-  updateCodeActions();
-  updateHtmlActions();
-  updateMathActions();
+  updateContextActions();
   rebuildRecentFilesMenu();
   refreshSidebarDocumentInfo();
   refreshSidebarOutline();
@@ -572,12 +549,7 @@ void muffin::MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {
                               .arg(zoneName(hit.zone), hit.blockId.toString())
                               .arg(hit.textOffset);
   }
-  updateEditActions();
-  updateTableActions();
-  updateParagraphActions();
-  updateCodeActions();
-  updateHtmlActions();
-  updateMathActions();
+  updateContextActions();
   updateStatus();
 }
 
@@ -701,6 +673,15 @@ void muffin::MainWindow::syncSourceEditorIfNeeded() {
   sourceEditorDirty_ = false;
 }
 
+void muffin::MainWindow::updateContextActions() {
+  updateEditActions();
+  updateTableActions();
+  updateParagraphActions();
+  updateCodeActions();
+  updateHtmlActions();
+  updateMathActions();
+}
+
 void muffin::MainWindow::scheduleWordCountUpdate() {
   wordCountDirty_ = true;
   if (wordCountTimer_ && !wordCountTimer_->isActive()) {
@@ -712,7 +693,7 @@ void muffin::MainWindow::updateWordCountNow() {
   if (!wordsLabel_ || !wordCountDirty_) {
     return;
   }
-  wordsLabel_->setText(tr("%1 words").arg(countWords(session_.markdownText())));
+  wordsLabel_->setText(tr("%1 words").arg(MainWindow::countWords(session_.markdownText())));
   wordCountDirty_ = false;
 }
 

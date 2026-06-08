@@ -272,7 +272,7 @@ bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, c
   context.sourceStart = sourceStart;
   context.sourceEnd = sourceEnd;
   context.sourceText = markdown.mid(sourceStart, sourceEnd - sourceStart);
-  return isPlainInlineEditable(*editable, context.sourceText) || InlineProjection(editable->inlines(), context.sourceText).isValid();
+  return isPlainInlineEditable(*editable, context.sourceText) || InlineProjection(editable->inlines(), context.sourceText, {}, sourceStart).isValid();
 }
 
 bool SelectionSerializer::editableCursorSourceOffset(
@@ -295,7 +295,11 @@ bool SelectionSerializer::editableCursorSourceOffset(
   CursorPosition contextCursor = cursor;
   contextCursor.text.textOffset = offset;
   InlineProjectionState projectionState = InlineProjectionState::forCursor(contextCursor, cursor.blockId, context.sourceStart);
-  InlineProjection projection(context.editableNode ? context.editableNode->inlines() : QVector<InlineNode>(), context.sourceText, projectionState);
+  InlineProjection projection(
+      context.editableNode ? context.editableNode->inlines() : QVector<InlineNode>(),
+      context.sourceText,
+      projectionState,
+      context.sourceStart);
   if (cursor.text.sourceOffset >= context.sourceStart && cursor.text.sourceOffset <= context.sourceEnd) {
     localSourceOffset = cursor.text.sourceOffset - context.sourceStart;
   } else if (!projection.sourceOffsetForVisibleOffset(offset, localSourceOffset)) {

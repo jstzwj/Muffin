@@ -203,6 +203,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
   InlineLayout::BuildOptions options;
   options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), sourceContentStartForEditableNode(node));
+  options.sourceBase = sourceContentStartForEditableNode(node);
   inlineLayout->build(node.inlines(), sourceTextForEditableNode(node), theme, width, font, options);
   qreal height = inlineLayout->height();
   if (node.type() == BlockType::Heading && node.headingLevel() <= 2) {
@@ -261,8 +262,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   QString listSourceText;
   if (const MarkdownNode* paragraph = primaryParagraph(node)) {
     listSourceText = sourceTextForEditableNode(*paragraph);
-    layout->setContentSourceStart(sourceContentStartForEditableNode(*paragraph));
-    options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), sourceContentStartForEditableNode(*paragraph));
+    const qsizetype contentStart = sourceContentStartForEditableNode(*paragraph);
+    layout->setContentSourceStart(contentStart);
+    options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), contentStart);
+    options.sourceBase = contentStart;
   }
   inlineLayout->build(primaryInlinesForListItem(node), listSourceText, theme, contentWidth, theme.paragraphFont(), options);
   layout->setInlineLayout(std::move(inlineLayout));
@@ -393,6 +396,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       cell.alternate = rowIndex % 2 == 1;
       cell.alignment = column < alignments.size() ? alignments.at(column) : TableAlignment::None;
       InlineLayout::BuildOptions options;
+      options.sourceBase = sourceContentStartForEditableNode(*cellNode);
       if (selection_.focus.text.nodeId == cellNode->id()) {
         options.projectionState = InlineProjectionState::forSelection(selection_, selection_.focus.blockId, sourceContentStartForEditableNode(*cellNode));
       }

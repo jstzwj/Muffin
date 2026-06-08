@@ -287,6 +287,28 @@ void testInlineProjectionMarkerSourcePositions() {
   require(sourceOffset == 1, "projection marker source offset mismatch");
 }
 
+void testInlineProjectionUsesParserSourceRangesForRepeatedUnicodeMarkers() {
+  const QString markdown = QString::fromUtf8("**中** and **中**");
+  InlineNode first = InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QString::fromUtf8("中"))});
+  first.setSourceStart(0);
+  first.setSourceEnd(QString::fromUtf8("**中**").size());
+  InlineNode spacer = InlineNode::text(QStringLiteral(" and "));
+  spacer.setSourceStart(first.sourceEnd());
+  spacer.setSourceEnd(first.sourceEnd() + spacer.text().size());
+  InlineNode second = InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QString::fromUtf8("中"))});
+  second.setSourceStart(markdown.lastIndexOf(QStringLiteral("**")));
+  second.setSourceEnd(markdown.size());
+
+  InlineProjectionState state;
+  state.cursorSourceOffset = second.sourceStart() + 1;
+  InlineProjection projection({first, spacer, second}, markdown, state, 0);
+  require(projection.isValid(), "projection should be valid for repeated unicode markers");
+  require(projection.displayText() == QString::fromUtf8("中 and **中**"),
+          "projection should expand the repeated inline selected by parser source range");
+  require(projection.visibleText() == QString::fromUtf8("中 and 中"),
+          "projection visible text should collapse repeated unicode markers");
+}
+
 void testInlineProjectionForwardBiasAtInlineEnd() {
   QVector<InlineNode> inlines;
   inlines.push_back(InlineNode::text(QStringLiteral("vendored ")));
@@ -1382,7 +1404,11 @@ void testEditorViewListInlineMathHitEditing() {
   require(!cursor.isEmpty(), "list inline math source cursor rect should exist");
   const QPointF hitPoint = view.nodeRect(blockId).topLeft() + QPointF(theme.listIndent() + cursor.left(), cursor.center().y());
   const HitTestResult hit = view.hitTest(hitPoint);
-  require(hit.isValid() && hit.sourceOffset == contentSourceStart + localMathSourceOffset, "list inline math hit should keep source offset");
+  require(hit.isValid() && hit.sourceOffset == contentSourceStart + localMathSourceOffset,
+          QStringLiteral("list inline math hit should keep source offset: actual=%1 expected=%2 textOffset=%3")
+              .arg(hit.sourceOffset)
+              .arg(contentSourceStart + localMathSourceOffset)
+              .arg(hit.textOffset));
   controller.activateHit(hit);
   require(controller.inputController().insertText(QStringLiteral("0")), "typing after list inline math hit should edit source");
   require(session.markdownText() == QStringLiteral("- before $x0+y$ after"), "list inline math hit insert should not drift");
@@ -1613,6 +1639,7 @@ int main(int argc, char** argv) {
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testInlineProjectionMarkerSourcePositions);
+  RUN_TEST(testInlineProjectionUsesParserSourceRangesForRepeatedUnicodeMarkers);
   RUN_TEST(testInlineProjectionForwardBiasAtInlineEnd);
   RUN_TEST(testInlineProjectionSpanContracts);
   RUN_TEST(testInlineProjectionMappingMatrix);

@@ -84,7 +84,6 @@ private:
       QVector<LocalEditNodeHint> nodeHints = {},
       bool structureEdit = false);
   CursorPosition cursorForSourceOffset(qsizetype sourceOffset) const;
-  MarkdownNode* paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset) const;
 
   EditorContext ctx_;
 };

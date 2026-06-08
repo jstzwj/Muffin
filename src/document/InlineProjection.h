@@ -71,7 +71,7 @@ struct InlineProjectionState {
 class InlineProjection {
 public:
   InlineProjection() = default;
-  InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState state = {});
+  InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState state = {}, qsizetype sourceBase = -1);
 
   bool isValid() const;
   QString sourceText() const;
@@ -94,6 +94,7 @@ public:
 private:
   struct BuildState {
     const QString* sourceText = nullptr;
+    qsizetype sourceBase = -1;
     InlineProjectionState projectionState;
     qsizetype displayOffset = 0;
     qsizetype visibleOffset = 0;

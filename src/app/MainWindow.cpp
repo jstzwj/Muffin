@@ -66,19 +66,6 @@ QString zoneName(muffin::HitTestResult::Zone zone) {
   }
 }
 
-int countWords(const QString& text) {
-  int count = 0;
-  bool inWord = false;
-  for (const QChar ch : text) {
-    const bool wordChar = ch.isLetterOrNumber() || ch == QLatin1Char('_');
-    if (wordChar && !inWord) {
-      ++count;
-    }
-    inWord = wordChar;
-  }
-  return count;
-}
-
 enum class StatusBarIconKind { Sidebar, SourceMode };
 
 QIcon statusBarIcon(StatusBarIconKind kind, const QColor& ink) {
@@ -682,4 +669,17 @@ void muffin::MainWindow::updateThemeActions() {
   commands_.setChecked(QStringLiteral("theme.night"), current == QStringLiteral("night"));
   commands_.setChecked(QStringLiteral("theme.pixyll"), current == QStringLiteral("pixyll"));
   commands_.setChecked(QStringLiteral("theme.whitey"), current == QStringLiteral("whitey"));
+}
+
+int muffin::MainWindow::countWords(const QString& text) {
+  int count = 0;
+  bool inWord = false;
+  for (const QChar ch : text) {
+    const bool wordChar = ch.isLetterOrNumber() || ch == QLatin1Char('_');
+    if (wordChar && !inWord) {
+      ++count;
+    }
+    inWord = wordChar;
+  }
+  return count;
 }

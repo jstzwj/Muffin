@@ -4,6 +4,7 @@
 #include "render/DocumentLayout.h"
 #include "math/MathBuilder.h"
 #include "math/MathDelimiter.h"
+#include "math/MathDimension.h"
 #include "math/MathFontMetrics.h"
 #include "math/MathFunctionRegistry.h"
 #include "math/MathLayoutTree.h"
@@ -2524,6 +2525,33 @@ void testRemainingKatexFunctionFamilies() {
             QStringLiteral("fraction VList shifts should match KaTeX genfrac.ts without double-applying child shifts"));
     require(vlist->children.at(1)->kind == math::MathRenderKind::Rule,
             QStringLiteral("fraction rule should be a normal rule child in the vlist"));
+  }
+  {
+    math::MathSettings settings;
+    math::MathOptions textOptions(math::MathStyle::textStyle(), 20.0, QColor(QStringLiteral("#111111")), settings);
+    math::MathOptions scriptOptions(math::MathStyle::script(), 20.0, QColor(QStringLiteral("#111111")), settings);
+    auto widthFor = [&](const QString& tex, const math::MathOptions& options) {
+      std::unique_ptr<math::MathRenderNode> root =
+          math::MathBuilder(options).buildExpression(math::MathParser(tex, settings).parse());
+      require(root != nullptr, QStringLiteral("math dimension sample should build: %1").arg(tex));
+      return root->width;
+    };
+    require(qAbs(widthFor(QStringLiteral("\\rule{1em}{1em}"), textOptions) - 20.0) < 0.01,
+            QStringLiteral("1em rule width should scale with current font size"));
+    require(qAbs(widthFor(QStringLiteral("\\scriptstyle\\rule{1em}{1em}"), scriptOptions) - 14.0) < 0.01,
+            QStringLiteral("1em rule width should scale with script font size"));
+    require(qAbs(widthFor(QStringLiteral("\\rule{1pt}{1pt}"), textOptions) - 2.0) < 0.01,
+            QStringLiteral("1pt rule width should match KaTeX ptPerEm conversion"));
+    require(qAbs(widthFor(QStringLiteral("\\scriptstyle\\rule{1pt}{1pt}"), scriptOptions) - 2.0) < 0.01,
+            QStringLiteral("absolute pt rule width should not shrink in script style"));
+    require(qAbs(widthFor(QStringLiteral("\\rule{1px}{1px}"), textOptions) - (803.0 / 800.0) * 2.0) < 0.01,
+            QStringLiteral("1px rule width should follow KaTeX pdfTeX 1bp default"));
+    require(qAbs(widthFor(QStringLiteral("\\rule{1bp}{1bp}"), textOptions) - (803.0 / 800.0) * 2.0) < 0.01,
+            QStringLiteral("1bp rule width should follow KaTeX ptPerUnit"));
+    require(qAbs(widthFor(QStringLiteral("\\rule{1in}{1in}"), textOptions) - 72.27 * 2.0) < 0.01,
+            QStringLiteral("1in rule width should use TeX points like KaTeX"));
+    require(qAbs(math::dimensionToPoints(QStringLiteral("1zz"), 20.0, 20.0)) < 0.01,
+            QStringLiteral("unknown dimension units should not be treated as em"));
   }
   {
     RenderTheme theme = RenderTheme::github();

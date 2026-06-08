@@ -15,4 +15,18 @@ namespace muffin::math {
  */
 qreal sizeTextToEm(const QString& sizeText);
 
+/**
+ * Parse a KaTeX/TeX dimension string and return the value in Muffin layout
+ * units.
+ *
+ * Relative units (em, ex, mu) are multiplied by fontPointSize. Absolute units
+ * (pt, mm, cm, in, bp, pc, dd, cc, nd, nc, sp, px) use KaTeX's ptPerUnit
+ * conversion table, then scale by absoluteReferencePointSize / 10 to mirror
+ * KaTeX's ptPerUnit / ptPerEm behavior. px follows KaTeX/pdfTeX and defaults
+ * to 1bp.
+ *
+ * Returns 0.0 for unparseable strings and unknown units.
+ */
+qreal dimensionToPoints(const QString& sizeText, qreal fontPointSize, qreal absoluteReferencePointSize = -1.0);
+
 }  // namespace muffin::math

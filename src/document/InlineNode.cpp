@@ -50,6 +50,22 @@ void InlineNode::setAlt(QString alt) {
   alt_ = std::move(alt);
 }
 
+qsizetype InlineNode::sourceStart() const {
+  return sourceStart_;
+}
+
+void InlineNode::setSourceStart(qsizetype start) {
+  sourceStart_ = start;
+}
+
+qsizetype InlineNode::sourceEnd() const {
+  return sourceEnd_;
+}
+
+void InlineNode::setSourceEnd(qsizetype end) {
+  sourceEnd_ = end;
+}
+
 QVector<InlineNode>& InlineNode::children() {
   return children_;
 }

@@ -59,7 +59,6 @@ private:
       qsizetype nextFocusSourceOffset,
       QVector<LocalEditNodeHint> nodeHints = {});
   CursorPosition cursorForSourceOffset(qsizetype sourceOffset) const;
-  MarkdownNode* paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset) const;
 
   EditorContext ctx_;
 };

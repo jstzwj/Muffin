@@ -1,6 +1,7 @@
 #include "math/MathBuilder.h"
 
 #include "math/MathDelimiter.h"
+#include "math/MathDimension.h"
 #include "math/MathFontMetrics.h"
 #include "math/MathLayoutTree.h"
 #include "math/MathSvgGeometry.h"
@@ -1490,29 +1491,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeError(const QString& text, cons
 }
 
 qreal MathBuilder::dimensionToPoints(const QString& value) const {
-  const QString trimmed = value.trimmed();
-  static const QRegularExpression re(QStringLiteral("^([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+))\\s*([a-zA-Z]+)?$"));
-  const QRegularExpressionMatch match = re.match(trimmed);
-  if (!match.hasMatch()) {
-    return 0.0;
-  }
-  const qreal number = match.captured(1).toDouble();
-  const QString unit = match.captured(2).isEmpty() ? QStringLiteral("em") : match.captured(2).toLower();
-  const qreal em = options_.fontPointSize();
-  if (unit == QStringLiteral("em")) return number * em;
-  if (unit == QStringLiteral("ex")) return number * em * 0.431;
-  if (unit == QStringLiteral("mu")) return number * em / 18.0;
-  if (unit == QStringLiteral("pt")) return number;
-  if (unit == QStringLiteral("mm")) return number * 72.0 / 25.4;
-  if (unit == QStringLiteral("cm")) return number * 72.0 / 2.54;
-  if (unit == QStringLiteral("in")) return number * 72.0;
-  if (unit == QStringLiteral("px")) return number;
-  if (unit == QStringLiteral("bp")) return number;
-  if (unit == QStringLiteral("pc")) return number * 12.0;
-  if (unit == QStringLiteral("dd")) return number * 1238.0 / 1157.0;
-  if (unit == QStringLiteral("cc")) return number * 12.0 * 1238.0 / 1157.0;
-  if (unit == QStringLiteral("sp")) return number / 65536.0;
-  return 0.0;
+  return math::dimensionToPoints(value, options_.fontPointSize(), options_.basePointSize());
 }
 
 }  // namespace muffin::math

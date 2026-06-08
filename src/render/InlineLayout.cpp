@@ -87,7 +87,7 @@ void InlineLayout::build(
   layoutText_.clear();
   textLayoutCodeBackgroundColor_ = theme.codeBackgroundColor();
   textLayoutCodeBorderColor_ = theme.codeBorderColor();
-  projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState);
+  projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState, options.sourceBase);
   buildOffsetMapFromProjection();
   buildMathAtoms(inlines, theme);
   buildTextLayout(theme, width, baseFont);

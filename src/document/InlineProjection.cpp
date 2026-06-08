@@ -75,10 +75,11 @@ InlineProjectionState InlineProjectionState::forSelection(
   return state;
 }
 
-InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState projectionState)
+InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState projectionState, qsizetype sourceBase)
     : sourceText_(std::move(sourceText)), visibleText_(plainTextForInlines(inlines)) {
   BuildState state;
   state.sourceText = &sourceText_;
+  state.sourceBase = sourceBase;
   state.projectionState = projectionState;
   appendInlines(state, inlines, 0, sourceText_.size());
   displayText_ = state.displayText;
@@ -449,7 +450,28 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
   qsizetype searchFrom = sourceStart;
   for (const InlineNode& node : inlines) {
     const QString markdown = markdownForInline(node);
-    const qsizetype nodeStart = findMarkdown(*state.sourceText, markdown, searchFrom, sourceEnd);
+    qsizetype nodeStart = -1;
+    qsizetype nodeEnd = -1;
+
+    // Use parser-provided source position when available (exact, no ambiguity).
+    // Only use when the stored range matches the reconstructed markdown length,
+    // to guard against cmark column-counting differences with non-ASCII text.
+    if (node.sourceStart() >= 0 && node.sourceEnd() > node.sourceStart() && state.sourceBase >= 0) {
+      const qsizetype absStart = node.sourceStart() - state.sourceBase;
+      const qsizetype absEnd = node.sourceEnd() - state.sourceBase;
+      if (absStart >= searchFrom && absEnd <= sourceEnd && absEnd > absStart &&
+          (absEnd - absStart) == markdown.size()) {
+        nodeStart = absStart;
+        nodeEnd = absEnd;
+      }
+    }
+
+    // Fallback: substring search for nodes without stored positions
+    if (nodeStart < 0) {
+      nodeStart = findMarkdown(*state.sourceText, markdown, searchFrom, sourceEnd);
+      nodeEnd = nodeStart >= 0 ? nodeStart + markdown.size() : -1;
+    }
+
     if (nodeStart < 0) {
       // Fallback: the reconstructed markdown didn't match the source text exactly
       // (e.g. different marker characters like __ vs **). Try locating the node's
@@ -490,8 +512,8 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
           state.sourceText->mid(searchFrom, nodeStart - searchFrom),
           true);
     }
-    appendInline(state, node, nodeStart, nodeStart + markdown.size());
-    searchFrom = nodeStart + markdown.size();
+    appendInline(state, node, nodeStart, nodeEnd);
+    searchFrom = nodeEnd;
   }
   if (searchFrom < sourceEnd) {
     appendTextSpan(

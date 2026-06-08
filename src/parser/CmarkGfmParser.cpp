@@ -376,6 +376,18 @@ FrontMatterScanResult scanFrontMatter(QStringView markdown) {
   return scanJsonFrontMatter(markdown);
 }
 
+void shiftInlineSourcePositions(QVector<InlineNode>& inlines, qsizetype delta) {
+  for (InlineNode& inlineNode : inlines) {
+    if (inlineNode.sourceStart() >= 0) {
+      inlineNode.setSourceStart(inlineNode.sourceStart() + delta);
+    }
+    if (inlineNode.sourceEnd() >= 0) {
+      inlineNode.setSourceEnd(inlineNode.sourceEnd() + delta);
+    }
+    shiftInlineSourcePositions(inlineNode.children(), delta);
+  }
+}
+
 void shiftSourceRanges(MarkdownNode& node, qsizetype delta, int lineDelta) {
   SourceRange range = node.sourceRange();
   if (range.byteStart >= 0 && range.byteEnd >= range.byteStart) {
@@ -405,6 +417,7 @@ void shiftSourceRanges(MarkdownNode& node, qsizetype delta, int lineDelta) {
     shiftField(definition.sourceRange);
     node.setDefinition(definition);
   }
+  shiftInlineSourcePositions(node.inlines(), delta);
   for (const auto& child : node.children()) {
     shiftSourceRanges(*child, delta, lineDelta);
   }
@@ -527,10 +540,10 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   cmark_parser_feed(parser, utf8.constData(), static_cast<size_t>(utf8.size()));
   cmark_node* document = cmark_parser_finish(parser);
 
-  CmarkNodeAdapter adapter;
+  const LineStartOffsetCache lineOffsets(markdownToParse);
+  CmarkNodeAdapter adapter(&lineOffsets);
   ParseResult result;
   result.root = adapter.convertBlock(document);
-  const LineStartOffsetCache lineOffsets(markdownToParse);
   insertVirtualEmptyParagraphs(markdownToParse, *result.root);
   annotateSourceOffsets(lineOffsets, *result.root);
   insertMissingDefinitions(*result.root, definitions, lineOffsets);

@@ -27,6 +27,11 @@ public:
   QString alt() const;
   void setAlt(QString alt);
 
+  qsizetype sourceStart() const;
+  void setSourceStart(qsizetype start);
+  qsizetype sourceEnd() const;
+  void setSourceEnd(qsizetype end);
+
   QVector<InlineNode>& children();
   const QVector<InlineNode>& children() const;
 
@@ -49,6 +54,8 @@ private:
   QString title_;
   QString alt_;
   QVector<InlineNode> children_;
+  qsizetype sourceStart_ = -1;
+  qsizetype sourceEnd_ = -1;
 };
 
 }  // namespace muffin

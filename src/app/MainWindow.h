@@ -108,9 +108,11 @@ private:
   void updateCodeActions();
   void updateHtmlActions();
   void updateMathActions();
+  void updateContextActions();
   void syncSourceEditorIfNeeded();
   void scheduleWordCountUpdate();
   void updateWordCountNow();
+  static int countWords(const QString& text);
   void undoEdit();
   void redoEdit();
   void applyTheme(QString name);

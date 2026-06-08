@@ -201,7 +201,7 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
     cursor.text.sourceOffset = cursorStoredSourceOffset;
     projectionState = InlineProjectionState::forCursor(cursor, displayNode.id(), start);
   }
-  context.inlineProjection = InlineProjection(editable->inlines(), context.contentText, projectionState);
+  context.inlineProjection = InlineProjection(editable->inlines(), context.contentText, projectionState, start);
   context.visibleText = context.inlineProjection.visibleText();
   context.plainInlineEditable = InlineProjection::isPlainInlineSource(editable->inlines(), context.contentText);
   qsizetype localSourceOffset = -1;
