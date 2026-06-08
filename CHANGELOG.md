@@ -5,6 +5,25 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-06-08
+
+### Changed
+- **EditorContext** - Introduced unified `EditorContext` struct to encapsulate all core editor context objects, replacing scattered `setDocumentSession` and other individual setters with a single `setContext` interface across all controllers
+- **Inline source range model** - New `InlineRange` and `InlineSourceRanges` structs for managing inline node source positions; rewrote `InlineProjection` and `CmarkNodeAdapter` to use precise inline source range annotations with markdown caching
+- **Action update consolidation** - Merged multiple per-action update functions into a single `updateContextActions` method
+- **Input controller literal editor management** - Migrated literal editor pointers from `InputController` members to `EditorContext` hash table, removing redundant attach/setter interfaces
+- **Edit transaction merging** - Added text delta merging, cursor update, and mutable access interfaces to `EditTransaction`; implemented undo stack transaction coalescing with max depth limit
+- **LiteralBlockUtil** - New utility class for preview generation and front matter insertion
+- **SourceRangeUtil** - Extracted common utility functions (line-to-offset, list marker parsing, main paragraph lookup) from scattered controllers into a shared utility
+- **MathDimension** - Extracted size conversion logic from `MathParser`/`MathParserEnvironment` into a standalone module with unified unit handling
+- **Paragraph and stylize controller refactoring** - Rewrote cursor offset conversion logic using the new source range model
+
+### Fixed
+- **CI release workflow PATH** - Fixed `cmake: command not found` on Linux and macOS by replacing `env: PATH:` override (which resolved to empty) with shell-level conditional PATH modification
+- **Inline projection text matching** - Improved tolerance for non-standard or repeated inline node patterns in projection matching
+- **Editor refresh dirty block loss** - Fixed editor refresh logic to preserve dirty blocks and avoid update loss
+- **Word count duplicate definition** - Removed duplicate `countWords` function definition
+
 ## [0.1.3] - 2026-06-08
 
 ### Added
@@ -114,6 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.1.4]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.4
 [0.1.3]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.3
 [0.1.2]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.2
 [0.1.1]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.1
