@@ -24,6 +24,7 @@ public:
   bool toggleItalic();
   bool toggleCode();
   bool insertLink();
+  bool insertImage();
 
 signals:
   void unsupportedStyleRequested(QString reason);

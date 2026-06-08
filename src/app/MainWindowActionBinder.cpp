@@ -5,14 +5,21 @@
 #include "document/MarkdownTypes.h"
 #include "editor/FindBarWidget.h"
 #include "editor/SourceEditorWidget.h"
+#include "editor/EditorView.h"
+#include "io/ImageFileOps.h"
 
 #include <QAction>
 #include <QApplication>
+#include <QClipboard>
 #include <QDesktopServices>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QImage>
 #include <QInputDialog>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QMenu>
+#include <QMimeData>
 #include <QPlainTextEdit>
 #include <QSettings>
 #include <QTextCursor>
@@ -86,6 +93,277 @@ void muffin::MainWindowActionBinder::bindCommands(MainWindow& window) {
   window.commands_.bind(QStringLiteral("format.italic"), [&window] { window.backend_->toggleItalic(); });
   window.commands_.bind(QStringLiteral("format.code"), [&window] { window.backend_->toggleCode(); });
   window.commands_.bind(QStringLiteral("format.link"), [&window] { window.backend_->insertLink(); });
+
+  window.commands_.bind(QStringLiteral("image.insert"), [&window] { window.insertImageWithDialog(); });
+  window.commands_.bind(QStringLiteral("image.insert_local"), [&window] { window.insertLocalImageWithDialog(); });
+  window.commands_.bind(QStringLiteral("image.reload_all"), [&window] {
+    if (window.renderView_) {
+      window.renderView_->setDocument(window.session_.document());
+    }
+  });
+  window.commands_.bind(QStringLiteral("image.insert_relative"), [&window] {
+    QSettings().setValue(QStringLiteral("image/insertAction"), 0);
+  });
+  window.commands_.bind(QStringLiteral("image.insert_absolute"), [&window] {
+    QSettings().setValue(QStringLiteral("image/insertAction"), 1);
+  });
+  window.commands_.bind(QStringLiteral("image.insert_copy"), [&window] {
+    QSettings().setValue(QStringLiteral("image/insertAction"), 2);
+  });
+  window.commands_.bind(QStringLiteral("image.insert_upload"), [&window] {
+    QSettings().setValue(QStringLiteral("image/insertAction"), 3);
+  });
+  window.commands_.bind(QStringLiteral("image.open_location"), [&window] {
+    const QString src = window.renderCommands_.imageSrcAtCursor();
+    const QString docDir = QFileInfo(window.session_.filePath()).absolutePath();
+    const QString resolved = muffin::ImageFileOps::resolveImagePath(src, docDir);
+    if (!resolved.isEmpty()) {
+      QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(resolved).absolutePath()));
+    }
+  });
+  window.commands_.bind(QStringLiteral("image.copy_image"), [&window] {
+    const QString src = window.renderCommands_.imageSrcAtCursor();
+    const QString docDir = QFileInfo(window.session_.filePath()).absolutePath();
+    const QString resolved = muffin::ImageFileOps::resolveImagePath(src, docDir);
+    if (resolved.isEmpty()) {
+      return;
+    }
+    QImage image(resolved);
+    if (image.isNull()) {
+      return;
+    }
+    QApplication::clipboard()->setImage(image);
+  });
+  window.commands_.bind(QStringLiteral("image.delete_image"), [&window] {
+    const QString src = window.renderCommands_.imageSrcAtCursor();
+    const QString docDir = QFileInfo(window.session_.filePath()).absolutePath();
+    const QString resolved = muffin::ImageFileOps::resolveImagePath(src, docDir);
+    if (resolved.isEmpty()) {
+      return;
+    }
+    if (QMessageBox::question(&window,
+            muffin::MainWindow::tr("Delete Image"),
+            muffin::MainWindow::tr("Delete image file \"%1\"?\nThis cannot be undone.").arg(QFileInfo(resolved).fileName())) !=
+        QMessageBox::Yes) {
+      return;
+    }
+    // Remove the image markdown syntax first
+    qsizetype srcStart = 0, srcEnd = 0;
+    if (window.renderCommands_.imageSourceRangeAtCursor(srcStart, srcEnd)) {
+      window.session_.applyTextDelta(srcStart, srcEnd - srcStart, QString(), true);
+    }
+    muffin::ImageFileOps::deleteImageFile(resolved);
+  });
+  window.commands_.bind(QStringLiteral("image.copy_to"), [&window] {
+    const QString src = window.renderCommands_.imageSrcAtCursor();
+    const QString docDir = QFileInfo(window.session_.filePath()).absolutePath();
+    const QString resolved = muffin::ImageFileOps::resolveImagePath(src, docDir);
+    if (resolved.isEmpty()) {
+      return;
+    }
+    const QString destDir = QFileDialog::getExistingDirectory(&window,
+        muffin::MainWindow::tr("Copy Image To"),
+        docDir);
+    if (destDir.isEmpty()) {
+      return;
+    }
+    QString newPath;
+    if (muffin::ImageFileOps::copyImageTo(resolved, QDir(destDir), &newPath)) {
+      // Update the markdown src to the new relative path
+      const QString relPath = QDir(docDir).relativeFilePath(newPath);
+      qsizetype srcStart = 0, srcEnd = 0;
+      if (window.renderCommands_.imageSourceRangeAtCursor(srcStart, srcEnd)) {
+        const QString& md = window.session_.markdownText();
+        const QString oldImage = md.mid(srcStart, srcEnd - srcStart);
+        // Replace the src URL in the image syntax
+        QString newImage = oldImage;
+        const int urlStart = oldImage.indexOf(QStringLiteral("](")) + 2;
+        if (urlStart > 1) {
+          int urlEnd = urlStart;
+          while (urlEnd < oldImage.size() && oldImage[urlEnd] != QChar(')') && oldImage[urlEnd] != QChar(' ')) {
+            ++urlEnd;
+          }
+          newImage = oldImage.left(urlStart) + relPath + oldImage.mid(urlEnd);
+          window.session_.applyTextDelta(srcStart, srcEnd - srcStart, newImage, true);
+        }
+      }
+    }
+  });
+  window.commands_.bind(QStringLiteral("image.move_to"), [&window] {
+    const QString src = window.renderCommands_.imageSrcAtCursor();
+    const QString docDir = QFileInfo(window.session_.filePath()).absolutePath();
+    const QString resolved = muffin::ImageFileOps::resolveImagePath(src, docDir);
+    if (resolved.isEmpty()) {
+      return;
+    }
+    const QString destDir = QFileDialog::getExistingDirectory(&window,
+        muffin::MainWindow::tr("Move Image To"),
+        docDir);
+    if (destDir.isEmpty()) {
+      return;
+    }
+    QString newPath;
+    if (muffin::ImageFileOps::moveImageTo(resolved, QDir(destDir), &newPath)) {
+      const QString relPath = QDir(docDir).relativeFilePath(newPath);
+      qsizetype srcStart = 0, srcEnd = 0;
+      if (window.renderCommands_.imageSourceRangeAtCursor(srcStart, srcEnd)) {
+        const QString& md = window.session_.markdownText();
+        const QString oldImage = md.mid(srcStart, srcEnd - srcStart);
+        QString newImage = oldImage;
+        const int urlStart = oldImage.indexOf(QStringLiteral("](")) + 2;
+        if (urlStart > 1) {
+          int urlEnd = urlStart;
+          while (urlEnd < oldImage.size() && oldImage[urlEnd] != QChar(')') && oldImage[urlEnd] != QChar(' ')) {
+            ++urlEnd;
+          }
+          newImage = oldImage.left(urlStart) + relPath + oldImage.mid(urlEnd);
+          window.session_.applyTextDelta(srcStart, srcEnd - srcStart, newImage, true);
+        }
+      }
+    }
+  });
+  window.commands_.bind(QStringLiteral("image.upload"), [&window] {
+    // Placeholder — upload infrastructure not yet implemented
+    QMessageBox::information(&window, muffin::MainWindow::tr("Upload Image"),
+        muffin::MainWindow::tr("Image upload is not yet configured.\nSet up an image uploader in Preferences → Images."));
+  });
+  window.commands_.bind(QStringLiteral("image.upload_all"), [&window] {
+    QMessageBox::information(&window, muffin::MainWindow::tr("Upload All Images"),
+        muffin::MainWindow::tr("Image upload is not yet configured.\nSet up an image uploader in Preferences → Images."));
+  });
+
+  // Resize image actions
+  const QList<QPair<QString, int>> resizeMap = {
+      {QStringLiteral("image.resize_25"), 25},
+      {QStringLiteral("image.resize_50"), 50},
+      {QStringLiteral("image.resize_75"), 75},
+      {QStringLiteral("image.resize_100"), 100},
+      {QStringLiteral("image.resize_150"), 150},
+  };
+  for (const auto& [id, pct] : resizeMap) {
+    window.commands_.bind(id, [&window, pct] {
+      Q_UNUSED(pct);
+      // Resize not yet fully supported — placeholder
+      // Future: update image size attribute in markdown
+    });
+  }
+  window.commands_.bind(QStringLiteral("image.resize_custom"), [&window] {
+    Q_UNUSED(window);
+    // Placeholder
+  });
+
+  // Convert image syntax
+  window.commands_.bind(QStringLiteral("image.to_standard"), [&window] {
+    // Placeholder — will convert <img> to ![](url) when HTML images are supported
+  });
+  window.commands_.bind(QStringLiteral("image.to_html"), [&window] {
+    const QString src = window.renderCommands_.imageSrcAtCursor();
+    if (src.isEmpty()) {
+      return;
+    }
+    qsizetype imgStart = 0, imgEnd = 0;
+    if (!window.renderCommands_.imageSourceRangeAtCursor(imgStart, imgEnd)) {
+      return;
+    }
+    const QString& md = window.session_.markdownText();
+    const QString oldSyntax = md.mid(imgStart, imgEnd - imgStart);
+    // Extract alt text: ![alt](...)
+    QString alt;
+    const int altStart = oldSyntax.indexOf(QStringLiteral("![")) + 2;
+    if (altStart > 1) {
+      const int altEnd = oldSyntax.indexOf(QChar(']'), altStart);
+      if (altEnd > altStart) {
+        alt = oldSyntax.mid(altStart, altEnd - altStart);
+      }
+    }
+    const QString html = QStringLiteral("<img src=\"%1\" alt=\"%2\">").arg(src, alt);
+    window.session_.applyTextDelta(imgStart, imgEnd - imgStart, html, true);
+  });
+
+  // Batch image operations
+  window.commands_.bind(QStringLiteral("image.copy_all_to"), [&window] {
+    const QString docDir = QFileInfo(window.session_.filePath()).absolutePath();
+    if (docDir.isEmpty()) {
+      return;
+    }
+    const QString destDir = QFileDialog::getExistingDirectory(&window,
+        muffin::MainWindow::tr("Copy All Images To"), docDir);
+    if (destDir.isEmpty()) {
+      return;
+    }
+    const QStringList images = muffin::ImageFileOps::collectLocalImagePaths(window.session_.document(), docDir);
+    int copied = 0;
+    for (const QString& img : images) {
+      if (muffin::ImageFileOps::copyImageTo(img, QDir(destDir), nullptr)) {
+        ++copied;
+      }
+    }
+    QMessageBox::information(&window, muffin::MainWindow::tr("Copy All Images"),
+        muffin::MainWindow::tr("Copied %1 of %2 image(s).").arg(copied).arg(images.size()));
+  });
+  window.commands_.bind(QStringLiteral("image.move_all_to"), [&window] {
+    const QString docDir = QFileInfo(window.session_.filePath()).absolutePath();
+    if (docDir.isEmpty()) {
+      return;
+    }
+    const QString destDir = QFileDialog::getExistingDirectory(&window,
+        muffin::MainWindow::tr("Move All Images To"), docDir);
+    if (destDir.isEmpty()) {
+      return;
+    }
+    const auto refs = muffin::ImageFileOps::collectImageRefs(window.session_.document());
+    int moved = 0;
+    // Move files and update markdown references
+    for (const auto& ref : refs) {
+      if (!muffin::ImageFileOps::isLocalImageSrc(ref.href)) {
+        continue;
+      }
+      const QString resolved = muffin::ImageFileOps::resolveImagePath(ref.href, docDir);
+      if (resolved.isEmpty()) {
+        continue;
+      }
+      QString newPath;
+      if (muffin::ImageFileOps::moveImageTo(resolved, QDir(destDir), &newPath)) {
+        ++moved;
+      }
+    }
+    // After moving, update all relative paths in the markdown
+    const QString relPrefix = QDir(docDir).relativeFilePath(destDir);
+    QString md = window.session_.markdownText();
+    // Re-collect refs after text may have shifted — use the originals from before
+    // Since we only moved files, the markdown hasn't changed yet. Update hrefs now.
+    for (int i = refs.size() - 1; i >= 0; --i) {
+      const auto& ref = refs[i];
+      if (!muffin::ImageFileOps::isLocalImageSrc(ref.href)) {
+        continue;
+      }
+      const QString resolved = muffin::ImageFileOps::resolveImagePath(ref.href, docDir);
+      if (resolved.isEmpty()) {
+        continue;
+      }
+      const QString fileName = QFileInfo(resolved).fileName();
+      const QString newRelPath = relPrefix.isEmpty()
+          ? fileName
+          : relPrefix + QChar('/') + fileName;
+      // Replace href in the source range — find the url portion
+      const int urlSearchStart = md.indexOf(QStringLiteral("]("), ref.sourceStart);
+      if (urlSearchStart < 0 || urlSearchStart >= ref.sourceEnd) {
+        continue;
+      }
+      const int urlStart = urlSearchStart + 2;
+      int urlEnd = urlStart;
+      while (urlEnd < md.size() && urlEnd <= ref.sourceEnd && md[urlEnd] != QChar(')') && md[urlEnd] != QChar(' ')) {
+        ++urlEnd;
+      }
+      md.replace(urlStart, urlEnd - urlStart, newRelPath);
+    }
+    window.session_.applyMarkdownText(md, true);
+    QMessageBox::information(&window, muffin::MainWindow::tr("Move All Images"),
+        muffin::MainWindow::tr("Moved %1 image(s).").arg(moved));
+  });
+  window.commands_.bind(QStringLiteral("image.global_settings"), [&window] {
+    window.showPreferences();
+  });
 
   window.commands_.bind(QStringLiteral("table.insert_row_before"), [&window] { window.renderCommands_.insertRowBefore(); });
   window.commands_.bind(QStringLiteral("table.insert_row_after"), [&window] { window.renderCommands_.insertRowAfter(); });
@@ -314,6 +592,20 @@ void muffin::MainWindowActionBinder::restorePersistentActionStates(MainWindow& w
     window.setWindowFlag(Qt::WindowStaysOnTopHint, alwaysOnTop);
     window.show();
   }
+
+  // Image insert action radio group
+  const int imageInsertAction = settings.value(QStringLiteral("image/insertAction"), 0).toInt();
+  const QStringList insertActionIds = {
+      QStringLiteral("image.insert_relative"),
+      QStringLiteral("image.insert_absolute"),
+      QStringLiteral("image.insert_copy"),
+      QStringLiteral("image.insert_upload"),
+  };
+  for (int i = 0; i < insertActionIds.size(); ++i) {
+    if (QAction* action = window.commands_.action(insertActionIds[i])) {
+      action->setChecked(i == imageInsertAction);
+    }
+  }
 }
 
 void muffin::MainWindowActionBinder::updateFileActions(MainWindow& window) {
@@ -449,6 +741,41 @@ void muffin::MainWindowActionBinder::updateContextActions(MainWindow& window) {
   updateCodeActions(window);
   updateHtmlActions(window);
   updateMathActions(window);
+  updateImageActions(window);
+}
+
+void muffin::MainWindowActionBinder::updateImageActions(MainWindow& window) {
+  const bool sourceMode = window.backend_->isSourceMode();
+  const bool onImage = !sourceMode && window.renderCommands_.isOnImage();
+  const QString imageSrc = onImage ? window.renderCommands_.imageSrcAtCursor() : QString();
+  const bool isLocalImage = onImage && !imageSrc.isEmpty() && QFileInfo(imageSrc).isFile();
+
+  window.commands_.setEnabled(QStringLiteral("image.insert"), !sourceMode);
+  window.commands_.setEnabled(QStringLiteral("image.insert_local"), !sourceMode);
+  window.commands_.setEnabled(QStringLiteral("image.open_location"), isLocalImage);
+  window.commands_.setEnabled(QStringLiteral("image.copy_image"), onImage);
+  window.commands_.setEnabled(QStringLiteral("image.delete_image"), isLocalImage);
+  window.commands_.setEnabled(QStringLiteral("image.copy_to"), isLocalImage);
+  window.commands_.setEnabled(QStringLiteral("image.move_to"), isLocalImage);
+  window.commands_.setEnabled(QStringLiteral("image.upload"), isLocalImage);
+  window.commands_.setEnabled(QStringLiteral("image.upload_all"), !sourceMode);
+  window.commands_.setEnabled(QStringLiteral("image.reload_all"), !sourceMode);
+
+  const QStringList resizeIds = {
+      QStringLiteral("image.resize_25"),   QStringLiteral("image.resize_50"),
+      QStringLiteral("image.resize_75"),   QStringLiteral("image.resize_100"),
+      QStringLiteral("image.resize_150"),  QStringLiteral("image.resize_custom"),
+  };
+  for (const QString& id : resizeIds) {
+    window.commands_.setEnabled(id, onImage);
+  }
+
+  window.commands_.setEnabled(QStringLiteral("image.to_standard"), onImage);
+  window.commands_.setEnabled(QStringLiteral("image.to_html"), onImage);
+
+  window.commands_.setEnabled(QStringLiteral("image.copy_all_to"), !sourceMode);
+  window.commands_.setEnabled(QStringLiteral("image.move_all_to"), !sourceMode);
+  window.commands_.setEnabled(QStringLiteral("image.global_settings"), false);
 }
 
 void muffin::MainWindowActionBinder::updateThemeActions(MainWindow& window) {

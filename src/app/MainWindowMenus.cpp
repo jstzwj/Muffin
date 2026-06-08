@@ -2,6 +2,7 @@
 #include "app/MainWindowActionBinder.h"
 #include "editor/EditorView.h"
 
+#include <QActionGroup>
 #include <QMenu>
 #include <QMenuBar>
 #include <QToolButton>
@@ -222,7 +223,49 @@ void muffin::MainWindow::setupFormatMenu() {
   addAction(format, QStringLiteral("format.comment"), tr("Comment"), {}, false);
   addAction(format, QStringLiteral("format.link"), tr("Hyperlink"), QKeySequence(QStringLiteral("Ctrl+K")));
   addDisabledMenu(format, tr("Link Actions"));
-  addDisabledMenu(format, tr("Image"));
+  QMenu* imageMenu = format->addMenu(tr("Image"));
+  addAction(imageMenu, QStringLiteral("image.insert"), tr("Insert Image..."), QKeySequence(QStringLiteral("Ctrl+Shift+I")));
+  addAction(imageMenu, QStringLiteral("image.insert_local"), tr("Insert Local Image..."));
+  imageMenu->addSeparator();
+  addAction(imageMenu, QStringLiteral("image.open_location"), tr("Open Image Location..."), {}, false);
+  addAction(imageMenu, QStringLiteral("image.copy_image"), tr("Copy Image"), {}, false);
+  addAction(imageMenu, QStringLiteral("image.delete_image"), tr("Delete Image File"), {}, false);
+  addAction(imageMenu, QStringLiteral("image.copy_to"), tr("Copy Image To..."), {}, false);
+  addAction(imageMenu, QStringLiteral("image.move_to"), tr("Rename / Move Image To..."), {}, false);
+  imageMenu->addSeparator();
+  addAction(imageMenu, QStringLiteral("image.upload"), tr("Upload Image"), {}, false);
+  addAction(imageMenu, QStringLiteral("image.upload_all"), tr("Upload All Local Images"));
+  addAction(imageMenu, QStringLiteral("image.reload_all"), tr("Reload All Images"));
+  imageMenu->addSeparator();
+
+  QMenu* resizeMenu = imageMenu->addMenu(tr("Resize Image"));
+  auto* resizeGroup = new QActionGroup(resizeMenu);
+  resizeGroup->setExclusive(true);
+  resizeGroup->addAction(addCheckAction(resizeMenu, QStringLiteral("image.resize_25"), tr("25%")));
+  resizeGroup->addAction(addCheckAction(resizeMenu, QStringLiteral("image.resize_50"), tr("50%")));
+  resizeGroup->addAction(addCheckAction(resizeMenu, QStringLiteral("image.resize_75"), tr("75%")));
+  resizeGroup->addAction(addCheckAction(resizeMenu, QStringLiteral("image.resize_100"), tr("100%"), {}, true));
+  resizeGroup->addAction(addCheckAction(resizeMenu, QStringLiteral("image.resize_150"), tr("150%")));
+  resizeMenu->addSeparator();
+  resizeGroup->addAction(addCheckAction(resizeMenu, QStringLiteral("image.resize_custom"), tr("Custom...")));
+
+  QMenu* convertMenu = imageMenu->addMenu(tr("Convert Image Syntax"));
+  addAction(convertMenu, QStringLiteral("image.to_standard"), tr("Standard Markdown ![](url)"), {}, false);
+  addAction(convertMenu, QStringLiteral("image.to_html"), tr("HTML <img>"), {}, false);
+
+  QMenu* insertActionMenu = imageMenu->addMenu(tr("When Inserting Local Image"));
+  auto* insertGroup = new QActionGroup(insertActionMenu);
+  insertGroup->setExclusive(true);
+  insertGroup->addAction(addCheckAction(insertActionMenu, QStringLiteral("image.insert_relative"), tr("Insert Relative Path"), {}, true));
+  insertGroup->addAction(addCheckAction(insertActionMenu, QStringLiteral("image.insert_absolute"), tr("Insert Absolute Path")));
+  insertGroup->addAction(addCheckAction(insertActionMenu, QStringLiteral("image.insert_copy"), tr("Copy to Custom Folder")));
+  insertGroup->addAction(addCheckAction(insertActionMenu, QStringLiteral("image.insert_upload"), tr("Upload Image")));
+
+  imageMenu->addSeparator();
+  addAction(imageMenu, QStringLiteral("image.copy_all_to"), tr("Copy All Images To..."));
+  addAction(imageMenu, QStringLiteral("image.move_all_to"), tr("Move All Images To..."));
+  imageMenu->addSeparator();
+  addAction(imageMenu, QStringLiteral("image.global_settings"), tr("Global Image Settings..."), {}, false);
   addAction(format, QStringLiteral("format.clear"), tr("Clear Style"), QKeySequence(QStringLiteral("Ctrl+\\")), false);
 }
 

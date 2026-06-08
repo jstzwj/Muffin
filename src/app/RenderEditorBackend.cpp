@@ -94,6 +94,10 @@ void RenderEditorBackend::insertLink() {
   controller_.stylizeController().insertLink();
 }
 
+void RenderEditorBackend::insertImage() {
+  controller_.stylizeController().insertImage();
+}
+
 bool RenderEditorBackend::hasSelection() const {
   return controller_.selection().hasCursor() && !controller_.selection().selection().isCollapsed();
 }

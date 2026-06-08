@@ -30,6 +30,10 @@ bool StylizeController::insertLink() {
   return wrapOrInsert(QStringLiteral("["), QStringLiteral("](url)"), QString(), EditTransaction::Kind::InsertText, QStringLiteral("Link"));
 }
 
+bool StylizeController::insertImage() {
+  return wrapOrInsert(QStringLiteral("!["), QStringLiteral("](url)"), QString(), EditTransaction::Kind::InsertText, QStringLiteral("Image"));
+}
+
 bool StylizeController::wrapOrInsert(
     QString openMarker,
     QString closeMarker,

@@ -68,6 +68,9 @@ protected:
   void mouseReleaseEvent(QMouseEvent* event) override;
   void inputMethodEvent(QInputMethodEvent* event) override;
   QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
+  void dragEnterEvent(QDragEnterEvent* event) override;
+  void dragMoveEvent(QDragMoveEvent* event) override;
+  void dropEvent(QDropEvent* event) override;
 
 private:
   struct HeadingBadge {

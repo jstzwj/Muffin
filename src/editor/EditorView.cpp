@@ -6,7 +6,11 @@
 
 #include <QApplication>
 #include <QDesktopServices>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <QElapsedTimer>
+#include <QFileInfo>
+#include <QMimeData>
 #include <QPainter>
 #include <QLoggingCategory>
 #include <QScrollBar>
@@ -638,6 +642,17 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
     const HitTestResult hit = hitTest(event->position());
     if (event->modifiers().testFlag(Qt::ControlModifier) && hit.isValid() && !hit.linkHref.isEmpty()) {
       QDesktopServices::openUrl(QUrl(hit.linkHref));
+      event->accept();
+      return;
+    }
+    if (event->modifiers().testFlag(Qt::ControlModifier) && hit.isValid() && !hit.imageSrc.isEmpty()) {
+      const QString src = hit.imageSrc;
+      const QFileInfo fi(src);
+      if (fi.exists()) {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(fi.absoluteFilePath()));
+      } else {
+        QDesktopServices::openUrl(QUrl(src));
+      }
       event->accept();
       return;
     }
@@ -1292,6 +1307,8 @@ void EditorView::updateMouseCursor(QPointF viewportPos) {
   const HitTestResult hit = hitTest(viewportPos);
   if (hit.isValid() && !hit.linkHref.isEmpty()) {
     viewport()->setCursor(Qt::PointingHandCursor);
+  } else if (hit.isValid() && !hit.imageSrc.isEmpty()) {
+    viewport()->setCursor(Qt::PointingHandCursor);
   } else if (hit.isValid() &&
       (hit.zone == HitTestResult::Zone::Text || hit.zone == HitTestResult::Zone::Code || hit.zone == HitTestResult::Zone::Math ||
        hit.zone == HitTestResult::Zone::Html || hit.zone == HitTestResult::Zone::FrontMatter || hit.zone == HitTestResult::Zone::TableCell ||
@@ -1300,6 +1317,64 @@ void EditorView::updateMouseCursor(QPointF viewportPos) {
   } else {
     viewport()->unsetCursor();
   }
+}
+
+void EditorView::dragEnterEvent(QDragEnterEvent* event) {
+  if (event->mimeData()->hasUrls()) {
+    const auto urls = event->mimeData()->urls();
+    for (const QUrl& url : urls) {
+      if (url.isLocalFile()) {
+        const QString suffix = QFileInfo(url.toLocalFile()).suffix().toLower();
+        if (suffix == QStringLiteral("png") || suffix == QStringLiteral("jpg") ||
+            suffix == QStringLiteral("jpeg") || suffix == QStringLiteral("gif") ||
+            suffix == QStringLiteral("svg") || suffix == QStringLiteral("webp") ||
+            suffix == QStringLiteral("bmp") || suffix == QStringLiteral("ico") ||
+            suffix == QStringLiteral("tiff") || suffix == QStringLiteral("tif")) {
+          event->acceptProposedAction();
+          return;
+        }
+      }
+    }
+  }
+  event->ignore();
+}
+
+void EditorView::dragMoveEvent(QDragMoveEvent* event) {
+  if (event->mimeData()->hasUrls()) {
+    event->acceptProposedAction();
+  } else {
+    event->ignore();
+  }
+}
+
+void EditorView::dropEvent(QDropEvent* event) {
+  if (!event->mimeData()->hasUrls()) {
+    event->ignore();
+    return;
+  }
+  const auto urls = event->mimeData()->urls();
+  if (urls.isEmpty()) {
+    event->ignore();
+    return;
+  }
+  const QUrl url = urls.first();
+  if (!url.isLocalFile()) {
+    event->ignore();
+    return;
+  }
+  const QString filePath = url.toLocalFile();
+  const QString suffix = QFileInfo(filePath).suffix().toLower();
+  if (suffix != QStringLiteral("png") && suffix != QStringLiteral("jpg") &&
+      suffix != QStringLiteral("jpeg") && suffix != QStringLiteral("gif") &&
+      suffix != QStringLiteral("svg") && suffix != QStringLiteral("webp") &&
+      suffix != QStringLiteral("bmp") && suffix != QStringLiteral("ico") &&
+      suffix != QStringLiteral("tiff") && suffix != QStringLiteral("tif")) {
+    event->ignore();
+    return;
+  }
+  event->acceptProposedAction();
+  const QString alt = QFileInfo(filePath).baseName();
+  emit textCommitted(QStringLiteral("![%1](%2)").arg(alt, filePath));
 }
 
 }  // namespace muffin

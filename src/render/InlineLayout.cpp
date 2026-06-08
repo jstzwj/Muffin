@@ -12,6 +12,7 @@ namespace muffin {
 namespace {
 
 constexpr QChar kInlineMathPlaceholder(0x00a0);
+constexpr QChar kImagePlaceholder(0x2009);  // thin space, distinct from math placeholder
 constexpr QChar kTabIndentSourceChar(0x200b);
 constexpr QChar kTabIndentLayoutChar(0x00a0);
 
@@ -82,6 +83,7 @@ void InlineLayout::build(
   plainText_ = flattenPlainText(inlines);
   offsetMap_.clear();
   mathAtoms_.clear();
+  imageAtoms_.clear();
   displayOffsetMap_.clear();
   displayText_.clear();
   layoutText_.clear();
@@ -90,6 +92,7 @@ void InlineLayout::build(
   projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState, options.sourceBase);
   buildOffsetMapFromProjection();
   buildMathAtoms(inlines, theme, width);
+  buildImageAtoms(inlines, theme, width);
   buildTextLayout(theme, width, baseFont);
 }
 
@@ -110,6 +113,7 @@ void InlineLayout::paint(QPainter& painter, QPointF origin) const {
   paintTextLayoutCodeSpans(painter, origin);
   textLayout_->draw(&painter, origin);
   paintTextLayoutMathAtoms(painter, origin);
+  paintTextLayoutImageAtoms(painter, origin);
   painter.restore();
 }
 
@@ -181,8 +185,25 @@ QString InlineLayout::linkHrefAtLocalPos(QPointF localPos) const {
   return projection_.linkHrefAtDisplayOffset(projOffset);
 }
 
+QString InlineLayout::imageSrcAtLocalPos(QPointF localPos) const {
+  if (!textLayout_) return {};
+  const qsizetype position = textLayoutDisplayOffsetForPoint(localPos);
+  for (const ImageAtom& atom : imageAtoms_) {
+    if (position >= atom.displayStart && position <= atom.displayEnd) {
+      return atom.srcUrl;
+    }
+  }
+  return {};
+}
+
 QRectF InlineLayout::cursorRect(qsizetype textOffset) const {
   for (const MathAtom& atom : mathAtoms_) {
+    if (textOffset > atom.visibleStart && textOffset < atom.visibleEnd) {
+      textOffset = textOffset - atom.visibleStart < atom.visibleEnd - textOffset ? atom.visibleStart : atom.visibleEnd;
+      break;
+    }
+  }
+  for (const ImageAtom& atom : imageAtoms_) {
     if (textOffset > atom.visibleStart && textOffset < atom.visibleEnd) {
       textOffset = textOffset - atom.visibleStart < atom.visibleEnd - textOffset ? atom.visibleStart : atom.visibleEnd;
       break;
@@ -193,6 +214,12 @@ QRectF InlineLayout::cursorRect(qsizetype textOffset) const {
 
 QRectF InlineLayout::cursorRectForSourceOffset(qsizetype sourceOffset) const {
   for (const MathAtom& atom : mathAtoms_) {
+    if (sourceOffset > atom.sourceStart && sourceOffset < atom.sourceEnd) {
+      const qsizetype displayOffset = sourceOffset - atom.sourceStart < atom.sourceEnd - sourceOffset ? atom.displayStart : atom.displayEnd;
+      return textLayoutCursorRectForDisplayOffset(displayOffset);
+    }
+  }
+  for (const ImageAtom& atom : imageAtoms_) {
     if (sourceOffset > atom.sourceStart && sourceOffset < atom.sourceEnd) {
       const qsizetype displayOffset = sourceOffset - atom.sourceStart < atom.sourceEnd - sourceOffset ? atom.displayStart : atom.displayEnd;
       return textLayoutCursorRectForDisplayOffset(displayOffset);
@@ -419,6 +446,136 @@ QString InlineLayout::texForInlineMathVisibleRange(const QVector<InlineNode>& in
   return visit(visit, inlines);
 }
 
+QString InlineLayout::imageSrcForVisibleRange(const QVector<InlineNode>& inlines, qsizetype visibleStart, qsizetype visibleEnd) const {
+  const QString expected = projection_.displayText().mid(visibleStart, visibleEnd - visibleStart);
+  const auto visit = [&](const auto& self, const QVector<InlineNode>& nodes) -> QString {
+    for (const InlineNode& node : nodes) {
+      if (node.type() == InlineType::Image && node.alt() == expected) {
+        return node.href();
+      }
+      if (!node.children().isEmpty()) {
+        const QString found = self(self, node.children());
+        if (!found.isEmpty()) {
+          return found;
+        }
+      }
+    }
+    return QString();
+  };
+  return visit(visit, inlines);
+}
+
+void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width) {
+  Q_UNUSED(theme);
+  Q_UNUSED(width);
+  // Quick check: are there any image Atom spans at all?
+  bool hasImageAtom = false;
+  for (const InlineProjectionSpan& span : projection_.spans()) {
+    if (span.type == InlineType::Image && span.kind == InlineSpanKind::Atom && span.visibleEnd > span.visibleStart) {
+      hasImageAtom = true;
+      break;
+    }
+  }
+  if (!hasImageAtom) {
+    return;
+  }
+
+  // Rebuild displayText_ and offsetMap_ to replace image Atom spans with image placeholders.
+  // This follows the same pattern as buildMathAtoms().
+  const QString currentDisplay = displayText_;
+  QString rebuiltDisplay;
+  QVector<OffsetMapEntry> rebuiltMap;
+  QVector<DisplayOffsetMapEntry> rebuiltDisplayMap;
+
+  for (const OffsetMapEntry& entry : offsetMap_) {
+    if (entry.displayEnd <= entry.displayStart) {
+      continue;
+    }
+
+    // Check if this entry's visible range corresponds to an image Atom in the projection
+    bool isImage = false;
+    qsizetype imgSourceStart = 0, imgSourceEnd = 0;
+    for (const InlineProjectionSpan& span : projection_.spans()) {
+      if (span.type == InlineType::Image && span.kind == InlineSpanKind::Atom &&
+          span.visibleStart == entry.visibleStart && span.visibleEnd == entry.visibleEnd) {
+        isImage = true;
+        imgSourceStart = span.sourceStart;
+        imgSourceEnd = span.sourceEnd;
+        break;
+      }
+    }
+
+    const QString spanText = currentDisplay.mid(entry.displayStart, entry.displayEnd - entry.displayStart);
+
+    if (!isImage) {
+      const qsizetype displayStart = rebuiltDisplay.size();
+      rebuiltDisplay += spanText;
+      rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), entry.visibleStart, entry.visibleEnd});
+      rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{entry.displayStart, entry.displayEnd, displayStart, rebuiltDisplay.size()});
+      continue;
+    }
+
+    // Extract image src URL from the inline nodes using visible range
+    const QString srcUrl = imageSrcForVisibleRange(inlines, entry.visibleStart, entry.visibleEnd);
+    if (srcUrl.isEmpty()) {
+      const qsizetype displayStart = rebuiltDisplay.size();
+      rebuiltDisplay += spanText;
+      rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), entry.visibleStart, entry.visibleEnd});
+      rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{entry.displayStart, entry.displayEnd, displayStart, rebuiltDisplay.size()});
+      continue;
+    }
+
+    // Try to load the image
+    QImage image;
+    constexpr qreal kMaxImageHeight = 200.0;
+    QSizeF displaySize;
+
+    if (image.load(srcUrl)) {
+      if (image.height() > kMaxImageHeight) {
+        const qreal scale = kMaxImageHeight / image.height();
+        displaySize = QSizeF(image.width() * scale, kMaxImageHeight);
+      } else {
+        displaySize = QSizeF(image.width(), image.height());
+      }
+    }
+
+    if (image.isNull()) {
+      // Failed to load — keep the alt text as-is
+      const qsizetype displayStart = rebuiltDisplay.size();
+      rebuiltDisplay += spanText;
+      rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), entry.visibleStart, entry.visibleEnd});
+      rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{entry.displayStart, entry.displayEnd, displayStart, rebuiltDisplay.size()});
+      continue;
+    }
+
+    // Replace alt text with a single placeholder character
+    const qsizetype displayStart = rebuiltDisplay.size();
+    rebuiltDisplay += kImagePlaceholder;
+
+    ImageAtom atom;
+    atom.displayStart = displayStart;
+    atom.displayEnd = rebuiltDisplay.size();
+    atom.sourceStart = imgSourceStart;
+    atom.sourceEnd = imgSourceEnd;
+    atom.visibleStart = entry.visibleStart;
+    atom.visibleEnd = entry.visibleEnd;
+    atom.srcUrl = srcUrl;
+    atom.displaySize = displaySize;
+    atom.image = image;
+    atom.loaded = true;
+
+    rebuiltMap.push_back(OffsetMapEntry{atom.displayStart, atom.displayEnd, atom.visibleStart, atom.visibleEnd});
+    rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{entry.displayStart, entry.displayEnd, atom.displayStart, atom.displayEnd});
+    imageAtoms_.push_back(std::move(atom));
+  }
+
+  if (!rebuiltDisplay.isEmpty()) {
+    displayText_ = std::move(rebuiltDisplay);
+    offsetMap_ = std::move(rebuiltMap);
+    displayOffsetMap_ = std::move(rebuiltDisplayMap);
+  }
+}
+
 void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont) {
   layoutText_ = layoutTextForDisplayText(displayText_);
   textLayout_ = std::make_unique<QTextLayout>(layoutText_.isEmpty() ? QStringLiteral(" ") : layoutText_, baseFont);
@@ -467,6 +624,33 @@ void InlineLayout::paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) c
       const qreal x = line.cursorToX(static_cast<int>(atom.displayStart));
       const qreal baseline = origin.y() + line.y() + line.ascent();
       atom.layout->paint(painter, QPointF(origin.x() + x, baseline - atom.layout->baseline));
+      break;
+    }
+  }
+}
+
+void InlineLayout::paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) const {
+  if (!textLayout_) {
+    return;
+  }
+  for (const ImageAtom& atom : imageAtoms_) {
+    if (!atom.loaded || atom.image.isNull()) {
+      continue;
+    }
+    for (int i = 0; i < textLayout_->lineCount(); ++i) {
+      const QTextLine line = textLayout_->lineAt(i);
+      if (!line.isValid()) {
+        continue;
+      }
+      const int lineStart = line.textStart();
+      const int lineEnd = lineStart + line.textLength();
+      if (atom.displayStart < lineStart || atom.displayStart > lineEnd) {
+        continue;
+      }
+      const qreal x = line.cursorToX(static_cast<int>(atom.displayStart));
+      const qreal y = origin.y() + line.y() + line.ascent() - atom.displaySize.height();
+      const QRectF targetRect(origin.x() + x, y, atom.displaySize.width(), atom.displaySize.height());
+      painter.drawImage(targetRect, atom.image, QRectF(atom.image.rect()));
       break;
     }
   }
@@ -577,6 +761,29 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     range.format = format;
     formats.push_back(range);
   }
+
+  for (const ImageAtom& atom : imageAtoms_) {
+    if (!atom.loaded || atom.displayEnd <= atom.displayStart) {
+      continue;
+    }
+    QFont placeholderFont = baseFont;
+    const QFontMetricsF baseMetrics(baseFont);
+    if (atom.displaySize.height() > baseMetrics.height() && baseFont.pointSizeF() > 0.0) {
+      placeholderFont.setPointSizeF(baseFont.pointSizeF() * atom.displaySize.height() / baseMetrics.height());
+    }
+    const QFontMetricsF placeholderMetrics(placeholderFont);
+    const qreal placeholderAdvance = placeholderMetrics.horizontalAdvance(kImagePlaceholder);
+    placeholderFont.setLetterSpacing(QFont::AbsoluteSpacing, atom.displaySize.width() - placeholderAdvance);
+
+    QTextCharFormat format = baseFormat;
+    format.setFont(placeholderFont);
+    format.setForeground(QColor(Qt::transparent));
+    QTextLayout::FormatRange range;
+    range.start = static_cast<int>(atom.displayStart);
+    range.length = static_cast<int>(atom.displayEnd - atom.displayStart);
+    range.format = format;
+    formats.push_back(range);
+  }
   return formats;
 }
 
@@ -586,6 +793,11 @@ qsizetype InlineLayout::visibleOffsetForDisplayOffset(qsizetype displayOffset) c
   }
   displayOffset = qBound<qsizetype>(0, displayOffset, displayText_.size());
   for (const MathAtom& atom : mathAtoms_) {
+    if (displayOffset > atom.displayStart && displayOffset < atom.displayEnd) {
+      return atom.visibleEnd;
+    }
+  }
+  for (const ImageAtom& atom : imageAtoms_) {
     if (displayOffset > atom.displayStart && displayOffset < atom.displayEnd) {
       return atom.visibleEnd;
     }
@@ -608,6 +820,11 @@ qsizetype InlineLayout::displayOffsetForVisibleOffset(qsizetype visibleOffset) c
   }
   visibleOffset = qBound<qsizetype>(0, visibleOffset, plainText_.size());
   for (const MathAtom& atom : mathAtoms_) {
+    if (visibleOffset > atom.visibleStart && visibleOffset < atom.visibleEnd) {
+      return atom.displayEnd;
+    }
+  }
+  for (const ImageAtom& atom : imageAtoms_) {
     if (visibleOffset > atom.visibleStart && visibleOffset < atom.visibleEnd) {
       return atom.displayEnd;
     }

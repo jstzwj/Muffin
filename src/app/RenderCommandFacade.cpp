@@ -229,4 +229,29 @@ bool RenderCommandFacade::setMathTex(QString tex) {
   return runCommand("setMathTex", [&] { return editorController_.mathLiteral().setContent(std::move(tex)); });
 }
 
+bool RenderCommandFacade::insertImage() {
+  return runCommand("insertImage", [&] { return editorController_.stylizeController().insertImage(); });
+}
+
+bool RenderCommandFacade::isOnImage() const {
+  if (!canRun()) {
+    return false;
+  }
+  return editorController_.isOnImage();
+}
+
+QString RenderCommandFacade::imageSrcAtCursor() const {
+  if (!canRun()) {
+    return {};
+  }
+  return editorController_.imageSrcAtCursor();
+}
+
+bool RenderCommandFacade::imageSourceRangeAtCursor(qsizetype& outStart, qsizetype& outEnd) const {
+  if (!canRun()) {
+    return false;
+  }
+  return editorController_.imageSourceRangeAtCursor(outStart, outEnd);
+}
+
 }  // namespace muffin

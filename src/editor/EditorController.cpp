@@ -700,6 +700,67 @@ QString EditorController::sanitizedHtmlPreview() const {
   return muffin::sanitizedHtmlPreview(htmlLiteral_);
 }
 
+bool EditorController::isOnImage() const {
+  return !imageSrcAtCursor().isEmpty();
+}
+
+QString EditorController::imageSrcAtCursor() const {
+  if (!session_ || !selection_.hasCursor()) {
+    return {};
+  }
+  BlockEditContextResolver resolver(const_cast<DocumentSession*>(session_), const_cast<SelectionController*>(&selection_));
+  BlockEditContext context;
+  if (!resolver.current(context) || !context.inlineProjection.isValid() || !context.editableNode) {
+    return {};
+  }
+  const qsizetype offset = context.cursorTextOffset;
+  for (const auto& span : context.inlineProjection.spans()) {
+    if (span.type != InlineType::Image || span.kind != InlineSpanKind::Atom) {
+      continue;
+    }
+    if (offset >= span.visibleStart && offset <= span.visibleEnd) {
+      // Match this span to an InlineNode by source range
+      for (const auto& inlineNode : context.editableNode->inlines()) {
+        if (inlineNode.type() == InlineType::Image &&
+            inlineNode.sourceRanges().source.start <= span.sourceStart &&
+            inlineNode.sourceRanges().source.end >= span.sourceEnd) {
+          return inlineNode.href();
+        }
+      }
+    }
+  }
+  return {};
+}
+
+bool EditorController::imageSourceRangeAtCursor(qsizetype& outStart, qsizetype& outEnd) const {
+  if (!session_ || !selection_.hasCursor()) {
+    return false;
+  }
+  BlockEditContextResolver resolver(const_cast<DocumentSession*>(session_), const_cast<SelectionController*>(&selection_));
+  BlockEditContext context;
+  if (!resolver.current(context) || !context.inlineProjection.isValid() || !context.editableNode) {
+    return false;
+  }
+  const qsizetype offset = context.cursorTextOffset;
+  for (const auto& span : context.inlineProjection.spans()) {
+    if (span.type != InlineType::Image || span.kind != InlineSpanKind::Atom) {
+      continue;
+    }
+    if (offset >= span.visibleStart && offset <= span.visibleEnd) {
+      for (const auto& inlineNode : context.editableNode->inlines()) {
+        if (inlineNode.type() == InlineType::Image &&
+            inlineNode.sourceRanges().source.start <= span.sourceStart &&
+            inlineNode.sourceRanges().source.end >= span.sourceEnd) {
+          outStart = inlineNode.sourceStart();
+          outEnd = inlineNode.sourceEnd();
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 void EditorController::activateHit(HitTestResult hit) {
   if (!hit.isValid()) {
     selection_.clear();

@@ -57,6 +57,9 @@ public:
 
   bool insertFrontMatter(FrontMatterFormat format);
   QString sanitizedHtmlPreview() const;
+  bool isOnImage() const;
+  QString imageSrcAtCursor() const;
+  bool imageSourceRangeAtCursor(qsizetype& outStart, qsizetype& outEnd) const;
 
 signals:
   void cursorChanged(HitTestResult hit);

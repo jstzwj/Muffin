@@ -3,9 +3,13 @@
 #include "document/DocumentSession.h"
 #include "editor/InputController.h"
 #include "editor/SelectionController.h"
+#include "io/ImageFileOps.h"
 
 #include <QApplication>
 #include <QClipboard>
+#include <QDir>
+#include <QFileInfo>
+#include <QImage>
 #include <QMimeData>
 
 namespace muffin {
@@ -52,6 +56,21 @@ bool ClipboardController::cut() {
 bool ClipboardController::paste() {
   if (!inputController_) {
     return false;
+  }
+
+  // Check for image data in the clipboard first
+  const QMimeData* mimeData = QApplication::clipboard()->mimeData();
+  if (mimeData && mimeData->hasImage()) {
+    const QImage image = qvariant_cast<QImage>(mimeData->imageData());
+    if (!image.isNull() && ctx_.hasSession()) {
+      const QString docDir = QFileInfo(ctx_.session->filePath()).absolutePath();
+      QDir saveDir(docDir);
+      const QString saved = muffin::ImageFileOps::savePastedImage(image, saveDir);
+      if (!saved.isEmpty()) {
+        const QString relPath = saveDir.relativeFilePath(saved);
+        return inputController_->insertText(QStringLiteral("![image](%1)").arg(relPath));
+      }
+    }
   }
 
   const QString text = QApplication::clipboard()->text();

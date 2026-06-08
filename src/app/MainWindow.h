@@ -129,6 +129,8 @@ private:
   void showInSidebar();
   void deleteFile();
   void insertTableWithDialog();
+  void insertImageWithDialog();
+  void insertLocalImageWithDialog();
 
   void showFindBar();
   void showReplaceBar();

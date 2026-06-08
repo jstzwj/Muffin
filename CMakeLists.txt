@@ -408,6 +408,8 @@ set(MUFFIN_UI_SOURCES
   src/editor/InputController.cpp
   src/editor/InputController.h
   src/editor/InputControllerEdit.cpp
+  src/io/ImageFileOps.cpp
+  src/io/ImageFileOps.h
   src/editor/SelectionController.cpp
   src/editor/SelectionController.h
   src/editor/TextBlockCommandBuilder.cpp

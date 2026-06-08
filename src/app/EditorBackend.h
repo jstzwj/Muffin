@@ -38,6 +38,7 @@ public:
   virtual void toggleItalic() = 0;
   virtual void toggleCode() = 0;
   virtual void insertLink() = 0;
+  virtual void insertImage() = 0;
 
   // State queries
   virtual bool hasSelection() const = 0;

@@ -179,6 +179,10 @@ void SourceEditorBackend::insertLink() {
   plainEdit()->insertPlainText(QStringLiteral("[](url)"));
 }
 
+void SourceEditorBackend::insertImage() {
+  plainEdit()->insertPlainText(QStringLiteral("![alt](url)"));
+}
+
 bool SourceEditorBackend::hasSelection() const {
   return plainEdit()->textCursor().hasSelection();
 }

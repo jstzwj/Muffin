@@ -8,6 +8,7 @@
 #include "theme/RenderTheme.h"
 
 #include <QColor>
+#include <QImage>
 #include <QPointF>
 #include <QRectF>
 #include <QSizeF>
@@ -46,6 +47,7 @@ public:
   qsizetype hitTestSourceOffset(QPointF localPos) const;
   QRectF hitTestCursorRect(QPointF localPos) const;
   QString linkHrefAtLocalPos(QPointF localPos) const;
+  QString imageSrcAtLocalPos(QPointF localPos) const;
   QRectF cursorRect(qsizetype textOffset) const;
   QRectF cursorRectForSourceOffset(qsizetype sourceOffset) const;
   QVector<QRectF> selectionRects(qsizetype startOffset, qsizetype endOffset) const;
@@ -77,6 +79,19 @@ private:
     std::shared_ptr<math::MathLayoutResult> layout;
   };
 
+  struct ImageAtom {
+    qsizetype displayStart = 0;
+    qsizetype displayEnd = 0;
+    qsizetype sourceStart = 0;
+    qsizetype sourceEnd = 0;
+    qsizetype visibleStart = 0;
+    qsizetype visibleEnd = 0;
+    QString srcUrl;
+    QSizeF displaySize;
+    QImage image;
+    bool loaded = false;
+  };
+
   struct DisplayOffsetMapEntry {
     qsizetype projectionStart = 0;
     qsizetype projectionEnd = 0;
@@ -92,10 +107,13 @@ private:
 
   void buildOffsetMapFromProjection();
   void buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
+  void buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
   QString texForInlineMathVisibleRange(const QVector<InlineNode>& inlines, qsizetype visibleStart, qsizetype visibleEnd) const;
+  QString imageSrcForVisibleRange(const QVector<InlineNode>& inlines, qsizetype visibleStart, qsizetype visibleEnd) const;
   void buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont);
   void paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) const;
   void paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) const;
+  void paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) const;
   QVector<QTextLayout::FormatRange> textLayoutFormats(const RenderTheme& theme, const QFont& baseFont) const;
   qsizetype visibleOffsetForDisplayOffset(qsizetype displayOffset) const;
   qsizetype displayOffsetForVisibleOffset(qsizetype visibleOffset) const;
@@ -118,6 +136,7 @@ private:
   QString layoutText_;
   QVector<OffsetMapEntry> offsetMap_;
   QVector<MathAtom> mathAtoms_;
+  QVector<ImageAtom> imageAtoms_;
   QVector<DisplayOffsetMapEntry> displayOffsetMap_;
   InlineProjection projection_;
   math::MathRenderer mathRenderer_;

@@ -36,6 +36,7 @@ public:
   void toggleItalic() override;
   void toggleCode() override;
   void insertLink() override;
+  void insertImage() override;
 
   bool hasSelection() const override;
   bool isSourceMode() const override;

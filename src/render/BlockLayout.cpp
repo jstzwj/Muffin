@@ -1070,6 +1070,7 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
         result.sourceOffset = contentSourceStart_ >= 0 ? contentSourceStart_ + localSourceOffset : localSourceOffset;
         result.cursorRect = inlineLayout_->hitTestCursorRect(localPos).translated(textRect.topLeft());
         result.linkHref = inlineLayout_->linkHrefAtLocalPos(localPos);
+        result.imageSrc = inlineLayout_->imageSrcAtLocalPos(localPos);
       }
       break;
     case BlockType::FrontMatter:
@@ -1147,6 +1148,7 @@ HitTestResult BlockLayout::hitTable(QPointF documentPos, const RenderTheme& them
         result.sourceOffset = cell.contentSourceStart >= 0 ? cell.contentSourceStart + localSourceOffset : localSourceOffset;
         result.cursorRect = cell.text.cursorRectForSourceOffset(localSourceOffset).translated(textOrigin);
         result.linkHref = cell.text.linkHrefAtLocalPos(localPos);
+        result.imageSrc = cell.text.imageSrcAtLocalPos(localPos);
         return result;
       }
       ++columnIndex;

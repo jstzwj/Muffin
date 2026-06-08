@@ -39,6 +39,7 @@ struct HitTestResult {
   int tableColumn = -1;
   DefinitionField definitionField = DefinitionField::None;
   QString linkHref;
+  QString imageSrc;
 
   bool isValid() const {
     return blockId.isValid();

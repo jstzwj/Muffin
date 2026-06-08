@@ -73,6 +73,11 @@ public:
   bool exitMathEditMode();
   bool setMathTex(QString tex);
 
+  bool insertImage();
+  bool isOnImage() const;
+  QString imageSrcAtCursor() const;
+  bool imageSourceRangeAtCursor(qsizetype& outStart, qsizetype& outEnd) const;
+
 private:
   bool canRun() const;
   bool runCommand(const char* commandName, const std::function<bool()>& command) const;
