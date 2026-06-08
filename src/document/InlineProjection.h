@@ -89,7 +89,7 @@ public:
 
   static QString plainTextForInlines(const QVector<InlineNode>& inlines);
   static QString markdownForInlines(const QVector<InlineNode>& inlines);
-  static bool isPlainInlineSource(const QVector<InlineNode>& inlines, const QString& sourceText);
+  static bool isPlainInlineSource(const QVector<InlineNode>& inlines, const QString& sourceText, qsizetype sourceBase = -1);
 
 private:
   struct BuildState {

@@ -3,6 +3,7 @@
 #include "document/InlineProjection.h"
 #include "document/MarkdownNode.h"
 #include "document/SelectionSerializer.h"
+#include "document/SourceRangeUtil.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
 #include "editor/EditorContext.h"
@@ -19,8 +20,6 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 
-#include <cmath>
-#include <cstdlib>
 #include <iostream>
 
 using namespace muffin;
@@ -148,6 +147,8 @@ struct ExpectedProjectionSpan {
   qsizetype visibleEnd = 0;
 };
 
+QVector<InlineNode> withInlineTestRanges(QVector<InlineNode> inlines, const QString& markdown);
+
 void requireSpanContract(const InlineProjectionSpan& span, const ExpectedProjectionSpan& expected, qsizetype index, const char* label) {
   const QString prefix = QStringLiteral("%1 span %2").arg(QString::fromUtf8(label)).arg(index);
   require(span.type == expected.type, prefix + QStringLiteral(" type mismatch"));
@@ -170,7 +171,7 @@ void requireProjectionSpans(
     const QString& displayText,
     const QString& visibleText,
     const char* label) {
-  InlineProjection projection(inlines, markdown, state);
+  InlineProjection projection(withInlineTestRanges(inlines, markdown), markdown, state);
   require(projection.isValid(), label);
   require(projection.displayText() == displayText,
           QStringLiteral("%1 display text mismatch: %2").arg(QString::fromUtf8(label), projection.displayText()));
@@ -192,7 +193,7 @@ void requireProjectionRoundTrip(
     const char* label) {
   InlineProjectionState state;
   state.cursorSourceOffset = cursorSourceOffset;
-  InlineProjection projection(inlines, markdown, state);
+  InlineProjection projection(withInlineTestRanges(inlines, markdown), markdown, state);
   require(projection.isValid(), label);
   require(projection.visibleText() == visibleText, QStringLiteral("%1 visible text mismatch: %2").arg(QString::fromUtf8(label), projection.visibleText()));
   require(projection.displayText() == displayText, QStringLiteral("%1 display text mismatch: %2").arg(QString::fromUtf8(label), projection.displayText()));
@@ -212,6 +213,82 @@ void requireProjectionRoundTrip(
     require(projection.visibleOffsetForSourceOffset(sourceOffset, mappedVisibleOffset), "projection source->visible should succeed");
     require(mappedVisibleOffset >= 0 && mappedVisibleOffset <= visibleText.size(), "projection visible round-trip should stay in visible text");
   }
+}
+
+void setInlineRanges(
+    InlineNode& node,
+    qsizetype sourceStart,
+    qsizetype sourceEnd,
+    qsizetype contentStart,
+    qsizetype contentEnd) {
+  InlineSourceRanges ranges;
+  ranges.source = {sourceStart, sourceEnd};
+  ranges.content = {contentStart, contentEnd};
+  ranges.openMarker = {sourceStart, contentStart};
+  ranges.closeMarker = {contentEnd, sourceEnd};
+  node.setSourceRanges(ranges);
+}
+
+QString testMarkerForInline(const InlineNode& node) {
+  switch (node.type()) {
+    case InlineType::Code:
+      return QStringLiteral("`");
+    case InlineType::InlineMath:
+      return QStringLiteral("$");
+    case InlineType::Emphasis:
+      return node.marker().isEmpty() ? QStringLiteral("*") : node.marker();
+    case InlineType::Strong:
+      return node.marker().isEmpty() ? QStringLiteral("**") : node.marker();
+    case InlineType::Strikethrough:
+      return QStringLiteral("~~");
+    default:
+      return {};
+  }
+}
+
+void annotateInlineTestRanges(QVector<InlineNode>& inlines, const QString& markdown, qsizetype sourceStart, qsizetype sourceEnd) {
+  qsizetype searchFrom = sourceStart;
+  for (InlineNode& node : inlines) {
+    const QString nodeMarkdown = InlineProjection::markdownForInlines({node});
+    const qsizetype start = markdown.indexOf(nodeMarkdown, searchFrom);
+    if (start < 0 || start + nodeMarkdown.size() > sourceEnd) {
+      continue;
+    }
+    const qsizetype end = start + nodeMarkdown.size();
+    const QString marker = testMarkerForInline(node);
+    if (!marker.isEmpty() && end - start >= marker.size() * 2 &&
+        (node.type() == InlineType::Code || node.type() == InlineType::InlineMath || node.type() == InlineType::Emphasis ||
+         node.type() == InlineType::Strong || node.type() == InlineType::Strikethrough)) {
+      setInlineRanges(node, start, end, start + marker.size(), end - marker.size());
+      annotateInlineTestRanges(node.children(), markdown, start + marker.size(), end - marker.size());
+    } else if (node.type() == InlineType::Link) {
+      InlineSourceRanges ranges;
+      ranges.source = {start, end};
+      ranges.openMarker = {start, start + 1};
+      const qsizetype labelEnd = markdown.indexOf(QLatin1Char(']'), start);
+      ranges.content = labelEnd >= 0 && labelEnd <= end ? InlineRange{start + 1, labelEnd} : InlineRange{start + 1, start + 1};
+      node.setSourceRanges(ranges);
+      annotateInlineTestRanges(node.children(), markdown, ranges.content.start, ranges.content.end);
+    } else if (node.type() == InlineType::Image) {
+      InlineSourceRanges ranges;
+      ranges.source = {start, end};
+      ranges.openMarker = {start, start + 2};
+      const qsizetype labelEnd = markdown.indexOf(QLatin1Char(']'), start);
+      ranges.content = labelEnd >= 0 && labelEnd <= end ? InlineRange{start + 2, labelEnd} : InlineRange{start + 2, start + 2};
+      node.setSourceRanges(ranges);
+    } else {
+      InlineSourceRanges ranges;
+      ranges.source = {start, end};
+      ranges.content = ranges.source;
+      node.setSourceRanges(ranges);
+    }
+    searchFrom = end;
+  }
+}
+
+QVector<InlineNode> withInlineTestRanges(QVector<InlineNode> inlines, const QString& markdown) {
+  annotateInlineTestRanges(inlines, markdown, 0, markdown.size());
+  return inlines;
 }
 
 const BlockLayout* requireViewBlock(EditorView& view, NodeId blockId, const QString& label);
@@ -288,27 +365,25 @@ void testInlineProjectionMarkerSourcePositions() {
 }
 
 void testInlineProjectionUsesParserSourceRangesForRepeatedUnicodeMarkers() {
-  const QString markdown = QString::fromUtf8("**中** and **中**");
-  InlineNode first = InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QString::fromUtf8("中"))});
-  first.setSourceStart(0);
-  first.setSourceEnd(QString::fromUtf8("**中**").size());
+  const QString markdown = QStringLiteral("**bold** and **bold**");
+  InlineNode first = InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QStringLiteral("bold"))});
+  setInlineRanges(first, 0, QStringLiteral("**bold**").size(), 2, QStringLiteral("**bold").size());
   InlineNode spacer = InlineNode::text(QStringLiteral(" and "));
   spacer.setSourceStart(first.sourceEnd());
   spacer.setSourceEnd(first.sourceEnd() + spacer.text().size());
-  InlineNode second = InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QString::fromUtf8("中"))});
-  second.setSourceStart(markdown.lastIndexOf(QStringLiteral("**")));
-  second.setSourceEnd(markdown.size());
+  InlineNode second = InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QStringLiteral("bold"))});
+  const qsizetype secondStart = QStringLiteral("**bold** and ").size();
+  setInlineRanges(second, secondStart, markdown.size(), secondStart + 2, markdown.size() - 2);
 
   InlineProjectionState state;
   state.cursorSourceOffset = second.sourceStart() + 1;
   InlineProjection projection({first, spacer, second}, markdown, state, 0);
-  require(projection.isValid(), "projection should be valid for repeated unicode markers");
-  require(projection.displayText() == QString::fromUtf8("中 and **中**"),
+  require(projection.isValid(), "projection should be valid for repeated markers");
+  require(projection.displayText() == QStringLiteral("bold and **bold**"),
           "projection should expand the repeated inline selected by parser source range");
-  require(projection.visibleText() == QString::fromUtf8("中 and 中"),
-          "projection visible text should collapse repeated unicode markers");
+  require(projection.visibleText() == QStringLiteral("bold and bold"),
+          "projection visible text should collapse repeated markers");
 }
-
 void testInlineProjectionUsesParserSourceRangesForRepeatedNonCanonicalMarkdown() {
   DocumentSession session;
   const QString markdown = QStringLiteral("__bold__ and __bold__");
@@ -349,21 +424,22 @@ void testInlineProjectionUsesParserSourceRangesForRepeatedNonCanonicalMarkdown()
 }
 
 void testInlineProjectionExpandsParserContentRangesForDelimitedInlines() {
+  DocumentSession session;
   const QString markdown = QStringLiteral("``a`b`` and ``a`b``");
-  InlineNode first = InlineNode::code(QStringLiteral("a`b"));
-  first.setSourceStart(2);
-  first.setSourceEnd(5);
-  InlineNode spacer = InlineNode::text(QStringLiteral(" and "));
-  spacer.setSourceStart(7);
-  spacer.setSourceEnd(12);
-  InlineNode second = InlineNode::code(QStringLiteral("a`b"));
-  second.setSourceStart(14);
-  second.setSourceEnd(17);
+  session.setMarkdownText(markdown, false);
+  MarkdownNode* block = blockAt(session, 0);
+  require(block->inlines().size() == 3, "content-range code sample should parse as three inlines");
+  const InlineNode& first = block->inlines().at(0);
+  const InlineNode& second = block->inlines().at(2);
+  require(first.sourceRange().start == 0 && first.sourceRange().end == 7, "first code source range should include delimiters");
+  require(first.contentRange().start == 2 && first.contentRange().end == 5, "first code content range mismatch");
+  require(second.sourceRange().start == 12 && second.sourceRange().end == markdown.size(), "second code source range should include delimiters");
+  require(second.contentRange().start == 14 && second.contentRange().end == 17, "second code content range mismatch");
 
   InlineProjectionState state;
   state.cursorSourceOffset = 14;
-  InlineProjection projection({first, spacer, second}, markdown, state, 0);
-  require(projection.isValid(), "projection should be valid for parser content ranges");
+  InlineProjection projection(block->inlines(), markdown, state, 0);
+  require(projection.isValid(), "projection should be valid for parser-normalized ranges");
   require(projection.displayText() == QStringLiteral("a`b and ``a`b``"),
           QStringLiteral("active content-range code display mismatch: %1").arg(projection.displayText()));
   require(projection.visibleText() == QStringLiteral("a`b and a`b"),
@@ -377,7 +453,250 @@ void testInlineProjectionExpandsParserContentRangesForDelimitedInlines() {
       break;
     }
   }
-  require(foundSecondTextSpan, "second content-range code span should expand to delimiter source range");
+  require(foundSecondTextSpan, "second code span should consume parser-normalized source/content ranges");
+}
+void testInlineProjectionAutolinkUsesFullSourceRangeAndLabel() {
+  DocumentSession session;
+  const QString markdown = QStringLiteral("autolinks like https://example.com, done");
+  session.setMarkdownText(markdown, false);
+  MarkdownNode* block = blockAt(session, 0);
+  require(block->inlines().size() >= 2, "autolink sample should parse into multiple inlines");
+  const InlineNode& autolink = block->inlines().at(1);
+  require(autolink.type() == InlineType::Link, "autolink node should be a link");
+  require(autolink.children().size() == 1, "autolink node should have one text child");
+  require(autolink.children().at(0).text() == QStringLiteral("https://example.com"),
+          QStringLiteral("autolink label mismatch: %1").arg(autolink.children().at(0).text()));
+  require(autolink.href() == QStringLiteral("https://example.com"),
+          QStringLiteral("autolink href mismatch: %1").arg(autolink.href()));
+  const qsizetype urlStart = markdown.indexOf(QStringLiteral("https://example.com"));
+  require(autolink.sourceRange().start == urlStart,
+          QStringLiteral("autolink source start mismatch: %1 vs %2").arg(autolink.sourceRange().start).arg(urlStart));
+  require(autolink.sourceRange().end == urlStart + QStringLiteral("https://example.com").size(),
+          QStringLiteral("autolink source end mismatch: %1").arg(autolink.sourceRange().end));
+  require(autolink.contentRange().start == autolink.sourceRange().start &&
+              autolink.contentRange().end == autolink.sourceRange().end,
+          "autolink content range should match source range");
+
+  InlineProjection projection(block->inlines(), markdown, InlineProjectionState{}, 0);
+  require(projection.isValid(), "autolink projection should be valid");
+  require(projection.visibleText() == markdown,
+          QStringLiteral("autolink visible text mismatch: %1").arg(projection.visibleText()));
+  require(projection.displayText() == markdown,
+          QStringLiteral("autolink display text mismatch: %1").arg(projection.displayText()));
+
+  bool foundAutolinkSpan = false;
+  for (const InlineProjectionSpan& span : projection.spans()) {
+    if (span.type == InlineType::Link && span.kind == InlineSpanKind::Text && span.sourceStart == urlStart &&
+        span.sourceEnd == urlStart + QStringLiteral("https://example.com").size() &&
+        span.contentSourceStart == span.sourceStart && span.contentSourceEnd == span.sourceEnd) {
+      foundAutolinkSpan = true;
+      break;
+    }
+  }
+  require(foundAutolinkSpan, "autolink text span should cover the full source URL");
+}
+
+void testInlineProjectionEntitiesAndMarkdownLinksUseParserRanges() {
+  DocumentSession session;
+  const QString markdown = QStringLiteral("&amp; &lt; &gt; &copy;. [Muffin](https://example.com)");
+  session.setMarkdownText(markdown, false);
+  MarkdownNode* block = blockAt(session, 0);
+
+  InlineProjection projection(block->inlines(), markdown, InlineProjectionState{}, 0);
+  require(projection.isValid(), "entity/link projection should be valid");
+  require(projection.visibleText() == QString::fromUtf8("& < > ©. Muffin"),
+          QStringLiteral("entity/link visible text mismatch: %1").arg(projection.visibleText()));
+  require(projection.displayText() == QString::fromUtf8("& < > ©. Muffin"),
+          QStringLiteral("entity/link display text mismatch: %1").arg(projection.displayText()));
+
+  InlineProjectionState activeLink;
+  activeLink.cursorSourceOffset = markdown.indexOf(QStringLiteral("Muffin"));
+  InlineProjection activeProjection(block->inlines(), markdown, activeLink, 0);
+  // Cursor is inside the link, not inside the entity text node, so entities
+  // remain decoded and only link syntax is revealed.
+  require(activeProjection.displayText() == QString::fromUtf8("& < > ©. [Muffin](https://example.com)"),
+          QStringLiteral("active entity/link display text mismatch: %1").arg(activeProjection.displayText()));
+}
+
+void testInlineProjectionEntityDisplayAfterEdit() {
+  DocumentSession session;
+  const QString markdown = QStringLiteral("Entities are decoded by renderers: &amp; &lt; &gt; &copy;.");
+  session.setMarkdownText(markdown, false);
+  MarkdownNode* block = blockAt(session, 0);
+
+  // Check initial projection
+  InlineProjection initialProjection(block->inlines(), markdown, InlineProjectionState{}, 0);
+  require(initialProjection.isValid(), "initial entity projection should be valid");
+  require(initialProjection.visibleText() == QString::fromUtf8("Entities are decoded by renderers: & < > ©."),
+          QStringLiteral("initial entity visible text mismatch: %1").arg(initialProjection.visibleText()));
+
+  // Insert 'a' at the beginning (source offset 0)
+  require(session.applyTextDelta(0, 0, QStringLiteral("a"), true),
+          "entity edit should apply");
+
+  const QString editedMarkdown = session.markdownText();
+  require(editedMarkdown == QStringLiteral("aEntities are decoded by renderers: &amp; &lt; &gt; &copy;."),
+          QStringLiteral("entity edited text mismatch: %1").arg(editedMarkdown));
+
+  block = blockAt(session, 0);
+  require(block != nullptr, "block should exist after edit");
+
+  // Extract source text the way the layout builder does it
+  const SourceRange range = block->sourceRange();
+  const qsizetype contentStart = sourceOffsetForLineColumn(editedMarkdown, range.lineStart, qMax(1, range.columnStart));
+  const qsizetype contentEnd = sourceOffsetForLineEnd(editedMarkdown, range.lineEnd);
+  const QString contentText = contentStart >= 0 && contentEnd > contentStart
+      ? editedMarkdown.mid(contentStart, contentEnd - contentStart)
+      : editedMarkdown;
+
+  InlineProjection editProjection(block->inlines(), contentText, InlineProjectionState{}, contentStart);
+  require(editProjection.isValid(), "post-edit entity projection should be valid");
+  require(editProjection.visibleText() == QString::fromUtf8("aEntities are decoded by renderers: & < > ©."),
+          QStringLiteral("post-edit entity visible text mismatch: %1").arg(editProjection.visibleText()));
+}
+
+void testInlineProjectionEntityRevealsRawSyntaxWhenActive() {
+  DocumentSession session;
+  const QString markdown = QStringLiteral("before &amp; &lt; after");
+  session.setMarkdownText(markdown, false);
+  MarkdownNode* block = blockAt(session, 0);
+
+  // Inactive: show decoded characters
+  InlineProjection inactive(block->inlines(), markdown, InlineProjectionState{}, 0);
+  require(inactive.isValid(), "entity projection should be valid");
+  require(inactive.visibleText() == QString::fromUtf8("before & < after"),
+          QStringLiteral("inactive entity visible text mismatch: %1").arg(inactive.visibleText()));
+  require(inactive.displayText() == QString::fromUtf8("before & < after"),
+          QStringLiteral("inactive entity display text mismatch: %1").arg(inactive.displayText()));
+
+  // Active on source syntax: reveal only the touched entity's raw syntax in gray.
+  InlineProjectionState activeState;
+  activeState.cursorSourceOffset = markdown.indexOf(QStringLiteral("&amp;"));
+  InlineProjection active(block->inlines(), markdown, activeState, 0);
+  require(active.isValid(), "active entity projection should be valid");
+  require(active.visibleText() == QString::fromUtf8("before & < after"),
+          QStringLiteral("active entity visible text mismatch: %1").arg(active.visibleText()));
+  require(active.displayText() == QString::fromUtf8("before &&amp; < after"),
+          QStringLiteral("active entity display text mismatch: %1").arg(active.displayText()));
+
+  int hiddenCount = 0;
+  int entityContentCount = 0;
+  for (const InlineProjectionSpan& span : active.spans()) {
+    if (span.kind == InlineSpanKind::HiddenSyntax && span.type == InlineType::Text) {
+      ++hiddenCount;
+    }
+    // Entity content spans: source range is shorter than display length (decoded char)
+    if (span.kind == InlineSpanKind::Text && span.type == InlineType::Text) {
+      const QString display = active.displayText().mid(
+          static_cast<int>(span.displayStart),
+          static_cast<int>(span.displayEnd - span.displayStart));
+      // Entity decoded chars: source range is wider than 1 char display
+      if (span.sourceEnd - span.sourceStart > 1 && display.size() == 1) {
+        ++entityContentCount;
+      }
+    }
+  }
+  require(hiddenCount == 1,
+          QStringLiteral("expected 1 hidden entity span, got %1").arg(hiddenCount));
+  require(entityContentCount == 2,
+          QStringLiteral("expected 2 entity content spans, got %1").arg(entityContentCount));
+
+  InlineProjectionState visibleActiveState;
+  visibleActiveState.cursorVisibleOffset = QStringLiteral("before & ").size();
+  InlineProjection visibleActive(block->inlines(), markdown, visibleActiveState, 0);
+  require(visibleActive.isValid(), "visible-active entity projection should be valid");
+  require(visibleActive.displayText() == QString::fromUtf8("before & <&lt; after"),
+          QStringLiteral("visible-active entity display text mismatch: %1").arg(visibleActive.displayText()));
+}
+
+void testInlineProjectionKeepsValidEntitiesDecodedAfterBrokenEntityEdit() {
+  DocumentSession session;
+  const QString original = QStringLiteral("Entities are decoded by renderers: &amp; &lt; &gt; &copy;.");
+  session.setMarkdownText(original, false);
+  const qsizetype copyAmp = original.indexOf(QStringLiteral("&copy;"));
+  require(copyAmp >= 0, "copy entity ampersand should exist");
+  require(session.applyTextDelta(copyAmp, 1, QString(), true), "copy entity ampersand delete should apply");
+
+  const QString markdown = QStringLiteral("Entities are decoded by renderers: &amp; &lt; &gt; copy;.");
+  require(session.markdownText() == markdown,
+          QStringLiteral("broken trailing entity markdown mismatch: %1").arg(session.markdownText()));
+  MarkdownNode* block = blockAt(session, 0);
+
+  InlineProjection projection(block->inlines(), markdown, InlineProjectionState{}, 0);
+  require(projection.isValid(), "broken trailing entity projection should be valid");
+  require(projection.visibleText() == QString::fromUtf8("Entities are decoded by renderers: & < > copy;."),
+          QStringLiteral("broken trailing entity visible text mismatch: %1").arg(projection.visibleText()));
+  require(projection.displayText() == QString::fromUtf8("Entities are decoded by renderers: & < > copy;."),
+          QStringLiteral("broken trailing entity display text mismatch: %1").arg(projection.displayText()));
+}
+
+void testInlineProjectionEntityDisplayAfterEditMultiParagraph() {
+  DocumentSession session;
+  const QString markdown = QStringLiteral("First paragraph.\n\nEntities: &amp; &lt; &gt; &copy;.");
+  session.setMarkdownText(markdown, false);
+
+  MarkdownNode* block = blockAt(session, 1);
+  require(block != nullptr, "entity block should exist");
+  require(block->type() == BlockType::Paragraph, "entity block should be paragraph");
+
+  const SourceRange range = block->sourceRange();
+  const qsizetype contentStart = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
+  const qsizetype contentEnd = sourceOffsetForLineEnd(markdown, range.lineEnd);
+  require(contentStart >= 0 && contentEnd > contentStart, "entity block content range should be valid");
+  const QString contentText = markdown.mid(contentStart, contentEnd - contentStart);
+
+  InlineProjection initialProjection(block->inlines(), contentText, InlineProjectionState{}, contentStart);
+  require(initialProjection.isValid(), "initial multi-paragraph entity projection should be valid");
+  require(initialProjection.visibleText() == QString::fromUtf8("Entities: & < > \xC2\xA9."),
+          QStringLiteral("initial visible text mismatch: %1").arg(initialProjection.visibleText()));
+
+  // Edit the first paragraph to trigger local re-parse of a slice containing the second paragraph
+  require(session.applyTextDelta(0, 0, QStringLiteral("x"), true),
+          "multi-paragraph entity edit should apply");
+
+  const QString editedMarkdown = session.markdownText();
+  require(editedMarkdown == QStringLiteral("xFirst paragraph.\n\nEntities: &amp; &lt; &gt; &copy;."),
+          QStringLiteral("multi-paragraph edited text mismatch: %1").arg(editedMarkdown));
+
+  block = blockAt(session, 1);
+  require(block != nullptr, "entity block should still exist after edit");
+  require(block->type() == BlockType::Paragraph, "entity block should still be paragraph");
+
+  const SourceRange editedRange = block->sourceRange();
+  const qsizetype editedStart = sourceOffsetForLineColumn(editedMarkdown, editedRange.lineStart, qMax(1, editedRange.columnStart));
+  const qsizetype editedEnd = sourceOffsetForLineEnd(editedMarkdown, editedRange.lineEnd);
+  require(editedStart >= 0 && editedEnd > editedStart, "post-edit content range should be valid");
+  const QString editedContentText = editedMarkdown.mid(editedStart, editedEnd - editedStart);
+
+  InlineProjection editProjection(block->inlines(), editedContentText, InlineProjectionState{}, editedStart);
+  require(editProjection.isValid(), "post-edit multi-paragraph entity projection should be valid");
+  require(editProjection.visibleText() == QString::fromUtf8("Entities: & < > \xC2\xA9."),
+          QStringLiteral("post-edit visible text mismatch: %1").arg(editProjection.visibleText()));
+}
+
+void testInlineMathOpeningMarkerHitEntersContent() {
+  DocumentSession session;
+  const QString markdown = QStringLiteral("inline math $E = mc^2$.");
+  session.setMarkdownText(markdown, false);
+  MarkdownNode* block = blockAt(session, 0);
+  const qsizetype mathStart = markdown.indexOf(QLatin1Char('$'));
+
+  InlineLayout::BuildOptions options;
+  options.sourceBase = 0;
+  options.projectionState.cursorSourceOffset = mathStart + 1;
+  InlineLayout layout;
+  const RenderTheme theme = RenderTheme::typoraLike();
+  layout.build(block->inlines(), markdown, theme, 900.0, theme.paragraphFont(), options);
+  require(layout.mathAtomCount() == 0, "active inline math should not collapse to atom");
+
+  const QRectF markerStart = layout.cursorRectForSourceOffset(mathStart);
+  const QRectF contentStart = layout.cursorRectForSourceOffset(mathStart + 1);
+  const QPointF markerPoint((markerStart.left() + contentStart.left()) / 2.0, markerStart.center().y());
+  const qsizetype hitSourceOffset = layout.hitTestSourceOffset(markerPoint);
+  require(hitSourceOffset == mathStart + 1,
+          QStringLiteral("inline math opening marker hit should enter content: %1 vs %2")
+              .arg(hitSourceOffset)
+              .arg(mathStart + 1));
 }
 
 void testInlineProjectionForwardBiasAtInlineEnd() {
@@ -1463,6 +1782,7 @@ void testEditorViewListInlineMathHitEditing() {
   InlineLayout::BuildOptions options;
   options.projectionState.cursorVisibleOffset = activeCursor.text.textOffset;
   options.projectionState.cursorSourceOffset = localMathSourceOffset;
+  options.sourceBase = contentSourceStart;
   const RenderTheme theme = RenderTheme::typoraLike();
   inlineLayout.build(
       paragraph->inlines(),
@@ -1713,6 +2033,13 @@ int main(int argc, char** argv) {
   RUN_TEST(testInlineProjectionUsesParserSourceRangesForRepeatedUnicodeMarkers);
   RUN_TEST(testInlineProjectionUsesParserSourceRangesForRepeatedNonCanonicalMarkdown);
   RUN_TEST(testInlineProjectionExpandsParserContentRangesForDelimitedInlines);
+  RUN_TEST(testInlineProjectionAutolinkUsesFullSourceRangeAndLabel);
+  RUN_TEST(testInlineProjectionEntitiesAndMarkdownLinksUseParserRanges);
+  RUN_TEST(testInlineProjectionEntityDisplayAfterEdit);
+  RUN_TEST(testInlineProjectionEntityRevealsRawSyntaxWhenActive);
+  RUN_TEST(testInlineProjectionKeepsValidEntitiesDecodedAfterBrokenEntityEdit);
+  RUN_TEST(testInlineProjectionEntityDisplayAfterEditMultiParagraph);
+  RUN_TEST(testInlineMathOpeningMarkerHitEntersContent);
   RUN_TEST(testInlineProjectionForwardBiasAtInlineEnd);
   RUN_TEST(testInlineProjectionSpanContracts);
   RUN_TEST(testInlineProjectionMappingMatrix);

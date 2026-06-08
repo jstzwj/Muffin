@@ -1,5 +1,6 @@
 #include "app/DocumentSession.h"
 
+#include "document/InlineNode.h"
 #include "document/SourceRangeUtil.h"
 #include "parser/MarkdownSerializer.h"
 
@@ -224,6 +225,7 @@ void shiftRanges(muffin::MarkdownNode& node, qsizetype delta, int lineDelta) {
     shiftField(definition.sourceRange);
     node.setDefinition(definition);
   }
+  shiftInlineSourcePositions(node.inlines(), delta);
   for (const auto& child : node.children()) {
     shiftRanges(*child, delta, lineDelta);
   }

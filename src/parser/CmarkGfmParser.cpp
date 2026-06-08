@@ -4,6 +4,7 @@
 #include "document/InlineNode.h"
 #include "document/LineStartOffsetCache.h"
 #include "parser/CmarkNodeAdapter.h"
+#include "parser/MarkdownSerializer.h"
 
 #include <QByteArray>
 #include <QElapsedTimer>
@@ -376,15 +377,59 @@ FrontMatterScanResult scanFrontMatter(QStringView markdown) {
   return scanJsonFrontMatter(markdown);
 }
 
-void shiftInlineSourcePositions(QVector<InlineNode>& inlines, qsizetype delta) {
+using muffin::shiftInlineSourcePositions;
+
+void annotateTableCellInlineSourceRanges(QVector<InlineNode>& inlines, const QString& content, qsizetype sourceBase) {
+  qsizetype searchFrom = 0;
   for (InlineNode& inlineNode : inlines) {
-    if (inlineNode.sourceStart() >= 0) {
-      inlineNode.setSourceStart(inlineNode.sourceStart() + delta);
+    const QString markdown = MarkdownSerializer().serializeInline(inlineNode);
+    const qsizetype start = markdown.isEmpty() ? searchFrom : content.indexOf(markdown, searchFrom);
+    if (start < 0) {
+      continue;
     }
-    if (inlineNode.sourceEnd() >= 0) {
-      inlineNode.setSourceEnd(inlineNode.sourceEnd() + delta);
+    const qsizetype end = start + markdown.size();
+    InlineSourceRanges ranges;
+    ranges.source = {sourceBase + start, sourceBase + end};
+    ranges.content = ranges.source;
+
+    const QString marker = inlineNode.marker();
+    if (!marker.isEmpty() && end - start >= marker.size() * 2 &&
+        (inlineNode.type() == InlineType::Emphasis || inlineNode.type() == InlineType::Strong ||
+         inlineNode.type() == InlineType::Strikethrough)) {
+      ranges.openMarker = {sourceBase + start, sourceBase + start + marker.size()};
+      ranges.closeMarker = {sourceBase + end - marker.size(), sourceBase + end};
+      ranges.content = {ranges.openMarker.end, ranges.closeMarker.start};
+      inlineNode.setSourceRanges(ranges);
+      annotateTableCellInlineSourceRanges(inlineNode.children(), content, sourceBase);
+    } else if (inlineNode.type() == InlineType::Code || inlineNode.type() == InlineType::InlineMath) {
+      const QChar delim = (inlineNode.type() == InlineType::Code) ? QLatin1Char('`') : QLatin1Char('$');
+      const qsizetype openLen = countLeading(content, start, end, delim);
+      const qsizetype closeLen = countTrailing(content, start, end, delim);
+      if (openLen > 0 && closeLen >= openLen) {
+        ranges.openMarker = {sourceBase + start, sourceBase + start + openLen};
+        ranges.closeMarker = {sourceBase + end - closeLen, sourceBase + end};
+        ranges.content = {ranges.openMarker.end, ranges.closeMarker.start};
+        inlineNode.setSourceRanges(ranges);
+      }
+    } else if (inlineNode.type() == InlineType::Link) {
+      ranges.openMarker = {sourceBase + start, sourceBase + start + 1};
+      const qsizetype labelEndInSlice = content.mid(start, end - start).indexOf(QLatin1Char(']'));
+      const qsizetype labelEnd = labelEndInSlice >= 0 ? start + labelEndInSlice : qsizetype(-1);
+      ranges.content = labelEnd >= 0 ? InlineRange{sourceBase + start + 1, sourceBase + labelEnd}
+                                     : InlineRange{ranges.openMarker.end, ranges.openMarker.end};
+      inlineNode.setSourceRanges(ranges);
+      annotateTableCellInlineSourceRanges(inlineNode.children(), content, sourceBase);
+    } else if (inlineNode.type() == InlineType::Image) {
+      ranges.openMarker = {sourceBase + start, sourceBase + start + 2};
+      const qsizetype labelEndInSlice = content.mid(start, end - start).indexOf(QLatin1Char(']'));
+      const qsizetype labelEnd = labelEndInSlice >= 0 ? start + labelEndInSlice : qsizetype(-1);
+      ranges.content = labelEnd >= 0 ? InlineRange{sourceBase + start + 2, sourceBase + labelEnd}
+                                     : InlineRange{ranges.openMarker.end, ranges.openMarker.end};
+      inlineNode.setSourceRanges(ranges);
+    } else {
+      inlineNode.setSourceRanges(ranges);
     }
-    shiftInlineSourcePositions(inlineNode.children(), delta);
+    searchFrom = end;
   }
 }
 
@@ -486,6 +531,10 @@ void annotateTableCellSourceRanges(QStringView markdown, const LineStartOffsetCa
           range.columnStart = static_cast<int>(range.byteStart - rowStart + 1);
           range.columnEnd = static_cast<int>(range.byteEnd - rowStart);
           child->setSourceRange(range);
+          annotateTableCellInlineSourceRanges(
+              child->inlines(),
+              markdown.mid(range.byteStart, range.byteEnd - range.byteStart).toString(),
+              range.byteStart);
         }
         ++column;
       }
@@ -541,7 +590,7 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   cmark_node* document = cmark_parser_finish(parser);
 
   const LineStartOffsetCache lineOffsets(markdownToParse);
-  CmarkNodeAdapter adapter(&lineOffsets);
+  CmarkNodeAdapter adapter(&lineOffsets, markdownToParse);
   ParseResult result;
   result.root = adapter.convertBlock(document);
   insertVirtualEmptyParagraphs(markdownToParse, *result.root);

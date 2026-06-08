@@ -2,6 +2,8 @@
 
 #include "document/MarkdownNode.h"
 
+#include <QString>
+
 extern "C" {
 #include "cmark-gfm.h"
 }
@@ -13,7 +15,7 @@ class LineStartOffsetCache;
 class CmarkNodeAdapter {
 public:
   CmarkNodeAdapter() = default;
-  explicit CmarkNodeAdapter(const LineStartOffsetCache* lineOffsets);
+  CmarkNodeAdapter(const LineStartOffsetCache* lineOffsets, QStringView markdown);
 
   std::unique_ptr<MarkdownNode> convertBlock(cmark_node* node);
   InlineNode convertInline(cmark_node* node);
@@ -28,6 +30,7 @@ private:
   void readTableMetadata(cmark_node* cmarkNode, MarkdownNode& muffinNode);
 
   const LineStartOffsetCache* lineOffsets_ = nullptr;
+  QStringView markdown_;
 };
 
 }  // namespace muffin

@@ -106,7 +106,7 @@ qsizetype normalizedTableCellInsertOffset(const MarkdownNode& cell, const QStrin
     }
   }
 
-  InlineProjection projection(cell.inlines(), content, InlineProjectionState{});
+  InlineProjection projection(cell.inlines(), content, InlineProjectionState{}, cell.sourceRange().byteStart);
   for (const InlineProjectionSpan& span : projection.spans()) {
     if (!span.editable || span.contentSourceEnd < span.contentSourceStart) {
       continue;
@@ -181,7 +181,7 @@ qsizetype tableCellSourceOffsetForVisibleOffset(const QString& content, qsizetyp
 
 qsizetype tableCellVisibleOffsetForEditCursor(const MarkdownNode& cell, const QString& content, qsizetype sourceOffset) {
   qsizetype visibleOffset = visibleOffsetForTableCellSourceOffset(content, sourceOffset);
-  InlineProjection projection(cell.inlines(), content, InlineProjectionState{});
+  InlineProjection projection(cell.inlines(), content, InlineProjectionState{}, cell.sourceRange().byteStart);
   if (projection.visibleOffsetForSourceOffset(sourceOffset, visibleOffset)) {
     visibleOffset = qMax<qsizetype>(0, visibleOffset - tableSpecialSourceExtraBefore(content, sourceOffset));
   }

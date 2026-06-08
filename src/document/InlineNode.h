@@ -3,9 +3,41 @@
 #include "document/MarkdownTypes.h"
 
 #include <QString>
+#include <QStringView>
 #include <QVector>
 
 namespace muffin {
+
+struct InlineRange {
+  qsizetype start = -1;
+  qsizetype end = -1;
+
+  bool isValid() const;
+  qsizetype length() const;
+};
+
+inline qsizetype countLeading(QStringView text, qsizetype start, qsizetype end, QChar ch) {
+  qsizetype count = 0;
+  while (start + count < end && text.at(start + count) == ch) {
+    ++count;
+  }
+  return count;
+}
+
+inline qsizetype countTrailing(QStringView text, qsizetype start, qsizetype end, QChar ch) {
+  qsizetype count = 0;
+  while (end - count > start && text.at(end - count - 1) == ch) {
+    ++count;
+  }
+  return count;
+}
+
+struct InlineSourceRanges {
+  InlineRange source;
+  InlineRange content;
+  InlineRange openMarker;
+  InlineRange closeMarker;
+};
 
 class InlineNode {
 public:
@@ -31,6 +63,16 @@ public:
   void setSourceStart(qsizetype start);
   qsizetype sourceEnd() const;
   void setSourceEnd(qsizetype end);
+  InlineRange sourceRange() const;
+  void setSourceRange(InlineRange range);
+  InlineRange contentRange() const;
+  void setContentRange(InlineRange range);
+  InlineRange openMarkerRange() const;
+  void setOpenMarkerRange(InlineRange range);
+  InlineRange closeMarkerRange() const;
+  void setCloseMarkerRange(InlineRange range);
+  InlineSourceRanges sourceRanges() const;
+  void setSourceRanges(InlineSourceRanges ranges);
 
   QVector<InlineNode>& children();
   const QVector<InlineNode>& children() const;
@@ -54,8 +96,9 @@ private:
   QString title_;
   QString alt_;
   QVector<InlineNode> children_;
-  qsizetype sourceStart_ = -1;
-  qsizetype sourceEnd_ = -1;
+  InlineSourceRanges sourceRanges_;
 };
+
+void shiftInlineSourcePositions(QVector<InlineNode>& inlines, qsizetype delta);
 
 }  // namespace muffin

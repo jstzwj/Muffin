@@ -36,10 +36,87 @@ bool isBlockType(cmark_node_type type) {
   return (type & CMARK_NODE_TYPE_MASK) == CMARK_NODE_TYPE_BLOCK;
 }
 
+bool isAutolinkInline(const InlineNode& node, const QString& label) {
+  return node.type() == InlineType::Link && node.title().isEmpty() &&
+         (label == node.href() || QStringLiteral("http://%1").arg(label) == node.href() ||
+          QStringLiteral("mailto:%1").arg(label) == node.href());
+}
+
+QString markdownForInlineLabel(const QVector<InlineNode>& inlines) {
+  QString label;
+  for (const InlineNode& child : inlines) {
+    switch (child.type()) {
+      case InlineType::Text:
+      case InlineType::Code:
+      case InlineType::InlineMath:
+      case InlineType::HtmlInline:
+        label += child.text();
+        break;
+      case InlineType::SoftBreak:
+        label += QLatin1Char('\n');
+        break;
+      case InlineType::LineBreak:
+        label += QStringLiteral("  \n");
+        break;
+      default:
+        label += markdownForInlineLabel(child.children());
+        break;
+    }
+  }
+  return label;
+}
+
+InlineRange inlineRange(qsizetype start, qsizetype end) {
+  return InlineRange{start, end};
+}
+
+void setPlainInlineRanges(InlineSourceRanges& ranges, qsizetype start, qsizetype end) {
+  ranges.source = inlineRange(start, end);
+  ranges.content = ranges.source;
+}
+
+void clampInlineRangeEnd(InlineRange& range, qsizetype end) {
+  if (!range.isValid() || end < 0) {
+    return;
+  }
+  range.end = qMin(range.end, end);
+  if (range.start > range.end) {
+    range.start = range.end;
+  }
+}
+
+void clampInlineRangesEnd(InlineNode& node, qsizetype end) {
+  InlineSourceRanges ranges = node.sourceRanges();
+  clampInlineRangeEnd(ranges.source, end);
+  clampInlineRangeEnd(ranges.content, end);
+  clampInlineRangeEnd(ranges.openMarker, end);
+  clampInlineRangeEnd(ranges.closeMarker, end);
+  node.setSourceRanges(ranges);
+}
+
+void clampInlineRangeStart(InlineRange& range, qsizetype start) {
+  if (!range.isValid() || start < 0) {
+    return;
+  }
+  range.start = qMax(range.start, start);
+  if (range.end < range.start) {
+    range.end = range.start;
+  }
+}
+
+void clampInlineRangesStart(InlineNode& node, qsizetype start) {
+  InlineSourceRanges ranges = node.sourceRanges();
+  clampInlineRangeStart(ranges.source, start);
+  clampInlineRangeStart(ranges.content, start);
+  clampInlineRangeStart(ranges.openMarker, start);
+  clampInlineRangeStart(ranges.closeMarker, start);
+  node.setSourceRanges(ranges);
+}
+
 }  // namespace
 
-CmarkNodeAdapter::CmarkNodeAdapter(const LineStartOffsetCache* lineOffsets)
-    : lineOffsets_(lineOffsets) {}
+CmarkNodeAdapter::CmarkNodeAdapter(const LineStartOffsetCache* lineOffsets, QStringView markdown)
+    : lineOffsets_(lineOffsets), markdown_(markdown) {}
 
 std::unique_ptr<MarkdownNode> CmarkNodeAdapter::convertBlock(cmark_node* node) {
   auto result = std::make_unique<MarkdownNode>(mapBlockType(node));
@@ -158,7 +235,7 @@ SourceRange CmarkNodeAdapter::readSourceRange(cmark_node* node) const {
 }
 
 void CmarkNodeAdapter::annotateInlineSource(cmark_node* cmarkNode, InlineNode& inlineNode) const {
-  if (!lineOffsets_) {
+  if (!lineOffsets_ || markdown_.isEmpty()) {
     return;
   }
   const SourceRange range = readSourceRange(cmarkNode);
@@ -167,9 +244,115 @@ void CmarkNodeAdapter::annotateInlineSource(cmark_node* cmarkNode, InlineNode& i
   }
   const qsizetype start = lineOffsets_->offsetForLineByteColumn(range.lineStart, qMax(1, range.columnStart));
   const qsizetype end = lineOffsets_->offsetForLineByteColumn(range.lineEnd, qMax(1, range.columnEnd + 1));
-  if (start >= 0 && end >= start) {
-    inlineNode.setSourceStart(start);
-    inlineNode.setSourceEnd(end);
+  if (start < 0 || end < start || end > markdown_.size()) {
+    return;
+  }
+
+  InlineSourceRanges ranges;
+  const InlineType type = inlineNode.type();
+  switch (type) {
+    case InlineType::Text:
+    case InlineType::HtmlInline: {
+      setPlainInlineRanges(ranges, start, end);
+      break;
+    }
+    case InlineType::SoftBreak:
+      if (start < markdown_.size() && markdown_.at(start) == QLatin1Char('\n')) {
+        setPlainInlineRanges(ranges, start, start + 1);
+      }
+      break;
+    case InlineType::LineBreak:
+      if (start + 3 <= markdown_.size() && markdown_.mid(start, 3) == QStringLiteral("  \n")) {
+        setPlainInlineRanges(ranges, start, start + 3);
+      }
+      break;
+    case InlineType::Code: {
+      qsizetype sourceStart = start;
+      qsizetype sourceEnd = end;
+      if (sourceStart < sourceEnd && markdown_.at(sourceStart) != QLatin1Char('`')) {
+        while (sourceStart > 0 && markdown_.at(sourceStart - 1) == QLatin1Char('`')) {
+          --sourceStart;
+        }
+        while (sourceEnd < markdown_.size() && markdown_.at(sourceEnd) == QLatin1Char('`')) {
+          ++sourceEnd;
+        }
+      }
+      const qsizetype openLength = countLeading(markdown_, sourceStart, sourceEnd, QLatin1Char('`'));
+      const qsizetype closeLength = countTrailing(markdown_, sourceStart, sourceEnd, QLatin1Char('`'));
+      if (openLength > 0 && closeLength >= openLength) {
+        ranges.source = inlineRange(sourceStart, sourceEnd);
+        ranges.openMarker = inlineRange(sourceStart, sourceStart + openLength);
+        ranges.closeMarker = inlineRange(sourceEnd - closeLength, sourceEnd);
+        ranges.content = inlineRange(ranges.openMarker.end, ranges.closeMarker.start);
+      }
+      break;
+    }
+    case InlineType::InlineMath: {
+      qsizetype sourceStart = start;
+      qsizetype sourceEnd = end;
+      if (sourceStart < sourceEnd && markdown_.at(sourceStart) != QLatin1Char('$')) {
+        while (sourceStart > 0 && markdown_.at(sourceStart - 1) == QLatin1Char('$')) {
+          --sourceStart;
+        }
+        while (sourceEnd < markdown_.size() && markdown_.at(sourceEnd) == QLatin1Char('$')) {
+          ++sourceEnd;
+        }
+      }
+      const qsizetype openLength = countLeading(markdown_, sourceStart, sourceEnd, QLatin1Char('$'));
+      const qsizetype closeLength = countTrailing(markdown_, sourceStart, sourceEnd, QLatin1Char('$'));
+      if (openLength > 0 && closeLength >= openLength) {
+        ranges.source = inlineRange(sourceStart, sourceEnd);
+        ranges.openMarker = inlineRange(sourceStart, sourceStart + openLength);
+        ranges.closeMarker = inlineRange(sourceEnd - closeLength, sourceEnd);
+        ranges.content = inlineRange(ranges.openMarker.end, ranges.closeMarker.start);
+      }
+      break;
+    }
+    case InlineType::Emphasis:
+    case InlineType::Strong:
+    case InlineType::Strikethrough: {
+      const QString marker = inlineNode.marker();
+      if (!marker.isEmpty() && end - start >= marker.size() * 2) {
+        ranges.source = inlineRange(start, end);
+        ranges.openMarker = inlineRange(start, start + marker.size());
+        ranges.closeMarker = inlineRange(end - marker.size(), end);
+        ranges.content = inlineRange(ranges.openMarker.end, ranges.closeMarker.start);
+      } else {
+        setPlainInlineRanges(ranges, start, end);
+      }
+      break;
+    }
+    case InlineType::Link: {
+      const QString label = markdownForInlineLabel(inlineNode.children());
+      const qsizetype searchStart = qMax<qsizetype>(0, start);
+      const qsizetype labelStart = label.isEmpty() ? qsizetype(-1) : markdown_.indexOf(label, searchStart);
+      if (isAutolinkInline(inlineNode, label) && labelStart >= 0 && labelStart <= end &&
+          labelStart + label.size() >= start && labelStart + label.size() <= markdown_.size()) {
+        setPlainInlineRanges(ranges, labelStart, labelStart + label.size());
+      } else {
+        ranges.source = inlineRange(start, end);
+        ranges.openMarker = inlineRange(start, qMin(end, start + 1));
+        const auto source = markdown_.mid(start, end - start);
+        const qsizetype labelEnd = source.indexOf(QLatin1Char(']'));
+        ranges.content = labelEnd >= 0 ? inlineRange(start + 1, start + labelEnd) : inlineRange(ranges.openMarker.end, ranges.openMarker.end);
+      }
+      break;
+    }
+    case InlineType::Image: {
+      ranges.source = inlineRange(start, end);
+      ranges.openMarker = inlineRange(start, qMin(end, start + 2));
+      const auto source = markdown_.mid(start, end - start);
+      const qsizetype labelEnd = source.indexOf(QLatin1Char(']'));
+      ranges.content = labelEnd >= 0 ? inlineRange(ranges.openMarker.end, start + labelEnd) : inlineRange(ranges.openMarker.end, ranges.openMarker.end);
+      break;
+    }
+    default:
+      setPlainInlineRanges(ranges, start, end);
+      break;
+  }
+
+  if (ranges.source.isValid()) {
+    inlineNode.setSourceRanges(ranges);
   }
 }
 
@@ -178,6 +361,18 @@ QVector<InlineNode> CmarkNodeAdapter::convertInlineChildren(cmark_node* node) {
   for (cmark_node* child = cmark_node_first_child(node); child; child = cmark_node_next(child)) {
     if (!isBlockType(cmark_node_get_type(child))) {
       children.push_back(convertInline(child));
+    }
+  }
+  for (qsizetype i = 0; i + 1 < children.size(); ++i) {
+    const InlineRange next = children.at(i + 1).sourceRange();
+    if (next.isValid()) {
+      clampInlineRangesEnd(children[i], next.start);
+    }
+  }
+  for (qsizetype i = 1; i < children.size(); ++i) {
+    const InlineRange prev = children.at(i - 1).sourceRange();
+    if (prev.isValid()) {
+      clampInlineRangesStart(children[i], prev.end);
     }
   }
   return children;

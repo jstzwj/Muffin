@@ -4,6 +4,14 @@
 
 namespace muffin {
 
+bool InlineRange::isValid() const {
+  return start >= 0 && end >= start;
+}
+
+qsizetype InlineRange::length() const {
+  return isValid() ? end - start : 0;
+}
+
 InlineNode::InlineNode(InlineType type) : type_(type) {}
 
 InlineType InlineNode::type() const {
@@ -51,19 +59,59 @@ void InlineNode::setAlt(QString alt) {
 }
 
 qsizetype InlineNode::sourceStart() const {
-  return sourceStart_;
+  return sourceRanges_.source.start;
 }
 
 void InlineNode::setSourceStart(qsizetype start) {
-  sourceStart_ = start;
+  sourceRanges_.source.start = start;
 }
 
 qsizetype InlineNode::sourceEnd() const {
-  return sourceEnd_;
+  return sourceRanges_.source.end;
 }
 
 void InlineNode::setSourceEnd(qsizetype end) {
-  sourceEnd_ = end;
+  sourceRanges_.source.end = end;
+}
+
+InlineRange InlineNode::sourceRange() const {
+  return sourceRanges_.source;
+}
+
+void InlineNode::setSourceRange(InlineRange range) {
+  sourceRanges_.source = range;
+}
+
+InlineRange InlineNode::contentRange() const {
+  return sourceRanges_.content;
+}
+
+void InlineNode::setContentRange(InlineRange range) {
+  sourceRanges_.content = range;
+}
+
+InlineRange InlineNode::openMarkerRange() const {
+  return sourceRanges_.openMarker;
+}
+
+void InlineNode::setOpenMarkerRange(InlineRange range) {
+  sourceRanges_.openMarker = range;
+}
+
+InlineRange InlineNode::closeMarkerRange() const {
+  return sourceRanges_.closeMarker;
+}
+
+void InlineNode::setCloseMarkerRange(InlineRange range) {
+  sourceRanges_.closeMarker = range;
+}
+
+InlineSourceRanges InlineNode::sourceRanges() const {
+  return sourceRanges_;
+}
+
+void InlineNode::setSourceRanges(InlineSourceRanges ranges) {
+  sourceRanges_ = ranges;
 }
 
 QVector<InlineNode>& InlineNode::children() {
@@ -135,6 +183,25 @@ InlineNode InlineNode::inlineMath(QString tex) {
   InlineNode node(InlineType::InlineMath);
   node.setText(std::move(tex));
   return node;
+}
+
+void shiftInlineSourcePositions(QVector<InlineNode>& inlines, qsizetype delta) {
+  auto shiftRange = [delta](InlineRange range) {
+    if (range.isValid()) {
+      range.start += delta;
+      range.end += delta;
+    }
+    return range;
+  };
+  for (InlineNode& inlineNode : inlines) {
+    InlineSourceRanges ranges = inlineNode.sourceRanges();
+    ranges.source = shiftRange(ranges.source);
+    ranges.content = shiftRange(ranges.content);
+    ranges.openMarker = shiftRange(ranges.openMarker);
+    ranges.closeMarker = shiftRange(ranges.closeMarker);
+    inlineNode.setSourceRanges(ranges);
+    shiftInlineSourcePositions(inlineNode.children(), delta);
+  }
 }
 
 }  // namespace muffin

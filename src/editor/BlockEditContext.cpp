@@ -203,7 +203,7 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
   }
   context.inlineProjection = InlineProjection(editable->inlines(), context.contentText, projectionState, start);
   context.visibleText = context.inlineProjection.visibleText();
-  context.plainInlineEditable = InlineProjection::isPlainInlineSource(editable->inlines(), context.contentText);
+  context.plainInlineEditable = InlineProjection::isPlainInlineSource(editable->inlines(), context.contentText, start);
   qsizetype localSourceOffset = -1;
   const bool hasStoredSourceOffset = cursorStoredSourceOffset >= start && cursorStoredSourceOffset <= end;
   context.supportsVisibleOffsetMapping =

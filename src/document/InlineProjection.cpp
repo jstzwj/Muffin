@@ -1,5 +1,7 @@
 #include "document/InlineProjection.h"
 
+#include "houdini.h"
+
 namespace muffin {
 namespace {
 
@@ -7,6 +9,57 @@ bool isAutolinkInline(const InlineNode& node, const QString& label) {
   return node.type() == InlineType::Link && node.title().isEmpty() &&
          (label == node.href() || QStringLiteral("http://%1").arg(label) == node.href() ||
           QStringLiteral("mailto:%1").arg(label) == node.href());
+}
+
+struct EntitySpan {
+  qsizetype sourceStart;  // offset within the local source slice
+  qsizetype sourceEnd;    // past-the-end offset
+  QString decodedText;
+};
+
+QString decodeHtmlEntity(QStringView rawEntity) {
+  if (rawEntity.size() < 3 || rawEntity.front() != QLatin1Char('&') || rawEntity.back() != QLatin1Char(';')) {
+    return {};
+  }
+
+  const QByteArray body = rawEntity.mid(1).toUtf8();
+  cmark_strbuf decoded = CMARK_BUF_INIT(cmark_get_default_mem_allocator());
+  const bufsize_t consumed = houdini_unescape_ent(
+      &decoded,
+      reinterpret_cast<const uint8_t*>(body.constData()),
+      static_cast<bufsize_t>(body.size()));
+  QString result;
+  if (consumed == body.size() && cmark_strbuf_len(&decoded) > 0) {
+    result = QString::fromUtf8(cmark_strbuf_cstr(&decoded), static_cast<qsizetype>(cmark_strbuf_len(&decoded)));
+  }
+  cmark_strbuf_free(&decoded);
+  return result;
+}
+
+QVector<EntitySpan> findHtmlEntities(QStringView source) {
+  QVector<EntitySpan> entities;
+  qsizetype i = 0;
+  while (i < source.size()) {
+    if (source.at(i) == QLatin1Char('&')) {
+      qsizetype semi = source.indexOf(QLatin1Char(';'), i + 1);
+      if (semi >= 0 && semi - i <= 33) {
+        const QString decoded = decodeHtmlEntity(source.mid(i, semi + 1 - i));
+        if (!decoded.isEmpty()) {
+          entities.push_back({i, semi + 1, decoded});
+          i = semi + 1;
+          continue;
+        }
+      }
+      ++i;
+    } else {
+      ++i;
+    }
+  }
+  return entities;
+}
+
+bool textMatchesAt(const QString& decoded, qsizetype decodedPos, QStringView text) {
+  return decodedPos >= 0 && decodedPos + text.size() <= decoded.size() && decoded.mid(decodedPos, text.size()) == text;
 }
 
 bool containsOffset(qsizetype start, qsizetype end, qsizetype offset) {
@@ -18,198 +71,20 @@ bool overlapsRange(qsizetype firstStart, qsizetype firstEnd, qsizetype secondSta
          secondStart < firstEnd;
 }
 
-qsizetype countLeading(const QString& text, qsizetype start, qsizetype end, QChar ch) {
-  qsizetype count = 0;
-  while (start + count < end && text.at(start + count) == ch) {
-    ++count;
+InlineRange localRange(InlineRange range, qsizetype sourceBase) {
+  if (!range.isValid()) {
+    return {};
   }
-  return count;
+  if (sourceBase < 0) {
+    return range;
+  }
+  range.start -= sourceBase;
+  range.end -= sourceBase;
+  return range;
 }
 
-qsizetype countTrailing(const QString& text, qsizetype start, qsizetype end, QChar ch) {
-  qsizetype count = 0;
-  while (end - count > start && text.at(end - count - 1) == ch) {
-    ++count;
-  }
-  return count;
-}
-
-struct DelimitedSource {
-  qsizetype contentStart = 0;
-  qsizetype contentEnd = 0;
-  QString openMarker;
-  QString closeMarker;
-};
-
-struct InlineSourceRange {
-  qsizetype start = -1;
-  qsizetype end = -1;
-};
-
-DelimitedSource delimitedSourceForInline(
-    const QString& sourceText,
-    InlineType type,
-    qsizetype sourceStart,
-    qsizetype sourceEnd,
-    const QString& fallbackMarker) {
-  DelimitedSource result;
-  result.contentStart = sourceStart;
-  result.contentEnd = sourceEnd;
-  qsizetype openLength = fallbackMarker.size();
-  qsizetype closeLength = fallbackMarker.size();
-
-  if (type == InlineType::Code) {
-    const qsizetype leadingBackticks = countLeading(sourceText, sourceStart, sourceEnd, QLatin1Char('`'));
-    const qsizetype trailingBackticks = countTrailing(sourceText, sourceStart, sourceEnd, QLatin1Char('`'));
-    if (leadingBackticks > 0 && trailingBackticks >= leadingBackticks) {
-      openLength = leadingBackticks;
-      closeLength = leadingBackticks;
-    }
-  } else if (type == InlineType::InlineMath) {
-    const qsizetype leadingDollars = countLeading(sourceText, sourceStart, sourceEnd, QLatin1Char('$'));
-    const qsizetype trailingDollars = countTrailing(sourceText, sourceStart, sourceEnd, QLatin1Char('$'));
-    if (leadingDollars > 0 && trailingDollars >= leadingDollars) {
-      openLength = leadingDollars;
-      closeLength = leadingDollars;
-    }
-  } else if (type == InlineType::Emphasis || type == InlineType::Strong || type == InlineType::Strikethrough) {
-    const qsizetype markerLength = fallbackMarker.size();
-    if (markerLength > 0 && sourceEnd - sourceStart >= markerLength * 2) {
-      openLength = markerLength;
-      closeLength = markerLength;
-    }
-  }
-
-  openLength = qBound<qsizetype>(0, openLength, qMax<qsizetype>(0, sourceEnd - sourceStart));
-  closeLength = qBound<qsizetype>(0, closeLength, qMax<qsizetype>(0, sourceEnd - sourceStart - openLength));
-  result.contentStart = sourceStart + openLength;
-  result.contentEnd = sourceEnd - closeLength;
-  result.openMarker = sourceText.mid(sourceStart, openLength);
-  result.closeMarker = sourceText.mid(result.contentEnd, closeLength);
-  return result;
-}
-
-bool hasPlausibleDelimitedSourceRange(
-    const QString& sourceText,
-    InlineType type,
-    qsizetype sourceStart,
-    qsizetype sourceEnd,
-    const QString& marker) {
-  if (sourceStart < 0 || sourceEnd <= sourceStart || sourceEnd > sourceText.size()) {
-    return false;
-  }
-
-  if (type == InlineType::Code) {
-    const qsizetype leadingBackticks = countLeading(sourceText, sourceStart, sourceEnd, QLatin1Char('`'));
-    const qsizetype trailingBackticks = countTrailing(sourceText, sourceStart, sourceEnd, QLatin1Char('`'));
-    return leadingBackticks > 0 && trailingBackticks >= leadingBackticks &&
-           sourceEnd - sourceStart >= leadingBackticks + trailingBackticks;
-  }
-
-  if (type == InlineType::InlineMath) {
-    const qsizetype leadingDollars = countLeading(sourceText, sourceStart, sourceEnd, QLatin1Char('$'));
-    const qsizetype trailingDollars = countTrailing(sourceText, sourceStart, sourceEnd, QLatin1Char('$'));
-    return leadingDollars > 0 && trailingDollars >= leadingDollars &&
-           sourceEnd - sourceStart >= leadingDollars + trailingDollars;
-  }
-
-  if (type == InlineType::Emphasis || type == InlineType::Strong) {
-    if (marker.isEmpty() || sourceEnd - sourceStart < marker.size() * 2) {
-      return false;
-    }
-    const QChar open = sourceText.at(sourceStart);
-    if (open != QLatin1Char('*') && open != QLatin1Char('_')) {
-      return false;
-    }
-    for (qsizetype index = 0; index < marker.size(); ++index) {
-      if (sourceText.at(sourceStart + index) != open || sourceText.at(sourceEnd - marker.size() + index) != open) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  if (type == InlineType::Strikethrough) {
-    return !marker.isEmpty() && sourceEnd - sourceStart >= marker.size() * 2 &&
-           sourceText.mid(sourceStart, marker.size()) == marker &&
-           sourceText.mid(sourceEnd - marker.size(), marker.size()) == marker;
-  }
-
-  return true;
-}
-
-bool expandContentDelimitedSourceRange(
-    const QString& sourceText,
-    InlineType type,
-    qsizetype contentStart,
-    qsizetype contentEnd,
-    qsizetype parentStart,
-    qsizetype parentEnd,
-    InlineSourceRange& range) {
-  QChar delimiter;
-  if (type == InlineType::Code) {
-    delimiter = QLatin1Char('`');
-  } else if (type == InlineType::InlineMath) {
-    delimiter = QLatin1Char('$');
-  } else {
-    return false;
-  }
-
-  if (contentStart < parentStart || contentEnd < contentStart || contentEnd > parentEnd) {
-    return false;
-  }
-
-  qsizetype start = contentStart;
-  while (start > parentStart && sourceText.at(start - 1) == delimiter) {
-    --start;
-  }
-  qsizetype end = contentEnd;
-  while (end < parentEnd && sourceText.at(end) == delimiter) {
-    ++end;
-  }
-
-  const qsizetype openLength = contentStart - start;
-  const qsizetype closeLength = end - contentEnd;
-  if (openLength <= 0 || closeLength < openLength || end - start < openLength + closeLength) {
-    return false;
-  }
-
-  range.start = start;
-  range.end = end;
-  return true;
-}
-
-bool sourceRangeFromParserRange(
-    const QString& sourceText,
-    const InlineNode& node,
-    const QString& marker,
-    qsizetype sourceBase,
-    qsizetype searchFrom,
-    qsizetype parentStart,
-    qsizetype parentEnd,
-    InlineSourceRange& range) {
-  if (node.sourceStart() < 0 || node.sourceEnd() <= node.sourceStart() || sourceBase < 0) {
-    return false;
-  }
-
-  const qsizetype absStart = node.sourceStart() - sourceBase;
-  const qsizetype absEnd = node.sourceEnd() - sourceBase;
-  if (absStart < searchFrom || absStart < parentStart || absEnd > parentEnd || absEnd <= absStart) {
-    return false;
-  }
-
-  if (hasPlausibleDelimitedSourceRange(sourceText, node.type(), absStart, absEnd, marker)) {
-    range.start = absStart;
-    range.end = absEnd;
-    return true;
-  }
-
-  if (expandContentDelimitedSourceRange(sourceText, node.type(), absStart, absEnd, parentStart, parentEnd, range) &&
-      range.start >= searchFrom) {
-    return true;
-  }
-
-  return false;
+bool rangeWithin(InlineRange range, qsizetype start, qsizetype end) {
+  return range.isValid() && range.start >= start && range.end <= end;
 }
 
 }  // namespace
@@ -498,8 +373,8 @@ QString InlineProjection::plainTextForInlines(const QVector<InlineNode>& inlines
   return text;
 }
 
-bool InlineProjection::isPlainInlineSource(const QVector<InlineNode>& inlines, const QString& sourceText) {
-  InlineProjection projection(inlines, sourceText, InlineProjectionState{});
+bool InlineProjection::isPlainInlineSource(const QVector<InlineNode>& inlines, const QString& sourceText, qsizetype sourceBase) {
+  InlineProjection projection(inlines, sourceText, InlineProjectionState{}, sourceBase);
   if (!projection.isValid()) {
     return false;
   }
@@ -649,16 +524,8 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
 
     // Use parser-provided source positions when available. They are the only
     // unambiguous identity for repeated or non-canonically written inline nodes.
-    InlineSourceRange parserRange;
-    if (sourceRangeFromParserRange(
-            *state.sourceText,
-            node,
-            markerForInline(node),
-            state.sourceBase,
-            searchFrom,
-            sourceStart,
-            sourceEnd,
-            parserRange)) {
+    const InlineRange parserRange = localRange(node.sourceRange(), state.sourceBase);
+    if (rangeWithin(parserRange, sourceStart, sourceEnd) && parserRange.start >= searchFrom) {
       nodeStart = parserRange.start;
       nodeEnd = parserRange.end;
     }
@@ -732,9 +599,78 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
   const bool active = state.projectionState.shouldRevealSourceRange(sourceStart, sourceEnd) ||
                       state.projectionState.shouldRevealVisibleRange(visibleStart, visibleEnd);
   switch (node.type()) {
-    case InlineType::Text:
-      appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, node.text(), true);
+    case InlineType::Text: {
+      const QString source = state.sourceText->mid(sourceStart, sourceEnd - sourceStart);
+      const QString& decoded = node.text();
+      if (source == decoded) {
+        appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, decoded, true);
+        break;
+      }
+      const QVector<EntitySpan> entities = findHtmlEntities(source);
+      if (entities.isEmpty()) {
+        appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, decoded, true);
+        break;
+      }
+      bool aligned = true;
+      qsizetype sourcePos = 0;
+      qsizetype decodedPos = 0;
+      for (const EntitySpan& entity : entities) {
+        const QStringView plainSource = QStringView(source).mid(sourcePos, entity.sourceStart - sourcePos);
+        if (!textMatchesAt(decoded, decodedPos, plainSource)) {
+          aligned = false;
+          break;
+        }
+        decodedPos += plainSource.size();
+        if (!textMatchesAt(decoded, decodedPos, QStringView(entity.decodedText))) {
+          aligned = false;
+          break;
+        }
+        decodedPos += entity.decodedText.size();
+        sourcePos = entity.sourceEnd;
+      }
+      if (aligned && !textMatchesAt(decoded, decodedPos, QStringView(source).mid(sourcePos))) {
+        aligned = false;
+      }
+      if (!aligned) {
+        appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, decoded, true);
+        break;
+      }
+
+      sourcePos = 0;
+      decodedPos = 0;
+      for (const EntitySpan& entity : entities) {
+        if (entity.sourceStart > sourcePos) {
+          const qsizetype plainLen = entity.sourceStart - sourcePos;
+          appendTextSpan(state, node.type(), InlineSpanKind::Text,
+                          sourceStart + sourcePos, sourceStart + entity.sourceStart,
+                          source.mid(sourcePos, plainLen), true);
+          decodedPos += plainLen;
+        }
+        const qsizetype entitySourceStart = sourceStart + entity.sourceStart;
+        const qsizetype entitySourceEnd = sourceStart + entity.sourceEnd;
+        const qsizetype entityVisibleStart = visibleStart + decodedPos;
+        const qsizetype entityVisibleEnd = entityVisibleStart + entity.decodedText.size();
+        const bool revealEntity = state.projectionState.shouldRevealSourceRange(entitySourceStart, entitySourceEnd) ||
+                                  state.projectionState.shouldRevealVisibleRange(entityVisibleStart, entityVisibleEnd);
+
+        appendTextSpan(state, node.type(), InlineSpanKind::Text,
+                        entitySourceStart, entitySourceEnd,
+                        entity.decodedText, true);
+        if (revealEntity) {
+          appendTextSpan(state, node.type(), InlineSpanKind::HiddenSyntax,
+                          entitySourceStart, entitySourceEnd,
+                          source.mid(entity.sourceStart, entity.sourceEnd - entity.sourceStart), false);
+        }
+        sourcePos = entity.sourceEnd;
+        decodedPos += entity.decodedText.size();
+      }
+      if (sourcePos < source.size()) {
+        appendTextSpan(state, node.type(), InlineSpanKind::Text,
+                        sourceStart + sourcePos, sourceEnd,
+                        decoded.mid(decodedPos), true);
+      }
       break;
+    }
     case InlineType::SoftBreak:
       appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, QStringLiteral(" "), true);
       break;
@@ -743,26 +679,32 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
       break;
     case InlineType::Code:
     case InlineType::InlineMath: {
-      const DelimitedSource source = delimitedSourceForInline(*state.sourceText, node.type(), sourceStart, sourceEnd, marker);
-      const qsizetype contentStart = source.contentStart;
-      const qsizetype contentEnd = qMax(contentStart, source.contentEnd);
+      InlineRange content = localRange(node.contentRange(), state.sourceBase);
+      if (!rangeWithin(content, sourceStart, sourceEnd)) {
+        content = InlineRange{qMin(sourceEnd, sourceStart + marker.size()), qMax(sourceStart, sourceEnd - marker.size())};
+      }
+      const qsizetype contentStart = content.start;
+      const qsizetype contentEnd = qMax(contentStart, content.end);
       if (active) {
-        appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, contentStart, source.openMarker, false);
+        appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, contentStart, state.sourceText->mid(sourceStart, contentStart - sourceStart), false);
       }
       appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, contentStart, contentEnd, node.text(), true);
       if (active) {
-        appendTextSpan(state, node.type(), InlineSpanKind::CloseMarker, contentEnd, sourceEnd, source.closeMarker, false);
+        appendTextSpan(state, node.type(), InlineSpanKind::CloseMarker, contentEnd, sourceEnd, state.sourceText->mid(contentEnd, sourceEnd - contentEnd), false);
       }
       break;
     }
     case InlineType::Emphasis:
     case InlineType::Strong:
     case InlineType::Strikethrough: {
-      const DelimitedSource source = delimitedSourceForInline(*state.sourceText, node.type(), sourceStart, sourceEnd, marker);
-      const qsizetype contentStart = source.contentStart;
-      const qsizetype contentEnd = qMax(contentStart, source.contentEnd);
+      InlineRange content = localRange(node.contentRange(), state.sourceBase);
+      if (!rangeWithin(content, sourceStart, sourceEnd)) {
+        content = InlineRange{qMin(sourceEnd, sourceStart + marker.size()), qMax(sourceStart, sourceEnd - marker.size())};
+      }
+      const qsizetype contentStart = content.start;
+      const qsizetype contentEnd = qMax(contentStart, content.end);
       if (active) {
-        appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, contentStart, source.openMarker, false);
+        appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, contentStart, state.sourceText->mid(sourceStart, contentStart - sourceStart), false);
       }
       const bool previousBold = state.bold;
       const bool previousItalic = state.italic;
@@ -782,7 +724,7 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
         appendTextSpan(state, node.type(), InlineSpanKind::EmptyContentSlot, contentStart, contentEnd, QString(), false);
       }
       if (active) {
-        appendTextSpan(state, node.type(), InlineSpanKind::CloseMarker, contentEnd, sourceEnd, source.closeMarker, false);
+        appendTextSpan(state, node.type(), InlineSpanKind::CloseMarker, contentEnd, sourceEnd, state.sourceText->mid(contentEnd, sourceEnd - contentEnd), false);
       }
       if (!active && state.spans.size() > 0) {
         const qsizetype displayEnd = state.displayOffset;
@@ -803,16 +745,20 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
     case InlineType::Link: {
       const QString label = markdownForInlines(node.children());
       if (isAutolinkInline(node, label)) {
-        appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, label, true);
+        InlineRange content = localRange(node.contentRange(), state.sourceBase);
+        if (!rangeWithin(content, sourceStart, sourceEnd)) {
+          content = InlineRange{sourceStart, sourceEnd};
+        }
+        appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, content.start, content.end, label, true);
         state.linkRanges.push_back({displayStart, state.displayOffset, node.href()});
         break;
       }
-      const QString markdown = state.sourceText->mid(sourceStart, sourceEnd - sourceStart);
-      const qsizetype labelEnd = markdown.indexOf(QLatin1Char(']'));
-      const qsizetype contentStart = qMin(sourceEnd, sourceStart + 1);
-      const qsizetype contentEnd = labelEnd >= 0 ? sourceStart + labelEnd : contentStart;
+      InlineRange openMarker = localRange(node.openMarkerRange(), state.sourceBase);
+      InlineRange content = localRange(node.contentRange(), state.sourceBase);
+      const qsizetype contentStart = rangeWithin(openMarker, sourceStart, sourceEnd) ? openMarker.end : qMin(sourceEnd, sourceStart + 1);
+      const qsizetype contentEnd = rangeWithin(content, sourceStart, sourceEnd) ? content.end : contentStart;
       if (active) {
-        appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, contentStart, QStringLiteral("["), false);
+        appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, contentStart, state.sourceText->mid(sourceStart, contentStart - sourceStart), false);
       }
       appendInlines(state, node.children(), contentStart, contentEnd);
       for (InlineProjectionSpan& span : state.spans) {
@@ -831,10 +777,10 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
         appendTextSpan(state, node.type(), InlineSpanKind::Atom, sourceStart, sourceEnd, node.alt(), true);
         break;
       }
-      const QString markdown = state.sourceText->mid(sourceStart, sourceEnd - sourceStart);
-      const qsizetype labelStart = markdown.startsWith(QStringLiteral("![")) ? sourceStart + 2 : sourceStart;
-      const qsizetype labelEndInMarkdown = markdown.indexOf(QLatin1Char(']'));
-      const qsizetype labelEnd = labelEndInMarkdown >= 0 ? sourceStart + labelEndInMarkdown : labelStart;
+      InlineRange openMarker = localRange(node.openMarkerRange(), state.sourceBase);
+      InlineRange content = localRange(node.contentRange(), state.sourceBase);
+      const qsizetype labelStart = rangeWithin(openMarker, sourceStart, sourceEnd) ? openMarker.end : sourceStart;
+      const qsizetype labelEnd = rangeWithin(content, sourceStart, sourceEnd) ? content.end : labelStart;
       if (labelStart > sourceStart) {
         appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, labelStart, state.sourceText->mid(sourceStart, labelStart - sourceStart), false);
       }

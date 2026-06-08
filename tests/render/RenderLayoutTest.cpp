@@ -1092,9 +1092,10 @@ void testInlineMarkerExpansion() {
 void testInlineProjectionContract() {
   RenderTheme theme = RenderTheme::github();
   InlineLayout::BuildOptions options;
-  const QVector<InlineNode> linkInlines{
-      InlineNode::link(QStringLiteral("https://example.com"), QString(), {InlineNode::text(QStringLiteral("label"))})};
   const QString linkMarkdown = QStringLiteral("[label](https://example.com)");
+  DocumentSession linkSession;
+  linkSession.setMarkdownText(linkMarkdown, false);
+  const QVector<InlineNode> linkInlines = linkSession.document().root().children().front()->inlines();
 
   InlineLayout collapsedLink;
   collapsedLink.build(linkInlines, linkMarkdown, theme, 400.0, theme.paragraphFont(), options);
@@ -1111,8 +1112,10 @@ void testInlineProjectionContract() {
           QStringLiteral("active link cursor rect should round-trip source offset"));
   require(!activeLink.selectionRects(0, 5).isEmpty(), QStringLiteral("active link selection rects should remain valid"));
 
-  const QVector<InlineNode> imageInlines{InlineNode::image(QStringLiteral("https://example.com/image.png"), QStringLiteral("alt"), QString())};
   const QString imageMarkdown = QStringLiteral("![alt](https://example.com/image.png)");
+  DocumentSession imageSession;
+  imageSession.setMarkdownText(imageMarkdown, false);
+  const QVector<InlineNode> imageInlines = imageSession.document().root().children().front()->inlines();
 
   InlineLayout collapsedImage;
   collapsedImage.build(imageInlines, imageMarkdown, theme, 400.0, theme.paragraphFont(), options);
@@ -1128,6 +1131,33 @@ void testInlineProjectionContract() {
   require(activeImage.hitTestSourceOffset(activeImage.cursorRectForSourceOffset(2).center()) == 2,
           QStringLiteral("active image cursor rect should round-trip source offset"));
   require(!activeImage.selectionRects(0, 3).isEmpty(), QStringLiteral("active image selection rects should remain valid"));
+}
+
+void testEntityDisplayAfterEdit() {
+  DocumentSession session;
+  const QString markdown = QStringLiteral("Entities: &amp; &lt; &gt; &copy;.");
+  session.setMarkdownText(markdown, false);
+  const QVector<InlineNode> inlines = session.document().root().children().front()->inlines();
+
+  // Build layout with raw source text — this is what buildEditable does
+  RenderTheme theme = RenderTheme::github();
+  InlineLayout layout;
+  InlineLayout::BuildOptions options;
+  layout.build(inlines, markdown, theme, 400.0, theme.paragraphFont(), options);
+  require(layout.displayText() == QString::fromUtf8("Entities: & < > ©."),
+          QStringLiteral("initial entity display text mismatch: %1").arg(layout.displayText()));
+
+  // Simulate inserting 'a' at the beginning
+  require(session.applyTextDelta(0, 0, QStringLiteral("a"), true),
+          "entity edit should apply");
+
+  const QString edited = session.markdownText();
+  const QVector<InlineNode> editedInlines = session.document().root().children().front()->inlines();
+
+  InlineLayout editedLayout;
+  editedLayout.build(editedInlines, edited, theme, 400.0, theme.paragraphFont(), options);
+  require(editedLayout.displayText() == QString::fromUtf8("aEntities: & < > ©."),
+          QStringLiteral("post-edit entity display text mismatch: %1").arg(editedLayout.displayText()));
 }
 
 void testInlineCodeEndSourceHitUsesForwardBias() {
@@ -3350,6 +3380,7 @@ int main(int argc, char** argv) {
   runTest("testThemeCodeHighlightPalette", [] { testThemeCodeHighlightPalette(); });
   runTest("testInlineMarkerExpansion", [] { testInlineMarkerExpansion(); });
   runTest("testInlineProjectionContract", [] { testInlineProjectionContract(); });
+  runTest("testEntityDisplayAfterEdit", [] { testEntityDisplayAfterEdit(); });
   runTest("testInlineCodeEndSourceHitUsesForwardBias", [] { testInlineCodeEndSourceHitUsesForwardBias(); });
   runTest("testInlineLayoutGeometryContract", [] { testInlineLayoutGeometryContract(); });
   runTest("testInlineLayoutZeroWidthTabIndentGeometry", [] { testInlineLayoutZeroWidthTabIndentGeometry(); });

@@ -147,6 +147,22 @@ qsizetype InlineLayout::hitTestSourceOffset(QPointF localPos) const {
     return atom.contentSourceStart + qBound<qsizetype>(0, contentOffset, contentLength);
   }
   const qsizetype projPosition = projectionDisplayOffsetForLayoutOffset(position, hit.bias);
+  for (const InlineProjectionSpan& span : projection_.spans()) {
+    if ((span.type != InlineType::InlineMath && span.type != InlineType::Code) ||
+        span.kind != InlineSpanKind::OpenMarker ||
+        span.displayEnd <= span.displayStart ||
+        projPosition < span.displayStart ||
+        projPosition > span.displayEnd) {
+      continue;
+    }
+    const QRectF markerStart = textLayoutCursorRectForDisplayOffset(span.displayStart);
+    const QRectF markerEnd = textLayoutCursorRectForDisplayOffset(span.displayEnd);
+    const qreal markerLeft = qMin(markerStart.left(), markerEnd.left());
+    const qreal markerRight = qMax(markerStart.left(), markerEnd.left());
+    if (localPos.x() >= markerLeft && localPos.x() <= markerRight) {
+      return span.sourceEnd;
+    }
+  }
   qsizetype sourceOffset = -1;
   if (projection_.sourceOffsetForDisplayOffset(projPosition, hit.bias, sourceOffset)) {
     return sourceOffset;
