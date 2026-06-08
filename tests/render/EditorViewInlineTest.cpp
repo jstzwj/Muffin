@@ -309,6 +309,77 @@ void testInlineProjectionUsesParserSourceRangesForRepeatedUnicodeMarkers() {
           "projection visible text should collapse repeated unicode markers");
 }
 
+void testInlineProjectionUsesParserSourceRangesForRepeatedNonCanonicalMarkdown() {
+  DocumentSession session;
+  const QString markdown = QStringLiteral("__bold__ and __bold__");
+  session.setMarkdownText(markdown, false);
+  MarkdownNode* block = blockAt(session, 0);
+  require(block->inlines().size() == 3, "repeated strong sample should parse as three inlines");
+  require(block->inlines().at(0).type() == InlineType::Strong, "first repeated strong inline missing");
+  require(block->inlines().at(2).type() == InlineType::Strong, "second repeated strong inline missing");
+
+  const qsizetype secondStart = QStringLiteral("__bold__ and ").size();
+  require(block->inlines().at(2).sourceStart() == secondStart,
+          QStringLiteral("second repeated strong parser source start mismatch: %1 vs %2")
+              .arg(block->inlines().at(2).sourceStart())
+              .arg(secondStart));
+  require(block->inlines().at(2).sourceEnd() == markdown.size(),
+          QStringLiteral("second repeated strong parser source end mismatch: %1 vs %2")
+              .arg(block->inlines().at(2).sourceEnd())
+              .arg(markdown.size()));
+
+  InlineProjectionState state;
+  state.cursorSourceOffset = secondStart + 2;
+  InlineProjection projection(block->inlines(), markdown, state, 0);
+  require(projection.isValid(), "projection should be valid for repeated non-canonical markdown");
+  require(projection.displayText() == QStringLiteral("bold and __bold__"),
+          QStringLiteral("active repeated strong display mismatch: %1").arg(projection.displayText()));
+  require(projection.visibleText() == QStringLiteral("bold and bold"),
+          QStringLiteral("active repeated strong visible mismatch: %1").arg(projection.visibleText()));
+
+  bool foundSecondTextSpan = false;
+  for (const InlineProjectionSpan& span : projection.spans()) {
+    if (span.type == InlineType::Text && span.kind == InlineSpanKind::Text && span.bold &&
+        span.contentSourceStart == secondStart + 2 && span.contentSourceEnd == markdown.size() - 2) {
+      foundSecondTextSpan = true;
+      break;
+    }
+  }
+  require(foundSecondTextSpan, "second repeated strong text span should use parser source range");
+}
+
+void testInlineProjectionExpandsParserContentRangesForDelimitedInlines() {
+  const QString markdown = QStringLiteral("``a`b`` and ``a`b``");
+  InlineNode first = InlineNode::code(QStringLiteral("a`b"));
+  first.setSourceStart(2);
+  first.setSourceEnd(5);
+  InlineNode spacer = InlineNode::text(QStringLiteral(" and "));
+  spacer.setSourceStart(7);
+  spacer.setSourceEnd(12);
+  InlineNode second = InlineNode::code(QStringLiteral("a`b"));
+  second.setSourceStart(14);
+  second.setSourceEnd(17);
+
+  InlineProjectionState state;
+  state.cursorSourceOffset = 14;
+  InlineProjection projection({first, spacer, second}, markdown, state, 0);
+  require(projection.isValid(), "projection should be valid for parser content ranges");
+  require(projection.displayText() == QStringLiteral("a`b and ``a`b``"),
+          QStringLiteral("active content-range code display mismatch: %1").arg(projection.displayText()));
+  require(projection.visibleText() == QStringLiteral("a`b and a`b"),
+          QStringLiteral("active content-range code visible mismatch: %1").arg(projection.visibleText()));
+
+  bool foundSecondTextSpan = false;
+  for (const InlineProjectionSpan& span : projection.spans()) {
+    if (span.type == InlineType::Code && span.kind == InlineSpanKind::Text && span.sourceStart == 12 &&
+        span.sourceEnd == markdown.size() && span.contentSourceStart == 14 && span.contentSourceEnd == 17) {
+      foundSecondTextSpan = true;
+      break;
+    }
+  }
+  require(foundSecondTextSpan, "second content-range code span should expand to delimiter source range");
+}
+
 void testInlineProjectionForwardBiasAtInlineEnd() {
   QVector<InlineNode> inlines;
   inlines.push_back(InlineNode::text(QStringLiteral("vendored ")));
@@ -1640,6 +1711,8 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testInlineProjectionMarkerSourcePositions);
   RUN_TEST(testInlineProjectionUsesParserSourceRangesForRepeatedUnicodeMarkers);
+  RUN_TEST(testInlineProjectionUsesParserSourceRangesForRepeatedNonCanonicalMarkdown);
+  RUN_TEST(testInlineProjectionExpandsParserContentRangesForDelimitedInlines);
   RUN_TEST(testInlineProjectionForwardBiasAtInlineEnd);
   RUN_TEST(testInlineProjectionSpanContracts);
   RUN_TEST(testInlineProjectionMappingMatrix);
