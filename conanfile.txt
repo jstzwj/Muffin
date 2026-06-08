@@ -1,6 +1,8 @@
 [requires]
 qt/6.11.1
 icu/74.2
+libwebp/1.6.0
+libavif/1.4.1
 
 [options]
 qt/*:shared=True

@@ -29,6 +29,8 @@ endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg PrintSupport Network)
 find_package(ICU REQUIRED COMPONENTS uc i18n)
+find_package(WebP REQUIRED)
+find_package(libavif REQUIRED)
 set(MUFFIN_QT_LINGUIST_BIN "" CACHE PATH "Optional Qt Linguist tool directory")
 set(MUFFIN_LOCAL_QT_LINGUIST_BIN "C:/Program Files/Qt Linguist/bin")
 if(NOT MUFFIN_QT_LINGUIST_BIN AND WIN32 AND EXISTS "${MUFFIN_LOCAL_QT_LINGUIST_BIN}/lupdate.exe")
@@ -461,6 +463,8 @@ set(MUFFIN_UI_SOURCES
   src/render/BlockLayoutBuilder.h
   src/render/DocumentLayout.cpp
   src/render/DocumentLayout.h
+  src/render/ImageDecoder.cpp
+  src/render/ImageDecoder.h
   src/render/ImageLoader.cpp
   src/render/ImageLoader.h
   src/render/InlineLayout.cpp
@@ -484,6 +488,9 @@ target_link_libraries(MuffinUi
     MuffinCore
     tree-sitter-runtime
     tree-sitter-languages
+  PRIVATE
+    WebP::webp
+    avif
 )
 
 target_include_directories(MuffinUi

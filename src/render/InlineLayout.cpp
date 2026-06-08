@@ -1,5 +1,6 @@
 #include "render/InlineLayout.h"
 
+#include "render/ImageDecoder.h"
 #include "render/ImageLoader.h"
 
 #include <QPainter>
@@ -529,7 +530,9 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
         ImageLoader::instance().request(srcUrl);
       }
     } else {
-      image.load(srcUrl);
+      if (!image.load(srcUrl)) {
+        image = image_decoder::decodeFileFallback(srcUrl);
+      }
     }
 
     if (!image.isNull()) {
@@ -596,8 +599,17 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
       break;
     }
     line.setLineWidth(lineWidth);
-    const qreal lineHeight = std::ceil(line.height() * 1.16);
-    line.setPosition(QPointF(0.0, height + (lineHeight - line.height()) * 0.5));
+    // Ensure the line is tall enough for any image atoms on this line.
+    qreal minLineHeight = line.height();
+    const int lineStart = line.textStart();
+    const int lineEnd = lineStart + line.textLength();
+    for (const ImageAtom& atom : imageAtoms_) {
+      if (atom.loaded && atom.displayStart >= lineStart && atom.displayStart <= lineEnd) {
+        minLineHeight = qMax(minLineHeight, atom.displaySize.height());
+      }
+    }
+    const qreal lineHeight = std::ceil(minLineHeight * 1.16);
+    line.setPosition(QPointF(0.0, height + (lineHeight - minLineHeight) * 0.5));
     height += lineHeight;
     maxWidth = qMax(maxWidth, line.naturalTextWidth());
   }
@@ -650,7 +662,11 @@ void InlineLayout::paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) 
         continue;
       }
       const qreal x = line.cursorToX(static_cast<int>(atom.displayStart));
-      const qreal y = origin.y() + line.y() + line.ascent() - atom.displaySize.height();
+      // Vertically center the image within the line's allocated height.
+      // line.y() already includes the vertical centering offset applied in buildTextLayout(),
+      // so we measure from the line's natural top (before centering) to get the correct position.
+      const qreal lineTop = origin.y() + line.y() - (std::ceil(line.height() * 1.16) - line.height()) * 0.5;
+      const qreal y = lineTop;
       const QRectF targetRect(origin.x() + x, y, atom.displaySize.width(), atom.displaySize.height());
       painter.drawImage(targetRect, atom.image, QRectF(atom.image.rect()));
       break;

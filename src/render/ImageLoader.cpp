@@ -1,4 +1,5 @@
 #include "render/ImageLoader.h"
+#include "render/ImageDecoder.h"
 
 #include <QNetworkReply>
 #include <QUrl>
@@ -47,7 +48,10 @@ void ImageLoader::request(const QString& url) {
     }
     QImage image;
     if (!image.loadFromData(data)) {
-      return;
+      image = image_decoder::decodeFallback(data);
+      if (image.isNull()) {
+        return;
+      }
     }
     cache_.insert(url, image);
     emit imageReady(url);
