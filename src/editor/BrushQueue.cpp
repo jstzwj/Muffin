@@ -1,7 +1,6 @@
 #include "editor/BrushQueue.h"
 
-#include <algorithm>
-
+#include <QSet>
 #include <QTimer>
 
 namespace muffin {
@@ -26,23 +25,26 @@ void BrushQueue::requestBlocksRefresh(QVector<NodeId> blockIds) {
     scheduleFlush();
     return;
   }
-  blockIds.erase(std::remove_if(blockIds.begin(), blockIds.end(), [](const NodeId& id) { return !id.isValid(); }), blockIds.end());
-  if (blockIds.isEmpty()) {
-    requestFullRefresh();
-    return;
+  QSet<NodeId> pendingIds;
+  pendingIds.reserve(pending_.layoutDirtyBlocks.size() + blockIds.size());
+  for (const NodeId& id : pending_.layoutDirtyBlocks) {
+    pendingIds.insert(id);
   }
-  QVector<NodeId> uniqueIds;
-  uniqueIds.reserve(blockIds.size());
+
+  bool sawValidBlock = false;
   for (const NodeId& id : blockIds) {
-    if (!uniqueIds.contains(id)) {
-      uniqueIds.push_back(id);
+    if (!id.isValid()) {
+      continue;
     }
-  }
-  blockIds = std::move(uniqueIds);
-  for (const NodeId& id : blockIds) {
-    if (!pending_.layoutDirtyBlocks.contains(id)) {
+    sawValidBlock = true;
+    if (!pendingIds.contains(id)) {
+      pendingIds.insert(id);
       pending_.layoutDirtyBlocks.push_back(id);
     }
+  }
+  if (!sawValidBlock) {
+    requestFullRefresh();
+    return;
   }
   scheduleFlush();
 }

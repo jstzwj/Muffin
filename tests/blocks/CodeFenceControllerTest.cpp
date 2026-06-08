@@ -1,4 +1,4 @@
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "blocks/code/CodeFenceController.h"
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"

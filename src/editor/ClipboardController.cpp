@@ -1,6 +1,6 @@
 #include "editor/ClipboardController.h"
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "editor/InputController.h"
 #include "editor/SelectionController.h"
 
@@ -12,16 +12,12 @@ namespace muffin {
 
 ClipboardController::ClipboardController(QObject* parent) : QObject(parent) {}
 
-void ClipboardController::setContext(const EditorContext& ctx) {
-  ctx_ = ctx;
-}
-
 void ClipboardController::setInputController(InputController* inputController) {
   inputController_ = inputController;
 }
 
 bool ClipboardController::copy() {
-  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor() ||
+  if (!ctx_.hasSession() || !ctx_.hasCursor() ||
       ctx_.selection->selection().isCollapsed()) {
     return false;
   }
@@ -63,7 +59,7 @@ bool ClipboardController::paste() {
 }
 
 bool ClipboardController::copyAsPlainText() {
-  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor() ||
+  if (!ctx_.hasSession() || !ctx_.hasCursor() ||
       ctx_.selection->selection().isCollapsed()) {
     return false;
   }
@@ -81,7 +77,7 @@ bool ClipboardController::copyAsPlainText() {
 }
 
 bool ClipboardController::copyAsMarkdown() {
-  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor() ||
+  if (!ctx_.hasSession() || !ctx_.hasCursor() ||
       ctx_.selection->selection().isCollapsed()) {
     return false;
   }
@@ -100,7 +96,7 @@ bool ClipboardController::copyAsMarkdown() {
 }
 
 bool ClipboardController::copyAsHtml() {
-  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor() ||
+  if (!ctx_.hasSession() || !ctx_.hasCursor() ||
       ctx_.selection->selection().isCollapsed()) {
     return false;
   }

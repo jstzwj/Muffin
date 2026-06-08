@@ -1,7 +1,7 @@
 #pragma once
 
 #include "document/InlineNode.h"
-#include "document/InlineProjection.h"
+#include "projection/InlineProjection.h"
 #include "editor/CursorPosition.h"
 #include "math/MathRenderer.h"
 #include "math/MathRenderNode.h"
@@ -91,7 +91,7 @@ private:
   };
 
   void buildOffsetMapFromProjection();
-  void buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme);
+  void buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
   QString texForInlineMathVisibleRange(const QVector<InlineNode>& inlines, qsizetype visibleStart, qsizetype visibleEnd) const;
   void buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont);
   void paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) const;

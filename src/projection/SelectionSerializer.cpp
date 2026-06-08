@@ -1,10 +1,10 @@
-#include "document/SelectionSerializer.h"
+#include "projection/SelectionSerializer.h"
 
 #include "document/InlineNode.h"
-#include "document/InlineProjection.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 #include "parser/CmarkGfmParser.h"
+#include "projection/InlineProjection.h"
 
 extern "C" {
 #include "cmark-gfm-core-extensions.h"

@@ -1,4 +1,4 @@
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 
 #include "document/InlineNode.h"
 #include "document/SourceRangeUtil.h"
@@ -13,6 +13,7 @@
 namespace {
 
 Q_LOGGING_CATEGORY(sessionPerf, "muffin.perf", QtWarningMsg)
+Q_LOGGING_CATEGORY(sessionLog, "muffin.session", QtWarningMsg)
 
 class PerfTimer {
 public:
@@ -40,6 +41,39 @@ struct TopLevelSlice {
   qsizetype sourceStart = -1;
   qsizetype sourceEnd = -1;
 };
+
+void warnLocalEditRejected(
+    const char* reason,
+    qsizetype sourceStart,
+    qsizetype sourceEnd,
+    qsizetype replacementLength,
+    qsizetype documentSize) {
+  qCWarning(sessionLog).nospace()
+      << "Rejected local document edit: " << reason
+      << " sourceStart=" << sourceStart
+      << " sourceEnd=" << sourceEnd
+      << " replacementLength=" << replacementLength
+      << " documentSize=" << documentSize;
+}
+
+void warnLocalEditSliceRejected(
+    const char* reason,
+    qsizetype sourceStart,
+    qsizetype sourceEnd,
+    qsizetype replacementLength,
+    qsizetype documentSize,
+    const TopLevelSlice& slice) {
+  qCWarning(sessionLog).nospace()
+      << "Rejected local document edit: " << reason
+      << " sourceStart=" << sourceStart
+      << " sourceEnd=" << sourceEnd
+      << " replacementLength=" << replacementLength
+      << " documentSize=" << documentSize
+      << " sliceFirst=" << slice.first
+      << " sliceCount=" << slice.count
+      << " sliceSourceStart=" << slice.sourceStart
+      << " sliceSourceEnd=" << slice.sourceEnd;
+}
 
 bool isEditableTopLevelType(muffin::BlockType type) {
   switch (type) {
@@ -487,6 +521,12 @@ bool muffin::DocumentSession::applyTextDelta(
   lastLocalEditChangedTopLevelStructure_ = false;
   lastLocalTopLevelRangeChange_ = {};
   if (sourceStart < 0 || removedLength < 0 || sourceStart + removedLength > document_.markdownText().size()) {
+    warnLocalEditRejected(
+        "invalid text delta range",
+        sourceStart,
+        sourceStart >= 0 && removedLength >= 0 ? sourceStart + removedLength : qsizetype(-1),
+        insertedText.size(),
+        document_.markdownText().size());
     return false;
   }
   if (!tryApplyTopLevelLocalEdit(sourceStart, sourceStart + removedLength, insertedText, modified, nodeHints)) {
@@ -582,6 +622,13 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
   const QStringView removedText = QStringView(oldText).mid(sourceStart, sourceEnd - sourceStart);
   TopLevelSlice slice = chooseTopLevelSlice(document_, sourceStart, sourceEnd, isBlankLineStructuralEdit(removedText, replacementText));
   if (slice.first < 0 || slice.sourceStart < 0 || slice.sourceEnd < slice.sourceStart) {
+    warnLocalEditSliceRejected(
+        "could not choose a valid top-level slice",
+        sourceStart,
+        sourceEnd,
+        replacementText.size(),
+        oldText.size(),
+        slice);
     return false;
   }
 
@@ -589,6 +636,13 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
   const qsizetype nextSliceEnd = slice.sourceEnd + editDelta;
   const qsizetype nextTextSize = oldText.size() + editDelta;
   if (nextSliceEnd < slice.sourceStart || nextSliceEnd > nextTextSize) {
+    warnLocalEditSliceRejected(
+        "edited slice would exceed updated document bounds",
+        sourceStart,
+        sourceEnd,
+        replacementText.size(),
+        oldText.size(),
+        slice);
     return false;
   }
 
@@ -599,6 +653,13 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
   sliceOptions.enableFrontMatter = slice.sourceStart == 0;
   ParseResult parsedSlice = parser_.parseDocument(QStringView(sliceMarkdown), sliceOptions);
   if (!parsedSlice.root) {
+    warnLocalEditSliceRejected(
+        "local slice parse produced no root node",
+        sourceStart,
+        sourceEnd,
+        replacementText.size(),
+        oldText.size(),
+        slice);
     return false;
   }
 

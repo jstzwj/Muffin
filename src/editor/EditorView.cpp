@@ -1043,6 +1043,10 @@ void EditorView::paintInsertionCursor(QPainter& painter) const {
 }
 
 QRectF EditorView::headingBadgeViewportRectForBlock(NodeId blockId) const {
+  return headingBadgeForBlock(blockId).viewportRect;
+}
+
+EditorView::HeadingBadge EditorView::headingBadgeForBlock(NodeId blockId) const {
   if (!layout_ || !blockId.isValid()) {
     return {};
   }
@@ -1067,32 +1071,30 @@ QRectF EditorView::headingBadgeViewportRectForBlock(NodeId blockId) const {
   const QFontMetricsF headingMetrics(theme_.headingFont(level));
   const qreal lineCenterY = blockRect.top() + headingMetrics.height() / 2.0;
   const qreal badgeY = lineCenterY - badgeHeight / 2.0 - scrollY();
-  return QRectF(blockRect.left() - badgeWidth - 4.0, badgeY, badgeWidth, badgeHeight);
+  return HeadingBadge{topId, QRectF(blockRect.left() - badgeWidth - 4.0, badgeY, badgeWidth, badgeHeight), level};
 }
 
 void EditorView::paintHeadingBadge(QPainter& painter) const {
-  const QRectF badgeRect = headingBadgeViewportRectForBlock(cursorPosition_.blockId);
-  if (badgeRect.isEmpty()) {
+  const HeadingBadge badge = headingBadgeForBlock(cursorPosition_.blockId);
+  if (!badge.isValid()) {
     return;
   }
 
-  if (!viewport()->rect().intersects(badgeRect.toAlignedRect())) {
+  if (!viewport()->rect().intersects(badge.viewportRect.toAlignedRect())) {
     return;
   }
 
-  const NodeId topId = layout_->topLevelBlockIdFor(cursorPosition_.blockId);
-  const BlockLayout* block = layout_->block(topId);
-  const QString badgeText = QStringLiteral("H%1").arg(block->headingLevel());
+  const QString badgeText = QStringLiteral("H%1").arg(badge.level);
 
   painter.save();
   painter.setPen(QPen(theme_.codeBorderColor(), 1));
   painter.setBrush(theme_.backgroundColor());
-  painter.drawRoundedRect(badgeRect, 3.0, 3.0);
+  painter.drawRoundedRect(badge.viewportRect, 3.0, 3.0);
   QFont badgeFont = theme_.paragraphFont();
   badgeFont.setPointSizeF(badgeFont.pointSizeF() * 0.8);
   painter.setFont(badgeFont);
   painter.setPen(QColor(theme_.mutedTextColor().red(), theme_.mutedTextColor().green(), theme_.mutedTextColor().blue(), 140));
-  painter.drawText(badgeRect, Qt::AlignCenter, badgeText);
+  painter.drawText(badge.viewportRect, Qt::AlignCenter, badgeText);
   painter.restore();
 }
 

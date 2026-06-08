@@ -1,4 +1,5 @@
 #include "app/MainWindow.h"
+#include "app/MainWindowActionBinder.h"
 #include "editor/EditorView.h"
 
 #include <QMenu>
@@ -84,9 +85,9 @@ void muffin::MainWindow::retranslateUi() {
     sourceModeButton_->setToolTip(tr("Toggle source / rendered mode"));
   }
 
-  updateFileActions();
-  updateContextActions();
-  updateThemeActions();
+  MainWindowActionBinder::updateFileActions(*this);
+  MainWindowActionBinder::updateContextActions(*this);
+  MainWindowActionBinder::updateThemeActions(*this);
   rebuildRecentFilesMenu();
   buildReopenEncodingMenu();
   if (renderView_) {

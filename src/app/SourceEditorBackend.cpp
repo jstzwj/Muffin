@@ -1,6 +1,6 @@
 #include "app/SourceEditorBackend.h"
 
-#include "document/SelectionSerializer.h"
+#include "projection/SelectionSerializer.h"
 #include "editor/SourceEditorWidget.h"
 
 #include <QApplication>

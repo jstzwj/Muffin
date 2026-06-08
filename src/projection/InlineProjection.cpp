@@ -1,4 +1,4 @@
-#include "document/InlineProjection.h"
+#include "projection/InlineProjection.h"
 
 #include "houdini.h"
 
@@ -800,11 +800,10 @@ qsizetype InlineProjection::findMarkdown(const QString& sourceText, const QStrin
   if (markdown.isEmpty()) {
     return qBound<qsizetype>(0, searchFrom, sourceText.size());
   }
-  const qsizetype found = sourceText.indexOf(markdown, searchFrom);
-  if (found < 0 || found + markdown.size() > searchEnd) {
+  if (searchFrom < 0 || searchFrom + markdown.size() > searchEnd || searchFrom + markdown.size() > sourceText.size()) {
     return -1;
   }
-  return found;
+  return QStringView(sourceText).mid(searchFrom, markdown.size()) == QStringView(markdown) ? searchFrom : -1;
 }
 
 bool InlineProjection::offsetInSource(qsizetype sourceOffset) const {

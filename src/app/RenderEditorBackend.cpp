@@ -1,6 +1,6 @@
 #include "app/RenderEditorBackend.h"
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/MarkdownDocument.h"
 #include "editor/EditorController.h"
 #include "editor/EditorView.h"

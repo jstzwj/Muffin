@@ -70,6 +70,14 @@ protected:
   QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
 
 private:
+  struct HeadingBadge {
+    NodeId blockId;
+    QRectF viewportRect;
+    int level = 0;
+
+    bool isValid() const { return blockId.isValid() && !viewportRect.isEmpty() && level >= 3 && level <= 6; }
+  };
+
   void rebuildLayout();
   void updateScrollBars();
   QRectF documentViewportRect() const;
@@ -84,6 +92,7 @@ private:
   void paintSelection(QPainter& painter) const;
   void paintInsertionCursor(QPainter& painter) const;
   void paintHeadingBadge(QPainter& painter) const;
+  HeadingBadge headingBadgeForBlock(NodeId blockId) const;
   QRectF headingBadgeViewportRectForBlock(NodeId blockId) const;
   HitTestResult hitForCursorPosition(CursorPosition position) const;
   QVector<const BlockLayout*> blocksBetween(NodeId first, NodeId last) const;

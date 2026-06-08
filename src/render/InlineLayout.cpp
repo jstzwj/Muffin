@@ -89,7 +89,7 @@ void InlineLayout::build(
   textLayoutCodeBorderColor_ = theme.codeBorderColor();
   projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState, options.sourceBase);
   buildOffsetMapFromProjection();
-  buildMathAtoms(inlines, theme);
+  buildMathAtoms(inlines, theme, width);
   buildTextLayout(theme, width, baseFont);
 }
 
@@ -326,7 +326,7 @@ void InlineLayout::buildOffsetMapFromProjection() {
   }
 }
 
-void InlineLayout::buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme) {
+void InlineLayout::buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width) {
   const QString projectedDisplay = projection_.displayText();
   QString rebuiltDisplay;
   QVector<OffsetMapEntry> rebuiltMap;
@@ -366,7 +366,7 @@ void InlineLayout::buildMathAtoms(const QVector<InlineNode>& inlines, const Rend
       rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, displayStart, rebuiltDisplay.size()});
       continue;
     }
-    auto layout = std::make_shared<math::MathLayoutResult>(mathRenderer_.render(tex, theme, false));
+    auto layout = std::make_shared<math::MathLayoutResult>(mathRenderer_.render(tex, theme, false, qMax<qreal>(1.0, width)));
     if (!layout->valid()) {
       const qsizetype displayStart = rebuiltDisplay.size();
       rebuiltDisplay += spanText;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/NodeId.h"
 #include "edit/EditTransaction.h"
 #include "editor/EditorContext.h"

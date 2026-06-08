@@ -1,10 +1,10 @@
 #pragma once
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/MarkdownTypes.h"
 #include "document/SourceRangeUtil.h"
 #include "edit/EditTransaction.h"
-#include "editor/EditorContext.h"
+#include "editor/EditorContextHolder.h"
 
 #include <QObject>
 
@@ -12,13 +12,13 @@ namespace muffin {
 
 class MarkdownNode;
 
-class StylizeController final : public QObject {
+class StylizeController final : public QObject, private EditorContextHolder {
   Q_OBJECT
 
 public:
   explicit StylizeController(QObject* parent = nullptr);
 
-  void setContext(const EditorContext& ctx);
+  using EditorContextHolder::setContext;
 
   bool toggleBold();
   bool toggleItalic();
@@ -60,7 +60,6 @@ private:
       QVector<LocalEditNodeHint> nodeHints = {});
   CursorPosition cursorForSourceOffset(qsizetype sourceOffset) const;
 
-  EditorContext ctx_;
 };
 
 }  // namespace muffin

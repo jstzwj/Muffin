@@ -5,7 +5,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
-#include <QSettings>
 #include <QVBoxLayout>
 
 muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(parent) {
@@ -26,11 +25,8 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   layout->addWidget(cardContainer);
 
   // --- Card 1: Markdown Syntax Preferences ---
-  auto* syntaxCard = new QWidget(this);
-  syntaxCard->setObjectName(QStringLiteral("settingsCard"));
-  auto* syntaxLayout = new QVBoxLayout(syntaxCard);
-  syntaxLayout->setContentsMargins(18, 16, 18, 16);
-  syntaxLayout->setSpacing(12);
+  auto* syntaxCard = makeCard(this);
+  auto* syntaxLayout = makeCardLayout(syntaxCard);
 
   auto* syntaxHeaderRow = new QHBoxLayout();
   syntaxLabel_ = makeSectionLabel(syntaxCard);
@@ -76,11 +72,8 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   cardColumn->addWidget(syntaxCard);
 
   // --- Card 2: Extended Syntax ---
-  auto* extCard = new QWidget(this);
-  extCard->setObjectName(QStringLiteral("settingsCard"));
-  auto* extLayout = new QVBoxLayout(extCard);
-  extLayout->setContentsMargins(18, 16, 18, 16);
-  extLayout->setSpacing(12);
+  auto* extCard = makeCard(this);
+  auto* extLayout = makeCardLayout(extCard);
 
   extSyntaxLabel_ = makeSectionLabel(extCard);
 
@@ -115,11 +108,8 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   cardColumn->addWidget(extCard);
 
   // --- Card 3: Smart Punctuation ---
-  auto* punctCard = new QWidget(this);
-  punctCard->setObjectName(QStringLiteral("settingsCard"));
-  auto* punctLayout = new QVBoxLayout(punctCard);
-  punctLayout->setContentsMargins(18, 16, 18, 16);
-  punctLayout->setSpacing(12);
+  auto* punctCard = makeCard(this);
+  auto* punctLayout = makeCardLayout(punctCard);
 
   auto* punctHeaderRow = new QHBoxLayout();
   smartPunctLabel_ = makeSectionLabel(punctCard);
@@ -159,11 +149,8 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   cardColumn->addWidget(punctCard);
 
   // --- Card 4: Code Blocks ---
-  auto* codeCard = new QWidget(this);
-  codeCard->setObjectName(QStringLiteral("settingsCard"));
-  auto* codeLayout = new QVBoxLayout(codeCard);
-  codeLayout->setContentsMargins(18, 16, 18, 16);
-  codeLayout->setSpacing(12);
+  auto* codeCard = makeCard(this);
+  auto* codeLayout = makeCardLayout(codeCard);
 
   codeBlockLabel_ = makeSectionLabel(codeCard);
   showLineNumbersCheck_ = new QCheckBox(codeCard);
@@ -214,52 +201,29 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   loadSettings();
 
   // Wire persistence
-  connect(strictModeCheck_, &QCheckBox::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("markdown/strictMode"), checked); });
-  connect(headingStyleCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [](int index) { QSettings().setValue(QStringLiteral("markdown/headingStyle"), index); });
-  connect(unorderedListCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [](int index) { QSettings().setValue(QStringLiteral("markdown/unorderedList"), index); });
-  connect(orderedListCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [](int index) { QSettings().setValue(QStringLiteral("markdown/orderedList"), index); });
-  connect(autoLinkCheck_, &QCheckBox::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("markdown/autoLink"), checked); });
-  connect(inlineMathCheck_, &QCheckBox::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("markdown/inlineMath"), checked); });
-  connect(subscriptCheck_, &QCheckBox::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("markdown/subscript"), checked); });
-  connect(superscriptCheck_, &QCheckBox::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("markdown/superscript"), checked); });
-  connect(highlightCheck_, &QCheckBox::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("markdown/highlight"), checked); });
-  connect(alertBoxCheck_, &QCheckBox::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("markdown/alertBox"), checked); });
-  connect(diagramsCheck_, &QCheckBox::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("markdown/diagrams"), checked); });
-  connect(convertOnInputCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [](int index) { QSettings().setValue(QStringLiteral("markdown/convertOnInput"), index); });
-  connect(smartQuotesCheck_, &QCheckBox::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("markdown/smartQuotes"), checked); });
-  connect(singleQuoteCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [](int index) { QSettings().setValue(QStringLiteral("markdown/singleQuoteStyle"), index); });
-  connect(doubleQuoteCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [](int index) { QSettings().setValue(QStringLiteral("markdown/doubleQuoteStyle"), index); });
-  connect(smartDashesCheck_, &QCheckBox::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("markdown/smartDashes"), checked); });
-  connect(unicodePunctCheck_, &QCheckBox::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("markdown/unicodePunctuation"), checked); });
-  connect(showLineNumbersCheck_, &QCheckBox::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("markdown/showLineNumbers"), checked); });
-  connect(codeBlockWrapCheck_, &QCheckBox::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("markdown/codeBlockWrap"), checked); });
-  connect(shiftTabIndentCheck_, &QCheckBox::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("markdown/shiftTabIndent"), checked); });
-  connect(codeIndentCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [](int index) { QSettings().setValue(QStringLiteral("markdown/codeIndent"), index); });
-  connect(defaultLangCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [](int index) { QSettings().setValue(QStringLiteral("markdown/defaultCodeLang"), index); });
-  connect(autoLangCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [](int index) { QSettings().setValue(QStringLiteral("markdown/autoCodeLang"), index); });
+  wireBoolSetting(strictModeCheck_, QStringLiteral("markdown/strictMode"));
+  wireComboIndexSetting(headingStyleCombo_, QStringLiteral("markdown/headingStyle"));
+  wireComboIndexSetting(unorderedListCombo_, QStringLiteral("markdown/unorderedList"));
+  wireComboIndexSetting(orderedListCombo_, QStringLiteral("markdown/orderedList"));
+  wireBoolSetting(autoLinkCheck_, QStringLiteral("markdown/autoLink"));
+  wireBoolSetting(inlineMathCheck_, QStringLiteral("markdown/inlineMath"));
+  wireBoolSetting(subscriptCheck_, QStringLiteral("markdown/subscript"));
+  wireBoolSetting(superscriptCheck_, QStringLiteral("markdown/superscript"));
+  wireBoolSetting(highlightCheck_, QStringLiteral("markdown/highlight"));
+  wireBoolSetting(alertBoxCheck_, QStringLiteral("markdown/alertBox"));
+  wireBoolSetting(diagramsCheck_, QStringLiteral("markdown/diagrams"));
+  wireComboIndexSetting(convertOnInputCombo_, QStringLiteral("markdown/convertOnInput"));
+  wireBoolSetting(smartQuotesCheck_, QStringLiteral("markdown/smartQuotes"));
+  wireComboIndexSetting(singleQuoteCombo_, QStringLiteral("markdown/singleQuoteStyle"));
+  wireComboIndexSetting(doubleQuoteCombo_, QStringLiteral("markdown/doubleQuoteStyle"));
+  wireBoolSetting(smartDashesCheck_, QStringLiteral("markdown/smartDashes"));
+  wireBoolSetting(unicodePunctCheck_, QStringLiteral("markdown/unicodePunctuation"));
+  wireBoolSetting(showLineNumbersCheck_, QStringLiteral("markdown/showLineNumbers"));
+  wireBoolSetting(codeBlockWrapCheck_, QStringLiteral("markdown/codeBlockWrap"));
+  wireBoolSetting(shiftTabIndentCheck_, QStringLiteral("markdown/shiftTabIndent"));
+  wireComboIndexSetting(codeIndentCombo_, QStringLiteral("markdown/codeIndent"));
+  wireComboIndexSetting(defaultLangCombo_, QStringLiteral("markdown/defaultCodeLang"));
+  wireComboIndexSetting(autoLangCombo_, QStringLiteral("markdown/autoCodeLang"));
 }
 
 void muffin::PrefsMarkdownPage::retranslateUi() {
@@ -267,36 +231,11 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
   syntaxLabel_->setText(tr("Markdown Syntax Preferences"));
   strictModeCheck_->setText(tr("Strict Mode"));
   headingStyleLabel_->setText(tr("Heading Style"));
-  {
-    const int cur = headingStyleCombo_->currentIndex();
-    headingStyleCombo_->blockSignals(true);
-    headingStyleCombo_->clear();
-    headingStyleCombo_->addItem(QStringLiteral("atx (#)"));
-    headingStyleCombo_->addItem(QStringLiteral("setext (===)"));
-    headingStyleCombo_->setCurrentIndex(qBound(0, cur, headingStyleCombo_->count() - 1));
-    headingStyleCombo_->blockSignals(false);
-  }
+  rebuildCombo(headingStyleCombo_, {QStringLiteral("atx (#)"), QStringLiteral("setext (===)")});
   unorderedListLabel_->setText(tr("Unordered List"));
-  {
-    const int cur = unorderedListCombo_->currentIndex();
-    unorderedListCombo_->blockSignals(true);
-    unorderedListCombo_->clear();
-    unorderedListCombo_->addItem(QStringLiteral("-"));
-    unorderedListCombo_->addItem(QStringLiteral("*"));
-    unorderedListCombo_->addItem(QStringLiteral("+"));
-    unorderedListCombo_->setCurrentIndex(qBound(0, cur, unorderedListCombo_->count() - 1));
-    unorderedListCombo_->blockSignals(false);
-  }
+  rebuildCombo(unorderedListCombo_, {QStringLiteral("-"), QStringLiteral("*"), QStringLiteral("+")});
   orderedListLabel_->setText(tr("Ordered List"));
-  {
-    const int cur = orderedListCombo_->currentIndex();
-    orderedListCombo_->blockSignals(true);
-    orderedListCombo_->clear();
-    orderedListCombo_->addItem(tr("1. ... 2. ... 3. ..."));
-    orderedListCombo_->addItem(tr("1. ... 1. ... 1. ..."));
-    orderedListCombo_->setCurrentIndex(qBound(0, cur, orderedListCombo_->count() - 1));
-    orderedListCombo_->blockSignals(false);
-  }
+  rebuildCombo(orderedListCombo_, {tr("1. ... 2. ... 3. ..."), tr("1. ... 1. ... 1. ...")});
 
   // Card 2: Extended Syntax
   extSyntaxLabel_->setText(tr("Markdown Extended Syntax"));
@@ -312,35 +251,10 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
   // Card 3: Smart Punctuation
   smartPunctLabel_->setText(tr("Smart Punctuation"));
   convertOnInputLabel_->setText(tr("Convert on Input"));
-  {
-    const int cur = convertOnInputCombo_->currentIndex();
-    convertOnInputCombo_->blockSignals(true);
-    convertOnInputCombo_->clear();
-    convertOnInputCombo_->addItem(tr("No conversion"));
-    convertOnInputCombo_->addItem(tr("When typing"));
-    convertOnInputCombo_->addItem(tr("Always"));
-    convertOnInputCombo_->setCurrentIndex(qBound(0, cur, convertOnInputCombo_->count() - 1));
-    convertOnInputCombo_->blockSignals(false);
-  }
+  rebuildCombo(convertOnInputCombo_, {tr("No conversion"), tr("When typing"), tr("Always")});
   smartQuotesCheck_->setText(tr("Smart Quotes"));
-  {
-    const int cur = singleQuoteCombo_->currentIndex();
-    singleQuoteCombo_->blockSignals(true);
-    singleQuoteCombo_->clear();
-    singleQuoteCombo_->addItem(QStringLiteral("\xe2\x80\x98" "abc" "\xe2\x80\x99"));  // 'abc'
-    singleQuoteCombo_->addItem(QStringLiteral("'abc'"));
-    singleQuoteCombo_->setCurrentIndex(qBound(0, cur, singleQuoteCombo_->count() - 1));
-    singleQuoteCombo_->blockSignals(false);
-  }
-  {
-    const int cur = doubleQuoteCombo_->currentIndex();
-    doubleQuoteCombo_->blockSignals(true);
-    doubleQuoteCombo_->clear();
-    doubleQuoteCombo_->addItem(QStringLiteral("\xe2\x80\x9c" "abc" "\xe2\x80\x9d"));  // "abc"
-    doubleQuoteCombo_->addItem(QStringLiteral("\"abc\""));
-    doubleQuoteCombo_->setCurrentIndex(qBound(0, cur, doubleQuoteCombo_->count() - 1));
-    doubleQuoteCombo_->blockSignals(false);
-  }
+  rebuildCombo(singleQuoteCombo_, {QStringLiteral("\xe2\x80\x98" "abc" "\xe2\x80\x99"), QStringLiteral("'abc'")});
+  rebuildCombo(doubleQuoteCombo_, {QStringLiteral("\xe2\x80\x9c" "abc" "\xe2\x80\x9d"), QStringLiteral("\"abc\"")});
   smartDashesCheck_->setText(tr("Smart Dashes"));
   unicodePunctCheck_->setText(tr("Allow and convert Unicode punctuation when parsing Markdown"));
 
@@ -350,85 +264,35 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
   codeBlockWrapCheck_->setText(tr("Code Blocks Auto Wrap"));
   shiftTabIndentCheck_->setText(tr("Use Shift+Tab to auto adjust indent of selected code"));
   codeIndentLabel_->setText(tr("Code Indent"));
-  {
-    const int cur = codeIndentCombo_->currentIndex();
-    codeIndentCombo_->blockSignals(true);
-    codeIndentCombo_->clear();
-    codeIndentCombo_->addItem(QStringLiteral("2"));
-    codeIndentCombo_->addItem(QStringLiteral("4"));
-    codeIndentCombo_->addItem(QStringLiteral("8"));
-    codeIndentCombo_->setCurrentIndex(qBound(0, cur, codeIndentCombo_->count() - 1));
-    codeIndentCombo_->blockSignals(false);
-  }
+  rebuildCombo(codeIndentCombo_, {QStringLiteral("2"), QStringLiteral("4"), QStringLiteral("8")});
   defaultLangLabel_->setText(tr("Default Code Block Language"));
-  {
-    const int cur = defaultLangCombo_->currentIndex();
-    defaultLangCombo_->blockSignals(true);
-    defaultLangCombo_->clear();
-    defaultLangCombo_->addItem(tr("(empty)"));
-    defaultLangCombo_->addItem(QStringLiteral("cpp"));
-    defaultLangCombo_->addItem(QStringLiteral("python"));
-    defaultLangCombo_->addItem(QStringLiteral("javascript"));
-    defaultLangCombo_->addItem(QStringLiteral("java"));
-    defaultLangCombo_->setCurrentIndex(qBound(0, cur, defaultLangCombo_->count() - 1));
-    defaultLangCombo_->blockSignals(false);
-  }
+  rebuildCombo(defaultLangCombo_, {tr("(empty)"), QStringLiteral("cpp"), QStringLiteral("python"), QStringLiteral("javascript"), QStringLiteral("java")});
   autoLangLabel_->setText(tr("Automatically add code block language"));
-  {
-    const int cur = autoLangCombo_->currentIndex();
-    autoLangCombo_->blockSignals(true);
-    autoLangCombo_->clear();
-    autoLangCombo_->addItem(tr("When inserting code blocks via Markdown code"));
-    autoLangCombo_->addItem(tr("Always"));
-    autoLangCombo_->addItem(tr("Never"));
-    autoLangCombo_->setCurrentIndex(qBound(0, cur, autoLangCombo_->count() - 1));
-    autoLangCombo_->blockSignals(false);
-  }
+  rebuildCombo(autoLangCombo_, {tr("When inserting code blocks via Markdown code"), tr("Always"), tr("Never")});
 }
 
 void muffin::PrefsMarkdownPage::loadSettings() {
-  QSettings s;
-
-  strictModeCheck_->blockSignals(true);
-  strictModeCheck_->setChecked(s.value(QStringLiteral("markdown/strictMode"), true).toBool());
-  strictModeCheck_->blockSignals(false);
-
-  auto setCombo = [&](QComboBox* combo, const QString& key, int def) {
-    if (combo->count() > 0) {
-      const int v = s.value(key, def).toInt();
-      combo->blockSignals(true);
-      combo->setCurrentIndex(qBound(0, v, combo->count() - 1));
-      combo->blockSignals(false);
-    }
-  };
-  setCombo(headingStyleCombo_, QStringLiteral("markdown/headingStyle"), 0);
-  setCombo(unorderedListCombo_, QStringLiteral("markdown/unorderedList"), 0);
-  setCombo(orderedListCombo_, QStringLiteral("markdown/orderedList"), 0);
-
-  auto setCheck = [&](QCheckBox* cb, const QString& key, bool def) {
-    cb->blockSignals(true);
-    cb->setChecked(s.value(key, def).toBool());
-    cb->blockSignals(false);
-  };
-  setCheck(autoLinkCheck_, QStringLiteral("markdown/autoLink"), true);
-  setCheck(inlineMathCheck_, QStringLiteral("markdown/inlineMath"), true);
-  setCheck(subscriptCheck_, QStringLiteral("markdown/subscript"), false);
-  setCheck(superscriptCheck_, QStringLiteral("markdown/superscript"), false);
-  setCheck(highlightCheck_, QStringLiteral("markdown/highlight"), false);
-  setCheck(alertBoxCheck_, QStringLiteral("markdown/alertBox"), true);
-  setCheck(diagramsCheck_, QStringLiteral("markdown/diagrams"), true);
-
-  setCombo(convertOnInputCombo_, QStringLiteral("markdown/convertOnInput"), 0);
-  setCheck(smartQuotesCheck_, QStringLiteral("markdown/smartQuotes"), false);
-  setCombo(singleQuoteCombo_, QStringLiteral("markdown/singleQuoteStyle"), 0);
-  setCombo(doubleQuoteCombo_, QStringLiteral("markdown/doubleQuoteStyle"), 0);
-  setCheck(smartDashesCheck_, QStringLiteral("markdown/smartDashes"), false);
-  setCheck(unicodePunctCheck_, QStringLiteral("markdown/unicodePunctuation"), false);
-
-  setCheck(showLineNumbersCheck_, QStringLiteral("markdown/showLineNumbers"), false);
-  setCheck(codeBlockWrapCheck_, QStringLiteral("markdown/codeBlockWrap"), true);
-  setCheck(shiftTabIndentCheck_, QStringLiteral("markdown/shiftTabIndent"), false);
-  setCombo(codeIndentCombo_, QStringLiteral("markdown/codeIndent"), 1);  // default 4
-  setCombo(defaultLangCombo_, QStringLiteral("markdown/defaultCodeLang"), 0);
-  setCombo(autoLangCombo_, QStringLiteral("markdown/autoCodeLang"), 0);
+  loadCheck(strictModeCheck_, QStringLiteral("markdown/strictMode"), true);
+  loadComboIndex(headingStyleCombo_, QStringLiteral("markdown/headingStyle"), 0);
+  loadComboIndex(unorderedListCombo_, QStringLiteral("markdown/unorderedList"), 0);
+  loadComboIndex(orderedListCombo_, QStringLiteral("markdown/orderedList"), 0);
+  loadCheck(autoLinkCheck_, QStringLiteral("markdown/autoLink"), true);
+  loadCheck(inlineMathCheck_, QStringLiteral("markdown/inlineMath"), true);
+  loadCheck(subscriptCheck_, QStringLiteral("markdown/subscript"), false);
+  loadCheck(superscriptCheck_, QStringLiteral("markdown/superscript"), false);
+  loadCheck(highlightCheck_, QStringLiteral("markdown/highlight"), false);
+  loadCheck(alertBoxCheck_, QStringLiteral("markdown/alertBox"), true);
+  loadCheck(diagramsCheck_, QStringLiteral("markdown/diagrams"), true);
+  loadComboIndex(convertOnInputCombo_, QStringLiteral("markdown/convertOnInput"), 0);
+  loadCheck(smartQuotesCheck_, QStringLiteral("markdown/smartQuotes"), false);
+  loadComboIndex(singleQuoteCombo_, QStringLiteral("markdown/singleQuoteStyle"), 0);
+  loadComboIndex(doubleQuoteCombo_, QStringLiteral("markdown/doubleQuoteStyle"), 0);
+  loadCheck(smartDashesCheck_, QStringLiteral("markdown/smartDashes"), false);
+  loadCheck(unicodePunctCheck_, QStringLiteral("markdown/unicodePunctuation"), false);
+  loadCheck(showLineNumbersCheck_, QStringLiteral("markdown/showLineNumbers"), false);
+  loadCheck(codeBlockWrapCheck_, QStringLiteral("markdown/codeBlockWrap"), true);
+  loadCheck(shiftTabIndentCheck_, QStringLiteral("markdown/shiftTabIndent"), false);
+  loadComboIndex(codeIndentCombo_, QStringLiteral("markdown/codeIndent"), 1);
+  loadComboIndex(defaultLangCombo_, QStringLiteral("markdown/defaultCodeLang"), 0);
+  loadComboIndex(autoLangCombo_, QStringLiteral("markdown/autoCodeLang"), 0);
 }

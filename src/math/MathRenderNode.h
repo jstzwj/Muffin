@@ -67,9 +67,11 @@ struct MathRenderNode {
 struct MathLayoutResult {
   std::unique_ptr<MathRenderNode> root;
   QSizeF size;
+  QSizeF naturalSize;
   qreal baseline = 0.0;
   QString source;
   QString error;
+  bool overflow = false;
 
   bool valid() const;
   void paint(QPainter& painter, QPointF origin) const;

@@ -20,6 +20,10 @@ struct EditorContext {
   EditorView* view = nullptr;
   QHash<int, LiteralBlockController*> literalEditors;
 
+  bool hasSession() const;
+  bool hasSelection() const;
+  bool hasCursor() const;
+  bool hasEditingServices() const;
   BlockEditContextResolver contextResolver() const;
 };
 

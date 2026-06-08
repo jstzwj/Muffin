@@ -1,6 +1,6 @@
 #include "editor/BlockEditContext.h"
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/InlineNode.h"
 #include "document/MarkdownNode.h"
 #include "editor/SelectionController.h"

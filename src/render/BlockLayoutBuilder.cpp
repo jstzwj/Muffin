@@ -1,6 +1,6 @@
 #include "render/BlockLayoutBuilder.h"
 
-#include "document/InlineProjection.h"
+#include "projection/InlineProjection.h"
 #include "document/SourceRangeUtil.h"
 
 #include <QCoreApplication>

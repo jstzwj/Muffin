@@ -1,8 +1,9 @@
 #pragma once
 
 #include "app/CommandRegistry.h"
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "app/EditorBackend.h"
+#include "app/RenderCommandFacade.h"
 #include "app/SidebarWidget.h"
 #include "editor/EditorController.h"
 #include "io/FileController.h"
@@ -24,10 +25,14 @@ namespace muffin {
 
 class EditorView;
 class FindBarWidget;
+class MainWindowActionBinder;
+class MainWindowSignalBinder;
 class SourceEditorWidget;
 
 class MainWindow final : public QMainWindow {
   Q_OBJECT
+  friend class MainWindowActionBinder;
+  friend class MainWindowSignalBinder;
 
 public:
   explicit MainWindow(QWidget* parent = nullptr);
@@ -81,7 +86,6 @@ private:
   void updateRenderCursorStatus(const HitTestResult& hit);
   void updateSidebarMode();
   void updateViewMode();
-  void updateFileActions();
   int zoomPercent() const;
   void setZoomPercent(int percent);
   int fontSizePx() const;
@@ -102,13 +106,6 @@ private:
   void openFolder();
   void openNewWindow();
   void activateOutlineNode(NodeId nodeId, SourceRange sourceRange);
-  void updateEditActions();
-  void updateTableActions();
-  void updateParagraphActions();
-  void updateCodeActions();
-  void updateHtmlActions();
-  void updateMathActions();
-  void updateContextActions();
   void syncSourceEditorIfNeeded();
   void scheduleWordCountUpdate();
   void updateWordCountNow();
@@ -116,7 +113,6 @@ private:
   void undoEdit();
   void redoEdit();
   void applyTheme(QString name);
-  void updateThemeActions();
   void rebuildRecentFilesMenu();
   void addRecentFile(QString path);
   QStringList recentFiles() const;
@@ -148,6 +144,7 @@ private:
   CommandRegistry commands_;
   ThemeManager themeManager_;
   EditorController editorController_;
+  RenderCommandFacade renderCommands_;
   QSplitter* centralSplitter_ = nullptr;
   SidebarWidget* sidebar_ = nullptr;
   QStackedWidget* viewStack_ = nullptr;

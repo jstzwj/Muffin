@@ -1,8 +1,8 @@
 #include "editor/InputController.h"
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/InlineNode.h"
-#include "document/InlineProjection.h"
+#include "projection/InlineProjection.h"
 #include "document/MarkdownNode.h"
 #include "editor/BrushQueue.h"
 #include "editor/EditorView.h"
@@ -131,7 +131,7 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
 }
 
 bool InputController::insertText(QString text) {
-  if (ctx_.session && ctx_.session->markdownText().isEmpty()) {
+  if (ctx_.hasSession() && ctx_.session->markdownText().isEmpty()) {
     return insertIntoEmptyDocument(std::move(text));
   }
   if (hasActiveLiteralEditor()) {
@@ -163,7 +163,7 @@ bool InputController::insertParagraphBreak() {
 }
 
 bool InputController::insertBlockAfterCurrentBlock(QString text) {
-  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor()) {
+  if (!ctx_.hasSession() || !ctx_.hasCursor()) {
     return false;
   }
   MarkdownNode* node = ctx_.session->document().node(ctx_.selection->cursorPosition().blockId);
@@ -324,7 +324,7 @@ bool InputController::replaceSelection(QString text, EditTransaction::Kind kind,
 }
 
 bool InputController::tryRemoveExactWholeBlockSelection(EditTransaction::Kind kind, const QString& label) {
-  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor() || ctx_.selection->selection().isCollapsed()) {
+  if (!ctx_.hasSession() || !ctx_.hasCursor() || ctx_.selection->selection().isCollapsed()) {
     return false;
   }
 
@@ -453,7 +453,7 @@ LiteralBlockController* InputController::activeLiteralEditor() const {
 }
 
 void InputController::syncLiteralEditMode(NodeId newBlockId) {
-  if (!ctx_.session || !ctx_.selection) {
+  if (!ctx_.hasSession() || !ctx_.hasSelection()) {
     return;
   }
   MarkdownNode* node = ctx_.session->document().node(newBlockId);
@@ -517,7 +517,7 @@ bool InputController::insertTextIntoActiveLiteral(QString text) {
 }
 
 bool InputController::tryInsertOptionalDefinitionTitle(QString text) {
-  if (text.isEmpty() || !ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor() || !ctx_.selection->selection().isCollapsed()) {
+  if (text.isEmpty() || !ctx_.hasSession() || !ctx_.hasCursor() || !ctx_.selection->selection().isCollapsed()) {
     return false;
   }
 
@@ -556,7 +556,7 @@ bool InputController::tryInsertOptionalDefinitionTitle(QString text) {
 }
 
 bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, const QString& label) {
-  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor()) {
+  if (!ctx_.hasSession() || !ctx_.hasCursor()) {
     return false;
   }
 
@@ -677,7 +677,7 @@ bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, con
 }
 
 bool InputController::tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, const QString& label) {
-  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor()) {
+  if (!ctx_.hasSession() || !ctx_.hasCursor()) {
     return false;
   }
 
@@ -862,7 +862,7 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
     return true;
   }
 
-  if (!ctx_.session || !ctx_.selection || !ctx_.view || event->modifiers().testFlag(Qt::ControlModifier) ||
+  if (!ctx_.hasSession() || !ctx_.hasSelection() || !ctx_.view || event->modifiers().testFlag(Qt::ControlModifier) ||
       event->modifiers().testFlag(Qt::AltModifier)) {
     return false;
   }
@@ -919,7 +919,7 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
 }
 
 bool InputController::insertIntoEmptyDocument(QString text) {
-  if (!ctx_.session || !ctx_.session->markdownText().isEmpty() || text.isEmpty()) {
+  if (!ctx_.hasSession() || !ctx_.session->markdownText().isEmpty() || text.isEmpty()) {
     return false;
   }
   const qsizetype insertedLength = text.size();
@@ -994,7 +994,7 @@ CursorPosition InputController::cursorForNode(MarkdownNode& node, qsizetype offs
 
 CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset, bool preferLaterEmptyAtOffset) const {
   CursorPosition cursor;
-  if (!ctx_.session) {
+  if (!ctx_.hasSession()) {
     return cursor;
   }
 
@@ -1021,7 +1021,7 @@ CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset, bo
 }
 
 CursorPosition InputController::cursorAfterEdit(CursorPosition preferredCursor, qsizetype fallbackSourceOffset, bool preferLaterEmptyAtOffset) const {
-  if (ctx_.session && preferredCursor.isValid()) {
+  if (ctx_.hasSession() && preferredCursor.isValid()) {
     if (preferredCursor.text.sourceOffset >= 0) {
       CursorPosition sourceCursor = cursorForSourceOffset(preferredCursor.text.sourceOffset, preferLaterEmptyAtOffset);
       if (sourceCursor.isValid()) {
@@ -1040,7 +1040,7 @@ MarkdownNode* InputController::paragraphAtSourceOffset(MarkdownNode& node, qsize
 }
 
 MarkdownNode* InputController::selectableBlockByDirection(NodeId current, int direction) const {
-  if (!ctx_.session) {
+  if (!ctx_.hasSession()) {
     return nullptr;
   }
   const auto& blocks = ctx_.session->document().root().children();
@@ -1090,7 +1090,7 @@ qsizetype InputController::selectableTextLength(const MarkdownNode& node) const 
 }
 
 bool InputController::moveCursorHorizontal(int direction, bool extendSelection) {
-  if (!ctx_.selection || !ctx_.selection->hasCursor() || !ctx_.session || direction == 0) {
+  if (!ctx_.hasSession() || !ctx_.hasCursor() || direction == 0) {
     return false;
   }
 
@@ -1146,7 +1146,7 @@ bool InputController::moveCursorHorizontal(int direction, bool extendSelection) 
 }
 
 bool InputController::moveCursorVertical(int direction, bool extendSelection) {
-  if (!ctx_.selection || !ctx_.selection->hasCursor() || !ctx_.session || direction == 0) {
+  if (!ctx_.hasSession() || !ctx_.hasCursor() || direction == 0) {
     return false;
   }
   MarkdownNode* target = selectableBlockByDirection(ctx_.selection->cursorPosition().blockId, direction);

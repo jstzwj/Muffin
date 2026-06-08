@@ -1,6 +1,6 @@
 #include "blocks/table/TableCellSourceEdit.h"
 
-#include "document/InlineProjection.h"
+#include "projection/InlineProjection.h"
 #include "document/MarkdownNode.h"
 
 namespace muffin {

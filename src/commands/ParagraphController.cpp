@@ -1,6 +1,6 @@
 #include "commands/ParagraphController.h"
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/MarkdownNode.h"
 #include "editor/BlockEditContext.h"
 #include "document/SourceRangeUtil.h"
@@ -16,10 +16,6 @@ namespace muffin {
 
 ParagraphController::ParagraphController(QObject* parent) : QObject(parent) {}
 
-void ParagraphController::setContext(const EditorContext& ctx) {
-  ctx_ = ctx;
-}
-
 // ---------------------------------------------------------------------------
 // Query methods
 // ---------------------------------------------------------------------------
@@ -33,7 +29,7 @@ int ParagraphController::currentHeadingLevel() const {
 }
 
 bool ParagraphController::isOnEditableBlock() const {
-  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor()) {
+  if (!ctx_.hasSession() || !ctx_.hasCursor()) {
     return false;
   }
   // Block-level commands should not apply when a multi-block selection is active
@@ -57,7 +53,7 @@ bool ParagraphController::isOnEditableBlock() const {
 // ---------------------------------------------------------------------------
 
 bool ParagraphController::resolveBlockContext(BlockContext& context) const {
-  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor()) {
+  if (!ctx_.hasSession() || !ctx_.hasCursor()) {
     return false;
   }
 
@@ -128,7 +124,7 @@ bool ParagraphController::applyBlockDelta(
     qsizetype nextCursorSourceOffset,
     QVector<LocalEditNodeHint> nodeHints,
     bool structureEdit) {
-  if (!ctx_.session || sourceStart < 0 || removedLength < 0 ||
+  if (!ctx_.hasSession() || sourceStart < 0 || removedLength < 0 ||
       sourceStart + removedLength > ctx_.session->markdownText().size()) {
     return false;
   }
@@ -192,7 +188,7 @@ bool ParagraphController::applyBlockDelta(
 
 CursorPosition ParagraphController::cursorForSourceOffset(qsizetype sourceOffset) const {
   CursorPosition cursor;
-  if (!ctx_.session) {
+  if (!ctx_.hasSession()) {
     return cursor;
   }
 
@@ -280,7 +276,7 @@ bool ParagraphController::insertFormulaBlock() {
   BlockContext context;
   if (!resolveBlockContext(context)) {
     // Even without a block context, try inserting at document end
-    if (!ctx_.session) {
+    if (!ctx_.hasSession()) {
       return false;
     }
     const QString markdown = ctx_.session->markdownText();
@@ -306,7 +302,7 @@ bool ParagraphController::insertFormulaBlock() {
 bool ParagraphController::insertCodeBlock() {
   BlockContext context;
   if (!resolveBlockContext(context)) {
-    if (!ctx_.session) {
+    if (!ctx_.hasSession()) {
       return false;
     }
     const QString markdown = ctx_.session->markdownText();
@@ -332,7 +328,7 @@ bool ParagraphController::insertCodeBlock() {
 bool ParagraphController::insertLinkReference() {
   BlockContext context;
   if (!resolveBlockContext(context)) {
-    if (!ctx_.session) {
+    if (!ctx_.hasSession()) {
       return false;
     }
     const QString markdown = ctx_.session->markdownText();
@@ -358,7 +354,7 @@ bool ParagraphController::insertLinkReference() {
 bool ParagraphController::insertFootnoteDefinition() {
   BlockContext context;
   if (!resolveBlockContext(context)) {
-    if (!ctx_.session) {
+    if (!ctx_.hasSession()) {
       return false;
     }
     const QString markdown = ctx_.session->markdownText();
@@ -384,7 +380,7 @@ bool ParagraphController::insertFootnoteDefinition() {
 bool ParagraphController::insertHorizontalRule() {
   BlockContext context;
   if (!resolveBlockContext(context)) {
-    if (!ctx_.session) {
+    if (!ctx_.hasSession()) {
       return false;
     }
     const QString markdown = ctx_.session->markdownText();
@@ -824,7 +820,7 @@ bool ParagraphController::insertFormulaBlockWithSplit() {
 }
 
 bool ParagraphController::toggleCodeBlock() {
-  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor()) return false;
+  if (!ctx_.hasSession() || !ctx_.hasCursor()) return false;
 
   const NodeId blockId = ctx_.selection->cursorPosition().blockId;
   if (!blockId.isValid()) return false;
@@ -867,7 +863,7 @@ bool ParagraphController::toggleCodeBlock() {
 }
 
 bool ParagraphController::toggleFormulaBlock() {
-  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor()) return false;
+  if (!ctx_.hasSession() || !ctx_.hasCursor()) return false;
 
   const NodeId blockId = ctx_.selection->cursorPosition().blockId;
   if (!blockId.isValid()) return false;

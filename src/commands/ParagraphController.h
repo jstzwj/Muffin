@@ -1,10 +1,10 @@
 #pragma once
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/MarkdownTypes.h"
 #include "document/SourceRangeUtil.h"
 #include "edit/EditTransaction.h"
-#include "editor/EditorContext.h"
+#include "editor/EditorContextHolder.h"
 
 #include <QObject>
 
@@ -12,13 +12,13 @@ namespace muffin {
 
 class MarkdownNode;
 
-class ParagraphController final : public QObject {
+class ParagraphController final : public QObject, private EditorContextHolder {
   Q_OBJECT
 
 public:
   explicit ParagraphController(QObject* parent = nullptr);
 
-  void setContext(const EditorContext& ctx);
+  using EditorContextHolder::setContext;
 
   // Query methods for MainWindow enable/disable logic
   int currentHeadingLevel() const;   // 0 = paragraph, 1-6 = heading
@@ -85,7 +85,6 @@ private:
       bool structureEdit = false);
   CursorPosition cursorForSourceOffset(qsizetype sourceOffset) const;
 
-  EditorContext ctx_;
 };
 
 }  // namespace muffin

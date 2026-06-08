@@ -1,4 +1,4 @@
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"

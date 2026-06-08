@@ -839,6 +839,26 @@ void testTaskListMetadata() {
   require(!childAt(list, 1).taskChecked(), QStringLiteral("Unchecked task metadata should be false"));
 }
 
+void testNodeIndexPreservesDocumentOrder() {
+  auto root = std::make_unique<MarkdownNode>(BlockType::Document);
+  MarkdownNode& heading = root->appendChild(std::make_unique<MarkdownNode>(BlockType::Heading, NodeId::fromString(QStringLiteral("heading"))));
+  MarkdownNode& list = root->appendChild(std::make_unique<MarkdownNode>(BlockType::List, NodeId::fromString(QStringLiteral("list"))));
+  MarkdownNode& item = list.appendChild(std::make_unique<MarkdownNode>(BlockType::ListItem, NodeId::fromString(QStringLiteral("item"))));
+  MarkdownNode& paragraph = root->appendChild(std::make_unique<MarkdownNode>(BlockType::Paragraph, NodeId::fromString(QStringLiteral("paragraph"))));
+
+  MarkdownDocument document;
+  document.setMarkdownText(QStringLiteral("# Heading\n\n- Item\n\nParagraph"), std::move(root));
+
+  require(document.index().firstBlock() == &heading, QStringLiteral("NodeIndex firstBlock should return first document-order block"));
+  require(document.index().lastBlock() == &paragraph, QStringLiteral("NodeIndex lastBlock should return last document-order block"));
+  require(document.index().find(list.id()) == &list, QStringLiteral("NodeIndex should still find intermediate blocks"));
+  require(document.index().find(item.id()) == &item, QStringLiteral("NodeIndex should still find nested blocks"));
+
+  document.index().removeSubtree(paragraph);
+  require(document.index().lastBlock() == &item, QStringLiteral("NodeIndex removeSubtree should update ordered blocks"));
+  require(!document.index().contains(paragraph.id()), QStringLiteral("NodeIndex removeSubtree should remove lookup entry"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -873,5 +893,6 @@ int main(int argc, char** argv) {
   testFrontMatterFalsePositives();
   testFrontMatterSerializationDoesNotGrowTrailingBlankLines();
   testTaskListMetadata();
+  testNodeIndexPreservesDocumentOrder();
   return 0;
 }

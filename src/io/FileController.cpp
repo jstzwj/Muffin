@@ -1,6 +1,6 @@
 #include "io/FileController.h"
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 
 #include <QFile>
 #include <QSettings>

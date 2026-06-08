@@ -1,6 +1,7 @@
 #include "app/MainWindow.h"
 
 #include "app/LanguageManager.h"
+#include "app/MainWindowActionBinder.h"
 #include "app/RenderEditorBackend.h"
 #include "app/SidebarWidget.h"
 #include "app/SourceEditorBackend.h"
@@ -119,7 +120,8 @@ QColor statusBarIconInk(const QString& themeName) {
 
 }  // namespace
 
-muffin::MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+muffin::MainWindow::MainWindow(QWidget* parent)
+    : QMainWindow(parent), renderCommands_(editorController_, [this] { return backend_ && backend_->isSourceMode(); }) {
   setupUi();
   setupMenuBar();
   setupStatusBar();
@@ -406,20 +408,6 @@ void muffin::MainWindow::updateViewMode() {
   updateStatus();
 }
 
-void muffin::MainWindow::updateFileActions() {
-  const bool hasFile = !session_.filePath().isEmpty();
-  commands_.setEnabled(QStringLiteral("file.properties"), hasFile);
-  commands_.setEnabled(QStringLiteral("file.reveal"), hasFile);
-  if (reopenEncodingMenu_) {
-    reopenEncodingMenu_->setEnabled(hasFile);
-  }
-  commands_.setEnabled(QStringLiteral("file.move_to"), hasFile);
-  commands_.setEnabled(QStringLiteral("file.save_all"), true);
-  commands_.setEnabled(QStringLiteral("file.sidebar"), hasFile);
-  commands_.setEnabled(QStringLiteral("file.delete"), hasFile);
-  commands_.setEnabled(QStringLiteral("file.print"), hasFile);
-}
-
 void muffin::MainWindow::printDocument() {
   if (session_.filePath().isEmpty()) {
     return;
@@ -539,58 +527,22 @@ void muffin::MainWindow::loadAppearanceSettings() {
   setZoomPercent(settings.value(QStringLiteral("appearance/zoomPercent"), 100).toInt());
   setFontSizePx(settings.value(QStringLiteral("appearance/fontSizePx"), 16).toInt());
 
-  // Restore word wrap
-  const bool wordWrap = settings.value(QStringLiteral("view/wordWrap"), true).toBool();
-  if (!wordWrap) {
+  MainWindowActionBinder::restorePersistentActionStates(*this);
+
+  if (QAction* action = commands_.action(QStringLiteral("view.word_wrap")); action && !action->isChecked()) {
     editor_->setWordWrapEnabled(false);
-    if (QAction* action = commands_.action(QStringLiteral("view.word_wrap"))) {
-      action->setChecked(false);
-    }
   }
 
-  // Restore sidebar visibility
-  if (settings.value(QStringLiteral("view/sidebarVisible"), false).toBool()) {
-    if (QAction* action = commands_.action(QStringLiteral("view.sidebar"))) {
-      action->setChecked(true);
-    }
+  if (QAction* action = commands_.action(QStringLiteral("view.sidebar")); action && action->isChecked()) {
     updateSidebarMode();
   }
 
-  // Restore source mode
-  if (settings.value(QStringLiteral("view/sourceMode"), false).toBool()) {
-    if (QAction* action = commands_.action(QStringLiteral("view.source_mode"))) {
-      action->setChecked(true);
-    }
+  if (QAction* action = commands_.action(QStringLiteral("view.source_mode")); action && action->isChecked()) {
     updateViewMode();
   }
 
-  // Restore typewriter mode (applied immediately)
-  const bool typewriterMode = settings.value(QStringLiteral("appearance/typewriterMode"), false).toBool();
-  if (typewriterMode) {
+  if (QAction* action = commands_.action(QStringLiteral("view.typewriter")); action && action->isChecked()) {
     setTypewriterMode(true);
-    if (QAction* action = commands_.action(QStringLiteral("view.typewriter"))) {
-      action->setChecked(true);
-    }
-  }
-
-  // Focus mode checked state is restored in retranslateUi() after menu rebuild
-  const bool focusMode = settings.value(QStringLiteral("appearance/focusMode"), false).toBool();
-  if (focusMode) {
-    if (QAction* action = commands_.action(QStringLiteral("view.focus"))) {
-      action->setChecked(true);
-    }
-  }
-
-  // Restore line break and trailing newline settings
-  const int lb = settings.value(QStringLiteral("editor/defaultLineBreak"), 1).toInt();
-  if (QAction* crlf = commands_.action(QStringLiteral("edit.linebreak_crlf"))) {
-    crlf->setChecked(lb == 1);
-  }
-  if (QAction* lf = commands_.action(QStringLiteral("edit.linebreak_lf"))) {
-    lf->setChecked(lb == 0);
-  }
-  if (QAction* tn = commands_.action(QStringLiteral("edit.trailing_newline"))) {
-    tn->setChecked(settings.value(QStringLiteral("editor/trailingNewline"), true).toBool());
   }
 }
 
@@ -631,7 +583,7 @@ void muffin::MainWindow::applyTheme(QString name) {
   if (sidebar_) {
     sidebar_->applyThemeName(name);
   }
-  updateThemeActions();
+  MainWindowActionBinder::updateThemeActions(*this);
 
   if (name == QStringLiteral("night")) {
     setStyleSheet(QStringLiteral(
@@ -660,15 +612,6 @@ void muffin::MainWindow::applyTheme(QString name) {
   if (sourceModeButton_) {
     sourceModeButton_->setIcon(statusBarIcon(StatusBarIconKind::SourceMode, ink));
   }
-}
-
-void muffin::MainWindow::updateThemeActions() {
-  const QString current = themeManager_.currentThemeName();
-  commands_.setChecked(QStringLiteral("theme.github"), current == QStringLiteral("github"));
-  commands_.setChecked(QStringLiteral("theme.newsprint"), current == QStringLiteral("newsprint"));
-  commands_.setChecked(QStringLiteral("theme.night"), current == QStringLiteral("night"));
-  commands_.setChecked(QStringLiteral("theme.pixyll"), current == QStringLiteral("pixyll"));
-  commands_.setChecked(QStringLiteral("theme.whitey"), current == QStringLiteral("whitey"));
 }
 
 int muffin::MainWindow::countWords(const QString& text) {

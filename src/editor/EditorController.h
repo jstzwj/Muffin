@@ -1,6 +1,6 @@
 #pragma once
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "blocks/code/CodeFenceController.h"
 #include "blocks/literal/LiteralBlockController.h"
 #include "blocks/table/TableController.h"

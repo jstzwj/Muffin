@@ -1,6 +1,6 @@
 #pragma once
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "edit/EditTransaction.h"
 #include "editor/BlockEditContext.h"
 #include "editor/CursorPosition.h"

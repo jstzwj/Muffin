@@ -48,6 +48,8 @@ enum class NodeAttribute {
 
 using NodeAttributeValue = std::variant<std::monostate, int, bool, QString, ListKind, QVector<TableAlignment>>;
 
+bool nodeAttributeAcceptsValue(NodeAttribute attribute, const NodeAttributeValue& value);
+
 struct TableCommand {
   NodeId tableId;
   int tableIndex = -1;

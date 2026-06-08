@@ -145,7 +145,6 @@ MathLayoutResult MathRenderer::render(const QString& tex, const RenderTheme& the
 }
 
 MathLayoutResult MathRenderer::render(const QString& tex, const RenderTheme& theme, bool displayMode, const MathSettings& inputSettings, qreal maxWidth) const {
-  Q_UNUSED(maxWidth);
   MathFontRegistry::ensureLoaded();
 
   MathSettings settings = inputSettings;
@@ -173,7 +172,12 @@ MathLayoutResult MathRenderer::render(const QString& tex, const RenderTheme& the
     return result;
   }
   result.baseline = result.root->height;
-  result.size = QSizeF(result.root->width, result.root->height + result.root->depth);
+  result.naturalSize = QSizeF(result.root->width, result.root->height + result.root->depth);
+  result.size = result.naturalSize;
+  if (maxWidth > 0.0 && result.size.width() > maxWidth) {
+    result.size.setWidth(maxWidth);
+    result.overflow = true;
+  }
   return result;
 }
 

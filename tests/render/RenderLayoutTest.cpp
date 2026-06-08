@@ -1,4 +1,4 @@
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/MarkdownDocument.h"
 #include "parser/CmarkGfmParser.h"
 #include "render/DocumentLayout.h"
@@ -2622,6 +2622,27 @@ void testRemainingKatexFunctionFamilies() {
     require(!ink.isEmpty(), QStringLiteral("nested fraction grouped sum should paint visible ink"));
     require(ink.height() > groupedLayout.size.height() * 0.45,
             QStringLiteral("nested fraction grouped sum paint should occupy the reserved vertical box"));
+  }
+  {
+    RenderTheme theme = RenderTheme::github();
+    const QString wide = QStringLiteral("a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a");
+    const math::MathLayoutResult natural = math::MathRenderer().render(wide, theme, true);
+    const qreal maxWidth = qMax<qreal>(20.0, natural.size.width() * 0.45);
+    const math::MathLayoutResult constrained = math::MathRenderer().render(wide, theme, true, maxWidth);
+    require(constrained.valid(), QStringLiteral("constrained math layout should remain valid"));
+    require(constrained.overflow, QStringLiteral("wide constrained math layout should report overflow"));
+    require(qAbs(constrained.size.width() - maxWidth) < 0.01, QStringLiteral("constrained math layout should expose max width"));
+    require(constrained.naturalSize.width() > constrained.size.width(), QStringLiteral("constrained math layout should preserve natural width"));
+
+    QImage image(QSize(qCeil(maxWidth) + 80, qCeil(constrained.size.height()) + 32), QImage::Format_ARGB32);
+    image.fill(theme.backgroundColor());
+    {
+      QPainter painter(&image);
+      constrained.paint(painter, QPointF(16.0, 16.0));
+    }
+    const QRect ink = imageInkBounds(image, theme.backgroundColor());
+    require(!ink.isEmpty(), QStringLiteral("constrained math layout should paint visible ink"));
+    require(ink.right() <= 16 + qCeil(maxWidth), QStringLiteral("constrained math paint should be clipped to max width"));
   }
   {
     const QStringList symbolCommands{

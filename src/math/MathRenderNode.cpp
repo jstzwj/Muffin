@@ -289,7 +289,15 @@ bool MathLayoutResult::valid() const {
 }
 
 void MathLayoutResult::paint(QPainter& painter, QPointF origin) const {
-  if (root) {
+  if (!root) {
+    return;
+  }
+  if (overflow && size.isValid()) {
+    painter.save();
+    painter.setClipRect(QRectF(origin, size), Qt::IntersectClip);
+    root->paint(painter, QPointF(origin.x(), origin.y() + baseline));
+    painter.restore();
+  } else {
     root->paint(painter, QPointF(origin.x(), origin.y() + baseline));
   }
 }

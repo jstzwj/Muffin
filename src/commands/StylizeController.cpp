@@ -1,6 +1,6 @@
 #include "commands/StylizeController.h"
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/InlineNode.h"
 #include "document/MarkdownNode.h"
 #include "editor/BlockEditContext.h"
@@ -13,8 +13,6 @@
 namespace muffin {
 
 StylizeController::StylizeController(QObject* parent) : QObject(parent) {}
-
-void StylizeController::setContext(const EditorContext& ctx) { ctx_ = ctx; }
 
 bool StylizeController::toggleBold() {
   return wrapOrInsert(QStringLiteral("**"), QStringLiteral("**"), QString(), EditTransaction::Kind::InsertText, QStringLiteral("Bold"));
@@ -93,7 +91,7 @@ bool StylizeController::wrapMultiBlockSelection(
     QString closeMarker,
     EditTransaction::Kind kind,
     QString label) {
-  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor()) {
+  if (!ctx_.hasSession() || !ctx_.hasCursor()) {
     return false;
   }
 
@@ -201,7 +199,7 @@ bool StylizeController::wrapMultiBlockSelection(
 }
 
 bool StylizeController::paragraphContext(ParagraphStyleContext& context) const {
-  if (!ctx_.session || !ctx_.selection || !ctx_.selection->hasCursor()) {
+  if (!ctx_.hasSession() || !ctx_.hasCursor()) {
     return false;
   }
 
@@ -221,7 +219,7 @@ bool StylizeController::paragraphContextFor(
     const SelectionRange& selection,
     ParagraphStyleContext& context,
     bool requirePlainInline) const {
-  if (!ctx_.session) {
+  if (!ctx_.hasSession()) {
     return false;
   }
 
@@ -308,7 +306,7 @@ bool StylizeController::applyStyleDelta(
     qsizetype nextAnchorSourceOffset,
     qsizetype nextFocusSourceOffset,
     QVector<LocalEditNodeHint> nodeHints) {
-  if (!ctx_.session || sourceStart < 0 || removedLength < 0 || sourceStart + removedLength > ctx_.session->markdownText().size()) {
+  if (!ctx_.hasSession() || sourceStart < 0 || removedLength < 0 || sourceStart + removedLength > ctx_.session->markdownText().size()) {
     return false;
   }
 
@@ -358,7 +356,7 @@ bool StylizeController::applyStyleDelta(
 
 CursorPosition StylizeController::cursorForSourceOffset(qsizetype sourceOffset) const {
   CursorPosition cursor;
-  if (!ctx_.session) {
+  if (!ctx_.hasSession()) {
     return cursor;
   }
 

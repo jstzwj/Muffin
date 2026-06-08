@@ -1,7 +1,7 @@
 #include "blocks/table/TableModelOps.h"
 #include "blocks/table/TableController.h"
 #include "blocks/table/TableCellSourceEdit.h"
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"

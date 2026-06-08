@@ -1,6 +1,6 @@
 #include "editor/InputController.h"
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/MarkdownNode.h"
 #include "edit/EditTransaction.h"
 #include "edit/UndoStack.h"
@@ -62,7 +62,7 @@ bool InputController::selectionSourceRange(qsizetype& start, qsizetype& end) con
 }
 
 bool InputController::blockSelectionSourceRange(qsizetype& start, qsizetype& end) const {
-  if (!ctx_.selection || !ctx_.selection->hasCursor() || !ctx_.session || ctx_.selection->selection().isCollapsed()) {
+  if (!ctx_.hasSession() || !ctx_.hasCursor() || ctx_.selection->selection().isCollapsed()) {
     return false;
   }
 
@@ -162,7 +162,7 @@ void InputController::applyLocalEdit(
     bool preferLaterEmptyAtOffset,
     bool structureEdit) {
   PerfTimer perf("input.applyLocalEdit");
-  if (!ctx_.session || sourceStart < 0 || removedLength < 0) {
+  if (!ctx_.hasSession() || sourceStart < 0 || removedLength < 0) {
     return;
   }
 

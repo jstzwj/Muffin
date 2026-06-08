@@ -11,7 +11,9 @@ bool holdsAttributeValue(const NodeAttributeValue& value) {
   return std::holds_alternative<T>(value);
 }
 
-bool valueMatchesAttribute(NodeAttribute attribute, const NodeAttributeValue& value) {
+}  // namespace
+
+bool nodeAttributeAcceptsValue(NodeAttribute attribute, const NodeAttributeValue& value) {
   switch (attribute) {
     case NodeAttribute::HeadingLevel:
     case NodeAttribute::ListStart:
@@ -31,8 +33,6 @@ bool valueMatchesAttribute(NodeAttribute attribute, const NodeAttributeValue& va
   }
   return false;
 }
-
-}  // namespace
 
 bool TextDelta::isValid() const {
   return start >= 0 && (!removedText.isEmpty() || !insertedText.isEmpty()) && removedText != insertedText;
@@ -273,7 +273,7 @@ SetNodeAttrCommand::SetNodeAttrCommand(
 
 bool SetNodeAttrCommand::isValid() const {
   return (nodeId.isValid() || nodeIndex >= 0) && nodeType != BlockType::Unknown && attribute != NodeAttribute::Unknown &&
-         valueMatchesAttribute(attribute, beforeValue) && valueMatchesAttribute(attribute, afterValue) && beforeValue != afterValue &&
+         nodeAttributeAcceptsValue(attribute, beforeValue) && nodeAttributeAcceptsValue(attribute, afterValue) && beforeValue != afterValue &&
          beforeCursor.isValid() && afterCursor.isValid();
 }
 

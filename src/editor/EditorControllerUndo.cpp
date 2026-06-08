@@ -6,8 +6,37 @@
 #include "editor/BrushQueue.h"
 #include "editor/EditorView.h"
 
+#include <QDebug>
+#include <QLoggingCategory>
+
+#include <optional>
+
 namespace muffin {
 namespace {
+
+Q_LOGGING_CATEGORY(undoLog, "muffin.undo", QtWarningMsg)
+
+const char* undoDirection(bool undo) {
+  return undo ? "undo" : "redo";
+}
+
+void warnUndoApplyFailed(bool undo, const char* command, const char* reason) {
+  qCWarning(undoLog).nospace()
+      << "Cannot apply " << undoDirection(undo) << " " << command << ": " << reason;
+}
+
+void warnUndoApplyFailed(bool undo, const char* command, const char* reason, qsizetype start, qsizetype length, qsizetype documentSize) {
+  qCWarning(undoLog).nospace()
+      << "Cannot apply " << undoDirection(undo) << " " << command << ": " << reason
+      << " start=" << start
+      << " length=" << length
+      << " documentSize=" << documentSize;
+}
+
+void warnUndoApplyFallback(bool undo, const char* command, const char* reason) {
+  qCWarning(undoLog).nospace()
+      << "Falling back while applying " << undoDirection(undo) << " " << command << ": " << reason;
+}
 
 MarkdownNode* tableByIdOrIndex(DocumentSession& session, NodeId tableId, int tableIndex) {
   if (tableId.isValid()) {
@@ -190,39 +219,73 @@ MarkdownNode* nodeByIdOrIndex(DocumentSession& session, NodeId nodeId, BlockType
 }
 
 template <typename T>
-T attributeValue(const NodeAttributeValue& value) {
-  return std::get<T>(value);
+std::optional<T> attributeValue(NodeAttribute attribute, const NodeAttributeValue& value) {
+  if (const T* typed = std::get_if<T>(&value)) {
+    return *typed;
+  }
+  qWarning() << "Cannot apply node attribute because value type does not match attribute" << static_cast<int>(attribute);
+  return std::nullopt;
 }
 
-void applyNodeAttribute(MarkdownNode& node, NodeAttribute attribute, const NodeAttributeValue& value) {
-  switch (attribute) {
-    case NodeAttribute::HeadingLevel:
-      node.setHeadingLevel(attributeValue<int>(value));
-      break;
-    case NodeAttribute::ListKind:
-      node.setListKind(attributeValue<ListKind>(value));
-      break;
-    case NodeAttribute::ListStart:
-      node.setListStart(attributeValue<int>(value));
-      break;
-    case NodeAttribute::ListTight:
-      node.setListTight(attributeValue<bool>(value));
-      break;
-    case NodeAttribute::TaskChecked:
-      node.setTaskChecked(attributeValue<bool>(value));
-      break;
-    case NodeAttribute::CodeLanguage:
-      node.setCodeLanguage(attributeValue<QString>(value));
-      break;
-    case NodeAttribute::TableAlignments:
-      node.setTableAlignments(attributeValue<QVector<TableAlignment>>(value));
-      break;
-    case NodeAttribute::TableRowIsHeader:
-      node.setTableRowIsHeader(attributeValue<bool>(value));
-      break;
-    case NodeAttribute::Unknown:
-      break;
+bool applyNodeAttribute(MarkdownNode& node, NodeAttribute attribute, const NodeAttributeValue& value) {
+  if (!nodeAttributeAcceptsValue(attribute, value)) {
+    qWarning() << "Cannot apply invalid node attribute value" << static_cast<int>(attribute);
+    return false;
   }
+
+  switch (attribute) {
+    case NodeAttribute::HeadingLevel: {
+      const std::optional<int> typed = attributeValue<int>(attribute, value);
+      if (!typed) return false;
+      node.setHeadingLevel(*typed);
+      return true;
+    }
+    case NodeAttribute::ListKind: {
+      const std::optional<ListKind> typed = attributeValue<ListKind>(attribute, value);
+      if (!typed) return false;
+      node.setListKind(*typed);
+      return true;
+    }
+    case NodeAttribute::ListStart: {
+      const std::optional<int> typed = attributeValue<int>(attribute, value);
+      if (!typed) return false;
+      node.setListStart(*typed);
+      return true;
+    }
+    case NodeAttribute::ListTight: {
+      const std::optional<bool> typed = attributeValue<bool>(attribute, value);
+      if (!typed) return false;
+      node.setListTight(*typed);
+      return true;
+    }
+    case NodeAttribute::TaskChecked: {
+      const std::optional<bool> typed = attributeValue<bool>(attribute, value);
+      if (!typed) return false;
+      node.setTaskChecked(*typed);
+      return true;
+    }
+    case NodeAttribute::CodeLanguage: {
+      const std::optional<QString> typed = attributeValue<QString>(attribute, value);
+      if (!typed) return false;
+      node.setCodeLanguage(*typed);
+      return true;
+    }
+    case NodeAttribute::TableAlignments: {
+      const std::optional<QVector<TableAlignment>> typed = attributeValue<QVector<TableAlignment>>(attribute, value);
+      if (!typed) return false;
+      node.setTableAlignments(*typed);
+      return true;
+    }
+    case NodeAttribute::TableRowIsHeader: {
+      const std::optional<bool> typed = attributeValue<bool>(attribute, value);
+      if (!typed) return false;
+      node.setTableRowIsHeader(*typed);
+      return true;
+    }
+    case NodeAttribute::Unknown:
+      return false;
+  }
+  return false;
 }
 
 bool applyTextReplacement(DocumentSession& session, qsizetype replaceStart, qsizetype replaceLength, const QString& replacement, const QVector<NodeId>& affectedNodes) {
@@ -319,9 +382,13 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     const TableCommand& command = transaction.tableCommand();
     const MarkdownNode* table = undo ? command.beforeTable.get() : command.afterTable.get();
     if (!table) {
+      warnUndoApplyFailed(undo, "table command", "missing stored table snapshot");
       return;
     }
     const bool applied = session_->applyTableSnapshot(command.tableId, command.tableIndex, *table, true);
+    if (!applied) {
+      warnUndoApplyFailed(undo, "table command", "table snapshot could not be applied");
+    }
     const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
     CursorPosition cursor = tableCursorForLocation(
         *session_, command, undo ? command.beforeRow : command.afterRow, undo ? command.beforeColumn : command.afterColumn, storedCursor);
@@ -346,6 +413,9 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     const qsizetype replaceEnd = command.delta.start + (undo ? command.delta.insertedText.size() : command.delta.removedText.size());
     const bool appliedLocally =
         session_->applyInsertedNode(command.nodeId, command.nodeType, replaceStart, command.nodeSourceStart, replaceEnd - replaceStart, replacement, true);
+    if (!appliedLocally) {
+      warnUndoApplyFallback(undo, "insert node command", "inserted node delta could not be applied locally");
+    }
     const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
     CursorPosition cursor = undo ? CursorPosition() : insertedNodeCursor(*session_, command, storedCursor);
     if (!cursor.isValid()) {
@@ -375,9 +445,13 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     const ReplaceNodeCommand& command = transaction.replaceNodeCommand();
     const MarkdownNode* node = undo ? command.beforeNode.get() : command.afterNode.get();
     if (!node) {
+      warnUndoApplyFailed(undo, "replace node command", "missing stored node snapshot");
       return;
     }
     const bool appliedLocally = session_->applyNodeSnapshot(command.nodeId, command.nodeType, command.nodeIndex, *node, true);
+    if (!appliedLocally) {
+      warnUndoApplyFallback(undo, "replace node command", "node snapshot could not be applied locally");
+    }
     const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
     CursorPosition cursor = replacedNodeCursor(*session_, command, storedCursor);
     if (!cursor.isValid()) {
@@ -401,6 +475,15 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     const QString replacement = undo ? command.delta.removedText : QString();
     const qsizetype replaceLength = undo ? 0 : command.delta.removedText.size();
     const bool applied = applyTextReplacement(*session_, command.delta.start, replaceLength, replacement, command.affectedNodes);
+    if (!applied) {
+      warnUndoApplyFailed(
+          undo,
+          "remove node command",
+          "text replacement range is invalid",
+          command.delta.start,
+          replaceLength,
+          session_->markdownText().size());
+    }
     const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
     CursorPosition cursor = remapSnapshotCursor(storedCursor);
     if (cursor.isValid()) {
@@ -418,11 +501,18 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     const SetNodeAttrCommand& command = transaction.setNodeAttrCommand();
     MarkdownNode* currentNode = nodeByIdOrIndex(*session_, command.nodeId, command.nodeType, command.nodeIndex);
     if (!currentNode) {
+      warnUndoApplyFailed(undo, "set node attribute command", "target node could not be found");
       return;
     }
     auto nextNode = currentNode->clone(CloneMode::PreserveIds);
-    applyNodeAttribute(*nextNode, command.attribute, undo ? command.beforeValue : command.afterValue);
+    if (!applyNodeAttribute(*nextNode, command.attribute, undo ? command.beforeValue : command.afterValue)) {
+      warnUndoApplyFailed(undo, "set node attribute command", "attribute value could not be applied");
+      return;
+    }
     const bool appliedLocally = session_->applyNodeSnapshot(command.nodeId, command.nodeType, command.nodeIndex, *nextNode, true);
+    if (!appliedLocally) {
+      warnUndoApplyFallback(undo, "set node attribute command", "node snapshot could not be applied locally");
+    }
     const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
     CursorPosition cursor = remapSnapshotCursor(storedCursor);
     if (cursor.isValid()) {
@@ -439,6 +529,7 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
   }
 
   if (!transaction.isTextDeltaCommand()) {
+    warnUndoApplyFailed(undo, "transaction", "unsupported transaction storage");
     return;
   }
 
@@ -464,8 +555,16 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
   }
 
   if (!appliedLocally) {
+    warnUndoApplyFallback(undo, "text delta command", "text delta could not be applied locally");
     QString text = session_->markdownText();
     if (replaceStart < 0 || replaceEnd < replaceStart || replaceEnd > text.size()) {
+      warnUndoApplyFailed(
+          undo,
+          "text delta command",
+          "fallback text replacement range is invalid",
+          replaceStart,
+          replaceEnd >= replaceStart ? replaceEnd - replaceStart : qsizetype(-1),
+          text.size());
       return;
     }
     text.replace(replaceStart, replaceEnd - replaceStart, replacement);

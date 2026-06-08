@@ -1,6 +1,6 @@
 #pragma once
 
-#include "document/InlineProjection.h"
+#include "projection/InlineProjection.h"
 #include "document/MarkdownTypes.h"
 #include "document/NodeId.h"
 #include "document/SourceRange.h"

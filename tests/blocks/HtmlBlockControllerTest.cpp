@@ -1,4 +1,4 @@
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "blocks/html/HtmlSanitizer.h"
 #include "blocks/literal/LiteralBlockController.h"
 #include "blocks/literal/LiteralBlockUtil.h"

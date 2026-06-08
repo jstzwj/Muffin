@@ -1,6 +1,6 @@
 #include "blocks/code/CodeFenceController.h"
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
@@ -84,7 +84,7 @@ QString CodeFenceController::tabText() const {
 }
 
 bool CodeFenceController::setLanguageForCodeFence(NodeId requestedCodeId, QString language) {
-  if (!ctx_.session || !ctx_.selection) {
+  if (!ctx_.hasSession() || !ctx_.hasSelection()) {
     return false;
   }
 

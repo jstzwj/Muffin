@@ -1,8 +1,8 @@
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/InlineNode.h"
-#include "document/InlineProjection.h"
+#include "projection/InlineProjection.h"
 #include "document/MarkdownNode.h"
-#include "document/SelectionSerializer.h"
+#include "projection/SelectionSerializer.h"
 #include "document/SourceRangeUtil.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
@@ -421,6 +421,24 @@ void testInlineProjectionUsesParserSourceRangesForRepeatedNonCanonicalMarkdown()
     }
   }
   require(foundSecondTextSpan, "second repeated strong text span should use parser source range");
+}
+
+void testInlineProjectionFallbackDoesNotSkipAheadToRepeatedMarkdown() {
+  const QString markdown = QStringLiteral("**bold** middle **bold**");
+  InlineNode first = InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QStringLiteral("bold"))});
+  InlineNode second = InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QStringLiteral("bold"))});
+
+  InlineProjection projection({first, second}, markdown, InlineProjectionState{}, 0);
+  require(projection.isValid(), "projection should remain valid when fallback cannot safely align every inline");
+  require(projection.displayText() == QStringLiteral("bold middle **bold**"),
+          QStringLiteral("fallback should preserve unmatched source instead of skipping ahead: %1").arg(projection.displayText()));
+  require(projection.visibleText() == QStringLiteral("bold middle **bold**"),
+          QStringLiteral("fallback visible text should preserve unmatched source: %1").arg(projection.visibleText()));
+
+  for (const InlineProjectionSpan& span : projection.spans()) {
+    require(!(span.type == InlineType::Strong && span.sourceStart == 17 && span.sourceEnd == markdown.size()),
+            "range-less fallback must not skip ahead to a repeated strong marker");
+  }
 }
 
 void testInlineProjectionExpandsParserContentRangesForDelimitedInlines() {
@@ -2032,6 +2050,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testInlineProjectionMarkerSourcePositions);
   RUN_TEST(testInlineProjectionUsesParserSourceRangesForRepeatedUnicodeMarkers);
   RUN_TEST(testInlineProjectionUsesParserSourceRangesForRepeatedNonCanonicalMarkdown);
+  RUN_TEST(testInlineProjectionFallbackDoesNotSkipAheadToRepeatedMarkdown);
   RUN_TEST(testInlineProjectionExpandsParserContentRangesForDelimitedInlines);
   RUN_TEST(testInlineProjectionAutolinkUsesFullSourceRangeAndLabel);
   RUN_TEST(testInlineProjectionEntitiesAndMarkdownLinksUseParserRanges);

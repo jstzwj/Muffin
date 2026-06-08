@@ -1,7 +1,7 @@
 #include "editor/EditorController.h"
 
 #include "blocks/literal/LiteralBlockUtil.h"
-#include "document/InlineProjection.h"
+#include "projection/InlineProjection.h"
 #include "document/MarkdownNode.h"
 #include "document/SourceRangeUtil.h"
 #include "editor/BlockEditContext.h"

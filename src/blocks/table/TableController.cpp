@@ -1,6 +1,6 @@
 #include "blocks/table/TableController.h"
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/InlineNode.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
@@ -81,7 +81,7 @@ void TableController::setContext(const EditorContext& ctx) {
 }
 
 TableLocation TableController::currentCell() const {
-  if (!ctx_.session || !ctx_.selection) {
+  if (!ctx_.hasSession() || !ctx_.hasSelection()) {
     return {};
   }
 
@@ -270,7 +270,7 @@ bool TableController::resizeCurrentTable(int rows, int columns) {
 }
 
 bool TableController::copyCurrentTable() const {
-  if (!ctx_.session) {
+  if (!ctx_.hasSession()) {
     return false;
   }
 
@@ -295,7 +295,7 @@ bool TableController::copyCurrentTable() const {
 }
 
 bool TableController::formatCurrentTableSource() {
-  if (!ctx_.session) {
+  if (!ctx_.hasSession()) {
     return false;
   }
 
@@ -355,7 +355,7 @@ bool TableController::formatCurrentTableSource() {
 }
 
 bool TableController::deleteCurrentTable() {
-  if (!ctx_.session) {
+  if (!ctx_.hasSession()) {
     return false;
   }
 
@@ -452,7 +452,7 @@ bool TableController::deleteCurrentTable() {
 }
 
 bool TableController::setCurrentColumnAlignment(TableAlignment alignment) {
-  if (!ctx_.session) {
+  if (!ctx_.hasSession()) {
     return false;
   }
 
@@ -522,7 +522,7 @@ bool TableController::setCurrentColumnAlignment(TableAlignment alignment) {
 }
 
 bool TableController::insertTable(int rows, int columns) {
-  if (!ctx_.session) {
+  if (!ctx_.hasSession()) {
     return false;
   }
 
@@ -622,7 +622,7 @@ bool TableController::editCurrentCellSource(
     QString label,
     EditTransaction::Kind kind,
     const std::function<std::optional<TableCellSourceEdit>(const MarkdownNode&, const QString&, qsizetype)>& buildEdit) {
-  if (!ctx_.session || !ctx_.selection) {
+  if (!ctx_.hasSession() || !ctx_.hasSelection()) {
     return false;
   }
 
@@ -714,7 +714,7 @@ bool TableController::mutateCurrentTable(
     QString label,
     EditTransaction::Kind kind,
     const std::function<bool(MarkdownNode&, TableLocation&)>& mutate) {
-  if (!ctx_.session) {
+  if (!ctx_.hasSession()) {
     return false;
   }
 
@@ -785,7 +785,7 @@ bool TableController::mutateCurrentTable(
 }
 
 MarkdownNode* TableController::tableForLocation(TableLocation location) const {
-  if (!ctx_.session || !location.isValid()) {
+  if (!ctx_.hasSession() || !location.isValid()) {
     return nullptr;
   }
   MarkdownNode* node = ctx_.session->document().node(location.tableId);
@@ -830,7 +830,7 @@ MarkdownNode* TableController::findAncestorTable(MarkdownNode& node) const {
 }
 
 int TableController::tableIndexFor(const MarkdownNode& table) const {
-  if (!ctx_.session) {
+  if (!ctx_.hasSession()) {
     return -1;
   }
 
@@ -854,7 +854,7 @@ int TableController::tableIndexFor(const MarkdownNode& table) const {
 }
 
 MarkdownNode* TableController::tableByIndex(int targetIndex) const {
-  if (!ctx_.session || targetIndex < 0) {
+  if (!ctx_.hasSession() || targetIndex < 0) {
     return nullptr;
   }
 

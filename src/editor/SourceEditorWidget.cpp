@@ -18,6 +18,7 @@
 #include <QTextBlockFormat>
 #include <QTextCursor>
 #include <QTextDocument>
+#include <cmath>
 #include <utility>
 
 namespace {
@@ -25,6 +26,7 @@ namespace {
 constexpr int kContentWidth = 800;
 constexpr int kHorizontalInset = 64;
 constexpr int kLineNumberWidth = 48;
+constexpr qreal kSourceLineSpacingScale = 1.7;
 constexpr QChar kZeroWidthSpace(0x200b);
 
 QTextCharFormat sourceFormat(QColor foreground, bool bold = false, double pointSize = 0.0) {
@@ -254,9 +256,9 @@ private:
   }
 
   void setLineSpacingForFont(const QFont& font) {
-    Q_UNUSED(font);
+    const qreal lineHeight = qMax<qreal>(14.0, std::ceil(QFontMetricsF(font).lineSpacing() * kSourceLineSpacingScale));
     QTextBlockFormat blockFormat;
-    blockFormat.setLineHeight(170.0, QTextBlockFormat::ProportionalHeight);
+    blockFormat.setLineHeight(lineHeight, QTextBlockFormat::MinimumHeight);
     QTextCursor cursor(document());
     cursor.select(QTextCursor::Document);
     cursor.mergeBlockFormat(blockFormat);

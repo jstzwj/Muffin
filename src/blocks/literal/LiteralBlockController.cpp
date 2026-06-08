@@ -1,6 +1,6 @@
 #include "blocks/literal/LiteralBlockController.h"
 
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
@@ -33,7 +33,7 @@ QString LiteralBlockController::tabText() const {
 }
 
 NodeId LiteralBlockController::currentBlockId() const {
-  if (!ctx_.session || !ctx_.selection) {
+  if (!ctx_.hasSession() || !ctx_.hasSelection()) {
     return {};
   }
 
@@ -182,7 +182,7 @@ bool LiteralBlockController::mutateCurrentBlock(QString label, EditTransaction::
 }
 
 bool LiteralBlockController::mutateBlock(NodeId requestedId, QString label, EditTransaction::Kind kind, const MutateFn& mutate) {
-  if (!ctx_.session || !ctx_.selection) {
+  if (!ctx_.hasSession() || !ctx_.hasSelection()) {
     return false;
   }
 
@@ -264,7 +264,7 @@ MarkdownNode* LiteralBlockController::currentBlock() const {
 }
 
 MarkdownNode* LiteralBlockController::blockById(NodeId id) const {
-  if (!ctx_.session || !id.isValid()) {
+  if (!ctx_.hasSession() || !id.isValid()) {
     return nullptr;
   }
   MarkdownNode* node = ctx_.session->document().node(id);
@@ -272,7 +272,7 @@ MarkdownNode* LiteralBlockController::blockById(NodeId id) const {
 }
 
 MarkdownNode* LiteralBlockController::blockByIndex(int targetIndex) const {
-  if (!ctx_.session || targetIndex < 0) {
+  if (!ctx_.hasSession() || targetIndex < 0) {
     return nullptr;
   }
   int index = 0;
@@ -294,7 +294,7 @@ MarkdownNode* LiteralBlockController::blockByIndex(int targetIndex) const {
 }
 
 int LiteralBlockController::blockIndexFor(NodeId id) const {
-  if (!ctx_.session || !id.isValid()) {
+  if (!ctx_.hasSession() || !id.isValid()) {
     return -1;
   }
   int index = 0;

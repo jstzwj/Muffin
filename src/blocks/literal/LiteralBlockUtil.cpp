@@ -2,7 +2,7 @@
 
 #include "blocks/html/HtmlSanitizer.h"
 #include "blocks/literal/LiteralBlockController.h"
-#include "app/DocumentSession.h"
+#include "document/DocumentSession.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"

@@ -27,7 +27,7 @@ if(MSVC)
   add_compile_options(/utf-8)
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Svg PrintSupport)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg PrintSupport)
 find_package(ICU REQUIRED COMPONENTS uc i18n)
 set(MUFFIN_QT_LINGUIST_BIN "" CACHE PATH "Optional Qt Linguist tool directory")
 set(MUFFIN_LOCAL_QT_LINGUIST_BIN "C:/Program Files/Qt Linguist/bin")
@@ -87,6 +87,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/main.cpp
   src/app/LanguageManager.cpp
   src/app/MainWindow.cpp
+  src/app/MainWindowActionBinder.cpp
   src/app/MainWindowMenus.cpp
   src/app/MainWindowActions.cpp
   src/app/MainWindowFileOps.cpp
@@ -101,7 +102,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/PrefsAppearancePage.cpp
   src/app/PrefsGeneralPage.cpp
   src/app/SidebarWidget.cpp
-  src/app/DocumentSession.cpp
+  src/document/DocumentSession.cpp
   src/editor/SourceEditorWidget.cpp
   src/editor/FindBarWidget.cpp
   src/render/BlockLayoutBuilder.cpp
@@ -245,8 +246,8 @@ target_include_directories(tree-sitter-languages
 )
 
 set(MUFFIN_CORE_SOURCES
-  src/app/DocumentSession.cpp
-  src/app/DocumentSession.h
+  src/document/DocumentSession.cpp
+  src/document/DocumentSession.h
   src/document/NodeId.cpp
   src/document/NodeId.h
   src/document/SourceRange.h
@@ -284,7 +285,7 @@ add_library(MuffinCore STATIC
 
 target_link_libraries(MuffinCore
   PUBLIC
-    Qt6::Widgets
+    Qt6::Core
   PRIVATE
     libcmark-gfm-extensions_static
     libcmark-gfm_static
@@ -308,8 +309,12 @@ add_executable(Muffin
   src/app/LanguageManager.h
   src/app/MainWindow.cpp
   src/app/MainWindow.h
+  src/app/MainWindowActionBinder.cpp
+  src/app/MainWindowActionBinder.h
   src/app/MainWindowMenus.cpp
   src/app/MainWindowActions.cpp
+  src/app/MainWindowSignalBinder.cpp
+  src/app/MainWindowSignalBinder.h
   src/app/MainWindowFileOps.cpp
   src/app/MainWindowFind.cpp
   src/app/RenderEditorBackend.cpp
@@ -318,6 +323,8 @@ add_executable(Muffin
   src/app/SourceEditorBackend.h
   src/app/PreferencesDialog.cpp
   src/app/PreferencesDialog.h
+  src/app/RenderCommandFacade.cpp
+  src/app/RenderCommandFacade.h
   src/app/PreferencesPage.cpp
   src/app/PreferencesPage.h
   src/app/PrefsFilesPage.cpp
@@ -345,10 +352,10 @@ set(MUFFIN_UI_SOURCES
   third_party/katex/src/svgGeometry.ts
   third_party/katex/src/symbols.ts
   src/tree_sitter_queries.qrc
-  src/document/InlineProjection.cpp
-  src/document/InlineProjection.h
-  src/document/SelectionSerializer.cpp
-  src/document/SelectionSerializer.h
+  src/projection/InlineProjection.cpp
+  src/projection/InlineProjection.h
+  src/projection/SelectionSerializer.cpp
+  src/projection/SelectionSerializer.h
   src/blocks/code/CodeFenceController.cpp
   src/blocks/code/CodeFenceController.h
   src/blocks/html/HtmlSanitizer.cpp
@@ -387,6 +394,7 @@ set(MUFFIN_UI_SOURCES
   src/editor/ClipboardController.h
   src/editor/EditorContext.cpp
   src/editor/EditorContext.h
+  src/editor/EditorContextHolder.h
   src/editor/CursorPosition.h
   src/editor/EditorController.cpp
   src/editor/EditorController.h
