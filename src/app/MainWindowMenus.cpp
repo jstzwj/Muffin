@@ -287,7 +287,6 @@ void muffin::MainWindow::setupViewMenu() {
   addCheckAction(view, QStringLiteral("view.sidebar"), tr("Show / Hide Sidebar"), QKeySequence(QStringLiteral("Ctrl+Shift+L")), false);
   addAction(view, QStringLiteral("view.outline"), tr("Outline"), QKeySequence(QStringLiteral("Ctrl+Shift+1")));
   addAction(view, QStringLiteral("view.file_tree"), tr("File Tree"), QKeySequence(QStringLiteral("Ctrl+Shift+3")));
-  addAction(view, QStringLiteral("view.search"), tr("Search"), QKeySequence(QStringLiteral("Ctrl+Shift+F")), false);
   view->addSeparator();
   addCheckAction(view, QStringLiteral("view.source_mode"), tr("Source Code Mode"), QKeySequence(QStringLiteral("Ctrl+/")), false);
   addCheckAction(view, QStringLiteral("view.word_wrap"), tr("Word Wrap"), {}, true);

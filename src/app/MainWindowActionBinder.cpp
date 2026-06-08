@@ -211,6 +211,12 @@ void muffin::MainWindowActionBinder::bindCommands(MainWindow& window) {
     window.setTypewriterMode(checked);
     window.saveAppearanceTypewriterMode(checked);
   });
+  window.commands_.bind(QStringLiteral("view.always_on_top"), [&window] {
+    const bool checked = window.commands_.action(QStringLiteral("view.always_on_top"))->isChecked();
+    window.setWindowFlag(Qt::WindowStaysOnTopHint, checked);
+    window.show();
+    QSettings().setValue(QStringLiteral("view/alwaysOnTop"), checked);
+  });
   window.commands_.bind(QStringLiteral("view.zoom_in"), [&window] {
     window.setZoomPercent(window.zoomPercent_ + 10);
     window.saveAppearanceZoomPercent(window.zoomPercent_);
@@ -301,6 +307,12 @@ void muffin::MainWindowActionBinder::restorePersistentActionStates(MainWindow& w
   const bool typewriterMode = settings.value(QStringLiteral("appearance/typewriterMode"), false).toBool();
   if (QAction* action = window.commands_.action(QStringLiteral("view.typewriter"))) {
     action->setChecked(typewriterMode);
+  }
+  const bool alwaysOnTop = settings.value(QStringLiteral("view/alwaysOnTop"), false).toBool();
+  if (QAction* action = window.commands_.action(QStringLiteral("view.always_on_top"))) {
+    action->setChecked(alwaysOnTop);
+    window.setWindowFlag(Qt::WindowStaysOnTopHint, alwaysOnTop);
+    window.show();
   }
 }
 
