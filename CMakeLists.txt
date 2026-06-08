@@ -580,8 +580,9 @@ if(APPLE)
   # Locate macdeployqt relative to Qt6::Core
   # On macOS frameworks, Qt6::Core is at <prefix>/lib/QtCore.framework/Versions/A/QtCore
   # and macdeployqt is at <prefix>/bin/macdeployqt or <prefix>/libexec/macdeployqt.
-  set(_muffin_macdeployqt "")
-  if(MUFFIN_QT_CORE_LOCATION_RELEASE)
+  set(_muffin_macdeployqt "${MUFFIN_MACDEPLOYQT}" CACHE FILEPATH "Path to macdeployqt")
+  set(_muffin_qt_hints "")
+  if(NOT _muffin_macdeployqt AND MUFFIN_QT_CORE_LOCATION_RELEASE)
     # Walk up from the library location to find the Qt prefix
     get_filename_component(_qt_candidate "${MUFFIN_QT_CORE_LOCATION_RELEASE}" DIRECTORY)
     while(_qt_candidate AND NOT _muffin_macdeployqt)
@@ -591,6 +592,9 @@ if(APPLE)
           break()
         endif()
       endforeach()
+      if(NOT _muffin_macdeployqt)
+        list(APPEND _muffin_qt_hints "${_qt_candidate}/bin" "${_qt_candidate}/libexec")
+      endif()
       get_filename_component(_qt_parent "${_qt_candidate}" DIRECTORY)
       if(_qt_parent STREQUAL _qt_candidate)
         break()
@@ -599,10 +603,22 @@ if(APPLE)
     endwhile()
   endif()
   if(NOT _muffin_macdeployqt)
-    find_program(_muffin_macdeployqt macdeployqt)
+    # Also try from Qt6::qmake location
+    if(TARGET Qt6::qmake)
+      get_target_property(_qt_qmake_location Qt6::qmake IMPORTED_LOCATION)
+      if(NOT _qt_qmake_location)
+        get_target_property(_qt_qmake_location Qt6::qmake LOCATION)
+      endif()
+      if(_qt_qmake_location)
+        get_filename_component(_qt_bin_dir "${_qt_qmake_location}" DIRECTORY)
+        list(APPEND _muffin_qt_hints "${_qt_bin_dir}")
+      endif()
+    endif()
+    find_program(_muffin_macdeployqt macdeployqt HINTS ${_muffin_qt_hints})
   endif()
 
   if(_muffin_macdeployqt)
+    message(STATUS "Found macdeployqt: ${_muffin_macdeployqt}")
     add_custom_target(dmg
       COMMAND ${CMAKE_COMMAND}
         "-DDIST_DIR=${MUFFIN_DIST_DIR}"
@@ -614,6 +630,8 @@ if(APPLE)
       COMMENT "Build Muffin DMG disk image"
       VERBATIM
     )
+  else()
+    message(WARNING "macdeployqt not found — DMG target will not be available")
   endif()
 endif()
 

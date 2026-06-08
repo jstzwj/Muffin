@@ -137,13 +137,30 @@ jobs:
         if: runner.os == 'Windows'
         run: dotnet tool install --global wix --version 4.0.5
 
+      - name: Locate macdeployqt
+        if: runner.os == 'macOS'
+        id: macdeployqt
+        shell: bash
+        run: |
+          DEPLOYQT=$(find ~/.conan2 -name macdeployqt -type f 2>/dev/null | head -1)
+          if [ -n "$DEPLOYQT" ]; then
+            echo "path=$DEPLOYQT" >> "$GITHUB_OUTPUT"
+            echo "Found macdeployqt: $DEPLOYQT"
+          else
+            echo "::warning::macdeployqt not found in Conan cache"
+          fi
+
       - name: Configure
         shell: bash
         run: |
+          EXTRA_ARGS=""
           if [ "${{ runner.os }}" = "Windows" ]; then
             export PATH="$PATH:$HOME/.dotnet/tools"
           fi
-          cmake --preset ${{ matrix.configure-preset }} -DMUFFIN_VERSION_OVERRIDE=${{ env.MUFFIN_RELEASE_VERSION }} ${{ matrix.cmake-args }}
+          if [ -n "${{ steps.macdeployqt.outputs.path }}" ]; then
+            EXTRA_ARGS="-DMUFFIN_MACDEPLOYQT=${{ steps.macdeployqt.outputs.path }}"
+          fi
+          cmake --preset ${{ matrix.configure-preset }} -DMUFFIN_VERSION_OVERRIDE=${{ env.MUFFIN_RELEASE_VERSION }} ${{ matrix.cmake-args }} $EXTRA_ARGS
 
       - name: Build
         run: cmake --build --preset conan-release
