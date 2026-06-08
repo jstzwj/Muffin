@@ -775,6 +775,7 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
     case InlineType::Image: {
       if (!active) {
         appendTextSpan(state, node.type(), InlineSpanKind::Atom, sourceStart, sourceEnd, node.alt(), true);
+        state.spans.last().href = node.href();
         break;
       }
       InlineRange openMarker = localRange(node.openMarkerRange(), state.sourceBase);
@@ -785,6 +786,7 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
         appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, labelStart, state.sourceText->mid(sourceStart, labelStart - sourceStart), false);
       }
       appendTextSpan(state, node.type(), InlineSpanKind::Atom, sourceStart, sourceEnd, labelStart, labelEnd, node.alt(), true);
+      state.spans.last().href = node.href();
       if (labelEnd < sourceEnd) {
         appendTextSpan(state, node.type(), InlineSpanKind::HiddenSyntax, labelEnd, sourceEnd, state.sourceText->mid(labelEnd, sourceEnd - labelEnd), false);
       }

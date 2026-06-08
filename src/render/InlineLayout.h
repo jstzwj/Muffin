@@ -109,11 +109,11 @@ private:
   void buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
   void buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
   QString texForInlineMathVisibleRange(const QVector<InlineNode>& inlines, qsizetype visibleStart, qsizetype visibleEnd) const;
-  QString imageSrcForVisibleRange(const QVector<InlineNode>& inlines, qsizetype visibleStart, qsizetype visibleEnd) const;
   void buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont);
   void paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) const;
   void paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) const;
   void paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) const;
+  void paintImagePreview(QPainter& painter, QPointF origin) const;
   QVector<QTextLayout::FormatRange> textLayoutFormats(const RenderTheme& theme, const QFont& baseFont) const;
   qsizetype visibleOffsetForDisplayOffset(qsizetype displayOffset) const;
   qsizetype displayOffsetForVisibleOffset(qsizetype visibleOffset) const;
@@ -137,6 +137,8 @@ private:
   QVector<OffsetMapEntry> offsetMap_;
   QVector<MathAtom> mathAtoms_;
   QVector<ImageAtom> imageAtoms_;
+  QVector<ImageAtom> previewAtoms_;   // Active images rendered as block preview below text
+  qreal previewHeight_ = 0.0;         // Total height of image previews
   QVector<DisplayOffsetMapEntry> displayOffsetMap_;
   InlineProjection projection_;
   math::MathRenderer mathRenderer_;

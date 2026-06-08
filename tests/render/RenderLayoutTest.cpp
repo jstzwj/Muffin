@@ -29,6 +29,7 @@
 #include <QJsonObject>
 #include <QMap>
 #include <QPainter>
+#include <QTemporaryDir>
 
 #include <algorithm>
 #include <functional>
@@ -1137,6 +1138,59 @@ void testInlineProjectionContract() {
   require(!activeImage.selectionRects(0, 3).isEmpty(), QStringLiteral("active image selection rects should remain valid"));
 }
 
+void testActiveLoadedImageKeepsSourceTextAndAddsPreviewSpace() {
+  QTemporaryDir dir;
+  require(dir.isValid(), QStringLiteral("temporary image directory should be valid"));
+  const QString imagePath = dir.filePath(QStringLiteral("active-image.png"));
+  QImage image(QSize(640, 480), QImage::Format_ARGB32);
+  image.fill(QColor(20, 120, 200));
+  require(image.save(imagePath), QStringLiteral("temporary image should save"));
+
+  const QString markdown = QStringLiteral("![San Juan Mountains](%1 \"San Juan Mountains\")").arg(imagePath);
+  DocumentSession session;
+  session.setMarkdownText(markdown, false);
+  const QVector<InlineNode> inlines = session.document().root().children().front()->inlines();
+  const RenderTheme theme = RenderTheme::github();
+
+  InlineLayout inactive;
+  inactive.build(inlines, markdown, theme, 400.0, theme.paragraphFont(), InlineLayout::BuildOptions{});
+  require(inactive.displayText() != markdown, QStringLiteral("inactive loaded image should collapse"));
+  require(!inactive.displayText().contains(QStringLiteral("![")), QStringLiteral("inactive loaded image should hide source syntax"));
+
+  InlineLayout::BuildOptions activeOptions;
+  activeOptions.projectionState.cursorSourceOffset = 2;
+  InlineLayout active;
+  active.build(inlines, markdown, theme, 400.0, theme.paragraphFont(), activeOptions);
+  require(active.displayText() == markdown,
+          QStringLiteral("active loaded image should show complete source, got: %1").arg(active.displayText()));
+  require(active.height() > inactive.height(), QStringLiteral("active loaded image should reserve preview space below source text"));
+
+  const auto renderBlueBounds = [&](const InlineLayout& layout) {
+    QImage canvas(QSize(420, qCeil(layout.height()) + 20), QImage::Format_ARGB32);
+    canvas.fill(theme.backgroundColor());
+    QPainter painter(&canvas);
+    layout.paint(painter, QPointF(0.0, 0.0));
+    painter.end();
+
+    QRect bounds;
+    const QColor imageColor(20, 120, 200);
+    for (int y = 0; y < canvas.height(); ++y) {
+      for (int x = 0; x < canvas.width(); ++x) {
+        if (QColor(canvas.pixel(x, y)) == imageColor) {
+          bounds = bounds.isNull() ? QRect(x, y, 1, 1) : bounds.united(QRect(x, y, 1, 1));
+        }
+      }
+    }
+    return bounds;
+  };
+  const QRect inactiveImageBounds = renderBlueBounds(inactive);
+  const QRect activeImageBounds = renderBlueBounds(active);
+  require(!inactiveImageBounds.isNull() && !activeImageBounds.isNull(), QStringLiteral("loaded image should paint in both states"));
+  require(qAbs(inactiveImageBounds.width() - activeImageBounds.width()) <= 1 &&
+              qAbs(inactiveImageBounds.height() - activeImageBounds.height()) <= 1,
+          QStringLiteral("active preview should keep the same image size as inactive rendering"));
+}
+
 void testEntityDisplayAfterEdit() {
   DocumentSession session;
   const QString markdown = QStringLiteral("Entities: &amp; &lt; &gt; &copy;.");
@@ -2204,7 +2258,13 @@ void testOfficialKatexScreenshotterAudit(const QString& fixturePath) {
       continue;
     }
 
-    const math::MathLayoutResult rendered = math::MathRenderer().render(tex, theme, display, officialSettings);
+    math::MathSettings fixtureSettings = officialSettings;
+    const QJsonObject macrosObj = fixture.value(QStringLiteral("macros")).toObject();
+    for (const QString& key : macrosObj.keys()) {
+      fixtureSettings.macros.insert(key, macrosObj.value(key).toString());
+    }
+
+    const math::MathLayoutResult rendered = math::MathRenderer().render(tex, theme, display, fixtureSettings);
     if (!rendered.valid()) {
       renderFailures.push_back(id);
       continue;
@@ -3405,6 +3465,7 @@ int main(int argc, char** argv) {
   runTest("testThemeCodeHighlightPalette", [] { testThemeCodeHighlightPalette(); });
   runTest("testInlineMarkerExpansion", [] { testInlineMarkerExpansion(); });
   runTest("testInlineProjectionContract", [] { testInlineProjectionContract(); });
+  runTest("testActiveLoadedImageKeepsSourceTextAndAddsPreviewSpace", [] { testActiveLoadedImageKeepsSourceTextAndAddsPreviewSpace(); });
   runTest("testEntityDisplayAfterEdit", [] { testEntityDisplayAfterEdit(); });
   runTest("testInlineCodeEndSourceHitUsesForwardBias", [] { testInlineCodeEndSourceHitUsesForwardBias(); });
   runTest("testInlineLayoutGeometryContract", [] { testInlineLayoutGeometryContract(); });

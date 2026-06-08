@@ -18,6 +18,7 @@ constexpr QChar kInlineMathPlaceholder(0x00a0);
 constexpr QChar kImagePlaceholder(0x2009);  // thin space, distinct from math placeholder
 constexpr QChar kTabIndentSourceChar(0x200b);
 constexpr QChar kTabIndentLayoutChar(0x00a0);
+constexpr qreal kMaxImageDisplayHeight = 200.0;
 
 QString flattenPlainText(const QVector<InlineNode>& inlines) {
   QString text;
@@ -49,6 +50,30 @@ QString flattenPlainText(const QVector<InlineNode>& inlines) {
 QString layoutTextForDisplayText(QString text) {
   text.replace(kTabIndentSourceChar, kTabIndentLayoutChar);
   return text;
+}
+
+bool isImageSourceRevealed(const QVector<InlineProjectionSpan>& spans, const InlineProjectionSpan& imageSpan) {
+  for (const InlineProjectionSpan& span : spans) {
+    if (span.type != InlineType::Image ||
+        (span.kind != InlineSpanKind::OpenMarker && span.kind != InlineSpanKind::HiddenSyntax)) {
+      continue;
+    }
+    if (span.sourceStart >= imageSpan.sourceStart && span.sourceEnd <= imageSpan.sourceEnd) {
+      return true;
+    }
+  }
+  return false;
+}
+
+QSizeF scaledImageDisplaySize(const QImage& image) {
+  if (image.isNull()) {
+    return QSizeF();
+  }
+  if (image.height() > kMaxImageDisplayHeight) {
+    const qreal scale = kMaxImageDisplayHeight / image.height();
+    return QSizeF(image.width() * scale, kMaxImageDisplayHeight);
+  }
+  return QSizeF(image.width(), image.height());
 }
 
 }  // namespace
@@ -87,6 +112,8 @@ void InlineLayout::build(
   offsetMap_.clear();
   mathAtoms_.clear();
   imageAtoms_.clear();
+  previewAtoms_.clear();
+  previewHeight_ = 0.0;
   displayOffsetMap_.clear();
   displayText_.clear();
   layoutText_.clear();
@@ -117,6 +144,7 @@ void InlineLayout::paint(QPainter& painter, QPointF origin) const {
   textLayout_->draw(&painter, origin);
   paintTextLayoutMathAtoms(painter, origin);
   paintTextLayoutImageAtoms(painter, origin);
+  paintImagePreview(painter, origin);
   painter.restore();
 }
 
@@ -449,26 +477,8 @@ QString InlineLayout::texForInlineMathVisibleRange(const QVector<InlineNode>& in
   return visit(visit, inlines);
 }
 
-QString InlineLayout::imageSrcForVisibleRange(const QVector<InlineNode>& inlines, qsizetype visibleStart, qsizetype visibleEnd) const {
-  const QString expected = projection_.displayText().mid(visibleStart, visibleEnd - visibleStart);
-  const auto visit = [&](const auto& self, const QVector<InlineNode>& nodes) -> QString {
-    for (const InlineNode& node : nodes) {
-      if (node.type() == InlineType::Image && node.alt() == expected) {
-        return node.href();
-      }
-      if (!node.children().isEmpty()) {
-        const QString found = self(self, node.children());
-        if (!found.isEmpty()) {
-          return found;
-        }
-      }
-    }
-    return QString();
-  };
-  return visit(visit, inlines);
-}
-
 void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width) {
+  Q_UNUSED(inlines);
   Q_UNUSED(theme);
   Q_UNUSED(width);
 
@@ -485,8 +495,6 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
   }
 
   // Iterate projection spans directly (same pattern as buildMathAtoms).
-  // Read text from projection_.displayText() (not the math-rebuilt displayText_)
-  // because span.displayStart/displayEnd are projection coordinates.
   const QString projectedDisplay = projection_.displayText();
   QString rebuiltDisplay;
   QVector<OffsetMapEntry> rebuiltMap;
@@ -498,9 +506,8 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
     }
 
     const bool isImageAtom = span.type == InlineType::Image && span.kind == InlineSpanKind::Atom;
-    const QString spanText = projectedDisplay.mid(span.displayStart, span.displayEnd - span.displayStart);
-
     if (!isImageAtom) {
+      const QString spanText = projectedDisplay.mid(span.displayStart, span.displayEnd - span.displayStart);
       const qsizetype displayStart = rebuiltDisplay.size();
       rebuiltDisplay += spanText;
       rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), span.visibleStart, span.visibleEnd});
@@ -508,9 +515,11 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
       continue;
     }
 
-    // Extract image src URL from the inline nodes
-    const QString srcUrl = imageSrcForVisibleRange(inlines, span.visibleStart, span.visibleEnd);
+    const bool collapsed = !isImageSourceRevealed(projection_.spans(), span);
+
+    const QString srcUrl = span.href;
     if (srcUrl.isEmpty()) {
+      const QString spanText = projectedDisplay.mid(span.displayStart, span.displayEnd - span.displayStart);
       const qsizetype displayStart = rebuiltDisplay.size();
       rebuiltDisplay += spanText;
       rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), span.visibleStart, span.visibleEnd});
@@ -518,11 +527,8 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
       continue;
     }
 
-    // Try to load the image — local files directly, remote URLs via async cache
+    // Try to load the image
     QImage image;
-    constexpr qreal kMaxImageHeight = 200.0;
-    QSizeF displaySize;
-
     const bool isRemote = srcUrl.startsWith(QStringLiteral("http:")) || srcUrl.startsWith(QStringLiteral("https:"));
     if (isRemote) {
       image = ImageLoader::instance().cached(srcUrl);
@@ -535,17 +541,9 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
       }
     }
 
-    if (!image.isNull()) {
-      if (image.height() > kMaxImageHeight) {
-        const qreal scale = kMaxImageHeight / image.height();
-        displaySize = QSizeF(image.width() * scale, kMaxImageHeight);
-      } else {
-        displaySize = QSizeF(image.width(), image.height());
-      }
-    }
-
     if (image.isNull()) {
       // Failed to load — keep the alt text as-is
+      const QString spanText = projectedDisplay.mid(span.displayStart, span.displayEnd - span.displayStart);
       const qsizetype displayStart = rebuiltDisplay.size();
       rebuiltDisplay += spanText;
       rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), span.visibleStart, span.visibleEnd});
@@ -553,25 +551,43 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
       continue;
     }
 
-    // Replace alt text with a single placeholder character
-    const qsizetype displayStart = rebuiltDisplay.size();
-    rebuiltDisplay += kImagePlaceholder;
+    if (collapsed) {
+      // Inactive: replace alt text with placeholder, render image inline.
+      const QSizeF displaySize = scaledImageDisplaySize(image);
 
-    ImageAtom atom;
-    atom.displayStart = displayStart;
-    atom.displayEnd = rebuiltDisplay.size();
-    atom.sourceStart = span.sourceStart;
-    atom.sourceEnd = span.sourceEnd;
-    atom.visibleStart = span.visibleStart;
-    atom.visibleEnd = span.visibleEnd;
-    atom.srcUrl = srcUrl;
-    atom.displaySize = displaySize;
-    atom.image = image;
-    atom.loaded = true;
+      const qsizetype displayStart = rebuiltDisplay.size();
+      rebuiltDisplay += kImagePlaceholder;
 
-    rebuiltMap.push_back(OffsetMapEntry{atom.displayStart, atom.displayEnd, atom.visibleStart, atom.visibleEnd});
-    rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, atom.displayStart, atom.displayEnd});
-    imageAtoms_.push_back(std::move(atom));
+      ImageAtom atom;
+      atom.displayStart = displayStart;
+      atom.displayEnd = rebuiltDisplay.size();
+      atom.sourceStart = span.sourceStart;
+      atom.sourceEnd = span.sourceEnd;
+      atom.visibleStart = span.visibleStart;
+      atom.visibleEnd = span.visibleEnd;
+      atom.srcUrl = srcUrl;
+      atom.displaySize = displaySize;
+      atom.image = image;
+      atom.loaded = true;
+
+      rebuiltMap.push_back(OffsetMapEntry{atom.displayStart, atom.displayEnd, atom.visibleStart, atom.visibleEnd});
+      rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, atom.displayStart, atom.displayEnd});
+      imageAtoms_.push_back(std::move(atom));
+    } else {
+      // Active (cursor on image): show source text as-is, add block preview below.
+      const QString spanText = projectedDisplay.mid(span.displayStart, span.displayEnd - span.displayStart);
+      const qsizetype displayStart = rebuiltDisplay.size();
+      rebuiltDisplay += spanText;
+      rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), span.visibleStart, span.visibleEnd});
+      rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, displayStart, rebuiltDisplay.size()});
+
+      ImageAtom preview;
+      preview.srcUrl = srcUrl;
+      preview.displaySize = scaledImageDisplaySize(image);
+      preview.image = image;
+      preview.loaded = true;
+      previewAtoms_.push_back(std::move(preview));
+    }
   }
 
   if (!rebuiltDisplay.isEmpty()) {
@@ -614,7 +630,14 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
     maxWidth = qMax(maxWidth, line.naturalTextWidth());
   }
   textLayout_->endLayout();
-  size_ = QSizeF(qMin(lineWidth, qMax<qreal>(maxWidth, 1.0)), height);
+
+  // Reserve space for block-level image previews (shown when cursor is on an image).
+  constexpr qreal kPreviewSpacing = 6.0;
+  previewHeight_ = 0.0;
+  for (const ImageAtom& atom : previewAtoms_) {
+    previewHeight_ += atom.displaySize.height() + kPreviewSpacing;
+  }
+  size_ = QSizeF(qMin(lineWidth, qMax<qreal>(maxWidth, 1.0)), height + previewHeight_);
 }
 
 void InlineLayout::paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) const {
@@ -671,6 +694,24 @@ void InlineLayout::paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) 
       painter.drawImage(targetRect, atom.image, QRectF(atom.image.rect()));
       break;
     }
+  }
+}
+
+void InlineLayout::paintImagePreview(QPainter& painter, QPointF origin) const {
+  if (previewAtoms_.isEmpty() || !textLayout_) {
+    return;
+  }
+  // Paint preview images below the text layout, left-aligned.
+  constexpr qreal kPreviewSpacing = 6.0;
+  const qreal textHeight = size_.height() - previewHeight_;
+  qreal y = origin.y() + textHeight + kPreviewSpacing;
+  for (const ImageAtom& atom : previewAtoms_) {
+    if (!atom.loaded || atom.image.isNull()) {
+      continue;
+    }
+    const QRectF targetRect(origin.x(), y, atom.displaySize.width(), atom.displaySize.height());
+    painter.drawImage(targetRect, atom.image, QRectF(atom.image.rect()));
+    y += atom.displaySize.height() + kPreviewSpacing;
   }
 }
 

@@ -44,6 +44,7 @@ struct InlineProjectionSpan {
   bool bold = false;
   bool italic = false;
   bool strike = false;
+  QString href;  // Non-empty for Image and Link Atom spans
 };
 
 struct InlineProjectionState {
