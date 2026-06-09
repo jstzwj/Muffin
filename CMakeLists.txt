@@ -167,6 +167,10 @@ if(TARGET libcmark-gfm-extensions_static AND TARGET libcmark-gfm_static)
   )
 endif()
 
+# Lexbor and Yoga are provided by Conan
+find_package(lexbor REQUIRED)
+find_package(yoga REQUIRED)
+
 add_library(tree-sitter-runtime STATIC
   third_party/tree-sitter/lib/src/lib.c
 )
@@ -366,6 +370,22 @@ set(MUFFIN_UI_SOURCES
   src/blocks/literal/LiteralBlockUtil.cpp
   src/blocks/literal/LiteralBlockUtil.h
   src/blocks/html/HtmlSanitizer.h
+  src/html/HtmlBox.cpp
+  src/html/HtmlBox.h
+  src/html/HtmlParser.cpp
+  src/html/HtmlParser.h
+  src/html/HtmlBoxBuilder.cpp
+  src/html/HtmlBoxBuilder.h
+  src/html/HtmlStyleResolver.cpp
+  src/html/HtmlStyleResolver.h
+  src/html/HtmlLayoutEngine.cpp
+  src/html/HtmlLayoutEngine.h
+  src/html/HtmlTextMeasurer.cpp
+  src/html/HtmlTextMeasurer.h
+  src/html/HtmlLayoutResult.cpp
+  src/html/HtmlLayoutResult.h
+  src/html/HtmlRenderer.cpp
+  src/html/HtmlRenderer.h
   src/blocks/math/MathRenderer.cpp
   src/blocks/math/MathRenderer.h
   src/blocks/table/TableController.cpp
@@ -491,6 +511,8 @@ target_link_libraries(MuffinUi
   PRIVATE
     WebP::webp
     avif
+    lexbor::lexbor_static
+    yoga::yoga
 )
 
 target_include_directories(MuffinUi

@@ -56,6 +56,8 @@ public:
   void activateHit(HitTestResult hit);
 
   bool insertFrontMatter(FrontMatterFormat format);
+  bool enterHtmlEditMode();
+  bool exitHtmlEditMode();
   QString sanitizedHtmlPreview() const;
   bool isOnImage() const;
   QString imageSrcAtCursor() const;

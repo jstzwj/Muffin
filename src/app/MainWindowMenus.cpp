@@ -92,7 +92,7 @@ void muffin::MainWindow::retranslateUi() {
   rebuildRecentFilesMenu();
   buildReopenEncodingMenu();
   if (renderView_) {
-    renderView_->setDocument(session_.document());
+    renderView_->setDocument(session_.document(), session_.filePath());
   }
   updateStatus();
   wordCountDirty_ = true;

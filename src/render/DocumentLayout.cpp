@@ -161,11 +161,20 @@ QRectF unitedOwnedBlockRects(const std::vector<std::unique_ptr<BlockLayout>>& bl
 
 }  // namespace
 
-void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth) {
-  rebuild(document, theme, viewportWidth, SelectionRange());
+void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, QString documentPath) {
+  rebuild(document, theme, viewportWidth, SelectionRange(), std::move(documentPath));
 }
 
-void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, SelectionRange selection) {
+void DocumentLayout::setEditingHtmlBlock(NodeId id) {
+  editingHtmlBlockId_ = id;
+}
+
+void DocumentLayout::rebuild(
+    const MarkdownDocument& document,
+    const RenderTheme& theme,
+    qreal viewportWidth,
+    SelectionRange selection,
+    QString documentPath) {
   QElapsedTimer totalTimer;
   const bool collectPerf = layoutPerf().isDebugEnabled();
   RebuildPerfStats perf;
@@ -174,6 +183,7 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
   }
 
   document_ = &document;
+  documentPath_ = std::move(documentPath);
   viewportWidth_ = viewportWidth;
   blocks_.clear();
   topLevelIndex_.clear();
@@ -186,6 +196,8 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
   BlockLayoutBuilder builder;
   builder.setMarkdownText(document.markdownText(), document.lineOffsets());
   builder.setSelection(selection);
+  builder.setEditingHtmlBlock(editingHtmlBlockId_);
+  builder.setDocumentPath(documentPath_);
   qreal cursorY = theme.topMargin();
   for (const auto& child : document.root().children()) {
     cursorY += spacingBeforeBlock(*child, theme, cursorY);
@@ -269,6 +281,8 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
   BlockLayoutBuilder builder;
   builder.setMarkdownText(document.markdownText(), document.lineOffsets());
   builder.setSelection(selection);
+  builder.setEditingHtmlBlock(editingHtmlBlockId_);
+  builder.setDocumentPath(documentPath_);
   std::unique_ptr<BlockLayout>& slot = blocks_.at(static_cast<size_t>(index));
   result.blockId = node->id();
   result.oldRect = slot->rect();
@@ -345,6 +359,8 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   BlockLayoutBuilder builder;
   builder.setMarkdownText(document.markdownText(), document.lineOffsets());
   builder.setSelection(selection);
+  builder.setEditingHtmlBlock(editingHtmlBlockId_);
+  builder.setDocumentPath(documentPath_);
   std::vector<std::unique_ptr<BlockLayout>> replacements;
   replacements.reserve(static_cast<size_t>(range.newCount));
 

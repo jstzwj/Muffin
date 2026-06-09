@@ -206,11 +206,11 @@ bool RenderCommandFacade::setCodeLanguageFor(NodeId codeId, QString language) {
 }
 
 bool RenderCommandFacade::enterHtmlEditMode() {
-  return runCommand("enterHtmlEditMode", [&] { return editorController_.htmlLiteral().enterEditMode(); });
+  return runCommand("enterHtmlEditMode", [&] { return editorController_.enterHtmlEditMode(); });
 }
 
 bool RenderCommandFacade::exitHtmlEditMode() {
-  return runCommand("exitHtmlEditMode", [&] { return editorController_.htmlLiteral().exitEditMode(); });
+  return runCommand("exitHtmlEditMode", [&] { return editorController_.exitHtmlEditMode(); });
 }
 
 bool RenderCommandFacade::setHtmlSource(QString html) {

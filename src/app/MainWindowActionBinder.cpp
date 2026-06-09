@@ -98,7 +98,7 @@ void muffin::MainWindowActionBinder::bindCommands(MainWindow& window) {
   window.commands_.bind(QStringLiteral("image.insert_local"), [&window] { window.insertLocalImageWithDialog(); });
   window.commands_.bind(QStringLiteral("image.reload_all"), [&window] {
     if (window.renderView_) {
-      window.renderView_->setDocument(window.session_.document());
+      window.renderView_->setDocument(window.session_.document(), window.session_.filePath());
     }
   });
   window.commands_.bind(QStringLiteral("image.insert_relative"), [&window] {

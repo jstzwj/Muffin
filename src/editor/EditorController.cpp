@@ -242,6 +242,30 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
     connect(view_, &EditorView::blockClicked, this, &EditorController::activateHit);
     connect(view_, &EditorView::selectionChanged, &selection_, &SelectionController::setSelection);
     connect(view_, &EditorView::textCommitted, &inputController_, &InputController::insertText);
+    connect(view_, &EditorView::htmlEditToggleRequested, this, [this](NodeId blockId) {
+      if (!blockId.isValid()) {
+        return;
+      }
+      if (htmlLiteral_.isEditing() && htmlLiteral_.currentBlockId() == blockId) {
+        htmlLiteral_.exitEditMode();
+        if (view_) {
+          view_->setEditingHtmlBlock({});
+        }
+        emit stateChanged();
+        return;
+      }
+
+      exitAllLiteralEditModes();
+      HitTestResult hit;
+      hit.zone = HitTestResult::Zone::Html;
+      hit.blockId = blockId;
+      hit.textNodeId = blockId;
+      selection_.setHitResult(hit);
+      if (htmlLiteral_.enterEditMode() && view_) {
+        view_->setEditingHtmlBlock(htmlLiteral_.currentBlockId());
+      }
+      emit stateChanged();
+    });
   }
   connect(&inputController_, &InputController::selectAllRequested, this, &EditorController::selectAll);
   connect(&selection_, &SelectionController::selectionChanged, this, [this](SelectionRange selection, HitTestResult hit) {
@@ -263,12 +287,12 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
       return;
     }
     if (request.fullLayoutDirty) {
-      view_->setDocument(session_->document());
+      view_->setDocument(session_->document(), session_->filePath());
       return;
     }
     if (request.topLevelRangeDirty.isValid()) {
       if (request.topLevelRangeDirty.documentRevision != session_->document().revision() || !view_->refreshTopLevelRange(request.topLevelRangeDirty, session_->document())) {
-        view_->setDocument(session_->document());
+        view_->setDocument(session_->document(), session_->filePath());
         return;
       }
       // The range refresh handled structural changes.  Still refresh any
@@ -278,22 +302,22 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
       if (!request.layoutDirtyBlocks.isEmpty()) {
         if (request.layoutDirtyBlocks.size() == 1) {
           if (!view_->refreshBlock(request.layoutDirtyBlocks.first(), session_->document())) {
-            view_->setDocument(session_->document());
+            view_->setDocument(session_->document(), session_->filePath());
           }
         } else if (!view_->refreshBlocks(request.layoutDirtyBlocks, session_->document())) {
-          view_->setDocument(session_->document());
+          view_->setDocument(session_->document(), session_->filePath());
         }
       }
       return;
     }
     if (request.layoutDirtyBlocks.size() == 1) {
       if (!view_->refreshBlock(request.layoutDirtyBlocks.first(), session_->document())) {
-        view_->setDocument(session_->document());
+        view_->setDocument(session_->document(), session_->filePath());
       }
       return;
     }
     if (!request.layoutDirtyBlocks.isEmpty() && !view_->refreshBlocks(request.layoutDirtyBlocks, session_->document())) {
-      view_->setDocument(session_->document());
+      view_->setDocument(session_->document(), session_->filePath());
     }
   });
 }
@@ -665,6 +689,9 @@ void EditorController::exitAllLiteralEditModes() {
   codeFenceController_.exitEditMode();
   htmlLiteral_.exitEditMode();
   mathLiteral_.exitEditMode();
+  if (view_) {
+    view_->setEditingHtmlBlock({});
+  }
 }
 
 bool EditorController::enterLiteralEditMode(HitTestResult::Zone zone) {
@@ -694,6 +721,31 @@ LiteralBlockController* EditorController::literalForZone(HitTestResult::Zone zon
 bool EditorController::insertFrontMatter(FrontMatterFormat format) {
   const EditorContext ctx{session_, &selection_, &undoStack_, &brushQueue_};
   return muffin::insertFrontMatter(ctx, frontMatterLiteral_, format);
+}
+
+bool EditorController::enterHtmlEditMode() {
+  if (!htmlLiteral_.enterEditMode()) {
+    return false;
+  }
+  if (view_) {
+    view_->setEditingHtmlBlock(htmlLiteral_.currentBlockId());
+  }
+  emit stateChanged();
+  return true;
+}
+
+bool EditorController::exitHtmlEditMode() {
+  const bool changed = htmlLiteral_.isEditing();
+  if (!htmlLiteral_.exitEditMode()) {
+    return false;
+  }
+  if (view_) {
+    view_->setEditingHtmlBlock({});
+  }
+  if (changed) {
+    emit stateChanged();
+  }
+  return true;
 }
 
 QString EditorController::sanitizedHtmlPreview() const {
@@ -771,9 +823,16 @@ void EditorController::activateHit(HitTestResult hit) {
     fillSourceOffsetForTextHit(*session_, hit);
   }
 
-  exitAllLiteralEditModes();
+  // Preserve HTML edit mode when clicking within the editing block — the click
+  // is for cursor repositioning in the source text, not for exiting edit mode.
+  const bool preserveHtmlEdit = hit.zone == HitTestResult::Zone::Html &&
+                                htmlLiteral_.isEditing() &&
+                                htmlLiteral_.currentBlockId() == hit.blockId;
+  if (!preserveHtmlEdit) {
+    exitAllLiteralEditModes();
+  }
   selection_.setHitResult(hit);
-  if (enterLiteralEditMode(hit.zone)) {
+  if (hit.zone != HitTestResult::Zone::Html && enterLiteralEditMode(hit.zone)) {
     selection_.setHitResult(hit);
   }
 }

@@ -414,6 +414,14 @@ const math::MathLayoutResult* BlockLayout::mathLayout() const {
   return mathLayout_.get();
 }
 
+void BlockLayout::setHtmlLayout(std::shared_ptr<html::HtmlLayoutResult> layout) {
+  htmlLayout_ = std::move(layout);
+}
+
+const html::HtmlLayoutResult* BlockLayout::htmlLayout() const {
+  return htmlLayout_.get();
+}
+
 void BlockLayout::setLiteralEditing(bool editing) {
   literalEditing_ = editing;
 }
@@ -790,17 +798,29 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
       break;
     }
     case BlockType::HtmlBlock: {
-      painter.save();
-      painter.setPen(theme.codeBorderColor());
-      painter.setBrush(theme.codeBackgroundColor());
-      painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
-      painter.setPen(theme.textColor());
-      painter.setFont(type_ == BlockType::MathBlock ? theme.mathFont() : theme.codeFont());
-      QTextOption option;
-      option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-      const QMarginsF padding = theme.codePadding();
-      painter.drawText(viewRect.marginsRemoved(padding), literal_, option);
-      painter.restore();
+      if (literalEditing_) {
+        painter.save();
+        painter.setPen(theme.codeBorderColor());
+        painter.setBrush(theme.codeBackgroundColor());
+        painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
+        paintLiteralSource(painter, theme, viewRect.marginsRemoved(theme.codePadding()), codeHighlightSpans_);
+        painter.restore();
+      } else if (htmlLayout_ && htmlLayout_->valid()) {
+        htmlLayout_->paint(painter, viewRect.marginsRemoved(theme.codePadding()).topLeft());
+      } else {
+        // Fallback: render raw HTML text
+        painter.save();
+        painter.setPen(theme.codeBorderColor());
+        painter.setBrush(theme.codeBackgroundColor());
+        painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
+        painter.setPen(theme.textColor());
+        painter.setFont(theme.codeFont());
+        QTextOption option;
+        option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+        const QMarginsF padding = theme.codePadding();
+        painter.drawText(viewRect.marginsRemoved(padding), literal_, option);
+        painter.restore();
+      }
       break;
     }
     case BlockType::ThematicBreak: {
@@ -836,8 +856,13 @@ QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection,
       break;
     case BlockType::FrontMatter:
     case BlockType::CodeFence:
-    case BlockType::HtmlBlock:
       return literalSelectionRects(selection.startOffset(), selection.endOffset(), theme);
+    case BlockType::HtmlBlock:
+      if (literalEditing_) {
+        return literalSelectionRects(selection.startOffset(), selection.endOffset(), theme);
+      }
+      rects.push_back(rect_.adjusted(-1.0, -1.0, 1.0, 1.0));
+      return rects;
     case BlockType::MathBlock:
       if (literalEditing_) {
         return literalSelectionRects(selection.startOffset(), selection.endOffset(), theme);
@@ -905,8 +930,15 @@ QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset,
       break;
     case BlockType::FrontMatter:
     case BlockType::CodeFence:
-    case BlockType::HtmlBlock:
       return literalSelectionRects(startOffset, endOffset, theme);
+    case BlockType::HtmlBlock:
+      if (literalEditing_) {
+        return literalSelectionRects(startOffset, endOffset, theme);
+      }
+      if (startOffset != endOffset) {
+        rects.push_back(rect_.adjusted(-1.0, -1.0, 1.0, 1.0));
+      }
+      return rects;
     case BlockType::MathBlock:
       if (literalEditing_) {
         return literalSelectionRects(startOffset, endOffset, theme);
@@ -1103,11 +1135,22 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
     case BlockType::HtmlBlock:
       result.zone = HitTestResult::Zone::Html;
       {
-        const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
-        result.textOffset =
-            literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont(), contentRect.width(), theme.codeLineHeight());
-        result.cursorRect =
-            literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft(), contentRect.width(), theme.codeLineHeight());
+        if (literalEditing_) {
+          const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
+          result.textOffset =
+              literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont(), contentRect.width(), theme.codeLineHeight());
+          result.cursorRect =
+              literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft(), contentRect.width(), theme.codeLineHeight());
+        } else {
+          if (htmlLayout_ && htmlLayout_->valid()) {
+            const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
+            const html::HtmlLayoutResult::HitResult htmlHit = htmlLayout_->hitTest(documentPos - contentRect.topLeft());
+            result.linkHref = htmlHit.linkHref;
+            result.imageSrc = htmlHit.imageSrc;
+          }
+          result.textOffset = documentPos.x() < rect_.center().x() ? 0 : literal_.size();
+          result.cursorRect = QRectF(result.textOffset == 0 ? rect_.left() : rect_.right(), rect_.top(), 1.0, rect_.height());
+        }
       }
       break;
     case BlockType::LinkDefinition:

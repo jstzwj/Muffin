@@ -325,6 +325,7 @@ CursorPosition LiteralBlockController::cursorFor(NodeId id, qsizetype offset) co
   cursor.blockId = id;
   cursor.text.nodeId = id;
   cursor.text.textOffset = qBound<qsizetype>(0, offset, node->literal().size());
+  cursor.text.sourceOffset = cursor.text.textOffset;
   return cursor;
 }
 

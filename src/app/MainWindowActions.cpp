@@ -69,7 +69,7 @@ void muffin::MainWindow::setupConnections() {
   updateSidebarMode();
   updateViewMode();
   applyTheme(themeManager_.currentThemeName());
-  renderView_->setDocument(session_.document());
+  renderView_->setDocument(session_.document(), session_.filePath());
 }
 
 void muffin::MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {

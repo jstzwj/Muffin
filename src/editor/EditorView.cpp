@@ -7,6 +7,7 @@
 
 #include <QApplication>
 #include <QDesktopServices>
+#include <QDir>
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QElapsedTimer>
@@ -38,6 +39,31 @@ bool sameCursorPosition(const CursorPosition& a, const CursorPosition& b) {
 
 bool sameSelectionRange(const SelectionRange& a, const SelectionRange& b) {
   return sameCursorPosition(a.anchor, b.anchor) && sameCursorPosition(a.focus, b.focus);
+}
+
+QUrl resolvedUrlForDocumentResource(const QString& value, const QString& documentPath) {
+  const QFileInfo info(value);
+  if (info.isAbsolute()) {
+    return QUrl::fromLocalFile(info.absoluteFilePath());
+  }
+
+  const QUrl url(value);
+  if (url.isLocalFile()) {
+    return QUrl::fromLocalFile(QFileInfo(url.toLocalFile()).absoluteFilePath());
+  }
+  if (url.isValid() && !url.scheme().isEmpty()) {
+    return url;
+  }
+  if (value.startsWith(QLatin1Char('#'))) {
+    return url;
+  }
+
+  if (!documentPath.isEmpty()) {
+    const QString baseDirectory = QFileInfo(documentPath).absolutePath();
+    return QUrl::fromLocalFile(QFileInfo(QDir(baseDirectory).absoluteFilePath(value)).absoluteFilePath());
+  }
+
+  return QUrl(value);
 }
 
 class PerfTimer {
@@ -257,11 +283,12 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
 
   connect(&ImageLoader::instance(), &ImageLoader::imageReady, this, [this](const QString&) {
     if (document_) {
-      setDocument(*document_);
+      setDocument(*document_, documentPath_);
     }
   });
 
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this, [this] {
+    clearHtmlHover();
     updateCodeLanguageEditor();
     updateTableToolbar();
   });
@@ -270,8 +297,9 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
   });
 }
 
-void EditorView::setDocument(const MarkdownDocument& document) {
+void EditorView::setDocument(const MarkdownDocument& document, QString documentPath) {
   document_ = &document;
+  documentPath_ = std::move(documentPath);
   rebuildLayout();
   updateTableToolbar();
 }
@@ -412,6 +440,20 @@ void EditorView::setSelectionRange(SelectionRange selection) {
   dragSelectionPending_ = false;
   draggingSelection_ = false;
   applySelectionRange(selection);
+}
+
+void EditorView::setEditingHtmlBlock(NodeId id) {
+  if (editingHtmlBlockId_ == id) {
+    return;
+  }
+  editingHtmlBlockId_ = id;
+  if (layout_) {
+    layout_->setEditingHtmlBlock(id);
+  }
+  clearHtmlHover();
+  if (document_) {
+    rebuildLayout();
+  }
 }
 
 void EditorView::applySelectionRange(SelectionRange selection) {
@@ -588,11 +630,15 @@ void EditorView::paintEvent(QPaintEvent* event) {
   }
   paintSelection(painter);
   paintCurrentTableCell(painter);
+  paintHtmlHoverOverlay(painter);
   paintInsertionCursor(painter);
   paintHeadingBadge(painter);
 }
 
 bool EditorView::event(QEvent* event) {
+  if (event->type() == QEvent::Leave) {
+    clearHtmlHover();
+  }
   if (event->type() == QEvent::KeyPress || event->type() == QEvent::ShortcutOverride) {
     auto* keyEvent = static_cast<QKeyEvent*>(event);
     if (keyEvent->key() == Qt::Key_A && keyEvent->modifiers().testFlag(Qt::ControlModifier)) {
@@ -617,6 +663,7 @@ void EditorView::resizeEvent(QResizeEvent* event) {
   QAbstractScrollArea::resizeEvent(event);
   bool relayouted = false;
   if (layout_ && document_) {
+    layout_->setEditingHtmlBlock(editingHtmlBlockId_);
     const int oldValue = verticalScrollBar()->value();
     relayouted = layout_->relayoutForViewportWidth(theme_, viewport()->width());
     if (relayouted) {
@@ -646,20 +693,27 @@ void EditorView::wheelEvent(QWheelEvent* event) {
 void EditorView::mousePressEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     setFocus(Qt::MouseFocusReason);
+    const NodeId htmlToggleBlockId = editingHtmlBlockId_.isValid() ? editingHtmlBlockId_ : visibleHtmlHoverBlockId_;
+    if (htmlHoverButtonViewportRect().contains(event->position()) && htmlToggleBlockId.isValid()) {
+      emit htmlEditToggleRequested(htmlToggleBlockId);
+      event->accept();
+      return;
+    }
     const HitTestResult hit = hitTest(event->position());
+    // Click anywhere on a rendered HTML block to enter source editing mode.
+    // When already editing this block, fall through to normal cursor placement.
+    if (hit.isValid() && hit.zone == HitTestResult::Zone::Html && editingHtmlBlockId_ != hit.blockId) {
+      emit htmlEditToggleRequested(hit.blockId);
+      event->accept();
+      return;
+    }
     if (event->modifiers().testFlag(Qt::ControlModifier) && hit.isValid() && !hit.linkHref.isEmpty()) {
-      QDesktopServices::openUrl(QUrl(hit.linkHref));
+      QDesktopServices::openUrl(resolvedUrlForDocumentResource(hit.linkHref, documentPath_));
       event->accept();
       return;
     }
     if (event->modifiers().testFlag(Qt::ControlModifier) && hit.isValid() && !hit.imageSrc.isEmpty()) {
-      const QString src = hit.imageSrc;
-      const QFileInfo fi(src);
-      if (fi.exists()) {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(fi.absoluteFilePath()));
-      } else {
-        QDesktopServices::openUrl(QUrl(src));
-      }
+      QDesktopServices::openUrl(resolvedUrlForDocumentResource(hit.imageSrc, documentPath_));
       event->accept();
       return;
     }
@@ -697,6 +751,7 @@ void EditorView::mouseMoveEvent(QMouseEvent* event) {
       return;
     }
   }
+  updateHtmlHover(event->position());
   updateMouseCursor(event->position());
   QAbstractScrollArea::mouseMoveEvent(event);
 }
@@ -849,7 +904,8 @@ void EditorView::rebuildLayout() {
 
   if (document_) {
     const int oldValue = verticalScrollBar()->value();
-    layout_->rebuild(*document_, theme_, viewport()->width(), selection_);
+    layout_->setEditingHtmlBlock(editingHtmlBlockId_);
+    layout_->rebuild(*document_, theme_, viewport()->width(), selection_, documentPath_);
     updateScrollBars();
     verticalScrollBar()->setValue(qBound(verticalScrollBar()->minimum(), oldValue, verticalScrollBar()->maximum()));
     if (cursorPosition_.isValid()) {
@@ -1120,6 +1176,89 @@ void EditorView::paintHeadingBadge(QPainter& painter) const {
   painter.restore();
 }
 
+QRectF EditorView::htmlHoverOverlayViewportRect() const {
+  if (!layout_) {
+    return {};
+  }
+  const NodeId id = editingHtmlBlockId_.isValid() ? editingHtmlBlockId_ : visibleHtmlHoverBlockId_;
+  const BlockLayout* block = layout_->block(id);
+  if (!block || block->type() != BlockType::HtmlBlock) {
+    return {};
+  }
+  return block->rect().translated(0, -scrollY());
+}
+
+QRectF EditorView::htmlHoverButtonViewportRect() const {
+  const QRectF overlay = htmlHoverOverlayViewportRect();
+  if (overlay.isEmpty()) {
+    return {};
+  }
+  return QRectF(overlay.right() - 30.0, overlay.top(), 24.0, 20.0);
+}
+
+void EditorView::paintHtmlHoverOverlay(QPainter& painter) const {
+  const QRectF overlay = htmlHoverOverlayViewportRect();
+  if (overlay.isEmpty() || !viewport()->rect().intersects(overlay.toAlignedRect())) {
+    return;
+  }
+
+  const QRectF buttonRect = htmlHoverButtonViewportRect();
+
+  painter.save();
+
+  // Only paint the gray overlay and "HTML" label in rendered (non-editing) mode.
+  // In editing mode, the overlay would obscure the syntax-highlighted source.
+  if (!editingHtmlBlockId_.isValid()) {
+    const QRectF labelRect(overlay.right() - 76.0, overlay.top(), 70.0, 20.0);
+
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(240, 242, 245, 96));
+    painter.drawRect(overlay.adjusted(0, 0, 0, 0));
+
+    painter.setBrush(theme_.backgroundColor());
+    painter.drawRect(labelRect.adjusted(-2, 0, 2, 0));
+
+    QFont badgeFont = theme_.paragraphFont();
+    badgeFont.setPointSizeF(qMax<qreal>(8.0, badgeFont.pointSizeF() * 0.75));
+    painter.setFont(badgeFont);
+    painter.setPen(QColor(132, 138, 148));
+    painter.drawText(labelRect.adjusted(4, 0, -28, 0), Qt::AlignVCenter | Qt::AlignRight, QStringLiteral("HTML"));
+  }
+
+  painter.setPen(QColor(87, 96, 110));
+  painter.drawText(buttonRect, Qt::AlignCenter, QStringLiteral("</>"));
+  painter.restore();
+}
+
+void EditorView::updateHtmlHover(QPointF viewportPos) {
+  const HitTestResult hit = hitTest(viewportPos);
+  const NodeId next = hit.isValid() && hit.zone == HitTestResult::Zone::Html ? hit.blockId : NodeId();
+  if (next == visibleHtmlHoverBlockId_) {
+    return;
+  }
+
+  const QRect oldRect = htmlHoverOverlayViewportRect().adjusted(-2, -2, 2, 2).toAlignedRect();
+  if (!editingHtmlBlockId_.isValid()) {
+    visibleHtmlHoverBlockId_ = next;
+  }
+  if (!oldRect.isEmpty()) {
+    viewport()->update(oldRect);
+  }
+  if (visibleHtmlHoverBlockId_.isValid()) {
+    viewport()->update(htmlHoverOverlayViewportRect().adjusted(-2, -2, 2, 2).toAlignedRect());
+  }
+}
+
+void EditorView::clearHtmlHover() {
+  const QRect oldRect = htmlHoverOverlayViewportRect().adjusted(-2, -2, 2, 2).toAlignedRect();
+  if (!editingHtmlBlockId_.isValid()) {
+    visibleHtmlHoverBlockId_ = {};
+  }
+  if (!oldRect.isEmpty()) {
+    viewport()->update(oldRect);
+  }
+}
+
 HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
   if (!layout_ || !position.isValid()) {
     return {};
@@ -1175,10 +1314,14 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
       break;
     case BlockType::HtmlBlock:
       hit.zone = HitTestResult::Zone::Html;
-      {
+      if (block->literalEditing()) {
         const QRectF contentRect = block->literalContentRect(theme_);
         hit.cursorRect =
             literalCursorRectForOffset(block->literal(), position.text.textOffset, theme_.codeFont(), contentRect.topLeft(), contentRect.width(), theme_.codeLineHeight());
+      } else {
+        const qsizetype offset = qBound<qsizetype>(0, position.text.textOffset, block->literal().size());
+        const qreal x = offset <= block->literal().size() / 2 ? block->rect().left() : block->rect().right();
+        hit.cursorRect = QRectF(x, block->rect().top(), 1.0, block->rect().height());
       }
       break;
     case BlockType::Table:
@@ -1311,6 +1454,10 @@ void EditorView::updateDragSelection(QPointF viewportPos) {
 }
 
 void EditorView::updateMouseCursor(QPointF viewportPos) {
+  if (htmlHoverButtonViewportRect().contains(viewportPos)) {
+    viewport()->setCursor(Qt::PointingHandCursor);
+    return;
+  }
   const HitTestResult hit = hitTest(viewportPos);
   if (hit.isValid() && !hit.linkHref.isEmpty()) {
     viewport()->setCursor(Qt::PointingHandCursor);

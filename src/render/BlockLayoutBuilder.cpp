@@ -1,9 +1,11 @@
 #include "render/BlockLayoutBuilder.h"
 
+#include "blocks/html/HtmlSanitizer.h"
 #include "projection/InlineProjection.h"
 #include "document/SourceRangeUtil.h"
 
 #include <QCoreApplication>
+#include <QFileInfo>
 #include <QFontMetricsF>
 #include <QStringList>
 #include <QTextLayout>
@@ -147,6 +149,14 @@ void BlockLayoutBuilder::setMarkdownText(QString markdownText, const LineStartOf
 
 void BlockLayoutBuilder::setSelection(SelectionRange selection) {
   selection_ = selection;
+}
+
+void BlockLayoutBuilder::setEditingHtmlBlock(NodeId id) {
+  editingHtmlBlockId_ = id;
+}
+
+void BlockLayoutBuilder::setDocumentPath(QString path) {
+  documentPath_ = std::move(path);
 }
 
 std::unique_ptr<BlockLayout> BlockLayoutBuilder::build(
@@ -325,7 +335,8 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
     layout->setCodeLanguage(language);
     layout->setCodeHighlightSpans(codeHighlighter_.highlight(language, layout->literal()));
   }
-  const bool editingLiteral = node.type() == BlockType::MathBlock && selectionFocusesNode(selection_, node.id());
+  const bool editingLiteral = (node.type() == BlockType::MathBlock && selectionFocusesNode(selection_, node.id())) ||
+                              (node.type() == BlockType::HtmlBlock && editingHtmlBlockId_ == node.id());
   layout->setLiteralEditing(editingLiteral);
   qreal height = textHeight(
       layout->literal(),
@@ -347,6 +358,24 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
                            theme.codePadding().bottom() + theme.codePadding().top() + previewHeight + theme.codePadding().bottom());
       }
       layout->setMathLayout(std::move(mathLayout));
+    }
+  }
+  if (node.type() == BlockType::HtmlBlock && editingLiteral) {
+    layout->setCodeHighlightSpans(codeHighlighter_.highlight(QStringLiteral("html"), layout->literal()));
+  }
+  if (node.type() == BlockType::HtmlBlock && !editingLiteral) {
+    const qreal contentWidth = qMax<qreal>(1.0, width - theme.codePadding().left() - theme.codePadding().right());
+    qreal fontSize = theme.paragraphFont().pointSizeF();
+    if (fontSize <= 0) {
+      fontSize = qMax<qreal>(1.0, theme.paragraphFont().pixelSize());
+    }
+    const QString sanitizedHtml = HtmlSanitizer().sanitizedPreview(layout->literal());
+    const QString baseDirectory = documentPath_.isEmpty() ? QString() : QFileInfo(documentPath_).absolutePath();
+    auto htmlResult = std::make_shared<html::HtmlLayoutResult>(
+        htmlRenderer_.render(sanitizedHtml, fontSize, contentWidth, baseDirectory));
+    if (htmlResult->valid()) {
+      height = std::ceil(htmlResult->size().height() + theme.codePadding().top() + theme.codePadding().bottom());
+      layout->setHtmlLayout(std::move(htmlResult));
     }
   }
   layout->setRect(QRectF(x, y, width, height));

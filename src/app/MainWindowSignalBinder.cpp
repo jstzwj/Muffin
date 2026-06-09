@@ -144,7 +144,7 @@ void muffin::MainWindowSignalBinder::connectSessionSignals(MainWindow& window) {
   QObject::connect(&window.session_, &DocumentSession::parsed, &window, [&window] {
     PerfTimer perf("main.parsed.consumer");
     if (!window.session_.lastParseWasLocalEdit()) {
-      window.renderView_->setDocument(window.session_.document());
+      window.renderView_->setDocument(window.session_.document(), window.session_.filePath());
     }
     window.scheduleWordCountUpdate();
     window.updateStatus();

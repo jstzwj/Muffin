@@ -37,8 +37,9 @@ public:
     qreal heightDelta = 0;
   };
 
-  void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth);
-  void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, SelectionRange selection);
+  void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, QString documentPath = {});
+  void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, SelectionRange selection, QString documentPath = {});
+  void setEditingHtmlBlock(NodeId id);
   bool relayoutForViewportWidth(const RenderTheme& theme, qreal viewportWidth);
   BlockRebuildResult rebuildBlock(NodeId blockId, const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
   RangeRebuildResult rebuildTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
@@ -61,6 +62,8 @@ private:
   void rebuildIndexes();
 
   const MarkdownDocument* document_ = nullptr;
+  QString documentPath_;
+  NodeId editingHtmlBlockId_;
   qreal viewportWidth_ = 0;
   std::vector<std::unique_ptr<BlockLayout>> blocks_;
   QHash<NodeId, qsizetype> topLevelIndex_;

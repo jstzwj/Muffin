@@ -68,6 +68,12 @@
       <Component Id="Qt6Widgets" Guid="*">
         <File Id="Qt6WidgetsDll" Source="$(var.DistDir)/Qt6Widgets.dll" />
       </Component>
+      <Component Id="Qt6PrintSupport" Guid="*">
+        <File Id="Qt6PrintSupportDll" Source="$(var.DistDir)/Qt6PrintSupport.dll" />
+      </Component>
+      <Component Id="Qt6Network" Guid="*">
+        <File Id="Qt6NetworkDll" Source="$(var.DistDir)/Qt6Network.dll" />
+      </Component>
       <Component Id="QtConf" Guid="c7d8e9f0-a1b2-4c3d-e4f5-a6b7c8d9e0f1">
         <File Id="QtConfFile" Source="$(var.DistDir)/qt.conf" />
       </Component>

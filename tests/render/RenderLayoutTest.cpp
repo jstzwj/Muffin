@@ -1,5 +1,10 @@
 #include "document/DocumentSession.h"
 #include "document/MarkdownDocument.h"
+#include "html/HtmlBoxBuilder.h"
+#include "html/HtmlLayoutEngine.h"
+#include "html/HtmlParser.h"
+#include "html/HtmlRenderer.h"
+#include "html/HtmlStyleResolver.h"
 #include "parser/CmarkGfmParser.h"
 #include "render/DocumentLayout.h"
 #include "math/MathBuilder.h"
@@ -30,6 +35,7 @@
 #include <QMap>
 #include <QPainter>
 #include <QTemporaryDir>
+#include <QTextLayout>
 
 #include <algorithm>
 #include <functional>
@@ -1648,6 +1654,37 @@ void testLiteralBlockWrappedEditingGeometry() {
           QStringLiteral("wrapped math cursor should move to visual wrapped line"));
 }
 
+void testHtmlBlockPreviewAndEditingHitTestContract() {
+  RenderTheme theme = RenderTheme::github();
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("<div><a href=\"#\">unsafe link</a><script>alert('blocked')</script></div>"), false);
+
+  const MarkdownNode* html = findFirstBlock(session.document().root(), BlockType::HtmlBlock);
+  require(html != nullptr, QStringLiteral("html hit-test fixture should parse"));
+
+  DocumentLayout previewLayout;
+  previewLayout.rebuild(session.document(), theme, 520.0);
+  const BlockLayout* previewBlock = previewLayout.block(html->id());
+  require(previewBlock != nullptr && !previewBlock->literalEditing(), QStringLiteral("html preview block should layout"));
+  const HitTestResult previewHit = previewBlock->hitTest(previewBlock->rect().center(), theme);
+  require(previewHit.zone == HitTestResult::Zone::Html, QStringLiteral("html preview hit should target html zone"));
+  require(previewHit.cursorRect.top() == previewBlock->rect().top(), QStringLiteral("html preview cursor should align to rendered block"));
+  require(previewHit.textOffset == 0 || previewHit.textOffset == previewBlock->literal().size(),
+          QStringLiteral("html preview hit should snap to block boundary, not raw source text"));
+  require(previewBlock->selectionRectsForOffsets(0, previewBlock->literal().size(), theme).size() == 1,
+          QStringLiteral("html preview selection should select rendered block as a unit"));
+
+  DocumentLayout editingLayout;
+  editingLayout.setEditingHtmlBlock(html->id());
+  editingLayout.rebuild(session.document(), theme, 520.0);
+  const BlockLayout* editingBlock = editingLayout.block(html->id());
+  require(editingBlock != nullptr && editingBlock->literalEditing(), QStringLiteral("html editing block should layout as source"));
+  const QRectF sourceRect = editingBlock->literalContentRect(theme);
+  const HitTestResult editingHit = editingBlock->hitTest(QPointF(sourceRect.left() + 80.0, sourceRect.top() + theme.codeLineHeight() * 0.5), theme);
+  require(editingHit.textOffset > 0 && editingHit.textOffset < editingBlock->literal().size(),
+          QStringLiteral("html editing hit should map into raw source text"));
+}
+
 void testFrontMatterLayoutPreservesTrailingLiteralNewline() {
   RenderTheme theme = RenderTheme::github();
 
@@ -3261,6 +3298,319 @@ void testDocumentLayoutInlineLayoutContract() {
           QStringLiteral("document inline layout table selection should be available"));
 }
 
+const html::HtmlBox* firstChildWithTag(const html::HtmlBox& box, html::HtmlTag tag) {
+  for (const auto& child : box.children()) {
+    if (child->tag() == tag) {
+      return child.get();
+    }
+    if (const html::HtmlBox* nested = firstChildWithTag(*child, tag)) {
+      return nested;
+    }
+  }
+  return nullptr;
+}
+
+const html::HtmlBox* firstChildWithText(const html::HtmlBox& box, const QString& text) {
+  for (const auto& child : box.children()) {
+    if (child->tag() == html::HtmlTag::TextRun && child->text() == text) {
+      return child.get();
+    }
+    if (const html::HtmlBox* nested = firstChildWithText(*child, text)) {
+      return nested;
+    }
+  }
+  return nullptr;
+}
+
+void collectChildrenWithTag(const html::HtmlBox& box, html::HtmlTag tag, QVector<const html::HtmlBox*>& out) {
+  for (const auto& child : box.children()) {
+    if (child->tag() == tag) {
+      out.push_back(child.get());
+    }
+    collectChildrenWithTag(*child, tag, out);
+  }
+}
+
+QRectF absoluteHtmlBoxRect(const html::HtmlBox& box) {
+  QPointF origin;
+  const html::HtmlBox* current = &box;
+  while (current) {
+    origin += QPointF(current->geometry().left, current->geometry().top);
+    current = current->parent();
+  }
+  return QRectF(origin, QSizeF(box.geometry().width, box.geometry().height));
+}
+
+void testHtmlInlineLayoutOwnershipContract() {
+  html::HtmlDocument document;
+  require(document.parse(QStringLiteral("<div><h1>HTML block sample</h1><p><a href=\"#\">safe link</a></p><script>alert('blocked')</script></div>")),
+          QStringLiteral("html ownership fixture should parse"));
+
+  html::HtmlBoxBuilder builder;
+  auto root = builder.build(document);
+  require(root != nullptr, QStringLiteral("html ownership fixture should build box tree"));
+  require(!root->collectedText().contains(QStringLiteral("blocked")), QStringLiteral("html script text should not enter box tree"));
+
+  html::HtmlStyleResolver resolver;
+  resolver.resolve(*root, 16.0, 320.0);
+
+  std::vector<std::unique_ptr<html::HtmlTextLayout>> textLayouts;
+  html::HtmlLayoutEngine engine;
+  engine.layout(*root, 320.0, 16.0, textLayouts);
+
+  const html::HtmlBox* heading = firstChildWithTag(*root, html::HtmlTag::Heading1);
+  const html::HtmlBox* paragraph = firstChildWithTag(*root, html::HtmlTag::Paragraph);
+  const html::HtmlBox* anchor = firstChildWithTag(*root, html::HtmlTag::Anchor);
+  require(heading != nullptr && paragraph != nullptr && anchor != nullptr, QStringLiteral("html ownership fixture missing expected nodes"));
+  require(!root->ownsTextLayout(), QStringLiteral("html root must not own descendant text layout"));
+  require(heading->ownsTextLayout(), QStringLiteral("html heading should own its inline text layout"));
+  require(paragraph->ownsTextLayout(), QStringLiteral("html paragraph should own its inline text layout"));
+  require(!anchor->ownsTextLayout(), QStringLiteral("html inline descendant must not own duplicate layout"));
+  require(textLayouts.size() == 2, QStringLiteral("html fixture should create exactly two inline text layouts"));
+
+  for (const auto& child : heading->children()) {
+    require(!child->ownsTextLayout(), QStringLiteral("html text run child must not own duplicate layout"));
+  }
+}
+
+void testHtmlTableAndListLayoutContract() {
+  html::HtmlDocument document;
+  require(document.parse(QStringLiteral(
+              "<ul><li>First item</li><li>Second item</li></ul>"
+              "<ol><li>Alpha</li><li>Beta</li></ol>"
+              "<table><thead><tr><th>Name</th><th>Value</th></tr></thead>"
+              "<tbody><tr><td>One</td><td>Two</td></tr></tbody></table>")),
+          QStringLiteral("html table/list fixture should parse"));
+
+  html::HtmlBoxBuilder builder;
+  auto root = builder.build(document);
+  require(root != nullptr, QStringLiteral("html table/list fixture should build box tree"));
+
+  html::HtmlStyleResolver resolver;
+  resolver.resolve(*root, 16.0, 320.0);
+
+  QVector<const html::HtmlBox*> listItems;
+  collectChildrenWithTag(*root, html::HtmlTag::ListItem, listItems);
+  require(listItems.size() == 4, QStringLiteral("html table/list fixture should contain four list items"));
+  require(listItems[0]->listMarker() == QStringLiteral("\u2022"), QStringLiteral("unordered list item should use bullet marker"));
+  require(listItems[2]->listMarker() == QStringLiteral("1."), QStringLiteral("ordered list item should start at 1"));
+  require(listItems[3]->listMarker() == QStringLiteral("2."), QStringLiteral("ordered list item should increment marker"));
+
+  std::vector<std::unique_ptr<html::HtmlTextLayout>> textLayouts;
+  html::HtmlLayoutEngine engine;
+  engine.layout(*root, 320.0, 16.0, textLayouts);
+
+  QVector<const html::HtmlBox*> rows;
+  collectChildrenWithTag(*root, html::HtmlTag::TableRow, rows);
+  QVector<const html::HtmlBox*> cells;
+  collectChildrenWithTag(*root, html::HtmlTag::TableCell, cells);
+  QVector<const html::HtmlBox*> headers;
+  collectChildrenWithTag(*root, html::HtmlTag::TableHeader, headers);
+  require(rows.size() == 2, QStringLiteral("html table should contain two rows"));
+  require(cells.size() == 2 && headers.size() == 2, QStringLiteral("html table should contain expected cells"));
+
+  const html::HtmlBox* firstHeader = headers[0];
+  const html::HtmlBox* secondHeader = headers[1];
+  const QRectF firstHeaderRect = absoluteHtmlBoxRect(*firstHeader);
+  const QRectF secondHeaderRect = absoluteHtmlBoxRect(*secondHeader);
+  require(firstHeaderRect.width() > 0 && firstHeaderRect.height() > 0,
+          QStringLiteral("html table header should receive non-zero geometry"));
+  require(secondHeaderRect.left() > firstHeaderRect.left(),
+          QStringLiteral("html table cells in a row should be laid out horizontally"));
+  require(qAbs(secondHeaderRect.top() - firstHeaderRect.top()) < 1.0,
+          QStringLiteral("html table cells in a row should share a row top"));
+
+  const html::HtmlBox* firstBodyCell = cells[0];
+  const QRectF firstBodyCellRect = absoluteHtmlBoxRect(*firstBodyCell);
+  require(firstBodyCellRect.top() > firstHeaderRect.top(),
+          QStringLiteral("html table body row should appear below header row"));
+
+  html::HtmlLayoutResult result;
+  result.setRoot(std::move(root));
+  result.setTextLayouts(std::move(textLayouts));
+  result.setSize(QSizeF(340.0, 260.0));
+
+  QImage output(380, 300, QImage::Format_ARGB32_Premultiplied);
+  output.fill(Qt::white);
+  QPainter painter(&output);
+  result.paint(painter, QPointF(24, 12));
+  painter.end();
+
+  require(changedPixelCount(output, Qt::white) > 300,
+          QStringLiteral("html table/list fixture should paint visible table/list pixels"));
+}
+
+void testHtmlInlineStyleAndTagSemanticsContract() {
+  html::HtmlDocument document;
+  require(document.parse(QStringLiteral(
+              "<div style=\"border-left: 3px solid #cccccc\">"
+              "alpha <q>quoted</q> H<sub>2</sub><small>small</small><span style=\"font-size: 24px\">large</span>"
+              "</div>"
+              "<div style=\"display: none\"><span>hidden child</span></div>")),
+          QStringLiteral("html style semantics fixture should parse"));
+
+  html::HtmlBoxBuilder builder;
+  auto root = builder.build(document);
+  require(root != nullptr, QStringLiteral("html style semantics fixture should build box tree"));
+
+  html::HtmlStyleResolver resolver;
+  resolver.resolve(*root, 16.0, 220.0);
+
+  const html::HtmlBox* bordered = firstChildWithTag(*root, html::HtmlTag::Div);
+  require(bordered != nullptr, QStringLiteral("html style semantics fixture missing bordered div"));
+  require(qFuzzyCompare(bordered->style().borderWidth.left(), 3.0), QStringLiteral("border-left should set left border"));
+  require(qFuzzyIsNull(bordered->style().borderWidth.top()), QStringLiteral("border-left should not set top border"));
+  require(qFuzzyIsNull(bordered->style().borderWidth.right()), QStringLiteral("border-left should not set right border"));
+  require(qFuzzyIsNull(bordered->style().borderWidth.bottom()), QStringLiteral("border-left should not set bottom border"));
+
+  const html::HtmlBox* quote = firstChildWithTag(*root, html::HtmlTag::Quote);
+  require(quote != nullptr, QStringLiteral("q tag should map to quote tag"));
+  require(quote->style().display == html::HtmlDisplay::Inline, QStringLiteral("q tag should remain inline"));
+
+  const html::HtmlBox* subText = firstChildWithText(*root, QStringLiteral("2"));
+  const html::HtmlBox* smallText = firstChildWithText(*root, QStringLiteral("small"));
+  const html::HtmlBox* largeText = firstChildWithText(*root, QStringLiteral("large"));
+  require(subText != nullptr && subText->style().fontSize < 16.0, QStringLiteral("sub text should inherit smaller font size"));
+  require(smallText != nullptr && smallText->style().fontSize < 16.0, QStringLiteral("small text should inherit smaller font size"));
+  require(largeText != nullptr && qFuzzyCompare(largeText->style().fontSize, 24.0), QStringLiteral("inline font-size should propagate to text"));
+
+  const html::HtmlBox* hiddenText = firstChildWithText(*root, QStringLiteral("hidden child"));
+  require(hiddenText != nullptr && hiddenText->style().visible, QStringLiteral("hidden child starts with its own computed visibility"));
+
+  std::vector<std::unique_ptr<html::HtmlTextLayout>> textLayouts;
+  html::HtmlLayoutEngine engine;
+  engine.layout(*root, 220.0, 16.0, textLayouts);
+
+  require(hiddenText->style().visible, QStringLiteral("layout must not mutate descendant visibility under hidden parent"));
+  require(!textLayouts.empty(), QStringLiteral("html style semantics fixture should create text layouts"));
+
+  bool sawSubSize = false;
+  bool sawSubBaseline = false;
+  bool sawSmallSize = false;
+  bool sawLargeSize = false;
+  for (const auto& textLayout : textLayouts) {
+    if (!textLayout || !textLayout->layout) {
+      continue;
+    }
+    for (const QTextLayout::FormatRange& range : textLayout->layout->formats()) {
+      const QString spanText = textLayout->text.mid(range.start, range.length);
+      const qreal pointSize = range.format.fontPointSize();
+      if (spanText == QStringLiteral("2") && pointSize > 0 && pointSize < 16.0) {
+        sawSubSize = true;
+        if (range.format.verticalAlignment() == QTextCharFormat::AlignSubScript) {
+          sawSubBaseline = true;
+        }
+      } else if (spanText == QStringLiteral("small") && pointSize > 0 && pointSize < 16.0) {
+        sawSmallSize = true;
+      } else if (spanText == QStringLiteral("large") && qFuzzyCompare(pointSize, 24.0)) {
+        sawLargeSize = true;
+      }
+    }
+  }
+  require(sawSubSize, QStringLiteral("sub text should emit smaller font format"));
+  require(sawSubBaseline, QStringLiteral("sub text should emit subscript baseline format"));
+  require(sawSmallSize, QStringLiteral("small text should emit smaller font format"));
+  require(sawLargeSize, QStringLiteral("inline font-size should emit font format"));
+}
+
+void testHtmlImagePaintContract() {
+  html::HtmlDocument document;
+  require(document.parse(QStringLiteral("<div><img src=\"missing-local-image.png\" alt=\"Missing\"></div>")),
+          QStringLiteral("html image fixture should parse"));
+
+  html::HtmlBoxBuilder builder;
+  auto root = builder.build(document);
+  require(root != nullptr, QStringLiteral("html image fixture should build box tree"));
+
+  html::HtmlStyleResolver resolver;
+  resolver.resolve(*root, 16.0, 220.0);
+
+  std::vector<std::unique_ptr<html::HtmlTextLayout>> textLayouts;
+  html::HtmlLayoutEngine engine;
+  engine.layout(*root, 220.0, 16.0, textLayouts);
+
+  const html::HtmlBox* image = firstChildWithTag(*root, html::HtmlTag::Image);
+  require(image != nullptr, QStringLiteral("html image fixture should contain image box"));
+  require(image->geometry().width > 0 && image->geometry().height > 0,
+          QStringLiteral("html image should receive non-zero layout size"));
+
+  html::HtmlLayoutResult result;
+  result.setRoot(std::move(root));
+  result.setTextLayouts(std::move(textLayouts));
+  result.setSize(QSizeF(220.0, 140.0));
+
+  QImage output(260, 180, QImage::Format_ARGB32_Premultiplied);
+  output.fill(Qt::white);
+  QPainter painter(&output);
+  result.paint(painter, QPointF(10, 10));
+  painter.end();
+
+  require(changedPixelCount(output, Qt::white) > 100,
+          QStringLiteral("html missing image placeholder should paint visible pixels"));
+}
+
+void testHtmlLinkAndRelativeImageHitContract() {
+  html::HtmlRenderer renderer;
+  html::HtmlLayoutResult linkResult =
+      renderer.render(QStringLiteral("<div><a href=\"https://example.test/path\">Open link</a></div>"), 16.0, 240.0);
+  require(linkResult.valid(), QStringLiteral("html link fixture should render"));
+  const html::HtmlLayoutResult::HitResult linkHit = linkResult.hitTest(QPointF(4.0, 8.0));
+  require(linkHit.linkHref == QStringLiteral("https://example.test/path"),
+          QStringLiteral("html link hit-test should return href"));
+
+  QTemporaryDir dir;
+  require(dir.isValid(), QStringLiteral("html relative image temp dir should be valid"));
+  const QString relativeName = QStringLiteral("asset.png");
+  const QString imagePath = dir.filePath(relativeName);
+  QImage image(64, 32, QImage::Format_ARGB32_Premultiplied);
+  image.fill(QColor(80, 120, 200));
+  require(image.save(imagePath), QStringLiteral("html relative image fixture should save image"));
+
+  html::HtmlLayoutResult imageResult =
+      renderer.render(QStringLiteral("<div><img src=\"asset.png\" width=\"32\" alt=\"asset\"></div>"), 16.0, 240.0, dir.path());
+  require(imageResult.valid(), QStringLiteral("html relative image fixture should render"));
+  require(imageResult.size().height() >= 16.0 && imageResult.size().height() <= 40.0,
+          QStringLiteral("html image width attr should preserve natural aspect ratio"));
+  const html::HtmlLayoutResult::HitResult imageHit = imageResult.hitTest(QPointF(4.0, 4.0));
+  require(QFileInfo(imageHit.imageSrc).absoluteFilePath() == QFileInfo(imagePath).absoluteFilePath(),
+          QStringLiteral("html image hit-test should return resolved local path"));
+}
+
+void testHtmlWrappedTextLinePositionsContract() {
+  html::HtmlDocument document;
+  require(document.parse(QStringLiteral(
+              "<div style=\"text-align: justify; font-size: 16px;\">"
+              "Antidisestablishmentarianism Antidisestablishmentarianism Antidisestablishmentarianism "
+              "Antidisestablishmentarianism Antidisestablishmentarianism"
+              "</div>")),
+          QStringLiteral("html wrapped text fixture should parse"));
+
+  html::HtmlBoxBuilder builder;
+  auto root = builder.build(document);
+  require(root != nullptr, QStringLiteral("html wrapped text fixture should build box tree"));
+
+  html::HtmlStyleResolver resolver;
+  resolver.resolve(*root, 16.0, 48.0);
+
+  std::vector<std::unique_ptr<html::HtmlTextLayout>> textLayouts;
+  html::HtmlLayoutEngine engine;
+  engine.layout(*root, 48.0, 16.0, textLayouts);
+
+  require(textLayouts.size() == 1, QStringLiteral("html wrapped text fixture should create one text layout"));
+  const html::HtmlTextLayout* textLayout = textLayouts.front().get();
+  require(textLayout != nullptr && textLayout->layout != nullptr, QStringLiteral("html wrapped text layout should exist"));
+  require(textLayout->layout->lineCount() > 1, QStringLiteral("html wrapped text should create multiple lines"));
+
+  qreal previousY = textLayout->layout->lineAt(0).position().y();
+  for (int i = 1; i < textLayout->layout->lineCount(); ++i) {
+    const qreal y = textLayout->layout->lineAt(i).position().y();
+    require(y > previousY, QStringLiteral("html wrapped text line positions must be vertically ordered"));
+    previousY = y;
+  }
+  require(textLayout->height > textLayout->layout->lineAt(0).height(),
+          QStringLiteral("html wrapped text height should include all lines"));
+}
+
 bool hasExactRoleSpan(const QVector<CodeHighlightSpan>& spans, CodeHighlightRole role, qsizetype start, qsizetype end) {
   for (const CodeHighlightSpan& span : spans) {
     if (span.role == role && span.start == start && span.end == end) {
@@ -3473,6 +3823,7 @@ int main(int argc, char** argv) {
   runTest("testInlineLayoutPainting", [] { testInlineLayoutPainting(); });
   runTest("testMathRenderingLayout", [] { testMathRenderingLayout(); });
   runTest("testLiteralBlockWrappedEditingGeometry", [] { testLiteralBlockWrappedEditingGeometry(); });
+  runTest("testHtmlBlockPreviewAndEditingHitTestContract", [] { testHtmlBlockPreviewAndEditingHitTestContract(); });
   runTest("testFrontMatterLayoutPreservesTrailingLiteralNewline", [] { testFrontMatterLayoutPreservesTrailingLiteralNewline(); });
   runTest("testExtendedMathFunctionRendering", [] { testExtendedMathFunctionRendering(); });
   runTest("testStrictMathGeometryFeatures", [] { testStrictMathGeometryFeatures(); });
@@ -3494,6 +3845,12 @@ int main(int argc, char** argv) {
   runTest("testIncrementalTopLevelRangeRebuildContract", [] { testIncrementalTopLevelRangeRebuildContract(); });
   runTest("testUnorderedListMarkerKindsByDepth", [] { testUnorderedListMarkerKindsByDepth(); });
   runTest("testDocumentLayoutInlineLayoutContract", [] { testDocumentLayoutInlineLayoutContract(); });
+  runTest("testHtmlInlineLayoutOwnershipContract", [] { testHtmlInlineLayoutOwnershipContract(); });
+  runTest("testHtmlTableAndListLayoutContract", [] { testHtmlTableAndListLayoutContract(); });
+  runTest("testHtmlInlineStyleAndTagSemanticsContract", [] { testHtmlInlineStyleAndTagSemanticsContract(); });
+  runTest("testHtmlImagePaintContract", [] { testHtmlImagePaintContract(); });
+  runTest("testHtmlLinkAndRelativeImageHitContract", [] { testHtmlLinkAndRelativeImageHitContract(); });
+  runTest("testHtmlWrappedTextLinePositionsContract", [] { testHtmlWrappedTextLinePositionsContract(); });
   runTest("testTreeSitterCodeHighlighting", [] { testTreeSitterCodeHighlighting(); });
   runTest("testThemeManagerSupportsBuiltInThemes", [] { testThemeManagerSupportsBuiltInThemes(); });
   runTest("testLayoutForTheme/github", [&] { testLayoutForTheme(document, RenderTheme::github(), QStringLiteral("github")); });

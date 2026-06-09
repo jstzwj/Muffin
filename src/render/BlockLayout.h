@@ -2,6 +2,7 @@
 
 #include "document/MarkdownNode.h"
 #include "editor/CursorPosition.h"
+#include "html/HtmlLayoutResult.h"
 #include "math/MathRenderNode.h"
 #include "render/CodeHighlight.h"
 #include "render/InlineLayout.h"
@@ -101,6 +102,8 @@ public:
   const QVector<CodeHighlightSpan>& codeHighlightSpans() const;
   void setMathLayout(std::shared_ptr<math::MathLayoutResult> layout);
   const math::MathLayoutResult* mathLayout() const;
+  void setHtmlLayout(std::shared_ptr<html::HtmlLayoutResult> layout);
+  const html::HtmlLayoutResult* htmlLayout() const;
   void setLiteralEditing(bool editing);
   bool literalEditing() const;
   QRectF literalContentRect(const RenderTheme& theme) const;
@@ -172,6 +175,7 @@ private:
   QString codeLanguage_;
   QVector<CodeHighlightSpan> codeHighlightSpans_;
   std::shared_ptr<math::MathLayoutResult> mathLayout_;
+  std::shared_ptr<html::HtmlLayoutResult> htmlLayout_;
   bool literalEditing_ = false;
   int headingLevel_ = 0;
   QString listMarker_;
