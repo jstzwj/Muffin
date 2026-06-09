@@ -31,7 +31,9 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg PrintSupport Network)
 find_package(ICU REQUIRED COMPONENTS uc i18n)
 find_package(WebP REQUIRED)
 find_package(libavif REQUIRED)
+find_package(Python3 COMPONENTS Interpreter QUIET)
 set(MUFFIN_QT_LINGUIST_BIN "" CACHE PATH "Optional Qt Linguist tool directory")
+set(MUFFIN_QT_TRANSLATION_SOURCE_DIR "" CACHE PATH "Optional directory containing Qt qtbase_*.qm translation files")
 set(MUFFIN_LOCAL_QT_LINGUIST_BIN "C:/Program Files/Qt Linguist/bin")
 if(NOT MUFFIN_QT_LINGUIST_BIN AND WIN32 AND EXISTS "${MUFFIN_LOCAL_QT_LINGUIST_BIN}/lupdate.exe")
   set(MUFFIN_QT_LINGUIST_BIN "${MUFFIN_LOCAL_QT_LINGUIST_BIN}")
@@ -170,12 +172,68 @@ foreach(MUFFIN_TRANSLATION_BINARY_SOURCE IN LISTS MUFFIN_TRANSLATION_BINARY_SOUR
   endif()
 endforeach()
 
+set(MUFFIN_QT_TRANSLATION_CANDIDATE_DIRS)
+if(MUFFIN_QT_TRANSLATION_SOURCE_DIR)
+  list(APPEND MUFFIN_QT_TRANSLATION_CANDIDATE_DIRS "${MUFFIN_QT_TRANSLATION_SOURCE_DIR}")
+endif()
+if(DEFINED QT6_INSTALL_PREFIX AND DEFINED QT6_INSTALL_TRANSLATIONS)
+  list(APPEND MUFFIN_QT_TRANSLATION_CANDIDATE_DIRS "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_TRANSLATIONS}")
+endif()
+if(DEFINED QT_HOST_PATH)
+  list(APPEND MUFFIN_QT_TRANSLATION_CANDIDATE_DIRS "${QT_HOST_PATH}/translations")
+endif()
+if(DEFINED ENV{QT_HOST_PATH})
+  list(APPEND MUFFIN_QT_TRANSLATION_CANDIDATE_DIRS "$ENV{QT_HOST_PATH}/translations")
+endif()
+if(Qt6_DIR)
+  get_filename_component(MUFFIN_QT_PREFIX_FROM_QT6_DIR "${Qt6_DIR}/../../.." ABSOLUTE)
+  list(APPEND MUFFIN_QT_TRANSLATION_CANDIDATE_DIRS "${MUFFIN_QT_PREFIX_FROM_QT6_DIR}/translations")
+endif()
+if(Qt6Core_DIR)
+  get_filename_component(MUFFIN_QT_PREFIX_FROM_QT6_CORE_DIR "${Qt6Core_DIR}/../../.." ABSOLUTE)
+  list(APPEND MUFFIN_QT_TRANSLATION_CANDIDATE_DIRS "${MUFFIN_QT_PREFIX_FROM_QT6_CORE_DIR}/translations")
+endif()
+if(Python3_Interpreter_FOUND)
+  execute_process(
+    COMMAND
+      "${Python3_EXECUTABLE}"
+      -c "from pathlib import Path; import PySide6; print(Path(PySide6.__file__).resolve().parent / 'translations')"
+    RESULT_VARIABLE MUFFIN_PYSIDE6_TRANSLATIONS_RESULT
+    OUTPUT_VARIABLE MUFFIN_PYSIDE6_TRANSLATIONS_DIR
+    ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  if(MUFFIN_PYSIDE6_TRANSLATIONS_RESULT EQUAL 0)
+    list(APPEND MUFFIN_QT_TRANSLATION_CANDIDATE_DIRS "${MUFFIN_PYSIDE6_TRANSLATIONS_DIR}")
+  endif()
+endif()
+list(REMOVE_DUPLICATES MUFFIN_QT_TRANSLATION_CANDIDATE_DIRS)
+
 foreach(MUFFIN_QT_TRANSLATION_BINARY_SOURCE IN LISTS MUFFIN_QT_TRANSLATION_BINARY_SOURCES)
   if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${MUFFIN_QT_TRANSLATION_BINARY_SOURCE}")
-    message(WARNING
-      "Missing ${MUFFIN_QT_TRANSLATION_BINARY_SOURCE}. "
-      "Standard Qt dialog buttons (Save, Discard, Cancel, etc.) will not be translated for this locale. "
-      "Compile qtbase translations from the Qt source tree to fix this.")
+    set(MUFFIN_QT_TRANSLATION_COPIED FALSE)
+    get_filename_component(MUFFIN_QT_TRANSLATION_FILE_NAME "${MUFFIN_QT_TRANSLATION_BINARY_SOURCE}" NAME)
+    foreach(MUFFIN_QT_TRANSLATION_CANDIDATE_DIR IN LISTS MUFFIN_QT_TRANSLATION_CANDIDATE_DIRS)
+      if(EXISTS "${MUFFIN_QT_TRANSLATION_CANDIDATE_DIR}/${MUFFIN_QT_TRANSLATION_FILE_NAME}")
+        message(STATUS
+          "Copying Qt translation ${MUFFIN_QT_TRANSLATION_FILE_NAME} "
+          "from ${MUFFIN_QT_TRANSLATION_CANDIDATE_DIR}")
+        file(COPY_FILE
+          "${MUFFIN_QT_TRANSLATION_CANDIDATE_DIR}/${MUFFIN_QT_TRANSLATION_FILE_NAME}"
+          "${CMAKE_CURRENT_SOURCE_DIR}/${MUFFIN_QT_TRANSLATION_BINARY_SOURCE}"
+          ONLY_IF_DIFFERENT
+        )
+        set(MUFFIN_QT_TRANSLATION_COPIED TRUE)
+        break()
+      endif()
+    endforeach()
+    if(NOT MUFFIN_QT_TRANSLATION_COPIED)
+      message(FATAL_ERROR
+        "Missing ${MUFFIN_QT_TRANSLATION_BINARY_SOURCE}, and no Qt translation source "
+        "directory contained ${MUFFIN_QT_TRANSLATION_FILE_NAME}. "
+        "Install PySide6, provide a Qt installation with translations, or set "
+        "MUFFIN_QT_TRANSLATION_SOURCE_DIR.")
+    endif()
   endif()
 endforeach()
 
