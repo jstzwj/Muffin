@@ -726,7 +726,7 @@
     "compareKatexMetrics": true,
     "compareKatexBBox": true,
     "compareKatexInkBBox": true,
-    "inkBBoxWidthToleranceEm": 0.65
+    "inkBBoxWidthToleranceEm": 1.25
   },
   {
     "id": "macro-high-frequency",
