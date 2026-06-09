@@ -79,7 +79,7 @@ QSizeF HtmlTextMeasurer::measureInlineContext(
   std::vector<HtmlTextLayout::LinkSpan> links;
   int offset = 0;
   collectInlineText(blockBox, text, spans, links, offset, false, false, false, HtmlTextDecoration::None, QColor(),
-                    QTextCharFormat::AlignNormal, QString(), fontSize, fontSize);
+                    QColor(), QTextCharFormat::AlignNormal, QString(), fontSize, fontSize);
 
   if (text.isEmpty()) {
     QFont font;
@@ -103,7 +103,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
   std::vector<HtmlTextLayout::LinkSpan> links;
   int offset = 0;
   collectInlineText(blockBox, text, spans, links, offset, false, false, false, HtmlTextDecoration::None, QColor(),
-                    QTextCharFormat::AlignNormal, QString(), fontSize, fontSize);
+                    QColor(), QTextCharFormat::AlignNormal, QString(), fontSize, fontSize);
 
   QFont baseFont;
   baseFont.setPointSizeF(fontSize);
@@ -157,6 +157,9 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
     if (hasDecoration(span.decoration, HtmlTextDecoration::LineThrough)) {
       fmt.setFontStrikeOut(true);
     }
+    if (span.backgroundColor.isValid()) {
+      fmt.setBackground(span.backgroundColor);
+    }
 
     if (fmt != QTextCharFormat()) {
       QTextLayout::FormatRange range;
@@ -202,6 +205,7 @@ void HtmlTextMeasurer::collectInlineText(
     bool parentMonospace,
     HtmlTextDecoration parentDecoration,
     QColor parentColor,
+    QColor parentBackgroundColor,
     QTextCharFormat::VerticalAlignment parentVerticalAlignment,
     QString parentHref,
     qreal parentFontSize,
@@ -214,6 +218,7 @@ void HtmlTextMeasurer::collectInlineText(
     decoration |= box.style().textDecoration;
   }
   QColor color = box.style().color.isValid() ? box.style().color : parentColor;
+  QColor backgroundColor = box.style().backgroundColor.isValid() ? box.style().backgroundColor : parentBackgroundColor;
   const qreal fontSize = box.style().fontSize > 0 ? box.style().fontSize : parentFontSize;
   const QString href = box.tag() == HtmlTag::Anchor && !box.href().isEmpty() ? box.href() : parentHref;
   QTextCharFormat::VerticalAlignment verticalAlignment = parentVerticalAlignment;
@@ -229,10 +234,11 @@ void HtmlTextMeasurer::collectInlineText(
     offset += box.text().length();
 
     if (bold || italic || mono || decoration != HtmlTextDecoration::None || color.isValid() ||
+        backgroundColor.isValid() ||
         (fontSize > 0 && !qFuzzyCompare(fontSize, baseFontSize)) ||
         verticalAlignment != QTextCharFormat::AlignNormal) {
       outSpans.push_back(TextFormatSpan{
-          start, offset - start, bold, italic, decoration, color, mono, fontSize, verticalAlignment});
+          start, offset - start, bold, italic, decoration, color, backgroundColor, mono, fontSize, verticalAlignment});
     }
     if (!href.isEmpty() && offset > start) {
       outLinks.push_back(HtmlTextLayout::LinkSpan{start, offset - start, href});
@@ -244,7 +250,7 @@ void HtmlTextMeasurer::collectInlineText(
     // Recurse into inline children
     for (const auto& child : box.children()) {
       collectInlineText(*child, outText, outSpans, outLinks, offset, bold, italic, mono, decoration, color,
-                        verticalAlignment, href, fontSize, baseFontSize);
+                        backgroundColor, verticalAlignment, href, fontSize, baseFontSize);
     }
   }
 }

@@ -21,6 +21,7 @@ struct TextFormatSpan {
   bool italic = false;
   HtmlTextDecoration decoration = HtmlTextDecoration::None;
   QColor color;
+  QColor backgroundColor;
   bool monospace = false;
   qreal fontSize = 0;
   QTextCharFormat::VerticalAlignment verticalAlignment = QTextCharFormat::AlignNormal;
@@ -82,6 +83,7 @@ private:
       bool parentMonospace,
       HtmlTextDecoration parentDecoration,
       QColor parentColor,
+      QColor parentBackgroundColor,
       QTextCharFormat::VerticalAlignment parentVerticalAlignment,
       QString parentHref,
       qreal parentFontSize,
