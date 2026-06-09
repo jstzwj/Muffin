@@ -1,4 +1,5 @@
 #include "html/HtmlLayoutResult.h"
+#include "render/ImageDecoder.h"
 #include "render/ImageLoader.h"
 
 #include <QFontMetricsF>
@@ -388,8 +389,12 @@ const QImage& HtmlLayoutResult::cachedImage(const QString& src) const {
     return it.value();
   }
 
-  // Local file path (existing behavior)
-  it = imageCache_.insert(src, QImage(src));
+  // Local file path — fall back to ImageDecoder for SVG, WebP, AVIF
+  QImage img(src);
+  if (img.isNull()) {
+    img = image_decoder::decodeFileFallback(src);
+  }
+  it = imageCache_.insert(src, std::move(img));
   return it.value();
 }
 

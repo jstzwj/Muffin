@@ -1,6 +1,10 @@
 #include "render/ImageDecoder.h"
 
 #include <QFile>
+#include <QGuiApplication>
+#include <QImageReader>
+#include <QPainter>
+#include <QSvgRenderer>
 
 #include <webp/decode.h>
 
@@ -31,6 +35,13 @@ bool isAvif(const QByteArray& data) {
     if (b == "avif" || b == "avis" || b == "mif1" || b == "msf1") return true;
   }
   return false;
+}
+
+bool isSvg(const QByteArray& data) {
+  // SVG is an XML format. Look for "<svg" tag in the first 1 KB.
+  if (data.size() < 4) return false;
+  const QByteArray header = data.left(1024);
+  return header.contains("<svg");
 }
 
 QImage decodeWebp(const QByteArray& data) {
@@ -108,6 +119,39 @@ QImage decodeAvif(const QByteArray& data) {
   return copy;
 }
 
+QImage decodeSvg(const QByteArray& data) {
+  QSvgRenderer renderer(data);
+  if (!renderer.isValid()) {
+    return QImage();
+  }
+
+  QSize svgSize = renderer.defaultSize();
+  if (svgSize.isEmpty()) {
+    svgSize = QSize(150, 150);
+  }
+
+  // Cap to prevent unreasonably large rasterization
+  static constexpr int kMaxSvgDimension = 2048;
+  if (svgSize.width() > kMaxSvgDimension || svgSize.height() > kMaxSvgDimension) {
+    svgSize.scale(kMaxSvgDimension, kMaxSvgDimension, Qt::KeepAspectRatio);
+  }
+
+  // Apply device pixel ratio for crisp rendering on HiDPI displays
+  const qreal dpr = qGuiApp ? qGuiApp->devicePixelRatio() : qreal(1.0);
+  const int pixelW = static_cast<int>(std::ceil(svgSize.width() * dpr));
+  const int pixelH = static_cast<int>(std::ceil(svgSize.height() * dpr));
+
+  QImage image(pixelW, pixelH, QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::transparent);
+  image.setDevicePixelRatio(dpr);
+
+  QPainter painter(&image);
+  painter.setRenderHint(QPainter::Antialiasing);
+  renderer.render(&painter);
+
+  return image;
+}
+
 }  // namespace
 
 QImage decodeFallback(const QByteArray& data) {
@@ -120,6 +164,9 @@ QImage decodeFallback(const QByteArray& data) {
   if (isAvif(data)) {
     return decodeAvif(data);
   }
+  if (isSvg(data)) {
+    return decodeSvg(data);
+  }
   return QImage();
 }
 
@@ -131,6 +178,22 @@ QImage decodeFileFallback(const QString& filePath) {
   const QByteArray data = file.readAll();
   file.close();
   return decodeFallback(data);
+}
+
+QSize detectSize(const QString& filePath) {
+  // Try QImageReader first (covers PNG, JPG, GIF, BMP, etc.)
+  QImageReader reader(filePath);
+  if (const QSize s = reader.size(); s.isValid()) {
+    return s;
+  }
+
+  // Try SVG via QSvgRenderer
+  QSvgRenderer renderer(filePath);
+  if (renderer.isValid()) {
+    return renderer.defaultSize();
+  }
+
+  return {};
 }
 
 }  // namespace muffin::image_decoder

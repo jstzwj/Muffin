@@ -597,6 +597,7 @@ target_link_libraries(MuffinUi
   PRIVATE
     WebP::webp
     avif
+    Qt6::Svg
     lexbor::lexbor_static
     yoga::yoga
 )

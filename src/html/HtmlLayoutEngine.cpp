@@ -1,10 +1,11 @@
 #include "html/HtmlLayoutEngine.h"
 #include "html/HtmlTextMeasurer.h"
+#include "render/ImageDecoder.h"
+#include "render/ImageLoader.h"
 
 #include <yoga/Yoga.h>
 
 #include <QFontMetricsF>
-#include <QImageReader>
 #include <QMap>
 #include <QVector>
 
@@ -189,8 +190,19 @@ YGNode* HtmlLayoutEngine::createYogaNode(
   if (box.tag() == HtmlTag::Image) {
     QSize naturalSize;
     if (!box.src().isEmpty()) {
-      QImageReader reader(box.src());
-      naturalSize = reader.size();
+      const QString& src = box.src();
+      if (src.startsWith(QLatin1String("http://")) ||
+          src.startsWith(QLatin1String("https://"))) {
+        // Remote: use cached rasterized image dimensions (async download
+        // is triggered by the paint path in HtmlLayoutResult::cachedImage)
+        QImage cached = ImageLoader::instance().cached(src);
+        if (!cached.isNull()) {
+          naturalSize = cached.size();
+        }
+      } else {
+        // Local: detectSize handles SVG via QSvgRenderer
+        naturalSize = image_decoder::detectSize(src);
+      }
     }
     qreal imageWidth = style.width >= 0 ? style.width : (naturalSize.width() > 0 ? naturalSize.width() : kDefaultImageWidth);
     qreal imageHeight = style.height >= 0 ? style.height : (naturalSize.height() > 0 ? naturalSize.height() : kDefaultImageHeight);
