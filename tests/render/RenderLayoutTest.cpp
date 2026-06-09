@@ -3378,7 +3378,7 @@ void testHtmlTableAndListLayoutContract() {
   require(document.parse(QStringLiteral(
               "<ul><li>First item</li><li>Second item</li></ul>"
               "<ol><li>Alpha</li><li>Beta</li></ol>"
-              "<table><thead><tr><th>Name</th><th>Value</th></tr></thead>"
+              "<table><caption>Language Comparison</caption><thead><tr><th>Name</th><th>Value</th></tr></thead>"
               "<tbody><tr><td>One</td><td>Two</td></tr></tbody></table>")),
           QStringLiteral("html table/list fixture should parse"));
 
@@ -3406,8 +3406,20 @@ void testHtmlTableAndListLayoutContract() {
   collectChildrenWithTag(*root, html::HtmlTag::TableCell, cells);
   QVector<const html::HtmlBox*> headers;
   collectChildrenWithTag(*root, html::HtmlTag::TableHeader, headers);
+  const html::HtmlBox* table = firstChildWithTag(*root, html::HtmlTag::Table);
+  const html::HtmlBox* caption = firstChildWithTag(*root, html::HtmlTag::Caption);
   require(rows.size() == 2, QStringLiteral("html table should contain two rows"));
   require(cells.size() == 2 && headers.size() == 2, QStringLiteral("html table should contain expected cells"));
+  require(table != nullptr && caption != nullptr, QStringLiteral("html table fixture should include table caption"));
+
+  const QRectF tableRect = absoluteHtmlBoxRect(*table);
+  const QRectF captionRect = absoluteHtmlBoxRect(*caption);
+  require(tableRect.width() < 320.0,
+          QStringLiteral("auto-width html table should use intrinsic width instead of filling the block"));
+  require(qAbs(captionRect.center().x() - tableRect.center().x()) < 1.0,
+          QStringLiteral("html table caption should be centered over the table"));
+  require(qAbs(captionRect.width() - tableRect.width()) < 1.0,
+          QStringLiteral("html table caption width should match table width"));
 
   const html::HtmlBox* firstHeader = headers[0];
   const html::HtmlBox* secondHeader = headers[1];
@@ -3421,9 +3433,14 @@ void testHtmlTableAndListLayoutContract() {
           QStringLiteral("html table cells in a row should share a row top"));
 
   const html::HtmlBox* firstBodyCell = cells[0];
+  const html::HtmlBox* secondBodyCell = cells[1];
   const QRectF firstBodyCellRect = absoluteHtmlBoxRect(*firstBodyCell);
+  const QRectF secondBodyCellRect = absoluteHtmlBoxRect(*secondBodyCell);
   require(firstBodyCellRect.top() > firstHeaderRect.top(),
           QStringLiteral("html table body row should appear below header row"));
+  require(qAbs(firstBodyCellRect.left() - firstHeaderRect.left()) < 1.0 &&
+              qAbs(secondBodyCellRect.left() - secondHeaderRect.left()) < 1.0,
+          QStringLiteral("html table columns should align across row groups"));
 
   html::HtmlLayoutResult result;
   result.setRoot(std::move(root));

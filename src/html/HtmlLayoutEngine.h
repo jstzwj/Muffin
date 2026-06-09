@@ -29,12 +29,21 @@ public:
       std::vector<std::unique_ptr<HtmlTextLayout>>& textLayouts);
 
 private:
-
   YGNode* createYogaNode(
       HtmlBox& box,
       qreal fontSize,
       qreal availableWidth,
       std::vector<std::unique_ptr<HtmlTextLayout>>& textLayouts);
+
+  void layoutTableBox(
+      HtmlBox& box,
+      qreal availableWidth,
+      std::vector<std::unique_ptr<HtmlTextLayout>>& textLayouts);
+  qreal layoutFixedWidthBox(
+      HtmlBox& box,
+      qreal width,
+      std::vector<std::unique_ptr<HtmlTextLayout>>& textLayouts);
+  qreal intrinsicOuterWidth(const HtmlBox& box, qreal availableWidth) const;
 
   void applyBoxStyle(YGNode* node, const HtmlComputedStyle& style);
   void readLayoutBack(HtmlBox& box, YGNode* node);
