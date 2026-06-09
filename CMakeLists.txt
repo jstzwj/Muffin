@@ -85,6 +85,23 @@ set(MUFFIN_TRANSLATION_BINARY_SOURCES
   translations/muffin_nl.qm
 )
 
+# Qt base translations for standard dialog buttons (Save, Discard, Cancel, etc.)
+set(MUFFIN_QT_TRANSLATION_BINARY_SOURCES
+  translations/qtbase_ja.qm
+  translations/qtbase_zh_CN.qm
+  translations/qtbase_fr.qm
+  translations/qtbase_es.qm
+  translations/qtbase_ru.qm
+  translations/qtbase_de.qm
+  translations/qtbase_pt_BR.qm
+  translations/qtbase_ko.qm
+  translations/qtbase_it.qm
+  translations/qtbase_zh_TW.qm
+  translations/qtbase_tr.qm
+  translations/qtbase_pl.qm
+  translations/qtbase_nl.qm
+)
+
 set(MUFFIN_TRANSLATABLE_SOURCES
   src/main.cpp
   src/app/LanguageManager.cpp
@@ -150,6 +167,15 @@ foreach(MUFFIN_TRANSLATION_BINARY_SOURCE IN LISTS MUFFIN_TRANSLATION_BINARY_SOUR
         "Missing ${MUFFIN_TRANSLATION_BINARY_SOURCE}. "
         "Install Qt Linguist tools, provide lrelease on PATH, or commit the generated .qm file.")
     endif()
+  endif()
+endforeach()
+
+foreach(MUFFIN_QT_TRANSLATION_BINARY_SOURCE IN LISTS MUFFIN_QT_TRANSLATION_BINARY_SOURCES)
+  if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${MUFFIN_QT_TRANSLATION_BINARY_SOURCE}")
+    message(WARNING
+      "Missing ${MUFFIN_QT_TRANSLATION_BINARY_SOURCE}. "
+      "Standard Qt dialog buttons (Save, Discard, Cancel, etc.) will not be translated for this locale. "
+      "Compile qtbase translations from the Qt source tree to fix this.")
   endif()
 endforeach()
 

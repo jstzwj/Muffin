@@ -40,6 +40,7 @@ private:
   QString currentCode_ = QStringLiteral("en");
   QString selectedCode_ = QStringLiteral("system");
   std::unique_ptr<QTranslator> translator_;
+  std::unique_ptr<QTranslator> qtTranslator_;
 };
 
 }  // namespace muffin

@@ -106,11 +106,16 @@ bool muffin::LanguageManager::installTranslator(const QString& code) {
     QApplication::removeTranslator(translator_.get());
     translator_.reset();
   }
+  if (qtTranslator_) {
+    QApplication::removeTranslator(qtTranslator_.get());
+    qtTranslator_.reset();
+  }
 
   if (code == QStringLiteral("en")) {
     return true;
   }
 
+  // Load application translations
   const QString qmPath = QStringLiteral(":/i18n/muffin_%1.qm").arg(code);
   auto translator = std::make_unique<QTranslator>();
   if (!translator->load(qmPath)) {
@@ -119,5 +124,14 @@ bool muffin::LanguageManager::installTranslator(const QString& code) {
 
   QApplication::installTranslator(translator.get());
   translator_ = std::move(translator);
+
+  // Load Qt base translations for standard dialog buttons (Save, Discard, Cancel, etc.)
+  const QString qtQmPath = QStringLiteral(":/i18n/qt/qtbase_%1.qm").arg(code);
+  auto qtTranslator = std::make_unique<QTranslator>();
+  if (qtTranslator->load(qtQmPath)) {
+    QApplication::installTranslator(qtTranslator.get());
+    qtTranslator_ = std::move(qtTranslator);
+  }
+
   return true;
 }

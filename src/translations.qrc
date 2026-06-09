@@ -15,4 +15,19 @@
     <file alias="muffin_pl.qm">../translations/muffin_pl.qm</file>
     <file alias="muffin_nl.qm">../translations/muffin_nl.qm</file>
   </qresource>
+  <qresource prefix="/i18n/qt">
+    <file alias="qtbase_ja.qm">../translations/qtbase_ja.qm</file>
+    <file alias="qtbase_zh_CN.qm">../translations/qtbase_zh_CN.qm</file>
+    <file alias="qtbase_fr.qm">../translations/qtbase_fr.qm</file>
+    <file alias="qtbase_es.qm">../translations/qtbase_es.qm</file>
+    <file alias="qtbase_ru.qm">../translations/qtbase_ru.qm</file>
+    <file alias="qtbase_de.qm">../translations/qtbase_de.qm</file>
+    <file alias="qtbase_pt_BR.qm">../translations/qtbase_pt_BR.qm</file>
+    <file alias="qtbase_ko.qm">../translations/qtbase_ko.qm</file>
+    <file alias="qtbase_it.qm">../translations/qtbase_it.qm</file>
+    <file alias="qtbase_zh_TW.qm">../translations/qtbase_zh_TW.qm</file>
+    <file alias="qtbase_tr.qm">../translations/qtbase_tr.qm</file>
+    <file alias="qtbase_pl.qm">../translations/qtbase_pl.qm</file>
+    <file alias="qtbase_nl.qm">../translations/qtbase_nl.qm</file>
+  </qresource>
 </RCC>
