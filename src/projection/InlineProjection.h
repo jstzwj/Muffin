@@ -2,10 +2,13 @@
 
 #include "document/InlineNode.h"
 #include "document/TextSelection.h"
+#include "html/HtmlTextMeasurer.h"
 
 #include <QString>
 #include <QtGlobal>
 #include <QVector>
+
+#include <vector>
 
 namespace muffin {
 
@@ -20,13 +23,20 @@ enum class InlineSpanKind {
   CloseMarker,
   EmptyContentSlot,
   HiddenSyntax,
-  Atom
+  Atom,
+  HtmlContent
 };
 
 struct LinkRange {
   qsizetype displayStart = 0;
   qsizetype displayEnd = 0;
   QString href;
+};
+
+struct HtmlInlineFormatData {
+  std::vector<html::TextFormatSpan> formatSpans;
+  std::vector<html::HtmlTextLayout::LinkSpan> links;
+  qsizetype displayStart = 0;
 };
 
 struct InlineProjectionSpan {
@@ -72,13 +82,15 @@ struct InlineProjectionState {
 class InlineProjection {
 public:
   InlineProjection() = default;
-  InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState state = {}, qsizetype sourceBase = -1);
+  InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState state = {}, qsizetype sourceBase = -1,
+                   qreal baseFontSize = 16.0);
 
   bool isValid() const;
   QString sourceText() const;
   QString displayText() const;
   QString visibleText() const;
   const QVector<InlineProjectionSpan>& spans() const;
+  const QVector<HtmlInlineFormatData>& htmlFormatData() const;
   QString linkHrefAtDisplayOffset(qsizetype displayOffset) const;
 
   bool sourceOffsetForVisibleOffset(qsizetype visibleOffset, qsizetype& sourceOffset) const;
@@ -102,6 +114,7 @@ private:
     bool bold = false;
     bool italic = false;
     bool strike = false;
+    qreal baseFontSize = 16.0;
     QString displayText;
     QString visibleText;
     QVector<InlineProjectionSpan> spans;
@@ -116,8 +129,13 @@ private:
   static void appendTextSpan(BuildState& state, InlineType type, InlineSpanKind kind, qsizetype sourceStart, qsizetype sourceEnd,
                              qsizetype contentSourceStart, qsizetype contentSourceEnd, QString displayText, bool visible,
                              bool editable = true);
-  static void appendInlines(BuildState& state, const QVector<InlineNode>& inlines, qsizetype sourceStart, qsizetype sourceEnd);
-  static void appendInline(BuildState& state, const InlineNode& node, qsizetype sourceStart, qsizetype sourceEnd);
+  static void appendInlines(BuildState& state, const QVector<InlineNode>& inlines, qsizetype sourceStart, qsizetype sourceEnd,
+                            QVector<HtmlInlineFormatData>& htmlFormatData);
+  static void appendInline(BuildState& state, const InlineNode& node, qsizetype sourceStart, qsizetype sourceEnd,
+                           QVector<HtmlInlineFormatData>& htmlFormatData);
+  static int tryAppendHtmlInlineGroup(BuildState& state, const QVector<InlineNode>& inlines, int index,
+                                      qsizetype sourceStart, qsizetype sourceEnd, qsizetype& searchFrom,
+                                      QVector<HtmlInlineFormatData>& htmlFormatData);
   static qsizetype findMarkdown(const QString& sourceText, const QString& markdown, qsizetype searchFrom, qsizetype searchEnd);
   bool offsetInSource(qsizetype sourceOffset) const;
 
@@ -126,6 +144,7 @@ private:
   QString visibleText_;
   QVector<InlineProjectionSpan> spans_;
   QVector<LinkRange> linkRanges_;
+  QVector<HtmlInlineFormatData> htmlFormatData_;
   bool valid_ = false;
 };
 

@@ -1,6 +1,7 @@
 #include "projection/InlineProjection.h"
 
 #include "houdini.h"
+#include "html/InlineHtmlRenderer.h"
 
 namespace muffin {
 namespace {
@@ -81,6 +82,45 @@ bool rangeWithin(InlineRange range, qsizetype start, qsizetype end) {
   return range.isValid() && range.start >= start && range.end <= end;
 }
 
+// Extract the tag name from an HTML inline tag text.
+// For "<b>", "<span ...>" returns "b", "span".
+// For "</b>", returns empty (closing tag).
+// For "<br>", "<br/>" returns "br".
+// For non-tag text, returns empty.
+QStringView extractOpeningTagName(const QString& text) {
+  if (text.size() < 2 || text[0] != QLatin1Char('<')) {
+    return {};
+  }
+  if (text.size() >= 2 && text[1] == QLatin1Char('/')) {
+    return {};  // closing tag
+  }
+  qsizetype end = 1;
+  while (end < text.size() && (text[end].isLetter() || text[end].isDigit())) {
+    ++end;
+  }
+  return end > 1 ? QStringView(text).mid(1, end - 1) : QStringView();
+}
+
+QStringView extractClosingTagName(const QString& text) {
+  if (text.size() < 3 || text[0] != QLatin1Char('<') || text[1] != QLatin1Char('/')) {
+    return {};
+  }
+  qsizetype end = 2;
+  while (end < text.size() && (text[end].isLetter() || text[end].isDigit())) {
+    ++end;
+  }
+  return end > 2 ? QStringView(text).mid(2, end - 2) : QStringView();
+}
+
+bool isSelfClosingBrTag(const QString& text) {
+  if (text.size() < 3 || text[0] != QLatin1Char('<')) {
+    return false;
+  }
+  const QStringView body = QStringView(text).mid(1).trimmed();
+  return body.startsWith(u"br", Qt::CaseInsensitive) &&
+         (body.size() == 2 || body[2] == QLatin1Char('>') || body[2] == QLatin1Char('/'));
+}
+
 }  // namespace
 
 bool InlineProjectionState::shouldRevealSourceRange(qsizetype sourceStart, qsizetype sourceEnd) const {
@@ -138,17 +178,21 @@ InlineProjectionState InlineProjectionState::forSelection(
   return state;
 }
 
-InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState projectionState, qsizetype sourceBase)
+InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState projectionState, qsizetype sourceBase,
+                                   qreal baseFontSize)
     : sourceText_(std::move(sourceText)), visibleText_(plainTextForInlines(inlines)) {
   BuildState state;
   state.sourceText = &sourceText_;
   state.sourceBase = sourceBase;
   state.projectionState = projectionState;
-  appendInlines(state, inlines, 0, sourceText_.size());
+  state.baseFontSize = baseFontSize;
+  QVector<HtmlInlineFormatData> htmlData;
+  appendInlines(state, inlines, 0, sourceText_.size(), htmlData);
   displayText_ = state.displayText;
   visibleText_ = state.visibleText;
   spans_ = state.spans;
   linkRanges_ = state.linkRanges;
+  htmlFormatData_ = std::move(htmlData);
   if (displayText_.isEmpty() && !sourceText_.isEmpty()) {
     appendTextSpan(state, InlineType::Text, InlineSpanKind::Text, 0, sourceText_.size(), sourceText_, true);
     displayText_ = state.displayText;
@@ -178,6 +222,10 @@ QString InlineProjection::visibleText() const {
 
 const QVector<InlineProjectionSpan>& InlineProjection::spans() const {
   return spans_;
+}
+
+const QVector<HtmlInlineFormatData>& InlineProjection::htmlFormatData() const {
+  return htmlFormatData_;
 }
 
 QString InlineProjection::linkHrefAtDisplayOffset(qsizetype displayOffset) const {
@@ -509,15 +557,16 @@ void InlineProjection::appendTextSpan(
   state.spans.push_back(span);
 }
 
-void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode>& inlines, qsizetype sourceStart, qsizetype sourceEnd) {
+void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode>& inlines, qsizetype sourceStart, qsizetype sourceEnd,
+                                     QVector<HtmlInlineFormatData>& htmlFormatData) {
   qsizetype searchFrom = sourceStart;
-  for (const InlineNode& node : inlines) {
+  for (int i = 0; i < inlines.size(); ++i) {
+    const InlineNode& node = inlines[i];
     const QString markdown = markdownForInline(node);
     qsizetype nodeStart = -1;
     qsizetype nodeEnd = -1;
 
-    // Use parser-provided source positions when available. They are the only
-    // unambiguous identity for repeated or non-canonically written inline nodes.
+    // Use parser-provided source positions when available.
     const InlineRange parserRange = localRange(node.sourceRange(), state.sourceBase);
     if (rangeWithin(parserRange, sourceStart, sourceEnd) && parserRange.start >= searchFrom) {
       nodeStart = parserRange.start;
@@ -532,9 +581,6 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
 
     if (nodeStart < 0) {
       // Fallback: the reconstructed markdown didn't match the source text exactly
-      // (e.g. different marker characters like __ vs **). Try locating the node's
-      // plain text content within the remaining source range so it isn't silently
-      // dropped from the projection.
       const QString plainText = plainTextForInline(node);
       const qsizetype textPos = plainText.isEmpty() ? qsizetype(-1) : state.sourceText->indexOf(plainText, searchFrom);
       if (textPos >= 0 && textPos + plainText.size() <= sourceEnd) {
@@ -570,7 +616,21 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
           state.sourceText->mid(searchFrom, nodeStart - searchFrom),
           true);
     }
-    appendInline(state, node, nodeStart, nodeEnd);
+
+    // Try to group inline HTML sequences into a single renderable unit.
+    if (node.type() == InlineType::HtmlInline) {
+      const int consumed = tryAppendHtmlInlineGroup(state, inlines, i, nodeStart, sourceEnd, searchFrom, htmlFormatData);
+      if (consumed > 0) {
+        // Advance past consumed nodes. The loop's ++i handles one increment.
+        // We need to update searchFrom to past the last consumed node.
+        // searchFrom is updated inside tryAppendHtmlInlineGroup via the last nodeEnd.
+        i += consumed - 1;
+        // searchFrom is already updated by the successful group handling.
+        continue;
+      }
+    }
+
+    appendInline(state, node, nodeStart, nodeEnd, htmlFormatData);
     searchFrom = nodeEnd;
   }
   if (searchFrom < sourceEnd) {
@@ -585,7 +645,145 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
   }
 }
 
-void InlineProjection::appendInline(BuildState& state, const InlineNode& node, qsizetype sourceStart, qsizetype sourceEnd) {
+int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<InlineNode>& inlines, int index,
+                                               qsizetype nodeStart, qsizetype sourceEnd, qsizetype& searchFrom,
+                                               QVector<HtmlInlineFormatData>& htmlFormatData) {
+  const InlineNode& openNode = inlines[index];
+  const QString& openText = openNode.text();
+
+  // Self-closing void tags like <br> should stay as raw text.
+  // The table cell editing code depends on <br> appearing as raw text
+  // in the projection so its offset calculations remain consistent.
+  if (isSelfClosingBrTag(openText)) {
+    return 0;
+  }
+
+  // Must be an opening tag with a renderable tag name
+  const QStringView tagName = extractOpeningTagName(openText);
+  if (tagName.isEmpty() || !html::InlineHtmlRenderer::isRenderableTag(tagName)) {
+    return 0;
+  }
+
+  // Scan forward for matching closing tag
+  const QString closeTag = QStringLiteral("</%1>").arg(tagName.toString());
+  int closeIndex = -1;
+  for (int j = index + 1; j < inlines.size(); ++j) {
+    if (inlines[j].type() == InlineType::HtmlInline) {
+      const QStringView closingName = extractClosingTagName(inlines[j].text());
+      if (closingName.compare(tagName, Qt::CaseInsensitive) == 0) {
+        closeIndex = j;
+        break;
+      }
+    }
+  }
+
+  if (closeIndex < 0) {
+    // No matching closing tag — fall back to raw text
+    return 0;
+  }
+
+  // Compute source positions for the entire group
+  const InlineRange openParserRange = localRange(openNode.sourceRange(), state.sourceBase);
+  const qsizetype openStart = nodeStart;
+  const qsizetype openEnd = openStart + openText.size();
+
+  const InlineNode& closeNode = inlines[closeIndex];
+  const QString closeMarkdown = markdownForInline(closeNode);
+  // The close tag's source start is after all consumed nodes' text.
+  // We need to compute sourceEnd for the close tag. Let's find it via the parser range or search.
+  qsizetype closeNodeStart = -1;
+  const InlineRange closeParserRange = localRange(closeNode.sourceRange(), state.sourceBase);
+  if (rangeWithin(closeParserRange, sourceEnd > 0 ? qsizetype(0) : qsizetype(0), sourceEnd) && closeParserRange.start >= openEnd) {
+    closeNodeStart = closeParserRange.start;
+  }
+  if (closeNodeStart < 0) {
+    // Fallback: search for the close tag text in source after the open tag
+    closeNodeStart = state.sourceText->indexOf(closeMarkdown, openEnd);
+  }
+  if (closeNodeStart < 0) {
+    return 0;
+  }
+  const qsizetype closeEnd = closeNodeStart + closeNode.text().size();
+
+  // Build the HTML fragment from all consumed nodes
+  QString htmlFragment;
+  for (int j = index; j <= closeIndex; ++j) {
+    htmlFragment += inlines[j].text();
+  }
+
+  // Render via InlineHtmlRenderer — use the actual paragraph font size
+  static const html::InlineHtmlRenderer renderer;
+  const html::InlineHtmlFormatResult rendered = renderer.render(htmlFragment, state.baseFontSize);
+
+  // Determine active state (cursor on the HTML group)
+  const qsizetype visibleStart = state.visibleOffset;
+  const qsizetype visibleEnd = visibleStart + rendered.text.size();
+  const bool active = state.projectionState.shouldRevealSourceRange(openStart, closeEnd) ||
+                      state.projectionState.shouldRevealVisibleRange(visibleStart, visibleEnd);
+
+  if (active) {
+    // When active, show raw HTML tags as visible text (like marker reveal for **bold**)
+    appendTextSpan(state, InlineType::HtmlInline, InlineSpanKind::OpenMarker, openStart, openEnd,
+                   state.sourceText->mid(openStart, openEnd - openStart), false);
+
+    // Emit the content nodes between open and close tags
+    // We need to process intermediate nodes (Text + HtmlInline) for source position accuracy
+    qsizetype contentSourceStart = openEnd;
+    for (int j = index + 1; j < closeIndex; ++j) {
+      const InlineNode& mid = inlines[j];
+      const QString midMd = markdownForInline(mid);
+      // Find source position for this intermediate node
+      qsizetype midStart = -1;
+      const InlineRange midParserRange = localRange(mid.sourceRange(), state.sourceBase);
+      if (rangeWithin(midParserRange, openEnd, closeNodeStart) && midParserRange.start >= contentSourceStart) {
+        midStart = midParserRange.start;
+      }
+      if (midStart < 0) {
+        midStart = state.sourceText->indexOf(midMd, contentSourceStart);
+      }
+      if (midStart >= 0 && midStart + midMd.size() <= closeNodeStart) {
+        if (midStart > contentSourceStart) {
+          appendTextSpan(state, InlineType::Text, InlineSpanKind::Text, contentSourceStart, midStart,
+                         state.sourceText->mid(contentSourceStart, midStart - contentSourceStart), true);
+        }
+        appendInline(state, mid, midStart, midStart + midMd.size(), htmlFormatData);
+        contentSourceStart = midStart + midMd.size();
+      }
+    }
+
+    appendTextSpan(state, InlineType::HtmlInline, InlineSpanKind::CloseMarker, closeNodeStart, closeEnd,
+                   state.sourceText->mid(closeNodeStart, closeEnd - closeNodeStart), false);
+  } else {
+    // When not active, render as formatted text — no markers in display text
+    // (same pattern as markdown emphasis: content only when inactive, markers appear when cursor enters)
+
+    // HtmlContent span (visible rendered text)
+    const qsizetype contentDisplayStart = state.displayOffset;
+    appendTextSpan(state, InlineType::HtmlInline, InlineSpanKind::HtmlContent, openStart, closeEnd,
+                   openEnd, closeNodeStart, rendered.text, true);
+
+    // Register format data
+    if (!rendered.formatSpans.empty() || !rendered.links.empty()) {
+      HtmlInlineFormatData data;
+      data.formatSpans = std::move(rendered.formatSpans);
+      data.links = std::move(rendered.links);
+      data.displayStart = contentDisplayStart;
+      htmlFormatData.push_back(std::move(data));
+    }
+
+    // Register link ranges
+    for (const auto& link : rendered.links) {
+      state.linkRanges.push_back({contentDisplayStart + link.start, contentDisplayStart + link.start + link.length, link.href});
+    }
+  }
+
+  // Advance searchFrom past the entire consumed group
+  searchFrom = closeEnd;
+  return closeIndex - index + 1;
+}
+
+void InlineProjection::appendInline(BuildState& state, const InlineNode& node, qsizetype sourceStart, qsizetype sourceEnd,
+                                    QVector<HtmlInlineFormatData>& htmlFormatData) {
   const QString marker = markerForInline(node);
   const qsizetype displayStart = state.displayOffset;
   const qsizetype visibleStart = state.visibleOffset;
@@ -710,7 +908,7 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
       } else if (node.type() == InlineType::Strikethrough) {
         state.strike = true;
       }
-      appendInlines(state, node.children(), contentStart, contentEnd);
+      appendInlines(state, node.children(), contentStart, contentEnd, htmlFormatData);
       state.bold = previousBold;
       state.italic = previousItalic;
       state.strike = previousStrike;
@@ -754,7 +952,7 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
       if (active) {
         appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, contentStart, state.sourceText->mid(sourceStart, contentStart - sourceStart), false);
       }
-      appendInlines(state, node.children(), contentStart, contentEnd);
+      appendInlines(state, node.children(), contentStart, contentEnd, htmlFormatData);
       for (InlineProjectionSpan& span : state.spans) {
         if (span.displayStart >= displayStart && span.displayEnd <= state.displayOffset) {
           span.type = InlineType::Link;
@@ -787,7 +985,7 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
       break;
     }
     default:
-      appendInlines(state, node.children(), sourceStart, sourceEnd);
+      appendInlines(state, node.children(), sourceStart, sourceEnd, htmlFormatData);
       break;
   }
 }

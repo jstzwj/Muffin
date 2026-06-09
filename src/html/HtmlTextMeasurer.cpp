@@ -270,6 +270,28 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildPreLayout(
   return result;
 }
 
+void HtmlTextMeasurer::collectInlineTextFromRoot(
+    const HtmlBox& box,
+    QString& outText,
+    std::vector<TextFormatSpan>& outSpans,
+    std::vector<HtmlTextLayout::LinkSpan>& outLinks,
+    int& offset,
+    bool parentBold,
+    bool parentItalic,
+    bool parentMonospace,
+    HtmlTextDecoration parentDecoration,
+    QColor parentColor,
+    QColor parentBackgroundColor,
+    QTextCharFormat::VerticalAlignment parentVerticalAlignment,
+    QString parentHref,
+    qreal parentFontSize,
+    qreal baseFontSize) const {
+  collectInlineText(box, outText, outSpans, outLinks, offset,
+                    parentBold, parentItalic, parentMonospace, parentDecoration,
+                    parentColor, parentBackgroundColor, parentVerticalAlignment,
+                    parentHref, parentFontSize, baseFontSize);
+}
+
 void HtmlTextMeasurer::collectInlineText(
     const HtmlBox& box,
     QString& outText,
@@ -314,7 +336,9 @@ void HtmlTextMeasurer::collectInlineText(
         (fontSize > 0 && !qFuzzyCompare(fontSize, baseFontSize)) ||
         verticalAlignment != QTextCharFormat::AlignNormal) {
       outSpans.push_back(TextFormatSpan{
-          start, offset - start, bold, italic, decoration, color, backgroundColor, mono, fontSize, verticalAlignment});
+          start, offset - start, bold, italic, decoration, color, backgroundColor, mono,
+          (fontSize > 0 && !qFuzzyCompare(fontSize, baseFontSize)) ? fontSize : 0.0,
+          verticalAlignment});
     }
     if (!href.isEmpty() && offset > start) {
       outLinks.push_back(HtmlTextLayout::LinkSpan{start, offset - start, href});

@@ -3,6 +3,7 @@
 #include "document/InlineNode.h"
 #include "projection/InlineProjection.h"
 #include "editor/CursorPosition.h"
+#include "html/HtmlTextMeasurer.h"
 #include "math/MathRenderer.h"
 #include "math/MathRenderNode.h"
 #include "theme/RenderTheme.h"
@@ -105,12 +106,28 @@ private:
     bool valid = false;
   };
 
+  struct HtmlFormatSpan {
+    int layoutStart = 0;
+    int layoutEnd = 0;
+    bool bold = false;
+    bool italic = false;
+    bool monospace = false;
+    html::HtmlTextDecoration decoration = html::HtmlTextDecoration::None;
+    QColor color;
+    QColor backgroundColor;
+    qreal fontSize = 0;
+    QTextCharFormat::VerticalAlignment verticalAlignment = QTextCharFormat::AlignNormal;
+    QString href;
+  };
+
   void buildOffsetMapFromProjection();
+  void buildHtmlFormatSpans();
   void buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
   void buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
   QString texForInlineMathVisibleRange(const QVector<InlineNode>& inlines, qsizetype visibleStart, qsizetype visibleEnd) const;
   void buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont);
   void paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) const;
+  void paintTextLayoutHtmlBackgrounds(QPainter& painter, QPointF origin) const;
   void paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) const;
   void paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) const;
   void paintImagePreview(QPainter& painter, QPointF origin) const;
@@ -139,6 +156,7 @@ private:
   QVector<ImageAtom> imageAtoms_;
   QVector<ImageAtom> previewAtoms_;   // Active images rendered as block preview below text
   qreal previewHeight_ = 0.0;         // Total height of image previews
+  QVector<HtmlFormatSpan> htmlFormatSpans_;
   QVector<DisplayOffsetMapEntry> displayOffsetMap_;
   InlineProjection projection_;
   math::MathRenderer mathRenderer_;

@@ -412,6 +412,8 @@ set(MUFFIN_UI_SOURCES
   src/html/HtmlLayoutResult.h
   src/html/HtmlRenderer.cpp
   src/html/HtmlRenderer.h
+  src/html/InlineHtmlRenderer.cpp
+  src/html/InlineHtmlRenderer.h
   src/blocks/math/MathRenderer.cpp
   src/blocks/math/MathRenderer.h
   src/blocks/table/TableController.cpp

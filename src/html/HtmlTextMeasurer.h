@@ -76,6 +76,25 @@ public:
       qreal fontSize,
       qreal availableWidth) const;
 
+  // Collect inline text and formatting spans from a box subtree.
+  // Public for use by InlineHtmlRenderer.
+  void collectInlineTextFromRoot(
+      const HtmlBox& box,
+      QString& outText,
+      std::vector<TextFormatSpan>& outSpans,
+      std::vector<HtmlTextLayout::LinkSpan>& outLinks,
+      int& offset,
+      bool parentBold,
+      bool parentItalic,
+      bool parentMonospace,
+      HtmlTextDecoration parentDecoration,
+      QColor parentColor,
+      QColor parentBackgroundColor,
+      QTextCharFormat::VerticalAlignment parentVerticalAlignment,
+      QString parentHref,
+      qreal parentFontSize,
+      qreal baseFontSize) const;
+
 private:
   QString collectPlainText(const HtmlBox& box) const;
 
