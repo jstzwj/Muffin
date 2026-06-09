@@ -5,6 +5,28 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-06-09
+
+### Added
+- **Math macros and symbols** - braket package macros (`\bra`, `\ket`, `\braket`, `\set`), stmaryrd symbols, and user-defined macro support
+- **Wide character mapping** - Mathematical Alphanumeric Symbols (U+1D400–U+1D7FF) rendering with surrogate pair token merging and precomposed character NFD decomposition
+- **CD environment** - `cd` commutative diagram environment parsing and rendering
+- **equation environment** - `equation` environment support with optimized parser context breakpoint handling
+- **\middle command** - Delimiter rendering with `\middle` command support
+- **\imath/\jmath** - Dotless i and j math symbols
+- **Context-sensitive \dots** - `\dots` macro now selects `ldots` or `cdots` based on context
+
+### Changed
+- **Math error nodes** - Error node generation refactored to match KaTeX behavior
+- **Auto-link detection** - Improved inline node autolink attribute recognition
+- **Text/math mode transitions** - Enhanced text mode and math mode conversion with more font commands
+- **Unicode and ligature handling** - New Unicode character decomposition and ligature processing logic
+- **Image menu translations** - Complete i18n for image context menu and new UI strings across all 14 languages
+
+### Fixed
+- **Arrow rendering** - Fixed renderer arrow drawing and empty node handling
+- **Test ink border tolerance** - Adjusted ink border width test tolerance to 1.25 for cross-platform stability
+
 ## [0.1.5] - 2026-06-09
 
 ### Added
@@ -154,6 +176,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.1.6]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.6
 [0.1.5]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.5
 [0.1.4]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.4
 [0.1.3]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.3
