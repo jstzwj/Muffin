@@ -144,6 +144,7 @@ void InlineLayout::paint(QPainter& painter, QPointF origin) const {
   painter.save();
   paintTextLayoutHtmlBackgrounds(painter, origin);
   paintTextLayoutCodeSpans(painter, origin);
+  paintTextLayoutHtmlKeyboardSpans(painter, origin);
   textLayout_->draw(&painter, origin);
   paintTextLayoutMathAtoms(painter, origin);
   paintTextLayoutImageAtoms(painter, origin);
@@ -393,6 +394,50 @@ void InlineLayout::paintTextLayoutHtmlBackgrounds(QPainter& painter, QPointF ori
   painter.restore();
 }
 
+void InlineLayout::paintTextLayoutHtmlKeyboardSpans(QPainter& painter, QPointF origin) const {
+  if (!textLayout_ || htmlFormatSpans_.isEmpty()) {
+    return;
+  }
+
+  painter.save();
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  for (const HtmlFormatSpan& hs : htmlFormatSpans_) {
+    if (!hs.keyboard || hs.layoutEnd <= hs.layoutStart) {
+      continue;
+    }
+
+    for (int i = 0; i < textLayout_->lineCount(); ++i) {
+      const QTextLine line = textLayout_->lineAt(i);
+      if (!line.isValid()) {
+        continue;
+      }
+      const int lineStart = line.textStart();
+      const int lineEnd = lineStart + line.textLength();
+      const int rangeStart = qMax(lineStart, hs.layoutStart);
+      const int rangeEnd = qMin(lineEnd, hs.layoutEnd);
+      if (rangeStart >= rangeEnd) {
+        continue;
+      }
+
+      const qreal x1 = line.cursorToX(rangeStart);
+      const qreal x2 = line.cursorToX(rangeEnd);
+      const QRectF rect(
+          origin.x() + qMin(x1, x2) - 4.0,
+          origin.y() + line.y() + 1.0,
+          qAbs(x2 - x1) + 8.0,
+          qMax<qreal>(1.0, line.height() - 3.0));
+
+      painter.setPen(QPen(QColor(196, 201, 209), 1.0));
+      painter.setBrush(QColor(250, 251, 252));
+      painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), 2.0, 2.0);
+
+      painter.setPen(QPen(QColor(181, 186, 194), 1.0));
+      painter.drawLine(rect.bottomLeft() + QPointF(2.0, -0.5), rect.bottomRight() + QPointF(-2.0, -0.5));
+    }
+  }
+  painter.restore();
+}
+
 QString InlineLayout::plainText() const {
   return plainText_;
 }
@@ -431,14 +476,14 @@ void InlineLayout::buildHtmlFormatSpans() {
   for (const auto& hd : data) {
     for (const auto& fs : hd.formatSpans) {
       // Map projection display offsets → layout display offsets
-      const DisplayOffsetRange startRange = layoutDisplayRangeForProjectionRange(hd.displayStart + fs.start, hd.displayStart + fs.start + 1);
-      const DisplayOffsetRange endRange = layoutDisplayRangeForProjectionRange(hd.displayStart + fs.start + fs.length, hd.displayStart + fs.start + fs.length + 1);
-      if (!startRange.valid || !endRange.valid) {
+      const DisplayOffsetRange layoutRange =
+          layoutDisplayRangeForProjectionRange(hd.displayStart + fs.start, hd.displayStart + fs.start + fs.length);
+      if (!layoutRange.valid) {
         continue;
       }
       HtmlFormatSpan hs;
-      hs.layoutStart = static_cast<int>(startRange.start);
-      hs.layoutEnd = static_cast<int>(endRange.start);
+      hs.layoutStart = static_cast<int>(layoutRange.start);
+      hs.layoutEnd = static_cast<int>(layoutRange.end);
       hs.bold = fs.bold;
       hs.italic = fs.italic;
       hs.monospace = fs.monospace;
@@ -447,6 +492,7 @@ void InlineLayout::buildHtmlFormatSpans() {
       hs.backgroundColor = fs.backgroundColor;
       hs.fontSize = fs.fontSize;
       hs.verticalAlignment = fs.verticalAlignment;
+      hs.keyboard = fs.keyboard;
       htmlFormatSpans_.push_back(hs);
     }
     // Register link ranges from inline HTML <a> tags
@@ -929,6 +975,9 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
       format.setFontItalic(true);
     }
     if (hs.monospace) {
+      format.setFontFamily(QStringLiteral("Courier New"));
+    }
+    if (hs.keyboard) {
       format.setFontFamily(QStringLiteral("Courier New"));
     }
     if (hs.color.isValid()) {

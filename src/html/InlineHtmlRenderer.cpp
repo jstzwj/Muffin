@@ -51,7 +51,7 @@ InlineHtmlFormatResult InlineHtmlRenderer::render(const QString& htmlFragment, q
   for (const auto& child : container->children()) {
     measurer.collectInlineTextFromRoot(
         *child, text, spans, links, offset,
-        false, false, false, HtmlTextDecoration::None,
+        false, false, false, false, HtmlTextDecoration::None,
         QColor(), QColor(), QTextCharFormat::AlignNormal,
         QString(), baseFontSize, baseFontSize);
   }

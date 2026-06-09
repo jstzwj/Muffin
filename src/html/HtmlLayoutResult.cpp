@@ -9,6 +9,55 @@
 #include <utility>
 
 namespace muffin::html {
+namespace {
+
+void paintKeyboardSpanRects(
+    QPainter& painter,
+    const QTextLayout& layout,
+    const std::vector<TextFormatSpan>& spans,
+    QPointF origin) {
+  painter.save();
+  painter.setRenderHint(QPainter::Antialiasing, true);
+
+  for (const TextFormatSpan& span : spans) {
+    if (!span.keyboard || span.length <= 0) {
+      continue;
+    }
+
+    for (int i = 0; i < layout.lineCount(); ++i) {
+      const QTextLine line = layout.lineAt(i);
+      if (!line.isValid()) {
+        continue;
+      }
+      const int lineStart = line.textStart();
+      const int lineEnd = lineStart + line.textLength();
+      const int rangeStart = qMax(lineStart, span.start);
+      const int rangeEnd = qMin(lineEnd, span.start + span.length);
+      if (rangeStart >= rangeEnd) {
+        continue;
+      }
+
+      const qreal x1 = line.cursorToX(rangeStart);
+      const qreal x2 = line.cursorToX(rangeEnd);
+      const QRectF rect(
+          origin.x() + qMin(x1, x2) - 4.0,
+          origin.y() + line.y() + 1.0,
+          qAbs(x2 - x1) + 8.0,
+          qMax<qreal>(1.0, line.height() - 3.0));
+
+      painter.setPen(QPen(QColor(196, 201, 209), 1.0));
+      painter.setBrush(QColor(250, 251, 252));
+      painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), 2.0, 2.0);
+
+      painter.setPen(QPen(QColor(181, 186, 194), 1.0));
+      painter.drawLine(rect.bottomLeft() + QPointF(2.0, -0.5), rect.bottomRight() + QPointF(-2.0, -0.5));
+    }
+  }
+
+  painter.restore();
+}
+
+}  // namespace
 
 HtmlLayoutResult::HtmlLayoutResult() = default;
 HtmlLayoutResult::~HtmlLayoutResult() = default;
@@ -238,6 +287,7 @@ void HtmlLayoutResult::paintTextRun(QPainter& painter, const HtmlBox& box, QPoin
   }
 
   painter.save();
+  paintKeyboardSpanRects(painter, *textLayout->layout, textLayout->formatSpans, origin);
   textLayout->layout->draw(&painter, origin);
   painter.restore();
 }

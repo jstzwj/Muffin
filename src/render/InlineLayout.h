@@ -117,6 +117,7 @@ private:
     QColor backgroundColor;
     qreal fontSize = 0;
     QTextCharFormat::VerticalAlignment verticalAlignment = QTextCharFormat::AlignNormal;
+    bool keyboard = false;
     QString href;
   };
 
@@ -128,6 +129,7 @@ private:
   void buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont);
   void paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) const;
   void paintTextLayoutHtmlBackgrounds(QPainter& painter, QPointF origin) const;
+  void paintTextLayoutHtmlKeyboardSpans(QPainter& painter, QPointF origin) const;
   void paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) const;
   void paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) const;
   void paintImagePreview(QPainter& painter, QPointF origin) const;

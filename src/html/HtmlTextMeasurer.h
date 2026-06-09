@@ -23,6 +23,7 @@ struct TextFormatSpan {
   QColor color;
   QColor backgroundColor;
   bool monospace = false;
+  bool keyboard = false;
   qreal fontSize = 0;
   QTextCharFormat::VerticalAlignment verticalAlignment = QTextCharFormat::AlignNormal;
 };
@@ -38,6 +39,7 @@ struct HtmlTextLayout {
     int length = 0;
     QString href;
   };
+  std::vector<TextFormatSpan> formatSpans;
   std::vector<LinkSpan> linkSpans;
   qreal width = 0;
   qreal height = 0;
@@ -87,6 +89,7 @@ public:
       bool parentBold,
       bool parentItalic,
       bool parentMonospace,
+      bool parentKeyboard,
       HtmlTextDecoration parentDecoration,
       QColor parentColor,
       QColor parentBackgroundColor,
@@ -107,6 +110,7 @@ private:
       bool parentBold,
       bool parentItalic,
       bool parentMonospace,
+      bool parentKeyboard,
       HtmlTextDecoration parentDecoration,
       QColor parentColor,
       QColor parentBackgroundColor,

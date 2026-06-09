@@ -117,7 +117,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
   std::vector<TextFormatSpan> spans;
   std::vector<HtmlTextLayout::LinkSpan> links;
   int offset = 0;
-  collectInlineText(blockBox, text, spans, links, offset, false, false, false, HtmlTextDecoration::None, QColor(),
+  collectInlineText(blockBox, text, spans, links, offset, false, false, false, false, HtmlTextDecoration::None, QColor(),
                     QColor(), QTextCharFormat::AlignNormal, QString(), fontSize, fontSize);
 
   QFont baseFont;
@@ -140,6 +140,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
   auto result = std::make_unique<HtmlTextLayout>();
   result->text = text;
   result->font = baseFont;
+  result->formatSpans = spans;
   result->linkSpans = std::move(links);
 
   auto layout = std::make_unique<QTextLayout>(text, baseFont);
@@ -159,6 +160,9 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
       fmt.setFontItalic(true);
     }
     if (span.monospace) {
+      fmt.setFontFamily(QStringLiteral("Courier New"));
+    }
+    if (span.keyboard) {
       fmt.setFontFamily(QStringLiteral("Courier New"));
     }
     if (span.color.isValid()) {
@@ -279,6 +283,7 @@ void HtmlTextMeasurer::collectInlineTextFromRoot(
     bool parentBold,
     bool parentItalic,
     bool parentMonospace,
+    bool parentKeyboard,
     HtmlTextDecoration parentDecoration,
     QColor parentColor,
     QColor parentBackgroundColor,
@@ -287,7 +292,7 @@ void HtmlTextMeasurer::collectInlineTextFromRoot(
     qreal parentFontSize,
     qreal baseFontSize) const {
   collectInlineText(box, outText, outSpans, outLinks, offset,
-                    parentBold, parentItalic, parentMonospace, parentDecoration,
+                    parentBold, parentItalic, parentMonospace, parentKeyboard, parentDecoration,
                     parentColor, parentBackgroundColor, parentVerticalAlignment,
                     parentHref, parentFontSize, baseFontSize);
 }
@@ -301,6 +306,7 @@ void HtmlTextMeasurer::collectInlineText(
     bool parentBold,
     bool parentItalic,
     bool parentMonospace,
+    bool parentKeyboard,
     HtmlTextDecoration parentDecoration,
     QColor parentColor,
     QColor parentBackgroundColor,
@@ -311,6 +317,7 @@ void HtmlTextMeasurer::collectInlineText(
   bool bold = parentBold || box.style().fontWeight >= QFont::Bold;
   bool italic = parentItalic || box.style().fontStyle == QFont::StyleItalic;
   bool mono = parentMonospace || box.tag() == HtmlTag::Code || box.tag() == HtmlTag::Kbd;
+  const bool keyboard = parentKeyboard || box.tag() == HtmlTag::Kbd;
   auto decoration = parentDecoration;
   if (box.style().textDecoration != HtmlTextDecoration::None) {
     decoration |= box.style().textDecoration;
@@ -331,12 +338,12 @@ void HtmlTextMeasurer::collectInlineText(
     outText += box.text();
     offset += box.text().length();
 
-    if (bold || italic || mono || decoration != HtmlTextDecoration::None || color.isValid() ||
+    if (bold || italic || mono || keyboard || decoration != HtmlTextDecoration::None || color.isValid() ||
         backgroundColor.isValid() ||
         (fontSize > 0 && !qFuzzyCompare(fontSize, baseFontSize)) ||
         verticalAlignment != QTextCharFormat::AlignNormal) {
       outSpans.push_back(TextFormatSpan{
-          start, offset - start, bold, italic, decoration, color, backgroundColor, mono,
+          start, offset - start, bold, italic, decoration, color, backgroundColor, mono, keyboard,
           (fontSize > 0 && !qFuzzyCompare(fontSize, baseFontSize)) ? fontSize : 0.0,
           verticalAlignment});
     }
@@ -349,7 +356,7 @@ void HtmlTextMeasurer::collectInlineText(
   } else {
     // Recurse into inline children
     for (const auto& child : box.children()) {
-      collectInlineText(*child, outText, outSpans, outLinks, offset, bold, italic, mono, decoration, color,
+      collectInlineText(*child, outText, outSpans, outLinks, offset, bold, italic, mono, keyboard, decoration, color,
                         backgroundColor, verticalAlignment, href, fontSize, baseFontSize);
     }
   }

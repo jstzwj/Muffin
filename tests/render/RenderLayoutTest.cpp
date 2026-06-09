@@ -1332,6 +1332,55 @@ void testInlineLayoutStyleFormats() {
           QStringLiteral("nested strong/emphasis text should combine style flags"));
 }
 
+void testInlineHtmlKeyboardLayoutContract() {
+  RenderTheme theme = RenderTheme::github();
+  QVector<InlineNode> inlines;
+
+  InlineNode openCtrl(InlineType::HtmlInline);
+  openCtrl.setText(QStringLiteral("<kbd>"));
+  InlineNode ctrlText = InlineNode::text(QStringLiteral("Ctrl"));
+  InlineNode closeCtrl(InlineType::HtmlInline);
+  closeCtrl.setText(QStringLiteral("</kbd>"));
+  InlineNode plus = InlineNode::text(QStringLiteral("+"));
+  InlineNode openC(InlineType::HtmlInline);
+  openC.setText(QStringLiteral("<kbd>"));
+  InlineNode cText = InlineNode::text(QStringLiteral("C"));
+  InlineNode closeC(InlineType::HtmlInline);
+  closeC.setText(QStringLiteral("</kbd>"));
+
+  inlines << openCtrl << ctrlText << closeCtrl << plus << openC << cText << closeC;
+
+  InlineLayout layout;
+  layout.build(
+      inlines,
+      QStringLiteral("<kbd>Ctrl</kbd>+<kbd>C</kbd>"),
+      theme,
+      500.0,
+      theme.paragraphFont(),
+      InlineLayout::BuildOptions{});
+
+  require(layout.displayText() == QStringLiteral("Ctrl+C"),
+          QStringLiteral("inline html kbd fixture should collapse to visible keyboard chord"));
+
+  const QVector<QTextLayout::FormatRange> formats = layout.debugTextFormats(theme, theme.paragraphFont());
+  auto formatAt = [&formats](int offset) -> QTextCharFormat {
+    QTextCharFormat result;
+    for (const QTextLayout::FormatRange& range : formats) {
+      if (offset >= range.start && offset < range.start + range.length) {
+        result = range.format;
+      }
+    }
+    return result;
+  };
+
+  require(formatAt(0).fontFamilies().toStringList().contains(QStringLiteral("Courier New")),
+          QStringLiteral("first kbd segment should use monospace keyboard font"));
+  require(formatAt(5).fontFamilies().toStringList().contains(QStringLiteral("Courier New")),
+          QStringLiteral("last kbd segment should map even at end of html fragment"));
+  require(!formatAt(4).fontFamilies().toStringList().contains(QStringLiteral("Courier New")),
+          QStringLiteral("keyboard format should not bleed into separator"));
+}
+
 void testInlineLayoutProjectionDisplayMappingAfterCollapsedMath() {
   RenderTheme theme = RenderTheme::github();
   QVector<InlineNode> inlines;
@@ -3462,6 +3511,7 @@ void testHtmlInlineStyleAndTagSemanticsContract() {
   require(document.parse(QStringLiteral(
               "<div style=\"border-left: 3px solid #cccccc\">"
               "alpha <q>quoted</q> H<sub>2</sub><small>small</small><span style=\"font-size: 24px\">large</span>"
+              "<kbd>Ctrl</kbd>+<kbd>C</kbd>"
               "</div>"
               "<div style=\"display: none\"><span>hidden child</span></div>")),
           QStringLiteral("html style semantics fixture should parse"));
@@ -3487,9 +3537,12 @@ void testHtmlInlineStyleAndTagSemanticsContract() {
   const html::HtmlBox* subText = firstChildWithText(*root, QStringLiteral("2"));
   const html::HtmlBox* smallText = firstChildWithText(*root, QStringLiteral("small"));
   const html::HtmlBox* largeText = firstChildWithText(*root, QStringLiteral("large"));
+  const html::HtmlBox* keyboard = firstChildWithTag(*root, html::HtmlTag::Kbd);
   require(subText != nullptr && subText->style().fontSize < 16.0, QStringLiteral("sub text should inherit smaller font size"));
   require(smallText != nullptr && smallText->style().fontSize < 16.0, QStringLiteral("small text should inherit smaller font size"));
   require(largeText != nullptr && qFuzzyCompare(largeText->style().fontSize, 24.0), QStringLiteral("inline font-size should propagate to text"));
+  require(keyboard != nullptr && keyboard->style().display == html::HtmlDisplay::Inline,
+          QStringLiteral("kbd tag should remain inline"));
 
   const html::HtmlBox* hiddenText = firstChildWithText(*root, QStringLiteral("hidden child"));
   require(hiddenText != nullptr && hiddenText->style().visible, QStringLiteral("hidden child starts with its own computed visibility"));
@@ -3505,9 +3558,16 @@ void testHtmlInlineStyleAndTagSemanticsContract() {
   bool sawSubBaseline = false;
   bool sawSmallSize = false;
   bool sawLargeSize = false;
+  bool sawKeyboard = false;
   for (const auto& textLayout : textLayouts) {
     if (!textLayout || !textLayout->layout) {
       continue;
+    }
+    for (const html::TextFormatSpan& span : textLayout->formatSpans) {
+      const QString spanText = textLayout->text.mid(span.start, span.length);
+      if (span.keyboard && (spanText == QStringLiteral("Ctrl") || spanText == QStringLiteral("C"))) {
+        sawKeyboard = true;
+      }
     }
     for (const QTextLayout::FormatRange& range : textLayout->layout->formats()) {
       const QString spanText = textLayout->text.mid(range.start, range.length);
@@ -3528,6 +3588,7 @@ void testHtmlInlineStyleAndTagSemanticsContract() {
   require(sawSubBaseline, QStringLiteral("sub text should emit subscript baseline format"));
   require(sawSmallSize, QStringLiteral("small text should emit smaller font format"));
   require(sawLargeSize, QStringLiteral("inline font-size should emit font format"));
+  require(sawKeyboard, QStringLiteral("kbd text should emit keyboard span format"));
 }
 
 void testHtmlPreLayoutContract() {
@@ -3894,6 +3955,7 @@ int main(int argc, char** argv) {
   runTest("testInlineLayoutGeometryContract", [] { testInlineLayoutGeometryContract(); });
   runTest("testInlineLayoutZeroWidthTabIndentGeometry", [] { testInlineLayoutZeroWidthTabIndentGeometry(); });
   runTest("testInlineLayoutPainting", [] { testInlineLayoutPainting(); });
+  runTest("testInlineHtmlKeyboardLayoutContract", [] { testInlineHtmlKeyboardLayoutContract(); });
   runTest("testMathRenderingLayout", [] { testMathRenderingLayout(); });
   runTest("testLiteralBlockWrappedEditingGeometry", [] { testLiteralBlockWrappedEditingGeometry(); });
   runTest("testHtmlBlockPreviewAndEditingHitTestContract", [] { testHtmlBlockPreviewAndEditingHitTestContract(); });

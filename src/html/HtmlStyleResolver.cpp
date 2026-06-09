@@ -219,6 +219,8 @@ void HtmlStyleResolver::applyTagDefaults(HtmlBox& box, qreal fontSize) {
     case HtmlTag::Kbd:
       style.display = HtmlDisplay::Inline;
       setDefaultFontSize(fontSize * 0.9);
+      style.fontWeight = QFont::Normal;
+      style.color = QColor(36, 41, 47);
       break;
 
     case HtmlTag::Anchor:
