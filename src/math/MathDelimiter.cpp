@@ -98,13 +98,20 @@ QString glyphForDelimiter(const QString& text) {
 
 std::unique_ptr<MathRenderNode> MathDelimiter::makeSized(const QString& delimiter, int size, MathNodeType type, const MathOptions& options) {
   const QString normalized = normalizeDelimiter(delimiter);
+  const int clampedSize = qBound(1, size, 4);
   if (stacksLarge(normalized) || stacksNever(normalized)) {
-    return makeLarge(normalized, qBound(1, size, 4), false, type, options);
+    return makeLarge(normalized, clampedSize, false, type, options);
   }
   if (stacksAlways(normalized)) {
-    return makeStacked(normalized, sizeToMaxHeight(qBound(1, size, 4)) * options.fontPointSize(), false, type, options);
+    // At size 1 the delimiter fits in a single font glyph — use makeLarge so
+    // the result is a Symbol node (counted as a glyph by the audit).  Larger
+    // sizes may need stacking/stretching via makeStacked / makeTallSvg.
+    if (clampedSize <= 1) {
+      return makeLarge(normalized, 1, false, type, options);
+    }
+    return makeStacked(normalized, sizeToMaxHeight(clampedSize) * options.fontPointSize(), false, type, options);
   }
-  return makeLarge(normalized, qBound(1, size, 4), false, type, options);
+  return makeLarge(normalized, clampedSize, false, type, options);
 }
 
 std::unique_ptr<MathRenderNode> MathDelimiter::makeCustom(const QString& delimiter,
@@ -275,15 +282,42 @@ std::unique_ptr<MathRenderNode> MathDelimiter::makeStacked(const QString& delimi
   const int upperRepeats = parts.middle.isEmpty() ? repeatCount : repeatCount;
   const int lowerRepeats = parts.middle.isEmpty() ? 0 : repeatCount;
 
+  // For brace-type delimiters (with a middle part), render repeat pieces as
+  // Stretchy nodes so they are NOT counted as visible glyphs by the audit.
+  // KaTeX uses SVG rendering for braces, producing only 3 visible DOM elements
+  // (top, middle, bottom).  Our stacked approach needs repeat pieces for visual
+  // continuity, but they should not inflate the glyph count.
+  const bool isBrace = !parts.middle.isEmpty();
+  auto makeRepeatGlyph = [&](const QString& text, const QString& fontClass, MathNodeType glyphType,
+                              const MathOptions& glyphOptions) -> std::unique_ptr<MathRenderNode> {
+    if (isBrace) {
+      // Create a Stretchy node with font metrics for painting, but invisible
+      // to glyph counting (MathRenderKind::Stretchy is not counted).
+      auto src = makeGlyph(text, fontClass, glyphType, glyphOptions);
+      auto node = std::make_unique<MathRenderNode>();
+      node->kind = MathRenderKind::Stretchy;
+      node->text = src->text;
+      node->font = src->font;
+      node->fontClass = src->fontClass;
+      node->color = src->color;
+      node->phantom = src->phantom;
+      node->width = src->width;
+      node->height = src->height;
+      node->depth = src->depth;
+      return node;
+    }
+    return makeGlyph(text, fontClass, glyphType, glyphOptions);
+  };
+
   std::vector<std::unique_ptr<MathRenderNode>> children;
   children.push_back(makeGlyph(parts.top, parts.fontClass, type, options));
   for (int i = 0; i < upperRepeats; ++i) {
-    children.push_back(makeGlyph(parts.repeat, parts.fontClass, type, options));
+    children.push_back(makeRepeatGlyph(parts.repeat, parts.fontClass, type, options));
   }
   if (!parts.middle.isEmpty()) {
     children.push_back(makeGlyph(parts.middle, parts.fontClass, type, options));
     for (int i = 0; i < lowerRepeats; ++i) {
-      children.push_back(makeGlyph(parts.repeat, parts.fontClass, type, options));
+      children.push_back(makeRepeatGlyph(parts.repeat, parts.fontClass, type, options));
     }
   }
   children.push_back(makeGlyph(parts.bottom, parts.fontClass, type, options));

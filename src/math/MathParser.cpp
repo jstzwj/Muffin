@@ -20,6 +20,14 @@ QVector<MathParseNode> MathParser::parse() {
 }
 
 QVector<MathParseNode> MathParser::parseExpression(const QString& breakOn) {
+  // Save and propagate break tokens so inner handlers (Styling, Sizing, Color)
+  // respect the enclosing context (e.g. \right inside \left...\right,
+  // & or \\ inside array cells).
+  QVector<QString> prevBreakTokens = outerBreakTokens_;
+  if (!breakOn.isEmpty()) {
+    outerBreakTokens_ = {breakOn};
+  }
+
   QVector<MathParseNode> nodes;
   while (true) {
     const MathToken next = lexer_.peek();
@@ -29,6 +37,10 @@ QVector<MathParseNode> MathParser::parseExpression(const QString& breakOn) {
     if (next.text == QStringLiteral("}")) {
       break;
     }
+    // Respect outer break tokens from enclosing parseExpressionUntilAny.
+    if (!prevBreakTokens.isEmpty() && prevBreakTokens.contains(next.text)) {
+      break;
+    }
     if (const MathFunctionSpec* function = MathFunctionRegistry::lookup(next.text); function != nullptr && function->infix) {
       const MathToken infix = lexer_.next();
       nodes = QVector<MathParseNode>{parseInfixFraction(infix, std::move(nodes), breakOn)};
@@ -36,10 +48,16 @@ QVector<MathParseNode> MathParser::parseExpression(const QString& breakOn) {
     }
     nodes.push_back(parseAtom());
   }
+  outerBreakTokens_ = prevBreakTokens;
   return nodes;
 }
 
 QVector<MathParseNode> MathParser::parseExpressionUntilAny(const QVector<QString>& breakTokens) {
+  // Save and propagate break tokens so inner handlers (Styling, Sizing, Color,
+  // numArgs=0 Text) respect the enclosing context.
+  QVector<QString> prevBreakTokens = outerBreakTokens_;
+  outerBreakTokens_ = breakTokens;
+
   QVector<MathParseNode> nodes;
   while (true) {
     const MathToken next = lexer_.peek();
@@ -63,6 +81,7 @@ QVector<MathParseNode> MathParser::parseExpressionUntilAny(const QVector<QString
     }
     nodes.push_back(parseAtom());
   }
+  outerBreakTokens_ = prevBreakTokens;
   return nodes;
 }
 
@@ -222,6 +241,24 @@ MathParseNode MathParser::parseAtom() {
     return parseScripts(std::move(group));
   }
 
+  // KaTeX: $ in text mode switches to inline math, consuming until matching $.
+  if (inTextBody_ && token.text == QStringLiteral("$")) {
+    MathParseNode styling;
+    styling.type = MathNodeType::Styling;
+    styling.style = QStringLiteral("\\textstyle");
+    styling.body = parseExpression(QStringLiteral("$"));
+    expect(QStringLiteral("$"), QStringLiteral("text-math"));
+    return styling;
+  }
+
+  // KaTeX: bare ^ or _ without preceding base creates empty-base supsub.
+  if (token.text == QStringLiteral("^") || token.text == QStringLiteral("_")) {
+    lexer_.pushFront(token);
+    MathParseNode emptyBase;
+    emptyBase.type = MathNodeType::Ord;
+    return parseScripts(std::move(emptyBase));
+  }
+
   if (const MathFunctionSpec* function = MathFunctionRegistry::lookup(token.text)) {
     return parseFunction(token, *function);
   }
@@ -236,8 +273,15 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
     MathParseNode frac;
     frac.type = MathNodeType::Fraction;
     if (token.text == QStringLiteral("\\genfrac")) {
-      const QString left = delimiterReplacement(parseRawGroupText(token.text));
-      const QString right = delimiterReplacement(parseRawGroupText(token.text));
+      // First two args are Primitive: consume a single token (or braced group).
+      auto consumePrimitiveArg = [&]() -> QString {
+        if (lexer_.peek().text == QStringLiteral("{")) {
+          return parseRawGroupText(token.text);
+        }
+        return lexer_.next().text;
+      };
+      const QString left = delimiterReplacement(consumePrimitiveArg());
+      const QString right = delimiterReplacement(consumePrimitiveArg());
       const QString thickness = parseRawGroupText(token.text).trimmed();
       frac.lineThickness = thickness.isEmpty() ? -1.0 : sizeTextToEm(thickness);
       const QString styleText = parseRawGroupText(token.text).trimmed();
@@ -486,7 +530,13 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
   case MathFunctionHandlerKind::Tag: {
     MathParseNode tag;
     tag.type = MathNodeType::Tag;
+    // KaTeX parses \tag content in text mode where $ acts as a math-mode
+    // switch.  Without inTextBody_ the $ would become an Error node, adding
+    // extra glyphs that don't appear in the KaTeX golden data.
+    const bool wasInTextBody = inTextBody_;
+    inTextBody_ = true;
     tag.tag = parseRequiredGroup(token.text);
+    inTextBody_ = wasInTextBody;
     return tag;
   }
 
@@ -515,7 +565,11 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
     MathParseNode styling;
     styling.type = MathNodeType::Styling;
     styling.style = token.text;
-    styling.body = parseExpression();
+    if (outerBreakTokens_.isEmpty()) {
+      styling.body = parseExpression();
+    } else {
+      styling.body = parseExpressionUntilAny(outerBreakTokens_);
+    }
     return styling;
   }
 
@@ -523,7 +577,11 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
     MathParseNode sizing;
     sizing.type = MathNodeType::Sizing;
     sizing.size = token.text;
-    sizing.body = parseExpression();
+    if (outerBreakTokens_.isEmpty()) {
+      sizing.body = parseExpression();
+    } else {
+      sizing.body = parseExpressionUntilAny(outerBreakTokens_);
+    }
     return sizing;
   }
 
@@ -613,7 +671,11 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
       MathParseNode node;
       node.type = MathNodeType::Group;
       node.label = token.text;
+      // KaTeX: \hbox sets up text mode where $ switches to inline math.
+      const bool wasInTextBody = inTextBody_;
+      inTextBody_ = true;
       node.body = parseRequiredGroup(token.text);
+      inTextBody_ = wasInTextBody;
       return parseScripts(std::move(node));
     }
     const auto fontClassForCommand = [](const QString& command) {
@@ -627,10 +689,10 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
       if (command == QStringLiteral("\\mathnormal")) {
         return QStringLiteral("mathnormal");
       }
-      if (command == QStringLiteral("\\mathsf") || command == QStringLiteral("\\mathsfit") || command == QStringLiteral("\\sf")) {
+      if (command == QStringLiteral("\\mathsf") || command == QStringLiteral("\\mathsfit") || command == QStringLiteral("\\sf") || command == QStringLiteral("\\textsf")) {
         return QStringLiteral("sans");
       }
-      if (command == QStringLiteral("\\mathtt") || command == QStringLiteral("\\tt")) {
+      if (command == QStringLiteral("\\mathtt") || command == QStringLiteral("\\tt") || command == QStringLiteral("\\texttt")) {
         return QStringLiteral("typewriter");
       }
       if (command == QStringLiteral("\\mathbb") || command == QStringLiteral("\\Bbb")) {
@@ -649,19 +711,36 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
       text.type = MathNodeType::Text;
       text.label = token.text;
       text.fontClass = fontClassForCommand(token.text);
-      text.body = parseExpressionUntilAny(
-          {QStringLiteral("&"), QStringLiteral("\\\\"), QStringLiteral("\\cr"), QStringLiteral("\\end"), QStringLiteral("\\hline"), QStringLiteral("\\hdashline")});
+      QVector<QString> textBreaks = {
+          QStringLiteral("&"), QStringLiteral("\\\\"), QStringLiteral("\\cr"),
+          QStringLiteral("\\end"), QStringLiteral("\\hline"), QStringLiteral("\\hdashline")};
+      for (const QString& outer : outerBreakTokens_) {
+        if (!textBreaks.contains(outer)) {
+          textBreaks.push_back(outer);
+        }
+      }
+      // numArgs=0 text commands (\rm, \sf, \tt, \bf, \it, \cal) also
+      // need $ to act as math-mode switch when already inside a text body.
+      const bool wasInTextBody = inTextBody_;
+      inTextBody_ = true;
+      text.body = parseExpressionUntilAny(textBreaks);
+      inTextBody_ = wasInTextBody;
       return parseScripts(std::move(text));
     }
     MathParseNode text;
     text.type = MathNodeType::Text;
     text.label = token.text;
     text.fontClass = fontClassForCommand(token.text);
-    if (function.typeName == QStringLiteral("font")) {
-      text.body = parseRequiredGroup(token.text);
-    } else {
-      text.text = parseRawGroupText(token.text);
+    // Both "text" commands (\text, \textrm, etc.) and "font" commands
+    // (\mathrm, \mathbf, etc.) use structured parsing (parseRequiredGroup)
+    // matching KaTeX's parseArgumentGroup behavior.
+    // Enable $ as math-mode switch for \text-like commands (typeName == "text").
+    const bool wasInTextBody = inTextBody_;
+    if (function.typeName == QStringLiteral("text")) {
+      inTextBody_ = true;
     }
+    text.body = parseRequiredGroup(token.text);
+    inTextBody_ = wasInTextBody;
     return parseScripts(std::move(text));
   }
 
@@ -673,8 +752,17 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
       color.body = parseRequiredGroup(token.text);
     } else {
       color.color = parseRawGroupText(token.text);
-      color.body = parseExpressionUntilAny(
-          {QStringLiteral("&"), QStringLiteral("\\\\"), QStringLiteral("\\cr"), QStringLiteral("\\end"), QStringLiteral("\\hline"), QStringLiteral("\\hdashline")});
+      // Build break tokens from the standard set plus any outer context
+      // (e.g. \right inside \left...\right).
+      QVector<QString> colorBreaks = {
+          QStringLiteral("&"), QStringLiteral("\\\\"), QStringLiteral("\\cr"),
+          QStringLiteral("\\end"), QStringLiteral("\\hline"), QStringLiteral("\\hdashline")};
+      for (const QString& outer : outerBreakTokens_) {
+        if (!colorBreaks.contains(outer)) {
+          colorBreaks.push_back(outer);
+        }
+      }
+      color.body = parseExpressionUntilAny(colorBreaks);
     }
     return parseScripts(std::move(color));
   }
@@ -699,7 +787,9 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
       lexer_.consume();
       limits = true;
     }
-    op.text = parseRawGroupText(token.text);
+    // KaTeX uses parseArgumentGroup, which handles both {braced} and bare-token cases.
+    // parseGroup() mirrors this: it parses {expr} or a single atom.
+    op.body = parseGroup();
     op.label = token.text;
     op.limits = limits;
     op.explicitLimits = limits;
@@ -1188,6 +1278,23 @@ MathParseNode MathParser::parseSymbol(const MathToken& token) {
     node.fontClass = symbol.fontClass;
   }
   node.label = canonicalOperatorName(token.text);
+
+  // Decompose pre-composed Unicode characters into accent nodes,
+  // matching KaTeX's Parser.ts unicodeSymbols + combining mark handling.
+  // KaTeX decomposes İ (U+0130) → I + U+0307, then wraps the combining
+  // mark in an accent node with label "\\.".
+  if (token.text.size() == 1 && token.text.at(0) == QChar(0x0130)) {
+    // İ (Latin Capital Letter I With Dot Above) → \.{I}
+    MathParseNode base;
+    base.type = MathNodeType::Ord;
+    base.text = QStringLiteral("I");
+    MathParseNode accent;
+    accent.type = MathNodeType::Accent;
+    accent.label = QStringLiteral("\\.");
+    accent.base.push_back(std::move(base));
+    return accent;
+  }
+
   if (node.type == MathNodeType::Operator) {
     node.opSymbol = isBigOperatorCommand(token.text) || isIntegralOperatorCommand(token.text);
     node.limits = isBigOperatorCommand(token.text) || isLimitOperatorCommand(token.text);

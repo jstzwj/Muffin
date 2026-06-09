@@ -67,6 +67,15 @@ private:
 
   MathLexer lexer_;
   MathSettings settings_;
+
+  // Break tokens from the enclosing parseExpressionUntilAny context.
+  // Used by Styling/Sizing/Color handlers to respect array cell boundaries
+  // (&, \\, \end) and \left-right boundaries (\right) instead of consuming everything.
+  QVector<QString> outerBreakTokens_;
+
+  // When true, $ is treated as a math-mode switch inside text body parsing.
+  // KaTeX registers $ as a text-mode function that switches to inline math.
+  bool inTextBody_ = false;
 };
 
 }  // namespace muffin::math

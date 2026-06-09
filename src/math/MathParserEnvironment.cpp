@@ -35,7 +35,8 @@ MathParseNode MathParser::parseBeginEnvironment() {
       name == QStringLiteral("drcases") || name == QStringLiteral("aligned") || name == QStringLiteral("split") ||
       name == QStringLiteral("align") || name == QStringLiteral("align*") || name == QStringLiteral("gathered") ||
       name == QStringLiteral("gather") || name == QStringLiteral("gather*") || name == QStringLiteral("alignedat") ||
-      name == QStringLiteral("alignat") || name == QStringLiteral("alignat*")) {
+      name == QStringLiteral("alignat") || name == QStringLiteral("alignat*") ||
+      name == QStringLiteral("equation") || name == QStringLiteral("equation*")) {
     return parseArrayEnvironment(name);
   }
   return errorNode(QStringLiteral("Unsupported environment %1").arg(name));
@@ -77,6 +78,13 @@ MathParseNode MathParser::parseArrayEnvironment(const QString& name) {
         array.columnAlignments = QString(align);
       }
     }
+  } else if ((name == QStringLiteral("alignedat") || name == QStringLiteral("alignat") ||
+              name == QStringLiteral("alignedat*") || name == QStringLiteral("alignat*")) &&
+             lexer_.peek().text == QStringLiteral("{")) {
+    // Consume the mandatory {numCols} argument.  The column count is
+    // determined by the preamble &-count at parse time; the numeric argument
+    // is only for validation in LaTeX and not needed for rendering.
+    parseRawGroupText(QStringLiteral("\\begin{") + name + QStringLiteral("}"));
   }
 
   if (array.columnAlignments.isEmpty()) {
@@ -314,6 +322,9 @@ void MathParser::configureArrayEnvironment(MathParseNode& array, const QString& 
   } else if (baseName == QStringLiteral("gathered") || baseName == QStringLiteral("gather")) {
     array.addJot = true;
     array.colSeparationType = QStringLiteral("gather");
+    array.columnAlignments = QStringLiteral("c");
+  } else if (baseName == QStringLiteral("equation")) {
+    array.arrayCellStyle = QStringLiteral("display");
     array.columnAlignments = QStringLiteral("c");
   }
 }

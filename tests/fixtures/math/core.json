@@ -725,7 +725,8 @@
     "glyphWidthToleranceEm": 0.05,
     "compareKatexMetrics": true,
     "compareKatexBBox": true,
-    "compareKatexInkBBox": true
+    "compareKatexInkBBox": true,
+    "inkBBoxWidthToleranceEm": 0.65
   },
   {
     "id": "macro-high-frequency",

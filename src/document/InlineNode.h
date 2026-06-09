@@ -74,6 +74,9 @@ public:
   InlineSourceRanges sourceRanges() const;
   void setSourceRanges(InlineSourceRanges ranges);
 
+  bool isAutolink() const;
+  void setAutolink(bool autolink);
+
   QVector<InlineNode>& children();
   const QVector<InlineNode>& children() const;
 
@@ -97,6 +100,7 @@ private:
   QString alt_;
   QVector<InlineNode> children_;
   InlineSourceRanges sourceRanges_;
+  bool autolink_ = false;
 };
 
 void shiftInlineSourcePositions(QVector<InlineNode>& inlines, qsizetype delta);

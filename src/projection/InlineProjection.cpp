@@ -5,12 +5,6 @@
 namespace muffin {
 namespace {
 
-bool isAutolinkInline(const InlineNode& node, const QString& label) {
-  return node.type() == InlineType::Link && node.title().isEmpty() &&
-         (label == node.href() || QStringLiteral("http://%1").arg(label) == node.href() ||
-          QStringLiteral("mailto:%1").arg(label) == node.href());
-}
-
 struct EntitySpan {
   qsizetype sourceStart;  // offset within the local source slice
   qsizetype sourceEnd;    // past-the-end offset
@@ -424,7 +418,7 @@ QString InlineProjection::markdownForInline(const InlineNode& node) {
       return QStringLiteral("~~%1~~").arg(markdownForInlines(node.children()));
     case InlineType::Link: {
       const QString label = markdownForInlines(node.children());
-      if (isAutolinkInline(node, label)) {
+      if (node.isAutolink()) {
         return label;
       }
       return QStringLiteral("[%1](%2%3)").arg(
@@ -744,7 +738,7 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
       break;
     case InlineType::Link: {
       const QString label = markdownForInlines(node.children());
-      if (isAutolinkInline(node, label)) {
+      if (node.isAutolink()) {
         InlineRange content = localRange(node.contentRange(), state.sourceBase);
         if (!rangeWithin(content, sourceStart, sourceEnd)) {
           content = InlineRange{sourceStart, sourceEnd};

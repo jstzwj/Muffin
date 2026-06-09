@@ -516,6 +516,27 @@ MathMacroExpander::MathMacroExpander(MathSettings settings) : settings_(std::mov
   defineMacro(QStringLiteral("\\KaTeX"),
               QStringLiteral("\\mathrm{K\\kern-.17em\\raisebox{0.205em}{\\scriptstyle A}\\kern-.15em\\TeX}"));
 
+  // braket.sty macros, matching KaTeX src/macros.ts:911-968.
+  // Simplified: | inside the body is treated as a regular ord symbol,
+  // not a \middle delimiter (KaTeX dynamically redefines | via braketHelper).
+  defineMacro(QStringLiteral("\\bra"), QStringLiteral("\\mathinner{\\langle{#1}|}"), 1);
+  defineMacro(QStringLiteral("\\ket"), QStringLiteral("\\mathinner{|{#1}\\rangle}"), 1);
+  defineMacro(QStringLiteral("\\braket"), QStringLiteral("\\mathinner{\\langle{#1}\\rangle}"), 1);
+  defineMacro(QStringLiteral("\\Bra"), QStringLiteral("\\left\\langle #1 \\right|"), 1);
+  defineMacro(QStringLiteral("\\Ket"), QStringLiteral("\\left| #1 \\right\\rangle"), 1);
+  defineMacro(QStringLiteral("\\Set"), QStringLiteral("\\left\\{ #1 \\right\\}"), 1);
+  defineMacro(QStringLiteral("\\Braket"), QStringLiteral("\\left\\langle #1 \\right\\rangle"), 1);
+  defineMacro(QStringLiteral("\\set"), QStringLiteral("\\{\\, #1 \\,\\}"), 1);
+
+  // stmaryrd \minuso (KaTeX src/macros.ts:820-826).
+  // KaTeX renders as \circ overlaid with - via \mathrlap, producing 2 glyphs.
+  defineMacro(QStringLiteral("\\minuso"), QStringLiteral("\\mathbin{\\mathrlap{\\circ}{-}}"));
+
+  // Apply user-defined macros from settings, overriding builtins.
+  for (auto it = settings_.macros.cbegin(); it != settings_.macros.cend(); ++it) {
+    defineMacro(it.key(), it.value());
+  }
+
   builtins_ = macros_;
 }
 

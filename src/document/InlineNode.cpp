@@ -114,6 +114,14 @@ void InlineNode::setSourceRanges(InlineSourceRanges ranges) {
   sourceRanges_ = ranges;
 }
 
+bool InlineNode::isAutolink() const {
+  return autolink_;
+}
+
+void InlineNode::setAutolink(bool autolink) {
+  autolink_ = autolink;
+}
+
 QVector<InlineNode>& InlineNode::children() {
   return children_;
 }

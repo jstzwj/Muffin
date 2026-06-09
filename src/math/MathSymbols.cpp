@@ -264,6 +264,9 @@ QHash<QString, MathSymbolInfo> buildSymbols() {
   add(QStringLiteral("\\varvdots"), QStringLiteral("⋮"), MathNodeType::Ord, QStringLiteral("main"));
   add(QStringLiteral("\\nobreakspace"), QStringLiteral(" "), MathNodeType::Spacing, QStringLiteral("main"));
 
+  // ~ in math mode is equivalent to \nobreakspace (non-breaking space).
+  add(QStringLiteral("~"), QStringLiteral(" "), MathNodeType::Spacing);
+
   // Text-mode symbols (KaTeX symbols.js text-mode entries)
   add(QStringLiteral("\\textendash"), QStringLiteral("–"), MathNodeType::Ord, QStringLiteral("main"));
   add(QStringLiteral("\\textemdash"), QStringLiteral("—"), MathNodeType::Ord, QStringLiteral("main"));
@@ -272,6 +275,12 @@ QHash<QString, MathSymbolInfo> buildSymbols() {
   add(QStringLiteral("\\textquotedblleft"), QStringLiteral("“"), MathNodeType::Ord, QStringLiteral("main"));
   add(QStringLiteral("\\textquotedblright"), QStringLiteral("”"), MathNodeType::Ord, QStringLiteral("main"));
   add(QStringLiteral("\\textdollar"), QStringLiteral("$"), MathNodeType::Ord, QStringLiteral("main"));
+
+  // Symbols from gensymb/stmaryrd packages (KaTeX symbols.ts:727-826).
+  add(QStringLiteral("\\degree"), QStringLiteral("°"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\textdegree"), QStringLiteral("°"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\pounds"), QStringLiteral("£"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\maltese"), QStringLiteral("✠"), MathNodeType::Ord, QStringLiteral("main"));
   add(QStringLiteral("\\textbackslash"), QStringLiteral("\x5c"), MathNodeType::Ord, QStringLiteral("main"));
   add(QStringLiteral("\\textasciicircum"), QStringLiteral("^"), MathNodeType::Ord, QStringLiteral("main"));
   add(QStringLiteral("\\textasciitilde"), QStringLiteral("~"), MathNodeType::Ord, QStringLiteral("main"));
@@ -282,6 +291,11 @@ QHash<QString, MathSymbolInfo> buildSymbols() {
   add(QStringLiteral("\\textperiodcentered"), QStringLiteral("·"), MathNodeType::Ord, QStringLiteral("main"));
   add(QStringLiteral("\\textasteriskcentered"), QStringLiteral("∗"), MathNodeType::Ord, QStringLiteral("main"));
   add(QStringLiteral("\\And"), QStringLiteral("&"), MathNodeType::Binary, QStringLiteral("main"));
+
+  // Text-mode dotless letters (KaTeX symbols.ts:684-685).
+  // Used as base characters for accents: \text{\'\i} → accent over dotless-i.
+  add(QStringLiteral("\\i"), QStringLiteral("ı"), MathNodeType::Ord, QStringLiteral("main"));
+  add(QStringLiteral("\\j"), QStringLiteral("ȷ"), MathNodeType::Ord, QStringLiteral("main"));
 
   return s;
 }

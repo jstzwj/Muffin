@@ -190,16 +190,24 @@ void MathRenderNode::paint(QPainter& painter, QPointF origin) const {
         const bool rightArrow = text == QStringLiteral("\\overrightarrow") || text == QStringLiteral("\\overleftrightarrow") ||
                                 text == QStringLiteral("\\underrightarrow") || text == QStringLiteral("\\underleftrightarrow");
         const bool underLeftArrow = text == QStringLiteral("\\underleftarrow") || text == QStringLiteral("\\underleftrightarrow");
-        const qreal y = origin.y() - height / 2.0;
-        painter.drawLine(QPointF(left, y), QPointF(right, y));
-        const qreal head = qMin<qreal>(width * 0.18, height);
-        if (rightArrow) {
-          painter.drawLine(QPointF(right, y), QPointF(right - head, y - head * 0.45));
-          painter.drawLine(QPointF(right, y), QPointF(right - head, y + head * 0.45));
-        }
-        if (leftArrow || underLeftArrow) {
-          painter.drawLine(QPointF(left, y), QPointF(left + head, y - head * 0.45));
-          painter.drawLine(QPointF(left, y), QPointF(left + head, y + head * 0.45));
+        if (leftArrow || rightArrow || underLeftArrow) {
+          const qreal y = origin.y() - height / 2.0;
+          painter.drawLine(QPointF(left, y), QPointF(right, y));
+          const qreal head = qMin<qreal>(width * 0.18, height);
+          if (rightArrow) {
+            painter.drawLine(QPointF(right, y), QPointF(right - head, y - head * 0.45));
+            painter.drawLine(QPointF(right, y), QPointF(right - head, y + head * 0.45));
+          }
+          if (leftArrow || underLeftArrow) {
+            painter.drawLine(QPointF(left, y), QPointF(left + head, y - head * 0.45));
+            painter.drawLine(QPointF(left, y), QPointF(left + head, y + head * 0.45));
+          }
+        } else if (!font.family().isEmpty() && !text.isEmpty()) {
+          // Fallback: render as text glyph (used for brace repeat segments
+          // that should be visually present but not counted as glyphs).
+          painter.setFont(font);
+          painter.setPen(color);
+          painter.drawText(origin, text);
         }
       }
       break;

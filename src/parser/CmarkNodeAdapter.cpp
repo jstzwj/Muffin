@@ -323,12 +323,20 @@ void CmarkNodeAdapter::annotateInlineSource(cmark_node* cmarkNode, InlineNode& i
       break;
     }
     case InlineType::Link: {
+      // cmark-gfm produces the same CMARK_NODE_LINK for both autolinks
+      // (<url>) and regular links ([text](url)). Distinguish them by
+      // inspecting the source text: a regular link starts with '['.
       const QString label = markdownForInlineLabel(inlineNode.children());
-      const qsizetype searchStart = qMax<qsizetype>(0, start);
-      const qsizetype labelStart = label.isEmpty() ? qsizetype(-1) : markdown_.indexOf(label, searchStart);
-      if (isAutolinkInline(inlineNode, label) && labelStart >= 0 && labelStart <= end &&
-          labelStart + label.size() >= start && labelStart + label.size() <= markdown_.size()) {
-        setPlainInlineRanges(ranges, labelStart, labelStart + label.size());
+      const bool isAutolink = isAutolinkInline(inlineNode, label) &&
+          !(start < markdown_.size() && markdown_.at(start) == QLatin1Char('['));
+      inlineNode.setAutolink(isAutolink);
+      if (isAutolink) {
+        const qsizetype searchStart = qMax<qsizetype>(0, start);
+        const qsizetype labelStart = label.isEmpty() ? qsizetype(-1) : markdown_.indexOf(label, searchStart);
+        if (labelStart >= 0 && labelStart <= end &&
+            labelStart + label.size() >= start && labelStart + label.size() <= markdown_.size()) {
+          setPlainInlineRanges(ranges, labelStart, labelStart + label.size());
+        }
       } else {
         ranges.source = inlineRange(start, end);
         ranges.openMarker = inlineRange(start, qMin(end, start + 1));
