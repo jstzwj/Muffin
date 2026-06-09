@@ -197,14 +197,15 @@ if(Python3_Interpreter_FOUND)
   execute_process(
     COMMAND
       "${Python3_EXECUTABLE}"
-      -c "from pathlib import Path; import PySide6; print(Path(PySide6.__file__).resolve().parent / 'translations')"
+      -c "from pathlib import Path; import PySide6; p = Path(PySide6.__file__).resolve().parent; print(p / 'translations'); print(p / 'Qt' / 'translations')"
     RESULT_VARIABLE MUFFIN_PYSIDE6_TRANSLATIONS_RESULT
     OUTPUT_VARIABLE MUFFIN_PYSIDE6_TRANSLATIONS_DIR
     ERROR_QUIET
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
   if(MUFFIN_PYSIDE6_TRANSLATIONS_RESULT EQUAL 0)
-    list(APPEND MUFFIN_QT_TRANSLATION_CANDIDATE_DIRS "${MUFFIN_PYSIDE6_TRANSLATIONS_DIR}")
+    string(REPLACE "\n" ";" MUFFIN_PYSIDE6_TRANSLATIONS_DIRS "${MUFFIN_PYSIDE6_TRANSLATIONS_DIR}")
+    list(APPEND MUFFIN_QT_TRANSLATION_CANDIDATE_DIRS ${MUFFIN_PYSIDE6_TRANSLATIONS_DIRS})
   endif()
 endif()
 list(REMOVE_DUPLICATES MUFFIN_QT_TRANSLATION_CANDIDATE_DIRS)
