@@ -36,6 +36,7 @@ private:
   MathParseNode parseBeginEnvironment();
   MathParseNode parseCr(const MathToken& token);
   MathParseNode parseArrayEnvironment(const QString& name);
+  MathParseNode parseCDEnvironment();
   void parseArrayPreamble(MathParseNode& array, const QString& preamble);
   void consumeArrayHLines(MathParseNode& array, int beforeRow);
   void configureArrayEnvironment(MathParseNode& array, const QString& name);

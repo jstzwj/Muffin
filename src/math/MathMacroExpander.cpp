@@ -23,6 +23,69 @@ bool spaceAfterDotsToken(const QString& token) {
   return tokens.contains(token);
 }
 
+// KaTeX macros.ts:394-450: \dots dispatches to the appropriate dots variant
+// based on the following token.
+QString dotsVariantForNext(const QString& next) {
+  static const QHash<QString, QString> dotsByToken{
+      {QStringLiteral(","), QStringLiteral("\\dotsc")},
+      {QStringLiteral("\\not"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("+"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("="), QStringLiteral("\\dotsb")},
+      {QStringLiteral("<"), QStringLiteral("\\dotsb")},
+      {QStringLiteral(">"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("-"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("*"), QStringLiteral("\\dotsb")},
+      {QStringLiteral(":"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\DOTSB"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\coprod"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\bigvee"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\bigwedge"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\biguplus"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\bigcap"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\bigcup"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\prod"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\sum"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\bigotimes"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\bigoplus"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\bigodot"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\bigsqcup"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\And"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\longrightarrow"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\Longrightarrow"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\longleftarrow"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\Longleftarrow"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\longleftrightarrow"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\Longleftrightarrow"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\mapsto"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\longmapsto"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\hookrightarrow"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\doteq"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\mathbin"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\mathrel"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\relbar"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\Relbar"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\xrightarrow"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\xleftarrow"), QStringLiteral("\\dotsb")},
+      {QStringLiteral("\\DOTSI"), QStringLiteral("\\dotsi")},
+      {QStringLiteral("\\int"), QStringLiteral("\\dotsi")},
+      {QStringLiteral("\\oint"), QStringLiteral("\\dotsi")},
+      {QStringLiteral("\\iint"), QStringLiteral("\\dotsi")},
+      {QStringLiteral("\\iiint"), QStringLiteral("\\dotsi")},
+      {QStringLiteral("\\iiiint"), QStringLiteral("\\dotsi")},
+      {QStringLiteral("\\idotsint"), QStringLiteral("\\dotsi")},
+      {QStringLiteral("\\DOTSX"), QStringLiteral("\\dotsx")},
+  };
+  const auto it = dotsByToken.constFind(next);
+  if (it != dotsByToken.constEnd()) {
+    return it.value();
+  }
+  // KaTeX also checks if next starts with \not → \dotsb
+  if (next.startsWith(QStringLiteral("\\not"))) {
+    return QStringLiteral("\\dotsb");
+  }
+  return QStringLiteral("\\dotso");
+}
+
 using MacroToken = MathMacroExpander::MacroToken;
 
 bool isCommandStart(const QString& text, qsizetype pos) {
@@ -456,6 +519,17 @@ MathMacroExpander::MathMacroExpander(MathSettings settings) : settings_(std::mov
   defineMacro(QStringLiteral("\\Alpha"), QStringLiteral("\\mathrm{A}"));
   defineMacro(QStringLiteral("\\Beta"), QStringLiteral("\\mathrm{B}"));
   defineMacro(QStringLiteral("\\bull"), QStringLiteral("\\bullet"));
+
+  //////////////////////////////////////////////////////////////////////
+  // actuarialangle.dtx (KaTeX macros.ts:974)
+  defineMacro(QStringLiteral("\\angln"), QStringLiteral("{\\angl n}"));
+
+  //////////////////////////////////////////////////////////////////////
+  // Dotless i/j (KaTeX macros.ts:357-358)
+  // \@imath/\@jmath are loaded from KaTeX symbols.ts as PUA characters.
+  // \imath/\jmath are macros that reference them.
+  defineMacro(QStringLiteral("\\imath"), QStringLiteral("\\@imath"));
+  defineMacro(QStringLiteral("\\jmath"), QStringLiteral("\\@jmath"));
   defineMacro(QStringLiteral("\\Chi"), QStringLiteral("\\mathrm{X}"));
   defineMacro(QStringLiteral("\\clubs"), QStringLiteral("\\clubsuit"));
   defineMacro(QStringLiteral("\\cnums"), QStringLiteral("\\mathbb{C}"));
@@ -524,8 +598,13 @@ MathMacroExpander::MathMacroExpander(MathSettings settings) : settings_(std::mov
   defineMacro(QStringLiteral("\\braket"), QStringLiteral("\\mathinner{\\langle{#1}\\rangle}"), 1);
   defineMacro(QStringLiteral("\\Bra"), QStringLiteral("\\left\\langle #1 \\right|"), 1);
   defineMacro(QStringLiteral("\\Ket"), QStringLiteral("\\left| #1 \\right\\rangle"), 1);
-  defineMacro(QStringLiteral("\\Set"), QStringLiteral("\\left\\{ #1 \\right\\}"), 1);
-  defineMacro(QStringLiteral("\\Braket"), QStringLiteral("\\left\\langle #1 \\right\\rangle"), 1);
+  // \Set and \Braket use braketHelper pattern (KaTeX macros.ts:919-968):
+  // dynamically redefine | as \middle\vert within the group.
+  defineMacro(QStringLiteral("\\Set"), QStringLiteral("\\bra@set{\\{\\,}{\\mid}{}{\\,\\}}"));
+  defineMacro(QStringLiteral("\\Braket"), QStringLiteral("\\bra@ket{\\left\\langle}{\\,\\middle\\vert\\,}{\\,\\middle\\vert\\,}{\\right\\rangle}"));
+  // \bra@ket and \bra@set are handled specially in expandOnce()
+  defineMacro(QStringLiteral("\\bra@ket"), QString());
+  defineMacro(QStringLiteral("\\bra@set"), QString());
   defineMacro(QStringLiteral("\\set"), QStringLiteral("\\{\\, #1 \\,\\}"), 1);
 
   // stmaryrd \minuso (KaTeX src/macros.ts:820-826).
@@ -728,6 +807,30 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
     return true;
   }
 
+  // braket.sty braketHelper (KaTeX macros.ts:893-968):
+  // braket.sty braketHelper (KaTeX macros.ts:893-968):
+  // \bra@ket and \bra@set replace | with \middle\vert and \| with
+  // \middle\Vert inside the body. We do direct string replacement since
+  // Muffin's macro expansion works on text.
+  if (actualCommand == QStringLiteral("\\bra@ket") || actualCommand == QStringLiteral("\\bra@set")) {
+    const QString left = stream.consumeArgText();
+    const QString mid = stream.consumeArgText();
+    const QString midDouble = stream.consumeArgText();
+    const QString right = stream.consumeArgText();
+
+    QString body = stream.consumeArgText();
+    if (!midDouble.isEmpty()) {
+      body.replace(QStringLiteral("\\|"), midDouble);
+    }
+    body.replace(QStringLiteral("|"), mid);
+
+    stream.pushTokens(reversedTokensFromString(right, token.position));
+    stream.pushTokens(reversedTokensFromString(body, token.position));
+    stream.pushTokens(reversedTokensFromString(left, token.position));
+    countExpansion(1, token.position, token.endPosition);
+    return true;
+  }
+
   if (actualCommand == QStringLiteral("\\newcommand") || actualCommand == QStringLiteral("\\renewcommand") ||
       actualCommand == QStringLiteral("\\providecommand")) {
     const QString name = stream.consumeCommandArgument();
@@ -786,6 +889,15 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
       setMacro(name, Macro{second.text, 0, false}, globalPrefix);
     }
     stream.pushToken(first);
+    countExpansion(1, token.position, token.endPosition);
+    return true;
+  }
+
+  // KaTeX macros.ts:452: \dots is context-sensitive, dispatches to
+  // \dotso/\dotsb/\dotsi/\dotsx based on the following token.
+  if (actualCommand == QStringLiteral("\\dots")) {
+    const QString variant = dotsVariantForNext(stream.future().text);
+    stream.pushTokens(reversedTokensFromString(variant, token.position));
     countExpansion(1, token.position, token.endPosition);
     return true;
   }

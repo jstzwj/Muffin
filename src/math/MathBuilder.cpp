@@ -1759,16 +1759,33 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeLeftRight(const MathParseNode& 
 }
 
 std::unique_ptr<MathRenderNode> MathBuilder::makeError(const QString& text, const MathOptions& options) {
-  auto node = std::make_unique<MathRenderNode>();
-  node->kind = MathRenderKind::Error;
-  node->text = text;
-  node->font = options.fontForClass(QStringLiteral("main"));
-  node->color = options.settings().errorColor;
-  const QFontMetricsF metrics(node->font);
-  node->width = metrics.horizontalAdvance(text);
-  node->height = metrics.ascent();
-  node->depth = metrics.descent();
-  return node;
+  // KaTeX formatUnsupportedCmd: render each character individually in error color.
+  // This produces one glyph per character, matching KaTeX's behavior exactly.
+  const QFont font = options.fontForClass(QStringLiteral("main"));
+  const QColor color = options.settings().errorColor;
+  std::vector<std::unique_ptr<MathRenderNode>> children;
+  children.reserve(text.size());
+  for (const QChar& ch : text) {
+    auto sym = std::make_unique<MathRenderNode>();
+    sym->kind = MathRenderKind::Symbol;
+    sym->text = QString(ch);
+    sym->font = font;
+    sym->color = color;
+    const QFontMetricsF metrics(sym->font);
+    sym->width = metrics.horizontalAdvance(sym->text);
+    sym->height = metrics.ascent();
+    sym->depth = metrics.descent();
+    children.push_back(std::move(sym));
+  }
+  auto span = std::make_unique<MathRenderNode>();
+  span->kind = MathRenderKind::Span;
+  span->children = std::move(children);
+  for (const auto& child : span->children) {
+    span->width += child->width;
+    span->height = qMax(span->height, child->height - child->shift);
+    span->depth = qMax(span->depth, child->depth + child->shift);
+  }
+  return span;
 }
 
 qreal MathBuilder::dimensionToPoints(const QString& value) const {

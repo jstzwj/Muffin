@@ -91,6 +91,12 @@ MathToken MathLexer::readToken() {
       return {input_.mid(start, pos_ - start), start, pos_};
     }
   }
+  // Combine surrogate pairs into a single token, matching KaTeX's Lexer.ts
+  // regex [\uD800-\uDBFF][\uDC00-\uDFFF] which matches them as one token.
+  if (ch.isHighSurrogate() && pos_ < input_.size() && input_.at(pos_).isLowSurrogate()) {
+    ++pos_;
+    return {input_.mid(start, 2), start, pos_};
+  }
   return {QString(ch), start, pos_};
 }
 

@@ -2240,7 +2240,7 @@ void testOfficialKatexScreenshotterAudit(const QString& fixturePath) {
   const QMap<QString, QJsonObject> katexGlyphsById = readObjectArrayById(katexGlyphsPathForFixture(fixturePath, QStringLiteral("katex-official")));
   RenderTheme theme = RenderTheme::github();
   math::MathSettings officialSettings;
-  officialSettings.trust = true;
+  officialSettings.trust = false;
   const qreal rootEm = math::MathRenderer::katexRootFontPixelSize(theme);
   QVector<BBoxAuditEntry> bboxAudit;
   QStringList renderFailures;

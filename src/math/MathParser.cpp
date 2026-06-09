@@ -478,7 +478,7 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
     }
     graphics.href = parseRawGroupText(token.text);
     if (!ensureTrusted(token, function, trustContextForNode(token, function, graphics))) {
-      return parseScripts(errorNode(QStringLiteral("Function %1 is not trusted").arg(token.text), &token));
+      return parseScripts(errorNode(token.text, &token));
     }
     return parseScripts(std::move(graphics));
   }
@@ -499,7 +499,7 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
     href.href = parseRawGroupText(token.text);
     href.body = parseRequiredGroup(token.text);
     if (!ensureTrusted(token, function, trustContextForNode(token, function, href))) {
-      return parseScripts(errorNode(QStringLiteral("Function %1 is not trusted").arg(token.text), &token));
+      return parseScripts(errorNode(token.text, &token));
     }
     return parseScripts(std::move(href));
   }
@@ -510,7 +510,7 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
     url.href = parseRawGroupText(token.text);
     url.text = url.href;
     if (!ensureTrusted(token, function, trustContextForNode(token, function, url))) {
-      return parseScripts(errorNode(QStringLiteral("Function %1 is not trusted").arg(token.text), &token));
+      return parseScripts(errorNode(token.text, &token));
     }
     return parseScripts(std::move(url));
   }
@@ -522,7 +522,7 @@ MathParseNode MathParser::parseFunction(const MathToken& token, const MathFuncti
     html.text = parseRawGroupText(token.text);
     html.body = parseRequiredGroup(token.text);
     if (!ensureTrusted(token, function, trustContextForNode(token, function, html))) {
-      return parseScripts(errorNode(QStringLiteral("Function %1 is not trusted").arg(token.text), &token));
+      return parseScripts(errorNode(token.text, &token));
     }
     return parseScripts(std::move(html));
   }
@@ -1270,6 +1270,28 @@ QString MathParser::delimiterReplacement(const QString& token) const {
 }
 
 MathParseNode MathParser::parseSymbol(const MathToken& token) {
+  // Handle surrogate pair tokens (mathematical alphanumeric symbols U+1D400–U+1D7FF).
+  // The lexer combines surrogate pairs into 2-char tokens. Map them to base char + font class.
+  if (token.text.size() == 2 && token.text.at(0).isHighSurrogate()) {
+    const uint high = token.text.at(0).unicode();
+    const uint low = token.text.at(1).unicode();
+    const uint codePoint = (high - 0xD800) * 0x400 + (low - 0xDC00) + 0x10000;
+    const WideCharMapping mapping = wideCharacterFont(codePoint);
+    if (!mapping.baseChar.isEmpty()) {
+      MathParseNode node;
+      node.type = MathNodeType::Ord;
+      node.text = mapping.baseChar;
+      node.fontClass = mapping.fontClass;
+      return node;
+    }
+    // Unsupported wide character (no font mapping) → error
+    MathParseNode node;
+    node.type = MathNodeType::Error;
+    node.text = token.text;
+    node.error = QStringLiteral("Unsupported wide character U+%1").arg(codePoint, 4, 16, QLatin1Char('0'));
+    return node;
+  }
+
   const MathSymbolInfo symbol = lookupSymbol(token.text);
   MathParseNode node;
   node.type = symbol.known ? symbol.type : MathNodeType::Error;
@@ -1293,6 +1315,46 @@ MathParseNode MathParser::parseSymbol(const MathToken& token) {
     accent.label = QStringLiteral("\\.");
     accent.base.push_back(std::move(base));
     return accent;
+  }
+
+  // Decompose pre-composed Latin accented characters (U+00C0–U+024F) using
+  // NFD normalization, matching KaTeX's unicodeSymbols + combining mark handling.
+  // KaTeX's Latin Modern font only has base glyphs; accents are rendered separately.
+  if (token.text.size() == 1) {
+    const ushort cp = token.text.at(0).unicode();
+    if (cp >= 0x00C0 && cp <= 0x024F) {
+      const QString decomposed = token.text.normalized(QString::NormalizationForm_D);
+      if (decomposed.size() >= 2) {
+        const ushort accentCp = decomposed.at(1).unicode();
+        if (accentCp >= 0x0300 && accentCp <= 0x036F) {
+          // Map combining diacritical marks to LaTeX accent commands.
+          static const QHash<ushort, QString> accentMap = {
+            {0x0300, QStringLiteral("\\`")},   // grave
+            {0x0301, QStringLiteral("\\'")},  // acute
+            {0x0302, QStringLiteral("\\^")},   // circumflex
+            {0x0303, QStringLiteral("\\~")},  // tilde
+            {0x0304, QStringLiteral("\\=")},   // macron
+            {0x0306, QStringLiteral("\\u")},   // breve
+            {0x0307, QStringLiteral("\\.")},   // dot above
+            {0x0308, QStringLiteral("\\\"")}, // diaeresis
+            {0x030A, QStringLiteral("\\r")},   // ring above
+            {0x030C, QStringLiteral("\\v")},   // caron
+            {0x0327, QStringLiteral("\\c")},   // cedilla
+          };
+          const auto it = accentMap.constFind(accentCp);
+          if (it != accentMap.constEnd()) {
+            MathParseNode baseNode;
+            baseNode.type = MathNodeType::Ord;
+            baseNode.text = QString(decomposed.at(0));
+            MathParseNode accentNode;
+            accentNode.type = MathNodeType::Accent;
+            accentNode.label = it.value();
+            accentNode.base.push_back(std::move(baseNode));
+            return accentNode;
+          }
+        }
+      }
+    }
   }
 
   if (node.type == MathNodeType::Operator) {

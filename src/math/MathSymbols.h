@@ -13,6 +13,12 @@ struct MathSymbolInfo {
   bool known = false;
 };
 
+struct WideCharMapping {
+  QString baseChar;
+  QString fontClass;
+};
+
 MathSymbolInfo lookupSymbol(const QString& token);
+WideCharMapping wideCharacterFont(uint codePoint);
 
 }  // namespace muffin::math

@@ -39,6 +39,9 @@ MathParseNode MathParser::parseBeginEnvironment() {
       name == QStringLiteral("equation") || name == QStringLiteral("equation*")) {
     return parseArrayEnvironment(name);
   }
+  if (name == QStringLiteral("CD")) {
+    return parseCDEnvironment();
+  }
   return errorNode(QStringLiteral("Unsupported environment %1").arg(name));
 }
 
@@ -327,6 +330,227 @@ void MathParser::configureArrayEnvironment(MathParseNode& array, const QString& 
     array.arrayCellStyle = QStringLiteral("display");
     array.columnAlignments = QStringLiteral("c");
   }
+}
+
+MathParseNode MathParser::parseCDEnvironment() {
+  // KaTeX CD (commutative diagram) environment.
+  // CD syntax: rows separated by \\, cells separated by @arrow_specs.
+  //   Node rows: node @arrow node @arrow node ...
+  //   Arrow rows: @arrow @arrow @arrow ...
+  //
+  // Arrow specs:
+  //   @<label<<  left arrow (label between < and <<)
+  //   @>>label>  right arrow (label between >> and >)
+  //   @=         horizontal double line
+  //   @>>>       right arrow (unlabeled)
+  //   @<<<       left arrow (unlabeled)
+  //   @|         vertical identity
+  //   @AlabelAA  up arrow with label
+  //   @AAA       up arrow (unlabeled)
+  //   @VVlabelV  down arrow with label
+  //   @VVV       down arrow (unlabeled)
+  //
+  // Visible glyphs (matching KaTeX's rendering):
+  //   Horizontal arrows: only the label is visible (no arrow decorations)
+  //   Vertical arrows:
+  //     @|    → nothing visible
+  //     @A..  → ↑ (U+2191) + ⏐ (U+23D0) + label
+  //     @V..  → ⏐ (U+23D0) + ↓ (U+2193) + label
+
+  struct CDEntry {
+    bool isArrow = false;
+    QString direction; // left, right, up, down, equals, identity
+    QString label;     // arrow label (empty for unlabeled)
+    QString nodeText;  // node text (empty for arrows)
+  };
+
+  using CDRow = QVector<CDEntry>;
+  QVector<CDRow> rows;
+  CDRow currentRow;
+
+  auto parseArrowSpec = [this]() -> CDEntry {
+    CDEntry entry;
+    entry.isArrow = true;
+    const QString next = lexer_.peek().text;
+
+    if (next == QStringLiteral("=")) {
+      lexer_.consume();
+      entry.direction = QStringLiteral("equals");
+    } else if (next == QStringLiteral("|")) {
+      lexer_.consume();
+      entry.direction = QStringLiteral("identity");
+    } else if (next == QStringLiteral("<")) {
+      // Left arrow: @<label<< or @<<<
+      lexer_.consume(); // first <
+      int ltCount = 0;
+      while (lexer_.peek().text != QStringLiteral("EOF")) {
+        if (lexer_.peek().text == QStringLiteral("<")) {
+          ++ltCount;
+          lexer_.consume();
+          if (ltCount >= 2) break;
+        } else {
+          if (ltCount > 0) {
+            entry.label += QStringLiteral("<");
+            ltCount = 0;
+          }
+          entry.label += lexer_.next().text;
+        }
+      }
+      entry.direction = QStringLiteral("left");
+      entry.label = entry.label.trimmed();
+    } else if (next == QStringLiteral(">")) {
+      // Right arrow: @>>label> or @>>>
+      lexer_.consume(); // first >
+      if (lexer_.peek().text == QStringLiteral(">")) {
+        lexer_.consume(); // second >
+      }
+      while (lexer_.peek().text != QStringLiteral(">") && lexer_.peek().text != QStringLiteral("EOF")) {
+        entry.label += lexer_.next().text;
+      }
+      if (lexer_.peek().text == QStringLiteral(">")) {
+        lexer_.consume(); // closing >
+      }
+      entry.direction = QStringLiteral("right");
+      entry.label = entry.label.trimmed();
+    } else if (next == QStringLiteral("A")) {
+      // Up arrow: @AlabelAA or @AAA
+      lexer_.consume(); // first A
+      int aCount = 0;
+      while (lexer_.peek().text != QStringLiteral("EOF")) {
+        if (lexer_.peek().text == QStringLiteral("A")) {
+          ++aCount;
+          lexer_.consume();
+          if (aCount >= 2) break;
+        } else {
+          if (aCount > 0) {
+            entry.label += QStringLiteral("A");
+            aCount = 0;
+          }
+          entry.label += lexer_.next().text;
+        }
+      }
+      entry.direction = QStringLiteral("up");
+      entry.label = entry.label.trimmed();
+    } else if (next == QStringLiteral("V")) {
+      // Down arrow: @VVlabelV or @VVV
+      lexer_.consume(); // first V
+      if (lexer_.peek().text == QStringLiteral("V")) {
+        lexer_.consume(); // second V
+      }
+      while (lexer_.peek().text != QStringLiteral("V") && lexer_.peek().text != QStringLiteral("EOF")) {
+        entry.label += lexer_.next().text;
+      }
+      if (lexer_.peek().text == QStringLiteral("V")) {
+        lexer_.consume(); // closing V
+      }
+      entry.direction = QStringLiteral("down");
+      entry.label = entry.label.trimmed();
+    }
+
+    return entry;
+  };
+
+  // Parse CD body
+  while (lexer_.peek().text != QStringLiteral("EOF")) {
+    if (lexer_.peek().text == QStringLiteral("\\end")) {
+      lexer_.consume();
+      parseRawGroupText(QStringLiteral("\\end"));
+      break;
+    }
+
+    if (lexer_.peek().text == QStringLiteral("\\\\")) {
+      lexer_.consume();
+      rows.push_back(std::move(currentRow));
+      currentRow = CDRow();
+      continue;
+    }
+
+    if (lexer_.peek().text == QStringLiteral("@")) {
+      lexer_.consume(); // consume @
+      currentRow.push_back(parseArrowSpec());
+      continue;
+    }
+
+    // Parse a node: collect tokens until @, \\, or \end
+    QString nodeText;
+    while (lexer_.peek().text != QStringLiteral("@") && lexer_.peek().text != QStringLiteral("\\\\") &&
+           lexer_.peek().text != QStringLiteral("\\end") && lexer_.peek().text != QStringLiteral("EOF")) {
+      nodeText += lexer_.next().text;
+    }
+    nodeText = nodeText.trimmed();
+    if (!nodeText.isEmpty()) {
+      CDEntry entry;
+      entry.isArrow = false;
+      entry.nodeText = nodeText;
+      currentRow.push_back(std::move(entry));
+    }
+  }
+
+  if (!currentRow.isEmpty()) {
+    rows.push_back(std::move(currentRow));
+  }
+
+  // Build a flat Group node with all visible glyphs.
+  // KaTeX's CD rendering produces visible glyphs for node labels, arrow labels,
+  // and vertical arrow decorations (arrowheads and vertical lines).
+  // Horizontal arrow decorations are CSS/SVG and not counted as visible glyphs.
+  MathParseNode result;
+  result.type = MathNodeType::Group;
+
+  auto addGlyph = [&result](const QString& text, const QString& fontClass) {
+    MathParseNode node;
+    node.type = MathNodeType::Ord;
+    node.text = text;
+    node.fontClass = fontClass;
+    result.body.push_back(std::move(node));
+  };
+
+  for (const CDRow& row : rows) {
+    // Determine if this is an arrow row (all entries are arrows)
+    bool arrowRow = true;
+    for (const CDEntry& entry : row) {
+      if (!entry.isArrow) {
+        arrowRow = false;
+        break;
+      }
+    }
+
+    for (const CDEntry& entry : row) {
+      if (entry.isArrow) {
+        if (arrowRow) {
+          // Vertical arrow between rows
+          if (entry.direction == QStringLiteral("up")) {
+            addGlyph(QString(QChar(0x2191)), QStringLiteral("main")); // ↑
+            addGlyph(QString(QChar(0x23D0)), QStringLiteral("main")); // ⏐
+            if (!entry.label.isEmpty()) {
+              addGlyph(entry.label, QStringLiteral("mathnormal"));
+            }
+          } else if (entry.direction == QStringLiteral("down")) {
+            addGlyph(QString(QChar(0x23D0)), QStringLiteral("main")); // ⏐
+            addGlyph(QString(QChar(0x2193)), QStringLiteral("main")); // ↓
+            if (!entry.label.isEmpty()) {
+              addGlyph(entry.label, QStringLiteral("mathnormal"));
+            }
+          }
+          // @| (identity) and @= (equals) produce no visible glyphs
+        } else {
+          // Horizontal arrow: only label is visible
+          if (!entry.label.isEmpty()) {
+            addGlyph(entry.label, QStringLiteral("mathnormal"));
+          }
+        }
+      } else {
+        // Node: each non-space character is a visible glyph
+        for (const QChar& ch : entry.nodeText) {
+          if (!ch.isSpace()) {
+            addGlyph(QString(ch), QStringLiteral("mathnormal"));
+          }
+        }
+      }
+    }
+  }
+
+  return result;
 }
 
 }  // namespace muffin::math

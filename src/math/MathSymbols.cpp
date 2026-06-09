@@ -461,6 +461,76 @@ const QHash<QString, MathSymbolInfo>& symbols() {
 
 }  // namespace
 
+// KaTeX wide-character.ts: maps Unicode mathematical alphanumeric symbols
+// (U+1D400-U+1D7FF) to their base character and font class.
+// Returns {baseChar, fontClass} or {empty, empty} if unsupported.
+WideCharMapping wideCharacterFont(uint codePoint) {
+  // Latin letters: groups of 26 (uppercase A-Z then lowercase a-z per style).
+  // Based on KaTeX's wideLatinLetterData array.
+  static const struct { const char* fontClass; int baseUpper; } latinGroups[] = {
+    {"mathbf", 'A'},      // bold upright A-Z, a-z
+    {"mathbf", 'A'},      // bold upright a-z (same font, different case range)
+    {"mathnormal", 'A'},  // italic A-Z, a-z
+    {"mathnormal", 'A'},  // italic a-z
+    {"boldsymbol", 'A'},  // bold italic A-Z, a-z
+    {"boldsymbol", 'A'},  // bold italic a-z
+    {"mathscr", 'A'},     // script A-Z
+    {"", 0},              // script a-z — no font
+    {"", 0},              // bold script A-Z — no font
+    {"", 0},              // bold script a-z — no font
+    {"mathfrak", 'A'},    // fraktur A-Z, a-z
+    {"mathfrak", 'A'},    // fraktur a-z
+    {"mathbb", 'A'},      // double-struck A-Z, k
+    {"mathbb", 'A'},      // double-struck a-z
+    {"mathfrak", 'A'},    // bold fraktur A-Z, a-z
+    {"mathfrak", 'A'},    // bold fraktur a-z
+    {"mathsf", 'A'},      // sans-serif A-Z, a-z
+    {"mathsf", 'A'},      // sans-serif a-z
+    {"mathsf", 'A'},      // bold sans-serif A-Z, a-z
+    {"mathsf", 'A'},      // bold sans-serif a-z
+    {"mathsf", 'A'},      // italic sans-serif A-Z, a-z
+    {"mathsf", 'A'},      // italic sans-serif a-z
+    {"", 0},              // bold italic sans A-Z — no font
+    {"", 0},              // bold italic sans a-z — no font
+    {"mathtt", 'A'},      // monospace A-Z, a-z
+    {"mathtt", 'A'},      // monospace a-z
+  };
+
+  if (0x1D400 <= codePoint && codePoint < 0x1D6A4) {
+    const int groupIndex = (codePoint - 0x1D400) / 26;
+    const int charIndex = (codePoint - 0x1D400) % 26;
+    if (groupIndex < 0 || groupIndex >= 26) return {{}, {}};
+    const auto& group = latinGroups[groupIndex];
+    if (group.fontClass[0] == '\0') return {{}, {}};
+    // Even groups (0,2,4,...) are uppercase, odd are lowercase
+    const int baseChar = (groupIndex % 2 == 0) ? (group.baseUpper + charIndex) : ('a' + charIndex);
+    return {QString(QChar(baseChar)), QString::fromLatin1(group.fontClass)};
+  }
+
+  // Numerals: groups of 10
+  static const char* numeralGroups[] = {
+    "mathbf",     // bold 0-9
+    "",           // double-struck 0-9 — no font
+    "mathsf",     // sans-serif 0-9
+    "mathsf",     // bold sans-serif 0-9
+    "mathtt",     // monospace 0-9
+  };
+  if (0x1D7CE <= codePoint && codePoint <= 0x1D7FF) {
+    const int groupIndex = (codePoint - 0x1D7CE) / 10;
+    const int charIndex = (codePoint - 0x1D7CE) % 10;
+    if (groupIndex < 0 || groupIndex >= 5) return {{}, {}};
+    if (numeralGroups[groupIndex][0] == '\0') return {{}, {}};
+    return {QString(QChar('0' + charIndex)), QString::fromLatin1(numeralGroups[groupIndex])};
+  }
+
+  // Dotless i/j (bold)
+  if (codePoint == 0x1D6A5 || codePoint == 0x1D6A6) {
+    return {QString(QChar(codePoint == 0x1D6A5 ? 'i' : 'j')), QStringLiteral("mathbf")};
+  }
+
+  return {{}, {}};
+}
+
 MathSymbolInfo lookupSymbol(const QString& token) {
   if (symbols().contains(token)) {
     return symbols().value(token);
