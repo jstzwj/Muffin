@@ -40,19 +40,25 @@ Muffin keeps your Markdown file as the source of truth while presenting the docu
 - **Source code mode** — Toggle to a syntax-highlighted raw Markdown editor with full cursor synchronization between views.
 - **Focus mode** (`F8`) — Dim all blocks except the active one, so you can concentrate on what you're writing.
 - **Typewriter mode** (`F9`) — Keep the cursor vertically centered with smooth animated scrolling that feels like paper.
-- **Editable tables** — Add, resize, align, and delete rows and columns inline.
+- **Editable tables** — Add, resize, align, and delete rows and columns inline. Insert tables via a configurable dialog.
 - **Editable code blocks** — Inline editing with syntax highlighting for 20+ languages via tree-sitter. Set the language from an autocomplete dropdown.
-- **Editable math blocks** — Write LaTeX expressions rendered live by KaTeX, with a dual-pane edit/preview layout.
-- **Editable HTML blocks** — Edit raw HTML blocks inline.
+- **Editable math blocks** — Write LaTeX expressions rendered live by a full KaTeX-compatible engine written in C++, with a dual-pane edit/preview layout. Supports user-defined macros, braket notation, commutative diagrams, and more.
+- **Editable HTML blocks** — Edit raw HTML blocks inline with Lexbor-based parsing and Yoga-based flexbox layout.
+- **Image editing** — Insert local or network images, drag-and-drop upload, right-click context menu, preview rendering, and batch processing. WebP and AVIF formats supported.
+- **Footnote and link definitions** — Full support for footnote (`[^id]: text`) and link reference definitions with rendering, editing, and insertion commands.
 - **Front matter** — Full YAML front matter support.
 - **Rich paragraph commands** — Toggle headings, code fences, math blocks, and more from the paragraph menu.
 - **Block movement** — Move paragraphs up and down with keyboard shortcuts.
-- **Find and replace** — Built-in search bar with regex support.
+- **Find and replace** — Built-in search bar with regex support, wrap-around, and replace/replace-all.
 - **Multi-format copy** — Copy selected content as Markdown, HTML, or plain text.
+- **Link interaction** — Hover cursor changes on links; Ctrl+Click to open in the system browser.
+- **Document printing** — Print the current document via File → Print (Ctrl+P).
+- **Line break preferences** — Choose Windows (CRLF) or Unix (LF) line endings, with an optional trailing newline on save.
 
 ### Navigation & Organization
 
 - **Document outline** — Jump to any heading from the sidebar outline panel.
+- **Heading badges** — Visual level badges (H3–H6) painted alongside headings for quick hierarchy identification.
 - **File tree sidebar** — Browse and open files from a folder tree.
 - **Status bar** — Parse time, cursor position, word count, and quick toggles for sidebar and source mode.
 
@@ -60,6 +66,7 @@ Muffin keeps your Markdown file as the source of truth while presenting the docu
 
 - **5 built-in themes** — GitHub, Newsprint, Night, Pixyll, and Whitey.
 - **Appearance preferences** — Font size, zoom level, focus mode, typewriter mode, and status bar visibility — all persisted across sessions.
+- **Always-on-top** — Keep the window above all others (Ctrl+Shift+F).
 - **14 UI languages** — English, 简体中文, 繁體中文, 日本語, 한국어, Tiếng Việt, Français, Español, Deutsch, Português (Brasil), Русский, Italiano, Türkçe, Polski, and Nederlands.
 
 ### Performance
@@ -73,13 +80,11 @@ Muffin keeps your Markdown file as the source of truth while presenting the docu
 
 |         | Windows | macOS | Linux |
 |:--------|:-------:|:-----:|:-----:|
-| Install | [MSIX (coming soon)](https://github.com/jstzwj/Muffin/releases) | [DMG (coming soon)](https://github.com/jstzwj/Muffin/releases) | [Build from source](#development) |
-
-> Pre-built packages are on the way. In the meantime, you can build from source following the instructions below.
+| Install | [MSI](https://github.com/jstzwj/Muffin/releases) | [DMG](https://github.com/jstzwj/Muffin/releases) | [Build from source](#development) |
 
 ## Development
 
-Muffin uses [Conan](https://conan.io/) for dependency management and CMake for building. You need a C++17 compiler, Qt 6 (installed via Conan), Conan 2.x, and CMake 3.24+.
+Muffin uses [Conan](https://conan.io/) for dependency management and CMake for building. You need a C++20 compiler, Qt 6 (installed via Conan), Conan 2.x, and CMake 3.24+.
 
 ### Build
 
@@ -88,7 +93,7 @@ Muffin uses [Conan](https://conan.io/) for dependency management and CMake for b
 conan profile detect --force
 
 # Install dependencies
-conan install . -s build_type=Release -s compiler.cppstd=17 --build=missing
+conan install . -s build_type=Release -s compiler.cppstd=20 --build=missing
 
 # Configure and build
 cmake --preset conan-default
@@ -130,10 +135,9 @@ If you have a bug report or feature request, feel free to [open an issue](https:
 ## Roadmap
 
 1. Polish the rendered editor surface — selection, cursor, IME, and local refresh edge cases.
-2. Expand block transforms — headings, paragraphs, lists, blockquotes, front matter, and task list commands.
-3. Finish complex block UX — tables, code fences, math blocks, HTML blocks, and images.
-4. Add search/replace, richer clipboard behavior, export flows, printing, and diagnostics.
-5. Harden performance with large-document stress tests and roundtrip verification.
+2. Expand export flows — PDF, HTML, and DOCX export with template support.
+3. Harden performance — large-document stress tests, roundtrip verification, and profiling diagnostics.
+4. Accessibility — keyboard navigation improvements, screen reader support.
 
 ## License
 

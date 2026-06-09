@@ -25,7 +25,7 @@ Thank you for your interest in contributing to Muffin! This document provides gu
 
 Muffin uses [Conan](https://conan.io/) for dependency management and CMake for building. You need:
 
-- **C++17** compiler (MSVC 2022+, GCC 11+, or Clang 14+)
+- **C++20** compiler (MSVC 2022+, GCC 12+, or Clang 15+)
 - **Qt 6** (installed via Conan)
 - **Conan 2.x** package manager
 - **CMake 3.24+**
@@ -37,7 +37,7 @@ Muffin uses [Conan](https://conan.io/) for dependency management and CMake for b
 conan profile detect --force
 
 # Install dependencies (Release mode)
-conan install . -s build_type=Release -s compiler.cppstd=17 --build=missing
+conan install . -s build_type=Release -s compiler.cppstd=20 --build=missing
 
 # Configure and build
 cmake --preset conan-default
