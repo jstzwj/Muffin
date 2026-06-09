@@ -23,7 +23,7 @@ void HtmlStyleResolver::resolveBox(HtmlBox& box, qreal fontSize, bool inheritCol
   font.setPointSizeF(fontSize);
   font.setWeight(static_cast<QFont::Weight>(box.style().fontWeight));
   font.setStyle(box.style().fontStyle);
-  if (box.style().whiteSpacePre) {
+  if (box.style().whiteSpace != HtmlWhiteSpace::Normal) {
     font.setFamily(QStringLiteral("Courier New"));
   }
 
@@ -138,8 +138,13 @@ void HtmlStyleResolver::applyTagDefaults(HtmlBox& box, qreal fontSize) {
     case HtmlTag::Pre:
       style.display = HtmlDisplay::Block;
       setDefaultFontSize(fontSize * 0.9);
-      style.whiteSpacePre = true;
+      if (!style.whiteSpaceExplicit) {
+        style.whiteSpace = HtmlWhiteSpace::Pre;
+      }
       style.margin = QMarginsF(0, fontSize, 0, fontSize);
+      style.padding = QMarginsF(12, 12, 12, 12);
+      style.backgroundColor = QColor(246, 248, 250);
+      style.lineHeight = 1.45;
       break;
 
     case HtmlTag::BlockQuote:

@@ -3530,6 +3530,62 @@ void testHtmlInlineStyleAndTagSemanticsContract() {
   require(sawLargeSize, QStringLiteral("inline font-size should emit font format"));
 }
 
+void testHtmlPreLayoutContract() {
+  html::HtmlDocument document;
+  require(document.parse(QStringLiteral(
+              "<pre>\nvoid hello() {\n    printf(&quot;Hello, HTML pre!\\n&quot;);\n}</pre>"
+              "<pre style=\"white-space: pre-wrap\">abcdefghijklmnopqrstuvwxyz abcdefghijklmnopqrstuvwxyz</pre>")),
+          QStringLiteral("html pre fixture should parse"));
+
+  html::HtmlBoxBuilder builder;
+  auto root = builder.build(document);
+  require(root != nullptr, QStringLiteral("html pre fixture should build box tree"));
+
+  html::HtmlStyleResolver resolver;
+  resolver.resolve(*root, 16.0, 140.0);
+
+  QVector<const html::HtmlBox*> preBlocks;
+  collectChildrenWithTag(*root, html::HtmlTag::Pre, preBlocks);
+  require(preBlocks.size() == 2, QStringLiteral("html pre fixture should contain two pre blocks"));
+  require(preBlocks[0]->style().whiteSpace == html::HtmlWhiteSpace::Pre,
+          QStringLiteral("pre default should use pre white-space mode"));
+  require(preBlocks[1]->style().whiteSpace == html::HtmlWhiteSpace::PreWrap,
+          QStringLiteral("inline white-space: pre-wrap should resolve distinctly"));
+  require(preBlocks[0]->style().backgroundColor.isValid(), QStringLiteral("pre should get default background"));
+  require(preBlocks[0]->style().padding.left() > 0 && preBlocks[0]->style().padding.top() > 0,
+          QStringLiteral("pre should get default padding"));
+  require(preBlocks[0]->style().lineHeight > 1.0, QStringLiteral("pre should get stable default line-height"));
+
+  std::vector<std::unique_ptr<html::HtmlTextLayout>> textLayouts;
+  html::HtmlLayoutEngine engine;
+  engine.layout(*root, 140.0, 16.0, textLayouts);
+
+  require(preBlocks[0]->ownsTextLayout() && preBlocks[1]->ownsTextLayout(),
+          QStringLiteral("pre blocks should own dedicated text layouts"));
+  require(textLayouts.size() == 2, QStringLiteral("html pre fixture should create two text layouts"));
+
+  const auto& noWrapLayout = textLayouts.at(static_cast<size_t>(preBlocks[0]->textLayoutIndex()));
+  const auto& wrapLayout = textLayouts.at(static_cast<size_t>(preBlocks[1]->textLayoutIndex()));
+  require(noWrapLayout != nullptr && noWrapLayout->layout != nullptr,
+          QStringLiteral("pre no-wrap text layout should exist"));
+  require(wrapLayout != nullptr && wrapLayout->layout != nullptr,
+          QStringLiteral("pre-wrap text layout should exist"));
+  require(!noWrapLayout->text.startsWith(QLatin1Char('\n')),
+          QStringLiteral("pre layout should strip the initial source newline"));
+  require(noWrapLayout->text.startsWith(QStringLiteral("void hello()")),
+          QStringLiteral("pre layout should preserve the first code line after newline normalization"));
+  require(noWrapLayout->text.contains(QStringLiteral("    printf")),
+          QStringLiteral("pre layout should preserve indentation"));
+  require(noWrapLayout->layout->lineCount() == 3,
+          QStringLiteral("pre no-wrap layout should preserve explicit source lines"));
+  require(wrapLayout->layout->lineCount() > 1,
+          QStringLiteral("pre-wrap layout should wrap long text within available width"));
+
+  const QRectF noWrapRect = absoluteHtmlBoxRect(*preBlocks[0]);
+  require(noWrapRect.height() > noWrapLayout->height,
+          QStringLiteral("pre block geometry should include padding around text layout"));
+}
+
 void testHtmlImagePaintContract() {
   html::HtmlDocument document;
   require(document.parse(QStringLiteral("<div><img src=\"missing-local-image.png\" alt=\"Missing\"></div>")),
@@ -3865,6 +3921,7 @@ int main(int argc, char** argv) {
   runTest("testHtmlInlineLayoutOwnershipContract", [] { testHtmlInlineLayoutOwnershipContract(); });
   runTest("testHtmlTableAndListLayoutContract", [] { testHtmlTableAndListLayoutContract(); });
   runTest("testHtmlInlineStyleAndTagSemanticsContract", [] { testHtmlInlineStyleAndTagSemanticsContract(); });
+  runTest("testHtmlPreLayoutContract", [] { testHtmlPreLayoutContract(); });
   runTest("testHtmlImagePaintContract", [] { testHtmlImagePaintContract(); });
   runTest("testHtmlLinkAndRelativeImageHitContract", [] { testHtmlLinkAndRelativeImageHitContract(); });
   runTest("testHtmlWrappedTextLinePositionsContract", [] { testHtmlWrappedTextLinePositionsContract(); });

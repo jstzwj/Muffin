@@ -100,6 +100,12 @@ enum class HtmlTextDecoration : int {
   LineThrough = 1 << 1,
 };
 
+enum class HtmlWhiteSpace {
+  Normal,
+  Pre,
+  PreWrap,
+};
+
 inline HtmlTextDecoration operator|(HtmlTextDecoration a, HtmlTextDecoration b) {
   return static_cast<HtmlTextDecoration>(static_cast<int>(a) | static_cast<int>(b));
 }
@@ -132,8 +138,9 @@ struct HtmlComputedStyle {
   qreal lineHeight = -1;
   qreal letterSpacing = 0;
   bool visible = true;
-  bool whiteSpacePre = false;
+  HtmlWhiteSpace whiteSpace = HtmlWhiteSpace::Normal;
   bool fontSizeExplicit = false;
+  bool whiteSpaceExplicit = false;
 };
 
 struct HtmlLayoutGeometry {

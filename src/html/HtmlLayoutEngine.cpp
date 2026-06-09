@@ -200,6 +200,22 @@ YGNode* HtmlLayoutEngine::createYogaNode(
     YGNodeStyleSetHeight(node, static_cast<float>(imageHeight));
     box.geometry().width = imageWidth;
     box.geometry().height = imageHeight;
+  } else if (box.tag() == HtmlTag::Pre && hasInlineContent && !hasBlockChildren && !hasReplacedInlineContent) {
+    auto textLayout = measurer_.buildPreLayout(
+        box, style.fontSize, qMax<qreal>(1.0, availableWidth - horizontalBoxExtent(style)));
+    qreal textHeight = textLayout->height;
+    qreal textWidth = textLayout->width;
+
+    auto* ctx = new YogaContext{&box, style.fontSize};
+    YGNodeSetContext(node, ctx);
+
+    const int textLayoutIndex = static_cast<int>(textLayouts.size());
+    textLayouts.push_back(std::move(textLayout));
+    box.setTextLayoutIndex(textLayoutIndex);
+    box.geometry().width = textWidth;
+    box.geometry().height = textHeight;
+
+    YGNodeSetMeasureFunc(node, measureTextCallback);
   } else if (hasInlineContent && !hasBlockChildren && !hasReplacedInlineContent) {
     // This is an inline formatting context — measure text as one unit
     auto textLayout = measurer_.buildInlineLayout(
@@ -440,7 +456,13 @@ qreal HtmlLayoutEngine::layoutFixedWidthBox(
   }
 
   qreal contentHeight = 0;
-  if (hasInlineContent && !hasBlockChildren && !hasReplacedInlineContent) {
+  if (box.tag() == HtmlTag::Pre && hasInlineContent && !hasBlockChildren && !hasReplacedInlineContent) {
+    auto textLayout = measurer_.buildPreLayout(box, style.fontSize, contentWidth);
+    contentHeight = textLayout->height;
+    const int textLayoutIndex = static_cast<int>(textLayouts.size());
+    textLayouts.push_back(std::move(textLayout));
+    box.setTextLayoutIndex(textLayoutIndex);
+  } else if (hasInlineContent && !hasBlockChildren && !hasReplacedInlineContent) {
     auto textLayout = measurer_.buildInlineLayout(box, style.fontSize, contentWidth, style.textAlign);
     contentHeight = textLayout->height;
     const int textLayoutIndex = static_cast<int>(textLayouts.size());
@@ -470,6 +492,10 @@ qreal HtmlLayoutEngine::layoutFixedWidthBox(
 
 qreal HtmlLayoutEngine::intrinsicOuterWidth(const HtmlBox& box, qreal availableWidth) const {
   const auto& style = box.style();
+  if (box.tag() == HtmlTag::Pre) {
+    auto textLayout = measurer_.buildPreLayout(box, style.fontSize, qMax<qreal>(1.0, availableWidth));
+    return qMax<qreal>(1.0, textLayout->width + horizontalBoxExtent(style));
+  }
   const qreal measuredWidth = measurer_.measureInlineContext(box, style.fontSize, qMax<qreal>(1.0, availableWidth)).width();
   return qMax<qreal>(1.0, measuredWidth + horizontalBoxExtent(style));
 }

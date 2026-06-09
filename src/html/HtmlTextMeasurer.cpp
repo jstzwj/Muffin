@@ -2,8 +2,37 @@
 #include "html/HtmlBox.h"
 
 #include <QFontMetricsF>
+#include <QTextOption>
+
+#include <cmath>
 
 namespace muffin::html {
+namespace {
+
+qreal resolvedLineHeight(const HtmlComputedStyle& style, const QFont& font) {
+  QFontMetricsF metrics(font);
+  if (style.lineHeight > 0) {
+    if (style.lineHeight < 4.0) {
+      return qMax<qreal>(metrics.height(), std::ceil(style.fontSize * style.lineHeight));
+    }
+    return qMax<qreal>(metrics.height(), style.lineHeight);
+  }
+  return metrics.height();
+}
+
+QString normalizePreText(QString text) {
+  text.replace(QLatin1String("\r\n"), QLatin1String("\n"));
+  text.replace(QLatin1Char('\r'), QLatin1Char('\n'));
+  if (text.startsWith(QLatin1String("\r\n"))) {
+    text.remove(0, 2);
+  } else if (text.startsWith(QLatin1Char('\n')) || text.startsWith(QLatin1Char('\r'))) {
+    text.remove(0, 1);
+  }
+  text.replace(QLatin1Char('\n'), QChar::LineSeparator);
+  return text;
+}
+
+}  // namespace
 
 QSizeF HtmlTextMeasurer::measure(const QString& text, const QFont& font, qreal availableWidth) const {
   if (text.isEmpty()) {
@@ -194,6 +223,63 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
   return result;
 }
 
+std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildPreLayout(
+    const HtmlBox& preBox,
+    qreal fontSize,
+    qreal availableWidth) const {
+  auto result = std::make_unique<HtmlTextLayout>();
+  QString text = normalizePreText(collectPlainText(preBox));
+
+  QFont font = preBox.style().font;
+  font.setPointSizeF(fontSize);
+  if (font.family().isEmpty()) {
+    font.setFamily(QStringLiteral("Courier New"));
+  }
+
+  if (text.isEmpty()) {
+    text = QStringLiteral(" ");
+  }
+
+  result->text = text;
+  result->font = font;
+  result->lineHeight = resolvedLineHeight(preBox.style(), font);
+
+  auto layout = std::make_unique<QTextLayout>(text, font);
+  QTextOption option;
+  option.setWrapMode(preBox.style().whiteSpace == HtmlWhiteSpace::PreWrap
+                         ? QTextOption::WrapAtWordBoundaryOrAnywhere
+                         : QTextOption::NoWrap);
+  option.setAlignment(preBox.style().textAlign);
+  layout->setTextOption(option);
+
+  layout->beginLayout();
+  qreal height = 0;
+  qreal maxWidth = 0;
+  while (true) {
+    QTextLine line = layout->createLine();
+    if (!line.isValid()) {
+      break;
+    }
+    const qreal lineWidth = preBox.style().whiteSpace == HtmlWhiteSpace::PreWrap
+                                ? qMax<qreal>(1.0, availableWidth)
+                                : 1000000.0;
+    line.setLineWidth(lineWidth);
+    const qreal naturalLineHeight = line.height();
+    const qreal lineHeight = qMax(result->lineHeight, naturalLineHeight);
+    line.setPosition(QPointF(0, height + (lineHeight - naturalLineHeight) * 0.5));
+    maxWidth = qMax(maxWidth, line.naturalTextWidth());
+    height += lineHeight;
+  }
+  layout->endLayout();
+
+  result->width = preBox.style().whiteSpace == HtmlWhiteSpace::PreWrap
+                      ? qMin(maxWidth, qMax<qreal>(1.0, availableWidth))
+                      : maxWidth;
+  result->height = height;
+  result->layout = std::move(layout);
+  return result;
+}
+
 void HtmlTextMeasurer::collectInlineText(
     const HtmlBox& box,
     QString& outText,
@@ -253,6 +339,21 @@ void HtmlTextMeasurer::collectInlineText(
                         backgroundColor, verticalAlignment, href, fontSize, baseFontSize);
     }
   }
+}
+
+QString HtmlTextMeasurer::collectPlainText(const HtmlBox& box) const {
+  if (box.tag() == HtmlTag::TextRun) {
+    return box.text();
+  }
+  if (box.tag() == HtmlTag::Break) {
+    return QStringLiteral("\n");
+  }
+
+  QString result;
+  for (const auto& child : box.children()) {
+    result += collectPlainText(*child);
+  }
+  return result;
 }
 
 }  // namespace muffin::html

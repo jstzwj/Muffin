@@ -489,8 +489,15 @@ void HtmlBoxBuilder::extractInlineStyle(HtmlBox& box, const char* styleAttr, siz
         style.lineHeight = v;
       }
     } else if (property == QStringLiteral("white-space")) {
-      if (value == QStringLiteral("pre") || value == QStringLiteral("pre-wrap")) {
-        style.whiteSpacePre = true;
+      if (value == QStringLiteral("pre")) {
+        style.whiteSpace = HtmlWhiteSpace::Pre;
+        style.whiteSpaceExplicit = true;
+      } else if (value == QStringLiteral("pre-wrap")) {
+        style.whiteSpace = HtmlWhiteSpace::PreWrap;
+        style.whiteSpaceExplicit = true;
+      } else if (value == QStringLiteral("normal")) {
+        style.whiteSpace = HtmlWhiteSpace::Normal;
+        style.whiteSpaceExplicit = true;
       }
     }
   }

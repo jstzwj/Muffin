@@ -71,7 +71,14 @@ public:
       qreal availableWidth,
       Qt::Alignment alignment = Qt::AlignLeft) const;
 
+  std::unique_ptr<HtmlTextLayout> buildPreLayout(
+      const HtmlBox& preBox,
+      qreal fontSize,
+      qreal availableWidth) const;
+
 private:
+  QString collectPlainText(const HtmlBox& box) const;
+
   void collectInlineText(
       const HtmlBox& box,
       QString& outText,
