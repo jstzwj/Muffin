@@ -5,6 +5,27 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-06-09
+
+### Added
+- **Image editing** - Insert local/network images, drag-and-drop upload, right-click image context menu, batch image processing, preview rendering, open image location, copy/move image files, and update image reference paths
+- **Remote image loading** - Asynchronous remote image loading with caching via `ImageLoader`, powered by Qt Network; mixed local/remote image rendering in documents
+- **WebP and AVIF image support** - Fallback decoding for WebP and AVIF formats via libwebp and libavif when Qt's native image loader doesn't support them
+- **Image block preview** - Active image spans show a large preview below the inline text; inactive images render inline
+- **Always-on-top view** - View → Always on Top option (Ctrl+Shift+F) with state persistence
+- **macdeployqt auto-discovery** - CI workflow step to locate `macdeployqt` from Conan cache and pass it via `MUFFIN_MACDEPLOYQT` cache variable
+
+### Changed
+- **Project structure** - Migrated headers from `app/` to `document/` and `projection/` directories; added `EditorContextHolder`, `MainWindowActionBinder`, `MainWindowSignalBinder`, and `RenderCommandFacade` to decouple responsibilities
+- **NodeIndex** - Rewritten to manage block nodes in document order
+- **MathLayoutResult overflow clipping** - Improved clipping logic for overflow cases
+- **Inline layout traversal** - Fixed traversal logic for mixed content blocks
+
+### Fixed
+- **Square root and array math rendering** - Adjusted radical yOffset and SVG drawing area to match KaTeX output; refactored array rendering with VList wrapping for correct border/ink box alignment
+- **Null pointer checks** - Unified null checks using new `EditorContext` helper methods across multiple call sites
+- **macOS DMG build** - Fixed `macdeployqt` not found by adding Conan cache search with `MUFFIN_MACDEPLOYQT` cache variable fallback
+
 ## [0.1.4] - 2026-06-08
 
 ### Changed
@@ -133,6 +154,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.1.5]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.5
 [0.1.4]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.4
 [0.1.3]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.3
 [0.1.2]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.2
