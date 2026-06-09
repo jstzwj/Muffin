@@ -1,4 +1,5 @@
 #include "html/HtmlLayoutResult.h"
+#include "render/ImageLoader.h"
 
 #include <QFontMetricsF>
 #include <QDir>
@@ -271,9 +272,26 @@ void HtmlLayoutResult::paintImage(QPainter& painter, const HtmlBox& box, QPointF
 
 const QImage& HtmlLayoutResult::cachedImage(const QString& src) const {
   auto it = imageCache_.constFind(src);
-  if (it == imageCache_.constEnd()) {
-    it = imageCache_.insert(src, QImage(src));
+  if (it != imageCache_.constEnd()) {
+    return it.value();
   }
+
+  // Remote URL: consult async ImageLoader singleton
+  if (src.startsWith(QLatin1String("http://")) ||
+      src.startsWith(QLatin1String("https://"))) {
+    QImage cached = ImageLoader::instance().cached(src);
+    if (!cached.isNull()) {
+      it = imageCache_.insert(src, std::move(cached));
+      return it.value();
+    }
+    // Not yet downloaded — request async; imageReady signal triggers a rebuild
+    ImageLoader::instance().request(src);
+    it = imageCache_.insert(src, QImage());
+    return it.value();
+  }
+
+  // Local file path (existing behavior)
+  it = imageCache_.insert(src, QImage(src));
   return it.value();
 }
 
