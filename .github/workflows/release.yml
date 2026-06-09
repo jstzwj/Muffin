@@ -21,7 +21,7 @@ jobs:
             artifact-suffix: windows-x64
             conan-arch: x86_64
             configure-preset: conan-default
-            conan-cppstd: 17
+            conan-cppstd: 20
             cmake-args: ''
             test-command: ctest --preset conan-release --output-on-failure
           - name: macOS ARM64
@@ -29,7 +29,7 @@ jobs:
             artifact-suffix: macos-arm64
             conan-arch: armv8
             configure-preset: conan-release
-            conan-cppstd: 17
+            conan-cppstd: 20
             cmake-args: ''
             test-command: ctest --preset conan-release --output-on-failure
           - name: Linux x64
@@ -37,7 +37,7 @@ jobs:
             artifact-suffix: linux-x64
             conan-arch: x86_64
             configure-preset: conan-release
-            conan-cppstd: gnu17
+            conan-cppstd: gnu20
             cmake-args: ''
             test-command: xvfb-run ctest --preset conan-release --output-on-failure
 

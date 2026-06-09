@@ -5,7 +5,7 @@
 This project uses Conan-generated CMake presets. Use the Release preset for local verification:
 
 ```powershell
-conan install . -s build_type=Release -s compiler.cppstd=17 --build=missing
+conan install . -s build_type=Release -s compiler.cppstd=20 --build=missing
 cmake --preset conan-default
 cmake --build --preset conan-release
 ```

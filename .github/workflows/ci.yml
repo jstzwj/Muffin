@@ -17,17 +17,17 @@ jobs:
           - name: Windows
             runner: windows-latest
             configure-preset: conan-default
-            conan-cppstd: 17
+            conan-cppstd: 20
             test-command: ctest --preset conan-release --output-on-failure
           - name: macOS
             runner: macos-latest
             configure-preset: conan-release
-            conan-cppstd: 17
+            conan-cppstd: 20
             test-command: ctest --preset conan-release --output-on-failure
           - name: Linux
             runner: ubuntu-latest
             configure-preset: conan-release
-            conan-cppstd: gnu17
+            conan-cppstd: gnu20
             test-command: xvfb-run ctest --preset conan-release --output-on-failure
 
     steps:
