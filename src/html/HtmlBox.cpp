@@ -24,6 +24,21 @@ void HtmlBox::setHref(QString href) { href_ = std::move(href); }
 QString HtmlBox::listMarker() const { return listMarker_; }
 void HtmlBox::setListMarker(QString marker) { listMarker_ = std::move(marker); }
 
+int HtmlBox::listStart() const { return listStart_; }
+void HtmlBox::setListStart(int start) { listStart_ = start; }
+HtmlListMarkerType HtmlBox::listMarkerType() const { return listMarkerType_; }
+void HtmlBox::setListMarkerType(HtmlListMarkerType type) { listMarkerType_ = type; }
+bool HtmlBox::listReversed() const { return listReversed_; }
+void HtmlBox::setListReversed(bool reversed) { listReversed_ = reversed; }
+
+bool HtmlBox::detailsOpen() const { return detailsOpen_; }
+void HtmlBox::setDetailsOpen(bool open) { detailsOpen_ = open; }
+
+int HtmlBox::colSpan() const { return colSpan_; }
+void HtmlBox::setColSpan(int span) { colSpan_ = qMax(1, span); }
+int HtmlBox::rowSpan() const { return rowSpan_; }
+void HtmlBox::setRowSpan(int span) { rowSpan_ = qMax(1, span); }
+
 HtmlComputedStyle& HtmlBox::style() { return style_; }
 const HtmlComputedStyle& HtmlBox::style() const { return style_; }
 void HtmlBox::setStyle(HtmlComputedStyle style) { style_ = std::move(style); }

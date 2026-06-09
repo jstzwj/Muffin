@@ -23,6 +23,8 @@ private:
   bool shouldSkipTag(HtmlTag tag) const;
   void extractInlineStyle(HtmlBox& box, const char* styleAttr, size_t length);
   void assignListMarkers(HtmlBox& box);
+  static QString formatOrderedMarker(int index, HtmlListMarkerType type);
+  static QString toRoman(int n);
 };
 
 }  // namespace muffin::html

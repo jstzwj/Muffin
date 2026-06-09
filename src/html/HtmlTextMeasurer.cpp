@@ -103,23 +103,9 @@ QSizeF HtmlTextMeasurer::measureInlineContext(
     const HtmlBox& blockBox,
     qreal fontSize,
     qreal availableWidth) const {
-  QString text;
-  std::vector<TextFormatSpan> spans;
-  std::vector<HtmlTextLayout::LinkSpan> links;
-  int offset = 0;
-  collectInlineText(blockBox, text, spans, links, offset, false, false, false, HtmlTextDecoration::None, QColor(),
-                    QColor(), QTextCharFormat::AlignNormal, QString(), fontSize, fontSize);
-
-  if (text.isEmpty()) {
-    QFont font;
-    font.setPointSizeF(fontSize);
-    QFontMetricsF fm(font);
-    return QSizeF(0, fm.height());
-  }
-
-  QFont font;
-  font.setPointSizeF(fontSize);
-  return measure(text, font, availableWidth);
+  // Use buildInlineLayout to account for bold, monospace, font-size changes, etc.
+  auto layout = buildInlineLayout(blockBox, fontSize, availableWidth);
+  return QSizeF(layout->width, layout->height);
 }
 
 std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
@@ -136,6 +122,10 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
 
   QFont baseFont;
   baseFont.setPointSizeF(fontSize);
+  // Apply letter-spacing from the block box style (inherited property)
+  if (blockBox.style().letterSpacing != 0) {
+    baseFont.setLetterSpacing(QFont::AbsoluteSpacing, blockBox.style().letterSpacing);
+  }
 
   if (text.isEmpty()) {
     auto result = std::make_unique<HtmlTextLayout>();

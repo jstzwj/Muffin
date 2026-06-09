@@ -35,8 +35,83 @@ bool parseCssLength(QString value, qreal referenceFontSize, qreal& out) {
   return true;
 }
 
+// Detect a CSS percentage value and extract the raw percentage number (e.g. "50%" → 50.0).
+// Returns true if the value is a percentage, false otherwise.
+bool parseCssPercent(const QString& value, qreal& out) {
+  QString v = value.trimmed();
+  if (v.endsWith(QLatin1Char('%'))) {
+    bool ok = false;
+    qreal pct = v.chopped(1).toDouble(&ok);
+    if (ok) {
+      out = pct;
+      return true;
+    }
+  }
+  return false;
+}
+
 qreal styleFontReference(const HtmlComputedStyle& style) {
   return style.fontSize > 0 ? style.fontSize : 16.0;
+}
+
+// Parse multi-value CSS box shorthand (margin/padding) into up to 4 sides.
+// Supports: "10px" (all), "10px 20px" (TB/RL), "10px 20px 30px" (T/RL/B), "10px 20px 30px 40px" (T/R/B/L).
+// Also tracks per-side percentage values (negative = not a percentage).
+// Returns false if no valid values could be parsed.
+bool parseCssBoxShorthand(const QString& value, qreal ref,
+                          qreal& top, qreal& right, qreal& bottom, qreal& left,
+                          qreal& topPct, qreal& rightPct, qreal& bottomPct, qreal& leftPct) {
+  QStringList parts = value.split(QLatin1Char(' '), Qt::SkipEmptyParts);
+  if (parts.isEmpty()) {
+    return false;
+  }
+  qreal values[4] = {};
+  qreal pcts[4] = {-1, -1, -1, -1};
+  bool valid[4] = {};
+  for (int i = 0; i < qMin(parts.size(), 4); ++i) {
+    // Check for percentage first
+    if (parseCssPercent(parts[i], pcts[i])) {
+      values[i] = 0;
+      valid[i] = true;
+    } else {
+      pcts[i] = -1;
+      valid[i] = parseCssLength(parts[i], ref, values[i]);
+    }
+  }
+  if (!valid[0]) {
+    return false;
+  }
+  auto assign = [&](int src, qreal& dst, qreal& dstPct) {
+    dst = valid[src] ? values[src] : 0;
+    dstPct = pcts[src];
+  };
+  switch (qMin(parts.size(), 4)) {
+    case 1:
+      assign(0, top, topPct);
+      right = top; rightPct = topPct;
+      bottom = top; bottomPct = topPct;
+      left = top; leftPct = topPct;
+      break;
+    case 2:
+      assign(0, top, topPct);
+      assign(1, right, rightPct);
+      bottom = top; bottomPct = topPct;
+      left = right; leftPct = rightPct;
+      break;
+    case 3:
+      assign(0, top, topPct);
+      assign(1, right, rightPct);
+      assign(2, bottom, bottomPct);
+      left = right; leftPct = rightPct;
+      break;
+    default:
+      assign(0, top, topPct);
+      assign(1, right, rightPct);
+      assign(2, bottom, bottomPct);
+      assign(3, left, leftPct);
+      break;
+  }
+  return true;
 }
 
 }  // namespace
@@ -150,6 +225,69 @@ std::unique_ptr<HtmlBox> HtmlBoxBuilder::buildNode(void* nodePtr) {
         box->setHref(QString::fromUtf8(reinterpret_cast<const char*>(val), static_cast<int>(len)));
       }
     }
+
+    // Extract ordered list attributes
+    if (tag == HtmlTag::OrderedList) {
+      size_t len = 0;
+      const lxb_char_t* val = lxb_dom_element_get_attribute(
+          element, reinterpret_cast<const lxb_char_t*>("start"), 5, &len);
+      if (val && len > 0) {
+        bool ok = false;
+        int start = QString::fromUtf8(reinterpret_cast<const char*>(val), static_cast<int>(len)).toInt(&ok);
+        if (ok && start > 0) {
+          box->setListStart(start);
+        }
+      }
+      val = lxb_dom_element_get_attribute(
+          element, reinterpret_cast<const lxb_char_t*>("type"), 4, &len);
+      if (val && len == 1) {
+        const char ch = static_cast<char>(*val);
+        switch (ch) {
+          case 'a': box->setListMarkerType(HtmlListMarkerType::LowerAlpha); break;
+          case 'A': box->setListMarkerType(HtmlListMarkerType::UpperAlpha); break;
+          case 'i': box->setListMarkerType(HtmlListMarkerType::LowerRoman); break;
+          case 'I': box->setListMarkerType(HtmlListMarkerType::UpperRoman); break;
+          default: break;
+        }
+      }
+      val = lxb_dom_element_get_attribute(
+          element, reinterpret_cast<const lxb_char_t*>("reversed"), 8, &len);
+      if (val || lxb_dom_element_has_attribute(element,
+          reinterpret_cast<const lxb_char_t*>("reversed"), 8)) {
+        box->setListReversed(true);
+      }
+    }
+
+    // Extract details open attribute
+    if (tag == HtmlTag::Details) {
+      if (lxb_dom_element_has_attribute(element,
+          reinterpret_cast<const lxb_char_t*>("open"), 4)) {
+        box->setDetailsOpen(true);
+      }
+    }
+
+    // Extract table cell span attributes
+    if (tag == HtmlTag::TableCell || tag == HtmlTag::TableHeader) {
+      size_t len = 0;
+      const lxb_char_t* val = lxb_dom_element_get_attribute(
+          element, reinterpret_cast<const lxb_char_t*>("colspan"), 7, &len);
+      if (val && len > 0) {
+        bool ok = false;
+        int span = QString::fromUtf8(reinterpret_cast<const char*>(val), static_cast<int>(len)).toInt(&ok);
+        if (ok && span > 0) {
+          box->setColSpan(span);
+        }
+      }
+      val = lxb_dom_element_get_attribute(
+          element, reinterpret_cast<const lxb_char_t*>("rowspan"), 7, &len);
+      if (val && len > 0) {
+        bool ok = false;
+        int span = QString::fromUtf8(reinterpret_cast<const char*>(val), static_cast<int>(len)).toInt(&ok);
+        if (ok && span > 0) {
+          box->setRowSpan(span);
+        }
+      }
+    }
   }
 
   // Recurse into children (void elements have no children)
@@ -219,6 +357,7 @@ HtmlTag HtmlBoxBuilder::mapTag(void* nodePtr) const {
       }
       break;
     case 2:
+      if (name[0] == 'b' && name[1] == 'r') return HtmlTag::Break;
       if (name[0] == 'e' && name[1] == 'm') return HtmlTag::Em;
       if (name[0] == 'h' && name[1] >= '1' && name[1] <= '6')
         return static_cast<HtmlTag>(static_cast<int>(HtmlTag::Heading1) + (name[1] - '1'));
@@ -247,6 +386,7 @@ HtmlTag HtmlBoxBuilder::mapTag(void* nodePtr) const {
       if (memcmp(name, "code", 4) == 0) return HtmlTag::Code;
       if (memcmp(name, "mark", 4) == 0) return HtmlTag::Mark;
       if (memcmp(name, "abbr", 4) == 0) return HtmlTag::Abbr;
+      if (memcmp(name, "html", 4) == 0) return HtmlTag::Html;
       if (memcmp(name, "body", 4) == 0) return HtmlTag::Body;
       if (memcmp(name, "head", 4) == 0) return HtmlTag::Head;
       if (memcmp(name, "main", 4) == 0) return HtmlTag::Main;
@@ -258,6 +398,8 @@ HtmlTag HtmlBoxBuilder::mapTag(void* nodePtr) const {
       if (memcmp(name, "label", 5) == 0) return HtmlTag::Label;
       if (memcmp(name, "aside", 5) == 0) return HtmlTag::Aside;
       if (memcmp(name, "style", 5) == 0) return HtmlTag::Style;
+      if (memcmp(name, "thead", 5) == 0) return HtmlTag::TableHead;
+      if (memcmp(name, "tbody", 5) == 0) return HtmlTag::TableBody;
       break;
     case 6:
       if (memcmp(name, "script", 6) == 0) return HtmlTag::Script;
@@ -303,18 +445,27 @@ bool HtmlBoxBuilder::shouldSkipTag(HtmlTag tag) const {
 
 void HtmlBoxBuilder::assignListMarkers(HtmlBox& box) {
   if (box.tag() == HtmlTag::UnorderedList || box.tag() == HtmlTag::OrderedList) {
-    int itemIndex = 1;
+    const int itemCount = static_cast<int>(std::count_if(
+        box.children().begin(), box.children().end(),
+        [](const auto& c) { return c->tag() == HtmlTag::ListItem; }));
+    int itemIndex = box.listStart();
+    const bool reversed = box.listReversed();
+    const HtmlListMarkerType markerType = box.listMarkerType();
+    int step = reversed ? -1 : 1;
+    if (reversed && itemCount > 0) {
+      itemIndex = box.listStart() + itemCount - 1;
+    }
     for (auto& child : box.children()) {
       if (child->tag() != HtmlTag::ListItem) {
         assignListMarkers(*child);
         continue;
       }
       if (box.tag() == HtmlTag::OrderedList) {
-        child->setListMarker(QString::number(itemIndex) + QLatin1Char('.'));
+        child->setListMarker(formatOrderedMarker(itemIndex, markerType) + QLatin1Char('.'));
       } else {
         child->setListMarker(QStringLiteral("\u2022"));
       }
-      ++itemIndex;
+      itemIndex += step;
       assignListMarkers(*child);
     }
     return;
@@ -323,6 +474,57 @@ void HtmlBoxBuilder::assignListMarkers(HtmlBox& box) {
   for (auto& child : box.children()) {
     assignListMarkers(*child);
   }
+}
+
+QString HtmlBoxBuilder::formatOrderedMarker(int index, HtmlListMarkerType type) {
+  if (index <= 0) {
+    return QString::number(index);
+  }
+  switch (type) {
+    case HtmlListMarkerType::LowerAlpha: {
+      // 1=a, 2=b, ..., 26=z, 27=aa, 28=ab, ...
+      QString result;
+      int n = index;
+      while (n > 0) {
+        n--;
+        result.prepend(QChar::fromLatin1('a' + (n % 26)));
+        n /= 26;
+      }
+      return result;
+    }
+    case HtmlListMarkerType::UpperAlpha: {
+      QString result;
+      int n = index;
+      while (n > 0) {
+        n--;
+        result.prepend(QChar::fromLatin1('A' + (n % 26)));
+        n /= 26;
+      }
+      return result;
+    }
+    case HtmlListMarkerType::LowerRoman:
+      return toRoman(index).toLower();
+    case HtmlListMarkerType::UpperRoman:
+      return toRoman(index);
+    default:
+      return QString::number(index);
+  }
+}
+
+QString HtmlBoxBuilder::toRoman(int n) {
+  static const QPair<int, const char*> table[] = {
+      {1000, "M"}, {900, "CM"}, {500, "D"}, {400, "CD"},
+      {100, "C"}, {90, "XC"}, {50, "L"}, {40, "XL"},
+      {10, "X"}, {9, "IX"}, {5, "V"}, {4, "IV"}, {1, "I"},
+  };
+  QString result;
+  for (const auto& [value, roman] : table) {
+    while (n >= value) {
+      result += QLatin1String(roman);
+      n -= value;
+    }
+  }
+  return result;
 }
 
 void HtmlBoxBuilder::extractInlineStyle(HtmlBox& box, const char* styleAttr, size_t length) {
@@ -408,10 +610,18 @@ void HtmlBoxBuilder::extractInlineStyle(HtmlBox& box, const char* styleAttr, siz
     } else if (property == QStringLiteral("width")) {
       if (value == QStringLiteral("auto")) {
         style.width = -1;
+        style.widthPercent = -1;
       } else {
-        qreal w = 0;
-        if (parseCssLength(value, styleFontReference(style), w) && w >= 0) {
-          style.width = w;
+        qreal pct = 0;
+        if (parseCssPercent(value, pct)) {
+          style.widthPercent = pct;
+          style.width = -1;
+        } else {
+          qreal w = 0;
+          if (parseCssLength(value, styleFontReference(style), w) && w >= 0) {
+            style.width = w;
+            style.widthPercent = -1;
+          }
         }
       }
     } else if (property == QStringLiteral("height")) {
@@ -424,33 +634,71 @@ void HtmlBoxBuilder::extractInlineStyle(HtmlBox& box, const char* styleAttr, siz
         }
       }
     } else if (property == QStringLiteral("margin") || property.startsWith(QStringLiteral("margin-"))) {
-      qreal v = 0;
-      if (parseCssLength(value, styleFontReference(style), v)) {
-        if (property == QStringLiteral("margin")) {
-          style.margin = QMarginsF(v, v, v, v);
-        } else if (property == QStringLiteral("margin-top")) {
-          style.margin.setTop(v);
-        } else if (property == QStringLiteral("margin-bottom")) {
-          style.margin.setBottom(v);
-        } else if (property == QStringLiteral("margin-left")) {
-          style.margin.setLeft(v);
-        } else if (property == QStringLiteral("margin-right")) {
-          style.margin.setRight(v);
+      if (property == QStringLiteral("margin")) {
+        qreal t, r, b, l, tp, rp, bp, lp;
+        if (parseCssBoxShorthand(value, styleFontReference(style), t, r, b, l, tp, rp, bp, lp)) {
+          style.margin = QMarginsF(l, t, r, b);
+          style.marginPercent = QMarginsF(lp, tp, rp, bp);
+        }
+      } else {
+        qreal pct = 0;
+        if (parseCssPercent(value, pct)) {
+          if (property == QStringLiteral("margin-top")) {
+            style.marginPercent.setTop(pct);
+          } else if (property == QStringLiteral("margin-bottom")) {
+            style.marginPercent.setBottom(pct);
+          } else if (property == QStringLiteral("margin-left")) {
+            style.marginPercent.setLeft(pct);
+          } else if (property == QStringLiteral("margin-right")) {
+            style.marginPercent.setRight(pct);
+          }
+        } else {
+          qreal v = 0;
+          if (parseCssLength(value, styleFontReference(style), v)) {
+            if (property == QStringLiteral("margin-top")) {
+              style.margin.setTop(v);
+            } else if (property == QStringLiteral("margin-bottom")) {
+              style.margin.setBottom(v);
+            } else if (property == QStringLiteral("margin-left")) {
+              style.margin.setLeft(v);
+            } else if (property == QStringLiteral("margin-right")) {
+              style.margin.setRight(v);
+            }
+          }
         }
       }
     } else if (property == QStringLiteral("padding") || property.startsWith(QStringLiteral("padding-"))) {
-      qreal v = 0;
-      if (parseCssLength(value, styleFontReference(style), v)) {
-        if (property == QStringLiteral("padding")) {
-          style.padding = QMarginsF(v, v, v, v);
-        } else if (property == QStringLiteral("padding-top")) {
-          style.padding.setTop(v);
-        } else if (property == QStringLiteral("padding-bottom")) {
-          style.padding.setBottom(v);
-        } else if (property == QStringLiteral("padding-left")) {
-          style.padding.setLeft(v);
-        } else if (property == QStringLiteral("padding-right")) {
-          style.padding.setRight(v);
+      if (property == QStringLiteral("padding")) {
+        qreal t, r, b, l, tp, rp, bp, lp;
+        if (parseCssBoxShorthand(value, styleFontReference(style), t, r, b, l, tp, rp, bp, lp)) {
+          style.padding = QMarginsF(l, t, r, b);
+          style.paddingPercent = QMarginsF(lp, tp, rp, bp);
+        }
+      } else {
+        qreal pct = 0;
+        if (parseCssPercent(value, pct)) {
+          if (property == QStringLiteral("padding-top")) {
+            style.paddingPercent.setTop(pct);
+          } else if (property == QStringLiteral("padding-bottom")) {
+            style.paddingPercent.setBottom(pct);
+          } else if (property == QStringLiteral("padding-left")) {
+            style.paddingPercent.setLeft(pct);
+          } else if (property == QStringLiteral("padding-right")) {
+            style.paddingPercent.setRight(pct);
+          }
+        } else {
+          qreal v = 0;
+          if (parseCssLength(value, styleFontReference(style), v)) {
+            if (property == QStringLiteral("padding-top")) {
+              style.padding.setTop(v);
+            } else if (property == QStringLiteral("padding-bottom")) {
+              style.padding.setBottom(v);
+            } else if (property == QStringLiteral("padding-left")) {
+              style.padding.setLeft(v);
+            } else if (property == QStringLiteral("padding-right")) {
+              style.padding.setRight(v);
+            }
+          }
         }
       }
     } else if (property == QStringLiteral("border") ||
@@ -460,33 +708,73 @@ void HtmlBoxBuilder::extractInlineStyle(HtmlBox& box, const char* styleAttr, siz
                property == QStringLiteral("border-left")) {
       QStringList parts = value.split(QLatin1Char(' '), Qt::SkipEmptyParts);
       if (!parts.isEmpty()) {
-        qreal v = 0;
-        if (parseCssLength(parts[0], styleFontReference(style), v)) {
-          if (property == QStringLiteral("border")) {
-            style.borderWidth = QMarginsF(v, v, v, v);
-          } else if (property == QStringLiteral("border-top")) {
-            style.borderWidth.setTop(v);
-          } else if (property == QStringLiteral("border-right")) {
-            style.borderWidth.setRight(v);
-          } else if (property == QStringLiteral("border-bottom")) {
-            style.borderWidth.setBottom(v);
-          } else if (property == QStringLiteral("border-left")) {
-            style.borderWidth.setLeft(v);
+        for (const QString& part : parts) {
+          // Try as length
+          qreal v = 0;
+          if (parseCssLength(part, styleFontReference(style), v)) {
+            if (property == QStringLiteral("border")) {
+              style.borderWidth = QMarginsF(v, v, v, v);
+            } else if (property == QStringLiteral("border-top")) {
+              style.borderWidth.setTop(v);
+            } else if (property == QStringLiteral("border-right")) {
+              style.borderWidth.setRight(v);
+            } else if (property == QStringLiteral("border-bottom")) {
+              style.borderWidth.setBottom(v);
+            } else if (property == QStringLiteral("border-left")) {
+              style.borderWidth.setLeft(v);
+            }
+            continue;
           }
-        }
-        for (int i = 1; i < parts.size(); ++i) {
-          QColor c(parts[i]);
+          // Try as color
+          QColor c(part);
           if (c.isValid()) {
             style.borderColor = c;
-            break;
+            continue;
+          }
+          // Try as border-style
+          if (part == QStringLiteral("solid")) {
+            style.borderStyle = HtmlBorderStyle::Solid;
+          } else if (part == QStringLiteral("dashed")) {
+            style.borderStyle = HtmlBorderStyle::Dashed;
+          } else if (part == QStringLiteral("dotted")) {
+            style.borderStyle = HtmlBorderStyle::Dotted;
+          } else if (part == QStringLiteral("double")) {
+            style.borderStyle = HtmlBorderStyle::Double;
+          } else if (part == QStringLiteral("none")) {
+            style.borderStyle = HtmlBorderStyle::None;
           }
         }
       }
+    } else if (property == QStringLiteral("border-style")) {
+      if (value == QStringLiteral("solid")) {
+        style.borderStyle = HtmlBorderStyle::Solid;
+      } else if (value == QStringLiteral("dashed")) {
+        style.borderStyle = HtmlBorderStyle::Dashed;
+      } else if (value == QStringLiteral("dotted")) {
+        style.borderStyle = HtmlBorderStyle::Dotted;
+      } else if (value == QStringLiteral("double")) {
+        style.borderStyle = HtmlBorderStyle::Double;
+      } else if (value == QStringLiteral("none")) {
+        style.borderStyle = HtmlBorderStyle::None;
+      }
+    } else if (property == QStringLiteral("border-radius")) {
+      qreal v = 0;
+      if (parseCssLength(value, styleFontReference(style), v) && v >= 0) {
+        style.borderRadius = v;
+      }
     } else if (property == QStringLiteral("line-height")) {
+      // Try unitless multiplier first (e.g. 1.5), then px/em/%
       bool ok = false;
       qreal v = value.toDouble(&ok);
       if (ok && v > 0) {
         style.lineHeight = v;
+      } else {
+        // Try parsing as a length (px, em, pt, %) and convert to multiplier
+        qreal px = 0;
+        if (parseCssLength(value, styleFontReference(style), px) && px > 0) {
+          qreal baseFontPx = styleFontReference(style);
+          style.lineHeight = px / baseFontPx;
+        }
       }
     } else if (property == QStringLiteral("white-space")) {
       if (value == QStringLiteral("pre")) {
@@ -498,6 +786,27 @@ void HtmlBoxBuilder::extractInlineStyle(HtmlBox& box, const char* styleAttr, siz
       } else if (value == QStringLiteral("normal")) {
         style.whiteSpace = HtmlWhiteSpace::Normal;
         style.whiteSpaceExplicit = true;
+      }
+    } else if (property == QStringLiteral("font-family")) {
+      // Remove quotes from font names (e.g. "Courier New" → Courier New)
+      QString family = value;
+      family.remove(QLatin1Char('"')).remove(QLatin1Char('\''));
+      // Take the first family in a comma-separated list
+      int comma = family.indexOf(QLatin1Char(','));
+      if (comma > 0) {
+        family = family.left(comma).trimmed();
+      }
+      if (!family.isEmpty()) {
+        style.fontFamily = family;
+      }
+    } else if (property == QStringLiteral("letter-spacing")) {
+      if (value == QStringLiteral("normal")) {
+        style.letterSpacing = 0;
+      } else {
+        qreal v = 0;
+        if (parseCssLength(value, styleFontReference(style), v)) {
+          style.letterSpacing = v;
+        }
       }
     }
   }

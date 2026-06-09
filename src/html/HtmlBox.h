@@ -106,6 +106,22 @@ enum class HtmlWhiteSpace {
   PreWrap,
 };
 
+enum class HtmlBorderStyle {
+  Solid,
+  Dashed,
+  Dotted,
+  Double,
+  None,
+};
+
+enum class HtmlListMarkerType {
+  Decimal,    // 1, 2, 3
+  LowerAlpha, // a, b, c
+  UpperAlpha, // A, B, C
+  LowerRoman, // i, ii, iii
+  UpperRoman, // I, II, III
+};
+
 inline HtmlTextDecoration operator|(HtmlTextDecoration a, HtmlTextDecoration b) {
   return static_cast<HtmlTextDecoration>(static_cast<int>(a) | static_cast<int>(b));
 }
@@ -133,6 +149,8 @@ struct HtmlComputedStyle {
   QMarginsF padding;
   QMarginsF borderWidth;
   QColor borderColor;
+  HtmlBorderStyle borderStyle = HtmlBorderStyle::Solid;
+  qreal borderRadius = 0;
   qreal width = -1;   // -1 = auto
   qreal height = -1;  // -1 = auto
   qreal lineHeight = -1;
@@ -141,6 +159,13 @@ struct HtmlComputedStyle {
   HtmlWhiteSpace whiteSpace = HtmlWhiteSpace::Normal;
   bool fontSizeExplicit = false;
   bool whiteSpaceExplicit = false;
+  QString fontFamily;  // empty = inherit
+
+  // Percentage values for properties that resolve against container width at layout time.
+  // Negative = not a percentage (use the pixel value above).
+  qreal widthPercent = -1;
+  QMarginsF marginPercent = QMarginsF(-1, -1, -1, -1);
+  QMarginsF paddingPercent = QMarginsF(-1, -1, -1, -1);
 };
 
 struct HtmlLayoutGeometry {
@@ -175,6 +200,24 @@ public:
   // List marker text (for <li>)
   QString listMarker() const;
   void setListMarker(QString marker);
+
+  // Ordered list attributes (for <ol>)
+  int listStart() const;
+  void setListStart(int start);
+  HtmlListMarkerType listMarkerType() const;
+  void setListMarkerType(HtmlListMarkerType type);
+  bool listReversed() const;
+  void setListReversed(bool reversed);
+
+  // Details open state (for <details>)
+  bool detailsOpen() const;
+  void setDetailsOpen(bool open);
+
+  // Table cell span attributes (for <td>/<th>)
+  int colSpan() const;
+  void setColSpan(int span);
+  int rowSpan() const;
+  void setRowSpan(int span);
 
   // Computed style
   HtmlComputedStyle& style();
@@ -212,6 +255,12 @@ private:
   QString alt_;
   QString href_;
   QString listMarker_;
+  int listStart_ = 1;
+  HtmlListMarkerType listMarkerType_ = HtmlListMarkerType::Decimal;
+  bool listReversed_ = false;
+  bool detailsOpen_ = false;
+  int colSpan_ = 1;
+  int rowSpan_ = 1;
   HtmlComputedStyle style_;
   HtmlLayoutGeometry geometry_;
   int textLayoutIndex_ = -1;

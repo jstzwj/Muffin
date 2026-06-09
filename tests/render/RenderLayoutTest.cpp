@@ -3352,7 +3352,7 @@ void testHtmlInlineLayoutOwnershipContract() {
   require(!root->collectedText().contains(QStringLiteral("blocked")), QStringLiteral("html script text should not enter box tree"));
 
   html::HtmlStyleResolver resolver;
-  resolver.resolve(*root, 16.0, 320.0);
+  resolver.resolve(*root, 16.0);
 
   std::vector<std::unique_ptr<html::HtmlTextLayout>> textLayouts;
   html::HtmlLayoutEngine engine;
@@ -3387,7 +3387,7 @@ void testHtmlTableAndListLayoutContract() {
   require(root != nullptr, QStringLiteral("html table/list fixture should build box tree"));
 
   html::HtmlStyleResolver resolver;
-  resolver.resolve(*root, 16.0, 320.0);
+  resolver.resolve(*root, 16.0);
 
   QVector<const html::HtmlBox*> listItems;
   collectChildrenWithTag(*root, html::HtmlTag::ListItem, listItems);
@@ -3471,7 +3471,7 @@ void testHtmlInlineStyleAndTagSemanticsContract() {
   require(root != nullptr, QStringLiteral("html style semantics fixture should build box tree"));
 
   html::HtmlStyleResolver resolver;
-  resolver.resolve(*root, 16.0, 220.0);
+  resolver.resolve(*root, 16.0);
 
   const html::HtmlBox* bordered = firstChildWithTag(*root, html::HtmlTag::Div);
   require(bordered != nullptr, QStringLiteral("html style semantics fixture missing bordered div"));
@@ -3542,7 +3542,7 @@ void testHtmlPreLayoutContract() {
   require(root != nullptr, QStringLiteral("html pre fixture should build box tree"));
 
   html::HtmlStyleResolver resolver;
-  resolver.resolve(*root, 16.0, 140.0);
+  resolver.resolve(*root, 16.0);
 
   QVector<const html::HtmlBox*> preBlocks;
   collectChildrenWithTag(*root, html::HtmlTag::Pre, preBlocks);
@@ -3596,7 +3596,7 @@ void testHtmlImagePaintContract() {
   require(root != nullptr, QStringLiteral("html image fixture should build box tree"));
 
   html::HtmlStyleResolver resolver;
-  resolver.resolve(*root, 16.0, 220.0);
+  resolver.resolve(*root, 16.0);
 
   std::vector<std::unique_ptr<html::HtmlTextLayout>> textLayouts;
   html::HtmlLayoutEngine engine;
@@ -3663,7 +3663,7 @@ void testHtmlWrappedTextLinePositionsContract() {
   require(root != nullptr, QStringLiteral("html wrapped text fixture should build box tree"));
 
   html::HtmlStyleResolver resolver;
-  resolver.resolve(*root, 16.0, 48.0);
+  resolver.resolve(*root, 16.0);
 
   std::vector<std::unique_ptr<html::HtmlTextLayout>> textLayouts;
   html::HtmlLayoutEngine engine;

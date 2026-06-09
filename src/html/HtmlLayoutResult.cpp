@@ -3,6 +3,7 @@
 
 #include <QFontMetricsF>
 #include <QDir>
+#include <QPainterPath>
 #include <QPen>
 
 #include <utility>
@@ -119,33 +120,65 @@ void HtmlLayoutResult::paintBox(QPainter& painter, const HtmlBox& box, QPointF o
   // Content area (inside border + padding)
   const QRectF contentRect = boxRect.marginsRemoved(style.borderWidth + style.padding);
 
-  // Paint background
-  if (style.backgroundColor.isValid() && style.backgroundColor.alpha() > 0) {
-    painter.fillRect(boxRect.marginsRemoved(style.borderWidth), style.backgroundColor);
-  }
+  // Determine if we can use rounded-rect path for background + border
+  const bool hasBorder = style.borderWidth.top() > 0 || style.borderWidth.bottom() > 0 ||
+                         style.borderWidth.left() > 0 || style.borderWidth.right() > 0;
+  const bool hasRoundedCorners = style.borderRadius > 0;
 
-  // Paint border
-  if (style.borderWidth.top() > 0 || style.borderWidth.bottom() > 0 ||
-      style.borderWidth.left() > 0 || style.borderWidth.right() > 0) {
-    painter.save();
-    QColor borderColor = style.borderColor.isValid() ? style.borderColor : QColor(204, 204, 204);
-    if (style.borderWidth.top() > 0) {
-      painter.setPen(QPen(borderColor, style.borderWidth.top()));
-      painter.drawLine(boxRect.topLeft(), boxRect.topRight());
+  if (hasRoundedCorners && (style.backgroundColor.isValid() || hasBorder)) {
+    // Paint background + border using QPainterPath for rounded corners
+    const QRectF bgRect = boxRect.marginsRemoved(style.borderWidth);
+    const qreal r = style.borderRadius;
+    QPainterPath path;
+    path.addRoundedRect(bgRect, r, r);
+
+    if (style.backgroundColor.isValid() && style.backgroundColor.alpha() > 0) {
+      painter.fillPath(path, style.backgroundColor);
     }
-    if (style.borderWidth.right() > 0) {
-      painter.setPen(QPen(borderColor, style.borderWidth.right()));
-      painter.drawLine(boxRect.topRight(), boxRect.bottomRight());
+    if (hasBorder && style.borderStyle != HtmlBorderStyle::None) {
+      QColor borderColor = style.borderColor.isValid() ? style.borderColor : QColor(204, 204, 204);
+      Qt::PenStyle penStyle = Qt::SolidLine;
+      if (style.borderStyle == HtmlBorderStyle::Dashed) penStyle = Qt::DashLine;
+      else if (style.borderStyle == HtmlBorderStyle::Dotted) penStyle = Qt::DotLine;
+      // Use uniform border width for the rounded-rect stroke
+      qreal bw = (style.borderWidth.top() + style.borderWidth.bottom() +
+                  style.borderWidth.left() + style.borderWidth.right()) / 4.0;
+      painter.save();
+      painter.setPen(QPen(borderColor, bw, penStyle));
+      painter.drawPath(path);
+      painter.restore();
     }
-    if (style.borderWidth.bottom() > 0) {
-      painter.setPen(QPen(borderColor, style.borderWidth.bottom()));
-      painter.drawLine(boxRect.bottomLeft(), boxRect.bottomRight());
+  } else {
+    // Paint background (no rounded corners)
+    if (style.backgroundColor.isValid() && style.backgroundColor.alpha() > 0) {
+      painter.fillRect(boxRect.marginsRemoved(style.borderWidth), style.backgroundColor);
     }
-    if (style.borderWidth.left() > 0) {
-      painter.setPen(QPen(borderColor, style.borderWidth.left()));
-      painter.drawLine(boxRect.topLeft(), boxRect.bottomLeft());
+
+    // Paint border (no rounded corners)
+    if (hasBorder && style.borderStyle != HtmlBorderStyle::None) {
+      painter.save();
+      QColor borderColor = style.borderColor.isValid() ? style.borderColor : QColor(204, 204, 204);
+      Qt::PenStyle penStyle = Qt::SolidLine;
+      if (style.borderStyle == HtmlBorderStyle::Dashed) penStyle = Qt::DashLine;
+      else if (style.borderStyle == HtmlBorderStyle::Dotted) penStyle = Qt::DotLine;
+      if (style.borderWidth.top() > 0) {
+        painter.setPen(QPen(borderColor, style.borderWidth.top(), penStyle));
+        painter.drawLine(boxRect.topLeft(), boxRect.topRight());
+      }
+      if (style.borderWidth.right() > 0) {
+        painter.setPen(QPen(borderColor, style.borderWidth.right(), penStyle));
+        painter.drawLine(boxRect.topRight(), boxRect.bottomRight());
+      }
+      if (style.borderWidth.bottom() > 0) {
+        painter.setPen(QPen(borderColor, style.borderWidth.bottom(), penStyle));
+        painter.drawLine(boxRect.bottomLeft(), boxRect.bottomRight());
+      }
+      if (style.borderWidth.left() > 0) {
+        painter.setPen(QPen(borderColor, style.borderWidth.left(), penStyle));
+        painter.drawLine(boxRect.topLeft(), boxRect.bottomLeft());
+      }
+      painter.restore();
     }
-    painter.restore();
   }
 
   if (box.tag() == HtmlTag::ListItem && !box.listMarker().isEmpty()) {
@@ -160,6 +193,21 @@ void HtmlLayoutResult::paintBox(QPainter& painter, const HtmlBox& box, QPointF o
 
     case HtmlTag::Image:
       paintImage(painter, box, contentRect.topLeft());
+      break;
+
+    case HtmlTag::Details:
+      // Only paint summary when collapsed; paint all children when open
+      if (box.detailsOpen()) {
+        for (const auto& child : box.children()) {
+          paintBox(painter, *child, boxOrigin);
+        }
+      } else {
+        for (const auto& child : box.children()) {
+          if (child->tag() == HtmlTag::Summary) {
+            paintBox(painter, *child, boxOrigin);
+          }
+        }
+      }
       break;
 
     default:

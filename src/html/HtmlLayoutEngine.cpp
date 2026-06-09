@@ -5,6 +5,7 @@
 
 #include <QFontMetricsF>
 #include <QImageReader>
+#include <QMap>
 #include <QVector>
 
 #include <cmath>
@@ -163,6 +164,10 @@ YGNode* HtmlLayoutEngine::createYogaNode(
     if (child->style().display == HtmlDisplay::None || !child->style().visible) {
       continue;
     }
+    // Collapsed details: only summary is visible
+    if (box.tag() == HtmlTag::Details && !box.detailsOpen() && child->tag() != HtmlTag::Summary) {
+      continue;
+    }
     if (child->style().display == HtmlDisplay::Block ||
         child->style().display == HtmlDisplay::Flex ||
         child->style().display == HtmlDisplay::Table ||
@@ -173,6 +178,10 @@ YGNode* HtmlLayoutEngine::createYogaNode(
       hasInlineContent = true;
     }
     if (child->tag() == HtmlTag::Image) {
+      hasReplacedInlineContent = true;
+    }
+    // inline-block acts as replaced inline content in inline context
+    if (child->style().display == HtmlDisplay::InlineBlock) {
       hasReplacedInlineContent = true;
     }
   }
@@ -254,6 +263,10 @@ YGNode* HtmlLayoutEngine::createYogaNode(
       if (child->style().display == HtmlDisplay::None || !child->style().visible) {
         continue;
       }
+      // Collapsed <details>: hide non-summary children
+      if (box.tag() == HtmlTag::Details && !box.detailsOpen() && child->tag() != HtmlTag::Summary) {
+        continue;
+      }
       qreal childAvailableWidth = availableWidth;
       if (style.display == HtmlDisplay::TableRow && child->style().display == HtmlDisplay::TableCell && tableCellCount > 0) {
         childAvailableWidth = qMax<qreal>(1.0, availableWidth / tableCellCount);
@@ -268,20 +281,54 @@ YGNode* HtmlLayoutEngine::createYogaNode(
 }
 
 void HtmlLayoutEngine::applyBoxStyle(YGNode* node, const HtmlComputedStyle& style) {
-  // Margin
-  YGNodeStyleSetMargin(node, YGEdgeTop, static_cast<float>(style.margin.top()));
-  YGNodeStyleSetMargin(node, YGEdgeBottom, static_cast<float>(style.margin.bottom()));
-  YGNodeStyleSetMargin(node, YGEdgeLeft, static_cast<float>(style.margin.left()));
-  YGNodeStyleSetMargin(node, YGEdgeRight, static_cast<float>(style.margin.right()));
+  // Margin (use percent API when a percentage was specified, pixel API otherwise)
+  if (style.marginPercent.top() >= 0) {
+    YGNodeStyleSetMarginPercent(node, YGEdgeTop, static_cast<float>(style.marginPercent.top()));
+  } else {
+    YGNodeStyleSetMargin(node, YGEdgeTop, static_cast<float>(style.margin.top()));
+  }
+  if (style.marginPercent.bottom() >= 0) {
+    YGNodeStyleSetMarginPercent(node, YGEdgeBottom, static_cast<float>(style.marginPercent.bottom()));
+  } else {
+    YGNodeStyleSetMargin(node, YGEdgeBottom, static_cast<float>(style.margin.bottom()));
+  }
+  if (style.marginPercent.left() >= 0) {
+    YGNodeStyleSetMarginPercent(node, YGEdgeLeft, static_cast<float>(style.marginPercent.left()));
+  } else {
+    YGNodeStyleSetMargin(node, YGEdgeLeft, static_cast<float>(style.margin.left()));
+  }
+  if (style.marginPercent.right() >= 0) {
+    YGNodeStyleSetMarginPercent(node, YGEdgeRight, static_cast<float>(style.marginPercent.right()));
+  } else {
+    YGNodeStyleSetMargin(node, YGEdgeRight, static_cast<float>(style.margin.right()));
+  }
 
-  // Padding
-  YGNodeStyleSetPadding(node, YGEdgeTop, static_cast<float>(style.padding.top()));
-  YGNodeStyleSetPadding(node, YGEdgeBottom, static_cast<float>(style.padding.bottom()));
-  YGNodeStyleSetPadding(node, YGEdgeLeft, static_cast<float>(style.padding.left()));
-  YGNodeStyleSetPadding(node, YGEdgeRight, static_cast<float>(style.padding.right()));
+  // Padding (use percent API when a percentage was specified, pixel API otherwise)
+  if (style.paddingPercent.top() >= 0) {
+    YGNodeStyleSetPaddingPercent(node, YGEdgeTop, static_cast<float>(style.paddingPercent.top()));
+  } else {
+    YGNodeStyleSetPadding(node, YGEdgeTop, static_cast<float>(style.padding.top()));
+  }
+  if (style.paddingPercent.bottom() >= 0) {
+    YGNodeStyleSetPaddingPercent(node, YGEdgeBottom, static_cast<float>(style.paddingPercent.bottom()));
+  } else {
+    YGNodeStyleSetPadding(node, YGEdgeBottom, static_cast<float>(style.padding.bottom()));
+  }
+  if (style.paddingPercent.left() >= 0) {
+    YGNodeStyleSetPaddingPercent(node, YGEdgeLeft, static_cast<float>(style.paddingPercent.left()));
+  } else {
+    YGNodeStyleSetPadding(node, YGEdgeLeft, static_cast<float>(style.padding.left()));
+  }
+  if (style.paddingPercent.right() >= 0) {
+    YGNodeStyleSetPaddingPercent(node, YGEdgeRight, static_cast<float>(style.paddingPercent.right()));
+  } else {
+    YGNodeStyleSetPadding(node, YGEdgeRight, static_cast<float>(style.padding.right()));
+  }
 
   // Width/Height
-  if (style.width >= 0) {
+  if (style.widthPercent >= 0) {
+    YGNodeStyleSetWidthPercent(node, static_cast<float>(style.widthPercent));
+  } else if (style.width >= 0) {
     YGNodeStyleSetWidth(node, static_cast<float>(style.width));
   }
   if (style.height >= 0) {
@@ -316,14 +363,33 @@ void HtmlLayoutEngine::layoutTableBox(
   QVector<HtmlBox*> rows;
   collectTableRows(table, rows);
 
-  int columnCount = 0;
-  QVector<QVector<HtmlBox*>> rowCells;
-  rowCells.reserve(rows.size());
+  // Build a grid accounting for colspan and rowspan
+  struct CellEntry {
+    HtmlBox* box = nullptr;
+    int colSpan = 1;
+    int rowSpan = 1;
+  };
+
+  int gridCols = 0;
+  QVector<QVector<CellEntry>> grid;
+  grid.reserve(rows.size());
   for (HtmlBox* row : rows) {
     QVector<HtmlBox*> cells;
     collectRowCells(*row, cells);
-    columnCount = qMax(columnCount, cells.size());
-    rowCells.push_back(std::move(cells));
+    // Determine effective column count accounting for spans
+    int rowCols = 0;
+    QVector<CellEntry> entries;
+    entries.reserve(cells.size());
+    for (HtmlBox* cell : cells) {
+      CellEntry entry;
+      entry.box = cell;
+      entry.colSpan = qMax(1, cell->colSpan());
+      entry.rowSpan = qMax(1, cell->rowSpan());
+      rowCols += entry.colSpan;
+      entries.push_back(entry);
+    }
+    gridCols = qMax(gridCols, rowCols);
+    grid.push_back(std::move(entries));
   }
 
   const qreal availableInnerWidth = qMax<qreal>(
@@ -331,11 +397,19 @@ void HtmlLayoutEngine::layoutTableBox(
       availableWidth - table.style().margin.left() - table.style().margin.right() -
           horizontalBoxExtent(table.style()));
 
-  QVector<qreal> columnWidths(qMax(0, columnCount), 0.0);
-  for (int rowIndex = 0; rowIndex < rowCells.size(); ++rowIndex) {
-    const QVector<HtmlBox*>& cells = rowCells[rowIndex];
-    for (int col = 0; col < cells.size(); ++col) {
-      columnWidths[col] = qMax(columnWidths[col], intrinsicOuterWidth(*cells[col], availableInnerWidth));
+  // Compute per-column widths from non-spanning cells
+  QVector<qreal> columnWidths(qMax(0, gridCols), 0.0);
+  for (int rowIdx = 0; rowIdx < grid.size(); ++rowIdx) {
+    int col = 0;
+    // Skip columns occupied by previous rowspans
+    // (simplified: we only account for colspan for width calculation)
+    for (const auto& entry : grid[rowIdx]) {
+      if (entry.colSpan == 1) {
+        if (col < columnWidths.size()) {
+          columnWidths[col] = qMax(columnWidths[col], intrinsicOuterWidth(*entry.box, availableInnerWidth));
+        }
+      }
+      col += entry.colSpan;
     }
   }
 
@@ -343,7 +417,7 @@ void HtmlLayoutEngine::layoutTableBox(
   qreal tableContentWidth = table.style().width >= 0 ? table.style().width : naturalTableContentWidth;
   tableContentWidth = qBound<qreal>(1.0, tableContentWidth, availableInnerWidth);
 
-  if (columnCount > 0 && naturalTableContentWidth > 0) {
+  if (gridCols > 0 && naturalTableContentWidth > 0) {
     if (!qFuzzyCompare(tableContentWidth, naturalTableContentWidth)) {
       const qreal scale = tableContentWidth / naturalTableContentWidth;
       for (qreal& width : columnWidths) {
@@ -366,26 +440,69 @@ void HtmlLayoutEngine::layoutTableBox(
     y += captionHeight;
   }
 
+  // Rowspan tracking: for each row, which columns are occupied by a cell from above
+  // and the remaining height to extend. Maps col → {remainingRows, height}
+  struct RowSpanSlot {
+    int remainingRows = 0;
+    qreal height = 0;
+  };
+  QVector<QMap<int, RowSpanSlot>> rowSpanGrid(rows.size());
+
   QVector<qreal> rowTops(rows.size(), 0.0);
   QVector<qreal> rowHeights(rows.size(), 0.0);
-  for (int rowIndex = 0; rowIndex < rows.size(); ++rowIndex) {
-    rowTops[rowIndex] = y;
-    const QVector<HtmlBox*>& cells = rowCells[rowIndex];
-    qreal x = 0;
+  for (int rowIdx = 0; rowIdx < rows.size(); ++rowIdx) {
+    rowTops[rowIdx] = y;
     qreal rowHeight = 0;
-    for (int col = 0; col < cells.size(); ++col) {
-      HtmlBox* cell = cells[col];
-      const qreal cellWidth = col < columnWidths.size() ? columnWidths[col] : 1.0;
-      const qreal cellHeight = layoutFixedWidthBox(*cell, qMax<qreal>(1.0, cellWidth), textLayouts);
-      cell->geometry() = HtmlLayoutGeometry{x, 0, cellWidth, cellHeight};
-      x += cellWidth;
+
+    // First pass: compute cell heights, place cells accounting for spans
+    int col = 0;
+    for (auto& entry : grid[rowIdx]) {
+      // Skip columns occupied by rowspans from above
+      while (col < gridCols && rowSpanGrid[rowIdx].contains(col)) {
+        auto& slot = rowSpanGrid[rowIdx][col];
+        rowHeight = qMax(rowHeight, slot.height);
+        col += 1;  // rowspan occupies 1 column-width per slot (simplified)
+      }
+
+      if (col >= gridCols) break;
+
+      // Compute width for this cell (sum of spanned columns)
+      qreal cellWidth = 0;
+      for (int c = col; c < col + entry.colSpan && c < gridCols; ++c) {
+        cellWidth += (c < columnWidths.size()) ? columnWidths[c] : 1.0;
+      }
+      cellWidth = qMax<qreal>(1.0, cellWidth);
+
+      const qreal cellHeight = layoutFixedWidthBox(*entry.box, cellWidth, textLayouts);
+      entry.box->geometry() = HtmlLayoutGeometry{
+          col < columnWidths.size() ? std::accumulate(columnWidths.begin(), columnWidths.begin() + col, 0.0) : 0.0,
+          0, cellWidth, cellHeight};
       rowHeight = qMax(rowHeight, cellHeight);
+
+      // Propagate rowspan to subsequent rows
+      if (entry.rowSpan > 1) {
+        for (int r = 1; r < entry.rowSpan && rowIdx + r < rows.size(); ++r) {
+          for (int c = col; c < col + entry.colSpan && c < gridCols; ++c) {
+            rowSpanGrid[rowIdx + r][c] = {entry.rowSpan - r, cellHeight};
+          }
+        }
+      }
+
+      col += entry.colSpan;
     }
-    for (HtmlBox* cell : cells) {
-      cell->geometry().height = rowHeight;
+
+    // Account for any remaining rowspan slots in this row
+    for (auto it = rowSpanGrid[rowIdx].constBegin(); it != rowSpanGrid[rowIdx].constEnd(); ++it) {
+      rowHeight = qMax(rowHeight, it.value().height);
     }
-    rows[rowIndex]->geometry() = HtmlLayoutGeometry{0, y, tableContentWidth, rowHeight};
-    rowHeights[rowIndex] = rowHeight;
+
+    // Equalize heights for all cells in this row
+    for (auto& entry : grid[rowIdx]) {
+      entry.box->geometry().height = rowHeight;
+    }
+
+    rows[rowIdx]->geometry() = HtmlLayoutGeometry{0, y, tableContentWidth, rowHeight};
+    rowHeights[rowIdx] = rowHeight;
     y += rowHeight;
   }
 
@@ -441,6 +558,9 @@ qreal HtmlLayoutEngine::layoutFixedWidthBox(
     if (!child->style().visible || child->style().display == HtmlDisplay::None) {
       continue;
     }
+    if (box.tag() == HtmlTag::Details && !box.detailsOpen() && child->tag() != HtmlTag::Summary) {
+      continue;
+    }
     if (child->style().display == HtmlDisplay::Block ||
         child->style().display == HtmlDisplay::Flex ||
         child->style().display == HtmlDisplay::Table ||
@@ -472,6 +592,9 @@ qreal HtmlLayoutEngine::layoutFixedWidthBox(
     qreal y = 0;
     for (auto& child : box.children()) {
       if (!child->style().visible || child->style().display == HtmlDisplay::None) {
+        continue;
+      }
+      if (box.tag() == HtmlTag::Details && !box.detailsOpen() && child->tag() != HtmlTag::Summary) {
         continue;
       }
       if (isTableInternalBox(*child)) {

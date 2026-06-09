@@ -5,11 +5,11 @@ namespace muffin::html {
 HtmlStyleResolver::HtmlStyleResolver() = default;
 HtmlStyleResolver::~HtmlStyleResolver() = default;
 
-void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, qreal availableWidth) {
-  resolveBox(root, baseFontSize, false, QColor());
+void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize) {
+  resolveBox(root, baseFontSize, false, QColor(), QString());
 }
 
-void HtmlStyleResolver::resolveBox(HtmlBox& box, qreal fontSize, bool inheritColor, QColor parentColor) {
+void HtmlStyleResolver::resolveBox(HtmlBox& box, qreal fontSize, bool inheritColor, QColor parentColor, const QString& parentFontFamily) {
   // Apply tag-based defaults first
   applyTagDefaults(box, fontSize);
 
@@ -18,6 +18,15 @@ void HtmlStyleResolver::resolveBox(HtmlBox& box, qreal fontSize, bool inheritCol
   fontSize = resolveFontSize(box.style(), fontSize);
   box.style().fontSize = fontSize;
 
+  // Resolve font family: inline style overrides, then inherit from parent
+  QString effectiveFontFamily = parentFontFamily;
+  if (box.style().fontFamily.isEmpty() && !parentFontFamily.isEmpty()) {
+    box.style().fontFamily = parentFontFamily;
+  }
+  if (!box.style().fontFamily.isEmpty()) {
+    effectiveFontFamily = box.style().fontFamily;
+  }
+
   // Build the font object from resolved properties
   QFont& font = box.style().font;
   font.setPointSizeF(fontSize);
@@ -25,6 +34,8 @@ void HtmlStyleResolver::resolveBox(HtmlBox& box, qreal fontSize, bool inheritCol
   font.setStyle(box.style().fontStyle);
   if (box.style().whiteSpace != HtmlWhiteSpace::Normal) {
     font.setFamily(QStringLiteral("Courier New"));
+  } else if (!effectiveFontFamily.isEmpty()) {
+    font.setFamily(effectiveFontFamily);
   }
 
   // Inherit color if not set
@@ -42,7 +53,7 @@ void HtmlStyleResolver::resolveBox(HtmlBox& box, qreal fontSize, bool inheritCol
   QColor effectiveColor = shouldInheritColor ? box.style().color : parentColor;
 
   for (const auto& child : box.children()) {
-    resolveBox(*child, fontSize, shouldInheritColor || inheritColor, effectiveColor);
+    resolveBox(*child, fontSize, shouldInheritColor || inheritColor, effectiveColor, effectiveFontFamily);
   }
 }
 

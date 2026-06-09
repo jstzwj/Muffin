@@ -80,7 +80,7 @@ HtmlLayoutResult HtmlRenderer::render(const QString& html, qreal baseFontSize, q
 
   // 3. Resolve styles
   HtmlStyleResolver styleResolver;
-  styleResolver.resolve(*root, baseFontSize, availableWidth);
+  styleResolver.resolve(*root, baseFontSize);
 
   // 4. Run layout
   HtmlLayoutEngine layoutEngine;
