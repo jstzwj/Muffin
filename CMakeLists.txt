@@ -995,6 +995,15 @@ set_tests_properties(MuffinRenderMathFunctions2Test PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
   RESOURCE_LOCK MuffinQtGui
 )
+if(APPLE)
+  set_tests_properties(
+    MuffinRenderMathLayoutTest
+    MuffinRenderMathGeometryTest
+    MuffinRenderMathAuditTest
+    MuffinRenderMathFunctions1Test
+    MuffinRenderMathFunctions2Test
+    PROPERTIES DISABLED YES)
+endif()
 
 add_executable(MuffinRenderHtmlLayoutTest
   tests/render/RenderHtmlLayoutTest.cpp

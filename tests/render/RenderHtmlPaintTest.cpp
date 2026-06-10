@@ -74,7 +74,7 @@ void testHtmlTableAndListLayoutContract() {
   QVector<const html::HtmlBox*> listItems;
   collectChildrenWithTag(*root, html::HtmlTag::ListItem, listItems);
   require(listItems.size() == 4, QStringLiteral("html table/list fixture should contain four list items"));
-  require(listItems[0]->listMarker() == QStringLiteral("\xe2\x80\xa2"), QStringLiteral("unordered list item should use bullet marker"));
+  require(listItems[0]->listMarker() == QStringLiteral("\u2022"), QStringLiteral("unordered list item should use bullet marker"));
   require(listItems[2]->listMarker() == QStringLiteral("1."), QStringLiteral("ordered list item should start at 1"));
   require(listItems[3]->listMarker() == QStringLiteral("2."), QStringLiteral("ordered list item should increment marker"));
 
