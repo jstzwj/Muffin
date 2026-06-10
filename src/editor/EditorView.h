@@ -124,6 +124,7 @@ private:
   bool cursorVisible_ = false;
   bool draggingSelection_ = false;
   bool dragSelectionPending_ = false;
+  SelectionRange preDragSelection_;
   QPointF dragStartViewportPos_;
   HitTestResult dragAnchorHit_;
   CodeLanguageEditor* codeLanguageEditor_ = nullptr;

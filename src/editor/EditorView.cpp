@@ -460,6 +460,12 @@ void EditorView::applySelectionRange(SelectionRange selection) {
   const SelectionRange previousSelection = selection_;
   selection_ = selection;
   cursorPosition_ = selection.focus;
+  if (draggingSelection_) {
+    cursorVisible_ = false;
+    viewport()->update();
+    updateTableToolbar();
+    return;
+  }
   refreshInlineProjectionForSelectionChange(previousSelection);
   updateTableToolbar();
 }
@@ -467,6 +473,7 @@ void EditorView::applySelectionRange(SelectionRange selection) {
 void EditorView::clearCursor() {
   cursorPosition_ = {};
   selection_ = {};
+  preDragSelection_ = {};
   cursorHit_ = {};
   cursorVisible_ = false;
   dragSelectionPending_ = false;
@@ -730,6 +737,7 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
     emit blockClicked(hit);
     updateCodeLanguageEditor();
     if (hit.isValid() && isSelectableZone(hit.zone)) {
+      preDragSelection_ = selection_;
       dragSelectionPending_ = true;
       draggingSelection_ = false;
       dragStartViewportPos_ = event->position();
@@ -758,11 +766,15 @@ void EditorView::mouseMoveEvent(QMouseEvent* event) {
 
 void EditorView::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton && (dragSelectionPending_ || draggingSelection_)) {
-    if (draggingSelection_) {
+    const bool wasDragging = draggingSelection_;
+    if (wasDragging) {
       updateDragSelection(event->position());
     }
     dragSelectionPending_ = false;
     draggingSelection_ = false;
+    if (wasDragging) {
+      refreshInlineProjectionForSelectionChange(preDragSelection_);
+    }
     event->accept();
     return;
   }
