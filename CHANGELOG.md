@@ -5,6 +5,31 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-06-10
+
+### Added
+- **HTML block rendering** - Live HTML preview rendering within HTML blocks, with inline editing toggle; powered by lexbor (HTML parser) and yoga (flexbox layout engine)
+- **Inline HTML rendering** - Common inline HTML tags (`<b>`, `<i>`, `<a>`, `<img>`, `<kbd>`, etc.) rendered inline in Markdown content via `InlineHtmlRenderer`
+- **HTML table layout** - Full HTML `<table>` layout with caption, row/cell layout, column alignment, and cell spanning
+- **`<pre>` tag support** - `<pre>` and `<pre-wrap>` white-space modes with dedicated text measurement and layout
+- **HTML `<img>` as Markdown image** - HTML inline `<img>` tags (standalone or wrapped in `<a>`) are parsed and rendered as Markdown image spans
+- **`<kbd>` tag rendering** - Keyboard shortcut styling with rounded background and monospace font
+- **SVG image support** - SVG image rendering via Qt6Svg, with size detection and fallback decoding
+- **Image placeholder icons** - Placeholder and broken-state SVG icons displayed during image loading and on load failure
+- **Qt standard dialog translations** - `qtbase_*.qm` translation files bundled for localized standard dialog buttons (Save, Discard, Cancel, etc.) across 13 languages
+
+### Changed
+- **C++ standard upgraded to C++20** - All platforms and CI configurations now use C++20 (`gnu20` on Linux, `20` on Windows/macOS)
+- **HTML style system** - Refactored style parsing with font family inheritance, percentage width/margin, border/radius, line-height, ordered list styles, and `<details>` collapse support
+- **Image loading pipeline** - Local images fall back to custom `ImageDecoder` on Qt failure; remote HTTP/HTTPS images loaded asynchronously with caching
+- **Icon resources consolidated** - Merged `image_icons.qrc` and `statusbar_icons.qrc` into unified `icons.qrc`
+- **Qt translation auto-discovery** - CMake now searches multiple paths (Qt prefix, `QT_HOST_PATH`, `Qt6_DIR`, PySide6) for `qtbase_*.qm` files and auto-copies them
+- **Inline projection selection refresh** - Pre-drag selection state preserved to fix selection display after drag operations
+
+### Fixed
+- **Text background color in HTML** - Fixed background color not being applied during inline text rendering
+- **SVG image sizing** - Fixed local SVG images returning incorrect dimensions
+
 ## [0.1.6] - 2026-06-09
 
 ### Added
@@ -176,6 +201,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.2.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.0
 [0.1.6]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.6
 [0.1.5]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.5
 [0.1.4]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.4
