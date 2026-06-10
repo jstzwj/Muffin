@@ -50,6 +50,7 @@ public:
 
 private:
   QString paragraphSeparatorFor(const BlockEditContext& context) const;
+  Command buildOutdentBlockQuoteEmptyParagraph(const BlockEditContext& context) const;
   Command buildConvertHeadingToParagraph(const BlockEditContext& context) const;
   Command buildRemoveEmptyHeading(const BlockEditContext& context) const;
   CursorPosition cursorFor(NodeId blockId, qsizetype offset) const;

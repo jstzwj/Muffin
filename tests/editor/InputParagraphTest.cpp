@@ -187,6 +187,57 @@ void testBlockQuoteEnterKeepsInsertedBlankLineInsideQuote() {
           "typing after outer blockquote enter text mismatch");
 }
 
+void testBlockQuoteEmptyParagraphEnterOutdentsQuoteLevel() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  const QString markdown = QStringLiteral(
+      "> A block quote can contain paragraphs.\n"
+      "> It can also contain **formatting**, `code`, and nested quotes.\n"
+      ">\n"
+      ">\n"
+      "> > Nested quote.");
+  session.setMarkdownText(markdown, false);
+  MarkdownNode* quote = blockAt(session, 0);
+  MarkdownNode* emptyParagraph = childAt(quote, 1);
+  setCursor(selection, emptyParagraph, 0);
+
+  require(input.insertParagraphBreak(), "enter on empty quote paragraph should outdent quote level");
+  require(session.markdownText() == QStringLiteral(
+                                      "> A block quote can contain paragraphs.\n"
+                                      "> It can also contain **formatting**, `code`, and nested quotes.\n"
+                                      ">\n"
+                                      "\n"
+                                      "\n"
+                                      "> > Nested quote."),
+          "empty quote paragraph outdent text mismatch");
+  require(session.document().root().children().size() == 3, "outdented quote line should create top-level empty paragraph");
+  require(input.insertText(QStringLiteral("Plain")), "typing after quote outdent should edit plain paragraph");
+  require(session.markdownText() == QStringLiteral(
+                                      "> A block quote can contain paragraphs.\n"
+                                      "> It can also contain **formatting**, `code`, and nested quotes.\n"
+                                      ">\n"
+                                      "\n"
+                                      "Plain\n"
+                                      "> > Nested quote."),
+          "typing after quote outdent text mismatch");
+
+  session.setMarkdownText(QStringLiteral("> > alpha\n> >\n> >\n> > beta"), false);
+  quote = blockAt(session, 0);
+  MarkdownNode* nestedQuote = childAt(quote, 0);
+  emptyParagraph = childAt(nestedQuote, 1);
+  setCursor(selection, emptyParagraph, 0);
+
+  require(input.insertParagraphBreak(), "enter on nested empty quote paragraph should outdent one quote level");
+  require(session.markdownText() == QStringLiteral("> > alpha\n> >\n> \n> \n> > beta"), "nested empty quote paragraph outdent text mismatch");
+  require(input.insertText(QStringLiteral("outer")), "typing after nested quote outdent should edit parent quote paragraph");
+  require(session.markdownText() == QStringLiteral("> > alpha\n> >\n> \n> outer\n> > beta"), "typing after nested quote outdent text mismatch");
+}
+
 // testLocalReparsePreservesUntouchedNodeIds (lines 539-563)
 void testLocalReparsePreservesUntouchedNodeIds() {
   DocumentSession session;
@@ -448,6 +499,7 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph);
   RUN_TEST(testBlockQuoteEnterKeepsInsertedBlankLineInsideQuote);
+  RUN_TEST(testBlockQuoteEmptyParagraphEnterOutdentsQuoteLevel);
   RUN_TEST(testLocalReparsePreservesUntouchedNodeIds);
   RUN_TEST(testBlockEditContextSeparatesBlockAndContentRanges);
   RUN_TEST(testTextBlockCommandBuilderCreatesStructuralEnterCommands);

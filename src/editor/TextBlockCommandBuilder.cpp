@@ -15,6 +15,16 @@ bool hasBlockQuoteAncestor(const MarkdownNode* node) {
   return false;
 }
 
+int blockQuoteDepth(const MarkdownNode* node) {
+  int depth = 0;
+  for (const MarkdownNode* parent = node ? node->parent() : nullptr; parent; parent = parent->parent()) {
+    if (parent->type() == BlockType::BlockQuote) {
+      ++depth;
+    }
+  }
+  return depth;
+}
+
 qsizetype lineStartForOffset(const QString& text, qsizetype offset) {
   qsizetype lineStart = qBound<qsizetype>(0, offset, text.size());
   while (lineStart > 0 && text.at(lineStart - 1) != QLatin1Char('\n')) {
@@ -41,6 +51,44 @@ QString blockQuotePrefixForLine(const QString& line) {
     prefix += line.mid(markerStart, index - markerStart);
   }
   return prefix;
+}
+
+struct BlockQuoteMarkerRange {
+  qsizetype start = -1;
+  qsizetype end = -1;
+  bool valid = false;
+};
+
+BlockQuoteMarkerRange nthBlockQuoteMarkerRange(const QString& line, int depth) {
+  BlockQuoteMarkerRange range;
+  if (depth <= 0) {
+    return range;
+  }
+
+  qsizetype index = 0;
+  int currentDepth = 0;
+  while (index < line.size()) {
+    while (index < line.size() && line.at(index) == QLatin1Char(' ')) {
+      ++index;
+    }
+    if (index >= line.size() || line.at(index) != QLatin1Char('>')) {
+      return range;
+    }
+
+    const qsizetype markerStart = index;
+    ++index;
+    if (index < line.size() && line.at(index) == QLatin1Char(' ')) {
+      ++index;
+    }
+    ++currentDepth;
+    if (currentDepth == depth) {
+      range.start = markerStart;
+      range.end = index;
+      range.valid = true;
+      return range;
+    }
+  }
+  return range;
 }
 
 }  // namespace
@@ -129,6 +177,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
         return context.contentText.trimmed().isEmpty() ? buildExitListItem(context) : buildSplitListItem(context);
       }
       if (context.visibleText.isEmpty()) {
+        if (hasBlockQuoteAncestor(context.node)) {
+          return buildOutdentBlockQuoteEmptyParagraph(context);
+        }
         return buildInsertBlockAfter(context);
       }
       if (context.cursorTextOffset <= 0) {
@@ -508,6 +559,43 @@ QString TextBlockCommandBuilder::paragraphSeparatorFor(const BlockEditContext& c
     blankPrefix.chop(1);
   }
   return QStringLiteral("\n") + blankPrefix + QStringLiteral("\n") + prefix;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentBlockQuoteEmptyParagraph(const BlockEditContext& context) const {
+  Command command;
+  if (!session_ || !context.node || context.contentRange.byteStart < 0) {
+    return command;
+  }
+
+  const int depth = blockQuoteDepth(context.node);
+  if (depth <= 0) {
+    return command;
+  }
+
+  const QString& markdown = session_->markdownText();
+  const qsizetype lineStart = lineStartForOffset(markdown, context.contentRange.byteStart);
+  qsizetype lineEnd = lineStart;
+  while (lineEnd < markdown.size() && markdown.at(lineEnd) != QLatin1Char('\n')) {
+    ++lineEnd;
+  }
+
+  const QString line = markdown.mid(lineStart, lineEnd - lineStart);
+  const BlockQuoteMarkerRange marker = nthBlockQuoteMarkerRange(line, depth);
+  if (!marker.valid) {
+    return command;
+  }
+
+  const QString outerPrefix = line.left(marker.start);
+  command.sourceStart = lineStart + marker.start;
+  command.removedLength = marker.end - marker.start;
+  command.insertedText = QStringLiteral("\n") + outerPrefix;
+  command.kind = EditTransaction::Kind::SplitParagraph;
+  command.label = QStringLiteral("Outdent Quote Paragraph");
+  command.fallbackSourceOffset = command.sourceStart + command.insertedText.size();
+  command.structureEdit = true;
+  command.valid = true;
+  command.handled = true;
+  return command;
 }
 
 CursorPosition TextBlockCommandBuilder::cursorFor(NodeId blockId, qsizetype offset) const {
