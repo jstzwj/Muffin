@@ -1,4 +1,8 @@
 <RCC>
+  <qresource prefix="/icons/statusbar">
+    <file alias="sidebar-toggle.svg">icons/statusbar/sidebar-toggle.svg</file>
+    <file alias="code-brackets.svg">icons/statusbar/code-brackets.svg</file>
+  </qresource>
   <qresource prefix="/icons/table-toolbar">
     <file alias="resize.svg">icons/table-toolbar/resize.svg</file>
     <file alias="align-left.svg">icons/table-toolbar/align-left.svg</file>
@@ -6,5 +10,9 @@
     <file alias="align-right.svg">icons/table-toolbar/align-right.svg</file>
     <file alias="more.svg">icons/table-toolbar/more.svg</file>
     <file alias="delete.svg">icons/table-toolbar/delete.svg</file>
+  </qresource>
+  <qresource prefix="/icons/image">
+    <file alias="image-placeholder.svg">icons/image/image-placeholder.svg</file>
+    <file alias="image-broken.svg">icons/image/image-broken.svg</file>
   </qresource>
 </RCC>

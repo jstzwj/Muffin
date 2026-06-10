@@ -1,6 +1,0 @@
-<RCC>
-  <qresource prefix="/icons/image">
-    <file alias="image-placeholder.svg">icons/image/image-placeholder.svg</file>
-    <file alias="image-broken.svg">icons/image/image-broken.svg</file>
-  </qresource>
-</RCC>
