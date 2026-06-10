@@ -94,6 +94,7 @@ void muffin::MainWindowActionBinder::bindCommands(MainWindow& window) {
   window.commands_.bind(QStringLiteral("format.code"), [&window] { window.backend_->toggleCode(); });
   window.commands_.bind(QStringLiteral("format.strike"), [&window] { window.backend_->toggleStrikethrough(); });
   window.commands_.bind(QStringLiteral("format.inline_math"), [&window] { window.backend_->toggleInlineMath(); });
+  window.commands_.bind(QStringLiteral("format.underline"), [&window] { window.backend_->toggleUnderline(); });
   window.commands_.bind(QStringLiteral("format.link"), [&window] { window.backend_->insertLink(); });
 
   window.commands_.bind(QStringLiteral("image.insert"), [&window] { window.insertImageWithDialog(); });

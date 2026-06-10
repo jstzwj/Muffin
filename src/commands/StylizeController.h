@@ -27,6 +27,7 @@ public:
   bool toggleCode();
   bool toggleStrikethrough();
   bool toggleInlineMath();
+  bool toggleUnderline();
   bool insertLink();
   bool insertImage();
 
@@ -78,6 +79,22 @@ private:
       qsizetype contentBase,
       qsizetype localSelStart, qsizetype localSelEnd,
       QVector<MarkerSpan>& markers) const;
+
+  // --- Word range helper (for collapsed cursor → word-wrap) ---
+  bool findWordRange(const BlockEditContext& context,
+                     qsizetype& localSourceStart,
+                     qsizetype& localSourceEnd) const;
+
+  // --- Underline toggle (HTML <u> tags, separate from Markdown markers) ---
+  bool toggleUnderlineCollapsed(const BlockEditContext& context);
+  bool toggleUnderlineRange(const BlockEditContext& context,
+                            qsizetype localSelStart, qsizetype localSelEnd);
+  bool hasUnderlineInRange(const QString& contentText,
+                           qsizetype localSourceStart,
+                           qsizetype localSourceEnd) const;
+  QVector<MarkerSpan> collectHtmlUnderlineMarkers(
+      const QString& contentText,
+      qsizetype localSelStart, qsizetype localSelEnd) const;
 
   // --- Content builder ---
   struct ToggledContent {

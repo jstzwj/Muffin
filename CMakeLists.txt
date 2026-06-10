@@ -596,6 +596,8 @@ target_link_libraries(MuffinUi
     MuffinCore
     tree-sitter-runtime
     tree-sitter-languages
+    ICU::uc
+    ICU::i18n
   PRIVATE
     WebP::webp
     avif

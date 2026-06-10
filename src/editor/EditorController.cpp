@@ -7,6 +7,7 @@
 #include "document/SourceRangeUtil.h"
 #include "editor/BlockEditContext.h"
 #include "editor/EditorView.h"
+#include "unicode/WordBoundary.h"
 
 namespace muffin {
 namespace {
@@ -646,6 +647,19 @@ CursorFormatState EditorController::queryCursorFormatState() const {
       }
     }
     accumulateUnderlineAtOffset(state, context.inlineProjection, offset);
+
+    // Fallback: detect underline from source text when projection is "active"
+    // (cursor inside <u>...</u> → htmlFormatData is empty, spans are Text not HtmlContent)
+    if (!state.underline && !context.contentText.isEmpty()) {
+      const qsizetype localSrc = context.cursorSourceOffset - context.contentRange.byteStart;
+      const qsizetype openPos = context.contentText.lastIndexOf(QLatin1String("<u>"), localSrc);
+      if (openPos >= 0) {
+        const qsizetype closePos = context.contentText.indexOf(QLatin1String("</u>"), openPos + 3);
+        if (closePos >= 0 && localSrc >= openPos + 3 && localSrc <= closePos) {
+          state.underline = true;
+        }
+      }
+    }
   } else {
     // --- Single-block range: all content spans must share the same format ---
     const qsizetype selStart = sel.startOffset();
@@ -685,6 +699,25 @@ CursorFormatState EditorController::queryCursorFormatState() const {
     }
     if (refSet) {
       state = ref;
+
+      // Fallback: detect underline from source text when projection is "active"
+      if (!state.underline && !context.contentText.isEmpty()) {
+        qsizetype selSrcStart = -1, selSrcEnd = -1;
+        if (context.inlineProjection.sourceOffsetForVisibleOffset(selStart, selSrcStart) &&
+            context.inlineProjection.sourceOffsetForVisibleOffset(selEnd, selSrcEnd) &&
+            selSrcStart >= 0 && selSrcEnd >= 0) {
+          const qsizetype openPos = context.contentText.lastIndexOf(
+              QLatin1String("<u>"), selSrcStart);
+          if (openPos >= 0) {
+            const qsizetype closePos = context.contentText.indexOf(
+                QLatin1String("</u>"), openPos + 3);
+            if (closePos >= 0 && openPos + 3 <= selSrcStart &&
+                closePos >= selSrcEnd) {
+              state.underline = true;
+            }
+          }
+        }
+      }
     }
   }
 
@@ -695,25 +728,18 @@ bool EditorController::selectWordAtCursor(const BlockEditContext& context) {
   const QString& visible = context.visibleText;
   const qsizetype offset = qBound<qsizetype>(0, context.cursorTextOffset, visible.size());
 
-  qsizetype wordStart = offset;
-  qsizetype wordEnd = offset;
-  while (wordStart > 0 && visible.at(wordStart - 1).isLetterOrNumber()) {
-    --wordStart;
-  }
-  while (wordEnd < visible.size() && visible.at(wordEnd).isLetterOrNumber()) {
-    ++wordEnd;
-  }
-  if (wordStart >= wordEnd) {
+  const auto seg = findWordSegment(visible, offset);
+  if (!seg.isWord || seg.start >= seg.end) {
     return false;
   }
 
   SelectionRange range;
   range.anchor.blockId = context.blockId;
   range.anchor.text.nodeId = context.editableNode ? context.editableNode->id() : context.node->id();
-  range.anchor.text.textOffset = wordStart;
+  range.anchor.text.textOffset = seg.start;
   range.focus.blockId = context.blockId;
   range.focus.text.nodeId = context.editableNode ? context.editableNode->id() : context.node->id();
-  range.focus.text.textOffset = wordEnd;
+  range.focus.text.textOffset = seg.end;
   selection_.setSelection(range);
   return true;
 }

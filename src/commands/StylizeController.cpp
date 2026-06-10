@@ -7,10 +7,13 @@
 #include "editor/BrushQueue.h"
 #include "editor/SelectionController.h"
 #include "edit/UndoStack.h"
+#include "unicode/WordBoundary.h"
 
 #include <algorithm>
 
 namespace muffin {
+namespace {
+}  // namespace
 
 // ============================================================================
 // Public entry points
@@ -46,6 +49,229 @@ bool StylizeController::toggleInlineMath() {
   return toggleStyle(InlineType::InlineMath,
                      QStringLiteral("$"), QStringLiteral("$"),
                      EditTransaction::Kind::InsertText, QStringLiteral("Inline Formula"));
+}
+
+// ============================================================================
+// Underline toggle (HTML <u> tags)
+// ============================================================================
+
+bool StylizeController::toggleUnderline() {
+  if (!ctx_.hasSession() || !ctx_.hasCursor()) {
+    return false;
+  }
+
+  const SelectionRange sel = ctx_.selection->selection();
+  if (!sel.anchor.isValid() || !sel.focus.isValid()) {
+    return false;
+  }
+  // Cross-block underline not supported
+  if (!sel.isSingleBlock()) {
+    return false;
+  }
+
+  auto resolver = ctx_.contextResolver();
+  BlockEditContext context;
+
+  if (sel.isCollapsed()) {
+    if (!resolver.current(context)) {
+      return false;
+    }
+    return toggleUnderlineCollapsed(context);
+  }
+
+  qsizetype localStart = -1, localEnd = -1;
+  if (!resolver.selectionContext(context, localStart, localEnd)) {
+    return false;
+  }
+  return toggleUnderlineRange(context, localStart, localEnd);
+}
+
+bool StylizeController::toggleUnderlineCollapsed(const BlockEditContext& context) {
+  if (!context.editableNode) {
+    return false;
+  }
+
+  const qsizetype contentBase = context.contentRange.byteStart;
+  const qsizetype localOffset = qBound<qsizetype>(
+      0, context.cursorSourceOffset - contentBase,
+      context.contentText.size());
+
+  QString contentText = context.contentText;
+
+  // ── Try REMOVE: detect wrapping <u>/</u> via source text search ──
+  // NOTE: We cannot use htmlFormatData() for detection because when the cursor
+  // is inside <u>...</u>, the InlineProjection renders the group as "active"
+  // (OpenMarker + Text + CloseMarker), and htmlFormatData is only populated
+  // for the inactive (rendered) state.
+  {
+    const qsizetype openPos = contentText.lastIndexOf(QLatin1String("<u>"), localOffset);
+    qsizetype closePos = -1;
+    if (openPos >= 0) {
+      closePos = contentText.indexOf(QLatin1String("</u>"), openPos + 3);
+    }
+    if (openPos >= 0 && closePos >= 0 && closePos > openPos &&
+        localOffset >= openPos + 3 && localOffset <= closePos) {
+      // Cursor is inside <u>...</u> → REMOVE tags
+      constexpr qsizetype openLen = 3;   // "<u>"
+      constexpr qsizetype closeLen = 4;  // "</u>"
+
+      contentText.remove(closePos, closeLen);
+      contentText.remove(openPos, openLen);
+
+      qsizetype cursor = localOffset;
+      if (cursor >= closePos + closeLen) {
+        cursor -= closeLen;
+      } else if (cursor > closePos) {
+        cursor = closePos;
+      }
+      if (cursor >= openPos + openLen) {
+        cursor -= openLen;
+      } else if (cursor > openPos) {
+        cursor = openPos;
+      }
+      cursor = qBound<qsizetype>(0, cursor, contentText.size());
+
+      const qsizetype nextSourceOffset = contentBase + cursor;
+      return applyStyleDelta(
+          EditTransaction::Kind::InsertText, QStringLiteral("Underline"),
+          contentBase,
+          context.contentRange.byteEnd - contentBase,
+          std::move(contentText),
+          nextSourceOffset, nextSourceOffset,
+          QVector<LocalEditNodeHint>{
+              LocalEditNodeHint{context.editableNode->id(), contentBase,
+                                context.editableNode->type()}});
+    }
+  }
+
+  // ── ADD: find word, wrap with <u>/</u>, or insert skeleton ──
+  qsizetype wordSourceStart = -1, wordSourceEnd = -1;
+  if (findWordRange(context, wordSourceStart, wordSourceEnd)) {
+    contentText.insert(wordSourceEnd, QStringLiteral("</u>"));
+    contentText.insert(wordSourceStart, QStringLiteral("<u>"));
+    const qsizetype adjStart = wordSourceStart + 3;
+    const qsizetype adjEnd = wordSourceEnd + 3;
+    return applyStyleDelta(
+        EditTransaction::Kind::InsertText, QStringLiteral("Underline"),
+        contentBase,
+        context.contentRange.byteEnd - contentBase,
+        std::move(contentText),
+        contentBase + adjStart, contentBase + adjEnd,
+        QVector<LocalEditNodeHint>{
+            LocalEditNodeHint{context.editableNode->id(), contentBase,
+                              context.editableNode->type()}});
+  }
+
+  // No word found → insert empty <u></u> skeleton
+  contentText.insert(localOffset, QStringLiteral("<u></u>"));
+  const qsizetype nextSourceOffset = contentBase + localOffset + 3;
+  return applyStyleDelta(
+      EditTransaction::Kind::InsertText, QStringLiteral("Underline"),
+      contentBase,
+      context.contentRange.byteEnd - contentBase,
+      std::move(contentText),
+      nextSourceOffset, nextSourceOffset,
+      QVector<LocalEditNodeHint>{
+          LocalEditNodeHint{context.editableNode->id(), contentBase,
+                            context.editableNode->type()}});
+}
+
+bool StylizeController::toggleUnderlineRange(
+    const BlockEditContext& context,
+    qsizetype localSelStart, qsizetype localSelEnd) {
+  if (!context.editableNode) {
+    return false;
+  }
+
+  const qsizetype contentBase = context.contentRange.byteStart;
+
+  // 1. Detect underline state via source text
+  const bool allUnderlined = hasUnderlineInRange(
+      context.contentText, localSelStart, localSelEnd);
+
+  // 2. Collect <u>/</u> marker positions
+  QVector<MarkerSpan> markers = collectHtmlUnderlineMarkers(
+      context.contentText, localSelStart, localSelEnd);
+
+  // 3. Build toggled content (reuse the generic builder)
+  ToggledContent result = buildToggledContent(
+      context.contentText, markers,
+      localSelStart, localSelEnd,
+      allUnderlined,
+      QStringLiteral("<u>"), QStringLiteral("</u>"));
+
+  // 4. Apply
+  const qsizetype nextAnchorSource = contentBase + result.adjustedSelStart;
+  const qsizetype nextFocusSource = contentBase + result.adjustedSelEnd;
+
+  return applyStyleDelta(
+      EditTransaction::Kind::InsertText, QStringLiteral("Underline"),
+      contentBase,
+      context.contentRange.byteEnd - contentBase,
+      std::move(result.text),
+      nextAnchorSource, nextFocusSource,
+      QVector<LocalEditNodeHint>{
+          LocalEditNodeHint{context.editableNode->id(), contentBase,
+                            context.editableNode->type()}});
+}
+
+// ============================================================================
+// Underline detection helpers
+// ============================================================================
+
+bool StylizeController::hasUnderlineInRange(
+    const QString& contentText,
+    qsizetype localSourceStart,
+    qsizetype localSourceEnd) const {
+  // Detect underline from source text: check if [localSourceStart, localSourceEnd)
+  // is fully within a <u>/</u> pair.  We cannot use projection htmlFormatData()
+  // because when the cursor/selection is on the <u> group, the projection renders
+  // it as "active" (OpenMarker + Text + CloseMarker) and htmlFormatData is empty.
+  const qsizetype openPos = contentText.lastIndexOf(QLatin1String("<u>"), localSourceStart);
+  if (openPos >= 0) {
+    const qsizetype closePos = contentText.indexOf(QLatin1String("</u>"), openPos + 3);
+    if (closePos >= 0 &&
+        openPos + 3 <= localSourceStart &&
+        closePos >= localSourceEnd) {
+      return true;
+    }
+  }
+  return false;
+}
+
+QVector<StylizeController::MarkerSpan>
+StylizeController::collectHtmlUnderlineMarkers(
+    const QString& contentText,
+    qsizetype localSelStart, qsizetype localSelEnd) const {
+  QVector<MarkerSpan> markers;
+
+  const QLatin1String openTag("<u>");
+  const QLatin1String closeTag("</u>");
+
+  qsizetype pos = 0;
+  while (pos < contentText.size()) {
+    const int openIdx = contentText.indexOf(openTag, pos);
+    if (openIdx < 0) {
+      break;
+    }
+    const int closeIdx = contentText.indexOf(closeTag, openIdx + openTag.size());
+    if (closeIdx < 0) {
+      break;
+    }
+
+    // Does this <u>...</u> pair's content overlap with the selection?
+    const qsizetype tagContentStart = openIdx + openTag.size();
+    const qsizetype tagContentEnd = closeIdx;
+
+    if (tagContentStart < localSelEnd && tagContentEnd > localSelStart) {
+      markers.append({openIdx, openIdx + openTag.size()});
+      markers.append({closeIdx, closeIdx + closeTag.size()});
+    }
+
+    pos = closeIdx + closeTag.size();
+  }
+
+  return markers;
 }
 
 // ============================================================================
@@ -86,6 +312,45 @@ bool StylizeController::toggleStyle(
   }
   return toggleRange(context, localStart, localEnd,
                      type, openMarker, closeMarker, kind, label);
+}
+
+// ============================================================================
+// Word range helper (collapsed cursor → select word → wrap)
+// Uses ICU BreakIterator for dictionary-based CJK word segmentation.
+// ============================================================================
+
+bool StylizeController::findWordRange(
+    const BlockEditContext& context,
+    qsizetype& localSourceStart,
+    qsizetype& localSourceEnd) const {
+  const QString& visible = context.visibleText;
+  if (visible.isEmpty()) {
+    return false;
+  }
+
+  const qsizetype offset = qBound<qsizetype>(0, context.cursorTextOffset, visible.size());
+
+  const auto seg = findWordSegment(visible, offset);
+  if (!seg.isWord || seg.start >= seg.end) {
+    return false;
+  }
+
+  // Convert visible offsets to local source offsets.
+  if (context.plainInlineEditable) {
+    localSourceStart = seg.start;
+    localSourceEnd = seg.end;
+    return true;
+  }
+
+  qsizetype srcStart = -1, srcEnd = -1;
+  if (!context.inlineProjection.sourceOffsetForVisibleOffset(seg.start, srcStart) ||
+      !context.inlineProjection.sourceOffsetForVisibleOffset(seg.end, srcEnd)) {
+    return false;
+  }
+
+  localSourceStart = srcStart;
+  localSourceEnd = srcEnd;
+  return localSourceStart < localSourceEnd;
 }
 
 // ============================================================================
@@ -142,7 +407,14 @@ bool StylizeController::toggleCollapsed(
     }
     nextAnchorLocal = qBound<qsizetype>(0, nextAnchorLocal, contentText.size());
   } else {
-    // ── INSERT SKELETON ──
+    // ── Try word-wrap (Typora-like: select word, then apply markers) ──
+    qsizetype wordSourceStart = -1, wordSourceEnd = -1;
+    if (findWordRange(context, wordSourceStart, wordSourceEnd)) {
+      return toggleRange(context, wordSourceStart, wordSourceEnd,
+                         type, openMarker, closeMarker, kind, label);
+    }
+
+    // ── No word found → INSERT SKELETON ──
     const QString skeleton = openMarker + closeMarker;
     contentText.insert(localOffset, skeleton);
     nextAnchorLocal = localOffset + openMarker.size();

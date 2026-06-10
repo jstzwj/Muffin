@@ -183,6 +183,10 @@ void SourceEditorBackend::toggleInlineMath() {
   plainEdit()->insertPlainText(QStringLiteral("$$"));
 }
 
+void SourceEditorBackend::toggleUnderline() {
+  plainEdit()->insertPlainText(QStringLiteral("<u></u>"));
+}
+
 void SourceEditorBackend::insertLink() {
   plainEdit()->insertPlainText(QStringLiteral("[](url)"));
 }

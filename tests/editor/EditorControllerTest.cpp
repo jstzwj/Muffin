@@ -374,26 +374,28 @@ void testStylizeCollapsedSkeletons() {
   StylizeController stylize;
   wireStyle(stylize, session, selection, undoStack, brushQueue);
 
+  // Collapsed cursor inside a word → word is selected and wrapped (Typora-like).
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
-  require(stylize.toggleBold(), "bold skeleton should insert");
-  require(session.markdownText() == QStringLiteral("alpha****"), "bold skeleton text mismatch");
-  require(selection.cursorPosition().text.textOffset == 7, "bold skeleton cursor mismatch");
-  require(selection.cursorPosition().text.sourceOffset == 7, "bold skeleton source cursor mismatch");
+  require(stylize.toggleBold(), "bold should wrap word");
+  require(session.markdownText() == QStringLiteral("**alpha**"), "bold word-wrap text mismatch");
+  require(selection.cursorPosition().text.textOffset == 7, "bold word-wrap cursor mismatch");
+  require(selection.cursorPosition().text.sourceOffset == 7, "bold word-wrap source cursor mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
-  require(stylize.toggleItalic(), "italic skeleton should insert");
-  require(session.markdownText() == QStringLiteral("alpha**"), "italic skeleton text mismatch");
-  require(selection.cursorPosition().text.textOffset == 6, "italic skeleton cursor mismatch");
+  require(stylize.toggleItalic(), "italic should wrap word");
+  require(session.markdownText() == QStringLiteral("*alpha*"), "italic word-wrap text mismatch");
+  require(selection.cursorPosition().text.textOffset == 6, "italic word-wrap cursor mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
-  require(stylize.toggleCode(), "code skeleton should insert");
-  require(session.markdownText() == QStringLiteral("alpha``"), "code skeleton text mismatch");
-  require(selection.cursorPosition().text.textOffset == 6, "code skeleton cursor mismatch");
-  require(selection.cursorPosition().text.sourceOffset == 6, "code skeleton source cursor mismatch");
+  require(stylize.toggleCode(), "code should wrap word");
+  require(session.markdownText() == QStringLiteral("`alpha`"), "code word-wrap text mismatch");
+  require(selection.cursorPosition().text.textOffset == 6, "code word-wrap cursor mismatch");
+  require(selection.cursorPosition().text.sourceOffset == 6, "code word-wrap source cursor mismatch");
 
+  // Link insertion uses a different code path (not toggleCollapsed), unchanged.
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(stylize.insertLink(), "link skeleton should insert");
@@ -411,23 +413,24 @@ void testTypingIntoCollapsedStyleSkeletons() {
   wireInput(input, session, selection, undoStack, brushQueue);
   wireStyle(stylize, session, selection, undoStack, brushQueue);
 
-  session.setMarkdownText(QStringLiteral("alpha"), false);
-  setCursor(selection, blockAt(session, 0), 5);
+  // Cursor between two spaces (no adjacent word) → skeleton insertion fallback.
+  session.setMarkdownText(QStringLiteral("a  b"), false);
+  setCursor(selection, blockAt(session, 0), 2);
   require(stylize.toggleBold(), "bold skeleton should insert before typing");
   require(input.insertText(QStringLiteral("B")), "typing into bold skeleton should work");
-  require(session.markdownText() == QStringLiteral("alpha**B**"), "bold skeleton typing mismatch");
+  require(session.markdownText() == QStringLiteral("a **B** b"), "bold skeleton typing mismatch");
 
-  session.setMarkdownText(QStringLiteral("alpha"), false);
-  setCursor(selection, blockAt(session, 0), 5);
+  session.setMarkdownText(QStringLiteral("a  b"), false);
+  setCursor(selection, blockAt(session, 0), 2);
   require(stylize.toggleCode(), "code skeleton should insert before typing");
   require(input.insertText(QStringLiteral("C")), "typing into code skeleton should work");
-  require(session.markdownText() == QStringLiteral("alpha`C`"), "code skeleton typing mismatch");
+  require(session.markdownText() == QStringLiteral("a `C` b"), "code skeleton typing mismatch");
 
-  session.setMarkdownText(QStringLiteral("alpha"), false);
-  setCursor(selection, blockAt(session, 0), 5);
+  session.setMarkdownText(QStringLiteral("a  b"), false);
+  setCursor(selection, blockAt(session, 0), 2);
   require(stylize.toggleItalic(), "italic skeleton should insert before typing");
   require(input.insertText(QStringLiteral("I")), "typing into italic skeleton should work");
-  require(session.markdownText() == QStringLiteral("alpha*I*"), "italic skeleton typing mismatch");
+  require(session.markdownText() == QStringLiteral("a *I* b"), "italic skeleton typing mismatch");
 }
 
 void testStylizeSelectionWrap() {
@@ -478,7 +481,7 @@ void testStylizeUndoRedoTextDelta() {
   require(undo.isTextDeltaCommand(), "style undo should use TextDeltaCommand");
   require(undo.textDeltaCommand().delta.start == 0, "style undo delta start mismatch");
   require(undo.textDeltaCommand().delta.removedText == QStringLiteral("alpha"), "style undo removed text mismatch");
-  require(undo.textDeltaCommand().delta.insertedText == QStringLiteral("alpha****"), "style undo inserted text mismatch");
+  require(undo.textDeltaCommand().delta.insertedText == QStringLiteral("**alpha**"), "style undo inserted text mismatch");
   session.applyTextDelta(
       undo.textDeltaCommand().delta.start,
       undo.textDeltaCommand().delta.insertedText.size(),
@@ -496,7 +499,7 @@ void testStylizeUndoRedoTextDelta() {
       redo.textDeltaCommand().delta.insertedText,
       true);
   selection.setCursorPosition(redo.textDeltaCommand().afterCursor);
-  require(session.markdownText() == QStringLiteral("alpha****"), "style redo text mismatch");
+  require(session.markdownText() == QStringLiteral("**alpha**"), "style redo text mismatch");
   require(selection.cursorPosition().text.textOffset == 7, "style redo cursor mismatch");
 }
 

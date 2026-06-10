@@ -37,6 +37,7 @@ public:
   void toggleCode() override;
   void toggleStrikethrough() override;
   void toggleInlineMath() override;
+  void toggleUnderline() override;
   void insertLink() override;
   void insertImage() override;
 

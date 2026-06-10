@@ -98,6 +98,10 @@ void RenderEditorBackend::toggleInlineMath() {
   controller_.stylizeController().toggleInlineMath();
 }
 
+void RenderEditorBackend::toggleUnderline() {
+  controller_.stylizeController().toggleUnderline();
+}
+
 void RenderEditorBackend::insertLink() {
   controller_.stylizeController().insertLink();
 }

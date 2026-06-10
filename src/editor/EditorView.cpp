@@ -4,6 +4,7 @@
 #include "editor/CodeLanguageEditor.h"
 #include "editor/TableToolbar.h"
 #include "render/ImageLoader.h"
+#include "unicode/WordBoundary.h"
 
 #include <QApplication>
 #include <QDesktopServices>
@@ -783,27 +784,26 @@ void EditorView::mouseReleaseEvent(QMouseEvent* event) {
 
 namespace {
 
-auto isWordChar(QChar ch) -> bool {
-  return ch.isLetterOrNumber() || ch == QLatin1Char('_');
-}
-
 QPair<qsizetype, qsizetype> wordRangeAtOffset(const QString& text, qsizetype offset) {
   if (text.isEmpty() || offset < 0 || offset >= text.size()) {
     return {qMax<qsizetype>(0, offset), qMax<qsizetype>(0, offset)};
   }
 
   const QChar c = text[offset];
+
+  // For word characters, use ICU BreakIterator for dictionary-based segmentation.
+  if (c.isLetterOrNumber() || c == QLatin1Char('_')) {
+    const auto seg = findWordSegment(text, offset);
+    if (seg.isWord && seg.start < seg.end) {
+      return {seg.start, seg.end};
+    }
+    return {offset, offset + 1};
+  }
+
+  // For spaces, extend through the contiguous space run.
   qsizetype start = offset;
   qsizetype end = offset + 1;
-
-  if (isWordChar(c)) {
-    while (start > 0 && isWordChar(text[start - 1])) {
-      --start;
-    }
-    while (end < text.size() && isWordChar(text[end])) {
-      ++end;
-    }
-  } else if (c.isSpace()) {
+  if (c.isSpace()) {
     while (start > 0 && text[start - 1].isSpace()) {
       --start;
     }
