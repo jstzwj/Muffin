@@ -83,7 +83,7 @@ class InlineProjection {
 public:
   InlineProjection() = default;
   InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState state = {}, qsizetype sourceBase = -1,
-                   qreal baseFontSize = 16.0);
+                   qreal baseFontSize = 16.0, qsizetype headingPrefixLength = 0);
 
   bool isValid() const;
   QString sourceText() const;

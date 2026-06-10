@@ -193,7 +193,7 @@ InlineProjectionState InlineProjectionState::forSelection(
 }
 
 InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState projectionState, qsizetype sourceBase,
-                                   qreal baseFontSize)
+                                   qreal baseFontSize, qsizetype headingPrefixLength)
     : sourceText_(std::move(sourceText)), visibleText_(plainTextForInlines(inlines)) {
   BuildState state;
   state.sourceText = &sourceText_;
@@ -201,7 +201,14 @@ InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString s
   state.projectionState = projectionState;
   state.baseFontSize = baseFontSize;
   QVector<HtmlInlineFormatData> htmlData;
-  appendInlines(state, inlines, 0, sourceText_.size(), htmlData);
+  if (headingPrefixLength > 0 && headingPrefixLength <= sourceText_.size()) {
+    const QString prefixText = sourceText_.left(headingPrefixLength);
+    appendTextSpan(state, InlineType::Text, InlineSpanKind::OpenMarker, 0, headingPrefixLength, prefixText, false);
+    state.bold = true;
+    appendInlines(state, inlines, headingPrefixLength, sourceText_.size(), htmlData);
+  } else {
+    appendInlines(state, inlines, 0, sourceText_.size(), htmlData);
+  }
   displayText_ = state.displayText;
   visibleText_ = state.visibleText;
   spans_ = state.spans;

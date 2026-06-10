@@ -164,11 +164,21 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
   }
 
   if (editable->type() == BlockType::Heading) {
+    // When the cursor is inside this heading (expanded mode), keep the full
+    // source range including the ### prefix so editing works within the prefix.
+    const qsizetype rawStart = start;
     while (start < end && markdown.at(start) == QLatin1Char('#')) {
       ++start;
     }
     if (start < end && markdown.at(start).isSpace()) {
       ++start;
+    }
+    const qsizetype contentStart = start;
+    const bool cursorInThisBlock =
+        selection_ && selection_->hasCursor() && selection_->cursorPosition().blockId == displayNode.id();
+    const qsizetype cursorSource = cursorInThisBlock ? selection_->cursorPosition().text.sourceOffset : -1;
+    if (cursorInThisBlock && cursorSource >= rawStart && cursorSource < contentStart) {
+      start = rawStart;
     }
   } else if (editable->type() == BlockType::Paragraph) {
     start = paragraphContentStartIncludingCommonMarkIndent(markdown, start);
