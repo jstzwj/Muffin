@@ -230,7 +230,7 @@
 <context>
     <name>muffin::BlockLayoutBuilder</name>
     <message>
-        <location filename="../src/render/BlockLayoutBuilder.cpp" line="209"/>
+        <location filename="../src/render/BlockLayoutBuilder.cpp" line="208"/>
         <source>Start writing...</source>
         <translation>Bắt đầu viết...</translation>
     </message>
@@ -389,7 +389,7 @@
         <translation type="vanished">Phân tích %1 ms</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="323"/>
+        <location filename="../src/app/MainWindow.cpp" line="325"/>
         <source>Open Folder</source>
         <translation>Mở thư mục</translation>
     </message>
@@ -818,7 +818,7 @@
         <translation>Gạch ngang</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="224"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="225"/>
         <source>Comment</source>
         <translation>Chú thích</translation>
     </message>
@@ -1232,114 +1232,114 @@
         <translation>Giới thiệu</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="145"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="149"/>
         <source>Delete Image</source>
         <translation>Xóa hình ảnh</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="146"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="150"/>
         <source>Delete image file &quot;%1&quot;?
 This cannot be undone.</source>
         <translation>Xóa tệp hình ảnh &quot;%1&quot;?
 Hành động này không thể hoàn tác.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="165"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="169"/>
         <source>Copy Image To</source>
         <translation>Sao chép hình ảnh đến</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="200"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="204"/>
         <source>Move Image To</source>
         <translation>Di chuyển hình ảnh đến</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="227"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="231"/>
         <location filename="../src/app/MainWindowMenus.cpp" line="238"/>
         <location filename="../src/app/MainWindowMenus.cpp" line="264"/>
         <source>Upload Image</source>
         <translation>Tải lên hình ảnh</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="228"/>
         <location filename="../src/app/MainWindowActionBinder.cpp" line="232"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="236"/>
         <source>Image upload is not yet configured.
 Set up an image uploader in Preferences → Images.</source>
         <translation>Tải lên hình ảnh chưa được cấu hình.
 Thiết lập trình tải lên trong Tùy chọn → Hình ảnh.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="231"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="235"/>
         <source>Upload All Images</source>
         <translation>Tải lên tất cả hình ảnh</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="290"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="294"/>
         <source>Copy All Images To</source>
         <translation>Sao chép tất cả hình ảnh đến</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="301"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="305"/>
         <source>Copy All Images</source>
         <translation>Sao chép tất cả hình ảnh</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="302"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="306"/>
         <source>Copied %1 of %2 image(s).</source>
         <translation>Đã sao chép %1/%2 hình ảnh.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="310"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="314"/>
         <source>Move All Images To</source>
         <translation>Di chuyển tất cả hình ảnh đến</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="361"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="365"/>
         <source>Move All Images</source>
         <translation>Di chuyển tất cả hình ảnh</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="362"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="366"/>
         <source>Moved %1 image(s).</source>
         <translation>Đã di chuyển %1 hình ảnh.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="415"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="419"/>
         <source>Code Language</source>
         <translation>Ngôn ngữ mã</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="415"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="419"/>
         <source>Language:</source>
         <translation>Ngôn ngữ:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="425"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="429"/>
         <source>HTML Source</source>
         <translation>Nguồn HTML</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="425"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="429"/>
         <source>HTML:</source>
         <translation>HTML:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="435"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="439"/>
         <source>Math TeX</source>
         <translation>TeX toán học</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="435"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="439"/>
         <source>TeX:</source>
         <translation>TeX:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="523"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="530"/>
         <source>About Muffin</source>
         <translation>Giới thiệu Muffin</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="524"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="531"/>
         <source>Muffin %1
 
 A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
@@ -1559,6 +1559,47 @@ Hành động này không thể hoàn tác.</translation>
         <location filename="../src/app/MainWindowMenus.cpp" line="168"/>
         <source>Find Previous</source>
         <translation>Tìm trước</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="178"/>
+        <source>Update Available</source>
+        <translation>Có bản cập nhật mới</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="179"/>
+        <source>A new version of Muffin (%1) is available.
+
+Would you like to open the download page?</source>
+        <translation>Có phiên bản Muffin mới (%1).
+
+Bạn có muốn mở trang tải xuống không?</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="186"/>
+        <source>Muffin %1 is available. Use Help &gt; Check for Updates to download.</source>
+        <translation>Muffin %1 đã có sẵn. Sử dụng Trợ giúp &gt; Kiểm tra cập nhật để tải xuống.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="193"/>
+        <source>Up to Date</source>
+        <translation>Đã cập nhật</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="194"/>
+        <source>You are running the latest version of Muffin.</source>
+        <translation>Bạn đang sử dụng phiên bản mới nhất của Muffin.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="200"/>
+        <source>Update Check Failed</source>
+        <translation>Kiểm tra cập nhật thất bại</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="201"/>
+        <source>Could not check for updates:
+%1</source>
+        <translation>Không thể kiểm tra cập nhật:
+%1</translation>
     </message>
 </context>
 <context>
@@ -1998,49 +2039,83 @@ Hành động này không thể hoàn tác.</translation>
 <context>
     <name>muffin::PrefsGeneralPage</name>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="96"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="88"/>
+        <source>Checking...</source>
+        <translation>Đang kiểm tra...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="94"/>
+        <source>Update Available</source>
+        <translation>Có bản cập nhật mới</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="95"/>
+        <source>A new version of Muffin (%1) is available.</source>
+        <translation>Có phiên bản Muffin mới (%1).</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="101"/>
+        <source>Up to Date</source>
+        <translation>Đã cập nhật</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="102"/>
+        <source>You are running the latest version of Muffin.</source>
+        <translation>Bạn đang sử dụng phiên bản mới nhất của Muffin.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="108"/>
+        <source>Update Check Failed</source>
+        <translation>Kiểm tra cập nhật thất bại</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="109"/>
+        <source>Could not check for updates:
+%1</source>
+        <translation>Không thể kiểm tra cập nhật:
+%1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="120"/>
         <source>Language</source>
         <translation>Ngôn ngữ</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="97"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="121"/>
         <source>Update</source>
         <translation>Cập nhật</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="98"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="122"/>
         <source>Check for Updates</source>
         <translation>Kiểm tra cập nhật</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="99"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="123"/>
         <source>Automatically check for updates</source>
         <translation>Tự động kiểm tra cập nhật</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="100"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="124"/>
         <source>Advanced</source>
         <translation>Nâng cao</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="101"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="125"/>
         <source>Enable debug mode</source>
         <translation>Bật chế độ gỡ lỗi</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="102"/>
         <source>Send anonymous usage data</source>
-        <translation>Gửi dữ liệu sử dụng ẩn danh</translation>
+        <translation type="vanished">Gửi dữ liệu sử dụng ẩn danh</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="103"/>
         <source>Open Advanced Settings</source>
-        <translation>Mở cài đặt nâng cao</translation>
+        <translation type="vanished">Mở cài đặt nâng cao</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="104"/>
         <source>Reset Advanced Settings</source>
-        <translation>Đặt lại cài đặt nâng cao</translation>
+        <translation type="vanished">Đặt lại cài đặt nâng cao</translation>
     </message>
 </context>
 <context>

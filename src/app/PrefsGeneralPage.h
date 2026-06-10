@@ -27,9 +27,6 @@ private:
   QCheckBox* autoUpdateCheck_ = nullptr;
   QLabel* advancedLabel_ = nullptr;
   QCheckBox* debugModeCheck_ = nullptr;
-  QCheckBox* telemetryCheck_ = nullptr;
-  QPushButton* openAdvancedButton_ = nullptr;
-  QPushButton* resetAdvancedButton_ = nullptr;
 };
 
 }  // namespace muffin

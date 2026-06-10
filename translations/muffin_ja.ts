@@ -230,7 +230,7 @@
 <context>
     <name>muffin::BlockLayoutBuilder</name>
     <message>
-        <location filename="../src/render/BlockLayoutBuilder.cpp" line="209"/>
+        <location filename="../src/render/BlockLayoutBuilder.cpp" line="208"/>
         <source>Start writing...</source>
         <translation>書き始める...</translation>
     </message>
@@ -389,7 +389,7 @@
         <translation type="vanished">解析 %1 ms</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="323"/>
+        <location filename="../src/app/MainWindow.cpp" line="325"/>
         <source>Open Folder</source>
         <translation>フォルダーを開く</translation>
     </message>
@@ -818,7 +818,7 @@
         <translation>取り消し線</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="224"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="225"/>
         <source>Comment</source>
         <translation>コメント</translation>
     </message>
@@ -1232,114 +1232,114 @@
         <translation>について</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="145"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="149"/>
         <source>Delete Image</source>
         <translation>画像を削除</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="146"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="150"/>
         <source>Delete image file &quot;%1&quot;?
 This cannot be undone.</source>
         <translation>画像ファイル「%1」を削除しますか？
 この操作は元に戻せません。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="165"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="169"/>
         <source>Copy Image To</source>
         <translation>画像をコピー先</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="200"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="204"/>
         <source>Move Image To</source>
         <translation>画像を移動先</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="227"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="231"/>
         <location filename="../src/app/MainWindowMenus.cpp" line="238"/>
         <location filename="../src/app/MainWindowMenus.cpp" line="264"/>
         <source>Upload Image</source>
         <translation>画像をアップロード</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="228"/>
         <location filename="../src/app/MainWindowActionBinder.cpp" line="232"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="236"/>
         <source>Image upload is not yet configured.
 Set up an image uploader in Preferences → Images.</source>
         <translation>画像のアップロードがまだ設定されていません。
 環境設定 → 画像でアップローダーを設定してください。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="231"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="235"/>
         <source>Upload All Images</source>
         <translation>すべての画像をアップロード</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="290"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="294"/>
         <source>Copy All Images To</source>
         <translation>すべての画像をコピー先</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="301"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="305"/>
         <source>Copy All Images</source>
         <translation>すべての画像をコピー</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="302"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="306"/>
         <source>Copied %1 of %2 image(s).</source>
         <translation>%2 個中 %1 個の画像をコピーしました。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="310"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="314"/>
         <source>Move All Images To</source>
         <translation>すべての画像を移動先</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="361"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="365"/>
         <source>Move All Images</source>
         <translation>すべての画像を移動</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="362"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="366"/>
         <source>Moved %1 image(s).</source>
         <translation>%1 個の画像を移動しました。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="415"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="419"/>
         <source>Code Language</source>
         <translation>コード言語</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="415"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="419"/>
         <source>Language:</source>
         <translation>言語:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="425"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="429"/>
         <source>HTML Source</source>
         <translation>HTML ソース</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="425"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="429"/>
         <source>HTML:</source>
         <translation>HTML:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="435"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="439"/>
         <source>Math TeX</source>
         <translation>数式 TeX</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="435"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="439"/>
         <source>TeX:</source>
         <translation>TeX:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="523"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="530"/>
         <source>About Muffin</source>
         <translation>Muffin について</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="524"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="531"/>
         <source>Muffin %1
 
 A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
@@ -1559,6 +1559,47 @@ This action cannot be undone.</source>
         <location filename="../src/app/MainWindowMenus.cpp" line="168"/>
         <source>Find Previous</source>
         <translation>前を検索</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="178"/>
+        <source>Update Available</source>
+        <translation>アップデートがあります</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="179"/>
+        <source>A new version of Muffin (%1) is available.
+
+Would you like to open the download page?</source>
+        <translation>Muffin の新しいバージョン (%1) が利用可能です。
+
+ダウンロードページを開きますか？</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="186"/>
+        <source>Muffin %1 is available. Use Help &gt; Check for Updates to download.</source>
+        <translation>Muffin %1 が利用可能です。ヘルプ &gt; アップデートを確認 からダウンロードしてください。</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="193"/>
+        <source>Up to Date</source>
+        <translation>最新です</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="194"/>
+        <source>You are running the latest version of Muffin.</source>
+        <translation>Muffin の最新バージョンを実行しています。</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="200"/>
+        <source>Update Check Failed</source>
+        <translation>アップデートの確認に失敗</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="201"/>
+        <source>Could not check for updates:
+%1</source>
+        <translation>アップデートを確認できませんでした：
+%1</translation>
     </message>
 </context>
 <context>
@@ -1998,49 +2039,83 @@ This action cannot be undone.</source>
 <context>
     <name>muffin::PrefsGeneralPage</name>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="96"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="88"/>
+        <source>Checking...</source>
+        <translation>確認中...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="94"/>
+        <source>Update Available</source>
+        <translation>アップデートがあります</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="95"/>
+        <source>A new version of Muffin (%1) is available.</source>
+        <translation>Muffin の新しいバージョン (%1) が利用可能です。</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="101"/>
+        <source>Up to Date</source>
+        <translation>最新です</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="102"/>
+        <source>You are running the latest version of Muffin.</source>
+        <translation>Muffin の最新バージョンを実行しています。</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="108"/>
+        <source>Update Check Failed</source>
+        <translation>アップデートの確認に失敗</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="109"/>
+        <source>Could not check for updates:
+%1</source>
+        <translation>アップデートを確認できませんでした：
+%1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="120"/>
         <source>Language</source>
         <translation>言語</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="97"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="121"/>
         <source>Update</source>
         <translation>アップデート</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="98"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="122"/>
         <source>Check for Updates</source>
         <translation>アップデートを確認</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="99"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="123"/>
         <source>Automatically check for updates</source>
         <translation>アップデートを自動的に確認</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="100"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="124"/>
         <source>Advanced</source>
         <translation>詳細</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="101"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="125"/>
         <source>Enable debug mode</source>
         <translation>デバッグモードを有効にする</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="102"/>
         <source>Send anonymous usage data</source>
-        <translation>匿名の使用状況データを送信</translation>
+        <translation type="vanished">匿名の使用状況データを送信</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="103"/>
         <source>Open Advanced Settings</source>
-        <translation>詳細設定を開く</translation>
+        <translation type="vanished">詳細設定を開く</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="104"/>
         <source>Reset Advanced Settings</source>
-        <translation>詳細設定をリセット</translation>
+        <translation type="vanished">詳細設定をリセット</translation>
     </message>
 </context>
 <context>

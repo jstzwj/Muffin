@@ -5,6 +5,7 @@
 #include "app/RenderEditorBackend.h"
 #include "app/SidebarWidget.h"
 #include "app/SourceEditorBackend.h"
+#include "app/UpdateChecker.h"
 #include "document/OutlineBuilder.h"
 #include "editor/EditorView.h"
 #include "editor/FindBarWidget.h"
@@ -128,6 +129,7 @@ muffin::MainWindow::MainWindow(QWidget* parent)
   setupConnections();
   applyEditorChrome();
   loadAppearanceSettings();
+  muffin::UpdateChecker::instance().maybeAutoCheck();
 }
 
 bool muffin::MainWindow::openFile(QString path) {

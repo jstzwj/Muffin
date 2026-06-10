@@ -3,12 +3,16 @@
 #include "app/LanguageManager.h"
 #include "app/MainWindow.h"
 #include "app/MainWindowActionBinder.h"
+#include "app/UpdateChecker.h"
 #include "app/SidebarWidget.h"
 #include "editor/EditorView.h"
 #include "editor/FindBarWidget.h"
 #include "editor/SourceEditorWidget.h"
 
 #include <QAction>
+#include <QDesktopServices>
+#include <QMessageBox>
+#include <QStatusBar>
 #include <QElapsedTimer>
 #include <QLoggingCategory>
 #include <QMenu>
@@ -164,6 +168,37 @@ void muffin::MainWindowSignalBinder::connectApplicationSignals(MainWindow& windo
     window.retranslateUi();
     if (window.sidebar_) {
       window.sidebar_->retranslateUi();
+    }
+  });
+
+  auto& updateChecker = muffin::UpdateChecker::instance();
+  QObject::connect(&updateChecker, &muffin::UpdateChecker::updateAvailable, &window, [&window](const QString& version, const QString& url) {
+    if (muffin::UpdateChecker::instance().isUserInitiated()) {
+      const int result = QMessageBox::information(&window,
+          muffin::MainWindow::tr("Update Available"),
+          muffin::MainWindow::tr("A new version of Muffin (%1) is available.\n\nWould you like to open the download page?").arg(version),
+          QMessageBox::Yes | QMessageBox::No);
+      if (result == QMessageBox::Yes) {
+        QDesktopServices::openUrl(QUrl(url));
+      }
+    } else if (window.statusBar() && window.statusBar()->isVisible()) {
+      window.statusBar()->showMessage(
+          muffin::MainWindow::tr("Muffin %1 is available. Use Help > Check for Updates to download.").arg(version),
+          15000);
+    }
+  });
+  QObject::connect(&updateChecker, &muffin::UpdateChecker::upToDate, &window, [&window] {
+    if (muffin::UpdateChecker::instance().isUserInitiated()) {
+      QMessageBox::information(&window,
+          muffin::MainWindow::tr("Up to Date"),
+          muffin::MainWindow::tr("You are running the latest version of Muffin."));
+    }
+  });
+  QObject::connect(&updateChecker, &muffin::UpdateChecker::checkFailed, &window, [&window](const QString& errorMessage) {
+    if (muffin::UpdateChecker::instance().isUserInitiated()) {
+      QMessageBox::warning(&window,
+          muffin::MainWindow::tr("Update Check Failed"),
+          muffin::MainWindow::tr("Could not check for updates:\n%1").arg(errorMessage));
     }
   });
 }

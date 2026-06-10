@@ -230,7 +230,7 @@
 <context>
     <name>muffin::BlockLayoutBuilder</name>
     <message>
-        <location filename="../src/render/BlockLayoutBuilder.cpp" line="209"/>
+        <location filename="../src/render/BlockLayoutBuilder.cpp" line="208"/>
         <source>Start writing...</source>
         <translation>Zacznij pisać...</translation>
     </message>
@@ -389,7 +389,7 @@
         <translation type="vanished">Analiza %1 ms</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="323"/>
+        <location filename="../src/app/MainWindow.cpp" line="325"/>
         <source>Open Folder</source>
         <translation>Otwórz folder</translation>
     </message>
@@ -818,7 +818,7 @@
         <translation>Przekreślenie</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="224"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="225"/>
         <source>Comment</source>
         <translation>Komentarz</translation>
     </message>
@@ -1232,114 +1232,114 @@
         <translation>O programie</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="145"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="149"/>
         <source>Delete Image</source>
         <translation>Usuń obraz</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="146"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="150"/>
         <source>Delete image file &quot;%1&quot;?
 This cannot be undone.</source>
         <translation>Usunąć plik obrazu &quot;%1&quot;?
 Ta operacja jest nieodwracalna.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="165"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="169"/>
         <source>Copy Image To</source>
         <translation>Kopiuj obraz do</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="200"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="204"/>
         <source>Move Image To</source>
         <translation>Przenieś obraz do</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="227"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="231"/>
         <location filename="../src/app/MainWindowMenus.cpp" line="238"/>
         <location filename="../src/app/MainWindowMenus.cpp" line="264"/>
         <source>Upload Image</source>
         <translation>Prześlij obraz</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="228"/>
         <location filename="../src/app/MainWindowActionBinder.cpp" line="232"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="236"/>
         <source>Image upload is not yet configured.
 Set up an image uploader in Preferences → Images.</source>
         <translation>Przesyłanie obrazów nie jest jeszcze skonfigurowane.
 Skonfiguruj przesyłanie w Preferencje → Obrazy.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="231"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="235"/>
         <source>Upload All Images</source>
         <translation>Prześlij wszystkie obrazy</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="290"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="294"/>
         <source>Copy All Images To</source>
         <translation>Kopiuj wszystkie obrazy do</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="301"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="305"/>
         <source>Copy All Images</source>
         <translation>Kopiuj wszystkie obrazy</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="302"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="306"/>
         <source>Copied %1 of %2 image(s).</source>
         <translation>Skopiowano %1 z %2 obrazów.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="310"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="314"/>
         <source>Move All Images To</source>
         <translation>Przenieś wszystkie obrazy do</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="361"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="365"/>
         <source>Move All Images</source>
         <translation>Przenieś wszystkie obrazy</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="362"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="366"/>
         <source>Moved %1 image(s).</source>
         <translation>Przeniesiono %1 obrazów.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="415"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="419"/>
         <source>Code Language</source>
         <translation>Język kodu</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="415"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="419"/>
         <source>Language:</source>
         <translation>Język:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="425"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="429"/>
         <source>HTML Source</source>
         <translation>Źródło HTML</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="425"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="429"/>
         <source>HTML:</source>
         <translation>HTML:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="435"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="439"/>
         <source>Math TeX</source>
         <translation>Matematyka TeX</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="435"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="439"/>
         <source>TeX:</source>
         <translation>TeX:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="523"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="530"/>
         <source>About Muffin</source>
         <translation>O Muffin</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActionBinder.cpp" line="524"/>
+        <location filename="../src/app/MainWindowActionBinder.cpp" line="531"/>
         <source>Muffin %1
 
 A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
@@ -1559,6 +1559,47 @@ Ta operacja jest nieodwracalna.</translation>
         <location filename="../src/app/MainWindowMenus.cpp" line="168"/>
         <source>Find Previous</source>
         <translation>Znajdź poprzedni</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="178"/>
+        <source>Update Available</source>
+        <translation>Dostępna aktualizacja</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="179"/>
+        <source>A new version of Muffin (%1) is available.
+
+Would you like to open the download page?</source>
+        <translation>Dostępna jest nowa wersja Muffin (%1).
+
+Czy chcesz otworzyć stronę pobierania?</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="186"/>
+        <source>Muffin %1 is available. Use Help &gt; Check for Updates to download.</source>
+        <translation>Muffin %1 jest dostępny. Użyj Pomoc &gt; Sprawdź aktualizacje, aby pobrać.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="193"/>
+        <source>Up to Date</source>
+        <translation>Wersja aktualna</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="194"/>
+        <source>You are running the latest version of Muffin.</source>
+        <translation>Korzystasz z najnowszej wersji Muffin.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="200"/>
+        <source>Update Check Failed</source>
+        <translation>Nie udało się sprawdzić aktualizacji</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="201"/>
+        <source>Could not check for updates:
+%1</source>
+        <translation>Nie można sprawdzić aktualizacji:
+%1</translation>
     </message>
 </context>
 <context>
@@ -1998,49 +2039,83 @@ Ta operacja jest nieodwracalna.</translation>
 <context>
     <name>muffin::PrefsGeneralPage</name>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="96"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="88"/>
+        <source>Checking...</source>
+        <translation>Sprawdzanie...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="94"/>
+        <source>Update Available</source>
+        <translation>Dostępna aktualizacja</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="95"/>
+        <source>A new version of Muffin (%1) is available.</source>
+        <translation>Dostępna jest nowa wersja Muffin (%1).</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="101"/>
+        <source>Up to Date</source>
+        <translation>Wersja aktualna</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="102"/>
+        <source>You are running the latest version of Muffin.</source>
+        <translation>Korzystasz z najnowszej wersji Muffin.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="108"/>
+        <source>Update Check Failed</source>
+        <translation>Nie udało się sprawdzić aktualizacji</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="109"/>
+        <source>Could not check for updates:
+%1</source>
+        <translation>Nie można sprawdzić aktualizacji:
+%1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="120"/>
         <source>Language</source>
         <translation>Język</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="97"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="121"/>
         <source>Update</source>
         <translation>Aktualizacja</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="98"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="122"/>
         <source>Check for Updates</source>
         <translation>Sprawdź aktualizacje</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="99"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="123"/>
         <source>Automatically check for updates</source>
         <translation>Automatycznie sprawdzaj aktualizacje</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="100"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="124"/>
         <source>Advanced</source>
         <translation>Zaawansowane</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="101"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="125"/>
         <source>Enable debug mode</source>
         <translation>Włącz tryb debugowania</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="102"/>
         <source>Send anonymous usage data</source>
-        <translation>Wysyłaj anonimowe dane użytkowania</translation>
+        <translation type="vanished">Wysyłaj anonimowe dane użytkowania</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="103"/>
         <source>Open Advanced Settings</source>
-        <translation>Otwórz ustawienia zaawansowane</translation>
+        <translation type="vanished">Otwórz ustawienia zaawansowane</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="104"/>
         <source>Reset Advanced Settings</source>
-        <translation>Resetuj ustawienia zaawansowane</translation>
+        <translation type="vanished">Resetuj ustawienia zaawansowane</translation>
     </message>
 </context>
 <context>

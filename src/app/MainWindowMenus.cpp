@@ -368,7 +368,7 @@ void muffin::MainWindow::setupHelpMenu() {
   addAction(help, QStringLiteral("help.changelog"), tr("Changelog"));
   addAction(help, QStringLiteral("help.website"), tr("Official Website"));
   addAction(help, QStringLiteral("help.feedback"), tr("Feedback"));
-  addAction(help, QStringLiteral("help.update"), tr("Check for Updates..."), {}, false);
+  addAction(help, QStringLiteral("help.update"), tr("Check for Updates..."));
   help->addSeparator();
   addAction(help, QStringLiteral("help.about"), tr("About"));
 }

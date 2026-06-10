@@ -1,11 +1,13 @@
 #include "app/PrefsGeneralPage.h"
 
 #include "app/LanguageManager.h"
+#include "app/UpdateChecker.h"
 
 #include <QCheckBox>
 #include <QComboBox>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QVBoxLayout>
 
@@ -60,20 +62,9 @@ muffin::PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(pa
   advancedLayout->setSpacing(12);
   advancedLabel_ = makeSectionLabel(advancedCard);
   debugModeCheck_ = new QCheckBox(advancedCard);
-  telemetryCheck_ = new QCheckBox(advancedCard);
-  telemetryCheck_->setChecked(true);
-  auto* advancedButtons = new QHBoxLayout();
-  advancedButtons->setSpacing(10);
-  openAdvancedButton_ = makeButton(advancedCard);
-  resetAdvancedButton_ = makeButton(advancedCard);
-  advancedButtons->addWidget(openAdvancedButton_);
-  advancedButtons->addWidget(resetAdvancedButton_);
-  advancedButtons->addStretch(1);
   advancedLayout->addWidget(advancedLabel_);
   advancedLayout->addSpacing(2);
   advancedLayout->addWidget(debugModeCheck_);
-  advancedLayout->addWidget(telemetryCheck_);
-  advancedLayout->addLayout(advancedButtons);
   cardColumn->addWidget(advancedCard);
 
   layout->addStretch(1);
@@ -90,6 +81,39 @@ muffin::PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(pa
     populateLanguages();
     retranslateUi();
   });
+
+  // --- Update check button ---
+  connect(checkUpdateButton_, &QPushButton::clicked, this, [this] {
+    checkUpdateButton_->setEnabled(false);
+    checkUpdateButton_->setText(tr("Checking..."));
+    auto& checker = muffin::UpdateChecker::instance();
+    connect(&checker, &muffin::UpdateChecker::updateAvailable, this,
+        [this](const QString& version, const QString& url) {
+          checkUpdateButton_->setEnabled(true);
+          retranslateUi();
+          QMessageBox::information(window(), tr("Update Available"),
+              tr("A new version of Muffin (%1) is available.").arg(version));
+        }, Qt::SingleShotConnection);
+    connect(&checker, &muffin::UpdateChecker::upToDate, this,
+        [this]() {
+          checkUpdateButton_->setEnabled(true);
+          retranslateUi();
+          QMessageBox::information(window(), tr("Up to Date"),
+              tr("You are running the latest version of Muffin."));
+        }, Qt::SingleShotConnection);
+    connect(&checker, &muffin::UpdateChecker::checkFailed, this,
+        [this](const QString& errorMessage) {
+          checkUpdateButton_->setEnabled(true);
+          retranslateUi();
+          QMessageBox::warning(window(), tr("Update Check Failed"),
+              tr("Could not check for updates:\n%1").arg(errorMessage));
+        }, Qt::SingleShotConnection);
+    checker.checkForUpdates();
+  });
+
+  // --- Auto-update checkbox ---
+  wireBoolSetting(autoUpdateCheck_, QStringLiteral("update/autoCheck"));
+  loadCheck(autoUpdateCheck_, QStringLiteral("update/autoCheck"), true);
 }
 
 void muffin::PrefsGeneralPage::retranslateUi() {
@@ -99,9 +123,6 @@ void muffin::PrefsGeneralPage::retranslateUi() {
   autoUpdateCheck_->setText(tr("Automatically check for updates"));
   advancedLabel_->setText(tr("Advanced"));
   debugModeCheck_->setText(tr("Enable debug mode"));
-  telemetryCheck_->setText(tr("Send anonymous usage data"));
-  openAdvancedButton_->setText(tr("Open Advanced Settings"));
-  resetAdvancedButton_->setText(tr("Reset Advanced Settings"));
 }
 
 void muffin::PrefsGeneralPage::populateLanguages() {

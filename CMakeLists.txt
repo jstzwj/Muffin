@@ -110,6 +110,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/MainWindow.cpp
   src/app/MainWindowActionBinder.cpp
   src/app/MainWindowMenus.cpp
+  src/app/MainWindowSignalBinder.cpp
   src/app/MainWindowActions.cpp
   src/app/MainWindowFileOps.cpp
   src/app/MainWindowFind.cpp
@@ -122,6 +123,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/PrefsExportPage.cpp
   src/app/PrefsAppearancePage.cpp
   src/app/PrefsGeneralPage.cpp
+  src/app/UpdateChecker.cpp
   src/app/SidebarWidget.cpp
   src/document/DocumentSession.cpp
   src/editor/SourceEditorWidget.cpp
@@ -406,6 +408,8 @@ add_executable(Muffin
   src/app/MainWindowActions.cpp
   src/app/MainWindowSignalBinder.cpp
   src/app/MainWindowSignalBinder.h
+  src/app/UpdateChecker.cpp
+  src/app/UpdateChecker.h
   src/app/MainWindowFileOps.cpp
   src/app/MainWindowFind.cpp
   src/app/RenderEditorBackend.cpp

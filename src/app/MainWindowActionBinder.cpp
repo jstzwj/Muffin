@@ -1,6 +1,7 @@
 #include "app/MainWindowActionBinder.h"
 
 #include "app/MainWindow.h"
+#include "app/UpdateChecker.h"
 #include "app/SidebarWidget.h"
 #include "document/MarkdownTypes.h"
 #include "editor/FindBarWidget.h"
@@ -519,6 +520,9 @@ void muffin::MainWindowActionBinder::bindCommands(MainWindow& window) {
   });
   window.commands_.bind(QStringLiteral("help.feedback"), [] {
     QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/jstzwj/Muffin/issues")));
+  });
+  window.commands_.bind(QStringLiteral("help.update"), [&window] {
+    muffin::UpdateChecker::instance().checkForUpdates();
   });
   window.commands_.bind(QStringLiteral("help.about"), [&window] {
     QMessageBox::about(
