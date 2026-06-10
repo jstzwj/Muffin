@@ -1,6 +1,7 @@
 #include "html/HtmlLayoutResult.h"
 #include "render/ImageDecoder.h"
 #include "render/ImageLoader.h"
+#include "render/ImagePlaceholder.h"
 
 #include <QFontMetricsF>
 #include <QDir>
@@ -323,34 +324,51 @@ void HtmlLayoutResult::paintHr(QPainter& painter, const HtmlBox& box, const QRec
 
 void HtmlLayoutResult::paintImage(QPainter& painter, const HtmlBox& box, QPointF origin) const {
   if (box.src().isEmpty()) {
-    // Draw placeholder
+    // No src — draw placeholder with icon
     const auto& geo = box.geometry();
+    const qreal w = geo.width > 0 ? geo.width : 100;
+    const qreal h = geo.height > 0 ? geo.height : 80;
     painter.save();
     painter.setPen(QColor(204, 204, 204));
     painter.setBrush(QColor(248, 248, 248));
-    const qreal w = geo.width > 0 ? geo.width : 100;
-    const qreal h = geo.height > 0 ? geo.height : 80;
     painter.drawRect(QRectF(origin, QSizeF(w, h)));
-    painter.setPen(QColor(150, 150, 150));
-    painter.drawText(QRectF(origin, QSizeF(w, h)), Qt::AlignCenter,
-                     box.alt().isEmpty() ? QStringLiteral("[image]") : box.alt());
+    // Center a placeholder icon inside the box
+    constexpr qreal kIconSize = 24.0;
+    const QImage icon = image_placeholder::loading(QSizeF(kIconSize, kIconSize));
+    if (!icon.isNull()) {
+      const qreal ix = origin.x() + (w - kIconSize) / 2.0;
+      const qreal iy = origin.y() + (h - kIconSize) / 2.0;
+      painter.drawImage(QRectF(ix, iy, kIconSize, kIconSize), icon);
+    } else {
+      painter.setPen(QColor(150, 150, 150));
+      painter.drawText(QRectF(origin, QSizeF(w, h)), Qt::AlignCenter,
+                       box.alt().isEmpty() ? QStringLiteral("[image]") : box.alt());
+    }
     painter.restore();
     return;
   }
 
   const QImage& image = cachedImage(box.src());
   if (image.isNull()) {
-    // Draw broken image placeholder
+    // Failed to load — draw broken-image icon inside the box
     const auto& geo = box.geometry();
+    const qreal w = geo.width > 0 ? geo.width : 100;
+    const qreal h = geo.height > 0 ? geo.height : 80;
     painter.save();
     painter.setPen(QColor(204, 204, 204));
     painter.setBrush(QColor(248, 248, 248));
-    const qreal w = geo.width > 0 ? geo.width : 100;
-    const qreal h = geo.height > 0 ? geo.height : 80;
     painter.drawRect(QRectF(origin, QSizeF(w, h)));
-    painter.setPen(QColor(200, 50, 50));
-    painter.drawText(QRectF(origin, QSizeF(w, h)), Qt::AlignCenter,
-                     box.alt().isEmpty() ? QStringLiteral("[broken image]") : box.alt());
+    constexpr qreal kIconSize = 24.0;
+    const QImage icon = image_placeholder::broken(QSizeF(kIconSize, kIconSize));
+    if (!icon.isNull()) {
+      const qreal ix = origin.x() + (w - kIconSize) / 2.0;
+      const qreal iy = origin.y() + (h - kIconSize) / 2.0;
+      painter.drawImage(QRectF(ix, iy, kIconSize, kIconSize), icon);
+    } else {
+      painter.setPen(QColor(200, 50, 50));
+      painter.drawText(QRectF(origin, QSizeF(w, h)), Qt::AlignCenter,
+                       box.alt().isEmpty() ? QStringLiteral("[broken image]") : box.alt());
+    }
     painter.restore();
     return;
   }

@@ -155,7 +155,6 @@ private:
   FindBarWidget* findBar_ = nullptr;
   QToolButton* sidebarButton_ = nullptr;
   QToolButton* sourceModeButton_ = nullptr;
-  QLabel* parseLabel_ = nullptr;
   QLabel* cursorLabel_ = nullptr;
   QLabel* wordsLabel_ = nullptr;
   QTimer* wordCountTimer_ = nullptr;

@@ -2,6 +2,7 @@
 
 #include "render/ImageDecoder.h"
 #include "render/ImageLoader.h"
+#include "render/ImagePlaceholder.h"
 
 #include <QPainter>
 #include <QPen>
@@ -660,7 +661,36 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
     }
 
     if (image.isNull()) {
-      // Failed to load — keep the alt text as-is
+      // Image not yet available — show a placeholder icon inline.
+      const bool isLoading = isRemote && ImageLoader::instance().isPending(srcUrl);
+      constexpr qreal kPlaceholderSize = 24.0;
+      QImage placeholder = isLoading
+          ? image_placeholder::loading(QSizeF(kPlaceholderSize, kPlaceholderSize))
+          : image_placeholder::broken(QSizeF(kPlaceholderSize, kPlaceholderSize));
+
+      if (!placeholder.isNull() && collapsed) {
+        const qsizetype displayStart = rebuiltDisplay.size();
+        rebuiltDisplay += kImagePlaceholder;
+
+        ImageAtom atom;
+        atom.displayStart = displayStart;
+        atom.displayEnd = rebuiltDisplay.size();
+        atom.sourceStart = span.sourceStart;
+        atom.sourceEnd = span.sourceEnd;
+        atom.visibleStart = span.visibleStart;
+        atom.visibleEnd = span.visibleEnd;
+        atom.srcUrl = srcUrl;
+        atom.displaySize = QSizeF(kPlaceholderSize, kPlaceholderSize);
+        atom.image = placeholder;
+        atom.loaded = true;
+
+        rebuiltMap.push_back(OffsetMapEntry{atom.displayStart, atom.displayEnd, atom.visibleStart, atom.visibleEnd});
+        rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, atom.displayStart, atom.displayEnd});
+        imageAtoms_.push_back(std::move(atom));
+        continue;
+      }
+
+      // Fallback: keep the alt text as-is (placeholder render failed or cursor is on the image)
       const QString spanText = projectedDisplay.mid(span.displayStart, span.displayEnd - span.displayStart);
       const qsizetype displayStart = rebuiltDisplay.size();
       rebuiltDisplay += spanText;

@@ -225,7 +225,6 @@ void muffin::MainWindow::setupStatusBar() {
   sourceModeButton_->setCheckable(true);
   sourceModeButton_->setAutoRaise(true);
 
-  parseLabel_ = new QLabel(this);
   cursorLabel_ = new QLabel(this);
   wordsLabel_ = new QLabel(this);
   wordCountTimer_ = new QTimer(this);
@@ -235,7 +234,6 @@ void muffin::MainWindow::setupStatusBar() {
 
   statusBar()->addWidget(sidebarButton_);
   statusBar()->addWidget(sourceModeButton_);
-  statusBar()->addPermanentWidget(parseLabel_);
   statusBar()->addPermanentWidget(cursorLabel_);
   statusBar()->addPermanentWidget(wordsLabel_);
 }
@@ -272,7 +270,6 @@ void muffin::MainWindow::updateTitle() {
 }
 
 void muffin::MainWindow::updateStatus() {
-  parseLabel_->setText(tr("Parse %1 ms").arg(session_.lastParseElapsedMs()));
   if (!backend_->isSourceMode() && !renderCursorStatus_.isEmpty()) {
     cursorLabel_->setText(renderCursorStatus_);
   } else {

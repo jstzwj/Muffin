@@ -393,6 +393,7 @@ target_include_directories(MuffinCore
 add_executable(Muffin
   src/translations.qrc
   src/statusbar_icons.qrc
+  src/image_icons.qrc
   src/app/CommandRegistry.cpp
   src/app/CommandRegistry.h
   src/app/EditorBackend.h
@@ -574,6 +575,8 @@ set(MUFFIN_UI_SOURCES
   src/render/ImageDecoder.h
   src/render/ImageLoader.cpp
   src/render/ImageLoader.h
+  src/render/ImagePlaceholder.cpp
+  src/render/ImagePlaceholder.h
   src/render/InlineLayout.cpp
   src/render/InlineLayout.h
   src/render/TreeSitterHighlighter.cpp
