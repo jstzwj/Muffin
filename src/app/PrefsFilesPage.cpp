@@ -10,14 +10,14 @@
 
 muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
-  layout->setContentsMargins(38, 34, 46, 34);
-  layout->setSpacing(22);
+  layout->setContentsMargins(kPageLeftMargin, kPageTopMargin, kPageRightMargin, kPageBottomMargin);
+  layout->setSpacing(18);
 
   auto* cardContainer = new QWidget(this);
-  cardContainer->setMaximumWidth(640);
+  cardContainer->setMaximumWidth(kContentWidth);
   auto* cardColumn = new QVBoxLayout(cardContainer);
   cardColumn->setContentsMargins(0, 0, 0, 0);
-  cardColumn->setSpacing(14);
+  cardColumn->setSpacing(kCardSpacing);
   layout->addWidget(cardContainer);
 
   // --- Card 1: Startup ---
@@ -40,7 +40,7 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
   outlineCard->setObjectName(QStringLiteral("settingsCard"));
   auto* outlineLayout = new QVBoxLayout(outlineCard);
   outlineLayout->setContentsMargins(18, 16, 18, 16);
-  outlineLayout->setSpacing(12);
+  outlineLayout->setSpacing(10);
   outlineLabel_ = makeSectionLabel(outlineCard);
   auto* outlineRow = new QHBoxLayout();
   outlineRow->setSpacing(8);
@@ -74,7 +74,7 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
   saveCard->setObjectName(QStringLiteral("settingsCard"));
   auto* saveLayout = new QVBoxLayout(saveCard);
   saveLayout->setContentsMargins(18, 16, 18, 16);
-  saveLayout->setSpacing(12);
+  saveLayout->setSpacing(10);
   saveLabel_ = makeSectionLabel(saveCard);
   autoSaveCheck_ = new QCheckBox(saveCard);
   autoSaveSwitchCheck_ = new QCheckBox(saveCard);
@@ -91,7 +91,7 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
   recentCard->setObjectName(QStringLiteral("settingsCard"));
   auto* recentLayout = new QVBoxLayout(recentCard);
   recentLayout->setContentsMargins(18, 16, 18, 16);
-  recentLayout->setSpacing(12);
+  recentLayout->setSpacing(10);
   recentLabel_ = makeSectionLabel(recentCard);
   auto* recentCheckRow = new QHBoxLayout();
   recentCheckRow->setSpacing(8);
@@ -113,7 +113,7 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
   dropCard->setObjectName(QStringLiteral("settingsCard"));
   auto* dropLayout = new QVBoxLayout(dropCard);
   dropLayout->setContentsMargins(18, 16, 18, 16);
-  dropLayout->setSpacing(12);
+  dropLayout->setSpacing(10);
   dropLabel_ = makeSectionLabel(dropCard);
 
   auto* dropFolderRow = new QHBoxLayout();
@@ -185,6 +185,7 @@ void muffin::PrefsFilesPage::retranslateUi() {
     startupCombo_->clear();
     startupCombo_->addItem(tr("Open new file"));
     startupCombo_->addItem(tr("Reopen last file"));
+    polishComboBox(startupCombo_);
     startupCombo_->setCurrentIndex(qBound(0, cur, startupCombo_->count() - 1));
     startupCombo_->blockSignals(false);
   }
@@ -200,6 +201,7 @@ void muffin::PrefsFilesPage::retranslateUi() {
     defaultExtCombo_->addItem(QStringLiteral("Markdown (.md)"));
     defaultExtCombo_->addItem(QStringLiteral("Markdown (.markdown)"));
     defaultExtCombo_->addItem(tr("Plain Text (.txt)"));
+    polishComboBox(defaultExtCombo_);
     defaultExtCombo_->setCurrentIndex(qBound(0, cur, defaultExtCombo_->count() - 1));
     defaultExtCombo_->blockSignals(false);
   }
@@ -221,6 +223,7 @@ void muffin::PrefsFilesPage::retranslateUi() {
     dropFolderCombo_->clear();
     dropFolderCombo_->addItem(tr("Open in Muffin"));
     dropFolderCombo_->addItem(tr("Open in File Manager"));
+    polishComboBox(dropFolderCombo_);
     dropFolderCombo_->setCurrentIndex(qBound(0, cur, dropFolderCombo_->count() - 1));
     dropFolderCombo_->blockSignals(false);
   }
@@ -231,6 +234,7 @@ void muffin::PrefsFilesPage::retranslateUi() {
     dropMdCombo_->clear();
     dropMdCombo_->addItem(tr("Open in Muffin"));
     dropMdCombo_->addItem(tr("Import File"));
+    polishComboBox(dropMdCombo_);
     dropMdCombo_->setCurrentIndex(qBound(0, cur, dropMdCombo_->count() - 1));
     dropMdCombo_->blockSignals(false);
   }
@@ -241,6 +245,7 @@ void muffin::PrefsFilesPage::retranslateUi() {
     dropImportCombo_->clear();
     dropImportCombo_->addItem(tr("Import File"));
     dropImportCombo_->addItem(tr("Open in Muffin"));
+    polishComboBox(dropImportCombo_);
     dropImportCombo_->setCurrentIndex(qBound(0, cur, dropImportCombo_->count() - 1));
     dropImportCombo_->blockSignals(false);
   }

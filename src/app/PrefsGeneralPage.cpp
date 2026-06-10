@@ -13,14 +13,14 @@
 
 muffin::PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
-  layout->setContentsMargins(38, 34, 46, 34);
-  layout->setSpacing(22);
+  layout->setContentsMargins(kPageLeftMargin, kPageTopMargin, kPageRightMargin, kPageBottomMargin);
+  layout->setSpacing(18);
 
   auto* cardContainer = new QWidget(this);
-  cardContainer->setMaximumWidth(640);
+  cardContainer->setMaximumWidth(kContentWidth);
   auto* cardColumn = new QVBoxLayout(cardContainer);
   cardColumn->setContentsMargins(0, 0, 0, 0);
-  cardColumn->setSpacing(14);
+  cardColumn->setSpacing(kCardSpacing);
   layout->addWidget(cardContainer);
 
   // --- Card 1: Language ---
@@ -44,7 +44,7 @@ muffin::PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(pa
   updateCard->setObjectName(QStringLiteral("settingsCard"));
   auto* updateLayout = new QVBoxLayout(updateCard);
   updateLayout->setContentsMargins(18, 16, 18, 16);
-  updateLayout->setSpacing(12);
+  updateLayout->setSpacing(10);
   updateLabel_ = makeSectionLabel(updateCard);
   checkUpdateButton_ = makeButton(updateCard);
   autoUpdateCheck_ = new QCheckBox(updateCard);
@@ -59,7 +59,7 @@ muffin::PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(pa
   advancedCard->setObjectName(QStringLiteral("settingsCard"));
   auto* advancedLayout = new QVBoxLayout(advancedCard);
   advancedLayout->setContentsMargins(18, 16, 18, 16);
-  advancedLayout->setSpacing(12);
+  advancedLayout->setSpacing(10);
   advancedLabel_ = makeSectionLabel(advancedCard);
   debugModeCheck_ = new QCheckBox(advancedCard);
   advancedLayout->addWidget(advancedLabel_);
@@ -145,6 +145,7 @@ void muffin::PrefsGeneralPage::populateLanguages() {
     }
   }
 
+  polishComboBox(languageCombo_, qMin(8, qMax(3, languageCombo_->count())));
   languageCombo_->setCurrentIndex(currentIndex);
   languageCombo_->blockSignals(false);
 }

@@ -33,7 +33,7 @@ signals:
 
 private:
   static QString themeDisplayName(const QString& name);
-  static void addNumberItems(QComboBox* combo, const QVector<int>& values, const QString& suffix);
+  void addNumberItems(QComboBox* combo, const QVector<int>& values, const QString& suffix) const;
   static void setNumberComboValue(QComboBox* combo, int value);
 
   QLabel* themeLabel_ = nullptr;

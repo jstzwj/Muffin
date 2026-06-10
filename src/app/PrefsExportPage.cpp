@@ -20,38 +20,39 @@ muffin::PrefsExportPage::PrefsExportPage(QWidget* parent) : PreferencesPage(pare
   auto* leftWidget = new QWidget(this);
   leftWidget->setFixedWidth(200);
   leftWidget->setStyleSheet(QStringLiteral(
-      "background:#f8f8f8; border-right:1px solid #e0e0e0;"));
+      "background:#ffffff; border-right:1px solid #e4e7ec;"));
   auto* leftLayout = new QVBoxLayout(leftWidget);
   leftLayout->setContentsMargins(12, 18, 12, 12);
   leftLayout->setSpacing(6);
 
   auto* sectionLabel = new QLabel(leftWidget);
-  sectionLabel->setStyleSheet(QStringLiteral("font-weight:600; color:#555555; font-size:12px;"));
+  sectionLabel->setStyleSheet(QStringLiteral("font-weight:600; color:#5c5c5c; font-size:12px;"));
   leftLayout->addWidget(sectionLabel);
 
   formatList_ = new QListWidget(leftWidget);
   formatList_->setFocusPolicy(Qt::NoFocus);
   formatList_->setStyleSheet(QStringLiteral(
       "QListWidget { border:0; outline:0; background:transparent; }"
-      "QListWidget::item { min-height:28px; padding-left:8px; color:#222222; border-radius:4px; }"
-      "QListWidget::item:hover { background:#eeeeee; }"
-      "QListWidget::item:selected { background:#e0e0e0; color:#111111; }"));
+      "QListWidget::item { min-height:30px; padding-left:10px; color:#57606a; border-radius:6px; margin:1px 2px; }"
+      "QListWidget::item:hover { background:#f3f6fa; color:#24292f; }"
+      "QListWidget::item:selected { background:#edf5ff; color:#0969da; border-left:3px solid #0969da; }"));
   leftLayout->addWidget(formatList_, 1);
 
   rootLayout->addWidget(leftWidget);
 
   // Right: settings card
   auto* rightWidget = new QWidget(this);
-  rightWidget->setStyleSheet(QStringLiteral("background:#ffffff;"));
+  rightWidget->setStyleSheet(QStringLiteral("background:transparent;"));
   auto* rightLayout = new QVBoxLayout(rightWidget);
-  rightLayout->setContentsMargins(38, 34, 46, 34);
-  rightLayout->setSpacing(22);
+  rightLayout->setContentsMargins(kPageLeftMargin, kPageTopMargin, kPageRightMargin, kPageBottomMargin);
+  rightLayout->setSpacing(18);
 
   auto* card = new QWidget(rightWidget);
   card->setObjectName(QStringLiteral("settingsCard"));
   auto* cardLayout = new QVBoxLayout(card);
   cardLayout->setContentsMargins(18, 16, 18, 16);
-  cardLayout->setSpacing(16);
+  cardLayout->setSpacing(14);
+  card->setMaximumWidth(kContentWidth);
 
   // Default export folder
   defaultFolderLabel_ = makeSectionLabel(card);
@@ -159,6 +160,7 @@ void muffin::PrefsExportPage::retranslateUi() {
     defaultFolderCombo_->addItem(tr("Auto"));
     defaultFolderCombo_->addItem(tr("Same folder as current file"));
     defaultFolderCombo_->addItem(tr("Custom..."));
+    polishComboBox(defaultFolderCombo_);
     defaultFolderCombo_->setCurrentIndex(qBound(0, cur, defaultFolderCombo_->count() - 1));
     defaultFolderCombo_->blockSignals(false);
   }

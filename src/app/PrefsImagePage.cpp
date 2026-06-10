@@ -10,14 +10,14 @@
 
 muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
-  layout->setContentsMargins(38, 34, 46, 34);
-  layout->setSpacing(22);
+  layout->setContentsMargins(kPageLeftMargin, kPageTopMargin, kPageRightMargin, kPageBottomMargin);
+  layout->setSpacing(18);
 
   auto* cardContainer = new QWidget(this);
-  cardContainer->setMaximumWidth(640);
+  cardContainer->setMaximumWidth(kContentWidth);
   auto* cardColumn = new QVBoxLayout(cardContainer);
   cardColumn->setContentsMargins(0, 0, 0, 0);
-  cardColumn->setSpacing(14);
+  cardColumn->setSpacing(kCardSpacing);
   layout->addWidget(cardContainer);
 
   // --- Card 1: When Inserting Images ---
@@ -25,7 +25,7 @@ muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent
   insertCard->setObjectName(QStringLiteral("settingsCard"));
   auto* insertCardLayout = new QVBoxLayout(insertCard);
   insertCardLayout->setContentsMargins(18, 16, 18, 16);
-  insertCardLayout->setSpacing(12);
+  insertCardLayout->setSpacing(10);
 
   auto* insertHeaderRow = new QHBoxLayout();
   insertLabel_ = makeSectionLabel(insertCard);
@@ -56,7 +56,7 @@ muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent
   syntaxCard->setObjectName(QStringLiteral("settingsCard"));
   auto* syntaxLayout = new QVBoxLayout(syntaxCard);
   syntaxLayout->setContentsMargins(18, 16, 18, 16);
-  syntaxLayout->setSpacing(12);
+  syntaxLayout->setSpacing(10);
 
   auto* syntaxHeaderRow = new QHBoxLayout();
   syntaxLabel_ = makeSectionLabel(syntaxCard);
@@ -91,7 +91,7 @@ muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent
   uploadCard->setObjectName(QStringLiteral("settingsCard"));
   auto* uploadCardLayout = new QVBoxLayout(uploadCard);
   uploadCardLayout->setContentsMargins(18, 16, 18, 16);
-  uploadCardLayout->setSpacing(12);
+  uploadCardLayout->setSpacing(10);
 
   auto* uploadHeaderRow = new QHBoxLayout();
   uploadLabel_ = makeSectionLabel(uploadCard);
@@ -153,6 +153,7 @@ void muffin::PrefsImagePage::retranslateUi() {
     insertCombo_->addItem(tr("No special operation"));
     insertCombo_->addItem(tr("Copy to custom folder"));
     insertCombo_->addItem(tr("Upload image"));
+    polishComboBox(insertCombo_);
     insertCombo_->setCurrentIndex(qBound(0, prev, insertCombo_->count() - 1));
     insertCombo_->blockSignals(false);
     // Update "Learn more" label — stored as the 2nd widget in the header row
@@ -178,6 +179,7 @@ void muffin::PrefsImagePage::retranslateUi() {
     uploadServiceCombo_->blockSignals(true);
     uploadServiceCombo_->clear();
     uploadServiceCombo_->addItem(tr("None"));
+    polishComboBox(uploadServiceCombo_);
     uploadServiceCombo_->setCurrentIndex(qBound(0, prev, uploadServiceCombo_->count() - 1));
     uploadServiceCombo_->blockSignals(false);
   }

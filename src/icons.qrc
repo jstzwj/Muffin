@@ -15,4 +15,8 @@
     <file alias="image-placeholder.svg">icons/image/image-placeholder.svg</file>
     <file alias="image-broken.svg">icons/image/image-broken.svg</file>
   </qresource>
+  <qresource prefix="/icons/ui">
+    <file alias="check.svg">icons/ui/check.svg</file>
+    <file alias="radio-dot.svg">icons/ui/radio-dot.svg</file>
+  </qresource>
 </RCC>

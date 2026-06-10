@@ -2,7 +2,6 @@
 
 #include <QCheckBox>
 #include <QComboBox>
-#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
@@ -10,48 +9,73 @@
 
 muffin::PrefsAppearancePage::PrefsAppearancePage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
-  layout->setContentsMargins(38, 34, 46, 34);
-  layout->setSpacing(22);
+  layout->setContentsMargins(kPageLeftMargin, kPageTopMargin, kPageRightMargin, kPageBottomMargin);
+  layout->setSpacing(18);
 
-  auto* content = new QWidget(this);
-  content->setMaximumWidth(620);
-  auto* form = new QFormLayout(content);
-  form->setContentsMargins(0, 0, 0, 0);
-  form->setHorizontalSpacing(28);
-  form->setVerticalSpacing(18);
-  form->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-  form->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
-  layout->addWidget(content);
+  auto* cardContainer = new QWidget(this);
+  cardContainer->setMaximumWidth(kContentWidth);
+  auto* cardColumn = new QVBoxLayout(cardContainer);
+  cardColumn->setContentsMargins(0, 0, 0, 0);
+  cardColumn->setSpacing(kCardSpacing);
+  layout->addWidget(cardContainer);
 
-  themeLabel_ = makeSectionLabel(content);
-  themeCombo_ = new QComboBox(content);
+  // --- Card 1: Theme ---
+  auto* themeCard = makeCard(this);
+  auto* themeLayout = new QHBoxLayout(themeCard);
+  themeLayout->setContentsMargins(18, 16, 18, 16);
+  themeLayout->setSpacing(24);
+  themeLabel_ = makeSectionLabel(themeCard);
+  themeCombo_ = new QComboBox(themeCard);
   themeCombo_->setMinimumWidth(320);
-  form->addRow(themeLabel_, themeCombo_);
+  themeLayout->addWidget(themeLabel_);
+  themeLayout->addStretch(1);
+  themeLayout->addWidget(themeCombo_);
+  cardColumn->addWidget(themeCard);
 
-  zoomLabel_ = makeSectionLabel(content);
-  auto* zoomBox = new QWidget(content);
-  auto* zoomLayout = new QHBoxLayout(zoomBox);
-  zoomLayout->setContentsMargins(0, 0, 0, 0);
-  zoomLayout->setSpacing(10);
-  zoomCombo_ = new QComboBox(zoomBox);
+  // --- Card 2: Zoom ---
+  auto* zoomCard = makeCard(this);
+  auto* zoomCardLayout = new QVBoxLayout(zoomCard);
+  zoomCardLayout->setContentsMargins(18, 16, 18, 16);
+  zoomCardLayout->setSpacing(10);
+  zoomLabel_ = makeSectionLabel(zoomCard);
+  auto* zoomRow = new QHBoxLayout();
+  zoomRow->setSpacing(10);
+  zoomCombo_ = new QComboBox(zoomCard);
   addNumberItems(zoomCombo_, {60, 75, 90, 100, 110, 125, 150, 175, 200}, QStringLiteral("%"));
   zoomCombo_->setMinimumWidth(180);
-  resetZoomButton_ = makeButton(zoomBox);
-  zoomLayout->addWidget(zoomCombo_);
-  zoomLayout->addWidget(resetZoomButton_);
-  zoomLayout->addStretch(1);
-  form->addRow(zoomLabel_, zoomBox);
+  resetZoomButton_ = makeButton(zoomCard);
+  zoomRow->addWidget(zoomCombo_);
+  zoomRow->addWidget(resetZoomButton_);
+  zoomRow->addStretch(1);
+  zoomCardLayout->addWidget(zoomLabel_);
+  zoomCardLayout->addSpacing(2);
+  zoomCardLayout->addLayout(zoomRow);
+  cardColumn->addWidget(zoomCard);
 
-  fontSizeLabel_ = makeSectionLabel(content);
-  fontSizeCombo_ = new QComboBox(content);
+  // --- Card 3: Font Size ---
+  auto* fontSizeCard = makeCard(this);
+  auto* fontSizeLayout = new QHBoxLayout(fontSizeCard);
+  fontSizeLayout->setContentsMargins(18, 16, 18, 16);
+  fontSizeLayout->setSpacing(24);
+  fontSizeLabel_ = makeSectionLabel(fontSizeCard);
+  fontSizeCombo_ = new QComboBox(fontSizeCard);
   addNumberItems(fontSizeCombo_, {12, 14, 15, 16, 18, 20, 22, 24}, QStringLiteral("px"));
   fontSizeCombo_->setMinimumWidth(180);
-  form->addRow(fontSizeLabel_, fontSizeCombo_);
+  fontSizeLayout->addWidget(fontSizeLabel_);
+  fontSizeLayout->addStretch(1);
+  fontSizeLayout->addWidget(fontSizeCombo_);
+  cardColumn->addWidget(fontSizeCard);
 
-  statusBarLabel_ = makeSectionLabel(content);
-  showStatusBarCheck_ = new QCheckBox(content);
+  // --- Card 4: Status Bar ---
+  auto* statusCard = makeCard(this);
+  auto* statusLayout = makeCardLayout(statusCard);
+  statusBarLabel_ = makeSectionLabel(statusCard);
+  showStatusBarCheck_ = new QCheckBox(statusCard);
   showStatusBarCheck_->setChecked(true);
-  form->addRow(statusBarLabel_, showStatusBarCheck_);
+  statusLayout->addWidget(statusBarLabel_);
+  statusLayout->addSpacing(2);
+  statusLayout->addWidget(showStatusBarCheck_);
+  cardColumn->addWidget(statusCard);
 
   layout->addStretch(1);
 
@@ -99,6 +123,7 @@ void muffin::PrefsAppearancePage::setAvailableThemes(const QStringList& themes) 
   for (const QString& theme : themes) {
     themeCombo_->addItem(themeDisplayName(theme), theme);
   }
+  polishComboBox(themeCombo_);
   const int index = themeCombo_->findData(current);
   if (index >= 0) {
     themeCombo_->setCurrentIndex(index);
@@ -148,11 +173,12 @@ QString muffin::PrefsAppearancePage::themeDisplayName(const QString& name) {
   return name;
 }
 
-void muffin::PrefsAppearancePage::addNumberItems(QComboBox* combo, const QVector<int>& values, const QString& suffix) {
+void muffin::PrefsAppearancePage::addNumberItems(QComboBox* combo, const QVector<int>& values, const QString& suffix) const {
   combo->clear();
   for (int value : values) {
     combo->addItem(QStringLiteral("%1%2").arg(value).arg(suffix), value);
   }
+  polishComboBox(combo);
 }
 
 void muffin::PrefsAppearancePage::setNumberComboValue(QComboBox* combo, int value) {

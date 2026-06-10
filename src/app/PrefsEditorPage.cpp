@@ -12,14 +12,14 @@
 
 muffin::PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
-  layout->setContentsMargins(38, 34, 46, 34);
-  layout->setSpacing(22);
+  layout->setContentsMargins(kPageLeftMargin, kPageTopMargin, kPageRightMargin, kPageBottomMargin);
+  layout->setSpacing(18);
 
   auto* cardContainer = new QWidget(this);
-  cardContainer->setMaximumWidth(640);
+  cardContainer->setMaximumWidth(kContentWidth);
   auto* cardColumn = new QVBoxLayout(cardContainer);
   cardColumn->setContentsMargins(0, 0, 0, 0);
-  cardColumn->setSpacing(14);
+  cardColumn->setSpacing(kCardSpacing);
   layout->addWidget(cardContainer);
 
   // --- Card 1: Default Indent ---

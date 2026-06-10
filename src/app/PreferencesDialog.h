@@ -8,6 +8,7 @@ class QCheckBox;
 class QComboBox;
 class QLabel;
 class QListWidget;
+class QScrollArea;
 class QStackedWidget;
 class QWidget;
 
@@ -47,9 +48,11 @@ private:
   void retranslateUi();
   QWidget* makePage(QWidget* parent);
   void addPlaceholderPage();
+  QScrollArea* makeScrollArea();
 
   QListWidget* categoryList_ = nullptr;
   QStackedWidget* contentStack_ = nullptr;
+  QLabel* sidebarTitleLabel_ = nullptr;
   QVector<QLabel*> pageTitleLabels_;
   QVector<QLabel*> placeholderLabels_;
 

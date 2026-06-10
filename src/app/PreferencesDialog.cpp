@@ -23,42 +23,85 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
   resize(1040, 720);
   setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
   setStyleSheet(QStringLiteral(
-      "QDialog { background:#f3f3f3; color:#181818; }"
-      "QWidget#settingsCard { background:#ffffff; border:1px solid #e6e6e6; border-radius:8px; }"
-      "QPushButton { border:1px solid #c8c8c8; border-radius:4px; background:#ffffff; min-height:30px; padding:0 14px; }"
-      "QPushButton:hover { background:#f5f5f5; border-color:#a8a8a8; }"
-      "QCheckBox { spacing:8px; }"
-      "QCheckBox::indicator { width:14px; height:14px; border:1px solid #111111; border-radius:2px; background:#ffffff; }"
-      "QCheckBox::indicator:hover { border-color:#0067c0; }"
-      "QCheckBox::indicator:checked { border:1px solid #111111; background:#0067c0; }"
-      "QCheckBox::indicator:checked:hover { background:#005a9e; }"
-      "QCheckBox::indicator:disabled { border-color:#9a9a9a; background:#eeeeee; }"
-      "QCheckBox::indicator:checked:disabled { border-color:#9a9a9a; background:#b8d8f3; }"
-      "QRadioButton { spacing:8px; }"
-      "QRadioButton::indicator { width:14px; height:14px; border:1px solid #111111; border-radius:7px; background:#ffffff; }"
-      "QRadioButton::indicator:hover { border-color:#0067c0; }"
-      "QRadioButton::indicator:checked { border:1px solid #111111; background:#0067c0; }"
-      "QRadioButton::indicator:checked:hover { background:#005a9e; }"
-      "QComboBox QAbstractItemView QScrollBar:vertical { width:10px; background:#f2f2f2; margin:2px; border:0; border-radius:5px; }"
-      "QComboBox QAbstractItemView QScrollBar::handle:vertical { background:#c8c8c8; min-height:28px; border-radius:5px; }"
-      "QComboBox QAbstractItemView QScrollBar::handle:vertical:hover { background:#a8a8a8; }"
-      "QComboBox QAbstractItemView QScrollBar::add-line:vertical, QComboBox QAbstractItemView QScrollBar::sub-line:vertical { height:0; border:0; background:transparent; }"
+      // Dialog base
+      "QDialog { background:#f6f7f9; color:#1f2328; }"
+      "QWidget#preferencesSidebar { background:#ffffff; border:1px solid #e7eaf0; border-radius:8px; }"
+
+      // Settings card
+      "QWidget#settingsCard { background:#ffffff; border:1px solid #e4e7ec; border-radius:8px; }"
+
+      // QPushButton
+      "QPushButton { border:1px solid #d0d7de; border-radius:6px; background:#ffffff; min-height:32px; padding:0 14px; color:#24292f; }"
+      "QPushButton:hover { background:#f6f8fa; border-color:#afb8c1; }"
+      "QPushButton:pressed { background:#eef1f4; border-color:#8c959f; }"
+      "QPushButton:focus { border-color:#0969da; }"
+      "QPushButton:disabled { background:#f6f8fa; color:#8c959f; border-color:#d8dee4; }"
+
+      // QCheckBox
+      "QCheckBox { spacing:8px; color:#24292f; min-height:24px; }"
+      "QCheckBox:disabled { color:#8c959f; }"
+      "QCheckBox::indicator { width:16px; height:16px; border:1px solid #8c959f; border-radius:4px; background:#ffffff; }"
+      "QCheckBox::indicator:hover { border-color:#0969da; }"
+      "QCheckBox::indicator:checked { border:1px solid #0969da; background:#0969da; image:url(:/icons/ui/check.svg); }"
+      "QCheckBox::indicator:checked:hover { background:#0550ae; border-color:#0550ae; }"
+      "QCheckBox::indicator:disabled { background:#f6f8fa; border-color:#d0d7de; }"
+      "QCheckBox::indicator:checked:disabled { background:#8c959f; border-color:#8c959f; }"
+
+      // QRadioButton
+      "QRadioButton { spacing:8px; color:#24292f; min-height:24px; }"
+      "QRadioButton:disabled { color:#8c959f; }"
+      "QRadioButton::indicator { width:16px; height:16px; border:1px solid #8c959f; border-radius:8px; background:#ffffff; }"
+      "QRadioButton::indicator:hover { border-color:#0969da; }"
+      "QRadioButton::indicator:checked { border:1px solid #0969da; background:#ffffff; image:url(:/icons/ui/radio-dot.svg); }"
+      "QRadioButton::indicator:disabled { background:#f6f8fa; border-color:#d0d7de; }"
+
+      // QComboBox
+      "QComboBox { border:1px solid #d0d7de; border-radius:6px; background:#ffffff; padding:5px 30px 5px 10px; min-height:26px; color:#24292f; }"
+      "QComboBox:hover { border-color:#afb8c1; }"
+      "QComboBox:focus, QComboBox:on { border-color:#0969da; }"
+      "QComboBox::drop-down { subcontrol-origin:padding; subcontrol-position:center right; width:28px; border:0; }"
+      "QComboBox QAbstractItemView { border:1px solid #d0d7de; border-radius:6px; background:#ffffff; color:#24292f; selection-background-color:#edf5ff; selection-color:#0969da; outline:0; padding:4px; }"
+      "QComboBox QAbstractItemView::item { min-height:28px; padding:4px 10px; background:#ffffff; color:#24292f; }"
+      "QComboBox QAbstractItemView::item:hover { background:#f3f6fa; color:#24292f; }"
+      "QComboBox QAbstractItemView::item:selected { background:#edf5ff; color:#0969da; }"
+
+      // QLineEdit
+      "QLineEdit { border:1px solid #d0d7de; border-radius:6px; background:#ffffff; padding:5px 10px; min-height:26px; color:#24292f; }"
+      "QLineEdit:hover { border-color:#afb8c1; }"
+      "QLineEdit:focus { border-color:#0969da; }"
+      "QLineEdit:disabled { background:#f6f8fa; color:#8c959f; }"
+
+      // QComboBox dropdown scrollbar
+      "QComboBox QAbstractItemView QScrollBar:vertical { width:8px; background:transparent; margin:2px; border:0; }"
+      "QComboBox QAbstractItemView QScrollBar::handle:vertical { background:#c9d1d9; min-height:28px; border-radius:4px; }"
+      "QComboBox QAbstractItemView QScrollBar::handle:vertical:hover { background:#8c959f; }"
+      "QComboBox QAbstractItemView QScrollBar::add-line:vertical, QComboBox QAbstractItemView QScrollBar::sub-line:vertical { height:0; }"
       "QComboBox QAbstractItemView QScrollBar::add-page:vertical, QComboBox QAbstractItemView QScrollBar::sub-page:vertical { background:transparent; }"
-      "QListWidget { border:0; outline:0; background:#f3f3f3; }"
-      "QListWidget::item { min-height:34px; padding-left:12px; color:#222222; }"
-      "QListWidget::item:hover { background:#ececec; }"
-      "QListWidget::item:selected { background:#dadada; color:#111111; }"
-      "QScrollArea { border:0; background:#ffffff; }"));
+
+      // Sidebar QListWidget
+      "QListWidget { border:0; outline:0; background:transparent; }"
+      "QListWidget::item { min-height:34px; padding-left:14px; margin:2px 6px; color:#57606a; border-radius:6px; border-left:3px solid transparent; }"
+      "QListWidget::item:hover { background:#f3f6fa; color:#24292f; }"
+      "QListWidget::item:selected { background:#edf5ff; color:#0969da; border-left:3px solid #0969da; font-weight:500; }"
+
+      // Page QScrollArea
+      "QScrollArea { border:0; background:transparent; }"
+      "QScrollArea > QWidget > QWidget { background:transparent; }"));
 
   auto* rootLayout = new QHBoxLayout(this);
-  rootLayout->setContentsMargins(28, 30, 28, 28);
-  rootLayout->setSpacing(34);
+  rootLayout->setContentsMargins(24, 24, 24, 24);
+  rootLayout->setSpacing(18);
 
   auto* sidebar = new QWidget(this);
-  sidebar->setFixedWidth(210);
+  sidebar->setObjectName(QStringLiteral("preferencesSidebar"));
+  sidebar->setFixedWidth(216);
   auto* sidebarLayout = new QVBoxLayout(sidebar);
-  sidebarLayout->setContentsMargins(0, 0, 0, 0);
-  sidebarLayout->setSpacing(16);
+  sidebarLayout->setContentsMargins(10, 18, 10, 14);
+  sidebarLayout->setSpacing(10);
+
+  sidebarTitleLabel_ = new QLabel(sidebar);
+  sidebarTitleLabel_->setStyleSheet(QStringLiteral("font-size:15px; font-weight:600; color:#24292f; padding-left:8px; padding-bottom:4px;"));
+  sidebarLayout->addWidget(sidebarTitleLabel_);
 
   categoryList_ = new QListWidget(sidebar);
   categoryList_->setFocusPolicy(Qt::NoFocus);
@@ -66,29 +109,20 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
   rootLayout->addWidget(sidebar);
 
   contentStack_ = new QStackedWidget(this);
-  contentStack_->setStyleSheet(QStringLiteral("QStackedWidget { background:#ffffff; }"));
+  contentStack_->setStyleSheet(QStringLiteral("QStackedWidget { background:transparent; }"));
   rootLayout->addWidget(contentStack_, 1);
 
   // Page 0: Files
   {
-    auto* scroll = new QScrollArea(contentStack_);
-    scroll->setWidgetResizable(true);
-    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    auto* scroll = makeScrollArea();
     filesPage_ = new PrefsFilesPage(scroll);
     scroll->setWidget(filesPage_);
     contentStack_->addWidget(scroll);
-    auto* title = new QLabel(filesPage_);
-    title->setStyleSheet(QStringLiteral("font-size:26px; font-weight:600; color:#111111;"));
-    title->setVisible(false);  // Title is shown via page title label in stack
-    // Actually, pages need title labels visible in the scroll area above the cards.
-    // Let's embed the title into the page itself.
   }
 
   // Page 1: Editor
   {
-    auto* scroll = new QScrollArea(contentStack_);
-    scroll->setWidgetResizable(true);
-    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    auto* scroll = makeScrollArea();
     editorPage_ = new PrefsEditorPage(scroll);
     scroll->setWidget(editorPage_);
     contentStack_->addWidget(scroll);
@@ -96,18 +130,15 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
 
   // Page 2: Image
   {
-    auto* scroll = new QScrollArea(contentStack_);
-    scroll->setWidgetResizable(true);
-    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    auto* scroll = makeScrollArea();
     imagePage_ = new PrefsImagePage(scroll);
-    scroll->setWidget(imagePage_);    contentStack_->addWidget(scroll);
+    scroll->setWidget(imagePage_);
+    contentStack_->addWidget(scroll);
   }
 
   // Page 3: Markdown
   {
-    auto* scroll = new QScrollArea(contentStack_);
-    scroll->setWidgetResizable(true);
-    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    auto* scroll = makeScrollArea();
     markdownPage_ = new PrefsMarkdownPage(scroll);
     scroll->setWidget(markdownPage_);
     contentStack_->addWidget(scroll);
@@ -115,9 +146,7 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
 
   // Page 4: Export
   {
-    auto* scroll = new QScrollArea(contentStack_);
-    scroll->setWidgetResizable(true);
-    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    auto* scroll = makeScrollArea();
     exportPage_ = new PrefsExportPage(scroll);
     scroll->setWidget(exportPage_);
     contentStack_->addWidget(scroll);
@@ -125,9 +154,7 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
 
   // Page 5: Appearance
   {
-    auto* scroll = new QScrollArea(contentStack_);
-    scroll->setWidgetResizable(true);
-    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    auto* scroll = makeScrollArea();
     appearancePage_ = new PrefsAppearancePage(scroll);
     scroll->setWidget(appearancePage_);
     contentStack_->addWidget(scroll);
@@ -135,9 +162,7 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
 
   // Page 6: General
   {
-    auto* scroll = new QScrollArea(contentStack_);
-    scroll->setWidgetResizable(true);
-    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    auto* scroll = makeScrollArea();
     auto* generalPage = new PrefsGeneralPage(scroll);
     scroll->setWidget(generalPage);
     contentStack_->addWidget(scroll);
@@ -201,6 +226,9 @@ void muffin::PreferencesDialog::changeEvent(QEvent* event) {
 
 void muffin::PreferencesDialog::retranslateUi() {
   setWindowTitle(tr("Preferences"));
+  if (sidebarTitleLabel_) {
+    sidebarTitleLabel_->setText(tr("Preferences"));
+  }
 
   const QStringList categories = {
       tr("Files"),
@@ -254,16 +282,29 @@ void muffin::PreferencesDialog::retranslateUi() {
   // General page handles its own retranslation via LanguageManager
 }
 
+QScrollArea* muffin::PreferencesDialog::makeScrollArea() {
+  auto* scroll = new QScrollArea(contentStack_);
+  scroll->setWidgetResizable(true);
+  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  scroll->setStyleSheet(QStringLiteral(
+      "QScrollBar:vertical { width:8px; background:transparent; margin:0; border:0; }"
+      "QScrollBar::handle:vertical { background:#c9d1d9; min-height:36px; border-radius:4px; }"
+      "QScrollBar::handle:vertical:hover { background:#8c959f; }"
+      "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height:0; }"
+      "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background:transparent; }"));
+  return scroll;
+}
+
 QWidget* muffin::PreferencesDialog::makePage(QWidget* parent) {
   auto* scroll = new QScrollArea(parent);
   scroll->setWidgetResizable(true);
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
   auto* page = new QWidget(scroll);
-  page->setStyleSheet(QStringLiteral("background:#ffffff;"));
+  page->setStyleSheet(QStringLiteral("background:transparent;"));
   auto* layout = new QVBoxLayout(page);
-  layout->setContentsMargins(38, 34, 46, 34);
-  layout->setSpacing(22);
+  layout->setContentsMargins(30, 28, 38, 28);
+  layout->setSpacing(18);
 
   auto* title = new QLabel(page);
   title->setStyleSheet(QStringLiteral("font-size:26px; font-weight:600; color:#111111;"));
