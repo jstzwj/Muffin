@@ -897,6 +897,9 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     if (span.strike) {
       format.setFontStrikeOut(true);
     }
+    if (span.underline) {
+      format.setFontUnderline(true);
+    }
     switch (span.type) {
       case InlineType::Code:
         format.setFont(theme.codeFont());

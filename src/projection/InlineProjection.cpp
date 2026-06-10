@@ -5,6 +5,8 @@
 
 #include <QRegularExpression>
 
+#include <optional>
+
 namespace muffin {
 namespace {
 
@@ -569,6 +571,7 @@ void InlineProjection::appendTextSpan(
   span.bold = state.bold;
   span.italic = state.italic;
   span.strike = state.strike;
+  span.underline = state.underline;
   state.displayText += displayText;
   if (visible) {
     state.visibleText += displayText;
@@ -693,6 +696,51 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
   }
 }
 
+struct HtmlFormatEffect {
+  bool bold = false;
+  bool italic = false;
+  bool strike = false;
+  bool underline = false;
+};
+
+std::optional<HtmlFormatEffect> htmlFormatEffectForTag(QStringView tagName) {
+  if (tagName == u"b" || tagName == u"bold" || tagName == u"strong")
+    return HtmlFormatEffect{true, false, false, false};
+  if (tagName == u"i" || tagName == u"italic" || tagName == u"em")
+    return HtmlFormatEffect{false, true, false, false};
+  if (tagName == u"s" || tagName == u"del")
+    return HtmlFormatEffect{false, false, true, false};
+  if (tagName == u"u" || tagName == u"underline" || tagName == u"ins")
+    return HtmlFormatEffect{false, false, false, true};
+  return std::nullopt;
+}
+
+void InlineProjection::appendHtmlInlineContent(BuildState& state, const QVector<InlineNode>& inlines,
+                                               int startIndex, int endIndex, qsizetype openEnd, qsizetype closeNodeStart,
+                                               QVector<HtmlInlineFormatData>& htmlFormatData) {
+  qsizetype contentSourceStart = openEnd;
+  for (int j = startIndex; j < endIndex; ++j) {
+    const InlineNode& mid = inlines[j];
+    const QString midMd = markdownForInline(mid);
+    qsizetype midStart = -1;
+    const InlineRange midParserRange = localRange(mid.sourceRange(), state.sourceBase);
+    if (rangeWithin(midParserRange, openEnd, closeNodeStart) && midParserRange.start >= contentSourceStart) {
+      midStart = midParserRange.start;
+    }
+    if (midStart < 0) {
+      midStart = state.sourceText->indexOf(midMd, contentSourceStart);
+    }
+    if (midStart >= 0 && midStart + midMd.size() <= closeNodeStart) {
+      if (midStart > contentSourceStart) {
+        appendTextSpan(state, InlineType::Text, InlineSpanKind::Text, contentSourceStart, midStart,
+                       state.sourceText->mid(contentSourceStart, midStart - contentSourceStart), true);
+      }
+      appendInline(state, mid, midStart, midStart + midMd.size(), htmlFormatData);
+      contentSourceStart = midStart + midMd.size();
+    }
+  }
+}
+
 int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<InlineNode>& inlines, int index,
                                                qsizetype nodeStart, qsizetype sourceEnd, qsizetype& searchFrom,
                                                QVector<HtmlInlineFormatData>& htmlFormatData) {
@@ -713,7 +761,6 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
   }
 
   // Scan forward for matching closing tag
-  const QString closeTag = QStringLiteral("</%1>").arg(tagName.toString());
   int closeIndex = -1;
   for (int j = index + 1; j < inlines.size(); ++j) {
     if (inlines[j].type() == InlineType::HtmlInline) {
@@ -737,8 +784,6 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
 
   const InlineNode& closeNode = inlines[closeIndex];
   const QString closeMarkdown = markdownForInline(closeNode);
-  // The close tag's source start is after all consumed nodes' text.
-  // We need to compute sourceEnd for the close tag. Let's find it via the parser range or search.
   qsizetype closeNodeStart = -1;
   const InlineRange closeParserRange = localRange(closeNode.sourceRange(), state.sourceBase);
   if (rangeWithin(closeParserRange, sourceEnd > 0 ? qsizetype(0) : qsizetype(0), sourceEnd) && closeParserRange.start >= openEnd) {
@@ -753,19 +798,34 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
   }
   const qsizetype closeEnd = closeNodeStart + closeNode.text().size();
 
-  // Build the HTML fragment from all consumed nodes
-  QString htmlFragment;
-  for (int j = index; j <= closeIndex; ++j) {
-    htmlFragment += inlines[j].text();
-  }
+  // Determine if this is a simple formatting tag that can bypass InlineHtmlRenderer.
+  // Simple tags (b, i, u, s, strong, em, del, ins, etc.) map to boolean state flags,
+  // so Markdown formatting inside them (e.g. <u>**bold**</u>) is preserved.
+  const auto formatEffect = htmlFormatEffectForTag(tagName);
+  const bool isSimple = formatEffect.has_value();
 
-  // Render via InlineHtmlRenderer — use the actual paragraph font size
-  static const html::InlineHtmlRenderer renderer;
-  const html::InlineHtmlFormatResult rendered = renderer.render(htmlFragment, state.baseFontSize);
+  // Compute the visible text size for active-state determination.
+  qsizetype visibleSize = 0;
+  html::InlineHtmlFormatResult rendered;
+  if (isSimple) {
+    // Simple tags: visible text comes from intermediate nodes only (no HTML markers).
+    for (int j = index + 1; j < closeIndex; ++j) {
+      visibleSize += plainTextForInline(inlines[j]).size();
+    }
+  } else {
+    // Complex tags: build HTML fragment and render via InlineHtmlRenderer.
+    QString htmlFragment;
+    for (int j = index; j <= closeIndex; ++j) {
+      htmlFragment += inlines[j].text();
+    }
+    static const html::InlineHtmlRenderer renderer;
+    rendered = renderer.render(htmlFragment, state.baseFontSize);
+    visibleSize = rendered.text.size();
+  }
 
   // Determine active state (cursor on the HTML group)
   const qsizetype visibleStart = state.visibleOffset;
-  const qsizetype visibleEnd = visibleStart + rendered.text.size();
+  const qsizetype visibleEnd = visibleStart + visibleSize;
   const bool active = state.projectionState.shouldRevealSourceRange(openStart, closeEnd) ||
                       state.projectionState.shouldRevealVisibleRange(visibleStart, visibleEnd);
 
@@ -775,34 +835,48 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
                    state.sourceText->mid(openStart, openEnd - openStart), false);
 
     // Emit the content nodes between open and close tags
-    // We need to process intermediate nodes (Text + HtmlInline) for source position accuracy
-    qsizetype contentSourceStart = openEnd;
-    for (int j = index + 1; j < closeIndex; ++j) {
-      const InlineNode& mid = inlines[j];
-      const QString midMd = markdownForInline(mid);
-      // Find source position for this intermediate node
-      qsizetype midStart = -1;
-      const InlineRange midParserRange = localRange(mid.sourceRange(), state.sourceBase);
-      if (rangeWithin(midParserRange, openEnd, closeNodeStart) && midParserRange.start >= contentSourceStart) {
-        midStart = midParserRange.start;
-      }
-      if (midStart < 0) {
-        midStart = state.sourceText->indexOf(midMd, contentSourceStart);
-      }
-      if (midStart >= 0 && midStart + midMd.size() <= closeNodeStart) {
-        if (midStart > contentSourceStart) {
-          appendTextSpan(state, InlineType::Text, InlineSpanKind::Text, contentSourceStart, midStart,
-                         state.sourceText->mid(contentSourceStart, midStart - contentSourceStart), true);
-        }
-        appendInline(state, mid, midStart, midStart + midMd.size(), htmlFormatData);
-        contentSourceStart = midStart + midMd.size();
-      }
-    }
+    appendHtmlInlineContent(state, inlines, index + 1, closeIndex, openEnd, closeNodeStart, htmlFormatData);
 
     appendTextSpan(state, InlineType::HtmlInline, InlineSpanKind::CloseMarker, closeNodeStart, closeEnd,
                    state.sourceText->mid(closeNodeStart, closeEnd - closeNodeStart), false);
+  } else if (isSimple) {
+    // Simple formatting tag inactive: process intermediate nodes through the Markdown
+    // pipeline with the HTML format applied as a state flag overlay.
+    const bool prevBold = state.bold;
+    const bool prevItalic = state.italic;
+    const bool prevStrike = state.strike;
+    const bool prevUnderline = state.underline;
+
+    if (formatEffect->bold)      state.bold      = true;
+    if (formatEffect->italic)    state.italic    = true;
+    if (formatEffect->strike)    state.strike    = true;
+    if (formatEffect->underline) state.underline = true;
+
+    const qsizetype groupDisplayStart = state.displayOffset;
+    const qsizetype groupVisibleStart = state.visibleOffset;
+
+    appendHtmlInlineContent(state, inlines, index + 1, closeIndex, openEnd, closeNodeStart, htmlFormatData);
+
+    // Remap source range of contained spans to cover the full HTML group,
+    // so clicking anywhere inside selects the entire construct.
+    if (state.spans.size() > 0) {
+      const qsizetype groupDisplayEnd = state.displayOffset;
+      const qsizetype groupVisibleEnd = state.visibleOffset;
+      for (InlineProjectionSpan& span : state.spans) {
+        if (span.displayStart >= groupDisplayStart && span.displayEnd <= groupDisplayEnd &&
+            span.visibleStart >= groupVisibleStart && span.visibleEnd <= groupVisibleEnd) {
+          span.sourceStart = openStart;
+          span.sourceEnd = closeEnd;
+        }
+      }
+    }
+
+    state.bold = prevBold;
+    state.italic = prevItalic;
+    state.strike = prevStrike;
+    state.underline = prevUnderline;
   } else {
-    // When not active, render as formatted text — no markers in display text
+    // Complex tag inactive: render via InlineHtmlRenderer
     // (same pattern as markdown emphasis: content only when inactive, markers appear when cursor enters)
 
     // Check for image-only content (e.g., <a href="..."><img src="..."></a>)

@@ -242,6 +242,156 @@ void testInlineLayoutPainting() {
   require(changedPixels > 25, QStringLiteral("inline layout paint should draw visible pixels"));
 }
 
+void testInlineHtmlSimpleFormattingPassthrough() {
+  RenderTheme theme = RenderTheme::github();
+
+  // --- <u>**bold**</u>: underline + bold ---
+  {
+    QVector<InlineNode> inlines;
+    InlineNode openU(InlineType::HtmlInline);
+    openU.setText(QStringLiteral("<u>"));
+    inlines << openU
+            << InlineNode::strong(QStringLiteral("**"), {InlineNode::text(QStringLiteral("bold"))});
+    InlineNode closeU(InlineType::HtmlInline);
+    closeU.setText(QStringLiteral("</u>"));
+    inlines << closeU;
+
+    InlineLayout layout;
+    layout.build(inlines, QStringLiteral("<u>**bold**</u>"), theme, 500.0, theme.paragraphFont(), InlineLayout::BuildOptions{});
+
+    require(layout.displayText() == QStringLiteral("bold"),
+            QStringLiteral("<u>**bold**</u> should display as 'bold', got '%1'").arg(layout.displayText()));
+
+    const QVector<QTextLayout::FormatRange> formats = layout.debugTextFormats(theme, theme.paragraphFont());
+    QTextCharFormat fmt;
+    for (const auto& range : formats) {
+      if (0 >= range.start && 0 < range.start + range.length) {
+        fmt = range.format;
+      }
+    }
+    require(fmt.fontWeight() >= QFont::Bold,
+            QStringLiteral("<u>**bold**</u> should render bold"));
+    require(fmt.fontUnderline(),
+            QStringLiteral("<u>**bold**</u> should render underline"));
+  }
+
+  // --- <u>text</u>: underline only ---
+  {
+    QVector<InlineNode> inlines;
+    InlineNode openU(InlineType::HtmlInline);
+    openU.setText(QStringLiteral("<u>"));
+    inlines << openU
+            << InlineNode::text(QStringLiteral("text"));
+    InlineNode closeU(InlineType::HtmlInline);
+    closeU.setText(QStringLiteral("</u>"));
+    inlines << closeU;
+
+    InlineLayout layout;
+    layout.build(inlines, QStringLiteral("<u>text</u>"), theme, 500.0, theme.paragraphFont(), InlineLayout::BuildOptions{});
+
+    require(layout.displayText() == QStringLiteral("text"),
+            QStringLiteral("<u>text</u> should display as 'text', got '%1'").arg(layout.displayText()));
+
+    const QVector<QTextLayout::FormatRange> formats = layout.debugTextFormats(theme, theme.paragraphFont());
+    QTextCharFormat fmt;
+    for (const auto& range : formats) {
+      if (0 >= range.start && 0 < range.start + range.length) {
+        fmt = range.format;
+      }
+    }
+    require(fmt.fontUnderline(),
+            QStringLiteral("<u>text</u> should render underline"));
+    require(fmt.fontWeight() < QFont::Bold,
+            QStringLiteral("<u>text</u> should not render bold"));
+  }
+
+  // --- <b>*italic*</b>: bold + italic ---
+  {
+    QVector<InlineNode> inlines;
+    InlineNode openB(InlineType::HtmlInline);
+    openB.setText(QStringLiteral("<b>"));
+    inlines << openB
+            << InlineNode::emphasis(QStringLiteral("*"), {InlineNode::text(QStringLiteral("italic"))});
+    InlineNode closeB(InlineType::HtmlInline);
+    closeB.setText(QStringLiteral("</b>"));
+    inlines << closeB;
+
+    InlineLayout layout;
+    layout.build(inlines, QStringLiteral("<b>*italic*</b>"), theme, 500.0, theme.paragraphFont(), InlineLayout::BuildOptions{});
+
+    require(layout.displayText() == QStringLiteral("italic"),
+            QStringLiteral("<b>*italic*</b> should display as 'italic', got '%1'").arg(layout.displayText()));
+
+    const QVector<QTextLayout::FormatRange> formats = layout.debugTextFormats(theme, theme.paragraphFont());
+    QTextCharFormat fmt;
+    for (const auto& range : formats) {
+      if (0 >= range.start && 0 < range.start + range.length) {
+        fmt = range.format;
+      }
+    }
+    require(fmt.fontWeight() >= QFont::Bold,
+            QStringLiteral("<b>*italic*</b> should render bold"));
+    require(fmt.fontItalic(),
+            QStringLiteral("<b>*italic*</b> should render italic"));
+  }
+
+  // --- <s>text</s>: strikethrough passthrough ---
+  {
+    QVector<InlineNode> inlines;
+    InlineNode openS(InlineType::HtmlInline);
+    openS.setText(QStringLiteral("<s>"));
+    inlines << openS
+            << InlineNode::text(QStringLiteral("gone"));
+    InlineNode closeS(InlineType::HtmlInline);
+    closeS.setText(QStringLiteral("</s>"));
+    inlines << closeS;
+
+    InlineLayout layout;
+    layout.build(inlines, QStringLiteral("<s>gone</s>"), theme, 500.0, theme.paragraphFont(), InlineLayout::BuildOptions{});
+
+    require(layout.displayText() == QStringLiteral("gone"),
+            QStringLiteral("<s>gone</s> should display as 'gone', got '%1'").arg(layout.displayText()));
+
+    const QVector<QTextLayout::FormatRange> formats = layout.debugTextFormats(theme, theme.paragraphFont());
+    QTextCharFormat fmt;
+    for (const auto& range : formats) {
+      if (0 >= range.start && 0 < range.start + range.length) {
+        fmt = range.format;
+      }
+    }
+    require(fmt.fontStrikeOut(),
+            QStringLiteral("<s>gone</s> should render strikethrough"));
+  }
+
+  // --- <kbd>text</kbd>: complex tag, still uses InlineHtmlRenderer (backward compat) ---
+  {
+    QVector<InlineNode> inlines;
+    InlineNode openKbd(InlineType::HtmlInline);
+    openKbd.setText(QStringLiteral("<kbd>"));
+    inlines << openKbd
+            << InlineNode::text(QStringLiteral("Ctrl"));
+    InlineNode closeKbd(InlineType::HtmlInline);
+    closeKbd.setText(QStringLiteral("</kbd>"));
+    inlines << closeKbd;
+
+    InlineLayout layout;
+    layout.build(inlines, QStringLiteral("<kbd>Ctrl</kbd>"), theme, 500.0, theme.paragraphFont(), InlineLayout::BuildOptions{});
+
+    require(layout.displayText() == QStringLiteral("Ctrl"),
+            QStringLiteral("<kbd>Ctrl</kbd> should display as 'Ctrl', got '%1'").arg(layout.displayText()));
+
+    const QVector<QTextLayout::FormatRange> formats = layout.debugTextFormats(theme, theme.paragraphFont());
+    QTextCharFormat fmt;
+    for (const auto& range : formats) {
+      if (0 >= range.start && 0 < range.start + range.length) {
+        fmt = range.format;
+      }
+    }
+    require(fmt.fontFamilies().toStringList().contains(QStringLiteral("Courier New")),
+            QStringLiteral("<kbd>Ctrl</kbd> should still use monospace keyboard font (backward compat)"));
+  }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -256,6 +406,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testInlineHtmlKeyboardLayoutContract);
   RUN_TEST(testInlineLayoutProjectionDisplayMappingAfterCollapsedMath);
   RUN_TEST(testInlineLayoutPainting);
+  RUN_TEST(testInlineHtmlSimpleFormattingPassthrough);
 #undef RUN_TEST
   return 0;
 }

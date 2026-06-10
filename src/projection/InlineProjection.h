@@ -54,6 +54,7 @@ struct InlineProjectionSpan {
   bool bold = false;
   bool italic = false;
   bool strike = false;
+  bool underline = false;
   QString href;  // Non-empty for Image and Link Atom spans
 };
 
@@ -114,6 +115,7 @@ private:
     bool bold = false;
     bool italic = false;
     bool strike = false;
+    bool underline = false;
     qreal baseFontSize = 16.0;
     QString displayText;
     QString visibleText;
@@ -137,6 +139,9 @@ private:
                            QVector<HtmlInlineFormatData>& htmlFormatData);
   static int tryAppendHtmlInlineGroup(BuildState& state, const QVector<InlineNode>& inlines, int index,
                                       qsizetype sourceStart, qsizetype sourceEnd, qsizetype& searchFrom,
+                                      QVector<HtmlInlineFormatData>& htmlFormatData);
+  static void appendHtmlInlineContent(BuildState& state, const QVector<InlineNode>& inlines,
+                                      int startIndex, int endIndex, qsizetype openEnd, qsizetype closeNodeStart,
                                       QVector<HtmlInlineFormatData>& htmlFormatData);
   static qsizetype findMarkdown(const QString& sourceText, const QString& markdown, qsizetype searchFrom, qsizetype searchEnd);
   bool offsetInSource(qsizetype sourceOffset) const;
