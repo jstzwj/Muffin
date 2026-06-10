@@ -119,15 +119,15 @@ void RenderTheme::setFontSizePx(int px) {
 }
 
 qreal RenderTheme::pageWidth() const {
-  return scaled(800.0);
+  return scaled(860.0);
 }
 
 qreal RenderTheme::topMargin() const {
-  return scaled(46.0);
+  return scaled(30.0);
 }
 
 qreal RenderTheme::bottomMargin() const {
-  return scaled(56.0);
+  return scaled(70.0);
 }
 
 qreal RenderTheme::blockSpacing() const {

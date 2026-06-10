@@ -23,7 +23,7 @@
 
 namespace {
 
-constexpr int kContentWidth = 800;
+constexpr int kContentWidth = 860;
 constexpr int kHorizontalInset = 64;
 constexpr int kLineNumberWidth = 48;
 constexpr qreal kSourceLineSpacingScale = 1.7;
@@ -340,7 +340,7 @@ void LineNumberArea::paintEvent(QPaintEvent* event) {
 
 muffin::SourceEditorWidget::SourceEditorWidget(QWidget* parent) : QWidget(parent) {
   auto* layout = new QHBoxLayout(this);
-  layout->setContentsMargins(0, 46, 0, 0);
+  layout->setContentsMargins(0, 30, 0, 0);
   layout->setSpacing(0);
 
   editor_ = new MarkdownSourceEdit(this);
