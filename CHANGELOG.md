@@ -5,6 +5,24 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-06-11
+
+### Added
+- **Underline formatting** - Toggle underline format via toolbar button or keyboard shortcut
+- **Strikethrough formatting** - Toggle strikethrough format via toolbar button or keyboard shortcut
+- **Inline math formatting** - Toggle inline math formatting command from the format toolbar
+- **HTML comment support** - HTML comments (`<!-- ... -->`) are now parsed and rendered in the editor
+- **Format toolbar optimization** - Reformatted toolbar with improved grouping of text formatting actions
+
+### Changed
+- **Cursor format state query** - Refactored cursor format state detection logic for more reliable real-time formatting feedback
+- **Chinese word segmentation** - Improved Chinese text word boundary detection for better cursor movement and selection
+- **Heading block editing** - Optimized heading block editing and rendering logic for smoother editing experience
+- **Page layout margins** - Adjusted page layout margins and content width for better readability
+
+### Fixed
+- **Qt TLS and network plugins** - Added Qt TLS and network information plugins to the distributable bundle for reliable remote image loading
+
 ## [0.2.0] - 2026-06-10
 
 ### Added
@@ -201,6 +219,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.2.1]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.1
 [0.2.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.0
 [0.1.6]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.6
 [0.1.5]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.5
