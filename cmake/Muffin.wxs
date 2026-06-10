@@ -16,6 +16,8 @@
         <Directory Id="PlatformsDir" Name="platforms" />
         <Directory Id="StylesDir" Name="styles" />
         <Directory Id="ImageformatsDir" Name="imageformats" />
+        <Directory Id="TlsDir" Name="tls" />
+        <Directory Id="NetworkinformationDir" Name="networkinformation" />
       </Directory>
     </StandardDirectory>
 
@@ -24,6 +26,8 @@
       <ComponentGroupRef Id="MuffinPlatformsPlugins" />
       <ComponentGroupRef Id="MuffinStylesPlugins" />
       <ComponentGroupRef Id="MuffinImageformatsPlugins" />
+      <ComponentGroupRef Id="MuffinTlsPlugins" />
+      <ComponentGroupRef Id="MuffinNetworkinformationPlugins" />
       <ComponentRef Id="ApplicationShortcut" />
     </Feature>
 
@@ -118,6 +122,30 @@
       </Component>
       <Component Id="QSvg" Guid="*">
         <File Id="QSvgDll" Source="$(var.DistDir)/imageformats/qsvg.dll" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- Qt TLS plugins -->
+  <Fragment>
+    <ComponentGroup Id="MuffinTlsPlugins" Directory="TlsDir">
+      <Component Id="QSchannelBackend" Guid="*">
+        <File Id="QSchannelBackendDll" Source="$(var.DistDir)/tls/qschannelbackend.dll" />
+      </Component>
+      <Component Id="QOpenSslBackend" Guid="*">
+        <File Id="QOpenSslBackendDll" Source="$(var.DistDir)/tls/qopensslbackend.dll" />
+      </Component>
+      <Component Id="QCertOnlyBackend" Guid="*">
+        <File Id="QCertOnlyBackendDll" Source="$(var.DistDir)/tls/qcertonlybackend.dll" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- Qt NetworkInformation plugins -->
+  <Fragment>
+    <ComponentGroup Id="MuffinNetworkinformationPlugins" Directory="NetworkinformationDir">
+      <Component Id="QNetworkListManager" Guid="*">
+        <File Id="QNetworkListManagerDll" Source="$(var.DistDir)/networkinformation/qnetworklistmanager.dll" />
       </Component>
     </ComponentGroup>
   </Fragment>
