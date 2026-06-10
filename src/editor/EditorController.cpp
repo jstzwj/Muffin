@@ -556,9 +556,62 @@ bool EditorController::selectCurrentFormatSpan() {
   return selectWordAtCursor(context);
 }
 
+namespace {
+
+void accumulateUnderlineAtOffset(CursorFormatState& state,
+                                 const InlineProjection& proj,
+                                 qsizetype offset) {
+  const auto& spans = proj.spans();
+  for (const auto& hd : proj.htmlFormatData()) {
+    for (const auto& fs : hd.formatSpans) {
+      if ((static_cast<int>(fs.decoration) & static_cast<int>(html::HtmlTextDecoration::Underline)) == 0) {
+        continue;
+      }
+      const qsizetype fmtStart = hd.displayStart + fs.start;
+      const qsizetype fmtEnd = fmtStart + fs.length;
+      for (const auto& span : spans) {
+        if (span.kind == InlineSpanKind::HtmlContent &&
+            span.displayStart >= fmtStart &&
+            span.displayEnd <= fmtEnd &&
+            offset >= span.visibleStart && offset <= span.visibleEnd) {
+          state.underline = true;
+        }
+      }
+    }
+  }
+}
+
+bool isSpanUnderlined(const InlineProjectionSpan& span, const InlineProjection& proj) {
+  if (span.kind != InlineSpanKind::HtmlContent) {
+    return false;
+  }
+  for (const auto& hd : proj.htmlFormatData()) {
+    for (const auto& fs : hd.formatSpans) {
+      if ((static_cast<int>(fs.decoration) & static_cast<int>(html::HtmlTextDecoration::Underline)) == 0) {
+        continue;
+      }
+      const qsizetype fmtStart = hd.displayStart + fs.start;
+      const qsizetype fmtEnd = fmtStart + fs.length;
+      if (span.displayStart >= fmtStart && span.displayEnd <= fmtEnd) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+}  // namespace
+
 CursorFormatState EditorController::queryCursorFormatState() const {
   CursorFormatState state;
   if (!session_ || !selection_.hasCursor()) {
+    return state;
+  }
+
+  const SelectionRange sel = selection_.selection();
+
+  // Multi-block selection: no inline format applies uniformly across paragraphs
+  if (!sel.isCollapsed() && !sel.isSingleBlock()) {
     return state;
   }
 
@@ -570,40 +623,64 @@ CursorFormatState EditorController::queryCursorFormatState() const {
     return state;
   }
 
-  const qsizetype offset = context.cursorTextOffset;
   const auto& spans = context.inlineProjection.spans();
 
-  for (const auto& span : spans) {
-    if (span.kind == InlineSpanKind::OpenMarker || span.kind == InlineSpanKind::CloseMarker ||
-        span.kind == InlineSpanKind::HiddenSyntax) {
-      continue;
-    }
-    if (offset >= span.visibleStart && offset <= span.visibleEnd) {
-      if (span.bold) state.bold = true;
-      if (span.italic) state.italic = true;
-      if (span.strike) state.strikethrough = true;
-      if (span.type == InlineType::Code && span.kind == InlineSpanKind::Text) state.code = true;
-      if (span.type == InlineType::InlineMath && span.kind == InlineSpanKind::Text) state.inlineMath = true;
-    }
-  }
-
-  // Check HTML inline format data for underline
-  for (const auto& hd : context.inlineProjection.htmlFormatData()) {
-    for (const auto& fs : hd.formatSpans) {
-      const bool hasUnderline = (static_cast<int>(fs.decoration) & static_cast<int>(html::HtmlTextDecoration::Underline)) != 0;
-      if (!hasUnderline) {
+  if (sel.isCollapsed()) {
+    // --- Collapsed cursor: accumulate all active formats at the position ---
+    const qsizetype offset = context.cursorTextOffset;
+    for (const auto& span : spans) {
+      if (span.kind == InlineSpanKind::OpenMarker || span.kind == InlineSpanKind::CloseMarker ||
+          span.kind == InlineSpanKind::HiddenSyntax) {
         continue;
       }
-      const qsizetype spanDisplayStart = hd.displayStart + fs.start;
-      const qsizetype spanDisplayEnd = spanDisplayStart + fs.length;
-      for (const auto& projSpan : spans) {
-        if (projSpan.kind == InlineSpanKind::HtmlContent &&
-            projSpan.displayStart >= spanDisplayStart &&
-            projSpan.displayEnd <= spanDisplayEnd &&
-            offset >= projSpan.visibleStart && offset <= projSpan.visibleEnd) {
-          state.underline = true;
-        }
+      if (offset >= span.visibleStart && offset <= span.visibleEnd) {
+        if (span.bold) state.bold = true;
+        if (span.italic) state.italic = true;
+        if (span.strike) state.strikethrough = true;
+        if (span.type == InlineType::Code && span.kind == InlineSpanKind::Text) state.code = true;
+        if (span.type == InlineType::InlineMath && span.kind == InlineSpanKind::Text) state.inlineMath = true;
       }
+    }
+    accumulateUnderlineAtOffset(state, context.inlineProjection, offset);
+  } else {
+    // --- Single-block range: all content spans must share the same format ---
+    const qsizetype selStart = sel.startOffset();
+    const qsizetype selEnd = sel.endOffset();
+
+    CursorFormatState ref;
+    bool refSet = false;
+
+    for (const auto& span : spans) {
+      if (span.kind == InlineSpanKind::OpenMarker || span.kind == InlineSpanKind::CloseMarker ||
+          span.kind == InlineSpanKind::HiddenSyntax) {
+        continue;
+      }
+      if (span.visibleEnd < selStart || span.visibleStart > selEnd) {
+        continue;
+      }
+
+      CursorFormatState spanFmt;
+      spanFmt.bold = span.bold;
+      spanFmt.italic = span.italic;
+      spanFmt.strikethrough = span.strike;
+      spanFmt.code = (span.type == InlineType::Code && span.kind == InlineSpanKind::Text);
+      spanFmt.inlineMath = (span.type == InlineType::InlineMath && span.kind == InlineSpanKind::Text);
+      spanFmt.underline = isSpanUnderlined(span, context.inlineProjection);
+
+      if (!refSet) {
+        ref = spanFmt;
+        refSet = true;
+      } else if (spanFmt.bold != ref.bold ||
+                 spanFmt.italic != ref.italic ||
+                 spanFmt.underline != ref.underline ||
+                 spanFmt.strikethrough != ref.strikethrough ||
+                 spanFmt.code != ref.code ||
+                 spanFmt.inlineMath != ref.inlineMath) {
+        return state;  // Inconsistent → all false
+      }
+    }
+    if (refSet) {
+      state = ref;
     }
   }
 
