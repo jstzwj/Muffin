@@ -11,7 +11,7 @@ namespace muffin {
 
 class RenderTheme {
 public:
-  static RenderTheme typoraLike(int zoomPercent = 100);
+  static RenderTheme defaultTheme(int zoomPercent = 100);
   static RenderTheme github(int zoomPercent = 100);
   static RenderTheme newsprint(int zoomPercent = 100);
   static RenderTheme night(int zoomPercent = 100);

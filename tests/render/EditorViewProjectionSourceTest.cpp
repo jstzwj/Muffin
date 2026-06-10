@@ -307,7 +307,7 @@ void testEditorViewInlineLayoutSmoke() {
   const QRectF selectedRect = view.nodeRect(block->id());
   const BlockLayout* selectedBlock = view.blockAtViewportPos(selectedRect.center());
   require(selectedBlock != nullptr, "probe selected block layout should exist");
-  const QVector<QRectF> selectionRects = selectedBlock->selectionRects(selection, RenderTheme::typoraLike());
+  const QVector<QRectF> selectionRects = selectedBlock->selectionRects(selection, RenderTheme::defaultTheme());
   require(!selectionRects.isEmpty(), "probe view selection rects should be drawable");
   for (const QRectF& rect : selectionRects) {
     require(rect.width() > 0 && rect.height() > 0, "probe view selection rect should have area");

@@ -116,7 +116,7 @@ private:
 
   QPointer<const MarkdownDocument> document_;
   QString documentPath_;
-  RenderTheme theme_ = RenderTheme::typoraLike();
+  RenderTheme theme_ = RenderTheme::defaultTheme();
   std::unique_ptr<DocumentLayout> layout_;
   CursorPosition cursorPosition_;
   SelectionRange selection_;

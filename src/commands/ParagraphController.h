@@ -36,7 +36,7 @@ public:
   bool insertFootnoteDefinition();
   bool insertHorizontalRule();
 
-  // Toggle commands (Typora-style)
+  // Toggle commands
   bool toggleCodeBlock();
   bool toggleFormulaBlock();
 

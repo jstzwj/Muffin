@@ -107,7 +107,7 @@ void testEditorViewInlineMarkerSourceSelection() {
   markerSelection.focus = inlineCursor(blockId, QStringLiteral("before ").size(), QStringLiteral("before **").size());
   view.setSelectionRange(markerSelection);
   const BlockLayout* selectedBlock = requireViewBlock(view, blockId, QStringLiteral("marker source selection"));
-  const QVector<QRectF> markerRects = selectedBlock->selectionRects(markerSelection, RenderTheme::typoraLike());
+  const QVector<QRectF> markerRects = selectedBlock->selectionRects(markerSelection, RenderTheme::defaultTheme());
   require(!markerRects.isEmpty(), "strong opener marker source selection should draw");
   qreal markerWidth = 0;
   for (const QRectF& rect : markerRects) {
@@ -346,7 +346,7 @@ void testEditorViewVerticalDragSelectionHitsWrappedLine() {
           QStringLiteral("vertical drag focus should follow the second visual line hit"));
   const BlockLayout* selectedBlock = view.blockAtViewportPos(blockRect.center());
   require(selectedBlock != nullptr, "vertical drag wrapped paragraph block should stay visible");
-  const QVector<QRectF> selectionRects = selectedBlock->selectionRects(controller.selection().selection(), RenderTheme::typoraLike());
+  const QVector<QRectF> selectionRects = selectedBlock->selectionRects(controller.selection().selection(), RenderTheme::defaultTheme());
   require(!selectionRects.isEmpty(), "vertical drag should produce visible selection rects without horizontal pre-drag");
   bool hasSecondLineRect = false;
   for (const QRectF& rect : selectionRects) {

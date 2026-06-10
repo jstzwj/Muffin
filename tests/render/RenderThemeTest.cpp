@@ -31,15 +31,15 @@ void testThemeCodeFontFallbackOrder() {
 void testThemeCodeHighlightPalette() {
   const RenderTheme theme = RenderTheme::github();
   require(theme.codeHighlightColor(CodeHighlightRole::Keyword).name() == QStringLiteral("#9b008b"),
-          QStringLiteral("light code keyword color should match Typora-like purple"));
+          QStringLiteral("light code keyword color should match default purple"));
   require(theme.codeHighlightColor(CodeHighlightRole::Function).name() == QStringLiteral("#0000a8"),
-          QStringLiteral("light code function color should match Typora-like blue"));
+          QStringLiteral("light code function color should match default blue"));
   require(theme.codeHighlightColor(CodeHighlightRole::String).name() == QStringLiteral("#a31515"),
-          QStringLiteral("light code string color should match Typora-like red"));
+          QStringLiteral("light code string color should match default red"));
   require(theme.codeHighlightColor(CodeHighlightRole::Preprocessor).name() == theme.textColor().name(),
           QStringLiteral("light code preprocessor color should stay close to plain text"));
   require(theme.codeHighlightColor(CodeHighlightRole::Type).name() == QStringLiteral("#008000"),
-          QStringLiteral("light code type color should match Typora-like green"));
+          QStringLiteral("light code type color should match default green"));
 }
 
 void testThemeManagerSupportsBuiltInThemes() {

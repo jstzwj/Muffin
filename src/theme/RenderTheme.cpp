@@ -24,7 +24,7 @@ QString firstAvailableFontFamily(std::initializer_list<QString> candidates) {
 
 }  // namespace
 
-RenderTheme RenderTheme::typoraLike(int zoomPercent) {
+RenderTheme RenderTheme::defaultTheme(int zoomPercent) {
   return github(zoomPercent);
 }
 

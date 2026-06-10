@@ -239,7 +239,7 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
 
   // Card 2: Extended Syntax
   extSyntaxLabel_->setText(tr("Markdown Extended Syntax"));
-  autoLinkCheck_->setText(tr("Auto Recognize Links") + QStringLiteral(" (https://typora.io)"));
+  autoLinkCheck_->setText(tr("Auto Recognize Links"));
   inlineMathCheck_->setText(tr("Inline Formula") + QStringLiteral(" ($\\LaTeX$)"));
   subscriptCheck_->setText(tr("Subscript") + QStringLiteral(" (H~2~O)"));
   superscriptCheck_->setText(tr("Superscript") + QStringLiteral(" (X^2^)"));

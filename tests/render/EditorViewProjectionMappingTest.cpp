@@ -169,7 +169,7 @@ void testInlineMathOpeningMarkerHitEntersContent() {
   options.sourceBase = 0;
   options.projectionState.cursorSourceOffset = mathStart + 1;
   InlineLayout layout;
-  const RenderTheme theme = RenderTheme::typoraLike();
+  const RenderTheme theme = RenderTheme::defaultTheme();
   layout.build(block->inlines(), markdown, theme, 900.0, theme.paragraphFont(), options);
   require(layout.mathAtomCount() == 0, "active inline math should not collapse to atom");
 

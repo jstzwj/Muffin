@@ -42,7 +42,7 @@ void testDefinitionPlaceholderHitKeepsCursorInSlot() {
   require(hit.definitionField == HitTestResult::DefinitionField::Destination, "definition placeholder hit should target destination field");
   require(hit.cursorRect.left() >= destination->rect.left(), "definition placeholder hit cursor should stay in destination slot");
   require(hit.cursorRect.left() < destination->rect.right(), "definition placeholder hit cursor should not jump to optional title end");
-  require(!block->definitionCursorRectForSourceOffset(hit.sourceOffset, RenderTheme::typoraLike()).isEmpty(),
+  require(!block->definitionCursorRectForSourceOffset(hit.sourceOffset, RenderTheme::defaultTheme()).isEmpty(),
           "definition source cursor rect should rebuild from source offset");
 
   controller.activateHit(hit);
@@ -124,7 +124,7 @@ void testEmptyLinkDefinitionTitlePlaceholderOnlyWhenFocused() {
   }
   require(titleToken != nullptr, "empty-title cursor restore should keep editable title token");
   const QRectF restoredCursor = block->definitionCursorRectForSourceOffset(controller.selection().cursorPosition().text.sourceOffset,
-                                                                          RenderTheme::typoraLike());
+                                                                          RenderTheme::defaultTheme());
   require(restoredCursor.left() >= titleToken->rect.left() - 0.01 &&
               restoredCursor.left() <= titleToken->rect.right() + 0.01,
           "empty-title cursor restored from source offset should stay inside the quotes");
@@ -164,8 +164,8 @@ void testDefinitionBoundaryHitPlacesCursorAtSourceEdges() {
   MarkdownNode* link = blockAt(session, 0);
   const DefinitionBlock definition = link->definition();
   const BlockLayout* block = requireViewBlock(view, link->id(), QStringLiteral("definition edge"));
-  const QRectF startCursor = block->definitionCursorRectForSourceOffset(definition.sourceRange.start, RenderTheme::typoraLike());
-  const QRectF endCursor = block->definitionCursorRectForSourceOffset(definition.sourceRange.end, RenderTheme::typoraLike());
+  const QRectF startCursor = block->definitionCursorRectForSourceOffset(definition.sourceRange.start, RenderTheme::defaultTheme());
+  const QRectF endCursor = block->definitionCursorRectForSourceOffset(definition.sourceRange.end, RenderTheme::defaultTheme());
   require(!startCursor.isEmpty(), "definition start cursor rect should exist");
   require(!endCursor.isEmpty(), "definition end cursor rect should exist");
 
@@ -199,7 +199,7 @@ void testNoTitleDefinitionRightEdgeHasNoInvisibleQuote() {
   }
   require(destination != nullptr, "definition destination slot should exist");
 
-  const QRectF endCursor = block->definitionCursorRectForSourceOffset(definition.sourceRange.end, RenderTheme::typoraLike());
+  const QRectF endCursor = block->definitionCursorRectForSourceOffset(definition.sourceRange.end, RenderTheme::defaultTheme());
   require(!endCursor.isEmpty(), "definition end cursor rect should exist");
   require(std::abs(endCursor.left() - destination->rect.right()) < 0.01,
           "no-title definition end cursor should not include invisible quote width");
@@ -286,7 +286,7 @@ void testFootnoteDefinitionUsesTokenPath() {
   require(sawNote, "footnote definition should include editable note token");
 
   const DefinitionBlock definition = footnote->definition();
-  const QRectF noteCursor = block->definitionCursorRectForSourceOffset(definition.noteRange.start, RenderTheme::typoraLike());
+  const QRectF noteCursor = block->definitionCursorRectForSourceOffset(definition.noteRange.start, RenderTheme::defaultTheme());
   require(!noteCursor.isEmpty(), "footnote note cursor should come from token path");
   const HitTestResult hit = view.hitTest(noteCursor.center());
   require(hit.definitionField == HitTestResult::DefinitionField::Note, "footnote token hit should target note field");
@@ -295,7 +295,7 @@ void testFootnoteDefinitionUsesTokenPath() {
 void testFocusedEmptyFootnoteDefinitionSlotSuppressesPlaceholder() {
   DocumentSession session;
   EditorView view;
-  const RenderTheme theme = RenderTheme::typoraLike();
+  const RenderTheme theme = RenderTheme::defaultTheme();
   const QFontMetricsF metrics(theme.paragraphFont());
 
   session.setMarkdownText(QStringLiteral("[^]: "), false);

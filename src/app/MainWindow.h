@@ -64,7 +64,7 @@ private:
   void setupMenuBar();
   void setupStatusBar();
   void setupConnections();
-  void applyTyporaLikeChrome();
+  void applyEditorChrome();
   void retranslateUi();
 
   void setupFileMenu();

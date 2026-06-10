@@ -170,7 +170,7 @@ void testSecondInlineMathHitMapsToItsSourceOffset() {
 
   const QString source = QStringLiteral("行内公式使用单美元符号：$E = mc^2$  和 $a_1 + b_1 = c_1$。");
   InlineLayout layout;
-  layout.build(inlines, source, RenderTheme::typoraLike(), 900.0, RenderTheme::typoraLike().paragraphFont(), InlineLayout::BuildOptions{});
+  layout.build(inlines, source, RenderTheme::defaultTheme(), 900.0, RenderTheme::defaultTheme().paragraphFont(), InlineLayout::BuildOptions{});
 
   const qsizetype secondMathSourceStart = source.indexOf(QStringLiteral("$a_1"));
   const qsizetype afterBSourceOffset = source.indexOf(QStringLiteral("b_1")) + 1;
@@ -197,7 +197,7 @@ void testSecondInlineMathHitInsertAfterEquals() {
   MarkdownNode* block = blockAt(session, 0);
 
   InlineLayout layout;
-  layout.build(block->inlines(), source, RenderTheme::typoraLike(), 900.0, RenderTheme::typoraLike().paragraphFont(), InlineLayout::BuildOptions{});
+  layout.build(block->inlines(), source, RenderTheme::defaultTheme(), 900.0, RenderTheme::defaultTheme().paragraphFont(), InlineLayout::BuildOptions{});
   require(layout.mathAtomCount() == 2, "two inactive inline math runs should collapse");
 
   const QString secondMath = QStringLiteral("a_1 + b_1 = c_1");

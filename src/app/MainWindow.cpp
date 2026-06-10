@@ -126,7 +126,7 @@ muffin::MainWindow::MainWindow(QWidget* parent)
   setupMenuBar();
   setupStatusBar();
   setupConnections();
-  applyTyporaLikeChrome();
+  applyEditorChrome();
   loadAppearanceSettings();
 }
 
@@ -238,7 +238,7 @@ void muffin::MainWindow::setupStatusBar() {
   statusBar()->addPermanentWidget(wordsLabel_);
 }
 
-void muffin::MainWindow::applyTyporaLikeChrome() {
+void muffin::MainWindow::applyEditorChrome() {
   setStyleSheet(QStringLiteral(
       "QMainWindow { background: #ffffff; }"
       "QMenuBar { background: #ffffff; color: #111111; padding: 0; }"
@@ -599,7 +599,7 @@ void muffin::MainWindow::applyTheme(QString name) {
         "QToolButton:hover { background:#2b3138; }"
         "QToolButton:checked { color:#e6edf3; background:#30363d; }"));
   } else {
-    applyTyporaLikeChrome();
+    applyEditorChrome();
   }
 
   const QColor ink = statusBarIconInk(name);

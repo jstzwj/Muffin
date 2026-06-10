@@ -407,7 +407,7 @@ bool StylizeController::toggleCollapsed(
     }
     nextAnchorLocal = qBound<qsizetype>(0, nextAnchorLocal, contentText.size());
   } else {
-    // ── Try word-wrap (Typora-like: select word, then apply markers) ──
+    // ── Try word-wrap (select word, then apply markers) ──
     qsizetype wordSourceStart = -1, wordSourceEnd = -1;
     if (findWordRange(context, wordSourceStart, wordSourceEnd)) {
       return toggleRange(context, wordSourceStart, wordSourceEnd,

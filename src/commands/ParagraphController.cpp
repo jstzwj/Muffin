@@ -594,7 +594,7 @@ bool ParagraphController::insertParagraphAfter() {
 }
 
 // ---------------------------------------------------------------------------
-// Toggle commands (Typora-style)
+// Toggle commands
 // ---------------------------------------------------------------------------
 
 qsizetype ParagraphController::nodeSourceStart(const MarkdownNode& node) const {

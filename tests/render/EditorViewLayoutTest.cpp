@@ -20,7 +20,7 @@ void testEditorViewPlainInlineLayout() {
   }
 
   const SelectionRange selection = inlineSelection(blockId, 1, inlineLayout->plainText().size() - 1);
-  const QVector<QRectF> rects = requireViewBlock(view, blockId, QStringLiteral("plain inline"))->selectionRects(selection, RenderTheme::typoraLike());
+  const QVector<QRectF> rects = requireViewBlock(view, blockId, QStringLiteral("plain inline"))->selectionRects(selection, RenderTheme::defaultTheme());
   require(!rects.isEmpty(), QStringLiteral("plain inline selection rects should exist"));
 }
 
@@ -46,7 +46,7 @@ void testEditorViewStyledInlineLayout() {
   selection.anchor = inlineCursor(blockId, 7, 9);
   selection.focus = inlineCursor(blockId, 11, 13);
   view.setSelectionRange(selection);
-  const QVector<QRectF> rects = requireViewBlock(view, blockId, QStringLiteral("styled inline"))->selectionRects(selection, RenderTheme::typoraLike());
+  const QVector<QRectF> rects = requireViewBlock(view, blockId, QStringLiteral("styled inline"))->selectionRects(selection, RenderTheme::defaultTheme());
   require(!rects.isEmpty(), QStringLiteral("styled inline selection rects should exist"));
 }
 
@@ -72,7 +72,7 @@ void testEditorViewListInlineMathHitEditing() {
   options.projectionState.cursorVisibleOffset = activeCursor.text.textOffset;
   options.projectionState.cursorSourceOffset = localMathSourceOffset;
   options.sourceBase = contentSourceStart;
-  const RenderTheme theme = RenderTheme::typoraLike();
+  const RenderTheme theme = RenderTheme::defaultTheme();
   inlineLayout.build(
       paragraph->inlines(),
       QStringLiteral("before $x+y$ after"),
@@ -128,7 +128,7 @@ void testEditorViewWrappedInlineLayout() {
   }
 
   const SelectionRange selection = inlineSelection(blockId, 0, inlineLayout->plainText().size());
-  const QVector<QRectF> rects = requireViewBlock(view, blockId, QStringLiteral("wrapped inline"))->selectionRects(selection, RenderTheme::typoraLike());
+  const QVector<QRectF> rects = requireViewBlock(view, blockId, QStringLiteral("wrapped inline"))->selectionRects(selection, RenderTheme::defaultTheme());
   require(rects.size() == lines.size(), QStringLiteral("wrapped inline selection rect count should match line count"));
 }
 
@@ -150,7 +150,7 @@ void testEditorViewTableCellInlineLayout() {
   require(!cell.text.cursorRect(1).isEmpty(), QStringLiteral("table cell cursor rect should exist"));
   require(!cell.text.selectionRects(0, 3).isEmpty(), QStringLiteral("table cell selection rects should exist"));
 
-  const QMarginsF padding = RenderTheme::typoraLike().tableCellPadding();
+  const QMarginsF padding = RenderTheme::defaultTheme().tableCellPadding();
   const QPointF point = cell.rect.marginsRemoved(padding).topLeft() + QPointF(cell.text.cursorRect(1).left(), cell.text.cursorRect(1).center().y());
   const HitTestResult hit = view.hitTest(point);
   require(hit.zone == HitTestResult::Zone::TableCell, QStringLiteral("table cell hit should use table cell zone"));
@@ -172,7 +172,7 @@ void testEditorViewTableCellInlineCodeEndHit() {
   MarkdownNode* cellNode = childAt(childAt(table, 1), 0);
   const BlockLayout* tableLayout = requireViewBlock(view, table->id(), QStringLiteral("table inline code end"));
   const auto& cell = tableLayout->tableRows().at(1).cells.at(0);
-  const QMarginsF padding = RenderTheme::typoraLike().tableCellPadding();
+  const QMarginsF padding = RenderTheme::defaultTheme().tableCellPadding();
   const QPointF textOrigin = cell.rect.marginsRemoved(padding).topLeft();
   const QRectF endCursor = cell.text.cursorRectForSourceOffset(cellContent.size());
   const QPointF point = textOrigin + QPointF(endCursor.left() + 2.0, endCursor.center().y());
@@ -292,7 +292,7 @@ void testMixedInlineParagraphHitEditingBeforeAutolink() {
 }
 
 void testInlineSelectionRects() {
-  RenderTheme theme = RenderTheme::typoraLike();
+  RenderTheme theme = RenderTheme::defaultTheme();
   InlineLayout layout;
   QVector<InlineNode> inlines;
   inlines.push_back(InlineNode::text(QStringLiteral("alpha beta gamma")));
