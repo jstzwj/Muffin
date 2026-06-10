@@ -19,7 +19,9 @@ private:
   void ensureExtensionsRegistered();
   void attachExtensions(cmark_parser* parser, const ParseOptions& options);
   void insertVirtualEmptyParagraphs(QStringView markdown, MarkdownNode& root) const;
+  void insertVirtualEmptyParagraphsInBlockQuotes(QStringView markdown, MarkdownNode& root) const;
   std::unique_ptr<MarkdownNode> createVirtualEmptyParagraph(int line) const;
+  std::unique_ptr<MarkdownNode> createVirtualEmptyParagraph(int line, int column, qsizetype sourceOffset) const;
 };
 
 }  // namespace muffin

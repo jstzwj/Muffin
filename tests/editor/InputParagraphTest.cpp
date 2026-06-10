@@ -120,6 +120,73 @@ void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
   require(selection.cursorPosition().text.textOffset == 0, "surrounded middle empty paragraph enter cursor offset mismatch");
 }
 
+void testBlockQuoteEnterKeepsInsertedBlankLineInsideQuote() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  const QString markdown = QStringLiteral(
+      "> A block quote can contain paragraphs.\n"
+      ">\n"
+      "> It can also contain **formatting**, `code`, and nested quotes.\n"
+      ">\n"
+      "> > Nested quote.");
+  session.setMarkdownText(markdown, false);
+  MarkdownNode* quote = blockAt(session, 0);
+  MarkdownNode* nestedQuote = childAt(quote, 2);
+  MarkdownNode* nestedParagraph = childAt(nestedQuote, 0);
+  setCursor(selection, nestedParagraph, 13);
+
+  require(input.insertParagraphBreak(), "enter after nested quote paragraph should stay inside quote");
+  require(session.markdownText() == QStringLiteral(
+                                      "> A block quote can contain paragraphs.\n"
+                                      ">\n"
+                                      "> It can also contain **formatting**, `code`, and nested quotes.\n"
+                                      ">\n"
+                                      "> > Nested quote.\n"
+                                      "> >\n"
+                                      "> > "),
+          "nested blockquote enter text mismatch");
+  require(blockAt(session, 0)->type() == BlockType::BlockQuote, "blockquote should remain one top-level quote");
+  require(session.document().root().children().size() == 1, "enter should not create a top-level blank paragraph outside quote");
+
+  require(selection.cursorPosition().text.textOffset == 0, "nested blockquote enter cursor offset mismatch");
+  require(undoStack.canUndo(), "blockquote enter should create undo command");
+  EditTransaction enterUndo = undoStack.takeUndo();
+  require(enterUndo.isSnapshot(), "blockquote structural enter should use snapshot undo");
+  require(enterUndo.before().markdownText == markdown, "blockquote enter undo before text mismatch");
+  require(enterUndo.after().markdownText == session.markdownText(), "blockquote enter undo after text mismatch");
+
+  session.setMarkdownText(markdown, false);
+  quote = blockAt(session, 0);
+  MarkdownNode* secondParagraph = childAt(quote, 1);
+  setCursor(selection, secondParagraph, QStringLiteral("It can also contain formatting, code, and nested quotes.").size());
+
+  require(input.insertParagraphBreak(), "enter after quote paragraph before nested quote should stay inside quote");
+  require(session.markdownText() == QStringLiteral(
+                                      "> A block quote can contain paragraphs.\n"
+                                      ">\n"
+                                      "> It can also contain **formatting**, `code`, and nested quotes.\n"
+                                      ">\n"
+                                      "> \n"
+                                      ">\n"
+                                      "> > Nested quote."),
+          "outer blockquote enter before nested quote text mismatch");
+  require(input.insertText(QStringLiteral("Continuation")), "typing after quote enter should edit inserted quote paragraph");
+  require(session.markdownText() == QStringLiteral(
+                                      "> A block quote can contain paragraphs.\n"
+                                      ">\n"
+                                      "> It can also contain **formatting**, `code`, and nested quotes.\n"
+                                      ">\n"
+                                      "> Continuation\n"
+                                      ">\n"
+                                      "> > Nested quote."),
+          "typing after outer blockquote enter text mismatch");
+}
+
 // testLocalReparsePreservesUntouchedNodeIds (lines 539-563)
 void testLocalReparsePreservesUntouchedNodeIds() {
   DocumentSession session;
@@ -380,6 +447,7 @@ int main(int argc, char** argv) {
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph);
+  RUN_TEST(testBlockQuoteEnterKeepsInsertedBlankLineInsideQuote);
   RUN_TEST(testLocalReparsePreservesUntouchedNodeIds);
   RUN_TEST(testBlockEditContextSeparatesBlockAndContentRanges);
   RUN_TEST(testTextBlockCommandBuilderCreatesStructuralEnterCommands);

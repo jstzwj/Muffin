@@ -4,6 +4,46 @@
 #include "editor/InlineSplit.h"
 
 namespace muffin {
+namespace {
+
+bool hasBlockQuoteAncestor(const MarkdownNode* node) {
+  for (const MarkdownNode* parent = node ? node->parent() : nullptr; parent; parent = parent->parent()) {
+    if (parent->type() == BlockType::BlockQuote) {
+      return true;
+    }
+  }
+  return false;
+}
+
+qsizetype lineStartForOffset(const QString& text, qsizetype offset) {
+  qsizetype lineStart = qBound<qsizetype>(0, offset, text.size());
+  while (lineStart > 0 && text.at(lineStart - 1) != QLatin1Char('\n')) {
+    --lineStart;
+  }
+  return lineStart;
+}
+
+QString blockQuotePrefixForLine(const QString& line) {
+  QString prefix;
+  qsizetype index = 0;
+  while (index < line.size()) {
+    const qsizetype markerStart = index;
+    while (index < line.size() && line.at(index) == QLatin1Char(' ')) {
+      ++index;
+    }
+    if (index >= line.size() || line.at(index) != QLatin1Char('>')) {
+      break;
+    }
+    ++index;
+    if (index < line.size() && line.at(index) == QLatin1Char(' ')) {
+      ++index;
+    }
+    prefix += line.mid(markerStart, index - markerStart);
+  }
+  return prefix;
+}
+
+}  // namespace
 
 TextBlockCommandBuilder::TextBlockCommandBuilder(DocumentSession* session, const BlockEditContextResolver* resolver)
     : session_(session), resolver_(resolver) {}
@@ -119,12 +159,14 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildInsertBlockBefore
 
   command.sourceStart = insertStart;
   command.removedLength = 0;
-  command.insertedText = QStringLiteral("\n\n");
+  const QString separator = paragraphSeparatorFor(context);
+  command.insertedText = separator;
   command.kind = EditTransaction::Kind::SplitParagraph;
   command.label = QStringLiteral("Insert Paragraph Before");
   command.preferredCursor = cursorFor(context.node->id(), 0);
-  command.fallbackSourceOffset = insertStart + 2;
-  command.nodeHints.push_back(LocalEditNodeHint{context.node->id(), insertStart + 2, context.node->type()});
+  command.fallbackSourceOffset = insertStart + separator.size();
+  command.nodeHints.push_back(LocalEditNodeHint{context.node->id(), command.fallbackSourceOffset, context.node->type()});
+  command.structureEdit = separator != QStringLiteral("\n\n");
   command.valid = true;
   command.handled = true;
   return command;
@@ -139,11 +181,13 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildInsertBlockAfter(
 
   command.sourceStart = insertEnd;
   command.removedLength = 0;
-  command.insertedText = QStringLiteral("\n\n");
+  const QString separator = paragraphSeparatorFor(context);
+  command.insertedText = separator;
   command.kind = EditTransaction::Kind::SplitParagraph;
   command.label = QStringLiteral("Insert Paragraph After");
-  command.fallbackSourceOffset = insertEnd + 2;
+  command.fallbackSourceOffset = insertEnd + separator.size();
   command.nodeHints.push_back(LocalEditNodeHint{context.node->id(), context.blockRange.byteStart, context.node->type()});
+  command.structureEdit = separator != QStringLiteral("\n\n");
   command.valid = true;
   command.handled = true;
   return command;
@@ -159,7 +203,8 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitTextBlock(
 
   QString nextContent = context.contentText;
   qsizetype nextOffset = normalizeSplitOffset(nextContent, contentOffset);
-  QString insertion = QStringLiteral("\n\n");
+  const QString separator = paragraphSeparatorFor(context);
+  QString insertion = separator;
   if (context.blockType == BlockType::Heading && context.blockRange.byteStart >= 0 &&
       context.blockRange.byteStart < context.contentRange.byteStart) {
     insertion += session_->markdownText().mid(context.blockRange.byteStart, context.contentRange.byteStart - context.blockRange.byteStart);
@@ -175,6 +220,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitTextBlock(
   command.label = QStringLiteral("Split Paragraph");
   command.fallbackSourceOffset = context.contentRange.byteStart + nextOffset;
   command.nodeHints.push_back(LocalEditNodeHint{context.node->id(), context.blockRange.byteStart, context.node->type()});
+  command.structureEdit = separator != QStringLiteral("\n\n");
   command.valid = true;
   command.handled = true;
   return command;
@@ -438,6 +484,30 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildRemoveEmptyHeadin
   command.valid = true;
   command.handled = true;
   return command;
+}
+
+QString TextBlockCommandBuilder::paragraphSeparatorFor(const BlockEditContext& context) const {
+  if (!session_ || !context.node || !hasBlockQuoteAncestor(context.node)) {
+    return QStringLiteral("\n\n");
+  }
+
+  const QString& markdown = session_->markdownText();
+  const qsizetype referenceOffset = context.contentRange.byteStart >= 0 ? context.contentRange.byteStart : context.blockRange.byteStart;
+  const qsizetype lineStart = lineStartForOffset(markdown, referenceOffset);
+  qsizetype lineEnd = lineStart;
+  while (lineEnd < markdown.size() && markdown.at(lineEnd) != QLatin1Char('\n')) {
+    ++lineEnd;
+  }
+
+  const QString prefix = blockQuotePrefixForLine(markdown.mid(lineStart, lineEnd - lineStart));
+  if (prefix.isEmpty()) {
+    return QStringLiteral("\n\n");
+  }
+  QString blankPrefix = prefix;
+  if (blankPrefix.endsWith(QLatin1Char(' '))) {
+    blankPrefix.chop(1);
+  }
+  return QStringLiteral("\n") + blankPrefix + QStringLiteral("\n") + prefix;
 }
 
 CursorPosition TextBlockCommandBuilder::cursorFor(NodeId blockId, qsizetype offset) const {

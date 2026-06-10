@@ -595,6 +595,7 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   result.root = adapter.convertBlock(document);
   insertVirtualEmptyParagraphs(markdownToParse, *result.root);
   annotateSourceOffsets(lineOffsets, *result.root);
+  insertVirtualEmptyParagraphsInBlockQuotes(markdownToParse, *result.root);
   insertMissingDefinitions(*result.root, definitions, lineOffsets);
   annotateDefinitionBlocks(*result.root, definitions, lineOffsets);
   insertTrailingEmptyParagraphAfterDefinition(markdownToParse, *result.root, definitions, lineOffsets);
@@ -694,17 +695,130 @@ void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, Markdown
   }
 }
 
+void CmarkGfmParser::insertVirtualEmptyParagraphsInBlockQuotes(QStringView markdown, MarkdownNode& root) const {
+  const QString text = markdown.toString();
+  const QStringList lines = text.split(QLatin1Char('\n'));
+
+  const auto quoteContentOffset = [](QStringView line, int depth) -> int {
+    int index = 0;
+    for (int currentDepth = 0; currentDepth < depth; ++currentDepth) {
+      while (index < line.size() && line.at(index) == QLatin1Char(' ')) {
+        ++index;
+      }
+      if (index >= line.size() || line.at(index) != QLatin1Char('>')) {
+        return -1;
+      }
+      ++index;
+      if (index < line.size() && line.at(index) == QLatin1Char(' ')) {
+        ++index;
+      }
+    }
+    return index;
+  };
+
+  const auto lineStartOffset = [&text](int line) -> qsizetype {
+    qsizetype offset = 0;
+    for (int currentLine = 1; currentLine < line; ++currentLine) {
+      const qsizetype newline = text.indexOf(QLatin1Char('\n'), offset);
+      if (newline < 0) {
+        return -1;
+      }
+      offset = newline + 1;
+    }
+    return offset;
+  };
+
+  const auto isEmptyQuoteLine = [&](int line, int depth, int& contentColumn, qsizetype& contentOffset) {
+    const int lineIndex = line - 1;
+    if (lineIndex < 0 || lineIndex >= lines.size()) {
+      return false;
+    }
+    const QString& sourceLine = lines.at(lineIndex);
+    const int contentIndex = quoteContentOffset(sourceLine, depth);
+    if (contentIndex < 0 || !QStringView(sourceLine).mid(contentIndex).trimmed().isEmpty()) {
+      return false;
+    }
+    const qsizetype startOffset = lineStartOffset(line);
+    if (startOffset < 0) {
+      return false;
+    }
+    contentColumn = contentIndex + 1;
+    contentOffset = startOffset + contentIndex;
+    return true;
+  };
+
+  const auto quoteDepth = [](const MarkdownNode& node) {
+    int depth = 0;
+    for (const MarkdownNode* current = &node; current; current = current->parent()) {
+      if (current->type() == BlockType::BlockQuote) {
+        ++depth;
+      }
+    }
+    return depth;
+  };
+
+  const auto visit = [&](const auto& self, MarkdownNode& node) -> void {
+    for (const auto& child : node.children()) {
+      self(self, *child);
+    }
+    if (node.type() != BlockType::BlockQuote || node.children().empty()) {
+      return;
+    }
+
+    const int depth = quoteDepth(node);
+    qsizetype childIndex = 0;
+    int previousEndLine = node.sourceRange().lineStart - 1;
+    while (childIndex < static_cast<qsizetype>(node.children().size())) {
+      MarkdownNode* child = node.children().at(static_cast<size_t>(childIndex)).get();
+      const SourceRange range = child->sourceRange();
+      const int startLine = range.lineStart;
+      const int blankLines = startLine > 0 ? startLine - previousEndLine - 1 : 0;
+      const int emptyCount = qMax(0, blankLines / 2);
+      const int firstEmptyLine = previousEndLine + 2;
+      for (int i = 0; i < emptyCount; ++i) {
+        const int emptyLine = firstEmptyLine + i * 2;
+        int contentColumn = 1;
+        qsizetype contentOffset = -1;
+        if (isEmptyQuoteLine(emptyLine, depth, contentColumn, contentOffset)) {
+          node.insertChild(childIndex, createVirtualEmptyParagraph(emptyLine, contentColumn, contentOffset));
+          ++childIndex;
+        }
+      }
+
+      previousEndLine = qMax(previousEndLine, range.lineEnd);
+      ++childIndex;
+    }
+
+    const int trailingLines = node.sourceRange().lineEnd - previousEndLine;
+    const int trailingEmptyCount = qMax(0, trailingLines / 2);
+    for (int i = 0; i < trailingEmptyCount; ++i) {
+      const int emptyLine = previousEndLine + 2 + i * 2;
+      int contentColumn = 1;
+      qsizetype contentOffset = -1;
+      if (isEmptyQuoteLine(emptyLine, depth, contentColumn, contentOffset)) {
+        node.appendChild(createVirtualEmptyParagraph(emptyLine, contentColumn, contentOffset));
+      }
+    }
+  };
+
+  visit(visit, root);
+}
+
 std::unique_ptr<MarkdownNode> CmarkGfmParser::createVirtualEmptyParagraph(int line) const {
+  return createVirtualEmptyParagraph(line, 1, 0);
+}
+
+std::unique_ptr<MarkdownNode> CmarkGfmParser::createVirtualEmptyParagraph(int line, int column, qsizetype sourceOffset) const {
   auto paragraph = std::make_unique<MarkdownNode>(BlockType::Paragraph);
   paragraph->inlines().push_back(InlineNode::text(QString()));
 
   SourceRange range;
   range.lineStart = line;
   range.lineEnd = line;
-  range.columnStart = 1;
-  range.columnEnd = 1;
-  range.byteStart = 0;
-  range.byteEnd = 0;
+  range.columnStart = column;
+  range.columnEnd = column;
+  range.byteStart = sourceOffset;
+  range.byteEnd = sourceOffset;
   paragraph->setSourceRange(range);
   return paragraph;
 }
