@@ -777,17 +777,41 @@ endif()
 if(APPLE)
   list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "QT_QPA_PLATFORM=set:offscreen")
 endif()
-add_executable(MuffinParserSmokeTest
-  tests/parser/ParserSmokeTest.cpp
+add_executable(MuffinParserBasicTest
+  tests/parser/ParserBasicTest.cpp
 )
 
-target_link_libraries(MuffinParserSmokeTest
+target_link_libraries(MuffinParserBasicTest
   PRIVATE
     MuffinCore
 )
 
-add_test(NAME MuffinParserSmokeTest COMMAND MuffinParserSmokeTest)
-set_tests_properties(MuffinParserSmokeTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
+add_test(NAME MuffinParserBasicTest COMMAND MuffinParserBasicTest)
+set_tests_properties(MuffinParserBasicTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
+
+add_executable(MuffinParserDefinitionTest
+  tests/parser/ParserDefinitionTest.cpp
+)
+
+target_link_libraries(MuffinParserDefinitionTest
+  PRIVATE
+    MuffinCore
+)
+
+add_test(NAME MuffinParserDefinitionTest COMMAND MuffinParserDefinitionTest)
+set_tests_properties(MuffinParserDefinitionTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
+
+add_executable(MuffinParserMathCodeTest
+  tests/parser/ParserMathCodeTest.cpp
+)
+
+target_link_libraries(MuffinParserMathCodeTest
+  PRIVATE
+    MuffinCore
+)
+
+add_test(NAME MuffinParserMathCodeTest COMMAND MuffinParserMathCodeTest)
+set_tests_properties(MuffinParserMathCodeTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
 
 add_executable(MuffinOutlineBuilderTest
   tests/document/OutlineBuilderTest.cpp
@@ -801,83 +825,488 @@ target_link_libraries(MuffinOutlineBuilderTest
 add_test(NAME MuffinOutlineBuilderTest COMMAND MuffinOutlineBuilderTest)
 set_tests_properties(MuffinOutlineBuilderTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
 
-add_executable(MuffinRenderLayoutTest
-  tests/render/RenderLayoutTest.cpp
+add_executable(MuffinRenderThemeTest
+  tests/render/RenderThemeTest.cpp
 )
 
-target_link_libraries(MuffinRenderLayoutTest
+target_link_libraries(MuffinRenderThemeTest
   PRIVATE
     MuffinUi
 )
 
 add_test(
-  NAME MuffinRenderLayoutTest
-  COMMAND MuffinRenderLayoutTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md"
+  NAME MuffinRenderThemeTest
+  COMMAND MuffinRenderThemeTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md"
 )
-set_tests_properties(MuffinRenderLayoutTest PROPERTIES
+set_tests_properties(MuffinRenderThemeTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
   RESOURCE_LOCK MuffinQtGui
 )
 if(APPLE)
-  set_tests_properties(MuffinRenderLayoutTest PROPERTIES DISABLED YES)
+  set_tests_properties(MuffinRenderThemeTest PROPERTIES DISABLED YES)
 endif()
 
-add_executable(MuffinEditorViewInlineTest
-  tests/render/EditorViewInlineTest.cpp
+add_executable(MuffinRenderIncrementalTest
+  tests/render/RenderIncrementalTest.cpp
 )
 
-target_link_libraries(MuffinEditorViewInlineTest
+target_link_libraries(MuffinRenderIncrementalTest
   PRIVATE
     MuffinUi
 )
 
-add_test(NAME MuffinEditorViewInlineTest COMMAND MuffinEditorViewInlineTest)
-set_tests_properties(MuffinEditorViewInlineTest PROPERTIES
+add_test(NAME MuffinRenderIncrementalTest COMMAND MuffinRenderIncrementalTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md")
+set_tests_properties(MuffinRenderIncrementalTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
   RESOURCE_LOCK MuffinQtGui
 )
 
-add_executable(MuffinEditorControllerTest
-  tests/editor/EditorControllerTest.cpp
+add_executable(MuffinRenderListMarkerTest
+  tests/render/RenderListMarkerTest.cpp
 )
 
-target_link_libraries(MuffinEditorControllerTest
+target_link_libraries(MuffinRenderListMarkerTest
   PRIVATE
     MuffinUi
 )
 
-add_test(NAME MuffinEditorControllerTest COMMAND MuffinEditorControllerTest)
-set_tests_properties(MuffinEditorControllerTest PROPERTIES
+add_test(NAME MuffinRenderListMarkerTest COMMAND MuffinRenderListMarkerTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md")
+set_tests_properties(MuffinRenderListMarkerTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
   RESOURCE_LOCK MuffinQtGui
 )
 
-add_executable(MuffinInputControllerTest
-  tests/editor/InputControllerTest.cpp
+add_executable(MuffinRenderInlineProjectionTest
+  tests/render/RenderInlineProjectionTest.cpp
 )
 
-target_link_libraries(MuffinInputControllerTest
+target_link_libraries(MuffinRenderInlineProjectionTest
   PRIVATE
     MuffinUi
 )
 
-add_test(NAME MuffinInputControllerTest COMMAND MuffinInputControllerTest)
-set_tests_properties(MuffinInputControllerTest PROPERTIES
+add_test(NAME MuffinRenderInlineProjectionTest COMMAND MuffinRenderInlineProjectionTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md")
+set_tests_properties(MuffinRenderInlineProjectionTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
   RESOURCE_LOCK MuffinQtGui
 )
 
-add_executable(MuffinParagraphControllerTest
-  tests/commands/ParagraphControllerTest.cpp
+add_executable(MuffinRenderInlineGeometryTest
+  tests/render/RenderInlineGeometryTest.cpp
 )
 
-target_link_libraries(MuffinParagraphControllerTest
+target_link_libraries(MuffinRenderInlineGeometryTest
   PRIVATE
     MuffinUi
 )
 
-add_test(NAME MuffinParagraphControllerTest COMMAND MuffinParagraphControllerTest)
-set_tests_properties(MuffinParagraphControllerTest PROPERTIES
+add_test(NAME MuffinRenderInlineGeometryTest COMMAND MuffinRenderInlineGeometryTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md")
+set_tests_properties(MuffinRenderInlineGeometryTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinRenderInlineHitTestTest
+  tests/render/RenderInlineHitTest.cpp
+)
+
+target_link_libraries(MuffinRenderInlineHitTestTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinRenderInlineHitTestTest COMMAND MuffinRenderInlineHitTestTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md")
+set_tests_properties(MuffinRenderInlineHitTestTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinRenderMathLayoutTest
+  tests/render/RenderMathLayoutTest.cpp
+)
+
+target_link_libraries(MuffinRenderMathLayoutTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinRenderMathLayoutTest COMMAND MuffinRenderMathLayoutTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md")
+set_tests_properties(MuffinRenderMathLayoutTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinRenderMathGeometryTest
+  tests/render/RenderMathGeometryTest.cpp
+)
+
+target_link_libraries(MuffinRenderMathGeometryTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinRenderMathGeometryTest COMMAND MuffinRenderMathGeometryTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md")
+set_tests_properties(MuffinRenderMathGeometryTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinRenderMathAuditTest
+  tests/render/RenderMathAuditTest.cpp
+)
+
+target_link_libraries(MuffinRenderMathAuditTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinRenderMathAuditTest COMMAND MuffinRenderMathAuditTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md")
+set_tests_properties(MuffinRenderMathAuditTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinRenderMathFunctions1Test
+  tests/render/RenderMathFunctions1Test.cpp
+)
+
+target_link_libraries(MuffinRenderMathFunctions1Test
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinRenderMathFunctions1Test COMMAND MuffinRenderMathFunctions1Test "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md")
+set_tests_properties(MuffinRenderMathFunctions1Test PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinRenderMathFunctions2Test
+  tests/render/RenderMathFunctions2Test.cpp
+)
+
+target_link_libraries(MuffinRenderMathFunctions2Test
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinRenderMathFunctions2Test COMMAND MuffinRenderMathFunctions2Test "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md")
+set_tests_properties(MuffinRenderMathFunctions2Test PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinRenderHtmlLayoutTest
+  tests/render/RenderHtmlLayoutTest.cpp
+)
+
+target_link_libraries(MuffinRenderHtmlLayoutTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinRenderHtmlLayoutTest COMMAND MuffinRenderHtmlLayoutTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md")
+set_tests_properties(MuffinRenderHtmlLayoutTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinRenderHtmlPaintTest
+  tests/render/RenderHtmlPaintTest.cpp
+)
+
+target_link_libraries(MuffinRenderHtmlPaintTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinRenderHtmlPaintTest COMMAND MuffinRenderHtmlPaintTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md")
+set_tests_properties(MuffinRenderHtmlPaintTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinRenderTreeSitterTest
+  tests/render/RenderTreeSitterTest.cpp
+)
+
+target_link_libraries(MuffinRenderTreeSitterTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinRenderTreeSitterTest COMMAND MuffinRenderTreeSitterTest "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render_smoke.md")
+set_tests_properties(MuffinRenderTreeSitterTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinEditorViewProjectionSourceTest
+  tests/render/EditorViewProjectionSourceTest.cpp
+)
+
+target_link_libraries(MuffinEditorViewProjectionSourceTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinEditorViewProjectionSourceTest COMMAND MuffinEditorViewProjectionSourceTest)
+set_tests_properties(MuffinEditorViewProjectionSourceTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinEditorViewProjectionMappingTest
+  tests/render/EditorViewProjectionMappingTest.cpp
+)
+
+target_link_libraries(MuffinEditorViewProjectionMappingTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinEditorViewProjectionMappingTest COMMAND MuffinEditorViewProjectionMappingTest)
+set_tests_properties(MuffinEditorViewProjectionMappingTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinEditorViewHitTestTest
+  tests/render/EditorViewHitTestTest.cpp
+)
+
+target_link_libraries(MuffinEditorViewHitTestTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinEditorViewHitTestTest COMMAND MuffinEditorViewHitTestTest)
+set_tests_properties(MuffinEditorViewHitTestTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinEditorViewSelectionTest
+  tests/render/EditorViewSelectionTest.cpp
+)
+
+target_link_libraries(MuffinEditorViewSelectionTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinEditorViewSelectionTest COMMAND MuffinEditorViewSelectionTest)
+set_tests_properties(MuffinEditorViewSelectionTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinEditorViewLayoutTest
+  tests/render/EditorViewLayoutTest.cpp
+)
+
+target_link_libraries(MuffinEditorViewLayoutTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinEditorViewLayoutTest COMMAND MuffinEditorViewLayoutTest)
+set_tests_properties(MuffinEditorViewLayoutTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinEditorCoreTest
+  tests/editor/EditorCoreTest.cpp
+)
+
+target_link_libraries(MuffinEditorCoreTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinEditorCoreTest COMMAND MuffinEditorCoreTest)
+set_tests_properties(MuffinEditorCoreTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinEditorStyleClipboardTest
+  tests/editor/EditorStyleClipboardTest.cpp
+)
+
+target_link_libraries(MuffinEditorStyleClipboardTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinEditorStyleClipboardTest COMMAND MuffinEditorStyleClipboardTest)
+set_tests_properties(MuffinEditorStyleClipboardTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinEditorCodeFenceSelectionTest
+  tests/editor/EditorCodeFenceSelectionTest.cpp
+)
+
+target_link_libraries(MuffinEditorCodeFenceSelectionTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinEditorCodeFenceSelectionTest COMMAND MuffinEditorCodeFenceSelectionTest)
+set_tests_properties(MuffinEditorCodeFenceSelectionTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinInputTextEditingTest
+  tests/editor/InputTextEditingTest.cpp
+)
+
+target_link_libraries(MuffinInputTextEditingTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinInputTextEditingTest COMMAND MuffinInputTextEditingTest)
+set_tests_properties(MuffinInputTextEditingTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinInputParagraphTest
+  tests/editor/InputParagraphTest.cpp
+)
+
+target_link_libraries(MuffinInputParagraphTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinInputParagraphTest COMMAND MuffinInputParagraphTest)
+set_tests_properties(MuffinInputParagraphTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinInputUndoSelectionTest
+  tests/editor/InputUndoSelectionTest.cpp
+)
+
+target_link_libraries(MuffinInputUndoSelectionTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinInputUndoSelectionTest COMMAND MuffinInputUndoSelectionTest)
+set_tests_properties(MuffinInputUndoSelectionTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinInputListTabTest
+  tests/editor/InputListTabTest.cpp
+)
+
+target_link_libraries(MuffinInputListTabTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinInputListTabTest COMMAND MuffinInputListTabTest)
+set_tests_properties(MuffinInputListTabTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinInputBlockEditingTest
+  tests/editor/InputBlockEditingTest.cpp
+)
+
+target_link_libraries(MuffinInputBlockEditingTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinInputBlockEditingTest COMMAND MuffinInputBlockEditingTest)
+set_tests_properties(MuffinInputBlockEditingTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinInputDefinitionHeadingTest
+  tests/editor/InputDefinitionHeadingTest.cpp
+)
+
+target_link_libraries(MuffinInputDefinitionHeadingTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinInputDefinitionHeadingTest COMMAND MuffinInputDefinitionHeadingTest)
+set_tests_properties(MuffinInputDefinitionHeadingTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinParagraphHeadingTest
+  tests/commands/ParagraphHeadingTest.cpp
+)
+
+target_link_libraries(MuffinParagraphHeadingTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinParagraphHeadingTest COMMAND MuffinParagraphHeadingTest)
+set_tests_properties(MuffinParagraphHeadingTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinParagraphBlockInsertTest
+  tests/commands/ParagraphBlockInsertTest.cpp
+)
+
+target_link_libraries(MuffinParagraphBlockInsertTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinParagraphBlockInsertTest COMMAND MuffinParagraphBlockInsertTest)
+set_tests_properties(MuffinParagraphBlockInsertTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinParagraphToggleBlockTest
+  tests/commands/ParagraphToggleBlockTest.cpp
+)
+
+target_link_libraries(MuffinParagraphToggleBlockTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinParagraphToggleBlockTest COMMAND MuffinParagraphToggleBlockTest)
+set_tests_properties(MuffinParagraphToggleBlockTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinParagraphToggleUndoTest
+  tests/commands/ParagraphToggleUndoTest.cpp
+)
+
+target_link_libraries(MuffinParagraphToggleUndoTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinParagraphToggleUndoTest COMMAND MuffinParagraphToggleUndoTest)
+set_tests_properties(MuffinParagraphToggleUndoTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
   RESOURCE_LOCK MuffinQtGui
 )
@@ -893,6 +1322,30 @@ target_link_libraries(MuffinTableModelOpsTest
 
 add_test(NAME MuffinTableModelOpsTest COMMAND MuffinTableModelOpsTest)
 set_tests_properties(MuffinTableModelOpsTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
+
+add_executable(MuffinTableControllerTest
+  tests/blocks/TableControllerTest.cpp
+)
+
+target_link_libraries(MuffinTableControllerTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinTableControllerTest COMMAND MuffinTableControllerTest)
+set_tests_properties(MuffinTableControllerTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
+
+add_executable(MuffinTableCellEditingTest
+  tests/blocks/TableCellEditingTest.cpp
+)
+
+target_link_libraries(MuffinTableCellEditingTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinTableCellEditingTest COMMAND MuffinTableCellEditingTest)
+set_tests_properties(MuffinTableCellEditingTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
 
 add_executable(MuffinCodeFenceControllerTest
   tests/blocks/CodeFenceControllerTest.cpp
@@ -930,17 +1383,32 @@ target_link_libraries(MuffinHtmlBlockControllerTest
 add_test(NAME MuffinHtmlBlockControllerTest COMMAND MuffinHtmlBlockControllerTest)
 set_tests_properties(MuffinHtmlBlockControllerTest PROPERTIES ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
 
-add_executable(MuffinBlockControllerTest
-  tests/blocks/BlockControllerTest.cpp
+add_executable(MuffinBlockTableUndoTest
+  tests/blocks/BlockTableUndoTest.cpp
 )
 
-target_link_libraries(MuffinBlockControllerTest
+target_link_libraries(MuffinBlockTableUndoTest
   PRIVATE
     MuffinUi
 )
 
-add_test(NAME MuffinBlockControllerTest COMMAND MuffinBlockControllerTest)
-set_tests_properties(MuffinBlockControllerTest PROPERTIES
+add_test(NAME MuffinBlockTableUndoTest COMMAND MuffinBlockTableUndoTest)
+set_tests_properties(MuffinBlockTableUndoTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinBlockCodeFrontMatterTest
+  tests/blocks/BlockCodeFrontMatterTest.cpp
+)
+
+target_link_libraries(MuffinBlockCodeFrontMatterTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinBlockCodeFrontMatterTest COMMAND MuffinBlockCodeFrontMatterTest)
+set_tests_properties(MuffinBlockCodeFrontMatterTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
   RESOURCE_LOCK MuffinQtGui
 )
