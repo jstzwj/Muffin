@@ -230,7 +230,7 @@
 <context>
     <name>muffin::BlockLayoutBuilder</name>
     <message>
-        <location filename="../src/render/BlockLayoutBuilder.cpp" line="199"/>
+        <location filename="../src/render/BlockLayoutBuilder.cpp" line="209"/>
         <source>Start writing...</source>
         <translation>書き始める...</translation>
     </message>
@@ -385,18 +385,17 @@
 <context>
     <name>muffin::MainWindow</name>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="275"/>
         <source>Parse %1 ms</source>
-        <translation>解析 %1 ms</translation>
+        <translation type="vanished">解析 %1 ms</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="326"/>
+        <location filename="../src/app/MainWindow.cpp" line="323"/>
         <source>Open Folder</source>
         <translation>フォルダーを開く</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="83"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="330"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="332"/>
         <source>Show / Hide Sidebar</source>
         <translation>サイドバーを表示 / 非表示</translation>
     </message>
@@ -538,7 +537,7 @@
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="138"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="231"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="233"/>
         <source>Copy Image</source>
         <translation>画像をコピー</translation>
     </message>
@@ -679,7 +678,7 @@
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="187"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="296"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="298"/>
         <source>Table</source>
         <translation>表</translation>
     </message>
@@ -809,302 +808,307 @@
         <translation>インラインコード</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="221"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="222"/>
+        <source>Inline Formula</source>
+        <translation>インライン数式</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="223"/>
         <source>Strikethrough</source>
         <translation>取り消し線</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="223"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="224"/>
         <source>Comment</source>
         <translation>コメント</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="224"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="226"/>
         <source>Hyperlink</source>
         <translation>ハイパーリンク</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="225"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="227"/>
         <source>Link Actions</source>
         <translation>リンク操作</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="226"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="228"/>
         <source>Image</source>
         <translation>画像</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="227"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="229"/>
         <source>Insert Image...</source>
         <translation>画像を挿入...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="228"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="230"/>
         <source>Insert Local Image...</source>
         <translation>ローカル画像を挿入...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="230"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="232"/>
         <source>Open Image Location...</source>
         <translation>画像の場所を開く...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="232"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="234"/>
         <source>Delete Image File</source>
         <translation>画像ファイルを削除</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="233"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="235"/>
         <source>Copy Image To...</source>
         <translation>画像をコピー先...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="234"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="236"/>
         <source>Rename / Move Image To...</source>
         <translation>名前の変更 / 画像の移動先...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="237"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="239"/>
         <source>Upload All Local Images</source>
         <translation>すべてのローカル画像をアップロード</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="238"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="240"/>
         <source>Reload All Images</source>
         <translation>すべての画像を再読み込み</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="241"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="243"/>
         <source>Resize Image</source>
         <translation>画像サイズの変更</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="244"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="246"/>
         <source>25%</source>
         <translation>25%</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="245"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="247"/>
         <source>50%</source>
         <translation>50%</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="246"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="248"/>
         <source>75%</source>
         <translation>75%</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="247"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="249"/>
         <source>100%</source>
         <translation>100%</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="248"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="250"/>
         <source>150%</source>
         <translation>150%</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="250"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="252"/>
         <source>Custom...</source>
         <translation>カスタム...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="252"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="254"/>
         <source>Convert Image Syntax</source>
         <translation>画像構文の変換</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="253"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="255"/>
         <source>Standard Markdown ![](url)</source>
         <translation>標準 Markdown ![](url)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="254"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="256"/>
         <source>HTML &lt;img&gt;</source>
         <translation>HTML &lt;img&gt;</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="256"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="258"/>
         <source>When Inserting Local Image</source>
         <translation>ローカル画像の挿入時</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="259"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="261"/>
         <source>Insert Relative Path</source>
         <translation>相対パスを挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="260"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="262"/>
         <source>Insert Absolute Path</source>
         <translation>絶対パスを挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="261"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="263"/>
         <source>Copy to Custom Folder</source>
         <translation>カスタムフォルダーにコピー</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="265"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="267"/>
         <source>Copy All Images To...</source>
         <translation>すべての画像をコピー先...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="266"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="268"/>
         <source>Move All Images To...</source>
         <translation>すべての画像を移動先...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="268"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="270"/>
         <source>Global Image Settings...</source>
         <translation>画像の全体設定...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="269"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="271"/>
         <source>Clear Style</source>
         <translation>スタイルをクリア</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="273"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="275"/>
         <location filename="../src/app/MainWindowActions.cpp" line="118"/>
         <source>Insert Table</source>
         <translation>表を挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="275"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="277"/>
         <source>Insert Row Above</source>
         <translation>上に行を挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="276"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="278"/>
         <source>Insert Row Below</source>
         <translation>下に行を挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="286"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="288"/>
         <source>Delete Row</source>
         <translation>行を削除</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="281"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="283"/>
         <source>Move Row Up</source>
         <translation>行を上へ移動</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="282"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="284"/>
         <source>Move Row Down</source>
         <translation>行を下へ移動</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="278"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="280"/>
         <source>Insert Column Left</source>
         <translation>左に列を挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="279"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="281"/>
         <source>Insert Column Right</source>
         <translation>右に列を挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="287"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="289"/>
         <source>Delete Column</source>
         <translation>列を削除</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="283"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="285"/>
         <source>Move Column Left</source>
         <translation>列を左へ移動</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="284"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="286"/>
         <source>Move Column Right</source>
         <translation>列を右へ移動</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="298"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="300"/>
         <source>Align Left</source>
         <translation>左揃え</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="299"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="301"/>
         <source>Align Center</source>
         <translation>中央揃え</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="300"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="302"/>
         <source>Align Right</source>
         <translation>右揃え</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="301"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="303"/>
         <source>Clear Alignment</source>
         <translation>配置をクリア</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="292"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="294"/>
         <source>Delete Table</source>
         <translation>表を削除</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="289"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="291"/>
         <source>Copy Table</source>
         <translation>表をコピー</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="290"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="292"/>
         <source>Format Table Source</source>
         <translation>表のソースを整形</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="305"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="307"/>
         <source>Code</source>
         <translation>コード</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="307"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="315"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="323"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="309"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="317"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="325"/>
         <source>Enter Edit</source>
         <translation>編集を開始</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="308"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="316"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="324"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="310"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="318"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="326"/>
         <source>Exit Edit</source>
         <translation>編集を終了</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="309"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="311"/>
         <source>Set Language...</source>
         <translation>言語を設定...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="313"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="315"/>
         <source>Math</source>
         <translation>数式</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="317"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="319"/>
         <source>Set TeX...</source>
         <translation>TeX を設定...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="325"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="327"/>
         <source>Set HTML...</source>
         <translation>HTML を設定...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="329"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="331"/>
         <source>View</source>
         <translation>表示</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="331"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="333"/>
         <source>Outline</source>
         <translation>アウトライン</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="332"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="334"/>
         <source>File Tree</source>
         <translation>ファイルツリー</translation>
     </message>
@@ -1113,117 +1117,117 @@
         <translation type="vanished">検索</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="334"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="336"/>
         <source>Source Code Mode</source>
         <translation>ソースコードモード</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="335"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="337"/>
         <source>Word Wrap</source>
         <translation>折り返し</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="336"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="338"/>
         <source>Focus Mode</source>
         <translation>フォーカスモード</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="337"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="339"/>
         <source>Typewriter Mode</source>
         <translation>タイプライターモード</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="338"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="340"/>
         <source>Show Status Bar</source>
         <translation>ステータスバーを表示</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="340"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="342"/>
         <source>Word Count Window</source>
         <translation>単語数ウィンドウ</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="341"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="343"/>
         <source>Toggle Full Screen</source>
         <translation>全画面表示を切り替え</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="342"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="344"/>
         <source>Always on Top</source>
         <translation>常に手前に表示</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="344"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="346"/>
         <source>Actual Size</source>
         <translation>実際のサイズ</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="345"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="347"/>
         <source>Zoom In</source>
         <translation>拡大</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="346"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="348"/>
         <source>Zoom Out</source>
         <translation>縮小</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="347"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="349"/>
         <source>Switch Windows</source>
         <translation>ウィンドウを切り替え</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="351"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="353"/>
         <source>Theme</source>
         <translation>テーマ</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="360"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="362"/>
         <source>Help</source>
         <translation>ヘルプ</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="361"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="363"/>
         <source>Quick Start</source>
         <translation>クイックスタート</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="362"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="364"/>
         <source>Markdown Reference</source>
         <translation>Markdown リファレンス</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="363"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="365"/>
         <source>Custom Themes</source>
         <translation>カスタムテーマ</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="365"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="367"/>
         <source>Acknowledgements</source>
         <translation>謝辞</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="366"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="368"/>
         <source>Changelog</source>
         <translation>変更履歴</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="367"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="369"/>
         <source>Official Website</source>
         <translation>公式ウェブサイト</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="368"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="370"/>
         <source>Feedback</source>
         <translation>フィードバック</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="369"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="371"/>
         <source>Check for Updates...</source>
         <translation>更新を確認...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="371"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="373"/>
         <source>About</source>
         <translation>について</translation>
     </message>
@@ -1251,8 +1255,8 @@ This cannot be undone.</source>
     </message>
     <message>
         <location filename="../src/app/MainWindowActionBinder.cpp" line="227"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="236"/>
-        <location filename="../src/app/MainWindowMenus.cpp" line="262"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="238"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="264"/>
         <source>Upload Image</source>
         <translation>画像をアップロード</translation>
     </message>

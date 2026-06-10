@@ -742,6 +742,36 @@ void muffin::MainWindowActionBinder::updateContextActions(MainWindow& window) {
   updateHtmlActions(window);
   updateMathActions(window);
   updateImageActions(window);
+  updateFormatActions(window);
+}
+
+void muffin::MainWindowActionBinder::updateFormatActions(MainWindow& window) {
+  const bool sourceMode = window.backend_->isSourceMode();
+  const bool editable = !sourceMode && window.renderCommands_.isOnEditableParagraphBlock();
+
+  window.commands_.setEnabled(QStringLiteral("format.bold"), editable);
+  window.commands_.setEnabled(QStringLiteral("format.italic"), editable);
+  window.commands_.setEnabled(QStringLiteral("format.underline"), editable);
+  window.commands_.setEnabled(QStringLiteral("format.code"), editable);
+  window.commands_.setEnabled(QStringLiteral("format.inline_math"), editable);
+  window.commands_.setEnabled(QStringLiteral("format.strike"), editable);
+
+  if (editable) {
+    const CursorFormatState fmt = window.renderCommands_.currentInlineFormats();
+    window.commands_.setChecked(QStringLiteral("format.bold"), fmt.bold);
+    window.commands_.setChecked(QStringLiteral("format.italic"), fmt.italic);
+    window.commands_.setChecked(QStringLiteral("format.underline"), fmt.underline);
+    window.commands_.setChecked(QStringLiteral("format.code"), fmt.code);
+    window.commands_.setChecked(QStringLiteral("format.inline_math"), fmt.inlineMath);
+    window.commands_.setChecked(QStringLiteral("format.strike"), fmt.strikethrough);
+  } else {
+    window.commands_.setChecked(QStringLiteral("format.bold"), false);
+    window.commands_.setChecked(QStringLiteral("format.italic"), false);
+    window.commands_.setChecked(QStringLiteral("format.underline"), false);
+    window.commands_.setChecked(QStringLiteral("format.code"), false);
+    window.commands_.setChecked(QStringLiteral("format.inline_math"), false);
+    window.commands_.setChecked(QStringLiteral("format.strike"), false);
+  }
 }
 
 void muffin::MainWindowActionBinder::updateImageActions(MainWindow& window) {

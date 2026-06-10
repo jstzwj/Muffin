@@ -218,6 +218,8 @@ void muffin::MainWindow::setupFormatMenu() {
   addCheckAction(format, QStringLiteral("format.italic"), tr("Italic"), QKeySequence::Italic);
   addCheckAction(format, QStringLiteral("format.underline"), tr("Underline"), QKeySequence::Underline, false, false);
   addCheckAction(format, QStringLiteral("format.code"), tr("Inline Code"), QKeySequence(QStringLiteral("Ctrl+Shift+`")));
+  format->addSeparator();
+  addCheckAction(format, QStringLiteral("format.inline_math"), tr("Inline Formula"), QKeySequence(QStringLiteral("Ctrl+Shift+M")), false, false);
   addCheckAction(format, QStringLiteral("format.strike"), tr("Strikethrough"), QKeySequence(QStringLiteral("Alt+Shift+5")), false, false);
   format->addSeparator();
   addAction(format, QStringLiteral("format.comment"), tr("Comment"), {}, false);

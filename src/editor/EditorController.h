@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/RenderCommandFacade.h"
 #include "document/DocumentSession.h"
 #include "blocks/code/CodeFenceController.h"
 #include "blocks/literal/LiteralBlockController.h"
@@ -50,6 +51,7 @@ public:
   bool selectAll();
   bool selectCurrentBlock();
   bool selectCurrentFormatSpan();
+  CursorFormatState queryCursorFormatState() const;
   bool moveBlockUp();
   bool moveBlockDown();
   void clearHistoryAndSelection();

@@ -1,5 +1,6 @@
 #include "editor/EditorController.h"
 
+#include "html/HtmlBox.h"
 #include "blocks/literal/LiteralBlockUtil.h"
 #include "projection/InlineProjection.h"
 #include "document/MarkdownNode.h"
@@ -162,10 +163,10 @@ bool fillSourceOffsetForTextHit(const DocumentSession& session, HitTestResult& h
 
   const SourceRange range = editable->sourceRange();
   const QString markdown = session.markdownText();
-  qsizetype start = editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+  qsizetype start = range.byteEnd > range.byteStart
                      ? range.byteStart
                      : sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
-  const qsizetype end = editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+  const qsizetype end = range.byteEnd > range.byteStart
                          ? range.byteEnd
                          : sourceOffsetForLineEnd(markdown, range.lineEnd);
   if (start < 0 || end < start) {
@@ -553,6 +554,60 @@ bool EditorController::selectCurrentFormatSpan() {
   }
 
   return selectWordAtCursor(context);
+}
+
+CursorFormatState EditorController::queryCursorFormatState() const {
+  CursorFormatState state;
+  if (!session_ || !selection_.hasCursor()) {
+    return state;
+  }
+
+  BlockEditContextResolver resolver(
+      const_cast<DocumentSession*>(session_),
+      const_cast<SelectionController*>(&selection_));
+  BlockEditContext context;
+  if (!resolver.current(context) || !context.inlineProjection.isValid()) {
+    return state;
+  }
+
+  const qsizetype offset = context.cursorTextOffset;
+  const auto& spans = context.inlineProjection.spans();
+
+  for (const auto& span : spans) {
+    if (span.kind == InlineSpanKind::OpenMarker || span.kind == InlineSpanKind::CloseMarker ||
+        span.kind == InlineSpanKind::HiddenSyntax) {
+      continue;
+    }
+    if (offset >= span.visibleStart && offset <= span.visibleEnd) {
+      if (span.bold) state.bold = true;
+      if (span.italic) state.italic = true;
+      if (span.strike) state.strikethrough = true;
+      if (span.type == InlineType::Code && span.kind == InlineSpanKind::Text) state.code = true;
+      if (span.type == InlineType::InlineMath && span.kind == InlineSpanKind::Text) state.inlineMath = true;
+    }
+  }
+
+  // Check HTML inline format data for underline
+  for (const auto& hd : context.inlineProjection.htmlFormatData()) {
+    for (const auto& fs : hd.formatSpans) {
+      const bool hasUnderline = (static_cast<int>(fs.decoration) & static_cast<int>(html::HtmlTextDecoration::Underline)) != 0;
+      if (!hasUnderline) {
+        continue;
+      }
+      const qsizetype spanDisplayStart = hd.displayStart + fs.start;
+      const qsizetype spanDisplayEnd = spanDisplayStart + fs.length;
+      for (const auto& projSpan : spans) {
+        if (projSpan.kind == InlineSpanKind::HtmlContent &&
+            projSpan.displayStart >= spanDisplayStart &&
+            projSpan.displayEnd <= spanDisplayEnd &&
+            offset >= projSpan.visibleStart && offset <= projSpan.visibleEnd) {
+          state.underline = true;
+        }
+      }
+    }
+  }
+
+  return state;
 }
 
 bool EditorController::selectWordAtCursor(const BlockEditContext& context) {

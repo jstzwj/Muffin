@@ -639,17 +639,6 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
       }
       continue;
     }
-    if (nodeStart > searchFrom) {
-      appendTextSpan(
-          state,
-          InlineType::Text,
-          InlineSpanKind::Text,
-          searchFrom,
-          nodeStart,
-          state.sourceText->mid(searchFrom, nodeStart - searchFrom),
-          true);
-    }
-
     // Try to group inline HTML sequences into a single renderable unit.
     if (node.type() == InlineType::HtmlInline) {
       // Handle standalone <img> tags as inline images (same as Markdown ![alt](src))
@@ -672,6 +661,16 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
       }
     }
 
+    if (nodeStart > searchFrom) {
+      appendTextSpan(
+          state,
+          InlineType::Text,
+          InlineSpanKind::Text,
+          searchFrom,
+          nodeStart,
+          state.sourceText->mid(searchFrom, nodeStart - searchFrom),
+          true);
+    }
     appendInline(state, node, nodeStart, nodeEnd, htmlFormatData);
     searchFrom = nodeEnd;
   }

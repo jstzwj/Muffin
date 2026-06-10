@@ -9,6 +9,15 @@
 
 namespace muffin {
 
+struct CursorFormatState {
+  bool bold = false;
+  bool italic = false;
+  bool underline = false;
+  bool code = false;
+  bool strikethrough = false;
+  bool inlineMath = false;
+};
+
 class EditorController;
 
 class RenderCommandFacade final {
@@ -77,6 +86,8 @@ public:
   bool isOnImage() const;
   QString imageSrcAtCursor() const;
   bool imageSourceRangeAtCursor(qsizetype& outStart, qsizetype& outEnd) const;
+
+  CursorFormatState currentInlineFormats() const;
 
 private:
   bool canRun() const;

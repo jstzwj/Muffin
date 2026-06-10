@@ -128,6 +128,22 @@ std::unique_ptr<MarkdownNode> CmarkNodeAdapter::convertBlock(cmark_node* node) {
     result->inlines() = convertInlineChildren(node);
   }
 
+  // Compute byte-level source range for block types whose editing code
+  // needs byteStart/byteEnd to resolve cell content or inline offsets.
+  if (lineOffsets_ && !markdown_.isEmpty()) {
+    const SourceRange srcRange = result->sourceRange();
+    if (srcRange.lineStart > 0 && result->sourceRange().byteEnd <= result->sourceRange().byteStart) {
+      const qsizetype start = lineOffsets_->offsetForLineByteColumn(srcRange.lineStart, qMax(1, srcRange.columnStart));
+      const qsizetype end = lineOffsets_->offsetForLineByteColumn(srcRange.lineEnd, qMax(1, srcRange.columnEnd + 1));
+      if (start >= 0 && end >= start && end <= markdown_.size()) {
+        SourceRange updated = srcRange;
+        updated.byteStart = start;
+        updated.byteEnd = end;
+        result->setSourceRange(updated);
+      }
+    }
+  }
+
   for (cmark_node* child = cmark_node_first_child(node); child; child = cmark_node_next(child)) {
     const auto type = cmark_node_get_type(child);
     if (isBlockType(type)) {

@@ -93,6 +93,101 @@ bool tableCellSpecialUnitContaining(
   return false;
 }
 
+// Convert an absolute InlineRange to a local range relative to sourceBase.
+InlineRange toLocalRange(InlineRange range, qsizetype sourceBase) {
+  if (!range.isValid()) {
+    return {};
+  }
+  if (sourceBase < 0) {
+    return range;
+  }
+  range.start -= sourceBase;
+  range.end -= sourceBase;
+  return range;
+}
+
+// Count inline marker characters that are hidden (not visible) before sourceOffset.
+// These are the markdown syntax characters like **, `, [ ], etc. that are invisible
+// in the rendered cell text.
+qsizetype countHiddenMarkerChars(const QVector<InlineNode>& nodes, qsizetype sourceBase, qsizetype sourceOffset) {
+  qsizetype hidden = 0;
+  for (const InlineNode& node : nodes) {
+    const InlineRange srcAbs = node.sourceRange();
+    if (!srcAbs.isValid()) {
+      continue;
+    }
+    const InlineRange src = toLocalRange(srcAbs, sourceBase);
+    // Skip nodes entirely before or after the range of interest.
+    if (src.end <= 0 || src.start >= sourceOffset) {
+      continue;
+    }
+
+    switch (node.type()) {
+      case InlineType::Strong:
+      case InlineType::Emphasis:
+      case InlineType::Strikethrough: {
+        InlineRange content = toLocalRange(node.contentRange(), sourceBase);
+        if (!content.isValid() || content.start < src.start || content.end > src.end) {
+          const qsizetype markerLen = qMax<qsizetype>(1, node.marker().size());
+          content = InlineRange{src.start + markerLen, src.end - markerLen};
+        }
+        // Opening marker (e.g., ** before content)
+        hidden += qMax<qsizetype>(0, qMin(content.start, sourceOffset) - src.start);
+        // Closing marker (e.g., ** after content)
+        if (src.end > content.end) {
+          hidden += qMax<qsizetype>(0, qMin(src.end, sourceOffset) - content.end);
+        }
+        // Recurse into children for nested formatting
+        hidden += countHiddenMarkerChars(node.children(), sourceBase, sourceOffset);
+        break;
+      }
+      case InlineType::Code:
+      case InlineType::InlineMath: {
+        InlineRange content = toLocalRange(node.contentRange(), sourceBase);
+        if (!content.isValid() || content.start < src.start || content.end > src.end) {
+          const qsizetype markerLen = qMax<qsizetype>(1, node.marker().size());
+          content = InlineRange{src.start + markerLen, src.end - markerLen};
+        }
+        hidden += qMax<qsizetype>(0, qMin(content.start, sourceOffset) - src.start);
+        if (src.end > content.end) {
+          hidden += qMax<qsizetype>(0, qMin(src.end, sourceOffset) - content.end);
+        }
+        break;
+      }
+      case InlineType::Link: {
+        if (!node.isAutolink()) {
+          InlineRange content = toLocalRange(node.contentRange(), sourceBase);
+          if (content.isValid()) {
+            // Opening marker ([)
+            hidden += qMax<qsizetype>(0, qMin(content.start, sourceOffset) - src.start);
+            // Closing hidden syntax (](url))
+            if (src.end > content.end) {
+              hidden += qMax<qsizetype>(0, qMin(src.end, sourceOffset) - content.end);
+            }
+          }
+        }
+        // Recurse into children for nested formatting in label
+        hidden += countHiddenMarkerChars(node.children(), sourceBase, sourceOffset);
+        break;
+      }
+      case InlineType::Image: {
+        InlineRange content = toLocalRange(node.contentRange(), sourceBase);
+        if (content.isValid()) {
+          hidden += qMax<qsizetype>(0, qMin(content.start, sourceOffset) - src.start);
+          if (src.end > content.end) {
+            hidden += qMax<qsizetype>(0, qMin(src.end, sourceOffset) - content.end);
+          }
+        }
+        break;
+      }
+      default:
+        hidden += countHiddenMarkerChars(node.children(), sourceBase, sourceOffset);
+        break;
+    }
+  }
+  return hidden;
+}
+
 qsizetype normalizedTableCellInsertOffset(const MarkdownNode& cell, const QString& content, qsizetype sourceOffset) {
   sourceOffset = qBound<qsizetype>(0, sourceOffset, content.size());
   qsizetype unitStart = 0;
@@ -180,12 +275,9 @@ qsizetype tableCellSourceOffsetForVisibleOffset(const QString& content, qsizetyp
 }
 
 qsizetype tableCellVisibleOffsetForEditCursor(const MarkdownNode& cell, const QString& content, qsizetype sourceOffset) {
-  qsizetype visibleOffset = visibleOffsetForTableCellSourceOffset(content, sourceOffset);
-  InlineProjection projection(cell.inlines(), content, InlineProjectionState{}, cell.sourceRange().byteStart);
-  if (projection.visibleOffsetForSourceOffset(sourceOffset, visibleOffset)) {
-    visibleOffset = qMax<qsizetype>(0, visibleOffset - tableSpecialSourceExtraBefore(content, sourceOffset));
-  }
-  return visibleOffset;
+  const qsizetype rawVis = visibleOffsetForTableCellSourceOffset(content, sourceOffset);
+  const qsizetype hiddenChars = countHiddenMarkerChars(cell.inlines(), cell.sourceRange().byteStart, sourceOffset);
+  return rawVis - hiddenChars;
 }
 
 std::optional<TableCellSourceEdit> buildTableCellInsertEdit(

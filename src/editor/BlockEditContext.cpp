@@ -153,10 +153,10 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
 
   const SourceRange range = editable->sourceRange();
   const QString markdown = session_->markdownText();
-  qsizetype start = editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+  qsizetype start = range.byteEnd > range.byteStart
                        ? range.byteStart
                        : sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
-  const qsizetype end = editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+  const qsizetype end = range.byteEnd > range.byteStart
                             ? range.byteEnd
                             : sourceOffsetForLineEnd(markdown, range.lineEnd);
   if (start < 0 || end < start) {

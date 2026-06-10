@@ -734,7 +734,7 @@ QString BlockLayoutBuilder::sourceTextForEditableNode(const MarkdownNode& node) 
 
 qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNode& node) const {
   const SourceRange range = node.sourceRange();
-  qsizetype start = node.type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+  qsizetype start = range.byteEnd > range.byteStart
                      ? range.byteStart
                      : sourceOffsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
   const qsizetype end = sourceContentEndForEditableNode(node);
@@ -759,7 +759,7 @@ qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNo
 
 qsizetype BlockLayoutBuilder::sourceContentEndForEditableNode(const MarkdownNode& node) const {
   const SourceRange range = node.sourceRange();
-  qsizetype end = node.type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+  qsizetype end = range.byteEnd > range.byteStart
                     ? range.byteEnd
                     : sourceOffsetForLineEnd(range.lineEnd);
   const qsizetype start = sourceOffsetForLineColumn(range.lineStart, qMax(1, range.columnStart));

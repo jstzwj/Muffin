@@ -16,6 +16,7 @@ public:
   static void updateHtmlActions(MainWindow& window);
   static void updateMathActions(MainWindow& window);
   static void updateImageActions(MainWindow& window);
+  static void updateFormatActions(MainWindow& window);
   static void updateContextActions(MainWindow& window);
   static void updateThemeActions(MainWindow& window);
 

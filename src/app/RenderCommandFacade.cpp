@@ -254,4 +254,11 @@ bool RenderCommandFacade::imageSourceRangeAtCursor(qsizetype& outStart, qsizetyp
   return editorController_.imageSourceRangeAtCursor(outStart, outEnd);
 }
 
+CursorFormatState RenderCommandFacade::currentInlineFormats() const {
+  if (!canRun()) {
+    return {};
+  }
+  return editorController_.queryCursorFormatState();
+}
+
 }  // namespace muffin
