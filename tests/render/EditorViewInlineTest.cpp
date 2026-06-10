@@ -816,6 +816,33 @@ void testInlineProjectionSpanContracts() {
       "inactive image span contract");
 }
 
+void testInlineHtmlImageProjectionContract() {
+  DocumentSession session;
+  const QString markdown = QStringLiteral("<a href=\"LICENSE\"><img src=\"license.svg\" alt=\"License\"><img src=\"platform.svg\" alt=\"Platform\"></a>");
+  session.setMarkdownText(markdown, false);
+  MarkdownNode* block = blockAt(session, 0);
+
+  InlineProjection projection(block->inlines(), markdown, InlineProjectionState{}, 0);
+  require(projection.isValid(), "inline html image projection should be valid");
+
+  int imageAtomCount = 0;
+  bool foundLicense = false;
+  bool foundPlatform = false;
+  for (const InlineProjectionSpan& span : projection.spans()) {
+    if (span.type != InlineType::Image || span.kind != InlineSpanKind::Atom) {
+      continue;
+    }
+    ++imageAtomCount;
+    foundLicense = foundLicense || span.href == QStringLiteral("license.svg");
+    foundPlatform = foundPlatform || span.href == QStringLiteral("platform.svg");
+  }
+  require(imageAtomCount == 2, "inline html image projection should emit both image atoms");
+  require(foundLicense, "inline html image projection should keep first image src");
+  require(foundPlatform, "inline html image projection should keep second image src");
+  require(projection.visibleText() == QStringLiteral("LicensePlatform"),
+          QStringLiteral("inline html image visible text mismatch: %1").arg(projection.visibleText()));
+}
+
 void testInlineProjectionMappingMatrix() {
   requireProjectionRoundTrip(
       {InlineNode::emphasis(QStringLiteral("*"), {InlineNode::text(QStringLiteral("x"))})},
@@ -2061,6 +2088,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testInlineMathOpeningMarkerHitEntersContent);
   RUN_TEST(testInlineProjectionForwardBiasAtInlineEnd);
   RUN_TEST(testInlineProjectionSpanContracts);
+  RUN_TEST(testInlineHtmlImageProjectionContract);
   RUN_TEST(testInlineProjectionMappingMatrix);
   RUN_TEST(testHorizontalNavigationEntersInlineMarkers);
   RUN_TEST(testTextHitActivationAddsSourceOffsetForInlineEditing);

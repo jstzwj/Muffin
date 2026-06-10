@@ -70,6 +70,7 @@ bool HtmlLayoutResult::valid() const { return static_cast<bool>(root_); }
 QSizeF HtmlLayoutResult::size() const { return size_; }
 QString HtmlLayoutResult::error() const { return error_; }
 QString HtmlLayoutResult::baseDirectory() const { return baseDirectory_; }
+const HtmlBox* HtmlLayoutResult::root() const { return root_.get(); }
 
 void HtmlLayoutResult::setBaseDirectory(QString directory) { baseDirectory_ = std::move(directory); }
 void HtmlLayoutResult::setRoot(std::unique_ptr<HtmlBox> root) { root_ = std::move(root); }

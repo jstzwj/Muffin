@@ -101,6 +101,31 @@ bool isTableInternalBox(const HtmlBox& box) {
          box.style().display == HtmlDisplay::TableCell;
 }
 
+bool isRenderableChildFor(const HtmlBox& parent, const HtmlBox& child) {
+  if (child.style().display == HtmlDisplay::None || !child.style().visible) {
+    return false;
+  }
+  if (parent.tag() == HtmlTag::Details && !parent.detailsOpen() && child.tag() != HtmlTag::Summary) {
+    return false;
+  }
+  return true;
+}
+
+bool containsReplacedInlineContent(const HtmlBox& box) {
+  if (box.tag() == HtmlTag::Image || box.style().display == HtmlDisplay::InlineBlock) {
+    return true;
+  }
+  for (const auto& child : box.children()) {
+    if (child->style().display == HtmlDisplay::None || !child->style().visible) {
+      continue;
+    }
+    if (containsReplacedInlineContent(*child)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace
 
 HtmlLayoutEngine::HtmlLayoutEngine() = default;
@@ -162,11 +187,7 @@ YGNode* HtmlLayoutEngine::createYogaNode(
   bool hasInlineContent = false;
   bool hasReplacedInlineContent = false;
   for (const auto& child : box.children()) {
-    if (child->style().display == HtmlDisplay::None || !child->style().visible) {
-      continue;
-    }
-    // Collapsed details: only summary is visible
-    if (box.tag() == HtmlTag::Details && !box.detailsOpen() && child->tag() != HtmlTag::Summary) {
+    if (!isRenderableChildFor(box, *child)) {
       continue;
     }
     if (child->style().display == HtmlDisplay::Block ||
@@ -178,11 +199,7 @@ YGNode* HtmlLayoutEngine::createYogaNode(
     if (child->isInlineLevel() || child->isTextRun()) {
       hasInlineContent = true;
     }
-    if (child->tag() == HtmlTag::Image) {
-      hasReplacedInlineContent = true;
-    }
-    // inline-block acts as replaced inline content in inline context
-    if (child->style().display == HtmlDisplay::InlineBlock) {
+    if (containsReplacedInlineContent(*child)) {
       hasReplacedInlineContent = true;
     }
   }
@@ -259,7 +276,10 @@ YGNode* HtmlLayoutEngine::createYogaNode(
     YGNodeSetMeasureFunc(node, measureTextCallback);
   } else {
     // Block-level container — recurse into children
-    if (style.display != HtmlDisplay::Flex && style.display != HtmlDisplay::TableRow) {
+    if (box.isInlineLevel() && hasReplacedInlineContent && !hasBlockChildren) {
+      YGNodeStyleSetFlexDirection(node, YGFlexDirectionRow);
+      YGNodeStyleSetFlexWrap(node, YGWrapWrap);
+    } else if (style.display != HtmlDisplay::Flex && style.display != HtmlDisplay::TableRow) {
       YGNodeStyleSetFlexDirection(node, YGFlexDirectionColumn);
     }
     int childIndex = 0;
@@ -567,10 +587,7 @@ qreal HtmlLayoutEngine::layoutFixedWidthBox(
   bool hasInlineContent = false;
   bool hasReplacedInlineContent = false;
   for (const auto& child : box.children()) {
-    if (!child->style().visible || child->style().display == HtmlDisplay::None) {
-      continue;
-    }
-    if (box.tag() == HtmlTag::Details && !box.detailsOpen() && child->tag() != HtmlTag::Summary) {
+    if (!isRenderableChildFor(box, *child)) {
       continue;
     }
     if (child->style().display == HtmlDisplay::Block ||
@@ -582,7 +599,7 @@ qreal HtmlLayoutEngine::layoutFixedWidthBox(
     if (child->isInlineLevel() || child->isTextRun()) {
       hasInlineContent = true;
     }
-    if (child->tag() == HtmlTag::Image) {
+    if (containsReplacedInlineContent(*child)) {
       hasReplacedInlineContent = true;
     }
   }

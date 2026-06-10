@@ -129,6 +129,8 @@ private:
   static void appendTextSpan(BuildState& state, InlineType type, InlineSpanKind kind, qsizetype sourceStart, qsizetype sourceEnd,
                              qsizetype contentSourceStart, qsizetype contentSourceEnd, QString displayText, bool visible,
                              bool editable = true);
+  static bool appendHtmlImageAtom(BuildState& state, const QString& tagText, qsizetype sourceStart, qsizetype sourceEnd,
+                                  qsizetype contentSourceStart, qsizetype contentSourceEnd);
   static void appendInlines(BuildState& state, const QVector<InlineNode>& inlines, qsizetype sourceStart, qsizetype sourceEnd,
                             QVector<HtmlInlineFormatData>& htmlFormatData);
   static void appendInline(BuildState& state, const InlineNode& node, qsizetype sourceStart, qsizetype sourceEnd,

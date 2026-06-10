@@ -3683,6 +3683,60 @@ void testHtmlImagePaintContract() {
           QStringLiteral("html missing image placeholder should paint visible pixels"));
 }
 
+void testHtmlLinkWrappedSvgImagesPaintContract() {
+  QTemporaryDir dir;
+  require(dir.isValid(), QStringLiteral("html svg badge temp dir should be valid"));
+
+  const QString firstPath = dir.filePath(QStringLiteral("first.svg"));
+  const QString secondPath = dir.filePath(QStringLiteral("second.svg"));
+  {
+    QFile file(firstPath);
+    require(file.open(QIODevice::WriteOnly | QIODevice::Text), QStringLiteral("first svg should open"));
+    file.write("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"82\" height=\"20\">"
+               "<rect width=\"82\" height=\"20\" fill=\"#0a7cff\"/>"
+               "<text x=\"6\" y=\"14\" fill=\"#ffffff\" font-size=\"12\">MIT</text>"
+               "</svg>");
+  }
+  {
+    QFile file(secondPath);
+    require(file.open(QIODevice::WriteOnly | QIODevice::Text), QStringLiteral("second svg should open"));
+    file.write("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"120\" height=\"20\">"
+               "<rect width=\"120\" height=\"20\" fill=\"#6f42c1\"/>"
+               "<text x=\"6\" y=\"14\" fill=\"#ffffff\" font-size=\"12\">Platform</text>"
+               "</svg>");
+  }
+
+  html::HtmlRenderer renderer;
+  html::HtmlLayoutResult result = renderer.render(
+      QStringLiteral("<div><a href=\"LICENSE\"><img src=\"first.svg\" alt=\"License\">"
+                     "<img src=\"second.svg\" alt=\"Platform\"></a></div>"),
+      16.0,
+      320.0,
+      dir.path());
+  require(result.valid(), QStringLiteral("html linked svg images fixture should render"));
+
+  const html::HtmlBox* root = result.root();
+  require(root != nullptr, QStringLiteral("html linked svg result should have root"));
+  QVector<const html::HtmlBox*> images;
+  collectChildrenWithTag(*root, html::HtmlTag::Image, images);
+  require(images.size() == 2, QStringLiteral("html linked svg fixture should keep both image boxes"));
+  require(images[0]->geometry().width >= 80.0 && images[0]->geometry().height >= 19.0,
+          QStringLiteral("first linked svg image should receive natural dimensions"));
+  require(images[1]->geometry().width >= 118.0 && images[1]->geometry().height >= 19.0,
+          QStringLiteral("second linked svg image should receive natural dimensions"));
+
+  QImage output(360, 80, QImage::Format_ARGB32_Premultiplied);
+  output.fill(Qt::white);
+  QPainter painter(&output);
+  result.paint(painter, QPointF(10, 10));
+  painter.end();
+
+  const QRect ink = imageInkBounds(output, Qt::white);
+  require(!ink.isNull(), QStringLiteral("linked svg images should paint visible pixels"));
+  require(ink.width() >= 180 && ink.height() >= 18,
+          QStringLiteral("linked svg images should paint both badges"));
+}
+
 void testHtmlLinkAndRelativeImageHitContract() {
   html::HtmlRenderer renderer;
   html::HtmlLayoutResult linkResult =
@@ -3985,6 +4039,7 @@ int main(int argc, char** argv) {
   runTest("testHtmlInlineStyleAndTagSemanticsContract", [] { testHtmlInlineStyleAndTagSemanticsContract(); });
   runTest("testHtmlPreLayoutContract", [] { testHtmlPreLayoutContract(); });
   runTest("testHtmlImagePaintContract", [] { testHtmlImagePaintContract(); });
+  runTest("testHtmlLinkWrappedSvgImagesPaintContract", [] { testHtmlLinkWrappedSvgImagesPaintContract(); });
   runTest("testHtmlLinkAndRelativeImageHitContract", [] { testHtmlLinkAndRelativeImageHitContract(); });
   runTest("testHtmlWrappedTextLinePositionsContract", [] { testHtmlWrappedTextLinePositionsContract(); });
   runTest("testTreeSitterCodeHighlighting", [] { testTreeSitterCodeHighlighting(); });

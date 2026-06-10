@@ -3,6 +3,8 @@
 #include "houdini.h"
 #include "html/InlineHtmlRenderer.h"
 
+#include <QRegularExpression>
+
 namespace muffin {
 namespace {
 
@@ -110,6 +112,18 @@ QStringView extractClosingTagName(const QString& text) {
     ++end;
   }
   return end > 2 ? QStringView(text).mid(2, end - 2) : QStringView();
+}
+
+// Extract a named attribute value from raw HTML tag text.
+// Handles src="...", src='...', alt="...", etc.
+QString extractHtmlAttr(const QString& tag, const QString& attrName) {
+  const QRegularExpression re(
+      QStringLiteral("(?:^|\\s)%1\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)')")
+          .arg(QRegularExpression::escape(attrName)),
+      QRegularExpression::CaseInsensitiveOption);
+  const auto match = re.match(tag);
+  if (!match.hasMatch()) return {};
+  return match.captured(1).isNull() ? match.captured(2) : match.captured(1);
 }
 
 bool isSelfClosingBrTag(const QString& text) {
@@ -557,6 +571,25 @@ void InlineProjection::appendTextSpan(
   state.spans.push_back(span);
 }
 
+bool InlineProjection::appendHtmlImageAtom(
+    BuildState& state,
+    const QString& tagText,
+    qsizetype sourceStart,
+    qsizetype sourceEnd,
+    qsizetype contentSourceStart,
+    qsizetype contentSourceEnd) {
+  const QString src = extractHtmlAttr(tagText, QStringLiteral("src"));
+  if (src.isEmpty()) {
+    return false;
+  }
+  const QString alt = extractHtmlAttr(tagText, QStringLiteral("alt"));
+  appendTextSpan(state, InlineType::Image, InlineSpanKind::Atom,
+                 sourceStart, sourceEnd, contentSourceStart, contentSourceEnd,
+                 alt.isEmpty() ? QString(QChar::Space) : alt, true);
+  state.spans.last().href = src;
+  return true;
+}
+
 void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode>& inlines, qsizetype sourceStart, qsizetype sourceEnd,
                                      QVector<HtmlInlineFormatData>& htmlFormatData) {
   qsizetype searchFrom = sourceStart;
@@ -619,6 +652,15 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
 
     // Try to group inline HTML sequences into a single renderable unit.
     if (node.type() == InlineType::HtmlInline) {
+      // Handle standalone <img> tags as inline images (same as Markdown ![alt](src))
+      const QStringView imgTagName = extractOpeningTagName(node.text());
+      if (imgTagName.compare(u"img", Qt::CaseInsensitive) == 0) {
+        if (appendHtmlImageAtom(state, node.text(), nodeStart, nodeEnd, nodeStart, nodeEnd)) {
+          searchFrom = nodeEnd;
+          continue;
+        }
+      }
+
       const int consumed = tryAppendHtmlInlineGroup(state, inlines, i, nodeStart, sourceEnd, searchFrom, htmlFormatData);
       if (consumed > 0) {
         // Advance past consumed nodes. The loop's ++i handles one increment.
@@ -756,6 +798,26 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
   } else {
     // When not active, render as formatted text — no markers in display text
     // (same pattern as markdown emphasis: content only when inactive, markers appear when cursor enters)
+
+    // Check for image-only content (e.g., <a href="..."><img src="..."></a>)
+    // InlineHtmlRenderer produces empty text for <img> since it has no text children.
+    // Detect this case and emit an Atom span so the existing image pipeline handles it.
+    if (rendered.text.trimmed().isEmpty()) {
+      bool appendedImage = false;
+      for (int j = index + 1; j < closeIndex; ++j) {
+        const InlineNode& mid = inlines[j];
+        if (mid.type() == InlineType::HtmlInline) {
+          const QStringView midTag = extractOpeningTagName(mid.text());
+          if (midTag.compare(u"img", Qt::CaseInsensitive) == 0) {
+            appendedImage = appendHtmlImageAtom(state, mid.text(), openStart, closeEnd, openEnd, closeNodeStart) || appendedImage;
+          }
+        }
+      }
+      if (appendedImage) {
+        searchFrom = closeEnd;
+        return closeIndex - index + 1;
+      }
+    }
 
     // HtmlContent span (visible rendered text)
     const qsizetype contentDisplayStart = state.displayOffset;

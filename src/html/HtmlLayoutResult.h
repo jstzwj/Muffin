@@ -32,6 +32,7 @@ public:
   QSizeF size() const;
   QString error() const;
   QString baseDirectory() const;
+  const HtmlBox* root() const;
 
   void setBaseDirectory(QString directory);
   void setRoot(std::unique_ptr<HtmlBox> root);
