@@ -1151,12 +1151,6 @@ EditorView::HeadingBadge EditorView::headingBadgeForBlock(NodeId blockId) const 
     return {};
   }
 
-  // When the cursor is inside this heading (expanded mode), the visible ###
-  // prefix replaces the badge, so suppress it.
-  if (topId == cursorPosition_.blockId) {
-    return {};
-  }
-
   const int level = block->headingLevel();
   QFont badgeFont = theme_.paragraphFont();
   badgeFont.setPointSizeF(badgeFont.pointSizeF() * 0.8);

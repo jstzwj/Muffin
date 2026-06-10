@@ -47,6 +47,10 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
         if (context.node->type() == BlockType::ListItem) {
           return buildOutdentListItem(context);
         }
+        if (context.blockType == BlockType::Heading && nextParagraph.isEmpty() &&
+            context.blockRange.byteStart >= 0 && context.contentRange.byteStart > context.blockRange.byteStart) {
+          return buildConvertHeadingToParagraph(context);
+        }
         return buildMergeWithPreviousParagraph(context);
       }
       command.sourceStart = context.contentRange.byteStart + nextOffset - 1;
@@ -59,6 +63,10 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
       break;
     case Operation::Delete:
       if (nextOffset >= nextParagraph.size()) {
+        if (context.blockType == BlockType::Heading && nextParagraph.isEmpty() &&
+            context.blockRange.byteStart >= 0 && context.contentRange.byteStart > context.blockRange.byteStart) {
+          return buildRemoveEmptyHeading(context);
+        }
         return buildMergeWithNextParagraph(context);
       }
       command.sourceStart = context.contentRange.byteStart + nextOffset;
@@ -379,6 +387,54 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildIndentListItem(co
   command.label = QStringLiteral("Indent List Item");
   command.fallbackSourceOffset = context.contentRange.byteStart + context.cursorTextOffset + 2;
   command.structureEdit = true;
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildConvertHeadingToParagraph(const BlockEditContext& context) const {
+  Command command;
+  if (!session_ || !context.node || context.blockRange.byteStart < 0) {
+    return command;
+  }
+
+  const qsizetype prefixLength = context.contentRange.byteStart - context.blockRange.byteStart;
+  command.sourceStart = context.blockRange.byteStart;
+  command.removedLength = prefixLength;
+  command.insertedText.clear();
+  command.kind = EditTransaction::Kind::DeleteText;
+  command.label = QStringLiteral("Convert Heading to Paragraph");
+  command.preferredCursor = cursorFor(context.node->id(), 0);
+  command.fallbackSourceOffset = context.blockRange.byteStart;
+  command.nodeHints.push_back(LocalEditNodeHint{context.node->id(), context.blockRange.byteStart, context.node->type()});
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildRemoveEmptyHeading(const BlockEditContext& context) const {
+  Command command;
+  if (!session_ || !resolver_ || !context.node || context.blockRange.byteStart < 0) {
+    return command;
+  }
+
+  BlockEditContext next;
+  if (!resolver_->nextEditableTextBlock(*context.node, next)) {
+    command.valid = true;
+    command.handled = false;
+    return command;
+  }
+
+  const qsizetype separatorStart = context.blockRange.byteStart;
+  const qsizetype separatorEnd = next.contentRange.byteStart >= 0 ? next.contentRange.byteStart : next.blockRange.byteStart;
+  const qsizetype separatorLength = qMax<qsizetype>(0, separatorEnd - separatorStart);
+
+  command.sourceStart = separatorStart;
+  command.removedLength = separatorLength;
+  command.insertedText.clear();
+  command.kind = EditTransaction::Kind::DeleteText;
+  command.label = QStringLiteral("Delete Empty Heading");
+  command.fallbackSourceOffset = separatorStart;
   command.valid = true;
   command.handled = true;
   return command;

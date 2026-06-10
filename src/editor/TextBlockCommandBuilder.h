@@ -49,6 +49,8 @@ public:
   Command buildIndentListItem(const BlockEditContext& context) const;
 
 private:
+  Command buildConvertHeadingToParagraph(const BlockEditContext& context) const;
+  Command buildRemoveEmptyHeading(const BlockEditContext& context) const;
   CursorPosition cursorFor(NodeId blockId, qsizetype offset) const;
 
   DocumentSession* session_ = nullptr;

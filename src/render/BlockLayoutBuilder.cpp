@@ -68,24 +68,6 @@ bool selectionFocusesNode(const SelectionRange& selection, NodeId nodeId) {
   return nodeId.isValid() && selection.focus.blockId == nodeId && selection.focus.text.nodeId == nodeId;
 }
 
-struct HeadingSourceBounds {
-  qsizetype rawStart;
-  qsizetype contentStart;
-};
-
-HeadingSourceBounds computeHeadingSourceBounds(const QString& md, const MarkdownNode& node, qsizetype rawStart, qsizetype end) {
-  qsizetype contentStart = rawStart;
-  if (node.type() == BlockType::Heading) {
-    while (contentStart < end && md.at(contentStart) == QLatin1Char('#')) {
-      ++contentStart;
-    }
-    if (contentStart < end && md.at(contentStart).isSpace()) {
-      ++contentStart;
-    }
-  }
-  return {rawStart, contentStart};
-}
-
 bool isEmptyDocumentParagraph(const QString& markdown, const MarkdownNode& node) {
   const SourceRange range = node.sourceRange();
   return markdown.isEmpty() && node.type() == BlockType::Paragraph && range.byteStart == 0 && range.byteEnd == 0;
@@ -227,48 +209,18 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   }
 
   auto inlineLayout = std::make_unique<InlineLayout>();
+  const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
   InlineLayout::BuildOptions options;
-
-  if (node.type() == BlockType::Heading) {
-    const SourceRange range = node.sourceRange();
-    const qsizetype rawStart = range.byteEnd > range.byteStart
-                                   ? range.byteStart
-                                   : sourceOffsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
-    const qsizetype contentEnd = sourceContentEndForEditableNode(node);
-    const auto bounds = computeHeadingSourceBounds(markdownText_, node, rawStart, contentEnd);
-    const bool expanded = selectionFocusesNode(selection_, node.id());
-
-    if (expanded) {
-      QFont font = theme.paragraphFont();
-      font.setBold(true);
-      layout->setContentSourceStart(bounds.rawStart);
-      options.headingPrefixLength = bounds.contentStart - bounds.rawStart;
-      options.sourceBase = bounds.rawStart;
-      options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), bounds.rawStart);
-      const QString sourceText = markdownText_.mid(bounds.rawStart, contentEnd - bounds.rawStart);
-      inlineLayout->build(node.inlines(), sourceText, theme, width, font, options);
-      layout->setRect(QRectF(x, y, width, inlineLayout->height()));
-    } else {
-      layout->setContentSourceStart(bounds.contentStart);
-      const QFont font = theme.headingFont(node.headingLevel());
-      options.sourceBase = bounds.contentStart;
-      options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), bounds.contentStart);
-      const QString sourceText = markdownText_.mid(bounds.contentStart, contentEnd - bounds.contentStart);
-      inlineLayout->build(node.inlines(), sourceText, theme, width, font, options);
-      qreal height = inlineLayout->height();
-      if (node.headingLevel() <= 2) {
-        height += theme.blockSpacing() * 0.35;
-      }
-      layout->setRect(QRectF(x, y, width, height));
-    }
-  } else {
-    layout->setContentSourceStart(sourceContentStartForEditableNode(node));
-    const QFont font = theme.paragraphFont();
-    options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), sourceContentStartForEditableNode(node));
-    options.sourceBase = sourceContentStartForEditableNode(node);
-    inlineLayout->build(node.inlines(), sourceTextForEditableNode(node), theme, width, font, options);
-    layout->setRect(QRectF(x, y, width, inlineLayout->height()));
+  options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), sourceContentStartForEditableNode(node));
+  options.sourceBase = sourceContentStartForEditableNode(node);
+  inlineLayout->build(node.inlines(), sourceTextForEditableNode(node), theme, width, font, options);
+  qreal height = inlineLayout->height();
+  if (node.type() == BlockType::Heading && node.headingLevel() <= 2) {
+    height += theme.blockSpacing() * 0.35;
   }
+  layout->setContentSourceStart(sourceContentStartForEditableNode(node));
+  layout->setRect(QRectF(x, y, width, height));
+
 
   layout->setInlineLayout(std::move(inlineLayout));
   return layout;
