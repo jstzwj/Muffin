@@ -29,6 +29,7 @@ public:
   void attach(DocumentSession* session, EditorView* view);
   void detach();
 
+  DocumentSession* session() const;
   SelectionController& selection();
   const SelectionController& selection() const;
   UndoStack& undoStack();

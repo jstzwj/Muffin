@@ -92,6 +92,8 @@ void muffin::MainWindowActionBinder::bindCommands(MainWindow& window) {
   window.commands_.bind(QStringLiteral("format.bold"), [&window] { window.backend_->toggleBold(); });
   window.commands_.bind(QStringLiteral("format.italic"), [&window] { window.backend_->toggleItalic(); });
   window.commands_.bind(QStringLiteral("format.code"), [&window] { window.backend_->toggleCode(); });
+  window.commands_.bind(QStringLiteral("format.strike"), [&window] { window.backend_->toggleStrikethrough(); });
+  window.commands_.bind(QStringLiteral("format.inline_math"), [&window] { window.backend_->toggleInlineMath(); });
   window.commands_.bind(QStringLiteral("format.link"), [&window] { window.backend_->insertLink(); });
 
   window.commands_.bind(QStringLiteral("image.insert"), [&window] { window.insertImageWithDialog(); });
@@ -747,7 +749,7 @@ void muffin::MainWindowActionBinder::updateContextActions(MainWindow& window) {
 
 void muffin::MainWindowActionBinder::updateFormatActions(MainWindow& window) {
   const bool sourceMode = window.backend_->isSourceMode();
-  const bool editable = !sourceMode && window.renderCommands_.isOnEditableParagraphBlock();
+  const bool editable = !sourceMode && window.renderCommands_.isInlineFormatEnabled();
 
   window.commands_.setEnabled(QStringLiteral("format.bold"), editable);
   window.commands_.setEnabled(QStringLiteral("format.italic"), editable);

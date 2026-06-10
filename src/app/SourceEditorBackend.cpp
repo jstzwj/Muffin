@@ -175,6 +175,14 @@ void SourceEditorBackend::toggleCode() {
   plainEdit()->insertPlainText(QStringLiteral("``"));
 }
 
+void SourceEditorBackend::toggleStrikethrough() {
+  plainEdit()->insertPlainText(QStringLiteral("~~~~"));
+}
+
+void SourceEditorBackend::toggleInlineMath() {
+  plainEdit()->insertPlainText(QStringLiteral("$$"));
+}
+
 void SourceEditorBackend::insertLink() {
   plainEdit()->insertPlainText(QStringLiteral("[](url)"));
 }

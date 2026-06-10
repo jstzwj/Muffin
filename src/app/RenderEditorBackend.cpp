@@ -90,6 +90,14 @@ void RenderEditorBackend::toggleCode() {
   controller_.stylizeController().toggleCode();
 }
 
+void RenderEditorBackend::toggleStrikethrough() {
+  controller_.stylizeController().toggleStrikethrough();
+}
+
+void RenderEditorBackend::toggleInlineMath() {
+  controller_.stylizeController().toggleInlineMath();
+}
+
 void RenderEditorBackend::insertLink() {
   controller_.stylizeController().insertLink();
 }

@@ -35,6 +35,8 @@ public:
   void toggleBold() override;
   void toggleItalic() override;
   void toggleCode() override;
+  void toggleStrikethrough() override;
+  void toggleInlineMath() override;
   void insertLink() override;
   void insertImage() override;
 

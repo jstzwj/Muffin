@@ -37,6 +37,8 @@ public:
   virtual void toggleBold() = 0;
   virtual void toggleItalic() = 0;
   virtual void toggleCode() = 0;
+  virtual void toggleStrikethrough() = 0;
+  virtual void toggleInlineMath() = 0;
   virtual void insertLink() = 0;
   virtual void insertImage() = 0;
 

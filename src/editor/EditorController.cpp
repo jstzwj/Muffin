@@ -335,6 +335,10 @@ void EditorController::detach() {
   view_ = nullptr;
 }
 
+DocumentSession* EditorController::session() const {
+  return session_;
+}
+
 SelectionController& EditorController::selection() {
   return selection_;
 }

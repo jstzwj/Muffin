@@ -1,6 +1,8 @@
 #include "app/RenderCommandFacade.h"
 
+#include "document/MarkdownNode.h"
 #include "editor/EditorController.h"
+#include "editor/SelectionController.h"
 
 #include <QLoggingCategory>
 
@@ -35,6 +37,28 @@ bool RenderCommandFacade::hasCurrentTableCell() const {
 
 bool RenderCommandFacade::isOnEditableParagraphBlock() const {
   return editorController_.paragraphController().isOnEditableBlock();
+}
+
+bool RenderCommandFacade::isInlineFormatEnabled() const {
+  auto* session = editorController_.session();
+  auto* selection = &editorController_.selection();
+  if (!session || !selection || !selection->hasCursor()) {
+    return false;
+  }
+  const SelectionRange sel = selection->selection();
+  const NodeId blockId = sel.focus.blockId;
+  if (!blockId.isValid()) {
+    return false;
+  }
+  MarkdownNode* node = session->document().node(blockId);
+  if (!node) {
+    return false;
+  }
+  // Accept Paragraph, Heading, ListItem — blocks that support inline formatting.
+  // Unlike isOnEditableParagraphBlock(), this allows non-collapsed selections.
+  return node->type() == BlockType::Paragraph ||
+         node->type() == BlockType::Heading ||
+         node->type() == BlockType::ListItem;
 }
 
 int RenderCommandFacade::currentHeadingLevel() const {
