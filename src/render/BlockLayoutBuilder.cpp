@@ -755,6 +755,20 @@ qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNo
     }
   } else if (node.type() == BlockType::Paragraph) {
     start = paragraphContentStartIncludingCommonMarkIndent(markdownText_, start);
+    if (node.parent() && node.parent()->type() == BlockType::ListItem) {
+      qsizetype lineStart = start;
+      while (lineStart > 0 && markdownText_.at(lineStart - 1) != QLatin1Char('\n')) {
+        --lineStart;
+      }
+      qsizetype lineEnd = start;
+      while (lineEnd < markdownText_.size() && markdownText_.at(lineEnd) != QLatin1Char('\n')) {
+        ++lineEnd;
+      }
+      const ListLineInfo info = listLineInfoFor(markdownText_.mid(lineStart, lineEnd - lineStart));
+      if (info.valid && info.task) {
+        start = lineStart + info.taskContentStart;
+      }
+    }
   }
   return start;
 }

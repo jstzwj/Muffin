@@ -44,12 +44,16 @@ public:
   Command buildMergeWithPreviousParagraph(const BlockEditContext& context) const;
   Command buildMergeWithNextParagraph(const BlockEditContext& context) const;
   Command buildSplitListItem(const BlockEditContext& context) const;
+  Command buildInsertListItemAbove(const BlockEditContext& context) const;
   Command buildExitListItem(const BlockEditContext& context) const;
+  Command buildMergeWithPreviousListItem(const BlockEditContext& context) const;
+  Command buildMergeWithNextListItem(const BlockEditContext& context) const;
   Command buildOutdentListItem(const BlockEditContext& context) const;
   Command buildIndentListItem(const BlockEditContext& context) const;
 
 private:
   QString paragraphSeparatorFor(const BlockEditContext& context) const;
+  Command buildOutdentBlockQuote(const BlockEditContext& context) const;
   Command buildOutdentBlockQuoteEmptyParagraph(const BlockEditContext& context) const;
   Command buildConvertHeadingToParagraph(const BlockEditContext& context) const;
   Command buildRemoveEmptyHeading(const BlockEditContext& context) const;

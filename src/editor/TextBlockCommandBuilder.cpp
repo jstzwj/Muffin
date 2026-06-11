@@ -1,7 +1,10 @@
 #include "editor/TextBlockCommandBuilder.h"
 
 #include "document/MarkdownNode.h"
+#include "document/SourceRangeUtil.h"
 #include "editor/InlineSplit.h"
+
+#include <QStringList>
 
 namespace muffin {
 namespace {
@@ -91,6 +94,75 @@ BlockQuoteMarkerRange nthBlockQuoteMarkerRange(const QString& line, int depth) {
   return range;
 }
 
+QString leadingSpaces(qsizetype count) {
+  return QString(qMax<qsizetype>(0, count), QLatin1Char(' '));
+}
+
+qsizetype lineEndForOffset(const QString& text, qsizetype offset) {
+  qsizetype lineEnd = qBound<qsizetype>(0, offset, text.size());
+  while (lineEnd < text.size() && text.at(lineEnd) != QLatin1Char('\n')) {
+    ++lineEnd;
+  }
+  return lineEnd;
+}
+
+qsizetype nextLineStart(const QString& text, qsizetype lineEnd) {
+  return lineEnd < text.size() && text.at(lineEnd) == QLatin1Char('\n') ? lineEnd + 1 : lineEnd;
+}
+
+qsizetype orderedSiblingRunEnd(const QString& markdown, qsizetype start, qsizetype markerColumn) {
+  qsizetype pos = qBound<qsizetype>(0, start, markdown.size());
+  while (pos < markdown.size()) {
+    const qsizetype lineEnd = lineEndForOffset(markdown, pos);
+    const QString line = markdown.mid(pos, lineEnd - pos);
+    const QString trimmed = line.trimmed();
+    if (trimmed.isEmpty()) {
+      break;
+    }
+
+    const ListLineInfo info = listLineInfoFor(line);
+    if (!info.valid) {
+      qsizetype leading = 0;
+      while (leading < line.size() && line.at(leading) == QLatin1Char(' ')) {
+        ++leading;
+      }
+      if (leading <= markerColumn) {
+        break;
+      }
+    } else if (info.markerStart < markerColumn) {
+      break;
+    }
+
+    pos = nextLineStart(markdown, lineEnd);
+  }
+  return pos;
+}
+
+QString renumberOrderedSiblings(QString text, qsizetype markerColumn, int nextNumber) {
+  qsizetype pos = 0;
+  while (pos < text.size()) {
+    const qsizetype lineEnd = lineEndForOffset(text, pos);
+    const QString line = text.mid(pos, lineEnd - pos);
+    const ListLineInfo info = listLineInfoFor(line);
+    if (info.valid && info.ordered && info.markerStart == markerColumn) {
+      const qsizetype numberStart = pos + info.markerStart;
+      qsizetype numberEnd = numberStart;
+      while (numberEnd < text.size() && text.at(numberEnd).isDigit()) {
+        ++numberEnd;
+      }
+      const QString replacement = QString::number(nextNumber);
+      text.replace(numberStart, numberEnd - numberStart, replacement);
+      const qsizetype delta = replacement.size() - (numberEnd - numberStart);
+      pos = lineEnd + delta;
+      ++nextNumber;
+    } else {
+      pos = lineEnd;
+    }
+    pos = nextLineStart(text, pos);
+  }
+  return text;
+}
+
 }  // namespace
 
 TextBlockCommandBuilder::TextBlockCommandBuilder(DocumentSession* session, const BlockEditContextResolver* resolver)
@@ -133,7 +205,23 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
     case Operation::Backspace:
       if (nextOffset <= 0) {
         if (context.node->type() == BlockType::ListItem) {
+          if (context.contentText.trimmed().isEmpty()) {
+            return buildOutdentListItem(context);
+          }
+          Command mergeCmd = buildMergeWithPreviousListItem(context);
+          if (mergeCmd.valid) return mergeCmd;
           return buildOutdentListItem(context);
+        }
+        // Block-quote outdent (mirrors Typora handler V): the FIRST child of a block quote
+        // drops one nesting level on backspace instead of merging. Checked before Heading so
+        // "> # Title" outdents the quote rather than converting the heading, and after ListItem
+        // so "> - item" still routes to list logic. Applies to empty first-child quote lines
+        // too (Typora pops them out the same way); buildOutdentBlockQuote handles the empty
+        // case so the quote is removed cleanly rather than split malformedly.
+        if (context.node->previousSibling() == nullptr &&
+            context.node->parent() &&
+            context.node->parent()->type() == BlockType::BlockQuote) {
+          return buildOutdentBlockQuote(context);
         }
         if (context.blockType == BlockType::Heading && nextParagraph.isEmpty() &&
             context.blockRange.byteStart >= 0 && context.contentRange.byteStart > context.blockRange.byteStart) {
@@ -151,6 +239,10 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
       break;
     case Operation::Delete:
       if (nextOffset >= nextParagraph.size()) {
+        if (context.node->type() == BlockType::ListItem) {
+          Command mergeCmd = buildMergeWithNextListItem(context);
+          if (mergeCmd.valid) return mergeCmd;
+        }
         if (context.blockType == BlockType::Heading && nextParagraph.isEmpty() &&
             context.blockRange.byteStart >= 0 && context.contentRange.byteStart > context.blockRange.byteStart) {
           return buildRemoveEmptyHeading(context);
@@ -174,7 +266,16 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
         }
       }
       if (context.node->type() == BlockType::ListItem) {
-        return context.contentText.trimmed().isEmpty() ? buildExitListItem(context) : buildSplitListItem(context);
+        if (context.contentText.trimmed().isEmpty()) {
+          return buildExitListItem(context);
+        }
+        const qsizetype contentOffset = context.plainInlineEditable
+            ? qBound<qsizetype>(0, context.cursorTextOffset, context.contentText.size())
+            : qBound<qsizetype>(0, context.cursorSourceOffset - context.contentRange.byteStart, context.contentText.size());
+        if (contentOffset <= 0) {
+          return buildInsertListItemAbove(context);
+        }
+        return buildSplitListItem(context);
       }
       if (context.visibleText.isEmpty()) {
         if (hasBlockQuoteAncestor(context.node)) {
@@ -296,12 +397,14 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPrevious
       context.blockRange.byteStart < context.contentRange.byteStart;
   const qsizetype separatorEnd = preserveCurrentHeadingPrefix ? context.blockRange.byteStart : context.contentRange.byteStart;
   const qsizetype separatorLength = qMax<qsizetype>(0, separatorEnd - separatorStart);
-  const QString separator = previous.contentText.isEmpty() || context.contentText.isEmpty() ? QString() : QStringLiteral(" ");
+  // Merge joins the two paragraphs by direct concatenation (Typora behaviour). We deliberately
+  // do NOT insert a separator space: it is wrong for CJK and other scripts that don't use word
+  // spacing, and the paragraphs' own text already carries whatever spacing the author intended.
   command.fallbackSourceOffset =
-      preserveCurrentHeadingPrefix ? context.contentRange.byteStart - separatorLength + separator.size() : previous.contentRange.byteEnd;
+      preserveCurrentHeadingPrefix ? context.contentRange.byteStart - separatorLength : previous.contentRange.byteEnd;
   command.sourceStart = separatorStart;
   command.removedLength = separatorLength;
-  command.insertedText = separator;
+  command.insertedText.clear();
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Merge Paragraphs");
   if (previous.contentText.isEmpty() && context.contentText.isEmpty()) {
@@ -333,12 +436,13 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithNextPara
       next.blockRange.byteStart < next.contentRange.byteStart;
   const qsizetype separatorEnd = preserveNextHeadingPrefix ? next.blockRange.byteStart : next.contentRange.byteStart;
   const qsizetype separatorLength = qMax<qsizetype>(0, separatorEnd - separatorStart);
-  const QString separator = context.contentText.isEmpty() || next.contentText.isEmpty() ? QString() : QStringLiteral(" ");
+  // Merge joins the two paragraphs by direct concatenation (Typora behaviour). No separator
+  // space is inserted (wrong for CJK / non-space scripts; the text already carries its spacing).
   command.fallbackSourceOffset =
-      preserveNextHeadingPrefix ? next.contentRange.byteStart - separatorLength + separator.size() : context.contentRange.byteEnd;
+      preserveNextHeadingPrefix ? next.contentRange.byteStart - separatorLength : context.contentRange.byteEnd;
   command.sourceStart = separatorStart;
   command.removedLength = separatorLength;
-  command.insertedText = separator;
+  command.insertedText.clear();
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Merge Paragraphs");
   command.valid = true;
@@ -361,8 +465,8 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(con
 
   const QString markdown = session_->markdownText();
   const QString line = markdown.mid(lineStart, lineEnd - lineStart);
-  const QString marker = listMarkerFor(line);
-  if (marker.isEmpty()) {
+  const ListLineInfo info = listLineInfoFor(line);
+  if (!info.valid) {
     return command;
   }
 
@@ -370,22 +474,24 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(con
   qsizetype contentOffset = context.plainInlineEditable ? context.cursorTextOffset : context.cursorSourceOffset - context.contentRange.byteStart;
   const qsizetype splitContentOffset = normalizeSplitOffset(nextLineContent, contentOffset);
   const qsizetype splitOffset = context.contentRange.byteStart + splitContentOffset;
-  const qsizetype markerColumn = qMax<qsizetype>(0, contentStart - lineStart - marker.size());
-  QString nextMarker = marker;
-  qsizetype digitCount = 0;
-  while (digitCount < marker.size() && marker.at(digitCount).isDigit()) {
-    ++digitCount;
-  }
-  if (digitCount > 0) {
-    const int nextNumber = marker.left(digitCount).toInt() + 1;
-    nextMarker = QStringLiteral("%1. ").arg(nextNumber);
-  }
-  QString insertion = QLatin1Char('\n') + QString(markerColumn, QLatin1Char(' ')) + nextMarker;
+  const qsizetype markerColumn = info.markerStart;
+  const QString nextMarker = info.ordered
+                                 ? QStringLiteral("%1%2 ").arg(info.orderedNumber + 1).arg(info.orderedDelimiter)
+                                 : info.marker;
+  const QString taskPrefix = info.task ? QStringLiteral("[ ] ") : QString();
+  QString insertion = QLatin1Char('\n') + leadingSpaces(markerColumn) + nextMarker + taskPrefix;
   insertion = insertionWithInlineSplit(insertion, nextLineContent, splitContentOffset);
   nextLineContent.insert(splitContentOffset, insertion);
   command.sourceStart = context.contentRange.byteStart;
   command.removedLength = context.contentRange.byteEnd - context.contentRange.byteStart;
-  command.insertedText = nextLineContent;
+  if (info.ordered) {
+    const qsizetype runEnd = orderedSiblingRunEnd(markdown, lineEnd < markdown.size() ? lineEnd + 1 : lineEnd, markerColumn);
+    const QString tail = markdown.mid(context.contentRange.byteEnd, runEnd - context.contentRange.byteEnd);
+    command.removedLength = runEnd - context.contentRange.byteStart;
+    command.insertedText = renumberOrderedSiblings(nextLineContent + tail, markerColumn, info.orderedNumber + 1);
+  } else {
+    command.insertedText = nextLineContent;
+  }
   command.kind = EditTransaction::Kind::SplitParagraph;
   command.label = QStringLiteral("Split List Item");
   command.fallbackSourceOffset = splitOffset + insertion.size();
@@ -407,12 +513,183 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildExitListItem(cons
     return command;
   }
 
-  command.sourceStart = lineStart;
-  command.removedLength = lineEnd - lineStart;
-  command.insertedText = QLatin1Char('\n');
+  const QString markdown = session_->markdownText();
+  const QString line = markdown.mid(lineStart, lineEnd - lineStart);
+  const ListLineInfo info = listLineInfoFor(line);
+  if (!info.valid) {
+    return command;
+  }
+
+  if (info.markerStart >= 2) {
+    command.sourceStart = lineStart;
+    command.removedLength = 2;
+    command.insertedText.clear();
+    command.fallbackSourceOffset = qMax<qsizetype>(lineStart, context.contentRange.byteStart - 2);
+    command.label = QStringLiteral("Outdent List Item");
+  } else {
+    command.sourceStart = lineStart;
+    command.removedLength = lineEnd - lineStart;
+    command.insertedText = QLatin1Char('\n');
+    command.fallbackSourceOffset = lineStart;
+    command.label = QStringLiteral("Exit List Item");
+  }
   command.kind = EditTransaction::Kind::DeleteText;
-  command.label = QStringLiteral("Exit List Item");
-  command.fallbackSourceOffset = lineStart;
+  command.structureEdit = true;
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildInsertListItemAbove(const BlockEditContext& context) const {
+  Command command;
+  if (!session_ || !resolver_) {
+    return command;
+  }
+
+  qsizetype lineStart = -1;
+  qsizetype contentStart = -1;
+  qsizetype lineEnd = -1;
+  if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd)) {
+    return command;
+  }
+
+  const QString line = session_->markdownText().mid(lineStart, lineEnd - lineStart);
+  const ListLineInfo info = listLineInfoFor(line);
+  if (!info.valid) {
+    return command;
+  }
+
+  const qsizetype markerColumn = info.markerStart;
+  const QString taskPrefix = info.task ? QStringLiteral("[ ] ") : QString();
+  const QString insertion = leadingSpaces(markerColumn) + info.marker + taskPrefix + QLatin1Char('\n');
+
+  command.sourceStart = lineStart;
+  command.removedLength = 0;
+  command.insertedText = insertion;
+  command.kind = EditTransaction::Kind::SplitParagraph;
+  command.label = QStringLiteral("Insert List Item Above");
+  command.fallbackSourceOffset = lineStart + insertion.size() - 1;
+  if (info.ordered) {
+    const QString markdown = session_->markdownText();
+    const qsizetype runEnd = orderedSiblingRunEnd(markdown, lineStart, markerColumn);
+    command.removedLength = runEnd - lineStart;
+    command.insertedText = insertion + renumberOrderedSiblings(markdown.mid(lineStart, runEnd - lineStart), markerColumn, info.orderedNumber + 1);
+  }
+  command.structureEdit = true;
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPreviousListItem(const BlockEditContext& context) const {
+  Command command;
+  if (!session_ || !resolver_ || !context.node) {
+    return command;
+  }
+
+  const MarkdownNode* previous = context.node->previousSibling();
+  if (!previous || previous->type() != BlockType::ListItem) {
+    return command;
+  }
+
+  // Resolve previous item's context to get its line bounds
+  MarkdownNode* prevNode = const_cast<MarkdownNode*>(previous);
+  BlockEditContext prevContext;
+  if (!resolver_->fill(*prevNode, prevContext)) {
+    return command;
+  }
+
+  qsizetype prevLineStart = -1;
+  qsizetype prevContentStart = -1;
+  qsizetype prevLineEnd = -1;
+  if (!resolver_->listItemLineBounds(prevContext, prevLineStart, prevContentStart, prevLineEnd)) {
+    return command;
+  }
+
+  // Get current item's line bounds
+  qsizetype curLineStart = -1;
+  qsizetype curContentStart = -1;
+  qsizetype curLineEnd = -1;
+  if (!resolver_->listItemLineBounds(context, curLineStart, curContentStart, curLineEnd)) {
+    return command;
+  }
+
+  const QString& markdown = session_->markdownText();
+  const QString curLine = markdown.mid(curLineStart, curLineEnd - curLineStart);
+  const ListLineInfo curInfo = listLineInfoFor(curLine);
+  if (!curInfo.valid) {
+    return command;
+  }
+  const qsizetype curContentRealStart = curInfo.task ? curLineStart + curInfo.taskContentStart : curContentStart;
+  const QString curText = markdown.mid(curContentRealStart, curLineEnd - curContentRealStart);
+
+  const QString separator =
+      (!prevContext.contentText.trimmed().isEmpty() && !curText.trimmed().isEmpty()) ? QStringLiteral(" ") : QString();
+
+  command.sourceStart = prevLineEnd;
+  command.removedLength = curContentRealStart - prevLineEnd;
+  command.insertedText = separator;
+  command.kind = EditTransaction::Kind::DeleteText;
+  command.label = QStringLiteral("Merge List Items");
+  command.fallbackSourceOffset = prevLineEnd + separator.size();
+  command.structureEdit = true;
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithNextListItem(const BlockEditContext& context) const {
+  Command command;
+  if (!session_ || !resolver_ || !context.node) {
+    return command;
+  }
+
+  const MarkdownNode* next = context.node->nextSibling();
+  if (!next || next->type() != BlockType::ListItem) {
+    return command;
+  }
+
+  // Get current item's line bounds
+  qsizetype curLineStart = -1;
+  qsizetype curContentStart = -1;
+  qsizetype curLineEnd = -1;
+  if (!resolver_->listItemLineBounds(context, curLineStart, curContentStart, curLineEnd)) {
+    return command;
+  }
+
+  // Resolve next item's context to get its line bounds
+  MarkdownNode* nextNode = const_cast<MarkdownNode*>(next);
+  BlockEditContext nextContext;
+  if (!resolver_->fill(*nextNode, nextContext)) {
+    return command;
+  }
+
+  qsizetype nextLineStart = -1;
+  qsizetype nextContentStart = -1;
+  qsizetype nextLineEnd = -1;
+  if (!resolver_->listItemLineBounds(nextContext, nextLineStart, nextContentStart, nextLineEnd)) {
+    return command;
+  }
+
+  const QString& markdown = session_->markdownText();
+  const QString nextLine = markdown.mid(nextLineStart, nextLineEnd - nextLineStart);
+  const ListLineInfo nextInfo = listLineInfoFor(nextLine);
+  if (!nextInfo.valid) {
+    return command;
+  }
+  const qsizetype nextContentRealStart = nextInfo.task ? nextLineStart + nextInfo.taskContentStart : nextContentStart;
+  const QString nextText = markdown.mid(nextContentRealStart, nextLineEnd - nextContentRealStart);
+
+  const QString separator =
+      (!context.contentText.trimmed().isEmpty() && !nextText.trimmed().isEmpty()) ? QStringLiteral(" ") : QString();
+
+  command.sourceStart = curLineEnd;
+  command.removedLength = nextContentRealStart - curLineEnd;
+  command.insertedText = separator;
+  command.kind = EditTransaction::Kind::DeleteText;
+  command.label = QStringLiteral("Merge List Items");
+  command.fallbackSourceOffset = curLineEnd + separator.size();
+  command.structureEdit = true;
   command.valid = true;
   command.handled = true;
   return command;
@@ -432,9 +709,12 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(c
   }
 
   const QString& markdown = session_->markdownText();
-  const qsizetype indent =
-      qMax<qsizetype>(0, contentStart - lineStart - listMarkerFor(markdown.mid(lineStart, lineEnd - lineStart)).size());
-  if (indent >= 2) {
+  const QString line = markdown.mid(lineStart, lineEnd - lineStart);
+  const ListLineInfo info = listLineInfoFor(line);
+  if (!info.valid) {
+    return command;
+  }
+  if (info.markerStart >= 2) {
     command.sourceStart = lineStart;
     command.removedLength = 2;
     command.insertedText.clear();
@@ -448,7 +728,8 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(c
   }
 
   command.sourceStart = lineStart;
-  command.removedLength = contentStart - lineStart;
+  const qsizetype textStart = info.task ? lineStart + info.taskContentStart : contentStart;
+  command.removedLength = textStart - lineStart;
   command.insertedText.clear();
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Exit List Item");
@@ -559,6 +840,83 @@ QString TextBlockCommandBuilder::paragraphSeparatorFor(const BlockEditContext& c
     blankPrefix.chop(1);
   }
   return QStringLiteral("\n") + blankPrefix + QStringLiteral("\n") + prefix;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentBlockQuote(const BlockEditContext& context) const {
+  Command command;
+  if (!session_ || !context.node || context.contentRange.byteStart < 0) {
+    return command;
+  }
+
+  const int depth = blockQuoteDepth(context.node);
+  if (depth <= 0) {
+    return command;
+  }
+
+  const MarkdownNode* quote = context.node->parent();
+  if (!quote || quote->type() != BlockType::BlockQuote) {
+    return command;
+  }
+
+  const QString& markdown = session_->markdownText();
+
+  // Source span whose depth-th ">" marker gets stripped on every line — the source-text
+  // equivalent of Typora's tree-level upStream (pop the block out one level).
+  //
+  // Content paragraph: its own line span; stripping each line drops one nesting level, lazy
+  // continuation lines without a marker stay as-is, and a sole-line quote simply disappears.
+  //
+  // Empty first-child paragraph: the virtual empty is anchored at a single blank quote line,
+  // but the *gap* that materialised it (from the quote's first line through the empty's line)
+  // is several blank ">" lines. Stripping only the empty's own marker would orphan the
+  // preceding ">" and split the quote in two. Instead span the whole leading gap so every
+  // blank ">" line becomes an outer-level blank line — the empty pops out cleanly and the
+  // remaining quote (the next sibling onward) is untouched, exactly like Typora.
+  qsizetype spanStart = -1;
+  qsizetype spanEnd = -1;
+  if (context.visibleText.isEmpty()) {
+    spanStart = sourceOffsetForLineColumn(markdown, quote->sourceRange().lineStart, 1);
+    const int emptyLineEnd = context.node->sourceRange().lineEnd;
+    spanEnd = emptyLineEnd > 0 ? sourceOffsetForLineEnd(markdown, emptyLineEnd) : spanStart;
+  } else {
+    spanStart = lineStartForOffset(markdown, context.contentRange.byteStart);
+    spanEnd = context.blockRange.lineEnd > 0 ? sourceOffsetForLineEnd(markdown, context.blockRange.lineEnd)
+                                             : lineEndForOffset(markdown, context.contentRange.byteStart);
+  }
+  if (spanStart < 0 || spanEnd < spanStart) {
+    return command;
+  }
+
+  QStringList lines = markdown.mid(spanStart, spanEnd - spanStart).split(QLatin1Char('\n'));
+  if (lines.isEmpty()) {
+    return command;
+  }
+  const BlockQuoteMarkerRange firstMarker = nthBlockQuoteMarkerRange(lines.first(), depth);
+  if (!firstMarker.valid) {
+    return command;  // first span line must carry the depth-th marker, else bail to merge
+  }
+  for (QString& line : lines) {
+    const BlockQuoteMarkerRange marker = nthBlockQuoteMarkerRange(line, depth);
+    if (marker.valid) {
+      line.remove(marker.start, marker.end - marker.start);
+    }
+  }
+
+  command.sourceStart = spanStart;
+  command.removedLength = spanEnd - spanStart;
+  command.insertedText = lines.join(QLatin1Char('\n'));
+  command.kind = EditTransaction::Kind::DeleteText;
+  command.label = QStringLiteral("Outdent Quote");
+  // Content: the caret stays at the content start, which shifts left by the stripped marker
+  // length. Empty: the popped empty lands at the start of the (now outer-level) span.
+  command.fallbackSourceOffset = context.visibleText.isEmpty()
+                                     ? spanStart
+                                     : context.contentRange.byteStart - (firstMarker.end - firstMarker.start);
+  command.structureEdit = true;
+  command.nodeHints.push_back(LocalEditNodeHint{context.node->id(), command.fallbackSourceOffset, context.node->type()});
+  command.valid = true;
+  command.handled = true;
+  return command;
 }
 
 TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentBlockQuoteEmptyParagraph(const BlockEditContext& context) const {

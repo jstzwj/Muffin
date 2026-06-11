@@ -65,7 +65,7 @@ void testListItemEditingCommands() {
   session.setMarkdownText(QStringLiteral("1. alpha\n2. beta"), false);
   setCursor(selection, listItemAt(session, 0, 0), 2);
   require(input.insertParagraphBreak(), "enter should split ordered list item");
-  require(session.markdownText() == QStringLiteral("1. al\n2. pha\n2. beta"), "ordered list split mismatch");
+  require(session.markdownText() == QStringLiteral("1. al\n2. pha\n3. beta"), "ordered list split mismatch");
   listUndo = requireTextDeltaCommand(undoStack, "ordered list split should use text delta command");
   require(listUndo.textDeltaCommand().delta.insertedText.contains(QStringLiteral("\n2. ")), "ordered list split delta inserted text mismatch");
 
@@ -136,6 +136,55 @@ void testListItemEditingCommands() {
   QKeyEvent backtab(QEvent::KeyPress, Qt::Key_Backtab, Qt::ShiftModifier);
   require(input.eventFilter(&view, &backtab), "backtab key should outdent nested list item");
   require(session.markdownText() == QStringLiteral("- alpha\n- beta"), "backtab key list outdent mismatch");
+}
+
+void testTyporaListKeyboardBehavior() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("1. alpha\n2. beta\n3. gamma"), false);
+  setCursor(selection, listItemAt(session, 0, 1), 0);
+  require(input.insertParagraphBreak(), "enter at ordered item start should insert empty item above");
+  require(session.markdownText() == QStringLiteral("1. alpha\n2. \n3. beta\n4. gamma"),
+          "ordered start-enter should renumber following items");
+
+  session.setMarkdownText(QStringLiteral("1. alpha\n2. beta\n3. gamma"), false);
+  setCursor(selection, listItemAt(session, 0, 1), 2);
+  require(input.insertParagraphBreak(), "enter in ordered item middle should split item");
+  require(session.markdownText() == QStringLiteral("1. alpha\n2. be\n3. ta\n4. gamma"),
+          "ordered split should renumber following items");
+
+  session.setMarkdownText(QStringLiteral("- [x] done"), false);
+  setCursor(selection, listItemAt(session, 0, 0), 5);
+  require(input.insertText(QStringLiteral("!")), "task item insert should edit task text only");
+  require(session.markdownText() == QStringLiteral("- [x] done!"), "task item insert should preserve checkbox marker");
+
+  setCursor(selection, listItemAt(session, 0, 0), 5);
+  require(input.insertParagraphBreak(), "enter at task item end should create unchecked task item");
+  require(session.markdownText() == QStringLiteral("- [x] done!\n- [ ] "), "task enter should create unchecked task item");
+
+  session.setMarkdownText(QStringLiteral("- [x] done\n- [ ] next"), false);
+  setCursor(selection, listItemAt(session, 0, 1), 0);
+  require(input.deleteBackward(), "backspace at task item start should merge into previous item");
+  require(session.markdownText() == QStringLiteral("- [x] done next"), "task backspace merge should remove next checkbox");
+
+  session.setMarkdownText(QStringLiteral("- [x] done\n- [ ] next"), false);
+  setCursor(selection, listItemAt(session, 0, 0), 4);
+  require(input.deleteForward(), "delete at task item end should merge next item");
+  require(session.markdownText() == QStringLiteral("- [x] done next"), "task delete merge should remove next checkbox");
+
+  session.setMarkdownText(QStringLiteral("- alpha\n  - beta\n  - "), false);
+  MarkdownNode* nestedList = firstChildOfType(listItemAt(session, 0, 0), BlockType::List);
+  setCursor(selection, childAt(nestedList, 1), 0);
+  require(input.insertParagraphBreak(), "enter on nested empty list item should outdent first");
+  require(session.markdownText() == QStringLiteral("- alpha\n  - beta\n- "), "nested empty enter should reduce one list level");
+  setCursor(selection, listItemAt(session, 0, 1), 0);
+  require(input.insertParagraphBreak(), "enter on top-level empty list item should exit list");
+  require(session.markdownText() == QStringLiteral("- alpha\n  - beta\n\n"), "top-level empty enter should exit list");
 }
 
 // testTabInRenderedTextInsertsZeroWidthSpace (lines 1098-1215)
@@ -362,6 +411,7 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testListItemInput);
   RUN_TEST(testListItemEditingCommands);
+  RUN_TEST(testTyporaListKeyboardBehavior);
   RUN_TEST(testTabInRenderedTextInsertsZeroWidthSpace);
   RUN_TEST(testListTabFromRenderedClick);
 #undef RUN_TEST

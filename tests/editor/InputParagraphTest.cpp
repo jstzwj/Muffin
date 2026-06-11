@@ -238,6 +238,310 @@ void testBlockQuoteEmptyParagraphEnterOutdentsQuoteLevel() {
   require(session.markdownText() == QStringLiteral("> > alpha\n> >\n> \n> outer\n> > beta"), "typing after nested quote outdent text mismatch");
 }
 
+void testBlockQuoteBackspaceOutdentsQuoteLevel() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  // Single level: "> hello" @0 -> "hello" (top-level paragraph), caret at content start.
+  session.setMarkdownText(QStringLiteral("> hello"), false);
+  MarkdownNode* quote = blockAt(session, 0);
+  MarkdownNode* paragraph = childAt(quote, 0);
+  setCursor(selection, paragraph, 0);
+  require(input.deleteBackward(), "single-level quote backspace should outdent");
+  require(session.markdownText() == QStringLiteral("hello"), "single-level quote outdent text mismatch");
+  require(blockAt(session, 0)->type() == BlockType::Paragraph, "single-level quote outdent should yield top-level paragraph");
+  require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "single-level quote outdent cursor block mismatch");
+  require(selection.cursorPosition().text.textOffset == 0, "single-level quote outdent cursor offset mismatch");
+  require(undoStack.canUndo(), "single-level quote outdent should be undoable");
+  EditTransaction outdentUndo = undoStack.takeUndo();
+  require(outdentUndo.isSnapshot(), "quote outdent should use snapshot undo");
+  require(outdentUndo.before().markdownText == QStringLiteral("> hello"), "single-level quote outdent undo before mismatch");
+
+  // Nested: "> > nested" @0 -> "> nested" -> "nested" (two backspaces, caret stays at offset 0).
+  session.setMarkdownText(QStringLiteral("> > nested"), false);
+  quote = blockAt(session, 0);
+  paragraph = childAt(childAt(quote, 0), 0);
+  setCursor(selection, paragraph, 0);
+  require(input.deleteBackward(), "nested quote backspace should drop one level");
+  require(session.markdownText() == QStringLiteral("> nested"), "nested quote outdent text mismatch");
+  require(input.deleteBackward(), "outdented quote backspace should exit quote");
+  require(session.markdownText() == QStringLiteral("nested"), "nested quote second outdent text mismatch");
+
+  // Three levels: "> > > deep" -> "> > deep" -> "> deep" -> "deep".
+  session.setMarkdownText(QStringLiteral("> > > deep"), false);
+  quote = blockAt(session, 0);
+  paragraph = childAt(childAt(childAt(quote, 0), 0), 0);
+  setCursor(selection, paragraph, 0);
+  require(input.deleteBackward(), "three-level quote first backspace");
+  require(session.markdownText() == QStringLiteral("> > deep"), "three-level quote first outdent mismatch");
+  require(input.deleteBackward(), "three-level quote second backspace");
+  require(session.markdownText() == QStringLiteral("> deep"), "three-level quote second outdent mismatch");
+  require(input.deleteBackward(), "three-level quote third backspace");
+  require(session.markdownText() == QStringLiteral("deep"), "three-level quote third outdent mismatch");
+
+  // User's exact scenario: nested quote paragraph outdents one level into the outer quote.
+  const QString markdown = QStringLiteral(
+      "> A block quote can contain paragraphs.\n"
+      "> It can also contain **formatting**, `code`, and nested quotes.\n"
+      ">\n"
+      ">\n"
+      "> > Nested quote.");
+  session.setMarkdownText(markdown, false);
+  quote = blockAt(session, 0);
+  MarkdownNode* nestedQuote = childAt(quote, quote->children().size() - 1);
+  paragraph = childAt(nestedQuote, 0);
+  setCursor(selection, paragraph, 0);
+  require(input.deleteBackward(), "nested quote paragraph backspace should outdent one level");
+  require(session.markdownText() == QStringLiteral(
+                                      "> A block quote can contain paragraphs.\n"
+                                      "> It can also contain **formatting**, `code`, and nested quotes.\n"
+                                      ">\n"
+                                      ">\n"
+                                      "> Nested quote."),
+          "user scenario quote outdent text mismatch");
+  quote = blockAt(session, 0);
+  MarkdownNode* outdented = childAt(quote, quote->children().size() - 1);
+  require(outdented->type() == BlockType::Paragraph, "outdented nested paragraph should sit directly under outer quote");
+  require(selection.cursorPosition().blockId == outdented->id(), "user scenario outdent cursor block mismatch");
+  require(selection.cursorPosition().text.textOffset == 0, "user scenario outdent cursor offset mismatch");
+
+  // Heading inside a quote: "> # Title" @0 -> "# Title" (quote removed, heading kept) — confirms
+  // the outdent branch wins over the heading-to-paragraph branch.
+  session.setMarkdownText(QStringLiteral("> # Title"), false);
+  quote = blockAt(session, 0);
+  MarkdownNode* heading = firstChildOfType(quote, BlockType::Heading);
+  setCursor(selection, heading, 0);
+  require(input.deleteBackward(), "quoted heading backspace should outdent quote");
+  require(session.markdownText() == QStringLiteral("# Title"), "quoted heading outdent text mismatch");
+  require(blockAt(session, 0)->type() == BlockType::Heading, "quoted heading outdent should keep heading at top level");
+}
+
+void testBlockQuoteBackspaceOutdentsMultilineQuoteParagraph() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  // Multi-line marked nested quote: every line of the paragraph drops one level together.
+  session.setMarkdownText(QStringLiteral("> > foo\n> > bar"), false);
+  MarkdownNode* quote = blockAt(session, 0);
+  MarkdownNode* paragraph = childAt(childAt(quote, 0), 0);
+  setCursor(selection, paragraph, 0);
+  require(input.deleteBackward(), "multiline nested quote backspace should outdent one level");
+  require(session.markdownText() == QStringLiteral("> foo\n> bar"), "multiline nested quote outdent text mismatch");
+
+  // Multi-line lazy continuation (line 2 carries no ">"): only line 1 loses its marker,
+  // the lazy line is unchanged. Result is robust whether cmark keeps "bar" lazy-in-quote
+  // or splits it into a separate paragraph.
+  session.setMarkdownText(QStringLiteral("> foo\nbar"), false);
+  MarkdownNode* first = blockAt(session, 0);
+  if (first->type() == BlockType::BlockQuote) {
+    first = childAt(first, 0);
+  }
+  setCursor(selection, first, 0);
+  require(input.deleteBackward(), "multiline lazy quote backspace should outdent");
+  require(session.markdownText() == QStringLiteral("foo\nbar"), "multiline lazy quote outdent text mismatch");
+}
+
+void testBlockQuoteBackspacePreservesQuoteWhenNotFirstChild() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  // Non-first child (beta has a previous sibling): backspace merges with the previous quote
+  // block, it must NOT outdent beta out of the quote.
+  session.setMarkdownText(QStringLiteral("> alpha\n>\n> beta"), false);
+  MarkdownNode* quote = blockAt(session, 0);
+  require(quote->type() == BlockType::BlockQuote, "baseline should be a block quote");
+  MarkdownNode* beta = childAt(quote, quote->children().size() - 1);
+  setCursor(selection, beta, 0);
+  require(input.deleteBackward(), "non-first quote child backspace should be handled");
+  require(firstBlockOfType(session, BlockType::BlockQuote) != nullptr,
+          "non-first quote child backspace should not outdent the quote away");
+  require(session.markdownText() != QStringLiteral("> alpha\n>\nbeta"),
+          "non-first quote child backspace should not drop beta to top level");
+
+  // Mid-block caret: backspace deletes one character, no outdent.
+  session.setMarkdownText(QStringLiteral("> hello"), false);
+  quote = blockAt(session, 0);
+  MarkdownNode* paragraph = childAt(quote, 0);
+  setCursor(selection, paragraph, 2);
+  require(input.deleteBackward(), "mid-block quote backspace should delete a character");
+  require(session.markdownText() == QStringLiteral("> hllo"), "mid-block quote backspace text mismatch");
+
+  // Caret at the start of a lazy-continuation line is a non-zero paragraph offset, so it never
+  // reaches the outdent branch: the line-1 quote marker must survive.
+  session.setMarkdownText(QStringLiteral("> foo\nbar"), false);
+  MarkdownNode* first = blockAt(session, 0);
+  if (first->type() == BlockType::BlockQuote) {
+    first = childAt(first, 0);
+  }
+  setCursor(selection, first, 4);
+  require(input.deleteBackward(), "lazy-continuation backspace should be handled");
+  require(session.markdownText().startsWith(QStringLiteral("> fo")),
+          "lazy-continuation backspace should preserve the quote marker on line 1");
+}
+
+void testBlockQuoteBackspaceOutdentsEmptyFirstChildQuote() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  // Empty first-child quote line pops out to the top level (mirrors Typora handler V: hoist
+  // the empty paragraph out; the quote survives with the remaining content). The leading
+  // blank ">" lines become outer-level blank lines so no ">" is orphaned, yielding a clean
+  // [top-level empty paragraph][quote] split rather than two malformed quotes.
+  session.setMarkdownText(QStringLiteral(">\n>\n> text"), false);
+  MarkdownNode* quote = blockAt(session, 0);
+  require(quote->type() == BlockType::BlockQuote, "baseline should be a block quote");
+  MarkdownNode* emptyFirst = childAt(quote, 0);
+  require(emptyFirst->type() == BlockType::Paragraph, "first child should be the virtual empty paragraph");
+  const NodeId emptyId = emptyFirst->id();
+  setCursor(selection, emptyFirst, 0);
+  require(input.deleteBackward(), "empty first-child quote backspace should outdent");
+  require(session.markdownText() == QStringLiteral("\n\n> text"), "empty first-child outdent text mismatch");
+  require(session.document().root().children().size() == 2, "empty first-child outdent should pop empty to top level");
+  require(blockAt(session, 0)->type() == BlockType::Paragraph, "empty first-child outdent should yield top-level empty paragraph");
+  require(blockAt(session, 1)->type() == BlockType::BlockQuote, "empty first-child outdent should keep remaining quote");
+  require(blockAt(session, 0)->id() == emptyId, "empty first-child outdent should preserve the empty paragraph identity");
+  require(selection.cursorPosition().blockId == blockAt(session, 0)->id(),
+          "empty first-child outdent cursor should stay in the popped empty paragraph");
+  require(selection.cursorPosition().text.textOffset == 0, "empty first-child outdent cursor offset mismatch");
+
+  // Empty first child followed by a nested quote: the empty pops to top level, the nested
+  // quote survives intact.
+  session.setMarkdownText(QStringLiteral(">\n>\n> > nested"), false);
+  quote = blockAt(session, 0);
+  emptyFirst = childAt(quote, 0);
+  setCursor(selection, emptyFirst, 0);
+  require(input.deleteBackward(), "empty first-child before nested quote backspace should outdent");
+  require(session.markdownText() == QStringLiteral("\n\n> > nested"), "empty first-child before nested quote outdent text mismatch");
+  require(session.document().root().children().size() == 2, "empty first-child before nested quote outdent should pop empty to top level");
+  require(blockAt(session, 0)->type() == BlockType::Paragraph, "nested-quote case should yield top-level empty paragraph");
+  require(blockAt(session, 1)->type() == BlockType::BlockQuote, "nested-quote case should keep the nested quote");
+
+  // Nested empty first child: the inner quote's leading empty drops to the OUTER quote (one
+  // level), the inner quote keeps its content. The outer quote now holds [empty, inner quote].
+  session.setMarkdownText(QStringLiteral("> >\n> >\n> > beta"), false);
+  quote = blockAt(session, 0);
+  require(quote->type() == BlockType::BlockQuote, "nested baseline should start with the outer quote");
+  MarkdownNode* innerQuote = childAt(quote, 0);
+  require(innerQuote->type() == BlockType::BlockQuote, "outer quote should contain the inner quote");
+  emptyFirst = childAt(innerQuote, 0);
+  require(emptyFirst->type() == BlockType::Paragraph, "inner quote first child should be the virtual empty");
+  setCursor(selection, emptyFirst, 0);
+  require(input.deleteBackward(), "nested empty first-child backspace should drop one level");
+  require(session.document().root().children().size() == 1, "nested empty outdent should keep a single outer quote");
+  quote = blockAt(session, 0);
+  require(quote->type() == BlockType::BlockQuote, "nested empty outdent should keep the outer quote");
+  require(quote->children().size() == 2, "nested empty outdent should leave [empty, inner quote] in the outer quote");
+  require(quote->children().at(0)->type() == BlockType::Paragraph, "outer quote first child should be the dropped empty");
+  require(quote->children().at(1)->type() == BlockType::BlockQuote, "outer quote second child should be the inner quote");
+}
+
+// The three multi-paragraph nested-quote scenarios reported by the user. They all reduce to the
+// same Typora rule — the FIRST child of a quote outdents on backspace, a NON-first child merges
+// into its predecessor — once you account for cmark splitting a quote at a truly blank line
+// (so "> .../<blank>/"> ..." is two sibling quotes, and the second quote's first paragraph is a
+// first child and therefore outdents rather than merging).
+void testBlockQuoteBackspaceUserScenarios() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  // EX1: cursor on "asd" inside a standalone ">> > asd" (a depth-3 quote split off by the blank
+  // line above). It is the first (only) child of its quote, so backspace drops one level: ">> asd".
+  const QString ex1Before = QStringLiteral(
+      "> A block quote can contain paragraphs.\n"
+      ">\n"
+      "\n"
+      ">It can also contain **formatting**, `code`, and nested quotes.\n"
+      ">\n"
+      ">> Nested quote.\n"
+      ">>\n"
+      ">> \n"
+      "\n"
+      ">> > asd");
+  session.setMarkdownText(ex1Before, false);
+  // The "asd" paragraph is root child #2 (the split-off quote) -> BQ -> BQ -> BQ -> P.
+  MarkdownNode* deepAsd = childAt(childAt(childAt(blockAt(session, 2), 0), 0), 0);
+  require(deepAsd->parent()->previousSibling() == nullptr, "EX1 deep paragraph should be the quote's first child");
+  setCursor(selection, deepAsd, 0);
+  require(input.deleteBackward(), "EX1 deep nested quote backspace should outdent");
+  require(session.markdownText() == QStringLiteral(
+                                        "> A block quote can contain paragraphs.\n"
+                                        ">\n"
+                                        "\n"
+                                        ">It can also contain **formatting**, `code`, and nested quotes.\n"
+                                        ">\n"
+                                        ">> Nested quote.\n"
+                                        ">>\n"
+                                        ">> \n"
+                                        "\n"
+                                        ">> asd"),
+          "EX1 deep nested quote outdent text mismatch");
+
+  // EX2: cursor on "It can also...", the FIRST paragraph of the second (split-off) quote. It
+  // outdents to the top level; the nested quote that followed it stays quoted.
+  const QString ex2Before = QStringLiteral(
+      "> A block quote can contain paragraphs.\n"
+      ">\n"
+      "\n"
+      ">It can also contain **formatting**, `code`, and nested quotes.\n"
+      ">\n"
+      ">> Nested quote.\n"
+      ">>\n"
+      ">> \n"
+      ">>\n"
+      ">> asd");
+  session.setMarkdownText(ex2Before, false);
+  // "It can also" is root child #1 (the second quote) -> first child paragraph.
+  MarkdownNode* itCanAlso = childAt(blockAt(session, 1), 0);
+  require(itCanAlso->previousSibling() == nullptr, "EX2 paragraph should be the first child of its quote");
+  setCursor(selection, itCanAlso, 0);
+  require(input.deleteBackward(), "EX2 first quote paragraph backspace should outdent to top level");
+  require(session.markdownText() == QStringLiteral(
+                                        "> A block quote can contain paragraphs.\n"
+                                        ">\n"
+                                        "\n"
+                                        "It can also contain **formatting**, `code`, and nested quotes.\n"
+                                        ">\n"
+                                        ">> Nested quote.\n"
+                                        ">>\n"
+                                        ">> \n"
+                                        ">>\n"
+                                        ">> asd"),
+          "EX2 outdent text mismatch");
+  require(blockAt(session, 1)->type() == BlockType::Paragraph, "EX2 should leave a top-level paragraph");
+  require(firstBlockOfType(session, BlockType::BlockQuote) != nullptr, "EX2 should keep the nested quote");
+
+  // EX3: cursor on "asd", which follows a nested quote and is therefore a NON-first child. It
+  // merges into the preceding block's text by direct concatenation (Typora behaviour, no
+  // inserted space), pulling "asd" up into the nested quote.
+  session.setMarkdownText(QStringLiteral(">> Nested quote.\n>\n>asd"), false);
+  // "asd" is root child #0 (the outer quote) -> second child paragraph (after the inner quote).
+  MarkdownNode* trailingAsd = childAt(blockAt(session, 0), 1);
+  require(trailingAsd->previousSibling() != nullptr, "EX3 paragraph should NOT be the first child");
+  setCursor(selection, trailingAsd, 0);
+  require(input.deleteBackward(), "EX3 non-first quote paragraph backspace should merge");
+  require(session.markdownText() == QStringLiteral(">> Nested quote.asd"), "EX3 merge text mismatch");
+}
+
 // testLocalReparsePreservesUntouchedNodeIds (lines 539-563)
 void testLocalReparsePreservesUntouchedNodeIds() {
   DocumentSession session;
@@ -370,21 +674,21 @@ void testInputMergeParagraphs() {
   setCursor(selection, blockAt(session, 1), 0);
 
   require(input.deleteBackward(), "backspace at paragraph start should merge previous paragraph");
-  require(session.markdownText() == QStringLiteral("alpha beta"), "backspace merge result mismatch");
+  require(session.markdownText() == QStringLiteral("alphabeta"), "backspace merge result mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "backspace merge cursor mismatch");
   EditTransaction mergeUndo = requireTextDeltaCommand(undoStack, "backspace merge should use text delta command");
   require(mergeUndo.textDeltaCommand().delta.removedText == QStringLiteral("\n\n"), "backspace merge removed text mismatch");
-  require(mergeUndo.textDeltaCommand().delta.insertedText == QStringLiteral(" "), "backspace merge inserted text mismatch");
+  require(mergeUndo.textDeltaCommand().delta.insertedText == QStringLiteral(""), "backspace merge inserted text mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha\n\nbeta"), false);
   setCursor(selection, blockAt(session, 0), 5);
 
   require(input.deleteForward(), "delete at paragraph end should merge next paragraph");
-  require(session.markdownText() == QStringLiteral("alpha beta"), "delete merge result mismatch");
+  require(session.markdownText() == QStringLiteral("alphabeta"), "delete merge result mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "delete merge cursor mismatch");
   mergeUndo = requireTextDeltaCommand(undoStack, "delete merge should use text delta command");
   require(mergeUndo.textDeltaCommand().delta.removedText == QStringLiteral("\n\n"), "delete merge removed text mismatch");
-  require(mergeUndo.textDeltaCommand().delta.insertedText == QStringLiteral(" "), "delete merge inserted text mismatch");
+  require(mergeUndo.textDeltaCommand().delta.insertedText == QStringLiteral(""), "delete merge inserted text mismatch");
 }
 
 // testInputBackspaceAtParagraphStartDeletesStructuralBoundary (lines 684-753)
@@ -447,14 +751,14 @@ void testInputBackspaceAtParagraphStartDeletesStructuralBoundary() {
   session.setMarkdownText(QStringLiteral("# Title\n\nbody"), false);
   setCursor(selection, blockAt(session, 1), 0);
   require(input.deleteBackward(), "backspace after heading should merge into heading");
-  require(session.markdownText() == QStringLiteral("# Title body"), "backspace heading merge mismatch");
+  require(session.markdownText() == QStringLiteral("# Titlebody"), "backspace heading merge mismatch");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "backspace heading merge cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "backspace heading merge cursor offset mismatch");
 
   session.setMarkdownText(QStringLiteral("before **bold**\n\nafter"), false);
   setCursor(selection, blockAt(session, 1), 0);
   require(input.deleteBackward(), "backspace after complex inline paragraph should merge");
-  require(session.markdownText() == QStringLiteral("before **bold** after"), "backspace complex inline merge mismatch");
+  require(session.markdownText() == QStringLiteral("before **bold**after"), "backspace complex inline merge mismatch");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "backspace complex inline cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 11, "backspace complex inline cursor offset mismatch");
 }
@@ -471,7 +775,7 @@ void testInputDeleteAtParagraphEndDeletesStructuralBoundary() {
   session.setMarkdownText(QStringLiteral("alpha\n\n# Title"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(input.deleteForward(), "delete before heading should merge heading into paragraph");
-  require(session.markdownText() == QStringLiteral("alpha Title"), "delete heading merge mismatch");
+  require(session.markdownText() == QStringLiteral("alphaTitle"), "delete heading merge mismatch");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "delete heading merge cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "delete heading merge cursor offset mismatch");
 
@@ -486,7 +790,7 @@ void testInputDeleteAtParagraphEndDeletesStructuralBoundary() {
   session.setMarkdownText(QStringLiteral("before **bold**\n\nafter"), false);
   setCursor(selection, blockAt(session, 0), 11);
   require(input.deleteForward(), "delete after complex inline paragraph should merge");
-  require(session.markdownText() == QStringLiteral("before **bold** after"), "delete complex inline merge mismatch");
+  require(session.markdownText() == QStringLiteral("before **bold**after"), "delete complex inline merge mismatch");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "delete complex inline cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 11, "delete complex inline cursor offset mismatch");
 }
@@ -500,6 +804,11 @@ int main(int argc, char** argv) {
   RUN_TEST(testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph);
   RUN_TEST(testBlockQuoteEnterKeepsInsertedBlankLineInsideQuote);
   RUN_TEST(testBlockQuoteEmptyParagraphEnterOutdentsQuoteLevel);
+  RUN_TEST(testBlockQuoteBackspaceOutdentsQuoteLevel);
+  RUN_TEST(testBlockQuoteBackspaceOutdentsMultilineQuoteParagraph);
+  RUN_TEST(testBlockQuoteBackspacePreservesQuoteWhenNotFirstChild);
+  RUN_TEST(testBlockQuoteBackspaceOutdentsEmptyFirstChildQuote);
+  RUN_TEST(testBlockQuoteBackspaceUserScenarios);
   RUN_TEST(testLocalReparsePreservesUntouchedNodeIds);
   RUN_TEST(testBlockEditContextSeparatesBlockAndContentRanges);
   RUN_TEST(testTextBlockCommandBuilderCreatesStructuralEnterCommands);

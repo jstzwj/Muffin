@@ -230,9 +230,10 @@ bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, c
       if (markerContext.sourceStart >= 0 && listItemLineBounds(markdown, markerContext, lineStart, contentStart, lineEnd)) {
         context.node = &displayNode;
         context.editableNode = nullptr;
-        context.sourceStart = contentStart;
+        const ListLineInfo info = listLineInfoFor(markdown.mid(lineStart, lineEnd - lineStart));
+        context.sourceStart = info.valid && info.task ? lineStart + info.taskContentStart : contentStart;
         context.sourceEnd = lineEnd;
-        context.sourceText = markdown.mid(contentStart, lineEnd - contentStart);
+        context.sourceText = markdown.mid(context.sourceStart, lineEnd - context.sourceStart);
         return context.sourceText.trimmed().isEmpty();
       }
     }
@@ -264,6 +265,19 @@ bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, c
     }
     if (sourceStart < sourceEnd && markdown.at(sourceStart).isSpace()) {
       ++sourceStart;
+    }
+  } else if (editable->type() == BlockType::Paragraph && displayNode.type() == BlockType::ListItem) {
+    qsizetype lineStart = sourceStart;
+    while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
+      --lineStart;
+    }
+    qsizetype lineEnd = sourceStart;
+    while (lineEnd < markdown.size() && markdown.at(lineEnd) != QLatin1Char('\n')) {
+      ++lineEnd;
+    }
+    const ListLineInfo info = listLineInfoFor(markdown.mid(lineStart, lineEnd - lineStart));
+    if (info.valid && info.task) {
+      sourceStart = lineStart + info.taskContentStart;
     }
   }
 
@@ -511,11 +525,11 @@ bool SelectionSerializer::listItemLineBounds(
   }
 
   const QString line = markdown.mid(lineStart, lineEnd - lineStart);
-  const QString marker = listMarkerFor(line);
-  if (marker.isEmpty()) {
+  const ListLineInfo info = listLineInfoFor(line);
+  if (!info.valid) {
     return false;
   }
-  contentStart = line.indexOf(marker) + marker.size() + lineStart;
+  contentStart = lineStart + info.contentStart;
   return contentStart >= lineStart && contentStart <= lineEnd;
 }
 

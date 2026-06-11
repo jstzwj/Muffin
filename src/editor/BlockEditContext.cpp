@@ -21,6 +21,15 @@ bool isDefinitionBlock(BlockType type) {
   return type == BlockType::LinkDefinition || type == BlockType::FootnoteDefinition;
 }
 
+qsizetype taskContentStartForListLine(const QString& markdown, qsizetype lineStart, qsizetype lineEnd, qsizetype markerContentStart) {
+  const QString line = markdown.mid(lineStart, lineEnd - lineStart);
+  const ListLineInfo info = listLineInfoFor(line);
+  if (!info.valid || !info.task) {
+    return markerContentStart;
+  }
+  return lineStart + info.taskContentStart;
+}
+
 qsizetype paragraphContentStartIncludingCommonMarkIndent(const QString& markdown, qsizetype astStart) {
   qsizetype lineStart = astStart;
   while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
@@ -128,17 +137,18 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
       markerContext.contentRange.byteStart = sourceOffsetForLineColumn(
           session_->markdownText(), displayNode.sourceRange().lineStart, qMax(1, displayNode.sourceRange().columnStart));
       if (markerContext.contentRange.byteStart >= 0 && listItemLineBounds(markerContext, lineStart, contentStart, lineEnd)) {
+        const qsizetype textStart = taskContentStartForListLine(session_->markdownText(), lineStart, lineEnd, contentStart);
         context.node = &displayNode;
         context.editableNode = nullptr;
         context.blockId = displayNode.id();
         context.blockType = displayNode.type();
         context.blockRange.byteStart = lineStart;
         context.blockRange.byteEnd = lineEnd;
-        context.contentRange.byteStart = contentStart;
+        context.contentRange.byteStart = textStart;
         context.contentRange.byteEnd = lineEnd;
         context.cursorTextOffset = 0;
-        context.cursorSourceOffset = contentStart;
-        context.contentText = session_->markdownText().mid(contentStart, lineEnd - contentStart);
+        context.cursorSourceOffset = textStart;
+        context.contentText = session_->markdownText().mid(textStart, lineEnd - textStart);
         context.visibleText = context.contentText;
         context.plainInlineEditable = context.contentText.trimmed().isEmpty();
         context.supportsVisibleOffsetMapping = context.plainInlineEditable;
@@ -172,6 +182,17 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
     }
   } else if (editable->type() == BlockType::Paragraph) {
     start = paragraphContentStartIncludingCommonMarkIndent(markdown, start);
+    if (displayNode.type() == BlockType::ListItem) {
+      qsizetype lineStart = start;
+      while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
+        --lineStart;
+      }
+      qsizetype lineEnd = start;
+      while (lineEnd < markdown.size() && markdown.at(lineEnd) != QLatin1Char('\n')) {
+        ++lineEnd;
+      }
+      start = taskContentStartForListLine(markdown, lineStart, lineEnd, start);
+    }
   }
 
   context.node = &displayNode;
@@ -318,11 +339,11 @@ bool BlockEditContextResolver::listItemLineBounds(
   }
 
   const QString line = markdown.mid(lineStart, lineEnd - lineStart);
-  const QString marker = listMarkerFor(line);
-  if (marker.isEmpty()) {
+  const ListLineInfo info = listLineInfoFor(line);
+  if (!info.valid) {
     return false;
   }
-  contentStart = line.indexOf(marker) + marker.size() + lineStart;
+  contentStart = lineStart + info.contentStart;
   return contentStart >= lineStart && contentStart <= lineEnd;
 }
 

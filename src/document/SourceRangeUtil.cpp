@@ -67,24 +67,66 @@ const MarkdownNode* primaryParagraph(const MarkdownNode& node) {
 }
 
 QString listMarkerFor(const QString& line) {
+  return listLineInfoFor(line).marker;
+}
+
+ListLineInfo listLineInfoFor(const QString& line) {
+  ListLineInfo info;
   qsizetype index = 0;
   while (index < line.size() && line.at(index) == QLatin1Char(' ')) {
     ++index;
   }
+
+  const qsizetype markerStart = index;
   if (index + 2 <= line.size() && (line.at(index) == QLatin1Char('-') || line.at(index) == QLatin1Char('*') ||
                                    line.at(index) == QLatin1Char('+')) &&
       line.at(index + 1).isSpace()) {
-    return line.mid(index, 2);
+    info.valid = true;
+    info.ordered = false;
+    info.markerStart = markerStart;
+    info.markerEnd = index + 2;
+    info.contentStart = info.markerEnd;
+    info.marker = line.mid(info.markerStart, info.markerEnd - info.markerStart);
+  } else {
+    const qsizetype numberStart = index;
+    while (index < line.size() && line.at(index).isDigit()) {
+      ++index;
+    }
+    if (index > numberStart && index + 2 <= line.size() &&
+        (line.at(index) == QLatin1Char('.') || line.at(index) == QLatin1Char(')')) &&
+        line.at(index + 1).isSpace()) {
+      info.valid = true;
+      info.ordered = true;
+      info.markerStart = numberStart;
+      info.markerEnd = index + 2;
+      info.contentStart = info.markerEnd;
+      info.marker = line.mid(info.markerStart, info.markerEnd - info.markerStart);
+      info.orderedDelimiter = line.at(index);
+      info.orderedNumber = line.mid(numberStart, index - numberStart).toInt();
+    }
   }
 
-  qsizetype numberStart = index;
-  while (index < line.size() && line.at(index).isDigit()) {
-    ++index;
+  if (!info.valid) {
+    return info;
   }
-  if (index > numberStart && index + 2 <= line.size() && line.at(index) == QLatin1Char('.') && line.at(index + 1).isSpace()) {
-    return line.mid(numberStart, index - numberStart + 2);
+
+  qsizetype taskIndex = info.contentStart;
+  while (taskIndex < line.size() && line.at(taskIndex).isSpace()) {
+    ++taskIndex;
   }
-  return {};
+  if (taskIndex + 3 < line.size() &&
+      line.at(taskIndex) == QLatin1Char('[') &&
+      (line.at(taskIndex + 1) == QLatin1Char(' ') || line.at(taskIndex + 1) == QLatin1Char('x') ||
+       line.at(taskIndex + 1) == QLatin1Char('X')) &&
+      line.at(taskIndex + 2) == QLatin1Char(']') &&
+      line.at(taskIndex + 3).isSpace()) {
+    info.task = true;
+    info.taskChecked = line.at(taskIndex + 1).toLower() == QLatin1Char('x');
+    info.taskMarkerStart = taskIndex;
+    info.taskMarkerEnd = taskIndex + 4;
+    info.taskContentStart = info.taskMarkerEnd;
+  }
+  return info;
 }
 
 }  // namespace muffin
