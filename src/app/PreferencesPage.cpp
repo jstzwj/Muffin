@@ -66,8 +66,8 @@ QWidget* muffin::PreferencesPage::makeCard(QWidget* parent) const {
 
 QVBoxLayout* muffin::PreferencesPage::makeCardLayout(QWidget* card) const {
   auto* layout = new QVBoxLayout(card);
-  layout->setContentsMargins(18, 16, 18, 16);
-  layout->setSpacing(10);
+  layout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  layout->setSpacing(kRowSpacing);
   return layout;
 }
 

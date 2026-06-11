@@ -11,9 +11,10 @@
 muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(kPageLeftMargin, kPageTopMargin, kPageRightMargin, kPageBottomMargin);
-  layout->setSpacing(18);
+  layout->setSpacing(14);
 
   auto* cardContainer = new QWidget(this);
+  cardContainer->setObjectName(QStringLiteral("settingsGroup"));
   cardContainer->setMaximumWidth(kContentWidth);
   auto* cardColumn = new QVBoxLayout(cardContainer);
   cardColumn->setContentsMargins(0, 0, 0, 0);
@@ -24,8 +25,8 @@ muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent
   auto* insertCard = new QWidget(this);
   insertCard->setObjectName(QStringLiteral("settingsCard"));
   auto* insertCardLayout = new QVBoxLayout(insertCard);
-  insertCardLayout->setContentsMargins(18, 16, 18, 16);
-  insertCardLayout->setSpacing(10);
+  insertCardLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  insertCardLayout->setSpacing(kRowSpacing);
 
   auto* insertHeaderRow = new QHBoxLayout();
   insertLabel_ = makeSectionLabel(insertCard);
@@ -55,8 +56,8 @@ muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent
   auto* syntaxCard = new QWidget(this);
   syntaxCard->setObjectName(QStringLiteral("settingsCard"));
   auto* syntaxLayout = new QVBoxLayout(syntaxCard);
-  syntaxLayout->setContentsMargins(18, 16, 18, 16);
-  syntaxLayout->setSpacing(10);
+  syntaxLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  syntaxLayout->setSpacing(kRowSpacing);
 
   auto* syntaxHeaderRow = new QHBoxLayout();
   syntaxLabel_ = makeSectionLabel(syntaxCard);
@@ -89,9 +90,10 @@ muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent
   // --- Card 3: Upload Service Settings ---
   auto* uploadCard = new QWidget(this);
   uploadCard->setObjectName(QStringLiteral("settingsCard"));
+  uploadCard->setProperty("lastSettingsRow", true);
   auto* uploadCardLayout = new QVBoxLayout(uploadCard);
-  uploadCardLayout->setContentsMargins(18, 16, 18, 16);
-  uploadCardLayout->setSpacing(10);
+  uploadCardLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  uploadCardLayout->setSpacing(kRowSpacing);
 
   auto* uploadHeaderRow = new QHBoxLayout();
   uploadLabel_ = makeSectionLabel(uploadCard);

@@ -14,9 +14,10 @@
 muffin::PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(kPageLeftMargin, kPageTopMargin, kPageRightMargin, kPageBottomMargin);
-  layout->setSpacing(18);
+  layout->setSpacing(14);
 
   auto* cardContainer = new QWidget(this);
+  cardContainer->setObjectName(QStringLiteral("settingsGroup"));
   cardContainer->setMaximumWidth(kContentWidth);
   auto* cardColumn = new QVBoxLayout(cardContainer);
   cardColumn->setContentsMargins(0, 0, 0, 0);
@@ -27,8 +28,8 @@ muffin::PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(pa
   auto* languageCard = new QWidget(this);
   languageCard->setObjectName(QStringLiteral("settingsCard"));
   auto* languageLayout = new QHBoxLayout(languageCard);
-  languageLayout->setContentsMargins(18, 16, 18, 16);
-  languageLayout->setSpacing(24);
+  languageLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  languageLayout->setSpacing(18);
   languageLabel_ = makeSectionLabel(languageCard);
   languageCombo_ = new QComboBox(languageCard);
   languageCombo_->setMinimumWidth(320);
@@ -43,8 +44,8 @@ muffin::PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(pa
   auto* updateCard = new QWidget(this);
   updateCard->setObjectName(QStringLiteral("settingsCard"));
   auto* updateLayout = new QVBoxLayout(updateCard);
-  updateLayout->setContentsMargins(18, 16, 18, 16);
-  updateLayout->setSpacing(10);
+  updateLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  updateLayout->setSpacing(kRowSpacing);
   updateLabel_ = makeSectionLabel(updateCard);
   checkUpdateButton_ = makeButton(updateCard);
   autoUpdateCheck_ = new QCheckBox(updateCard);
@@ -57,9 +58,10 @@ muffin::PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(pa
   // --- Card 3: Advanced ---
   auto* advancedCard = new QWidget(this);
   advancedCard->setObjectName(QStringLiteral("settingsCard"));
+  advancedCard->setProperty("lastSettingsRow", true);
   auto* advancedLayout = new QVBoxLayout(advancedCard);
-  advancedLayout->setContentsMargins(18, 16, 18, 16);
-  advancedLayout->setSpacing(10);
+  advancedLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  advancedLayout->setSpacing(kRowSpacing);
   advancedLabel_ = makeSectionLabel(advancedCard);
   debugModeCheck_ = new QCheckBox(advancedCard);
   advancedLayout->addWidget(advancedLabel_);

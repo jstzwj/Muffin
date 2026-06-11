@@ -27,14 +27,16 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
       "QDialog { background:#f6f7f9; color:#1f2328; }"
       "QWidget#preferencesSidebar { background:#ffffff; border:1px solid #e7eaf0; border-radius:8px; }"
 
-      // Settings card
-      "QWidget#settingsCard { background:#ffffff; border:1px solid #e4e7ec; border-radius:8px; }"
+      // Settings groups and rows
+      "QWidget#settingsGroup { background:#ffffff; border:1px solid #e4e7ec; border-radius:8px; }"
+      "QWidget#settingsCard { background:transparent; border:0; border-bottom:1px solid #eef1f4; border-radius:0; }"
+      "QWidget#settingsCard[lastSettingsRow=\"true\"] { border-bottom:0; }"
 
       // QPushButton
-      "QPushButton { border:1px solid #d0d7de; border-radius:6px; background:#ffffff; min-height:32px; padding:0 14px; color:#24292f; }"
+      "QPushButton { border:1px solid #d0d7de; border-radius:6px; background:#ffffff; min-height:30px; padding:0 13px; color:#24292f; }"
       "QPushButton:hover { background:#f6f8fa; border-color:#afb8c1; }"
       "QPushButton:pressed { background:#eef1f4; border-color:#8c959f; }"
-      "QPushButton:focus { border-color:#0969da; }"
+      "QPushButton:focus { border-color:#54aeff; }"
       "QPushButton:disabled { background:#f6f8fa; color:#8c959f; border-color:#d8dee4; }"
 
       // QCheckBox
@@ -56,9 +58,9 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
       "QRadioButton::indicator:disabled { background:#f6f8fa; border-color:#d0d7de; }"
 
       // QComboBox
-      "QComboBox { border:1px solid #d0d7de; border-radius:6px; background:#ffffff; padding:5px 30px 5px 10px; min-height:26px; color:#24292f; }"
+      "QComboBox { border:1px solid #d0d7de; border-radius:6px; background:#ffffff; padding:4px 30px 4px 10px; min-height:24px; color:#24292f; }"
       "QComboBox:hover { border-color:#afb8c1; }"
-      "QComboBox:focus, QComboBox:on { border-color:#0969da; }"
+      "QComboBox:focus, QComboBox:on { border-color:#54aeff; }"
       "QComboBox::drop-down { subcontrol-origin:padding; subcontrol-position:center right; width:28px; border:0; }"
       "QComboBox QAbstractItemView { border:1px solid #d0d7de; border-radius:6px; background:#ffffff; color:#24292f; selection-background-color:#edf5ff; selection-color:#0969da; outline:0; padding:4px; }"
       "QComboBox QAbstractItemView::item { min-height:28px; padding:4px 10px; background:#ffffff; color:#24292f; }"
@@ -66,9 +68,9 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
       "QComboBox QAbstractItemView::item:selected { background:#edf5ff; color:#0969da; }"
 
       // QLineEdit
-      "QLineEdit { border:1px solid #d0d7de; border-radius:6px; background:#ffffff; padding:5px 10px; min-height:26px; color:#24292f; }"
+      "QLineEdit { border:1px solid #d0d7de; border-radius:6px; background:#ffffff; padding:4px 10px; min-height:24px; color:#24292f; }"
       "QLineEdit:hover { border-color:#afb8c1; }"
-      "QLineEdit:focus { border-color:#0969da; }"
+      "QLineEdit:focus { border-color:#54aeff; }"
       "QLineEdit:disabled { background:#f6f8fa; color:#8c959f; }"
 
       // QComboBox dropdown scrollbar
@@ -90,7 +92,7 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
 
   auto* rootLayout = new QHBoxLayout(this);
   rootLayout->setContentsMargins(24, 24, 24, 24);
-  rootLayout->setSpacing(18);
+  rootLayout->setSpacing(14);
 
   auto* sidebar = new QWidget(this);
   sidebar->setObjectName(QStringLiteral("preferencesSidebar"));
@@ -303,8 +305,8 @@ QWidget* muffin::PreferencesDialog::makePage(QWidget* parent) {
   auto* page = new QWidget(scroll);
   page->setStyleSheet(QStringLiteral("background:transparent;"));
   auto* layout = new QVBoxLayout(page);
-  layout->setContentsMargins(30, 28, 38, 28);
-  layout->setSpacing(18);
+  layout->setContentsMargins(22, 26, 34, 26);
+  layout->setSpacing(14);
 
   auto* title = new QLabel(page);
   title->setStyleSheet(QStringLiteral("font-size:26px; font-weight:600; color:#111111;"));

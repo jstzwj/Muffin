@@ -10,7 +10,7 @@
 muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(kPageLeftMargin, kPageTopMargin, kPageRightMargin, kPageBottomMargin);
-  layout->setSpacing(18);
+  layout->setSpacing(14);
 
   // Restart note
   auto* noteLabel = makeMutedLabel(this);
@@ -18,6 +18,7 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   layout->addWidget(noteLabel);
 
   auto* cardContainer = new QWidget(this);
+  cardContainer->setObjectName(QStringLiteral("settingsGroup"));
   cardContainer->setMaximumWidth(kContentWidth);
   auto* cardColumn = new QVBoxLayout(cardContainer);
   cardColumn->setContentsMargins(0, 0, 0, 0);
@@ -150,6 +151,7 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
 
   // --- Card 4: Code Blocks ---
   auto* codeCard = makeCard(this);
+  codeCard->setProperty("lastSettingsRow", true);
   auto* codeLayout = makeCardLayout(codeCard);
 
   codeBlockLabel_ = makeSectionLabel(codeCard);

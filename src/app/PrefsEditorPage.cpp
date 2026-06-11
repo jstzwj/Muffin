@@ -13,9 +13,10 @@
 muffin::PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(kPageLeftMargin, kPageTopMargin, kPageRightMargin, kPageBottomMargin);
-  layout->setSpacing(18);
+  layout->setSpacing(14);
 
   auto* cardContainer = new QWidget(this);
+  cardContainer->setObjectName(QStringLiteral("settingsGroup"));
   cardContainer->setMaximumWidth(kContentWidth);
   auto* cardColumn = new QVBoxLayout(cardContainer);
   cardColumn->setContentsMargins(0, 0, 0, 0);
@@ -110,8 +111,8 @@ muffin::PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(pare
   // --- Card 7: Spell Check ---
   auto* spellCard = makeCard(this);
   auto* spellLayout = new QHBoxLayout(spellCard);
-  spellLayout->setContentsMargins(18, 16, 18, 16);
-  spellLayout->setSpacing(24);
+  spellLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  spellLayout->setSpacing(18);
   spellCheckLabel_ = makeSectionLabel(spellCard);
   spellCheckCombo_ = new QComboBox(spellCard);
   spellCheckCombo_->setMinimumWidth(260);
@@ -123,6 +124,7 @@ muffin::PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(pare
 
   // --- Card 8: Typewriter Mode ---
   auto* twCard = makeCard(this);
+  twCard->setProperty("lastSettingsRow", true);
   auto* twLayout = makeCardLayout(twCard);
   typewriterLabel_ = makeSectionLabel(twCard);
   typewriterCursorMiddleCheck_ = new QCheckBox(twCard);

@@ -10,9 +10,10 @@
 muffin::PrefsAppearancePage::PrefsAppearancePage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(kPageLeftMargin, kPageTopMargin, kPageRightMargin, kPageBottomMargin);
-  layout->setSpacing(18);
+  layout->setSpacing(14);
 
   auto* cardContainer = new QWidget(this);
+  cardContainer->setObjectName(QStringLiteral("settingsGroup"));
   cardContainer->setMaximumWidth(kContentWidth);
   auto* cardColumn = new QVBoxLayout(cardContainer);
   cardColumn->setContentsMargins(0, 0, 0, 0);
@@ -22,8 +23,8 @@ muffin::PrefsAppearancePage::PrefsAppearancePage(QWidget* parent) : PreferencesP
   // --- Card 1: Theme ---
   auto* themeCard = makeCard(this);
   auto* themeLayout = new QHBoxLayout(themeCard);
-  themeLayout->setContentsMargins(18, 16, 18, 16);
-  themeLayout->setSpacing(24);
+  themeLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  themeLayout->setSpacing(18);
   themeLabel_ = makeSectionLabel(themeCard);
   themeCombo_ = new QComboBox(themeCard);
   themeCombo_->setMinimumWidth(320);
@@ -35,8 +36,8 @@ muffin::PrefsAppearancePage::PrefsAppearancePage(QWidget* parent) : PreferencesP
   // --- Card 2: Zoom ---
   auto* zoomCard = makeCard(this);
   auto* zoomCardLayout = new QVBoxLayout(zoomCard);
-  zoomCardLayout->setContentsMargins(18, 16, 18, 16);
-  zoomCardLayout->setSpacing(10);
+  zoomCardLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  zoomCardLayout->setSpacing(kRowSpacing);
   zoomLabel_ = makeSectionLabel(zoomCard);
   auto* zoomRow = new QHBoxLayout();
   zoomRow->setSpacing(10);
@@ -55,8 +56,8 @@ muffin::PrefsAppearancePage::PrefsAppearancePage(QWidget* parent) : PreferencesP
   // --- Card 3: Font Size ---
   auto* fontSizeCard = makeCard(this);
   auto* fontSizeLayout = new QHBoxLayout(fontSizeCard);
-  fontSizeLayout->setContentsMargins(18, 16, 18, 16);
-  fontSizeLayout->setSpacing(24);
+  fontSizeLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  fontSizeLayout->setSpacing(18);
   fontSizeLabel_ = makeSectionLabel(fontSizeCard);
   fontSizeCombo_ = new QComboBox(fontSizeCard);
   addNumberItems(fontSizeCombo_, {12, 14, 15, 16, 18, 20, 22, 24}, QStringLiteral("px"));
@@ -68,6 +69,7 @@ muffin::PrefsAppearancePage::PrefsAppearancePage(QWidget* parent) : PreferencesP
 
   // --- Card 4: Status Bar ---
   auto* statusCard = makeCard(this);
+  statusCard->setProperty("lastSettingsRow", true);
   auto* statusLayout = makeCardLayout(statusCard);
   statusBarLabel_ = makeSectionLabel(statusCard);
   showStatusBarCheck_ = new QCheckBox(statusCard);

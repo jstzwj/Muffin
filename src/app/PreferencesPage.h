@@ -23,12 +23,15 @@ public:
   virtual void retranslateUi() = 0;
 
 protected:
-  static constexpr int kPageLeftMargin = 30;
-  static constexpr int kPageTopMargin = 28;
-  static constexpr int kPageRightMargin = 38;
-  static constexpr int kPageBottomMargin = 28;
+  static constexpr int kPageLeftMargin = 22;
+  static constexpr int kPageTopMargin = 26;
+  static constexpr int kPageRightMargin = 34;
+  static constexpr int kPageBottomMargin = 26;
   static constexpr int kContentWidth = 680;
-  static constexpr int kCardSpacing = 12;
+  static constexpr int kCardSpacing = 0;
+  static constexpr int kRowHorizontalMargin = 16;
+  static constexpr int kRowVerticalMargin = 12;
+  static constexpr int kRowSpacing = 8;
 
   QLabel* makeSectionLabel(QWidget* parent) const;
   QLabel* makeMutedLabel(QWidget* parent) const;

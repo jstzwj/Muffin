@@ -45,13 +45,13 @@ muffin::PrefsExportPage::PrefsExportPage(QWidget* parent) : PreferencesPage(pare
   rightWidget->setStyleSheet(QStringLiteral("background:transparent;"));
   auto* rightLayout = new QVBoxLayout(rightWidget);
   rightLayout->setContentsMargins(kPageLeftMargin, kPageTopMargin, kPageRightMargin, kPageBottomMargin);
-  rightLayout->setSpacing(18);
+  rightLayout->setSpacing(14);
 
   auto* card = new QWidget(rightWidget);
-  card->setObjectName(QStringLiteral("settingsCard"));
+  card->setObjectName(QStringLiteral("settingsGroup"));
   auto* cardLayout = new QVBoxLayout(card);
-  cardLayout->setContentsMargins(18, 16, 18, 16);
-  cardLayout->setSpacing(14);
+  cardLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  cardLayout->setSpacing(kRowSpacing);
   card->setMaximumWidth(kContentWidth);
 
   // Default export folder

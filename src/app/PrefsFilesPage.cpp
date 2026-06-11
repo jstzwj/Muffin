@@ -11,9 +11,10 @@
 muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(kPageLeftMargin, kPageTopMargin, kPageRightMargin, kPageBottomMargin);
-  layout->setSpacing(18);
+  layout->setSpacing(14);
 
   auto* cardContainer = new QWidget(this);
+  cardContainer->setObjectName(QStringLiteral("settingsGroup"));
   cardContainer->setMaximumWidth(kContentWidth);
   auto* cardColumn = new QVBoxLayout(cardContainer);
   cardColumn->setContentsMargins(0, 0, 0, 0);
@@ -24,8 +25,8 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
   auto* startupCard = new QWidget(this);
   startupCard->setObjectName(QStringLiteral("settingsCard"));
   auto* startupLayout = new QHBoxLayout(startupCard);
-  startupLayout->setContentsMargins(18, 16, 18, 16);
-  startupLayout->setSpacing(24);
+  startupLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  startupLayout->setSpacing(18);
   startupLabel_ = makeSectionLabel(startupCard);
   startupCombo_ = new QComboBox(startupCard);
   startupCombo_->setMinimumWidth(320);
@@ -39,8 +40,8 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
   auto* outlineCard = new QWidget(this);
   outlineCard->setObjectName(QStringLiteral("settingsCard"));
   auto* outlineLayout = new QVBoxLayout(outlineCard);
-  outlineLayout->setContentsMargins(18, 16, 18, 16);
-  outlineLayout->setSpacing(10);
+  outlineLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  outlineLayout->setSpacing(kRowSpacing);
   outlineLabel_ = makeSectionLabel(outlineCard);
   auto* outlineRow = new QHBoxLayout();
   outlineRow->setSpacing(8);
@@ -58,8 +59,8 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
   auto* extCard = new QWidget(this);
   extCard->setObjectName(QStringLiteral("settingsCard"));
   auto* extLayout = new QHBoxLayout(extCard);
-  extLayout->setContentsMargins(18, 16, 18, 16);
-  extLayout->setSpacing(24);
+  extLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  extLayout->setSpacing(18);
   defaultExtLabel_ = makeSectionLabel(extCard);
   defaultExtCombo_ = new QComboBox(extCard);
   defaultExtCombo_->setMinimumWidth(320);
@@ -73,8 +74,8 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
   auto* saveCard = new QWidget(this);
   saveCard->setObjectName(QStringLiteral("settingsCard"));
   auto* saveLayout = new QVBoxLayout(saveCard);
-  saveLayout->setContentsMargins(18, 16, 18, 16);
-  saveLayout->setSpacing(10);
+  saveLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  saveLayout->setSpacing(kRowSpacing);
   saveLabel_ = makeSectionLabel(saveCard);
   autoSaveCheck_ = new QCheckBox(saveCard);
   autoSaveSwitchCheck_ = new QCheckBox(saveCard);
@@ -90,8 +91,8 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
   auto* recentCard = new QWidget(this);
   recentCard->setObjectName(QStringLiteral("settingsCard"));
   auto* recentLayout = new QVBoxLayout(recentCard);
-  recentLayout->setContentsMargins(18, 16, 18, 16);
-  recentLayout->setSpacing(10);
+  recentLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  recentLayout->setSpacing(kRowSpacing);
   recentLabel_ = makeSectionLabel(recentCard);
   auto* recentCheckRow = new QHBoxLayout();
   recentCheckRow->setSpacing(8);
@@ -111,9 +112,10 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
   // --- Card 6: Drag & Drop ---
   auto* dropCard = new QWidget(this);
   dropCard->setObjectName(QStringLiteral("settingsCard"));
+  dropCard->setProperty("lastSettingsRow", true);
   auto* dropLayout = new QVBoxLayout(dropCard);
-  dropLayout->setContentsMargins(18, 16, 18, 16);
-  dropLayout->setSpacing(10);
+  dropLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
+  dropLayout->setSpacing(kRowSpacing);
   dropLabel_ = makeSectionLabel(dropCard);
 
   auto* dropFolderRow = new QHBoxLayout();
