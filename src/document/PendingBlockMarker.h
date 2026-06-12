@@ -34,6 +34,18 @@ PendingBlockMarker detectPendingBlockMarker(QStringView singleLine);
 PendingBlockMarker detectPendingBlockMarkerForNode(const QString& markdown, const MarkdownNode& node);
 bool shouldDemotePendingMarker(const QString& markdown, const MarkdownNode& node);
 
+// Fold a pending-marker block (one whose source is a still-incomplete opener such as `###`, `*`,
+// ``` ``` ```, `$$`) back into a Paragraph holding the opener as plain text. Clears any block
+// children so a lone-marker List (cmark emits List -> ListItem for `*` alone, since a trailing
+// newline satisfies its bullet check) collapses into a single-text paragraph.
+void demotePendingMarkerToParagraph(const QString& markdown, MarkdownNode& node);
+
+// Demote every lone-marker List (bullet/ordered marker with no trailing space, e.g. `*` or `1.`
+// alone on a line) back to a Paragraph, recursively (so it also applies inside block quotes).
+// Real lists (`* foo`) are left intact. Applied at parse time so load and edit paths agree and
+// cmark never hands the editor a non-editable "zombie" list whose marker lacks a space.
+void demotePendingListMarkers(MarkdownNode& root, const QString& markdown);
+
 // Source offsets of every Paragraph whose source text is a still-incomplete block opener (`###`,
 // `*`, ``` ``` ```, `$$`, `\[`), including Paragraph nodes nested in containers. Loaded structural
 // blocks (e.g. an empty ATX heading, which is a Heading node) are excluded; only markers that are

@@ -3,6 +3,7 @@
 #include "document/DefinitionBlock.h"
 #include "document/InlineNode.h"
 #include "document/LineStartOffsetCache.h"
+#include "document/PendingBlockMarker.h"
 #include "parser/CmarkNodeAdapter.h"
 #include "parser/MarkdownSerializer.h"
 
@@ -852,6 +853,10 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   annotateDefinitionBlocks(*result.root, definitions, lineOffsets);
   insertTrailingEmptyParagraphAfterDefinition(markdownToParse, *result.root, definitions, lineOffsets);
   annotateTableCellSourceRanges(markdownToParse, lineOffsets, *result.root);
+  // cmark turns a lone `*`/`-`/`+`/`1.` (trailing newline satisfies its bullet check) into an empty
+  // list item the editor can't edit (its list-marker validation requires a space). Demote those to
+  // paragraphs at parse time so load and edit paths agree. Done last, on the pre-front-matter tree.
+  demotePendingListMarkers(*result.root, markdownToParse.toString());
 
   if (frontMatterNode) {
     const int lineDelta = frontMatter.lineEnd;

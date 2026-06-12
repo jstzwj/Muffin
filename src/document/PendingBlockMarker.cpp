@@ -111,6 +111,18 @@ qsizetype pendingMarkerStartInLine(QStringView line) {
   return -1;
 }
 
+QString pendingMarkerParagraphText(const QString& markdown, const MarkdownNode& node) {
+  if (!shouldDemotePendingMarker(markdown, node)) {
+    return {};
+  }
+  const SourceRange range = node.sourceRange();
+  if (range.byteStart < 0 || range.byteStart > markdown.size()) {
+    return {};
+  }
+  const qsizetype end = qMin(range.byteEnd, markdown.size());
+  return markdown.mid(range.byteStart, end - range.byteStart);
+}
+
 }  // namespace
 
 bool PendingBlockMarker::isValid() const {
@@ -204,6 +216,41 @@ PendingBlockMarker detectPendingBlockMarkerForNode(const QString& markdown, cons
 
 bool shouldDemotePendingMarker(const QString& markdown, const MarkdownNode& node) {
   return node.type() != BlockType::Paragraph && detectPendingBlockMarkerForNode(markdown, node).isValid();
+}
+
+void demotePendingMarkerToParagraph(const QString& markdown, MarkdownNode& node) {
+  const QString text = pendingMarkerParagraphText(markdown, node);
+  if (text.isEmpty()) {
+    return;
+  }
+  const SourceRange range = node.sourceRange();
+  const qsizetype end = qMin(range.byteEnd, markdown.size());
+  node.setType(BlockType::Paragraph);
+  node.setLiteral(QString());
+  node.setCodeLanguage(QString());
+  node.setHeadingLevel(0);
+  node.setListKind(ListKind::None);
+  // A lone-marker List carries ListItem children; a Paragraph must not, so collapse them.
+  node.clearChildren();
+  QVector<InlineNode> inlines;
+  InlineNode inlineNode = InlineNode::text(text);
+  inlineNode.setSourceRange(InlineRange{range.byteStart, end});
+  inlines.append(inlineNode);
+  node.inlines() = std::move(inlines);
+}
+
+void demotePendingListMarkers(MarkdownNode& node, const QString& markdown) {
+  if (node.type() == BlockType::List) {
+    const PendingBlockMarker marker = detectPendingBlockMarkerForNode(markdown, node);
+    if (marker.isValid() && marker.kind == PendingBlockMarkerKind::List) {
+      demotePendingMarkerToParagraph(markdown, node);
+    }
+  }
+  for (const auto& child : node.children()) {
+    if (child) {
+      demotePendingListMarkers(*child, markdown);
+    }
+  }
 }
 
 QVector<qsizetype> collectPendingMarkerOffsets(const QString& markdown, const MarkdownNode& root) {

@@ -143,41 +143,8 @@ int lineForOffset(const QString& text, qsizetype offset) {
   return line;
 }
 
-QString pendingMarkerParagraphText(const QString& markdown, const muffin::MarkdownNode& node) {
-  if (!muffin::shouldDemotePendingMarker(markdown, node)) {
-    return {};
-  }
-  const muffin::SourceRange range = node.sourceRange();
-  if (range.byteStart < 0 || range.byteStart > markdown.size()) {
-    return {};
-  }
-  const qsizetype end = qMin(range.byteEnd, markdown.size());
-  return markdown.mid(range.byteStart, end - range.byteStart);
-}
-
-// Fold a pending marker block back into a Paragraph holding the marker as plain text, so the
-// editor keeps treating it as an ordinary line until the user commits it.
-void demotePendingMarkerToParagraph(const QString& markdown, muffin::MarkdownNode& node) {
-  const QString text = pendingMarkerParagraphText(markdown, node);
-  if (text.isEmpty()) {
-    return;
-  }
-  const muffin::SourceRange range = node.sourceRange();
-  const qsizetype end = qMin(range.byteEnd, markdown.size());
-  node.setType(muffin::BlockType::Paragraph);
-  node.setLiteral(QString());
-  node.setCodeLanguage(QString());
-  node.setHeadingLevel(0);
-  node.setListKind(muffin::ListKind::None);
-  QVector<muffin::InlineNode> inlines;
-  muffin::InlineNode inlineNode = muffin::InlineNode::text(text);
-  inlineNode.setSourceRange(muffin::InlineRange{range.byteStart, end});
-  inlines.append(inlineNode);
-  node.inlines() = std::move(inlines);
-}
-
 void demotePendingMarkersInSubtree(const QString& markdown, muffin::MarkdownNode& node) {
-  demotePendingMarkerToParagraph(markdown, node);
+  muffin::demotePendingMarkerToParagraph(markdown, node);
   for (const auto& child : node.children()) {
     if (child) {
       demotePendingMarkersInSubtree(markdown, *child);
@@ -196,7 +163,7 @@ bool demotePendingMarkerAtOffset(const QString& markdown, muffin::MarkdownNode& 
     }
   }
   const muffin::BlockType beforeType = node.type();
-  demotePendingMarkerToParagraph(markdown, node);
+  muffin::demotePendingMarkerToParagraph(markdown, node);
   return node.type() != beforeType;
 }
 

@@ -11,6 +11,50 @@
 
 using namespace muffin;
 
+void testLoneBulletMarkerIsParagraphNotList() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+
+  // cmark turns a lone bullet/ordered marker (a trailing newline satisfies its bullet check) into
+  // an empty list item the editor cannot edit, because its list-marker validation requires a space
+  // after the bullet. The parser must demote such lone markers to paragraphs so that only
+  // `* ` / `- ` / `1. ` (marker + space) actually start a list.
+  const QStringList loneMarkers = {
+      QStringLiteral("*"),
+      QStringLiteral("-"),
+      QStringLiteral("+"),
+      QStringLiteral("1."),
+  };
+  for (const QString& marker : loneMarkers) {
+    const QString markdown = marker + QLatin1Char('\n');
+    ParseResult parsed = parser.parseDocument(markdown, options);
+    require(parsed.root != nullptr, QStringLiteral("Parser returned null root for lone marker %1").arg(marker));
+    require(parsed.root->children().size() == 1, QStringLiteral("Lone marker %1 should produce one block").arg(marker));
+    const MarkdownNode& child = childAt(*parsed.root, 0);
+    require(child.type() == BlockType::Paragraph,
+            QStringLiteral("Lone marker '%1' must be a paragraph, not a list").arg(marker));
+    require(!child.inlines().isEmpty() && child.inlines().front().text() == marker,
+            QStringLiteral("Demoted paragraph should hold the marker '%1' as plain text").arg(marker));
+  }
+
+  // A real list (marker + space + content) must still parse as a list.
+  ParseResult realList = parser.parseDocument(QStringLiteral("* foo\n"), options);
+  require(realList.root != nullptr, QStringLiteral("Parser returned null root for real list"));
+  require(childAt(*realList.root, 0).type() == BlockType::List, QStringLiteral("'* foo' must remain a list"));
+
+  // A marker followed by a space but no content (`* `) is a valid empty list and stays a list.
+  ParseResult emptyList = parser.parseDocument(QStringLiteral("* \n"), options);
+  require(childAt(*emptyList.root, 0).type() == BlockType::List,
+          QStringLiteral("'* ' (marker + space) must remain a list, only a bare marker is demoted"));
+
+  // The demotion is container-aware: a lone marker inside a block quote is also demoted.
+  ParseResult quoted = parser.parseDocument(QStringLiteral("> *\n"), options);
+  const MarkdownNode& quote = childAt(*quoted.root, 0);
+  require(quote.type() == BlockType::BlockQuote, QStringLiteral("'> *' top block should be a block quote"));
+  require(!quote.children().empty() && quote.children().front()->type() == BlockType::Paragraph,
+          QStringLiteral("Lone marker inside a block quote should be demoted to a paragraph"));
+}
+
 void testLineStartOffsetCache() {
   LineStartOffsetCache empty{QStringView(QString())};
   require(empty.lineCount() == 1, QStringLiteral("Empty text should have one line"));
@@ -213,6 +257,7 @@ void testTableCellSourceRanges() {
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
   testLineStartOffsetCache();
+  testLoneBulletMarkerIsParagraphNotList();
   testInlineSourceRangesUseUtf8Columns();
   testFinalParagraphSourceRangeWithoutTrailingNewline();
   testEmptyDocumentHasEditableParagraph();
