@@ -46,6 +46,13 @@ public:
   MarkdownNode* nextEditableTextBlock(const MarkdownNode& node, BlockEditContext& context) const;
   MarkdownNode* nodeAtContentSourceOffset(MarkdownNode& node, qsizetype sourceOffset, bool preferLaterEmptyAtOffset = false) const;
 
+  // Resolves a source offset that lies inside a literal block (code fence, math, HTML, front
+  // matter) — the one block class nodeAtContentSourceOffset deliberately skips, since literal
+  // blocks edit through their own controllers rather than inline text. On a match, returns the
+  // node and sets contentStartOut to the byte offset just past the opening fence/marker line
+  // (the first character of the editable literal content). Returns null for inline-text offsets.
+  MarkdownNode* literalBlockAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset, qsizetype& contentStartOut) const;
+
 private:
   MarkdownNode* lastEditableDescendant(MarkdownNode& node) const;
   MarkdownNode* firstEditableDescendant(MarkdownNode& node) const;

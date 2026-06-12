@@ -1251,6 +1251,21 @@ set_tests_properties(MuffinInputLazyBlockTest PROPERTIES
   RESOURCE_LOCK MuffinQtGui
 )
 
+add_executable(MuffinCodeFenceCommitCursorTest
+  tests/editor/CodeFenceCommitCursorTest.cpp
+)
+
+target_link_libraries(MuffinCodeFenceCommitCursorTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinCodeFenceCommitCursorTest COMMAND MuffinCodeFenceCommitCursorTest)
+set_tests_properties(MuffinCodeFenceCommitCursorTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
 add_executable(MuffinInputBlockEditingTest
   tests/editor/InputBlockEditingTest.cpp
 )

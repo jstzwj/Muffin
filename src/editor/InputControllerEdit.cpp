@@ -216,6 +216,13 @@ void InputController::applyLocalEdit(
     }
     ctx_.selection->setCursorPosition(nextCursor);
   }
+  // A structure edit (e.g. committing "```"/"$$" with Enter) can leave the caret inside a newly
+  // created literal block. Activate that block's inline editor so the caret paints as an editing
+  // caret and subsequent keystrokes route into it rather than being rejected. syncLiteralEditMode
+  // is a no-op when the caret is on a plain text block, so this is safe for ordinary edits.
+  if (nextCursor.isValid()) {
+    syncLiteralEditMode(nextCursor.blockId);
+  }
 
   if (ctx_.undoStack) {
     const bool textDeltaUndoEligible = appliedLocally && !structureEdit && beforeCursor.isValid() && nextCursor.isValid();

@@ -89,6 +89,12 @@ NodeId refreshNodeFor(DocumentSession* session, NodeId nodeId) {
   return node->id();
 }
 
+// Blocks that edit through a dedicated literal controller rather than inline text.
+bool isLiteralBlockType(BlockType type) {
+  return type == BlockType::CodeFence || type == BlockType::MathBlock ||
+         type == BlockType::HtmlBlock || type == BlockType::FrontMatter;
+}
+
 }  // namespace
 
 InputController::InputController(QObject* parent) : QObject(parent) {}
@@ -140,6 +146,7 @@ bool InputController::insertText(QString text) {
   if (ctx_.hasSession() && ctx_.session->markdownText().isEmpty()) {
     return insertIntoEmptyDocument(std::move(text));
   }
+  reconcileLiteralEditorForCursor();
   if (hasActiveLiteralEditor()) {
     return insertTextIntoActiveLiteral(std::move(text));
   }
@@ -206,6 +213,7 @@ bool InputController::insertBlockAfterCurrentBlock(QString text) {
 }
 
 bool InputController::deleteBackward() {
+  reconcileLiteralEditorForCursor();
   if (hasActiveLiteralEditor()) {
     return deleteBackwardInActiveLiteral();
   }
@@ -222,6 +230,7 @@ bool InputController::deleteBackward() {
 }
 
 bool InputController::deleteForward() {
+  reconcileLiteralEditorForCursor();
   if (hasActiveLiteralEditor()) {
     return deleteForwardInActiveLiteral();
   }
@@ -468,7 +477,7 @@ void InputController::syncLiteralEditMode(NodeId newBlockId) {
   }
 
   const BlockType type = node->type();
-  const bool isLiteral = type == BlockType::CodeFence || type == BlockType::MathBlock || type == BlockType::HtmlBlock || type == BlockType::FrontMatter;
+  const bool isLiteral = isLiteralBlockType(type);
 
   const auto exitAllLiteralEditors = [this]() {
     for (auto it = ctx_.literalEditors.constBegin(); it != ctx_.literalEditors.constEnd(); ++it) {
@@ -509,6 +518,21 @@ void InputController::syncLiteralEditMode(NodeId newBlockId) {
   }
   if (entered) {
     ctx_.selection->setCursorPosition(savedCursor);
+  }
+}
+
+void InputController::reconcileLiteralEditorForCursor() {
+  // Drop a literal editor that no longer matches the caret. Structure edits and undo can move the
+  // caret off the block being edited (e.g. committing "```" then undoing restores the paragraph)
+  // without going through syncLiteralEditMode, leaving a stale editor active. Without this, the
+  // next keystroke would route into a now-absent block and silently no-op. Entering a new editor
+  // is intentionally NOT done here — that is the caller's responsibility (syncLiteralEditMode).
+  if (!hasActiveLiteralEditor() || !ctx_.hasSession() || !ctx_.hasCursor()) {
+    return;
+  }
+  MarkdownNode* node = ctx_.session->document().node(ctx_.selection->cursorPosition().blockId);
+  if (!node || !isLiteralBlockType(node->type())) {
+    exitActiveLiteralEditor();
   }
 }
 
@@ -1004,12 +1028,28 @@ CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset, bo
     return cursor;
   }
 
+  BlockEditContextResolver resolver = contextResolver();
+
+  // A source offset that lands inside a literal block (code/math/HTML/front matter) resolves to
+  // that block. nodeAtContentSourceOffset only matches inline-editable text, so without this a
+  // freshly committed "```"/"$$" block would leave the post-edit caret unresolvable — and, since
+  // the fallback (end-of-document) is also unresolvable, the selection cursor would be cleared,
+  // making the caret vanish entirely.
+  qsizetype literalContentStart = -1;
+  if (MarkdownNode* literal =
+          resolver.literalBlockAtSourceOffset(ctx_.session->document().root(), sourceOffset, literalContentStart)) {
+    cursor.blockId = literal->id();
+    cursor.text.nodeId = literal->id();
+    cursor.text.textOffset = qBound<qsizetype>(0, sourceOffset - literalContentStart, literal->literal().size());
+    cursor.text.sourceOffset = sourceOffset;
+    return cursor;
+  }
+
   MarkdownNode* node = paragraphAtSourceOffset(ctx_.session->document().root(), sourceOffset, preferLaterEmptyAtOffset);
   if (!node) {
     return cursor;
   }
 
-  BlockEditContextResolver resolver = contextResolver();
   BlockEditContext context;
   if (!resolver.fill(*node, context)) {
     return cursor;

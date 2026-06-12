@@ -22,6 +22,24 @@ bool isDefinitionBlock(BlockType type) {
   return type == BlockType::LinkDefinition || type == BlockType::FootnoteDefinition;
 }
 
+// Literal blocks edit through dedicated controllers (code/math/HTML/front matter) rather than
+// the inline-text model. The cursor for such a block is anchored on the block node itself, with
+// the caret expressed as an offset into the literal content.
+bool isLiteralBlockType(BlockType type) {
+  return type == BlockType::CodeFence || type == BlockType::MathBlock ||
+         type == BlockType::HtmlBlock || type == BlockType::FrontMatter;
+}
+
+// Byte offset of the first editable literal character: just past the opening fence/marker line.
+// For "```\nfoo\n```" that is index 4 (the 'f'); for an empty "```\n\n```" it is the blank line.
+qsizetype literalContentStartOffset(const QString& markdown, const MarkdownNode& node) {
+  const SourceRange range = node.sourceRange();
+  const qsizetype start = qBound<qsizetype>(0, range.byteStart, markdown.size());
+  const qsizetype newlineAt = markdown.indexOf(QLatin1Char('\n'), start);
+  const qsizetype bound = qMin<qsizetype>(markdown.size(), qMax(range.byteEnd, start));
+  return (newlineAt >= 0 && newlineAt < bound) ? newlineAt + 1 : start;
+}
+
 qsizetype taskContentStartForListLine(const QString& markdown, qsizetype lineStart, qsizetype lineEnd, qsizetype markerContentStart) {
   const QString line = markdown.mid(lineStart, lineEnd - lineStart);
   const ListLineInfo info = listLineInfoFor(line);
@@ -419,6 +437,26 @@ MarkdownNode* BlockEditContextResolver::firstEditableDescendant(MarkdownNode& no
   }
   for (const auto& child : node.children()) {
     if (MarkdownNode* found = firstEditableDescendant(*child)) {
+      return found;
+    }
+  }
+  return nullptr;
+}
+
+MarkdownNode* BlockEditContextResolver::literalBlockAtSourceOffset(
+    MarkdownNode& node, qsizetype sourceOffset, qsizetype& contentStartOut) const {
+  if (!session_) {
+    return nullptr;
+  }
+  if (isLiteralBlockType(node.type())) {
+    const SourceRange range = node.sourceRange();
+    if (sourceOffset >= range.byteStart && sourceOffset <= range.byteEnd) {
+      contentStartOut = literalContentStartOffset(session_->markdownText(), node);
+      return &node;
+    }
+  }
+  for (const auto& child : node.children()) {
+    if (MarkdownNode* found = literalBlockAtSourceOffset(*child, sourceOffset, contentStartOut)) {
       return found;
     }
   }

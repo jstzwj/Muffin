@@ -64,6 +64,7 @@ private:
   bool handleKeyPress(QKeyEvent* event);
   bool hasActiveLiteralEditor() const;
   void syncLiteralEditMode(NodeId newBlockId);
+  void reconcileLiteralEditorForCursor();
   bool insertTextIntoActiveLiteral(QString text);
   bool tryInsertOptionalDefinitionTitle(QString text);
   bool deleteBackwardInActiveLiteral();
