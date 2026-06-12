@@ -1,5 +1,7 @@
 #include "render/BlockLayout.h"
 
+#include "document/SourceRangeUtil.h"
+
 #include <QFontMetricsF>
 #include <QPainter>
 #include <QTextLayout>
@@ -414,6 +416,14 @@ const math::MathLayoutResult* BlockLayout::mathLayout() const {
   return mathLayout_.get();
 }
 
+void BlockLayout::setMathDelimiter(MathDelimiter delimiter) {
+  mathDelimiter_ = delimiter;
+}
+
+MathDelimiter BlockLayout::mathDelimiter() const {
+  return mathDelimiter_;
+}
+
 void BlockLayout::setHtmlLayout(std::shared_ptr<html::HtmlLayoutResult> layout) {
   htmlLayout_ = std::move(layout);
 }
@@ -771,9 +781,11 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
         painter.setFont(codeFont);
         QTextOption option;
         option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-        painter.drawText(QPointF(sourceRect.left(), viewRect.top() + padding.top() + codeMetrics.ascent()), QStringLiteral("$$"));
+        const QString openMarker = mathOpeningDelimiter(mathDelimiter_);
+        const QString closeMarker = mathClosingDelimiter(mathDelimiter_);
+        painter.drawText(QPointF(sourceRect.left(), viewRect.top() + padding.top() + codeMetrics.ascent()), openMarker);
         paintLiteralSource(painter, theme, sourceRect, highlightMathTex(literal_));
-        painter.drawText(QPointF(sourceRect.left(), sourceRect.bottom() + codeMetrics.ascent()), QStringLiteral("$$"));
+        painter.drawText(QPointF(sourceRect.left(), sourceRect.bottom() + codeMetrics.ascent()), closeMarker);
         painter.setPen(QPen(theme.codeBorderColor(), 1));
         const qreal dividerY = sourcePanel.bottom() + 0.5;
         painter.drawLine(QPointF(viewRect.left(), dividerY), QPointF(viewRect.right(), dividerY));

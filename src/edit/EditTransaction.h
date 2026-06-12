@@ -15,6 +15,11 @@ namespace muffin {
 struct DocumentSnapshot {
   QString markdownText;
   CursorPosition cursor;
+  // When replayed via applyMarkdownText, demote every pending marker at these source offsets back
+  // to a paragraph, so redo of a lazy-marker edit stays consistent with the forward (demoted)
+  // state. Carries all in-progress markers (not just one) so multi-marker documents demote
+  // consistently; loaded structural blocks are excluded because they are never paragraphs.
+  QVector<qsizetype> demoteAtOffsets;
 };
 
 struct TextDelta {

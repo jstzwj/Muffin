@@ -358,7 +358,7 @@ void EditorController::applySnapshot(const DocumentSnapshot& snapshot) {
     return;
   }
 
-  session_->applyMarkdownText(snapshot.markdownText, true);
+  session_->applyMarkdownText(snapshot.markdownText, true, snapshot.demoteAtOffsets);
   const CursorPosition cursor = remapSnapshotCursor(snapshot.cursor);
   if (cursor.isValid()) {
     selection_.setCursorPosition(cursor);

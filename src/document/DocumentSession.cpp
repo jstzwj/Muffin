@@ -1,6 +1,7 @@
 #include "document/DocumentSession.h"
 
 #include "document/InlineNode.h"
+#include "document/PendingBlockMarker.h"
 #include "document/SourceRangeUtil.h"
 #include "parser/MarkdownSerializer.h"
 
@@ -142,6 +143,77 @@ int lineForOffset(const QString& text, qsizetype offset) {
   return line;
 }
 
+QString pendingMarkerParagraphText(const QString& markdown, const muffin::MarkdownNode& node) {
+  if (!muffin::shouldDemotePendingMarker(markdown, node)) {
+    return {};
+  }
+  const muffin::SourceRange range = node.sourceRange();
+  if (range.byteStart < 0 || range.byteStart > markdown.size()) {
+    return {};
+  }
+  const qsizetype end = qMin(range.byteEnd, markdown.size());
+  return markdown.mid(range.byteStart, end - range.byteStart);
+}
+
+// Fold a pending marker block back into a Paragraph holding the marker as plain text, so the
+// editor keeps treating it as an ordinary line until the user commits it.
+void demotePendingMarkerToParagraph(const QString& markdown, muffin::MarkdownNode& node) {
+  const QString text = pendingMarkerParagraphText(markdown, node);
+  if (text.isEmpty()) {
+    return;
+  }
+  const muffin::SourceRange range = node.sourceRange();
+  const qsizetype end = qMin(range.byteEnd, markdown.size());
+  node.setType(muffin::BlockType::Paragraph);
+  node.setLiteral(QString());
+  node.setCodeLanguage(QString());
+  node.setHeadingLevel(0);
+  node.setListKind(muffin::ListKind::None);
+  QVector<muffin::InlineNode> inlines;
+  muffin::InlineNode inlineNode = muffin::InlineNode::text(text);
+  inlineNode.setSourceRange(muffin::InlineRange{range.byteStart, end});
+  inlines.append(inlineNode);
+  node.inlines() = std::move(inlines);
+}
+
+void demotePendingMarkersInSubtree(const QString& markdown, muffin::MarkdownNode& node) {
+  demotePendingMarkerToParagraph(markdown, node);
+  for (const auto& child : node.children()) {
+    if (child) {
+      demotePendingMarkersInSubtree(markdown, *child);
+    }
+  }
+}
+
+bool demotePendingMarkerAtOffset(const QString& markdown, muffin::MarkdownNode& node, qsizetype offset) {
+  const muffin::SourceRange range = node.sourceRange();
+  if (node.type() != muffin::BlockType::Document && (range.byteStart > offset || range.byteEnd < offset)) {
+    return false;
+  }
+  for (const auto& child : node.children()) {
+    if (child && demotePendingMarkerAtOffset(markdown, *child, offset)) {
+      return true;
+    }
+  }
+  const muffin::BlockType beforeType = node.type();
+  demotePendingMarkerToParagraph(markdown, node);
+  return node.type() != beforeType;
+}
+
+// Demote every pending marker whose source range contains one of `offsets` back to a paragraph.
+// This lets the edit-driven full-reparse fallback keep still-incomplete openers (lone `###`, `-`,
+// ``` ``` ```, `$$`/`\[`) as paragraphs even when the local-edit path was rejected. The search is
+// recursive so pending markers behave the same inside block quotes and list items as they do at
+// document root.
+void demotePendingMarkersAtOffsets(const QString& markdown, muffin::MarkdownNode& root, const QVector<qsizetype>& offsets) {
+  for (const qsizetype offset : offsets) {
+    if (offset < 0) {
+      continue;
+    }
+    demotePendingMarkerAtOffset(markdown, root, offset);
+  }
+}
+
 TopLevelSlice chooseTopLevelSlice(const muffin::MarkdownDocument& document, qsizetype editStart, qsizetype editEnd, bool blankLineStructuralEdit) {
   TopLevelSlice slice;
   const auto& blocks = document.root().children();
@@ -190,13 +262,22 @@ TopLevelSlice chooseTopLevelSlice(const muffin::MarkdownDocument& document, qsiz
         }
       }
 
+      // Only expand into neighboring blocks for blank-line structural edits.
+      // Character insertions (like typing "*" in a virtual empty paragraph)
+      // don't need surrounding context — the pending-marker demotion logic
+      // handles single-line markers correctly.  Expanding would pull in a
+      // List block, causing cmark to absorb the "*" into the list structure,
+      // which then can't be demoted because the multi-line source doesn't
+      // match the single-line pending-marker regex.
       qsizetype expandedFirst = selectedFirst;
       qsizetype expandedEnd = selectedEnd;
-      if (expandedFirst > 0) {
-        --expandedFirst;
-      }
-      if (expandedEnd < static_cast<qsizetype>(blocks.size())) {
-        ++expandedEnd;
+      if (blankLineStructuralEdit) {
+        if (expandedFirst > 0) {
+          --expandedFirst;
+        }
+        if (expandedEnd < static_cast<qsizetype>(blocks.size())) {
+          ++expandedEnd;
+        }
       }
 
       slice.first = expandedFirst;
@@ -507,8 +588,8 @@ void muffin::DocumentSession::updateFromEditor(QString text) {
   parseAndStore(std::move(text), true);
 }
 
-void muffin::DocumentSession::applyMarkdownText(QString text, bool modified) {
-  parseAndStore(std::move(text), modified);
+void muffin::DocumentSession::applyMarkdownText(QString text, bool modified, QVector<qsizetype> demoteAtOffsets) {
+  parseAndStore(std::move(text), modified, std::move(demoteAtOffsets));
   emit documentTextChanged(document_.markdownText());
 }
 
@@ -599,7 +680,7 @@ bool muffin::DocumentSession::applyInsertedNode(
   return applyTextDelta(sourceStart, removedLength, std::move(insertedText), modified, std::move(nodeHints));
 }
 
-void muffin::DocumentSession::parseAndStore(QString text, bool modified) {
+void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector<qsizetype> demoteAtOffsets) {
   PerfTimer perf("session.fullParse");
   ParseResult result = parser_.parseDocument(QStringView(text), parseOptions_);
   lastParseElapsedMs_ = result.elapsedMs;
@@ -608,6 +689,9 @@ void muffin::DocumentSession::parseAndStore(QString text, bool modified) {
   lastLocalTopLevelRangeChange_ = {};
   document_.setMarkdownText(std::move(text), std::move(result.root));
   document_.setModified(modified);
+  if (!demoteAtOffsets.isEmpty()) {
+    demotePendingMarkersAtOffsets(document_.markdownText(), document_.root(), demoteAtOffsets);
+  }
   emit parsed(lastParseElapsedMs_);
 }
 
@@ -669,6 +753,16 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
     auto child = parsedSlice.root->detachChild(0);
     shiftRanges(*child, slice.sourceStart, sliceLineDelta);
     replacements.push_back(std::move(child));
+  }
+  // Typora-style lazy markers: keep a still-incomplete list bullet / fence / math opener as a
+  // paragraph instead of letting cmark snap it into a block while the user is mid-keystroke.
+  // The freshly-parsed node ranges index into the post-edit text, so reconstruct it here.
+  QString postEditText = oldText;
+  postEditText.replace(sourceStart, sourceEnd - sourceStart, replacementText);
+  for (const auto& replacement : replacements) {
+    if (replacement) {
+      demotePendingMarkersInSubtree(postEditText, *replacement);
+    }
   }
   inheritIdsForUnchangedTopLevelBlocks(document_, slice, replacements, sourceStart, sourceEnd, editDelta);
   applyNodeHints(document_, replacements, nodeHints);

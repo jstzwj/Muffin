@@ -151,6 +151,14 @@ void MarkdownNode::setCodeLanguage(QString language) {
   codeLanguage_ = std::move(language);
 }
 
+MathDelimiter MarkdownNode::mathDelimiter() const {
+  return mathDelimiter_;
+}
+
+void MarkdownNode::setMathDelimiter(MathDelimiter delimiter) {
+  mathDelimiter_ = delimiter;
+}
+
 FrontMatterFormat MarkdownNode::frontMatterFormat() const {
   return frontMatterFormat_;
 }
@@ -202,6 +210,7 @@ std::unique_ptr<MarkdownNode> MarkdownNode::clone(CloneMode mode) const {
   copy->listTight_ = listTight_;
   copy->taskChecked_ = taskChecked_;
   copy->codeLanguage_ = codeLanguage_;
+  copy->mathDelimiter_ = mathDelimiter_;
   copy->frontMatterFormat_ = frontMatterFormat_;
   copy->definition_ = definition_;
   copy->tableAlignments_ = tableAlignments_;

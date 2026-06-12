@@ -465,7 +465,7 @@ bool SelectionSerializer::literalContentSourceRange(const MarkdownDocument& docu
     }
     const QString closingLine = markdown.mid(closingStart, end - closingStart).trimmed();
     if ((node.type() == BlockType::CodeFence && closingLine.startsWith(QStringLiteral("```"))) ||
-        (node.type() == BlockType::MathBlock && closingLine == QStringLiteral("$$")) ||
+        (node.type() == BlockType::MathBlock && isMathClosingLine(node, closingLine)) ||
         (node.type() == BlockType::FrontMatter &&
          ((node.frontMatterFormat() == FrontMatterFormat::Yaml && closingLine == QStringLiteral("---")) ||
           (node.frontMatterFormat() == FrontMatterFormat::Toml && closingLine == QStringLiteral("+++"))))) {

@@ -100,10 +100,44 @@ void testSetTexAndRoundtripFence() {
   require(setTexUndo.isReplaceNodeCommand(), "set tex should use ReplaceNodeCommand");
 }
 
+void testBracketMathLiteralEditingPreservesBracketDelimiters() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  LiteralBlockController controller(mathSpec());
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
+
+  session.setMarkdownText(QStringLiteral("before\n\n\\[\nx^2\n\\]\n\nafter"), false);
+  MarkdownNode* math = firstMathBlock(session);
+  require(math != nullptr, "bracket math block missing");
+  require(math->mathDelimiter() == MathDelimiter::Bracket, "bracket math delimiter should be preserved");
+  require(math->literal() == QStringLiteral("x^2"), "bracket math literal should not include closing delimiter");
+  setMathHit(selection, math, 0);
+
+  require(controller.enterEditMode(), "enter bracket math edit should work");
+  require(selection.cursorPosition().text.textOffset == math->literal().size(), "bracket math edit cursor mismatch");
+  require(controller.setContent(QStringLiteral("E = mc^2")), "set bracket math tex should work");
+  require(session.markdownText() == QStringLiteral("before\n\n\\[\nE = mc^2\n\\]\n\nafter"),
+          "bracket math setContent should preserve bracket delimiters exactly");
+
+  math = firstMathBlock(session);
+  require(math != nullptr, "bracket math block missing after setContent");
+  require(math->mathDelimiter() == MathDelimiter::Bracket, "bracket math delimiter should survive setContent");
+  require(math->literal() == QStringLiteral("E = mc^2"), "bracket math literal mismatch after setContent");
+
+  setMathHit(selection, math, math->literal().size());
+  require(controller.enterEditMode(), "re-enter bracket math edit should work");
+  require(controller.insertText(QStringLiteral("\n+ c")), "bracket math insert should work");
+  require(session.markdownText() == QStringLiteral("before\n\n\\[\nE = mc^2\n+ c\n\\]\n\nafter"),
+          "bracket math insert should keep closing bracket delimiter outside literal");
+}
+
 }  // namespace
 
 int main() {
   testEnterEditAndTextEditing();
   testSetTexAndRoundtripFence();
+  testBracketMathLiteralEditingPreservesBracketDelimiters();
   return 0;
 }

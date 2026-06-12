@@ -1,6 +1,7 @@
 #include "editor/TextBlockCommandBuilder.h"
 
 #include "document/MarkdownNode.h"
+#include "document/PendingBlockMarker.h"
 #include "document/SourceRangeUtil.h"
 #include "editor/InlineSplit.h"
 
@@ -257,6 +258,12 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
       command.label = QStringLiteral("Delete");
       break;
     case Operation::Enter:
+      if (context.blockType == BlockType::Paragraph) {
+        Command pendingBlock = buildConvertPendingToBlock(context);
+        if (pendingBlock.valid) {
+          return pendingBlock;
+        }
+      }
       if (context.node->type() == BlockType::LinkDefinition || context.node->type() == BlockType::FootnoteDefinition) {
         const DefinitionBlock definition = context.node->definition();
         const DefinitionFieldRange finalField =
@@ -297,6 +304,38 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
       context.node->id(),
       context.blockRange.byteStart >= 0 ? context.blockRange.byteStart : context.contentRange.byteStart,
       context.node->type()});
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildConvertPendingToBlock(const BlockEditContext& context) const {
+  // Typora behavior: pressing Enter on a paragraph that is exactly a fence / $$ / \[ opener
+  // commits it into a real code or math block (with the caret inside the empty content).
+  Command command;
+  if (!session_ || !context.node || context.blockType != BlockType::Paragraph) {
+    return command;
+  }
+
+  const QString content = context.contentText;
+  const PendingBlockMarker marker = detectPendingBlockMarker(QStringView(content));
+  if (!marker.commitsOnEnter()) {
+    return command;
+  }
+
+  const QString inserted = marker.opener + QStringLiteral("\n\n") + marker.closer;
+  const qsizetype contentStart = context.contentRange.byteStart;
+
+  command.sourceStart = contentStart;
+  command.removedLength = context.contentRange.byteEnd - contentStart;
+  command.insertedText = inserted;
+  command.kind = EditTransaction::Kind::SplitParagraph;
+  command.label = marker.targetType == BlockType::CodeFence ? QStringLiteral("Convert to Code Block")
+                                                            : QStringLiteral("Convert to Math Block");
+  // Caret lands on the blank line inside the new block (opener + "\n").
+  command.fallbackSourceOffset = contentStart + marker.opener.size() + 1;
+  command.nodeHints.push_back(LocalEditNodeHint{context.node->id(), contentStart, marker.targetType});
+  command.structureEdit = true;
   command.valid = true;
   command.handled = true;
   return command;

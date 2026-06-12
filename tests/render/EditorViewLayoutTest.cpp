@@ -310,6 +310,29 @@ void testInlineSelectionRects() {
   require(layout.selectionRects(3, 3).isEmpty(), "collapsed selection should not create rects");
 }
 
+// An active heading renders its `# ` prefix inside the projection, so the projection's source space
+// starts at the block start rather than the content start. The caret at every visible offset must
+// hit-test back to document source offset (prefix + visible); a 2-char drift means the layout's
+// content-source-start diverged from the projection's source base.
+void testEditorViewActiveHeadingHitNoPrefixDrift() {
+  DocumentSession session;
+  EditorView view;
+  session.setMarkdownText(QStringLiteral("# hello"), false);
+  view.resize(900, 500);
+  view.setDocument(session.document());
+  const NodeId blockId = blockAt(session, 0)->id();
+  const qsizetype prefixLen = QStringLiteral("# ").size();
+
+  // Activate the heading so its "# " prefix takes the buggy rendering path.
+  view.setCursorPosition(inlineCursor(blockId, 0, prefixLen));
+
+  for (qsizetype visible = 0; visible <= 5; ++visible) {
+    const HitTestResult hit = hitAtTextOffset(view, blockId, visible, QStringLiteral("active heading @%1").arg(visible));
+    require(hit.textOffset == visible, QStringLiteral("active heading visible offset drift @%1").arg(visible));
+    require(hit.sourceOffset == prefixLen + visible, QStringLiteral("active heading source offset drift @%1").arg(visible));
+  }
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -325,6 +348,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testTableCellRichInlineSelectionDeleteAndCopyUseSourceOffsets);
   RUN_TEST(testMixedInlineParagraphHitEditingBeforeAutolink);
   RUN_TEST(testInlineSelectionRects);
+  RUN_TEST(testEditorViewActiveHeadingHitNoPrefixDrift);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

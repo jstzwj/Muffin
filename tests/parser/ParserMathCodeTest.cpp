@@ -126,6 +126,169 @@ void testMathEdgeCases() {
           QStringLiteral("Serialized multiline math block missing"));
 }
 
+void testLegacyBracketMathBlock() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+
+  const QString markdown = QStringLiteral(
+      "\\[\n"
+      "y = x\n"
+      "\\]\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for bracket math sample"));
+  require(countMathBlocks(*parsed.root) == 1, QStringLiteral("Bracket math block was not parsed"));
+  const MarkdownNode& mathBlock = childAt(*parsed.root, 0);
+  require(mathBlock.type() == BlockType::MathBlock, QStringLiteral("Expected bracket math block"));
+  require(mathBlock.mathDelimiter() == MathDelimiter::Bracket, QStringLiteral("Bracket math delimiter flag missing"));
+  require(mathBlock.literal() == QStringLiteral("y = x"), QStringLiteral("Bracket math literal mismatch"));
+
+  MarkdownDocument doc;
+  doc.setMarkdownText(markdown, std::move(parsed.root));
+  MarkdownSerializer serializer;
+  const QString serialized = serializer.serializeDocument(doc);
+  require(serialized.contains(QStringLiteral("\\[\ny = x\n\\]")), QStringLiteral("Serialized bracket math block missing"));
+
+  const QString twice = serializeMarkdown(serialized);
+  require(twice == serialized, QStringLiteral("Bracket math serialization is not stable"));
+
+  const QString dollar = QStringLiteral("$$\ny = x\n$$\n");
+  ParseResult dollarParsed = parser.parseDocument(dollar, options);
+  require(countMathBlocks(*dollarParsed.root) == 1, QStringLiteral("Dollar math block was not parsed"));
+  require(childAt(*dollarParsed.root, 0).mathDelimiter() == MathDelimiter::Dollar,
+          QStringLiteral("Dollar math delimiter should remain Dollar"));
+}
+
+void testLegacyBracketMathInsideCodeFenceUntouched() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QStringLiteral(
+      "```\n"
+      "\\[\n"
+      "not math\n"
+      "\\]\n"
+      "```\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for fenced code bracket sample"));
+  require(countMathBlocks(*parsed.root) == 0, QStringLiteral("Bracket lines inside a fenced code block must not become math"));
+  const MarkdownNode& code = childAt(*parsed.root, 0);
+  require(code.type() == BlockType::CodeFence, QStringLiteral("Expected fenced code block"));
+  require(code.literal().contains(QStringLiteral("\\[")), QStringLiteral("Bracket opener inside code fence should be preserved verbatim"));
+}
+
+void testLegacyBracketMathInsideDollarMathUntouched() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QStringLiteral(
+      "$$\n"
+      "\\[\n"
+      "not text\n"
+      "\\]\n"
+      "$$\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for $$ math bracket sample"));
+  require(countMathBlocks(*parsed.root) == 1, QStringLiteral("Expected exactly one math block around $$ delimiters"));
+  const MarkdownNode& mathBlock = childAt(*parsed.root, 0);
+  require(mathBlock.type() == BlockType::MathBlock, QStringLiteral("Expected math block"));
+  require(mathBlock.literal().contains(QStringLiteral("\\[")),
+          QStringLiteral("\\[ inside $$ math block should be preserved verbatim"));
+  require(mathBlock.literal().contains(QStringLiteral("\\]")),
+          QStringLiteral("\\] inside $$ math block should be preserved verbatim"));
+}
+
+void testLegacyBracketMathStateMachineEdges() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+
+  const QString unmatchedClose = QStringLiteral(
+      "\\]\n"
+      "not math\n");
+  ParseResult unmatchedParsed = parser.parseDocument(unmatchedClose, options);
+  require(unmatchedParsed.root != nullptr, QStringLiteral("Parser returned null root for unmatched bracket close"));
+  require(countMathBlocks(*unmatchedParsed.root) == 0, QStringLiteral("Unmatched \\] must not open a math block"));
+
+  const QString dollarInsideBracket = QStringLiteral(
+      "\\[\n"
+      "$$\n"
+      "still math\n"
+      "\\]\n");
+  ParseResult dollarParsed = parser.parseDocument(dollarInsideBracket, options);
+  require(dollarParsed.root != nullptr, QStringLiteral("Parser returned null root for dollar-inside-bracket math"));
+  require(countMathBlocks(*dollarParsed.root) == 1, QStringLiteral("Dollar line inside bracket math must not split the block"));
+  const MarkdownNode& dollarMath = childAt(*dollarParsed.root, 0);
+  require(dollarMath.type() == BlockType::MathBlock, QStringLiteral("Expected bracket math block"));
+  require(dollarMath.mathDelimiter() == MathDelimiter::Bracket, QStringLiteral("Bracket delimiter flag missing"));
+  require(dollarMath.literal().contains(QStringLiteral("$$")), QStringLiteral("Dollar line should remain math literal"));
+  require(dollarMath.literal().contains(QStringLiteral("still math")), QStringLiteral("Bracket math body was truncated"));
+
+  const QString bracketInsideBracket = QStringLiteral(
+      "\\[\n"
+      "\\[\n"
+      "inner text\n"
+      "\\]\n");
+  ParseResult bracketParsed = parser.parseDocument(bracketInsideBracket, options);
+  require(bracketParsed.root != nullptr, QStringLiteral("Parser returned null root for bracket-inside-bracket math"));
+  require(countMathBlocks(*bracketParsed.root) == 1, QStringLiteral("Nested-looking \\[ line must stay inside bracket math body"));
+  const MarkdownNode& bracketMath = childAt(*bracketParsed.root, 0);
+  require(bracketMath.literal().contains(QStringLiteral("\\[")), QStringLiteral("Inner \\[ should remain literal text"));
+  require(bracketMath.literal().contains(QStringLiteral("inner text")), QStringLiteral("Bracket math body missing inner text"));
+}
+
+void testLegacyBracketMathWithLeadingSpaces() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QStringLiteral(
+      "   \\[\n"
+      "y = x\n"
+      "   \\]\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for indented bracket math sample"));
+  require(countMathBlocks(*parsed.root) == 1, QStringLiteral("Indented bracket math block was not parsed"));
+  const MarkdownNode& mathBlock = childAt(*parsed.root, 0);
+  require(mathBlock.type() == BlockType::MathBlock, QStringLiteral("Expected indented bracket math block"));
+  require(mathBlock.mathDelimiter() == MathDelimiter::Bracket, QStringLiteral("Indented bracket math delimiter flag missing"));
+  require(mathBlock.literal() == QStringLiteral("y = x"), QStringLiteral("Indented bracket math literal mismatch"));
+}
+
+void testLegacyBracketMathInBlockQuoteAndList() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+
+  const QString quoteMarkdown = QStringLiteral(
+      "> \\[\n"
+      "> y = x\n"
+      "> \\]\n");
+  ParseResult quoteParsed = parser.parseDocument(quoteMarkdown, options);
+  require(quoteParsed.root != nullptr, QStringLiteral("Parser returned null root for quote bracket math sample"));
+  require(countMathBlocks(*quoteParsed.root) == 1, QStringLiteral("Block quote bracket math block was not parsed"));
+  const MarkdownNode& quote = childAt(*quoteParsed.root, 0);
+  require(quote.type() == BlockType::BlockQuote, QStringLiteral("Expected block quote wrapper"));
+  const MarkdownNode& quoteMath = childAt(quote, 0);
+  require(quoteMath.type() == BlockType::MathBlock, QStringLiteral("Expected bracket math inside block quote"));
+  require(quoteMath.mathDelimiter() == MathDelimiter::Bracket, QStringLiteral("Quote bracket math delimiter flag missing"));
+  require(quoteMath.literal() == QStringLiteral("y = x"),
+          QStringLiteral("Quote bracket math literal mismatch: '%1'").arg(quoteMath.literal()));
+
+  const QString listMarkdown = QStringLiteral(
+      "- \\[\n"
+      "  y = x\n"
+      "  \\]\n");
+  ParseResult listParsed = parser.parseDocument(listMarkdown, options);
+  require(listParsed.root != nullptr, QStringLiteral("Parser returned null root for list bracket math sample"));
+  require(countMathBlocks(*listParsed.root) == 1, QStringLiteral("List bracket math block was not parsed"));
+  const MarkdownNode& list = childAt(*listParsed.root, 0);
+  require(list.type() == BlockType::List, QStringLiteral("Expected list wrapper"));
+  const MarkdownNode& listItem = childAt(list, 0);
+  require(countMathBlocks(listItem) == 1, QStringLiteral("Expected bracket math inside list item"));
+  const MarkdownNode& listMath = childAt(listItem, 0);
+  require(listMath.type() == BlockType::MathBlock, QStringLiteral("Expected bracket math as first list item child"));
+  require(listMath.literal() == QStringLiteral("y = x"),
+          QStringLiteral("List bracket math literal mismatch: '%1'").arg(listMath.literal()));
+}
+
 void testFencedCodeBlock() {
   CmarkGfmParser parser;
   ParseOptions options;
@@ -344,6 +507,12 @@ int main(int argc, char** argv) {
   testMathSupport();
   testMathInHeadingsAndTables();
   testMathEdgeCases();
+  testLegacyBracketMathBlock();
+  testLegacyBracketMathInsideCodeFenceUntouched();
+  testLegacyBracketMathInsideDollarMathUntouched();
+  testLegacyBracketMathStateMachineEdges();
+  testLegacyBracketMathWithLeadingSpaces();
+  testLegacyBracketMathInBlockQuoteAndList();
   testFencedCodeBlock();
   testCodeFenceSerializationDoesNotGrowTrailingBlankLines();
   testYamlFrontMatter();

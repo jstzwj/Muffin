@@ -269,7 +269,23 @@ void CmarkNodeAdapter::annotateInlineSource(cmark_node* cmarkNode, InlineNode& i
   switch (type) {
     case InlineType::Text:
     case InlineType::HtmlInline: {
-      setPlainInlineRanges(ranges, start, end);
+      qsizetype textStart = start;
+      qsizetype textEnd = end;
+      // cmark-gfm shifts the start of a text node right past any backtick it scanned as a failed
+      // code-span opener, but keeps the (correct) end. The range is then too short for the literal
+      // (zero-width when the whole node is a single backtick), and the projection painted the
+      // backtick twice — once as the "gap" before the node, once as the node's own text. Re-anchor
+      // the start on the end so the literal maps 1:1. Entities are unaffected: their decoded text
+      // is shorter than the raw source slice, so the guard below never fires for them.
+      const QString literal = inlineNode.text();
+      if (!literal.isEmpty() && literal.size() > textEnd - textStart) {
+        const qsizetype anchoredStart = textEnd - literal.size();
+        if (anchoredStart >= 0 && anchoredStart + literal.size() <= markdown_.size() &&
+            markdown_.mid(anchoredStart, literal.size()) == literal) {
+          textStart = anchoredStart;
+        }
+      }
+      setPlainInlineRanges(ranges, textStart, textEnd);
       break;
     }
     case InlineType::SoftBreak:

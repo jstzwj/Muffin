@@ -69,6 +69,12 @@ QString plainTextForNode(const MarkdownNode& node) {
   }
 }
 
+bool isDeadKey(int key) {
+  return (key >= Qt::Key_Dead_Grave && key <= Qt::Key_Dead_Currency) ||
+         (key >= Qt::Key_Dead_a && key <= Qt::Key_Dead_Greek) ||
+         (key >= Qt::Key_Dead_Lowline && key <= Qt::Key_Dead_Longsolidusoverlay);
+}
+
 NodeId refreshNodeFor(DocumentSession* session, NodeId nodeId) {
   if (!session || !nodeId.isValid()) {
     return nodeId;
@@ -1176,6 +1182,9 @@ void InputController::setCursorOrExtend(CursorPosition cursor, bool extendSelect
 }
 
 QString InputController::printableText(QKeyEvent* event) const {
+  if (isDeadKey(event->key())) {
+    return {};
+  }
   const QString text = event->text();
   if (text.isEmpty()) {
     return {};

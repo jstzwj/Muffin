@@ -4,6 +4,26 @@
 
 namespace muffin {
 
+QString mathOpeningDelimiter(const MarkdownNode& node) {
+  return mathOpeningDelimiter(node.mathDelimiter());
+}
+
+QString mathClosingDelimiter(const MarkdownNode& node) {
+  return mathClosingDelimiter(node.mathDelimiter());
+}
+
+QString mathOpeningDelimiter(MathDelimiter delimiter) {
+  return delimiter == MathDelimiter::Bracket ? QStringLiteral("\\[") : QStringLiteral("$$");
+}
+
+QString mathClosingDelimiter(MathDelimiter delimiter) {
+  return delimiter == MathDelimiter::Bracket ? QStringLiteral("\\]") : QStringLiteral("$$");
+}
+
+bool isMathClosingLine(const MarkdownNode& node, QStringView line) {
+  return line.trimmed() == mathClosingDelimiter(node);
+}
+
 SourceRange fullBlockSourceRange(const MarkdownNode& node, const QString& markdown) {
   SourceRange range = node.sourceRange();
   if (range.byteStart < 0 || range.byteEnd < range.byteStart || range.byteEnd > markdown.size()) {
@@ -11,10 +31,14 @@ SourceRange fullBlockSourceRange(const MarkdownNode& node, const QString& markdo
   }
 
   if (node.type() == BlockType::MathBlock) {
-    if (range.byteEnd + 3 <= markdown.size() && markdown.mid(range.byteEnd, 3) == QStringLiteral("\n$$")) {
-      range.byteEnd += 3;
-    } else if (range.byteEnd + 2 <= markdown.size() && markdown.mid(range.byteEnd, 2) == QStringLiteral("$$")) {
-      range.byteEnd += 2;
+    const QString closing = mathClosingDelimiter(node);
+    const QString newlineClosing = QLatin1Char('\n') + closing;
+    if (range.byteEnd + newlineClosing.size() <= markdown.size() &&
+        markdown.mid(range.byteEnd, newlineClosing.size()) == newlineClosing) {
+      range.byteEnd += newlineClosing.size();
+    } else if (range.byteEnd + closing.size() <= markdown.size() &&
+               markdown.mid(range.byteEnd, closing.size()) == closing) {
+      range.byteEnd += closing.size();
     }
   }
 

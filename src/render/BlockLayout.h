@@ -102,6 +102,8 @@ public:
   const QVector<CodeHighlightSpan>& codeHighlightSpans() const;
   void setMathLayout(std::shared_ptr<math::MathLayoutResult> layout);
   const math::MathLayoutResult* mathLayout() const;
+  void setMathDelimiter(MathDelimiter delimiter);
+  MathDelimiter mathDelimiter() const;
   void setHtmlLayout(std::shared_ptr<html::HtmlLayoutResult> layout);
   const html::HtmlLayoutResult* htmlLayout() const;
   void setLiteralEditing(bool editing);
@@ -175,6 +177,7 @@ private:
   QString codeLanguage_;
   QVector<CodeHighlightSpan> codeHighlightSpans_;
   std::shared_ptr<math::MathLayoutResult> mathLayout_;
+  MathDelimiter mathDelimiter_ = MathDelimiter::Dollar;
   std::shared_ptr<html::HtmlLayoutResult> htmlLayout_;
   bool literalEditing_ = false;
   int headingLevel_ = 0;

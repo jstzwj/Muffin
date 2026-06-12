@@ -138,6 +138,38 @@ void testListItemEditingCommands() {
   require(session.markdownText() == QStringLiteral("- alpha\n- beta"), "backtab key list outdent mismatch");
 }
 
+void testExitLastEmptyListItem() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  // 2-item list: exit last empty item → paragraph after list
+  session.setMarkdownText(QStringLiteral("- alpha\n- "), false);
+  setCursor(selection, listItemAt(session, 0, 1), 0);
+  require(input.insertParagraphBreak(), "enter on last empty list item should exit list");
+  require(session.markdownText() == QStringLiteral("- alpha\n\n"), "last empty list enter text mismatch");
+  const auto& children = session.document().root().children();
+  require(children.size() >= 2, "root should have at least 2 children after exit");
+  require(children.at(1)->type() == BlockType::Paragraph, "second root child should be a paragraph");
+  // Cursor should be in the paragraph
+  require(selection.cursorPosition().isValid(), "cursor should be valid after exiting last list item");
+  require(selection.cursorPosition().blockId == children.at(1)->id(), "cursor should be in trailing paragraph");
+
+  // 3-item list matching user's exact scenario
+  session.setMarkdownText(QStringLiteral("- 123\n- 123\n- "), false);
+  setCursor(selection, listItemAt(session, 0, 2), 0);
+  require(input.insertParagraphBreak(), "enter on last empty item in 3-item list should exit");
+  require(session.markdownText() == QStringLiteral("- 123\n- 123\n\n"), "3-item last empty enter text mismatch");
+  const auto& children3 = session.document().root().children();
+  require(children3.size() >= 2, "root should have at least 2 children after 3-item exit");
+  require(children3.at(1)->type() == BlockType::Paragraph, "second root child should be paragraph after 3-item exit");
+  require(selection.cursorPosition().isValid(), "cursor should be valid after 3-item exit");
+  require(selection.cursorPosition().blockId == children3.at(1)->id(), "cursor should be in paragraph after 3-item exit");
+}
+
 void testTyporaListKeyboardBehavior() {
   DocumentSession session;
   SelectionController selection;
@@ -411,6 +443,7 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testListItemInput);
   RUN_TEST(testListItemEditingCommands);
+  RUN_TEST(testExitLastEmptyListItem);
   RUN_TEST(testTyporaListKeyboardBehavior);
   RUN_TEST(testTabInRenderedTextInsertsZeroWidthSpace);
   RUN_TEST(testListTabFromRenderedClick);

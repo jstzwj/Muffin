@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/SourceRange.h"
+#include "document/MarkdownTypes.h"
 
 #include <QString>
 
@@ -25,6 +26,11 @@ struct ListLineInfo {
 };
 
 SourceRange fullBlockSourceRange(const MarkdownNode& node, const QString& markdown);
+QString mathOpeningDelimiter(const MarkdownNode& node);
+QString mathClosingDelimiter(const MarkdownNode& node);
+QString mathOpeningDelimiter(MathDelimiter delimiter);
+QString mathClosingDelimiter(MathDelimiter delimiter);
+bool isMathClosingLine(const MarkdownNode& node, QStringView line);
 
 qsizetype sourceOffsetForLineColumn(const QString& text, int line, int column);
 qsizetype sourceOffsetForLineEnd(const QString& text, int line);

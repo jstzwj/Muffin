@@ -53,6 +53,7 @@ public:
 
 private:
   QString paragraphSeparatorFor(const BlockEditContext& context) const;
+  Command buildConvertPendingToBlock(const BlockEditContext& context) const;
   Command buildOutdentBlockQuote(const BlockEditContext& context) const;
   Command buildOutdentBlockQuoteEmptyParagraph(const BlockEditContext& context) const;
   Command buildConvertHeadingToParagraph(const BlockEditContext& context) const;

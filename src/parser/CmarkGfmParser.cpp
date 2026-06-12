@@ -36,6 +36,257 @@ void annotateSourceOffsets(const LineStartOffsetCache& lineOffsets, MarkdownNode
   }
 }
 
+bool isListMarkerAt(const QString& line, int index, int& markerEnd) {
+  if (index >= line.size()) {
+    return false;
+  }
+  if ((line.at(index) == QLatin1Char('-') || line.at(index) == QLatin1Char('*') || line.at(index) == QLatin1Char('+')) &&
+      index + 1 < line.size() && line.at(index + 1).isSpace()) {
+    markerEnd = index + 2;
+    return true;
+  }
+
+  int digitEnd = index;
+  while (digitEnd < line.size() && line.at(digitEnd).isDigit()) {
+    ++digitEnd;
+  }
+  if (digitEnd > index && digitEnd + 1 < line.size() &&
+      (line.at(digitEnd) == QLatin1Char('.') || line.at(digitEnd) == QLatin1Char(')')) &&
+      line.at(digitEnd + 1).isSpace()) {
+    markerEnd = digitEnd + 2;
+    return true;
+  }
+  return false;
+}
+
+int containerPrefixEnd(const QString& line) {
+  int index = 0;
+  bool consumedContainer = false;
+  while (true) {
+    const int beforeIndent = index;
+    int indent = 0;
+    while (index < line.size() && indent < 3 && line.at(index) == QLatin1Char(' ')) {
+      ++index;
+      ++indent;
+    }
+
+    if (index < line.size() && line.at(index) == QLatin1Char('>')) {
+      ++index;
+      if (index < line.size() && line.at(index) == QLatin1Char(' ')) {
+        ++index;
+      }
+      consumedContainer = true;
+      continue;
+    }
+
+    int markerEnd = -1;
+    if (isListMarkerAt(line, index, markerEnd)) {
+      index = markerEnd;
+      consumedContainer = true;
+      continue;
+    }
+
+    return consumedContainer ? beforeIndent : 0;
+  }
+}
+
+int contentStartWithinContainer(const QString& line) {
+  const int prefixEnd = containerPrefixEnd(line);
+  int index = prefixEnd;
+  int indent = 0;
+  while (index < line.size() && line.at(index) == QLatin1Char(' ')) {
+    ++index;
+    ++indent;
+  }
+  return indent <= 3 ? index : -1;
+}
+
+bool hasOnlyTrailingSpaces(const QString& line, int start) {
+  for (int i = start; i < line.size(); ++i) {
+    if (!line.at(i).isSpace()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool isLegacyMathDelimiterLine(const QString& line, int contentStart, const QString& delimiter) {
+  if (contentStart < 0 || contentStart + delimiter.size() > line.size()) {
+    return false;
+  }
+  return line.mid(contentStart, delimiter.size()) == delimiter &&
+         hasOnlyTrailingSpaces(line, contentStart + delimiter.size());
+}
+
+QString bodyForLegacyMathBlock(QStringView markdown, const SourceRange& range) {
+  if (range.byteStart < 0 || range.byteEnd > markdown.size() || range.byteEnd <= range.byteStart) {
+    return {};
+  }
+
+  const QString text = markdown.toString();
+  qsizetype openerLineStart = range.byteStart;
+  while (openerLineStart > 0 && text.at(openerLineStart - 1) != QLatin1Char('\n')) {
+    --openerLineStart;
+  }
+  qsizetype openerLineEnd = range.byteStart;
+  while (openerLineEnd < text.size() && text.at(openerLineEnd) != QLatin1Char('\n')) {
+    ++openerLineEnd;
+  }
+  if (openerLineEnd >= text.size()) {
+    return {};
+  }
+
+  const QString openerLine = text.mid(openerLineStart, openerLineEnd - openerLineStart);
+  const bool stripContainerPrefixes = contentStartWithinContainer(openerLine) == range.byteStart - openerLineStart;
+
+  QStringList bodyLines;
+  qsizetype lineStart = openerLineEnd + 1;
+  while (lineStart <= range.byteEnd && lineStart < text.size()) {
+    qsizetype lineEnd = lineStart;
+    while (lineEnd < text.size() && lineEnd < range.byteEnd && text.at(lineEnd) != QLatin1Char('\n')) {
+      ++lineEnd;
+    }
+
+    const QString line = text.mid(lineStart, lineEnd - lineStart);
+    const int contentStart = contentStartWithinContainer(line);
+    if (isLegacyMathDelimiterLine(line, contentStart, QStringLiteral("\\]"))) {
+      break;
+    }
+
+    bodyLines.append(stripContainerPrefixes && contentStart > 0 ? line.mid(contentStart) : line);
+
+    if (lineEnd >= text.size() || lineEnd >= range.byteEnd) {
+      break;
+    }
+    lineStart = lineEnd + 1;
+  }
+  return bodyLines.join(QLatin1Char('\n')).trimmed();
+}
+
+bool fenceInfoAt(const QString& line, int contentStart, QChar& fenceChar, int& fenceLength) {
+  if (contentStart < 0 || contentStart >= line.size()) {
+    return false;
+  }
+  const QChar c = line.at(contentStart);
+  if (c != QLatin1Char('`') && c != QLatin1Char('~')) {
+    return false;
+  }
+  int run = 0;
+  while (contentStart + run < line.size() && line.at(contentStart + run) == c) {
+    ++run;
+  }
+  if (run < 3) {
+    return false;
+  }
+  fenceChar = c;
+  fenceLength = run;
+  return true;
+}
+
+bool isDollarMathDelimiterLine(const QString& line, int contentStart) {
+  if (contentStart < 0 || contentStart + 2 > line.size()) {
+    return false;
+  }
+  if (line.at(contentStart) != QLatin1Char('$') || line.at(contentStart + 1) != QLatin1Char('$')) {
+    return false;
+  }
+  return hasOnlyTrailingSpaces(line, contentStart + 2);
+}
+
+enum class MathScanState {
+  None,
+  Dollar,
+  Bracket
+};
+
+// Typora-compatible display math: a `\[` line opens and the next matching `\]` line closes a
+// LaTeX display-math block. cmark-gfm only parses `$$`, so rewrite the paired delimiters to `$$`.
+// The delimiter swaps are byte-for-byte the same length on the same column, so every offset cmark
+// reports still maps onto the original text. Lines inside fenced code blocks are left untouched.
+// Dollar delimiter lines inside bracket math are temporarily escaped, then the MathBlock literal is
+// restored from the original source when delimiters are annotated.
+QString legacyMathDelimitersToDollar(QStringView markdown) {
+  QStringList lines = markdown.toString().split(QLatin1Char('\n'));
+  bool inFence = false;
+  MathScanState mathState = MathScanState::None;
+  QChar fenceChar;
+  int fenceLength = 0;
+  for (QString& line : lines) {
+    const int contentStart = contentStartWithinContainer(line);
+
+    if (inFence) {
+      if (contentStart >= 0 && line.size() > contentStart && line.at(contentStart) == fenceChar) {
+        int run = 0;
+        while (contentStart + run < line.size() && line.at(contentStart + run) == fenceChar) {
+          ++run;
+        }
+        if (run >= fenceLength && hasOnlyTrailingSpaces(line, contentStart + run)) {
+          inFence = false;
+          fenceChar = QChar();
+          fenceLength = 0;
+        }
+      }
+      continue;
+    }
+
+    if (mathState == MathScanState::Dollar) {
+      if (isDollarMathDelimiterLine(line, contentStart)) {
+        mathState = MathScanState::None;
+      }
+      continue;
+    }
+
+    if (mathState == MathScanState::Bracket) {
+      if (isLegacyMathDelimiterLine(line, contentStart, QStringLiteral("\\]"))) {
+        line.replace(contentStart, 2, QStringLiteral("$$"));
+        mathState = MathScanState::None;
+      } else if (isDollarMathDelimiterLine(line, contentStart)) {
+        line.replace(contentStart, 2, QStringLiteral("\\$"));
+      }
+      continue;
+    }
+
+    QChar openingFenceChar;
+    int openingFenceLength = 0;
+    if (fenceInfoAt(line, contentStart, openingFenceChar, openingFenceLength)) {
+      inFence = true;
+      fenceChar = openingFenceChar;
+      fenceLength = openingFenceLength;
+      continue;
+    }
+
+    if (isDollarMathDelimiterLine(line, contentStart)) {
+      mathState = MathScanState::Dollar;
+      continue;
+    }
+
+    if (isLegacyMathDelimiterLine(line, contentStart, QStringLiteral("\\["))) {
+      line.replace(contentStart, 2, QStringLiteral("$$"));
+      mathState = MathScanState::Bracket;
+    }
+  }
+  return lines.join(QLatin1Char('\n'));
+}
+
+// After source offsets are known, mark each MathBlock whose original opener was `\[` so the
+// serializer can re-emit `\[ ... \]` instead of `$$ ... $$`.
+void annotateMathDelimiters(QStringView markdown, MarkdownNode& root) {
+  const auto visit = [](auto&& self, QStringView md, MarkdownNode& node) -> void {
+    if (node.type() == BlockType::MathBlock) {
+      const SourceRange range = node.sourceRange();
+      if (range.byteStart >= 0 && range.byteStart + 1 < md.size() &&
+          md.at(range.byteStart) == QLatin1Char('\\') && md.at(range.byteStart + 1) == QLatin1Char('[')) {
+        node.setMathDelimiter(MathDelimiter::Bracket);
+        node.setLiteral(bodyForLegacyMathBlock(md, range));
+      }
+    }
+    for (const auto& child : node.children()) {
+      self(self, md, *child);
+    }
+  };
+  visit(visit, markdown, root);
+}
+
 void annotateDefinitionBlocks(
     MarkdownNode& root,
     const QVector<DefinitionParseResult>& definitions,
@@ -582,7 +833,7 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   }
 
   const QStringView markdownToParse = markdown.mid(markdownStart);
-  const QByteArray utf8 = markdownToParse.toString().toUtf8();
+  const QByteArray utf8 = legacyMathDelimitersToDollar(markdownToParse).toUtf8();
   const QVector<DefinitionParseResult> definitions = scanDefinitionBlocks(markdownToParse);
   cmark_parser* parser = cmark_parser_new(CMARK_OPT_DEFAULT | CMARK_OPT_FOOTNOTES);
   attachExtensions(parser, options);
@@ -595,6 +846,7 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   result.root = adapter.convertBlock(document);
   insertVirtualEmptyParagraphs(markdownToParse, *result.root);
   annotateSourceOffsets(lineOffsets, *result.root);
+  annotateMathDelimiters(markdownToParse, *result.root);
   insertVirtualEmptyParagraphsInBlockQuotes(markdownToParse, *result.root);
   insertMissingDefinitions(*result.root, definitions, lineOffsets);
   annotateDefinitionBlocks(*result.root, definitions, lineOffsets);
@@ -684,10 +936,20 @@ void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, Markdown
   }
 
   const int totalLines = lines.size();
-  const int trailingLines = totalLines - previousEndLine;
+  // Container blocks (Lists, BlockQuotes) absorb trailing blank lines into
+  // their lineEnd, so previousEndLine may overestimate where the content ends.
+  // Use the actual last non-blank line for trailing blank-line counting.
+  int lastContentLine = 0;
+  for (int i = lines.size() - 1; i >= 0; --i) {
+    if (!lines.at(i).trimmed().isEmpty()) {
+      lastContentLine = i + 1;  // 1-indexed
+      break;
+    }
+  }
+  const int trailingLines = totalLines - lastContentLine;
   const int trailingEmptyCount = qMax(0, trailingLines / 2);
   for (int i = 0; i < trailingEmptyCount; ++i) {
-    const int emptyLine = previousEndLine + 2 + i * 2;
+    const int emptyLine = lastContentLine + 2 + i * 2;
     const int lineIndex = emptyLine - 1;
     if (lineIndex >= 0 && lineIndex < lines.size() && lines.at(lineIndex).trimmed().isEmpty()) {
       root.appendChild(createVirtualEmptyParagraph(emptyLine));

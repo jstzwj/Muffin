@@ -195,7 +195,7 @@ InlineProjectionState InlineProjectionState::forSelection(
 }
 
 InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState projectionState, qsizetype sourceBase,
-                                   qreal baseFontSize, qsizetype headingPrefixLength)
+                                   qreal baseFontSize, qsizetype headingPrefixLength, qsizetype pendingPrefixLength)
     : sourceText_(std::move(sourceText)), visibleText_(plainTextForInlines(inlines)) {
   BuildState state;
   state.sourceText = &sourceText_;
@@ -208,6 +208,12 @@ InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString s
     appendTextSpan(state, InlineType::Text, InlineSpanKind::OpenMarker, 0, headingPrefixLength, prefixText, false);
     state.bold = true;
     appendInlines(state, inlines, headingPrefixLength, sourceText_.size(), htmlData);
+  } else if (pendingPrefixLength > 0 && pendingPrefixLength <= sourceText_.size()) {
+    // A still-uncommitted fence/math opener: show the marker in the muted "syntax" color the
+    // whole time it is being typed (unlike a heading prefix, this stays visible, never bold).
+    const QString prefixText = sourceText_.left(pendingPrefixLength);
+    appendTextSpan(state, InlineType::Text, InlineSpanKind::OpenMarker, 0, pendingPrefixLength, prefixText, true);
+    appendInlines(state, inlines, pendingPrefixLength, sourceText_.size(), htmlData);
   } else {
     appendInlines(state, inlines, 0, sourceText_.size(), htmlData);
   }
@@ -216,9 +222,10 @@ InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString s
   spans_ = state.spans;
   linkRanges_ = state.linkRanges;
   htmlFormatData_ = std::move(htmlData);
-  if (displayText_.isEmpty() && !sourceText_.isEmpty()) {
+  if (spans_.isEmpty() && !sourceText_.isEmpty()) {
     appendTextSpan(state, InlineType::Text, InlineSpanKind::Text, 0, sourceText_.size(), sourceText_, true);
     displayText_ = state.displayText;
+    visibleText_ = state.visibleText;
     spans_ = state.spans;
   }
   valid_ = !spans_.isEmpty() || sourceText_.isEmpty();

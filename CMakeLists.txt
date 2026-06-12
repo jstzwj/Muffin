@@ -344,6 +344,8 @@ set(MUFFIN_CORE_SOURCES
   src/document/NodeId.cpp
   src/document/NodeId.h
   src/document/SourceRange.h
+  src/document/PendingBlockMarker.cpp
+  src/document/PendingBlockMarker.h
   src/document/SourceRangeUtil.cpp
   src/document/SourceRangeUtil.h
   src/document/LineStartOffsetCache.cpp
@@ -1230,6 +1232,21 @@ target_link_libraries(MuffinInputListTabTest
 
 add_test(NAME MuffinInputListTabTest COMMAND MuffinInputListTabTest)
 set_tests_properties(MuffinInputListTabTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinInputLazyBlockTest
+  tests/editor/InputLazyBlockTest.cpp
+)
+
+target_link_libraries(MuffinInputLazyBlockTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinInputLazyBlockTest COMMAND MuffinInputLazyBlockTest)
+set_tests_properties(MuffinInputLazyBlockTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
   RESOURCE_LOCK MuffinQtGui
 )

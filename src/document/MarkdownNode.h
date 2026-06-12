@@ -60,6 +60,9 @@ public:
   QString codeLanguage() const;
   void setCodeLanguage(QString language);
 
+  MathDelimiter mathDelimiter() const;
+  void setMathDelimiter(MathDelimiter delimiter);
+
   FrontMatterFormat frontMatterFormat() const;
   void setFrontMatterFormat(FrontMatterFormat format);
 
@@ -91,6 +94,7 @@ private:
   bool listTight_ = false;
   bool taskChecked_ = false;
   QString codeLanguage_;
+  MathDelimiter mathDelimiter_ = MathDelimiter::Dollar;
   FrontMatterFormat frontMatterFormat_ = FrontMatterFormat::None;
   DefinitionBlock definition_;
   QVector<TableAlignment> tableAlignments_;

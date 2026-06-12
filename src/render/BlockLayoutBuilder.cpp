@@ -1,8 +1,9 @@
 #include "render/BlockLayoutBuilder.h"
 
 #include "blocks/html/HtmlSanitizer.h"
-#include "projection/InlineProjection.h"
+#include "document/PendingBlockMarker.h"
 #include "document/SourceRangeUtil.h"
+#include "projection/InlineProjection.h"
 
 #include <QCoreApplication>
 #include <QFileInfo>
@@ -50,6 +51,14 @@ QString displayLiteralFor(const MarkdownNode& node) {
   return (node.type() == BlockType::CodeFence || node.type() == BlockType::FrontMatter) ? node.literal() : node.literal().trimmed();
 }
 
+qsizetype pendingPrefixLengthFor(const MarkdownNode& node, const QString& source) {
+  if (node.type() != BlockType::Paragraph) {
+    return 0;
+  }
+  const PendingBlockMarker marker = detectPendingBlockMarker(QStringView(source));
+  return marker.highlightPrefix ? marker.prefixLength : 0;
+}
+
 QString languageForFrontMatter(FrontMatterFormat format) {
   switch (format) {
     case FrontMatterFormat::Yaml:
@@ -66,6 +75,17 @@ QString languageForFrontMatter(FrontMatterFormat format) {
 
 bool selectionFocusesNode(const SelectionRange& selection, NodeId nodeId) {
   return nodeId.isValid() && selection.focus.blockId == nodeId && selection.focus.text.nodeId == nodeId;
+}
+
+qsizetype headingPrefixLengthForSource(const QString& source) {
+  qsizetype index = 0;
+  while (index < source.size() && source.at(index) == QLatin1Char('#')) {
+    ++index;
+  }
+  if (index > 0 && index < source.size() && source.at(index).isSpace()) {
+    ++index;
+  }
+  return index;
 }
 
 bool isEmptyDocumentParagraph(const QString& markdown, const MarkdownNode& node) {
@@ -210,15 +230,31 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
 
   auto inlineLayout = std::make_unique<InlineLayout>();
   const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
+  const qsizetype contentStart = sourceContentStartForEditableNode(node);
+  const qsizetype contentEnd = sourceContentEndForEditableNode(node);
+  const bool activeHeading = node.type() == BlockType::Heading && selectionFocusesNode(selection_, node.id());
+  const qsizetype blockStart = node.sourceRange().byteStart;
+  // When the heading is active its `# ` prefix is rendered inside the projection, so the
+  // projection's source space starts at the block start; otherwise it starts at the content. This
+  // base is the single source of truth for document<->local offset conversion, so it MUST be the
+  // same value handed to the projection (sourceBase) and stored on the layout (contentSourceStart) —
+  // diverging the two shifts every caret/hit mapping by exactly the prefix length.
+  const qsizetype projectionBase = activeHeading ? blockStart : contentStart;
+  QString editableSource = sourceTextForEditableNode(node);
   InlineLayout::BuildOptions options;
-  options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), sourceContentStartForEditableNode(node));
-  options.sourceBase = sourceContentStartForEditableNode(node);
-  inlineLayout->build(node.inlines(), sourceTextForEditableNode(node), theme, width, font, options);
+  options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), projectionBase);
+  options.sourceBase = projectionBase;
+  if (activeHeading && blockStart >= 0 && contentEnd >= blockStart) {
+    editableSource = markdownText_.mid(blockStart, contentEnd - blockStart);
+    options.headingPrefixLength = headingPrefixLengthForSource(editableSource);
+  }
+  options.pendingPrefixLength = pendingPrefixLengthFor(node, editableSource);
+  inlineLayout->build(node.inlines(), editableSource, theme, width, font, options);
   qreal height = inlineLayout->height();
   if (node.type() == BlockType::Heading && node.headingLevel() <= 2) {
     height += theme.blockSpacing() * 0.35;
   }
-  layout->setContentSourceStart(sourceContentStartForEditableNode(node));
+  layout->setContentSourceStart(projectionBase);
   layout->setRect(QRectF(x, y, width, height));
 
 
@@ -329,6 +365,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
   layout->setType(node.type());
   layout->setDepth(depth);
   layout->setLiteral(displayLiteralFor(node));
+  if (node.type() == BlockType::MathBlock) {
+    layout->setMathDelimiter(node.mathDelimiter());
+  }
   if (node.type() == BlockType::CodeFence) {
     layout->setCodeLanguage(node.codeLanguage());
     layout->setCodeHighlightSpans(codeHighlighter_.highlight(node.codeLanguage(), layout->literal()));

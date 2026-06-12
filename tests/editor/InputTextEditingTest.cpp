@@ -11,6 +11,7 @@
 #include "EditorTestUtils.h"
 
 #include <QApplication>
+#include <QInputMethodEvent>
 
 #include <iostream>
 
@@ -242,6 +243,35 @@ void testCodeAndMathCursorAfterSourceInsert() {
   require(selection.cursorPosition().text.textOffset == 1, "code cursor visible offset should stay after inserted char");
 }
 
+void testBacktickInputIsNotDuplicated() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+
+  session.setMarkdownText(QString(), false);
+  view.setDocument(session.document());
+  view.resize(800, 480);
+  view.show();
+  view.setFocus();
+
+  const QChar backtick(QLatin1Char('`'));
+  QKeyEvent ordinaryBacktick(QEvent::KeyPress, Qt::Key_QuoteLeft, Qt::NoModifier, QString(backtick));
+  QApplication::sendEvent(&view, &ordinaryBacktick);
+  require(session.markdownText() == QString(backtick), "ordinary backtick keypress should insert exactly one backtick");
+
+  session.setMarkdownText(QString(), false);
+  view.setDocument(session.document());
+  QKeyEvent deadBacktick(QEvent::KeyPress, Qt::Key_Dead_Grave, Qt::NoModifier, QString(backtick));
+  QApplication::sendEvent(&view, &deadBacktick);
+  require(session.markdownText().isEmpty(), "dead-grave keypress should wait for input method commit");
+
+  QInputMethodEvent commit;
+  commit.setCommitString(QString(backtick));
+  QApplication::sendEvent(&view, &commit);
+  require(session.markdownText() == QString(backtick), "dead-grave commit should insert exactly one backtick");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -255,6 +285,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testSecondInlineMathHitMapsToItsSourceOffset);
   RUN_TEST(testSecondInlineMathHitInsertAfterEquals);
   RUN_TEST(testCodeAndMathCursorAfterSourceInsert);
+  RUN_TEST(testBacktickInputIsNotDuplicated);
 #undef RUN_TEST
   return 0;
 }

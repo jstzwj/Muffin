@@ -37,7 +37,7 @@ public:
   void setFilePath(QString path);
   void setMarkdownText(QString text, bool modified);
   void updateFromEditor(QString text);
-  void applyMarkdownText(QString text, bool modified);
+  void applyMarkdownText(QString text, bool modified, QVector<qsizetype> demoteAtOffsets = {});
   bool applyTextDelta(
       qsizetype sourceStart,
       qsizetype removedLength,
@@ -63,7 +63,7 @@ signals:
   void modifiedChanged(bool modified);
 
 private:
-  void parseAndStore(QString text, bool modified);
+  void parseAndStore(QString text, bool modified, QVector<qsizetype> demoteAtOffsets = {});
   bool tryApplyTopLevelLocalEdit(
       qsizetype sourceStart,
       qsizetype sourceEnd,

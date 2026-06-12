@@ -209,6 +209,28 @@ void testInlineCodeEndSourceHitUsesForwardBias() {
           QStringLiteral("inline code end hit should map after closing marker"));
 }
 
+void testPendingPrefixFallbackDoesNotDuplicateSource() {
+  RenderTheme theme = RenderTheme::github();
+
+  InlineLayout fence;
+  InlineLayout::BuildOptions fenceOptions;
+  fenceOptions.pendingPrefixLength = 3;
+  fence.build({}, QStringLiteral("```"), theme, 400.0, theme.paragraphFont(), fenceOptions);
+  require(fence.displayText() == QStringLiteral("```"),
+          QStringLiteral("pending fence display should not duplicate source: %1").arg(fence.displayText()));
+  require(fence.visibleText() == QStringLiteral("```"),
+          QStringLiteral("pending fence visible text should not duplicate source: %1").arg(fence.visibleText()));
+
+  InlineLayout math;
+  InlineLayout::BuildOptions mathOptions;
+  mathOptions.pendingPrefixLength = 2;
+  math.build({}, QStringLiteral("$$"), theme, 400.0, theme.paragraphFont(), mathOptions);
+  require(math.displayText() == QStringLiteral("$$"),
+          QStringLiteral("pending math display should not duplicate source: %1").arg(math.displayText()));
+  require(math.visibleText() == QStringLiteral("$$"),
+          QStringLiteral("pending math visible text should not duplicate source: %1").arg(math.visibleText()));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -222,6 +244,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testActiveLoadedImageKeepsSourceTextAndAddsPreviewSpace);
   RUN_TEST(testEntityDisplayAfterEdit);
   RUN_TEST(testInlineCodeEndSourceHitUsesForwardBias);
+  RUN_TEST(testPendingPrefixFallbackDoesNotDuplicateSource);
 #undef RUN_TEST
   return 0;
 }

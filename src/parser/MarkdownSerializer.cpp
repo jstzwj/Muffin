@@ -1,6 +1,7 @@
 #include "parser/MarkdownSerializer.h"
 
 #include "document/DefinitionBlock.h"
+#include "document/SourceRangeUtil.h"
 
 #include <QStringList>
 
@@ -95,7 +96,8 @@ QString MarkdownSerializer::serializeBlock(const MarkdownNode& node) const {
     case BlockType::HtmlBlock:
       return node.literal();
     case BlockType::MathBlock:
-      return QStringLiteral("$$\n%1\n$$").arg(node.literal());
+      return QStringLiteral("%1\n%2\n%3")
+          .arg(mathOpeningDelimiter(node), node.literal(), mathClosingDelimiter(node));
     case BlockType::Table:
       return serializeTable(node);
     case BlockType::LinkDefinition: {

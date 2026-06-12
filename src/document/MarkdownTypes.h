@@ -51,6 +51,13 @@ enum class ListKind {
   Ordered
 };
 
+// Display-math block delimiter kind. cmark-gfm only parses `$$`, so LaTeX-style
+// `\[ ... \]` blocks are normalized to `$$` for parsing and re-expanded on serialize.
+enum class MathDelimiter {
+  Dollar,
+  Bracket
+};
+
 enum class TableAlignment {
   None,
   Left,
