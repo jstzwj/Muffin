@@ -46,6 +46,18 @@ The packaged executable is:
 
 If `build\dist\Muffin.exe` is older than `build\Release\Muffin.exe`, run the dist target again before testing the packaged app.
 
+## Application Icons
+
+The committed raster icons in `resources/app-icons/` (PNGs at 16–1024px, `muffin.ico`, `muffin.icns`) are embedded by CMake automatically — the `.ico` into the Windows `.exe` via `cmake/muffin.rc.in`, the `.icns` into the macOS `.app` bundle, and a 256px PNG as the runtime window icon (all platforms, primary on Linux). No GitHub Actions change is needed; the build picks them up on every platform.
+
+They are generated from `logo.svg`. Regenerate after editing the logo:
+
+```powershell
+python scripts/generate_icons.py
+```
+
+This requires PySide6 (uses `QSvgRenderer`, the same Qt SVG engine the app links) and Pillow. Both ship in CI; locally `pip install PySide6 Pillow`. Do not hand-edit the generated files.
+
 ## Translation (i18n)
 
 ### lupdate namespace context bug

@@ -8,6 +8,7 @@
 #include <QDateTime>
 #include <QFile>
 #include <QFileInfo>
+#include <QIcon>
 #include <QLoggingCategory>
 #include <QMutex>
 #include <QMutexLocker>
@@ -54,6 +55,10 @@ int main(int argc, char *argv[]) {
   QApplication::setApplicationName("Muffin");
   QApplication::setOrganizationName("Muffin");
   QApplication::setApplicationVersion(QStringLiteral(MUFFIN_VERSION));
+  // Application window/taskbar icon for every platform. This is the primary
+  // mechanism on Linux; on Windows/macOS the .exe/.app icon is also embedded,
+  // and this makes the decoration appear immediately at launch.
+  QApplication::setWindowIcon(QIcon(QStringLiteral(":/app/muffin.png")));
   muffin::LanguageManager::instance().initialize();
 
   QCommandLineParser parser;

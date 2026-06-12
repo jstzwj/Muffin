@@ -19,4 +19,7 @@
     <file alias="check.svg">icons/ui/check.svg</file>
     <file alias="radio-dot.svg">icons/ui/radio-dot.svg</file>
   </qresource>
+  <qresource prefix="/app">
+    <file alias="muffin.png">../resources/app-icons/muffin-256.png</file>
+  </qresource>
 </RCC>

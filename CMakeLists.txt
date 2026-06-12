@@ -643,15 +643,34 @@ target_compile_definitions(Muffin
     MUFFIN_VERSION="${MUFFIN_EFFECTIVE_VERSION}"
 )
 
+set(MUFFIN_APP_ICONS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources/app-icons")
+
 if(WIN32)
   set_target_properties(Muffin PROPERTIES WIN32_EXECUTABLE TRUE)
+  # Embed the application icon into the .exe so it shows in Explorer, the
+  # taskbar, and Start Menu shortcuts. Use forward slashes in the RC file
+  # because backslashes collide with C escapes (e.g. \r in \resources).
+  set(MUFFIN_APP_ICON_ICO "${MUFFIN_APP_ICONS_DIR}/muffin.ico")
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/muffin.rc.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/muffin.rc"
+    @ONLY
+  )
+  target_sources(Muffin PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/muffin.rc")
 endif()
 
 if(APPLE)
   set_target_properties(Muffin PROPERTIES
     MACOSX_BUNDLE TRUE
+    MACOSX_BUNDLE_ICON_FILE "muffin"
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Info.plist.in"
   )
+  # Place the icon set in Muffin.app/Contents/Resources/ (CFBundleIconFile = muffin).
+  set(MUFFIN_APP_ICON_ICNS "${MUFFIN_APP_ICONS_DIR}/muffin.icns")
+  set_source_files_properties("${MUFFIN_APP_ICON_ICNS}" PROPERTIES
+    MACOSX_PACKAGE_LOCATION "Resources"
+  )
+  target_sources(Muffin PRIVATE "${MUFFIN_APP_ICON_ICNS}")
 endif()
 
 set(MUFFIN_DIST_DIR "${CMAKE_BINARY_DIR}/dist" CACHE PATH "Muffin distribution output directory")

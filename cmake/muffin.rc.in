@@ -1,0 +1,8 @@
+// Windows application icon resource.
+//
+// The path is substituted by CMake's configure_file() as a native absolute path
+// (see CMakeLists.txt), because the MSVC resource compiler (rc.exe) resolves
+// relative ICON paths against its working directory, not the .rc file's
+// directory. An absolute path makes the embedded icon independent of the
+// build working directory.
+IDI_ICON1 ICON "@MUFFIN_APP_ICON_ICO@"
