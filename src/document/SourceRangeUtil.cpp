@@ -72,6 +72,16 @@ qsizetype sourceOffsetForLineEnd(const QString& text, int line) {
   return newline < 0 ? text.size() : newline;
 }
 
+qsizetype headingContentEndOffset(const MarkdownNode& node, const QString& markdown) {
+  const SourceRange range = node.sourceRange();
+  if (node.setext() && range.lineStart > 0) {
+    // Setext: editable content is the text line only; stop before the underline line.
+    return sourceOffsetForLineEnd(markdown, range.lineStart);
+  }
+  return range.byteEnd > range.byteStart ? range.byteEnd
+                                         : sourceOffsetForLineEnd(markdown, range.lineEnd);
+}
+
 MarkdownNode* primaryParagraph(MarkdownNode& node) {
   for (const auto& child : node.children()) {
     if (child->type() == BlockType::Paragraph) {

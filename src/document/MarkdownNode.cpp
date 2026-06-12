@@ -111,6 +111,14 @@ void MarkdownNode::setHeadingLevel(int level) {
   headingLevel_ = level;
 }
 
+bool MarkdownNode::setext() const {
+  return setext_;
+}
+
+void MarkdownNode::setSetext(bool setext) {
+  setext_ = setext;
+}
+
 ListKind MarkdownNode::listKind() const {
   return listKind_;
 }
@@ -205,6 +213,7 @@ std::unique_ptr<MarkdownNode> MarkdownNode::clone(CloneMode mode) const {
   copy->inlines_ = inlines_;
   copy->literal_ = literal_;
   copy->headingLevel_ = headingLevel_;
+  copy->setext_ = setext_;
   copy->listKind_ = listKind_;
   copy->listStart_ = listStart_;
   copy->listTight_ = listTight_;

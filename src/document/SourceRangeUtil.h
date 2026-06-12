@@ -35,6 +35,13 @@ bool isMathClosingLine(const MarkdownNode& node, QStringView line);
 qsizetype sourceOffsetForLineColumn(const QString& text, int line, int column);
 qsizetype sourceOffsetForLineEnd(const QString& text, int line);
 
+// Past-the-end byte offset of a heading's editable content. For a Setext heading
+// the content is the text line only; the `===`/`---` underline line belongs to the
+// block's construct span (kept intact in sourceRange for structural consumers) and
+// must not leak into the rendered/edited content. ATX headings fall through to the
+// usual byte/line end.
+qsizetype headingContentEndOffset(const MarkdownNode& node, const QString& markdown);
+
 MarkdownNode* primaryParagraph(MarkdownNode& node);
 const MarkdownNode* primaryParagraph(const MarkdownNode& node);
 

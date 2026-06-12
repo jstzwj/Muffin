@@ -814,9 +814,11 @@ qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNo
 
 qsizetype BlockLayoutBuilder::sourceContentEndForEditableNode(const MarkdownNode& node) const {
   const SourceRange range = node.sourceRange();
-  qsizetype end = range.byteEnd > range.byteStart
-                    ? range.byteEnd
-                    : sourceOffsetForLineEnd(range.lineEnd);
+  qsizetype end = node.type() == BlockType::Heading
+                    ? headingContentEndOffset(node, markdownText_)
+                    : (range.byteEnd > range.byteStart
+                           ? range.byteEnd
+                           : sourceOffsetForLineEnd(range.lineEnd));
   const qsizetype start = sourceOffsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
   if (isEmptyDocumentParagraph(markdownText_, node)) {
     return 0;

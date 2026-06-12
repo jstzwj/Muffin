@@ -422,6 +422,9 @@ void CmarkNodeAdapter::readBlockMetadata(cmark_node* cmarkNode, MarkdownNode& mu
   switch (muffinNode.type()) {
     case BlockType::Heading:
       muffinNode.setHeadingLevel(cmark_node_get_heading_level(cmarkNode));
+      // cmark-gfm only emits Setext headings for levels 1-2, and a Setext heading
+      // always spans two source lines (text + underline) whereas ATX is single-line.
+      muffinNode.setSetext(muffinNode.sourceRange().lineEnd > muffinNode.sourceRange().lineStart);
       break;
     case BlockType::List:
       muffinNode.setListKind(cmark_node_get_list_type(cmarkNode) == CMARK_ORDERED_LIST

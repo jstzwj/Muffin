@@ -47,6 +47,11 @@ public:
 
   int headingLevel() const;
   void setHeadingLevel(int level);
+  // True when the heading was authored in Setext style (text followed by an
+  // `===`/`---` underline) rather than ATX (`# `). Setext underlines only apply
+  // to levels 1-2; levels 3-6 are always ATX.
+  bool setext() const;
+  void setSetext(bool setext);
 
   ListKind listKind() const;
   void setListKind(ListKind kind);
@@ -89,6 +94,7 @@ private:
   QVector<InlineNode> inlines_;
   QString literal_;
   int headingLevel_ = 0;
+  bool setext_ = false;
   ListKind listKind_ = ListKind::None;
   int listStart_ = 1;
   bool listTight_ = false;

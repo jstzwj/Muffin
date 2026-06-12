@@ -188,9 +188,14 @@ QString MarkdownSerializer::serializeChildren(const MarkdownNode& node, QString 
 }
 
 QString MarkdownSerializer::serializeHeading(const MarkdownNode& node) const {
+  const QString content = serializeInlineList(node.inlines());
+  // Preserve the Setext underline form (levels 1-2 only); ATX covers all levels.
+  if (node.setext() && node.headingLevel() <= 2) {
+    const QChar underline = node.headingLevel() == 1 ? QLatin1Char('=') : QLatin1Char('-');
+    return content + QLatin1Char('\n') + QString(qMax(1, content.size()), underline);
+  }
   return QStringLiteral("%1 %2").arg(
-      repeated(QStringLiteral("#"), qMax(1, node.headingLevel())),
-      serializeInlineList(node.inlines()));
+      repeated(QStringLiteral("#"), qMax(1, node.headingLevel())), content);
 }
 
 QString MarkdownSerializer::serializeList(const MarkdownNode& node) const {

@@ -1,6 +1,7 @@
 #include "document/LineStartOffsetCache.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
+#include "document/SourceRangeUtil.h"
 #include "parser/CmarkGfmParser.h"
 #include "parser/MarkdownSerializer.h"
 
@@ -144,6 +145,46 @@ void testBasicParseAndSerialize() {
           QStringLiteral("Serialized table delimiter missing"));
 }
 
+void testSetextHeadingParseAndSerialize() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QString::fromUtf8("我是一级标题\n===\n\n我是二级标题\n----\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for setext sample"));
+  require(parsed.root->children().size() == 2, QStringLiteral("Setext sample should have two heading blocks"));
+
+  const MarkdownNode& h1 = childAt(*parsed.root, 0);
+  require(h1.type() == BlockType::Heading, QStringLiteral("First setext block is not a heading"));
+  require(h1.headingLevel() == 1, QStringLiteral("=== underline should produce an H1"));
+  require(h1.setext(), QStringLiteral("H1 from === should carry the setext flag"));
+  require(h1.sourceRange().lineEnd > h1.sourceRange().lineStart,
+          QStringLiteral("Setext heading source range should span text + underline lines"));
+
+  const MarkdownNode& h2 = childAt(*parsed.root, 1);
+  require(h2.type() == BlockType::Heading, QStringLiteral("Second setext block is not a heading"));
+  require(h2.headingLevel() == 2, QStringLiteral("--- underline should produce an H2"));
+  require(h2.setext(), QStringLiteral("H2 from --- should carry the setext flag"));
+
+  // Editable content must exclude the underline line.
+  const qsizetype h1ContentEnd = headingContentEndOffset(h1, markdown);
+  const QString h1Content = markdown.mid(h1.sourceRange().byteStart, h1ContentEnd - h1.sourceRange().byteStart);
+  require(h1Content == QString::fromUtf8("我是一级标题"),
+          QStringLiteral("Setext heading content must not include the === underline"));
+  require(!h1Content.contains(QLatin1Char('=')),
+          QStringLiteral("Setext heading leaked the underline into the editable content range"));
+
+  // Serialization should round-trip the setext underline form instead of rewriting to ATX.
+  MarkdownDocument doc;
+  doc.setMarkdownText(markdown, std::move(parsed.root));
+  MarkdownSerializer serializer;
+  const QString serialized = serializer.serializeDocument(doc);
+  require(serialized.contains(QString::fromUtf8("我是一级标题\n===")),
+          QStringLiteral("Serializer should preserve the H1 setext underline"));
+  require(serialized.contains(QString::fromUtf8("我是二级标题\n----")),
+          QStringLiteral("Serializer should preserve the H2 setext underline"));
+}
+
 void testTableCellSourceRanges() {
   CmarkGfmParser parser;
   ParseOptions options;
@@ -176,6 +217,7 @@ int main(int argc, char** argv) {
   testFinalParagraphSourceRangeWithoutTrailingNewline();
   testEmptyDocumentHasEditableParagraph();
   testBasicParseAndSerialize();
+  testSetextHeadingParseAndSerialize();
   testTableCellSourceRanges();
   return 0;
 }

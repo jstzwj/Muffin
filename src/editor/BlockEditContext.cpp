@@ -3,6 +3,7 @@
 #include "document/DocumentSession.h"
 #include "document/InlineNode.h"
 #include "document/MarkdownNode.h"
+#include "document/SourceRangeUtil.h"
 #include "editor/SelectionController.h"
 
 namespace muffin {
@@ -166,9 +167,11 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
   qsizetype start = range.byteEnd > range.byteStart
                        ? range.byteStart
                        : sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
-  const qsizetype end = range.byteEnd > range.byteStart
-                            ? range.byteEnd
-                            : sourceOffsetForLineEnd(markdown, range.lineEnd);
+  const qsizetype end = editable->type() == BlockType::Heading
+                            ? headingContentEndOffset(*editable, markdown)
+                            : (range.byteEnd > range.byteStart
+                                   ? range.byteEnd
+                                   : sourceOffsetForLineEnd(markdown, range.lineEnd));
   if (start < 0 || end < start) {
     return false;
   }
