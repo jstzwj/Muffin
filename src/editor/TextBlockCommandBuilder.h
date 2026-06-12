@@ -43,6 +43,7 @@ public:
   Command buildSplitTextBlock(const BlockEditContext& context, qsizetype contentOffset) const;
   Command buildMergeWithPreviousParagraph(const BlockEditContext& context) const;
   Command buildMergeWithNextParagraph(const BlockEditContext& context) const;
+  Command buildMergeWithPreviousLiteralBlock(const BlockEditContext& context) const;
   Command buildSplitListItem(const BlockEditContext& context) const;
   Command buildInsertListItemAbove(const BlockEditContext& context) const;
   Command buildExitListItem(const BlockEditContext& context) const;

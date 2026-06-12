@@ -1251,6 +1251,21 @@ set_tests_properties(MuffinInputLazyBlockTest PROPERTIES
   RESOURCE_LOCK MuffinQtGui
 )
 
+add_executable(MuffinInputLiteralMergeTest
+  tests/editor/InputLiteralMergeTest.cpp
+)
+
+target_link_libraries(MuffinInputLiteralMergeTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinInputLiteralMergeTest COMMAND MuffinInputLiteralMergeTest)
+set_tests_properties(MuffinInputLiteralMergeTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
 add_executable(MuffinCodeFenceCommitCursorTest
   tests/editor/CodeFenceCommitCursorTest.cpp
 )

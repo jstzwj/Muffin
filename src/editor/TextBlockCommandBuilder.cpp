@@ -228,6 +228,13 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
             context.blockRange.byteStart >= 0 && context.contentRange.byteStart > context.blockRange.byteStart) {
           return buildConvertHeadingToParagraph(context);
         }
+        // Backspace at the start of a paragraph that immediately follows a fenced literal block
+        // (code fence / math) folds the paragraph into the block's last content line, instead of
+        // the no-op that the generic paragraph merge produces (literal blocks are not "editable
+        // text", so buildMergeWithPreviousParagraph cannot see them). Mirrors Typora.
+        if (Command literalMerge = buildMergeWithPreviousLiteralBlock(context); literalMerge.valid) {
+          return literalMerge;
+        }
         return buildMergeWithPreviousParagraph(context);
       }
       command.sourceStart = context.contentRange.byteStart + nextOffset - 1;
@@ -484,6 +491,68 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithNextPara
   command.insertedText.clear();
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Merge Paragraphs");
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPreviousLiteralBlock(const BlockEditContext& context) const {
+  // Folds the current paragraph into the preceding fenced literal block (code fence or math),
+  // appending the paragraph's text to the block's last content line. Returned only when the
+  // paragraph's previous sibling is such a block; otherwise valid=false lets the caller fall
+  // through to the generic paragraph merge (which cannot itself see literal blocks, since they
+  // edit through dedicated controllers rather than the inline-text model).
+  Command command;
+  if (!session_ || !context.node) {
+    return command;
+  }
+
+  MarkdownNode* prev = context.node->previousSibling();
+  if (!prev && context.node->parent() && context.node->parent()->type() == BlockType::ListItem) {
+    prev = context.node->parent()->previousSibling();
+  }
+  if (!prev || (prev->type() != BlockType::CodeFence && prev->type() != BlockType::MathBlock)) {
+    return command;
+  }
+
+  const QString markdown = session_->markdownText();
+  const SourceRange full = fullBlockSourceRange(*prev, markdown);
+  if (full.byteStart < 0 || full.byteEnd <= full.byteStart || full.byteEnd > markdown.size()) {
+    return command;
+  }
+  // The closing fence/marker is the last line covered by the block's full source range.
+  const qsizetype closeLineStart = lineStartForOffset(markdown, full.byteEnd);
+  const QString closingFence = markdown.mid(closeLineStart, full.byteEnd - closeLineStart);
+  if (closingFence.isEmpty()) {
+    return command;
+  }
+  // Insertion point sits right after the literal content, before the newline + closing fence, so
+  // the paragraph text lands on the block's last content line rather than starting a new line.
+  const qsizetype newlineAt = markdown.indexOf(QLatin1Char('\n'), full.byteStart);
+  const qsizetype contentStart =
+      (newlineAt >= 0 && newlineAt < full.byteEnd) ? newlineAt + 1 : full.byteStart;
+  const qsizetype insertPos =
+      qBound<qsizetype>(contentStart, contentStart + prev->literal().size(), closeLineStart);
+
+  const qsizetype paraStart = context.contentRange.byteStart;
+  const qsizetype paraEnd = context.contentRange.byteEnd;
+  if (paraEnd < insertPos || paraStart < 0 || paraEnd > markdown.size()) {
+    return command;
+  }
+  // Remove everything from the content tail through the paragraph (the content's trailing newline,
+  // the closing fence line, any separating blank lines, and the paragraph text), then re-emit the
+  // paragraph text followed by the closing fence — net effect: para text is grafted onto the last
+  // content line and the fence is relocated below it.
+  const QString paraText = markdown.mid(paraStart, paraEnd - paraStart);
+  command.sourceStart = insertPos;
+  command.removedLength = paraEnd - insertPos;
+  command.insertedText = paraText + QLatin1Char('\n') + closingFence;
+  // Caret lands just after the grafted text, inside the literal block — cursorForSourceOffset
+  // resolves literal-block offsets and applyLocalEdit then activates the block's inline editor.
+  command.fallbackSourceOffset = insertPos + paraText.size();
+  command.kind = EditTransaction::Kind::DeleteText;
+  command.label = QStringLiteral("Merge Into Block");
+  command.structureEdit = true;
   command.valid = true;
   command.handled = true;
   return command;
