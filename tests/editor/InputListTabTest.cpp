@@ -435,6 +435,71 @@ void testListTabFromRenderedClick() {
   require(listDepthForItem(indentedViewportItem) == 2, "viewport tab should increase unordered list AST depth");
 }
 
+// Regression for a cmark-gfm divergence from CommonMark: a lone "-" that can be
+// an empty list item must be parsed as a list item, not as a setext heading
+// underline (commonmark-spec#95, commonmark.js#222).  Before the fix, pressing
+// Tab on an empty middle list item turned the preceding item into a Setext H2.
+void testIndentEmptyListItemDoesNotPromotePreviousToHeading() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  // The user's exact scenario: an empty middle item is nested via Tab.
+  session.setMarkdownText(QStringLiteral("- First item\n- \n- Second item with **bold** text"), false);
+  setCursor(selection, listItemAt(session, 0, 1), 0);
+  require(input.indentListItem(), "tab should indent the empty middle list item");
+  require(session.markdownText() == QStringLiteral("- First item\n  - \n- Second item with **bold** text"),
+          "indenting an empty item should only add leading spaces");
+
+  MarkdownNode* firstItem = listItemAt(session, 0, 0);
+  require(maybeFirstChildOfType(firstItem, BlockType::Paragraph) != nullptr,
+          "preceding item content must stay a paragraph after nesting an empty item");
+  require(maybeFirstChildOfType(firstItem, BlockType::Heading) == nullptr,
+          "preceding item must not be promoted to a setext heading");
+  MarkdownNode* nestedList = maybeFirstChildOfType(firstItem, BlockType::List);
+  require(nestedList != nullptr && nestedList->children().size() == 1, "nesting should create one empty child item");
+  require(listDepthForItem(childAt(nestedList, 0)) == 2, "nested empty item should be at list depth 2");
+
+  // The bug also reproduces when the source already contains a nested empty item
+  // (e.g. re-opening a saved file) — the parser must not promote the parent.
+  session.setMarkdownText(QStringLiteral("- First item\n  - \n- Second item with **bold** text\n- Third item"), false);
+  MarkdownNode* parsedFirst = listItemAt(session, 0, 0);
+  require(maybeFirstChildOfType(parsedFirst, BlockType::Heading) == nullptr,
+          "parsed nested empty item must not promote its parent to a heading");
+  require(maybeFirstChildOfType(parsedFirst, BlockType::List) != nullptr,
+          "parsed nested empty item should be a nested list");
+
+  // The empty nested item must remain editable: typing fills it instead of
+  // re-triggering the misparse.
+  setCursor(selection, childAt(maybeFirstChildOfType(parsedFirst, BlockType::List), 0), 0);
+  require(input.insertText(QStringLiteral("nested")), "typing into the nested empty item should edit it");
+  require(session.markdownText() == QStringLiteral("- First item\n  - nested\n- Second item with **bold** text\n- Third item"),
+          "typing into nested empty item should keep the list structure");
+
+  // Ordered lists share the bug shape: an empty nested "1." must not be turned
+  // into a setext underline either (setext only uses "-" / "=", but guard the
+  // structure regardless).
+  session.setMarkdownText(QStringLiteral("1. First item\n2. \n3. Second item"), false);
+  setCursor(selection, listItemAt(session, 0, 1), 0);
+  require(input.indentListItem(), "tab should indent the empty ordered middle item");
+  require(session.markdownText() == QStringLiteral("1. First item\n  2. \n3. Second item"),
+          "indenting empty ordered item should only add leading spaces");
+  require(maybeFirstChildOfType(listItemAt(session, 0, 0), BlockType::Heading) == nullptr,
+          "ordered preceding item must not become a heading");
+
+  // Multi-character setext underlines are NOT list markers and must keep working
+  // (guards the cmark-gfm fix from weakening the Setext feature).
+  session.setMarkdownText(QStringLiteral("Title\n====\n"), false);
+  require(blockAt(session, 0)->type() == BlockType::Heading && blockAt(session, 0)->headingLevel() == 1,
+          "'===' setext underline must still parse as a level-1 heading");
+  session.setMarkdownText(QStringLiteral("Title\n----\n"), false);
+  require(blockAt(session, 0)->type() == BlockType::Heading && blockAt(session, 0)->headingLevel() == 2,
+          "'----' setext underline must still parse as a level-2 heading");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -447,6 +512,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testTyporaListKeyboardBehavior);
   RUN_TEST(testTabInRenderedTextInsertsZeroWidthSpace);
   RUN_TEST(testListTabFromRenderedClick);
+  RUN_TEST(testIndentEmptyListItemDoesNotPromotePreviousToHeading);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

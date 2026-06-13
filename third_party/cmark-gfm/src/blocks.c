@@ -578,7 +578,13 @@ static bufsize_t parse_list_marker(cmark_mem *mem, cmark_chunk *input,
         i++;
       }
       if (peek_at(input, i) == '\n') {
-        return 0;
+        /* CommonMark: a lone empty "-" item that could otherwise be parsed as a
+           setext underline or a GFM table delimiter must still be treated as a
+           list item (commonmark-spec#95, commonmark.js#222).  Empty "*"/"+"
+           items keep the historical non-interrupting behavior. */
+        if (c != '-') {
+          return 0;
+        }
       }
     }
 
@@ -1203,7 +1209,16 @@ static void open_new_blocks(cmark_parser *parser, cmark_node **container,
       // text
     } else if (!indented && cont_type == CMARK_NODE_PARAGRAPH &&
                (lev =
-                    scan_setext_heading_line(input, parser->first_nonspace))) {
+                    scan_setext_heading_line(input, parser->first_nonspace)) &&
+               /* CommonMark: a lone "-" that could begin an empty list item must
+                  not be treated as a setext underline (commonmark-spec#95,
+                  commonmark.js#222).  A run of two or more dashes is an
+                  unambiguous H2 underline; "=" underlines and multi-dash
+                  underlines are unaffected.  scan_setext_heading_line already
+                  guarantees a line terminator follows, so the next byte is in
+                  bounds. */
+               !(lev == 2 &&
+                 peek_at(input, parser->first_nonspace + 1) != '-')) {
       // finalize paragraph, resolving reference links
       has_content = resolve_reference_link_definitions(parser, *container);
 
