@@ -2,6 +2,7 @@
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
+#include "editor/EditorView.h"
 #include "editor/InputController.h"
 #include "editor/SelectionController.h"
 #include "blocks/code/CodeFenceController.h"
@@ -272,6 +273,91 @@ void testDefinitionDestinationEditDoesNotRestoreStaleSourceText() {
           QStringLiteral("stale sourceText destination should not be restored: '%1'").arg(session.markdownText()));
 }
 
+// Enter at the end of an indented code block cannot persist a trailing empty line (cmark strips
+// it), so the editor shows a phantom blank line held only in the node and commits it once a key
+// is typed on it. Exercises the handleKeyPress dispatch: Enter creates the phantom, Backspace
+// undoes it, a printable commits it.
+void testInputIndentedCodePhantomEnterLine() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  CodeFenceController codeFence;
+  codeFence.setContext({&session, &selection, &undoStack, &brushQueue});
+  EditorView view;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue, &view);
+  input.setCodeFenceController(&codeFence);
+
+  session.setMarkdownText(QStringLiteral("    code"), false);
+  view.setDocument(session.document());
+  require(blockAt(session, 0)->isIndentedCode(), "expected an indented code block");
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Code;
+  hit.blockId = blockAt(session, 0)->id();
+  hit.textNodeId = hit.blockId;
+  hit.textOffset = 0;
+  selection.setHitResult(hit);
+  require(codeFence.enterEditMode(), "enter code edit should work");
+
+  // Enter at the end creates a phantom line without touching the source.
+  require(pressKey(input, &view, Qt::Key_Return), "Enter keypress should be handled");
+  require(session.markdownText() == QStringLiteral("    code"), "phantom Enter must not mutate source");
+  require(codeFence.hasPendingTrailingNewline(), "phantom line should be present after Enter");
+
+  // Backspace undoes the phantom (still no source change).
+  require(pressKey(input, &view, Qt::Key_Backspace), "backspace keypress should be handled");
+  require(!codeFence.hasPendingTrailingNewline(), "phantom should clear on backspace");
+  require(session.markdownText() == QStringLiteral("    code"), "backspace on phantom must not mutate source");
+
+  // Re-create the phantom, then type a character to commit it as a real indented line.
+  require(pressKey(input, &view, Qt::Key_Return), "phantom Enter recreated");
+  QKeyEvent letter(QEvent::KeyPress, Qt::Key_X, Qt::NoModifier, QStringLiteral("x"));
+  require(input.eventFilter(&view, &letter), "letter keypress should commit the phantom");
+  require(!codeFence.hasPendingTrailingNewline(), "phantom should clear after commit");
+  require(session.markdownText().contains(QStringLiteral("    code\n    x")), "committed line should be indented code");
+  require(!session.markdownText().contains(QLatin1String("```")), "must stay indented, not become fenced");
+}
+
+// A second Enter on the phantom empty line exits the indented code block to a new paragraph
+// below it (indented code cannot hold a second trailing empty line; Enter-on-empty leaves).
+void testInputIndentedCodeSecondEnterExitsToParagraph() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  CodeFenceController codeFence;
+  codeFence.setContext({&session, &selection, &undoStack, &brushQueue});
+  EditorView view;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue, &view);
+  input.setCodeFenceController(&codeFence);
+
+  session.setMarkdownText(QStringLiteral("    code"), false);
+  view.setDocument(session.document());
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Code;
+  hit.blockId = blockAt(session, 0)->id();
+  hit.textNodeId = hit.blockId;
+  hit.textOffset = 0;
+  selection.setHitResult(hit);
+  require(codeFence.enterEditMode(), "enter code edit should work");
+
+  // First Enter: phantom line (source unchanged, still one block).
+  require(pressKey(input, &view, Qt::Key_Return), "first Enter should be handled");
+  require(codeFence.hasPendingTrailingNewline(), "phantom line should be set");
+  require(session.document().root().children().size() == 1, "phantom Enter must not add a block");
+
+  // Second Enter: exit to a new paragraph below the code block.
+  require(pressKey(input, &view, Qt::Key_Return), "second Enter should be handled");
+  require(session.document().root().children().size() == 2, "second Enter should create a paragraph after the code");
+  require(blockAt(session, 0)->type() == BlockType::CodeFence, "code block should remain first");
+  require(blockAt(session, 1)->type() == BlockType::Paragraph, "a paragraph should follow the code block");
+  require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "cursor should land in the new paragraph");
+  require(!session.markdownText().contains(QLatin1String("```")), "code must stay indented, not become fenced");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -285,6 +371,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testEmptyDefinitionBackspaceDeletesBlock);
   RUN_TEST(testOptionalLinkDefinitionTitleInsertionAddsQuotes);
   RUN_TEST(testDefinitionDestinationEditDoesNotRestoreStaleSourceText);
+  RUN_TEST(testInputIndentedCodePhantomEnterLine);
+  RUN_TEST(testInputIndentedCodeSecondEnterExitsToParagraph);
 #undef RUN_TEST
   return 0;
 }

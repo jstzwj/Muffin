@@ -167,6 +167,128 @@ void testSelectionReplaceAndDelete() {
   require(session.markdownText().contains(QStringLiteral("aef")), "code selection delete mismatch");
 }
 
+void testIndentedCodeEditingStaysIndented() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  CodeFenceController controller;
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
+
+  session.setMarkdownText(QStringLiteral("    conan install\n    cmake --build"), false);
+  MarkdownNode* code = firstCodeFence(session);
+  require(code != nullptr, "indented code block missing");
+  require(code->isIndentedCode(), "indented code block should be flagged as indented");
+  require(code->literal() == QStringLiteral("conan install\ncmake --build"), "indented code literal should be stripped of indent");
+
+  setCodeHit(selection, code, 0);
+  require(controller.enterEditMode(), "enter edit on indented code should work");
+
+  // Type at the end of the block — must stay indented, NOT be rewritten as a fenced block.
+  require(controller.insertText(QStringLiteral("2")), "insert into indented code should work");
+  const QString md = session.markdownText();
+  require(!md.contains(QLatin1String("```")), "indented code must not be rewritten as fenced on edit");
+  require(md.contains(QLatin1String("    cmake --build2")), "indented code edit should preserve 4-space indent");
+  MarkdownNode* after = firstCodeFence(session);
+  require(after != nullptr && after->isIndentedCode(), "indented code should remain flagged as indented after edit");
+
+  // setContent must also preserve the indented form.
+  require(controller.setContent(QStringLiteral("alpha\nbeta")), "setContent on indented code should work");
+  const QString md2 = session.markdownText();
+  require(!md2.contains(QLatin1String("```")), "setContent must not rewrite indented code as fenced");
+  require(md2.contains(QLatin1String("    alpha")), "setContent should re-indent indented code");
+
+  // deleteBackward must also preserve the indented form.
+  require(controller.deleteBackward(), "deleteBackward on indented code should work");
+  require(!session.markdownText().contains(QLatin1String("```")), "deleteBackward must not rewrite indented code as fenced");
+}
+
+// Regression for the user-reported scenario: an indented code block that follows a
+// paragraph (separated by a blank line). Typing, pressing Enter, and repeated edits must all
+// preserve the indented form — the block must never be rewritten as a fenced (```) block.
+void testIndentedCodeAfterParagraphStaysIndented() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  CodeFenceController controller;
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
+
+  const QString source = QStringLiteral("Indented code:\n\n    conan install\n    cmake --build");
+  session.setMarkdownText(source, false);
+  MarkdownNode* code = firstCodeFence(session);
+  require(code != nullptr, "indented code block after paragraph missing");
+  require(code->isIndentedCode(), "indented code (after paragraph) should be flagged as indented");
+
+  setCodeHit(selection, code, 0);
+  require(controller.enterEditMode(), "enter edit on indented code (after paragraph) should work");
+
+  // Typing a character must keep the block indented.
+  require(controller.insertText(QStringLiteral("2")), "type into indented code (after paragraph) should work");
+  require(!session.markdownText().contains(QLatin1String("```")), "indented code must not become fenced after typing");
+  require(session.markdownText().contains(QLatin1String("    cmake --build2")), "typed text should land on the indented line");
+  require(firstCodeFence(session)->isIndentedCode(), "indented flag must survive typing");
+
+  // Pressing Enter (new line) must keep the block indented.
+  require(controller.insertText(QStringLiteral("\n")), "Enter in indented code (after paragraph) should work");
+  require(!session.markdownText().contains(QLatin1String("```")), "indented code must not become fenced after Enter");
+  require(firstCodeFence(session)->isIndentedCode(), "indented flag must survive Enter");
+
+  // A second typed character after the Enter must still be indented.
+  require(controller.insertText(QStringLiteral("x")), "type after Enter should work");
+  require(!session.markdownText().contains(QLatin1String("```")), "indented code must not become fenced on second edit");
+  require(firstCodeFence(session)->isIndentedCode(), "indented flag must survive repeated edits");
+}
+
+// Enter at the very end of an indented code block cannot persist a trailing empty line (cmark
+// strips it). Instead the editor shows a phantom blank line held only in the node, and commits
+// it to the document once a character lands on that line.
+void testEnterAtEndOfIndentedCodeShowsPhantomLine() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  CodeFenceController controller;
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
+
+  const QString source = QStringLiteral("    line1\n    line2");
+  session.setMarkdownText(source, false);
+  MarkdownNode* code = firstCodeFence(session);
+  require(code != nullptr, "indented code block missing");
+  require(code->isIndentedCode(), "should be flagged indented");
+
+  setCodeHit(selection, code, 0);
+  require(controller.enterEditMode(), "enter edit should work");
+
+  // Enter at the end must NOT mutate the source (cmark would strip a real trailing empty line);
+  // instead it extends the node literal with a phantom trailing newline (the phantom IS that '\n').
+  const QString beforeEnter = session.markdownText();
+  require(controller.insertText(QStringLiteral("\n")), "Enter at end should be handled");
+  require(session.markdownText() == beforeEnter, "Enter at end must not mutate the source");
+  MarkdownNode* afterEnter = firstCodeFence(session);
+  require(afterEnter != nullptr, "code block still present after phantom Enter");
+  require(controller.hasPendingTrailingNewline(), "phantom line should be present after Enter");
+  require(afterEnter->literal() == QStringLiteral("line1\nline2\n"), "phantom newline should extend the node literal");
+
+  // Typing a character commits the phantom line as real indented code.
+  require(controller.insertText(QStringLiteral("x")), "commit character should be accepted");
+  MarkdownNode* afterCommit = firstCodeFence(session);
+  require(afterCommit != nullptr && !controller.hasPendingTrailingNewline(), "phantom must clear after commit");
+  require(session.markdownText().contains(QStringLiteral("    line2\n    x")), "committed line should be indented code");
+  require(!session.markdownText().contains(QLatin1String("```")), "must stay indented, not become fenced");
+
+  // Clearing the phantom undoes it without touching the source.
+  session.setMarkdownText(source, false);
+  setCodeHit(selection, firstCodeFence(session), 0);
+  controller.enterEditMode();
+  require(controller.insertText(QStringLiteral("\n")), "phantom Enter before clear");
+  require(controller.hasPendingTrailingNewline(), "phantom should be set before clear");
+  controller.clearPendingTrailingNewline();
+  require(!controller.hasPendingTrailingNewline(), "phantom should clear after clear");
+  require(firstCodeFence(session)->literal() == QStringLiteral("line1\nline2"), "literal should be restored");
+  require(session.markdownText() == source, "source should be unchanged after clear");
+}
+
 }  // namespace
 
 int main() {
@@ -174,5 +296,8 @@ int main() {
   testSetLanguageAndContent();
   testSetLanguageForSpecificFenceKeepsCursor();
   testSelectionReplaceAndDelete();
+  testIndentedCodeEditingStaysIndented();
+  testIndentedCodeAfterParagraphStaysIndented();
+  testEnterAtEndOfIndentedCodeShowsPhantomLine();
   return 0;
 }

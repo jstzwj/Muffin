@@ -252,7 +252,32 @@ QString MarkdownSerializer::serializeTable(const MarkdownNode& node) const {
 }
 
 QString MarkdownSerializer::serializeCodeFence(const MarkdownNode& node) const {
-  const QString literal = node.literal();
+  QString literal = node.literal();
+  if (node.isIndentedCode()) {
+    // cmark strips every trailing whitespace-only line from an indented code block, so its
+    // literal never legitimately ends in '\n'. Any trailing newline is the phantom "Enter at end
+    // of block" affordance held only in the node (see LiteralBlockController) — drop it here so
+    // it never leaks into the document, the undo stack, or a snapshot. This is what makes the
+    // phantom safe to keep on the node: serialization restores the source-of-truth invariant.
+    while (literal.endsWith(QLatin1Char('\n'))) {
+      literal.chop(1);
+    }
+    if (literal.isEmpty()) {
+      // An empty indented code block has no representation in CommonMark (a whitespace-only line
+      // is just a blank line), so emit nothing and let the block collapse rather than leave a
+      // dead "    " that would vanish on the next re-parse anyway.
+      return QString();
+    }
+    // Re-apply the 4-space indent to each content line (blank lines stay blank, matching how
+    // cmark strips the leading indent on input).
+    QStringList lines = literal.split(QLatin1Char('\n'));
+    for (QString& line : lines) {
+      if (!line.isEmpty()) {
+        line = QStringLiteral("    ") + line;
+      }
+    }
+    return lines.join(QLatin1Char('\n'));
+  }
   if (literal.isEmpty()) {
     return QStringLiteral("```%1\n```").arg(node.codeLanguage());
   }

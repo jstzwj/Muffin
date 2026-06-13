@@ -28,6 +28,7 @@ public:
 
   bool hasCurrentTableCell() const;
   bool isOnEditableParagraphBlock() const;
+  bool canInsertParagraphAround() const;
   bool isInlineFormatEnabled() const;
   int currentHeadingLevel() const;
   bool isInCodeBlock() const;

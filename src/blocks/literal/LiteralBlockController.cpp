@@ -85,6 +85,9 @@ bool LiteralBlockController::enterEditMode() {
 }
 
 bool LiteralBlockController::exitEditMode() {
+  // Leaving the block discards any phantom trailing line (it is a transient affordance held only
+  // in the node; the next click/Esc/cursor move should not leave a stray blank line behind).
+  clearPendingTrailingNewline();
   editingId_ = {};
   editingIndex_ = -1;
   return true;
@@ -93,6 +96,12 @@ bool LiteralBlockController::exitEditMode() {
 bool LiteralBlockController::insertText(QString text) {
   if (text.isEmpty()) {
     return false;
+  }
+  // Enter at the very end of an indented code block can't persist a trailing empty line (cmark
+  // strips it), so the normal append would round-trip to a no-op. Hold the newline only in the
+  // node as a phantom blank line and commit it when the next character lands on that line.
+  if (text == QStringLiteral("\n") && shouldDeferTrailingNewline()) {
+    return deferTrailingNewline();
   }
   return mutateCurrentBlock(spec_.editLabel, EditTransaction::Kind::InsertText,
                             [this, text = std::move(text)](MarkdownNode& node, qsizetype& offset) {
@@ -346,6 +355,69 @@ bool LiteralBlockController::currentSelectionRange(qsizetype& startOffset, qsize
 void LiteralBlockController::setEditingBlock(NodeId id, int index) {
   editingId_ = id;
   editingIndex_ = index;
+}
+
+bool LiteralBlockController::shouldDeferTrailingNewline() const {
+  if (spec_.blockType != BlockType::CodeFence || !ctx_.hasSession() || !ctx_.hasSelection()) {
+    return false;
+  }
+  MarkdownNode* active = currentBlock();
+  if (!active || !active->isIndentedCode()) {
+    return false;
+  }
+  // The phantom IS a trailing '\n' on the literal; if one is already present, a second Enter must
+  // not append another (cmark would strip it anyway, and the editor caps at one phantom line).
+  if (active->literal().endsWith(QLatin1Char('\n'))) {
+    return false;
+  }
+  if (!ctx_.selection->hasCursor()) {
+    return false;
+  }
+  const CursorPosition cursor = ctx_.selection->cursorPosition();
+  return cursor.blockId == active->id() && cursor.text.textOffset >= active->literal().size();
+}
+
+bool LiteralBlockController::deferTrailingNewline() {
+  MarkdownNode* active = currentBlock();
+  if (!active) {
+    return false;
+  }
+  const NodeId nodeId = active->id();
+  active->setLiteral(active->literal() + QLatin1Char('\n'));
+  if (ctx_.selection) {
+    ctx_.selection->setCursorPosition(cursorFor(nodeId, active->literal().size()));
+  }
+  if (ctx_.brushQueue) {
+    ctx_.brushQueue->requestBlockRefresh(nodeId);
+  }
+  return true;
+}
+
+bool LiteralBlockController::hasPendingTrailingNewline() const {
+  MarkdownNode* active = currentBlock();
+  // The phantom is a trailing '\n' appended to an indented-code literal. Fenced blocks may carry
+  // a real trailing blank line, so only indented code can report a phantom.
+  return active && active->isIndentedCode() && active->literal().endsWith(QLatin1Char('\n'));
+}
+
+void LiteralBlockController::clearPendingTrailingNewline() {
+  MarkdownNode* active = currentBlock();
+  if (!active || !active->isIndentedCode() || !active->literal().endsWith(QLatin1Char('\n'))) {
+    return;
+  }
+  QString literal = active->literal();
+  literal.chop(1);
+  active->setLiteral(literal);
+  // Re-anchor the caret only if it is still on this block. A command that moved the caret
+  // elsewhere (e.g. insert-paragraph-before, which leaves the code block) owns the new position
+  // and must not be dragged back here.
+  if (ctx_.selection && ctx_.selection->hasCursor() &&
+      ctx_.selection->cursorPosition().blockId == active->id()) {
+    ctx_.selection->setCursorPosition(cursorFor(active->id(), literal.size()));
+  }
+  if (ctx_.brushQueue) {
+    ctx_.brushQueue->requestBlockRefresh(active->id());
+  }
 }
 
 }  // namespace muffin

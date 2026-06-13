@@ -148,12 +148,129 @@ void testInsertParagraphBeforeAndAfter() {
   setCursor(selection, blockAt(session, 0), 3);
   require(paragraph.insertParagraphBefore(), "insert before should succeed");
   require(session.document().root().children().size() == 2, "insert before should create 2 blocks");
+  require(cursorBlock(session, selection) == blockAt(session, 0), "cursor should jump to the new (first) paragraph");
+  require(cursorBlock(session, selection)->type() == BlockType::Paragraph, "cursor block should be a paragraph");
 
   session.setMarkdownText(QStringLiteral("Hello"), false);
   setCursor(selection, blockAt(session, 0), 3);
   require(paragraph.insertParagraphAfter(), "insert after should succeed");
   require(session.document().root().children().size() == 2, "insert after should create 2 blocks");
   require(blockAt(session, 0)->type() == BlockType::Paragraph, "insert after first block should be paragraph");
+  require(cursorBlock(session, selection) == blockAt(session, 1), "cursor should jump to the new (second) paragraph");
+}
+
+void testInsertParagraphAroundCodeBlock() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  // Insert before: cursor inside the code fence → blank paragraph appears before the fence.
+  session.setMarkdownText(QStringLiteral("```\ncode\n```"), false);
+  setCursor(selection, blockAt(session, 0), 2);
+  require(paragraph.canInsertAdjacentParagraph(), "code fence should allow adjacent paragraph insert");
+  require(paragraph.insertParagraphBefore(), "insert before code fence should succeed");
+  require(session.document().root().children().size() == 2, "insert before should create 2 blocks");
+  require(blockAt(session, 0)->type() == BlockType::Paragraph, "block before code fence should be a paragraph");
+  require(blockAt(session, 1)->type() == BlockType::CodeFence, "code fence should remain after insert");
+  require(session.markdownText().contains(QStringLiteral("code")), "code content should be preserved");
+  require(cursorBlock(session, selection) == blockAt(session, 0), "cursor should jump to the new paragraph before the fence");
+
+  // Insert after: blank paragraph appears after the closing fence.
+  session.setMarkdownText(QStringLiteral("```\ncode\n```"), false);
+  setCursor(selection, blockAt(session, 0), 2);
+  require(paragraph.insertParagraphAfter(), "insert after code fence should succeed");
+  require(session.document().root().children().size() == 2, "insert after should create 2 blocks");
+  require(blockAt(session, 0)->type() == BlockType::CodeFence, "code fence should remain before insert");
+  require(blockAt(session, 1)->type() == BlockType::Paragraph, "block after code fence should be a paragraph");
+  require(cursorBlock(session, selection) == blockAt(session, 1), "cursor should jump to the new paragraph after the fence");
+}
+
+void testInsertParagraphAroundIndentedCode() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  const QString source = QStringLiteral("    conan install .\n    cmake --build");
+
+  // Insert before: the 4-space indent must be preserved (the block must stay code).
+  session.setMarkdownText(source, false);
+  setCursor(selection, blockAt(session, 0), 6);
+  require(paragraph.insertParagraphBefore(), "insert before indented code should succeed");
+  require(session.document().root().children().size() == 2, "insert before should create 2 blocks");
+  require(blockAt(session, 0)->type() == BlockType::Paragraph, "block before indented code should be a paragraph");
+  require(blockAt(session, 1)->type() == BlockType::CodeFence, "indented code must remain a code block");
+  require(session.markdownText().contains(QStringLiteral("conan install")), "code content should be preserved");
+  require(cursorBlock(session, selection) == blockAt(session, 0), "cursor should jump to the new paragraph before indented code");
+
+  // Insert after.
+  session.setMarkdownText(source, false);
+  setCursor(selection, blockAt(session, 0), 6);
+  require(paragraph.insertParagraphAfter(), "insert after indented code should succeed");
+  require(session.document().root().children().size() == 2, "insert after should create 2 blocks");
+  require(blockAt(session, 0)->type() == BlockType::CodeFence, "indented code (after-insert) must remain a code block");
+  require(blockAt(session, 1)->type() == BlockType::Paragraph, "block after indented code should be a paragraph");
+  require(cursorBlock(session, selection) == blockAt(session, 1), "cursor should jump to the new paragraph after indented code");
+}
+
+void testInsertParagraphAroundIndentedCodeWithPrecedingPara() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  const QString source = QStringLiteral("Header para.\n\n    conan install\n    cmake --build");
+
+  // Insert before: cursor in the indented code block (block 1) -> new paragraph appears before it.
+  session.setMarkdownText(source, false);
+  setCursor(selection, blockAt(session, 1), 6);
+  require(paragraph.insertParagraphBefore(), "insert before indented code (with preceding para) should succeed");
+  require(session.document().root().children().size() == 3, "should be para + new-para + code");
+  require(blockAt(session, 0)->type() == BlockType::Paragraph, "first block stays the header paragraph");
+  require(blockAt(session, 1)->type() == BlockType::Paragraph, "new paragraph inserted before the code");
+  require(blockAt(session, 2)->type() == BlockType::CodeFence, "indented code remains last");
+  require(cursorBlock(session, selection) == blockAt(session, 1), "caret must land in the new paragraph");
+
+  // Insert after: new paragraph appears after the code block.
+  session.setMarkdownText(source, false);
+  setCursor(selection, blockAt(session, 1), 6);
+  require(paragraph.insertParagraphAfter(), "insert after indented code (with preceding para) should succeed");
+  require(session.document().root().children().size() == 3, "should be para + code + new-para");
+  require(blockAt(session, 2)->type() == BlockType::Paragraph, "new paragraph inserted after the code");
+  require(cursorBlock(session, selection) == blockAt(session, 2), "caret must land in the new paragraph after");
+}
+
+void testInsertParagraphAroundMathBlock() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("$$\na+b\n$$"), false);
+  setCursor(selection, blockAt(session, 0), 2);
+  require(paragraph.canInsertAdjacentParagraph(), "math block should allow adjacent paragraph insert");
+  require(paragraph.insertParagraphBefore(), "insert before math block should succeed");
+  require(session.document().root().children().size() == 2, "insert before should create 2 blocks");
+  require(blockAt(session, 0)->type() == BlockType::Paragraph, "block before math block should be a paragraph");
+  require(blockAt(session, 1)->type() == BlockType::MathBlock, "math block should remain after insert");
+  require(cursorBlock(session, selection) == blockAt(session, 0), "cursor should jump to the new paragraph before the math block");
+
+  session.setMarkdownText(QStringLiteral("$$\na+b\n$$"), false);
+  setCursor(selection, blockAt(session, 0), 2);
+  require(paragraph.insertParagraphAfter(), "insert after math block should succeed");
+  require(session.document().root().children().size() == 2, "insert after should create 2 blocks");
+  require(blockAt(session, 0)->type() == BlockType::MathBlock, "math block should remain before insert");
+  require(blockAt(session, 1)->type() == BlockType::Paragraph, "block after math block should be a paragraph");
+  require(cursorBlock(session, selection) == blockAt(session, 1), "cursor should jump to the new paragraph after the math block");
 }
 
 void testInsertIntoEmptyDocument() {
@@ -304,14 +421,21 @@ void testIsOnEditableBlock() {
   session.setMarkdownText(QStringLiteral("```\ncode\n```"), false);
   setCursor(selection, blockAt(session, 0), 2);
   require(!paragraph.isOnEditableBlock(), "code fence should not be editable");
+  require(paragraph.canInsertAdjacentParagraph(), "code fence should allow adjacent paragraph insert");
+
+  session.setMarkdownText(QStringLiteral("$$\na+b\n$$"), false);
+  setCursor(selection, blockAt(session, 0), 2);
+  require(paragraph.canInsertAdjacentParagraph(), "math block should allow adjacent paragraph insert");
 
   selection.clear();
   require(!paragraph.isOnEditableBlock(), "no cursor should not be editable");
+  require(!paragraph.canInsertAdjacentParagraph(), "no cursor should not allow adjacent paragraph insert");
   require(paragraph.currentHeadingLevel() == 0, "no cursor heading level should be 0");
 
   session.setMarkdownText(QStringLiteral("Hello"), false);
   setSelection(selection, blockAt(session, 0), 0, 3);
   require(!paragraph.isOnEditableBlock(), "selection should not be editable");
+  require(!paragraph.canInsertAdjacentParagraph(), "non-collapsed selection should not allow adjacent paragraph insert");
 }
 
 int main(int argc, char** argv) {
@@ -327,6 +451,10 @@ int main(int argc, char** argv) {
   RUN_TEST(testInsertFootnoteDefinition);
   RUN_TEST(testInsertHorizontalRule);
   RUN_TEST(testInsertParagraphBeforeAndAfter);
+  RUN_TEST(testInsertParagraphAroundCodeBlock);
+  RUN_TEST(testInsertParagraphAroundIndentedCode);
+  RUN_TEST(testInsertParagraphAroundIndentedCodeWithPrecedingPara);
+  RUN_TEST(testInsertParagraphAroundMathBlock);
   RUN_TEST(testInsertIntoEmptyDocument);
   RUN_TEST(testToggleQuote);
   RUN_TEST(testConvertToUnorderedList);

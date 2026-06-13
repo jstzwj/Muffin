@@ -257,6 +257,9 @@ TopLevelSlice chooseTopLevelSlice(const muffin::MarkdownDocument& document, qsiz
   }
 
   if (slice.first >= 0) {
+    // Snap the slice start to the line boundary (shared helper) so block-leading indentation —
+    // notably indented-code blocks, whose node range begins at the content — is re-parsed intact.
+    slice.sourceStart = muffin::lineStartOffset(document.markdownText(), slice.sourceStart);
     return slice;
   }
 

@@ -31,6 +31,8 @@ public:
   bool setLanguage(QString language);
   bool setLanguageFor(NodeId codeId, QString language);
   bool setContent(QString content);
+  bool hasPendingTrailingNewline() const;
+  void clearPendingTrailingNewline();
   QString tabText() const;
 
 signals:

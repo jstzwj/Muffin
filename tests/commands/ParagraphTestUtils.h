@@ -29,6 +29,13 @@ inline muffin::MarkdownNode* blockAt(const muffin::DocumentSession& session, qsi
   return children.at(static_cast<size_t>(index)).get();
 }
 
+// Returns the node the selection cursor currently sits on, or nullptr if none/invalid.
+inline muffin::MarkdownNode* cursorBlock(const muffin::DocumentSession& session,
+                                         const muffin::SelectionController& selection) {
+  const muffin::NodeId id = selection.cursorPosition().blockId;
+  return id.isValid() ? session.document().node(id) : nullptr;
+}
+
 inline muffin::MarkdownNode* firstChildOfType(muffin::MarkdownNode* node, muffin::BlockType type) {
   require(node != nullptr, "parent node should exist");
   for (const auto& child : node->children()) {

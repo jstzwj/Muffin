@@ -907,6 +907,47 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
     return insertIntoEmptyDocument(printableText(event));
   }
 
+  // Phantom trailing line in an indented code block. cmark cannot persist a trailing empty line,
+  // so Enter at the end of an indented block is held only in the node's literal as a trailing '\n'
+  // (created by LiteralBlockController::insertText). While that phantom is present this block owns
+  // the per-key semantics; everything else falls through to normal dispatch:
+  //   - printable / Tab: commit — the text lands on the phantom line (becomes real code)
+  //   - Backspace:        undo the phantom without touching the source
+  //   - Enter:            a second Enter on the empty line leaves the block to a new paragraph
+  //   - modifier-only:    leave the phantom intact
+  //   - any other key:    discard the phantom first, then proceed normally
+  if (codeFenceController_ && codeFenceController_->hasPendingTrailingNewline()) {
+    const int key = event->key();
+    const auto isModifierKey = [](int k) {
+      return k == Qt::Key_Shift || k == Qt::Key_Control || k == Qt::Key_Alt || k == Qt::Key_Meta ||
+             k == Qt::Key_AltGr || k == Qt::Key_CapsLock || k == Qt::Key_NumLock || k == Qt::Key_ScrollLock;
+    };
+    switch (key) {
+      case Qt::Key_Backspace:
+        codeFenceController_->clearPendingTrailingNewline();
+        return true;
+      case Qt::Key_Return:
+      case Qt::Key_Enter:
+        // Indented code cannot hold a second trailing empty line, and Enter-on-empty is the
+        // standard "leave the block" gesture. exitEditMode() clears the phantom as its choke point,
+        // so the cursor stays usable for the paragraph insert below.
+        codeFenceController_->exitEditMode();
+        return insertBlockAfterCurrentBlock();
+      case Qt::Key_Tab:
+      case Qt::Key_Backtab:
+        break;  // commit: the Tab text lands on the phantom line via the switch below
+      default:
+        if (!printableText(event).isEmpty()) {
+          break;  // commit: the character lands on the phantom line via insertText below
+        }
+        if (isModifierKey(key)) {
+          break;  // modifier-only press (e.g. Shift): leave the phantom intact
+        }
+        codeFenceController_->clearPendingTrailingNewline();
+        break;
+    }
+  }
+
   switch (event->key()) {
     case Qt::Key_Tab:
       if (hasActiveLiteralEditor()) {

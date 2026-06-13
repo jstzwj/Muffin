@@ -28,13 +28,17 @@ int ParagraphController::currentHeadingLevel() const {
   return context.headingLevel;
 }
 
-bool ParagraphController::isOnEditableBlock() const {
+// Shared precondition for block-level queries: a session, a caret, and a collapsed selection.
+// A multi-block selection disables every block-level command (insert-paragraph, heading, etc.).
+bool ParagraphController::hasCollapsedBlockCursor() const {
   if (!ctx_.hasSession() || !ctx_.hasCursor()) {
     return false;
   }
-  // Block-level commands should not apply when a multi-block selection is active
-  const SelectionRange sel = ctx_.selection->selection();
-  if (!sel.isCollapsed()) {
+  return ctx_.selection->selection().isCollapsed();
+}
+
+bool ParagraphController::isOnEditableBlock() const {
+  if (!hasCollapsedBlockCursor()) {
     return false;
   }
   const NodeId blockId = ctx_.selection->cursorPosition().blockId;
@@ -46,6 +50,58 @@ bool ParagraphController::isOnEditableBlock() const {
     return false;
   }
   return node->type() == BlockType::Paragraph || node->type() == BlockType::Heading;
+}
+
+bool ParagraphController::canInsertAdjacentParagraph() const {
+  BlockContext context;
+  return resolveInsertionContext(context);
+}
+
+// ---------------------------------------------------------------------------
+// resolveInsertionContext — context for insert-paragraph-before/after.
+// Accepts Paragraph/Heading (via resolveBlockContext) and CodeFence/MathBlock.
+// For literal blocks only blockStart/blockEnd (the line span) are filled;
+// content fields are left at their defaults since they are unused by the
+// adjacent-insertion commands.
+// ---------------------------------------------------------------------------
+
+bool ParagraphController::resolveInsertionContext(BlockContext& context) const {
+  if (!hasCollapsedBlockCursor()) {
+    return false;
+  }
+  // Paragraph/Heading: reuse the rich context (content, heading level, etc.).
+  if (resolveBlockContext(context)) {
+    return true;
+  }
+  const NodeId blockId = ctx_.selection->cursorPosition().blockId;
+  if (!blockId.isValid()) {
+    return false;
+  }
+  MarkdownNode* node = ctx_.session->document().node(blockId);
+  if (!node) {
+    return false;
+  }
+  // Only literal blocks with well-defined delimiters support adjacent insertion.
+  if (node->type() != BlockType::CodeFence && node->type() != BlockType::MathBlock) {
+    return false;
+  }
+
+  // The insertion point is the block's plain line span (column 1 of the first line through the end
+  // of the last line), NOT the whole-block range from fullBlockSourceRange — that one extends a
+  // math block past its closing "$$"/"\]" for snapshot replacement, which would swallow the closing
+  // delimiter and land the new paragraph in the wrong place. See SourceRangeUtil::blockLineSpan.
+  const SourceRange span = blockLineSpan(*node, ctx_.session->markdownText());
+  if (span.byteStart < 0 || span.byteEnd < span.byteStart) {
+    return false;
+  }
+
+  context.node = node;
+  context.editableNode = node;
+  context.blockId = blockId;
+  context.blockType = node->type();
+  context.blockStart = span.byteStart;
+  context.blockEnd = span.byteEnd;
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -561,7 +617,7 @@ bool ParagraphController::convertToTaskList() {
 
 bool ParagraphController::insertParagraphBefore() {
   BlockContext context;
-  if (!resolveBlockContext(context)) {
+  if (!resolveInsertionContext(context)) {
     return false;
   }
 
@@ -571,14 +627,16 @@ bool ParagraphController::insertParagraphBefore() {
       context.blockStart,
       0,
       QStringLiteral("\n\n"),
-      context.blockStart + 1,
+      // The new empty paragraph is created at the insertion point (the blank line
+      // before the block); its zero-length content range begins exactly here.
+      context.blockStart,
       {LocalEditNodeHint{context.blockId, context.blockStart + 2, context.blockType}},
       true);
 }
 
 bool ParagraphController::insertParagraphAfter() {
   BlockContext context;
-  if (!resolveBlockContext(context)) {
+  if (!resolveInsertionContext(context)) {
     return false;
   }
 
@@ -588,7 +646,9 @@ bool ParagraphController::insertParagraphAfter() {
       context.blockEnd,
       0,
       QStringLiteral("\n\n"),
-      context.blockEnd + 1,
+      // After inserting "\n\n" at the block end, the new empty paragraph's content
+      // begins right after the two inserted newlines.
+      context.blockEnd + 2,
       {LocalEditNodeHint{context.blockId, context.blockStart, context.blockType}},
       true);
 }

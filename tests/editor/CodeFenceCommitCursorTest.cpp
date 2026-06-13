@@ -126,6 +126,37 @@ void testTypingAfterCommitUndoStillWorks() {
   require(!h.controller.codeFenceController().isEditing(), "stale code editor should be exited before typing");
 }
 
+// Insert-paragraph-before/after an indented code block must exit the code editor: the caret
+// moves to the new paragraph, so subsequent typing must land there (not back in the code block).
+void testInsertParagraphAroundIndentedCodeExitsEditMode() {
+  Harness h;
+  h.session.setMarkdownText(QStringLiteral("Header.\n\n    code"), false);
+  h.view.setDocument(h.session.document());
+  require(blockAt(h.session, 1)->isIndentedCode(), "expected an indented code block");
+
+  setCursor(h.controller.selection(), blockAt(h.session, 1), 2);
+  require(h.controller.codeFenceController().enterEditMode(), "enter edit on indented code");
+  require(h.controller.codeFenceController().isEditing(), "precondition: code editor active");
+
+  require(h.controller.paragraphController().insertParagraphBefore(), "insert before indented code should succeed");
+  require(!h.controller.codeFenceController().isEditing(), "code editor must exit after insert-paragraph-before");
+  // After insert-before the layout is [Header, NEW-para, code]; the caret must be in the new
+  // paragraph (block 1), not the code block (block 2).
+  require(blockAt(h.session, 1)->type() == BlockType::Paragraph, "new paragraph should be block 1");
+  require(h.controller.selection().cursorPosition().blockId == blockAt(h.session, 1)->id(),
+          "caret must land in the new paragraph before the code");
+
+  h.session.setMarkdownText(QStringLiteral("Header.\n\n    code"), false);
+  h.view.setDocument(h.session.document());
+  setCursor(h.controller.selection(), blockAt(h.session, 1), 2);
+  h.controller.codeFenceController().enterEditMode();
+  require(h.controller.paragraphController().insertParagraphAfter(), "insert after indented code should succeed");
+  require(!h.controller.codeFenceController().isEditing(), "code editor must exit after insert-paragraph-after");
+  // After insert-after the layout is [Header, code, NEW-para]; caret in the new paragraph (block 2).
+  require(h.controller.selection().cursorPosition().blockId == blockAt(h.session, 2)->id(),
+          "caret must land in the new paragraph after the code");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -136,6 +167,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testDollarMathCommitCaretInsideBlock);
   RUN_TEST(testBracketMathCommitCaretInsideBlock);
   RUN_TEST(testTypingAfterCommitUndoStillWorks);
+  RUN_TEST(testInsertParagraphAroundIndentedCodeExitsEditMode);
 #undef RUN_TEST
   return 0;
 }

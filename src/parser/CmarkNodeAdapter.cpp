@@ -443,6 +443,16 @@ void CmarkNodeAdapter::readBlockMetadata(cmark_node* cmarkNode, MarkdownNode& mu
       }
       muffinNode.setLiteral(codeLiteral);
       muffinNode.setCodeLanguage(fromUtf8(cmark_node_get_fence_info(cmarkNode)).section(' ', 0, 0));
+      // cmark reports both fenced and indented code as CMARK_NODE_CODE_BLOCK, but it records the
+      // original form in the node's authoritative `fenced` flag (set during parsing). That is the
+      // only reliable signal: inspecting the source line breaks for a fence nested inside a
+      // list/block-quote, whose opening fence is itself indented (column 1 is a space) yet the
+      // block is genuinely fenced. Round-trip indented code as indented, fenced as fenced.
+      int fenceLength = 0;
+      int fenceOffset = 0;
+      char fenceChar = 0;
+      const bool isFenced = cmark_node_get_fenced(cmarkNode, &fenceLength, &fenceOffset, &fenceChar) != 0;
+      muffinNode.setIndentedCode(!isFenced);
       break;
     }
     case BlockType::HtmlBlock:

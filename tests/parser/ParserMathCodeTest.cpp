@@ -502,6 +502,137 @@ void testNodeIndexPreservesDocumentOrder() {
   require(!document.index().contains(paragraph.id()), QStringLiteral("NodeIndex removeSubtree should remove lookup entry"));
 }
 
+// Walks a subtree looking for the first CodeFence node.
+const MarkdownNode* firstCodeFenceIn(const MarkdownNode& root) {
+  if (root.type() == BlockType::CodeFence) {
+    return &root;
+  }
+  for (const auto& child : root.children()) {
+    if (const MarkdownNode* found = firstCodeFenceIn(*child)) {
+      return found;
+    }
+  }
+  return nullptr;
+}
+
+// A code block's indented-vs-fenced style must be detected from cmark's authoritative
+// `fenced` flag — NOT by inspecting whether the source line happens to start with a fence
+// character. The latter breaks for a fenced block nested inside a list/block-quote, where
+// the opening fence is itself indented (so column 1 is a space) yet the block is genuinely
+// fenced and must round-trip as a fence.
+void testIndentedVsFencedCodeDetection() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+
+  // Top-level indented code block -> indented.
+  const QString indented = QStringLiteral("    conan install\n    cmake --build");
+  ParseResult indentedParsed = parser.parseDocument(indented, options);
+  require(indentedParsed.root != nullptr, QStringLiteral("null root for indented code"));
+  const MarkdownNode* indentedCode = firstCodeFenceIn(*indentedParsed.root);
+  require(indentedCode != nullptr, QStringLiteral("indented code block not parsed"));
+  require(indentedCode->isIndentedCode(), QStringLiteral("top-level indented code must be flagged indented"));
+
+  // Top-level fenced code block -> fenced.
+  const QString fenced = QStringLiteral("```python\nprint(1)\n```");
+  ParseResult fencedParsed = parser.parseDocument(fenced, options);
+  require(fencedParsed.root != nullptr, QStringLiteral("null root for fenced code"));
+  const MarkdownNode* fencedCode = firstCodeFenceIn(*fencedParsed.root);
+  require(fencedCode != nullptr, QStringLiteral("fenced code block not parsed"));
+  require(!fencedCode->isIndentedCode(), QStringLiteral("top-level fenced code must NOT be flagged indented"));
+
+  // Fenced code INSIDE a list item -> the fence is indented by the list, but the block is
+  // still fenced. Source-line inspection would misread it as indented code.
+  const QString listFenced = QStringLiteral("- item:\n  ```python\n  print(1)\n  ```");
+  ParseResult listParsed = parser.parseDocument(listFenced, options);
+  require(listParsed.root != nullptr, QStringLiteral("null root for list+code sample"));
+  const MarkdownNode* listCode = firstCodeFenceIn(*listParsed.root);
+  require(listCode != nullptr, QStringLiteral("fenced code inside list not parsed"));
+  require(!listCode->isIndentedCode(),
+          QStringLiteral("fenced code inside a list must stay fenced, not be rewritten as indented"));
+
+  // Fenced code INSIDE a block quote -> same reasoning.
+  const QString quoteFenced = QStringLiteral("> ```python\n> print(1)\n> ```");
+  ParseResult quoteParsed = parser.parseDocument(quoteFenced, options);
+  require(quoteParsed.root != nullptr, QStringLiteral("null root for quote+code sample"));
+  const MarkdownNode* quoteCode = firstCodeFenceIn(*quoteParsed.root);
+  require(quoteCode != nullptr, QStringLiteral("fenced code inside block quote not parsed"));
+  require(!quoteCode->isIndentedCode(),
+          QStringLiteral("fenced code inside a block quote must stay fenced"));
+
+  // Round-trip stability: a list-with-fenced-code must serialize back to a fence (not 4-space
+  // indented text), otherwise the list structure collapses.
+  MarkdownDocument listDoc;
+  listDoc.setMarkdownText(listFenced, std::move(listParsed.root));
+  const QString listSerialized = MarkdownSerializer().serializeDocument(listDoc);
+  require(listSerialized.contains(QStringLiteral("```python")),
+          QStringLiteral("list+code must serialize with a fence, got: '%1'").arg(listSerialized));
+}
+
+// Documents the CommonMark constraint that motivates the phantom-line behavior: an indented
+// code block cannot carry a trailing empty line — cmark strips every trailing whitespace-only
+// line — whereas a fenced block keeps it. This is why Enter-at-end of an indented block is held
+// as a phantom line in the node rather than committed to the source.
+void testIndentedCodeCannotHoldTrailingEmptyLine() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+
+  auto literalOf = [&](const QString& md) -> QString {
+    ParseResult parsed = parser.parseDocument(md, options);
+    const MarkdownNode* code = firstCodeFenceIn(*parsed.root);
+    return code ? code->literal() : QStringLiteral("<none>");
+  };
+
+  require(literalOf(QStringLiteral("    code")) == QStringLiteral("code"), "indented baseline literal");
+  require(literalOf(QStringLiteral("    code\n")) == QStringLiteral("code"), "trailing newline must be stripped");
+  require(literalOf(QStringLiteral("    code\n    ")) == QStringLiteral("code"), "trailing 4-space line must be stripped");
+  require(literalOf(QStringLiteral("    code\n    \n")) == QStringLiteral("code"), "trailing blank+indent must be stripped");
+
+  // Fenced code keeps a trailing blank line because the closing fence is a sentinel.
+  require(literalOf(QStringLiteral("```\ncode\n```")) == QStringLiteral("code"), "fenced baseline literal");
+  require(literalOf(QStringLiteral("```\ncode\n\n```")) == QStringLiteral("code\n"), "fenced trailing blank must be preserved");
+}
+
+// B1 regression: a phantom trailing newline held in an indented-code node's literal (after Enter
+// at the end of the block) must not leak into serialization — otherwise undo/save/snapshot would
+// write a stray blank line. Because cmark never produces a trailing newline on an indented-code
+// literal, the serializer drops any it sees. Also covers B2 (empty indented code collapses).
+void testIndentedCodeSerializationDropsPhantomTrailingNewline() {
+  MarkdownSerializer serializer;
+
+  MarkdownNode node(BlockType::CodeFence);
+  node.setIndentedCode(true);
+
+  // A single phantom trailing newline is dropped before re-indenting.
+  node.setLiteral(QStringLiteral("line1\nline2\n"));
+  require(serializer.serializeBlock(node) == QStringLiteral("    line1\n    line2"),
+          QStringLiteral("phantom trailing newline must not leak into serialization: '%1'")
+              .arg(serializer.serializeBlock(node)));
+
+  // Multiple trailing newlines are all dropped (cmark strips every trailing blank line).
+  node.setLiteral(QStringLiteral("line1\n\n"));
+  require(serializer.serializeBlock(node) == QStringLiteral("    line1"),
+          QStringLiteral("all trailing newlines must be stripped: '%1'")
+              .arg(serializer.serializeBlock(node)));
+
+  // B2: an empty (or newline-only) indented-code literal collapses to nothing — a whitespace-only
+  // line is just a blank line in CommonMark, so no dead "    " is emitted.
+  node.setLiteral(QString());
+  require(serializer.serializeBlock(node) == QString(),
+          QStringLiteral("empty indented code must serialize to nothing: '%1'")
+              .arg(serializer.serializeBlock(node)));
+  node.setLiteral(QStringLiteral("\n"));
+  require(serializer.serializeBlock(node) == QString(),
+          QStringLiteral("newline-only indented code must serialize to nothing: '%1'")
+              .arg(serializer.serializeBlock(node)));
+
+  // Sanity: a fenced block keeps a real trailing blank line (no phantom concept there).
+  MarkdownNode fenced(BlockType::CodeFence);
+  fenced.setLiteral(QStringLiteral("code\n"));
+  require(serializer.serializeBlock(fenced) == QStringLiteral("```\ncode\n\n```"),
+          QStringLiteral("fenced trailing blank line should be preserved: '%1'")
+              .arg(serializer.serializeBlock(fenced)));
+}
+
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
   testMathSupport();
@@ -523,5 +654,8 @@ int main(int argc, char** argv) {
   testFrontMatterSerializationDoesNotGrowTrailingBlankLines();
   testTaskListMetadata();
   testNodeIndexPreservesDocumentOrder();
+  testIndentedVsFencedCodeDetection();
+  testIndentedCodeCannotHoldTrailingEmptyLine();
+  testIndentedCodeSerializationDropsPhantomTrailingNewline();
   return 0;
 }

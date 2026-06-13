@@ -39,6 +39,10 @@ bool RenderCommandFacade::isOnEditableParagraphBlock() const {
   return editorController_.paragraphController().isOnEditableBlock();
 }
 
+bool RenderCommandFacade::canInsertParagraphAround() const {
+  return editorController_.paragraphController().canInsertAdjacentParagraph();
+}
+
 bool RenderCommandFacade::isInlineFormatEnabled() const {
   auto* session = editorController_.session();
   auto* selection = &editorController_.selection();

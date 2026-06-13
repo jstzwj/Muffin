@@ -83,6 +83,14 @@ QString CodeFenceController::tabText() const {
   return literal_.tabText();
 }
 
+bool CodeFenceController::hasPendingTrailingNewline() const {
+  return literal_.hasPendingTrailingNewline();
+}
+
+void CodeFenceController::clearPendingTrailingNewline() {
+  literal_.clearPendingTrailingNewline();
+}
+
 bool CodeFenceController::setLanguageForCodeFence(NodeId requestedCodeId, QString language) {
   if (!ctx_.hasSession() || !ctx_.hasSelection()) {
     return false;

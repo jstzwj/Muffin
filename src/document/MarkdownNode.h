@@ -64,6 +64,11 @@ public:
 
   QString codeLanguage() const;
   void setCodeLanguage(QString language);
+  // True for an indented (4-space) code block as opposed to a fenced (```/~~~) one.
+  // cmark collapses both into CMARK_NODE_CODE_BLOCK, so the original style must be
+  // recorded at parse time to round-trip edits without rewriting indented code as fenced.
+  bool isIndentedCode() const;
+  void setIndentedCode(bool indented);
 
   MathDelimiter mathDelimiter() const;
   void setMathDelimiter(MathDelimiter delimiter);
@@ -100,6 +105,7 @@ private:
   bool listTight_ = false;
   bool taskChecked_ = false;
   QString codeLanguage_;
+  bool codeIndented_ = false;
   MathDelimiter mathDelimiter_ = MathDelimiter::Dollar;
   FrontMatterFormat frontMatterFormat_ = FrontMatterFormat::None;
   DefinitionBlock definition_;

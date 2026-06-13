@@ -271,6 +271,9 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
   }
   connect(&inputController_, &InputController::selectAllRequested, this, &EditorController::selectAll);
   connect(&selection_, &SelectionController::selectionChanged, this, [this](SelectionRange selection, HitTestResult hit) {
+    // A command (e.g. insert-paragraph-before/after) may have moved the caret off the literal
+    // block being edited; leave that editor so the caret and the next keystroke follow the caret.
+    inputController_.reconcileLiteralEditorForCursor();
     if (view_) {
       if (selection.focus.isValid() && !selection.isCollapsed()) {
         view_->setSelectionRange(selection);

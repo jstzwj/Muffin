@@ -698,12 +698,15 @@ void muffin::MainWindowActionBinder::updateParagraphActions(MainWindow& window) 
   const bool wysiwyg = !sourceMode;
   const bool inCodeBlock = wysiwyg && window.renderCommands_.isInCodeBlock();
   const bool inMathBlock = wysiwyg && window.renderCommands_.isInMathBlock();
+  // Insert-paragraph-before/after also works adjacent to code/math blocks, so it is
+  // enabled more broadly than the style-oriented `editable` predicate.
+  const bool canInsertAround = editable || (wysiwyg && window.renderCommands_.canInsertParagraphAround());
   window.commands_.setEnabled(QStringLiteral("paragraph.math_block"), wysiwyg);
   window.commands_.setEnabled(QStringLiteral("paragraph.code_block"), wysiwyg);
   window.commands_.setChecked(QStringLiteral("paragraph.code_block"), inCodeBlock);
   window.commands_.setChecked(QStringLiteral("paragraph.math_block"), inMathBlock);
-  window.commands_.setEnabled(QStringLiteral("paragraph.insert_before"), editable);
-  window.commands_.setEnabled(QStringLiteral("paragraph.insert_after"), editable);
+  window.commands_.setEnabled(QStringLiteral("paragraph.insert_before"), canInsertAround);
+  window.commands_.setEnabled(QStringLiteral("paragraph.insert_after"), canInsertAround);
   window.commands_.setEnabled(QStringLiteral("paragraph.link_ref"), wysiwyg);
   window.commands_.setEnabled(QStringLiteral("paragraph.footnote"), wysiwyg);
   window.commands_.setEnabled(QStringLiteral("paragraph.hr"), wysiwyg);

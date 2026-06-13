@@ -42,6 +42,13 @@ SourceRange fullBlockSourceRange(const MarkdownNode& node, const QString& markdo
     }
   }
 
+  // cmark reports indented-code content starting past its 4-space indent, so extend the
+  // range back to the line start so serialization (which re-applies the indent) replaces the
+  // whole block rather than double-indenting the first line.
+  if (node.type() == BlockType::CodeFence && node.isIndentedCode() && range.byteStart > 0) {
+    range.byteStart = lineStartOffset(markdown, range.byteStart);
+  }
+
   return range;
 }
 
@@ -70,6 +77,33 @@ qsizetype sourceOffsetForLineEnd(const QString& text, int line) {
   }
   const qsizetype newline = text.indexOf(QLatin1Char('\n'), offset);
   return newline < 0 ? text.size() : newline;
+}
+
+qsizetype lineStartOffset(const QString& text, qsizetype offset) {
+  const qsizetype bounded = qBound<qsizetype>(0, offset, text.size());
+  for (qsizetype i = bounded; i > 0; --i) {
+    if (text.at(i - 1) == QLatin1Char('\n')) {
+      return i;
+    }
+  }
+  return 0;
+}
+
+SourceRange blockLineSpan(const MarkdownNode& node, const QString& markdown) {
+  SourceRange span;
+  span.byteStart = -1;
+  span.byteEnd = -1;
+  const SourceRange range = node.sourceRange();
+  if (range.lineStart <= 0 || range.lineEnd < range.lineStart) {
+    return span;
+  }
+  span.byteStart = sourceOffsetForLineColumn(markdown, range.lineStart, 1);
+  span.byteEnd = sourceOffsetForLineEnd(markdown, range.lineEnd);
+  if (span.byteStart < 0 || span.byteEnd < span.byteStart) {
+    span.byteStart = -1;
+    span.byteEnd = -1;
+  }
+  return span;
 }
 
 qsizetype headingContentEndOffset(const MarkdownNode& node, const QString& markdown) {

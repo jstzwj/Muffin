@@ -159,6 +159,14 @@ void MarkdownNode::setCodeLanguage(QString language) {
   codeLanguage_ = std::move(language);
 }
 
+bool MarkdownNode::isIndentedCode() const {
+  return codeIndented_;
+}
+
+void MarkdownNode::setIndentedCode(bool indented) {
+  codeIndented_ = indented;
+}
+
 MathDelimiter MarkdownNode::mathDelimiter() const {
   return mathDelimiter_;
 }
@@ -219,6 +227,7 @@ std::unique_ptr<MarkdownNode> MarkdownNode::clone(CloneMode mode) const {
   copy->listTight_ = listTight_;
   copy->taskChecked_ = taskChecked_;
   copy->codeLanguage_ = codeLanguage_;
+  copy->codeIndented_ = codeIndented_;
   copy->mathDelimiter_ = mathDelimiter_;
   copy->frontMatterFormat_ = frontMatterFormat_;
   copy->definition_ = definition_;

@@ -56,6 +56,11 @@ public:
 
   bool eventFilter(QObject* watched, QEvent* event) override;
 
+  // Exit the active literal editor when the caret is no longer on its block. Called after
+  // command-driven cursor moves (e.g. insert-paragraph-before/after) so the caret and the next
+  // keystroke follow the new position instead of being trapped in the literal block.
+  void reconcileLiteralEditorForCursor();
+
 signals:
   void unsupportedEditRequested(QString reason);
   void selectAllRequested();
@@ -64,7 +69,6 @@ private:
   bool handleKeyPress(QKeyEvent* event);
   bool hasActiveLiteralEditor() const;
   void syncLiteralEditMode(NodeId newBlockId);
-  void reconcileLiteralEditorForCursor();
   bool insertTextIntoActiveLiteral(QString text);
   bool tryInsertOptionalDefinitionTitle(QString text);
   bool deleteBackwardInActiveLiteral();

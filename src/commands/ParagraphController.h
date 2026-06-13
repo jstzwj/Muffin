@@ -23,6 +23,10 @@ public:
   // Query methods for MainWindow enable/disable logic
   int currentHeadingLevel() const;   // 0 = paragraph, 1-6 = heading
   bool isOnEditableBlock() const;    // Paragraph or Heading (not ListItem)
+  // Eligible for insert-paragraph-before/after: Paragraph, Heading, CodeFence, or MathBlock.
+  // Broader than isOnEditableBlock() because a paragraph may be inserted adjacent to a
+  // literal block without editing its content.
+  bool canInsertAdjacentParagraph() const;
 
   // Heading commands
   bool setHeadingLevel(int level);   // 0 = paragraph, 1-6 = heading
@@ -66,6 +70,12 @@ private:
   };
 
   bool resolveBlockContext(BlockContext& context) const;
+  // Resolves context for insert-paragraph-before/after: succeeds for Paragraph/Heading
+  // (delegating to resolveBlockContext) and for CodeFence/MathBlock (using the block's line
+  // span via SourceRangeUtil::blockLineSpan). Fills only blockStart/blockEnd for literal blocks.
+  bool resolveInsertionContext(BlockContext& context) const;
+  // Shared precondition: a session + caret + collapsed selection (no multi-block selection).
+  bool hasCollapsedBlockCursor() const;
   qsizetype nodeSourceStart(const MarkdownNode& node) const;
   qsizetype nodeSourceEnd(const MarkdownNode& node) const;
   bool convertLiteralBlockToParagraph(MarkdownNode& node);
