@@ -228,6 +228,14 @@ bool InputController::deleteBackward() {
   if (ctx_.selection && ctx_.selection->hasCursor() && !ctx_.selection->selection().isCollapsed()) {
     return deleteSelection();
   }
+  // The virtual trailing paragraph carries no text. A backspace from it pulls the caret up to
+  // the end of the last block's content (Typora-style); the next backspace deletes from there.
+  // Without this, backspace on the trailing area is a silent no-op — and for a document whose
+  // last block is a list it even routes to "unsupported edit", since the list node is not an
+  // editable text block.
+  if (ctx_.selection && ctx_.selection->hasCursor() && ctx_.selection->cursorPosition().afterBlock) {
+    return collapseTrailingCaretToEndOfLastBlock();
+  }
   if (tryRemoveEmptyDefinitionBlock(EditTransaction::Kind::DeleteText, QStringLiteral("Backspace Empty Definition"))) {
     return true;
   }
@@ -831,6 +839,33 @@ bool InputController::tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, 
       ctx_.brushQueue->requestFullRefresh();
     }
   }
+  return true;
+}
+
+bool InputController::collapseTrailingCaretToEndOfLastBlock() {
+  if (!ctx_.hasSession() || !ctx_.selection) {
+    return false;
+  }
+  // Resolving the end-of-document source offset lands the caret on the deepest editable
+  // block — a list item's content end, a paragraph's end, or a literal block's content end —
+  // and clears the afterBlock flag so the caret paints inside real content.
+  CursorPosition target = cursorForSourceOffset(ctx_.session->markdownText().size());
+  if (!target.isValid()) {
+    // No editable content reaches the document end — e.g. a table whose last cell ends before
+    // the trailing newline, or "alpha\n\n---" where the last block is a non-editable break.
+    // Retreat to the last editable block's content end instead.
+    BlockEditContextResolver resolver = contextResolver();
+    if (MarkdownNode* last = resolver.lastEditableDescendant(ctx_.session->document().root())) {
+      BlockEditContext context;
+      if (resolver.fill(*last, context)) {
+        target = cursorForSourceOffset(context.contentRange.byteEnd);
+      }
+    }
+  }
+  if (!target.isValid()) {
+    return false;  // no editable content anywhere (e.g. a lone thematic break)
+  }
+  ctx_.selection->setCursorPosition(target);
   return true;
 }
 

@@ -235,6 +235,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
         if (Command literalMerge = buildMergeWithPreviousLiteralBlock(context); literalMerge.valid) {
           return literalMerge;
         }
+        if (Command removeEmpty = buildRemoveEmptyParagraphBeforeLeafBlock(context); removeEmpty.valid) {
+          return removeEmpty;
+        }
         return buildMergeWithPreviousParagraph(context);
       }
       command.sourceStart = context.contentRange.byteStart + nextOffset - 1;
@@ -553,6 +556,74 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPrevious
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Merge Into Block");
   command.structureEdit = true;
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildRemoveEmptyParagraphBeforeLeafBlock(const BlockEditContext& context) const {
+  // An empty paragraph that follows a leaf non-text block (table, HTML block) cannot merge
+  // the way two text paragraphs do: merging into a table cell eats the table's closing pipes
+  // (corrupting it), and HTML blocks have no inline text to merge into (so the generic merge
+  // no-ops). Instead, delete the trailing empty paragraph and land the caret at the end of
+  // the preceding block's content. Code/math blocks fold via buildMergeWithPreviousLiteralBlock;
+  // front matter's trailing-newline-sensitive parsing is left to the caller's no-op fallback.
+  Command command;
+  if (!session_ || !resolver_ || !context.node || context.node->type() != BlockType::Paragraph) {
+    return command;
+  }
+  if (!context.contentText.trimmed().isEmpty()) {
+    return command;
+  }
+  MarkdownNode* prev = context.node->previousSibling();
+  if (!prev) {
+    return command;
+  }
+  const BlockType type = prev->type();
+  const bool isLeafNonText = type == BlockType::Table || type == BlockType::HtmlBlock;
+  if (!isLeafNonText) {
+    return command;
+  }
+  // The empty paragraph is zero-width in the source, so its own range under-states the bytes
+  // that must go. Removing the whole trailing run (previous block end through document end)
+  // is correct when it is the last top-level block — the common "trailing empty paragraph"
+  // case. Mid-document empty paragraphs are left to the generic merge path.
+  if (context.node->nextSibling() != nullptr) {
+    return command;
+  }
+
+  const qsizetype prevEnd = prev->sourceRange().byteEnd;
+  const qsizetype docEnd = session_->markdownText().size();
+  if (prevEnd < 0 || docEnd < prevEnd) {
+    return command;
+  }
+
+  command.sourceStart = prevEnd;
+  command.removedLength = docEnd - prevEnd;
+  command.insertedText.clear();
+  command.kind = EditTransaction::Kind::DeleteText;
+  command.label = QStringLiteral("Delete Empty Paragraph");
+  command.structureEdit = true;
+
+  // Caret retreats to the preceding block's editable content end. For a table, resolve the
+  // last cell explicitly (its content does not reach the block's source end). For HTML / front
+  // matter, fall back to the block's source end so the established literal-offset resolution
+  // path computes the correct caret position inside the block.
+  if (type == BlockType::Table) {
+    if (MarkdownNode* cell = resolver_->lastEditableDescendant(*prev)) {
+      BlockEditContext cellContext;
+      if (resolver_->fill(*cell, cellContext)) {
+        command.preferredCursor = cursorFor(cell->id(), cellContext.contentText.size());
+      }
+    }
+    if (!command.preferredCursor.isValid()) {
+      command.fallbackSourceOffset = prevEnd;
+    }
+  } else {
+    command.fallbackSourceOffset = prevEnd;
+  }
+
+  command.nodeHints.push_back(LocalEditNodeHint{prev->id(), prev->sourceRange().byteStart, type});
   command.valid = true;
   command.handled = true;
   return command;
