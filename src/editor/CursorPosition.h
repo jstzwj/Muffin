@@ -52,6 +52,7 @@ struct HitTestResult {
     position.text.textOffset = textOffset;
     position.text.sourceOffset = sourceOffset;
     position.text.inMeta = zone == Zone::Marker;
+    position.afterBlock = zone == Zone::BlockAfter;
     return position;
   }
 };

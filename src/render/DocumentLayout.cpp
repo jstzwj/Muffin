@@ -3,6 +3,7 @@
 #include "render/BlockLayoutBuilder.h"
 
 #include <QElapsedTimer>
+#include <QFontMetricsF>
 #include <QLoggingCategory>
 
 #include <cmath>
@@ -159,7 +160,42 @@ QRectF unitedOwnedBlockRects(const std::vector<std::unique_ptr<BlockLayout>>& bl
   return rect;
 }
 
+// A paragraph that already serves as the "append content here" target: one
+// with no inline content at all. This is checked on the inline set (via
+// InlineLayout::isEmpty), not on flattened plain text — a paragraph holding
+// only an image with empty alt text flattens to empty text but is real content,
+// so the virtual trailing append line below it must still appear.
+bool isTrailingEmptyParagraph(const BlockLayout& block) {
+  if (block.type() != BlockType::Paragraph) {
+    return false;
+  }
+  const InlineLayout* inlineLayout = block.inlineLayout();
+  return inlineLayout == nullptr || inlineLayout->isEmpty();
+}
+
+// Vertical space reserved for the virtual trailing paragraph below the last
+// block. It is suppressed (returns 0) when that last block is already an empty
+// paragraph, since the trailing line is then redundant — isTrailingEmptyParagraph
+// is the single source of truth shared by hit-test suppression and every height
+// computation, so the two can never disagree.
+qreal trailingHeightForLastBlock(const BlockLayout* lastBlock, const RenderTheme& theme) {
+  if (lastBlock && isTrailingEmptyParagraph(*lastBlock)) {
+    return 0.0;
+  }
+  return DocumentLayout::trailingSpaceForVirtualParagraph(theme);
+}
+
 }  // namespace
+
+QRectF DocumentLayout::trailingParagraphCursorRect(const BlockLayout& lastBlock, const RenderTheme& theme, qreal pageLeft) {
+  const qreal lineHeight = QFontMetricsF(theme.paragraphFont()).height();
+  const qreal x = pageLeft > 0 ? pageLeft : lastBlock.rect().left();
+  return QRectF(x, lastBlock.rect().bottom() + theme.blockSpacing(), 1.0, lineHeight);
+}
+
+qreal DocumentLayout::trailingSpaceForVirtualParagraph(const RenderTheme& theme) {
+  return theme.blockSpacing() + QFontMetricsF(theme.paragraphFont()).height();
+}
 
 void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, QString documentPath) {
   rebuild(document, theme, viewportWidth, SelectionRange(), std::move(documentPath));
@@ -223,7 +259,8 @@ void DocumentLayout::rebuild(
     blocks_.push_back(std::move(block));
   }
 
-  totalHeight_ = qMax(cursorY + theme.bottomMargin(), theme.topMargin() + theme.bottomMargin());
+  const qreal trailingHeight = trailingHeightForLastBlock(blocks_.empty() ? nullptr : blocks_.back().get(), theme);
+  totalHeight_ = qMax(cursorY + theme.bottomMargin() + trailingHeight, theme.topMargin() + theme.bottomMargin());
   if (collectPerf) {
     perf.totalNs = totalTimer.nsecsElapsed();
     logRebuildPerf(perf, viewportWidth_, pageWidth_, totalHeight_);
@@ -293,10 +330,16 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
   if (index + 1 < static_cast<qsizetype>(documentBlocks.size())) {
     newNextTop += spacingBeforeBlock(*documentBlocks.at(static_cast<size_t>(index + 1)), theme, newNextTop);
   }
+  // The rebuilt block is the last one in this branch, so `replacement` is the
+  // new last block — base the trailing-paragraph height on it, not on the
+  // (about-to-be-replaced) slot.
+  const qreal trailingHeight = trailingHeightForLastBlock(replacement.get(), theme);
   const qreal delta =
       index + 1 < static_cast<qsizetype>(blocks_.size())
           ? newNextTop - blocks_.at(static_cast<size_t>(index + 1))->rect().top()
-          : qMax(newNextTop + theme.bottomMargin(), theme.topMargin() + theme.bottomMargin()) - totalHeight_;
+          : qMax(newNextTop + theme.bottomMargin() + trailingHeight,
+                 theme.topMargin() + theme.bottomMargin()) -
+                totalHeight_;
   result.heightDelta = delta;
   slot = std::move(replacement);
 
@@ -311,7 +354,8 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
   if (index + 1 < static_cast<qsizetype>(blocks_.size())) {
     totalHeight_ += delta;
   } else {
-    totalHeight_ = qMax(newNextTop + theme.bottomMargin(), theme.topMargin() + theme.bottomMargin());
+    totalHeight_ = qMax(newNextTop + theme.bottomMargin() + trailingHeight,
+                        theme.topMargin() + theme.bottomMargin());
   }
 
   rebuildIndexes();
@@ -388,7 +432,21 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   }
 
   const qreal oldNextTop = oldSuffixFirst < layoutCount ? blocks_.at(static_cast<size_t>(oldSuffixFirst))->rect().top() : totalHeight_;
-  const qreal newTotalHeight = qMax(newNextTop + theme.bottomMargin(), theme.topMargin() + theme.bottomMargin());
+  // Resolve the layout's new last block to decide trailing-paragraph height:
+  // the unchanged suffix's tail when a suffix remains, otherwise the rebuilt
+  // range's last replacement (or the block before the range when it shrinks to
+  // nothing at the document end).
+  const BlockLayout* newLastBlock = nullptr;
+  if (newSuffixFirst < documentCount) {
+    newLastBlock = blocks_.back().get();
+  } else if (!replacements.empty()) {
+    newLastBlock = replacements.back().get();
+  } else if (range.first > 0) {
+    newLastBlock = blocks_.at(static_cast<size_t>(range.first - 1)).get();
+  }
+  const qreal trailingHeight = trailingHeightForLastBlock(newLastBlock, theme);
+  const qreal newTotalHeight =
+      qMax(newNextTop + theme.bottomMargin() + trailingHeight, theme.topMargin() + theme.bottomMargin());
   result.heightDelta = oldSuffixFirst < layoutCount ? newNextTop - oldNextTop : newTotalHeight - totalHeight_;
 
   blocks_.erase(blocks_.begin() + range.first, blocks_.begin() + range.first + range.oldCount);
@@ -492,14 +550,15 @@ HitTestResult DocumentLayout::hitTest(QPointF documentPos, const RenderTheme& th
       bestDistance = distance;
     }
   }
-  if (documentPos.y() > nearest->rect().bottom()) {
+  if (documentPos.y() > nearest->rect().bottom() &&
+      (blocks_.empty() || !isTrailingEmptyParagraph(*blocks_.back()))) {
     HitTestResult result;
     result.blockId = nearest->nodeId();
     result.textNodeId = nearest->nodeId();
     result.zone = HitTestResult::Zone::BlockAfter;
     result.blockRect = nearest->rect();
     result.textOffset = 0;
-    result.cursorRect = QRectF(nearest->rect().left(), nearest->rect().bottom(), 1.0, theme.codeLineHeight());
+    result.cursorRect = trailingParagraphCursorRect(*nearest, theme, pageLeft_);
     return result;
   }
   return nearest->hitTest(QPointF(qBound(nearest->rect().left(), documentPos.x(), nearest->rect().right()), nearest->rect().center().y()), theme);

@@ -58,6 +58,10 @@ public:
   QString plainText() const;
   QString displayText() const;
   QString visibleText() const;
+  // True when the block has no visible content: empty text and no rendered
+  // image. Distinct from plainText().isEmpty(), which is also empty for a
+  // paragraph holding only an image with blank alt text (real content).
+  bool isEmpty() const { return isEmpty_; }
   int mathAtomCount() const;
   QVector<QTextLayout::FormatRange> debugTextFormats(const RenderTheme& theme, const QFont& baseFont) const;
 
@@ -152,6 +156,7 @@ private:
   QColor textLayoutCodeBackgroundColor_;
   QColor textLayoutCodeBorderColor_;
   QString plainText_;
+  bool isEmpty_ = true;
   QString displayText_;
   QString layoutText_;
   QVector<OffsetMapEntry> offsetMap_;

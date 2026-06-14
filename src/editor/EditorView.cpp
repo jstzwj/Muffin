@@ -163,6 +163,14 @@ bool isSelectableZone(HitTestResult::Zone zone) {
          zone == HitTestResult::Zone::Html || zone == HitTestResult::Zone::FrontMatter || zone == HitTestResult::Zone::TableCell;
 }
 
+// Zones a drag (or shift-click) can start or land on. Unlike isSelectableZone,
+// this includes the virtual trailing paragraph: dragging from the document end
+// selects back through the preceding blocks. Double-click word selection still
+// uses isSelectableZone, since the trailing paragraph has no word to select.
+bool isDragSelectableZone(HitTestResult::Zone zone) {
+  return isSelectableZone(zone) || zone == HitTestResult::Zone::BlockAfter;
+}
+
 QPointF tableCellTextOrigin(const BlockLayout::TableCellLayout& cell, const RenderTheme& theme) {
   const QRectF contentRect = cell.rect.marginsRemoved(theme.tableCellPadding());
   qreal textX = contentRect.left();
@@ -213,6 +221,22 @@ QRect viewportUpdateRect(QRectF documentRect, qreal scrollY, const QSize& viewpo
   }
   documentRect.translate(0, -scrollY);
   return documentRect.adjusted(-4, -4, 4, 4).toAlignedRect().intersected(QRect(QPoint(0, 0), viewportSize));
+}
+
+// Union a document-coordinate rect into a viewport-coordinate dirty region so
+// it repaints even when it lies outside the refreshed block rects — used for
+// the caret, which can sit on the virtual trailing paragraph below the last
+// block. Called for both the new caret position (to draw it) and the previously
+// painted one (to erase the ghost left behind when the caret moves away).
+QRect uniteDocumentRectDirty(QRect dirty, QRectF documentRect, qreal scrollY, const QSize& viewportSize) {
+  if (documentRect.isNull() || documentRect.isEmpty()) {
+    return dirty;
+  }
+  const QRect viewportRect = viewportUpdateRect(documentRect, scrollY, viewportSize);
+  if (viewportRect.isEmpty()) {
+    return dirty;
+  }
+  return dirty.isEmpty() ? viewportRect : dirty.united(viewportRect);
 }
 
 template <typename RebuildResult>
@@ -326,6 +350,11 @@ bool EditorView::refreshBlock(NodeId blockId, const MarkdownDocument& document) 
   if (!badgeRect.isEmpty()) {
     dirty = dirty.united(badgeRect.adjusted(-2, -2, 2, 2).toAlignedRect());
   }
+  // The caret may sit outside the refreshed block (e.g. on the virtual trailing
+  // paragraph below the last block). Dirty both the new caret position (to draw
+  // it) and the previously painted one (to erase the ghost on move).
+  dirty = uniteDocumentRectDirty(dirty, cursorHit_.cursorRect, scrollY(), viewport()->size());
+  dirty = uniteDocumentRectDirty(dirty, lastPaintedCaretDocumentRect_, scrollY(), viewport()->size());
   if (dirty.isEmpty()) {
     dirty = viewport()->rect();
   }
@@ -358,6 +387,11 @@ bool EditorView::refreshBlocks(const QVector<NodeId>& blockIds, const MarkdownDo
   }
   updateCursorHitFromPosition();
   updateTableToolbar();
+  // Include the caret so a caret outside the refreshed blocks (e.g. on the
+  // virtual trailing paragraph below the last block) repaints too — both the
+  // new position (to draw) and the previous one (to erase the ghost on move).
+  dirty = uniteDocumentRectDirty(dirty, cursorHit_.cursorRect, scrollY(), viewport()->size());
+  dirty = uniteDocumentRectDirty(dirty, lastPaintedCaretDocumentRect_, scrollY(), viewport()->size());
   viewport()->update(dirty.isEmpty() ? viewport()->rect() : dirty);
   return true;
 }
@@ -477,6 +511,7 @@ void EditorView::clearCursor() {
   preDragSelection_ = {};
   cursorHit_ = {};
   cursorVisible_ = false;
+  lastPaintedCaretDocumentRect_ = {};
   dragSelectionPending_ = false;
   draggingSelection_ = false;
   updateCodeLanguageEditor();
@@ -604,7 +639,18 @@ HitTestResult EditorView::hitTest(QPointF viewportPos) const {
   if (!layout_) {
     return {};
   }
-  return layout_->hitTest(QPointF(viewportPos.x(), viewportPos.y() + scrollY()), theme_);
+  HitTestResult hit = layout_->hitTest(QPointF(viewportPos.x(), viewportPos.y() + scrollY()), theme_);
+  // The virtual trailing paragraph sits after the last block's content, so as a
+  // selection endpoint it is the END of that block — not offset 0. Resolve it
+  // here so drag/shift-click selection from the document end selects back
+  // through the block content, and serialization copies it, with no special
+  // casing downstream.
+  if (hit.zone == HitTestResult::Zone::BlockAfter) {
+    if (const BlockLayout* block = layout_->block(hit.blockId)) {
+      hit.textOffset = selectableLength(block);
+    }
+  }
+  return hit;
 }
 
 void EditorView::paintEvent(QPaintEvent* event) {
@@ -725,7 +771,7 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
       event->accept();
       return;
     }
-    if (event->modifiers().testFlag(Qt::ShiftModifier) && hit.isValid() && isSelectableZone(hit.zone) && cursorPosition_.isValid()) {
+    if (event->modifiers().testFlag(Qt::ShiftModifier) && hit.isValid() && isDragSelectableZone(hit.zone) && cursorPosition_.isValid()) {
       SelectionRange range;
       range.anchor = selection_.anchor.isValid() ? selection_.anchor : cursorPosition_;
       range.focus = hit.cursorPosition();
@@ -737,7 +783,7 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
     setCursorHit(hit);
     emit blockClicked(hit);
     updateCodeLanguageEditor();
-    if (hit.isValid() && isSelectableZone(hit.zone)) {
+    if (hit.isValid() && isDragSelectableZone(hit.zone)) {
       preDragSelection_ = selection_;
       dragSelectionPending_ = true;
       draggingSelection_ = false;
@@ -1110,6 +1156,7 @@ void EditorView::paintCurrentTableCell(QPainter& painter) const {
 
 void EditorView::paintInsertionCursor(QPainter& painter) const {
   if (!cursorVisible_ || !cursorHit_.isValid()) {
+    lastPaintedCaretDocumentRect_ = {};
     return;
   }
 
@@ -1117,6 +1164,7 @@ void EditorView::paintInsertionCursor(QPainter& painter) const {
   if (cursor.isEmpty()) {
     cursor = QRectF(cursorHit_.blockRect.left(), cursorHit_.blockRect.top(), 1.0, cursorHit_.blockRect.height());
   }
+  lastPaintedCaretDocumentRect_ = cursor;
   cursor.translate(0, -scrollY());
 
   if (!viewport()->rect().adjusted(-4, -4, 4, 4).intersects(cursor.toAlignedRect())) {
@@ -1279,6 +1327,22 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
   const BlockLayout* block = layout_->block(position.blockId);
   if (!block) {
     return {};
+  }
+
+  // Reproduce the virtual trailing-paragraph caret so it survives layout
+  // rebuilds (resize, theme change, refresh). Without this, recomputation from
+  // a CursorPosition would resolve to the block's real type and snap the caret
+  // back inside the last block.
+  if (position.afterBlock) {
+    HitTestResult hit;
+    hit.blockId = position.blockId;
+    hit.textNodeId = position.blockId;
+    hit.textOffset = 0;
+    hit.sourceOffset = -1;
+    hit.blockRect = block->rect();
+    hit.zone = HitTestResult::Zone::BlockAfter;
+    hit.cursorRect = DocumentLayout::trailingParagraphCursorRect(*block, theme_, layout_->pageLeft());
+    return hit;
   }
 
   HitTestResult hit;
@@ -1451,7 +1515,7 @@ void EditorView::updateDragSelection(QPointF viewportPos) {
   }
 
   const HitTestResult focusHit = hitTest(viewportPos);
-  if (!focusHit.isValid() || !isSelectableZone(focusHit.zone)) {
+  if (!focusHit.isValid() || !isDragSelectableZone(focusHit.zone)) {
     return;
   }
 

@@ -347,6 +347,127 @@ void testFocusedEmptyFootnoteDefinitionSlotSuppressesPlaceholder() {
   require(sawFocusedNote, "focused empty footnote note slot should suppress placeholder");
 }
 
+// testClickBelowLastBlockHitsBlockAfterWithDistinctCursorRect
+// Clicking below the last block lands on the virtual trailing paragraph with a
+// caret that reads as a fresh empty line (paragraph line height, sitting a
+// block-spacing below the last block — not glued to its bottom edge).
+void testClickBelowLastBlockHitsBlockAfterWithDistinctCursorRect() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+
+  session.setMarkdownText(QStringLiteral("alpha"), false);
+  view.resize(800, 600);
+  view.setDocument(session.document());
+
+  MarkdownNode* paragraph = blockAt(session, 0);
+  const QRectF blockRect = view.nodeRect(paragraph->id());
+  require(!blockRect.isEmpty(), "paragraph block rect should exist");
+
+  const RenderTheme theme = view.theme();
+  const QPointF clickPoint(blockRect.left(), blockRect.bottom() + theme.blockSpacing() + 5.0);
+  const HitTestResult hit = view.hitTest(clickPoint);
+  require(hit.zone == HitTestResult::Zone::BlockAfter, "click below last block should hit BlockAfter zone");
+  require(hit.cursorRect.top() >= blockRect.bottom() + theme.blockSpacing() - 0.5,
+          "trailing caret should sit a block-spacing below the last block");
+  const qreal expectedLineHeight = QFontMetricsF(theme.paragraphFont()).height();
+  require(qAbs(hit.cursorRect.height() - expectedLineHeight) < 0.5,
+          "trailing caret should use paragraph line height, not code line height");
+
+  // The virtual trailing line should always be reachable: total height must
+  // reserve room for it plus a click margin below the last block.
+  const qreal expectedFloor = blockRect.bottom() + theme.bottomMargin() + theme.blockSpacing() + expectedLineHeight;
+  require(view.layoutTotalHeight() >= expectedFloor - 0.5, "layout height should reserve trailing virtual-paragraph space");
+}
+
+// testBlockAfterCursorSurvivesRebuild
+// Regression guard: a caret placed on the virtual trailing paragraph must stay
+// there across a layout rebuild (here triggered by resize). Before the fix,
+// hitForCursorPosition recomputed from a CursorPosition and snapped the caret
+// back inside the last block.
+void testBlockAfterCursorSurvivesRebuild() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+
+  session.setMarkdownText(QStringLiteral("alpha"), false);
+  view.resize(800, 600);
+  view.setDocument(session.document());
+
+  MarkdownNode* paragraph = blockAt(session, 0);
+  const QRectF blockRect = view.nodeRect(paragraph->id());
+  const RenderTheme theme = view.theme();
+  const QPointF clickPoint(blockRect.left(), blockRect.bottom() + theme.blockSpacing() + 5.0);
+  const HitTestResult hit = view.hitTest(clickPoint);
+  require(hit.zone == HitTestResult::Zone::BlockAfter, "click below last block should hit BlockAfter zone");
+
+  view.setCursorHit(hit);
+  require(view.cursorHit().zone == HitTestResult::Zone::BlockAfter, "caret should be on the trailing paragraph after click");
+  require(view.cursorPosition().afterBlock, "stored cursor position should carry afterBlock");
+
+  // Trigger a full layout rebuild (page width changes → rebuildLayout path,
+  // which recomputes cursorHit_ via hitForCursorPosition).
+  view.resize(640, 480);
+  require(view.cursorHit().zone == HitTestResult::Zone::BlockAfter,
+          "trailing caret should survive a layout rebuild (regression: it used to snap back into the last block)");
+  const QRectF newBlockRect = view.nodeRect(paragraph->id());
+  require(view.cursorHit().cursorRect.top() >= newBlockRect.bottom() + theme.blockSpacing() - 0.5,
+          "trailing caret should still sit below the last block after rebuild");
+}
+
+// When the last block is already an empty paragraph, the virtual trailing
+// paragraph must NOT appear — the empty paragraph itself is the append target.
+// Clicking below it lands inside the empty paragraph instead of BlockAfter.
+void testNoVirtualTrailingParagraphBelowEmptyLastParagraph() {
+  // Trailing empty paragraph (document ends with a blank line).
+  {
+    DocumentSession session;
+    EditorView view;
+    EditorController controller;
+    controller.attach(&session, &view);
+
+    session.setMarkdownText(QStringLiteral("alpha\n\n"), false);
+    view.resize(800, 600);
+    view.setDocument(session.document());
+    require(session.document().root().children().size() == 2, "fixture should have alpha + empty paragraph");
+    MarkdownNode* emptyParagraph = blockAt(session, 1);
+    require(emptyParagraph->type() == BlockType::Paragraph, "last block should be a paragraph");
+
+    const QRectF emptyRect = view.nodeRect(emptyParagraph->id());
+    require(!emptyRect.isEmpty(), "empty trailing paragraph rect should exist");
+    const RenderTheme theme = view.theme();
+    const QPointF belowEmpty(emptyRect.left(), emptyRect.bottom() + theme.blockSpacing() + 5.0);
+    const HitTestResult hit = view.hitTest(belowEmpty);
+    require(hit.zone != HitTestResult::Zone::BlockAfter, "no virtual trailing paragraph below an empty last paragraph");
+    require(hit.blockId == emptyParagraph->id(), "click below empty trailing paragraph should land in that paragraph");
+  }
+
+  // Empty document: the parser inserts one virtual empty paragraph, which is
+  // the type target — no second virtual trailing line below it.
+  {
+    DocumentSession session;
+    EditorView view;
+    EditorController controller;
+    controller.attach(&session, &view);
+
+    session.setMarkdownText(QString(), false);
+    view.resize(800, 600);
+    view.setDocument(session.document());
+    require(session.document().root().children().size() == 1, "empty document should have one virtual empty paragraph");
+    MarkdownNode* emptyParagraph = blockAt(session, 0);
+
+    const QRectF emptyRect = view.nodeRect(emptyParagraph->id());
+    require(!emptyRect.isEmpty(), "empty document paragraph rect should exist");
+    const RenderTheme theme = view.theme();
+    const QPointF belowEmpty(emptyRect.left(), emptyRect.bottom() + theme.blockSpacing() + 5.0);
+    const HitTestResult hit = view.hitTest(belowEmpty);
+    require(hit.zone != HitTestResult::Zone::BlockAfter, "no virtual trailing paragraph below empty document's paragraph");
+    require(hit.blockId == emptyParagraph->id(), "click below empty document paragraph should land in that paragraph");
+  }
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -361,6 +482,9 @@ int main(int argc, char** argv) {
   RUN_TEST(testDefinitionSyntaxHitChoosesNearestEditableSlot);
   RUN_TEST(testFootnoteDefinitionUsesTokenPath);
   RUN_TEST(testFocusedEmptyFootnoteDefinitionSlotSuppressesPlaceholder);
+  RUN_TEST(testClickBelowLastBlockHitsBlockAfterWithDistinctCursorRect);
+  RUN_TEST(testBlockAfterCursorSurvivesRebuild);
+  RUN_TEST(testNoVirtualTrailingParagraphBelowEmptyLastParagraph);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

@@ -44,6 +44,7 @@ void SelectionController::setCursorPosition(CursorPosition position) {
   currentHit_.textNodeId = position.text.nodeId;
   currentHit_.textOffset = position.text.textOffset;
   currentHit_.sourceOffset = position.text.sourceOffset;
+  currentHit_.zone = position.afterBlock ? HitTestResult::Zone::BlockAfter : HitTestResult::Zone::None;
   selection_.anchor = position;
   selection_.focus = position;
   hasCursor_ = true;
@@ -62,6 +63,7 @@ void SelectionController::setSelection(SelectionRange selection) {
   currentHit_.textNodeId = selection.focus.text.nodeId;
   currentHit_.textOffset = selection.focus.text.textOffset;
   currentHit_.sourceOffset = selection.focus.text.sourceOffset;
+  currentHit_.zone = selection.focus.afterBlock ? HitTestResult::Zone::BlockAfter : HitTestResult::Zone::None;
   hasCursor_ = true;
   emit selectionChanged(selection_, currentHit_);
 }

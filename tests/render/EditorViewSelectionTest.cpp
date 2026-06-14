@@ -358,6 +358,47 @@ void testEditorViewVerticalDragSelectionHitsWrappedLine() {
   require(hasSecondLineRect, "vertical drag selection rects should include the second visual line");
 }
 
+// Drag from the virtual trailing paragraph (below the last block) back up into
+// an earlier block must select across blocks, treating the trailing position as
+// the end of the last block — and the selection must serialize for copy.
+void testEditorViewDragFromTrailingParagraphSelectsBack() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("alpha\n\nbeta"), false);
+  view.setDocument(session.document());
+  MarkdownNode* alpha = blockAt(session, 0);
+  MarkdownNode* beta = blockAt(session, 1);
+  const QRectF alphaRect = view.nodeRect(alpha->id());
+  const QRectF betaRect = view.nodeRect(beta->id());
+  require(!alphaRect.isEmpty() && !betaRect.isEmpty(), "two-paragraph fixture should lay out both blocks");
+  const InlineLayout* alphaInline = requireViewInlineLayout(view, alpha->id(), QStringLiteral("alpha"));
+
+  const RenderTheme theme = view.theme();
+  // Press on the virtual trailing paragraph below beta, then drag up into alpha.
+  const QPointF trailingPos(betaRect.left(), betaRect.bottom() + theme.blockSpacing() + 5.0);
+  const HitTestResult trailingHit = view.hitTest(trailingPos);
+  require(trailingHit.zone == HitTestResult::Zone::BlockAfter, "press point below last block should be BlockAfter");
+  require(trailingHit.textOffset == 4, "BlockAfter hit should resolve to the last block's selectable length (4 for \"beta\")");
+
+  const QPointF alphaPos = alphaRect.topLeft() + alphaInline->cursorRect(2).center();
+
+  QMouseEvent press(QEvent::MouseButtonPress, trailingPos, QPointF(trailingPos), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press);
+  QMouseEvent move(QEvent::MouseMove, alphaPos, QPointF(alphaPos), Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &move);
+
+  const SelectionRange selection = controller.selection().selection();
+  require(!selection.isCollapsed(), "dragging from the trailing paragraph should create a selection");
+  require(selection.anchor.blockId != selection.focus.blockId, "trailing drag should span both paragraphs");
+  require(selection.focus.blockId == alpha->id(), "trailing drag focus should land in the alpha block");
+  require(selectedMarkdown(session, controller.selection()) == QStringLiteral("pha\n\nbeta"),
+          "trailing drag should select from alpha offset 2 through the end of beta");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -370,6 +411,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testEditorViewInlineClickDoesNotSelectAfterMarkerExpansion);
   RUN_TEST(testEditorViewDragSelectionContinuesAcrossMoves);
   RUN_TEST(testEditorViewVerticalDragSelectionHitsWrappedLine);
+  RUN_TEST(testEditorViewDragFromTrailingParagraphSelectsBack);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

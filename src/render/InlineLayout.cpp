@@ -128,6 +128,10 @@ void InlineLayout::build(
   buildImageAtoms(inlines, theme, width);
   buildHtmlFormatSpans();
   buildTextLayout(theme, width, baseFont);
+  // Genuinely empty: no text glyphs and no rendered image. Checking the image
+  // atoms (not just plainText) matters because an image with blank alt text
+  // flattens to empty text but is still visible content.
+  isEmpty_ = plainText_.isEmpty() && imageAtoms_.isEmpty();
 }
 
 QSizeF InlineLayout::size() const {

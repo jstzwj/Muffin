@@ -41,6 +41,11 @@ public:
   void setCodeLanguageSuggestions(QStringList languages);
 
   QRectF nodeRect(NodeId id) const;
+  // Exposed for tests: the current caret hit and the laid-out document height.
+  HitTestResult cursorHit() const { return cursorHit_; }
+  CursorPosition cursorPosition() const { return cursorPosition_; }
+  qreal layoutTotalHeight() const { return layout_ ? layout_->totalHeight() : 0.0; }
+  const RenderTheme& theme() const { return theme_; }
   void scrollToNode(NodeId id);
   void scrollToCursorCentered();
   void scrollToCursorCenteredAnimated();
@@ -122,6 +127,10 @@ private:
   SelectionRange selection_;
   HitTestResult cursorHit_;
   bool cursorVisible_ = false;
+  // Document-coordinate rect of the last painted caret; dirtied on the next
+  // refresh so a moved caret is erased at its old position, even when that
+  // position lies outside any block (e.g. the virtual trailing paragraph).
+  mutable QRectF lastPaintedCaretDocumentRect_;
   bool draggingSelection_ = false;
   bool dragSelectionPending_ = false;
   SelectionRange preDragSelection_;

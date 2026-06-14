@@ -582,6 +582,26 @@ CursorPosition EditorController::remapSnapshotCursor(const CursorPosition& snaps
   }
 
   BlockEditContextResolver resolver(const_cast<DocumentSession*>(session_), const_cast<SelectionController*>(&selection_));
+  // The virtual trailing-paragraph caret is positional (no source offset); keep
+  // it on the trailing line as long as its block still exists after the undo/redo.
+  if (snapshotCursor.afterBlock) {
+    MarkdownNode* node = session_->document().node(snapshotCursor.blockId);
+    if (!node) {
+      // A full reparse (e.g. snapshot undo) may reassign node ids; fall back to
+      // the last top-level block, which is where the trailing paragraph lives.
+      const auto& children = session_->document().root().children();
+      if (!children.empty()) {
+        node = children.back().get();
+      }
+    }
+    if (node && node->parent() && node->parent()->type() == BlockType::Document) {
+      cursor.blockId = node->id();
+      cursor.text.nodeId = node->id();
+      cursor.afterBlock = true;
+      return cursor;
+    }
+    return cursor;
+  }
   if (snapshotCursor.text.sourceOffset >= 0) {
     if (MarkdownNode* node = resolver.nodeAtContentSourceOffset(session_->document().root(), snapshotCursor.text.sourceOffset)) {
       BlockEditContext context;

@@ -48,6 +48,13 @@ public:
   qreal pageWidth() const;
   qreal totalHeight() const;
 
+  // Geometry for the always-present virtual trailing empty paragraph below the
+  // last block. The caret on this line is the click target for "append a new
+  // paragraph"; typing materializes it. Shared by hit-test and cursor rebuild so
+  // the trailing caret stays consistent across layout rebuilds.
+  static QRectF trailingParagraphCursorRect(const BlockLayout& lastBlock, const RenderTheme& theme, qreal pageLeft);
+  static qreal trailingSpaceForVirtualParagraph(const RenderTheme& theme);
+
   const std::vector<std::unique_ptr<BlockLayout>>& blocks() const;
   QVector<const BlockLayout*> visibleBlocks(QRectF documentViewport) const;
   const BlockLayout* block(NodeId id) const;

@@ -337,6 +337,106 @@ void testKeyboardSwitchingBetweenCodeBlocksRoutesInputToTargetBlock() {
   require(!session.markdownText().contains(QStringLiteral("BAfirst")), "second keyboard-routed input should not write into first code block");
 }
 
+// testBlockAfterTypingCreatesSeparateParagraphForParagraphBlock
+// Clicking the virtual trailing empty paragraph below a paragraph block and
+// typing must materialize a SEPARATE paragraph (\n\n), not a soft line break.
+void testBlockAfterTypingCreatesSeparateParagraphForParagraphBlock() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("alpha"), false);
+  MarkdownNode* paragraph = blockAt(session, 0);
+  require(paragraph != nullptr && paragraph->type() == BlockType::Paragraph, "single paragraph should exist");
+
+  HitTestResult blockAfterHit;
+  blockAfterHit.zone = HitTestResult::Zone::BlockAfter;
+  blockAfterHit.blockId = paragraph->id();
+  blockAfterHit.textNodeId = paragraph->id();
+  controller.activateHit(blockAfterHit);
+  require(controller.selection().currentHit().zone == HitTestResult::Zone::BlockAfter, "block-after click should set current hit zone");
+  require(controller.selection().cursorPosition().afterBlock, "block-after cursor should carry afterBlock flag");
+
+  require(controller.inputController().insertText(QStringLiteral("hello")), "typing after paragraph block should succeed");
+  require(session.markdownText() == QStringLiteral("alpha\n\nhello"), "block-after typing should create a separate paragraph (blank-line separated)");
+  require(session.document().root().children().size() == 2, "block-after typing should add a second top-level block");
+
+  MarkdownNode* newParagraph = blockAt(session, 1);
+  require(newParagraph != nullptr && newParagraph->type() == BlockType::Paragraph, "typed block-after text should parse as a paragraph");
+  require(controller.selection().cursorPosition().blockId == newParagraph->id(), "cursor should move into the new paragraph");
+  require(!controller.selection().cursorPosition().afterBlock, "cursor should leave the virtual trailing paragraph after typing");
+  require(controller.selection().currentHit().zone != HitTestResult::Zone::BlockAfter, "current hit zone should not stay BlockAfter after typing");
+}
+
+// testBlockAfterEnterInsertsBlankParagraph
+// Enter on the virtual trailing paragraph appends an empty paragraph block.
+void testBlockAfterEnterInsertsBlankParagraph() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("alpha"), false);
+  MarkdownNode* paragraph = blockAt(session, 0);
+
+  HitTestResult blockAfterHit;
+  blockAfterHit.zone = HitTestResult::Zone::BlockAfter;
+  blockAfterHit.blockId = paragraph->id();
+  blockAfterHit.textNodeId = paragraph->id();
+  controller.activateHit(blockAfterHit);
+
+  require(controller.inputController().insertParagraphBreak(), "enter on block-after should succeed");
+  require(session.markdownText() == QStringLiteral("alpha\n\n"), "block-after enter should append a blank paragraph");
+  require(session.document().root().children().size() == 2, "block-after enter should add a second top-level block");
+  require(blockAt(session, 1)->type() == BlockType::Paragraph, "appended block should be a paragraph");
+}
+
+// testBlockAfterBackspaceIsHarmless
+// Backspace on the virtual trailing paragraph must not corrupt the document or crash.
+void testBlockAfterBackspaceIsHarmless() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("alpha"), false);
+  MarkdownNode* paragraph = blockAt(session, 0);
+
+  HitTestResult blockAfterHit;
+  blockAfterHit.zone = HitTestResult::Zone::BlockAfter;
+  blockAfterHit.blockId = paragraph->id();
+  blockAfterHit.textNodeId = paragraph->id();
+  controller.activateHit(blockAfterHit);
+
+  controller.inputController().deleteBackward();
+  require(session.markdownText() == QStringLiteral("alpha"), "backspace on trailing virtual paragraph should not change document");
+  require(controller.selection().hasCursor(), "cursor should remain valid after backspace on trailing paragraph");
+}
+
+// testBlockAfterUndoRestoresTrailingCursor
+// Undo of a block-after insertion should restore the trailing (afterBlock) caret.
+void testBlockAfterUndoRestoresTrailingCursor() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("alpha"), false);
+  MarkdownNode* paragraph = blockAt(session, 0);
+
+  HitTestResult blockAfterHit;
+  blockAfterHit.zone = HitTestResult::Zone::BlockAfter;
+  blockAfterHit.blockId = paragraph->id();
+  blockAfterHit.textNodeId = paragraph->id();
+  controller.activateHit(blockAfterHit);
+
+  require(controller.inputController().insertText(QStringLiteral("x")), "typing after paragraph block should succeed");
+  require(session.markdownText() == QStringLiteral("alpha\n\nx"), "block-after typing should create a separate paragraph");
+  require(controller.undoStack().canUndo(), "block-after typing should push an undo entry");
+
+  controller.undo();
+  require(session.markdownText() == QStringLiteral("alpha"), "undo should restore original document");
+  require(controller.selection().cursorPosition().afterBlock, "undo should restore the trailing afterBlock caret");
+  require(controller.selection().currentHit().zone == HitTestResult::Zone::BlockAfter, "undo should restore BlockAfter hit zone");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -352,6 +452,10 @@ int main(int argc, char** argv) {
   RUN_TEST(testCodeFenceEnterInsertsNewline);
   RUN_TEST(testCodeFenceArrowKeyEnterInsertsNewline);
   RUN_TEST(testKeyboardSwitchingBetweenCodeBlocksRoutesInputToTargetBlock);
+  RUN_TEST(testBlockAfterTypingCreatesSeparateParagraphForParagraphBlock);
+  RUN_TEST(testBlockAfterEnterInsertsBlankParagraph);
+  RUN_TEST(testBlockAfterBackspaceIsHarmless);
+  RUN_TEST(testBlockAfterUndoRestoresTrailingCursor);
 #undef RUN_TEST
   return 0;
 }

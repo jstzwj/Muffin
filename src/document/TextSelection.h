@@ -18,6 +18,10 @@ struct TextPosition {
 struct CursorPosition {
   NodeId blockId;
   TextPosition text;
+  // True when the caret sits on the virtual trailing empty paragraph below
+  // this block (Zone::BlockAfter). Persisted so the trailing caret survives
+  // layout rebuilds; never set for a caret inside real block content.
+  bool afterBlock = false;
 
   bool isValid() const {
     return blockId.isValid();
@@ -30,7 +34,8 @@ struct SelectionRange {
 
   bool isCollapsed() const {
     return anchor.blockId == focus.blockId && anchor.text.textOffset == focus.text.textOffset &&
-           anchor.text.sourceOffset == focus.text.sourceOffset && anchor.text.inMeta == focus.text.inMeta;
+           anchor.text.sourceOffset == focus.text.sourceOffset && anchor.text.inMeta == focus.text.inMeta &&
+           anchor.afterBlock == focus.afterBlock;
   }
 
   bool isSingleBlock() const {

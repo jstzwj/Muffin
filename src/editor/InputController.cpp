@@ -197,7 +197,15 @@ bool InputController::insertBlockAfterCurrentBlock(QString text) {
     ++insertOffset;
   }
 
-  const QString insertedText = text.isEmpty() ? QStringLiteral("\n\n") : QStringLiteral("\n%1").arg(text);
+  // Literal blocks (front matter / code fence / math / html) already end on a
+  // fence boundary, so a single newline starts a fresh block. Content blocks
+  // (paragraph, heading, list, ...) need a blank line (\n\n) to form a separate
+  // paragraph instead of a soft line break within the current block.
+  const bool isLiteralBlock = node->type() == BlockType::FrontMatter || node->type() == BlockType::CodeFence ||
+                              node->type() == BlockType::MathBlock || node->type() == BlockType::HtmlBlock;
+  const QString insertedText = text.isEmpty() ? QStringLiteral("\n\n")
+      : isLiteralBlock                          ? QStringLiteral("\n%1").arg(text)
+                                               : QStringLiteral("\n\n%1").arg(text);
   applyLocalEdit(
       EditTransaction::Kind::SplitParagraph,
       text.isEmpty() ? QStringLiteral("Insert Paragraph After") : QStringLiteral("Insert Text After Block"),
