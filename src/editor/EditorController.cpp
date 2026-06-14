@@ -513,6 +513,69 @@ bool EditorController::selectCurrentWord() {
   return selectWordAtCursor(context);
 }
 
+bool EditorController::moveDocumentStart() {
+  if (!session_) {
+    return false;
+  }
+  MarkdownNode* first = firstSelectableBlock(session_->document().root());
+  if (!first) {
+    return false;
+  }
+  SelectionRange range;
+  range.anchor = range.focus = cursorForNodeText(*first, 0);
+  selection_.setSelection(range);
+  return true;
+}
+
+bool EditorController::moveDocumentEnd() {
+  if (!session_) {
+    return false;
+  }
+  MarkdownNode* last = lastSelectableBlock(session_->document().root());
+  if (!last) {
+    return false;
+  }
+  SelectionRange range;
+  range.anchor = range.focus = cursorForNodeText(*last, selectableTextLength(*last));
+  selection_.setSelection(range);
+  return true;
+}
+
+bool EditorController::moveBlockStart() {
+  if (!session_ || !selection_.hasCursor()) {
+    return false;
+  }
+  MarkdownNode* blockNode = session_->document().node(selection_.cursorPosition().blockId);
+  if (!blockNode) {
+    return false;
+  }
+  MarkdownNode* target = primaryParagraphOrSelf(*blockNode);
+  SelectionRange range;
+  range.anchor = range.focus = cursorForNodeText(*target, 0, blockNode->id());
+  selection_.setSelection(range);
+  return true;
+}
+
+bool EditorController::moveBlockEnd() {
+  if (!session_ || !selection_.hasCursor()) {
+    return false;
+  }
+  MarkdownNode* blockNode = session_->document().node(selection_.cursorPosition().blockId);
+  if (!blockNode) {
+    return false;
+  }
+  MarkdownNode* target = primaryParagraphOrSelf(*blockNode);
+  SelectionRange range;
+  range.anchor = range.focus = cursorForNodeText(*target, selectableTextLength(*target), blockNode->id());
+  selection_.setSelection(range);
+  return true;
+}
+
+bool EditorController::selectNextOccurrence() {
+  // Delegated to InputController, which owns the source-offset ↔ cursor mapping.
+  return inputController_.selectNextOccurrence();
+}
+
 bool EditorController::selectCurrentBlockForRemoval() {
   if (!session_ || !selection_.hasCursor()) {
     return false;

@@ -68,6 +68,39 @@ void RenderEditorBackend::selectFormatSpan() {
   controller_.selectCurrentFormatSpan();
 }
 
+void RenderEditorBackend::selectBlock() {
+  controller_.selectCurrentBlock();
+}
+
+void RenderEditorBackend::selectWord() {
+  controller_.selectCurrentWord();
+}
+
+void RenderEditorBackend::moveDocumentStart() {
+  controller_.moveDocumentStart();
+}
+
+void RenderEditorBackend::moveDocumentEnd() {
+  controller_.moveDocumentEnd();
+}
+
+void RenderEditorBackend::moveLineStart() {
+  controller_.moveBlockStart();
+}
+
+void RenderEditorBackend::moveLineEnd() {
+  controller_.moveBlockEnd();
+}
+
+void RenderEditorBackend::selectNextOccurrence() {
+  // Ctrl+J searches for the current selection; when the caret is collapsed,
+  // expand to the current word first so the first invocation has a target.
+  if (!controller_.selection().hasCursor() || controller_.selection().selection().isCollapsed()) {
+    controller_.selectCurrentWord();
+  }
+  controller_.inputController().selectNextOccurrence();
+}
+
 void RenderEditorBackend::moveLineUp() {
   controller_.moveBlockUp();
 }

@@ -53,6 +53,12 @@ public:
   bool selectCurrentBlock();
   bool selectCurrentFormatSpan();
   bool selectCurrentWord();
+  // Caret navigation for the Edit ▸ Select ▸ "Jump to" group.
+  bool moveDocumentStart();
+  bool moveDocumentEnd();
+  bool moveBlockStart();   // start of the current block's text (≈ line start)
+  bool moveBlockEnd();     // end of the current block's text (≈ line end)
+  bool selectNextOccurrence();  // select the next occurrence of the current selection/word
   // Select the whole current top-level block's source range (markers included)
   // so a subsequent delete removes the entire block via the exact-whole-block
   // path. Returns false on the trailing caret to avoid deleting the last block.

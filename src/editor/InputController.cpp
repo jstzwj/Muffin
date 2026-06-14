@@ -1020,6 +1020,12 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
       return moveCursorVertical(-1, event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_Down:
       return moveCursorVertical(1, event->modifiers().testFlag(Qt::ShiftModifier));
+    case Qt::Key_Home:
+      return moveJump(event->modifiers().testFlag(Qt::ControlModifier) ? JumpTarget::DocumentStart : JumpTarget::BlockStart,
+                      event->modifiers().testFlag(Qt::ShiftModifier));
+    case Qt::Key_End:
+      return moveJump(event->modifiers().testFlag(Qt::ControlModifier) ? JumpTarget::DocumentEnd : JumpTarget::BlockEnd,
+                      event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_Escape:
       return exitActiveLiteralEditor();
     case Qt::Key_Return:
@@ -1285,6 +1291,84 @@ bool InputController::moveCursorVertical(int direction, bool extendSelection) {
   }
   const qsizetype offset = direction > 0 ? 0 : selectableTextLength(*target);
   setCursorOrExtend(cursorForNode(*target, offset), extendSelection);
+  return true;
+}
+
+bool InputController::moveJump(JumpTarget target, bool extendSelection) {
+  if (!ctx_.hasSession() || !ctx_.hasCursor()) {
+    return false;
+  }
+  switch (target) {
+    case JumpTarget::BlockStart:
+    case JumpTarget::BlockEnd: {
+      MarkdownNode* node = ctx_.session->document().node(ctx_.selection->cursorPosition().blockId);
+      if (!node) {
+        return false;
+      }
+      const qsizetype offset = target == JumpTarget::BlockStart ? 0 : selectableTextLength(*node);
+      setCursorOrExtend(cursorForNode(*node, offset), extendSelection);
+      return true;
+    }
+    case JumpTarget::DocumentStart:
+    case JumpTarget::DocumentEnd: {
+      MarkdownNode& root = ctx_.session->document().root();
+      MarkdownNode* edge = nullptr;
+      if (target == JumpTarget::DocumentStart) {
+        for (const auto& child : root.children()) {
+          if (child->type() != BlockType::Unknown) {
+            edge = child.get();
+            break;
+          }
+        }
+      } else {
+        for (auto it = root.children().rbegin(); it != root.children().rend(); ++it) {
+          if ((*it)->type() != BlockType::Unknown) {
+            edge = it->get();
+            break;
+          }
+        }
+      }
+      if (!edge) {
+        return false;
+      }
+      const qsizetype offset = target == JumpTarget::DocumentStart ? 0 : selectableTextLength(*edge);
+      setCursorOrExtend(cursorForNode(*edge, offset), extendSelection);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool InputController::selectNextOccurrence() {
+  if (!ctx_.hasSession()) {
+    return false;
+  }
+  qsizetype start = -1;
+  qsizetype end = -1;
+  if (!selectionSourceRange(start, end) || end <= start) {
+    return false;  // nothing selected — caller expands to the current word first
+  }
+  const QString& markdown = ctx_.session->markdownText();
+  const QString needle = markdown.mid(start, end - start);
+  if (needle.isEmpty()) {
+    return false;
+  }
+  qsizetype idx = markdown.indexOf(needle, end);
+  if (idx < 0) {
+    idx = markdown.indexOf(needle, 0);  // wrap around
+  }
+  if (idx < 0) {
+    return false;
+  }
+  CursorPosition anchor = cursorForSourceOffset(idx);
+  CursorPosition focus = cursorForSourceOffset(idx + needle.size());
+  if (!anchor.isValid() || !focus.isValid()) {
+    return false;
+  }
+  SelectionRange range;
+  range.anchor = anchor;
+  range.focus = focus;
+  ctx_.selection->setSelection(range);
   return true;
 }
 

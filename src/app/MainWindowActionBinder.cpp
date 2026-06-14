@@ -84,6 +84,13 @@ void muffin::MainWindowActionBinder::bindCommands(MainWindow& window) {
   window.commands_.bind(QStringLiteral("edit.paste_plain"), [&window] { window.backend_->pasteAsPlainText(); });
   window.commands_.bind(QStringLiteral("edit.select_line"), [&window] { window.backend_->selectLine(); });
   window.commands_.bind(QStringLiteral("edit.select_format"), [&window] { window.backend_->selectFormatSpan(); });
+  window.commands_.bind(QStringLiteral("edit.select_block"), [&window] { window.backend_->selectBlock(); });
+  window.commands_.bind(QStringLiteral("edit.select_word"), [&window] { window.backend_->selectWord(); });
+  window.commands_.bind(QStringLiteral("edit.jump_doc_start"), [&window] { window.backend_->moveDocumentStart(); });
+  window.commands_.bind(QStringLiteral("edit.jump_doc_end"), [&window] { window.backend_->moveDocumentEnd(); });
+  window.commands_.bind(QStringLiteral("edit.jump_line_start"), [&window] { window.backend_->moveLineStart(); });
+  window.commands_.bind(QStringLiteral("edit.jump_line_end"), [&window] { window.backend_->moveLineEnd(); });
+  window.commands_.bind(QStringLiteral("edit.jump_selection"), [&window] { window.backend_->selectNextOccurrence(); });
   window.commands_.bind(QStringLiteral("edit.move_line_up"), [&window] { window.backend_->moveLineUp(); });
   window.commands_.bind(QStringLiteral("edit.move_line_down"), [&window] { window.backend_->moveLineDown(); });
 
@@ -659,6 +666,13 @@ void muffin::MainWindowActionBinder::updateEditActions(MainWindow& window) {
   window.commands_.setEnabled(QStringLiteral("edit.paste_plain"), true);
   window.commands_.setEnabled(QStringLiteral("edit.select_line"), hasCursor);
   window.commands_.setEnabled(QStringLiteral("edit.select_format"), hasCursor);
+  window.commands_.setEnabled(QStringLiteral("edit.select_block"), hasCursor);
+  window.commands_.setEnabled(QStringLiteral("edit.select_word"), hasCursor);
+  window.commands_.setEnabled(QStringLiteral("edit.jump_doc_start"), hasCursor);
+  window.commands_.setEnabled(QStringLiteral("edit.jump_doc_end"), hasCursor);
+  window.commands_.setEnabled(QStringLiteral("edit.jump_line_start"), hasCursor);
+  window.commands_.setEnabled(QStringLiteral("edit.jump_line_end"), hasCursor);
+  window.commands_.setEnabled(QStringLiteral("edit.jump_selection"), hasCursor);
   window.commands_.setEnabled(QStringLiteral("edit.move_line_up"), hasCursor);
   window.commands_.setEnabled(QStringLiteral("edit.move_line_down"), hasCursor);
   window.commands_.setEnabled(QStringLiteral("edit.find"), true);

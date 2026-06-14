@@ -18,9 +18,16 @@ public:
   void deleteRange(DeleteTarget target) override;
   void selectAll() override;
   void selectLine() override;
+  void selectBlock() override;
+  void selectWord() override;
   void selectFormatSpan() override;
   void moveLineUp() override;
   void moveLineDown() override;
+  void moveDocumentStart() override;
+  void moveDocumentEnd() override;
+  void moveLineStart() override;
+  void moveLineEnd() override;
+  void selectNextOccurrence() override;
 
   bool canUndo() const override;
   bool canRedo() const override;

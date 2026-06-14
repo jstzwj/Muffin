@@ -144,8 +144,24 @@ void muffin::MainWindow::setupEditMenu() {
   edit->addSeparator();
   QMenu* select = edit->addMenu(tr("Select"));
   addAction(select, QStringLiteral("edit.select_all"), tr("Select All"), QKeySequence::SelectAll);
-  addAction(select, QStringLiteral("edit.select_line"), tr("Select Current Line"), {}, false);
-  addAction(select, QStringLiteral("edit.select_format"), tr("Select Current Format Text"), {}, false);
+  addAction(select, QStringLiteral("edit.select_block"), tr("Select Paragraph or Block"), QKeySequence(QStringLiteral("Ctrl+Alt+P")), false);
+  addAction(select, QStringLiteral("edit.select_line"), tr("Select Current Line or Sentence"), QKeySequence(QStringLiteral("Ctrl+L")), false);
+  addAction(select, QStringLiteral("edit.select_format"), tr("Select Current Format Text"), QKeySequence(QStringLiteral("Ctrl+E")), false);
+  addAction(select, QStringLiteral("edit.select_word"), tr("Select Current Word"), QKeySequence(QStringLiteral("Ctrl+D")), false);
+  select->addSeparator();
+  // Home/End/Ctrl+Home/Ctrl+End are standard text-navigation keys already handled
+  // natively by the Source editor and (for render mode) by InputController. Keep
+  // them as WidgetShortcut here so the menu shows the binding but does not steal
+  // the keystroke from the focused editor or from find-bar/dialog line edits.
+  QAction* jumpDocStart = addAction(select, QStringLiteral("edit.jump_doc_start"), tr("Jump to Start of Document"), QKeySequence(QStringLiteral("Ctrl+Home")));
+  jumpDocStart->setShortcutContext(Qt::WidgetShortcut);
+  addAction(select, QStringLiteral("edit.jump_selection"), tr("Jump to Selection"), QKeySequence(QStringLiteral("Ctrl+J")));
+  QAction* jumpDocEnd = addAction(select, QStringLiteral("edit.jump_doc_end"), tr("Jump to End of Document"), QKeySequence(QStringLiteral("Ctrl+End")));
+  jumpDocEnd->setShortcutContext(Qt::WidgetShortcut);
+  QAction* jumpLineStart = addAction(select, QStringLiteral("edit.jump_line_start"), tr("Jump to Start of Line"), QKeySequence(QStringLiteral("Home")));
+  jumpLineStart->setShortcutContext(Qt::WidgetShortcut);
+  QAction* jumpLineEnd = addAction(select, QStringLiteral("edit.jump_line_end"), tr("Jump to End of Line"), QKeySequence(QStringLiteral("End")));
+  jumpLineEnd->setShortcutContext(Qt::WidgetShortcut);
   edit->addSeparator();
   addAction(edit, QStringLiteral("edit.move_line_up"), tr("Move Line Up"), QKeySequence(QStringLiteral("Alt+Up")), false);
   addAction(edit, QStringLiteral("edit.move_line_down"), tr("Move Line Down"), QKeySequence(QStringLiteral("Alt+Down")), false);

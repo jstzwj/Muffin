@@ -42,6 +42,11 @@ public:
   bool hasEditableSelection() const;
   bool handleInputMethod(QInputMethodEvent* event);
 
+  // Select the next occurrence of the current selection (Ctrl+J). When the
+  // selection is collapsed the caller is expected to expand to the current word
+  // first; returns false when there is nothing to search for.
+  bool selectNextOccurrence();
+
   void performLocalEdit(
       EditTransaction::Kind kind,
       const QString& label,
@@ -97,6 +102,8 @@ private:
   qsizetype selectableTextLength(const MarkdownNode& node) const;
   bool moveCursorHorizontal(int direction, bool extendSelection);
   bool moveCursorVertical(int direction, bool extendSelection);
+  enum class JumpTarget { BlockStart, BlockEnd, DocumentStart, DocumentEnd };
+  bool moveJump(JumpTarget target, bool extendSelection);
   void setCursorOrExtend(CursorPosition cursor, bool extendSelection);
   void applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText, qsizetype nextSourceOffset);
   void applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText, qsizetype nextSourceOffset, bool preferLaterEmptyAtOffset);

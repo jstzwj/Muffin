@@ -111,6 +111,71 @@ void SourceEditorBackend::selectFormatSpan() {
   plainEdit()->setTextCursor(cursor);
 }
 
+void SourceEditorBackend::selectBlock() {
+  // Source mode is raw text: a "block" is just the current text line.
+  selectLine();
+}
+
+void SourceEditorBackend::selectWord() {
+  QTextCursor cursor = plainEdit()->textCursor();
+  cursor.select(QTextCursor::WordUnderCursor);
+  plainEdit()->setTextCursor(cursor);
+}
+
+void SourceEditorBackend::moveDocumentStart() {
+  QTextCursor cursor = plainEdit()->textCursor();
+  cursor.movePosition(QTextCursor::Start);
+  plainEdit()->setTextCursor(cursor);
+}
+
+void SourceEditorBackend::moveDocumentEnd() {
+  QTextCursor cursor = plainEdit()->textCursor();
+  cursor.movePosition(QTextCursor::End);
+  plainEdit()->setTextCursor(cursor);
+}
+
+void SourceEditorBackend::moveLineStart() {
+  QTextCursor cursor = plainEdit()->textCursor();
+  cursor.movePosition(QTextCursor::StartOfBlock);
+  plainEdit()->setTextCursor(cursor);
+}
+
+void SourceEditorBackend::moveLineEnd() {
+  QTextCursor cursor = plainEdit()->textCursor();
+  cursor.movePosition(QTextCursor::EndOfBlock);
+  plainEdit()->setTextCursor(cursor);
+}
+
+void SourceEditorBackend::selectNextOccurrence() {
+  QPlainTextEdit* edit = plainEdit();
+  QTextCursor cursor = edit->textCursor();
+  QString needle = cursor.selectedText();
+  if (needle.isEmpty()) {
+    QTextCursor word = cursor;
+    word.select(QTextCursor::WordUnderCursor);
+    needle = word.selectedText();
+  }
+  if (needle.isEmpty()) {
+    return;
+  }
+  // QTextCursor::selectedText uses U+2029 for paragraph separators; map back so
+  // indexOf over the document text matches real newlines.
+  needle.replace(QChar(0x2029), QChar('\n'));
+
+  const QString text = edit->toPlainText();
+  const int from = cursor.selectionEnd();
+  int idx = text.indexOf(needle, from);
+  if (idx < 0) {
+    idx = text.indexOf(needle, 0);  // wrap around
+  }
+  if (idx >= 0) {
+    QTextCursor found = cursor;
+    found.setPosition(idx);
+    found.setPosition(idx + needle.size(), QTextCursor::KeepAnchor);
+    edit->setTextCursor(found);
+  }
+}
+
 void SourceEditorBackend::moveLineUp() {
   QTextCursor cursor = plainEdit()->textCursor();
   QTextBlock currentBlock = cursor.block();
