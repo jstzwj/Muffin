@@ -670,11 +670,6 @@
         <translation>検索と置換</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="189"/>
-        <source>Emoji and Symbols</source>
-        <translation>絵文字と記号</translation>
-    </message>
-    <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="193"/>
         <location filename="../src/app/MainWindowMenus.cpp" line="203"/>
         <source>Paragraph</source>

@@ -670,11 +670,6 @@
         <translation>Bul ve Değiştir</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="189"/>
-        <source>Emoji and Symbols</source>
-        <translation>Emoji ve Semboller</translation>
-    </message>
-    <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="193"/>
         <location filename="../src/app/MainWindowMenus.cpp" line="203"/>
         <source>Paragraph</source>

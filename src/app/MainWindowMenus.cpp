@@ -186,7 +186,6 @@ void muffin::MainWindow::setupEditMenu() {
   findMenu->addSeparator();
   addAction(findMenu, QStringLiteral("edit.find_next"), tr("Find Next"), QKeySequence(QStringLiteral("F3")));
   addAction(findMenu, QStringLiteral("edit.find_previous"), tr("Find Previous"), QKeySequence(QStringLiteral("Shift+F3")));
-  addAction(edit, QStringLiteral("edit.symbols"), tr("Emoji and Symbols"), QKeySequence(QStringLiteral("Ctrl+.")), false);
 }
 
 void muffin::MainWindow::setupParagraphMenu() {

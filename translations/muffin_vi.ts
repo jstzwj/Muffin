@@ -670,11 +670,6 @@
         <translation>Tìm và thay thế</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="189"/>
-        <source>Emoji and Symbols</source>
-        <translation>Biểu tượng cảm xúc và ký hiệu</translation>
-    </message>
-    <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="193"/>
         <location filename="../src/app/MainWindowMenus.cpp" line="203"/>
         <source>Paragraph</source>

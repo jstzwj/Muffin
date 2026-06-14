@@ -663,11 +663,6 @@
         <translation>查找和替换</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="189"/>
-        <source>Emoji and Symbols</source>
-        <translation>表情符号与符号</translation>
-    </message>
-    <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="193"/>
         <location filename="../src/app/MainWindowMenus.cpp" line="203"/>
         <source>Paragraph</source>

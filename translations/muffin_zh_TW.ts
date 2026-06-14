@@ -678,11 +678,6 @@
         <translation>尋找與取代</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="189"/>
-        <source>Emoji and Symbols</source>
-        <translation>表情符號與符號</translation>
-    </message>
-    <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="193"/>
         <location filename="../src/app/MainWindowMenus.cpp" line="203"/>
         <source>Paragraph</source>
