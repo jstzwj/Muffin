@@ -206,9 +206,12 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
     case Operation::Backspace:
       if (nextOffset <= 0) {
         if (context.node->type() == BlockType::ListItem) {
-          if (context.contentText.trimmed().isEmpty()) {
-            return buildOutdentListItem(context);
-          }
+          // An empty list item with a previous sibling folds back into it (deletes the whole
+          // marker line and retreats the caret to the previous item's content end) — this is the
+          // symmetric inverse of Enter creating an empty item, and the behaviour users expect for
+          // "I pressed Enter one time too many". Outdent (removing the marker to exit the list)
+          // only applies when there is nothing to merge into (the sole item), otherwise it would
+          // collapse to a trailing blank line that parses to no block at all, dropping the caret.
           Command mergeCmd = buildMergeWithPreviousListItem(context);
           if (mergeCmd.valid) return mergeCmd;
           return buildOutdentListItem(context);

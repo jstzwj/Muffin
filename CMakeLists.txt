@@ -1274,6 +1274,10 @@ add_executable(MuffinInputLazyBlockTest
   tests/editor/InputLazyBlockTest.cpp
 )
 
+add_executable(MuffinBackspaceEmptyListItemTest
+  tests/editor/BackspaceEmptyListItemTest.cpp
+)
+
 add_executable(MuffinBackspaceTrailingCaretTest
   tests/editor/BackspaceTrailingCaretTest.cpp
 )
@@ -1300,6 +1304,17 @@ target_link_libraries(MuffinBackspaceTrailingCaretTest
 
 add_test(NAME MuffinBackspaceTrailingCaretTest COMMAND MuffinBackspaceTrailingCaretTest)
 set_tests_properties(MuffinBackspaceTrailingCaretTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+target_link_libraries(MuffinBackspaceEmptyListItemTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinBackspaceEmptyListItemTest COMMAND MuffinBackspaceEmptyListItemTest)
+set_tests_properties(MuffinBackspaceEmptyListItemTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
   RESOURCE_LOCK MuffinQtGui
 )
