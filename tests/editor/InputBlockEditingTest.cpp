@@ -149,7 +149,84 @@ void testInputNonEmptyCodeFenceBackspaceDoesNotRemoveBlock() {
   require(session.markdownText().contains(QStringLiteral("```cpp")), "non-empty code fence should not be removed");
 }
 
-// testDefinitionBlockFieldEditing (lines 1448-1490)
+// Repro for user bug: empty $$ math block + Backspace should remove the block.
+void testInputEmptyMathBlockBackspaceRemovesBlock() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  LiteralBlockController mathBlock(LiteralBlockSpec{
+      BlockType::MathBlock, HitTestResult::Zone::Math,
+      QStringLiteral("No math block is active."),
+      QStringLiteral("Edit Math Block"),
+      QStringLiteral("Backspace Math Block"),
+      QStringLiteral("Delete Math Block Text"),
+      QStringLiteral("Delete Math Block Selection"),
+      QStringLiteral("Set Math Block TeX"),
+      QStringLiteral("  ")});
+  mathBlock.setContext({&session, &selection, &undoStack, &brushQueue});
+
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue, nullptr,
+      {{static_cast<int>(BlockType::MathBlock), &mathBlock}});
+
+  session.setMarkdownText(QStringLiteral("$$\n\n$$"), false);
+  MarkdownNode* math = blockAt(session, 0);
+  require(math->type() == BlockType::MathBlock, "first block should be math block");
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Math;
+  hit.blockId = math->id();
+  hit.textNodeId = math->id();
+  hit.textOffset = 0;
+  selection.setHitResult(hit);
+  require(mathBlock.enterEditMode(), "enter math edit should work");
+
+  require(input.deleteBackward(), "backspace on empty math block should succeed");
+  require(!session.markdownText().contains(QStringLiteral("$$")), "empty math block should be removed after backspace");
+}
+
+// Repro for user bug: pressing Enter inside a math block should insert a newline that survives round-trip.
+void testInputMathBlockEnterInsertsNewline() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  LiteralBlockController mathBlock(LiteralBlockSpec{
+      BlockType::MathBlock, HitTestResult::Zone::Math,
+      QStringLiteral("No math block is active."),
+      QStringLiteral("Edit Math Block"),
+      QStringLiteral("Backspace Math Block"),
+      QStringLiteral("Delete Math Block Text"),
+      QStringLiteral("Delete Math Block Selection"),
+      QStringLiteral("Set Math Block TeX"),
+      QStringLiteral("  ")});
+  mathBlock.setContext({&session, &selection, &undoStack, &brushQueue});
+
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue, nullptr,
+      {{static_cast<int>(BlockType::MathBlock), &mathBlock}});
+
+  session.setMarkdownText(QStringLiteral("$$\nx\n$$"), false);
+  MarkdownNode* math = blockAt(session, 0);
+  require(math->type() == BlockType::MathBlock, "first block should be math block");
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Math;
+  hit.blockId = math->id();
+  hit.textNodeId = math->id();
+  hit.textOffset = math->literal().size();  // caret at end
+  selection.setHitResult(hit);
+  require(mathBlock.enterEditMode(), "enter math edit should work");
+
+  require(input.insertParagraphBreak(), "Enter in math block should be handled");
+  MarkdownNode* mathAfter = blockAt(session, 0);  // re-fetch: the block node is replaced on edit
+  require(mathAfter->type() == BlockType::MathBlock, "block should still be math after Enter");
+  require(mathAfter->literal().contains(QLatin1Char('\n')), "Enter should leave a newline in the math literal");
+  require(mathAfter->literal() == QStringLiteral("x\n"), "math literal should be exactly 'x\\n' after Enter");
+  require(selection.cursorPosition().text.textOffset == 2, "caret should advance past the inserted newline");
+}
+
 void testDefinitionBlockFieldEditing() {
   DocumentSession session;
   SelectionController selection;
@@ -367,6 +444,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testInputEmptyCodeFenceBackspaceRemovesBlock);
   RUN_TEST(testInputEmptyCodeFenceDeleteRemovesBlock);
   RUN_TEST(testInputNonEmptyCodeFenceBackspaceDoesNotRemoveBlock);
+  RUN_TEST(testInputMathBlockEnterInsertsNewline);
+  RUN_TEST(testInputEmptyMathBlockBackspaceRemovesBlock);
   RUN_TEST(testDefinitionBlockFieldEditing);
   RUN_TEST(testEmptyDefinitionBackspaceDeletesBlock);
   RUN_TEST(testOptionalLinkDefinitionTitleInsertionAddsQuotes);

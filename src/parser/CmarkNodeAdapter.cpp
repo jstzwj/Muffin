@@ -458,9 +458,23 @@ void CmarkNodeAdapter::readBlockMetadata(cmark_node* cmarkNode, MarkdownNode& mu
     case BlockType::HtmlBlock:
       muffinNode.setLiteral(fromUtf8(cmark_node_get_literal(cmarkNode)));
       break;
-    case BlockType::MathBlock:
-      muffinNode.setLiteral(fromUtf8(cmark_node_get_string_content(cmarkNode)).trimmed());
+    case BlockType::MathBlock: {
+      // cmark wraps the math body in newlines (opener/closer live on their own lines):
+      //   "$$\nx\n$$" -> string_content = "\nx\n"
+      // Treat it like a fenced code block: strip exactly one leading and one trailing
+      // newline so the literal is the user-editable body. Internal newlines/blank lines
+      // are preserved (cmark keeps them), which lets the user break a long formula across
+      // lines and keeps caret offsets mapping 1:1 to the source.
+      QString mathLiteral = fromUtf8(cmark_node_get_string_content(cmarkNode));
+      if (mathLiteral.startsWith(QLatin1Char('\n'))) {
+        mathLiteral.remove(0, 1);
+      }
+      if (mathLiteral.endsWith(QLatin1Char('\n'))) {
+        mathLiteral.chop(1);
+      }
+      muffinNode.setLiteral(mathLiteral);
       break;
+    }
     case BlockType::Table:
       readTableMetadata(cmarkNode, muffinNode);
       break;

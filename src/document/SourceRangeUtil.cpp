@@ -30,18 +30,6 @@ SourceRange fullBlockSourceRange(const MarkdownNode& node, const QString& markdo
     return range;
   }
 
-  if (node.type() == BlockType::MathBlock) {
-    const QString closing = mathClosingDelimiter(node);
-    const QString newlineClosing = QLatin1Char('\n') + closing;
-    if (range.byteEnd + newlineClosing.size() <= markdown.size() &&
-        markdown.mid(range.byteEnd, newlineClosing.size()) == newlineClosing) {
-      range.byteEnd += newlineClosing.size();
-    } else if (range.byteEnd + closing.size() <= markdown.size() &&
-               markdown.mid(range.byteEnd, closing.size()) == closing) {
-      range.byteEnd += closing.size();
-    }
-  }
-
   // cmark reports indented-code content starting past its 4-space indent, so extend the
   // range back to the line start so serialization (which re-applies the indent) replaces the
   // whole block rather than double-indenting the first line.

@@ -20,7 +20,7 @@ extern "C" {
 namespace muffin {
 namespace {
 
-void annotateSourceOffsets(const LineStartOffsetCache& lineOffsets, MarkdownNode& node) {
+void annotateSourceOffsets(const LineStartOffsetCache& lineOffsets, QStringView markdown, MarkdownNode& node) {
   SourceRange range = node.sourceRange();
   if (range.lineStart > 0) {
     const qsizetype start = lineOffsets.offsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
@@ -32,8 +32,25 @@ void annotateSourceOffsets(const LineStartOffsetCache& lineOffsets, MarkdownNode
     }
   }
 
+  // cmark-gfm reports a math block's source range up to the last CONTENT line only, excluding the
+  // closing delimiter line (`$$` / `\]`). Every other consumer — block deletion, slice selection,
+  // serialization-range replacement — needs the range to span the whole block including the closer,
+  // just like a fenced code block. Extend it here, at the single place block byte ranges are
+  // resolved, so the range is correct everywhere instead of being patched ad hoc downstream.
+  if (node.type() == BlockType::MathBlock && range.byteStart >= 0 && range.byteEnd >= range.byteStart) {
+    for (const QString& closer : {QStringLiteral("\n$$"), QStringLiteral("\n\\]")}) {
+      if (range.byteEnd + closer.size() <= markdown.size() &&
+          markdown.mid(range.byteEnd, closer.size()) == closer) {
+        range.byteEnd += closer.size();
+        range.lineEnd = lineOffsets.lineForOffset(range.byteEnd);
+        node.setSourceRange(range);
+        break;
+      }
+    }
+  }
+
   for (const auto& child : node.children()) {
-    annotateSourceOffsets(lineOffsets, *child);
+    annotateSourceOffsets(lineOffsets, markdown, *child);
   }
 }
 
@@ -846,7 +863,7 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   ParseResult result;
   result.root = adapter.convertBlock(document);
   insertVirtualEmptyParagraphs(markdownToParse, *result.root);
-  annotateSourceOffsets(lineOffsets, *result.root);
+  annotateSourceOffsets(lineOffsets, markdownToParse, *result.root);
   annotateMathDelimiters(markdownToParse, *result.root);
   insertVirtualEmptyParagraphsInBlockQuotes(markdownToParse, *result.root);
   insertMissingDefinitions(*result.root, definitions, lineOffsets);

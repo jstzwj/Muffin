@@ -48,7 +48,15 @@ qreal layoutLiteralHeight(const QString& text, const QFont& font, qreal lineHeig
 }
 
 QString displayLiteralFor(const MarkdownNode& node) {
-  return (node.type() == BlockType::CodeFence || node.type() == BlockType::FrontMatter) ? node.literal() : node.literal().trimmed();
+  // Math literals are extracted clean (no wrapping newlines) at parse time and are edited verbatim
+  // through the literal editor, so the layout literal must match the node literal 1:1 — otherwise a
+  // trailing newline typed via Enter (e.g. "x\n") gets trimmed to "x", the source panel drops the
+  // new line, and the caret (offset past the '\n') gets clamped back onto line 1.
+  if (node.type() == BlockType::CodeFence || node.type() == BlockType::FrontMatter ||
+      node.type() == BlockType::MathBlock) {
+    return node.literal();
+  }
+  return node.literal().trimmed();
 }
 
 qsizetype pendingPrefixLengthFor(const MarkdownNode& node, const QString& source) {
