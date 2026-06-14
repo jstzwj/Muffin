@@ -459,6 +459,32 @@ bool ParagraphController::insertHorizontalRule() {
       {}, true);
 }
 
+bool ParagraphController::insertTableOfContents() {
+  BlockContext context;
+  if (!resolveBlockContext(context)) {
+    if (!ctx_.hasSession()) {
+      return false;
+    }
+    const QString markdown = ctx_.session->markdownText();
+    const QString inserted = markdown.isEmpty() ? QStringLiteral("[TOC]\n\n") : QStringLiteral("\n\n[TOC]\n\n");
+    const qsizetype offset = markdown.size();
+    return applyBlockDelta(
+        EditTransaction::Kind::InsertText,
+        QStringLiteral("Insert Table of Contents"),
+        offset, 0, inserted,
+        offset + inserted.size(),
+        {}, true);
+  }
+
+  const QString inserted = QStringLiteral("\n\n[TOC]\n\n");
+  return applyBlockDelta(
+      EditTransaction::Kind::InsertText,
+      QStringLiteral("Insert Table of Contents"),
+      context.blockEnd, 0, inserted,
+      context.blockEnd + inserted.size(),
+      {}, true);
+}
+
 // ---------------------------------------------------------------------------
 // Block conversion commands
 // ---------------------------------------------------------------------------

@@ -9,6 +9,7 @@
 #include <QElapsedTimer>
 #include <QLoggingCategory>
 
+#include <algorithm>
 #include <utility>
 
 namespace {
@@ -106,6 +107,27 @@ bool overlapsEdit(const muffin::SourceRange& range, qsizetype editStart, qsizety
 bool isVirtualEmptyParagraph(const muffin::MarkdownNode& node) {
   const muffin::SourceRange range = node.sourceRange();
   return node.type() == muffin::BlockType::Paragraph && range.byteStart >= 0 && range.byteEnd == range.byteStart;
+}
+
+// A slice is parsed in isolation, so insertVirtualEmptyParagraphs can synthesize a virtual empty
+// paragraph at the leading edge purely from the slice's own leading blank lines — without knowing
+// the neighboring block on the other side of the slice boundary. For a pure insertion (count == 0)
+// that lands after an existing block, a leading VEP followed by real content is a context artifact:
+// it represents the single blank line that separates the new content from the preceding block,
+// which the isolated slice mis-counts as a double-blank gap. Promoted to a permanent block it
+// renders stale neighbor source (e.g. a phantom "---" after a thematic break). Such separator VEPs
+// are dropped. A leading VEP that is itself the intended content (the slice yields only VEPs, e.g.
+// the new empty paragraph created by insertParagraphBefore/After) is kept.
+void stripSeparatorVirtualEmptyParagraphs(std::vector<std::unique_ptr<muffin::MarkdownNode>>& replacements) {
+  const bool hasRealContent =
+      std::any_of(replacements.begin(), replacements.end(),
+                  [](const std::unique_ptr<muffin::MarkdownNode>& node) { return !isVirtualEmptyParagraph(*node); });
+  if (!hasRealContent) {
+    return;
+  }
+  while (!replacements.empty() && isVirtualEmptyParagraph(*replacements.front())) {
+    replacements.erase(replacements.begin());
+  }
 }
 
 bool isOnlyNewlines(QStringView text) {
@@ -733,6 +755,14 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
     if (replacement) {
       demotePendingMarkersInSubtree(postEditText, *replacement);
     }
+  }
+  // For a pure insertion after an existing block, drop the context-dependent leading VEP the
+  // isolated slice parse synthesized from its own leading blank line (see
+  // stripLeadingVirtualEmptyParagraphsForInsertion). Slices that replace real blocks (count > 0)
+  // or start at the document root (slice.first == 0) keep their VEPs — those are anchored to real
+  // content or document start, not to a neighbor the slice can't see.
+  if (slice.count == 0 && slice.first > 0) {
+    stripSeparatorVirtualEmptyParagraphs(replacements);
   }
   inheritIdsForUnchangedTopLevelBlocks(document_, slice, replacements, sourceStart, sourceEnd, editDelta);
   applyNodeHints(document_, replacements, nodeHints);

@@ -136,6 +136,33 @@ void testInsertHorizontalRule() {
   require(blockAt(session, 1)->type() == BlockType::ThematicBreak, "horizontal rule should parse as a thematic break block");
 }
 
+void testInsertTableOfContents() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("Hello"), false);
+  setCursor(selection, blockAt(session, 0), 3);
+  require(paragraph.insertTableOfContents(), "insert table of contents should succeed");
+
+  const QString md = session.markdownText();
+  require(md.contains(QLatin1String("[TOC]")), "table of contents should contain the [TOC] directive");
+  require(md.startsWith(QLatin1String("Hello")), "table of contents should preserve original text");
+  require(blockAt(session, 1)->type() == BlockType::Paragraph, "table of contents should parse as a paragraph block");
+
+  const EditTransaction undo = undoStack.takeUndo();
+  require(undo.isTextDeltaCommand(), "table of contents undo should use TextDeltaCommand");
+  session.applyTextDelta(
+      undo.textDeltaCommand().delta.start,
+      undo.textDeltaCommand().delta.insertedText.size(),
+      undo.textDeltaCommand().delta.removedText,
+      true);
+  require(session.markdownText() == QStringLiteral("Hello"), "table of contents undo text mismatch");
+}
+
 void testInsertParagraphBeforeAndAfter() {
   DocumentSession session;
   SelectionController selection;
@@ -450,6 +477,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testInsertLinkReferenceIntoEmptyDocument);
   RUN_TEST(testInsertFootnoteDefinition);
   RUN_TEST(testInsertHorizontalRule);
+  RUN_TEST(testInsertTableOfContents);
   RUN_TEST(testInsertParagraphBeforeAndAfter);
   RUN_TEST(testInsertParagraphAroundCodeBlock);
   RUN_TEST(testInsertParagraphAroundIndentedCode);

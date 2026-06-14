@@ -3,6 +3,8 @@
 #include "editor/EditorController.h"
 #include "editor/EditorView.h"
 #include "editor/SelectionController.h"
+#include "render/DocumentLayout.h"
+#include "theme/RenderTheme.h"
 
 #include "EditorTestUtils.h"
 
@@ -162,6 +164,68 @@ void testEmptyParagraphAfterThematicBreakIsSafe() {
   require(h.session.markdownText().contains(QStringLiteral("---")), "thematic break must survive backspace");
 }
 
+// Regression: typing "---" (→ thematic break), then clicking the virtual trailing area below it
+// and typing text, must NOT leave a phantom paragraph that renders the thematic break's source
+// "---" as literal text. Root cause: the incremental local-edit slice parse synthesized a
+// context-dependent virtual empty paragraph at the slice boundary, which then rendered the
+// preceding thematic break's line range as "---". The fix strips boundary VEPs from slice results.
+void testTypingAfterThematicBreakRendersNoStaleMarker() {
+  Harness h;
+  h.load(QString());
+  // Type "---" character by character; the third dash commits it to a thematic break.
+  h.controller.inputController().insertText(QStringLiteral("-"));
+  h.controller.inputController().insertText(QStringLiteral("-"));
+  h.controller.inputController().insertText(QStringLiteral("-"));
+  require(h.session.document().root().children().size() == 1, "typed '---' should be a single thematic break");
+  require(h.session.document().root().children().at(0)->type() == BlockType::ThematicBreak,
+          "typed '---' should parse as a thematic break");
+
+  // Click the virtual trailing paragraph below the break and type "123".
+  h.placeInTrailing();
+  h.controller.inputController().insertText(QStringLiteral("123"));
+
+  // Source must be exactly the break followed by the typed paragraph.
+  require(h.session.markdownText() == QStringLiteral("---\n\n123"), "markdown should be '---\\n\\n123'");
+
+  // The tree must hold only the thematic break and the new paragraph — no phantom in between.
+  const auto& kids = h.session.document().root().children();
+  require(kids.size() == 2, "should be exactly 2 blocks (break + paragraph), no phantom");
+  require(kids.at(0)->type() == BlockType::ThematicBreak, "first block should remain the thematic break");
+  require(kids.at(1)->type() == BlockType::Paragraph, "second block should be the typed paragraph");
+
+  // The user-visible symptom: no rendered block may display the stale "---" source.
+  DocumentLayout layout;
+  layout.rebuild(h.session.document(), RenderTheme::github(), 900.0, h.controller.selection().selection());
+  for (const auto& c : kids) {
+    const BlockLayout* bl = layout.block(c->id());
+    const QString display = (bl && bl->inlineLayout()) ? bl->inlineLayout()->displayText() : QString();
+    require(display != QStringLiteral("---"), "no block should render the stale '---' marker text");
+  }
+}
+
+// Same guard via the loaded-break path: a pre-existing thematic break followed by typing into its
+// trailing area must not resurrect the "---" as text either. This exercises the slice parse with a
+// leading blank line directly.
+void testTypingAfterLoadedThematicBreakRendersNoStaleMarker() {
+  Harness h;
+  h.load(QStringLiteral("---"));
+  require(h.session.document().root().children().at(0)->type() == BlockType::ThematicBreak,
+          "loaded '---' should be a thematic break");
+  h.placeInTrailing();
+  h.controller.inputController().insertText(QStringLiteral("xyz"));
+
+  require(h.session.markdownText() == QStringLiteral("---\n\nxyz"), "markdown should be '---\\n\\nxyz'");
+  require(h.session.document().root().children().size() == 2, "should be exactly 2 blocks, no phantom");
+
+  DocumentLayout layout;
+  layout.rebuild(h.session.document(), RenderTheme::github(), 900.0, h.controller.selection().selection());
+  for (const auto& c : h.session.document().root().children()) {
+    const BlockLayout* bl = layout.block(c->id());
+    const QString display = (bl && bl->inlineLayout()) ? bl->inlineLayout()->displayText() : QString();
+    require(display != QStringLiteral("---"), "no block should render the stale '---' marker text");
+  }
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -173,6 +237,8 @@ int main(int argc, char** argv) {
   testEmptyParagraphAfterFrontMatterIsSafe();
   testEmptyParagraphAfterCommonBlocks();
   testEmptyParagraphAfterThematicBreakIsSafe();
+  testTypingAfterThematicBreakRendersNoStaleMarker();
+  testTypingAfterLoadedThematicBreakRendersNoStaleMarker();
   QApplication::clipboard()->clear();
   return 0;
 }

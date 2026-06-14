@@ -39,6 +39,7 @@ public:
   bool insertLinkReference();
   bool insertFootnoteDefinition();
   bool insertHorizontalRule();
+  bool insertTableOfContents();
 
   // Toggle commands
   bool toggleCodeBlock();

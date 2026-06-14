@@ -201,6 +201,10 @@ bool RenderCommandFacade::insertHorizontalRule() {
   return runCommand("insertHorizontalRule", [&] { return editorController_.paragraphController().insertHorizontalRule(); });
 }
 
+bool RenderCommandFacade::insertTableOfContents() {
+  return runCommand("insertTableOfContents", [&] { return editorController_.paragraphController().insertTableOfContents(); });
+}
+
 bool RenderCommandFacade::toggleQuote() {
   return runCommand("toggleQuote", [&] { return editorController_.paragraphController().toggleQuote(); });
 }

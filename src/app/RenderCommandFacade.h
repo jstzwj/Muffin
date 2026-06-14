@@ -66,6 +66,7 @@ public:
   bool insertLinkReference();
   bool insertFootnoteDefinition();
   bool insertHorizontalRule();
+  bool insertTableOfContents();
   bool toggleQuote();
   bool convertToOrderedList();
   bool convertToUnorderedList();

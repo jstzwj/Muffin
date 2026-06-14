@@ -424,6 +424,7 @@ void muffin::MainWindowActionBinder::bindCommands(MainWindow& window) {
   window.commands_.bind(QStringLiteral("paragraph.link_ref"), [&window] { window.renderCommands_.insertLinkReference(); });
   window.commands_.bind(QStringLiteral("paragraph.footnote"), [&window] { window.renderCommands_.insertFootnoteDefinition(); });
   window.commands_.bind(QStringLiteral("paragraph.hr"), [&window] { window.renderCommands_.insertHorizontalRule(); });
+  window.commands_.bind(QStringLiteral("paragraph.toc"), [&window] { window.renderCommands_.insertTableOfContents(); });
 
   window.commands_.bind(QStringLiteral("paragraph.quote"), [&window] { window.renderCommands_.toggleQuote(); });
   window.commands_.bind(QStringLiteral("paragraph.ordered_list"), [&window] { window.renderCommands_.convertToOrderedList(); });
@@ -740,6 +741,7 @@ void muffin::MainWindowActionBinder::updateParagraphActions(MainWindow& window) 
   window.commands_.setEnabled(QStringLiteral("paragraph.link_ref"), wysiwyg);
   window.commands_.setEnabled(QStringLiteral("paragraph.footnote"), wysiwyg);
   window.commands_.setEnabled(QStringLiteral("paragraph.hr"), wysiwyg);
+  window.commands_.setEnabled(QStringLiteral("paragraph.toc"), wysiwyg);
 
   window.commands_.setEnabled(QStringLiteral("paragraph.quote"), editable);
   window.commands_.setEnabled(QStringLiteral("paragraph.ordered_list"), editable);
