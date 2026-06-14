@@ -195,7 +195,7 @@ InlineProjectionState InlineProjectionState::forSelection(
 }
 
 InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState projectionState, qsizetype sourceBase,
-                                   qreal baseFontSize, qsizetype headingPrefixLength, qsizetype pendingPrefixLength)
+                                   qreal baseFontSize, qsizetype pendingPrefixLength)
     : sourceText_(std::move(sourceText)), visibleText_(plainTextForInlines(inlines)) {
   BuildState state;
   state.sourceText = &sourceText_;
@@ -203,14 +203,9 @@ InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString s
   state.projectionState = projectionState;
   state.baseFontSize = baseFontSize;
   QVector<HtmlInlineFormatData> htmlData;
-  if (headingPrefixLength > 0 && headingPrefixLength <= sourceText_.size()) {
-    const QString prefixText = sourceText_.left(headingPrefixLength);
-    appendTextSpan(state, InlineType::Text, InlineSpanKind::OpenMarker, 0, headingPrefixLength, prefixText, false);
-    state.bold = true;
-    appendInlines(state, inlines, headingPrefixLength, sourceText_.size(), htmlData);
-  } else if (pendingPrefixLength > 0 && pendingPrefixLength <= sourceText_.size()) {
+  if (pendingPrefixLength > 0 && pendingPrefixLength <= sourceText_.size()) {
     // A still-uncommitted fence/math opener: show the marker in the muted "syntax" color the
-    // whole time it is being typed (unlike a heading prefix, this stays visible, never bold).
+    // whole time it is being typed (stays visible, never bold).
     const QString prefixText = sourceText_.left(pendingPrefixLength);
     appendTextSpan(state, InlineType::Text, InlineSpanKind::OpenMarker, 0, pendingPrefixLength, prefixText, true);
     appendInlines(state, inlines, pendingPrefixLength, sourceText_.size(), htmlData);

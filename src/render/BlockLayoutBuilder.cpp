@@ -77,17 +77,6 @@ bool selectionFocusesNode(const SelectionRange& selection, NodeId nodeId) {
   return nodeId.isValid() && selection.focus.blockId == nodeId && selection.focus.text.nodeId == nodeId;
 }
 
-qsizetype headingPrefixLengthForSource(const QString& source) {
-  qsizetype index = 0;
-  while (index < source.size() && source.at(index) == QLatin1Char('#')) {
-    ++index;
-  }
-  if (index > 0 && index < source.size() && source.at(index).isSpace()) {
-    ++index;
-  }
-  return index;
-}
-
 bool isEmptyDocumentParagraph(const QString& markdown, const MarkdownNode& node) {
   const SourceRange range = node.sourceRange();
   return markdown.isEmpty() && node.type() == BlockType::Paragraph && range.byteStart == 0 && range.byteEnd == 0;
@@ -230,24 +219,19 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
 
   auto inlineLayout = std::make_unique<InlineLayout>();
   const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
+  // A heading projects content-only: its `# ` prefix region [blockStart, contentStart) is never part
+  // of the editable projection (it is empty for Setext headings, whose byteStart == contentStart).
+  // The level is conveyed by font size and changed via the heading-level commands, so the prefix is
+  // not needed for editing. The prefix still shows while the user is typing it, because at that
+  // point the line is a Paragraph/pending marker, not yet a Heading node. Keeping projectionBase at
+  // contentStart for both the active and inactive cases means document<->local offset conversion
+  // stays identical — this base MUST match what is stored on the layout (contentSourceStart).
   const qsizetype contentStart = sourceContentStartForEditableNode(node);
-  const qsizetype contentEnd = sourceContentEndForEditableNode(node);
-  const bool activeHeading = node.type() == BlockType::Heading && selectionFocusesNode(selection_, node.id());
-  const qsizetype blockStart = node.sourceRange().byteStart;
-  // When the heading is active its `# ` prefix is rendered inside the projection, so the
-  // projection's source space starts at the block start; otherwise it starts at the content. This
-  // base is the single source of truth for document<->local offset conversion, so it MUST be the
-  // same value handed to the projection (sourceBase) and stored on the layout (contentSourceStart) —
-  // diverging the two shifts every caret/hit mapping by exactly the prefix length.
-  const qsizetype projectionBase = activeHeading ? blockStart : contentStart;
+  const qsizetype projectionBase = contentStart;
   QString editableSource = sourceTextForEditableNode(node);
   InlineLayout::BuildOptions options;
   options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), projectionBase);
   options.sourceBase = projectionBase;
-  if (activeHeading && blockStart >= 0 && contentEnd >= blockStart) {
-    editableSource = markdownText_.mid(blockStart, contentEnd - blockStart);
-    options.headingPrefixLength = headingPrefixLengthForSource(editableSource);
-  }
   options.pendingPrefixLength = pendingPrefixLengthFor(node, editableSource);
   inlineLayout->build(node.inlines(), editableSource, theme, width, font, options);
   qreal height = inlineLayout->height();

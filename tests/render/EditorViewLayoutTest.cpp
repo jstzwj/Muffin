@@ -310,27 +310,70 @@ void testInlineSelectionRects() {
   require(layout.selectionRects(3, 3).isEmpty(), "collapsed selection should not create rects");
 }
 
-// An active heading renders its `# ` prefix inside the projection, so the projection's source space
-// starts at the block start rather than the content start. The caret at every visible offset must
-// hit-test back to document source offset (prefix + visible); a 2-char drift means the layout's
-// content-source-start diverged from the projection's source base.
-void testEditorViewActiveHeadingHitNoPrefixDrift() {
+// An active heading projects content-only: its `# ` prefix is never rendered, so the projection's
+// source space starts at the content start for both the active and inactive cases. The caret at
+// every visible offset must hit-test back to document source offset (contentStart + visible); a
+// drift means the layout's content-source-start diverged from the projection's source base.
+void testEditorViewActiveHeadingHitContentOffsetStable() {
   DocumentSession session;
   EditorView view;
   session.setMarkdownText(QStringLiteral("# hello"), false);
   view.resize(900, 500);
   view.setDocument(session.document());
   const NodeId blockId = blockAt(session, 0)->id();
-  const qsizetype prefixLen = QStringLiteral("# ").size();
+  const qsizetype contentStart = QStringLiteral("# ").size();
 
-  // Activate the heading so its "# " prefix takes the buggy rendering path.
-  view.setCursorPosition(inlineCursor(blockId, 0, prefixLen));
+  // Activate the heading by placing the caret in its content (after the "# " prefix).
+  view.setCursorPosition(inlineCursor(blockId, 0, contentStart));
 
   for (qsizetype visible = 0; visible <= 5; ++visible) {
     const HitTestResult hit = hitAtTextOffset(view, blockId, visible, QStringLiteral("active heading @%1").arg(visible));
     require(hit.textOffset == visible, QStringLiteral("active heading visible offset drift @%1").arg(visible));
-    require(hit.sourceOffset == prefixLen + visible, QStringLiteral("active heading source offset drift @%1").arg(visible));
+    require(hit.sourceOffset == contentStart + visible, QStringLiteral("active heading source offset drift @%1").arg(visible));
   }
+}
+
+// An active heading must render content-only: the `# ` prefix is NOT part of the projection's
+// display text. Previously the prefix was rendered as a gray OpenMarker span whenever the cursor
+// was on the heading; this guards against regressing back to always showing it.
+void testEditorViewActiveHeadingRendersContentWithoutPrefix() {
+  DocumentSession session;
+  EditorView view;
+  session.setMarkdownText(QStringLiteral("# hello"), false);
+  view.resize(900, 500);
+  view.setDocument(session.document());
+  const NodeId blockId = blockAt(session, 0)->id();
+  require(blockAt(session, 0)->type() == BlockType::Heading, QStringLiteral("expected a heading node"));
+
+  // Cursor inside the heading content makes the heading active.
+  view.setCursorPosition(inlineCursor(blockId, 0, QStringLiteral("# ").size()));
+
+  const InlineLayout* layout = requireViewInlineLayout(view, blockId, QStringLiteral("active heading"));
+  require(layout->displayText() == QStringLiteral("hello"),
+          QStringLiteral("active heading display text should be content only, got: %1").arg(layout->displayText()));
+  require(layout->visibleText() == QStringLiteral("hello"),
+          QStringLiteral("active heading visible text should be content only, got: %1").arg(layout->visibleText()));
+}
+
+// A Setext heading has no `# ` prefix at all (byteStart == contentStart), so it must also render
+// content-only with no crash. Guards the "headings don't necessarily start with #" path.
+void testEditorViewActiveSetextHeadingRendersContentWithoutPrefix() {
+  DocumentSession session;
+  EditorView view;
+  session.setMarkdownText(QStringLiteral("hello\n==="), false);
+  view.resize(900, 500);
+  view.setDocument(session.document());
+  const NodeId blockId = blockAt(session, 0)->id();
+  require(blockAt(session, 0)->type() == BlockType::Heading, QStringLiteral("expected a setext heading node"));
+
+  // Cursor inside the content (Setext content start == byte start == 0).
+  view.setCursorPosition(inlineCursor(blockId, 0, 0));
+
+  const InlineLayout* layout = requireViewInlineLayout(view, blockId, QStringLiteral("active setext heading"));
+  require(layout->displayText() == QStringLiteral("hello"),
+          QStringLiteral("active setext heading display text should be content only, got: %1").arg(layout->displayText()));
+  require(layout->visibleText() == QStringLiteral("hello"),
+          QStringLiteral("active setext heading visible text should be content only, got: %1").arg(layout->visibleText()));
 }
 
 int main(int argc, char** argv) {
@@ -348,7 +391,9 @@ int main(int argc, char** argv) {
   RUN_TEST(testTableCellRichInlineSelectionDeleteAndCopyUseSourceOffsets);
   RUN_TEST(testMixedInlineParagraphHitEditingBeforeAutolink);
   RUN_TEST(testInlineSelectionRects);
-  RUN_TEST(testEditorViewActiveHeadingHitNoPrefixDrift);
+  RUN_TEST(testEditorViewActiveHeadingHitContentOffsetStable);
+  RUN_TEST(testEditorViewActiveHeadingRendersContentWithoutPrefix);
+  RUN_TEST(testEditorViewActiveSetextHeadingRendersContentWithoutPrefix);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

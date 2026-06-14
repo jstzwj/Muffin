@@ -71,13 +71,15 @@ void testHeadingWithoutSpaceStaysParagraph() {
   requireActiveInlineText(h, QStringLiteral("###123"), QStringLiteral("###123"), "heading without space");
 }
 
-void testHeadingWithSpaceKeepsPrefixWhileActive() {
+// An active heading renders content-only: its `### ` prefix is never shown. The underlying markdown
+// still preserves the prefix (serialization is unchanged); only the rendered projection drops it.
+void testHeadingWithSpaceHidesPrefixWhenActive() {
   Harness h;
   typeString(h.input, QStringLiteral("### 123"));
   require(blockAt(h.session, 0)->type() == BlockType::Heading, "'### 123' should parse as heading");
   require(blockAt(h.session, 0)->headingLevel() == 3, "'### 123' should be h3");
   require(h.session.markdownText() == QStringLiteral("### 123"), "heading markdown should be preserved");
-  requireActiveInlineText(h, QStringLiteral("### 123"), QStringLiteral("123"), "active heading");
+  requireActiveInlineText(h, QStringLiteral("123"), QStringLiteral("123"), "active heading");
 }
 
 // Typora behavior: a lone `*` (no trailing space) stays a paragraph; only `* ` becomes a list.
@@ -635,7 +637,7 @@ int main(int argc, char** argv) {
   QApplication app(argc, argv);
   testLoneHeadingMarkersStayParagraph();
   testHeadingWithoutSpaceStaysParagraph();
-  testHeadingWithSpaceKeepsPrefixWhileActive();
+  testHeadingWithSpaceHidesPrefixWhenActive();
   testLoneBulletStaysParagraphUntilSpace();
   testLoneOrderedMarkerStaysParagraphUntilSpace();
   testAllListMarkersStayParagraphUntilSpace();

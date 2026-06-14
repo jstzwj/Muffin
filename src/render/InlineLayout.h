@@ -28,7 +28,6 @@ public:
   struct BuildOptions {
     InlineProjectionState projectionState;
     qsizetype sourceBase = -1;
-    qsizetype headingPrefixLength = 0;
     qsizetype pendingPrefixLength = 0;
   };
 
