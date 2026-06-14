@@ -118,6 +118,12 @@ public:
   void setListMarkerKind(ListMarkerKind kind);
   ListMarkerKind listMarkerKind() const;
   bool hasListMarker() const;
+  // Horizontal gutter reserved for the list marker (the content's left edge sits at
+  // rect().left() + this value). For ordered lists it grows with the widest sibling
+  // marker so multi-digit numbers never overlap the content; for bullet/task lists it
+  // equals theme.listIndent(). Zero for non-list blocks.
+  void setListContentIndent(qreal indent);
+  qreal listContentIndent() const;
   void setContentSourceStart(qsizetype sourceStart);
   qsizetype contentSourceStart() const;
   void setPlaceholderText(QString text);
@@ -183,6 +189,7 @@ private:
   int headingLevel_ = 0;
   QString listMarker_;
   ListMarkerKind listMarkerKind_ = ListMarkerKind::None;
+  qreal listContentIndent_ = 0.0;
   qsizetype contentSourceStart_ = -1;
   QString placeholderText_;
   DefinitionBlock definition_;

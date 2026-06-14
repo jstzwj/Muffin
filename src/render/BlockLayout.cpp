@@ -475,6 +475,14 @@ bool BlockLayout::hasListMarker() const {
   return listMarkerKind_ != ListMarkerKind::None;
 }
 
+void BlockLayout::setListContentIndent(qreal indent) {
+  listContentIndent_ = indent;
+}
+
+qreal BlockLayout::listContentIndent() const {
+  return listContentIndent_;
+}
+
 void BlockLayout::setContentSourceStart(qsizetype sourceStart) {
   contentSourceStart_ = sourceStart;
 }
@@ -705,6 +713,9 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
           painter.setPen(theme.textColor());
           const QFontMetricsF metrics(painter.font());
           const qreal markerX = viewRect.left() + theme.listIndent() * 0.45;
+          const qreal contentX = viewRect.left() + listContentIndent_;
+          // Gap between a marker glyph and the content, scaled with the theme indent.
+          const qreal markerGap = theme.listIndent() * 0.2;
           if (taskListItem_) {
             const QRectF box(
                 markerX,
@@ -720,13 +731,16 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
               painter.drawLine(QPointF(box.left() + 5.5, box.bottom() - 3), QPointF(box.right() - 3, box.top() + 3));
             }
           } else if (listMarkerKind_ == ListMarkerKind::OrderedText) {
-            painter.drawText(QPointF(markerX, viewRect.top() + metrics.ascent()), listMarker_);
+            // Right-align the number to the content gutter so wide multi-digit markers
+            // (e.g. "34.", "100.") never overlap the content or the caret.
+            const qreal orderedX = contentX - markerGap - metrics.horizontalAdvance(listMarker_);
+            painter.drawText(QPointF(orderedX, viewRect.top() + metrics.ascent()), listMarker_);
           } else {
             const QPointF markerCenter(markerX + metrics.horizontalAdvance(QStringLiteral("0")) * 0.35, viewRect.top() + metrics.ascent() - metrics.xHeight() * 0.45);
             paintUnorderedListMarker(painter, listMarkerKind_, markerCenter, metrics.height(), theme.textColor());
           }
           painter.restore();
-          inlineLayout_->paint(painter, QPointF(viewRect.left() + theme.listIndent(), viewRect.top()));
+          inlineLayout_->paint(painter, QPointF(contentX, viewRect.top()));
         } else {
           inlineLayout_->paint(painter, viewRect.topLeft());
         }
@@ -915,7 +929,7 @@ QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection,
     return rects;
   }
 
-  const qreal textLeft = hasListMarker() ? rect_.left() + theme.listIndent() : rect_.left();
+  const qreal textLeft = hasListMarker() ? rect_.left() + listContentIndent_ : rect_.left();
   const QPointF origin(textLeft, rect_.top());
   const qsizetype localAnchorSourceOffset =
       selection.anchor.text.sourceOffset >= 0 && contentSourceStart_ >= 0 ? selection.anchor.text.sourceOffset - contentSourceStart_ : -1;
@@ -975,7 +989,7 @@ QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset,
     return rects;
   }
 
-  const qreal textLeft = hasListMarker() ? rect_.left() + theme.listIndent() : rect_.left();
+  const qreal textLeft = hasListMarker() ? rect_.left() + listContentIndent_ : rect_.left();
   const QPointF origin(textLeft, rect_.top());
   for (QRectF rect : inlineLayout_->selectionRects(startOffset, endOffset)) {
     rect.translate(origin);
@@ -1100,7 +1114,7 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
     case BlockType::Paragraph:
     case BlockType::ListItem:
       if (inlineLayout_) {
-        const qreal textLeft = hasListMarker() ? rect_.left() + theme.listIndent() : rect_.left();
+        const qreal textLeft = hasListMarker() ? rect_.left() + listContentIndent_ : rect_.left();
         const QRectF textRect(textLeft, rect_.top(), qMax<qreal>(1.0, rect_.right() - textLeft), rect_.height());
         if (hasListMarker() && documentPos.x() < textLeft) {
           result.zone = HitTestResult::Zone::Marker;

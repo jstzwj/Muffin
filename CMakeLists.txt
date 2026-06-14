@@ -1255,6 +1255,21 @@ set_tests_properties(MuffinInputListTabTest PROPERTIES
   RESOURCE_LOCK MuffinQtGui
 )
 
+add_executable(MuffinOrderedListMarkerCursorTest
+  tests/editor/OrderedListMarkerCursorTest.cpp
+)
+
+target_link_libraries(MuffinOrderedListMarkerCursorTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinOrderedListMarkerCursorTest COMMAND MuffinOrderedListMarkerCursorTest)
+set_tests_properties(MuffinOrderedListMarkerCursorTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
 add_executable(MuffinInputLazyBlockTest
   tests/editor/InputLazyBlockTest.cpp
 )

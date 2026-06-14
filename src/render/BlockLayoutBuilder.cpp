@@ -293,8 +293,40 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   layout->setType(BlockType::ListItem);
   layout->setDepth(depth);
 
-  const qreal contentX = x + theme.listIndent();
-  const qreal contentWidth = qMax<qreal>(1.0, width - theme.listIndent());
+  // Resolve the list marker up front so the content gutter can be sized to the widest
+  // sibling marker — the same way browsers size an <ol> marker box. For ordered lists
+  // this keeps multi-digit numbers ("34.", "100.") from overlapping the content and the
+  // caret; bullet/task lists keep the fixed theme indent.
+  const MarkdownNode* listParent = node.parent();
+  qsizetype itemIndex = 0;
+  if (listParent) {
+    for (const auto& sibling : listParent->children()) {
+      if (sibling.get() == &node) {
+        break;
+      }
+      ++itemIndex;
+    }
+    layout->setListMarker(textForListMarker(*listParent, itemIndex));
+    layout->setListMarkerKind(markerKindForListItem(node));
+  } else {
+    layout->setListMarkerKind(BlockLayout::ListMarkerKind::BulletDisc);
+    layout->setListMarker(QStringLiteral("•"));
+  }
+
+  const qreal markerGap = theme.listIndent() * 0.2;
+  qreal contentIndent = theme.listIndent();
+  if (layout->listMarkerKind() == BlockLayout::ListMarkerKind::OrderedText && listParent) {
+    const QFontMetricsF metrics(theme.paragraphFont());
+    qreal widestMarker = 0.0;
+    for (qsizetype index = 0; index < static_cast<qsizetype>(listParent->children().size()); ++index) {
+      widestMarker = qMax(widestMarker, metrics.horizontalAdvance(textForListMarker(*listParent, index)));
+    }
+    contentIndent = qMax(theme.listIndent(), widestMarker + markerGap);
+  }
+  layout->setListContentIndent(contentIndent);
+
+  const qreal contentX = x + contentIndent;
+  const qreal contentWidth = qMax<qreal>(1.0, width - contentIndent);
   qreal cursorY = y;
 
   auto inlineLayout = std::make_unique<InlineLayout>();
@@ -325,20 +357,6 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
     children.push_back(std::move(childLayout));
   }
 
-  if (const MarkdownNode* listParent = node.parent()) {
-    qsizetype index = 0;
-    for (const auto& sibling : listParent->children()) {
-      if (sibling.get() == &node) {
-        break;
-      }
-      ++index;
-    }
-    layout->setListMarker(textForListMarker(*listParent, index));
-    layout->setListMarkerKind(markerKindForListItem(node));
-  } else {
-    layout->setListMarkerKind(BlockLayout::ListMarkerKind::BulletDisc);
-    layout->setListMarker(QStringLiteral("•"));
-  }
   layout->setTaskListItem(node.taskChecked(), node.taskChecked());
 
   layout->setRect(QRectF(x, y, width, height));
