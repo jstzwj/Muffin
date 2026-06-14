@@ -31,12 +31,65 @@ void SourceEditorBackend::paste() {
   plainEdit()->paste();
 }
 
-void SourceEditorBackend::deleteForward() {
+void SourceEditorBackend::deleteRange(DeleteTarget target) {
   QTextCursor cursor = plainEdit()->textCursor();
-  if (cursor.hasSelection()) {
-    cursor.removeSelectedText();
-  } else {
-    cursor.deleteChar();
+  switch (target) {
+    case DeleteTarget::Forward:
+      if (cursor.hasSelection()) {
+        cursor.removeSelectedText();
+      } else {
+        cursor.deleteChar();
+      }
+      break;
+    case DeleteTarget::Backward:
+      if (cursor.hasSelection()) {
+        cursor.removeSelectedText();
+      } else {
+        cursor.deletePreviousChar();
+      }
+      break;
+    case DeleteTarget::Word:
+    case DeleteTarget::FormatSpan: {
+      // Source mode has no markdown-aware inline-format notion; both map to
+      // the word under the cursor (consistent with selectFormatSpan).
+      QTextCursor word = cursor;
+      word.select(QTextCursor::WordUnderCursor);
+      if (word.hasSelection()) {
+        word.removeSelectedText();
+        cursor = word;
+      }
+      break;
+    }
+    case DeleteTarget::Line: {
+      // Clear the current line's text but keep the (now empty) line in place.
+      QTextCursor line = cursor;
+      line.movePosition(QTextCursor::StartOfBlock);
+      line.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+      if (line.hasSelection()) {
+        line.removeSelectedText();
+        cursor = line;
+      }
+      break;
+    }
+    case DeleteTarget::Block: {
+      // Remove the current line entirely (VS Code "delete line"). When a
+      // following line exists, select from this line's start to the next line's
+      // start (covers the line text + its trailing newline). On the last line,
+      // select to the end of the document.
+      QTextCursor block = cursor;
+      block.movePosition(QTextCursor::StartOfBlock);
+      const QTextBlock current = block.block();
+      if (current.next().isValid()) {
+        block.setPosition(current.next().position(), QTextCursor::KeepAnchor);
+      } else {
+        block.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+      }
+      if (block.hasSelection()) {
+        block.removeSelectedText();
+        cursor = block;
+      }
+      break;
+    }
   }
   plainEdit()->setTextCursor(cursor);
 }

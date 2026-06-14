@@ -66,6 +66,18 @@ void muffin::MainWindowActionBinder::bindCommands(MainWindow& window) {
   window.commands_.bind(QStringLiteral("edit.paste"), [&window] { window.backend_->paste(); });
   window.commands_.bind(QStringLiteral("edit.select_all"), [&window] { window.backend_->selectAll(); });
   window.commands_.bind(QStringLiteral("edit.delete"), [&window] { window.backend_->deleteForward(); });
+  window.commands_.bind(QStringLiteral("edit.delete_word"), [&window] {
+    window.backend_->deleteRange(muffin::DeleteTarget::Word);
+  });
+  window.commands_.bind(QStringLiteral("edit.delete_format"), [&window] {
+    window.backend_->deleteRange(muffin::DeleteTarget::FormatSpan);
+  });
+  window.commands_.bind(QStringLiteral("edit.delete_line"), [&window] {
+    window.backend_->deleteRange(muffin::DeleteTarget::Line);
+  });
+  window.commands_.bind(QStringLiteral("edit.delete_block"), [&window] {
+    window.backend_->deleteRange(muffin::DeleteTarget::Block);
+  });
   window.commands_.bind(QStringLiteral("edit.copy_plain"), [&window] { window.backend_->copyAsPlainText(); });
   window.commands_.bind(QStringLiteral("edit.copy_markdown"), [&window] { window.backend_->copyAsMarkdown(); });
   window.commands_.bind(QStringLiteral("edit.copy_html"), [&window] { window.backend_->copyAsHtml(); });
@@ -637,6 +649,10 @@ void muffin::MainWindowActionBinder::updateEditActions(MainWindow& window) {
       : hasCursor && !window.editorController_.selection().selection().isCollapsed();
 
   window.commands_.setEnabled(QStringLiteral("edit.delete"), hasCursor);
+  window.commands_.setEnabled(QStringLiteral("edit.delete_block"), hasCursor);
+  window.commands_.setEnabled(QStringLiteral("edit.delete_line"), hasCursor);
+  window.commands_.setEnabled(QStringLiteral("edit.delete_format"), hasCursor);
+  window.commands_.setEnabled(QStringLiteral("edit.delete_word"), hasCursor);
   window.commands_.setEnabled(QStringLiteral("edit.copy_plain"), hasSelection);
   window.commands_.setEnabled(QStringLiteral("edit.copy_markdown"), hasSelection);
   window.commands_.setEnabled(QStringLiteral("edit.copy_html"), hasSelection);

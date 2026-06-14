@@ -6,6 +6,19 @@ class QTextDocument;
 
 namespace muffin {
 
+// Unified delete API. `Forward` preserves the legacy "delete selection or one
+// char forward" semantics used by the standalone Delete menu item; the other
+// targets power the Delete Range submenu (delete the current word / format
+// span / line / block). Implementations select the target unit and delete it.
+enum class DeleteTarget {
+  Forward,     // delete selection, else one char forward
+  Backward,    // delete selection, else one char backward
+  Word,        // delete the word at the cursor
+  FormatSpan,  // delete the inline format span at the cursor
+  Line,        // clear the current line/block content, keep the container
+  Block,       // remove the whole current block
+};
+
 class EditorBackend {
 public:
   virtual ~EditorBackend() = default;
@@ -14,7 +27,10 @@ public:
   virtual void cut() = 0;
   virtual void copy() = 0;
   virtual void paste() = 0;
-  virtual void deleteForward() = 0;
+  virtual void deleteRange(DeleteTarget target) = 0;
+  // Legacy single-forward-delete; delegates to deleteRange(Forward). Kept as a
+  // non-virtual inline so existing callers (and tests) are unaffected.
+  void deleteForward() { deleteRange(DeleteTarget::Forward); }
   virtual void selectAll() = 0;
   virtual void selectLine() = 0;
   virtual void selectFormatSpan() = 0;

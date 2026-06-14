@@ -399,7 +399,6 @@ add_executable(Muffin
   src/icons.qrc
   src/app/CommandRegistry.cpp
   src/app/CommandRegistry.h
-  src/app/EditorBackend.h
   src/app/LanguageManager.cpp
   src/app/LanguageManager.h
   src/app/MainWindow.cpp
@@ -414,10 +413,6 @@ add_executable(Muffin
   src/app/UpdateChecker.h
   src/app/MainWindowFileOps.cpp
   src/app/MainWindowFind.cpp
-  src/app/RenderEditorBackend.cpp
-  src/app/RenderEditorBackend.h
-  src/app/SourceEditorBackend.cpp
-  src/app/SourceEditorBackend.h
   src/app/PreferencesDialog.cpp
   src/app/PreferencesDialog.h
   src/app/RenderCommandFacade.cpp
@@ -512,6 +507,11 @@ set(MUFFIN_UI_SOURCES
   src/editor/CursorPosition.h
   src/editor/EditorController.cpp
   src/editor/EditorController.h
+  src/app/EditorBackend.h
+  src/app/RenderEditorBackend.cpp
+  src/app/RenderEditorBackend.h
+  src/app/SourceEditorBackend.cpp
+  src/app/SourceEditorBackend.h
   src/editor/EditorControllerUndo.cpp
   src/editor/EditorView.cpp
   src/editor/EditorView.h
@@ -1315,6 +1315,36 @@ target_link_libraries(MuffinBackspaceEmptyListItemTest
 
 add_test(NAME MuffinBackspaceEmptyListItemTest COMMAND MuffinBackspaceEmptyListItemTest)
 set_tests_properties(MuffinBackspaceEmptyListItemTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinInputDeleteRangeTest
+  tests/editor/InputDeleteRangeTest.cpp
+)
+
+target_link_libraries(MuffinInputDeleteRangeTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinInputDeleteRangeTest COMMAND MuffinInputDeleteRangeTest)
+set_tests_properties(MuffinInputDeleteRangeTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
+add_executable(MuffinSourceEditorBackendDeleteTest
+  tests/app/SourceEditorBackendDeleteTest.cpp
+)
+
+target_link_libraries(MuffinSourceEditorBackendDeleteTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinSourceEditorBackendDeleteTest COMMAND MuffinSourceEditorBackendDeleteTest)
+set_tests_properties(MuffinSourceEditorBackendDeleteTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
   RESOURCE_LOCK MuffinQtGui
 )

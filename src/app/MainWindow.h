@@ -160,6 +160,7 @@ private:
   QTimer* wordCountTimer_ = nullptr;
   QMenu* recentFilesMenu_ = nullptr;
   QMenu* reopenEncodingMenu_ = nullptr;
+  QMenu* deleteRangeMenu_ = nullptr;
   int cursorLine_ = 1;
   int cursorColumn_ = 1;
   QString renderCursorStatus_;

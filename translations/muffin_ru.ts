@@ -608,6 +608,26 @@
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="155"/>
+        <source>Delete Block</source>
+        <translation>Удалить блок</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="156"/>
+        <source>Delete Current Line</source>
+        <translation>Удалить текущую строку</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="157"/>
+        <source>Delete Current Format Text</source>
+        <translation>Удалить текущий форматированный текст</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="158"/>
+        <source>Delete Current Word</source>
+        <translation>Удалить текущее слово</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="155"/>
         <source>Math Tools</source>
         <translation>Математические инструменты</translation>
     </message>

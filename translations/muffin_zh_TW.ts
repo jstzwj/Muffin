@@ -616,6 +616,26 @@
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="155"/>
+        <source>Delete Block</source>
+        <translation>刪除區塊</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="156"/>
+        <source>Delete Current Line</source>
+        <translation>刪除目前行</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="157"/>
+        <source>Delete Current Format Text</source>
+        <translation>刪除目前格式文字</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="158"/>
+        <source>Delete Current Word</source>
+        <translation>刪除目前字詞</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="155"/>
         <source>Math Tools</source>
         <translation>數學工具</translation>
     </message>

@@ -499,6 +499,77 @@ bool EditorController::selectCurrentBlock() {
   return true;
 }
 
+bool EditorController::selectCurrentWord() {
+  if (!session_ || !selection_.hasCursor()) {
+    return false;
+  }
+
+  BlockEditContextResolver resolver(const_cast<DocumentSession*>(session_), const_cast<SelectionController*>(&selection_));
+  BlockEditContext context;
+  if (!resolver.current(context)) {
+    return false;
+  }
+
+  return selectWordAtCursor(context);
+}
+
+bool EditorController::selectCurrentBlockForRemoval() {
+  if (!session_ || !selection_.hasCursor()) {
+    return false;
+  }
+
+  const CursorPosition cursor = selection_.cursorPosition();
+  // The trailing caret sits on the virtual empty paragraph below the last
+  // block; removing "the current block" from there would silently delete the
+  // last real block, so refuse.
+  if (cursor.afterBlock) {
+    return false;
+  }
+
+  // If a literal editor (code/math/html/front matter) is active, deleteSelection
+  // would route to the literal's own delete and only clear its content. Exit
+  // literal mode first so the block-level removal below takes effect.
+  exitAllLiteralEditModes();
+
+  MarkdownNode* current = session_->document().node(cursor.blockId);
+  if (!current) {
+    return false;
+  }
+
+  // Walk up to the top-level child of Document (same strategy as moveBlockUp).
+  while (current->parent() && current->parent()->type() != BlockType::Document) {
+    current = current->parent();
+  }
+  if (!current->parent() || current->parent()->type() != BlockType::Document) {
+    return false;
+  }
+
+  BlockEditContextResolver resolver(const_cast<DocumentSession*>(session_), const_cast<SelectionController*>(&selection_));
+  qsizetype blockStart = -1;
+  qsizetype blockEnd = -1;
+  if (!resolver.blockSourceRange(*current, blockStart, blockEnd) || blockEnd <= blockStart) {
+    return false;
+  }
+
+  // Build a selection whose derived block-selection range exactly equals the
+  // block source range [blockStart, blockEnd]. blockSelectionSourceRange()
+  // computes start/end as blockStart + textOffset (clamped to the block
+  // length), so anchor at offset 0 and focus at the full block length yields
+  // [blockStart, blockEnd] — which makes tryRemoveExactWholeBlockSelection()
+  // fire and remove the whole node with a proper undo transaction.
+  SelectionRange range;
+  range.anchor.blockId = current->id();
+  range.anchor.text.nodeId = current->id();
+  range.anchor.text.textOffset = 0;
+  range.anchor.text.sourceOffset = blockStart;
+  range.focus.blockId = current->id();
+  range.focus.text.nodeId = current->id();
+  range.focus.text.textOffset = blockEnd - blockStart;
+  range.focus.text.sourceOffset = blockEnd;
+  selection_.setSelection(range);
+  return true;
+}
+
 bool EditorController::selectCurrentFormatSpan() {
   if (!session_ || !selection_.hasCursor()) {
     return false;

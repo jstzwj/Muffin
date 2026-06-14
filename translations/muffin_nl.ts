@@ -608,6 +608,26 @@
     </message>
     <message>
         <location filename="../src/app/MainWindowMenus.cpp" line="155"/>
+        <source>Delete Block</source>
+        <translation>Blok verwijderen</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="156"/>
+        <source>Delete Current Line</source>
+        <translation>Huidige regel verwijderen</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="157"/>
+        <source>Delete Current Format Text</source>
+        <translation>Huidige opgemaakte tekst verwijderen</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="158"/>
+        <source>Delete Current Word</source>
+        <translation>Huidige woord verwijderen</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowMenus.cpp" line="155"/>
         <source>Math Tools</source>
         <translation>Wiskundehulpmiddelen</translation>
     </message>

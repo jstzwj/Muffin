@@ -52,6 +52,11 @@ public:
   bool selectAll();
   bool selectCurrentBlock();
   bool selectCurrentFormatSpan();
+  bool selectCurrentWord();
+  // Select the whole current top-level block's source range (markers included)
+  // so a subsequent delete removes the entire block via the exact-whole-block
+  // path. Returns false on the trailing caret to avoid deleting the last block.
+  bool selectCurrentBlockForRemoval();
   CursorFormatState queryCursorFormatState() const;
   bool moveBlockUp();
   bool moveBlockDown();

@@ -22,8 +22,38 @@ void RenderEditorBackend::paste() {
   controller_.clipboardController().paste();
 }
 
-void RenderEditorBackend::deleteForward() {
-  controller_.inputController().deleteForward();
+void RenderEditorBackend::deleteRange(DeleteTarget target) {
+  InputController& input = controller_.inputController();
+  switch (target) {
+    case DeleteTarget::Forward:
+      input.deleteForward();
+      return;
+    case DeleteTarget::Backward:
+      input.deleteBackward();
+      return;
+    case DeleteTarget::Word:
+      if (controller_.selectCurrentWord()) {
+        input.deleteSelection();
+      }
+      return;
+    case DeleteTarget::FormatSpan:
+      if (controller_.selectCurrentFormatSpan()) {
+        input.deleteSelection();
+      }
+      return;
+    case DeleteTarget::Line:
+      // Clear the current block's content; for markerless blocks (paragraphs)
+      // this matches whole-block removal since content == block range.
+      if (controller_.selectCurrentBlock()) {
+        input.deleteSelection();
+      }
+      return;
+    case DeleteTarget::Block:
+      if (controller_.selectCurrentBlockForRemoval()) {
+        input.deleteSelection();
+      }
+      return;
+  }
 }
 
 void RenderEditorBackend::selectAll() {

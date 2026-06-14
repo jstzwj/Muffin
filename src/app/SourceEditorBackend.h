@@ -15,7 +15,7 @@ public:
   void cut() override;
   void copy() override;
   void paste() override;
-  void deleteForward() override;
+  void deleteRange(DeleteTarget target) override;
   void selectAll() override;
   void selectLine() override;
   void selectFormatSpan() override;

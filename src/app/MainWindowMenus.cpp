@@ -151,7 +151,11 @@ void muffin::MainWindow::setupEditMenu() {
   addAction(edit, QStringLiteral("edit.move_line_down"), tr("Move Line Down"), QKeySequence(QStringLiteral("Alt+Down")), false);
   addAction(edit, QStringLiteral("edit.delete"), tr("Delete"), {}, false);
   edit->addSeparator();
-  addDisabledMenu(edit, tr("Delete Range"));
+  deleteRangeMenu_ = edit->addMenu(tr("Delete Range"));
+  addAction(deleteRangeMenu_, QStringLiteral("edit.delete_block"), tr("Delete Block"), {}, false);
+  addAction(deleteRangeMenu_, QStringLiteral("edit.delete_line"), tr("Delete Current Line"), {}, false);
+  addAction(deleteRangeMenu_, QStringLiteral("edit.delete_format"), tr("Delete Current Format Text"), {}, false);
+  addAction(deleteRangeMenu_, QStringLiteral("edit.delete_word"), tr("Delete Current Word"), {}, false);
   addDisabledMenu(edit, tr("Math Tools"));
   addDisabledMenu(edit, tr("Smart Punctuation"));
   QMenu* lineBreaks = edit->addMenu(tr("Line Breaks"));
