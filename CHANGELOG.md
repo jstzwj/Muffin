@@ -5,6 +5,30 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-06-14
+
+### Added
+- **Automatic update checking** - The app now checks for new releases on startup (once per 24 hours) and notifies the user when an update is available; users can also check manually from the Help menu
+- **Application icons** - Generated app icons (PNG/ICO/ICNS) embedded into the Windows `.exe`, macOS `.app` bundle, and runtime window icon across all platforms
+- **Setext heading support** - Full Setext-style heading (`====`/`----`) parsing, serialization, and editing
+- **LaTeX display math syntax** - `\[ ... \]` LaTeX-style math blocks are now parsed and rendered alongside the existing `$$` syntax
+- **HTML underline rendering** - `<u>` inline HTML and HTML-block underline styling now render correctly
+- **Virtual trailing paragraph cursor** - A virtual trailing paragraph at the end of the document can be focused and edited for smoother end-of-document cursor handling
+- **Paragraph insertion around literal blocks** - Insert empty paragraphs before and after code and math blocks
+- **Blockquote dedent on Enter** - Pressing Enter in an empty blockquote paragraph outdents the block instead of nesting deeper
+
+### Changed
+- **Heading rendering** - Simplified heading block rendering logic, removed heading-prefix rendering, and improved empty heading handling
+- **Preferences UI** - Refactored the preferences dialog layout with unified styling and shared layout constants
+- **Literal block cursor handling** - Reworked cursor handling for code, math, and other literal blocks, including merging literal blocks with following paragraphs
+- **Pending block marker logic** - Unified the pending-block marker processing flow in the parser
+- **List item editing** - Improved list item editing with cursor positioning and merging support for task list items
+- **Blockquote line breaks** - Corrected line-break behavior and prefix handling inside blockquotes
+- **Generalized naming** - Renamed editor-specific identifiers to a more generic editor style
+
+### Fixed
+- **Setext underline false positive** - Fixed standalone `-` being misdetected as a Setext heading underline in cmark-gfm
+
 ## [0.2.1] - 2026-06-11
 
 ### Added
@@ -219,6 +243,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.2.2]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.2
 [0.2.1]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.1
 [0.2.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.0
 [0.1.6]: https://github.com/jstzwj/Muffin/releases/tag/v0.1.6
