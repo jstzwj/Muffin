@@ -5,6 +5,25 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-06-15
+
+### Added
+- **Table of contents insertion** - Insert a `[TOC]` table-of-contents marker via the insert menu
+- **Editor multi-selection and navigation** - Paragraph/block selection, word selection, jump to document start/end and line start/end, and select-next-match, available in both render and source editors with menu shortcuts
+- **Delete Range submenu** - Unified `deleteRange` deletion with delete-by-word, delete-by-format-block, delete-by-line, and delete-whole-block commands under a new Edit submenu
+- **Thematic break editing gestures** - Backspace after a paragraph removes an adjacent trailing thematic break, delete before removes a leading one, with list-adjacency handling and full undo/redo support
+
+### Changed
+- **Ordered list marker alignment** - Ordered lists now indent content based on the widest item marker and right-align markers to that boundary, so multi-digit markers no longer overlap content and the cursor stays out of the marker area
+
+### Removed
+- **Emoji and symbols menu entry** - Removed the emoji and symbols menu item and its translations
+
+### Fixed
+- **Math block editing** - Unified math block source-range annotation, correct literal parsing (trimming stray leading/trailing newlines), and preservation of original newlines on edit
+- **Backspace at trailing empty paragraph** - Backspace from the virtual trailing paragraph now collapses to the end of the last real block instead of doing nothing
+- **Empty list item backspace** - Empty list items now merge into the preceding sibling on backspace instead of always outdenting (only outdenting when there is no preceding item), and no longer lose the cursor
+
 ## [0.2.2] - 2026-06-14
 
 ### Added
@@ -243,6 +262,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.2.3]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.3
 [0.2.2]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.2
 [0.2.1]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.1
 [0.2.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.0

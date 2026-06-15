@@ -399,7 +399,7 @@ void testBlockQuoteBackspaceOutdentsEmptyFirstChildQuote() {
   InputController input;
   wireInput(input, session, selection, undoStack, brushQueue);
 
-  // Empty first-child quote line pops out to the top level (mirrors Typora handler V: hoist
+  // Empty first-child quote line pops out to the top level (hoist
   // the empty paragraph out; the quote survives with the remaining content). The leading
   // blank ">" lines become outer-level blank lines so no ">" is orphaned, yielding a clean
   // [top-level empty paragraph][quote] split rather than two malformed quotes.
@@ -452,7 +452,7 @@ void testBlockQuoteBackspaceOutdentsEmptyFirstChildQuote() {
 }
 
 // The three multi-paragraph nested-quote scenarios reported by the user. They all reduce to the
-// same Typora rule — the FIRST child of a quote outdents on backspace, a NON-first child merges
+// same rule — the FIRST child of a quote outdents on backspace, a NON-first child merges
 // into its predecessor — once you account for cmark splitting a quote at a truly blank line
 // (so "> .../<blank>/"> ..." is two sibling quotes, and the second quote's first paragraph is a
 // first child and therefore outdents rather than merging).
@@ -531,7 +531,7 @@ void testBlockQuoteBackspaceUserScenarios() {
   require(firstBlockOfType(session, BlockType::BlockQuote) != nullptr, "EX2 should keep the nested quote");
 
   // EX3: cursor on "asd", which follows a nested quote and is therefore a NON-first child. It
-  // merges into the preceding block's text by direct concatenation (Typora behaviour, no
+  // merges into the preceding block's text by direct concatenation (no
   // inserted space), pulling "asd" up into the nested quote.
   session.setMarkdownText(QStringLiteral(">> Nested quote.\n>\n>asd"), false);
   // "asd" is root child #0 (the outer quote) -> second child paragraph (after the inner quote).

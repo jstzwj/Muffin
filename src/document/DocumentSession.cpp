@@ -746,7 +746,7 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
     shiftRanges(*child, slice.sourceStart, sliceLineDelta);
     replacements.push_back(std::move(child));
   }
-  // Typora-style lazy markers: keep a still-incomplete list bullet / fence / math opener as a
+  // Lazy markers: keep a still-incomplete list bullet / fence / math opener as a
   // paragraph instead of letting cmark snap it into a block while the user is mid-keystroke.
   // The freshly-parsed node ranges index into the post-edit text, so reconstruct it here.
   QString postEditText = oldText;

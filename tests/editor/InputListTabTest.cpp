@@ -170,7 +170,7 @@ void testExitLastEmptyListItem() {
   require(selection.cursorPosition().blockId == children3.at(1)->id(), "cursor should be in paragraph after 3-item exit");
 }
 
-void testTyporaListKeyboardBehavior() {
+void testListKeyboardBehavior() {
   DocumentSession session;
   SelectionController selection;
   UndoStack undoStack;
@@ -509,7 +509,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testListItemInput);
   RUN_TEST(testListItemEditingCommands);
   RUN_TEST(testExitLastEmptyListItem);
-  RUN_TEST(testTyporaListKeyboardBehavior);
+  RUN_TEST(testListKeyboardBehavior);
   RUN_TEST(testTabInRenderedTextInsertsZeroWidthSpace);
   RUN_TEST(testListTabFromRenderedClick);
   RUN_TEST(testIndentEmptyListItemDoesNotPromotePreviousToHeading);

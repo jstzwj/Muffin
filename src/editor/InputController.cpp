@@ -236,7 +236,7 @@ bool InputController::deleteBackward() {
     return true;
   }
   // The virtual trailing paragraph carries no text. A backspace from it pulls the caret up to
-  // the end of the last block's content (Typora-style); the next backspace deletes from there.
+  // the end of the last block's content; the next backspace deletes from there.
   // Without this, backspace on the trailing area is a silent no-op — and for a document whose
   // last block is a list it even routes to "unsupported edit", since the list node is not an
   // editable text block.

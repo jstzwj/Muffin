@@ -216,12 +216,12 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
           if (mergeCmd.valid) return mergeCmd;
           return buildOutdentListItem(context);
         }
-        // Block-quote outdent (mirrors Typora handler V): the FIRST child of a block quote
-        // drops one nesting level on backspace instead of merging. Checked before Heading so
-        // "> # Title" outdents the quote rather than converting the heading, and after ListItem
-        // so "> - item" still routes to list logic. Applies to empty first-child quote lines
-        // too (Typora pops them out the same way); buildOutdentBlockQuote handles the empty
-        // case so the quote is removed cleanly rather than split malformedly.
+        // Block-quote outdent: the FIRST child of a block quote drops one nesting level on
+        // backspace instead of merging. Checked before Heading so "> # Title" outdents the
+        // quote rather than converting the heading, and after ListItem so "> - item" still
+        // routes to list logic. Applies to empty first-child quote lines too;
+        // buildOutdentBlockQuote handles the empty case so the quote is removed cleanly
+        // rather than split malformedly.
         if (context.node->previousSibling() == nullptr &&
             context.node->parent() &&
             context.node->parent()->type() == BlockType::BlockQuote) {
@@ -234,7 +234,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
         // Backspace at the start of a paragraph that immediately follows a fenced literal block
         // (code fence / math) folds the paragraph into the block's last content line, instead of
         // the no-op that the generic paragraph merge produces (literal blocks are not "editable
-        // text", so buildMergeWithPreviousParagraph cannot see them). Mirrors Typora.
+        // text", so buildMergeWithPreviousParagraph cannot see them).
         if (Command literalMerge = buildMergeWithPreviousLiteralBlock(context); literalMerge.valid) {
           return literalMerge;
         }
@@ -334,7 +334,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
 }
 
 TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildConvertPendingToBlock(const BlockEditContext& context) const {
-  // Typora behavior: pressing Enter on a paragraph that is exactly a fence / $$ / \[ opener
+  // Pressing Enter on a paragraph that is exactly a fence / $$ / \[ opener
   // commits it into a real code or math block (with the caret inside the empty content).
   Command command;
   if (!session_ || !context.node || context.blockType != BlockType::Paragraph) {
@@ -460,7 +460,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPrevious
       context.blockRange.byteStart < context.contentRange.byteStart;
   const qsizetype separatorEnd = preserveCurrentHeadingPrefix ? context.blockRange.byteStart : context.contentRange.byteStart;
   const qsizetype separatorLength = qMax<qsizetype>(0, separatorEnd - separatorStart);
-  // Merge joins the two paragraphs by direct concatenation (Typora behaviour). We deliberately
+  // Merge joins the two paragraphs by direct concatenation. We deliberately
   // do NOT insert a separator space: it is wrong for CJK and other scripts that don't use word
   // spacing, and the paragraphs' own text already carries whatever spacing the author intended.
   command.fallbackSourceOffset =
@@ -499,7 +499,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithNextPara
       next.blockRange.byteStart < next.contentRange.byteStart;
   const qsizetype separatorEnd = preserveNextHeadingPrefix ? next.blockRange.byteStart : next.contentRange.byteStart;
   const qsizetype separatorLength = qMax<qsizetype>(0, separatorEnd - separatorStart);
-  // Merge joins the two paragraphs by direct concatenation (Typora behaviour). No separator
+  // Merge joins the two paragraphs by direct concatenation. No separator
   // space is inserted (wrong for CJK / non-space scripts; the text already carries its spacing).
   command.fallbackSourceOffset =
       preserveNextHeadingPrefix ? next.contentRange.byteStart - separatorLength : context.contentRange.byteEnd;
@@ -647,7 +647,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildRemovePrecedingTh
   // Backspace at the START of a paragraph immediately following a thematic break eats the divider:
   // the "---"/"***"/"___" line plus the blank line(s) after it are removed, so the paragraph moves
   // up next to whatever sat before the rule. This is the inverse of typing "---" + Enter to create
-  // a divider, and the gesture Typora exposes. The generic paragraph-merge path cannot do this — a
+  // a divider. The generic paragraph-merge path cannot do this — a
   // thematic break carries no editable content, so buildMergeWithPreviousParagraph only sees the
   // rule as the previous sibling and silently no-ops.
   Command command;
@@ -1173,7 +1173,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentBlockQuote
   const QString& markdown = session_->markdownText();
 
   // Source span whose depth-th ">" marker gets stripped on every line — the source-text
-  // equivalent of Typora's tree-level upStream (pop the block out one level).
+  // equivalent of a tree-level up-stream (pop the block out one level).
   //
   // Content paragraph: its own line span; stripping each line drops one nesting level, lazy
   // continuation lines without a marker stay as-is, and a sole-line quote simply disappears.
@@ -1183,7 +1183,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentBlockQuote
   // is several blank ">" lines. Stripping only the empty's own marker would orphan the
   // preceding ">" and split the quote in two. Instead span the whole leading gap so every
   // blank ">" line becomes an outer-level blank line — the empty pops out cleanly and the
-  // remaining quote (the next sibling onward) is untouched, exactly like Typora.
+  // remaining quote (the next sibling onward) is untouched.
   qsizetype spanStart = -1;
   qsizetype spanEnd = -1;
   if (context.visibleText.isEmpty()) {

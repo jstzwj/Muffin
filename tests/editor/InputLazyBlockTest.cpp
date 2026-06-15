@@ -82,7 +82,7 @@ void testHeadingWithSpaceHidesPrefixWhenActive() {
   requireActiveInlineText(h, QStringLiteral("123"), QStringLiteral("123"), "active heading");
 }
 
-// Typora behavior: a lone `*` (no trailing space) stays a paragraph; only `* ` becomes a list.
+// A lone `*` (no trailing space) stays a paragraph; only `* ` becomes a list.
 void testLoneBulletStaysParagraphUntilSpace() {
   Harness h;
   require(h.input.insertText(QStringLiteral("*")), "insert lone bullet");

@@ -217,7 +217,7 @@ enum class MathScanState {
   Bracket
 };
 
-// Typora-compatible display math: a `\[` line opens and the next matching `\]` line closes a
+// Display-math shorthand: a `\[` line opens and the next matching `\]` line closes a
 // LaTeX display-math block. cmark-gfm only parses `$$`, so rewrite the paired delimiters to `$$`.
 // The delimiter swaps are byte-for-byte the same length on the same column, so every offset cmark
 // reports still maps onto the original text. Lines inside fenced code blocks are left untouched.
