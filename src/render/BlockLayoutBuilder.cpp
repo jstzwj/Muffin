@@ -18,6 +18,19 @@
 namespace muffin {
 namespace {
 
+// A parsed node's byte range is trustworthy when the parser adapter resolved
+// it to real offsets. An empty table cell legitimately resolves to a zero-width
+// range (byteStart == byteEnd) — its content is empty, not missing — so we must
+// not treat zero-width as "unset". The only genuinely-unset range left by the
+// adapter is the default (0, 0) marker; everything else with byteEnd >= byteStart
+// and a non-zero anchor was computed from the source and should be used as-is.
+// Using the fallback (line/column) for an empty cell instead swallows everything
+// from the cell's column to the end of the row, rendering stray pipes and the
+// following cell's text inside the empty cell.
+bool hasResolvedByteRange(const SourceRange& range) {
+  return range.byteEnd >= range.byteStart && (range.byteStart > 0 || range.byteEnd > 0);
+}
+
 qreal layoutTextHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width) {
   QTextLayout layout(text.isEmpty() ? QStringLiteral(" ") : text, font);
   QTextOption option;
@@ -774,7 +787,7 @@ QString BlockLayoutBuilder::sourceTextForEditableNode(const MarkdownNode& node) 
 
 qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNode& node) const {
   const SourceRange range = node.sourceRange();
-  qsizetype start = range.byteEnd > range.byteStart
+  qsizetype start = hasResolvedByteRange(range)
                      ? range.byteStart
                      : sourceOffsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
   const qsizetype end = sourceContentEndForEditableNode(node);
@@ -815,7 +828,7 @@ qsizetype BlockLayoutBuilder::sourceContentEndForEditableNode(const MarkdownNode
   const SourceRange range = node.sourceRange();
   qsizetype end = node.type() == BlockType::Heading
                     ? headingContentEndOffset(node, markdownText_)
-                    : (range.byteEnd > range.byteStart
+                    : (hasResolvedByteRange(range)
                            ? range.byteEnd
                            : sourceOffsetForLineEnd(range.lineEnd));
   const qsizetype start = sourceOffsetForLineColumn(range.lineStart, qMax(1, range.columnStart));

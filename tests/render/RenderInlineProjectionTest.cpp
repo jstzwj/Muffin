@@ -1,7 +1,14 @@
+#include "blocks/table/TableModelOps.h"
+#include "blocks/table/TableController.h"
 #include "document/DocumentSession.h"
 #include "document/MarkdownDocument.h"
+#include "document/MarkdownNode.h"
+#include "edit/UndoStack.h"
+#include "editor/BrushQueue.h"
+#include "editor/SelectionController.h"
 #include "render/DocumentLayout.h"
 #include "render/InlineLayout.h"
+#include "render/BlockLayout.h"
 #include "theme/RenderTheme.h"
 
 #include <QApplication>
@@ -231,7 +238,126 @@ void testPendingPrefixFallbackDoesNotDuplicateSource() {
           QStringLiteral("pending math visible text should not duplicate source: %1").arg(math.visibleText()));
 }
 
+void testTableCellEscapedPipeRendersDecoded() {
+  // cmark-gfm reports table-cell inline source ranges that are off by one
+  // source char per escaped pipe (\|): the range starts after the backslash
+  // and ends one char short. The table renderer feeds the cell's raw source
+  // slice (with the backslash) into InlineLayout; without reconciliation the
+  // escaped pipe leaks its backslash and/or duplicates the trailing content.
+  struct Case {
+    QString markdown;
+    QString expectedDisplay;
+  };
+  const Case cases[] = {
+      {QStringLiteral("| A | B |\n| --- | --- |\n| 1 \\| 2 | 3 |"), QStringLiteral("1 | 2")},
+      {QStringLiteral("| A |\n| --- |\n| a \\| b \\| c |"), QStringLiteral("a | b | c")},
+      {QStringLiteral("| A |\n| --- |\n| \\| leading |"), QStringLiteral("| leading")},
+      {QStringLiteral("| A |\n| --- |\n| trailing \\||"), QStringLiteral("trailing |")},
+  };
+
+  RenderTheme theme = RenderTheme::github();
+  InlineLayout::BuildOptions options;
+
+  for (const Case& c : cases) {
+    DocumentSession session;
+    session.setMarkdownText(c.markdown, false);
+    const MarkdownNode* table = session.document().root().children().front().get();
+    const MarkdownNode* cell = TableModelOps::cellAt(*table, 1, 0);
+    require(cell != nullptr, QStringLiteral("escaped pipe cell missing for: %1").arg(c.markdown));
+
+    const SourceRange sr = cell->sourceRange();
+    const QString md = session.markdownText();
+    const QString sourceSlice = md.mid(sr.byteStart, sr.byteEnd - sr.byteStart);
+    options.sourceBase = sr.byteStart;
+
+    InlineLayout layout;
+    layout.build(cell->inlines(), sourceSlice, theme, 400.0, theme.paragraphFont(), options);
+    require(layout.displayText() == c.expectedDisplay,
+            QStringLiteral("escaped pipe cell should render '%1' but got '%2' (source '%3')")
+                .arg(c.expectedDisplay, layout.displayText(), sourceSlice));
+  }
+}
+
 }  // namespace
+
+QStringList tableCellDisplayTexts(const QString& markdown) {
+  DocumentSession session;
+  session.setMarkdownText(markdown, false);
+  RenderTheme theme = RenderTheme::github();
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+  const BlockLayout* table = layout.block(session.document().root().children().front()->id());
+  QStringList texts;
+  if (!table) {
+    return texts;
+  }
+  for (const BlockLayout::TableRowLayout& row : table->tableRows()) {
+    for (const BlockLayout::TableCellLayout& cell : row.cells) {
+      texts << cell.text.displayText();
+    }
+  }
+  return texts;
+}
+
+void selectTableCell(SelectionController& selection, const MarkdownNode& table, int row, int column) {
+  const MarkdownNode* cell = TableModelOps::cellAt(table, row, column);
+  require(cell != nullptr, QStringLiteral("selectTableCell: cell missing"));
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::TableCell;
+  hit.blockId = table.id();
+  hit.textNodeId = cell->id();
+  hit.tableRow = row;
+  hit.tableColumn = column;
+  selection.setHitResult(hit);
+}
+
+// An empty table cell (byteStart == byteEnd, a legitimately zero-width range)
+// must render as empty. Previously the layout treated the zero-width range as
+// "unset" and fell back to line/column offsets, which made the cell swallow
+// every pipe and following cell from its column to the end of the row — so an
+// empty cell rendered as e.g. "| B |". Inserting a column creates empty cells,
+// which is why the stray pipes appeared on insert.
+void testEmptyTableCellRendersEmpty() {
+  // Naturally empty cells (no insertion involved).
+  const QStringList natural = tableCellDisplayTexts(QStringLiteral("| A | B |\n| --- | --- |\n|  | x |"));
+  require(natural.size() == 4, QStringLiteral("natural table should have 4 cells: %1").arg(natural.size()));
+  require(natural.at(2).isEmpty(), QStringLiteral("empty body cell should render empty: '%1'").arg(natural.at(2)));
+  require(natural.at(3) == QStringLiteral("x"), QStringLiteral("non-empty cell should render 'x': '%1'").arg(natural.at(3)));
+
+  // Insert a column: the new empty cells must render empty, neighbours intact.
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  TableController controller;
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
+  session.setMarkdownText(QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), false);
+  MarkdownNode& table = *session.document().root().children().front();
+  selectTableCell(selection, table, 1, 0);
+  require(controller.insertColumnAfter(), QStringLiteral("insertColumnAfter should succeed"));
+  const QStringList afterColumn = tableCellDisplayTexts(session.markdownText());
+  require(afterColumn.size() == 6, QStringLiteral("table should have 6 cells after column insert: %1").arg(afterColumn.size()));
+  for (int i = 0; i < afterColumn.size(); ++i) {
+    require(!afterColumn.at(i).contains(QLatin1Char('|')),
+            QStringLiteral("inserted/empty cell must not render a pipe: cell %1 was '%2'").arg(i).arg(afterColumn.at(i)));
+  }
+  require(afterColumn.at(0) == QStringLiteral("A") && afterColumn.at(2) == QStringLiteral("B"),
+          QStringLiteral("header neighbours should survive column insert"));
+  require(afterColumn.at(3) == QStringLiteral("1") && afterColumn.at(5) == QStringLiteral("2"),
+          QStringLiteral("body neighbours should survive column insert"));
+
+  // Insert a row: the new empty cells must render empty.
+  session.setMarkdownText(QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), false);
+  MarkdownNode& rowTable = *session.document().root().children().front();
+  selectTableCell(selection, rowTable, 1, 0);
+  require(controller.insertRowAfter(), QStringLiteral("insertRowAfter should succeed"));
+  const QStringList afterRow = tableCellDisplayTexts(session.markdownText());
+  require(afterRow.size() == 6, QStringLiteral("table should have 6 cells after row insert: %1").arg(afterRow.size()));
+  for (int i = 0; i < afterRow.size(); ++i) {
+    require(!afterRow.at(i).contains(QLatin1Char('|')),
+            QStringLiteral("inserted/empty row cell must not render a pipe: cell %1 was '%2'").arg(i).arg(afterRow.at(i)));
+  }
+}
 
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
@@ -239,6 +365,8 @@ int main(int argc, char** argv) {
   }
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testEmptyTableCellRendersEmpty);
+  RUN_TEST(testTableCellEscapedPipeRendersDecoded);
   RUN_TEST(testInlineMarkerExpansion);
   RUN_TEST(testInlineProjectionContract);
   RUN_TEST(testActiveLoadedImageKeepsSourceTextAndAddsPreviewSpace);

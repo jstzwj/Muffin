@@ -648,15 +648,60 @@ FrontMatterScanResult scanFrontMatter(QStringView markdown) {
 
 using muffin::shiftInlineSourcePositions;
 
+// cmark-gfm decodes an escaped pipe `\|` to `|` inside a table cell (see
+// unescape_pipes in extensions/table.c) but reports the inline node's source range as
+// if the backslash were not there — one source char too short per `\|`, and a leading
+// `\|` starts the range after the backslash. An inline node's serialized text therefore
+// carries the decoded `|`, while the cell source keeps it escaped as `\|`, so a plain
+// QString::indexOf of the serialized text misses the span entirely and the node is left
+// with cmark's mis-reported range. Match the decoded needle against the escaped source
+// instead: treat a `\|` pair in the source as a single decoded `|`. Returns the start
+// offset and the source offset where the needle is fully consumed; `end` may exceed
+// `start + needle.size()` because each `\|` consumes two source chars. On no match
+// returns {-1, -1}.
+struct EscapeAwareMatch {
+  qsizetype start = -1;
+  qsizetype end = -1;
+};
+EscapeAwareMatch escapeAwareFind(QStringView content, QStringView needle, qsizetype from) {
+  if (needle.isEmpty()) {
+    return {from, from};
+  }
+  for (qsizetype s = from; s < content.size(); ++s) {
+    qsizetype ci = s;
+    qsizetype ni = 0;
+    while (ni < needle.size() && ci < content.size()) {
+      const QChar c = content.at(ci);
+      if (c == QLatin1Char('\\') && ci + 1 < content.size() && content.at(ci + 1) == QLatin1Char('|')) {
+        if (needle.at(ni) != QLatin1Char('|')) {
+          break;
+        }
+        ci += 2;
+        ++ni;
+      } else if (c == needle.at(ni)) {
+        ++ci;
+        ++ni;
+      } else {
+        break;
+      }
+    }
+    if (ni == needle.size()) {
+      return {s, ci};
+    }
+  }
+  return {};
+}
+
 void annotateTableCellInlineSourceRanges(QVector<InlineNode>& inlines, const QString& content, qsizetype sourceBase) {
   qsizetype searchFrom = 0;
   for (InlineNode& inlineNode : inlines) {
     const QString markdown = MarkdownSerializer().serializeInline(inlineNode);
-    const qsizetype start = markdown.isEmpty() ? searchFrom : content.indexOf(markdown, searchFrom);
-    if (start < 0) {
+    const EscapeAwareMatch match = escapeAwareFind(content, markdown, searchFrom);
+    if (match.start < 0) {
       continue;
     }
-    const qsizetype end = start + markdown.size();
+    const qsizetype start = match.start;
+    const qsizetype end = match.end;
     InlineSourceRanges ranges;
     ranges.source = {sourceBase + start, sourceBase + end};
     ranges.content = ranges.source;

@@ -10,6 +10,7 @@
 #include "editor/SelectionController.h"
 #include "parser/CmarkGfmParser.h"
 #include "parser/MarkdownSerializer.h"
+#include "projection/InlineProjection.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -383,7 +384,96 @@ void testTableControllerDeletesTableBreakAsUnit() {
   require(session.markdownText().contains(QStringLiteral("| ab |")), "table break delete should remove whole break token");
 }
 
+// Escaped pipes (\|) inside a table cell survive every structural mutation
+// (insert row/column before/after). The escaped pipe must stay escaped in the
+// serialized markdown and must never split a cell into an extra column.
+void testEscapedPipeSurvivesStructuralEdits() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  TableController tableController;
+  tableController.setContext({&session, &selection, &undoStack, &brushQueue});
+
+  struct Case {
+    QString markdown;
+    int row;
+    int column;
+    int expectedColumns;
+    QString expectedCellSlice;  // the escaped-pipe cell content after the edit
+    bool (TableController::*op)();
+  };
+  const Case cases[] = {
+      {QStringLiteral("| A | B |\n| --- | --- |\n| 1 \\| 2 | 3 |"), 1, 0, 3, QStringLiteral("1 \\| 2"), &TableController::insertColumnBefore},
+      {QStringLiteral("| A | B |\n| --- | --- |\n| 1 \\| 2 | 3 |"), 1, 0, 3, QStringLiteral("1 \\| 2"), &TableController::insertColumnAfter},
+      {QStringLiteral("| A | B |\n| --- | --- |\n| 1 \\| 2 | 3 |"), 1, 0, 2, QStringLiteral("1 \\| 2"), &TableController::insertRowBefore},
+      {QStringLiteral("| A | B |\n| --- | --- |\n| 1 \\| 2 | 3 |"), 1, 0, 2, QStringLiteral("1 \\| 2"), &TableController::insertRowAfter},
+      {QStringLiteral("| A | B |\n| --- | --- |\n| 1 \\| 2 \\| 3 | 4 |"), 1, 0, 3, QStringLiteral("1 \\| 2 \\| 3"), &TableController::insertColumnAfter},
+      {QStringLiteral("| A | B | C |\n| --- | --- | --- |\n| 1 | 2 | 3 \\| 4 |"), 1, 2, 4, QStringLiteral("3 \\| 4"), &TableController::insertColumnAfter},
+      {QStringLiteral("| A | B |\n| --- | --- |\n| 1 \\| 2 | 3 |"), 1, 1, 2, QStringLiteral("1 \\| 2"), &TableController::insertRowAfter},
+  };
+
+  for (const Case& c : cases) {
+    session.setMarkdownText(c.markdown, false);
+    setTableCellCursor(session, selection, c.row, c.column, 0, 0);
+    require((tableController.*(c.op))(), "structural table edit should succeed");
+
+    const QString md = session.markdownText();
+    const MarkdownNode& table = *session.document().root().children().front();
+    const int columns = TableModelOps::columnCount(table);
+    if (columns != c.expectedColumns) {
+      std::cerr << "escaped pipe added a column: want " << c.expectedColumns << " got " << columns << "\n" << md.toUtf8().data() << "\n";
+    }
+    require(columns == c.expectedColumns, "escaped pipe should not add a column");
+    const QString expectedCell = QStringLiteral("| %1 |").arg(c.expectedCellSlice);
+    if (!md.contains(expectedCell)) {
+      std::cerr << "escaped pipe cell content lost. expected [" << expectedCell.toUtf8().data() << "] in:\n" << md.toUtf8().data() << "\n";
+    }
+    require(md.contains(expectedCell), "escaped pipe cell content should survive structural edit");
+  }
+}
+
+// A table cell whose source contains an escaped pipe (\|) must render as the
+// decoded single pipe, not duplicate its trailing content. cmark-gfm reports an
+// inline source range that is one char too short per \|; the parser adapter
+// (annotateTableCellInlineSourceRanges) reconciles that range at the source so
+// every consumer — including InlineProjection's gap fill — sees the true span.
+void testEscapedPipeCellProjection() {
+  struct Case {
+    QString markdown;
+    QString expectedDisplay;
+  };
+  const Case cases[] = {
+      {QStringLiteral("| A |\n| --- |\n| 1 \\| 2 |"), QStringLiteral("1 | 2")},
+      {QStringLiteral("| A |\n| --- |\n| a \\| b \\| c |"), QStringLiteral("a | b | c")},
+      {QStringLiteral("| A |\n| --- |\n| \\| leading |"), QStringLiteral("| leading")},
+      {QStringLiteral("| A |\n| --- |\n| trailing \\||"), QStringLiteral("trailing |")},
+  };
+
+  for (const Case& c : cases) {
+    DocumentSession session;
+    session.setMarkdownText(c.markdown, false);
+    const MarkdownNode& table = *session.document().root().children().front();
+    const MarkdownNode* cell = TableModelOps::cellAt(table, 1, 0);
+    require(cell != nullptr, "escaped pipe projection test cell missing");
+
+    const SourceRange sr = cell->sourceRange();
+    const QString md = session.markdownText();
+    const QString sourceSlice = md.mid(sr.byteStart, sr.byteEnd - sr.byteStart);
+
+    InlineProjection projection(cell->inlines(), sourceSlice, InlineProjectionState{}, sr.byteStart);
+    if (projection.displayText() != c.expectedDisplay) {
+      std::cerr << "escaped pipe display mismatch: want [" << c.expectedDisplay.toUtf8().data() << "] got ["
+                << projection.displayText().toUtf8().data() << "] source [" << sourceSlice.toUtf8().data() << "]\n";
+    }
+    require(projection.displayText() == c.expectedDisplay, "escaped pipe cell should render decoded pipe without duplicating content");
+    require(projection.visibleText() == c.expectedDisplay, "escaped pipe cell visible text should match display text");
+  }
+}
+
 int main() {
+  testEscapedPipeCellProjection();
+  testEscapedPipeSurvivesStructuralEdits();
   testTableControllerCommands();
   testTableControllerResize();
   testTableControllerDeleteTable();
