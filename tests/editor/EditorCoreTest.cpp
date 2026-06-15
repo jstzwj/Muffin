@@ -116,7 +116,16 @@ void testBrushQueueBatchesRefreshRequests() {
   require(requests.size() == 2, "brush queue should emit top-level range refresh batch");
   require(!requests.last().fullLayoutDirty, "range refresh should not be full dirty");
   require(requests.last().topLevelRangeDirty == range, "range refresh should preserve top-level range");
-  require(requests.last().layoutDirtyBlocks.isEmpty(), "range refresh should clear block dirty ids");
+  // A block refresh arriving while a range is pending must be preserved, not
+  // dropped: the downstream handler (EditorController) refreshes the range and
+  // then any remaining dirty blocks, so a block outside the structural-change
+  // range would otherwise render stale. (requestTopLevelRangeRefresh already
+  // preserves blocks that were pending before the range; this is the symmetric
+  // case where the block arrives after.)
+  require(requests.last().layoutDirtyBlocks.size() == 1,
+          "block refresh arriving after a range should be preserved alongside it");
+  require(requests.last().layoutDirtyBlocks.at(0) == first,
+          "range-pending block refresh should keep the block id for the downstream handler");
 
   queue.requestTopLevelRangeRefresh(range);
   queue.requestTopLevelRangeRefresh(TopLevelRangeChange{2, 1, 2, 7});

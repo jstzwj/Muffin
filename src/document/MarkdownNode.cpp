@@ -50,14 +50,14 @@ MarkdownNode& MarkdownNode::appendChild(std::unique_ptr<MarkdownNode> child) {
 
 MarkdownNode& MarkdownNode::insertChild(qsizetype index, std::unique_ptr<MarkdownNode> child) {
   child->parent_ = this;
-  const qsizetype boundedIndex = std::clamp<qsizetype>(index, 0, children_.size());
+  const qsizetype boundedIndex = std::clamp<qsizetype>(index, 0, static_cast<qsizetype>(children_.size()));
   children_.insert(children_.begin() + boundedIndex, std::move(child));
   relinkChildren();
   return *children_[boundedIndex];
 }
 
 std::unique_ptr<MarkdownNode> MarkdownNode::detachChild(qsizetype index) {
-  if (index < 0 || index >= children_.size()) {
+  if (index < 0 || index >= static_cast<qsizetype>(children_.size())) {
     return nullptr;
   }
 
@@ -80,161 +80,156 @@ void MarkdownNode::clearChildren() {
 }
 
 void MarkdownNode::relinkChildren() {
-  for (qsizetype i = 0; i < children_.size(); ++i) {
+  const qsizetype count = static_cast<qsizetype>(children_.size());
+  for (qsizetype i = 0; i < count; ++i) {
     children_[i]->parent_ = this;
     children_[i]->previous_ = i > 0 ? children_[i - 1].get() : nullptr;
-    children_[i]->next_ = i + 1 < children_.size() ? children_[i + 1].get() : nullptr;
+    children_[i]->next_ = i + 1 < count ? children_[i + 1].get() : nullptr;
   }
 }
 
 QVector<InlineNode>& MarkdownNode::inlines() {
-  return inlines_;
+  return metadata_.inlines;
 }
 
 const QVector<InlineNode>& MarkdownNode::inlines() const {
-  return inlines_;
+  return metadata_.inlines;
 }
 
 QString MarkdownNode::literal() const {
-  return literal_;
+  return metadata_.literal;
 }
 
 void MarkdownNode::setLiteral(QString text) {
-  literal_ = std::move(text);
+  metadata_.literal = std::move(text);
 }
 
 int MarkdownNode::headingLevel() const {
-  return headingLevel_;
+  return metadata_.heading.level;
 }
 
 void MarkdownNode::setHeadingLevel(int level) {
-  headingLevel_ = level;
+  metadata_.heading.level = level;
 }
 
 bool MarkdownNode::setext() const {
-  return setext_;
+  return metadata_.heading.setext;
 }
 
 void MarkdownNode::setSetext(bool setext) {
-  setext_ = setext;
+  metadata_.heading.setext = setext;
 }
 
 ListKind MarkdownNode::listKind() const {
-  return listKind_;
+  return metadata_.list.kind;
 }
 
 void MarkdownNode::setListKind(ListKind kind) {
-  listKind_ = kind;
+  metadata_.list.kind = kind;
 }
 
 int MarkdownNode::listStart() const {
-  return listStart_;
+  return metadata_.list.start;
 }
 
 void MarkdownNode::setListStart(int start) {
-  listStart_ = start;
+  metadata_.list.start = start;
 }
 
 bool MarkdownNode::listTight() const {
-  return listTight_;
+  return metadata_.list.tight;
 }
 
 void MarkdownNode::setListTight(bool tight) {
-  listTight_ = tight;
+  metadata_.list.tight = tight;
 }
 
 bool MarkdownNode::taskChecked() const {
-  return taskChecked_;
+  return metadata_.list.taskChecked;
 }
 
 void MarkdownNode::setTaskChecked(bool checked) {
-  taskChecked_ = checked;
+  metadata_.list.taskChecked = checked;
+}
+
+bool MarkdownNode::isTaskItem() const {
+  return metadata_.list.taskItem;
+}
+
+void MarkdownNode::setTaskItem(bool taskItem) {
+  metadata_.list.taskItem = taskItem;
 }
 
 QString MarkdownNode::codeLanguage() const {
-  return codeLanguage_;
+  return metadata_.code.language;
 }
 
 void MarkdownNode::setCodeLanguage(QString language) {
-  codeLanguage_ = std::move(language);
+  metadata_.code.language = std::move(language);
 }
 
 bool MarkdownNode::isIndentedCode() const {
-  return codeIndented_;
+  return metadata_.code.indented;
 }
 
 void MarkdownNode::setIndentedCode(bool indented) {
-  codeIndented_ = indented;
+  metadata_.code.indented = indented;
 }
 
 MathDelimiter MarkdownNode::mathDelimiter() const {
-  return mathDelimiter_;
+  return metadata_.mathDelimiter;
 }
 
 void MarkdownNode::setMathDelimiter(MathDelimiter delimiter) {
-  mathDelimiter_ = delimiter;
+  metadata_.mathDelimiter = delimiter;
 }
 
 FrontMatterFormat MarkdownNode::frontMatterFormat() const {
-  return frontMatterFormat_;
+  return metadata_.frontMatterFormat;
 }
 
 void MarkdownNode::setFrontMatterFormat(FrontMatterFormat format) {
-  frontMatterFormat_ = format;
+  metadata_.frontMatterFormat = format;
 }
 
 DefinitionBlock MarkdownNode::definition() const {
-  return definition_;
+  return metadata_.definition;
 }
 
 void MarkdownNode::setDefinition(DefinitionBlock definition) {
-  definition_ = std::move(definition);
+  metadata_.definition = std::move(definition);
 }
 
 QVector<TableAlignment> MarkdownNode::tableAlignments() const {
-  return tableAlignments_;
+  return metadata_.table.alignments;
 }
 
 void MarkdownNode::setTableAlignments(QVector<TableAlignment> alignments) {
-  tableAlignments_ = std::move(alignments);
+  metadata_.table.alignments = std::move(alignments);
 }
 
 bool MarkdownNode::tableRowIsHeader() const {
-  return tableRowIsHeader_;
+  return metadata_.table.rowIsHeader;
 }
 
 void MarkdownNode::setTableRowIsHeader(bool header) {
-  tableRowIsHeader_ = header;
+  metadata_.table.rowIsHeader = header;
 }
 
 SourceRange MarkdownNode::sourceRange() const {
-  return sourceRange_;
+  return metadata_.sourceRange;
 }
 
 void MarkdownNode::setSourceRange(SourceRange range) {
-  sourceRange_ = range;
+  metadata_.sourceRange = std::move(range);
 }
 
 std::unique_ptr<MarkdownNode> MarkdownNode::clone(CloneMode mode) const {
   auto copy = std::make_unique<MarkdownNode>(
       type_, mode == CloneMode::PreserveIds ? id_ : NodeId::create());
-  copy->inlines_ = inlines_;
-  copy->literal_ = literal_;
-  copy->headingLevel_ = headingLevel_;
-  copy->setext_ = setext_;
-  copy->listKind_ = listKind_;
-  copy->listStart_ = listStart_;
-  copy->listTight_ = listTight_;
-  copy->taskChecked_ = taskChecked_;
-  copy->codeLanguage_ = codeLanguage_;
-  copy->codeIndented_ = codeIndented_;
-  copy->mathDelimiter_ = mathDelimiter_;
-  copy->frontMatterFormat_ = frontMatterFormat_;
-  copy->definition_ = definition_;
-  copy->tableAlignments_ = tableAlignments_;
-  copy->tableRowIsHeader_ = tableRowIsHeader_;
-  copy->sourceRange_ = sourceRange_;
-
+  // A single aggregate copy carries every domain field, so adding a field can no longer be
+  // silently dropped here (the flat layout previously let clone() miss taskItem_).
+  copy->metadata_ = metadata_;
   for (const auto& child : children_) {
     copy->appendChild(child->clone(mode));
   }

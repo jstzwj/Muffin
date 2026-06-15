@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/CommandRegistry.h"
+#include "app/CommandDeclarations.h"
 #include "document/DocumentSession.h"
 #include "app/EditorBackend.h"
 #include "app/RenderCommandFacade.h"
@@ -9,12 +10,14 @@
 #include "io/FileController.h"
 #include "theme/ThemeManager.h"
 
+#include <QHash>
 #include <QMainWindow>
 #include <QString>
 #include <memory>
 
 class QLabel;
 class QMenu;
+class QActionGroup;
 class QTimer;
 class QSplitter;
 class QStackedWidget;
@@ -25,14 +28,16 @@ namespace muffin {
 
 class EditorView;
 class FindBarWidget;
-class MainWindowActionBinder;
-class MainWindowSignalBinder;
 class SourceEditorWidget;
 
 class MainWindow final : public QMainWindow {
   Q_OBJECT
-  friend class MainWindowActionBinder;
-  friend class MainWindowSignalBinder;
+
+  // The command declaration table (CommandDeclarations.cpp) defines every
+  // command's handler and enable/checked predicates against MainWindow state, so
+  // it needs private access — a single narrow free-function friend rather than
+  // the friend-classes removed in the binder→member split.
+  friend const std::vector<CommandDeclaration>& commandDeclarations();
 
 public:
   explicit MainWindow(QWidget* parent = nullptr);
@@ -41,24 +46,28 @@ public:
   bool saveCurrentDocument();
   bool isDocumentModified() const;
 
+  // Composite editor-state queries backing the command declaration predicates
+  // (CommandDeclarations.cpp). Exposed so the predicate table — which lives
+  // outside the class — can evaluate enable/checked state without private access
+  // or a scatter of friend helpers.
+  bool commandHasCursor() const;
+  bool commandHasSelection() const;
+  bool commandOnEditableParagraph() const;
+  int commandHeadingLevel() const;
+  bool commandInlineFormatEnabled() const;
+  bool commandInTableCell() const;
+  bool commandOnImage() const;
+  bool commandOnLocalImage() const;
+
 protected:
   void closeEvent(QCloseEvent* event) override;
   void changeEvent(QEvent* event) override;
 
 private:
-  QAction* addAction(
-      QMenu* menu,
-      const QString& id,
-      const QString& text,
-      const QKeySequence& shortcut = {},
-      bool enabled = true);
-  QAction* addCheckAction(
-      QMenu* menu,
-      const QString& id,
-      const QString& text,
-      const QKeySequence& shortcut = {},
-      bool checked = false,
-      bool enabled = true);
+  // Create and register one QAction for a declared command, pulling its label,
+  // shortcut, checkable state and action-group from the declaration table. The
+  // menu walker (buildMenus) calls this for every Action item in mainMenuSpec().
+  QAction* registerAction(QMenu* menu, const QString& id);
 
   void setupUi();
   void setupMenuBar();
@@ -67,18 +76,43 @@ private:
   void applyEditorChrome();
   void retranslateUi();
 
-  void setupFileMenu();
-  void setupEditMenu();
-  void setupParagraphMenu();
-  void setupTableMenu();
-  void populateTableMenu(QMenu* menu);
-  void setupCodeMenu();
-  void setupHtmlMenu();
-  void setupMathMenu();
-  void setupFormatMenu();
-  void setupViewMenu();
-  void setupThemeMenu();
-  void setupHelpMenu();
+  // Command binding and per-domain action enable/checked refresh. These were
+  // once free functions in a friend MainWindowActionBinder; they are members now
+  // so MainWindow carries no friend coupling and the binding lives with the
+  // window like the other MainWindow*.cpp partials.
+  void bindCommands();
+  void restorePersistentActionStates();
+  void updateFileActions();
+  void updateEditActions();
+  void updateTableActions();
+  void updateParagraphActions();
+  void updateCodeActions();
+  void updateHtmlActions();
+  void updateMathActions();
+  void updateImageActions();
+  void updateFormatActions();
+  void updateContextActions();
+  void updateThemeActions();
+  // Apply every command's enabled/checked predicate within one category (the
+  // per-domain update*Actions above are thin wrappers around this so call sites
+  // stay unchanged). updateAllActions() refreshes every category.
+  void updateActionsForCategory(CommandCategory category);
+  void updateAllActions();
+
+  // Qt signal wiring, split out for readability (formerly MainWindowSignalBinder).
+  void connectEditorSignals();
+  void connectRenderSignals();
+  void connectSessionSignals();
+  void connectApplicationSignals();
+  void connectFindBarSignals();
+  void connectChromeSignals();
+  void connectSidebarSignals();
+
+  // Menu bar built from mainMenuSpec() (CommandDeclarations.cpp). setupMenuBar()
+  // clears and calls buildMenus(); retranslateUi() calls setupMenuBar() to
+  // rebuild with retranslated labels.
+  void buildMenus();
+  void buildMenuItems(QMenu* parent, const std::vector<MenuItem>& items);
 
   void updateTitle();
   void updateStatus();
@@ -160,7 +194,9 @@ private:
   QTimer* wordCountTimer_ = nullptr;
   QMenu* recentFilesMenu_ = nullptr;
   QMenu* reopenEncodingMenu_ = nullptr;
-  QMenu* deleteRangeMenu_ = nullptr;
+  // Exclusive radio groups (image resize, image insert action), keyed by the
+  // declaration's actionGroup id. Rebuilt on every menu rebuild.
+  QHash<QString, QActionGroup*> actionGroups_;
   int cursorLine_ = 1;
   int cursorColumn_ = 1;
   QString renderCursorStatus_;

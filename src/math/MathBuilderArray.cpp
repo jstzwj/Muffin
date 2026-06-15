@@ -1,5 +1,6 @@
 #include "math/MathBuilder.h"
 
+#include "math/MathBuilderUtils.h"
 #include "math/MathDelimiter.h"
 #include "math/MathFontMetrics.h"
 #include "math/MathLayoutTree.h"
@@ -11,37 +12,6 @@
 #include <vector>
 
 namespace muffin::math {
-namespace {
-
-qreal axisHeight(const MathOptions& options) {
-  return options.fontPointSize() * MathFontMetrics::globalMetrics(options.style().size()).axisHeight;
-}
-
-qreal ruleThickness(const MathOptions& options) {
-  const qreal ruleEm = qMax(MathFontMetrics::globalMetrics(options.style().size()).defaultRuleThickness, options.settings().minRuleThickness);
-  return options.fontPointSize() * ruleEm;
-}
-
-std::unique_ptr<MathRenderNode> makeArrayCellWrapper(std::unique_ptr<MathRenderNode> content,
-                                                     qreal rowHeight,
-                                                     qreal rowDepth,
-                                                     qreal alignedX) {
-  auto wrapper = std::make_unique<MathRenderNode>();
-  wrapper->kind = MathRenderKind::Span;
-  wrapper->width = content ? content->width : 0.0;
-  wrapper->height = rowHeight;
-  wrapper->depth = rowDepth;
-  wrapper->xOffset = alignedX;
-  if (content) {
-    content->xOffset = 0.0;
-    content->yOffset = 0.0;
-    wrapper->children.push_back(std::move(content));
-  }
-  return wrapper;
-}
-
-}  // namespace
-
 std::unique_ptr<MathRenderNode> MathBuilder::makeArray(const MathParseNode& node) {
   const int rowCount = node.rows.size();
   int colCount = 0;

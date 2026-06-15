@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/TopLevelRangeChange.h"
+#include "editor/HtmlBlockHoverController.h"
 #include "render/DocumentLayout.h"
 #include "theme/RenderTheme.h"
 
@@ -106,13 +107,10 @@ private:
   void paintHtmlHoverOverlay(QPainter& painter) const;
   HeadingBadge headingBadgeForBlock(NodeId blockId) const;
   QRectF headingBadgeViewportRectForBlock(NodeId blockId) const;
-  QRectF htmlHoverOverlayViewportRect() const;
   QRectF htmlHoverButtonViewportRect() const;
   void updateHtmlHover(QPointF viewportPos);
   void clearHtmlHover();
-  HitTestResult hitForCursorPosition(CursorPosition position) const;
-  QVector<const BlockLayout*> blocksBetween(NodeId first, NodeId last) const;
-  bool blockComesBefore(NodeId first, NodeId second) const;
+  HtmlBlockHoverController::Inputs htmlHoverInputs() const;
   void applySelectionRange(SelectionRange selection);
   void updateDragSelection(QPointF viewportPos);
   void updateMouseCursor(QPointF viewportPos);
@@ -142,7 +140,7 @@ private:
   bool focusMode_ = false;
   QPropertyAnimation* scrollAnimation_ = nullptr;
   NodeId editingHtmlBlockId_;
-  NodeId visibleHtmlHoverBlockId_;
+  HtmlBlockHoverController htmlHover_;
 };
 
 }  // namespace muffin

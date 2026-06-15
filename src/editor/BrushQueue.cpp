@@ -21,10 +21,10 @@ void BrushQueue::requestBlocksRefresh(QVector<NodeId> blockIds) {
     scheduleFlush();
     return;
   }
-  if (pending_.topLevelRangeDirty.isValid()) {
-    scheduleFlush();
-    return;
-  }
+  // Do NOT short-circuit on a pending top-level range: the downstream handler
+  // (EditorController) refreshes both the range and the remaining dirty blocks,
+  // so blocks that fall outside the structural-change range must still be merged
+  // here. Early-returning here silently drops them and leaves their visuals stale.
   QSet<NodeId> pendingIds;
   pendingIds.reserve(pending_.layoutDirtyBlocks.size() + blockIds.size());
   for (const NodeId& id : pending_.layoutDirtyBlocks) {

@@ -1,5 +1,6 @@
 #include "render/BlockLayout.h"
 
+#include "document/BlockPredicates.h"
 #include "document/SourceRangeUtil.h"
 
 #include <QFontMetricsF>
@@ -59,10 +60,6 @@ QVector<LiteralVisualLine> layoutLiteralVisualLines(const QString& literal, cons
     globalStart += sourceLine.size() + 1;
   }
   return visualLines;
-}
-
-bool isLiteralBlockType(BlockType type) {
-  return type == BlockType::FrontMatter || type == BlockType::CodeFence || type == BlockType::HtmlBlock || type == BlockType::MathBlock;
 }
 
 qsizetype literalOffsetForPoint(const QString& literal, QPointF localPos, const QFont& font, qreal width, qreal lineHeight) {

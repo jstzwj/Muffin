@@ -1,7 +1,6 @@
 #include "app/MainWindow.h"
 
 #include "app/LanguageManager.h"
-#include "app/MainWindowActionBinder.h"
 #include "app/RenderEditorBackend.h"
 #include "app/SidebarWidget.h"
 #include "app/SourceEditorBackend.h"
@@ -197,17 +196,9 @@ void muffin::MainWindow::setupUi() {
 void muffin::MainWindow::setupMenuBar() {
   commands_.clearActions();
   menuBar()->clear();
-  setupFileMenu();
-  setupEditMenu();
-  setupParagraphMenu();
-  setupTableMenu();
-  setupCodeMenu();
-  setupHtmlMenu();
-  setupMathMenu();
-  setupFormatMenu();
-  setupViewMenu();
-  setupThemeMenu();
-  setupHelpMenu();
+  qDeleteAll(actionGroups_);
+  actionGroups_.clear();
+  buildMenus();
 }
 
 void muffin::MainWindow::setupStatusBar() {
@@ -526,7 +517,7 @@ void muffin::MainWindow::loadAppearanceSettings() {
   setZoomPercent(settings.value(QStringLiteral("appearance/zoomPercent"), 100).toInt());
   setFontSizePx(settings.value(QStringLiteral("appearance/fontSizePx"), 16).toInt());
 
-  MainWindowActionBinder::restorePersistentActionStates(*this);
+  restorePersistentActionStates();
 
   if (QAction* action = commands_.action(QStringLiteral("view.word_wrap")); action && !action->isChecked()) {
     editor_->setWordWrapEnabled(false);
@@ -582,7 +573,7 @@ void muffin::MainWindow::applyTheme(QString name) {
   if (sidebar_) {
     sidebar_->applyThemeName(name);
   }
-  MainWindowActionBinder::updateThemeActions(*this);
+  updateThemeActions();
 
   if (name == QStringLiteral("night")) {
     setStyleSheet(QStringLiteral(

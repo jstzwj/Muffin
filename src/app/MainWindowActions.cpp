@@ -1,7 +1,5 @@
 #include "app/MainWindow.h"
 
-#include "app/MainWindowActionBinder.h"
-#include "app/MainWindowSignalBinder.h"
 #include "editor/EditorView.h"
 #include "editor/SourceEditorWidget.h"
 
@@ -50,19 +48,19 @@ QString zoneName(muffin::HitTestResult::Zone zone) {
 void muffin::MainWindow::setupConnections() {
   editorController_.attach(&session_, renderView_);
 
-  MainWindowSignalBinder::connectEditorSignals(*this);
-  MainWindowSignalBinder::connectRenderSignals(*this);
-  MainWindowSignalBinder::connectSessionSignals(*this);
-  MainWindowSignalBinder::connectApplicationSignals(*this);
+  connectEditorSignals();
+  connectRenderSignals();
+  connectSessionSignals();
+  connectApplicationSignals();
 
-  MainWindowActionBinder::bindCommands(*this);
+  bindCommands();
 
-  MainWindowSignalBinder::connectFindBarSignals(*this);
-  MainWindowSignalBinder::connectChromeSignals(*this);
-  MainWindowSignalBinder::connectSidebarSignals(*this);
+  connectFindBarSignals();
+  connectChromeSignals();
+  connectSidebarSignals();
 
-  MainWindowActionBinder::updateFileActions(*this);
-  MainWindowActionBinder::updateContextActions(*this);
+  updateFileActions();
+  updateContextActions();
   rebuildRecentFilesMenu();
   refreshSidebarDocumentInfo();
   refreshSidebarOutline();
@@ -82,7 +80,7 @@ void muffin::MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {
                               .arg(zoneName(hit.zone), hit.blockId.toString())
                               .arg(hit.textOffset);
   }
-  MainWindowActionBinder::updateContextActions(*this);
+  updateContextActions();
   updateStatus();
 }
 

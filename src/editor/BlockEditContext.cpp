@@ -1,5 +1,6 @@
 #include "editor/BlockEditContext.h"
 
+#include "document/BlockPredicates.h"
 #include "document/DocumentSession.h"
 #include "document/InlineNode.h"
 #include "document/MarkdownNode.h"
@@ -22,14 +23,6 @@ bool isDefinitionBlock(BlockType type) {
   return type == BlockType::LinkDefinition || type == BlockType::FootnoteDefinition;
 }
 
-// Literal blocks edit through dedicated controllers (code/math/HTML/front matter) rather than
-// the inline-text model. The cursor for such a block is anchored on the block node itself, with
-// the caret expressed as an offset into the literal content.
-bool isLiteralBlockType(BlockType type) {
-  return type == BlockType::CodeFence || type == BlockType::MathBlock ||
-         type == BlockType::HtmlBlock || type == BlockType::FrontMatter;
-}
-
 // Byte offset of the first editable literal character: just past the opening fence/marker line.
 // For "```\nfoo\n```" that is index 4 (the 'f'); for an empty "```\n\n```" it is the blank line.
 qsizetype literalContentStartOffset(const QString& markdown, const MarkdownNode& node) {
@@ -47,18 +40,6 @@ qsizetype taskContentStartForListLine(const QString& markdown, qsizetype lineSta
     return markerContentStart;
   }
   return lineStart + info.taskContentStart;
-}
-
-qsizetype paragraphContentStartIncludingCommonMarkIndent(const QString& markdown, qsizetype astStart) {
-  qsizetype lineStart = astStart;
-  while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
-    --lineStart;
-  }
-  qsizetype start = astStart;
-  while (start > lineStart && astStart - start < 3 && markdown.at(start - 1) == QLatin1Char(' ')) {
-    --start;
-  }
-  return start == lineStart ? start : astStart;
 }
 
 bool localSourceOffsetForCursor(const BlockEditContext& context, const CursorPosition& cursor, qsizetype& localSourceOffset) {

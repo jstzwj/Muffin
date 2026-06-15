@@ -1,5 +1,6 @@
 #include "editor/EditorController.h"
 
+#include "document/BlockPredicates.h"
 #include "html/HtmlBox.h"
 #include "blocks/literal/LiteralBlockUtil.h"
 #include "projection/InlineProjection.h"
@@ -74,18 +75,8 @@ qsizetype selectableTextLength(const MarkdownNode& node) {
     case BlockType::HtmlBlock:
       return node.literal().size();
     case BlockType::LinkDefinition:
-    case BlockType::FootnoteDefinition: {
-      const DefinitionBlock definition = node.definition();
-      if (!definition.markerRange.isValid()) {
-        return 0;
-      }
-      const qsizetype end = definition.sourceRange.isValid()
-                                 ? definition.sourceRange.end
-                                 : qMax(definition.markerRange.end,
-                                        qMax(definition.destinationRange.end,
-                                             qMax(definition.titleRange.end, definition.noteRange.end)));
-      return qMax<qsizetype>(0, end - definition.markerRange.start);
-    }
+    case BlockType::FootnoteDefinition:
+      return definitionSelectableLength(node);
     case BlockType::Table:
       return 1;
     default:
@@ -123,18 +114,6 @@ MarkdownNode* lastSelectableBlock(MarkdownNode& root) {
     }
   }
   return nullptr;
-}
-
-qsizetype paragraphContentStartIncludingCommonMarkIndent(const QString& markdown, qsizetype astStart) {
-  qsizetype lineStart = astStart;
-  while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
-    --lineStart;
-  }
-  qsizetype start = astStart;
-  while (start > lineStart && astStart - start < 3 && markdown.at(start - 1) == QLatin1Char(' ')) {
-    --start;
-  }
-  return start == lineStart ? start : astStart;
 }
 
 bool fillSourceOffsetForTextHit(const DocumentSession& session, HitTestResult& hit) {

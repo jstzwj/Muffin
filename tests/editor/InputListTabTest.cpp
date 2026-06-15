@@ -500,6 +500,124 @@ void testIndentEmptyListItemDoesNotPromotePreviousToHeading() {
           "'----' setext underline must still parse as a level-2 heading");
 }
 
+// Regression for the user-reported "press Tab on the trailing empty list item and its
+// marker jumps onto the previous item's line" scenario. Historically an empty *trailing*
+// item could be mis-resolved: cmark-gfm used to treat a bare "-" as a Setext H2 underline
+// (fixed in 053dc90), which let the empty item's marker get absorbed by the preceding item.
+// This locks in the corrected behaviour for the trailing case (the middle case is covered by
+// testIndentEmptyListItemDoesNotPromotePreviousToHeading) and exercises the full pipeline:
+// direct indent, real Tab key through the view, and typing into the newly nested item.
+void testIndentTrailingEmptyListItem() {
+  // --- "*" markers (the user's exact document: heading + 4-item list, 4th item empty) ---
+  {
+    DocumentSession session;
+    SelectionController selection;
+    UndoStack undoStack;
+    BrushQueue brushQueue;
+    InputController input;
+    wireInput(input, session, selection, undoStack, brushQueue);
+
+    session.setMarkdownText(QStringLiteral("# 123\n\n* 第一项\n* 第二项\n* 第三项\n* "), false);
+    setCursor(selection, listItemAt(session, 1, 3), 0);
+    require(input.indentListItem(), "tab should indent the trailing empty '*' list item");
+    require(session.markdownText() == QStringLiteral("# 123\n\n* 第一项\n* 第二项\n* 第三项\n  * "),
+            "indenting trailing empty '*' item should only add leading spaces on its own line");
+    require(!session.markdownText().mid(0).contains(QStringLiteral("第三项*")),
+            "trailing empty item marker must not be glued onto the previous item");
+
+    MarkdownNode* thirdItem = listItemAt(session, 1, 2);
+    require(maybeFirstChildOfType(thirdItem, BlockType::Heading) == nullptr,
+            "preceding item must not become a heading after indenting the trailing empty item");
+    MarkdownNode* nestedList = maybeFirstChildOfType(thirdItem, BlockType::List);
+    require(nestedList != nullptr && nestedList->children().size() == 1,
+            "indenting trailing empty '*' item should nest one empty child under the previous item");
+    require(listDepthForItem(childAt(nestedList, 0)) == 2, "nested trailing empty item should be at list depth 2");
+
+    // Typing into the now-nested empty item must land inside it, not in the previous item.
+    setCursor(selection, childAt(nestedList, 0), 0);
+    require(input.insertText(QStringLiteral("X")), "should be able to type into the nested empty item");
+    require(session.markdownText() == QStringLiteral("# 123\n\n* 第一项\n* 第二项\n* 第三项\n  * X"),
+            "typing into nested trailing empty item should fill it in place");
+  }
+
+  // --- "-" markers (the variant the Setext fix targeted) ---
+  {
+    DocumentSession session;
+    SelectionController selection;
+    UndoStack undoStack;
+    BrushQueue brushQueue;
+    InputController input;
+    wireInput(input, session, selection, undoStack, brushQueue);
+
+    session.setMarkdownText(QStringLiteral("# 123\n\n- one\n- two\n- three\n- "), false);
+    setCursor(selection, listItemAt(session, 1, 3), 0);
+    require(input.indentListItem(), "tab should indent the trailing empty '-' list item");
+    require(session.markdownText() == QStringLiteral("# 123\n\n- one\n- two\n- three\n  - "),
+            "indenting trailing empty '-' item should only add leading spaces on its own line");
+    MarkdownNode* thirdItem = listItemAt(session, 1, 2);
+    require(maybeFirstChildOfType(thirdItem, BlockType::Heading) == nullptr,
+            "preceding '-' item must not become a Setext heading");
+    require(maybeFirstChildOfType(thirdItem, BlockType::List) != nullptr,
+            "indenting trailing empty '-' item should nest a child list");
+  }
+
+  // --- MIDDLE empty '*' item: the sibling of the trailing case.  Before the parser fix,
+  //     empty "*"/"+" markers were non-interrupting, so indenting a middle empty "*" item
+  //     was absorbed into the previous item just like the trailing case.  The existing
+  //     middle-item regression test only covered "-", so cover "*" here. ---
+  {
+    DocumentSession session;
+    SelectionController selection;
+    UndoStack undoStack;
+    BrushQueue brushQueue;
+    InputController input;
+    wireInput(input, session, selection, undoStack, brushQueue);
+
+    session.setMarkdownText(QStringLiteral("* First item\n* \n* Second item"), false);
+    setCursor(selection, listItemAt(session, 0, 1), 0);
+    require(input.indentListItem(), "tab should indent the middle empty '*' list item");
+    require(session.markdownText() == QStringLiteral("* First item\n  * \n* Second item"),
+            "indenting a middle empty '*' item should only add leading spaces on its own line");
+    MarkdownNode* firstItem = listItemAt(session, 0, 0);
+    require(maybeFirstChildOfType(firstItem, BlockType::Heading) == nullptr,
+            "preceding '*' item must not become a Setext heading");
+    MarkdownNode* nestedList = maybeFirstChildOfType(firstItem, BlockType::List);
+    require(nestedList != nullptr && nestedList->children().size() == 1,
+            "indenting a middle empty '*' item should nest one empty child");
+    require(listDepthForItem(childAt(nestedList, 0)) == 2, "middle nested empty '*' item should be at list depth 2");
+  }
+
+  // --- Full pipeline: click the empty item in the rendered view and press a real Tab key ---
+  {
+    DocumentSession session;
+    EditorController controller;
+    EditorView view;
+    controller.attach(&session, &view);
+    view.resize(720, 420);
+    session.setMarkdownText(QStringLiteral("# 123\n\n* 第一项\n* 第二项\n* 第三项\n* "), false);
+    view.setDocument(session.document());
+
+    MarkdownNode* emptyItem = listItemAt(session, 1, 3);
+    const QRectF rect = view.nodeRect(emptyItem->id());
+    require(rect.isValid(), "trailing empty list item should have a render rect");
+    const QPointF pt(rect.left() + 6.0, rect.center().y());
+    for (QEvent::Type t : {QEvent::MouseButtonPress, QEvent::MouseButtonRelease}) {
+      QMouseEvent me(t, pt, QPointF(pt), Qt::LeftButton,
+                     t == QEvent::MouseButtonPress ? Qt::LeftButton : Qt::NoButton, Qt::NoModifier);
+      QApplication::sendEvent(view.viewport(), &me);
+    }
+    require(controller.selection().cursorPosition().blockId == emptyItem->id(),
+            "clicking the trailing empty item should place the cursor in it, not the previous item");
+
+    QKeyEvent tab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+    QApplication::sendEvent(&view, &tab);
+    require(session.markdownText() == QStringLiteral("# 123\n\n* 第一项\n* 第二项\n* 第三项\n  * "),
+            "real Tab key on the rendered trailing empty item should nest it correctly");
+    require(maybeFirstChildOfType(listItemAt(session, 1, 2), BlockType::List) != nullptr,
+            "rendered Tab on trailing empty item should create a nested list");
+  }
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -513,6 +631,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testTabInRenderedTextInsertsZeroWidthSpace);
   RUN_TEST(testListTabFromRenderedClick);
   RUN_TEST(testIndentEmptyListItemDoesNotPromotePreviousToHeading);
+  RUN_TEST(testIndentTrailingEmptyListItem);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

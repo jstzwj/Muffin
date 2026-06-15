@@ -1,5 +1,6 @@
 #include "editor/InputController.h"
 
+#include "document/BlockPredicates.h"
 #include "document/DocumentSession.h"
 #include "document/InlineNode.h"
 #include "projection/InlineProjection.h"
@@ -87,12 +88,6 @@ NodeId refreshNodeFor(DocumentSession* session, NodeId nodeId) {
     node = node->parent();
   }
   return node->id();
-}
-
-// Blocks that edit through a dedicated literal controller rather than inline text.
-bool isLiteralBlockType(BlockType type) {
-  return type == BlockType::CodeFence || type == BlockType::MathBlock ||
-         type == BlockType::HtmlBlock || type == BlockType::FrontMatter;
 }
 
 }  // namespace
@@ -1325,18 +1320,8 @@ qsizetype InputController::selectableTextLength(const MarkdownNode& node) const 
     case BlockType::HtmlBlock:
       return node.literal().size();
     case BlockType::LinkDefinition:
-    case BlockType::FootnoteDefinition: {
-      const DefinitionBlock definition = node.definition();
-      if (!definition.markerRange.isValid()) {
-        return 0;
-      }
-      const qsizetype end = definition.sourceRange.isValid()
-                                 ? definition.sourceRange.end
-                                 : qMax(definition.markerRange.end,
-                                        qMax(definition.destinationRange.end,
-                                             qMax(definition.titleRange.end, definition.noteRange.end)));
-      return qMax<qsizetype>(0, end - definition.markerRange.start);
-    }
+    case BlockType::FootnoteDefinition:
+      return definitionSelectableLength(node);
     case BlockType::Table:
       return 1;
     default:

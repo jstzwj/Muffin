@@ -434,6 +434,13 @@ void CmarkNodeAdapter::readBlockMetadata(cmark_node* cmarkNode, MarkdownNode& mu
       muffinNode.setListTight(cmark_node_get_list_tight(cmarkNode) != 0);
       break;
     case BlockType::ListItem:
+      // The tasklist extension reports type string "tasklist" for genuine task
+      // items and "item" for plain bullets; the checked flag alone is false for
+      // both an unchecked task item and a regular item, so it cannot tell them
+      // apart. Capture task-item identity here so the serializer can round-trip
+      // the checkbox faithfully.
+      muffinNode.setTaskItem(
+          QString::fromUtf8(cmark_node_get_type_string(cmarkNode)) == QLatin1String("tasklist"));
       muffinNode.setTaskChecked(cmark_gfm_extensions_get_tasklist_item_checked(cmarkNode));
       break;
     case BlockType::CodeFence: {

@@ -1,6 +1,7 @@
 #include "render/BlockLayoutBuilder.h"
 
 #include "blocks/html/HtmlSanitizer.h"
+#include "document/BlockPredicates.h"
 #include "document/PendingBlockMarker.h"
 #include "document/SourceRangeUtil.h"
 #include "projection/InlineProjection.h"
@@ -88,18 +89,6 @@ bool selectionFocusesNode(const SelectionRange& selection, NodeId nodeId) {
 bool isEmptyDocumentParagraph(const QString& markdown, const MarkdownNode& node) {
   const SourceRange range = node.sourceRange();
   return markdown.isEmpty() && node.type() == BlockType::Paragraph && range.byteStart == 0 && range.byteEnd == 0;
-}
-
-qsizetype paragraphContentStartIncludingCommonMarkIndent(const QString& markdown, qsizetype astStart) {
-  qsizetype lineStart = astStart;
-  while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
-    --lineStart;
-  }
-  qsizetype start = astStart;
-  while (start > lineStart && astStart - start < 3 && markdown.at(start - 1) == QLatin1Char(' ')) {
-    --start;
-  }
-  return start == lineStart ? start : astStart;
 }
 
 QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& theme, qreal width) {

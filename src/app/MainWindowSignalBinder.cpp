@@ -1,8 +1,5 @@
-#include "app/MainWindowSignalBinder.h"
-
 #include "app/LanguageManager.h"
 #include "app/MainWindow.h"
-#include "app/MainWindowActionBinder.h"
 #include "app/UpdateChecker.h"
 #include "app/SidebarWidget.h"
 #include "editor/EditorView.h"
@@ -44,7 +41,8 @@ private:
 
 }  // namespace
 
-void muffin::MainWindowSignalBinder::connectEditorSignals(MainWindow& window) {
+void muffin::MainWindow::connectEditorSignals() {
+  auto& window = *this;  // preserves the window.X call sites after the friend→member split
   QObject::connect(window.editor_, &SourceEditorWidget::textEdited, &window.session_, &DocumentSession::updateFromEditor);
   QObject::connect(window.editor_, &SourceEditorWidget::cursorPositionChanged, &window, [&window](int line, int column) {
     window.updateCursorStatus(line, column);
@@ -53,11 +51,12 @@ void muffin::MainWindowSignalBinder::connectEditorSignals(MainWindow& window) {
     }
   });
   QObject::connect(window.editor_, &SourceEditorWidget::cursorPositionChanged, &window, [&window](int, int) {
-    MainWindowActionBinder::updateEditActions(window);
+    window.updateEditActions();
   });
 }
 
-void muffin::MainWindowSignalBinder::connectRenderSignals(MainWindow& window) {
+void muffin::MainWindow::connectRenderSignals() {
+  auto& window = *this;
   QObject::connect(&window.editorController_, &EditorController::cursorChanged, &window, [&window](const HitTestResult& hit) {
     window.updateRenderCursorStatus(hit);
     if (window.typewriterMode_ && !window.backend_->isSourceMode()) {
@@ -89,8 +88,8 @@ void muffin::MainWindowSignalBinder::connectRenderSignals(MainWindow& window) {
     if (window.backend_->isSourceMode()) {
       return;
     }
-    MainWindowActionBinder::updateTableActions(window);
-    MainWindowActionBinder::updateParagraphActions(window);
+    window.updateTableActions();
+    window.updateParagraphActions();
     QMenu menu(&window);
     const QStringList ids = {
         QStringLiteral("table.insert_table"),
@@ -123,7 +122,8 @@ void muffin::MainWindowSignalBinder::connectRenderSignals(MainWindow& window) {
   });
 }
 
-void muffin::MainWindowSignalBinder::connectSessionSignals(MainWindow& window) {
+void muffin::MainWindow::connectSessionSignals() {
+  auto& window = *this;
   QObject::connect(&window.session_, &DocumentSession::documentTextChanged, &window, [&window](const QString& text) {
     PerfTimer perf("main.documentTextChanged.consumer");
     if (window.backend_->isSourceMode()) {
@@ -139,7 +139,7 @@ void muffin::MainWindowSignalBinder::connectSessionSignals(MainWindow& window) {
   });
   QObject::connect(&window.session_, &DocumentSession::filePathChanged, &window, &MainWindow::updateTitle);
   QObject::connect(&window.session_, &DocumentSession::filePathChanged, &window, [&window] {
-    MainWindowActionBinder::updateFileActions(window);
+    window.updateFileActions();
   });
   QObject::connect(&window.session_, &DocumentSession::filePathChanged, &window, &MainWindow::refreshSidebarDocumentInfo);
   QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, &MainWindow::updateTitle);
@@ -156,10 +156,11 @@ void muffin::MainWindowSignalBinder::connectSessionSignals(MainWindow& window) {
   });
 }
 
-void muffin::MainWindowSignalBinder::connectApplicationSignals(MainWindow& window) {
+void muffin::MainWindow::connectApplicationSignals() {
+  auto& window = *this;
   QObject::connect(&window.editorController_, &EditorController::stateChanged, &window, [&window] {
     window.updateStatus();
-    MainWindowActionBinder::updateContextActions(window);
+    window.updateContextActions();
   });
   QObject::connect(&window.themeManager_, &ThemeManager::themeChanged, &window, [&window](const QString& name) {
     window.applyTheme(name);
@@ -203,14 +204,16 @@ void muffin::MainWindowSignalBinder::connectApplicationSignals(MainWindow& windo
   });
 }
 
-void muffin::MainWindowSignalBinder::connectFindBarSignals(MainWindow& window) {
+void muffin::MainWindow::connectFindBarSignals() {
+  auto& window = *this;
   QObject::connect(window.findBar_, &FindBarWidget::findRequested, &window, &MainWindow::performFind);
   QObject::connect(window.findBar_, &FindBarWidget::closed, &window, &MainWindow::hideFindBar);
   QObject::connect(window.findBar_, &FindBarWidget::replaceRequested, &window, &MainWindow::performReplace);
   QObject::connect(window.findBar_, &FindBarWidget::replaceAllRequested, &window, &MainWindow::performReplaceAll);
 }
 
-void muffin::MainWindowSignalBinder::connectChromeSignals(MainWindow& window) {
+void muffin::MainWindow::connectChromeSignals() {
+  auto& window = *this;
   QObject::connect(window.sidebarButton_, &QToolButton::clicked, &window, [&window] {
     if (QAction* action = window.commands_.action(QStringLiteral("view.sidebar"))) {
       action->trigger();
@@ -223,7 +226,8 @@ void muffin::MainWindowSignalBinder::connectChromeSignals(MainWindow& window) {
   });
 }
 
-void muffin::MainWindowSignalBinder::connectSidebarSignals(MainWindow& window) {
+void muffin::MainWindow::connectSidebarSignals() {
+  auto& window = *this;
   QObject::connect(window.sidebar_, &SidebarWidget::newFileRequested, &window, [&window] {
     if (QAction* action = window.commands_.action(QStringLiteral("file.new"))) {
       action->trigger();

@@ -118,11 +118,53 @@ void testStandaloneSanitizer() {
   require(!preview.contains(QStringLiteral("javascript:"), Qt::CaseInsensitive), "standalone sanitizer should remove javascript URL");
 }
 
+void testSanitizerClosesBypassClasses() {
+  // Slash-delimited event handler: the old \s+on regex missed `<img/onerror=...>`.
+  require(!HtmlSanitizer().sanitizedPreview(QStringLiteral("<img/onerror=alert(1) src=x>"))
+              .contains(QStringLiteral("onerror"), Qt::CaseInsensitive),
+          "sanitizer must strip slash-separated event handlers");
+
+  // <iframe> subtree dropped entirely (content included).
+  const QString iframe = HtmlSanitizer().sanitizedPreview(
+      QStringLiteral("<iframe src=\"javascript:alert(1)\">fallback</iframe>"));
+  require(!iframe.contains(QStringLiteral("iframe"), Qt::CaseInsensitive), "iframe subtree must be removed");
+  require(!iframe.contains(QStringLiteral("javascript:"), Qt::CaseInsensitive), "iframe javascript src must be removed");
+
+  // <svg> can carry nested <script>/onload; drop the whole subtree.
+  const QString svg = HtmlSanitizer().sanitizedPreview(
+      QStringLiteral("<svg onload=\"alert(1)\"><script>alert(2)</script></svg>"));
+  require(!svg.contains(QStringLiteral("svg"), Qt::CaseInsensitive), "svg subtree must be removed");
+  require(!svg.contains(QStringLiteral("onload"), Qt::CaseInsensitive), "svg onload must be removed");
+  require(!svg.contains(QStringLiteral("script"), Qt::CaseInsensitive), "svg nested script must be removed");
+
+  // vbscript: and dangerous data: URIs are neutralized to '#'.
+  require(HtmlSanitizer().sanitizedPreview(QStringLiteral("<a href=\"vbscript:alert(1)\">x</a>"))
+              .contains(QStringLiteral("href=\"#\""), Qt::CaseInsensitive),
+          "vbscript URL must be neutralized to '#'");
+  require(!HtmlSanitizer().sanitizedPreview(QStringLiteral("<a href=\"data:text/html,<b>x</b>\">x</a>"))
+              .contains(QStringLiteral("data:"), Qt::CaseInsensitive),
+          "data:text/html URL must be neutralized");
+
+  // Control-character obfuscation of the scheme must not bypass the check.
+  require(!HtmlSanitizer().sanitizedPreview(QStringLiteral("<a href=\"java\tscript:alert(1)\">x</a>"))
+              .contains(QStringLiteral("script:"), Qt::CaseInsensitive),
+          "tab-obfuscated javascript scheme must be neutralized");
+
+  // Benign structure and safe data: images survive the whitelist.
+  const QString kept = HtmlSanitizer().sanitizedPreview(
+      QStringLiteral("<p>hi <strong>there</strong></p><img src=\"data:image/png;base64,AAAA\">"));
+  require(kept.contains(QStringLiteral("<p>"), Qt::CaseInsensitive), "benign <p> should be preserved");
+  require(kept.contains(QStringLiteral("<strong>"), Qt::CaseInsensitive), "benign <strong> should be preserved");
+  require(kept.contains(QStringLiteral("data:image/png;base64"), Qt::CaseInsensitive),
+          "safe data:image URL should be preserved");
+}
+
 }  // namespace
 
 int main() {
   testEnterEditAndTextEditing();
   testSetHtmlRoundtripAndSanitizer();
   testStandaloneSanitizer();
+  testSanitizerClosesBypassClasses();
   return 0;
 }

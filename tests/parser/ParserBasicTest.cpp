@@ -254,6 +254,71 @@ void testTableCellSourceRanges() {
   require(sourceTextForNode(markdown, childAt(bodyRow, 2)) == QStringLiteral("[x](u)"), QStringLiteral("Inline markdown cell source range mismatch"));
 }
 
+void testTaskListAndLooseListRoundTrip() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  MarkdownSerializer serializer;
+
+  // Tight task list: checked state must survive serialize -> parse, and the
+  // checkbox must only appear on genuine task items.
+  const QString tight = QStringLiteral("- [x] done\n- [ ] todo\n");
+  ParseResult parsedTight = parser.parseDocument(tight, options);
+  require(parsedTight.root != nullptr, QStringLiteral("Parser returned null root for task list"));
+  const MarkdownNode& tightList = childAt(*parsedTight.root, 0);
+  require(tightList.type() == BlockType::List, QStringLiteral("'- [x] ...' should parse as a list"));
+  require(tightList.listTight(), QStringLiteral("Adjacent task items should form a tight list"));
+  require(tightList.children().size() == 2, QStringLiteral("Task list should have two items"));
+  require(tightList.children()[0]->isTaskItem(), QStringLiteral("First item should be a task item"));
+  require(tightList.children()[0]->taskChecked(), QStringLiteral("Checked task item flag missing"));
+  require(tightList.children()[1]->isTaskItem(), QStringLiteral("Second item should be a task item"));
+  require(!tightList.children()[1]->taskChecked(), QStringLiteral("Unchecked task item should be unchecked"));
+
+  MarkdownDocument tightDoc;
+  tightDoc.setMarkdownText(tight, std::move(parsedTight.root));
+  const QString tightSerialized = serializer.serializeDocument(tightDoc);
+  require(tightSerialized.contains(QStringLiteral("[x] done")), QStringLiteral("Checked checkbox dropped on serialization"));
+  require(tightSerialized.contains(QStringLiteral("[ ] todo")), QStringLiteral("Unchecked checkbox dropped on serialization"));
+
+  ParseResult reparsedTight = parser.parseDocument(tightSerialized, options);
+  require(reparsedTight.root != nullptr, QStringLiteral("Re-parsed task list root is null"));
+  const MarkdownNode& reTightList = childAt(*reparsedTight.root, 0);
+  require(reTightList.type() == BlockType::List, QStringLiteral("Serialized task list did not re-parse to a list"));
+  require(reTightList.children().size() == 2, QStringLiteral("Task list item count changed on round-trip"));
+  require(reTightList.children()[0]->isTaskItem() && reTightList.children()[0]->taskChecked(),
+          QStringLiteral("Checked task item did not survive the round-trip"));
+  require(reTightList.children()[1]->isTaskItem() && !reTightList.children()[1]->taskChecked(),
+          QStringLiteral("Unchecked task item did not survive the round-trip"));
+
+  // Plain bullets must NOT gain a checkbox on round-trip.
+  const QString plain = QStringLiteral("- alpha\n- beta\n");
+  ParseResult parsedPlain = parser.parseDocument(plain, options);
+  MarkdownDocument plainDoc;
+  plainDoc.setMarkdownText(plain, std::move(parsedPlain.root));
+  const QString plainSerialized = serializer.serializeDocument(plainDoc);
+  require(!plainSerialized.contains(QStringLiteral("[ ]"), Qt::CaseInsensitive),
+          QStringLiteral("Plain bullet list must not gain a task checkbox on round-trip"));
+  require(!plainSerialized.contains(QStringLiteral("[x]"), Qt::CaseInsensitive),
+          QStringLiteral("Plain bullet list must not gain a checked checkbox on round-trip"));
+
+  // Loose list: the blank-line-separated form must survive serialize -> parse.
+  const QString loose = QStringLiteral("- one\n\n- two\n\n- three\n");
+  ParseResult parsedLoose = parser.parseDocument(loose, options);
+  require(parsedLoose.root != nullptr, QStringLiteral("Parser returned null root for loose list"));
+  const MarkdownNode& looseList = childAt(*parsedLoose.root, 0);
+  require(looseList.type() == BlockType::List, QStringLiteral("Loose sample should parse as a list"));
+  require(!looseList.listTight(), QStringLiteral("Blank-line-separated items should form a loose list"));
+
+  MarkdownDocument looseDoc;
+  looseDoc.setMarkdownText(loose, std::move(parsedLoose.root));
+  const QString looseSerialized = serializer.serializeDocument(looseDoc);
+  require(looseSerialized.contains(QStringLiteral("\n\n-")),
+          QStringLiteral("Loose list serialization must keep blank-line separators between items"));
+  ParseResult reparsedLoose = parser.parseDocument(looseSerialized, options);
+  const MarkdownNode& reLooseList = childAt(*reparsedLoose.root, 0);
+  require(reLooseList.type() == BlockType::List, QStringLiteral("Serialized loose list did not re-parse to a list"));
+  require(!reLooseList.listTight(), QStringLiteral("Loose list became tight after round-trip"));
+}
+
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
   testLineStartOffsetCache();
@@ -264,5 +329,6 @@ int main(int argc, char** argv) {
   testBasicParseAndSerialize();
   testSetextHeadingParseAndSerialize();
   testTableCellSourceRanges();
+  testTaskListAndLooseListRoundTrip();
   return 0;
 }

@@ -205,13 +205,20 @@ QString MarkdownSerializer::serializeList(const MarkdownNode& node) const {
     items.push_back(serializeListItem(*child, index, node.listKind()));
     ++index;
   }
-  return items.join('\n');
+  // A loose list (listTight()==false) separates items with a blank line; a tight
+  // list joins them directly. Re-emitting the wrong form would flip the list's
+  // rendered spacing on the next re-parse.
+  const QString separator = node.listTight() ? QStringLiteral("\n") : QStringLiteral("\n\n");
+  return items.join(separator);
 }
 
 QString MarkdownSerializer::serializeListItem(const MarkdownNode& node, int index, ListKind kind) const {
-  const QString marker = kind == ListKind::Ordered
-                             ? QStringLiteral("%1. ").arg(index)
-                             : QStringLiteral("- ");
+  QString marker = kind == ListKind::Ordered
+                       ? QStringLiteral("%1. ").arg(index)
+                       : QStringLiteral("- ");
+  if (node.isTaskItem()) {
+    marker += node.taskChecked() ? QStringLiteral("[x] ") : QStringLiteral("[ ] ");
+  }
   QString content = serializeChildren(node, QStringLiteral("\n"));
   if (content.isEmpty()) {
     content = serializeInlineList(node.inlines());

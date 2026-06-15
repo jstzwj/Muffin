@@ -61,6 +61,11 @@ public:
   void setListTight(bool tight);
   bool taskChecked() const;
   void setTaskChecked(bool checked);
+  // True only for genuine task-list items (GFM `- [ ]`/`- [x]`). A plain bullet
+  // and an unchecked task item both report taskChecked()==false, so this flag is
+  // the only way to tell them apart and round-trip the checkbox faithfully.
+  bool isTaskItem() const;
+  void setTaskItem(bool taskItem);
 
   QString codeLanguage() const;
   void setCodeLanguage(QString language);
@@ -89,29 +94,104 @@ public:
 
   std::unique_ptr<MarkdownNode> clone(CloneMode mode = CloneMode::PreserveIds) const;
 
+  // Generic subtree traversal, replacing hand-written recursive walks scattered across the
+  // editor/parser/render code. Depth-first preorder; visits descendants of *this (not *this).
+  template <typename F>
+  void forEachDescendant(F&& fn) {
+    for (const auto& child : children_) {
+      fn(*child);
+      child->forEachDescendant(fn);
+    }
+  }
+  template <typename F>
+  void forEachDescendant(F&& fn) const {
+    for (const auto& child : children_) {
+      fn(*child);
+      child->forEachDescendant(fn);
+    }
+  }
+
+  // First descendant (DFS preorder) for which pred(*node) is true, or nullptr.
+  template <typename F>
+  MarkdownNode* findDescendant(F&& pred) {
+    for (const auto& child : children_) {
+      if (pred(*child)) return child.get();
+      if (MarkdownNode* found = child->findDescendant(pred)) return found;
+    }
+    return nullptr;
+  }
+  template <typename F>
+  const MarkdownNode* findDescendant(F&& pred) const {
+    for (const auto& child : children_) {
+      if (pred(*child)) return child.get();
+      if (const MarkdownNode* found = child->findDescendant(pred)) return found;
+    }
+    return nullptr;
+  }
+
+  MarkdownNode* firstChildByType(BlockType type) {
+    for (const auto& child : children_) {
+      if (child->type() == type) return child.get();
+    }
+    return nullptr;
+  }
+  const MarkdownNode* firstChildByType(BlockType type) const {
+    for (const auto& child : children_) {
+      if (child->type() == type) return child.get();
+    }
+    return nullptr;
+  }
+
+  MarkdownNode* findDescendantByType(BlockType type) {
+    return findDescendant([type](const MarkdownNode& node) { return node.type() == type; });
+  }
+  const MarkdownNode* findDescendantByType(BlockType type) const {
+    return findDescendant([type](const MarkdownNode& node) { return node.type() == type; });
+  }
+
 private:
+  struct HeadingInfo {
+    int level = 0;
+    bool setext = false;
+  };
+  struct ListInfo {
+    ListKind kind = ListKind::None;
+    int start = 1;
+    bool tight = false;
+    bool taskChecked = false;
+    bool taskItem = false;
+  };
+  struct CodeInfo {
+    QString language;
+    bool indented = false;
+  };
+  struct TableInfo {
+    QVector<TableAlignment> alignments;
+    bool rowIsHeader = false;
+  };
+  // All per-block domain state in one copyable aggregate, so clone() copies it in a single
+  // assignment and adding a field can never be silently dropped — the flat layout previously let
+  // clone() miss taskItem_, which shipped as a round-trip bug.
+  struct BlockMetadata {
+    QVector<InlineNode> inlines;
+    QString literal;
+    HeadingInfo heading;
+    ListInfo list;
+    CodeInfo code;
+    TableInfo table;
+    MathDelimiter mathDelimiter = MathDelimiter::Dollar;
+    FrontMatterFormat frontMatterFormat = FrontMatterFormat::None;
+    DefinitionBlock definition;
+    SourceRange sourceRange;
+  };
+
   NodeId id_;
   BlockType type_ = BlockType::Unknown;
   MarkdownNode* parent_ = nullptr;
   MarkdownNode* previous_ = nullptr;
   MarkdownNode* next_ = nullptr;
   std::vector<std::unique_ptr<MarkdownNode>> children_;
-  QVector<InlineNode> inlines_;
-  QString literal_;
-  int headingLevel_ = 0;
-  bool setext_ = false;
-  ListKind listKind_ = ListKind::None;
-  int listStart_ = 1;
-  bool listTight_ = false;
-  bool taskChecked_ = false;
-  QString codeLanguage_;
-  bool codeIndented_ = false;
-  MathDelimiter mathDelimiter_ = MathDelimiter::Dollar;
-  FrontMatterFormat frontMatterFormat_ = FrontMatterFormat::None;
-  DefinitionBlock definition_;
-  QVector<TableAlignment> tableAlignments_;
-  bool tableRowIsHeader_ = false;
-  SourceRange sourceRange_;
+  BlockMetadata metadata_;
 };
 
 }  // namespace muffin

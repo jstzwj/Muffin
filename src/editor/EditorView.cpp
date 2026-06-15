@@ -2,9 +2,10 @@
 
 #include "document/MarkdownDocument.h"
 #include "editor/CodeLanguageEditor.h"
+#include "editor/EditorViewGeometry.h"
+#include "editor/HtmlBlockHoverController.h"
 #include "editor/TableToolbar.h"
 #include "render/ImageLoader.h"
-#include "unicode/WordBoundary.h"
 
 #include <QApplication>
 #include <QDesktopServices>
@@ -23,12 +24,16 @@
 #include <QMouseEvent>
 #include <QInputMethodEvent>
 #include <QFontMetricsF>
-#include <QTextLayout>
-#include <QTextOption>
 #include <QUrl>
 #include <QKeyEvent>
 
 namespace muffin {
+
+// Pull the stateless geometry/hit-test helpers into scope so call sites read as
+// before (isSelectableZone, selectableLength, …). The moved logic lives in
+// editor_geometry; EditorView keeps only the stateful orchestration.
+using namespace editor_geometry;
+
 namespace {
 
 Q_LOGGING_CATEGORY(viewPerf, "muffin.perf", QtWarningMsg)
@@ -86,166 +91,6 @@ private:
   bool enabled_ = false;
   QElapsedTimer timer_;
 };
-
-QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin) {
-  const QFontMetricsF metrics(font);
-  const qreal lineHeight = qMax<qreal>(14.0, metrics.height());
-  offset = qBound<qsizetype>(0, offset, literal.size());
-
-  qsizetype lineStart = 0;
-  int line = 0;
-  for (qsizetype i = 0; i < offset && i < literal.size(); ++i) {
-    if (literal.at(i) == QLatin1Char('\n')) {
-      ++line;
-      lineStart = i + 1;
-    }
-  }
-
-  const qreal x = metrics.horizontalAdvance(literal.mid(lineStart, offset - lineStart));
-  return QRectF(origin.x() + x, origin.y() + line * lineHeight, 1.0, lineHeight);
-}
-
-QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin, qreal width, qreal lineHeight) {
-  const QFontMetricsF metrics(font);
-  const qreal fallbackHeight = qMax<qreal>(14.0, lineHeight);
-  offset = qBound<qsizetype>(0, offset, literal.size());
-
-  QTextOption option;
-  option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-
-  const QStringList physicalLines = literal.isEmpty() ? QStringList{QString()} : literal.split(QLatin1Char('\n'));
-  const qreal lineWidth = qMax<qreal>(1.0, width);
-  qreal y = 0.0;
-  qsizetype globalStart = 0;
-  QRectF fallback(origin.x(), origin.y(), 1.0, fallbackHeight);
-
-  for (const QString& sourceLine : physicalLines) {
-    const QString lineText = sourceLine.isEmpty() ? QStringLiteral(" ") : sourceLine;
-    QTextLayout layout(lineText, font);
-    layout.setTextOption(option);
-    layout.beginLayout();
-    bool producedLine = false;
-    while (true) {
-      QTextLine textLine = layout.createLine();
-      if (!textLine.isValid()) {
-        break;
-      }
-      textLine.setLineWidth(lineWidth);
-      const qreal height = qMax<qreal>(fallbackHeight, textLine.height());
-      textLine.setPosition(QPointF(0.0, y + (height - textLine.height()) * 0.5));
-      producedLine = true;
-      const qsizetype visualStart = globalStart + textLine.textStart();
-      const qsizetype visualLength = qMin<qsizetype>(textLine.textLength(), sourceLine.size() - textLine.textStart());
-      const qsizetype visualEnd = visualStart + visualLength;
-      fallback = QRectF(origin.x() + metrics.horizontalAdvance(sourceLine), origin.y() + y, 1.0, height);
-      if (offset >= visualStart && offset <= visualEnd) {
-        const qsizetype localOffset = qBound<qsizetype>(visualStart, offset, visualEnd);
-        const qreal x = metrics.horizontalAdvance(literal.mid(visualStart, localOffset - visualStart));
-        layout.endLayout();
-        return QRectF(origin.x() + x, origin.y() + y, 1.0, height);
-      }
-      y += height;
-    }
-    layout.endLayout();
-    if (!producedLine) {
-      if (offset == globalStart) {
-        return QRectF(origin.x(), origin.y() + y, 1.0, fallbackHeight);
-      }
-      y += fallbackHeight;
-    }
-    globalStart += sourceLine.size() + 1;
-  }
-  return fallback;
-}
-
-bool isSelectableZone(HitTestResult::Zone zone) {
-  return zone == HitTestResult::Zone::Text || zone == HitTestResult::Zone::Code || zone == HitTestResult::Zone::Math ||
-         zone == HitTestResult::Zone::Html || zone == HitTestResult::Zone::FrontMatter || zone == HitTestResult::Zone::TableCell;
-}
-
-// Zones a drag (or shift-click) can start or land on. Unlike isSelectableZone,
-// this includes the virtual trailing paragraph: dragging from the document end
-// selects back through the preceding blocks. Double-click word selection still
-// uses isSelectableZone, since the trailing paragraph has no word to select.
-bool isDragSelectableZone(HitTestResult::Zone zone) {
-  return isSelectableZone(zone) || zone == HitTestResult::Zone::BlockAfter;
-}
-
-QPointF tableCellTextOrigin(const BlockLayout::TableCellLayout& cell, const RenderTheme& theme) {
-  const QRectF contentRect = cell.rect.marginsRemoved(theme.tableCellPadding());
-  qreal textX = contentRect.left();
-  if (cell.alignment == TableAlignment::Right) {
-    textX = contentRect.right() - cell.text.size().width();
-  } else if (cell.alignment == TableAlignment::Center) {
-    textX = contentRect.left() + (contentRect.width() - cell.text.size().width()) / 2.0;
-  }
-  return QPointF(qMax(contentRect.left(), textX), contentRect.top());
-}
-
-qsizetype selectableLength(const BlockLayout* block) {
-  if (!block) {
-    return 0;
-  }
-  if (const InlineLayout* inlineLayout = block->inlineLayout()) {
-    return inlineLayout->plainText().size();
-  }
-  switch (block->type()) {
-    case BlockType::FrontMatter:
-    case BlockType::CodeFence:
-    case BlockType::MathBlock:
-    case BlockType::HtmlBlock:
-      return block->literal().size();
-    case BlockType::Table:
-      return 1;
-    case BlockType::LinkDefinition:
-    case BlockType::FootnoteDefinition: {
-      const DefinitionBlock& def = block->definition();
-      if (!def.markerRange.isValid()) {
-        return 0;
-      }
-      const qsizetype end = def.sourceRange.isValid()
-                                ? def.sourceRange.end
-                                : qMax(def.markerRange.end,
-                                       qMax(def.destinationRange.end,
-                                            qMax(def.titleRange.end, def.noteRange.end)));
-      return qMax<qsizetype>(0, end - def.markerRange.start);
-    }
-    default:
-      return 0;
-  }
-}
-
-QRect viewportUpdateRect(QRectF documentRect, qreal scrollY, const QSize& viewportSize) {
-  if (documentRect.isNull() || documentRect.isEmpty()) {
-    return {};
-  }
-  documentRect.translate(0, -scrollY);
-  return documentRect.adjusted(-4, -4, 4, 4).toAlignedRect().intersected(QRect(QPoint(0, 0), viewportSize));
-}
-
-// Union a document-coordinate rect into a viewport-coordinate dirty region so
-// it repaints even when it lies outside the refreshed block rects — used for
-// the caret, which can sit on the virtual trailing paragraph below the last
-// block. Called for both the new caret position (to draw it) and the previously
-// painted one (to erase the ghost left behind when the caret moves away).
-QRect uniteDocumentRectDirty(QRect dirty, QRectF documentRect, qreal scrollY, const QSize& viewportSize) {
-  if (documentRect.isNull() || documentRect.isEmpty()) {
-    return dirty;
-  }
-  const QRect viewportRect = viewportUpdateRect(documentRect, scrollY, viewportSize);
-  if (viewportRect.isEmpty()) {
-    return dirty;
-  }
-  return dirty.isEmpty() ? viewportRect : dirty.united(viewportRect);
-}
-
-template <typename RebuildResult>
-void addRebuildDirtyRect(QRect& dirty, const RebuildResult& result, QRectF documentViewport, qreal scrollY, const QSize& viewportSize) {
-  dirty = dirty.united(viewportUpdateRect(result.oldRect.united(result.newRect), scrollY, viewportSize));
-  if (!result.shiftedRect.isEmpty()) {
-    dirty = dirty.united(viewportUpdateRect(result.shiftedRect.intersected(documentViewport), scrollY, viewportSize));
-  }
-}
 
 }  // namespace
 
@@ -747,7 +592,7 @@ void EditorView::wheelEvent(QWheelEvent* event) {
 void EditorView::mousePressEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     setFocus(Qt::MouseFocusReason);
-    const NodeId htmlToggleBlockId = editingHtmlBlockId_.isValid() ? editingHtmlBlockId_ : visibleHtmlHoverBlockId_;
+    const NodeId htmlToggleBlockId = editingHtmlBlockId_.isValid() ? editingHtmlBlockId_ : htmlHover_.visibleBlockId();
     if (htmlHoverButtonViewportRect().contains(event->position()) && htmlToggleBlockId.isValid()) {
       emit htmlEditToggleRequested(htmlToggleBlockId);
       event->accept();
@@ -827,41 +672,6 @@ void EditorView::mouseReleaseEvent(QMouseEvent* event) {
   }
   QAbstractScrollArea::mouseReleaseEvent(event);
 }
-
-namespace {
-
-QPair<qsizetype, qsizetype> wordRangeAtOffset(const QString& text, qsizetype offset) {
-  if (text.isEmpty() || offset < 0 || offset >= text.size()) {
-    return {qMax<qsizetype>(0, offset), qMax<qsizetype>(0, offset)};
-  }
-
-  const QChar c = text[offset];
-
-  // For word characters, use ICU BreakIterator for dictionary-based segmentation.
-  if (c.isLetterOrNumber() || c == QLatin1Char('_')) {
-    const auto seg = findWordSegment(text, offset);
-    if (seg.isWord && seg.start < seg.end) {
-      return {seg.start, seg.end};
-    }
-    return {offset, offset + 1};
-  }
-
-  // For spaces, extend through the contiguous space run.
-  qsizetype start = offset;
-  qsizetype end = offset + 1;
-  if (c.isSpace()) {
-    while (start > 0 && text[start - 1].isSpace()) {
-      --start;
-    }
-    while (end < text.size() && text[end].isSpace()) {
-      ++end;
-    }
-  }
-
-  return {start, end};
-}
-
-}  // namespace
 
 void EditorView::mouseDoubleClickEvent(QMouseEvent* event) {
   if (event->button() != Qt::LeftButton) {
@@ -967,7 +777,7 @@ void EditorView::rebuildLayout() {
     updateScrollBars();
     verticalScrollBar()->setValue(qBound(verticalScrollBar()->minimum(), oldValue, verticalScrollBar()->maximum()));
     if (cursorPosition_.isValid()) {
-      cursorHit_ = hitForCursorPosition(cursorPosition_);
+      cursorHit_ = hitForCursorPosition(*layout_, theme_, cursorPosition_);
       cursorVisible_ = cursorHit_.isValid();
     }
   } else {
@@ -1037,7 +847,7 @@ void EditorView::updateTableToolbar() {
 }
 
 void EditorView::updateCursorHitFromPosition() {
-  cursorHit_ = hitForCursorPosition(cursorPosition_);
+  cursorHit_ = hitForCursorPosition(*layout_, theme_, cursorPosition_);
   cursorVisible_ = cursorHit_.isValid();
   updateCodeLanguageEditor();
   updateTableToolbar();
@@ -1097,8 +907,8 @@ void EditorView::paintSelection(QPainter& painter) const {
       }
     }
   } else {
-    const bool anchorFirst = blockComesBefore(selection_.anchor.blockId, selection_.focus.blockId);
-    const QVector<const BlockLayout*> selectedBlocks = blocksBetween(selection_.anchor.blockId, selection_.focus.blockId);
+    const bool anchorFirst = blockComesBefore(*layout_, selection_.anchor.blockId, selection_.focus.blockId);
+    const QVector<const BlockLayout*> selectedBlocks = blocksBetween(*layout_, selection_.anchor.blockId, selection_.focus.blockId);
     for (qsizetype i = 0; i < selectedBlocks.size(); ++i) {
       const BlockLayout* block = selectedBlocks.at(i);
       if (!block) {
@@ -1236,277 +1046,35 @@ void EditorView::paintHeadingBadge(QPainter& painter) const {
   painter.restore();
 }
 
-QRectF EditorView::htmlHoverOverlayViewportRect() const {
-  if (!layout_) {
-    return {};
-  }
-  const NodeId id = editingHtmlBlockId_.isValid() ? editingHtmlBlockId_ : visibleHtmlHoverBlockId_;
-  const BlockLayout* block = layout_->block(id);
-  if (!block || block->type() != BlockType::HtmlBlock) {
-    return {};
-  }
-  return block->rect().translated(0, -scrollY());
+HtmlBlockHoverController::Inputs EditorView::htmlHoverInputs() const {
+  return {layout_.get(), &theme_, editingHtmlBlockId_, scrollY()};
 }
 
 QRectF EditorView::htmlHoverButtonViewportRect() const {
-  const QRectF overlay = htmlHoverOverlayViewportRect();
-  if (overlay.isEmpty()) {
-    return {};
-  }
-  return QRectF(overlay.right() - 30.0, overlay.top(), 24.0, 20.0);
+  return htmlHover_.buttonViewportRect(htmlHoverInputs());
 }
 
 void EditorView::paintHtmlHoverOverlay(QPainter& painter) const {
-  const QRectF overlay = htmlHoverOverlayViewportRect();
-  if (overlay.isEmpty() || !viewport()->rect().intersects(overlay.toAlignedRect())) {
-    return;
-  }
-
-  const QRectF buttonRect = htmlHoverButtonViewportRect();
-
-  painter.save();
-
-  // Only paint the gray overlay and "HTML" label in rendered (non-editing) mode.
-  // In editing mode, the overlay would obscure the syntax-highlighted source.
-  if (!editingHtmlBlockId_.isValid()) {
-    const QRectF labelRect(overlay.right() - 76.0, overlay.top(), 70.0, 20.0);
-
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(QColor(240, 242, 245, 96));
-    painter.drawRect(overlay.adjusted(0, 0, 0, 0));
-
-    painter.setBrush(theme_.backgroundColor());
-    painter.drawRect(labelRect.adjusted(-2, 0, 2, 0));
-
-    QFont badgeFont = theme_.paragraphFont();
-    badgeFont.setPointSizeF(qMax<qreal>(8.0, badgeFont.pointSizeF() * 0.75));
-    painter.setFont(badgeFont);
-    painter.setPen(QColor(132, 138, 148));
-    painter.drawText(labelRect.adjusted(4, 0, -28, 0), Qt::AlignVCenter | Qt::AlignRight, QStringLiteral("HTML"));
-  }
-
-  painter.setPen(QColor(87, 96, 110));
-  painter.drawText(buttonRect, Qt::AlignCenter, QStringLiteral("</>"));
-  painter.restore();
+  htmlHover_.paint(painter, htmlHoverInputs(), viewport()->rect());
 }
 
 void EditorView::updateHtmlHover(QPointF viewportPos) {
   const HitTestResult hit = hitTest(viewportPos);
   const NodeId next = hit.isValid() && hit.zone == HitTestResult::Zone::Html ? hit.blockId : NodeId();
-  if (next == visibleHtmlHoverBlockId_) {
-    return;
+  const HtmlBlockHoverController::Dirty dirty = htmlHover_.setHoveredBlock(next, htmlHoverInputs());
+  if (!dirty.oldRect.isEmpty()) {
+    viewport()->update(dirty.oldRect);
   }
-
-  const QRect oldRect = htmlHoverOverlayViewportRect().adjusted(-2, -2, 2, 2).toAlignedRect();
-  if (!editingHtmlBlockId_.isValid()) {
-    visibleHtmlHoverBlockId_ = next;
-  }
-  if (!oldRect.isEmpty()) {
-    viewport()->update(oldRect);
-  }
-  if (visibleHtmlHoverBlockId_.isValid()) {
-    viewport()->update(htmlHoverOverlayViewportRect().adjusted(-2, -2, 2, 2).toAlignedRect());
+  if (!dirty.newRect.isEmpty()) {
+    viewport()->update(dirty.newRect);
   }
 }
 
 void EditorView::clearHtmlHover() {
-  const QRect oldRect = htmlHoverOverlayViewportRect().adjusted(-2, -2, 2, 2).toAlignedRect();
-  if (!editingHtmlBlockId_.isValid()) {
-    visibleHtmlHoverBlockId_ = {};
+  const HtmlBlockHoverController::Dirty dirty = htmlHover_.clear(htmlHoverInputs());
+  if (!dirty.oldRect.isEmpty()) {
+    viewport()->update(dirty.oldRect);
   }
-  if (!oldRect.isEmpty()) {
-    viewport()->update(oldRect);
-  }
-}
-
-HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
-  if (!layout_ || !position.isValid()) {
-    return {};
-  }
-
-  const BlockLayout* block = layout_->block(position.blockId);
-  if (!block) {
-    return {};
-  }
-
-  // Reproduce the virtual trailing-paragraph caret so it survives layout
-  // rebuilds (resize, theme change, refresh). Without this, recomputation from
-  // a CursorPosition would resolve to the block's real type and snap the caret
-  // back inside the last block.
-  if (position.afterBlock) {
-    HitTestResult hit;
-    hit.blockId = position.blockId;
-    hit.textNodeId = position.blockId;
-    hit.textOffset = 0;
-    hit.sourceOffset = -1;
-    hit.blockRect = block->rect();
-    hit.zone = HitTestResult::Zone::BlockAfter;
-    hit.cursorRect = DocumentLayout::trailingParagraphCursorRect(*block, theme_, layout_->pageLeft());
-    return hit;
-  }
-
-  HitTestResult hit;
-  hit.blockId = position.blockId;
-  hit.textNodeId = position.text.nodeId.isValid() ? position.text.nodeId : position.blockId;
-  hit.textOffset = position.text.textOffset;
-  hit.sourceOffset = position.text.sourceOffset;
-  hit.blockRect = block->rect();
-  hit.zone = HitTestResult::Zone::Block;
-
-  switch (block->type()) {
-    case BlockType::Paragraph:
-    case BlockType::Heading:
-    case BlockType::ListItem:
-      hit.zone = position.text.inMeta ? HitTestResult::Zone::Marker : HitTestResult::Zone::Text;
-      if (const InlineLayout* inlineLayout = block->inlineLayout()) {
-        const qreal textLeft = block->hasListMarker() ? block->rect().left() + block->listContentIndent() : block->rect().left();
-        const qsizetype localSourceOffset =
-            position.text.sourceOffset >= 0 && block->contentSourceStart() >= 0 ? position.text.sourceOffset - block->contentSourceStart() : -1;
-        hit.cursorRect = localSourceOffset >= 0
-                             ? inlineLayout->cursorRectForSourceOffset(localSourceOffset).translated(QPointF(textLeft, block->rect().top()))
-                             : inlineLayout->cursorRect(position.text.textOffset).translated(QPointF(textLeft, block->rect().top()));
-      }
-      break;
-    case BlockType::FrontMatter:
-    case BlockType::CodeFence:
-      hit.zone = block->type() == BlockType::FrontMatter ? HitTestResult::Zone::FrontMatter : HitTestResult::Zone::Code;
-      {
-        const QRectF contentRect = block->literalContentRect(theme_);
-        hit.cursorRect =
-            literalCursorRectForOffset(block->literal(), position.text.textOffset, theme_.codeFont(), contentRect.topLeft(), contentRect.width(), theme_.codeLineHeight());
-      }
-      break;
-    case BlockType::MathBlock:
-      hit.zone = HitTestResult::Zone::Math;
-      if (block->literalEditing()) {
-        const QRectF contentRect = block->literalContentRect(theme_);
-        hit.cursorRect =
-            literalCursorRectForOffset(block->literal(), position.text.textOffset, theme_.codeFont(), contentRect.topLeft(), contentRect.width(), theme_.codeLineHeight());
-      } else {
-        const qsizetype offset = qBound<qsizetype>(0, position.text.textOffset, block->literal().size());
-        const qreal x = offset <= block->literal().size() / 2 ? block->rect().left() : block->rect().right();
-        hit.cursorRect = QRectF(x, block->rect().top(), 1.0, block->rect().height());
-      }
-      break;
-    case BlockType::HtmlBlock:
-      hit.zone = HitTestResult::Zone::Html;
-      if (block->literalEditing()) {
-        const QRectF contentRect = block->literalContentRect(theme_);
-        hit.cursorRect =
-            literalCursorRectForOffset(block->literal(), position.text.textOffset, theme_.codeFont(), contentRect.topLeft(), contentRect.width(), theme_.codeLineHeight());
-      } else {
-        const qsizetype offset = qBound<qsizetype>(0, position.text.textOffset, block->literal().size());
-        const qreal x = offset <= block->literal().size() / 2 ? block->rect().left() : block->rect().right();
-        hit.cursorRect = QRectF(x, block->rect().top(), 1.0, block->rect().height());
-      }
-      break;
-    case BlockType::Table:
-      hit.zone = HitTestResult::Zone::TableCell;
-      hit.tableRow = -1;
-      hit.tableColumn = -1;
-      for (int row = 0; row < static_cast<int>(block->tableRows().size()); ++row) {
-        const auto& tableRow = block->tableRows().at(static_cast<size_t>(row));
-        for (int column = 0; column < static_cast<int>(tableRow.cells.size()); ++column) {
-          if (tableRow.cells.at(static_cast<size_t>(column)).nodeId == hit.textNodeId) {
-            hit.tableRow = row;
-            hit.tableColumn = column;
-            break;
-          }
-        }
-        if (hit.tableRow >= 0) {
-          break;
-        }
-      }
-      if (hit.tableRow >= 0 && hit.tableColumn >= 0) {
-        const QRectF cellRect = block->tableCellRect(hit.tableRow, hit.tableColumn);
-        for (const auto& tableRow : block->tableRows()) {
-          for (const auto& cell : tableRow.cells) {
-            if (cell.nodeId == hit.textNodeId) {
-              const QPointF textOrigin = tableCellTextOrigin(cell, theme_);
-              const qsizetype localSourceOffset =
-                  position.text.sourceOffset >= 0 && cell.contentSourceStart >= 0 ? position.text.sourceOffset - cell.contentSourceStart : -1;
-              hit.cursorRect = localSourceOffset >= 0
-                                   ? cell.text.cursorRectForSourceOffset(localSourceOffset).translated(textOrigin)
-                                   : cell.text.cursorRect(position.text.textOffset).translated(textOrigin);
-              break;
-            }
-          }
-        }
-        if (hit.cursorRect.isEmpty()) {
-          hit.cursorRect = QRectF(cellRect.left() + 6.0, cellRect.top() + 4.0, 1.0, qMax<qreal>(14.0, cellRect.height() - 8.0));
-        }
-      }
-      break;
-    case BlockType::LinkDefinition:
-    case BlockType::FootnoteDefinition:
-      hit.zone = HitTestResult::Zone::Text;
-      hit.cursorRect = block->definitionCursorRectForSourceOffset(position.text.sourceOffset, theme_);
-      break;
-    default:
-      break;
-  }
-
-  if (hit.cursorRect.isEmpty()) {
-    hit.cursorRect = QRectF(hit.blockRect.left(), hit.blockRect.top(), 1.0, hit.blockRect.height());
-  }
-  return hit;
-}
-
-QVector<const BlockLayout*> EditorView::blocksBetween(NodeId first, NodeId last) const {
-  QVector<const BlockLayout*> result;
-  if (!layout_ || !first.isValid() || !last.isValid()) {
-    return result;
-  }
-
-  const BlockLayout* firstBlock = layout_->block(first);
-  const BlockLayout* lastBlock = layout_->block(last);
-  if (!firstBlock || !lastBlock) {
-    return result;
-  }
-
-  NodeId startId = first;
-  NodeId endId = last;
-  if (firstBlock->rect().top() > lastBlock->rect().top() ||
-      (qFuzzyCompare(firstBlock->rect().top(), lastBlock->rect().top()) && firstBlock->rect().left() > lastBlock->rect().left())) {
-    qSwap(startId, endId);
-  }
-
-  bool collecting = false;
-  const auto collect = [&](const auto& self, const BlockLayout& block) -> void {
-    if (block.nodeId() == startId) {
-      collecting = true;
-    }
-    if (collecting) {
-      result.push_back(&block);
-    }
-    if (block.nodeId() == endId) {
-      collecting = false;
-      return;
-    }
-    for (const auto& child : block.children()) {
-      self(self, *child);
-      if (!collecting && !result.isEmpty() && result.last()->nodeId() == endId) {
-        return;
-      }
-    }
-  };
-
-  for (const auto& block : layout_->blocks()) {
-    collect(collect, *block);
-    if (!result.isEmpty() && result.last()->nodeId() == endId) {
-      break;
-    }
-  }
-  return result;
-}
-
-bool EditorView::blockComesBefore(NodeId first, NodeId second) const {
-  if (first == second) {
-    return true;
-  }
-
-  const QVector<const BlockLayout*> range = blocksBetween(first, second);
-  return !range.isEmpty() && range.first()->nodeId() == first;
 }
 
 void EditorView::updateDragSelection(QPointF viewportPos) {

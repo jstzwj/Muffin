@@ -222,8 +222,8 @@ public:
   };
 
   EditTransaction() = default;
-  EditTransaction(const EditTransaction& other);
-  EditTransaction& operator=(const EditTransaction& other);
+  EditTransaction(const EditTransaction&) = default;
+  EditTransaction& operator=(const EditTransaction&) = default;
   EditTransaction(EditTransaction&&) noexcept = default;
   EditTransaction& operator=(EditTransaction&&) noexcept = default;
   EditTransaction(Kind kind, QString label, DocumentSnapshot before, DocumentSnapshot after);
@@ -278,17 +278,21 @@ public:
   TextDeltaCommand& textDeltaCommandMut();
 
 private:
-  Storage storage_ = Storage::Invalid;
+  // Pairs the before/after snapshots carried by the Snapshot storage.
+  struct SnapshotCommand {
+    DocumentSnapshot before;
+    DocumentSnapshot after;
+  };
+
   Kind kind_ = Kind::ReplaceDocumentText;
   QString label_;
-  DocumentSnapshot before_;
-  DocumentSnapshot after_;
-  TextDeltaCommand textDeltaCommand_;
-  TableCommand tableCommand_;
-  InsertNodeCommand insertNodeCommand_;
-  ReplaceNodeCommand replaceNodeCommand_;
-  RemoveNodeCommand removeNodeCommand_;
-  SetNodeAttrCommand setNodeAttrCommand_;
+  // One discriminated command payload. Replaces a hand-rolled Storage enum plus eight
+  // always-present members: copy/assign are now trivially correct (the variant copies the
+  // active payload itself), so the "forgot to copy a field" drift the old hand-written copy
+  // constructor invited is structurally impossible.
+  std::variant<std::monostate, SnapshotCommand, TextDeltaCommand, TableCommand, InsertNodeCommand,
+               ReplaceNodeCommand, RemoveNodeCommand, SetNodeAttrCommand>
+      storage_;
 };
 
 }  // namespace muffin

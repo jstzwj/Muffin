@@ -571,22 +571,15 @@ static bufsize_t parse_list_marker(cmark_mem *mem, cmark_chunk *input,
       return 0;
     }
 
-    if (interrupts_paragraph) {
-      i = pos;
-      // require non-blank content after list marker:
-      while (S_is_space_or_tab(peek_at(input, i))) {
-        i++;
-      }
-      if (peek_at(input, i) == '\n') {
-        /* CommonMark: a lone empty "-" item that could otherwise be parsed as a
-           setext underline or a GFM table delimiter must still be treated as a
-           list item (commonmark-spec#95, commonmark.js#222).  Empty "*"/"+"
-           items keep the historical non-interrupting behavior. */
-        if (c != '-') {
-          return 0;
-        }
-      }
-    }
+    // An empty bullet marker (marker + spaces + line end) may interrupt a
+    // paragraph.  Historically cmark rejected empty "*"/"+" but allowed "-"
+    // (the setext-underline carve-out from commonmark-spec#95), which left "*"
+    // and "+" inconsistent: indenting an empty "*" / "+" list item produced
+    // "prev\n  * " that re-parsed with the marker absorbed into the preceding
+    // item's paragraph as a lazy continuation instead of nesting.  Treat all
+    // bullet markers uniformly so the editor's "indent empty item" command
+    // round-trips for "*", "+", and "-" alike.  The Setext/TABLE guard in
+    // open_new_blocks still keeps a lone "-" from becoming an H2 underline.
 
     data = (cmark_list *)mem->calloc(1, sizeof(*data));
     data->marker_offset = 0; // will be adjusted later

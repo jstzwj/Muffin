@@ -277,93 +277,26 @@ bool SetNodeAttrCommand::isValid() const {
          beforeCursor.isValid() && afterCursor.isValid();
 }
 
-EditTransaction::EditTransaction(const EditTransaction& other)
-    : storage_(other.storage_),
-      kind_(other.kind_),
-      label_(other.label_),
-      before_(other.before_),
-      after_(other.after_),
-      textDeltaCommand_(other.textDeltaCommand_),
-      tableCommand_(other.tableCommand_),
-      insertNodeCommand_(other.insertNodeCommand_),
-      replaceNodeCommand_(other.replaceNodeCommand_),
-      removeNodeCommand_(other.removeNodeCommand_),
-      setNodeAttrCommand_(other.setNodeAttrCommand_) {}
-
-EditTransaction& EditTransaction::operator=(const EditTransaction& other) {
-  if (this == &other) {
-    return *this;
-  }
-  storage_ = other.storage_;
-  kind_ = other.kind_;
-  label_ = other.label_;
-  before_ = other.before_;
-  after_ = other.after_;
-  textDeltaCommand_ = other.textDeltaCommand_;
-  tableCommand_ = other.tableCommand_;
-  insertNodeCommand_ = other.insertNodeCommand_;
-  replaceNodeCommand_ = other.replaceNodeCommand_;
-  removeNodeCommand_ = other.removeNodeCommand_;
-  setNodeAttrCommand_ = other.setNodeAttrCommand_;
-  return *this;
-}
-
 EditTransaction::EditTransaction(Kind kind, QString label, DocumentSnapshot before, DocumentSnapshot after)
-    : storage_(Storage::Snapshot), kind_(kind), label_(std::move(label)), before_(std::move(before)), after_(std::move(after)) {}
+    : kind_(kind), label_(std::move(label)), storage_(SnapshotCommand{std::move(before), std::move(after)}) {}
 
-EditTransaction::EditTransaction(
-    Kind kind,
-    QString label,
-    TextDeltaCommand command)
-    : storage_(Storage::TextDeltaCommand),
-      kind_(kind),
-      label_(std::move(label)),
-      textDeltaCommand_(std::move(command)) {}
+EditTransaction::EditTransaction(Kind kind, QString label, TextDeltaCommand command)
+    : kind_(kind), label_(std::move(label)), storage_(std::move(command)) {}
 
-EditTransaction::EditTransaction(
-    Kind kind,
-    QString label,
-    TableCommand command)
-    : storage_(Storage::TableCommand),
-      kind_(kind),
-      label_(std::move(label)),
-      tableCommand_(std::move(command)) {}
+EditTransaction::EditTransaction(Kind kind, QString label, TableCommand command)
+    : kind_(kind), label_(std::move(label)), storage_(std::move(command)) {}
 
-EditTransaction::EditTransaction(
-    Kind kind,
-    QString label,
-    InsertNodeCommand command)
-    : storage_(Storage::InsertNodeCommand),
-      kind_(kind),
-      label_(std::move(label)),
-      insertNodeCommand_(std::move(command)) {}
+EditTransaction::EditTransaction(Kind kind, QString label, InsertNodeCommand command)
+    : kind_(kind), label_(std::move(label)), storage_(std::move(command)) {}
 
-EditTransaction::EditTransaction(
-    Kind kind,
-    QString label,
-    ReplaceNodeCommand command)
-    : storage_(Storage::ReplaceNodeCommand),
-      kind_(kind),
-      label_(std::move(label)),
-      replaceNodeCommand_(std::move(command)) {}
+EditTransaction::EditTransaction(Kind kind, QString label, ReplaceNodeCommand command)
+    : kind_(kind), label_(std::move(label)), storage_(std::move(command)) {}
 
-EditTransaction::EditTransaction(
-    Kind kind,
-    QString label,
-    RemoveNodeCommand command)
-    : storage_(Storage::RemoveNodeCommand),
-      kind_(kind),
-      label_(std::move(label)),
-      removeNodeCommand_(std::move(command)) {}
+EditTransaction::EditTransaction(Kind kind, QString label, RemoveNodeCommand command)
+    : kind_(kind), label_(std::move(label)), storage_(std::move(command)) {}
 
-EditTransaction::EditTransaction(
-    Kind kind,
-    QString label,
-    SetNodeAttrCommand command)
-    : storage_(Storage::SetNodeAttrCommand),
-      kind_(kind),
-      label_(std::move(label)),
-      setNodeAttrCommand_(std::move(command)) {}
+EditTransaction::EditTransaction(Kind kind, QString label, SetNodeAttrCommand command)
+    : kind_(kind), label_(std::move(label)), storage_(std::move(command)) {}
 
 EditTransaction::Kind EditTransaction::kind() const {
   return kind_;
@@ -374,96 +307,106 @@ QString EditTransaction::label() const {
 }
 
 EditTransaction::Storage EditTransaction::storage() const {
-  return storage_;
+  return std::visit([]<typename T>(const T&) -> Storage {
+    if constexpr (std::is_same_v<T, std::monostate>) return Storage::Invalid;
+    else if constexpr (std::is_same_v<T, SnapshotCommand>) return Storage::Snapshot;
+    else if constexpr (std::is_same_v<T, TextDeltaCommand>) return Storage::TextDeltaCommand;
+    else if constexpr (std::is_same_v<T, TableCommand>) return Storage::TableCommand;
+    else if constexpr (std::is_same_v<T, InsertNodeCommand>) return Storage::InsertNodeCommand;
+    else if constexpr (std::is_same_v<T, ReplaceNodeCommand>) return Storage::ReplaceNodeCommand;
+    else if constexpr (std::is_same_v<T, RemoveNodeCommand>) return Storage::RemoveNodeCommand;
+    else if constexpr (std::is_same_v<T, SetNodeAttrCommand>) return Storage::SetNodeAttrCommand;
+  }, storage_);
 }
 
 bool EditTransaction::isSnapshot() const {
-  return storage_ == Storage::Snapshot;
+  return std::holds_alternative<SnapshotCommand>(storage_);
 }
 
 bool EditTransaction::isTextDeltaCommand() const {
-  return storage_ == Storage::TextDeltaCommand;
+  return std::holds_alternative<TextDeltaCommand>(storage_);
 }
 
 bool EditTransaction::isTableCommand() const {
-  return storage_ == Storage::TableCommand;
+  return std::holds_alternative<TableCommand>(storage_);
 }
 
 bool EditTransaction::isInsertNodeCommand() const {
-  return storage_ == Storage::InsertNodeCommand;
+  return std::holds_alternative<InsertNodeCommand>(storage_);
 }
 
 bool EditTransaction::isReplaceNodeCommand() const {
-  return storage_ == Storage::ReplaceNodeCommand;
+  return std::holds_alternative<ReplaceNodeCommand>(storage_);
 }
 
 bool EditTransaction::isRemoveNodeCommand() const {
-  return storage_ == Storage::RemoveNodeCommand;
+  return std::holds_alternative<RemoveNodeCommand>(storage_);
 }
 
 bool EditTransaction::isSetNodeAttrCommand() const {
-  return storage_ == Storage::SetNodeAttrCommand;
+  return std::holds_alternative<SetNodeAttrCommand>(storage_);
 }
 
 const DocumentSnapshot& EditTransaction::before() const {
-  return before_;
+  return std::get<SnapshotCommand>(storage_).before;
 }
 
 const DocumentSnapshot& EditTransaction::after() const {
-  return after_;
+  return std::get<SnapshotCommand>(storage_).after;
 }
 
 const TextDeltaCommand& EditTransaction::textDeltaCommand() const {
-  return textDeltaCommand_;
+  return std::get<TextDeltaCommand>(storage_);
 }
 
 const TableCommand& EditTransaction::tableCommand() const {
-  return tableCommand_;
+  return std::get<TableCommand>(storage_);
 }
 
 const InsertNodeCommand& EditTransaction::insertNodeCommand() const {
-  return insertNodeCommand_;
+  return std::get<InsertNodeCommand>(storage_);
 }
 
 const ReplaceNodeCommand& EditTransaction::replaceNodeCommand() const {
-  return replaceNodeCommand_;
+  return std::get<ReplaceNodeCommand>(storage_);
 }
 
 const RemoveNodeCommand& EditTransaction::removeNodeCommand() const {
-  return removeNodeCommand_;
+  return std::get<RemoveNodeCommand>(storage_);
 }
 
 const SetNodeAttrCommand& EditTransaction::setNodeAttrCommand() const {
-  return setNodeAttrCommand_;
+  return std::get<SetNodeAttrCommand>(storage_);
 }
 
 bool EditTransaction::isValid() const {
   if (isSnapshot()) {
-    return before_.markdownText != after_.markdownText;
+    const auto& snapshot = std::get<SnapshotCommand>(storage_);
+    return snapshot.before.markdownText != snapshot.after.markdownText;
   }
   if (isTextDeltaCommand()) {
-    return textDeltaCommand_.isValid();
+    return textDeltaCommand().isValid();
   }
   if (isTableCommand()) {
-    return tableCommand_.isValid();
+    return tableCommand().isValid();
   }
   if (isInsertNodeCommand()) {
-    return insertNodeCommand_.isValid();
+    return insertNodeCommand().isValid();
   }
   if (isReplaceNodeCommand()) {
-    return replaceNodeCommand_.isValid();
+    return replaceNodeCommand().isValid();
   }
   if (isRemoveNodeCommand()) {
-    return removeNodeCommand_.isValid();
+    return removeNodeCommand().isValid();
   }
   if (isSetNodeAttrCommand()) {
-    return setNodeAttrCommand_.isValid();
+    return setNodeAttrCommand().isValid();
   }
   return false;
 }
 
 void EditTransaction::mergeTextDelta(const TextDeltaCommand& next) {
-  TextDelta& prevDelta = textDeltaCommand_.delta;
+  TextDelta& prevDelta = std::get<TextDeltaCommand>(storage_).delta;
   const TextDelta& nextDelta = next.delta;
   prevDelta.insertedText += nextDelta.insertedText;
   prevDelta.removedText = nextDelta.removedText + prevDelta.removedText;
@@ -472,12 +415,12 @@ void EditTransaction::mergeTextDelta(const TextDeltaCommand& next) {
 
 void EditTransaction::updateAfterCursor(const CursorPosition& cursor) {
   if (isTextDeltaCommand()) {
-    textDeltaCommand_.afterCursor = cursor;
+    std::get<TextDeltaCommand>(storage_).afterCursor = cursor;
   }
 }
 
 TextDeltaCommand& EditTransaction::textDeltaCommandMut() {
-  return textDeltaCommand_;
+  return std::get<TextDeltaCommand>(storage_);
 }
 
 }  // namespace muffin

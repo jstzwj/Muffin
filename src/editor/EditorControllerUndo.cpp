@@ -129,16 +129,14 @@ MarkdownNode* nodeByTopLevelIndex(DocumentSession& session, int nodeIndex, Block
 }
 
 MarkdownNode* nodeBySourceOffset(MarkdownNode& node, BlockType nodeType, qsizetype sourceOffset) {
-  const SourceRange range = node.sourceRange();
-  if (node.type() == nodeType && range.byteStart <= sourceOffset && range.byteEnd >= sourceOffset) {
+  const auto matches = [nodeType, sourceOffset](MarkdownNode& candidate) {
+    const SourceRange range = candidate.sourceRange();
+    return candidate.type() == nodeType && range.byteStart <= sourceOffset && range.byteEnd >= sourceOffset;
+  };
+  if (matches(node)) {
     return &node;
   }
-  for (const auto& child : node.children()) {
-    if (MarkdownNode* found = nodeBySourceOffset(*child, nodeType, sourceOffset)) {
-      return found;
-    }
-  }
-  return nullptr;
+  return node.findDescendant(matches);
 }
 
 CursorPosition insertedNodeCursor(DocumentSession& session, const InsertNodeCommand& command, const CursorPosition& storedCursor) {
