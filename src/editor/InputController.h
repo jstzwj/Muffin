@@ -89,6 +89,7 @@ private:
   bool tryRemoveExactWholeBlockSelection(EditTransaction::Kind kind, const QString& label);
   bool tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, const QString& label);
   bool tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, const QString& label);
+  bool tryRemoveThematicBreak(bool forward);
   bool collapseTrailingCaretToEndOfLastBlock();
   bool selectionSourceRange(qsizetype& start, qsizetype& end) const;
   bool blockSelectionSourceRange(qsizetype& start, qsizetype& end) const;

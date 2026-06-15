@@ -228,6 +228,13 @@ bool InputController::deleteBackward() {
   if (ctx_.selection && ctx_.selection->hasCursor() && !ctx_.selection->selection().isCollapsed()) {
     return deleteSelection();
   }
+  // The caret can sit on a thematic break itself — either landed directly on the rule (arrow-key
+  // navigation does not skip non-editable blocks) or in its virtual trailing area (afterBlock).
+  // The rule carries no editable text, so editParagraph rejects it and backspace would be a silent
+  // no-op (or, for the trailing caret, merely collapse the caret). Eat the divider instead.
+  if (tryRemoveThematicBreak(/*forward=*/false)) {
+    return true;
+  }
   // The virtual trailing paragraph carries no text. A backspace from it pulls the caret up to
   // the end of the last block's content (Typora-style); the next backspace deletes from there.
   // Without this, backspace on the trailing area is a silent no-op — and for a document whose
@@ -252,6 +259,11 @@ bool InputController::deleteForward() {
   }
   if (ctx_.selection && ctx_.selection->hasCursor() && !ctx_.selection->selection().isCollapsed()) {
     return deleteSelection();
+  }
+  // Symmetric to the backspace case: Delete from a caret resting on a thematic break (directly or
+  // in its trailing area) removes the divider.
+  if (tryRemoveThematicBreak(/*forward=*/true)) {
+    return true;
   }
   if (tryRemoveEmptyDefinitionBlock(EditTransaction::Kind::DeleteText, QStringLiteral("Delete Empty Definition"))) {
     return true;
@@ -839,6 +851,113 @@ bool InputController::tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, 
       ctx_.brushQueue->requestFullRefresh();
     }
   }
+  return true;
+}
+
+bool InputController::tryRemoveThematicBreak(bool forward) {
+  // Removes a top-level thematic break the caret currently rests on. The caret reaches a rule in
+  // two ways: arrow-key navigation lands directly on it (selectableBlockByDirection does not skip
+  // non-editable blocks), and a click in the virtual trailing area below a rule that ends the
+  // document puts the caret there with afterBlock set. Either way editParagraph rejects the block
+  // (a rule has no editable text), so without this the keystroke is a silent no-op.
+  //
+  // The removal goes through applyLocalEdit, which falls back to a full reparse when the
+  // incremental slice picker cannot anchor the edit — and it cannot here, because
+  // chooseTopLevelSlice deliberately skips non-editable top-level blocks (a thematic break has no
+  // content to slice). The caret lands on the neighbour the gesture points at: backspace → the
+  // previous block's content end, delete → the next block's start.
+  if (!ctx_.hasSession() || !ctx_.hasCursor()) {
+    return false;
+  }
+
+  MarkdownNode* node = ctx_.session->document().node(ctx_.selection->cursorPosition().blockId);
+  if (!node || node->type() != BlockType::ThematicBreak) {
+    return false;
+  }
+  if (!node->parent() || node->parent()->type() != BlockType::Document) {
+    return false;
+  }
+
+  qsizetype blockStart = -1;
+  qsizetype blockEnd = -1;
+  BlockEditContextResolver resolver = contextResolver();
+  if (!resolver.blockSourceRange(*node, blockStart, blockEnd)) {
+    return false;
+  }
+
+  const auto& blocks = ctx_.session->document().root().children();
+  int nodeIndex = -1;
+  for (int i = 0; i < static_cast<int>(blocks.size()); ++i) {
+    if (blocks.at(static_cast<size_t>(i)).get() == node) {
+      nodeIndex = i;
+      break;
+    }
+  }
+  if (nodeIndex < 0) {
+    return false;
+  }
+
+  // Span the rule plus exactly one adjacent separator so the surviving blocks stay distinct.
+  qsizetype deleteStart = blockStart;
+  qsizetype deleteEnd = blockEnd;
+  if (blocks.size() == 1) {
+    deleteStart = 0;
+    deleteEnd = ctx_.session->markdownText().size();
+  } else if (nodeIndex + 1 < static_cast<int>(blocks.size())) {
+    deleteEnd = blocks.at(static_cast<size_t>(nodeIndex + 1))->sourceRange().byteStart;
+  } else {
+    deleteStart = blocks.at(static_cast<size_t>(nodeIndex - 1))->sourceRange().byteEnd;
+  }
+  deleteStart = qBound<qsizetype>(0, deleteStart, ctx_.session->markdownText().size());
+  deleteEnd = qBound<qsizetype>(deleteStart, deleteEnd, ctx_.session->markdownText().size());
+  if (deleteStart >= deleteEnd) {
+    return false;
+  }
+
+  // Neighbouring editable blocks, for caret placement. applyLocalEdit falls back to a full
+  // reparse here (the incremental slice picker cannot anchor a non-editable block's removal), which
+  // hands every node a fresh id — so the preferred caret must be expressed as a SOURCE offset that
+  // still resolves on the post-edit document, not as a node id. The preceding block's content end
+  // sits before the edit point and is stable; the following block, after removing
+  // [deleteStart, deleteEnd), now begins exactly at deleteStart.
+  MarkdownNode* beforeEditable =
+      nodeIndex > 0 ? resolver.lastEditableDescendant(*blocks.at(static_cast<size_t>(nodeIndex - 1))) : nullptr;
+  MarkdownNode* afterEditable = nodeIndex + 1 < static_cast<int>(blocks.size())
+                                    ? resolver.firstEditableDescendant(*blocks.at(static_cast<size_t>(nodeIndex + 1)))
+                                    : nullptr;
+  BlockEditContext beforeCtx;
+  const bool haveBefore = beforeEditable && resolver.fill(*beforeEditable, beforeCtx);
+  const qsizetype beforeEnd = haveBefore ? beforeCtx.contentRange.byteEnd : qsizetype(-1);
+  CursorPosition preferred;
+  auto makePreferred = [&](MarkdownNode* target, qsizetype sourceOffset) {
+    preferred.blockId = target->id();
+    preferred.text.sourceOffset = sourceOffset;
+  };
+  if (forward) {
+    if (afterEditable) {
+      makePreferred(afterEditable, deleteStart);
+    } else if (haveBefore) {
+      makePreferred(beforeEditable, beforeEnd);
+    }
+  } else {
+    if (haveBefore) {
+      makePreferred(beforeEditable, beforeEnd);
+    } else if (afterEditable) {
+      makePreferred(afterEditable, deleteStart);
+    }
+  }
+
+  applyLocalEdit(
+      EditTransaction::Kind::DeleteText,
+      forward ? QStringLiteral("Delete Thematic Break") : QStringLiteral("Remove Thematic Break"),
+      deleteStart,
+      deleteEnd - deleteStart,
+      QString(),
+      preferred,
+      deleteStart,
+      {LocalEditNodeHint{node->id(), blockStart, BlockType::ThematicBreak}},
+      false,
+      true);
   return true;
 }
 

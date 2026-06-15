@@ -1282,6 +1282,21 @@ add_executable(MuffinBackspaceTrailingCaretTest
   tests/editor/BackspaceTrailingCaretTest.cpp
 )
 
+add_executable(MuffinThematicBreakEditTest
+  tests/editor/ThematicBreakEditTest.cpp
+)
+
+target_link_libraries(MuffinThematicBreakEditTest
+  PRIVATE
+    MuffinUi
+)
+
+add_test(NAME MuffinThematicBreakEditTest COMMAND MuffinThematicBreakEditTest)
+set_tests_properties(MuffinThematicBreakEditTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}"
+  RESOURCE_LOCK MuffinQtGui
+)
+
 add_executable(MuffinBackspaceEmptyParagraphTest
   tests/editor/BackspaceEmptyParagraphTest.cpp
 )

@@ -48,6 +48,9 @@ public:
   // subtree holds no editable inline content (e.g. a thematic break, or an HTML/front-matter
   // block which edits through its literal controller rather than inline text).
   MarkdownNode* lastEditableDescendant(MarkdownNode& node) const;
+  // First editable text block at or under `node` (first in document order); the head/tail pair of
+  // lastEditableDescendant. Used to land a caret on the block that survives a structural removal.
+  MarkdownNode* firstEditableDescendant(MarkdownNode& node) const;
   MarkdownNode* nodeAtContentSourceOffset(MarkdownNode& node, qsizetype sourceOffset, bool preferLaterEmptyAtOffset = false) const;
 
   // Resolves a source offset that lies inside a literal block (code fence, math, HTML, front
@@ -58,8 +61,6 @@ public:
   MarkdownNode* literalBlockAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset, qsizetype& contentStartOut) const;
 
 private:
-  MarkdownNode* firstEditableDescendant(MarkdownNode& node) const;
-
   DocumentSession* session_ = nullptr;
   SelectionController* selection_ = nullptr;
 };

@@ -241,6 +241,12 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
         if (Command removeEmpty = buildRemoveEmptyParagraphBeforeLeafBlock(context); removeEmpty.valid) {
           return removeEmpty;
         }
+        // Backspace at the start of a paragraph that immediately follows a thematic break eats the
+        // divider instead of the no-op the generic paragraph merge produces (a thematic break has no
+        // editable content, so buildMergeWithPreviousParagraph cannot see across it).
+        if (Command removeRule = buildRemovePrecedingThematicBreak(context); removeRule.valid) {
+          return removeRule;
+        }
         return buildMergeWithPreviousParagraph(context);
       }
       command.sourceStart = context.contentRange.byteStart + nextOffset - 1;
@@ -260,6 +266,11 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
         if (context.blockType == BlockType::Heading && nextParagraph.isEmpty() &&
             context.blockRange.byteStart >= 0 && context.contentRange.byteStart > context.blockRange.byteStart) {
           return buildRemoveEmptyHeading(context);
+        }
+        // Delete at the end of a paragraph that immediately precedes a thematic break eats the
+        // divider (symmetric inverse of backspace from the paragraph after it).
+        if (Command removeRule = buildRemoveFollowingThematicBreak(context); removeRule.valid) {
+          return removeRule;
         }
         return buildMergeWithNextParagraph(context);
       }
@@ -627,6 +638,125 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildRemoveEmptyParagr
   }
 
   command.nodeHints.push_back(LocalEditNodeHint{prev->id(), prev->sourceRange().byteStart, type});
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildRemovePrecedingThematicBreak(const BlockEditContext& context) const {
+  // Backspace at the START of a paragraph immediately following a thematic break eats the divider:
+  // the "---"/"***"/"___" line plus the blank line(s) after it are removed, so the paragraph moves
+  // up next to whatever sat before the rule. This is the inverse of typing "---" + Enter to create
+  // a divider, and the gesture Typora exposes. The generic paragraph-merge path cannot do this — a
+  // thematic break carries no editable content, so buildMergeWithPreviousParagraph only sees the
+  // rule as the previous sibling and silently no-ops.
+  Command command;
+  if (!session_ || !resolver_ || !context.node) {
+    return command;
+  }
+
+  MarkdownNode* hr = context.node->previousSibling();
+  if (!hr && context.node->parent() && context.node->parent()->type() == BlockType::ListItem) {
+    hr = context.node->parent()->previousSibling();
+  }
+  if (!hr || hr->type() != BlockType::ThematicBreak) {
+    return command;
+  }
+
+  const qsizetype hrStart = hr->sourceRange().byteStart;
+  const qsizetype paraStart = context.contentRange.byteStart;
+  if (hrStart < 0 || paraStart < hrStart) {
+    return command;
+  }
+
+  // Remove from the rule's start through the current paragraph's content start: this deletes the
+  // rule line and the blank line(s) that separated it from the paragraph, while preserving the
+  // separator that kept the pre-rule block apart (so the two surviving blocks stay distinct).
+  command.sourceStart = hrStart;
+  command.removedLength = paraStart - hrStart;
+  command.insertedText.clear();
+  command.kind = EditTransaction::Kind::DeleteText;
+  command.label = QStringLiteral("Remove Thematic Break");
+  command.structureEdit = true;
+
+  // The editable block that sat before the rule (if any). When the current paragraph is empty,
+  // removing the rule lets it collapse (cmark drops a trailing/leading empty paragraph), so the
+  // caret must retreat to that preceding block's content end — there is no paragraph left to land in.
+  MarkdownNode* before = hr->previousSibling();
+  if (!before && hr->parent() && hr->parent()->type() == BlockType::ListItem) {
+    before = hr->parent()->previousSibling();
+  }
+  MarkdownNode* beforeEditable = before ? resolver_->lastEditableDescendant(*before) : nullptr;
+
+  if (context.contentText.trimmed().isEmpty()) {
+    if (!beforeEditable) {
+      // The rule was the leading block and the paragraph is empty: removing both would leave an
+      // empty document with nowhere to anchor the caret. Bail to a safe no-op (the rule survives,
+      // caret stays valid) rather than corrupting or dropping the selection.
+      return Command{};
+    }
+    BlockEditContext beforeCtx;
+    if (resolver_->fill(*beforeEditable, beforeCtx)) {
+      command.preferredCursor = cursorFor(beforeEditable->id(), beforeCtx.contentText.size());
+      command.fallbackSourceOffset = beforeCtx.contentRange.byteEnd;
+    } else {
+      command.fallbackSourceOffset = hrStart;
+    }
+  } else {
+    // The paragraph survives the edit and now begins where the rule was. Keep the caret at its start.
+    command.preferredCursor = cursorFor(context.node->id(), 0);
+    command.fallbackSourceOffset = hrStart;
+  }
+
+  command.nodeHints.push_back(LocalEditNodeHint{context.node->id(), hrStart, context.node->type()});
+  command.valid = true;
+  command.handled = true;
+  return command;
+}
+
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildRemoveFollowingThematicBreak(const BlockEditContext& context) const {
+  // Delete at the END of a paragraph immediately preceding a thematic break eats the divider — the
+  // symmetric inverse of buildRemovePrecedingThematicBreak. The rule line and the blank line(s)
+  // before it are removed, the following block moves up, and the caret stays at the current
+  // paragraph's content end. The generic next-paragraph merge cannot cross a thematic break.
+  Command command;
+  if (!session_ || !resolver_ || !context.node) {
+    return command;
+  }
+
+  MarkdownNode* hr = context.node->nextSibling();
+  if (!hr && context.node->parent() && context.node->parent()->type() == BlockType::ListItem) {
+    hr = context.node->parent()->nextSibling();
+  }
+  if (!hr || hr->type() != BlockType::ThematicBreak) {
+    return command;
+  }
+
+  const qsizetype contentEnd = context.contentRange.byteEnd;
+  const qsizetype hrStart = hr->sourceRange().byteStart;
+  if (contentEnd < 0 || hrStart < contentEnd) {
+    return command;
+  }
+
+  const QString markdown = session_->markdownText();
+  // End of the rule's own line (exclusive of its trailing newline). Removing [contentEnd, lineEnd)
+  // deletes the blank line(s) that separated the paragraph from the rule PLUS the rule itself,
+  // while leaving the blank line(s) after the rule intact — so the post-rule block stays a
+  // separate paragraph and the two surviving blocks do not collapse into one.
+  const qsizetype ruleLineEnd = lineEndForOffset(markdown, hrStart);
+  if (ruleLineEnd < contentEnd) {
+    return command;
+  }
+  command.sourceStart = contentEnd;
+  command.removedLength = ruleLineEnd - contentEnd;
+  command.insertedText.clear();
+  command.kind = EditTransaction::Kind::DeleteText;
+  command.label = QStringLiteral("Remove Thematic Break");
+  command.structureEdit = true;
+
+  command.preferredCursor = cursorFor(context.node->id(), context.contentText.size());
+  command.fallbackSourceOffset = contentEnd;
+  command.nodeHints.push_back(LocalEditNodeHint{context.node->id(), context.blockRange.byteStart, context.node->type()});
   command.valid = true;
   command.handled = true;
   return command;

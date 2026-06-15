@@ -151,8 +151,11 @@ void testEmptyParagraphAfterCommonBlocks() {
   }
 }
 
-// Thematic break has no editable content, so backspace on a trailing empty paragraph is a
-// safe no-op (document unchanged, caret valid) — it must never corrupt or drop the caret.
+// A LEADING thematic break (no editable content before it) followed by an empty paragraph:
+// backspace cannot eat the divider because there is nowhere to retreat the caret, so it stays a
+// safe no-op (document unchanged, caret valid) — it must never corrupt or drop the caret. (When
+// there IS editable content before the rule, backspace instead removes the divider — see
+// ThematicBreakEditTest.)
 void testEmptyParagraphAfterThematicBreakIsSafe() {
   Harness h;
   const QString md = QStringLiteral("---\n\n");
