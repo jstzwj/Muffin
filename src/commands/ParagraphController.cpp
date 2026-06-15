@@ -637,6 +637,51 @@ bool ParagraphController::convertToTaskList() {
       true);
 }
 
+bool ParagraphController::toggleTaskListItem(NodeId blockId) {
+  if (!ctx_.hasSession() || !blockId.isValid()) {
+    return false;
+  }
+  MarkdownNode* node = ctx_.session->document().node(blockId);
+  if (!node || node->type() != BlockType::ListItem || !node->isTaskItem()) {
+    return false;
+  }
+
+  const QString markdown = ctx_.session->markdownText();
+  // The toggle target is the inner character of "[ ]"/"[x]" on the item's first
+  // source line. Resolve that line and reuse the shared list-line scanner so the
+  // offset agrees with how the parser and serializer see the marker.
+  const qsizetype lineStart = lineStartOffset(markdown, node->sourceRange().byteStart);
+  if (lineStart < 0) {
+    return false;
+  }
+  const qsizetype newline = markdown.indexOf(QLatin1Char('\n'), lineStart);
+  const QString line = newline < 0 ? markdown.mid(lineStart) : markdown.mid(lineStart, newline - lineStart);
+  const ListLineInfo info = listLineInfoFor(line);
+  if (!info.task) {
+    return false;  // Defensive: node claims task-item identity but source disagrees.
+  }
+
+  const qsizetype toggleOffset = lineStart + info.taskMarkerStart + 1;
+  const QChar current = markdown.at(toggleOffset);
+  const QChar next = current.isSpace() ? QLatin1Char('x') : QLatin1Char(' ');
+  // A single-character swap shifts no offsets, so the caret stays put; only fall
+  // back to the item's content start when there is no caret to preserve.
+  const qsizetype contentStart = lineStart + info.taskContentStart;
+  const qsizetype nextCursor = ctx_.hasCursor()
+      ? qBound<qsizetype>(0, ctx_.selection->cursorPosition().text.sourceOffset, markdown.size())
+      : contentStart;
+
+  return applyBlockDelta(
+      EditTransaction::Kind::ReplaceDocumentText,
+      QStringLiteral("Toggle Task"),
+      toggleOffset,
+      1,
+      QString(next),
+      nextCursor,
+      {},
+      true);
+}
+
 // ---------------------------------------------------------------------------
 // Paragraph insert commands
 // ---------------------------------------------------------------------------

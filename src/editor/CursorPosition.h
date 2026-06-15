@@ -40,6 +40,10 @@ struct HitTestResult {
   DefinitionField definitionField = DefinitionField::None;
   QString linkHref;
   QString imageSrc;
+  // True when the click landed on a task-list item's checkbox affordance (the
+  // marker gutter of a task item). Consumed by the view to toggle the item
+  // instead of placing the caret.
+  bool taskCheckboxHit = false;
 
   bool isValid() const {
     return blockId.isValid();

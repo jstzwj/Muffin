@@ -480,6 +480,13 @@ const BlockLayout* EditorView::blockAtViewportPos(QPointF viewportPos) const {
   return layout_->blockAt(QPointF(viewportPos.x(), viewportPos.y() + scrollY()));
 }
 
+const BlockLayout* EditorView::blockLayoutForNode(NodeId id) const {
+  if (!layout_) {
+    return nullptr;
+  }
+  return layout_->block(id);
+}
+
 HitTestResult EditorView::hitTest(QPointF viewportPos) const {
   if (!layout_) {
     return {};
@@ -613,6 +620,11 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
     }
     if (event->modifiers().testFlag(Qt::ControlModifier) && hit.isValid() && !hit.imageSrc.isEmpty()) {
       QDesktopServices::openUrl(resolvedUrlForDocumentResource(hit.imageSrc, documentPath_));
+      event->accept();
+      return;
+    }
+    if (hit.isValid() && hit.taskCheckboxHit) {
+      emit taskCheckboxToggled(hit.blockId);
       event->accept();
       return;
     }

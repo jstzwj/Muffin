@@ -138,6 +138,10 @@ public:
   void setTaskListItem(bool taskListItem, bool checked);
   bool isTaskListItem() const;
   bool taskChecked() const;
+  // Document-coordinate rect of the checkbox drawn for a task-list item (empty
+  // when this block is not a task item). Single source of truth shared by the
+  // painter and the hit tester so a click target never drifts from the glyph.
+  QRectF taskCheckboxRect(const RenderTheme& theme) const;
 
   void setDepth(int depth);
   int depth() const;

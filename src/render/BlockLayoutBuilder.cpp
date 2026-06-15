@@ -359,7 +359,13 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
     children.push_back(std::move(childLayout));
   }
 
-  layout->setTaskListItem(node.taskChecked(), node.taskChecked());
+  // Identity ("is this a task item at all?") and state ("is it checked?") are
+  // independent: an unchecked task item has isTaskItem()==true but
+  // taskChecked()==false. Driving the first arg off taskChecked() collapsed the
+  // two, so unchecked items fell through to the bullet branch and rendered with
+  // no checkbox at all — leaving nothing to click to re-check them. The identity
+  // flag must come from isTaskItem().
+  layout->setTaskListItem(node.isTaskItem(), node.taskChecked());
 
   layout->setRect(QRectF(x, y, width, height));
   layout->setChildren(std::move(children));

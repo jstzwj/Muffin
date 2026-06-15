@@ -583,6 +583,13 @@ bool BlockLayout::taskChecked() const {
   return taskChecked_;
 }
 
+QRectF BlockLayout::taskCheckboxRect(const RenderTheme& theme) const {
+  const qreal markerX = rect_.left() + theme.listIndent() * 0.45;
+  const QFontMetricsF metrics(theme.paragraphFont());
+  const qreal top = rect_.top() + qMax<qreal>(2.0, (metrics.height() - 13.0) / 2.0);
+  return QRectF(markerX, top, 13.0, 13.0);
+}
+
 void BlockLayout::setDepth(int depth) {
   depth_ = depth;
 }
@@ -714,11 +721,7 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
           // Gap between a marker glyph and the content, scaled with the theme indent.
           const qreal markerGap = theme.listIndent() * 0.2;
           if (taskListItem_) {
-            const QRectF box(
-                markerX,
-                viewRect.top() + qMax<qreal>(2.0, (metrics.height() - 13.0) / 2.0),
-                13,
-                13);
+            const QRectF box = taskCheckboxRect(theme).translated(0, -scrollY);
             painter.setBrush(theme.backgroundColor());
             painter.setPen(QPen(theme.tableBorderColor(), 1));
             painter.drawRoundedRect(box, 2, 2);
@@ -1116,6 +1119,11 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
         if (hasListMarker() && documentPos.x() < textLeft) {
           result.zone = HitTestResult::Zone::Marker;
           result.cursorRect = QRectF(textLeft, rect_.top(), 1.0, rect_.height());
+          // A task item's whole gutter is the checkbox affordance; widening the
+          // hit rect a little makes the 13px box comfortably clickable.
+          if (taskListItem_ && taskCheckboxRect(theme).adjusted(-3.0, -3.0, 3.0, 3.0).contains(documentPos)) {
+            result.taskCheckboxHit = true;
+          }
           return result;
         }
         result.zone = HitTestResult::Zone::Text;

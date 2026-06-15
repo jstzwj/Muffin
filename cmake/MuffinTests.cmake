@@ -30,6 +30,7 @@ muffin_add_test(NAME MuffinRenderTreeSitterTest       SOURCE tests/render/Render
 muffin_add_test(NAME MuffinEditorViewProjectionSourceTest SOURCE tests/render/EditorViewProjectionSourceTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEditorViewProjectionMappingTest SOURCE tests/render/EditorViewProjectionMappingTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEditorViewHitTestTest    SOURCE tests/render/EditorViewHitTestTest.cpp    LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinEditorViewTaskCheckboxTest SOURCE tests/render/EditorViewTaskCheckboxTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEditorViewSelectionTest  SOURCE tests/render/EditorViewSelectionTest.cpp  LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEditorViewLayoutTest     SOURCE tests/render/EditorViewLayoutTest.cpp     LINK MuffinUi RESOURCE_LOCK)
 
@@ -59,6 +60,7 @@ muffin_add_test(NAME MuffinParagraphHeadingTest     SOURCE tests/commands/Paragr
 muffin_add_test(NAME MuffinParagraphBlockInsertTest SOURCE tests/commands/ParagraphBlockInsertTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinParagraphToggleBlockTest SOURCE tests/commands/ParagraphToggleBlockTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinParagraphToggleUndoTest  SOURCE tests/commands/ParagraphToggleUndoTest.cpp  LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinParagraphTaskToggleTest  SOURCE tests/commands/ParagraphTaskToggleTest.cpp  LINK MuffinUi RESOURCE_LOCK)
 
 # --- blocks / controllers (pure-logic controller tests link MuffinUi but never spin up a GUI,
 #     so they omit RESOURCE_LOCK and stay parallel; the two that do render take the lock) ---

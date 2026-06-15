@@ -247,6 +247,11 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
       }
       emit stateChanged();
     });
+    connect(view_, &EditorView::taskCheckboxToggled, this, [this](NodeId blockId) {
+      if (paragraphController_.toggleTaskListItem(blockId)) {
+        emit stateChanged();
+      }
+    });
   }
   connect(&inputController_, &InputController::selectAllRequested, this, &EditorController::selectAll);
   connect(&selection_, &SelectionController::selectionChanged, this, [this](SelectionRange selection, HitTestResult hit) {

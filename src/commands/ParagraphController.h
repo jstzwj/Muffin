@@ -50,6 +50,11 @@ public:
   bool convertToOrderedList();
   bool convertToUnorderedList();
   bool convertToTaskList();
+  // Toggle the checked state of the GFM task-list item identified by blockId
+  // (the rendered-checkbox click). A no-op returning false when blockId does not
+  // resolve to a task item. Edits exactly the inner character of "[ ]"/"[x]" so
+  // the marker, content, and sibling items are untouched.
+  bool toggleTaskListItem(NodeId blockId);
 
   // Paragraph insert commands
   bool insertParagraphBefore();

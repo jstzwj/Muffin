@@ -53,6 +53,9 @@ public:
   void setTypewriterMode(bool enabled);
   void setFocusMode(bool enabled);
   const BlockLayout* blockAtViewportPos(QPointF viewportPos) const;
+  // Direct layout lookup by node id (resolves nested blocks such as a list item,
+  // unlike blockAtViewportPos which returns the innermost block under a point).
+  const BlockLayout* blockLayoutForNode(NodeId id) const;
   HitTestResult hitTest(QPointF viewportPos) const;
 
 signals:
@@ -65,6 +68,7 @@ signals:
   void tableDeleteRequested();
   void tableMoreActionsRequested(QPoint globalPos);
   void htmlEditToggleRequested(NodeId blockId);
+  void taskCheckboxToggled(NodeId blockId);
 
 protected:
   bool event(QEvent* event) override;
