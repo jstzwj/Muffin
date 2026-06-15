@@ -5,6 +5,11 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-06-16
+
+### Added
+- **In-app help viewer** - Quick Start, Markdown Reference, and Acknowledgements are now available from the Help menu in a built-in viewer that renders the documentation with the native Markdown engine, shows the localized version matching the current interface language, and supports back/forward navigation and cross-document links
+
 ## [0.2.3] - 2026-06-15
 
 ### Added
@@ -262,6 +267,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.2.4]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.4
 [0.2.3]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.3
 [0.2.2]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.2
 [0.2.1]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.1
