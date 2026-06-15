@@ -64,9 +64,9 @@ This requires PySide6 (uses `QSvgRenderer`, the same Qt SVG engine the app links
 
 `lupdate` fails to track namespace prefixes across `namespace muffin { }` wrappers in `.cpp` files. It generates context `ClassName` instead of the correct `muffin::ClassName`, causing translations to never match at runtime (where `tr()` uses `metaObject()->className()` = `muffin::ClassName`).
 
-**Rule:** All `.cpp` files in `MUFFIN_TRANSLATABLE_SOURCES` that contain `tr()` calls MUST use fully qualified method names (e.g. `muffin::MainWindow::setupFileMenu()`) instead of `namespace muffin { }` wrapping. Free functions and anonymous namespaces that don't use `tr()` may remain inside `namespace muffin { }` or at file scope.
+**Rule:** A `.cpp` file in `MUFFIN_TRANSLATABLE_SOURCES` that contains `tr()` calls MUST NOT contain *any* `namespace muffin { }` block — not even one wrapping `tr()`-free helpers. A single such block anywhere in the file corrupts `lupdate`'s namespace state, so every `tr()` afterward lands under the wrong (un-prefixed) context. Define methods with fully-qualified names (e.g. `muffin::MainWindow::setupFileMenu()`) and put `tr()`-free file-local helpers in an *anonymous* namespace (`namespace { ... }`) at file scope — never inside `namespace muffin { }`.
 
-When adding a new `.cpp` file with `tr()` calls to the translatable sources, do NOT wrap it in `namespace muffin { }`. Use `muffin::ClassName::method()` for all method definitions instead.
+When adding a new `.cpp` file with `tr()` calls to the translatable sources, do NOT wrap it in `namespace muffin { }` — not even partially. Use `muffin::ClassName::method()` for all method definitions and keep helpers in an anonymous namespace. `src/app/HelpViewerDialog.cpp` is a worked example: `muffin::HelpViewerDialog::method()` definitions plus a `namespace { ... }` helper, which `lupdate` correctly attributes to the `muffin::HelpViewerDialog` context.
 
 ### Updating translations
 

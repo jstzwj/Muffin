@@ -116,6 +116,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/MainWindowFileOps.cpp
   src/app/MainWindowFind.cpp
   src/app/PreferencesDialog.cpp
+  src/app/HelpViewerDialog.cpp
   src/app/PreferencesPage.cpp
   src/app/PrefsFilesPage.cpp
   src/app/PrefsEditorPage.cpp
@@ -409,9 +410,34 @@ target_include_directories(MuffinCore
     ${CMAKE_CURRENT_BINARY_DIR}/third_party/cmark-gfm/src
 )
 
+# Help documentation: a set of GFM .md files per UI locale (English fallback at
+# the root), embedded as resources. A .qrc is generated at configure time from a
+# glob, so adding a locale or document needs no manual edits. CONFIGURE_DEPENDS
+# re-runs the glob (and regenerates the .qrc) whenever the file set changes.
+file(GLOB_RECURSE MUFFIN_HELP_DOCS CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/resources/help/*.md")
+file(RELATIVE_PATH MUFFIN_HELP_QRC_REL "${CMAKE_CURRENT_BINARY_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}/resources/help")
+set(MUFFIN_HELP_QRC "${CMAKE_CURRENT_BINARY_DIR}/help.qrc")
+string(CONCAT MUFFIN_HELP_QRC_CONTENT
+  "<RCC>\n"
+  "  <qresource prefix=\"/help\">\n")
+foreach(MUFFIN_HELP_DOC IN LISTS MUFFIN_HELP_DOCS)
+  file(RELATIVE_PATH MUFFIN_HELP_DOC_REL
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources/help" "${MUFFIN_HELP_DOC}")
+  string(REPLACE "\\" "/" MUFFIN_HELP_DOC_REL "${MUFFIN_HELP_DOC_REL}")
+  string(CONCAT MUFFIN_HELP_QRC_CONTENT "${MUFFIN_HELP_QRC_CONTENT}"
+    "    <file alias=\"${MUFFIN_HELP_DOC_REL}\">${MUFFIN_HELP_QRC_REL}/${MUFFIN_HELP_DOC_REL}</file>\n")
+endforeach()
+string(CONCAT MUFFIN_HELP_QRC_CONTENT "${MUFFIN_HELP_QRC_CONTENT}"
+  "  </qresource>\n"
+  "</RCC>\n")
+file(WRITE "${MUFFIN_HELP_QRC}" "${MUFFIN_HELP_QRC_CONTENT}")
+
 add_executable(Muffin
   src/translations.qrc
   src/icons.qrc
+  ${MUFFIN_HELP_QRC}
   src/app/CommandRegistry.cpp
   src/app/CommandRegistry.h
   src/app/LanguageManager.cpp
@@ -430,6 +456,8 @@ add_executable(Muffin
   src/app/MainWindowFind.cpp
   src/app/PreferencesDialog.cpp
   src/app/PreferencesDialog.h
+  src/app/HelpViewerDialog.cpp
+  src/app/HelpViewerDialog.h
   src/app/RenderCommandFacade.cpp
   src/app/RenderCommandFacade.h
   src/app/PreferencesPage.cpp

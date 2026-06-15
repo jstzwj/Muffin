@@ -1,0 +1,21 @@
+# Remerciements
+
+Muffin s'appuie sur d'excellents projets open source.
+
+## Bibliothèques principales
+
+- [Qt 6](https://www.qt.io) — framework d'application et d'interface utilisateur.
+- [cmark‑gfm](https://github.com/github/cmark-gfm) — analyse de GitHub‑Flavored Markdown.
+- [Tree‑sitter](https://tree-sitter.github.io) et ses grammaires de langage — coloration syntaxique du code.
+- [KaTeX](https://katex.org) — composition mathématique rapide (polices incluses).
+
+## Mise en page et HTML
+
+- [Yoga](https://github.com/facebook/yoga) — moteur de mise en page flexbox.
+- [Lexbor](https://github.com/lexbor/lexbor) — analyse HTML.
+
+## Remerciements
+
+Merci à chaque traducteur, testeur et contributeur qui aide à améliorer Muffin. Vos retours sont les bienvenus sur le [suivi des tickets](https://github.com/jstzwj/Muffin/issues).
+
+Visitez la [page d'accueil du projet](https://github.com/jstzwj/Muffin) ou revenez au [Démarrage rapide](help:quick-start).

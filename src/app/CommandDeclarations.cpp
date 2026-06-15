@@ -1,6 +1,7 @@
 #include "app/CommandDeclarations.h"
 
 #include "app/MainWindow.h"
+#include "app/HelpViewerDialog.h"
 #include "app/UpdateChecker.h"
 #include "app/SidebarWidget.h"
 #include "document/MarkdownTypes.h"
@@ -1377,11 +1378,11 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
       {.id = QStringLiteral("help.quick_start"),
        .category = CommandCategory::Help,
        .text = muffin::MainWindow::tr("Quick Start"),
-       .enabledInitial = false},
+       .handler = [](MainWindow& w) { HelpViewerDialog::open(&w, HelpTopic::QuickStart); }},
       {.id = QStringLiteral("help.markdown_ref"),
        .category = CommandCategory::Help,
        .text = muffin::MainWindow::tr("Markdown Reference"),
-       .enabledInitial = false},
+       .handler = [](MainWindow& w) { HelpViewerDialog::open(&w, HelpTopic::MarkdownReference); }},
       {.id = QStringLiteral("help.custom_themes"),
        .category = CommandCategory::Help,
        .text = muffin::MainWindow::tr("Custom Themes"),
@@ -1389,7 +1390,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
       {.id = QStringLiteral("help.acknowledgements"),
        .category = CommandCategory::Help,
        .text = muffin::MainWindow::tr("Acknowledgements"),
-       .enabledInitial = false},
+       .handler = [](MainWindow& w) { HelpViewerDialog::open(&w, HelpTopic::Acknowledgements); }},
       {.id = QStringLiteral("help.changelog"),
        .category = CommandCategory::Help,
        .text = muffin::MainWindow::tr("Changelog"),
