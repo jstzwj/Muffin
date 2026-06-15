@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="logo.png" alt="Muffin" width="220">
+<img src="logo.svg" alt="Muffin" width="220">
 
 # Muffin
 
