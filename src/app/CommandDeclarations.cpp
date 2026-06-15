@@ -814,7 +814,8 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .category = CommandCategory::Format,
        .text = muffin::MainWindow::tr("Clear Style"),
        .shortcut = QKeySequence(QStringLiteral("Ctrl+\\")),
-       .enabledInitial = false},
+       .handler = [](MainWindow& window) { window.backend_->clearFormatting(); },
+       .enabled = [](const MainWindow& w) { return inlineFormat(w); }},
 
       // ---------------- Image ----------------
       {.id = QStringLiteral("image.insert"),

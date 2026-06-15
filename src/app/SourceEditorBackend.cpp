@@ -313,6 +313,12 @@ void SourceEditorBackend::insertImage() {
   plainEdit()->insertPlainText(QStringLiteral("![alt](url)"));
 }
 
+void SourceEditorBackend::clearFormatting() {
+  // No-op: the command is disabled in source mode (the Format menu's enabled
+  // predicate gates on !isSourceMode), and stripping markers reliably requires
+  // the parsed inline tree this backend does not maintain.
+}
+
 bool SourceEditorBackend::hasSelection() const {
   return plainEdit()->textCursor().hasSelection();
 }

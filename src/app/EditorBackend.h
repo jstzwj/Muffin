@@ -67,6 +67,7 @@ public:
   virtual void toggleUnderline() = 0;
   virtual void insertLink() = 0;
   virtual void insertImage() = 0;
+  virtual void clearFormatting() = 0;
 
   // State queries
   virtual bool hasSelection() const = 0;

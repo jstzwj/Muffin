@@ -31,6 +31,11 @@ public:
   bool insertLink();
   bool insertImage();
 
+  // Strip every inline formatting marker from the paragraph holding the cursor
+  // (bold/italic/strikethrough/code/underline, and link syntax → label text),
+  // leaving content such as inline math and images untouched.
+  bool clearFormatting();
+
 signals:
   void unsupportedStyleRequested(QString reason);
 
@@ -79,6 +84,13 @@ private:
       qsizetype contentBase,
       qsizetype localSelStart, qsizetype localSelEnd,
       QVector<MarkerSpan>& markers) const;
+
+  // Collect the delimiter-syntax source spans of every styling node (the source
+  // region lying outside each node's content range) so they can be stripped in
+  // one pass. Content (math, images, label text) is left in place.
+  void collectClearFormattingSpans(const QVector<InlineNode>& inlines,
+                                   qsizetype contentBase,
+                                   QVector<MarkerSpan>& spans) const;
 
   // --- Word range helper (for collapsed cursor → word-wrap) ---
   bool findWordRange(const BlockEditContext& context,

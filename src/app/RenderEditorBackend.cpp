@@ -173,6 +173,10 @@ void RenderEditorBackend::insertImage() {
   controller_.stylizeController().insertImage();
 }
 
+void RenderEditorBackend::clearFormatting() {
+  controller_.stylizeController().clearFormatting();
+}
+
 bool RenderEditorBackend::hasSelection() const {
   return controller_.selection().hasCursor() && !controller_.selection().selection().isCollapsed();
 }

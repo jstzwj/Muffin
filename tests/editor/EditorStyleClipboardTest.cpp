@@ -305,12 +305,113 @@ void testSelectionSerializerCrossComplexInlineEdges() {
   const QString plainText = selectedPlainText(session, selection);
   require(plainText == QStringLiteral("bold and code\nMiddle\nTail x+y"), "complex inline cross selection plain text mismatch");
 }
+
+// Clear Formatting strips every inline marker from the cursor's paragraph while
+// leaving content (math, images) intact. One generic rule covers every styling
+// type: the source region outside a node's content range is its delimiter syntax.
+void testClearFormatting() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  StylizeController stylize;
+  wireStyle(stylize, session, selection, undoStack, brushQueue);
+
+  struct Case {
+    QString input;
+    QString expected;
+    qsizetype cursor;  // visible offset to drop the cursor before clearing
+    qsizetype expectedCursor;  // visible offset the cursor should land on after clearing
+  };
+  const Case cases[] = {
+      {QStringLiteral("**bold** and *italic*"), QStringLiteral("bold and italic"), 3, 3},
+      {QStringLiteral("`code` here"), QStringLiteral("code here"), 2, 2},
+      {QStringLiteral("~~strike~~"), QStringLiteral("strike"), 2, 2},
+      {QStringLiteral("[label](https://x)"), QStringLiteral("label"), 2, 2},
+      {QStringLiteral("__u__ _i_"), QStringLiteral("u i"), 1, 1},
+      // Nested formatting: outer + inner markers all stripped, content kept.
+      {QStringLiteral("**bold *and* more**"), QStringLiteral("bold and more"), 5, 5},
+      // Content is preserved: inline math and images are not "formatting".
+      {QStringLiteral("**bold** $x^2$"), QStringLiteral("bold $x^2$"), 2, 2},
+      {QStringLiteral("**b** ![alt](u)"), QStringLiteral("b ![alt](u)"), 1, 1},
+      // Underline is raw HTML (<u></u>); its tags are stripped, inner text kept.
+      {QStringLiteral("a <u>under</u> b"), QStringLiteral("a under b"), 4, 4},
+  };
+
+  for (const Case& c : cases) {
+    session.setMarkdownText(c.input, false);
+    setCursor(selection, blockAt(session, 0), c.cursor);
+    require(stylize.clearFormatting(), "clearFormatting should report a change when formatting is present");
+    if (session.markdownText() != c.expected) {
+      std::cerr << "clearFormatting text mismatch: input [" << c.input.toUtf8().data()
+                << "] expected [" << c.expected.toUtf8().data() << "] got ["
+                << session.markdownText().toUtf8().data() << "]\n";
+    }
+    require(session.markdownText() == c.expected, "clearFormatting should strip markers, keep content");
+    require(selection.cursorPosition().blockId.isValid(), "clearFormatting should keep a valid cursor");
+    require(selection.cursorPosition().text.textOffset == c.expectedCursor,
+            "clearFormatting should preserve the cursor's visible position");
+    require(undoStack.canUndo(), "clearFormatting should push an undo entry");
+    undoStack.clear();
+  }
+
+  // No formatting → no-op: returns false, text untouched, nothing pushed to undo.
+  session.setMarkdownText(QStringLiteral("just plain text"), false);
+  setCursor(selection, blockAt(session, 0), 5);
+  require(!stylize.clearFormatting(), "clearFormatting should be a no-op when no formatting is present");
+  require(session.markdownText() == QStringLiteral("just plain text"), "clearFormatting no-op must not alter text");
+  require(!undoStack.canUndo(), "clearFormatting no-op must not push undo");
+
+  // Math/images alone are content, not formatting → also a no-op.
+  session.setMarkdownText(QStringLiteral("$x^2$ and ![alt](u)"), false);
+  setCursor(selection, blockAt(session, 0), 2);
+  require(!stylize.clearFormatting(), "clearFormatting should not treat math/images as formatting");
+  require(session.markdownText() == QStringLiteral("$x^2$ and ![alt](u)"), "clearFormatting must leave math/images untouched");
+}
+
+void testClearFormattingUndoRedo() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  StylizeController stylize;
+  wireStyle(stylize, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("**bold** and *italic*"), false);
+  setCursor(selection, blockAt(session, 0), 3);
+  require(stylize.clearFormatting(), "clearFormatting should clear the paragraph");
+  require(session.markdownText() == QStringLiteral("bold and italic"), "clearFormatting text mismatch");
+
+  const EditTransaction undo = undoStack.takeUndo();
+  require(undo.isTextDeltaCommand(), "clearFormatting undo should use TextDeltaCommand");
+  require(undo.textDeltaCommand().delta.removedText == QStringLiteral("**bold** and *italic*"),
+          "clearFormatting undo removedText should be the formatted original");
+  require(undo.textDeltaCommand().delta.insertedText == QStringLiteral("bold and italic"),
+          "clearFormatting undo insertedText should be the cleared text");
+  // Undo: replace the cleared text with the formatted original.
+  session.applyTextDelta(undo.textDeltaCommand().delta.start,
+                         undo.textDeltaCommand().delta.insertedText.size(),
+                         undo.textDeltaCommand().delta.removedText, true);
+  selection.setCursorPosition(undo.textDeltaCommand().beforeCursor);
+  require(session.markdownText() == QStringLiteral("**bold** and *italic*"), "clearFormatting undo should restore formatting");
+
+  // Redo: re-apply the clearing.
+  const EditTransaction redo = undoStack.takeRedo();
+  require(redo.isTextDeltaCommand(), "clearFormatting redo should use TextDeltaCommand");
+  session.applyTextDelta(redo.textDeltaCommand().delta.start,
+                         redo.textDeltaCommand().delta.removedText.size(),
+                         redo.textDeltaCommand().delta.insertedText, true);
+  selection.setCursorPosition(redo.textDeltaCommand().afterCursor);
+  require(session.markdownText() == QStringLiteral("bold and italic"), "clearFormatting redo should re-clear");
+}
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
   }
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testClearFormatting);
+  RUN_TEST(testClearFormattingUndoRedo);
   RUN_TEST(testStylizeCollapsedSkeletons);
   RUN_TEST(testTypingIntoCollapsedStyleSkeletons);
   RUN_TEST(testStylizeSelectionWrap);

@@ -47,6 +47,7 @@ public:
   void toggleUnderline() override;
   void insertLink() override;
   void insertImage() override;
+  void clearFormatting() override;
 
   bool hasSelection() const override;
   bool isSourceMode() const override;

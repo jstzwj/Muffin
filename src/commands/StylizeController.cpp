@@ -86,6 +86,83 @@ bool StylizeController::toggleUnderline() {
   return toggleUnderlineRange(context, localStart, localEnd);
 }
 
+bool StylizeController::clearFormatting() {
+  if (!ctx_.hasSession() || !ctx_.hasCursor()) {
+    return false;
+  }
+
+  auto resolver = ctx_.contextResolver();
+  BlockEditContext context;
+  // Paragraph-scoped: clear the block holding the cursor regardless of selection.
+  if (!resolver.current(context)) {
+    return false;
+  }
+  if (!context.editableNode || context.contentRange.byteStart < 0) {
+    return false;
+  }
+
+  const qsizetype contentBase = context.contentRange.byteStart;
+  const qsizetype contentEnd = context.contentRange.byteEnd;
+  const QString contentText = context.contentText;
+
+  // Collect every delimiter-syntax span to strip: for each styling node the source
+  // region lying outside its content range IS the marker syntax (`**`, `__`,
+  // `~~`, backticks, `[`, `](url)`). Content — math, images, label text — stays put.
+  // Underline uses raw HTML (<u></u>), collected separately from the text.
+  QVector<MarkerSpan> spans;
+  collectClearFormattingSpans(context.editableNode->inlines(), contentBase, spans);
+  const QVector<MarkerSpan> underline =
+      collectHtmlUnderlineMarkers(contentText, 0, contentText.size());
+  spans.append(underline);
+
+  if (spans.isEmpty()) {
+    return false;  // nothing to clear
+  }
+
+  // Merge overlapping/adjacent spans so each source char is removed exactly once.
+  std::sort(spans.begin(), spans.end(),
+            [](const MarkerSpan& a, const MarkerSpan& b) { return a.localStart < b.localStart; });
+  QVector<MarkerSpan> merged;
+  merged.reserve(spans.size());
+  for (const MarkerSpan& span : spans) {
+    if (span.localStart >= span.localEnd) {
+      continue;
+    }
+    if (!merged.isEmpty() && span.localStart <= merged.last().localEnd) {
+      merged.last().localEnd = qMax(merged.last().localEnd, span.localEnd);
+    } else {
+      merged.append(span);
+    }
+  }
+
+  // Remove in reverse to keep earlier offsets valid. Track how far the cursor
+  // shifts left: fully-preceding spans move it by their length; a span straddling
+  // the cursor snaps it back to the span's start.
+  const qsizetype localCursor =
+      qBound<qsizetype>(0, context.cursorSourceOffset - contentBase, contentText.size());
+  QString newText = contentText;
+  qsizetype cursorShift = 0;
+  for (auto it = merged.rbegin(); it != merged.rend(); ++it) {
+    const qsizetype length = it->localEnd - it->localStart;
+    newText.remove(it->localStart, length);
+    if (it->localEnd <= localCursor) {
+      cursorShift += length;
+    } else if (it->localStart < localCursor) {
+      cursorShift += localCursor - it->localStart;
+    }
+  }
+
+  const qsizetype nextLocal = qBound<qsizetype>(0, localCursor - cursorShift, newText.size());
+  const qsizetype nextSource = contentBase + nextLocal;
+
+  return applyStyleDelta(
+      EditTransaction::Kind::InsertText, QStringLiteral("Clear Formatting"),
+      contentBase, contentEnd - contentBase, std::move(newText),
+      nextSource, nextSource,
+      QVector<LocalEditNodeHint>{
+          LocalEditNodeHint{context.editableNode->id(), contentBase, context.editableNode->type()}});
+}
+
 bool StylizeController::toggleUnderlineCollapsed(const BlockEditContext& context) {
   if (!context.editableNode) {
     return false;
@@ -967,6 +1044,37 @@ void StylizeController::collectOverlappingMarkersRecursive(
             node.children(), targetType, contentBase,
             localSelStart, localSelEnd, markers);
       }
+    }
+  }
+}
+
+void StylizeController::collectClearFormattingSpans(
+    const QVector<InlineNode>& inlines, qsizetype contentBase,
+    QVector<MarkerSpan>& spans) const {
+  for (const InlineNode& node : inlines) {
+    const InlineType type = node.type();
+    const bool isStyling = type == InlineType::Emphasis || type == InlineType::Strong ||
+                           type == InlineType::Strikethrough || type == InlineType::Code ||
+                           (type == InlineType::Link && !node.isAutolink());
+    if (isStyling) {
+      const InlineRange source = node.sourceRange();
+      const InlineRange content = node.contentRange();
+      if (source.isValid() && content.isValid()) {
+        // The marker syntax is everything inside the node's source span but
+        // outside its content span: the opening `**`/`[`/backtick … and the
+        // closing `**`/`](url)`/backtick. Stripping both leaves the content.
+        if (content.start > source.start) {
+          spans.append({source.start - contentBase, content.start - contentBase});
+        }
+        if (source.end > content.end) {
+          spans.append({content.end - contentBase, source.end - contentBase});
+        }
+      }
+    }
+    // Recurse so nested formatting (e.g. a bold span inside a link label) is
+    // stripped too. Math/image/text carry no styling markers to remove.
+    if (!node.children().isEmpty()) {
+      collectClearFormattingSpans(node.children(), contentBase, spans);
     }
   }
 }
