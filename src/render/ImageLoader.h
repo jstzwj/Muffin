@@ -7,6 +7,8 @@
 #include <QSet>
 #include <QString>
 
+#include <memory>
+
 namespace muffin {
 
 /// Async image loader with in-memory cache. Loads remote (HTTP/HTTPS) images
@@ -33,7 +35,7 @@ signals:
 private:
   explicit ImageLoader(QObject* parent = nullptr);
 
-  QNetworkAccessManager network_;
+  QNetworkAccessManager* network_ = nullptr;  // Owned; torn down on aboutToQuit (see .cpp).
   QHash<QString, QImage> cache_;
   QSet<QString> pending_;
 };

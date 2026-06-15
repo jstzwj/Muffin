@@ -1,6 +1,7 @@
 #include "render/ImageLoader.h"
 #include "render/ImageDecoder.h"
 
+#include <QCoreApplication>
 #include <QNetworkReply>
 #include <QUrl>
 
@@ -11,7 +12,24 @@ ImageLoader& ImageLoader::instance() {
   return loader;
 }
 
-ImageLoader::ImageLoader(QObject* parent) : QObject(parent) {}
+ImageLoader::ImageLoader(QObject* parent) : QObject(parent), network_(new QNetworkAccessManager(this)) {
+  // ImageLoader is a function-local static, so it is destroyed during exit(),
+  // AFTER the QApplication (a stack local in main) is gone. QNetworkAccessManager
+  // and its pending replies must be destroyed while a QCoreApplication still
+  // exists — otherwise Qt's network teardown corrupts the heap (on Linux glibc
+  // aborts with "malloc_consolidate(): unaligned fastbin chunk"). Tear down
+  // networking on aboutToQuit, while the application object still lives, and
+  // null out the pointer so the member does not destruct again at exit().
+  if (auto* app = QCoreApplication::instance()) {
+    connect(app, &QCoreApplication::aboutToQuit, this, [this] {
+      if (network_) {
+        delete network_;
+        network_ = nullptr;
+      }
+      pending_.clear();
+    });
+  }
+}
 
 QImage ImageLoader::cached(const QString& url) const {
   return cache_.value(url);
@@ -33,7 +51,7 @@ void ImageLoader::request(const QString& url) {
   const QUrl requestUrl(url);
   QNetworkRequest request(requestUrl);
   request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
-  QNetworkReply* reply = network_.get(request);
+  QNetworkReply* reply = network_->get(request);
 
   connect(reply, &QNetworkReply::finished, this, [this, reply, url] {
     reply->deleteLater();
