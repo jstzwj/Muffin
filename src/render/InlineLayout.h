@@ -13,10 +13,12 @@
 #include <QPointF>
 #include <QRectF>
 #include <QSizeF>
+#include <QStringView>
 #include <QTextLayout>
 #include <QString>
 #include <QVector>
 
+#include <functional>
 #include <memory>
 
 class QPainter;
@@ -29,6 +31,10 @@ public:
     InlineProjectionState projectionState;
     qsizetype sourceBase = -1;
     qsizetype pendingPrefixLength = 0;
+    // When set, misspelled prose words within Text spans receive a SpellCheck underline.
+    // Supplied by the builder from the SpellChecker; InlineLayout itself stays free of any
+    // spell-check dependency.
+    std::function<bool(QStringView)> isMisspelled;
   };
 
   InlineLayout() = default;
@@ -168,6 +174,7 @@ private:
   QVector<DisplayOffsetMapEntry> displayOffsetMap_;
   InlineProjection projection_;
   math::MathRenderer mathRenderer_;
+  std::function<bool(QStringView)> isMisspelled_;
 };
 
 }  // namespace muffin

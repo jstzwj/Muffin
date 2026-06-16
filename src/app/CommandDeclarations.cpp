@@ -9,6 +9,7 @@
 #include "editor/FindBarWidget.h"
 #include "editor/SourceEditorWidget.h"
 #include "io/ImageFileOps.h"
+#include "spellcheck/SpellChecker.h"
 
 #include <QApplication>
 #include <QClipboard>
@@ -342,8 +343,15 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .enabled = [](const MainWindow& w) { return cursorPresent(w); }},
       {.id = QStringLiteral("edit.spellcheck"),
        .category = CommandCategory::Edit,
-       .text = muffin::MainWindow::tr("Spell Check..."),
-       .enabledInitial = false},
+       .text = muffin::MainWindow::tr("Spell Check"),
+       .checkable = true,
+       .handler = [](MainWindow& window) {
+         if (QAction* action = window.commands_.action(QStringLiteral("edit.spellcheck"))) {
+           SpellChecker::instance().setEnabled(action->isChecked());
+         }
+       },
+       .enabled = [](const MainWindow&) { return true; },
+       .checked = [](const MainWindow&) { return SpellChecker::instance().isEnabled(); }},
       {.id = QStringLiteral("edit.linebreak_crlf"),
        .category = CommandCategory::Edit,
        .text = muffin::MainWindow::tr("Windows (CRLF)"),

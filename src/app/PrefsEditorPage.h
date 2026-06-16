@@ -43,7 +43,9 @@ private:
   QRadioButton* lineBreakLfRadio_ = nullptr;
   QRadioButton* lineBreakCrlfRadio_ = nullptr;
   QLabel* spellCheckLabel_ = nullptr;
-  QComboBox* spellCheckCombo_ = nullptr;
+  QCheckBox* spellCheckEnabledCheck_ = nullptr;
+  QLabel* spellCheckLanguageLabel_ = nullptr;
+  QComboBox* spellCheckLanguageCombo_ = nullptr;
   QLabel* typewriterLabel_ = nullptr;
   QCheckBox* typewriterCursorMiddleCheck_ = nullptr;
   QPushButton* disableTypewriterFocusButton_ = nullptr;

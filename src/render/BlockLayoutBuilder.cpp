@@ -5,14 +5,17 @@
 #include "document/PendingBlockMarker.h"
 #include "document/SourceRangeUtil.h"
 #include "projection/InlineProjection.h"
+#include "spellcheck/SpellChecker.h"
 
 #include <QCoreApplication>
 #include <QFileInfo>
 #include <QFontMetricsF>
 #include <QStringList>
+#include <QStringView>
 #include <QTextLayout>
 #include <QTextOption>
 
+#include <functional>
 #include <utility>
 
 namespace muffin {
@@ -29,6 +32,15 @@ namespace {
 // following cell's text inside the empty cell.
 bool hasResolvedByteRange(const SourceRange& range) {
   return range.byteEnd >= range.byteStart && (range.byteStart > 0 || range.byteEnd > 0);
+}
+
+// Predicate for the rendered-mode spell-check overlay. Returns a null std::function when
+// spell checking is off, so InlineLayout skips the per-word scan entirely.
+std::function<bool(QStringView)> spellMisspelledPredicate() {
+  if (!SpellChecker::instance().isEnabled()) {
+    return {};
+  }
+  return [](QStringView word) { return !SpellChecker::instance().isCorrect(word); };
 }
 
 qreal layoutTextHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width) {
@@ -243,6 +255,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), projectionBase);
   options.sourceBase = projectionBase;
   options.pendingPrefixLength = pendingPrefixLengthFor(node, editableSource);
+  options.isMisspelled = spellMisspelledPredicate();
   inlineLayout->build(node.inlines(), editableSource, theme, width, font, options);
   qreal height = inlineLayout->height();
   if (node.type() == BlockType::Heading && node.headingLevel() <= 2) {
@@ -341,6 +354,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
     options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), contentStart);
     options.sourceBase = contentStart;
   }
+  options.isMisspelled = spellMisspelledPredicate();
   inlineLayout->build(primaryInlinesForListItem(node), listSourceText, theme, contentWidth, theme.paragraphFont(), options);
   layout->setInlineLayout(std::move(inlineLayout));
 
@@ -488,6 +502,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       if (selection_.focus.text.nodeId == cellNode->id()) {
         options.projectionState = InlineProjectionState::forSelection(selection_, selection_.focus.blockId, sourceContentStartForEditableNode(*cellNode));
       }
+      options.isMisspelled = spellMisspelledPredicate();
       cell.text.build(
           cellNode->inlines(),
           sourceTextForEditableNode(*cellNode),

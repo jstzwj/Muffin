@@ -576,7 +576,7 @@ Set up an image uploader in Preferences → Images.</source>
         <translation type="obsolete">画像の全体設定...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="142"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="191"/>
         <source>Show / Hide Sidebar</source>
         <translation type="unfinished">サイドバーを表示 / 非表示</translation>
     </message>
@@ -979,7 +979,7 @@ C++ と Qt 6 Widgets で構築された高速で軽量なネイティブ Markdow
         <translation>タイ語 (TIS-620)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowMenus.cpp" line="145"/>
+        <location filename="../src/app/MainWindowMenus.cpp" line="194"/>
         <source>Toggle source / rendered mode</source>
         <translation type="unfinished">ソース / レンダリング表示を切り替え</translation>
     </message>
@@ -1000,7 +1000,7 @@ C++ と Qt 6 Widgets で構築された高速で軽量なネイティブ Markdow
 <context>
     <name>muffin::BlockLayoutBuilder</name>
     <message>
-        <location filename="../src/render/BlockLayoutBuilder.cpp" line="227"/>
+        <location filename="../src/render/BlockLayoutBuilder.cpp" line="239"/>
         <source>Start writing...</source>
         <translation>書き始める...</translation>
     </message>
@@ -1011,6 +1011,19 @@ C++ と Qt 6 Widgets で構築された高速で軽量なネイティブ Markdow
         <location filename="../src/document/DocumentSession.cpp" line="534"/>
         <source>Untitled</source>
         <translation>無題</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::EditorView</name>
+    <message>
+        <location filename="../src/editor/EditorView.cpp" line="797"/>
+        <source>(no spelling suggestions)</source>
+        <translation>(スペルの候補なし)</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/EditorView.cpp" line="813"/>
+        <source>Ignore &quot;%1&quot;</source>
+        <translation>「%1」を無視</translation>
     </message>
 </context>
 <context>
@@ -1203,12 +1216,12 @@ C++ と Qt 6 Widgets で構築された高速で軽量なネイティブ Markdow
         <translation type="vanished">解析 %1 ms</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="316"/>
+        <location filename="../src/app/MainWindow.cpp" line="319"/>
         <source>Open Folder</source>
         <translation>フォルダーを開く</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1207"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1215"/>
         <source>Show / Hide Sidebar</source>
         <translation>サイドバーを表示 / 非表示</translation>
     </message>
@@ -1217,174 +1230,174 @@ C++ と Qt 6 Widgets で構築された高速で軽量なネイティブ Markdow
         <translation type="vanished">ソース / レンダリング表示を切り替え</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1454"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1462"/>
         <source>File</source>
         <translation>ファイル</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="75"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="76"/>
         <source>New</source>
         <translation>新規</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="83"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="84"/>
         <source>New Window</source>
         <translation>新規ウィンドウ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="92"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="93"/>
         <source>Open...</source>
         <translation>開く...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="88"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="89"/>
         <source>Open Folder...</source>
         <translation>フォルダーを開く...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="102"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="103"/>
         <source>Quick Open...</source>
         <translation>クイックオープン...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1461"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1469"/>
         <source>Open Recent</source>
         <translation>最近使った項目を開く</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1463"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1471"/>
         <source>Reopen with Encoding</source>
         <translation>エンコーディングを指定して再度開く</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="106"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="107"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="115"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="116"/>
         <source>Save As...</source>
         <translation>名前を付けて保存...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="124"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="125"/>
         <source>Move To...</source>
         <translation>移動...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="130"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="131"/>
         <source>Save All Open Files...</source>
         <translation>開いているすべてのファイルを保存...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="136"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="137"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="105"/>
         <source>Properties</source>
         <translation>プロパティ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="141"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="142"/>
         <source>Show in File Manager...</source>
         <translation>ファイルマネージャーで表示...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="146"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="147"/>
         <source>Show in Sidebar</source>
         <translation>サイドバーに表示</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="152"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="153"/>
         <source>Delete...</source>
         <translation>削除...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="158"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="159"/>
         <source>Import...</source>
         <translation>インポート...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1475"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1483"/>
         <source>Export</source>
         <translation>エクスポート</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="162"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="163"/>
         <source>Print...</source>
         <translation>印刷...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="168"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="169"/>
         <source>Preferences...</source>
         <translation>環境設定...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="173"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="174"/>
         <source>Close</source>
         <translation>閉じる</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1482"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1490"/>
         <source>Edit</source>
         <translation>編集</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="180"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="181"/>
         <source>Undo</source>
         <translation>元に戻す</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="185"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="186"/>
         <source>Redo</source>
         <translation>やり直す</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="190"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="191"/>
         <source>Cut</source>
         <translation>切り取り</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="195"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="196"/>
         <source>Copy</source>
         <translation>コピー</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="200"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="848"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="201"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="856"/>
         <source>Copy Image</source>
         <translation>画像をコピー</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="204"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="205"/>
         <source>Paste</source>
         <translation>貼り付け</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="209"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="210"/>
         <source>Copy as Plain Text</source>
         <translation>プレーンテキストとしてコピー</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="215"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="216"/>
         <source>Copy as Markdown</source>
         <translation>Markdown としてコピー</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="222"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="223"/>
         <source>Copy as HTML</source>
         <translation>HTML としてコピー</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="228"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="229"/>
         <source>Paste as Plain Text</source>
         <translation>プレーンテキストとして貼り付け</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1497"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1505"/>
         <source>Select</source>
         <translation>選択</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="234"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="235"/>
         <source>Select All</source>
         <translation>すべて選択</translation>
     </message>
@@ -1393,62 +1406,62 @@ C++ と Qt 6 Widgets で構築された高速で軽量なネイティブ Markdow
         <translation type="vanished">現在の行を選択</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="253"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="254"/>
         <source>Select Current Format Text</source>
         <translation>現在の書式のテキストを選択</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="301"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="302"/>
         <source>Move Line Up</source>
         <translation>行を上へ移動</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="308"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="309"/>
         <source>Move Line Down</source>
         <translation>行を下へ移動</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="315"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="316"/>
         <source>Delete</source>
         <translation>削除</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1517"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1525"/>
         <source>Delete Range</source>
         <translation>範囲を削除</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="321"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="322"/>
         <source>Delete Block</source>
         <translation>ブロックを削除</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="327"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="328"/>
         <source>Delete Current Line</source>
         <translation>現在の行を削除</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="333"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="334"/>
         <source>Delete Current Format Text</source>
         <translation>現在の書式テキストを削除</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="339"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="340"/>
         <source>Delete Current Word</source>
         <translation>現在の単語を削除</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1524"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1532"/>
         <source>Math Tools</source>
         <translation>数式ツール</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1525"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1533"/>
         <source>Smart Punctuation</source>
         <translation>スマート句読点</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1527"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1535"/>
         <source>Line Breaks</source>
         <translation>改行</translation>
     </message>
@@ -1457,33 +1470,32 @@ C++ と Qt 6 Widgets で構築された高速で軽量なネイティブ Markdow
         <translation type="vanished">空白と改行</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="349"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="357"/>
         <source>Windows (CRLF)</source>
         <translation>Windows (CRLF)</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="359"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="367"/>
         <source>Unix (LF)</source>
         <translation>Unix (LF)</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="369"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="377"/>
         <source>Ensure Trailing Newline on Save</source>
         <translation>保存時に末尾の改行を確認</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="345"/>
         <source>Spell Check...</source>
-        <translation>スペルチェック...</translation>
+        <translation type="vanished">スペルチェック...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1536"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1544"/>
         <source>Find and Replace</source>
         <translation>検索と置換</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="458"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1546"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="466"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1554"/>
         <source>Paragraph</source>
         <translation>段落</translation>
     </message>
@@ -1492,488 +1504,488 @@ C++ と Qt 6 Widgets で構築された高速で軽量なネイティブ Markdow
         <translation type="vanished">見出し %1</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="467"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="475"/>
         <source>Promote Heading</source>
         <translation>見出しレベルを上げる</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="477"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="485"/>
         <source>Demote Heading</source>
         <translation>見出しレベルを下げる</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1559"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1611"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1567"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1619"/>
         <source>Table</source>
         <translation>表</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="487"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="495"/>
         <source>Formula Block</source>
         <translation>数式ブロック</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="495"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="503"/>
         <source>Code Block</source>
         <translation>コードブロック</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1584"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1592"/>
         <source>Code Tools</source>
         <translation>コードツール</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1585"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1593"/>
         <source>Alert</source>
         <translation>アラート</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="503"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="511"/>
         <source>Quote</source>
         <translation>引用</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="510"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="518"/>
         <source>Ordered List</source>
         <translation>番号付きリスト</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="517"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="525"/>
         <source>Unordered List</source>
         <translation>箇条書きリスト</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="524"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="532"/>
         <source>Task List</source>
         <translation>タスクリスト</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1591"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1599"/>
         <source>Task Status</source>
         <translation>タスクの状態</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1592"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1600"/>
         <source>List Indent</source>
         <translation>リストのインデント</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="531"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="539"/>
         <source>Insert Paragraph Before</source>
         <translation>前に段落を挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="539"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="547"/>
         <source>Insert Paragraph After</source>
         <translation>後に段落を挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="547"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="555"/>
         <source>Link Reference</source>
         <translation>リンク参照</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="553"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="561"/>
         <source>Footnote</source>
         <translation>脚注</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="559"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="567"/>
         <source>Horizontal Rule</source>
         <translation>水平線</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="565"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="573"/>
         <source>Table of Contents</source>
         <translation>目次</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1603"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1611"/>
         <source>Front Matter</source>
         <translation>フロントマター</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="571"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="579"/>
         <source>YAML</source>
         <translation>YAML</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="575"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="583"/>
         <source>TOML</source>
         <translation>TOML</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="579"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="587"/>
         <source>JSON</source>
         <translation>JSON</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1644"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1652"/>
         <source>Format</source>
         <translation>書式</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="756"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="764"/>
         <source>Bold</source>
         <translation>太字</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="764"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="772"/>
         <source>Italic</source>
         <translation>斜体</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="772"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="780"/>
         <source>Underline</source>
         <translation>下線</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="781"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="789"/>
         <source>Inline Code</source>
         <translation>インラインコード</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="789"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="797"/>
         <source>Inline Formula</source>
         <translation>インライン数式</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="798"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="806"/>
         <source>Strikethrough</source>
         <translation>取り消し線</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="807"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="815"/>
         <source>Comment</source>
         <translation>コメント</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="811"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="819"/>
         <source>Hyperlink</source>
         <translation>ハイパーリンク</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1656"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1664"/>
         <source>Link Actions</source>
         <translation>リンク操作</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1658"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1666"/>
         <source>Image</source>
         <translation>画像</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="824"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="832"/>
         <source>Insert Image...</source>
         <translation>画像を挿入...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="830"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="838"/>
         <source>Insert Local Image...</source>
         <translation>ローカル画像を挿入...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="835"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="843"/>
         <source>Open Image Location...</source>
         <translation>画像の場所を開く...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="866"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="874"/>
         <source>Delete Image File</source>
         <translation>画像ファイルを削除</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="891"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="899"/>
         <source>Copy Image To...</source>
         <translation>画像をコピー先...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="929"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="937"/>
         <source>Rename / Move Image To...</source>
         <translation>名前の変更 / 画像の移動先...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="975"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="983"/>
         <source>Upload All Local Images</source>
         <translation>すべてのローカル画像をアップロード</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="983"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="991"/>
         <source>Reload All Images</source>
         <translation>すべての画像を再読み込み</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1674"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1682"/>
         <source>Resize Image</source>
         <translation>画像サイズの変更</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="992"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1000"/>
         <source>25%</source>
         <translation>25%</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1001"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1009"/>
         <source>50%</source>
         <translation>50%</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1010"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1018"/>
         <source>75%</source>
         <translation>75%</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1019"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1027"/>
         <source>100%</source>
         <translation>100%</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1029"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1037"/>
         <source>150%</source>
         <translation>150%</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1038"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1046"/>
         <source>Custom...</source>
         <translation>カスタム...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1685"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1693"/>
         <source>Convert Image Syntax</source>
         <translation>画像構文の変換</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1047"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1055"/>
         <source>Standard Markdown ![](url)</source>
         <translation>標準 Markdown ![](url)</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1055"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1063"/>
         <source>HTML &lt;img&gt;</source>
         <translation>HTML &lt;img&gt;</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1691"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1699"/>
         <source>When Inserting Local Image</source>
         <translation>ローカル画像の挿入時</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1083"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1091"/>
         <source>Insert Relative Path</source>
         <translation>相対パスを挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1092"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1100"/>
         <source>Insert Absolute Path</source>
         <translation>絶対パスを挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1100"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1108"/>
         <source>Copy to Custom Folder</source>
         <translation>カスタムフォルダーにコピー</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1116"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1124"/>
         <source>Copy All Images To...</source>
         <translation>すべての画像をコピー先...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1139"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1147"/>
         <source>Move All Images To...</source>
         <translation>すべての画像を移動先...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1199"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1207"/>
         <source>Global Image Settings...</source>
         <translation>画像の全体設定...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="816"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="824"/>
         <source>Clear Style</source>
         <translation>スタイルをクリア</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="585"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="593"/>
         <location filename="../src/app/MainWindowActions.cpp" line="116"/>
         <source>Insert Table</source>
         <translation>表を挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="591"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="599"/>
         <source>Insert Row Above</source>
         <translation>上に行を挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="596"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="604"/>
         <source>Insert Row Below</source>
         <translation>下に行を挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="634"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="642"/>
         <source>Delete Row</source>
         <translation>行を削除</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="612"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="620"/>
         <source>Move Row Up</source>
         <translation>行を上へ移動</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="617"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="625"/>
         <source>Move Row Down</source>
         <translation>行を下へ移動</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="602"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="610"/>
         <source>Insert Column Left</source>
         <translation>左に列を挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="607"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="615"/>
         <source>Insert Column Right</source>
         <translation>右に列を挿入</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="640"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="648"/>
         <source>Delete Column</source>
         <translation>列を削除</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="622"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="630"/>
         <source>Move Column Left</source>
         <translation>列を左へ移動</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="628"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="636"/>
         <source>Move Column Right</source>
         <translation>列を右へ移動</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="660"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="668"/>
         <source>Align Left</source>
         <translation>左揃え</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="664"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="672"/>
         <source>Align Center</source>
         <translation>中央揃え</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="668"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="676"/>
         <source>Align Right</source>
         <translation>右揃え</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="672"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="680"/>
         <source>Clear Alignment</source>
         <translation>配置をクリア</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="655"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="663"/>
         <source>Delete Table</source>
         <translation>表を削除</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="239"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="240"/>
         <source>Select Paragraph or Block</source>
         <translation>段落またはブロックを選択</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="246"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="247"/>
         <source>Select Current Line or Sentence</source>
         <translation>現在の行または文を選択</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="260"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="261"/>
         <source>Select Current Word</source>
         <translation>現在の単語を選択</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="267"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="268"/>
         <source>Jump to Start of Document</source>
         <translation>文書の先頭へジャンプ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="274"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="275"/>
         <source>Jump to Selection</source>
         <translation>選択範囲へジャンプ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="280"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="281"/>
         <source>Jump to End of Document</source>
         <translation>文書の末尾へジャンプ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="287"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="288"/>
         <source>Jump to Start of Line</source>
         <translation>行頭へジャンプ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="294"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="295"/>
         <source>Jump to End of Line</source>
         <translation>行末へジャンプ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="645"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="653"/>
         <source>Copy Table</source>
         <translation>表をコピー</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="650"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="658"/>
         <source>Format Table Source</source>
         <translation>表のソースを整形</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1620"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1628"/>
         <source>Code</source>
         <translation>コード</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="678"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="704"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="730"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="686"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="712"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="738"/>
         <source>Enter Edit</source>
         <translation>編集を開始</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="683"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="709"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="735"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="691"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="717"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="743"/>
         <source>Exit Edit</source>
         <translation>編集を終了</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="688"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="696"/>
         <source>Set Language...</source>
         <translation>言語を設定...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1636"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1644"/>
         <source>Math</source>
         <translation>数式</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="740"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="748"/>
         <source>Set TeX...</source>
         <translation>TeX を設定...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="714"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="722"/>
         <source>Set HTML...</source>
         <translation>HTML を設定...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1707"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1715"/>
         <source>View</source>
         <translation>表示</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1217"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1225"/>
         <source>Outline</source>
         <translation>アウトライン</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1222"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1230"/>
         <source>File Tree</source>
         <translation>ファイルツリー</translation>
     </message>
@@ -1982,259 +1994,264 @@ C++ と Qt 6 Widgets で構築された高速で軽量なネイティブ Markdow
         <translation type="vanished">検索</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1227"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1235"/>
         <source>Source Code Mode</source>
         <translation>ソースコードモード</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1237"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1245"/>
         <source>Word Wrap</source>
         <translation>折り返し</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1247"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1255"/>
         <source>Focus Mode</source>
         <translation>フォーカスモード</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1257"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1265"/>
         <source>Typewriter Mode</source>
         <translation>タイプライターモード</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1267"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1275"/>
         <source>Show Status Bar</source>
         <translation>ステータスバーを表示</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1277"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1285"/>
         <source>Word Count Window</source>
         <translation>単語数ウィンドウ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1281"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1289"/>
         <source>Toggle Full Screen</source>
         <translation>全画面表示を切り替え</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1286"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1294"/>
         <source>Always on Top</source>
         <translation>常に手前に表示</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1296"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1304"/>
         <source>Actual Size</source>
         <translation>実際のサイズ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1304"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1312"/>
         <source>Zoom In</source>
         <translation>拡大</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1312"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1320"/>
         <source>Zoom Out</source>
         <translation>縮小</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1320"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1328"/>
         <source>Switch Windows</source>
         <translation>ウィンドウを切り替え</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1729"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1737"/>
         <source>Theme</source>
         <translation>テーマ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1738"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1746"/>
         <source>Help</source>
         <translation>ヘルプ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1380"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1388"/>
         <source>Quick Start</source>
         <translation>クイックスタート</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1384"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1392"/>
         <source>Markdown Reference</source>
         <translation>Markdown リファレンス</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1388"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1396"/>
         <source>Custom Themes</source>
         <translation>カスタムテーマ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1392"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1400"/>
         <source>Acknowledgements</source>
         <translation>謝辞</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1396"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1404"/>
         <source>Changelog</source>
         <translation>変更履歴</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1402"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1410"/>
         <source>Official Website</source>
         <translation>公式ウェブサイト</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1408"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1416"/>
         <source>Feedback</source>
         <translation>フィードバック</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1414"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1422"/>
         <source>Check for Updates...</source>
         <translation>更新を確認...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1418"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1426"/>
         <source>About</source>
         <translation>について</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="876"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="884"/>
         <source>Delete Image</source>
         <translation>画像を削除</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="410"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="346"/>
+        <source>Spell Check</source>
+        <translation type="unfinished">スペルチェック</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CommandDeclarations.cpp" line="418"/>
         <source>Heading 1</source>
         <translation>見出し1</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="418"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="426"/>
         <source>Heading 2</source>
         <translation>見出し2</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="426"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="434"/>
         <source>Heading 3</source>
         <translation>見出し3</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="434"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="442"/>
         <source>Heading 4</source>
         <translation>見出し4</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="442"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="450"/>
         <source>Heading 5</source>
         <translation>見出し5</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="450"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="458"/>
         <source>Heading 6</source>
         <translation>見出し6</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="877"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="885"/>
         <source>Delete image file &quot;%1&quot;?
 This cannot be undone.</source>
         <translation>画像ファイル「%1」を削除しますか？
 この操作は元に戻せません。</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="900"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="908"/>
         <source>Copy Image To</source>
         <translation>画像をコピー先</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="938"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="946"/>
         <source>Move Image To</source>
         <translation>画像を移動先</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="965"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="969"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1108"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="973"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="977"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1116"/>
         <source>Upload Image</source>
         <translation>画像をアップロード</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="970"/>
         <location filename="../src/app/CommandDeclarations.cpp" line="978"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="986"/>
         <source>Image upload is not yet configured.
 Set up an image uploader in Preferences → Images.</source>
         <translation>画像のアップロードがまだ設定されていません。
 環境設定 → 画像でアップローダーを設定してください。</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="977"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="985"/>
         <source>Upload All Images</source>
         <translation>すべての画像をアップロード</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1122"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1130"/>
         <source>Copy All Images To</source>
         <translation>すべての画像をコピー先</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1133"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1141"/>
         <source>Copy All Images</source>
         <translation>すべての画像をコピー</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1134"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1142"/>
         <source>Copied %1 of %2 image(s).</source>
         <translation>%2 個中 %1 個の画像をコピーしました。</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1145"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1153"/>
         <source>Move All Images To</source>
         <translation>すべての画像を移動先</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1194"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1202"/>
         <source>Move All Images</source>
         <translation>すべての画像を移動</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1194"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1202"/>
         <source>Moved %1 image(s).</source>
         <translation>%1 個の画像を移動しました。</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="692"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="700"/>
         <source>Code Language</source>
         <translation>コード言語</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="692"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="700"/>
         <source>Language:</source>
         <translation>言語:</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="718"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="726"/>
         <source>HTML Source</source>
         <translation>HTML ソース</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="718"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="726"/>
         <source>HTML:</source>
         <translation>HTML:</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="744"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="752"/>
         <source>Math TeX</source>
         <translation>数式 TeX</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="744"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="752"/>
         <source>TeX:</source>
         <translation>TeX:</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1422"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1430"/>
         <source>About Muffin</source>
         <translation>Muffin について</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1423"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1431"/>
         <source>Muffin %1
 
 A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
@@ -2436,32 +2453,32 @@ This action cannot be undone.</source>
         <translation type="vanished">自分のライセンス...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="378"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="386"/>
         <source>Find...</source>
         <translation>検索...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="383"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="391"/>
         <source>Replace...</source>
         <translation>置換...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="388"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="396"/>
         <source>Find Next</source>
         <translation>次を検索</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="398"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="406"/>
         <source>Find Previous</source>
         <translation>前を検索</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="179"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="202"/>
         <source>Update Available</source>
         <translation>アップデートがあります</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="180"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="203"/>
         <source>A new version of Muffin (%1) is available.
 
 Would you like to open the download page?</source>
@@ -2470,31 +2487,44 @@ Would you like to open the download page?</source>
 ダウンロードページを開きますか？</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="187"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="210"/>
         <source>Muffin %1 is available. Use Help &gt; Check for Updates to download.</source>
         <translation>Muffin %1 が利用可能です。ヘルプ &gt; アップデートを確認 からダウンロードしてください。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="194"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="217"/>
         <source>Up to Date</source>
         <translation>最新です</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="195"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="218"/>
         <source>You are running the latest version of Muffin.</source>
         <translation>Muffin の最新バージョンを実行しています。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="201"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="224"/>
         <source>Update Check Failed</source>
         <translation>アップデートの確認に失敗</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="202"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="225"/>
         <source>Could not check for updates:
 %1</source>
         <translation>アップデートを確認できませんでした：
 %1</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::MarkdownSourceEdit</name>
+    <message>
+        <location filename="../src/editor/SourceEditorWidget.cpp" line="357"/>
+        <source>(no spelling suggestions)</source>
+        <translation>(スペルの候補なし)</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/SourceEditorWidget.cpp" line="362"/>
+        <source>Ignore &quot;%1&quot;</source>
+        <translation>「%1」を無視</translation>
     </message>
 </context>
 <context>
@@ -2637,117 +2667,125 @@ Would you like to open the download page?</source>
 <context>
     <name>muffin::PrefsEditorPage</name>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="162"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="180"/>
         <source>Default Indent</source>
         <translation>デフォルトのインデント</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="163"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="181"/>
         <source>Only effective for references and lists generated via menu bar or shortcuts</source>
         <translation>メニューバーまたはショートカットで生成される参照やリストにのみ有効</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="165"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="183"/>
         <source>Align Indent</source>
         <translation>インデントを揃える</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="167"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="185"/>
         <source>Use Paired Symbols</source>
         <translation>ペア記号を使用</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="168"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="186"/>
         <source>Match brackets and quotes</source>
         <translation>括弧と引用符を自動で閉じる</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="169"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="187"/>
         <source>Match Markdown characters</source>
         <translation>Markdown の文字を自動で閉じる</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="171"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="189"/>
         <source>Autocomplete</source>
         <translation>自動補完</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="172"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="190"/>
         <source>Enable Emoji autocomplete</source>
         <translation>絵文字の自動補完を有効にする</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="174"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="192"/>
         <source>Live Rendering</source>
         <translation>ライブレンダリング</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="175"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="193"/>
         <source>Show Markdown source of the current block element</source>
         <translation>現在のブロック要素の Markdown ソースを表示</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="177"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="195"/>
         <source>Default Copy Behavior</source>
         <translation>デフォルトのコピー動作</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="178"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="196"/>
         <source>Copy Markdown source when copying plain text</source>
         <translation>プレーンテキストのコピー時に Markdown ソースをコピー</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="179"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="197"/>
         <source>Copy or cut the entire line when no text is selected</source>
         <translation>テキストが選択されていないときに行全体をコピーまたは切り取り</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="181"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="199"/>
         <source>Default Line Break</source>
         <translation>デフォルトの改行</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="182"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="200"/>
         <source>Default line break for new files</source>
         <translation>新規ファイルのデフォルト改行コード</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="183"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="201"/>
         <source>LF (Unix Style)</source>
         <translation>LF (Unix 形式)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="184"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="202"/>
         <source>CRLF (Windows Style)</source>
         <translation>CRLF (Windows 形式)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="186"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="204"/>
         <source>Spell Check</source>
         <translation>スペルチェック</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="189"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="205"/>
+        <source>Enable spell checking</source>
+        <translation>スペルチェックを有効にする</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="206"/>
+        <source>Language</source>
+        <translation type="unfinished">言語</translation>
+    </message>
+    <message>
         <source>Auto-detect language</source>
-        <translation>言語を自動検出</translation>
+        <translation type="vanished">言語を自動検出</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="189"/>
         <source>Chinese (Simplified)</source>
-        <translation>中国語 (簡体字)</translation>
+        <translation type="vanished">中国語 (簡体字)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="191"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="208"/>
         <source>Typewriter Mode</source>
         <translation>タイプライターモード</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="192"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="209"/>
         <source>Always keep the cursor in the middle of the screen</source>
         <translation>カーソルを常に画面中央に保つ</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="193"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="210"/>
         <source>Disable Typewriter / Focus Mode</source>
         <translation>タイプライター / フォーカスモードを無効にする</translation>
     </message>
@@ -3292,7 +3330,7 @@ Would you like to open the download page?</source>
 <context>
     <name>muffin::SourceEditorWidget</name>
     <message>
-        <location filename="../src/editor/SourceEditorWidget.cpp" line="435"/>
+        <location filename="../src/editor/SourceEditorWidget.cpp" line="549"/>
         <source>Start writing...</source>
         <translation>書き始める...</translation>
     </message>

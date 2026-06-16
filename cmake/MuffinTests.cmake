@@ -75,3 +75,6 @@ muffin_add_test(NAME MuffinBlockCodeFrontMatterTest SOURCE tests/blocks/BlockCod
 
 # --- app ---
 muffin_add_test(NAME MuffinTranslationResourceTest SOURCE tests/app/TranslationResourceTest.cpp LINK Qt6::Widgets EXTRA_SOURCES src/translations.qrc RESOURCE_LOCK)
+
+# --- spell check (needs the bundled dictionaries, hence dicts.qrc as an extra source) ---
+muffin_add_test(NAME MuffinSpellCheckerTest SOURCE tests/spellcheck/SpellCheckerTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_DICTS_QRC} RESOURCE_LOCK)

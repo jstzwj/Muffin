@@ -64,6 +64,7 @@ RenderTheme RenderTheme::night(int zoomPercent) {
   theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#303b4a"));
   theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#242a31"));
   theme.selectionColor_ = QColor(QStringLiteral("#264f78"));
+  theme.spellCheckColor_ = QColor(QStringLiteral("#ff6a6a"));
   theme.setZoomPercent(zoomPercent);
   return theme;
 }
@@ -263,6 +264,10 @@ QColor RenderTheme::tableAlternateBackgroundColor() const {
 
 QColor RenderTheme::selectionColor() const {
   return selectionColor_;
+}
+
+QColor RenderTheme::spellCheckColor() const {
+  return spellCheckColor_;
 }
 
 QColor RenderTheme::codeHighlightColor(CodeHighlightRole role) const {

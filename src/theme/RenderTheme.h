@@ -47,6 +47,7 @@ public:
   QColor tableHeaderBackgroundColor() const;
   QColor tableAlternateBackgroundColor() const;
   QColor selectionColor() const;
+  QColor spellCheckColor() const;
   QColor codeHighlightColor(CodeHighlightRole role) const;
 
   QMarginsF codePadding() const;
@@ -69,6 +70,7 @@ private:
   QColor tableHeaderBackgroundColor_ = QColor(QStringLiteral("#edf4ff"));
   QColor tableAlternateBackgroundColor_ = QColor(QStringLiteral("#f6f8fa"));
   QColor selectionColor_ = QColor(QStringLiteral("#d7e8ff"));
+  QColor spellCheckColor_ = QColor(QStringLiteral("#d1242f"));
 };
 
 }  // namespace muffin

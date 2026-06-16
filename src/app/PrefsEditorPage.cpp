@@ -1,9 +1,12 @@
 #include "app/PrefsEditorPage.h"
 
+#include "spellcheck/SpellChecker.h"
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLocale>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSettings>
@@ -110,16 +113,23 @@ muffin::PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(pare
 
   // --- Card 7: Spell Check ---
   auto* spellCard = makeCard(this);
-  auto* spellLayout = new QHBoxLayout(spellCard);
-  spellLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
-  spellLayout->setSpacing(18);
+  auto* spellLayout = makeCardLayout(spellCard);
   spellCheckLabel_ = makeSectionLabel(spellCard);
-  spellCheckCombo_ = new QComboBox(spellCard);
-  spellCheckCombo_->setMinimumWidth(260);
-  spellCheckCombo_->setMaximumWidth(380);
+  spellCheckEnabledCheck_ = new QCheckBox(spellCard);
+  auto* spellLangRow = new QHBoxLayout();
+  spellLangRow->setSpacing(16);
+  spellLangRow->setContentsMargins(28, 0, 0, 0);  // indent under the checkbox
+  spellCheckLanguageLabel_ = new QLabel(spellCard);
+  spellCheckLanguageCombo_ = new QComboBox(spellCard);
+  spellCheckLanguageCombo_->setMinimumWidth(260);
+  spellCheckLanguageCombo_->setMaximumWidth(380);
+  spellLangRow->addWidget(spellCheckLanguageLabel_);
+  spellLangRow->addStretch(1);
+  spellLangRow->addWidget(spellCheckLanguageCombo_);
   spellLayout->addWidget(spellCheckLabel_);
-  spellLayout->addStretch(1);
-  spellLayout->addWidget(spellCheckCombo_);
+  spellLayout->addSpacing(2);
+  spellLayout->addWidget(spellCheckEnabledCheck_);
+  spellLayout->addLayout(spellLangRow);
   cardColumn->addWidget(spellCard);
 
   // --- Card 8: Typewriter Mode ---
@@ -152,7 +162,15 @@ muffin::PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(pare
   wireBoolSetting(copyLineWhenNoSelectionCheck_, QStringLiteral("editor/copyLineNoSelection"));
   connect(lineBreakLfRadio_, &QRadioButton::toggled, this,
           [](bool checked) { QSettings().setValue(QStringLiteral("editor/defaultLineBreak"), checked ? 0 : 1); });
-  wireComboIndexSetting(spellCheckCombo_, QStringLiteral("editor/spellCheckLanguage"));
+  connect(spellCheckEnabledCheck_, &QCheckBox::toggled, this, [](bool on) {
+    SpellChecker::instance().setEnabled(on);
+  });
+  connect(spellCheckLanguageCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int) {
+    const QString code = spellCheckLanguageCombo_->currentData().toString();
+    if (!code.isEmpty()) {
+      SpellChecker::instance().setLanguage(code);
+    }
+  });
   wireBoolSetting(typewriterCursorMiddleCheck_, QStringLiteral("editor/typewriterCursorMiddle"));
   connect(disableTypewriterFocusButton_, &QPushButton::clicked, this,
           &muffin::PrefsEditorPage::disableTypewriterFocusRequested);
@@ -184,9 +202,8 @@ void muffin::PrefsEditorPage::retranslateUi() {
   lineBreakCrlfRadio_->setText(tr("CRLF (Windows Style)"));
 
   spellCheckLabel_->setText(tr("Spell Check"));
-  rebuildCombo(
-      spellCheckCombo_,
-      {tr("Auto-detect language"), QStringLiteral("English (US)"), QStringLiteral("English (UK)"), tr("Chinese (Simplified)")});
+  spellCheckEnabledCheck_->setText(tr("Enable spell checking"));
+  spellCheckLanguageLabel_->setText(tr("Language"));
 
   typewriterLabel_->setText(tr("Typewriter Mode"));
   typewriterCursorMiddleCheck_->setText(tr("Always keep the cursor in the middle of the screen"));
@@ -212,6 +229,27 @@ void muffin::PrefsEditorPage::loadSettings() {
     lineBreakCrlfRadio_->setChecked(true);
   }
 
-  loadComboIndex(spellCheckCombo_, QStringLiteral("editor/spellCheckLanguage"), 0);
+  // Spell check: the enable state and the bundled-dictionary language dropdown (combo
+  // item data is the locale code). Source of truth is the SpellChecker singleton, which
+  // already read the settings at construction.
+  spellCheckEnabledCheck_->blockSignals(true);
+  spellCheckEnabledCheck_->setChecked(SpellChecker::instance().isEnabled());
+  spellCheckEnabledCheck_->blockSignals(false);
+
+  spellCheckLanguageCombo_->blockSignals(true);
+  spellCheckLanguageCombo_->clear();
+  for (const QString& code : SpellChecker::availableLanguages()) {
+    QString name = QLocale(code).nativeLanguageName();
+    if (name.isEmpty()) {
+      name = code;
+    }
+    spellCheckLanguageCombo_->addItem(name, code);
+  }
+  int spellIndex = spellCheckLanguageCombo_->findData(SpellChecker::instance().language());
+  if (spellIndex < 0) {
+    spellIndex = spellCheckLanguageCombo_->findData(QStringLiteral("en_US"));
+  }
+  spellCheckLanguageCombo_->setCurrentIndex(spellIndex < 0 ? 0 : spellIndex);
+  spellCheckLanguageCombo_->blockSignals(false);
   loadCheck(typewriterCursorMiddleCheck_, QStringLiteral("editor/typewriterCursorMiddle"), true);
 }

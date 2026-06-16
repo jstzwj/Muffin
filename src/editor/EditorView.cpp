@@ -6,14 +6,21 @@
 #include "editor/HtmlBlockHoverController.h"
 #include "editor/TableToolbar.h"
 #include "render/ImageLoader.h"
+#include "spellcheck/SpellChecker.h"
+#include "unicode/WordBoundary.h"
 
+#include <QAction>
 #include <QApplication>
+#include <QContextMenuEvent>
+#include <QCoreApplication>
 #include <QDesktopServices>
 #include <QDir>
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QElapsedTimer>
 #include <QFileInfo>
+#include <QList>
+#include <QMenu>
 #include <QMimeData>
 #include <QPainter>
 #include <QLoggingCategory>
@@ -755,6 +762,65 @@ void EditorView::mouseDoubleClickEvent(QMouseEvent* event) {
   draggingSelection_ = false;
 
   event->accept();
+}
+
+void EditorView::contextMenuEvent(QContextMenuEvent* event) {
+  // Right-click spelling suggestions in rendered mode. Resolve the word under the cursor
+  // via its markdown source offset, and offer replacement/ignore when it's misspelled.
+  auto& checker = SpellChecker::instance();
+  if (!document_ || !checker.isEnabled()) {
+    QAbstractScrollArea::contextMenuEvent(event);
+    return;
+  }
+  const HitTestResult hit = hitTest(QPointF(event->pos()));
+  if (hit.zone != HitTestResult::Zone::Text || hit.sourceOffset < 0) {
+    QAbstractScrollArea::contextMenuEvent(event);
+    return;
+  }
+  const QString& markdown = document_->markdownText();
+  const WordSegment seg = findWordSegment(markdown, hit.sourceOffset);
+  if (!seg.isWord || seg.end <= seg.start || seg.start >= markdown.size()) {
+    QAbstractScrollArea::contextMenuEvent(event);
+    return;
+  }
+  const QString word = markdown.mid(seg.start, seg.end - seg.start);
+  if (word.isEmpty() || checker.isCorrect(word)) {
+    QAbstractScrollArea::contextMenuEvent(event);
+    return;
+  }
+
+  const QStringList suggestions = checker.suggestions(word);
+  QMenu menu(this);
+  QList<QAction*> spellActions;
+  const int cap = 8;
+  if (suggestions.isEmpty()) {
+    QAction* none = new QAction(QCoreApplication::translate("muffin::EditorView", "(no spelling suggestions)"), &menu);
+    none->setEnabled(false);
+    spellActions.append(none);
+  } else {
+    for (int i = 0; i < qMin(suggestions.size(), cap); ++i) {
+      const QString suggestion = suggestions.at(i);
+      const qsizetype start = seg.start;
+      const qsizetype length = seg.end - seg.start;
+      QAction* replaceAction = new QAction(suggestion, &menu);
+      connect(replaceAction, &QAction::triggered, this, [this, start, length, suggestion]() {
+        emit spellCorrectionRequested(start, length, suggestion);
+      });
+      spellActions.append(replaceAction);
+    }
+  }
+  QAction* ignoreAction =
+      new QAction(QCoreApplication::translate("muffin::EditorView", "Ignore \"%1\"").arg(word), &menu);
+  connect(ignoreAction, &QAction::triggered, this, [this, word]() {
+    SpellChecker::instance().ignoreWord(word);
+    if (document_) {
+      setDocument(*document_, documentPath_);  // re-layout so the squiggle clears
+    }
+  });
+  spellActions.append(ignoreAction);
+
+  menu.addActions(spellActions);
+  menu.exec(event->globalPos());
 }
 
 void EditorView::inputMethodEvent(QInputMethodEvent* event) {

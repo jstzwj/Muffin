@@ -6,6 +6,7 @@
 
 #include <QPainter>
 #include <QPen>
+#include <QRegularExpression>
 #include <QTextCharFormat>
 #include <QTextLine>
 #include <QTextOption>
@@ -119,6 +120,7 @@ void InlineLayout::build(
   displayOffsetMap_.clear();
   displayText_.clear();
   layoutText_.clear();
+  isMisspelled_ = options.isMisspelled;
   textLayoutCodeBackgroundColor_ = theme.codeBackgroundColor();
   textLayoutCodeBorderColor_ = theme.codeBorderColor();
   projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState, options.sourceBase, baseFont.pointSizeF(),
@@ -1042,6 +1044,48 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     range.length = hs.layoutEnd - hs.layoutStart;
     range.format = format;
     formats.push_back(range);
+  }
+
+  // Spell-check overlay (rendered mode): append SpellCheckUnderline ranges for misspelled
+  // prose words. Appended last so the underline paints over any bold/italic/link styling
+  // on the same glyphs (Qt composes FormatRanges per-property, later wins). Only Text spans
+  // are scanned — code spans, inline math and atoms are skipped. The misspelled predicate
+  // is supplied by the builder; when it is unset, spell checking is off and this is skipped.
+  if (isMisspelled_) {
+    static const QRegularExpression wordRe(QStringLiteral("[\\p{L}][\\p{L}'\\x{2019}]*"),
+                                           QRegularExpression::UseUnicodePropertiesOption);
+    const QColor errorColor = theme.spellCheckColor();
+    for (const InlineProjectionSpan& span : projection_.spans()) {
+      if (span.kind != InlineSpanKind::Text || span.type == InlineType::Code || span.type == InlineType::InlineMath) {
+        continue;
+      }
+      const DisplayOffsetRange spanRange = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
+      if (!spanRange.valid || spanRange.end > displayText_.size()) {
+        continue;
+      }
+      const QString spanText = displayText_.mid(spanRange.start, spanRange.end - spanRange.start);
+      QRegularExpressionMatchIterator it = wordRe.globalMatch(spanText);
+      while (it.hasNext()) {
+        const QRegularExpressionMatch m = it.next();
+        const int localStart = static_cast<int>(m.capturedStart());
+        const int localLen = static_cast<int>(m.capturedLength());
+        if (localLen <= 1) {
+          continue;
+        }
+        const QStringView word(spanText.constData() + localStart, localLen);
+        if (!isMisspelled_(word)) {
+          continue;
+        }
+        QTextCharFormat format;
+        format.setUnderlineColor(errorColor);
+        format.setUnderlineStyle(QTextCharFormat::SpellCheckUnderline);
+        QTextLayout::FormatRange spellRange;
+        spellRange.start = static_cast<int>(spanRange.start) + localStart;
+        spellRange.length = localLen;
+        spellRange.format = format;
+        formats.push_back(spellRange);
+      }
+    }
   }
 
   return formats;

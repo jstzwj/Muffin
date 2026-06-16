@@ -69,6 +69,7 @@ signals:
   void tableMoreActionsRequested(QPoint globalPos);
   void htmlEditToggleRequested(NodeId blockId);
   void taskCheckboxToggled(NodeId blockId);
+  void spellCorrectionRequested(qsizetype sourceStart, qsizetype removedLength, QString replacement);
 
 protected:
   bool event(QEvent* event) override;
@@ -79,6 +80,7 @@ protected:
   void mouseDoubleClickEvent(QMouseEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;
   void mouseReleaseEvent(QMouseEvent* event) override;
+  void contextMenuEvent(QContextMenuEvent* event) override;
   void inputMethodEvent(QInputMethodEvent* event) override;
   QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
   void dragEnterEvent(QDragEnterEvent* event) override;

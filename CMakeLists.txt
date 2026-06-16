@@ -128,6 +128,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/UpdateChecker.cpp
   src/app/SidebarWidget.cpp
   src/document/DocumentSession.cpp
+  src/editor/EditorView.cpp
   src/editor/SourceEditorWidget.cpp
   src/editor/FindBarWidget.cpp
   src/render/BlockLayoutBuilder.cpp
@@ -254,6 +255,36 @@ if(TARGET libcmark-gfm-extensions_static AND TARGET libcmark-gfm_static)
     INTERFACE
       libcmark-gfm_static
   )
+endif()
+
+# Nuspell (vendored) — spell checking. Library-only: disable the CLI tool, tests and
+# docs. When embedded via add_subdirectory, nuspell's own CMakeLists detects
+# PARENT_DIRECTORY and returns() right after building src/nuspell, so its tests,
+# docs and install rules are skipped automatically — but BUILD_TOOLS is consulted
+# before that return (and pulls in getopt on MSVC), so it must be off. Built static
+# to match cmark-gfm and the other vendored static libs. ICU (uc + data, which
+# nuspell requires) is already provided by Conan and found transitively.
+set(_muffin_prev_build_shared_libs "${BUILD_SHARED_LIBS}")
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(BUILD_DOCS OFF CACHE BOOL "" FORCE)
+add_subdirectory(third_party/nuspell EXCLUDE_FROM_ALL)
+# Treat nuspell's headers as system headers so /external:W0 (MSVC) / SYSTEM includes
+# silence its third-party warnings in Muffin's own translation units, and mute its own
+# compile to match the other vendored libraries.
+get_target_property(_muffin_nuspell_includes nuspell INTERFACE_INCLUDE_DIRECTORIES)
+if(_muffin_nuspell_includes)
+  set_target_properties(nuspell PROPERTIES
+      INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${_muffin_nuspell_includes}")
+endif()
+if(MSVC)
+  target_compile_options(nuspell PRIVATE /W0 /external:W0)
+endif()
+if(DEFINED _muffin_prev_build_shared_libs)
+  set(BUILD_SHARED_LIBS "${_muffin_prev_build_shared_libs}" CACHE BOOL "" FORCE)
+else()
+  unset(BUILD_SHARED_LIBS CACHE)
 endif()
 
 # Lexbor and Yoga are provided by Conan
@@ -434,10 +465,35 @@ string(CONCAT MUFFIN_HELP_QRC_CONTENT "${MUFFIN_HELP_QRC_CONTENT}"
   "</RCC>\n")
 file(WRITE "${MUFFIN_HELP_QRC}" "${MUFFIN_HELP_QRC_CONTENT}")
 
+# Spell-check dictionaries: hunspell .aff/.dic per locale, embedded as zlib-compressed
+# resources (compress="9" shrinks the text dicts ~3-4x; Qt decompresses transparently on
+# read, so nuspell still receives the raw bytes via QFile). Globbed so adding a locale is
+# just dropping a file; en_US is the universal fallback. Mirrors the help-doc block above.
+file(GLOB MUFFIN_DICT_FILES CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/resources/dicts/*.dic"
+  "${CMAKE_CURRENT_SOURCE_DIR}/resources/dicts/*.aff")
+file(RELATIVE_PATH MUFFIN_DICTS_QRC_REL "${CMAKE_CURRENT_BINARY_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}/resources/dicts")
+set(MUFFIN_DICTS_QRC "${CMAKE_CURRENT_BINARY_DIR}/dicts.qrc")
+string(CONCAT MUFFIN_DICTS_QRC_CONTENT
+  "<RCC>\n"
+  "  <qresource prefix=\"/dicts\">\n")
+foreach(MUFFIN_DICT_FILE IN LISTS MUFFIN_DICT_FILES)
+  get_filename_component(MUFFIN_DICT_FILE_NAME "${MUFFIN_DICT_FILE}" NAME)
+  string(REPLACE "\\" "/" MUFFIN_DICT_FILE_NAME "${MUFFIN_DICT_FILE_NAME}")
+  string(CONCAT MUFFIN_DICTS_QRC_CONTENT "${MUFFIN_DICTS_QRC_CONTENT}"
+    "    <file alias=\"${MUFFIN_DICT_FILE_NAME}\" compress=\"9\">${MUFFIN_DICTS_QRC_REL}/${MUFFIN_DICT_FILE_NAME}</file>\n")
+endforeach()
+string(CONCAT MUFFIN_DICTS_QRC_CONTENT "${MUFFIN_DICTS_QRC_CONTENT}"
+  "  </qresource>\n"
+  "</RCC>\n")
+file(WRITE "${MUFFIN_DICTS_QRC}" "${MUFFIN_DICTS_QRC_CONTENT}")
+
 add_executable(Muffin
   src/translations.qrc
   src/icons.qrc
   ${MUFFIN_HELP_QRC}
+  ${MUFFIN_DICTS_QRC}
   src/app/CommandRegistry.cpp
   src/app/CommandRegistry.h
   src/app/LanguageManager.cpp
@@ -528,6 +584,8 @@ set(MUFFIN_UI_SOURCES
   src/editor/SourceEditorWidget.h
   src/editor/FindBarWidget.cpp
   src/editor/FindBarWidget.h
+  src/spellcheck/SpellChecker.cpp
+  src/spellcheck/SpellChecker.h
   src/blocks/table/TableModelOps.cpp
   src/blocks/table/TableModelOps.h
   src/commands/ParagraphController.cpp
@@ -657,6 +715,7 @@ target_link_libraries(MuffinUi
     Qt6::Svg
     lexbor::lexbor_static
     yoga::yoga
+    Nuspell::nuspell
 )
 
 target_include_directories(MuffinUi

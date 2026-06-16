@@ -1,13 +1,19 @@
 #include "editor/SourceEditorWidget.h"
 
+#include "spellcheck/SpellChecker.h"
 #include "theme/RenderTheme.h"
 
 #include <QAbstractTextDocumentLayout>
+#include <QAction>
+#include <QContextMenuEvent>
 #include <QEvent>
-#include <QPainter>
 #include <QFont>
 #include <QFontMetricsF>
 #include <QHBoxLayout>
+#include <QList>
+#include <QMenu>
+#include <QPainter>
+#include <QPair>
 #include <QPlainTextEdit>
 #include <QPaintEvent>
 #include <QRegularExpression>
@@ -58,7 +64,7 @@ protected:
     if (text.startsWith(QStringLiteral("```")) || text.startsWith(QStringLiteral("~~~"))) {
       setFormat(0, text.size(), fenceFormat_);
       applyZeroWidthSpaces(text);
-      return;
+      return;  // fenced code block: syntax only, no spell checking
     }
 
     static const QRegularExpression headingRe(QStringLiteral("^(#{1,6})(\\s.*)?$"));
@@ -67,29 +73,75 @@ protected:
       const int level = qBound(1, heading.capturedLength(1), 6);
       setFormat(0, text.size(), headingFormats_[level - 1]);
       applyZeroWidthSpaces(text);
+    } else {
+      static const QRegularExpression quoteRe(QStringLiteral("^\\s*>+"));
+      QRegularExpressionMatch quote = quoteRe.match(text);
+      if (quote.hasMatch()) {
+        setFormat(quote.capturedStart(0), quote.capturedLength(0), quoteFormat_);
+      }
+
+      static const QRegularExpression listRe(QStringLiteral("^\\s*(?:[-+*]|\\d+[.)])\\s+"));
+      QRegularExpressionMatch list = listRe.match(text);
+      if (list.hasMatch()) {
+        setFormat(list.capturedStart(0), list.capturedLength(0), markerFormat_);
+      }
+
+      static const QRegularExpression codeRe(QStringLiteral("`[^`]*`"));
+      applyRegex(text, codeRe, codeFormat_);
+      applyLinks(text);
+      static const QRegularExpression emphasisRe(QStringLiteral("(\\*\\*|__|\\*|_|~~)"));
+      applyRegex(text, emphasisRe, emphasisFormat_);
+      static const QRegularExpression tableRe(QStringLiteral("\\|"));
+      applyRegex(text, tableRe, tableFormat_);
+      applyZeroWidthSpaces(text);
+    }
+    applySpellCheck(text);
+  }
+
+  // Underlines misspelled prose words, skipping inline code spans, URLs and email
+  // addresses. A no-op while spell checking is disabled (SpellChecker::isCorrect then
+  // reports every word as correct), so toggling is handled by a rehighlight only.
+  void applySpellCheck(const QString& text) {
+    auto& checker = muffin::SpellChecker::instance();
+    if (!checker.isEnabled()) {
       return;
     }
-
-    static const QRegularExpression quoteRe(QStringLiteral("^\\s*>+"));
-    QRegularExpressionMatch quote = quoteRe.match(text);
-    if (quote.hasMatch()) {
-      setFormat(quote.capturedStart(0), quote.capturedLength(0), quoteFormat_);
-    }
-
-    static const QRegularExpression listRe(QStringLiteral("^\\s*(?:[-+*]|\\d+[.)])\\s+"));
-    QRegularExpressionMatch list = listRe.match(text);
-    if (list.hasMatch()) {
-      setFormat(list.capturedStart(0), list.capturedLength(0), markerFormat_);
-    }
-
+    static const QRegularExpression wordRe(QStringLiteral("[\\p{L}][\\p{L}'\\x{2019}]*"),
+                                           QRegularExpression::UseUnicodePropertiesOption);
+    // Ranges that must never be spell-checked: inline code, URLs and emails.
     static const QRegularExpression codeRe(QStringLiteral("`[^`]*`"));
-    applyRegex(text, codeRe, codeFormat_);
-    applyLinks(text);
-    static const QRegularExpression emphasisRe(QStringLiteral("(\\*\\*|__|\\*|_|~~)"));
-    applyRegex(text, emphasisRe, emphasisFormat_);
-    static const QRegularExpression tableRe(QStringLiteral("\\|"));
-    applyRegex(text, tableRe, tableFormat_);
-    applyZeroWidthSpaces(text);
+    static const QRegularExpression urlRe(QStringLiteral("\\b(?:https?|ftp|file)://\\S+|\\bwww\\.[^\\s]+"));
+    static const QRegularExpression emailRe(QStringLiteral("[\\w.+-]+@[\\w-]+(?:\\.[\\w-]+)+"));
+    QList<QPair<int, int>> skip;
+    for (const QRegularExpression* re : {&codeRe, &urlRe, &emailRe}) {
+      QRegularExpressionMatchIterator it = re->globalMatch(text);
+      while (it.hasNext()) {
+        const QRegularExpressionMatch m = it.next();
+        skip.append({static_cast<int>(m.capturedStart()), static_cast<int>(m.capturedEnd())});
+      }
+    }
+    QRegularExpressionMatchIterator it = wordRe.globalMatch(text);
+    while (it.hasNext()) {
+      const QRegularExpressionMatch m = it.next();
+      const int start = static_cast<int>(m.capturedStart());
+      const int end = static_cast<int>(m.capturedEnd());
+      if (end - start <= 1) {
+        continue;
+      }
+      bool inSkip = false;
+      for (const QPair<int, int>& s : skip) {
+        if (start < s.second && end > s.first) {
+          inSkip = true;
+          break;
+        }
+      }
+      if (inSkip) {
+        continue;
+      }
+      if (!checker.isCorrect(m.captured())) {
+        setFormat(start, end - start, spellFormat_);
+      }
+    }
   }
 
 private:
@@ -112,6 +164,8 @@ private:
     tableFormat_ = sourceFormat(QColor(QStringLiteral("#1a60a8")));
     zeroWidthFormat_ = sourceFormat(QColor(QStringLiteral("#d14f7f")), true);
     zeroWidthFormat_.setBackground(QColor(QStringLiteral("#fff0f6")));
+    spellFormat_.setUnderlineColor(QColor(QStringLiteral("#d1242f")));
+    spellFormat_.setUnderlineStyle(QTextCharFormat::SpellCheckUnderline);
   }
 
   void applyZeroWidthSpaces(const QString& text) {
@@ -157,6 +211,7 @@ private:
   QTextCharFormat emphasisFormat_;
   QTextCharFormat tableFormat_;
   QTextCharFormat zeroWidthFormat_;
+  QTextCharFormat spellFormat_;
 };
 
 }  // namespace
@@ -195,6 +250,17 @@ public:
       updateCurrentLineSelection();
       viewport()->update();
       lineNumberArea_->update();
+    });
+    // Re-scan for squiggles when spell checking is toggled or the dictionary changes.
+    connect(&SpellChecker::instance(), &SpellChecker::enabledChanged, this, [this] {
+      if (highlighter_) {
+        highlighter_->rehighlight();
+      }
+    });
+    connect(&SpellChecker::instance(), &SpellChecker::languageChanged, this, [this] {
+      if (highlighter_) {
+        highlighter_->rehighlight();
+      }
     });
   }
 
@@ -265,6 +331,54 @@ private:
   }
 
 protected:
+  void contextMenuEvent(QContextMenuEvent* event) override {
+    QTextCursor cursor = cursorForPosition(event->pos());
+    cursor.select(QTextCursor::WordUnderCursor);
+    const QString word = cursor.selectedText();
+    QMenu* menu = createStandardContextMenu(event->pos());
+    menu->setParent(this);
+
+    muffin::SpellChecker& checker = muffin::SpellChecker::instance();
+    if (checker.isEnabled() && word.size() > 1 && !checker.isCorrect(word)) {
+      const QStringList suggestions = checker.suggestions(word);
+      QList<QAction*> spellActions;
+      const int cap = 8;
+      for (int i = 0; i < qMin(suggestions.size(), cap); ++i) {
+        const QString suggestion = suggestions.at(i);
+        QAction* replaceAction = new QAction(suggestion, menu);
+        connect(replaceAction, &QAction::triggered, this, [cursor, suggestion]() {
+          QTextCursor replaceCursor = cursor;
+          replaceCursor.insertText(suggestion);
+        });
+        spellActions.append(replaceAction);
+      }
+      if (spellActions.isEmpty()) {
+        QAction* none = new QAction(
+            QCoreApplication::translate("muffin::MarkdownSourceEdit", "(no spelling suggestions)"), menu);
+        none->setEnabled(false);
+        spellActions.append(none);
+      }
+      QAction* ignoreAction = new QAction(
+          QCoreApplication::translate("muffin::MarkdownSourceEdit", "Ignore \"%1\"").arg(word), menu);
+      connect(ignoreAction, &QAction::triggered, this, [this, word]() {
+        muffin::SpellChecker::instance().ignoreWord(word);
+        if (highlighter_) {
+          highlighter_->rehighlight();
+        }
+      });
+      spellActions.append(ignoreAction);
+      QAction* separator = new QAction(menu);
+      separator->setSeparator(true);
+      spellActions.append(separator);
+
+      const QList<QAction*> existing = menu->actions();
+      menu->insertActions(existing.isEmpty() ? nullptr : existing.first(), spellActions);
+    }
+
+    menu->exec(event->globalPos());
+    delete menu;
+  }
+
   void resizeEvent(QResizeEvent* event) override {
     QPlainTextEdit::resizeEvent(event);
     const QRect contentRect = contentsRect();

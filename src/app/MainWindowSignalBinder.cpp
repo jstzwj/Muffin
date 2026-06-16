@@ -2,9 +2,12 @@
 #include "app/MainWindow.h"
 #include "app/UpdateChecker.h"
 #include "app/SidebarWidget.h"
+#include "document/MarkdownDocument.h"
+#include "document/MarkdownNode.h"
 #include "editor/EditorView.h"
 #include "editor/FindBarWidget.h"
 #include "editor/SourceEditorWidget.h"
+#include "spellcheck/SpellChecker.h"
 
 #include <QAction>
 #include <QDesktopServices>
@@ -43,7 +46,18 @@ private:
 
 void muffin::MainWindow::connectEditorSignals() {
   auto& window = *this;  // preserves the window.X call sites after the friend→member split
-  QObject::connect(window.editor_, &SourceEditorWidget::textEdited, &window.session_, &DocumentSession::updateFromEditor);
+  QObject::connect(window.editor_, &SourceEditorWidget::textEdited, &window.session_, [&window](const QString& text) {
+    // In render mode the (hidden, possibly empty) source widget is a shadow, not the source
+    // of truth — the user edits through the rendered view. Its textChanged must not write
+    // back to the document, because the source widget may be empty/out of sync (it is only
+    // populated on entering source mode). Otherwise a spurious textChanged — e.g. from
+    // QSyntaxHighlighter::rehighlight when toggling spell check — would call updateFromEditor
+    // with an empty string and wipe the document. Only the source-mode backend edits via it.
+    if (!window.backend_ || !window.backend_->isSourceMode()) {
+      return;
+    }
+    window.session_.updateFromEditor(text);
+  });
   QObject::connect(window.editor_, &SourceEditorWidget::cursorPositionChanged, &window, [&window](int line, int column) {
     window.updateCursorStatus(line, column);
     if (window.typewriterMode_ && window.backend_->isSourceMode()) {
@@ -84,6 +98,13 @@ void muffin::MainWindow::connectRenderSignals() {
       window.renderCommands_.deleteCurrentTable();
     }
   });
+  QObject::connect(window.renderView_, &EditorView::spellCorrectionRequested, &window,
+      [&window](qsizetype start, qsizetype length, const QString& replacement) {
+        if (window.backend_->isSourceMode()) {
+          return;
+        }
+        window.session_.applyTextDelta(start, length, replacement, true);
+      });
   QObject::connect(window.renderView_, &EditorView::tableMoreActionsRequested, &window, [&window](QPoint globalPos) {
     if (window.backend_->isSourceMode()) {
       return;
@@ -171,6 +192,31 @@ void muffin::MainWindow::connectApplicationSignals() {
       window.sidebar_->retranslateUi();
     }
   });
+
+  // Spell checker: re-decorate the rendered view's squiggles incrementally, NOT via a full
+  // setDocument. setDocument clears and rebuilds the whole layout and repaints the entire
+  // viewport; during the modal PreferencesDialog that full-viewport repaint races with the
+  // dialog's window-blocking and can leave a stale/blank backing store until the next
+  // resize/interaction (observed as the editor going blank when toggling the checkbox).
+  // refreshBlocks rebuilds each top-level block — re-running the per-block spell predicate
+  // baked into InlineLayout — while preserving scroll/cursor/selection and only repainting
+  // dirty rects. The source-mode highlighter rehighlights itself on these signals.
+  auto refreshSpellOverlay = [&window] {
+    if (!window.renderView_) {
+      return;
+    }
+    QVector<NodeId> ids;
+    for (const std::unique_ptr<MarkdownNode>& child : window.session_.document().root().children()) {
+      ids.append(child->id());
+    }
+    window.renderView_->refreshBlocks(ids, window.session_.document());
+  };
+  QObject::connect(&SpellChecker::instance(), &SpellChecker::enabledChanged, &window,
+      [&window, refreshSpellOverlay] {
+        window.updateContextActions();
+        refreshSpellOverlay();
+      });
+  QObject::connect(&SpellChecker::instance(), &SpellChecker::languageChanged, &window, refreshSpellOverlay);
 
   auto& updateChecker = muffin::UpdateChecker::instance();
   QObject::connect(&updateChecker, &muffin::UpdateChecker::updateAvailable, &window, [&window](const QString& version, const QString& url) {
