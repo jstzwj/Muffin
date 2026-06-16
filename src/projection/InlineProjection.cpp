@@ -10,7 +10,12 @@
 namespace muffin {
 namespace {
 
-struct EntitySpan {
+// A source substring that decodes to a shorter visible run, breaking the 1:1
+// source/visible correspondence the projection offset-mapping relies on. Covers
+// both CommonMark backslash escapes (`\*` -> `*`) and HTML entities
+// (`&amp;` -> `&`); the Text-node builder splits the node around these so each
+// resulting plain segment keeps a clean 1:1 mapping.
+struct DecodeSpan {
   qsizetype sourceStart;  // offset within the local source slice
   qsizetype sourceEnd;    // past-the-end offset
   QString decodedText;
@@ -35,26 +40,41 @@ QString decodeHtmlEntity(QStringView rawEntity) {
   return result;
 }
 
-QVector<EntitySpan> findHtmlEntities(QStringView source) {
-  QVector<EntitySpan> entities;
+// CommonMark §2.4: a backslash escapes any ASCII punctuation character. Anything
+// else (digits, letters, end of input) leaves the backslash literal, which does
+// not change the source/visible length, so it needs no special handling here.
+bool isBackslashEscapablePunct(QChar ch) {
+  const ushort c = ch.unicode();
+  return c >= 0x21 && c <= 0x7e &&
+         !((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
+}
+
+// Source-ordered, non-overlapping escape and entity runs. An escaped ampersand
+// (`\&`) is consumed as an escape, so it never also opens an entity scan.
+QVector<DecodeSpan> findDecodeSpans(QStringView source) {
+  QVector<DecodeSpan> spans;
   qsizetype i = 0;
   while (i < source.size()) {
+    if (source.at(i) == QLatin1Char('\\') && i + 1 < source.size() &&
+        isBackslashEscapablePunct(source.at(i + 1))) {
+      spans.push_back({i, i + 2, QString(source.at(i + 1))});
+      i += 2;
+      continue;
+    }
     if (source.at(i) == QLatin1Char('&')) {
       qsizetype semi = source.indexOf(QLatin1Char(';'), i + 1);
       if (semi >= 0 && semi - i <= 33) {
         const QString decoded = decodeHtmlEntity(source.mid(i, semi + 1 - i));
         if (!decoded.isEmpty()) {
-          entities.push_back({i, semi + 1, decoded});
+          spans.push_back({i, semi + 1, decoded});
           i = semi + 1;
           continue;
         }
       }
-      ++i;
-    } else {
-      ++i;
     }
+    ++i;
   }
-  return entities;
+  return spans;
 }
 
 bool textMatchesAt(const QString& decoded, qsizetype decodedPos, QStringView text) {
@@ -942,27 +962,33 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
         appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, decoded, true);
         break;
       }
-      const QVector<EntitySpan> entities = findHtmlEntities(source);
-      if (entities.isEmpty()) {
+      // decoded differs from source only via escapes and HTML entities, each of
+      // which consumes more source chars than it shows. Split around them so every
+      // plain segment keeps a 1:1 source/visible mapping (correct offset math).
+      const QVector<DecodeSpan> segments = findDecodeSpans(source);
+      if (segments.isEmpty()) {
         appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, decoded, true);
         break;
       }
+      // Sanity-check that the segments actually reconstruct decoded; if something
+      // else (a cmark decoding we don't model) is at play, fall back to a single
+      // span rather than emit a misaligned projection.
       bool aligned = true;
       qsizetype sourcePos = 0;
       qsizetype decodedPos = 0;
-      for (const EntitySpan& entity : entities) {
-        const QStringView plainSource = QStringView(source).mid(sourcePos, entity.sourceStart - sourcePos);
+      for (const DecodeSpan& segment : segments) {
+        const QStringView plainSource = QStringView(source).mid(sourcePos, segment.sourceStart - sourcePos);
         if (!textMatchesAt(decoded, decodedPos, plainSource)) {
           aligned = false;
           break;
         }
         decodedPos += plainSource.size();
-        if (!textMatchesAt(decoded, decodedPos, QStringView(entity.decodedText))) {
+        if (!textMatchesAt(decoded, decodedPos, QStringView(segment.decodedText))) {
           aligned = false;
           break;
         }
-        decodedPos += entity.decodedText.size();
-        sourcePos = entity.sourceEnd;
+        decodedPos += segment.decodedText.size();
+        sourcePos = segment.sourceEnd;
       }
       if (aligned && !textMatchesAt(decoded, decodedPos, QStringView(source).mid(sourcePos))) {
         aligned = false;
@@ -974,31 +1000,31 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
 
       sourcePos = 0;
       decodedPos = 0;
-      for (const EntitySpan& entity : entities) {
-        if (entity.sourceStart > sourcePos) {
-          const qsizetype plainLen = entity.sourceStart - sourcePos;
+      for (const DecodeSpan& segment : segments) {
+        if (segment.sourceStart > sourcePos) {
+          const qsizetype plainLen = segment.sourceStart - sourcePos;
           appendTextSpan(state, node.type(), InlineSpanKind::Text,
-                          sourceStart + sourcePos, sourceStart + entity.sourceStart,
+                          sourceStart + sourcePos, sourceStart + segment.sourceStart,
                           source.mid(sourcePos, plainLen), true);
           decodedPos += plainLen;
         }
-        const qsizetype entitySourceStart = sourceStart + entity.sourceStart;
-        const qsizetype entitySourceEnd = sourceStart + entity.sourceEnd;
-        const qsizetype entityVisibleStart = visibleStart + decodedPos;
-        const qsizetype entityVisibleEnd = entityVisibleStart + entity.decodedText.size();
-        const bool revealEntity = state.projectionState.shouldRevealSourceRange(entitySourceStart, entitySourceEnd) ||
-                                  state.projectionState.shouldRevealVisibleRange(entityVisibleStart, entityVisibleEnd);
+        const qsizetype segmentSourceStart = sourceStart + segment.sourceStart;
+        const qsizetype segmentSourceEnd = sourceStart + segment.sourceEnd;
+        const qsizetype segmentVisibleStart = visibleStart + decodedPos;
+        const qsizetype segmentVisibleEnd = segmentVisibleStart + segment.decodedText.size();
+        const bool revealSyntax = state.projectionState.shouldRevealSourceRange(segmentSourceStart, segmentSourceEnd) ||
+                                  state.projectionState.shouldRevealVisibleRange(segmentVisibleStart, segmentVisibleEnd);
 
         appendTextSpan(state, node.type(), InlineSpanKind::Text,
-                        entitySourceStart, entitySourceEnd,
-                        entity.decodedText, true);
-        if (revealEntity) {
+                        segmentSourceStart, segmentSourceEnd,
+                        segment.decodedText, true);
+        if (revealSyntax) {
           appendTextSpan(state, node.type(), InlineSpanKind::HiddenSyntax,
-                          entitySourceStart, entitySourceEnd,
-                          source.mid(entity.sourceStart, entity.sourceEnd - entity.sourceStart), false);
+                          segmentSourceStart, segmentSourceEnd,
+                          source.mid(segment.sourceStart, segment.sourceEnd - segment.sourceStart), false);
         }
-        sourcePos = entity.sourceEnd;
-        decodedPos += entity.decodedText.size();
+        sourcePos = segment.sourceEnd;
+        decodedPos += segment.decodedText.size();
       }
       if (sourcePos < source.size()) {
         appendTextSpan(state, node.type(), InlineSpanKind::Text,

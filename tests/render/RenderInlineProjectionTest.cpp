@@ -197,6 +197,50 @@ void testEntityDisplayAfterEdit() {
           QStringLiteral("post-edit entity display text mismatch: %1").arg(editedLayout.displayText()));
 }
 
+void testEscapedPunctuationOffsetMapping() {
+  // Backslash-escapes (`\*` -> `*`) consume more source chars than they show, so
+  // the projection must split the Text node around each escape to keep the
+  // visible/source offset math 1:1 inside every plain segment. Without it the
+  // offset drifts by one source char per preceding escape and typed text inserts
+  // in the wrong place. cursorRect(visibleOffset) is the ground-truth visual
+  // caret (a position in the decoded text); hitTestSourceOffset must map it back
+  // to the correct source offset. A self round-trip (sourceOffset -> rect ->
+  // sourceOffset) would NOT catch this, since both directions share the bug.
+  struct Case {
+    QString markdown;
+    QString expectedDisplay;
+    qsizetype visibleOffset;   // caret position within the decoded text
+    qsizetype expectedSource;  // the source offset that caret must map to
+  };
+  const Case cases[] = {
+      // caret between "not " and "emphasized" -> before 'e'; one escape precedes it
+      {QStringLiteral("\\*not emphasized\\*"), QStringLiteral("*not emphasized*"), 5, 6},
+      // two escapes: the caret before the final 'b' is off by two without the fix
+      {QStringLiteral("\\*a\\*b"), QStringLiteral("*a*b"), 3, 5},
+      // escape-free prefix: the mapping is a plain 1:1, so both agree (guard)
+      {QStringLiteral("ab\\*cd"), QStringLiteral("ab*cd"), 2, 2},
+  };
+
+  RenderTheme theme = RenderTheme::github();
+  InlineLayout::BuildOptions options;
+  for (const Case& c : cases) {
+    DocumentSession session;
+    session.setMarkdownText(c.markdown, false);
+    const QVector<InlineNode> inlines = session.document().root().children().front()->inlines();
+
+    InlineLayout layout;
+    layout.build(inlines, c.markdown, theme, 400.0, theme.paragraphFont(), options);
+    require(layout.displayText() == c.expectedDisplay,
+            QStringLiteral("escape decode mismatch for '%1': expected '%2', got '%3'")
+                .arg(c.markdown, c.expectedDisplay, layout.displayText()));
+    const QRectF caret = layout.cursorRect(c.visibleOffset);
+    const qsizetype mapped = layout.hitTestSourceOffset(caret.center());
+    require(mapped == c.expectedSource,
+            QStringLiteral("escape offset mapping for '%1' at visible %2: expected source %3, got %4")
+                .arg(c.markdown).arg(c.visibleOffset).arg(c.expectedSource).arg(mapped));
+  }
+}
+
 void testInlineCodeEndSourceHitUsesForwardBias() {
   RenderTheme theme = RenderTheme::github();
   QVector<InlineNode> inlines;
@@ -371,6 +415,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testInlineProjectionContract);
   RUN_TEST(testActiveLoadedImageKeepsSourceTextAndAddsPreviewSpace);
   RUN_TEST(testEntityDisplayAfterEdit);
+  RUN_TEST(testEscapedPunctuationOffsetMapping);
   RUN_TEST(testInlineCodeEndSourceHitUsesForwardBias);
   RUN_TEST(testPendingPrefixFallbackDoesNotDuplicateSource);
 #undef RUN_TEST
