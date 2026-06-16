@@ -5,6 +5,20 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-06-17
+
+### Added
+- **Spell checking** - Nuspell-powered spell checking with a global spell checker, an editor preferences panel to enable it and switch the dictionary language, misspelling underlines in both render and source modes, a right-click suggestion menu and ignore-word support, and bundled dictionaries for 11 languages (English, German, Spanish, French, Italian, Dutch, Polish, Portuguese (Brazil), Russian, Turkish, and Vietnamese)
+- **Emoji autocomplete** - Emoji autocomplete system with a bundled emoji provider and a popup completer widget, enabled by default while typing
+- **Configurable indent** - Default indent size selector (2/4/8 spaces) with an "Align Indent" option; the indent system was refactored to support configurable units and aligned indentation
+- **Whole-line copy and cut** - The clipboard now copies or cuts the entire line when no text is selected
+- **Copy as Markdown** - Option to copy the Markdown source when copying plain text
+- **Block source preview** - The status bar can show the Markdown source of the current block element
+
+### Fixed
+- **Language switching heap corruption** - Menu translation no longer rebuilds menus on the `LanguageChange` event; it now updates menu text in place via `retranslateMenuTexts()`, avoiding heap corruption from freeing menu resources while Qt still has pending events
+- **Inline projection offset mapping** - `InlineProjection` decoding now covers backslash escapes in addition to HTML entities, and splits text nodes so each plain-text segment keeps a 1:1 offset correspondence, fixing incorrect cursor and source position mapping for escaped punctuation and HTML entities
+
 ## [0.2.4] - 2026-06-16
 
 ### Added
@@ -267,6 +281,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.2.5]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.5
 [0.2.4]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.4
 [0.2.3]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.3
 [0.2.2]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.2
