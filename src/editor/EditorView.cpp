@@ -395,24 +395,49 @@ void EditorView::scrollToNode(NodeId id) {
   scrollBar->setValue(target);
 }
 
-void EditorView::scrollToCursorCentered() {
+QRectF EditorView::effectiveCursorRect() const {
   if (!cursorHit_.isValid()) {
-    return;
+    return QRectF();
   }
-
   QRectF cursor = cursorHit_.cursorRect;
   if (cursor.isEmpty()) {
     cursor = QRectF(cursorHit_.blockRect.left(), cursorHit_.blockRect.top(), 1.0, cursorHit_.blockRect.height());
   }
-  if (cursor.isEmpty()) {
-    return;
-  }
+  return cursor;
+}
 
+int EditorView::typewriterScrollTarget(const QRectF& cursor) const {
   QScrollBar* scrollBar = verticalScrollBar();
   const qreal cursorCenterY = cursor.center().y();
   const qreal viewportHeight = static_cast<qreal>(viewport()->height());
-  const int target = qBound(scrollBar->minimum(), qRound(cursorCenterY - viewportHeight / 2.0), scrollBar->maximum());
-  scrollBar->setValue(target);
+  if (typewriterCursorMiddle_) {
+    // Keep the caret pinned to the vertical centre of the viewport.
+    return qBound(scrollBar->minimum(), qRound(cursorCenterY - viewportHeight / 2.0), scrollBar->maximum());
+  }
+  // Relaxed policy: scroll only when the caret leaves a comfort band (top/bottom third of the
+  // viewport). When it already sits inside the band, no scrolling is wanted.
+  const qreal cursorViewportY = cursorCenterY - static_cast<qreal>(scrollBar->value());
+  const qreal topMargin = viewportHeight / 3.0;
+  const qreal bottomMargin = viewportHeight * 2.0 / 3.0;
+  if (cursorViewportY < topMargin) {
+    return qBound(scrollBar->minimum(), qRound(cursorCenterY - topMargin), scrollBar->maximum());
+  }
+  if (cursorViewportY > bottomMargin) {
+    return qBound(scrollBar->minimum(), qRound(cursorCenterY - bottomMargin), scrollBar->maximum());
+  }
+  return -1;
+}
+
+void EditorView::scrollToCursorCentered() {
+  const QRectF cursor = effectiveCursorRect();
+  if (cursor.isEmpty()) {
+    return;
+  }
+  const int target = typewriterScrollTarget(cursor);
+  if (target < 0) {
+    return;
+  }
+  verticalScrollBar()->setValue(target);
 }
 
 void EditorView::setTypewriterMode(bool enabled) {
@@ -422,6 +447,18 @@ void EditorView::setTypewriterMode(bool enabled) {
     scrollToCursorCentered();
   } else if (!enabled) {
     // Clamp scroll back to normal range [0, normalMax].
+    QScrollBar* sb = verticalScrollBar();
+    sb->setValue(qBound(sb->minimum(), sb->value(), sb->maximum()));
+  }
+}
+
+void EditorView::setTypewriterCursorMiddle(bool enabled) {
+  typewriterCursorMiddle_ = enabled;
+  updateScrollBars();
+  if (typewriterMode_ && cursorHit_.isValid()) {
+    scrollToCursorCentered();
+  } else if (typewriterMode_) {
+    // Relaxed mode uses the normal range; re-clamp any overshoot from the previous centred mode.
     QScrollBar* sb = verticalScrollBar();
     sb->setValue(qBound(sb->minimum(), sb->value(), sb->maximum()));
   }
@@ -446,22 +483,16 @@ void EditorView::stopScrollAnimation() {
 }
 
 void EditorView::scrollToCursorCenteredAnimated() {
-  if (!cursorHit_.isValid()) {
-    return;
-  }
-
-  QRectF cursor = cursorHit_.cursorRect;
-  if (cursor.isEmpty()) {
-    cursor = QRectF(cursorHit_.blockRect.left(), cursorHit_.blockRect.top(), 1.0, cursorHit_.blockRect.height());
-  }
+  const QRectF cursor = effectiveCursorRect();
   if (cursor.isEmpty()) {
     return;
   }
 
   QScrollBar* scrollBar = verticalScrollBar();
-  const qreal cursorCenterY = cursor.center().y();
-  const qreal viewportHeight = static_cast<qreal>(viewport()->height());
-  const int target = qBound(scrollBar->minimum(), qRound(cursorCenterY - viewportHeight / 2.0), scrollBar->maximum());
+  const int target = typewriterScrollTarget(cursor);
+  if (target < 0) {
+    return;
+  }
 
   const int current = scrollBar->value();
   if (current == target) {
@@ -873,11 +904,13 @@ void EditorView::updateScrollBars() {
   const int normalMax = layout_ ? qMax(0, static_cast<int>(std::ceil(layout_->totalHeight() - vh))) : 0;
   verticalScrollBar()->setPageStep(pageStep);
   verticalScrollBar()->setSingleStep(qMax(16, pageStep / 12));
-  if (typewriterMode_) {
+  if (typewriterMode_ && typewriterCursorMiddle_) {
     // Allow scrolling past document boundaries so the cursor can always be
     // centered: negative scroll (empty space above) and extra range (empty
     // space below).  Half a viewport on each side is enough to center the
-    // cursor at the very first or last line.
+    // cursor at the very first or last line. The relaxed (non-centered)
+    // policy never forces the caret past the document edges, so it keeps the
+    // normal [0, normalMax] range.
     const int halfVh = vh / 2;
     verticalScrollBar()->setRange(-halfVh, normalMax + halfVh);
   } else {
@@ -891,6 +924,10 @@ QRectF EditorView::documentViewportRect() const {
 
 qreal EditorView::scrollY() const {
   return static_cast<qreal>(verticalScrollBar()->value());
+}
+
+QPointF EditorView::mapDocumentToViewport(const QPointF& documentPos) const {
+  return QPointF(documentPos.x(), documentPos.y() - scrollY());
 }
 
 void EditorView::applyScrollBarStyle() {

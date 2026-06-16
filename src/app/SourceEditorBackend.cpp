@@ -7,6 +7,7 @@
 #include <QClipboard>
 #include <QMimeData>
 #include <QPlainTextEdit>
+#include <QSettings>
 #include <QTextBlock>
 #include <QTextCursor>
 #include <QTextDocument>
@@ -19,12 +20,41 @@ QPlainTextEdit* SourceEditorBackend::plainEdit() const {
   return editor_->editor();
 }
 
+// editor/copyLineNoSelection (default off): with no selection, copy/cut the whole current line
+// instead of being a no-op. Returns true when it handled the line copy/cut.
+bool SourceEditorBackend::maybeCopyWholeLine(bool cut) {
+  if (!QSettings().value(QStringLiteral("editor/copyLineNoSelection"), false).toBool()) {
+    return false;
+  }
+  QPlainTextEdit* edit = plainEdit();
+  QTextCursor cursor = edit->textCursor();
+  if (cursor.hasSelection()) {
+    return false;  // an explicit selection takes precedence
+  }
+  const int savedPosition = cursor.position();
+  cursor.movePosition(QTextCursor::StartOfBlock);
+  cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+  edit->setTextCursor(cursor);
+  if (cut) {
+    edit->cut();  // removes the line content; leave the caret at the deletion point
+  } else {
+    edit->copy();
+    cursor.setPosition(savedPosition);
+    edit->setTextCursor(cursor);  // restore the collapsed caret
+  }
+  return true;
+}
+
 void SourceEditorBackend::cut() {
-  plainEdit()->cut();
+  if (!maybeCopyWholeLine(/*cut=*/true)) {
+    plainEdit()->cut();
+  }
 }
 
 void SourceEditorBackend::copy() {
-  plainEdit()->copy();
+  if (!maybeCopyWholeLine(/*cut=*/false)) {
+    plainEdit()->copy();
+  }
 }
 
 void SourceEditorBackend::paste() {

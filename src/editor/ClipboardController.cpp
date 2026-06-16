@@ -11,6 +11,7 @@
 #include <QFileInfo>
 #include <QImage>
 #include <QMimeData>
+#include <QSettings>
 
 namespace muffin {
 
@@ -34,13 +35,24 @@ bool ClipboardController::copy() {
     return false;
   }
 
+  // editor/copyAsMarkdown (default on): put the markdown source on the clipboard (as the primary
+  // text and a text/markdown MIME part) so rich paste targets keep the markup. Off, copy only the
+  // decoded plain text.
+  const bool preferMarkdown = QSettings().value(QStringLiteral("editor/copyAsMarkdown"), true).toBool();
   auto* mimeData = new QMimeData();
-  mimeData->setText(markdown.text.isEmpty() ? plainText.text : markdown.text);
-  if (!markdown.text.isEmpty()) {
-    mimeData->setData(QStringLiteral("text/markdown"), markdown.mimeData);
-  }
-  if (markdown.text.isEmpty() && !plainText.text.isEmpty()) {
-    mimeData->setData(QStringLiteral("text/plain"), plainText.mimeData);
+  if (preferMarkdown) {
+    mimeData->setText(markdown.text.isEmpty() ? plainText.text : markdown.text);
+    if (!markdown.text.isEmpty()) {
+      mimeData->setData(QStringLiteral("text/markdown"), markdown.mimeData);
+    }
+    if (markdown.text.isEmpty() && !plainText.text.isEmpty()) {
+      mimeData->setData(QStringLiteral("text/plain"), plainText.mimeData);
+    }
+  } else {
+    mimeData->setText(plainText.text.isEmpty() ? markdown.text : plainText.text);
+    if (!plainText.text.isEmpty()) {
+      mimeData->setData(QStringLiteral("text/plain"), plainText.mimeData);
+    }
   }
   QApplication::clipboard()->setMimeData(mimeData);
   return true;

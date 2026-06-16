@@ -5,7 +5,9 @@
 #include "app/SidebarWidget.h"
 #include "app/SourceEditorBackend.h"
 #include "app/UpdateChecker.h"
+#include "document/MarkdownNode.h"
 #include "document/OutlineBuilder.h"
+#include "document/SourceRangeUtil.h"
 #include "editor/EditorView.h"
 #include "editor/FindBarWidget.h"
 #include "editor/SourceEditorWidget.h"
@@ -13,6 +15,7 @@
 #include <QAction>
 #include <QCloseEvent>
 #include <QDir>
+#include <QFontDatabase>
 #include <QEvent>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -222,6 +225,11 @@ void muffin::MainWindow::setupStatusBar() {
   sourceModeButton_->setAutoRaise(true);
 
   cursorLabel_ = new QLabel(this);
+  blockSourceLabel_ = new QLabel(this);
+  blockSourceLabel_->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+  blockSourceLabel_->setStyleSheet(QStringLiteral("color: #8a8f98;"));
+  blockSourceLabel_->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+  blockSourceLabel_->setMinimumWidth(0);
   wordsLabel_ = new QLabel(this);
   wordCountTimer_ = new QTimer(this);
   wordCountTimer_->setSingleShot(true);
@@ -230,6 +238,7 @@ void muffin::MainWindow::setupStatusBar() {
 
   statusBar()->addWidget(sidebarButton_);
   statusBar()->addWidget(sourceModeButton_);
+  statusBar()->addWidget(blockSourceLabel_, 1);
   statusBar()->addPermanentWidget(cursorLabel_);
   statusBar()->addPermanentWidget(wordsLabel_);
 }
@@ -270,6 +279,10 @@ void muffin::MainWindow::updateStatus() {
     cursorLabel_->setText(renderCursorStatus_);
   } else {
     cursorLabel_->setText(QStringLiteral("%1:%2").arg(cursorLine_).arg(cursorColumn_));
+  }
+  // The block-source preview is render-mode only; clear any stale text when editing source.
+  if (backend_ && backend_->isSourceMode() && blockSourceLabel_) {
+    blockSourceLabel_->clear();
   }
 }
 
@@ -490,6 +503,7 @@ void muffin::MainWindow::setTypewriterMode(bool enabled) {
 
   if (renderView_) {
     renderView_->setTypewriterMode(enabled);
+    renderView_->setTypewriterCursorMiddle(QSettings().value(QStringLiteral("editor/typewriterCursorMiddle"), true).toBool());
   }
 
   if (QAction* action = commands_.action(QStringLiteral("view.typewriter"))) {
@@ -536,6 +550,9 @@ void muffin::MainWindow::loadAppearanceSettings() {
 
   if (QAction* action = commands_.action(QStringLiteral("view.typewriter")); action && action->isChecked()) {
     setTypewriterMode(true);
+  }
+  if (renderView_) {
+    renderView_->setTypewriterCursorMiddle(settings.value(QStringLiteral("editor/typewriterCursorMiddle"), true).toBool());
   }
 }
 

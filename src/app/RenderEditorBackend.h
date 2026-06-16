@@ -4,6 +4,7 @@
 
 namespace muffin {
 
+class ClipboardController;
 class DocumentSession;
 class EditorController;
 class EditorView;
@@ -62,6 +63,8 @@ public:
   QString cursorStatusText() const override;
 
 private:
+  bool maybeCopyWholeBlock(ClipboardController& clipboard, bool cut);
+
   EditorController& controller_;
   DocumentSession& session_;
   EditorView* view_;

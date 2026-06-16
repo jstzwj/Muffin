@@ -489,11 +489,24 @@ string(CONCAT MUFFIN_DICTS_QRC_CONTENT "${MUFFIN_DICTS_QRC_CONTENT}"
   "</RCC>\n")
 file(WRITE "${MUFFIN_DICTS_QRC}" "${MUFFIN_DICTS_QRC_CONTENT}")
 
+# Emoji autocomplete dataset: a single shortcode->glyph table (one "shortcode<TAB>glyph" per line)
+# embedded as a zlib-compressed resource so the BundledEmojiProvider can load it without disk I/O.
+set(MUFFIN_EMOJI_QRC "${CMAKE_CURRENT_BINARY_DIR}/emoji.qrc")
+file(RELATIVE_PATH MUFFIN_EMOJI_QRC_REL "${CMAKE_CURRENT_BINARY_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}/resources/emoji/emoji.txt")
+file(WRITE "${MUFFIN_EMOJI_QRC}"
+  "<RCC>\n"
+  "  <qresource prefix=\"/emoji\">\n"
+  "    <file alias=\"emoji.txt\" compress=\"9\">${MUFFIN_EMOJI_QRC_REL}</file>\n"
+  "  </qresource>\n"
+  "</RCC>\n")
+
 add_executable(Muffin
   src/translations.qrc
   src/icons.qrc
   ${MUFFIN_HELP_QRC}
   ${MUFFIN_DICTS_QRC}
+  ${MUFFIN_EMOJI_QRC}
   src/app/CommandRegistry.cpp
   src/app/CommandRegistry.h
   src/app/LanguageManager.cpp
@@ -622,6 +635,9 @@ set(MUFFIN_UI_SOURCES
   src/editor/HtmlBlockHoverController.h
   src/editor/CodeLanguageEditor.cpp
   src/editor/CodeLanguageEditor.h
+  src/editor/EmojiCompleter.cpp
+  src/editor/EmojiCompleter.h
+  src/editor/EmojiProvider.h
   src/editor/TableToolbar.cpp
   src/editor/TableToolbar.h
   src/editor/InputController.cpp

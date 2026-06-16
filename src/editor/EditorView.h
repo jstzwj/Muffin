@@ -42,6 +42,8 @@ public:
   void setCodeLanguageSuggestions(QStringList languages);
 
   QRectF nodeRect(NodeId id) const;
+  // Map a document-coordinate point to viewport coordinates (applies the current vertical scroll).
+  QPointF mapDocumentToViewport(const QPointF& documentPos) const;
   // Exposed for tests: the current caret hit and the laid-out document height.
   HitTestResult cursorHit() const { return cursorHit_; }
   CursorPosition cursorPosition() const { return cursorPosition_; }
@@ -51,6 +53,9 @@ public:
   void scrollToCursorCentered();
   void scrollToCursorCenteredAnimated();
   void setTypewriterMode(bool enabled);
+  // editor/typewriterCursorMiddle: when typewriter mode is on, keep the cursor centered (on) or
+  // only scroll when it leaves the comfort margins (off).
+  void setTypewriterCursorMiddle(bool enabled);
   void setFocusMode(bool enabled);
   const BlockLayout* blockAtViewportPos(QPointF viewportPos) const;
   // Direct layout lookup by node id (resolves nested blocks such as a list item,
@@ -122,6 +127,10 @@ private:
   void updateMouseCursor(QPointF viewportPos);
   void ensureScrollAnimation();
   void stopScrollAnimation();
+  QRectF effectiveCursorRect() const;
+  // Scroll target that keeps the cursor on screen under the active typewriter policy, or -1 when
+  // the relaxed policy decides the cursor is already comfortable and no scroll is needed.
+  int typewriterScrollTarget(const QRectF& cursor) const;
 
   QPointer<const MarkdownDocument> document_;
   QString documentPath_;
@@ -143,6 +152,7 @@ private:
   CodeLanguageEditor* codeLanguageEditor_ = nullptr;
   TableToolbar* tableToolbar_ = nullptr;
   bool typewriterMode_ = false;
+  bool typewriterCursorMiddle_ = true;
   bool focusMode_ = false;
   QPropertyAnimation* scrollAnimation_ = nullptr;
   NodeId editingHtmlBlockId_;

@@ -1,5 +1,7 @@
 #include "app/MainWindow.h"
 
+#include "document/MarkdownNode.h"
+#include "document/SourceRangeUtil.h"
 #include "editor/EditorView.h"
 #include "editor/SourceEditorWidget.h"
 
@@ -12,6 +14,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QSettings>
 #include <QSpinBox>
 #include <QTimer>
 
@@ -47,6 +50,7 @@ QString zoneName(muffin::HitTestResult::Zone zone) {
 
 void muffin::MainWindow::setupConnections() {
   editorController_.attach(&session_, renderView_);
+  editorController_.inputController().setEmojiProvider(&emojiProvider_);
 
   connectEditorSignals();
   connectRenderSignals();
@@ -80,8 +84,49 @@ void muffin::MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {
                               .arg(zoneName(hit.zone), hit.blockId.toString())
                               .arg(hit.textOffset);
   }
+  updateBlockSourceLabel(hit);
   updateContextActions();
   updateStatus();
+}
+
+void muffin::MainWindow::updateBlockSourceLabel(const HitTestResult& hit) {
+  if (!blockSourceLabel_) {
+    return;
+  }
+  const bool enabled = QSettings().value(QStringLiteral("editor/showBlockSource"), false).toBool();
+  if (!enabled || !backend_ || backend_->isSourceMode() || !hit.isValid()) {
+    blockSourceLabel_->clear();
+    blockSourceLabel_->setToolTip(QString());
+    return;
+  }
+  MarkdownNode* node = session_.document().node(hit.blockId);
+  if (!node) {
+    blockSourceLabel_->clear();
+    blockSourceLabel_->setToolTip(QString());
+    return;
+  }
+  // Walk up to the top-level block so the preview shows the whole construct (list/table/code),
+  // not just the innermost text node the caret sits in.
+  while (node->parent() && node->parent()->type() != BlockType::Document) {
+    node = node->parent();
+  }
+  const SourceRange range = fullBlockSourceRange(*node, session_.markdownText());
+  if (range.byteStart < 0 || range.byteEnd <= range.byteStart) {
+    blockSourceLabel_->clear();
+    blockSourceLabel_->setToolTip(QString());
+    return;
+  }
+  const QString& markdown = session_.markdownText();
+  const QString raw = markdown.mid(range.byteStart, range.byteEnd - range.byteStart);
+  blockSourceLabel_->setToolTip(raw.trimmed());
+  // Flatten to a single status-bar line so multi-line blocks stay readable.
+  QString flat = raw;
+  flat.replace(QLatin1Char('\n'), QStringLiteral(" → "));
+  flat = flat.trimmed();
+  if (flat.size() > 120) {
+    flat = flat.left(117) + QStringLiteral("...");
+  }
+  blockSourceLabel_->setText(flat);
 }
 
 void muffin::MainWindow::syncSourceEditorIfNeeded() {

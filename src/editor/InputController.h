@@ -16,6 +16,8 @@ namespace muffin {
 
 class CodeFenceController;
 class EditorView;
+class EmojiCompleter;
+class EmojiProvider;
 class LiteralBlockController;
 class MarkdownNode;
 class SelectionController;
@@ -30,6 +32,12 @@ public:
   void setContext(const EditorContext& ctx);
   void setTableController(TableController* tableController);
   void setCodeFenceController(CodeFenceController* codeFenceController);
+  // editor/emojiAutocomplete: supplies the shortcode->glyph table. nullptr (the default) leaves
+  // the feature inert even when the preference is on; production wires a BundledEmojiProvider,
+  // tests inject a fake.
+  void setEmojiProvider(const EmojiProvider* provider);
+  // Exposed for tests so they can assert popup visibility after typing a ":shortcode" trigger.
+  EmojiCompleter* emojiCompleter() const { return emojiCompleter_; }
 
   bool insertText(QString text);
   bool insertParagraphBreak();
@@ -76,6 +84,14 @@ private:
   void syncLiteralEditMode(NodeId newBlockId);
   bool insertTextIntoActiveLiteral(QString text);
   bool tryInsertOptionalDefinitionTitle(QString text);
+  // Auto-pair / wrap-selection / skip-over for a single typed character, gated by the
+  // editor/matchBrackets and editor/matchMarkdown preferences. Returns true when it handled the
+  // keystroke (caller returns true); false to let the character insert normally.
+  bool tryAutoPairOrWrap(QChar ch);
+  EmojiCompleter* ensureEmojiCompleter();
+  void maybeUpdateEmojiPopup();
+  void insertEmoji(const QString& glyph);
+  void hideEmojiPopup();
   bool deleteBackwardInActiveLiteral();
   bool deleteForwardInActiveLiteral();
   bool deleteSelectionInActiveLiteral();
@@ -134,6 +150,9 @@ private:
   EditorContext ctx_;
   CodeFenceController* codeFenceController_ = nullptr;
   TableController* tableController_ = nullptr;
+  EmojiCompleter* emojiCompleter_ = nullptr;
+  const EmojiProvider* emojiProvider_ = nullptr;
+  qsizetype emojiColonStart_ = -1;  // source offset of the leading ':' of the active shortcode
 };
 
 }  // namespace muffin

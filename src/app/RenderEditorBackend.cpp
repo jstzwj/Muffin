@@ -4,18 +4,51 @@
 #include "document/MarkdownDocument.h"
 #include "editor/EditorController.h"
 #include "editor/EditorView.h"
+#include "editor/SelectionController.h"
+
+#include <QSettings>
 
 namespace muffin {
 
 RenderEditorBackend::RenderEditorBackend(EditorController& controller, DocumentSession& session, EditorView* view)
     : controller_(controller), session_(session), view_(view) {}
 
+// editor/copyLineNoSelection (default off): with no selection, copy/cut operate on the whole
+// current block (the render-mode equivalent of a line). Returns true when it performed the line
+// copy/cut so the caller does nothing else; false to fall back to the normal selection copy.
+bool RenderEditorBackend::maybeCopyWholeBlock(ClipboardController& clipboard, bool cut) {
+  if (!QSettings().value(QStringLiteral("editor/copyLineNoSelection"), false).toBool()) {
+    return false;
+  }
+  SelectionController& selection = controller_.selection();
+  if (!selection.hasCursor() || !selection.selection().isCollapsed()) {
+    return false;
+  }
+  if (!controller_.selectCurrentBlock()) {
+    return false;
+  }
+  if (cut) {
+    clipboard.cut();  // copies the block then deletes it — the content is gone, so no restore.
+  } else {
+    const CursorPosition savedCaret = selection.cursorPosition();
+    clipboard.copy();
+    selection.setCursorPosition(savedCaret);  // keep the caret collapsed (no visible selection).
+  }
+  return true;
+}
+
 void RenderEditorBackend::cut() {
-  controller_.clipboardController().cut();
+  ClipboardController& clipboard = controller_.clipboardController();
+  if (!maybeCopyWholeBlock(clipboard, /*cut=*/true)) {
+    clipboard.cut();
+  }
 }
 
 void RenderEditorBackend::copy() {
-  controller_.clipboardController().copy();
+  ClipboardController& clipboard = controller_.clipboardController();
+  if (!maybeCopyWholeBlock(clipboard, /*cut=*/false)) {
+    clipboard.copy();
+  }
 }
 
 void RenderEditorBackend::paste() {

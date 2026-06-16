@@ -5,6 +5,7 @@
 #include "document/SourceRangeUtil.h"
 #include "editor/InlineSplit.h"
 
+#include <QSettings>
 #include <QStringList>
 
 namespace muffin {
@@ -97,6 +98,19 @@ BlockQuoteMarkerRange nthBlockQuoteMarkerRange(const QString& line, int depth) {
 
 QString leadingSpaces(qsizetype count) {
   return QString(qMax<qsizetype>(0, count), QLatin1Char(' '));
+}
+
+// editor/indentSize is stored as a combo INDEX (PrefsEditorPage shows "2"/"4"/"8" at rows 0/1/2),
+// not the literal indent count. This is the single place that maps index -> space count, so a future
+// author can never accidentally read the raw int and silently break indentation.
+int indentUnit() {
+  static const int units[] = {2, 4, 8};
+  const int idx = QSettings().value(QStringLiteral("editor/indentSize"), 0).toInt();
+  return units[qBound(0, idx, 2)];
+}
+
+bool alignIndentEnabled() {
+  return QSettings().value(QStringLiteral("editor/alignIndent"), false).toBool();
 }
 
 qsizetype lineEndForOffset(const QString& text, qsizetype offset) {
@@ -787,11 +801,21 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(con
   const qsizetype splitContentOffset = normalizeSplitOffset(nextLineContent, contentOffset);
   const qsizetype splitOffset = context.contentRange.byteStart + splitContentOffset;
   const qsizetype markerColumn = info.markerStart;
+  // When alignIndent is on, the new item's marker lines up under the parent item's *content*
+  // column (so `- x`/`- [ ] x` continuations sit beneath the text, not the bullet). Off, alignExtra
+  // is 0 and the leading-space count is byte-identical to the historical flat behaviour. Ordered
+  // lists are excluded: nesting a numbered item would collide with auto-renumber (which only
+  // renumbers same-column siblings) and a nested ordered list restarts numbering anyway, so
+  // "aligning" it is ill-defined — keep ordered items flat.
+  const qsizetype alignExtra = alignIndentEnabled() && !info.ordered
+      ? (info.task ? (info.taskContentStart - info.markerStart)
+                   : (info.markerEnd - info.markerStart))
+      : 0;
   const QString nextMarker = info.ordered
                                  ? QStringLiteral("%1%2 ").arg(info.orderedNumber + 1).arg(info.orderedDelimiter)
                                  : info.marker;
   const QString taskPrefix = info.task ? QStringLiteral("[ ] ") : QString();
-  QString insertion = QLatin1Char('\n') + leadingSpaces(markerColumn) + nextMarker + taskPrefix;
+  QString insertion = QLatin1Char('\n') + leadingSpaces(markerColumn + alignExtra) + nextMarker + taskPrefix;
   insertion = insertionWithInlineSplit(insertion, nextLineContent, splitContentOffset);
   nextLineContent.insert(splitContentOffset, insertion);
   command.sourceStart = context.contentRange.byteStart;
@@ -832,11 +856,14 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildExitListItem(cons
     return command;
   }
 
-  if (info.markerStart >= 2) {
+  // Outdent one configured level (min with the leading spaces actually present, so a stray
+  // shorter indent still collapses gracefully instead of underflowing).
+  const qsizetype exitRemove = qMin<qsizetype>(indentUnit(), info.markerStart);
+  if (exitRemove > 0) {
     command.sourceStart = lineStart;
-    command.removedLength = 2;
+    command.removedLength = exitRemove;
     command.insertedText.clear();
-    command.fallbackSourceOffset = qMax<qsizetype>(lineStart, context.contentRange.byteStart - 2);
+    command.fallbackSourceOffset = qMax<qsizetype>(lineStart, context.contentRange.byteStart - exitRemove);
     command.label = QStringLiteral("Outdent List Item");
   } else {
     command.sourceStart = lineStart;
@@ -1026,13 +1053,15 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(c
   if (!info.valid) {
     return command;
   }
-  if (info.markerStart >= 2) {
+  const qsizetype outdentRemove = qMin<qsizetype>(indentUnit(), info.markerStart);
+  if (outdentRemove > 0) {
     command.sourceStart = lineStart;
-    command.removedLength = 2;
+    command.removedLength = outdentRemove;
     command.insertedText.clear();
     command.kind = EditTransaction::Kind::DeleteText;
     command.label = QStringLiteral("Outdent List Item");
-    command.fallbackSourceOffset = qMax<qsizetype>(lineStart, context.contentRange.byteStart + context.cursorTextOffset - 2);
+    command.fallbackSourceOffset =
+        qMax<qsizetype>(lineStart, context.contentRange.byteStart + context.cursorTextOffset - outdentRemove);
     command.structureEdit = true;
     command.valid = true;
     command.handled = true;
@@ -1072,10 +1101,10 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildIndentListItem(co
 
   command.sourceStart = lineStart;
   command.removedLength = 0;
-  command.insertedText = QStringLiteral("  ");
+  command.insertedText = leadingSpaces(indentUnit());
   command.kind = EditTransaction::Kind::InsertText;
   command.label = QStringLiteral("Indent List Item");
-  command.fallbackSourceOffset = context.contentRange.byteStart + context.cursorTextOffset + 2;
+  command.fallbackSourceOffset = context.contentRange.byteStart + context.cursorTextOffset + indentUnit();
   command.structureEdit = true;
   command.valid = true;
   command.handled = true;

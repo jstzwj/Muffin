@@ -7,6 +7,7 @@
 #include "app/RenderCommandFacade.h"
 #include "app/SidebarWidget.h"
 #include "editor/EditorController.h"
+#include "editor/EmojiProvider.h"
 #include "io/FileController.h"
 #include "theme/ThemeManager.h"
 
@@ -123,6 +124,9 @@ private:
   void updateStatus();
   void updateCursorStatus(int line, int column);
   void updateRenderCursorStatus(const HitTestResult& hit);
+  // editor/showBlockSource: render-mode status-bar preview of the raw markdown of the block under
+  // the caret. No-op (clears the label) when the setting is off, in source mode, or without a hit.
+  void updateBlockSourceLabel(const HitTestResult& hit);
   void updateSidebarMode();
   void updateViewMode();
   int zoomPercent() const;
@@ -185,6 +189,7 @@ private:
   CommandRegistry commands_;
   ThemeManager themeManager_;
   EditorController editorController_;
+  BundledEmojiProvider emojiProvider_;
   RenderCommandFacade renderCommands_;
   QSplitter* centralSplitter_ = nullptr;
   SidebarWidget* sidebar_ = nullptr;
@@ -195,6 +200,7 @@ private:
   QToolButton* sidebarButton_ = nullptr;
   QToolButton* sourceModeButton_ = nullptr;
   QLabel* cursorLabel_ = nullptr;
+  QLabel* blockSourceLabel_ = nullptr;
   QLabel* wordsLabel_ = nullptr;
   QTimer* wordCountTimer_ = nullptr;
   QMenu* recentFilesMenu_ = nullptr;

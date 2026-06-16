@@ -7,6 +7,8 @@
 #include "document/MarkdownNode.h"
 #include "editor/BrushQueue.h"
 #include "editor/EditorView.h"
+#include "editor/EmojiCompleter.h"
+#include "editor/EmojiProvider.h"
 #include "editor/SelectionController.h"
 #include "editor/TextBlockCommandBuilder.h"
 #include "edit/UndoStack.h"
@@ -19,11 +21,46 @@
 #include <QKeyEvent>
 #include <QLoggingCategory>
 #include <QInputMethodEvent>
+#include <QPoint>
+#include <QSettings>
 
 namespace muffin {
 namespace {
 
 Q_LOGGING_CATEGORY(inputPerf, "muffin.perf", QtWarningMsg)
+
+// editor/matchBrackets (default on) and editor/matchMarkdown (default off) gate the auto-pair
+// tables below. Read raw at call time so toggling the preference takes effect on the next keystroke.
+bool matchBracketsEnabled() {
+  return QSettings().value(QStringLiteral("editor/matchBrackets"), true).toBool();
+}
+
+bool matchMarkdownEnabled() {
+  return QSettings().value(QStringLiteral("editor/matchMarkdown"), false).toBool();
+}
+
+// The opener -> closer pairs active under the current preferences.
+struct PairedChar {
+  QChar opener;
+  QChar closer;
+};
+QVector<PairedChar> activePairedChars() {
+  QVector<PairedChar> pairs;
+  if (matchBracketsEnabled()) {
+    pairs.append({QLatin1Char('('), QLatin1Char(')')});
+    pairs.append({QLatin1Char('['), QLatin1Char(']')});
+    pairs.append({QLatin1Char('{'), QLatin1Char('}')});
+    pairs.append({QLatin1Char('"'), QLatin1Char('"')});
+    pairs.append({QLatin1Char('\''), QLatin1Char('\'')});
+  }
+  if (matchMarkdownEnabled()) {
+    pairs.append({QLatin1Char('*'), QLatin1Char('*')});
+    pairs.append({QLatin1Char('_'), QLatin1Char('_')});
+    pairs.append({QLatin1Char('`'), QLatin1Char('`')});
+    pairs.append({QLatin1Char('~'), QLatin1Char('~')});
+  }
+  return pairs;
+}
 
 class PerfTimer {
 public:
@@ -145,19 +182,238 @@ bool InputController::insertText(QString text) {
   if (hasActiveLiteralEditor()) {
     return insertTextIntoActiveLiteral(std::move(text));
   }
+  // Auto-pairing only fires for a single typed character (multi-char IME commits and drag-drop
+  // blobs like "![alt](path)" pass straight through) and never inside a table cell, where the
+  // table controller owns text entry.
+  if (text.size() == 1 && !(tableController_ && tableController_->currentCell().isValid()) &&
+      tryAutoPairOrWrap(text.at(0))) {
+    maybeUpdateEmojiPopup();
+    return true;
+  }
   if (ctx_.selection && ctx_.selection->hasCursor() && !ctx_.selection->selection().isCollapsed()) {
-    return replaceSelection(std::move(text), EditTransaction::Kind::InsertText, QStringLiteral("Replace Selection"));
+    const bool replaced = replaceSelection(std::move(text), EditTransaction::Kind::InsertText, QStringLiteral("Replace Selection"));
+    if (replaced) {
+      maybeUpdateEmojiPopup();
+    }
+    return replaced;
   }
   if (tableController_ && tableController_->currentCell().isValid()) {
+    hideEmojiPopup();
     return tableController_->insertText(std::move(text));
   }
   if (ctx_.selection && ctx_.selection->currentHit().zone == HitTestResult::Zone::BlockAfter) {
+    hideEmojiPopup();
     return insertBlockAfterCurrentBlock(std::move(text));
   }
   if (tryInsertOptionalDefinitionTitle(text)) {
+    hideEmojiPopup();
     return true;
   }
-  return text.isEmpty() ? false : editParagraph(TextBlockCommandBuilder::Operation::InsertText, std::move(text));
+  const bool inserted = text.isEmpty() ? false : editParagraph(TextBlockCommandBuilder::Operation::InsertText, std::move(text));
+  if (inserted) {
+    maybeUpdateEmojiPopup();
+  }
+  return inserted;
+}
+
+bool InputController::tryAutoPairOrWrap(QChar ch) {
+  const QVector<PairedChar> pairs = activePairedChars();
+
+  QChar closerForOpener;
+  bool isCloser = false;
+  for (const PairedChar& p : pairs) {
+    if (p.opener == ch) {
+      closerForOpener = p.closer;
+    }
+    if (p.closer == ch) {
+      isCloser = true;
+    }
+  }
+  if (closerForOpener.isNull() && !isCloser) {
+    return false;  // not a paired character under the active preferences
+  }
+
+  const bool hasCursor = ctx_.selection && ctx_.selection->hasCursor();
+  const bool hasSelection = hasCursor && !ctx_.selection->selection().isCollapsed();
+
+  BlockEditContextResolver resolver = contextResolver();
+  BlockEditContext context;
+  const bool resolved = resolver.current(context) && context.node;
+  // The caret source offset comes from the resolved context (computed from the cursor's block and
+  // textOffset) rather than cursorPosition().text.sourceOffset, which callers that place the cursor
+  // programmatically may leave unset (-1).
+  const qsizetype off = resolved ? context.cursorSourceOffset : -1;
+  const QString& markdown = ctx_.session ? ctx_.session->markdownText() : QString();
+
+  // A character right after a backslash is an escape / LaTeX sequence (e.g. "\[", "\(", "\{"),
+  // so auto-pairing it would corrupt the delimiter — insert it literally instead.
+  if (off > 0 && off <= markdown.size() && markdown.at(off - 1) == QLatin1Char('\\')) {
+    return false;
+  }
+
+  // Skip-over: the caret sits right before the matching close character, so stepping over it
+  // (instead of inserting a duplicate) is what the user wants. Covers symmetric pairs (* ` " ')
+  // and pure closers typed immediately after an auto-paired opener.
+  if (!hasSelection && isCloser && off >= 0 && off < markdown.size() && markdown.at(off) == ch) {
+    setCursorOrExtend(cursorForSourceOffset(off + 1), false);
+    return true;
+  }
+
+  if (closerForOpener.isNull()) {
+    return false;  // a pure closer without a skip-over inserts normally
+  }
+
+  // A single quote flanked by letters is a contraction (don't), not an opener — decline so the
+  // lone quote inserts instead of a pairing that would turn "don't" into "don''t".
+  if (ch == QLatin1Char('\'') && off > 0 && off < markdown.size() &&
+      markdown.at(off - 1).isLetter() && markdown.at(off).isLetter()) {
+    return false;
+  }
+
+  // Wrap an existing selection in opener + closer (single undo entry via replaceSelection).
+  if (hasSelection) {
+    qsizetype start = 0;
+    qsizetype end = 0;
+    if (selectionSourceRange(start, end) && end > start) {
+      const QString wrapped = QString(ch) + markdown.mid(start, end - start) + QString(closerForOpener);
+      replaceSelection(wrapped, EditTransaction::Kind::InsertText, QStringLiteral("Wrap Selection"));
+      return true;
+    }
+    return false;
+  }
+
+  // Insert the empty pair with the caret between, mirroring the plain InsertText command's
+  // sourceStart arithmetic so it composes identically with the projection layer.
+  if (!resolved) {
+    return false;
+  }
+  const qsizetype nextOffset = context.plainInlineEditable
+      ? qBound<qsizetype>(0, context.cursorTextOffset, context.contentText.size())
+      : qBound<qsizetype>(0, context.cursorSourceOffset - context.contentRange.byteStart, context.contentText.size());
+  const qsizetype sourceStart = context.contentRange.byteStart + nextOffset;
+  const QString pair = QString(ch) + QString(closerForOpener);
+  applyLocalEdit(
+      EditTransaction::Kind::InsertText,
+      QStringLiteral("Insert Paired Symbol"),
+      sourceStart,
+      0,
+      pair,
+      CursorPosition(),
+      sourceStart + 1,
+      {},
+      false,
+      false);
+  return true;
+}
+
+void InputController::setEmojiProvider(const EmojiProvider* provider) {
+  emojiProvider_ = provider;
+  emojiColonStart_ = -1;
+  if (emojiCompleter_) {
+    emojiCompleter_->hide();
+  }
+}
+
+EmojiCompleter* InputController::ensureEmojiCompleter() {
+  if (emojiCompleter_ || !emojiProvider_ || !ctx_.view) {
+    return emojiCompleter_;
+  }
+  emojiCompleter_ = new EmojiCompleter(ctx_.view->viewport(), emojiProvider_, this);
+  connect(emojiCompleter_, &EmojiCompleter::accepted, this, [this](const QString& glyph) {
+    insertEmoji(glyph);
+  });
+  return emojiCompleter_;
+}
+
+void InputController::hideEmojiPopup() {
+  emojiColonStart_ = -1;
+  if (emojiCompleter_) {
+    emojiCompleter_->hide();
+  }
+}
+
+// Re-scan the line up to the caret for a ":shortcode" trigger and show/hide the popup accordingly.
+// State is derived from the document source on every keystroke (no fragile accumulated buffer).
+void InputController::maybeUpdateEmojiPopup() {
+  if (!emojiProvider_ || !ctx_.hasSession() || !ctx_.selection) {
+    return;
+  }
+  if (!QSettings().value(QStringLiteral("editor/emojiAutocomplete"), true).toBool() ||
+      hasActiveLiteralEditor() || (tableController_ && tableController_->currentCell().isValid())) {
+    hideEmojiPopup();
+    return;
+  }
+  const CursorPosition cursor = ctx_.selection->cursorPosition();
+  const qsizetype caret = cursor.text.sourceOffset;
+  const QString& markdown = ctx_.session->markdownText();
+  if (!cursor.isValid() || caret < 0 || caret > markdown.size()) {
+    hideEmojiPopup();
+    return;
+  }
+  qsizetype lineStart = caret;
+  while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
+    --lineStart;
+  }
+  qsizetype colon = -1;
+  for (qsizetype i = caret - 1; i >= lineStart; --i) {
+    if (markdown.at(i) == QLatin1Char(':')) {
+      colon = i;
+      break;
+    }
+  }
+  if (colon < 0) {
+    hideEmojiPopup();
+    return;
+  }
+  const QStringView code = QStringView(markdown).mid(colon + 1, caret - colon - 1);
+  // A valid partial shortcode is non-empty and only [A-Za-z0-9_+-]; anything else (a space, the
+  // closing ':', etc.) breaks the trigger.
+  if (code.isEmpty()) {
+    hideEmojiPopup();
+    return;
+  }
+  for (const QChar c : code) {
+    const ushort u = c.unicode();
+    const bool ok = (u >= 'a' && u <= 'z') || (u >= 'A' && u <= 'Z') || (u >= '0' && u <= '9') ||
+                    u == '_' || u == '+' || u == '-';
+    if (!ok) {
+      hideEmojiPopup();
+      return;
+    }
+  }
+
+  emojiColonStart_ = colon;
+  EmojiCompleter* completer = ensureEmojiCompleter();
+  if (!completer || !ctx_.view) {
+    return;
+  }
+  const QRectF caretDocRect = ctx_.selection->currentHit().cursorRect;
+  const QPointF caretViewport = ctx_.view->mapDocumentToViewport(
+      caretDocRect.isEmpty() ? QPointF(0, 0) : QPointF(caretDocRect.left(), caretDocRect.bottom()));
+  completer->present(code.toString(), QPoint(qRound(caretViewport.x()), qRound(caretViewport.y())));
+}
+
+void InputController::insertEmoji(const QString& glyph) {
+  if (emojiColonStart_ < 0 || !ctx_.hasSession()) {
+    return;
+  }
+  const qsizetype caret = ctx_.selection ? ctx_.selection->cursorPosition().text.sourceOffset : -1;
+  if (caret < emojiColonStart_) {
+    return;
+  }
+  const qsizetype removedLength = caret - emojiColonStart_;
+  applyLocalEdit(
+      EditTransaction::Kind::InsertText,
+      QStringLiteral("Insert Emoji"),
+      emojiColonStart_,
+      removedLength,
+      glyph,
+      CursorPosition(),
+      emojiColonStart_ + glyph.size(),
+      {},
+      false,
+      false);
+  emojiColonStart_ = -1;
 }
 
 bool InputController::insertParagraphBreak() {
@@ -1052,6 +1308,30 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
   if (!ctx_.hasSession() || !ctx_.hasSelection() || !ctx_.view || event->modifiers().testFlag(Qt::ControlModifier) ||
       event->modifiers().testFlag(Qt::AltModifier)) {
     return false;
+  }
+
+  // While the emoji completion popup is open, arrows/Enter/Tab/Esc drive it; any other key hides
+  // it and then falls through so the keystroke keeps editing normally.
+  if (emojiCompleter_ && emojiCompleter_->isVisible()) {
+    switch (event->key()) {
+      case Qt::Key_Down:
+        emojiCompleter_->moveSelection(1);
+        return true;
+      case Qt::Key_Up:
+        emojiCompleter_->moveSelection(-1);
+        return true;
+      case Qt::Key_Return:
+      case Qt::Key_Enter:
+      case Qt::Key_Tab:
+        emojiCompleter_->acceptCurrent();
+        return true;
+      case Qt::Key_Escape:
+        hideEmojiPopup();
+        return true;
+      default:
+        hideEmojiPopup();
+        break;
+    }
   }
 
   if (!ctx_.selection->hasCursor()) {

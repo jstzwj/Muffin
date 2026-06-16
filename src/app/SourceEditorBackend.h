@@ -63,6 +63,7 @@ public:
 
 private:
   QPlainTextEdit* plainEdit() const;
+  bool maybeCopyWholeLine(bool cut);
 
   SourceEditorWidget* editor_;
 };
