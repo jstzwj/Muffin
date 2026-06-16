@@ -151,10 +151,13 @@ void muffin::MainWindow::closeEvent(QCloseEvent* event) {
 }
 
 void muffin::MainWindow::changeEvent(QEvent* event) {
-  if (event->type() == QEvent::LanguageChange) {
-    retranslateUi();
-  }
   QMainWindow::changeEvent(event);
+  // Retranslation on a language change is handled by the LanguageManager::
+  // languageChanged signal (connected in MainWindowSignalBinder), which fires
+  // synchronously during setLanguage() before Qt delivers the posted LanguageChange
+  // events. Intentionally not retranslating here keeps all menu work out of Qt's
+  // LanguageChange delivery (retranslateUi() updates menus in place, but running
+  // it mid-delivery is unnecessary and best avoided).
 }
 
 void muffin::MainWindow::setupUi() {

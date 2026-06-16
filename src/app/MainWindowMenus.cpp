@@ -95,6 +95,55 @@ void MainWindow::buildMenus() {
   }
 }
 
+namespace {
+// Recursively update submenu titles in place by re-walking the live menu against
+// its spec. Creates/deletes nothing — safe during a language change.
+void retranslateMenuItemTitles(QMenu* menu, const std::vector<MenuItem>& items) {
+  const QList<QAction*> actions = menu->actions();
+  for (qsizetype i = 0; i < static_cast<qsizetype>(items.size()) && i < actions.size(); ++i) {
+    const MenuItem& item = items[static_cast<size_t>(i)];
+    QAction* action = actions[i];
+    switch (item.kind) {
+      case MenuItem::Kind::Submenu:
+        action->setText(item.title);
+        if (QMenu* sub = action->menu()) {
+          retranslateMenuItemTitles(sub, item.children);
+        }
+        break;
+      case MenuItem::Kind::PlaceholderSubmenu:
+      case MenuItem::Kind::DynamicSubmenu:
+        action->setText(item.title);
+        break;
+      case MenuItem::Kind::Action:
+      case MenuItem::Kind::Separator:
+        break;  // command action labels are updated via the registry; separators have no text
+    }
+  }
+}
+}  // namespace
+
+void MainWindow::retranslateMenuTexts() {
+  // Rebuild the declaration table so its tr() labels reflect the new locale, then
+  // update existing actions/menus in place. No QActions/QMenus are deleted or
+  // created here — that deletion (setupMenuBar's clear+rebuild) was what corrupted
+  // the heap on language switch, because Qt still had LanguageChange events pending
+  // for the freed actions.
+  refreshDeclarations();
+  for (const CommandDeclaration& decl : commandDeclarations()) {
+    if (QAction* action = commands_.action(decl.id)) {
+      action->setText(decl.text);
+    }
+  }
+  const std::vector<MenuSpec>& specs = mainMenuSpec();
+  const QList<QAction*> topActions = menuBar()->actions();
+  for (qsizetype i = 0; i < static_cast<qsizetype>(specs.size()) && i < topActions.size(); ++i) {
+    topActions[i]->setText(specs[static_cast<size_t>(i)].title);
+    if (QMenu* menu = topActions[i]->menu()) {
+      retranslateMenuItemTitles(menu, specs[static_cast<size_t>(i)].items);
+    }
+  }
+}
+
 void MainWindow::retranslateUi() {
   const bool sidebarChecked =
       commands_.action(QStringLiteral("view.sidebar")) && commands_.action(QStringLiteral("view.sidebar"))->isChecked();
@@ -109,10 +158,10 @@ void MainWindow::retranslateUi() {
   const bool typewriterChecked =
       commands_.action(QStringLiteral("view.typewriter")) && commands_.action(QStringLiteral("view.typewriter"))->isChecked();
 
-  // Drop the cached declaration tables so the rebuilt menus pick up fresh tr()
-  // labels for the new locale, then rebuild.
-  refreshDeclarations();
-  setupMenuBar();
+  // Update menu labels/titles in place for the new locale. Do NOT call
+  // setupMenuBar() (clear+rebuild) here: deleting and recreating menu actions
+  // while Qt still has LanguageChange events pending for them corrupts the heap.
+  retranslateMenuTexts();
 
   if (QAction* action = commands_.action(QStringLiteral("view.sidebar"))) {
     action->setChecked(sidebarChecked);
@@ -148,11 +197,11 @@ void MainWindow::retranslateUi() {
   updateFileActions();
   updateContextActions();
   updateThemeActions();
-  rebuildRecentFilesMenu();
-  buildReopenEncodingMenu();
-  if (renderView_) {
-    renderView_->setDocument(session_.document(), session_.filePath());
-  }
+  // Note: rebuildRecentFilesMenu()/buildReopenEncodingMenu() are intentionally
+  // NOT called here — they delete and recreate submenu actions (same heap-corruption
+  // hazard as setupMenuBar), and their content is language-independent. Their
+  // submenu titles are updated in place by retranslateMenuTexts(). Likewise the
+  // document is not re-rendered (its content does not change with locale).
   updateStatus();
   wordCountDirty_ = true;
   updateWordCountNow();

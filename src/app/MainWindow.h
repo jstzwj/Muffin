@@ -71,6 +71,11 @@ private:
 
   void setupUi();
   void setupMenuBar();
+  // Update menu action labels and menu/submenu titles in place for a locale
+  // change — unlike setupMenuBar(), this deletes/recreates nothing (which is what
+  // made the language switch crash: deleting menu actions while Qt still has
+  // LanguageChange events pending for them corrupted the heap).
+  void retranslateMenuTexts();
   void setupStatusBar();
   void setupConnections();
   void applyEditorChrome();
