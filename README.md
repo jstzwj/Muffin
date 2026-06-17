@@ -4,11 +4,9 @@
 
 # Muffin
 
-**A native, lightweight Markdown editor with a live rendered writing surface.**
+**A native, lightweight, WYSIWYG Markdown editor.**
 
-Muffin is a block-level WYSIWYG Markdown editor built in C++ and Qt 6. It keeps your Markdown file as the single source of truth while rendering the document as a directly editable page — no split panes, no preview lag, no Electron. Edit the rendered output and let the editor maintain the Markdown underneath.
-
-Muffin also ships a synchronized source mode, so you can fall back to raw Markdown whenever you want, with full cursor round-tripping between the two views.
+Muffin is a block-level WYSIWYG Markdown editor built from the ground up in C++ and Qt 6. Your Markdown file stays the single source of truth, rendered as a page you edit directly: no split panes, no preview pane, no typing lag.
 
 [Download](#download) · [Features](#features) · [Build from source](#development) · [Architecture](#architecture)
 
@@ -24,6 +22,13 @@ Muffin also ships a synchronized source mode, so you can fall back to raw Markdo
 
 </div>
 
+## Why Muffin
+
+- **Native, not a web app** — A real C++/Qt desktop application. No bundled Chromium, no Node runtime, no web stack — just a fast cold start and a small memory footprint.
+- **Handles huge documents** — Incremental parsing, viewport-aware layout, and text-delta editing keep it responsive on files that bring web-based editors to a crawl.
+- **True WYSIWYG editing** — Write and edit directly on the rendered page, with the Markdown kept in sync underneath. No side-by-side preview, no render delay.
+- **Markdown as the source of truth** — Your `.md` file round-trips cleanly, and a synchronized source mode lets you drop into raw Markdown anytime with full cursor round-tripping between the two views.
+
 <br />
 
 ## Features
@@ -34,6 +39,8 @@ Muffin also ships a synchronized source mode, so you can fall back to raw Markdo
 - **Source mode** — Toggle to a syntax-highlighted raw Markdown editor with full cursor synchronization between views.
 - **Focus mode** (`F8`) — Dim all blocks except the active one, so you can concentrate on what you're writing.
 - **Typewriter mode** (`F9`) — Keep the cursor vertically centered with smooth animated scrolling that feels like paper.
+- **Spell checking** — Nuspell-powered spell checking with misspelling underlines in both render and source modes, a right-click suggestion menu, ignore-word support, and bundled dictionaries for 11 languages.
+- **Emoji autocomplete** — Type `:` followed by a shortcode to open a popup emoji picker backed by a bundled dataset, then accept with `Tab`; enabled by default while typing.
 - **Editable tables** — Add, resize, align, and delete rows and columns inline. Insert tables via a configurable dialog.
 - **Editable code blocks** — Inline editing with syntax highlighting for 20+ languages via tree-sitter. Set the language from an autocomplete dropdown.
 - **Editable math blocks** — Write LaTeX expressions rendered live by a full KaTeX-compatible engine written in C++, with a dual-pane edit/preview layout. Supports user-defined macros, braket notation, commutative diagrams, and more.
@@ -43,8 +50,11 @@ Muffin also ships a synchronized source mode, so you can fall back to raw Markdo
 - **Front matter** — Full YAML front matter support.
 - **Rich paragraph commands** — Toggle headings, code fences, math blocks, and more from the paragraph menu.
 - **Block movement** — Move paragraphs up and down with keyboard shortcuts.
+- **Configurable indent** — Choose the default indent size (2/4/8 spaces), with an optional "Align Indent" command to match surrounding indentation.
 - **Find & replace** — Built-in search bar with regex support, wrap-around, and replace/replace-all.
 - **Multi-format copy** — Copy selected content as Markdown, HTML, or plain text.
+- **Copy as Markdown** — Optional preference to copy the underlying Markdown source when copying as plain text.
+- **Whole-line copy & cut** — With no selection, copy and cut operate on the entire current line.
 - **Link interaction** — Hover cursor changes on links; Ctrl+Click to open in the system browser.
 - **Document printing** — Print the current document via File → Print (Ctrl+P).
 - **Line break preferences** — Choose Windows (CRLF) or Unix (LF) line endings, with an optional trailing newline on save.
@@ -54,7 +64,8 @@ Muffin also ships a synchronized source mode, so you can fall back to raw Markdo
 - **Document outline** — Jump to any heading from the sidebar outline panel.
 - **Heading badges** — Visual level badges (H3–H6) painted alongside headings for quick hierarchy identification.
 - **File tree sidebar** — Browse and open files from a folder tree.
-- **Status bar** — Parse time, cursor position, word count, and quick toggles for sidebar and source mode.
+- **Status bar** — Parse time, cursor position, word count, quick toggles for sidebar and source mode, and an optional preview of the current block's Markdown source.
+- **In-app help** — Quick Start, Markdown Reference, and Acknowledgements available from the Help menu in a built-in viewer rendered by the native Markdown engine, with back/forward navigation.
 
 ### 🎨 Appearance
 
