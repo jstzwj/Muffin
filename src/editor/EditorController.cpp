@@ -1,6 +1,7 @@
 #include "editor/EditorController.h"
 
 #include "document/BlockPredicates.h"
+#include "document/ImageSyntaxOps.h"
 #include "html/HtmlBox.h"
 #include "blocks/literal/LiteralBlockUtil.h"
 #include "projection/InlineProjection.h"
@@ -1039,29 +1040,93 @@ bool EditorController::isOnImage() const {
   return !imageSrcAtCursor().isEmpty();
 }
 
-QString EditorController::imageSrcAtCursor() const {
-  if (!session_ || !selection_.hasCursor()) {
-    return {};
-  }
-  BlockEditContextResolver resolver(const_cast<DocumentSession*>(session_), const_cast<SelectionController*>(&selection_));
-  BlockEditContext context;
-  if (!resolver.current(context) || !context.inlineProjection.isValid() || !context.editableNode) {
-    return {};
-  }
-  const qsizetype offset = context.cursorTextOffset;
+namespace {
+// The image Atom span under the cursor, or null. Matches when the cursor sits anywhere within the
+// image's source extent (alt text, URL, or brackets) — the user's intent is "this image" no matter
+// where inside it they clicked — using the block-local source offset; falls back to the visible
+// alt-label range when no source offset is resolved (e.g. a synthetic cursor). The span carries the
+// resolved href for both markdown images and HTML <img> tags (an HtmlInline node projected as an
+// Image Atom span, which has no Image node to match against).
+const InlineProjectionSpan* imageAtomSpanAtCursor(const BlockEditContext& context) {
+  // Span source offsets are LOCAL to the block's content slice — the projection is built with
+  // sourceBase = contentRange.byteStart (see BlockEditContextResolver) — while cursorSourceOffset is
+  // ABSOLUTE (into the full markdown). Convert to local before comparing, or every image whose block
+  // doesn't start at document offset 0 is silently missed and the resize/convert menu no-ops.
+  const qsizetype base = context.contentRange.byteStart;
+  const qsizetype srcOffset = context.cursorSourceOffset;
+  const qsizetype localSrc = srcOffset >= base ? srcOffset - base : -1;
+  const qsizetype visOffset = context.cursorTextOffset;
   for (const auto& span : context.inlineProjection.spans()) {
     if (span.type != InlineType::Image || span.kind != InlineSpanKind::Atom) {
       continue;
     }
-    if (offset >= span.visibleStart && offset <= span.visibleEnd) {
-      // Match this span to an InlineNode by source range
-      for (const auto& inlineNode : context.editableNode->inlines()) {
-        if (inlineNode.type() == InlineType::Image &&
-            inlineNode.sourceRanges().source.start <= span.sourceStart &&
-            inlineNode.sourceRanges().source.end >= span.sourceEnd) {
-          return inlineNode.href();
-        }
+    const bool inSource = localSrc >= 0 && localSrc >= span.sourceStart && localSrc <= span.sourceEnd;
+    const bool inVisible = visOffset >= span.visibleStart && visOffset <= span.visibleEnd;
+    if (inSource || inVisible) {
+      return &span;
+    }
+  }
+  return nullptr;
+}
+
+// A standalone <img> on its own line is parsed by cmark-gfm as an HTML *block* (HtmlBlock), which
+// has no inline projection — so imageAtomSpanAtCursor (paragraph inline projection) never sees it.
+// Resolve such an image straight from the block's source text: find the <img ...> tag and return its
+// absolute source range. Returns false when the block holds no <img> tag.
+bool htmlBlockImageRange(const MarkdownNode& block, const QString& markdown,
+                         qsizetype& outStart, qsizetype& outEnd) {
+  const SourceRange range = block.sourceRange();
+  const QString blockText = markdown.mid(range.byteStart, range.byteEnd - range.byteStart);
+  const image_syntax::ImgTagLocation tag = image_syntax::findImgTag(blockText);
+  if (!tag.found) {
+    return false;
+  }
+  outStart = range.byteStart + tag.start;
+  outEnd = range.byteStart + tag.end;
+  return true;
+}
+}  // namespace
+
+// The HtmlBlock under the cursor when it is an <img> block, else null. Clicking a rendered HTML
+// block enters HTML edit mode (htmlLiteral_ holds the block); when not editing, fall back to the
+// selection's block. Only blocks that actually contain an <img> tag qualify as image blocks.
+MarkdownNode* EditorController::htmlImageBlockAtCursor() const {
+  if (!session_) {
+    return nullptr;
+  }
+  MarkdownNode* block = nullptr;
+  if (htmlLiteral_.isEditing()) {
+    block = htmlLiteral_.currentBlock();
+  }
+  if (!block && selection_.hasCursor()) {
+    block = session_->document().node(selection_.cursorPosition().blockId);
+  }
+  if (!block || block->type() != BlockType::HtmlBlock) {
+    return nullptr;
+  }
+  qsizetype start = 0, end = 0;
+  return htmlBlockImageRange(*block, session_->markdownText(), start, end) ? block : nullptr;
+}
+
+QString EditorController::imageSrcAtCursor() const {
+  if (!session_ || !selection_.hasCursor()) {
+    return {};
+  }
+  {
+    BlockEditContextResolver resolver(const_cast<DocumentSession*>(session_), const_cast<SelectionController*>(&selection_));
+    BlockEditContext context;
+    if (resolver.current(context) && context.inlineProjection.isValid()) {
+      const InlineProjectionSpan* span = imageAtomSpanAtCursor(context);
+      if (span) {
+        return span->href;
       }
+    }
+  }
+  // Standalone <img> HTML block (cmark parses a line-leading <img> as an HtmlBlock, not inline).
+  if (MarkdownNode* block = htmlImageBlockAtCursor()) {
+    qsizetype start = 0, end = 0;
+    if (htmlBlockImageRange(*block, session_->markdownText(), start, end)) {
+      return image_syntax::parse(session_->markdownText().mid(start, end - start)).src;
     }
   }
   return {};
@@ -1071,27 +1136,39 @@ bool EditorController::imageSourceRangeAtCursor(qsizetype& outStart, qsizetype& 
   if (!session_ || !selection_.hasCursor()) {
     return false;
   }
-  BlockEditContextResolver resolver(const_cast<DocumentSession*>(session_), const_cast<SelectionController*>(&selection_));
-  BlockEditContext context;
-  if (!resolver.current(context) || !context.inlineProjection.isValid() || !context.editableNode) {
-    return false;
-  }
-  const qsizetype offset = context.cursorTextOffset;
-  for (const auto& span : context.inlineProjection.spans()) {
-    if (span.type != InlineType::Image || span.kind != InlineSpanKind::Atom) {
-      continue;
-    }
-    if (offset >= span.visibleStart && offset <= span.visibleEnd) {
-      for (const auto& inlineNode : context.editableNode->inlines()) {
-        if (inlineNode.type() == InlineType::Image &&
-            inlineNode.sourceRanges().source.start <= span.sourceStart &&
-            inlineNode.sourceRanges().source.end >= span.sourceEnd) {
-          outStart = inlineNode.sourceStart();
-          outEnd = inlineNode.sourceEnd();
-          return true;
+  {
+    BlockEditContextResolver resolver(const_cast<DocumentSession*>(session_), const_cast<SelectionController*>(&selection_));
+    BlockEditContext context;
+    if (resolver.current(context) && context.inlineProjection.isValid() && context.editableNode) {
+      const InlineProjectionSpan* span = imageAtomSpanAtCursor(context);
+      if (span) {
+        // Resolve the absolute document source range from the backing inline node. Both a markdown
+        // Image node and an HTML <img> HtmlInline node back an Image Atom span. As in
+        // imageAtomSpanAtCursor, the span offsets are content-local while the node offsets are
+        // absolute; shift the node range to local for the containment test, but return the node's
+        // ABSOLUTE range (that's what the caller splices into the full markdown).
+        const qsizetype base = context.contentRange.byteStart;
+        for (const auto& inlineNode : context.editableNode->inlines()) {
+          const bool isImageNode = inlineNode.type() == InlineType::Image;
+          const bool isHtmlImg = inlineNode.type() == InlineType::HtmlInline &&
+              inlineNode.text().trimmed().startsWith(QStringLiteral("<img"), Qt::CaseInsensitive);
+          if (!(isImageNode || isHtmlImg)) {
+            continue;
+          }
+          const qsizetype nodeStart = inlineNode.sourceRanges().source.start - base;
+          const qsizetype nodeEnd = inlineNode.sourceRanges().source.end - base;
+          if (nodeStart <= span->sourceStart && nodeEnd >= span->sourceEnd) {
+            outStart = inlineNode.sourceStart();
+            outEnd = inlineNode.sourceEnd();
+            return true;
+          }
         }
       }
     }
+  }
+  // Standalone <img> HTML block (HtmlBlock — no inline projection).
+  if (MarkdownNode* block = htmlImageBlockAtCursor()) {
+    return htmlBlockImageRange(*block, session_->markdownText(), outStart, outEnd);
   }
   return false;
 }

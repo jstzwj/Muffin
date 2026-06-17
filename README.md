@@ -25,7 +25,7 @@ Muffin is a block-level WYSIWYG Markdown editor built from the ground up in C++ 
 ## Why Muffin
 
 - **Native, not a web app** — A real C++/Qt desktop application. No bundled Chromium, no Node runtime, no web stack — just a fast cold start and a small memory footprint.
-- **Handles huge documents** — Incremental parsing, viewport-aware layout, and text-delta editing keep it responsive on files that bring web-based editors to a crawl.
+- **Opens huge files instantly** — A lazy, viewport-aware layout renders only the blocks on screen, so multi-megabyte documents open without freezing. Incremental parsing and text-delta editing keep typing responsive at any size.
 - **True WYSIWYG editing** — Write and edit directly on the rendered page, with the Markdown kept in sync underneath. No side-by-side preview, no render delay.
 - **Markdown as the source of truth** — Your `.md` file round-trips cleanly, and a synchronized source mode lets you drop into raw Markdown anytime with full cursor round-tripping between the two views.
 
@@ -77,8 +77,9 @@ Muffin is a block-level WYSIWYG Markdown editor built from the ground up in C++ 
 ### ⚡ Performance
 
 - **Native C++/Qt** — No Electron. Fast startup, low memory, and smooth scrolling.
+- **Lazy viewport layout** — Opening a document computes only cheap height estimates for the whole file; full text shaping, syntax highlighting, math, and HTML rendering are deferred to blocks as they scroll into view. Anchor-corrected scrolling keeps the page steady while offscreen blocks are promoted, so large files open and scroll without lag.
 - **Incremental parsing** — Only changed blocks are re-parsed and re-rendered.
-- **Incremental layout** — Top-level block range diffing avoids full layout rebuilds.
+- **Incremental layout** — Top-level block range diffing avoids full layout rebuilds on edits.
 - **Text delta editing** — Sends incremental text updates instead of full document replacement.
 
 ## Download

@@ -1000,91 +1000,72 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .text = muffin::MainWindow::tr("25%"),
        .checkable = true,
        .actionGroup = QStringLiteral("image.resize"),
-       .handler = [](MainWindow& window) {
-         // Resize not yet fully supported — placeholder
-       },
-       .enabled = [](const MainWindow& w) { return onImage(w); }},
+       .handler = [](MainWindow& window) { window.renderCommands_.setImageZoomAtCursor(25); },
+       .enabled = [](const MainWindow& w) { return onImage(w); },
+       .checked = [](const MainWindow& w) { return onImage(w) && w.renderCommands_.currentImageZoomPercent() == 25; }},
       {.id = QStringLiteral("image.resize_50"),
        .category = CommandCategory::Image,
        .text = muffin::MainWindow::tr("50%"),
        .checkable = true,
        .actionGroup = QStringLiteral("image.resize"),
-       .handler = [](MainWindow& window) {
-         // Resize not yet fully supported — placeholder
-       },
-       .enabled = [](const MainWindow& w) { return onImage(w); }},
+       .handler = [](MainWindow& window) { window.renderCommands_.setImageZoomAtCursor(50); },
+       .enabled = [](const MainWindow& w) { return onImage(w); },
+       .checked = [](const MainWindow& w) { return onImage(w) && w.renderCommands_.currentImageZoomPercent() == 50; }},
       {.id = QStringLiteral("image.resize_75"),
        .category = CommandCategory::Image,
        .text = muffin::MainWindow::tr("75%"),
        .checkable = true,
        .actionGroup = QStringLiteral("image.resize"),
-       .handler = [](MainWindow& window) {
-         // Resize not yet fully supported — placeholder
-       },
-       .enabled = [](const MainWindow& w) { return onImage(w); }},
+       .handler = [](MainWindow& window) { window.renderCommands_.setImageZoomAtCursor(75); },
+       .enabled = [](const MainWindow& w) { return onImage(w); },
+       .checked = [](const MainWindow& w) { return onImage(w) && w.renderCommands_.currentImageZoomPercent() == 75; }},
       {.id = QStringLiteral("image.resize_100"),
        .category = CommandCategory::Image,
        .text = muffin::MainWindow::tr("100%"),
        .checkable = true,
        .checkedInitial = true,
        .actionGroup = QStringLiteral("image.resize"),
-       .handler = [](MainWindow& window) {
-         // Resize not yet fully supported — placeholder
-       },
-       .enabled = [](const MainWindow& w) { return onImage(w); }},
+       .handler = [](MainWindow& window) { window.renderCommands_.setImageZoomAtCursor(100); },
+       .enabled = [](const MainWindow& w) { return onImage(w); },
+       .checked = [](const MainWindow& w) { return onImage(w) && w.renderCommands_.currentImageZoomPercent() == 100; }},
       {.id = QStringLiteral("image.resize_150"),
        .category = CommandCategory::Image,
        .text = muffin::MainWindow::tr("150%"),
        .checkable = true,
        .actionGroup = QStringLiteral("image.resize"),
-       .handler = [](MainWindow& window) {
-         // Resize not yet fully supported — placeholder
-       },
-       .enabled = [](const MainWindow& w) { return onImage(w); }},
+       .handler = [](MainWindow& window) { window.renderCommands_.setImageZoomAtCursor(150); },
+       .enabled = [](const MainWindow& w) { return onImage(w); },
+       .checked = [](const MainWindow& w) { return onImage(w) && w.renderCommands_.currentImageZoomPercent() == 150; }},
       {.id = QStringLiteral("image.resize_custom"),
        .category = CommandCategory::Image,
        .text = muffin::MainWindow::tr("Custom..."),
        .checkable = true,
        .actionGroup = QStringLiteral("image.resize"),
        .handler = [](MainWindow& window) {
-         // Placeholder
+         bool ok = false;
+         const int percent = QInputDialog::getInt(
+             &window, muffin::MainWindow::tr("Image Size"), muffin::MainWindow::tr("Zoom percent:"),
+             window.renderCommands_.currentImageZoomPercent(), 1, 1000, 1, &ok);
+         if (ok) {
+           window.renderCommands_.setImageZoomAtCursor(percent);
+         }
        },
-       .enabled = [](const MainWindow& w) { return onImage(w); }},
+       .enabled = [](const MainWindow& w) { return onImage(w); },
+       .checked = [](const MainWindow& w) {
+         const int zoom = w.renderCommands_.currentImageZoomPercent();
+         return onImage(w) && zoom != 25 && zoom != 50 && zoom != 75 && zoom != 100 && zoom != 150;
+       }},
       {.id = QStringLiteral("image.to_standard"),
        .category = CommandCategory::Image,
        .text = muffin::MainWindow::tr("Standard Markdown ![](url)"),
        .enabledInitial = false,
-       .handler = [](MainWindow& window) {
-         // Placeholder — will convert <img> to ![](url) when HTML images are supported
-       },
+       .handler = [](MainWindow& window) { window.renderCommands_.convertImageAtCursorToMarkdown(); },
        .enabled = [](const MainWindow& w) { return onImage(w); }},
       {.id = QStringLiteral("image.to_html"),
        .category = CommandCategory::Image,
        .text = muffin::MainWindow::tr("HTML <img>"),
        .enabledInitial = false,
-       .handler = [](MainWindow& window) {
-         const QString src = window.renderCommands_.imageSrcAtCursor();
-         if (src.isEmpty()) {
-           return;
-         }
-         qsizetype imgStart = 0, imgEnd = 0;
-         if (!window.renderCommands_.imageSourceRangeAtCursor(imgStart, imgEnd)) {
-           return;
-         }
-         const QString& md = window.session_.markdownText();
-         const QString oldSyntax = md.mid(imgStart, imgEnd - imgStart);
-         // Extract alt text: ![alt](...)
-         QString alt;
-         const int altStart = oldSyntax.indexOf(QStringLiteral("![")) + 2;
-         if (altStart > 1) {
-           const int altEnd = oldSyntax.indexOf(QChar(']'), altStart);
-           if (altEnd > altStart) {
-             alt = oldSyntax.mid(altStart, altEnd - altStart);
-           }
-         }
-         const QString html = QStringLiteral("<img src=\"%1\" alt=\"%2\">").arg(src, alt);
-         window.session_.applyTextDelta(imgStart, imgEnd - imgStart, html, true);
-       },
+       .handler = [](MainWindow& window) { window.renderCommands_.convertImageAtCursorToHtml(); },
        .enabled = [](const MainWindow& w) { return onImage(w); }},
       {.id = QStringLiteral("image.insert_relative"),
        .category = CommandCategory::Image,

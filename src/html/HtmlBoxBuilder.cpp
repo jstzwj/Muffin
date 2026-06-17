@@ -633,6 +633,19 @@ void HtmlBoxBuilder::extractInlineStyle(HtmlBox& box, const char* styleAttr, siz
           style.height = h;
         }
       }
+    } else if (property == QStringLiteral("zoom")) {
+      // Typora-style image sizing: zoom:N% scales the element (1.0 = natural). Accept both a
+      // percentage ("25%") and a bare factor ("0.25"); negative/zero leaves the default 1.0.
+      qreal pct = 0;
+      if (parseCssPercent(value, pct)) {
+        style.zoom = pct / 100.0;
+      } else {
+        bool ok = false;
+        const qreal factor = value.trimmed().toDouble(&ok);
+        if (ok && factor > 0) {
+          style.zoom = factor;
+        }
+      }
     } else if (property == QStringLiteral("margin") || property.startsWith(QStringLiteral("margin-"))) {
       if (property == QStringLiteral("margin")) {
         qreal t, r, b, l, tp, rp, bp, lp;

@@ -90,11 +90,22 @@ public:
   QString imageSrcAtCursor() const;
   bool imageSourceRangeAtCursor(qsizetype& outStart, qsizetype& outEnd) const;
 
+  // Zoom percent encoded in the image's style="zoom:N%" (100 when none). For the resize
+  // radio group's checked state.
+  int currentImageZoomPercent() const;
+  // Resize the image under the cursor to `percent` by editing its style="zoom:N%;"
+  // (markdown images are promoted to <img> when a non-100 zoom is needed).
+  bool setImageZoomAtCursor(int percent);
+  // Convert the image under the cursor between markdown ![](src) and HTML <img>.
+  bool convertImageAtCursorToHtml();
+  bool convertImageAtCursorToMarkdown();
+
   CursorFormatState currentInlineFormats() const;
 
 private:
   bool canRun() const;
   bool runCommand(const char* commandName, const std::function<bool()>& command) const;
+  bool replaceImageUnderCursor(const std::function<QString(const QString&)>& transform, const char* name);
 
   EditorController& editorController_;
   SourceModeFn sourceMode_;

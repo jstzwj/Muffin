@@ -398,6 +398,8 @@ set(MUFFIN_CORE_SOURCES
   src/document/LineStartOffsetCache.h
   src/document/TopLevelRangeChange.h
   src/document/MarkdownTypes.h
+  src/document/ImageSyntaxOps.cpp
+  src/document/ImageSyntaxOps.h
   src/document/DefinitionBlock.cpp
   src/document/DefinitionBlock.h
   src/document/InlineNode.cpp

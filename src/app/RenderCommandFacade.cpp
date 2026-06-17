@@ -1,5 +1,6 @@
 #include "app/RenderCommandFacade.h"
 
+#include "document/ImageSyntaxOps.h"
 #include "document/MarkdownNode.h"
 #include "editor/EditorController.h"
 #include "editor/SelectionController.h"
@@ -284,6 +285,61 @@ bool RenderCommandFacade::imageSourceRangeAtCursor(qsizetype& outStart, qsizetyp
     return false;
   }
   return editorController_.imageSourceRangeAtCursor(outStart, outEnd);
+}
+
+int RenderCommandFacade::currentImageZoomPercent() const {
+  if (!canRun()) {
+    return 100;
+  }
+  qsizetype start = 0, end = 0;
+  if (!editorController_.imageSourceRangeAtCursor(start, end)) {
+    return 100;
+  }
+  DocumentSession* session = editorController_.session();
+  if (!session) {
+    return 100;
+  }
+  const QString source = session->markdownText().mid(start, end - start);
+  return image_syntax::zoomPercent(source);
+}
+
+// Apply a transform to the image under the cursor. Replaces the whole document text via
+// applyMarkdownText (not a local applyTextDelta): a local edit's view refresh is driven by the
+// editor's transaction path, which these commands bypass, so a local edit would update the model
+// but never repaint. applyMarkdownText does a full re-parse, which fires `parsed` with
+// lastParseWasLocalEdit() == false and triggers setDocument on the rendered view.
+bool RenderCommandFacade::replaceImageUnderCursor(const std::function<QString(const QString&)>& transform, const char* name) {
+  return runCommand(name, [&] {
+    qsizetype start = 0, end = 0;
+    if (!editorController_.imageSourceRangeAtCursor(start, end)) {
+      return false;
+    }
+    DocumentSession* session = editorController_.session();
+    if (!session) {
+      return false;
+    }
+    const QString& md = session->markdownText();
+    const QString source = md.mid(start, end - start);
+    const QString replacement = transform(source);
+    if (replacement == source) {
+      return true;  // no change (e.g. markdown at 100%, or already in the target syntax)
+    }
+    session->applyMarkdownText(md.left(start) + replacement + md.mid(end), true);
+    return true;
+  });
+}
+
+bool RenderCommandFacade::setImageZoomAtCursor(int percent) {
+  return replaceImageUnderCursor(
+      [percent](const QString& s) { return image_syntax::setZoom(s, percent); }, "setImageZoom");
+}
+
+bool RenderCommandFacade::convertImageAtCursorToHtml() {
+  return replaceImageUnderCursor([](const QString& s) { return image_syntax::toHtml(s); }, "convertImageToHtml");
+}
+
+bool RenderCommandFacade::convertImageAtCursorToMarkdown() {
+  return replaceImageUnderCursor([](const QString& s) { return image_syntax::toMarkdown(s); }, "convertImageToMarkdown");
 }
 
 CursorFormatState RenderCommandFacade::currentInlineFormats() const {

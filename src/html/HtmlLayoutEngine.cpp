@@ -228,6 +228,12 @@ YGNode* HtmlLayoutEngine::createYogaNode(
     } else if (style.height >= 0 && style.width < 0 && naturalSize.width() > 0 && naturalSize.height() > 0) {
       imageWidth = imageHeight * naturalSize.width() / naturalSize.height();
     }
+    // Apply the element's own zoom (style="zoom:N%") before the available-width cap so a
+    // zoomed-up image still honors the column width.
+    if (style.zoom > 0 && style.zoom != 1.0) {
+      imageWidth *= style.zoom;
+      imageHeight *= style.zoom;
+    }
     const qreal maxWidth = qMax<qreal>(1.0, availableWidth - style.margin.left() - style.margin.right());
     if (imageWidth > maxWidth) {
       const qreal scale = maxWidth / imageWidth;

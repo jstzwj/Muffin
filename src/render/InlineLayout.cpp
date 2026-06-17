@@ -1,5 +1,6 @@
 #include "render/InlineLayout.h"
 
+#include "document/ImageSyntaxOps.h"
 #include "render/ImageDecoder.h"
 #include "render/ImageLoader.h"
 #include "render/ImagePlaceholder.h"
@@ -67,15 +68,18 @@ bool isImageSourceRevealed(const QVector<InlineProjectionSpan>& spans, const Inl
   return false;
 }
 
-QSizeF scaledImageDisplaySize(const QImage& image) {
+QSizeF scaledImageDisplaySize(const QImage& image, qreal zoom) {
   if (image.isNull()) {
     return QSizeF();
   }
-  if (image.height() > kMaxImageDisplayHeight) {
-    const qreal scale = kMaxImageDisplayHeight / image.height();
-    return QSizeF(image.width() * scale, kMaxImageDisplayHeight);
+  // Apply the image's own zoom (style="zoom:N%") to its natural size, then enforce the
+  // layout height cap so a zoomed-up or naturally tall image cannot blow out the line.
+  QSizeF size(image.width() * zoom, image.height() * zoom);
+  if (size.height() > kMaxImageDisplayHeight) {
+    const qreal scale = kMaxImageDisplayHeight / size.height();
+    return QSizeF(size.width() * scale, kMaxImageDisplayHeight);
   }
-  return QSizeF(image.width(), image.height());
+  return size;
 }
 
 }  // namespace
@@ -706,9 +710,14 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
       continue;
     }
 
+    // Apply the image's own zoom (style="zoom:N%") — read straight from the source
+    // snippet the span covers. Markdown images have no zoom (factor 1.0).
+    const QString imgSource = projection_.sourceText().mid(span.sourceStart, span.sourceEnd - span.sourceStart);
+    const qreal zoom = image_syntax::zoomFactor(imgSource);
+
     if (collapsed) {
       // Inactive: replace alt text with placeholder, render image inline.
-      const QSizeF displaySize = scaledImageDisplaySize(image);
+      const QSizeF displaySize = scaledImageDisplaySize(image, zoom);
 
       const qsizetype displayStart = rebuiltDisplay.size();
       rebuiltDisplay += kImagePlaceholder;
@@ -738,7 +747,7 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
 
       ImageAtom preview;
       preview.srcUrl = srcUrl;
-      preview.displaySize = scaledImageDisplaySize(image);
+      preview.displaySize = scaledImageDisplaySize(image, zoom);
       preview.image = image;
       preview.loaded = true;
       previewAtoms_.push_back(std::move(preview));

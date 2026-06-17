@@ -86,6 +86,7 @@ signals:
 
 private:
   void exitAllLiteralEditModes();
+  MarkdownNode* htmlImageBlockAtCursor() const;
   bool enterLiteralEditMode(HitTestResult::Zone zone);
   LiteralBlockController* literalForZone(HitTestResult::Zone zone);
   void applySnapshot(const DocumentSnapshot& snapshot);

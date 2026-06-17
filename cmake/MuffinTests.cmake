@@ -9,6 +9,7 @@ muffin_add_test(NAME MuffinParserBasicTest      SOURCE tests/parser/ParserBasicT
 muffin_add_test(NAME MuffinParserDefinitionTest SOURCE tests/parser/ParserDefinitionTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinParserMathCodeTest   SOURCE tests/parser/ParserMathCodeTest.cpp   LINK MuffinCore)
 muffin_add_test(NAME MuffinOutlineBuilderTest   SOURCE tests/document/OutlineBuilderTest.cpp LINK MuffinCore)
+muffin_add_test(NAME MuffinImageSyntaxOpsTest   SOURCE tests/document/ImageSyntaxOpsTest.cpp LINK MuffinCore)
 
 # --- render (link MuffinUi, take the render_smoke fixture, lock the GUI) ---
 muffin_add_test(NAME MuffinRenderThemeTest            SOURCE tests/render/RenderThemeTest.cpp            LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK DISABLED_ON APPLE)
@@ -36,6 +37,7 @@ muffin_add_test(NAME MuffinEditorViewLayoutTest     SOURCE tests/render/EditorVi
 
 # --- editor input / controller ---
 muffin_add_test(NAME MuffinEditorCoreTest              SOURCE tests/editor/EditorCoreTest.cpp              LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinImageResizeTest             SOURCE tests/editor/ImageResizeTest.cpp            LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEditorStyleClipboardTest    SOURCE tests/editor/EditorStyleClipboardTest.cpp    LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEditorCodeFenceSelectionTest SOURCE tests/editor/EditorCodeFenceSelectionTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputTextEditingTest        SOURCE tests/editor/InputTextEditingTest.cpp        LINK MuffinUi RESOURCE_LOCK)
