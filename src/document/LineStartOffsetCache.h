@@ -17,6 +17,11 @@ public:
   int lineForOffset(qsizetype offset) const;
   int lineCount() const;
 
+  // Perf instrumentation for offsetForLineByteColumn (the byte-column walk).
+  static void setByteColPerfEnabled(bool enabled);
+  static void resetByteColPerf();
+  static qreal byteColPerfMs();
+
 private:
   QString text_;
   QVector<qsizetype> lineStarts_;

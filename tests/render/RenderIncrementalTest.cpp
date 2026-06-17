@@ -17,7 +17,7 @@ using namespace muffin;
 namespace {
 
 void requireSameTopLevelLayout(const DocumentLayout& incremental, const DocumentLayout& full, const MarkdownDocument& document, const QString& label) {
-  require(incremental.blocks().size() == full.blocks().size(), label + QStringLiteral(" block count mismatch"));
+  require(incremental.slotCount() == full.slotCount(), label + QStringLiteral(" block count mismatch"));
   require(qAbs(incremental.totalHeight() - full.totalHeight()) < 0.01, label + QStringLiteral(" total height mismatch"));
   for (const auto& child : document.root().children()) {
     const BlockLayout* incrementalBlock = incremental.block(child->id());

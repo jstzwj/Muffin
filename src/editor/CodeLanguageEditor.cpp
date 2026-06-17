@@ -39,7 +39,7 @@ void CodeLanguageEditor::update(const CursorPosition& cursor, const HitTestResul
     return;
   }
 
-  const BlockLayout* block = layout->block(cursor.blockId);
+  const BlockLayout* block = layout->blockIfPromoted(cursor.blockId);
   if (!block || block->type() != BlockType::CodeFence) {
     forceHide();
     return;

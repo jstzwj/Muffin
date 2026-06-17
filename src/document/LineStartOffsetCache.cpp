@@ -1,10 +1,33 @@
 #include "document/LineStartOffsetCache.h"
 
+#include <QElapsedTimer>
+#include <QLoggingCategory>
+
 #include <algorithm>
 
 namespace muffin {
 
 namespace {
+
+Q_LOGGING_CATEGORY(lineOffsetPerf, "muffin.perf", QtWarningMsg)
+
+qint64 g_byteColNs = 0;
+bool g_byteColPerf = false;
+
+struct ByteColGuard {
+  qint64& bucket;
+  QElapsedTimer timer;
+  explicit ByteColGuard(qint64& b) : bucket(b) {
+    if (g_byteColPerf) {
+      timer.start();
+    }
+  }
+  ~ByteColGuard() {
+    if (g_byteColPerf) {
+      bucket += timer.nsecsElapsed();
+    }
+  }
+};
 
 qsizetype utf8ByteLength(uint ucs4) {
   if (ucs4 <= 0x7F) {
@@ -55,6 +78,7 @@ qsizetype LineStartOffsetCache::offsetForLineColumn(int line, int column) const 
 }
 
 qsizetype LineStartOffsetCache::offsetForLineByteColumn(int line, int column) const {
+  ByteColGuard guard(g_byteColNs);
   if (line <= 0 || column <= 0 || line > lineStarts_.size()) {
     return -1;
   }
@@ -101,6 +125,18 @@ int LineStartOffsetCache::lineForOffset(qsizetype offset) const {
 
 int LineStartOffsetCache::lineCount() const {
   return static_cast<int>(lineStarts_.size());
+}
+
+void LineStartOffsetCache::setByteColPerfEnabled(bool enabled) {
+  g_byteColPerf = enabled;
+}
+
+void LineStartOffsetCache::resetByteColPerf() {
+  g_byteColNs = 0;
+}
+
+qreal LineStartOffsetCache::byteColPerfMs() {
+  return g_byteColNs / 1000000.0;
 }
 
 }  // namespace muffin

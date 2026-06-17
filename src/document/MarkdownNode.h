@@ -37,7 +37,6 @@ public:
   MarkdownNode& insertChild(qsizetype index, std::unique_ptr<MarkdownNode> child);
   std::unique_ptr<MarkdownNode> detachChild(qsizetype index);
   void clearChildren();
-  void relinkChildren();
 
   QVector<InlineNode>& inlines();
   const QVector<InlineNode>& inlines() const;

@@ -51,9 +51,23 @@ MarkdownNode& MarkdownNode::appendChild(std::unique_ptr<MarkdownNode> child) {
 MarkdownNode& MarkdownNode::insertChild(qsizetype index, std::unique_ptr<MarkdownNode> child) {
   child->parent_ = this;
   const qsizetype boundedIndex = std::clamp<qsizetype>(index, 0, static_cast<qsizetype>(children_.size()));
+  const qsizetype countBefore = static_cast<qsizetype>(children_.size());
+  // Fix only the two sibling pointers at the insertion point. Rebuilding every child's links on
+  // each insert made building a node with N children O(N^2) — the dominant cost of convertBlock
+  // on large documents (a 27k-block root alone was ~1.3s of pointer writes).
+  MarkdownNode* previous = boundedIndex > 0 ? children_[boundedIndex - 1].get() : nullptr;
+  MarkdownNode* following = boundedIndex < countBefore ? children_[boundedIndex].get() : nullptr;
   children_.insert(children_.begin() + boundedIndex, std::move(child));
-  relinkChildren();
-  return *children_[boundedIndex];
+  MarkdownNode* inserted = children_[boundedIndex].get();
+  inserted->previous_ = previous;
+  inserted->next_ = following;
+  if (previous) {
+    previous->next_ = inserted;
+  }
+  if (following) {
+    following->previous_ = inserted;
+  }
+  return *inserted;
 }
 
 std::unique_ptr<MarkdownNode> MarkdownNode::detachChild(qsizetype index) {
@@ -61,12 +75,20 @@ std::unique_ptr<MarkdownNode> MarkdownNode::detachChild(qsizetype index) {
     return nullptr;
   }
 
+  const qsizetype count = static_cast<qsizetype>(children_.size());
+  MarkdownNode* previous = index > 0 ? children_[index - 1].get() : nullptr;
+  MarkdownNode* following = index + 1 < count ? children_[index + 1].get() : nullptr;
   auto child = std::move(children_[index]);
   children_.erase(children_.begin() + index);
   child->parent_ = nullptr;
   child->previous_ = nullptr;
   child->next_ = nullptr;
-  relinkChildren();
+  if (previous) {
+    previous->next_ = following;
+  }
+  if (following) {
+    following->previous_ = previous;
+  }
   return child;
 }
 
@@ -77,15 +99,6 @@ void MarkdownNode::clearChildren() {
     child->next_ = nullptr;
   }
   children_.clear();
-}
-
-void MarkdownNode::relinkChildren() {
-  const qsizetype count = static_cast<qsizetype>(children_.size());
-  for (qsizetype i = 0; i < count; ++i) {
-    children_[i]->parent_ = this;
-    children_[i]->previous_ = i > 0 ? children_[i - 1].get() : nullptr;
-    children_[i]->next_ = i + 1 < count ? children_[i + 1].get() : nullptr;
-  }
 }
 
 QVector<InlineNode>& MarkdownNode::inlines() {

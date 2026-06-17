@@ -205,11 +205,9 @@ void muffin::MainWindow::connectApplicationSignals() {
     if (!window.renderView_) {
       return;
     }
-    QVector<NodeId> ids;
-    for (const std::unique_ptr<MarkdownNode>& child : window.session_.document().root().children()) {
-      ids.append(child->id());
-    }
-    window.renderView_->refreshBlocks(ids, window.session_.document());
+    // Only the visible (promoted) blocks are re-decorated now; offscreen blocks pick up the new
+    // spell state when they scroll into view. Avoids rebuilding an entire large document on toggle.
+    window.renderView_->refreshVisibleBlocks(window.session_.document());
   };
   QObject::connect(&SpellChecker::instance(), &SpellChecker::enabledChanged, &window,
       [&window, refreshSpellOverlay] {

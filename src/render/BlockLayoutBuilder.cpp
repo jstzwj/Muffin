@@ -8,8 +8,10 @@
 #include "spellcheck/SpellChecker.h"
 
 #include <QCoreApplication>
+#include <QElapsedTimer>
 #include <QFileInfo>
 #include <QFontMetricsF>
+#include <QLoggingCategory>
 #include <QStringList>
 #include <QStringView>
 #include <QTextLayout>
@@ -20,6 +22,30 @@
 
 namespace muffin {
 namespace {
+
+Q_LOGGING_CATEGORY(blockBuildPerf, "muffin.perf", QtWarningMsg)
+
+// Accumulates elapsed nanoseconds into a bucket when measurement is enabled; otherwise
+// just two cheap branch checks. Aggregates per-block build() costs across one rebuild
+// without emitting one log line per block.
+class BuildAccumTimer {
+public:
+  BuildAccumTimer(qint64& bucket, bool enabled) : bucket_(bucket), enabled_(enabled) {
+    if (enabled_) {
+      timer_.start();
+    }
+  }
+  ~BuildAccumTimer() {
+    if (enabled_) {
+      bucket_ += timer_.nsecsElapsed();
+    }
+  }
+
+private:
+  qint64& bucket_;
+  bool enabled_;
+  QElapsedTimer timer_;
+};
 
 // A parsed node's byte range is trustworthy when the parser adapter resolved
 // it to real offsets. An empty table cell legitimately resolves to a zero-width
@@ -190,6 +216,19 @@ void BlockLayoutBuilder::setDocumentPath(QString path) {
   documentPath_ = std::move(path);
 }
 
+BlockLayoutBuilder::BlockLayoutBuilder() : perfEnabled_(blockBuildPerf().isDebugEnabled()) {}
+
+void BlockLayoutBuilder::dumpBuildBreakdown() const {
+  if (!perfEnabled_) {
+    return;
+  }
+  qCDebug(blockBuildPerf).nospace() << "build.inlineLayout " << inlineLayoutNs_ / 1000000.0 << " ms";
+  qCDebug(blockBuildPerf).nospace() << "build.codeHighlight " << codeHighlightNs_ / 1000000.0 << " ms";
+  qCDebug(blockBuildPerf).nospace() << "build.mathRender " << mathRenderNs_ / 1000000.0 << " ms";
+  qCDebug(blockBuildPerf).nospace() << "build.htmlRender " << htmlRenderNs_ / 1000000.0 << " ms";
+  qCDebug(blockBuildPerf).nospace() << "build.literalText " << literalTextNs_ / 1000000.0 << " ms";
+}
+
 std::unique_ptr<BlockLayout> BlockLayoutBuilder::build(
     const MarkdownNode& node,
     const RenderTheme& theme,
@@ -256,7 +295,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   options.sourceBase = projectionBase;
   options.pendingPrefixLength = pendingPrefixLengthFor(node, editableSource);
   options.isMisspelled = spellMisspelledPredicate();
-  inlineLayout->build(node.inlines(), editableSource, theme, width, font, options);
+  {
+    BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
+    inlineLayout->build(node.inlines(), editableSource, theme, width, font, options);
+  }
   qreal height = inlineLayout->height();
   if (node.type() == BlockType::Heading && node.headingLevel() <= 2) {
     height += theme.blockSpacing() * 0.35;
@@ -355,7 +397,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
     options.sourceBase = contentStart;
   }
   options.isMisspelled = spellMisspelledPredicate();
-  inlineLayout->build(primaryInlinesForListItem(node), listSourceText, theme, contentWidth, theme.paragraphFont(), options);
+  {
+    BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
+    inlineLayout->build(primaryInlinesForListItem(node), listSourceText, theme, contentWidth, theme.paragraphFont(), options);
+  }
   layout->setInlineLayout(std::move(inlineLayout));
 
   qreal height = layout->inlineLayout() ? layout->inlineLayout()->height() : QFontMetricsF(theme.paragraphFont()).height();
@@ -402,23 +447,37 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
   }
   if (node.type() == BlockType::CodeFence) {
     layout->setCodeLanguage(node.codeLanguage());
-    layout->setCodeHighlightSpans(codeHighlighter_.highlight(node.codeLanguage(), layout->literal()));
+    {
+      BuildAccumTimer t(codeHighlightNs_, perfEnabled_);
+      layout->setCodeHighlightSpans(codeHighlighter_.highlight(node.codeLanguage(), layout->literal()));
+    }
   } else if (node.type() == BlockType::FrontMatter) {
     const QString language = languageForFrontMatter(node.frontMatterFormat());
     layout->setCodeLanguage(language);
-    layout->setCodeHighlightSpans(codeHighlighter_.highlight(language, layout->literal()));
+    {
+      BuildAccumTimer t(codeHighlightNs_, perfEnabled_);
+      layout->setCodeHighlightSpans(codeHighlighter_.highlight(language, layout->literal()));
+    }
   }
   const bool editingLiteral = (node.type() == BlockType::MathBlock && selectionFocusesNode(selection_, node.id())) ||
                               (node.type() == BlockType::HtmlBlock && editingHtmlBlockId_ == node.id());
   layout->setLiteralEditing(editingLiteral);
-  qreal height = textHeight(
-      layout->literal(),
-      node.type() == BlockType::MathBlock ? theme.mathFont() : theme.codeFont(),
-      node.type() == BlockType::MathBlock ? qMax<qreal>(14.0, QFontMetricsF(theme.mathFont()).height()) : theme.codeLineHeight(),
-      width,
-      theme.codePadding());
+  qreal height;
+  {
+    BuildAccumTimer t(literalTextNs_, perfEnabled_);
+    height = textHeight(
+        layout->literal(),
+        node.type() == BlockType::MathBlock ? theme.mathFont() : theme.codeFont(),
+        node.type() == BlockType::MathBlock ? qMax<qreal>(14.0, QFontMetricsF(theme.mathFont()).height()) : theme.codeLineHeight(),
+        width,
+        theme.codePadding());
+  }
   if (node.type() == BlockType::MathBlock) {
-    auto mathLayout = std::make_shared<math::MathLayoutResult>(mathRenderer_.render(layout->literal(), theme, true, width));
+    std::shared_ptr<math::MathLayoutResult> mathLayout;
+    {
+      BuildAccumTimer t(mathRenderNs_, perfEnabled_);
+      mathLayout = std::make_shared<math::MathLayoutResult>(mathRenderer_.render(layout->literal(), theme, true, width));
+    }
     if (mathLayout->valid()) {
       if (!editingLiteral) {
         height = std::ceil(mathLayout->size.height() + theme.codePadding().top() + theme.codePadding().bottom());
@@ -434,6 +493,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
     }
   }
   if (node.type() == BlockType::HtmlBlock && editingLiteral) {
+    BuildAccumTimer t(codeHighlightNs_, perfEnabled_);
     layout->setCodeHighlightSpans(codeHighlighter_.highlight(QStringLiteral("html"), layout->literal()));
   }
   if (node.type() == BlockType::HtmlBlock && !editingLiteral) {
@@ -442,10 +502,15 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
     if (fontSize <= 0) {
       fontSize = qMax<qreal>(1.0, theme.paragraphFont().pixelSize());
     }
-    const QString sanitizedHtml = HtmlSanitizer().sanitizedPreview(layout->literal());
     const QString baseDirectory = documentPath_.isEmpty() ? QString() : QFileInfo(documentPath_).absolutePath();
-    auto htmlResult = std::make_shared<html::HtmlLayoutResult>(
-        htmlRenderer_.render(sanitizedHtml, fontSize, contentWidth, baseDirectory));
+    QString sanitizedHtml;
+    std::shared_ptr<html::HtmlLayoutResult> htmlResult;
+    {
+      BuildAccumTimer t(htmlRenderNs_, perfEnabled_);
+      sanitizedHtml = HtmlSanitizer().sanitizedPreview(layout->literal());
+      htmlResult = std::make_shared<html::HtmlLayoutResult>(
+          htmlRenderer_.render(sanitizedHtml, fontSize, contentWidth, baseDirectory));
+    }
     if (htmlResult->valid()) {
       height = std::ceil(htmlResult->size().height() + theme.codePadding().top() + theme.codePadding().bottom());
       layout->setHtmlLayout(std::move(htmlResult));
@@ -503,13 +568,16 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
         options.projectionState = InlineProjectionState::forSelection(selection_, selection_.focus.blockId, sourceContentStartForEditableNode(*cellNode));
       }
       options.isMisspelled = spellMisspelledPredicate();
-      cell.text.build(
-          cellNode->inlines(),
-          sourceTextForEditableNode(*cellNode),
-          theme,
-          qMax<qreal>(1.0, columnWidth - padding.left() - padding.right()),
-          cell.header ? theme.headingFont(6) : theme.paragraphFont(),
-          options);
+      {
+        BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
+        cell.text.build(
+            cellNode->inlines(),
+            sourceTextForEditableNode(*cellNode),
+            theme,
+            qMax<qreal>(1.0, columnWidth - padding.left() - padding.right()),
+            cell.header ? theme.headingFont(6) : theme.paragraphFont(),
+            options);
+      }
       rowHeight = qMax(rowHeight, cell.text.height() + padding.top() + padding.bottom());
       cell.rect = QRectF(cellX, cursorY, columnWidth, 0);
       cells.push_back(std::move(cell));
@@ -878,6 +946,251 @@ qsizetype BlockLayoutBuilder::sourceOffsetForLineEnd(int line) const {
 qreal BlockLayoutBuilder::textHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width, const QMarginsF& padding) const {
   const qreal innerWidth = qMax<qreal>(1.0, width - padding.left() - padding.right());
   return std::ceil(layoutLiteralHeight(text, font, lineHeight, innerWidth) + padding.top() + padding.bottom() + 2.0);
+}
+
+namespace {
+
+// True if the inline set renders any content whose size is not cheaply derivable from
+// font metrics (inline images / inline math). Such blocks must be fully measured.
+bool inlinesContainSizedContent(const QVector<InlineNode>& inlines) {
+  for (const InlineNode& node : inlines) {
+    if (node.type() == InlineType::Image || node.type() == InlineType::InlineMath) {
+      return true;
+    }
+    if (inlinesContainSizedContent(node.children())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Estimate wrapped line count from plain text and an average characters-per-line capacity,
+// respecting explicit newlines (a trailing '\n' yields one extra line, matching QTextLayout).
+qreal estimateWrappedLines(QStringView text, qreal charsPerLine) {
+  if (text.isEmpty()) {
+    return 1.0;
+  }
+  const qreal cpl = std::max(charsPerLine, qreal(1.0));
+  qreal lines = 0;
+  qsizetype segStart = 0;
+  while (true) {
+    const qsizetype nl = text.indexOf(QLatin1Char('\n'), segStart);
+    const qsizetype segEnd = nl < 0 ? text.length() : nl;
+    lines += std::max(qreal(1.0), std::ceil(static_cast<qreal>(segEnd - segStart) / cpl));
+    if (nl < 0) {
+      break;
+    }
+    segStart = nl + 1;
+    if (segStart >= text.length()) {
+      lines += 1.0;  // trailing newline -> extra empty line
+      break;
+    }
+  }
+  return std::max(lines, qreal(1.0));
+}
+
+}  // namespace
+
+qreal BlockLayoutBuilder::estimateLineHeight(const QFont& font) const {
+  // Matches InlineLayout's per-line height: ceil(QFontMetricsF::height() * 1.16).
+  return std::ceil(QFontMetricsF(font).height() * 1.16);
+}
+
+qreal BlockLayoutBuilder::avgCharWidthForText(QStringView text, const QFont& font) const {
+  const QString key = font.key();
+  auto it = fontMetricsCache_.constFind(key);
+  qreal wideAdvance;
+  qreal narrowAdvance;
+  if (it != fontMetricsCache_.constEnd()) {
+    wideAdvance = it.value().first;
+    narrowAdvance = it.value().second;
+  } else {
+    const QFontMetricsF metrics(font);
+    // One representative wide (fullwidth/CJK) glyph and an ASCII average; cached per font so the
+    // estimate pass never measures full block text.
+    wideAdvance = metrics.horizontalAdvance(QChar(0x5B57));    // '字' (CJK ideograph)
+    narrowAdvance = metrics.horizontalAdvance(QStringLiteral("abcdefghijklmnopqrstuvwxyz0123456789 ")) /
+                    static_cast<qreal>(37);
+    fontMetricsCache_.insert(key, {wideAdvance, narrowAdvance});
+  }
+  if (text.isEmpty()) {
+    return wideAdvance;  // placeholder; estimateWrappedLines treats empty as one line anyway
+  }
+  // Cheap per-char classification: East-Asian wide scripts (>= Hangul Jamo) advance ~1em, the rest
+  // ~half-em. Tracks CJK vs ASCII density per block without measuring the whole run.
+  qreal total = 0;
+  qsizetype count = 0;
+  for (const QChar c : text) {
+    total += (c.unicode() >= 0x1100) ? wideAdvance : narrowAdvance;
+    ++count;
+  }
+  return count > 0 ? total / static_cast<qreal>(count) : wideAdvance;
+}
+
+BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateHeight(const MarkdownNode& node, const RenderTheme& theme, qreal width, int depth) const {
+  switch (node.type()) {
+    case BlockType::Paragraph:
+    case BlockType::Heading:
+      return estimateParagraphLike(node, theme, width);
+    case BlockType::BlockQuote:
+    case BlockType::List:
+      return estimateContainer(node, theme, width, depth);
+    case BlockType::ListItem:
+      return estimateListItem(node, theme, width, depth);
+    case BlockType::FrontMatter:
+    case BlockType::CodeFence:
+    case BlockType::HtmlBlock:
+    case BlockType::MathBlock:
+      return estimateLiteralBlock(node, theme, width);
+    case BlockType::Table:
+      return estimateTable(node, theme, width);
+    case BlockType::ThematicBreak:
+      return {theme.blockSpacing() * 2.0, false};
+    case BlockType::LinkDefinition:
+    case BlockType::FootnoteDefinition:
+      return estimateDefinition(node, theme, width);
+    case BlockType::Document:
+    default:
+      return estimateContainer(node, theme, width, depth);
+  }
+}
+
+BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateParagraphLike(const MarkdownNode& node, const RenderTheme& theme, qreal width) const {
+  const bool isHeading = node.type() == BlockType::Heading;
+  const QFont font = isHeading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
+  const qreal lineHeight = estimateLineHeight(font);
+  const QString text = InlineProjection::plainTextForInlines(node.inlines());
+  const qreal charsPerLine = std::max(qreal(1.0), std::floor(std::max<qreal>(1.0, width) / avgCharWidthForText(QStringView(text), font)));
+  qreal height = estimateWrappedLines(QStringView(text), charsPerLine) * lineHeight;
+  if (isHeading && node.headingLevel() <= 2) {
+    height += theme.blockSpacing() * 0.35;
+  }
+  return {height, inlinesContainSizedContent(node.inlines())};
+}
+
+BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateContainer(const MarkdownNode& node, const RenderTheme& theme, qreal width, int depth) const {
+  if (depth > 64) {
+    return {estimateLineHeight(theme.paragraphFont()), true};
+  }
+  if (node.children().empty()) {
+    return {QFontMetricsF(theme.paragraphFont()).height(), false};
+  }
+  const bool isQuote = node.type() == BlockType::BlockQuote;
+  const qreal childWidth = isQuote ? std::max<qreal>(1.0, width - theme.blockQuoteIndent()) : width;
+  qreal total = 0;
+  bool mustMeasure = false;
+  for (const auto& child : node.children()) {
+    const EstimateResult r = estimateHeight(*child, theme, childWidth, depth + 1);
+    total += r.height;
+    mustMeasure = mustMeasure || r.mustMeasure;
+  }
+  total += theme.blockSpacing() * static_cast<qreal>(static_cast<qsizetype>(node.children().size()) - 1);
+  return {total, mustMeasure};
+}
+
+BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateListItem(const MarkdownNode& node, const RenderTheme& theme, qreal width, int depth) const {
+  const MarkdownNode* listParent = node.parent();
+  qreal contentIndent = theme.listIndent();
+  const bool ordered = listParent && listParent->listKind() == ListKind::Ordered;
+  if (ordered && listParent) {
+    const QFontMetricsF metrics(theme.paragraphFont());
+    qreal widestMarker = 0;
+    for (qsizetype i = 0; i < static_cast<qsizetype>(listParent->children().size()); ++i) {
+      widestMarker = std::max(widestMarker, metrics.horizontalAdvance(textForListMarker(*listParent, i)));
+    }
+    contentIndent = std::max(theme.listIndent(), widestMarker + theme.listIndent() * 0.2);
+  }
+  const qreal contentWidth = std::max<qreal>(1.0, width - contentIndent);
+
+  const QVector<InlineNode> primary = primaryInlinesForListItem(node);
+  qreal height = QFontMetricsF(theme.paragraphFont()).height();
+  bool mustMeasure = false;
+  if (!primary.isEmpty()) {
+    const QFont font = theme.paragraphFont();
+    const QString text = InlineProjection::plainTextForInlines(primary);
+    const qreal charsPerLine = std::max(qreal(1.0), std::floor(contentWidth / avgCharWidthForText(QStringView(text), font)));
+    height = estimateWrappedLines(QStringView(text), charsPerLine) * estimateLineHeight(font);
+    mustMeasure = inlinesContainSizedContent(primary);
+  }
+
+  bool skippedPrimary = false;
+  for (const auto& child : node.children()) {
+    if (!skippedPrimary && child->type() == BlockType::Paragraph) {
+      skippedPrimary = true;
+      continue;
+    }
+    const EstimateResult r = estimateHeight(*child, theme, contentWidth, depth + 1);
+    height += theme.blockSpacing() + r.height;
+    mustMeasure = mustMeasure || r.mustMeasure;
+  }
+  return {height, mustMeasure};
+}
+
+BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateLiteralBlock(const MarkdownNode& node, const RenderTheme& theme, qreal width) const {
+  const QString literal = displayLiteralFor(node);
+  const bool isMath = node.type() == BlockType::MathBlock;
+  const QFont font = isMath ? theme.mathFont() : theme.codeFont();
+  const qreal lineHeight = isMath ? std::max<qreal>(14.0, QFontMetricsF(theme.mathFont()).height()) : theme.codeLineHeight();
+  const QMarginsF padding = theme.codePadding();
+  const qreal innerWidth = std::max<qreal>(1.0, width - padding.left() - padding.right());
+  const qreal charsPerLine = std::max(qreal(1.0), std::floor(innerWidth / avgCharWidthForText(QStringView(literal), font)));
+  const qreal lines = estimateWrappedLines(QStringView(literal), charsPerLine);
+  const qreal height = std::ceil(lines * lineHeight + padding.top() + padding.bottom() + 2.0);
+  // Math/HTML rendered size is not derivable from metrics; tree-sitter only colors code.
+  const bool mustMeasure = isMath || node.type() == BlockType::HtmlBlock;
+  return {height, mustMeasure};
+}
+
+BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateTable(const MarkdownNode& node, const RenderTheme& theme, qreal width) const {
+  const int rowCount = static_cast<int>(node.children().size());
+  int columnCount = 0;
+  for (const auto& row : node.children()) {
+    columnCount = std::max(columnCount, static_cast<int>(row->children().size()));
+  }
+  if (rowCount == 0 || columnCount == 0) {
+    return {QFontMetricsF(theme.paragraphFont()).height(), false};
+  }
+  const QVector<qreal> columnWidths = tableColumnWidths(node, theme, width);
+  const QMarginsF padding = theme.tableCellPadding();
+  const QFont paraFont = theme.paragraphFont();
+  const QFont headFont = theme.headingFont(6);
+  const qreal paraLineHeight = estimateLineHeight(paraFont);
+  const qreal headLineHeight = estimateLineHeight(headFont);
+  qreal total = 0;
+  bool mustMeasure = false;
+  for (const auto& row : node.children()) {
+    qreal rowHeight = QFontMetricsF(theme.paragraphFont()).height() + padding.top() + padding.bottom();
+    int column = 0;
+    for (const auto& cell : row->children()) {
+      const qreal columnWidth = column < columnWidths.size() ? columnWidths.at(column) : width / columnCount;
+      const qreal innerWidth = std::max<qreal>(1.0, columnWidth - padding.left() - padding.right());
+      const bool header = row->tableRowIsHeader();
+      const QString text = InlineProjection::plainTextForInlines(cell->inlines());
+      const qreal charsPerLine = std::max(qreal(1.0), std::floor(innerWidth / avgCharWidthForText(QStringView(text), header ? headFont : paraFont)));
+      const qreal lines = estimateWrappedLines(QStringView(text), charsPerLine);
+      const qreal cellHeight = lines * (header ? headLineHeight : paraLineHeight) + padding.top() + padding.bottom();
+      rowHeight = std::max(rowHeight, cellHeight);
+      if (inlinesContainSizedContent(cell->inlines())) {
+        mustMeasure = true;
+      }
+      ++column;
+    }
+    total += rowHeight;
+  }
+  return {total, mustMeasure};
+}
+
+BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateDefinition(const MarkdownNode& node, const RenderTheme& theme, qreal width) const {
+  Q_UNUSED(width);
+  // Definition blocks are rare (footnote/link defs) and render precise token rects;
+  // measure them when they come into view. One line is a safe placeholder.
+  const qreal lineHeight = estimateLineHeight(theme.paragraphFont());
+  qreal height = lineHeight;
+  if (node.type() == BlockType::FootnoteDefinition && !node.literal().isEmpty()) {
+    // Multi-line footnote continuation: rough estimate from source line count.
+    height += lineHeight * (static_cast<qreal>(node.literal().count(QLatin1Char('\n'))) + 1.0);
+  }
+  return {height, true};
 }
 
 }  // namespace muffin

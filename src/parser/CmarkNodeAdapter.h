@@ -20,6 +20,12 @@ public:
   std::unique_ptr<MarkdownNode> convertBlock(cmark_node* node);
   InlineNode convertInline(cmark_node* node);
 
+  // Aggregate convertBlock breakdown (QString copies vs inline-source annotation), reported via
+  // muffin.perf. No-op unless enabled.
+  static void setPerfEnabled(bool enabled);
+  static void resetPerfCounters();
+  static void dumpConvertBreakdown();
+
 private:
   BlockType mapBlockType(cmark_node* node) const;
   InlineType mapInlineType(cmark_node* node) const;

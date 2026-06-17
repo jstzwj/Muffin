@@ -14,7 +14,7 @@ QRectF HtmlBlockHoverController::overlayViewportRect(const Inputs& inputs) const
     return {};
   }
   const NodeId id = inputs.editingHtmlBlockId.isValid() ? inputs.editingHtmlBlockId : visibleHtmlHoverBlockId_;
-  const BlockLayout* block = inputs.layout->block(id);
+  const BlockLayout* block = inputs.layout->blockIfPromoted(id);
   if (!block || block->type() != BlockType::HtmlBlock) {
     return {};
   }

@@ -446,7 +446,7 @@ void muffin::MainWindow::printDocument() {
   const qreal pageHeight = page.height();
   qreal pageTop = 0;
 
-  for (const auto& block : layout.blocks()) {
+  for (const BlockLayout* block : layout.promotedBlocks()) {
     if (block->rect().bottom() > pageTop + pageHeight && block->rect().top() > pageTop) {
       printer->newPage();
       pageTop = block->rect().top();

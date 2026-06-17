@@ -66,7 +66,7 @@ void testLayoutForTheme(const MarkdownDocument& document, const RenderTheme& the
 
   require(layout.pageWidth() > 300.0, QStringLiteral("%1 page width too small").arg(themeName));
   require(layout.totalHeight() > 700.0, QStringLiteral("%1 total height should exceed smoke viewport").arg(themeName));
-  require(!layout.blocks().empty(), QStringLiteral("%1 layout produced no blocks").arg(themeName));
+  require(layout.slotCount() > 0, QStringLiteral("%1 layout produced no blocks").arg(themeName));
 
   const MarkdownNode* heading = findFirstBlock(document.root(), BlockType::Heading);
   const MarkdownNode* paragraph = findFirstBlock(document.root(), BlockType::Paragraph);

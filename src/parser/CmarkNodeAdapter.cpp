@@ -3,6 +3,8 @@
 #include "document/InlineNode.h"
 #include "document/LineStartOffsetCache.h"
 
+#include <QElapsedTimer>
+#include <QLoggingCategory>
 #include <QString>
 
 extern "C" {
@@ -15,7 +17,33 @@ extern "C" {
 namespace muffin {
 namespace {
 
+Q_LOGGING_CATEGORY(adapterPerf, "muffin.perf", QtWarningMsg)
+
+// Aggregate convertBlock breakdown counters (single-threaded parse). Enabled only while
+// muffin.perf debug is on, so the fromUtf8/annotate hot paths pay just a branch in normal builds.
+qint64 g_fromUtf8Ns = 0;
+qint64 g_annotateNs = 0;
+qint64 g_inlineChildrenNs = 0;
+qint64 g_blockLocalNs = 0;
+bool g_adapterPerf = false;
+
+struct AccumGuard {
+  qint64& bucket;
+  QElapsedTimer timer;
+  explicit AccumGuard(qint64& b) : bucket(b) {
+    if (g_adapterPerf) {
+      timer.start();
+    }
+  }
+  ~AccumGuard() {
+    if (g_adapterPerf) {
+      bucket += timer.nsecsElapsed();
+    }
+  }
+};
+
 QString fromUtf8(const char* value) {
+  AccumGuard guard(g_fromUtf8Ns);
   return value ? QString::fromUtf8(value) : QString();
 }
 
@@ -119,9 +147,13 @@ CmarkNodeAdapter::CmarkNodeAdapter(const LineStartOffsetCache* lineOffsets, QStr
     : lineOffsets_(lineOffsets), markdown_(markdown) {}
 
 std::unique_ptr<MarkdownNode> CmarkNodeAdapter::convertBlock(cmark_node* node) {
-  auto result = std::make_unique<MarkdownNode>(mapBlockType(node));
-  result->setSourceRange(readSourceRange(node));
-  readBlockMetadata(node, *result);
+  std::unique_ptr<MarkdownNode> result;
+  {
+    AccumGuard g(g_blockLocalNs);
+    result = std::make_unique<MarkdownNode>(mapBlockType(node));
+    result->setSourceRange(readSourceRange(node));
+    readBlockMetadata(node, *result);
+  }
 
   if (result->type() == BlockType::Paragraph || result->type() == BlockType::Heading ||
       result->type() == BlockType::TableCell) {
@@ -130,16 +162,19 @@ std::unique_ptr<MarkdownNode> CmarkNodeAdapter::convertBlock(cmark_node* node) {
 
   // Compute byte-level source range for block types whose editing code
   // needs byteStart/byteEnd to resolve cell content or inline offsets.
-  if (lineOffsets_ && !markdown_.isEmpty()) {
-    const SourceRange srcRange = result->sourceRange();
-    if (srcRange.lineStart > 0 && result->sourceRange().byteEnd <= result->sourceRange().byteStart) {
-      const qsizetype start = lineOffsets_->offsetForLineByteColumn(srcRange.lineStart, qMax(1, srcRange.columnStart));
-      const qsizetype end = lineOffsets_->offsetForLineByteColumn(srcRange.lineEnd, qMax(1, srcRange.columnEnd + 1));
-      if (start >= 0 && end >= start && end <= markdown_.size()) {
-        SourceRange updated = srcRange;
-        updated.byteStart = start;
-        updated.byteEnd = end;
-        result->setSourceRange(updated);
+  {
+    AccumGuard g(g_blockLocalNs);
+    if (lineOffsets_ && !markdown_.isEmpty()) {
+      const SourceRange srcRange = result->sourceRange();
+      if (srcRange.lineStart > 0 && result->sourceRange().byteEnd <= result->sourceRange().byteStart) {
+        const qsizetype start = lineOffsets_->offsetForLineByteColumn(srcRange.lineStart, qMax(1, srcRange.columnStart));
+        const qsizetype end = lineOffsets_->offsetForLineByteColumn(srcRange.lineEnd, qMax(1, srcRange.columnEnd + 1));
+        if (start >= 0 && end >= start && end <= markdown_.size()) {
+          SourceRange updated = srcRange;
+          updated.byteStart = start;
+          updated.byteEnd = end;
+          result->setSourceRange(updated);
+        }
       }
     }
   }
@@ -251,6 +286,7 @@ SourceRange CmarkNodeAdapter::readSourceRange(cmark_node* node) const {
 }
 
 void CmarkNodeAdapter::annotateInlineSource(cmark_node* cmarkNode, InlineNode& inlineNode) const {
+  AccumGuard guard(g_annotateNs);
   if (!lineOffsets_ || markdown_.isEmpty()) {
     return;
   }
@@ -397,6 +433,7 @@ void CmarkNodeAdapter::annotateInlineSource(cmark_node* cmarkNode, InlineNode& i
 }
 
 QVector<InlineNode> CmarkNodeAdapter::convertInlineChildren(cmark_node* node) {
+  AccumGuard guard(g_inlineChildrenNs);
   QVector<InlineNode> children;
   for (cmark_node* child = cmark_node_first_child(node); child; child = cmark_node_next(child)) {
     if (!isBlockType(cmark_node_get_type(child))) {
@@ -502,6 +539,27 @@ void CmarkNodeAdapter::readTableMetadata(cmark_node* cmarkNode, MarkdownNode& mu
     converted.push_back(tableAlignmentFromCmark(alignments ? alignments[i] : 0));
   }
   muffinNode.setTableAlignments(std::move(converted));
+}
+
+void CmarkNodeAdapter::setPerfEnabled(bool enabled) {
+  g_adapterPerf = enabled;
+}
+
+void CmarkNodeAdapter::resetPerfCounters() {
+  g_fromUtf8Ns = 0;
+  g_annotateNs = 0;
+  g_inlineChildrenNs = 0;
+  g_blockLocalNs = 0;
+}
+
+void CmarkNodeAdapter::dumpConvertBreakdown() {
+  if (!adapterPerf().isDebugEnabled()) {
+    return;
+  }
+  qCDebug(adapterPerf).nospace() << "adapter.fromUtf8 " << g_fromUtf8Ns / 1000000.0 << " ms";
+  qCDebug(adapterPerf).nospace() << "adapter.annotateInline " << g_annotateNs / 1000000.0 << " ms";
+  qCDebug(adapterPerf).nospace() << "adapter.inlineChildren " << g_inlineChildrenNs / 1000000.0 << " ms (incl fromUtf8+annotate)";
+  qCDebug(adapterPerf).nospace() << "adapter.blockLocal " << g_blockLocalNs / 1000000.0 << " ms (construct+meta+byterange)";
 }
 
 }  // namespace muffin

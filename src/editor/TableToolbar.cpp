@@ -351,7 +351,7 @@ const BlockLayout* TableToolbar::activeTableLayout(const HitTestResult& hit, con
   if (!layout || hit.zone != HitTestResult::Zone::TableCell || hit.tableRow < 0 || hit.tableColumn < 0) {
     return nullptr;
   }
-  const BlockLayout* table = layout->block(hit.blockId);
+  const BlockLayout* table = layout->blockIfPromoted(hit.blockId);
   if (!table || table->type() != BlockType::Table || hit.tableRow >= static_cast<int>(table->tableRows().size())) {
     return nullptr;
   }

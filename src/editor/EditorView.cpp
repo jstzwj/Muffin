@@ -381,17 +381,25 @@ QRectF EditorView::nodeRect(NodeId id) const {
   if (!layout_) {
     return {};
   }
-  const BlockLayout* block = layout_->block(id);
+  const BlockLayout* block = layout_->block(id, theme_);
   return block ? block->rect() : QRectF();
 }
 
 void EditorView::scrollToNode(NodeId id) {
-  const QRectF rect = nodeRect(id);
-  if (rect.isNull() || rect.isEmpty()) {
+  if (!layout_) {
     return;
   }
+  // One-shot promote the target block so its top Y is accurate, then scroll to it. Blocks above
+  // the target may still be estimated, so the landing is approximate until the surrounding window
+  // is promoted by the ensuing scrollContentsBy -> ensureVisibleBuilt (anchor-corrected).
+  const qsizetype idx = layout_->topLevelIndexFor(id);
+  if (idx < 0) {
+    return;
+  }
+  layout_->ensureBuilt(idx, idx, theme_);
+  const qreal targetTop = layout_->slotTop(idx);
   QScrollBar* scrollBar = verticalScrollBar();
-  const int target = qBound(scrollBar->minimum(), qRound(rect.top() - 24.0), scrollBar->maximum());
+  const int target = qBound(scrollBar->minimum(), qRound(targetTop - 24.0), scrollBar->maximum());
   scrollBar->setValue(target);
 }
 
@@ -515,14 +523,14 @@ const BlockLayout* EditorView::blockAtViewportPos(QPointF viewportPos) const {
   if (!layout_) {
     return nullptr;
   }
-  return layout_->blockAt(QPointF(viewportPos.x(), viewportPos.y() + scrollY()));
+  return layout_->blockAt(QPointF(viewportPos.x(), viewportPos.y() + scrollY()), theme_);
 }
 
 const BlockLayout* EditorView::blockLayoutForNode(NodeId id) const {
   if (!layout_) {
     return nullptr;
   }
-  return layout_->block(id);
+  return layout_->block(id, theme_);
 }
 
 HitTestResult EditorView::hitTest(QPointF viewportPos) const {
@@ -536,7 +544,7 @@ HitTestResult EditorView::hitTest(QPointF viewportPos) const {
   // through the block content, and serialization copies it, with no special
   // casing downstream.
   if (hit.zone == HitTestResult::Zone::BlockAfter) {
-    if (const BlockLayout* block = layout_->block(hit.blockId)) {
+    if (const BlockLayout* block = layout_->block(hit.blockId, theme_)) {
       hit.textOffset = selectableLength(block);
     }
   }
@@ -554,8 +562,10 @@ void EditorView::paintEvent(QPaintEvent* event) {
     return;
   }
 
+  ensureVisibleBuilt();
+
   const QRectF visible = documentViewportRect();
-  const QVector<const BlockLayout*> blocks = layout_->visibleBlocks(visible.adjusted(0, -80, 0, 80));
+  const QVector<const BlockLayout*> blocks = layout_->visibleBlocks(visible.adjusted(0, -80, 0, 80), theme_);
   painter.setRenderHint(QPainter::Antialiasing, true);
   painter.setRenderHint(QPainter::TextAntialiasing, true);
 
@@ -737,7 +747,7 @@ void EditorView::mouseDoubleClickEvent(QMouseEvent* event) {
   }
 
   // Find the block layout to get the text for word boundary detection.
-  const BlockLayout* block = layout_ ? layout_->block(hit.blockId) : nullptr;
+  const BlockLayout* block = layout_ ? layout_->block(hit.blockId, theme_) : nullptr;
   if (!block) {
     QAbstractScrollArea::mouseDoubleClickEvent(event);
     return;
@@ -882,9 +892,21 @@ void EditorView::rebuildLayout() {
   if (document_) {
     const int oldValue = verticalScrollBar()->value();
     layout_->setEditingHtmlBlock(editingHtmlBlockId_);
-    layout_->rebuild(*document_, theme_, viewport()->width(), selection_, documentPath_);
+    // Lazy layout builds only cheap height estimates up front; visible and caret blocks are
+    // promoted to full detail on demand. Fall back to Eager under the offscreen test platform
+    // (no real paint/scroll cycle drives ensureVisibleBuilt), keeping render/view tests unchanged.
+    const bool lazy = QApplication::platformName() != QLatin1String("offscreen");
+    layout_->rebuild(*document_, theme_, viewport()->width(), selection_, documentPath_,
+                     lazy ? DocumentLayout::BuildPolicy::Lazy : DocumentLayout::BuildPolicy::Eager);
     updateScrollBars();
     verticalScrollBar()->setValue(qBound(verticalScrollBar()->minimum(), oldValue, verticalScrollBar()->maximum()));
+    if (cursorPosition_.isValid()) {
+      const qsizetype caretIdx = layout_->topLevelIndexFor(cursorPosition_.blockId);
+      if (caretIdx >= 0) {
+        layout_->ensureBuilt(caretIdx, caretIdx, theme_);  // caret block needed for hit resolution
+      }
+    }
+    ensureVisibleBuilt();
     if (cursorPosition_.isValid()) {
       cursorHit_ = hitForCursorPosition(*layout_, theme_, cursorPosition_);
       cursorVisible_ = cursorHit_.isValid();
@@ -896,6 +918,58 @@ void EditorView::rebuildLayout() {
   updateCodeLanguageEditor();
   updateTableToolbar();
   viewport()->update();
+}
+
+void EditorView::scrollContentsBy(int dx, int dy) {
+  QAbstractScrollArea::scrollContentsBy(dx, dy);
+  if (layout_ && document_) {
+    ensureVisibleBuilt();
+  }
+  updateCodeLanguageEditor();
+  updateTableToolbar();
+}
+
+void EditorView::ensureVisibleBuilt() {
+  if (!layout_ || !document_ || inScrollBuild_ || viewport()->height() <= 0) {
+    return;
+  }
+  const QRectF vis = documentViewportRect();
+  const qreal buffer = viewport()->height() * 1.5;
+  const QPair<qsizetype, qsizetype> range = layout_->slotRangeOverlappingY(vis.top() - buffer, vis.bottom() + buffer);
+  if (range.first < 0) {
+    return;
+  }
+  promoteWithAnchor(range.first, range.second);
+}
+
+void EditorView::promoteWithAnchor(qsizetype first, qsizetype last) {
+  if (!layout_) {
+    return;
+  }
+  inScrollBuild_ = true;
+  // Anchor on the topmost visible slot: after promotion, restore its viewport offset so blocks
+  // measured above the viewport don't shift what the user is looking at.
+  const QRectF vis = documentViewportRect();
+  const QPair<qsizetype, qsizetype> visRange = layout_->slotRangeOverlappingY(vis.top(), vis.bottom());
+  const qreal anchorViewportOffset = (visRange.first >= 0) ? (layout_->slotTop(visRange.first) - scrollY()) : 0.0;
+  layout_->ensureBuilt(first, last, theme_);
+  updateScrollBars();  // totalHeight may change as estimates become measurements
+  if (visRange.first >= 0) {
+    const qreal desiredScroll = layout_->slotTop(visRange.first) - anchorViewportOffset;
+    QScrollBar* bar = verticalScrollBar();
+    const int target = qBound(bar->minimum(), qRound(desiredScroll), bar->maximum());
+    if (target != bar->value()) {
+      bar->setValue(target);
+    }
+  }
+  inScrollBuild_ = false;
+}
+
+bool EditorView::refreshVisibleBlocks(const MarkdownDocument& document) {
+  if (!layout_) {
+    return false;
+  }
+  return refreshBlocks(layout_->promotedTopLevelIds(), document);
 }
 
 void EditorView::updateScrollBars() {
@@ -1014,7 +1088,7 @@ void EditorView::paintSelection(QPainter& painter) const {
   painter.setBrush(color);
 
   if (selection_.isSingleBlock()) {
-    const BlockLayout* block = layout_->block(selection_.focus.blockId);
+    const BlockLayout* block = layout_->blockIfPromoted(selection_.focus.blockId);
     if (block) {
       for (QRectF rect : block->selectionRects(selection_, theme_)) {
         rect.translate(0, -scrollY());
@@ -1061,7 +1135,7 @@ void EditorView::paintCurrentTableCell(QPainter& painter) const {
     return;
   }
 
-  const BlockLayout* table = layout_->block(cursorHit_.blockId);
+  const BlockLayout* table = layout_->blockIfPromoted(cursorHit_.blockId);
   if (!table || table->type() != BlockType::Table) {
     return;
   }
@@ -1119,7 +1193,7 @@ EditorView::HeadingBadge EditorView::headingBadgeForBlock(NodeId blockId) const 
     return {};
   }
 
-  const BlockLayout* block = layout_->block(topId);
+  const BlockLayout* block = layout_->blockIfPromoted(topId);
   if (!block || block->type() != BlockType::Heading || block->headingLevel() < 3 || block->headingLevel() > 6) {
     return {};
   }

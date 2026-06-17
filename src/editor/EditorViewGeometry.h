@@ -73,7 +73,7 @@ QPair<qsizetype, qsizetype> wordRangeAtOffset(const QString& text, qsizetype off
 // document. Reproduces the virtual trailing-paragraph caret and per-zone cursor
 // geometry so a CursorPosition survives layout rebuilds (resize/theme/refresh)
 // without snapping back inside the last block.
-HitTestResult hitForCursorPosition(const DocumentLayout& layout, const RenderTheme& theme, CursorPosition position);
+HitTestResult hitForCursorPosition(DocumentLayout& layout, const RenderTheme& theme, CursorPosition position);
 
 // Top-level + nested blocks between two block ids, in document order (geometric
 // top-to-bottom). Used to paint multi-block selection spans.

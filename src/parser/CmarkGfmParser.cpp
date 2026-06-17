@@ -11,6 +11,7 @@
 #include <QElapsedTimer>
 #include <QHash>
 #include <QJsonDocument>
+#include <QLoggingCategory>
 #include <QStringList>
 #include <QVector>
 
@@ -20,6 +21,30 @@ extern "C" {
 
 namespace muffin {
 namespace {
+
+Q_LOGGING_CATEGORY(parsePerf, "muffin.perf", QtWarningMsg)
+
+// RAII per-phase timer for parseDocument. Emits "label <ms>" on scope exit via the
+// muffin.perf category, which MUFFIN_PERF_LOG captures. No-op (single branch) when the
+// category's debug level is disabled.
+class ParsePerfTimer {
+public:
+  explicit ParsePerfTimer(const char* label) : label_(label), enabled_(parsePerf().isDebugEnabled()) {
+    if (enabled_) {
+      timer_.start();
+    }
+  }
+  ~ParsePerfTimer() {
+    if (enabled_) {
+      qCDebug(parsePerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0 << " ms";
+    }
+  }
+
+private:
+  const char* label_;
+  bool enabled_ = false;
+  QElapsedTimer timer_;
+};
 
 void annotateSourceOffsets(const LineStartOffsetCache& lineOffsets, QStringView markdown, MarkdownNode& node) {
   SourceRange range = node.sourceRange();
@@ -892,7 +917,11 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   QElapsedTimer timer;
   timer.start();
 
-  const FrontMatterScanResult frontMatter = options.enableFrontMatter ? scanFrontMatter(markdown) : FrontMatterScanResult{};
+  FrontMatterScanResult frontMatter;
+  {
+    ParsePerfTimer t("parse.frontMatter");
+    frontMatter = options.enableFrontMatter ? scanFrontMatter(markdown) : FrontMatterScanResult{};
+  }
   qsizetype markdownStart = 0;
   std::unique_ptr<MarkdownNode> frontMatterNode;
   if (frontMatter.found) {
@@ -918,29 +947,91 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   }
 
   const QStringView markdownToParse = markdown.mid(markdownStart);
-  const QByteArray utf8 = legacyMathDelimitersToDollar(markdownToParse).toUtf8();
-  const QVector<DefinitionParseResult> definitions = scanDefinitionBlocks(markdownToParse);
-  cmark_parser* parser = cmark_parser_new(CMARK_OPT_DEFAULT | CMARK_OPT_FOOTNOTES);
-  attachExtensions(parser, options);
-  cmark_parser_feed(parser, utf8.constData(), static_cast<size_t>(utf8.size()));
-  cmark_node* document = cmark_parser_finish(parser);
+  QString mathConverted;
+  {
+    ParsePerfTimer t("parse.mathConvert");
+    mathConverted = legacyMathDelimitersToDollar(markdownToParse);
+  }
+  QByteArray utf8;
+  {
+    ParsePerfTimer t("parse.toUtf8");
+    utf8 = mathConverted.toUtf8();
+  }
+  QVector<DefinitionParseResult> definitions;
+  {
+    ParsePerfTimer t("parse.scanDefinitions");
+    definitions = scanDefinitionBlocks(markdownToParse);
+  }
+  cmark_parser* parser = nullptr;
+  cmark_node* document = nullptr;
+  {
+    ParsePerfTimer t("parse.cmark");
+    parser = cmark_parser_new(CMARK_OPT_DEFAULT | CMARK_OPT_FOOTNOTES);
+    attachExtensions(parser, options);
+    cmark_parser_feed(parser, utf8.constData(), static_cast<size_t>(utf8.size()));
+    document = cmark_parser_finish(parser);
+  }
 
-  const LineStartOffsetCache lineOffsets(markdownToParse);
+  const LineStartOffsetCache lineOffsets = [markdownToParse] {
+    ParsePerfTimer t("parse.lineOffsets");
+    return LineStartOffsetCache(markdownToParse);
+  }();
   CmarkNodeAdapter adapter(&lineOffsets, markdownToParse);
   ParseResult result;
-  result.root = adapter.convertBlock(document);
-  insertVirtualEmptyParagraphs(markdownToParse, *result.root);
-  annotateSourceOffsets(lineOffsets, markdownToParse, *result.root);
-  annotateMathDelimiters(markdownToParse, *result.root);
-  insertVirtualEmptyParagraphsInBlockQuotes(markdownToParse, *result.root);
-  insertMissingDefinitions(*result.root, definitions, lineOffsets);
-  annotateDefinitionBlocks(*result.root, definitions, lineOffsets);
-  insertTrailingEmptyParagraphAfterDefinition(markdownToParse, *result.root, definitions, lineOffsets);
-  annotateTableCellSourceRanges(markdownToParse, lineOffsets, *result.root);
+  {
+    ParsePerfTimer t("parse.convertBlock");
+    const bool perf = parsePerf().isDebugEnabled();
+    CmarkNodeAdapter::setPerfEnabled(perf);
+    CmarkNodeAdapter::resetPerfCounters();
+    LineStartOffsetCache::setByteColPerfEnabled(perf);
+    LineStartOffsetCache::resetByteColPerf();
+    result.root = adapter.convertBlock(document);
+    CmarkNodeAdapter::setPerfEnabled(false);
+    LineStartOffsetCache::setByteColPerfEnabled(false);
+    CmarkNodeAdapter::dumpConvertBreakdown();
+    if (perf) {
+      qCDebug(parsePerf).nospace() << "lineOffset.byteColumn " << LineStartOffsetCache::byteColPerfMs() << " ms";
+    }
+  }
+  {
+    ParsePerfTimer t("parse.insertVirtualEmptyParagraphs");
+    insertVirtualEmptyParagraphs(markdownToParse, *result.root);
+  }
+  {
+    ParsePerfTimer t("parse.annotateSourceOffsets");
+    annotateSourceOffsets(lineOffsets, markdownToParse, *result.root);
+  }
+  {
+    ParsePerfTimer t("parse.annotateMathDelimiters");
+    annotateMathDelimiters(markdownToParse, *result.root);
+  }
+  {
+    ParsePerfTimer t("parse.insertVEPInBlockQuotes");
+    insertVirtualEmptyParagraphsInBlockQuotes(markdownToParse, *result.root);
+  }
+  {
+    ParsePerfTimer t("parse.insertMissingDefinitions");
+    insertMissingDefinitions(*result.root, definitions, lineOffsets);
+  }
+  {
+    ParsePerfTimer t("parse.annotateDefinitionBlocks");
+    annotateDefinitionBlocks(*result.root, definitions, lineOffsets);
+  }
+  {
+    ParsePerfTimer t("parse.insertTrailingVEPAfterDefinition");
+    insertTrailingEmptyParagraphAfterDefinition(markdownToParse, *result.root, definitions, lineOffsets);
+  }
+  {
+    ParsePerfTimer t("parse.annotateTableCellRanges");
+    annotateTableCellSourceRanges(markdownToParse, lineOffsets, *result.root);
+  }
   // cmark turns a lone `*`/`-`/`+`/`1.` (trailing newline satisfies its bullet check) into an empty
   // list item the editor can't edit (its list-marker validation requires a space). Demote those to
   // paragraphs at parse time so load and edit paths agree. Done last, on the pre-front-matter tree.
-  demotePendingListMarkers(*result.root, markdownToParse.toString());
+  {
+    ParsePerfTimer t("parse.demoteListMarkers");
+    demotePendingListMarkers(*result.root, markdownToParse.toString());
+  }
 
   if (frontMatterNode) {
     const int lineDelta = frontMatter.lineEnd;

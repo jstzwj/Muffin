@@ -30,6 +30,10 @@ public:
   void setDocument(const MarkdownDocument& document, QString documentPath = {});
   bool refreshBlock(NodeId blockId, const MarkdownDocument& document);
   bool refreshBlocks(const QVector<NodeId>& blockIds, const MarkdownDocument& document);
+  // Re-runs the per-block rebuild only for currently-promoted (visible) top-level blocks — used
+  // by the spell-check overlay toggle so we don't rebuild the whole large document at once;
+  // un-promoted blocks pick up the new state when they scroll into view.
+  bool refreshVisibleBlocks(const MarkdownDocument& document);
   bool refreshTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document);
   void setZoomPercent(int percent);
   void setFontSizePx(int px);
@@ -80,6 +84,7 @@ protected:
   bool event(QEvent* event) override;
   void paintEvent(QPaintEvent* event) override;
   void resizeEvent(QResizeEvent* event) override;
+  void scrollContentsBy(int dx, int dy) override;
   void wheelEvent(QWheelEvent* event) override;
   void mousePressEvent(QMouseEvent* event) override;
   void mouseDoubleClickEvent(QMouseEvent* event) override;
@@ -103,6 +108,10 @@ private:
 
   void rebuildLayout();
   void updateScrollBars();
+  // Lazy-layout: promote the visible window (+buffer) to full detail, anchor-correcting the
+  // scrollbar so promoting blocks above the viewport doesn't shift what the user sees.
+  void ensureVisibleBuilt();
+  void promoteWithAnchor(qsizetype first, qsizetype last);
   QRectF documentViewportRect() const;
   qreal scrollY() const;
   void applyScrollBarStyle();
@@ -157,6 +166,7 @@ private:
   QPropertyAnimation* scrollAnimation_ = nullptr;
   NodeId editingHtmlBlockId_;
   HtmlBlockHoverController htmlHover_;
+  bool inScrollBuild_ = false;  // guards ensureVisibleBuilt against re-entry via anchor setValue
 };
 
 }  // namespace muffin

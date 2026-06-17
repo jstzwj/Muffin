@@ -184,12 +184,12 @@ QPair<qsizetype, qsizetype> wordRangeAtOffset(const QString& text, qsizetype off
   return {start, end};
 }
 
-HitTestResult hitForCursorPosition(const DocumentLayout& layout, const RenderTheme& theme, CursorPosition position) {
+HitTestResult hitForCursorPosition(DocumentLayout& layout, const RenderTheme& theme, CursorPosition position) {
   if (!position.isValid()) {
     return {};
   }
 
-  const BlockLayout* block = layout.block(position.blockId);
+  const BlockLayout* block = layout.block(position.blockId, theme);
   if (!block) {
     return {};
   }
@@ -323,19 +323,23 @@ QVector<const BlockLayout*> blocksBetween(const DocumentLayout& layout, NodeId f
     return result;
   }
 
-  const BlockLayout* firstBlock = layout.block(first);
-  const BlockLayout* lastBlock = layout.block(last);
-  if (!firstBlock || !lastBlock) {
+  const qsizetype firstIdx = layout.topLevelIndexFor(first);
+  const qsizetype lastIdx = layout.topLevelIndexFor(last);
+  if (firstIdx < 0 || lastIdx < 0) {
     return result;
   }
 
   NodeId startId = first;
   NodeId endId = last;
-  if (firstBlock->rect().top() > lastBlock->rect().top() ||
-      (qFuzzyCompare(firstBlock->rect().top(), lastBlock->rect().top()) && firstBlock->rect().left() > lastBlock->rect().left())) {
+  qsizetype startIdx = firstIdx;
+  qsizetype endIdx = lastIdx;
+  if (firstIdx > lastIdx) {
+    qSwap(startIdx, endIdx);
     qSwap(startId, endId);
   }
 
+  // Collect promoted top-level blocks (and their nested children) between the endpoints. Un-promoted
+  // (offscreen) blocks are skipped — their selection rects are not visible anyway under the lazy layout.
   bool collecting = false;
   const auto collect = [&](const auto& self, const BlockLayout& block) -> void {
     if (block.nodeId() == startId) {
@@ -356,7 +360,11 @@ QVector<const BlockLayout*> blocksBetween(const DocumentLayout& layout, NodeId f
     }
   };
 
-  for (const auto& block : layout.blocks()) {
+  for (qsizetype i = startIdx; i <= endIdx; ++i) {
+    const BlockLayout* block = layout.blockIfPromoted(layout.slotNodeId(i));
+    if (!block) {
+      continue;
+    }
     collect(collect, *block);
     if (!result.isEmpty() && result.last()->nodeId() == endId) {
       break;
@@ -368,6 +376,13 @@ QVector<const BlockLayout*> blocksBetween(const DocumentLayout& layout, NodeId f
 bool blockComesBefore(const DocumentLayout& layout, NodeId first, NodeId second) {
   if (first == second) {
     return true;
+  }
+  // Order by top-level slot index (robust to un-promoted offscreen blocks); for two ids nested in
+  // the same top-level block fall back to the promoted-tree traversal.
+  const qsizetype a = layout.topLevelIndexFor(first);
+  const qsizetype b = layout.topLevelIndexFor(second);
+  if (a >= 0 && b >= 0 && a != b) {
+    return a < b;
   }
   const QVector<const BlockLayout*> range = blocksBetween(layout, first, second);
   return !range.isEmpty() && range.first()->nodeId() == first;

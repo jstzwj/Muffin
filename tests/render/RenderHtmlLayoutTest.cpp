@@ -238,7 +238,7 @@ void testDocumentLayoutInlineLayoutContract() {
   QImage image(QSize(420, qCeil(layout.totalHeight()) + 20), QImage::Format_ARGB32);
   image.fill(theme.backgroundColor());
   QPainter painter(&image);
-  for (const auto& block : layout.blocks()) {
+  for (const BlockLayout* block : layout.promotedBlocks()) {
     block->paint(painter, theme, 0.0);
   }
   painter.end();
