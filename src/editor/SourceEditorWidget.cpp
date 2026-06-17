@@ -47,6 +47,63 @@ QTextCharFormat sourceFormat(QColor foreground, bool bold = false, double pointS
   return result;
 }
 
+// Every color the source page needs, derived in one place from the active RenderTheme. The widget
+// stylesheet, the syntax highlighter, the line-number gutter, the current-line highlight and the
+// zero-width-space markers all read from here, so a theme switch restyles the source page the same
+// way it restyles the rendered view — instead of freezing it on a fixed light appearance.
+struct SourceColors {
+  QColor background;
+  QColor gutterBackground;
+  QColor text;
+  QColor currentLine;
+  QColor lineNumber;
+  QColor selection;
+
+  QColor heading;
+  QColor listMarker;
+  QColor linkLabel;
+  QColor linkTarget;
+  QColor inlineCodeText;
+  QColor inlineCodeBackground;
+  QColor fence;
+  QColor quote;
+  QColor emphasis;
+  QColor table;
+  QColor zeroWidthText;
+  QColor zeroWidthBackground;
+  QColor spell;
+
+  static SourceColors fromTheme(const muffin::RenderTheme& theme) {
+    // Dark test mirrors RenderTheme::codeHighlightColor so the source page flips on the same
+    // boundary as every other theme-driven surface.
+    const bool dark = theme.backgroundColor().lightness() < 128;
+    SourceColors c;
+    // Structural colors come straight from the theme so the source page tracks it exactly.
+    c.background = theme.backgroundColor();
+    c.text = theme.textColor();
+    c.selection = theme.selectionColor();
+    c.inlineCodeText = theme.textColor();
+    c.inlineCodeBackground = theme.codeBackgroundColor();
+    c.spell = theme.spellCheckColor();
+    c.linkTarget = theme.linkColor();
+    // Decorative accents have no theme field: keep the hand-tuned light values (zero regression on
+    // light themes) and supply brighter dark counterparts that read on a #1f2328 page.
+    c.heading = dark ? QColor(QStringLiteral("#ff8fb3")) : QColor(QStringLiteral("#e34f8b"));
+    c.emphasis = dark ? QColor(QStringLiteral("#ff7ad9")) : QColor(QStringLiteral("#a00070"));
+    c.listMarker = dark ? QColor(QStringLiteral("#ffb347")) : QColor(QStringLiteral("#c27a00"));
+    c.linkLabel = dark ? QColor(QStringLiteral("#ffc070")) : QColor(QStringLiteral("#c77700"));
+    c.fence = dark ? QColor(QStringLiteral("#e0a85a")) : QColor(QStringLiteral("#8a5a00"));
+    c.quote = dark ? QColor(QStringLiteral("#8b949e")) : QColor(QStringLiteral("#7a7a7a"));
+    c.table = dark ? QColor(QStringLiteral("#6cb6ff")) : QColor(QStringLiteral("#1a60a8"));
+    c.lineNumber = dark ? QColor(QStringLiteral("#6e7681")) : QColor(QStringLiteral("#c9cdd3"));
+    c.gutterBackground = dark ? QColor(QStringLiteral("#191c21")) : QColor(QStringLiteral("#fafbfc"));
+    c.currentLine = dark ? QColor(QStringLiteral("#2a3038")) : QColor(QStringLiteral("#f3f3f3"));
+    c.zeroWidthText = c.heading;
+    c.zeroWidthBackground = dark ? QColor(QStringLiteral("#3a2230")) : QColor(QStringLiteral("#fff0f6"));
+    return c;
+  }
+};
+
 class MarkdownSourceHighlighter final : public QSyntaxHighlighter {
 public:
   explicit MarkdownSourceHighlighter(QTextDocument* document) : QSyntaxHighlighter(document) {
@@ -55,6 +112,12 @@ public:
 
   void setBasePointSize(double pointSize) {
     basePointSize_ = pointSize;
+    rebuildFormats();
+    rehighlight();
+  }
+
+  void setColors(const SourceColors& colors) {
+    colors_ = colors;
     rebuildFormats();
     rehighlight();
   }
@@ -146,25 +209,24 @@ protected:
 
 private:
   void rebuildFormats() {
-    const QColor headingColor(QStringLiteral("#e34f8b"));
-    headingFormats_[0] = sourceFormat(headingColor, true, basePointSize_ * 1.78);
-    headingFormats_[1] = sourceFormat(headingColor, true, basePointSize_ * 1.36);
-    headingFormats_[2] = sourceFormat(headingColor, true, basePointSize_ * 1.18);
-    headingFormats_[3] = sourceFormat(headingColor, true, basePointSize_);
-    headingFormats_[4] = sourceFormat(headingColor, true, basePointSize_);
-    headingFormats_[5] = sourceFormat(headingColor, true, basePointSize_);
-    markerFormat_ = sourceFormat(QColor(QStringLiteral("#c27a00")));
-    linkLabelFormat_ = sourceFormat(QColor(QStringLiteral("#c77700")));
-    linkTargetFormat_ = sourceFormat(QColor(QStringLiteral("#6f7fbf")));
-    codeFormat_ = sourceFormat(QColor(QStringLiteral("#1f2328")));
-    codeFormat_.setBackground(QColor(QStringLiteral("#eef2f7")));
-    fenceFormat_ = sourceFormat(QColor(QStringLiteral("#8a5a00")));
-    quoteFormat_ = sourceFormat(QColor(QStringLiteral("#7a7a7a")));
-    emphasisFormat_ = sourceFormat(QColor(QStringLiteral("#a00070")));
-    tableFormat_ = sourceFormat(QColor(QStringLiteral("#1a60a8")));
-    zeroWidthFormat_ = sourceFormat(QColor(QStringLiteral("#d14f7f")), true);
-    zeroWidthFormat_.setBackground(QColor(QStringLiteral("#fff0f6")));
-    spellFormat_.setUnderlineColor(QColor(QStringLiteral("#d1242f")));
+    headingFormats_[0] = sourceFormat(colors_.heading, true, basePointSize_ * 1.78);
+    headingFormats_[1] = sourceFormat(colors_.heading, true, basePointSize_ * 1.36);
+    headingFormats_[2] = sourceFormat(colors_.heading, true, basePointSize_ * 1.18);
+    headingFormats_[3] = sourceFormat(colors_.heading, true, basePointSize_);
+    headingFormats_[4] = sourceFormat(colors_.heading, true, basePointSize_);
+    headingFormats_[5] = sourceFormat(colors_.heading, true, basePointSize_);
+    markerFormat_ = sourceFormat(colors_.listMarker);
+    linkLabelFormat_ = sourceFormat(colors_.linkLabel);
+    linkTargetFormat_ = sourceFormat(colors_.linkTarget);
+    codeFormat_ = sourceFormat(colors_.inlineCodeText);
+    codeFormat_.setBackground(colors_.inlineCodeBackground);
+    fenceFormat_ = sourceFormat(colors_.fence);
+    quoteFormat_ = sourceFormat(colors_.quote);
+    emphasisFormat_ = sourceFormat(colors_.emphasis);
+    tableFormat_ = sourceFormat(colors_.table);
+    zeroWidthFormat_ = sourceFormat(colors_.zeroWidthText, true);
+    zeroWidthFormat_.setBackground(colors_.zeroWidthBackground);
+    spellFormat_.setUnderlineColor(colors_.spell);
     spellFormat_.setUnderlineStyle(QTextCharFormat::SpellCheckUnderline);
   }
 
@@ -200,6 +262,7 @@ private:
     }
   }
 
+  SourceColors colors_ = SourceColors::fromTheme(muffin::RenderTheme::github());
   double basePointSize_ = 12.5;
   QTextCharFormat headingFormats_[6];
   QTextCharFormat markerFormat_;
@@ -264,9 +327,13 @@ public:
     });
   }
 
-  void setTheme(RenderTheme theme) {
-    theme_ = std::move(theme);
+  void applySourceColors(const SourceColors& colors) {
+    colors_ = colors;
+    if (highlighter_) {
+      highlighter_->setColors(colors_);
+    }
     updateCurrentLineSelection();
+    lineNumberArea_->update();
     viewport()->update();
   }
 
@@ -289,9 +356,9 @@ public:
 
   void paintLineNumberArea(QPaintEvent* event) {
     QPainter painter(lineNumberArea_);
-    painter.fillRect(event->rect(), palette().base());
+    painter.fillRect(event->rect(), colors_.gutterBackground);
     painter.setFont(lineNumberFont_);
-    painter.setPen(QColor(QStringLiteral("#c9cdd3")));
+    painter.setPen(colors_.lineNumber);
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
@@ -314,7 +381,7 @@ public:
 private:
   void updateCurrentLineSelection() {
     QTextEdit::ExtraSelection currentLine;
-    currentLine.format.setBackground(QColor(QStringLiteral("#f3f3f3")));
+    currentLine.format.setBackground(colors_.currentLine);
     currentLine.format.setProperty(QTextFormat::FullWidthSelection, true);
     currentLine.cursor = textCursor();
     currentLine.cursor.clearSelection();
@@ -393,8 +460,8 @@ protected:
 
   void paintZeroWidthSpaces(QPainter& painter) {
     painter.save();
-    painter.setPen(QColor(QStringLiteral("#d14f7f")));
-    painter.setBrush(QColor(QStringLiteral("#fff0f6")));
+    painter.setPen(colors_.zeroWidthText);
+    painter.setBrush(colors_.zeroWidthBackground);
     QTextBlock block = firstVisibleBlock();
     while (block.isValid()) {
       const QRectF blockRect = blockBoundingGeometry(block).translated(contentOffset());
@@ -433,7 +500,7 @@ protected:
     }
   }
 
-  RenderTheme theme_ = RenderTheme::github();
+  SourceColors colors_ = SourceColors::fromTheme(RenderTheme::github());
   MarkdownSourceHighlighter* highlighter_ = nullptr;
   LineNumberArea* lineNumberArea_ = nullptr;
   QFont lineNumberFont_;
@@ -505,18 +572,19 @@ void muffin::SourceEditorWidget::setFontSizePx(int px) {
 }
 
 void muffin::SourceEditorWidget::setTheme(const RenderTheme& theme) {
+  const SourceColors colors = SourceColors::fromTheme(theme);
+  editor_->applySourceColors(colors);
   setStyleSheet(QStringLiteral(
                     "SourceEditorWidget { background:%1; }"
                     "QPlainTextEdit {"
-                    "  background:#ffffff;"
+                    "  background:%1;"
                     "  color:%2;"
                     "  selection-background-color:%3;"
                     "  padding:0 0 56px 0;"
                     "}")
-                    .arg(
-                        theme.backgroundColor().name(QColor::HexRgb),
-                        theme.textColor().name(QColor::HexRgb),
-                        theme.selectionColor().name(QColor::HexRgb)));
+                    .arg(colors.background.name(QColor::HexRgb),
+                         colors.text.name(QColor::HexRgb),
+                         colors.selection.name(QColor::HexRgb)));
 }
 
 QPlainTextEdit* muffin::SourceEditorWidget::editor() {
