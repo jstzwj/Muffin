@@ -951,18 +951,40 @@ void EditorView::promoteWithAnchor(qsizetype first, qsizetype last) {
   // measured above the viewport don't shift what the user is looking at.
   const QRectF vis = documentViewportRect();
   const QPair<qsizetype, qsizetype> visRange = layout_->slotRangeOverlappingY(vis.top(), vis.bottom());
-  const qreal anchorViewportOffset = (visRange.first >= 0) ? (layout_->slotTop(visRange.first) - scrollY()) : 0.0;
+  const ViewportAnchor anchor = captureSlotAnchor(visRange.first);
   layout_->ensureBuilt(first, last, theme_);
   updateScrollBars();  // totalHeight may change as estimates become measurements
-  if (visRange.first >= 0) {
-    const qreal desiredScroll = layout_->slotTop(visRange.first) - anchorViewportOffset;
-    QScrollBar* bar = verticalScrollBar();
-    const int target = qBound(bar->minimum(), qRound(desiredScroll), bar->maximum());
-    if (target != bar->value()) {
-      bar->setValue(target);
-    }
-  }
+  restoreSlotAnchor(anchor);
   inScrollBuild_ = false;
+}
+
+EditorView::ViewportAnchor EditorView::captureSlotAnchor(qsizetype slotIndex) const {
+  ViewportAnchor anchor;
+  if (!layout_ || slotIndex < 0 || slotIndex >= layout_->slotCount()) {
+    return anchor;
+  }
+  anchor.valid = true;
+  anchor.slotIndex = slotIndex;
+  anchor.screenOffset = layout_->slotTop(slotIndex) - scrollY();
+  return anchor;
+}
+
+bool EditorView::restoreSlotAnchor(const ViewportAnchor& anchor) {
+  if (!anchor.valid || !layout_) {
+    return false;
+  }
+  const qreal desiredScroll = layout_->slotTop(anchor.slotIndex) - anchor.screenOffset;
+  QScrollBar* bar = verticalScrollBar();
+  const int target = qBound(bar->minimum(), qRound(desiredScroll), bar->maximum());
+  if (target == bar->value()) {
+    return false;
+  }
+  // Suppress the valueChanged -> scrollContentsBy -> ensureVisibleBuilt cascade; the caller's
+  // rebuild already produced correct block heights, and the next paint re-promotes if needed.
+  inScrollBuild_ = true;
+  bar->setValue(target);
+  inScrollBuild_ = false;
+  return true;
 }
 
 bool EditorView::refreshVisibleBlocks(const MarkdownDocument& document) {
@@ -1047,10 +1069,21 @@ void EditorView::refreshInlineProjectionForSelectionChange(SelectionRange previo
   addSelectionBlocks(blockIds, previousSelection);
   addSelectionBlocks(blockIds, selection_);
 
+  // Revealing/hiding inline markdown markers reflows lines and changes block heights. Pin the
+  // focus block's on-screen position so the line the user clicked stays put instead of drifting
+  // when a rebuilt block above it (e.g. the block the cursor just left) resizes. Captured before
+  // the rebuild and restored after; a no-op when nothing above the focus block changed.
+  const qsizetype focusSlot = layout_ ? layout_->topLevelIndexFor(cursorPosition_.blockId) : -1;
+  const ViewportAnchor anchor = captureSlotAnchor(focusSlot);
+
   bool refreshed = false;
   if (document_ && layout_ && !blockIds.isEmpty()) {
     refreshed = refreshBlocks(blockIds, *document_);
   }
+  if (refreshed && restoreSlotAnchor(anchor)) {
+    viewport()->update();  // the pin scrolled the view — repaint coherently with the new offset
+  }
+
   if (!refreshed) {
     updateCursorHitFromPosition();
     cursorVisible_ = selection_.isCollapsed() && cursorHit_.isValid();

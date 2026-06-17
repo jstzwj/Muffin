@@ -1,5 +1,7 @@
 #include "EditorViewTestUtils.h"
 
+#include <QScrollBar>
+
 using namespace muffin;
 
 void testEditorViewPlainInlineLayout() {
@@ -376,6 +378,67 @@ void testEditorViewActiveSetextHeadingRendersContentWithoutPrefix() {
           QStringLiteral("active setext heading visible text should be content only, got: %1").arg(layout->visibleText()));
 }
 
+void testEditorViewRevealKeepsFocusBlockAnchored() {
+  // Revealing/hiding inline markdown markers reflows a block and changes its height. When the
+  // cursor leaves such a block, the block below (the new focus) must stay at its on-screen
+  // position instead of jumping. A selection spanning many emphasis spans reveals them all,
+  // giving a height change large enough to assert on deterministically.
+  DocumentSession session;
+  EditorView view;
+
+  // 40 "**x** " spans in the paragraph under test; filler paragraphs above and below keep it in
+  // the middle of a tall document so the scrollbar has room to compensate without clamping.
+  const QString fillerLine = QStringLiteral("the quick brown fox jumps over the lazy dog. ");
+  QString filler;
+  for (int i = 0; i < 40; ++i) {
+    filler += fillerLine + QStringLiteral("\n\n");
+  }
+  QString paragraph;
+  for (int i = 0; i < 40; ++i) {
+    paragraph += QStringLiteral("**x** ");
+  }
+  session.setMarkdownText(filler + paragraph + QStringLiteral("\n\ntarget line") + QStringLiteral("\n\n") + filler, false);
+
+  view.resize(420, 480);
+  view.setDocument(session.document());
+
+  const NodeId block0 = blockAt(session, 40)->id();  // the revealing paragraph
+  const NodeId block1 = blockAt(session, 41)->id();  // the focus target below it
+
+  // Reveal spans 5..34 by selecting across them (focus stays in block 0). visible offset of span
+  // i is 2i; source offset of its content is 6i+2.
+  SelectionRange reveal;
+  reveal.anchor = inlineCursor(block0, 2 * 5, 6 * 5 + 2);
+  reveal.focus = inlineCursor(block0, 2 * 34 + 1, 6 * 34 + 3);
+  view.setSelectionRange(reveal);
+
+  const qreal heightRevealed = view.nodeRect(block0).height();
+
+  // Scroll so block 0 sits near the top of the viewport with the filler scrolled off above —
+  // scrollY is large and well clear of 0/maximum, so the anchor restore won't clamp.
+  QScrollBar* bar = view.verticalScrollBar();
+  bar->setValue(qBound(bar->minimum(), qRound(view.nodeRect(block0).top() - 50.0), bar->maximum()));
+
+  const qreal focusScreenBefore = view.nodeRect(block1).top() - static_cast<qreal>(bar->value());
+
+  // Move the cursor into block 1: block 0 loses its revealed markers and reflows shorter. The
+  // anchor fix must re-pin block 1 so its on-screen position is preserved.
+  view.setCursorPosition(inlineCursor(block1, 0, 0));
+
+  const qreal heightHidden = view.nodeRect(block0).height();
+  // Sanity: the assertion is only meaningful if the reveal actually resized block 0.
+  require(heightRevealed > heightHidden + 1.0,
+          QStringLiteral("revealed markers should have made block 0 taller (revealed=%1 hidden=%2)")
+              .arg(heightRevealed)
+              .arg(heightHidden));
+
+  const qreal focusScreenAfter = view.nodeRect(block1).top() - static_cast<qreal>(bar->value());
+  require(qAbs(focusScreenAfter - focusScreenBefore) < 1.0,
+          QStringLiteral("focus block drifted on marker reveal (before=%1 after=%2)")
+              .arg(focusScreenBefore)
+              .arg(focusScreenAfter));
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -394,6 +457,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testEditorViewActiveHeadingHitContentOffsetStable);
   RUN_TEST(testEditorViewActiveHeadingRendersContentWithoutPrefix);
   RUN_TEST(testEditorViewActiveSetextHeadingRendersContentWithoutPrefix);
+  RUN_TEST(testEditorViewRevealKeepsFocusBlockAnchored);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

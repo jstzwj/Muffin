@@ -112,6 +112,18 @@ private:
   // scrollbar so promoting blocks above the viewport doesn't shift what the user sees.
   void ensureVisibleBuilt();
   void promoteWithAnchor(qsizetype first, qsizetype last);
+  // A stable on-screen reference point used to keep the viewport from jumping when a rebuild
+  // changes block heights. Capture a top-level slot's screen offset before the rebuild, restore
+  // it after by moving the scrollbar. Shared by lazy-block promotion and selection-driven inline
+  // rebuilds (marker reveal) so neither drifts what the user is looking at.
+  struct ViewportAnchor {
+    bool valid = false;
+    qsizetype slotIndex = -1;
+    qreal screenOffset = 0.0;  // slotTop(slotIndex) - scrollY() at capture time
+  };
+  ViewportAnchor captureSlotAnchor(qsizetype slotIndex) const;
+  // Re-pins the captured slot to its original screen offset; returns true if the scrollbar moved.
+  bool restoreSlotAnchor(const ViewportAnchor& anchor);
   QRectF documentViewportRect() const;
   qreal scrollY() const;
   void applyScrollBarStyle();
