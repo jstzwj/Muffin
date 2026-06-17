@@ -82,6 +82,28 @@ void muffin::MainWindow::setRecentFiles(const QStringList& paths) const {
   settings.setValue(QStringLiteral("recentFiles"), paths);
 }
 
+void muffin::MainWindow::restoreStartupFile() {
+  // files/startupBehavior: 0 = open new file, 1 = reopen last file.
+  QSettings settings;
+  if (settings.value(QStringLiteral("files/startupBehavior"), 0).toInt() != 1) {
+    return;  // default empty document is already in place
+  }
+
+  const QStringList recent = recentFiles();
+  if (recent.isEmpty()) {
+    return;
+  }
+
+  const QString path = recent.first();
+  // A stale entry (file deleted/moved since it was recorded) must not pop an
+  // "Open Failed" error at launch; just fall back to the empty document.
+  if (!QFileInfo(path).isFile()) {
+    return;
+  }
+
+  openFile(path);
+}
+
 void muffin::MainWindow::showDocumentProperties() {
   if (session_.filePath().isEmpty()) {
     return;

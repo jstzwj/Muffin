@@ -44,6 +44,10 @@ public:
   explicit MainWindow(QWidget* parent = nullptr);
 
   bool openFile(QString path);
+  // Honor the "files/startupBehavior" preference when the app is launched
+  // without a file argument: reopen the most-recently-used file, or leave the
+  // default empty document. Called from main() so a command-line file still wins.
+  void restoreStartupFile();
   bool saveCurrentDocument();
   bool isDocumentModified() const;
 

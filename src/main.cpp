@@ -76,6 +76,8 @@ int main(int argc, char *argv[]) {
   const QStringList positionalArguments = parser.positionalArguments();
   if (!positionalArguments.isEmpty()) {
     window.openFile(QFileInfo(positionalArguments.first()).absoluteFilePath());
+  } else {
+    window.restoreStartupFile();
   }
   window.show();
 
