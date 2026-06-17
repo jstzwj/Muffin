@@ -674,12 +674,19 @@ bool muffin::DocumentSession::applyInsertedNode(
 
 void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector<qsizetype> demoteAtOffsets) {
   PerfTimer perf("session.fullParse");
-  ParseResult result = parser_.parseDocument(QStringView(text), parseOptions_);
+  ParseResult result;
+  {
+    PerfTimer parsePerf("session.parse");
+    result = parser_.parseDocument(QStringView(text), parseOptions_);
+  }
   lastParseElapsedMs_ = result.elapsedMs;
   lastParseWasLocalEdit_ = false;
   lastLocalEditChangedTopLevelStructure_ = false;
   lastLocalTopLevelRangeChange_ = {};
-  document_.setMarkdownText(std::move(text), std::move(result.root));
+  {
+    PerfTimer buildPerf("session.buildDocument");
+    document_.setMarkdownText(std::move(text), std::move(result.root));
+  }
   document_.setModified(modified);
   if (!demoteAtOffsets.isEmpty()) {
     demotePendingMarkersAtOffsets(document_.markdownText(), document_.root(), demoteAtOffsets);

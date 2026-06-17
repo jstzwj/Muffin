@@ -9,6 +9,7 @@
 
 #include <QByteArray>
 #include <QElapsedTimer>
+#include <QHash>
 #include <QJsonDocument>
 #include <QStringList>
 #include <QVector>
@@ -309,54 +310,56 @@ void annotateDefinitionBlocks(
     MarkdownNode& root,
     const QVector<DefinitionParseResult>& definitions,
     const LineStartOffsetCache& lineOffsets) {
+  if (definitions.isEmpty()) {
+    return;
+  }
+  // Index every footnote/link definition node by its source start offset once, so each definition
+  // resolves in O(1) instead of re-walking the whole tree per definition (was O(N x nodes)).
+  QHash<qsizetype, MarkdownNode*> defNodeByStart;
+  const auto indexTree = [&](const auto& self, MarkdownNode& node) -> void {
+    if ((node.type() == BlockType::FootnoteDefinition || node.type() == BlockType::LinkDefinition) &&
+        node.sourceRange().byteStart >= 0) {
+      defNodeByStart.insert(node.sourceRange().byteStart, &node);
+    }
+    for (const auto& child : node.children()) {
+      self(self, *child);
+    }
+  };
+  indexTree(indexTree, root);
+
   for (const DefinitionParseResult& parsedDefinition : definitions) {
     const DefinitionBlock& definition = parsedDefinition.definition;
-    const auto visit = [&](const auto& self, MarkdownNode& node) -> bool {
-      const SourceRange range = node.sourceRange();
-      const bool matchesRange = range.byteStart == definition.markerRange.start &&
-                                range.byteEnd >= definition.markerRange.end;
-      const bool matchesType =
-          (definition.kind == DefinitionBlock::Kind::Footnote && node.type() == BlockType::FootnoteDefinition) ||
-          (definition.kind == DefinitionBlock::Kind::Link && node.type() == BlockType::LinkDefinition);
-      if (matchesRange && matchesType) {
-        DefinitionBlock annotated = definition;
-        if (node.type() == BlockType::FootnoteDefinition) {
-          annotated.sourceRange = {range.byteStart, range.byteEnd};
-        }
-        node.setDefinition(annotated);
-        if (definition.sourceRange.isValid() && node.type() != BlockType::FootnoteDefinition) {
-          SourceRange preciseRange = node.sourceRange();
-          preciseRange.byteStart = definition.sourceRange.start;
-          preciseRange.byteEnd = definition.sourceRange.end;
-          preciseRange.lineStart = lineOffsets.lineForOffset(preciseRange.byteStart);
-          preciseRange.lineEnd = lineOffsets.lineForOffset(preciseRange.byteEnd);
-          const qsizetype lineStart = lineOffsets.offsetForLineColumn(preciseRange.lineStart, 1);
-          preciseRange.columnStart = lineStart >= 0 ? static_cast<int>(preciseRange.byteStart - lineStart + 1) : 1;
-          preciseRange.columnEnd = lineStart >= 0 ? static_cast<int>(preciseRange.byteEnd - lineStart + 1) : preciseRange.columnStart;
-          node.setSourceRange(preciseRange);
-        }
-        return true;
-      }
-      for (const auto& child : node.children()) {
-        if (self(self, *child)) {
-          return true;
-        }
-      }
-      return false;
-    };
-    visit(visit, root);
-  }
-}
-
-bool hasDefinitionBlockStartingAt(const MarkdownNode& root, const DefinitionBlock& definition) {
-  const BlockType expectedType =
-      definition.kind == DefinitionBlock::Kind::Footnote ? BlockType::FootnoteDefinition : BlockType::LinkDefinition;
-  for (const auto& child : root.children()) {
-    if (child->type() == expectedType && child->sourceRange().byteStart == definition.markerRange.start) {
-      return true;
+    const auto found = defNodeByStart.constFind(definition.markerRange.start);
+    if (found == defNodeByStart.constEnd()) {
+      continue;
+    }
+    MarkdownNode& node = *found.value();
+    const SourceRange range = node.sourceRange();
+    const bool matchesRange = range.byteStart == definition.markerRange.start &&
+                              range.byteEnd >= definition.markerRange.end;
+    const bool matchesType =
+        (definition.kind == DefinitionBlock::Kind::Footnote && node.type() == BlockType::FootnoteDefinition) ||
+        (definition.kind == DefinitionBlock::Kind::Link && node.type() == BlockType::LinkDefinition);
+    if (!matchesRange || !matchesType) {
+      continue;
+    }
+    DefinitionBlock annotated = definition;
+    if (node.type() == BlockType::FootnoteDefinition) {
+      annotated.sourceRange = {range.byteStart, range.byteEnd};
+    }
+    node.setDefinition(annotated);
+    if (definition.sourceRange.isValid() && node.type() != BlockType::FootnoteDefinition) {
+      SourceRange preciseRange = node.sourceRange();
+      preciseRange.byteStart = definition.sourceRange.start;
+      preciseRange.byteEnd = definition.sourceRange.end;
+      preciseRange.lineStart = lineOffsets.lineForOffset(preciseRange.byteStart);
+      preciseRange.lineEnd = lineOffsets.lineForOffset(preciseRange.byteEnd);
+      const qsizetype lineStart = lineOffsets.offsetForLineColumn(preciseRange.lineStart, 1);
+      preciseRange.columnStart = lineStart >= 0 ? static_cast<int>(preciseRange.byteStart - lineStart + 1) : 1;
+      preciseRange.columnEnd = lineStart >= 0 ? static_cast<int>(preciseRange.byteEnd - lineStart + 1) : preciseRange.columnStart;
+      node.setSourceRange(preciseRange);
     }
   }
-  return false;
 }
 
 bool shouldInsertSyntheticDefinition(const DefinitionParseResult& parsedDefinition) {
@@ -400,30 +403,49 @@ bool isDefinitionSourceParagraph(const MarkdownNode& node, const DefinitionBlock
 }
 
 void insertMissingDefinitions(MarkdownNode& root, const QVector<DefinitionParseResult>& definitions, const LineStartOffsetCache& lineOffsets) {
-  if (root.type() != BlockType::Document) {
+  if (root.type() != BlockType::Document || definitions.isEmpty()) {
     return;
   }
+  // definitions are scanned top-to-bottom, so markerRange.start is non-decreasing. Index existing
+  // top-level definition blocks once so the existence check is O(1) (was O(M) per definition), and
+  // a monotonically advancing cursor makes the insert-position search O(N + M) overall instead of
+  // re-scanning from the first child for every definition.
+  QHash<qsizetype, BlockType> existingDefTypeByStart;
+  for (const auto& child : root.children()) {
+    const BlockType type = child->type();
+    if ((type == BlockType::FootnoteDefinition || type == BlockType::LinkDefinition) &&
+        child->sourceRange().byteStart >= 0) {
+      existingDefTypeByStart.insert(child->sourceRange().byteStart, type);
+    }
+  }
+
+  qsizetype cursor = 0;
   for (const DefinitionParseResult& parsedDefinition : definitions) {
     if (!shouldInsertSyntheticDefinition(parsedDefinition)) {
       continue;
     }
     const DefinitionBlock& definition = parsedDefinition.definition;
-    if (hasDefinitionBlockStartingAt(root, definition)) {
+    const BlockType expectedType =
+        definition.kind == DefinitionBlock::Kind::Footnote ? BlockType::FootnoteDefinition : BlockType::LinkDefinition;
+    const auto existing = existingDefTypeByStart.constFind(definition.markerRange.start);
+    if (existing != existingDefTypeByStart.constEnd() && existing.value() == expectedType) {
       continue;
     }
 
-    qsizetype insertAt = 0;
-    while (insertAt < root.children().size() &&
-           root.children().at(static_cast<size_t>(insertAt))->sourceRange().byteStart < definition.markerRange.start) {
-      ++insertAt;
+    const auto& children = root.children();
+    while (cursor < static_cast<qsizetype>(children.size()) &&
+           children.at(static_cast<size_t>(cursor))->sourceRange().byteStart < definition.markerRange.start) {
+      ++cursor;
     }
-    if (insertAt < root.children().size() &&
-        (isDefinitionSourceParagraph(*root.children().at(static_cast<size_t>(insertAt)), definition) ||
-         (isVirtualEmptyParagraph(*root.children().at(static_cast<size_t>(insertAt))) &&
-          root.children().at(static_cast<size_t>(insertAt))->sourceRange().byteStart == definition.markerRange.start))) {
+    const qsizetype insertAt = cursor;
+    if (insertAt < static_cast<qsizetype>(children.size()) &&
+        (isDefinitionSourceParagraph(*children.at(static_cast<size_t>(insertAt)), definition) ||
+         (isVirtualEmptyParagraph(*children.at(static_cast<size_t>(insertAt))) &&
+          children.at(static_cast<size_t>(insertAt))->sourceRange().byteStart == definition.markerRange.start))) {
       root.detachChild(insertAt);
     }
     root.insertChild(insertAt, createDefinitionNode(definition, lineOffsets));
+    cursor = insertAt + 1;
   }
 }
 
