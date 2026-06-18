@@ -590,6 +590,14 @@ bool BlockLayout::taskChecked() const {
   return taskChecked_;
 }
 
+void BlockLayout::setAlertKind(AlertKind kind) {
+  alertKind_ = kind;
+}
+
+AlertKind BlockLayout::alertKind() const {
+  return alertKind_;
+}
+
 QRectF BlockLayout::taskCheckboxRect(const RenderTheme& theme) const {
   const qreal markerX = rect_.left() + theme.listIndent() * 0.45;
   const QFontMetricsF metrics(theme.paragraphFont());
@@ -771,8 +779,21 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
     case BlockType::BlockQuote: {
       painter.save();
       painter.setPen(Qt::NoPen);
-      painter.setBrush(theme.quoteBorderColor());
-      painter.drawRect(QRectF(viewRect.left(), viewRect.top(), 4, viewRect.height()));
+      if (alertKind_ != AlertKind::None) {
+        // GitHub-style alert card: tinted background (semi-transparent accent, so it adapts to the
+        // page background of any theme) with a solid accent left bar. v1 keeps the `[!KIND]` first
+        // line visible; an icon/title row is a later enhancement.
+        QColor tint = theme.alertAccent(alertKind_);
+        tint.setAlphaF(0.10f);
+        painter.setBrush(tint);
+        painter.drawRoundedRect(viewRect, 6.0, 6.0);
+        painter.setBrush(theme.alertAccent(alertKind_));
+        painter.drawRoundedRect(QRectF(viewRect.left(), viewRect.top() + 3.0, 4.0, viewRect.height() - 6.0),
+                                2.0, 2.0);
+      } else {
+        painter.setBrush(theme.quoteBorderColor());
+        painter.drawRect(QRectF(viewRect.left(), viewRect.top(), 4, viewRect.height()));
+      }
       painter.restore();
       break;
     }

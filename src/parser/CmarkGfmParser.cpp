@@ -331,6 +331,291 @@ void annotateMathDelimiters(QStringView markdown, MarkdownNode& root) {
   visit(visit, markdown, root);
 }
 
+// Collects the leading plain text of a paragraph's inlines (enough to test a GitHub alert marker),
+// stopping at the first line break so the marker must sit on the blockquote's first line.
+QString leadingInlineText(const QVector<InlineNode>& inlines) {
+  QString text;
+  const auto visit = [&](auto&& self, const QVector<InlineNode>& nodes) -> void {
+    for (const InlineNode& node : nodes) {
+      if (text.size() >= 32) {
+        return;
+      }
+      switch (node.type()) {
+        case InlineType::Text:
+        case InlineType::Code:
+        case InlineType::InlineMath:
+        case InlineType::HtmlInline:
+          text += node.text();
+          break;
+        case InlineType::SoftBreak:
+        case InlineType::LineBreak:
+          return;
+        default:
+          break;
+      }
+      self(self, node.children());
+    }
+  };
+  visit(visit, inlines);
+  return text;
+}
+
+// Returns the alert kind for a blockquote whose first line is `[!NOTE]`/`[!TIP]`/... (case
+// insensitive, matching GitHub's five kinds), else None.
+AlertKind alertKindFromFirstLine(const QString& firstLine) {
+  const QString s = firstLine.trimmed();
+  if (s.size() < 5 || s.at(0) != QLatin1Char('[') || s.at(1) != QLatin1Char('!')) {
+    return AlertKind::None;
+  }
+  const int close = s.indexOf(QLatin1Char(']'), 2);
+  if (close < 0) {
+    return AlertKind::None;
+  }
+  const QString key = s.mid(2, close - 2).toUpper();
+  if (key == QLatin1String("NOTE")) {
+    return AlertKind::Note;
+  }
+  if (key == QLatin1String("TIP")) {
+    return AlertKind::Tip;
+  }
+  if (key == QLatin1String("IMPORTANT")) {
+    return AlertKind::Important;
+  }
+  if (key == QLatin1String("WARNING")) {
+    return AlertKind::Warning;
+  }
+  if (key == QLatin1String("CAUTION")) {
+    return AlertKind::Caution;
+  }
+  return AlertKind::None;
+}
+
+// Tags each blockquote whose first line is a GitHub alert marker with its kind, so the renderer can
+// draw a themed card instead of a plain quote bar. Mirrors annotateMathDelimiters's tree walk.
+void annotateAlertKinds(MarkdownNode& root) {
+  const auto visit = [](auto&& self, MarkdownNode& node) -> void {
+    if (node.type() == BlockType::BlockQuote) {
+      MarkdownNode* paragraph = node.firstChildByType(BlockType::Paragraph);
+      if (paragraph) {
+        const AlertKind kind = alertKindFromFirstLine(leadingInlineText(paragraph->inlines()));
+        if (kind != AlertKind::None) {
+          node.setAlertKind(kind);
+        }
+      }
+    }
+    for (const auto& child : node.children()) {
+      self(self, *child);
+    }
+  };
+  visit(visit, root);
+}
+
+// === Highlight (==text==) post-parse splitter ===
+// cmark-gfm has no highlight extension, so `==text==` arrives as literal Text. This pass tokenizes
+// each paragraph/heading/table-cell inline list into `==` runs + content, then pairs runs with an
+// opener stack (emphasis-style flank rules) into Highlight nodes. Faithful to Pandoc: only a run of
+// exactly two `=` is a marker (so `===` and lone `=` stay literal); a backslash-escaped `==` stays
+// literal. Source ranges stay absolute (the projection subtracts the block's source base later).
+struct HighlightToken {
+  enum class Kind { Inline, EqRun, Highlight };
+  Kind kind = Kind::Inline;
+  InlineNode node;  // Inline: a `=`-free text segment or an opaque inline; Highlight: the built node
+  qsizetype srcStart = -1;
+  qsizetype srcEnd = -1;
+  int eqLength = 0;
+  bool escaped = false;
+};
+
+QChar firstSignificantChar(const InlineNode& node) {
+  switch (node.type()) {
+    case InlineType::Text:
+    case InlineType::Code:
+    case InlineType::InlineMath:
+    case InlineType::HtmlInline:
+      return node.text().isEmpty() ? QChar() : node.text().at(0);
+    case InlineType::SoftBreak:
+    case InlineType::LineBreak:
+      return QChar::Space;
+    case InlineType::Emphasis:
+    case InlineType::Strong:
+    case InlineType::Strikethrough:
+    case InlineType::Highlight:
+    case InlineType::Link:
+      for (const InlineNode& child : node.children()) {
+        const QChar ch = firstSignificantChar(child);
+        if (!ch.isNull()) {
+          return ch;
+        }
+      }
+      return QChar();
+    default:  // Image, TaskMarker — treated as non-space content
+      return QLatin1Char('x');
+  }
+}
+
+QChar lastSignificantChar(const InlineNode& node) {
+  switch (node.type()) {
+    case InlineType::Text:
+    case InlineType::Code:
+    case InlineType::InlineMath:
+    case InlineType::HtmlInline:
+      return node.text().isEmpty() ? QChar() : node.text().at(node.text().size() - 1);
+    case InlineType::SoftBreak:
+    case InlineType::LineBreak:
+      return QChar::Space;
+    case InlineType::Emphasis:
+    case InlineType::Strong:
+    case InlineType::Strikethrough:
+    case InlineType::Highlight:
+    case InlineType::Link: {
+      const QVector<InlineNode>& kids = node.children();
+      for (auto it = kids.rbegin(); it != kids.rend(); ++it) {
+        const QChar ch = lastSignificantChar(*it);
+        if (!ch.isNull()) {
+          return ch;
+        }
+      }
+      return QChar();
+    }
+    default:
+      return QLatin1Char('x');
+  }
+}
+
+// Only Text nodes whose decoded text maps 1:1 to their source span can be safely split — escapes
+// and HTML entities decode to fewer source chars and would misalign segment offsets. For those,
+// keep the node opaque (its `==` stays literal).
+QVector<HighlightToken> buildHighlightTokens(const QVector<InlineNode>& inlines, QStringView markdown) {
+  QVector<HighlightToken> tokens;
+  for (const InlineNode& node : inlines) {
+    if (node.type() == InlineType::Text) {
+      const QString text = node.text();
+      const InlineRange range = node.sourceRange();
+      const qsizetype srcLen = range.end - range.start;
+      if (range.start < 0 || srcLen != text.size()) {
+        tokens.append({HighlightToken::Kind::Inline, node, range.start, range.end, 0, false});
+        continue;
+      }
+      qsizetype i = 0;
+      while (i < text.size()) {
+        if (text.at(i) == QLatin1Char('=')) {
+          qsizetype j = i;
+          while (j < text.size() && text.at(j) == QLatin1Char('=')) {
+            ++j;
+          }
+          HighlightToken t{HighlightToken::Kind::EqRun, InlineNode(InlineType::Text), range.start + i, range.start + j,
+                           int(j - i), false};
+          if (t.srcStart > 0 && markdown.at(t.srcStart - 1) == QLatin1Char('\\')) {
+            t.escaped = true;
+          }
+          tokens.append(t);
+          i = j;
+        } else {
+          qsizetype j = i;
+          while (j < text.size() && text.at(j) != QLatin1Char('=')) {
+            ++j;
+          }
+          InlineNode seg = InlineNode::text(text.mid(i, j - i));
+          InlineSourceRanges segRanges;
+          segRanges.source = InlineRange{range.start + i, range.start + j};
+          segRanges.content = segRanges.source;
+          seg.setSourceRanges(segRanges);
+          tokens.append({HighlightToken::Kind::Inline, seg, range.start + i, range.start + j, 0, false});
+          i = j;
+        }
+      }
+    } else {
+      const InlineRange range = node.sourceRange();
+      tokens.append({HighlightToken::Kind::Inline, node, range.start, range.end, 0, false});
+    }
+  }
+  return tokens;
+}
+
+InlineNode tokenToInline(const HighlightToken& t) {
+  if (t.kind == HighlightToken::Kind::EqRun) {
+    InlineNode text = InlineNode::text(QString(t.eqLength, QLatin1Char('=')));
+    InlineSourceRanges ranges;
+    ranges.source = InlineRange{t.srcStart, t.srcEnd};
+    ranges.content = ranges.source;
+    text.setSourceRanges(ranges);
+    return text;
+  }
+  return t.node;
+}
+
+void matchHighlightTokens(QVector<HighlightToken>& tokens) {
+  QVector<int> openers;  // indices of `==` runs that can open
+  for (int i = 0; i < tokens.size(); ++i) {
+    const HighlightToken& t = tokens[i];
+    if (t.kind != HighlightToken::Kind::EqRun || t.eqLength != 2 || t.escaped) {
+      continue;
+    }
+    const bool canOpen = i + 1 < tokens.size() &&
+        !firstSignificantChar(tokens[i + 1].node).isNull() &&
+        !firstSignificantChar(tokens[i + 1].node).isSpace();
+    const bool canClose = i > 0 &&
+        !lastSignificantChar(tokens[i - 1].node).isNull() &&
+        !lastSignificantChar(tokens[i - 1].node).isSpace();
+    if (canClose && !openers.isEmpty()) {
+      const int opener = openers.last();
+      if (opener + 1 < i) {  // at least one content token between them
+        QVector<InlineNode> children;
+        for (int k = opener + 1; k < i; ++k) {
+          children.append(tokenToInline(tokens[k]));
+        }
+        InlineNode highlight = InlineNode::highlight(QStringLiteral("=="), std::move(children));
+        InlineSourceRanges ranges;
+        ranges.openMarker = InlineRange{tokens[opener].srcStart, tokens[opener].srcEnd};
+        ranges.closeMarker = InlineRange{t.srcStart, t.srcEnd};
+        ranges.source = InlineRange{ranges.openMarker.start, ranges.closeMarker.end};
+        ranges.content = InlineRange{ranges.openMarker.end, ranges.closeMarker.start};
+        highlight.setSourceRanges(ranges);
+        tokens[opener] = HighlightToken{HighlightToken::Kind::Highlight, highlight, ranges.source.start, ranges.source.end, 0, false};
+        tokens.remove(opener + 1, i - opener);
+        openers.removeLast();
+        i = opener;  // rescan from the new highlight token (its content may pair further out)
+        continue;
+      }
+      openers.removeLast();
+    }
+    if (canOpen) {
+      openers.append(i);
+    }
+  }
+}
+
+void splitHighlightInBlock(QVector<InlineNode>& inlines, QStringView markdown) {
+  QVector<HighlightToken> tokens = buildHighlightTokens(inlines, markdown);
+  matchHighlightTokens(tokens);
+  QVector<InlineNode> rebuilt;
+  rebuilt.reserve(tokens.size());
+  bool changed = false;
+  for (const HighlightToken& t : tokens) {
+    if (t.kind == HighlightToken::Kind::Highlight) {
+      changed = true;
+    }
+    rebuilt.append(tokenToInline(t));
+  }
+  if (changed) {
+    inlines = std::move(rebuilt);
+  }
+}
+
+// Walks the tree and splits `==...==` into Highlight inlines within every block that owns inlines
+// (paragraph, heading, table cell). Gated on options.enableHighlight at the call site.
+void splitHighlightInlines(MarkdownNode& root, QStringView markdown) {
+  const auto visit = [&](auto&& self, MarkdownNode& node) -> void {
+    if (!node.inlines().isEmpty()) {
+      splitHighlightInBlock(node.inlines(), markdown);
+    }
+    for (const auto& child : node.children()) {
+      self(self, *child);
+    }
+  };
+  visit(visit, root);
+}
+
 void annotateDefinitionBlocks(
     MarkdownNode& root,
     const QVector<DefinitionParseResult>& definitions,
@@ -1004,6 +1289,14 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   {
     ParsePerfTimer t("parse.annotateMathDelimiters");
     annotateMathDelimiters(markdownToParse, *result.root);
+  }
+  if (options.enableAlertBox) {
+    ParsePerfTimer t("parse.annotateAlertKinds");
+    annotateAlertKinds(*result.root);
+  }
+  if (options.enableHighlight) {
+    ParsePerfTimer t("parse.splitHighlightInlines");
+    splitHighlightInlines(*result.root, markdownToParse);
   }
   {
     ParsePerfTimer t("parse.insertVEPInBlockQuotes");

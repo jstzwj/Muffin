@@ -21,6 +21,8 @@ struct ParseOptions {
   bool enableTaskList = true;
   bool enableMath = true;
   bool enableFrontMatter = true;
+  bool enableAlertBox = true;
+  bool enableHighlight = false;
   bool preserveSourceRange = true;
 
   // Used by DocumentSession::setParseOptions to skip a full re-parse when nothing changed

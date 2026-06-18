@@ -35,7 +35,6 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   syntaxHeaderRow->addStretch(1);
 
   strictModeCheck_ = new QCheckBox(syntaxCard);
-  strictModeCheck_->setChecked(true);
 
   auto* headingRow = new QHBoxLayout();
   headingRow->setSpacing(16);
@@ -229,9 +228,8 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
 
   // Options whose behavior is not yet implemented are disabled and labelled "coming soon" so users
   // are not misled into thinking a toggle works. Re-enable here as each feature lands.
-  for (QCheckBox* unbuilt : {strictModeCheck_, subscriptCheck_, superscriptCheck_, highlightCheck_,
-                             alertBoxCheck_, diagramsCheck_, showLineNumbersCheck_,
-                             shiftTabIndentCheck_, unicodePunctCheck_}) {
+  for (QCheckBox* unbuilt : {subscriptCheck_, superscriptCheck_, diagramsCheck_,
+                             showLineNumbersCheck_, unicodePunctCheck_}) {
     if (unbuilt) {
       unbuilt->setEnabled(false);
     }
@@ -244,7 +242,9 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
 void muffin::PrefsMarkdownPage::retranslateUi() {
   noteLabel_->setText(tr(
       "Markdown changes take effect when you close this dialog (no restart needed). "
-      "Greyed-out options are not yet implemented."));
+      "Greyed-out options are not yet implemented. "
+      "Strict Mode turns off tables, strikethrough, task lists, auto links and formulas "
+      "for plain CommonMark output."));
   // Card 1: Syntax Preferences
   syntaxLabel_->setText(tr("Markdown Syntax Preferences"));
   strictModeCheck_->setText(tr("Strict Mode"));
@@ -290,7 +290,7 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
 }
 
 void muffin::PrefsMarkdownPage::loadSettings() {
-  loadCheck(strictModeCheck_, QStringLiteral("markdown/strictMode"), true);
+  loadCheck(strictModeCheck_, QStringLiteral("markdown/strictMode"), false);
   loadComboIndex(headingStyleCombo_, QStringLiteral("markdown/headingStyle"), 0);
   loadComboIndex(unorderedListCombo_, QStringLiteral("markdown/unorderedList"), 0);
   loadComboIndex(orderedListCombo_, QStringLiteral("markdown/orderedList"), 0);

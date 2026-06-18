@@ -29,6 +29,7 @@ void appendInlineText(const InlineNode& node, QString& text) {
     case InlineType::Strong:
     case InlineType::Link:
     case InlineType::Strikethrough:
+    case InlineType::Highlight:
     case InlineType::Unknown:
       for (const InlineNode& child : node.children()) {
         appendInlineText(child, text);

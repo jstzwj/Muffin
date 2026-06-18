@@ -73,6 +73,27 @@ void testInlineMarkerExpansion() {
   require(selectionExpanded.displayText().contains(QStringLiteral("**")), QStringLiteral("selection touching inline should show strong markers"));
 }
 
+void testInlineHighlightExpansion() {
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::text(QStringLiteral("before ")));
+  inlines.push_back(InlineNode::highlight(QStringLiteral("=="), QVector<InlineNode>{InlineNode::text(QStringLiteral("key"))}));
+  inlines.push_back(InlineNode::text(QStringLiteral(" after")));
+
+  RenderTheme theme = RenderTheme::github();
+  InlineLayout collapsed;
+  collapsed.build(inlines, theme, 400.0, theme.paragraphFont());
+  require(!collapsed.displayText().contains(QStringLiteral("==")), QStringLiteral("collapsed inline should hide highlight markers"));
+  require(collapsed.displayText().contains(QStringLiteral("key")), QStringLiteral("collapsed inline should show highlight content"));
+  require(collapsed.plainText() == QStringLiteral("before key after"), QStringLiteral("highlight plain text should drop markers"));
+
+  InlineLayout expanded;
+  InlineLayout::BuildOptions options;
+  options.projectionState.cursorVisibleOffset = 8;
+  options.projectionState.cursorSourceOffset = 10;
+  expanded.build(inlines, QStringLiteral("before ==key== after"), theme, 400.0, theme.paragraphFont(), options);
+  require(expanded.displayText().contains(QStringLiteral("==")), QStringLiteral("active inline should show highlight markers"));
+}
+
 void testInlineProjectionContract() {
   RenderTheme theme = RenderTheme::github();
   InlineLayout::BuildOptions options;
@@ -412,6 +433,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testEmptyTableCellRendersEmpty);
   RUN_TEST(testTableCellEscapedPipeRendersDecoded);
   RUN_TEST(testInlineMarkerExpansion);
+  RUN_TEST(testInlineHighlightExpansion);
   RUN_TEST(testInlineProjectionContract);
   RUN_TEST(testActiveLoadedImageKeepsSourceTextAndAddsPreviewSpace);
   RUN_TEST(testEntityDisplayAfterEdit);

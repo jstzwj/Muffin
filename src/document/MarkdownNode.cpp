@@ -197,6 +197,14 @@ void MarkdownNode::setMathDelimiter(MathDelimiter delimiter) {
   metadata_.mathDelimiter = delimiter;
 }
 
+AlertKind MarkdownNode::alertKind() const {
+  return metadata_.quote.alertKind;
+}
+
+void MarkdownNode::setAlertKind(AlertKind kind) {
+  metadata_.quote.alertKind = kind;
+}
+
 FrontMatterFormat MarkdownNode::frontMatterFormat() const {
   return metadata_.frontMatterFormat;
 }

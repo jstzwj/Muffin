@@ -42,6 +42,7 @@ enum class InlineType {
   Strikethrough,
   TaskMarker,
   InlineMath,
+  Highlight,
   Unknown
 };
 
@@ -49,6 +50,18 @@ enum class ListKind {
   None,
   Bullet,
   Ordered
+};
+
+// GitHub-style alert, recognized when a blockquote's first line is `[!NOTE]`/`[!TIP]`/...
+// (cmark parses the blockquote; this kind is annotated in a post-parse pass so the renderer can
+// draw a themed card instead of a plain quote bar).
+enum class AlertKind {
+  None,
+  Note,
+  Tip,
+  Important,
+  Warning,
+  Caution
 };
 
 // Display-math block delimiter kind. cmark-gfm only parses `$$`, so LaTeX-style

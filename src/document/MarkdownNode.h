@@ -77,6 +77,11 @@ public:
   MathDelimiter mathDelimiter() const;
   void setMathDelimiter(MathDelimiter delimiter);
 
+  // GitHub-style alert kind when this blockquote's first line is `[!NOTE]`/`[!TIP]`/...; None for a
+  // plain quote. Annotated in a post-parse pass so the renderer can draw a themed card.
+  AlertKind alertKind() const;
+  void setAlertKind(AlertKind kind);
+
   FrontMatterFormat frontMatterFormat() const;
   void setFrontMatterFormat(FrontMatterFormat format);
 
@@ -168,6 +173,9 @@ private:
     QVector<TableAlignment> alignments;
     bool rowIsHeader = false;
   };
+  struct QuoteInfo {
+    AlertKind alertKind = AlertKind::None;
+  };
   // All per-block domain state in one copyable aggregate, so clone() copies it in a single
   // assignment and adding a field can never be silently dropped — the flat layout previously let
   // clone() miss taskItem_, which shipped as a round-trip bug.
@@ -178,6 +186,7 @@ private:
     ListInfo list;
     CodeInfo code;
     TableInfo table;
+    QuoteInfo quote;
     MathDelimiter mathDelimiter = MathDelimiter::Dollar;
     FrontMatterFormat frontMatterFormat = FrontMatterFormat::None;
     DefinitionBlock definition;

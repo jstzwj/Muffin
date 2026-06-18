@@ -165,6 +165,13 @@ InlineNode InlineNode::strikethrough(QString marker, QVector<InlineNode> childre
   return node;
 }
 
+InlineNode InlineNode::highlight(QString marker, QVector<InlineNode> children) {
+  InlineNode node(InlineType::Highlight);
+  node.setMarker(std::move(marker));
+  node.children_ = std::move(children);
+  return node;
+}
+
 InlineNode InlineNode::code(QString value) {
   InlineNode node(InlineType::Code);
   node.setText(std::move(value));

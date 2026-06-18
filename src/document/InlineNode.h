@@ -86,6 +86,7 @@ public:
   static InlineNode strong(QString marker, QVector<InlineNode> children);
   static InlineNode emphasis(QString marker, QVector<InlineNode> children);
   static InlineNode strikethrough(QString marker, QVector<InlineNode> children);
+  static InlineNode highlight(QString marker, QVector<InlineNode> children);
   static InlineNode code(QString value);
   static InlineNode link(QString href, QString title, QVector<InlineNode> label);
   static InlineNode image(QString src, QString alt, QString title);

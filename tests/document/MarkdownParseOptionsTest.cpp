@@ -13,6 +13,49 @@ using namespace muffin;
 // guard), the parser honoring enableMath (previously a dead field — math was attached
 // unconditionally), and DocumentSession::setParseOptions reparsing only on change.
 
+namespace {
+int countBlocks(const MarkdownNode& node, BlockType type) {
+  int count = node.type() == type ? 1 : 0;
+  for (const auto& child : node.children()) {
+    count += countBlocks(*child, type);
+  }
+  return count;
+}
+
+int countInlineType(const QVector<InlineNode>& inlines, InlineType type) {
+  int count = 0;
+  for (const InlineNode& inlineNode : inlines) {
+    if (inlineNode.type() == type) {
+      ++count;
+    }
+    count += countInlineType(inlineNode.children(), type);
+  }
+  return count;
+}
+
+int countInlineType(const MarkdownNode& node, InlineType type) {
+  int count = countInlineType(node.inlines(), type);
+  for (const auto& child : node.children()) {
+    count += countInlineType(*child, type);
+  }
+  return count;
+}
+
+// Mirrors what markdownParseOptions() builds when markdown/strictMode is true: every GFM extension
+// off (front matter stays enabled so documents with a leading metadata block aren't corrupted).
+ParseOptions strictOptions() {
+  ParseOptions options;
+  options.enableTable = false;
+  options.enableStrikethrough = false;
+  options.enableTaskList = false;
+  options.enableAutolink = false;
+  options.enableMath = false;
+  options.enableAlertBox = false;
+  options.enableHighlight = false;
+  return options;
+}
+}  // namespace
+
 void testParseOptionsEquality() {
   ParseOptions a;
   ParseOptions b;
@@ -63,6 +106,32 @@ void testSetParseOptionsReparsesOnlyOnChange() {
   require(session.markdownText() == QStringLiteral("Hello world"), "re-parse must preserve text");
 }
 
+// Strict mode (markdown/strictMode) means vanilla CommonMark: tables, strikethrough, task lists,
+// math and the new alert/highlight passes all parse as plain text/blocks. The funnel builds exactly
+// this ParseOptions; here we assert the parser honors it across several extension kinds at once.
+void testStrictOptionsDisableExtensions() {
+  CmarkGfmParser parser;
+  const QString markdown = QStringLiteral(
+      "$$\ny = x\n$$\n\n"
+      "| a | b |\n| --- | --- |\n| 1 | 2 |\n\n"
+      "~~struck~~\n\n"
+      "- [ ] task\n");
+
+  ParseResult gfm = parser.parseDocument(markdown, ParseOptions{});
+  require(gfm.root != nullptr, "default parse should produce a root");
+  require(countMathBlocks(*gfm.root) >= 1, "math block should parse with extensions on");
+  require(countBlocks(*gfm.root, BlockType::Table) >= 1, "table should parse with extensions on");
+  require(countInlineType(*gfm.root, InlineType::Strikethrough) >= 1,
+          "strikethrough should parse with extensions on");
+
+  ParseResult strict = parser.parseDocument(markdown, strictOptions());
+  require(strict.root != nullptr, "strict parse should produce a root");
+  require(countMathBlocks(*strict.root) == 0, "strict mode should disable math");
+  require(countBlocks(*strict.root, BlockType::Table) == 0, "strict mode should disable tables");
+  require(countInlineType(*strict.root, InlineType::Strikethrough) == 0,
+          "strict mode should disable strikethrough");
+}
+
 int main(int argc, char** argv) {
   QCoreApplication::setOrganizationName(QStringLiteral("MuffinTest"));
   QCoreApplication::setApplicationName(QStringLiteral("MarkdownParseOptionsTest"));
@@ -71,6 +140,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testParseOptionsEquality);
   RUN_TEST(testEnableMathGatesMathBlockParsing);
   RUN_TEST(testSetParseOptionsReparsesOnlyOnChange);
+  RUN_TEST(testStrictOptionsDisableExtensions);
 #undef RUN_TEST
   return 0;
 }

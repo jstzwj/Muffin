@@ -58,6 +58,7 @@ RenderTheme RenderTheme::night(int zoomPercent) {
   theme.mutedTextColor_ = QColor(QStringLiteral("#9aa4af"));
   theme.linkColor_ = QColor(QStringLiteral("#7fb4f5"));
   theme.codeBackgroundColor_ = QColor(QStringLiteral("#2b3138"));
+  theme.highlightBackgroundColor_ = QColor(QStringLiteral("#3a341a"));
   theme.codeBorderColor_ = QColor(QStringLiteral("#3d444d"));
   theme.quoteBorderColor_ = QColor(QStringLiteral("#56616d"));
   theme.tableBorderColor_ = QColor(QStringLiteral("#3d444d"));
@@ -242,11 +243,33 @@ QColor RenderTheme::codeBackgroundColor() const {
   return codeBackgroundColor_;
 }
 
+QColor RenderTheme::highlightBackgroundColor() const {
+  return highlightBackgroundColor_;
+}
+
 QColor RenderTheme::codeBorderColor() const {
   return codeBorderColor_;
 }
 
 QColor RenderTheme::quoteBorderColor() const {
+  return quoteBorderColor_;
+}
+
+QColor RenderTheme::alertAccent(AlertKind kind) const {
+  switch (kind) {
+    case AlertKind::Note:
+      return QColor(QStringLiteral("#0969da"));      // blue
+    case AlertKind::Tip:
+      return QColor(QStringLiteral("#1a7f37"));      // green
+    case AlertKind::Important:
+      return QColor(QStringLiteral("#8250df"));      // purple
+    case AlertKind::Warning:
+      return QColor(QStringLiteral("#9a6700"));      // amber
+    case AlertKind::Caution:
+      return QColor(QStringLiteral("#cf222e"));      // red
+    case AlertKind::None:
+      break;
+  }
   return quoteBorderColor_;
 }
 

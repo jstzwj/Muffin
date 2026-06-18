@@ -41,8 +41,14 @@ public:
   QColor mutedTextColor() const;
   QColor linkColor() const;
   QColor codeBackgroundColor() const;
+  // Background wash behind `==highlighted==` inline text (Pandoc-style marker).
+  QColor highlightBackgroundColor() const;
   QColor codeBorderColor() const;
   QColor quoteBorderColor() const;
+  // GitHub-style alert accent per kind (Note/Tip/Important/Warning/Caution). A fixed palette that
+  // reads on both light and dark themes; the card tint is derived from it with low alpha at the
+  // paint site so it adapts to the page background automatically.
+  QColor alertAccent(AlertKind kind) const;
   QColor tableBorderColor() const;
   QColor tableHeaderBackgroundColor() const;
   QColor tableAlternateBackgroundColor() const;
@@ -64,6 +70,7 @@ private:
   QColor mutedTextColor_ = QColor(QStringLiteral("#57606a"));
   QColor linkColor_ = QColor(QStringLiteral("#4183c4"));
   QColor codeBackgroundColor_ = QColor(QStringLiteral("#f6f8fa"));
+  QColor highlightBackgroundColor_ = QColor(QStringLiteral("#fff8c5"));
   QColor codeBorderColor_ = QColor(QStringLiteral("#e5e7eb"));
   QColor quoteBorderColor_ = QColor(QStringLiteral("#d0d7de"));
   QColor tableBorderColor_ = QColor(QStringLiteral("#dfe2e5"));

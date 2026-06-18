@@ -3143,9 +3143,9 @@ Wilt u de downloadpagina openen?</translation>
 <context>
     <name>muffin::PrefsMarkdownPage</name>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="245"/>
-        <source>Markdown changes take effect when you close this dialog (no restart needed). Greyed-out options are not yet implemented.</source>
-        <translation type="unfinished"></translation>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="243"/>
+        <source>Markdown changes take effect when you close this dialog (no restart needed). Greyed-out options are not yet implemented. Strict Mode turns off tables, strikethrough, task lists, auto links and formulas for plain CommonMark output.</source>
+        <translation>Markdown-wijzigingen worden van kracht wanneer u dit dialoogvenster sluit (herstart niet nodig). Grijze opties zijn nog niet geïmplementeerd. Strikte modus schakelt tabellen, doorhaling, takenlijsten, automatische links en formules uit voor gewone CommonMark-uitvoer.</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="249"/>

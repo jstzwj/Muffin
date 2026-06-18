@@ -25,6 +25,10 @@ public:
   bool exitEditMode();
 
   bool insertText(QString text);
+  // Shift+Tab dedent: removes one codeIndentUnit of leading space from every line the current
+  // selection covers (min-rule: never removes more spaces than the line has). Returns false when
+  // there is no selection, so the caller can fall back to inserting a tab.
+  bool dedentSelection();
   bool deleteBackward();
   bool deleteForward();
   bool deleteSelection();

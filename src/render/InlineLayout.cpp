@@ -932,6 +932,13 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
           format.setFontUnderline(true);
         }
         break;
+      case InlineType::Highlight:
+        // Pandoc-style marker: a flat yellow wash behind the content text (no border), like inline
+        // code but tinted. Markers are hidden unless the cursor reveals them.
+        if (span.kind == InlineSpanKind::Text) {
+          format.setBackground(theme.highlightBackgroundColor());
+        }
+        break;
       default:
         break;
     }

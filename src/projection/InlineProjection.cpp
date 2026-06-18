@@ -485,6 +485,8 @@ QString InlineProjection::markerForInline(const InlineNode& node) {
       return node.marker().isEmpty() ? QStringLiteral("**") : node.marker();
     case InlineType::Strikethrough:
       return QStringLiteral("~~");
+    case InlineType::Highlight:
+      return QStringLiteral("==");
     default:
       return {};
   }
@@ -509,6 +511,8 @@ QString InlineProjection::markdownForInline(const InlineNode& node) {
       return QStringLiteral("%1%2%1").arg(markerForInline(node), markdownForInlines(node.children()));
     case InlineType::Strikethrough:
       return QStringLiteral("~~%1~~").arg(markdownForInlines(node.children()));
+    case InlineType::Highlight:
+      return QStringLiteral("==%1==").arg(markdownForInlines(node.children()));
     case InlineType::Link: {
       const QString label = markdownForInlines(node.children());
       if (node.isAutolink()) {
@@ -1058,7 +1062,8 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
     }
     case InlineType::Emphasis:
     case InlineType::Strong:
-    case InlineType::Strikethrough: {
+    case InlineType::Strikethrough:
+    case InlineType::Highlight: {
       InlineRange content = localRange(node.contentRange(), state.sourceBase);
       if (!rangeWithin(content, sourceStart, sourceEnd)) {
         content = InlineRange{qMin(sourceEnd, sourceStart + marker.size()), qMax(sourceStart, sourceEnd - marker.size())};

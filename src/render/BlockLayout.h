@@ -138,6 +138,9 @@ public:
   void setTaskListItem(bool taskListItem, bool checked);
   bool isTaskListItem() const;
   bool taskChecked() const;
+  // GitHub-style alert kind for a blockquote rendered as a themed card; None for a plain quote.
+  void setAlertKind(AlertKind kind);
+  AlertKind alertKind() const;
   // Document-coordinate rect of the checkbox drawn for a task-list item (empty
   // when this block is not a task item). Single source of truth shared by the
   // painter and the hit tester so a click target never drifts from the glyph.
@@ -201,6 +204,7 @@ private:
   QVector<DefinitionTokenLayout> definitionTokens_;
   bool taskListItem_ = false;
   bool taskChecked_ = false;
+  AlertKind alertKind_ = AlertKind::None;
   int depth_ = 0;
   std::vector<std::unique_ptr<BlockLayout>> children_;
   std::vector<TableRowLayout> tableRows_;

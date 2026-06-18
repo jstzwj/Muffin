@@ -321,6 +321,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(
   auto layout = std::make_unique<BlockLayout>(node.id());
   layout->setType(node.type());
   layout->setDepth(depth);
+  layout->setAlertKind(node.alertKind());
 
   const qreal childX = node.type() == BlockType::BlockQuote ? x + theme.blockQuoteIndent() : x;
   const qreal childWidth = node.type() == BlockType::BlockQuote ? width - theme.blockQuoteIndent() : width;

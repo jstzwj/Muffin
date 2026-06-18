@@ -63,6 +63,66 @@ bool CodeFenceController::insertText(QString text) {
   return literal_.insertText(std::move(text));
 }
 
+bool CodeFenceController::dedentSelection() {
+  return literal_.mutateCurrentBlock(QStringLiteral("Dedent Code Fence Selection"),
+                                     EditTransaction::Kind::DeleteText,
+                                     [this](MarkdownNode& node, qsizetype& offset) {
+                                       qsizetype selStart = 0;
+                                       qsizetype selEnd = 0;
+                                       if (!literal_.currentSelectionRange(selStart, selEnd)) {
+                                         return false;  // collapsed caret: caller inserts a tab instead
+                                       }
+                                       QString value = node.literal();
+                                       selStart = qBound<qsizetype>(0, selStart, value.size());
+                                       selEnd = qBound<qsizetype>(selStart, selEnd, value.size());
+                                       if (selStart == selEnd) {
+                                         return false;
+                                       }
+                                       const qsizetype unit = codeIndentUnit();
+                                       // Gather the start offset of each line the selection covers
+                                       // (a line counts if its start is strictly before selEnd, so a
+                                       // selection ending exactly at a line's first column leaves
+                                       // that line untouched — matching typical code editors).
+                                       QVector<qsizetype> lineStarts;
+                                       qsizetype lineStart = selStart;
+                                       while (lineStart > 0 && value.at(lineStart - 1) != QLatin1Char('\n')) {
+                                         --lineStart;
+                                       }
+                                       lineStarts.append(lineStart);
+                                       while (true) {
+                                         const int newline = value.indexOf(QLatin1Char('\n'), lineStart);
+                                         if (newline < 0) {
+                                           break;
+                                         }
+                                         lineStart = newline + 1;
+                                         if (lineStart >= selEnd) {
+                                           break;
+                                         }
+                                         lineStarts.append(lineStart);
+                                       }
+                                       // Strip leading spaces last-line-first so earlier offsets stay valid.
+                                       qsizetype firstLineRemoved = 0;
+                                       for (int i = lineStarts.size() - 1; i >= 0; --i) {
+                                         const qsizetype start = lineStarts[i];
+                                         qsizetype spaces = 0;
+                                         while (start + spaces < value.size() &&
+                                                value.at(start + spaces) == QLatin1Char(' ') &&
+                                                spaces < unit) {
+                                           ++spaces;
+                                         }
+                                         if (spaces > 0) {
+                                           value.remove(start, spaces);
+                                         }
+                                         if (i == 0) {
+                                           firstLineRemoved = spaces;
+                                         }
+                                       }
+                                       node.setLiteral(value);
+                                       offset = qBound<qsizetype>(0, selStart - firstLineRemoved, value.size());
+                                       return true;
+                                     });
+}
+
 bool CodeFenceController::deleteBackward() {
   return literal_.deleteBackward();
 }
