@@ -5,6 +5,7 @@
 
 #include <QFontMetricsF>
 #include <QPainter>
+#include <QSettings>
 #include <QTextLayout>
 #include <QTextOption>
 
@@ -14,6 +15,12 @@
 
 namespace muffin {
 namespace {
+
+// markdown/codeBlockWrap (default on): whether code-fence source lines soft-wrap. Math/HTML literal
+// blocks always wrap regardless of this setting.
+bool codeBlockWrapEnabled() {
+  return QSettings().value(QStringLiteral("markdown/codeBlockWrap"), true).toBool();
+}
 
 struct LiteralVisualLine {
   qsizetype start = 0;
@@ -798,7 +805,7 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
         const QString openMarker = mathOpeningDelimiter(mathDelimiter_);
         const QString closeMarker = mathClosingDelimiter(mathDelimiter_);
         painter.drawText(QPointF(sourceRect.left(), viewRect.top() + padding.top() + codeMetrics.ascent()), openMarker);
-        paintLiteralSource(painter, theme, sourceRect, highlightMathTex(literal_));
+        paintLiteralSource(painter, theme, sourceRect, highlightMathTex(literal_), true);
         painter.drawText(QPointF(sourceRect.left(), sourceRect.bottom() + codeMetrics.ascent()), closeMarker);
         painter.setPen(QPen(theme.codeBorderColor(), 1));
         const qreal dividerY = sourcePanel.bottom() + 0.5;
@@ -829,7 +836,7 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
         painter.setPen(theme.codeBorderColor());
         painter.setBrush(theme.codeBackgroundColor());
         painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
-        paintLiteralSource(painter, theme, viewRect.marginsRemoved(theme.codePadding()), codeHighlightSpans_);
+        paintLiteralSource(painter, theme, viewRect.marginsRemoved(theme.codePadding()), codeHighlightSpans_, codeBlockWrapEnabled());
         painter.restore();
       } else if (htmlLayout_ && htmlLayout_->valid()) {
         htmlLayout_->paint(painter, viewRect.marginsRemoved(theme.codePadding()).topLeft());
@@ -1040,16 +1047,16 @@ void BlockLayout::paintCodeFence(QPainter& painter, const RenderTheme& theme, QR
   painter.setPen(theme.codeBorderColor());
   painter.setBrush(theme.codeBackgroundColor());
   painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
-  paintLiteralSource(painter, theme, viewRect.marginsRemoved(theme.codePadding()), codeHighlightSpans_);
+  paintLiteralSource(painter, theme, viewRect.marginsRemoved(theme.codePadding()), codeHighlightSpans_, codeBlockWrapEnabled());
   painter.restore();
 }
 
-void BlockLayout::paintLiteralSource(QPainter& painter, const RenderTheme& theme, QRectF contentRect, const QVector<CodeHighlightSpan>& spans) const {
+void BlockLayout::paintLiteralSource(QPainter& painter, const RenderTheme& theme, QRectF contentRect, const QVector<CodeHighlightSpan>& spans, bool wrap) const {
   const QStringList lines = literal_.isEmpty() ? QStringList{QString()} : literal_.split(QLatin1Char('\n'));
   QTextCharFormat baseFormat;
   baseFormat.setForeground(theme.textColor());
   QTextOption option;
-  option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+  option.setWrapMode(wrap ? QTextOption::WrapAtWordBoundaryOrAnywhere : QTextOption::NoWrap);
 
   qreal y = contentRect.top();
   qsizetype lineStartOffset = 0;

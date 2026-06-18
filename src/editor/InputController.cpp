@@ -39,6 +39,30 @@ bool matchMarkdownEnabled() {
   return QSettings().value(QStringLiteral("editor/matchMarkdown"), false).toBool();
 }
 
+// markdown/* smart-punctuation settings. Read raw at call time so toggling takes effect on the next
+// keystroke, matching editor/matchBrackets above.
+// markdown/convertOnInput: 0 = off, 1 = convert single chars while typing, 2 = also convert bulk text.
+int smartPunctuationMode() {
+  return qBound(0, QSettings().value(QStringLiteral("markdown/convertOnInput"), 0).toInt(), 2);
+}
+
+bool smartQuotesEnabled() {
+  return QSettings().value(QStringLiteral("markdown/smartQuotes"), false).toBool();
+}
+
+bool smartDashesEnabled() {
+  return QSettings().value(QStringLiteral("markdown/smartDashes"), false).toBool();
+}
+
+// Style 0 = curly (convert), 1 = straight (leave as-is).
+int singleQuoteStyleIndex() {
+  return qBound(0, QSettings().value(QStringLiteral("markdown/singleQuoteStyle"), 0).toInt(), 1);
+}
+
+int doubleQuoteStyleIndex() {
+  return qBound(0, QSettings().value(QStringLiteral("markdown/doubleQuoteStyle"), 0).toInt(), 1);
+}
+
 // The opener -> closer pairs active under the current preferences.
 struct PairedChar {
   QChar opener;
@@ -182,6 +206,20 @@ bool InputController::insertText(QString text) {
   if (hasActiveLiteralEditor()) {
     return insertTextIntoActiveLiteral(std::move(text));
   }
+  // Smart punctuation (markdown/*): turn quotes into curly/smart forms and collapse "--"/"---" into
+  // en/em dashes. Only in prose (the literal path above already returned for code/math blocks) and
+  // only with a collapsed selection — the selection path is owned by auto-pair/wrap & replace.
+  // Quote conversion is a pure text transform; because the smart chars aren't in the pair table,
+  // tryAutoPairOrWrap below then declines and the converted text inserts normally.
+  const bool smartPunctSkipSelection =
+      ctx_.selection && ctx_.selection->hasCursor() && !ctx_.selection->selection().isCollapsed();
+  if (!smartPunctSkipSelection) {
+    if (text.size() == 1 && trySmartDashes(text.at(0))) {
+      maybeUpdateEmojiPopup();
+      return true;
+    }
+    text = maybeConvertSmartPunctuation(std::move(text));
+  }
   // Auto-pairing only fires for a single typed character (multi-char IME commits and drag-drop
   // blobs like "![alt](path)" pass straight through) and never inside a table cell, where the
   // table controller owns text entry.
@@ -304,6 +342,80 @@ bool InputController::tryAutoPairOrWrap(QChar ch) {
       false,
       false);
   return true;
+}
+
+bool InputController::trySmartDashes(QChar ch) {
+  if (ch != QLatin1Char('-') || smartPunctuationMode() == 0 || !smartDashesEnabled()) {
+    return false;
+  }
+  BlockEditContextResolver resolver = contextResolver();
+  BlockEditContext context;
+  if (!resolver.current(context) || !context.node) {
+    return false;
+  }
+  const QString& md = ctx_.session ? ctx_.session->markdownText() : QString();
+  const qsizetype off = context.cursorSourceOffset;
+  if (off < 1 || off > md.size()) {
+    return false;
+  }
+  // "---" → em-dash: two dashes already precede the caret; the typed dash is consumed into "—".
+  if (off >= 2 && md.at(off - 1) == QLatin1Char('-') && md.at(off - 2) == QLatin1Char('-')) {
+    applyLocalEdit(EditTransaction::Kind::InsertText, QStringLiteral("Smart Dash"),
+                   off - 2, 2, QStringLiteral("\xe2\x80\x94"), CursorPosition(), off - 1, {}, false, false);
+    return true;
+  }
+  // "--" → en-dash: one dash precedes the caret.
+  if (md.at(off - 1) == QLatin1Char('-')) {
+    applyLocalEdit(EditTransaction::Kind::InsertText, QStringLiteral("Smart Dash"),
+                   off - 1, 1, QStringLiteral("\xe2\x80\x93"), CursorPosition(), off, {}, false, false);
+    return true;
+  }
+  return false;
+}
+
+QString InputController::maybeConvertSmartPunctuation(QString text) {
+  const int mode = smartPunctuationMode();
+  if (mode == 0 || !smartQuotesEnabled()) {
+    return text;
+  }
+  if (mode == 1 && text.size() != 1) {
+    return text;  // "when typing" converts only single-character keystrokes
+  }
+  const int doubleStyle = doubleQuoteStyleIndex();
+  const int singleStyle = singleQuoteStyleIndex();
+  if (doubleStyle == 1 && singleStyle == 1) {
+    return text;  // both quote styles set to straight → nothing to convert
+  }
+  if (ctx_.selection && ctx_.selection->hasCursor() && !ctx_.selection->selection().isCollapsed()) {
+    return text;  // selection path is owned by auto-pair/wrap & replace
+  }
+
+  BlockEditContextResolver resolver = contextResolver();
+  BlockEditContext context;
+  const bool resolved = resolver.current(context) && context.node;
+  const qsizetype off = resolved ? context.cursorSourceOffset : -1;
+  const QString& md = ctx_.session ? ctx_.session->markdownText() : QString();
+
+  // Opening quote when the preceding char is absent / whitespace / non-word; closing otherwise.
+  auto isOpening = [](QChar prev) {
+    return prev.isNull() || prev.isSpace() || !prev.isLetterOrNumber();
+  };
+
+  QString out;
+  out.reserve(text.size() + 4);
+  QChar prev = (off > 0 && off <= md.size()) ? md.at(off - 1) : QChar();
+  for (int i = 0; i < text.size(); ++i) {
+    const QChar c = text.at(i);
+    if (c == QLatin1Char('"') && doubleStyle == 0) {
+      out += isOpening(prev) ? QStringLiteral("\xe2\x80\x9c") : QStringLiteral("\xe2\x80\x9d");  // left/right double
+    } else if (c == QLatin1Char('\'') && singleStyle == 0) {
+      out += isOpening(prev) ? QStringLiteral("\xe2\x80\x98") : QStringLiteral("\xe2\x80\x99");  // left/right single
+    } else {
+      out += c;
+    }
+    prev = c;
+  }
+  return out;
 }
 
 void InputController::setEmojiProvider(const EmojiProvider* provider) {

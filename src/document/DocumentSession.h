@@ -37,6 +37,10 @@ public:
   void setFilePath(QString path);
   void setMarkdownText(QString text, bool modified);
   void updateFromEditor(QString text);
+  // Applies new parse options. When they differ from the current ones the document is re-parsed
+  // (full path: parseAndStore sets lastParseWasLocalEdit_=false, so the rendered view rebuilds via
+  // the `parsed` signal). No-op (no re-parse) when unchanged, so callers can invoke unconditionally.
+  void setParseOptions(ParseOptions options);
   void applyMarkdownText(QString text, bool modified, QVector<qsizetype> demoteAtOffsets = {});
   bool applyTextDelta(
       qsizetype sourceStart,

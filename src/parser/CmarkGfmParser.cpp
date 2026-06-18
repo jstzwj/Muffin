@@ -1067,7 +1067,7 @@ void CmarkGfmParser::attachExtensions(cmark_parser* parser, const ParseOptions& 
   if (options.enableStrikethrough) attach("strikethrough");
   if (options.enableAutolink) attach("autolink");
   if (options.enableTaskList) attach("tasklist");
-  attach("math");
+  if (options.enableMath) attach("math");
 }
 
 void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, MarkdownNode& root) const {

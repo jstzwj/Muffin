@@ -6,9 +6,18 @@
 #include "editor/BrushQueue.h"
 #include "editor/SelectionController.h"
 
+#include <QSettings>
+
 namespace muffin {
 
 namespace {
+
+// markdown/codeIndent: combo INDEX {0,1,2} -> space count {2,4,8}. Default index 1 = 4 spaces.
+int codeIndentUnit() {
+  static const int units[] = {2, 4, 8};
+  const int idx = qBound(0, QSettings().value(QStringLiteral("markdown/codeIndent"), 1).toInt(), 2);
+  return units[idx];
+}
 
 LiteralBlockSpec codeSpec() {
   return LiteralBlockSpec{
@@ -80,7 +89,8 @@ bool CodeFenceController::setContent(QString content) {
 }
 
 QString CodeFenceController::tabText() const {
-  return literal_.tabText();
+  // Honor markdown/codeIndent (spaces) rather than the spec's fallback "\t".
+  return QString(codeIndentUnit(), QLatin1Char(' '));
 }
 
 bool CodeFenceController::hasPendingTrailingNewline() const {

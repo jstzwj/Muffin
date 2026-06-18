@@ -113,6 +113,11 @@ bool alignIndentEnabled() {
   return QSettings().value(QStringLiteral("editor/alignIndent"), false).toBool();
 }
 
+// markdown/orderedList: 0 = sequential (1. 2. 3.), 1 = every item starts at 1 (1. 1. 1.).
+bool orderedListSequential() {
+  return QSettings().value(QStringLiteral("markdown/orderedList"), 0).toInt() != 1;
+}
+
 qsizetype lineEndForOffset(const QString& text, qsizetype offset) {
   qsizetype lineEnd = qBound<qsizetype>(0, offset, text.size());
   while (lineEnd < text.size() && text.at(lineEnd) != QLatin1Char('\n')) {
@@ -154,6 +159,10 @@ qsizetype orderedSiblingRunEnd(const QString& markdown, qsizetype start, qsizety
 }
 
 QString renumberOrderedSiblings(QString text, qsizetype markerColumn, int nextNumber) {
+  const bool sequential = orderedListSequential();
+  if (!sequential) {
+    nextNumber = 1;  // "1. 1. 1." style: every sibling restarts at 1.
+  }
   qsizetype pos = 0;
   while (pos < text.size()) {
     const qsizetype lineEnd = lineEndForOffset(text, pos);
@@ -169,7 +178,9 @@ QString renumberOrderedSiblings(QString text, qsizetype markerColumn, int nextNu
       text.replace(numberStart, numberEnd - numberStart, replacement);
       const qsizetype delta = replacement.size() - (numberEnd - numberStart);
       pos = lineEnd + delta;
-      ++nextNumber;
+      if (sequential) {
+        ++nextNumber;
+      }
     } else {
       pos = lineEnd;
     }

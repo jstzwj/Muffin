@@ -174,7 +174,7 @@ private:
   QRectF mathEditorSourceRect(const RenderTheme& theme) const;
   QRectF mathPreviewContentRect(const RenderTheme& theme) const;
   void paintCodeFence(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
-  void paintLiteralSource(QPainter& painter, const RenderTheme& theme, QRectF contentRect, const QVector<CodeHighlightSpan>& spans) const;
+  void paintLiteralSource(QPainter& painter, const RenderTheme& theme, QRectF contentRect, const QVector<CodeHighlightSpan>& spans, bool wrap) const;
   void paintDefinition(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
   HitTestResult hitDefinition(QPointF documentPos, const RenderTheme& theme) const;
   QVector<QRectF> definitionSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;

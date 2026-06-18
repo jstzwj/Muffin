@@ -11,6 +11,46 @@
 #include "edit/UndoStack.h"
 
 #include <algorithm>
+#include <QSettings>
+
+namespace {
+
+// markdown/* insertion-default readers. Each maps a combo INDEX (as persisted by PrefsMarkdownPage)
+// to the real emitted value. Mirrors the editor/indentSize convention in
+// TextBlockCommandBuilder.cpp::indentUnit() — this is the single place each mapping lives.
+
+// markdown/headingStyle: 0 = ATX (#), 1 = setext (===/---). Setext is only valid for levels 1-2.
+int headingStyleIndex() {
+  return qBound(0, QSettings().value(QStringLiteral("markdown/headingStyle"), 0).toInt(), 1);
+}
+
+// markdown/unorderedList: 0 = '-', 1 = '*', 2 = '+'.
+QChar unorderedListMarker() {
+  const QChar markers[3] = {QLatin1Char('-'), QLatin1Char('*'), QLatin1Char('+')};
+  return markers[qBound(0, QSettings().value(QStringLiteral("markdown/unorderedList"), 0).toInt(), 2)];
+}
+
+// markdown/defaultCodeLang: 0 = (empty), 1 = cpp, 2 = python, 3 = javascript, 4 = java.
+QString defaultCodeLang() {
+  const QString langs[5] = {
+      QString(), QStringLiteral("cpp"), QStringLiteral("python"),
+      QStringLiteral("javascript"), QStringLiteral("java")};
+  return langs[qBound(0, QSettings().value(QStringLiteral("markdown/defaultCodeLang"), 0).toInt(), 4)];
+}
+
+// markdown/autoCodeLang: 0 = when inserting via markdown code, 1 = always, 2 = never. The code-block
+// insert commands in this file ARE the "via markdown code" path, so 0 and 1 both emit a language.
+bool shouldEmitCodeLang() {
+  return qBound(0, QSettings().value(QStringLiteral("markdown/autoCodeLang"), 0).toInt(), 2) != 2;
+}
+
+// The opening fence with optional language, e.g. "```" or "```cpp" (no trailing newline). Callers
+// append "\n". Using its size() keeps cursor offsets correct regardless of language length.
+QString codeFenceOpen() {
+  return shouldEmitCodeLang() ? QStringLiteral("```") + defaultCodeLang() : QStringLiteral("```");
+}
+
+}  // namespace
 
 namespace muffin {
 
@@ -282,12 +322,20 @@ bool ParagraphController::setHeadingLevel(int level) {
     return true;  // no-op
   }
 
-  QString newPrefix;
+  QString newPrefix;        // ATX prefix ("# "). Empty for setext.
+  QString trailingBlock;    // setext underline ("\n===" / "\n---"). Empty for ATX.
+  const bool setext = level > 0 && (level == 1 || level == 2) && headingStyleIndex() == 1 &&
+                      !context.contentText.isEmpty();
   if (level > 0) {
-    newPrefix = QStringLiteral("#").repeated(level) + QLatin1Char(' ');
+    if (setext) {
+      const QChar line = (level == 1) ? QLatin1Char('=') : QLatin1Char('-');
+      trailingBlock = QStringLiteral("\n") + QString(line).repeated(qMax(1, context.contentText.size()));
+    } else {
+      newPrefix = QStringLiteral("#").repeated(level) + QLatin1Char(' ');
+    }
   }
 
-  const QString insertedText = newPrefix + context.contentText;
+  const QString insertedText = newPrefix + context.contentText + trailingBlock;
   const qsizetype removedLength = context.blockEnd - context.blockStart;
 
   // Compute cursor offset within the content
@@ -295,6 +343,8 @@ bool ParagraphController::setHeadingLevel(int level) {
       context.cursorSourceOffset >= context.contentStart
           ? qBound<qsizetype>(0, context.cursorSourceOffset - context.contentStart, context.contentText.size())
           : 0;
+  // For ATX the content follows newPrefix; for setext newPrefix is empty so the cursor still lands on
+  // the content at blockStart (a setext heading's first line is the content text).
   const qsizetype nextCursorOffset = context.blockStart + newPrefix.size() + cursorContentOffset;
 
   return applyBlockDelta(
@@ -362,18 +412,21 @@ bool ParagraphController::insertCodeBlock() {
       return false;
     }
     const QString markdown = ctx_.session->markdownText();
-    const QString inserted = markdown.isEmpty() ? QStringLiteral("```\n\n```") : QStringLiteral("\n\n```\n\n```");
+    const QString open = codeFenceOpen();
+    const QString inserted = markdown.isEmpty() ? open + QStringLiteral("\n\n```")
+                                                : QStringLiteral("\n\n") + open + QStringLiteral("\n\n```");
     const qsizetype offset = markdown.size();
     return applyBlockDelta(
         EditTransaction::Kind::InsertText,
         QStringLiteral("Insert Code Block"),
         offset, 0, inserted,
-        offset + (markdown.isEmpty() ? 4 : 6),
+        offset + (markdown.isEmpty() ? open.size() + 1 : 2 + open.size() + 1),
         {}, true);
   }
 
-  const QString inserted = QStringLiteral("\n\n```\n\n```");
-  const qsizetype nextCursor = context.blockEnd + 6;  // between ``` markers
+  const QString open = codeFenceOpen();
+  const QString inserted = QStringLiteral("\n\n") + open + QStringLiteral("\n\n```");
+  const qsizetype nextCursor = context.blockEnd + 2 + open.size() + 1;  // between ``` markers
   return applyBlockDelta(
       EditTransaction::Kind::InsertText,
       QStringLiteral("Insert Code Block"),
@@ -595,7 +648,7 @@ bool ParagraphController::convertToUnorderedList() {
     return false;
   }
 
-  const QString inserted = QStringLiteral("- ") + context.contentText;
+  const QString inserted = unorderedListMarker() + QStringLiteral(" ") + context.contentText;
   const qsizetype cursorContentOffset =
       context.cursorSourceOffset >= context.contentStart
           ? qBound<qsizetype>(0, context.cursorSourceOffset - context.contentStart, context.contentText.size())
@@ -619,7 +672,7 @@ bool ParagraphController::convertToTaskList() {
     return false;
   }
 
-  const QString inserted = QStringLiteral("- [ ] ") + context.contentText;
+  const QString inserted = unorderedListMarker() + QStringLiteral(" [ ] ") + context.contentText;
   const qsizetype cursorContentOffset =
       context.cursorSourceOffset >= context.contentStart
           ? qBound<qsizetype>(0, context.cursorSourceOffset - context.contentStart, context.contentText.size())
@@ -773,10 +826,11 @@ bool ParagraphController::convertLiteralBlockToType(MarkdownNode& node, BlockTyp
   QString blockSource;
   qsizetype contentOffset;
   if (targetType == BlockType::CodeFence) {
+    const QString open = codeFenceOpen();
     blockSource = content.isEmpty()
-                      ? QStringLiteral("```\n```")
-                      : QStringLiteral("```\n%1\n```").arg(content);
-    contentOffset = 4;  // past "```\n"
+                      ? open + QStringLiteral("\n```")
+                      : (open + QStringLiteral("\n%1\n```")).arg(content);
+    contentOffset = open.size() + 1;  // past opening fence + newline
   } else {
     blockSource = content.isEmpty()
                       ? QStringLiteral("$$\n$$")
@@ -837,12 +891,13 @@ bool ParagraphController::insertCodeBlockWithSplit() {
     qsizetype nextOffset = normalizeSplitOffset(nextContent, contentOffset);
 
     // blockBreak: paragraph-break + code-block + paragraph-break + heading-prefix
-    QString blockBreak = QStringLiteral("\n\n```\n\n```\n\n") + headingPrefix;
+    const QString open = codeFenceOpen();
+    QString blockBreak = QStringLiteral("\n\n") + open + QStringLiteral("\n\n```\n\n") + headingPrefix;
     blockBreak = insertionWithInlineSplit(blockBreak, nextContent, nextOffset);
     nextContent.insert(nextOffset, blockBreak);
 
     // Cursor inside the empty code block content area
-    const qsizetype codeContentPos = blockBreak.indexOf(QStringLiteral("```\n")) + 4;
+    const qsizetype codeContentPos = blockBreak.indexOf(open + QLatin1Char('\n')) + open.size() + 1;
     const qsizetype nextCursor = context.contentStart + nextOffset + codeContentPos;
 
     return applyBlockDelta(
@@ -868,12 +923,13 @@ bool ParagraphController::insertCodeBlockWithSplit() {
   qsizetype nextOffset = selContentStart;
   nextOffset = normalizeSplitOffset(nextContent, nextOffset);
 
-  QString blockBreak = QStringLiteral("\n\n```\n%1\n```\n\n").arg(selectedText) + headingPrefix;
+  const QString open = codeFenceOpen();
+  QString blockBreak = (QStringLiteral("\n\n") + open + QStringLiteral("\n%1\n```\n\n")).arg(selectedText) + headingPrefix;
   blockBreak = insertionWithInlineSplit(blockBreak, nextContent, nextOffset);
   nextContent.insert(nextOffset, blockBreak);
 
   // Cursor at the end of selected text inside the code block
-  const qsizetype codeContentPos = blockBreak.indexOf(QStringLiteral("```\n")) + 4;
+  const qsizetype codeContentPos = blockBreak.indexOf(open + QLatin1Char('\n')) + open.size() + 1;
   const qsizetype nextCursor = context.contentStart + nextOffset + codeContentPos + selectedText.size();
 
   return applyBlockDelta(
@@ -968,7 +1024,8 @@ bool ParagraphController::toggleCodeBlock() {
       t = t->parent();
     }
     if (t) {
-      return insertBlockAfterNode(*t, QStringLiteral("```\n\n```"), 6,
+      const QString open = codeFenceOpen();
+      return insertBlockAfterNode(*t, open + QStringLiteral("\n\n```"), open.size() + 3,
                                   QStringLiteral("Insert Code Block"));
     }
     return insertCodeBlock();

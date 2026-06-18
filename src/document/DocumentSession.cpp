@@ -694,6 +694,16 @@ void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector
   emit parsed(lastParseElapsedMs_);
 }
 
+void muffin::DocumentSession::setParseOptions(ParseOptions options) {
+  if (options == parseOptions_) {
+    return;
+  }
+  parseOptions_ = options;
+  // Re-parse in place, preserving the current text and modified flag. parseAndStore sets
+  // lastParseWasLocalEdit_=false, so the rendered view rebuilds via the `parsed` signal.
+  parseAndStore(document_.markdownText(), document_.isModified());
+}
+
 bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
     qsizetype sourceStart,
     qsizetype sourceEnd,

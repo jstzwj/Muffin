@@ -1,5 +1,6 @@
 #include "app/MainWindow.h"
 
+#include "app/MarkdownSettings.h"
 #include "app/PreferencesDialog.h"
 #include "app/SidebarWidget.h"
 #include "editor/EditorView.h"
@@ -164,6 +165,17 @@ void muffin::MainWindow::showPreferences() {
   });
 
   dialog.exec();
+
+  // Re-apply markdown preferences now that the modal dialog has closed. Doing this AFTER exec()
+  // (rather than live during the dialog) is deliberate: a full setDocument re-render while the
+  // modal PreferencesDialog is open races its window-blocking and can blank the viewport (see the
+  // spell-check note in MainWindowSignalBinder.cpp). setParseOptions is a no-op when the parse
+  // options are unchanged; refreshVisibleBlocks picks up layout-only changes (e.g. codeBlockWrap)
+  // without a re-parse.
+  session_.setParseOptions(markdownParseOptions());
+  if (renderView_) {
+    renderView_->refreshVisibleBlocks(session_.document());
+  }
 }
 
 void muffin::MainWindow::revealCurrentFile() {

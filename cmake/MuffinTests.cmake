@@ -10,6 +10,7 @@ muffin_add_test(NAME MuffinParserDefinitionTest SOURCE tests/parser/ParserDefini
 muffin_add_test(NAME MuffinParserMathCodeTest   SOURCE tests/parser/ParserMathCodeTest.cpp   LINK MuffinCore)
 muffin_add_test(NAME MuffinOutlineBuilderTest   SOURCE tests/document/OutlineBuilderTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinImageSyntaxOpsTest   SOURCE tests/document/ImageSyntaxOpsTest.cpp LINK MuffinCore)
+muffin_add_test(NAME MuffinMarkdownParseOptionsTest SOURCE tests/document/MarkdownParseOptionsTest.cpp LINK MuffinCore)
 
 # --- render (link MuffinUi, take the render_smoke fixture, lock the GUI) ---
 muffin_add_test(NAME MuffinRenderThemeTest            SOURCE tests/render/RenderThemeTest.cpp            LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK DISABLED_ON APPLE)
@@ -45,6 +46,7 @@ muffin_add_test(NAME MuffinInputParagraphTest          SOURCE tests/editor/Input
 muffin_add_test(NAME MuffinInputUndoSelectionTest      SOURCE tests/editor/InputUndoSelectionTest.cpp      LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputListTabTest            SOURCE tests/editor/InputListTabTest.cpp            LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputIndentSizeTest         SOURCE tests/editor/InputIndentSizeTest.cpp         LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinInputMarkdownDefaultsTest   SOURCE tests/editor/InputMarkdownDefaultsTest.cpp   LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputAlignIndentTest        SOURCE tests/editor/InputAlignIndentTest.cpp        LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputAutoPairTest           SOURCE tests/editor/InputAutoPairTest.cpp          LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEmojiTriggerTest            SOURCE tests/editor/EmojiTriggerTest.cpp           LINK MuffinUi RESOURCE_LOCK)
@@ -64,6 +66,7 @@ muffin_add_test(NAME MuffinInputDefinitionHeadingTest  SOURCE tests/editor/Input
 # --- block commands ---
 muffin_add_test(NAME MuffinParagraphHeadingTest     SOURCE tests/commands/ParagraphHeadingTest.cpp     LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinParagraphBlockInsertTest SOURCE tests/commands/ParagraphBlockInsertTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinParagraphMarkdownDefaultsTest SOURCE tests/commands/ParagraphMarkdownDefaultsTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinParagraphToggleBlockTest SOURCE tests/commands/ParagraphToggleBlockTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinParagraphToggleUndoTest  SOURCE tests/commands/ParagraphToggleUndoTest.cpp  LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinParagraphTaskToggleTest  SOURCE tests/commands/ParagraphTaskToggleTest.cpp  LINK MuffinUi RESOURCE_LOCK)

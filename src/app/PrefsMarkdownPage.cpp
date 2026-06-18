@@ -12,10 +12,10 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   layout->setContentsMargins(kPageLeftMargin, kPageTopMargin, kPageRightMargin, kPageBottomMargin);
   layout->setSpacing(14);
 
-  // Restart note
-  auto* noteLabel = makeMutedLabel(this);
-  noteLabel->setWordWrap(true);
-  layout->addWidget(noteLabel);
+  // Behavior note (text set in retranslateUi)
+  noteLabel_ = makeMutedLabel(this);
+  noteLabel_->setWordWrap(true);
+  layout->addWidget(noteLabel_);
 
   auto* cardContainer = new QWidget(this);
   cardContainer->setObjectName(QStringLiteral("settingsGroup"));
@@ -226,9 +226,25 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   wireComboIndexSetting(codeIndentCombo_, QStringLiteral("markdown/codeIndent"));
   wireComboIndexSetting(defaultLangCombo_, QStringLiteral("markdown/defaultCodeLang"));
   wireComboIndexSetting(autoLangCombo_, QStringLiteral("markdown/autoCodeLang"));
+
+  // Options whose behavior is not yet implemented are disabled and labelled "coming soon" so users
+  // are not misled into thinking a toggle works. Re-enable here as each feature lands.
+  for (QCheckBox* unbuilt : {strictModeCheck_, subscriptCheck_, superscriptCheck_, highlightCheck_,
+                             alertBoxCheck_, diagramsCheck_, showLineNumbersCheck_,
+                             shiftTabIndentCheck_, unicodePunctCheck_}) {
+    if (unbuilt) {
+      unbuilt->setEnabled(false);
+    }
+  }
+  if (diagramOptionsButton_) {
+    diagramOptionsButton_->setEnabled(false);
+  }
 }
 
 void muffin::PrefsMarkdownPage::retranslateUi() {
+  noteLabel_->setText(tr(
+      "Markdown changes take effect when you close this dialog (no restart needed). "
+      "Greyed-out options are not yet implemented."));
   // Card 1: Syntax Preferences
   syntaxLabel_->setText(tr("Markdown Syntax Preferences"));
   strictModeCheck_->setText(tr("Strict Mode"));

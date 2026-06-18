@@ -533,6 +533,8 @@ add_executable(Muffin
   src/app/RenderCommandFacade.h
   src/app/PreferencesPage.cpp
   src/app/PreferencesPage.h
+  src/app/MarkdownSettings.cpp
+  src/app/MarkdownSettings.h
   src/app/PrefsFilesPage.cpp
   src/app/PrefsFilesPage.h
   src/app/PrefsEditorPage.cpp

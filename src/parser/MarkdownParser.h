@@ -22,6 +22,10 @@ struct ParseOptions {
   bool enableMath = true;
   bool enableFrontMatter = true;
   bool preserveSourceRange = true;
+
+  // Used by DocumentSession::setParseOptions to skip a full re-parse when nothing changed
+  // (e.g. the PreferencesDialog closed without altering any parse-gating setting).
+  bool operator==(const ParseOptions&) const = default;
 };
 
 struct ParseResult {

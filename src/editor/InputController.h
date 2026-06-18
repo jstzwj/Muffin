@@ -88,6 +88,13 @@ private:
   // editor/matchBrackets and editor/matchMarkdown preferences. Returns true when it handled the
   // keystroke (caller returns true); false to let the character insert normally.
   bool tryAutoPairOrWrap(QChar ch);
+  // markdown/* smart punctuation. trySmartDashes collapses "--"/"---" into en/em dashes (applies its
+  // own edit since it must delete preceding characters); returns true when handled. The quote
+  // conversion is a pure text transform, applied to `text` before auto-pairing so the smart quote
+  // chars bypass the pair table. Both honor markdown/convertOnInput and only run in prose (code/math
+  // literal editors return before this point) with a collapsed selection.
+  bool trySmartDashes(QChar ch);
+  QString maybeConvertSmartPunctuation(QString text);
   EmojiCompleter* ensureEmojiCompleter();
   void maybeUpdateEmojiPopup();
   void insertEmoji(const QString& glyph);

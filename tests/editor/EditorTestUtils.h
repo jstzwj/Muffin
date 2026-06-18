@@ -19,34 +19,7 @@
 
 #include <iostream>
 
-// RAII guard that sets a QSettings key for the duration of a scope and restores (or removes) the
-// prior value on destruction. QSettings is process-global, so tests that exercise a preference
-// (editor/indentSize, editor/alignIndent, editor/matchBrackets, ...) must restore the default
-// afterwards or they poison every later test run in the same process.
-class SettingsOverride {
-public:
-  SettingsOverride(const char* key, const QVariant& value) : key_(QString::fromLatin1(key)) {
-    QSettings settings;
-    hadOld_ = settings.contains(key_);
-    oldValue_ = settings.value(key_);
-    settings.setValue(key_, value);
-  }
-  ~SettingsOverride() {
-    QSettings settings;
-    if (hadOld_) {
-      settings.setValue(key_, oldValue_);
-    } else {
-      settings.remove(key_);
-    }
-  }
-  SettingsOverride(const SettingsOverride&) = delete;
-  SettingsOverride& operator=(const SettingsOverride&) = delete;
-
-private:
-  QString key_;
-  QVariant oldValue_;
-  bool hadOld_ = false;
-};
+// SettingsOverride (RAII QSettings key override) is provided by TestUtils.h, included above.
 
 inline muffin::EditTransaction requireTextDeltaCommand(muffin::UndoStack& stack, const char* message) {
   require(stack.canUndo(), "expected undo command");

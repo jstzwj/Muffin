@@ -1,6 +1,7 @@
 #include "app/MainWindow.h"
 
 #include "app/LanguageManager.h"
+#include "app/MarkdownSettings.h"
 #include "app/RenderEditorBackend.h"
 #include "app/SidebarWidget.h"
 #include "app/SourceEditorBackend.h"
@@ -131,6 +132,10 @@ muffin::MainWindow::MainWindow(QWidget* parent)
   setupConnections();
   applyEditorChrome();
   loadAppearanceSettings();
+  // Apply markdown parse preferences (markdown/autoLink, markdown/inlineMath, ...) before the first
+  // real parse. parseOptions_ defaults to all-on, so this is a no-op re-parse unless the user has
+  // disabled an extension.
+  session_.setParseOptions(markdownParseOptions());
   muffin::UpdateChecker::instance().maybeAutoCheck();
 }
 

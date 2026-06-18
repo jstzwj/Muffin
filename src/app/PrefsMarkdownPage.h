@@ -20,6 +20,8 @@ public:
 private:
   void loadSettings();
 
+  QLabel* noteLabel_ = nullptr;  // top-of-page behavior note
+
   // Card 1: Syntax Preferences
   QLabel* syntaxLabel_ = nullptr;
   QCheckBox* strictModeCheck_ = nullptr;
