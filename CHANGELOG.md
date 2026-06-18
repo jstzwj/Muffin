@@ -5,6 +5,30 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] - 2026-06-19
+
+### Added
+- **Subscript and superscript** - `~text~` subscript and `^text^` superscript syntax with parsing, serialization, and rendering, plus toggleable parse options in the Markdown preferences page
+- **Highlight inline format** - `==highlight==` inline highlighting with full parse, render, and serialize support
+- **GitHub-style alerts** - Blockquote alerts marked with `[!NOTE]`, `[!TIP]`, `[!WARNING]`, etc. now render as themed cards
+- **Code fence horizontal scroll** - Non-wrapping code fences support horizontal scrolling via scrollbar drag and Shift+wheel, keeping the cursor within view
+- **Code block line numbers** - Code blocks now display line numbers in the gutter
+- **Code block Shift+Tab dedent** - Shift+Tab now dedents the selected lines across a code block
+- **Image zoom and conversion** - Resize images via `style="zoom:N%"` and convert between Markdown image syntax and HTML `<img>` tags
+- **Markdown preferences system** - A unified Markdown parse-options panel controlling smart punctuation, list style, code block indent, strict mode, and the new subscript, superscript, and highlight extensions
+- **Restore last file on startup** - When launched without arguments, the app reopens the most recently used file instead of a blank document
+
+### Changed
+- **Source editor theming** - The source editor's colors are now derived from the active render theme and update live on theme switch; hardcoded color values were removed and the gutter/current-line highlighting was unified with the theme
+- **Viewport anchor stability** - Replaced slot-index anchoring with a NodeId-based anchor behind a unified `ScopedViewportPin` RAII primitive that pins every layout-mutation path, keeping the view steady across block refreshes, range refreshes, full re-layouts, and gutter realignment
+- **Document layout lazy loading** - `DocumentLayout` now builds lazily and renders only visible blocks, with visible-block refresh APIs that avoid full rebuilds on large documents
+- **Parse and document-build performance** - Definition-block tree traversal reduced from O(M*N) to O(M+N) with caching for missing-definition inserts, plus independent performance timers for parse and `setMarkdownText`
+
+### Fixed
+- **Scroll jumping on inline marker reveal** - Revealing inline markers and promoting blocks no longer causes the viewport to jump
+- **Math parse toggle** - The math formula parse switch now correctly takes effect when changed in preferences
+- **Inline cursor hit range** - Corrected the cursor hit-test range logic for inline elements
+
 ## [0.2.5] - 2026-06-17
 
 ### Added
@@ -281,6 +305,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.2.6]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.6
 [0.2.5]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.5
 [0.2.4]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.4
 [0.2.3]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.3
