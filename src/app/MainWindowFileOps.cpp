@@ -5,17 +5,27 @@
 #include "app/SidebarWidget.h"
 #include "editor/EditorView.h"
 
+#include <QAbstractItemView>
 #include <QApplication>
 #include <QDateTime>
 #include <QDesktopServices>
+#include <QDialog>
 #include <QDir>
 #include <QFileInfo>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QLocale>
+#include <QListWidget>
+#include <QListWidgetItem>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QSettings>
 #include <QStatusBar>
+#include <QTimer>
 #include <QUrl>
+#include <QVariant>
+#include <QVBoxLayout>
 
 namespace {
 
@@ -59,6 +69,13 @@ void muffin::MainWindow::rebuildRecentFilesMenu() {
 
 void muffin::MainWindow::addRecentFile(QString path) {
   if (path.isEmpty()) {
+    return;
+  }
+  // files/recordHistory gates whether opening/saving/moving a file records it
+  // into the Open Recent list. Clearing the list (clearRecentFilesRequested) is
+  // independent and always available.
+  QSettings settings;
+  if (!settings.value(QStringLiteral("files/recordHistory"), true).toBool()) {
     return;
   }
   path = QFileInfo(path).absoluteFilePath();
@@ -157,6 +174,14 @@ void muffin::MainWindow::showPreferences() {
     setRecentFiles({});
     rebuildRecentFilesMenu();
   });
+  connect(&dialog, &PreferencesDialog::outlineFoldableChanged, this, [this](bool foldable) {
+    if (sidebar_) {
+      sidebar_->setOutlineFoldable(foldable);
+    }
+  });
+  connect(&dialog, &PreferencesDialog::restoreDraftsRequested, this, [this] {
+    offerDraftRecovery();
+  });
   connect(&dialog, &PreferencesDialog::disableTypewriterFocusRequested, this, [this] {
     setTypewriterMode(false);
     setFocusMode(false);
@@ -189,9 +214,133 @@ void muffin::MainWindow::revealCurrentFile() {
 bool muffin::MainWindow::saveCurrentDocument() {
   if (fileController_.save(session_, this)) {
     addRecentFile(session_.filePath());
+    drafts_.markClean(session_.filePath());
     return true;
   }
   return false;
+}
+
+void muffin::MainWindow::performAutoSave() {
+  // Silent write of a pathed, modified document when files/autoSave is on. Untitled
+  // documents (no filePath) are handled by draft-recovery snapshots, not here.
+  QSettings settings;
+  if (!settings.value(QStringLiteral("files/autoSave"), false).toBool()) {
+    return;
+  }
+  if (session_.filePath().isEmpty() || !session_.document().isModified()) {
+    return;
+  }
+  if (fileController_.save(session_, this)) {
+    drafts_.markClean(session_.filePath());
+  }
+}
+
+void muffin::MainWindow::snapshotDraft() {
+  // Persist a recovery snapshot while the document has unsaved content, so a
+  // crash or forced exit can be restored on the next launch. Cleared on save.
+  if (!session_.document().isModified()) {
+    return;
+  }
+  const QString text = session_.markdownText();
+  if (!text.isEmpty() && text != lastDraftSnapshotText_) {
+    drafts_.snapshot(text, session_.filePath());
+    lastDraftSnapshotText_ = text;
+  }
+  // Heartbeat: re-arm for as long as the document stays dirty. modifiedChanged
+  // only fires on the clean↔dirty transition, so without this re-arm a single
+  // snapshot would be taken seconds into an edit session and never refreshed —
+  // leaving everything typed afterwards unrecoverable. The content check above
+  // keeps the heartbeat's cost to a string comparison when the user pauses.
+  draftTimer_->start();
+}
+
+bool muffin::MainWindow::offerDraftRecovery() {
+  // Drop drafts whose source file vanished plus crash-leftover half-pairs first,
+  // so the dialog only ever shows drafts that are genuinely restorable.
+  drafts_.pruneOrphaned();
+  const QVector<DraftRecovery::PendingDraft> drafts = drafts_.pendingDrafts();
+  if (drafts.isEmpty()) {
+    return false;
+  }
+
+  QDialog dialog(this);
+  dialog.setWindowTitle(tr("Unsaved Drafts Found"));
+  auto* layout = new QVBoxLayout(&dialog);
+
+  auto* label = new QLabel(&dialog);
+  label->setWordWrap(true);
+  label->setText(tr("Muffin found %n unsaved draft(s) from a previous session. "
+                    "Restore one into this window, discard all of them, or keep them for later.",
+                    nullptr, drafts.size()));
+  layout->addWidget(label);
+
+  auto* list = new QListWidget(&dialog);
+  // Single selection: Muffin is a single-document window, so only one draft can
+  // be the active document. Leftover drafts stay on disk for the next launch.
+  list->setSelectionMode(QAbstractItemView::SingleSelection);
+  for (const DraftRecovery::PendingDraft& d : drafts) {
+    const QString time = QDateTime::fromMSecsSinceEpoch(d.timestamp)
+                              .toString(QLocale().dateTimeFormat(QLocale::ShortFormat));
+    const QString where = d.sourcePath.isEmpty() ? tr("Untitled") : QDir::toNativeSeparators(d.sourcePath);
+    auto* item = new QListWidgetItem(
+        tr("%1  —  %2  (%n char(s))", nullptr, int(d.charCount)).arg(where, time), list);
+    item->setData(Qt::UserRole, QVariant::fromValue(d));
+  }
+  list->setCurrentRow(0);  // pre-select the newest draft for a one-click restore
+  list->setMinimumHeight(qMax(120, 28 + drafts.size() * 26));
+  layout->addWidget(list);
+
+  auto* buttonRow = new QHBoxLayout;
+  auto* restoreBtn = new QPushButton(tr("Restore"), &dialog);
+  auto* discardBtn = new QPushButton(tr("Discard All"), &dialog);
+  auto* laterBtn = new QPushButton(tr("Later"), &dialog);
+  restoreBtn->setDefault(true);
+  buttonRow->addWidget(restoreBtn);
+  buttonRow->addWidget(discardBtn);
+  buttonRow->addStretch(1);
+  buttonRow->addWidget(laterBtn);
+  layout->addLayout(buttonRow);
+
+  enum Result { Restore = 10, Discard = 20 };
+  QObject::connect(restoreBtn, &QPushButton::clicked, &dialog, [&dialog] { dialog.done(Restore); });
+  QObject::connect(discardBtn, &QPushButton::clicked, &dialog, [&dialog] { dialog.done(Discard); });
+  QObject::connect(laterBtn, &QPushButton::clicked, &dialog, [&dialog] { dialog.done(int(QDialog::Rejected)); });
+
+  const int result = dialog.exec();
+  bool restoredAny = false;
+  if (result == Restore) {
+    if (list->currentItem() != nullptr) {
+      restoreDraft(list->currentItem()->data(Qt::UserRole).value<DraftRecovery::PendingDraft>());
+      restoredAny = true;
+    }
+  } else if (result == Discard) {
+    for (const DraftRecovery::PendingDraft& d : drafts) {
+      drafts_.discard(d);
+    }
+  }
+  // Later / window close: leave the drafts in place for the next launch.
+  return restoredAny;
+}
+
+void muffin::MainWindow::restoreDraft(const DraftRecovery::PendingDraft& draft) {
+  const QString content = drafts_.loadDraft(draft);
+  if (content.isEmpty()) {
+    return;
+  }
+  if (!draft.sourcePath.isEmpty() && QFileInfo(draft.sourcePath).isFile()) {
+    // Reopen the on-disk file (restores path and undo history), then overlay the
+    // recovered content and mark it modified — the recovered text is the newer version.
+    openFile(draft.sourcePath);
+    editorController_.clearHistoryAndSelection();
+    session_.setMarkdownText(content, true);
+  } else {
+    // Untitled draft, or the source file no longer exists: load into a new untitled doc.
+    fileController_.newFile(session_, this);
+    editorController_.clearHistoryAndSelection();
+    session_.setMarkdownText(content, true);
+  }
+  // The restored draft becomes the active document; its key is reused by the next
+  // snapshot, so we don't discard here.
 }
 
 bool muffin::MainWindow::isDocumentModified() const {
@@ -417,7 +566,10 @@ bool muffin::MainWindow::maybeSaveChanges() {
     return false;
   }
   if (choice == QMessageBox::Save) {
-    return fileController_.save(session_, this);
+    return fileController_.save(session_, this);  // save() emits documentBecameClean.
   }
+  // Discard: the user explicitly abandoned the unsaved work — drop its recovery
+  // draft so the next launch doesn't offer to restore what was just thrown away.
+  drafts_.markClean(session_.filePath());
   return true;
 }

@@ -200,6 +200,10 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
   // Forward page signals
   connect(filesPage_, &PrefsFilesPage::clearRecentFilesRequested,
           this, &PreferencesDialog::clearRecentFilesRequested);
+  connect(filesPage_, &PrefsFilesPage::outlineFoldableChanged,
+          this, &PreferencesDialog::outlineFoldableChanged);
+  connect(filesPage_, &PrefsFilesPage::restoreDraftsRequested,
+          this, &PreferencesDialog::restoreDraftsRequested);
   connect(editorPage_, &PrefsEditorPage::disableTypewriterFocusRequested,
           this, &PreferencesDialog::disableTypewriterFocusRequested);
   connect(appearancePage_, &PrefsAppearancePage::themeRequested,

@@ -43,6 +43,7 @@ muffin::PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(pa
   // --- Card 2: Update ---
   auto* updateCard = new QWidget(this);
   updateCard->setObjectName(QStringLiteral("settingsCard"));
+  updateCard->setProperty("lastSettingsRow", true);
   auto* updateLayout = new QVBoxLayout(updateCard);
   updateLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
   updateLayout->setSpacing(kRowSpacing);
@@ -54,20 +55,6 @@ muffin::PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(pa
   updateLayout->addWidget(checkUpdateButton_, 0, Qt::AlignLeft);
   updateLayout->addWidget(autoUpdateCheck_);
   cardColumn->addWidget(updateCard);
-
-  // --- Card 3: Advanced ---
-  auto* advancedCard = new QWidget(this);
-  advancedCard->setObjectName(QStringLiteral("settingsCard"));
-  advancedCard->setProperty("lastSettingsRow", true);
-  auto* advancedLayout = new QVBoxLayout(advancedCard);
-  advancedLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
-  advancedLayout->setSpacing(kRowSpacing);
-  advancedLabel_ = makeSectionLabel(advancedCard);
-  debugModeCheck_ = new QCheckBox(advancedCard);
-  advancedLayout->addWidget(advancedLabel_);
-  advancedLayout->addSpacing(2);
-  advancedLayout->addWidget(debugModeCheck_);
-  cardColumn->addWidget(advancedCard);
 
   layout->addStretch(1);
 
@@ -123,8 +110,6 @@ void muffin::PrefsGeneralPage::retranslateUi() {
   updateLabel_->setText(tr("Update"));
   checkUpdateButton_->setText(tr("Check for Updates"));
   autoUpdateCheck_->setText(tr("Automatically check for updates"));
-  advancedLabel_->setText(tr("Advanced"));
-  debugModeCheck_->setText(tr("Enable debug mode"));
 }
 
 void muffin::PrefsGeneralPage::populateLanguages() {

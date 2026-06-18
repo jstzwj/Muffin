@@ -2,6 +2,7 @@
 
 #include <QAbstractItemView>
 #include <QDir>
+#include <QSettings>
 #include <QEvent>
 #include <QFileInfo>
 #include <QFileSystemModel>
@@ -124,6 +125,12 @@ void muffin::SidebarWidget::setupFilesPanel() {
 }
 
 void muffin::SidebarWidget::setupOutlinePanel() {
+  // files/outlineFoldable: when on, the outline is a real collapsible tree
+  // (indentation + expand arrows); when off it is a flat list with text-only
+  // indentation (the original behavior). Read once at construction; toggling the
+  // preference later routes through setOutlineFoldable().
+  outlineFoldable_ = QSettings().value(QStringLiteral("files/outlineFoldable"), false).toBool();
+
   outlinePanel_ = new QWidget(this);
   auto* layout = new QVBoxLayout(outlinePanel_);
   layout->setContentsMargins(0, 12, 0, 0);
@@ -136,9 +143,10 @@ void muffin::SidebarWidget::setupOutlinePanel() {
   outlineTree_ = new QTreeWidget(outlinePanel_);
   outlineTree_->setObjectName(QStringLiteral("OutlineTree"));
   outlineTree_->setHeaderHidden(true);
-  outlineTree_->setIndentation(0);
-  outlineTree_->setRootIsDecorated(false);
-  outlineTree_->setItemsExpandable(false);
+  outlineTree_->setIndentation(outlineFoldable_ ? 14 : 0);
+  outlineTree_->setRootIsDecorated(outlineFoldable_);
+  outlineTree_->setItemsExpandable(outlineFoldable_);
+  // Double-click navigates (emitOutlineItem); folding uses the expand arrow.
   outlineTree_->setExpandsOnDoubleClick(false);
   outlineTree_->setAnimated(false);
   outlineTree_->setMouseTracking(true);
@@ -210,6 +218,7 @@ QString muffin::SidebarWidget::folderRoot() const {
 }
 
 void muffin::SidebarWidget::setOutline(const QVector<OutlineEntry>& entries) {
+  lastOutlineEntries_ = entries;
   outlineTree_->clear();
   QVector<QTreeWidgetItem*> items;
   items.reserve(entries.size());
@@ -223,6 +232,18 @@ void muffin::SidebarWidget::setOutline(const QVector<OutlineEntry>& entries) {
   const bool empty = entries.isEmpty();
   outlineEmptyLabel_->setVisible(empty);
   outlineTree_->setVisible(!empty);
+}
+
+void muffin::SidebarWidget::setOutlineFoldable(bool foldable) {
+  if (outlineFoldable_ == foldable) {
+    return;
+  }
+  outlineFoldable_ = foldable;
+  outlineTree_->setIndentation(foldable ? 14 : 0);
+  outlineTree_->setRootIsDecorated(foldable);
+  outlineTree_->setItemsExpandable(foldable);
+  applyStyle(nightStyle_);          // toggle the expand-arrow rule
+  setOutline(lastOutlineEntries_);  // rebuild items (prefix logic depends on foldable)
 }
 
 void muffin::SidebarWidget::applyThemeName(QString name) {
@@ -257,33 +278,36 @@ void muffin::SidebarWidget::updateTabButtons() {
 }
 
 void muffin::SidebarWidget::applyStyle(bool night) {
-  if (night) {
-    setStyleSheet(QStringLiteral(
+  nightStyle_ = night;
+  // The branch (expand-arrow) rule is appended below depending on outlineFoldable_,
+  // so it is omitted from both base sheets here.
+  QString sheet = night ? QStringLiteral(
         "#MuffinSidebar { background:#1f2328; border-right:1px solid #3d444d; }"
         "#MuffinSidebar QToolButton { background:transparent; border:0; color:#9aa4af; padding:5px 4px; }"
         "#MuffinSidebar QToolButton:hover { background:#2b3138; }"
         "#MuffinSidebar QToolButton:checked { color:#e6edf3; border-bottom:3px solid #8b949e; }"
         "#OutlineEmptyLabel { color:#8b949e; }"
         "#FileTree, #OutlineTree { background:#1f2328; color:#e6edf3; border:0; padding:4px 0; outline:0; }"
-        "#OutlineTree::branch { image:none; width:0; }"
         "#FileTree::item, #OutlineTree::item { min-height:22px; padding:1px 4px; border:0; }"
         "#FileTree::item:hover, #OutlineTree::item:hover { background:#2b3138; color:#e6edf3; }"
         "#FileTree::item:selected, #OutlineTree::item:selected { background:#30363d; color:#e6edf3; }"
-        "#SidebarNewFileButton { min-width:32px; min-height:24px; padding:0; color:#9aa4af; }"));
-  } else {
-    setStyleSheet(QStringLiteral(
+        "#SidebarNewFileButton { min-width:32px; min-height:24px; padding:0; color:#9aa4af; }")
+      : QStringLiteral(
         "#MuffinSidebar { background:#fafafa; border-right:1px solid #eeeeee; }"
         "#MuffinSidebar QToolButton { background:transparent; border:0; color:#666666; padding:5px 4px; }"
         "#MuffinSidebar QToolButton:hover { background:#eeeeee; }"
         "#MuffinSidebar QToolButton:checked { color:#111111; border-bottom:3px solid #333333; }"
         "#OutlineEmptyLabel { color:#777777; }"
         "#FileTree, #OutlineTree { background:#fafafa; color:#222222; border:0; padding:4px 0; outline:0; }"
-        "#OutlineTree::branch { image:none; width:0; }"
         "#FileTree::item, #OutlineTree::item { min-height:22px; padding:1px 4px; border:0; }"
         "#FileTree::item:hover, #OutlineTree::item:hover { background:#eeeeee; color:#222222; }"
         "#FileTree::item:selected, #OutlineTree::item:selected { background:#e8e8e8; color:#222222; }"
-        "#SidebarNewFileButton { min-width:32px; min-height:24px; padding:0; color:#3574b8; }"));
+        "#SidebarNewFileButton { min-width:32px; min-height:24px; padding:0; color:#3574b8; }");
+  // Flat mode hides the expand arrow; foldable mode shows it for collapsing.
+  if (!outlineFoldable_) {
+    sheet += QStringLiteral("#OutlineTree::branch { image:none; width:0; }");
   }
+  setStyleSheet(sheet);
 }
 
 QTreeWidgetItem* muffin::SidebarWidget::addOutlineItem(const OutlineEntry& entry, QTreeWidgetItem* parent) {
@@ -298,7 +322,12 @@ QTreeWidgetItem* muffin::SidebarWidget::addOutlineItem(const OutlineEntry& entry
   item->setData(0, ColumnEndRole, entry.sourceRange.columnEnd);
   item->setTextAlignment(0, Qt::AlignVCenter | Qt::AlignLeft);
   item->setSizeHint(0, QSize(0, 22));
-  item->setText(0, QString(qMax(0, entry.level - 1) * 2, QChar(0x2002)) + entry.title);
+  // Flat mode fakes hierarchy with leading spaces; foldable mode relies on the
+  // tree's own indentation, so no prefix.
+  const QString title = outlineFoldable_
+      ? entry.title
+      : QString(qMax(0, entry.level - 1) * 2, QChar(0x2002)) + entry.title;
+  item->setText(0, title);
   return item;
 }
 

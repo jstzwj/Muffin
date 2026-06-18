@@ -11,6 +11,9 @@
 
 #include <QAction>
 #include <QDesktopServices>
+#include <QSettings>
+#include <QTimer>
+#include <QUrl>
 #include <QMessageBox>
 #include <QStatusBar>
 #include <QElapsedTimer>
@@ -141,6 +144,33 @@ void muffin::MainWindow::connectRenderSignals() {
         }
         window.buildEditorContextMenu(hit, globalPos);
       });
+
+  // External drag-and-drop of folders / documents is handled by the main window
+  // according to the files/drop* preferences (images are still inserted inline).
+  QObject::connect(window.renderView_, &EditorView::folderDropped, &window, [&window](const QString& path) {
+    // files/dropFolder: 0 = open in Muffin (sidebar root), 1 = open in file manager.
+    const int action = QSettings().value(QStringLiteral("files/dropFolder"), 0).toInt();
+    if (action == 1) {
+      QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+    } else if (window.sidebar_) {
+      window.sidebar_->setFolderRoot(path);
+      window.setSidebarPanel(SidebarWidget::Panel::Files);
+    }
+  });
+  QObject::connect(window.renderView_, &EditorView::markdownFileDropped, &window, [&window](const QString& path) {
+    // Markdown is Muffin's native format, so a dropped .md/.txt always opens.
+    // (files/dropMarkdown is reserved for a future "import into current doc" action.)
+    window.openFile(path);
+  });
+  QObject::connect(window.renderView_, &EditorView::importableFileDropped, &window, [&window](const QString& path) {
+    // files/dropImportable: 1 = open as text; 0 (default) = import. Import has no
+    // backend yet, so it no-ops — which also means a binary/unknown drop (PDF,
+    // DOCX, …) is ignored rather than force-opened as text garbage.
+    const int action = QSettings().value(QStringLiteral("files/dropImportable"), 0).toInt();
+    if (action == 1) {
+      window.openFile(path);
+    }
+  });
 }
 
 void muffin::MainWindow::connectSessionSignals() {
@@ -166,6 +196,32 @@ void muffin::MainWindow::connectSessionSignals() {
   QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, &MainWindow::updateTitle);
   QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, &MainWindow::updateStatus);
   QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, &MainWindow::refreshSidebarDocumentInfo);
+  // Drive auto-save: arm the debounce timer when a pathed document becomes dirty
+  // (and files/autoSave is on); stop it once clean. The timer does the gated write.
+  QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, [&window](bool modified) {
+    if (modified && QSettings().value(QStringLiteral("files/autoSave"), false).toBool()
+        && !window.session_.filePath().isEmpty()) {
+      window.autoSaveTimer_->start();
+    } else {
+      window.autoSaveTimer_->stop();
+    }
+  });
+  // Arm the crash-recovery snapshot timer whenever the document becomes dirty;
+  // snapshotDraft() re-arms it (the heartbeat) while it stays dirty, and stops
+  // here once clean. Resetting the content tracker lets the next dirty period
+  // snapshot immediately instead of deduping against stale text.
+  QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, [&window](bool modified) {
+    if (modified) {
+      window.draftTimer_->start();
+    } else {
+      window.draftTimer_->stop();
+      window.lastDraftSnapshotText_.clear();
+    }
+  });
+  // When unsaved work is resolved (saved or explicitly discarded), clear that
+  // document's recovery draft — see FileController::documentBecameClean.
+  QObject::connect(&window.fileController_, &FileController::documentBecameClean, &window,
+                   [&window](const QString& filePath) { window.drafts_.markClean(filePath); });
   QObject::connect(&window.session_, &DocumentSession::parsed, &window, [&window] {
     PerfTimer perf("main.parsed.consumer");
     if (!window.session_.lastParseWasLocalEdit()) {

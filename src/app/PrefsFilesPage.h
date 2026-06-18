@@ -19,6 +19,8 @@ public:
 
 signals:
   void clearRecentFilesRequested();
+  void outlineFoldableChanged(bool foldable);
+  void restoreDraftsRequested();
 
 private:
   void buildUi();

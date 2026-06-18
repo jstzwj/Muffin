@@ -1552,19 +1552,13 @@ void EditorView::updateMouseCursor(QPointF viewportPos) {
 }
 
 void EditorView::dragEnterEvent(QDragEnterEvent* event) {
+  // Accept any local file/folder; dropEvent routes by type. Only image drops are
+  // inserted inline — everything else is handed to the main window.
   if (event->mimeData()->hasUrls()) {
-    const auto urls = event->mimeData()->urls();
-    for (const QUrl& url : urls) {
+    for (const QUrl& url : event->mimeData()->urls()) {
       if (url.isLocalFile()) {
-        const QString suffix = QFileInfo(url.toLocalFile()).suffix().toLower();
-        if (suffix == QStringLiteral("png") || suffix == QStringLiteral("jpg") ||
-            suffix == QStringLiteral("jpeg") || suffix == QStringLiteral("gif") ||
-            suffix == QStringLiteral("svg") || suffix == QStringLiteral("webp") ||
-            suffix == QStringLiteral("bmp") || suffix == QStringLiteral("ico") ||
-            suffix == QStringLiteral("tiff") || suffix == QStringLiteral("tif")) {
-          event->acceptProposedAction();
-          return;
-        }
+        event->acceptProposedAction();
+        return;
       }
     }
   }
@@ -1594,19 +1588,32 @@ void EditorView::dropEvent(QDropEvent* event) {
     event->ignore();
     return;
   }
+  event->acceptProposedAction();
   const QString filePath = url.toLocalFile();
-  const QString suffix = QFileInfo(filePath).suffix().toLower();
-  if (suffix != QStringLiteral("png") && suffix != QStringLiteral("jpg") &&
-      suffix != QStringLiteral("jpeg") && suffix != QStringLiteral("gif") &&
-      suffix != QStringLiteral("svg") && suffix != QStringLiteral("webp") &&
-      suffix != QStringLiteral("bmp") && suffix != QStringLiteral("ico") &&
-      suffix != QStringLiteral("tiff") && suffix != QStringLiteral("tif")) {
-    event->ignore();
+  const QFileInfo info(filePath);
+  const QString suffix = info.suffix().toLower();
+
+  // Folders and non-image files are routed to the main window (open the file /
+  // set the sidebar root / future import). Only images are inserted inline.
+  if (info.isDir()) {
+    emit folderDropped(filePath);
     return;
   }
-  event->acceptProposedAction();
-  const QString alt = QFileInfo(filePath).baseName();
-  emit textCommitted(QStringLiteral("![%1](%2)").arg(alt, filePath));
+  if (suffix == QStringLiteral("png") || suffix == QStringLiteral("jpg") ||
+      suffix == QStringLiteral("jpeg") || suffix == QStringLiteral("gif") ||
+      suffix == QStringLiteral("svg") || suffix == QStringLiteral("webp") ||
+      suffix == QStringLiteral("bmp") || suffix == QStringLiteral("ico") ||
+      suffix == QStringLiteral("tiff") || suffix == QStringLiteral("tif")) {
+    const QString alt = info.baseName();
+    emit textCommitted(QStringLiteral("![%1](%2)").arg(alt, filePath));
+    return;
+  }
+  if (suffix == QStringLiteral("md") || suffix == QStringLiteral("markdown") ||
+      suffix == QStringLiteral("mdown") || suffix == QStringLiteral("txt")) {
+    emit markdownFileDropped(filePath);
+    return;
+  }
+  emit importableFileDropped(filePath);
 }
 
 }  // namespace muffin

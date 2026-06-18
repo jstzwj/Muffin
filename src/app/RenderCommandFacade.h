@@ -30,6 +30,8 @@ public:
   bool isOnEditableParagraphBlock() const;
   bool canInsertParagraphAround() const;
   bool isInlineFormatEnabled() const;
+  bool isOnListItem() const;
+  bool isOnTaskItem() const;
   int currentHeadingLevel() const;
   bool isInCodeBlock() const;
   bool isEditingCodeBlock() const;
@@ -71,6 +73,10 @@ public:
   bool convertToOrderedList();
   bool convertToUnorderedList();
   bool convertToTaskList();
+  bool insertAlert(AlertKind kind);
+  bool toggleCurrentTaskListItem();
+  bool indentListItem();
+  bool outdentListItem();
 
   bool enterCodeEditMode();
   bool exitCodeEditMode();

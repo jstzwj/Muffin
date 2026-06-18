@@ -149,6 +149,11 @@ bool muffin::MainWindow::openFile(QString path) {
 }
 
 void muffin::MainWindow::closeEvent(QCloseEvent* event) {
+  // Auto-save before the discard prompt: persist a pathed, modified document
+  // silently so the "unsaved changes" dialog only concerns untitled documents.
+  performAutoSave();
+  // Ensure the latest content is snapshotted for crash recovery before exit.
+  snapshotDraft();
   if (maybeSaveChanges()) {
     QSettings settings;
     settings.setValue(QStringLiteral("window/geometry"), saveGeometry());
@@ -240,6 +245,20 @@ void muffin::MainWindow::setupStatusBar() {
   wordCountTimer_->setSingleShot(true);
   wordCountTimer_->setInterval(250);
   connect(wordCountTimer_, &QTimer::timeout, this, &muffin::MainWindow::updateWordCountNow);
+
+  // Auto-save: debounced silent write of a pathed, modified document. Untitled
+  // documents (no filePath) are covered by draft-recovery snapshots, not here.
+  autoSaveTimer_ = new QTimer(this);
+  autoSaveTimer_->setSingleShot(true);
+  autoSaveTimer_->setInterval(1500);
+  connect(autoSaveTimer_, &QTimer::timeout, this, &muffin::MainWindow::performAutoSave);
+
+  // Crash-recovery: debounce-snapshot the current document so a forced exit can
+  // be restored next launch. See DraftRecovery / offerDraftRecovery.
+  draftTimer_ = new QTimer(this);
+  draftTimer_->setSingleShot(true);
+  draftTimer_->setInterval(3000);
+  connect(draftTimer_, &QTimer::timeout, this, &muffin::MainWindow::snapshotDraft);
 
   statusBar()->addWidget(sidebarButton_);
   statusBar()->addWidget(sourceModeButton_);

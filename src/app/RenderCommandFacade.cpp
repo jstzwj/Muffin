@@ -198,6 +198,31 @@ bool RenderCommandFacade::insertFootnoteDefinition() {
   return runCommand("insertFootnoteDefinition", [&] { return editorController_.paragraphController().insertFootnoteDefinition(); });
 }
 
+bool RenderCommandFacade::insertAlert(AlertKind kind) {
+  return runCommand("insertAlert", [&] { return editorController_.paragraphController().insertAlert(kind); });
+}
+
+bool RenderCommandFacade::toggleCurrentTaskListItem() {
+  return runCommand("toggleCurrentTaskListItem",
+                    [&] { return editorController_.paragraphController().toggleCurrentTaskListItem(); });
+}
+
+bool RenderCommandFacade::indentListItem() {
+  return runCommand("indentListItem", [&] { return editorController_.inputController().indentListItem(); });
+}
+
+bool RenderCommandFacade::outdentListItem() {
+  return runCommand("outdentListItem", [&] { return editorController_.inputController().outdentListItem(); });
+}
+
+bool RenderCommandFacade::isOnListItem() const {
+  return editorController_.paragraphController().isOnListItem();
+}
+
+bool RenderCommandFacade::isOnTaskItem() const {
+  return editorController_.paragraphController().isOnTaskItem();
+}
+
 bool RenderCommandFacade::insertHorizontalRule() {
   return runCommand("insertHorizontalRule", [&] { return editorController_.paragraphController().insertHorizontalRule(); });
 }

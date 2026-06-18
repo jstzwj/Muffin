@@ -55,6 +55,16 @@ public:
   // resolve to a task item. Edits exactly the inner character of "[ ]"/"[x]" so
   // the marker, content, and sibling items are untouched.
   bool toggleTaskListItem(NodeId blockId);
+  // Toggle the GFM task item under the caret (menu entry point). Walks up to the
+  // nearest ListItem; no-op if it isn't a task.
+  bool toggleCurrentTaskListItem();
+
+  // Insert a GitHub-flavored alert block (> [!NOTE/...]) after the current block.
+  bool insertAlert(AlertKind kind);
+
+  // Caret queries backing menu enable state.
+  bool isOnListItem() const;  // caret is inside a list item
+  bool isOnTaskItem() const;  // caret is inside a GFM task-list item
 
   // Paragraph insert commands
   bool insertParagraphBefore();
@@ -76,6 +86,8 @@ private:
   };
 
   bool resolveBlockContext(BlockContext& context) const;
+  // Walk up from the caret's block to the nearest ListItem (nullptr if none).
+  MarkdownNode* currentListItem() const;
   // Resolves context for insert-paragraph-before/after: succeeds for Paragraph/Heading
   // (delegating to resolveBlockContext) and for CodeFence/MathBlock (using the block's line
   // span via SourceRangeUtil::blockLineSpan). Fills only blockStart/blockEnd for literal blocks.

@@ -80,6 +80,9 @@ signals:
   void blockClicked(HitTestResult result);
   void selectionChanged(SelectionRange selection, HitTestResult focusHit);
   void textCommitted(QString text);
+  void folderDropped(QString path);
+  void markdownFileDropped(QString path);
+  void importableFileDropped(QString path);
   void codeLanguageCommitted(NodeId codeId, QString language);
   void tableResizeRequested(int rows, int columns);
   void tableColumnAlignmentRequested(TableAlignment alignment);

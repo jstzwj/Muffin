@@ -28,6 +28,7 @@ public:
   void setFolderRoot(QString path);
   QString folderRoot() const;
   void setOutline(const QVector<OutlineEntry>& entries);
+  void setOutlineFoldable(bool foldable);
   void applyThemeName(QString name);
   void retranslateUi();
 
@@ -60,6 +61,9 @@ private:
   Panel panel_ = Panel::Files;
   QString currentFilePath_;
   QString folderRoot_;
+  bool outlineFoldable_ = false;
+  bool nightStyle_ = false;
+  QVector<OutlineEntry> lastOutlineEntries_;
 };
 
 }  // namespace muffin

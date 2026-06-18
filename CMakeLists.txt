@@ -421,6 +421,8 @@ set(MUFFIN_CORE_SOURCES
   src/parser/CmarkGfmParser.h
   src/parser/MarkdownSerializer.cpp
   src/parser/MarkdownSerializer.h
+  src/app/DraftRecovery.cpp
+  src/app/DraftRecovery.h
 )
 
 add_library(MuffinCore STATIC

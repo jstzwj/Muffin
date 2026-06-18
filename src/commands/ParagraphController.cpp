@@ -735,6 +735,81 @@ bool ParagraphController::toggleTaskListItem(NodeId blockId) {
       true);
 }
 
+MarkdownNode* ParagraphController::currentListItem() const {
+  if (!ctx_.hasSession() || !ctx_.hasCursor()) {
+    return nullptr;
+  }
+  const NodeId blockId = ctx_.selection->cursorPosition().blockId;
+  if (!blockId.isValid()) {
+    return nullptr;
+  }
+  // The caret's block may be the list item itself or a child of it; walk up to
+  // the nearest ListItem.
+  MarkdownNode* node = ctx_.session->document().node(blockId);
+  while (node && node->type() != BlockType::ListItem) {
+    node = node->parent();
+  }
+  return node;
+}
+
+bool ParagraphController::isOnListItem() const {
+  return currentListItem() != nullptr;
+}
+
+bool ParagraphController::isOnTaskItem() const {
+  MarkdownNode* item = currentListItem();
+  return item && item->isTaskItem();
+}
+
+bool ParagraphController::toggleCurrentTaskListItem() {
+  MarkdownNode* item = currentListItem();
+  if (item && item->isTaskItem()) {
+    return toggleTaskListItem(item->id());
+  }
+  return false;
+}
+
+bool ParagraphController::insertAlert(AlertKind kind) {
+  const char* marker = nullptr;
+  switch (kind) {
+    case AlertKind::Note: marker = "NOTE"; break;
+    case AlertKind::Tip: marker = "TIP"; break;
+    case AlertKind::Important: marker = "IMPORTANT"; break;
+    case AlertKind::Warning: marker = "WARNING"; break;
+    case AlertKind::Caution: marker = "CAUTION"; break;
+    default: return false;
+  }
+  // A GFM alert is a blockquote whose first line is [!KIND]; the following ">"
+  // line carries the content. Place the caret on that line, ready to type.
+  const QString markerStr = QString::fromLatin1(marker);
+  const QString body = QStringLiteral("\n\n> [!%1]\n> ").arg(markerStr);
+
+  BlockContext context;
+  if (!resolveBlockContext(context)) {
+    if (!ctx_.hasSession()) {
+      return false;
+    }
+    const QString markdown = ctx_.session->markdownText();
+    const QString inserted = markdown.isEmpty()
+        ? QStringLiteral("> [!%1]\n> ").arg(markerStr)
+        : body;
+    const qsizetype offset = markdown.size();
+    return applyBlockDelta(
+        EditTransaction::Kind::InsertText,
+        QStringLiteral("Insert Alert"),
+        offset, 0, inserted,
+        offset + inserted.size(),
+        {}, true);
+  }
+
+  return applyBlockDelta(
+      EditTransaction::Kind::InsertText,
+      QStringLiteral("Insert Alert"),
+      context.blockEnd, 0, body,
+      context.blockEnd + body.size(),
+      {}, true);
+}
+
 // ---------------------------------------------------------------------------
 // Paragraph insert commands
 // ---------------------------------------------------------------------------

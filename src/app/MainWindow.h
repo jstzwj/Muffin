@@ -9,6 +9,7 @@
 #include "editor/EditorController.h"
 #include "editor/EmojiProvider.h"
 #include "io/FileController.h"
+#include "app/DraftRecovery.h"
 #include "theme/ThemeManager.h"
 
 #include <QHash>
@@ -48,6 +49,10 @@ public:
   // without a file argument: reopen the most-recently-used file, or leave the
   // default empty document. Called from main() so a command-line file still wins.
   void restoreStartupFile();
+  // Offer to restore unsaved drafts left by a previous (crashed/closed-unsaved)
+  // session. Returns true if at least one draft was restored. Called from main()
+  // before restoreStartupFile() so a restored draft takes precedence.
+  bool offerDraftRecovery();
   bool saveCurrentDocument();
   bool isDocumentModified() const;
 
@@ -193,9 +198,13 @@ private:
   void performFindPrevious();
   void performReplace(const QString& findText, const QString& replaceText);
   void performReplaceAll(const QString& findText, const QString& replaceText);
+  void performAutoSave();
+  void snapshotDraft();
+  void restoreDraft(const DraftRecovery::PendingDraft& draft);
 
   DocumentSession session_;
   FileController fileController_;
+  DraftRecovery drafts_;
   CommandRegistry commands_;
   ThemeManager themeManager_;
   EditorController editorController_;
@@ -213,6 +222,12 @@ private:
   QLabel* blockSourceLabel_ = nullptr;
   QLabel* wordsLabel_ = nullptr;
   QTimer* wordCountTimer_ = nullptr;
+  QTimer* autoSaveTimer_ = nullptr;
+  QTimer* draftTimer_ = nullptr;
+  // Last text written to the draft store this dirty period. snapshotDraft()
+  // skips the (atomic) disk write when content is unchanged, so the heartbeat
+  // timer can keep firing cheaply without churning the drafts directory.
+  QString lastDraftSnapshotText_;
   QMenu* recentFilesMenu_ = nullptr;
   QMenu* reopenEncodingMenu_ = nullptr;
   // Exclusive radio groups (image resize, image insert action), keyed by the

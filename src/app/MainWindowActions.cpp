@@ -66,6 +66,7 @@ void muffin::MainWindow::setupConnections() {
   updateFileActions();
   updateContextActions();
   rebuildRecentFilesMenu();
+  buildReopenEncodingMenu();
   refreshSidebarDocumentInfo();
   refreshSidebarOutline();
   updateSidebarMode();

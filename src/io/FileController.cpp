@@ -18,6 +18,7 @@
 muffin::FileController::FileController(QObject* parent) : QObject(parent) {}
 
 bool muffin::FileController::newFile(DocumentSession& session, QWidget* parent) {
+  autoSaveOnSwitchIfEnabled(session, parent);
   if (!confirmDiscardIfModified(session, parent)) {
     return false;
   }
@@ -26,6 +27,7 @@ bool muffin::FileController::newFile(DocumentSession& session, QWidget* parent) 
 }
 
 bool muffin::FileController::open(DocumentSession& session, QWidget* parent, QString path) {
+  autoSaveOnSwitchIfEnabled(session, parent);
   if (!confirmDiscardIfModified(session, parent)) {
     return false;
   }
@@ -59,21 +61,50 @@ bool muffin::FileController::save(DocumentSession& session, QWidget* parent) {
     return false;
   }
   session.document().setModified(false);
+  emit documentBecameClean(session.filePath());
   return true;
+}
+
+QString muffin::FileController::defaultUntitledName() const {
+  // files/defaultExtension: 0 = .md (default), 1 = .markdown, 2 = .txt.
+  QSettings settings;
+  switch (settings.value(QStringLiteral("files/defaultExtension"), 0).toInt()) {
+    case 1:
+      return QStringLiteral("Untitled.markdown");
+    case 2:
+      return QStringLiteral("Untitled.txt");
+    default:
+      return QStringLiteral("Untitled.md");
+  }
+}
+
+void muffin::FileController::autoSaveOnSwitchIfEnabled(DocumentSession& session, QWidget* parent) {
+  // Silently persist a pathed, modified document before switching away, so the
+  // confirm-discard prompt below is skipped. No-op unless files/autoSaveOnSwitch is on.
+  QSettings settings;
+  if (!settings.value(QStringLiteral("files/autoSaveOnSwitch"), false).toBool()) {
+    return;
+  }
+  if (session.filePath().isEmpty() || !session.document().isModified()) {
+    return;
+  }
+  save(session, parent);
 }
 
 bool muffin::FileController::saveAs(DocumentSession& session, QWidget* parent) {
   QString path = QFileDialog::getSaveFileName(
       parent,
       tr("Save As"),
-      session.filePath().isEmpty() ? QStringLiteral("Untitled.md") : session.filePath(),
-      tr("Markdown files (*.md);;Text files (*.txt);;All files (*.*)"));
+      session.filePath().isEmpty() ? defaultUntitledName() : session.filePath(),
+      tr("Markdown files (*.md *.markdown);;Text files (*.txt);;All files (*.*)"));
   if (path.isEmpty()) {
     return false;
   }
   if (!writeTextFile(path, session.markdownText(), parent)) {
     return false;
   }
+  // The previous path's draft (if any) is now obsolete: the content lives at `path`.
+  emit documentBecameClean(session.filePath());
   session.setFilePath(path);
   session.document().setModified(false);
   return true;
@@ -95,8 +126,9 @@ bool muffin::FileController::confirmDiscardIfModified(DocumentSession& session, 
     return false;
   }
   if (choice == QMessageBox::Save) {
-    return save(session, parent);
+    return save(session, parent);  // save() emits documentBecameClean on success.
   }
+  emit documentBecameClean(session.filePath());
   return true;
 }
 
@@ -218,6 +250,8 @@ bool muffin::FileController::reopenWithEncoding(
       if (!save(session, parent)) {
         return false;
       }
+    } else {
+      emit documentBecameClean(session.filePath());
     }
   }
 

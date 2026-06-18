@@ -14,6 +14,7 @@ muffin_add_test(NAME MuffinMarkdownParseOptionsTest SOURCE tests/document/Markdo
 muffin_add_test(NAME MuffinAlertBoxParseTest       SOURCE tests/document/AlertBoxParseTest.cpp       LINK MuffinCore)
 muffin_add_test(NAME MuffinHighlightParseTest      SOURCE tests/document/HighlightParseTest.cpp      LINK MuffinCore)
 muffin_add_test(NAME MuffinSubscriptSuperscriptParseTest SOURCE tests/document/SubscriptSuperscriptParseTest.cpp LINK MuffinCore)
+muffin_add_test(NAME MuffinDraftRecoveryTest SOURCE tests/app/DraftRecoveryTest.cpp LINK MuffinCore)
 
 # --- render (link MuffinUi, take the render_smoke fixture, lock the GUI) ---
 muffin_add_test(NAME MuffinRenderThemeTest            SOURCE tests/render/RenderThemeTest.cpp            LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK DISABLED_ON APPLE)

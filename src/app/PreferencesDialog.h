@@ -39,6 +39,8 @@ signals:
   void zoomPercentRequested(int percent);
   void fontSizePxRequested(int px);
   void clearRecentFilesRequested();
+  void outlineFoldableChanged(bool foldable);
+  void restoreDraftsRequested();
   void disableTypewriterFocusRequested();
 
 protected:

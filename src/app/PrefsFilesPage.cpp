@@ -161,7 +161,10 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
   connect(startupCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           [](int index) { QSettings().setValue(QStringLiteral("files/startupBehavior"), index); });
   connect(outlineFoldableCheck_, &QCheckBox::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("files/outlineFoldable"), checked); });
+          [this](bool checked) {
+            QSettings().setValue(QStringLiteral("files/outlineFoldable"), checked);
+            emit outlineFoldableChanged(checked);
+          });
   connect(defaultExtCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           [](int index) { QSettings().setValue(QStringLiteral("files/defaultExtension"), index); });
   connect(autoSaveCheck_, &QCheckBox::toggled, this,
@@ -177,6 +180,7 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
   connect(dropImportCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           [](int index) { QSettings().setValue(QStringLiteral("files/dropImportable"), index); });
   connect(clearHistoryButton_, &QPushButton::clicked, this, &muffin::PrefsFilesPage::clearRecentFilesRequested);
+  connect(restoreDraftButton_, &QPushButton::clicked, this, &muffin::PrefsFilesPage::restoreDraftsRequested);
 }
 
 void muffin::PrefsFilesPage::retranslateUi() {

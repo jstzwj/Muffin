@@ -76,7 +76,9 @@ int main(int argc, char *argv[]) {
   const QStringList positionalArguments = parser.positionalArguments();
   if (!positionalArguments.isEmpty()) {
     window.openFile(QFileInfo(positionalArguments.first()).absoluteFilePath());
-  } else {
+  } else if (!window.offerDraftRecovery()) {
+    // No draft was restored (none existed, all discarded, or deferred) — fall
+    // back to the configured startup behavior.
     window.restoreStartupFile();
   }
   window.show();
