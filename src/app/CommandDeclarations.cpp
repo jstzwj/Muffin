@@ -7,6 +7,7 @@
 #include "document/MarkdownTypes.h"
 #include "editor/EditorView.h"
 #include "editor/FindBarWidget.h"
+#include "editor/ResourceUrl.h"
 #include "editor/SourceEditorWidget.h"
 #include "io/ImageFileOps.h"
 #include "spellcheck/SpellChecker.h"
@@ -200,6 +201,33 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .category = CommandCategory::Edit,
        .text = muffin::MainWindow::tr("Copy Image"),
        .enabledInitial = false},
+      {.id = QStringLiteral("link.open"),
+       .category = CommandCategory::Edit,
+       .text = muffin::MainWindow::tr("Open Link"),
+       .enabledInitial = false,
+       .handler = [](MainWindow& window) {
+         const QString href = window.renderView_->cursorHit().linkHref;
+         if (href.isEmpty()) {
+           return;
+         }
+         QDesktopServices::openUrl(resolvedUrlForDocumentResource(href, window.session_.filePath()));
+       },
+       .enabled = [](const MainWindow& w) {
+         return !w.backend_->isSourceMode() && !w.renderView_->cursorHit().linkHref.isEmpty();
+       }},
+      {.id = QStringLiteral("link.copy_address"),
+       .category = CommandCategory::Edit,
+       .text = muffin::MainWindow::tr("Copy Link Address"),
+       .enabledInitial = false,
+       .handler = [](MainWindow& window) {
+         const QString href = window.renderView_->cursorHit().linkHref;
+         if (!href.isEmpty()) {
+           QApplication::clipboard()->setText(href);
+         }
+       },
+       .enabled = [](const MainWindow& w) {
+         return !w.backend_->isSourceMode() && !w.renderView_->cursorHit().linkHref.isEmpty();
+       }},
       {.id = QStringLiteral("edit.paste"),
        .category = CommandCategory::Edit,
        .text = muffin::MainWindow::tr("Paste"),

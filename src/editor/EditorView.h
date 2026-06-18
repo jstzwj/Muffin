@@ -87,7 +87,12 @@ signals:
   void tableMoreActionsRequested(QPoint globalPos);
   void htmlEditToggleRequested(NodeId blockId);
   void taskCheckboxToggled(NodeId blockId);
-  void spellCorrectionRequested(qsizetype sourceStart, qsizetype removedLength, QString replacement);
+  // Right-click in rendered mode: carries the hit under the cursor (zone/link/
+  // image/table context) plus the global position. The caret has already been
+  // moved to the click (unless it landed on the current selection), so the
+  // receiver can build a caret-based menu from the command registry. MainWindow
+  // owns commands_ and builds/execs the menu; EditorView stays decoupled.
+  void contextMenuRequested(HitTestResult hit, QPoint globalPos);
 
 protected:
   bool event(QEvent* event) override;
@@ -175,6 +180,12 @@ private:
   void paintSelectionRectsForBlock(QPainter& painter, const BlockLayout* block, const QVector<QRectF>& documentRects) const;
   // True for a code fence that paints a horizontal scrollbar (wrap off + a line wider than content).
   bool isScrollableCodeFence(const BlockLayout* block) const;
+  // True when `viewportPos` falls inside the current selection's painted rects.
+  // Used by contextMenuEvent to decide whether a right-click should move the
+  // caret: a click on an existing selection leaves it intact (so Cut/Copy act on
+  // it), a click elsewhere repositions the caret to the click so caret-based
+  // commands target the clicked location.
+  bool selectionContainsViewportPoint(const HitTestResult& hit, QPointF viewportPos) const;
   void paintInsertionCursor(QPainter& painter) const;
   void paintHeadingBadge(QPainter& painter) const;
   void paintHtmlHoverOverlay(QPainter& painter) const;

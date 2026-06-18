@@ -98,13 +98,6 @@ void muffin::MainWindow::connectRenderSignals() {
       window.renderCommands_.deleteCurrentTable();
     }
   });
-  QObject::connect(window.renderView_, &EditorView::spellCorrectionRequested, &window,
-      [&window](qsizetype start, qsizetype length, const QString& replacement) {
-        if (window.backend_->isSourceMode()) {
-          return;
-        }
-        window.session_.applyTextDelta(start, length, replacement, true);
-      });
   QObject::connect(window.renderView_, &EditorView::tableMoreActionsRequested, &window, [&window](QPoint globalPos) {
     if (window.backend_->isSourceMode()) {
       return;
@@ -141,6 +134,13 @@ void muffin::MainWindow::connectRenderSignals() {
     }
     menu.exec(globalPos);
   });
+  QObject::connect(window.renderView_, &EditorView::contextMenuRequested, &window,
+      [&window](HitTestResult hit, QPoint globalPos) {
+        if (window.backend_->isSourceMode()) {
+          return;  // source mode keeps the native QPlainTextEdit context menu
+        }
+        window.buildEditorContextMenu(hit, globalPos);
+      });
 }
 
 void muffin::MainWindow::connectSessionSignals() {

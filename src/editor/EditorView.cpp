@@ -5,24 +5,20 @@
 #include "editor/CodeLanguageEditor.h"
 #include "editor/EditorViewGeometry.h"
 #include "editor/HtmlBlockHoverController.h"
+#include "editor/ResourceUrl.h"
 #include "editor/TableToolbar.h"
 #include "render/ImageLoader.h"
-#include "spellcheck/SpellChecker.h"
-#include "unicode/WordBoundary.h"
 
 #include <QAction>
 #include <QApplication>
 #include <QContextMenuEvent>
-#include <QCoreApplication>
 #include <QDesktopServices>
-#include <QDir>
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QFontMetricsF>
 #include <QList>
-#include <QMenu>
 #include <QMimeData>
 #include <QPainter>
 #include <QLoggingCategory>
@@ -54,31 +50,6 @@ bool sameCursorPosition(const CursorPosition& a, const CursorPosition& b) {
 
 bool sameSelectionRange(const SelectionRange& a, const SelectionRange& b) {
   return sameCursorPosition(a.anchor, b.anchor) && sameCursorPosition(a.focus, b.focus);
-}
-
-QUrl resolvedUrlForDocumentResource(const QString& value, const QString& documentPath) {
-  const QFileInfo info(value);
-  if (info.isAbsolute()) {
-    return QUrl::fromLocalFile(info.absoluteFilePath());
-  }
-
-  const QUrl url(value);
-  if (url.isLocalFile()) {
-    return QUrl::fromLocalFile(QFileInfo(url.toLocalFile()).absoluteFilePath());
-  }
-  if (url.isValid() && !url.scheme().isEmpty()) {
-    return url;
-  }
-  if (value.startsWith(QLatin1Char('#'))) {
-    return url;
-  }
-
-  if (!documentPath.isEmpty()) {
-    const QString baseDirectory = QFileInfo(documentPath).absolutePath();
-    return QUrl::fromLocalFile(QFileInfo(QDir(baseDirectory).absoluteFilePath(value)).absoluteFilePath());
-  }
-
-  return QUrl(value);
 }
 
 class PerfTimer {
@@ -863,62 +834,89 @@ void EditorView::mouseDoubleClickEvent(QMouseEvent* event) {
 }
 
 void EditorView::contextMenuEvent(QContextMenuEvent* event) {
-  // Right-click spelling suggestions in rendered mode. Resolve the word under the cursor
-  // via its markdown source offset, and offer replacement/ignore when it's misspelled.
-  auto& checker = SpellChecker::instance();
-  if (!document_ || !checker.isEnabled()) {
-    QAbstractScrollArea::contextMenuEvent(event);
-    return;
-  }
   const HitTestResult hit = hitTest(QPointF(event->pos()));
-  if (hit.zone != HitTestResult::Zone::Text || hit.sourceOffset < 0) {
-    QAbstractScrollArea::contextMenuEvent(event);
-    return;
-  }
-  const QString& markdown = document_->markdownText();
-  const WordSegment seg = findWordSegment(markdown, hit.sourceOffset);
-  if (!seg.isWord || seg.end <= seg.start || seg.start >= markdown.size()) {
-    QAbstractScrollArea::contextMenuEvent(event);
-    return;
-  }
-  const QString word = markdown.mid(seg.start, seg.end - seg.start);
-  if (word.isEmpty() || checker.isCorrect(word)) {
-    QAbstractScrollArea::contextMenuEvent(event);
-    return;
+
+  // Standard editor behavior: move the caret to the click so caret-based commands
+  // (format / paragraph / table / image) target the clicked location. A click on
+  // a link / image / table cell always repositions (the intent is to act on that
+  // object); a plain-text click leaves an existing selection intact when it lands
+  // on it, so Cut/Copy still act on the selection. The menu itself (spell
+  // suggestions + command sections) is assembled by MainWindow from the registry.
+  const bool onObject = !hit.linkHref.isEmpty() || !hit.imageSrc.isEmpty() || hit.zone == HitTestResult::Zone::TableCell;
+  const bool placeable = hit.isValid() && isSelectableZone(hit.zone);
+  if (placeable && (onObject || !selectionContainsViewportPoint(hit, QPointF(event->pos())))) {
+    setCursorHit(hit);
+    emit blockClicked(hit);
   }
 
-  const QStringList suggestions = checker.suggestions(word);
-  QMenu menu(this);
-  QList<QAction*> spellActions;
-  const int cap = 8;
-  if (suggestions.isEmpty()) {
-    QAction* none = new QAction(QCoreApplication::translate("muffin::EditorView", "(no spelling suggestions)"), &menu);
-    none->setEnabled(false);
-    spellActions.append(none);
+  emit contextMenuRequested(hit, event->globalPos());
+}
+
+bool EditorView::selectionContainsViewportPoint(const HitTestResult& hit, QPointF viewportPos) const {
+  if (!layout_ || !hit.isValid() || selection_.isCollapsed()) {
+    return false;
+  }
+  const NodeId clickTop = layout_->topLevelBlockIdFor(hit.blockId);
+  const BlockLayout* block = layout_->block(clickTop, theme_);
+  if (!block) {
+    return false;
+  }
+
+  QVector<QRectF> rects;
+  if (selection_.isSingleBlock()) {
+    if (clickTop != selection_.focus.blockId) {
+      return false;  // click is in a different block than the (single) selected one
+    }
+    rects = block->selectionRects(selection_, theme_);
   } else {
-    for (int i = 0; i < qMin(suggestions.size(), cap); ++i) {
-      const QString suggestion = suggestions.at(i);
-      const qsizetype start = seg.start;
-      const qsizetype length = seg.end - seg.start;
-      QAction* replaceAction = new QAction(suggestion, &menu);
-      connect(replaceAction, &QAction::triggered, this, [this, start, length, suggestion]() {
-        emit spellCorrectionRequested(start, length, suggestion);
-      });
-      spellActions.append(replaceAction);
+    // Multi-block: BlockLayout::selectionRectsSelf bails on non-single-block
+    // selections (BlockLayout.cpp:934), so selectionRects() returns nothing and
+    // the naive check would always say "not in selection" — collapsing the
+    // selection on right-click. Compute the per-block selected [start, end]
+    // range exactly as paintSelection does, then use selectionRectsForOffsets.
+    const NodeId anchorBlock = selection_.anchor.blockId;
+    const NodeId focusBlock = selection_.focus.blockId;
+    const QVector<const BlockLayout*> selectedBlocks = blocksBetween(*layout_, anchorBlock, focusBlock);
+    bool inSelection = false;
+    for (const BlockLayout* sb : selectedBlocks) {
+      if (sb && sb->nodeId() == clickTop) {
+        inSelection = true;
+        break;
+      }
+    }
+    if (!inSelection) {
+      return false;
+    }
+    const bool anchorFirst = blockComesBefore(*layout_, anchorBlock, focusBlock);
+    qsizetype start = 0;
+    qsizetype end = selectableLength(block);
+    const bool isAnchor = clickTop == anchorBlock;
+    const bool isFocus = clickTop == focusBlock;
+    const bool isTable = block->type() == BlockType::Table;
+    if (isAnchor) {
+      if (anchorFirst) {
+        start = isTable ? 0 : selection_.anchor.text.textOffset;
+      } else {
+        end = isTable ? selectableLength(block) : selection_.anchor.text.textOffset;
+      }
+    }
+    if (isFocus) {
+      if (anchorFirst) {
+        end = isTable ? selectableLength(block) : selection_.focus.text.textOffset;
+      } else {
+        start = isTable ? 0 : selection_.focus.text.textOffset;
+      }
+    }
+    rects = block->selectionRectsForOffsets(start, end, theme_);
+  }
+
+  const QPointF documentPos(viewportPos.x(), viewportPos.y() + scrollY());
+  for (const QRectF& r : rects) {
+    if (r.contains(documentPos)) {
+      return true;
     }
   }
-  QAction* ignoreAction =
-      new QAction(QCoreApplication::translate("muffin::EditorView", "Ignore \"%1\"").arg(word), &menu);
-  connect(ignoreAction, &QAction::triggered, this, [this, word]() {
-    SpellChecker::instance().ignoreWord(word);
-    if (document_) {
-      setDocument(*document_, documentPath_);  // re-layout so the squiggle clears
-    }
-  });
-  spellActions.append(ignoreAction);
-
-  menu.addActions(spellActions);
-  menu.exec(event->globalPos());
+  return false;
 }
 
 void EditorView::inputMethodEvent(QInputMethodEvent* event) {

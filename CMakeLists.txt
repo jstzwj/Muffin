@@ -111,6 +111,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/MainWindowActionBinder.cpp
   src/app/CommandDeclarations.cpp
   src/app/MainWindowMenus.cpp
+  src/app/MainWindowContextMenu.cpp
   src/app/MainWindowSignalBinder.cpp
   src/app/MainWindowActions.cpp
   src/app/MainWindowFileOps.cpp
@@ -519,6 +520,7 @@ add_executable(Muffin
   src/app/CommandDeclarations.cpp
   src/app/CommandDeclarations.h
   src/app/MainWindowMenus.cpp
+  src/app/MainWindowContextMenu.cpp
   src/app/MainWindowActions.cpp
   src/app/MainWindowSignalBinder.cpp
   src/app/UpdateChecker.cpp
