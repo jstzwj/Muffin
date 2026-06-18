@@ -1,5 +1,6 @@
 #include "editor/EditorView.h"
 
+#include "blocks/code/CodeFenceScrollController.h"
 #include "document/MarkdownDocument.h"
 #include "editor/CodeLanguageEditor.h"
 #include "editor/EditorViewGeometry.h"
@@ -19,6 +20,7 @@
 #include <QDropEvent>
 #include <QElapsedTimer>
 #include <QFileInfo>
+#include <QFontMetricsF>
 #include <QList>
 #include <QMenu>
 #include <QMimeData>
@@ -195,6 +197,10 @@ bool EditorView::refreshBlock(NodeId blockId, const MarkdownDocument& document) 
     updateScrollBars();
   }
   updateCursorHitFromPosition();
+  // Typing in a wrap-OFF code fence grows the line at its natural width; once the caret crosses the
+  // visible window's right edge it would otherwise scroll off-screen. setCursorHit/rebuildLayout
+  // already follow, but the per-keystroke refresh path needs the same horizontal keep-visible.
+  ensureCodeFenceCursorVisible();
   updateTableToolbar();
   QRect dirty;
   addRebuildDirtyRect(dirty, result, documentViewportRect(), scrollY(), viewport()->size());
@@ -205,7 +211,7 @@ bool EditorView::refreshBlock(NodeId blockId, const MarkdownDocument& document) 
   // The caret may sit outside the refreshed block (e.g. on the virtual trailing
   // paragraph below the last block). Dirty both the new caret position (to draw
   // it) and the previously painted one (to erase the ghost on move).
-  dirty = uniteDocumentRectDirty(dirty, cursorHit_.cursorRect, scrollY(), viewport()->size());
+  dirty = uniteDocumentRectDirty(dirty, effectiveCursorRect(), scrollY(), viewport()->size());
   dirty = uniteDocumentRectDirty(dirty, lastPaintedCaretDocumentRect_, scrollY(), viewport()->size());
   if (dirty.isEmpty()) {
     dirty = viewport()->rect();
@@ -242,7 +248,7 @@ bool EditorView::refreshBlocks(const QVector<NodeId>& blockIds, const MarkdownDo
   // Include the caret so a caret outside the refreshed blocks (e.g. on the
   // virtual trailing paragraph below the last block) repaints too — both the
   // new position (to draw) and the previous one (to erase the ghost on move).
-  dirty = uniteDocumentRectDirty(dirty, cursorHit_.cursorRect, scrollY(), viewport()->size());
+  dirty = uniteDocumentRectDirty(dirty, effectiveCursorRect(), scrollY(), viewport()->size());
   dirty = uniteDocumentRectDirty(dirty, lastPaintedCaretDocumentRect_, scrollY(), viewport()->size());
   viewport()->update(dirty.isEmpty() ? viewport()->rect() : dirty);
   return true;
@@ -306,6 +312,7 @@ void EditorView::setCursorHit(HitTestResult hit) {
   selection_.anchor = cursorPosition_;
   selection_.focus = cursorPosition_;
   refreshInlineProjectionForSelectionChange(previousSelection);
+  ensureCodeFenceCursorVisible();
   updateTableToolbar();
 }
 
@@ -410,6 +417,15 @@ QRectF EditorView::effectiveCursorRect() const {
   QRectF cursor = cursorHit_.cursorRect;
   if (cursor.isEmpty()) {
     cursor = QRectF(cursorHit_.blockRect.left(), cursorHit_.blockRect.top(), 1.0, cursorHit_.blockRect.height());
+  }
+  // A scrollable code fence (wrap off + overflow) paints its content translated by -offset, so the
+  // caret must shift by the same amount to stay aligned with the character under it.
+  if (cursorHit_.zone == HitTestResult::Zone::Code && codeFenceScroll_ != nullptr && layout_) {
+    const BlockLayout* block = layout_->blockIfPromoted(cursorHit_.blockId);
+    if (block != nullptr && block->type() == BlockType::CodeFence &&
+        block->codeMaxLineWidth() > block->literalContentRect(theme_).width() + 0.5) {
+      cursor.translate(-codeFenceScroll_->offsetFor(cursorHit_.blockId), 0.0);
+    }
   }
   return cursor;
 }
@@ -576,10 +592,10 @@ void EditorView::paintEvent(QPaintEvent* event) {
     if (focusMode_ && activeTopLevel.isValid() && block->nodeId() != activeTopLevel) {
       painter.save();
       painter.setOpacity(0.35);
-      block->paint(painter, theme_, scrollY());
+      block->paint(painter, theme_, scrollY(), codeFenceScroll_);
       painter.restore();
     } else {
-      block->paint(painter, theme_, scrollY());
+      block->paint(painter, theme_, scrollY(), codeFenceScroll_);
     }
   }
   paintSelection(painter);
@@ -638,6 +654,16 @@ void EditorView::resizeEvent(QResizeEvent* event) {
 }
 
 void EditorView::wheelEvent(QWheelEvent* event) {
+  const bool horizontal = qAbs(event->angleDelta().x()) >= qAbs(event->angleDelta().y());
+  // Shift+wheel or a trackpad horizontal gesture scrolls the code fence under the cursor; plain
+  // vertical wheel always scrolls the document (unchanged).
+  if ((event->modifiers().testFlag(Qt::ShiftModifier) || horizontal) && scrollCodeFenceHorizontally(event, horizontal)) {
+    stopScrollAnimation();
+    event->accept();
+    updateCodeLanguageEditor();
+    updateTableToolbar();
+    return;
+  }
   stopScrollAnimation();
   QAbstractScrollArea::wheelEvent(event);
   updateCodeLanguageEditor();
@@ -676,6 +702,13 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
       event->accept();
       return;
     }
+    if (hit.isValid() && hit.zone == HitTestResult::Zone::CodeHorizontalBar) {
+      // Dragging the code-fence horizontal scrollbar: jump to the click and track the drag.
+      codeFenceScrollDragId_ = hit.blockId;
+      dragCodeFenceScrollBarTo(hit.blockId, event->position());
+      event->accept();
+      return;
+    }
     if (event->modifiers().testFlag(Qt::ShiftModifier) && hit.isValid() && isDragSelectableZone(hit.zone) && cursorPosition_.isValid()) {
       SelectionRange range;
       range.anchor = selection_.anchor.isValid() ? selection_.anchor : cursorPosition_;
@@ -700,6 +733,11 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
 }
 
 void EditorView::mouseMoveEvent(QMouseEvent* event) {
+  if (codeFenceScrollDragId_.isValid() && (event->buttons() & Qt::LeftButton)) {
+    dragCodeFenceScrollBarTo(codeFenceScrollDragId_, event->position());
+    event->accept();
+    return;
+  }
   if ((dragSelectionPending_ || draggingSelection_) && (event->buttons() & Qt::LeftButton)) {
     if (!draggingSelection_) {
       draggingSelection_ = true;
@@ -717,6 +755,11 @@ void EditorView::mouseMoveEvent(QMouseEvent* event) {
 }
 
 void EditorView::mouseReleaseEvent(QMouseEvent* event) {
+  if (event->button() == Qt::LeftButton && codeFenceScrollDragId_.isValid()) {
+    codeFenceScrollDragId_ = NodeId();
+    event->accept();
+    return;
+  }
   if (event->button() == Qt::LeftButton && (dragSelectionPending_ || draggingSelection_)) {
     const bool wasDragging = draggingSelection_;
     if (wasDragging) {
@@ -873,10 +916,9 @@ void EditorView::inputMethodEvent(QInputMethodEvent* event) {
 
 QVariant EditorView::inputMethodQuery(Qt::InputMethodQuery query) const {
   if (query == Qt::ImCursorRectangle) {
-    QRectF cursor = cursorHit_.cursorRect;
-    if (cursor.isEmpty()) {
-      cursor = QRectF(cursorHit_.blockRect.left(), cursorHit_.blockRect.top(), 1.0, cursorHit_.blockRect.height());
-    }
+    // effectiveCursorRect matches where the caret is painted (offset-adjusted for a scrolled code
+    // fence); without it the IME panel anchored at the natural advance, far from the visible caret.
+    QRectF cursor = effectiveCursorRect();
     cursor.translate(0, -scrollY());
     return cursor.toRect();
   }
@@ -888,6 +930,12 @@ void EditorView::rebuildLayout() {
   if (!layout_) {
     layout_ = std::make_unique<DocumentLayout>();
   }
+  // (Re)wire the code-fence scroll controller. The no-document branch below hands back a fresh
+  // layout_, which drops the controller attach() set on the previous one. With a null controller,
+  // DocumentLayout::hitTest maps clicks at offset 0 while the paint path (which reads the view's
+  // codeFenceScroll_ directly) scrolls the text — so drag selections desynchronized from the text,
+  // the shift growing with the horizontal scroll offset.
+  layout_->setCodeFenceScroll(codeFenceScroll_);
 
   if (document_) {
     const int oldValue = verticalScrollBar()->value();
@@ -910,9 +958,11 @@ void EditorView::rebuildLayout() {
     if (cursorPosition_.isValid()) {
       cursorHit_ = hitForCursorPosition(*layout_, theme_, cursorPosition_);
       cursorVisible_ = cursorHit_.isValid();
+      ensureCodeFenceCursorVisible();
     }
   } else {
     layout_ = std::make_unique<DocumentLayout>();
+    layout_->setCodeFenceScroll(codeFenceScroll_);
     updateScrollBars();
   }
   updateCodeLanguageEditor();
@@ -1064,6 +1114,104 @@ void EditorView::updateCursorHitFromPosition() {
   updateTableToolbar();
 }
 
+void EditorView::setCodeFenceScroll(CodeFenceScrollController* controller) {
+  codeFenceScroll_ = controller;
+  if (layout_) {
+    layout_->setCodeFenceScroll(controller);
+  }
+}
+
+bool EditorView::scrollCodeFenceHorizontally(QWheelEvent* event, bool horizontal) {
+  if (codeFenceScroll_ == nullptr || layout_ == nullptr) {
+    return false;
+  }
+  const HitTestResult hit = hitTest(event->position());
+  if (!hit.isValid()) {
+    return false;
+  }
+  const BlockLayout* block = layout_->blockIfPromoted(hit.blockId);
+  if (block == nullptr || block->type() != BlockType::CodeFence) {
+    return false;
+  }
+  const qreal maxW = block->codeMaxLineWidth();
+  const qreal visibleW = block->literalContentRect(theme_).width();
+  if (maxW <= visibleW + 0.5) {
+    return false;  // not scrollable (wrap on, or no overflowing line)
+  }
+  const int delta = horizontal ? event->angleDelta().x() : event->angleDelta().y();
+  const qreal step = QFontMetricsF(theme_.codeFont()).horizontalAdvance(QLatin1Char('M')) * 3.0;
+  const qreal current = codeFenceScroll_->offsetFor(hit.blockId);
+  const qreal maxOffset = qMax<qreal>(0.0, maxW - visibleW);
+  codeFenceScroll_->setOffset(hit.blockId, qBound<qreal>(0.0, current - delta / 120.0 * step, maxOffset));
+  viewport()->update();
+  return true;
+}
+
+void EditorView::dragCodeFenceScrollBarTo(NodeId blockId, QPointF viewportPos) {
+  if (codeFenceScroll_ == nullptr || layout_ == nullptr || !blockId.isValid()) {
+    return;
+  }
+  const BlockLayout* block = layout_->blockIfPromoted(blockId);
+  if (block == nullptr) {
+    return;
+  }
+  const qreal maxW = block->codeMaxLineWidth();
+  const QRectF content = block->literalContentRect(theme_);  // document space
+  const qreal visibleW = content.width();
+  const qreal totalW = qMax(maxW, visibleW);
+  if (totalW <= visibleW + 0.5) {
+    return;
+  }
+  const qreal stripH = BlockLayout::scrollBarStripHeight(theme_);
+  const QRectF strip(content.left(), content.bottom() - stripH, content.width(), stripH);
+  const qreal thumbW = qMax<qreal>(24.0, strip.width() * visibleW / totalW);
+  const qreal trackRange = qMax<qreal>(1.0, strip.width() - thumbW);
+  // Scroll is vertical-only, so a document x equals its viewport x.
+  const qreal t = qBound<qreal>(0.0, (viewportPos.x() - strip.left() - thumbW * 0.5) / trackRange, 1.0);
+  const qreal maxOffset = qMax<qreal>(0.0, maxW - visibleW);
+  codeFenceScroll_->setOffset(blockId, t * maxOffset);
+  viewport()->update();
+}
+
+void EditorView::ensureCodeFenceCursorVisible() {
+  if (codeFenceScroll_ == nullptr || layout_ == nullptr) {
+    return;
+  }
+  if (!cursorHit_.isValid() || cursorHit_.zone != HitTestResult::Zone::Code) {
+    return;
+  }
+  const BlockLayout* block = layout_->blockIfPromoted(cursorHit_.blockId);
+  if (block == nullptr || block->type() != BlockType::CodeFence) {
+    return;
+  }
+  const qreal maxW = block->codeMaxLineWidth();
+  const QRectF content = block->literalContentRect(theme_);
+  const qreal visibleW = content.width();
+  if (maxW <= visibleW + 0.5) {
+    return;  // wrap on sets maxW to 0; otherwise no overflow
+  }
+  const qreal caretX = cursorHit_.cursorRect.left() - content.left();
+  const qreal current = codeFenceScroll_->offsetFor(cursorHit_.blockId);
+  const qreal margin = QFontMetricsF(theme_.codeFont()).horizontalAdvance(QLatin1Char('M')) * 2.0;
+  qreal next = current;
+  // Only scroll when the caret is genuinely OUTSIDE the visible window. The earlier margin-based
+  // test (caretX < current+margin / caretX > current+visibleW-margin) also fired on a click whose
+  // caret was already visible but within `margin` of an edge — that shifted the content, which
+  // desynchronized a drag's anchor (captured from the pre-scroll hit) from its focus (resolved at
+  // the post-scroll offset): the caret then "jumped" sideways by ~margin the moment the drag began.
+  // A click places the caret at a visible spot, so it must not move; typing/keyboard nav can push
+  // the caret fully off-screen, and those cases still scroll to reveal it (with a small margin).
+  if (caretX < current) {
+    next = qMax<qreal>(0.0, caretX - margin);
+  } else if (caretX > current + visibleW) {
+    next = qMin<qreal>(maxW - visibleW, caretX - visibleW + margin);
+  }
+  if (next != current) {
+    codeFenceScroll_->setOffset(cursorHit_.blockId, next);
+    viewport()->update();
+  }
+}
+
 void EditorView::refreshInlineProjectionForSelectionChange(SelectionRange previousSelection) {
   QVector<NodeId> blockIds;
   addSelectionBlocks(blockIds, previousSelection);
@@ -1123,10 +1271,7 @@ void EditorView::paintSelection(QPainter& painter) const {
   if (selection_.isSingleBlock()) {
     const BlockLayout* block = layout_->blockIfPromoted(selection_.focus.blockId);
     if (block) {
-      for (QRectF rect : block->selectionRects(selection_, theme_)) {
-        rect.translate(0, -scrollY());
-        painter.drawRoundedRect(rect, 2, 2);
-      }
+      paintSelectionRectsForBlock(painter, block, block->selectionRects(selection_, theme_));
     }
   } else {
     const bool anchorFirst = blockComesBefore(*layout_, selection_.anchor.blockId, selection_.focus.blockId);
@@ -1154,13 +1299,47 @@ void EditorView::paintSelection(QPainter& painter) const {
           start = block->type() == BlockType::Table ? 0 : selection_.focus.text.textOffset;
         }
       }
-      for (QRectF rect : block->selectionRectsForOffsets(start, end, theme_)) {
-        rect.translate(0, -scrollY());
-        painter.drawRoundedRect(rect, 2, 2);
-      }
+      paintSelectionRectsForBlock(painter, block, block->selectionRectsForOffsets(start, end, theme_));
     }
   }
   painter.restore();
+}
+
+void EditorView::paintSelectionRectsForBlock(QPainter& painter, const BlockLayout* block, const QVector<QRectF>& documentRects) const {
+  if (block == nullptr) {
+    return;
+  }
+  const bool scrollable = isScrollableCodeFence(block);
+  qreal offset = 0.0;
+  QRectF clipViewport;  // empty unless scrollable; the visible text window minus the scrollbar strip
+  if (scrollable && codeFenceScroll_ != nullptr) {
+    offset = codeFenceScroll_->offsetFor(block->nodeId());
+    const qreal stripH = BlockLayout::scrollBarStripHeight(theme_);
+    const QRectF textDocument = block->literalContentRect(theme_).adjusted(0, 0, 0, -stripH);
+    clipViewport = textDocument.translated(0, -scrollY());
+  }
+  for (QRectF rect : documentRects) {
+    if (scrollable) {
+      rect.translate(-offset, 0.0);  // match the content's translate(-offset) in paintCodeFence
+    }
+    rect.translate(0, -scrollY());
+    if (scrollable) {
+      rect = rect.intersected(clipViewport);
+      if (rect.isEmpty()) {
+        continue;  // selection scrolled out of the visible window
+      }
+    }
+    painter.drawRoundedRect(rect, 2, 2);
+  }
+}
+
+bool EditorView::isScrollableCodeFence(const BlockLayout* block) const {
+  if (block == nullptr || block->type() != BlockType::CodeFence) {
+    return false;
+  }
+  // Mirrors paintCodeFence's predicate: wrap off (implied by maxLineWidth being meaningful) and a
+  // line wider than the content area.
+  return block->codeMaxLineWidth() > block->literalContentRect(theme_).width() + 0.5;
 }
 
 void EditorView::paintCurrentTableCell(QPainter& painter) const {
@@ -1192,10 +1371,10 @@ void EditorView::paintInsertionCursor(QPainter& painter) const {
     return;
   }
 
-  QRectF cursor = cursorHit_.cursorRect;
-  if (cursor.isEmpty()) {
-    cursor = QRectF(cursorHit_.blockRect.left(), cursorHit_.blockRect.top(), 1.0, cursorHit_.blockRect.height());
-  }
+  // effectiveCursorRect subtracts a scrollable code fence's horizontal offset, so the caret lands on
+  // the translated character: the text is painted with painter.translate(-offset), so without this
+  // the caret sat at the natural advance and was clipped out of view whenever the fence scrolled.
+  QRectF cursor = effectiveCursorRect();
   lastPaintedCaretDocumentRect_ = cursor;
   cursor.translate(0, -scrollY());
 

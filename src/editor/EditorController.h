@@ -3,6 +3,7 @@
 #include "app/RenderCommandFacade.h"
 #include "document/DocumentSession.h"
 #include "blocks/code/CodeFenceController.h"
+#include "blocks/code/CodeFenceScrollController.h"
 #include "blocks/literal/LiteralBlockController.h"
 #include "blocks/table/TableController.h"
 #include "commands/ParagraphController.h"
@@ -38,6 +39,7 @@ public:
   StylizeController& stylizeController();
   LiteralBlockController& frontMatterLiteral();
   CodeFenceController& codeFenceController();
+  CodeFenceScrollController& codeFenceScroll();
   LiteralBlockController& htmlLiteral();
   LiteralBlockController& mathLiteral();
   TableController& tableController();
@@ -105,6 +107,7 @@ private:
   ParagraphController paragraphController_;
   LiteralBlockController frontMatterLiteral_;
   CodeFenceController codeFenceController_;
+  CodeFenceScrollController codeFenceScroll_;
   LiteralBlockController htmlLiteral_;
   LiteralBlockController mathLiteral_;
   TableController tableController_;

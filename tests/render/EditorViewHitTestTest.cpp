@@ -1,5 +1,8 @@
 #include "EditorViewTestUtils.h"
 
+#include <QTextLayout>
+#include <QTextOption>
+
 using namespace muffin;
 
 void testDefinitionPlaceholderHitKeepsCursorInSlot() {
@@ -468,11 +471,369 @@ void testNoVirtualTrailingParagraphBelowEmptyLastParagraph() {
   }
 }
 
+// testNoWrapCodeFenceCursorStaysOnSingleRow
+// Regression: with markdown/codeBlockWrap OFF, a caret at the end of a long code
+// line must stay on that single visual row when recomputed from a CursorPosition
+// (rebuildLayout → editor_geometry::hitForCursorPosition → literalCursorRectForOffset).
+// Before the fix the caret-geometry path hardcoded soft-wrap, so the caret dropped
+// onto a phantom second (wrapped) row even though the line renders unwrapped —
+// typing then appeared to insert after the first line while the caret sat below it.
+void testNoWrapCodeFenceCursorStaysOnSingleRow() {
+  SettingsOverride wrapOff("markdown/codeBlockWrap", false);
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+
+  const QString longLine(400, QLatin1Char('a'));
+  session.setMarkdownText(QStringLiteral("```\n") + longLine + QStringLiteral("\n```"), false);
+  view.resize(640, 320);
+  view.setDocument(session.document());
+
+  MarkdownNode* code = blockAt(session, 0);
+  require(code->type() == BlockType::CodeFence, "fixture block should be a code fence");
+  const BlockLayout* block = requireViewBlock(view, code->id(), QStringLiteral("long-line code fence"));
+  const RenderTheme theme = view.theme();
+  const QRectF contentRect = block->literalContentRect(theme);
+  require(block->codeMaxLineWidth() > contentRect.width() + 0.5,
+          "the long line should overflow the content width so the fence is horizontally scrollable");
+
+  // Place the caret at the very end of the long line.
+  CursorPosition endCursor;
+  endCursor.blockId = code->id();
+  endCursor.text.nodeId = code->id();
+  endCursor.text.textOffset = longLine.size();
+  view.setCursorPosition(endCursor);
+
+  // A resize forces rebuildLayout, which recomputes cursorHit_ from cursorPosition_
+  // via editor_geometry::hitForCursorPosition — the exact path that used to hardcode wrap.
+  view.resize(720, 320);
+
+  const BlockLayout* rebuiltBlock = requireViewBlock(view, code->id(), QStringLiteral("rebuilt long-line code fence"));
+  const QRectF rebuiltContent = rebuiltBlock->literalContentRect(theme);
+  const HitTestResult caret = view.cursorHit();
+  require(caret.zone == HitTestResult::Zone::Code, "recomputed caret should still be in the code zone");
+  // The caret must remain on the FIRST content row (its top == content top), not wrapped down to a
+  // phantom second row. Under the bug the caret sat ~8 wrapped rows lower.
+  require(qAbs(caret.cursorRect.top() - rebuiltContent.top()) < 0.5,
+          "NoWrap code caret should stay on the single content row, not wrap to a phantom second row");
+  // And its x is the line's natural advance (well past the visible window), proving the layout used
+  // NoWrap rather than wrapping the long line inside the content width.
+  require(caret.cursorRect.left() - rebuiltContent.left() > rebuiltContent.width(),
+          "NoWrap code caret x should be the natural advance, beyond the wrap width");
+}
+
+// testScrollableCodeFenceHitRespectsHorizontalOffset
+// paintCodeFence draws a NoWrap line with painter.translate(-offset); a click at view-space x must
+// therefore resolve to the character whose advance is ~viewX+offset, i.e. the hit must ADD the
+// horizontal scroll offset (undoing the paint's leftward translate). A sign flip here mapped any
+// scrolled-right click back toward the line start (right-edge click → offset 0), which surfaced as
+// the drag-selection caret jumping left on drag-start.
+void testScrollableCodeFenceHitRespectsHorizontalOffset() {
+  SettingsOverride wrapOff("markdown/codeBlockWrap", false);
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+
+  const QString longLine(400, QLatin1Char('a'));
+  session.setMarkdownText(QStringLiteral("```\n") + longLine + QStringLiteral("\n```"), false);
+  view.resize(640, 320);
+  view.setDocument(session.document());
+
+  MarkdownNode* code = blockAt(session, 0);
+  require(code->type() == BlockType::CodeFence, "fixture block should be a code fence");
+  const BlockLayout* block = requireViewBlock(view, code->id(), QStringLiteral("scrollable code fence"));
+  const RenderTheme theme = view.theme();
+  const QRectF content = block->literalContentRect(theme);
+  require(block->codeMaxLineWidth() > content.width() + 0.5, "line should overflow");
+  const qreal maxOffset = block->codeMaxLineWidth() - content.width();
+  controller.codeFenceScroll().setOffset(code->id(), maxOffset);
+
+  // Scrolled to show the line's END: a click at the right edge must map near the end, and the left
+  // edge must map near the start of the visible span (well into the line, not back to offset 0).
+  const QPointF clickAtEnd(content.right() - 6.0, content.top() + theme.codeLineHeight() * 0.5);
+  const HitTestResult hit = view.hitTest(clickAtEnd);
+  require(hit.blockId == code->id(), "click should hit the code fence");
+  require(hit.textOffset > longLine.size() - 12,
+          QStringLiteral("right-edge click in the scrolled-to-end window should map near the line end, got %1").arg(hit.textOffset));
+
+  const QPointF clickAtStart(content.left() + 6.0, content.top() + theme.codeLineHeight() * 0.5);
+  const HitTestResult hitStart = view.hitTest(clickAtStart);
+  require(hitStart.textOffset > 0 && hitStart.textOffset < hit.textOffset,
+          QStringLiteral("left-edge click should map before the right-edge click within the scrolled span, got %1 < %2")
+              .arg(hitStart.textOffset)
+              .arg(hit.textOffset));
+}
+
+// testScrollableCodeFenceDragAnchorStaysUnderPress
+// Empirical drag simulation: in a wrap-OFF code fence scrolled to the right, press then drag-select.
+// The selection anchor must stay where the mouse pressed (a high offset in the right half of the
+// long line) — not jump back toward the line start. Decides whether the drag symptom is a real bug
+// or a stale running process: drag uses the same hitTest as click, so once the offset-sign is fixed
+// both must be correct.
+void testScrollableCodeFenceDragAnchorStaysUnderPress() {
+  SettingsOverride wrapOff("markdown/codeBlockWrap", false);
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+
+  const QString longLine(400, QLatin1Char('a'));
+  session.setMarkdownText(QStringLiteral("```\n") + longLine + QStringLiteral("\n```"), false);
+  view.resize(640, 320);
+  view.setDocument(session.document());
+
+  MarkdownNode* code = blockAt(session, 0);
+  const BlockLayout* block = requireViewBlock(view, code->id(), QStringLiteral("scrollable code fence"));
+  const RenderTheme theme = view.theme();
+  const QRectF content = block->literalContentRect(theme);
+  require(block->codeMaxLineWidth() > content.width() + 0.5, "line should overflow");
+  const qreal maxOffset = block->codeMaxLineWidth() - content.width();
+  controller.codeFenceScroll().setOffset(code->id(), maxOffset);
+
+  SelectionRange captured;
+  QObject::connect(&view, &EditorView::selectionChanged, &view,
+                   [&captured](SelectionRange s, HitTestResult) { captured = s; });
+
+  // Press in the right third of the visible window (showing the line's end), then drag a bit further right.
+  const qreal y = content.top() + theme.codeLineHeight() * 0.5;
+  const QPointF pressPos(content.right() - content.width() * 0.25, y);
+  const QPointF dragPos(content.right() - content.width() * 0.10, y);
+  QMouseEvent press(QEvent::MouseButtonPress, pressPos, pressPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press);
+  QMouseEvent move(QEvent::MouseMove, dragPos, dragPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &move);
+
+  require(captured.anchor.text.nodeId.isValid(), "drag should have produced a selection");
+  require(captured.anchor.text.textOffset > longLine.size() / 2,
+          QStringLiteral("drag anchor should stay in the pressed (right) region, not jump to the line start; got anchor=%1 focus=%2")
+              .arg(captured.anchor.text.textOffset)
+              .arg(captured.focus.text.textOffset));
+}
+
+// testCodeFenceClickDoesNotScrollAwayFromPress
+// Root cause of the drag-jump symptom: ensureCodeFenceCursorVisible used to margin-scroll on a click
+// whose caret was already visible. That changed the horizontal offset AFTER the drag anchor had been
+// captured from the (pre-scroll) hit, but BEFORE the drag focus was resolved (post-scroll offset) —
+// so the anchor no longer sat under the pressed pixel and the caret visibly jumped sideways the
+// instant the drag began. Now the follow only scrolls when the caret is genuinely off-screen, so a
+// click leaves the offset untouched and the drag anchor stays exactly where the mouse pressed.
+// The 75%-press test above never tripped the old margin-scroll (both branches clamp at maxOffset),
+// so it passed while the real bug survived — this test parks the offset just shy of the end so a
+// right-edge click used to fire the un-clamped scroll.
+void testCodeFenceClickDoesNotScrollAwayFromPress() {
+  SettingsOverride wrapOff("markdown/codeBlockWrap", false);
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+
+  const QString longLine(400, QLatin1Char('a'));
+  session.setMarkdownText(QStringLiteral("```\n") + longLine + QStringLiteral("\n```"), false);
+  view.resize(640, 320);
+  view.setDocument(session.document());
+
+  MarkdownNode* code = blockAt(session, 0);
+  const BlockLayout* block = requireViewBlock(view, code->id(), QStringLiteral("scrollable code fence"));
+  const RenderTheme theme = view.theme();
+  const QRectF content = block->literalContentRect(theme);
+  const qreal maxOffset = block->codeMaxLineWidth() - content.width();
+  require(maxOffset > 40.0, "line should overflow enough to scroll well past a margin");
+  // Park just shy of the far-right end so a right-edge click used to trip the (un-clamped)
+  // margin-scroll — exactly the user's "scrolled near the end" scenario.
+  const qreal parkedOffset = maxOffset - 40.0;
+  controller.codeFenceScroll().setOffset(code->id(), parkedOffset);
+
+  SelectionRange captured;
+  QObject::connect(&view, &EditorView::selectionChanged, &view,
+                   [&captured](SelectionRange s, HitTestResult) { captured = s; });
+
+  const QFontMetricsF metrics(theme.codeFont());
+  const qreal charWidth = metrics.horizontalAdvance(QLatin1Char('a'));
+  const qreal y = content.top() + theme.codeLineHeight() * 0.5;
+  // Press near the RIGHT edge of the visible window. Under the bug the offset increased and the
+  // content shifted left, so the drag anchor ended up left of the pressed pixel ("jumped left").
+  const QPointF pressPos(content.right() - charWidth * 1.5, y);
+  QMouseEvent press(QEvent::MouseButtonPress, pressPos, pressPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press);
+
+  // The caret was placed at a visible spot, so the offset must be untouched — this is the fix.
+  require(qAbs(controller.codeFenceScroll().offsetFor(code->id()) - parkedOffset) < 0.5,
+          QStringLiteral("clicking a visible code-fence position must not scroll the content away from the click; offset=%1")
+              .arg(controller.codeFenceScroll().offsetFor(code->id())));
+
+  // Drag a little further right; the anchor must stay under the press, not jump sideways.
+  const QPointF dragPos(content.right() - charWidth * 0.5, y);
+  QMouseEvent move(QEvent::MouseMove, dragPos, dragPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &move);
+
+  require(captured.anchor.text.nodeId.isValid(), "drag should have produced a selection");
+  const qreal anchorAdvance = metrics.horizontalAdvance(longLine.left(captured.anchor.text.textOffset));
+  const qreal anchorViewportX = anchorAdvance - controller.codeFenceScroll().offsetFor(code->id());
+  const qreal pressViewportX = pressPos.x() - content.left();
+  require(qAbs(anchorViewportX - pressViewportX) < charWidth * 1.5,
+          QStringLiteral("drag anchor should stay under the press position (no sideways jump); anchorViewportX=%1 pressViewportX=%2")
+              .arg(anchorViewportX)
+              .arg(pressViewportX));
+}
+
+// testCodeFenceCaretRectFollowsHorizontalScroll
+// paintInsertionCursor (and the IME cursor rectangle) consume effectiveCursorRect, which subtracts a
+// scrollable code fence's horizontal offset. Before the fix both used cursorHit_.cursorRect directly
+// (the natural advance), so in a scrolled code fence the caret sat at ~line width — far outside the
+// viewport — while the text had scrolled left underneath it.
+void testCodeFenceCaretRectFollowsHorizontalScroll() {
+  SettingsOverride wrapOff("markdown/codeBlockWrap", false);
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+
+  const QString longLine(400, QLatin1Char('a'));
+  session.setMarkdownText(QStringLiteral("```\n") + longLine + QStringLiteral("\n```"), false);
+  view.resize(640, 320);
+  view.setDocument(session.document());
+
+  MarkdownNode* code = blockAt(session, 0);
+  const BlockLayout* block = requireViewBlock(view, code->id(), QStringLiteral("scrollable code fence"));
+  const RenderTheme theme = view.theme();
+  const QRectF content = block->literalContentRect(theme);
+  const qreal maxOffset = block->codeMaxLineWidth() - content.width();
+  require(maxOffset > 1.0, "line should overflow enough to scroll");
+  controller.codeFenceScroll().setOffset(code->id(), maxOffset);  // scrolled to the far-right end
+
+  const QFontMetricsF metrics(theme.codeFont());
+  const qreal charWidth = metrics.horizontalAdvance(QLatin1Char('a'));
+  const qreal y = content.top() + theme.codeLineHeight() * 0.5;
+  // Press near the right edge so the caret lands near the line end (visible only because we scrolled).
+  const QPointF pressPos(content.right() - charWidth * 1.5, y);
+  QMouseEvent press(QEvent::MouseButtonPress, pressPos, pressPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press);
+
+  const QRectF caret = view.effectiveCursorRect();
+  require(!caret.isEmpty(), "caret rect should be valid after a click");
+  // The caret must land INSIDE the content's visible span (offset-adjusted). Before the fix it sat at
+  // x≈natural advance (~line width), well past the right edge and off-screen.
+  require(caret.left() >= content.left() - 1.0 && caret.left() <= content.right() + 1.0,
+          QStringLiteral("scrolled code-fence caret should be inside the viewport (offset-adjusted), got x=%1").arg(caret.left()));
+  // And specifically at the pressed character, not at the natural advance.
+  require(qAbs(caret.left() - pressPos.x()) < charWidth * 2.0,
+          QStringLiteral("caret should follow the horizontal scroll to the pressed character; caretX=%1 pressX=%2")
+              .arg(caret.left())
+              .arg(pressPos.x()));
+}
+
+// testCodeFenceScrollableSelectionRectAlignsWithDrag
+// The selection HIGHLIGHT (not just the logical anchor) must land under the mouse in a scrolled
+// code fence. The rects come back in document space at the content's natural advance; paint shifts
+// them by -offset to match the translated text. Asserting the offset-adjusted span equals the
+// press/drag viewport span guards against a highlight that drifts off the characters it covers
+// (e.g. from a QFontMetricsF-vs-QTextLayout divergence, a double offset, or a stale offset).
+void testCodeFenceScrollableSelectionRectAlignsWithDrag() {
+  SettingsOverride wrapOff("markdown/codeBlockWrap", false);
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+
+  const QString longLine(400, QLatin1Char('a'));
+  session.setMarkdownText(QStringLiteral("```\n") + longLine + QStringLiteral("\n```"), false);
+  view.resize(640, 320);
+  view.setDocument(session.document());
+
+  MarkdownNode* code = blockAt(session, 0);
+  const RenderTheme theme = view.theme();
+  const QFontMetricsF metrics(theme.codeFont());
+  const qreal charWidth = metrics.horizontalAdvance(QLatin1Char('a'));
+  const BlockLayout* block = view.blockLayoutForNode(code->id());
+  require(block != nullptr && block->type() == BlockType::CodeFence, "code fence block should resolve");
+  const QRectF content = block->literalContentRect(theme);
+  const qreal maxOffset = block->codeMaxLineWidth() - content.width();
+  controller.codeFenceScroll().setOffset(code->id(), maxOffset);
+
+  SelectionRange captured;
+  QObject::connect(&view, &EditorView::selectionChanged, &view, [&captured](SelectionRange s, HitTestResult) { captured = s; });
+  const qreal y = content.top() + theme.codeLineHeight() * 0.5;
+  const QPointF pressPos(content.left() + 120.0, y);
+  const QPointF dragPos(content.left() + 420.0, y);
+  QMouseEvent press(QEvent::MouseButtonPress, pressPos, pressPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press);
+  QMouseEvent move(QEvent::MouseMove, dragPos, dragPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &move);
+
+  const BlockLayout* blk = view.blockLayoutForNode(code->id());
+  const QVector<QRectF> rects = blk->selectionRects(captured, theme);
+  require(!rects.isEmpty(), "drag should produce at least one selection rect");
+  const qreal offset = controller.codeFenceScroll().offsetFor(code->id());
+  const qreal rectLeftVx = rects.first().left() - offset - content.left();
+  const qreal rectRightVx = rects.last().right() - offset - content.left();
+  const qreal spanLeft = qMin(rectLeftVx, rectRightVx);
+  const qreal spanRight = qMax(rectLeftVx, rectRightVx);
+  const qreal pressVx = pressPos.x() - content.left();
+  const qreal dragVx = dragPos.x() - content.left();
+  require(qAbs(spanLeft - qMin(pressVx, dragVx)) < charWidth * 1.5,
+          QStringLiteral("selection span left should sit under the drag start; spanLeft=%1 expected=%2")
+              .arg(spanLeft).arg(qMin(pressVx, dragVx)));
+  require(qAbs(spanRight - qMax(pressVx, dragVx)) < charWidth * 1.5,
+          QStringLiteral("selection span right should sit under the drag end; spanRight=%1 expected=%2")
+              .arg(spanRight).arg(qMax(pressVx, dragVx)));
+}
+
+// testCodeFenceHitKeepsScrollControllerAcrossLayoutReset
+// Regression for the "drag selection shifts left, more the further I scroll" bug. rebuildLayout's
+// no-document branch (reached e.g. when the app applies theme/zoom before a file is open) handed
+// back a fresh DocumentLayout, dropping the CodeFenceScrollController that attach() had wired onto
+// the previous one. The paint path reads the controller from the EditorView directly (so the text
+// scrolled correctly), but DocumentLayout::hitTest forwards its OWN stored member — which was now
+// null — so clicks mapped at offset 0. Drag selections therefore landed on characters offset by
+// the full scroll amount from where the user pointed. The fix re-wires the controller onto any
+// (re)created layout in rebuildLayout.
+void testCodeFenceHitKeepsScrollControllerAcrossLayoutReset() {
+  SettingsOverride wrapOff("markdown/codeBlockWrap", false);
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+
+  // Force a rebuild with no document yet (mimics setTheme/setZoom applied before a file is opened):
+  // pre-fix this replaced layout_ and dropped the controller.
+  view.setTheme(view.theme());
+
+  const QString longLine(400, QLatin1Char('a'));
+  session.setMarkdownText(QStringLiteral("```\n") + longLine + QStringLiteral("\n```"), false);
+  view.resize(640, 320);
+  view.setDocument(session.document());
+
+  MarkdownNode* code = blockAt(session, 0);
+  const BlockLayout* block = view.blockLayoutForNode(code->id());
+  require(block != nullptr && block->type() == BlockType::CodeFence, "code fence block should resolve");
+  const RenderTheme theme = view.theme();
+  const QRectF content = block->literalContentRect(theme);
+  const qreal maxOffset = block->codeMaxLineWidth() - content.width();
+  require(maxOffset > 1.0, "line should overflow enough to scroll");
+  controller.codeFenceScroll().setOffset(code->id(), maxOffset);  // scrolled to the far-right end
+
+  // A click at the right edge of the visible window must map near the line END. Under the bug the
+  // hit saw a null controller (offset 0), so a right-edge click resolved to offset ~0 (the start).
+  const QPointF clickAtEnd(content.right() - 6.0, content.top() + theme.codeLineHeight() * 0.5);
+  const HitTestResult hit = view.hitTest(clickAtEnd);
+  require(hit.blockId == code->id(), "click should hit the code fence");
+  require(hit.textOffset > longLine.size() - 12,
+          QStringLiteral("scrolled-to-end right-edge click should map near the line end (hit must see the offset); got %1")
+              .arg(hit.textOffset));
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
   }
   QApplication app(argc, argv);
+  // codeBlockWrapEnabled() reads a default-constructed QSettings(); without org/app names the
+  // SettingsOverride below writes to a location the production code reads inconsistently, so the
+  // wrap setting never takes effect (the markdown-prefs gotcha).
+  QCoreApplication::setOrganizationName(QStringLiteral("MuffinTest"));
+  QCoreApplication::setApplicationName(QStringLiteral("EditorViewHitTestTest"));
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testDefinitionPlaceholderHitKeepsCursorInSlot);
   RUN_TEST(testEmptyLinkDefinitionTitlePlaceholderOnlyWhenFocused);
@@ -485,6 +846,13 @@ int main(int argc, char** argv) {
   RUN_TEST(testClickBelowLastBlockHitsBlockAfterWithDistinctCursorRect);
   RUN_TEST(testBlockAfterCursorSurvivesRebuild);
   RUN_TEST(testNoVirtualTrailingParagraphBelowEmptyLastParagraph);
+  RUN_TEST(testNoWrapCodeFenceCursorStaysOnSingleRow);
+  RUN_TEST(testScrollableCodeFenceHitRespectsHorizontalOffset);
+  RUN_TEST(testScrollableCodeFenceDragAnchorStaysUnderPress);
+  RUN_TEST(testCodeFenceClickDoesNotScrollAwayFromPress);
+  RUN_TEST(testCodeFenceCaretRectFollowsHorizontalScroll);
+  RUN_TEST(testCodeFenceScrollableSelectionRectAlignsWithDrag);
+  RUN_TEST(testCodeFenceHitKeepsScrollControllerAcrossLayoutReset);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

@@ -1,5 +1,6 @@
 #include "render/BlockLayoutBuilder.h"
 
+#include "blocks/code/CodeFenceScrollController.h"
 #include "blocks/html/HtmlSanitizer.h"
 #include "document/BlockPredicates.h"
 #include "document/PendingBlockMarker.h"
@@ -43,6 +44,30 @@ qreal codeLineNumberGutterWidth(const QString& literal, const RenderTheme& theme
   }
   const qreal digitWidth = qMax<qreal>(1.0, metrics.horizontalAdvance(QStringLiteral("8")));
   return static_cast<qreal>(digits + 1) * digitWidth;
+}
+
+// markdown/codeBlockWrap (default on): whether code-fence source lines soft-wrap. Mirrors the
+// same-named helper in BlockLayout.cpp so build-time height/scroll math and paint agree.
+bool codeBlockWrapEnabled() {
+  return QSettings().value(QStringLiteral("markdown/codeBlockWrap"), true).toBool();
+}
+
+// Pixel width of the widest physical line in `literal` under `font`. Drives whether a code fence is
+// horizontally scrollable (wrap off) and the scrollbar thumb ratio.
+qreal maxLiteralLineWidth(const QString& literal, const QFont& font) {
+  const QFontMetricsF metrics(font);
+  qreal max = 1.0;
+  qsizetype start = 0;
+  while (start <= literal.size()) {
+    const qsizetype nl = literal.indexOf(QLatin1Char('\n'), start);
+    const qsizetype end = nl < 0 ? literal.size() : nl;
+    max = qMax(max, metrics.horizontalAdvance(literal.mid(start, end - start)));
+    if (nl < 0) {
+      break;
+    }
+    start = nl + 1;
+  }
+  return max;
 }
 
 // Accumulates elapsed nanoseconds into a bucket when measurement is enabled; otherwise
@@ -110,8 +135,12 @@ qreal layoutTextHeight(const QString& text, const QFont& font, qreal lineHeight,
   return qMax(height, lineHeight);
 }
 
-qreal layoutLiteralHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width) {
+qreal layoutLiteralHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width, bool wrap = true) {
   const QStringList lines = text.isEmpty() ? QStringList{QString()} : text.split(QLatin1Char('\n'));
+  if (!wrap) {
+    // NoWrap: one visual line per physical line, regardless of width.
+    return qMax<qreal>(static_cast<qreal>(lines.size()) * lineHeight, lineHeight);
+  }
   qreal height = 0;
   for (const QString& line : lines) {
     height += layoutTextHeight(line.isEmpty() ? QStringLiteral(" ") : line, font, lineHeight, width);
@@ -234,6 +263,10 @@ void BlockLayoutBuilder::setEditingHtmlBlock(NodeId id) {
 
 void BlockLayoutBuilder::setDocumentPath(QString path) {
   documentPath_ = std::move(path);
+}
+
+void BlockLayoutBuilder::setCodeFenceScroll(CodeFenceScrollController* controller) {
+  codeFenceScroll_ = controller;
 }
 
 BlockLayoutBuilder::BlockLayoutBuilder() : perfEnabled_(blockBuildPerf().isDebugEnabled()) {}
@@ -488,6 +521,23 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
           ? codeLineNumberGutterWidth(layout->literal(), theme)
           : 0.0;
   layout->setLineNumberGutterWidth(lineNumberGutter);
+  // Code fences honor markdown/codeBlockWrap; other literal blocks always wrap.
+  const bool codeWrap = node.type() == BlockType::CodeFence ? codeBlockWrapEnabled() : true;
+  // Measure the widest source line so the block knows whether it is horizontally scrollable and
+  // the scrollbar thumb ratio. Reserved strip height makes room for the always-on scrollbar.
+  qreal reservedStrip = 0.0;
+  if (node.type() == BlockType::CodeFence && !codeWrap) {
+    const qreal maxLineW = maxLiteralLineWidth(layout->literal(), theme.codeFont());
+    layout->setCodeMaxLineWidth(maxLineW);
+    if (codeFenceScroll_ != nullptr) {
+      codeFenceScroll_->setContentWidth(node.id(), maxLineW);
+    }
+    const qreal visibleW =
+        qMax<qreal>(1.0, width - lineNumberGutter - theme.codePadding().left() - theme.codePadding().right());
+    if (maxLineW > visibleW + 0.5) {
+      reservedStrip = BlockLayout::scrollBarStripHeight(theme);
+    }
+  }
   qreal height;
   {
     BuildAccumTimer t(literalTextNs_, perfEnabled_);
@@ -496,8 +546,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
         node.type() == BlockType::MathBlock ? theme.mathFont() : theme.codeFont(),
         node.type() == BlockType::MathBlock ? qMax<qreal>(14.0, QFontMetricsF(theme.mathFont()).height()) : theme.codeLineHeight(),
         width - lineNumberGutter,
-        theme.codePadding());
+        theme.codePadding(),
+        codeWrap);
   }
+  height += reservedStrip;
   if (node.type() == BlockType::MathBlock) {
     std::shared_ptr<math::MathLayoutResult> mathLayout;
     {
@@ -969,9 +1021,9 @@ qsizetype BlockLayoutBuilder::sourceOffsetForLineEnd(int line) const {
   return lineOffsets_ ? lineOffsets_->lineEndOffset(line) : -1;
 }
 
-qreal BlockLayoutBuilder::textHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width, const QMarginsF& padding) const {
+qreal BlockLayoutBuilder::textHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width, const QMarginsF& padding, bool wrap) const {
   const qreal innerWidth = qMax<qreal>(1.0, width - padding.left() - padding.right());
-  return std::ceil(layoutLiteralHeight(text, font, lineHeight, innerWidth) + padding.top() + padding.bottom() + 2.0);
+  return std::ceil(layoutLiteralHeight(text, font, lineHeight, innerWidth, wrap) + padding.top() + padding.bottom() + 2.0);
 }
 
 namespace {
@@ -1161,9 +1213,32 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateLiteralBlock(cons
   const qreal lineNumberGutter =
       (node.type() == BlockType::CodeFence && showLineNumbersEnabled()) ? codeLineNumberGutterWidth(literal, theme) : 0.0;
   const qreal innerWidth = std::max<qreal>(1.0, width - padding.left() - padding.right() - lineNumberGutter);
-  const qreal charsPerLine = std::max(qreal(1.0), std::floor(innerWidth / avgCharWidthForText(QStringView(literal), font)));
-  const qreal lines = estimateWrappedLines(QStringView(literal), charsPerLine);
-  const qreal height = std::ceil(lines * lineHeight + padding.top() + padding.bottom() + 2.0);
+  const qreal avgCharWidth = avgCharWidthForText(QStringView(literal), font);
+  qreal lines;
+  qreal reservedStrip = 0.0;
+  if (node.type() == BlockType::CodeFence && !codeBlockWrapEnabled()) {
+    // NoWrap: one visual line per physical line; reserve the scrollbar strip if the widest line
+    // (estimated) overflows, matching the build path so the scrollbar range doesn't jump on promotion.
+    lines = literal.isEmpty() ? 1.0 : qreal(literal.count(QLatin1Char('\n'))) + 1.0;
+    int maxLineChars = 1;
+    qsizetype start = 0;
+    while (start <= literal.size()) {
+      const qsizetype nl = literal.indexOf(QLatin1Char('\n'), start);
+      const qsizetype end = nl < 0 ? literal.size() : nl;
+      maxLineChars = std::max(maxLineChars, int(end - start));
+      if (nl < 0) {
+        break;
+      }
+      start = nl + 1;
+    }
+    if (avgCharWidth * maxLineChars > innerWidth + 0.5) {
+      reservedStrip = BlockLayout::scrollBarStripHeight(theme);
+    }
+  } else {
+    const qreal charsPerLine = std::max(qreal(1.0), std::floor(innerWidth / avgCharWidth));
+    lines = estimateWrappedLines(QStringView(literal), charsPerLine);
+  }
+  const qreal height = std::ceil(lines * lineHeight + padding.top() + padding.bottom() + 2.0 + reservedStrip);
   // Math/HTML rendered size is not derivable from metrics; tree-sitter only colors code.
   const bool mustMeasure = isMath || node.type() == BlockType::HtmlBlock;
   return {height, mustMeasure};

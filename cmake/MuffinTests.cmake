@@ -81,6 +81,7 @@ muffin_add_test(NAME MuffinTableModelOpsTest       SOURCE tests/blocks/TableMode
 muffin_add_test(NAME MuffinTableControllerTest     SOURCE tests/blocks/TableControllerTest.cpp     LINK MuffinUi)
 muffin_add_test(NAME MuffinTableCellEditingTest    SOURCE tests/blocks/TableCellEditingTest.cpp    LINK MuffinUi)
 muffin_add_test(NAME MuffinCodeFenceControllerTest SOURCE tests/blocks/CodeFenceControllerTest.cpp LINK MuffinUi)
+muffin_add_test(NAME MuffinCodeFenceScrollControllerTest SOURCE tests/blocks/CodeFenceScrollControllerTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinMathBlockControllerTest SOURCE tests/blocks/MathBlockControllerTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinHtmlBlockControllerTest SOURCE tests/blocks/HtmlBlockControllerTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinBlockTableUndoTest      SOURCE tests/blocks/BlockTableUndoTest.cpp      LINK MuffinUi RESOURCE_LOCK)

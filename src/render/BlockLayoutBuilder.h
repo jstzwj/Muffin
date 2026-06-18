@@ -15,6 +15,8 @@
 
 namespace muffin {
 
+class CodeFenceScrollController;
+
 class BlockLayoutBuilder {
 public:
   void setMarkdownText(QString markdownText);
@@ -22,6 +24,10 @@ public:
   void setSelection(SelectionRange selection);
   void setEditingHtmlBlock(NodeId id);
   void setDocumentPath(QString path);
+  // Per-code-fence horizontal scroll state (offset + longest-line width), keyed by NodeId and
+  // owned outside the rebuilt BlockLayouts. The builder writes the measured line width so the
+  // paint path and scrollbar thumb agree on scrollability.
+  void setCodeFenceScroll(CodeFenceScrollController* controller);
 
   BlockLayoutBuilder();
 
@@ -102,7 +108,7 @@ private:
   qsizetype sourceContentEndForEditableNode(const MarkdownNode& node) const;
   qsizetype sourceOffsetForLineColumn(int line, int column) const;
   qsizetype sourceOffsetForLineEnd(int line) const;
-  qreal textHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width, const QMarginsF& padding) const;
+  qreal textHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width, const QMarginsF& padding, bool wrap = true) const;
 
   // Height-estimate helpers mirroring the build* dispatch. Never touch QTextLayout.
   EstimateResult estimateParagraphLike(const MarkdownNode& node, const RenderTheme& theme, qreal width) const;
@@ -123,6 +129,7 @@ private:
   const LineStartOffsetCache* lineOffsets_ = &ownedLineOffsets_;
   SelectionRange selection_;
   NodeId editingHtmlBlockId_;
+  CodeFenceScrollController* codeFenceScroll_ = nullptr;
   TreeSitterHighlighter codeHighlighter_;
   math::MathRenderer mathRenderer_;
   html::HtmlRenderer htmlRenderer_;

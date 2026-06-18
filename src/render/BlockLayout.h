@@ -17,6 +17,8 @@
 
 namespace muffin {
 
+class CodeFenceScrollController;
+
 class BlockLayout {
 public:
   enum class ListMarkerKind {
@@ -112,6 +114,12 @@ public:
   // Width reserved at the left of a code-fence content rect for line numbers (0 when off).
   void setLineNumberGutterWidth(qreal width);
   qreal lineNumberGutterWidth() const;
+  // Pixel width of the longest source line in a code fence (drives horizontal scrollability and the
+  // scrollbar thumb ratio). Set by the builder; 0 means unmeasured / not scrollable.
+  void setCodeMaxLineWidth(qreal width);
+  qreal codeMaxLineWidth() const;
+  // Height of the horizontal scrollbar strip drawn at the bottom of a scrollable code fence.
+  static qreal scrollBarStripHeight(const RenderTheme& theme);
 
   void setHeadingLevel(int level);
   int headingLevel() const;
@@ -161,27 +169,30 @@ public:
   const std::vector<TableRowLayout>& tableRows() const;
   QRectF tableCellRect(int row, int column) const;
 
-  void paint(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
+  void paint(QPainter& painter, const RenderTheme& theme, qreal scrollY,
+             const CodeFenceScrollController* scroll = nullptr) const;
   bool intersects(const QRectF& documentViewport) const;
   bool containsNode(NodeId id) const;
   bool containsInteractiveContent(QPointF documentPos, const RenderTheme& theme) const;
-  HitTestResult hitTest(QPointF documentPos, const RenderTheme& theme) const;
+  HitTestResult hitTest(QPointF documentPos, const RenderTheme& theme,
+                        const CodeFenceScrollController* scroll = nullptr) const;
   QVector<QRectF> selectionRects(const SelectionRange& selection, const RenderTheme& theme) const;
   QVector<QRectF> selectionRectsForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
 
 private:
-  void paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
+  void paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll) const;
   void paintTable(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
-  HitTestResult hitSelf(QPointF documentPos, const RenderTheme& theme) const;
+  HitTestResult hitSelf(QPointF documentPos, const RenderTheme& theme, const CodeFenceScrollController* scroll) const;
   HitTestResult hitTable(QPointF documentPos, const RenderTheme& theme) const;
   QVector<QRectF> selectionRectsSelf(const SelectionRange& selection, const RenderTheme& theme) const;
   QVector<QRectF> selectionRectsSelfForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
   QVector<QRectF> literalSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
   QRectF mathEditorSourceRect(const RenderTheme& theme) const;
   QRectF mathPreviewContentRect(const RenderTheme& theme) const;
-  void paintCodeFence(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
+  void paintCodeFence(QPainter& painter, const RenderTheme& theme, QRectF viewRect, const CodeFenceScrollController* scroll) const;
   void paintLiteralSource(QPainter& painter, const RenderTheme& theme, QRectF contentRect, const QVector<CodeHighlightSpan>& spans, bool wrap) const;
   void paintCodeLineNumbers(QPainter& painter, const RenderTheme& theme, const QRectF& codeRect) const;
+  void paintCodeFenceScrollBar(QPainter& painter, const RenderTheme& theme, QRectF contentRect, qreal offset, qreal maxLineWidth) const;
   void paintDefinition(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
   HitTestResult hitDefinition(QPointF documentPos, const RenderTheme& theme) const;
   QVector<QRectF> definitionSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
@@ -198,6 +209,7 @@ private:
   std::shared_ptr<html::HtmlLayoutResult> htmlLayout_;
   bool literalEditing_ = false;
   qreal lineNumberGutterWidth_ = 0.0;
+  qreal codeMaxLineWidth_ = 0.0;
   int headingLevel_ = 0;
   QString listMarker_;
   ListMarkerKind listMarkerKind_ = ListMarkerKind::None;

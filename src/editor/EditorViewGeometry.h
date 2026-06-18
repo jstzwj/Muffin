@@ -26,10 +26,13 @@ namespace editor_geometry {
 // Single-line variant: no wrapping, advances by horizontalAdvance from origin.
 QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin);
 
-// Wrapped variant for code-style blocks: lays each physical line out at the
-// given width and places the caret on the visual line holding the offset.
+// Wrapped-or-not variant for code-style blocks. With `wrap` it soft-wraps each
+// physical line at the given width; without, each physical line is one visual
+// line laid out at its natural advance (so a long line in a wrap-OFF code fence
+// keeps the caret on that single row instead of dropping to a phantom second
+// one). Code fences honour markdown/codeBlockWrap; math/html/front-matter wrap.
 QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin,
-                                  qreal width, qreal lineHeight);
+                                  qreal width, qreal lineHeight, bool wrap);
 
 // Zones a click/selection can land on (text-bearing content).
 bool isSelectableZone(HitTestResult::Zone zone);

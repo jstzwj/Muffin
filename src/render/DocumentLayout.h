@@ -17,6 +17,8 @@
 
 namespace muffin {
 
+class CodeFenceScrollController;
+
 class DocumentLayout {
  public:
   // Eager (default) builds every block's full detail up front — today's behavior, used by
@@ -59,6 +61,10 @@ class DocumentLayout {
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, SelectionRange selection, QString documentPath = {});
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, SelectionRange selection, QString documentPath, BuildPolicy policy);
   void setEditingHtmlBlock(NodeId id);
+  // Per-code-fence horizontal scroll state; forwarded to the builder (writes longest-line width)
+  // and to BlockLayout hit-test (reads the offset). Owned by EditorController.
+  void setCodeFenceScroll(CodeFenceScrollController* controller);
+  CodeFenceScrollController* codeFenceScroll() const;
   bool relayoutForViewportWidth(const RenderTheme& theme, qreal viewportWidth);
   BlockRebuildResult rebuildBlock(NodeId blockId, const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
   RangeRebuildResult rebuildTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
@@ -114,6 +120,7 @@ class DocumentLayout {
   const MarkdownDocument* document_ = nullptr;
   QString documentPath_;
   NodeId editingHtmlBlockId_;
+  CodeFenceScrollController* codeFenceScroll_ = nullptr;
   SelectionRange selection_;
   qreal viewportWidth_ = 0;
   BuildPolicy buildPolicy_ = BuildPolicy::Eager;

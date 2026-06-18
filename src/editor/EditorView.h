@@ -17,6 +17,7 @@ class QWidget;
 
 namespace muffin {
 
+class CodeFenceScrollController;
 class CodeLanguageEditor;
 class MarkdownDocument;
 class TableToolbar;
@@ -42,6 +43,9 @@ public:
   void setCursorPosition(CursorPosition position);
   void setSelectionRange(SelectionRange selection);
   void setEditingHtmlBlock(NodeId id);
+  // Per-code-fence horizontal scroll state (owned by EditorController). EditorView mutates the
+  // offset on Shift+wheel / scrollbar drag and passes it down to paint/hit-test.
+  void setCodeFenceScroll(CodeFenceScrollController* controller);
   void clearCursor();
   void setCodeLanguageSuggestions(QStringList languages);
 
@@ -66,6 +70,11 @@ public:
   // unlike blockAtViewportPos which returns the innermost block under a point).
   const BlockLayout* blockLayoutForNode(NodeId id) const;
   HitTestResult hitTest(QPointF viewportPos) const;
+  // The caret's document-space rect with a scrollable code fence's horizontal offset subtracted, so
+  // it matches where the translated text is actually drawn. paintInsertionCursor / the IME cursor
+  // rectangle / caret dirty-rects all consume this; exposing it lets tests verify the caret lands on
+  // the visible character instead of the natural advance when a fence is scrolled.
+  QRectF effectiveCursorRect() const;
 
 signals:
   void blockClicked(HitTestResult result);
@@ -134,6 +143,13 @@ private:
   void addSelectionBlocks(QVector<NodeId>& blockIds, const SelectionRange& selection) const;
   void paintCurrentTableCell(QPainter& painter) const;
   void paintSelection(QPainter& painter) const;
+  // Map a code fence's document-space selection rects into viewport space. Scrollable fences
+  // (wrap off + overflow) paint their text translated by -offset, so the highlight must shift by
+  // the same amount and be clipped to the visible text window (the content rect minus the scrollbar
+  // strip) — otherwise the highlight sits at the content's natural x while the text has scrolled.
+  void paintSelectionRectsForBlock(QPainter& painter, const BlockLayout* block, const QVector<QRectF>& documentRects) const;
+  // True for a code fence that paints a horizontal scrollbar (wrap off + a line wider than content).
+  bool isScrollableCodeFence(const BlockLayout* block) const;
   void paintInsertionCursor(QPainter& painter) const;
   void paintHeadingBadge(QPainter& painter) const;
   void paintHtmlHoverOverlay(QPainter& painter) const;
@@ -148,7 +164,11 @@ private:
   void updateMouseCursor(QPointF viewportPos);
   void ensureScrollAnimation();
   void stopScrollAnimation();
-  QRectF effectiveCursorRect() const;
+  // Horizontal scrollbar for scrollable code fences (wrap off + an overflowing line).
+  bool scrollCodeFenceHorizontally(QWheelEvent* event, bool horizontal);
+  void dragCodeFenceScrollBarTo(NodeId blockId, QPointF viewportPos);
+  // Keep the caret inside the visible horizontal span of the code fence it lives in.
+  void ensureCodeFenceCursorVisible();
   // Scroll target that keeps the cursor on screen under the active typewriter policy, or -1 when
   // the relaxed policy decides the cursor is already comfortable and no scroll is needed.
   int typewriterScrollTarget(const QRectF& cursor) const;
@@ -177,6 +197,8 @@ private:
   bool focusMode_ = false;
   QPropertyAnimation* scrollAnimation_ = nullptr;
   NodeId editingHtmlBlockId_;
+  CodeFenceScrollController* codeFenceScroll_ = nullptr;
+  NodeId codeFenceScrollDragId_;  // block being horizontally dragged via its scrollbar (invalid when idle)
   HtmlBlockHoverController htmlHover_;
   bool inScrollBuild_ = false;  // guards ensureVisibleBuilt against re-entry via anchor setValue
 };

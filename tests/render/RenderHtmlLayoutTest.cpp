@@ -144,6 +144,48 @@ void testLiteralBlockWrappedEditingGeometry() {
           QStringLiteral("wrapped math cursor should move to visual wrapped line"));
 }
 
+void testCodeFenceNoWrapSelectionGeometry() {
+  // Regression guard for the horizontal-scrollbar code fence. With codeBlockWrap OFF, selecting
+  // inside an overflowing line must produce ONE rect at the line's natural width (not wrap onto a
+  // phantom second visual row), and the rect must stay in document space at natural x — the view
+  // applies the scroll offset and clips to the visible window, so the layout must not pre-clip to
+  // the content width. Earlier literalSelectionRectsForRange hard-coded wrap=true, so drag-selection
+  // looked like the line had wrapped.
+  SettingsOverride wrapOff("markdown/codeBlockWrap", false);
+  RenderTheme theme = RenderTheme::github();
+  const QString longLine = QStringLiteral("0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz");
+  const QString markdown = QStringLiteral("```text\n%1\n```").arg(longLine);
+
+  CmarkGfmParser parser;
+  ParseResult parsed = parser.parseDocument(markdown, {});
+  require(parsed.root != nullptr, QStringLiteral("no-wrap code parse should produce a document"));
+
+  MarkdownDocument document;
+  document.setMarkdownText(markdown, std::move(parsed.root));
+  const MarkdownNode* code = findFirstBlock(document.root(), BlockType::CodeFence);
+  require(code != nullptr, QStringLiteral("no-wrap code block should exist"));
+
+  DocumentLayout layout;
+  layout.rebuild(document, theme, 360.0);
+  const BlockLayout* codeBlock = layout.block(code->id());
+  require(codeBlock != nullptr, QStringLiteral("no-wrap code layout should exist"));
+  const QRectF content = codeBlock->literalContentRect(theme);
+  require(codeBlock->codeMaxLineWidth() > content.width() + 0.5,
+          QStringLiteral("overflowing no-wrap code should report a scrollable max line width"));
+
+  // Whole-line selection: one rect (single visual line) spanning natural width, wider than content.
+  const QVector<QRectF> whole = codeBlock->selectionRectsForOffsets(0, longLine.size(), theme);
+  require(whole.size() == 1, QStringLiteral("no-wrap code selection must be a single rect, not wrapped"));
+  require(whole.first().width() > content.width(),
+          QStringLiteral("no-wrap selection rect should span natural width, not clipped to content"));
+
+  // Leading partial selection [0,5] aligns to the content left at the natural advance.
+  const QVector<QRectF> head = codeBlock->selectionRectsForOffsets(0, 5, theme);
+  require(head.size() == 1, QStringLiteral("leading partial selection should be one rect"));
+  require(qAbs(head.first().left() - content.left()) < 1.5,
+          QStringLiteral("no-wrap selection origin should align with the content left"));
+}
+
 void testHtmlBlockPreviewAndEditingHitTestContract() {
   RenderTheme theme = RenderTheme::github();
   DocumentSession session;
@@ -381,8 +423,14 @@ int main(int argc, char** argv) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
   }
   QApplication app(argc, argv);
+  // A well-defined QSettings scope is required for SettingsOverride to be seen by the layout
+  // builder's QSettings reads — with empty org/app names the default-constructed QSettings can
+  // resolve to an inconsistent path between the write and the read.
+  QCoreApplication::setOrganizationName(QStringLiteral("MuffinTest"));
+  QCoreApplication::setApplicationName(QStringLiteral("RenderHtmlLayoutTest"));
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testLiteralBlockWrappedEditingGeometry);
+  RUN_TEST(testCodeFenceNoWrapSelectionGeometry);
   RUN_TEST(testHtmlBlockPreviewAndEditingHitTestContract);
   RUN_TEST(testFrontMatterLayoutPreservesTrailingLiteralNewline);
   RUN_TEST(testDocumentLayoutInlineLayoutContract);

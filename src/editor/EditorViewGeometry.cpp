@@ -3,11 +3,20 @@
 #include "unicode/WordBoundary.h"
 
 #include <QFontMetricsF>
+#include <QSettings>
 #include <QTextLayout>
 #include <QTextOption>
 #include <QStringList>
 
 namespace muffin {
+namespace {
+// markdown/codeBlockWrap (default on): mirrors the same-named file-local helpers in
+// BlockLayout.cpp / BlockLayoutBuilder.cpp so the caret-geometry path agrees with
+// paint and hit-test on whether a code fence soft-wraps its source lines.
+bool codeBlockWrapEnabled() {
+  return QSettings().value(QStringLiteral("markdown/codeBlockWrap"), true).toBool();
+}
+}  // namespace
 namespace editor_geometry {
 
 QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin) {
@@ -29,13 +38,13 @@ QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, cons
 }
 
 QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin, qreal width,
-                                  qreal lineHeight) {
+                                  qreal lineHeight, bool wrap) {
   const QFontMetricsF metrics(font);
   const qreal fallbackHeight = qMax<qreal>(14.0, lineHeight);
   offset = qBound<qsizetype>(0, offset, literal.size());
 
   QTextOption option;
-  option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+  option.setWrapMode(wrap ? QTextOption::WrapAtWordBoundaryOrAnywhere : QTextOption::NoWrap);
 
   const QStringList physicalLines = literal.isEmpty() ? QStringList{QString()} : literal.split(QLatin1Char('\n'));
   const qreal lineWidth = qMax<qreal>(1.0, width);
@@ -237,8 +246,12 @@ HitTestResult hitForCursorPosition(DocumentLayout& layout, const RenderTheme& th
       hit.zone = block->type() == BlockType::FrontMatter ? HitTestResult::Zone::FrontMatter : HitTestResult::Zone::Code;
       {
         const QRectF contentRect = block->literalContentRect(theme);
-        hit.cursorRect =
-            literalCursorRectForOffset(block->literal(), position.text.textOffset, theme.codeFont(), contentRect.topLeft(), contentRect.width(), theme.codeLineHeight());
+        // Code fences honour markdown/codeBlockWrap; front-matter always wraps. Mirrors the hit-test
+        // path in BlockLayout: without this a long line in a wrap-OFF fence is laid out wrapped and
+        // the caret drops onto a phantom second row.
+        const bool wrap = block->type() == BlockType::CodeFence ? codeBlockWrapEnabled() : true;
+        hit.cursorRect = literalCursorRectForOffset(block->literal(), position.text.textOffset, theme.codeFont(),
+                                                    contentRect.topLeft(), contentRect.width(), theme.codeLineHeight(), wrap);
       }
       break;
     case BlockType::MathBlock:
@@ -246,7 +259,7 @@ HitTestResult hitForCursorPosition(DocumentLayout& layout, const RenderTheme& th
       if (block->literalEditing()) {
         const QRectF contentRect = block->literalContentRect(theme);
         hit.cursorRect =
-            literalCursorRectForOffset(block->literal(), position.text.textOffset, theme.codeFont(), contentRect.topLeft(), contentRect.width(), theme.codeLineHeight());
+            literalCursorRectForOffset(block->literal(), position.text.textOffset, theme.codeFont(), contentRect.topLeft(), contentRect.width(), theme.codeLineHeight(), true);
       } else {
         const qsizetype offset = qBound<qsizetype>(0, position.text.textOffset, block->literal().size());
         const qreal x = offset <= block->literal().size() / 2 ? block->rect().left() : block->rect().right();
@@ -258,7 +271,7 @@ HitTestResult hitForCursorPosition(DocumentLayout& layout, const RenderTheme& th
       if (block->literalEditing()) {
         const QRectF contentRect = block->literalContentRect(theme);
         hit.cursorRect =
-            literalCursorRectForOffset(block->literal(), position.text.textOffset, theme.codeFont(), contentRect.topLeft(), contentRect.width(), theme.codeLineHeight());
+            literalCursorRectForOffset(block->literal(), position.text.textOffset, theme.codeFont(), contentRect.topLeft(), contentRect.width(), theme.codeLineHeight(), true);
       } else {
         const qsizetype offset = qBound<qsizetype>(0, position.text.textOffset, block->literal().size());
         const qreal x = offset <= block->literal().size() / 2 ? block->rect().left() : block->rect().right();

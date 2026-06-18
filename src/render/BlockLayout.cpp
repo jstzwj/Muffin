@@ -1,5 +1,6 @@
 #include "render/BlockLayout.h"
 
+#include "blocks/code/CodeFenceScrollController.h"
 #include "document/BlockPredicates.h"
 #include "document/SourceRangeUtil.h"
 
@@ -28,13 +29,13 @@ struct LiteralVisualLine {
   QRectF rect;
 };
 
-QVector<LiteralVisualLine> layoutLiteralVisualLines(const QString& literal, const QFont& font, qreal width, qreal lineHeight) {
+QVector<LiteralVisualLine> layoutLiteralVisualLines(const QString& literal, const QFont& font, qreal width, qreal lineHeight, bool wrap) {
   QVector<LiteralVisualLine> visualLines;
   const QStringList physicalLines = literal.isEmpty() ? QStringList{QString()} : literal.split(QLatin1Char('\n'));
   const qreal lineWidth = qMax<qreal>(1.0, width);
   const qreal fallbackHeight = qMax<qreal>(14.0, lineHeight);
   QTextOption option;
-  option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+  option.setWrapMode(wrap ? QTextOption::WrapAtWordBoundaryOrAnywhere : QTextOption::NoWrap);
 
   qreal y = 0.0;
   qsizetype globalStart = 0;
@@ -69,9 +70,14 @@ QVector<LiteralVisualLine> layoutLiteralVisualLines(const QString& literal, cons
   return visualLines;
 }
 
-qsizetype literalOffsetForPoint(const QString& literal, QPointF localPos, const QFont& font, qreal width, qreal lineHeight) {
+qsizetype literalOffsetForPoint(const QString& literal, QPointF localPos, const QFont& font, qreal width, qreal lineHeight, bool wrap, qreal xOffset) {
   const QFontMetricsF metrics(font);
-  const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal, font, width, lineHeight);
+  // Map the view-space click x into content space. paintCodeFence draws the (NoWrap) line with
+  // painter.translate(-offset), so a view-space x reveals content at advance (viewX + offset):
+  // undoing that leftward shift means ADDING the offset, not subtracting. (Subtracting mapped a
+  // scrolled-right click back toward the line start — a click at the right edge resolved to offset 0.)
+  localPos.setX(localPos.x() + xOffset);
+  const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal, font, width, lineHeight, wrap);
   const LiteralVisualLine* target = lines.isEmpty() ? nullptr : &lines.first();
   for (const LiteralVisualLine& line : lines) {
     if (localPos.y() >= line.rect.top() && localPos.y() <= line.rect.bottom()) {
@@ -101,11 +107,11 @@ qsizetype literalOffsetForPoint(const QString& literal, QPointF localPos, const 
   return qBound<qsizetype>(0, offset, literal.size());
 }
 
-QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin, qreal width, qreal lineHeight) {
+QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin, qreal width, qreal lineHeight, bool wrap) {
   const QFontMetricsF metrics(font);
   lineHeight = qMax<qreal>(14.0, lineHeight);
   offset = qBound<qsizetype>(0, offset, literal.size());
-  const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal, font, width, lineHeight);
+  const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal, font, width, lineHeight, wrap);
   const LiteralVisualLine* target = lines.isEmpty() ? nullptr : &lines.last();
   for (const LiteralVisualLine& line : lines) {
     const qsizetype lineEnd = line.start + line.length;
@@ -162,7 +168,8 @@ QVector<QRectF> literalSelectionRectsForRange(
     const QFont& font,
     qreal lineHeight,
     QPointF origin,
-    qreal maxWidth) {
+    qreal maxWidth,
+    bool wrap) {
   QVector<QRectF> rects;
   startOffset = qBound<qsizetype>(0, startOffset, literal.size());
   endOffset = qBound<qsizetype>(0, endOffset, literal.size());
@@ -174,7 +181,7 @@ QVector<QRectF> literalSelectionRectsForRange(
   }
 
   const QFontMetricsF metrics(font);
-  const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal, font, maxWidth, lineHeight);
+  const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal, font, maxWidth, lineHeight, wrap);
   for (const LiteralVisualLine& line : lines) {
     const qsizetype lineEnd = line.start + line.length;
     const qsizetype rangeStart = qMax(startOffset, line.start);
@@ -191,8 +198,8 @@ QVector<QRectF> literalSelectionRectsForRange(
   return rects;
 }
 
-qreal literalTextHeight(const QString& literal, const QFont& font, qreal width, qreal lineHeight) {
-  const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal, font, width, lineHeight);
+qreal literalTextHeight(const QString& literal, const QFont& font, qreal width, qreal lineHeight, bool wrap = true) {
+  const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal, font, width, lineHeight, wrap);
   if (lines.isEmpty()) {
     return qMax<qreal>(14.0, lineHeight);
   }
@@ -452,6 +459,18 @@ qreal BlockLayout::lineNumberGutterWidth() const {
   return lineNumberGutterWidth_;
 }
 
+void BlockLayout::setCodeMaxLineWidth(qreal width) {
+  codeMaxLineWidth_ = width;
+}
+
+qreal BlockLayout::codeMaxLineWidth() const {
+  return codeMaxLineWidth_;
+}
+
+qreal BlockLayout::scrollBarStripHeight(const RenderTheme& theme) {
+  return qMax<qreal>(8.0, theme.codeLineHeight() * 0.45);
+}
+
 QRectF BlockLayout::literalContentRect(const RenderTheme& theme) const {
   if (type_ == BlockType::MathBlock && literalEditing_) {
     return mathEditorSourceRect(theme);
@@ -661,10 +680,10 @@ QRectF BlockLayout::tableCellRect(int row, int column) const {
   return tableRow.cells.at(static_cast<size_t>(column)).rect;
 }
 
-void BlockLayout::paint(QPainter& painter, const RenderTheme& theme, qreal scrollY) const {
-  paintSelf(painter, theme, scrollY);
+void BlockLayout::paint(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll) const {
+  paintSelf(painter, theme, scrollY, scroll);
   for (const auto& child : children_) {
-    child->paint(painter, theme, scrollY);
+    child->paint(painter, theme, scrollY, scroll);
   }
 }
 
@@ -694,11 +713,11 @@ bool BlockLayout::containsInteractiveContent(QPointF documentPos, const RenderTh
   return rect_.adjusted(-2, -theme.blockSpacing() * 0.5, 2, theme.blockSpacing() * 0.5).contains(documentPos);
 }
 
-HitTestResult BlockLayout::hitTest(QPointF documentPos, const RenderTheme& theme) const {
+HitTestResult BlockLayout::hitTest(QPointF documentPos, const RenderTheme& theme, const CodeFenceScrollController* scroll) const {
   for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
     const BlockLayout& child = **it;
     if (child.rect().adjusted(-theme.blockSpacing(), -theme.blockSpacing(), theme.blockSpacing(), theme.blockSpacing()).contains(documentPos)) {
-      HitTestResult childHit = child.hitTest(documentPos, theme);
+      HitTestResult childHit = child.hitTest(documentPos, theme, scroll);
       if (childHit.isValid()) {
         return childHit;
       }
@@ -712,7 +731,7 @@ HitTestResult BlockLayout::hitTest(QPointF documentPos, const RenderTheme& theme
   if (type_ == BlockType::Table) {
     return hitTable(documentPos, theme);
   }
-  return hitSelf(documentPos, theme);
+  return hitSelf(documentPos, theme, scroll);
 }
 
 QVector<QRectF> BlockLayout::selectionRects(const SelectionRange& selection, const RenderTheme& theme) const {
@@ -731,7 +750,7 @@ QVector<QRectF> BlockLayout::selectionRectsForOffsets(qsizetype startOffset, qsi
   return rects;
 }
 
-void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY) const {
+void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll) const {
   const QRectF viewRect = rect_.translated(0, -scrollY);
 
   switch (type_) {
@@ -812,7 +831,7 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
     }
     case BlockType::FrontMatter:
     case BlockType::CodeFence:
-      paintCodeFence(painter, theme, viewRect);
+      paintCodeFence(painter, theme, viewRect, scroll);
       break;
     case BlockType::MathBlock: {
       painter.save();
@@ -1042,10 +1061,19 @@ QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset,
 QVector<QRectF> BlockLayout::literalSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const {
   QFont font = theme.codeFont();
   const QRectF contentRect = literalContentRect(theme);
+  // Code fences honor the wrap setting; FrontMatter always wraps (matching hit-test/paint). The
+  // rects are returned in document space at the content's natural x — when a code fence scrolls
+  // horizontally the view applies the offset and clips to the visible text window (just like the
+  // caret via effectiveCursorRect). Previously this hard-coded wrap=true, so a selection inside an
+  // overflowing NoWrap line wrapped to a second visual row that didn't exist in the paint.
+  const bool wrap = type_ == BlockType::CodeFence ? codeBlockWrapEnabled() : true;
   QVector<QRectF> rects =
-      literalSelectionRectsForRange(literal_, startOffset, endOffset, font, theme.codeLineHeight(), contentRect.topLeft(), contentRect.width());
+      literalSelectionRectsForRange(literal_, startOffset, endOffset, font, theme.codeLineHeight(), contentRect.topLeft(), contentRect.width(), wrap);
   for (QRectF& rect : rects) {
-    rect = rect.adjusted(-1.0, 0, 1.0, 0).intersected(contentRect.adjusted(0, 0, 1, 0));
+    rect = rect.adjusted(-1.0, 0, 1.0, 0);
+    if (wrap) {
+      rect = rect.intersected(contentRect.adjusted(0, 0, 1, 0));
+    }
   }
   return rects;
 }
@@ -1076,20 +1104,63 @@ QRectF BlockLayout::mathPreviewContentRect(const RenderTheme& theme) const {
                 qMax<qreal>(1.0, rect_.bottom() - padding.bottom() - previewTop));
 }
 
-void BlockLayout::paintCodeFence(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
+void BlockLayout::paintCodeFence(QPainter& painter, const RenderTheme& theme, QRectF viewRect, const CodeFenceScrollController* scroll) const {
   painter.save();
   painter.setPen(theme.codeBorderColor());
   painter.setBrush(theme.codeBackgroundColor());
   painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
   // literalContentRect is document-space (rect_-based); shift it into view space the same way the
   // caller built viewRect (rect_.translated(0, -scrollY)) so the code text lands inside the box.
-  // Without this the content painted at the document y and was invisible once the view scrolled.
   const QRectF contentRect = literalContentRect(theme).translated(0, viewRect.top() - rect_.top());
+  const bool wrap = codeBlockWrapEnabled();
+  const qreal maxLineWidth = codeMaxLineWidth_;
+  // Horizontal scroll applies only to code fences (not FrontMatter) with wrap off and a line wider
+  // than the content area. The controller holds the per-block offset, surviving layout rebuilds.
+  const bool scrollable = type_ == BlockType::CodeFence && !wrap && maxLineWidth > contentRect.width() + 0.5;
+  const qreal offset = (scroll != nullptr && scrollable) ? scroll->offsetFor(id_) : 0.0;
+  const qreal stripH = scrollable ? scrollBarStripHeight(theme) : 0.0;
+  const QRectF textRect = contentRect.adjusted(0, 0, 0, -stripH);
+
   if (lineNumberGutterWidth_ > 0.0) {
-    paintCodeLineNumbers(painter, theme, contentRect);
+    paintCodeLineNumbers(painter, theme, textRect);
   }
-  paintLiteralSource(painter, theme, contentRect, codeHighlightSpans_, codeBlockWrapEnabled());
+
+  if (scrollable) {
+    painter.save();
+    // Clip in view space FIRST, then translate: NoWrap lines are drawn at natural width and must
+    // be cut at the block's right edge instead of overflowing into the page margin.
+    painter.setClipRect(textRect);
+    painter.translate(QPointF(-offset, 0.0));
+    // Draw at the base text rect (NOT +offset). The painter's translate(-offset) is what actually
+    // moves the content: a char at world x appears at device x-offset, so as `offset` grows the line
+    // scrolls left and the clip reveals its right portion. (Earlier code passed textRect.translated
+    // (offset,0), which drew at textRect.left()+offset — that +offset cancelled the translate and
+    // froze the content in place, so scrolling moved only the thumb, never the text.)
+    paintLiteralSource(painter, theme, textRect, codeHighlightSpans_, false);
+    painter.restore();
+    paintCodeFenceScrollBar(painter, theme, contentRect, offset, maxLineWidth);
+  } else {
+    paintLiteralSource(painter, theme, contentRect, codeHighlightSpans_, wrap);
+  }
   painter.restore();
+}
+
+void BlockLayout::paintCodeFenceScrollBar(QPainter& painter, const RenderTheme& theme, QRectF contentRect, qreal offset, qreal maxLineWidth) const {
+  const qreal stripH = scrollBarStripHeight(theme);
+  const QRectF strip(contentRect.left(), contentRect.bottom() - stripH, contentRect.width(), stripH);
+  const qreal visibleW = contentRect.width();
+  const qreal totalW = qMax(maxLineWidth, visibleW);
+  const qreal maxOff = totalW - visibleW;
+  const qreal ratio = visibleW / totalW;
+  const qreal thumbW = qMax<qreal>(24.0, strip.width() * ratio);
+  const qreal thumbX = strip.left() + (maxOff > 0.0 ? (offset / maxOff) * (strip.width() - thumbW) : 0.0);
+  const QRectF track = strip.adjusted(0.5, 0.5, -0.5, -0.5);
+  const QRectF thumb(thumbX, strip.top() + 1.0, thumbW, strip.height() - 2.0);
+  painter.setPen(Qt::NoPen);
+  painter.setBrush(theme.codeBorderColor());
+  painter.drawRoundedRect(track, 3.0, 3.0);
+  painter.setBrush(theme.mutedTextColor());
+  painter.drawRoundedRect(thumb, 3.0, 3.0);
 }
 
 void BlockLayout::paintLiteralSource(QPainter& painter, const RenderTheme& theme, QRectF contentRect, const QVector<CodeHighlightSpan>& spans, bool wrap) const {
@@ -1191,7 +1262,7 @@ void BlockLayout::paintCodeLineNumbers(QPainter& painter, const RenderTheme& the
   }
 }
 
-HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme) const {
+HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme, const CodeFenceScrollController* scroll) const {
   HitTestResult result;
   result.blockId = id_;
   result.textNodeId = id_;
@@ -1226,25 +1297,42 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
       }
       break;
     case BlockType::FrontMatter:
-    case BlockType::CodeFence:
-      result.zone = type_ == BlockType::FrontMatter ? HitTestResult::Zone::FrontMatter : HitTestResult::Zone::Code;
-      {
-        const QRectF contentRect = literalContentRect(theme);
-        result.textOffset =
-            literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont(), contentRect.width(), theme.codeLineHeight());
-        result.cursorRect =
-            literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft(), contentRect.width(), theme.codeLineHeight());
+    case BlockType::CodeFence: {
+      const QRectF contentRect = literalContentRect(theme);
+      const bool wrap = codeBlockWrapEnabled();
+      const bool scrollable = type_ == BlockType::CodeFence && !wrap && codeMaxLineWidth_ > contentRect.width() + 0.5;
+      const qreal offset = (scroll != nullptr && scrollable) ? scroll->offsetFor(id_) : 0.0;
+      // A click on the reserved bottom scrollbar strip drives the horizontal thumb instead of
+      // placing the caret.
+      if (scrollable) {
+        const qreal stripH = scrollBarStripHeight(theme);
+        const QRectF strip(contentRect.left(), contentRect.bottom() - stripH, contentRect.width(), stripH);
+        if (strip.contains(documentPos)) {
+          result.zone = HitTestResult::Zone::CodeHorizontalBar;
+          result.cursorRect = strip;  // document-space strip; EditorView maps it to the viewport for dragging
+          return result;
+        }
       }
+      result.zone = type_ == BlockType::FrontMatter ? HitTestResult::Zone::FrontMatter : HitTestResult::Zone::Code;
+      // Code fences honor the wrap setting (and subtract the horizontal scroll offset when mapping
+      // a click); FrontMatter always wraps. Previously both hardcoded wrap, so click mapping was
+      // wrong whenever code-block wrap was off.
+      const bool codeWrap = type_ == BlockType::CodeFence ? wrap : true;
+      result.textOffset = literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(),
+                                                theme.codeFont(), contentRect.width(), theme.codeLineHeight(), codeWrap, offset);
+      result.cursorRect = literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(),
+                                                     contentRect.topLeft(), contentRect.width(), theme.codeLineHeight(), codeWrap);
       break;
+    }
     case BlockType::MathBlock:
       result.zone = HitTestResult::Zone::Math;
       {
         if (literalEditing_) {
           const QRectF contentRect = mathEditorSourceRect(theme);
           result.textOffset =
-              literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont(), contentRect.width(), theme.codeLineHeight());
+              literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont(), contentRect.width(), theme.codeLineHeight(), true, 0.0);
           result.cursorRect =
-              literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft(), contentRect.width(), theme.codeLineHeight());
+              literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft(), contentRect.width(), theme.codeLineHeight(), true);
         } else {
           result.textOffset = documentPos.x() < rect_.center().x() ? 0 : literal_.size();
           const qreal x = result.textOffset == 0 ? rect_.left() : rect_.right();
@@ -1258,9 +1346,9 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
         if (literalEditing_) {
           const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
           result.textOffset =
-              literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont(), contentRect.width(), theme.codeLineHeight());
+              literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont(), contentRect.width(), theme.codeLineHeight(), true, 0.0);
           result.cursorRect =
-              literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft(), contentRect.width(), theme.codeLineHeight());
+              literalCursorRectForOffset(literal_, result.textOffset, theme.codeFont(), contentRect.topLeft(), contentRect.width(), theme.codeLineHeight(), true);
         } else {
           if (htmlLayout_ && htmlLayout_->valid()) {
             const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());

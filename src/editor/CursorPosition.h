@@ -22,6 +22,7 @@ struct HitTestResult {
     Marker,
     TableCell,
     Code,
+    CodeHorizontalBar,  // the horizontal scrollbar affordance under a scrollable code fence
     Math,
     Html,
     FrontMatter,

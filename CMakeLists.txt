@@ -565,6 +565,8 @@ set(MUFFIN_UI_SOURCES
   src/projection/SelectionSerializer.h
   src/blocks/code/CodeFenceController.cpp
   src/blocks/code/CodeFenceController.h
+  src/blocks/code/CodeFenceScrollController.cpp
+  src/blocks/code/CodeFenceScrollController.h
   src/blocks/html/HtmlSanitizer.cpp
   src/blocks/literal/LiteralBlockController.cpp
   src/blocks/literal/LiteralBlockController.h

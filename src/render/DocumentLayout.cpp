@@ -1,5 +1,6 @@
 #include "render/DocumentLayout.h"
 
+#include "blocks/code/CodeFenceScrollController.h"
 #include "render/BlockLayoutBuilder.h"
 
 #include <QElapsedTimer>
@@ -295,6 +296,14 @@ void DocumentLayout::rebuild(
 
 void DocumentLayout::setEditingHtmlBlock(NodeId id) {
   editingHtmlBlockId_ = id;
+}
+
+void DocumentLayout::setCodeFenceScroll(CodeFenceScrollController* controller) {
+  codeFenceScroll_ = controller;
+}
+
+CodeFenceScrollController* DocumentLayout::codeFenceScroll() const {
+  return codeFenceScroll_;
 }
 
 bool DocumentLayout::relayoutForViewportWidth(const RenderTheme& theme, qreal viewportWidth) {
@@ -736,7 +745,7 @@ HitTestResult DocumentLayout::hitTest(QPointF documentPos, const RenderTheme& th
   for (qsizetype i = last; i >= first; --i) {
     const BlockLayout* block = slots_.at(static_cast<size_t>(i)).detail.get();
     if (block && block->containsInteractiveContent(documentPos, theme)) {
-      HitTestResult result = block->hitTest(documentPos, theme);
+      HitTestResult result = block->hitTest(documentPos, theme, codeFenceScroll_);
       if (result.isValid()) {
         return result;
       }
@@ -773,7 +782,7 @@ HitTestResult DocumentLayout::hitTest(QPointF documentPos, const RenderTheme& th
       return result;
     }
   }
-  return nearestBlock->hitTest(QPointF(qBound(nearestBlock->rect().left(), documentPos.x(), nearestBlock->rect().right()), nearestBlock->rect().center().y()), theme);
+  return nearestBlock->hitTest(QPointF(qBound(nearestBlock->rect().left(), documentPos.x(), nearestBlock->rect().right()), nearestBlock->rect().center().y()), theme, codeFenceScroll_);
 }
 
 const MarkdownNode* DocumentLayout::topLevelBlockFor(NodeId id, const MarkdownDocument& document) const {
@@ -852,6 +861,7 @@ void DocumentLayout::configureBuilder(SelectionRange selection) {
   builder_.setSelection(selection);
   builder_.setEditingHtmlBlock(editingHtmlBlockId_);
   builder_.setDocumentPath(documentPath_);
+  builder_.setCodeFenceScroll(codeFenceScroll_);
 }
 
 qreal DocumentLayout::promoteSlot(qsizetype index, const RenderTheme& theme) {

@@ -201,6 +201,9 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
   detach();
   session_ = session;
   view_ = view;
+  if (view_ != nullptr) {
+    view_->setCodeFenceScroll(&codeFenceScroll_);
+  }
 
   const EditorContext ctx{session_, &selection_, &undoStack_, &brushQueue_, view_,
       {{static_cast<int>(BlockType::FrontMatter), &frontMatterLiteral_},
@@ -358,6 +361,10 @@ LiteralBlockController& EditorController::frontMatterLiteral() {
 
 CodeFenceController& EditorController::codeFenceController() {
   return codeFenceController_;
+}
+
+CodeFenceScrollController& EditorController::codeFenceScroll() {
+  return codeFenceScroll_;
 }
 
 LiteralBlockController& EditorController::htmlLiteral() {
