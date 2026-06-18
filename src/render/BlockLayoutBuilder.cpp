@@ -43,7 +43,9 @@ qreal codeLineNumberGutterWidth(const QString& literal, const RenderTheme& theme
     ++digits;
   }
   const qreal digitWidth = qMax<qreal>(1.0, metrics.horizontalAdvance(QStringLiteral("8")));
-  return static_cast<qreal>(digits + 1) * digitWidth;
+  // Gutter = 1-char left padding + the digits + a 2-char gap to the code. paintCodeLineNumbers
+  // right-aligns the number leaving that 2-char gap (numRightX = codeRect.left() - 2*digitWidth).
+  return static_cast<qreal>(digits + 1 + 2) * digitWidth;
 }
 
 // markdown/codeBlockWrap (default on): whether code-fence source lines soft-wrap. Mirrors the

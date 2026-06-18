@@ -1232,7 +1232,9 @@ void BlockLayout::paintCodeLineNumbers(QPainter& painter, const RenderTheme& the
 
   painter.setFont(codeFont);
   painter.setPen(theme.mutedTextColor());
-  const qreal numRightX = codeRect.left() - 0.5 * digitWidth;
+  // Right-align the number leaving a 2-char gap before the code. The gutter
+  // (codeLineNumberGutterWidth) reserves digits + 3 chars so this fits with a 1-char left padding.
+  const qreal numRightX = codeRect.left() - 2.0 * digitWidth;
   qreal y = codeRect.top();
   int number = 1;
   for (const QString& sourceLine : lines) {

@@ -189,13 +189,19 @@ bool EditorView::refreshBlock(NodeId blockId, const MarkdownDocument& document) 
     return false;
   }
 
-  const DocumentLayout::BlockRebuildResult result = layout_->rebuildBlock(blockId, document, theme_, selection_);
-  if (!result.rebuilt) {
-    return false;
+  // Rebuild inside a viewport pin: an edit that changes a block's height reflows every block below
+  // it and changes totalHeight, which must never move what the user is looking at. The pin
+  // re-derives the scrollbar value at scope exit, so the dirty rects below are computed against the
+  // final scroll offset (a no-op when nothing above the viewport moved).
+  DocumentLayout::BlockRebuildResult result;
+  {
+    ScopedViewportPin pin(*this);
+    result = layout_->rebuildBlock(blockId, document, theme_, selection_);
+    if (!result.rebuilt) {
+      return false;  // pin reconciles (nothing moved); caller falls back to setDocument
+    }
   }
-  if (!qFuzzyIsNull(result.heightDelta)) {
-    updateScrollBars();
-  }
+
   updateCursorHitFromPosition();
   // Typing in a wrap-OFF code fence grows the line at its natural width; once the caret crosses the
   // visible window's right edge it would otherwise scroll off-screen. setCursorHit/rebuildLayout
@@ -226,22 +232,27 @@ bool EditorView::refreshBlocks(const QVector<NodeId>& blockIds, const MarkdownDo
     return false;
   }
 
-  QRect dirty;
-  bool scrollbarDirty = false;
-  for (NodeId blockId : blockIds) {
-    const DocumentLayout::BlockRebuildResult result = layout_->rebuildBlock(blockId, document, theme_, selection_);
-    if (!result.rebuilt) {
-      return false;
+  // Rebuild every block inside one viewport pin (the suffix shift from each rebuild accumulates),
+  // then compute dirty rects against the reconciled scroll offset.
+  QVector<DocumentLayout::BlockRebuildResult> results;
+  {
+    ScopedViewportPin pin(*this);
+    for (NodeId blockId : blockIds) {
+      const DocumentLayout::BlockRebuildResult result = layout_->rebuildBlock(blockId, document, theme_, selection_);
+      if (!result.rebuilt) {
+        return false;
+      }
+      results.append(result);
     }
-    scrollbarDirty = scrollbarDirty || !qFuzzyIsNull(result.heightDelta);
+  }
+
+  QRect dirty;
+  for (const DocumentLayout::BlockRebuildResult& result : results) {
     addRebuildDirtyRect(dirty, result, documentViewportRect(), scrollY(), viewport()->size());
   }
   const QRectF badgeRect = headingBadgeViewportRectForBlock(cursorPosition_.blockId);
   if (!badgeRect.isEmpty()) {
     dirty = dirty.united(badgeRect.adjusted(-2, -2, 2, 2).toAlignedRect());
-  }
-  if (scrollbarDirty) {
-    updateScrollBars();
   }
   updateCursorHitFromPosition();
   updateTableToolbar();
@@ -260,13 +271,16 @@ bool EditorView::refreshTopLevelRange(TopLevelRangeChange range, const MarkdownD
     return false;
   }
 
-  const DocumentLayout::RangeRebuildResult result = layout_->rebuildTopLevelRange(range, document, theme_, selection_);
-  if (!result.rebuilt) {
-    return false;
+  // Rebuild the changed range inside a viewport pin, then dirty against the reconciled offset.
+  DocumentLayout::RangeRebuildResult result;
+  {
+    ScopedViewportPin pin(*this);
+    result = layout_->rebuildTopLevelRange(range, document, theme_, selection_);
+    if (!result.rebuilt) {
+      return false;
+    }
   }
-  if (!qFuzzyIsNull(result.heightDelta)) {
-    updateScrollBars();
-  }
+
   updateCursorHitFromPosition();
   updateCodeLanguageEditor();
   updateTableToolbar();
@@ -938,23 +952,27 @@ void EditorView::rebuildLayout() {
   layout_->setCodeFenceScroll(codeFenceScroll_);
 
   if (document_) {
-    const int oldValue = verticalScrollBar()->value();
     layout_->setEditingHtmlBlock(editingHtmlBlockId_);
     // Lazy layout builds only cheap height estimates up front; visible and caret blocks are
     // promoted to full detail on demand. Fall back to Eager under the offscreen test platform
     // (no real paint/scroll cycle drives ensureVisibleBuilt), keeping render/view tests unchanged.
     const bool lazy = QApplication::platformName() != QLatin1String("offscreen");
-    layout_->rebuild(*document_, theme_, viewport()->width(), selection_, documentPath_,
-                     lazy ? DocumentLayout::BuildPolicy::Lazy : DocumentLayout::BuildPolicy::Eager);
-    updateScrollBars();
-    verticalScrollBar()->setValue(qBound(verticalScrollBar()->minimum(), oldValue, verticalScrollBar()->maximum()));
-    if (cursorPosition_.isValid()) {
-      const qsizetype caretIdx = layout_->topLevelIndexFor(cursorPosition_.blockId);
-      if (caretIdx >= 0) {
-        layout_->ensureBuilt(caretIdx, caretIdx, theme_);  // caret block needed for hit resolution
+    {
+      // Pin by node id: a full Lazy rebuild re-estimates every slot then re-promotes the visible
+      // ones, churning totalHeight twice. The captured block's new slotTop re-derives a value that
+      // keeps it on screen — pinning the old integer value (the prior approach) was meaningless
+      // once every height re-estimated.
+      ScopedViewportPin pin(*this);
+      layout_->rebuild(*document_, theme_, viewport()->width(), selection_, documentPath_,
+                       lazy ? DocumentLayout::BuildPolicy::Lazy : DocumentLayout::BuildPolicy::Eager);
+      if (cursorPosition_.isValid()) {
+        const qsizetype caretIdx = layout_->topLevelIndexFor(cursorPosition_.blockId);
+        if (caretIdx >= 0) {
+          layout_->ensureBuilt(caretIdx, caretIdx, theme_);  // caret block needed for hit resolution
+        }
       }
     }
-    ensureVisibleBuilt();
+    ensureVisibleBuilt();  // promote the visible window; self-pinned so the promotion snap is invisible
     if (cursorPosition_.isValid()) {
       cursorHit_ = hitForCursorPosition(*layout_, theme_, cursorPosition_);
       cursorVisible_ = cursorHit_.isValid();
@@ -989,52 +1007,67 @@ void EditorView::ensureVisibleBuilt() {
   if (range.first < 0) {
     return;
   }
-  promoteWithAnchor(range.first, range.second);
+  // Promoting estimated slots to measured ones changes totalHeight; pin the topmost visible block
+  // so the snap is absorbed entirely into the scrollbar range/value and never moves the content.
+  ScopedViewportPin pin(*this);
+  layout_->ensureBuilt(range.first, range.second, theme_);
 }
 
-void EditorView::promoteWithAnchor(qsizetype first, qsizetype last) {
-  if (!layout_) {
-    return;
-  }
-  inScrollBuild_ = true;
-  // Anchor on the topmost visible slot: after promotion, restore its viewport offset so blocks
-  // measured above the viewport don't shift what the user is looking at.
-  const QRectF vis = documentViewportRect();
-  const QPair<qsizetype, qsizetype> visRange = layout_->slotRangeOverlappingY(vis.top(), vis.bottom());
-  const ViewportAnchor anchor = captureSlotAnchor(visRange.first);
-  layout_->ensureBuilt(first, last, theme_);
-  updateScrollBars();  // totalHeight may change as estimates become measurements
-  restoreSlotAnchor(anchor);
-  inScrollBuild_ = false;
-}
-
-EditorView::ViewportAnchor EditorView::captureSlotAnchor(qsizetype slotIndex) const {
+EditorView::ViewportAnchor EditorView::captureViewportAnchor(NodeId preferNode) const {
   ViewportAnchor anchor;
-  if (!layout_ || slotIndex < 0 || slotIndex >= layout_->slotCount()) {
+  if (!layout_ || layout_->slotCount() == 0 || viewport()->height() <= 0) {
+    return anchor;
+  }
+  qsizetype slot = -1;
+  if (preferNode.isValid()) {
+    slot = layout_->topLevelIndexFor(preferNode);  // honor the caller's preferred block (e.g. cursor)
+  }
+  if (slot < 0) {
+    // Default reference: the topmost block visible at the top of the viewport.
+    const QRectF vis = documentViewportRect();
+    const QPair<qsizetype, qsizetype> visRange = layout_->slotRangeOverlappingY(vis.top(), vis.bottom());
+    slot = visRange.first;
+  }
+  if (slot < 0 || slot >= layout_->slotCount()) {
     return anchor;
   }
   anchor.valid = true;
-  anchor.slotIndex = slotIndex;
-  anchor.screenOffset = layout_->slotTop(slotIndex) - scrollY();
+  anchor.nodeId = layout_->slotNodeId(slot);  // node id survives re-parse / reorder / full rebuild
+  anchor.screenOffset = layout_->slotTop(slot) - scrollY();
   return anchor;
 }
 
-bool EditorView::restoreSlotAnchor(const ViewportAnchor& anchor) {
+bool EditorView::restoreViewportAnchor(const ViewportAnchor& anchor) {
   if (!anchor.valid || !layout_) {
     return false;
   }
-  const qreal desiredScroll = layout_->slotTop(anchor.slotIndex) - anchor.screenOffset;
+  const qsizetype slot = layout_->topLevelIndexFor(anchor.nodeId);
+  if (slot < 0) {
+    return false;  // block removed by the change — leave cursor-follow to decide
+  }
   QScrollBar* bar = verticalScrollBar();
-  const int target = qBound(bar->minimum(), qRound(desiredScroll), bar->maximum());
+  const int target = qBound(bar->minimum(), qRound(layout_->slotTop(slot) - anchor.screenOffset), bar->maximum());
   if (target == bar->value()) {
     return false;
   }
-  // Suppress the valueChanged -> scrollContentsBy -> ensureVisibleBuilt cascade; the caller's
-  // rebuild already produced correct block heights, and the next paint re-promotes if needed.
+  // Suppress the valueChanged -> scrollContentsBy -> ensureVisibleBuilt cascade whether or not a
+  // ScopedViewportPin already holds the guard.
+  const bool prev = inScrollBuild_;
   inScrollBuild_ = true;
   bar->setValue(target);
-  inScrollBuild_ = false;
+  inScrollBuild_ = prev;
   return true;
+}
+
+EditorView::ScopedViewportPin::ScopedViewportPin(EditorView& view, NodeId preferNode)
+    : view_(view), anchor_(view_.captureViewportAnchor(preferNode)), prevGuard_(view_.inScrollBuild_) {
+  view_.inScrollBuild_ = true;
+}
+
+EditorView::ScopedViewportPin::~ScopedViewportPin() {
+  view_.updateScrollBars();           // range may have changed; value clamp is harmless under the guard
+  view_.restoreViewportAnchor(anchor_);  // re-derive value so the captured block stays on screen
+  view_.inScrollBuild_ = prevGuard_;
 }
 
 bool EditorView::refreshVisibleBlocks(const MarkdownDocument& document) {
@@ -1218,19 +1251,18 @@ void EditorView::refreshInlineProjectionForSelectionChange(SelectionRange previo
   addSelectionBlocks(blockIds, selection_);
 
   // Revealing/hiding inline markdown markers reflows lines and changes block heights. Pin the
-  // focus block's on-screen position so the line the user clicked stays put instead of drifting
-  // when a rebuilt block above it (e.g. the block the cursor just left) resizes. Captured before
-  // the rebuild and restored after; a no-op when nothing above the focus block changed.
-  const qsizetype focusSlot = layout_ ? layout_->topLevelIndexFor(cursorPosition_.blockId) : -1;
-  const ViewportAnchor anchor = captureSlotAnchor(focusSlot);
+  // focus block (by node id) so the line the user clicked stays put instead of drifting when a
+  // rebuilt block above it (e.g. the block the cursor just left) resizes. Captured before the
+  // rebuild and restored after; a no-op when nothing above the focus block moved. refreshBlocks
+  // also pins internally on the topmost visible block — this explicit focus pin is applied last, so
+  // it governs the final position.
+  const ViewportAnchor anchor = captureViewportAnchor(cursorPosition_.blockId);
 
   bool refreshed = false;
   if (document_ && layout_ && !blockIds.isEmpty()) {
     refreshed = refreshBlocks(blockIds, *document_);
   }
-  if (refreshed && restoreSlotAnchor(anchor)) {
-    viewport()->update();  // the pin scrolled the view — repaint coherently with the new offset
-  }
+  const bool scrolled = refreshed && restoreViewportAnchor(anchor);
 
   if (!refreshed) {
     updateCursorHitFromPosition();
@@ -1238,6 +1270,9 @@ void EditorView::refreshInlineProjectionForSelectionChange(SelectionRange previo
     viewport()->update();
   } else {
     cursorVisible_ = selection_.isCollapsed() && cursorHit_.isValid();
+    if (scrolled) {
+      viewport()->update();  // content shifted under a new scroll offset — repaint coherently
+    }
     // Erase old heading badge if cursor moved away from a heading block
     if (previousSelection.focus.blockId != cursorPosition_.blockId) {
       const QRectF oldBadge = headingBadgeViewportRectForBlock(previousSelection.focus.blockId);

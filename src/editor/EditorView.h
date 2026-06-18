@@ -117,22 +117,47 @@ private:
 
   void rebuildLayout();
   void updateScrollBars();
-  // Lazy-layout: promote the visible window (+buffer) to full detail, anchor-correcting the
-  // scrollbar so promoting blocks above the viewport doesn't shift what the user sees.
+  // Lazy-layout: promote the visible window (+buffer) to full detail, pinning the scrollbar so
+  // promoting blocks above the viewport doesn't shift what the user sees.
   void ensureVisibleBuilt();
-  void promoteWithAnchor(qsizetype first, qsizetype last);
-  // A stable on-screen reference point used to keep the viewport from jumping when a rebuild
-  // changes block heights. Capture a top-level slot's screen offset before the rebuild, restore
-  // it after by moving the scrollbar. Shared by lazy-block promotion and selection-driven inline
-  // rebuilds (marker reveal) so neither drifts what the user is looking at.
+  // A stable on-screen reference used to keep the viewport from jumping when a layout change moves
+  // block heights. Captured as the top-level *node id* at the top of the viewport (not a slot
+  // index), so it survives in-place rebuilds, structural edits AND a full re-parse/rebuild — the
+  // scrollbar value is re-derived to keep that block pinned to its captured screen offset. This
+  // single mechanism replaces the old split between "anchored" (lazy promotion, marker reveal) and
+  // "unanchored" (every edit-driven refresh) paths that caused the scrollbar to flicker.
   struct ViewportAnchor {
     bool valid = false;
-    qsizetype slotIndex = -1;
-    qreal screenOffset = 0.0;  // slotTop(slotIndex) - scrollY() at capture time
+    NodeId nodeId;
+    qreal screenOffset = 0.0;  // slotTop(nodeId) - scrollY() at capture time
   };
-  ViewportAnchor captureSlotAnchor(qsizetype slotIndex) const;
-  // Re-pins the captured slot to its original screen offset; returns true if the scrollbar moved.
-  bool restoreSlotAnchor(const ViewportAnchor& anchor);
+  // Resolve the block to anchor on into a ViewportAnchor. When `preferNode` is valid it is used
+  // directly (e.g. the cursor's block, so a marker reveal keeps the clicked line put); otherwise
+  // the topmost visible block is used. Invalid when the document is empty / above its first block.
+  ViewportAnchor captureViewportAnchor(NodeId preferNode = {}) const;
+  // Re-pin the captured block to its original screen offset after a layout change; returns true
+  // when the scrollbar moved. A no-op (false) when the block was removed — the caller's
+  // cursor-follow path then decides where to land. Self-guards inScrollBuild_, so it is safe both
+  // inside a ScopedViewportPin and on its own.
+  bool restoreViewportAnchor(const ViewportAnchor& anchor);
+  // RAII pin: every mutation that can change block Y-coordinates or totalHeight (per-block
+  // refresh, range refresh, full rebuild, lazy promotion) runs inside one of these. It captures the
+  // viewport anchor on construction, holds inScrollBuild_ so the implicit
+  // setRange -> clamp -> valueChanged -> scrollContentsBy -> ensureVisibleBuilt cascade cannot
+  // re-enter layout, and on destruction re-derives the scrollbar value so the visible content never
+  // jumps. Nested pins are safe: the outermost governs the final scroll position.
+  class ScopedViewportPin {
+   public:
+    explicit ScopedViewportPin(EditorView& view, NodeId preferNode = {});
+    ~ScopedViewportPin();
+    ScopedViewportPin(const ScopedViewportPin&) = delete;
+    ScopedViewportPin& operator=(const ScopedViewportPin&) = delete;
+
+   private:
+    EditorView& view_;
+    ViewportAnchor anchor_;
+    bool prevGuard_;
+  };
   QRectF documentViewportRect() const;
   qreal scrollY() const;
   void applyScrollBarStyle();
@@ -200,7 +225,10 @@ private:
   CodeFenceScrollController* codeFenceScroll_ = nullptr;
   NodeId codeFenceScrollDragId_;  // block being horizontally dragged via its scrollbar (invalid when idle)
   HtmlBlockHoverController htmlHover_;
-  bool inScrollBuild_ = false;  // guards ensureVisibleBuilt against re-entry via anchor setValue
+  // True while a ScopedViewportPin (or restoreViewportAnchor) is reconciling the scrollbar, so the
+  // implicit setRange -> clamp -> valueChanged -> scrollContentsBy -> ensureVisibleBuilt cascade
+  // cannot re-enter layout and re-promote mid-transaction.
+  bool inScrollBuild_ = false;
 };
 
 }  // namespace muffin
