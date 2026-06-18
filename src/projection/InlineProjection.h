@@ -55,6 +55,9 @@ struct InlineProjectionSpan {
   bool italic = false;
   bool strike = false;
   bool underline = false;
+  bool highlight = false;     // ==text==: yellow wash propagated onto content spans
+  bool subscript = false;     // ~text~: lowered baseline propagated onto content spans
+  bool superscript = false;   // ^text^: raised baseline propagated onto content spans
   QString href;  // Non-empty for Image and Link Atom spans
 };
 
@@ -116,6 +119,9 @@ private:
     bool italic = false;
     bool strike = false;
     bool underline = false;
+    bool highlight = false;
+    bool subscript = false;
+    bool superscript = false;
     qreal baseFontSize = 16.0;
     QString displayText;
     QString visibleText;

@@ -154,6 +154,10 @@ QString MarkdownSerializer::serializeInline(const InlineNode& node) const {
       return QStringLiteral("~~%1~~").arg(serializeInlineList(node.children()));
     case InlineType::Highlight:
       return QStringLiteral("==%1==").arg(serializeInlineList(node.children()));
+    case InlineType::Subscript:
+      return QStringLiteral("~%1~").arg(serializeInlineList(node.children()));
+    case InlineType::Superscript:
+      return QStringLiteral("^%1^").arg(serializeInlineList(node.children()));
     case InlineType::Link:
       return QStringLiteral("[%1](%2%3)").arg(
           serializeInlineList(node.children()),

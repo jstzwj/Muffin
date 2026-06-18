@@ -996,7 +996,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
 <context>
     <name>muffin::BlockLayoutBuilder</name>
     <message>
-        <location filename="../src/render/BlockLayoutBuilder.cpp" line="278"/>
+        <location filename="../src/render/BlockLayoutBuilder.cpp" line="298"/>
         <source>Start writing...</source>
         <translation>Начните писать...</translation>
     </message>
@@ -3139,178 +3139,177 @@ Would you like to open the download page?</source>
 <context>
     <name>muffin::PrefsMarkdownPage</name>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="243"/>
-        <source>Markdown changes take effect when you close this dialog (no restart needed). Greyed-out options are not yet implemented. Strict Mode turns off tables, strikethrough, task lists, auto links and formulas for plain CommonMark output.</source>
-        <translation>Изменения Markdown вступают в силу после закрытия этого диалога (перезапуск не требуется). Серые параметры ещё не реализованы. Строгий режим отключает таблицы, зачёркивание, списки задач, автоматические ссылки и формулы для вывода в формате обычного CommonMark.</translation>
-    </message>
-    <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="249"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="235"/>
         <source>Markdown Syntax Preferences</source>
         <translation>Настройки синтаксиса Markdown</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="250"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="236"/>
         <source>Strict Mode</source>
         <translation>Строгий режим</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="251"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="237"/>
+        <source>Strict Mode turns off tables, strikethrough, task lists, auto links and formulas for plain CommonMark output.</source>
+        <translation>Строгий режим отключает таблицы, зачёркивание, списки задач, автоматические ссылки и формулы для вывода в формате обычного CommonMark.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="240"/>
         <source>Heading Style</source>
         <translation>Стиль заголовков</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="253"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="242"/>
         <source>Unordered List</source>
         <translation>Маркированный список</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="255"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="244"/>
         <source>Ordered List</source>
         <translation>Нумерованный список</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="256"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="245"/>
         <source>1. ... 2. ... 3. ...</source>
         <translation>1. ... 2. ... 3. ...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="256"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="245"/>
         <source>1. ... 1. ... 1. ...</source>
         <translation>1. ... 1. ... 1. ...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="259"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="248"/>
         <source>Markdown Extended Syntax</source>
         <translation>Расширенный синтаксис Markdown</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="260"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="249"/>
         <source>Auto Recognize Links</source>
         <translation>Автоматически распознавать ссылки</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="261"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="250"/>
         <source>Inline Formula</source>
         <translation>Встроенная формула</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="262"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="251"/>
         <source>Subscript</source>
         <translation>Нижний индекс</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="263"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="252"/>
         <source>Superscript</source>
         <translation>Верхний индекс</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="264"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="253"/>
         <source>Highlight</source>
         <translation>Выделение</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="265"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="254"/>
         <source>Github Style Alert Box</source>
         <translation>Блоки предупреждений в стиле GitHub</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="266"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="255"/>
         <source>Diagrams (Sequence, Flowchart, Mermaid)</source>
         <translation>Диаграммы (Sequence, Flowchart, Mermaid)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="267"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="256"/>
         <source>Diagram Options</source>
         <translation>Параметры диаграмм</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="270"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="259"/>
         <source>Smart Punctuation</source>
         <translation>Умная пунктуация</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="271"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="260"/>
         <source>Convert on Input</source>
         <translation>Преобразовывать при вводе</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="272"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="261"/>
         <source>No conversion</source>
         <translation>Без преобразования</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="272"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="261"/>
         <source>When typing</source>
         <translation>При вводе</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="272"/>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="289"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="261"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="277"/>
         <source>Always</source>
         <translation>Всегда</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="273"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="262"/>
         <source>Smart Quotes</source>
         <translation>Умные кавычки</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="276"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="265"/>
         <source>Smart Dashes</source>
         <translation>Умные тире</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="277"/>
         <source>Allow and convert Unicode punctuation when parsing Markdown</source>
-        <translation>Разрешать и преобразовывать пунктуацию Unicode при разборе Markdown</translation>
+        <translation type="vanished">Разрешать и преобразовывать пунктуацию Unicode при разборе Markdown</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="280"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="268"/>
         <source>Code Blocks</source>
         <translation>Блоки кода</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="281"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="269"/>
         <source>Show Line Numbers</source>
         <translation>Показывать номера строк</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="282"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="270"/>
         <source>Code Blocks Auto Wrap</source>
         <translation>Автоперенос в блоках кода</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="283"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="271"/>
         <source>Use Shift+Tab to auto adjust indent of selected code</source>
         <translation>Использовать Shift+Tab для автоматической настройки отступа выделенного кода</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="284"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="272"/>
         <source>Code Indent</source>
         <translation>Отступ в коде</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="286"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="274"/>
         <source>Default Code Block Language</source>
         <translation>Язык блока кода по умолчанию</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="287"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="275"/>
         <source>(empty)</source>
         <translation>(пусто)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="288"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="276"/>
         <source>Automatically add code block language</source>
         <translation>Автоматически добавлять язык блока кода</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="289"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="277"/>
         <source>When inserting code blocks via Markdown code</source>
         <translation>При вставке блоков кода через код Markdown</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="289"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="277"/>
         <source>Never</source>
         <translation>Никогда</translation>
     </message>

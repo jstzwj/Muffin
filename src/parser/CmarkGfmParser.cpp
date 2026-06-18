@@ -410,19 +410,33 @@ void annotateAlertKinds(MarkdownNode& root) {
   visit(visit, root);
 }
 
-// === Highlight (==text==) post-parse splitter ===
-// cmark-gfm has no highlight extension, so `==text==` arrives as literal Text. This pass tokenizes
-// each paragraph/heading/table-cell inline list into `==` runs + content, then pairs runs with an
-// opener stack (emphasis-style flank rules) into Highlight nodes. Faithful to Pandoc: only a run of
-// exactly two `=` is a marker (so `===` and lone `=` stay literal); a backslash-escaped `==` stays
-// literal. Source ranges stay absolute (the projection subtracts the block's source base later).
-struct HighlightToken {
-  enum class Kind { Inline, EqRun, Highlight };
+// === Generic delimited-inline splitter (highlight == / subscript ~ / superscript ^) ===
+// cmark-gfm has no extension for these markers, so `==x==` / `~x~` / `^x^` arrive as literal Text.
+// A single parameterized pass tokenizes each paragraph/heading/table-cell inline list into marker
+// runs + content, then pairs runs with an opener stack (emphasis-style flank rules) into the typed
+// inline named by the spec. Faithful to Pandoc: only a run of the spec's exact length is a marker
+// (so `===`, a lone `=`, and a backslash-escaped marker all stay literal). Source ranges stay
+// absolute (the projection subtracts the block's source base later). Driven by a DelimitedInlineSpec
+// so one engine yields Highlight (`==`, run 2), Subscript (`~`, run 1) and Superscript (`^`, run 1).
+struct DelimitedInlineSpec {
+  QChar marker;
+  int runLength = 0;
+  InlineType type = InlineType::Highlight;
+  QString markerString;
+};
+
+DelimitedInlineSpec specForHighlight() { return {QLatin1Char('='), 2, InlineType::Highlight, QStringLiteral("==")}; }
+DelimitedInlineSpec specForSubscript() { return {QLatin1Char('~'), 1, InlineType::Subscript, QStringLiteral("~")}; }
+DelimitedInlineSpec specForSuperscript() { return {QLatin1Char('^'), 1, InlineType::Superscript, QStringLiteral("^")}; }
+DelimitedInlineSpec specForStrikethrough() { return {QLatin1Char('~'), 2, InlineType::Strikethrough, QStringLiteral("~~")}; }
+
+struct DelimToken {
+  enum class Kind { Inline, MarkerRun, Built };
   Kind kind = Kind::Inline;
-  InlineNode node;  // Inline: a `=`-free text segment or an opaque inline; Highlight: the built node
+  InlineNode node;  // Inline: a marker-free text segment or an opaque inline; Built: the assembled node
   qsizetype srcStart = -1;
   qsizetype srcEnd = -1;
-  int eqLength = 0;
+  int runLength = 0;
   bool escaped = false;
 };
 
@@ -440,6 +454,8 @@ QChar firstSignificantChar(const InlineNode& node) {
     case InlineType::Strong:
     case InlineType::Strikethrough:
     case InlineType::Highlight:
+    case InlineType::Subscript:
+    case InlineType::Superscript:
     case InlineType::Link:
       for (const InlineNode& child : node.children()) {
         const QChar ch = firstSignificantChar(child);
@@ -467,6 +483,8 @@ QChar lastSignificantChar(const InlineNode& node) {
     case InlineType::Strong:
     case InlineType::Strikethrough:
     case InlineType::Highlight:
+    case InlineType::Subscript:
+    case InlineType::Superscript:
     case InlineType::Link: {
       const QVector<InlineNode>& kids = node.children();
       for (auto it = kids.rbegin(); it != kids.rend(); ++it) {
@@ -482,29 +500,43 @@ QChar lastSignificantChar(const InlineNode& node) {
   }
 }
 
+InlineNode makeDelimitedInline(const DelimitedInlineSpec& spec, QVector<InlineNode> children) {
+  switch (spec.type) {
+    case InlineType::Strikethrough:
+      return InlineNode::strikethrough(spec.markerString, std::move(children));
+    case InlineType::Subscript:
+      return InlineNode::subscript(spec.markerString, std::move(children));
+    case InlineType::Superscript:
+      return InlineNode::superscript(spec.markerString, std::move(children));
+    case InlineType::Highlight:
+    default:
+      return InlineNode::highlight(spec.markerString, std::move(children));
+  }
+}
+
 // Only Text nodes whose decoded text maps 1:1 to their source span can be safely split — escapes
 // and HTML entities decode to fewer source chars and would misalign segment offsets. For those,
-// keep the node opaque (its `==` stays literal).
-QVector<HighlightToken> buildHighlightTokens(const QVector<InlineNode>& inlines, QStringView markdown) {
-  QVector<HighlightToken> tokens;
+// keep the node opaque (its marker stays literal).
+QVector<DelimToken> buildDelimTokens(const QVector<InlineNode>& inlines, QStringView markdown, const DelimitedInlineSpec& spec) {
+  QVector<DelimToken> tokens;
   for (const InlineNode& node : inlines) {
     if (node.type() == InlineType::Text) {
       const QString text = node.text();
       const InlineRange range = node.sourceRange();
       const qsizetype srcLen = range.end - range.start;
       if (range.start < 0 || srcLen != text.size()) {
-        tokens.append({HighlightToken::Kind::Inline, node, range.start, range.end, 0, false});
+        tokens.append({DelimToken::Kind::Inline, node, range.start, range.end, 0, false});
         continue;
       }
       qsizetype i = 0;
       while (i < text.size()) {
-        if (text.at(i) == QLatin1Char('=')) {
+        if (text.at(i) == spec.marker) {
           qsizetype j = i;
-          while (j < text.size() && text.at(j) == QLatin1Char('=')) {
+          while (j < text.size() && text.at(j) == spec.marker) {
             ++j;
           }
-          HighlightToken t{HighlightToken::Kind::EqRun, InlineNode(InlineType::Text), range.start + i, range.start + j,
-                           int(j - i), false};
+          DelimToken t{DelimToken::Kind::MarkerRun, InlineNode(InlineType::Text), range.start + i, range.start + j,
+                       int(j - i), false};
           if (t.srcStart > 0 && markdown.at(t.srcStart - 1) == QLatin1Char('\\')) {
             t.escaped = true;
           }
@@ -512,7 +544,7 @@ QVector<HighlightToken> buildHighlightTokens(const QVector<InlineNode>& inlines,
           i = j;
         } else {
           qsizetype j = i;
-          while (j < text.size() && text.at(j) != QLatin1Char('=')) {
+          while (j < text.size() && text.at(j) != spec.marker) {
             ++j;
           }
           InlineNode seg = InlineNode::text(text.mid(i, j - i));
@@ -520,21 +552,21 @@ QVector<HighlightToken> buildHighlightTokens(const QVector<InlineNode>& inlines,
           segRanges.source = InlineRange{range.start + i, range.start + j};
           segRanges.content = segRanges.source;
           seg.setSourceRanges(segRanges);
-          tokens.append({HighlightToken::Kind::Inline, seg, range.start + i, range.start + j, 0, false});
+          tokens.append({DelimToken::Kind::Inline, seg, range.start + i, range.start + j, 0, false});
           i = j;
         }
       }
     } else {
       const InlineRange range = node.sourceRange();
-      tokens.append({HighlightToken::Kind::Inline, node, range.start, range.end, 0, false});
+      tokens.append({DelimToken::Kind::Inline, node, range.start, range.end, 0, false});
     }
   }
   return tokens;
 }
 
-InlineNode tokenToInline(const HighlightToken& t) {
-  if (t.kind == HighlightToken::Kind::EqRun) {
-    InlineNode text = InlineNode::text(QString(t.eqLength, QLatin1Char('=')));
+InlineNode tokenToInline(const DelimToken& t, const DelimitedInlineSpec& spec) {
+  if (t.kind == DelimToken::Kind::MarkerRun) {
+    InlineNode text = InlineNode::text(QString(t.runLength, spec.marker));
     InlineSourceRanges ranges;
     ranges.source = InlineRange{t.srcStart, t.srcEnd};
     ranges.content = ranges.source;
@@ -544,11 +576,11 @@ InlineNode tokenToInline(const HighlightToken& t) {
   return t.node;
 }
 
-void matchHighlightTokens(QVector<HighlightToken>& tokens) {
-  QVector<int> openers;  // indices of `==` runs that can open
+void matchDelimTokens(QVector<DelimToken>& tokens, const DelimitedInlineSpec& spec) {
+  QVector<int> openers;  // indices of marker runs that can open
   for (int i = 0; i < tokens.size(); ++i) {
-    const HighlightToken& t = tokens[i];
-    if (t.kind != HighlightToken::Kind::EqRun || t.eqLength != 2 || t.escaped) {
+    const DelimToken& t = tokens[i];
+    if (t.kind != DelimToken::Kind::MarkerRun || t.runLength != spec.runLength || t.escaped) {
       continue;
     }
     const bool canOpen = i + 1 < tokens.size() &&
@@ -562,19 +594,19 @@ void matchHighlightTokens(QVector<HighlightToken>& tokens) {
       if (opener + 1 < i) {  // at least one content token between them
         QVector<InlineNode> children;
         for (int k = opener + 1; k < i; ++k) {
-          children.append(tokenToInline(tokens[k]));
+          children.append(tokenToInline(tokens[k], spec));
         }
-        InlineNode highlight = InlineNode::highlight(QStringLiteral("=="), std::move(children));
+        InlineNode built = makeDelimitedInline(spec, std::move(children));
         InlineSourceRanges ranges;
         ranges.openMarker = InlineRange{tokens[opener].srcStart, tokens[opener].srcEnd};
         ranges.closeMarker = InlineRange{t.srcStart, t.srcEnd};
         ranges.source = InlineRange{ranges.openMarker.start, ranges.closeMarker.end};
         ranges.content = InlineRange{ranges.openMarker.end, ranges.closeMarker.start};
-        highlight.setSourceRanges(ranges);
-        tokens[opener] = HighlightToken{HighlightToken::Kind::Highlight, highlight, ranges.source.start, ranges.source.end, 0, false};
+        built.setSourceRanges(ranges);
+        tokens[opener] = DelimToken{DelimToken::Kind::Built, built, ranges.source.start, ranges.source.end, 0, false};
         tokens.remove(opener + 1, i - opener);
         openers.removeLast();
-        i = opener;  // rescan from the new highlight token (its content may pair further out)
+        i = opener;  // rescan from the new built token (its content may pair further out)
         continue;
       }
       openers.removeLast();
@@ -585,29 +617,29 @@ void matchHighlightTokens(QVector<HighlightToken>& tokens) {
   }
 }
 
-void splitHighlightInBlock(QVector<InlineNode>& inlines, QStringView markdown) {
-  QVector<HighlightToken> tokens = buildHighlightTokens(inlines, markdown);
-  matchHighlightTokens(tokens);
+void splitDelimInBlock(QVector<InlineNode>& inlines, QStringView markdown, const DelimitedInlineSpec& spec) {
+  QVector<DelimToken> tokens = buildDelimTokens(inlines, markdown, spec);
+  matchDelimTokens(tokens, spec);
   QVector<InlineNode> rebuilt;
   rebuilt.reserve(tokens.size());
   bool changed = false;
-  for (const HighlightToken& t : tokens) {
-    if (t.kind == HighlightToken::Kind::Highlight) {
+  for (const DelimToken& t : tokens) {
+    if (t.kind == DelimToken::Kind::Built) {
       changed = true;
     }
-    rebuilt.append(tokenToInline(t));
+    rebuilt.append(tokenToInline(t, spec));
   }
   if (changed) {
     inlines = std::move(rebuilt);
   }
 }
 
-// Walks the tree and splits `==...==` into Highlight inlines within every block that owns inlines
-// (paragraph, heading, table cell). Gated on options.enableHighlight at the call site.
-void splitHighlightInlines(MarkdownNode& root, QStringView markdown) {
+// Walks the tree and splits spec-delimited runs into typed inlines within every block that owns
+// inlines (paragraph, heading, table cell). Gated on the matching ParseOptions flag at the call site.
+void splitDelimInlines(MarkdownNode& root, QStringView markdown, const DelimitedInlineSpec& spec) {
   const auto visit = [&](auto&& self, MarkdownNode& node) -> void {
     if (!node.inlines().isEmpty()) {
-      splitHighlightInBlock(node.inlines(), markdown);
+      splitDelimInBlock(node.inlines(), markdown, spec);
     }
     for (const auto& child : node.children()) {
       self(self, *child);
@@ -1295,8 +1327,23 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
     annotateAlertKinds(*result.root);
   }
   if (options.enableHighlight) {
-    ParsePerfTimer t("parse.splitHighlightInlines");
-    splitHighlightInlines(*result.root, markdownToParse);
+    ParsePerfTimer t("parse.splitHighlight");
+    splitDelimInlines(*result.root, markdownToParse, specForHighlight());
+  }
+  // cmark's strikethrough extension is never attached (see attachExtensions), so `~~` is always
+  // handled here (run 2). It MUST run before the subscript pass (run 1) so a `~~` pair is consumed
+  // first and only single `~` is left for subscript.
+  if (options.enableStrikethrough) {
+    ParsePerfTimer t("parse.splitStrikethrough");
+    splitDelimInlines(*result.root, markdownToParse, specForStrikethrough());
+  }
+  if (options.enableSubscript) {
+    ParsePerfTimer t("parse.splitSubscript");
+    splitDelimInlines(*result.root, markdownToParse, specForSubscript());
+  }
+  if (options.enableSuperscript) {
+    ParsePerfTimer t("parse.splitSuperscript");
+    splitDelimInlines(*result.root, markdownToParse, specForSuperscript());
   }
   {
     ParsePerfTimer t("parse.insertVEPInBlockQuotes");
@@ -1357,7 +1404,13 @@ void CmarkGfmParser::attachExtensions(cmark_parser* parser, const ParseOptions& 
   };
 
   if (options.enableTable) attach("table");
-  if (options.enableStrikethrough) attach("strikethrough");
+  // cmark-gfm's strikethrough extension matches a SINGLE `~` as well as `~~`. Attaching it would turn
+  // `H~2~O` (subscript off) into a strikethrough, which is surprising and inconsistent with the
+  // subscript-on case where `~` means subscript. We always own tilde runs ourselves in
+  // splitDelimInlines: `~~` -> strikethrough (run 2), single `~` -> subscript when enabled else
+  // literal text. So cmark's extension is never attached, and `~` semantics never depend on the
+  // subscript toggle.
+  // if (options.enableStrikethrough) attach("strikethrough");  // intentionally disabled — see above
   if (options.enableAutolink) attach("autolink");
   if (options.enableTaskList) attach("tasklist");
   if (options.enableMath) attach("math");

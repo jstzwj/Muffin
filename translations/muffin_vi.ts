@@ -1000,7 +1000,7 @@ Một trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằ
 <context>
     <name>muffin::BlockLayoutBuilder</name>
     <message>
-        <location filename="../src/render/BlockLayoutBuilder.cpp" line="278"/>
+        <location filename="../src/render/BlockLayoutBuilder.cpp" line="298"/>
         <source>Start writing...</source>
         <translation>Bắt đầu viết...</translation>
     </message>
@@ -3143,178 +3143,177 @@ Bạn có muốn mở trang tải xuống không?</translation>
 <context>
     <name>muffin::PrefsMarkdownPage</name>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="243"/>
-        <source>Markdown changes take effect when you close this dialog (no restart needed). Greyed-out options are not yet implemented. Strict Mode turns off tables, strikethrough, task lists, auto links and formulas for plain CommonMark output.</source>
-        <translation>Các thay đổi Markdown có hiệu lực khi bạn đóng hộp thoại này (không cần khởi động lại). Các tùy chọn hiển thị mờ chưa được triển khai. Chế độ nghiêm ngặt tắt bảng, gạch ngang, danh sách tác vụ, liên kết tự động và công thức để tạo kết xuất CommonMark thuần.</translation>
-    </message>
-    <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="249"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="235"/>
         <source>Markdown Syntax Preferences</source>
         <translation>Tùy chọn cú pháp Markdown</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="250"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="236"/>
         <source>Strict Mode</source>
         <translation>Chế độ nghiêm ngặt</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="251"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="237"/>
+        <source>Strict Mode turns off tables, strikethrough, task lists, auto links and formulas for plain CommonMark output.</source>
+        <translation>Chế độ nghiêm ngặt tắt bảng, gạch ngang, danh sách tác vụ, liên kết tự động và công thức để tạo kết xuất CommonMark thuần.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="240"/>
         <source>Heading Style</source>
         <translation>Kiểu tiêu đề</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="253"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="242"/>
         <source>Unordered List</source>
         <translation>Danh sách không thứ tự</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="255"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="244"/>
         <source>Ordered List</source>
         <translation>Danh sách có thứ tự</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="256"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="245"/>
         <source>1. ... 2. ... 3. ...</source>
         <translation>1. ... 2. ... 3. ...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="256"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="245"/>
         <source>1. ... 1. ... 1. ...</source>
         <translation>1. ... 1. ... 1. ...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="259"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="248"/>
         <source>Markdown Extended Syntax</source>
         <translation>Cú pháp mở rộng Markdown</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="260"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="249"/>
         <source>Auto Recognize Links</source>
         <translation>Tự động nhận diện liên kết</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="261"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="250"/>
         <source>Inline Formula</source>
         <translation>Công thức nội tuyến</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="262"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="251"/>
         <source>Subscript</source>
         <translation>Chỉ số dưới</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="263"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="252"/>
         <source>Superscript</source>
         <translation>Chỉ số trên</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="264"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="253"/>
         <source>Highlight</source>
         <translation>Nổi bật</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="265"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="254"/>
         <source>Github Style Alert Box</source>
         <translation>Hộp cảnh báo kiểu Github</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="266"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="255"/>
         <source>Diagrams (Sequence, Flowchart, Mermaid)</source>
         <translation>Sơ đồ (Sequence, Flowchart, Mermaid)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="267"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="256"/>
         <source>Diagram Options</source>
         <translation>Tùy chọn sơ đồ</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="270"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="259"/>
         <source>Smart Punctuation</source>
         <translation>Dấu câu thông minh</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="271"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="260"/>
         <source>Convert on Input</source>
         <translation>Chuyển đổi khi nhập</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="272"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="261"/>
         <source>No conversion</source>
         <translation>Không chuyển đổi</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="272"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="261"/>
         <source>When typing</source>
         <translation>Khi gõ</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="272"/>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="289"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="261"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="277"/>
         <source>Always</source>
         <translation>Luôn luôn</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="273"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="262"/>
         <source>Smart Quotes</source>
         <translation>Dấu trích dẫn thông minh</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="276"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="265"/>
         <source>Smart Dashes</source>
         <translation>Dấu gạch ngang thông minh</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="277"/>
         <source>Allow and convert Unicode punctuation when parsing Markdown</source>
-        <translation>Cho phép và chuyển đổi dấu câu Unicode khi phân tích Markdown</translation>
+        <translation type="vanished">Cho phép và chuyển đổi dấu câu Unicode khi phân tích Markdown</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="280"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="268"/>
         <source>Code Blocks</source>
         <translation>Khối mã</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="281"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="269"/>
         <source>Show Line Numbers</source>
         <translation>Hiển thị số dòng</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="282"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="270"/>
         <source>Code Blocks Auto Wrap</source>
         <translation>Tự động ngắt dòng trong khối mã</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="283"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="271"/>
         <source>Use Shift+Tab to auto adjust indent of selected code</source>
         <translation>Sử dụng Shift+Tab để tự động điều chỉnh thụt lề của mã đã chọn</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="284"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="272"/>
         <source>Code Indent</source>
         <translation>Thụt lề mã</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="286"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="274"/>
         <source>Default Code Block Language</source>
         <translation>Ngôn ngữ khối mã mặc định</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="287"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="275"/>
         <source>(empty)</source>
         <translation>(trống)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="288"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="276"/>
         <source>Automatically add code block language</source>
         <translation>Tự động thêm ngôn ngữ cho khối mã</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="289"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="277"/>
         <source>When inserting code blocks via Markdown code</source>
         <translation>Khi chèn khối mã thông qua mã Markdown</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="289"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="277"/>
         <source>Never</source>
         <translation>Không bao giờ</translation>
     </message>

@@ -14,8 +14,26 @@
 #include <QLabel>
 #include <QListWidget>
 #include <QScrollArea>
+#include <QSettings>
 #include <QStackedWidget>
 #include <QVBoxLayout>
+
+namespace {
+// Stable internal keys for the preferences categories, in the same order as the category list built
+// in retranslateUi(). Persisted to QSettings so the dialog reopens on the last-viewed page instead
+// of always landing on General. The translated labels can't be used as keys — they change with the
+// UI language.
+const QStringList kCategoryKeys = {
+    QStringLiteral("files"),
+    QStringLiteral("editor"),
+    QStringLiteral("image"),
+    QStringLiteral("markdown"),
+    QStringLiteral("export"),
+    QStringLiteral("appearance"),
+    QStringLiteral("general"),
+};
+const QString kLastCategorySetting = QStringLiteral("preferences/lastCategory");
+}  // namespace
 
 muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) {
   setModal(true);
@@ -171,6 +189,13 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
   }
 
   connect(categoryList_, &QListWidget::currentRowChanged, contentStack_, &QStackedWidget::setCurrentIndex);
+  // Remember the last-viewed category so the dialog reopens on it next time. retranslateUi sets the
+  // row with signals blocked, so this only fires on genuine user navigation.
+  connect(categoryList_, &QListWidget::currentRowChanged, this, [](int row) {
+    if (row >= 0 && row < kCategoryKeys.size()) {
+      QSettings().setValue(kLastCategorySetting, kCategoryKeys.at(row));
+    }
+  });
 
   // Forward page signals
   connect(filesPage_, &PrefsFilesPage::clearRecentFilesRequested,
@@ -244,7 +269,12 @@ void muffin::PreferencesDialog::retranslateUi() {
 
   int currentRow = categoryList_->currentRow();
   if (currentRow < 0 || currentRow >= categories.size()) {
-    currentRow = categories.size() - 1;
+    // First construction (the list was empty): reopen the last-viewed category instead of always
+    // landing on General. On a live retranslate (language change) currentRow is already valid and is
+    // preserved by the branch above, so we only restore on the initial build.
+    const QString savedKey = QSettings().value(kLastCategorySetting).toString();
+    const int restored = kCategoryKeys.indexOf(savedKey);
+    currentRow = (restored >= 0 && restored < categories.size()) ? restored : categories.size() - 1;
   }
 
   categoryList_->blockSignals(true);

@@ -12,6 +12,7 @@
 #include <QFileInfo>
 #include <QFontMetricsF>
 #include <QLoggingCategory>
+#include <QSettings>
 #include <QStringList>
 #include <QStringView>
 #include <QTextLayout>
@@ -24,6 +25,25 @@ namespace muffin {
 namespace {
 
 Q_LOGGING_CATEGORY(blockBuildPerf, "muffin.perf", QtWarningMsg)
+
+// markdown/showLineNumbers (default off): reserve a left gutter in code fences for line numbers.
+bool showLineNumbersEnabled() {
+  return QSettings().value(QStringLiteral("markdown/showLineNumbers"), false).toBool();
+}
+
+// Width to right-align 1..lineCount in a code-fence gutter, measured with the zoom-aware code font
+// (so the gutter scales with zoom). (digits + 1) glyph widths: the digits plus a half-glyph gap on
+// each side, matching how paintCodeLineNumbers right-aligns numbers just left of the code text.
+qreal codeLineNumberGutterWidth(const QString& literal, const RenderTheme& theme) {
+  const QFontMetricsF metrics(theme.codeFont());
+  const int lineCount = literal.isEmpty() ? 1 : int(literal.count(QLatin1Char('\n'))) + 1;
+  int digits = 1;
+  for (int n = lineCount; n >= 10; n /= 10) {
+    ++digits;
+  }
+  const qreal digitWidth = qMax<qreal>(1.0, metrics.horizontalAdvance(QStringLiteral("8")));
+  return static_cast<qreal>(digits + 1) * digitWidth;
+}
 
 // Accumulates elapsed nanoseconds into a bucket when measurement is enabled; otherwise
 // just two cheap branch checks. Aggregates per-block build() costs across one rebuild
@@ -463,6 +483,11 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
   const bool editingLiteral = (node.type() == BlockType::MathBlock && selectionFocusesNode(selection_, node.id())) ||
                               (node.type() == BlockType::HtmlBlock && editingHtmlBlockId_ == node.id());
   layout->setLiteralEditing(editingLiteral);
+  const qreal lineNumberGutter =
+      (node.type() == BlockType::CodeFence && showLineNumbersEnabled())
+          ? codeLineNumberGutterWidth(layout->literal(), theme)
+          : 0.0;
+  layout->setLineNumberGutterWidth(lineNumberGutter);
   qreal height;
   {
     BuildAccumTimer t(literalTextNs_, perfEnabled_);
@@ -470,7 +495,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
         layout->literal(),
         node.type() == BlockType::MathBlock ? theme.mathFont() : theme.codeFont(),
         node.type() == BlockType::MathBlock ? qMax<qreal>(14.0, QFontMetricsF(theme.mathFont()).height()) : theme.codeLineHeight(),
-        width,
+        width - lineNumberGutter,
         theme.codePadding());
   }
   if (node.type() == BlockType::MathBlock) {
@@ -1133,7 +1158,9 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateLiteralBlock(cons
   const QFont font = isMath ? theme.mathFont() : theme.codeFont();
   const qreal lineHeight = isMath ? std::max<qreal>(14.0, QFontMetricsF(theme.mathFont()).height()) : theme.codeLineHeight();
   const QMarginsF padding = theme.codePadding();
-  const qreal innerWidth = std::max<qreal>(1.0, width - padding.left() - padding.right());
+  const qreal lineNumberGutter =
+      (node.type() == BlockType::CodeFence && showLineNumbersEnabled()) ? codeLineNumberGutterWidth(literal, theme) : 0.0;
+  const qreal innerWidth = std::max<qreal>(1.0, width - padding.left() - padding.right() - lineNumberGutter);
   const qreal charsPerLine = std::max(qreal(1.0), std::floor(innerWidth / avgCharWidthForText(QStringView(literal), font)));
   const qreal lines = estimateWrappedLines(QStringView(literal), charsPerLine);
   const qreal height = std::ceil(lines * lineHeight + padding.top() + padding.bottom() + 2.0);

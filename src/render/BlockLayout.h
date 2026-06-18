@@ -109,6 +109,9 @@ public:
   void setLiteralEditing(bool editing);
   bool literalEditing() const;
   QRectF literalContentRect(const RenderTheme& theme) const;
+  // Width reserved at the left of a code-fence content rect for line numbers (0 when off).
+  void setLineNumberGutterWidth(qreal width);
+  qreal lineNumberGutterWidth() const;
 
   void setHeadingLevel(int level);
   int headingLevel() const;
@@ -178,6 +181,7 @@ private:
   QRectF mathPreviewContentRect(const RenderTheme& theme) const;
   void paintCodeFence(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
   void paintLiteralSource(QPainter& painter, const RenderTheme& theme, QRectF contentRect, const QVector<CodeHighlightSpan>& spans, bool wrap) const;
+  void paintCodeLineNumbers(QPainter& painter, const RenderTheme& theme, const QRectF& codeRect) const;
   void paintDefinition(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
   HitTestResult hitDefinition(QPointF documentPos, const RenderTheme& theme) const;
   QVector<QRectF> definitionSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
@@ -193,6 +197,7 @@ private:
   MathDelimiter mathDelimiter_ = MathDelimiter::Dollar;
   std::shared_ptr<html::HtmlLayoutResult> htmlLayout_;
   bool literalEditing_ = false;
+  qreal lineNumberGutterWidth_ = 0.0;
   int headingLevel_ = 0;
   QString listMarker_;
   ListMarkerKind listMarkerKind_ = ListMarkerKind::None;

@@ -915,6 +915,14 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     if (span.underline) {
       format.setFontUnderline(true);
     }
+    if (span.highlight) {
+      format.setBackground(theme.highlightBackgroundColor());
+    }
+    if (span.subscript) {
+      format.setVerticalAlignment(QTextCharFormat::AlignSubScript);
+    } else if (span.superscript) {
+      format.setVerticalAlignment(QTextCharFormat::AlignSuperScript);
+    }
     switch (span.type) {
       case InlineType::Code:
         format.setFont(theme.codeFont());
@@ -930,13 +938,6 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
             span.kind != InlineSpanKind::HiddenSyntax && span.kind != InlineSpanKind::EmptyContentSlot) {
           format.setForeground(theme.linkColor());
           format.setFontUnderline(true);
-        }
-        break;
-      case InlineType::Highlight:
-        // Pandoc-style marker: a flat yellow wash behind the content text (no border), like inline
-        // code but tinted. Markers are hidden unless the cursor reveals them.
-        if (span.kind == InlineSpanKind::Text) {
-          format.setBackground(theme.highlightBackgroundColor());
         }
         break;
       default:

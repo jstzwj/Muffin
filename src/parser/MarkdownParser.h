@@ -23,6 +23,8 @@ struct ParseOptions {
   bool enableFrontMatter = true;
   bool enableAlertBox = true;
   bool enableHighlight = false;
+  bool enableSubscript = false;
+  bool enableSuperscript = false;
   bool preserveSourceRange = true;
 
   // Used by DocumentSession::setParseOptions to skip a full re-parse when nothing changed

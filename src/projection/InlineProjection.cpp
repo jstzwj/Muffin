@@ -81,8 +81,12 @@ bool textMatchesAt(const QString& decoded, qsizetype decodedPos, QStringView tex
   return decodedPos >= 0 && decodedPos + text.size() <= decoded.size() && decoded.mid(decodedPos, text.size()) == text;
 }
 
+// Half-open [start, end): a caret at `end` sits *past* the inline's closing marker, so it is
+// treated as outside. This mirrors overlapsRange (selection) and is what keeps a TRAILING inline
+// at end-of-block from staying "active" forever — the caret that rests there has moved on, so its
+// markers should hide. The caret at `start` (on the opening marker) still counts as inside.
 bool containsOffset(qsizetype start, qsizetype end, qsizetype offset) {
-  return offset >= start && offset <= end;
+  return offset >= start && offset < end;
 }
 
 bool overlapsRange(qsizetype firstStart, qsizetype firstEnd, qsizetype secondStart, qsizetype secondEnd) {
@@ -487,6 +491,10 @@ QString InlineProjection::markerForInline(const InlineNode& node) {
       return QStringLiteral("~~");
     case InlineType::Highlight:
       return QStringLiteral("==");
+    case InlineType::Subscript:
+      return QStringLiteral("~");
+    case InlineType::Superscript:
+      return QStringLiteral("^");
     default:
       return {};
   }
@@ -513,6 +521,10 @@ QString InlineProjection::markdownForInline(const InlineNode& node) {
       return QStringLiteral("~~%1~~").arg(markdownForInlines(node.children()));
     case InlineType::Highlight:
       return QStringLiteral("==%1==").arg(markdownForInlines(node.children()));
+    case InlineType::Subscript:
+      return QStringLiteral("~%1~").arg(markdownForInlines(node.children()));
+    case InlineType::Superscript:
+      return QStringLiteral("^%1^").arg(markdownForInlines(node.children()));
     case InlineType::Link: {
       const QString label = markdownForInlines(node.children());
       if (node.isAutolink()) {
@@ -598,6 +610,9 @@ void InlineProjection::appendTextSpan(
   span.italic = state.italic;
   span.strike = state.strike;
   span.underline = state.underline;
+  span.highlight = state.highlight;
+  span.subscript = state.subscript;
+  span.superscript = state.superscript;
   state.displayText += displayText;
   if (visible) {
     state.visibleText += displayText;
@@ -1063,7 +1078,9 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
     case InlineType::Emphasis:
     case InlineType::Strong:
     case InlineType::Strikethrough:
-    case InlineType::Highlight: {
+    case InlineType::Highlight:
+    case InlineType::Subscript:
+    case InlineType::Superscript: {
       InlineRange content = localRange(node.contentRange(), state.sourceBase);
       if (!rangeWithin(content, sourceStart, sourceEnd)) {
         content = InlineRange{qMin(sourceEnd, sourceStart + marker.size()), qMax(sourceStart, sourceEnd - marker.size())};
@@ -1076,17 +1093,29 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
       const bool previousBold = state.bold;
       const bool previousItalic = state.italic;
       const bool previousStrike = state.strike;
+      const bool previousHighlight = state.highlight;
+      const bool previousSubscript = state.subscript;
+      const bool previousSuperscript = state.superscript;
       if (node.type() == InlineType::Strong) {
         state.bold = true;
       } else if (node.type() == InlineType::Emphasis) {
         state.italic = true;
       } else if (node.type() == InlineType::Strikethrough) {
         state.strike = true;
+      } else if (node.type() == InlineType::Highlight) {
+        state.highlight = true;
+      } else if (node.type() == InlineType::Subscript) {
+        state.subscript = true;
+      } else if (node.type() == InlineType::Superscript) {
+        state.superscript = true;
       }
       appendInlines(state, node.children(), contentStart, contentEnd, htmlFormatData);
       state.bold = previousBold;
       state.italic = previousItalic;
       state.strike = previousStrike;
+      state.highlight = previousHighlight;
+      state.subscript = previousSubscript;
+      state.superscript = previousSuperscript;
       if (contentStart == contentEnd) {
         appendTextSpan(state, node.type(), InlineSpanKind::EmptyContentSlot, contentStart, contentEnd, QString(), false);
       }

@@ -12,11 +12,6 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   layout->setContentsMargins(kPageLeftMargin, kPageTopMargin, kPageRightMargin, kPageBottomMargin);
   layout->setSpacing(14);
 
-  // Behavior note (text set in retranslateUi)
-  noteLabel_ = makeMutedLabel(this);
-  noteLabel_->setWordWrap(true);
-  layout->addWidget(noteLabel_);
-
   auto* cardContainer = new QWidget(this);
   cardContainer->setObjectName(QStringLiteral("settingsGroup"));
   cardContainer->setMaximumWidth(kContentWidth);
@@ -138,14 +133,12 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   quotesRow->addStretch(1);
 
   smartDashesCheck_ = new QCheckBox(punctCard);
-  unicodePunctCheck_ = new QCheckBox(punctCard);
 
   punctLayout->addLayout(punctHeaderRow);
   punctLayout->addLayout(convertRow);
   punctLayout->addWidget(smartQuotesCheck_);
   punctLayout->addLayout(quotesRow);
   punctLayout->addWidget(smartDashesCheck_);
-  punctLayout->addWidget(unicodePunctCheck_);
   cardColumn->addWidget(punctCard);
 
   // --- Card 4: Code Blocks ---
@@ -218,7 +211,6 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   wireComboIndexSetting(singleQuoteCombo_, QStringLiteral("markdown/singleQuoteStyle"));
   wireComboIndexSetting(doubleQuoteCombo_, QStringLiteral("markdown/doubleQuoteStyle"));
   wireBoolSetting(smartDashesCheck_, QStringLiteral("markdown/smartDashes"));
-  wireBoolSetting(unicodePunctCheck_, QStringLiteral("markdown/unicodePunctuation"));
   wireBoolSetting(showLineNumbersCheck_, QStringLiteral("markdown/showLineNumbers"));
   wireBoolSetting(codeBlockWrapCheck_, QStringLiteral("markdown/codeBlockWrap"));
   wireBoolSetting(shiftTabIndentCheck_, QStringLiteral("markdown/shiftTabIndent"));
@@ -226,10 +218,9 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   wireComboIndexSetting(defaultLangCombo_, QStringLiteral("markdown/defaultCodeLang"));
   wireComboIndexSetting(autoLangCombo_, QStringLiteral("markdown/autoCodeLang"));
 
-  // Options whose behavior is not yet implemented are disabled and labelled "coming soon" so users
-  // are not misled into thinking a toggle works. Re-enable here as each feature lands.
-  for (QCheckBox* unbuilt : {subscriptCheck_, superscriptCheck_, diagramsCheck_,
-                             showLineNumbersCheck_, unicodePunctCheck_}) {
+  // Diagrams need a rendering engine not yet present in Muffin, so the toggle stays disabled and
+  // labelled "coming soon" so users aren't misled into thinking it works.
+  for (QCheckBox* unbuilt : {diagramsCheck_}) {
     if (unbuilt) {
       unbuilt->setEnabled(false);
     }
@@ -240,14 +231,12 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
 }
 
 void muffin::PrefsMarkdownPage::retranslateUi() {
-  noteLabel_->setText(tr(
-      "Markdown changes take effect when you close this dialog (no restart needed). "
-      "Greyed-out options are not yet implemented. "
-      "Strict Mode turns off tables, strikethrough, task lists, auto links and formulas "
-      "for plain CommonMark output."));
   // Card 1: Syntax Preferences
   syntaxLabel_->setText(tr("Markdown Syntax Preferences"));
   strictModeCheck_->setText(tr("Strict Mode"));
+  strictModeCheck_->setToolTip(tr(
+      "Strict Mode turns off tables, strikethrough, task lists, auto links and formulas "
+      "for plain CommonMark output."));
   headingStyleLabel_->setText(tr("Heading Style"));
   rebuildCombo(headingStyleCombo_, {QStringLiteral("atx (#)"), QStringLiteral("setext (===)")});
   unorderedListLabel_->setText(tr("Unordered List"));
@@ -274,7 +263,6 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
   rebuildCombo(singleQuoteCombo_, {QStringLiteral("\xe2\x80\x98" "abc" "\xe2\x80\x99"), QStringLiteral("'abc'")});
   rebuildCombo(doubleQuoteCombo_, {QStringLiteral("\xe2\x80\x9c" "abc" "\xe2\x80\x9d"), QStringLiteral("\"abc\"")});
   smartDashesCheck_->setText(tr("Smart Dashes"));
-  unicodePunctCheck_->setText(tr("Allow and convert Unicode punctuation when parsing Markdown"));
 
   // Card 4: Code Blocks
   codeBlockLabel_->setText(tr("Code Blocks"));
@@ -306,7 +294,6 @@ void muffin::PrefsMarkdownPage::loadSettings() {
   loadComboIndex(singleQuoteCombo_, QStringLiteral("markdown/singleQuoteStyle"), 0);
   loadComboIndex(doubleQuoteCombo_, QStringLiteral("markdown/doubleQuoteStyle"), 0);
   loadCheck(smartDashesCheck_, QStringLiteral("markdown/smartDashes"), false);
-  loadCheck(unicodePunctCheck_, QStringLiteral("markdown/unicodePunctuation"), false);
   loadCheck(showLineNumbersCheck_, QStringLiteral("markdown/showLineNumbers"), false);
   loadCheck(codeBlockWrapCheck_, QStringLiteral("markdown/codeBlockWrap"), true);
   loadCheck(shiftTabIndentCheck_, QStringLiteral("markdown/shiftTabIndent"), false);

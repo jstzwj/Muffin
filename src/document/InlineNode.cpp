@@ -172,6 +172,20 @@ InlineNode InlineNode::highlight(QString marker, QVector<InlineNode> children) {
   return node;
 }
 
+InlineNode InlineNode::subscript(QString marker, QVector<InlineNode> children) {
+  InlineNode node(InlineType::Subscript);
+  node.setMarker(std::move(marker));
+  node.children_ = std::move(children);
+  return node;
+}
+
+InlineNode InlineNode::superscript(QString marker, QVector<InlineNode> children) {
+  InlineNode node(InlineType::Superscript);
+  node.setMarker(std::move(marker));
+  node.children_ = std::move(children);
+  return node;
+}
+
 InlineNode InlineNode::code(QString value) {
   InlineNode node(InlineType::Code);
   node.setText(std::move(value));

@@ -43,6 +43,8 @@ enum class InlineType {
   TaskMarker,
   InlineMath,
   Highlight,
+  Subscript,
+  Superscript,
   Unknown
 };
 

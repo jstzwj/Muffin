@@ -94,6 +94,69 @@ void testInlineHighlightExpansion() {
   require(expanded.displayText().contains(QStringLiteral("==")), QStringLiteral("active inline should show highlight markers"));
 }
 
+void testTrailingInlineHidesMarkersAtBlockEnd() {
+  // A trailing inline at the end of a block must NOT keep revealing its markers when the caret
+  // rests at the end of the block (= the inline's sourceEnd). The caret there has moved past the
+  // closing marker, so it should be treated as outside the inline. containsOffset used an inclusive
+  // upper bound (offset <= end), so the trailing inline stayed "active" forever and its ^/~/==
+  // markers never hid — e.g. "X^2^" with the caret at end kept showing "^". Aligning to half-open
+  // [start, end) (same as the selection overlap check) fixes it.
+  const RenderTheme theme = RenderTheme::github();
+  const QString source = QStringLiteral("X^2^");
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::text(QStringLiteral("X")));
+  inlines.push_back(InlineNode::superscript(QStringLiteral("^"), QVector<InlineNode>{InlineNode::text(QStringLiteral("2"))}));
+
+  InlineLayout::BuildOptions endCursor;
+  endCursor.projectionState.cursorSourceOffset = source.size();  // caret right after the closing ^
+  endCursor.projectionState.cursorVisibleOffset = 2;             // visible text "X2" -> end
+  InlineLayout trailing;
+  trailing.build(inlines, source, theme, 400.0, theme.paragraphFont(), endCursor);
+  require(!trailing.displayText().contains(QLatin1Char('^')),
+          QStringLiteral("trailing inline markers should hide when the caret rests at end of block: %1").arg(trailing.displayText()));
+
+  // Sanity: a caret INSIDE the same inline still reveals its markers.
+  InlineLayout::BuildOptions insideCursor;
+  insideCursor.projectionState.cursorSourceOffset = 2;  // on the "2"
+  insideCursor.projectionState.cursorVisibleOffset = 1;
+  InlineLayout inside;
+  inside.build(inlines, source, theme, 400.0, theme.paragraphFont(), insideCursor);
+  require(inside.displayText().contains(QLatin1Char('^')),
+          QStringLiteral("inline markers should reveal when the caret is inside the inline"));
+}
+
+void testHighlightPaintsBackgroundOnContent() {
+  // Guards the stateful-format fix: the highlight's yellow wash must paint over its CONTENT text,
+  // not just the hidden markers. Before the fix the background was keyed on span.type==Highlight,
+  // but content spans are emitted as Text — so nothing painted. Now it propagates via span.highlight.
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::text(QStringLiteral("before ")));
+  inlines.push_back(InlineNode::highlight(QStringLiteral("=="), QVector<InlineNode>{InlineNode::text(QStringLiteral("key"))}));
+  inlines.push_back(InlineNode::text(QStringLiteral(" after")));
+
+  const RenderTheme theme = RenderTheme::github();
+  InlineLayout layout;
+  layout.build(inlines, theme, 400.0, theme.paragraphFont());
+  require(layout.displayText() == QStringLiteral("before key after"), QStringLiteral("highlight should collapse to content text"));
+
+  QImage canvas(QSize(420, 60), QImage::Format_ARGB32);
+  canvas.fill(theme.backgroundColor());
+  QPainter painter(&canvas);
+  layout.paint(painter, QPointF(10.0, 10.0));
+  painter.end();
+
+  const QColor wash = theme.highlightBackgroundColor();
+  bool painted = false;
+  for (int y = 0; y < canvas.height() && !painted; ++y) {
+    for (int x = 0; x < canvas.width() && !painted; ++x) {
+      if (QColor(canvas.pixel(x, y)) == wash) {
+        painted = true;
+      }
+    }
+  }
+  require(painted, QStringLiteral("highlight background should paint over its content text"));
+}
+
 void testInlineProjectionContract() {
   RenderTheme theme = RenderTheme::github();
   InlineLayout::BuildOptions options;
@@ -434,6 +497,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testTableCellEscapedPipeRendersDecoded);
   RUN_TEST(testInlineMarkerExpansion);
   RUN_TEST(testInlineHighlightExpansion);
+  RUN_TEST(testTrailingInlineHidesMarkersAtBlockEnd);
+  RUN_TEST(testHighlightPaintsBackgroundOnContent);
   RUN_TEST(testInlineProjectionContract);
   RUN_TEST(testActiveLoadedImageKeepsSourceTextAndAddsPreviewSpace);
   RUN_TEST(testEntityDisplayAfterEdit);

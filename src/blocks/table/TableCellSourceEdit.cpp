@@ -126,7 +126,9 @@ qsizetype countHiddenMarkerChars(const QVector<InlineNode>& nodes, qsizetype sou
       case InlineType::Strong:
       case InlineType::Emphasis:
       case InlineType::Strikethrough:
-      case InlineType::Highlight: {
+      case InlineType::Highlight:
+      case InlineType::Subscript:
+      case InlineType::Superscript: {
         InlineRange content = toLocalRange(node.contentRange(), sourceBase);
         if (!content.isValid() || content.start < src.start || content.end > src.end) {
           const qsizetype markerLen = qMax<qsizetype>(1, node.marker().size());

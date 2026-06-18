@@ -444,11 +444,24 @@ bool BlockLayout::literalEditing() const {
   return literalEditing_;
 }
 
+void BlockLayout::setLineNumberGutterWidth(qreal width) {
+  lineNumberGutterWidth_ = width;
+}
+
+qreal BlockLayout::lineNumberGutterWidth() const {
+  return lineNumberGutterWidth_;
+}
+
 QRectF BlockLayout::literalContentRect(const RenderTheme& theme) const {
   if (type_ == BlockType::MathBlock && literalEditing_) {
     return mathEditorSourceRect(theme);
   }
-  return rect_.marginsRemoved(theme.codePadding());
+  QRectF content = rect_.marginsRemoved(theme.codePadding());
+  // Reserve a left gutter for line numbers in code fences (set at build time); 0 for other blocks.
+  if (type_ == BlockType::CodeFence && lineNumberGutterWidth_ > 0.0) {
+    content.adjust(lineNumberGutterWidth_, 0, 0, 0);
+  }
+  return content;
 }
 
 void BlockLayout::setHeadingLevel(int level) {
@@ -1068,7 +1081,14 @@ void BlockLayout::paintCodeFence(QPainter& painter, const RenderTheme& theme, QR
   painter.setPen(theme.codeBorderColor());
   painter.setBrush(theme.codeBackgroundColor());
   painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
-  paintLiteralSource(painter, theme, viewRect.marginsRemoved(theme.codePadding()), codeHighlightSpans_, codeBlockWrapEnabled());
+  // literalContentRect is document-space (rect_-based); shift it into view space the same way the
+  // caller built viewRect (rect_.translated(0, -scrollY)) so the code text lands inside the box.
+  // Without this the content painted at the document y and was invisible once the view scrolled.
+  const QRectF contentRect = literalContentRect(theme).translated(0, viewRect.top() - rect_.top());
+  if (lineNumberGutterWidth_ > 0.0) {
+    paintCodeLineNumbers(painter, theme, contentRect);
+  }
+  paintLiteralSource(painter, theme, contentRect, codeHighlightSpans_, codeBlockWrapEnabled());
   painter.restore();
 }
 
@@ -1130,6 +1150,47 @@ void BlockLayout::paintLiteralSource(QPainter& painter, const RenderTheme& theme
   }
 }
 
+void BlockLayout::paintCodeLineNumbers(QPainter& painter, const RenderTheme& theme, const QRectF& codeRect) const {
+  const QStringList lines = literal_.isEmpty() ? QStringList{QString()} : literal_.split(QLatin1Char('\n'));
+  const QFont codeFont = theme.codeFont();
+  const QFontMetricsF metrics(codeFont);
+  const qreal codeLineHeight = theme.codeLineHeight();
+  const qreal digitWidth = metrics.horizontalAdvance(QStringLiteral("8"));
+  QTextOption option;
+  option.setWrapMode(codeBlockWrapEnabled() ? QTextOption::WrapAtWordBoundaryOrAnywhere : QTextOption::NoWrap);
+
+  painter.setFont(codeFont);
+  painter.setPen(theme.mutedTextColor());
+  const qreal numRightX = codeRect.left() - 0.5 * digitWidth;
+  qreal y = codeRect.top();
+  int number = 1;
+  for (const QString& sourceLine : lines) {
+    // Mirror paintLiteralSource's per-line layout so a number stays aligned to its source line even
+    // when that line soft-wraps across multiple visual lines.
+    const QString lineText = sourceLine.isEmpty() ? QStringLiteral(" ") : sourceLine;
+    QTextLayout layout(lineText, codeFont);
+    layout.setTextOption(option);
+    layout.beginLayout();
+    qreal lineY = 0;
+    while (true) {
+      QTextLine textLine = layout.createLine();
+      if (!textLine.isValid()) {
+        break;
+      }
+      textLine.setLineWidth(qMax<qreal>(1.0, codeRect.width()));
+      const qreal visualHeight = qMax<qreal>(codeLineHeight, textLine.height());
+      textLine.setPosition(QPointF(0, lineY + (visualHeight - textLine.height()) * 0.5));
+      lineY += visualHeight;
+    }
+    layout.endLayout();
+    const qreal slotHeight = qMax<qreal>(lineY, codeLineHeight);
+    const QString num = QString::number(number++);
+    const qreal numWidth = metrics.horizontalAdvance(num);
+    painter.drawText(QRectF(numRightX - numWidth, y, numWidth, slotHeight), Qt::AlignVCenter | Qt::AlignRight, num);
+    y += slotHeight;
+  }
+}
+
 HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme) const {
   HitTestResult result;
   result.blockId = id_;
@@ -1168,7 +1229,7 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
     case BlockType::CodeFence:
       result.zone = type_ == BlockType::FrontMatter ? HitTestResult::Zone::FrontMatter : HitTestResult::Zone::Code;
       {
-        const QRectF contentRect = rect_.marginsRemoved(theme.codePadding());
+        const QRectF contentRect = literalContentRect(theme);
         result.textOffset =
             literalOffsetForPoint(literal_, documentPos - contentRect.topLeft(), theme.codeFont(), contentRect.width(), theme.codeLineHeight());
         result.cursorRect =
