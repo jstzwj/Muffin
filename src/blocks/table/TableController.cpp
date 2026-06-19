@@ -4,6 +4,7 @@
 #include "document/InlineNode.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
+#include "document/SourceRangeUtil.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
 #include "editor/SelectionController.h"
@@ -552,20 +553,55 @@ bool TableController::insertTable(int rows, int columns) {
 
   MarkdownSerializer serializer;
   const QString tableText = serializer.serializeBlock(*table);
-  const MarkdownNode* lastBlock = ctx_.session->document().root().children().empty()
-                                      ? nullptr
-                                      : ctx_.session->document().root().children().back().get();
-  const qsizetype replaceStart = lastBlock && lastBlock->sourceRange().byteStart >= 0
-                                     ? lastBlock->sourceRange().byteStart
-                                     : beforeText.size();
-  if (replaceStart < 0 || replaceStart > beforeText.size()) {
+
+  // Insert the table as a new top-level block immediately after the caret's block. A table must
+  // live at document level, so the anchor is the caret's nearest top-level ancestor — a caret
+  // inside a list / block quote / table cell inserts after the whole container rather than
+  // fragmenting the table into a nested block. With no caret or no usable span (e.g. an empty
+  // document) it falls back to the end of the document. (Previously this targeted the document's
+  // last block regardless of the caret, so the table jumped to the end whenever the caret was not
+  // already there.)
+  MarkdownDocument& document = ctx_.session->document();
+  MarkdownNode& root = document.root();
+  MarkdownNode* anchorBlock = nullptr;
+  if (ctx_.hasCursor()) {
+    const NodeId blockId = ctx_.selection->cursorPosition().blockId;
+    anchorBlock = blockId.isValid() ? document.node(blockId) : nullptr;
+    while (anchorBlock != nullptr && anchorBlock->parent() != nullptr && anchorBlock->parent() != &root) {
+      anchorBlock = anchorBlock->parent();
+    }
+  }
+
+  qsizetype insertOffset = -1;
+  int insertedNodeIndex = static_cast<int>(root.children().size());
+  if (anchorBlock != nullptr) {
+    const SourceRange span = blockLineSpan(*anchorBlock, beforeText);
+    if (span.byteStart >= 0 && span.byteEnd >= span.byteStart && span.byteEnd <= beforeText.size()) {
+      insertOffset = span.byteEnd;
+      // The table becomes the top-level sibling directly after the anchor block.
+      const auto& siblings = root.children();
+      for (std::size_t i = 0; i < siblings.size(); ++i) {
+        if (siblings[i].get() == anchorBlock) {
+          insertedNodeIndex = static_cast<int>(i) + 1;
+          break;
+        }
+      }
+    }
+  }
+  if (insertOffset < 0) {
+    insertOffset = beforeText.size();
+  }
+  if (insertOffset > beforeText.size()) {
     return false;
   }
-  const QString removedText = beforeText.mid(replaceStart);
-  const QString prefix = removedText.isEmpty() ? QString() : removedText + QStringLiteral("\n\n");
-  const QString insertedText = prefix + tableText;
-  const qsizetype tableSourceStart = replaceStart + prefix.size();
-  const int insertedNodeIndex = static_cast<int>(ctx_.session->document().root().children().size());
+
+  // Pure splice: nothing is removed, the table is inserted after the anchor block. The empty
+  // removedText keeps the undo delta a clean insertion, so undo deletes exactly the table text.
+  const qsizetype replaceStart = insertOffset;
+  const QString removedText;
+  const QString separator = insertOffset > 0 ? QStringLiteral("\n\n") : QString();
+  const QString insertedText = separator + tableText;
+  const qsizetype tableSourceStart = replaceStart + separator.size();
   int insertedTableIndex = 0;
   const auto countTables = [&](const auto& self, const MarkdownNode& node) -> void {
     if (node.type() == BlockType::Table) {

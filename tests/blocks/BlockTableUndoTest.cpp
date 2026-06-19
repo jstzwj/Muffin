@@ -130,6 +130,33 @@ void testInsertTableUndoUsesInsertNodeCommand() {
   require(controller.tableController().currentCell().isValid(), "insert table redo should restore table cursor");
 }
 
+// Regression: insertTable must splice the table in at the caret's block, not append it at the
+// end of the document. With the caret in a middle paragraph the trailing paragraph must survive
+// *after* the table, and undo must restore the original document exactly.
+void testInsertTableUsesCaretBlock() {
+  DocumentSession session;
+  EditorController controller;
+  controller.attach(&session, nullptr);
+
+  session.setMarkdownText(QStringLiteral("alpha\n\nbravo\n\ncharlie"), false);
+  MarkdownNode* bravo = blockAt(session, 1);  // the middle paragraph
+  require(bravo != nullptr, "caret block missing");
+  setCursor(controller.selection(), bravo, 2);
+
+  require(controller.tableController().insertTable(), "insert table should work");
+  const QString after = session.markdownText();
+  require(after.startsWith(QStringLiteral("alpha\n\nbravo\n\n|  |  |")), "insert table should splice after the caret block");
+  require(after.endsWith(QStringLiteral("charlie")), "insert table must not drop the trailing block");
+  require(controller.undoStack().canUndo(), "insert table should push undo");
+
+  controller.undo();
+  require(session.markdownText() == QStringLiteral("alpha\n\nbravo\n\ncharlie"), "insert table undo should restore the original document");
+
+  controller.redo();
+  require(session.markdownText().startsWith(QStringLiteral("alpha\n\nbravo\n\n|  |  |")), "insert table redo should keep the table after the caret block");
+  require(controller.tableController().currentCell().isValid(), "insert table redo should restore the table cursor");
+}
+
 // testResizeTableUndoUsesTableCommand (lines 301-333)
 void testResizeTableUndoUsesTableCommand() {
   DocumentSession session;
@@ -260,6 +287,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testTableStructureUndoUsesTableCommand);
   RUN_TEST(testTableCellTextUndoUsesTextDeltaCommand);
   RUN_TEST(testInsertTableUndoUsesInsertNodeCommand);
+  RUN_TEST(testInsertTableUsesCaretBlock);
   RUN_TEST(testResizeTableUndoUsesTableCommand);
   RUN_TEST(testDeleteTableUndoUsesRemoveNodeCommand);
   RUN_TEST(testStructuredNodeCommandModels);
