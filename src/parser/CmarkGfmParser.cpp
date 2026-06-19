@@ -1372,6 +1372,16 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
     ParsePerfTimer t("parse.demoteListMarkers");
     demotePendingListMarkers(*result.root, markdownToParse.toString());
   }
+  // cmark emits a childless BlockQuote for a `>`/`> ` line that has no following content (a
+  // blockquote the user is still typing). A blockquote is only editable through its child paragraph,
+  // so an empty one leaves the caret nowhere to land — typing `>` would drop the caret and reject
+  // the next keystroke. Fold empty blockquotes back into a Paragraph holding the marker, mirroring
+  // the lone-list demotion above; once real content follows (`> text`) cmark emits the child and the
+  // quote materialises normally.
+  {
+    ParsePerfTimer t("parse.demoteEmptyBlockQuotes");
+    demoteEmptyBlockQuotes(*result.root, markdownToParse.toString());
+  }
 
   if (frontMatterNode) {
     const int lineDelta = frontMatter.lineEnd;

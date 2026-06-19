@@ -66,6 +66,7 @@ muffin_add_test(NAME MuffinSourceEditorBackendDeleteTest SOURCE tests/app/Source
 muffin_add_test(NAME MuffinInputLiteralMergeTest       SOURCE tests/editor/InputLiteralMergeTest.cpp       LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinCodeFenceCommitCursorTest   SOURCE tests/editor/CodeFenceCommitCursorTest.cpp   LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputBlockEditingTest       SOURCE tests/editor/InputBlockEditingTest.cpp       LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinInputBlockquoteTypingTest   SOURCE tests/editor/InputBlockquoteTypingTest.cpp   LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputDefinitionHeadingTest  SOURCE tests/editor/InputDefinitionHeadingTest.cpp  LINK MuffinUi RESOURCE_LOCK)
 
 # --- block commands ---

@@ -253,6 +253,40 @@ void demotePendingListMarkers(MarkdownNode& node, const QString& markdown) {
   }
 }
 
+void demoteEmptyBlockQuoteToParagraph(const QString& markdown, MarkdownNode& node) {
+  const SourceRange range = node.sourceRange();
+  const qsizetype end = qMin(range.byteEnd, markdown.size());
+  if (range.byteStart < 0 || end <= range.byteStart) {
+    return;  // no usable source text to surface as a paragraph
+  }
+  const QString text = markdown.mid(range.byteStart, end - range.byteStart);
+  node.setType(BlockType::Paragraph);
+  node.setLiteral(QString());
+  node.setCodeLanguage(QString());
+  node.setHeadingLevel(0);
+  node.setListKind(ListKind::None);
+  node.clearChildren();
+  QVector<InlineNode> inlines;
+  InlineNode inlineNode = InlineNode::text(text);
+  inlineNode.setSourceRange(InlineRange{range.byteStart, end});
+  inlines.append(inlineNode);
+  node.inlines() = std::move(inlines);
+}
+
+void demoteEmptyBlockQuotes(MarkdownNode& node, const QString& markdown) {
+  // Recurse bottom-up so a nested quote like `> >` demotes its empty inner quote to a paragraph
+  // first; the outer quote then sees that paragraph as a child and is no longer empty, so it stays
+  // a real blockquote (BlockQuote > Paragraph ">") rather than collapsing wholesale.
+  for (const auto& child : node.children()) {
+    if (child) {
+      demoteEmptyBlockQuotes(*child, markdown);
+    }
+  }
+  if (node.type() == BlockType::BlockQuote && node.children().empty()) {
+    demoteEmptyBlockQuoteToParagraph(markdown, node);
+  }
+}
+
 QVector<qsizetype> collectPendingMarkerOffsets(const QString& markdown, const MarkdownNode& root) {
   QVector<qsizetype> offsets;
   const auto visit = [&](const auto& self, const MarkdownNode& node) -> void {

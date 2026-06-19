@@ -46,6 +46,14 @@ void demotePendingMarkerToParagraph(const QString& markdown, MarkdownNode& node)
 // cmark never hands the editor a non-editable "zombie" list whose marker lacks a space.
 void demotePendingListMarkers(MarkdownNode& root, const QString& markdown);
 
+// Demote every childless BlockQuote (a `>`/`>` + spaces line with no following content, e.g. a
+// blockquote being typed as `>` or `> ` before any text follows) back to a Paragraph holding the
+// marker as plain text, recursively. A blockquote with real content (`> text`) parses to a
+// BlockQuote with a child Paragraph and is left intact; only the empty container — which cmark
+// emits with NO child at all, so the editor has no editable block to land the caret in — is folded.
+// Applied at parse time so load and edit paths agree, mirroring demotePendingListMarkers.
+void demoteEmptyBlockQuotes(MarkdownNode& root, const QString& markdown);
+
 // Source offsets of every Paragraph whose source text is a still-incomplete block opener (`###`,
 // `*`, ``` ``` ```, `$$`, `\[`), including Paragraph nodes nested in containers. Loaded structural
 // blocks (e.g. an empty ATX heading, which is a Heading node) are excluded; only markers that are
