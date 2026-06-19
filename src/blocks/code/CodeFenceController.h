@@ -35,6 +35,11 @@ public:
   bool setLanguage(QString language);
   bool setLanguageFor(NodeId codeId, QString language);
   bool setContent(QString content);
+  // Code Tools menu helpers: copy raw content and indent/dedent by line.
+  QString currentContent() const;
+  bool indentSelection();
+  bool indentWholeBlock();
+  bool dedentWholeBlock();
   bool hasPendingTrailingNewline() const;
   void clearPendingTrailingNewline();
   QString tabText() const;
@@ -44,6 +49,10 @@ signals:
 
 private:
   bool setLanguageForCodeFence(NodeId requestedCodeId, QString language);
+  // Shared indent/dedent transform over either the selection's lines or the whole block.
+  // indent=true inserts a unit at each in-scope line start; false strips up to a unit of
+  // leading space. Selection scope requires a non-empty selection (returns false otherwise).
+  bool adjustIndent(bool indent, bool wholeBlock);
 
   LiteralBlockController literal_;
   EditorContext ctx_;

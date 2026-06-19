@@ -784,6 +784,40 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .enabled = [](const MainWindow& w) {
          return !w.backend_->isSourceMode() && (w.renderCommands_.isInCodeBlock() || w.renderCommands_.isEditingCodeBlock());
        }},
+      {.id = QStringLiteral("code.copy_content"),
+       .category = CommandCategory::Code,
+       .text = muffin::MainWindow::tr("Copy Code Block Content"),
+       .handler = [](MainWindow& window) {
+         const QString content = window.renderCommands_.codeContentAtCursor();
+         if (!content.isEmpty()) {
+           QApplication::clipboard()->setText(content);
+         }
+       },
+       .enabled = [](const MainWindow& w) { return !w.backend_->isSourceMode() && w.renderCommands_.isInCodeBlock(); }},
+      {.id = QStringLiteral("code.indent_selection"),
+       .category = CommandCategory::Code,
+       .text = muffin::MainWindow::tr("Indent Selection"),
+       .handler = [](MainWindow& window) { window.renderCommands_.indentCodeSelection(); },
+       .enabled = [](const MainWindow& w) {
+         return !w.backend_->isSourceMode() && w.renderCommands_.isInCodeBlock() && w.commandHasSelection();
+       }},
+      {.id = QStringLiteral("code.dedent_selection"),
+       .category = CommandCategory::Code,
+       .text = muffin::MainWindow::tr("Dedent Selection"),
+       .handler = [](MainWindow& window) { window.renderCommands_.dedentCodeSelection(); },
+       .enabled = [](const MainWindow& w) {
+         return !w.backend_->isSourceMode() && w.renderCommands_.isInCodeBlock() && w.commandHasSelection();
+       }},
+      {.id = QStringLiteral("code.indent_block"),
+       .category = CommandCategory::Code,
+       .text = muffin::MainWindow::tr("Indent Whole Block"),
+       .handler = [](MainWindow& window) { window.renderCommands_.indentCodeBlock(); },
+       .enabled = [](const MainWindow& w) { return !w.backend_->isSourceMode() && w.renderCommands_.isInCodeBlock(); }},
+      {.id = QStringLiteral("code.dedent_block"),
+       .category = CommandCategory::Code,
+       .text = muffin::MainWindow::tr("Dedent Whole Block"),
+       .handler = [](MainWindow& window) { window.renderCommands_.dedentCodeBlock(); },
+       .enabled = [](const MainWindow& w) { return !w.backend_->isSourceMode() && w.renderCommands_.isInCodeBlock(); }},
 
       // ---------------- HTML ----------------
       {.id = QStringLiteral("html.enter_edit"),
@@ -1649,7 +1683,17 @@ const std::vector<MenuSpec>& mainMenuSpec() {
             }},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.math_block")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.code_block")},
-           {.kind = MenuItem::Kind::PlaceholderSubmenu, .title = muffin::MainWindow::tr("Code Tools")},
+           {.kind = MenuItem::Kind::Submenu,
+            .title = muffin::MainWindow::tr("Code Tools"),
+            .children = {
+                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("code.copy_content")},
+                {.kind = MenuItem::Kind::Separator},
+                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("code.indent_selection")},
+                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("code.dedent_selection")},
+                {.kind = MenuItem::Kind::Separator},
+                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("code.indent_block")},
+                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("code.dedent_block")},
+            }},
            {.kind = MenuItem::Kind::Submenu,
             .title = muffin::MainWindow::tr("Alert"),
             .children = {

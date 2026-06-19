@@ -148,6 +148,107 @@ bool CodeFenceController::setContent(QString content) {
   return literal_.setContent(std::move(content));
 }
 
+QString CodeFenceController::currentContent() const {
+  const MarkdownNode* active = literal_.currentBlock();
+  return active ? active->literal() : QString();
+}
+
+bool CodeFenceController::indentSelection() {
+  return adjustIndent(true, false);
+}
+
+bool CodeFenceController::indentWholeBlock() {
+  return adjustIndent(true, true);
+}
+
+bool CodeFenceController::dedentWholeBlock() {
+  return adjustIndent(false, true);
+}
+
+bool CodeFenceController::adjustIndent(bool indent, bool wholeBlock) {
+  const QString label = indent
+                            ? (wholeBlock ? QStringLiteral("Indent Code Block") : QStringLiteral("Indent Code Selection"))
+                            : (wholeBlock ? QStringLiteral("Dedent Code Block") : QStringLiteral("Dedent Code Selection"));
+  return literal_.mutateCurrentBlock(label, EditTransaction::Kind::ReplaceDocumentText,
+      [this, indent, wholeBlock](MarkdownNode& node, qsizetype& offset) {
+        QString value = node.literal();
+        const qsizetype unit = codeIndentUnit();
+
+        // Selection scope requires a non-empty selection; whole-block scope spans every line.
+        qsizetype selStart = 0;
+        qsizetype selEnd = value.size();
+        if (!wholeBlock) {
+          if (!literal_.currentSelectionRange(selStart, selEnd)) {
+            return false;
+          }
+          selStart = qBound<qsizetype>(0, selStart, value.size());
+          selEnd = qBound<qsizetype>(selStart, selEnd, value.size());
+          if (selStart == selEnd) {
+            return false;
+          }
+        }
+
+        const qsizetype caret = qBound<qsizetype>(0, offset, value.size());
+
+        // Gather the start offset of each in-scope line. For a selection the first line start is
+        // the beginning of the line holding selStart, and a line counts while its start is strictly
+        // before selEnd (a selection ending exactly at a line's first column leaves that line
+        // untouched), matching typical code editors.
+        QVector<qsizetype> lineStarts;
+        qsizetype firstStart = 0;
+        if (!wholeBlock) {
+          firstStart = selStart;
+          while (firstStart > 0 && value.at(firstStart - 1) != QLatin1Char('\n')) {
+            --firstStart;
+          }
+        }
+        lineStarts.append(firstStart);
+        qsizetype scan = firstStart;
+        while (true) {
+          const int newline = value.indexOf(QLatin1Char('\n'), scan);
+          if (newline < 0) {
+            break;
+          }
+          scan = newline + 1;
+          if (!wholeBlock && scan >= selEnd) {
+            break;
+          }
+          if (scan >= value.size()) {
+            break;  // trailing newline: no further content line to transform
+          }
+          lineStarts.append(scan);
+        }
+
+        // Transform last-line-first so earlier offsets stay valid, tracking how far the caret
+        // shifts so it lands on the same column of its line.
+        qsizetype caretShift = 0;
+        for (int i = lineStarts.size() - 1; i >= 0; --i) {
+          const qsizetype start = lineStarts[i];
+          if (indent) {
+            value.insert(start, QString(unit, QLatin1Char(' ')));
+            if (caret >= start) {
+              caretShift += unit;
+            }
+          } else {
+            qsizetype spaces = 0;
+            while (start + spaces < value.size() && value.at(start + spaces) == QLatin1Char(' ') && spaces < unit) {
+              ++spaces;
+            }
+            if (spaces > 0) {
+              value.remove(start, spaces);
+              if (caret > start) {
+                caretShift -= qMin(spaces, caret - start);
+              }
+            }
+          }
+        }
+
+        node.setLiteral(value);
+        offset = qBound<qsizetype>(0, caret + caretShift, value.size());
+        return true;
+      });
+}
+
 QString CodeFenceController::tabText() const {
   // Honor markdown/codeIndent (spaces) rather than the spec's fallback "\t".
   return QString(codeIndentUnit(), QLatin1Char(' '));

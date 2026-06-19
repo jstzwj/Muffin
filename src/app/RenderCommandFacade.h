@@ -82,6 +82,11 @@ public:
   bool exitCodeEditMode();
   bool setCodeLanguage(QString language);
   bool setCodeLanguageFor(NodeId codeId, QString language);
+  QString codeContentAtCursor() const;
+  bool indentCodeSelection();
+  bool dedentCodeSelection();
+  bool indentCodeBlock();
+  bool dedentCodeBlock();
 
   bool enterHtmlEditMode();
   bool exitHtmlEditMode();

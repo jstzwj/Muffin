@@ -263,6 +263,26 @@ bool RenderCommandFacade::setCodeLanguageFor(NodeId codeId, QString language) {
   return runCommand("setCodeLanguageFor", [&] { return editorController_.codeFenceController().setLanguageFor(codeId, std::move(language)); });
 }
 
+QString RenderCommandFacade::codeContentAtCursor() const {
+  return editorController_.codeFenceController().currentContent();
+}
+
+bool RenderCommandFacade::indentCodeSelection() {
+  return runCommand("indentCodeSelection", [&] { return editorController_.codeFenceController().indentSelection(); });
+}
+
+bool RenderCommandFacade::dedentCodeSelection() {
+  return runCommand("dedentCodeSelection", [&] { return editorController_.codeFenceController().dedentSelection(); });
+}
+
+bool RenderCommandFacade::indentCodeBlock() {
+  return runCommand("indentCodeBlock", [&] { return editorController_.codeFenceController().indentWholeBlock(); });
+}
+
+bool RenderCommandFacade::dedentCodeBlock() {
+  return runCommand("dedentCodeBlock", [&] { return editorController_.codeFenceController().dedentWholeBlock(); });
+}
+
 bool RenderCommandFacade::enterHtmlEditMode() {
   return runCommand("enterHtmlEditMode", [&] { return editorController_.enterHtmlEditMode(); });
 }
