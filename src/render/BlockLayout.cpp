@@ -889,7 +889,12 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
         painter.setPen(theme.codeBorderColor());
         painter.setBrush(theme.codeBackgroundColor());
         painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
-        paintLiteralSource(painter, theme, viewRect.marginsRemoved(theme.codePadding()), codeHighlightSpans_, codeBlockWrapEnabled());
+        // HTML literal source always wraps (unlike code fences, which honour
+        // markdown/codeBlockWrap and gain a horizontal scrollbar instead). This
+        // must match the build/estimate/selection/hit-test paths, all of which
+        // treat HtmlBlock as wrap=true — otherwise the reserved height (wrapped)
+        // and the painted text (NoWrap, clipped, no scrollbar) disagree.
+        paintLiteralSource(painter, theme, viewRect.marginsRemoved(theme.codePadding()), codeHighlightSpans_, true);
         painter.restore();
       } else if (htmlLayout_ && htmlLayout_->valid()) {
         htmlLayout_->paint(painter, viewRect.marginsRemoved(theme.codePadding()).topLeft());
