@@ -29,6 +29,22 @@ Muffin is a block-level WYSIWYG Markdown editor built from the ground up in C++ 
 - **True WYSIWYG editing** — Write and edit directly on the rendered page, with the Markdown kept in sync underneath. No side-by-side preview, no render delay.
 - **Markdown as the source of truth** — Your `.md` file round-trips cleanly, and a synchronized source mode lets you drop into raw Markdown anytime with full cursor round-tripping between the two views.
 
+### How it compares
+
+Muffin is the only fully native, fully open-source WYSIWYG editor in this group — and the only one that stays responsive on very large files.
+
+| | Muffin | Typora | MarkText | Obsidian |
+|:--|:--:|:--:|:--:|:--:|
+| Core technology | C++ / Qt 6 | Electron | Electron | Electron |
+| Open source | ✅ | ❌ | ✅ | ❌ |
+| WYSIWYG | ✅ | ✅ | ✅ | ❌ |
+| Native UI | ✅ | ❌ | ❌ | ❌ |
+| Local-first | ✅ | ✅ | ✅ | ✅ |
+| Free | ✅ | Paid | ✅ | Free for personal use |
+| Large files | ✅ | ⚠️ | ⚠️ | ⚠️ |
+
+<sub>Obsidian's Live Preview blends rendered Markdown with raw syntax rather than offering true inline WYSIWYG. ⚠️ marks editors that can open very large documents but may lag while scrolling or editing.</sub>
+
 <br />
 
 ## Features
