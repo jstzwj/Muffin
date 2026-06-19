@@ -32,6 +32,10 @@ muffin_add_test(NAME MuffinRenderHtmlLayoutTest       SOURCE tests/render/Render
 muffin_add_test(NAME MuffinRenderHtmlPaintTest        SOURCE tests/render/RenderHtmlPaintTest.cpp        LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderTreeSitterTest       SOURCE tests/render/RenderTreeSitterTest.cpp       LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
 
+# --- export (link MuffinUi; pure logic under QCoreApplication, no GUI lock) ---
+muffin_add_test(NAME MuffinHtmlExporterTest   SOURCE tests/export/HtmlExporterTest.cpp   LINK MuffinUi)
+muffin_add_test(NAME MuffinPandocRunnerTest   SOURCE tests/export/PandocRunnerTest.cpp   LINK MuffinUi)
+
 # --- editor view (link MuffinUi, lock the GUI; no fixture arg) ---
 muffin_add_test(NAME MuffinEditorViewProjectionSourceTest SOURCE tests/render/EditorViewProjectionSourceTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEditorViewProjectionMappingTest SOURCE tests/render/EditorViewProjectionMappingTest.cpp LINK MuffinUi RESOURCE_LOCK)

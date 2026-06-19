@@ -447,8 +447,10 @@ void muffin::MainWindow::printDocument() {
   if (dialog.exec() != QDialog::Accepted) {
     return;
   }
+  paintDocumentToPrinter(dialog.printer());
+}
 
-  QPrinter* printer = dialog.printer();
+void muffin::MainWindow::paintDocumentToPrinter(QPrinter* printer) {
   if (!printer) {
     return;
   }

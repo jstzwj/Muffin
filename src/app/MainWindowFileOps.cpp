@@ -2,8 +2,11 @@
 
 #include "app/MarkdownSettings.h"
 #include "app/PreferencesDialog.h"
+#include "app/QuickOpenDialog.h"
 #include "app/SidebarWidget.h"
 #include "editor/EditorView.h"
+#include "export/HtmlExporter.h"
+#include "export/PandocRunner.h"
 
 #include <QAbstractItemView>
 #include <QApplication>
@@ -11,6 +14,7 @@
 #include <QDesktopServices>
 #include <QDialog>
 #include <QDir>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -19,8 +23,12 @@
 #include <QListWidgetItem>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPrinter>
 #include <QPushButton>
+#include <QSaveFile>
+#include <QSet>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QStatusBar>
 #include <QTimer>
 #include <QUrl>
@@ -345,6 +353,250 @@ void muffin::MainWindow::restoreDraft(const DraftRecovery::PendingDraft& draft) 
 
 bool muffin::MainWindow::isDocumentModified() const {
   return session_.document().isModified();
+}
+
+// ---- Quick Open -----------------------------------------------------------
+
+QStringList muffin::MainWindow::quickOpenCandidates() const {
+  QStringList candidates = recentFiles();
+
+  // When a file is open, also surface its sibling Markdown/text files so the
+  // picker doubles as a workspace switcher for the current folder.
+  const QString current = session_.filePath();
+  if (!current.isEmpty()) {
+    const QString dir = QFileInfo(current).absolutePath();
+    const QStringList entries = QDir(dir).entryList(
+        {QStringLiteral("*.md"), QStringLiteral("*.markdown"), QStringLiteral("*.mdown"), QStringLiteral("*.txt")},
+        QDir::Files, QDir::Name);
+    QSet<QString> seen;
+    for (const QString& path : candidates) {
+      seen.insert(QFileInfo(path).absoluteFilePath());
+    }
+    const QString currentAbs = QFileInfo(current).absoluteFilePath();
+    seen.insert(currentAbs);
+    for (const QString& entry : entries) {
+      const QString abs = QDir(dir).absoluteFilePath(entry);
+      if (!seen.contains(abs)) {
+        seen.insert(abs);
+        candidates.append(abs);
+      }
+    }
+  }
+  return candidates;
+}
+
+void muffin::MainWindow::quickOpen() {
+  const QStringList candidates = quickOpenCandidates();
+  if (candidates.isEmpty()) {
+    statusBar()->showMessage(tr("No files to open"), 4000);
+    return;
+  }
+  QuickOpenDialog dialog(this);
+  dialog.setCandidates(candidates);
+  if (dialog.exec() == QDialog::Accepted) {
+    const QString path = dialog.selectedPath();
+    if (!path.isEmpty()) {
+      openFile(path);
+    }
+  }
+}
+
+// ---- Import (Pandoc → markdown) -------------------------------------------
+
+void muffin::MainWindow::importFile() {
+  const QString dir = session_.filePath().isEmpty() ? QString() : QFileInfo(session_.filePath()).absolutePath();
+  const QString sourcePath = QFileDialog::getOpenFileName(
+      this, tr("Import"), dir,
+      tr("Word (*.docx);;OpenDocument (*.odt);;RTF (*.rtf);;EPUB (*.epub);;HTML (*.html *.htm);;"
+         "LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawini);;reStructuredText (*.rst);;"
+         "Textile (*.textile);;OPML (*.opml);;All files (*)"));
+  if (sourcePath.isEmpty()) {
+    return;
+  }
+
+  if (!PandocRunner::isAvailable()) {
+    QMessageBox::warning(
+        this, tr("Import Failed"),
+        tr("Pandoc was not found. Install Pandoc or set its path in Preferences → Export."));
+    return;
+  }
+
+  statusBar()->showMessage(tr("Importing %1…").arg(QFileInfo(sourcePath).fileName()), 0);
+  // Pandoc infers the input format from the file extension; GFM output matches
+  // Muffin's cmark-gfm parser best.
+  const PandocResult result =
+      PandocRunner::run(this, {QStringLiteral("-t"), QStringLiteral("gfm"), sourcePath});
+  statusBar()->clearMessage();
+  if (result.canceled) {
+    return;
+  }
+  if (!result.ran || result.exitCode != 0) {
+    QMessageBox::critical(this, tr("Import Failed"),
+                          tr("Pandoc could not convert the file.") + QStringLiteral("\n\n") +
+                              QString::fromUtf8(result.err));
+    return;
+  }
+
+  fileController_.newFile(session_, this);  // confirms discarding unsaved work first
+  editorController_.clearHistoryAndSelection();
+  session_.setMarkdownText(QString::fromUtf8(result.out), true);  // imported content is unsaved
+  statusBar()->showMessage(tr("Imported %1").arg(QFileInfo(sourcePath).fileName()), 4000);
+}
+
+// ---- Export ---------------------------------------------------------------
+
+namespace {
+
+// Per-format file extension. PDF/HTML are native; the rest are Pandoc outputs.
+QString exportExtension(muffin::ExportFormat format) {
+  switch (format) {
+    case muffin::ExportFormat::Pdf: return QStringLiteral(".pdf");
+    case muffin::ExportFormat::Html:
+    case muffin::ExportFormat::HtmlPlain: return QStringLiteral(".html");
+    case muffin::ExportFormat::Docx: return QStringLiteral(".docx");
+    case muffin::ExportFormat::Odt: return QStringLiteral(".odt");
+    case muffin::ExportFormat::Rtf: return QStringLiteral(".rtf");
+    case muffin::ExportFormat::Epub: return QStringLiteral(".epub");
+    case muffin::ExportFormat::Latex: return QStringLiteral(".tex");
+    case muffin::ExportFormat::MediaWiki: return QStringLiteral(".wiki");
+    case muffin::ExportFormat::Rst: return QStringLiteral(".rst");
+    case muffin::ExportFormat::Textile: return QStringLiteral(".textile");
+    case muffin::ExportFormat::Opml: return QStringLiteral(".opml");
+  }
+  return QStringLiteral(".txt");
+}
+
+// Pandoc writer id for the Pandoc-backed formats.
+QString exportPandocWriter(muffin::ExportFormat format) {
+  switch (format) {
+    case muffin::ExportFormat::Docx: return QStringLiteral("docx");
+    case muffin::ExportFormat::Odt: return QStringLiteral("odt");
+    case muffin::ExportFormat::Rtf: return QStringLiteral("rtf");
+    case muffin::ExportFormat::Epub: return QStringLiteral("epub");
+    case muffin::ExportFormat::Latex: return QStringLiteral("latex");
+    case muffin::ExportFormat::MediaWiki: return QStringLiteral("mediawiki");
+    case muffin::ExportFormat::Rst: return QStringLiteral("rst");
+    case muffin::ExportFormat::Textile: return QStringLiteral("textile");
+    case muffin::ExportFormat::Opml: return QStringLiteral("opml");
+    default: return QStringLiteral("markdown");
+  }
+}
+
+// Resolves the suggested destination directory from export/defaultFolder:
+// 0 Auto / 1 Same folder → the source file's folder (Documents if untitled);
+// 2 Custom → the last-used custom folder (export/lastCustomFolder).
+QString exportSuggestedDir(const QString& sourcePath) {
+  QSettings settings;
+  const QString documents = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+  const int mode = settings.value(QStringLiteral("export/defaultFolder"), 0).toInt();
+  const QString sourceDir = sourcePath.isEmpty() ? QString() : QFileInfo(sourcePath).absolutePath();
+  switch (mode) {
+    case 2:
+      return settings.value(QStringLiteral("export/lastCustomFolder"), documents).toString();
+    case 1:
+      return sourceDir.isEmpty() ? documents : sourceDir;
+    case 0:
+    default:
+      return sourceDir.isEmpty() ? documents : sourceDir;
+  }
+}
+
+// Writes bytes verbatim (no trailing-newline / line-ending transforms, unlike
+// FileController::writeTextFile) via an atomic QSaveFile.
+bool writeExportBytes(const QString& path, const QByteArray& bytes, QString* error) {
+  QSaveFile file(path);
+  if (!file.open(QIODevice::WriteOnly)) {
+    if (error) {
+      *error = file.errorString();
+    }
+    return false;
+  }
+  if (file.write(bytes) != bytes.size() || !file.commit()) {
+    if (error) {
+      *error = file.errorString();
+    }
+    return false;
+  }
+  return true;
+}
+
+}  // namespace
+
+void muffin::MainWindow::exportAs(ExportFormat format) {
+  const QString markdown = session_.markdownText();
+  if (markdown.trimmed().isEmpty()) {
+    statusBar()->showMessage(tr("Nothing to export"), 4000);
+    return;
+  }
+
+  const QString sourcePath = session_.filePath();
+  const QString baseName = sourcePath.isEmpty() ? tr("Untitled") : QFileInfo(sourcePath).completeBaseName();
+  const QString ext = exportExtension(format);
+  const QString suggestedPath = QDir(exportSuggestedDir(sourcePath)).absoluteFilePath(baseName + ext);
+
+  const QString target =
+      QFileDialog::getSaveFileName(this, tr("Export As"), suggestedPath, tr("%1 files (*%2)").arg(baseName, ext));
+  if (target.isEmpty()) {
+    return;
+  }
+
+  // Remember the chosen folder in Custom mode so the next export reopens there.
+  QSettings settings;
+  if (settings.value(QStringLiteral("export/defaultFolder"), 0).toInt() == 2) {
+    settings.setValue(QStringLiteral("export/lastCustomFolder"), QFileInfo(target).absolutePath());
+  }
+
+  bool ok = false;
+  QString error;
+  switch (format) {
+    case ExportFormat::Pdf: {
+      QPrinter printer;
+      printer.setOutputFormat(QPrinter::PdfFormat);
+      printer.setOutputFileName(target);
+      paintDocumentToPrinter(&printer);
+      ok = true;
+      break;
+    }
+    case ExportFormat::Html:
+    case ExportFormat::HtmlPlain: {
+      const QString html = muffin::renderDocumentHtml(markdown, baseName, format == ExportFormat::Html);
+      ok = writeExportBytes(target, html.toUtf8(), &error);
+      break;
+    }
+    default: {
+      if (!PandocRunner::isAvailable()) {
+        error = tr("Pandoc was not found. Install Pandoc or set its path in Preferences → Export.");
+        break;
+      }
+      statusBar()->showMessage(tr("Exporting %1…").arg(baseName + ext), 0);
+      const PandocResult result = PandocRunner::run(
+          this, {QStringLiteral("-f"), QStringLiteral("gfm"), QStringLiteral("-t"), exportPandocWriter(format),
+                 QStringLiteral("-o"), target},
+          markdown.toUtf8());
+      statusBar()->clearMessage();
+      if (result.canceled) {
+        QFile::remove(target);  // drop partial output
+        return;
+      }
+      if (result.ran && result.exitCode == 0) {
+        ok = true;
+      } else {
+        QFile::remove(target);
+        error = tr("Pandoc failed:") + QStringLiteral("\n\n") + QString::fromUtf8(result.err);
+      }
+      break;
+    }
+  }
+
+  if (!ok) {
+    QMessageBox::critical(this, tr("Export Failed"), error);
+    return;
+  }
+
+  statusBar()->showMessage(tr("Exported to %1").arg(QDir::toNativeSeparators(target)), 6000);
+  if (settings.value(QStringLiteral("export/openAfterExport"), false).toBool()) {
+    QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(target).absolutePath()));
+  }
 }
 
 void muffin::MainWindow::buildReopenEncodingMenu() {

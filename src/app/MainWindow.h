@@ -10,6 +10,7 @@
 #include "editor/EmojiProvider.h"
 #include "io/FileController.h"
 #include "app/DraftRecovery.h"
+#include "export/ExportFormat.h"
 #include "theme/ThemeManager.h"
 
 #include <QHash>
@@ -19,6 +20,7 @@
 
 class QLabel;
 class QMenu;
+class QPrinter;
 class QActionGroup;
 class QTimer;
 class QSplitter;
@@ -178,6 +180,19 @@ private:
   void showDocumentProperties();
   void showPreferences();
   void printDocument();
+  // File → Quick Open (Ctrl+P): pick from recent files plus the current file's
+  // sibling Markdown files.
+  void quickOpen();
+  QStringList quickOpenCandidates() const;
+  // File → Import: convert a foreign format to markdown via Pandoc and load it
+  // into a new untitled document.
+  void importFile();
+  // File → Export: write the document to a file in the given format (native PDF
+  // / HTML, or Pandoc-driven for the rest).
+  void exportAs(ExportFormat format);
+  // Paints the laid-out document onto a printer (shared by Print and PDF
+  // export). Extracted from printDocument so PDF export can reuse it.
+  void paintDocumentToPrinter(QPrinter* printer);
   void revealCurrentFile();
   bool maybeSaveChanges();
   void reopenWithEncoding(const QString& encodingName);

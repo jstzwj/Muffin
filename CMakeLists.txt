@@ -118,6 +118,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/MainWindowFind.cpp
   src/app/PreferencesDialog.cpp
   src/app/HelpViewerDialog.cpp
+  src/app/QuickOpenDialog.cpp
   src/app/PreferencesPage.cpp
   src/app/PrefsFilesPage.cpp
   src/app/PrefsEditorPage.cpp
@@ -533,6 +534,9 @@ add_executable(Muffin
   src/app/PreferencesDialog.h
   src/app/HelpViewerDialog.cpp
   src/app/HelpViewerDialog.h
+  src/app/QuickOpenDialog.cpp
+  src/app/QuickOpenDialog.h
+  src/export/ExportFormat.h
   src/app/RenderCommandFacade.cpp
   src/app/RenderCommandFacade.h
   src/app/PreferencesPage.cpp
@@ -567,6 +571,10 @@ set(MUFFIN_UI_SOURCES
   src/projection/InlineProjection.h
   src/projection/SelectionSerializer.cpp
   src/projection/SelectionSerializer.h
+  src/export/HtmlExporter.cpp
+  src/export/HtmlExporter.h
+  src/export/PandocRunner.cpp
+  src/export/PandocRunner.h
   src/blocks/code/CodeFenceController.cpp
   src/blocks/code/CodeFenceController.h
   src/blocks/code/CodeFenceScrollController.cpp
