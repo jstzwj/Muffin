@@ -5,6 +5,32 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.8] - 2026-06-20
+
+### Added
+- **Quick Open** - Fuzzy file opener for the workspace folder, surfacing recently used and recently modified files for fast switching
+- **Multi-format export** - File → Export to PDF (native renderer), HTML and plain HTML (native serializer), plus Word, ODT, RTF, ePub, LaTeX, MediaWiki, RST, Textile, and OPML via an external Pandoc process
+- **Import via Pandoc** - Convert documents from other formats into Markdown through File → Import
+- **File operations** - Move, delete, reveal in file manager, reopen-with-encoding, save-all-open-files, and show-in-sidebar commands for the current file
+- **Image insertion policy** - A centralized system unifying image insertion across paste, dialog, and drag-and-drop with six Typora-style actions (no action, copy to `./`, copy to `./assets`, copy to `./$(filename).assets`, upload, copy to a custom folder), honoring front-matter upload overrides and configurable relative-path, leading-slash, and URL-escaping formatting
+- **Custom-command image upload** - Upload images via a configurable external command (a second QProcess subsystem), parsing the returned stdout lines as image URLs
+- **Bundled PNG and JPEG decoders** - PNG and JPEG are now decoded by bundled static libpng and libjpeg instead of Qt's image plugins, so images load reliably even in Qt builds shipped without `qjpeg`/`qpng`
+- **Custom-drawn status bar** - A fully self-painted status bar themed from the active render theme, with a click-to-open document statistics popup (words, characters, lines, reading time, and selection count) and an inline spell-check language quick-switcher
+- **Code block indent, dedent, and copy-content commands** - Code Tools actions to indent or dedent a selection or the whole block by line, and copy the raw block content
+- **Refreshed About description** - Updated the Help → About blurb to accurately reflect the current feature set
+
+### Changed
+- **Chrome font hinting** - UI text (menus, status bar, dialogs) now uses vertical-stroke hinting for smoother anti-aliasing, bringing the rendered chrome closer to native application text
+- **Code block indent logic** - Refactored code-block indent handling and removed the Shift+Tab indent configuration
+- **Image copy command IDs** - Unified the image copy command id naming
+
+### Fixed
+- **HTML block source view wrapping** - Clicking an HTML block to edit its source once again soft-wraps the source text; a regression had tied it to the "Code Blocks Auto Wrap" setting, causing the reserved layout height (wrapped) to disagree with the painted text (clipped, non-scrolling overflow)
+- **Local JPEG and PNG images** - Markdown and HTML images referencing local `.jpg`/`.png` files now render reliably regardless of Qt's image-plugin availability
+- **HTML `<img>` with Windows drive-letter paths** - `<img src="C:/...">` is no longer rejected as an unsafe URL scheme by the sanitizer
+- **Paste Plain command** - The Paste Plain action is no longer permanently disabled
+- **Image menu** - Removed a duplicate "Copy Image" menu mount and enabled the image global-settings command
+
 ## [0.2.7] - 2026-06-19
 
 ### Added
@@ -325,6 +351,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.2.8]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.8
 [0.2.7]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.7
 [0.2.6]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.6
 [0.2.5]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.5
