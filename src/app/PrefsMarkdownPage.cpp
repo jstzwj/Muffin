@@ -150,7 +150,6 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   showLineNumbersCheck_ = new QCheckBox(codeCard);
   codeBlockWrapCheck_ = new QCheckBox(codeCard);
   codeBlockWrapCheck_->setChecked(true);
-  shiftTabIndentCheck_ = new QCheckBox(codeCard);
 
   auto* indentRow = new QHBoxLayout();
   indentRow->setSpacing(16);
@@ -183,7 +182,6 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   codeLayout->addSpacing(2);
   codeLayout->addWidget(showLineNumbersCheck_);
   codeLayout->addWidget(codeBlockWrapCheck_);
-  codeLayout->addWidget(shiftTabIndentCheck_);
   codeLayout->addLayout(indentRow);
   codeLayout->addLayout(langRow);
   codeLayout->addLayout(autoLangRow);
@@ -213,7 +211,6 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   wireBoolSetting(smartDashesCheck_, QStringLiteral("markdown/smartDashes"));
   wireBoolSetting(showLineNumbersCheck_, QStringLiteral("markdown/showLineNumbers"));
   wireBoolSetting(codeBlockWrapCheck_, QStringLiteral("markdown/codeBlockWrap"));
-  wireBoolSetting(shiftTabIndentCheck_, QStringLiteral("markdown/shiftTabIndent"));
   wireComboIndexSetting(codeIndentCombo_, QStringLiteral("markdown/codeIndent"));
   wireComboIndexSetting(defaultLangCombo_, QStringLiteral("markdown/defaultCodeLang"));
   wireComboIndexSetting(autoLangCombo_, QStringLiteral("markdown/autoCodeLang"));
@@ -268,7 +265,6 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
   codeBlockLabel_->setText(tr("Code Blocks"));
   showLineNumbersCheck_->setText(tr("Show Line Numbers"));
   codeBlockWrapCheck_->setText(tr("Code Blocks Auto Wrap"));
-  shiftTabIndentCheck_->setText(tr("Use Shift+Tab to auto adjust indent of selected code"));
   codeIndentLabel_->setText(tr("Code Indent"));
   rebuildCombo(codeIndentCombo_, {QStringLiteral("2"), QStringLiteral("4"), QStringLiteral("8")});
   defaultLangLabel_->setText(tr("Default Code Block Language"));
@@ -296,7 +292,6 @@ void muffin::PrefsMarkdownPage::loadSettings() {
   loadCheck(smartDashesCheck_, QStringLiteral("markdown/smartDashes"), false);
   loadCheck(showLineNumbersCheck_, QStringLiteral("markdown/showLineNumbers"), false);
   loadCheck(codeBlockWrapCheck_, QStringLiteral("markdown/codeBlockWrap"), true);
-  loadCheck(shiftTabIndentCheck_, QStringLiteral("markdown/shiftTabIndent"), false);
   loadComboIndex(codeIndentCombo_, QStringLiteral("markdown/codeIndent"), 1);
   loadComboIndex(defaultLangCombo_, QStringLiteral("markdown/defaultCodeLang"), 0);
   loadComboIndex(autoLangCombo_, QStringLiteral("markdown/autoCodeLang"), 0);

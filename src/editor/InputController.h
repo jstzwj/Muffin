@@ -83,9 +83,9 @@ private:
   bool hasActiveLiteralEditor() const;
   void syncLiteralEditMode(NodeId newBlockId);
   bool insertTextIntoActiveLiteral(QString text);
-  // Shift+Tab inside a code fence: when markdown/shiftTabIndent is on and there is a selection,
-  // dedents each selected line by one indent unit. Returns true if it handled the keystroke; false
-  // to fall back to inserting a tab.
+  // Shift+Tab inside a code fence: dedents the selected lines (or the caret's line when there is
+  // no selection) by one indent unit. Returns true if it handled the keystroke; false to fall back
+  // to inserting a tab.
   bool tryDedentActiveCodeFence();
   bool tryInsertOptionalDefinitionTitle(QString text);
   // Auto-pair / wrap-selection / skip-over for a single typed character, gated by the

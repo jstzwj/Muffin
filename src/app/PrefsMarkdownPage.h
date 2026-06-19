@@ -54,7 +54,6 @@ private:
   QLabel* codeBlockLabel_ = nullptr;
   QCheckBox* showLineNumbersCheck_ = nullptr;
   QCheckBox* codeBlockWrapCheck_ = nullptr;
-  QCheckBox* shiftTabIndentCheck_ = nullptr;
   QLabel* codeIndentLabel_ = nullptr;
   QComboBox* codeIndentCombo_ = nullptr;
   QLabel* defaultLangLabel_ = nullptr;

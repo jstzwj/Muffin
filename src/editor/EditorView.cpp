@@ -1332,7 +1332,10 @@ void EditorView::paintSelection(QPainter& painter) const {
           start = block->type() == BlockType::Table ? 0 : selection_.focus.text.textOffset;
         }
       }
-      paintSelectionRectsForBlock(painter, block, block->selectionRectsForOffsets(start, end, theme_));
+      // Self-only rects: blocksBetween already lists every block (containers and descendants) once,
+      // so we must NOT recurse here — recursing would repaint each nested item once per owning
+      // ancestor (a darker double-highlighted band) and smear this block's offsets onto its children.
+      paintSelectionRectsForBlock(painter, block, block->selectionRectsSelfForOffsets(start, end, theme_));
     }
   }
   painter.restore();

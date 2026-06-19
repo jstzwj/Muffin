@@ -54,12 +54,6 @@ bool smartDashesEnabled() {
   return QSettings().value(QStringLiteral("markdown/smartDashes"), false).toBool();
 }
 
-// markdown/shiftTabIndent: when on, Shift+Tab inside a code fence dedents each selected line by one
-// indent unit instead of inserting a tab. Default off preserves the legacy insert-tab behavior.
-bool shiftTabDedentEnabled() {
-  return QSettings().value(QStringLiteral("markdown/shiftTabIndent"), false).toBool();
-}
-
 // Style 0 = curly (convert), 1 = straight (leave as-is).
 int singleQuoteStyleIndex() {
   return qBound(0, QSettings().value(QStringLiteral("markdown/singleQuoteStyle"), 0).toInt(), 1);
@@ -944,9 +938,6 @@ bool InputController::insertTextIntoActiveLiteral(QString text) {
 }
 
 bool InputController::tryDedentActiveCodeFence() {
-  if (!shiftTabDedentEnabled()) {
-    return false;
-  }
   if (!codeFenceController_ || !codeFenceController_->isEditing()) {
     return false;
   }
@@ -1517,6 +1508,11 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
     case Qt::Key_Tab:
       if (hasActiveLiteralEditor()) {
         if (event->modifiers().testFlag(Qt::ShiftModifier) && tryDedentActiveCodeFence()) {
+          return true;
+        }
+        // Tab with a selection in a code fence indents the selected lines (symmetric to
+        // Shift+Tab); a bare Tab inserts a single indent unit at the caret.
+        if (codeFenceController_ && codeFenceController_->isEditing() && codeFenceController_->indentSelection()) {
           return true;
         }
         return insertTextIntoActiveLiteral(activeLiteralTabText());

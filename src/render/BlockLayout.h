@@ -178,6 +178,14 @@ public:
                         const CodeFenceScrollController* scroll = nullptr) const;
   QVector<QRectF> selectionRects(const SelectionRange& selection, const RenderTheme& theme) const;
   QVector<QRectF> selectionRectsForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
+  // Selection rects for THIS block's own content within [startOffset, endOffset] only — does NOT
+  // descend into children. Use this (not the recursive selectionRectsForOffsets) when painting a
+  // pre-flattened block list (e.g. the result of blocksBetween): that list already contains every
+  // descendant once, so recursing here would repaint each descendant once per owning ancestor
+  // (visible as a darker, double-highlighted band) and would smear the ancestor's offsets onto the
+  // descendant's text. Containers (List / BlockQuote / nested List) have no own content and return
+  // nothing, exactly as wanted — their content is painted by their own child entries.
+  QVector<QRectF> selectionRectsSelfForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
 
 private:
   void paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll) const;
@@ -185,7 +193,6 @@ private:
   HitTestResult hitSelf(QPointF documentPos, const RenderTheme& theme, const CodeFenceScrollController* scroll) const;
   HitTestResult hitTable(QPointF documentPos, const RenderTheme& theme) const;
   QVector<QRectF> selectionRectsSelf(const SelectionRange& selection, const RenderTheme& theme) const;
-  QVector<QRectF> selectionRectsSelfForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
   QVector<QRectF> literalSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
   QRectF mathEditorSourceRect(const RenderTheme& theme) const;
   QRectF mathPreviewContentRect(const RenderTheme& theme) const;

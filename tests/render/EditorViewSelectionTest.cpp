@@ -1,5 +1,8 @@
 #include "EditorViewTestUtils.h"
 
+#include "editor/EditorViewGeometry.h"
+#include "render/DocumentLayout.h"
+
 using namespace muffin;
 
 void testEditorViewHitTestActivatesInlineSourceEditing() {
@@ -399,6 +402,137 @@ void testEditorViewDragFromTrailingParagraphSelectsBack() {
           "trailing drag should select from alpha offset 2 through the end of beta");
 }
 
+// Regression: dragging UP from a nested list item to before its parent list item painted NOTHING,
+// while the forward drag highlighted fine. The parent and the nested item share one top-level List
+// slot (topLevelIndexFor returns the same index for both), so the old blocksBetween walk — which
+// assumed it reached the start endpoint before the end one — met the focus (parent, above) before
+// the anchor (nested, below), collected nothing, and paintSelection drew zero rects. blocksBetween
+// is now direction-independent, so the same blocks must come back either way.
+void testEditorViewBackwardNestedSelectionCoversBothBlocks() {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("- Third item\n  - Nested item\n  - Another nested item"), false);
+
+  MarkdownNode* list = blockAt(session, 0);
+  require(list != nullptr && list->type() == BlockType::List, "fixture should parse as one top-level list");
+  MarkdownNode* thirdItem = childAt(list, 0);
+  require(thirdItem != nullptr && thirdItem->type() == BlockType::ListItem, "first list item should exist");
+  const NodeId thirdId = thirdItem->id();
+
+  // Locate the nested list item (a ListItem nested inside thirdItem, i.e. not thirdItem itself),
+  // walking whatever intermediate Paragraph/nested-List nodes cmark inserts.
+  NodeId nestedId;
+  const auto findNestedItem = [&](const auto& self, const MarkdownNode& node) -> void {
+    if (nestedId.isValid()) {
+      return;
+    }
+    for (const auto& child : node.children()) {
+      if (child->type() == BlockType::ListItem && child->id() != thirdId) {
+        nestedId = child->id();
+        return;
+      }
+      self(self, *child);
+    }
+  };
+  findNestedItem(findNestedItem, *thirdItem);
+  require(nestedId.isValid(), "fixture should contain a nested list item");
+  require(nestedId != thirdId, "nested item must differ from its parent");
+
+  DocumentLayout layout;
+  layout.rebuild(session.document(), RenderTheme::defaultTheme(), 1000.0);
+  require(layout.topLevelIndexFor(thirdId) == layout.topLevelIndexFor(nestedId),
+          "parent and nested item must share one top-level List slot");
+  require(layout.topLevelIndexFor(thirdId) >= 0, "list slot should be built");
+
+  const QVector<const BlockLayout*> forward = editor_geometry::blocksBetween(layout, thirdId, nestedId);
+  const QVector<const BlockLayout*> backward = editor_geometry::blocksBetween(layout, nestedId, thirdId);
+  require(!forward.isEmpty() && !backward.isEmpty(), "a same-slot selection must cover blocks in both directions");
+  require(backward.size() == forward.size(), "backward drag must cover exactly the same blocks as forward");
+
+  bool forwardHasThird = false, forwardHasNested = false;
+  bool backwardHasThird = false, backwardHasNested = false;
+  for (const BlockLayout* block : forward) {
+    if (block->nodeId() == thirdId) forwardHasThird = true;
+    if (block->nodeId() == nestedId) forwardHasNested = true;
+  }
+  for (const BlockLayout* block : backward) {
+    if (block->nodeId() == thirdId) backwardHasThird = true;
+    if (block->nodeId() == nestedId) backwardHasNested = true;
+  }
+  require(forwardHasThird && forwardHasNested, "forward selection must span both endpoints");
+  require(backwardHasThird && backwardHasNested, "backward selection must span both endpoints");
+
+  require(editor_geometry::blockComesBefore(layout, thirdId, nestedId), "parent should precede the nested item");
+  require(!editor_geometry::blockComesBefore(layout, nestedId, thirdId), "nested item should not precede its parent");
+}
+
+// Regression for the double-highlight that surfaced once backward nested-list selection started
+// painting. paintSelection iterated the blocksBetween list — which contains a list item AND its
+// nested descendants — and called the RECURSIVE selectionRectsForOffsets on each entry, so every
+// nested item was painted once by its own entry and again by each owning ancestor's recursion: a
+// darker, double-painted band. The fix paints each block's OWN content only
+// (selectionRectsSelfForOffsets). This pins the primitive: the parent's own selection rects stay in
+// the parent's text row and never reach the nested item, whereas the recursive variant does reach
+// it — which is exactly why it must not be used over a pre-flattened block list.
+void testListItemOwnSelectionRectsDoNotLeakToNested() {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("- Third item\n  - Nested item\n  - Another nested item"), false);
+
+  MarkdownNode* list = blockAt(session, 0);
+  require(list != nullptr && list->type() == BlockType::List, "fixture should parse as one top-level list");
+  MarkdownNode* thirdItem = childAt(list, 0);
+  const NodeId thirdId = thirdItem->id();
+
+  NodeId nestedId;
+  const auto findNestedItem = [&](const auto& self, const MarkdownNode& node) -> void {
+    if (nestedId.isValid()) {
+      return;
+    }
+    for (const auto& child : node.children()) {
+      if (child->type() == BlockType::ListItem && child->id() != thirdId) {
+        nestedId = child->id();
+        return;
+      }
+      self(self, *child);
+    }
+  };
+  findNestedItem(findNestedItem, *thirdItem);
+  require(nestedId.isValid(), "fixture should contain a nested list item");
+
+  DocumentLayout layout;
+  const RenderTheme theme = RenderTheme::defaultTheme();
+  layout.rebuild(session.document(), theme, 1000.0);
+  const BlockLayout* thirdBlock = layout.block(thirdId);
+  const BlockLayout* nestedBlock = layout.block(nestedId);
+  require(thirdBlock != nullptr && nestedBlock != nullptr, "both list items should be laid out");
+  require(thirdBlock->inlineLayout() != nullptr && nestedBlock->inlineLayout() != nullptr, "both items should have inline layouts");
+
+  const qreal thirdTop = thirdBlock->rect().top();
+  const qreal thirdTextBottom = thirdTop + thirdBlock->inlineLayout()->height();
+  const qreal nestedTop = nestedBlock->rect().top();
+  require(nestedTop >= thirdTextBottom - 1.0, "nested item should lay out below its parent's own text row");
+
+  const qsizetype thirdLen = thirdBlock->inlineLayout()->plainText().size();
+  const QVector<QRectF> ownRects = thirdBlock->selectionRectsSelfForOffsets(0, thirdLen, theme);
+  require(!ownRects.isEmpty(), "parent own selection should produce rects");
+  for (const QRectF& r : ownRects) {
+    require(r.bottom() <= thirdTextBottom + 1.0,
+            "self-only selection rects must stay in the parent's own text row (no descendant leak)");
+  }
+
+  // The recursive variant DOES descend into children — this is the call that double-painted when
+  // used over the flattened list, and the reason paintSelection now uses the self-only form.
+  const QVector<QRectF> recursiveRects = thirdBlock->selectionRectsForOffsets(0, thirdLen, theme);
+  require(recursiveRects.size() > ownRects.size(), "recursive selection must descend into nested children");
+  bool reachedNestedRow = false;
+  for (const QRectF& r : recursiveRects) {
+    if (r.top() >= nestedTop - 1.0) {
+      reachedNestedRow = true;
+      break;
+    }
+  }
+  require(reachedNestedRow, "recursive selection must reach the nested item's row (the leak the self-only fix removes)");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -412,6 +546,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testEditorViewDragSelectionContinuesAcrossMoves);
   RUN_TEST(testEditorViewVerticalDragSelectionHitsWrappedLine);
   RUN_TEST(testEditorViewDragFromTrailingParagraphSelectsBack);
+  RUN_TEST(testEditorViewBackwardNestedSelectionCoversBothBlocks);
+  RUN_TEST(testListItemOwnSelectionRectsDoNotLeakToNested);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

@@ -48,11 +48,16 @@ signals:
   void codeCommandRejected(QString reason);
 
 private:
+  enum class IndentScope {
+    Selection,        // the selected lines; requires a non-empty selection
+    SelectionOrLine,  // selected lines, or the caret's line when nothing is selected
+    WholeBlock,       // every line in the block
+  };
   bool setLanguageForCodeFence(NodeId requestedCodeId, QString language);
-  // Shared indent/dedent transform over either the selection's lines or the whole block.
-  // indent=true inserts a unit at each in-scope line start; false strips up to a unit of
-  // leading space. Selection scope requires a non-empty selection (returns false otherwise).
-  bool adjustIndent(bool indent, bool wholeBlock);
+  // Shared indent/dedent transform. indent=true inserts a unit at each in-scope line start;
+  // false strips up to a unit of leading space. Returns false only when Selection scope has no
+  // selection, so callers (e.g. Tab) can fall back to inserting an indent unit.
+  bool adjustIndent(bool indent, IndentScope scope);
 
   LiteralBlockController literal_;
   EditorContext ctx_;

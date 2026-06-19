@@ -342,46 +342,57 @@ QVector<const BlockLayout*> blocksBetween(const DocumentLayout& layout, NodeId f
     return result;
   }
 
-  NodeId startId = first;
-  NodeId endId = last;
-  qsizetype startIdx = firstIdx;
-  qsizetype endIdx = lastIdx;
-  if (firstIdx > lastIdx) {
-    qSwap(startIdx, endIdx);
-    qSwap(startId, endId);
-  }
-
-  // Collect promoted top-level blocks (and their nested children) between the endpoints. Un-promoted
-  // (offscreen) blocks are skipped — their selection rects are not visible anyway under the lazy layout.
-  bool collecting = false;
-  const auto collect = [&](const auto& self, const BlockLayout& block) -> void {
-    if (block.nodeId() == startId) {
-      collecting = true;
+  // Flatten the slot range in document (preorder) order, recording where each endpoint falls, then
+  // slice the inclusive range between them. This is direction-independent, so a *backward* drag —
+  // anchor below the focus yet sharing one top-level slot (e.g. a nested list item and its parent
+  // list item, for which topLevelIndexFor returns the same List-slot index) — yields the same block
+  // set as the forward drag. The previous start/end-driven walk assumed it reached the start endpoint
+  // before the end one; when a backward selection put the end first it collected nothing, so neither
+  // paintSelection nor the right-click in-selection check drew or recognised the span. Un-promoted
+  // (offscreen) slots are still skipped — only promoted slot roots and their built descendants are
+  // visited — matching the old behaviour under lazy layout.
+  const qsizetype startSlot = qMin(firstIdx, lastIdx);
+  const qsizetype endSlot = qMax(firstIdx, lastIdx);
+  QVector<const BlockLayout*> flat;
+  flat.reserve(16);
+  qsizetype firstPos = -1;
+  qsizetype lastPos = -1;
+  const auto flatten = [&](const auto& self, const BlockLayout& block) -> void {
+    if (firstPos >= 0 && lastPos >= 0) {
+      return;  // both endpoints already located higher up; nothing more to record
     }
-    if (collecting) {
-      result.push_back(&block);
+    flat.push_back(&block);
+    const NodeId id = block.nodeId();
+    if (firstPos < 0 && id == first) {
+      firstPos = flat.size() - 1;
     }
-    if (block.nodeId() == endId) {
-      collecting = false;
+    if (lastPos < 0 && id == last) {
+      lastPos = flat.size() - 1;
+    }
+    if (firstPos >= 0 && lastPos >= 0) {
       return;
     }
     for (const auto& child : block.children()) {
-      self(self, *child);
-      if (!collecting && !result.isEmpty() && result.last()->nodeId() == endId) {
-        return;
+      if (firstPos >= 0 && lastPos >= 0) {
+        break;
       }
+      self(self, *child);
     }
   };
-
-  for (qsizetype i = startIdx; i <= endIdx; ++i) {
+  for (qsizetype i = startSlot; i <= endSlot && !(firstPos >= 0 && lastPos >= 0); ++i) {
     const BlockLayout* block = layout.blockIfPromoted(layout.slotNodeId(i));
-    if (!block) {
-      continue;
+    if (block) {
+      flatten(flatten, *block);
     }
-    collect(collect, *block);
-    if (!result.isEmpty() && result.last()->nodeId() == endId) {
-      break;
-    }
+  }
+
+  if (firstPos < 0 || lastPos < 0) {
+    return result;  // an endpoint sits in an un-promoted slot; nothing visible lies between them
+  }
+  const qsizetype lo = qMin(firstPos, lastPos);
+  const qsizetype hi = qMax(firstPos, lastPos);
+  for (qsizetype i = lo; i <= hi; ++i) {
+    result.push_back(flat.at(i));
   }
   return result;
 }

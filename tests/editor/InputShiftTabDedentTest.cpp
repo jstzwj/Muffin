@@ -12,9 +12,9 @@
 
 using namespace muffin;
 
-// markdown/shiftTabIndent: inside a code fence, Shift+Tab dedents every selected line by one
-// codeIndent unit (default 4 spaces) instead of inserting a tab. min-rule: never strip more spaces
-// than a line has.
+// Inside a code fence, Shift+Tab dedents by one codeIndent unit (default 4 spaces): every selected
+// line when there is a selection, otherwise just the caret's line. min-rule: never strip more
+// spaces than a line has; an unindented line is a no-op (no tab is inserted).
 
 namespace {
 // Builds a one-fence document, enters code-fence edit mode, and selects [anchorOff, focusOff] of
@@ -50,7 +50,6 @@ void sendBackTab(EditorController& controller, EditorView& view) {
 }  // namespace
 
 void testShiftTabDedentsSelectedLines() {
-  SettingsOverride shiftOn("markdown/shiftTabIndent", 1);
   SettingsOverride indent("markdown/codeIndent", 1);  // 4 spaces
   DocumentSession session;
   EditorView view;
@@ -66,7 +65,6 @@ void testShiftTabDedentsSelectedLines() {
 }
 
 void testShiftTabMinRuleStripsOnlyPresentSpaces() {
-  SettingsOverride shiftOn("markdown/shiftTabIndent", 1);
   SettingsOverride indent("markdown/codeIndent", 1);  // 4 spaces
   DocumentSession session;
   EditorView view;
@@ -82,16 +80,16 @@ void testShiftTabMinRuleStripsOnlyPresentSpaces() {
           "Shift+Tab min-rule should strip no more spaces than a line has");
 }
 
-void testShiftTabDisabledInsertsTab() {
-  SettingsOverride shiftOff("markdown/shiftTabIndent", 0);
+void testShiftTabCollapsedCaretDedentsLine() {
   SettingsOverride indent("markdown/codeIndent", 1);  // 4 spaces
   DocumentSession session;
   EditorView view;
   EditorController controller;
   controller.attach(&session, &view);
 
-  // Collapsed caret at offset 0: with the feature off, Shift+Tab falls back to inserting a tab.
-  const QString code = QStringLiteral("line one\nline two");
+  // Collapsed caret at the start of the first line: Shift+Tab dedents the caret's line only,
+  // leaving the second line untouched.
+  const QString code = QStringLiteral("    line one\n    line two");
   MarkdownNode* fence = setupFenceSelection(controller, session, view, code, 0, 0);
   CursorPosition caret;
   caret.blockId = fence->id();
@@ -100,18 +98,19 @@ void testShiftTabDisabledInsertsTab() {
   controller.selection().setCursorPosition(caret);
   sendBackTab(controller, view);
 
-  require(session.markdownText() == QStringLiteral("```cpp\n    line one\nline two\n```"),
-          "with shiftTabIndent off, Shift+Tab should insert one indent unit");
+  require(session.markdownText() == QStringLiteral("```cpp\nline one\n    line two\n```"),
+          "Shift+Tab with a collapsed caret should dedent only the caret's line");
 }
 
-void testShiftTabCollapsedSelectionInsertsTab() {
-  SettingsOverride shiftOn("markdown/shiftTabIndent", 1);
+void testShiftTabUnindentedLineIsNoop() {
   SettingsOverride indent("markdown/codeIndent", 1);  // 4 spaces
   DocumentSession session;
   EditorView view;
   EditorController controller;
   controller.attach(&session, &view);
 
+  // Collapsed caret on a line with no leading spaces: nothing to strip, so Shift+Tab is a no-op
+  // and must not insert an indent unit.
   const QString code = QStringLiteral("line one");
   MarkdownNode* fence = setupFenceSelection(controller, session, view, code, 0, 0);
   CursorPosition caret;
@@ -121,8 +120,8 @@ void testShiftTabCollapsedSelectionInsertsTab() {
   controller.selection().setCursorPosition(caret);
   sendBackTab(controller, view);
 
-  require(session.markdownText() == QStringLiteral("```cpp\n    line one\n```"),
-          "collapsed selection should fall back to inserting a tab");
+  require(session.markdownText() == QStringLiteral("```cpp\nline one\n```"),
+          "Shift+Tab on an unindented line should be a no-op (no tab inserted)");
 }
 
 int main(int argc, char** argv) {
@@ -136,8 +135,8 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testShiftTabDedentsSelectedLines);
   RUN_TEST(testShiftTabMinRuleStripsOnlyPresentSpaces);
-  RUN_TEST(testShiftTabDisabledInsertsTab);
-  RUN_TEST(testShiftTabCollapsedSelectionInsertsTab);
+  RUN_TEST(testShiftTabCollapsedCaretDedentsLine);
+  RUN_TEST(testShiftTabUnindentedLineIsNoop);
 #undef RUN_TEST
   return 0;
 }
