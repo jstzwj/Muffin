@@ -2,6 +2,7 @@
 #include "app/MainWindow.h"
 #include "app/UpdateChecker.h"
 #include "app/SidebarWidget.h"
+#include "app/StatusBarWidget.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 #include "editor/EditorView.h"
@@ -324,6 +325,48 @@ void muffin::MainWindow::connectChromeSignals() {
       action->trigger();
     }
   });
+
+  // Status bar: clicking the stats trigger pops a detail panel with the computed counts.
+  QObject::connect(window.statusBar_, &muffin::StatusBarWidget::statsClicked, &window, [&window] {
+    if (!window.statusBar_) {
+      return;
+    }
+    const QString& md = window.session_.markdownText();
+    muffin::StatusBarStats stats;
+    stats.words = muffin::MainWindow::countWords(md);
+    stats.characters = md.size();
+    stats.lines = window.session_.document().lineOffsets().lineCount();
+    stats.readingMinutes = qMax(1, stats.words / 200);
+    // Selection: source mode has a clean extraction; render mode slices the source range.
+    QString selected;
+    if (window.backend_ && window.backend_->hasSelection()) {
+      selected = window.backend_->selectedText();
+    } else if (window.backend_ && !window.backend_->isSourceMode()) {
+      const auto range = window.editorController_.selection().selection();
+      if (!range.isCollapsed()) {
+        selected = md.mid(range.startOffset(), range.endOffset() - range.startOffset());
+      }
+    }
+    if (!selected.isEmpty()) {
+      stats.selectedWords = muffin::MainWindow::countWords(selected);
+      stats.selectedCharacters = selected.size();
+    }
+    window.statusBar_->showStatsPopup(stats);
+  });
+
+  // Keep the spell-language button in sync when the checker changes.
+  QObject::connect(&muffin::SpellChecker::instance(), &muffin::SpellChecker::languageChanged, &window,
+      [&window](const QString& code) {
+        if (window.statusBar_) {
+          window.statusBar_->setSpellLanguage(code, muffin::SpellChecker::instance().isEnabled());
+        }
+      });
+  QObject::connect(&muffin::SpellChecker::instance(), &muffin::SpellChecker::enabledChanged, &window,
+      [&window](bool enabled) {
+        if (window.statusBar_) {
+          window.statusBar_->setSpellLanguage(muffin::SpellChecker::instance().language(), enabled);
+        }
+      });
 }
 
 void muffin::MainWindow::connectSidebarSignals() {

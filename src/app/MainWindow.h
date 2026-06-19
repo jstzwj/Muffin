@@ -33,6 +33,7 @@ namespace muffin {
 class EditorView;
 class FindBarWidget;
 class SourceEditorWidget;
+class StatusBarWidget;
 
 class MainWindow final : public QMainWindow {
   Q_OBJECT
@@ -233,9 +234,7 @@ private:
   FindBarWidget* findBar_ = nullptr;
   QToolButton* sidebarButton_ = nullptr;
   QToolButton* sourceModeButton_ = nullptr;
-  QLabel* cursorLabel_ = nullptr;
-  QLabel* blockSourceLabel_ = nullptr;
-  QLabel* wordsLabel_ = nullptr;
+  StatusBarWidget* statusBar_ = nullptr;
   QTimer* wordCountTimer_ = nullptr;
   QTimer* autoSaveTimer_ = nullptr;
   QTimer* draftTimer_ = nullptr;

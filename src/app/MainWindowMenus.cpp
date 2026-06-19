@@ -1,5 +1,6 @@
 #include "app/MainWindow.h"
 #include "app/CommandDeclarations.h"
+#include "app/StatusBarWidget.h"
 #include "editor/EditorView.h"
 
 #include <QAction>
@@ -192,6 +193,9 @@ void MainWindow::retranslateUi() {
   }
   if (sourceModeButton_) {
     sourceModeButton_->setToolTip(tr("Toggle source / rendered mode"));
+  }
+  if (statusBar_) {
+    statusBar_->retranslateUi();
   }
 
   updateFileActions();

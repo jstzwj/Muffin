@@ -5,6 +5,7 @@
 #include "editor/EditorView.h"
 #include "editor/SourceEditorWidget.h"
 #include "image/ImageInsertionPolicy.h"
+#include "app/StatusBarWidget.h"
 
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -91,19 +92,17 @@ void muffin::MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {
 }
 
 void muffin::MainWindow::updateBlockSourceLabel(const HitTestResult& hit) {
-  if (!blockSourceLabel_) {
+  if (!statusBar_) {
     return;
   }
   const bool enabled = QSettings().value(QStringLiteral("editor/showBlockSource"), false).toBool();
   if (!enabled || !backend_ || backend_->isSourceMode() || !hit.isValid()) {
-    blockSourceLabel_->clear();
-    blockSourceLabel_->setToolTip(QString());
+    statusBar_->setBlockSource(QString(), QString());
     return;
   }
   MarkdownNode* node = session_.document().node(hit.blockId);
   if (!node) {
-    blockSourceLabel_->clear();
-    blockSourceLabel_->setToolTip(QString());
+    statusBar_->setBlockSource(QString(), QString());
     return;
   }
   // Walk up to the top-level block so the preview shows the whole construct (list/table/code),
@@ -113,13 +112,11 @@ void muffin::MainWindow::updateBlockSourceLabel(const HitTestResult& hit) {
   }
   const SourceRange range = fullBlockSourceRange(*node, session_.markdownText());
   if (range.byteStart < 0 || range.byteEnd <= range.byteStart) {
-    blockSourceLabel_->clear();
-    blockSourceLabel_->setToolTip(QString());
+    statusBar_->setBlockSource(QString(), QString());
     return;
   }
   const QString& markdown = session_.markdownText();
   const QString raw = markdown.mid(range.byteStart, range.byteEnd - range.byteStart);
-  blockSourceLabel_->setToolTip(raw.trimmed());
   // Flatten to a single status-bar line so multi-line blocks stay readable.
   QString flat = raw;
   flat.replace(QLatin1Char('\n'), QStringLiteral(" → "));
@@ -127,7 +124,7 @@ void muffin::MainWindow::updateBlockSourceLabel(const HitTestResult& hit) {
   if (flat.size() > 120) {
     flat = flat.left(117) + QStringLiteral("...");
   }
-  blockSourceLabel_->setText(flat);
+  statusBar_->setBlockSource(flat, raw.trimmed());
 }
 
 void muffin::MainWindow::syncSourceEditorIfNeeded() {
@@ -146,10 +143,10 @@ void muffin::MainWindow::scheduleWordCountUpdate() {
 }
 
 void muffin::MainWindow::updateWordCountNow() {
-  if (!wordsLabel_ || !wordCountDirty_) {
+  if (!statusBar_ || !wordCountDirty_) {
     return;
   }
-  wordsLabel_->setText(tr("%1 words").arg(MainWindow::countWords(session_.markdownText())));
+  statusBar_->setWordCount(MainWindow::countWords(session_.markdownText()));
   wordCountDirty_ = false;
 }
 

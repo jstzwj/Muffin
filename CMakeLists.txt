@@ -131,6 +131,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/PrefsGeneralPage.cpp
   src/app/UpdateChecker.cpp
   src/app/SidebarWidget.cpp
+  src/app/StatusBarWidget.cpp
   src/document/DocumentSession.cpp
   src/editor/EditorView.cpp
   src/editor/SourceEditorWidget.cpp
@@ -613,6 +614,8 @@ set(MUFFIN_UI_SOURCES
   src/blocks/table/TableCellSourceEdit.h
   src/app/SidebarWidget.cpp
   src/app/SidebarWidget.h
+  src/app/StatusBarWidget.cpp
+  src/app/StatusBarWidget.h
   src/editor/SourceEditorWidget.cpp
   src/editor/SourceEditorWidget.h
   src/editor/FindBarWidget.cpp

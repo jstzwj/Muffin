@@ -5,11 +5,13 @@
 #include "app/RenderEditorBackend.h"
 #include "app/SidebarWidget.h"
 #include "app/SourceEditorBackend.h"
+#include "app/StatusBarWidget.h"
 #include "app/UpdateChecker.h"
 #include "document/MarkdownNode.h"
 #include "document/OutlineBuilder.h"
 #include "document/SourceRangeUtil.h"
 #include "editor/EditorView.h"
+#include "spellcheck/SpellChecker.h"
 #include "editor/FindBarWidget.h"
 #include "editor/SourceEditorWidget.h"
 
@@ -69,57 +71,6 @@ QString zoneName(muffin::HitTestResult::Zone zone) {
     default:
       return QStringLiteral("none");
   }
-}
-
-enum class StatusBarIconKind { Sidebar, SourceMode };
-
-QIcon statusBarIcon(StatusBarIconKind kind, const QColor& ink) {
-  const char* resourcePath = nullptr;
-  switch (kind) {
-    case StatusBarIconKind::Sidebar:
-      resourcePath = ":/icons/statusbar/sidebar-toggle.svg";
-      break;
-    case StatusBarIconKind::SourceMode:
-      resourcePath = ":/icons/statusbar/code-brackets.svg";
-      break;
-  }
-
-  // Load SVG bytes and recolor
-  QFile svgFile(QString::fromLatin1(resourcePath));
-  if (!svgFile.open(QIODevice::ReadOnly)) {
-    return QIcon();
-  }
-  QByteArray svgData = svgFile.readAll();
-  svgFile.close();
-  svgData.replace("#000000", ink.name(QColor::HexRgb).toUtf8());
-
-  // Render SVG via QSvgRenderer directly — no imageformat plugin needed
-  QSvgRenderer renderer(svgData);
-  if (!renderer.isValid()) {
-    return QIcon();
-  }
-
-  const qreal dpr = qApp->devicePixelRatio();
-  QIcon icon;
-  constexpr int sizes[] = {16, 24, 32};
-  for (const int sz : sizes) {
-    QPixmap px(static_cast<int>(sz * dpr), static_cast<int>(sz * dpr));
-    px.setDevicePixelRatio(dpr);
-    px.fill(Qt::transparent);
-    QPainter p(&px);
-    p.setRenderHint(QPainter::Antialiasing);
-    renderer.render(&p);
-    p.end();
-    icon.addPixmap(px);
-  }
-  return icon;
-}
-
-QColor statusBarIconInk(const QString& themeName) {
-  if (themeName == QStringLiteral("night")) {
-    return QColor(0x9a, 0xa4, 0xaf);
-  }
-  return QColor(0x55, 0x55, 0x55);
 }
 
 }  // namespace
@@ -220,27 +171,15 @@ void muffin::MainWindow::setupMenuBar() {
 void muffin::MainWindow::setupStatusBar() {
   statusBar()->setSizeGripEnabled(false);
 
-  const QColor ink = statusBarIconInk(themeManager_.currentThemeName());
-
-  sidebarButton_ = new QToolButton(this);
-  sidebarButton_->setIcon(statusBarIcon(StatusBarIconKind::Sidebar, ink));
-  sidebarButton_->setIconSize(QSize(16, 16));
-  sidebarButton_->setCheckable(true);
-  sidebarButton_->setAutoRaise(true);
-
-  sourceModeButton_ = new QToolButton(this);
-  sourceModeButton_->setIcon(statusBarIcon(StatusBarIconKind::SourceMode, ink));
-  sourceModeButton_->setIconSize(QSize(16, 16));
-  sourceModeButton_->setCheckable(true);
-  sourceModeButton_->setAutoRaise(true);
-
-  cursorLabel_ = new QLabel(this);
-  blockSourceLabel_ = new QLabel(this);
-  blockSourceLabel_->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
-  blockSourceLabel_->setStyleSheet(QStringLiteral("color: #8a8f98;"));
-  blockSourceLabel_->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
-  blockSourceLabel_->setMinimumWidth(0);
-  wordsLabel_ = new QLabel(this);
+  statusBar_ = new StatusBarWidget(this);
+  // Reuse the widget's internal buttons so every existing reference (icon/checked/
+  // tooltip/click) keeps working without rewiring.
+  sidebarButton_ = statusBar_->sidebarButton();
+  sourceModeButton_ = statusBar_->sourceModeButton();
+  statusBar_->setSpellLanguage(SpellChecker::instance().language(), SpellChecker::instance().isEnabled());
+  const int lineBreak = QSettings().value(QStringLiteral("editor/defaultLineBreak"), 1).toInt();
+  statusBar_->setEncodingLineEnding(QStringLiteral("UTF-8 · %1").arg(
+      lineBreak == 1 ? QStringLiteral("CRLF") : QStringLiteral("LF")));
   wordCountTimer_ = new QTimer(this);
   wordCountTimer_->setSingleShot(true);
   wordCountTimer_->setInterval(250);
@@ -260,11 +199,7 @@ void muffin::MainWindow::setupStatusBar() {
   draftTimer_->setInterval(3000);
   connect(draftTimer_, &QTimer::timeout, this, &muffin::MainWindow::snapshotDraft);
 
-  statusBar()->addWidget(sidebarButton_);
-  statusBar()->addWidget(sourceModeButton_);
-  statusBar()->addWidget(blockSourceLabel_, 1);
-  statusBar()->addPermanentWidget(cursorLabel_);
-  statusBar()->addPermanentWidget(wordsLabel_);
+  statusBar()->addWidget(statusBar_, 1);
 }
 
 void muffin::MainWindow::applyEditorChrome() {
@@ -277,9 +212,6 @@ void muffin::MainWindow::applyEditorChrome() {
       "QMenu::item { padding: 5px 34px 5px 24px; }"
       "QMenu::item:selected { background: #e7f1ff; }"
       "QMenu::item:disabled { color: #999999; }"
-      "QStatusBar { background: #ffffff; color: #555555; border: 0; font-size: 12px; }"
-      "QStatusBar::item { border: 0; }"
-      "QStatusBar QLabel { padding: 0 8px; }"
       "QToolButton {"
       "  background: transparent;"
       "  border: 0;"
@@ -291,6 +223,13 @@ void muffin::MainWindow::applyEditorChrome() {
       "}"
       "QToolButton:hover { background: #eeeeee; }"
       "QToolButton:checked { color: #111111; background: #e9e9e9; }"));
+
+  // Drive the painted status bar with per-theme colors.
+  if (statusBar_) {
+    const RenderTheme theme = themeManager_.currentTheme(zoomPercent_, fontSizePx_);
+    statusBar_->applyThemeColors(theme.backgroundColor(), theme.textColor(), theme.mutedTextColor(),
+                                 theme.codeBorderColor());
+  }
 }
 
 void muffin::MainWindow::updateTitle() {
@@ -299,14 +238,17 @@ void muffin::MainWindow::updateTitle() {
 }
 
 void muffin::MainWindow::updateStatus() {
+  if (!statusBar_) {
+    return;
+  }
   if (!backend_->isSourceMode() && !renderCursorStatus_.isEmpty()) {
-    cursorLabel_->setText(renderCursorStatus_);
+    statusBar_->setCursorStatus(renderCursorStatus_);
   } else {
-    cursorLabel_->setText(QStringLiteral("%1:%2").arg(cursorLine_).arg(cursorColumn_));
+    statusBar_->setCursorStatus(QStringLiteral("%1:%2").arg(cursorLine_).arg(cursorColumn_));
   }
   // The block-source preview is render-mode only; clear any stale text when editing source.
-  if (backend_ && backend_->isSourceMode() && blockSourceLabel_) {
-    blockSourceLabel_->clear();
+  if (backend_ && backend_->isSourceMode()) {
+    statusBar_->setBlockSource(QString(), QString());
   }
 }
 
@@ -631,9 +573,6 @@ void muffin::MainWindow::applyTheme(QString name) {
         "QMenu::item { padding:5px 34px 5px 24px; }"
         "QMenu::item:selected { background:#264f78; }"
         "QMenu::item:disabled { color:#6e7681; }"
-        "QStatusBar { background:#1f2328; color:#9aa4af; border:0; font-size:12px; }"
-        "QStatusBar::item { border:0; }"
-        "QStatusBar QLabel { padding:0 8px; }"
         "QToolButton { background:transparent; border:0; color:#9aa4af; padding:0 8px; min-width:22px; min-height:18px; font-size:12px; }"
         "QToolButton:hover { background:#2b3138; }"
         "QToolButton:checked { color:#e6edf3; background:#30363d; }"));
@@ -641,12 +580,10 @@ void muffin::MainWindow::applyTheme(QString name) {
     applyEditorChrome();
   }
 
-  const QColor ink = statusBarIconInk(name);
-  if (sidebarButton_) {
-    sidebarButton_->setIcon(statusBarIcon(StatusBarIconKind::Sidebar, ink));
-  }
-  if (sourceModeButton_) {
-    sourceModeButton_->setIcon(statusBarIcon(StatusBarIconKind::SourceMode, ink));
+  // The painted status bar recolors itself (background, text, icons) from the theme.
+  if (statusBar_) {
+    statusBar_->applyThemeColors(theme.backgroundColor(), theme.textColor(), theme.mutedTextColor(),
+                                 theme.codeBorderColor());
   }
 }
 
