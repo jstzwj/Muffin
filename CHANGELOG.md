@@ -5,6 +5,26 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.7] - 2026-06-19
+
+### Added
+- **Render-mode context menu** - Right-click in the rendered view opens a context-aware menu for text, links, images, and tables, with dedicated "Open Link" and "Copy Link Address" commands
+- **Draft recovery** - A new draft recovery system restores unsaved documents after a crash or an unsaved exit
+- **Outline folding** - The sidebar outline can now collapse and expand heading subtrees, toggleable from the preferences
+- **List and alert operations** - Insert GitHub-style alert blocks, toggle task list item status, and indent/outdent list items via the paragraph commands
+- **File drag-and-drop** - Drag-and-drop now accepts folders, Markdown files, and other importable files in addition to images
+- **Autosave** - Automatic periodic saving and save-on-exit options to protect unsaved work
+
+### Changed
+- **Table toolbar orientation** - The table toolbar now switches between horizontal and vertical layout automatically, preferring a position above the table and falling back to the left sidebar when space is constrained
+
+### Removed
+- **Advanced debug settings card** - Removed the advanced debug settings card from the General preferences page
+
+### Fixed
+- **Table insertion position** - Inserting a table now places it after the cursor's current block instead of always appending it to the end of the document
+- **Cursor disappearing on empty blockquote** - Typing a blockquote into an empty block no longer loses the cursor; empty blockquotes are demoted to paragraphs during parsing so the cursor always has a place to land
+
 ## [0.2.6] - 2026-06-19
 
 ### Added
@@ -305,6 +325,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.2.7]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.7
 [0.2.6]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.6
 [0.2.5]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.5
 [0.2.4]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.4
