@@ -88,7 +88,7 @@ void muffin::MainWindow::buildEditorContextMenu(const HitTestResult& hit, QPoint
   } else if (!hit.imageSrc.isEmpty()) {
     QMenu* imageMenu = menu.addMenu(tr("Image"));
     fill(imageMenu,
-        {QStringLiteral("image.open_location"), QStringLiteral("edit.copy_image")});
+        {QStringLiteral("image.open_location"), QStringLiteral("image.copy_image")});
     imageMenu->addSeparator();
     QMenu* resizeMenu = imageMenu->addMenu(tr("Resize"));
     fill(resizeMenu,
