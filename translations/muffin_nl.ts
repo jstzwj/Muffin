@@ -987,12 +987,16 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
 <context>
     <name>main</name>
     <message>
-        <location filename="../src/main.cpp" line="65"/>
         <source>A fast native Markdown editor built with C++ and Qt 6 Widgets.</source>
-        <translation>Een snelle native Markdown-editor gebouwd met C++ en Qt 6 Widgets.</translation>
+        <translation type="vanished">Een snelle native Markdown-editor gebouwd met C++ en Qt 6 Widgets.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="72"/>
+        <location filename="../src/main.cpp" line="82"/>
+        <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
+        <translation>Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6.</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="89"/>
         <source>Markdown or text file to open.</source>
         <translation>Markdown- of tekstbestand om te openen.</translation>
     </message>
@@ -1234,7 +1238,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation type="vanished">Schakel tussen bron- / weergavemodus</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1700"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1706"/>
         <source>File</source>
         <translation>Bestand</translation>
     </message>
@@ -1264,12 +1268,12 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation>Snel openen...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1707"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1713"/>
         <source>Open Recent</source>
         <translation>Recent openen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1709"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1715"/>
         <source>Reopen with Encoding</source>
         <translation>Opnieuw openen met codering</translation>
     </message>
@@ -1320,7 +1324,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation>Importeren...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1722"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1728"/>
         <source>Export</source>
         <translation>Exporteren</translation>
     </message>
@@ -1340,7 +1344,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation>Sluiten</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1745"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1751"/>
         <source>Edit</source>
         <translation>Bewerken</translation>
     </message>
@@ -1395,7 +1399,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation>Plakken als platte tekst</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1759"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1765"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="170"/>
         <source>Select</source>
         <translation>Selecteren</translation>
@@ -1430,7 +1434,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation>Verwijderen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1779"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1785"/>
         <source>Delete Range</source>
         <translation>Bereik verwijderen</translation>
     </message>
@@ -1455,17 +1459,17 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation>Huidige woord verwijderen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1786"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1792"/>
         <source>Math Tools</source>
         <translation>Wiskundehulpmiddelen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1787"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1793"/>
         <source>Smart Punctuation</source>
         <translation>Slimme interpunctie</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1789"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1795"/>
         <source>Line Breaks</source>
         <translation>Regeleinden</translation>
     </message>
@@ -1493,13 +1497,13 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation type="vanished">Spellingcontrole...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1798"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1804"/>
         <source>Find and Replace</source>
         <translation>Zoeken en vervangen</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="572"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1808"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1814"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="150"/>
         <source>Paragraph</source>
         <translation>Alinea</translation>
@@ -1519,8 +1523,8 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation>Kop degraderen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1821"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1900"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1827"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1906"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="106"/>
         <source>Table</source>
         <translation>Tabel</translation>
@@ -1536,12 +1540,12 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation>Codeblok</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1847"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1853"/>
         <source>Code Tools</source>
         <translation>Codehulpmiddelen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1858"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1864"/>
         <source>Alert</source>
         <translation>Waarschuwing</translation>
     </message>
@@ -1566,12 +1570,12 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation>Takenlijst</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1872"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1878"/>
         <source>Task Status</source>
         <translation>Taakstatus</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1877"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1883"/>
         <source>List Indent</source>
         <translation>Lijstinspringing</translation>
     </message>
@@ -1606,7 +1610,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation>Inhoudsopgave</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1892"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1898"/>
         <source>Front Matter</source>
         <translation>Front Matter</translation>
     </message>
@@ -1626,7 +1630,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation>JSON</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1933"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1939"/>
         <source>Format</source>
         <translation>Opmaak</translation>
     </message>
@@ -1671,12 +1675,12 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation>Hyperlink</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1946"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1952"/>
         <source>Link Actions</source>
         <translation>Linkacties</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1952"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1958"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="89"/>
         <source>Image</source>
         <translation>Afbeelding</translation>
@@ -1722,7 +1726,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation>Alle afbeeldingen opnieuw laden</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1968"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1974"/>
         <source>Resize Image</source>
         <translation>Afbeeldingsgrootte wijzigen</translation>
     </message>
@@ -1757,7 +1761,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation>Aangepast...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1979"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1985"/>
         <source>Convert Image Syntax</source>
         <translation>Afbeeldingssyntaxis converteren</translation>
     </message>
@@ -1809,7 +1813,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="754"/>
-        <location filename="../src/app/MainWindowActions.cpp" line="159"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="162"/>
         <source>Insert Table</source>
         <translation>Tabel invoegen</translation>
     </message>
@@ -1965,7 +1969,16 @@ Stel een aangepaste uploadopdracht in via Voorkeuren → Afbeeldingen.</translat
         <translation>%1 afbeelding(en) geüpload.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1909"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1669"/>
+        <source>Muffin %1
+
+A fast, lightweight, native Markdown editor built with C++ and Qt 6.
+
+Live preview and source editing; export to PDF, HTML, and many more formats via Pandoc; image insertion with copy-to-folder and custom-command upload; spell checking; themes; find &amp; replace; outline; quick open; and crash-safe draft recovery.</source>
+        <translation>Live voorbeeld en bronbewerking; exporteren naar PDF, HTML en nog vele andere formaten via Pandoc; afbeeldingen invoegen met kopiëren-naar-map en uploaden via aangepaste opdracht; spellingcontrole; thema's; zoeken en vervangen; overzicht; snel openen; en crash-veilige conceptherstel.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1915"/>
         <source>Code</source>
         <translation>Code</translation>
     </message>
@@ -1989,7 +2002,7 @@ Stel een aangepaste uploadopdracht in via Voorkeuren → Afbeeldingen.</translat
         <translation>Taal instellen...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1925"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1931"/>
         <source>Math</source>
         <translation>Wiskunde</translation>
     </message>
@@ -2004,7 +2017,7 @@ Stel een aangepaste uploadopdracht in via Voorkeuren → Afbeeldingen.</translat
         <translation>HTML instellen...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1993"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1999"/>
         <source>View</source>
         <translation>Beeld</translation>
     </message>
@@ -2083,12 +2096,12 @@ Stel een aangepaste uploadopdracht in via Voorkeuren → Afbeeldingen.</translat
         <translation>Vensters wisselen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2015"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2021"/>
         <source>Theme</source>
         <translation>Thema</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2024"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2030"/>
         <source>Help</source>
         <translation>Help</translation>
     </message>
@@ -2426,87 +2439,85 @@ Stel een uploader in bij Voorkeuren → Afbeeldingen.</translation>
         <translation>Over Muffin</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1669"/>
         <source>Muffin %1
 
 A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</source>
-        <translation>Muffin %1
+        <translation type="vanished">Muffin %1
 
 Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="83"/>
         <source>table %1:%2 offset %3</source>
-        <translation>tabel %1:%2 offset %3</translation>
+        <translation type="vanished">tabel %1:%2 offset %3</translation>
     </message>
     <message>
         <source>%1 words</source>
         <translation type="vanished">%1 woorden</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="175"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="178"/>
         <source>Rows:</source>
         <translation>Rijen:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="176"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="179"/>
         <source>Columns:</source>
         <translation>Kolommen:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="179"/>
-        <location filename="../src/app/MainWindowActions.cpp" line="221"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="182"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="224"/>
         <source>OK</source>
         <translation>OK</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="180"/>
-        <location filename="../src/app/MainWindowActions.cpp" line="222"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="183"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="225"/>
         <source>Cancel</source>
         <translation>Annuleren</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="201"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="204"/>
         <source>Insert Image</source>
         <translation>Afbeelding invoegen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="208"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="211"/>
         <source>https://example.com/image.png</source>
         <translation>https://example.com/image.png</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="211"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="214"/>
         <source>Alternative text</source>
         <translation>Alternatieve tekst</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="214"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="217"/>
         <source>Title (optional)</source>
         <translation>Titel (optioneel)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="216"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="219"/>
         <source>URL:</source>
         <translation>URL:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="217"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="220"/>
         <source>Alt Text:</source>
         <translation>Alternatieve tekst:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="218"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="221"/>
         <source>Title:</source>
         <translation>Titel:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="256"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="259"/>
         <source>Images (%1)</source>
         <translation>Afbeeldingen (%1)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="258"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="261"/>
         <source>Select Image</source>
         <translation>Afbeelding selecteren</translation>
     </message>
@@ -3746,49 +3757,49 @@ Wilt u de downloadpagina openen?</translation>
 <context>
     <name>muffin::StatusBarWidget</name>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="170"/>
-        <location filename="../src/app/StatusBarWidget.cpp" line="425"/>
-        <location filename="../src/app/StatusBarWidget.cpp" line="449"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="176"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="432"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="456"/>
         <source>%1 words</source>
         <translation>%1 woorden</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="401"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="408"/>
         <source>Spell Check</source>
         <translation>Spellingcontrole</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="420"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="427"/>
         <source>Words</source>
         <translation>Woorden</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="421"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="428"/>
         <source>Characters</source>
         <translation>Tekens</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="422"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="429"/>
         <source>Lines</source>
         <translation>Regels</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="423"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="430"/>
         <source>Reading time</source>
         <translation>Leestijd</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="423"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="430"/>
         <source>&lt; 1 min</source>
         <translation>&lt; 1 min</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="423"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="430"/>
         <source>%1 min</source>
         <translation>%1 min</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="425"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="432"/>
         <source>Selected</source>
         <translation>Geselecteerd</translation>
     </message>

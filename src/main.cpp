@@ -8,6 +8,8 @@
 #include <QDateTime>
 #include <QFile>
 #include <QFileInfo>
+#include <QFont>
+#include <QGuiApplication>
 #include <QIcon>
 #include <QLoggingCategory>
 #include <QMutex>
@@ -51,6 +53,12 @@ void installPerfFileLogger() {
 int main(int argc, char *argv[]) {
   installPerfFileLogger();
 
+  // Qt 6 defaults to PassThrough (fractional) scaling and Per-Monitor V2 DPI
+  // awareness. Set it explicitly so a stray env var or qt.conf can't silently
+  // change it and reintroduce blurry chrome.
+  QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+      Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+
   QApplication app(argc, argv);
   QApplication::setApplicationName("Muffin");
   QApplication::setOrganizationName("Muffin");
@@ -59,12 +67,21 @@ int main(int argc, char *argv[]) {
   // mechanism on Linux; on Windows/macOS the .exe/.app icon is also embedded,
   // and this makes the decoration appear immediately at launch.
   QApplication::setWindowIcon(QIcon(QStringLiteral(":/app/muffin.png")));
+
+  // Smoother chrome text (menu bar / status bar / dialogs): hint only the
+  // vertical strokes so curves and diagonal edges anti-alias instead of being
+  // grid-fitted into hard steps. This is the Qt lever closest to the smooth
+  // "anti-aliased" look of Chromium/Electron text on Windows.
+  QFont uiFont = QApplication::font();
+  uiFont.setHintingPreference(QFont::PreferVerticalHinting);
+  QApplication::setFont(uiFont);
+
   muffin::LanguageManager::instance().initialize();
 
   QCommandLineParser parser;
   parser.setApplicationDescription(QCoreApplication::translate(
       "main",
-      "A fast native Markdown editor built with C++ and Qt 6 Widgets."));
+      "A fast, lightweight, native Markdown editor built with C++ and Qt 6."));
   parser.addHelpOption();
   parser.addVersionOption();
   parser.addPositionalArgument(

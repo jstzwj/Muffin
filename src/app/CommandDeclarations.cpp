@@ -1666,7 +1666,13 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
          QMessageBox::about(
              &window,
              muffin::MainWindow::tr("About Muffin"),
-             muffin::MainWindow::tr("Muffin %1\n\nA fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.")
+             muffin::MainWindow::tr(
+                 "Muffin %1\n\n"
+                 "A fast, lightweight, native Markdown editor built with C++ and Qt 6.\n\n"
+                 "Live preview and source editing; export to PDF, HTML, and many more "
+                 "formats via Pandoc; image insertion with copy-to-folder and custom-command "
+                 "upload; spell checking; themes; find & replace; outline; quick open; and "
+                 "crash-safe draft recovery.")
                  .arg(QApplication::applicationVersion()));
        }},
   };

@@ -205,11 +205,11 @@ void muffin::MainWindow::setupStatusBar() {
 void muffin::MainWindow::applyEditorChrome() {
   setStyleSheet(QStringLiteral(
       "QMainWindow { background: #ffffff; }"
-      "QMenuBar { background: #ffffff; color: #111111; padding: 0; }"
+      "QMenuBar { background: #ffffff; color: #333333; padding: 0; font-size: 13px; }"
       "QMenuBar::item { padding: 4px 9px; background: transparent; }"
       "QMenuBar::item:selected { background: #e9e9e9; }"
       "QMenu { background: #ffffff; border: 1px solid #cfcfcf; padding: 4px 0; }"
-      "QMenu::item { padding: 5px 34px 5px 24px; }"
+      "QMenu::item { padding: 5px 34px 5px 24px; color: #333333; }"
       "QMenu::item:selected { background: #e7f1ff; }"
       "QMenu::item:disabled { color: #999999; }"
       "QToolButton {"
@@ -219,7 +219,7 @@ void muffin::MainWindow::applyEditorChrome() {
       "  padding: 0 8px;"
       "  min-width: 22px;"
       "  min-height: 18px;"
-      "  font-size: 12px;"
+      "  font-size: 13px;"
       "}"
       "QToolButton:hover { background: #eeeeee; }"
       "QToolButton:checked { color: #111111; background: #e9e9e9; }"));
@@ -566,14 +566,14 @@ void muffin::MainWindow::applyTheme(QString name) {
   if (name == QStringLiteral("night")) {
     setStyleSheet(QStringLiteral(
         "QMainWindow { background:#1f2328; }"
-        "QMenuBar { background:#1f2328; color:#e6edf3; padding:0; }"
+        "QMenuBar { background:#1f2328; color:#e6edf3; padding:0; font-size:13px; }"
         "QMenuBar::item { padding:4px 9px; background:transparent; }"
         "QMenuBar::item:selected { background:#2b3138; }"
         "QMenu { background:#242a31; color:#e6edf3; border:1px solid #3d444d; padding:4px 0; }"
         "QMenu::item { padding:5px 34px 5px 24px; }"
         "QMenu::item:selected { background:#264f78; }"
         "QMenu::item:disabled { color:#6e7681; }"
-        "QToolButton { background:transparent; border:0; color:#9aa4af; padding:0 8px; min-width:22px; min-height:18px; font-size:12px; }"
+        "QToolButton { background:transparent; border:0; color:#9aa4af; padding:0 8px; min-width:22px; min-height:18px; font-size:13px; }"
         "QToolButton:hover { background:#2b3138; }"
         "QToolButton:checked { color:#e6edf3; background:#30363d; }"));
   } else {

@@ -79,12 +79,15 @@ void muffin::MainWindow::setupConnections() {
 void muffin::MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {
   if (!hit.isValid()) {
     renderCursorStatus_.clear();
-  } else if (hit.zone == HitTestResult::Zone::TableCell) {
-    renderCursorStatus_ = tr("table %1:%2 offset %3").arg(hit.tableRow + 1).arg(hit.tableColumn + 1).arg(hit.textOffset);
   } else {
-    renderCursorStatus_ = QStringLiteral("%1 %2 offset %3")
-                              .arg(zoneName(hit.zone), hit.blockId.toString())
-                              .arg(hit.textOffset);
+    // Render mode has no QTextCursor; report the source line:column derived from
+    // the hit's text offset (matching the source-mode "line:col" display) instead
+    // of the verbose zone/block-id/offset detail.
+    const auto& offsets = session_.document().lineOffsets();
+    const int line = offsets.lineForOffset(hit.textOffset);
+    const qsizetype lineStart = offsets.offsetForLineColumn(line, 1);
+    const int column = lineStart >= 0 ? static_cast<int>(hit.textOffset - lineStart) + 1 : 1;
+    renderCursorStatus_ = QStringLiteral("%1:%2").arg(line).arg(column);
   }
   updateBlockSourceLabel(hit);
   updateContextActions();

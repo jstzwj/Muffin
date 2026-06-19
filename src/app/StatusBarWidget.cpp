@@ -135,6 +135,12 @@ muffin::StatusBarWidget::StatusBarWidget(QWidget* parent) : QWidget(parent) {
   setMouseTracking(true);
   setAttribute(Qt::WA_StyledBackground, false);
 
+  // Match the bumped chrome size (~10pt ≈ 13px @96dpi) and inherit the app
+  // font's PreferVerticalHinting so the painted segments anti-alias smoothly.
+  QFont barFont = font();
+  barFont.setPointSizeF(10.0);
+  setFont(barFont);
+
   sidebarButton_ = new QToolButton(this);
   sidebarButton_->setIconSize(QSize(16, 16));
   sidebarButton_->setCheckable(true);
@@ -296,6 +302,7 @@ void muffin::StatusBarWidget::drawSegmentText(QPainter& p, const QString& text, 
 void muffin::StatusBarWidget::paintEvent(QPaintEvent*) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing, true);
+  p.setRenderHint(QPainter::TextAntialiasing, true);
   p.setFont(font());
 
   // Background + 1px top separator.
