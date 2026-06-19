@@ -4,6 +4,7 @@
 #include "render/BlockLayout.h"
 #include "render/DocumentLayout.h"
 
+#include <QBoxLayout>
 #include <QFrame>
 #include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
@@ -242,6 +243,7 @@ void TableToolbar::ensureToolbar() {
   toolbar_->setFocusPolicy(Qt::NoFocus);
   toolbar_->hide();
   auto* layout = new QHBoxLayout(toolbar_);
+  toolbarLayout_ = layout;  // a QHBoxLayout is a QBoxLayout; stored so show() can flip its direction
   layout->setContentsMargins(4, 3, 4, 3);
   layout->setSpacing(1);
 
@@ -303,7 +305,7 @@ void TableToolbar::ensureToolbar() {
 
 void TableToolbar::show(const BlockLayout& table, qreal scrollY, const QRect& viewportRect) {
   ensureToolbar();
-  if (!toolbar_) {
+  if (!toolbar_ || !toolbarLayout_) {
     return;
   }
 
@@ -314,18 +316,56 @@ void TableToolbar::show(const BlockLayout& table, qreal scrollY, const QRect& vi
   }
 
   updating_ = true;
-  toolbar_->adjustSize();
-  int x = qRound(tableRect.left());
-  int y = qRound(tableRect.top()) - toolbar_->height() - 6;
-  if (y < 4) {
-    y = qRound(tableRect.top()) + 4;
+  constexpr int gap = 6;
+  constexpr int margin = 4;
+  const int tableLeft = qRound(tableRect.left());
+  const int tableTop = qRound(tableRect.top());
+
+  // Measure the horizontal toolbar to decide whether it fits above the table.
+  applyDirection(false);
+  const int aboveY = tableTop - toolbar_->height() - gap;
+
+  int x = 0;
+  int y = 0;
+  if (aboveY >= margin) {
+    // Preferred: a horizontal toolbar floating above the table.
+    x = tableLeft;
+    y = aboveY;
+  } else {
+    // The table is pinned to the top of the viewport/page, so there is no room above. Float a
+    // VERTICAL toolbar in the page's left margin instead — the editor centres the page, so the
+    // margin usually has ample room, and the toolbar then never covers the first row.
+    applyDirection(true);
+    const int leftX = tableLeft - toolbar_->width() - gap;
+    if (leftX >= margin) {
+      x = leftX;
+      y = qBound(margin, tableTop, qMax(margin, viewportRect.height() - toolbar_->height() - margin));
+    } else {
+      // Very narrow window: no room above or to the left. Fall back to a horizontal toolbar docked
+      // at the viewport top (standard sticky behaviour; only the top edge overlaps, never cell text).
+      applyDirection(false);
+      x = tableLeft;
+      y = margin;
+    }
   }
-  x = qBound(4, x, qMax(4, viewportRect.width() - toolbar_->width() - 4));
-  y = qBound(4, y, qMax(4, viewportRect.height() - toolbar_->height() - 4));
+
+  x = qBound(margin, x, qMax(margin, viewportRect.width() - toolbar_->width() - margin));
+  y = qBound(margin, y, qMax(margin, viewportRect.height() - toolbar_->height() - margin));
   toolbar_->move(x, y);
   toolbar_->show();
   toolbar_->raise();
   updating_ = false;
+}
+
+void TableToolbar::applyDirection(bool vertical) {
+  // Only the box-direction flip is gated on a change (it triggers a full relayout); adjustSize() is
+  // cheap and runs every update so the measured width/height always match the current orientation
+  // (and so the toolbar has a valid size on its first show).
+  if (toolbarLayout_ && vertical != verticalToolbar_) {
+    toolbarLayout_->setDirection(vertical ? QBoxLayout::TopToBottom : QBoxLayout::LeftToRight);
+    verticalToolbar_ = vertical;
+  }
+  toolbar_->adjustSize();
 }
 
 void TableToolbar::showResizePopup() {

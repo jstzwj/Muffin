@@ -8,6 +8,7 @@
 
 class QToolButton;
 class QWidget;
+class QBoxLayout;
 
 namespace muffin {
 
@@ -35,12 +36,17 @@ private:
   void ensureToolbar();
   void show(const BlockLayout& table, qreal scrollY, const QRect& viewportRect);
   void showResizePopup();
+  // Flip the toolbar between horizontal (above the table) and vertical (in the left margin), only
+  // relaying out when the direction actually changes.
+  void applyDirection(bool vertical);
 
   const BlockLayout* activeTableLayout(const HitTestResult& hit, const DocumentLayout* layout) const;
   QPair<int, int> activeTableSize(const BlockLayout* table) const;
 
   QWidget* viewport_;
   QWidget* toolbar_ = nullptr;
+  QBoxLayout* toolbarLayout_ = nullptr;
+  bool verticalToolbar_ = false;  // tracks the toolbar's current box-layout direction
   QToolButton* resizeButton_ = nullptr;
   QToolButton* alignLeftButton_ = nullptr;
   QToolButton* alignCenterButton_ = nullptr;
