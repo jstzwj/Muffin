@@ -31,6 +31,8 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg PrintSupport Network)
 find_package(ICU REQUIRED COMPONENTS uc i18n)
 find_package(WebP REQUIRED)
 find_package(libavif REQUIRED)
+find_package(JPEG REQUIRED)
+find_package(PNG REQUIRED)
 find_package(Python3 COMPONENTS Interpreter QUIET)
 set(MUFFIN_QT_LINGUIST_BIN "" CACHE PATH "Optional Qt Linguist tool directory")
 set(MUFFIN_QT_TRANSLATION_SOURCE_DIR "" CACHE PATH "Optional directory containing Qt qtbase_*.qm translation files")
@@ -663,6 +665,10 @@ set(MUFFIN_UI_SOURCES
   src/editor/InputControllerEdit.cpp
   src/io/ImageFileOps.cpp
   src/io/ImageFileOps.h
+  src/image/ImageInsertionPolicy.cpp
+  src/image/ImageInsertionPolicy.h
+  src/image/CustomCommandUploader.cpp
+  src/image/CustomCommandUploader.h
   src/editor/SelectionController.cpp
   src/editor/SelectionController.h
   src/editor/TextBlockCommandBuilder.cpp
@@ -750,6 +756,8 @@ target_link_libraries(MuffinUi
     lexbor::lexbor_static
     yoga::yoga
     Nuspell::nuspell
+    JPEG::JPEG
+    PNG::PNG
 )
 
 target_include_directories(MuffinUi

@@ -666,8 +666,11 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
         ImageLoader::instance().request(srcUrl);
       }
     } else {
-      if (!image.load(srcUrl)) {
-        image = image_decoder::decodeFileFallback(srcUrl);
+      // Prefer our bundled decoders (png/jpeg/webp/avif/svg) so local image display
+      // never depends on Qt's imageformat plugins (qjpeg is absent from this Qt build).
+      image = image_decoder::decodeFileFallback(srcUrl);
+      if (image.isNull()) {
+        image.load(srcUrl);  // last resort for formats we don't ship (tiff/bmp/gif/ico)
       }
     }
 

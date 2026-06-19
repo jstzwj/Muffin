@@ -1,10 +1,20 @@
 #include "app/PrefsImagePage.h"
 
+#include "image/CustomCommandUploader.h"
+#include "image/ImageInsertAction.h"
+
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDir>
+#include <QFile>
+#include <QFileDialog>
 #include <QHBoxLayout>
-#include <QOverload>
+#include <QImage>
 #include <QLabel>
+#include <QLineEdit>
+#include <QMessageBox>
+#include <QOverload>
+#include <QPushButton>
 #include <QSettings>
 #include <QVBoxLayout>
 
@@ -28,24 +38,33 @@ muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent
   insertCardLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
   insertCardLayout->setSpacing(kRowSpacing);
 
-  auto* insertHeaderRow = new QHBoxLayout();
   insertLabel_ = makeSectionLabel(insertCard);
-  auto* insertLearnMore = new QLabel(insertCard);
-  insertLearnMore->setOpenExternalLinks(true);
-  insertHeaderRow->addWidget(insertLabel_);
-  insertHeaderRow->addWidget(insertLearnMore);
-  insertHeaderRow->addStretch(1);
-
   insertCombo_ = new QComboBox(insertCard);
-  insertCombo_->setMinimumWidth(320);
+  insertCombo_->setMinimumWidth(360);
+
+  // "Copy to specified path" sub-row — only meaningful for that insert action.
+  customFolderRow_ = new QWidget(insertCard);
+  auto* customFolderLayout = new QVBoxLayout(customFolderRow_);
+  customFolderLayout->setContentsMargins(0, 0, 0, 0);
+  customFolderLayout->setSpacing(4);
+  auto* customFolderRowLine = new QHBoxLayout();
+  customFolderRowLine->setSpacing(8);
+  customFolderEdit_ = new QLineEdit(customFolderRow_);
+  customFolderEdit_->setMinimumWidth(300);
+  customFolderBrowse_ = makeButton(customFolderRow_);
+  customFolderBrowse_->setFixedWidth(36);
+  customFolderRowLine->addWidget(customFolderEdit_, 1);
+  customFolderRowLine->addWidget(customFolderBrowse_);
+  customFolderLayout->addLayout(customFolderRowLine);
 
   applyToLocalCheck_ = new QCheckBox(insertCard);
   applyToLocalCheck_->setChecked(true);
   applyToNetworkCheck_ = new QCheckBox(insertCard);
   allowYamlUploadCheck_ = new QCheckBox(insertCard);
 
-  insertCardLayout->addLayout(insertHeaderRow);
+  insertCardLayout->addWidget(insertLabel_);
   insertCardLayout->addWidget(insertCombo_);
+  insertCardLayout->addWidget(customFolderRow_);
   insertCardLayout->addSpacing(2);
   insertCardLayout->addWidget(applyToLocalCheck_);
   insertCardLayout->addWidget(applyToNetworkCheck_);
@@ -59,13 +78,7 @@ muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent
   syntaxLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
   syntaxLayout->setSpacing(kRowSpacing);
 
-  auto* syntaxHeaderRow = new QHBoxLayout();
   syntaxLabel_ = makeSectionLabel(syntaxCard);
-  auto* syntaxLearnMore = new QLabel(syntaxCard);
-  syntaxLearnMore->setOpenExternalLinks(true);
-  syntaxHeaderRow->addWidget(syntaxLabel_);
-  syntaxHeaderRow->addWidget(syntaxLearnMore);
-  syntaxHeaderRow->addStretch(1);
 
   preferRelativePathCheck_ = new QCheckBox(syntaxCard);
 
@@ -80,7 +93,7 @@ muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent
 
   escapeImageUrlCheck_ = new QCheckBox(syntaxCard);
 
-  syntaxLayout->addLayout(syntaxHeaderRow);
+  syntaxLayout->addWidget(syntaxLabel_);
   syntaxLayout->addSpacing(2);
   syntaxLayout->addWidget(preferRelativePathCheck_);
   syntaxLayout->addLayout(slashRow);
@@ -95,13 +108,7 @@ muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent
   uploadCardLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
   uploadCardLayout->setSpacing(kRowSpacing);
 
-  auto* uploadHeaderRow = new QHBoxLayout();
   uploadLabel_ = makeSectionLabel(uploadCard);
-  auto* uploadLearnMore = new QLabel(uploadCard);
-  uploadLearnMore->setOpenExternalLinks(true);
-  uploadHeaderRow->addWidget(uploadLabel_);
-  uploadHeaderRow->addWidget(uploadLearnMore);
-  uploadHeaderRow->addStretch(1);
 
   auto* serviceRow = new QHBoxLayout();
   serviceRow->setSpacing(24);
@@ -112,9 +119,24 @@ muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent
   serviceRow->addStretch(1);
   serviceRow->addWidget(uploadServiceCombo_);
 
-  uploadCardLayout->addLayout(uploadHeaderRow);
+  // Custom-command sub-row — only meaningful when "Custom Command" is selected.
+  commandRow_ = new QWidget(uploadCard);
+  auto* commandLayout = new QVBoxLayout(commandRow_);
+  commandLayout->setContentsMargins(0, 0, 0, 0);
+  commandLayout->setSpacing(4);
+  auto* commandRowLine = new QHBoxLayout();
+  commandRowLine->setSpacing(8);
+  commandEdit_ = new QLineEdit(commandRow_);
+  commandEdit_->setMinimumWidth(300);
+  testButton_ = makeButton(commandRow_);
+  commandRowLine->addWidget(commandEdit_, 1);
+  commandRowLine->addWidget(testButton_);
+  commandLayout->addLayout(commandRowLine);
+
+  uploadCardLayout->addWidget(uploadLabel_);
   uploadCardLayout->addSpacing(2);
   uploadCardLayout->addLayout(serviceRow);
+  uploadCardLayout->addWidget(commandRow_);
   cardColumn->addWidget(uploadCard);
 
   layout->addStretch(1);
@@ -124,10 +146,15 @@ muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent
 
   retranslateUi();
   loadSettings();
+  updateConditionalRows();
 
   // Wire persistence
-  connect(insertCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [](int index) { QSettings().setValue(QStringLiteral("image/insertAction"), index); });
+  connect(insertCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
+    QSettings().setValue(QStringLiteral("image/insertAction"), index);
+    updateConditionalRows();
+  });
+  connect(customFolderEdit_, &QLineEdit::textChanged, this,
+          [](const QString& text) { QSettings().setValue(QStringLiteral("image/customFolder"), text); });
   connect(applyToLocalCheck_, &QCheckBox::toggled, this,
           [](bool checked) { QSettings().setValue(QStringLiteral("image/applyToLocal"), checked); });
   connect(applyToNetworkCheck_, &QCheckBox::toggled, this,
@@ -140,29 +167,35 @@ muffin::PrefsImagePage::PrefsImagePage(QWidget* parent) : PreferencesPage(parent
           [](bool checked) { QSettings().setValue(QStringLiteral("image/addLeadingSlash"), checked); });
   connect(escapeImageUrlCheck_, &QCheckBox::toggled, this,
           [](bool checked) { QSettings().setValue(QStringLiteral("image/escapeImageUrl"), checked); });
-  connect(uploadServiceCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [](int index) { QSettings().setValue(QStringLiteral("image/uploadService"), index); });
+  connect(uploadServiceCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
+    QSettings().setValue(QStringLiteral("image/uploadService"), index);
+    updateConditionalRows();
+  });
+  connect(commandEdit_, &QLineEdit::textChanged, this,
+          [](const QString& text) { QSettings().setValue(QStringLiteral("image/uploadCommand"), text); });
+  connect(customFolderBrowse_, &QPushButton::clicked, this, [this] { browseCustomFolder(); });
+  connect(testButton_, &QPushButton::clicked, this, [this] { testUploader(); });
 }
 
 void muffin::PrefsImagePage::retranslateUi() {
   // Card 1: Insert images
   insertLabel_->setText(tr("When Inserting Images"));
   {
-    const auto learnMore = tr("Learn more...");
     const auto prev = insertCombo_->currentIndex();
     insertCombo_->blockSignals(true);
     insertCombo_->clear();
     insertCombo_->addItem(tr("No special operation"));
-    insertCombo_->addItem(tr("Copy to custom folder"));
+    insertCombo_->addItem(tr("Copy image to current folder (./)"));
+    insertCombo_->addItem(tr("Copy image to ./assets folder"));
+    insertCombo_->addItem(tr("Copy image to ./%1 folder").arg(QStringLiteral("$(filename).assets")));
     insertCombo_->addItem(tr("Upload image"));
+    insertCombo_->addItem(tr("Copy to specified path"));
     polishComboBox(insertCombo_);
     insertCombo_->setCurrentIndex(qBound(0, prev, insertCombo_->count() - 1));
     insertCombo_->blockSignals(false);
-    // Update "Learn more" label — stored as the 2nd widget in the header row
-    if (auto* lm = insertLabel_->parentWidget()->findChildren<QLabel*>().value(1)) {
-      lm->setText(QStringLiteral("<a href=\"#\">%1</a>").arg(learnMore));
-    }
   }
+  customFolderEdit_->setPlaceholderText(tr("Destination folder for copied images"));
+  customFolderBrowse_->setText(tr("Browse..."));
   applyToLocalCheck_->setText(tr("Apply the above rules to local images"));
   applyToNetworkCheck_->setText(tr("Apply the above rules to network images"));
   allowYamlUploadCheck_->setText(tr("Allow automatic image upload based on YAML settings"));
@@ -181,10 +214,13 @@ void muffin::PrefsImagePage::retranslateUi() {
     uploadServiceCombo_->blockSignals(true);
     uploadServiceCombo_->clear();
     uploadServiceCombo_->addItem(tr("None"));
+    uploadServiceCombo_->addItem(tr("Custom Command"));
     polishComboBox(uploadServiceCombo_);
     uploadServiceCombo_->setCurrentIndex(qBound(0, prev, uploadServiceCombo_->count() - 1));
     uploadServiceCombo_->blockSignals(false);
   }
+  commandEdit_->setPlaceholderText(tr("e.g. picgo upload or uPic -m upload"));
+  testButton_->setText(tr("Test"));
 }
 
 void muffin::PrefsImagePage::loadSettings() {
@@ -196,6 +232,10 @@ void muffin::PrefsImagePage::loadSettings() {
     insertCombo_->setCurrentIndex(qBound(0, insert, insertCombo_->count() - 1));
     insertCombo_->blockSignals(false);
   }
+
+  customFolderEdit_->blockSignals(true);
+  customFolderEdit_->setText(settings.value(QStringLiteral("image/customFolder")).toString());
+  customFolderEdit_->blockSignals(false);
 
   applyToLocalCheck_->blockSignals(true);
   applyToLocalCheck_->setChecked(settings.value(QStringLiteral("image/applyToLocal"), true).toBool());
@@ -228,5 +268,52 @@ void muffin::PrefsImagePage::loadSettings() {
     uploadServiceCombo_->blockSignals(true);
     uploadServiceCombo_->setCurrentIndex(qBound(0, service, uploadServiceCombo_->count() - 1));
     uploadServiceCombo_->blockSignals(false);
+  }
+
+  commandEdit_->blockSignals(true);
+  commandEdit_->setText(settings.value(QStringLiteral("image/uploadCommand")).toString());
+  commandEdit_->blockSignals(false);
+}
+
+void muffin::PrefsImagePage::updateConditionalRows() {
+  if (customFolderRow_) {
+    const bool copyToCustom = insertCombo_->currentIndex() == static_cast<int>(ImageInsertAction::CopyToCustomFolder);
+    customFolderRow_->setVisible(copyToCustom);
+  }
+  if (commandRow_) {
+    // index 1 == "Custom Command" (see retranslateUi)
+    commandRow_->setVisible(uploadServiceCombo_->currentIndex() == 1);
+  }
+}
+
+void muffin::PrefsImagePage::browseCustomFolder() {
+  const QString dir = QFileDialog::getExistingDirectory(this, tr("Select Image Folder"), customFolderEdit_->text());
+  if (!dir.isEmpty()) {
+    customFolderEdit_->setText(dir);
+  }
+}
+
+void muffin::PrefsImagePage::testUploader() {
+  const QString command = commandEdit_->text().trimmed();
+  if (command.isEmpty()) {
+    QMessageBox::warning(this, tr("Test Upload"), tr("Enter an upload command first."));
+    return;
+  }
+  // Generate a tiny throwaway image so the uploader has a real file to post.
+  QImage test(16, 16, QImage::Format_RGB32);
+  test.fill(Qt::white);
+  const QString tempPath = QDir::tempPath() + QStringLiteral("/muffin_upload_test.png");
+  if (!test.save(tempPath, "PNG")) {
+    QMessageBox::warning(this, tr("Test Upload"), tr("Could not create a test image."));
+    return;
+  }
+  const CustomCommandResult res = CustomCommandUploader::upload(this, {tempPath}, command);
+  QFile::remove(tempPath);
+  if (res.canceled) {
+    QMessageBox::information(this, tr("Test Upload"), tr("Upload canceled."));
+  } else if (res.ran && !res.urls.isEmpty()) {
+    QMessageBox::information(this, tr("Test Upload"), tr("Upload succeeded. Returned URL:\n%1").arg(res.urls.first()));
+  } else {
+    QMessageBox::warning(this, tr("Test Upload"), tr("Upload failed:\n%1").arg(res.error));
   }
 }

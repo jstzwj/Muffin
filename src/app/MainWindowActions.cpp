@@ -4,10 +4,10 @@
 #include "document/SourceRangeUtil.h"
 #include "editor/EditorView.h"
 #include "editor/SourceEditorWidget.h"
+#include "image/ImageInsertionPolicy.h"
 
 #include <QDialog>
 #include <QDialogButtonBox>
-#include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
@@ -263,19 +263,21 @@ void muffin::MainWindow::insertLocalImageWithDialog() {
     return;
   }
 
-  // Compute relative path if a document is open
-  QString imagePath = filePath;
-  const QString docDir = QFileInfo(session_.filePath()).absolutePath();
-  if (!docDir.isEmpty()) {
-    const QString relative = QDir(docDir).relativeFilePath(filePath);
-    // Use relative path if it doesn't go up too many levels
-    if (!relative.startsWith(QStringLiteral(".."))) {
-      imagePath = relative;
-    }
+  // Route through the centralized insertion policy so the picked file honours the
+  // configured insert action (copy to ./assets, upload, …) and syntax checkboxes.
+  muffin::ImageInsertRequest req;
+  req.sourcePath = filePath;
+  req.documentPath = session_.filePath();
+  req.documentText = session_.markdownText();
+  req.alt = QFileInfo(filePath).completeBaseName();
+  QSettings settings;
+  const muffin::ImageInsertResult res = muffin::ImageInsertionPolicy::resolveHref(req, settings, this);
+  if (!res.ok) {
+    return;
   }
 
-  const QString alt = QFileInfo(filePath).baseName();
-  const QString markdown = QStringLiteral("![%1](%2)").arg(alt, imagePath);
+  const QString alt = res.alt.isEmpty() ? QStringLiteral("image") : res.alt;
+  const QString markdown = QStringLiteral("![%1](%2)").arg(alt, res.href);
   editorController_.inputController().insertText(markdown);
 }
 

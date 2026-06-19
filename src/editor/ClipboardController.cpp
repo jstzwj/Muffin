@@ -3,12 +3,10 @@
 #include "document/DocumentSession.h"
 #include "editor/InputController.h"
 #include "editor/SelectionController.h"
-#include "io/ImageFileOps.h"
+#include "image/ImageInsertionPolicy.h"
 
 #include <QApplication>
 #include <QClipboard>
-#include <QDir>
-#include <QFileInfo>
 #include <QImage>
 #include <QMimeData>
 #include <QSettings>
@@ -70,17 +68,21 @@ bool ClipboardController::paste() {
     return false;
   }
 
-  // Check for image data in the clipboard first
+  // Image data on the clipboard goes through the centralized insertion policy
+  // (image/insertAction + the syntax/apply checkboxes) instead of a hardcoded
+  // save-to-document-dir. Non-image pastes fall through to plain-text insertion.
   const QMimeData* mimeData = QApplication::clipboard()->mimeData();
-  if (mimeData && mimeData->hasImage()) {
+  if (mimeData && mimeData->hasImage() && ctx_.hasSession()) {
     const QImage image = qvariant_cast<QImage>(mimeData->imageData());
-    if (!image.isNull() && ctx_.hasSession()) {
-      const QString docDir = QFileInfo(ctx_.session->filePath()).absolutePath();
-      QDir saveDir(docDir);
-      const QString saved = muffin::ImageFileOps::savePastedImage(image, saveDir);
-      if (!saved.isEmpty()) {
-        const QString relPath = saveDir.relativeFilePath(saved);
-        return inputController_->insertText(QStringLiteral("![image](%1)").arg(relPath));
+    if (!image.isNull()) {
+      muffin::ImageInsertRequest req;
+      req.pastedImage = image;
+      req.documentPath = ctx_.session->filePath();
+      req.documentText = ctx_.session->markdownText();
+      QSettings settings;
+      const muffin::ImageInsertResult res = muffin::ImageInsertionPolicy::resolveHref(req, settings, nullptr);
+      if (res.ok) {
+        return inputController_->insertText(QStringLiteral("![image](%1)").arg(res.href));
       }
     }
   }

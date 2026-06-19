@@ -174,20 +174,6 @@ void MainWindow::restorePersistentActionStates() {
     window.setWindowFlag(Qt::WindowStaysOnTopHint, alwaysOnTop);
     window.show();
   }
-
-  // Image insert action radio group
-  const int imageInsertAction = settings.value(QStringLiteral("image/insertAction"), 0).toInt();
-  const QStringList insertActionIds = {
-      QStringLiteral("image.insert_relative"),
-      QStringLiteral("image.insert_absolute"),
-      QStringLiteral("image.insert_copy"),
-      QStringLiteral("image.insert_upload"),
-  };
-  for (int i = 0; i < insertActionIds.size(); ++i) {
-    if (QAction* action = window.commands_.action(insertActionIds[i])) {
-      action->setChecked(i == imageInsertAction);
-    }
-  }
 }
 
 }  // namespace muffin

@@ -133,6 +133,16 @@ bool hasUnsafeUrlScheme(const QString& rawValue) {
   // there is no real scheme, so treat it as a relative URL.
   const int colon = collapsed.indexOf(QLatin1Char(':'));
   if (colon <= 0) return false;
+
+  // Windows drive-letter absolute path ("C:/..." / "C:\..."): the single drive
+  // letter + colon parses as a one-token "scheme", but it is a local file path,
+  // not a URL scheme — and not a script vector — so treat it as safe. Without
+  // this, an <img src="C:/.../x.svg"> has its src rewritten to "#" and never loads.
+  if (colon == 1 && collapsed.size() > 2 &&
+      (collapsed.at(2) == QLatin1Char('/') || collapsed.at(2) == QLatin1Char('\\'))) {
+    return false;
+  }
+
   for (int i = 0; i < colon; ++i) {
     const QChar c = collapsed.at(i);
     if (!(c.isLetterOrNumber() || c == QLatin1Char('+') || c == QLatin1Char('-') ||

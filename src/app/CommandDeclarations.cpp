@@ -10,6 +10,7 @@
 #include "editor/FindBarWidget.h"
 #include "editor/ResourceUrl.h"
 #include "editor/SourceEditorWidget.h"
+#include "image/CustomCommandUploader.h"
 #include "io/ImageFileOps.h"
 #include "spellcheck/SpellChecker.h"
 
@@ -17,6 +18,7 @@
 #include <QClipboard>
 #include <QDesktopServices>
 #include <QDir>
+#include <QHash>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QImage>
@@ -333,7 +335,6 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .category = CommandCategory::Edit,
        .text = muffin::MainWindow::tr("Paste as Plain Text"),
        .shortcut = QKeySequence(QStringLiteral("Ctrl+Shift+V")),
-       .enabledInitial = false,
        .handler = [](MainWindow& window) { window.backend_->pasteAsPlainText(); }},
       {.id = QStringLiteral("edit.select_all"),
        .category = CommandCategory::Edit,
@@ -1167,17 +1168,114 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .text = muffin::MainWindow::tr("Upload Image"),
        .enabledInitial = false,
        .handler = [](MainWindow& window) {
-         // Placeholder — upload infrastructure not yet implemented
-         QMessageBox::information(&window, muffin::MainWindow::tr("Upload Image"),
-             muffin::MainWindow::tr("Image upload is not yet configured.\nSet up an image uploader in Preferences → Images."));
+         if (!CustomCommandUploader::isAvailable()) {
+           QMessageBox::information(&window, muffin::MainWindow::tr("Upload Image"),
+               muffin::MainWindow::tr("No upload command is configured.\nSet up a custom upload command in Preferences → Images."));
+           return;
+         }
+         const QString src = window.renderCommands_.imageSrcAtCursor();
+         const QString docDir = QFileInfo(window.session_.filePath()).absolutePath();
+         const QString resolved = ImageFileOps::resolveImagePath(src, docDir);
+         if (resolved.isEmpty()) {
+           return;
+         }
+         const CustomCommandResult res = CustomCommandUploader::upload(&window, {resolved});
+         if (res.canceled) {
+           return;
+         }
+         if (!res.ran || res.urls.isEmpty()) {
+           QMessageBox::warning(&window, muffin::MainWindow::tr("Upload Image"),
+               muffin::MainWindow::tr("Upload failed:\n%1").arg(res.error));
+           return;
+         }
+         const QString url = res.urls.first();
+         qsizetype srcStart = 0, srcEnd = 0;
+         if (window.renderCommands_.imageSourceRangeAtCursor(srcStart, srcEnd)) {
+           const QString& md = window.session_.markdownText();
+           const QString oldImage = md.mid(srcStart, srcEnd - srcStart);
+           const int urlStart = oldImage.indexOf(QStringLiteral("](")) + 2;
+           if (urlStart > 1) {
+             int urlEnd = urlStart;
+             while (urlEnd < oldImage.size() && oldImage[urlEnd] != QChar(')') && oldImage[urlEnd] != QChar(' ')) {
+               ++urlEnd;
+             }
+             const QString newImage = oldImage.left(urlStart) + url + oldImage.mid(urlEnd);
+             window.session_.applyTextDelta(srcStart, srcEnd - srcStart, newImage, true);
+           }
+         }
        },
        .enabled = [](const MainWindow& w) { return localImageAtCursor(w); }},
       {.id = QStringLiteral("image.upload_all"),
        .category = CommandCategory::Image,
        .text = muffin::MainWindow::tr("Upload All Local Images"),
        .handler = [](MainWindow& window) {
+         if (!CustomCommandUploader::isAvailable()) {
+           QMessageBox::information(&window, muffin::MainWindow::tr("Upload All Images"),
+               muffin::MainWindow::tr("No upload command is configured.\nSet up a custom upload command in Preferences → Images."));
+           return;
+         }
+         const QString docDir = QFileInfo(window.session_.filePath()).absolutePath();
+         const auto refs = ImageFileOps::collectImageRefs(window.session_.document());
+         // Collect unique resolved local paths (uploaders take a batch; order preserved).
+         QStringList paths;
+         QHash<QString, int> pathIndex;
+         for (const auto& ref : refs) {
+           if (!ImageFileOps::isLocalImageSrc(ref.href)) {
+             continue;
+           }
+           const QString resolved = ImageFileOps::resolveImagePath(ref.href, docDir);
+           if (resolved.isEmpty() || pathIndex.contains(resolved)) {
+             continue;
+           }
+           pathIndex.insert(resolved, paths.size());
+           paths.append(resolved);
+         }
+         if (paths.isEmpty()) {
+           QMessageBox::information(&window, muffin::MainWindow::tr("Upload All Images"),
+               muffin::MainWindow::tr("There are no local images to upload."));
+           return;
+         }
+         const CustomCommandResult res = CustomCommandUploader::upload(&window, paths);
+         if (res.canceled) {
+           return;
+         }
+         if (!res.ran || res.urls.size() != paths.size()) {
+           QMessageBox::warning(&window, muffin::MainWindow::tr("Upload All Images"),
+               muffin::MainWindow::tr("Upload failed:\n%1").arg(res.error.isEmpty() ? QStringLiteral("the uploader did not return one URL per image") : res.error));
+           return;
+         }
+         QHash<QString, QString> pathToUrl;
+         for (int i = 0; i < paths.size(); ++i) {
+           pathToUrl.insert(paths[i], res.urls[i]);
+         }
+         // Rewrite each ref's href in reverse so earlier offsets stay valid.
+         QString md = window.session_.markdownText();
+         int uploaded = 0;
+         for (int i = refs.size() - 1; i >= 0; --i) {
+           const auto& ref = refs[i];
+           if (!ImageFileOps::isLocalImageSrc(ref.href)) {
+             continue;
+           }
+           const QString resolved = ImageFileOps::resolveImagePath(ref.href, docDir);
+           const auto it = pathToUrl.constFind(resolved);
+           if (it == pathToUrl.constEnd()) {
+             continue;
+           }
+           const int urlSearchStart = md.indexOf(QStringLiteral("]("), ref.sourceStart);
+           if (urlSearchStart < 0 || urlSearchStart >= ref.sourceEnd) {
+             continue;
+           }
+           const int urlStart = urlSearchStart + 2;
+           int urlEnd = urlStart;
+           while (urlEnd < md.size() && urlEnd <= ref.sourceEnd && md[urlEnd] != QChar(')') && md[urlEnd] != QChar(' ')) {
+             ++urlEnd;
+           }
+           md.replace(urlStart, urlEnd - urlStart, it.value());
+           ++uploaded;
+         }
+         window.session_.applyMarkdownText(md, true);
          QMessageBox::information(&window, muffin::MainWindow::tr("Upload All Images"),
-             muffin::MainWindow::tr("Image upload is not yet configured.\nSet up an image uploader in Preferences → Images."));
+             muffin::MainWindow::tr("Uploaded %1 image(s).").arg(uploaded));
        },
        .enabled = [](const MainWindow& w) { return !w.backend_->isSourceMode(); }},
       {.id = QStringLiteral("image.reload_all"),
@@ -1261,39 +1359,6 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .enabledInitial = false,
        .handler = [](MainWindow& window) { window.renderCommands_.convertImageAtCursorToHtml(); },
        .enabled = [](const MainWindow& w) { return onImage(w); }},
-      {.id = QStringLiteral("image.insert_relative"),
-       .category = CommandCategory::Image,
-       .text = muffin::MainWindow::tr("Insert Relative Path"),
-       .checkable = true,
-       .checkedInitial = true,
-       .actionGroup = QStringLiteral("image.insertAction"),
-       .handler = [](MainWindow& window) {
-         QSettings().setValue(QStringLiteral("image/insertAction"), 0);
-       }},
-      {.id = QStringLiteral("image.insert_absolute"),
-       .category = CommandCategory::Image,
-       .text = muffin::MainWindow::tr("Insert Absolute Path"),
-       .checkable = true,
-       .actionGroup = QStringLiteral("image.insertAction"),
-       .handler = [](MainWindow& window) {
-         QSettings().setValue(QStringLiteral("image/insertAction"), 1);
-       }},
-      {.id = QStringLiteral("image.insert_copy"),
-       .category = CommandCategory::Image,
-       .text = muffin::MainWindow::tr("Copy to Custom Folder"),
-       .checkable = true,
-       .actionGroup = QStringLiteral("image.insertAction"),
-       .handler = [](MainWindow& window) {
-         QSettings().setValue(QStringLiteral("image/insertAction"), 2);
-       }},
-      {.id = QStringLiteral("image.insert_upload"),
-       .category = CommandCategory::Image,
-       .text = muffin::MainWindow::tr("Upload Image"),
-       .checkable = true,
-       .actionGroup = QStringLiteral("image.insertAction"),
-       .handler = [](MainWindow& window) {
-         QSettings().setValue(QStringLiteral("image/insertAction"), 3);
-       }},
       {.id = QStringLiteral("image.copy_all_to"),
        .category = CommandCategory::Image,
        .text = muffin::MainWindow::tr("Copy All Images To..."),
@@ -1380,9 +1445,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
       {.id = QStringLiteral("image.global_settings"),
        .category = CommandCategory::Image,
        .text = muffin::MainWindow::tr("Global Image Settings..."),
-       .enabledInitial = false,
-       .handler = [](MainWindow& window) { window.showPreferences(); },
-       .enabled = [](const MainWindow&) { return false; }},
+       .handler = [](MainWindow& window) { window.showPreferences(); }},
 
       // ---------------- View ----------------
       {.id = QStringLiteral("view.sidebar"),
@@ -1686,7 +1749,6 @@ const std::vector<MenuSpec>& mainMenuSpec() {
            {.kind = MenuItem::Kind::Separator},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.cut")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.copy")},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("image.copy_image")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.paste")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.copy_plain")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.copy_markdown")},
@@ -1918,14 +1980,6 @@ const std::vector<MenuSpec>& mainMenuSpec() {
                  .children = {
                      {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("image.to_standard")},
                      {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("image.to_html")},
-                 }},
-                {.kind = MenuItem::Kind::Submenu,
-                 .title = muffin::MainWindow::tr("When Inserting Local Image"),
-                 .children = {
-                     {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("image.insert_relative")},
-                     {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("image.insert_absolute")},
-                     {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("image.insert_copy")},
-                     {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("image.insert_upload")},
                  }},
                 {.kind = MenuItem::Kind::Separator},
                 {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("image.copy_all_to")},

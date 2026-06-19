@@ -64,9 +64,9 @@ void ImageLoader::request(const QString& url) {
     if (data.isEmpty()) {
       return;
     }
-    QImage image;
-    if (!image.loadFromData(data)) {
-      image = image_decoder::decodeFallback(data);
+    QImage image = image_decoder::decodeFallback(data);  // png/jpeg/webp/avif/svg via bundled libs
+    if (image.isNull()) {
+      image.loadFromData(data);  // last resort for formats we don't ship
       if (image.isNull()) {
         return;
       }

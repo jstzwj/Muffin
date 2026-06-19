@@ -10,6 +10,13 @@
 
 #include <avif/avif.h>
 
+#include <jpeglib.h>
+#include <png.h>
+
+#include <csetjmp>
+#include <cstring>
+#include <vector>
+
 namespace muffin::image_decoder {
 
 namespace {
@@ -152,6 +159,100 @@ QImage decodeSvg(const QByteArray& data) {
   return image;
 }
 
+bool isPng(const QByteArray& data) {
+  // PNG signature: 89 50 4E 47 0D 0A 1A 0A
+  static constexpr unsigned char kSig[8] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+  return data.size() >= 8 && std::memcmp(data.constData(), kSig, 8) == 0;
+}
+
+QImage decodePng(const QByteArray& data) {
+  // libpng's simplified png_image API: read from memory into an 8-bit RGBA buffer,
+  // then wrap (and detach) it in a QImage. This is independent of Qt's qpng plugin.
+  png_image image;
+  std::memset(&image, 0, sizeof(image));
+  image.version = PNG_IMAGE_VERSION;
+  if (png_image_begin_read_from_memory(&image, data.constData(),
+                                       static_cast<png_alloc_size_t>(data.size())) == 0) {
+    return QImage();
+  }
+  image.format = PNG_FORMAT_RGBA;
+  std::vector<unsigned char> buffer(PNG_IMAGE_SIZE(image));
+  if (png_image_finish_read(&image, nullptr, buffer.data(), 0, nullptr) == 0) {
+    png_image_free(&image);
+    return QImage();
+  }
+  const int width = static_cast<int>(image.width);
+  const int height = static_cast<int>(image.height);
+  png_image_free(&image);
+  QImage img(buffer.data(), width, height, width * 4, QImage::Format_RGBA8888);
+  return img.copy();
+}
+
+bool isJpeg(const QByteArray& data) {
+  // JPEG SOI marker followed by an APPn/define marker: FF D8 FF
+  return data.size() >= 3 && (unsigned char)data[0] == 0xFF && (unsigned char)data[1] == 0xD8 &&
+         (unsigned char)data[2] == 0xFF;
+}
+
+// libjpeg reports fatal errors by calling error_exit, which must not return. longjmp
+// back to the decoder so it can bail and tear down cleanly.
+struct JpegErrorHandler {
+  jpeg_error_mgr base;
+  jmp_buf setjmp_buffer;
+};
+
+void onJpegError(j_common_ptr cinfo) {
+  auto* handler = reinterpret_cast<JpegErrorHandler*>(cinfo->err);
+  longjmp(handler->setjmp_buffer, 1);
+}
+
+QImage decodeJpeg(const QByteArray& data) {
+  jpeg_decompress_struct cinfo;
+  JpegErrorHandler err;
+  cinfo.err = jpeg_std_error(&err.base);
+  err.base.error_exit = onJpegError;
+  jpeg_create_decompress(&cinfo);
+
+  if (setjmp(err.setjmp_buffer)) {
+    jpeg_destroy_decompress(&cinfo);
+    return QImage();
+  }
+
+  jpeg_mem_src(&cinfo, reinterpret_cast<const unsigned char*>(data.constData()),
+               static_cast<unsigned long>(data.size()));
+  if (jpeg_read_header(&cinfo, TRUE) != JPEG_HEADER_OK) {
+    jpeg_destroy_decompress(&cinfo);
+    return QImage();
+  }
+  // Force RGB output so output_components is always 3 (covers grayscale/CMYK inputs).
+  cinfo.out_color_space = JCS_RGB;
+  if (!jpeg_start_decompress(&cinfo)) {
+    jpeg_destroy_decompress(&cinfo);
+    return QImage();
+  }
+
+  const int width = static_cast<int>(cinfo.output_width);
+  const int height = static_cast<int>(cinfo.output_height);
+  if (width <= 0 || height <= 0 || cinfo.output_components != 3) {
+    jpeg_destroy_decompress(&cinfo);
+    return QImage();
+  }
+
+  // Decode into a tightly-packed RGB buffer, then wrap (and detach) in a QImage.
+  std::vector<unsigned char> pixels(static_cast<size_t>(width) * 3 * height);
+  while (cinfo.output_scanline < static_cast<JDIMENSION>(height)) {
+    unsigned char* row =
+        pixels.data() + static_cast<size_t>(cinfo.output_scanline) * width * 3;
+    jpeg_read_scanlines(&cinfo, &row, 1);
+  }
+
+  jpeg_finish_decompress(&cinfo);
+  jpeg_destroy_decompress(&cinfo);
+
+  QImage img(pixels.data(), width, height, width * 3, QImage::Format_RGB888);
+  return img.copy();
+}
+
 }  // namespace
 
 QImage decodeFallback(const QByteArray& data) {
@@ -163,6 +264,12 @@ QImage decodeFallback(const QByteArray& data) {
   }
   if (isAvif(data)) {
     return decodeAvif(data);
+  }
+  if (isPng(data)) {
+    return decodePng(data);
+  }
+  if (isJpeg(data)) {
+    return decodeJpeg(data);
   }
   if (isSvg(data)) {
     return decodeSvg(data);

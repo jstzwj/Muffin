@@ -36,6 +36,11 @@ muffin_add_test(NAME MuffinRenderTreeSitterTest       SOURCE tests/render/Render
 muffin_add_test(NAME MuffinHtmlExporterTest   SOURCE tests/export/HtmlExporterTest.cpp   LINK MuffinUi)
 muffin_add_test(NAME MuffinPandocRunnerTest   SOURCE tests/export/PandocRunnerTest.cpp   LINK MuffinUi)
 
+# --- image subsystem (link MuffinUi; pure logic under QCoreApplication, no GUI lock) ---
+muffin_add_test(NAME MuffinImageInsertionPolicyTest  SOURCE tests/image/ImageInsertionPolicyTest.cpp  LINK MuffinUi)
+muffin_add_test(NAME MuffinCustomCommandUploaderTest SOURCE tests/image/CustomCommandUploaderTest.cpp LINK MuffinUi)
+muffin_add_test(NAME MuffinImageDecoderTest          SOURCE tests/image/ImageDecoderTest.cpp          LINK MuffinUi)
+
 # --- editor view (link MuffinUi, lock the GUI; no fixture arg) ---
 muffin_add_test(NAME MuffinEditorViewProjectionSourceTest SOURCE tests/render/EditorViewProjectionSourceTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEditorViewProjectionMappingTest SOURCE tests/render/EditorViewProjectionMappingTest.cpp LINK MuffinUi RESOURCE_LOCK)
@@ -90,6 +95,7 @@ muffin_add_test(NAME MuffinCodeFenceControllerTest SOURCE tests/blocks/CodeFence
 muffin_add_test(NAME MuffinCodeFenceScrollControllerTest SOURCE tests/blocks/CodeFenceScrollControllerTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinMathBlockControllerTest SOURCE tests/blocks/MathBlockControllerTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinHtmlBlockControllerTest SOURCE tests/blocks/HtmlBlockControllerTest.cpp LINK MuffinUi)
+muffin_add_test(NAME MuffinHtmlSanitizerTest       SOURCE tests/blocks/HtmlSanitizerTest.cpp       LINK MuffinUi)
 muffin_add_test(NAME MuffinBlockTableUndoTest      SOURCE tests/blocks/BlockTableUndoTest.cpp      LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinBlockCodeFrontMatterTest SOURCE tests/blocks/BlockCodeFrontMatterTest.cpp LINK MuffinUi RESOURCE_LOCK)
 
