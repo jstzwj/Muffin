@@ -863,6 +863,30 @@ add_custom_target(dist
 )
 
 # --- Windows MSI installer target ---
+# Determine the WiX target architecture so the same 'msi' target produces an
+# x64 installer on x86_64 hosts and an arm64 installer on the windows-11-arm
+# runner. Prefer an explicit override; otherwise derive from the platform so a
+# native build picks the right one. CMAKE_SYSTEM_PROCESSOR can surface as
+# AMD64, arm64, armv8, aarch64, ... depending on the generator/toolchain, so
+# fold every ARM spelling into WiX's arm64 rather than matching exact strings.
+set(MUFFIN_MSI_ARCH "" CACHE STRING "WiX target architecture for the MSI installer (x64, arm64, ...")
+if(NOT MUFFIN_MSI_ARCH)
+  if(DEFINED CMAKE_VS_PLATFORM_NAME AND CMAKE_VS_PLATFORM_NAME)
+    string(TOLOWER "${CMAKE_VS_PLATFORM_NAME}" _msi_arch_candidate)
+  elseif(DEFINED CMAKE_SYSTEM_PROCESSOR AND CMAKE_SYSTEM_PROCESSOR)
+    string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" _msi_arch_candidate)
+  endif()
+  if(_msi_arch_candidate MATCHES "^(amd64|x86_64|x64)$")
+    set(MUFFIN_MSI_ARCH "x64")
+  elseif(_msi_arch_candidate MATCHES "(aarch|arm)")
+    set(MUFFIN_MSI_ARCH "arm64")
+  elseif(_msi_arch_candidate STREQUAL "x86")
+    set(MUFFIN_MSI_ARCH "x86")
+  elseif(_msi_arch_candidate)
+    set(MUFFIN_MSI_ARCH "${_msi_arch_candidate}")
+  endif()
+  unset(_msi_arch_candidate)
+endif()
 if(WIN32)
   find_program(WIX_COMMAND wix)
   if(WIX_COMMAND)
@@ -871,6 +895,7 @@ if(WIN32)
         "-DDIST_DIR=${MUFFIN_DIST_DIR}"
         "-DWIX_COMMAND=${WIX_COMMAND}"
         "-DMUFFIN_VERSION=${MUFFIN_EFFECTIVE_VERSION}"
+        "-DMSI_ARCH=${MUFFIN_MSI_ARCH}"
         "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
         -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildMSI.cmake"
       DEPENDS dist

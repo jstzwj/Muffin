@@ -22,7 +22,15 @@ jobs:
             conan-arch: x86_64
             configure-preset: conan-default
             conan-cppstd: 20
-            cmake-args: ''
+            cmake-args: '-DMUFFIN_MSI_ARCH=x64'
+            test-command: ctest --preset conan-release --output-on-failure
+          - name: Windows ARM64
+            runner: windows-11-arm
+            artifact-suffix: windows-arm64
+            conan-arch: armv8
+            configure-preset: conan-default
+            conan-cppstd: 20
+            cmake-args: '-DMUFFIN_MSI_ARCH=arm64'
             test-command: ctest --preset conan-release --output-on-failure
           - name: macOS ARM64
             runner: macos-latest
@@ -74,9 +82,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.conan2/p
-          key: conan-pkg-${{ runner.os }}-${{ hashFiles('conanfile.txt') }}
+          # Include conan-arch in the key: x86_64 and armv8 Windows builds both
+          # report runner.os == 'Windows', so without the arch segment they would
+          # share one cache and restore the wrong-arch binaries on each other.
+          key: conan-pkg-${{ runner.os }}-${{ matrix.conan-arch }}-${{ hashFiles('conanfile.txt') }}
           restore-keys: |
-            conan-pkg-${{ runner.os }}-
+            conan-pkg-${{ runner.os }}-${{ matrix.conan-arch }}-
 
       - name: Detect Conan profile
         run: conan profile detect --force
@@ -205,8 +216,8 @@ jobs:
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
-          name: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-windows-x64-msi
-          path: build/Muffin-*-windows-x64.msi
+          name: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}-msi
+          path: build/Muffin-*-${{ matrix.artifact-suffix }}.msi
           if-no-files-found: error
 
       - name: Build DMG disk image

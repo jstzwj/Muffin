@@ -16,6 +16,12 @@ if(NOT DEFINED MUFFIN_VERSION OR MUFFIN_VERSION STREQUAL "")
   message(FATAL_ERROR "MUFFIN_VERSION is required")
 endif()
 
+# MSI_ARCH selects the WiX package architecture (x64, arm64, ...). It defaults
+# to x64 to preserve the historical behaviour for callers that don't pass it.
+if(NOT DEFINED MSI_ARCH OR MSI_ARCH STREQUAL "")
+  set(MSI_ARCH "x64")
+endif()
+
 if(NOT EXISTS "${DIST_DIR}")
   message(FATAL_ERROR "Dist directory does not exist: ${DIST_DIR}. Run the 'dist' target first.")
 endif()
@@ -29,17 +35,18 @@ while(_part_count LESS 4)
   math(EXPR _part_count "${_part_count} + 1")
 endwhile()
 
-set(MSI_OUTPUT "${CMAKE_BINARY_DIR}/Muffin-${MUFFIN_VERSION}-windows-x64.msi")
+set(MSI_OUTPUT "${CMAKE_BINARY_DIR}/Muffin-${MUFFIN_VERSION}-windows-${MSI_ARCH}.msi")
 
 message(STATUS "Building MSI installer...")
 message(STATUS "  WiX:      ${WIX_COMMAND}")
 message(STATUS "  DistDir:  ${DIST_DIR}")
+message(STATUS "  Arch:     ${MSI_ARCH}")
 message(STATUS "  Version:  ${_msi_version}")
 message(STATUS "  Output:   ${MSI_OUTPUT}")
 
 execute_process(
   COMMAND "${WIX_COMMAND}" build
-    -arch x64
+    -arch ${MSI_ARCH}
     -d MuffinVersion=${_msi_version}
     -d DistDir=${DIST_DIR}
     -out "${MSI_OUTPUT}"
