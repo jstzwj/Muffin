@@ -19,6 +19,7 @@
 #include "document/DocumentSession.h"
 #include "document/InlineNode.h"
 #include "document/MarkdownNode.h"
+#include "document/PendingBlockMarker.h"
 
 #include <QCoreApplication>
 #include <QElapsedTimer>
@@ -182,6 +183,29 @@ int main(int argc, char** argv) {
 
   typeAt(session, lastBlockStart + 1, iters);
   report("NEAR END (inside last block, best case)", session.markdownText().size(), blocks, inlines, iters);
+
+  // Isolated cost of the InputController-path O(doc) operation that the session bench above
+  // BYPASSES (it calls session.applyTextDelta directly, skipping InputController). This runs once
+  // per keystroke in the real app ON TOP of session.localParse, so it explains the gap between the
+  // bench (~tens of ms) and perceived lag. (BlockLayoutBuilder::setMarkdownText also copies the
+  // whole text per rebuildBlock — ~the memmove cost — but its header pulls Qt GUI, unreachable here.)
+  {
+    const QString& md = session.markdownText();
+    const muffin::MarkdownNode& root = session.document().root();
+    const int reps = 5;
+
+    double pendingMin = 1e9;
+    for (int i = 0; i < reps; ++i) {
+      QElapsedTimer t;
+      t.start();
+      volatile auto offsets = muffin::collectPendingMarkerOffsets(md, root);
+      (void)offsets;
+      pendingMin = std::min(pendingMin, t.elapsed() / 1.0);
+    }
+
+    std::fprintf(stdout, "\n=== ISOLATED InputController O(doc) op (min of %d) ===\n", reps);
+    std::fprintf(stdout, "collectPendingMarkerOffsets (every keystroke):  %.2f ms\n", pendingMin);
+  }
 
   std::fflush(stdout);
   return 0;

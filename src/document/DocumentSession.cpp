@@ -100,10 +100,6 @@ muffin::SourceRange usableRange(const muffin::MarkdownNode& node) {
   return node.sourceRange();
 }
 
-bool overlapsEdit(const muffin::SourceRange& range, qsizetype editStart, qsizetype editEnd) {
-  return range.byteStart <= editEnd && range.byteEnd >= editStart;
-}
-
 bool isVirtualEmptyParagraph(const muffin::MarkdownNode& node) {
   const muffin::SourceRange range = node.sourceRange();
   return node.type() == muffin::BlockType::Paragraph && range.byteStart >= 0 && range.byteEnd == range.byteStart;
@@ -152,17 +148,6 @@ int countNewlines(QStringView text) {
     }
   }
   return count;
-}
-
-int lineForOffset(const QString& text, qsizetype offset) {
-  int line = 1;
-  const qsizetype bounded = qBound<qsizetype>(0, offset, text.size());
-  for (qsizetype i = 0; i < bounded; ++i) {
-    if (text.at(i) == QLatin1Char('\n')) {
-      ++line;
-    }
-  }
-  return line;
 }
 
 void demotePendingMarkersInSubtree(const QString& markdown, muffin::MarkdownNode& node) {
@@ -214,20 +199,52 @@ TopLevelSlice chooseTopLevelSlice(const muffin::MarkdownDocument& document, qsiz
     return slice;
   }
 
-  for (qsizetype i = 0; i < static_cast<qsizetype>(blocks.size()); ++i) {
+  // Top-level block ranges are absolute and non-decreasing in document order, so binary-search to
+  // the overlap window instead of scanning every block. lo = first block whose byteEnd >= editStart,
+  // hiExcl = first block whose byteStart > editEnd; every block in [lo, hiExcl) overlaps the edit
+  // (the original `editStart == byteStart/byteEnd` boundary cases are subsumed given editStart <=
+  // editEnd). Then accumulate the editable ones exactly as before. Replaces an O(blocks) scan that
+  // cost ~16ms @ 50MB on every keystroke with O(log n + overlap-window).
+  qsizetype lo = 0;
+  {
+    qsizetype a = 0;
+    qsizetype b = static_cast<qsizetype>(blocks.size());
+    while (a < b) {
+      const qsizetype mid = a + (b - a) / 2;
+      if (usableRange(*blocks.at(static_cast<size_t>(mid))).byteEnd < editStart) {
+        a = mid + 1;
+      } else {
+        b = mid;
+      }
+    }
+    lo = a;
+  }
+  qsizetype hiExcl = static_cast<qsizetype>(blocks.size());
+  {
+    qsizetype a = lo;
+    qsizetype b = static_cast<qsizetype>(blocks.size());
+    while (a < b) {
+      const qsizetype mid = a + (b - a) / 2;
+      if (usableRange(*blocks.at(static_cast<size_t>(mid))).byteStart <= editEnd) {
+        a = mid + 1;
+      } else {
+        b = mid;
+      }
+    }
+    hiExcl = a;
+  }
+  for (qsizetype i = lo; i < hiExcl; ++i) {
     const muffin::MarkdownNode& block = *blocks.at(static_cast<size_t>(i));
     const muffin::SourceRange range = usableRange(block);
     if (range.byteStart < 0 || range.byteEnd < range.byteStart || !isEditableTopLevelType(block.type())) {
       continue;
     }
-    if (overlapsEdit(range, editStart, editEnd) || editStart == range.byteStart || editStart == range.byteEnd) {
-      if (slice.first < 0) {
-        slice.first = i;
-        slice.sourceStart = range.byteStart;
-      }
-      slice.count = i - slice.first + 1;
-      slice.sourceEnd = range.byteEnd;
+    if (slice.first < 0) {
+      slice.first = i;
+      slice.sourceStart = range.byteStart;
     }
+    slice.count = i - slice.first + 1;
+    slice.sourceEnd = range.byteEnd;
   }
 
   if (slice.first >= 0) {
@@ -303,40 +320,10 @@ TopLevelSlice chooseTopLevelSlice(const muffin::MarkdownDocument& document, qsiz
   return slice;
 }
 
-void shiftRanges(muffin::MarkdownNode& node, qsizetype delta, int lineDelta) {
-  muffin::SourceRange range = node.sourceRange();
-  if (range.byteStart >= 0 && range.byteEnd >= range.byteStart) {
-    range.byteStart += delta;
-    range.byteEnd += delta;
-    if (range.lineStart > 0) {
-      range.lineStart += lineDelta;
-    }
-    if (range.lineEnd > 0) {
-      range.lineEnd += lineDelta;
-    }
-    node.setSourceRange(range);
-  }
-  muffin::DefinitionBlock definition = node.definition();
-  if (definition.isValid()) {
-    auto shiftField = [delta](muffin::DefinitionFieldRange& field) {
-      if (field.isValid()) {
-        field.start += delta;
-        field.end += delta;
-      }
-    };
-    shiftField(definition.labelRange);
-    shiftField(definition.destinationRange);
-    shiftField(definition.titleRange);
-    shiftField(definition.noteRange);
-    shiftField(definition.markerRange);
-    shiftField(definition.sourceRange);
-    node.setDefinition(definition);
-  }
-  shiftInlineSourcePositions(node.inlines(), delta);
-  for (const auto& child : node.children()) {
-    shiftRanges(*child, delta, lineDelta);
-  }
-}
+// The old recursive shiftRanges is gone: under the block-relative offset model, a suffix
+// top-level block only needs its OWN sourceRange shifted (descendants are relative and invariant).
+// See tryApplyTopLevelLocalEdit's suffix loop. Slice nodes are made block-relative via
+// MarkdownNode::relativizeDescendants + an own-range absolutize (no recursive shift).
 
 void inheritIdsByStructure(const muffin::MarkdownNode& oldNode, muffin::MarkdownNode& newNode) {
   if (oldNode.type() != newNode.type()) {
@@ -691,6 +678,16 @@ void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector
   if (!demoteAtOffsets.isEmpty()) {
     demotePendingMarkersAtOffsets(document_.markdownText(), document_.root(), demoteAtOffsets);
   }
+  // Block-relative offsets: convert each top-level block's subtree to relative now that every
+  // parse/demote pass has written absolute offsets. Runs once per full parse (not per keystroke).
+  {
+    PerfTimer relativizePerf("session.relativize");
+    for (const auto& child : document_.root().children()) {
+      if (child) {
+        child->relativizeDescendants();
+      }
+    }
+  }
   emit parsed(lastParseElapsedMs_);
 }
 
@@ -779,10 +776,34 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
   }
 
   std::vector<std::unique_ptr<MarkdownNode>> replacements;
-  const int sliceLineDelta = lineForOffset(oldText, slice.sourceStart) - 1;
+  int sliceLineDelta;
+  {
+    PerfTimer lineProbe("session.local.lineForOffset");
+    // oldText == document_.markdownText() here (replaceTopLevelRange has not run yet), and
+    // document_.lineOffsets() is maintained incrementally against that exact text via applyEdit on
+    // every edit — so the cache answers in O(log n) instead of an O(offset) scan of oldText that
+    // dominated per-keystroke cost near the end of a large document (~64ms@50MB).
+    sliceLineDelta = document_.lineOffsets().lineForOffset(slice.sourceStart) - 1;
+  }
   while (!parsedSlice.root->children().empty()) {
     auto child = parsedSlice.root->detachChild(0);
-    shiftRanges(*child, slice.sourceStart, sliceLineDelta);
+    // Block-relative offsets: relativize this block's descendants while its own range is still
+    // SLICE-RELATIVE (the base is the block's slice-relative byteStart), THEN absolutize the
+    // block's own range. Descendants stay relative-to-block; sourceRange() resolves them to
+    // absolute via the block's now-absolute byteStart.
+    child->relativizeDescendants();
+    SourceRange own = child->sourceRange();  // detached top-level block: stored, slice-relative
+    if (own.byteStart >= 0 && own.byteEnd >= own.byteStart) {
+      own.byteStart += slice.sourceStart;
+      own.byteEnd += slice.sourceStart;
+    }
+    if (own.lineStart > 0) {
+      own.lineStart += sliceLineDelta;
+    }
+    if (own.lineEnd > 0) {
+      own.lineEnd += sliceLineDelta;
+    }
+    child->setSourceRange(own);
     replacements.push_back(std::move(child));
   }
   // For a pure insertion after an existing block, drop the context-dependent leading VEP the
@@ -803,8 +824,12 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
     const int editLineDelta = countNewlines(QStringView(replacementText)) - countNewlines(QStringView(oldText).mid(sourceStart, sourceEnd - sourceStart));
     const qsizetype firstFollowing = slice.first + slice.count;
     auto& existingBlocks = document_.root().children();
+    // Block-relative offsets: only each suffix top-level block's OWN sourceRange shifts
+    // (descendants are relative to it and stay invariant). O(num top-level blocks), no recursion —
+    // replaces the old O(all suffix nodes+inlines) shiftRanges sweep. shiftOwnSourceRange mutates
+    // metadata_ in place (no SourceRange struct copy-out/copy-in per block).
     for (qsizetype i = firstFollowing; i < static_cast<qsizetype>(existingBlocks.size()); ++i) {
-      shiftRanges(*existingBlocks.at(static_cast<size_t>(i)), editDelta, editLineDelta);
+      existingBlocks.at(static_cast<size_t>(i))->shiftOwnSourceRange(editDelta, editLineDelta);
     }
   }
 

@@ -19,8 +19,10 @@ class CodeFenceScrollController;
 
 class BlockLayoutBuilder {
 public:
-  void setMarkdownText(QString markdownText);
-  void setMarkdownText(QString markdownText, const LineStartOffsetCache& lineOffsets);
+  // Holds a non-owning view onto the document's markdown text (the document outlives every build,
+  // and configureBuilder refreshes it before each build/estimate). Avoids copying the whole
+  // document text into the builder on every per-keystroke rebuildBlock.
+  void setMarkdownText(const QString& markdownText, const LineStartOffsetCache& lineOffsets);
   void setSelection(SelectionRange selection);
   void setEditingHtmlBlock(NodeId id);
   void setDocumentPath(QString path);
@@ -108,6 +110,10 @@ private:
   qsizetype sourceContentEndForEditableNode(const MarkdownNode& node) const;
   qsizetype sourceOffsetForLineColumn(int line, int column) const;
   qsizetype sourceOffsetForLineEnd(int line) const;
+  // The live document text (non-owning view set by configureBuilder). Always non-null: it defaults
+  // to emptyText_ and is refreshed with the live document before every build/estimate, so a stray
+  // build without configureBuilder yields an empty layout instead of a null dereference.
+  const QString& md() const;
   qreal textHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width, const QMarginsF& padding, bool wrap = true) const;
 
   // Height-estimate helpers mirroring the build* dispatch. Never touch QTextLayout.
@@ -123,10 +129,15 @@ private:
   // track CJK vs ASCII density per block without measuring full text widths.
   qreal avgCharWidthForText(QStringView text, const QFont& font) const;
 
-  QString markdownText_;
   QString documentPath_;
-  LineStartOffsetCache ownedLineOffsets_;
-  const LineStartOffsetCache* lineOffsets_ = &ownedLineOffsets_;
+  // Stable empty fallbacks so the non-owning views below are NEVER null. A build/estimate that runs
+  // before configureBuilder (or after the document has been cleared) reads empty text + an empty
+  // line-offset cache — a graceful no-op — instead of dereferencing a null pointer. The owning-
+  // text overload of setMarkdownText was removed, so these no longer get repopulated; they exist
+  // purely as the safe default pointees.
+  QString emptyText_;
+  LineStartOffsetCache emptyLineOffsets_;
+  const LineStartOffsetCache* lineOffsets_ = &emptyLineOffsets_;
   SelectionRange selection_;
   NodeId editingHtmlBlockId_;
   CodeFenceScrollController* codeFenceScroll_ = nullptr;
@@ -142,6 +153,8 @@ private:
   qint64 literalTextNs_ = 0;
   bool perfEnabled_ = false;
   mutable QHash<QString, QPair<qreal, qreal>> fontMetricsCache_;  // QFont::key() -> {wideAdvance, narrowAdvance}
+
+  const QString* markdownText_ = &emptyText_;  // non-owning; refreshed by configureBuilder before each build
 };
 
 }  // namespace muffin

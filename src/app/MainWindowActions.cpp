@@ -141,7 +141,10 @@ void muffin::MainWindow::syncSourceEditorIfNeeded() {
 
 void muffin::MainWindow::scheduleWordCountUpdate() {
   wordCountDirty_ = true;
-  if (wordCountTimer_ && !wordCountTimer_->isActive()) {
+  if (wordCountTimer_) {
+    // Restart on every call so the O(document) word count runs only after typing pauses (250ms),
+    // not every 250ms mid-burst. The old !isActive gate fired it periodically during continuous
+    // typing — an O(doc) hitch (countWords scans every QChar) that stuttered large documents.
     wordCountTimer_->start();
   }
 }

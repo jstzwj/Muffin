@@ -340,6 +340,10 @@ bool muffin::MainWindow::saveCurrentDocument() {
   return false;
 }
 
+int muffin::MainWindow::draftSnapshotIntervalMs() const {
+  return qMax(3000, static_cast<int>(session_.markdownText().size() / 2048));
+}
+
 void muffin::MainWindow::performAutoSave() {
   // Silent write of a pathed, modified document when files/autoSave is on. Untitled
   // documents (no filePath) are handled by draft-recovery snapshots, not here.
@@ -361,17 +365,21 @@ void muffin::MainWindow::snapshotDraft() {
   if (!session_.document().isModified()) {
     return;
   }
-  const QString text = session_.markdownText();
-  if (!text.isEmpty() && text != lastDraftSnapshotText_) {
-    drafts_.snapshot(text, session_.filePath());
-    lastDraftSnapshotText_ = text;
+  // Gate by revision (not a full-text compare) so the heartbeat is cheap when idle, and snapshot
+  // only when content actually changed. snapshot() takes the text by const-ref and does the UTF-8
+  // encode + sync write internally — no 50MB copy/compare here on every fire.
+  const quint64 revision = session_.document().revision();
+  if (revision != lastDraftSnapshotRevision_ && !session_.markdownText().isEmpty()) {
+    drafts_.snapshot(session_.markdownText(), session_.filePath());
+    lastDraftSnapshotRevision_ = revision;
   }
   // Heartbeat: re-arm for as long as the document stays dirty. modifiedChanged
   // only fires on the clean↔dirty transition, so without this re-arm a single
   // snapshot would be taken seconds into an edit session and never refreshed —
-  // leaving everything typed afterwards unrecoverable. The content check above
-  // keeps the heartbeat's cost to a string comparison when the user pauses.
-  draftTimer_->start();
+  // leaving everything typed afterwards unrecoverable. The revision check above
+  // keeps the heartbeat's cost to a revision read when the user pauses. The
+  // interval scales with document size so the encode+write doesn't hitch typing.
+  draftTimer_->start(draftSnapshotIntervalMs());
 }
 
 bool muffin::MainWindow::offerDraftRecovery() {

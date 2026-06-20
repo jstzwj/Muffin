@@ -171,7 +171,8 @@ bool fillSourceOffsetForTextHit(const DocumentSession& session, HitTestResult& h
   cursor.text.textOffset = hit.textOffset;
   cursor.text.sourceOffset = hit.sourceOffset;
   InlineProjectionState projectionState = InlineProjectionState::forCursor(cursor, hit.blockId, start);
-  InlineProjection projection(editable->inlines(), contentText, projectionState, start);
+  InlineProjection projection(editable->inlines(), contentText, projectionState,
+                              start - editable->topLevelBlock()->sourceRange().byteStart);
   if (hit.sourceOffset >= 0) {
     localSourceOffset = qBound<qsizetype>(0, hit.sourceOffset - start, contentText.size());
   } else if (!projection.sourceOffsetForVisibleOffset(hit.textOffset, localSourceOffset)) {
@@ -1153,8 +1154,11 @@ bool EditorController::imageSourceRangeAtCursor(qsizetype& outStart, qsizetype& 
         // Image node and an HTML <img> HtmlInline node back an Image Atom span. As in
         // imageAtomSpanAtCursor, the span offsets are content-local while the node offsets are
         // absolute; shift the node range to local for the containment test, but return the node's
-        // ABSOLUTE range (that's what the caller splices into the full markdown).
-        const qsizetype base = context.contentRange.byteStart;
+        // Inlines are stored relative to the owning top-level block; convert to content-local for
+        // the span comparison (base = content offset within block), then back to ABSOLUTE for the
+        // returned range (what the caller splices into the full markdown).
+        const qsizetype topLevelByteStart = context.editableNode->topLevelBlock()->sourceRange().byteStart;
+        const qsizetype base = context.contentRange.byteStart - topLevelByteStart;
         for (const auto& inlineNode : context.editableNode->inlines()) {
           const bool isImageNode = inlineNode.type() == InlineType::Image;
           const bool isHtmlImg = inlineNode.type() == InlineType::HtmlInline &&
@@ -1165,8 +1169,8 @@ bool EditorController::imageSourceRangeAtCursor(qsizetype& outStart, qsizetype& 
           const qsizetype nodeStart = inlineNode.sourceRanges().source.start - base;
           const qsizetype nodeEnd = inlineNode.sourceRanges().source.end - base;
           if (nodeStart <= span->sourceStart && nodeEnd >= span->sourceEnd) {
-            outStart = inlineNode.sourceStart();
-            outEnd = inlineNode.sourceEnd();
+            outStart = inlineNode.sourceStart() + topLevelByteStart;
+            outEnd = inlineNode.sourceEnd() + topLevelByteStart;
             return true;
           }
         }

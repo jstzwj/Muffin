@@ -258,15 +258,13 @@ QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& t
 
 }  // namespace
 
-void BlockLayoutBuilder::setMarkdownText(QString markdownText) {
-  markdownText_ = std::move(markdownText);
-  ownedLineOffsets_.rebuild(QStringView(markdownText_));
-  lineOffsets_ = &ownedLineOffsets_;
+void BlockLayoutBuilder::setMarkdownText(const QString& markdownText, const LineStartOffsetCache& lineOffsets) {
+  markdownText_ = &markdownText;  // non-owning view; the document outlives the build
+  lineOffsets_ = &lineOffsets;
 }
 
-void BlockLayoutBuilder::setMarkdownText(QString markdownText, const LineStartOffsetCache& lineOffsets) {
-  markdownText_ = std::move(markdownText);
-  lineOffsets_ = &lineOffsets;
+const QString& BlockLayoutBuilder::md() const {
+  return *markdownText_;  // defaults to emptyText_; configureBuilder refreshes it before each build
 }
 
 void BlockLayoutBuilder::setSelection(SelectionRange selection) {
@@ -343,7 +341,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   layout->setType(node.type());
   layout->setDepth(depth);
   layout->setHeadingLevel(node.headingLevel());
-  if (isEmptyDocumentParagraph(markdownText_, node)) {
+  if (isEmptyDocumentParagraph(md(), node)) {
     layout->setPlaceholderText(QCoreApplication::translate("muffin::BlockLayoutBuilder", "Start writing..."));
   }
 
@@ -361,7 +359,11 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   QString editableSource = sourceTextForEditableNode(node);
   InlineLayout::BuildOptions options;
   options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), projectionBase);
-  options.sourceBase = projectionBase;
+  // Inlines are stored relative to the owning top-level block's byteStart. The projection wants
+  // content-local spans, so sourceBase = content offset within the block (contentStart - the
+  // top-level block's byteStart). localRange then yields the same content-local spans as before.
+  // projectionBase (setContentSourceStart / forSelection) stays ABSOLUTE — cursor math is absolute.
+  options.sourceBase = projectionBase - node.topLevelBlock()->sourceRange().byteStart;
   options.pendingPrefixLength = pendingPrefixLengthFor(node, editableSource);
   options.isMisspelled = spellMisspelledPredicate();
   options.smartPunct = smartPunctRenderOptions();
@@ -465,7 +467,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
     const qsizetype contentStart = sourceContentStartForEditableNode(*paragraph);
     layout->setContentSourceStart(contentStart);
     options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), contentStart);
-    options.sourceBase = contentStart;
+    options.sourceBase = contentStart - node.topLevelBlock()->sourceRange().byteStart;
   }
   options.isMisspelled = spellMisspelledPredicate();
   options.smartPunct = smartPunctRenderOptions();
@@ -670,7 +672,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       cell.alternate = rowIndex % 2 == 1;
       cell.alignment = column < alignments.size() ? alignments.at(column) : TableAlignment::None;
       InlineLayout::BuildOptions options;
-      options.sourceBase = sourceContentStartForEditableNode(*cellNode);
+      options.sourceBase = sourceContentStartForEditableNode(*cellNode) - cellNode->topLevelBlock()->sourceRange().byteStart;
       if (selection_.focus.text.nodeId == cellNode->id()) {
         options.projectionState = InlineProjectionState::forSelection(selection_, selection_.focus.blockId, sourceContentStartForEditableNode(*cellNode));
       }
@@ -831,10 +833,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildDefinition(
 
     // Extract continuation lines for multi-line footnotes
     if (definition.sourceRange.isValid() && definition.noteRange.isValid() &&
-        definition.sourceRange.end > definition.noteRange.end && !markdownText_.isEmpty()) {
+        definition.sourceRange.end > definition.noteRange.end && !md().isEmpty()) {
       // Find end of the first line in the source range
       const qsizetype srcStart = definition.sourceRange.start;
-      const qsizetype firstLineEnd = markdownText_.indexOf(
+      const qsizetype firstLineEnd = md().indexOf(
           QLatin1Char('\n'), definition.noteRange.end);
       if (firstLineEnd >= 0 && firstLineEnd < definition.sourceRange.end) {
         QString continuation;
@@ -843,31 +845,31 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildDefinition(
           // Strip leading indentation (up to 4 spaces or 1 tab)
           int indent = 0;
           while (pos < definition.sourceRange.end && indent < 4 &&
-                 markdownText_.at(pos) == QLatin1Char(' ')) {
+                 md().at(pos) == QLatin1Char(' ')) {
             ++pos;
             ++indent;
           }
           if (pos < definition.sourceRange.end && indent < 4 &&
-              markdownText_.at(pos) == QLatin1Char('\t')) {
+              md().at(pos) == QLatin1Char('\t')) {
             ++pos;
           }
           // Read to end of line
           const qsizetype contentStart = pos;
           while (pos < definition.sourceRange.end &&
-                 markdownText_.at(pos) != QLatin1Char('\n') &&
-                 markdownText_.at(pos) != QLatin1Char('\r')) {
+                 md().at(pos) != QLatin1Char('\n') &&
+                 md().at(pos) != QLatin1Char('\r')) {
             ++pos;
           }
           if (!continuation.isEmpty()) {
             continuation += QLatin1Char('\n');
           }
-          continuation += markdownText_.mid(contentStart, pos - contentStart);
+          continuation += md().mid(contentStart, pos - contentStart);
           if (pos < definition.sourceRange.end &&
-              markdownText_.at(pos) == QLatin1Char('\r')) {
+              md().at(pos) == QLatin1Char('\r')) {
             ++pos;
           }
           if (pos < definition.sourceRange.end &&
-              markdownText_.at(pos) == QLatin1Char('\n')) {
+              md().at(pos) == QLatin1Char('\n')) {
             ++pos;
           }
         }
@@ -980,7 +982,7 @@ QString BlockLayoutBuilder::sourceTextForEditableNode(const MarkdownNode& node) 
   if (start < 0 || end < start) {
     return {};
   }
-  return markdownText_.mid(start, end - start);
+  return md().mid(start, end - start);
 }
 
 qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNode& node) const {
@@ -992,28 +994,28 @@ qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNo
   if (start < 0 || end < start) {
     return -1;
   }
-  if (isEmptyDocumentParagraph(markdownText_, node)) {
+  if (isEmptyDocumentParagraph(md(), node)) {
     return 0;
   }
   if (node.type() == BlockType::Heading) {
-    while (start < end && markdownText_.at(start) == QLatin1Char('#')) {
+    while (start < end && md().at(start) == QLatin1Char('#')) {
       ++start;
     }
-    if (start < end && markdownText_.at(start).isSpace()) {
+    if (start < end && md().at(start).isSpace()) {
       ++start;
     }
   } else if (node.type() == BlockType::Paragraph) {
-    start = paragraphContentStartIncludingCommonMarkIndent(markdownText_, start);
+    start = paragraphContentStartIncludingCommonMarkIndent(md(), start);
     if (node.parent() && node.parent()->type() == BlockType::ListItem) {
       qsizetype lineStart = start;
-      while (lineStart > 0 && markdownText_.at(lineStart - 1) != QLatin1Char('\n')) {
+      while (lineStart > 0 && md().at(lineStart - 1) != QLatin1Char('\n')) {
         --lineStart;
       }
       qsizetype lineEnd = start;
-      while (lineEnd < markdownText_.size() && markdownText_.at(lineEnd) != QLatin1Char('\n')) {
+      while (lineEnd < md().size() && md().at(lineEnd) != QLatin1Char('\n')) {
         ++lineEnd;
       }
-      const ListLineInfo info = listLineInfoFor(markdownText_.mid(lineStart, lineEnd - lineStart));
+      const ListLineInfo info = listLineInfoFor(md().mid(lineStart, lineEnd - lineStart));
       if (info.valid && info.task) {
         start = lineStart + info.taskContentStart;
       }
@@ -1025,19 +1027,19 @@ qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNo
 qsizetype BlockLayoutBuilder::sourceContentEndForEditableNode(const MarkdownNode& node) const {
   const SourceRange range = node.sourceRange();
   qsizetype end = node.type() == BlockType::Heading
-                    ? headingContentEndOffset(node, markdownText_)
+                    ? headingContentEndOffset(node, md())
                     : (hasResolvedByteRange(range)
                            ? range.byteEnd
                            : sourceOffsetForLineEnd(range.lineEnd));
   const qsizetype start = sourceOffsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
-  if (isEmptyDocumentParagraph(markdownText_, node)) {
+  if (isEmptyDocumentParagraph(md(), node)) {
     return 0;
   }
   if (start < 0 || end < start) {
     return -1;
   }
   if (node.type() == BlockType::TableCell) {
-    while (end > start && markdownText_.at(end - 1).isSpace()) {
+    while (end > start && md().at(end - 1).isSpace()) {
       --end;
     }
   }

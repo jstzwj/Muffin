@@ -214,7 +214,32 @@ void MarkdownNode::setFrontMatterFormat(FrontMatterFormat format) {
 }
 
 DefinitionBlock MarkdownNode::definition() const {
-  return metadata_.definition;
+  DefinitionBlock def = metadata_.definition;
+  if (!def.isValid()) {
+    return def;
+  }
+  const MarkdownNode* top = topLevelBlock();
+  // Pre-relativize (parser/annotation passes on the absolute tree): fields are absolute — raw.
+  if (!top->metadata_.offsetsRelative) {
+    return def;
+  }
+  // Post-relativize: field ranges are stored relative to the owning top-level block's byteStart;
+  // resolve to absolute. For a top-level definition block topLevelBlock() == this, so the base is
+  // the block's own byteStart (its fields are relative to itself) — still correct.
+  const qsizetype byteBase = top->metadata_.sourceRange.byteStart;
+  const auto shift = [byteBase](DefinitionFieldRange& field) {
+    if (field.isValid()) {
+      field.start += byteBase;
+      field.end += byteBase;
+    }
+  };
+  shift(def.labelRange);
+  shift(def.destinationRange);
+  shift(def.titleRange);
+  shift(def.noteRange);
+  shift(def.markerRange);
+  shift(def.sourceRange);
+  return def;
 }
 
 void MarkdownNode::setDefinition(DefinitionBlock definition) {
@@ -238,11 +263,122 @@ void MarkdownNode::setTableRowIsHeader(bool header) {
 }
 
 SourceRange MarkdownNode::sourceRange() const {
-  return metadata_.sourceRange;
+  SourceRange range = metadata_.sourceRange;
+  // Top-level block (parent is the document root) or the root itself (parent_ == null): stored
+  // ABSOLUTE — return as-is.
+  if (!parent_ || !parent_->parent_) {
+    return range;
+  }
+  const MarkdownNode* top = topLevelBlock();
+  // Descendant: storage is block-relative only after the owning top-level block has been
+  // relativized. Before that (parser/annotation/demote passes on the absolute tree) return raw.
+  if (!top->metadata_.offsetsRelative) {
+    return range;
+  }
+  // Post-relativize: stored RELATIVE to the owning top-level block's byteStart/lineStart — resolve.
+  // Lines resolve inside the byte-valid branch (mirror relativizeNodeAndDescendants) so a valid line
+  // that relativized to 0 still round-trips.
+  const SourceRange topRange = top->metadata_.sourceRange;
+  if (range.byteStart >= 0 && range.byteEnd >= range.byteStart) {
+    range.byteStart += topRange.byteStart;
+    range.byteEnd += topRange.byteStart;
+    range.lineStart += topRange.lineStart;
+    range.lineEnd += topRange.lineStart;
+  }
+  return range;
 }
 
 void MarkdownNode::setSourceRange(SourceRange range) {
   metadata_.sourceRange = std::move(range);
+}
+
+void MarkdownNode::shiftOwnSourceRange(qsizetype byteDelta, int lineDelta) {
+  SourceRange& range = metadata_.sourceRange;
+  if (range.byteStart >= 0 && range.byteEnd >= range.byteStart) {
+    range.byteStart += byteDelta;
+    range.byteEnd += byteDelta;
+  }
+  if (range.lineStart > 0) {
+    range.lineStart += lineDelta;
+  }
+  if (range.lineEnd > 0) {
+    range.lineEnd += lineDelta;
+  }
+}
+
+const MarkdownNode* MarkdownNode::topLevelBlock() const {
+  if (topLevelCache_) {
+    return topLevelCache_;
+  }
+  // Walk up to the node whose parent is the document root (parent_ exists, parent_->parent_ does
+  // not). For a direct root child the loop body never runs. For the document root (parent_ == null)
+  // this returns the root itself. Memoized: a live node's top-level block never changes (within-
+  // block surgery such as table cell moves preserves it; cross-block edits destroy + re-parse rather
+  // than reparent), so the first computed value is valid for the node's lifetime.
+  const MarkdownNode* n = this;
+  while (n->parent_ && n->parent_->parent_) {
+    n = n->parent_;
+  }
+  topLevelCache_ = n;
+  return n;
+}
+
+void MarkdownNode::subtractDefinitionFields(DefinitionBlock& def, qsizetype byteBase) {
+  if (!def.isValid()) {
+    return;
+  }
+  const auto shiftField = [byteBase](DefinitionFieldRange& field) {
+    if (field.isValid()) {
+      field.start -= byteBase;
+      field.end -= byteBase;
+    }
+  };
+  shiftField(def.labelRange);
+  shiftField(def.destinationRange);
+  shiftField(def.titleRange);
+  shiftField(def.noteRange);
+  shiftField(def.markerRange);
+  shiftField(def.sourceRange);
+}
+
+void MarkdownNode::relativizeNodeAndDescendants(const MarkdownNode* topLevel, qsizetype byteBase, int lineBase) {
+  topLevelCache_ = topLevel;  // seed the cache while we are already walking the subtree
+  SourceRange range = metadata_.sourceRange;
+  // Shift bytes AND lines together whenever the byte range is resolved. Lines must move inside the
+  // same guard as bytes (not a separate `lineStart > 0` check): a valid line can relativize to 0
+  // (e.g. an item on the block's first line), and a `> 0` guard would then skip re-adding it on
+  // resolve, breaking the round-trip.
+  if (range.byteStart >= 0 && range.byteEnd >= range.byteStart) {
+    range.byteStart -= byteBase;
+    range.byteEnd -= byteBase;
+    range.lineStart -= lineBase;
+    range.lineEnd -= lineBase;
+  }
+  metadata_.sourceRange = range;
+  subtractDefinitionFields(metadata_.definition, byteBase);
+  shiftInlineSourcePositions(metadata_.inlines, -byteBase);
+  for (const auto& child : children_) {
+    if (child) {
+      child->relativizeNodeAndDescendants(topLevel, byteBase, lineBase);
+    }
+  }
+}
+
+void MarkdownNode::relativizeDescendants() {
+  // 'this' is a top-level block. Its own sourceRange is the anchor and stays ABSOLUTE; read the
+  // base directly from metadata_ (for a slice-assembled block this is read BEFORE its own range is
+  // absolutized, so the base is slice-relative and descendants become relative-to-block).
+  const qsizetype byteBase = metadata_.sourceRange.byteStart;
+  const int lineBase = metadata_.sourceRange.lineStart;
+  metadata_.offsetsRelative = true;
+  topLevelCache_ = this;  // this block is its own top-level
+  subtractDefinitionFields(metadata_.definition, byteBase);
+  shiftInlineSourcePositions(metadata_.inlines, -byteBase);
+  for (const auto& child : children_) {
+    if (child) {
+      child->relativizeNodeAndDescendants(this, byteBase, lineBase);
+    }
+  }
 }
 
 std::unique_ptr<MarkdownNode> MarkdownNode::clone(CloneMode mode) const {

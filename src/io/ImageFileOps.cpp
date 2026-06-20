@@ -12,22 +12,27 @@
 
 namespace {
 
-void collectInlineImageRefs(const muffin::InlineNode& inlineNode, QVector<muffin::ImageFileOps::ImageRef>& refs) {
+void collectInlineImageRefs(const muffin::InlineNode& inlineNode, qsizetype topLevelByteStart, QVector<muffin::ImageFileOps::ImageRef>& refs) {
   if (inlineNode.type() == muffin::InlineType::Image) {
+    // Inlines are stored relative to the owning top-level block; resolve to ABSOLUTE document
+    // offsets (ImageRef is spliced into the full markdown by callers).
     refs.append({
-        inlineNode.sourceStart(),
-        inlineNode.sourceEnd(),
+        inlineNode.sourceStart() + topLevelByteStart,
+        inlineNode.sourceEnd() + topLevelByteStart,
         inlineNode.href(),
     });
   }
   for (const auto& child : inlineNode.children()) {
-    collectInlineImageRefs(child, refs);
+    collectInlineImageRefs(child, topLevelByteStart, refs);
   }
 }
 
 void collectImageRefsRecursive(const muffin::MarkdownNode& node, QVector<muffin::ImageFileOps::ImageRef>& refs) {
+  // All descendants share the same top-level block, so its byteStart resolves every inline in the
+  // subtree. Recomputed per call (O(depth)) — image collection is not a hot path.
+  const qsizetype topLevelByteStart = node.topLevelBlock()->sourceRange().byteStart;
   for (const auto& inlineNode : node.inlines()) {
-    collectInlineImageRefs(inlineNode, refs);
+    collectInlineImageRefs(inlineNode, topLevelByteStart, refs);
   }
   for (const auto& child : node.children()) {
     collectImageRefsRecursive(*child, refs);

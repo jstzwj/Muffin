@@ -286,7 +286,10 @@ bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, c
   context.sourceStart = sourceStart;
   context.sourceEnd = sourceEnd;
   context.sourceText = markdown.mid(sourceStart, sourceEnd - sourceStart);
-  return isPlainInlineEditable(*editable, context.sourceText) || InlineProjection(editable->inlines(), context.sourceText, {}, sourceStart).isValid();
+  // Inline ranges are relative to the owning top-level block; the projection's sourceBase must be
+  // the content offset within the block (sourceStart - top-level byteStart), not the absolute start.
+  const qsizetype topLevelByteStart = editable->topLevelBlock()->sourceRange().byteStart;
+  return isPlainInlineEditable(*editable, context.sourceText) || InlineProjection(editable->inlines(), context.sourceText, {}, sourceStart - topLevelByteStart).isValid();
 }
 
 bool SelectionSerializer::editableCursorSourceOffset(

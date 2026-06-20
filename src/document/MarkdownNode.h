@@ -95,6 +95,26 @@ public:
 
   SourceRange sourceRange() const;
   void setSourceRange(SourceRange range);
+  // Shift this node's OWN stored sourceRange in place by (byteDelta, lineDelta). Used by the
+  // per-keystroke suffix shift on top-level blocks (whose stored range is absolute): mutates
+  // metadata_ directly, avoiding the copy-out / copy-in of the SourceRange struct that
+  // sourceRange()/setSourceRange() would do for every block in the suffix.
+  void shiftOwnSourceRange(qsizetype byteDelta, int lineDelta);
+
+  // --- Block-relative offset model ------------------------------------------
+  // Descendant offsets (child block SourceRange, InlineNode ranges, DefinitionBlock fields, and
+  // the top-level block's OWN definition fields) are stored RELATIVE to the owning top-level
+  // block's sourceRange().byteStart (bytes) / .lineStart (lines). The top-level block's own
+  // sourceRange stays ABSOLUTE. sourceRange()/definition() resolve to absolute on read.
+  // Owning top-level block (the node whose parent is the document root; returns this if already
+  // top-level or this is the root). O(1) after the first call: memoized, since a live node's
+  // top-level block never changes (within-block surgery preserves it; cross-block edits destroy +
+  // re-parse rather than reparent). The relativize walk seeds the cache for the whole subtree.
+  const MarkdownNode* topLevelBlock() const;
+  // Relativize this top-level block's subtree (its own sourceRange is left absolute). Call once
+  // after the subtree is built with absolute offsets. The base is read from this block's OWN
+  // current byteStart, so for a slice-assembled block call BEFORE adding slice.sourceStart to it.
+  void relativizeDescendants();
 
   std::unique_ptr<MarkdownNode> clone(CloneMode mode = CloneMode::PreserveIds) const;
 
@@ -191,6 +211,13 @@ private:
     FrontMatterFormat frontMatterFormat = FrontMatterFormat::None;
     DefinitionBlock definition;
     SourceRange sourceRange;
+    // Set on a top-level block by relativizeDescendants() once its subtree's offsets have been
+    // converted to block-relative. Lives IN this aggregate on purpose: clone() copies metadata_ in
+    // a single assignment, so a standalone member would be silently dropped (it once was), leaving a
+    // cloned subtree with relative-stored offsets but the flag false — accessors would then return
+    // unresolved relative values. Only the owning top-level block's flag is ever read (descendants
+    // read it via topLevelBlock()->metadata_); their own copy stays false and is unused.
+    bool offsetsRelative = false;
   };
 
   NodeId id_;
@@ -200,6 +227,19 @@ private:
   MarkdownNode* next_ = nullptr;
   std::vector<std::unique_ptr<MarkdownNode>> children_;
   BlockMetadata metadata_;
+  // Cached owning top-level block (the node whose parent is the document root). A LIVE node's
+  // top-level block never changes: within-block surgery (e.g. table cell moves) keeps the same
+  // top-level ancestor, and cross-block edits replace subtrees via destroy + re-parse rather than
+  // reparenting. So a value computed once stays valid for the node's lifetime, letting
+  // sourceRange()/definition() resolve in O(1) instead of climbing parent_ on every call. null
+  // defers to the parent_ climb (lazy memoization) — the relativize walk seeds it for free.
+  // mutable: set by the const topLevelBlock() accessor. NOT in metadata_: a clone's top-level
+  // differs from the original's, so clone() must leave it null (lazy recompute).
+  mutable const MarkdownNode* topLevelCache_ = nullptr;
+
+  // Block-relative offset helpers (see public relativizeDescendants).
+  void relativizeNodeAndDescendants(const MarkdownNode* topLevel, qsizetype byteBase, int lineBase);
+  static void subtractDefinitionFields(DefinitionBlock& def, qsizetype byteBase);
 };
 
 }  // namespace muffin

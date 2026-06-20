@@ -104,13 +104,16 @@ bool StylizeController::clearFormatting() {
   const qsizetype contentBase = context.contentRange.byteStart;
   const qsizetype contentEnd = context.contentRange.byteEnd;
   const QString contentText = context.contentText;
+  // Inline ranges are relative to the owning top-level block; pass the content OFFSET (not the
+  // absolute contentBase) to the inline-span collector.
+  const qsizetype contentOffset = contentBase - context.editableNode->topLevelBlock()->sourceRange().byteStart;
 
   // Collect every delimiter-syntax span to strip: for each styling node the source
   // region lying outside its content range IS the marker syntax (`**`, `__`,
   // `~~`, backticks, `[`, `](url)`). Content — math, images, label text — stays put.
   // Underline uses raw HTML (<u></u>), collected separately from the text.
   QVector<MarkerSpan> spans;
-  collectClearFormattingSpans(context.editableNode->inlines(), contentBase, spans);
+  collectClearFormattingSpans(context.editableNode->inlines(), contentOffset, spans);
   const QVector<MarkerSpan> underline =
       collectHtmlUnderlineMarkers(contentText, 0, contentText.size());
   spans.append(underline);
@@ -443,6 +446,10 @@ bool StylizeController::toggleCollapsed(
   }
 
   const qsizetype contentBase = context.contentRange.byteStart;
+  // Inline ranges are stored relative to the owning top-level block; convert them to content-local
+  // via the content OFFSET (contentBase - the top-level block's byteStart). contentBase stays
+  // absolute for cursor/source-offset arithmetic.
+  const qsizetype contentOffset = contentBase - context.editableNode->topLevelBlock()->sourceRange().byteStart;
   const qsizetype localOffset = qBound<qsizetype>(
       0, context.cursorSourceOffset - contentBase,
       context.contentText.size());
@@ -451,7 +458,7 @@ bool StylizeController::toggleCollapsed(
   qsizetype nextAnchorLocal = -1;
 
   const InlineNode* wrapping = findWrappingNode(
-      context.editableNode->inlines(), type, contentBase, localOffset);
+      context.editableNode->inlines(), type, contentOffset, localOffset);
 
   if (wrapping) {
     // ── REMOVE: strip open/close markers ──
@@ -461,9 +468,9 @@ bool StylizeController::toggleCollapsed(
       return false;
     }
 
-    const qsizetype openLocal = openRange.start - contentBase;
+    const qsizetype openLocal = openRange.start - contentOffset;
     const qsizetype openLen = openRange.length();
-    const qsizetype closeLocal = closeRange.start - contentBase;
+    const qsizetype closeLocal = closeRange.start - contentOffset;
     const qsizetype closeLen = closeRange.length();
 
     // Remove in reverse order to preserve offsets

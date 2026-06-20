@@ -225,6 +225,12 @@ private:
   void performReplaceAll(const QString& findText, const QString& replaceText);
   void performAutoSave();
   void snapshotDraft();
+  // Crash-recovery heartbeat interval, scaled by document length: floor 3s, then +1s per ~2k
+  // characters. The length is QString::size() — UTF-16 CODE UNITS, not on-disk bytes — so a
+  // CJK-heavy doc (1 code unit per char but 3 UTF-8 bytes) scales by its character count, not byte
+  // size (a "50MB on disk" CJK doc is ~25M code units → ~12s, not ~25s). Bounds typing-at-risk on a
+  // crash while keeping the O(doc) encode + sync write off the typing path on large documents.
+  int draftSnapshotIntervalMs() const;
   void restoreDraft(const DraftRecovery::PendingDraft& draft);
 
   DocumentSession session_;
@@ -248,10 +254,11 @@ private:
   QTimer* outlineTimer_ = nullptr;
   QTimer* autoSaveTimer_ = nullptr;
   QTimer* draftTimer_ = nullptr;
-  // Last text written to the draft store this dirty period. snapshotDraft()
-  // skips the (atomic) disk write when content is unchanged, so the heartbeat
-  // timer can keep firing cheaply without churning the drafts directory.
-  QString lastDraftSnapshotText_;
+  // Document revision at the last draft snapshot this dirty period. snapshotDraft() skips the
+  // O(doc) UTF-8 encode + sync disk write when the revision is unchanged (the old code compared a
+  // full copy of the text — an O(doc) copy + compare on every heartbeat). Reset to 0 on clean so
+  // the next dirty period snapshots immediately.
+  quint64 lastDraftSnapshotRevision_ = 0;
   QMenu* recentFilesMenu_ = nullptr;
   QMenu* reopenEncodingMenu_ = nullptr;
   QMenu* themesMenu_ = nullptr;

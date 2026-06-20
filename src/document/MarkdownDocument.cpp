@@ -9,6 +9,11 @@ namespace {
 
 Q_LOGGING_CATEGORY(documentPerf, "muffin.perf", QtWarningMsg)
 
+// Spare capacity maintained on markdownText_ so a length-changing replace reuses it instead of
+// reallocating an exact-size buffer (and copying the whole document) on every keystroke. 1 MiB of
+// headroom = ~500k single-char inserts before a single amortized realloc re-establishes it.
+constexpr qsizetype kTextGrowthHeadroom = 1024 * 1024;
+
 // Scoped perf probe routed to the muffin.perf category (captured by MUFFIN_PERF_LOG). No-op
 // (single branch) when the category is disabled, so it is safe to keep in release builds.
 class PerfTimer {
@@ -66,6 +71,7 @@ const LineStartOffsetCache& MarkdownDocument::lineOffsets() const {
 
 void MarkdownDocument::setMarkdownText(QString text, std::unique_ptr<MarkdownNode> root) {
   markdownText_ = std::move(text);
+  markdownText_.reserve(markdownText_.size() + kTextGrowthHeadroom);
   lineOffsets_.rebuild(QStringView(markdownText_));
   replaceRoot(std::move(root));
 }
@@ -80,6 +86,14 @@ void MarkdownDocument::replaceTopLevelRange(
   PerfTimer totalPerf("session.local.replaceRange");
   {
     PerfTimer memmovePerf("session.local.replace.memmove");
+    // Keep spare capacity so a length-changing replace reuses it instead of reallocating an
+    // exact-size buffer and copying the whole document on every keystroke. reserve() is a cheap
+    // no-op when enough slack already exists; the headroom is re-established only after it is
+    // consumed by ~1M chars of net growth. Without this, replace()'s full realloc-copy dominated
+    // per-keystroke cost (~24ms@50MB) regardless of edit position. Reserve exactly the post-replace
+    // size plus headroom (N - removed + inserted + H) — an earlier form added `removed` too, over-
+    // allocating by 2x the removed span on every edit.
+    markdownText_.reserve(markdownText_.size() - (sourceEnd - sourceStart) + replacementText.size() + kTextGrowthHeadroom);
     markdownText_.replace(sourceStart, sourceEnd - sourceStart, replacementText);
   }
   {

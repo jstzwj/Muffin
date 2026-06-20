@@ -129,7 +129,7 @@ void testInlineProjectionEntityDisplayAfterEditMultiParagraph() {
   require(contentStart >= 0 && contentEnd > contentStart, "entity block content range should be valid");
   const QString contentText = markdown.mid(contentStart, contentEnd - contentStart);
 
-  InlineProjection initialProjection(block->inlines(), contentText, InlineProjectionState{}, contentStart);
+  InlineProjection initialProjection(block->inlines(), contentText, InlineProjectionState{}, contentStart - range.byteStart);
   require(initialProjection.isValid(), "initial multi-paragraph entity projection should be valid");
   require(initialProjection.visibleText() == QString::fromUtf8("Entities: & < > \xC2\xA9."),
           QStringLiteral("initial visible text mismatch: %1").arg(initialProjection.visibleText()));
@@ -152,7 +152,7 @@ void testInlineProjectionEntityDisplayAfterEditMultiParagraph() {
   require(editedStart >= 0 && editedEnd > editedStart, "post-edit content range should be valid");
   const QString editedContentText = editedMarkdown.mid(editedStart, editedEnd - editedStart);
 
-  InlineProjection editProjection(block->inlines(), editedContentText, InlineProjectionState{}, editedStart);
+  InlineProjection editProjection(block->inlines(), editedContentText, InlineProjectionState{}, editedStart - editedRange.byteStart);
   require(editProjection.isValid(), "post-edit multi-paragraph entity projection should be valid");
   require(editProjection.visibleText() == QString::fromUtf8("Entities: & < > \xC2\xA9."),
           QStringLiteral("post-edit visible text mismatch: %1").arg(editProjection.visibleText()));

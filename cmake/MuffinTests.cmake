@@ -12,6 +12,8 @@ muffin_add_test(NAME MuffinTypingPerfBench SOURCE tests/perf/TypingPerfBench.cpp
 muffin_add_test(NAME MuffinParserBasicTest      SOURCE tests/parser/ParserBasicTest.cpp      LINK MuffinCore)
 muffin_add_test(NAME MuffinParserDefinitionTest SOURCE tests/parser/ParserDefinitionTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinParserMathCodeTest   SOURCE tests/parser/ParserMathCodeTest.cpp   LINK MuffinCore)
+muffin_add_test(NAME MuffinRelativeOffsetTest   SOURCE tests/parser/RelativeOffsetTest.cpp   LINK MuffinCore)
+muffin_add_test(NAME MuffinRelativeOffsetOracleTest SOURCE tests/parser/RelativeOffsetOracleTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinOutlineBuilderTest   SOURCE tests/document/OutlineBuilderTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinImageSyntaxOpsTest   SOURCE tests/document/ImageSyntaxOpsTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinMarkdownParseOptionsTest SOURCE tests/document/MarkdownParseOptionsTest.cpp LINK MuffinCore)

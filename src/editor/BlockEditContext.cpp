@@ -241,10 +241,13 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
     cursor.text.sourceOffset = cursorStoredSourceOffset;
     projectionState = InlineProjectionState::forCursor(cursor, displayNode.id(), start);
   }
-  context.inlineProjection = InlineProjection(editable->inlines(), context.contentText, projectionState, start,
+  // Inlines are stored relative to the owning top-level block's byteStart; InlineProjection's
+  // sourceBase must be the content offset within the block (start - top-level byteStart).
+  const qsizetype inlineBase = start - editable->topLevelBlock()->sourceRange().byteStart;
+  context.inlineProjection = InlineProjection(editable->inlines(), context.contentText, projectionState, inlineBase,
                                               16.0, 0, smartPunctRenderOptions());
   context.visibleText = context.inlineProjection.visibleText();
-  context.plainInlineEditable = InlineProjection::isPlainInlineSource(editable->inlines(), context.contentText, start);
+  context.plainInlineEditable = InlineProjection::isPlainInlineSource(editable->inlines(), context.contentText, inlineBase);
   qsizetype localSourceOffset = -1;
   const bool hasStoredSourceOffset = cursorStoredSourceOffset >= start && cursorStoredSourceOffset <= end;
   context.supportsVisibleOffsetMapping =

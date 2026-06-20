@@ -213,10 +213,10 @@ void muffin::MainWindow::connectSessionSignals() {
   // snapshot immediately instead of deduping against stale text.
   QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, [&window](bool modified) {
     if (modified) {
-      window.draftTimer_->start();
+      window.draftTimer_->start(window.draftSnapshotIntervalMs());
     } else {
       window.draftTimer_->stop();
-      window.lastDraftSnapshotText_.clear();
+      window.lastDraftSnapshotRevision_ = 0;  // next dirty period snapshots immediately
     }
   });
   // When unsaved work is resolved (saved or explicitly discarded), clear that

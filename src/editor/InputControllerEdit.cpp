@@ -187,8 +187,19 @@ void InputController::applyLocalEdit(
   }
 
   const QString removedText = currentText.mid(sourceStart, removedLength);
-  const QVector<qsizetype> beforeOffsets = collectPendingMarkerOffsetsForSession(ctx_.session);
   const bool snapshotUndoLikely = ctx_.undoStack && !beforeCursor.blockId.isValid();
+  // Pre-edit pending-marker offsets feed the snapshot undo path's "before" DocumentSnapshot
+  // (replayed on undo to re-demote pending markers — see DocumentSnapshot::demoteAtOffsets). Normal
+  // typing takes the TextDeltaCommand path, which never stores them, so we skip the O(doc) scan
+  // (collectPendingMarkerOffsets walks every paragraph; ~1.5s @ 50MB) there. Collect eagerly only
+  // when the snapshot path is guaranteed up front (structure edit, or no valid pre-edit cursor);
+  // the !appliedLocally fallback below collects lazily AND reuses the same vector for the forward
+  // demote — so there is at most one scan per edit, and the undo snapshot always carries the
+  // pre-edit markers when its branch is taken.
+  const bool needsPreEditMarkerOffsets = ctx_.undoStack && (structureEdit || snapshotUndoLikely);
+  QVector<qsizetype> beforeOffsets = needsPreEditMarkerOffsets
+      ? collectPendingMarkerOffsetsForSession(ctx_.session)
+      : QVector<qsizetype>{};
   QString beforeText = snapshotUndoLikely ? QString(currentText) : QString();
   bool beforeTextCaptured = snapshotUndoLikely;
   const bool appliedLocally =
@@ -202,6 +213,13 @@ void InputController::applyLocalEdit(
     nextText = beforeText;
     nextText.replace(sourceStart, removedLength, insertedText);
     const qsizetype editedOffset = pendingMarkerOffsetForSingleLineEdit(nextText, sourceStart, insertedText);
+    // The local edit was rejected, so the session still holds the PRE-EDIT text + tree. If we
+    // skipped the eager scan above (normal typing, expected to take the TextDeltaCommand path),
+    // collect now — once — and reuse for both the forward demote and the undo snapshot's "before"
+    // side. (Snapshot path: !appliedLocally forces it, so beforeOffsets must be populated here.)
+    if (!needsPreEditMarkerOffsets) {
+      beforeOffsets = collectPendingMarkerOffsetsForSession(ctx_.session);
+    }
     QVector<qsizetype> demoteOffsets = shiftPendingMarkerOffsets(beforeOffsets, sourceStart, removedLength, insertedText.size());
     if (editedOffset >= 0) {
       demoteOffsets.append(editedOffset);
