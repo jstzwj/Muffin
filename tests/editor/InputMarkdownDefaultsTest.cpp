@@ -31,7 +31,7 @@ void testSmartQuotes() {
   setCursor(selection, blockAt(session, 0), 4);  // end of "word"
   require(input.insertText(QStringLiteral("\"")), "typing a quote should succeed");
   // Preceding char is a letter -> closing curly quote (U+201D), and it must NOT auto-pair.
-  require(session.markdownText() == QStringLiteral("word") + QStringLiteral("\xe2\x80\x9d"),
+  require(session.markdownText() == QStringLiteral("word") + QString::fromUtf8("\xe2\x80\x9d"),
           "smart quote after a word should be a closing curly quote");
 }
 
@@ -49,7 +49,7 @@ void testSmartDashes() {
   setCursor(selection, blockAt(session, 0), 2);  // after the single '-'
   require(input.insertText(QStringLiteral("-")), "typing a dash should succeed");
   // "--" -> en-dash (U+2013): the existing '-' + typed '-' collapse.
-  require(session.markdownText() == QStringLiteral("a") + QStringLiteral("\xe2\x80\x93"),
+  require(session.markdownText() == QStringLiteral("a") + QString::fromUtf8("\xe2\x80\x93"),
           "'--' should collapse to an en-dash");
 }
 
@@ -67,7 +67,7 @@ void testSmartEllipsis() {
   setCursor(selection, blockAt(session, 0), 3);  // after the two dots
   require(input.insertText(QStringLiteral(".")), "typing a dot should succeed");
   // "..." -> ellipsis (U+2026): the two existing dots + typed dot collapse.
-  require(session.markdownText() == QStringLiteral("a") + QStringLiteral("\xe2\x80\xa6"),
+  require(session.markdownText() == QStringLiteral("a") + QString::fromUtf8("\xe2\x80\xa6"),
           "'...' should collapse to an ellipsis");
 }
 

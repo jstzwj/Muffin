@@ -270,8 +270,8 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
   convertOnInputLabel_->setText(tr("Convert on Input"));
   rebuildCombo(convertOnInputCombo_, {tr("No conversion"), tr("When typing"), tr("Always")});
   smartQuotesCheck_->setText(tr("Smart Quotes"));
-  rebuildCombo(singleQuoteCombo_, {QStringLiteral("\xe2\x80\x98" "abc" "\xe2\x80\x99"), QStringLiteral("'abc'")});
-  rebuildCombo(doubleQuoteCombo_, {QStringLiteral("\xe2\x80\x9c" "abc" "\xe2\x80\x9d"), QStringLiteral("\"abc\"")});
+  rebuildCombo(singleQuoteCombo_, {QString::fromUtf8("\xe2\x80\x98" "abc" "\xe2\x80\x99"), QStringLiteral("'abc'")});
+  rebuildCombo(doubleQuoteCombo_, {QString::fromUtf8("\xe2\x80\x9c" "abc" "\xe2\x80\x9d"), QStringLiteral("\"abc\"")});
   smartDashesCheck_->setText(tr("Smart Dashes"));
   convertOnRenderingCheck_->setText(tr("Convert on Rendering"));
   remapUnicodeCheck_->setText(tr("Remap Unicode Punctuation on Parse"));

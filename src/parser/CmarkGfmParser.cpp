@@ -318,8 +318,8 @@ QString legacyMathDelimitersToDollar(QStringView markdown) {
 // the original text (same invariant as legacyMathDelimitersToDollar). Lines inside fenced code
 // blocks are left untouched so a code literal's em-dash isn't turned into "---".
 QString remapUnicodePunctuation(QStringView markdown) {
-  static const QString kEmDash = QStringLiteral("\xe2\x80\x94");    // —
-  static const QString kEllipsis = QStringLiteral("\xe2\x80\xa6");  // …
+  static const QString kEmDash = QString::fromUtf8("\xe2\x80\x94");    // —
+  static const QString kEllipsis = QString::fromUtf8("\xe2\x80\xa6");  // …
   QStringList lines = markdown.toString().split(QLatin1Char('\n'));
   bool inFence = false;
   QChar fenceChar;

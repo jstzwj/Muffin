@@ -115,7 +115,7 @@ void testRemainingKatexFunctionsPart2() {
   strictUnicodeSettings.strict = math::MathStrictMode::Error;
   threw = false;
   try {
-    math::MathParser parser(QStringLiteral("\xe4\xb8\xad"), strictUnicodeSettings);
+    math::MathParser parser(QString::fromUtf8("\xe4\xb8\xad"), strictUnicodeSettings);
     parser.parse();
   } catch (const math::MathParseError& error) {
     threw = true;

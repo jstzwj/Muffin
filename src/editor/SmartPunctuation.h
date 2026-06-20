@@ -20,12 +20,12 @@ inline bool isOpeningQuoteContext(QChar prev) {
 // Unicode replacements as UTF-8 byte sequences. Shared so the input path (which
 // persists them to the Markdown source) and the render path (display-only) emit
 // the exact same code points.
-inline const QString kLeftDoubleQuote = QStringLiteral("\xe2\x80\x9c");   // “
-inline const QString kRightDoubleQuote = QStringLiteral("\xe2\x80\x9d");  // ”
-inline const QString kLeftSingleQuote = QStringLiteral("\xe2\x80\x98");   // ‘
-inline const QString kRightSingleQuote = QStringLiteral("\xe2\x80\x99");  // ’
-inline const QString kEmDash = QStringLiteral("\xe2\x80\x94");            // —
-inline const QString kEnDash = QStringLiteral("\xe2\x80\x93");            // –
-inline const QString kEllipsis = QStringLiteral("\xe2\x80\xa6");          // …
+inline const QString kLeftDoubleQuote = QString::fromUtf8("\xe2\x80\x9c");   // “
+inline const QString kRightDoubleQuote = QString::fromUtf8("\xe2\x80\x9d");  // ”
+inline const QString kLeftSingleQuote = QString::fromUtf8("\xe2\x80\x98");   // ‘
+inline const QString kRightSingleQuote = QString::fromUtf8("\xe2\x80\x99");  // ’
+inline const QString kEmDash = QString::fromUtf8("\xe2\x80\x94");            // —
+inline const QString kEnDash = QString::fromUtf8("\xe2\x80\x93");            // –
+inline const QString kEllipsis = QString::fromUtf8("\xe2\x80\xa6");          // …
 
 }  // namespace muffin::smartpunct
