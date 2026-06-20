@@ -1,5 +1,6 @@
 #include "projection/InlineProjection.h"
 
+#include "editor/SmartPunctuation.h"
 #include "houdini.h"
 #include "html/InlineHtmlRenderer.h"
 
@@ -9,6 +10,89 @@
 
 namespace muffin {
 namespace {
+
+// A render-level smart-punctuation fold: a run of N source characters that renders as a single
+// display glyph (e.g. "--" -> en-dash, "---" -> em-dash, "..." -> ellipsis). Quotes are 1:1 and do
+// not fold. Tracking folds lets the projection emit a separate span per folded token, so the offset
+// map stays exact (no per-span linear drift) and edits can act on the whole source token.
+struct SmartPunctFold {
+  qsizetype displayStart = 0;  // offset within the converted display text
+  qsizetype displayEnd = 0;
+  qsizetype sourceLength = 0;  // source characters mapped onto [displayStart, displayEnd)
+};
+
+struct SmartPunctResult {
+  QString text;
+  QVector<SmartPunctFold> folds;
+};
+
+// Convert ASCII quotes/dashes/ellipsis to their Unicode forms for display, recording each folded
+// token. `prev` seeds the opening/closing-quote decision from text emitted before this run and
+// carries the backslash-escape state (a char right after '\' stays literal).
+SmartPunctResult applySmartPunctForRender(const QString& text, QChar prev, const SmartPunctRenderOptions& opts) {
+  SmartPunctResult result;
+  QString& out = result.text;
+  out.reserve(text.size() + 4);
+  if (!opts.convertQuotes && !opts.convertDashes && !opts.convertEllipsis) {
+    out = text;
+    return result;
+  }
+  const bool convertQuotes = opts.convertQuotes && (opts.doubleQuoteStyle == 0 || opts.singleQuoteStyle == 0);
+  QChar p = prev;
+  for (qsizetype i = 0; i < text.size(); ) {
+    const QChar c = text.at(i);
+    // Backslash escape: the following character stays literal.
+    if (p == QLatin1Char('\\')) {
+      out += c;
+      p = c;
+      ++i;
+      continue;
+    }
+    // Dash run: 3+ -> em-dash, 2 -> en-dash, lone '-' stays literal.
+    if (opts.convertDashes && c == QLatin1Char('-')) {
+      qsizetype run = 0;
+      while (i + run < text.size() && text.at(i + run) == QLatin1Char('-')) ++run;
+      if (run >= 3) {
+        out += smartpunct::kEmDash;
+        result.folds.append({out.size() - 1, out.size(), run});
+      } else if (run == 2) {
+        out += smartpunct::kEnDash;
+        result.folds.append({out.size() - 1, out.size(), 2});
+      } else {
+        out += c;
+      }
+      i += run;
+      p = QLatin1Char('-');
+      continue;
+    }
+    // Ellipsis: "..." -> …
+    if (opts.convertEllipsis && c == QLatin1Char('.') && i + 3 <= text.size() &&
+        text.at(i + 1) == QLatin1Char('.') && text.at(i + 2) == QLatin1Char('.')) {
+      out += smartpunct::kEllipsis;
+      result.folds.append({out.size() - 1, out.size(), 3});
+      i += 3;
+      p = QLatin1Char('.');
+      continue;
+    }
+    // Quotes: 1:1 conversion, no fold.
+    if (convertQuotes && c == QLatin1Char('"') && opts.doubleQuoteStyle == 0) {
+      out += smartpunct::isOpeningQuoteContext(p) ? smartpunct::kLeftDoubleQuote : smartpunct::kRightDoubleQuote;
+      p = c;
+      ++i;
+      continue;
+    }
+    if (convertQuotes && c == QLatin1Char('\'') && opts.singleQuoteStyle == 0) {
+      out += smartpunct::isOpeningQuoteContext(p) ? smartpunct::kLeftSingleQuote : smartpunct::kRightSingleQuote;
+      p = c;
+      ++i;
+      continue;
+    }
+    out += c;
+    p = c;
+    ++i;
+  }
+  return result;
+}
 
 // A source substring that decodes to a shorter visible run, breaking the 1:1
 // source/visible correspondence the projection offset-mapping relies on. Covers
@@ -219,13 +303,14 @@ InlineProjectionState InlineProjectionState::forSelection(
 }
 
 InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState projectionState, qsizetype sourceBase,
-                                   qreal baseFontSize, qsizetype pendingPrefixLength)
+                                   qreal baseFontSize, qsizetype pendingPrefixLength, SmartPunctRenderOptions smartPunct)
     : sourceText_(std::move(sourceText)), visibleText_(plainTextForInlines(inlines)) {
   BuildState state;
   state.sourceText = &sourceText_;
   state.sourceBase = sourceBase;
   state.projectionState = projectionState;
   state.baseFontSize = baseFontSize;
+  state.smartPunct = smartPunct;
   QVector<HtmlInlineFormatData> htmlData;
   if (pendingPrefixLength > 0 && pendingPrefixLength <= sourceText_.size()) {
     // A still-uncommitted fence/math opener: show the marker in the muted "syntax" color the
@@ -271,6 +356,37 @@ QString InlineProjection::visibleText() const {
 
 const QVector<InlineProjectionSpan>& InlineProjection::spans() const {
   return spans_;
+}
+
+bool InlineProjection::foldedTokenForDeletion(qsizetype offset, int direction, qsizetype& start, qsizetype& end) const {
+  for (const InlineProjectionSpan& span : spans_) {
+    if (!span.folded) continue;
+    if (direction < 0) {  // backspace: caret at the token's end -> remove the whole token
+      if (offset == span.sourceEnd) {
+        start = span.sourceStart;
+        end = span.sourceEnd;
+        return true;
+      }
+    } else {  // delete: caret at the token's start -> remove the whole token forward
+      if (offset == span.sourceStart) {
+        start = span.sourceStart;
+        end = span.sourceEnd;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool InlineProjection::foldedSpanInterior(qsizetype offset, qsizetype& start, qsizetype& end) const {
+  for (const InlineProjectionSpan& span : spans_) {
+    if (span.folded && offset > span.sourceStart && offset < span.sourceEnd) {
+      start = span.sourceStart;
+      end = span.sourceEnd;
+      return true;
+    }
+  }
+  return false;
 }
 
 const QVector<HtmlInlineFormatData>& InlineProjection::htmlFormatData() const {
@@ -620,6 +736,42 @@ void InlineProjection::appendTextSpan(
   }
   state.displayOffset = span.displayEnd;
   state.spans.push_back(span);
+}
+
+void InlineProjection::appendSmartPunctTextSpans(BuildState& state, qsizetype sourceStart, qsizetype sourceEnd, const QString& decoded) {
+  const QChar prev = state.displayOffset > 0 ? state.displayText.at(state.displayOffset - 1) : QChar();
+  const SmartPunctResult result = applySmartPunctForRender(decoded, prev, state.smartPunct);
+  const QString& text = result.text;
+  const QVector<SmartPunctFold>& folds = result.folds;
+  if (folds.isEmpty()) {
+    appendTextSpan(state, InlineType::Text, InlineSpanKind::Text, sourceStart, sourceEnd, text, true);
+    return;
+  }
+  // Walk the folds, emitting a 1:1 span for the plain text between them and a folded span
+  // (source N / display 1) for each token. Source positions accumulate from sourceStart; plain
+  // segments consume equal source/display length, folds consume fold.sourceLength source chars.
+  qsizetype displayPos = 0;
+  qsizetype sourcePos = sourceStart;
+  for (const SmartPunctFold& fold : folds) {
+    if (fold.displayStart > displayPos) {
+      const qsizetype len = fold.displayStart - displayPos;
+      appendTextSpan(state, InlineType::Text, InlineSpanKind::Text, sourcePos, sourcePos + len,
+                     text.mid(displayPos, len), true);
+      sourcePos += len;
+      displayPos = fold.displayStart;
+    }
+    const qsizetype foldDisplayLen = fold.displayEnd - fold.displayStart;
+    appendTextSpan(state, InlineType::Text, InlineSpanKind::Text, sourcePos, sourcePos + fold.sourceLength,
+                   text.mid(fold.displayStart, foldDisplayLen), true);
+    state.spans.last().folded = true;
+    sourcePos += fold.sourceLength;
+    displayPos = fold.displayEnd;
+  }
+  if (displayPos < text.size()) {
+    const qsizetype len = text.size() - displayPos;
+    appendTextSpan(state, InlineType::Text, InlineSpanKind::Text, sourcePos, sourcePos + len,
+                   text.mid(displayPos, len), true);
+  }
 }
 
 bool InlineProjection::appendHtmlImageAtom(
@@ -978,7 +1130,7 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
       const QString source = state.sourceText->mid(sourceStart, sourceEnd - sourceStart);
       const QString& decoded = node.text();
       if (source == decoded) {
-        appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, decoded, true);
+        appendSmartPunctTextSpans(state, sourceStart, sourceEnd, decoded);
         break;
       }
       // decoded differs from source only via escapes and HTML entities, each of

@@ -487,6 +487,63 @@ void testEmptyTableCellRendersEmpty() {
   }
 }
 
+// Convert on Rendering: ASCII quotes/dashes/ellipsis become Unicode in the display text only,
+// while the source stays ASCII (the per-span offset map stays consistent via the converted length).
+void testSmartPunctRenderConvertsQuotesAndDashes() {
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::text(QStringLiteral("\"hi\" x-- y--- z...")));
+
+  RenderTheme theme = RenderTheme::github();
+
+  InlineLayout raw;
+  raw.build(inlines, theme, 400.0, theme.paragraphFont());
+  require(raw.displayText().contains(QLatin1Char('"')),
+          QStringLiteral("convert-on-render off should keep ASCII quotes in display"));
+
+  InlineLayout smart;
+  InlineLayout::BuildOptions options;
+  options.smartPunct.convertQuotes = true;
+  options.smartPunct.convertDashes = true;
+  options.smartPunct.convertEllipsis = true;
+  smart.build(inlines, theme, 400.0, theme.paragraphFont(), options);
+  require(!smart.displayText().contains(QLatin1Char('"')),
+          QStringLiteral("convert-on-render should replace ASCII double quotes in display"));
+  require(smart.displayText().contains(QString::fromUtf8("\xe2\x80\x9c")) &&
+          smart.displayText().contains(QString::fromUtf8("\xe2\x80\x9d")),
+          QStringLiteral("smart quotes should render as curly double quotes"));
+  require(smart.displayText().contains(QString::fromUtf8("\xe2\x80\x93")),
+          QStringLiteral("-- should render as en dash"));
+  require(smart.displayText().contains(QString::fromUtf8("\xe2\x80\x94")),
+          QStringLiteral("--- should render as em dash"));
+  require(smart.displayText().contains(QString::fromUtf8("\xe2\x80\xa6")),
+          QStringLiteral("... should render as ellipsis"));
+}
+
+// Convert on Rendering decomposes a folded token (e.g. "--" -> en-dash) into its own span so the
+// N:1 source/display mapping stays exact and edits act on the whole token, not a single dash.
+void testSmartPunctFoldedTokenDecomposesIntoSpans() {
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::text(QStringLiteral("a--b")));
+  SmartPunctRenderOptions sp;
+  sp.convertDashes = true;
+
+  InlineProjection proj(inlines, QStringLiteral("a--b"), InlineProjectionState{}, -1, 16.0, 0, sp);
+  require(proj.displayText() == QString::fromUtf8("a\xe2\x80\x93" "b"),
+          QStringLiteral("Convert on Rendering: -- should render as a single en-dash"));
+  const InlineProjectionSpan* folded = nullptr;
+  for (const auto& s : proj.spans()) {
+    if (s.folded) { folded = &s; break; }
+  }
+  require(folded != nullptr, QStringLiteral("the dash token must be its own folded span"));
+  require(folded->sourceEnd - folded->sourceStart == 2, QStringLiteral("folded token spans both source dashes"));
+  require(folded->displayEnd - folded->displayStart == 1, QStringLiteral("folded token renders as one glyph"));
+  // Backspace at the token's end targets the whole source token (not one dash).
+  qsizetype start = 0, end = 0;
+  require(proj.foldedTokenForDeletion(folded->sourceEnd, -1, start, end) &&
+              start == folded->sourceStart && end == folded->sourceEnd,
+          QStringLiteral("backspace at en-dash end should delete the whole source token"));
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -505,6 +562,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testEscapedPunctuationOffsetMapping);
   RUN_TEST(testInlineCodeEndSourceHitUsesForwardBias);
   RUN_TEST(testPendingPrefixFallbackDoesNotDuplicateSource);
+  RUN_TEST(testSmartPunctRenderConvertsQuotesAndDashes);
+  RUN_TEST(testSmartPunctFoldedTokenDecomposesIntoSpans);
 #undef RUN_TEST
   return 0;
 }

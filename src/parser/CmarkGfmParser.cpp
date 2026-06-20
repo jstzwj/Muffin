@@ -312,6 +312,48 @@ QString legacyMathDelimitersToDollar(QStringView markdown) {
   return lines.join(QLatin1Char('\n'));
 }
 
+// Remap the Unicode em-dash and ellipsis that Smart Dashes may have written into the source back to
+// their ASCII forms so Markdown syntax (`---` thematic breaks, `...`) still parses. Only the
+// byte-length-preserving replacements are applied, so every cmark-reported offset still maps onto
+// the original text (same invariant as legacyMathDelimitersToDollar). Lines inside fenced code
+// blocks are left untouched so a code literal's em-dash isn't turned into "---".
+QString remapUnicodePunctuation(QStringView markdown) {
+  static const QString kEmDash = QStringLiteral("\xe2\x80\x94");    // —
+  static const QString kEllipsis = QStringLiteral("\xe2\x80\xa6");  // …
+  QStringList lines = markdown.toString().split(QLatin1Char('\n'));
+  bool inFence = false;
+  QChar fenceChar;
+  int fenceLength = 0;
+  for (QString& line : lines) {
+    const int contentStart = contentStartWithinContainer(line);
+    if (inFence) {
+      if (contentStart >= 0 && line.size() > contentStart && line.at(contentStart) == fenceChar) {
+        int run = 0;
+        while (contentStart + run < line.size() && line.at(contentStart + run) == fenceChar) {
+          ++run;
+        }
+        if (run >= fenceLength && hasOnlyTrailingSpaces(line, contentStart + run)) {
+          inFence = false;
+          fenceChar = QChar();
+          fenceLength = 0;
+        }
+      }
+      continue;
+    }
+    QChar openingFenceChar;
+    int openingFenceLength = 0;
+    if (fenceInfoAt(line, contentStart, openingFenceChar, openingFenceLength)) {
+      inFence = true;
+      fenceChar = openingFenceChar;
+      fenceLength = openingFenceLength;
+      continue;
+    }
+    line.replace(kEmDash, QStringLiteral("---"));
+    line.replace(kEllipsis, QStringLiteral("..."));
+  }
+  return lines.join(QLatin1Char('\n'));
+}
+
 // After source offsets are known, mark each MathBlock whose original opener was `\[` so the
 // serializer can re-emit `\[ ... \]` instead of `$$ ... $$`.
 void annotateMathDelimiters(QStringView markdown, MarkdownNode& root) {
@@ -1269,10 +1311,20 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
     ParsePerfTimer t("parse.mathConvert");
     mathConverted = legacyMathDelimitersToDollar(markdownToParse);
   }
+  // Optional pre-parse remap of Unicode em-dash/ellipsis back to ASCII. Only the bytes fed to cmark
+  // change (byte-length-preserving); LineStartOffsetCache/CmarkNodeAdapter/passes below keep using
+  // the original markdownToParse, so offsets and displayed text stay correct.
+  QString remapped;
+  if (options.enableUnicodeRemap) {
+    ParsePerfTimer t("parse.unicodeRemap");
+    remapped = remapUnicodePunctuation(mathConverted);
+  } else {
+    remapped = std::move(mathConverted);
+  }
   QByteArray utf8;
   {
     ParsePerfTimer t("parse.toUtf8");
-    utf8 = mathConverted.toUtf8();
+    utf8 = remapped.toUtf8();
   }
   QVector<DefinitionParseResult> definitions;
   {

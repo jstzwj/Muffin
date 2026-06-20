@@ -54,6 +54,20 @@ bool codeBlockWrapEnabled() {
   return QSettings().value(QStringLiteral("markdown/codeBlockWrap"), true).toBool();
 }
 
+// markdown/convertOnRendering + the smart-quotes/dashes sub-toggles drive display-only SmartyPants
+// conversion. Read at build time so a menu/preference toggle + refreshVisibleBlocks re-renders
+// without a reparse. Mirrors how the input path (InputController) interprets the same keys.
+SmartPunctRenderOptions smartPunctRenderOptions() {
+  SmartPunctRenderOptions opts;
+  const bool rendering = QSettings().value(QStringLiteral("markdown/convertOnRendering"), false).toBool();
+  opts.convertQuotes = rendering && QSettings().value(QStringLiteral("markdown/smartQuotes"), false).toBool();
+  opts.convertDashes = rendering && QSettings().value(QStringLiteral("markdown/smartDashes"), false).toBool();
+  opts.convertEllipsis = opts.convertDashes;  // ellipsis rides on Smart Dashes, matching Typora
+  opts.doubleQuoteStyle = QSettings().value(QStringLiteral("markdown/doubleQuoteStyle"), 0).toInt();
+  opts.singleQuoteStyle = QSettings().value(QStringLiteral("markdown/singleQuoteStyle"), 0).toInt();
+  return opts;
+}
+
 // Pixel width of the widest physical line in `literal` under `font`. Drives whether a code fence is
 // horizontally scrollable (wrap off) and the scrollbar thumb ratio.
 qreal maxLiteralLineWidth(const QString& literal, const QFont& font) {
@@ -350,6 +364,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   options.sourceBase = projectionBase;
   options.pendingPrefixLength = pendingPrefixLengthFor(node, editableSource);
   options.isMisspelled = spellMisspelledPredicate();
+  options.smartPunct = smartPunctRenderOptions();
   {
     BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
     inlineLayout->build(node.inlines(), editableSource, theme, width, font, options);
@@ -453,6 +468,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
     options.sourceBase = contentStart;
   }
   options.isMisspelled = spellMisspelledPredicate();
+  options.smartPunct = smartPunctRenderOptions();
   {
     BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
     inlineLayout->build(primaryInlinesForListItem(node), listSourceText, theme, contentWidth, theme.paragraphFont(), options);
@@ -659,6 +675,8 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
         options.projectionState = InlineProjectionState::forSelection(selection_, selection_.focus.blockId, sourceContentStartForEditableNode(*cellNode));
       }
       options.isMisspelled = spellMisspelledPredicate();
+      options.smartPunct = smartPunctRenderOptions();
+  options.smartPunct = smartPunctRenderOptions();
       {
         BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
         cell.text.build(

@@ -53,6 +53,42 @@ void testSmartDashes() {
           "'--' should collapse to an en-dash");
 }
 
+void testSmartEllipsis() {
+  SettingsOverride mode("markdown/convertOnInput", 1);
+  SettingsOverride dashes("markdown/smartDashes", true);  // ellipsis rides on Smart Dashes
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("a.."), false);
+  setCursor(selection, blockAt(session, 0), 3);  // after the two dots
+  require(input.insertText(QStringLiteral(".")), "typing a dot should succeed");
+  // "..." -> ellipsis (U+2026): the two existing dots + typed dot collapse.
+  require(session.markdownText() == QStringLiteral("a") + QStringLiteral("\xe2\x80\xa6"),
+          "'...' should collapse to an ellipsis");
+}
+
+void testSmartDashEscapeKeepsLiteral() {
+  SettingsOverride mode("markdown/convertOnInput", 1);
+  SettingsOverride dashes("markdown/smartDashes", true);
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("a\\-"), false);  // backslash-escaped dash
+  setCursor(selection, blockAt(session, 0), 3);  // after the escaped dash
+  require(input.insertText(QStringLiteral("-")), "typing a dash should succeed");
+  // The first dash is escaped, so the run must NOT collapse to an en-dash.
+  require(session.markdownText() == QStringLiteral("a\\--"),
+          "an escaped dash should stay literal and not become a smart dash");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -64,6 +100,8 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testSmartQuotes);
   RUN_TEST(testSmartDashes);
+  RUN_TEST(testSmartEllipsis);
+  RUN_TEST(testSmartDashEscapeKeepsLiteral);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

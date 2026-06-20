@@ -58,6 +58,8 @@ struct InlineProjectionSpan {
   bool highlight = false;     // ==text==: yellow wash propagated onto content spans
   bool subscript = false;     // ~text~: lowered baseline propagated onto content spans
   bool superscript = false;   // ^text^: raised baseline propagated onto content spans
+  bool folded = false;        // Render-level smart-punct token (e.g. "--"->en-dash): source range is
+                              // wider than the single display glyph, so edits/delete act on the whole token.
   QString href;  // Non-empty for Image and Link Atom spans
 };
 
@@ -83,17 +85,36 @@ struct InlineProjectionState {
       qsizetype contentSourceStart);
 };
 
+// Display-only smart punctuation (SmartyPants) for the render path: ASCII quotes/dashes/ellipsis
+// are shown as their Unicode forms without touching the Markdown source. Mirrors the input-level
+// conversion (InputController) so the two paths stay consistent.
+struct SmartPunctRenderOptions {
+  bool convertQuotes = false;
+  bool convertDashes = false;
+  bool convertEllipsis = false;
+  int doubleQuoteStyle = 0;  // 0 = curly, 1 = straight (mirrors markdown/doubleQuoteStyle)
+  int singleQuoteStyle = 0;  // 0 = curly, 1 = straight
+};
+
 class InlineProjection {
 public:
   InlineProjection() = default;
   InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState state = {}, qsizetype sourceBase = -1,
-                   qreal baseFontSize = 16.0, qsizetype pendingPrefixLength = 0);
+                   qreal baseFontSize = 16.0, qsizetype pendingPrefixLength = 0,
+                   SmartPunctRenderOptions smartPunct = {});
 
   bool isValid() const;
   QString sourceText() const;
   QString displayText() const;
   QString visibleText() const;
   const QVector<InlineProjectionSpan>& spans() const;
+  // Render-level folded-token queries (Convert on Rendering). `offset` is source-relative to this
+  // projection's sourceText (block-content-relative). For deletion: when the caret sits at a folded
+  // token's boundary in `direction`, returns the whole token's source range so backspace/delete
+  // removes it atomically. Interior: when `offset` lies strictly inside a folded token, returns its
+  // range so cursor movement jumps to the boundary instead of stopping mid-token.
+  bool foldedTokenForDeletion(qsizetype offset, int direction, qsizetype& start, qsizetype& end) const;
+  bool foldedSpanInterior(qsizetype offset, qsizetype& start, qsizetype& end) const;
   const QVector<HtmlInlineFormatData>& htmlFormatData() const;
   QString linkHrefAtDisplayOffset(qsizetype displayOffset) const;
 
@@ -123,6 +144,7 @@ private:
     bool subscript = false;
     bool superscript = false;
     qreal baseFontSize = 16.0;
+    SmartPunctRenderOptions smartPunct;
     QString displayText;
     QString visibleText;
     QVector<InlineProjectionSpan> spans;
@@ -137,6 +159,10 @@ private:
   static void appendTextSpan(BuildState& state, InlineType type, InlineSpanKind kind, qsizetype sourceStart, qsizetype sourceEnd,
                              qsizetype contentSourceStart, qsizetype contentSourceEnd, QString displayText, bool visible,
                              bool editable = true);
+  // Emits one or more Text spans for a decoded run, applying render-level smart punctuation
+  // (Convert on Rendering). Folded tokens (--/---/...) become their own span with folded=true so
+  // the N:1 source/display mapping stays exact (no per-span linear drift); quotes are 1:1.
+  static void appendSmartPunctTextSpans(BuildState& state, qsizetype sourceStart, qsizetype sourceEnd, const QString& decoded);
   static bool appendHtmlImageAtom(BuildState& state, const QString& tagText, qsizetype sourceStart, qsizetype sourceEnd,
                                   qsizetype contentSourceStart, qsizetype contentSourceEnd);
   static void appendInlines(BuildState& state, const QVector<InlineNode>& inlines, qsizetype sourceStart, qsizetype sourceEnd,

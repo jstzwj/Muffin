@@ -35,6 +35,8 @@ public:
     // Supplied by the builder from the SpellChecker; InlineLayout itself stays free of any
     // spell-check dependency.
     std::function<bool(QStringView)> isMisspelled;
+    // Display-only smart punctuation (Convert on Rendering); no-op by default.
+    SmartPunctRenderOptions smartPunct;
   };
 
   InlineLayout() = default;

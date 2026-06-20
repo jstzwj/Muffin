@@ -49,6 +49,8 @@ private:
   QComboBox* singleQuoteCombo_ = nullptr;
   QComboBox* doubleQuoteCombo_ = nullptr;
   QCheckBox* smartDashesCheck_ = nullptr;
+  QCheckBox* convertOnRenderingCheck_ = nullptr;
+  QCheckBox* remapUnicodeCheck_ = nullptr;
 
   // Card 4: Code Blocks
   QLabel* codeBlockLabel_ = nullptr;

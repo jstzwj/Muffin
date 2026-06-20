@@ -7,8 +7,25 @@
 #include "document/SourceRangeUtil.h"
 #include "editor/SelectionController.h"
 
+#include <QSettings>
+
 namespace muffin {
 namespace {
+
+// markdown/* smart punctuation for the render path (Convert on Rendering). Mirrors the same-named
+// helper in BlockLayoutBuilder.cpp so the editing projection and the painted projection apply the
+// identical conversion — and thus agree on folded-token boundaries (so backspace/delete/cursor act
+// on the whole source token, not a single dash).
+SmartPunctRenderOptions smartPunctRenderOptions() {
+  SmartPunctRenderOptions opts;
+  const bool rendering = QSettings().value(QStringLiteral("markdown/convertOnRendering"), false).toBool();
+  opts.convertQuotes = rendering && QSettings().value(QStringLiteral("markdown/smartQuotes"), false).toBool();
+  opts.convertDashes = rendering && QSettings().value(QStringLiteral("markdown/smartDashes"), false).toBool();
+  opts.convertEllipsis = opts.convertDashes;
+  opts.doubleQuoteStyle = QSettings().value(QStringLiteral("markdown/doubleQuoteStyle"), 0).toInt();
+  opts.singleQuoteStyle = QSettings().value(QStringLiteral("markdown/singleQuoteStyle"), 0).toInt();
+  return opts;
+}
 
 bool isEditableTextBlock(BlockType type) {
   return type == BlockType::Paragraph || type == BlockType::Heading || type == BlockType::ListItem || type == BlockType::TableCell ||
@@ -224,7 +241,8 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
     cursor.text.sourceOffset = cursorStoredSourceOffset;
     projectionState = InlineProjectionState::forCursor(cursor, displayNode.id(), start);
   }
-  context.inlineProjection = InlineProjection(editable->inlines(), context.contentText, projectionState, start);
+  context.inlineProjection = InlineProjection(editable->inlines(), context.contentText, projectionState, start,
+                                              16.0, 0, smartPunctRenderOptions());
   context.visibleText = context.inlineProjection.visibleText();
   context.plainInlineEditable = InlineProjection::isPlainInlineSource(editable->inlines(), context.contentText, start);
   qsizetype localSourceOffset = -1;

@@ -133,12 +133,16 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   quotesRow->addStretch(1);
 
   smartDashesCheck_ = new QCheckBox(punctCard);
+  convertOnRenderingCheck_ = new QCheckBox(punctCard);
+  remapUnicodeCheck_ = new QCheckBox(punctCard);
 
   punctLayout->addLayout(punctHeaderRow);
   punctLayout->addLayout(convertRow);
   punctLayout->addWidget(smartQuotesCheck_);
   punctLayout->addLayout(quotesRow);
   punctLayout->addWidget(smartDashesCheck_);
+  punctLayout->addWidget(convertOnRenderingCheck_);
+  punctLayout->addWidget(remapUnicodeCheck_);
   cardColumn->addWidget(punctCard);
 
   // --- Card 4: Code Blocks ---
@@ -209,6 +213,15 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   wireComboIndexSetting(singleQuoteCombo_, QStringLiteral("markdown/singleQuoteStyle"));
   wireComboIndexSetting(doubleQuoteCombo_, QStringLiteral("markdown/doubleQuoteStyle"));
   wireBoolSetting(smartDashesCheck_, QStringLiteral("markdown/smartDashes"));
+  wireBoolSetting(convertOnRenderingCheck_, QStringLiteral("markdown/convertOnRendering"));
+  // Convert on Input / Convert on Rendering are mutually exclusive conversion timings.
+  connect(convertOnRenderingCheck_, &QCheckBox::toggled, this, [this](bool on) {
+    convertOnInputCombo_->setEnabled(!on);
+    if (on && convertOnInputCombo_->currentIndex() != 0) {
+      convertOnInputCombo_->setCurrentIndex(0);  // zeroes markdown/convertOnInput via its wire
+    }
+  });
+  wireBoolSetting(remapUnicodeCheck_, QStringLiteral("markdown/remapUnicode"));
   wireBoolSetting(showLineNumbersCheck_, QStringLiteral("markdown/showLineNumbers"));
   wireBoolSetting(codeBlockWrapCheck_, QStringLiteral("markdown/codeBlockWrap"));
   wireComboIndexSetting(codeIndentCombo_, QStringLiteral("markdown/codeIndent"));
@@ -260,6 +273,8 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
   rebuildCombo(singleQuoteCombo_, {QStringLiteral("\xe2\x80\x98" "abc" "\xe2\x80\x99"), QStringLiteral("'abc'")});
   rebuildCombo(doubleQuoteCombo_, {QStringLiteral("\xe2\x80\x9c" "abc" "\xe2\x80\x9d"), QStringLiteral("\"abc\"")});
   smartDashesCheck_->setText(tr("Smart Dashes"));
+  convertOnRenderingCheck_->setText(tr("Convert on Rendering"));
+  remapUnicodeCheck_->setText(tr("Remap Unicode Punctuation on Parse"));
 
   // Card 4: Code Blocks
   codeBlockLabel_->setText(tr("Code Blocks"));
@@ -290,6 +305,9 @@ void muffin::PrefsMarkdownPage::loadSettings() {
   loadComboIndex(singleQuoteCombo_, QStringLiteral("markdown/singleQuoteStyle"), 0);
   loadComboIndex(doubleQuoteCombo_, QStringLiteral("markdown/doubleQuoteStyle"), 0);
   loadCheck(smartDashesCheck_, QStringLiteral("markdown/smartDashes"), false);
+  loadCheck(convertOnRenderingCheck_, QStringLiteral("markdown/convertOnRendering"), false);
+  convertOnInputCombo_->setEnabled(!convertOnRenderingCheck_->isChecked());
+  loadCheck(remapUnicodeCheck_, QStringLiteral("markdown/remapUnicode"), false);
   loadCheck(showLineNumbersCheck_, QStringLiteral("markdown/showLineNumbers"), false);
   loadCheck(codeBlockWrapCheck_, QStringLiteral("markdown/codeBlockWrap"), true);
   loadComboIndex(codeIndentCombo_, QStringLiteral("markdown/codeIndent"), 1);

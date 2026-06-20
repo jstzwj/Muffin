@@ -10,6 +10,7 @@
 #include "editor/EmojiCompleter.h"
 #include "editor/EmojiProvider.h"
 #include "editor/SelectionController.h"
+#include "editor/SmartPunctuation.h"
 #include "editor/TextBlockCommandBuilder.h"
 #include "edit/UndoStack.h"
 #include "blocks/code/CodeFenceController.h"
@@ -214,7 +215,7 @@ bool InputController::insertText(QString text) {
   const bool smartPunctSkipSelection =
       ctx_.selection && ctx_.selection->hasCursor() && !ctx_.selection->selection().isCollapsed();
   if (!smartPunctSkipSelection) {
-    if (text.size() == 1 && trySmartDashes(text.at(0))) {
+    if (text.size() == 1 && (trySmartDashes(text.at(0)) || trySmartEllipsis(text.at(0)))) {
       maybeUpdateEmojiPopup();
       return true;
     }
@@ -359,15 +360,43 @@ bool InputController::trySmartDashes(QChar ch) {
     return false;
   }
   // "---" → em-dash: two dashes already precede the caret; the typed dash is consumed into "—".
-  if (off >= 2 && md.at(off - 1) == QLatin1Char('-') && md.at(off - 2) == QLatin1Char('-')) {
+  // Honor a backslash escape on the first dash of the run (mirrors tryAutoPairOrWrap's guard).
+  if (off >= 2 && md.at(off - 1) == QLatin1Char('-') && md.at(off - 2) == QLatin1Char('-') &&
+      !(off >= 3 && md.at(off - 3) == QLatin1Char('\\'))) {
     applyLocalEdit(EditTransaction::Kind::InsertText, QStringLiteral("Smart Dash"),
-                   off - 2, 2, QStringLiteral("\xe2\x80\x94"), CursorPosition(), off - 1, {}, false, false);
+                   off - 2, 2, smartpunct::kEmDash, CursorPosition(), off - 1, {}, false, false);
     return true;
   }
-  // "--" → en-dash: one dash precedes the caret.
-  if (md.at(off - 1) == QLatin1Char('-')) {
+  // "--" → en-dash: one dash precedes the caret (and isn't escaped).
+  if (md.at(off - 1) == QLatin1Char('-') && !(off >= 2 && md.at(off - 2) == QLatin1Char('\\'))) {
     applyLocalEdit(EditTransaction::Kind::InsertText, QStringLiteral("Smart Dash"),
-                   off - 1, 1, QStringLiteral("\xe2\x80\x93"), CursorPosition(), off, {}, false, false);
+                   off - 1, 1, smartpunct::kEnDash, CursorPosition(), off, {}, false, false);
+    return true;
+  }
+  return false;
+}
+
+bool InputController::trySmartEllipsis(QChar ch) {
+  // "..." → ellipsis. Rides on the Smart Dashes toggle, matching Typora (no separate option).
+  if (ch != QLatin1Char('.') || smartPunctuationMode() == 0 || !smartDashesEnabled()) {
+    return false;
+  }
+  BlockEditContextResolver resolver = contextResolver();
+  BlockEditContext context;
+  if (!resolver.current(context) || !context.node) {
+    return false;
+  }
+  const QString& md = ctx_.session ? ctx_.session->markdownText() : QString();
+  const qsizetype off = context.cursorSourceOffset;
+  if (off < 1 || off > md.size()) {
+    return false;
+  }
+  // Two dots already precede the caret; the typed dot is consumed into "…". Honor a backslash
+  // escape on the first dot of the run.
+  if (off >= 2 && md.at(off - 1) == QLatin1Char('.') && md.at(off - 2) == QLatin1Char('.') &&
+      !(off >= 3 && md.at(off - 3) == QLatin1Char('\\'))) {
+    applyLocalEdit(EditTransaction::Kind::InsertText, QStringLiteral("Smart Ellipsis"),
+                   off - 2, 2, smartpunct::kEllipsis, CursorPosition(), off - 1, {}, false, false);
     return true;
   }
   return false;
@@ -396,20 +425,21 @@ QString InputController::maybeConvertSmartPunctuation(QString text) {
   const qsizetype off = resolved ? context.cursorSourceOffset : -1;
   const QString& md = ctx_.session ? ctx_.session->markdownText() : QString();
 
-  // Opening quote when the preceding char is absent / whitespace / non-word; closing otherwise.
-  auto isOpening = [](QChar prev) {
-    return prev.isNull() || prev.isSpace() || !prev.isLetterOrNumber();
-  };
-
   QString out;
   out.reserve(text.size() + 4);
   QChar prev = (off > 0 && off <= md.size()) ? md.at(off - 1) : QChar();
   for (int i = 0; i < text.size(); ++i) {
     const QChar c = text.at(i);
+    // Honor a backslash escape: a quote right after '\' stays literal.
+    if (prev == QLatin1Char('\\')) {
+      out += c;
+      prev = c;
+      continue;
+    }
     if (c == QLatin1Char('"') && doubleStyle == 0) {
-      out += isOpening(prev) ? QStringLiteral("\xe2\x80\x9c") : QStringLiteral("\xe2\x80\x9d");  // left/right double
+      out += smartpunct::isOpeningQuoteContext(prev) ? smartpunct::kLeftDoubleQuote : smartpunct::kRightDoubleQuote;
     } else if (c == QLatin1Char('\'') && singleStyle == 0) {
-      out += isOpening(prev) ? QStringLiteral("\xe2\x80\x98") : QStringLiteral("\xe2\x80\x99");  // left/right single
+      out += smartpunct::isOpeningQuoteContext(prev) ? smartpunct::kLeftSingleQuote : smartpunct::kRightSingleQuote;
     } else {
       out += c;
     }
@@ -1770,6 +1800,15 @@ bool InputController::moveCursorHorizontal(int direction, bool extendSelection) 
         return true;
       }
       nextSourceOffset = context.contentRange.byteEnd;
+    }
+    // Render-level smart punct: never stop mid-token (e.g. between the two dashes of a folded
+    // en-dash). If the next offset lands strictly inside a folded token, jump to its boundary.
+    {
+      const qsizetype localNext = nextSourceOffset - context.contentRange.byteStart;
+      qsizetype tokenStart = 0, tokenEnd = 0;
+      if (context.inlineProjection.foldedSpanInterior(localNext, tokenStart, tokenEnd)) {
+        nextSourceOffset = context.contentRange.byteStart + (direction > 0 ? tokenEnd : tokenStart);
+      }
     }
     setCursorOrExtend(cursorForSourceOffset(nextSourceOffset), extendSelection);
     return true;

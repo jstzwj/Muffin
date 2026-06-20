@@ -26,6 +26,9 @@ struct ParseOptions {
   bool enableSubscript = false;
   bool enableSuperscript = false;
   bool preserveSourceRange = true;
+  // Remap Unicode em-dash/ellipsis back to ASCII before cmark parses (byte-length-preserving), so
+  // syntax like a `---` thematic break survives when Smart Dashes has written an em-dash to source.
+  bool enableUnicodeRemap = false;
 
   // Used by DocumentSession::setParseOptions to skip a full re-parse when nothing changed
   // (e.g. the PreferencesDialog closed without altering any parse-gating setting).

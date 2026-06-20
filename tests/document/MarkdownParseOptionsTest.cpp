@@ -132,6 +132,27 @@ void testStrictOptionsDisableExtensions() {
           "strict mode should disable strikethrough");
 }
 
+// enableUnicodeRemap: Smart Dashes turns a typed `---` horizontal rule into a single em-dash char,
+// which cmark no longer recognizes as a thematic break. The byte-length-preserving remap restores
+// `---` for the parser only; source ranges still map onto the original em-dash text.
+void testEnableUnicodeRemapParsesEmDashAsThematicBreak() {
+  CmarkGfmParser parser;
+  const QString markdown = QString::fromUtf8("\xe2\x80\x94\n");  // em-dash (smart-dash output for `---`)
+
+  ParseOptions noRemap;
+  ParseOptions withRemap;
+  withRemap.enableUnicodeRemap = true;
+
+  ParseResult offResult = parser.parseDocument(markdown, noRemap);
+  ParseResult onResult = parser.parseDocument(markdown, withRemap);
+  require(offResult.root != nullptr, "parse without remap should produce a root");
+  require(onResult.root != nullptr, "parse with remap should produce a root");
+  require(countBlocks(*offResult.root, BlockType::ThematicBreak) == 0,
+          "a lone em-dash line should NOT be a thematic break without remap");
+  require(countBlocks(*onResult.root, BlockType::ThematicBreak) >= 1,
+          "a lone em-dash line should parse as a thematic break with remap enabled");
+}
+
 int main(int argc, char** argv) {
   QCoreApplication::setOrganizationName(QStringLiteral("MuffinTest"));
   QCoreApplication::setApplicationName(QStringLiteral("MarkdownParseOptionsTest"));
@@ -141,6 +162,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testEnableMathGatesMathBlockParsing);
   RUN_TEST(testSetParseOptionsReparsesOnlyOnChange);
   RUN_TEST(testStrictOptionsDisableExtensions);
+  RUN_TEST(testEnableUnicodeRemapParsesEmDashAsThematicBreak);
 #undef RUN_TEST
   return 0;
 }

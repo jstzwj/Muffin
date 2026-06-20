@@ -1,6 +1,7 @@
 #include "app/CommandDeclarations.h"
 
 #include "app/MainWindow.h"
+#include "app/MarkdownSettings.h"
 #include "app/HelpViewerDialog.h"
 #include "app/UpdateChecker.h"
 #include "app/SidebarWidget.h"
@@ -1029,6 +1030,86 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
          window.renderView_->refreshVisibleBlocks(window.session_.document());
        }},
 
+      // ---------------- Smart Punctuation ----------------
+      {.id = QStringLiteral("edit.smart_convert_on_input"),
+       .category = CommandCategory::Edit,
+       .text = muffin::MainWindow::tr("Convert on Input"),
+       .checkable = true,
+       .handler = [](MainWindow& window) {
+         const bool on = window.commands_.action(QStringLiteral("edit.smart_convert_on_input"))->isChecked();
+         QSettings().setValue(QStringLiteral("markdown/convertOnInput"), on ? 1 : 0);
+         if (on) {
+           // Mutually exclusive with Convert on Rendering (Typora semantics): the two are
+           // alternate conversion timings, never both on at once.
+           QSettings().setValue(QStringLiteral("markdown/convertOnRendering"), false);
+           if (auto* a = window.commands_.action(QStringLiteral("edit.smart_convert_on_rendering"))) {
+             a->setChecked(false);
+           }
+         }
+       },
+       .checked = [](const MainWindow&) {
+         return QSettings().value(QStringLiteral("markdown/convertOnInput"), 0).toInt() > 0;
+       }},
+      {.id = QStringLiteral("edit.smart_convert_on_rendering"),
+       .category = CommandCategory::Edit,
+       .text = muffin::MainWindow::tr("Convert on Rendering"),
+       .checkable = true,
+       .handler = [](MainWindow& window) {
+         const bool on = window.commands_.action(QStringLiteral("edit.smart_convert_on_rendering"))->isChecked();
+         QSettings().setValue(QStringLiteral("markdown/convertOnRendering"), on);
+         if (on) {
+           // Mutually exclusive with Convert on Input.
+           QSettings().setValue(QStringLiteral("markdown/convertOnInput"), 0);
+           if (auto* a = window.commands_.action(QStringLiteral("edit.smart_convert_on_input"))) {
+             a->setChecked(false);
+           }
+         }
+         window.renderView_->refreshVisibleBlocks(window.session_.document());
+       },
+       .checked = [](const MainWindow&) {
+         return QSettings().value(QStringLiteral("markdown/convertOnRendering"), false).toBool();
+       }},
+      {.id = QStringLiteral("edit.smart_quotes"),
+       .category = CommandCategory::Edit,
+       .text = muffin::MainWindow::tr("Smart Quotes"),
+       .checkable = true,
+       .handler = [](MainWindow& window) {
+         const bool on = window.commands_.action(QStringLiteral("edit.smart_quotes"))->isChecked();
+         QSettings().setValue(QStringLiteral("markdown/smartQuotes"), on);
+         window.renderView_->refreshVisibleBlocks(window.session_.document());
+       },
+       .checked = [](const MainWindow&) {
+         return QSettings().value(QStringLiteral("markdown/smartQuotes"), false).toBool();
+       }},
+      {.id = QStringLiteral("edit.smart_dashes"),
+       .category = CommandCategory::Edit,
+       .text = muffin::MainWindow::tr("Smart Dashes"),
+       .checkable = true,
+       .handler = [](MainWindow& window) {
+         const bool on = window.commands_.action(QStringLiteral("edit.smart_dashes"))->isChecked();
+         QSettings().setValue(QStringLiteral("markdown/smartDashes"), on);
+         window.renderView_->refreshVisibleBlocks(window.session_.document());
+       },
+       .checked = [](const MainWindow&) {
+         return QSettings().value(QStringLiteral("markdown/smartDashes"), false).toBool();
+       }},
+      {.id = QStringLiteral("edit.smart_remap_unicode"),
+       .category = CommandCategory::Edit,
+       .text = muffin::MainWindow::tr("Remap Unicode Punctuation on Parse"),
+       .checkable = true,
+       .handler = [](MainWindow& window) {
+         const bool on = window.commands_.action(QStringLiteral("edit.smart_remap_unicode"))->isChecked();
+         QSettings().setValue(QStringLiteral("markdown/remapUnicode"), on);
+         window.session_.setParseOptions(markdownParseOptions());
+       },
+       .checked = [](const MainWindow&) {
+         return QSettings().value(QStringLiteral("markdown/remapUnicode"), false).toBool();
+       }},
+      {.id = QStringLiteral("edit.smart_more_options"),
+       .category = CommandCategory::Edit,
+       .text = muffin::MainWindow::tr("More Options..."),
+       .handler = [](MainWindow& window) { window.showPreferences(); }},
+
       // ---------------- Image ----------------
       {.id = QStringLiteral("image.insert"),
        .category = CommandCategory::Image,
@@ -1754,7 +1835,18 @@ const std::vector<MenuSpec>& mainMenuSpec() {
             .children = {
                 {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("math.refresh_all")},
             }},
-           {.kind = MenuItem::Kind::PlaceholderSubmenu, .title = muffin::MainWindow::tr("Smart Punctuation")},
+           {.kind = MenuItem::Kind::Submenu,
+            .title = muffin::MainWindow::tr("Smart Punctuation"),
+            .children = {
+                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.smart_convert_on_input")},
+                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.smart_convert_on_rendering")},
+                {.kind = MenuItem::Kind::Separator},
+                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.smart_quotes")},
+                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.smart_dashes")},
+                {.kind = MenuItem::Kind::Separator},
+                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.smart_remap_unicode")},
+                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.smart_more_options")},
+            }},
            {.kind = MenuItem::Kind::Submenu,
             .title = muffin::MainWindow::tr("Line Breaks"),
             .children = {

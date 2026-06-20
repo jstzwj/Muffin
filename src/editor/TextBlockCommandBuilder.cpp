@@ -274,11 +274,24 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
         }
         return buildMergeWithPreviousParagraph(context);
       }
-      command.sourceStart = context.contentRange.byteStart + nextOffset - 1;
-      command.removedLength = 1;
-      command.insertedText.clear();
-      nextParagraph.remove(nextOffset - 1, 1);
-      --nextOffset;
+      {
+        qsizetype tokenStart = 0, tokenEnd = 0;
+        if (context.inlineProjection.foldedTokenForDeletion(nextOffset, -1, tokenStart, tokenEnd)) {
+          // Render-level smart punct: caret is at a folded token's end (e.g. "--" shown as one
+          // en-dash) — backspace removes the whole source token, not a single dash.
+          command.sourceStart = context.contentRange.byteStart + tokenStart;
+          command.removedLength = tokenEnd - tokenStart;
+          command.insertedText.clear();
+          nextParagraph.remove(tokenStart, tokenEnd - tokenStart);
+          nextOffset = tokenStart;
+        } else {
+          command.sourceStart = context.contentRange.byteStart + nextOffset - 1;
+          command.removedLength = 1;
+          command.insertedText.clear();
+          nextParagraph.remove(nextOffset - 1, 1);
+          --nextOffset;
+        }
+      }
       command.kind = EditTransaction::Kind::DeleteText;
       command.label = QStringLiteral("Backspace");
       break;
@@ -299,10 +312,22 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
         }
         return buildMergeWithNextParagraph(context);
       }
-      command.sourceStart = context.contentRange.byteStart + nextOffset;
-      command.removedLength = 1;
-      command.insertedText.clear();
-      nextParagraph.remove(nextOffset, 1);
+      {
+        qsizetype tokenStart = 0, tokenEnd = 0;
+        if (context.inlineProjection.foldedTokenForDeletion(nextOffset, 1, tokenStart, tokenEnd)) {
+          // Render-level smart punct: caret is at a folded token's start — delete removes the whole
+          // source token forward, not a single dash.
+          command.sourceStart = context.contentRange.byteStart + tokenStart;
+          command.removedLength = tokenEnd - tokenStart;
+          command.insertedText.clear();
+          nextParagraph.remove(tokenStart, tokenEnd - tokenStart);
+        } else {
+          command.sourceStart = context.contentRange.byteStart + nextOffset;
+          command.removedLength = 1;
+          command.insertedText.clear();
+          nextParagraph.remove(nextOffset, 1);
+        }
+      }
       command.kind = EditTransaction::Kind::DeleteText;
       command.label = QStringLiteral("Delete");
       break;

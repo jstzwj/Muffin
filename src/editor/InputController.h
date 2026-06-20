@@ -98,6 +98,7 @@ private:
   // chars bypass the pair table. Both honor markdown/convertOnInput and only run in prose (code/math
   // literal editors return before this point) with a collapsed selection.
   bool trySmartDashes(QChar ch);
+  bool trySmartEllipsis(QChar ch);
   QString maybeConvertSmartPunctuation(QString text);
   EmojiCompleter* ensureEmojiCompleter();
   void maybeUpdateEmojiPopup();
