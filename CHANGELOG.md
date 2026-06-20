@@ -5,7 +5,22 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.8] - 2026-06-20
+## [0.3.0] - 2026-06-20
+
+### Added
+- **Unified theme system** - A single `ThemeDefinition` data structure now drives every styling surface, replacing four parallel hardcoded systems. The document theme and the chrome (window) theme are described by one definition, and a `ChromeStyleSheet` generator produces the application QSS from theme tokens instead of string literals
+- **Custom theme import** - Load user-authored themes from `AppDataLocation/themes/*.json` on startup; `ThemeManager` scans the folder and lists built-in and imported definitions together
+- **Dynamic Theme menu** - The Theme menu is now enumerated live from the available definitions, so imported themes appear immediately alongside the built-ins, with an Import-Theme action reachable from both the menu and the Appearance preferences page
+- **Open theme folder** - Quickly jump to the user themes directory to add or edit custom theme files
+- **Serif body typography** - Themes can opt into a serif body font via a `serifBody` flag; the built-in Pixyll theme is now a serif theme, and Whitey's palette was softened for a gentler look
+- **HTML render theming** - HTML blocks now render against a full `HtmlColorPalette` derived from the active theme, so embedded HTML adopts the document's colors instead of hardcoded values
+- **Smart punctuation** - Input-side conversion of straight quotes, dashes, and ellipses into their typographic forms, plus a display-only render-time conversion that leaves the Markdown source untouched
+- **Smart punctuation controls** - A Markdown preferences section and Math Tools menu commands to toggle smart punctuation behavior
+- **Math Refresh All** - A global command (under the Math Tools submenu) that re-renders every visible math formula at once
+
+### Changed
+- **Full theming refactor** - The sidebar, preferences dialog, and all chrome widgets were rewired to follow the active theme colors, removing the last hardcoded color values and the old static theme-switching code paths
+- **Unicode punctuation remapping** - Punctuation is remapped during parsing so that smart quotes and dashes no longer break Markdown syntax recognition
 
 ### Added
 - **Quick Open** - Fuzzy file opener for the workspace folder, surfacing recently used and recently modified files for fast switching
@@ -351,6 +366,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.3.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.3.0
 [0.2.8]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.8
 [0.2.7]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.7
 [0.2.6]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.6

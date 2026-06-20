@@ -28,6 +28,7 @@ Muffin is a block-level WYSIWYG Markdown editor built from the ground up in C++ 
 - **Opens huge files instantly** — A lazy, viewport-aware layout renders only the blocks on screen, so multi-megabyte documents open without freezing. Incremental parsing and text-delta editing keep typing responsive at any size.
 - **True WYSIWYG editing** — Write and edit directly on the rendered page, with the Markdown kept in sync underneath. No side-by-side preview, no render delay.
 - **Markdown as the source of truth** — Your `.md` file round-trips cleanly, and a synchronized source mode lets you drop into raw Markdown anytime with full cursor round-tripping between the two views.
+- **Themeable end to end** — One theme definition drives the rendered page, the source editor, and every piece of chrome (menus, sidebar, dialogs, status bar). Ship your own themes as `.json` files.
 
 ### How it compares
 
@@ -55,13 +56,14 @@ Muffin is the only fully native, fully open-source WYSIWYG editor in this group 
 - **Source mode** — Toggle to a syntax-highlighted raw Markdown editor with full cursor synchronization between views.
 - **Focus mode** (`F8`) — Dim all blocks except the active one, so you can concentrate on what you're writing.
 - **Typewriter mode** (`F9`) — Keep the cursor vertically centered with smooth animated scrolling that feels like paper.
+- **Smart punctuation** — Curl straight quotes, turn `--`/`---` into en/em dashes, and `...` into an ellipsis as you type. An optional render-only mode beautifies punctuation without touching your Markdown source.
+- **Extended Markdown** — GitHub-style alerts (`[!NOTE]`, `[!TIP]`, `[!WARNING]`, …), `==highlight==`, `~subscript~`, `^superscript^`, Setext headings, and `\[ ... \]` LaTeX math blocks.
 - **Spell checking** — Nuspell-powered spell checking with misspelling underlines in both render and source modes, a right-click suggestion menu, ignore-word support, and bundled dictionaries for 11 languages.
 - **Emoji autocomplete** — Type `:` followed by a shortcode to open a popup emoji picker backed by a bundled dataset, then accept with `Tab`; enabled by default while typing.
 - **Editable tables** — Add, resize, align, and delete rows and columns inline. Insert tables via a configurable dialog.
-- **Editable code blocks** — Inline editing with syntax highlighting for 20+ languages via tree-sitter. Set the language from an autocomplete dropdown.
-- **Editable math blocks** — Write LaTeX expressions rendered live by a full KaTeX-compatible engine written in C++, with a dual-pane edit/preview layout. Supports user-defined macros, braket notation, commutative diagrams, and more.
-- **Editable HTML blocks** — Edit raw HTML blocks inline with Lexbor-based parsing and Yoga-based flexbox layout.
-- **Image editing** — Insert local or network images, drag-and-drop upload, right-click context menu, preview rendering, and batch processing. WebP and AVIF formats supported.
+- **Editable code blocks** — Inline editing with syntax highlighting for 20+ languages via tree-sitter. Set the language from an autocomplete dropdown. Code Tools add line-by-line indent/dedent and a copy-block-content action.
+- **Editable math blocks** — Write LaTeX expressions rendered live by a full KaTeX-compatible engine written in C++, with a dual-pane edit/preview layout. Supports user-defined macros, braket notation, commutative diagrams, and a one-click "Refresh All" to re-render every formula.
+- **Editable HTML blocks** — Edit raw HTML blocks inline with Lexbor-based parsing and Yoga-based flexbox layout, themed to match the active document.
 - **Footnotes & link definitions** — Full support for footnote (`[^id]: text`) and link reference definitions with rendering, editing, and insertion commands.
 - **Front matter** — Full YAML front matter support.
 - **Rich paragraph commands** — Toggle headings, code fences, math blocks, and more from the paragraph menu.
@@ -72,20 +74,37 @@ Muffin is the only fully native, fully open-source WYSIWYG editor in this group 
 - **Copy as Markdown** — Optional preference to copy the underlying Markdown source when copying as plain text.
 - **Whole-line copy & cut** — With no selection, copy and cut operate on the entire current line.
 - **Link interaction** — Hover cursor changes on links; Ctrl+Click to open in the system browser.
-- **Document printing** — Print the current document via File → Print (Ctrl+P).
 - **Line break preferences** — Choose Windows (CRLF) or Unix (LF) line endings, with an optional trailing newline on save.
 
 ### 🧭 Navigation & Organization
 
-- **Document outline** — Jump to any heading from the sidebar outline panel.
+- **Document outline** — Jump to any heading from the sidebar outline, with collapsible subtrees for long documents.
 - **Heading badges** — Visual level badges (H3–H6) painted alongside headings for quick hierarchy identification.
 - **File tree sidebar** — Browse and open files from a folder tree.
-- **Status bar** — Parse time, cursor position, word count, quick toggles for sidebar and source mode, and an optional preview of the current block's Markdown source.
+- **Quick Open** — Fuzzy-jump to any file in the open workspace, with recently used and recently modified files surfaced first.
+- **File operations** — Move, delete, reveal in file manager, reopen-with-encoding, and save-all-open-files from the file menu.
+- **Draft recovery** — Recover unsaved work after a crash or unexpected exit.
+- **Autosave** — Optional periodic saving and save-on-exit to protect unsaved work.
+- **Custom status bar** — A self-painted, theme-aware status bar showing parse time, cursor position, and word count, with a click-to-open statistics popup (words, characters, lines, reading time, and selection count) and an inline spell-check language quick-switcher.
 - **In-app help** — Quick Start, Markdown Reference, and Acknowledgements available from the Help menu in a built-in viewer rendered by the native Markdown engine, with back/forward navigation.
+- **Automatic update checks** — Notified of new releases on startup (once per 24 hours), with a manual check from the Help menu.
+
+### 📤 Export & Import
+
+- **Multi-format export** — Export to PDF (native renderer), HTML, and plain HTML natively; Word (DOCX), ODT, RTF, ePub, LaTeX, MediaWiki, RST, Textile, and OPML via an external [Pandoc](https://pandoc.org) process.
+- **Import via Pandoc** — Convert documents from other formats into Markdown through File → Import.
+- **Document printing** — Print the current document via File → Print (Ctrl+P).
+
+### 🖼️ Images
+
+- **Image editing** — Insert local or network images, drag-and-drop upload, right-click context menu, preview rendering, and batch processing. WebP and AVIF formats supported, plus bundled PNG/JPEG decoders so images load reliably regardless of Qt's plugin availability.
+- **Image insertion policy** — A centralized system governing image insertion across paste, dialog, and drag-and-drop with six Typora-style actions (no action, copy to `./`, `./assets`, `./<filename>.assets`, upload, or a custom folder), honoring front-matter upload overrides and configurable relative-path, leading-slash, and URL-escaping formatting.
+- **Custom-command upload** — Upload images through a configurable external command, parsing its stdout lines as image URLs.
 
 ### 🎨 Appearance
 
-- **5 built-in themes** — GitHub, Newsprint, Night, Pixyll, and Whitey.
+- **5 built-in themes** — GitHub, Newsprint, Night, Pixyll (now with a serif body font), and Whitey.
+- **Custom themes** — Author your own theme as a `.json` file, drop it into the themes folder, and it shows up in the live Theme menu instantly. Import themes directly from the menu or the Appearance preferences page.
 - **Appearance preferences** — Font size, zoom level, focus mode, typewriter mode, and status bar visibility — all persisted across sessions.
 - **Always-on-top** — Keep the window above all others (Ctrl+Shift+F).
 - **15 UI languages** — English, 简体中文, 繁體中文, 日本語, 한국어, Tiếng Việt, Français, Español, Deutsch, Português (Brasil), Русский, Italiano, Türkçe, Polski, and Nederlands.
@@ -154,7 +173,7 @@ Muffin uses a native block tree as its runtime model. On import, Markdown is par
 
 | Layer | Responsibility |
 | --- | --- |
-| `app` | MainWindow, preferences, sidebar, and UI language management. |
+| `app` | MainWindow, preferences, sidebar, quick open, and UI language management. |
 | `editor` | The rendered editing surface, source editor, find bar, and input handling. |
 | `render` | Layout engine and block/inline painting, driven by themes. |
 | `document` | Markdown document model, outline, and source round-trip mapping. |
@@ -162,32 +181,37 @@ Muffin uses a native block tree as its runtime model. On import, Markdown is par
 | `blocks` | Per-block runtimes: code, table, math, HTML, front matter, link refs, literal. |
 | `edit` | Text editing operations: insert, delete, replace, and block movement. |
 | `projection` | Bidirectional offset mapping between the rendered view and raw Markdown. |
-| `export` | File export pipeline. |
+| `export` | Native PDF/HTML export and the Pandoc runner for other formats. |
 | `math` | KaTeX-compatible math rendering. |
-| `theme` | Theme definitions and runtime theme management. |
+| `theme` | Unified theme definitions, chrome style-sheet generation, and runtime theme management. |
+| `image` | Image insertion policy and custom-command upload. |
+| `io` | File I/O, encoding, and image file operations. |
 | `commands` | Command registry decoupling menu actions from their implementations. |
-| `io` | File I/O and encoding. |
-| `diagnostics` | Debug and profiling utilities. |
-| `unicode` | Unicode text utilities. |
 
 ### Third-party dependencies
 
 | Library | Purpose | License |
 |---------|---------|---------|
 | Qt 6 | GUI framework | LGPL-3.0 |
-| cmark-gfm | Markdown parsing | BSD-2-Clause |
-| tree-sitter | Syntax highlighting for code blocks | MIT |
-| KaTeX | Math formula rendering | MIT |
+| cmark-gfm | GitHub-Flavored Markdown parsing | BSD-2-Clause |
+| tree-sitter | Code syntax highlighting | MIT |
+| KaTeX | Math formula rendering (fonts bundled) | MIT |
+| Yoga | Flexbox layout for HTML blocks | MIT |
+| Lexbor | HTML parsing | Apache-2.0 |
+| Nuspell | Spell checking | LGPL-3.0-or-later |
+| ICU | Unicode text processing | ICU License |
+| libwebp / libavif | WebP and AVIF image decoding | BSD-3-Clause / BSD-2-Clause |
+| libpng / libjpeg | PNG and JPEG image decoding | libpng / libjpeg |
 
 Third-party sources live in `third_party/` and are built as part of the CMake project.
 
 ## Roadmap
 
-Muffin already covers nearly all of core and extended Markdown — headings, paragraphs, lists, task lists, blockquotes, tables, code blocks, inline formatting, links, reference-style links and images, footnotes, front matter, math, and HTML. Ongoing work includes:
+Muffin already covers nearly all of core and extended Markdown — headings, paragraphs, lists, task lists, blockquotes, tables, code blocks, inline formatting, links, reference-style links and images, footnotes, front matter, math, and HTML — plus multi-format export and import. Ongoing work includes:
 
 - [ ] Polish the rendered editor surface — selection, cursor, IME, and local refresh edge cases.
-- [ ] Expand export flows — PDF, HTML, and DOCX export with template support.
-- [ ] Harden performance — large-document stress tests, roundtrip verification, and profiling diagnostics.
+- [ ] Extend Markdown support — diagrams (Mermaid) and continued GFM coverage.
+- [ ] Harden performance — roundtrip verification and profiling diagnostics for very large documents.
 - [ ] Accessibility — keyboard navigation improvements and screen reader support.
 
 ## Contributing
