@@ -406,6 +406,145 @@ void testTableCellEscapedPipeRendersDecoded() {
   }
 }
 
+// Typora-style <br>: the tag markup renders gray (a non-stopping OpenMarker span) and a
+// hard line break follows it. All three spellings (<br>, <br/>, <br />) behave the same.
+void testBrTagRendersAsHardBreak() {
+  const QString tags[] = {QStringLiteral("<br>"), QStringLiteral("<br/>"), QStringLiteral("<br />"),
+                          QStringLiteral("<br >"), QStringLiteral("<br   >")};
+  for (const QString& tag : tags) {
+    const QString md = QStringLiteral("ab") + tag + QStringLiteral("cd");
+    DocumentSession session;
+    session.setMarkdownText(md, false);
+    const MarkdownNode* para = session.document().root().children().front().get();
+    require(para != nullptr, QStringLiteral("paragraph missing for br tag %1").arg(tag));
+
+    InlineProjection projection(para->inlines(), md, InlineProjectionState{}, 0);
+
+    // Display keeps the gray tag markup and appends a newline; visible text (cursor-stop
+    // space) collapses the markup to just the break.
+    require(projection.displayText() == QStringLiteral("ab") + tag + QStringLiteral("\ncd"),
+            QStringLiteral("br %1 should render gray markup + break; got '%2'").arg(tag, projection.displayText()));
+    require(projection.visibleText() == QStringLiteral("ab\ncd"),
+            QStringLiteral("br %1 visible text should collapse markup; got '%2'").arg(tag, projection.visibleText()));
+
+    // Structure: a gray OpenMarker span over the tag + a zero-width-source Text '\n'.
+    bool foundMarker = false;
+    bool foundBreak = false;
+    const QString display = projection.displayText();
+    for (const InlineProjectionSpan& s : projection.spans()) {
+      const QString slice = display.mid(s.displayStart, s.displayEnd - s.displayStart);
+      if (s.type == InlineType::HtmlInline && s.kind == InlineSpanKind::OpenMarker && slice == tag) {
+        require(s.sourceEnd - s.sourceStart == tag.size(),
+                QStringLiteral("br marker should cover the %1-char tag source").arg(tag.size()));
+        foundMarker = true;
+      }
+      if (s.kind == InlineSpanKind::Text && slice == QStringLiteral("\n")) {
+        require(s.sourceStart == s.sourceEnd,
+                QStringLiteral("br break span should be zero-width source at the tag end"));
+        foundBreak = true;
+      }
+    }
+    require(foundMarker, QStringLiteral("br %1 should emit a gray OpenMarker span").arg(tag));
+    require(foundBreak, QStringLiteral("br %1 should emit a line-break span").arg(tag));
+
+    // Offset mapping: a caret at the break maps to the source offset just past the tag.
+    const qsizetype tagEndSource = QStringLiteral("ab").size() + tag.size();
+    qsizetype src = -1;
+    require(projection.sourceOffsetForDisplayOffset(tagEndSource, src),
+            QStringLiteral("br %1 break display offset should resolve").arg(tag));
+    require(src == tagEndSource,
+            QStringLiteral("br %1 break caret should map to source %2 but got %3").arg(tag).arg(tagEndSource).arg(src));
+    qsizetype disp = -1;
+    require(projection.displayOffsetForSourceOffset(tagEndSource, disp),
+            QStringLiteral("br %1 source-after-tag should resolve").arg(tag));
+    require(disp == tagEndSource,
+            QStringLiteral("br %1 source-after-tag should map to break display %2 but got %3")
+                .arg(tag).arg(tagEndSource).arg(disp));
+  }
+}
+
+// A corrupted tag (no closing '>') is plain Text, so it renders literally with no break —
+// the line break vanishes the moment the tag is no longer intact.
+void testCorruptedBrRendersAsLiteralText() {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("text<br"), false);  // no closing '>'
+  const MarkdownNode* para = session.document().root().children().front().get();
+  require(para != nullptr, QStringLiteral("paragraph missing for corrupted br"));
+  InlineProjection projection(para->inlines(), QStringLiteral("text<br"), InlineProjectionState{}, 0);
+  require(!projection.displayText().contains(QLatin1Char('\n')),
+          QStringLiteral("corrupted <br should not render a break; got '%1'").arg(projection.displayText()));
+  require(projection.displayText().contains(QStringLiteral("<br")),
+          QStringLiteral("corrupted <br should render literally; got '%1'").arg(projection.displayText()));
+}
+
+// Table cells share the paragraph render path, so the same gray-marker + break applies.
+void testBrTagRendersAsHardBreakInTableCell() {
+  const QString tags[] = {QStringLiteral("<br>"), QStringLiteral("<br/>"), QStringLiteral("<br />"),
+                          QStringLiteral("<br >"), QStringLiteral("<br   >")};
+  RenderTheme theme = RenderTheme::github();
+  InlineLayout::BuildOptions options;
+  for (const QString& tag : tags) {
+    const QString markdown = QStringLiteral("| A |\n| --- |\n| a%1b |").arg(tag);
+    DocumentSession session;
+    session.setMarkdownText(markdown, false);
+    const MarkdownNode* table = session.document().root().children().front().get();
+    const MarkdownNode* cell = TableModelOps::cellAt(*table, 1, 0);
+    require(cell != nullptr, QStringLiteral("br table cell missing for tag %1").arg(tag));
+    const SourceRange sr = cell->sourceRange();
+    const QString md = session.markdownText();
+    const QString sourceSlice = md.mid(sr.byteStart, sr.byteEnd - sr.byteStart);
+    options.sourceBase = sr.byteStart;
+
+    InlineLayout layout;
+    layout.build(cell->inlines(), sourceSlice, theme, 400.0, theme.paragraphFont(), options);
+    require(layout.displayText() == QStringLiteral("a") + tag + QStringLiteral("\nb"),
+            QStringLiteral("table br %1 display should be 'a%2\\nb' but got '%3' (source '%4')")
+                .arg(tag, tag, layout.displayText(), sourceSlice));
+    require(layout.visibleText() == QStringLiteral("a\nb"),
+            QStringLiteral("table br %1 visible should be 'a\\nb' but got '%2'").arg(tag, layout.visibleText()));
+  }
+}
+
+// Diagnostic: confirm the <br> break actually produces a taller (multi-line) laid-out block,
+// not just a '\n' sitting in the display string.
+void testBrTagProducesMultipleLayoutLines() {
+  RenderTheme theme = RenderTheme::github();
+
+  DocumentSession withBreak;
+  withBreak.setMarkdownText(QStringLiteral("line1<br>line2"), false);
+  const MarkdownNode* withBreakPara = withBreak.document().root().children().front().get();
+  InlineLayout withBreakLayout;
+  withBreakLayout.build(withBreakPara->inlines(), theme, 400.0, theme.paragraphFont());
+
+  DocumentSession flat;
+  flat.setMarkdownText(QStringLiteral("line1line2"), false);
+  const MarkdownNode* flatPara = flat.document().root().children().front().get();
+  InlineLayout flatLayout;
+  flatLayout.build(flatPara->inlines(), theme, 400.0, theme.paragraphFont());
+
+  require(withBreakLayout.size().height() > flatLayout.size().height() * 1.5,
+          QStringLiteral("<br> should lay out as two lines (height %1 > 1.5x flat %2); display '%3'")
+              .arg(withBreakLayout.size().height()).arg(flatLayout.size().height()).arg(withBreakLayout.displayText()));
+}
+
+// <br> nested inside a paired inline HTML tag (<b>a<br>b</b>) reaches appendInline via
+// appendHtmlInlineContent, NOT the top-level appendInlines interception. It must still
+// render as gray markup + a line break — otherwise the projection (literal "<br>") would
+// disagree with plainTextForInline/flattenPlainText (which decode <br> to '\n'), drifting
+// the layout's plainText_ length away from the real visible text.
+void testBrTagRendersAsHardBreakInsideHtmlGroup() {
+  const QString md = QStringLiteral("<b>a<br>b</b>");
+  DocumentSession session;
+  session.setMarkdownText(md, false);
+  const MarkdownNode* para = session.document().root().children().front().get();
+  require(para != nullptr, QStringLiteral("paragraph missing for br inside html group"));
+  InlineProjection projection(para->inlines(), md, InlineProjectionState{}, 0);
+  require(projection.displayText() == QStringLiteral("a<br>\nb"),
+          QStringLiteral("<br> inside <b> should render gray markup + break; got '%1'").arg(projection.displayText()));
+  require(projection.visibleText() == QStringLiteral("a\nb"),
+          QStringLiteral("<br> inside <b> visible text should be 'a\\nb'; got '%1'").arg(projection.visibleText()));
+}
+
 }  // namespace
 
 QStringList tableCellDisplayTexts(const QString& markdown) {
@@ -564,6 +703,11 @@ int main(int argc, char** argv) {
   RUN_TEST(testPendingPrefixFallbackDoesNotDuplicateSource);
   RUN_TEST(testSmartPunctRenderConvertsQuotesAndDashes);
   RUN_TEST(testSmartPunctFoldedTokenDecomposesIntoSpans);
+  RUN_TEST(testBrTagRendersAsHardBreak);
+  RUN_TEST(testCorruptedBrRendersAsLiteralText);
+  RUN_TEST(testBrTagRendersAsHardBreakInTableCell);
+  RUN_TEST(testBrTagRendersAsHardBreakInsideHtmlGroup);
+  RUN_TEST(testBrTagProducesMultipleLayoutLines);
 #undef RUN_TEST
   return 0;
 }

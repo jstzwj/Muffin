@@ -236,16 +236,47 @@ QString extractHtmlAttr(const QString& tag, const QString& attrName) {
   return match.captured(1).isNull() ? match.captured(2) : match.captured(1);
 }
 
-bool isSelfClosingBrTag(const QString& text) {
-  if (text.size() < 3 || text[0] != QLatin1Char('<')) {
-    return false;
+}  // namespace
+
+int brTagLengthAt(const QString& content, qsizetype offset) {
+  const qsizetype size = content.size();
+  if (offset < 0 || offset + 4 > size || content.at(offset) != QLatin1Char('<')) {
+    return 0;
   }
-  const QStringView body = QStringView(text).mid(1).trimmed();
-  return body.startsWith(u"br", Qt::CaseInsensitive) &&
-         (body.size() == 2 || body[2] == QLatin1Char('>') || body[2] == QLatin1Char('/'));
+  const QChar c1 = content.at(offset + 1);
+  const QChar c2 = content.at(offset + 2);
+  if ((c1 != QLatin1Char('b') && c1 != QLatin1Char('B')) ||
+      (c2 != QLatin1Char('r') && c2 != QLatin1Char('R'))) {
+    return 0;
+  }
+  // After "<br": HTML5 allows any whitespace and an optional self-closing slash before '>'.
+  // Covers <br>, <br/>, <br />, <br >, <br   >, <br / >. Rejects tags with attributes
+  // (<br class=x>) or a different name (<break>) — those fall through to literal text.
+  qsizetype i = offset + 3;
+  bool seenSlash = false;
+  while (i < size) {
+    const QChar c = content.at(i);
+    if (c == QLatin1Char('>')) {
+      return static_cast<int>(i + 1 - offset);
+    }
+    if (c == QLatin1Char('/') && !seenSlash) {
+      seenSlash = true;
+      ++i;
+      continue;
+    }
+    if (c.isSpace()) {
+      ++i;
+      continue;
+    }
+    return 0;  // an attribute name or other char — not a bare <br> tag
+  }
+  return 0;  // no closing '>'
 }
 
-}  // namespace
+bool isStandaloneBrTag(const QString& text) {
+  const int length = brTagLengthAt(text, 0);
+  return length > 0 && length == text.size();
+}
 
 bool InlineProjectionState::shouldRevealSourceRange(qsizetype sourceStart, qsizetype sourceEnd) const {
   if (revealMarkdownMarkers) {
@@ -674,8 +705,11 @@ QString InlineProjection::plainTextForInline(const InlineNode& node) {
     case InlineType::Text:
     case InlineType::Code:
     case InlineType::InlineMath:
-    case InlineType::HtmlInline:
       return node.text();
+    case InlineType::HtmlInline:
+      // <br> contributes a line break to plain text (column width / row height / copy);
+      // other inline HTML keeps its literal source text.
+      return isStandaloneBrTag(node.text()) ? QStringLiteral("\n") : node.text();
     case InlineType::SoftBreak:
       return QStringLiteral(" ");
     case InlineType::LineBreak:
@@ -736,6 +770,16 @@ void InlineProjection::appendTextSpan(
   }
   state.displayOffset = span.displayEnd;
   state.spans.push_back(span);
+}
+
+void InlineProjection::appendBrLineBreak(BuildState& state, qsizetype sourceStart, qsizetype sourceEnd, const QString& tagText) {
+  // Gray markup over the tag (a non-stopping marker), then a hard line break whose source
+  // range is zero-width at the tag end. The break is visible (counts in plain/visible text
+  // and produces a layout line) but not editable — it has no source span of its own to edit.
+  appendTextSpan(state, InlineType::HtmlInline, InlineSpanKind::OpenMarker,
+                 sourceStart, sourceEnd, tagText, false);
+  appendTextSpan(state, InlineType::HtmlInline, InlineSpanKind::Text,
+                 sourceEnd, sourceEnd, QStringLiteral("\n"), true, false);
 }
 
 void InlineProjection::appendSmartPunctTextSpans(BuildState& state, qsizetype sourceStart, qsizetype sourceEnd, const QString& decoded) {
@@ -853,6 +897,15 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
         }
       }
 
+      // Typora-style <br>: gray markup + a hard line break. The break only exists while the
+      // tag is intact — cmark parses a corrupted "<br" as plain Text, so it never reaches
+      // here and renders literally.
+      if (isStandaloneBrTag(node.text())) {
+        appendBrLineBreak(state, nodeStart, nodeEnd, node.text());
+        searchFrom = nodeEnd;
+        continue;
+      }
+
       const int consumed = tryAppendHtmlInlineGroup(state, inlines, i, nodeStart, sourceEnd, searchFrom, htmlFormatData);
       if (consumed > 0) {
         // Advance past consumed nodes. The loop's ++i handles one increment.
@@ -940,12 +993,8 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
   const InlineNode& openNode = inlines[index];
   const QString& openText = openNode.text();
 
-  // Self-closing void tags like <br> should stay as raw text.
-  // The table cell editing code depends on <br> appearing as raw text
-  // in the projection so its offset calculations remain consistent.
-  if (isSelfClosingBrTag(openText)) {
-    return 0;
-  }
+  // <br> is handled in appendInlines (gray markup + line break) and never reaches
+  // this grouping path, so only paired renderable tags are considered here.
 
   // Must be an opening tag with a renderable tag name
   const QStringView tagName = extractOpeningTagName(openText);
@@ -1288,7 +1337,14 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
       break;
     }
     case InlineType::HtmlInline:
-      appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, node.text(), true);
+      // <br> nested inside a paired inline HTML group (<b>..<br>..</b>) reaches this case
+      // via appendHtmlInlineContent; emit it the same way as a top-level <br> so plain/
+      // visible/display text stays consistent. Other inline HTML keeps its literal text.
+      if (isStandaloneBrTag(node.text())) {
+        appendBrLineBreak(state, sourceStart, sourceEnd, node.text());
+      } else {
+        appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, node.text(), true);
+      }
       break;
     case InlineType::Link: {
       const QString label = markdownForInlines(node.children());

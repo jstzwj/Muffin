@@ -190,8 +190,26 @@ void testTableControllerFormatSource() {
   require(selection.cursorPosition().blockId.isValid(), "format table source should keep a table cursor");
 }
 
+void testTableControllerInsertInsideBr() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  TableController tableController;
+  tableController.setContext({&session, &selection, &undoStack, &brushQueue});
+
+  // Inserting between 'r' and '>' inside <br> lands in place — a space there just makes
+  // another valid spelling (<br >), so it must not snap past the tag to the line break.
+  session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| a<br>b |"), false);
+  setTableCellCursor(session, selection, 1, 0, QStringLiteral("a<br").size(), 2);
+  require(tableController.insertText(QStringLiteral(" ")), "insert inside <br> should work");
+  require(session.markdownText().contains(QStringLiteral("| a<br >b |")),
+          "insert inside <br> should land in place (making <br >), not snap past the tag");
+}
+
 int main() {
   testTableCellSourceEditMixedTableTokensAndInlineMarkers();
+  testTableControllerInsertInsideBr();
   testTableControllerInsertTable();
   testTableControllerFormatSource();
   return 0;

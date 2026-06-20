@@ -22,8 +22,8 @@ qsizetype visibleOffsetForTableCellSourceOffset(const QString& content, qsizetyp
       ++visible;
       continue;
     }
-    if (content.mid(source, 4) == QStringLiteral("<br>")) {
-      source = qMin(sourceOffset, source + 4);
+    if (const int brLen = brTagLengthAt(content, source)) {
+      source = qMin(sourceOffset, source + brLen);
       ++visible;
       continue;
     }
@@ -38,19 +38,15 @@ bool escapedPipeAt(const QString& content, qsizetype offset) {
          content.at(offset + 1) == QLatin1Char('|');
 }
 
-bool tableBreakAt(const QString& content, qsizetype offset) {
-  return offset >= 0 && offset + 4 <= content.size() && content.mid(offset, 4) == QStringLiteral("<br>");
-}
-
 bool tableCellSpecialUnitAt(const QString& content, qsizetype offset, qsizetype& unitStart, qsizetype& unitEnd) {
   if (escapedPipeAt(content, offset)) {
     unitStart = offset;
     unitEnd = offset + 2;
     return true;
   }
-  if (tableBreakAt(content, offset)) {
+  if (const int brLen = brTagLengthAt(content, offset)) {
     unitStart = offset;
-    unitEnd = offset + 4;
+    unitEnd = offset + brLen;
     return true;
   }
   return false;
@@ -200,6 +196,12 @@ qsizetype normalizedTableCellInsertOffset(const MarkdownNode& cell, const QStrin
       continue;
     }
     if (sourceOffset > unitStart && sourceOffset < unitEnd) {
+      // <br> is editable char-by-char: inserting a space inside it (e.g. between 'r' and '>')
+      // just yields another valid spelling (<br >), so don't snap. Only the escaped-pipe unit
+      // must stay atomic — inserting inside \| would leak a raw '|' and split the cell.
+      if (brTagLengthAt(content, unitStart)) {
+        continue;
+      }
       return sourceOffset - unitStart < unitEnd - sourceOffset ? unitStart : unitEnd;
     }
   }
@@ -228,7 +230,12 @@ std::optional<TableCellSourceEdit> tableCellDeleteEdit(
 
   qsizetype unitStart = 0;
   qsizetype unitEnd = 0;
-  if (tableCellSpecialUnitContaining(content, sourceOffset, direction, unitStart, unitEnd)) {
+  // Only the escaped-pipe unit (\|) deletes atomically: deleting just the backslash would
+  // leak a raw '|' and split the cell. <br> is editable char-by-char — removing one char
+  // corrupts the tag and the parser drops the line break on the next pass, so the user can
+  // fix or retype it instead of losing the whole tag on a single keystroke.
+  if (tableCellSpecialUnitContaining(content, sourceOffset, direction, unitStart, unitEnd) &&
+      !brTagLengthAt(content, unitStart)) {
     return TableCellSourceEdit{unitStart, unitEnd - unitStart, QString(), unitStart};
   }
 
@@ -266,8 +273,8 @@ qsizetype tableCellSourceOffsetForVisibleOffset(const QString& content, qsizetyp
       ++visible;
       continue;
     }
-    if (content.mid(source, 4) == QStringLiteral("<br>")) {
-      source += 4;
+    if (const int brLen = brTagLengthAt(content, source)) {
+      source += brLen;
       ++visible;
       continue;
     }

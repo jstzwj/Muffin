@@ -365,7 +365,7 @@ void testTableControllerPreservesInlineContainersOnCellEdit() {
   require(session.markdownText().contains(QStringLiteral("| [label]url) |")), "link label end delete removes destination syntax");
 }
 
-void testTableControllerDeletesTableBreakAsUnit() {
+void testTableControllerBrDeletesPerChar() {
   DocumentSession session;
   SelectionController selection;
   UndoStack undoStack;
@@ -373,15 +373,31 @@ void testTableControllerDeletesTableBreakAsUnit() {
   TableController tableController;
   tableController.setContext({&session, &selection, &undoStack, &brushQueue});
 
+  // Backspace just past '>' removes only that char, corrupting the tag — NOT the whole tag.
   session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| a<br>b |"), false);
   setTableCellCursor(session, selection, 1, 0, QStringLiteral("a<br>").size(), 2);
-  require(tableController.deleteBackward(), "table break backspace should work");
-  require(session.markdownText().contains(QStringLiteral("| ab |")), "table break backspace should remove whole break token");
+  require(tableController.deleteBackward(), "br backspace should work");
+  require(session.markdownText().contains(QStringLiteral("| a<brb |")),
+          "br backspace should remove only '>' (per-char), not the whole tag");
+  require(!session.markdownText().contains(QStringLiteral("<br>")),
+          "br backspace should corrupt the tag so the break is gone");
 
+  // Forward delete just before '<' removes only that char.
   session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| a<br>b |"), false);
   setTableCellCursor(session, selection, 1, 0, 1, 1);
-  require(tableController.deleteForward(), "table break delete should work");
-  require(session.markdownText().contains(QStringLiteral("| ab |")), "table break delete should remove whole break token");
+  require(tableController.deleteForward(), "br forward delete should work");
+  require(session.markdownText().contains(QStringLiteral("| abr>b |")),
+          "br forward delete should remove only '<' (per-char), not the whole tag");
+
+  // All spellings behave the same (per-char, not atomic).
+  const QString variants[] = {QStringLiteral("<br/>"), QStringLiteral("<br />")};
+  for (const QString& tag : variants) {
+    session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| a%1b |").arg(tag), false);
+    setTableCellCursor(session, selection, 1, 0, QStringLiteral("a").size() + tag.size(), 2);
+    require(tableController.deleteBackward(), "br variant backspace should work");
+    require(!session.markdownText().contains(tag),
+            "br variant backspace should corrupt the tag, not delete it whole");
+  }
 }
 
 // Escaped pipes (\|) inside a table cell survive every structural mutation
@@ -482,6 +498,6 @@ int main() {
   testTableControllerDeletesOnlyEditableInlineContent();
   testTableControllerPreservesTableEscapesOnCellDelete();
   testTableControllerPreservesInlineContainersOnCellEdit();
-  testTableControllerDeletesTableBreakAsUnit();
+  testTableControllerBrDeletesPerChar();
   return 0;
 }

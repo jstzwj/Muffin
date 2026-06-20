@@ -30,8 +30,15 @@ QString flattenPlainText(const QVector<InlineNode>& inlines) {
       case InlineType::Text:
       case InlineType::Code:
       case InlineType::InlineMath:
-      case InlineType::HtmlInline:
         text += node.text();
+        break;
+      case InlineType::HtmlInline:
+        // <br> is a line break in plain text; other inline HTML keeps its literal text.
+        if (isStandaloneBrTag(node.text())) {
+          text += QLatin1Char('\n');
+        } else {
+          text += node.text();
+        }
         break;
       case InlineType::SoftBreak:
         text += QLatin1Char(' ');
@@ -52,6 +59,11 @@ QString flattenPlainText(const QVector<InlineNode>& inlines) {
 
 QString layoutTextForDisplayText(QString text) {
   text.replace(kTabIndentSourceChar, kTabIndentLayoutChar);
+  // This Qt build's QTextLayout createLine() treats only U+2028 (Line Separator) as a hard
+  // break, not '\n' (0x0a) — so a '\n' in the display text (a <br> or a Markdown hard break)
+  // would not wrap. Convert '\n' to U+2028 for layout only. Length-preserving (1:1), so every
+  // offset/coordinate computed from displayText_ stays valid; displayText_ keeps the '\n'.
+  text.replace(QLatin1Char('\n'), QChar(0x2028));
   return text;
 }
 

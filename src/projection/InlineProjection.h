@@ -27,6 +27,15 @@ enum class InlineSpanKind {
   HtmlContent
 };
 
+// Length (in QChars) of a complete <br>/<br/>/<br /> tag starting at content[offset]
+// (case-insensitive), or 0 if no tag starts there. A complete tag requires its
+// closing '>', so a half-typed "<br" returns 0. Shared by the render path
+// (InlineProjection) and the table-cell edit bridge (TableCellSourceEdit) so both
+// recognize every br spelling consistently.
+int brTagLengthAt(const QString& content, qsizetype offset);
+// True when text is exactly a standalone <br>/<br/>/<br /> tag.
+bool isStandaloneBrTag(const QString& text);
+
 struct LinkRange {
   qsizetype displayStart = 0;
   qsizetype displayEnd = 0;
@@ -159,6 +168,11 @@ private:
   static void appendTextSpan(BuildState& state, InlineType type, InlineSpanKind kind, qsizetype sourceStart, qsizetype sourceEnd,
                              qsizetype contentSourceStart, qsizetype contentSourceEnd, QString displayText, bool visible,
                              bool editable = true);
+  // Emits a <br> tag as a gray OpenMarker (the markup) + a zero-width-source line break.
+  // Centralized so every HtmlInline render path — top-level appendInlines and appendInline
+  // (for <br> nested inside paired inline HTML like <b>..<br>..</b>) — agrees with
+  // plainTextForInline/flattenPlainText, which decode <br> to '\n'.
+  static void appendBrLineBreak(BuildState& state, qsizetype sourceStart, qsizetype sourceEnd, const QString& tagText);
   // Emits one or more Text spans for a decoded run, applying render-level smart punctuation
   // (Convert on Rendering). Folded tokens (--/---/...) become their own span with folded=true so
   // the N:1 source/display mapping stays exact (no per-span linear drift); quotes are 1:1.
