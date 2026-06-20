@@ -167,8 +167,8 @@ std::unique_ptr<MarkdownNode> CmarkNodeAdapter::convertBlock(cmark_node* node) {
     if (lineOffsets_ && !markdown_.isEmpty()) {
       const SourceRange srcRange = result->sourceRange();
       if (srcRange.lineStart > 0 && result->sourceRange().byteEnd <= result->sourceRange().byteStart) {
-        const qsizetype start = lineOffsets_->offsetForLineByteColumn(srcRange.lineStart, qMax(1, srcRange.columnStart));
-        const qsizetype end = lineOffsets_->offsetForLineByteColumn(srcRange.lineEnd, qMax(1, srcRange.columnEnd + 1));
+        const qsizetype start = lineOffsets_->offsetForLineByteColumn(markdown_, srcRange.lineStart, qMax(1, srcRange.columnStart));
+        const qsizetype end = lineOffsets_->offsetForLineByteColumn(markdown_, srcRange.lineEnd, qMax(1, srcRange.columnEnd + 1));
         if (start >= 0 && end >= start && end <= markdown_.size()) {
           SourceRange updated = srcRange;
           updated.byteStart = start;
@@ -294,8 +294,8 @@ void CmarkNodeAdapter::annotateInlineSource(cmark_node* cmarkNode, InlineNode& i
   if (range.lineStart <= 0) {
     return;
   }
-  const qsizetype start = lineOffsets_->offsetForLineByteColumn(range.lineStart, qMax(1, range.columnStart));
-  const qsizetype end = lineOffsets_->offsetForLineByteColumn(range.lineEnd, qMax(1, range.columnEnd + 1));
+  const qsizetype start = lineOffsets_->offsetForLineByteColumn(markdown_, range.lineStart, qMax(1, range.columnStart));
+  const qsizetype end = lineOffsets_->offsetForLineByteColumn(markdown_, range.lineEnd, qMax(1, range.columnEnd + 1));
   if (start < 0 || end < start || end > markdown_.size()) {
     return;
   }

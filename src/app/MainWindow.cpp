@@ -185,6 +185,13 @@ void muffin::MainWindow::setupStatusBar() {
   wordCountTimer_->setInterval(250);
   connect(wordCountTimer_, &QTimer::timeout, this, &muffin::MainWindow::updateWordCountNow);
 
+  // Outline refresh is debounced for local edits so typing in a large document does not trigger a
+  // full-tree heading walk (collectHeadings) on every keystroke. Full parses refresh immediately.
+  outlineTimer_ = new QTimer(this);
+  outlineTimer_->setSingleShot(true);
+  outlineTimer_->setInterval(200);
+  connect(outlineTimer_, &QTimer::timeout, this, &muffin::MainWindow::refreshSidebarOutline);
+
   // Auto-save: debounced silent write of a pathed, modified document. Untitled
   // documents (no filePath) are covered by draft-recovery snapshots, not here.
   autoSaveTimer_ = new QTimer(this);

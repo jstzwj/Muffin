@@ -53,7 +53,6 @@ LineStartOffsetCache::LineStartOffsetCache(QStringView text) {
 }
 
 void LineStartOffsetCache::rebuild(QStringView text) {
-  text_ = text.toString();
   textSize_ = text.size();
   lineStarts_.clear();
   lineStarts_.reserve(qMax<qsizetype>(1, text.size() / 48));
@@ -63,6 +62,56 @@ void LineStartOffsetCache::rebuild(QStringView text) {
       lineStarts_.push_back(i + 1);
     }
   }
+}
+
+void LineStartOffsetCache::applyEdit(
+    qsizetype sourceStart, qsizetype removedLen, qsizetype insertedLen, QStringView fullPostEditText) {
+  if (sourceStart < 0 || removedLen < 0 || sourceStart + removedLen > textSize_) {
+    return;
+  }
+  const qsizetype sourceEnd = sourceStart + removedLen;
+  const qsizetype editDelta = insertedLen - removedLen;
+
+  // All offsets below are pre-edit until winEndPost. lineStarts_/textSize_ still describe the
+  // pre-edit text here; textSize_ is refreshed at the end.
+  const int firstLine = lineForOffset(sourceStart);      // index of first entry > sourceStart
+  const int suffixStartIdx = lineForOffset(sourceEnd);   // index of first entry > sourceEnd
+  const qsizetype winStartPre = lineStarts_.at(firstLine - 1);
+
+  const bool hasSuffix = suffixStartIdx < lineStarts_.size();
+  const qsizetype winEndPre = hasSuffix ? lineStarts_.at(suffixStartIdx) : textSize_;
+  const qsizetype winEndPost = winEndPre + editDelta;
+
+  QVector<qsizetype> result;
+  result.reserve(lineStarts_.size() + 8);
+
+  // 1. Prefix: line starts strictly inside the line that contains sourceStart are unchanged
+  //    (their preceding '\n' is before sourceStart, never touched by the edit).
+  for (int i = 0; i < firstLine; ++i) {
+    result.push_back(lineStarts_.at(i));
+  }
+
+  // 2. Rescan the affected window of the post-edit text. A '\n' at offset p starts a line at p+1.
+  //    Skip the boundary line-start that the shifted suffix already provides (winEndPost).
+  const qsizetype scanEnd = qBound(winStartPre, winEndPost, fullPostEditText.size());
+  for (qsizetype p = winStartPre; p < scanEnd; ++p) {
+    if (fullPostEditText.at(p) == QLatin1Char('\n')) {
+      const qsizetype lineStart = p + 1;
+      if (hasSuffix && lineStart == winEndPost) {
+        continue;
+      }
+      result.push_back(lineStart);
+    }
+  }
+
+  // 3. Suffix: line starts whose value is strictly greater than sourceEnd survived the edit
+  //    (their preceding '\n' is outside the removed range); shift them by editDelta.
+  for (int i = suffixStartIdx; i < lineStarts_.size(); ++i) {
+    result.push_back(lineStarts_.at(i) + editDelta);
+  }
+
+  lineStarts_ = std::move(result);
+  textSize_ = fullPostEditText.size();
 }
 
 qsizetype LineStartOffsetCache::offsetForLineColumn(int line, int column) const {
@@ -77,7 +126,7 @@ qsizetype LineStartOffsetCache::offsetForLineColumn(int line, int column) const 
   return qMin(start + column - 1, end);
 }
 
-qsizetype LineStartOffsetCache::offsetForLineByteColumn(int line, int column) const {
+qsizetype LineStartOffsetCache::offsetForLineByteColumn(QStringView text, int line, int column) const {
   ByteColGuard guard(g_byteColNs);
   if (line <= 0 || column <= 0 || line > lineStarts_.size()) {
     return -1;
@@ -91,9 +140,9 @@ qsizetype LineStartOffsetCache::offsetForLineByteColumn(int line, int column) co
   qsizetype offset = start;
   qsizetype byteColumn = 1;
   while (offset < end && byteColumn < column) {
-    const uint ucs4 = text_.at(offset).isHighSurrogate() && offset + 1 < end && text_.at(offset + 1).isLowSurrogate()
-                          ? QChar::surrogateToUcs4(text_.at(offset), text_.at(offset + 1))
-                          : text_.at(offset).unicode();
+    const uint ucs4 = text.at(offset).isHighSurrogate() && offset + 1 < end && text.at(offset + 1).isLowSurrogate()
+                          ? QChar::surrogateToUcs4(text.at(offset), text.at(offset + 1))
+                          : text.at(offset).unicode();
     const qsizetype nextByteColumn = byteColumn + utf8ByteLength(ucs4);
     if (column < nextByteColumn) {
       break;

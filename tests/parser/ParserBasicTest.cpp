@@ -83,10 +83,64 @@ void testLineStartOffsetCache() {
   require(unicodeLines.offsetForLineColumn(1, 3) == 2, QStringLiteral("Emoji UTF-16 offset mismatch"));
   require(unicodeLines.lineEndOffset(1) == unicode.indexOf(QLatin1Char('\n')), QStringLiteral("Unicode line end mismatch"));
   require(unicodeLines.offsetForLineColumn(2, 1) == unicode.indexOf(QLatin1Char('\n')) + 1, QStringLiteral("Unicode second line start mismatch"));
-  require(unicodeLines.offsetForLineByteColumn(1, 2) == 1, QStringLiteral("Unicode byte column ASCII offset mismatch"));
-  require(unicodeLines.offsetForLineByteColumn(1, 3) == 1, QStringLiteral("Unicode byte column inside emoji should snap to emoji start"));
-  require(unicodeLines.offsetForLineByteColumn(1, 6) == 3, QStringLiteral("Unicode byte column CJK start mismatch"));
-  require(unicodeLines.offsetForLineByteColumn(1, 9) == unicode.indexOf(QLatin1Char('\n')), QStringLiteral("Unicode byte column line end mismatch"));
+  require(unicodeLines.offsetForLineByteColumn(QStringView(unicode), 1, 2) == 1, QStringLiteral("Unicode byte column ASCII offset mismatch"));
+  require(unicodeLines.offsetForLineByteColumn(QStringView(unicode), 1, 3) == 1, QStringLiteral("Unicode byte column inside emoji should snap to emoji start"));
+  require(unicodeLines.offsetForLineByteColumn(QStringView(unicode), 1, 6) == 3, QStringLiteral("Unicode byte column CJK start mismatch"));
+  require(unicodeLines.offsetForLineByteColumn(QStringView(unicode), 1, 9) == unicode.indexOf(QLatin1Char('\n')), QStringLiteral("Unicode byte column line end mismatch"));
+}
+
+// Differential fuzz: applyEdit must produce a lineStarts_ vector byte-identical to a from-scratch
+// rebuild, across random insert/delete/replace edits including ones that delete a '\n' at the
+// window boundary (the class of bug found in adversarial review). Deterministic LCG for repro.
+void testLineStartOffsetCacheApplyEditMatchesRebuild() {
+  uint32_t state = 0x12345678u;
+  auto rng = [&state]() -> uint32_t {
+    state = state * 1664525u + 1013904223u;
+    return state;
+  };
+  const QChar alphabet[] = {'a', 'b', 'X', 'y', '\n', '\n'};
+
+  for (int iter = 0; iter < 30000; ++iter) {
+    const int len = rng() % 25;
+    QString text;
+    for (int i = 0; i < len; ++i) {
+      text.append(alphabet[rng() % 6]);
+    }
+    LineStartOffsetCache cache{QStringView(text)};
+
+    for (int step = 0; step < 6; ++step) {
+      const qsizetype srcStart = rng() % (text.size() + 1);
+      const qsizetype maxRemove = text.size() - srcStart;
+      const qsizetype removedLen = maxRemove > 0 ? rng() % (maxRemove + 1) : 0;
+      const int insertedLen = rng() % 7;
+      QString insertion;
+      for (int i = 0; i < insertedLen; ++i) {
+        insertion.append(alphabet[rng() % 6]);
+      }
+
+      QString postEdit = text;
+      postEdit.replace(srcStart, removedLen, insertion);
+
+      LineStartOffsetCache reference{QStringView(postEdit)};
+      cache.applyEdit(srcStart, removedLen, insertion.size(), QStringView(postEdit));
+
+      require(cache.lineCount() == reference.lineCount(),
+              QStringLiteral("applyEdit lineCount drift at iter %1 step %2").arg(iter).arg(step));
+      const int lines = reference.lineCount();
+      for (int line = 1; line <= lines; ++line) {
+        require(cache.offsetForLineColumn(line, 1) == reference.offsetForLineColumn(line, 1),
+                QStringLiteral("applyEdit line start drift at iter %1 step %2 line %3").arg(iter).arg(step).arg(line));
+        require(cache.lineEndOffset(line) == reference.lineEndOffset(line),
+                QStringLiteral("applyEdit line end drift at iter %1 step %2 line %3").arg(iter).arg(step).arg(line));
+      }
+      for (qsizetype off = 0; off <= postEdit.size(); ++off) {
+        require(cache.lineForOffset(off) == reference.lineForOffset(off),
+                QStringLiteral("applyEdit lineForOffset drift at iter %1 step %2 off %3").arg(iter).arg(step).arg(off));
+      }
+
+      text = postEdit;
+    }
+  }
 }
 
 void testInlineSourceRangesUseUtf8Columns() {
@@ -322,6 +376,7 @@ void testTaskListAndLooseListRoundTrip() {
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
   testLineStartOffsetCache();
+  testLineStartOffsetCacheApplyEditMatchesRebuild();
   testLoneBulletMarkerIsParagraphNotList();
   testInlineSourceRangesUseUtf8Columns();
   testFinalParagraphSourceRangeWithoutTrailingNewline();

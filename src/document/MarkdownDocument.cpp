@@ -47,18 +47,34 @@ void MarkdownDocument::replaceTopLevelRange(
     qsizetype sourceEnd,
     const QString& replacementText) {
   markdownText_.replace(sourceStart, sourceEnd - sourceStart, replacementText);
-  lineOffsets_.rebuild(QStringView(markdownText_));
+  lineOffsets_.applyEdit(sourceStart, sourceEnd - sourceStart, replacementText.size(), QStringView(markdownText_));
   const qsizetype boundedFirst = qBound<qsizetype>(0, first, root_->children().size());
   const qsizetype boundedCount = qBound<qsizetype>(0, count, root_->children().size() - boundedFirst);
+
+  // Drop the soon-to-be-removed subtrees from the index lookup while they are still alive, then
+  // detach (destroying them) and insert the replacements, then register the new subtrees. This
+  // keeps find() correct without an O(document) index_.rebuild on every keystroke.
+  std::vector<MarkdownNode*> removed;
+  removed.reserve(static_cast<std::size_t>(boundedCount));
+  for (qsizetype i = 0; i < boundedCount; ++i) {
+    removed.push_back(root_->children().at(static_cast<std::size_t>(boundedFirst + i)).get());
+  }
+  index_.removeSubtreesFromLookup(removed);
+
   for (qsizetype i = 0; i < boundedCount; ++i) {
     root_->detachChild(boundedFirst);
   }
+
+  std::vector<MarkdownNode*> inserted;
+  inserted.reserve(replacements.size());
   qsizetype insertAt = boundedFirst;
   for (auto& replacement : replacements) {
-    root_->insertChild(insertAt, std::move(replacement));
+    MarkdownNode& node = root_->insertChild(insertAt, std::move(replacement));
+    inserted.push_back(&node);
     ++insertAt;
   }
-  index_.rebuild(*root_);
+  index_.addSubtreesToLookup(inserted);
+
   ++revision_;
   emit documentReset();
 }

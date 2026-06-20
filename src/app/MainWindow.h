@@ -245,6 +245,7 @@ private:
   QToolButton* sourceModeButton_ = nullptr;
   StatusBarWidget* statusBar_ = nullptr;
   QTimer* wordCountTimer_ = nullptr;
+  QTimer* outlineTimer_ = nullptr;
   QTimer* autoSaveTimer_ = nullptr;
   QTimer* draftTimer_ = nullptr;
   // Last text written to the draft store this dirty period. snapshotDraft()

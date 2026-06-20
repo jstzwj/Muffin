@@ -225,12 +225,18 @@ void muffin::MainWindow::connectSessionSignals() {
                    [&window](const QString& filePath) { window.drafts_.markClean(filePath); });
   QObject::connect(&window.session_, &DocumentSession::parsed, &window, [&window] {
     PerfTimer perf("main.parsed.consumer");
-    if (!window.session_.lastParseWasLocalEdit()) {
+    if (window.session_.lastParseWasLocalEdit()) {
+      // Local edit (typing): debounce the outline rebuild so a full-tree heading walk does not
+      // run on every keystroke. Word count is already debounced; status is O(1).
+      window.outlineTimer_->start();
+    } else {
+      // Full parse (open/import/options change): the view and outline may have changed wholesale.
+      window.outlineTimer_->stop();
       window.renderView_->setDocument(window.session_.document(), window.session_.filePath());
+      window.refreshSidebarOutline();
     }
     window.scheduleWordCountUpdate();
     window.updateStatus();
-    window.refreshSidebarOutline();
   });
 }
 
