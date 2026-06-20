@@ -16,26 +16,23 @@ muffin::PrefsExportPage::PrefsExportPage(QWidget* parent) : PreferencesPage(pare
   rootLayout->setContentsMargins(0, 0, 0, 0);
   rootLayout->setSpacing(0);
 
-  // Left: format list (fixed width)
+  // Left: format list (fixed width). Colours come from the dialog stylesheet
+  // (QWidget#exportPanel, QLabel#exportPanelHeader and the generic QListWidget
+  // rules in dialogStyleSheet) so this panel follows the theme instead of
+  // forcing a white panel with dark text in dark mode.
   auto* leftWidget = new QWidget(this);
+  leftWidget->setObjectName(QStringLiteral("exportPanel"));
   leftWidget->setFixedWidth(200);
-  leftWidget->setStyleSheet(QStringLiteral(
-      "background:#ffffff; border-right:1px solid #e4e7ec;"));
   auto* leftLayout = new QVBoxLayout(leftWidget);
   leftLayout->setContentsMargins(12, 18, 12, 12);
   leftLayout->setSpacing(6);
 
   auto* sectionLabel = new QLabel(leftWidget);
-  sectionLabel->setStyleSheet(QStringLiteral("font-weight:600; color:#5c5c5c; font-size:12px;"));
+  sectionLabel->setObjectName(QStringLiteral("exportPanelHeader"));
   leftLayout->addWidget(sectionLabel);
 
   formatList_ = new QListWidget(leftWidget);
   formatList_->setFocusPolicy(Qt::NoFocus);
-  formatList_->setStyleSheet(QStringLiteral(
-      "QListWidget { border:0; outline:0; background:transparent; }"
-      "QListWidget::item { min-height:30px; padding-left:10px; color:#57606a; border-radius:6px; margin:1px 2px; }"
-      "QListWidget::item:hover { background:#f3f6fa; color:#24292f; }"
-      "QListWidget::item:selected { background:#edf5ff; color:#0969da; border-left:3px solid #0969da; }"));
   leftLayout->addWidget(formatList_, 1);
 
   rootLayout->addWidget(leftWidget);

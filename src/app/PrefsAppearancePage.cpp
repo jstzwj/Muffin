@@ -22,15 +22,21 @@ muffin::PrefsAppearancePage::PrefsAppearancePage(QWidget* parent) : PreferencesP
 
   // --- Card 1: Theme ---
   auto* themeCard = makeCard(this);
-  auto* themeLayout = new QHBoxLayout(themeCard);
+  auto* themeLayout = new QVBoxLayout(themeCard);
   themeLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
-  themeLayout->setSpacing(18);
+  themeLayout->setSpacing(8);
   themeLabel_ = makeSectionLabel(themeCard);
   themeCombo_ = new QComboBox(themeCard);
   themeCombo_->setMinimumWidth(320);
-  themeLayout->addWidget(themeLabel_);
-  themeLayout->addStretch(1);
-  themeLayout->addWidget(themeCombo_);
+  auto* themeRow = new QHBoxLayout();
+  themeRow->setSpacing(18);
+  themeRow->addWidget(themeLabel_);
+  themeRow->addStretch(1);
+  themeRow->addWidget(themeCombo_);
+  themeLayout->addLayout(themeRow);
+  importThemeButton_ = makeButton(themeCard);
+  importThemeButton_->setCursor(Qt::PointingHandCursor);
+  themeLayout->addWidget(importThemeButton_);
   cardColumn->addWidget(themeCard);
 
   // --- Card 2: Zoom ---
@@ -89,6 +95,7 @@ muffin::PrefsAppearancePage::PrefsAppearancePage(QWidget* parent) : PreferencesP
       emit themeRequested(name);
     }
   });
+  connect(importThemeButton_, &QPushButton::clicked, this, &PrefsAppearancePage::importThemeRequested);
   connect(zoomCombo_, &QComboBox::currentIndexChanged, this, [this](int index) {
     if (index >= 0) {
       emit zoomPercentRequested(zoomCombo_->itemData(index).toInt());
@@ -113,17 +120,23 @@ void muffin::PrefsAppearancePage::retranslateUi() {
   fontSizeLabel_->setText(tr("Text Size"));
   statusBarLabel_->setText(tr("Status Bar"));
   showStatusBarCheck_->setText(tr("Show status bar"));
-  for (int i = 0; i < themeCombo_->count(); ++i) {
-    themeCombo_->setItemText(i, themeDisplayName(themeCombo_->itemData(i).toString()));
+  if (importThemeButton_) {
+    importThemeButton_->setText(tr("Import Theme..."));
+  }
+  // Refresh dropdown labels from the stored (id, label) pairs — custom themes
+  // carry their authored label, so this isn't a hard-coded lookup any more.
+  for (int i = 0; i < themeCombo_->count() && i < themes_.size(); ++i) {
+    themeCombo_->setItemText(i, themes_.at(i).second);
   }
 }
 
-void muffin::PrefsAppearancePage::setAvailableThemes(const QStringList& themes) {
+void muffin::PrefsAppearancePage::setAvailableThemes(const QVector<QPair<QString, QString>>& themes) {
   const QString current = themeCombo_->currentData().toString();
+  themes_ = themes;
   themeCombo_->blockSignals(true);
   themeCombo_->clear();
-  for (const QString& theme : themes) {
-    themeCombo_->addItem(themeDisplayName(theme), theme);
+  for (const auto& entry : themes_) {
+    themeCombo_->addItem(entry.second, entry.first);  // text=label, data=id
   }
   polishComboBox(themeCombo_);
   const int index = themeCombo_->findData(current);
@@ -154,25 +167,6 @@ void muffin::PrefsAppearancePage::setZoomPercent(int percent) {
 
 void muffin::PrefsAppearancePage::setFontSizePx(int px) {
   setNumberComboValue(fontSizeCombo_, px);
-}
-
-QString muffin::PrefsAppearancePage::themeDisplayName(const QString& name) {
-  if (name == QStringLiteral("github")) {
-    return QStringLiteral("Github");
-  }
-  if (name == QStringLiteral("newsprint")) {
-    return QStringLiteral("Newsprint");
-  }
-  if (name == QStringLiteral("night")) {
-    return QStringLiteral("Night");
-  }
-  if (name == QStringLiteral("pixyll")) {
-    return QStringLiteral("Pixyll");
-  }
-  if (name == QStringLiteral("whitey")) {
-    return QStringLiteral("Whitey");
-  }
-  return name;
 }
 
 void muffin::PrefsAppearancePage::addNumberItems(QComboBox* combo, const QVector<int>& values, const QString& suffix) const {

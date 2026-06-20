@@ -91,7 +91,6 @@ private:
   void retranslateMenuTexts();
   void setupStatusBar();
   void setupConnections();
-  void applyEditorChrome();
   void retranslateUi();
 
   // Command binding and per-domain action enable/checked refresh. These were
@@ -174,6 +173,16 @@ private:
   void undoEdit();
   void redoEdit();
   void applyTheme(QString name);
+  // Theme menu is enumerated from ThemeManager::definitions() (built-ins +
+  // imported custom themes), so it is rebuilt rather than a fixed command list.
+  void rebuildThemesMenu();
+  // Apply a theme by id (menu + Preferences dropdown path): persists the choice
+  // and refreshes the menu checks. The visual apply happens via themeChanged.
+  void setThemeByName(const QString& name);
+  // File → pick a *.json, copy into the user themes dir, reload the registry.
+  void importTheme();
+  // Reveal the user themes directory in the OS file manager.
+  void openThemesFolder();
   void rebuildRecentFilesMenu();
   void addRecentFile(QString path);
   QStringList recentFiles() const;
@@ -244,6 +253,7 @@ private:
   QString lastDraftSnapshotText_;
   QMenu* recentFilesMenu_ = nullptr;
   QMenu* reopenEncodingMenu_ = nullptr;
+  QMenu* themesMenu_ = nullptr;
   // Exclusive radio groups (image resize, image insert action), keyed by the
   // declaration's actionGroup id. Rebuilt on every menu rebuild.
   QHash<QString, QActionGroup*> actionGroups_;

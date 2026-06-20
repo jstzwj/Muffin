@@ -92,6 +92,9 @@ void MainWindow::buildMenus() {
     if (spec.hidden) {
       menu->menuAction()->setVisible(false);
     }
+    if (spec.dynamicId == DynamicMenu::Themes) {
+      themesMenu_ = menu;
+    }
     buildMenuItems(menu, spec.items);
   }
 }

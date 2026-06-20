@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/OutlineBuilder.h"
+#include "theme/ThemeDefinition.h"
 
 #include <QWidget>
 
@@ -29,7 +30,7 @@ public:
   QString folderRoot() const;
   void setOutline(const QVector<OutlineEntry>& entries);
   void setOutlineFoldable(bool foldable);
-  void applyThemeName(QString name);
+  void applyTheme(const ThemeDefinition& theme);
   void retranslateUi();
 
 signals:
@@ -44,7 +45,7 @@ private:
   void setupFilesPanel();
   void setupOutlinePanel();
   void updateTabButtons();
-  void applyStyle(bool night);
+  void applyStyle();
   QTreeWidgetItem* addOutlineItem(const OutlineEntry& entry, QTreeWidgetItem* parent);
   void emitOutlineItem(QTreeWidgetItem* item);
 
@@ -62,7 +63,7 @@ private:
   QString currentFilePath_;
   QString folderRoot_;
   bool outlineFoldable_ = false;
-  bool nightStyle_ = false;
+  ThemeDefinition currentTheme_;
   QVector<OutlineEntry> lastOutlineEntries_;
 };
 

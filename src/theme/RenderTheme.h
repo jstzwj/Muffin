@@ -2,6 +2,7 @@
 
 #include "document/MarkdownTypes.h"
 #include "render/CodeHighlight.h"
+#include "theme/ThemeDefinition.h"
 
 #include <QColor>
 #include <QFont>
@@ -17,6 +18,12 @@ public:
   static RenderTheme night(int zoomPercent = 100);
   static RenderTheme pixyll(int zoomPercent = 100);
   static RenderTheme whitey(int zoomPercent = 100);
+
+  // Build a theme from a unified ThemeDefinition. The five built-in definitions
+  // reproduce github()/newsprint()/night()/pixyll()/whitey() exactly, so custom
+  // themes (loaded from JSON by ThemeManager) drive the editor through the same
+  // path as the built-ins — no separate code path for custom themes.
+  static RenderTheme fromDefinition(const ThemeDefinition& definition, int zoomPercent = 100, int fontSizePx = 16);
 
   int zoomPercent() const;
   void setZoomPercent(int percent);

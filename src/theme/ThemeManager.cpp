@@ -1,43 +1,120 @@
 #include "theme/ThemeManager.h"
 
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QSet>
+#include <QStandardPaths>
+
 namespace muffin {
 
-ThemeManager::ThemeManager(QObject* parent) : QObject(parent) {}
+namespace {
+
+// User-supplied custom themes live here as *.json (one per file, id = file stem).
+// Created on demand when the user imports a theme.
+QString userThemesDir() {
+  return ThemeManager::themesDirectory();
+}
+
+}  // namespace
+
+QString ThemeManager::themesDirectory() {
+  return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+         + QStringLiteral("/themes");
+}
+
+ThemeManager::ThemeManager(QObject* parent) : QObject(parent) {
+  loadDefinitions();
+}
+
+void ThemeManager::loadDefinitions() {
+  definitions_.clear();
+  // Built-ins first, in their canonical display order.
+  definitions_ = ThemeDefinition::builtIns();
+
+  // Then any user-supplied *.json from the themes directory. Built-in ids win —
+  // a custom file whose stem matches a built-in is skipped so the built-ins stay
+  // canonical (and so the built-in factories / ThemeDefinition::builtIn agree).
+  const QDir dir(userThemesDir());
+  if (dir.exists()) {
+    QSet<QString> known;
+    for (const auto& d : definitions_) {
+      known.insert(d.id);
+    }
+    const QStringList files = dir.entryList({QStringLiteral("*.json")}, QDir::Files);
+    for (const QString& file : files) {
+      QFile f(dir.absoluteFilePath(file));
+      if (!f.open(QIODevice::ReadOnly)) {
+        continue;
+      }
+      const QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
+      if (!doc.isObject()) {
+        continue;
+      }
+      const QString id = QFileInfo(file).baseName().toLower();
+      if (known.contains(id)) {
+        continue;  // don't shadow a built-in
+      }
+      ThemeDefinition d = ThemeDefinition::fromJson(doc.object(), id);
+      if (d.valid()) {
+        definitions_.push_back(std::move(d));
+        known.insert(id);
+      }
+    }
+  }
+}
 
 QString ThemeManager::currentThemeName() const {
   return currentThemeName_;
 }
 
 RenderTheme ThemeManager::currentTheme(int zoomPercent, int fontSizePx) const {
-  RenderTheme theme;
-  if (currentThemeName_ == QStringLiteral("newsprint")) {
-    theme = RenderTheme::newsprint(zoomPercent);
-  } else if (currentThemeName_ == QStringLiteral("night")) {
-    theme = RenderTheme::night(zoomPercent);
-  } else if (currentThemeName_ == QStringLiteral("pixyll")) {
-    theme = RenderTheme::pixyll(zoomPercent);
-  } else if (currentThemeName_ == QStringLiteral("whitey")) {
-    theme = RenderTheme::whitey(zoomPercent);
-  } else {
-    theme = RenderTheme::github(zoomPercent);
-  }
-  theme.setFontSizePx(fontSizePx);
-  return theme;
+  // Build the editor theme from the same definition the chrome reads, so a
+  // custom (JSON) theme drives the document through the exact same path as a
+  // built-in. fromDefinition reproduces the five built-in factories bit-for-bit.
+  return RenderTheme::fromDefinition(definition(currentThemeName_), zoomPercent, fontSizePx);
 }
 
 QStringList ThemeManager::availableThemes() const {
-  return {
-      QStringLiteral("github"),
-      QStringLiteral("newsprint"),
-      QStringLiteral("night"),
-      QStringLiteral("pixyll"),
-      QStringLiteral("whitey"),
-  };
+  QStringList names;
+  names.reserve(int(definitions_.size()));
+  for (const auto& d : definitions_) {
+    names << d.id;
+  }
+  return names;
+}
+
+const std::vector<ThemeDefinition>& ThemeManager::definitions() const {
+  return definitions_;
+}
+
+ThemeDefinition ThemeManager::definition(const QString& name) const {
+  const QString lower = name.toLower();
+  for (const auto& d : definitions_) {
+    if (d.id == lower) {
+      return d;
+    }
+  }
+  // Unknown name — fall back to github rather than an empty definition.
+  return ThemeDefinition::builtIn(QStringLiteral("github")).value();
+}
+
+ThemeDefinition ThemeManager::currentDefinition() const {
+  return definition(currentThemeName_);
 }
 
 bool ThemeManager::setTheme(QString name) {
   name = name.toLower();
-  if (!availableThemes().contains(name)) {
+  bool found = false;
+  for (const auto& d : definitions_) {
+    if (d.id == name) {
+      found = true;
+      break;
+    }
+  }
+  if (!found) {
     return false;
   }
   if (currentThemeName_ == name) {
@@ -46,6 +123,22 @@ bool ThemeManager::setTheme(QString name) {
   currentThemeName_ = std::move(name);
   emit themeChanged(currentThemeName_);
   return true;
+}
+
+void ThemeManager::reloadCustomThemes() {
+  loadDefinitions();
+  // If the active theme was a custom one that no longer exists, fall back.
+  bool currentStillKnown = false;
+  for (const auto& d : definitions_) {
+    if (d.id == currentThemeName_) {
+      currentStillKnown = true;
+      break;
+    }
+  }
+  if (!currentStillKnown) {
+    currentThemeName_ = QStringLiteral("github");
+  }
+  emit themesChanged();
 }
 
 }  // namespace muffin

@@ -7,7 +7,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListView>
-#include <QPalette>
 #include <QPainter>
 #include <QPixmap>
 #include <QPushButton>
@@ -21,13 +20,15 @@ muffin::PreferencesPage::PreferencesPage(QWidget* parent) : QWidget(parent) {
 
 QLabel* muffin::PreferencesPage::makeSectionLabel(QWidget* parent) const {
   auto* label = new QLabel(parent);
-  label->setStyleSheet(QStringLiteral("font-size:13px; font-weight:600; color:#1f2328;"));
+  // Themed via object name (see dialogStyleSheet) so the colour follows the
+  // active theme instead of a hard-coded near-black that's invisible on dark.
+  label->setObjectName(QStringLiteral("preferencesSectionLabel"));
   return label;
 }
 
 QLabel* muffin::PreferencesPage::makeMutedLabel(QWidget* parent) const {
   auto* label = new QLabel(parent);
-  label->setStyleSheet(QStringLiteral("font-size:12px; color:#6e7781;"));
+  label->setObjectName(QStringLiteral("preferencesMutedLabel"));
   return label;
 }
 
@@ -136,21 +137,8 @@ void muffin::PreferencesPage::polishComboBox(QComboBox* comboBox, int visibleIte
   view->setUniformItemSizes(true);
   view->setSpacing(0);
   view->setMinimumHeight(0);
-  view->setStyleSheet(QStringLiteral(
-      "QListView { background:#ffffff; color:#24292f; border:1px solid #d0d7de; border-radius:6px; padding:4px; outline:0; }"
-      "QListView::item { min-height:28px; padding:4px 10px; color:#24292f; background:#ffffff; border-radius:4px; }"
-      "QListView::item:hover { background:#f3f6fa; color:#24292f; }"
-      "QListView::item:selected { background:#edf5ff; color:#0969da; }"
-      "QScrollBar:vertical { width:8px; background:transparent; margin:2px; border:0; }"
-      "QScrollBar::handle:vertical { background:#c9d1d9; min-height:28px; border-radius:4px; }"
-      "QScrollBar::handle:vertical:hover { background:#8c959f; }"
-      "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height:0; }"
-      "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background:transparent; }"));
-
-  QPalette palette = view->palette();
-  palette.setColor(QPalette::Base, QColor(QStringLiteral("#ffffff")));
-  palette.setColor(QPalette::Text, QColor(QStringLiteral("#24292f")));
-  palette.setColor(QPalette::Highlight, QColor(QStringLiteral("#edf5ff")));
-  palette.setColor(QPalette::HighlightedText, QColor(QStringLiteral("#0969da")));
-  view->setPalette(palette);
+  // Dropdown colours come from the dialog-level stylesheet (QComboBox
+  // QAbstractItemView rules in dialogStyleSheet), which is inherited by the
+  // combo popup. We deliberately do NOT set a per-view stylesheet or palette
+  // here — doing so overrode the theme and forced a white dropdown in dark mode.
 }

@@ -14,6 +14,8 @@
 #include "spellcheck/SpellChecker.h"
 #include "editor/FindBarWidget.h"
 #include "editor/SourceEditorWidget.h"
+#include "theme/ChromeStyleSheet.h"
+#include "theme/ThemeDefinition.h"
 
 #include <QAction>
 #include <QCloseEvent>
@@ -81,7 +83,6 @@ muffin::MainWindow::MainWindow(QWidget* parent)
   setupMenuBar();
   setupStatusBar();
   setupConnections();
-  applyEditorChrome();
   loadAppearanceSettings();
   // Apply markdown parse preferences (markdown/autoLink, markdown/inlineMath, ...) before the first
   // real parse. parseOptions_ defaults to all-on, so this is a no-op re-parse unless the user has
@@ -128,7 +129,6 @@ void muffin::MainWindow::setupUi() {
   centralSplitter_ = new QSplitter(Qt::Horizontal, this);
   centralSplitter_->setChildrenCollapsible(false);
   centralSplitter_->setHandleWidth(1);
-  centralSplitter_->setStyleSheet(QStringLiteral("QSplitter::handle { background:#f0f0f0; width:1px; }"));
 
   sidebar_ = new SidebarWidget(centralSplitter_);
 
@@ -200,36 +200,6 @@ void muffin::MainWindow::setupStatusBar() {
   connect(draftTimer_, &QTimer::timeout, this, &muffin::MainWindow::snapshotDraft);
 
   statusBar()->addWidget(statusBar_, 1);
-}
-
-void muffin::MainWindow::applyEditorChrome() {
-  setStyleSheet(QStringLiteral(
-      "QMainWindow { background: #ffffff; }"
-      "QMenuBar { background: #ffffff; color: #333333; padding: 0; font-size: 13px; }"
-      "QMenuBar::item { padding: 4px 9px; background: transparent; }"
-      "QMenuBar::item:selected { background: #e9e9e9; }"
-      "QMenu { background: #ffffff; border: 1px solid #cfcfcf; padding: 4px 0; }"
-      "QMenu::item { padding: 5px 34px 5px 24px; color: #333333; }"
-      "QMenu::item:selected { background: #e7f1ff; }"
-      "QMenu::item:disabled { color: #999999; }"
-      "QToolButton {"
-      "  background: transparent;"
-      "  border: 0;"
-      "  color: #555555;"
-      "  padding: 0 8px;"
-      "  min-width: 22px;"
-      "  min-height: 18px;"
-      "  font-size: 13px;"
-      "}"
-      "QToolButton:hover { background: #eeeeee; }"
-      "QToolButton:checked { color: #111111; background: #e9e9e9; }"));
-
-  // Drive the painted status bar with per-theme colors.
-  if (statusBar_) {
-    const RenderTheme theme = themeManager_.currentTheme(zoomPercent_, fontSizePx_);
-    statusBar_->applyThemeColors(theme.backgroundColor(), theme.textColor(), theme.mutedTextColor(),
-                                 theme.codeBorderColor());
-  }
 }
 
 void muffin::MainWindow::updateTitle() {
@@ -556,28 +526,21 @@ void muffin::MainWindow::saveAppearanceTypewriterMode(bool enabled) const {
 
 void muffin::MainWindow::applyTheme(QString name) {
   const RenderTheme theme = themeManager_.currentTheme(zoomPercent_, fontSizePx_);
+  const ThemeDefinition def = themeManager_.definition(name);
   renderView_->setTheme(theme);
   editor_->setTheme(theme);
   if (sidebar_) {
-    sidebar_->applyThemeName(name);
+    sidebar_->applyTheme(def);
   }
   updateThemeActions();
 
-  if (name == QStringLiteral("night")) {
-    setStyleSheet(QStringLiteral(
-        "QMainWindow { background:#1f2328; }"
-        "QMenuBar { background:#1f2328; color:#e6edf3; padding:0; font-size:13px; }"
-        "QMenuBar::item { padding:4px 9px; background:transparent; }"
-        "QMenuBar::item:selected { background:#2b3138; }"
-        "QMenu { background:#242a31; color:#e6edf3; border:1px solid #3d444d; padding:4px 0; }"
-        "QMenu::item { padding:5px 34px 5px 24px; }"
-        "QMenu::item:selected { background:#264f78; }"
-        "QMenu::item:disabled { color:#6e7681; }"
-        "QToolButton { background:transparent; border:0; color:#9aa4af; padding:0 8px; min-width:22px; min-height:18px; font-size:13px; }"
-        "QToolButton:hover { background:#2b3138; }"
-        "QToolButton:checked { color:#e6edf3; background:#30363d; }"));
-  } else {
-    applyEditorChrome();
+  // Chrome (menu bar, menus, tool buttons, splitter handle) now derives
+  // entirely from the theme definition — no more hard-coded night/light branch,
+  // so every theme (incl. the warm newsprint palette) tints the chrome.
+  setStyleSheet(mainWindowStyleSheet(def));
+  if (centralSplitter_) {
+    centralSplitter_->setStyleSheet(
+        QStringLiteral("QSplitter::handle { background:%1; width:1px; }").arg(def.colors.border.name(QColor::HexRgb)));
   }
 
   // The painted status bar recolors itself (background, text, icons) from the theme.

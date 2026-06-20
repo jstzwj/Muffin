@@ -28,6 +28,29 @@ RenderTheme RenderTheme::defaultTheme(int zoomPercent) {
   return github(zoomPercent);
 }
 
+RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int zoomPercent, int fontSizePx) {
+  const ThemeColors& c = definition.colors;
+  RenderTheme t;
+  t.backgroundColor_ = c.background;
+  t.textColor_ = c.text;
+  t.mutedTextColor_ = c.muted;
+  t.linkColor_ = c.link;
+  t.codeBackgroundColor_ = c.codeBackground;
+  t.highlightBackgroundColor_ = c.highlight;
+  t.codeBorderColor_ = c.codeBorder;
+  t.quoteBorderColor_ = c.quoteBorder;
+  t.tableBorderColor_ = c.tableBorder;
+  t.tableHeaderBackgroundColor_ = c.tableHeaderBackground;
+  t.tableAlternateBackgroundColor_ = c.tableAlternateBackground;
+  t.selectionColor_ = c.selection;
+  // Spell-check red isn't part of the theme JSON — pick the readable variant for
+  // the page tone (matches the night() factory's lighter red on dark pages).
+  t.spellCheckColor_ = c.isDark ? QColor(QStringLiteral("#ff6a6a")) : QColor(QStringLiteral("#d1242f"));
+  t.setZoomPercent(zoomPercent);
+  t.setFontSizePx(fontSizePx);
+  return t;
+}
+
 RenderTheme RenderTheme::github(int zoomPercent) {
   RenderTheme theme;
   theme.setZoomPercent(zoomPercent);

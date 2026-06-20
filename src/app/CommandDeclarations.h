@@ -85,6 +85,7 @@ enum class DynamicMenu {
   RecentFiles,
   ReopenEncoding,
   DeleteRange,
+  Themes,  // top-level Theme menu: enumerated from ThemeManager::definitions()
 };
 
 struct MenuItem {
@@ -108,6 +109,11 @@ struct MenuSpec {
   QString title;  // top-level menu title (tr())
   std::vector<MenuItem> items;
   bool hidden = false;  // top-level menu created hidden (Table/Code/Math/Html)
+  // When not None, buildMenus captures this top-level menu into the matching
+  // MainWindow member for dynamic population (e.g. the Theme menu, which is
+  // enumerated from ThemeManager::definitions() at runtime rather than a fixed
+  // command list).
+  DynamicMenu dynamicId = DynamicMenu::None;
 };
 
 // The full menu bar, in order. Top-level menus in display order; each menu's

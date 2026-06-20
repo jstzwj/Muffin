@@ -735,8 +735,12 @@ set(MUFFIN_UI_SOURCES
   src/render/TreeSitterHighlighter.h
   src/theme/RenderTheme.cpp
   src/theme/RenderTheme.h
+  src/theme/ThemeDefinition.cpp
+  src/theme/ThemeDefinition.h
   src/theme/ThemeManager.cpp
   src/theme/ThemeManager.h
+  src/theme/ChromeStyleSheet.cpp
+  src/theme/ChromeStyleSheet.h
 )
 
 add_library(MuffinUi STATIC

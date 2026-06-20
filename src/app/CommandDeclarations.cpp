@@ -1568,57 +1568,9 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .enabledInitial = false},
 
       // ---------------- Theme ----------------
-      {.id = QStringLiteral("theme.github"),
-       .category = CommandCategory::Theme,
-       .text = QStringLiteral("Github"),
-       .checkable = true,
-       .checkedInitial = true,
-       .handler = [](MainWindow& window) {
-         if (window.themeManager_.setTheme(QStringLiteral("github"))) {
-           window.saveAppearanceTheme(window.themeManager_.currentThemeName());
-         }
-       },
-       .checked = [](const MainWindow& w) { return w.themeManager_.currentThemeName() == QStringLiteral("github"); }},
-      {.id = QStringLiteral("theme.newsprint"),
-       .category = CommandCategory::Theme,
-       .text = QStringLiteral("Newsprint"),
-       .checkable = true,
-       .handler = [](MainWindow& window) {
-         if (window.themeManager_.setTheme(QStringLiteral("newsprint"))) {
-           window.saveAppearanceTheme(window.themeManager_.currentThemeName());
-         }
-       },
-       .checked = [](const MainWindow& w) { return w.themeManager_.currentThemeName() == QStringLiteral("newsprint"); }},
-      {.id = QStringLiteral("theme.night"),
-       .category = CommandCategory::Theme,
-       .text = QStringLiteral("Night"),
-       .checkable = true,
-       .handler = [](MainWindow& window) {
-         if (window.themeManager_.setTheme(QStringLiteral("night"))) {
-           window.saveAppearanceTheme(window.themeManager_.currentThemeName());
-         }
-       },
-       .checked = [](const MainWindow& w) { return w.themeManager_.currentThemeName() == QStringLiteral("night"); }},
-      {.id = QStringLiteral("theme.pixyll"),
-       .category = CommandCategory::Theme,
-       .text = QStringLiteral("Pixyll"),
-       .checkable = true,
-       .handler = [](MainWindow& window) {
-         if (window.themeManager_.setTheme(QStringLiteral("pixyll"))) {
-           window.saveAppearanceTheme(window.themeManager_.currentThemeName());
-         }
-       },
-       .checked = [](const MainWindow& w) { return w.themeManager_.currentThemeName() == QStringLiteral("pixyll"); }},
-      {.id = QStringLiteral("theme.whitey"),
-       .category = CommandCategory::Theme,
-       .text = QStringLiteral("Whitey"),
-       .checkable = true,
-       .handler = [](MainWindow& window) {
-         if (window.themeManager_.setTheme(QStringLiteral("whitey"))) {
-           window.saveAppearanceTheme(window.themeManager_.currentThemeName());
-         }
-       },
-       .checked = [](const MainWindow& w) { return w.themeManager_.currentThemeName() == QStringLiteral("whitey"); }},
+      // Theme selection is no longer a fixed command list — the Theme menu is a
+      // DynamicMenu::Themes (see mainMenuSpec below), enumerated at runtime from
+      // ThemeManager::definitions() so user-imported custom themes appear too.
 
       // ---------------- Help ----------------
       {.id = QStringLiteral("help.quick_start"),
@@ -2017,15 +1969,10 @@ const std::vector<MenuSpec>& mainMenuSpec() {
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.zoom_out")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.window_switch")},
        }},
-      // Theme
-      {muffin::MainWindow::tr("Theme"),
-       {
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("theme.github")},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("theme.newsprint")},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("theme.night")},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("theme.pixyll")},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("theme.whitey")},
-       }},
+      // Theme — top-level menu populated dynamically from ThemeManager::definitions()
+      // (built-ins + any imported custom themes). buildMenus captures it into
+      // themesMenu_; rebuildThemesMenu() fills it.
+      {muffin::MainWindow::tr("Theme"), {}, false, DynamicMenu::Themes},
       // Help
       {muffin::MainWindow::tr("Help"),
        {

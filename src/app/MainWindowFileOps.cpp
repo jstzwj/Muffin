@@ -7,16 +7,21 @@
 #include "editor/EditorView.h"
 #include "export/HtmlExporter.h"
 #include "export/PandocRunner.h"
+#include "theme/ThemeDefinition.h"
 
 #include <QAbstractItemView>
+#include <QAction>
 #include <QApplication>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDialog>
 #include <QDir>
+#include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QLocale>
 #include <QListWidget>
@@ -73,6 +78,92 @@ void muffin::MainWindow::rebuildRecentFilesMenu() {
       rebuildRecentFilesMenu();
     });
   }
+}
+
+void muffin::MainWindow::rebuildThemesMenu() {
+  if (!themesMenu_) {
+    return;
+  }
+  // Enumerate every theme the manager knows (built-ins + imported customs) so
+  // the menu reflects the registry, not a fixed list. Theme names are proper
+  // nouns, so (like the recent-files submenu) this isn't rebuilt on locale
+  // change — see the heap-corruption note in retranslateUi.
+  themesMenu_->clear();
+  const QString current = themeManager_.currentThemeName();
+  for (const ThemeDefinition& d : themeManager_.definitions()) {
+    QAction* action = themesMenu_->addAction(d.label.isEmpty() ? d.id : d.label);
+    action->setCheckable(true);
+    action->setChecked(d.id == current);
+    action->setData(d.id);
+    connect(action, &QAction::triggered, this, [this, id = d.id] { setThemeByName(id); });
+  }
+  themesMenu_->addSeparator();
+  QAction* importAction = themesMenu_->addAction(tr("Import Theme..."));
+  connect(importAction, &QAction::triggered, this, [this] { importTheme(); });
+  QAction* folderAction = themesMenu_->addAction(tr("Open Themes Folder"));
+  connect(folderAction, &QAction::triggered, this, [this] { openThemesFolder(); });
+}
+
+void muffin::MainWindow::setThemeByName(const QString& name) {
+  if (themeManager_.setTheme(name)) {
+    saveAppearanceTheme(themeManager_.currentThemeName());
+    rebuildThemesMenu();  // refresh the radio-style checks
+  }
+}
+
+void muffin::MainWindow::importTheme() {
+  const QString src = QFileDialog::getOpenFileName(
+      this, tr("Import Theme"), QString(), tr("Theme Files (*.json)"));
+  if (src.isEmpty()) {
+    return;
+  }
+  // Validate before copying so a malformed file never lands in the themes dir.
+  QFile in(src);
+  if (!in.open(QIODevice::ReadOnly)) {
+    QMessageBox::warning(this, tr("Import Theme"), tr("Could not read the selected file."));
+    return;
+  }
+  const QJsonDocument doc = QJsonDocument::fromJson(in.readAll());
+  in.close();
+  if (!doc.isObject()) {
+    QMessageBox::warning(this, tr("Import Theme"), tr("The selected file is not a valid theme."));
+    return;
+  }
+  const QString id = QFileInfo(src).baseName().toLower();
+  // A custom file whose id matches a built-in is intentionally ignored by the
+  // loader (built-ins stay canonical), so refuse it up front with a clear reason.
+  if (ThemeDefinition::builtIn(id).has_value()) {
+    QMessageBox::information(this, tr("Import Theme"),
+        tr("A built-in theme named \"%1\" already exists; choose a different file name.").arg(id));
+    return;
+  }
+  ThemeDefinition probe = ThemeDefinition::fromJson(doc.object(), id);
+  if (!probe.valid()) {
+    QMessageBox::warning(this, tr("Import Theme"),
+        tr("The theme file is missing required colours (background and text)."));
+    return;
+  }
+
+  const QString dir = ThemeManager::themesDirectory();
+  QDir().mkpath(dir);
+  const QString dest = dir + QDir::separator() + QFileInfo(src).fileName().toLower();
+  if (QFileInfo::exists(dest)) {
+    QFile::remove(dest);
+  }
+  if (!QFile::copy(src, dest)) {
+    QMessageBox::warning(this, tr("Import Theme"), tr("Could not copy the theme into the themes folder."));
+    return;
+  }
+
+  themeManager_.reloadCustomThemes();
+  rebuildThemesMenu();
+  setThemeByName(id);  // apply immediately so the user sees the imported theme
+}
+
+void muffin::MainWindow::openThemesFolder() {
+  const QString dir = ThemeManager::themesDirectory();
+  QDir().mkpath(dir);
+  QDesktopServices::openUrl(QUrl::fromLocalFile(dir));
 }
 
 void muffin::MainWindow::addRecentFile(QString path) {
@@ -155,16 +246,37 @@ void muffin::MainWindow::showDocumentProperties() {
 
 void muffin::MainWindow::showPreferences() {
   PreferencesDialog dialog(this);
-  dialog.setAvailableThemes(themeManager_.availableThemes());
+  // Build (id, label) pairs from the registry so custom themes show their
+  // authored label. Captured as a lambda so the import handler can rebuild the
+  // same list after the registry changes.
+  auto themeOptions = [this]() {
+    QVector<QPair<QString, QString>> options;
+    for (const ThemeDefinition& d : themeManager_.definitions()) {
+      options.append({d.id, d.label.isEmpty() ? d.id : d.label});
+    }
+    return options;
+  };
+  dialog.setAvailableThemes(themeOptions());
   dialog.setCurrentThemeName(themeManager_.currentThemeName());
+  dialog.setThemeDefinition(themeManager_.currentDefinition());
   dialog.setStatusBarVisible(statusBar()->isVisible());
   dialog.setZoomPercent(zoomPercent());
   dialog.setFontSizePx(fontSizePx());
 
-  connect(&dialog, &PreferencesDialog::themeRequested, this, [this](const QString& name) {
+  connect(&dialog, &PreferencesDialog::themeRequested, this, [this, &dialog](const QString& name) {
     if (themeManager_.setTheme(name)) {
       saveAppearanceTheme(themeManager_.currentThemeName());
+      // Live-preview: re-theme the open dialog too so picking a theme here shows
+      // the result immediately (the "preferences should follow the theme" link).
+      dialog.setThemeDefinition(themeManager_.currentDefinition());
     }
+  });
+  connect(&dialog, &PreferencesDialog::importThemeRequested, this, [this, &dialog, themeOptions] {
+    importTheme();
+    // importTheme() reloads the registry (and applies the new theme); refresh
+    // the dropdown so the imported theme appears and the selection tracks it.
+    dialog.setAvailableThemes(themeOptions());
+    dialog.setCurrentThemeName(themeManager_.currentThemeName());
   });
   connect(&dialog, &PreferencesDialog::statusBarVisibleRequested, this, [this](bool visible) {
     setStatusBarVisible(visible);

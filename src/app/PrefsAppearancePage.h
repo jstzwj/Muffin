@@ -2,6 +2,7 @@
 
 #include "app/PreferencesPage.h"
 
+#include <QPair>
 #include <QVector>
 
 class QCheckBox;
@@ -19,7 +20,9 @@ public:
 
   void retranslateUi() override;
 
-  void setAvailableThemes(const QStringList& themes);
+  // Populate the theme dropdown. Each entry is an (id, display-label) pair so
+  // imported custom themes show their authored label rather than the raw id.
+  void setAvailableThemes(const QVector<QPair<QString, QString>>& themes);
   void setCurrentThemeName(const QString& name);
   void setStatusBarVisible(bool visible);
   void setZoomPercent(int percent);
@@ -27,17 +30,21 @@ public:
 
 signals:
   void themeRequested(QString name);
+  // "Import Theme..." clicked — MainWindow handles the file picker + reload, then
+  // refreshes the dropdown via setAvailableThemes.
+  void importThemeRequested();
   void statusBarVisibleRequested(bool visible);
   void zoomPercentRequested(int percent);
   void fontSizePxRequested(int px);
 
 private:
-  static QString themeDisplayName(const QString& name);
   void addNumberItems(QComboBox* combo, const QVector<int>& values, const QString& suffix) const;
   static void setNumberComboValue(QComboBox* combo, int value);
 
   QLabel* themeLabel_ = nullptr;
   QComboBox* themeCombo_ = nullptr;
+  QPushButton* importThemeButton_ = nullptr;
+  QVector<QPair<QString, QString>> themes_;  // (id, label) backing the dropdown
   QLabel* zoomLabel_ = nullptr;
   QComboBox* zoomCombo_ = nullptr;
   QPushButton* resetZoomButton_ = nullptr;

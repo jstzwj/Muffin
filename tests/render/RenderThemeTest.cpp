@@ -52,7 +52,16 @@ void testThemeManagerSupportsBuiltInThemes() {
       QStringLiteral("whitey"),
   };
 
-  require(manager.availableThemes() == expectedThemes, QStringLiteral("Theme manager should expose the five built-in themes"));
+  // Built-ins must be present and in canonical order at the front, but custom
+  // (user-loaded) themes may follow — the list is no longer required to be
+  // exactly the five built-ins once JSON themes can be imported.
+  const QStringList available = manager.availableThemes();
+  require(available.size() >= expectedThemes.size(),
+          QStringLiteral("Theme manager should expose at least the five built-in themes"));
+  for (int i = 0; i < expectedThemes.size(); ++i) {
+    require(available.at(i) == expectedThemes.at(i),
+            QStringLiteral("Built-in %1 should remain at position %2").arg(expectedThemes.at(i)).arg(i));
+  }
   for (const QString& name : expectedThemes) {
     require(manager.setTheme(name), QStringLiteral("Theme manager should accept %1").arg(name));
     require(manager.currentThemeName() == name, QStringLiteral("Theme manager should activate %1").arg(name));
@@ -137,6 +146,53 @@ void testLayoutForTheme(const MarkdownDocument& document, const RenderTheme& the
   require(mathHit.zone == HitTestResult::Zone::Math, QStringLiteral("%1 math hit should be math").arg(themeName));
 }
 
+void testFromDefinitionReproducesBuiltIns() {
+  // The whole theme-unification design hinges on fromDefinition(definition(id))
+  // reproducing the matching built-in factory exactly — otherwise switching the
+  // editor to go through the definition registry would silently change colours.
+  ThemeManager manager;
+  struct Entry {
+    QString id;
+    RenderTheme factory;
+  };
+  const Entry entries[] = {
+      {QStringLiteral("github"), RenderTheme::github()},
+      {QStringLiteral("newsprint"), RenderTheme::newsprint()},
+      {QStringLiteral("night"), RenderTheme::night()},
+      {QStringLiteral("pixyll"), RenderTheme::pixyll()},
+      {QStringLiteral("whitey"), RenderTheme::whitey()},
+  };
+  for (const Entry& e : entries) {
+    const RenderTheme viaDef = RenderTheme::fromDefinition(manager.definition(e.id));
+    require(viaDef.backgroundColor().name() == e.factory.backgroundColor().name(),
+            QStringLiteral("%1 background via fromDefinition should match factory").arg(e.id));
+    require(viaDef.textColor().name() == e.factory.textColor().name(),
+            QStringLiteral("%1 text via fromDefinition should match factory").arg(e.id));
+    require(viaDef.mutedTextColor().name() == e.factory.mutedTextColor().name(),
+            QStringLiteral("%1 muted via fromDefinition should match factory").arg(e.id));
+    require(viaDef.linkColor().name() == e.factory.linkColor().name(),
+            QStringLiteral("%1 link via fromDefinition should match factory").arg(e.id));
+    require(viaDef.codeBackgroundColor().name() == e.factory.codeBackgroundColor().name(),
+            QStringLiteral("%1 code bg via fromDefinition should match factory").arg(e.id));
+    require(viaDef.highlightBackgroundColor().name() == e.factory.highlightBackgroundColor().name(),
+            QStringLiteral("%1 highlight via fromDefinition should match factory").arg(e.id));
+    require(viaDef.codeBorderColor().name() == e.factory.codeBorderColor().name(),
+            QStringLiteral("%1 code border via fromDefinition should match factory").arg(e.id));
+    require(viaDef.quoteBorderColor().name() == e.factory.quoteBorderColor().name(),
+            QStringLiteral("%1 quote border via fromDefinition should match factory").arg(e.id));
+    require(viaDef.tableBorderColor().name() == e.factory.tableBorderColor().name(),
+            QStringLiteral("%1 table border via fromDefinition should match factory").arg(e.id));
+    require(viaDef.tableHeaderBackgroundColor().name() == e.factory.tableHeaderBackgroundColor().name(),
+            QStringLiteral("%1 table header bg via fromDefinition should match factory").arg(e.id));
+    require(viaDef.tableAlternateBackgroundColor().name() == e.factory.tableAlternateBackgroundColor().name(),
+            QStringLiteral("%1 table alt bg via fromDefinition should match factory").arg(e.id));
+    require(viaDef.selectionColor().name() == e.factory.selectionColor().name(),
+            QStringLiteral("%1 selection via fromDefinition should match factory").arg(e.id));
+    require(viaDef.spellCheckColor().name() == e.factory.spellCheckColor().name(),
+            QStringLiteral("%1 spell-check via fromDefinition should match factory").arg(e.id));
+  }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -159,6 +215,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testThemeCodeFontFallbackOrder);
   RUN_TEST(testThemeCodeHighlightPalette);
   RUN_TEST(testThemeManagerSupportsBuiltInThemes);
+  RUN_TEST(testFromDefinitionReproducesBuiltIns);
   runTest("testLayoutForTheme/github", [&] { testLayoutForTheme(document, RenderTheme::github(), QStringLiteral("github")); });
   runTest("testLayoutForTheme/newsprint", [&] { testLayoutForTheme(document, RenderTheme::newsprint(), QStringLiteral("newsprint")); });
   runTest("testLayoutForTheme/night", [&] { testLayoutForTheme(document, RenderTheme::night(), QStringLiteral("night")); });
