@@ -135,8 +135,10 @@ void HtmlLayoutEngine::layout(
     HtmlBox& root,
     qreal availableWidth,
     qreal baseFontSize,
-    std::vector<std::unique_ptr<HtmlTextLayout>>& textLayouts) {
+    std::vector<std::unique_ptr<HtmlTextLayout>>& textLayouts,
+    const HtmlColorPalette& palette) {
   textLayouts.clear();
+  measurer_.setDefaultTextColor(palette.text);
 
   YGNode* rootNode = createYogaNode(root, baseFontSize, availableWidth, textLayouts);
 

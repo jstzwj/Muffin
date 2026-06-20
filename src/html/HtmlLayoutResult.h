@@ -39,6 +39,7 @@ public:
   void setTextLayouts(std::vector<std::unique_ptr<HtmlTextLayout>> layouts);
   void setSize(QSizeF size);
   void setError(QString error);
+  void setPalette(HtmlColorPalette palette);
 
   void paint(QPainter& painter, QPointF origin) const;
   HitResult hitTest(QPointF localPos) const;
@@ -59,6 +60,7 @@ private:
   QSizeF size_;
   QString error_;
   QString baseDirectory_;
+  HtmlColorPalette palette_ = HtmlColorPalette::defaultLight();
   mutable QHash<QString, QImage> imageCache_;
 };
 

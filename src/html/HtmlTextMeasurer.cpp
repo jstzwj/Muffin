@@ -34,6 +34,8 @@ QString normalizePreText(QString text) {
 
 }  // namespace
 
+void HtmlTextMeasurer::setDefaultTextColor(QColor color) { defaultTextColor_ = color; }
+
 QSizeF HtmlTextMeasurer::measure(const QString& text, const QFont& font, qreal availableWidth) const {
   if (text.isEmpty()) {
     QFontMetricsF fm(font);
@@ -117,7 +119,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
   std::vector<TextFormatSpan> spans;
   std::vector<HtmlTextLayout::LinkSpan> links;
   int offset = 0;
-  collectInlineText(blockBox, text, spans, links, offset, false, false, false, false, HtmlTextDecoration::None, QColor(),
+  collectInlineText(blockBox, text, spans, links, offset, false, false, false, false, HtmlTextDecoration::None, defaultTextColor_,
                     QColor(), QTextCharFormat::AlignNormal, QString(), fontSize, fontSize);
 
   QFont baseFont;

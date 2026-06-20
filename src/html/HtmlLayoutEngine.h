@@ -26,7 +26,8 @@ public:
       HtmlBox& root,
       qreal availableWidth,
       qreal baseFontSize,
-      std::vector<std::unique_ptr<HtmlTextLayout>>& textLayouts);
+      std::vector<std::unique_ptr<HtmlTextLayout>>& textLayouts,
+      const HtmlColorPalette& palette = HtmlColorPalette::defaultLight());
 
 private:
   YGNode* createYogaNode(

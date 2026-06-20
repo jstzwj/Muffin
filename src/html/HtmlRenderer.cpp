@@ -53,7 +53,7 @@ void resolveResourcePaths(HtmlBox& box, const QString& baseDirectory) {
 HtmlRenderer::HtmlRenderer() = default;
 HtmlRenderer::~HtmlRenderer() = default;
 
-HtmlLayoutResult HtmlRenderer::render(const QString& html, qreal baseFontSize, qreal availableWidth, QString baseDirectory) {
+HtmlLayoutResult HtmlRenderer::render(const QString& html, qreal baseFontSize, qreal availableWidth, QString baseDirectory, const HtmlColorPalette& palette) {
   HtmlLayoutResult result;
   result.setBaseDirectory(std::move(baseDirectory));
 
@@ -80,12 +80,12 @@ HtmlLayoutResult HtmlRenderer::render(const QString& html, qreal baseFontSize, q
 
   // 3. Resolve styles
   HtmlStyleResolver styleResolver;
-  styleResolver.resolve(*root, baseFontSize);
+  styleResolver.resolve(*root, baseFontSize, palette);
 
   // 4. Run layout
   HtmlLayoutEngine layoutEngine;
   std::vector<std::unique_ptr<HtmlTextLayout>> textLayouts;
-  layoutEngine.layout(*root, availableWidth, baseFontSize, textLayouts);
+  layoutEngine.layout(*root, availableWidth, baseFontSize, textLayouts, palette);
 
   // 5. Compute total size
   const auto& geo = root->geometry();
@@ -94,6 +94,7 @@ HtmlLayoutResult HtmlRenderer::render(const QString& html, qreal baseFontSize, q
   result.setRoot(std::move(root));
   result.setTextLayouts(std::move(textLayouts));
   result.setSize(totalSize);
+  result.setPalette(palette);
   return result;
 }
 

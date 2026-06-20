@@ -588,8 +588,19 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
     {
       BuildAccumTimer t(htmlRenderNs_, perfEnabled_);
       sanitizedHtml = HtmlSanitizer().sanitizedPreview(layout->literal());
+      html::HtmlColorPalette htmlPalette;
+      htmlPalette.text = theme.textColor();
+      htmlPalette.background = theme.backgroundColor();
+      htmlPalette.muted = theme.mutedTextColor();
+      htmlPalette.link = theme.linkColor();
+      htmlPalette.codeBackground = theme.codeBackgroundColor();
+      htmlPalette.codeBorder = theme.codeBorderColor();
+      htmlPalette.quoteBorder = theme.quoteBorderColor();
+      htmlPalette.tableBorder = theme.tableBorderColor();
+      htmlPalette.tableHeaderBackground = theme.tableHeaderBackgroundColor();
+      htmlPalette.highlight = theme.highlightBackgroundColor();
       htmlResult = std::make_shared<html::HtmlLayoutResult>(
-          htmlRenderer_.render(sanitizedHtml, fontSize, contentWidth, baseDirectory));
+          htmlRenderer_.render(sanitizedHtml, fontSize, contentWidth, baseDirectory, htmlPalette));
     }
     if (htmlResult->valid()) {
       height = std::ceil(htmlResult->size().height() + theme.codePadding().top() + theme.codePadding().bottom());

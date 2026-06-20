@@ -5,13 +5,13 @@ namespace muffin::html {
 HtmlStyleResolver::HtmlStyleResolver() = default;
 HtmlStyleResolver::~HtmlStyleResolver() = default;
 
-void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize) {
-  resolveBox(root, baseFontSize, false, QColor(), QString());
+void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, const HtmlColorPalette& palette) {
+  resolveBox(root, baseFontSize, false, QColor(), QString(), palette);
 }
 
-void HtmlStyleResolver::resolveBox(HtmlBox& box, qreal fontSize, bool inheritColor, QColor parentColor, const QString& parentFontFamily) {
+void HtmlStyleResolver::resolveBox(HtmlBox& box, qreal fontSize, bool inheritColor, QColor parentColor, const QString& parentFontFamily, const HtmlColorPalette& palette) {
   // Apply tag-based defaults first
-  applyTagDefaults(box, fontSize);
+  applyTagDefaults(box, fontSize, palette);
 
   // If the box has inline styles, they were already parsed in HtmlBoxBuilder::extractInlineStyle.
   // Now resolve the effective font size considering inheritance.
@@ -53,11 +53,11 @@ void HtmlStyleResolver::resolveBox(HtmlBox& box, qreal fontSize, bool inheritCol
   QColor effectiveColor = shouldInheritColor ? box.style().color : parentColor;
 
   for (const auto& child : box.children()) {
-    resolveBox(*child, fontSize, shouldInheritColor || inheritColor, effectiveColor, effectiveFontFamily);
+    resolveBox(*child, fontSize, shouldInheritColor || inheritColor, effectiveColor, effectiveFontFamily, palette);
   }
 }
 
-void HtmlStyleResolver::applyTagDefaults(HtmlBox& box, qreal fontSize) {
+void HtmlStyleResolver::applyTagDefaults(HtmlBox& box, qreal fontSize, const HtmlColorPalette& palette) {
   auto& style = box.style();
   const auto setDefaultFontSize = [&](qreal value) {
     if (!style.fontSizeExplicit) {
@@ -70,6 +70,9 @@ void HtmlStyleResolver::applyTagDefaults(HtmlBox& box, qreal fontSize) {
     case HtmlTag::Html:
       style.display = HtmlDisplay::Block;
       setDefaultFontSize(fontSize);
+      if (!style.backgroundColor.isValid()) {
+        style.backgroundColor = palette.background;
+      }
       break;
 
     case HtmlTag::Paragraph:
@@ -154,7 +157,7 @@ void HtmlStyleResolver::applyTagDefaults(HtmlBox& box, qreal fontSize) {
       }
       style.margin = QMarginsF(0, fontSize, 0, fontSize);
       style.padding = QMarginsF(12, 12, 12, 12);
-      style.backgroundColor = QColor(246, 248, 250);
+      style.backgroundColor = palette.codeBackground;
       style.lineHeight = 1.45;
       break;
 
@@ -162,7 +165,7 @@ void HtmlStyleResolver::applyTagDefaults(HtmlBox& box, qreal fontSize) {
       style.display = HtmlDisplay::Block;
       style.margin = QMarginsF(40, fontSize, 40, fontSize);
       style.borderWidth = QMarginsF(0, 0, 0, 3);
-      style.borderColor = QColor(204, 204, 204);
+      style.borderColor = palette.quoteBorder;
       style.padding = QMarginsF(16, 0, 0, 0);
       break;
 
@@ -193,7 +196,7 @@ void HtmlStyleResolver::applyTagDefaults(HtmlBox& box, qreal fontSize) {
 
     case HtmlTag::Mark:
       style.display = HtmlDisplay::Inline;
-      style.backgroundColor = QColor(255, 255, 0);
+      style.backgroundColor = palette.highlight;
       break;
 
     case HtmlTag::Sub:
@@ -220,12 +223,12 @@ void HtmlStyleResolver::applyTagDefaults(HtmlBox& box, qreal fontSize) {
       style.display = HtmlDisplay::Inline;
       setDefaultFontSize(fontSize * 0.9);
       style.fontWeight = QFont::Normal;
-      style.color = QColor(36, 41, 47);
+      style.color = palette.text;
       break;
 
     case HtmlTag::Anchor:
       style.display = HtmlDisplay::Inline;
-      style.color = QColor(6, 69, 173);
+      style.color = palette.link;
       style.textDecoration = HtmlTextDecoration::Underline;
       break;
 
@@ -271,16 +274,16 @@ void HtmlStyleResolver::applyTagDefaults(HtmlBox& box, qreal fontSize) {
     case HtmlTag::TableHeader:
       style.display = HtmlDisplay::TableCell;
       style.fontWeight = QFont::Bold;
-      style.backgroundColor = QColor(240, 240, 240);
+      style.backgroundColor = palette.tableHeaderBackground;
       style.borderWidth = QMarginsF(1, 1, 1, 1);
-      style.borderColor = QColor(204, 204, 204);
+      style.borderColor = palette.tableBorder;
       style.padding = QMarginsF(8, 8, 8, 8);
       break;
 
     case HtmlTag::TableCell:
       style.display = HtmlDisplay::TableCell;
       style.borderWidth = QMarginsF(1, 1, 1, 1);
-      style.borderColor = QColor(204, 204, 204);
+      style.borderColor = palette.tableBorder;
       style.padding = QMarginsF(8, 8, 8, 8);
       break;
 
@@ -309,15 +312,15 @@ void HtmlStyleResolver::applyTagDefaults(HtmlBox& box, qreal fontSize) {
     case HtmlTag::Input:
       style.display = HtmlDisplay::Inline;
       style.borderWidth = QMarginsF(1, 1, 1, 1);
-      style.borderColor = QColor(204, 204, 204);
+      style.borderColor = palette.tableBorder;
       style.padding = QMarginsF(2, 2, 2, 2);
       break;
 
     case HtmlTag::Button:
       style.display = HtmlDisplay::Inline;
       style.borderWidth = QMarginsF(1, 1, 1, 1);
-      style.borderColor = QColor(153, 153, 153);
-      style.backgroundColor = QColor(240, 240, 240);
+      style.borderColor = palette.muted;
+      style.backgroundColor = palette.codeBackground;
       style.padding = QMarginsF(4, 4, 8, 4);
       break;
 

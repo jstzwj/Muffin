@@ -17,7 +17,8 @@ void paintKeyboardSpanRects(
     QPainter& painter,
     const QTextLayout& layout,
     const std::vector<TextFormatSpan>& spans,
-    QPointF origin) {
+    QPointF origin,
+    const HtmlColorPalette& palette) {
   painter.save();
   painter.setRenderHint(QPainter::Antialiasing, true);
 
@@ -47,11 +48,11 @@ void paintKeyboardSpanRects(
           qAbs(x2 - x1) + 8.0,
           qMax<qreal>(1.0, line.height() - 3.0));
 
-      painter.setPen(QPen(QColor(196, 201, 209), 1.0));
-      painter.setBrush(QColor(250, 251, 252));
+      painter.setPen(QPen(palette.codeBorder, 1.0));
+      painter.setBrush(palette.codeBackground);
       painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), 2.0, 2.0);
 
-      painter.setPen(QPen(QColor(181, 186, 194), 1.0));
+      painter.setPen(QPen(palette.codeBorder, 1.0));
       painter.drawLine(rect.bottomLeft() + QPointF(2.0, -0.5), rect.bottomRight() + QPointF(-2.0, -0.5));
     }
   }
@@ -80,6 +81,7 @@ void HtmlLayoutResult::setTextLayouts(std::vector<std::unique_ptr<HtmlTextLayout
 }
 void HtmlLayoutResult::setSize(QSizeF size) { size_ = size; }
 void HtmlLayoutResult::setError(QString error) { error_ = std::move(error); }
+void HtmlLayoutResult::setPalette(HtmlColorPalette palette) { palette_ = std::move(palette); }
 
 void HtmlLayoutResult::paint(QPainter& painter, QPointF origin) const {
   if (!root_) {
@@ -188,7 +190,7 @@ void HtmlLayoutResult::paintBox(QPainter& painter, const HtmlBox& box, QPointF o
       painter.fillPath(path, style.backgroundColor);
     }
     if (hasBorder && style.borderStyle != HtmlBorderStyle::None) {
-      QColor borderColor = style.borderColor.isValid() ? style.borderColor : QColor(204, 204, 204);
+      QColor borderColor = style.borderColor.isValid() ? style.borderColor : palette_.tableBorder;
       Qt::PenStyle penStyle = Qt::SolidLine;
       if (style.borderStyle == HtmlBorderStyle::Dashed) penStyle = Qt::DashLine;
       else if (style.borderStyle == HtmlBorderStyle::Dotted) penStyle = Qt::DotLine;
@@ -209,7 +211,7 @@ void HtmlLayoutResult::paintBox(QPainter& painter, const HtmlBox& box, QPointF o
     // Paint border (no rounded corners)
     if (hasBorder && style.borderStyle != HtmlBorderStyle::None) {
       painter.save();
-      QColor borderColor = style.borderColor.isValid() ? style.borderColor : QColor(204, 204, 204);
+      QColor borderColor = style.borderColor.isValid() ? style.borderColor : palette_.tableBorder;
       Qt::PenStyle penStyle = Qt::SolidLine;
       if (style.borderStyle == HtmlBorderStyle::Dashed) penStyle = Qt::DashLine;
       else if (style.borderStyle == HtmlBorderStyle::Dotted) penStyle = Qt::DotLine;
@@ -290,7 +292,7 @@ void HtmlLayoutResult::paintTextRun(QPainter& painter, const HtmlBox& box, QPoin
   }
 
   painter.save();
-  paintKeyboardSpanRects(painter, *textLayout->layout, textLayout->formatSpans, origin);
+  paintKeyboardSpanRects(painter, *textLayout->layout, textLayout->formatSpans, origin, palette_);
   textLayout->layout->draw(&painter, origin);
   painter.restore();
 }
@@ -298,7 +300,7 @@ void HtmlLayoutResult::paintTextRun(QPainter& painter, const HtmlBox& box, QPoin
 void HtmlLayoutResult::paintListMarker(QPainter& painter, const HtmlBox& box, const QRectF& contentRect) const {
   painter.save();
   painter.setFont(box.style().font);
-  painter.setPen(box.style().color.isValid() ? box.style().color : QColor(31, 35, 40));
+  painter.setPen(box.style().color.isValid() ? box.style().color : palette_.text);
   QFontMetricsF metrics(box.style().font);
   // Place the marker inside the list's left padding (40px from <ul>/<ol> defaults),
   // right-aligned just before the content area.
@@ -315,7 +317,7 @@ void HtmlLayoutResult::paintListMarker(QPainter& painter, const HtmlBox& box, co
 
 void HtmlLayoutResult::paintHr(QPainter& painter, const HtmlBox& box, const QRectF& contentRect) const {
   painter.save();
-  QColor color = box.style().borderColor.isValid() ? box.style().borderColor : QColor(204, 204, 204);
+  QColor color = box.style().borderColor.isValid() ? box.style().borderColor : palette_.tableBorder;
   painter.setPen(QPen(color, 1));
   const qreal y = contentRect.center().y();
   painter.drawLine(QPointF(contentRect.left(), y), QPointF(contentRect.right(), y));
@@ -329,8 +331,8 @@ void HtmlLayoutResult::paintImage(QPainter& painter, const HtmlBox& box, QPointF
     const qreal w = geo.width > 0 ? geo.width : 100;
     const qreal h = geo.height > 0 ? geo.height : 80;
     painter.save();
-    painter.setPen(QColor(204, 204, 204));
-    painter.setBrush(QColor(248, 248, 248));
+    painter.setPen(palette_.codeBorder);
+    painter.setBrush(palette_.codeBackground);
     painter.drawRect(QRectF(origin, QSizeF(w, h)));
     // Center a placeholder icon inside the box
     constexpr qreal kIconSize = 24.0;
@@ -340,7 +342,7 @@ void HtmlLayoutResult::paintImage(QPainter& painter, const HtmlBox& box, QPointF
       const qreal iy = origin.y() + (h - kIconSize) / 2.0;
       painter.drawImage(QRectF(ix, iy, kIconSize, kIconSize), icon);
     } else {
-      painter.setPen(QColor(150, 150, 150));
+      painter.setPen(palette_.muted);
       painter.drawText(QRectF(origin, QSizeF(w, h)), Qt::AlignCenter,
                        box.alt().isEmpty() ? QStringLiteral("[image]") : box.alt());
     }
@@ -355,8 +357,8 @@ void HtmlLayoutResult::paintImage(QPainter& painter, const HtmlBox& box, QPointF
     const qreal w = geo.width > 0 ? geo.width : 100;
     const qreal h = geo.height > 0 ? geo.height : 80;
     painter.save();
-    painter.setPen(QColor(204, 204, 204));
-    painter.setBrush(QColor(248, 248, 248));
+    painter.setPen(palette_.codeBorder);
+    painter.setBrush(palette_.codeBackground);
     painter.drawRect(QRectF(origin, QSizeF(w, h)));
     constexpr qreal kIconSize = 24.0;
     const QImage icon = image_placeholder::broken(QSizeF(kIconSize, kIconSize));

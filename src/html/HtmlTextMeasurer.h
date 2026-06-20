@@ -78,6 +78,12 @@ public:
       qreal fontSize,
       qreal availableWidth) const;
 
+  // Default text colour applied to inline runs that specify no colour of their
+  // own. Set by the layout engine from the theme palette; invalid (the default)
+  // leaves runs uncoloured so the paint layer decides — preserving the
+  // inline-HTML path's behaviour.
+  void setDefaultTextColor(QColor color);
+
   // Collect inline text and formatting spans from a box subtree.
   // Public for use by InlineHtmlRenderer.
   void collectInlineTextFromRoot(
@@ -99,6 +105,7 @@ public:
       qreal baseFontSize) const;
 
 private:
+  QColor defaultTextColor_;
   QString collectPlainText(const HtmlBox& box) const;
 
   void collectInlineText(

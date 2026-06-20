@@ -14,7 +14,7 @@ public:
   // Render HTML text to a layout result.
   // baseFontSize: font size from the theme (typically 16px).
   // availableWidth: the content width for layout.
-  HtmlLayoutResult render(const QString& html, qreal baseFontSize, qreal availableWidth, QString baseDirectory = {});
+  HtmlLayoutResult render(const QString& html, qreal baseFontSize, qreal availableWidth, QString baseDirectory = {}, const HtmlColorPalette& palette = HtmlColorPalette::defaultLight());
 };
 
 }  // namespace muffin::html

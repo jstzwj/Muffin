@@ -176,6 +176,39 @@ struct HtmlLayoutGeometry {
   qreal height = 0;
 };
 
+// Theme palette for the HTML rendering engine. The engine is theme-unaware by
+// construction (it mimics browser-canvas defaults); this struct is the single
+// seam where a host theme feeds its colours in. defaultLight() reproduces the
+// historical hardcoded values, so callers that don't care (the inline-HTML
+// path) keep rendering exactly as before.
+struct HtmlColorPalette {
+  QColor text;                   // default body text + <kbd>
+  QColor background;             // <body> canvas
+  QColor muted;                  // secondary text / soft borders (<button> border, placeholder alt)
+  QColor link;                   // <a>
+  QColor codeBackground;         // <pre>, <th>/<button> surface, <kbd> fill, image-placeholder fill
+  QColor codeBorder;             // <pre>/<kbd> border, image-placeholder border
+  QColor quoteBorder;            // <blockquote>
+  QColor tableBorder;            // table cells / <input> / generic border / <hr>
+  QColor tableHeaderBackground;  // <th>
+  QColor highlight;              // <mark>
+
+  static HtmlColorPalette defaultLight() {
+    HtmlColorPalette p;
+    p.text = QColor(31, 35, 40);
+    p.background = QColor(255, 255, 255);
+    p.muted = QColor(153, 153, 153);
+    p.link = QColor(6, 69, 173);
+    p.codeBackground = QColor(246, 248, 250);
+    p.codeBorder = QColor(204, 204, 204);
+    p.quoteBorder = QColor(204, 204, 204);
+    p.tableBorder = QColor(204, 204, 204);
+    p.tableHeaderBackground = QColor(240, 240, 240);
+    p.highlight = QColor(255, 255, 0);
+    return p;
+  }
+};
+
 class HtmlBox {
 public:
   explicit HtmlBox(HtmlTag tag);
