@@ -1,6 +1,37 @@
 #include "document/MarkdownDocument.h"
 
+#include <QElapsedTimer>
+#include <QLoggingCategory>
+
 #include <utility>
+
+namespace {
+
+Q_LOGGING_CATEGORY(documentPerf, "muffin.perf", QtWarningMsg)
+
+// Scoped perf probe routed to the muffin.perf category (captured by MUFFIN_PERF_LOG). No-op
+// (single branch) when the category is disabled, so it is safe to keep in release builds.
+class PerfTimer {
+public:
+  explicit PerfTimer(const char* label) : label_(label), enabled_(documentPerf().isDebugEnabled()) {
+    if (enabled_) {
+      timer_.start();
+    }
+  }
+
+  ~PerfTimer() {
+    if (enabled_) {
+      qCDebug(documentPerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0 << " ms";
+    }
+  }
+
+private:
+  const char* label_;
+  bool enabled_ = false;
+  QElapsedTimer timer_;
+};
+
+}  // namespace
 
 namespace muffin {
 
@@ -46,34 +77,44 @@ void MarkdownDocument::replaceTopLevelRange(
     qsizetype sourceStart,
     qsizetype sourceEnd,
     const QString& replacementText) {
-  markdownText_.replace(sourceStart, sourceEnd - sourceStart, replacementText);
-  lineOffsets_.applyEdit(sourceStart, sourceEnd - sourceStart, replacementText.size(), QStringView(markdownText_));
-  const qsizetype boundedFirst = qBound<qsizetype>(0, first, root_->children().size());
-  const qsizetype boundedCount = qBound<qsizetype>(0, count, root_->children().size() - boundedFirst);
-
-  // Drop the soon-to-be-removed subtrees from the index lookup while they are still alive, then
-  // detach (destroying them) and insert the replacements, then register the new subtrees. This
-  // keeps find() correct without an O(document) index_.rebuild on every keystroke.
-  std::vector<MarkdownNode*> removed;
-  removed.reserve(static_cast<std::size_t>(boundedCount));
-  for (qsizetype i = 0; i < boundedCount; ++i) {
-    removed.push_back(root_->children().at(static_cast<std::size_t>(boundedFirst + i)).get());
+  PerfTimer totalPerf("session.local.replaceRange");
+  {
+    PerfTimer memmovePerf("session.local.replace.memmove");
+    markdownText_.replace(sourceStart, sourceEnd - sourceStart, replacementText);
   }
-  index_.removeSubtreesFromLookup(removed);
-
-  for (qsizetype i = 0; i < boundedCount; ++i) {
-    root_->detachChild(boundedFirst);
+  {
+    PerfTimer lineOffsetsPerf("session.local.replace.lineOffsets");
+    lineOffsets_.applyEdit(sourceStart, sourceEnd - sourceStart, replacementText.size(), QStringView(markdownText_));
   }
+  {
+    PerfTimer indexPerf("session.local.replace.index");
+    const qsizetype boundedFirst = qBound<qsizetype>(0, first, root_->children().size());
+    const qsizetype boundedCount = qBound<qsizetype>(0, count, root_->children().size() - boundedFirst);
 
-  std::vector<MarkdownNode*> inserted;
-  inserted.reserve(replacements.size());
-  qsizetype insertAt = boundedFirst;
-  for (auto& replacement : replacements) {
-    MarkdownNode& node = root_->insertChild(insertAt, std::move(replacement));
-    inserted.push_back(&node);
-    ++insertAt;
+    // Drop the soon-to-be-removed subtrees from the index lookup while they are still alive, then
+    // detach (destroying them) and insert the replacements, then register the new subtrees. This
+    // keeps find() correct without an O(document) index_.rebuild on every keystroke.
+    std::vector<MarkdownNode*> removed;
+    removed.reserve(static_cast<std::size_t>(boundedCount));
+    for (qsizetype i = 0; i < boundedCount; ++i) {
+      removed.push_back(root_->children().at(static_cast<std::size_t>(boundedFirst + i)).get());
+    }
+    index_.removeSubtreesFromLookup(removed);
+
+    for (qsizetype i = 0; i < boundedCount; ++i) {
+      root_->detachChild(boundedFirst);
+    }
+
+    std::vector<MarkdownNode*> inserted;
+    inserted.reserve(replacements.size());
+    qsizetype insertAt = boundedFirst;
+    for (auto& replacement : replacements) {
+      MarkdownNode& node = root_->insertChild(insertAt, std::move(replacement));
+      inserted.push_back(&node);
+      ++insertAt;
+    }
+    index_.addSubtreesToLookup(inserted);
   }
-  index_.addSubtreesToLookup(inserted);
 
   ++revision_;
   emit documentReset();

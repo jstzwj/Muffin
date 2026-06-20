@@ -739,12 +739,17 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
     return false;
   }
 
-  QString sliceMarkdown = oldText.mid(slice.sourceStart, sourceStart - slice.sourceStart);
-  sliceMarkdown += replacementText;
-  sliceMarkdown += oldText.mid(sourceEnd, slice.sourceEnd - sourceEnd);
-  ParseOptions sliceOptions = parseOptions_;
-  sliceOptions.enableFrontMatter = slice.sourceStart == 0;
-  ParseResult parsedSlice = parser_.parseDocument(QStringView(sliceMarkdown), sliceOptions);
+  QString sliceMarkdown;
+  ParseResult parsedSlice;
+  {
+    PerfTimer sliceParsePerf("session.local.sliceParse");
+    sliceMarkdown = oldText.mid(slice.sourceStart, sourceStart - slice.sourceStart);
+    sliceMarkdown += replacementText;
+    sliceMarkdown += oldText.mid(sourceEnd, slice.sourceEnd - sourceEnd);
+    ParseOptions sliceOptions = parseOptions_;
+    sliceOptions.enableFrontMatter = slice.sourceStart == 0;
+    parsedSlice = parser_.parseDocument(QStringView(sliceMarkdown), sliceOptions);
+  }
   if (!parsedSlice.root) {
     warnLocalEditSliceRejected(
         "local slice parse produced no root node",
@@ -756,22 +761,29 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
     return false;
   }
 
+  // Lazy markers: keep a still-incomplete list bullet / fence / math opener as a paragraph
+  // instead of letting cmark snap it into a block while the user is mid-keystroke. Demote while
+  // the freshly-parsed nodes are still SLICE-RELATIVE (they index into sliceMarkdown, which is
+  // exactly the post-edit text of the slice region). The previous code shifted them to absolute
+  // offsets first and then built a FULL-document postEditText copy to demote against — an O(doc)
+  // cost on every keystroke. Demoting slice-relative nodes against sliceMarkdown is equivalent
+  // (demotePendingMarkerToParagraph is frame-consistent: it only reads node.range against the
+  // passed text) and avoids the copy.
+  {
+    PerfTimer demoteWalkPerf("session.local.demoteWalk");
+    for (const auto& child : parsedSlice.root->children()) {
+      if (child) {
+        demotePendingMarkersInSubtree(sliceMarkdown, *child);
+      }
+    }
+  }
+
   std::vector<std::unique_ptr<MarkdownNode>> replacements;
   const int sliceLineDelta = lineForOffset(oldText, slice.sourceStart) - 1;
   while (!parsedSlice.root->children().empty()) {
     auto child = parsedSlice.root->detachChild(0);
     shiftRanges(*child, slice.sourceStart, sliceLineDelta);
     replacements.push_back(std::move(child));
-  }
-  // Lazy markers: keep a still-incomplete list bullet / fence / math opener as a
-  // paragraph instead of letting cmark snap it into a block while the user is mid-keystroke.
-  // The freshly-parsed node ranges index into the post-edit text, so reconstruct it here.
-  QString postEditText = oldText;
-  postEditText.replace(sourceStart, sourceEnd - sourceStart, replacementText);
-  for (const auto& replacement : replacements) {
-    if (replacement) {
-      demotePendingMarkersInSubtree(postEditText, *replacement);
-    }
   }
   // For a pure insertion after an existing block, drop the context-dependent leading VEP the
   // isolated slice parse synthesized from its own leading blank line (see
@@ -786,11 +798,14 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
   const qsizetype replacementCount = static_cast<qsizetype>(replacements.size());
   lastLocalEditChangedTopLevelStructure_ = topLevelStructureChanged(document_.root().children(), slice.first, slice.count, replacements);
 
-  const int editLineDelta = countNewlines(QStringView(replacementText)) - countNewlines(QStringView(oldText).mid(sourceStart, sourceEnd - sourceStart));
-  const qsizetype firstFollowing = slice.first + slice.count;
-  auto& existingBlocks = document_.root().children();
-  for (qsizetype i = firstFollowing; i < static_cast<qsizetype>(existingBlocks.size()); ++i) {
-    shiftRanges(*existingBlocks.at(static_cast<size_t>(i)), editDelta, editLineDelta);
+  {
+    PerfTimer shiftSuffixPerf("session.local.shiftSuffix");
+    const int editLineDelta = countNewlines(QStringView(replacementText)) - countNewlines(QStringView(oldText).mid(sourceStart, sourceEnd - sourceStart));
+    const qsizetype firstFollowing = slice.first + slice.count;
+    auto& existingBlocks = document_.root().children();
+    for (qsizetype i = firstFollowing; i < static_cast<qsizetype>(existingBlocks.size()); ++i) {
+      shiftRanges(*existingBlocks.at(static_cast<size_t>(i)), editDelta, editLineDelta);
+    }
   }
 
   document_.replaceTopLevelRange(slice.first, slice.count, std::move(replacements), sourceStart, sourceEnd, replacementText);

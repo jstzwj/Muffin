@@ -4,6 +4,10 @@
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MuffinTestFunctions.cmake)
 
+# --- perf benchmark (pure MuffinCore, no GUI lock; defaults are a fast smoke — override
+#     MUFFIN_BENCH_SIZE_MB / MUFFIN_BENCH_ITERS for a real measurement run) ---
+muffin_add_test(NAME MuffinTypingPerfBench SOURCE tests/perf/TypingPerfBench.cpp LINK MuffinCore)
+
 # --- parser / document (pure logic; link MuffinCore, no Qt GUI lock) ---
 muffin_add_test(NAME MuffinParserBasicTest      SOURCE tests/parser/ParserBasicTest.cpp      LINK MuffinCore)
 muffin_add_test(NAME MuffinParserDefinitionTest SOURCE tests/parser/ParserDefinitionTest.cpp LINK MuffinCore)
