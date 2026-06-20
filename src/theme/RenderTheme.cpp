@@ -46,6 +46,7 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   // Spell-check red isn't part of the theme JSON — pick the readable variant for
   // the page tone (matches the night() factory's lighter red on dark pages).
   t.spellCheckColor_ = c.isDark ? QColor(QStringLiteral("#ff6a6a")) : QColor(QStringLiteral("#d1242f"));
+  t.serifBody_ = c.serifBody;
   t.setZoomPercent(zoomPercent);
   t.setFontSizePx(fontSizePx);
   return t;
@@ -95,34 +96,35 @@ RenderTheme RenderTheme::night(int zoomPercent) {
 
 RenderTheme RenderTheme::pixyll(int zoomPercent) {
   RenderTheme theme;
-  theme.backgroundColor_ = QColor(QStringLiteral("#ffffff"));
-  theme.textColor_ = QColor(QStringLiteral("#333333"));
-  theme.mutedTextColor_ = QColor(QStringLiteral("#777777"));
-  theme.linkColor_ = QColor(QStringLiteral("#0076df"));
-  theme.codeBackgroundColor_ = QColor(QStringLiteral("#f7f7f7"));
-  theme.codeBorderColor_ = QColor(QStringLiteral("#dddddd"));
-  theme.quoteBorderColor_ = QColor(QStringLiteral("#7a7a7a"));
-  theme.tableBorderColor_ = QColor(QStringLiteral("#dddddd"));
-  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#eef6ff"));
-  theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#fbfbfb"));
-  theme.selectionColor_ = QColor(QStringLiteral("#cfe8ff"));
+  theme.backgroundColor_ = QColor(QStringLiteral("#fafaf7"));
+  theme.textColor_ = QColor(QStringLiteral("#2c2c2c"));
+  theme.mutedTextColor_ = QColor(QStringLiteral("#6a6a6a"));
+  theme.linkColor_ = QColor(QStringLiteral("#0e8a7a"));
+  theme.codeBackgroundColor_ = QColor(QStringLiteral("#f0eee6"));
+  theme.codeBorderColor_ = QColor(QStringLiteral("#ddd9cc"));
+  theme.quoteBorderColor_ = QColor(QStringLiteral("#c2b280"));
+  theme.tableBorderColor_ = QColor(QStringLiteral("#ddd9cc"));
+  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#eef3ec"));
+  theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#f4f2ea"));
+  theme.selectionColor_ = QColor(QStringLiteral("#cdeae3"));
+  theme.serifBody_ = true;  // keep the factory in sync with fromDefinition
   theme.setZoomPercent(zoomPercent);
   return theme;
 }
 
 RenderTheme RenderTheme::whitey(int zoomPercent) {
   RenderTheme theme;
-  theme.backgroundColor_ = QColor(QStringLiteral("#fdfdfd"));
-  theme.textColor_ = QColor(QStringLiteral("#2b2b2b"));
-  theme.mutedTextColor_ = QColor(QStringLiteral("#666666"));
-  theme.linkColor_ = QColor(QStringLiteral("#2a7ae2"));
-  theme.codeBackgroundColor_ = QColor(QStringLiteral("#f3f3f3"));
-  theme.codeBorderColor_ = QColor(QStringLiteral("#e1e4e8"));
-  theme.quoteBorderColor_ = QColor(QStringLiteral("#cccccc"));
-  theme.tableBorderColor_ = QColor(QStringLiteral("#e1e4e8"));
-  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#eef5ff"));
-  theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#fafafa"));
-  theme.selectionColor_ = QColor(QStringLiteral("#dcecff"));
+  theme.backgroundColor_ = QColor(QStringLiteral("#fcfcfc"));
+  theme.textColor_ = QColor(QStringLiteral("#4a4a4a"));
+  theme.mutedTextColor_ = QColor(QStringLiteral("#8a8a8a"));
+  theme.linkColor_ = QColor(QStringLiteral("#6a7d9a"));
+  theme.codeBackgroundColor_ = QColor(QStringLiteral("#f4f4f4"));
+  theme.codeBorderColor_ = QColor(QStringLiteral("#ececec"));
+  theme.quoteBorderColor_ = QColor(QStringLiteral("#d4d4d4"));
+  theme.tableBorderColor_ = QColor(QStringLiteral("#ececec"));
+  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#f2f5f8"));
+  theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#f8f8f8"));
+  theme.selectionColor_ = QColor(QStringLiteral("#e0e8f0"));
   theme.setZoomPercent(zoomPercent);
   return theme;
 }
@@ -168,7 +170,7 @@ qreal RenderTheme::blockQuoteIndent() const {
 }
 
 QFont RenderTheme::paragraphFont() const {
-  static const QString paragraphFamily = firstAvailableFontFamily({
+  static const QString sansFamily = firstAvailableFontFamily({
 #if defined(Q_OS_WIN)
       QStringLiteral("Microsoft YaHei UI"),
       QStringLiteral("Segoe UI"),
@@ -185,7 +187,25 @@ QFont RenderTheme::paragraphFont() const {
       QStringLiteral("Arial"),
 #endif
   });
-  QFont font(paragraphFamily);
+  // Serif body (Pixyll). Qt substitutes an available CJK face for any glyphs
+  // the serif family lacks, so mixed CJK+Latin content still renders.
+  static const QString serifFamily = firstAvailableFontFamily({
+#if defined(Q_OS_WIN)
+      QStringLiteral("Georgia"),
+      QStringLiteral("Cambria"),
+      QStringLiteral("Times New Roman"),
+#elif defined(Q_OS_MACOS)
+      QStringLiteral("New York"),
+      QStringLiteral("Times New Roman"),
+      QStringLiteral("Georgia"),
+#else
+      QStringLiteral("Noto Serif"),
+      QStringLiteral("DejaVu Serif"),
+      QStringLiteral("Times New Roman"),
+#endif
+      QStringLiteral("serif"),
+  });
+  QFont font(serifBody_ ? serifFamily : sansFamily);
   font.setStyleStrategy(QFont::PreferDefault);
   font.setPointSizeF(scaledFont(12.0));
   return font;

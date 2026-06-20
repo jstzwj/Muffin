@@ -50,6 +50,7 @@ ThemeDefinition ThemeDefinition::fromJson(const QJsonObject& json, const QString
   k.hover = parseColor(c, "hover");
   k.selected = parseColor(c, "selected");
   k.accent = parseColor(c, "accent");
+  k.serifBody = c.value(QStringLiteral("serifBody")).toBool(false);
 
   // Derive chrome defaults from the document palette when a theme file omits
   // them, so a minimal (document-colours-only) JSON still renders sanely.
@@ -100,6 +101,9 @@ QJsonObject ThemeDefinition::toJson() const {
   put("hover", colors.hover);
   put("selected", colors.selected);
   put("accent", colors.accent);
+  if (colors.serifBody) {
+    c.insert(QStringLiteral("serifBody"), true);
+  }
   c.insert(QStringLiteral("isDark"), colors.isDark);
 
   QJsonObject root;
@@ -204,57 +208,62 @@ const std::vector<ThemeDefinition>& ThemeDefinition::builtIns() {
       c.isDark = true;
       add("night", "Night", c);
     }
-    // pixyll — light, clean.
+    // pixyll — serif body on warm paper with a teal accent. Its identity is
+    // typography (a serif body), so serifBody is set; the palette is warmed and
+    // shifted to teal so it reads as clearly distinct from github at a glance.
     {
       ThemeColors c;
-      c.background = QColor("#ffffff");
-      c.text = QColor("#333333");
-      c.muted = QColor("#777777");
-      c.link = QColor("#0076df");
-      c.codeBackground = QColor("#f7f7f7");
-      c.codeBorder = QColor("#dddddd");
-      c.quoteBorder = QColor("#7a7a7a");
-      c.tableBorder = QColor("#dddddd");
-      c.tableHeaderBackground = QColor("#eef6ff");
-      c.tableAlternateBackground = QColor("#fbfbfb");
+      c.background = QColor("#fafaf7");
+      c.text = QColor("#2c2c2c");
+      c.muted = QColor("#6a6a6a");
+      c.link = QColor("#0e8a7a");
+      c.codeBackground = QColor("#f0eee6");
+      c.codeBorder = QColor("#ddd9cc");
+      c.quoteBorder = QColor("#c2b280");
+      c.tableBorder = QColor("#ddd9cc");
+      c.tableHeaderBackground = QColor("#eef3ec");
+      c.tableAlternateBackground = QColor("#f4f2ea");
       c.highlight = QColor("#fff8c5");
-      c.selection = QColor("#cfe8ff");
-      c.chromeBackground = QColor("#ffffff");
-      c.chromeText = QColor("#333333");
-      c.chromeMuted = QColor("#777777");
+      c.selection = QColor("#cdeae3");
+      c.chromeBackground = QColor("#fafaf7");
+      c.chromeText = QColor("#2c2c2c");
+      c.chromeMuted = QColor("#6a6a6a");
       c.surface = QColor("#ffffff");
-      c.canvas = QColor("#f7f7f7");
-      c.border = QColor("#dddddd");
-      c.hover = QColor("#f7f7f7");
-      c.selected = QColor("#eef6ff");
-      c.accent = QColor("#0076df");
+      c.canvas = QColor("#f3f1e8");
+      c.border = QColor("#ddd9cc");
+      c.hover = QColor("#f0eee6");
+      c.selected = QColor("#eef3ec");
+      c.accent = QColor("#0e8a7a");
+      c.serifBody = true;
       c.isDark = false;
       add("pixyll", "Pixyll", c);
     }
-    // whitey — light, minimal.
+    // whitey — minimal / airy: noticeably lighter body text and faint chrome on
+    // a near-white canvas, so it reads softer and less dense than github rather
+    // than just "another dark-on-white" theme.
     {
       ThemeColors c;
-      c.background = QColor("#fdfdfd");
-      c.text = QColor("#2b2b2b");
-      c.muted = QColor("#666666");
-      c.link = QColor("#2a7ae2");
-      c.codeBackground = QColor("#f3f3f3");
-      c.codeBorder = QColor("#e1e4e8");
-      c.quoteBorder = QColor("#cccccc");
-      c.tableBorder = QColor("#e1e4e8");
-      c.tableHeaderBackground = QColor("#eef5ff");
-      c.tableAlternateBackground = QColor("#fafafa");
+      c.background = QColor("#fcfcfc");
+      c.text = QColor("#4a4a4a");
+      c.muted = QColor("#8a8a8a");
+      c.link = QColor("#6a7d9a");
+      c.codeBackground = QColor("#f4f4f4");
+      c.codeBorder = QColor("#ececec");
+      c.quoteBorder = QColor("#d4d4d4");
+      c.tableBorder = QColor("#ececec");
+      c.tableHeaderBackground = QColor("#f2f5f8");
+      c.tableAlternateBackground = QColor("#f8f8f8");
       c.highlight = QColor("#fff8c5");
-      c.selection = QColor("#dcecff");
-      c.chromeBackground = QColor("#fdfdfd");
-      c.chromeText = QColor("#2b2b2b");
-      c.chromeMuted = QColor("#666666");
+      c.selection = QColor("#e0e8f0");
+      c.chromeBackground = QColor("#fcfcfc");
+      c.chromeText = QColor("#4a4a4a");
+      c.chromeMuted = QColor("#8a8a8a");
       c.surface = QColor("#ffffff");
       c.canvas = QColor("#f5f5f5");
-      c.border = QColor("#e1e4e8");
-      c.hover = QColor("#f3f3f3");
-      c.selected = QColor("#eef5ff");
-      c.accent = QColor("#2a7ae2");
+      c.border = QColor("#ececec");
+      c.hover = QColor("#f4f4f4");
+      c.selected = QColor("#f2f5f8");
+      c.accent = QColor("#6a7d9a");
       c.isDark = false;
       add("whitey", "Whitey", c);
     }

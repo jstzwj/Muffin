@@ -72,6 +72,7 @@ private:
 
   int zoomPercent_ = 100;
   int fontSizePx_ = 16;
+  bool serifBody_ = false;
   QColor backgroundColor_ = QColor(QStringLiteral("#ffffff"));
   QColor textColor_ = QColor(QStringLiteral("#202124"));
   QColor mutedTextColor_ = QColor(QStringLiteral("#57606a"));

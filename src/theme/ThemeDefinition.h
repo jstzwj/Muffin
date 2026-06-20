@@ -44,6 +44,11 @@ struct ThemeColors {
   QColor selected;          // selected item background (list rows, checked tabs)
   QColor accent;            // focus / links / checked-indicator
 
+  // Typography: when true, paragraph + heading text renders in a serif family
+  // (code/math stay monospace). Models themes whose identity is typography
+  // rather than colour — e.g. Pixyll, which is a serif-body theme.
+  bool serifBody = false;
+
   bool isDark = false;
 };
 
