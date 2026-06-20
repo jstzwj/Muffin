@@ -1021,6 +1021,14 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .handler = [](MainWindow& window) { window.backend_->clearFormatting(); },
        .enabled = [](const MainWindow& w) { return inlineFormat(w); }},
 
+      // ---------------- Math ----------------
+      {.id = QStringLiteral("math.refresh_all"),
+       .category = CommandCategory::Math,
+       .text = muffin::MainWindow::tr("Refresh All Math"),
+       .handler = [](MainWindow& window) {
+         window.renderView_->refreshVisibleBlocks(window.session_.document());
+       }},
+
       // ---------------- Image ----------------
       {.id = QStringLiteral("image.insert"),
        .category = CommandCategory::Image,
@@ -1741,7 +1749,11 @@ const std::vector<MenuSpec>& mainMenuSpec() {
                 {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.delete_format")},
                 {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.delete_word")},
             }},
-           {.kind = MenuItem::Kind::PlaceholderSubmenu, .title = muffin::MainWindow::tr("Math Tools")},
+           {.kind = MenuItem::Kind::Submenu,
+            .title = muffin::MainWindow::tr("Math Tools"),
+            .children = {
+                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("math.refresh_all")},
+            }},
            {.kind = MenuItem::Kind::PlaceholderSubmenu, .title = muffin::MainWindow::tr("Smart Punctuation")},
            {.kind = MenuItem::Kind::Submenu,
             .title = muffin::MainWindow::tr("Line Breaks"),
