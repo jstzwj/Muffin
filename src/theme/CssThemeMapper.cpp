@@ -4,6 +4,7 @@
 #include "theme/CssThemeParser.h"
 
 #include <QColor>
+#include <QFont>
 #include <QPointF>
 #include <QRegularExpression>
 #include <QSet>
@@ -110,7 +111,15 @@ SelInfo analyzeSelector(const QString& selector) {
       if (element) {
         if (info.pseudoElement.isEmpty()) { info.pseudoElement = name; }
       } else {
-        if (name == QStringLiteral("hover")) { info.hover = true; }
+        // CSS2 allowed single-colon pseudo-elements (:before/:after). Typora
+        // themes still use that spelling, so normalize it to the same decoration
+        // channel as ::before/::after instead of treating it as an ignored state.
+        if ((name == QStringLiteral("before") || name == QStringLiteral("after") ||
+             name == QStringLiteral("selection") || name == QStringLiteral("marker")) &&
+            info.pseudoElement.isEmpty()) {
+          info.pseudoElement = name;
+        }
+        else if (name == QStringLiteral("hover")) { info.hover = true; }
         else if (name == QStringLiteral("focus")) { info.focus = true; }
         else if (name == QStringLiteral("visited")) { info.visited = true; }
         else if (name == QStringLiteral("active")) { info.active = true; }
@@ -478,6 +487,20 @@ QString firstFamily(const QString& value, const QHash<QString, QString>& vars) {
   return out.join(QLatin1Char('\n'));
 }
 
+bool fontStackLooksSerif(const QString& stack) {
+  for (const QString& raw : stack.split(QLatin1Char('\n'), Qt::SkipEmptyParts)) {
+    const QString f = raw.trimmed().toLower();
+    if (f == QStringLiteral("serif") || f.contains(QStringLiteral("serif")) ||
+        f.contains(QStringLiteral("times")) || f.contains(QStringLiteral("palatino")) ||
+        f.contains(QStringLiteral("georgia")) || f.contains(QStringLiteral("garamond")) ||
+        f.contains(QStringLiteral("baskerville")) || f.contains(QStringLiteral("vollkorn")) ||
+        f.contains(QStringLiteral("cambria"))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 QStringList splitTopLevelSpaces(const QString& text) {
   QStringList out;
   QString cur;
@@ -504,8 +527,11 @@ QStringList splitTopLevelSpaces(const QString& text) {
   return out;
 }
 
-// CSS length → points. Handles px/rem/em/%/pt/numbers relative to a 16px root.
-qreal lengthToPt(const QString& value, const QHash<QString, QString>& vars) {
+qreal pxToPt(qreal px) { return px * 72.0 / 96.0; }
+qreal ptToPx(qreal pt) { return pt * 96.0 / 72.0; }
+
+// CSS length → points. Handles px/rem/em/%/pt/numbers relative to the supplied em size.
+qreal lengthToPt(const QString& value, const QHash<QString, QString>& vars, qreal emPx = 16.0) {
   const QString resolved = CssThemeParser::resolveVars(value, vars).trimmed();
   if (resolved.isEmpty()) { return 0.0; }
   // Parse leading number (optional sign, digits, decimal point).
@@ -519,11 +545,12 @@ qreal lengthToPt(const QString& value, const QHash<QString, QString>& vars) {
   bool ok = false;
   const qreal n = numStr.toDouble(&ok);
   if (!ok) { return 0.0; }
-  if (unit == QStringLiteral("px")) { return n * 72.0 / 96.0; }
+  if (unit == QStringLiteral("px")) { return pxToPt(n); }
   if (unit == QStringLiteral("pt")) { return n; }
-  if (unit == QStringLiteral("rem") || unit == QStringLiteral("em")) { return n * 16.0 * 72.0 / 96.0; }
-  if (unit == QStringLiteral("%")) { return n / 100.0 * 16.0 * 72.0 / 96.0; }
-  if (unit.isEmpty()) { return n * 72.0 / 96.0; }  // bare number → treat as px
+  if (unit == QStringLiteral("rem")) { return pxToPt(n * 16.0); }
+  if (unit == QStringLiteral("em")) { return pxToPt(n * emPx); }
+  if (unit == QStringLiteral("%")) { return pxToPt(n / 100.0 * emPx); }
+  if (unit.isEmpty()) { return pxToPt(n); }  // bare number → treat as px
   return 0.0;
 }
 
@@ -612,6 +639,53 @@ qreal borderWidthPx(const QString& value, const QHash<QString, QString>& vars, q
     if (px > 0.0) { return px; }
   }
   return 0.0;
+}
+
+Qt::Alignment parseTextAlign(const QString& raw, const QHash<QString, QString>& vars) {
+  const QString v = CssThemeParser::resolveVars(raw, vars).trimmed().toLower();
+  if (v == QStringLiteral("left") || v == QStringLiteral("start")) { return Qt::AlignLeft; }
+  if (v == QStringLiteral("right") || v == QStringLiteral("end")) { return Qt::AlignRight; }
+  if (v == QStringLiteral("center")) { return Qt::AlignHCenter; }
+  if (v == QStringLiteral("justify")) { return Qt::AlignJustify; }
+  return Qt::Alignment();
+}
+
+struct ParsedFontWeight { int weight = 0; bool present = false; };
+ParsedFontWeight parseFontWeight(const QString& raw, const QHash<QString, QString>& vars) {
+  const QString v = CssThemeParser::resolveVars(raw, vars).trimmed().toLower();
+  if (v.isEmpty()) { return {}; }
+  if (v == QStringLiteral("normal")) { return {QFont::Normal, true}; }
+  if (v == QStringLiteral("bold") || v == QStringLiteral("bolder")) { return {QFont::Bold, true}; }
+  if (v == QStringLiteral("lighter")) { return {QFont::Light, true}; }
+  bool ok = false;
+  const int numeric = v.toInt(&ok);
+  if (ok) { return {qBound(static_cast<int>(QFont::Thin), numeric, static_cast<int>(QFont::Black)), true}; }
+  return {};
+}
+
+struct ParsedItalic { bool italic = false; bool present = false; };
+ParsedItalic parseFontItalic(const QString& raw, const QHash<QString, QString>& vars) {
+  const QString v = CssThemeParser::resolveVars(raw, vars).trimmed().toLower();
+  if (v == QStringLiteral("italic") || v == QStringLiteral("oblique")) { return {true, true}; }
+  if (v == QStringLiteral("normal")) { return {false, true}; }
+  return {};
+}
+
+qreal parseLineHeightMultiplier(const QString& raw, const QHash<QString, QString>& vars, qreal fontPx) {
+  const QString v = CssThemeParser::resolveVars(raw, vars).trimmed().toLower();
+  if (v.isEmpty() || v == QStringLiteral("normal")) { return 0.0; }
+  bool ok = false;
+  const qreal n = v.toDouble(&ok);
+  if (ok && n > 0.0) { return n; }
+  if (fontPx <= 0.0) { return 0.0; }
+  const qreal px = lengthToPx(v, vars, fontPx);
+  return px > 0.0 ? px / fontPx : 0.0;
+}
+
+qreal headingEmPx(const ThemeTypography& ty, int level, qreal bodyPx) {
+  const int idx = qBound(0, level - 1, 5);
+  if (ty.headingSizePt[idx] > 0.0) { return ptToPx(ty.headingSizePt[idx]); }
+  return bodyPx > 0.0 ? bodyPx : 16.0;
 }
 
 QString varValue(const QHash<QString, QString>& vars, const char* name) {
@@ -904,7 +978,8 @@ std::vector<FlatDecl> filterPseudoFlat(const std::vector<FlatDecl>& flat, const 
 }
 
 std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& flat,
-                                                   const QHash<QString, QString>& vars, qreal emPx) {
+                                                   const QHash<QString, QString>& vars,
+                                                   const std::function<qreal(const QString&)>& emPxForHost) {
   struct Key { QString host; QString pseudo; };
   std::vector<Key> keys;
   const auto seen = [&](const QString& h, const QString& p) {
@@ -922,6 +997,7 @@ std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& f
   for (const Key& k : keys) {
     const std::vector<FlatDecl> sub = filterPseudoFlat(flat, k.host, k.pseudo);
     if (sub.empty()) { continue; }
+    const qreal emPx = emPxForHost(k.host);
     PseudoElementRule rule;
     rule.host = k.host;
     rule.pseudo = k.pseudo;
@@ -956,6 +1032,11 @@ std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& f
     const qreal w = lengthToPx(bestValue(sub, {QStringLiteral("width")}, allPred), vars, emPx);
     const qreal h = lengthToPx(bestValue(sub, {QStringLiteral("height")}, allPred), vars, emPx);
     if (w > 0 || h > 0) { rule.size = QSizeF(w, h); }
+    const QString bb = bestValue(sub,
+        {QStringLiteral("border-bottom"), QStringLiteral("border-bottom-color"),
+         QStringLiteral("border-color"), QStringLiteral("border")}, allPred);
+    rule.borderBottomColor = extractColor(bb, vars);
+    rule.borderBottomWidth = borderWidthPx(bb, vars, emPx);
     const QByteArray contentSvg = extractDataUri(contentRaw);
     const QByteArray bgSvg = extractDataUri(bgImg);
     const QByteArray maskSvg = extractDataUri(maskImg);
@@ -1203,6 +1284,9 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   const std::vector<QString> familyProps = {QStringLiteral("font-family")};
   const std::vector<QString> sizeProps = {QStringLiteral("font-size")};
   const std::vector<QString> lhProps = {QStringLiteral("line-height")};
+  const std::vector<QString> alignProps = {QStringLiteral("text-align")};
+  const std::vector<QString> weightProps = {QStringLiteral("font-weight")};
+  const std::vector<QString> styleProps = {QStringLiteral("font-style")};
   const std::vector<QString> marginProps = {QStringLiteral("margin")};
   const std::vector<QString> paddingProps = {QStringLiteral("padding")};
   const std::vector<QString> borderLeftProps = {QStringLiteral("border-left-color"), QStringLiteral("border-left"),
@@ -1234,9 +1318,6 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
 
   qreal bodyPx = lengthToPx(bestValue(flat, sizeProps, isHtmlOrBody), vars, 16.0);
   if (bodyPx <= 0.0) { bodyPx = 16.0; }
-  // ::before/::after decorations (gradients, SVG icons, text content, texture
-  // masks), grouped by host. Empty for themes that declare none.
-  d.decorations.pseudos = extractPseudoRules(flat, vars, bodyPx);
   // Host element own background-image gradients (h2 radial glow, hr gradient, …).
   d.decorations.backgrounds = extractElementBackgrounds(flat, vars);
   // :hover glow/tint (box-shadow subset) + transition durations.
@@ -1289,12 +1370,21 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   for (int level = 1; level <= 6; ++level) {
     QColor hc = colorToken(flat, vars, colorProps, [level](const SelInfo& s) { return isHeading(s, level); });
     if (hc.isValid()) { d.typography.headingColor[level - 1] = hc; }
-    const qreal hs = lengthToPt(bestValue(flat, sizeProps, [level](const SelInfo& s) { return isHeading(s, level); }), vars);
+    const qreal hs = lengthToPt(bestValue(flat, sizeProps, [level](const SelInfo& s) { return isHeading(s, level); }), vars, bodyPx);
     if (hs > 0.0) { d.typography.headingSizePt[level - 1] = hs; }
   }
   k.headingAccentColor = colorToken(flat, vars, borderLeftProps, [](const SelInfo& s) {
     return s.tag == QStringLiteral("h2") && !s.hover;
   });
+  const auto emPxForHost = [&](const QString& host) {
+    if (host.size() == 2 && host.at(0) == QLatin1Char('h') && host.at(1) >= QLatin1Char('1') && host.at(1) <= QLatin1Char('6')) {
+      return headingEmPx(d.typography, host.at(1).digitValue(), bodyPx);
+    }
+    return bodyPx;
+  };
+  // ::before/::after decorations (gradients, SVG icons, text content, texture
+  // masks), grouped by host. Empty for themes that declare none.
+  d.decorations.pseudos = extractPseudoRules(flat, vars, emPxForHost);
 
   // CSS document-flow metrics.
   d.spacing.paragraphMargin = boxToMarginsPx(bestValue(flat, marginProps, [](const SelInfo& s) { return s.tag == QStringLiteral("p"); }), vars, bodyPx);
@@ -1307,36 +1397,55 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
     d.spacing.listPaddingLeft = boxToMarginsPx(bestValue(flat, paddingProps, [](const SelInfo& s) { return s.tag == QStringLiteral("ul") || s.tag == QStringLiteral("ol"); }), vars, bodyPx).left();
   }
   for (int level = 1; level <= 6; ++level) {
-    d.spacing.headingMargin[level - 1] = boxToMarginsPx(bestValue(flat, marginProps, [level](const SelInfo& s) { return isHeading(s, level); }), vars, bodyPx);
-    d.spacing.headingPadding[level - 1] = boxToMarginsPx(bestValue(flat, paddingProps, [level](const SelInfo& s) { return isHeading(s, level); }), vars, bodyPx);
-    const qreal headingPadLeft = lengthToPx(bestValue(flat, {QStringLiteral("padding-left")}, [level](const SelInfo& s) { return isHeading(s, level); }), vars, bodyPx);
+    const qreal headingPx = headingEmPx(d.typography, level, bodyPx);
+    d.spacing.headingMargin[level - 1] = readBox(flat, vars, [level](const SelInfo& s) { return isHeading(s, level); }, QStringLiteral("margin"), headingPx).margins;
+    d.spacing.headingPadding[level - 1] = readBox(flat, vars, [level](const SelInfo& s) { return isHeading(s, level); }, QStringLiteral("padding"), headingPx).margins;
+    const qreal headingPadLeft = lengthToPx(bestValue(flat, {QStringLiteral("padding-left")}, [level](const SelInfo& s) { return isHeading(s, level); }), vars, headingPx);
     if (headingPadLeft > 0.0) { d.spacing.headingPadding[level - 1].setLeft(headingPadLeft); }
     const QString bb = bestValue(flat, {QStringLiteral("border-bottom"), QStringLiteral("border-bottom-color")}, [level](const SelInfo& s) { return isHeading(s, level); });
     d.spacing.headingBorderBottomColor[level - 1] = extractColor(bb, vars);
-    d.spacing.headingBorderBottomWidth[level - 1] = borderWidthPx(bb, vars, bodyPx);
+    d.spacing.headingBorderBottomWidth[level - 1] = borderWidthPx(bb, vars, headingPx);
     const QString bl = bestValue(flat, {QStringLiteral("border-left"), QStringLiteral("border-left-color")}, [level](const SelInfo& s) { return isHeading(s, level); });
     d.spacing.headingBorderLeftColor[level - 1] = extractColor(bl, vars);
-    d.spacing.headingBorderLeftWidth[level - 1] = borderWidthPx(bl, vars, bodyPx);
+    d.spacing.headingBorderLeftWidth[level - 1] = borderWidthPx(bl, vars, headingPx);
   }
 
   // Fonts / sizes / line-height. p,li writing font overrides body font for the
   // rendered prose; html/body still provide the base size and line-height.
   d.typography.bodyFont = firstFamily(bestValue(flat, familyProps, isParagraphText), vars);
+  if (d.typography.bodyFont.isEmpty()) { d.typography.bodyFont = firstFamily(bestValue(flat, familyProps, isWrite), vars); }
   if (d.typography.bodyFont.isEmpty()) { d.typography.bodyFont = firstFamily(bestValue(flat, familyProps, isHtmlOrBody), vars); }
   d.typography.headingFont = firstFamily(bestValue(flat, familyProps, isAnyHeading), vars);
+  if (d.typography.headingFont.isEmpty()) { d.typography.headingFont = firstFamily(bestValue(flat, familyProps, isWrite), vars); }
   if (d.typography.headingFont.isEmpty()) { d.typography.headingFont = firstFamily(bestValue(flat, familyProps, isHtmlOrBody), vars); }
   if (d.typography.headingFont.isEmpty()) { d.typography.headingFont = d.typography.bodyFont; }
+  if (fontStackLooksSerif(d.typography.bodyFont) || fontStackLooksSerif(d.typography.headingFont)) { k.serifBody = true; }
   d.typography.codeFont = firstFamily(bestValue(flat, familyProps, [](const SelInfo& s) { return isInlineCode(s) || isCodeBlock(s); }), vars);
-  d.typography.bodySizePt = lengthToPt(bestValue(flat, sizeProps, isHtmlOrBody), vars);
-  const QString lhRaw = bestValue(flat, lhProps, isHtmlOrBody);
-  bool lhOk = false;
-  const qreal lh = CssThemeParser::resolveVars(lhRaw, vars).trimmed().toDouble(&lhOk);
-  if (lhOk && lh > 0.0) { d.typography.lineHeight = lh; }
+  d.typography.bodySizePt = lengthToPt(bestValue(flat, sizeProps, isHtmlOrBody), vars, 16.0);
+  d.typography.bodyAlignment = parseTextAlign(bestValue(flat, alignProps, [](const SelInfo& s) {
+    return isParagraphText(s) || isWrite(s) || isHtmlOrBody(s);
+  }), vars);
+  const QString lhRaw = bestValue(flat, lhProps, [](const SelInfo& s) {
+    return isParagraphText(s) || isWrite(s) || isHtmlOrBody(s);
+  });
+  const qreal lh = parseLineHeightMultiplier(lhRaw, vars, bodyPx);
+  if (lh > 0.0) { d.typography.lineHeight = lh; }
   for (int level = 1; level <= 6; ++level) {
+    const qreal headingPx = headingEmPx(d.typography, level, bodyPx);
+    d.typography.headingAlignment[level - 1] = parseTextAlign(bestValue(flat, alignProps, [level](const SelInfo& s) { return isHeading(s, level); }), vars);
+    const ParsedFontWeight fw = parseFontWeight(bestValue(flat, weightProps, [level](const SelInfo& s) { return isHeading(s, level); }), vars);
+    if (fw.present) {
+      d.typography.headingFontWeight[level - 1] = fw.weight;
+      d.typography.headingFontWeightSet[level - 1] = true;
+    }
+    const ParsedItalic fs = parseFontItalic(bestValue(flat, styleProps, [level](const SelInfo& s) { return isHeading(s, level); }), vars);
+    if (fs.present) {
+      d.typography.headingItalic[level - 1] = fs.italic;
+      d.typography.headingItalicSet[level - 1] = true;
+    }
     const QString hlh = bestValue(flat, lhProps, [level](const SelInfo& s) { return isHeading(s, level); });
-    bool ok = false;
-    const qreal v = CssThemeParser::resolveVars(hlh, vars).trimmed().toDouble(&ok);
-    if (ok && v > 0.0) { d.typography.headingLineHeight[level - 1] = v; }
+    const qreal v = parseLineHeightMultiplier(hlh, vars, headingPx);
+    if (v > 0.0) { d.typography.headingLineHeight[level - 1] = v; }
   }
 
   // --- Tier 2: conventional :root variable vocabulary (gap fill) ----------

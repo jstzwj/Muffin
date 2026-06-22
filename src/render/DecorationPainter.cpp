@@ -140,22 +140,29 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
       const qreal s = (after->size.width() > 0 ? after->size.width() : em);
       const QColor tint = after->color.isValid() ? after->color : after->backgroundColor;
       paintIcon(painter, after->svgData, QRectF(anchor.x() + 4.0, anchor.y() + (em - s) / 2.0, s, s), tint, after->svgFromMask);
-    } else if ((after->background.kind != GradientSpec::Kind::None || after->backgroundColor.isValid()) && isHeading) {
-      // ::after underline bar. Width/height come from the rule (e.g. phycat's
-      // h1::after: width 40px, height 4px); centre it under the heading text.
-      const qreal barH = (after->size.height() > 0 ? after->size.height() : 2.0);
-      qreal barW = (after->size.width() > 0 ? after->size.width() : rect.width());
+    } else if ((after->background.kind != GradientSpec::Kind::None || after->backgroundColor.isValid() ||
+                (after->borderBottomColor.isValid() && after->borderBottomWidth > 0.0)) && isHeading) {
+      // ::after underline bar. Width/height come from the rule (e.g. Whitey's
+      // h2::after border-bottom: 100px centred; phycat's h1::after gradient bar).
+      const qreal borderW = after->borderBottomWidth > 0.0 ? after->borderBottomWidth : 0.0;
+      const qreal barH = (after->size.height() > 0 ? after->size.height() : qMax<qreal>(2.0, borderW));
+      qreal barW = (after->size.width() > 0 ? after->size.width() : (ctx.textBounds.isValid() ? ctx.textBounds.width() : rect.width()));
       barW = qMin(barW, rect.width());
-      const qreal textMid = ctx.textStart.x() >= 0 && ctx.textEnd.x() >= 0
-                                ? (ctx.textStart.x() + ctx.textEnd.x()) / 2.0
-                                : rect.center().x();
+      const qreal textMid = ctx.textBounds.isValid() ? ctx.textBounds.center().x()
+                            : (ctx.textStart.x() >= 0 && ctx.textEnd.x() >= 0
+                                   ? (ctx.textStart.x() + ctx.textEnd.x()) / 2.0
+                                   : rect.center().x());
       const QRectF bar(textMid - barW / 2.0, rect.bottom() - barH, barW, barH);
       painter.save();
       painter.setOpacity(after->opacity);
       if (after->background.kind != GradientSpec::Kind::None) {
         painter.fillRect(bar, GradientPainter::makeBrush(after->background, bar));
-      } else {
+      } else if (after->backgroundColor.isValid()) {
         painter.fillRect(bar, after->backgroundColor);
+      }
+      if (after->borderBottomColor.isValid() && after->borderBottomWidth > 0.0) {
+        painter.setPen(QPen(after->borderBottomColor, after->borderBottomWidth));
+        painter.drawLine(bar.bottomLeft(), bar.bottomRight());
       }
       painter.restore();
     }

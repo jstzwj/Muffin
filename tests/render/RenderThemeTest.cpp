@@ -151,6 +151,33 @@ void testLayoutForTheme(const MarkdownDocument& document, const RenderTheme& the
   require(mathHit.zone == HitTestResult::Zone::Math, QStringLiteral("%1 math hit should be math").arg(themeName));
 }
 
+void testThemeTypographyWeightStyleAndAlignment() {
+  ThemeDefinition def;
+  def.id = QStringLiteral("typography");
+  def.colors.text = QColor(QStringLiteral("#333333"));
+  def.colors.background = QColor(QStringLiteral("#ffffff"));
+  def.typography.bodyAlignment = Qt::AlignJustify;
+  def.typography.headingAlignment[0] = Qt::AlignHCenter;
+  def.typography.headingFontWeight[0] = QFont::Normal;
+  def.typography.headingFontWeightSet[0] = true;
+  def.typography.headingItalic[2] = true;
+  def.typography.headingItalicSet[2] = true;
+
+  const RenderTheme theme = RenderTheme::fromDefinition(def);
+  require(theme.textAlignment(BlockType::Paragraph) == Qt::AlignJustify,
+          QStringLiteral("paragraphs should use body text alignment"));
+  require(theme.textAlignment(BlockType::Heading, 1) == Qt::AlignHCenter,
+          QStringLiteral("explicit heading alignment should override body alignment"));
+  require(theme.textAlignment(BlockType::Heading, 2) == Qt::AlignJustify,
+          QStringLiteral("unset heading alignment should inherit body alignment"));
+  require(theme.headingFont(1).weight() == QFont::Normal,
+          QStringLiteral("explicit heading font-weight: normal should suppress bold fallback"));
+  require(!theme.headingFont(1).italic(), QStringLiteral("h1 should not be italic by default"));
+  require(theme.headingFont(2).weight() >= QFont::Bold,
+          QStringLiteral("unset heading font-weight should keep legacy bold fallback"));
+  require(theme.headingFont(3).italic(), QStringLiteral("explicit heading italic should apply"));
+}
+
 void testFromDefinitionReproducesBuiltIns() {
   // The whole theme-unification design hinges on fromDefinition(definition(id))
   // reproducing the matching built-in factory exactly — otherwise switching the
@@ -310,6 +337,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testThemeCodeFontFallbackOrder);
   RUN_TEST(testThemeCodeHighlightPalette);
   RUN_TEST(testThemeManagerSupportsBuiltInThemes);
+  RUN_TEST(testThemeTypographyWeightStyleAndAlignment);
   RUN_TEST(testFromDefinitionReproducesBuiltIns);
   runTest("testLayoutForTheme/github", [&] { testLayoutForTheme(document, RenderTheme::github(), QStringLiteral("github")); });
   runTest("testLayoutForTheme/newsprint", [&] { testLayoutForTheme(document, RenderTheme::newsprint(), QStringLiteral("newsprint")); });

@@ -53,6 +53,34 @@ void testInlineLayoutGeometryContract() {
   require(!styled.selectionRects(0, styled.plainText().size()).isEmpty(), QStringLiteral("inline layout should produce styled selection rects"));
 }
 
+void testInlineLayoutAlignmentAffectsGeometryAndVisualBounds() {
+  RenderTheme theme = RenderTheme::github();
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::text(QStringLiteral("center")));
+
+  InlineLayout left;
+  left.build(inlines, theme, 300.0, theme.paragraphFont());
+
+  InlineLayout::BuildOptions options;
+  options.alignment = Qt::AlignHCenter;
+  InlineLayout centered;
+  centered.build(inlines, theme, 300.0, theme.paragraphFont(), options);
+
+  const QRectF leftCursor = left.cursorRect(0);
+  const QRectF centeredCursor = centered.cursorRect(0);
+  require(centeredCursor.left() > leftCursor.left() + 50.0,
+          QStringLiteral("center alignment should shift cursor geometry into the line"));
+  require(centered.hitTestTextOffset(QPointF(centeredCursor.left(), centeredCursor.center().y())) == 0,
+          QStringLiteral("hit-testing should round-trip against centered QTextLayout geometry"));
+  const QVector<QRectF> selection = centered.selectionRects(0, centered.plainText().size());
+  require(!selection.isEmpty() && qAbs(selection.first().left() - centeredCursor.left()) < 1.0,
+          QStringLiteral("selection rect should start at the centered text position"));
+  const QRectF bounds = centered.visualTextBounds();
+  require(bounds.left() > 50.0, QStringLiteral("visual text bounds should include centered x offset"));
+  require(qAbs(bounds.center().x() - 150.0) < 5.0,
+          QStringLiteral("visual text bounds should be centred in the layout width"));
+}
+
 void testInlineLayoutFirstLineBaselineFollowsLineHeight() {
   // Placeholder text and list markers are drawn at the first line's baseline.
   // That baseline must include the line-height centering offset (line.y()), or
@@ -435,6 +463,7 @@ int main(int argc, char** argv) {
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testInlineLayoutGeometryContract);
+  RUN_TEST(testInlineLayoutAlignmentAffectsGeometryAndVisualBounds);
   RUN_TEST(testInlineLayoutFirstLineBaselineFollowsLineHeight);
   RUN_TEST(testInlineLayoutZeroWidthTabIndentGeometry);
   RUN_TEST(testInlineLayoutStyleFormats);

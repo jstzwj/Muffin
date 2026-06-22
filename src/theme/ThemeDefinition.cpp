@@ -24,6 +24,23 @@ QColor parseColor(const QJsonObject& colors, const char* key) {
   return c.isValid() ? c : QColor();
 }
 
+Qt::Alignment alignmentFromString(const QString& value) {
+  const QString v = value.trimmed().toLower();
+  if (v == QStringLiteral("left")) { return Qt::AlignLeft; }
+  if (v == QStringLiteral("right")) { return Qt::AlignRight; }
+  if (v == QStringLiteral("center")) { return Qt::AlignHCenter; }
+  if (v == QStringLiteral("justify")) { return Qt::AlignJustify; }
+  return Qt::Alignment();
+}
+
+QString alignmentToString(Qt::Alignment alignment) {
+  if (alignment & Qt::AlignJustify) { return QStringLiteral("justify"); }
+  if (alignment & Qt::AlignHCenter) { return QStringLiteral("center"); }
+  if (alignment & Qt::AlignRight) { return QStringLiteral("right"); }
+  if (alignment & Qt::AlignLeft) { return QStringLiteral("left"); }
+  return QString();
+}
+
 // @font-face declared family name (lowercased) → the family name QFontDatabase
 // actually registered the font under. CSS @font-face aliases a declared name to
 // the font file regardless of the file's internal name; QFontDatabase registers
@@ -127,6 +144,25 @@ ThemeDefinition ThemeDefinition::fromJson(const QJsonObject& json, const QString
       QColor hc(hcols.at(i).toString());
       if (hc.isValid()) { ty.headingColor[i] = hc; }
     }
+    ty.bodyAlignment = alignmentFromString(t.value(QStringLiteral("bodyAlignment")).toString());
+    const QJsonArray aligns = t.value(QStringLiteral("headingAlignment")).toArray();
+    for (int i = 0; i < 6 && i < aligns.size(); ++i) {
+      ty.headingAlignment[i] = alignmentFromString(aligns.at(i).toString());
+    }
+    const QJsonArray weights = t.value(QStringLiteral("headingFontWeight")).toArray();
+    for (int i = 0; i < 6 && i < weights.size(); ++i) {
+      if (weights.at(i).isDouble()) {
+        ty.headingFontWeight[i] = weights.at(i).toInt();
+        ty.headingFontWeightSet[i] = true;
+      }
+    }
+    const QJsonArray italics = t.value(QStringLiteral("headingItalic")).toArray();
+    for (int i = 0; i < 6 && i < italics.size(); ++i) {
+      if (italics.at(i).isBool()) {
+        ty.headingItalic[i] = italics.at(i).toBool();
+        ty.headingItalicSet[i] = true;
+      }
+    }
   }
 
   // Derive chrome defaults from the document palette when a theme file omits
@@ -180,9 +216,15 @@ QJsonObject ThemeDefinition::toJson() const {
   // Only emit typography when the theme actually sets any of it, so legacy
   // themes round-trip unchanged.
   const ThemeTypography& ty = typography;
+  bool anyHeadingTypography = false;
+  for (int i = 0; i < 6; ++i) {
+    anyHeadingTypography = anyHeadingTypography || ty.headingAlignment[i] != Qt::Alignment() ||
+                           ty.headingFontWeightSet[i] || ty.headingItalicSet[i];
+  }
   const bool hasTypo = !(ty.bodyFont.isEmpty() && ty.headingFont.isEmpty() &&
                          ty.codeFont.isEmpty() && ty.mathFont.isEmpty() &&
-                         ty.bodySizePt == 0.0 && ty.lineHeight == 0.0);
+                         ty.bodySizePt == 0.0 && ty.lineHeight == 0.0 &&
+                         ty.bodyAlignment == Qt::Alignment() && !anyHeadingTypography);
   if (hasTypo) {
     QJsonObject t;
     if (!ty.bodyFont.isEmpty()) t.insert(QStringLiteral("bodyFont"), ty.bodyFont);
@@ -209,6 +251,42 @@ QJsonObject ThemeDefinition::toJson() const {
       }
     }
     if (anyHcol) t.insert(QStringLiteral("headingColor"), hcols);
+    const QString bodyAlignment = alignmentToString(ty.bodyAlignment);
+    if (!bodyAlignment.isEmpty()) { t.insert(QStringLiteral("bodyAlignment"), bodyAlignment); }
+    QJsonArray aligns;
+    bool anyAlign = false;
+    for (int i = 0; i < 6; ++i) {
+      const QString a = alignmentToString(ty.headingAlignment[i]);
+      if (!a.isEmpty()) {
+        aligns.append(a);
+        anyAlign = true;
+      } else {
+        aligns.append(QJsonValue::Null);
+      }
+    }
+    if (anyAlign) { t.insert(QStringLiteral("headingAlignment"), aligns); }
+    QJsonArray weights;
+    bool anyWeight = false;
+    for (int i = 0; i < 6; ++i) {
+      if (ty.headingFontWeightSet[i]) {
+        weights.append(ty.headingFontWeight[i]);
+        anyWeight = true;
+      } else {
+        weights.append(QJsonValue::Null);
+      }
+    }
+    if (anyWeight) { t.insert(QStringLiteral("headingFontWeight"), weights); }
+    QJsonArray italics;
+    bool anyItalic = false;
+    for (int i = 0; i < 6; ++i) {
+      if (ty.headingItalicSet[i]) {
+        italics.append(ty.headingItalic[i]);
+        anyItalic = true;
+      } else {
+        italics.append(QJsonValue::Null);
+      }
+    }
+    if (anyItalic) { t.insert(QStringLiteral("headingItalic"), italics); }
     root.insert(QStringLiteral("typography"), t);
   }
   return root;

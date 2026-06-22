@@ -162,10 +162,16 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   t.mathFont_ = ty.mathFont;
   t.bodySizePt_ = ty.bodySizePt;
   t.lineHeight_ = ty.lineHeight;
+  t.bodyAlignment_ = ty.bodyAlignment;
   for (int i = 0; i < 6; ++i) {
     t.headingSizePt_[i] = ty.headingSizePt[i];
     t.headingLineHeight_[i] = ty.headingLineHeight[i];
     t.headingColor_[i] = ty.headingColor[i];
+    t.headingAlignment_[i] = ty.headingAlignment[i];
+    t.headingFontWeight_[i] = ty.headingFontWeight[i];
+    t.headingFontWeightSet_[i] = ty.headingFontWeightSet[i];
+    t.headingItalic_[i] = ty.headingItalic[i];
+    t.headingItalicSet_[i] = ty.headingItalicSet[i];
   }
   t.viewportBackgroundColor_ = definition.page.viewportBackground;
   t.pageBackgroundColor_ = definition.page.pageBackground;
@@ -357,6 +363,14 @@ qreal RenderTheme::lineHeightMultiplier(BlockType type, int headingLevel) const 
   return lineHeight_;
 }
 
+Qt::Alignment RenderTheme::textAlignment(BlockType type, int headingLevel) const {
+  if (type == BlockType::Heading) {
+    const Qt::Alignment heading = headingAlignment_[qBound(0, headingLevel - 1, 5)];
+    if (heading != Qt::Alignment()) { return heading; }
+  }
+  return bodyAlignment_;
+}
+
 QFont RenderTheme::paragraphFont() const {
   const QString& platform = serifBody_ ? serifFamily() : sansFamily();
   QFont font;
@@ -375,8 +389,15 @@ QFont RenderTheme::paragraphFont() const {
 QFont RenderTheme::headingFont(int level) const {
   static constexpr qreal sizes[] = {24.0, 19.0, 16.0, 14.0, 12.5, 12.0};
   QFont font = paragraphFont();
-  font.setBold(true);
   const int idx = qBound(0, level - 1, 5);
+  if (headingFontWeightSet_[idx]) {
+    font.setWeight(static_cast<QFont::Weight>(qBound(static_cast<int>(QFont::Thin), headingFontWeight_[idx], static_cast<int>(QFont::Black))));
+  } else {
+    font.setBold(true);
+  }
+  if (headingItalicSet_[idx]) {
+    font.setItalic(headingItalic_[idx]);
+  }
   const qreal themeSize = headingSizePt_[idx];
   font.setPointSizeF(scaledFont(themeSize > 0.0 ? themeSize : sizes[idx]));
   if (!headingFont_.isEmpty()) {

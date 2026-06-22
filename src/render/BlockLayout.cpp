@@ -821,20 +821,15 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
         if (type_ == BlockType::Heading) {
           painter.save();
           const QMarginsF pad = theme.headingPadding(headingLevel_);
-          const QColor leftColor = theme.headingBorderLeftColor(headingLevel_).isValid()
-                                     ? theme.headingBorderLeftColor(headingLevel_)
-                                     : theme.headingAccentColor();
+          const QColor leftColor = theme.headingBorderLeftColor(headingLevel_);
           const qreal leftWidth = theme.headingBorderLeftWidth(headingLevel_);
           if (leftColor.isValid() && leftWidth > 0.0) {
             painter.setPen(Qt::NoPen);
             painter.setBrush(leftColor);
             painter.drawRect(QRectF(viewRect.left() - pad.left(), viewRect.top(), leftWidth, inlineLayout_->height()));
           }
-          const QColor bottomColor = theme.headingBorderBottomColor(headingLevel_).isValid()
-                                        ? theme.headingBorderBottomColor(headingLevel_)
-                                        : (headingLevel_ <= 2 && !leftColor.isValid() ? theme.codeBorderColor() : QColor());
-          const qreal bottomWidth = theme.headingBorderBottomWidth(headingLevel_) > 0.0 ? theme.headingBorderBottomWidth(headingLevel_)
-                                                                                       : (headingLevel_ <= 2 && bottomColor.isValid() ? 1.0 : 0.0);
+          const QColor bottomColor = theme.headingBorderBottomColor(headingLevel_);
+          const qreal bottomWidth = theme.headingBorderBottomWidth(headingLevel_);
           if (bottomColor.isValid() && bottomWidth > 0.0) {
             painter.setPen(QPen(bottomColor, bottomWidth));
             const qreal y = viewRect.top() + inlineLayout_->height() + theme.blockSpacing() * 0.15;
@@ -847,8 +842,11 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
           dctx.headingLevel = headingLevel_;
           dctx.font = theme.headingFont(headingLevel_);
           const qreal headingPaintX = viewRect.left() + theme.headingPadding(headingLevel_).left();
-          dctx.textStart = QPointF(headingPaintX, viewRect.top());
-          dctx.textEnd = QPointF(headingPaintX + inlineLayout_->size().width(), viewRect.top());
+          const QRectF textBounds = inlineLayout_->visualTextBounds().translated(headingPaintX, viewRect.top());
+          dctx.textBounds = textBounds;
+          dctx.textStart = textBounds.isValid() ? textBounds.topLeft() : QPointF(headingPaintX, viewRect.top());
+          dctx.textEnd = textBounds.isValid() ? QPointF(textBounds.right(), textBounds.top())
+                                              : QPointF(headingPaintX + inlineLayout_->size().width(), viewRect.top());
           DecorationPainter::paintPseudoDecorations(
               painter, theme, QStringLiteral("h%1").arg(headingLevel_), viewRect, dctx);
         }

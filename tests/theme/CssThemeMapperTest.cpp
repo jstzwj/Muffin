@@ -10,6 +10,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QFont>
 #include <QHash>
 #include <QString>
 #include <QtGlobal>
@@ -117,6 +118,44 @@ void testSampleTheme() {
   require(d.colors.isDark == false, QStringLiteral("light background → not dark"));
 }
 
+void testWhiteyTypographySemantics() {
+  const QString css = QStringLiteral(
+      "html { font-size: 19px; }"
+      "body { background:#fefefe; color:#333; font-family:'Vollkorn', Palatino, Times; line-height:1.4; text-align:justify; }"
+      "#write { line-height:1.53; }"
+      "h1 { font-size:3em; margin-top:1.6em; font-weight:normal; }"
+      "h2 { margin-top:2em; font-weight:normal; }"
+      "h3 { margin-top:3em; font-weight:normal; font-style:italic; }"
+      "h1, h2, h3 { text-align:center; }"
+      "h2:after { border-bottom:1px solid #2f2f2f; content:''; width:100px; display:block; margin:0 auto; height:1px; }");
+  const ThemeDefinition d = CssThemeMapper::fromCss(css, QStringLiteral("whitey-like"), QString());
+  require(d.valid(), QStringLiteral("whitey-like CSS should produce a valid definition"));
+  require(d.colors.serifBody, QStringLiteral("serif font stacks should flip the serif body flag"));
+  require(d.typography.bodyFont.contains(QStringLiteral("Palatino")) && d.typography.bodyFont.contains(QStringLiteral("Times")),
+          QStringLiteral("body font stack should preserve Whitey's serif fallback families"));
+  require(qAbs(d.typography.bodySizePt - 14.25) < 0.01, QStringLiteral("19px root/body font-size should map to 14.25pt"));
+  require(qAbs(d.typography.lineHeight - 1.53) < 0.001, QStringLiteral("#write line-height should override body line-height"));
+  require(d.typography.bodyAlignment == Qt::AlignJustify, QStringLiteral("body text-align: justify should be captured"));
+  for (int i = 0; i < 3; ++i) {
+    require(d.typography.headingAlignment[i] == Qt::AlignHCenter, QStringLiteral("h%1 text-align should be centered").arg(i + 1));
+    require(d.typography.headingFontWeightSet[i], QStringLiteral("h%1 font-weight should be explicit").arg(i + 1));
+    require(d.typography.headingFontWeight[i] == QFont::Normal, QStringLiteral("h%1 font-weight should be normal").arg(i + 1));
+  }
+  require(d.typography.headingItalicSet[2] && d.typography.headingItalic[2], QStringLiteral("h3 font-style: italic should be captured"));
+  require(qAbs(d.typography.headingSizePt[0] - 42.75) < 0.01, QStringLiteral("h1 3em should be relative to 19px body font"));
+  require(qAbs(d.spacing.headingMargin[0].top() - 91.2) < 0.5, QStringLiteral("h1 margin-top 1.6em should use h1 font-size as em"));
+
+  const PseudoElementRule* h2After = nullptr;
+  for (const PseudoElementRule& r : d.decorations.pseudos) {
+    if (r.host == QStringLiteral("h2") && r.pseudo == QStringLiteral("after")) { h2After = &r; }
+  }
+  require(h2After != nullptr, QStringLiteral("Whitey h2:after should be captured as a pseudo decoration"));
+  require(qAbs(h2After->size.width() - 100.0) < 0.01, QStringLiteral("h2:after width should be 100px"));
+  require(qAbs(h2After->size.height() - 1.0) < 0.01, QStringLiteral("h2:after height should be 1px"));
+  require(h2After->borderBottomColor == QColor(QStringLiteral("#2f2f2f")), QStringLiteral("h2:after border-bottom colour should be captured"));
+  require(qAbs(h2After->borderBottomWidth - 1.0) < 0.01, QStringLiteral("h2:after border-bottom width should be captured"));
+}
+
 void testMistBlueFixture(const QString& path) {
   QFile f(path);
   require(f.open(QIODevice::ReadOnly | QIODevice::Text), QStringLiteral("could not open mist-blue fixture"));
@@ -150,7 +189,7 @@ void testMistBlueFixture(const QString& path) {
   require(qAbs(d.typography.headingSizePt[1] - 18.6) < 0.01, QStringLiteral("h2 1.55rem should map to 18.6pt"));
   require(qAbs(d.spacing.paragraphMargin.top() - 11.52) < 0.01 && qAbs(d.spacing.paragraphMargin.bottom() - 11.52) < 0.01,
           QStringLiteral("p margin 0.72em should map"));
-  require(qAbs(d.spacing.headingPadding[1].left() - 9.28) < 0.01, QStringLiteral("h2 padding-left 0.58em should map"));
+  require(qAbs(d.spacing.headingPadding[1].left() - 14.384) < 0.01, QStringLiteral("h2 padding-left 0.58em should use h2 font-size as em"));
   require(d.spacing.headingBorderLeftColor[1].name(QColor::HexRgb) == QStringLiteral("#4c6f91"),
           QStringLiteral("h2 left border colour should map"));
   require(d.colors.isDark == false, QStringLiteral("mist-blue is a light theme"));
@@ -850,6 +889,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testResolveVars);
   RUN_TEST(testSplitCommas);
   RUN_TEST(testSampleTheme);
+  RUN_TEST(testWhiteyTypographySemantics);
   RUN_TEST(testPureVariableTheme);
   RUN_TEST(testCascadeBeatsVariable);
   RUN_TEST(testTextOnlySynthesisesBackground);

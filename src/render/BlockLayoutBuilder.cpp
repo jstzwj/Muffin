@@ -27,6 +27,18 @@ namespace {
 
 Q_LOGGING_CATEGORY(blockBuildPerf, "muffin.perf", QtWarningMsg)
 
+bool hasHeadingAfterDecoration(const RenderTheme& theme, int level) {
+  const QString host = QStringLiteral("h%1").arg(level);
+  for (const PseudoElementRule& rule : theme.decorations().pseudos) {
+    if (rule.host == host && rule.pseudo == QStringLiteral("after") &&
+        (rule.background.kind != GradientSpec::Kind::None || rule.backgroundColor.isValid() ||
+         (rule.borderBottomColor.isValid() && rule.borderBottomWidth > 0.0) || !rule.svgData.isEmpty())) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // markdown/showLineNumbers (default off): reserve a left gutter in code fences for line numbers.
 bool showLineNumbersEnabled() {
   return QSettings().value(QStringLiteral("markdown/showLineNumbers"), false).toBool();
@@ -378,12 +390,15 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
     options.baseTextColor = theme.headingColor(node.headingLevel());
   }
   options.lineHeightMultiplier = theme.lineHeightMultiplier(node.type(), node.headingLevel());
+  options.alignment = theme.textAlignment(node.type(), node.headingLevel());
   {
     BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
     inlineLayout->build(node.inlines(), editableSource, theme, textWidth, font, options);
   }
   qreal height = inlineLayout->height();
-  if (node.type() == BlockType::Heading && node.headingLevel() <= 2) {
+  if (node.type() == BlockType::Heading &&
+      ((theme.headingBorderBottomColor(node.headingLevel()).isValid() && theme.headingBorderBottomWidth(node.headingLevel()) > 0.0) ||
+       hasHeadingAfterDecoration(theme, node.headingLevel()))) {
     height += theme.blockSpacing() * 0.35;
   }
   layout->setContentSourceStart(projectionBase);

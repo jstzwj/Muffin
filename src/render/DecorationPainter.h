@@ -4,10 +4,10 @@
 
 #include <QFont>
 #include <QPointF>
+#include <QRectF>
 #include <QString>
 
 class QPainter;
-class QRectF;
 
 namespace muffin {
 
@@ -24,6 +24,7 @@ struct PaintContext {
   QFont font;                      // host font (sizes icons / content text)
   QPointF textEnd = QPointF(-1.0, -1.0);   // where heading text ends (for an ::after icon)
   QPointF textStart = QPointF(-1.0, -1.0);  // where heading text starts (for a ::before icon)
+  QRectF textBounds;                         // visual text bounds after QTextLayout alignment
 };
 
 // Fill the host element's own background gradient (e.g. h2 radial glow) into

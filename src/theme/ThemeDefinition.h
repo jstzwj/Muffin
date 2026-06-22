@@ -6,6 +6,7 @@
 #include <QPointF>
 #include <QSizeF>
 #include <QString>
+#include <Qt>
 
 #include <optional>
 #include <vector>
@@ -82,6 +83,20 @@ struct ThemeTypography {
 
   // Per-heading text colour. Invalid → fall back to the body text colour.
   QColor headingColor[6];
+
+  // CSS text-align. Empty alignment means unset; headings then inherit the body
+  // alignment at RenderTheme time. Stored as Qt alignment because the native
+  // renderer feeds it straight into QTextOption.
+  Qt::Alignment bodyAlignment;
+  Qt::Alignment headingAlignment[6];
+
+  // CSS font-weight / font-style for headings. The explicit flags distinguish
+  // `font-weight: normal` from an omitted declaration, so legacy themes can keep
+  // their bold heading fallback while CSS themes like Whitey can opt out.
+  int headingFontWeight[6] = {};
+  bool headingFontWeightSet[6] = {};
+  bool headingItalic[6] = {};
+  bool headingItalicSet[6] = {};
 };
 
 // The CSS-theme page model: body/html paint the viewport, while #write is a centered
@@ -158,6 +173,8 @@ struct PseudoElementRule {
   QSizeF maskTile = QSizeF(20, 20);  // mask-size
   QSizeF size;            // width/height (invalid/0 ⇒ content/auto)
   QMarginsF insets;       // top/left/bottom/right offsets
+  QColor borderBottomColor;
+  qreal borderBottomWidth = 0.0;
   qreal opacity = 1.0;
   bool present = false;
 };

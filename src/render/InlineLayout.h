@@ -16,6 +16,7 @@
 #include <QStringView>
 #include <QTextLayout>
 #include <QString>
+#include <Qt>
 #include <QVector>
 
 #include <functional>
@@ -42,6 +43,7 @@ public:
     // colours (links, code, highlight) still take precedence per span.
     QColor baseTextColor;
     qreal lineHeightMultiplier = 0.0;
+    Qt::Alignment alignment;
   };
 
   InlineLayout() = default;
@@ -57,6 +59,7 @@ public:
 
   QSizeF size() const;
   qreal height() const;
+  QRectF visualTextBounds() const;
   // Baseline Y of the first text line, relative to the layout origin. Includes
   // the line-height centering offset (line.y()), so callers drawing decoration
   // that must align with the first line (placeholder text, list markers) land on
@@ -176,6 +179,7 @@ private:
   QColor textLayoutCodeBackgroundColor_;
   QColor baseTextColorOverride_;  // invalid → theme.textColor() for plain runs
   qreal lineHeightMultiplier_ = 0.0;
+  Qt::Alignment alignment_;
   QColor textLayoutCodeBorderColor_;
   // CSS inline decorations (Phase 3). link ::before icon (mask-tinted SVG) +
   // mark background-image gradient. Empty/None → nothing painted.

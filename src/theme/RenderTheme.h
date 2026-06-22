@@ -7,6 +7,7 @@
 #include <QColor>
 #include <QFont>
 #include <QMarginsF>
+#include <Qt>
 
 namespace muffin {
 
@@ -53,6 +54,7 @@ public:
   QColor headingBorderLeftColor(int level) const;
   qreal headingBorderLeftWidth(int level) const;
   qreal lineHeightMultiplier(BlockType type, int headingLevel = 0) const;
+  Qt::Alignment textAlignment(BlockType type, int headingLevel = 0) const;
 
   QFont paragraphFont() const;
   QFont headingFont(int level) const;
@@ -113,6 +115,12 @@ private:
   qreal headingSizePt_[6] = {};
   qreal headingLineHeight_[6] = {};
   QColor headingColor_[6];
+  Qt::Alignment bodyAlignment_;
+  Qt::Alignment headingAlignment_[6];
+  int headingFontWeight_[6] = {};
+  bool headingFontWeightSet_[6] = {};
+  bool headingItalic_[6] = {};
+  bool headingItalicSet_[6] = {};
 
   QColor viewportBackgroundColor_;
   QColor pageBackgroundColor_;

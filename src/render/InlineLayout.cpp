@@ -158,6 +158,7 @@ void InlineLayout::build(
   }
   baseTextColorOverride_ = options.baseTextColor;
   lineHeightMultiplier_ = options.lineHeightMultiplier;
+  alignment_ = options.alignment;
   projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState, options.sourceBase, baseFont.pointSizeF(),
                                  options.pendingPrefixLength, options.smartPunct);
   buildOffsetMapFromProjection();
@@ -177,6 +178,26 @@ QSizeF InlineLayout::size() const {
 
 qreal InlineLayout::height() const {
   return size_.height();
+}
+
+QRectF InlineLayout::visualTextBounds() const {
+  if (!textLayout_ || textLayout_->lineCount() == 0) {
+    return QRectF();
+  }
+  QRectF bounds;
+  bool have = false;
+  for (int i = 0; i < textLayout_->lineCount(); ++i) {
+    const QTextLine line = textLayout_->lineAt(i);
+    if (!line.isValid()) { continue; }
+    const int start = line.textStart();
+    const int end = start + line.textLength();
+    const qreal x1 = line.cursorToX(start);
+    const qreal x2 = line.cursorToX(end);
+    const QRectF lineRect(qMin(x1, x2), line.y(), qAbs(x2 - x1), line.height());
+    bounds = have ? bounds.united(lineRect) : lineRect;
+    have = true;
+  }
+  return bounds;
 }
 
 qreal InlineLayout::firstLineBaselineY() const {
@@ -866,6 +887,9 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
   textLayout_ = std::make_unique<QTextLayout>(layoutText_.isEmpty() ? QStringLiteral(" ") : layoutText_, baseFont);
   QTextOption option;
   option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+  if (alignment_ != Qt::Alignment()) {
+    option.setAlignment(alignment_);
+  }
   textLayout_->setTextOption(option);
   textLayout_->setFormats(textLayoutFormats(theme, baseFont));
 
