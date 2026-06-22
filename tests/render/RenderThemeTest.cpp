@@ -315,6 +315,25 @@ void testDecoratedThemePaints(const MarkdownDocument& document) {
   require(drew, QStringLiteral("decorations should paint non-background pixels"));
 }
 
+void testCodeBorderNeverRendersBlack() {
+  // Regression: themes that declare no `border` on `code`/`.md-fences`
+  // (Night, Pixyll, Newsprint, Whitey) left codeBorderColor invalid, and Qt
+  // paints an unset QPen/QBrush as solid black — a black box around every
+  // inline code span. deriveChromeDefaults now derives a soft edge off the code
+  // background so the colour is always valid on every theme.
+  const RenderTheme themes[] = {
+      RenderTheme::github(), RenderTheme::newsprint(), RenderTheme::night(),
+      RenderTheme::pixyll(), RenderTheme::whitey()};
+  for (const RenderTheme& t : themes) {
+    const QColor c = t.codeBorderColor();
+    require(c.isValid(),
+            QStringLiteral("codeBorderColor must be valid (an invalid colour paints as solid black)"));
+    const bool pureBlack = c.red() == 0 && c.green() == 0 && c.blue() == 0;
+    require(!pureBlack,
+            QStringLiteral("codeBorderColor must not be pure black (got %1)").arg(c.name()));
+  }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -339,6 +358,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testThemeManagerSupportsBuiltInThemes);
   RUN_TEST(testThemeTypographyWeightStyleAndAlignment);
   RUN_TEST(testFromDefinitionReproducesBuiltIns);
+  RUN_TEST(testCodeBorderNeverRendersBlack);
   runTest("testLayoutForTheme/github", [&] { testLayoutForTheme(document, RenderTheme::github(), QStringLiteral("github")); });
   runTest("testLayoutForTheme/newsprint", [&] { testLayoutForTheme(document, RenderTheme::newsprint(), QStringLiteral("newsprint")); });
   runTest("testLayoutForTheme/night", [&] { testLayoutForTheme(document, RenderTheme::night(), QStringLiteral("night")); });

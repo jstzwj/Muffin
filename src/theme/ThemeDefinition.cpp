@@ -320,6 +320,21 @@ void ThemeDefinition::deriveChromeDefaults(ThemeColors& k) {
       k.border = base.lightness() < 128 ? base.lighter(140) : base.darker(112);
     }
   }
+  // Code border — inline code spans, code fences, math/HTML block outlines, plus
+  // the soft UI lines that borrow it (thematic-break rule, code-fence scrollbar
+  // track, heading badge). A theme that declares no `border` on `code` /
+  // `.md-fences` leaves this invalid, and Qt renders an unset QPen/QBrush as
+  // solid black — the black box around every inline code span on Night/Pixyll/
+  // Newsprint/Whitey. Derive a subtle edge off the code background (one step
+  // darker on light pages, lighter on dark) so the outline stays
+  // visible-but-soft on every theme. Themes that DO declare a border (e.g.
+  // github #e7eaed) keep their explicit colour. This runs AFTER the chrome-
+  // hairline block above, so the hairline still sees the original (possibly
+  // invalid) codeBorder before this fallback fills it in.
+  if (!k.codeBorder.isValid()) {
+    const QColor base = k.codeBackground.isValid() ? k.codeBackground : k.background;
+    k.codeBorder = base.lightness() < 128 ? base.lighter(140) : base.darker(112);
+  }
   if (!k.hover.isValid()) k.hover = k.codeBackground;
   if (!k.selected.isValid()) k.selected = k.codeBackground;
   if (!k.accent.isValid()) k.accent = k.link;
