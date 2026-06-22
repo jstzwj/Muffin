@@ -78,8 +78,8 @@ jobs:
       # (e.g. one shipping VS 2022) gets restored on a newer image and makes CMake search for a VS
       # instance that no longer exists ("could not find any instance of Visual Studio"). Restore
       # the cache first so `--force` overwrites any stale state for the current image.
-      - name: Cache Conan packages
-        uses: actions/cache@v4
+      - name: Restore Conan packages
+        uses: actions/cache/restore@v4
         with:
           path: ~/.conan2/p
           # Include conan-arch in the key: x86_64 and armv8 Windows builds both
@@ -149,6 +149,26 @@ jobs:
 
       - name: Install dependencies
         run: conan install . -s build_type=Release -s compiler.cppstd=${{ matrix.conan-cppstd }} -s arch=${{ matrix.conan-arch }} --build=missing
+
+      # Persist the package store right after `conan install` populates it: the binaries never
+      # change during configure/build/test, so saving here survives a downstream failure. PRs only
+      # restore, never save -- otherwise each PR forks its own per-branch copy and pushes the repo
+      # past the 10 GB cache quota. Prune source/build/download temp dirs first so each entry stays
+      # small (Qt's source/build folders are hundreds of MB and are only needed to build, not to
+      # reuse the already-extracted binaries). Temporal flags only, never -f: -f would also delete
+      # the binary packages we just installed. (Release runs on tag pushes, so the PR guard is a
+      # no-op here but keeps the two workflows symmetric.)
+      - name: Prune Conan cache
+        if: github.event_name != 'pull_request'
+        run: conan cache clean --source --build --download
+
+      - name: Save Conan packages
+        if: github.event_name != 'pull_request'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.conan2/p
+          key: conan-pkg-${{ runner.os }}-${{ matrix.conan-arch }}-${{ hashFiles('conanfile.txt') }}
+        continue-on-error: true   # exact-hit restores have nothing new to persist
 
       - name: Install WiX Toolset
         if: runner.os == 'Windows'
