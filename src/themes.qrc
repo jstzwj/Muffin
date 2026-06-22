@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="/themes">
+    <file alias="github.css">../resources/themes/github.css</file>
+    <file alias="newsprint.css">../resources/themes/newsprint.css</file>
+    <file alias="night.css">../resources/themes/night.css</file>
+    <file alias="pixyll.css">../resources/themes/pixyll.css</file>
+    <file alias="whitey.css">../resources/themes/whitey.css</file>
+  </qresource>
+</RCC>

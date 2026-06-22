@@ -196,6 +196,10 @@ private:
   QRectF headingBadgeViewportRectForBlock(NodeId blockId) const;
   QRectF htmlHoverButtonViewportRect() const;
   void updateHtmlHover(QPointF viewportPos);
+  void updateBlockHover(QPointF viewportPos);
+  void repaintHoverBlock(NodeId blockId);
+  qreal hoverTransitionMs(const QString& host) const;
+  void repaintAnimatedBlocks();
   void clearHtmlHover();
   HtmlBlockHoverController::Inputs htmlHoverInputs() const;
   void applySelectionRange(SelectionRange selection);
@@ -239,6 +243,9 @@ private:
   CodeFenceScrollController* codeFenceScroll_ = nullptr;
   NodeId codeFenceScrollDragId_;  // block being horizontally dragged via its scrollbar (invalid when idle)
   HtmlBlockHoverController htmlHover_;
+  class HoverAnimator* hoverAnimator_ = nullptr;
+  NodeId hoveredBlockId_;  // top-level block under the cursor (for CSS :hover glow)
+  class KeyframeAnimator* keyframeAnimator_ = nullptr;
   // True while a ScopedViewportPin (or restoreViewportAnchor) is reconciling the scrollbar, so the
   // implicit setRange -> clamp -> valueChanged -> scrollContentsBy -> ensureVisibleBuilt cascade
   // cannot re-enter layout and re-promote mid-transaction.

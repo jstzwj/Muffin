@@ -2560,12 +2560,12 @@ Un editor Markdown nativo, veloce e leggero, costruito con C++ e Qt 6 Widgets.</
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="101"/>
         <source>Import Theme...</source>
-        <translation type="unfinished"></translation>
+        <translation>Importa tema...</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="103"/>
         <source>Open Themes Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri cartella temi</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="116"/>
@@ -2575,37 +2575,37 @@ Un editor Markdown nativo, veloce e leggero, costruito con C++ e Qt 6 Widgets.</
         <location filename="../src/app/MainWindowFileOps.cpp" line="142"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="154"/>
         <source>Import Theme</source>
-        <translation type="unfinished"></translation>
+        <translation>Importa tema</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="116"/>
-        <source>Theme Files (*.json)</source>
-        <translation type="unfinished"></translation>
+        <source>Theme Files (*.css *.json)</source>
+        <translation>File tema (*.css *.json)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="123"/>
         <source>Could not read the selected file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile leggere il file selezionato.</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="129"/>
         <source>The selected file is not a valid theme.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il file selezionato non è un tema valido.</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="137"/>
         <source>A built-in theme named &quot;%1&quot; already exists; choose a different file name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Esiste già un tema integrato denominato &quot;%1&quot;; scegli un altro nome file.</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="143"/>
         <source>The theme file is missing required colours (background and text).</source>
-        <translation type="unfinished"></translation>
+        <translation>Nel file tema mancano i colori obbligatori (sfondo e testo).</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="154"/>
         <source>Could not copy the theme into the themes folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile copiare il tema nella cartella dei temi.</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="230"/>
@@ -3066,7 +3066,7 @@ Vuoi aprire la pagina di download?</translation>
     <message>
         <location filename="../src/app/PrefsAppearancePage.cpp" line="124"/>
         <source>Import Theme...</source>
-        <translation type="unfinished"></translation>
+        <translation>Importa tema...</translation>
     </message>
 </context>
 <context>

@@ -7,7 +7,13 @@ namespace muffin {
 namespace {
 
 QString hexRgb(const QColor& c) {
-  return c.name(QColor::HexRgb);
+  if (!c.isValid()) {
+    return QStringLiteral("#000000");
+  }
+  // Use HexArgb to preserve alpha channel. When alpha == 255, this is identical
+  // to HexRgb but correctly formats colors with alpha (e.g., rgba hover states).
+  // Qt stylesheet accepts #RRGGBBAA notation.
+  return c.name(QColor::HexArgb);
 }
 
 // Accent-colour tint used for menu-popup item selection, so the blue highlight
@@ -26,12 +32,17 @@ QString accentSelectionTint(const ThemeColors& c) {
 
 QString mainWindowStyleSheet(const ThemeDefinition& d) {
   const ThemeColors& c = d.colors;
+  // %8 is the document text colour, used for the menu bar + popup menu items.
+  // Those are primary chrome navigation, so they read in the theme's body ink
+  // (matches Typora, whose header / megamenu inherits the body colour) — NOT the
+  // muted --control-text-color, which themes reserve for the sidebar (github sets
+  // it to #777, which reads as washed-out pale grey on a menu bar).
   return QStringLiteral(
       "QMainWindow { background: %1; }"
-      "QMenuBar { background: %1; color: %2; padding: 0; font-size: 13px; }"
+      "QMenuBar { background: %1; color: %8; padding: 0; font-size: 13px; }"
       "QMenuBar::item { padding: 4px 9px; background: transparent; }"
       "QMenuBar::item:selected { background: %3; }"
-      "QMenu { background: %4; color: %2; border: 1px solid %5; padding: 4px 0; }"
+      "QMenu { background: %4; color: %8; border: 1px solid %5; padding: 4px 0; }"
       "QMenu::item { padding: 5px 34px 5px 24px; }"
       "QMenu::item:selected { background: %6; }"
       "QMenu::item:disabled { color: %7; }"
@@ -45,7 +56,8 @@ QString mainWindowStyleSheet(const ThemeDefinition& d) {
            hexRgb(c.surface),
            hexRgb(c.border),
            accentSelectionTint(c),
-           hexRgb(c.chromeMuted));
+           hexRgb(c.chromeMuted),
+           hexRgb(c.text));
 }
 
 QString sidebarStyleSheet(const ThemeDefinition& d, bool outlineFoldable) {

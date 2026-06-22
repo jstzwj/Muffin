@@ -2568,12 +2568,12 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="101"/>
         <source>Import Theme...</source>
-        <translation type="unfinished"></translation>
+        <translation>테마 가져오기…</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="103"/>
         <source>Open Themes Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>테마 폴더 열기</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="116"/>
@@ -2583,37 +2583,37 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <location filename="../src/app/MainWindowFileOps.cpp" line="142"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="154"/>
         <source>Import Theme</source>
-        <translation type="unfinished"></translation>
+        <translation>테마 가져오기</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="116"/>
-        <source>Theme Files (*.json)</source>
-        <translation type="unfinished"></translation>
+        <source>Theme Files (*.css *.json)</source>
+        <translation>테마 파일 (*.css *.json)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="123"/>
         <source>Could not read the selected file.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 파일을 읽을 수 없습니다.</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="129"/>
         <source>The selected file is not a valid theme.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 파일이 올바른 테마가 아닙니다.</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="137"/>
         <source>A built-in theme named &quot;%1&quot; already exists; choose a different file name.</source>
-        <translation type="unfinished"></translation>
+        <translation>이름이 &quot;%1&quot;인 기본 제공 테마가 이미 있습니다. 다른 파일 이름을 선택하세요.</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="143"/>
         <source>The theme file is missing required colours (background and text).</source>
-        <translation type="unfinished"></translation>
+        <translation>테마 파일에 필수 색(배경색과 글자색)이 없습니다.</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="154"/>
         <source>Could not copy the theme into the themes folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>테마를 테마 폴더에 복사할 수 없습니다.</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="230"/>
@@ -3072,7 +3072,7 @@ Would you like to open the download page?</source>
     <message>
         <location filename="../src/app/PrefsAppearancePage.cpp" line="124"/>
         <source>Import Theme...</source>
-        <translation type="unfinished"></translation>
+        <translation>테마 가져오기…</translation>
     </message>
 </context>
 <context>

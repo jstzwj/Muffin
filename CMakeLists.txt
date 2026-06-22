@@ -513,6 +513,7 @@ file(WRITE "${MUFFIN_EMOJI_QRC}"
 add_executable(Muffin
   src/translations.qrc
   src/icons.qrc
+  src/themes.qrc
   ${MUFFIN_HELP_QRC}
   ${MUFFIN_DICTS_QRC}
   ${MUFFIN_EMOJI_QRC}
@@ -656,6 +657,10 @@ set(MUFFIN_UI_SOURCES
   src/editor/EditorViewGeometry.h
   src/editor/HtmlBlockHoverController.cpp
   src/editor/HtmlBlockHoverController.h
+  src/editor/HoverAnimator.cpp
+  src/editor/HoverAnimator.h
+  src/editor/KeyframeAnimator.cpp
+  src/editor/KeyframeAnimator.h
   src/editor/CodeLanguageEditor.cpp
   src/editor/CodeLanguageEditor.h
   src/editor/EmojiCompleter.cpp
@@ -723,6 +728,12 @@ set(MUFFIN_UI_SOURCES
   src/render/BlockLayoutBuilder.h
   src/render/DocumentLayout.cpp
   src/render/DocumentLayout.h
+  src/render/GradientPainter.cpp
+  src/render/GradientPainter.h
+  src/render/DecorationPainter.cpp
+  src/render/DecorationPainter.h
+  src/render/KeyframeSampler.cpp
+  src/render/KeyframeSampler.h
   src/render/ImageDecoder.cpp
   src/render/ImageDecoder.h
   src/render/ImageLoader.cpp
@@ -741,6 +752,10 @@ set(MUFFIN_UI_SOURCES
   src/theme/ThemeManager.h
   src/theme/ChromeStyleSheet.cpp
   src/theme/ChromeStyleSheet.h
+  src/theme/CssThemeParser.cpp
+  src/theme/CssThemeParser.h
+  src/theme/CssThemeMapper.cpp
+  src/theme/CssThemeMapper.h
 )
 
 add_library(MuffinUi STATIC

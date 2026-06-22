@@ -23,6 +23,7 @@
 
 #include <QCoreApplication>
 #include <QElapsedTimer>
+#include <QFile>
 #include <QLoggingCategory>
 #include <QMutex>
 #include <QMutexLocker>
@@ -157,7 +158,20 @@ int main(int argc, char** argv) {
   qInstallMessageHandler(perfCapture);
 
   muffin::DocumentSession session;
-  const QString doc = makeBigDoc(sizeMb * 1024 * 1024);
+  // MUFFIN_BENCH_FILE: parse a real on-disk file (tables/code/math/lists) instead of the synthetic
+  // inline-dense paragraph doc. Measures the true open path on the actual file the user opens.
+  const QString doc = [&] {
+    const QByteArray fileEnv = qgetenv("MUFFIN_BENCH_FILE");
+    if (fileEnv.isEmpty()) {
+      return makeBigDoc(sizeMb * 1024 * 1024);
+    }
+    QFile f(QString::fromLocal8Bit(fileEnv));
+    f.open(QIODevice::ReadOnly);
+    QString t = QString::fromUtf8(f.readAll());
+    t.replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
+    t.replace(QLatin1Char('\r'), QLatin1Char('\n'));
+    return t;
+  }();
   QElapsedTimer setup;
   setup.start();
   session.setMarkdownText(doc, false);
@@ -170,6 +184,10 @@ int main(int argc, char** argv) {
   std::fprintf(stdout, "tree: %lld top-level blocks, %lld total nodes, %lld inlines\n",
                static_cast<long long>(session.document().root().children().size()),
                static_cast<long long>(blocks), static_cast<long long>(inlines));
+
+  // Report the OPEN-parse phase breakdown before any typing probe clears the buffer — these are the
+  // 100MB setup parse.* / session.* values, which the per-scenario reports would otherwise drop.
+  report("SETUP (open parse of full doc)", doc.size(), blocks, inlines, 1);
 
   const auto& topBlocks = session.document().root().children();
   const qsizetype lastBlockStart = topBlocks.empty() ? 0 : topBlocks.back()->sourceRange().byteStart;

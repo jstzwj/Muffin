@@ -75,6 +75,7 @@ public:
 protected:
   void closeEvent(QCloseEvent* event) override;
   void changeEvent(QEvent* event) override;
+  void showEvent(QShowEvent* event) override;
 
 private:
   // Create and register one QAction for a declared command, pulling its label,
@@ -110,6 +111,11 @@ private:
   void updateFormatActions();
   void updateContextActions();
   void updateThemeActions();
+  // Sync the radio-style checkmarks in the Theme menu to the active theme.
+  // Called from applyTheme — the single choke point every theme change flows
+  // through (incl. the startup restore) — so the checks can never desync from
+  // the visuals. Lighter than rebuildThemesMenu: no QActions are created/removed.
+  void updateThemeChecks();
   // Apply every command's enabled/checked predicate within one category (the
   // per-domain update*Actions above are thin wrappers around this so call sites
   // stay unchanged). updateAllActions() refreshes every category.
@@ -173,6 +179,10 @@ private:
   void undoEdit();
   void redoEdit();
   void applyTheme(QString name);
+  // Toggle the OS-drawn title bar (Windows caption + system buttons) to match
+  // the theme brightness. Style sheets can't reach it; on Windows this calls
+  // DwmSetWindowAttribute, elsewhere it's a no-op.
+  void applyNativeTitleBarDarkMode(bool dark);
   // Theme menu is enumerated from ThemeManager::definitions() (built-ins +
   // imported custom themes), so it is rebuilt rather than a fixed command list.
   void rebuildThemesMenu();

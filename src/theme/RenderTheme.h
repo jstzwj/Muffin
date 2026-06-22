@@ -36,6 +36,23 @@ public:
   qreal blockSpacing() const;
   qreal listIndent() const;
   qreal blockQuoteIndent() const;
+  QColor viewportBackgroundColor() const;
+  QColor pageBackgroundColor() const;
+  QColor pageBorderColor() const;
+  qreal pageBorderWidth() const;
+  qreal pageBorderRadius() const;
+  QMarginsF pagePadding() const;
+  QMarginsF pageMargin() const;
+  QColor pageShadowColor() const;
+  qreal pageShadowBlur() const;
+  qreal pageShadowOffsetY() const;
+  QMarginsF blockMargin(BlockType type, int headingLevel = 0) const;
+  QMarginsF headingPadding(int level) const;
+  QColor headingBorderBottomColor(int level) const;
+  qreal headingBorderBottomWidth(int level) const;
+  QColor headingBorderLeftColor(int level) const;
+  qreal headingBorderLeftWidth(int level) const;
+  qreal lineHeightMultiplier(BlockType type, int headingLevel = 0) const;
 
   QFont paragraphFont() const;
   QFont headingFont(int level) const;
@@ -48,6 +65,9 @@ public:
   QColor mutedTextColor() const;
   QColor linkColor() const;
   QColor codeBackgroundColor() const;
+  // Fenced code-block fill. Distinct from inline code when the theme sets it;
+  // otherwise identical to codeBackgroundColor() (preserving legacy behaviour).
+  QColor codeBlockBackgroundColor() const;
   // Background wash behind `==highlighted==` inline text (Pandoc-style marker).
   QColor highlightBackgroundColor() const;
   QColor codeBorderColor() const;
@@ -61,7 +81,18 @@ public:
   QColor tableAlternateBackgroundColor() const;
   QColor selectionColor() const;
   QColor spellCheckColor() const;
+  // Per-heading text colour from the theme; invalid when the theme doesn't set
+  // one (caller falls back to textColor). level is 1..6.
+  QColor headingColor(int level) const;
+  // P5 cheap decorations the paint engine can already draw; invalid → unused.
+  QColor headingAccentColor() const;     // h2 left accent bar
+  QColor blockquoteBackgroundColor() const;
   QColor codeHighlightColor(CodeHighlightRole role) const;
+
+  // ::before/::after decorations keyed by host ("h2","blockquote","#write",…).
+  // Painters filter the vector for the host they are drawing. Empty for themes
+  // that declare none.
+  const ThemeDecorations& decorations() const;
 
   QMarginsF codePadding() const;
   QMarginsF tableCellPadding() const;
@@ -73,6 +104,46 @@ private:
   int zoomPercent_ = 100;
   int fontSizePx_ = 16;
   bool serifBody_ = false;
+
+  // Theme-supplied typography (CSS themes). Empty/zero → fall back to the
+  // per-platform families / built-in sizes below, so built-in themes are unchanged.
+  QString bodyFont_, headingFont_, codeFont_, mathFont_;
+  qreal bodySizePt_ = 0.0;
+  qreal lineHeight_ = 0.0;
+  qreal headingSizePt_[6] = {};
+  qreal headingLineHeight_[6] = {};
+  QColor headingColor_[6];
+
+  QColor viewportBackgroundColor_;
+  QColor pageBackgroundColor_;
+  QColor pageBorderColor_;
+  qreal pageBorderWidth_ = 0.0;
+  qreal pageBorderRadius_ = 0.0;
+  QMarginsF pagePadding_;
+  QMarginsF pageMargin_;
+  bool pageMarginExplicit_ = false;  // theme declared a #write margin (or padding→default 0)
+  qreal pageMaxWidth_ = 0.0;
+  QColor pageShadowColor_;
+  qreal pageShadowBlur_ = 0.0;
+  qreal pageShadowOffsetY_ = 0.0;
+
+  // ::before/::after decorations (gradients, SVG icons, text content, texture
+  // masks) keyed by host. Empty for themes that declare none (all built-ins).
+  ThemeDecorations decorations_;
+
+  QMarginsF paragraphMargin_;
+  QMarginsF headingMargin_[6];
+  QMarginsF headingPadding_[6];
+  QColor headingBorderBottomColor_[6];
+  qreal headingBorderBottomWidth_[6] = {};
+  QColor headingBorderLeftColor_[6];
+  qreal headingBorderLeftWidth_[6] = {};
+  QMarginsF blockquoteMargin_;
+  QMarginsF codeBlockMargin_;
+  QMarginsF tableMargin_;
+  QMarginsF listMargin_;
+  qreal listPaddingLeft_ = 0.0;
+
   QColor backgroundColor_ = QColor(QStringLiteral("#ffffff"));
   QColor textColor_ = QColor(QStringLiteral("#202124"));
   QColor mutedTextColor_ = QColor(QStringLiteral("#57606a"));
@@ -86,6 +157,9 @@ private:
   QColor tableAlternateBackgroundColor_ = QColor(QStringLiteral("#f6f8fa"));
   QColor selectionColor_ = QColor(QStringLiteral("#d7e8ff"));
   QColor spellCheckColor_ = QColor(QStringLiteral("#d1242f"));
+  QColor codeBlockBackground_;        // invalid → codeBackgroundColor()
+  QColor headingAccentColor_;         // invalid → no h2 accent bar
+  QColor blockquoteBackground_;       // invalid → no quote fill
 };
 
 }  // namespace muffin

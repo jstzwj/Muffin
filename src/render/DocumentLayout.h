@@ -69,8 +69,11 @@ class DocumentLayout {
   BlockRebuildResult rebuildBlock(NodeId blockId, const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
   RangeRebuildResult rebuildTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
 
-  qreal pageLeft() const;
-  qreal pageWidth() const;
+  qreal pageLeft() const;   // content left
+  qreal pageWidth() const;  // content width
+  qreal pageOuterLeft() const;
+  qreal pageOuterWidth() const;
+  QRectF pageRect(const RenderTheme& theme, qreal viewportHeight = 0) const;
   qreal totalHeight() const;
   BuildPolicy buildPolicy() const;
 
@@ -131,8 +134,10 @@ class DocumentLayout {
   QHash<NodeId, NodeId> nestedToTopLevel_;          // any node id -> top-level node id
   QHash<NodeId, const BlockLayout*> layoutIndex_;   // node id -> built BlockLayout* (lazy-populated)
 
-  qreal pageLeft_ = 0;
-  qreal pageWidth_ = 0;
+  qreal pageLeft_ = 0;       // content left
+  qreal pageWidth_ = 0;      // content width
+  qreal pageOuterLeft_ = 0;  // #write card left
+  qreal pageOuterWidth_ = 0; // #write card width
   qreal totalHeight_ = 0;
   BlockLayoutBuilder builder_;
 };

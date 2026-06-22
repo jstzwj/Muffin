@@ -22,6 +22,112 @@ QString firstAvailableFontFamily(std::initializer_list<QString> candidates) {
   return systemFamily.isEmpty() ? QStringLiteral("sans-serif") : systemFamily;
 }
 
+bool familyAvailable(const QString& family, const QStringList& availableFamilies) {
+  for (const QString& available : availableFamilies) {
+    if (available.compare(family, Qt::CaseInsensitive) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Resolved per-platform fallback families, each cached on first use. Used both as
+// the legacy default (when a theme supplies no font) and as the substitution tail
+// appended after a theme-supplied family so missing glyphs (CJK, symbols) resolve.
+const QString& sansFamily() {
+  static const QString f = firstAvailableFontFamily({
+#if defined(Q_OS_WIN)
+      QStringLiteral("Microsoft YaHei UI"), QStringLiteral("Segoe UI"), QStringLiteral("Arial"),
+#elif defined(Q_OS_MACOS)
+      QStringLiteral("PingFang SC"), QStringLiteral("Hiragino Sans GB"), QStringLiteral("Helvetica Neue"),
+      QStringLiteral("Arial"),
+#else
+      QStringLiteral("Noto Sans CJK SC"), QStringLiteral("Noto Sans"), QStringLiteral("DejaVu Sans"),
+      QStringLiteral("Arial"),
+#endif
+  });
+  return f;
+}
+const QString& serifFamily() {
+  static const QString f = firstAvailableFontFamily({
+#if defined(Q_OS_WIN)
+      QStringLiteral("Georgia"), QStringLiteral("Cambria"), QStringLiteral("Times New Roman"),
+#elif defined(Q_OS_MACOS)
+      QStringLiteral("New York"), QStringLiteral("Times New Roman"), QStringLiteral("Georgia"),
+#else
+      QStringLiteral("Noto Serif"), QStringLiteral("DejaVu Serif"), QStringLiteral("Times New Roman"),
+#endif
+      QStringLiteral("serif"),
+  });
+  return f;
+}
+const QString& codeFamily() {
+  static const QString f = firstAvailableFontFamily({
+#if defined(Q_OS_WIN)
+      QStringLiteral("Lucida Console"), QStringLiteral("Consolas"), QStringLiteral("Courier"),
+#elif defined(Q_OS_MACOS)
+      QStringLiteral("Menlo"), QStringLiteral("Monaco"), QStringLiteral("Courier New"),
+#else
+      QStringLiteral("DejaVu Sans Mono"), QStringLiteral("Noto Sans Mono"), QStringLiteral("Liberation Mono"),
+#endif
+      QStringLiteral("monospace"),
+  });
+  return f;
+}
+QString genericFamilyTail(const QString& generic) {
+  const QString lower = generic.toLower();
+  if (lower == QStringLiteral("serif")) { return serifFamily(); }
+  if (lower == QStringLiteral("monospace")) { return codeFamily(); }
+  return sansFamily();
+}
+QStringList themeFamilyList(const QString& raw, const QString& platformTail) {
+  QStringList requested = raw.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+  for (QString& f : requested) { f = f.trimmed(); }
+  requested.removeAll(QString());
+
+  QString genericTail;
+  if (!requested.isEmpty()) {
+    const QString last = requested.last().toLower();
+    if (last == QStringLiteral("serif") || last == QStringLiteral("sans-serif") || last == QStringLiteral("monospace")) {
+      genericTail = genericFamilyTail(requested.takeLast());
+    }
+  }
+
+  const QStringList availableFamilies = QFontDatabase::families();
+  QStringList out;
+  for (const QString& family : requested) {
+    // @font-face: a CSS theme may declare `font-family: CascadiaCode` while the
+    // font file's internal name (what QFontDatabase registers) is "Cascadia Code",
+    // or `"LXGW WenKai"` whose internal name is 霞鹜文楷. Substitute the declared
+    // alias with the registered name so the stack resolves to the bundled font.
+    QString resolved = family;
+    if (const QString alias = ThemeDefinition::fontFamilyAlias(family); !alias.isEmpty()) {
+      resolved = alias;
+    }
+    if (familyAvailable(resolved, availableFamilies) && !out.contains(resolved, Qt::CaseInsensitive)) {
+      out << resolved;
+    }
+  }
+  if (!genericTail.isEmpty() && !out.contains(genericTail, Qt::CaseInsensitive)) { out << genericTail; }
+  if (!platformTail.isEmpty() && !out.contains(platformTail, Qt::CaseInsensitive)) { out << platformTail; }
+  if (out.isEmpty()) { out = requested; }
+  return out;
+}
+
+const QString& mathFamily() {
+  static const QString f = firstAvailableFontFamily({
+#if defined(Q_OS_WIN)
+      QStringLiteral("Cambria Math"), QStringLiteral("Segoe UI Symbol"),
+#elif defined(Q_OS_MACOS)
+      QStringLiteral("STIX Two Math"), QStringLiteral("STIXGeneral"), QStringLiteral("Apple Symbols"),
+#else
+      QStringLiteral("STIX Two Math"), QStringLiteral("Latin Modern Math"),
+      QStringLiteral("DejaVu Math TeX Gyre"),
+#endif
+  });
+  return f;
+}
+
 }  // namespace
 
 RenderTheme RenderTheme::defaultTheme(int zoomPercent) {
@@ -47,87 +153,75 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   // the page tone (matches the night() factory's lighter red on dark pages).
   t.spellCheckColor_ = c.isDark ? QColor(QStringLiteral("#ff6a6a")) : QColor(QStringLiteral("#d1242f"));
   t.serifBody_ = c.serifBody;
+  // Typography + P5 colours from the theme (CSS themes). Built-in themes
+  // leave these empty/invalid so the per-platform fonts and legacy colours win.
+  const ThemeTypography& ty = definition.typography;
+  t.bodyFont_ = ty.bodyFont;
+  t.headingFont_ = ty.headingFont;
+  t.codeFont_ = ty.codeFont;
+  t.mathFont_ = ty.mathFont;
+  t.bodySizePt_ = ty.bodySizePt;
+  t.lineHeight_ = ty.lineHeight;
+  for (int i = 0; i < 6; ++i) {
+    t.headingSizePt_[i] = ty.headingSizePt[i];
+    t.headingLineHeight_[i] = ty.headingLineHeight[i];
+    t.headingColor_[i] = ty.headingColor[i];
+  }
+  t.viewportBackgroundColor_ = definition.page.viewportBackground;
+  t.pageBackgroundColor_ = definition.page.pageBackground;
+  t.pageBorderColor_ = definition.page.pageBorderColor;
+  t.pageBorderWidth_ = definition.page.pageBorderWidth;
+  t.pageBorderRadius_ = definition.page.pageBorderRadius;
+  t.pagePadding_ = definition.page.pagePadding;
+  t.pageMargin_ = definition.page.pageMargin;
+  t.pageMarginExplicit_ = definition.page.pageMarginExplicit;
+  t.pageMaxWidth_ = definition.page.pageMaxWidth;
+  t.pageShadowColor_ = definition.page.pageShadowColor;
+  t.pageShadowBlur_ = definition.page.pageShadowBlur;
+  t.pageShadowOffsetY_ = definition.page.pageShadowOffsetY;
+  t.decorations_ = definition.decorations;
+  t.paragraphMargin_ = definition.spacing.paragraphMargin;
+  t.blockquoteMargin_ = definition.spacing.blockquoteMargin;
+  t.codeBlockMargin_ = definition.spacing.codeBlockMargin;
+  t.tableMargin_ = definition.spacing.tableMargin;
+  t.listMargin_ = definition.spacing.listMargin;
+  t.listPaddingLeft_ = definition.spacing.listPaddingLeft;
+  for (int i = 0; i < 6; ++i) {
+    t.headingMargin_[i] = definition.spacing.headingMargin[i];
+    t.headingPadding_[i] = definition.spacing.headingPadding[i];
+    t.headingBorderBottomColor_[i] = definition.spacing.headingBorderBottomColor[i];
+    t.headingBorderBottomWidth_[i] = definition.spacing.headingBorderBottomWidth[i];
+    t.headingBorderLeftColor_[i] = definition.spacing.headingBorderLeftColor[i];
+    t.headingBorderLeftWidth_[i] = definition.spacing.headingBorderLeftWidth[i];
+  }
+  t.codeBlockBackground_ = c.codeBlockBackground;
+  t.headingAccentColor_ = c.headingAccentColor;
+  t.blockquoteBackground_ = c.blockquoteBackground;
   t.setZoomPercent(zoomPercent);
   t.setFontSizePx(fontSizePx);
   return t;
 }
 
-RenderTheme RenderTheme::github(int zoomPercent) {
+namespace {
+// Built-in themes are authored as CSS at :/themes/<id>.css and loaded through
+// ThemeDefinition::builtIns(). Each factory re-loads that SAME definition, so the
+// factory and the CSS-loaded theme can never drift apart — no hand-synced colour
+// table to maintain, and every token (borders, table headers, …) stays aligned
+// automatically. Falls back to a plain default if the resource is missing.
+RenderTheme loadBuiltInTheme(const QString& id, int zoomPercent) {
+  const std::optional<ThemeDefinition> def = ThemeDefinition::builtIn(id);
+  if (def) { return RenderTheme::fromDefinition(*def, zoomPercent); }
   RenderTheme theme;
   theme.setZoomPercent(zoomPercent);
   return theme;
 }
+}  // namespace
 
-RenderTheme RenderTheme::newsprint(int zoomPercent) {
-  RenderTheme theme;
-  theme.backgroundColor_ = QColor(QStringLiteral("#fbfaf7"));
-  theme.textColor_ = QColor(QStringLiteral("#1f2328"));
-  theme.mutedTextColor_ = QColor(QStringLiteral("#6b665d"));
-  theme.linkColor_ = QColor(QStringLiteral("#2f6f9f"));
-  theme.codeBackgroundColor_ = QColor(QStringLiteral("#f1eee8"));
-  theme.codeBorderColor_ = QColor(QStringLiteral("#ded8cc"));
-  theme.quoteBorderColor_ = QColor(QStringLiteral("#c8bfae"));
-  theme.tableBorderColor_ = QColor(QStringLiteral("#d8d0c2"));
-  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#efe3ce"));
-  theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#f6f3ed"));
-  theme.selectionColor_ = QColor(QStringLiteral("#d9e8ef"));
-  theme.setZoomPercent(zoomPercent);
-  return theme;
-}
-
-RenderTheme RenderTheme::night(int zoomPercent) {
-  RenderTheme theme;
-  theme.backgroundColor_ = QColor(QStringLiteral("#1f2328"));
-  theme.textColor_ = QColor(QStringLiteral("#e6edf3"));
-  theme.mutedTextColor_ = QColor(QStringLiteral("#9aa4af"));
-  theme.linkColor_ = QColor(QStringLiteral("#7fb4f5"));
-  theme.codeBackgroundColor_ = QColor(QStringLiteral("#2b3138"));
-  theme.highlightBackgroundColor_ = QColor(QStringLiteral("#3a341a"));
-  theme.codeBorderColor_ = QColor(QStringLiteral("#3d444d"));
-  theme.quoteBorderColor_ = QColor(QStringLiteral("#56616d"));
-  theme.tableBorderColor_ = QColor(QStringLiteral("#3d444d"));
-  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#303b4a"));
-  theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#242a31"));
-  theme.selectionColor_ = QColor(QStringLiteral("#264f78"));
-  theme.spellCheckColor_ = QColor(QStringLiteral("#ff6a6a"));
-  theme.setZoomPercent(zoomPercent);
-  return theme;
-}
-
-RenderTheme RenderTheme::pixyll(int zoomPercent) {
-  RenderTheme theme;
-  theme.backgroundColor_ = QColor(QStringLiteral("#fafaf7"));
-  theme.textColor_ = QColor(QStringLiteral("#2c2c2c"));
-  theme.mutedTextColor_ = QColor(QStringLiteral("#6a6a6a"));
-  theme.linkColor_ = QColor(QStringLiteral("#0e8a7a"));
-  theme.codeBackgroundColor_ = QColor(QStringLiteral("#f0eee6"));
-  theme.codeBorderColor_ = QColor(QStringLiteral("#ddd9cc"));
-  theme.quoteBorderColor_ = QColor(QStringLiteral("#c2b280"));
-  theme.tableBorderColor_ = QColor(QStringLiteral("#ddd9cc"));
-  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#eef3ec"));
-  theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#f4f2ea"));
-  theme.selectionColor_ = QColor(QStringLiteral("#cdeae3"));
-  theme.serifBody_ = true;  // keep the factory in sync with fromDefinition
-  theme.setZoomPercent(zoomPercent);
-  return theme;
-}
-
-RenderTheme RenderTheme::whitey(int zoomPercent) {
-  RenderTheme theme;
-  theme.backgroundColor_ = QColor(QStringLiteral("#fcfcfc"));
-  theme.textColor_ = QColor(QStringLiteral("#4a4a4a"));
-  theme.mutedTextColor_ = QColor(QStringLiteral("#8a8a8a"));
-  theme.linkColor_ = QColor(QStringLiteral("#6a7d9a"));
-  theme.codeBackgroundColor_ = QColor(QStringLiteral("#f4f4f4"));
-  theme.codeBorderColor_ = QColor(QStringLiteral("#ececec"));
-  theme.quoteBorderColor_ = QColor(QStringLiteral("#d4d4d4"));
-  theme.tableBorderColor_ = QColor(QStringLiteral("#ececec"));
-  theme.tableHeaderBackgroundColor_ = QColor(QStringLiteral("#f2f5f8"));
-  theme.tableAlternateBackgroundColor_ = QColor(QStringLiteral("#f8f8f8"));
-  theme.selectionColor_ = QColor(QStringLiteral("#e0e8f0"));
-  theme.setZoomPercent(zoomPercent);
-  return theme;
-}
+RenderTheme RenderTheme::github(int zoomPercent) { return loadBuiltInTheme(QStringLiteral("github"), zoomPercent); }
+RenderTheme RenderTheme::newsprint(int zoomPercent) { return loadBuiltInTheme(QStringLiteral("newsprint"), zoomPercent); }
+RenderTheme RenderTheme::night(int zoomPercent) { return loadBuiltInTheme(QStringLiteral("night"), zoomPercent); }
+RenderTheme RenderTheme::pixyll(int zoomPercent) { return loadBuiltInTheme(QStringLiteral("pixyll"), zoomPercent); }
+RenderTheme RenderTheme::whitey(int zoomPercent) { return loadBuiltInTheme(QStringLiteral("whitey"), zoomPercent); }
 
 int RenderTheme::zoomPercent() const {
   return zoomPercent_;
@@ -146,7 +240,7 @@ void RenderTheme::setFontSizePx(int px) {
 }
 
 qreal RenderTheme::pageWidth() const {
-  return scaled(860.0);
+  return scaled(pageMaxWidth_ > 0.0 ? pageMaxWidth_ : 860.0);
 }
 
 qreal RenderTheme::topMargin() const {
@@ -162,52 +256,119 @@ qreal RenderTheme::blockSpacing() const {
 }
 
 qreal RenderTheme::listIndent() const {
-  return scaled(30.0);
+  return scaled(listPaddingLeft_ > 0.0 ? listPaddingLeft_ : 30.0);
 }
 
 qreal RenderTheme::blockQuoteIndent() const {
   return scaled(16.0);
 }
 
+QColor RenderTheme::viewportBackgroundColor() const {
+  return viewportBackgroundColor_.isValid() ? viewportBackgroundColor_ : backgroundColor_;
+}
+
+QColor RenderTheme::pageBackgroundColor() const {
+  return pageBackgroundColor_.isValid() ? pageBackgroundColor_ : backgroundColor_;
+}
+
+QColor RenderTheme::pageBorderColor() const {
+  return pageBorderColor_;
+}
+
+qreal RenderTheme::pageBorderWidth() const {
+  return scaled(pageBorderWidth_);
+}
+
+qreal RenderTheme::pageBorderRadius() const {
+  return scaled(pageBorderRadius_);
+}
+
+QMarginsF RenderTheme::pagePadding() const {
+  return QMarginsF(scaled(pagePadding_.left()), scaled(pagePadding_.top()), scaled(pagePadding_.right()), scaled(pagePadding_.bottom()));
+}
+
+QMarginsF RenderTheme::pageMargin() const {
+  // An explicit #write margin (even `margin: 0 auto`, which parses to an
+  // all-zero QMarginsF) must be honoured as-is — it is NOT the same as "the
+  // theme specified no margin", which is the only case that should fall back to
+  // the legacy flat-document 30/70 inset. pageMarginExplicit_ is the flag that
+  // separates those two null-QMarginsF cases.
+  if (!pageMarginExplicit_) {
+    return QMarginsF(0, topMargin(), 0, bottomMargin());
+  }
+  return QMarginsF(scaled(pageMargin_.left()), scaled(pageMargin_.top()), scaled(pageMargin_.right()), scaled(pageMargin_.bottom()));
+}
+
+QColor RenderTheme::pageShadowColor() const { return pageShadowColor_; }
+qreal RenderTheme::pageShadowBlur() const { return scaled(pageShadowBlur_); }
+qreal RenderTheme::pageShadowOffsetY() const { return scaled(pageShadowOffsetY_); }
+
+QMarginsF RenderTheme::blockMargin(BlockType type, int headingLevel) const {
+  QMarginsF m;
+  switch (type) {
+    case BlockType::Heading:
+      m = headingMargin_[qBound(0, headingLevel - 1, 5)];
+      break;
+    case BlockType::Paragraph:
+      m = paragraphMargin_;
+      break;
+    case BlockType::BlockQuote:
+      m = blockquoteMargin_;
+      break;
+    case BlockType::CodeFence:
+    case BlockType::FrontMatter:
+      m = codeBlockMargin_;
+      break;
+    case BlockType::Table:
+      m = tableMargin_;
+      break;
+    case BlockType::List:
+      m = listMargin_;
+      break;
+    default:
+      break;
+  }
+  return QMarginsF(scaled(m.left()), scaled(m.top()), scaled(m.right()), scaled(m.bottom()));
+}
+
+QMarginsF RenderTheme::headingPadding(int level) const {
+  const QMarginsF p = headingPadding_[qBound(0, level - 1, 5)];
+  return QMarginsF(scaled(p.left()), scaled(p.top()), scaled(p.right()), scaled(p.bottom()));
+}
+
+QColor RenderTheme::headingBorderBottomColor(int level) const {
+  return headingBorderBottomColor_[qBound(0, level - 1, 5)];
+}
+qreal RenderTheme::headingBorderBottomWidth(int level) const {
+  return scaled(headingBorderBottomWidth_[qBound(0, level - 1, 5)]);
+}
+QColor RenderTheme::headingBorderLeftColor(int level) const {
+  return headingBorderLeftColor_[qBound(0, level - 1, 5)];
+}
+qreal RenderTheme::headingBorderLeftWidth(int level) const {
+  return scaled(headingBorderLeftWidth_[qBound(0, level - 1, 5)]);
+}
+
+qreal RenderTheme::lineHeightMultiplier(BlockType type, int headingLevel) const {
+  if (type == BlockType::Heading) {
+    const qreal v = headingLineHeight_[qBound(0, headingLevel - 1, 5)];
+    if (v > 0.0) { return v; }
+  }
+  return lineHeight_;
+}
+
 QFont RenderTheme::paragraphFont() const {
-  static const QString sansFamily = firstAvailableFontFamily({
-#if defined(Q_OS_WIN)
-      QStringLiteral("Microsoft YaHei UI"),
-      QStringLiteral("Segoe UI"),
-      QStringLiteral("Arial"),
-#elif defined(Q_OS_MACOS)
-      QStringLiteral("PingFang SC"),
-      QStringLiteral("Hiragino Sans GB"),
-      QStringLiteral("Helvetica Neue"),
-      QStringLiteral("Arial"),
-#else
-      QStringLiteral("Noto Sans CJK SC"),
-      QStringLiteral("Noto Sans"),
-      QStringLiteral("DejaVu Sans"),
-      QStringLiteral("Arial"),
-#endif
-  });
-  // Serif body (Pixyll). Qt substitutes an available CJK face for any glyphs
-  // the serif family lacks, so mixed CJK+Latin content still renders.
-  static const QString serifFamily = firstAvailableFontFamily({
-#if defined(Q_OS_WIN)
-      QStringLiteral("Georgia"),
-      QStringLiteral("Cambria"),
-      QStringLiteral("Times New Roman"),
-#elif defined(Q_OS_MACOS)
-      QStringLiteral("New York"),
-      QStringLiteral("Times New Roman"),
-      QStringLiteral("Georgia"),
-#else
-      QStringLiteral("Noto Serif"),
-      QStringLiteral("DejaVu Serif"),
-      QStringLiteral("Times New Roman"),
-#endif
-      QStringLiteral("serif"),
-  });
-  QFont font(serifBody_ ? serifFamily : sansFamily);
+  const QString& platform = serifBody_ ? serifFamily() : sansFamily();
+  QFont font;
+  if (!bodyFont_.isEmpty()) {
+    // Theme font primary, platform family as substitution tail so missing glyphs
+    // (CJK, symbols) still resolve.
+    font.setFamilies(themeFamilyList(bodyFont_, platform));
+  } else {
+    font.setFamily(platform);
+  }
   font.setStyleStrategy(QFont::PreferDefault);
-  font.setPointSizeF(scaledFont(12.0));
+  font.setPointSizeF(scaledFont(bodySizePt_ > 0.0 ? bodySizePt_ : 12.0));
   return font;
 }
 
@@ -215,28 +376,23 @@ QFont RenderTheme::headingFont(int level) const {
   static constexpr qreal sizes[] = {24.0, 19.0, 16.0, 14.0, 12.5, 12.0};
   QFont font = paragraphFont();
   font.setBold(true);
-  font.setPointSizeF(scaledFont(sizes[qBound(0, level - 1, 5)]));
+  const int idx = qBound(0, level - 1, 5);
+  const qreal themeSize = headingSizePt_[idx];
+  font.setPointSizeF(scaledFont(themeSize > 0.0 ? themeSize : sizes[idx]));
+  if (!headingFont_.isEmpty()) {
+    const QString& platform = serifBody_ ? serifFamily() : sansFamily();
+    font.setFamilies(themeFamilyList(headingFont_, platform));
+  }
   return font;
 }
 
 QFont RenderTheme::codeFont() const {
-  static const QString codeFamily = firstAvailableFontFamily({
-#if defined(Q_OS_WIN)
-      QStringLiteral("Lucida Console"),
-      QStringLiteral("Consolas"),
-      QStringLiteral("Courier"),
-#elif defined(Q_OS_MACOS)
-      QStringLiteral("Menlo"),
-      QStringLiteral("Monaco"),
-      QStringLiteral("Courier New"),
-#else
-      QStringLiteral("DejaVu Sans Mono"),
-      QStringLiteral("Noto Sans Mono"),
-      QStringLiteral("Liberation Mono"),
-#endif
-      QStringLiteral("monospace"),
-  });
-  QFont font(codeFamily);
+  QFont font;
+  if (!codeFont_.isEmpty()) {
+    font.setFamilies(themeFamilyList(codeFont_, codeFamily()));
+  } else {
+    font.setFamily(codeFamily());
+  }
   font.setStyleHint(QFont::Monospace);
   font.setPointSizeF(scaledFont(10.8));
   return font;
@@ -247,21 +403,12 @@ qreal RenderTheme::codeLineHeight() const {
 }
 
 QFont RenderTheme::mathFont() const {
-  static const QString mathFamily = firstAvailableFontFamily({
-#if defined(Q_OS_WIN)
-      QStringLiteral("Cambria Math"),
-      QStringLiteral("Segoe UI Symbol"),
-#elif defined(Q_OS_MACOS)
-      QStringLiteral("STIX Two Math"),
-      QStringLiteral("STIXGeneral"),
-      QStringLiteral("Apple Symbols"),
-#else
-      QStringLiteral("STIX Two Math"),
-      QStringLiteral("Latin Modern Math"),
-      QStringLiteral("DejaVu Math TeX Gyre"),
-#endif
-  });
-  QFont font(mathFamily);
+  QFont font;
+  if (!mathFont_.isEmpty()) {
+    font.setFamilies(themeFamilyList(mathFont_, mathFamily()));
+  } else {
+    font.setFamily(mathFamily());
+  }
   font.setPointSizeF(scaledFont(12.5));
   return font;
 }
@@ -336,6 +483,27 @@ QColor RenderTheme::spellCheckColor() const {
   return spellCheckColor_;
 }
 
+QColor RenderTheme::headingColor(int level) const {
+  const int idx = qBound(0, level - 1, 5);
+  return headingColor_[idx];  // invalid when the theme doesn't set one
+}
+
+QColor RenderTheme::codeBlockBackgroundColor() const {
+  return codeBlockBackground_.isValid() ? codeBlockBackground_ : codeBackgroundColor_;
+}
+
+QColor RenderTheme::headingAccentColor() const {
+  return headingAccentColor_;  // invalid → caller skips the accent bar
+}
+
+QColor RenderTheme::blockquoteBackgroundColor() const {
+  return blockquoteBackground_;  // invalid → caller paints no quote fill
+}
+
+const ThemeDecorations& RenderTheme::decorations() const {
+  return decorations_;
+}
+
 QColor RenderTheme::codeHighlightColor(CodeHighlightRole role) const {
   const bool dark = backgroundColor_.lightness() < 128;
   switch (role) {
@@ -344,7 +512,9 @@ QColor RenderTheme::codeHighlightColor(CodeHighlightRole role) const {
     case CodeHighlightRole::Keyword:
       return dark ? QColor(QStringLiteral("#ff7b72")) : QColor(QStringLiteral("#9b008b"));
     case CodeHighlightRole::Preprocessor:
-      return dark ? QColor(QStringLiteral("#ff7b72")) : QColor(QStringLiteral("#202124"));
+      // Light themes: ride the theme's text colour so preprocessor tokens stay
+      // close to plain text regardless of the theme's chosen ink colour.
+      return dark ? QColor(QStringLiteral("#ff7b72")) : textColor_;
     case CodeHighlightRole::String:
       return dark ? QColor(QStringLiteral("#a5d6ff")) : QColor(QStringLiteral("#a31515"));
     case CodeHighlightRole::Number:

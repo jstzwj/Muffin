@@ -23,7 +23,7 @@ muffin_add_test(NAME MuffinSubscriptSuperscriptParseTest SOURCE tests/document/S
 muffin_add_test(NAME MuffinDraftRecoveryTest SOURCE tests/app/DraftRecoveryTest.cpp LINK MuffinCore)
 
 # --- render (link MuffinUi, take the render_smoke fixture, lock the GUI) ---
-muffin_add_test(NAME MuffinRenderThemeTest            SOURCE tests/render/RenderThemeTest.cpp            LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK DISABLED_ON APPLE)
+muffin_add_test(NAME MuffinRenderThemeTest            SOURCE tests/render/RenderThemeTest.cpp            LINK MuffinUi EXTRA_SOURCES src/themes.qrc FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK DISABLED_ON APPLE)
 muffin_add_test(NAME MuffinRenderIncrementalTest      SOURCE tests/render/RenderIncrementalTest.cpp      LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderListMarkerTest       SOURCE tests/render/RenderListMarkerTest.cpp       LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderInlineProjectionTest SOURCE tests/render/RenderInlineProjectionTest.cpp LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
@@ -41,6 +41,9 @@ muffin_add_test(NAME MuffinRenderTreeSitterTest       SOURCE tests/render/Render
 # --- export (link MuffinUi; pure logic under QCoreApplication, no GUI lock) ---
 muffin_add_test(NAME MuffinHtmlExporterTest   SOURCE tests/export/HtmlExporterTest.cpp   LINK MuffinUi)
 muffin_add_test(NAME MuffinPandocRunnerTest   SOURCE tests/export/PandocRunnerTest.cpp   LINK MuffinUi)
+
+# --- theme CSS mapper (link MuffinUi; pure logic under QCoreApplication, no GUI lock) ---
+muffin_add_test(NAME MuffinCssThemeMapperTest SOURCE tests/theme/CssThemeMapperTest.cpp LINK MuffinUi EXTRA_SOURCES src/themes.qrc FIXTURE tests/fixtures/theme/mist-blue.css)
 
 # --- image subsystem (link MuffinUi; pure logic under QCoreApplication, no GUI lock) ---
 muffin_add_test(NAME MuffinImageInsertionPolicyTest  SOURCE tests/image/ImageInsertionPolicyTest.cpp  LINK MuffinUi)

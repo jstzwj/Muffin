@@ -1,0 +1,146 @@
+/*
+ * Mist Blue (test fixture — trimmed self-contained copy of a community CSS theme)
+ * Real-world community CSS theme exercising the CssThemeMapper: :root vars with var()
+ * references, html/body vs #write specificity, element rules for code/pre/
+ * blockquote/table/mark/::selection, and a multi-family font stack.
+ */
+:root {
+  --bg: rgb(217, 222, 232);
+  --paper: rgba(248, 250, 253, 0.58);
+  --ink: #263241;
+  --muted: #647084;
+  --accent: #4c6f91;
+  --accent-strong: #2f5e88;
+  --mark: rgba(255, 220, 128, 0.46);
+  --code-bg: rgba(226, 232, 241, 0.72);
+  --code-block-bg: rgba(224, 230, 239, 0.78);
+  --shadow: 0 18px 46px rgba(57, 67, 84, 0.12);
+  --radius: 8px;
+  --font-sans: "iA Writer Quattro", "Inter", "Segoe UI", sans-serif;
+  --font-writing: "LXGW WenKai", "Kaiti SC", "Source Han Serif SC", serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.78;
+}
+
+#write {
+  background: var(--paper);
+  max-width: 860px;
+  margin: 32px auto;
+  padding: 52px 64px 72px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+p,
+li {
+  font-family: var(--font-writing);
+}
+
+p {
+  margin: 0.72em 0;
+}
+
+a {
+  color: var(--accent-strong);
+  text-decoration: none;
+}
+
+a:hover {
+  color: #234a70;
+}
+
+h1,
+h2,
+h3 {
+  color: #1f2b39;
+  font-family: var(--font-sans);
+}
+
+h1 {
+  font-size: 2.1rem;
+}
+
+h2 {
+  padding-left: 0.58em;
+  border-left: 4px solid var(--accent);
+  font-size: 1.55rem;
+}
+
+code,
+tt {
+  padding: 0.16em 0.36em;
+  color: #2b4d69;
+  background: var(--code-bg);
+  border: 1px solid rgba(76, 111, 145, 0.16);
+  border-radius: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+}
+
+pre.md-fences,
+pre {
+  margin: 1.15em 0;
+  padding: 1em 1.1em;
+  color: #253244;
+  background: var(--code-block-bg);
+  border: 1px solid rgba(74, 86, 106, 0.18);
+  border-radius: 8px;
+}
+
+blockquote {
+  margin: 1.2em 0;
+  padding: 0.76em 1.12em;
+  color: #435066;
+  background: rgba(255, 255, 255, 0.34);
+  border-left: 4px solid rgba(76, 111, 145, 0.58);
+  border-radius: 0 8px 8px 0;
+}
+
+table {
+  width: 100%;
+  margin: 1.35em 0;
+  border-collapse: collapse;
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+thead {
+  background: rgba(76, 111, 145, 0.14);
+}
+
+th,
+td {
+  padding: 0.68em 0.82em;
+  border: 1px solid rgba(74, 86, 106, 0.22);
+}
+
+tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+mark {
+  padding: 0.05em 0.18em;
+  background: var(--mark);
+  border-radius: 4px;
+}
+
+::selection {
+  background: rgba(76, 111, 145, 0.25);
+}
+
+@media (max-width: 760px) {
+  #write {
+    margin: 0;
+    padding: 32px 22px 56px;
+  }
+}

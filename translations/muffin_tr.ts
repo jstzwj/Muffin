@@ -2556,12 +2556,12 @@ C++ ve Qt 6 Widgets ile oluşturulmuş hızlı, hafif yerel Markdown düzenleyic
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="101"/>
         <source>Import Theme...</source>
-        <translation type="unfinished"></translation>
+        <translation>Tema içe aktar…</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="103"/>
         <source>Open Themes Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Tema klasörünü aç</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="116"/>
@@ -2571,37 +2571,37 @@ C++ ve Qt 6 Widgets ile oluşturulmuş hızlı, hafif yerel Markdown düzenleyic
         <location filename="../src/app/MainWindowFileOps.cpp" line="142"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="154"/>
         <source>Import Theme</source>
-        <translation type="unfinished"></translation>
+        <translation>Tema içe aktar</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="116"/>
-        <source>Theme Files (*.json)</source>
-        <translation type="unfinished"></translation>
+        <source>Theme Files (*.css *.json)</source>
+        <translation>Tema dosyaları (*.css *.json)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="123"/>
         <source>Could not read the selected file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçilen dosya okunamadı.</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="129"/>
         <source>The selected file is not a valid theme.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçilen dosya geçerli bir tema değil.</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="137"/>
         <source>A built-in theme named &quot;%1&quot; already exists; choose a different file name.</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;%1&quot; adında yerleşik bir tema zaten var; başka bir dosya adı seçin.</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="143"/>
         <source>The theme file is missing required colours (background and text).</source>
-        <translation type="unfinished"></translation>
+        <translation>Tema dosyasında gerekli renkler (arka plan ve metin) eksik.</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="154"/>
         <source>Could not copy the theme into the themes folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tema, tema klasörüne kopyalanamadı.</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="230"/>
@@ -3060,7 +3060,7 @@ Would you like to open the download page?</source>
     <message>
         <location filename="../src/app/PrefsAppearancePage.cpp" line="124"/>
         <source>Import Theme...</source>
-        <translation type="unfinished"></translation>
+        <translation>Tema içe aktar…</translation>
     </message>
 </context>
 <context>

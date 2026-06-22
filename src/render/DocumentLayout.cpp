@@ -122,10 +122,14 @@ void logRebuildPerf(const RebuildPerfStats& stats, qreal viewportWidth, qreal pa
 }
 
 qreal spacingAfterBlock(const MarkdownNode& node, const RenderTheme& theme) {
+  const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel());
+  if (!css.isNull()) { return css.bottom(); }
   return node.type() == BlockType::Heading ? theme.blockSpacing() * 0.65 : theme.blockSpacing();
 }
 
 qreal spacingBeforeBlock(const MarkdownNode& node, const RenderTheme& theme, qreal cursorY) {
+  const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel());
+  if (!css.isNull()) { return css.top(); }
   if (node.type() != BlockType::Heading || cursorY <= theme.topMargin()) {
     return 0;
   }
@@ -136,14 +140,33 @@ qreal spacingBeforeBlock(const MarkdownNode& node, const RenderTheme& theme, qre
 }
 
 struct PageMetrics {
-  qreal left = 0;
-  qreal width = 0;
+  qreal outerLeft = 0;
+  qreal outerWidth = 0;
+  qreal contentLeft = 0;
+  qreal contentWidth = 0;
 };
 
 PageMetrics pageMetricsFor(const RenderTheme& theme, qreal viewportWidth) {
-  const qreal horizontalInset = qMin<qreal>(64.0, qMax<qreal>(16.0, viewportWidth * 0.08));
-  const qreal width = qMin(theme.pageWidth(), qMax<qreal>(320.0, viewportWidth - horizontalInset * 2.0));
-  return {qMax<qreal>(16.0, (viewportWidth - width) / 2.0 - 12.0), width};
+  const QMarginsF padding = theme.pagePadding();
+  const bool cssPageBox = !padding.isNull() || theme.pageBorderRadius() > 0.0 || theme.pageBorderWidth() > 0.0;
+  // The card's horizontal gap to the viewport edge is the theme's OWN #write
+  // margin — this is what `margin: 0 auto` means in Typora: the column fills the
+  // window up to its max-width (margin 0 → no app-imposed gutter), and a theme
+  // that declares a real margin (e.g. mist-blue's 32px) gets that as its minimum
+  // gap. A fixed 32px app gutter (the previous behaviour) made the column
+  // narrower than Typora and pushed text further from the edges than the theme
+  // asked for — the "huge L/R margins" on phycat (margin 0) vs Typora's tight 0.
+  const QMarginsF margin = theme.pageMargin();
+  const qreal horizontalInset =
+      cssPageBox ? qMax(margin.left(), margin.right())
+                 : qMin<qreal>(64.0, qMax<qreal>(16.0, viewportWidth * 0.08));
+  const qreal maxOuter = qMax<qreal>(320.0, viewportWidth - horizontalInset * 2.0);
+  const qreal outerWidth = qMin(theme.pageWidth(), maxOuter);
+  const qreal outerLeft = cssPageBox ? qMax<qreal>(0.0, (viewportWidth - outerWidth) / 2.0)
+                                    : qMax<qreal>(16.0, (viewportWidth - outerWidth) / 2.0 - 12.0);
+  const qreal contentLeft = outerLeft + padding.left();
+  const qreal contentWidth = qMax<qreal>(120.0, outerWidth - padding.left() - padding.right());
+  return {outerLeft, outerWidth, contentLeft, contentWidth};
 }
 
 // A paragraph that already serves as the "append content here" target: one
@@ -217,8 +240,10 @@ void DocumentLayout::rebuild(
   nestedToTopLevel_.clear();
 
   const PageMetrics metrics = pageMetricsFor(theme, viewportWidth);
-  pageWidth_ = metrics.width;
-  pageLeft_ = metrics.left;
+  pageOuterLeft_ = metrics.outerLeft;
+  pageOuterWidth_ = metrics.outerWidth;
+  pageLeft_ = metrics.contentLeft;
+  pageWidth_ = metrics.contentWidth;
 
   configureBuilder(selection);
 
@@ -229,7 +254,9 @@ void DocumentLayout::rebuild(
   RebuildPerfStats perf;
   qreal estimateMs = 0.0;
 
-  qreal cursorY = theme.topMargin();
+  const QMarginsF pagePadding = theme.pagePadding();
+  const QMarginsF pageMargin = theme.pageMargin();
+  qreal cursorY = pageMargin.top() + pagePadding.top();
   if (policy == BuildPolicy::Lazy) {
     QElapsedTimer estTimer;
     if (collectPerf) {
@@ -311,16 +338,20 @@ bool DocumentLayout::relayoutForViewportWidth(const RenderTheme& theme, qreal vi
     return false;
   }
   const PageMetrics metrics = pageMetricsFor(theme, viewportWidth);
-  if (!qFuzzyCompare(metrics.width + 1.0, pageWidth_ + 1.0)) {
+  if (!qFuzzyCompare(metrics.contentWidth + 1.0, pageWidth_ + 1.0)) {
     return false;
   }
   viewportWidth_ = viewportWidth;
-  const qreal dx = metrics.left - pageLeft_;
+  pageOuterLeft_ = metrics.outerLeft;
+  pageOuterWidth_ = metrics.outerWidth;
+  const qreal dx = metrics.contentLeft - pageLeft_;
   if (qFuzzyIsNull(dx)) {
-    pageLeft_ = metrics.left;
+    pageLeft_ = metrics.contentLeft;
+    pageWidth_ = metrics.contentWidth;
     return true;
   }
-  pageLeft_ = metrics.left;
+  pageLeft_ = metrics.contentLeft;
+  pageWidth_ = metrics.contentWidth;
   for (BlockSlot& slot : slots_) {
     if (slot.detail) {
       slot.detail->translate(dx, 0);
@@ -472,7 +503,7 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   std::vector<BlockSlot> replacements;
   replacements.reserve(static_cast<size_t>(range.newCount));
 
-  qreal cursorY = theme.topMargin();
+  qreal cursorY = theme.pageMargin().top() + theme.pagePadding().top();
   if (range.first > 0) {
     const MarkdownNode& previousNode = *documentBlocks.at(static_cast<size_t>(range.first - 1));
     const BlockSlot& prev = slots_.at(static_cast<size_t>(range.first - 1));
@@ -558,6 +589,22 @@ qreal DocumentLayout::pageLeft() const {
 
 qreal DocumentLayout::pageWidth() const {
   return pageWidth_;
+}
+
+qreal DocumentLayout::pageOuterLeft() const {
+  return pageOuterLeft_;
+}
+
+qreal DocumentLayout::pageOuterWidth() const {
+  return pageOuterWidth_;
+}
+
+QRectF DocumentLayout::pageRect(const RenderTheme& theme, qreal viewportHeight) const {
+  const QMarginsF margin = theme.pageMargin();
+  const qreal top = margin.top();
+  const qreal minHeight = viewportHeight > 0 ? qMax<qreal>(0.0, viewportHeight - margin.top() - margin.bottom()) : 0.0;
+  const qreal height = qMax(totalHeight_ - margin.top() - margin.bottom(), minHeight);
+  return QRectF(pageOuterLeft_, top, pageOuterWidth_, height);
 }
 
 qreal DocumentLayout::totalHeight() const {
@@ -902,17 +949,21 @@ void DocumentLayout::shiftSuffixFrom(qsizetype index, qreal delta) {
 }
 
 void DocumentLayout::recomputeTotalHeight(const RenderTheme& theme) {
-  // Replicates the original rebuild formula: cursorY after the last block includes that
-  // block's trailing spacing, then bottom margin + virtual-paragraph trailing space.
-  qreal cursorY = theme.topMargin();
+  const QMarginsF pageMargin = theme.pageMargin();
+  const QMarginsF pagePadding = theme.pagePadding();
+  qreal cursorY = pageMargin.top() + pagePadding.top();
   qreal trailingHeight = trailingHeightForLastBlock(nullptr, theme);
   if (!slots_.empty()) {
     const BlockSlot& last = slots_.back();
-    const qreal spacingAfter = last.type == BlockType::Heading ? theme.blockSpacing() * 0.65 : theme.blockSpacing();
+    const int level = last.detail ? last.detail->headingLevel() : 0;
+    const QMarginsF css = theme.blockMargin(last.type, level);
+    const qreal spacingAfter = !css.isNull() ? css.bottom()
+                                             : (last.type == BlockType::Heading ? theme.blockSpacing() * 0.65 : theme.blockSpacing());
     cursorY = last.top + last.height + spacingAfter;
     trailingHeight = trailingHeightForLastBlock(last.detail ? last.detail.get() : nullptr, theme);
   }
-  totalHeight_ = qMax(cursorY + theme.bottomMargin() + trailingHeight, theme.topMargin() + theme.bottomMargin());
+  totalHeight_ = qMax(cursorY + pagePadding.bottom() + pageMargin.bottom() + trailingHeight,
+                      pageMargin.top() + pagePadding.top() + pagePadding.bottom() + pageMargin.bottom());
 }
 
 }  // namespace muffin

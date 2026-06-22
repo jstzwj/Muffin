@@ -53,6 +53,40 @@ void testInlineLayoutGeometryContract() {
   require(!styled.selectionRects(0, styled.plainText().size()).isEmpty(), QStringLiteral("inline layout should produce styled selection rects"));
 }
 
+void testInlineLayoutFirstLineBaselineFollowsLineHeight() {
+  // Placeholder text and list markers are drawn at the first line's baseline.
+  // That baseline must include the line-height centering offset (line.y()), or
+  // decoration drifts above the caret/typed text under a large theme
+  // line-height (e.g. a community theme (phycat)'s 2.25). Guard that firstLineBaselineY()
+  // tracks the first line's actual position, not the raw block-top + ascent.
+  RenderTheme theme = RenderTheme::github();
+  const QFont font = theme.paragraphFont();
+  const qreal rawAscent = QFontMetricsF(font).ascent();
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::text(QStringLiteral("line")));
+
+  InlineLayout::BuildOptions options;
+  options.lineHeightMultiplier = 2.5;  // tall line-height → sizeable centering offset
+  InlineLayout tall;
+  tall.build(inlines, theme, 300.0, font, options);
+  const qreal tallBaseline = tall.firstLineBaselineY();
+  const qreal tallCaretTop = tall.cursorRect(0).top();
+  require(tallBaseline > rawAscent,
+          QStringLiteral("first-line baseline must include the line-height offset, not just the raw ascent"));
+  // The baseline sits one ascent above the caret's first-line top (the caret
+  // spans line.y()..line.y()+lineHeight; its top is line.y(), and
+  // firstLineBaselineY is line.y()+ascent).
+  require(qAbs(tallBaseline - tallCaretTop - rawAscent) < 1.0,
+          QStringLiteral("first-line baseline must be caret-top + ascent"));
+
+  // With no line-height multiplier the offset collapses toward zero, but the
+  // baseline must still resolve to caret-top + ascent.
+  InlineLayout plain;
+  plain.build(inlines, theme, 300.0, font);
+  require(qAbs(plain.firstLineBaselineY() - plain.cursorRect(0).top() - rawAscent) < 2.0,
+          QStringLiteral("first-line baseline tracks caret even with default line-height"));
+}
+
 void testInlineLayoutZeroWidthTabIndentGeometry() {
   RenderTheme theme = RenderTheme::github();
   QVector<InlineNode> inlines;
@@ -401,6 +435,7 @@ int main(int argc, char** argv) {
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testInlineLayoutGeometryContract);
+  RUN_TEST(testInlineLayoutFirstLineBaselineFollowsLineHeight);
   RUN_TEST(testInlineLayoutZeroWidthTabIndentGeometry);
   RUN_TEST(testInlineLayoutStyleFormats);
   RUN_TEST(testInlineHtmlKeyboardLayoutContract);

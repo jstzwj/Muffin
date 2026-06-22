@@ -1,6 +1,8 @@
 #include "render/InlineLayout.h"
 
 #include "document/ImageSyntaxOps.h"
+#include "render/DecorationPainter.h"
+#include "render/GradientPainter.h"
 #include "render/ImageDecoder.h"
 #include "render/ImageLoader.h"
 #include "render/ImagePlaceholder.h"
@@ -139,6 +141,23 @@ void InlineLayout::build(
   isMisspelled_ = options.isMisspelled;
   textLayoutCodeBackgroundColor_ = theme.codeBackgroundColor();
   textLayoutCodeBorderColor_ = theme.codeBorderColor();
+  // CSS inline decorations: link ::before icon (mask-tinted SVG) + mark gradient.
+  linkBeforeIcon_.clear();
+  linkBeforeIconTint_ = QColor();
+  linkBeforeIconFromMask_ = false;
+  markGradient_ = GradientSpec{};
+  for (const PseudoElementRule& r : theme.decorations().pseudos) {
+    if (r.host == QStringLiteral("a") && r.pseudo == QStringLiteral("before") && !r.svgData.isEmpty()) {
+      linkBeforeIcon_ = r.svgData;
+      linkBeforeIconFromMask_ = r.svgFromMask;
+      linkBeforeIconTint_ = r.color.isValid() ? r.color : r.backgroundColor;
+    }
+  }
+  for (const ElementBackground& eb : theme.decorations().backgrounds) {
+    if (eb.host == QStringLiteral("mark")) { markGradient_ = eb.gradient; }
+  }
+  baseTextColorOverride_ = options.baseTextColor;
+  lineHeightMultiplier_ = options.lineHeightMultiplier;
   projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState, options.sourceBase, baseFont.pointSizeF(),
                                  options.pendingPrefixLength, options.smartPunct);
   buildOffsetMapFromProjection();
@@ -160,6 +179,17 @@ qreal InlineLayout::height() const {
   return size_.height();
 }
 
+qreal InlineLayout::firstLineBaselineY() const {
+  if (!textLayout_ || textLayout_->lineCount() == 0) {
+    return 0.0;
+  }
+  const QTextLine line = textLayout_->lineAt(0);
+  // line.y() is the centering offset applied for line-height (see buildTextLayout);
+  // line.ascent() is the font ascent. Their sum is where the first line's text
+  // baseline sits relative to the layout origin.
+  return line.isValid() ? (line.y() + line.ascent()) : 0.0;
+}
+
 void InlineLayout::paint(QPainter& painter, QPointF origin) const {
   if (!textLayout_) {
     return;
@@ -168,6 +198,7 @@ void InlineLayout::paint(QPainter& painter, QPointF origin) const {
   painter.save();
   paintTextLayoutHtmlBackgrounds(painter, origin);
   paintTextLayoutCodeSpans(painter, origin);
+  paintTextLayoutInlineDecorations(painter, origin);
   paintTextLayoutHtmlKeyboardSpans(painter, origin);
   textLayout_->draw(&painter, origin);
   paintTextLayoutMathAtoms(painter, origin);
@@ -378,6 +409,60 @@ void InlineLayout::paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) c
     }
   }
   painter.restore();
+}
+
+void InlineLayout::paintTextLayoutInlineDecorations(QPainter& painter, QPointF origin) const {
+  if (!textLayout_) { return; }
+  const bool hasMark = markGradient_.kind != GradientSpec::Kind::None;
+  const bool hasLinkIcon = !linkBeforeIcon_.isEmpty();
+  if (!hasMark && !hasLinkIcon) { return; }
+
+  // mark background-image gradient, per occupied line (mirrors code-span rects).
+  if (hasMark) {
+    painter.save();
+    for (const InlineProjectionSpan& span : projection_.spans()) {
+      if (!span.highlight || span.kind != InlineSpanKind::Text || span.displayEnd <= span.displayStart) { continue; }
+      for (int i = 0; i < textLayout_->lineCount(); ++i) {
+        const QTextLine line = textLayout_->lineAt(i);
+        if (!line.isValid()) { continue; }
+        const int lineStart = line.textStart();
+        const int lineEnd = lineStart + line.textLength();
+        const DisplayOffsetRange lr = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
+        if (!lr.valid) { continue; }
+        const int rs = qMax(lineStart, static_cast<int>(lr.start));
+        const int re = qMin(lineEnd, static_cast<int>(lr.end));
+        if (rs >= re) { continue; }
+        const qreal x1 = line.cursorToX(rs);
+        const qreal x2 = line.cursorToX(re);
+        const QRectF rect(origin.x() + qMin(x1, x2), origin.y() + line.y(), qAbs(x2 - x1), line.height());
+        painter.fillRect(rect, GradientPainter::makeBrush(markGradient_, rect));
+      }
+    }
+    painter.restore();
+  }
+
+  // link ::before icon at the link's leading edge (first occupied line).
+  if (hasLinkIcon) {
+    for (const InlineProjectionSpan& span : projection_.spans()) {
+      if (span.type != InlineType::Link || span.kind != InlineSpanKind::Text || span.displayEnd <= span.displayStart) { continue; }
+      for (int i = 0; i < textLayout_->lineCount(); ++i) {
+        const QTextLine line = textLayout_->lineAt(i);
+        if (!line.isValid()) { continue; }
+        const int lineStart = line.textStart();
+        const int lineEnd = lineStart + line.textLength();
+        const DisplayOffsetRange lr = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
+        if (!lr.valid) { continue; }
+        const int rs = qMax(lineStart, static_cast<int>(lr.start));
+        const int re = qMin(lineEnd, static_cast<int>(lr.end));
+        if (rs >= re) { continue; }
+        const qreal x1 = line.cursorToX(rs);
+        const qreal em = line.height();
+        const QRectF target(origin.x() + x1 - em - 2.0, origin.y() + line.y() + (line.height() - em) / 2.0, em, em);
+        DecorationPainter::paintIcon(painter, linkBeforeIcon_, target, linkBeforeIconTint_, linkBeforeIconFromMask_);
+        break;  // icon only at the link's first line
+      }
+    }
+  }
 }
 
 void InlineLayout::paintTextLayoutHtmlBackgrounds(QPainter& painter, QPointF origin) const {
@@ -803,7 +888,15 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
         minLineHeight = qMax(minLineHeight, atom.displaySize.height());
       }
     }
-    const qreal lineHeight = std::ceil(minLineHeight * 1.16);
+    qreal lineHeight = std::ceil(minLineHeight * 1.16);
+    if (lineHeightMultiplier_ > 0.0) {
+      // CSS `line-height: N` is N * font-size, not N * the platform font
+      // metrics line box. Multiplying QTextLine::height() made CSS themes too
+      // tall compared with other renderers, especially for serif fallback fonts.
+      const qreal pointSize = baseFont.pointSizeF() > 0.0 ? baseFont.pointSizeF() : 12.0;
+      const qreal cssFontPx = pointSize * (96.0 / 72.0);
+      lineHeight = std::ceil(qMax(minLineHeight, cssFontPx * lineHeightMultiplier_));
+    }
     line.setPosition(QPointF(0.0, height + (lineHeight - minLineHeight) * 0.5));
     height += lineHeight;
     maxWidth = qMax(maxWidth, line.naturalTextWidth());
@@ -902,7 +995,7 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
 
   QTextCharFormat baseFormat;
   baseFormat.setFont(baseFont);
-  baseFormat.setForeground(theme.textColor());
+  baseFormat.setForeground(baseTextColorOverride_.isValid() ? baseTextColorOverride_ : theme.textColor());
   QTextLayout::FormatRange baseRange;
   baseRange.start = 0;
   baseRange.length = displayText_.size();

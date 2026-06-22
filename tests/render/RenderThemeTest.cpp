@@ -1,14 +1,19 @@
 #include "document/DocumentSession.h"
 #include "document/MarkdownDocument.h"
 #include "parser/CmarkGfmParser.h"
+#include "render/DecorationPainter.h"
 #include "render/DocumentLayout.h"
+#include "render/BlockLayout.h"
 #include "theme/RenderTheme.h"
+#include "theme/ThemeDefinition.h"
 #include "theme/ThemeManager.h"
 
 #include <QApplication>
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
+#include <QImage>
+#include <QPainter>
 
 #include <functional>
 #include <iostream>
@@ -193,6 +198,96 @@ void testFromDefinitionReproducesBuiltIns() {
   }
 }
 
+// Regression guard for the "narrow window squeezes content into a thin column
+// with huge side margins" symptom reported on `#write { max-width; margin: 0
+// auto; padding }` themes (e.g. phycat). Such a theme is a CSS page box whose
+// horizontalInset is max(margin.left, margin.right) = 0, so the column must FILL
+// the viewport at every width (matching Typora) — never float as a thin centred
+// column. Asserts the real DocumentLayout page-width math at 1000/600/400 px.
+void testNarrowViewportFillsForCardTheme(const MarkdownDocument& document) {
+  ThemeDefinition def;
+  def.id = QStringLiteral("cardlike");
+  def.label = QStringLiteral("Card-like");
+  def.colors.text = QColor(QStringLiteral("#d6deeb"));
+  def.colors.background = QColor(QStringLiteral("#0f111a"));
+  def.page.viewportBackground = QColor(QStringLiteral("#0f111a"));
+  def.page.pageMaxWidth = 950.0;                       // #write max-width: 950px
+  def.page.pagePadding = QMarginsF(15, 15, 15, 15);    // #write padding: 15px  → cssPageBox
+  def.page.pageMargin = QMarginsF(0, 0, 0, 0);         // margin: 0 auto → zero box
+  def.page.pageMarginExplicit = true;
+  const RenderTheme theme = RenderTheme::fromDefinition(def);
+
+  DocumentLayout layout;
+  layout.rebuild(document, theme, 1000.0);
+  require(layout.pageWidth() > 900.0, QStringLiteral("1000px viewport should fill (got %1)").arg(layout.pageWidth()));
+  layout.rebuild(document, theme, 600.0);
+  require(layout.pageWidth() > 500.0,
+          QStringLiteral("600px viewport should fill to ~570, not squeeze (got %1)").arg(layout.pageWidth()));
+  layout.rebuild(document, theme, 400.0);
+  require(layout.pageWidth() > 300.0,
+          QStringLiteral("400px viewport should fill to ~370, not squeeze (got %1)").arg(layout.pageWidth()));
+}
+
+// Paint a theme carrying decorations (h2 element bg gradient, h1::after underline,
+// #write::before texture) end-to-end to an image. Guards the decoration paint
+// hooks + GradientPainter + DecorationPainter against crashes when decorations
+// are actually present (built-in themes carry none, so the other render tests
+// only exercise the empty-decoration early-return paths).
+void testDecoratedThemePaints(const MarkdownDocument& document) {
+  ThemeDefinition def;
+  def.id = QStringLiteral("decorated");
+  def.colors.text = QColor(QStringLiteral("#d6deeb"));
+  def.colors.background = QColor(QStringLiteral("#0f111a"));
+  def.page.viewportBackground = QColor(QStringLiteral("#0f111a"));
+  ElementBackground h2bg;
+  h2bg.host = QStringLiteral("h2");
+  h2bg.present = true;
+  h2bg.gradient.kind = GradientSpec::Kind::Radial;
+  h2bg.gradient.radialCenter = QPointF(0.5, 1.0);
+  h2bg.gradient.stops = {{0.0, QColor(QStringLiteral("#00f3ff"))}, {1.0, QColor(Qt::transparent)}};
+  def.decorations.backgrounds.push_back(h2bg);
+  PseudoElementRule h1after;
+  h1after.host = QStringLiteral("h1");
+  h1after.pseudo = QStringLiteral("after");
+  h1after.present = true;
+  h1after.backgroundColor = QColor(QStringLiteral("#00f3ff"));
+  h1after.size = QSizeF(40.0, 4.0);
+  def.decorations.pseudos.push_back(h1after);
+  PseudoElementRule wbefore;
+  wbefore.host = QStringLiteral("#write");
+  wbefore.pseudo = QStringLiteral("before");
+  wbefore.present = true;
+  wbefore.maskTint = QColor(QStringLiteral("#bd93f9"));
+  wbefore.opacity = 0.05;
+  wbefore.maskTile = QSizeF(20.0, 20.0);
+  wbefore.maskPattern.kind = GradientSpec::Kind::Radial;
+  wbefore.maskPattern.stops = {{0.0, QColor(QStringLiteral("#ffffff"))}, {1.0, QColor(Qt::transparent)}};
+  def.decorations.pseudos.push_back(wbefore);
+  const RenderTheme theme = RenderTheme::fromDefinition(def);
+
+  DocumentLayout layout;
+  layout.rebuild(document, theme, 800.0);
+  QImage img(QSize(800, qCeil(layout.totalHeight()) + 20), QImage::Format_ARGB32);
+  img.fill(QColor(QStringLiteral("#0f111a")).rgba());
+  QPainter p(&img);
+  DecorationPainter::paintWriteTexture(p, theme, QRectF(0, 0, 800, layout.totalHeight()));
+  for (const BlockLayout* blk : layout.promotedBlocks()) {
+    blk->paint(p, theme, 0.0, nullptr);
+  }
+  p.end();
+  require(img.width() > 0 && img.height() > 0, QStringLiteral("decorated paint produced an image"));
+  // A decoration drew something: at least one pixel must differ from the plain
+  // viewport fill (the h2 glow / h1 underline inject non-background colour).
+  const QRgb bg = QColor(QStringLiteral("#0f111a")).rgba();
+  bool drew = false;
+  for (int y = 0; y < img.height() && !drew; ++y) {
+    for (int x = 0; x < img.width(); ++x) {
+      if (img.pixel(x, y) != bg) { drew = true; break; }
+    }
+  }
+  require(drew, QStringLiteral("decorations should paint non-background pixels"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -221,6 +316,8 @@ int main(int argc, char** argv) {
   runTest("testLayoutForTheme/night", [&] { testLayoutForTheme(document, RenderTheme::night(), QStringLiteral("night")); });
   runTest("testLayoutForTheme/pixyll", [&] { testLayoutForTheme(document, RenderTheme::pixyll(), QStringLiteral("pixyll")); });
   runTest("testLayoutForTheme/whitey", [&] { testLayoutForTheme(document, RenderTheme::whitey(), QStringLiteral("whitey")); });
+  runTest("testNarrowViewportFillsForCardTheme", [&] { testNarrowViewportFillsForCardTheme(document); });
+  runTest("testDecoratedThemePaints", [&] { testDecoratedThemePaints(document); });
 #undef RUN_TEST
   return 0;
 }

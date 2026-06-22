@@ -1,5 +1,16 @@
 #include "theme/ThemeDefinition.h"
 
+#include "theme/CssThemeMapper.h"
+#include "theme/CssThemeParser.h"
+
+#include <QFile>
+#include <QFileInfo>
+#include <QFontDatabase>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QSet>
+#include <QStringList>
+
 namespace muffin {
 
 namespace {
@@ -13,12 +24,53 @@ QColor parseColor(const QJsonObject& colors, const char* key) {
   return c.isValid() ? c : QColor();
 }
 
+// @font-face declared family name (lowercased) → the family name QFontDatabase
+// actually registered the font under. CSS @font-face aliases a declared name to
+// the font file regardless of the file's internal name; QFontDatabase registers
+// only the internal name. So a theme that declares `font-family: CascadiaCode`
+// (file Cascadia-Code-Regular.ttf, internal "Cascadia Code") or `"LXGW WenKai"`
+// (internal Chinese name 霞鹜文楷) would NOT resolve without this map.
+// RenderTheme's font-stack builder substitutes the declared name with the
+// registered one (ThemeDefinition::fontFamilyAlias).
+QHash<QString, QString>& fontFaceAliases() {
+  static QHash<QString, QString> map;
+  return map;
+}
+
+// Register every @font-face font declared in the sheet with QFontDatabase so the
+// theme's font-family stacks resolve to the bundled typefaces (e.g. phycat's
+// LXGW WenKai / CascadiaCode). Each font's srcPath is already absolute and
+// resolved against its owning CSS file's dir (a font in an @import'd base
+// resolves against that base). Process-global side-effect, guarded by a static
+// path set so repeated loadDefinitions() calls (startup + every import) don't
+// re-register the same file — mirrors MathFontRegistry's static-loaded guard.
+// Must run before any render queries QFontDatabase::families(); ThemeManager
+// runs fromCss (and thus this) at load time, ahead of painting.
+void registerThemeFonts(const CssThemeSheet& sheet) {
+  static QSet<QString> registered;
+  for (const CssFontFace& ff : sheet.fontFaces()) {
+    if (ff.srcPath.isEmpty() || registered.contains(ff.srcPath)) { continue; }
+    if (!QFileInfo(ff.srcPath).isFile()) { continue; }
+    const int id = QFontDatabase::addApplicationFont(ff.srcPath);
+    registered.insert(ff.srcPath);
+    // Map the @font-face declared name to the family name Qt actually registered
+    // (the font's internal name, which often differs from the declared alias).
+    if (id >= 0) {
+      const QStringList fams = QFontDatabase::applicationFontFamilies(id);
+      if (!fams.isEmpty()) { fontFaceAliases().insert(ff.family.toLower(), fams.first()); }
+    }
+  }
+}
+
 }  // namespace
 
 bool ThemeDefinition::valid() const {
-  // Usable as long as the core document colours resolved. Chrome fields fall
-  // back to document colours in fromJson(), so they need not be present.
-  return colors.background.isValid() && colors.text.isValid();
+  // Text is the one essential token: a theme with no readable text colour is
+  // unusable. A missing background is legitimate (a CSS theme may leave the
+  // viewport to a browser-like default) and is synthesised by the CSS loader /
+  // derived for chrome, so it is not a validity gate. Chrome fields all fall
+  // back to document colours, so they need not be present either.
+  return colors.text.isValid();
 }
 
 ThemeDefinition ThemeDefinition::fromJson(const QJsonObject& json, const QString& idHint) {
@@ -41,6 +93,9 @@ ThemeDefinition ThemeDefinition::fromJson(const QJsonObject& json, const QString
   k.tableAlternateBackground = parseColor(c, "tableAlternateBackground");
   k.highlight = parseColor(c, "highlight");
   k.selection = parseColor(c, "selection");
+  k.codeBlockBackground = parseColor(c, "codeBlockBackground");
+  k.headingAccentColor = parseColor(c, "headingAccentColor");
+  k.blockquoteBackground = parseColor(c, "blockquoteBackground");
   k.chromeBackground = parseColor(c, "chromeBackground");
   k.chromeText = parseColor(c, "chromeText");
   k.chromeMuted = parseColor(c, "chromeMuted");
@@ -52,23 +107,31 @@ ThemeDefinition ThemeDefinition::fromJson(const QJsonObject& json, const QString
   k.accent = parseColor(c, "accent");
   k.serifBody = c.value(QStringLiteral("serifBody")).toBool(false);
 
+  // Optional typography block (Muffin-native JSON themes; CSS themes go
+  // through fromCss instead). Absent → all fields stay default/empty.
+  const QJsonObject t = json.value(QStringLiteral("typography")).toObject();
+  if (!t.isEmpty()) {
+    ThemeTypography& ty = d.typography;
+    ty.bodyFont = t.value(QStringLiteral("bodyFont")).toString();
+    ty.headingFont = t.value(QStringLiteral("headingFont")).toString();
+    ty.codeFont = t.value(QStringLiteral("codeFont")).toString();
+    ty.mathFont = t.value(QStringLiteral("mathFont")).toString();
+    ty.bodySizePt = t.value(QStringLiteral("bodySizePt")).toDouble(0.0);
+    ty.lineHeight = t.value(QStringLiteral("lineHeight")).toDouble(0.0);
+    const QJsonArray sizes = t.value(QStringLiteral("headingSizePt")).toArray();
+    for (int i = 0; i < 6 && i < sizes.size(); ++i) {
+      ty.headingSizePt[i] = sizes.at(i).toDouble(0.0);
+    }
+    const QJsonArray hcols = t.value(QStringLiteral("headingColor")).toArray();
+    for (int i = 0; i < 6 && i < hcols.size(); ++i) {
+      QColor hc(hcols.at(i).toString());
+      if (hc.isValid()) { ty.headingColor[i] = hc; }
+    }
+  }
+
   // Derive chrome defaults from the document palette when a theme file omits
   // them, so a minimal (document-colours-only) JSON still renders sanely.
-  if (!k.chromeBackground.isValid()) k.chromeBackground = k.background;
-  if (!k.chromeText.isValid()) k.chromeText = k.text;
-  if (!k.chromeMuted.isValid()) k.chromeMuted = k.muted;
-  if (!k.surface.isValid()) k.surface = k.background;
-  // canvas = the tone behind cards. A minimal theme usually omits it, so derive
-  // a subtle step off the base tones for depth (lighter themes get a faint gray
-  // canvas; darker themes get a marginally darker one) rather than going flat.
-  if (!k.canvas.isValid()) {
-    const QColor base = k.chromeBackground.isValid() ? k.chromeBackground : k.background;
-    k.canvas = base.lightness() < 128 ? base.darker(112) : k.surface.darker(104);
-  }
-  if (!k.border.isValid()) k.border = k.codeBorder;
-  if (!k.hover.isValid()) k.hover = k.codeBackground;
-  if (!k.selected.isValid()) k.selected = k.codeBackground;
-  if (!k.accent.isValid()) k.accent = k.link;
+  deriveChromeDefaults(k);
   k.isDark = c.value(QStringLiteral("isDark")).toBool(k.background.lightness() < 128);
   return d;
 }
@@ -92,6 +155,9 @@ QJsonObject ThemeDefinition::toJson() const {
   put("tableAlternateBackground", colors.tableAlternateBackground);
   put("highlight", colors.highlight);
   put("selection", colors.selection);
+  put("codeBlockBackground", colors.codeBlockBackground);
+  put("headingAccentColor", colors.headingAccentColor);
+  put("blockquoteBackground", colors.blockquoteBackground);
   put("chromeBackground", colors.chromeBackground);
   put("chromeText", colors.chromeText);
   put("chromeMuted", colors.chromeMuted);
@@ -110,162 +176,124 @@ QJsonObject ThemeDefinition::toJson() const {
   root.insert(QStringLiteral("name"), id);
   root.insert(QStringLiteral("label"), label);
   root.insert(QStringLiteral("colors"), c);
+
+  // Only emit typography when the theme actually sets any of it, so legacy
+  // themes round-trip unchanged.
+  const ThemeTypography& ty = typography;
+  const bool hasTypo = !(ty.bodyFont.isEmpty() && ty.headingFont.isEmpty() &&
+                         ty.codeFont.isEmpty() && ty.mathFont.isEmpty() &&
+                         ty.bodySizePt == 0.0 && ty.lineHeight == 0.0);
+  if (hasTypo) {
+    QJsonObject t;
+    if (!ty.bodyFont.isEmpty()) t.insert(QStringLiteral("bodyFont"), ty.bodyFont);
+    if (!ty.headingFont.isEmpty()) t.insert(QStringLiteral("headingFont"), ty.headingFont);
+    if (!ty.codeFont.isEmpty()) t.insert(QStringLiteral("codeFont"), ty.codeFont);
+    if (!ty.mathFont.isEmpty()) t.insert(QStringLiteral("mathFont"), ty.mathFont);
+    if (ty.bodySizePt != 0.0) t.insert(QStringLiteral("bodySizePt"), ty.bodySizePt);
+    if (ty.lineHeight != 0.0) t.insert(QStringLiteral("lineHeight"), ty.lineHeight);
+    QJsonArray sizes;
+    bool anySize = false;
+    for (int i = 0; i < 6; ++i) {
+      sizes.append(ty.headingSizePt[i]);
+      if (ty.headingSizePt[i] != 0.0) anySize = true;
+    }
+    if (anySize) t.insert(QStringLiteral("headingSizePt"), sizes);
+    QJsonArray hcols;
+    bool anyHcol = false;
+    for (int i = 0; i < 6; ++i) {
+      if (ty.headingColor[i].isValid()) {
+        hcols.append(ty.headingColor[i].name(QColor::HexArgb));
+        anyHcol = true;
+      } else {
+        hcols.append(QJsonValue::Null);
+      }
+    }
+    if (anyHcol) t.insert(QStringLiteral("headingColor"), hcols);
+    root.insert(QStringLiteral("typography"), t);
+  }
   return root;
 }
 
-const std::vector<ThemeDefinition>& ThemeDefinition::builtIns() {
-  static const std::vector<ThemeDefinition> kBuiltIns = [] {
-    std::vector<ThemeDefinition> out;
-    auto add = [&out](const char* id, const char* label, ThemeColors c) {
-      ThemeDefinition d;
-      d.id = QString::fromLatin1(id);
-      d.label = QString::fromLatin1(label);
-      d.colors = std::move(c);
-      d.isBuiltIn = true;
-      out.push_back(std::move(d));
-    };
+void ThemeDefinition::deriveChromeDefaults(ThemeColors& k) {
+  // Derive chrome defaults from the document palette when a theme omits them, so
+  // a minimal (document-colours-only) theme still renders sane chrome. Shared by
+  // fromJson and the CSS mapper. isDark is intentionally NOT set here.
+  if (!k.chromeBackground.isValid()) k.chromeBackground = k.background;
+  if (!k.chromeText.isValid()) k.chromeText = k.text;
+  if (!k.chromeMuted.isValid()) k.chromeMuted = k.muted;
+  if (!k.surface.isValid()) k.surface = k.background;
+  // canvas = the tone behind cards. A minimal theme usually omits it, so derive
+  // a subtle step off the base tones for depth (lighter themes get a faint gray
+  // canvas; darker themes get a marginally darker one) rather than going flat.
+  if (!k.canvas.isValid()) {
+    const QColor base = k.chromeBackground.isValid() ? k.chromeBackground : k.background;
+    k.canvas = base.lightness() < 128 ? base.darker(112) : k.surface.darker(104);
+  }
+  if (!k.border.isValid()) {
+    // Chrome hairline (splitter, menu/status-bar separators). codeBorder is the
+    // first choice, but a theme may set neither (e.g. minimal/variable-only CSS
+    // themes) — leaving it invalid makes every consumer render an unset QPen as
+    // solid black (the "black line above the status bar"). Fall back to a subtle
+    // step off the chrome background so the hairline is always visible-but-soft.
+    if (k.codeBorder.isValid()) {
+      k.border = k.codeBorder;
+    } else {
+      const QColor base = k.chromeBackground.isValid() ? k.chromeBackground : k.background;
+      k.border = base.lightness() < 128 ? base.lighter(140) : base.darker(112);
+    }
+  }
+  if (!k.hover.isValid()) k.hover = k.codeBackground;
+  if (!k.selected.isValid()) k.selected = k.codeBackground;
+  if (!k.accent.isValid()) k.accent = k.link;
+}
 
-    // github — default, light/neutral. Chrome palette matches the current
-    // hard-coded light chrome so this theme is visually unchanged.
-    {
-      ThemeColors c;
-      c.background = QColor("#ffffff");
-      c.text = QColor("#202124");
-      c.muted = QColor("#57606a");
-      c.link = QColor("#4183c4");
-      c.codeBackground = QColor("#f6f8fa");
-      c.codeBorder = QColor("#e5e7eb");
-      c.quoteBorder = QColor("#d0d7de");
-      c.tableBorder = QColor("#dfe2e5");
-      c.tableHeaderBackground = QColor("#edf4ff");
-      c.tableAlternateBackground = QColor("#f6f8fa");
-      c.highlight = QColor("#fff8c5");
-      c.selection = QColor("#d7e8ff");
-      c.chromeBackground = QColor("#ffffff");
-      c.chromeText = QColor("#1f2328");
-      c.chromeMuted = QColor("#57606a");
-      c.surface = QColor("#ffffff");
-      c.canvas = QColor("#f6f7f9");
-      c.border = QColor("#d0d7de");
-      c.hover = QColor("#f6f8fa");
-      c.selected = QColor("#e9e9e9");
-      c.accent = QColor("#0969da");
-      c.isDark = false;
-      add("github", "GitHub", c);
-    }
-    // newsprint — warm. Chrome warmed to match, so the theme tints the whole
-    // UI (previously the chrome stayed neutral light for every non-night theme).
-    {
-      ThemeColors c;
-      c.background = QColor("#fbfaf7");
-      c.text = QColor("#1f2328");
-      c.muted = QColor("#6b665d");
-      c.link = QColor("#2f6f9f");
-      c.codeBackground = QColor("#f1eee8");
-      c.codeBorder = QColor("#ded8cc");
-      c.quoteBorder = QColor("#c8bfae");
-      c.tableBorder = QColor("#d8d0c2");
-      c.tableHeaderBackground = QColor("#efe3ce");
-      c.tableAlternateBackground = QColor("#f6f3ed");
-      c.highlight = QColor("#fff8c5");
-      c.selection = QColor("#d9e8ef");
-      c.chromeBackground = QColor("#fbfaf7");
-      c.chromeText = QColor("#1f2328");
-      c.chromeMuted = QColor("#6b665d");
-      c.surface = QColor("#ffffff");
-      c.canvas = QColor("#f4f1ea");
-      c.border = QColor("#ded8cc");
-      c.hover = QColor("#f1eee8");
-      c.selected = QColor("#efe3ce");
-      c.accent = QColor("#2f6f9f");
-      c.isDark = false;
-      add("newsprint", "Newsprint", c);
-    }
-    // night — dark.
-    {
-      ThemeColors c;
-      c.background = QColor("#1f2328");
-      c.text = QColor("#e6edf3");
-      c.muted = QColor("#9aa4af");
-      c.link = QColor("#7fb4f5");
-      c.codeBackground = QColor("#2b3138");
-      c.codeBorder = QColor("#3d444d");
-      c.quoteBorder = QColor("#56616d");
-      c.tableBorder = QColor("#3d444d");
-      c.tableHeaderBackground = QColor("#303b4a");
-      c.tableAlternateBackground = QColor("#242a31");
-      c.highlight = QColor("#3a341a");
-      c.selection = QColor("#264f78");
-      c.chromeBackground = QColor("#1f2328");
-      c.chromeText = QColor("#e6edf3");
-      c.chromeMuted = QColor("#9aa4af");
-      c.surface = QColor("#242a31");
-      c.canvas = QColor("#1b1f24");
-      c.border = QColor("#3d444d");
-      c.hover = QColor("#2b3138");
-      c.selected = QColor("#30363d");
-      c.accent = QColor("#7fb4f5");
-      c.isDark = true;
-      add("night", "Night", c);
-    }
-    // pixyll — serif body on warm paper with a teal accent. Its identity is
-    // typography (a serif body), so serifBody is set; the palette is warmed and
-    // shifted to teal so it reads as clearly distinct from github at a glance.
-    {
-      ThemeColors c;
-      c.background = QColor("#fafaf7");
-      c.text = QColor("#2c2c2c");
-      c.muted = QColor("#6a6a6a");
-      c.link = QColor("#0e8a7a");
-      c.codeBackground = QColor("#f0eee6");
-      c.codeBorder = QColor("#ddd9cc");
-      c.quoteBorder = QColor("#c2b280");
-      c.tableBorder = QColor("#ddd9cc");
-      c.tableHeaderBackground = QColor("#eef3ec");
-      c.tableAlternateBackground = QColor("#f4f2ea");
-      c.highlight = QColor("#fff8c5");
-      c.selection = QColor("#cdeae3");
-      c.chromeBackground = QColor("#fafaf7");
-      c.chromeText = QColor("#2c2c2c");
-      c.chromeMuted = QColor("#6a6a6a");
-      c.surface = QColor("#ffffff");
-      c.canvas = QColor("#f3f1e8");
-      c.border = QColor("#ddd9cc");
-      c.hover = QColor("#f0eee6");
-      c.selected = QColor("#eef3ec");
-      c.accent = QColor("#0e8a7a");
-      c.serifBody = true;
-      c.isDark = false;
-      add("pixyll", "Pixyll", c);
-    }
-    // whitey — minimal / airy: noticeably lighter body text and faint chrome on
-    // a near-white canvas, so it reads softer and less dense than github rather
-    // than just "another dark-on-white" theme.
-    {
-      ThemeColors c;
-      c.background = QColor("#fcfcfc");
-      c.text = QColor("#4a4a4a");
-      c.muted = QColor("#8a8a8a");
-      c.link = QColor("#6a7d9a");
-      c.codeBackground = QColor("#f4f4f4");
-      c.codeBorder = QColor("#ececec");
-      c.quoteBorder = QColor("#d4d4d4");
-      c.tableBorder = QColor("#ececec");
-      c.tableHeaderBackground = QColor("#f2f5f8");
-      c.tableAlternateBackground = QColor("#f8f8f8");
-      c.highlight = QColor("#fff8c5");
-      c.selection = QColor("#e0e8f0");
-      c.chromeBackground = QColor("#fcfcfc");
-      c.chromeText = QColor("#4a4a4a");
-      c.chromeMuted = QColor("#8a8a8a");
-      c.surface = QColor("#ffffff");
-      c.canvas = QColor("#f5f5f5");
-      c.border = QColor("#ececec");
-      c.hover = QColor("#f4f4f4");
-      c.selected = QColor("#f2f5f8");
-      c.accent = QColor("#6a7d9a");
-      c.isDark = false;
-      add("whitey", "Whitey", c);
+ThemeDefinition ThemeDefinition::fromCss(const QString& cssPath, const QString& id) {
+  QFile f(cssPath);
+  if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    return ThemeDefinition{};  // default-constructed → invalid (no background/text)
+  }
+  const QString text = QString::fromUtf8(f.readAll());
+  f.close();
+  // @import urls resolve relative to the CSS file's directory. Works for both
+  // filesystem paths and :/resource paths (QFile/QDir handle both).
+  const QString baseDir = QFileInfo(cssPath).absolutePath();
+  const CssThemeSheet sheet = CssThemeParser::parse(text, baseDir);
+  // Register @font-face fonts before translation so the font-family stacks the
+  // mapper reads are backed by registered typefaces by the time anything paints.
+  registerThemeFonts(sheet);
+  return CssThemeMapper::fromSheet(sheet, id);
+}
+
+QString ThemeDefinition::fontFamilyAlias(const QString& declaredName) {
+  // Resolve a CSS @font-face declared family name to the family name QFontDatabase
+  // registered (the font file's internal name), or empty if it isn't an @font-face
+  // alias. See fontFaceAliases() for why this mapping is necessary.
+  if (declaredName.isEmpty()) { return {}; }
+  const auto& map = fontFaceAliases();
+  const auto it = map.constFind(declaredName.toLower());
+  return it != map.constEnd() ? it.value() : QString();
+}
+
+const std::vector<ThemeDefinition>& ThemeDefinition::builtIns() {
+  // Built-ins are authored as community-CSS CSS at :/themes/<id>.css and
+  // loaded through the SAME fromCss path as user themes — one format, one
+  // code path. The display order + labels are fixed here; the colours live in
+  // the CSS. testFromDefinitionReproducesBuiltIns guards that each CSS built-in
+  // still reproduces the matching RenderTheme factory bit-for-bit.
+  static const std::vector<ThemeDefinition> kBuiltIns = [] {
+    struct Spec { const char* id; const char* label; };
+    static constexpr Spec specs[] = {
+        {"github", "GitHub"}, {"newsprint", "Newsprint"}, {"night", "Night"},
+        {"pixyll", "Pixyll"}, {"whitey", "Whitey"},
+    };
+    std::vector<ThemeDefinition> out;
+    for (const Spec& s : specs) {
+      const QString path = QStringLiteral(":/themes/%1.css").arg(QString::fromLatin1(s.id));
+      ThemeDefinition d = ThemeDefinition::fromCss(path, QString::fromLatin1(s.id));
+      d.id = QString::fromLatin1(s.id);
+      d.label = QString::fromLatin1(s.label);
+      d.isBuiltIn = true;
+      if (d.valid()) { out.push_back(std::move(d)); }
     }
     return out;
   }();

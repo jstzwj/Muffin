@@ -37,6 +37,11 @@ public:
     std::function<bool(QStringView)> isMisspelled;
     // Display-only smart punctuation (Convert on Rendering); no-op by default.
     SmartPunctRenderOptions smartPunct;
+    // Base text colour override (e.g. a theme's per-heading colour). Invalid →
+    // the layout falls back to theme.textColor() for plain Text runs. Span-level
+    // colours (links, code, highlight) still take precedence per span.
+    QColor baseTextColor;
+    qreal lineHeightMultiplier = 0.0;
   };
 
   InlineLayout() = default;
@@ -52,6 +57,12 @@ public:
 
   QSizeF size() const;
   qreal height() const;
+  // Baseline Y of the first text line, relative to the layout origin. Includes
+  // the line-height centering offset (line.y()), so callers drawing decoration
+  // that must align with the first line (placeholder text, list markers) land on
+  // the same baseline as the painted text and the caret — which otherwise drift
+  // apart under a large theme line-height.
+  qreal firstLineBaselineY() const;
   void paint(QPainter& painter, QPointF origin) const;
   qsizetype hitTestTextOffset(QPointF localPos) const;
   qsizetype hitTestSourceOffset(QPointF localPos) const;
@@ -141,6 +152,7 @@ private:
   QString texForInlineMathVisibleRange(const QVector<InlineNode>& inlines, qsizetype visibleStart, qsizetype visibleEnd) const;
   void buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont);
   void paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) const;
+  void paintTextLayoutInlineDecorations(QPainter& painter, QPointF origin) const;
   void paintTextLayoutHtmlBackgrounds(QPainter& painter, QPointF origin) const;
   void paintTextLayoutHtmlKeyboardSpans(QPainter& painter, QPointF origin) const;
   void paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) const;
@@ -162,7 +174,15 @@ private:
   std::unique_ptr<QTextLayout> textLayout_;
   QSizeF size_;
   QColor textLayoutCodeBackgroundColor_;
+  QColor baseTextColorOverride_;  // invalid → theme.textColor() for plain runs
+  qreal lineHeightMultiplier_ = 0.0;
   QColor textLayoutCodeBorderColor_;
+  // CSS inline decorations (Phase 3). link ::before icon (mask-tinted SVG) +
+  // mark background-image gradient. Empty/None → nothing painted.
+  QByteArray linkBeforeIcon_;
+  QColor linkBeforeIconTint_;
+  bool linkBeforeIconFromMask_ = false;
+  GradientSpec markGradient_;
   QString plainText_;
   bool isEmpty_ = true;
   QString displayText_;

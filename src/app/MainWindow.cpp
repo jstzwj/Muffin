@@ -45,6 +45,21 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
+#if defined(Q_OS_WIN)
+// Dark-mode title bar: the OS draws the caption (title text + min/max/close
+// buttons), so Qt style sheets cannot reach it. Toggling the DWM attribute
+// below makes that caption follow the theme's brightness. NOMINMAX /
+// WIN32_LEAN_AND_MEAN keep <windows.h> from clashing with Qt/std symbols.
+#  define WIN32_LEAN_AND_MEAN
+#  define NOMINMAX
+#  include <windows.h>
+#  include <dwmapi.h>
+#  pragma comment(lib, "dwmapi")
+#  ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#    define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#  endif
+#endif
+
 namespace {
 
 Q_LOGGING_CATEGORY(mainWindowPerf, "muffin.perf", QtWarningMsg)
@@ -123,6 +138,24 @@ void muffin::MainWindow::changeEvent(QEvent* event) {
   // events. Intentionally not retranslating here keeps all menu work out of Qt's
   // LanguageChange delivery (retranslateUi() updates menus in place, but running
   // it mid-delivery is unnecessary and best avoided).
+}
+
+void muffin::MainWindow::showEvent(QShowEvent* event) {
+  QMainWindow::showEvent(event);
+  // DWM dark-mode often only takes hold once the window is actually shown, so
+  // re-apply on reveal (cheap; one Win32 call) to cover the startup path.
+  applyNativeTitleBarDarkMode(themeManager_.currentDefinition().colors.isDark);
+}
+
+void muffin::MainWindow::applyNativeTitleBarDarkMode(bool dark) {
+#if defined(Q_OS_WIN)
+  if (HWND hwnd = reinterpret_cast<HWND>(winId())) {
+    const BOOL value = dark ? TRUE : FALSE;
+    DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
+  }
+#else
+  Q_UNUSED(dark);
+#endif
 }
 
 void muffin::MainWindow::setupUi() {
@@ -540,6 +573,7 @@ void muffin::MainWindow::applyTheme(QString name) {
     sidebar_->applyTheme(def);
   }
   updateThemeActions();
+  updateThemeChecks();
 
   // Chrome (menu bar, menus, tool buttons, splitter handle) now derives
   // entirely from the theme definition — no more hard-coded night/light branch,
@@ -551,10 +585,15 @@ void muffin::MainWindow::applyTheme(QString name) {
   }
 
   // The painted status bar recolors itself (background, text, icons) from the theme.
+  // The top separator uses the chrome border (a guaranteed-valid hairline), NOT
+  // the code-border colour: that's a document/code token which is invalid on
+  // themes with no code-border rule, and an invalid QPen renders solid black.
   if (statusBar_) {
     statusBar_->applyThemeColors(theme.backgroundColor(), theme.textColor(), theme.mutedTextColor(),
-                                 theme.codeBorderColor());
+                                 def.colors.border);
   }
+
+  applyNativeTitleBarDarkMode(def.colors.isDark);
 }
 
 int muffin::MainWindow::countWords(const QString& text) {

@@ -62,7 +62,7 @@ SmartPunctRenderOptions smartPunctRenderOptions() {
   const bool rendering = QSettings().value(QStringLiteral("markdown/convertOnRendering"), false).toBool();
   opts.convertQuotes = rendering && QSettings().value(QStringLiteral("markdown/smartQuotes"), false).toBool();
   opts.convertDashes = rendering && QSettings().value(QStringLiteral("markdown/smartDashes"), false).toBool();
-  opts.convertEllipsis = opts.convertDashes;  // ellipsis rides on Smart Dashes, matching Typora
+  opts.convertEllipsis = opts.convertDashes;  // ellipsis rides on Smart Dashes, matching other editors
   opts.doubleQuoteStyle = QSettings().value(QStringLiteral("markdown/doubleQuoteStyle"), 0).toInt();
   opts.singleQuoteStyle = QSettings().value(QStringLiteral("markdown/singleQuoteStyle"), 0).toInt();
   return opts;
@@ -347,6 +347,11 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
 
   auto inlineLayout = std::make_unique<InlineLayout>();
   const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
+  const QMarginsF headingPadding = node.type() == BlockType::Heading ? theme.headingPadding(node.headingLevel()) : QMarginsF();
+  // Text width accounts for heading padding so content wraps within the padded area.
+  // The rect itself stays at the original x position so hitTest/cursor calculations
+  // remain consistent with the paint offset.
+  const qreal textWidth = qMax<qreal>(1.0, width - headingPadding.left() - headingPadding.right());
   // A heading projects content-only: its `# ` prefix region [blockStart, contentStart) is never part
   // of the editable projection (it is empty for Setext headings, whose byteStart == contentStart).
   // The level is conveyed by font size and changed via the heading-level commands, so the prefix is
@@ -367,9 +372,15 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   options.pendingPrefixLength = pendingPrefixLengthFor(node, editableSource);
   options.isMisspelled = spellMisspelledPredicate();
   options.smartPunct = smartPunctRenderOptions();
+  // Per-heading text colour from the theme (CSS themes give h1-h6 their
+  // own colours). Invalid for themes that don't → falls back to textColor.
+  if (node.type() == BlockType::Heading) {
+    options.baseTextColor = theme.headingColor(node.headingLevel());
+  }
+  options.lineHeightMultiplier = theme.lineHeightMultiplier(node.type(), node.headingLevel());
   {
     BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
-    inlineLayout->build(node.inlines(), editableSource, theme, width, font, options);
+    inlineLayout->build(node.inlines(), editableSource, theme, textWidth, font, options);
   }
   qreal height = inlineLayout->height();
   if (node.type() == BlockType::Heading && node.headingLevel() <= 2) {

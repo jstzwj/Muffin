@@ -104,6 +104,21 @@ void muffin::MainWindow::rebuildThemesMenu() {
   connect(folderAction, &QAction::triggered, this, [this] { openThemesFolder(); });
 }
 
+void muffin::MainWindow::updateThemeChecks() {
+  if (!themesMenu_) {
+    return;
+  }
+  // The theme actions are the checkable ones (each carries its theme id as
+  // data()); the Import/Open-folder actions below them are not checkable, so
+  // isCheckable() filters them out.
+  const QString current = themeManager_.currentThemeName();
+  for (QAction* action : themesMenu_->actions()) {
+    if (action->isCheckable()) {
+      action->setChecked(action->data().toString() == current);
+    }
+  }
+}
+
 void muffin::MainWindow::setThemeByName(const QString& name) {
   if (themeManager_.setTheme(name)) {
     saveAppearanceTheme(themeManager_.currentThemeName());
@@ -113,20 +128,8 @@ void muffin::MainWindow::setThemeByName(const QString& name) {
 
 void muffin::MainWindow::importTheme() {
   const QString src = QFileDialog::getOpenFileName(
-      this, tr("Import Theme"), QString(), tr("Theme Files (*.json)"));
+      this, tr("Import Theme"), QString(), tr("Theme Files (*.css *.json)"));
   if (src.isEmpty()) {
-    return;
-  }
-  // Validate before copying so a malformed file never lands in the themes dir.
-  QFile in(src);
-  if (!in.open(QIODevice::ReadOnly)) {
-    QMessageBox::warning(this, tr("Import Theme"), tr("Could not read the selected file."));
-    return;
-  }
-  const QJsonDocument doc = QJsonDocument::fromJson(in.readAll());
-  in.close();
-  if (!doc.isObject()) {
-    QMessageBox::warning(this, tr("Import Theme"), tr("The selected file is not a valid theme."));
     return;
   }
   const QString id = QFileInfo(src).baseName().toLower();
@@ -137,7 +140,26 @@ void muffin::MainWindow::importTheme() {
         tr("A built-in theme named \"%1\" already exists; choose a different file name.").arg(id));
     return;
   }
-  ThemeDefinition probe = ThemeDefinition::fromJson(doc.object(), id);
+  // Validate before copying so a malformed file never lands in the themes dir.
+  // CSS themes go through the community-CSS interpreter; JSON themes use the
+  // native Muffin schema.
+  ThemeDefinition probe;
+  if (src.endsWith(QStringLiteral(".css"), Qt::CaseInsensitive)) {
+    probe = ThemeDefinition::fromCss(src, id);
+  } else {
+    QFile in(src);
+    if (!in.open(QIODevice::ReadOnly)) {
+      QMessageBox::warning(this, tr("Import Theme"), tr("Could not read the selected file."));
+      return;
+    }
+    const QJsonDocument doc = QJsonDocument::fromJson(in.readAll());
+    in.close();
+    if (!doc.isObject()) {
+      QMessageBox::warning(this, tr("Import Theme"), tr("The selected file is not a valid theme."));
+      return;
+    }
+    probe = ThemeDefinition::fromJson(doc.object(), id);
+  }
   if (!probe.valid()) {
     QMessageBox::warning(this, tr("Import Theme"),
         tr("The theme file is missing required colours (background and text)."));
@@ -146,13 +168,25 @@ void muffin::MainWindow::importTheme() {
 
   const QString dir = ThemeManager::themesDirectory();
   QDir().mkpath(dir);
-  const QString dest = dir + QDir::separator() + QFileInfo(src).fileName().toLower();
-  if (QFileInfo::exists(dest)) {
-    QFile::remove(dest);
-  }
-  if (!QFile::copy(src, dest)) {
-    QMessageBox::warning(this, tr("Import Theme"), tr("Could not copy the theme into the themes folder."));
-    return;
+  if (src.endsWith(QStringLiteral(".css"), Qt::CaseInsensitive)) {
+    // Install as a multi-file mirror: the top .css verbatim + every local file
+    // it transitively references (@import'd base sheets, @font-face fonts, url()
+    // images) copied next to it with relative paths preserved. The theme then
+    // resolves identically to its source folder — Typora-style, e.g. phycat:
+    // phycat-abyss.css + phycat/ carrying the base CSS and the .ttf fonts. This
+    // replaces the former @import-inlining import, which flattened the theme to
+    // one file and broke the @font-face font urls in the @import'd base.
+    if (!ThemeManager::installCssTheme(src, dir)) {
+      QMessageBox::warning(this, tr("Import Theme"), tr("Could not read the selected file."));
+      return;
+    }
+  } else {
+    const QString dest = dir + QDir::separator() + QFileInfo(src).fileName().toLower();
+    if (QFileInfo::exists(dest)) { QFile::remove(dest); }
+    if (!QFile::copy(src, dest)) {
+      QMessageBox::warning(this, tr("Import Theme"), tr("Could not copy the theme into the themes folder."));
+      return;
+    }
   }
 
   themeManager_.reloadCustomThemes();

@@ -5,9 +5,13 @@
 #include "editor/CodeLanguageEditor.h"
 #include "editor/EditorViewGeometry.h"
 #include "editor/HtmlBlockHoverController.h"
+#include "editor/HoverAnimator.h"
+#include "editor/KeyframeAnimator.h"
 #include "editor/ResourceUrl.h"
 #include "editor/TableToolbar.h"
+#include "render/DecorationPainter.h"
 #include "render/ImageLoader.h"
+#include "render/KeyframeSampler.h"
 
 #include <QAction>
 #include <QApplication>
@@ -21,6 +25,7 @@
 #include <QList>
 #include <QMimeData>
 #include <QPainter>
+#include <QSet>
 #include <QLoggingCategory>
 #include <QScrollBar>
 #include <QPropertyAnimation>
@@ -42,6 +47,15 @@ using namespace editor_geometry;
 namespace {
 
 Q_LOGGING_CATEGORY(viewPerf, "muffin.perf", QtWarningMsg)
+
+// Map a block to its CSS host key for decoration/hover lookup ("" → none).
+QString hostKeyForBlock(const BlockLayout& block) {
+  switch (block.type()) {
+    case BlockType::Heading: return QStringLiteral("h%1").arg(block.headingLevel());
+    case BlockType::BlockQuote: return QStringLiteral("blockquote");
+    default: return QString();
+  }
+}
 
 bool sameCursorPosition(const CursorPosition& a, const CursorPosition& b) {
   return a.blockId == b.blockId && a.text.nodeId == b.text.nodeId && a.text.textOffset == b.text.textOffset &&
@@ -84,6 +98,10 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
   viewport()->setAutoFillBackground(false);
   setBackgroundRole(QPalette::Base);
   applyScrollBarStyle();
+  hoverAnimator_ = new HoverAnimator(this);
+  hoverAnimator_->repaintBlock = [this](NodeId id) { repaintHoverBlock(id); };
+  keyframeAnimator_ = new KeyframeAnimator(this);
+  keyframeAnimator_->repaintAnimated = [this]() { repaintAnimatedBlocks(); };
 
   codeLanguageEditor_ = new CodeLanguageEditor(viewport(), this);
   codeLanguageEditor_->setSuggestions({
@@ -283,6 +301,7 @@ void EditorView::setTheme(RenderTheme theme) {
   theme_ = std::move(theme);
   theme_.setZoomPercent(zoom);
   theme_.setFontSizePx(fontSize);
+  if (keyframeAnimator_) { keyframeAnimator_->setTheme(theme_); }
   applyScrollBarStyle();
   viewport()->setPalette(QPalette(theme_.backgroundColor()));
   rebuildLayout();
@@ -557,11 +576,55 @@ void EditorView::paintEvent(QPaintEvent* event) {
   Q_UNUSED(event);
 
   QPainter painter(viewport());
-  painter.fillRect(viewport()->rect(), theme_.backgroundColor());
+  painter.fillRect(viewport()->rect(), theme_.viewportBackgroundColor());
 
   if (!layout_) {
     return;
   }
+
+  const QRectF page = layout_->pageRect(theme_, viewport()->height()).translated(0, -scrollY());
+  painter.save();
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  if (theme_.pageShadowColor().isValid() && theme_.pageShadowBlur() > 0.0) {
+    // CSS box-shadow blur is a Gaussian falloff. We approximate it with N
+    // concentric rounded-rect shells, each grown further out and carrying an
+    // equal slice of the peak alpha. Drawn outer-first, the overdraw builds a
+    // soft core at the offset position and fades to nothing ~blur px out —
+    // instead of one hard-edged rect that, behind a translucent paper (e.g.
+    // mist-blue's rgba(248,250,253,0.58) card), read as a second panel offset
+    // below the card.
+    QColor base = theme_.pageShadowColor();
+    base.setAlpha(qMin(base.alpha(), 42));
+    const qreal peakAlphaF = base.alphaF();
+    const qreal blur = theme_.pageShadowBlur();
+    const qreal offsetY = theme_.pageShadowOffsetY();
+    const qreal r = theme_.pageBorderRadius();
+    const QRectF core = page.translated(0, offsetY);
+    painter.setPen(Qt::NoPen);
+    constexpr int kLayers = 8;
+    for (int i = kLayers; i >= 1; --i) {
+      const qreal grow = blur * (i / qreal(kLayers));
+      QColor shell = base;
+      shell.setAlphaF(peakAlphaF / kLayers);
+      painter.setBrush(shell);
+      painter.drawRoundedRect(core.adjusted(-grow, -grow, grow, grow), r + grow, r + grow);
+    }
+  }
+  painter.setBrush(theme_.pageBackgroundColor());
+  if (theme_.pageBorderColor().isValid() && theme_.pageBorderWidth() > 0.0) {
+    painter.setPen(QPen(theme_.pageBorderColor(), theme_.pageBorderWidth()));
+  } else {
+    painter.setPen(Qt::NoPen);
+  }
+  const qreal radius = theme_.pageBorderRadius();
+  painter.drawRoundedRect(page, radius, radius);
+  // CSS #write::before full-page texture overlay (e.g. phycat's faint dot grid):
+  // painted over the card, clipped to it, under the text.
+  painter.save();
+  painter.setClipRect(page);
+  DecorationPainter::paintWriteTexture(painter, theme_, page);
+  painter.restore();
+  painter.restore();
 
   ensureVisibleBuilt();
 
@@ -573,7 +636,43 @@ void EditorView::paintEvent(QPaintEvent* event) {
   const NodeId activeTopLevel =
       (focusMode_ && cursorPosition_.isValid()) ? layout_->topLevelBlockIdFor(cursorPosition_.blockId) : NodeId();
 
+  // Tell the keyframe driver which animated hosts are visible (it filters to
+  // infinite animations and starts/stops its timer accordingly).
+  if (keyframeAnimator_ && keyframeAnimator_->hasAnimations()) {
+    QSet<QString> visibleHosts;
+    for (const BlockLayout* b : blocks) {
+      const QString h = hostKeyForBlock(*b);
+      if (!h.isEmpty()) { visibleHosts.insert(h); }
+    }
+    keyframeAnimator_->setVisibleHosts(visibleHosts);
+  }
+
   for (const BlockLayout* block : blocks) {
+    const QString host = hostKeyForBlock(*block);
+    const AnimatedSample* anim = (keyframeAnimator_ && !host.isEmpty()) ? keyframeAnimator_->sampleFor(host) : nullptr;
+    // CSS :hover box-shadow glow (phase-animated by HoverAnimator).
+    if (hoverAnimator_ && block->nodeId() == hoverAnimator_->animatedBlockId() && hoverAnimator_->phase() > 0.0) {
+      if (!host.isEmpty()) {
+        DecorationPainter::paintBlockHoverGlow(painter, theme_, host,
+                                               block->rect().translated(0, -scrollY()), hoverAnimator_->phase());
+      }
+    }
+    // @keyframes glow (colour/blur from the sampled frame).
+    if (anim && anim->hasGlow) {
+      DecorationPainter::paintGlow(painter, block->rect().translated(0, -scrollY()), anim->glowColor, anim->glowBlur, 1.0);
+    }
+    const bool wrap = anim && (anim->hasOpacity || (anim->hasScale && qAbs(anim->scale - 1.0) > 0.001));
+    if (wrap) {
+      painter.save();
+      if (anim->hasOpacity) { painter.setOpacity(anim->opacity); }
+      if (anim->hasScale) {
+        const QRectF br = block->rect().translated(0, -scrollY());
+        const QPointF c = br.center();
+        painter.translate(c);
+        painter.scale(anim->scale, anim->scale);
+        painter.translate(-c);
+      }
+    }
     if (focusMode_ && activeTopLevel.isValid() && block->nodeId() != activeTopLevel) {
       painter.save();
       painter.setOpacity(0.35);
@@ -582,6 +681,7 @@ void EditorView::paintEvent(QPaintEvent* event) {
     } else {
       block->paint(painter, theme_, scrollY(), codeFenceScroll_);
     }
+    if (wrap) { painter.restore(); }
   }
   paintSelection(painter);
   paintCurrentTableCell(painter);
@@ -593,6 +693,8 @@ void EditorView::paintEvent(QPaintEvent* event) {
 bool EditorView::event(QEvent* event) {
   if (event->type() == QEvent::Leave) {
     clearHtmlHover();
+    hoveredBlockId_ = NodeId();
+    if (hoverAnimator_) { hoverAnimator_->setHovered(NodeId(), 0.0); }
   }
   if (event->type() == QEvent::KeyPress || event->type() == QEvent::ShortcutOverride) {
     auto* keyEvent = static_cast<QKeyEvent*>(event);
@@ -735,6 +837,7 @@ void EditorView::mouseMoveEvent(QMouseEvent* event) {
     }
   }
   updateHtmlHover(event->position());
+  updateBlockHover(event->position());
   updateMouseCursor(event->position());
   QAbstractScrollArea::mouseMoveEvent(event);
 }
@@ -1418,7 +1521,11 @@ void EditorView::paintInsertionCursor(QPainter& painter) const {
     return;
   }
 
-  const qreal height = qBound<qreal>(14.0, cursor.height(), 34.0);
+  // The cap only guards image/preview lines, whose line height can be hundreds
+  // of px; text lines — including large headings (a 2.1rem H1 is ~38px) — must
+  // use their natural line height, or the caret is clipped short and looks
+  // vertically offset from the glyphs.
+  const qreal height = qBound<qreal>(14.0, cursor.height(), 96.0);
   QRectF visibleCursor(cursor.left(), cursor.top(), 1.5, height);
   painter.save();
   painter.setPen(Qt::NoPen);
@@ -1512,6 +1619,52 @@ void EditorView::clearHtmlHover() {
   if (!dirty.oldRect.isEmpty()) {
     viewport()->update(dirty.oldRect);
   }
+}
+
+void EditorView::updateBlockHover(QPointF viewportPos) {
+  if (!layout_ || !hoverAnimator_) { return; }
+  const HitTestResult hit = hitTest(viewportPos);
+  const NodeId next = hit.isValid() ? layout_->topLevelBlockIdFor(hit.blockId) : NodeId();
+  if (next == hoveredBlockId_) { return; }
+  hoveredBlockId_ = next;
+  // Drive the animator only for hosts that actually declare a hover glow.
+  qreal duration = 0.0;
+  if (next.isValid()) {
+    if (const BlockLayout* blk = layout_->blockIfPromoted(next)) {
+      duration = hoverTransitionMs(hostKeyForBlock(*blk));
+    }
+  }
+  hoverAnimator_->setHovered(next, duration);
+}
+
+void EditorView::repaintHoverBlock(NodeId blockId) {
+  if (!layout_ || !blockId.isValid()) { return; }
+  const BlockLayout* blk = layout_->blockIfPromoted(blockId);
+  if (!blk) { return; }
+  const QRectF r = blk->rect().translated(0, -scrollY()).adjusted(-20, -20, 20, 20);
+  viewport()->update(r.toAlignedRect());
+}
+
+qreal EditorView::hoverTransitionMs(const QString& host) const {
+  if (host.isEmpty()) { return 0.0; }
+  for (const TransitionSpec& t : theme_.decorations().transitions) {
+    if (t.host == host) { return t.durationMs; }
+  }
+  return 0.0;
+}
+
+void EditorView::repaintAnimatedBlocks() {
+  if (!layout_ || !keyframeAnimator_) { return; }
+  const QRectF visible = documentViewportRect();
+  const QVector<const BlockLayout*> blocks = layout_->visibleBlocks(visible.adjusted(0, -40, 0, 40), theme_);
+  QRectF dirty;
+  for (const BlockLayout* blk : blocks) {
+    const QString host = hostKeyForBlock(*blk);
+    if (!host.isEmpty() && keyframeAnimator_->sampleFor(host)) {
+      dirty = dirty.isNull() ? blk->rect() : dirty.united(blk->rect());
+    }
+  }
+  if (!dirty.isNull()) { viewport()->update(dirty.translated(0, -scrollY()).adjusted(-24, -24, 24, 24).toAlignedRect()); }
 }
 
 void EditorView::updateDragSelection(QPointF viewportPos) {
