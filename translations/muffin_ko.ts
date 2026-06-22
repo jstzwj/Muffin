@@ -809,172 +809,172 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation type="obsolete">표 삽입</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="733"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="780"/>
         <source>Unicode</source>
         <translation>유니코드</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="735"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="782"/>
         <source>UTF-8</source>
         <translation>UTF-8</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="736"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="783"/>
         <source>UTF-16 LE</source>
         <translation>UTF-16 LE</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="737"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="784"/>
         <source>UTF-16 BE</source>
         <translation>UTF-16 BE</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="739"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="786"/>
         <source>Western</source>
         <translation>서유럽</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="741"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="788"/>
         <source>Western (Windows-1252)</source>
         <translation>서유럽 (Windows-1252)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="743"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="790"/>
         <source>Cyrillic</source>
         <translation>키릴</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="745"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="792"/>
         <source>Cyrillic (Windows-1251)</source>
         <translation>키릴 (Windows-1251)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="746"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="793"/>
         <source>Cyrillic (ISO-8859-5)</source>
         <translation>키릴 (ISO-8859-5)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="747"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="794"/>
         <source>Cyrillic (IBM866)</source>
         <translation>키릴 (IBM866)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="748"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="795"/>
         <source>Cyrillic (IBM855)</source>
         <translation>키릴 (IBM855)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="749"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="796"/>
         <source>Cyrillic (KOI8-R)</source>
         <translation>키릴 (KOI8-R)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="750"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="797"/>
         <source>Cyrillic (Mac)</source>
         <translation>키릴 (Mac)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="752"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="799"/>
         <source>Central European</source>
         <translation>중부 유럽</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="754"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="801"/>
         <source>Central European (Windows-1250)</source>
         <translation>중부 유럽 (Windows-1250)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="755"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="802"/>
         <source>Central European (ISO-8859-2)</source>
         <translation>중부 유럽 (ISO-8859-2)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="757"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="804"/>
         <source>Greek</source>
         <translation>그리스</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="759"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="806"/>
         <source>Greek (Windows-1253)</source>
         <translation>그리스 (Windows-1253)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="760"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="807"/>
         <source>Greek (ISO-8859-7)</source>
         <translation>그리스 (ISO-8859-7)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="762"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="809"/>
         <source>Hebrew</source>
         <translation>히브리</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="764"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="811"/>
         <source>Hebrew (Windows-1255)</source>
         <translation>히브리 (Windows-1255)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="765"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="812"/>
         <source>Hebrew (ISO-8859-8)</source>
         <translation>히브리 (ISO-8859-8)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="767"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="814"/>
         <source>Chinese Simplified</source>
         <translation>중국어 간체</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="769"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="816"/>
         <source>Chinese Simplified (GB2312)</source>
         <translation>중국어 간체 (GB2312)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="770"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="817"/>
         <source>Chinese Simplified (GB18030)</source>
         <translation>중국어 간체 (GB18030)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="772"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="819"/>
         <source>Chinese Traditional</source>
         <translation>중국어 번체</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="774"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="821"/>
         <source>Chinese Traditional (Big5)</source>
         <translation>중국어 번체 (Big5)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="776"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="823"/>
         <source>Japanese</source>
         <translation>일본어</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="778"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="825"/>
         <source>Japanese (Shift_JIS)</source>
         <translation>일본어 (Shift_JIS)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="779"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="826"/>
         <source>Japanese (EUC-JP)</source>
         <translation>일본어 (EUC-JP)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="781"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="828"/>
         <source>Korean</source>
         <translation>한국어</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="783"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="830"/>
         <source>Korean (EUC-KR)</source>
         <translation>한국어 (EUC-KR)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="785"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="832"/>
         <source>Thai</source>
         <translation>태국어</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="787"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="834"/>
         <source>Thai (TIS-620)</source>
         <translation>태국어 (TIS-620)</translation>
     </message>
@@ -1004,7 +1004,7 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
 <context>
     <name>muffin::BlockLayoutBuilder</name>
     <message>
-        <location filename="../src/render/BlockLayoutBuilder.cpp" line="347"/>
+        <location filename="../src/render/BlockLayoutBuilder.cpp" line="364"/>
         <source>Start writing...</source>
         <translation>쓰기 시작...</translation>
     </message>
@@ -1012,7 +1012,7 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
 <context>
     <name>muffin::DocumentSession</name>
     <message>
-        <location filename="../src/document/DocumentSession.cpp" line="534"/>
+        <location filename="../src/document/DocumentSession.cpp" line="521"/>
         <source>Untitled</source>
         <translation>제목 없음</translation>
     </message>
@@ -1048,13 +1048,13 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>다른 이름으로 저장</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="281"/>
+        <location filename="../src/io/FileController.cpp" line="284"/>
         <source>Markdown files (*.md);;Text files (*.txt);;All files (*.*)</source>
         <translation>Markdown 파일 (*.md);;텍스트 파일 (*.txt);;모든 파일 (*.*)</translation>
     </message>
     <message>
         <location filename="../src/io/FileController.cpp" line="120"/>
-        <location filename="../src/io/FileController.cpp" line="242"/>
+        <location filename="../src/io/FileController.cpp" line="245"/>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
@@ -1070,51 +1070,51 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
     </message>
     <message>
         <location filename="../src/io/FileController.cpp" line="138"/>
-        <location filename="../src/io/FileController.cpp" line="190"/>
+        <location filename="../src/io/FileController.cpp" line="193"/>
         <source>Open Failed</source>
         <translation>열기 실패</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="155"/>
-        <location filename="../src/io/FileController.cpp" line="179"/>
+        <location filename="../src/io/FileController.cpp" line="158"/>
+        <location filename="../src/io/FileController.cpp" line="182"/>
         <source>Save Failed</source>
         <translation>저장 실패</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="199"/>
-        <location filename="../src/io/FileController.cpp" line="211"/>
-        <location filename="../src/io/FileController.cpp" line="224"/>
+        <location filename="../src/io/FileController.cpp" line="202"/>
+        <location filename="../src/io/FileController.cpp" line="214"/>
+        <location filename="../src/io/FileController.cpp" line="227"/>
         <source>Encoding Error</source>
         <translation>인코딩 오류</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="200"/>
+        <location filename="../src/io/FileController.cpp" line="203"/>
         <source>Unsupported encoding: %1</source>
         <translation>지원하지 않는 인코딩: %1</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="212"/>
-        <location filename="../src/io/FileController.cpp" line="225"/>
+        <location filename="../src/io/FileController.cpp" line="215"/>
+        <location filename="../src/io/FileController.cpp" line="228"/>
         <source>Failed to decode file with encoding: %1</source>
         <translation>인코딩 %1(으)로 파일을 디코딩하지 못했습니다.</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="243"/>
+        <location filename="../src/io/FileController.cpp" line="246"/>
         <source>The document has unsaved changes. Save before reopening with a new encoding?</source>
         <translation>저장하지 않은 변경 사항이 있습니다. 새 인코딩으로 다시 열기 전에 저장하시겠습니까?</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="279"/>
+        <location filename="../src/io/FileController.cpp" line="282"/>
         <source>Move To</source>
         <translation>이동 위치</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="287"/>
+        <location filename="../src/io/FileController.cpp" line="290"/>
         <source>Move Failed</source>
         <translation>이동 실패</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="288"/>
+        <location filename="../src/io/FileController.cpp" line="291"/>
         <source>Could not move file to:
 %1</source>
         <translation>파일을 이동할 수 없습니다:
@@ -1224,12 +1224,12 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation type="vanished">구문 분석 %1 ms</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="268"/>
+        <location filename="../src/app/MainWindow.cpp" line="308"/>
         <source>Open Folder</source>
         <translation>폴더 열기</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1527"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1542"/>
         <source>Show / Hide Sidebar</source>
         <translation>사이드바 표시 / 숨기기</translation>
     </message>
@@ -1238,7 +1238,7 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation type="vanished">소스 / 렌더링 모드 전환</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1732"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1747"/>
         <source>File</source>
         <translation>파일</translation>
     </message>
@@ -1268,12 +1268,12 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>빠른 열기...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1739"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1754"/>
         <source>Open Recent</source>
         <translation>최근 파일 열기</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1741"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1756"/>
         <source>Reopen with Encoding</source>
         <translation>인코딩을 지정하여 다시 열기</translation>
     </message>
@@ -1299,7 +1299,7 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="147"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="244"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="278"/>
         <source>Properties</source>
         <translation>속성</translation>
     </message>
@@ -1324,7 +1324,7 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>가져오기...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1754"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1769"/>
         <source>Export</source>
         <translation>내보내기</translation>
     </message>
@@ -1344,7 +1344,7 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>닫기</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1777"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1792"/>
         <source>Edit</source>
         <translation>편집</translation>
     </message>
@@ -1369,7 +1369,7 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>복사</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1125"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1140"/>
         <source>Copy Image</source>
         <translation>이미지 복사</translation>
     </message>
@@ -1399,7 +1399,7 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>일반 텍스트로 붙여넣기</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1791"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1806"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="170"/>
         <source>Select</source>
         <translation>선택</translation>
@@ -1434,7 +1434,7 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>삭제</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1811"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1826"/>
         <source>Delete Range</source>
         <translation>범위 삭제</translation>
     </message>
@@ -1459,17 +1459,17 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>현재 단어 삭제</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1819"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1834"/>
         <source>Math Tools</source>
         <translation>수식 도구</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1824"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1839"/>
         <source>Smart Punctuation</source>
         <translation>스마트 문장 부호</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1836"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1851"/>
         <source>Line Breaks</source>
         <translation>줄 바꿈</translation>
     </message>
@@ -1497,13 +1497,13 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation type="vanished">맞춤법 검사...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1845"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1860"/>
         <source>Find and Replace</source>
         <translation>찾기 및 바꾸기</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="573"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1855"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1870"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="150"/>
         <source>Paragraph</source>
         <translation>단락</translation>
@@ -1523,8 +1523,8 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>제목 수준 내리기</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1868"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1947"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1883"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1962"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="106"/>
         <source>Table</source>
         <translation>표</translation>
@@ -1540,12 +1540,12 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>코드 블록</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1894"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1909"/>
         <source>Code Tools</source>
         <translation>코드 도구</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1905"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1920"/>
         <source>Alert</source>
         <translation>알림</translation>
     </message>
@@ -1570,12 +1570,12 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>작업 목록</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1919"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1934"/>
         <source>Task Status</source>
         <translation>작업 상태</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1924"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1939"/>
         <source>List Indent</source>
         <translation>목록 들여쓰기</translation>
     </message>
@@ -1610,7 +1610,7 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>목차</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1939"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1954"/>
         <source>Front Matter</source>
         <translation>프론트 매터</translation>
     </message>
@@ -1630,7 +1630,7 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>JSON</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1980"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1995"/>
         <source>Format</source>
         <translation>서식</translation>
     </message>
@@ -1675,103 +1675,103 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>하이퍼링크</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1993"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2008"/>
         <source>Link Actions</source>
         <translation>링크 작업</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1999"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2014"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="89"/>
         <source>Image</source>
         <translation>이미지</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1101"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1116"/>
         <source>Insert Image...</source>
         <translation>이미지 삽입...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1107"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1122"/>
         <source>Insert Local Image...</source>
         <translation>로컬 이미지 삽입...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1112"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1127"/>
         <source>Open Image Location...</source>
         <translation>이미지 위치 열기...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1143"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1158"/>
         <source>Delete Image File</source>
         <translation>이미지 파일 삭제</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1168"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1183"/>
         <source>Copy Image To...</source>
         <translation>이미지 복사 위치...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1206"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1221"/>
         <source>Rename / Move Image To...</source>
         <translation>이미지 이름 변경 / 이동 위치...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1284"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1299"/>
         <source>Upload All Local Images</source>
         <translation>모든 로컬 이미지 업로드</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1357"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1372"/>
         <source>Reload All Images</source>
         <translation>모든 이미지 다시 불러오기</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2015"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2030"/>
         <source>Resize Image</source>
         <translation>이미지 크기 조정</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1366"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1381"/>
         <source>25%</source>
         <translation>25%</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1374"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1389"/>
         <source>50%</source>
         <translation>50%</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1382"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1397"/>
         <source>75%</source>
         <translation>75%</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1390"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1405"/>
         <source>100%</source>
         <translation>100%</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1399"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1414"/>
         <source>150%</source>
         <translation>150%</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1407"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1422"/>
         <source>Custom...</source>
         <translation>사용자 지정...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2026"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2041"/>
         <source>Convert Image Syntax</source>
         <translation>이미지 구문 변환</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1426"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1441"/>
         <source>Standard Markdown ![](url)</source>
         <translation>표준 Markdown ![](url)</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1432"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1447"/>
         <source>HTML &lt;img&gt;</source>
         <translation>HTML &lt;img&gt;</translation>
     </message>
@@ -1792,17 +1792,17 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation type="vanished">사용자 지정 폴더에 복사</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1438"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1453"/>
         <source>Copy All Images To...</source>
         <translation>모든 이미지 복사 위치...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1461"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1476"/>
         <source>Move All Images To...</source>
         <translation>모든 이미지 이동 위치...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1521"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1536"/>
         <source>Global Image Settings...</source>
         <translation>전역 이미지 설정...</translation>
     </message>
@@ -1813,7 +1813,7 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="755"/>
-        <location filename="../src/app/MainWindowActions.cpp" line="163"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="166"/>
         <source>Insert Table</source>
         <translation>표 삽입</translation>
     </message>
@@ -1943,33 +1943,33 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>표 소스 정렬</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1247"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1288"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1262"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1303"/>
         <source>No upload command is configured.
 Set up a custom upload command in Preferences → Images.</source>
         <translation>업로드 명령이 구성되지 않았습니다.
 환경설정 → 이미지에서 사용자 지정 업로드 명령을 설정하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1262"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1318"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1277"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1333"/>
         <source>Upload failed:
 %1</source>
         <translation>업로드 실패:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1309"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1324"/>
         <source>There are no local images to upload.</source>
         <translation>업로드할 로컬 이미지가 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1352"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1367"/>
         <source>Uploaded %1 image(s).</source>
         <translation>이미지 %1개를 업로드했습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1695"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1710"/>
         <source>Muffin %1
 
 A fast, lightweight, native Markdown editor built with C++ and Qt 6.
@@ -1982,7 +1982,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
 실시간 미리보기 및 소스 편집, Pandoc을 통한 PDF·HTML 등 다양한 형식 내보내기, 폴더 복사 및 사용자 지정 명령 업로드를 지원하는 이미지 삽입, 맞춤법 검사, 테마, 찾기 및 바꾸기, 개요, 빠른 열기, 그리고 크래시 안전 임시저장 복구 기능을 제공합니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1956"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1971"/>
         <source>Code</source>
         <translation>코드</translation>
     </message>
@@ -2006,7 +2006,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>언어 설정...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1972"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1987"/>
         <source>Math</source>
         <translation>수식</translation>
     </message>
@@ -2021,17 +2021,17 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>HTML 설정...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2040"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2055"/>
         <source>View</source>
         <translation>보기</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1537"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1552"/>
         <source>Outline</source>
         <translation>개요</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1542"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1557"/>
         <source>File Tree</source>
         <translation>파일 트리</translation>
     </message>
@@ -2040,122 +2040,122 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation type="vanished">검색</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1547"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1562"/>
         <source>Source Code Mode</source>
         <translation>소스 코드 모드</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1557"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1572"/>
         <source>Word Wrap</source>
         <translation>자동 줄 바꿈</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1567"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1582"/>
         <source>Focus Mode</source>
         <translation>집중 모드</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1577"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1592"/>
         <source>Typewriter Mode</source>
         <translation>타자기 모드</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1587"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1602"/>
         <source>Show Status Bar</source>
         <translation>상태 표시줄 표시</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1597"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1612"/>
         <source>Word Count Window</source>
         <translation>단어 수 창</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1601"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1616"/>
         <source>Toggle Full Screen</source>
         <translation>전체 화면 전환</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1606"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1621"/>
         <source>Always on Top</source>
         <translation>항상 위에 표시</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1616"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1631"/>
         <source>Actual Size</source>
         <translation>실제 크기</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1624"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1639"/>
         <source>Zoom In</source>
         <translation>확대</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1632"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1647"/>
         <source>Zoom Out</source>
         <translation>축소</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1640"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1655"/>
         <source>Switch Windows</source>
         <translation>창 전환</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2064"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2079"/>
         <source>Theme</source>
         <translation>테마</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2066"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2081"/>
         <source>Help</source>
         <translation>도움말</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1652"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1667"/>
         <source>Quick Start</source>
         <translation>빠른 시작</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1656"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1671"/>
         <source>Markdown Reference</source>
         <translation>Markdown 참조</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1660"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1675"/>
         <source>Custom Themes</source>
         <translation>사용자 지정 테마</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1664"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1679"/>
         <source>Acknowledgements</source>
         <translation>감사의 글</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1668"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1683"/>
         <source>Changelog</source>
         <translation>변경 로그</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1674"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1689"/>
         <source>Official Website</source>
         <translation>공식 웹사이트</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1680"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1695"/>
         <source>Feedback</source>
         <translation>피드백</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1686"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1701"/>
         <source>Check for Updates...</source>
         <translation>업데이트 확인...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1690"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1705"/>
         <source>About</source>
         <translation>정보</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1153"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1168"/>
         <source>Delete Image</source>
         <translation>이미지 삭제</translation>
     </message>
@@ -2340,51 +2340,51 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation type="unfinished">입력 시 변환</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1047"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1055"/>
         <source>Convert on Rendering</source>
         <translation>렌더링 시 변환</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1059"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1074"/>
         <source>Smart Quotes</source>
         <translation type="unfinished">스마트 인용부호</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1071"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1086"/>
         <source>Smart Dashes</source>
         <translation type="unfinished">스마트 대시</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1083"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1098"/>
         <source>Remap Unicode Punctuation on Parse</source>
         <translation>파싱 시 유니코드 문장 부호 재매핑</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1095"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1110"/>
         <source>More Options...</source>
         <translation>추가 옵션...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1154"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1169"/>
         <source>Delete image file &quot;%1&quot;?
 This cannot be undone.</source>
         <translation>이미지 파일 &quot;%1&quot;을(를) 삭제하시겠습니까?
 이 작업은 되돌릴 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1177"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1192"/>
         <source>Copy Image To</source>
         <translation>이미지 복사 위치</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1215"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1230"/>
         <source>Move Image To</source>
         <translation>이미지 이동 위치</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1242"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1246"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1257"/>
         <location filename="../src/app/CommandDeclarations.cpp" line="1261"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1276"/>
         <source>Upload Image</source>
         <translation>이미지 업로드</translation>
     </message>
@@ -2395,50 +2395,50 @@ Set up an image uploader in Preferences → Images.</source>
 기본 설정 → 이미지에서 업로더를 설정하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1287"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1308"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1317"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1351"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1302"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1323"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1332"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1366"/>
         <source>Upload All Images</source>
         <translation>모든 이미지 업로드</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1413"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1428"/>
         <source>Image Size</source>
         <translation>이미지 크기</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1413"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1428"/>
         <source>Zoom percent:</source>
         <translation>확대/축소 비율:</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1444"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1459"/>
         <source>Copy All Images To</source>
         <translation>모든 이미지 복사 위치</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1455"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1470"/>
         <source>Copy All Images</source>
         <translation>모든 이미지 복사</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1456"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1471"/>
         <source>Copied %1 of %2 image(s).</source>
         <translation>%2개 중 %1개의 이미지를 복사했습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1467"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1482"/>
         <source>Move All Images To</source>
         <translation>모든 이미지 이동 위치</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1516"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1531"/>
         <source>Move All Images</source>
         <translation>모든 이미지 이동</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1516"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1531"/>
         <source>Moved %1 image(s).</source>
         <translation>%1개의 이미지를 이동했습니다.</translation>
     </message>
@@ -2473,7 +2473,7 @@ Set up an image uploader in Preferences → Images.</source>
         <translation>TeX:</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1694"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1709"/>
         <source>About Muffin</source>
         <translation>Muffin 정보</translation>
     </message>
@@ -2494,69 +2494,69 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation type="vanished">%1 단어</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="179"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="182"/>
         <source>Rows:</source>
         <translation>행:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="180"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="183"/>
         <source>Columns:</source>
         <translation>열:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="183"/>
-        <location filename="../src/app/MainWindowActions.cpp" line="225"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="186"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="228"/>
         <source>OK</source>
         <translation>확인</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="184"/>
-        <location filename="../src/app/MainWindowActions.cpp" line="226"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="187"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="229"/>
         <source>Cancel</source>
         <translation>취소</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="205"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="208"/>
         <source>Insert Image</source>
         <translation>이미지 삽입</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="212"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="215"/>
         <source>https://example.com/image.png</source>
         <translation>https://example.com/image.png</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="215"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="218"/>
         <source>Alternative text</source>
         <translation>대체 텍스트</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="218"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="221"/>
         <source>Title (optional)</source>
         <translation>제목 (선택)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="220"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="223"/>
         <source>URL:</source>
         <translation>URL：</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="221"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="224"/>
         <source>Alt Text:</source>
         <translation>대체 텍스트：</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="222"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="225"/>
         <source>Title:</source>
         <translation>제목：</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="260"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="263"/>
         <source>Images (%1)</source>
         <translation>이미지 (%1)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowActions.cpp" line="262"/>
+        <location filename="../src/app/MainWindowActions.cpp" line="265"/>
         <source>Select Image</source>
         <translation>이미지 선택</translation>
     </message>
@@ -2576,47 +2576,49 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation>테마 폴더 열기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="116"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="123"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="129"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="136"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="142"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="154"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="131"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="139"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="152"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="158"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="164"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="180"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="187"/>
         <source>Import Theme</source>
         <translation>테마 가져오기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="116"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="131"/>
         <source>Theme Files (*.css *.json)</source>
         <translation>테마 파일 (*.css *.json)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="123"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="152"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="180"/>
         <source>Could not read the selected file.</source>
         <translation>선택한 파일을 읽을 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="129"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="158"/>
         <source>The selected file is not a valid theme.</source>
         <translation>선택한 파일이 올바른 테마가 아닙니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="137"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="140"/>
         <source>A built-in theme named &quot;%1&quot; already exists; choose a different file name.</source>
         <translation>이름이 &quot;%1&quot;인 기본 제공 테마가 이미 있습니다. 다른 파일 이름을 선택하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="143"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="165"/>
         <source>The theme file is missing required colours (background and text).</source>
         <translation>테마 파일에 필수 색(배경색과 글자색)이 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="154"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="187"/>
         <source>Could not copy the theme into the themes folder.</source>
         <translation>테마를 테마 폴더에 복사할 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="230"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="264"/>
         <source>Name: %1
 Location: %2
 Size: %3 bytes
@@ -2631,140 +2633,140 @@ Parse time: %6 ms</source>
 파싱 시간: %6 ms</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="387"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="429"/>
         <source>Unsaved Drafts Found</source>
         <translation>저장되지 않은 초안 발견</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/MainWindowFileOps.cpp" line="392"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="434"/>
         <source>Muffin found %n unsaved draft(s) from a previous session. Restore one into this window, discard all of them, or keep them for later.</source>
         <translation>
             <numerusform>이전 세션에서 저장되지 않은 초안 %n개를 발견했습니다. 이 창에 하나를 복원하거나, 모두 삭제하거나, 나중을 위해 보관할 수 있습니다.</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="404"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="645"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="446"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="687"/>
         <source>Untitled</source>
         <translation>제목 없음</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/MainWindowFileOps.cpp" line="406"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="448"/>
         <source>%1  —  %2  (%n char(s))</source>
         <translation>
             <numerusform>%1  —  %2  (%n자)</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="414"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="456"/>
         <source>Restore</source>
         <translation>복원</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="415"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="457"/>
         <source>Discard All</source>
         <translation>모두 삭제</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="416"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="458"/>
         <source>Later</source>
         <translation>나중에</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="503"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="545"/>
         <source>No files to open</source>
         <translation>열 파일이 없습니다</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="521"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="563"/>
         <source>Import</source>
         <translation>가져오기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="522"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="564"/>
         <source>Word (*.docx);;OpenDocument (*.odt);;RTF (*.rtf);;EPUB (*.epub);;HTML (*.html *.htm);;LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawini);;reStructuredText (*.rst);;Textile (*.textile);;OPML (*.opml);;All files (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="531"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="546"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="573"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="588"/>
         <source>Import Failed</source>
         <translation>가져오기 실패</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="532"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="680"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="574"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="722"/>
         <source>Pandoc was not found. Install Pandoc or set its path in Preferences → Export.</source>
         <translation>Pandoc를 찾을 수 없습니다. Pandoc를 설치하거나 환경 설정 → 내보내기에서 경로를 지정하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="536"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="578"/>
         <source>Importing %1…</source>
         <translation>%1 가져오는 중…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="547"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="589"/>
         <source>Pandoc could not convert the file.</source>
         <translation>Pandoc에서 파일을 변환할 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="555"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="597"/>
         <source>Imported %1</source>
         <translation>%1을(를) 가져왔습니다</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="640"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="682"/>
         <source>Nothing to export</source>
         <translation>내보낼 항목이 없습니다</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="650"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="692"/>
         <source>Export As</source>
         <translation>형식을 지정하여 내보내기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="650"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="692"/>
         <source>%1 files (*%2)</source>
         <translation>%1 파일 (*%2)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="683"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="725"/>
         <source>Exporting %1…</source>
         <translation>%1 내보내는 중…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="697"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="744"/>
         <source>Pandoc failed:</source>
         <translation>Pandoc 실패:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="704"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="751"/>
         <source>Export Failed</source>
         <translation>내보내기 실패</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="708"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="755"/>
         <source>Exported to %1</source>
         <translation>%1(으)로 내보냈습니다</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="849"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="896"/>
         <source>Save All</source>
         <translation>모두 저장</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="850"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="897"/>
         <source>Saved %1 file(s). %2 file(s) could not be saved.</source>
         <translation>%1개 파일을 저장했습니다. %2개 파일을 저장할 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="875"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="890"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="922"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="937"/>
         <source>Delete File</source>
         <translation>파일 삭제</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="876"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="923"/>
         <source>Are you sure you want to move &quot;%1&quot; to the trash?
 
 This action cannot be undone.</source>
@@ -2773,7 +2775,7 @@ This action cannot be undone.</source>
 이 작업은 되돌릴 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="891"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="938"/>
         <source>Could not move to trash. Permanently delete &quot;%1&quot;?
 
 This action cannot be undone.</source>
@@ -2782,24 +2784,24 @@ This action cannot be undone.</source>
 이 작업은 되돌릴 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="902"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="949"/>
         <source>Delete Failed</source>
         <translation>삭제 실패</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="903"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="950"/>
         <source>Could not delete file:
 %1</source>
         <translation>파일을 삭제할 수 없습니다:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="924"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="971"/>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="925"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="972"/>
         <source>The current document has unsaved changes.</source>
         <translation>현재 문서에 저장되지 않은 변경 사항이 있습니다.</translation>
     </message>
@@ -2864,12 +2866,12 @@ This action cannot be undone.</source>
         <translation>이전 찾기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="280"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="286"/>
         <source>Update Available</source>
         <translation>업데이트 가능</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="281"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="287"/>
         <source>A new version of Muffin (%1) is available.
 
 Would you like to open the download page?</source>
@@ -2878,27 +2880,27 @@ Would you like to open the download page?</source>
 다운로드 페이지를 여시겠습니까?</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="288"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="294"/>
         <source>Muffin %1 is available. Use Help &gt; Check for Updates to download.</source>
         <translation>Muffin %1을(를) 사용할 수 있습니다. 도움말 &gt; 업데이트 확인에서 다운로드하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="295"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="301"/>
         <source>Up to Date</source>
         <translation>최신 버전</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="296"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="302"/>
         <source>You are running the latest version of Muffin.</source>
         <translation>Muffin의 최신 버전을 사용 중입니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="302"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="308"/>
         <source>Update Check Failed</source>
         <translation>업데이트 확인 실패</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="303"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="309"/>
         <source>Could not check for updates:
 %1</source>
         <translation>업데이트를 확인할 수 없습니다:
@@ -3628,133 +3630,143 @@ Would you like to open the download page?</source>
 <context>
     <name>muffin::PrefsMarkdownPage</name>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="238"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="249"/>
         <source>Markdown Syntax Preferences</source>
         <translation>Markdown 구문 기본 설정</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="250"/>
         <source>Strict Mode</source>
         <translation>엄격 모드</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="240"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="251"/>
         <source>Strict Mode turns off tables, strikethrough, task lists, auto links and formulas for plain CommonMark output.</source>
         <translation>엄격 모드는 순수 CommonMark 출력을 위해 표, 취소선, 작업 목록, 자동 링크, 수식을 끕니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="243"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="254"/>
+        <source>Break on Single Newline</source>
+        <translation>단일 줄바꿈 시 줄바꿈</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="255"/>
+        <source>Render a single line break as a new line, like Typora and Obsidian. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
+        <translation>Typora 및 Obsidian처럼 단일 줄바꿈을 줄바꿈으로 렌더링합니다. 끄면 엄격한 CommonMark가 적용되어 소프트 래핑된 여러 줄이 하나의 단락으로 합쳐집니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="258"/>
         <source>Heading Style</source>
         <translation>제목 스타일</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="245"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="260"/>
         <source>Unordered List</source>
         <translation>글머리 기호 목록</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="247"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="262"/>
         <source>Ordered List</source>
         <translation>번호 매기기 목록</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="248"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="263"/>
         <source>1. ... 2. ... 3. ...</source>
         <translation>1. ... 2. ... 3. ...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="248"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="263"/>
         <source>1. ... 1. ... 1. ...</source>
         <translation>1. ... 1. ... 1. ...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="251"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="266"/>
         <source>Markdown Extended Syntax</source>
         <translation>Markdown 확장 구문</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="252"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="267"/>
         <source>Auto Recognize Links</source>
         <translation>링크 자동 인식</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="253"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="268"/>
         <source>Inline Formula</source>
         <translation>인라인 수식</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="254"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="269"/>
         <source>Subscript</source>
         <translation>아래첨자</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="255"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="270"/>
         <source>Superscript</source>
         <translation>위첨자</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="256"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="271"/>
         <source>Highlight</source>
         <translation>강조</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="257"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="272"/>
         <source>Github Style Alert Box</source>
         <translation>GitHub 스타일 알림 상자</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="258"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="273"/>
         <source>Diagrams (Sequence, Flowchart, Mermaid)</source>
         <translation>다이어그램 (시퀀스, 순서도, Mermaid)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="259"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="274"/>
         <source>Diagram Options</source>
         <translation>다이어그램 옵션</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="262"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="277"/>
         <source>Smart Punctuation</source>
         <translation>스마트 문장 부호</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="263"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="278"/>
         <source>Convert on Input</source>
         <translation>입력 시 변환</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="264"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="279"/>
         <source>No conversion</source>
         <translation>변환 안 함</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="264"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="279"/>
         <source>When typing</source>
         <translation>입력할 때</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="264"/>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="281"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="279"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="296"/>
         <source>Always</source>
         <translation>항상</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="265"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="280"/>
         <source>Smart Quotes</source>
         <translation>스마트 인용부호</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="268"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="283"/>
         <source>Smart Dashes</source>
         <translation>스마트 대시</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="269"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="284"/>
         <source>Convert on Rendering</source>
         <translation>렌더링 시 변환</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="270"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="285"/>
         <source>Remap Unicode Punctuation on Parse</source>
         <translation>파싱 시 유니코드 문장 부호 재매핑</translation>
     </message>
@@ -3763,17 +3775,17 @@ Would you like to open the download page?</source>
         <translation type="vanished">Markdown 구문 분석 시 유니코드 문장 부호 허용 및 변환</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="273"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="288"/>
         <source>Code Blocks</source>
         <translation>코드 블록</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="274"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="289"/>
         <source>Show Line Numbers</source>
         <translation>줄 번호 표시</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="275"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="290"/>
         <source>Code Blocks Auto Wrap</source>
         <translation>코드 블록 자동 줄 바꿈</translation>
     </message>
@@ -3782,32 +3794,32 @@ Would you like to open the download page?</source>
         <translation type="vanished">Shift+Tab으로 선택한 코드 들여쓰기 자동 조정</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="276"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="291"/>
         <source>Code Indent</source>
         <translation>코드 들여쓰기</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="278"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="293"/>
         <source>Default Code Block Language</source>
         <translation>기본 코드 블록 언어</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="279"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="294"/>
         <source>(empty)</source>
         <translation>(비어 있음)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="280"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="295"/>
         <source>Automatically add code block language</source>
         <translation>코드 블록 언어 자동 추가</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="281"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="296"/>
         <source>When inserting code blocks via Markdown code</source>
         <translation>Markdown 코드로 코드 블록을 삽입할 때</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="281"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="296"/>
         <source>Never</source>
         <translation>사용 안 함</translation>
     </message>

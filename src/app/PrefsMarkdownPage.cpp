@@ -30,6 +30,8 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   syntaxHeaderRow->addStretch(1);
 
   strictModeCheck_ = new QCheckBox(syntaxCard);
+  breakOnSingleNewlineCheck_ = new QCheckBox(syntaxCard);
+  breakOnSingleNewlineCheck_->setChecked(true);
 
   auto* headingRow = new QHBoxLayout();
   headingRow->setSpacing(16);
@@ -60,6 +62,7 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
 
   syntaxLayout->addLayout(syntaxHeaderRow);
   syntaxLayout->addWidget(strictModeCheck_);
+  syntaxLayout->addWidget(breakOnSingleNewlineCheck_);
   syntaxLayout->addSpacing(4);
   syntaxLayout->addLayout(headingRow);
   syntaxLayout->addLayout(ulRow);
@@ -198,6 +201,7 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
 
   // Wire persistence
   wireBoolSetting(strictModeCheck_, QStringLiteral("markdown/strictMode"));
+  wireBoolSetting(breakOnSingleNewlineCheck_, QStringLiteral("markdown/breakOnSingleNewline"));
   wireComboIndexSetting(headingStyleCombo_, QStringLiteral("markdown/headingStyle"));
   wireComboIndexSetting(unorderedListCombo_, QStringLiteral("markdown/unorderedList"));
   wireComboIndexSetting(orderedListCombo_, QStringLiteral("markdown/orderedList"));
@@ -247,6 +251,10 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
   strictModeCheck_->setToolTip(tr(
       "Strict Mode turns off tables, strikethrough, task lists, auto links and formulas "
       "for plain CommonMark output."));
+  breakOnSingleNewlineCheck_->setText(tr("Break on Single Newline"));
+  breakOnSingleNewlineCheck_->setToolTip(tr(
+      "Render a single line break as a new line, like Typora and Obsidian. "
+      "Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph."));
   headingStyleLabel_->setText(tr("Heading Style"));
   rebuildCombo(headingStyleCombo_, {QStringLiteral("atx (#)"), QStringLiteral("setext (===)")});
   unorderedListLabel_->setText(tr("Unordered List"));
@@ -290,6 +298,7 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
 
 void muffin::PrefsMarkdownPage::loadSettings() {
   loadCheck(strictModeCheck_, QStringLiteral("markdown/strictMode"), false);
+  loadCheck(breakOnSingleNewlineCheck_, QStringLiteral("markdown/breakOnSingleNewline"), true);
   loadComboIndex(headingStyleCombo_, QStringLiteral("markdown/headingStyle"), 0);
   loadComboIndex(unorderedListCombo_, QStringLiteral("markdown/unorderedList"), 0);
   loadComboIndex(orderedListCombo_, QStringLiteral("markdown/orderedList"), 0);

@@ -334,7 +334,7 @@ InlineProjectionState InlineProjectionState::forSelection(
 }
 
 InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState projectionState, qsizetype sourceBase,
-                                   qreal baseFontSize, qsizetype pendingPrefixLength, SmartPunctRenderOptions smartPunct)
+                                   qreal baseFontSize, qsizetype pendingPrefixLength, SmartPunctRenderOptions smartPunct, bool breakOnSingleNewline)
     : sourceText_(std::move(sourceText)), visibleText_(plainTextForInlines(inlines)) {
   BuildState state;
   state.sourceText = &sourceText_;
@@ -342,6 +342,7 @@ InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString s
   state.projectionState = projectionState;
   state.baseFontSize = baseFontSize;
   state.smartPunct = smartPunct;
+  state.breakOnSingleNewline = breakOnSingleNewline;
   QVector<HtmlInlineFormatData> htmlData;
   if (pendingPrefixLength > 0 && pendingPrefixLength <= sourceText_.size()) {
     // A still-uncommitted fence/math opener: show the marker in the muted "syntax" color the
@@ -603,10 +604,10 @@ bool InlineProjection::displayOffsetForSourceOffset(qsizetype sourceOffset, Inli
   return true;
 }
 
-QString InlineProjection::plainTextForInlines(const QVector<InlineNode>& inlines) {
+QString InlineProjection::plainTextForInlines(const QVector<InlineNode>& inlines, bool breakOnSingleNewline) {
   QString text;
   for (const InlineNode& node : inlines) {
-    text += plainTextForInline(node);
+    text += plainTextForInline(node, breakOnSingleNewline);
   }
   return text;
 }
@@ -700,7 +701,7 @@ QString InlineProjection::markdownForInlines(const QVector<InlineNode>& inlines)
   return markdown;
 }
 
-QString InlineProjection::plainTextForInline(const InlineNode& node) {
+QString InlineProjection::plainTextForInline(const InlineNode& node, bool breakOnSingleNewline) {
   switch (node.type()) {
     case InlineType::Text:
     case InlineType::Code:
@@ -711,7 +712,7 @@ QString InlineProjection::plainTextForInline(const InlineNode& node) {
       // other inline HTML keeps its literal source text.
       return isStandaloneBrTag(node.text()) ? QStringLiteral("\n") : node.text();
     case InlineType::SoftBreak:
-      return QStringLiteral(" ");
+      return breakOnSingleNewline ? QStringLiteral("\n") : QStringLiteral(" ");
     case InlineType::LineBreak:
       return QStringLiteral("\n");
     case InlineType::Image:
@@ -1254,7 +1255,10 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
       break;
     }
     case InlineType::SoftBreak:
-      appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, QStringLiteral(" "), true);
+      // CommonMark joins a soft break into the paragraph as a space; breakOnSingleNewline instead
+      // forces a line break (matching Obsidian/Typora), so pasted "1\n2\n3" renders on three lines.
+      appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd,
+                     state.breakOnSingleNewline ? QStringLiteral("\n") : QStringLiteral(" "), true);
       break;
     case InlineType::LineBreak:
       appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, QStringLiteral("\n"), true);

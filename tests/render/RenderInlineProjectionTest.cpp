@@ -683,6 +683,45 @@ void testSmartPunctFoldedTokenDecomposesIntoSpans() {
           QStringLiteral("backspace at en-dash end should delete the whole source token"));
 }
 
+// markdown/breakOnSingleNewline (default on in the app): a single '\n' soft break normally joins
+// into the paragraph as a space (CommonMark); the flag renders it as a line break (Obsidian/Typora),
+// so pasted "1\n2\n3" shows on separate lines instead of collapsing to one line.
+void testBreakOnSingleNewlineRendersSoftBreak() {
+  QVector<InlineNode> inlines;
+  inlines.push_back(InlineNode::text(QStringLiteral("1")));
+  inlines.push_back(InlineNode::softBreak());
+  inlines.push_back(InlineNode::text(QStringLiteral("2")));
+
+  RenderTheme theme = RenderTheme::github();
+
+  // CommonMark (flag off): the soft break joins the paragraph with a space.
+  InlineLayout joined;
+  InlineLayout::BuildOptions joinedOptions;  // breakOnSingleNewline stays false (CommonMark)
+  joined.build(inlines, QStringLiteral("1\n2"), theme, 400.0, theme.paragraphFont(), joinedOptions);
+  require(joined.displayText() == QStringLiteral("1 2"),
+          QStringLiteral("CommonMark should join a soft break with a space"));
+  require(joined.plainText() == QStringLiteral("1 2"),
+          QStringLiteral("CommonMark plain text should join a soft break with a space"));
+
+  // breakOnSingleNewline: the soft break renders as a line break.
+  InlineLayout broken;
+  InlineLayout::BuildOptions options;
+  options.breakOnSingleNewline = true;
+  broken.build(inlines, QStringLiteral("1\n2"), theme, 400.0, theme.paragraphFont(), options);
+  require(broken.displayText() == QStringLiteral("1\n2"),
+          QStringLiteral("breakOnSingleNewline should render a soft break as a line break"));
+  require(broken.plainText() == QStringLiteral("1\n2"),
+          QStringLiteral("breakOnSingleNewline plain text should render a soft break as a line break"));
+  require(broken.height() > joined.height(),
+          QStringLiteral("a rendered line break should make the block taller than the joined form"));
+
+  // plainTextForInlines honours the flag for the layout estimators and plain-text export.
+  require(InlineProjection::plainTextForInlines(inlines, false) == QStringLiteral("1 2"),
+          QStringLiteral("plainTextForInlines(false) should join a soft break with a space"));
+  require(InlineProjection::plainTextForInlines(inlines, true) == QStringLiteral("1\n2"),
+          QStringLiteral("plainTextForInlines(true) should render a soft break as a line break"));
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -703,6 +742,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testPendingPrefixFallbackDoesNotDuplicateSource);
   RUN_TEST(testSmartPunctRenderConvertsQuotesAndDashes);
   RUN_TEST(testSmartPunctFoldedTokenDecomposesIntoSpans);
+  RUN_TEST(testBreakOnSingleNewlineRendersSoftBreak);
   RUN_TEST(testBrTagRendersAsHardBreak);
   RUN_TEST(testCorruptedBrRendersAsLiteralText);
   RUN_TEST(testBrTagRendersAsHardBreakInTableCell);

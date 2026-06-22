@@ -25,7 +25,7 @@ constexpr QChar kTabIndentSourceChar(0x200b);
 constexpr QChar kTabIndentLayoutChar(0x00a0);
 constexpr qreal kMaxImageDisplayHeight = 200.0;
 
-QString flattenPlainText(const QVector<InlineNode>& inlines) {
+QString flattenPlainText(const QVector<InlineNode>& inlines, bool breakOnSingleNewline) {
   QString text;
   for (const InlineNode& node : inlines) {
     switch (node.type()) {
@@ -43,7 +43,7 @@ QString flattenPlainText(const QVector<InlineNode>& inlines) {
         }
         break;
       case InlineType::SoftBreak:
-        text += QLatin1Char(' ');
+        text += breakOnSingleNewline ? QLatin1Char('\n') : QLatin1Char(' ');
         break;
       case InlineType::LineBreak:
         text += QLatin1Char('\n');
@@ -52,7 +52,7 @@ QString flattenPlainText(const QVector<InlineNode>& inlines) {
         text += node.alt();
         break;
       default:
-        text += flattenPlainText(node.children());
+        text += flattenPlainText(node.children(), breakOnSingleNewline);
         break;
     }
   }
@@ -128,7 +128,7 @@ void InlineLayout::build(
     qreal width,
     const QFont& baseFont,
     BuildOptions options) {
-  plainText_ = flattenPlainText(inlines);
+  plainText_ = flattenPlainText(inlines, options.breakOnSingleNewline);
   offsetMap_.clear();
   mathAtoms_.clear();
   imageAtoms_.clear();
@@ -160,7 +160,7 @@ void InlineLayout::build(
   lineHeightMultiplier_ = options.lineHeightMultiplier;
   alignment_ = options.alignment;
   projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState, options.sourceBase, baseFont.pointSizeF(),
-                                 options.pendingPrefixLength, options.smartPunct);
+                                 options.pendingPrefixLength, options.smartPunct, options.breakOnSingleNewline);
   buildOffsetMapFromProjection();
   buildMathAtoms(inlines, theme, width);
   buildImageAtoms(inlines, theme, width);

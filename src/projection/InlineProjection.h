@@ -110,7 +110,7 @@ public:
   InlineProjection() = default;
   InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState state = {}, qsizetype sourceBase = -1,
                    qreal baseFontSize = 16.0, qsizetype pendingPrefixLength = 0,
-                   SmartPunctRenderOptions smartPunct = {});
+                   SmartPunctRenderOptions smartPunct = {}, bool breakOnSingleNewline = false);
 
   bool isValid() const;
   QString sourceText() const;
@@ -134,7 +134,7 @@ public:
   bool displayOffsetForSourceOffset(qsizetype sourceOffset, qsizetype& displayOffset) const;
   bool displayOffsetForSourceOffset(qsizetype sourceOffset, InlineProjectionBias bias, qsizetype& displayOffset) const;
 
-  static QString plainTextForInlines(const QVector<InlineNode>& inlines);
+  static QString plainTextForInlines(const QVector<InlineNode>& inlines, bool breakOnSingleNewline = false);
   static QString markdownForInlines(const QVector<InlineNode>& inlines);
   static bool isPlainInlineSource(const QVector<InlineNode>& inlines, const QString& sourceText, qsizetype sourceBase = -1);
 
@@ -154,6 +154,9 @@ private:
     bool superscript = false;
     qreal baseFontSize = 16.0;
     SmartPunctRenderOptions smartPunct;
+    // markdown/breakOnSingleNewline (default on): render a single '\n' soft break as a line break
+    // (Obsidian/Typora behaviour) instead of joining it into one paragraph line (CommonMark).
+    bool breakOnSingleNewline = false;
     QString displayText;
     QString visibleText;
     QVector<InlineProjectionSpan> spans;
@@ -162,7 +165,7 @@ private:
 
   static QString markerForInline(const InlineNode& node);
   static QString markdownForInline(const InlineNode& node);
-  static QString plainTextForInline(const InlineNode& node);
+  static QString plainTextForInline(const InlineNode& node, bool breakOnSingleNewline = false);
   static void appendTextSpan(BuildState& state, InlineType type, InlineSpanKind kind, qsizetype sourceStart, qsizetype sourceEnd,
                              QString displayText, bool visible, bool editable = true);
   static void appendTextSpan(BuildState& state, InlineType type, InlineSpanKind kind, qsizetype sourceStart, qsizetype sourceEnd,

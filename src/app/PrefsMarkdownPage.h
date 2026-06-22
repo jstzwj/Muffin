@@ -23,6 +23,7 @@ private:
   // Card 1: Syntax Preferences
   QLabel* syntaxLabel_ = nullptr;
   QCheckBox* strictModeCheck_ = nullptr;
+  QCheckBox* breakOnSingleNewlineCheck_ = nullptr;
   QLabel* headingStyleLabel_ = nullptr;
   QComboBox* headingStyleCombo_ = nullptr;
   QLabel* unorderedListLabel_ = nullptr;

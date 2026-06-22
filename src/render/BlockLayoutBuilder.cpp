@@ -66,6 +66,13 @@ bool codeBlockWrapEnabled() {
   return QSettings().value(QStringLiteral("markdown/codeBlockWrap"), true).toBool();
 }
 
+// markdown/breakOnSingleNewline (default on): render a single '\n' soft break as a line break
+// (Obsidian/Typora) instead of joining it into the paragraph (CommonMark). Read at build time so a
+// preference toggle + refreshVisibleBlocks re-renders without a reparse — same model as codeBlockWrap.
+bool breakOnSingleNewlineEnabled() {
+  return QSettings().value(QStringLiteral("markdown/breakOnSingleNewline"), true).toBool();
+}
+
 // markdown/convertOnRendering + the smart-quotes/dashes sub-toggles drive display-only SmartyPants
 // conversion. Read at build time so a menu/preference toggle + refreshVisibleBlocks re-renders
 // without a reparse. Mirrors how the input path (InputController) interprets the same keys.
@@ -239,7 +246,7 @@ QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& t
       }
       const MarkdownNode& cell = *row->children().at(static_cast<size_t>(column));
       const QFont font = row->tableRowIsHeader() ? theme.headingFont(6) : theme.paragraphFont();
-      preferred = qMax(preferred, QFontMetricsF(font).horizontalAdvance(InlineProjection::plainTextForInlines(cell.inlines())));
+      preferred = qMax(preferred, QFontMetricsF(font).horizontalAdvance(InlineProjection::plainTextForInlines(cell.inlines(), breakOnSingleNewlineEnabled())));
     }
     widths[column] = preferred + padding.left() + padding.right();
     preferredTotal += widths[column];
@@ -384,6 +391,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   options.pendingPrefixLength = pendingPrefixLengthFor(node, editableSource);
   options.isMisspelled = spellMisspelledPredicate();
   options.smartPunct = smartPunctRenderOptions();
+  options.breakOnSingleNewline = breakOnSingleNewlineEnabled();
   // Per-heading text colour from the theme (CSS themes give h1-h6 their
   // own colours). Invalid for themes that don't → falls back to textColor.
   if (node.type() == BlockType::Heading) {
@@ -497,6 +505,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   }
   options.isMisspelled = spellMisspelledPredicate();
   options.smartPunct = smartPunctRenderOptions();
+  options.breakOnSingleNewline = breakOnSingleNewlineEnabled();
   {
     BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
     inlineLayout->build(primaryInlinesForListItem(node), listSourceText, theme, contentWidth, theme.paragraphFont(), options);
@@ -704,6 +713,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       }
       options.isMisspelled = spellMisspelledPredicate();
       options.smartPunct = smartPunctRenderOptions();
+      options.breakOnSingleNewline = breakOnSingleNewlineEnabled();
   options.smartPunct = smartPunctRenderOptions();
       {
         BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
@@ -1196,7 +1206,7 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateParagraphLike(con
   const bool isHeading = node.type() == BlockType::Heading;
   const QFont font = isHeading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
   const qreal lineHeight = estimateLineHeight(font);
-  const QString text = InlineProjection::plainTextForInlines(node.inlines());
+  const QString text = InlineProjection::plainTextForInlines(node.inlines(), breakOnSingleNewlineEnabled());
   const qreal charsPerLine = std::max(qreal(1.0), std::floor(std::max<qreal>(1.0, width) / avgCharWidthForText(QStringView(text), font)));
   qreal height = estimateWrappedLines(QStringView(text), charsPerLine) * lineHeight;
   if (isHeading && node.headingLevel() <= 2) {
@@ -1244,7 +1254,7 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateListItem(const Ma
   bool mustMeasure = false;
   if (!primary.isEmpty()) {
     const QFont font = theme.paragraphFont();
-    const QString text = InlineProjection::plainTextForInlines(primary);
+    const QString text = InlineProjection::plainTextForInlines(primary, breakOnSingleNewlineEnabled());
     const qreal charsPerLine = std::max(qreal(1.0), std::floor(contentWidth / avgCharWidthForText(QStringView(text), font)));
     height = estimateWrappedLines(QStringView(text), charsPerLine) * estimateLineHeight(font);
     mustMeasure = inlinesContainSizedContent(primary);
@@ -1327,7 +1337,7 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateTable(const Markd
       const qreal columnWidth = column < columnWidths.size() ? columnWidths.at(column) : width / columnCount;
       const qreal innerWidth = std::max<qreal>(1.0, columnWidth - padding.left() - padding.right());
       const bool header = row->tableRowIsHeader();
-      const QString text = InlineProjection::plainTextForInlines(cell->inlines());
+      const QString text = InlineProjection::plainTextForInlines(cell->inlines(), breakOnSingleNewlineEnabled());
       const qreal charsPerLine = std::max(qreal(1.0), std::floor(innerWidth / avgCharWidthForText(QStringView(text), header ? headFont : paraFont)));
       const qreal lines = estimateWrappedLines(QStringView(text), charsPerLine);
       const qreal cellHeight = lines * (header ? headLineHeight : paraLineHeight) + padding.top() + padding.bottom();

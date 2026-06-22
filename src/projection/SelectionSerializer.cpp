@@ -10,6 +10,7 @@ extern "C" {
 #include "cmark-gfm-core-extensions.h"
 }
 
+#include <QSettings>
 #include <QStringList>
 
 namespace muffin {
@@ -175,7 +176,15 @@ QString SelectionSerializer::renderMarkdownToHtml(const QString& markdown) {
   attach("math");
   cmark_parser_feed(parser, utf8.constData(), static_cast<size_t>(utf8.size()));
   cmark_node* doc = cmark_parser_finish(parser);
-  char* html = cmark_render_html(doc, CMARK_OPT_DEFAULT, cmark_parser_get_syntax_extensions(parser));
+  // markdown/breakOnSingleNewline (default on): emit soft breaks as <br> so exported HTML matches
+  // the editor view (Obsidian/Typora). cmark keeps a single '\n' as a softbreak node;
+  // CMARK_OPT_HARDBREAKS is what turns it into <br> at render time (parser classification is
+  // trailing-space-based and unaffected by the option).
+  int renderOpts = CMARK_OPT_DEFAULT;
+  if (QSettings().value(QStringLiteral("markdown/breakOnSingleNewline"), true).toBool()) {
+    renderOpts |= CMARK_OPT_HARDBREAKS;
+  }
+  char* html = cmark_render_html(doc, renderOpts, cmark_parser_get_syntax_extensions(parser));
   QString result = QString::fromUtf8(html);
   free(html);
   cmark_node_free(doc);
