@@ -679,6 +679,12 @@ void splitDelimInBlock(QVector<InlineNode>& inlines, QStringView markdown, const
 // Walks the tree and splits spec-delimited runs into typed inlines within every block that owns
 // inlines (paragraph, heading, table cell). Gated on the matching ParseOptions flag at the call site.
 void splitDelimInlines(MarkdownNode& root, QStringView markdown, const DelimitedInlineSpec& spec) {
+  // The marker char can only ever produce a split where it occurs; if the whole document has none,
+  // the walk has nothing to do. One fast scan beats a full tree walk over every inline-bearing
+  // block (~1s @100MB saved for the common "no ~ / ^ / ==" document).
+  if (markdown.indexOf(spec.marker) < 0) {
+    return;
+  }
   const auto visit = [&](auto&& self, MarkdownNode& node) -> void {
     if (!node.inlines().isEmpty()) {
       splitDelimInBlock(node.inlines(), markdown, spec);
@@ -904,6 +910,17 @@ struct FrontMatterScanResult {
 
 bool isHorizontalPadding(QChar ch) {
   return ch == QLatin1Char(' ') || ch == QLatin1Char('\t');
+}
+
+// True if a line has no non-whitespace character — equivalent to QString::trimmed().isEmpty() but
+// over a zero-allocation QStringView, for the line-indexed VEP passes.
+bool isBlankLine(QStringView line) {
+  for (QChar ch : line) {
+    if (!ch.isSpace()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 qsizetype skipBom(QStringView text) {
@@ -1306,25 +1323,29 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   }
 
   const QStringView markdownToParse = markdown.mid(markdownStart);
+  // Build the UTF-8 buffer cmark parses. legacyMathDelimitersToDollar rewrites `\[`/`\]` display
+  // math (byte-length-preserving) and remapUnicodePunctuation rewrites smart-punct Unicode; both
+  // are skipped entirely when the document provably has nothing to rewrite. The whole point is that
+  // the common case (no `\[`, remap off) is a single toUtf8 of the original view — no intermediate
+  // 100MB QString copies from the old unconditional toString/split/join chain.
+  const bool needsMathConvert = markdownToParse.indexOf(QStringLiteral("\\[")) >= 0;
   QString mathConverted;
-  {
+  QString remapped;
+  QStringView cmarkInput = markdownToParse;
+  if (needsMathConvert) {
     ParsePerfTimer t("parse.mathConvert");
     mathConverted = legacyMathDelimitersToDollar(markdownToParse);
+    cmarkInput = mathConverted;
   }
-  // Optional pre-parse remap of Unicode em-dash/ellipsis back to ASCII. Only the bytes fed to cmark
-  // change (byte-length-preserving); LineStartOffsetCache/CmarkNodeAdapter/passes below keep using
-  // the original markdownToParse, so offsets and displayed text stay correct.
-  QString remapped;
   if (options.enableUnicodeRemap) {
     ParsePerfTimer t("parse.unicodeRemap");
-    remapped = remapUnicodePunctuation(mathConverted);
-  } else {
-    remapped = std::move(mathConverted);
+    remapped = remapUnicodePunctuation(cmarkInput);
+    cmarkInput = remapped;
   }
   QByteArray utf8;
   {
     ParsePerfTimer t("parse.toUtf8");
-    utf8 = remapped.toUtf8();
+    utf8 = cmarkInput.toUtf8();
   }
   QVector<DefinitionParseResult> definitions;
   {
@@ -1364,7 +1385,7 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   }
   {
     ParsePerfTimer t("parse.insertVirtualEmptyParagraphs");
-    insertVirtualEmptyParagraphs(markdownToParse, *result.root);
+    insertVirtualEmptyParagraphs(markdownToParse, *result.root, lineOffsets);
   }
   {
     ParsePerfTimer t("parse.annotateSourceOffsets");
@@ -1399,7 +1420,7 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   }
   {
     ParsePerfTimer t("parse.insertVEPInBlockQuotes");
-    insertVirtualEmptyParagraphsInBlockQuotes(markdownToParse, *result.root);
+    insertVirtualEmptyParagraphsInBlockQuotes(markdownToParse, *result.root, lineOffsets);
   }
   {
     ParsePerfTimer t("parse.insertMissingDefinitions");
@@ -1422,7 +1443,7 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   // paragraphs at parse time so load and edit paths agree. Done last, on the pre-front-matter tree.
   {
     ParsePerfTimer t("parse.demoteListMarkers");
-    demotePendingListMarkers(*result.root, markdownToParse.toString());
+    demotePendingListMarkers(*result.root, markdownToParse);
   }
   // cmark emits a childless BlockQuote for a `>`/`> ` line that has no following content (a
   // blockquote the user is still typing). A blockquote is only editable through its child paragraph,
@@ -1432,7 +1453,7 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   // quote materialises normally.
   {
     ParsePerfTimer t("parse.demoteEmptyBlockQuotes");
-    demoteEmptyBlockQuotes(*result.root, markdownToParse.toString());
+    demoteEmptyBlockQuotes(*result.root, markdownToParse);
   }
 
   if (frontMatterNode) {
@@ -1478,13 +1499,15 @@ void CmarkGfmParser::attachExtensions(cmark_parser* parser, const ParseOptions& 
   if (options.enableMath) attach("math");
 }
 
-void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, MarkdownNode& root) const {
+void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, MarkdownNode& root, const LineStartOffsetCache& lineOffsets) const {
   if (root.type() != BlockType::Document) {
     return;
   }
 
-  const QString text = markdown.toString();
-  const QStringList lines = text.split(QLatin1Char('\n'));
+  // Index lines through lineOffsets (a view over markdown) instead of markdown.toString() +
+  // split('\n'), which on a large document allocates a full copy plus one QString per line. The
+  // blank-line predicate is isBlankLine(lineText(...)) — identical to the old lines.at(i).trimmed().
+  const int totalLines = lineOffsets.lineCount();
   qsizetype childIndex = 0;
   int previousEndLine = 0;
 
@@ -1493,10 +1516,10 @@ void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, Markdown
       root.appendChild(createVirtualEmptyParagraph(1));
       return;
     }
-    const int emptyCount = lines.size() / 2;
+    const int emptyCount = totalLines / 2;
     for (int i = 0; i < emptyCount; ++i) {
       const int emptyLine = 1 + i * 2;
-      if (emptyLine - 1 < lines.size() && lines.at(emptyLine - 1).trimmed().isEmpty()) {
+      if (emptyLine >= 1 && emptyLine <= totalLines && isBlankLine(lineOffsets.lineText(markdown, emptyLine))) {
         root.appendChild(createVirtualEmptyParagraph(emptyLine));
       }
     }
@@ -1512,8 +1535,7 @@ void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, Markdown
     const int firstEmptyLine = previousEndLine == 0 ? 1 : previousEndLine + 2;
     for (int i = 0; i < emptyCount; ++i) {
       const int emptyLine = firstEmptyLine + i * 2;
-      const int lineIndex = emptyLine - 1;
-      if (lineIndex >= 0 && lineIndex < lines.size() && lines.at(lineIndex).trimmed().isEmpty()) {
+      if (emptyLine >= 1 && emptyLine <= totalLines && isBlankLine(lineOffsets.lineText(markdown, emptyLine))) {
         root.insertChild(childIndex, createVirtualEmptyParagraph(emptyLine));
         ++childIndex;
       }
@@ -1523,14 +1545,13 @@ void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, Markdown
     ++childIndex;
   }
 
-  const int totalLines = lines.size();
   // Container blocks (Lists, BlockQuotes) absorb trailing blank lines into
   // their lineEnd, so previousEndLine may overestimate where the content ends.
   // Use the actual last non-blank line for trailing blank-line counting.
   int lastContentLine = 0;
-  for (int i = lines.size() - 1; i >= 0; --i) {
-    if (!lines.at(i).trimmed().isEmpty()) {
-      lastContentLine = i + 1;  // 1-indexed
+  for (int i = totalLines; i >= 1; --i) {
+    if (!isBlankLine(lineOffsets.lineText(markdown, i))) {
+      lastContentLine = i;  // 1-indexed
       break;
     }
   }
@@ -1538,17 +1559,16 @@ void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, Markdown
   const int trailingEmptyCount = qMax(0, trailingLines / 2);
   for (int i = 0; i < trailingEmptyCount; ++i) {
     const int emptyLine = lastContentLine + 2 + i * 2;
-    const int lineIndex = emptyLine - 1;
-    if (lineIndex >= 0 && lineIndex < lines.size() && lines.at(lineIndex).trimmed().isEmpty()) {
+    if (emptyLine >= 1 && emptyLine <= totalLines && isBlankLine(lineOffsets.lineText(markdown, emptyLine))) {
       root.appendChild(createVirtualEmptyParagraph(emptyLine));
     }
   }
 }
 
-void CmarkGfmParser::insertVirtualEmptyParagraphsInBlockQuotes(QStringView markdown, MarkdownNode& root) const {
-  const QString text = markdown.toString();
-  const QStringList lines = text.split(QLatin1Char('\n'));
-
+void CmarkGfmParser::insertVirtualEmptyParagraphsInBlockQuotes(QStringView markdown, MarkdownNode& root, const LineStartOffsetCache& lineOffsets) const {
+  // Line content and start offsets come from lineOffsets (a view over markdown) instead of
+  // markdown.toString() + split('\n'); the old lineStartOffset lambda was also O(line) per call,
+  // now O(1) via lineStarts_.
   const auto quoteContentOffset = [](QStringView line, int depth) -> int {
     int index = 0;
     for (int currentDepth = 0; currentDepth < depth; ++currentDepth) {
@@ -1566,29 +1586,16 @@ void CmarkGfmParser::insertVirtualEmptyParagraphsInBlockQuotes(QStringView markd
     return index;
   };
 
-  const auto lineStartOffset = [&text](int line) -> qsizetype {
-    qsizetype offset = 0;
-    for (int currentLine = 1; currentLine < line; ++currentLine) {
-      const qsizetype newline = text.indexOf(QLatin1Char('\n'), offset);
-      if (newline < 0) {
-        return -1;
-      }
-      offset = newline + 1;
-    }
-    return offset;
-  };
-
   const auto isEmptyQuoteLine = [&](int line, int depth, int& contentColumn, qsizetype& contentOffset) {
-    const int lineIndex = line - 1;
-    if (lineIndex < 0 || lineIndex >= lines.size()) {
-      return false;
+    const QStringView sourceLine = lineOffsets.lineText(markdown, line);
+    if (sourceLine.isNull()) {
+      return false;  // out of range
     }
-    const QString& sourceLine = lines.at(lineIndex);
     const int contentIndex = quoteContentOffset(sourceLine, depth);
-    if (contentIndex < 0 || !QStringView(sourceLine).mid(contentIndex).trimmed().isEmpty()) {
+    if (contentIndex < 0 || !sourceLine.mid(contentIndex).trimmed().isEmpty()) {
       return false;
     }
-    const qsizetype startOffset = lineStartOffset(line);
+    const qsizetype startOffset = lineOffsets.lineStartOffset(line);
     if (startOffset < 0) {
       return false;
     }

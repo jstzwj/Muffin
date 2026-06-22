@@ -7,7 +7,7 @@
 namespace muffin {
 namespace {
 
-QString sourceForNode(const QString& markdown, const MarkdownNode& node) {
+QStringView sourceForNode(QStringView markdown, const MarkdownNode& node) {
   const SourceRange range = node.sourceRange();
   if (range.byteStart < 0 || range.byteStart > markdown.size()) {
     return {};
@@ -111,7 +111,7 @@ qsizetype pendingMarkerStartInLine(QStringView line) {
   return -1;
 }
 
-QString pendingMarkerParagraphText(const QString& markdown, const MarkdownNode& node) {
+QStringView pendingMarkerParagraphText(QStringView markdown, const MarkdownNode& node) {
   if (!shouldDemotePendingMarker(markdown, node)) {
     return {};
   }
@@ -184,14 +184,14 @@ PendingBlockMarker detectPendingBlockMarker(QStringView singleLine) {
   return marker;
 }
 
-PendingBlockMarker detectPendingBlockMarkerForNode(const QString& markdown, const MarkdownNode& node) {
-  const QString source = sourceForNode(markdown, node);
+PendingBlockMarker detectPendingBlockMarkerForNode(QStringView markdown, const MarkdownNode& node) {
+  const QStringView source = sourceForNode(markdown, node);
   if (source.isEmpty()) {
     return {};
   }
-  const qsizetype markerStart = pendingMarkerStartInLine(QStringView(source));
+  const qsizetype markerStart = pendingMarkerStartInLine(source);
   PendingBlockMarker marker =
-      markerStart >= 0 ? detectPendingBlockMarker(QStringView(source).mid(markerStart)) : PendingBlockMarker();
+      markerStart >= 0 ? detectPendingBlockMarker(source.mid(markerStart)) : PendingBlockMarker();
   if (!marker.isValid()) {
     return {};
   }
@@ -214,12 +214,12 @@ PendingBlockMarker detectPendingBlockMarkerForNode(const QString& markdown, cons
   }
 }
 
-bool shouldDemotePendingMarker(const QString& markdown, const MarkdownNode& node) {
+bool shouldDemotePendingMarker(QStringView markdown, const MarkdownNode& node) {
   return node.type() != BlockType::Paragraph && detectPendingBlockMarkerForNode(markdown, node).isValid();
 }
 
-void demotePendingMarkerToParagraph(const QString& markdown, MarkdownNode& node) {
-  const QString text = pendingMarkerParagraphText(markdown, node);
+void demotePendingMarkerToParagraph(QStringView markdown, MarkdownNode& node) {
+  const QStringView text = pendingMarkerParagraphText(markdown, node);
   if (text.isEmpty()) {
     return;
   }
@@ -233,13 +233,13 @@ void demotePendingMarkerToParagraph(const QString& markdown, MarkdownNode& node)
   // A lone-marker List carries ListItem children; a Paragraph must not, so collapse them.
   node.clearChildren();
   QVector<InlineNode> inlines;
-  InlineNode inlineNode = InlineNode::text(text);
+  InlineNode inlineNode = InlineNode::text(text.toString());
   inlineNode.setSourceRange(InlineRange{range.byteStart, end});
   inlines.append(inlineNode);
   node.inlines() = std::move(inlines);
 }
 
-void demotePendingListMarkers(MarkdownNode& node, const QString& markdown) {
+void demotePendingListMarkers(MarkdownNode& node, QStringView markdown) {
   if (node.type() == BlockType::List) {
     const PendingBlockMarker marker = detectPendingBlockMarkerForNode(markdown, node);
     if (marker.isValid() && marker.kind == PendingBlockMarkerKind::List) {
@@ -253,13 +253,13 @@ void demotePendingListMarkers(MarkdownNode& node, const QString& markdown) {
   }
 }
 
-void demoteEmptyBlockQuoteToParagraph(const QString& markdown, MarkdownNode& node) {
+void demoteEmptyBlockQuoteToParagraph(QStringView markdown, MarkdownNode& node) {
   const SourceRange range = node.sourceRange();
   const qsizetype end = qMin(range.byteEnd, markdown.size());
   if (range.byteStart < 0 || end <= range.byteStart) {
     return;  // no usable source text to surface as a paragraph
   }
-  const QString text = markdown.mid(range.byteStart, end - range.byteStart);
+  const QStringView text = markdown.mid(range.byteStart, end - range.byteStart);
   node.setType(BlockType::Paragraph);
   node.setLiteral(QString());
   node.setCodeLanguage(QString());
@@ -267,13 +267,13 @@ void demoteEmptyBlockQuoteToParagraph(const QString& markdown, MarkdownNode& nod
   node.setListKind(ListKind::None);
   node.clearChildren();
   QVector<InlineNode> inlines;
-  InlineNode inlineNode = InlineNode::text(text);
+  InlineNode inlineNode = InlineNode::text(text.toString());
   inlineNode.setSourceRange(InlineRange{range.byteStart, end});
   inlines.append(inlineNode);
   node.inlines() = std::move(inlines);
 }
 
-void demoteEmptyBlockQuotes(MarkdownNode& node, const QString& markdown) {
+void demoteEmptyBlockQuotes(MarkdownNode& node, QStringView markdown) {
   // Recurse bottom-up so a nested quote like `> >` demotes its empty inner quote to a paragraph
   // first; the outer quote then sees that paragraph as a child and is no longer empty, so it stays
   // a real blockquote (BlockQuote > Paragraph ">") rather than collapsing wholesale.
@@ -287,12 +287,12 @@ void demoteEmptyBlockQuotes(MarkdownNode& node, const QString& markdown) {
   }
 }
 
-QVector<qsizetype> collectPendingMarkerOffsets(const QString& markdown, const MarkdownNode& root) {
+QVector<qsizetype> collectPendingMarkerOffsets(QStringView markdown, const MarkdownNode& root) {
   QVector<qsizetype> offsets;
   const auto visit = [&](const auto& self, const MarkdownNode& node) -> void {
     if (node.type() == BlockType::Paragraph) {
-      const QString source = sourceForNode(markdown, node);
-      const qsizetype markerStart = pendingMarkerStartInLine(QStringView(source));
+      const QStringView source = sourceForNode(markdown, node);
+      const qsizetype markerStart = pendingMarkerStartInLine(source);
       if (markerStart >= 0) {
         offsets.append(node.sourceRange().byteStart + markerStart);
       }
@@ -307,7 +307,7 @@ QVector<qsizetype> collectPendingMarkerOffsets(const QString& markdown, const Ma
   return offsets;
 }
 
-qsizetype pendingBlockMarkerOffset(const QString& markdown, qsizetype offset) {
+qsizetype pendingBlockMarkerOffset(QStringView markdown, qsizetype offset) {
   if (offset < 0 || offset > markdown.size()) {
     return -1;
   }
@@ -319,7 +319,7 @@ qsizetype pendingBlockMarkerOffset(const QString& markdown, qsizetype offset) {
   while (lineEnd < markdown.size() && markdown.at(lineEnd) != QLatin1Char('\n')) {
     ++lineEnd;
   }
-  const qsizetype markerStart = pendingMarkerStartInLine(QStringView(markdown).mid(lineStart, lineEnd - lineStart));
+  const qsizetype markerStart = pendingMarkerStartInLine(markdown.mid(lineStart, lineEnd - lineStart));
   return markerStart >= 0 ? lineStart + markerStart : -1;
 }
 

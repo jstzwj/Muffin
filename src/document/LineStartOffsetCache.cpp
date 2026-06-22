@@ -56,12 +56,22 @@ void LineStartOffsetCache::rebuild(QStringView text) {
   textSize_ = text.size();
   lineStarts_.clear();
   lineStarts_.reserve(qMax<qsizetype>(1, text.size() / 48));
+  lineIsAscii_.clear();
+  lineIsAscii_.reserve(qMax<qsizetype>(1, text.size() / 48));
   lineStarts_.push_back(0);
+  bool ascii = true;  // ascii-ness of the line starting at the last pushed lineStarts_ entry
   for (qsizetype i = 0; i < text.size(); ++i) {
-    if (text.at(i) == QLatin1Char('\n')) {
+    const QChar c = text.at(i);
+    if (c.unicode() > 0x7F) {
+      ascii = false;
+    }
+    if (c == QLatin1Char('\n')) {
+      lineIsAscii_.push_back(ascii ? 1 : 0);
       lineStarts_.push_back(i + 1);
+      ascii = true;
     }
   }
+  lineIsAscii_.push_back(ascii ? 1 : 0);  // the final line (no trailing newline)
 }
 
 void LineStartOffsetCache::applyEdit(
@@ -112,6 +122,10 @@ void LineStartOffsetCache::applyEdit(
 
   lineStarts_ = std::move(result);
   textSize_ = fullPostEditText.size();
+  // applyEdit maintains lineStarts_ incrementally but not the per-line ASCII flags (the only
+  // offsetForLineByteColumn caller is the parse path, which uses a freshly rebuilt cache). Clear
+  // them so a stale flag can never be read; byteColumn falls back to a scan when they're absent.
+  lineIsAscii_.clear();
 }
 
 qsizetype LineStartOffsetCache::offsetForLineColumn(int line, int column) const {
@@ -137,6 +151,31 @@ qsizetype LineStartOffsetCache::offsetForLineByteColumn(QStringView text, int li
     return -1;
   }
 
+  // ASCII fast path: when every code point on the line is <= 0x7F, the UTF-8 byte column equals the
+  // UTF-16 code-unit column, so the byte-column-to-offset mapping is pure arithmetic — no
+  // per-character surrogate decoding or utf8ByteLength walk. On a freshly rebuilt cache the line's
+  // ASCII-ness is cached (O(1)); an applyEdit-maintained cache carries no flags and falls back to a
+  // scan of the target span (still correct). This is the overwhelmingly common case (any line
+  // without non-ASCII), and on a large document it is the difference between ~4s and ~0 for the
+  // convertBlock phase, which calls this once per inline/block.
+  const qsizetype target = start + static_cast<qsizetype>(column) - 1;
+  bool lineIsAscii = false;
+  if (line - 1 < lineIsAscii_.size()) {
+    lineIsAscii = lineIsAscii_.at(line - 1) != 0;
+  } else {
+    const qsizetype scanLimit = qMin(end, target);
+    lineIsAscii = true;
+    for (qsizetype i = start; i < scanLimit; ++i) {
+      if (text.at(i).unicode() > 0x7F) {
+        lineIsAscii = false;
+        break;
+      }
+    }
+  }
+  if (lineIsAscii) {
+    return qMin(target, end);
+  }
+
   qsizetype offset = start;
   qsizetype byteColumn = 1;
   while (offset < end && byteColumn < column) {
@@ -151,6 +190,25 @@ qsizetype LineStartOffsetCache::offsetForLineByteColumn(QStringView text, int li
     offset += ucs4 > 0xFFFF ? 2 : 1;
   }
   return qMin(offset, end);
+}
+
+qsizetype LineStartOffsetCache::lineStartOffset(int line) const {
+  if (line <= 0 || line > lineStarts_.size()) {
+    return -1;
+  }
+  return lineStarts_.at(line - 1);
+}
+
+QStringView LineStartOffsetCache::lineText(QStringView doc, int line) const {
+  if (line <= 0 || line > lineStarts_.size()) {
+    return {};
+  }
+  const qsizetype start = lineStarts_.at(line - 1);
+  const qsizetype end = lineEndOffset(line);  // '\n' position (exclusive content end); textSize_ for the last line
+  if (end < start || end > doc.size()) {
+    return {};
+  }
+  return doc.mid(start, end - start);
 }
 
 qsizetype LineStartOffsetCache::lineEndOffset(int line) const {
