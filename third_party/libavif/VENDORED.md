@@ -25,6 +25,25 @@ outside; libavif's internal libyuv subset ships as committed source.
 The integration lives in the top-level `CMakeLists.txt` (search for `third_party/libavif`),
 mirroring the `nuspell` subproject pattern. Muffin links the `avif_static` target.
 
+> **dav1d must be linked explicitly by the consumer.** `avif_static` is a merged static archive
+> (`merge_static_libs`) that only folds in libavif's `AVIF_LOCAL` deps; a `SYSTEM` dav1d from
+> Conan is **not** merged into the archive and **not** forwarded by the archive target. So
+> `dav1d::dav1d` is linked directly on `MuffinUi` (PRIVATE — it still propagates to every
+> `Muffin.exe` / test consumer because `MuffinUi` is STATIC). Without this, libavif's dav1d
+> symbols are undefined at the final link (seen on macOS arm64; would also hit Linux).
+
+## Local patches to upstream
+
+- **`CMakeLists.txt` dav1d dl-link (Unix)** — upstream's dav1d block does
+  `target_link_libraries(dav1d::dav1d INTERFACE ${CMAKE_DL_LIBS})` on Linux for dlsym.
+  Because we set `AVIF_CODEC_DAV1D=SYSTEM`, `dav1d::dav1d` is an **IMPORTED** target from
+  Conan, and CMake rejects modifying an imported target's link interface
+  ("Cannot specify link libraries ... which is not built by this project") — Linux CI
+  failed at configure time. Patched to check the target's `IMPORTED` property and, when
+  imported, link `dl` onto `avif_obj` instead of the imported dav1d target. The block is
+  already `if(UNIX AND NOT APPLE)` so Windows/macOS were never affected. Look for the
+  `_muffin_dav1d_imported` guard.
+
 ## Provenance
 
 | | |
@@ -59,3 +78,5 @@ gdk-pixbuf loader sources in place, which don't build on our platforms), `third_
    `CMakeLists.txt` (they can change between releases), and that `AVIF_LIBYUV=OFF` still compiles
    the bundled `third_party/libyuv/` subset (lines referencing it move between releases).
 4. Rebuild; confirm `find_package(dav1d)` still resolves to Conan's dav1d.
+5. Re-apply any **Local patches to upstream** (above) — re-diff against upstream and
+   confirm they still apply (or are no longer needed because upstream fixed them).

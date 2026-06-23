@@ -296,18 +296,13 @@ if(MSVC)
     #   /source-charset:<value> Source encoding, supports only UTF-8
     # So we don't need to pass /source-charset:utf-8 to clang-cl, and we cannot pass /execution-charset:us-ascii to clang-cl.
     if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
+        # NOTE (Muffin): the top-level CMake adds /utf-8 globally (add_compile_options(/utf-8)),
+        # which already sets source-charset:utf-8. Adding /source-charset here too triggers MSVC
+        # error D8016 ("/utf-8 and /source-charset are incompatible"), so the explicit charset
+        # flags below are intentionally omitted — avif's sources are ASCII, so /utf-8 is safe.
         target_compile_options(
             avif_obj
-            PUBLIC $<BUILD_INTERFACE:
-                   # This tells MSVC to read source code as UTF-8 and assume console can only use ASCII (minimal safe).
-                   # libavif uses ANSI API to print to console, which is not portable between systems using different
-                   # languages and results in mojibake unless we only use codes shared by every code page: ASCII.
-                   # A C4556 warning will be generated on violation.
-                   # Commonly used /utf-8 flag assumes UTF-8 for both source and console, which is usually not the case.
-                   # Warnings can be suppressed but there will still be random characters printed to the console.
-                   /source-charset:utf-8
-                   /execution-charset:us-ascii
-                   >
+            PUBLIC $<BUILD_INTERFACE:>
         )
     endif()
 elseif(CMAKE_C_COMPILER_ID MATCHES "Clang")
@@ -459,7 +454,19 @@ if(AVIF_CODEC_DAV1D_ENABLED)
     target_sources(avif_obj PRIVATE src/codec_dav1d.c)
 
     if(UNIX AND NOT APPLE)
-        target_link_libraries(dav1d::dav1d INTERFACE ${CMAKE_DL_LIBS}) # for dlsym
+        # dav1d::dav1d may be an IMPORTED target (AVIF_CODEC_DAV1D=SYSTEM — e.g. provided by
+        # Conan) rather than a target this project builds (LOCAL). CMake forbids modifying an
+        # IMPORTED target's link interface ("Cannot specify link libraries ... which is not
+        # built by this project"), so augment dav1d directly only when it is locally built.
+        # For an imported dav1d the provider's recipe owns its transitive link interface
+        # (it already carries dl when needed); still link dl on our own object lib here as a
+        # safety net for dav1d's dlsym usage. Local patch for Muffin — see VENDORED.md.
+        get_target_property(_muffin_dav1d_imported dav1d::dav1d IMPORTED)
+        if(_muffin_dav1d_imported)
+            target_link_libraries(avif_obj PRIVATE ${CMAKE_DL_LIBS})
+        else()
+            target_link_libraries(dav1d::dav1d INTERFACE ${CMAKE_DL_LIBS}) # for dlsym
+        endif()
     endif()
 
     avif_target_link_library(dav1d::dav1d)

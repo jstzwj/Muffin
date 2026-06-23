@@ -806,6 +806,14 @@ target_link_libraries(MuffinUi
   PRIVATE
     WebP::webp
     avif_static
+    # avif_static is a merged static archive (merge_static_libs) that only folds in libavif's
+    # AVIF_LOCAL deps; the SYSTEM dav1d from Conan is NOT merged into the archive and is NOT
+    # forwarded by the archive target, so libavif's dav1d symbols (_dav1d_open, ...) would be
+    # unresolved at every consumer's link step (macOS arm64 "Undefined symbols", and Linux too).
+    # Link dav1d explicitly here. MuffinUi is STATIC, so this PRIVATE dep still propagates to its
+    # consumers (Muffin.exe + every render/test exe) as a link requirement.
+    # See third_party/libavif/VENDORED.md.
+    dav1d::dav1d
     Qt6::Svg
     lexbor::lexbor_static
     yoga::yoga
