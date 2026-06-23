@@ -249,8 +249,9 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
   syntaxLabel_->setText(tr("Markdown Syntax Preferences"));
   strictModeCheck_->setText(tr("Strict Mode"));
   strictModeCheck_->setToolTip(tr(
-      "Strict Mode turns off tables, strikethrough, task lists, auto links and formulas "
-      "for plain CommonMark output."));
+      "Strict Mode turns off tables, strikethrough and task lists for plain CommonMark "
+      "structure. Inline extensions (formulas, auto links, sub/superscript, etc.) always "
+      "follow their own switches and are not affected by Strict Mode."));
   breakOnSingleNewlineCheck_->setText(tr("Break on Single Newline"));
   breakOnSingleNewlineCheck_->setToolTip(tr(
       "Render a single line break as a new line, like Typora and Obsidian. "

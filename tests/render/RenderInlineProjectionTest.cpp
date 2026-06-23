@@ -6,6 +6,7 @@
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
 #include "editor/SelectionController.h"
+#include "parser/CmarkGfmParser.h"
 #include "render/DocumentLayout.h"
 #include "render/InlineLayout.h"
 #include "render/BlockLayout.h"
@@ -65,12 +66,39 @@ void testInlineMarkerExpansion() {
   require(inactiveMath.mathAtomCount() == 1 && !inactiveMath.displayText().contains(QStringLiteral("a123")),
           QStringLiteral("inactive inline math should collapse to a native math atom"));
 
-  InlineLayout selectionExpanded;
-  InlineLayout::BuildOptions selectionOptions;
-  selectionOptions.projectionState.selectionVisibleStart = 8;
-  selectionOptions.projectionState.selectionVisibleEnd = 10;
-  selectionExpanded.build(inlines, QStringLiteral("before **bold** after"), theme, 400.0, theme.paragraphFont(), selectionOptions);
-  require(selectionExpanded.displayText().contains(QStringLiteral("**")), QStringLiteral("selection touching inline should show strong markers"));
+  // Reveal follows the focus, never the selection extent: a selection whose focus sits in the
+  // SECOND of two strong spans must expand only that span — the first (covered by the extent but
+  // not the focus) stays collapsed. This guards against re-adding selection-extent overlap reveal,
+  // which used to fan out every marker a drag touched.
+  {
+    QVector<InlineNode> two;
+    two.push_back(InlineNode::text(QStringLiteral("x ")));
+    two.push_back(InlineNode::strong(QStringLiteral("**"), QVector<InlineNode>{InlineNode::text(QStringLiteral("A"))}));
+    two.push_back(InlineNode::text(QStringLiteral(" y ")));
+    two.push_back(InlineNode::strong(QStringLiteral("**"), QVector<InlineNode>{InlineNode::text(QStringLiteral("B"))}));
+    two.push_back(InlineNode::text(QStringLiteral(" z")));
+    // source: "x **A** y **B** z"; collapsed visible: "x A y B z". B's content "B" is at visible 6 / source 12.
+    SelectionRange across;
+    const NodeId blockId = NodeId::create();
+    across.anchor.blockId = blockId;
+    across.anchor.text.nodeId = blockId;
+    across.anchor.text.textOffset = 0;
+    across.anchor.text.sourceOffset = 0;
+    across.focus.blockId = blockId;
+    across.focus.text.nodeId = blockId;
+    across.focus.text.textOffset = 6;   // inside "B"
+    across.focus.text.sourceOffset = 12;
+    require(!across.isCollapsed(), QStringLiteral("across fixture should be a real selection"));
+    InlineLayout::BuildOptions acrossOptions;
+    acrossOptions.projectionState = InlineProjectionState::forSelection(across, blockId, 0);
+    InlineLayout acrossLayout;
+    acrossLayout.build(two, QStringLiteral("x **A** y **B** z"), theme, 400.0, theme.paragraphFont(), acrossOptions);
+    require(acrossLayout.displayText().contains(QStringLiteral("**B**")),
+            QStringLiteral("the focus inline (B) should be revealed"));
+    require(!acrossLayout.displayText().contains(QStringLiteral("**A**")),
+            QStringLiteral("an inline covered only by the selection extent (A) must NOT be revealed: %1")
+                .arg(acrossLayout.displayText()));
+  }
 }
 
 void testInlineHighlightExpansion() {
@@ -692,6 +720,12 @@ void testBreakOnSingleNewlineRendersSoftBreak() {
   inlines.push_back(InlineNode::softBreak());
   inlines.push_back(InlineNode::text(QStringLiteral("2")));
 
+  QVector<InlineNode> nested;
+  nested.push_back(InlineNode::strong(QStringLiteral("**"), QVector<InlineNode>{
+      InlineNode::text(QStringLiteral("1")),
+      InlineNode::softBreak(),
+      InlineNode::text(QStringLiteral("2"))}));
+
   RenderTheme theme = RenderTheme::github();
 
   // CommonMark (flag off): the soft break joins the paragraph with a space.
@@ -720,6 +754,29 @@ void testBreakOnSingleNewlineRendersSoftBreak() {
           QStringLiteral("plainTextForInlines(false) should join a soft break with a space"));
   require(InlineProjection::plainTextForInlines(inlines, true) == QStringLiteral("1\n2"),
           QStringLiteral("plainTextForInlines(true) should render a soft break as a line break"));
+  require(InlineProjection::plainTextForInlines(nested, false) == QStringLiteral("1 2"),
+          QStringLiteral("plainTextForInlines(false) should join nested soft breaks with a space"));
+  require(InlineProjection::plainTextForInlines(nested, true) == QStringLiteral("1\n2"),
+          QStringLiteral("plainTextForInlines(true) should propagate into nested inline children"));
+}
+
+void testInlineMathAfterBrCollapsesToAtom() {
+  RenderTheme theme = RenderTheme::github();
+  CmarkGfmParser parser;
+  const QString markdown = QStringLiteral("before <br>$E=mc^2$ after");
+  ParseResult parsed = parser.parseDocument(markdown, {});
+  require(parsed.root != nullptr, QStringLiteral("inline math after br sample should parse"));
+
+  const MarkdownNode* paragraph = findFirstBlock(*parsed.root, BlockType::Paragraph);
+  require(paragraph != nullptr, QStringLiteral("inline math after br paragraph should exist"));
+
+  InlineLayout layout;
+  InlineLayout::BuildOptions options;
+  options.breakOnSingleNewline = true;
+  layout.build(paragraph->inlines(), markdown, theme, 400.0, theme.paragraphFont(), options);
+  require(layout.mathAtomCount() == 1, QStringLiteral("inline math after br should collapse to one native atom"));
+  require(!layout.displayText().contains(QLatin1Char('$')) && !layout.displayText().contains(QStringLiteral("mc^2")),
+          QStringLiteral("inactive inline math after br should not expose raw TeX"));
 }
 
 int main(int argc, char** argv) {
@@ -743,6 +800,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testSmartPunctRenderConvertsQuotesAndDashes);
   RUN_TEST(testSmartPunctFoldedTokenDecomposesIntoSpans);
   RUN_TEST(testBreakOnSingleNewlineRendersSoftBreak);
+  RUN_TEST(testInlineMathAfterBrCollapsesToAtom);
   RUN_TEST(testBrTagRendersAsHardBreak);
   RUN_TEST(testCorruptedBrRendersAsLiteralText);
   RUN_TEST(testBrTagRendersAsHardBreakInTableCell);

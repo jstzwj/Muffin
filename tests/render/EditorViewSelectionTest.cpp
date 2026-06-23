@@ -79,7 +79,10 @@ void testEditorViewInlineProjectionStateChanges() {
   const QRectF selectedRect = view.nodeRect(block->id());
   const InlineLayout* selectedLayout = view.blockAtViewportPos(selectedRect.center())->inlineLayout();
   require(selectedLayout != nullptr, "selection inline layout should exist");
-  require(selectedLayout->cursorRectForSourceOffset(9).left() != collapsedCursor.left(), "selection touching inline should expand marker layout");
+  // Reveal follows the focus: this selection's focus sits inside the bold inline, so its markers
+  // stay expanded (only the focus inline reveals; the selection extent would not).
+  require(selectedLayout->cursorRectForSourceOffset(9).left() != collapsedCursor.left(),
+          "selection with focus inside inline should keep its markers expanded");
 }
 
 void testEditorViewInlineMarkerSourceSelection() {

@@ -13,19 +13,15 @@ ParseOptions markdownParseOptions() {
   options.enableSubscript = QSettings().value(QStringLiteral("markdown/subscript"), false).toBool();
   options.enableSuperscript = QSettings().value(QStringLiteral("markdown/superscript"), false).toBool();
   options.enableUnicodeRemap = QSettings().value(QStringLiteral("markdown/remapUnicode"), false).toBool();
-  // Strict mode = vanilla CommonMark: disable every GFM/non-standard extension (front matter stays
-  // on, since turning it off can corrupt documents that rely on a leading metadata block).
+  // Strict Mode = plain CommonMark structure. It disables only the always-on GFM extensions that
+  // have NO individual switch in Preferences (tables, strikethrough, task lists). Every extension
+  // the user can toggle (formulas, auto links, highlight, alert boxes, sub/superscript, unicode
+  // remap) always follows its own switch — Strict Mode must never silently override an explicit
+  // choice, otherwise "I enabled Inline Formula" appears to do nothing.
   if (QSettings().value(QStringLiteral("markdown/strictMode"), false).toBool()) {
     options.enableTable = false;
     options.enableStrikethrough = false;
     options.enableTaskList = false;
-    options.enableAutolink = false;
-    options.enableMath = false;
-    options.enableAlertBox = false;
-    options.enableHighlight = false;
-    options.enableSubscript = false;
-    options.enableSuperscript = false;
-    options.enableUnicodeRemap = false;
   }
   return options;
 }

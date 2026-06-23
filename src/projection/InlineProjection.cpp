@@ -166,16 +166,11 @@ bool textMatchesAt(const QString& decoded, qsizetype decodedPos, QStringView tex
 }
 
 // Half-open [start, end): a caret at `end` sits *past* the inline's closing marker, so it is
-// treated as outside. This mirrors overlapsRange (selection) and is what keeps a TRAILING inline
-// at end-of-block from staying "active" forever — the caret that rests there has moved on, so its
-// markers should hide. The caret at `start` (on the opening marker) still counts as inside.
+// treated as outside. This is what keeps a TRAILING inline at end-of-block from staying "active"
+// forever — the caret that rests there has moved on, so its markers should hide. The caret at
+// `start` (on the opening marker) still counts as inside.
 bool containsOffset(qsizetype start, qsizetype end, qsizetype offset) {
   return offset >= start && offset < end;
-}
-
-bool overlapsRange(qsizetype firstStart, qsizetype firstEnd, qsizetype secondStart, qsizetype secondEnd) {
-  return firstStart >= 0 && firstEnd >= firstStart && secondStart >= 0 && secondEnd >= secondStart && firstStart < secondEnd &&
-         secondStart < firstEnd;
 }
 
 InlineRange localRange(InlineRange range, qsizetype sourceBase) {
@@ -282,20 +277,14 @@ bool InlineProjectionState::shouldRevealSourceRange(qsizetype sourceStart, qsize
   if (revealMarkdownMarkers) {
     return true;
   }
-  if (cursorSourceOffset >= 0 && containsOffset(sourceStart, sourceEnd, cursorSourceOffset)) {
-    return true;
-  }
-  return overlapsRange(selectionSourceStart, selectionSourceEnd, sourceStart, sourceEnd);
+  return cursorSourceOffset >= 0 && containsOffset(sourceStart, sourceEnd, cursorSourceOffset);
 }
 
 bool InlineProjectionState::shouldRevealVisibleRange(qsizetype visibleStart, qsizetype visibleEnd) const {
   if (revealMarkdownMarkers) {
     return true;
   }
-  if (cursorVisibleOffset >= 0 && containsOffset(visibleStart, visibleEnd, cursorVisibleOffset)) {
-    return true;
-  }
-  return overlapsRange(selectionVisibleStart, selectionVisibleEnd, visibleStart, visibleEnd);
+  return cursorVisibleOffset >= 0 && containsOffset(visibleStart, visibleEnd, cursorVisibleOffset);
 }
 
 InlineProjectionState InlineProjectionState::forCursor(
@@ -317,18 +306,12 @@ InlineProjectionState InlineProjectionState::forSelection(
     return state;
   }
 
+  // Reveal follows the ACTIVE caret = the selection's focus (the end the user is driving). The
+  // selection's EXTENT (anchor..focus) never reveals markers — so sweeping a selection across many
+  // inlines no longer fans them all open; only the one the focus currently sits in is revealed.
   state.cursorVisibleOffset = selection.focus.text.textOffset;
   state.cursorSourceOffset =
       selection.focus.text.sourceOffset >= 0 && contentSourceStart >= 0 ? selection.focus.text.sourceOffset - contentSourceStart : -1;
-
-  if (!selection.isCollapsed() && selection.isSingleBlock()) {
-    state.selectionVisibleStart = qMin(selection.anchor.text.textOffset, selection.focus.text.textOffset);
-    state.selectionVisibleEnd = qMax(selection.anchor.text.textOffset, selection.focus.text.textOffset);
-    if (selection.anchor.text.sourceOffset >= 0 && selection.focus.text.sourceOffset >= 0 && contentSourceStart >= 0) {
-      state.selectionSourceStart = qMin(selection.anchor.text.sourceOffset, selection.focus.text.sourceOffset) - contentSourceStart;
-      state.selectionSourceEnd = qMax(selection.anchor.text.sourceOffset, selection.focus.text.sourceOffset) - contentSourceStart;
-    }
-  }
 
   return state;
 }
@@ -718,7 +701,7 @@ QString InlineProjection::plainTextForInline(const InlineNode& node, bool breakO
     case InlineType::Image:
       return node.alt();
     default:
-      return plainTextForInlines(node.children());
+      return plainTextForInlines(node.children(), breakOnSingleNewline);
   }
 }
 
@@ -862,7 +845,7 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
 
     if (nodeStart < 0) {
       // Fallback: the reconstructed markdown didn't match the source text exactly
-      const QString plainText = plainTextForInline(node);
+      const QString plainText = plainTextForInline(node, state.breakOnSingleNewline);
       const qsizetype textPos = plainText.isEmpty() ? qsizetype(-1) : state.sourceText->indexOf(plainText, searchFrom);
       if (textPos >= 0 && textPos + plainText.size() <= sourceEnd) {
         if (textPos > searchFrom) {
@@ -1053,7 +1036,7 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
   if (isSimple) {
     // Simple tags: visible text comes from intermediate nodes only (no HTML markers).
     for (int j = index + 1; j < closeIndex; ++j) {
-      visibleSize += plainTextForInline(inlines[j]).size();
+      visibleSize += plainTextForInline(inlines[j], state.breakOnSingleNewline).size();
     }
   } else {
     // Complex tags: build HTML fragment and render via InlineHtmlRenderer.
@@ -1172,7 +1155,7 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
   const QString marker = markerForInline(node);
   const qsizetype displayStart = state.displayOffset;
   const qsizetype visibleStart = state.visibleOffset;
-  const qsizetype visibleEnd = visibleStart + plainTextForInlines(QVector<InlineNode>{node}).size();
+  const qsizetype visibleEnd = visibleStart + plainTextForInline(node, state.breakOnSingleNewline).size();
   const bool active = state.projectionState.shouldRevealSourceRange(sourceStart, sourceEnd) ||
                       state.projectionState.shouldRevealVisibleRange(visibleStart, visibleEnd);
   switch (node.type()) {

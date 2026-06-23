@@ -72,13 +72,14 @@ struct InlineProjectionSpan {
   QString href;  // Non-empty for Image and Link Atom spans
 };
 
+// What makes an inline's markdown markers (e.g. `**`, `$`, `~~`) appear in the projection.
+// Reveal follows the ACTIVE caret — the selection's focus: a marker shows when the focus sits inside
+// the inline. The selection's EXTENT never reveals markers, so dragging across many inlines doesn't
+// fan out a cascade of revealed syntax (only the inline the focus is in is revealed). `revealMarkdownMarkers`
+// is the global override (syntax-view / tests).
 struct InlineProjectionState {
   qsizetype cursorSourceOffset = -1;
   qsizetype cursorVisibleOffset = -1;
-  qsizetype selectionSourceStart = -1;
-  qsizetype selectionSourceEnd = -1;
-  qsizetype selectionVisibleStart = -1;
-  qsizetype selectionVisibleEnd = -1;
   bool revealMarkdownMarkers = false;
 
   bool shouldRevealSourceRange(qsizetype sourceStart, qsizetype sourceEnd) const;

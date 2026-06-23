@@ -246,7 +246,7 @@ QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& t
       }
       const MarkdownNode& cell = *row->children().at(static_cast<size_t>(column));
       const QFont font = row->tableRowIsHeader() ? theme.headingFont(6) : theme.paragraphFont();
-      preferred = qMax(preferred, QFontMetricsF(font).horizontalAdvance(InlineProjection::plainTextForInlines(cell.inlines(), breakOnSingleNewlineEnabled())));
+      preferred = qMax(preferred, maxLiteralLineWidth(InlineProjection::plainTextForInlines(cell.inlines(), breakOnSingleNewlineEnabled()), font));
     }
     widths[column] = preferred + padding.left() + padding.right();
     preferredTotal += widths[column];

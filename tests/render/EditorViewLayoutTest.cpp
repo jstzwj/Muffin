@@ -381,22 +381,24 @@ void testEditorViewActiveSetextHeadingRendersContentWithoutPrefix() {
 void testEditorViewRevealKeepsFocusBlockAnchored() {
   // Revealing/hiding inline markdown markers reflows a block and changes its height. When the
   // cursor leaves such a block, the block below (the new focus) must stay at its on-screen
-  // position instead of jumping. A selection spanning many emphasis spans reveals them all,
-  // giving a height change large enough to assert on deterministically.
+  // position instead of jumping. The caret sits inside a link so its hidden destination URL is
+  // revealed — a reflow large enough to assert on deterministically (reveal is caret-driven).
   DocumentSession session;
   EditorView view;
 
-  // 40 "**x** " spans in the paragraph under test; filler paragraphs above and below keep it in
-  // the middle of a tall document so the scrollbar has room to compensate without clamping.
+  // Filler paragraphs above and below keep the revealing paragraph in the middle of a tall
+  // document so the scrollbar has room to compensate without clamping.
   const QString fillerLine = QStringLiteral("the quick brown fox jumps over the lazy dog. ");
   QString filler;
   for (int i = 0; i < 40; ++i) {
     filler += fillerLine + QStringLiteral("\n\n");
   }
-  QString paragraph;
-  for (int i = 0; i < 40; ++i) {
-    paragraph += QStringLiteral("**x** ");
-  }
+  // The revealing paragraph holds one link whose destination URL the projection hides. Placing the
+  // collapsed caret inside the link reveals the full "[text](url)" markdown — a large reflow —
+  // which is how reveal works now (caret-driven, never via selection extent). "target line" below
+  // is the focus target.
+  const QString url = QStringLiteral("https://") + QString(200, QLatin1Char('x'));
+  const QString paragraph = QStringLiteral("go [here](") + url + QStringLiteral(") now");
   session.setMarkdownText(filler + paragraph + QStringLiteral("\n\ntarget line") + QStringLiteral("\n\n") + filler, false);
 
   view.resize(420, 480);
@@ -405,12 +407,9 @@ void testEditorViewRevealKeepsFocusBlockAnchored() {
   const NodeId block0 = blockAt(session, 40)->id();  // the revealing paragraph
   const NodeId block1 = blockAt(session, 41)->id();  // the focus target below it
 
-  // Reveal spans 5..34 by selecting across them (focus stays in block 0). visible offset of span
-  // i is 2i; source offset of its content is 6i+2.
-  SelectionRange reveal;
-  reveal.anchor = inlineCursor(block0, 2 * 5, 6 * 5 + 2);
-  reveal.focus = inlineCursor(block0, 2 * 34 + 1, 6 * 34 + 3);
-  view.setSelectionRange(reveal);
+  // Caret inside the link text "here" (source offset 5 / visible offset 4 within the block): the
+  // hidden destination URL is revealed, reflowing the paragraph across many lines.
+  view.setCursorPosition(inlineCursor(block0, 4, 5));
 
   const qreal heightRevealed = view.nodeRect(block0).height();
 

@@ -155,7 +155,7 @@ private:
   void buildHtmlFormatSpans();
   void buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
   void buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
-  QString texForInlineMathVisibleRange(const QVector<InlineNode>& inlines, qsizetype visibleStart, qsizetype visibleEnd) const;
+  QString texForInlineMathSpan(const QVector<InlineNode>& inlines, const InlineProjectionSpan& span) const;
   void buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont);
   void paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) const;
   void paintTextLayoutInlineDecorations(QPainter& painter, QPointF origin) const;

@@ -1,3 +1,4 @@
+#include "app/MarkdownSettings.h"
 #include "document/DocumentSession.h"
 #include "document/MarkdownNode.h"
 #include "parser/CmarkGfmParser.h"
@@ -6,6 +7,7 @@
 
 #include <QCoreApplication>
 #include <QObject>
+#include <QSettings>
 
 using namespace muffin;
 
@@ -41,17 +43,15 @@ int countInlineType(const MarkdownNode& node, InlineType type) {
   return count;
 }
 
-// Mirrors what markdownParseOptions() builds when markdown/strictMode is true: every GFM extension
-// off (front matter stays enabled so documents with a leading metadata block aren't corrupted).
+// Mirrors what markdownParseOptions() builds when markdown/strictMode is true: only the always-on
+// GFM extensions with no individual switch (tables, strikethrough, task lists) are off. Individually
+// toggleable extensions (math, autolinks, highlight, alert boxes, sub/superscript) stay at their
+// defaults — Strict Mode never overrides an explicit switch.
 ParseOptions strictOptions() {
   ParseOptions options;
   options.enableTable = false;
   options.enableStrikethrough = false;
   options.enableTaskList = false;
-  options.enableAutolink = false;
-  options.enableMath = false;
-  options.enableAlertBox = false;
-  options.enableHighlight = false;
   return options;
 }
 }  // namespace
@@ -106,9 +106,10 @@ void testSetParseOptionsReparsesOnlyOnChange() {
   require(session.markdownText() == QStringLiteral("Hello world"), "re-parse must preserve text");
 }
 
-// Strict mode (markdown/strictMode) means vanilla CommonMark: tables, strikethrough, task lists,
-// math and the new alert/highlight passes all parse as plain text/blocks. The funnel builds exactly
-// this ParseOptions; here we assert the parser honors it across several extension kinds at once.
+// Strict mode (markdown/strictMode) disables the always-on GFM block extensions (tables,
+// strikethrough, task lists) for plain CommonMark structure. Math and other individually-toggleable
+// extensions follow their own switches and are NOT disabled by strict mode — so a user who enables
+// Inline Formula still gets rendered math even with Strict Mode on.
 void testStrictOptionsDisableExtensions() {
   CmarkGfmParser parser;
   const QString markdown = QStringLiteral(
@@ -126,10 +127,42 @@ void testStrictOptionsDisableExtensions() {
 
   ParseResult strict = parser.parseDocument(markdown, strictOptions());
   require(strict.root != nullptr, "strict parse should produce a root");
-  require(countMathBlocks(*strict.root) == 0, "strict mode should disable math");
+  require(countMathBlocks(*strict.root) >= 1,
+          "strict mode must NOT disable math — it follows its own switch");
   require(countBlocks(*strict.root, BlockType::Table) == 0, "strict mode should disable tables");
   require(countInlineType(*strict.root, InlineType::Strikethrough) == 0,
           "strict mode should disable strikethrough");
+}
+
+// The real markdownParseOptions() funnel (reads QSettings). With strictMode=true AND inlineMath
+// explicitly on, math must stay enabled — Strict Mode must not silently override an explicit switch.
+// Only the checkbox-less GFM defaults (tables, strikethrough, task lists) go off. This is the exact
+// gap that let the original bug through (tests used ParseOptions{} instead of this funnel). Settings
+// are written to this test's isolated org/app (MuffinTest), never the user's real Muffin settings.
+void testMarkdownParseOptionsStrictModeDoesNotOverrideSwitches() {
+  QSettings().setValue(QStringLiteral("markdown/strictMode"), true);
+  QSettings().setValue(QStringLiteral("markdown/inlineMath"), true);
+  QSettings().setValue(QStringLiteral("markdown/autoLink"), true);
+  QSettings().setValue(QStringLiteral("markdown/subscript"), true);
+  QSettings().setValue(QStringLiteral("markdown/highlight"), true);
+
+  const ParseOptions opts = markdownParseOptions();
+  require(opts.enableMath, "strict mode must NOT disable explicitly-enabled inline math");
+  require(opts.enableAutolink, "strict mode must NOT disable explicitly-enabled autolinks");
+  require(opts.enableSubscript, "strict mode must NOT disable explicitly-enabled subscript");
+  require(opts.enableHighlight, "strict mode must NOT disable explicitly-enabled highlight");
+  require(!opts.enableTable, "strict mode should still disable tables (no individual switch)");
+  require(!opts.enableStrikethrough, "strict mode should still disable strikethrough");
+  require(!opts.enableTaskList, "strict mode should still disable task lists");
+
+  // And with strictMode off, an explicit inlineMath=false is honored.
+  QSettings().setValue(QStringLiteral("markdown/strictMode"), false);
+  QSettings().setValue(QStringLiteral("markdown/inlineMath"), false);
+  const ParseOptions off = markdownParseOptions();
+  require(!off.enableMath, "inlineMath=false should disable math when strict mode is off");
+  require(off.enableTable, "tables should be on when strict mode is off");
+
+  QSettings().remove(QStringLiteral("markdown"));  // clean up isolated test settings
 }
 
 // enableUnicodeRemap: Smart Dashes turns a typed `---` horizontal rule into a single em-dash char,
@@ -162,6 +195,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testEnableMathGatesMathBlockParsing);
   RUN_TEST(testSetParseOptionsReparsesOnlyOnChange);
   RUN_TEST(testStrictOptionsDisableExtensions);
+  RUN_TEST(testMarkdownParseOptionsStrictModeDoesNotOverrideSwitches);
   RUN_TEST(testEnableUnicodeRemapParsesEmDashAsThematicBreak);
 #undef RUN_TEST
   return 0;

@@ -5,7 +5,6 @@
 #include "theme/RenderTheme.h"
 
 #include <QApplication>
-#include <QDebug>
 #include <QImage>
 #include <QPainter>
 
@@ -205,6 +204,53 @@ void testMathRenderingLayout() {
   require(changedPixels > 50, QStringLiteral("math block paint should draw visible pixels"));
 }
 
+void testUserSampleHeadingLanguageAndInlineMath() {
+  RenderTheme theme = RenderTheme::github();
+  CmarkGfmParser parser;
+  const QString markdown = QStringLiteral(
+      "# Muffin Markdown Example\n\n"
+      "中文 | English\n\n"
+      "Plain text can mix **bold**, *italic*, ~~strikethrough~~, `inline code`, "
+      "inline HTML <kbd>Ctrl</kbd> + <kbd>S</kbd>, links such as [Muffin](https://example.com), "
+      "autolinks like https://example.com, and inline math $E = mc^2$.");
+  ParseResult parsed = parser.parseDocument(markdown, {});
+  require(parsed.root != nullptr, QStringLiteral("user markdown sample should parse"));
+  require(parsed.root->children().size() >= 3, QStringLiteral("user markdown sample should keep three top-level blocks"));
+
+  const NodeId headingId = parsed.root->children().at(0)->id();
+  const NodeId languageId = parsed.root->children().at(1)->id();
+  const NodeId bodyId = parsed.root->children().at(2)->id();
+  require(parsed.root->children().at(0)->type() == BlockType::Heading, QStringLiteral("sample first block should stay a heading"));
+  require(parsed.root->children().at(1)->type() == BlockType::Paragraph, QStringLiteral("sample language line should stay a paragraph"));
+  require(parsed.root->children().at(2)->type() == BlockType::Paragraph, QStringLiteral("sample body should stay one paragraph"));
+
+  for (const auto& child : parsed.root->children()) {
+    child->relativizeDescendants();
+  }
+
+  MarkdownDocument document;
+  document.setMarkdownText(markdown, std::move(parsed.root));
+  DocumentLayout layout;
+  layout.rebuild(document, theme, 640.0);
+
+  const BlockLayout* languageLayout = layout.block(languageId);
+  require(languageLayout != nullptr && languageLayout->inlineLayout() != nullptr,
+          QStringLiteral("sample language paragraph should have inline layout"));
+  require(languageLayout->inlineLayout()->displayText() == QStringLiteral("中文 | English"),
+          QStringLiteral("sample language paragraph should not gain extra rendered text"));
+
+  const BlockLayout* bodyLayout = layout.block(bodyId);
+  require(bodyLayout != nullptr && bodyLayout->inlineLayout() != nullptr,
+          QStringLiteral("sample body paragraph should have inline layout"));
+  require(bodyLayout->inlineLayout()->mathAtomCount() == 1,
+          QStringLiteral("sample inline math should collapse to one native atom: count=%1 display=%2")
+              .arg(bodyLayout->inlineLayout()->mathAtomCount())
+              .arg(bodyLayout->inlineLayout()->displayText()));
+  require(!bodyLayout->inlineLayout()->displayText().contains(QLatin1Char('$')) &&
+              !bodyLayout->inlineLayout()->displayText().contains(QStringLiteral("mc^2")),
+          QStringLiteral("sample inactive inline math should not expose raw TeX"));
+}
+
 void testExtendedMathFunctionRendering() {
   RenderTheme theme = RenderTheme::github();
 
@@ -256,6 +302,7 @@ int main(int argc, char** argv) {
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testMathRenderingLayout);
+  RUN_TEST(testUserSampleHeadingLanguageAndInlineMath);
   RUN_TEST(testExtendedMathFunctionRendering);
 #undef RUN_TEST
   return 0;

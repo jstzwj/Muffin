@@ -664,7 +664,7 @@ void InlineLayout::buildMathAtoms(const QVector<InlineNode>& inlines, const Rend
       continue;
     }
 
-    const QString tex = texForInlineMathVisibleRange(inlines, span.visibleStart, span.visibleEnd);
+    const QString tex = texForInlineMathSpan(inlines, span);
     if (tex.isEmpty()) {
       const qsizetype displayStart = rebuiltDisplay.size();
       rebuiltDisplay += spanText;
@@ -704,13 +704,19 @@ void InlineLayout::buildMathAtoms(const QVector<InlineNode>& inlines, const Rend
   }
 }
 
-QString InlineLayout::texForInlineMathVisibleRange(const QVector<InlineNode>& inlines, qsizetype visibleStart, qsizetype visibleEnd) const {
-  // Extract the expected math content from the projected display text
-  const QString expected = projection_.displayText().mid(visibleStart, visibleEnd - visibleStart);
-  // Find the matching InlineMath node by DFS — text content must match
+QString InlineLayout::texForInlineMathSpan(const QVector<InlineNode>& inlines, const InlineProjectionSpan& span) const {
+  const QString source = projection_.sourceText();
+  if (span.contentSourceStart >= 0 && span.contentSourceEnd >= span.contentSourceStart && span.contentSourceEnd <= source.size()) {
+    const QString tex = source.mid(span.contentSourceStart, span.contentSourceEnd - span.contentSourceStart);
+    if (!tex.isEmpty()) {
+      return tex;
+    }
+  }
+
+  const QString expected = projection_.visibleText().mid(span.visibleStart, span.visibleEnd - span.visibleStart);
   const auto visit = [&](const auto& self, const QVector<InlineNode>& nodes) -> QString {
     for (const InlineNode& node : nodes) {
-      if (node.type() == InlineType::InlineMath && node.text() == expected) {
+      if (node.type() == InlineType::InlineMath && (expected.isEmpty() || node.text() == expected)) {
         return node.text();
       }
       if (!node.children().isEmpty()) {
