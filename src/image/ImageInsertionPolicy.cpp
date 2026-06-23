@@ -12,6 +12,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QTimer>
 #include <QUrl>
 
@@ -153,11 +154,24 @@ ImageInsertResult ImageInsertionPolicy::resolveHref(const ImageInsertRequest& re
   // 1. Materialize a local file path for the source.
   QString sourcePath = req.sourcePath;
   if (sourcePath.isEmpty() && !req.pastedImage.isNull()) {
+    // An untitled document has no folder yet, so docDir is empty. Don't refuse the
+    // paste (that silently dropped it — the most common "Ctrl+V image does nothing"
+    // report). Mirror Typora's fallback: park the image under the app's roaming data
+    // dir in a dedicated "muffin-user-images" folder until the document is saved
+    // somewhere with a real folder. The href stays absolute in the meantime.
+    QDir saveDir(docDir);
     if (docDir.isEmpty()) {
-      result.error = QStringLiteral("no document folder to save the pasted image into");
+      QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+      if (base.isEmpty()) {  // headless/odd environments: fall back to the OS temp dir.
+        base = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+      }
+      saveDir = QDir(base + QStringLiteral("/muffin-user-images"));
+    }
+    if (!saveDir.exists() && !saveDir.mkpath(QStringLiteral("."))) {
+      result.error = QStringLiteral("no folder to save the pasted image into");
       return result;
     }
-    sourcePath = ImageFileOps::savePastedImage(req.pastedImage, QDir(docDir));
+    sourcePath = ImageFileOps::savePastedImage(req.pastedImage, saveDir);
     if (sourcePath.isEmpty()) {
       result.error = QStringLiteral("could not save the pasted image");
       return result;

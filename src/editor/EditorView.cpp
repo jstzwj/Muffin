@@ -96,6 +96,13 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
   setAttribute(Qt::WA_InputMethodEnabled, true);
   viewport()->setMouseTracking(true);
   viewport()->setAutoFillBackground(false);
+  // Enable external drag-and-drop. acceptDrops defaults to false, so without
+  // this the overridden drag*/dropEvent handlers are never delivered and drops
+  // of folders/.md/.txt/images onto the window are silently ignored. The
+  // viewport is the real drop target for a QAbstractScrollArea (its events are
+  // forwarded to these handlers), so it must accept drops too.
+  setAcceptDrops(true);
+  viewport()->setAcceptDrops(true);
   setBackgroundRole(QPalette::Base);
   applyScrollBarStyle();
   hoverAnimator_ = new HoverAnimator(this);

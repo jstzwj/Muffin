@@ -149,7 +149,8 @@ QString muffin::ImageFileOps::savePastedImage(const QImage& image, const QDir& d
   if (image.isNull() || !destDir.exists()) {
     return {};
   }
-  const QString fileName = QStringLiteral("pasted_%1.png").arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_HHmmss_zzz")));
+  // Typora-style name: image-<YYYYMMDDHHmmssmmm>.png (e.g. image-20260624040509881.png).
+  const QString fileName = QStringLiteral("image-%1.png").arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMddHHmmsszzz")));
   const QString filePath = destDir.filePath(fileName);
   if (!image.save(filePath, "PNG")) {
     return {};
