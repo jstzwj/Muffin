@@ -320,6 +320,23 @@ void ThemeDefinition::deriveChromeDefaults(ThemeColors& k) {
       k.border = base.lightness() < 128 ? base.lighter(140) : base.darker(112);
     }
   }
+  // Code background — the FILL of inline code spans / code fences / math+HTML
+  // block bodies. A theme that declares no `background` on `code` / `.md-fences`
+  // (pixyll: `code { color:#7a7a7a }` only; variable-only themes) leaves this
+  // invalid. InlineLayout::paintTextLayoutCodeSpans sets a QBrush from it, and Qt
+  // paints an unset brush as solid black — the black chip behind every inline code
+  // span. The hover / selected tokens below fall back to it too, so an invalid
+  // codeBackground ALSO turns menu-item hover, tool-button hover and sidebar-row
+  // selection black (via hexRgb's invalid → #000000). Derive a subtle step off the
+  // page background so the chip is always visible-but-soft. Runs BEFORE codeBorder
+  // so the border derives from a real code background, not the page background.
+  if (!k.codeBackground.isValid()) {
+    const QColor base = k.background.isValid() ? k.background : QColor(0xff, 0xff, 0xff);
+    k.codeBackground = base.lightness() < 128 ? base.lighter(125) : base.darker(106);
+  }
+  // Code-block background follows the inline code background (the RenderTheme
+  // getter already falls back this way; centralize it so ThemeDefinition is sane).
+  if (!k.codeBlockBackground.isValid()) { k.codeBlockBackground = k.codeBackground; }
   // Code border — inline code spans, code fences, math/HTML block outlines, plus
   // the soft UI lines that borrow it (thematic-break rule, code-fence scrollbar
   // track, heading badge). A theme that declares no `border` on `code` /
@@ -332,12 +349,25 @@ void ThemeDefinition::deriveChromeDefaults(ThemeColors& k) {
   // hairline block above, so the hairline still sees the original (possibly
   // invalid) codeBorder before this fallback fills it in.
   if (!k.codeBorder.isValid()) {
-    const QColor base = k.codeBackground.isValid() ? k.codeBackground : k.background;
+    const QColor base = k.codeBackground;  // now always valid (filled above)
     k.codeBorder = base.lightness() < 128 ? base.lighter(140) : base.darker(112);
   }
   if (!k.hover.isValid()) k.hover = k.codeBackground;
   if (!k.selected.isValid()) k.selected = k.codeBackground;
   if (!k.accent.isValid()) k.accent = k.link;
+  // Highlight (==mark==) background — most themes declare no `mark`, leaving it
+  // invalid (the `==text==` fill, and BlockLayoutBuilder's HTML palette, both
+  // paint an unset brush as solid black). Default to a soft amber (dark amber on
+  // dark pages). isDark is not set here, so derive from the page luminance.
+  if (!k.highlight.isValid()) {
+    const QColor base = k.background.isValid() ? k.background : QColor(0xff, 0xff, 0xff);
+    k.highlight = base.lightness() < 128 ? QColor(0x6a, 0x53, 0x16) : QColor(0xff, 0xf1, 0x73);
+  }
+  // Text-selection background — a theme with no ::selection leaves it invalid and
+  // the source-mode selection paints black. Default to a soft accent blue.
+  if (!k.selection.isValid()) {
+    k.selection = k.accent.isValid() ? k.accent : (k.link.isValid() ? k.link : QColor(0x3b, 0x82, 0xf6));
+  }
 }
 
 ThemeDefinition ThemeDefinition::fromCss(const QString& cssPath, const QString& id) {

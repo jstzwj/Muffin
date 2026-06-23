@@ -277,6 +277,36 @@ void testTextOnlySynthesisesBackground() {
   require(d.colors.isDark == true, QStringLiteral("light text on no-bg should infer a dark canvas"));
 }
 
+// Regression for the pixyll "everything turns black" bug: pixyll declares
+// `code { color:#7a7a7a }` with NO background and no mark / ::selection, so the
+// code-background fill, highlight, selection, and the hover/selected tokens that
+// fall back to codeBackground all resolved INVALID. Qt paints an unset QBrush as
+// solid black, and hexRgb turns an invalid QSS token into #000000 — so the inline
+// code chip, menu-item hover, tool-button hover and sidebar selection all went
+// black. deriveChromeDefaults must now fill every one of them with a valid colour.
+void testPixyllHasNoInvalidBlackProneTokens() {
+  const ThemeDefinition d = ThemeDefinition::fromCss(QStringLiteral(":/themes/pixyll.css"), QStringLiteral("pixyll"));
+  require(d.valid(), QStringLiteral("pixyll.css should load from the QRC resource"));
+  const auto mustBeValid = [](const QColor& c, const char* name) {
+    require(c.isValid(),
+            QStringLiteral("pixyll %1 must resolve to a valid colour (was the invalid→black trap)")
+                .arg(QString::fromLatin1(name)));
+  };
+  mustBeValid(d.colors.background, "background");
+  mustBeValid(d.colors.chromeBackground, "chromeBackground");
+  mustBeValid(d.colors.codeBackground, "codeBackground");
+  mustBeValid(d.colors.codeBlockBackground, "codeBlockBackground");
+  mustBeValid(d.colors.codeBorder, "codeBorder");
+  mustBeValid(d.colors.highlight, "highlight");
+  mustBeValid(d.colors.selection, "selection");
+  mustBeValid(d.colors.hover, "hover");
+  mustBeValid(d.colors.selected, "selected");
+  // On pixyll's white page the derived code chip must be a light grey, never black.
+  require(d.colors.codeBackground.lightness() > 128,
+          QStringLiteral("pixyll code background should be a light fill, not black (got %1)")
+              .arg(d.colors.codeBackground.name(QColor::HexRgb)));
+}
+
 // Inline /* */ comments between declarations must not glue onto the next
 // property and silently drop it. This is the a community theme (phycat) failure: a large
 // :root with a comment before (nearly) every variable lost --bg-color and
@@ -893,6 +923,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testPureVariableTheme);
   RUN_TEST(testCascadeBeatsVariable);
   RUN_TEST(testTextOnlySynthesisesBackground);
+  RUN_TEST(testPixyllHasNoInvalidBlackProneTokens);
   RUN_TEST(testCommentsDoNotDropDeclarations);
   RUN_TEST(testWriteBeforeDoesNotLeakBackground);
   RUN_TEST(testColorMixResolvesTintedBackground);

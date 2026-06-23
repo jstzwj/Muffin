@@ -98,6 +98,28 @@ InlineRange inlineRange(qsizetype start, qsizetype end) {
   return InlineRange{start, end};
 }
 
+// Index (relative to `source`) of the ']' that closes the bracketed construct whose opener already
+// occupies source[0..scanFrom). Scanning starts at `scanFrom`, so a nested opener — the '[' of an
+// image label inside a link [![alt](img)](url) — is balanced against its OWN ']' and skipped. A naive
+// first-']' search would otherwise stop at the nested image's ']' and truncate the link's label range,
+// which in turn made the image child fall out of the link's content bounds and render as alt text.
+// Returns -1 when no matching closer is found.
+qsizetype matchingBracketEnd(QStringView source, qsizetype scanFrom) {
+  int depth = 0;
+  for (qsizetype i = scanFrom; i < source.size(); ++i) {
+    const QChar ch = source.at(i);
+    if (ch == QLatin1Char('[')) {
+      ++depth;
+    } else if (ch == QLatin1Char(']')) {
+      if (depth == 0) {
+        return i;
+      }
+      --depth;
+    }
+  }
+  return -1;
+}
+
 void setPlainInlineRanges(InlineSourceRanges& ranges, qsizetype start, qsizetype end) {
   ranges.source = inlineRange(start, end);
   ranges.content = ranges.source;
@@ -409,7 +431,8 @@ void CmarkNodeAdapter::annotateInlineSource(cmark_node* cmarkNode, InlineNode& i
         ranges.source = inlineRange(start, end);
         ranges.openMarker = inlineRange(start, qMin(end, start + 1));
         const auto source = markdown_.mid(start, end - start);
-        const qsizetype labelEnd = source.indexOf(QLatin1Char(']'));
+        // Depth-aware: skip the ']' of a nested image label so the link's OWN ']' bounds the label.
+        const qsizetype labelEnd = matchingBracketEnd(source, ranges.openMarker.end - start);
         ranges.content = labelEnd >= 0 ? inlineRange(start + 1, start + labelEnd) : inlineRange(ranges.openMarker.end, ranges.openMarker.end);
       }
       break;
@@ -418,7 +441,7 @@ void CmarkNodeAdapter::annotateInlineSource(cmark_node* cmarkNode, InlineNode& i
       ranges.source = inlineRange(start, end);
       ranges.openMarker = inlineRange(start, qMin(end, start + 2));
       const auto source = markdown_.mid(start, end - start);
-      const qsizetype labelEnd = source.indexOf(QLatin1Char(']'));
+      const qsizetype labelEnd = matchingBracketEnd(source, ranges.openMarker.end - start);
       ranges.content = labelEnd >= 0 ? inlineRange(ranges.openMarker.end, start + labelEnd) : inlineRange(ranges.openMarker.end, ranges.openMarker.end);
       break;
     }

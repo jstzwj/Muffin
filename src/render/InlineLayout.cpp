@@ -465,7 +465,7 @@ void InlineLayout::paintTextLayoutInlineDecorations(QPainter& painter, QPointF o
   // link ::before icon at the link's leading edge (first occupied line).
   if (hasLinkIcon) {
     for (const InlineProjectionSpan& span : projection_.spans()) {
-      if (span.type != InlineType::Link || span.kind != InlineSpanKind::Text || span.displayEnd <= span.displayStart) { continue; }
+      if (!span.link || span.kind != InlineSpanKind::Text || span.displayEnd <= span.displayStart) { continue; }
       for (int i = 0; i < textLayout_->lineCount(); ++i) {
         const QTextLine line = textLayout_->lineAt(i);
         if (!line.isValid()) { continue; }
@@ -1071,15 +1071,17 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
       case InlineType::InlineMath:
         format.setFont(theme.mathFont());
         break;
-      case InlineType::Link:
-        if (span.kind != InlineSpanKind::OpenMarker && span.kind != InlineSpanKind::CloseMarker &&
-            span.kind != InlineSpanKind::HiddenSyntax && span.kind != InlineSpanKind::EmptyContentSlot) {
-          format.setForeground(theme.linkColor());
-          format.setFontUnderline(true);
-        }
-        break;
       default:
         break;
+    }
+    // Link formatting is an orthogonal wrapping attribute (span.link), decoupled from span.type, so a
+    // link composes with any inner node: an image-link renders as a clickable image, `[`code`](url)`
+    // keeps its code background, etc. Atom is excluded so an image-link's placeholder isn't underlined.
+    if (span.link && span.kind != InlineSpanKind::OpenMarker && span.kind != InlineSpanKind::CloseMarker &&
+        span.kind != InlineSpanKind::HiddenSyntax && span.kind != InlineSpanKind::EmptyContentSlot &&
+        span.kind != InlineSpanKind::Atom) {
+      format.setForeground(theme.linkColor());
+      format.setFontUnderline(true);
     }
     const DisplayOffsetRange layoutRange = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
     if (!layoutRange.valid || layoutRange.end > displayText_.size()) {

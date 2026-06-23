@@ -1341,6 +1341,7 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
           content = InlineRange{sourceStart, sourceEnd};
         }
         appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, content.start, content.end, label, true);
+        state.spans.last().link = true;  // formatting is driven by span.link, not type (see Link re-tag below)
         state.linkRanges.push_back({displayStart, state.displayOffset, node.href()});
         break;
       }
@@ -1352,9 +1353,14 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
         appendTextSpan(state, node.type(), InlineSpanKind::OpenMarker, sourceStart, contentStart, state.sourceText->mid(sourceStart, contentStart - sourceStart), false);
       }
       appendInlines(state, node.children(), contentStart, contentEnd, htmlFormatData);
+      // Mark the link's child spans as part of a link WITHOUT overwriting their type. Each span keeps
+      // its real type (Image/Code/Emphasis/…) so the inner content renders correctly — images load via
+      // buildImageAtoms, code keeps its background — while link color/underline is applied orthogonally
+      // via span.link (InlineLayout). This is what makes an image-link [![alt](img)](url) render as a
+      // clickable image instead of collapsing to alt-text-as-link.
       for (InlineProjectionSpan& span : state.spans) {
         if (span.displayStart >= displayStart && span.displayEnd <= state.displayOffset) {
-          span.type = InlineType::Link;
+          span.link = true;
         }
       }
       state.linkRanges.push_back({displayStart, state.displayOffset, node.href()});

@@ -229,6 +229,45 @@ void testInlineProjectionContract() {
   require(!activeImage.selectionRects(0, 3).isEmpty(), QStringLiteral("active image selection rects should remain valid"));
 }
 
+void testImageInsideLinkProjectsAsClickableImage() {
+  // [![ko-fi](img.svg)](link) — an image wrapped in a link. Must project as a clickable IMAGE:
+  // the Image Atom span survives (type stays Image so buildImageAtoms loads it) AND it is part of
+  // the link (span.link + a linkRange → clicking opens the link URL). Before the fix, the link's
+  // re-tag overwrote the span type to Link, so buildImageAtoms skipped it and only alt text rendered.
+  const QString markdown = QStringLiteral("[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/sumruler)");
+  DocumentSession session;
+  session.setMarkdownText(markdown, false);
+  const QVector<InlineNode> inlines = session.document().root().children().front()->inlines();
+
+  InlineProjection projection(inlines, markdown, InlineProjectionState{}, 0);
+  require(projection.isValid(), QStringLiteral("image-in-link should project"));
+
+  // The link's single child is an image: expect an Image Atom span whose href is the image src and
+  // that carries link=true (orthogonal link attribute), NOT a span whose type was clobbered to Link.
+  qsizetype imageDisplayStart = -1;
+  bool foundImageAtom = false;
+  for (const InlineProjectionSpan& span : projection.spans()) {
+    if (span.type == InlineType::Image && span.kind == InlineSpanKind::Atom) {
+      foundImageAtom = true;
+      imageDisplayStart = span.displayStart;
+      require(span.href == QStringLiteral("https://ko-fi.com/img/githubbutton_sm.svg"),
+              QStringLiteral("image-in-link atom must keep the image src, got: %1").arg(span.href));
+      require(span.link, QStringLiteral("image-in-link atom must be tagged as part of the link"));
+    }
+  }
+  require(foundImageAtom, QStringLiteral("image-in-link must produce an Image Atom span (was overwritten to Link)"));
+
+  // The image atom sits inside the link range, so a hover/click on it resolves to the LINK url —
+  // matching GitHub/Typora where clicking a clickable image navigates to the link.
+  require(projection.linkHrefAtDisplayOffset(imageDisplayStart) == QStringLiteral("https://ko-fi.com/sumruler"),
+          QStringLiteral("image-in-link click target must be the link href, got: %1")
+              .arg(projection.linkHrefAtDisplayOffset(imageDisplayStart)));
+
+  // The nesting round-trips through serialization, so copy/export keeps the image-link intact.
+  require(InlineProjection::markdownForInlines(inlines) == markdown,
+          QStringLiteral("image-in-link should round-trip its markdown, got: %1").arg(InlineProjection::markdownForInlines(inlines)));
+}
+
 void testActiveLoadedImageKeepsSourceTextAndAddsPreviewSpace() {
   QTemporaryDir dir;
   require(dir.isValid(), QStringLiteral("temporary image directory should be valid"));
@@ -792,6 +831,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testTrailingInlineHidesMarkersAtBlockEnd);
   RUN_TEST(testHighlightPaintsBackgroundOnContent);
   RUN_TEST(testInlineProjectionContract);
+  RUN_TEST(testImageInsideLinkProjectsAsClickableImage);
   RUN_TEST(testActiveLoadedImageKeepsSourceTextAndAddsPreviewSpace);
   RUN_TEST(testEntityDisplayAfterEdit);
   RUN_TEST(testEscapedPunctuationOffsetMapping);

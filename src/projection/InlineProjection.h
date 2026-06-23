@@ -64,6 +64,11 @@ struct InlineProjectionSpan {
   bool italic = false;
   bool strike = false;
   bool underline = false;
+  bool link = false;          // Wrapping attribute ORTHOGONAL to `type`: this span is part of a link →
+                              // link color/underline applied in InlineLayout. Decoupled from `type` so a
+                              // link composes with any inner node (image/code/math/emphasis…) instead of
+                              // overwriting it — this is what makes an image-link [![alt](img)](url) render
+                              // as a clickable image, and keeps `[`code`](url)` rendered as code.
   bool highlight = false;     // ==text==: yellow wash propagated onto content spans
   bool subscript = false;     // ~text~: lowered baseline propagated onto content spans
   bool superscript = false;   // ^text^: raised baseline propagated onto content spans

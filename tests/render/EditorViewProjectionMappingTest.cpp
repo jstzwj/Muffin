@@ -231,6 +231,10 @@ void testInlineProjectionSpanContracts() {
       QStringLiteral("x"),
       "inactive strong span contract");
 
+  // Link-ness is an orthogonal wrapping attribute (span.link), decoupled from span.type: the link's
+  // own structural markers (OpenMarker/HiddenSyntax) carry the Link type, but the WRAPPED content
+  // keeps its real type (Text here) and is flagged link=true. This is what lets an image-link
+  // [![alt](img)](url) keep type=Image so it renders, instead of being clobbered to Link.
   InlineProjectionState activeLink;
   activeLink.cursorSourceOffset = 1;
   requireProjectionSpans(
@@ -239,7 +243,7 @@ void testInlineProjectionSpanContracts() {
       activeLink,
       {
           {InlineType::Link, InlineSpanKind::OpenMarker, 0, 1, 0, 1, 0, 1, 0, 0},
-          {InlineType::Link, InlineSpanKind::Text, 1, 2, 1, 2, 1, 2, 0, 1},
+          {InlineType::Text, InlineSpanKind::Text, 1, 2, 1, 2, 1, 2, 0, 1},
           {InlineType::Link, InlineSpanKind::HiddenSyntax, 2, 6, 2, 6, 2, 6, 1, 1},
       },
       QStringLiteral("[x](u)"),
@@ -250,7 +254,7 @@ void testInlineProjectionSpanContracts() {
       QStringLiteral("[x](u)"),
       inactive,
       {
-          {InlineType::Link, InlineSpanKind::Text, 1, 2, 1, 2, 0, 1, 0, 1},
+          {InlineType::Text, InlineSpanKind::Text, 1, 2, 1, 2, 0, 1, 0, 1},
       },
       QStringLiteral("x"),
       QStringLiteral("x"),
