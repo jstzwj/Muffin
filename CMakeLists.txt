@@ -30,7 +30,10 @@ endif()
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg PrintSupport Network)
 find_package(ICU REQUIRED COMPONENTS uc i18n)
 find_package(WebP REQUIRED)
-find_package(libavif REQUIRED)
+# dav1d is libavif's AV1 decoder; found here (Conan provides dav1d::dav1d) so libavif's own
+# find_package(dav1d) below reuses it. libavif itself is built from vendored source (see the
+# third_party/libavif block below) rather than pulled from Conan, to avoid its libyuv dependency.
+find_package(dav1d REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(PNG REQUIRED)
 find_package(Python3 COMPONENTS Interpreter QUIET)
@@ -288,6 +291,35 @@ if(MSVC)
 endif()
 if(DEFINED _muffin_prev_build_shared_libs)
   set(BUILD_SHARED_LIBS "${_muffin_prev_build_shared_libs}" CACHE BOOL "" FORCE)
+else()
+  unset(BUILD_SHARED_LIBS CACHE)
+endif()
+
+# libavif (vendored) — AVIF decoder. Built from source instead of pulled from Conan because the
+# ConanCenter libavif/1.4.1 recipe hard-requires libyuv, whose only source
+# (chromium.googlesource.com) is unreachable from GitHub Actions IPs. Decode-only: dav1d from
+# Conan (reliable VideoLAN source; found above), libyuv OFF (libavif uses its internal
+# YUV->RGB), aom OFF, no apps/tests/examples. Static to match the other vendored libs. The
+# external static target is `avif_static` (the `avif`/`avif_internal` targets are not for
+# external use). See third_party/libavif/VENDORED.md.
+set(_muffin_prev_build_shared_libs_avif "${BUILD_SHARED_LIBS}")
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(AVIF_CODEC_DAV1D  SYSTEM CACHE STRING "" FORCE)
+set(AVIF_CODEC_AOM    OFF     CACHE STRING "" FORCE)
+set(AVIF_LIBYUV       OFF     CACHE STRING "" FORCE)
+set(AVIF_LIBSHARPYUV  OFF     CACHE STRING "" FORCE)
+set(AVIF_BUILD_APPS     OFF CACHE BOOL "" FORCE)
+set(AVIF_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
+set(AVIF_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+add_subdirectory(third_party/libavif EXCLUDE_FROM_ALL)
+# Ensure the avif headers are visible as system includes for Muffin's own translation units
+# (ImageDecoder.cpp #includes <avif/avif.h>); merge_static_libs may not forward avif's includes.
+if(TARGET avif_static)
+  target_include_directories(avif_static SYSTEM PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libavif/include)
+endif()
+if(DEFINED _muffin_prev_build_shared_libs_avif)
+  set(BUILD_SHARED_LIBS "${_muffin_prev_build_shared_libs_avif}" CACHE BOOL "" FORCE)
 else()
   unset(BUILD_SHARED_LIBS CACHE)
 endif()
@@ -773,7 +805,7 @@ target_link_libraries(MuffinUi
     ICU::i18n
   PRIVATE
     WebP::webp
-    avif
+    avif_static
     Qt6::Svg
     lexbor::lexbor_static
     yoga::yoga

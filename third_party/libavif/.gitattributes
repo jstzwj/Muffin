@@ -1,0 +1,5 @@
+# Vendored from AOMediaCodec/libavif v1.4.1. Force stable LF checkout everywhere so the tree
+# builds identically on every platform (upstream had `* text=auto` which allows CRLF on Windows).
+* text=auto eol=lf
+*.sh text eol=lf
+*.y4m -text -diff

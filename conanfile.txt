@@ -2,7 +2,7 @@
 qt/6.11.1
 icu/74.2
 libwebp/1.6.0
-libavif/1.4.1
+dav1d/1.5.3
 libjpeg/9f
 libpng/1.6.51
 lexbor/2.6.0
