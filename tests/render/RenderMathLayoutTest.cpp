@@ -8,7 +8,6 @@
 #include <QImage>
 #include <QPainter>
 
-#include <functional>
 #include <iostream>
 
 #include "MathTestUtils.h"
@@ -251,6 +250,49 @@ void testUserSampleHeadingLanguageAndInlineMath() {
           QStringLiteral("sample inactive inline math should not expose raw TeX"));
 }
 
+// cmark-gfm reports a display-math block's range up to its last CONTENT line, EXCLUDING the closing
+// $$ line; an HTML block can similarly exclude its closing-tag line. insertVirtualEmptyParagraphs
+// must count ACTUAL blank lines in the gap, not trust the (short) reported end line — otherwise a
+// display-math / HTML block followed by a single blank line gained a spurious clickable empty
+// paragraph (the closer line was read as a second blank line). The closer line is non-blank, so it
+// must not count toward the 2-blank-line threshold that gates a virtual empty paragraph.
+void testMathAndHtmlBlocksDoNotSpawnSpuriousEmptyParagraphs() {
+  CmarkGfmParser parser;
+
+  const auto emptyParagraphCount = [](const MarkdownNode& root) {
+    int count = 0;
+    for (const auto& child : root.children()) {
+      const SourceRange r = child->sourceRange();
+      if (child->type() == BlockType::Paragraph && r.byteStart >= 0 && r.byteEnd == r.byteStart) {
+        ++count;
+      }
+    }
+    return count;
+  };
+
+  // Display math ($$ … $$) followed by ONE blank line, then content: no virtual empty paragraph.
+  ParseResult mathParsed = parser.parseDocument(QStringLiteral("intro\n\n$$\nx^2\n$$\n\nafter\n"), {});
+  require(mathParsed.root != nullptr, QStringLiteral("display-math sample should parse"));
+  require(emptyParagraphCount(*mathParsed.root) == 0,
+          QStringLiteral("display math + one blank line must not add a spurious empty paragraph"));
+
+  // HTML block (<pre> … </pre>) followed by ONE blank line, then content: no virtual empty paragraph.
+  ParseResult htmlParsed = parser.parseDocument(QStringLiteral("<pre>\nline\n</pre>\n\nafter\n"), {});
+  require(htmlParsed.root != nullptr, QStringLiteral("html-block sample should parse"));
+  require(emptyParagraphCount(*htmlParsed.root) == 0,
+          QStringLiteral("html block + one blank line must not add a spurious empty paragraph"));
+
+  // Sanity: TWO blank lines between blocks DO warrant a virtual empty paragraph (this is how the
+  // editor represents an empty paragraph created by Enter / insert — the caret lands in it — so it
+  // must keep working). One blank line never does.
+  ParseResult oneBlank = parser.parseDocument(QStringLiteral("a\n\nb"), {});
+  require(emptyParagraphCount(*oneBlank.root) == 0,
+          QStringLiteral("one blank line between blocks must not add an empty paragraph"));
+  ParseResult twoBlank = parser.parseDocument(QStringLiteral("a\n\n\nb"), {});
+  require(emptyParagraphCount(*twoBlank.root) == 1,
+          QStringLiteral("two blank lines between blocks should yield one virtual empty paragraph"));
+}
+
 void testExtendedMathFunctionRendering() {
   RenderTheme theme = RenderTheme::github();
 
@@ -303,6 +345,7 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testMathRenderingLayout);
   RUN_TEST(testUserSampleHeadingLanguageAndInlineMath);
+  RUN_TEST(testMathAndHtmlBlocksDoNotSpawnSpuriousEmptyParagraphs);
   RUN_TEST(testExtendedMathFunctionRendering);
 #undef RUN_TEST
   return 0;

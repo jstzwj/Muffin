@@ -824,6 +824,56 @@ void testCodeFenceHitKeepsScrollControllerAcrossLayoutReset() {
               .arg(hit.textOffset));
 }
 
+// A click in the gap below a NON-last block must NOT resolve to the trailing BlockAfter zone.
+// hitTest used to return BlockAfter(nearestBlock) for ANY click below a block's bottom (not just
+// the last block), so clicking the gap after a block — and typing — called insertBlockAfterCurrentBlock
+// and inserted a brand-new paragraph (the user's "empty line I can click into and type" between a
+// heading and the following text). BlockAfter is only valid below the LAST block. To reproduce
+// deterministically (independent of inter-block gap size), we click below a SHORT block that is
+// followed by a TALLER block: the tall block's centre sits far enough below that the short block
+// stays the nearest-by-centre for clicks just below its bottom, exercising exactly the buggy branch.
+void testGapClickBelowNonLastBlockIsNotTrailingBlockAfter() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  session.setMarkdownText(QStringLiteral("Intro paragraph.\n\n# A Heading Line\n\nFinal paragraph."), false);
+  view.resize(800, 600);
+  view.setDocument(session.document());
+
+  MarkdownNode* intro = blockAt(session, 0);
+  MarkdownNode* heading = blockAt(session, 1);
+  MarkdownNode* finalPara = blockAt(session, 2);
+  const BlockLayout* introBlock = requireViewBlock(view, intro->id(), QStringLiteral("intro"));
+  const BlockLayout* headingBlock = requireViewBlock(view, heading->id(), QStringLiteral("heading"));
+  const BlockLayout* finalBlock = requireViewBlock(view, finalPara->id(), QStringLiteral("final"));
+
+  const qreal windowTop = introBlock->rect().bottom();
+  const qreal windowBottom = (introBlock->rect().center().y() + headingBlock->rect().center().y()) / 2.0;
+  require(windowBottom > windowTop + 1.0,
+          QStringLiteral("test setup expects a gap below the intro block where it is the nearest block"));
+  const QPointF gapClick(introBlock->rect().left() + 8.0, (windowTop + windowBottom) / 2.0);
+  const HitTestResult gapHit = view.hitTest(gapClick);
+  require(gapHit.isValid(), QStringLiteral("gap click should resolve to a valid hit"));
+  require(gapHit.zone != HitTestResult::Zone::BlockAfter,
+          QStringLiteral("clicking the gap below a non-last block must NOT be the trailing BlockAfter zone"));
+  require(gapHit.blockId == intro->id() || gapHit.blockId == heading->id(),
+          QStringLiteral("gap click should snap to the intro or the heading, not signal a new block"));
+
+  // Typing at that hit must not spawn a new top-level block.
+  controller.activateHit(gapHit);
+  require(controller.inputController().insertText(QStringLiteral("1")),
+          QStringLiteral("typing after the gap click should be handled"));
+  require(session.document().root().children().size() == 3,
+          QStringLiteral("typing in the gap must not insert a new paragraph (still 3 top-level blocks)"));
+
+  // The trailing position below the LAST block is unchanged: still BlockAfter.
+  const QPointF trailingClick(finalBlock->rect().left() + 8.0, finalBlock->rect().bottom() + 60.0);
+  const HitTestResult trailingHit = view.hitTest(trailingClick);
+  require(trailingHit.zone == HitTestResult::Zone::BlockAfter,
+          QStringLiteral("clicking below the last block should still be the trailing BlockAfter zone"));
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -835,6 +885,7 @@ int main(int argc, char** argv) {
   QCoreApplication::setOrganizationName(QStringLiteral("MuffinTest"));
   QCoreApplication::setApplicationName(QStringLiteral("EditorViewHitTestTest"));
 #define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testGapClickBelowNonLastBlockIsNotTrailingBlockAfter);
   RUN_TEST(testDefinitionPlaceholderHitKeepsCursorInSlot);
   RUN_TEST(testEmptyLinkDefinitionTitlePlaceholderOnlyWhenFocused);
   RUN_TEST(testDefinitionBoundaryHitPlacesCursorAtSourceEdges);

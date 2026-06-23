@@ -4,8 +4,11 @@
 #include "render/BlockLayoutBuilder.h"
 
 #include <QElapsedTimer>
+#include <QDir>
+#include <QFile>
 #include <QFontMetricsF>
 #include <QLoggingCategory>
+#include <QTextStream>
 
 #include <algorithm>
 #include <cmath>
@@ -122,12 +125,23 @@ void logRebuildPerf(const RebuildPerfStats& stats, qreal viewportWidth, qreal pa
 }
 
 qreal spacingAfterBlock(const MarkdownNode& node, const RenderTheme& theme) {
+  // Paragraphs sit tight — only slightly more than a soft line break — regardless of the theme's CSS
+  // paragraph margin. Adjacent block margins are summed here (not CSS-collapsed), so a theme's
+  // top+bottom paragraph margin (e.g. github's 0.8em = 12.8px each) summed to a 25.6px gap, far more
+  // than a soft break. The paragraph's top margin is dropped in spacingBeforeBlock, so this single
+  // bottom gap is the whole inter-paragraph separation.
+  if (node.type() == BlockType::Paragraph) { return theme.blockSpacing() * 0.4; }
   const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel());
   if (!css.isNull()) { return css.bottom(); }
-  return node.type() == BlockType::Heading ? theme.blockSpacing() * 0.65 : theme.blockSpacing();
+  if (node.type() == BlockType::Heading) { return theme.blockSpacing() * 0.65; }
+  return theme.blockSpacing();
 }
 
 qreal spacingBeforeBlock(const MarkdownNode& node, const RenderTheme& theme, qreal cursorY) {
+  // No top margin for paragraphs: the inter-paragraph gap lives entirely in spacingAfterBlock, so the
+  // theme's top+bottom margins are not summed into a double-wide gap. (This is the practical
+  // equivalent of CSS margin collapsing for the paragraph-paragraph case.)
+  if (node.type() == BlockType::Paragraph) { return 0; }
   const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel());
   if (!css.isNull()) { return css.top(); }
   if (node.type() != BlockType::Heading || cursorY <= theme.topMargin()) {
@@ -307,6 +321,29 @@ void DocumentLayout::rebuild(
 
   buildNestedIndex(document);
   recomputeTotalHeight(theme);
+
+  // TEMP DEBUG: dump theme margins + slot positions (first real multi-block document) to diagnose spacing.
+  static bool dumped = false;
+  if (!dumped && slots_.size() >= 5) {
+    dumped = true;
+    QFile df(QDir::homePath() + QStringLiteral("/muffin_layout_debug.txt"));
+    if (df.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+      QTextStream s(&df);
+      const QMarginsF pm = theme.blockMargin(BlockType::Paragraph, 0);
+      const QMarginsF hm = theme.blockMargin(BlockType::Heading, 1);
+      s << "zoom=" << theme.zoomPercent() << " fontPx=" << theme.fontSizePx()
+        << " blockSpacing=" << theme.blockSpacing()
+        << " paraMargin(top/bot)=" << pm.top() << "/" << pm.bottom()
+        << " h1Margin(top/bot)=" << hm.top() << "/" << hm.bottom() << "\n";
+      const int n = qMin<int>(int(slots_.size()), 20);
+      for (int i = 0; i < n; ++i) {
+        const BlockSlot& sl = slots_[size_t(i)];
+        s << "slot[" << i << "] type=" << static_cast<int>(sl.type)
+          << " top=" << sl.top << " h=" << sl.height
+          << " bottom=" << (sl.top + sl.height) << "\n";
+      }
+    }
+  }
 
   if (collectPerf) {
     if (policy == BuildPolicy::Lazy) {
@@ -815,19 +852,22 @@ HitTestResult DocumentLayout::hitTest(QPointF documentPos, const RenderTheme& th
   if (!nearestBlock) {
     return {};
   }
-  if (documentPos.y() > nearestBlock->rect().bottom()) {
-    const BlockSlot& lastSlot = slots_.back();
-    const bool lastIsEmptyParagraph = lastSlot.detail && isTrailingEmptyParagraph(*lastSlot.detail);
-    if (!lastIsEmptyParagraph) {
-      HitTestResult result;
-      result.blockId = nearestBlock->nodeId();
-      result.textNodeId = nearestBlock->nodeId();
-      result.zone = HitTestResult::Zone::BlockAfter;
-      result.blockRect = nearestBlock->rect();
-      result.textOffset = 0;
-      result.cursorRect = trailingParagraphCursorRect(*nearestBlock, theme, pageLeft_);
-      return result;
-    }
+  // The trailing BlockAfter zone (click below the document to append a paragraph) must apply ONLY
+  // to the last block. A heading's CSS margin-bottom enlarges the gap after it, and the heading's
+  // centre-Y is the nearest for clicks in the upper part of that gap — so without this guard, such
+  // a click returned BlockAfter(heading) and typing inserted a brand-new paragraph between the
+  // heading and the following block (the user's "empty paragraph I can click into and type"). For
+  // any non-trailing block, fall through to snapping into the nearest block instead.
+  const bool isLastSlot = nearestIdx == static_cast<qsizetype>(slots_.size()) - 1;
+  if (isLastSlot && documentPos.y() > nearestBlock->rect().bottom() && !isTrailingEmptyParagraph(*nearestBlock)) {
+    HitTestResult result;
+    result.blockId = nearestBlock->nodeId();
+    result.textNodeId = nearestBlock->nodeId();
+    result.zone = HitTestResult::Zone::BlockAfter;
+    result.blockRect = nearestBlock->rect();
+    result.textOffset = 0;
+    result.cursorRect = trailingParagraphCursorRect(*nearestBlock, theme, pageLeft_);
+    return result;
   }
   return nearestBlock->hitTest(QPointF(qBound(nearestBlock->rect().left(), documentPos.x(), nearestBlock->rect().right()), nearestBlock->rect().center().y()), theme, codeFenceScroll_);
 }

@@ -1530,7 +1530,20 @@ void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, Markdown
     MarkdownNode* child = root.children().at(static_cast<size_t>(childIndex)).get();
     const SourceRange range = child->sourceRange();
     const int startLine = range.lineStart;
-    const int blankLines = startLine > 0 ? startLine - previousEndLine - 1 : 0;
+    // Count ACTUAL blank lines in the gap [previousEndLine+1, startLine) rather than trusting
+    // startLine-previousEndLine-1. cmark-gfm under-reports the end line of some block types
+    // (a display-math block excludes its closing $$/\] line; an HTML block can exclude its closing
+    // tag line), so the apparent gap can include a non-blank closer line. Counting real blank lines
+    // yields the correct virtual-empty-paragraph count regardless — otherwise every display-math /
+    // HTML block followed by a single blank line gained a spurious clickable empty paragraph.
+    int blankLines = 0;
+    if (startLine > 0) {
+      for (int line = previousEndLine + 1; line < startLine; ++line) {
+        if (line >= 1 && line <= totalLines && isBlankLine(lineOffsets.lineText(markdown, line))) {
+          ++blankLines;
+        }
+      }
+    }
     const int emptyCount = qMax(0, blankLines / 2);
     const int firstEmptyLine = previousEndLine == 0 ? 1 : previousEndLine + 2;
     for (int i = 0; i < emptyCount; ++i) {

@@ -125,22 +125,25 @@ void testMathBracketBackspaceAppendsToLastLine() {
   require(h.selection.cursorPosition().text.textOffset == 8, "math \\[ merge cursor should sit after the grafted text");
 }
 
-// Empty paragraph sitting directly after a literal block (a blank line between the block and the
-// next real paragraph) merges into the block; the real paragraph below survives. Math blocks emit
-// such a virtual empty paragraph for the blank line, so they exercise this path.
-void testLiteralBackspaceConsumesEmptyParagraphBeforeFollowingBlock() {
+// A display-math block followed by a SINGLE blank line no longer synthesizes a spurious virtual
+// empty paragraph (cmark under-reports the block's end line, so the closing $$ line used to read
+// as a blank gap and trigger one). With that paragraph gone, the following paragraph is the math
+// block's direct next sibling, so backspace at its start folds it into the block's last content
+// line — the same behavior as a code fence followed by one blank line, and as a math block
+// followed by NO blank line.
+void testMathBlockFollowedByOneBlankLineFoldsParagraphIntoBlock() {
   Harness h;
   h.session.setMarkdownText(QStringLiteral("$$\na=b\n$$\n\nhello"), false);
-  // child[1] is the empty paragraph right after the math block; "hello" is child[2].
+  // child[1] is "hello" directly (no virtual empty paragraph sits between the math block and it).
   setCursor(h.selection, blockAt(h.session, 1), 0);
-  require(h.input.deleteBackward(), "math empty-paragraph-before-block backspace should be handled");
-  require(h.session.markdownText() == QStringLiteral("$$\na=b\n$$\nhello"),
-          "empty-paragraph merge should drop the blank line and keep the following paragraph");
+  require(h.input.deleteBackward(), "math one-blank-line backspace should be handled");
+  require(h.session.markdownText() == QStringLiteral("$$\na=bhello\n$$"),
+          "math block + one blank line should fold the paragraph into the block (no spurious empty paragraph)");
   MarkdownNode* math = literalBlock(h.session, BlockType::MathBlock);
-  require(math != nullptr, "math block should survive the empty merge");
-  require(math->literal() == QStringLiteral("a=b"), "empty-paragraph merge should not change the math content");
-  require(h.selection.cursorPosition().blockId == math->id(), "math empty merge cursor should be inside the block");
-  require(h.selection.cursorPosition().text.textOffset == 3, "math empty merge cursor should sit at content end");
+  require(math != nullptr, "math block should survive the fold");
+  require(math->literal() == QStringLiteral("a=bhello"), "fold should graft the paragraph text onto the last content line");
+  require(h.selection.cursorPosition().blockId == math->id(), "math fold cursor should be inside the block");
+  require(h.selection.cursorPosition().text.textOffset == 8, "math fold cursor should sit after the grafted text");
 }
 
 // The merge must be undoable as a clean snapshot (it restructures across two blocks).
@@ -204,7 +207,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testCodeFenceBackspaceGraftsRawParagraphSource);
   RUN_TEST(testMathDollarBackspaceAppendsToLastLine);
   RUN_TEST(testMathBracketBackspaceAppendsToLastLine);
-  RUN_TEST(testLiteralBackspaceConsumesEmptyParagraphBeforeFollowingBlock);
+  RUN_TEST(testMathBlockFollowedByOneBlankLineFoldsParagraphIntoBlock);
   RUN_TEST(testLiteralBackspaceMergeProducesSnapshotUndo);
   RUN_TEST(testNormalParagraphBackspaceStillMergesNormally);
   RUN_TEST(testBuilderProducesLiteralMergeCommand);

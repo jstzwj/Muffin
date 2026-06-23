@@ -554,7 +554,7 @@ qreal lengthToPt(const QString& value, const QHash<QString, QString>& vars, qrea
   return 0.0;
 }
 
-qreal lengthToPx(const QString& value, const QHash<QString, QString>& vars, qreal emPx = 16.0) {
+qreal lengthToPx(const QString& value, const QHash<QString, QString>& vars, qreal emPx = 16.0, qreal rootPx = -1.0) {
   const QString resolved = CssThemeParser::resolveVars(value, vars).trimmed();
   if (resolved.isEmpty() || resolved == QStringLiteral("auto")) { return 0.0; }
   int i = 0;
@@ -568,7 +568,8 @@ qreal lengthToPx(const QString& value, const QHash<QString, QString>& vars, qrea
   const QString unit = resolved.mid(i).trimmed().toLower();
   if (unit == QStringLiteral("px") || unit.isEmpty()) { return n; }
   if (unit == QStringLiteral("pt")) { return n * 96.0 / 72.0; }
-  if (unit == QStringLiteral("em") || unit == QStringLiteral("rem")) { return n * emPx; }
+  if (unit == QStringLiteral("em")) { return n * emPx; }
+  if (unit == QStringLiteral("rem")) { return n * (rootPx > 0.0 ? rootPx : emPx); }  // rem is root-relative
   if (unit == QStringLiteral("%")) { return n / 100.0 * emPx; }
   return 0.0;
 }
@@ -593,11 +594,11 @@ qreal pageWidthToPxOrSentinel(const QString& raw, const QHash<QString, QString>&
   return lengthToPx(resolved, vars, emPx);
 }
 
-QMarginsF boxToMarginsPx(const QString& value, const QHash<QString, QString>& vars, qreal emPx = 16.0) {
+QMarginsF boxToMarginsPx(const QString& value, const QHash<QString, QString>& vars, qreal emPx = 16.0, qreal rootPx = -1.0) {
   const QStringList parts = splitTopLevelSpaces(CssThemeParser::resolveVars(value, vars));
   if (parts.isEmpty()) { return QMarginsF(); }
   qreal v[4] = {};
-  for (int i = 0; i < qMin(4, parts.size()); ++i) { v[i] = lengthToPx(parts.at(i), vars, emPx); }
+  for (int i = 0; i < qMin(4, parts.size()); ++i) { v[i] = lengthToPx(parts.at(i), vars, emPx, rootPx); }
   qreal top = v[0], right = v[0], bottom = v[0], left = v[0];
   if (parts.size() == 2) { right = left = v[1]; }
   else if (parts.size() == 3) { right = left = v[1]; bottom = v[2]; }
@@ -613,18 +614,18 @@ QMarginsF boxToMarginsPx(const QString& value, const QHash<QString, QString>& va
 // zero margin apart from "no margin rule" (both parse to a null QMarginsF).
 struct Box { QMarginsF margins; bool present; };
 Box readBox(const std::vector<FlatDecl>& flat, const QHash<QString, QString>& vars,
-            const std::function<bool(const SelInfo&)>& target, const QString& shorthand, qreal emPx) {
+            const std::function<bool(const SelInfo&)>& target, const QString& shorthand, qreal emPx, qreal rootPx = -1.0) {
   qreal top = 0.0, right = 0.0, bottom = 0.0, left = 0.0;
   bool present = false;
   const QString sh = bestValue(flat, {shorthand}, target);
   if (!sh.isEmpty()) {
-    const QMarginsF b = boxToMarginsPx(sh, vars, emPx);
+    const QMarginsF b = boxToMarginsPx(sh, vars, emPx, rootPx);
     top = b.top(); right = b.right(); bottom = b.bottom(); left = b.left();
     present = true;
   }
   const auto side = [&](const QString& prop, qreal& dst) {
     const QString v = bestValue(flat, {prop}, target);
-    if (!v.isEmpty()) { dst = lengthToPx(v, vars, emPx); present = true; }
+    if (!v.isEmpty()) { dst = lengthToPx(v, vars, emPx, rootPx); present = true; }
   };
   side(shorthand + QStringLiteral("-top"), top);
   side(shorthand + QStringLiteral("-right"), right);
@@ -1398,7 +1399,10 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   }
   for (int level = 1; level <= 6; ++level) {
     const qreal headingPx = headingEmPx(d.typography, level, bodyPx);
-    d.spacing.headingMargin[level - 1] = readBox(flat, vars, [level](const SelInfo& s) { return isHeading(s, level); }, QStringLiteral("margin"), headingPx).margins;
+    // Heading MARGIN: "em" is heading-relative (uses headingPx), but "rem" is root-relative (uses
+    // bodyPx). readBox threads both so e.g. github's "1rem" → root, while an "em" margin stays
+    // heading-sized. Padding below stays purely heading-relative.
+    d.spacing.headingMargin[level - 1] = readBox(flat, vars, [level](const SelInfo& s) { return isHeading(s, level); }, QStringLiteral("margin"), headingPx, bodyPx).margins;
     d.spacing.headingPadding[level - 1] = readBox(flat, vars, [level](const SelInfo& s) { return isHeading(s, level); }, QStringLiteral("padding"), headingPx).margins;
     const qreal headingPadLeft = lengthToPx(bestValue(flat, {QStringLiteral("padding-left")}, [level](const SelInfo& s) { return isHeading(s, level); }), vars, headingPx);
     if (headingPadLeft > 0.0) { d.spacing.headingPadding[level - 1].setLeft(headingPadLeft); }
