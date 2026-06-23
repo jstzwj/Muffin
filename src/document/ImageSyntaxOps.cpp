@@ -54,7 +54,7 @@ QString assembleStyle(const QStringList& decls) {
   if (decls.isEmpty()) {
     return {};
   }
-  // Typora-style trailing ';' (e.g. "zoom:25%;").
+  // Trailing ';' on style declarations (e.g. "zoom:25%;").
   return decls.join(QStringLiteral("; ")) + QStringLiteral(";");
 }
 

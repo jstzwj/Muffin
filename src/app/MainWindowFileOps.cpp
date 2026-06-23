@@ -172,8 +172,8 @@ void muffin::MainWindow::importTheme() {
     // Install as a multi-file mirror: the top .css verbatim + every local file
     // it transitively references (@import'd base sheets, @font-face fonts, url()
     // images) copied next to it with relative paths preserved. The theme then
-    // resolves identically to its source folder — Typora-style, e.g. phycat:
-    // phycat-abyss.css + phycat/ carrying the base CSS and the .ttf fonts. This
+    // resolves identically to its source folder — e.g. my-theme.css paired with
+    // a my-theme/ folder carrying the base CSS and .ttf fonts. This
     // replaces the former @import-inlining import, which flattened the theme to
     // one file and broke the @font-face font urls in the @import'd base.
     if (!ThemeManager::installCssTheme(src, dir)) {

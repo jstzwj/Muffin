@@ -164,12 +164,12 @@ PageMetrics pageMetricsFor(const RenderTheme& theme, qreal viewportWidth) {
   const QMarginsF padding = theme.pagePadding();
   const bool cssPageBox = !padding.isNull() || theme.pageBorderRadius() > 0.0 || theme.pageBorderWidth() > 0.0;
   // The card's horizontal gap to the viewport edge is the theme's OWN #write
-  // margin — this is what `margin: 0 auto` means in Typora: the column fills the
-  // window up to its max-width (margin 0 → no app-imposed gutter), and a theme
-  // that declares a real margin (e.g. mist-blue's 32px) gets that as its minimum
+  // margin — this is what `margin: 0 auto` means: the column fills the window
+  // up to its max-width (margin 0 → no app-imposed gutter), and a theme that
+  // declares a real margin (e.g. mist-blue's 32px) gets that as its minimum
   // gap. A fixed 32px app gutter (the previous behaviour) made the column
-  // narrower than Typora and pushed text further from the edges than the theme
-  // asked for — the "huge L/R margins" on phycat (margin 0) vs Typora's tight 0.
+  // narrower than intended and pushed text further from the edges than the theme
+  // asked for — the "huge L/R margins" on a margin-0 theme versus the tight 0 it specified.
   const QMarginsF margin = theme.pageMargin();
   const qreal horizontalInset =
       cssPageBox ? qMax(margin.left(), margin.right())

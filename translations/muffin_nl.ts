@@ -3649,8 +3649,8 @@ Wilt u de downloadpagina openen?</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="255"/>
-        <source>Render a single line break as a new line, like Typora and Obsidian. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
-        <translation>Toon elk enkele regeleinde als een nieuwe regel, net als Typora en Obsidian. Schakel uit voor strikte CommonMark, dat zacht-teruggelopen regels samenvoegt tot één alinea.</translation>
+        <source>Render a single line break as a new line. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
+        <translation>Toon elk enkele regeleinde als een nieuwe regel. Schakel uit voor strikte CommonMark, dat zacht-teruggelopen regels samenvoegt tot één alinea.</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="258"/>

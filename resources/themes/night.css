@@ -1016,7 +1016,7 @@ footer.ty-footer {
     top: 8px;
 }
 
-/* try fix https://github.com/typora/typora-issues/issues/5253 */
+/* Expanded file-node children layout fix */
 .file-node-expanded>.file-node-children {
     display: grid;
   }

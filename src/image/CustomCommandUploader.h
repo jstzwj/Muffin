@@ -35,7 +35,7 @@ public:
 
   // Runs the configured upload command, splitting it with QProcess::splitCommand
   // and appending every path in `paths` as an extra argv element. Non-blank stdout
-  // lines are returned as URLs (PicGo/Typora convention: one URL per input image,
+  // lines are returned as URLs (the common image-uploader convention: one URL per input image,
   // in order). A cancellable QProgressDialog is shown over `parent`; cancelling
   // kills the process (result.canceled becomes true). Blocks until the process
   // finishes or is cancelled. Pass a non-empty `commandOverride` to run a command

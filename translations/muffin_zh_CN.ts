@@ -3651,8 +3651,8 @@ Would you like to open the download page?</source>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="255"/>
-        <source>Render a single line break as a new line, like Typora and Obsidian. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
-        <translation>将单个换行符渲染为换行，效果与 Typora 和 Obsidian 一致。关闭后使用严格 CommonMark 规则，会将软换行的多行合并为一个段落。</translation>
+        <source>Render a single line break as a new line. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
+        <translation>将单个换行符渲染为换行。关闭后使用严格 CommonMark 规则，会将软换行的多行合并为一个段落。</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="258"/>

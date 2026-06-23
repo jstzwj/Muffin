@@ -34,7 +34,7 @@ QString mainWindowStyleSheet(const ThemeDefinition& d) {
   const ThemeColors& c = d.colors;
   // %8 is the document text colour, used for the menu bar + popup menu items.
   // Those are primary chrome navigation, so they read in the theme's body ink
-  // (matches Typora, whose header / megamenu inherits the body colour) — NOT the
+  // (matches common Markdown editors, whose header / megamenu inherits the body colour) — NOT the
   // muted --control-text-color, which themes reserve for the sidebar (github sets
   // it to #777, which reads as washed-out pale grey on a menu bar).
   return QStringLiteral(

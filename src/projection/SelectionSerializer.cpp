@@ -177,7 +177,7 @@ QString SelectionSerializer::renderMarkdownToHtml(const QString& markdown) {
   cmark_parser_feed(parser, utf8.constData(), static_cast<size_t>(utf8.size()));
   cmark_node* doc = cmark_parser_finish(parser);
   // markdown/breakOnSingleNewline (default on): emit soft breaks as <br> so exported HTML matches
-  // the editor view (Obsidian/Typora). cmark keeps a single '\n' as a softbreak node;
+  // the editor view. cmark keeps a single '\n' as a softbreak node;
   // CMARK_OPT_HARDBREAKS is what turns it into <br> at render time (parser classification is
   // trailing-space-based and unaffected by the option).
   int renderOpts = CMARK_OPT_DEFAULT;

@@ -3649,8 +3649,8 @@ Möchten Sie die Download-Seite öffnen?</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="255"/>
-        <source>Render a single line break as a new line, like Typora and Obsidian. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
-        <translation>Zeigt einen einzelnen Zeilenumbruch als neue Zeile an, wie Typora und Obsidian. Für strenges CommonMark deaktivieren – dieses fasst weich umbrochene Zeilen zu einem Absatz zusammen.</translation>
+        <source>Render a single line break as a new line. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
+        <translation>Zeigt einen einzelnen Zeilenumbruch als neue Zeile an. Für strenges CommonMark deaktivieren – dieses fasst weich umbrochene Zeilen zu einem Absatz zusammen.</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="258"/>

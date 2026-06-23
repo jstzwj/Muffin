@@ -881,7 +881,7 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
         }
       }
 
-      // Typora-style <br>: gray markup + a hard line break. The break only exists while the
+      // Hard <br> line break: gray markup + a hard line break. The break only exists while the
       // tag is intact — cmark parses a corrupted "<br" as plain Text, so it never reaches
       // here and renders literally.
       if (isStandaloneBrTag(node.text())) {
@@ -1239,7 +1239,7 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
     }
     case InlineType::SoftBreak:
       // CommonMark joins a soft break into the paragraph as a space; breakOnSingleNewline instead
-      // forces a line break (matching Obsidian/Typora), so pasted "1\n2\n3" renders on three lines.
+      // forces a line break, so pasted "1\n2\n3" renders on three lines.
       appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd,
                      state.breakOnSingleNewline ? QStringLiteral("\n") : QStringLiteral(" "), true);
       break;

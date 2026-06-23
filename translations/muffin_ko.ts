@@ -3651,8 +3651,8 @@ Would you like to open the download page?</source>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="255"/>
-        <source>Render a single line break as a new line, like Typora and Obsidian. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
-        <translation>Typora 및 Obsidian처럼 단일 줄바꿈을 줄바꿈으로 렌더링합니다. 끄면 엄격한 CommonMark가 적용되어 소프트 래핑된 여러 줄이 하나의 단락으로 합쳐집니다.</translation>
+        <source>Render a single line break as a new line. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
+        <translation>단일 줄바꿈을 줄바꿈으로 렌더링합니다. 끄면 엄격한 CommonMark가 적용되어 소프트 래핑된 여러 줄이 하나의 단락으로 합쳐집니다.</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="258"/>

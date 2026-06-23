@@ -588,7 +588,7 @@ input {
 	opacity: 1;
 }
 
-/* https://github.com/typora/typora-issues/issues/2046 */
+/* Windows 7 strong-emphasis workaround */
 .os-windows-7 strong,
 .os-windows-7 strong  {
 	font-weight: 760;

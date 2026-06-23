@@ -254,7 +254,7 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
       "follow their own switches and are not affected by Strict Mode."));
   breakOnSingleNewlineCheck_->setText(tr("Break on Single Newline"));
   breakOnSingleNewlineCheck_->setToolTip(tr(
-      "Render a single line break as a new line, like Typora and Obsidian. "
+      "Render a single line break as a new line. "
       "Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph."));
   headingStyleLabel_->setText(tr("Heading Style"));
   rebuildCombo(headingStyleCombo_, {QStringLiteral("atx (#)"), QStringLiteral("setext (===)")});

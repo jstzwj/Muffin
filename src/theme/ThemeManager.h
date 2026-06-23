@@ -47,8 +47,8 @@ public:
   // .css verbatim into `destDir` (preserving its @import), then copy every local
   // file it transitively references (@import'd base sheets + @font-face fonts +
   // url() images) next to it, preserving relative paths — so the theme resolves
-  // identically to its source folder (Typora-style: phycat-abyss.css + phycat/
-  // with the base CSS and .ttf fonts). Returns false only if the top file can't
+  // identically to its source folder (e.g. my-theme.css + a my-theme/ folder
+  // carrying the base CSS and .ttf fonts). Returns false only if the top file can't
   // be read. Static + destDir-parametrised so it is unit-testable with a temp
   // dir (no GUI). Replaces the former @import-inlining import, which flattened
   // the theme to one file and broke the font/image urls in its @import'd base.

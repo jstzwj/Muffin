@@ -3649,8 +3649,8 @@ Would you like to open the download page?</source>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="255"/>
-        <source>Render a single line break as a new line, like Typora and Obsidian. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
-        <translation>Muestra cada salto de línea simple como una nueva línea, como Typora y Obsidian. Desactívalo para CommonMark estricto, que une las líneas con salto suave en un solo párrafo.</translation>
+        <source>Render a single line break as a new line. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
+        <translation>Muestra cada salto de línea simple como una nueva línea. Desactívalo para CommonMark estricto, que une las líneas con salto suave en un solo párrafo.</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="258"/>

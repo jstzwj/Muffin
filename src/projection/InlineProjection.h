@@ -156,7 +156,7 @@ private:
     qreal baseFontSize = 16.0;
     SmartPunctRenderOptions smartPunct;
     // markdown/breakOnSingleNewline (default on): render a single '\n' soft break as a line break
-    // (Obsidian/Typora behaviour) instead of joining it into one paragraph line (CommonMark).
+    // instead of joining it into one paragraph line (CommonMark).
     bool breakOnSingleNewline = false;
     QString displayText;
     QString visibleText;

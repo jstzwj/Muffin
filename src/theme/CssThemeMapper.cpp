@@ -111,7 +111,7 @@ SelInfo analyzeSelector(const QString& selector) {
       if (element) {
         if (info.pseudoElement.isEmpty()) { info.pseudoElement = name; }
       } else {
-        // CSS2 allowed single-colon pseudo-elements (:before/:after). Typora
+        // CSS2 allowed single-colon pseudo-elements (:before/:after). Community
         // themes still use that spelling, so normalize it to the same decoration
         // channel as ::before/::after instead of treating it as an ignored state.
         if ((name == QStringLiteral("before") || name == QStringLiteral("after") ||
@@ -163,10 +163,10 @@ bool selectorRequiresExportContext(const QString& selector) {
     int j = i + 1;
     while (j < selector.size() && isIdentChar(selector.at(j))) { ++j; }
     const QString cls = selector.mid(i + 1, j - i - 1).toLower();
-    // Typora's export/outline/sidebar shells are not present in Muffin's live
-    // editor DOM. If these selectors enter the semantic cascade as plain `#write`
-    // or `h2` rules, their higher specificity lets export-only page sizing and
-    // decorations override the live editor style (e.g. phycat's `width: 90%`).
+    // Export/outline/sidebar shells from community themes are not present in
+    // Muffin's live editor DOM. If these selectors enter the semantic cascade as
+    // plain `#write` or `h2` rules, their higher specificity lets export-only page
+    // sizing and decorations override the live editor style (e.g. `width: 90%`).
     if (cls == QStringLiteral("typora-export") || cls == QStringLiteral("typora-export-sidebar") ||
         cls == QStringLiteral("typora-export-content")) {
       return true;
@@ -1337,7 +1337,7 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
     // No #write margin declared, but the theme gave #write its own padding — so
     // the card already has breathing room. Honour the CSS default margin of 0
     // rather than the legacy flat-document inset, which would double the top
-    // gap (e.g. github: padding 30 + legacy margin 30 = 60, vs Typora's 30).
+    // gap (e.g. github: padding 30 + legacy margin 30 = 60, vs the theme's own 30).
     d.page.pageMargin = QMarginsF();
     d.page.pageMarginExplicit = true;
   } else {

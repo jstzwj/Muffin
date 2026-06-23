@@ -3655,8 +3655,8 @@ Czy chcesz otworzyć stronę pobierania?</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="255"/>
-        <source>Render a single line break as a new line, like Typora and Obsidian. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
-        <translation>Renderuj pojedynczy nowy wiersz jako przejście do nowej linii, jak w Typora i Obsidian. Wyłącz dla ścisłego CommonMark, który łączy linie z miękkim zawijaniem w jeden akapit.</translation>
+        <source>Render a single line break as a new line. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
+        <translation>Renderuj pojedynczy nowy wiersz jako przejście do nowej linii. Wyłącz dla ścisłego CommonMark, który łączy linie z miękkim zawijaniem w jeden akapit.</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="258"/>

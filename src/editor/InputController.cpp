@@ -377,7 +377,7 @@ bool InputController::trySmartDashes(QChar ch) {
 }
 
 bool InputController::trySmartEllipsis(QChar ch) {
-  // "..." → ellipsis. Rides on the Smart Dashes toggle, matching Typora (no separate option).
+  // "..." → ellipsis. Rides on the Smart Dashes toggle (no separate option).
   if (ch != QLatin1Char('.') || smartPunctuationMode() == 0 || !smartDashesEnabled()) {
     return false;
   }

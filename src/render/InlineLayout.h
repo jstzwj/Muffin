@@ -44,7 +44,7 @@ public:
     QColor baseTextColor;
     qreal lineHeightMultiplier = 0.0;
     Qt::Alignment alignment;
-    // Render a single '\n' soft break as a line break (Obsidian/Typora) instead of joining it
+    // Render a single '\n' soft break as a line break instead of joining it
     // into the paragraph (CommonMark). Defaults off so standalone/test layouts stay CommonMark.
     bool breakOnSingleNewline = false;
   };

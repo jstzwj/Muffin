@@ -421,12 +421,12 @@ void testInteractiveStatesDoNotLeak() {
           QStringLiteral("h2 colour must be the base, not the :hover primary-color"));
 }
 
-// Typora export selectors describe a different DOM (`.typora-export #write`,
+// Export-shell selectors describe a different DOM (`.typora-export #write`,
 // export sidebar, etc.). Muffin's live editor has no such ancestor, so these
 // rules must not enter the live semantic cascade as higher-specificity `#write`
-// or heading rules. This is the phycat-abyss narrow-column root cause: an export
+// or heading rules. This is the narrow-column root cause: an export
 // `width: 90%` rule beat the live `max-width: 950px` and collapsed the page.
-void testTyporaExportSelectorsDoNotLeak() {
+void testExportSelectorsDoNotLeak() {
   const char* css = R"(
 :root { --bg-color: #0f111a; }
 #write {
@@ -662,7 +662,7 @@ void testIntrinsicWidthIsUnbounded() {
 //   • pagePadding present  → RenderTheme treats it as a CSS page box
 //     (cssPageBox=true), whose horizontalInset = max(margin.left, margin.right).
 //   • margin: 0 auto → margin (0,0,0,0), so horizontalInset = 0 → the column
-//     fills the viewport at every width (matching Typora), NOT the legacy
+//     fills the viewport at every width (matching the theme's intent), NOT the legacy
 //     flat-document ~8%-of-viewport gutter that produces the "thin column"
 //     look on a 400–600px window.
 // If any of these regress (e.g. the @imported #write rule stops reaching the
@@ -897,7 +897,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testWriteBeforeDoesNotLeakBackground);
   RUN_TEST(testColorMixResolvesTintedBackground);
   RUN_TEST(testInteractiveStatesDoNotLeak);
-  RUN_TEST(testTyporaExportSelectorsDoNotLeak);
+  RUN_TEST(testExportSelectorsDoNotLeak);
   RUN_TEST(testPageWidthPercentDoesNotCollapse);
   RUN_TEST(testBuiltInCssResourcesReproduceFactories);
   RUN_TEST(testFontFaceCaptureAcrossImport);

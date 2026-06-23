@@ -5,6 +5,31 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-06-24
+
+### Added
+- **CSS-based built-in theme system** - The five built-in themes (GitHub, Newsprint, Night, Pixyll, Whitey) are now authored as CSS files and loaded through a `CssThemeMapper` that converts selectors to theme tokens; CSS-format themes can be imported alongside JSON user themes, with custom line-height, heading colors, margins, and document-card rendering with shadows
+- **Break on single newline** - A new Markdown rendering preference renders a single line break as an actual line break rather than joining lines, applied consistently across the rendered view, HTML export, and Pandoc export, while leaving the saved source as soft breaks
+- **`<br>` editing** - All three `<br>` variants (`<br>`, `<br/>`, `<br />`) are now handled uniformly in length calculation, table-cell editing, plain-text generation, and inline projection, so hard line breaks render and edit correctly
+- **HTML block empty-content fallback** - HTML blocks that render no visible content (only scaffold tags or whitespace) now fall back to showing the syntax-highlighted source instead of a blank block
+- **Typography alignment and font styles** - Themes can now control text alignment, font weight, and italic styling; the Night theme gained its own cursor resources, fonts, and styles, and heading decoration drawing was refined
+- **Windows ARM64 installer** - Cross-architecture MSI packaging driven by a new `MUFFIN_MSI_ARCH` cache variable, with a Windows ARM64 build added to CI and the release workflow (the Conan cache key is now architecture-aware to prevent cross-arch corruption)
+
+### Changed
+- **Block-relative offset model** - MarkdownNode descendant offsets are now stored relative to their top-level block and resolved to absolute on read; local edits shift only the top-level block's range instead of recursively walking descendants, fixing inline-projection offset drift and cutting per-edit cost
+- **Typing performance** - Added a typing performance benchmark and instrumentation timers across the edit pipeline (visible under the `muffin.perf` log category); local-edit lazy-marker processing no longer builds a full document copy, and the markdown text buffer pre-reserves growth capacity to reduce per-edit allocation and copying
+- **Incremental sidebar and index refresh** - Outline refresh is now debounced for local edits, and both the line-start offset cache and the document node index update incrementally instead of rebuilding on every keystroke
+- **Inline math source retrieval** - Refactored to read the TeX source directly from the projection span instead of recomputing, and table column-width calculation now accounts for a span's maximum visual line advance
+- **UTF-8 string construction** - All hardcoded UTF-8 byte sequences are now built via `QString::fromUtf8` instead of `QStringLiteral`, avoiding cross-compiler portability pitfalls (correct on MSVC, garbage on GCC/Linux)
+- **libavif build** - Replaced the Conan `libavif` package with the AV1 decoder `dav1d` and a vendored libavif built from source, avoiding the unreachable libyuv dependency; the Conan cache workflow was split into restore/clean/save phases to reduce cache size and avoid cache-over-limit failures
+
+### Fixed
+- **Thematic break deletion next to nested containers** - Backspace/Delete can now remove a thematic break (`---`) even when the adjacent editable block is nested inside a blockquote or list; rule handlers now climb to the next block in document order instead of stopping at the container boundary
+- **Spurious empty paragraphs and spacing** - Rewrote virtual-empty-paragraph insertion to count actual blank lines in the gap rather than relying on line arithmetic (cmark-gfm under-reports end lines for math and HTML blocks), eliminating false empty paragraphs after display-math and HTML blocks and the extra blank space between paragraphs
+- **Rem unit and paragraph spacing** - Added root-relative-px (`rem`) computation in the CSS theme mapper and adjusted paragraph spacing calculation to remove inter-paragraph gaps; non-tail blocks are no longer misjudged as a block-tail area on click
+- **Code border color** - Themes without an explicit code-border color now derive a soft border instead of falling back to pure black
+- **avif/dav1d static linking** - MuffinUi now explicitly links `dav1d::dav1d`, resolving undefined-symbol errors when libavif was built statically without merging Conan's dav1d dependency
+
 ## [0.3.0] - 2026-06-20
 
 ### Added
@@ -27,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Multi-format export** - File → Export to PDF (native renderer), HTML and plain HTML (native serializer), plus Word, ODT, RTF, ePub, LaTeX, MediaWiki, RST, Textile, and OPML via an external Pandoc process
 - **Import via Pandoc** - Convert documents from other formats into Markdown through File → Import
 - **File operations** - Move, delete, reveal in file manager, reopen-with-encoding, save-all-open-files, and show-in-sidebar commands for the current file
-- **Image insertion policy** - A centralized system unifying image insertion across paste, dialog, and drag-and-drop with six Typora-style actions (no action, copy to `./`, copy to `./assets`, copy to `./$(filename).assets`, upload, copy to a custom folder), honoring front-matter upload overrides and configurable relative-path, leading-slash, and URL-escaping formatting
+- **Image insertion policy** - A centralized system unifying image insertion across paste, dialog, and drag-and-drop with six configurable actions (no action, copy to `./`, copy to `./assets`, copy to `./$(filename).assets`, upload, copy to a custom folder), honoring front-matter upload overrides and configurable relative-path, leading-slash, and URL-escaping formatting
 - **Custom-command image upload** - Upload images via a configurable external command (a second QProcess subsystem), parsing the returned stdout lines as image URLs
 - **Bundled PNG and JPEG decoders** - PNG and JPEG are now decoded by bundled static libpng and libjpeg instead of Qt's image plugins, so images load reliably even in Qt builds shipped without `qjpeg`/`qpng`
 - **Custom-drawn status bar** - A fully self-painted status bar themed from the active render theme, with a click-to-open document statistics popup (words, characters, lines, reading time, and selection count) and an inline spell-check language quick-switcher
@@ -366,6 +391,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.4.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.4.0
 [0.3.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.3.0
 [0.2.8]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.8
 [0.2.7]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.7

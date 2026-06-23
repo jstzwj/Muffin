@@ -26,7 +26,7 @@ CustomCommandResult CustomCommandUploader::upload(QWidget* parent, const QString
   }
 
   // Tokenize the command line the way a shell would (honors quotes), then append
-  // the image paths as trailing argv elements — the PicGo/Typora calling convention
+  // the image paths as trailing argv elements — the common image-uploader calling convention
   // is `<uploader> <file1> <file2> …`.
   QStringList args = QProcess::splitCommand(command);
   if (args.isEmpty()) {

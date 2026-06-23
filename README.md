@@ -28,7 +28,7 @@ Muffin is a block-level WYSIWYG Markdown editor built from the ground up in C++ 
 - **Opens huge files instantly** — A lazy, viewport-aware layout renders only the blocks on screen, so multi-megabyte documents open without freezing. Incremental parsing and text-delta editing keep typing responsive at any size.
 - **True WYSIWYG editing** — Write and edit directly on the rendered page, with the Markdown kept in sync underneath. No side-by-side preview, no render delay.
 - **Markdown as the source of truth** — Your `.md` file round-trips cleanly, and a synchronized source mode lets you drop into raw Markdown anytime with full cursor round-tripping between the two views.
-- **Themeable end to end** — One theme definition drives the rendered page, the source editor, and every piece of chrome (menus, sidebar, dialogs, status bar). Ship your own themes as `.json` files.
+- **Themeable end to end** — One theme definition drives the rendered page, the source editor, and every piece of chrome (menus, sidebar, dialogs, status bar). The built-in themes are authored as plain CSS, and you can drop in your own `.css` (or `.json`) theme.
 
 ### How it compares
 
@@ -74,6 +74,7 @@ Muffin is the only fully native, fully open-source WYSIWYG editor in this group 
 - **Copy as Markdown** — Optional preference to copy the underlying Markdown source when copying as plain text.
 - **Whole-line copy & cut** — With no selection, copy and cut operate on the entire current line.
 - **Link interaction** — Hover cursor changes on links; Ctrl+Click to open in the system browser.
+- **Line break rendering** — Render a single newline as a hard line break, or join soft-wrapped lines into one paragraph per CommonMark, controlled by a Markdown preference. Hard `<br>` line breaks render and edit in all three forms (`<br>`, `<br/>`, `<br />`).
 - **Line break preferences** — Choose Windows (CRLF) or Unix (LF) line endings, with an optional trailing newline on save.
 
 ### 🧭 Navigation & Organization
@@ -98,13 +99,13 @@ Muffin is the only fully native, fully open-source WYSIWYG editor in this group 
 ### 🖼️ Images
 
 - **Image editing** — Insert local or network images, drag-and-drop upload, right-click context menu, preview rendering, and batch processing. WebP and AVIF formats supported, plus bundled PNG/JPEG decoders so images load reliably regardless of Qt's plugin availability.
-- **Image insertion policy** — A centralized system governing image insertion across paste, dialog, and drag-and-drop with six Typora-style actions (no action, copy to `./`, `./assets`, `./<filename>.assets`, upload, or a custom folder), honoring front-matter upload overrides and configurable relative-path, leading-slash, and URL-escaping formatting.
+- **Image insertion policy** — A centralized system governing image insertion across paste, dialog, and drag-and-drop with six configurable actions (no action, copy to `./`, `./assets`, `./<filename>.assets`, upload, or a custom folder), honoring front-matter upload overrides and configurable relative-path, leading-slash, and URL-escaping formatting.
 - **Custom-command upload** — Upload images through a configurable external command, parsing its stdout lines as image URLs.
 
 ### 🎨 Appearance
 
 - **5 built-in themes** — GitHub, Newsprint, Night, Pixyll (now with a serif body font), and Whitey.
-- **Custom themes** — Author your own theme as a `.json` file, drop it into the themes folder, and it shows up in the live Theme menu instantly. Import themes directly from the menu or the Appearance preferences page.
+- **Custom themes** — The built-in themes are authored as plain CSS, and you can author your own the same way: drop a `.css` (or `.json`) file into the themes folder and it shows up in the live Theme menu instantly. Import themes directly from the menu or the Appearance preferences page.
 - **Appearance preferences** — Font size, zoom level, focus mode, typewriter mode, and status bar visibility — all persisted across sessions.
 - **Always-on-top** — Keep the window above all others (Ctrl+Shift+F).
 - **15 UI languages** — English, 简体中文, 繁體中文, 日本語, 한국어, Tiếng Việt, Français, Español, Deutsch, Português (Brasil), Русский, Italiano, Türkçe, Polski, and Nederlands.
@@ -179,13 +180,16 @@ Muffin uses a native block tree as its runtime model. On import, Markdown is par
 | `document` | Markdown document model, outline, and source round-trip mapping. |
 | `parser` | Markdown parsing via cmark-gfm, fed by incremental text deltas. |
 | `blocks` | Per-block runtimes: code, table, math, HTML, front matter, link refs, literal. |
+| `html` | HTML block layout engine — Lexbor parsing and Yoga flexbox used by HTML blocks. |
 | `edit` | Text editing operations: insert, delete, replace, and block movement. |
 | `projection` | Bidirectional offset mapping between the rendered view and raw Markdown. |
 | `export` | Native PDF/HTML export and the Pandoc runner for other formats. |
 | `math` | KaTeX-compatible math rendering. |
+| `unicode` | Word-boundary segmentation for cursor movement and selection. |
 | `theme` | Unified theme definitions, chrome style-sheet generation, and runtime theme management. |
 | `image` | Image insertion policy and custom-command upload. |
 | `io` | File I/O, encoding, and image file operations. |
+| `spellcheck` | Nuspell spell checking and bundled dictionaries. |
 | `commands` | Command registry decoupling menu actions from their implementations. |
 
 ### Third-party dependencies
@@ -200,7 +204,7 @@ Muffin uses a native block tree as its runtime model. On import, Markdown is par
 | Lexbor | HTML parsing | Apache-2.0 |
 | Nuspell | Spell checking | LGPL-3.0-or-later |
 | ICU | Unicode text processing | ICU License |
-| libwebp / libavif | WebP and AVIF image decoding | BSD-3-Clause / BSD-2-Clause |
+| libwebp / libavif / dav1d | WebP and AVIF image decoding (libavif built from vendored source, with dav1d as its AV1 decoder) | BSD-3-Clause / BSD-2-Clause |
 | libpng / libjpeg | PNG and JPEG image decoding | libpng / libjpeg |
 
 Third-party sources live in `third_party/` and are built as part of the CMake project.

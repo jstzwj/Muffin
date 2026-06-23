@@ -3647,8 +3647,8 @@ Bạn có muốn mở trang tải xuống không?</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="255"/>
-        <source>Render a single line break as a new line, like Typora and Obsidian. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
-        <translation>Hiển thị mỗi ký tự xuống dòng đơn thành một dòng mới, giống Typora và Obsidian. Tắt để dùng CommonMark nghiêm ngặt, vốn gộp các dòng ngắt mềm thành một đoạn văn.</translation>
+        <source>Render a single line break as a new line. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
+        <translation>Hiển thị mỗi ký tự xuống dòng đơn thành một dòng mới. Tắt để dùng CommonMark nghiêm ngặt, vốn gộp các dòng ngắt mềm thành một đoạn văn.</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="258"/>

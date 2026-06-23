@@ -67,7 +67,7 @@ bool codeBlockWrapEnabled() {
 }
 
 // markdown/breakOnSingleNewline (default on): render a single '\n' soft break as a line break
-// (Obsidian/Typora) instead of joining it into the paragraph (CommonMark). Read at build time so a
+// instead of joining it into the paragraph (CommonMark). Read at build time so a
 // preference toggle + refreshVisibleBlocks re-renders without a reparse — same model as codeBlockWrap.
 bool breakOnSingleNewlineEnabled() {
   return QSettings().value(QStringLiteral("markdown/breakOnSingleNewline"), true).toBool();

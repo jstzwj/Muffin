@@ -634,7 +634,7 @@ void HtmlBoxBuilder::extractInlineStyle(HtmlBox& box, const char* styleAttr, siz
         }
       }
     } else if (property == QStringLiteral("zoom")) {
-      // Typora-style image sizing: zoom:N% scales the element (1.0 = natural). Accept both a
+      // Image sizing via zoom:N% scales the element (1.0 = natural size). Accept both a
       // percentage ("25%") and a bare factor ("0.25"); negative/zero leaves the default 1.0.
       qreal pct = 0;
       if (parseCssPercent(value, pct)) {

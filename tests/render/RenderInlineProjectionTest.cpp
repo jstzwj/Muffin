@@ -434,7 +434,7 @@ void testTableCellEscapedPipeRendersDecoded() {
   }
 }
 
-// Typora-style <br>: the tag markup renders gray (a non-stopping OpenMarker span) and a
+// Hard <br> line break: the tag markup renders gray (a non-stopping OpenMarker span) and a
 // hard line break follows it. All three spellings (<br>, <br/>, <br />) behave the same.
 void testBrTagRendersAsHardBreak() {
   const QString tags[] = {QStringLiteral("<br>"), QStringLiteral("<br/>"), QStringLiteral("<br />"),
@@ -712,7 +712,7 @@ void testSmartPunctFoldedTokenDecomposesIntoSpans() {
 }
 
 // markdown/breakOnSingleNewline (default on in the app): a single '\n' soft break normally joins
-// into the paragraph as a space (CommonMark); the flag renders it as a line break (Obsidian/Typora),
+// into the paragraph as a space (CommonMark); the flag renders it as a line break,
 // so pasted "1\n2\n3" shows on separate lines instead of collapsing to one line.
 void testBreakOnSingleNewlineRendersSoftBreak() {
   QVector<InlineNode> inlines;

@@ -3639,8 +3639,8 @@ Would you like to open the download page?</source>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="255"/>
-        <source>Render a single line break as a new line, like Typora and Obsidian. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
-        <translation>Her tek satır sonunu yeni bir satır olarak göster, Typora ve Obsidian'daki gibi. Yumuşak kaydırılan satırları tek paragrafta birleştiren katı CommonMark için kapatın.</translation>
+        <source>Render a single line break as a new line. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
+        <translation>Her tek satır sonunu yeni bir satır olarak göster. Yumuşak kaydırılan satırları tek paragrafta birleştiren katı CommonMark için kapatın.</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="258"/>

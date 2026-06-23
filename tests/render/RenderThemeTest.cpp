@@ -227,9 +227,9 @@ void testFromDefinitionReproducesBuiltIns() {
 
 // Regression guard for the "narrow window squeezes content into a thin column
 // with huge side margins" symptom reported on `#write { max-width; margin: 0
-// auto; padding }` themes (e.g. phycat). Such a theme is a CSS page box whose
+// auto; padding }` themes. Such a theme is a CSS page box whose
 // horizontalInset is max(margin.left, margin.right) = 0, so the column must FILL
-// the viewport at every width (matching Typora) — never float as a thin centred
+// the viewport at every width (matching the theme's intent) — never float as a thin centred
 // column. Asserts the real DocumentLayout page-width math at 1000/600/400 px.
 void testNarrowViewportFillsForCardTheme(const MarkdownDocument& document) {
   ThemeDefinition def;

@@ -1039,7 +1039,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
          const bool on = window.commands_.action(QStringLiteral("edit.smart_convert_on_input"))->isChecked();
          QSettings().setValue(QStringLiteral("markdown/convertOnInput"), on ? 1 : 0);
          if (on) {
-           // Mutually exclusive with Convert on Rendering (Typora semantics): the two are
+           // Mutually exclusive with Convert on Rendering (alternate conversion timings): the two are
            // alternate conversion timings, never both on at once.
            QSettings().setValue(QStringLiteral("markdown/convertOnRendering"), false);
            if (auto* a = window.commands_.action(QStringLiteral("edit.smart_convert_on_rendering"))) {
