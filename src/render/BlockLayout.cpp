@@ -954,17 +954,14 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
       } else if (htmlLayout_ && htmlLayout_->valid()) {
         htmlLayout_->paint(painter, viewRect.marginsRemoved(theme.codePadding()).topLeft());
       } else {
-        // Fallback: render raw HTML text
+        // Fallback: the HTML did not render (invalid) or rendered with no visible content
+        // (just <div>/<br>/whitespace). Show the source, syntax-highlighted like edit mode.
+        // codeHighlightSpans_ is populated for this case by buildLiteralBlock().
         painter.save();
         painter.setPen(theme.codeBorderColor());
         painter.setBrush(theme.codeBackgroundColor());
         painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
-        painter.setPen(theme.textColor());
-        painter.setFont(theme.codeFont());
-        QTextOption option;
-        option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-        const QMarginsF padding = theme.codePadding();
-        painter.drawText(viewRect.marginsRemoved(padding), literal_, option);
+        paintLiteralSource(painter, theme, viewRect.marginsRemoved(theme.codePadding()), codeHighlightSpans_, true);
         painter.restore();
       }
       break;

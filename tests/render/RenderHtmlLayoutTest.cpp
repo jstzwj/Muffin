@@ -416,6 +416,76 @@ void testHtmlInlineStyleAndTagSemanticsContract() {
   require(sawKeyboard, QStringLiteral("kbd text should emit keyboard span format"));
 }
 
+void testHtmlVisibilityDetection() {
+  // An HTML block may parse to a "valid" box tree yet paint nothing — pure scaffolding like
+  // <div>/<br>/whitespace, or a display:none subtree. hasVisibleContent() must distinguish those
+  // from content that actually draws pixels, mirroring paintBox()'s decisions exactly.
+  html::HtmlRenderer renderer;
+
+  auto render = [&](const QString& html) {
+    return renderer.render(html, 16.0, 320.0);
+  };
+
+  const QVector<QString> invisible = {
+      QStringLiteral("<div><br></div>"),
+      QStringLiteral("<div></div>"),
+      QStringLiteral("<div>   </div>"),
+      QStringLiteral("<div style=\"display:none\"><span>hidden</span></div>"),
+  };
+  for (const QString& html : invisible) {
+    const html::HtmlLayoutResult result = render(html);
+    require(result.valid(), QStringLiteral("invisible fixture should build a valid box tree: %1").arg(html));
+    require(!result.hasVisibleContent(), QStringLiteral("scaffolding-only HTML should have no visible content: %1").arg(html));
+  }
+
+  const QVector<QString> visible = {
+      QStringLiteral("<p>Hello</p>"),
+      QStringLiteral("<hr>"),
+      QStringLiteral("<img src=\"x.png\">"),
+      QStringLiteral("<ul><li>a</li></ul>"),
+      QStringLiteral("<div style=\"background:red;height:8px\"></div>"),
+      QStringLiteral("<div style=\"border:1px solid red\"></div>"),
+  };
+  for (const QString& html : visible) {
+    const html::HtmlLayoutResult result = render(html);
+    require(result.valid(), QStringLiteral("visible fixture should build a valid box tree: %1").arg(html));
+    require(result.hasVisibleContent(), QStringLiteral("content-bearing HTML should have visible content: %1").arg(html));
+  }
+}
+
+void testHtmlBlockFallsBackToSourceWhenInvisible() {
+  // End-to-end through the builder: an invisibly-empty HTML block must NOT take the rendered-HTML
+  // path (htmlLayout() stays null) and instead fall back to highlighted source, while a block with
+  // real content renders normally.
+  RenderTheme theme = RenderTheme::github();
+
+  DocumentSession invisibleSession;
+  invisibleSession.setMarkdownText(QStringLiteral("<div><br></div>"), false);
+  const MarkdownNode* invisibleNode = findFirstBlock(invisibleSession.document().root(), BlockType::HtmlBlock);
+  require(invisibleNode != nullptr, QStringLiteral("invisible html fixture should parse"));
+  DocumentLayout invisibleLayout;
+  invisibleLayout.rebuild(invisibleSession.document(), theme, 520.0);
+  const BlockLayout* invisibleBlock = invisibleLayout.block(invisibleNode->id());
+  require(invisibleBlock != nullptr, QStringLiteral("invisible html block should layout"));
+  require(invisibleBlock->htmlLayout() == nullptr,
+          QStringLiteral("scaffolding-only html block should fall back to source, not render empty space"));
+  require(!invisibleBlock->codeHighlightSpans().isEmpty(),
+          QStringLiteral("invisible html block fallback should show highlighted source"));
+
+  DocumentSession visibleSession;
+  visibleSession.setMarkdownText(QStringLiteral("<div>visible text</div>"), false);
+  const MarkdownNode* visibleNode = findFirstBlock(visibleSession.document().root(), BlockType::HtmlBlock);
+  require(visibleNode != nullptr, QStringLiteral("visible html fixture should parse"));
+  DocumentLayout visibleLayout;
+  visibleLayout.rebuild(visibleSession.document(), theme, 520.0);
+  const BlockLayout* visibleBlock = visibleLayout.block(visibleNode->id());
+  require(visibleBlock != nullptr, QStringLiteral("visible html block should layout"));
+  require(visibleBlock->htmlLayout() != nullptr,
+          QStringLiteral("content-bearing html block should render its content"));
+  require(visibleBlock->codeHighlightSpans().isEmpty(),
+          QStringLiteral("rendered html block should not compute source highlight spans"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -436,6 +506,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testDocumentLayoutInlineLayoutContract);
   RUN_TEST(testHtmlInlineLayoutOwnershipContract);
   RUN_TEST(testHtmlInlineStyleAndTagSemanticsContract);
+  RUN_TEST(testHtmlVisibilityDetection);
+  RUN_TEST(testHtmlBlockFallsBackToSourceWhenInvisible);
 #undef RUN_TEST
   return 0;
 }

@@ -74,6 +74,21 @@ QString HtmlLayoutResult::error() const { return error_; }
 QString HtmlLayoutResult::baseDirectory() const { return baseDirectory_; }
 const HtmlBox* HtmlLayoutResult::root() const { return root_.get(); }
 
+bool HtmlLayoutResult::hasVisibleContent() const {
+  if (!root_) {
+    return false;
+  }
+  // The root is the engine's synthetic <body> wrapper; the style resolver paints it with the
+  // canvas background (palette.background), which is the page surface, not content. Treat it as
+  // a pure container and ask whether any of its descendants actually draws something.
+  for (const auto& child : root_->children()) {
+    if (boxHasVisibleContent(*child)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void HtmlLayoutResult::setBaseDirectory(QString directory) { baseDirectory_ = std::move(directory); }
 void HtmlLayoutResult::setRoot(std::unique_ptr<HtmlBox> root) { root_ = std::move(root); }
 void HtmlLayoutResult::setTextLayouts(std::vector<std::unique_ptr<HtmlTextLayout>> layouts) {
@@ -95,6 +110,54 @@ HtmlLayoutResult::HitResult HtmlLayoutResult::hitTest(QPointF localPos) const {
     return {};
   }
   return hitTestBox(*root_, localPos, QPointF());
+}
+
+bool HtmlLayoutResult::boxHasVisibleContent(const HtmlBox& box) const {
+  // display:none is flattened to style().visible = false in HtmlBoxBuilder, and paintBox()
+  // returns early on it without recursing — so a hidden ancestor suppresses its whole subtree.
+  // Mirror that here: once a box does not paint, neither do its descendants.
+  if (!box.style().visible) {
+    return false;
+  }
+  const auto& style = box.style();
+
+  // A non-transparent background paints a filled box (e.g. a coloured spacer is real content).
+  if (style.backgroundColor.isValid() && style.backgroundColor.alpha() > 0) {
+    return true;
+  }
+  // A non-none border paints pixels on at least one side.
+  const bool hasBorder = style.borderWidth.top() > 0 || style.borderWidth.bottom() > 0 ||
+                         style.borderWidth.left() > 0 || style.borderWidth.right() > 0;
+  if (hasBorder && style.borderStyle != HtmlBorderStyle::None) {
+    return true;
+  }
+
+  // Tag-specific painting done in paintBox() / paintHr() / paintImage() / paintListMarker().
+  switch (box.tag()) {
+    case HtmlTag::Hr:
+      return true;
+    case HtmlTag::Image:
+      return true;
+    case HtmlTag::ListItem:
+      if (!box.listMarker().isEmpty()) {
+        return true;
+      }
+      break;
+    case HtmlTag::TextRun:
+      if (!box.text().trimmed().isEmpty()) {
+        return true;
+      }
+      break;
+    default:
+      break;
+  }
+
+  for (const auto& child : box.children()) {
+    if (boxHasVisibleContent(*child)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 HtmlLayoutResult::HitResult HtmlLayoutResult::hitTestBox(const HtmlBox& box, QPointF localPos, QPointF origin) const {

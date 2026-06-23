@@ -655,9 +655,15 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
       htmlResult = std::make_shared<html::HtmlLayoutResult>(
           htmlRenderer_.render(sanitizedHtml, fontSize, contentWidth, baseDirectory, htmlPalette));
     }
-    if (htmlResult->valid()) {
+    if (htmlResult->valid() && htmlResult->hasVisibleContent()) {
       height = std::ceil(htmlResult->size().height() + theme.codePadding().top() + theme.codePadding().bottom());
       layout->setHtmlLayout(std::move(htmlResult));
+    } else {
+      // The HTML rendered to nothing readable — invalid, or valid but with no visible content
+      // (e.g. just <div>/<br>/whitespace). Fall back to showing the highlighted source so the
+      // block is not an unexplained blank. Spans feed paintLiteralSource() in the paint fallback.
+      BuildAccumTimer t(codeHighlightNs_, perfEnabled_);
+      layout->setCodeHighlightSpans(codeHighlighter_.highlight(QStringLiteral("html"), layout->literal()));
     }
   }
   layout->setRect(QRectF(x, y, width, height));

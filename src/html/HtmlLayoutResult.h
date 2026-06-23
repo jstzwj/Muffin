@@ -34,6 +34,13 @@ public:
   QString baseDirectory() const;
   const HtmlBox* root() const;
 
+  // True iff the laid-out box tree actually paints something a user would read as content —
+  // text glyphs, an image, a rule, a list marker, or a box with a background/border. Pure
+  // scaffolding (<div>, <br>, whitespace-only text, display:none subtrees) yields false, so a
+  // host can decide to fall back to showing the raw HTML source instead of empty space. The
+  // predicate mirrors paintBox()'s decisions, so "visible" here == "would draw".
+  bool hasVisibleContent() const;
+
   void setBaseDirectory(QString directory);
   void setRoot(std::unique_ptr<HtmlBox> root);
   void setTextLayouts(std::vector<std::unique_ptr<HtmlTextLayout>> layouts);
@@ -46,6 +53,7 @@ public:
 
 private:
   HitResult hitTestBox(const HtmlBox& box, QPointF localPos, QPointF origin) const;
+  bool boxHasVisibleContent(const HtmlBox& box) const;
   QString linkHrefAtTextLayout(const HtmlBox& box, QPointF localPos) const;
   void paintBox(QPainter& painter, const HtmlBox& box, QPointF origin) const;
   void paintInlineContent(QPainter& painter, const HtmlBox& box, QPointF origin) const;
