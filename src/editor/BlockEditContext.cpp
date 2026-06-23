@@ -4,6 +4,7 @@
 #include "document/DocumentSession.h"
 #include "document/InlineNode.h"
 #include "document/MarkdownNode.h"
+#include "document/NodeNavigation.h"
 #include "document/SourceRangeUtil.h"
 #include "editor/SelectionController.h"
 
@@ -371,6 +372,12 @@ bool BlockEditContextResolver::listItemLineBounds(
 }
 
 MarkdownNode* BlockEditContextResolver::previousEditableTextBlock(const MarkdownNode& node, BlockEditContext& context) const {
+  // NOTE: deliberately does NOT climb out of containers, unlike nextEditableTextBlock below. A
+  // backspace at the start of a nested editable leaf is intercepted before reaching here — a list
+  // item's caret lives on the ListItem (so the dispatcher routes to list merge/outdent), and a
+  // block quote's first line routes to quote outdent — so the only way in with no previous sibling
+  // is an artificial inner-paragraph caret, where climbing out would destructively escape the
+  // container. Keeping the immediate-sibling lookup is the safe, correct behaviour here.
   MarkdownNode* candidate = node.previousSibling() ? const_cast<MarkdownNode*>(node.previousSibling()) : nullptr;
   if (!candidate && node.parent() && node.parent()->type() == BlockType::ListItem) {
     candidate = node.parent()->previousSibling();
@@ -383,10 +390,13 @@ MarkdownNode* BlockEditContextResolver::previousEditableTextBlock(const Markdown
 }
 
 MarkdownNode* BlockEditContextResolver::nextEditableTextBlock(const MarkdownNode& node, BlockEditContext& context) const {
-  MarkdownNode* candidate = node.nextSibling() ? const_cast<MarkdownNode*>(node.nextSibling()) : nullptr;
-  if (!candidate && node.parent() && node.parent()->type() == BlockType::ListItem) {
-    candidate = node.parent()->nextSibling();
-  }
+  // Climb out of the caret's container (block quote, list, …) to the block that actually follows in
+  // the source. A nested editable leaf has its siblings INSIDE the container, so node->nextSibling()
+  // alone never finds an editable block sitting OUTSIDE — and the resulting silent no-op left a
+  // forward-delete at a container boundary doing nothing, inconsistent with a top-level caret (which
+  // merges fine). See NodeNavigation.h. (The backward direction is handled differently — see
+  // previousEditableTextBlock.)
+  MarkdownNode* candidate = nextSiblingAcrossContainers(const_cast<MarkdownNode&>(node));
   if (!candidate) {
     return nullptr;
   }

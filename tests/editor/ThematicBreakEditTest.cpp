@@ -263,6 +263,111 @@ void testTrailingCaretBelowRuleEatsIt() {
   require(h.controller.selection().hasCursor(), "caret should remain valid");
 }
 
+// Delete at the END of editable content nested in a CONTAINER that immediately precedes a rule
+// eats the divider. The caret's block is the block quote's inner paragraph; its tree siblings live
+// INSIDE the quote, so the old nextSibling()-based lookup never reached the top-level rule and the
+// gesture was a silent no-op. This is the user's real document: "> note\n\n---\n\n## Heading".
+void testDeleteFromBlockBeforeRuleAcrossContainer() {
+  Harness h;
+  h.load(QStringLiteral("> quote\n\n---\n\n## H"));
+  MarkdownNode* quote = findFirstParagraph(&h.session.document().root());
+  setCursor(h.controller.selection(), quote, 5);
+
+  require(h.controller.inputController().deleteForward(), "delete should be handled");
+  require(h.session.markdownText() == QStringLiteral("> quote\n\n## H"),
+          "rule removed, block quote + heading survive; got: " + h.session.markdownText());
+  require(!reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "thematic break should be gone");
+  require(reparsedRootHasBlockType(h.session, BlockType::BlockQuote), "block quote must survive");
+  require(reparsedRootHasBlockType(h.session, BlockType::Heading), "heading must survive");
+  require(h.controller.selection().hasCursor(), "caret should remain valid");
+}
+
+// Symmetric: Delete at the end of the LAST list item immediately preceding a rule eats the divider.
+// The old code only climbed one ListItem level, so a rule that is a sibling of the whole List (the
+// last item has no next sibling) was unreachable — another silent no-op.
+void testDeleteFromLastListItemBeforeRule() {
+  Harness h;
+  h.load(QStringLiteral("- item\n\n---"));
+  MarkdownNode* item = findFirstParagraph(&h.session.document().root());
+  setCursor(h.controller.selection(), item, 4);
+
+  require(h.controller.inputController().deleteForward(), "delete should be handled");
+  require(h.session.markdownText() == QStringLiteral("- item"),
+          "rule removed, list item survives; got: " + h.session.markdownText());
+  require(!reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "thematic break should be gone");
+  require(reparsedRootHasBlockType(h.session, BlockType::List), "list must survive");
+}
+
+// Delete at the end of a paragraph nested in a CONTAINER merges with the following editable block —
+// the same thing a top-level caret already does (e.g. "alpha\n\n> quote" + Del → "alphaquote"). The
+// container-blind nextEditableTextBlock used to make this a silent no-op; now it climbs out and the
+// nested caret behaves like a top-level one. "> quote\n\nbeta" + Del (end of quote) → "> quotebeta".
+void testDeleteMergesParagraphOutOfBlockquote() {
+  Harness h;
+  h.load(QStringLiteral("> quote\n\nbeta"));
+  MarkdownNode* quote = findFirstParagraph(&h.session.document().root());
+  setCursor(h.controller.selection(), quote, 5);
+
+  require(h.controller.inputController().deleteForward(), "delete should be handled");
+  require(h.session.markdownText() == QStringLiteral("> quotebeta"),
+          "quote should merge into the following paragraph; got: " + h.session.markdownText());
+  require(h.controller.selection().hasCursor(), "caret should remain valid");
+}
+
+// Same climb, but the following block is a LIST — consistent with a top-level caret merging into a
+// list ("alpha\n\n- item" + Del → "alphaitem"). "> quote\n\n- item" + Del → "> quoteitem".
+void testDeleteMergesParagraphOutOfBlockquoteIntoList() {
+  Harness h;
+  h.load(QStringLiteral("> quote\n\n- item"));
+  MarkdownNode* quote = findFirstParagraph(&h.session.document().root());
+  setCursor(h.controller.selection(), quote, 5);
+
+  require(h.controller.inputController().deleteForward(), "delete should be handled");
+  require(h.session.markdownText() == QStringLiteral("> quoteitem"),
+          "quote should merge into the list's first item; got: " + h.session.markdownText());
+}
+
+// Deleting a top-level `---` from a caret nested DEEP inside an adjacent list must leave the LIVE
+// tree correct — not just the source text. The edit window spans the list (editable) and the
+// divider (non-editable); the slice picker used to slice only the list and silently drop the
+// divider, leaving a stale ThematicBreak node plus duplicated Heading/List nodes (stale ranges → the
+// rendered heading read as garbled "1 | 例1…" and list items lost their text). Now the slice picker
+// refuses (full re-parse) whenever an edit strictly overlaps a non-editable top-level block.
+void testDeleteRuleFromNestedListItemKeepsLiveTreeConsistent() {
+  Harness h;
+  h.load(QStringLiteral(
+      "text1\n\n---\n\n## Heading One\n\n- outer\n  - inner content here\n\n---\n\n## Heading Two\n\n- o2\n  - i2"));
+  MarkdownNode* list = blockAt(h.session, 3);
+  MarkdownNode* outerItem = childAt(list, 0);
+  MarkdownNode* nestedList = childAt(outerItem, 1);
+  MarkdownNode* innerItem = childAt(nestedList, 0);
+  require(innerItem != nullptr && innerItem->type() == BlockType::ListItem, "found nested list item");
+  setCursor(h.controller.selection(), innerItem, 18);  // end of "inner content here"
+
+  require(h.controller.inputController().deleteForward(), "delete should be handled");
+  require(!h.session.markdownText().contains(QStringLiteral("---\n\n## Heading Two")),
+          "the second divider should be gone from the source; got: " + h.session.markdownText());
+
+  // Capture the LIVE tree's top-level signature, then compare it against a fresh reparse of the
+  // (correct) source. A corrupt incremental update diverges here even though the source is right.
+  auto signature = [](DocumentSession& s) {
+    QString out;
+    for (const auto& c : s.document().root().children()) {
+      const SourceRange r = c->sourceRange();
+      out += QString::number(static_cast<int>(c->type())) + QStringLiteral(":") +
+             QString::number(r.byteStart) + QStringLiteral("-") + QString::number(r.byteEnd) +
+             QStringLiteral(" ");
+    }
+    return out.trimmed();
+  };
+  const QString live = signature(h.session);
+  h.session.setMarkdownText(h.session.markdownText(), true);  // full re-parse = ground truth
+  const QString truth = signature(h.session);
+  require(live == truth,
+          "live tree must match a fresh re-parse (no stale/duplicate nodes); live={" + live +
+              "} truth={" + truth + "}");
+}
+
 // Undo must restore a rule removed while the caret rested on it.
 void testUndoRestoresRuleRemovedFromOnIt() {
   Harness h;
@@ -293,5 +398,10 @@ int main(int argc, char** argv) {
   testBackspaceOnRuleRemovesIt();
   testTrailingCaretBelowRuleEatsIt();
   testUndoRestoresRuleRemovedFromOnIt();
+  testDeleteFromBlockBeforeRuleAcrossContainer();
+  testDeleteFromLastListItemBeforeRule();
+  testDeleteMergesParagraphOutOfBlockquote();
+  testDeleteMergesParagraphOutOfBlockquoteIntoList();
+  testDeleteRuleFromNestedListItemKeepsLiveTreeConsistent();
   return 0;
 }

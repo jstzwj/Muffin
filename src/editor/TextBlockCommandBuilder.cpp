@@ -1,6 +1,7 @@
 #include "editor/TextBlockCommandBuilder.h"
 
 #include "document/MarkdownNode.h"
+#include "document/NodeNavigation.h"
 #include "document/PendingBlockMarker.h"
 #include "document/SourceRangeUtil.h"
 #include "editor/InlineSplit.h"
@@ -705,10 +706,12 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildRemovePrecedingTh
     return command;
   }
 
-  MarkdownNode* hr = context.node->previousSibling();
-  if (!hr && context.node->parent() && context.node->parent()->type() == BlockType::ListItem) {
-    hr = context.node->parent()->previousSibling();
-  }
+  // The rule sits in DOCUMENT ORDER before the caret's block — not necessarily as an immediate
+  // tree sibling. When the caret is on an editable leaf nested inside a container (block quote,
+  // list, …) the previous tree sibling lives INSIDE the container, so a naive previousSibling()
+  // misses a rule that is a sibling of the container itself. previousSiblingAcrossContainers climbs
+  // out of the container and is correct at every nesting depth.
+  MarkdownNode* hr = previousSiblingAcrossContainers(*context.node);
   if (!hr || hr->type() != BlockType::ThematicBreak) {
     return command;
   }
@@ -732,10 +735,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildRemovePrecedingTh
   // The editable block that sat before the rule (if any). When the current paragraph is empty,
   // removing the rule lets it collapse (cmark drops a trailing/leading empty paragraph), so the
   // caret must retreat to that preceding block's content end — there is no paragraph left to land in.
-  MarkdownNode* before = hr->previousSibling();
-  if (!before && hr->parent() && hr->parent()->type() == BlockType::ListItem) {
-    before = hr->parent()->previousSibling();
-  }
+  MarkdownNode* before = previousSiblingAcrossContainers(*hr);
   MarkdownNode* beforeEditable = before ? resolver_->lastEditableDescendant(*before) : nullptr;
 
   if (context.contentText.trimmed().isEmpty()) {
@@ -774,10 +774,10 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildRemoveFollowingTh
     return command;
   }
 
-  MarkdownNode* hr = context.node->nextSibling();
-  if (!hr && context.node->parent() && context.node->parent()->type() == BlockType::ListItem) {
-    hr = context.node->parent()->nextSibling();
-  }
+  // See buildRemovePrecedingThematicBreak: the rule is the next block in DOCUMENT ORDER, which for
+  // an editable leaf nested in a container is a sibling of the container — unreachable via the
+  // leaf's own nextSibling(). nextSiblingAcrossContainers climbs out and finds it at any depth.
+  MarkdownNode* hr = nextSiblingAcrossContainers(*context.node);
   if (!hr || hr->type() != BlockType::ThematicBreak) {
     return command;
   }

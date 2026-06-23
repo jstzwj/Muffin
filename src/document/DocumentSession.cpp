@@ -233,6 +233,26 @@ TopLevelSlice chooseTopLevelSlice(const muffin::MarkdownDocument& document, qsiz
     }
     hiExcl = a;
   }
+  // An edit that overlaps a NON-editable top-level block (a thematic break, …) is removing or
+  // reshaping structure the slice cannot represent: the slice only re-parses editable blocks, so it
+  // would splice the surviving editable neighbours around a block it silently dropped — corrupting
+  // the live tree (stale ranges, duplicate nodes) even though the source text ends up correct.
+  // The classic trigger is deleting a `---` from a caret nested inside an adjacent list/block quote:
+  // the edit window spans the editable container AND the divider, the slice picks only the container,
+  // and the removed divider leaves a stale node. Force a full re-parse instead (the caller's
+  // !appliedLocally fallback). Strict overlap (byteStart < editEnd && byteEnd > editStart) excludes a
+  // block that merely touches the edit at a boundary, e.g. an insertion whose end lands on a
+  // divider's start — those don't remove the divider and slice normally.
+  for (qsizetype i = lo; i < hiExcl; ++i) {
+    const muffin::MarkdownNode& block = *blocks.at(static_cast<size_t>(i));
+    if (isEditableTopLevelType(block.type())) {
+      continue;
+    }
+    const muffin::SourceRange range = usableRange(block);
+    if (range.byteStart < editEnd && range.byteEnd > editStart) {
+      return slice;  // first == -1 → caller rejects the slice and full-reparses
+    }
+  }
   for (qsizetype i = lo; i < hiExcl; ++i) {
     const muffin::MarkdownNode& block = *blocks.at(static_cast<size_t>(i));
     const muffin::SourceRange range = usableRange(block);
