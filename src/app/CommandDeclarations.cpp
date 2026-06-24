@@ -27,6 +27,7 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QSettings>
+#include <QSysInfo>
 #include <QUrl>
 
 namespace muffin {
@@ -1708,13 +1709,12 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
              &window,
              muffin::MainWindow::tr("About Muffin"),
              muffin::MainWindow::tr(
-                 "Muffin %1\n\n"
-                 "A fast, lightweight, native Markdown editor built with C++ and Qt 6.\n\n"
-                 "Live preview and source editing; export to PDF, HTML, and many more "
-                 "formats via Pandoc; image insertion with copy-to-folder and custom-command "
-                 "upload; spell checking; themes; find & replace; outline; quick open; and "
-                 "crash-safe draft recovery.")
-                 .arg(QApplication::applicationVersion()));
+                 "<h3>Muffin %1</h3>"
+                 "<p><b>Platform:</b> %2<br>"
+                 "<b>Author:</b> jstzwj<br>"
+                 "<b>License:</b> MIT License<br>"
+                 "<b>Website:</b> https://github.com/jstzwj/Muffin</p>")
+                 .arg(QApplication::applicationVersion(), QSysInfo::prettyProductName()));
        }},
   };
     commandsValid() = true;
