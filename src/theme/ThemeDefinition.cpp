@@ -116,6 +116,7 @@ ThemeDefinition ThemeDefinition::fromJson(const QJsonObject& json, const QString
   k.chromeBackground = parseColor(c, "chromeBackground");
   k.chromeText = parseColor(c, "chromeText");
   k.chromeMuted = parseColor(c, "chromeMuted");
+  k.chromeDisabled = parseColor(c, "chromeDisabled");
   k.surface = parseColor(c, "surface");
   k.canvas = parseColor(c, "canvas");
   k.border = parseColor(c, "border");
@@ -197,6 +198,7 @@ QJsonObject ThemeDefinition::toJson() const {
   put("chromeBackground", colors.chromeBackground);
   put("chromeText", colors.chromeText);
   put("chromeMuted", colors.chromeMuted);
+  put("chromeDisabled", colors.chromeDisabled);
   put("surface", colors.surface);
   put("canvas", colors.canvas);
   put("border", colors.border);
@@ -299,6 +301,22 @@ void ThemeDefinition::deriveChromeDefaults(ThemeColors& k) {
   if (!k.chromeBackground.isValid()) k.chromeBackground = k.background;
   if (!k.chromeText.isValid()) k.chromeText = k.text;
   if (!k.chromeMuted.isValid()) k.chromeMuted = k.muted;
+  // Disabled/ghosted text + controls (menu items, dialog buttons/inputs/…).
+  // Distinct from chromeMuted, which is ACTIVE secondary text (toolbar/sidebar/
+  // scrollbar): muted needs only a gentle de-emphasis, disabled must read as
+  // clearly unavailable. Reusing chromeMuted for both (the old design) left
+  // disabled only ~1 step above the ink on light themes (e.g. GitHub #333 ink
+  // → #515 "disabled") — indistinguishable from enabled. Fade the body ink
+  // halfway toward the page background instead: a strong ghosting cue that
+  // needs no isDark branch (blending toward the bg fades correctly on light
+  // AND dark pages, so this is safe to derive before isDark is set).
+  if (!k.chromeDisabled.isValid()) {
+    const QColor ink = k.text.isValid() ? k.text : QColor(0x33, 0x33, 0x33);
+    const QColor bg = k.background.isValid() ? k.background : QColor(0xff, 0xff, 0xff);
+    k.chromeDisabled = QColor(int(ink.red() + (bg.red() - ink.red()) * 0.5),
+                              int(ink.green() + (bg.green() - ink.green()) * 0.5),
+                              int(ink.blue() + (bg.blue() - ink.blue()) * 0.5));
+  }
   if (!k.surface.isValid()) k.surface = k.background;
   // canvas = the tone behind cards. A minimal theme usually omits it, so derive
   // a subtle step off the base tones for depth (lighter themes get a faint gray

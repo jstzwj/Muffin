@@ -301,6 +301,7 @@ void testPixyllHasNoInvalidBlackProneTokens() {
   mustBeValid(d.colors.selection, "selection");
   mustBeValid(d.colors.hover, "hover");
   mustBeValid(d.colors.selected, "selected");
+  mustBeValid(d.colors.chromeDisabled, "chromeDisabled");
   // On pixyll's white page the derived code chip must be a light grey, never black.
   require(d.colors.codeBackground.lightness() > 128,
           QStringLiteral("pixyll code background should be a light fill, not black (got %1)")

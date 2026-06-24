@@ -44,7 +44,8 @@ struct ThemeColors {
   // --- Chrome / dialog (previously hard-coded per-widget) ---
   QColor chromeBackground;  // main window + dialog base background
   QColor chromeText;        // menu bar / dialog primary text
-  QColor chromeMuted;       // secondary text, disabled controls
+  QColor chromeMuted;       // active secondary text (toolbar, sidebar, scrollbar)
+  QColor chromeDisabled;    // disabled/ghosted text + controls (clearly faded)
   QColor surface;           // cards, panels, sidebar, list backgrounds
   QColor canvas;            // tone behind cards/dialog panels (slightly distinct
                             //   from surface for depth; equals chromeBackground

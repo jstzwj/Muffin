@@ -45,7 +45,11 @@ QString mainWindowStyleSheet(const ThemeDefinition& d) {
       "QMenu { background: %4; color: %8; border: 1px solid %5; padding: 4px 0; }"
       "QMenu::item { padding: 5px 34px 5px 24px; }"
       "QMenu::item:selected { background: %6; }"
-      "QMenu::item:disabled { color: %7; }"
+      // %9 = chromeDisabled (the body ink faded toward the page background), so
+      // disabled items read as clearly unavailable — NOT chromeMuted (%7), which
+      // is only a hair lighter than the ink on light themes and also drives the
+      // toolbar/sidebar's ACTIVE secondary text.
+      "QMenu::item:disabled { color: %9; }"
       "QToolButton { background: transparent; border: 0; color: %7; padding: 0 8px;"
       "  min-width: 22px; min-height: 18px; font-size: 13px; }"
       "QToolButton:hover { background: %3; }"
@@ -57,7 +61,8 @@ QString mainWindowStyleSheet(const ThemeDefinition& d) {
            hexRgb(c.border),
            accentSelectionTint(c),
            hexRgb(c.chromeMuted),
-           hexRgb(c.text));
+           hexRgb(c.text),
+           hexRgb(c.chromeDisabled));
 }
 
 QString sidebarStyleSheet(const ThemeDefinition& d, bool outlineFoldable) {
@@ -92,10 +97,11 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
   //   %2 chromeText  primary text (dialog, buttons, inputs, titles)
   //   %3 surface     cards / sidebar / buttons / inputs / combo dropdown bg
   //   %4 border      hairline borders + page-scrollbar handle
-  //   %5 chromeMuted muted + disabled text, disabled controls, scroll handle:hover
+  //   %5 chromeMuted active muted text (sidebar nav, captions), scroll handle:hover
   //   %6 hover       hover + pressed + disabled fills
   //   %7 accent      focus rings, checked indicators, selected-item accent bar
   //   %8 selected    list / combo selected-row fill
+  //   %9 chromeDisabled disabled/ghosted text + controls (clearly faded)
   return QStringLiteral(
       // Dialog base + sidebar card
       "QDialog { background:%1; color:%2; }"
@@ -118,21 +124,21 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
       "QPushButton:hover { background:%6; }"
       "QPushButton:pressed { background:%6; }"
       "QPushButton:focus { border-color:%7; }"
-      "QPushButton:disabled { background:%6; color:%5; }"
+      "QPushButton:disabled { background:%6; color:%9; }"
 
       // QCheckBox
       "QCheckBox { spacing:8px; color:%2; min-height:24px; }"
-      "QCheckBox:disabled { color:%5; }"
+      "QCheckBox:disabled { color:%9; }"
       "QCheckBox::indicator { width:16px; height:16px; border:1px solid %5; border-radius:4px; background:%3; }"
       "QCheckBox::indicator:hover { border-color:%7; }"
       "QCheckBox::indicator:checked { border:1px solid %7; background:%7; image:url(:/icons/ui/check.svg); }"
       "QCheckBox::indicator:checked:hover { background:%7; border-color:%7; }"
       "QCheckBox::indicator:disabled { background:%6; border-color:%4; }"
-      "QCheckBox::indicator:checked:disabled { background:%5; border-color:%5; }"
+      "QCheckBox::indicator:checked:disabled { background:%9; border-color:%9; }"
 
       // QRadioButton
       "QRadioButton { spacing:8px; color:%2; min-height:24px; }"
-      "QRadioButton:disabled { color:%5; }"
+      "QRadioButton:disabled { color:%9; }"
       "QRadioButton::indicator { width:16px; height:16px; border:1px solid %5; border-radius:8px; background:%3; }"
       "QRadioButton::indicator:hover { border-color:%7; }"
       "QRadioButton::indicator:checked { border:1px solid %7; background:%3; image:url(:/icons/ui/radio-dot.svg); }"
@@ -153,7 +159,7 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
       "QLineEdit { border:1px solid %4; border-radius:6px; background:%3; padding:4px 10px; min-height:24px; color:%2; }"
       "QLineEdit:hover { border-color:%7; }"
       "QLineEdit:focus { border-color:%7; }"
-      "QLineEdit:disabled { background:%6; color:%5; }"
+      "QLineEdit:disabled { background:%6; color:%9; }"
 
       // QComboBox dropdown scrollbar (more specific than the page scrollbar below)
       "QComboBox QAbstractItemView QScrollBar:vertical { width:8px; background:transparent; margin:2px; border:0; }"
@@ -197,7 +203,8 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
            hexRgb(c.chromeMuted),
            hexRgb(c.hover),
            hexRgb(c.accent),
-           hexRgb(c.selected));
+           hexRgb(c.selected),
+           hexRgb(c.chromeDisabled));
 }
 
 }  // namespace muffin
