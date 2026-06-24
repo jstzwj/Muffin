@@ -5,6 +5,11 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-06-24
+
+### Fixed
+- **Image links render as clickable images** - An image wrapped in a link (`[![alt](image)](url)`) now displays the image inline and opens the link on click, instead of collapsing to the alt text styled as a plain link. Link formatting is now applied as a separate attribute that composes with any nested inline content: inside a link, images load, inline code keeps its background, and inline math keeps its styling
+
 ## [0.4.0] - 2026-06-24
 
 ### Added
@@ -391,6 +396,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.4.1]: https://github.com/jstzwj/Muffin/releases/tag/v0.4.1
 [0.4.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.4.0
 [0.3.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.3.0
 [0.2.8]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.8
