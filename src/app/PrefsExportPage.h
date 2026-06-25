@@ -19,11 +19,15 @@ public:
 
   void retranslateUi() override;
 
+private slots:
+  void refreshPandocStatus();
+
 private:
   void loadSettings();
 
   // Left sidebar: format list
   QListWidget* formatList_ = nullptr;
+  QLabel* sectionLabel_ = nullptr;
 
   // Right content card
   QLabel* defaultFolderLabel_ = nullptr;
@@ -31,6 +35,8 @@ private:
   QLabel* pandocLabel_ = nullptr;
   QLineEdit* pandocPathEdit_ = nullptr;
   QPushButton* pandocBrowseButton_ = nullptr;
+  QPushButton* autoDetectButton_ = nullptr;
+  QLabel* pandocStatus_ = nullptr;
   QLabel* afterExportLabel_ = nullptr;
   QCheckBox* openAfterExportCheck_ = nullptr;
 };

@@ -1,8 +1,12 @@
 #include "app/PrefsExportPage.h"
 
+#include "export/PandocRunner.h"
+
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDir>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -29,6 +33,7 @@ muffin::PrefsExportPage::PrefsExportPage(QWidget* parent) : PreferencesPage(pare
 
   auto* sectionLabel = new QLabel(leftWidget);
   sectionLabel->setObjectName(QStringLiteral("exportPanelHeader"));
+  sectionLabel_ = sectionLabel;
   leftLayout->addWidget(sectionLabel);
 
   formatList_ = new QListWidget(leftWidget);
@@ -64,18 +69,24 @@ muffin::PrefsExportPage::PrefsExportPage(QWidget* parent) : PreferencesPage(pare
   pandocLabel_ = makeSectionLabel(card);
   pandocHeaderRow->addWidget(pandocLabel_);
   pandocHeaderRow->addStretch(1);
+  autoDetectButton_ = makeButton(card);
+  pandocHeaderRow->addWidget(autoDetectButton_);
 
   auto* pandocRow = new QHBoxLayout();
   pandocRow->setSpacing(8);
   pandocPathEdit_ = new QLineEdit(card);
   pandocPathEdit_->setMinimumWidth(280);
   pandocBrowseButton_ = makeButton(card);
-  pandocBrowseButton_->setFixedWidth(36);
   pandocRow->addWidget(pandocPathEdit_);
   pandocRow->addWidget(pandocBrowseButton_);
 
   cardLayout->addLayout(pandocHeaderRow);
   cardLayout->addLayout(pandocRow);
+
+  // Live status line showing which Pandoc will actually be used.
+  pandocStatus_ = makeMutedLabel(card);
+  pandocStatus_->setWordWrap(true);
+  cardLayout->addWidget(pandocStatus_);
 
   // After export
   afterExportLabel_ = makeSectionLabel(card);
@@ -96,6 +107,10 @@ muffin::PrefsExportPage::PrefsExportPage(QWidget* parent) : PreferencesPage(pare
           [](int index) { QSettings().setValue(QStringLiteral("export/defaultFolder"), index); });
   connect(pandocPathEdit_, &QLineEdit::textChanged, this,
           [](const QString& text) { QSettings().setValue(QStringLiteral("export/pandocPath"), text); });
+  connect(pandocPathEdit_, &QLineEdit::textChanged, this, [this] { refreshPandocStatus(); });
+  // Auto-detect clears any pinned path so resolution falls back to the system
+  // search; refreshPandocStatus() then shows what was found.
+  connect(autoDetectButton_, &QPushButton::clicked, this, [this] { pandocPathEdit_->clear(); });
   connect(openAfterExportCheck_, &QCheckBox::toggled, this,
           [](bool checked) { QSettings().setValue(QStringLiteral("export/openAfterExport"), checked); });
   connect(pandocBrowseButton_, &QPushButton::clicked, this, [this] {
@@ -114,13 +129,6 @@ void muffin::PrefsExportPage::retranslateUi() {
     formatList_->blockSignals(true);
     formatList_->clear();
 
-    // "General" section header — use a disabled item as separator
-    auto* generalItem = new QListWidgetItem(tr("General"));
-    generalItem->setFlags(Qt::NoItemFlags);
-    generalItem->setForeground(QColor(0x55, 0x55, 0x55));
-    generalItem->setFont([&] { QFont f = font(); f.setBold(true); return f; }());
-    formatList_->addItem(generalItem);
-
     formatList_->addItem(QStringLiteral("PDF"));
     formatList_->addItem(QStringLiteral("HTML"));
     formatList_->addItem(tr("HTML (without Styles)"));
@@ -138,15 +146,13 @@ void muffin::PrefsExportPage::retranslateUi() {
     if (cur >= 0 && cur < formatList_->count()) {
       formatList_->setCurrentRow(cur);
     } else {
-      formatList_->setCurrentRow(1);  // Default to first real item (PDF)
+      formatList_->setCurrentRow(0);  // Default to first item (PDF)
     }
     formatList_->blockSignals(false);
   }
 
-  // Update section label above the format list
-  if (auto* sectionLabel = formatList_->parentWidget()->findChild<QLabel*>()) {
-    sectionLabel->setText(tr("General"));
-  }
+  // Header above the format list.
+  sectionLabel_->setText(tr("Formats"));
 
   // Right card
   defaultFolderLabel_->setText(tr("Default Export Folder"));
@@ -166,9 +172,13 @@ void muffin::PrefsExportPage::retranslateUi() {
   if (pandocPathEdit_->text().isEmpty()) {
     pandocPathEdit_->setPlaceholderText(tr("(Auto-detect)"));
   }
+  pandocBrowseButton_->setText(tr("Browse..."));
+  autoDetectButton_->setText(tr("Auto-detect"));
 
   afterExportLabel_->setText(tr("After Export"));
   openAfterExportCheck_->setText(tr("Open the exported file directory"));
+
+  refreshPandocStatus();
 }
 
 void muffin::PrefsExportPage::loadSettings() {
@@ -188,4 +198,33 @@ void muffin::PrefsExportPage::loadSettings() {
   openAfterExportCheck_->blockSignals(true);
   openAfterExportCheck_->setChecked(settings.value(QStringLiteral("export/openAfterExport"), false).toBool());
   openAfterExportCheck_->blockSignals(false);
+
+  // pandocPathEdit_ was loaded with signals blocked, so refresh manually.
+  refreshPandocStatus();
+}
+
+void muffin::PrefsExportPage::refreshPandocStatus() {
+  const QString configured = pandocPathEdit_->text().trimmed();
+  if (!configured.isEmpty()) {
+    if (QFileInfo(configured).isExecutable()) {
+      pandocStatus_->setText(tr("Using: %1").arg(QDir::toNativeSeparators(configured)));
+    } else {
+      pandocStatus_->setText(tr("Not a valid executable; will auto-detect."));
+    }
+    return;
+  }
+  // Auto mode: report whatever the runner will actually invoke. searchSystem()
+  // covers well-known install locations; if it still falls through to a bare
+  // "pandoc", resolveOnPath() says whether PATH can find it (for display only).
+  const QString resolved = muffin::PandocRunner::resolvedExecutable();
+  if (resolved != QStringLiteral("pandoc")) {
+    pandocStatus_->setText(tr("Detected: %1").arg(QDir::toNativeSeparators(resolved)));
+    return;
+  }
+  const QString onPath = muffin::PandocRunner::resolveOnPath();
+  if (!onPath.isEmpty()) {
+    pandocStatus_->setText(tr("Detected: %1").arg(QDir::toNativeSeparators(onPath)));
+  } else {
+    pandocStatus_->setText(tr("Pandoc was not found. Install it, or click Browse to locate."));
+  }
 }

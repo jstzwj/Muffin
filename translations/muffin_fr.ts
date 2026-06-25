@@ -3208,70 +3208,104 @@ Souhaitez-vous ouvrir la page de téléchargement ?</translation>
 <context>
     <name>muffin::PrefsExportPage</name>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="102"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="117"/>
         <source>Select Pandoc Executable</source>
         <translation>Sélectionner l&apos;exécutable Pandoc</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="103"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="118"/>
         <source>Executables (*.exe);;All Files (*)</source>
         <translation>Exécutables (*.exe);;Tous les fichiers (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="118"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="148"/>
         <source>General</source>
-        <translation>Général</translation>
+        <translation type="vanished">Général</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="126"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="134"/>
         <source>HTML (without Styles)</source>
         <translation>HTML (sans styles)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="127"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="135"/>
         <source>Image</source>
         <translation>Image</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="152"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="155"/>
+        <source>Formats</source>
+        <translation>Formats</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="158"/>
         <source>Default Export Folder</source>
         <translation>Dossier d&apos;exportation par défaut</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="157"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="163"/>
         <source>Auto</source>
         <translation>Automatique</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="158"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="164"/>
         <source>Same folder as current file</source>
         <translation>Même dossier que le fichier actuel</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="159"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="165"/>
         <source>Custom...</source>
         <translation>Personnalisé...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="165"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="171"/>
         <source>Pandoc Path</source>
         <translation>Chemin de Pandoc</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="167"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="173"/>
         <source>(Auto-detect)</source>
         <translation>(Détection automatique)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="170"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="175"/>
+        <source>Browse...</source>
+        <translation>Parcourir...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="176"/>
+        <source>Auto-detect</source>
+        <translation>Détecter automatiquement</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="178"/>
         <source>After Export</source>
         <translation>Après l&apos;exportation</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="171"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="179"/>
         <source>Open the exported file directory</source>
         <translation>Ouvrir le dossier du fichier exporté</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="210"/>
+        <source>Using: %1</source>
+        <translation>Utilisé : %1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="212"/>
+        <source>Not a valid executable; will auto-detect.</source>
+        <translation>Ce n'est pas un exécutable valide ; détection automatique.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="221"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="226"/>
+        <source>Detected: %1</source>
+        <translation>Détecté : %1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="228"/>
+        <source>Pandoc was not found. Install it, or click Browse to locate.</source>
+        <translation>Pandoc est introuvable. Installez-le, ou cliquez sur « Parcourir » pour le localiser.</translation>
     </message>
 </context>
 <context>

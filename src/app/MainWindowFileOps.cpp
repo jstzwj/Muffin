@@ -575,11 +575,12 @@ void muffin::MainWindow::importFile() {
     return;
   }
 
-  statusBar()->showMessage(tr("Importing %1…").arg(QFileInfo(sourcePath).fileName()), 0);
+  const QString importingMsg = tr("Importing %1…").arg(QFileInfo(sourcePath).fileName());
+  statusBar()->showMessage(importingMsg, 0);
   // Pandoc infers the input format from the file extension; GFM output matches
   // Muffin's cmark-gfm parser best.
   const PandocResult result =
-      PandocRunner::run(this, {QStringLiteral("-t"), QStringLiteral("gfm"), sourcePath});
+      PandocRunner::run(this, {QStringLiteral("-t"), QStringLiteral("gfm"), sourcePath}, {}, importingMsg);
   statusBar()->clearMessage();
   if (result.canceled) {
     return;
@@ -722,7 +723,8 @@ void muffin::MainWindow::exportAs(ExportFormat format) {
         error = tr("Pandoc was not found. Install Pandoc or set its path in Preferences → Export.");
         break;
       }
-      statusBar()->showMessage(tr("Exporting %1…").arg(baseName + ext), 0);
+      const QString exportingMsg = tr("Exporting %1…").arg(baseName + ext);
+      statusBar()->showMessage(exportingMsg, 0);
       // markdown/breakOnSingleNewline (default on): render soft breaks as line breaks, matching the
       // editor view. pandoc's hard_line_breaks extension does for gfm input what the view does.
       const QString inputFormat = QSettings().value(QStringLiteral("markdown/breakOnSingleNewline"), true).toBool()
@@ -731,7 +733,7 @@ void muffin::MainWindow::exportAs(ExportFormat format) {
       const PandocResult result = PandocRunner::run(
           this, {QStringLiteral("-f"), inputFormat, QStringLiteral("-t"), exportPandocWriter(format),
                  QStringLiteral("-o"), target},
-          markdown.toUtf8());
+          markdown.toUtf8(), {}, exportingMsg);
       statusBar()->clearMessage();
       if (result.canceled) {
         QFile::remove(target);  // drop partial output

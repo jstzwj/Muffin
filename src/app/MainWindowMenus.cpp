@@ -96,6 +96,15 @@ void MainWindow::buildMenus() {
       themesMenu_ = menu;
     }
     buildMenuItems(menu, spec.items);
+    // Recompute action enable/checked state just before the menu opens. Several
+    // predicates are content-dependent (notably Export, which is enabled once the
+    // document has text) but are NOT refreshed on every keystroke for performance
+    // reasons — so without this they stay stale (e.g. disabled) on an unsaved
+    // document until a file is opened/saved. Mirrors the context-menu path, which
+    // also calls updateAllActions() on show. buildMenus() builds fresh QMenu
+    // objects each call (setupMenuBar clears first), so this connection does not
+    // accumulate across retranslations.
+    connect(menu, &QMenu::aboutToShow, this, &MainWindow::updateAllActions);
   }
 }
 

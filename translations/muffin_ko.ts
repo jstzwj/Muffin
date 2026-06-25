@@ -3210,70 +3210,104 @@ Would you like to open the download page?</source>
 <context>
     <name>muffin::PrefsExportPage</name>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="102"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="117"/>
         <source>Select Pandoc Executable</source>
         <translation>Pandoc 실행 파일 선택</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="103"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="118"/>
         <source>Executables (*.exe);;All Files (*)</source>
         <translation>실행 파일 (*.exe);;모든 파일 (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="118"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="148"/>
         <source>General</source>
-        <translation>일반</translation>
+        <translation type="vanished">일반</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="126"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="134"/>
         <source>HTML (without Styles)</source>
         <translation>HTML (스타일 제외)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="127"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="135"/>
         <source>Image</source>
         <translation>이미지</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="152"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="155"/>
+        <source>Formats</source>
+        <translation>형식</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="158"/>
         <source>Default Export Folder</source>
         <translation>기본 내보내기 폴더</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="157"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="163"/>
         <source>Auto</source>
         <translation>자동</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="158"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="164"/>
         <source>Same folder as current file</source>
         <translation>현재 파일과 같은 폴더</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="159"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="165"/>
         <source>Custom...</source>
         <translation>사용자 지정...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="165"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="171"/>
         <source>Pandoc Path</source>
         <translation>Pandoc 경로</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="167"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="173"/>
         <source>(Auto-detect)</source>
         <translation>(자동 감지)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="170"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="175"/>
+        <source>Browse...</source>
+        <translation>찾아보기...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="176"/>
+        <source>Auto-detect</source>
+        <translation>자동 감지</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="178"/>
         <source>After Export</source>
         <translation>내보내기 후</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="171"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="179"/>
         <source>Open the exported file directory</source>
         <translation>내보낸 파일 디렉터리 열기</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="210"/>
+        <source>Using: %1</source>
+        <translation>사용 중: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="212"/>
+        <source>Not a valid executable; will auto-detect.</source>
+        <translation>올바른 실행 파일이 아닙니다. 자동으로 감지합니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="221"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="226"/>
+        <source>Detected: %1</source>
+        <translation>감지됨: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsExportPage.cpp" line="228"/>
+        <source>Pandoc was not found. Install it, or click Browse to locate.</source>
+        <translation>Pandoc를 찾을 수 없습니다. 설치하거나 '찾아보기'를 클릭하여 위치를 지정하세요.</translation>
     </message>
 </context>
 <context>
