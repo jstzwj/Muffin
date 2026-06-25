@@ -74,24 +74,35 @@ QString escapeHtmlText(const QString& text) {
 
 }  // namespace
 
-QString renderDocumentHtml(const QString& markdownSource, const QString& title, bool styled) {
+QString renderDocumentHtml(const QString& markdownSource, const QString& title, bool styled,
+                           const QString& themeCss) {
   const QString body = SelectionSerializer::renderMarkdownToHtml(markdownSource);
 
+  const bool useTheme = styled && !themeCss.isEmpty();
   QString html;
-  html.reserve(body.size() + 512);
+  html.reserve(body.size() + (styled ? (useTheme ? themeCss.size() : 0) + 512 : 512));
   html += QStringLiteral("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n");
   html += QStringLiteral("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>");
   html += escapeHtmlText(title);
   html += QStringLiteral("</title>\n");
   if (styled) {
     html += QStringLiteral("<style>\n");
-    html += QString::fromLatin1(kStyledCss);
+    html += useTheme ? themeCss : QString::fromLatin1(kStyledCss);
     html += QStringLiteral("</style>\n");
   }
   html += QStringLiteral("</head>\n<body>\n");
+  // Typora themes style #write (the centred content card: max-width/margin/
+  // padding); wrap the body so a theme's layout rules apply. Harmless for the
+  // built-in fallback, which targets <body> directly.
+  if (styled) {
+    html += QStringLiteral("<div id=\"write\">\n");
+  }
   html += body;
   if (!body.endsWith(QLatin1Char('\n'))) {
     html += QLatin1Char('\n');
+  }
+  if (styled) {
+    html += QStringLiteral("</div>\n");
   }
   html += QStringLiteral("</body>\n</html>\n");
   return html;

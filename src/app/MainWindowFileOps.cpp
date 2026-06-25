@@ -714,7 +714,11 @@ void muffin::MainWindow::exportAs(ExportFormat format) {
     }
     case ExportFormat::Html:
     case ExportFormat::HtmlPlain: {
-      const QString html = muffin::renderDocumentHtml(markdown, baseName, format == ExportFormat::Html);
+      const bool styled = (format == ExportFormat::Html);
+      // Carry the active theme into the styled export (built-in or custom *.css
+      // theme); plain export and JSON-only themes (no CSS source) fall back.
+      const QString html = muffin::renderDocumentHtml(
+          markdown, baseName, styled, styled ? themeManager_.currentThemeCss() : QString());
       ok = writeExportBytes(target, html.toUtf8(), &error);
       break;
     }

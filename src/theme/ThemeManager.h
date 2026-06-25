@@ -3,6 +3,7 @@
 #include "theme/RenderTheme.h"
 #include "theme/ThemeDefinition.h"
 
+#include <QHash>
 #include <QObject>
 #include <QStringList>
 
@@ -30,6 +31,13 @@ public:
   // sidebar, dialogs and editor (via RenderTheme::fromDefinition) read from.
   ThemeDefinition definition(const QString& name) const;
   ThemeDefinition currentDefinition() const;
+
+  // Raw CSS source text of the current theme, for embedding into exported HTML
+  // so the export carries the active theme. Re-reads from the theme's source
+  // file (Qt resource for built-ins, the on-disk file for custom *.css themes).
+  // Returns empty when there is no CSS source — i.e. a JSON-only custom theme
+  // or a read failure — in which case callers fall back to a default stylesheet.
+  QString currentThemeCss() const;
 
   bool setTheme(QString name);
 
@@ -63,6 +71,10 @@ private:
 
   QString currentThemeName_ = QStringLiteral("github");
   std::vector<ThemeDefinition> definitions_;
+  // id → absolute source path of the theme's *.css (":/themes/<id>.css" for
+  // built-ins, the disk file for custom *.css themes). Absent for JSON-only
+  // custom themes. Populated by loadDefinitions(); used by currentThemeCss().
+  QHash<QString, QString> cssSourcePaths_;
 };
 
 }  // namespace muffin

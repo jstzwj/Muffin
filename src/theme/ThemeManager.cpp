@@ -7,6 +7,7 @@
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QRegularExpression>
 #include <QSet>
 #include <QStandardPaths>
 #include <QStringList>
@@ -19,6 +20,73 @@ namespace {
 // Created on demand when the user imports a theme.
 QString userThemesDir() {
   return ThemeManager::themesDirectory();
+}
+
+// True for a @import/url target that points at a local file (not http(s)/data/
+// protocol-relative). Only local @imports can be inlined for a self-contained
+// export; remote ones are kept verbatim.
+bool isLocalCssReference(const QString& url) {
+  const QString u = url.trimmed();
+  if (u.isEmpty()) {
+    return false;
+  }
+  if (u.startsWith(QStringLiteral("http://"), Qt::CaseInsensitive)
+      || u.startsWith(QStringLiteral("https://"), Qt::CaseInsensitive)
+      || u.startsWith(QStringLiteral("data:"), Qt::CaseInsensitive)
+      || u.startsWith(QStringLiteral("//"))) {
+    return false;
+  }
+  return true;
+}
+
+// Recursively inlines local @import statements so the returned CSS is
+// self-contained — multi-file themes (e.g. phycat: top file does
+// `@import url(./phycat/phycat.light.css)`; the real styles live in that base
+// sheet) otherwise lose their base styles when exported as a single HTML file,
+// since the relative @import resolves against the export location, not the
+// theme folder. Remote/data @imports and url() assets (fonts, background
+// images) are left untouched — assets won't resolve from the export location
+// and fonts fall back. `visited` guards against cycles/duplicate inclusion.
+QString flattenCssImports(const QString& text, const QString& baseDir, QSet<QString>& visited) {
+  static const QRegularExpression re(
+      QStringLiteral(
+          "@import\\s+(?:url\\(\\s*)?['\"]?(?<url>[^'\"\\)\\s]+)['\"]?\\s*\\)?\\s*(?<media>[^;]*);"),
+      QRegularExpression::CaseInsensitiveOption);
+  QString out;
+  out.reserve(text.size());
+  qsizetype lastEnd = 0;
+  auto it = re.globalMatch(text);
+  while (it.hasNext()) {
+    const QRegularExpressionMatch m = it.next();
+    out += text.mid(lastEnd, m.capturedStart() - lastEnd);
+    lastEnd = m.capturedEnd();
+    const QString url = m.captured(QStringLiteral("url"));
+    const QString media = m.captured(QStringLiteral("media")).trimmed();
+    if (!isLocalCssReference(url)) {
+      out += m.captured(0);  // keep remote/data @import verbatim
+      continue;
+    }
+    const QString absPath = QDir::cleanPath(baseDir + QLatin1Char('/') + url);
+    if (visited.contains(absPath)) {
+      continue;  // already inlined (or cycle) — drop the duplicate @import
+    }
+    visited.insert(absPath);
+    QFile sub(absPath);
+    if (!sub.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      continue;  // unreadable base sheet — drop the @import rather than leave a broken ref
+    }
+    const QString subText = QString::fromUtf8(sub.readAll());
+    const QString inlined = flattenCssImports(subText, QFileInfo(absPath).absolutePath(), visited);
+    if (!media.isEmpty()) {
+      // @import with a media query → scope the inlined rules to that media.
+      out += QStringLiteral("@media %1 {\n").arg(media) + inlined + QStringLiteral("\n}\n");
+    } else {
+      out += inlined;
+      out += QLatin1Char('\n');
+    }
+  }
+  out += text.mid(lastEnd);
+  return out;
 }
 
 }  // namespace
@@ -69,6 +137,12 @@ void ThemeManager::loadDefinitions() {
   definitions_.clear();
   // Built-ins first, in their canonical display order.
   definitions_ = ThemeDefinition::builtIns();
+  cssSourcePaths_.clear();
+  for (const ThemeDefinition& d : definitions_) {
+    if (d.isBuiltIn) {
+      cssSourcePaths_.insert(d.id, QStringLiteral(":/themes/%1.css").arg(d.id));
+    }
+  }
 
   // Then any user-supplied themes from the themes directory — both native *.json
   // and community-CSS *.css. Built-in ids win: a custom file whose stem
@@ -88,7 +162,9 @@ void ThemeManager::loadDefinitions() {
       }
       ThemeDefinition d;
       if (file.endsWith(QStringLiteral(".css"), Qt::CaseInsensitive)) {
-        d = ThemeDefinition::fromCss(dir.absoluteFilePath(file), id);
+        const QString absPath = dir.absoluteFilePath(file);
+        d = ThemeDefinition::fromCss(absPath, id);
+        cssSourcePaths_.insert(id, absPath);  // record real path for currentThemeCss()
       } else {
         QFile f(dir.absoluteFilePath(file));
         if (!f.open(QIODevice::ReadOnly)) {
@@ -110,6 +186,23 @@ void ThemeManager::loadDefinitions() {
 
 QString ThemeManager::currentThemeName() const {
   return currentThemeName_;
+}
+
+QString ThemeManager::currentThemeCss() const {
+  auto it = cssSourcePaths_.constFind(currentThemeName_);
+  if (it == cssSourcePaths_.constEnd()) {
+    return {};  // JSON-only custom theme (or unknown) — no CSS source to embed.
+  }
+  QFile f(it.value());
+  if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    return {};
+  }
+  const QString text = QString::fromUtf8(f.readAll());
+  // Inline local @imports so multi-file themes export as one self-contained
+  // stylesheet (their base sheets otherwise don't resolve from the export path).
+  QSet<QString> visited;
+  visited.insert(QDir::cleanPath(it.value()));
+  return flattenCssImports(text, QFileInfo(it.value()).absolutePath(), visited);
 }
 
 RenderTheme ThemeManager::currentTheme(int zoomPercent, int fontSizePx) const {
