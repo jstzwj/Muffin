@@ -761,9 +761,23 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
       if (inlineLayout_) {
         if (type_ == BlockType::Heading) {
           // CSS element background gradient (e.g. phycat's h2 radial "fusion glass"
-          // glow) sits behind the heading text.
+          // glow) sits behind the heading text. When the heading declares
+          // `width: fit-content`, the glow/tint box shrinks to the text + heading
+          // padding (a left-aligned pill, or centred for `margin: auto` + center
+          // text) instead of spanning the full block — matching how a browser
+          // sizes an inline-shrink heading. Block rect stays full width, so this
+          // is paint-only: layout, hit-test and selection are unaffected.
+          const QMarginsF hpad = theme.headingPadding(headingLevel_);
+          const qreal headingPaintX = viewRect.left() + hpad.left();
+          const QRectF textBounds = inlineLayout_->visualTextBounds().translated(headingPaintX, viewRect.top());
+          QRectF bgRect = viewRect;
+          if (theme.headingFitContent(headingLevel_) && textBounds.isValid() && inlineLayout_->height() > 0.0) {
+            const qreal left = qBound(viewRect.left(), textBounds.left() - hpad.left(), viewRect.right());
+            const qreal right = qBound(left, textBounds.right() + hpad.right(), viewRect.right());
+            bgRect = QRectF(left, viewRect.top(), qMax<qreal>(1.0, right - left), inlineLayout_->height());
+          }
           DecorationPainter::paintElementBackground(
-              painter, theme, QStringLiteral("h%1").arg(headingLevel_), viewRect);
+              painter, theme, QStringLiteral("h%1").arg(headingLevel_), bgRect);
         }
         if (hasListMarker()) {
           painter.save();
@@ -800,18 +814,21 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
           painter.restore();
           inlineLayout_->paint(painter, QPointF(contentX, viewRect.top()));
         } else {
-          // For headings with left padding, offset the paint position so text aligns
-          // with the wrapped width used during layout. Paragraph/List items have no padding.
-          const qreal paintX = type_ == BlockType::Heading ? viewRect.left() + theme.headingPadding(headingLevel_).left()
-                                                            : viewRect.left();
+          // For headings with left padding (+ inline ::before advance), offset the
+          // paint position so text aligns with the wrapped width used during layout.
+          // Paragraph/List items have no padding/advance.
+          const qreal paintX = type_ == BlockType::Heading
+                                   ? viewRect.left() + theme.headingPadding(headingLevel_).left() + theme.headingBeforeAdvance(headingLevel_)
+                                   : viewRect.left();
           inlineLayout_->paint(painter, QPointF(paintX, viewRect.top()));
         }
         if (!placeholderText_.isEmpty()) {
           painter.save();
           painter.setFont(theme.paragraphFont());
           painter.setPen(theme.mutedTextColor());
-          const qreal placeholderX = type_ == BlockType::Heading ? viewRect.left() + theme.headingPadding(headingLevel_).left()
-                                                                    : viewRect.left();
+          const qreal placeholderX = type_ == BlockType::Heading
+                                         ? viewRect.left() + theme.headingPadding(headingLevel_).left() + theme.headingBeforeAdvance(headingLevel_)
+                                         : viewRect.left();
           // Align with the first text line's baseline (line-height aware) so the
           // placeholder sits where the caret and typed text will, not at the raw
           // block top + ascent.
@@ -842,11 +859,16 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
           dctx.headingLevel = headingLevel_;
           dctx.font = theme.headingFont(headingLevel_);
           const qreal headingPaintX = viewRect.left() + theme.headingPadding(headingLevel_).left();
-          const QRectF textBounds = inlineLayout_->visualTextBounds().translated(headingPaintX, viewRect.top());
+          const qreal beforeAdvance = theme.headingBeforeAdvance(headingLevel_);
+          // textBounds reflects the shifted text origin so ::after anchors to the
+          // real text end; contentLeftX (== headingPaintX) lets an inline ::before
+          // marker place itself in the reserved [contentLeftX, textStart) zone.
+          const QRectF textBounds = inlineLayout_->visualTextBounds().translated(headingPaintX + beforeAdvance, viewRect.top());
           dctx.textBounds = textBounds;
-          dctx.textStart = textBounds.isValid() ? textBounds.topLeft() : QPointF(headingPaintX, viewRect.top());
+          dctx.contentLeftX = headingPaintX;
+          dctx.textStart = textBounds.isValid() ? textBounds.topLeft() : QPointF(headingPaintX + beforeAdvance, viewRect.top());
           dctx.textEnd = textBounds.isValid() ? QPointF(textBounds.right(), textBounds.top())
-                                              : QPointF(headingPaintX + inlineLayout_->size().width(), viewRect.top());
+                                              : QPointF(headingPaintX + beforeAdvance + inlineLayout_->size().width(), viewRect.top());
           DecorationPainter::paintPseudoDecorations(
               painter, theme, QStringLiteral("h%1").arg(headingLevel_), viewRect, dctx);
         }
@@ -866,6 +888,26 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
         painter.setBrush(theme.alertAccent(alertKind_));
         painter.drawRoundedRect(QRectF(viewRect.left(), viewRect.top() + 3.0, 4.0, viewRect.height() - 6.0),
                                 2.0, 2.0);
+      } else if (theme.blockquoteBoxThemed()) {
+        // Phase 4a: CSS-driven quote box — themed radius/background/border. The
+        // content is already inset by the theme's padding (buildContainer), so the
+        // box paints edge-to-edge over the block rect.
+        const qreal r = theme.blockquoteBorderRadius();
+        if (theme.blockquoteBackgroundColor().isValid()) {
+          painter.setBrush(theme.blockquoteBackgroundColor());
+          painter.setPen(Qt::NoPen);
+          painter.drawRoundedRect(viewRect, r, r);
+        }
+        if (theme.blockquoteBorderWidth() > 0.0 && theme.blockquoteBorderColor().isValid()) {
+          painter.setBrush(Qt::NoBrush);
+          painter.setPen(QPen(theme.blockquoteBorderColor(), theme.blockquoteBorderWidth()));
+          painter.drawRoundedRect(viewRect, r, r);
+        }
+        // CSS ::before content (e.g. a 💡 glyph) at the quote's top-left.
+        DecorationPainter::PaintContext qctx;
+        qctx.font = theme.paragraphFont();
+        DecorationPainter::paintPseudoDecorations(
+            painter, theme, QStringLiteral("blockquote"), viewRect, qctx);
       } else {
         // Optional quote fill (CSS themes that tint blockquote backgrounds).
         if (theme.blockquoteBackgroundColor().isValid()) {
@@ -892,7 +934,11 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
       painter.save();
       painter.setPen(theme.codeBorderColor());
       painter.setBrush(theme.codeBackgroundColor());
-      painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
+      if (theme.codeBlockBoxThemed() && theme.codeBlockBorderRadius() > 0.0) {
+        painter.drawRoundedRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5), theme.codeBlockBorderRadius(), theme.codeBlockBorderRadius());
+      } else {
+        painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
+      }
       if (literalEditing_) {
         const QRectF sourceRect = mathEditorSourceRect(theme).translated(0, -scrollY);
         const QRectF previewRect = mathPreviewContentRect(theme).translated(0, -scrollY);
@@ -943,7 +989,11 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
         painter.save();
         painter.setPen(theme.codeBorderColor());
         painter.setBrush(theme.codeBackgroundColor());
-        painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
+        if (theme.codeBlockBoxThemed() && theme.codeBlockBorderRadius() > 0.0) {
+          painter.drawRoundedRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5), theme.codeBlockBorderRadius(), theme.codeBlockBorderRadius());
+        } else {
+          painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
+        }
         // HTML literal source always wraps (unlike code fences, which honour
         // markdown/codeBlockWrap and gain a horizontal scrollbar instead). This
         // must match the build/estimate/selection/hit-test paths, all of which
@@ -1174,7 +1224,12 @@ void BlockLayout::paintCodeFence(QPainter& painter, const RenderTheme& theme, QR
   painter.save();
   painter.setPen(theme.codeBorderColor());
   painter.setBrush(theme.codeBlockBackgroundColor());
-  painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
+  // Phase 4b: a CSS-themed code fence rounds its box; legacy fences stay square.
+  if (theme.codeBlockBoxThemed() && theme.codeBlockBorderRadius() > 0.0) {
+    painter.drawRoundedRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5), theme.codeBlockBorderRadius(), theme.codeBlockBorderRadius());
+  } else {
+    painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
+  }
   // literalContentRect is document-space (rect_-based); shift it into view space the same way the
   // caller built viewRect (rect_.translated(0, -scrollY)) so the code text lands inside the box.
   const QRectF contentRect = literalContentRect(theme).translated(0, viewRect.top() - rect_.top());
@@ -1489,7 +1544,12 @@ void BlockLayout::paintTable(QPainter& painter, const RenderTheme& theme, qreal 
       const QRectF cellRect = cell.rect.translated(0, -scrollY);
       painter.setPen(theme.tableBorderColor());
       painter.setBrush(cell.header ? theme.tableHeaderBackgroundColor() : (cell.alternate ? theme.tableAlternateBackgroundColor() : theme.backgroundColor()));
-      painter.drawRect(cellRect.adjusted(0.5, 0.5, -0.5, -0.5));
+      // Phase 4c: a CSS-themed table rounds its cells; legacy tables stay square.
+      if (theme.tableBoxThemed() && theme.tableBorderRadius() > 0.0) {
+        painter.drawRoundedRect(cellRect.adjusted(0.5, 0.5, -0.5, -0.5), theme.tableBorderRadius(), theme.tableBorderRadius());
+      } else {
+        painter.drawRect(cellRect.adjusted(0.5, 0.5, -0.5, -0.5));
+      }
       cell.text.paint(painter, tableCellTextOrigin(cell, theme) + QPointF(0, -scrollY));
     }
     Q_UNUSED(rowRect);

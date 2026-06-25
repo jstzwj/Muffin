@@ -136,6 +136,17 @@ private:
     bool valid = false;
   };
 
+  // Phase 3c: a flow-reserved placeholder for `a::before` generated content. The
+  // placeholder char lives in displayText_ (so QTextLayout measures/wraps it),
+  // is painted transparent and widened to the icon size via letter spacing, and
+  // maps to the link run's start source offset (zero-width, non-editable) — the
+  // same trick math/image atoms use.
+  struct LinkBeforeAtom {
+    qsizetype displayStart = 0;
+    qsizetype displayEnd = 0;
+    qsizetype visibleStart = 0;  // link run's first visible offset (caret target)
+  };
+
   struct HtmlFormatSpan {
     int layoutStart = 0;
     int layoutEnd = 0;
@@ -152,6 +163,7 @@ private:
   };
 
   void buildOffsetMapFromProjection();
+  void buildLinkBeforeAtoms();
   void buildHtmlFormatSpans();
   void buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
   void buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
@@ -184,11 +196,31 @@ private:
   qreal lineHeightMultiplier_ = 0.0;
   Qt::Alignment alignment_;
   QColor textLayoutCodeBorderColor_;
+  QColor textLayoutCodeTextColor_;
+  bool darkTheme_ = false;
+  // Phase 3c: CSS-driven <kbd> keycap. Invalid/zero → legacy heuristic below.
+  QColor kbdFill_, kbdText_, kbdBorder_, kbdShadow_;
+  QString kbdFont_;
+  qreal kbdPadH_ = 0.0;
+  qreal kbdPadV_ = 0.0;
+  qreal kbdRadius_ = 0.0;
+  qreal kbdBorderWidth_ = 0.0;
+  // Phase 3b: inline-code box geometry from CSS (defaults reproduce the legacy
+  // -3/+6 / radius-3 / 1px chip so built-ins are unchanged).
+  qreal codeBoxPaddingH_ = 3.0;
+  qreal codeBoxPaddingV_ = 1.0;
+  qreal codeBoxRadius_ = 3.0;
+  qreal codeBoxBorderWidth_ = 1.0;
   // CSS inline decorations (Phase 3). link ::before icon (mask-tinted SVG) +
   // mark background-image gradient. Empty/None → nothing painted.
   QByteArray linkBeforeIcon_;
   QColor linkBeforeIconTint_;
   bool linkBeforeIconFromMask_ = false;
+  QSizeF linkBeforeIconSize_;       // CSS width/height (invalid → 1em)
+  qreal linkBeforeIconMarginRight_ = 0.0;  // CSS margin-right gap before the link text
+  qreal linkBeforeIconAdvance_ = 0.0;      // reserved flow width (icon + margin)
+  qreal linkBeforeIconHeight_ = 0.0;       // paint height (vertical centering)
+  QVector<LinkBeforeAtom> linkBeforeAtoms_;
   GradientSpec markGradient_;
   QString plainText_;
   bool isEmpty_ = true;

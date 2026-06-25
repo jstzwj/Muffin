@@ -7,6 +7,7 @@
 #include <QHash>
 #include <QImage>
 #include <QPainter>
+#include <QPainterPath>
 #include <QPixmap>
 #include <QRectF>
 #include <QSvgRenderer>
@@ -90,11 +91,35 @@ void paintIcon(QPainter& painter, const QByteArray& svgData, const QRectF& targe
 
 void paintElementBackground(QPainter& painter, const RenderTheme& theme, const QString& host, const QRectF& rect) {
   const ElementBackground* eb = elementBackground(theme, host);
-  if (!eb || eb->gradient.kind == GradientSpec::Kind::None) { return; }
+  if (!eb) { return; }
+  // Phase 2c: a fit-content heading pill (phycat h2) rounds its corners and may
+  // carry a top hairline. A host can have a border-radius / border-top WITHOUT a
+  // gradient, so do not bail on gradient==None — guard the gradient fill itself.
+  // border-radius % is box-relative, so clamp to half the smaller side (50% →
+  // disc). Clip to the rounded pill so the fill AND the border-top line follow
+  // the corner arcs instead of squaring them off.
   painter.save();
+  const qreal r = qBound(0.0, eb->borderRadius, qMin(rect.width(), rect.height()) / 2.0);
+  if (r > 0.5) {
+    QPainterPath pill;
+    pill.addRoundedRect(rect, r, r);
+    painter.setClipPath(pill);
+  } else {
+    painter.setClipRect(rect);
+  }
   if (eb->color.isValid()) { painter.fillRect(rect, eb->color); }
-  painter.setOpacity(eb->opacity);
-  painter.fillRect(rect, GradientPainter::makeBrush(eb->gradient, rect));
+  if (eb->gradient.kind != GradientSpec::Kind::None) {
+    painter.setOpacity(eb->opacity);
+    painter.fillRect(rect, GradientPainter::makeBrush(eb->gradient, rect));
+  }
+  if (eb->borderTopColor.isValid() && eb->borderTopWidth > 0.0) {
+    painter.setOpacity(1.0);
+    painter.setPen(QPen(eb->borderTopColor, eb->borderTopWidth));
+    // Draw just inside the top edge so the full pen width shows within the pill;
+    // the clip rounds it into the corners.
+    const qreal y = rect.top() + eb->borderTopWidth / 2.0;
+    painter.drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y));
+  }
   painter.restore();
 }
 
@@ -113,18 +138,66 @@ void paintHrGradient(QPainter& painter, const RenderTheme& theme, const QRectF& 
   painter.restore();
 }
 
+void paintShapeBox(QPainter& painter, const PseudoElementRule& rule, QRectF box) {
+  if (box.width() <= 0.0 || box.height() <= 0.0) { return; }
+  // border-radius % is relative to the box (50% → circle), not em; clamp to half
+  // the smaller side so a declared 50% rounds into a disc regardless of emPx.
+  const qreal r = qBound(0.0, rule.borderRadius, qMin(box.width(), box.height()) / 2.0);
+  painter.save();
+  painter.setOpacity(rule.opacity);
+  if (rule.backgroundColor.isValid()) {
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(rule.backgroundColor);
+    painter.drawRoundedRect(box, r, r);
+  }
+  if (rule.borderWidth > 0.0 && rule.borderColor.isValid()) {
+    painter.setBrush(Qt::NoBrush);
+    painter.setPen(QPen(rule.borderColor, rule.borderWidth));
+    painter.drawRoundedRect(box, r, r);
+  }
+  painter.restore();
+}
+
 void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const QString& host,
                             const QRectF& rect, const PaintContext& ctx) {
   const bool isHeading = ctx.headingLevel >= 1 && ctx.headingLevel <= 6;
   const QFontMetricsF fm(ctx.font);
   const qreal em = fm.height();
+  const qreal vCenter = ctx.textBounds.isValid() ? ctx.textBounds.center().y() : rect.center().y();
 
   if (const PseudoElementRule* before = pseudoRule(theme, host, QStringLiteral("before"))) {
-    if (!before->svgData.isEmpty()) {
-      const QPointF anchor = ctx.textStart.x() >= 0 ? ctx.textStart : rect.topLeft();
-      const qreal s = (before->size.width() > 0 ? before->size.width() : em);
-      const QColor tint = before->color.isValid() ? before->color : before->backgroundColor;
-      paintIcon(painter, before->svgData, QRectF(anchor.x() - s - 2.0, anchor.y(), s, s), tint, before->svgFromMask);
+    if (isHeading) {
+      if (before->absolute) {
+        // position:absolute left bar (phycat h3): anchored to the heading padding
+        // box (rect.left), vertically centred on the text line.
+        const qreal w = before->size.width() > 0.0 ? before->size.width() : qMax<qreal>(2.0, em * 0.25);
+        const qreal h = before->size.height() > 0.0 ? before->size.height() : em;
+        paintShapeBox(painter, *before, QRectF(rect.left() + before->insets.left(), vCenter - h / 2.0, w, h));
+      } else if (!before->svgData.isEmpty()) {
+        // Legacy: an inline SVG ::before painted into the left margin (no advance).
+        const QPointF anchor = ctx.textStart.x() >= 0 ? ctx.textStart : rect.topLeft();
+        const qreal s = (before->size.width() > 0 ? before->size.width() : em);
+        const QColor tint = before->color.isValid() ? before->color : before->backgroundColor;
+        paintIcon(painter, before->svgData, QRectF(anchor.x() - s - 2.0, anchor.y(), s, s), tint, before->svgFromMask);
+      } else {
+        // Inline marker (h4 disc / h5 ring / h6 dash): occupies the reserved zone
+        // [contentLeftX, textStart) so it sits left of the (already-shifted) text.
+        const qreal zoneLeft = ctx.contentLeftX >= 0.0 ? ctx.contentLeftX : rect.left();
+        const qreal zoneRight = (ctx.textStart.x() >= 0 ? ctx.textStart.x() : rect.right()) - before->marginRight;
+        if (before->backgroundColor.isValid() || before->borderWidth > 0.0) {
+          const qreal w = before->size.width() > 0.0 ? before->size.width() : em;
+          const qreal h = before->size.height() > 0.0 ? before->size.height() : em;
+          paintShapeBox(painter, *before, QRectF(zoneRight - w, vCenter - h / 2.0, w, h));
+        } else if (!before->content.isEmpty() && zoneRight > zoneLeft) {
+          painter.save();
+          painter.setOpacity(before->opacity);
+          painter.setFont(ctx.font);
+          painter.setPen(before->color.isValid() ? before->color : theme.textColor());
+          painter.drawText(QRectF(zoneLeft, ctx.textBounds.top(), zoneRight - zoneLeft, ctx.textBounds.height()),
+                           Qt::AlignVCenter | Qt::AlignRight, before->content);
+          painter.restore();
+        }
+      }
     } else if (!before->content.isEmpty() && host == QStringLiteral("blockquote")) {
       painter.save();
       painter.setFont(ctx.font);
@@ -136,10 +209,17 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
 
   if (const PseudoElementRule* after = pseudoRule(theme, host, QStringLiteral("after"))) {
     if (!after->svgData.isEmpty() && isHeading) {
+      // Trailing mask icon (phycat h3-h6): immediately after the text, top-aligned
+      // (vertical-align: top), sized to the rule's width/height.
       const QPointF anchor = ctx.textEnd.x() >= 0 ? ctx.textEnd : QPointF(rect.right(), rect.top());
-      const qreal s = (after->size.width() > 0 ? after->size.width() : em);
+      const qreal w = after->size.width() > 0.0 ? after->size.width() : em;
+      const qreal h = after->size.height() > 0.0 ? after->size.height() : em;
+      const qreal top = ctx.textBounds.isValid() ? ctx.textBounds.top() : anchor.y();
       const QColor tint = after->color.isValid() ? after->color : after->backgroundColor;
-      paintIcon(painter, after->svgData, QRectF(anchor.x() + 4.0, anchor.y() + (em - s) / 2.0, s, s), tint, after->svgFromMask);
+      painter.save();
+      painter.setOpacity(after->opacity);
+      paintIcon(painter, after->svgData, QRectF(anchor.x() + after->marginLeft, top, w, h), tint, after->svgFromMask);
+      painter.restore();
     } else if ((after->background.kind != GradientSpec::Kind::None || after->backgroundColor.isValid() ||
                 (after->borderBottomColor.isValid() && after->borderBottomWidth > 0.0)) && isHeading) {
       // ::after underline bar. Width/height come from the rule (e.g. Whitey's

@@ -1,5 +1,7 @@
 #include "theme/CssThemeMapper.h"
 
+#include "theme/CssComputedStyleEngine.h"
+#include "theme/CssStyleDebug.h"
 #include "theme/ThemeDefinition.h"
 #include "theme/CssThemeParser.h"
 
@@ -33,6 +35,7 @@ struct SelInfo {
   bool focus = false;
   bool visited = false;
   bool active = false;
+  bool unsupportedPseudoClass = false;  // structural pseudos like :has/:last-child are not modelled here
   bool nthEven = false;   // :nth-child(even) / :nth-of-type(even)
 };
 
@@ -123,9 +126,21 @@ SelInfo analyzeSelector(const QString& selector) {
         else if (name == QStringLiteral("focus")) { info.focus = true; }
         else if (name == QStringLiteral("visited")) { info.visited = true; }
         else if (name == QStringLiteral("active")) { info.active = true; }
+        else if (name == QStringLiteral("not") || name == QStringLiteral("root")) {
+          // Safe no-op in the flattened semantic mapper: `a:not(.md-toc-inner)`
+          // should still feed the normal link token, and :root variables are
+          // collected by CssThemeParser before flattening.
+        }
         else if ((name == QStringLiteral("nth-child") || name == QStringLiteral("nth-of-type")) &&
                  (arg == QStringLiteral("even") || arg.contains(QStringLiteral("2n")))) {
           info.nthEven = true;
+        }
+        else {
+          // Structural pseudos such as :has(img), :last-child or :first-of-type
+          // cannot be evaluated against this prototype-free flat view. Treating
+          // only the rightmost tag as a match makes targeted rules global (e.g.
+          // `#write p:has(img) { text-align:center }` centering every paragraph).
+          info.unsupportedPseudoClass = true;
         }
       }
       i = j;
@@ -234,7 +249,10 @@ std::vector<FlatDecl> flatten(const CssThemeSheet& sheet) {
       // community phycat family: the leak bypasses the color-mix() evaluator
       // entirely, because the winning rule is a plain var(), not a tint. Drop
       // every interactive-state selector from the cascade so the base rule wins.
-      if (info.hover || info.focus || info.active || info.visited || info.mdFocus) { continue; }
+      // Also drop unsupported structural pseudo-classes. This flat mapper knows
+      // only the semantic target, not real sibling/descendant contents; keeping a
+      // selector like `p:has(img)` would make its declarations apply to all `p`.
+      if (info.hover || info.focus || info.active || info.visited || info.mdFocus || info.unsupportedPseudoClass) { continue; }
       const int spec = specificity(selector);
       for (const CssDeclaration& decl : rule.declarations) {
         FlatDecl fd;
@@ -755,6 +773,9 @@ bool isHeading(const SelInfo& s, int level) {
 bool isInlineCode(const SelInfo& s) {
   return s.tag == QStringLiteral("code") || s.tag == QStringLiteral("tt") || s.tag == QStringLiteral("kbd");
 }
+bool isKeyboard(const SelInfo& s) {
+  return s.tag == QStringLiteral("kbd");
+}
 bool isCodeBlock(const SelInfo& s) {
   return s.tag == QStringLiteral("pre") || s.classFences;
 }
@@ -1033,14 +1054,32 @@ std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& f
     const qreal w = lengthToPx(bestValue(sub, {QStringLiteral("width")}, allPred), vars, emPx);
     const qreal h = lengthToPx(bestValue(sub, {QStringLiteral("height")}, allPred), vars, emPx);
     if (w > 0 || h > 0) { rule.size = QSizeF(w, h); }
+    // Phase 2b geometry: position/border-radius/outline-border/margin for
+    // heading ::before/::after markers (phycat h3 left bar, h4/h5 discs, etc.).
+    const QString posRaw = CssThemeParser::resolveVars(bestValue(sub, {QStringLiteral("position")}, allPred), vars).trimmed().toLower();
+    rule.absolute = (posRaw == QStringLiteral("absolute"));
+    rule.insets.setLeft(lengthToPx(bestValue(sub, {QStringLiteral("left")}, allPred), vars, emPx));
+    rule.borderRadius = lengthToPx(bestValue(sub, {QStringLiteral("border-radius")}, allPred), vars, emPx);
+    const QString bord = bestValue(sub, {QStringLiteral("border"), QStringLiteral("border-color")}, allPred);
+    rule.borderColor = extractColor(bord, vars);
+    rule.borderWidth = borderWidthPx(bord, vars, emPx);
+    const QMarginsF pmargin = boxToMarginsPx(bestValue(sub, {QStringLiteral("margin")}, allPred), vars, emPx);
+    qreal marginLeft = pmargin.left();
+    qreal marginRight = pmargin.right();
+    const QString mright = bestValue(sub, {QStringLiteral("margin-right")}, allPred);
+    if (!mright.isEmpty()) { marginRight = lengthToPx(mright, vars, emPx); }
+    const QString mleft = bestValue(sub, {QStringLiteral("margin-left")}, allPred);
+    if (!mleft.isEmpty()) { marginLeft = lengthToPx(mleft, vars, emPx); }
+    rule.marginLeft = marginLeft;
+    rule.marginRight = marginRight;
     const QString bb = bestValue(sub,
         {QStringLiteral("border-bottom"), QStringLiteral("border-bottom-color"),
          QStringLiteral("border-color"), QStringLiteral("border")}, allPred);
     rule.borderBottomColor = extractColor(bb, vars);
     rule.borderBottomWidth = borderWidthPx(bb, vars, emPx);
-    const QByteArray contentSvg = extractDataUri(contentRaw);
-    const QByteArray bgSvg = extractDataUri(bgImg);
-    const QByteArray maskSvg = extractDataUri(maskImg);
+    const QByteArray contentSvg = extractDataUri(CssThemeParser::resolveVars(contentRaw, vars));
+    const QByteArray bgSvg = extractDataUri(CssThemeParser::resolveVars(bgImg, vars));
+    const QByteArray maskSvg = extractDataUri(CssThemeParser::resolveVars(maskImg, vars));
     rule.svgData = !contentSvg.isEmpty() ? contentSvg : (!bgSvg.isEmpty() ? bgSvg : maskSvg);
     // An icon sourced from `mask:` is an alpha shape tinted with the
     // background-color (e.g. phycat's link ::before); render recoloured, not as-is.
@@ -1054,7 +1093,8 @@ std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& f
 // captured here — solid background-colours remain on the existing theme tokens
 // (codeBackground/highlight/blockquoteBackground/…) so they aren't double-painted.
 std::vector<ElementBackground> extractElementBackgrounds(const std::vector<FlatDecl>& flat,
-                                                          const QHash<QString, QString>& vars) {
+                                                          const QHash<QString, QString>& vars,
+                                                          qreal emPx) {
   static const std::vector<QString> hosts = {
       QStringLiteral("h1"), QStringLiteral("h2"), QStringLiteral("h3"), QStringLiteral("h4"),
       QStringLiteral("h5"), QStringLiteral("h6"), QStringLiteral("blockquote"), QStringLiteral("hr"),
@@ -1067,12 +1107,26 @@ std::vector<ElementBackground> extractElementBackgrounds(const std::vector<FlatD
     };
     const QString bgImg = bestValue(flat, {QStringLiteral("background-image"), QStringLiteral("background")}, pred);
     const GradientSpec grad = parseGradientSpec(bgImg, vars);
-    if (grad.kind == GradientSpec::Kind::None) { continue; }
+    // Phase 2c: a host may carry a rounded pill / top hairline WITHOUT a gradient
+    // (e.g. a heading with only `border-top` or `border-radius`). Capture the box
+    // decorations before gating so such hosts still produce an entry; only skip
+    // when there is nothing decorative at all (preserves the built-in "no host
+    // gradient → no entry" contract, since built-ins use border-bottom, not
+    // border-top/border-radius, on these hosts).
+    const qreal borderRadius = lengthToPx(bestValue(flat, {QStringLiteral("border-radius")}, pred), vars, emPx);
+    const QString bt = bestValue(flat, {QStringLiteral("border-top"), QStringLiteral("border-top-color")}, pred);
+    const QColor borderTopColor = extractColor(bt, vars);
+    const qreal borderTopWidth = borderWidthPx(bt, vars, emPx);
+    const bool hasBoxDecoration = borderRadius > 0.0 || (borderTopColor.isValid() && borderTopWidth > 0.0);
+    if (grad.kind == GradientSpec::Kind::None && !hasBoxDecoration) { continue; }
     ElementBackground eb;
     eb.host = host;
     eb.gradient = grad;
     eb.color = colorToken(flat, vars, {QStringLiteral("background-color"), QStringLiteral("background")}, pred);
     eb.opacity = 1.0;
+    eb.borderRadius = borderRadius;
+    eb.borderTopColor = borderTopColor;
+    eb.borderTopWidth = borderTopWidth;
     eb.present = true;
     out.push_back(std::move(eb));
   }
@@ -1278,7 +1332,17 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   d.id = id.toLower();
 
   const QHash<QString, QString>& vars = sheet.variables();
-  const std::vector<FlatDecl> flat = flatten(sheet);
+  // `allFlat` carries ::before/::after declarations too (extractPseudoRules reads
+  // them). Base token extraction must NOT see pseudo-element declarations — a
+  // rule like `h6::before { color: accent }` is the marker's colour, not the h6
+  // text colour, so feeding it through isHeading() leaked the accent into the
+  // heading's base text colour. `flat` is the pseudo-stripped view every base
+  // extractor below uses; only extractPseudoRules gets the full `allFlat`.
+  const std::vector<FlatDecl> allFlat = flatten(sheet);
+  std::vector<FlatDecl> flat;
+  for (const FlatDecl& fd : allFlat) {
+    if (fd.info.pseudoElement.isEmpty()) { flat.push_back(fd); }
+  }
 
   const std::vector<QString> bgProps = {QStringLiteral("background-color"), QStringLiteral("background")};
   const std::vector<QString> colorProps = {QStringLiteral("color")};
@@ -1304,7 +1368,12 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   d.page.viewportBackground = colorToken(flat, vars, bgProps, isHtmlOrBody);
   d.page.pageBackground = colorToken(flat, vars, bgProps, isWrite);
   k.background = d.page.pageBackground.isValid() ? d.page.pageBackground : d.page.viewportBackground;
-  k.text = colorToken(flat, vars, colorProps, isDocumentContainer);
+  // The renderer's primary text colour is prose ink. Some themes put the base
+  // document colour on #write, then intentionally mute normal paragraphs via
+  // `#write p { color: ... }` while headings inherit the brighter #write colour.
+  // Prefer paragraph/list colour when present; fall back to the document shell.
+  k.text = colorToken(flat, vars, colorProps, isParagraphText);
+  if (!k.text.isValid()) { k.text = colorToken(flat, vars, colorProps, isDocumentContainer); }
   k.link = colorToken(flat, vars, colorProps, isLink);
   k.codeBackground = colorToken(flat, vars, bgProps, isInlineCode);
   k.codeBlockBackground = colorToken(flat, vars, bgProps, isCodeBlock);
@@ -1319,8 +1388,86 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
 
   qreal bodyPx = lengthToPx(bestValue(flat, sizeProps, isHtmlOrBody), vars, 16.0);
   if (bodyPx <= 0.0) { bodyPx = 16.0; }
+
+  // --- Computed-style gap fill (Phase 1) -------------------------------------
+  // The flat last-compound extractor above is the primary source (it preserves
+  // every existing token value). The cascade/inheritance-aware engine fills ONLY
+  // the tokens it leaves invalid — e.g. a colour declared on an ancestor
+  // (`#write { color }`) that the last-compound heuristic can't see, or a value
+  // reachable only through a descendant selector. It never overwrites a value
+  // the flat pass already resolved, so existing themes are byte-identical and the
+  // engine is exercised productively at every theme load. Phase 2 promotes this
+  // to the primary source once block/inline renderers consume ComputedStyle.
+  CssComputedStyleEngine styleEngine(sheet);
+  CssElement csHtml; csHtml.tag = QStringLiteral("html");
+  CssElement csBody; csBody.tag = QStringLiteral("body"); csBody.parent = &csHtml;
+  CssElement csWrite; csWrite.id = QStringLiteral("write"); csWrite.parent = &csBody;
+  CssElement csParagraph; csParagraph.tag = QStringLiteral("p"); csParagraph.parent = &csWrite;
+  CssElement csLink; csLink.tag = QStringLiteral("a"); csLink.parent = &csParagraph;
+  CssElement csInlineCode; csInlineCode.tag = QStringLiteral("code"); csInlineCode.parent = &csParagraph;
+  CssElement csCodeFence; csCodeFence.tag = QStringLiteral("pre"); csCodeFence.classes = {QStringLiteral("md-fences")}; csCodeFence.parent = &csWrite;
+  CssElement csMark; csMark.tag = QStringLiteral("mark"); csMark.parent = &csParagraph;
+  CssElement csSelection; csSelection.pseudoElement = QStringLiteral("selection"); csSelection.parent = &csWrite;
+  CssElement csBlockquote; csBlockquote.tag = QStringLiteral("blockquote"); csBlockquote.parent = &csWrite;
+  CssElement csTable; csTable.tag = QStringLiteral("table"); csTable.parent = &csWrite;
+  CssElement csThead; csThead.tag = QStringLiteral("thead"); csThead.parent = &csTable;
+  CssElement csTh; csTh.tag = QStringLiteral("th"); csTh.parent = &csThead;
+  CssElement csTbody; csTbody.tag = QStringLiteral("tbody"); csTbody.parent = &csTable;
+  CssElement csTrEven; csTrEven.tag = QStringLiteral("tr"); csTrEven.nthEven = true; csTrEven.parent = &csTbody;
+
+  const CssComputedStyle csBodyStyle = styleEngine.styleFor(csBody);
+  const CssComputedStyle csHtmlStyle = styleEngine.styleFor(csHtml);
+  const CssComputedStyle csWriteStyle = styleEngine.styleFor(csWrite);
+  const CssComputedStyle csParagraphStyle = styleEngine.styleFor(csParagraph);
+  const CssComputedStyle csLinkStyle = styleEngine.styleFor(csLink);
+  const CssComputedStyle csInlineCodeStyle = styleEngine.styleFor(csInlineCode);
+  const CssComputedStyle csCodeFenceStyle = styleEngine.styleFor(csCodeFence);
+  const CssComputedStyle csMarkStyle = styleEngine.styleFor(csMark);
+  const CssComputedStyle csSelectionStyle = styleEngine.styleFor(csSelection);
+  const CssComputedStyle csBlockquoteStyle = styleEngine.styleFor(csBlockquote);
+  const CssComputedStyle csTableStyle = styleEngine.styleFor(csTable);
+  const CssComputedStyle csThStyle = styleEngine.styleFor(csTh);
+  const CssComputedStyle csTrEvenStyle = styleEngine.styleFor(csTrEven);
+
+  const auto styleColor = [&](const CssComputedStyle& style, const std::vector<QString>& properties) {
+    for (const QString& property : properties) {
+      const QColor c = extractColor(style.resolvedValue(property), style.customProperties());
+      if (c.isValid()) { return c; }
+    }
+    return QColor();
+  };
+  const auto fill = [&](QColor ThemeColors::* member, const QColor& resolved) {
+    if (!(k.*member).isValid() && resolved.isValid()) { k.*member = resolved; }
+  };
+  if (!d.page.viewportBackground.isValid()) {
+    d.page.viewportBackground = styleColor(csBodyStyle, bgProps);
+    if (!d.page.viewportBackground.isValid()) { d.page.viewportBackground = styleColor(csHtmlStyle, bgProps); }
+  }
+  if (!d.page.pageBackground.isValid()) { d.page.pageBackground = styleColor(csWriteStyle, bgProps); }
+  if (!k.background.isValid()) { k.background = d.page.pageBackground.isValid() ? d.page.pageBackground : d.page.viewportBackground; }
+  if (!k.text.isValid()) {
+    QColor t = styleColor(csParagraphStyle, colorProps);
+    if (!t.isValid()) { t = styleColor(csWriteStyle, colorProps); }
+    if (!t.isValid()) { t = styleColor(csBodyStyle, colorProps); }
+    k.text = t;
+  }
+  fill(&ThemeColors::link, styleColor(csLinkStyle, colorProps));
+  fill(&ThemeColors::codeBackground, styleColor(csInlineCodeStyle, bgProps));
+  fill(&ThemeColors::codeBlockBackground, styleColor(csCodeFenceStyle, bgProps));
+  fill(&ThemeColors::highlight, styleColor(csMarkStyle, bgProps));
+  fill(&ThemeColors::selection, styleColor(csSelectionStyle, bgProps));
+  fill(&ThemeColors::quoteBorder, styleColor(csBlockquoteStyle, borderLeftProps));
+  fill(&ThemeColors::blockquoteBackground, styleColor(csBlockquoteStyle, bgProps));
+  fill(&ThemeColors::tableBorder, styleColor(csTableStyle, borderProps));
+  fill(&ThemeColors::tableHeaderBackground, styleColor(csThStyle, bgProps));
+  fill(&ThemeColors::tableAlternateBackground, styleColor(csTrEvenStyle, bgProps));
+  {
+    const QColor cb = styleColor(csInlineCodeStyle, borderProps);
+    if (cb.isValid()) { fill(&ThemeColors::codeBorder, cb); }
+    else { fill(&ThemeColors::codeBorder, styleColor(csCodeFenceStyle, borderProps)); }
+  }
   // Host element own background-image gradients (h2 radial glow, hr gradient, …).
-  d.decorations.backgrounds = extractElementBackgrounds(flat, vars);
+  d.decorations.backgrounds = extractElementBackgrounds(flat, vars, bodyPx);
   // :hover glow/tint (box-shadow subset) + transition durations.
   d.decorations.hoverEffects = extractHoverEffects(flattenHover(sheet), vars);
   d.decorations.transitions = extractTransitions(flat, vars);
@@ -1368,8 +1515,12 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   }
 
   // Per-heading colour + the h2 accent bar (cheap decoration).
+  const QColor headingInheritedColor = colorToken(flat, vars, colorProps, isWrite).isValid()
+      ? colorToken(flat, vars, colorProps, isWrite)
+      : colorToken(flat, vars, colorProps, isHtmlOrBody);
   for (int level = 1; level <= 6; ++level) {
     QColor hc = colorToken(flat, vars, colorProps, [level](const SelInfo& s) { return isHeading(s, level); });
+    if (!hc.isValid()) { hc = headingInheritedColor; }
     if (hc.isValid()) { d.typography.headingColor[level - 1] = hc; }
     const qreal hs = lengthToPt(bestValue(flat, sizeProps, [level](const SelInfo& s) { return isHeading(s, level); }), vars, bodyPx);
     if (hs > 0.0) { d.typography.headingSizePt[level - 1] = hs; }
@@ -1385,13 +1536,52 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   };
   // ::before/::after decorations (gradients, SVG icons, text content, texture
   // masks), grouped by host. Empty for themes that declare none.
-  d.decorations.pseudos = extractPseudoRules(flat, vars, emPxForHost);
+  d.decorations.pseudos = extractPseudoRules(allFlat, vars, emPxForHost);
 
   // CSS document-flow metrics.
   d.spacing.paragraphMargin = boxToMarginsPx(bestValue(flat, marginProps, [](const SelInfo& s) { return s.tag == QStringLiteral("p"); }), vars, bodyPx);
   d.spacing.blockquoteMargin = boxToMarginsPx(bestValue(flat, marginProps, isBlockquote), vars, bodyPx);
+  // Phase 4a: CSS `blockquote` box (padding/border/radius). The quote flips to
+  // the themed path only when the author actually styled it — absent rules leave
+  // the legacy accent-bar + 16px indent intact (built-ins byte-identical).
+  {
+    const QMarginsF bp = readBox(flat, vars, isBlockquote, QStringLiteral("padding"), bodyPx).margins;
+    if (!bp.isNull()) { d.spacing.blockquotePadding = bp; d.spacing.blockquoteBoxThemed = true; }
+    const QString qbb = bestValue(flat, {QStringLiteral("border"), QStringLiteral("border-width")}, isBlockquote);
+    if (const qreal qw = borderWidthPx(qbb, vars, bodyPx); qw > 0.0) {
+      d.spacing.blockquoteBorderWidth = qw;
+      if (const QColor qc = extractColor(qbb, vars); qc.isValid()) { d.spacing.blockquoteBorderColor = qc; }
+      d.spacing.blockquoteBoxThemed = true;
+    }
+    if (const qreal qr = lengthToPx(bestValue(flat, {QStringLiteral("border-radius")}, isBlockquote), vars, bodyPx); qr > 0.0) {
+      d.spacing.blockquoteBorderRadius = qr;
+      d.spacing.blockquoteBoxThemed = true;
+    }
+  }
   d.spacing.codeBlockMargin = boxToMarginsPx(bestValue(flat, marginProps, isCodeBlock), vars, bodyPx);
+  // Phase 4b: CSS `pre`/`.md-fences` box (padding + radius). Border colour is
+  // already captured on `codeBorder`; this adds flow-aware padding and rounded
+  // corners. Absent rules leave the legacy scaled(12/10) padding intact.
+  {
+    const QMarginsF cp = readBox(flat, vars, isCodeBlock, QStringLiteral("padding"), bodyPx).margins;
+    if (!cp.isNull()) { d.spacing.codeBlockPadding = cp; d.spacing.codeBlockBoxThemed = true; }
+    if (const qreal cr = lengthToPx(bestValue(flat, {QStringLiteral("border-radius")}, isCodeBlock), vars, bodyPx); cr > 0.0) {
+      d.spacing.codeBlockBorderRadius = cr;
+      d.spacing.codeBlockBoxThemed = true;
+    }
+  }
   d.spacing.tableMargin = boxToMarginsPx(bestValue(flat, marginProps, [](const SelInfo& s) { return s.tag == QStringLiteral("table"); }), vars, bodyPx);
+  // Phase 4c: CSS `td`/`th` padding + `table` radius. Absent rules leave the
+  // legacy scaled(12/6) cell padding intact.
+  {
+    const auto isCell = [](const SelInfo& s) { return s.tag == QStringLiteral("td") || s.tag == QStringLiteral("th"); };
+    const QMarginsF tp = readBox(flat, vars, isCell, QStringLiteral("padding"), bodyPx).margins;
+    if (!tp.isNull()) { d.spacing.tableCellPadding = tp; d.spacing.tableBoxThemed = true; }
+    if (const qreal tr = lengthToPx(bestValue(flat, {QStringLiteral("border-radius")}, [](const SelInfo& s) { return s.tag == QStringLiteral("table"); }), vars, bodyPx); tr > 0.0) {
+      d.spacing.tableBorderRadius = tr;
+      d.spacing.tableBoxThemed = true;
+    }
+  }
   d.spacing.listMargin = boxToMarginsPx(bestValue(flat, marginProps, [](const SelInfo& s) { return s.tag == QStringLiteral("ul") || s.tag == QStringLiteral("ol"); }), vars, bodyPx);
   d.spacing.listPaddingLeft = lengthToPx(bestValue(flat, {QStringLiteral("padding-left")}, [](const SelInfo& s) { return s.tag == QStringLiteral("ul") || s.tag == QStringLiteral("ol"); }), vars, bodyPx);
   if (d.spacing.listPaddingLeft <= 0.0) {
@@ -1412,6 +1602,26 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
     const QString bl = bestValue(flat, {QStringLiteral("border-left"), QStringLiteral("border-left-color")}, [level](const SelInfo& s) { return isHeading(s, level); });
     d.spacing.headingBorderLeftColor[level - 1] = extractColor(bl, vars);
     d.spacing.headingBorderLeftWidth[level - 1] = borderWidthPx(bl, vars, headingPx);
+    // `width: fit-content`/`max-content`/`min-content` → the heading's own
+    // background/decoration box shrinks to the text (phycat's h2 pill). Auto/%
+    // and pixel widths stay full-width (the legacy behaviour).
+    const QString hw = CssThemeParser::resolveVars(bestValue(flat, {QStringLiteral("width")}, [level](const SelInfo& s) { return isHeading(s, level); }), vars).trimmed().toLower();
+    d.spacing.headingFitContent[level - 1] = isIntrinsicPageWidthKeyword(hw);
+    // Reserve left space for an INLINE ::before marker (h4/h5/h6 disc / h6 dash).
+    // Absolute befores (h3 left bar) sit in the heading's own padding gap, so they
+    // advance the text by 0. SVG befores keep the legacy "painted into the left
+    // margin" behaviour (no advance) to avoid a double shift.
+    const QString hHost = QStringLiteral("h%1").arg(level);
+    for (const PseudoElementRule& r : d.decorations.pseudos) {
+      if (r.host != hHost || r.pseudo != QStringLiteral("before") || r.absolute || !r.svgData.isEmpty()) { continue; }
+      const bool isShape = r.backgroundColor.isValid() || r.borderWidth > 0.0;
+      const bool isText = !r.content.isEmpty();
+      if (!isShape && !isText) { continue; }
+      qreal markerWidth = r.size.width();
+      if (markerWidth <= 0.0 && isText) { markerWidth = headingPx; }  // text glyph ≈ 1em
+      if (markerWidth > 0.0) { d.spacing.headingBeforeAdvance[level - 1] = markerWidth + r.marginRight; }
+      break;
+    }
   }
 
   // Fonts / sizes / line-height. p,li writing font overrides body font for the
@@ -1434,6 +1644,52 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   });
   const qreal lh = parseLineHeightMultiplier(lhRaw, vars, bodyPx);
   if (lh > 0.0) { d.typography.lineHeight = lh; }
+  // Phase 3: letter-spacing (baked into the theme fonts by RenderTheme) and the
+  // `a` text-decoration flag. Body letter-spacing is read from p/#write/body
+  // (inherited); code from inline code / fenced code.
+  const auto docPred = [](const SelInfo& s) { return isParagraphText(s) || isWrite(s) || isHtmlOrBody(s); };
+  const qreal ls = lengthToPx(bestValue(flat, {QStringLiteral("letter-spacing")}, docPred), vars, bodyPx);
+  if (ls > 0.0) { d.typography.letterSpacing = ls; }
+  const qreal cls = lengthToPx(bestValue(flat, {QStringLiteral("letter-spacing")}, [](const SelInfo& s) { return isInlineCode(s) || isCodeBlock(s); }), vars, bodyPx);
+  if (cls > 0.0) { d.typography.codeLetterSpacing = cls; }
+  // Phase 3b: inline-code chip geometry + text colour from `code`.
+  d.typography.inlineCodeTextColor = colorToken(flat, vars, colorProps, isInlineCode);
+  const QMarginsF codePadding = boxToMarginsPx(bestValue(flat, paddingProps, isInlineCode), vars, bodyPx);
+  if (!codePadding.isNull()) {
+    d.typography.inlineCodePaddingH = qMax(codePadding.left(), codePadding.right());
+    d.typography.inlineCodePaddingV = qMax(codePadding.top(), codePadding.bottom());
+  }
+  const qreal codeRadius = lengthToPx(bestValue(flat, {QStringLiteral("border-radius")}, isInlineCode), vars, bodyPx);
+  if (codeRadius > 0.0) { d.typography.inlineCodeBorderRadius = codeRadius; }
+  const qreal codeBorderW = borderWidthPx(bestValue(flat, {QStringLiteral("border"), QStringLiteral("border-width")}, isInlineCode), vars, bodyPx);
+  if (codeBorderW > 0.0) { d.typography.inlineCodeBorderWidth = codeBorderW; }
+  // Phase 3c: HTML <kbd> keycap box from CSS `kbd`. Captured separately from
+  // inline code so a theme can style the keycap distinctly (phycat gives it a
+  // dark raised-key look). Reads are guarded: absent declarations leave the
+  // legacy light/dark keycap heuristic in place.
+  d.typography.kbdTextColor = colorToken(flat, vars, colorProps, isKeyboard);
+  {
+    const QString kbdBg = bestValue(flat, {QStringLiteral("background-color"), QStringLiteral("background")}, isKeyboard);
+    const QColor kc = extractColor(kbdBg, vars);
+    if (kc.isValid()) { d.typography.kbdBackground = kc; }
+  }
+  d.typography.kbdFont = firstFamily(bestValue(flat, familyProps, isKeyboard), vars);
+  {
+    const QMarginsF kp = boxToMarginsPx(bestValue(flat, paddingProps, isKeyboard), vars, bodyPx);
+    if (!kp.isNull()) {
+      d.typography.kbdPaddingH = qMax(kp.left(), kp.right());
+      d.typography.kbdPaddingV = qMax(kp.top(), kp.bottom());
+    }
+  }
+  if (const qreal kr = lengthToPx(bestValue(flat, {QStringLiteral("border-radius")}, isKeyboard), vars, bodyPx); kr > 0.0) { d.typography.kbdBorderRadius = kr; }
+  {
+    const QString kb = bestValue(flat, {QStringLiteral("border"), QStringLiteral("border-color")}, isKeyboard);
+    if (const QColor kc = extractColor(kb, vars); kc.isValid()) { d.typography.kbdBorderColor = kc; }
+    if (const qreal kw = borderWidthPx(kb, vars, bodyPx); kw > 0.0) { d.typography.kbdBorderWidth = kw; }
+  }
+  if (const QColor ksc = extractColor(bestValue(flat, {QStringLiteral("box-shadow")}, isKeyboard), vars); ksc.isValid()) { d.typography.kbdShadowColor = ksc; }
+  const QString tdRaw = CssThemeParser::resolveVars(bestValue(flat, {QStringLiteral("text-decoration")}, isLink), vars).trimmed().toLower();
+  if (!tdRaw.isEmpty()) { d.typography.linkUnderlined = tdRaw.contains(QLatin1String("underline")); }
   for (int level = 1; level <= 6; ++level) {
     const qreal headingPx = headingEmPx(d.typography, level, bodyPx);
     d.typography.headingAlignment[level - 1] = parseTextAlign(bestValue(flat, alignProps, [level](const SelInfo& s) { return isHeading(s, level); }), vars);
@@ -1579,6 +1835,9 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
     }
   } else {
     d.label = titleCaseId(d.id);
+  }
+  if (themeStyleLog().isDebugEnabled()) {
+    qCDebug(themeStyleLog).noquote() << formatThemeDefinitionSummary(d);
   }
   return d;
 }

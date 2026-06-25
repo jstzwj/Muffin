@@ -49,10 +49,32 @@ public:
   qreal pageShadowOffsetY() const;
   QMarginsF blockMargin(BlockType type, int headingLevel = 0) const;
   QMarginsF headingPadding(int level) const;
+  // Phase 4a: CSS `blockquote` box (flow-aware). blockquoteBoxThemed() is the
+  // switch from the legacy accent-bar + 16px indent to the CSS-driven path.
+  bool blockquoteBoxThemed() const;
+  QMarginsF blockquotePadding() const;
+  qreal blockquoteBorderWidth() const;
+  QColor blockquoteBorderColor() const;
+  qreal blockquoteBorderRadius() const;
+  // Phase 4b: CSS `pre`/`.md-fences` box. codePadding() returns the CSS padding
+  // when themed, else the legacy scaled(12/10). codeBlockBorderRadius() is 0
+  // (sharp) when not themed.
+  bool codeBlockBoxThemed() const;
+  qreal codeBlockBorderRadius() const;
+  // Phase 4c: CSS `td`/`th` padding + `table` radius. tableCellPadding() returns
+  // the CSS padding when themed, else legacy scaled(12/6).
+  bool tableBoxThemed() const;
+  qreal tableBorderRadius() const;
   QColor headingBorderBottomColor(int level) const;
   qreal headingBorderBottomWidth(int level) const;
   QColor headingBorderLeftColor(int level) const;
   qreal headingBorderLeftWidth(int level) const;
+  // True when the heading declares `width: fit-content` (or max/min-content) —
+  // its background/decoration box shrinks to the text. Paint-only; level 1..6.
+  bool headingFitContent(int level) const;
+  // Px reserved left of the heading text for an inline `::before` marker
+  // (h4/h5/h6). The block rect stays full width; only the text origin shifts.
+  qreal headingBeforeAdvance(int level) const;
   qreal lineHeightMultiplier(BlockType type, int headingLevel = 0) const;
   Qt::Alignment textAlignment(BlockType type, int headingLevel = 0) const;
 
@@ -66,6 +88,25 @@ public:
   QColor textColor() const;
   QColor mutedTextColor() const;
   QColor linkColor() const;
+  // Phase 3: `a` underline follows CSS `text-decoration` (false for `none`).
+  bool linkUnderlined() const;
+  // Phase 3b: inline-code chip geometry from CSS `code` (zoom-scaled). Paint-only.
+  qreal inlineCodePaddingH() const;
+  qreal inlineCodePaddingV() const;
+  qreal inlineCodeBorderRadius() const;
+  qreal inlineCodeBorderWidth() const;
+  QColor inlineCodeTextColor() const;
+  // Phase 3c: HTML <kbd> keycap box (CSS-driven). Invalid/zero getters signal
+  // the caller to fall back to the legacy light/dark keycap heuristic.
+  QColor kbdBackgroundColor() const;
+  QColor kbdTextColor() const;
+  QString kbdFont() const;
+  qreal kbdPaddingH() const;
+  qreal kbdPaddingV() const;
+  qreal kbdBorderRadius() const;
+  QColor kbdBorderColor() const;
+  qreal kbdBorderWidth() const;
+  QColor kbdShadowColor() const;
   QColor codeBackgroundColor() const;
   // Fenced code-block fill. Distinct from inline code when the theme sets it;
   // otherwise identical to codeBackgroundColor() (preserving legacy behaviour).
@@ -112,6 +153,20 @@ private:
   QString bodyFont_, headingFont_, codeFont_, mathFont_;
   qreal bodySizePt_ = 0.0;
   qreal lineHeight_ = 0.0;
+  qreal letterSpacing_ = 0.0;
+  qreal codeLetterSpacing_ = 0.0;
+  bool linkUnderlined_ = true;
+  qreal inlineCodePaddingH_ = 3.0;
+  qreal inlineCodePaddingV_ = 1.0;
+  qreal inlineCodeBorderRadius_ = 3.0;
+  qreal inlineCodeBorderWidth_ = 1.0;
+  QColor inlineCodeTextColor_;
+  QColor kbdBackground_, kbdTextColor_, kbdBorderColor_, kbdShadowColor_;
+  QString kbdFont_;
+  qreal kbdPaddingH_ = 0.0;
+  qreal kbdPaddingV_ = 0.0;
+  qreal kbdBorderRadius_ = 0.0;
+  qreal kbdBorderWidth_ = 0.0;
   qreal headingSizePt_[6] = {};
   qreal headingLineHeight_[6] = {};
   QColor headingColor_[6];
@@ -146,7 +201,20 @@ private:
   qreal headingBorderBottomWidth_[6] = {};
   QColor headingBorderLeftColor_[6];
   qreal headingBorderLeftWidth_[6] = {};
+  bool headingFitContent_[6] = {};
+  qreal headingBeforeAdvance_[6] = {};
   QMarginsF blockquoteMargin_;
+  QMarginsF blockquotePadding_;
+  qreal blockquoteBorderWidth_ = 0.0;
+  QColor blockquoteBorderColor_;
+  qreal blockquoteBorderRadius_ = 0.0;
+  bool blockquoteBoxThemed_ = false;
+  QMarginsF codeBlockPadding_;
+  qreal codeBlockBorderRadius_ = 0.0;
+  bool codeBlockBoxThemed_ = false;
+  QMarginsF tableCellPadding_;
+  qreal tableBorderRadius_ = 0.0;
+  bool tableBoxThemed_ = false;
   QMarginsF codeBlockMargin_;
   QMarginsF tableMargin_;
   QMarginsF listMargin_;

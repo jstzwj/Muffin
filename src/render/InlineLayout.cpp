@@ -21,6 +21,7 @@ namespace {
 
 constexpr QChar kInlineMathPlaceholder(0x00a0);
 constexpr QChar kImagePlaceholder(0x2009);  // thin space, distinct from math placeholder
+constexpr QChar kLinkBeforePlaceholder(0xe000);  // PUA: flow-reserved slot for a::before icons
 constexpr QChar kTabIndentSourceChar(0x200b);
 constexpr QChar kTabIndentLayoutChar(0x00a0);
 constexpr qreal kMaxImageDisplayHeight = 200.0;
@@ -141,16 +142,35 @@ void InlineLayout::build(
   isMisspelled_ = options.isMisspelled;
   textLayoutCodeBackgroundColor_ = theme.codeBackgroundColor();
   textLayoutCodeBorderColor_ = theme.codeBorderColor();
+  textLayoutCodeTextColor_ = theme.inlineCodeTextColor();
+  darkTheme_ = theme.backgroundColor().lightness() < 128;
+  kbdFill_ = theme.kbdBackgroundColor();
+  kbdText_ = theme.kbdTextColor();
+  kbdFont_ = theme.kbdFont();
+  kbdPadH_ = theme.kbdPaddingH();
+  kbdPadV_ = theme.kbdPaddingV();
+  kbdRadius_ = theme.kbdBorderRadius();
+  kbdBorder_ = theme.kbdBorderColor();
+  kbdBorderWidth_ = theme.kbdBorderWidth();
+  kbdShadow_ = theme.kbdShadowColor();
+  codeBoxPaddingH_ = theme.inlineCodePaddingH();
+  codeBoxPaddingV_ = theme.inlineCodePaddingV();
+  codeBoxRadius_ = theme.inlineCodeBorderRadius();
+  codeBoxBorderWidth_ = theme.inlineCodeBorderWidth();
   // CSS inline decorations: link ::before icon (mask-tinted SVG) + mark gradient.
   linkBeforeIcon_.clear();
   linkBeforeIconTint_ = QColor();
   linkBeforeIconFromMask_ = false;
+  linkBeforeIconSize_ = QSizeF();
+  linkBeforeIconMarginRight_ = 0.0;
   markGradient_ = GradientSpec{};
   for (const PseudoElementRule& r : theme.decorations().pseudos) {
     if (r.host == QStringLiteral("a") && r.pseudo == QStringLiteral("before") && !r.svgData.isEmpty()) {
       linkBeforeIcon_ = r.svgData;
       linkBeforeIconFromMask_ = r.svgFromMask;
       linkBeforeIconTint_ = r.color.isValid() ? r.color : r.backgroundColor;
+      linkBeforeIconSize_ = r.size;
+      linkBeforeIconMarginRight_ = r.marginRight;
     }
   }
   for (const ElementBackground& eb : theme.decorations().backgrounds) {
@@ -164,6 +184,16 @@ void InlineLayout::build(
   buildOffsetMapFromProjection();
   buildMathAtoms(inlines, theme, width);
   buildImageAtoms(inlines, theme, width);
+  // Phase 3c: reserve inline flow for `a::before` icons (must run before the
+  // HTML-span / text-layout passes, which consume the shifted offset maps).
+  {
+    const QFontMetricsF metrics(baseFont);
+    const qreal em = qMax<qreal>(1.0, metrics.height());
+    linkBeforeIconHeight_ = linkBeforeIconSize_.isValid() && linkBeforeIconSize_.height() > 0.0 ? linkBeforeIconSize_.height() : em;
+    const qreal iconW = linkBeforeIconSize_.isValid() && linkBeforeIconSize_.width() > 0.0 ? linkBeforeIconSize_.width() : em;
+    linkBeforeIconAdvance_ = !linkBeforeIcon_.isEmpty() ? (iconW + linkBeforeIconMarginRight_) : 0.0;
+  }
+  buildLinkBeforeAtoms();
   buildHtmlFormatSpans();
   buildTextLayout(theme, width, baseFont);
   // Genuinely empty: no text glyphs and no rendered image. Checking the image
@@ -396,8 +426,14 @@ void InlineLayout::paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) c
   }
 
   painter.save();
-  painter.setPen(QPen(textLayoutCodeBorderColor_, 1.0));
+  painter.setPen(QPen(textLayoutCodeBorderColor_, codeBoxBorderWidth_));
   painter.setBrush(textLayoutCodeBackgroundColor_);
+  // Phase 3b: chip geometry from CSS (defaults reproduce the legacy -3/+6 / r=3
+  // chip). Advance stays = text advance (paint-only), so editing/cursor/hit-test
+  // are unaffected; only the painted box grows with the theme's padding/radius.
+  const qreal padH = codeBoxPaddingH_;
+  const qreal padV = codeBoxPaddingV_;
+  const qreal radius = codeBoxRadius_;
   for (const InlineProjectionSpan& span : projection_.spans()) {
     if (span.type != InlineType::Code || span.kind != InlineSpanKind::Text || span.displayEnd <= span.displayStart) {
       continue;
@@ -422,11 +458,11 @@ void InlineLayout::paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) c
       const qreal x1 = line.cursorToX(rangeStart);
       const qreal x2 = line.cursorToX(rangeEnd);
       const QRectF rect(
-          origin.x() + qMin(x1, x2) - 3.0,
-          origin.y() + line.y() + 1.0,
-          qAbs(x2 - x1) + 6.0,
-          qMax<qreal>(1.0, line.height() - 2.0));
-      painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), 3.0, 3.0);
+          origin.x() + qMin(x1, x2) - padH,
+          origin.y() + line.y() + padV,
+          qAbs(x2 - x1) + padH * 2.0,
+          qMax<qreal>(1.0, line.height() - padV * 2.0));
+      painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), radius, radius);
     }
   }
   painter.restore();
@@ -462,25 +498,28 @@ void InlineLayout::paintTextLayoutInlineDecorations(QPainter& painter, QPointF o
     painter.restore();
   }
 
-  // link ::before icon at the link's leading edge (first occupied line).
+  // link ::before icon, painted over its flow-reserved placeholder (Phase 3c).
+  // The placeholder already participates in QTextLayout advance/wrap, so the icon
+  // sits at a real inline position and the link text follows after the gap — no
+  // more hanging off the left edge of a line-start link.
   if (hasLinkIcon) {
-    for (const InlineProjectionSpan& span : projection_.spans()) {
-      if (!span.link || span.kind != InlineSpanKind::Text || span.displayEnd <= span.displayStart) { continue; }
+    const qreal iconH = linkBeforeIconHeight_;
+    const qreal iconW = linkBeforeIconSize_.isValid() && linkBeforeIconSize_.width() > 0.0
+                            ? linkBeforeIconSize_.width() : iconH;
+    for (const LinkBeforeAtom& atom : linkBeforeAtoms_) {
+      if (atom.displayEnd <= atom.displayStart) { continue; }
       for (int i = 0; i < textLayout_->lineCount(); ++i) {
         const QTextLine line = textLayout_->lineAt(i);
         if (!line.isValid()) { continue; }
         const int lineStart = line.textStart();
         const int lineEnd = lineStart + line.textLength();
-        const DisplayOffsetRange lr = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
-        if (!lr.valid) { continue; }
-        const int rs = qMax(lineStart, static_cast<int>(lr.start));
-        const int re = qMin(lineEnd, static_cast<int>(lr.end));
-        if (rs >= re) { continue; }
-        const qreal x1 = line.cursorToX(rs);
-        const qreal em = line.height();
-        const QRectF target(origin.x() + x1 - em - 2.0, origin.y() + line.y() + (line.height() - em) / 2.0, em, em);
+        if (atom.displayStart < lineStart || atom.displayStart >= lineEnd) { continue; }
+        const qreal x1 = line.cursorToX(static_cast<int>(atom.displayStart));
+        const qreal x2 = line.cursorToX(static_cast<int>(atom.displayEnd));
+        const QRectF target(origin.x() + qMin(x1, x2),
+                            origin.y() + line.y() + (line.height() - iconH) / 2.0, iconW, iconH);
         DecorationPainter::paintIcon(painter, linkBeforeIcon_, target, linkBeforeIconTint_, linkBeforeIconFromMask_);
-        break;  // icon only at the link's first line
+        break;  // one icon per link run, on its first line
       }
     }
   }
@@ -529,6 +568,18 @@ void InlineLayout::paintTextLayoutHtmlKeyboardSpans(QPainter& painter, QPointF o
     return;
   }
 
+  // Phase 3c: prefer the theme's `kbd` CSS; fall back to the legacy light/dark
+  // keycap heuristic when the theme declares no `kbd` rule (built-ins unchanged).
+  const bool themed = kbdFill_.isValid();
+  const QColor fill = themed ? kbdFill_ : (darkTheme_ ? QColor(QStringLiteral("#333333")) : QColor(250, 251, 252));
+  const QColor border = kbdBorder_.isValid() ? kbdBorder_
+      : (darkTheme_ ? QColor(QStringLiteral("#444444")) : QColor(196, 201, 209));
+  const QColor bottom = kbdShadow_.isValid() ? kbdShadow_
+      : (darkTheme_ ? QColor(QStringLiteral("#222222")) : QColor(181, 186, 194));
+  const qreal padH = kbdPadH_ > 0.0 ? kbdPadH_ : (themed ? 4.0 : (darkTheme_ ? 8.0 : 4.0));
+  const qreal radius = kbdRadius_ > 0.0 ? kbdRadius_ : (themed ? 4.0 : (darkTheme_ ? 6.0 : 2.0));
+  const qreal borderWidth = kbdBorderWidth_ > 0.0 ? kbdBorderWidth_ : 1.0;
+
   painter.save();
   painter.setRenderHint(QPainter::Antialiasing, true);
   for (const HtmlFormatSpan& hs : htmlFormatSpans_) {
@@ -552,16 +603,16 @@ void InlineLayout::paintTextLayoutHtmlKeyboardSpans(QPainter& painter, QPointF o
       const qreal x1 = line.cursorToX(rangeStart);
       const qreal x2 = line.cursorToX(rangeEnd);
       const QRectF rect(
-          origin.x() + qMin(x1, x2) - 4.0,
+          origin.x() + qMin(x1, x2) - padH,
           origin.y() + line.y() + 1.0,
-          qAbs(x2 - x1) + 8.0,
+          qAbs(x2 - x1) + padH * 2.0,
           qMax<qreal>(1.0, line.height() - 3.0));
 
-      painter.setPen(QPen(QColor(196, 201, 209), 1.0));
-      painter.setBrush(QColor(250, 251, 252));
-      painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), 2.0, 2.0);
+      painter.setPen(QPen(border, borderWidth));
+      painter.setBrush(fill);
+      painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), radius, radius);
 
-      painter.setPen(QPen(QColor(181, 186, 194), 1.0));
+      painter.setPen(QPen(bottom, darkTheme_ && !themed ? 2.0 : 1.0));
       painter.drawLine(rect.bottomLeft() + QPointF(2.0, -0.5), rect.bottomRight() + QPointF(-2.0, -0.5));
     }
   }
@@ -597,6 +648,114 @@ void InlineLayout::buildOffsetMapFromProjection() {
   for (const InlineProjectionSpan& span : projection_.spans()) {
     offsetMap_.push_back(OffsetMapEntry{span.displayStart, span.displayEnd, span.visibleStart, span.visibleEnd});
     displayOffsetMap_.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, span.displayStart, span.displayEnd});
+  }
+}
+
+void InlineLayout::buildLinkBeforeAtoms() {
+  linkBeforeAtoms_.clear();
+  if (linkBeforeIcon_.isEmpty() || linkBeforeIconAdvance_ <= 0.0) { return; }
+  if (displayText_.isEmpty() || offsetMap_.isEmpty()) { return; }
+
+  // Collect link-run starts in PROJECTION display space: the first content span
+  // of each contiguous link run (markers/hidden/atoms are skipped so the icon
+  // leads the link's first visible character).
+  QVector<qsizetype> projRunStarts;
+  {
+    qsizetype lastLinkEnd = -1;
+    for (const InlineProjectionSpan& span : projection_.spans()) {
+      if (!span.link || span.displayEnd <= span.displayStart) { continue; }
+      if (span.kind == InlineSpanKind::OpenMarker || span.kind == InlineSpanKind::CloseMarker ||
+          span.kind == InlineSpanKind::HiddenSyntax || span.kind == InlineSpanKind::EmptyContentSlot ||
+          span.kind == InlineSpanKind::Atom) {
+        continue;
+      }
+      if (span.displayStart != lastLinkEnd) { projRunStarts.push_back(span.displayStart); }
+      lastLinkEnd = span.displayEnd;
+    }
+  }
+  if (projRunStarts.isEmpty()) { return; }
+
+  // Map each projection run-start to a layout offset in the current (post-atom)
+  // display text. Placeholders insert at span boundaries, which align with
+  // offsetMap_ entry boundaries, so no entry is ever split.
+  QVector<qsizetype> insertAt;
+  insertAt.reserve(projRunStarts.size());
+  for (qsizetype p : projRunStarts) {
+    insertAt.push_back(layoutDisplayOffsetForProjectionOffset(p, InlineProjectionBias::Backward));
+  }
+  std::sort(insertAt.begin(), insertAt.end());
+
+  // Insert the placeholder char (descending so earlier offsets stay valid).
+  QString newText = displayText_;
+  for (auto it = insertAt.rbegin(); it != insertAt.rend(); ++it) {
+    newText.insert(qBound<qsizetype>(0, *it, newText.size()), kLinkBeforePlaceholder);
+  }
+
+  // Rebuild both offset maps in lockstep: emit placeholders (zero-width on the
+  // source/visible side, mapping to the following link entry's start) before the
+  // entry whose displayStart they precede, and shift every subsequent entry.
+  QVector<OffsetMapEntry> newOffset;
+  newOffset.reserve(offsetMap_.size() + static_cast<int>(insertAt.size()));
+  qsizetype shift = 0;
+  size_t nextInsert = 0;
+  for (const OffsetMapEntry& e : offsetMap_) {
+    while (nextInsert < insertAt.size() && insertAt[nextInsert] == e.displayStart) {
+      const qsizetype pos = e.displayStart + shift;
+      newOffset.push_back(OffsetMapEntry{pos, pos + 1, e.visibleStart, e.visibleStart});
+      // The placeholder's caret target is the link run's first visible offset,
+      // which is exactly this following entry's visibleStart.
+      linkBeforeAtoms_.push_back(LinkBeforeAtom{pos, pos + 1, e.visibleStart});
+      shift += 1;
+      ++nextInsert;
+    }
+    newOffset.push_back(OffsetMapEntry{e.displayStart + shift, e.displayEnd + shift, e.visibleStart, e.visibleEnd});
+  }
+  // Rebuild displayOffsetMap_ with the same shift, matching placeholders against
+  // entry layout boundaries (projection↔layout is non-1:1 for atom spans, so it
+  // must be walked on its own layoutStart field, identical to offsetMap_ order).
+  QVector<DisplayOffsetMapEntry> newDisplay;
+  newDisplay.reserve(displayOffsetMap_.size() + static_cast<int>(insertAt.size()));
+  {
+    qsizetype dshift = 0;
+    size_t dnext = 0;
+    for (const DisplayOffsetMapEntry& e : displayOffsetMap_) {
+      while (dnext < insertAt.size() && insertAt[dnext] == e.layoutStart) {
+        const qsizetype pos = e.layoutStart + dshift;
+        newDisplay.push_back(DisplayOffsetMapEntry{e.projectionStart, e.projectionStart, pos, pos + 1});
+        dshift += 1;
+        ++dnext;
+      }
+      newDisplay.push_back(DisplayOffsetMapEntry{e.projectionStart, e.projectionEnd, e.layoutStart + dshift, e.layoutEnd + dshift});
+    }
+  }
+
+  displayText_ = std::move(newText);
+  offsetMap_ = std::move(newOffset);
+  displayOffsetMap_ = std::move(newDisplay);
+
+  // The inserted `a::before` placeholders now live in displayText_, so the
+  // math/image atoms — built earlier with display offsets into the
+  // pre-insertion text — must be shifted by the same accumulated amount the
+  // maps received above. Without this, each preceding link's icon leaves an
+  // atom's displayStart one icon-width too far left, so cursorToX() (paint)
+  // and the force-width format (textLayoutFormats) both resolve at a stale
+  // index: the real placeholder is never widened and the atom paints over the
+  // preceding text (e.g. inline math covering the 'h' of an adjacent word).
+  // Mirrors the offset-map entry shift exactly: an entry at displayStart v is
+  // shifted by the count of insertions at positions <= v.
+  const auto atomShift = [&insertAt](qsizetype start) {
+    return static_cast<qsizetype>(
+        std::count_if(insertAt.begin(), insertAt.end(), [start](qsizetype p) { return p <= start; }));
+  };
+  for (MathAtom& atom : mathAtoms_) {
+    const qsizetype s = atomShift(atom.displayStart);
+    atom.displayStart += s;
+    atom.displayEnd += s;
+  }
+  for (ImageAtom& atom : imageAtoms_) {
+    const qsizetype s = atomShift(atom.displayStart);
+    atom.displayStart += s;
+    atom.displayEnd += s;
   }
 }
 
@@ -909,13 +1068,22 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
       break;
     }
     line.setLineWidth(lineWidth);
-    // Ensure the line is tall enough for any image atoms on this line.
+    // Ensure the line is tall enough for any image / math atoms on this line.
+    // Without this, a tall inline atom (image, or math with a superscript /
+    // fraction) paints baseline-aligned but overflows the un-grown line box,
+    // intruding into the neighbour line (e.g. an inline `$E=mc^2$` covering the
+    // line above after a wrap).
     qreal minLineHeight = line.height();
     const int lineStart = line.textStart();
     const int lineEnd = lineStart + line.textLength();
     for (const ImageAtom& atom : imageAtoms_) {
       if (atom.loaded && atom.displayStart >= lineStart && atom.displayStart <= lineEnd) {
         minLineHeight = qMax(minLineHeight, atom.displaySize.height());
+      }
+    }
+    for (const MathAtom& atom : mathAtoms_) {
+      if (atom.layout && atom.layout->valid() && atom.displayStart >= lineStart && atom.displayStart <= lineEnd) {
+        minLineHeight = qMax(minLineHeight, atom.layout->size.height());
       }
     }
     qreal lineHeight = std::ceil(minLineHeight * 1.16);
@@ -1023,8 +1191,20 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     return formats;
   }
 
+  // QTextCharFormat::setFont does not carry QFont::letterSpacing through to the
+  // shaping engine (the per-range font would otherwise override the layout's
+  // base font and silently drop CSS letter-spacing). Re-apply it on the format
+  // so the theme's letter-spacing survives (Phase 3). No-op at 0 (built-ins).
+  const auto applyLetterSpacing = [](QTextCharFormat& fmt, const QFont& src) {
+    if (src.letterSpacing() != 0.0) {
+      fmt.setFontLetterSpacingType(src.letterSpacingType());
+      fmt.setFontLetterSpacing(src.letterSpacing());
+    }
+  };
+
   QTextCharFormat baseFormat;
   baseFormat.setFont(baseFont);
+  applyLetterSpacing(baseFormat, baseFont);
   baseFormat.setForeground(baseTextColorOverride_.isValid() ? baseTextColorOverride_ : theme.textColor());
   QTextLayout::FormatRange baseRange;
   baseRange.start = 0;
@@ -1064,6 +1244,10 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     switch (span.type) {
       case InlineType::Code:
         format.setFont(theme.codeFont());
+        applyLetterSpacing(format, theme.codeFont());
+        if (theme.inlineCodeTextColor().isValid()) {
+          format.setForeground(theme.inlineCodeTextColor());
+        }
         if (span.kind == InlineSpanKind::Text) {
           format.setBackground(theme.codeBackgroundColor());
         }
@@ -1081,7 +1265,8 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
         span.kind != InlineSpanKind::HiddenSyntax && span.kind != InlineSpanKind::EmptyContentSlot &&
         span.kind != InlineSpanKind::Atom) {
       format.setForeground(theme.linkColor());
-      format.setFontUnderline(true);
+      // Phase 3: link underline follows CSS `text-decoration` (phycat sets none).
+      format.setFontUnderline(theme.linkUnderlined());
     }
     const DisplayOffsetRange layoutRange = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
     if (!layoutRange.valid || layoutRange.end > displayText_.size()) {
@@ -1159,6 +1344,25 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     formats.push_back(range);
   }
 
+  // Phase 3c: `a::before` flow-reserved placeholders. Transparent (the icon is
+  // painted over them) and widened to the icon advance via letter spacing, so
+  // QTextLayout reserves real horizontal flow and wraps accordingly.
+  for (const LinkBeforeAtom& atom : linkBeforeAtoms_) {
+    if (atom.displayEnd <= atom.displayStart) { continue; }
+    QFont placeholderFont = baseFont;
+    const QFontMetricsF placeholderMetrics(placeholderFont);
+    const qreal placeholderAdvance = qMax<qreal>(1.0, placeholderMetrics.horizontalAdvance(kLinkBeforePlaceholder));
+    placeholderFont.setLetterSpacing(QFont::AbsoluteSpacing, linkBeforeIconAdvance_ - placeholderAdvance);
+    QTextCharFormat format = baseFormat;
+    format.setFont(placeholderFont);
+    format.setForeground(QColor(Qt::transparent));
+    QTextLayout::FormatRange range;
+    range.start = static_cast<int>(atom.displayStart);
+    range.length = static_cast<int>(atom.displayEnd - atom.displayStart);
+    range.format = format;
+    formats.push_back(range);
+  }
+
   // Apply HTML inline format spans (from <b>, <i>, <span style="...">, etc.)
   for (const HtmlFormatSpan& hs : htmlFormatSpans_) {
     if (hs.layoutEnd <= hs.layoutStart) {
@@ -1175,7 +1379,11 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
       format.setFontFamily(QStringLiteral("Courier New"));
     }
     if (hs.keyboard) {
-      format.setFontFamily(QStringLiteral("Courier New"));
+      // Phase 3c: prefer the theme's `kbd { font-family }`; keep Courier New as
+      // the legacy default (built-ins + the geometry test's monospace assertion).
+      format.setFontFamily(kbdFont_.isEmpty() ? QStringLiteral("Courier New") : kbdFont_);
+      format.setForeground(kbdText_.isValid() ? kbdText_
+          : (textLayoutCodeTextColor_.isValid() ? textLayoutCodeTextColor_ : theme.textColor()));
     }
     if (hs.color.isValid()) {
       format.setForeground(hs.color);
@@ -1194,7 +1402,10 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     }
     if (!hs.href.isEmpty()) {
       format.setForeground(theme.linkColor());
-      format.setFontUnderline(true);
+      // Phase 3c: HTML <a> follows the same text-decoration rule as Markdown
+      // links (phycat sets `a { text-decoration: none }`). Previously this was
+      // forced on, so HTML links stayed underlined even when the theme opted out.
+      format.setFontUnderline(theme.linkUnderlined());
     }
     QTextLayout::FormatRange range;
     range.start = hs.layoutStart;
@@ -1263,6 +1474,13 @@ qsizetype InlineLayout::visibleOffsetForDisplayOffset(qsizetype displayOffset) c
       return atom.visibleEnd;
     }
   }
+  // Phase 3c: a click inside a flow-reserved link-icon placeholder lands the
+  // caret at the link run's first visible offset.
+  for (const LinkBeforeAtom& atom : linkBeforeAtoms_) {
+    if (displayOffset >= atom.displayStart && displayOffset <= atom.displayEnd) {
+      return atom.visibleStart;
+    }
+  }
   for (const OffsetMapEntry& entry : offsetMap_) {
     if (displayOffset <= entry.displayEnd) {
       if (entry.visibleEnd <= entry.visibleStart || entry.displayEnd <= entry.displayStart) {
@@ -1290,6 +1508,9 @@ qsizetype InlineLayout::displayOffsetForVisibleOffset(qsizetype visibleOffset) c
       return atom.displayEnd;
     }
   }
+  // Phase 3c: link-icon placeholders have no visible extent (they map to the
+  // link run's start), so an interior visible offset has no placeholder display
+  // range to return — fall through to the proportional map below.
   for (const OffsetMapEntry& entry : offsetMap_) {
     if (visibleOffset <= entry.visibleEnd) {
       if (entry.visibleEnd <= entry.visibleStart || entry.displayEnd <= entry.displayStart) {

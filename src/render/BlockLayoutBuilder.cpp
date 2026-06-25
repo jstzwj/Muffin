@@ -367,10 +367,14 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   auto inlineLayout = std::make_unique<InlineLayout>();
   const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
   const QMarginsF headingPadding = node.type() == BlockType::Heading ? theme.headingPadding(node.headingLevel()) : QMarginsF();
-  // Text width accounts for heading padding so content wraps within the padded area.
-  // The rect itself stays at the original x position so hitTest/cursor calculations
-  // remain consistent with the paint offset.
-  const qreal textWidth = qMax<qreal>(1.0, width - headingPadding.left() - headingPadding.right());
+  // A heading with an inline `::before` marker (h4/h5/h6) reserves left space for
+  // it (headingBeforeAdvance); the text wraps within the remaining width. The
+  // block rect stays full width so hit-test/selection geometry is unchanged.
+  const qreal beforeAdvance = node.type() == BlockType::Heading ? theme.headingBeforeAdvance(node.headingLevel()) : 0.0;
+  // Text width accounts for heading padding (+ before-marker advance) so content
+  // wraps within the padded/marked area. The rect itself stays at the original x
+  // position so hitTest/cursor calculations remain consistent with the paint offset.
+  const qreal textWidth = qMax<qreal>(1.0, width - headingPadding.left() - headingPadding.right() - beforeAdvance);
   // A heading projects content-only: its `# ` prefix region [blockStart, contentStart) is never part
   // of the editable projection (it is empty for Setext headings, whose byteStart == contentStart).
   // The level is conveyed by font size and changed via the heading-level commands, so the prefix is
@@ -429,9 +433,15 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(
   layout->setDepth(depth);
   layout->setAlertKind(node.alertKind());
 
-  const qreal childX = node.type() == BlockType::BlockQuote ? x + theme.blockQuoteIndent() : x;
-  const qreal childWidth = node.type() == BlockType::BlockQuote ? width - theme.blockQuoteIndent() : width;
-  qreal cursorY = y;
+  // Phase 4a: a CSS-themed blockquote applies its padding as real container flow
+  // (children inset by left/right, cursor starts after top padding, height grows
+  // by bottom padding). Non-themed quotes keep the legacy fixed left indent.
+  const bool quoteBox = node.type() == BlockType::BlockQuote && theme.blockquoteBoxThemed();
+  const QMarginsF qpad = quoteBox ? theme.blockquotePadding() : QMarginsF();
+  const qreal quoteIndent = (node.type() == BlockType::BlockQuote && !quoteBox) ? theme.blockQuoteIndent() : 0.0;
+  const qreal childX = x + quoteIndent + qpad.left();
+  const qreal childWidth = qMax<qreal>(1.0, width - quoteIndent - qpad.left() - qpad.right());
+  qreal cursorY = y + (quoteBox ? qpad.top() : 0.0);
   std::vector<std::unique_ptr<BlockLayout>> children;
 
   for (const auto& child : node.children()) {
@@ -440,7 +450,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(
     children.push_back(std::move(childLayout));
   }
 
-  const qreal height = children.empty() ? QFontMetricsF(theme.paragraphFont()).height() : qMax<qreal>(0, cursorY - y - theme.blockSpacing());
+  qreal height = children.empty() ? QFontMetricsF(theme.paragraphFont()).height() : qMax<qreal>(0, cursorY - y - theme.blockSpacing());
+  if (quoteBox) {
+    height += qpad.bottom();
+  }
   layout->setRect(QRectF(x, y, width, height));
   layout->setChildren(std::move(children));
   return layout;
@@ -1213,7 +1226,9 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateParagraphLike(con
   const QFont font = isHeading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
   const qreal lineHeight = estimateLineHeight(font);
   const QString text = InlineProjection::plainTextForInlines(node.inlines(), breakOnSingleNewlineEnabled());
-  const qreal charsPerLine = std::max(qreal(1.0), std::floor(std::max<qreal>(1.0, width) / avgCharWidthForText(QStringView(text), font)));
+  // Mirror buildParagraphLike: an inline ::before marker narrows the wrap width.
+  const qreal beforeAdvance = isHeading ? theme.headingBeforeAdvance(node.headingLevel()) : 0.0;
+  const qreal charsPerLine = std::max(qreal(1.0), std::floor(std::max<qreal>(1.0, width - beforeAdvance) / avgCharWidthForText(QStringView(text), font)));
   qreal height = estimateWrappedLines(QStringView(text), charsPerLine) * lineHeight;
   if (isHeading && node.headingLevel() <= 2) {
     height += theme.blockSpacing() * 0.35;
@@ -1229,8 +1244,11 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateContainer(const M
     return {QFontMetricsF(theme.paragraphFont()).height(), false};
   }
   const bool isQuote = node.type() == BlockType::BlockQuote;
-  const qreal childWidth = isQuote ? std::max<qreal>(1.0, width - theme.blockQuoteIndent()) : width;
-  qreal total = 0;
+  const bool quoteBox = isQuote && theme.blockquoteBoxThemed();
+  const QMarginsF qpad = quoteBox ? theme.blockquotePadding() : QMarginsF();
+  const qreal quoteIndent = (isQuote && !quoteBox) ? theme.blockQuoteIndent() : 0.0;
+  const qreal childWidth = std::max<qreal>(1.0, width - quoteIndent - qpad.left() - qpad.right());
+  qreal total = quoteBox ? qpad.top() : 0.0;
   bool mustMeasure = false;
   for (const auto& child : node.children()) {
     const EstimateResult r = estimateHeight(*child, theme, childWidth, depth + 1);
@@ -1238,6 +1256,7 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateContainer(const M
     mustMeasure = mustMeasure || r.mustMeasure;
   }
   total += theme.blockSpacing() * static_cast<qreal>(static_cast<qsizetype>(node.children().size()) - 1);
+  if (quoteBox) { total += qpad.bottom(); }
   return {total, mustMeasure};
 }
 

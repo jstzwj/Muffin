@@ -784,6 +784,10 @@ set(MUFFIN_UI_SOURCES
   src/theme/ThemeManager.h
   src/theme/ChromeStyleSheet.cpp
   src/theme/ChromeStyleSheet.h
+  src/theme/CssComputedStyleEngine.cpp
+  src/theme/CssComputedStyleEngine.h
+  src/theme/CssStyleDebug.cpp
+  src/theme/CssStyleDebug.h
   src/theme/CssThemeParser.cpp
   src/theme/CssThemeParser.h
   src/theme/CssThemeMapper.cpp

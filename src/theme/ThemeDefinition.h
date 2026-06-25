@@ -98,6 +98,33 @@ struct ThemeTypography {
   bool headingFontWeightSet[6] = {};
   bool headingItalic[6] = {};
   bool headingItalicSet[6] = {};
+
+  // Phase 3 inline CSS. letter-spacing is baked into the theme fonts (Qt supports
+  // it natively), so layout/estimate/paint/hit-test stay consistent for free;
+  // 0 = unchanged. linkUnderlined drives `a` underline from CSS `text-decoration`
+  // (phycat sets `text-decoration:none`); default true preserves built-ins.
+  qreal letterSpacing = 0.0;        // body + heading (inherited from #write/body)
+  qreal codeLetterSpacing = 0.0;    // inline + fenced code
+  QColor inlineCodeTextColor;       // `code { color }`; invalid → inherit prose text
+  bool linkUnderlined = true;       // `a { text-decoration }` — false when `none`
+  // Phase 3b: inline-code chip geometry from CSS `code` (paint-only box; advance
+  // stays = text advance so editing/cursor/hit-test are unaffected). Defaults
+  // reproduce the legacy hardcoded chip (-3/+6 padding, radius 3, 1px border).
+  qreal inlineCodePaddingH = 3.0;
+  qreal inlineCodePaddingV = 1.0;
+  qreal inlineCodeBorderRadius = 3.0;
+  qreal inlineCodeBorderWidth = 1.0;
+  // Phase 3c: HTML <kbd> keycap box driven by CSS `kbd`. Invalid/zero → fall
+  // back to the legacy light/dark keycap heuristic so built-ins are unchanged.
+  QColor kbdBackground;           // `kbd { background-color }`
+  QColor kbdTextColor;            // `kbd { color }`
+  QString kbdFont;                // `kbd { font-family }`
+  qreal kbdPaddingH = 0.0;
+  qreal kbdPaddingV = 0.0;
+  qreal kbdBorderRadius = 0.0;
+  QColor kbdBorderColor;
+  qreal kbdBorderWidth = 0.0;
+  QColor kbdShadowColor;          // bottom-edge "raised key" line colour
 };
 
 // The CSS-theme page model: body/html paint the viewport, while #write is a centered
@@ -131,11 +158,38 @@ struct ThemeBlockSpacing {
   qreal headingBorderBottomWidth[6] = {};
   QColor headingBorderLeftColor[6];
   qreal headingBorderLeftWidth[6] = {};
+  // CSS `width: fit-content` (or max-content/min-content) on a heading: the
+  // heading's own background/decoration box shrinks to the text width instead of
+  // spanning the full block (e.g. phycat's h2 "fusion glass" pill). Paint-only —
+  // the block rect stays full width so layout/hit-test/selection are unaffected.
+  bool headingFitContent[6] = {};
+  // Px the heading text is inset from its left padding edge to reserve room for
+  // an inline `::before` marker (phycat h4/h5/h6). 0 for absolute befores (h3,
+  // which sits in the heading's own padding gap) and headings with no before.
+  qreal headingBeforeAdvance[6] = {};
   QMarginsF blockquoteMargin;
   QMarginsF codeBlockMargin;
   QMarginsF tableMargin;
   QMarginsF listMargin;
   qreal listPaddingLeft = 0.0;
+  // Phase 4a: CSS `blockquote` box. `blockquoteBoxThemed` flips the whole quote
+  // to the CSS-driven path (padding as real container flow, full border, radius);
+  // false → legacy accent-bar + 16px indent (built-ins byte-identical).
+  QMarginsF blockquotePadding;
+  qreal blockquoteBorderWidth = 0.0;
+  QColor blockquoteBorderColor;
+  qreal blockquoteBorderRadius = 0.0;
+  bool blockquoteBoxThemed = false;
+  // Phase 4b: CSS `pre`/`.md-fences` box. codeBlockBoxThemed flips codePadding()
+  // to the CSS value (legacy scaled(12/10) otherwise) and rounds the fence box.
+  QMarginsF codeBlockPadding;
+  qreal codeBlockBorderRadius = 0.0;
+  bool codeBlockBoxThemed = false;
+  // Phase 4c: CSS `td`/`th` padding + `table` radius. tableBoxThemed flips
+  // tableCellPadding() to the CSS value (legacy scaled(12/6) otherwise).
+  QMarginsF tableCellPadding;
+  qreal tableBorderRadius = 0.0;
+  bool tableBoxThemed = false;
 };
 
 // A CSS linear/radial gradient parsed at theme-map time. Carried as data (not a
@@ -173,9 +227,20 @@ struct PseudoElementRule {
   GradientSpec maskPattern;          // mask-image (radial-gradient dots, …)
   QSizeF maskTile = QSizeF(20, 20);  // mask-size
   QSizeF size;            // width/height (invalid/0 ⇒ content/auto)
-  QMarginsF insets;       // top/left/bottom/right offsets
+  QMarginsF insets;       // top/left/bottom/right offsets (absolute pseudo left/top)
   QColor borderBottomColor;
   qreal borderBottomWidth = 0.0;
+  // Phase 2b: heading pseudo geometry. `absolute` (position:absolute) anchors the
+  // box to the host padding box (e.g. phycat's h3 left bar); otherwise the pseudo
+  // is inline and the host text is inset by `advance` to make room (h4/h5/h6
+  // circles / h6 dash). borderRadius/borderColor/borderWidth paint a filled
+  // rounded box and/or an outline (h4 filled disc vs h5 hollow ring).
+  bool absolute = false;
+  qreal borderRadius = 0.0;
+  QColor borderColor;
+  qreal borderWidth = 0.0;
+  qreal marginLeft = 0.0;
+  qreal marginRight = 0.0;
   qreal opacity = 1.0;
   bool present = false;
 };
@@ -188,6 +253,11 @@ struct ElementBackground {
   GradientSpec gradient;
   QColor color;       // solid background-color (paint under the gradient)
   qreal opacity = 1.0;
+  // Phase 2c: a fit-content heading pill (phycat h2) rounds its corners and may
+  // carry a top hairline. Both paint on the same box as the gradient fill.
+  qreal borderRadius = 0.0;
+  QColor borderTopColor;
+  qreal borderTopWidth = 0.0;
   bool present = false;
 };
 

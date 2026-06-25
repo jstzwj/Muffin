@@ -25,6 +25,7 @@ struct PaintContext {
   QPointF textEnd = QPointF(-1.0, -1.0);   // where heading text ends (for an ::after icon)
   QPointF textStart = QPointF(-1.0, -1.0);  // where heading text starts (for a ::before icon)
   QRectF textBounds;                         // visual text bounds after QTextLayout alignment
+  qreal contentLeftX = -1.0;       // heading content-box left (inline ::before marker zone start)
 };
 
 // Fill the host element's own background gradient (e.g. h2 radial glow) into

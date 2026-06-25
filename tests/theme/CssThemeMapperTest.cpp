@@ -824,10 +824,11 @@ void testWriteBeforeTextureCapture() {
 // background-image gradient.
 void testLinkBeforeMaskIconAndMarkGradient() {
   const QString css = QStringLiteral(
+      ":root { --link-icon: url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><path d='M0 0L10 10'/></svg>\"); }"
       "body { background:#0f111a; color:#d6deeb; }"
       "#write { max-width:950px; padding:15px; margin:0 auto; }"
       "#write a::before { content:''; background-color:#00f3ff;"
-      "  -webkit-mask:url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><path d='M0 0L10 10'/></svg>\") center/contain; }"
+      "  -webkit-mask:var(--link-icon) center/contain; }"
       "#write mark { background-image:linear-gradient(to top, rgba(0,243,255,0.5), transparent); }");
   const ThemeDefinition d = CssThemeMapper::fromCss(css, QStringLiteral("t"), QString());
   const PseudoElementRule* link = nullptr;
@@ -909,6 +910,202 @@ void testKeyframeSampling() {
   require(atQ.hasOpacity && qAbs(atQ.opacity - 0.65) < 0.01, QStringLiteral("phase 0.25 → opacity ~0.65 (lerp)"));
 }
 
+// Phase 2: `width: fit-content` on a heading flips headingFitContent so the
+// paint path renders the heading's own background as a shrink-to-text pill
+// (phycat's h2 "fusion glass") instead of a full-width bar. Auto/%/px widths
+// and absent width stay full-width (the legacy behaviour for every built-in).
+void testHeadingFitContentDetection() {
+  const char* css = R"(
+#write { color:#d6deeb; }
+#write h1 { text-align:center; width:fit-content; margin:15px auto; }
+#write h2 { width:fit-content; margin:1rem 0; padding:0 10px; }
+#write h3 { width:max-content; }
+#write h4 { width:90%; }
+#write h5 { width:300px; }
+)";
+  const ThemeDefinition d = CssThemeMapper::fromCss(QString::fromUtf8(css), QStringLiteral("t"), QString());
+  require(d.spacing.headingFitContent[0], QStringLiteral("h1 width:fit-content should set the flag"));
+  require(d.spacing.headingFitContent[1], QStringLiteral("h2 width:fit-content should set the flag"));
+  require(d.spacing.headingFitContent[2], QStringLiteral("h3 width:max-content should set the flag"));
+  require(!d.spacing.headingFitContent[3], QStringLiteral("h4 width:90% must stay full-width"));
+  require(!d.spacing.headingFitContent[4], QStringLiteral("h5 width:300px must stay full-width"));
+  require(!d.spacing.headingFitContent[5], QStringLiteral("h6 with no width must stay full-width"));
+}
+
+// Phase 2c latent fix: a host that carries a border-radius and/or border-top but
+// NO gradient must still produce an ElementBackground entry, so the rounded pill
+// / top hairline paint. Previously extractElementBackgrounds `continue`d on
+// gradient==None and dropped these decorations entirely. A plain background-colour
+// host (no gradient/border) still produces NO entry, preserving the built-in
+// contract (built-ins use border-bottom on headings, not border-top/radius).
+void testBorderOnlyHostProducesElementBackground() {
+  const char* css = R"(
+#write { color:#d6deeb; }
+#write h2 { border-top:2px solid #00f3ff; border-radius:6px; }
+#write h3 { border-radius:10px; background-color:#112233; }
+#write h4 { background-color:#445566; }
+)";
+  const ThemeDefinition d = CssThemeMapper::fromCss(QString::fromUtf8(css), QStringLiteral("borderbox"), QString());
+  const ElementBackground* h2 = nullptr;
+  const ElementBackground* h3 = nullptr;
+  const ElementBackground* h4 = nullptr;
+  for (const ElementBackground& eb : d.decorations.backgrounds) {
+    if (eb.host == QStringLiteral("h2")) { h2 = &eb; }
+    else if (eb.host == QStringLiteral("h3")) { h3 = &eb; }
+    else if (eb.host == QStringLiteral("h4")) { h4 = &eb; }
+  }
+  require(h2 != nullptr, QStringLiteral("h2 with border-top/border-radius but no gradient should produce an element background"));
+  require(h2->borderTopColor == QColor(QStringLiteral("#00f3ff")), QStringLiteral("h2 border-top colour captured"));
+  require(qAbs(h2->borderTopWidth - 2.0) < 0.01, QStringLiteral("h2 border-top width captured"));
+  require(qAbs(h2->borderRadius - 6.0) < 0.01, QStringLiteral("h2 border-radius captured"));
+  require(h3 != nullptr, QStringLiteral("h3 with border-radius should produce an element background"));
+  require(qAbs(h3->borderRadius - 10.0) < 0.01, QStringLiteral("h3 border-radius captured"));
+  require(h4 == nullptr, QStringLiteral("h4 with only background-colour must not produce an element background (built-in contract)"));
+}
+
+void testUnsupportedStructuralPseudosDoNotLeak() {
+  const char* css = R"(
+#write { color:#d6deeb; text-align:left; }
+#write p { color:#7e8c9f; }
+#write p:has(img) { text-align:center; }
+#write h1 { text-align:center; }
+#write h3>span:first-of-type::before { color:#00f3ff; content:"ignored"; }
+#write h4::before { content:""; width:8px; height:8px; margin-right:10px; background-color:#00f3ff; }
+a:not(.md-toc-inner) { text-decoration:none; }
+)";
+  const ThemeDefinition d = CssThemeMapper::fromCss(QString::fromUtf8(css), QStringLiteral("structural"), QString());
+  require(d.typography.bodyAlignment == Qt::AlignLeft,
+          QStringLiteral("unsupported p:has(img) selector must not center every paragraph"));
+  require(d.typography.headingAlignment[0] == Qt::AlignHCenter,
+          QStringLiteral("supported h1 text-align should still be captured"));
+  require(d.colors.text.name(QColor::HexRgb) == QStringLiteral("#7e8c9f"),
+          QStringLiteral("paragraph colour should become prose text colour"));
+  require(d.typography.headingColor[2].name(QColor::HexRgb) == QStringLiteral("#d6deeb"),
+          QStringLiteral("heading should inherit #write colour, not paragraph muted colour or unsupported child pseudo colour"));
+  require(qAbs(d.spacing.headingBeforeAdvance[3] - 18.0) < 0.01,
+          QStringLiteral("supported h4::before marker should still reserve space"));
+  require(!d.typography.linkUnderlined,
+          QStringLiteral("supported :not(.class) selector should still feed normal link styles"));
+}
+
+// Phase 3: link `text-decoration` drives linkUnderlined; letter-spacing is
+// captured for body+heading and code (baked into the theme fonts by RenderTheme).
+void testLinkDecorationAndLetterSpacing() {
+  const char* css = R"(
+#write { color:#000000; letter-spacing:1.5px; }
+code { letter-spacing:.5px; }
+a { text-decoration:none; }
+)";
+  const ThemeDefinition d = CssThemeMapper::fromCss(QString::fromUtf8(css), QStringLiteral("p3"), QString());
+  require(qAbs(d.typography.letterSpacing - 1.5) < 0.01, QStringLiteral("body letter-spacing should map to 1.5px"));
+  require(qAbs(d.typography.codeLetterSpacing - 0.5) < 0.01, QStringLiteral("code letter-spacing should map to 0.5px"));
+  require(!d.typography.linkUnderlined, QStringLiteral("a { text-decoration:none } → links not underlined"));
+
+  const ThemeDefinition underlined = CssThemeMapper::fromCss(
+      QStringLiteral("a { color:#0000ff; text-decoration:underline; }"), QStringLiteral("u"), QString());
+  require(underlined.typography.linkUnderlined, QStringLiteral("a { text-decoration:underline } → links underlined"));
+
+  const ThemeDefinition omitted = CssThemeMapper::fromCss(QStringLiteral("#write { color:#000000; }"),
+                                                          QStringLiteral("o"), QString());
+  require(omitted.typography.linkUnderlined, QStringLiteral("no text-decoration → default underlined (built-in parity)"));
+}
+
+// Phase 3b: inline-code chip geometry (padding/radius/border-width) from CSS
+// `code`. Defaults reproduce the legacy hardcoded chip so built-ins are unchanged.
+void testInlineCodeBoxGeometry() {
+  const char* css = R"(
+#write { color:#000000; }
+code { color:#00f3ff; padding:2px 6px; border-radius:6px; border:1px solid #888888; }
+)";
+  const ThemeDefinition d = CssThemeMapper::fromCss(QString::fromUtf8(css), QStringLiteral("b"), QString());
+  require(d.typography.inlineCodeTextColor.name(QColor::HexRgb) == QStringLiteral("#00f3ff"), QStringLiteral("code color should map to inline code text colour"));
+  require(qAbs(d.typography.inlineCodePaddingH - 6.0) < 0.01, QStringLiteral("code padding horizontal → 6px"));
+  require(qAbs(d.typography.inlineCodePaddingV - 2.0) < 0.01, QStringLiteral("code padding vertical → 2px"));
+  require(qAbs(d.typography.inlineCodeBorderRadius - 6.0) < 0.01, QStringLiteral("code border-radius → 6"));
+  require(qAbs(d.typography.inlineCodeBorderWidth - 1.0) < 0.01, QStringLiteral("code border-width → 1"));
+
+  const ThemeDefinition e = CssThemeMapper::fromCss(QStringLiteral("#write { color:#000000; }"),
+                                                    QStringLiteral("e"), QString());
+  require(qAbs(e.typography.inlineCodePaddingH - 3.0) < 0.01, QStringLiteral("default code paddingH → 3 (legacy)"));
+  require(qAbs(e.typography.inlineCodePaddingV - 1.0) < 0.01, QStringLiteral("default code paddingV → 1 (legacy)"));
+  require(qAbs(e.typography.inlineCodeBorderRadius - 3.0) < 0.01, QStringLiteral("default code radius → 3 (legacy)"));
+}
+
+// Phase 3c: HTML <kbd> keycap box driven by CSS `kbd`, distinct from inline code.
+void testKeyboardBoxCapture() {
+  const char* css = R"(
+#write { color:#d6deeb; }
+code { background-color:#112233; }
+kbd { background-color:#333333; color:#d6deeb; font-family:CascadiaCode, Consolas, monospace;
+      padding:4px 8px; border-radius:6px; border:1px solid #444444; box-shadow:0 4px 0 #222222; }
+)";
+  const ThemeDefinition d = CssThemeMapper::fromCss(QString::fromUtf8(css), QStringLiteral("kb"), QString());
+  require(d.typography.kbdBackground.name(QColor::HexRgb) == QStringLiteral("#333333"), QStringLiteral("kbd background from CSS"));
+  require(d.typography.kbdTextColor.name(QColor::HexRgb) == QStringLiteral("#d6deeb"), QStringLiteral("kbd text colour from CSS"));
+  require(d.typography.kbdFont.startsWith(QStringLiteral("CascadiaCode")), QStringLiteral("kbd font-family first family"));
+  require(qAbs(d.typography.kbdPaddingH - 8.0) < 0.01, QStringLiteral("kbd horizontal padding → 8"));
+  require(qAbs(d.typography.kbdPaddingV - 4.0) < 0.01, QStringLiteral("kbd vertical padding → 4"));
+  require(qAbs(d.typography.kbdBorderRadius - 6.0) < 0.01, QStringLiteral("kbd border-radius → 6"));
+  require(d.typography.kbdBorderColor.name(QColor::HexRgb) == QStringLiteral("#444444"), QStringLiteral("kbd border colour"));
+  require(qAbs(d.typography.kbdBorderWidth - 1.0) < 0.01, QStringLiteral("kbd border-width → 1"));
+  require(d.typography.kbdShadowColor.name(QColor::HexRgb) == QStringLiteral("#222222"), QStringLiteral("kbd box-shadow colour"));
+
+  // A theme with no `kbd` rule leaves every kbd token invalid → legacy heuristic.
+  const ThemeDefinition none = CssThemeMapper::fromCss(QStringLiteral("#write { color:#000000; }"),
+                                                       QStringLiteral("n"), QString());
+  require(!none.typography.kbdBackground.isValid() && !none.typography.kbdTextColor.isValid(),
+          QStringLiteral("no kbd rule → all kbd tokens invalid (legacy fallback)"));
+}
+
+// Phase 4a: CSS `blockquote` box (padding/border/radius) is captured and flips
+// the quote onto the themed path. A theme with no `blockquote` rule stays on the
+// legacy accent-bar path (blockquoteBoxThemed == false → built-ins unchanged).
+void testBlockquoteBoxCapture() {
+  const char* css = R"(
+#write { color:#000000; }
+blockquote { padding:18px 20px 18px 48px; border:1px solid #aabbcc; border-radius:16px; }
+)";
+  const ThemeDefinition d = CssThemeMapper::fromCss(QString::fromUtf8(css), QStringLiteral("bq"), QString());
+  require(d.spacing.blockquoteBoxThemed, QStringLiteral("blockquote padding/border/radius should flip the themed flag"));
+  require(qAbs(d.spacing.blockquotePadding.top() - 18.0) < 0.01, QStringLiteral("blockquote padding-top → 18"));
+  require(qAbs(d.spacing.blockquotePadding.left() - 48.0) < 0.01, QStringLiteral("blockquote padding-left → 48"));
+  require(qAbs(d.spacing.blockquotePadding.right() - 20.0) < 0.01, QStringLiteral("blockquote padding-right → 20"));
+  require(qAbs(d.spacing.blockquotePadding.bottom() - 18.0) < 0.01, QStringLiteral("blockquote padding-bottom → 18"));
+  require(qAbs(d.spacing.blockquoteBorderWidth - 1.0) < 0.01, QStringLiteral("blockquote border-width → 1"));
+  require(d.spacing.blockquoteBorderColor.name(QColor::HexRgb) == QStringLiteral("#aabbcc"), QStringLiteral("blockquote border colour"));
+  require(qAbs(d.spacing.blockquoteBorderRadius - 16.0) < 0.01, QStringLiteral("blockquote border-radius → 16"));
+
+  const ThemeDefinition plain = CssThemeMapper::fromCss(QStringLiteral("#write { color:#000000; }"),
+                                                        QStringLiteral("p"), QString());
+  require(!plain.spacing.blockquoteBoxThemed,
+          QStringLiteral("no blockquote rule → legacy accent-bar path (built-in parity)"));
+}
+
+// Phase 4b/4c: CSS code-fence + table box tokens flip the themed flags. Absent
+// rules leave the legacy hardcoded padding path (built-ins unchanged).
+void testCodeAndTableBoxCapture() {
+  const char* css = R"(
+#write { color:#000000; }
+pre, .md-fences { padding:14px 16px; border-radius:8px; }
+td, th { padding:6px 10px; }
+table { border-radius:6px; }
+)";
+  const ThemeDefinition d = CssThemeMapper::fromCss(QString::fromUtf8(css), QStringLiteral("box"), QString());
+  require(d.spacing.codeBlockBoxThemed, QStringLiteral("pre/.md-fences padding+radius should flip code themed flag"));
+  require(qAbs(d.spacing.codeBlockPadding.top() - 14.0) < 0.01, QStringLiteral("code padding-top → 14"));
+  require(qAbs(d.spacing.codeBlockPadding.left() - 16.0) < 0.01, QStringLiteral("code padding-left → 16"));
+  require(qAbs(d.spacing.codeBlockBorderRadius - 8.0) < 0.01, QStringLiteral("code border-radius → 8"));
+  require(d.spacing.tableBoxThemed, QStringLiteral("td/th padding + table radius should flip table themed flag"));
+  require(qAbs(d.spacing.tableCellPadding.top() - 6.0) < 0.01, QStringLiteral("table cell padding-top → 6"));
+  require(qAbs(d.spacing.tableCellPadding.left() - 10.0) < 0.01, QStringLiteral("table cell padding-left → 10"));
+  require(qAbs(d.spacing.tableBorderRadius - 6.0) < 0.01, QStringLiteral("table border-radius → 6"));
+
+  const ThemeDefinition none = CssThemeMapper::fromCss(QStringLiteral("#write { color:#000000; }"),
+                                                       QStringLiteral("n"), QString());
+  require(!none.spacing.codeBlockBoxThemed && !none.spacing.tableBoxThemed,
+          QStringLiteral("no pre/td rules → legacy hardcoded padding (built-in parity)"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -946,6 +1143,14 @@ int main(int argc, char** argv) {
   RUN_TEST(testHoverEffectAndTransitionCapture);
   RUN_TEST(testKeyframesAndAnimationParse);
   RUN_TEST(testKeyframeSampling);
+  RUN_TEST(testHeadingFitContentDetection);
+  RUN_TEST(testBorderOnlyHostProducesElementBackground);
+  RUN_TEST(testUnsupportedStructuralPseudosDoNotLeak);
+  RUN_TEST(testLinkDecorationAndLetterSpacing);
+  RUN_TEST(testInlineCodeBoxGeometry);
+  RUN_TEST(testKeyboardBoxCapture);
+  RUN_TEST(testBlockquoteBoxCapture);
+  RUN_TEST(testCodeAndTableBoxCapture);
 #undef RUN_TEST
   runTest("testMistBlueFixture", [&] { testMistBlueFixture(fixture); });
   return 0;

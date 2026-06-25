@@ -37,12 +37,21 @@ muffin_add_test(NAME MuffinRenderMathFunctions2Test   SOURCE tests/render/Render
 muffin_add_test(NAME MuffinRenderHtmlLayoutTest       SOURCE tests/render/RenderHtmlLayoutTest.cpp       LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderHtmlPaintTest        SOURCE tests/render/RenderHtmlPaintTest.cpp        LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderTreeSitterTest       SOURCE tests/render/RenderTreeSitterTest.cpp       LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
+muffin_add_test(NAME MuffinRenderHeadingFitContentTest SOURCE tests/render/RenderHeadingFitContentTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinRenderHeadingPseudoTest SOURCE tests/render/RenderHeadingPseudoTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinRenderHeadingPillTest SOURCE tests/render/RenderHeadingPillTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinRenderLetterSpacingTest SOURCE tests/render/RenderLetterSpacingTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinRenderInlineCodeBoxTest SOURCE tests/render/RenderInlineCodeBoxTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinRenderLinkBeforeFlowTest SOURCE tests/render/RenderLinkBeforeFlowTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinRenderMathLineHeightTest SOURCE tests/render/RenderMathLineHeightTest.cpp LINK MuffinUi RESOURCE_LOCK DISABLED_ON APPLE)
+muffin_add_test(NAME MuffinRenderMathLinkBeforeOffsetTest SOURCE tests/render/RenderMathLinkBeforeOffsetTest.cpp LINK MuffinUi RESOURCE_LOCK DISABLED_ON APPLE)
 
 # --- export (link MuffinUi; pure logic under QCoreApplication, no GUI lock) ---
 muffin_add_test(NAME MuffinHtmlExporterTest   SOURCE tests/export/HtmlExporterTest.cpp   LINK MuffinUi)
 muffin_add_test(NAME MuffinPandocRunnerTest   SOURCE tests/export/PandocRunnerTest.cpp   LINK MuffinUi)
 
 # --- theme CSS mapper (link MuffinUi; pure logic under QCoreApplication, no GUI lock) ---
+muffin_add_test(NAME MuffinCssComputedStyleEngineTest SOURCE tests/theme/CssComputedStyleEngineTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinCssThemeMapperTest SOURCE tests/theme/CssThemeMapperTest.cpp LINK MuffinUi EXTRA_SOURCES src/themes.qrc FIXTURE tests/fixtures/theme/mist-blue.css)
 
 # --- image subsystem (link MuffinUi; pure logic under QCoreApplication, no GUI lock) ---

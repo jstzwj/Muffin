@@ -162,6 +162,23 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   t.mathFont_ = ty.mathFont;
   t.bodySizePt_ = ty.bodySizePt;
   t.lineHeight_ = ty.lineHeight;
+  t.letterSpacing_ = ty.letterSpacing;
+  t.codeLetterSpacing_ = ty.codeLetterSpacing;
+  t.linkUnderlined_ = ty.linkUnderlined;
+  t.inlineCodePaddingH_ = ty.inlineCodePaddingH;
+  t.inlineCodePaddingV_ = ty.inlineCodePaddingV;
+  t.inlineCodeBorderRadius_ = ty.inlineCodeBorderRadius;
+  t.inlineCodeBorderWidth_ = ty.inlineCodeBorderWidth;
+  t.inlineCodeTextColor_ = ty.inlineCodeTextColor;
+  t.kbdBackground_ = ty.kbdBackground;
+  t.kbdTextColor_ = ty.kbdTextColor;
+  t.kbdFont_ = ty.kbdFont;
+  t.kbdPaddingH_ = ty.kbdPaddingH;
+  t.kbdPaddingV_ = ty.kbdPaddingV;
+  t.kbdBorderRadius_ = ty.kbdBorderRadius;
+  t.kbdBorderColor_ = ty.kbdBorderColor;
+  t.kbdBorderWidth_ = ty.kbdBorderWidth;
+  t.kbdShadowColor_ = ty.kbdShadowColor;
   t.bodyAlignment_ = ty.bodyAlignment;
   for (int i = 0; i < 6; ++i) {
     t.headingSizePt_[i] = ty.headingSizePt[i];
@@ -188,6 +205,17 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   t.decorations_ = definition.decorations;
   t.paragraphMargin_ = definition.spacing.paragraphMargin;
   t.blockquoteMargin_ = definition.spacing.blockquoteMargin;
+  t.blockquotePadding_ = definition.spacing.blockquotePadding;
+  t.blockquoteBorderWidth_ = definition.spacing.blockquoteBorderWidth;
+  t.blockquoteBorderColor_ = definition.spacing.blockquoteBorderColor;
+  t.blockquoteBorderRadius_ = definition.spacing.blockquoteBorderRadius;
+  t.blockquoteBoxThemed_ = definition.spacing.blockquoteBoxThemed;
+  t.codeBlockPadding_ = definition.spacing.codeBlockPadding;
+  t.codeBlockBorderRadius_ = definition.spacing.codeBlockBorderRadius;
+  t.codeBlockBoxThemed_ = definition.spacing.codeBlockBoxThemed;
+  t.tableCellPadding_ = definition.spacing.tableCellPadding;
+  t.tableBorderRadius_ = definition.spacing.tableBorderRadius;
+  t.tableBoxThemed_ = definition.spacing.tableBoxThemed;
   t.codeBlockMargin_ = definition.spacing.codeBlockMargin;
   t.tableMargin_ = definition.spacing.tableMargin;
   t.listMargin_ = definition.spacing.listMargin;
@@ -199,6 +227,8 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
     t.headingBorderBottomWidth_[i] = definition.spacing.headingBorderBottomWidth[i];
     t.headingBorderLeftColor_[i] = definition.spacing.headingBorderLeftColor[i];
     t.headingBorderLeftWidth_[i] = definition.spacing.headingBorderLeftWidth[i];
+    t.headingFitContent_[i] = definition.spacing.headingFitContent[i];
+    t.headingBeforeAdvance_[i] = definition.spacing.headingBeforeAdvance[i];
   }
   t.codeBlockBackground_ = c.codeBlockBackground;
   t.headingAccentColor_ = c.headingAccentColor;
@@ -342,6 +372,21 @@ QMarginsF RenderTheme::headingPadding(int level) const {
   return QMarginsF(scaled(p.left()), scaled(p.top()), scaled(p.right()), scaled(p.bottom()));
 }
 
+bool RenderTheme::blockquoteBoxThemed() const { return blockquoteBoxThemed_; }
+QMarginsF RenderTheme::blockquotePadding() const {
+  return QMarginsF(scaled(blockquotePadding_.left()), scaled(blockquotePadding_.top()),
+                   scaled(blockquotePadding_.right()), scaled(blockquotePadding_.bottom()));
+}
+qreal RenderTheme::blockquoteBorderWidth() const { return scaled(blockquoteBorderWidth_); }
+QColor RenderTheme::blockquoteBorderColor() const { return blockquoteBorderColor_; }
+qreal RenderTheme::blockquoteBorderRadius() const { return scaled(blockquoteBorderRadius_); }
+
+bool RenderTheme::codeBlockBoxThemed() const { return codeBlockBoxThemed_; }
+qreal RenderTheme::codeBlockBorderRadius() const { return scaled(codeBlockBorderRadius_); }
+
+bool RenderTheme::tableBoxThemed() const { return tableBoxThemed_; }
+qreal RenderTheme::tableBorderRadius() const { return scaled(tableBorderRadius_); }
+
 QColor RenderTheme::headingBorderBottomColor(int level) const {
   return headingBorderBottomColor_[qBound(0, level - 1, 5)];
 }
@@ -353,6 +398,14 @@ QColor RenderTheme::headingBorderLeftColor(int level) const {
 }
 qreal RenderTheme::headingBorderLeftWidth(int level) const {
   return scaled(headingBorderLeftWidth_[qBound(0, level - 1, 5)]);
+}
+
+bool RenderTheme::headingFitContent(int level) const {
+  return headingFitContent_[qBound(0, level - 1, 5)];
+}
+
+qreal RenderTheme::headingBeforeAdvance(int level) const {
+  return scaled(headingBeforeAdvance_[qBound(0, level - 1, 5)]);
 }
 
 qreal RenderTheme::lineHeightMultiplier(BlockType type, int headingLevel) const {
@@ -383,6 +436,12 @@ QFont RenderTheme::paragraphFont() const {
   }
   font.setStyleStrategy(QFont::PreferDefault);
   font.setPointSizeF(scaledFont(bodySizePt_ > 0.0 ? bodySizePt_ : 12.0));
+  // Phase 3: CSS letter-spacing (body + headings inherit this font). Qt's text
+  // engine honours it for advance/measure, so layout, the lazy estimate, paint
+  // and hit-test all stay consistent. Zoom-scaled; 0 → untouched (built-ins).
+  if (letterSpacing_ > 0.0) {
+    font.setLetterSpacing(QFont::AbsoluteSpacing, scaled(letterSpacing_));
+  }
   return font;
 }
 
@@ -416,6 +475,9 @@ QFont RenderTheme::codeFont() const {
   }
   font.setStyleHint(QFont::Monospace);
   font.setPointSizeF(scaledFont(10.8));
+  if (codeLetterSpacing_ > 0.0) {
+    font.setLetterSpacing(QFont::AbsoluteSpacing, scaled(codeLetterSpacing_));
+  }
   return font;
 }
 
@@ -449,6 +511,25 @@ QColor RenderTheme::mutedTextColor() const {
 QColor RenderTheme::linkColor() const {
   return linkColor_;
 }
+
+bool RenderTheme::linkUnderlined() const {
+  return linkUnderlined_;
+}
+
+qreal RenderTheme::inlineCodePaddingH() const { return scaled(inlineCodePaddingH_); }
+qreal RenderTheme::inlineCodePaddingV() const { return scaled(inlineCodePaddingV_); }
+qreal RenderTheme::inlineCodeBorderRadius() const { return scaled(inlineCodeBorderRadius_); }
+qreal RenderTheme::inlineCodeBorderWidth() const { return scaled(inlineCodeBorderWidth_); }
+QColor RenderTheme::inlineCodeTextColor() const { return inlineCodeTextColor_; }
+QColor RenderTheme::kbdBackgroundColor() const { return kbdBackground_; }
+QColor RenderTheme::kbdTextColor() const { return kbdTextColor_; }
+QString RenderTheme::kbdFont() const { return kbdFont_; }
+qreal RenderTheme::kbdPaddingH() const { return scaled(kbdPaddingH_); }
+qreal RenderTheme::kbdPaddingV() const { return scaled(kbdPaddingV_); }
+qreal RenderTheme::kbdBorderRadius() const { return scaled(kbdBorderRadius_); }
+QColor RenderTheme::kbdBorderColor() const { return kbdBorderColor_; }
+qreal RenderTheme::kbdBorderWidth() const { return scaled(kbdBorderWidth_); }
+QColor RenderTheme::kbdShadowColor() const { return kbdShadowColor_; }
 
 QColor RenderTheme::codeBackgroundColor() const {
   return codeBackgroundColor_;
@@ -561,10 +642,18 @@ QColor RenderTheme::codeHighlightColor(CodeHighlightRole role) const {
 }
 
 QMarginsF RenderTheme::codePadding() const {
+  if (codeBlockBoxThemed_) {
+    return QMarginsF(scaled(codeBlockPadding_.left()), scaled(codeBlockPadding_.top()),
+                     scaled(codeBlockPadding_.right()), scaled(codeBlockPadding_.bottom()));
+  }
   return QMarginsF(scaled(12), scaled(10), scaled(12), scaled(10));
 }
 
 QMarginsF RenderTheme::tableCellPadding() const {
+  if (tableBoxThemed_) {
+    return QMarginsF(scaled(tableCellPadding_.left()), scaled(tableCellPadding_.top()),
+                     scaled(tableCellPadding_.right()), scaled(tableCellPadding_.bottom()));
+  }
   return QMarginsF(scaled(12), scaled(6), scaled(12), scaled(6));
 }
 

@@ -2,13 +2,11 @@
 
 #include "blocks/code/CodeFenceScrollController.h"
 #include "render/BlockLayoutBuilder.h"
+#include "theme/CssStyleDebug.h"
 
 #include <QElapsedTimer>
-#include <QDir>
-#include <QFile>
 #include <QFontMetricsF>
 #include <QLoggingCategory>
-#include <QTextStream>
 
 #include <algorithm>
 #include <cmath>
@@ -322,26 +320,22 @@ void DocumentLayout::rebuild(
   buildNestedIndex(document);
   recomputeTotalHeight(theme);
 
-  // TEMP DEBUG: dump theme margins + slot positions (first real multi-block document) to diagnose spacing.
-  static bool dumped = false;
-  if (!dumped && slots_.size() >= 5) {
-    dumped = true;
-    QFile df(QDir::homePath() + QStringLiteral("/muffin_layout_debug.txt"));
-    if (df.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-      QTextStream s(&df);
-      const QMarginsF pm = theme.blockMargin(BlockType::Paragraph, 0);
-      const QMarginsF hm = theme.blockMargin(BlockType::Heading, 1);
-      s << "zoom=" << theme.zoomPercent() << " fontPx=" << theme.fontSizePx()
+  if (renderLayoutDebugLog().isDebugEnabled() && slots_.size() >= 5) {
+    const QMarginsF pm = theme.blockMargin(BlockType::Paragraph, 0);
+    const QMarginsF hm = theme.blockMargin(BlockType::Heading, 1);
+    qCDebug(renderLayoutDebugLog).nospace()
+        << "layout.theme zoom=" << theme.zoomPercent()
+        << " fontPx=" << theme.fontSizePx()
         << " blockSpacing=" << theme.blockSpacing()
         << " paraMargin(top/bot)=" << pm.top() << "/" << pm.bottom()
-        << " h1Margin(top/bot)=" << hm.top() << "/" << hm.bottom() << "\n";
-      const int n = qMin<int>(int(slots_.size()), 20);
-      for (int i = 0; i < n; ++i) {
-        const BlockSlot& sl = slots_[size_t(i)];
-        s << "slot[" << i << "] type=" << static_cast<int>(sl.type)
+        << " h1Margin(top/bot)=" << hm.top() << "/" << hm.bottom();
+    const int n = qMin<int>(int(slots_.size()), 20);
+    for (int i = 0; i < n; ++i) {
+      const BlockSlot& sl = slots_[size_t(i)];
+      qCDebug(renderLayoutDebugLog).nospace()
+          << "layout.slot[" << i << "] type=" << static_cast<int>(sl.type)
           << " top=" << sl.top << " h=" << sl.height
-          << " bottom=" << (sl.top + sl.height) << "\n";
-      }
+          << " bottom=" << (sl.top + sl.height);
     }
   }
 
