@@ -1159,11 +1159,16 @@ void InlineLayout::paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) 
         continue;
       }
       const qreal x = line.cursorToX(static_cast<int>(atom.displayStart));
-      // Vertically center the image within the line's allocated height.
-      // line.y() already includes the vertical centering offset applied in buildTextLayout(),
-      // so we measure from the line's natural top (before centering) to get the correct position.
-      const qreal lineTop = origin.y() + line.y() - (std::ceil(line.height() * 1.16) - line.height()) * 0.5;
-      const qreal y = lineTop;
+      // Vertically place the image exactly where buildTextLayout allocated the line.
+      // line.y() is the centred top of the line's minLineHeight content; the image grew
+      // minLineHeight to its own height, so it starts at line.y() when it is the tallest
+      // item on the line and is centred only when shorter than the text line box.
+      // Recomputing minLineHeight = max(line.height(), image height) — the same expression
+      // buildTextLayout uses — keeps paint in lock-step with layout. The previous
+      // `ceil(line.height()*1.16)` estimate was only valid for a plain text line and drifted
+      // negative under CSS `line-height`, painting the image above its own block rect.
+      const qreal minLineHeight = qMax(line.height(), atom.displaySize.height());
+      const qreal y = origin.y() + line.y() + (minLineHeight - atom.displaySize.height()) * 0.5;
       const QRectF targetRect(origin.x() + x, y, atom.displaySize.width(), atom.displaySize.height());
       painter.drawImage(targetRect, atom.image, QRectF(atom.image.rect()));
       break;
