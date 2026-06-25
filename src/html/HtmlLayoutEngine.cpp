@@ -218,6 +218,12 @@ YGNode* HtmlLayoutEngine::createYogaNode(
         if (!cached.isNull()) {
           naturalSize = cached.size();
         }
+      } else if (src.startsWith(QLatin1String("data:"), Qt::CaseInsensitive)) {
+        // Inline data: URI — decode to read its real dimensions.
+        const QImage decoded = image_decoder::decodeDataUri(src);
+        if (!decoded.isNull()) {
+          naturalSize = decoded.size();
+        }
       } else {
         // Local: detectSize handles SVG via QSvgRenderer
         naturalSize = image_decoder::detectSize(src);

@@ -16,6 +16,13 @@ QImage decodeFallback(const QByteArray& data);
 /// Returns a null QImage if the file can't be read or decoding failed.
 QImage decodeFileFallback(const QString& filePath);
 
+/// Decode an inline `data:` URI (RFC 2397) into a QImage. Accepts both
+/// `;base64` and percent-encoded payloads; the media type is ignored (format is
+/// detected from the payload's magic bytes, so a missing/wrong media type still
+/// decodes correctly). Returns a null QImage if `uri` is not a data URI or the
+/// payload failed to decode.
+QImage decodeDataUri(const QString& uri);
+
 /// Detect the natural size of a local image file.
 /// Tries QImageReader first, then QSvgRenderer for SVG files.
 /// Returns an invalid QSize if detection fails.

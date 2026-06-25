@@ -42,6 +42,7 @@ muffin_add_test(NAME MuffinRenderHeadingPseudoTest SOURCE tests/render/RenderHea
 muffin_add_test(NAME MuffinRenderHeadingPillTest SOURCE tests/render/RenderHeadingPillTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderLetterSpacingTest SOURCE tests/render/RenderLetterSpacingTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderInlineCodeBoxTest SOURCE tests/render/RenderInlineCodeBoxTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinRenderImageDataUriTest SOURCE tests/render/RenderImageDataUriTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderLinkBeforeFlowTest SOURCE tests/render/RenderLinkBeforeFlowTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderMathLineHeightTest SOURCE tests/render/RenderMathLineHeightTest.cpp LINK MuffinUi RESOURCE_LOCK DISABLED_ON APPLE)
 muffin_add_test(NAME MuffinRenderMathLinkBeforeOffsetTest SOURCE tests/render/RenderMathLinkBeforeOffsetTest.cpp LINK MuffinUi RESOURCE_LOCK DISABLED_ON APPLE)

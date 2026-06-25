@@ -473,6 +473,13 @@ const QImage& HtmlLayoutResult::cachedImage(const QString& src) const {
     return it.value();
   }
 
+  // Inline data: URI (RFC 2397, base64 or percent-encoded) — decode synchronously.
+  if (src.startsWith(QLatin1String("data:"), Qt::CaseInsensitive)) {
+    QImage img = image_decoder::decodeDataUri(src);
+    it = imageCache_.insert(src, std::move(img));
+    return it.value();
+  }
+
   // Local file path — fall back to ImageDecoder for SVG, WebP, AVIF
   QImage img(src);
   if (img.isNull()) {

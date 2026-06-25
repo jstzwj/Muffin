@@ -943,11 +943,15 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
     // Try to load the image
     QImage image;
     const bool isRemote = srcUrl.startsWith(QStringLiteral("http:")) || srcUrl.startsWith(QStringLiteral("https:"));
+    const bool isDataUri = srcUrl.startsWith(QStringLiteral("data:"), Qt::CaseInsensitive);
     if (isRemote) {
       image = ImageLoader::instance().cached(srcUrl);
       if (image.isNull()) {
         ImageLoader::instance().request(srcUrl);
       }
+    } else if (isDataUri) {
+      // Inline data: URI (RFC 2397, base64 or percent-encoded) — decode synchronously.
+      image = image_decoder::decodeDataUri(srcUrl);
     } else {
       // Prefer our bundled decoders (png/jpeg/webp/avif/svg) so local image display
       // never depends on Qt's imageformat plugins (qjpeg is absent from this Qt build).

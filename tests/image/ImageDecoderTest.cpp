@@ -98,5 +98,35 @@ int main(int argc,char**argv){
   const QImage jpg = muffin::image_decoder::decodeFallback(QByteArray::fromRawData(reinterpret_cast<const char*>(kJpeg), kJpeg_size));
   require(!jpg.isNull(), QStringLiteral("JPEG decode failed (libjpeg not linked?)"));
   require(jpg.width()==4 && jpg.height()==3, QStringLiteral("JPEG size mismatch: %1x%2").arg(jpg.width()).arg(jpg.height()));
+
+  // --- data: URI (RFC 2397): inline base64 / percent-encoded images ---
+  const QByteArray pngRaw = QByteArray::fromRawData(reinterpret_cast<const char*>(kPng), kPng_size);
+  const QImage fromBase64 = muffin::image_decoder::decodeDataUri(
+      QStringLiteral("data:image/png;base64,") + QString::fromLatin1(pngRaw.toBase64()));
+  require(!fromBase64.isNull(), QStringLiteral("base64 data URI decode failed"));
+  require(fromBase64.width()==4 && fromBase64.height()==3,
+          QStringLiteral("base64 data URI size mismatch: %1x%2").arg(fromBase64.width()).arg(fromBase64.height()));
+
+  // Percent-encoded payload (the standard form for raw bytes / inline SVG).
+  const QImage fromPercent = muffin::image_decoder::decodeDataUri(
+      QStringLiteral("data:image/png,") + QString::fromLatin1(pngRaw.toPercentEncoding()));
+  require(!fromPercent.isNull(), QStringLiteral("percent-encoded data URI decode failed"));
+  require(fromPercent.width()==4 && fromPercent.height()==3,
+          QStringLiteral("percent-encoded data URI size mismatch: %1x%2").arg(fromPercent.width()).arg(fromPercent.height()));
+
+  // Scheme and the ;base64 flag are case-insensitive; a wrong media type still
+  // decodes because the format is sniffed from magic bytes, not the type label.
+  const QImage fromUpper = muffin::image_decoder::decodeDataUri(
+      QStringLiteral("DATA:image/jpeg;BASE64,") + QString::fromLatin1(pngRaw.toBase64()));
+  require(!fromUpper.isNull() && fromUpper.width()==4 && fromUpper.height()==3,
+          QStringLiteral("uppercase-scheme / mistyped-media data URI should still decode"));
+
+  // Malformed inputs must return null, never crash.
+  require(muffin::image_decoder::decodeDataUri(QStringLiteral("data:image/png;base64")).isNull(),
+          QStringLiteral("data URI without a comma should be null"));
+  require(muffin::image_decoder::decodeDataUri(QStringLiteral("http://example.com/a.png")).isNull(),
+          QStringLiteral("non-data scheme should be null"));
+  require(muffin::image_decoder::decodeDataUri(QStringLiteral("data:image/png;base64,AAAA")).isNull(),
+          QStringLiteral("valid base64 of non-image bytes should be null"));
   return 0;
 }

@@ -4,6 +4,7 @@
 #include <QGuiApplication>
 #include <QImageReader>
 #include <QPainter>
+#include <QStringView>
 #include <QSvgRenderer>
 
 #include <webp/decode.h>
@@ -285,6 +286,55 @@ QImage decodeFileFallback(const QString& filePath) {
   const QByteArray data = file.readAll();
   file.close();
   return decodeFallback(data);
+}
+
+// Decode an inline `data:` URI (RFC 2397): data:[<mediatype>][;base64],<data>.
+// Only the "data" scheme and an explicit ";base64" flag matter — the media type
+// is ignored because decodeFallback() sniffs format from magic bytes, so a
+// missing or wrong type still decodes. Non-base64 payloads are percent-decoded
+// (the standard form for inline SVG and raw image bytes).
+QImage decodeDataUri(const QString& uri) {
+  const int comma = uri.indexOf(QLatin1Char(','));
+  if (comma < 0) {
+    return QImage();
+  }
+  const QStringView head = QStringView(uri).left(comma);
+  const int colon = head.indexOf(QLatin1Char(':'));
+  if (colon < 0 ||
+      head.left(colon).trimmed().compare(QLatin1String("data"), Qt::CaseInsensitive) != 0) {
+    return QImage();
+  }
+
+  const QStringView body = QStringView(uri).mid(comma + 1);
+
+  bool isBase64 = false;
+  for (const QStringView token : head.split(QLatin1Char(';'))) {
+    if (token.trimmed().compare(QLatin1String("base64"), Qt::CaseInsensitive) == 0) {
+      isBase64 = true;
+      break;
+    }
+  }
+
+  QByteArray bytes;
+  if (isBase64) {
+    // Some emitters wrap long base64 lines with newlines/spaces, which
+    // QByteArray::fromBase64 rejects — strip them first.
+    QByteArray raw = body.toUtf8();
+    raw.replace('\n', QByteArray()).replace('\r', QByteArray())
+        .replace(' ', QByteArray()).replace('\t', QByteArray());
+    bytes = QByteArray::fromBase64(raw);
+  } else {
+    bytes = QByteArray::fromPercentEncoding(body.toUtf8());
+  }
+  if (bytes.isEmpty()) {
+    return QImage();
+  }
+
+  QImage image = decodeFallback(bytes);
+  if (image.isNull()) {
+    image.loadFromData(bytes);  // last resort for formats we don't ship (gif/bmp/tiff…)
+  }
+  return image;
 }
 
 QSize detectSize(const QString& filePath) {
