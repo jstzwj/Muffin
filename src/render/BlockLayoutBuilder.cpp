@@ -7,6 +7,7 @@
 #include "document/SourceRangeUtil.h"
 #include "projection/InlineProjection.h"
 #include "spellcheck/SpellChecker.h"
+#include "theme/CssContent.h"
 
 #include <QCoreApplication>
 #include <QElapsedTimer>
@@ -26,6 +27,16 @@ namespace muffin {
 namespace {
 
 Q_LOGGING_CATEGORY(blockBuildPerf, "muffin.perf", QtWarningMsg)
+
+bool isOrderedListStyle(const QString& style) {
+  static const QSet<QString> ordered = {
+      QStringLiteral("decimal"), QStringLiteral("decimal-leading-zero"),
+      QStringLiteral("lower-alpha"), QStringLiteral("upper-alpha"),
+      QStringLiteral("lower-latin"), QStringLiteral("upper-latin"),
+      QStringLiteral("lower-roman"), QStringLiteral("upper-roman"),
+      QStringLiteral("lower-greek")};
+  return ordered.contains(style);
+}
 
 bool isInsideBlockquote(const MarkdownNode& node) {
   for (const MarkdownNode* p = node.parent(); p; p = p->parent()) {
@@ -48,10 +59,10 @@ bool hasHeadingAfterDecoration(const RenderTheme& theme, int level) {
 
 QMarginsF blockMarginForFlow(const MarkdownNode& node, const RenderTheme& theme) {
   if (node.type() == BlockType::Paragraph && isInsideBlockquote(node)) {
-    const ThemeElementBoxStyle quoteParagraph = theme.elementBoxStyle(QStringLiteral("blockquote p"));
+    const ThemeElementBoxStyle quoteParagraph = theme.elementBoxStyle(QStringLiteral("blockquote p"), &node);
     if (quoteParagraph.present && !quoteParagraph.margin.isNull()) { return quoteParagraph.margin; }
   }
-  return theme.blockMargin(node.type(), node.headingLevel());
+  return theme.blockMargin(node.type(), node.headingLevel(), &node);
 }
 
 bool hasCssFlowMargin(const MarkdownNode& node, const RenderTheme& theme) {
@@ -426,7 +437,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   const QString elementKey = node.type() == BlockType::Heading
       ? QStringLiteral("h%1").arg(node.headingLevel())
       : (isInsideBlockquote(node) ? QStringLiteral("blockquote p") : QStringLiteral("p"));
-  const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.textFontForElement(elementKey);
+  const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.textFontForElement(elementKey, &node);
   const QMarginsF headingPadding = node.type() == BlockType::Heading ? theme.headingPadding(node.headingLevel()) : QMarginsF();
   // A heading with an inline `::before` marker (h4/h5/h6) reserves left space for
   // it (headingBeforeAdvance); the text wraps within the remaining width. The
@@ -468,12 +479,20 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
         options.hoverTextColor = hover->paint.color;
       }
     }
+    // CSS `:focus { color }` target — same mechanism, blended on top of hover.
+    if (const ThemeElementStyle* focus = theme.elementStyle(QStringLiteral("h%1:focus").arg(node.headingLevel()))) {
+      if (focus->paint.color.isValid()) {
+        options.focusTextColor = focus->paint.color;
+      }
+    }
   } else {
-    options.baseTextColor = theme.textColorForElement(elementKey);
+    options.baseTextColor = theme.textColorForElement(elementKey, &node);
   }
-  options.lineHeightMultiplier = theme.lineHeightMultiplierForElement(elementKey, node.type(), node.headingLevel());
-  options.wordSpacing = theme.wordSpacingForElement(elementKey);
-  options.alignment = theme.textAlignmentForElement(elementKey, node.type(), node.headingLevel());
+  options.lineHeightMultiplier = theme.lineHeightMultiplierForElement(elementKey, node.type(), node.headingLevel(), &node);
+  options.wordSpacing = theme.wordSpacingForElement(elementKey, &node);
+  options.alignment = theme.textAlignmentForElement(elementKey, node.type(), node.headingLevel(), &node);
+  options.textTransform = static_cast<TextTransform>(theme.textTransformForElement(elementKey, &node));
+  options.textShadow = theme.textShadowForElement(elementKey, &node);
   {
     BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
     inlineLayout->build(node.inlines(), editableSource, theme, textWidth, font, options);
@@ -624,8 +643,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
       }
       ++itemIndex;
     }
-    layout->setListMarker(textForListMarker(*listParent, itemIndex));
-    layout->setListMarkerKind(markerKindForListItem(node));
+    const ResolvedMarker marker = resolveListMarker(node, theme, itemIndex);
+    layout->setListMarkerKind(marker.kind);
+    layout->setListMarker(marker.text);
   } else {
     layout->setListMarkerKind(BlockLayout::ListMarkerKind::BulletDisc);
     layout->setListMarker(QStringLiteral("•"));
@@ -637,7 +657,8 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
     const QFontMetricsF metrics(theme.paragraphFont());
     qreal widestMarker = 0.0;
     for (qsizetype index = 0; index < static_cast<qsizetype>(listParent->children().size()); ++index) {
-      widestMarker = qMax(widestMarker, metrics.horizontalAdvance(textForListMarker(*listParent, index)));
+      // Size the gutter to the widest CSS-styled marker too (e.g. roman "viii").
+      widestMarker = qMax(widestMarker, metrics.horizontalAdvance(resolveListMarker(*listParent->children().at(index), theme, index).text));
     }
     contentIndent = qMax(theme.listIndent(), widestMarker + markerGap);
   }
@@ -662,11 +683,13 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   options.breakOnSingleNewline = breakOnSingleNewlineEnabled();
   {
     BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
-    options.baseTextColor = theme.textColorForElement(elementKey);
-    options.lineHeightMultiplier = theme.lineHeightMultiplierForElement(elementKey, BlockType::Paragraph);
-    options.wordSpacing = theme.wordSpacingForElement(elementKey);
-    options.alignment = theme.textAlignmentForElement(elementKey, BlockType::Paragraph);
-    inlineLayout->build(primaryInlinesForListItem(node), listSourceText, theme, contentWidth, theme.textFontForElement(elementKey), options);
+    options.baseTextColor = theme.textColorForElement(elementKey, &node);
+    options.lineHeightMultiplier = theme.lineHeightMultiplierForElement(elementKey, BlockType::Paragraph, 0, &node);
+    options.wordSpacing = theme.wordSpacingForElement(elementKey, &node);
+    options.alignment = theme.textAlignmentForElement(elementKey, BlockType::Paragraph, 0, &node);
+    options.textTransform = static_cast<TextTransform>(theme.textTransformForElement(elementKey, &node));
+    options.textShadow = theme.textShadowForElement(elementKey, &node);
+    inlineLayout->build(primaryInlinesForListItem(node), listSourceText, theme, contentWidth, theme.textFontForElement(elementKey, &node), options);
   }
   layout->setInlineLayout(std::move(inlineLayout));
 
@@ -1170,6 +1193,59 @@ BlockLayout::ListMarkerKind BlockLayoutBuilder::markerKindForListItem(const Mark
   }
 }
 
+BlockLayoutBuilder::ResolvedMarker BlockLayoutBuilder::resolveListMarker(
+    const MarkdownNode& itemNode, const RenderTheme& theme, qsizetype itemIndex) const {
+  const MarkdownNode* listNode = itemNode.parent();
+  // `li::marker { content: … counter(list-item) … }` — content-driven marker,
+  // resolved against the implicit list-item counter (this item's position).
+  const auto& contentTokens = theme.decorations().listMarkerContent;
+  if (!contentTokens.empty()) {
+    const auto value = [&itemNode, listNode, itemIndex](const QString& name) -> int {
+      if (name == QStringLiteral("list-item")) {
+        const int start = (listNode && listNode->listKind() == ListKind::Ordered) ? listNode->listStart() : 1;
+        return start + int(itemIndex);
+      }
+      return 0;  // named counters are not tracked in the marker path
+    };
+    const auto chain = [&itemNode](const QString& name) -> QVector<int> {
+      QVector<int> levels;  // outermost first
+      if (name != QStringLiteral("list-item")) { return levels; }
+      for (const MarkdownNode* item = &itemNode; item && item->type() == BlockType::ListItem; ) {
+        const MarkdownNode* list = item->parent();
+        if (!list) { break; }
+        int idx = 0;
+        for (const auto& s : list->children()) { if (s.get() == item) { break; } ++idx; }
+        const int start = (list->listKind() == ListKind::Ordered) ? list->listStart() : 1;
+        levels.prepend(start + idx);
+        item = list->parent();  // next outer list level (a ListItem, or null at top)
+      }
+      return levels;
+    };
+    const QString text = resolveContentTokens(contentTokens, value, chain);
+    return {text.isEmpty() ? BlockLayout::ListMarkerKind::None : BlockLayout::ListMarkerKind::OrderedText, text};
+  }
+  QString styleType;
+  if (listNode) {
+    const bool ordered = listNode->listKind() == ListKind::Ordered;
+    styleType = theme.listStyleTypeForItem(ordered);
+  }
+  if (styleType.isEmpty()) {
+    // No CSS list-style-type → legacy depth/kind-based marker.
+    if (listNode) { return {markerKindForListItem(itemNode), textForListMarker(*listNode, itemIndex)}; }
+    return {BlockLayout::ListMarkerKind::BulletDisc, QStringLiteral("•")};
+  }
+  if (styleType == QStringLiteral("none")) { return {BlockLayout::ListMarkerKind::None, QString()}; }
+  if (styleType == QStringLiteral("disc")) { return {BlockLayout::ListMarkerKind::BulletDisc, QStringLiteral("•")}; }
+  if (styleType == QStringLiteral("circle")) { return {BlockLayout::ListMarkerKind::BulletCircle, QStringLiteral("•")}; }
+  if (styleType == QStringLiteral("square")) { return {BlockLayout::ListMarkerKind::BulletSquare, QStringLiteral("•")}; }
+  if (isOrderedListStyle(styleType)) {
+    const int start = (listNode && listNode->listKind() == ListKind::Ordered) ? listNode->listStart() : 1;
+    return {BlockLayout::ListMarkerKind::OrderedText, formatCounterValue(start + int(itemIndex), styleType) + QStringLiteral(".")};
+  }
+  if (listNode) { return {markerKindForListItem(itemNode), textForListMarker(*listNode, itemIndex)}; }
+  return {BlockLayout::ListMarkerKind::BulletDisc, QStringLiteral("•")};
+}
+
 QVector<InlineNode> BlockLayoutBuilder::primaryInlinesForListItem(const MarkdownNode& node) const {
   if (!node.inlines().isEmpty()) {
     return node.inlines();
@@ -1313,9 +1389,10 @@ qreal BlockLayoutBuilder::estimateLineHeight(const QFont& font) const {
   return std::ceil(QFontMetricsF(font).height() * 1.16);
 }
 
-qreal estimateLineHeightForElement(const RenderTheme& theme, const QString& elementKey, BlockType type, int headingLevel = 0) {
-  const QFont font = type == BlockType::Heading ? theme.headingFont(headingLevel) : theme.textFontForElement(elementKey);
-  const qreal multiplier = theme.lineHeightMultiplierForElement(elementKey, type, headingLevel);
+qreal estimateLineHeightForElement(const RenderTheme& theme, const QString& elementKey, BlockType type,
+                                   const MarkdownNode* node = nullptr, int headingLevel = 0) {
+  const QFont font = type == BlockType::Heading ? theme.headingFont(headingLevel) : theme.textFontForElement(elementKey, node);
+  const qreal multiplier = theme.lineHeightMultiplierForElement(elementKey, type, headingLevel, node);
   if (multiplier > 0.0) {
     const qreal pointSize = font.pointSizeF() > 0.0 ? font.pointSizeF() : 12.0;
     return std::ceil(pointSize * (96.0 / 72.0) * multiplier);
@@ -1386,8 +1463,8 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateParagraphLike(con
   const bool isHeading = node.type() == BlockType::Heading;
   const QString elementKey = isHeading ? QStringLiteral("h%1").arg(node.headingLevel())
                                       : (isInsideBlockquote(node) ? QStringLiteral("blockquote p") : QStringLiteral("p"));
-  const QFont font = isHeading ? theme.headingFont(node.headingLevel()) : theme.textFontForElement(elementKey);
-  const qreal lineHeight = estimateLineHeightForElement(theme, elementKey, node.type(), node.headingLevel());
+  const QFont font = isHeading ? theme.headingFont(node.headingLevel()) : theme.textFontForElement(elementKey, &node);
+  const qreal lineHeight = estimateLineHeightForElement(theme, elementKey, node.type(), &node, node.headingLevel());
   const QString text = InlineProjection::plainTextForInlines(node.inlines(), breakOnSingleNewlineEnabled());
   // Mirror buildParagraphLike: an inline ::before marker narrows the wrap width.
   const qreal beforeAdvance = isHeading ? theme.headingBeforeAdvance(node.headingLevel()) : 0.0;
@@ -1451,8 +1528,8 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateListItem(const Ma
 
   const QVector<InlineNode> primary = primaryInlinesForListItem(node);
   const QString elementKey = isInsideBlockquote(node) ? QStringLiteral("blockquote p") : QStringLiteral("li");
-  const QFont font = theme.textFontForElement(elementKey);
-  const qreal lineHeight = estimateLineHeightForElement(theme, elementKey, BlockType::Paragraph);
+  const QFont font = theme.textFontForElement(elementKey, &node);
+  const qreal lineHeight = estimateLineHeightForElement(theme, elementKey, BlockType::Paragraph, &node);
   qreal inlineHeight = lineHeight;
   bool mustMeasure = false;
   if (!primary.isEmpty()) {

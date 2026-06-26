@@ -11,6 +11,35 @@
 namespace muffin {
 namespace {
 
+// CSS text-transform applied to a display-text run. Per-code-point case mapping
+// (QChar::toUpper/toLower) is length-preserving for every code point — unlike
+// QString::toUpper(), which performs special-casing (e.g. ß → "SS") that would
+// change the string length and desync the projection's source↔display offsets.
+// `capitalize` uppercases the first letter of each word and leaves the rest as-is
+// (CSS does not force the remainder to lowercase).
+QString applyTextTransform(const QString& src, TextTransform transform) {
+  if (src.isEmpty() || transform == TextTransform::None) { return src; }
+  QString out;
+  out.reserve(src.size());
+  if (transform == TextTransform::Uppercase) {
+    for (QChar ch : src) { out.append(ch.toUpper()); }
+  } else if (transform == TextTransform::Lowercase) {
+    for (QChar ch : src) { out.append(ch.toLower()); }
+  } else {  // Capitalize
+    bool wordStart = true;
+    for (QChar ch : src) {
+      if (ch.isLetter()) {
+        out.append(wordStart ? ch.toUpper() : ch);
+        wordStart = false;
+      } else {
+        out.append(ch);
+        if (ch.isSpace()) { wordStart = true; }
+      }
+    }
+  }
+  return out;
+}
+
 // A render-level smart-punctuation fold: a run of N source characters that renders as a single
 // display glyph (e.g. "--" -> en-dash, "---" -> em-dash, "..." -> ellipsis). Quotes are 1:1 and do
 // not fold. Tracking folds lets the projection emit a separate span per folded token, so the offset
@@ -317,7 +346,8 @@ InlineProjectionState InlineProjectionState::forSelection(
 }
 
 InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState projectionState, qsizetype sourceBase,
-                                   qreal baseFontSize, qsizetype pendingPrefixLength, SmartPunctRenderOptions smartPunct, bool breakOnSingleNewline)
+                                   qreal baseFontSize, qsizetype pendingPrefixLength, SmartPunctRenderOptions smartPunct, bool breakOnSingleNewline,
+                                   TextTransform textTransform)
     : sourceText_(std::move(sourceText)), visibleText_(plainTextForInlines(inlines)) {
   BuildState state;
   state.sourceText = &sourceText_;
@@ -326,6 +356,7 @@ InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString s
   state.baseFontSize = baseFontSize;
   state.smartPunct = smartPunct;
   state.breakOnSingleNewline = breakOnSingleNewline;
+  state.textTransform = textTransform;
   QVector<HtmlInlineFormatData> htmlData;
   if (pendingPrefixLength > 0 && pendingPrefixLength <= sourceText_.size()) {
     // A still-uncommitted fence/math opener: show the marker in the muted "syntax" color the
@@ -728,6 +759,14 @@ void InlineProjection::appendTextSpan(
     QString displayText,
     bool visible,
     bool editable) {
+  // CSS text-transform (uppercase/lowercase/capitalize) on visible prose only.
+  // Per-code-point mapping ⇒ length-preserving, so the source↔display offsets
+  // computed below stay exact. Markers/atoms (non-letter syntax/placeholders) are
+  // left as-is by applying only to Text + HtmlContent spans.
+  if (state.textTransform != TextTransform::None &&
+      (kind == InlineSpanKind::Text || kind == InlineSpanKind::HtmlContent)) {
+    displayText = applyTextTransform(displayText, state.textTransform);
+  }
   InlineProjectionSpan span;
   span.type = type;
   span.kind = kind;

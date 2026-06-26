@@ -30,6 +30,10 @@ struct PaintContext {
   // base (not hovered); drives hover-state pseudo geometry such as a widening
   // ::after underline (phycat `h1:hover::after { width:100% }`).
   qreal hoverPhase = 0.0;
+  // Focus animation phase (0..1), from the FocusAnimator. Drives `:focus`-state
+  // pseudo geometry (e.g. `h1:focus::after { width:100% }`), applied after the
+  // hover widening so the two compose.
+  qreal focusPhase = 0.0;
 };
 
 // Fill the host element's own background gradient (e.g. h2 radial glow) into

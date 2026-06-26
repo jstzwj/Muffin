@@ -129,11 +129,11 @@ qreal spacingAfterBlock(const MarkdownNode& node, const RenderTheme& theme) {
   // When a theme declares no paragraph margin, keep the legacy tight floor
   // (slightly more than a soft break) so such themes are unchanged.
   if (node.type() == BlockType::Paragraph) {
-    const QMarginsF pm = theme.blockMargin(BlockType::Paragraph);
+    const QMarginsF pm = theme.blockMargin(BlockType::Paragraph, 0, &node);
     if (pm.bottom() > 0.0) { return pm.bottom(); }
     return theme.blockSpacing() * 0.4;
   }
-  const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel());
+  const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel(), &node);
   if (!css.isNull()) { return css.bottom(); }
   if (node.type() == BlockType::Heading) { return theme.blockSpacing() * 0.65; }
   return theme.blockSpacing();
@@ -143,10 +143,10 @@ qreal spacingBeforeBlock(const MarkdownNode& node, const RenderTheme& theme, qre
   // CSS paragraph top margins participate in adjacent margin collapse. Themes with
   // no paragraph margin keep the legacy no-before-spacing path.
   if (node.type() == BlockType::Paragraph) {
-    const QMarginsF pm = theme.blockMargin(BlockType::Paragraph);
+    const QMarginsF pm = theme.blockMargin(BlockType::Paragraph, 0, &node);
     return !pm.isNull() ? pm.top() : 0.0;
   }
-  const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel());
+  const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel(), &node);
   if (!css.isNull()) { return css.top(); }
   if (node.type() != BlockType::Heading || cursorY <= theme.topMargin()) {
     return 0;
@@ -158,7 +158,7 @@ qreal spacingBeforeBlock(const MarkdownNode& node, const RenderTheme& theme, qre
 }
 
 bool hasCssBlockMargin(const MarkdownNode& node, const RenderTheme& theme) {
-  return !theme.blockMargin(node.type(), node.headingLevel()).isNull();
+  return !theme.blockMargin(node.type(), node.headingLevel(), &node).isNull();
 }
 
 qreal spacingBetweenBlocks(const MarkdownNode& prev, const MarkdownNode& next, const RenderTheme& theme) {
@@ -261,6 +261,10 @@ void DocumentLayout::rebuild(
     totalTimer.start();
   }
 
+  // A structural-selector theme resolves each node's style against its live
+  // position; drop the cache so edited structure (a sibling added/removed) is
+  // re-evaluated. Cheap when the theme has no structural rules (empty cache).
+  theme.clearStructuralCache();
   document_ = &document;
   documentPath_ = std::move(documentPath);
   viewportWidth_ = viewportWidth;
@@ -429,6 +433,7 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
     return result;
   }
 
+  theme.clearStructuralCache();
   const MarkdownNode* node = topLevelBlockFor(blockId, document);
   if (!node) {
     return result;
@@ -515,6 +520,7 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   result.first = range.first;
   result.oldCount = range.oldCount;
   result.newCount = range.newCount;
+  theme.clearStructuralCache();
   if (!range.isValid() || document_ != &document || viewportWidth_ <= 0) {
     return result;
   }

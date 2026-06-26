@@ -2,11 +2,11 @@
 
 #include "document/NodeId.h"
 
+#include <QElapsedTimer>
 #include <QObject>
 
 #include <functional>
 
-class QElapsedTimer;
 class QTimer;
 
 namespace muffin {
@@ -39,7 +39,7 @@ private slots:
 
 private:
   QTimer* timer_ = nullptr;
-  QElapsedTimer* clock_ = nullptr;
+  QElapsedTimer clock_;  // value member: QElapsedTimer is not a QObject, so a `new`-ed pointer would leak
   NodeId blockId_;
   qreal phase_ = 0.0;
   qreal target_ = 0.0;

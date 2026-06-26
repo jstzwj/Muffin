@@ -9,6 +9,8 @@ class QString;
 namespace muffin {
 
 class CssThemeSheet;  // defined in CssThemeParser.h
+class CssComputedStyleEngine;  // defined in CssComputedStyleEngine.h
+class MarkdownNode;
 
 // Construct a QColor from a CSS colour literal, correcting Qt's hex-alpha
 // byte order. CSS specifies alpha LAST (#RRGGBBAA / #RGBA); QColor reads 8- and
@@ -56,6 +58,12 @@ public:
   // where the % is relative to the rendered host (e.g. `h3::before { height: 61% }`).
   static qreal resolveLengthPx(const QString& value, const QHash<QString, QString>& vars,
                                qreal emPx, qreal containingPx);
+  // Real-tree computed style for a node: build a CssElement view of `node` (its
+  // live ancestors/siblings/position), run the cascade through `engine`, and map
+  // the result to a ThemeElementStyle the same way the load-time precompute does.
+  // Used by the structural-selector layout path. `bodyPx` is the em/rem basis.
+  static ThemeElementStyle elementStyleForNode(const CssComputedStyleEngine& engine, const MarkdownNode& node,
+                                               const QString& key, qreal bodyPx);
 };
 
 }  // namespace muffin

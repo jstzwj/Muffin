@@ -92,6 +92,75 @@ void testUnorderedListMarkerKindsByDepth() {
           QStringLiteral("unordered child inside ordered list should start its own bullet depth"));
 }
 
+// CSS `list-style-type` overrides the legacy Arabic "1." marker. lower-roman →
+// "i."/"ii."/"iii.", and `none` suppresses the marker entirely. Inherited, so a
+// value on `ol` reaches every `li`.
+void testListStyleTypeFormatsMarker() {
+  const QString css = QStringLiteral(
+      "#write { color:#000000; }"
+      "#write ol { list-style-type: lower-roman; }");
+  const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("lst"), QString()));
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("1. first\n2. second\n3. third\n"), false);
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+  QVector<const MarkdownNode*> items;
+  collectListItems(session.document().root(), items);
+  require(items.size() == 3, QStringLiteral("three ordered items"));
+  require(layout.block(items.at(0)->id())->listMarker() == QStringLiteral("i."),
+          QStringLiteral("lower-roman first marker 'i.' (got '%1')").arg(layout.block(items.at(0)->id())->listMarker()));
+  require(layout.block(items.at(1)->id())->listMarker() == QStringLiteral("ii."),
+          QStringLiteral("lower-roman second marker 'ii.' (got '%1')").arg(layout.block(items.at(1)->id())->listMarker()));
+  require(layout.block(items.at(2)->id())->listMarker() == QStringLiteral("iii."),
+          QStringLiteral("lower-roman third marker 'iii.' (got '%1')").arg(layout.block(items.at(2)->id())->listMarker()));
+
+  // `none` ⇒ no marker kind at all.
+  const QString noneCss = QStringLiteral("#write { color:#000000; } #write ul { list-style-type: none; }");
+  const RenderTheme noneTheme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(noneCss, QStringLiteral("n"), QString()));
+  DocumentSession ns;
+  ns.setMarkdownText(QStringLiteral("- a\n- b\n"), false);
+  DocumentLayout nl;
+  nl.rebuild(ns.document(), noneTheme, 800.0);
+  QVector<const MarkdownNode*> nitems;
+  collectListItems(ns.document().root(), nitems);
+  require(nl.block(nitems.at(0)->id())->listMarkerKind() == BlockLayout::ListMarkerKind::None,
+          QStringLiteral("list-style-type: none ⇒ no marker"));
+}
+
+// CSS counters in `li::marker` content: `counter(list-item)` resolves to the
+// item's position, with literal text and a style both honoured. Content wins over
+// list-style-type (author owns the format).
+void testCounterInMarkerContent() {
+  const QString css = QStringLiteral(
+      "#write { color:#000000; }"
+      "#write ol { list-style-type: lower-roman; }"
+      "li::marker { content: \"(\" counter(list-item) \")\"; }");
+  const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("ctr"), QString()));
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("1. first\n2. second\n"), false);
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+  QVector<const MarkdownNode*> items;
+  collectListItems(session.document().root(), items);
+  require(items.size() == 2, QStringLiteral("two ordered items"));
+  require(layout.block(items.at(0)->id())->listMarker() == QStringLiteral("(1)"),
+          QStringLiteral("content '(':counter:')' first marker '(1)' (got '%1')").arg(layout.block(items.at(0)->id())->listMarker()));
+  require(layout.block(items.at(1)->id())->listMarker() == QStringLiteral("(2)"),
+          QStringLiteral("second marker '(2)' (got '%1')").arg(layout.block(items.at(1)->id())->listMarker()));
+
+  // counter(list-item, lower-roman) formats the value with the given style.
+  const QString css2 = QStringLiteral("#write { color:#000000; } li::marker { content: counter(list-item, lower-roman) \".\"; }");
+  const RenderTheme theme2 = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css2, QStringLiteral("ctr2"), QString()));
+  DocumentSession s2;
+  s2.setMarkdownText(QStringLiteral("1. a\n2. b\n3. c\n"), false);
+  DocumentLayout l2;
+  l2.rebuild(s2.document(), theme2, 800.0);
+  QVector<const MarkdownNode*> it2;
+  collectListItems(s2.document().root(), it2);
+  require(l2.block(it2.at(2)->id())->listMarker() == QStringLiteral("iii."),
+          QStringLiteral("counter(list-item, lower-roman) third marker 'iii.' (got '%1')").arg(l2.block(it2.at(2)->id())->listMarker()));
+}
+
 // The nested-list guide line's X must follow the CSS `left` (relative to the li's
 // left edge), NOT be pinned to the marker column. With `left:5px` the guide
 // paints at image x≈5 (rect.left()+5 in document space), well left of the marker
@@ -151,6 +220,8 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testUnorderedListMarkerKindsByDepth);
   RUN_TEST(testListMarkerColorPaintsFromCssMarker);
+  RUN_TEST(testListStyleTypeFormatsMarker);
+  RUN_TEST(testCounterInMarkerContent);
   RUN_TEST(testListGuideLineHonorsCssLeftOffset);
 #undef RUN_TEST
   return 0;

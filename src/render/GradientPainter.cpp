@@ -1,5 +1,6 @@
 #include "render/GradientPainter.h"
 
+#include <QConicalGradient>
 #include <QLinearGradient>
 #include <QRadialGradient>
 #include <QRectF>
@@ -32,6 +33,16 @@ QBrush makeBrush(const GradientSpec& spec, const QRectF& target) {
     const qreal halfH = target.height() / 2.0;
     const qreal proj = qFabs(dx) * halfW + qFabs(dy) * halfH;
     QLinearGradient g(c - QPointF(dx, dy) * proj, c + QPointF(dx, dy) * proj);
+    setStops(g);
+    return QBrush(g);
+  }
+  if (spec.kind == GradientSpec::Kind::Conic) {
+    // CSS conic-gradient: angle 0 = 12 o'clock, sweeping CLOCKWISE. QConicalGradient
+    // uses 3 o'clock origin sweeping COUNTER-clockwise, in degrees. Convert:
+    // qtAngle = 90 - cssAngle, negated for the sweep direction → cssStart - 90.
+    const QPointF center(target.left() + spec.conicCenter.x() * target.width(),
+                         target.top() + spec.conicCenter.y() * target.height());
+    QConicalGradient g(center, spec.conicStartDeg - 90.0);
     setStops(g);
     return QBrush(g);
   }

@@ -1,6 +1,7 @@
 #include "render/InlineLayout.h"
 
 #include "document/ImageSyntaxOps.h"
+#include "render/Blur.h"
 #include "render/DecorationPainter.h"
 #include "render/GradientPainter.h"
 #include "render/ImageDecoder.h"
@@ -190,11 +191,13 @@ void InlineLayout::build(
   }
   baseTextColorOverride_ = options.baseTextColor;
   hoverTextColor_ = options.hoverTextColor;
+  focusTextColor_ = options.focusTextColor;
   lineHeightMultiplier_ = options.lineHeightMultiplier;
   wordSpacing_ = options.wordSpacing;
+  textShadow_ = options.textShadow;
   alignment_ = options.alignment;
   projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState, options.sourceBase, baseFont.pointSizeF(),
-                                 options.pendingPrefixLength, options.smartPunct, options.breakOnSingleNewline);
+                                 options.pendingPrefixLength, options.smartPunct, options.breakOnSingleNewline, options.textTransform);
   buildOffsetMapFromProjection();
   buildMathAtoms(inlines, theme, width);
   buildImageAtoms(inlines, theme, width);
@@ -255,7 +258,7 @@ qreal InlineLayout::firstLineBaselineY() const {
   return line.isValid() ? (line.y() + line.ascent()) : 0.0;
 }
 
-void InlineLayout::paint(QPainter& painter, QPointF origin, qreal hoverPhase) const {
+void InlineLayout::paint(QPainter& painter, QPointF origin, qreal hoverPhase, qreal focusPhase) const {
   if (!textLayout_) {
     return;
   }
@@ -265,15 +268,26 @@ void InlineLayout::paint(QPainter& painter, QPointF origin, qreal hoverPhase) co
   paintTextLayoutCodeSpans(painter, origin);
   paintTextLayoutInlineDecorations(painter, origin);
   paintTextLayoutHtmlKeyboardSpans(painter, origin);
-  // CSS `:hover { color }` recolours only the runs that inherit the element colour
-  // (pre-computed in hoverRecolourRanges_), animated by the HoverAnimator phase. It
-  // is applied as foreground-only `selection`s passed to draw() — a draw-time
-  // override of the foreground that needs NO setFormats() (broken after endLayout
-  // in this Qt build) and a NO second render, so glyph edges stay crisp and styled
-  // spans (links/code/del/kbd) keep their own colours. The selection replaces (not
-  // blends) the per-run colour, so the target is the lerped base→hover colour.
-  if (hoverTextColor_.isValid() && hoverPhase > 0.0 && !hoverRecolourRanges_.isEmpty()) {
-    const QColor target = lerpColor(baseRunColor_, hoverTextColor_, qBound(0.0, hoverPhase, 1.0));
+  // CSS `text-shadow`: render the laid-out text to an offscreen image, recolour it
+  // to the shadow colour (alpha mask), blur, and composite behind the crisp text.
+  if (textShadow_.present && textShadow_.color.isValid() && textLayout_) {
+    paintTextShadow(painter, origin);
+  }
+  // CSS `:hover`/`:focus { color }` recolours only the runs that inherit the element
+  // colour (pre-computed in hoverRecolourRanges_), animated by the HoverAnimator/
+  // FocusAnimator phases. Applied as foreground-only `selection`s passed to draw() —
+  // a draw-time override of the foreground that needs NO setFormats() (broken after
+  // endLayout in this Qt build) and NO second render, so glyph edges stay crisp and
+  // styled spans (links/code/del/kbd) keep their own colours. The selection replaces
+  // (not blends) the per-run colour, so the target is the lerped colour: focus is
+  // applied first (base→focus), then hover on top (→hover) — the two orthogonal
+  // states compose, with hover visually winning when both are at full phase.
+  const bool hasFocus = focusTextColor_.isValid() && focusPhase > 0.0;
+  const bool hasHover = hoverTextColor_.isValid() && hoverPhase > 0.0;
+  if ((hasFocus || hasHover) && !hoverRecolourRanges_.isEmpty()) {
+    QColor target = baseRunColor_;
+    if (hasFocus) { target = lerpColor(target, focusTextColor_, qBound(0.0, focusPhase, 1.0)); }
+    if (hasHover) { target = lerpColor(target, hoverTextColor_, qBound(0.0, hoverPhase, 1.0)); }
     QVector<QTextLayout::FormatRange> selections;
     selections.reserve(hoverRecolourRanges_.size());
     for (const QPair<int, int>& range : hoverRecolourRanges_) {
@@ -1134,7 +1148,7 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
   // Pre-compute the runs a `:hover { color }` should recolour (only when the
   // element actually declares a hover colour). Derived from the same `formats`
   // the layout draws, so it stays in lock-step with span colouring.
-  if (hoverTextColor_.isValid()) {
+  if (hoverTextColor_.isValid() || focusTextColor_.isValid()) {
     computeHoverRecolourRanges(formats, theme);
   } else {
     hoverRecolourRanges_.clear();
@@ -1219,6 +1233,32 @@ void InlineLayout::computeHoverRecolourRanges(const QVector<QTextLayout::FormatR
     while (i < n && effective[i] == baseRunColor_) { ++i; }
     hoverRecolourRanges_.append({start, i});
   }
+}
+
+void InlineLayout::paintTextShadow(QPainter& painter, QPointF origin) const {
+  if (!textLayout_ || size_.width() <= 0 || size_.height() <= 0) { return; }
+  const qreal blur = qMax(qreal(0.0), textShadow_.blur);
+  const qreal maxOff = qMax(qAbs(textShadow_.offset.x()), qAbs(textShadow_.offset.y()));
+  const int pad = qCeil(blur + maxOff + 2.0);
+  const QSize size(qCeil(size_.width()) + pad * 2, qCeil(size_.height()) + pad * 2);
+
+  // Render the text once as an alpha mask (only its coverage shape matters).
+  QImage mask(size, QImage::Format_ARGB32_Premultiplied);
+  mask.fill(Qt::transparent);
+  { QPainter mp(&mask); mp.setRenderHint(QPainter::TextAntialiasing, true); textLayout_->draw(&mp, QPointF(pad, pad)); }
+
+  // Recolour the mask's alpha to the shadow colour: fill the colour, then keep it
+  // only where the mask had coverage (DestinationIn).
+  QImage shadow(size, QImage::Format_ARGB32_Premultiplied);
+  shadow.fill(Qt::transparent);
+  { QPainter sp(&shadow);
+    sp.fillRect(shadow.rect(), textShadow_.color);
+    sp.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+    sp.drawImage(0, 0, mask);
+  }
+  if (blur > 0.0) { boxBlur(shadow, qMax(1, qRound(blur))); }
+  painter.drawImage(QPointF(origin.x() - pad + textShadow_.offset.x(),
+                            origin.y() - pad + textShadow_.offset.y()), shadow);
 }
 
 void InlineLayout::paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) const {
@@ -1388,8 +1428,17 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
         span.kind != InlineSpanKind::HiddenSyntax && span.kind != InlineSpanKind::EmptyContentSlot &&
         span.kind != InlineSpanKind::Atom) {
       format.setForeground(theme.linkColor());
-      // Phase 3: link underline follows CSS `text-decoration` (phycat sets none).
-      format.setFontUnderline(theme.linkUnderlined());
+      // CSS `a { text-decoration }`: underline + style + colour, and optional overline.
+      if (theme.linkUnderlined()) {
+        format.setFontUnderline(true);
+        const int style = theme.linkUnderlineStyle();
+        format.setUnderlineStyle(style >= 0 ? static_cast<QTextCharFormat::UnderlineStyle>(style)
+                                            : QTextCharFormat::SingleUnderline);
+        if (const QColor uc = theme.linkUnderlineColor(); uc.isValid()) {
+          format.setUnderlineColor(uc);
+        }
+      }
+      if (theme.linkOverline()) { format.setFontOverline(true); }
     }
     const DisplayOffsetRange layoutRange = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
     if (!layoutRange.valid || layoutRange.end > displayText_.size()) {
@@ -1525,10 +1574,19 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     }
     if (!hs.href.isEmpty()) {
       format.setForeground(theme.linkColor());
-      // Phase 3c: HTML <a> follows the same text-decoration rule as Markdown
-      // links (phycat sets `a { text-decoration: none }`). Previously this was
-      // forced on, so HTML links stayed underlined even when the theme opted out.
-      format.setFontUnderline(theme.linkUnderlined());
+      // HTML <a> shares the Markdown link's text-decoration (underline + style +
+      // colour + overline). phycat sets `a { text-decoration: none }`; this keeps
+      // HTML links in step with Markdown links under the same CSS rule.
+      if (theme.linkUnderlined()) {
+        format.setFontUnderline(true);
+        const int style = theme.linkUnderlineStyle();
+        format.setUnderlineStyle(style >= 0 ? static_cast<QTextCharFormat::UnderlineStyle>(style)
+                                            : QTextCharFormat::SingleUnderline);
+        if (const QColor uc = theme.linkUnderlineColor(); uc.isValid()) {
+          format.setUnderlineColor(uc);
+        }
+      }
+      if (theme.linkOverline()) { format.setFontOverline(true); }
     }
     QTextLayout::FormatRange range;
     range.start = hs.layoutStart;

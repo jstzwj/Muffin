@@ -12,6 +12,7 @@
 #include <QFileInfo>
 #include <QFont>
 #include <QHash>
+#include <QTextCharFormat>
 #include <QString>
 #include <QtGlobal>
 #include <QTemporaryDir>
@@ -1049,6 +1050,163 @@ void testHoverPseudoWidthAndHoverColorCapture() {
           QStringLiteral("h1:not(.md-focus):hover colour must resolve (md-focus excluded via :not)"));
 }
 
+// :focus is the heading that holds the caret (Typora's .md-focus equivalent). The
+// mapper must build a `h1:focus` element style carrying the focus text colour, and
+// attach `h1:focus::after { width }` to the base pseudo rule as focusWidthRaw —
+// parallel to hover, so the FocusAnimator phase can drive both. A :focus pseudo
+// width must NOT collide with :hover (single-state partition).
+void testFocusStyleAndPseudoWidthCapture() {
+  const QString css = QStringLiteral(
+      "body { background:#fff; color:#222; }"
+      "#write { max-width:950px; padding:15px; margin:0 auto; }"
+      "#write h1 { color:#222; width:fit-content; }"
+      "#write h1::after { content:''; position:absolute; bottom:0; left:50%;"
+      "  width:40px; height:4px; background:#3db8d3; }"
+      "#write h1:focus { color:#e63946; box-shadow:0 0 12px #e63946; }"
+      "#write h1:hover::after { width:100%; }"
+      "#write h1:focus::after { width:60%; }");
+  const ThemeDefinition d = CssThemeMapper::fromCss(css, QStringLiteral("focus"), QString());
+  const ThemeElementStyle* focus = nullptr;
+  for (const ThemeElementStyle& s : d.elementStyles) {
+    if (s.key == QStringLiteral("h1:focus")) { focus = &s; }
+  }
+  require(focus != nullptr, QStringLiteral("h1:focus element style should be captured"));
+  require(focus->paint.color == QColor(QStringLiteral("#e63946")),
+          QStringLiteral("h1:focus colour should resolve"));
+  require(focus->paint.boxShadowColor == QColor(QStringLiteral("#e63946")) && qAbs(focus->paint.boxShadowBlur - 12.0) < 0.01,
+          QStringLiteral("h1:focus box-shadow should resolve"));
+  const PseudoElementRule* after = nullptr;
+  for (const PseudoElementRule& r : d.decorations.pseudos) {
+    if (r.host == QStringLiteral("h1") && r.pseudo == QStringLiteral("after")) { after = &r; }
+  }
+  require(after != nullptr, QStringLiteral("h1::after rule should be captured"));
+  require(after->hoverWidthRaw == QStringLiteral("100%"), QStringLiteral("hover width stays 100%"));
+  require(after->focusWidthRaw == QStringLiteral("60%"),
+          QStringLiteral("h1:focus::after width:60%% must attach as focusWidthRaw, separate from hover"));
+}
+
+// CSS `a { text-decoration: <line> <style> <color> }`: the shorthand must split into
+// linkUnderlined (line), linkUnderlineStyle (style → QTextCharFormat enum), and
+// linkUnderlineColor (colour). `overline` is a separate line keyword. Longhands
+// (text-decoration-line/-style/-color) override the shorthand. `none` clears the
+// underline. Qt has no double/dash-distinct strike; style maps to Qt's enum set.
+void testLinkTextDecorationShorthandAndLonghands() {
+  // Shorthand carrying all three: underline + dotted + a colour + overline.
+  const QString shortCss = QStringLiteral(
+      "#write { color:#222; } a { text-decoration: underline dotted #ff0000 overline; }");
+  const ThemeDefinition sd = CssThemeMapper::fromCss(shortCss, QStringLiteral("decoshort"), QString());
+  require(sd.typography.linkUnderlined, QStringLiteral("shorthand `underline` → linkUnderlined"));
+  require(sd.typography.linkOverline, QStringLiteral("shorthand `overline` → linkOverline"));
+  require(sd.typography.linkUnderlineStyle == int(QTextCharFormat::DotLine),
+          QStringLiteral("shorthand `dotted` → DotLine (got %1)").arg(sd.typography.linkUnderlineStyle));
+  require(sd.typography.linkUnderlineColor == QColor(QStringLiteral("#ff0000")),
+          QStringLiteral("shorthand colour token → linkUnderlineColor"));
+
+  // Longhands override the shorthand; `none` clears the underline.
+  const QString longCss = QStringLiteral(
+      "#write { color:#222; }"
+      "a { text-decoration: underline solid; text-decoration-style: wavy; text-decoration-color: #00aa00; }"
+      "a.none { text-decoration: none; }");
+  const ThemeDefinition ld = CssThemeMapper::fromCss(longCss, QStringLiteral("decolong"), QString());
+  require(ld.typography.linkUnderlineStyle == int(QTextCharFormat::WaveUnderline),
+          QStringLiteral("text-decoration-style: wavy overrides shorthand (got %1)").arg(ld.typography.linkUnderlineStyle));
+  require(ld.typography.linkUnderlineColor == QColor(QStringLiteral("#00aa00")),
+          QStringLiteral("text-decoration-color longhand → linkUnderlineColor"));
+}
+
+// CSS text-transform on an element maps to the int code ThemeElementTextStyle
+// carries (1=upper, 2=lower, 3=capitalize); absent/none → 0.
+void testTextTransformParse() {
+  const QString css = QStringLiteral(
+      "#write { color:#222; }"
+      "#write h1 { text-transform: uppercase; }"
+      "#write h2 { text-transform: capitalize; }"
+      "#write h3 { text-transform: lowercase; }"
+      "#write h4 { text-transform: none; }");
+  const ThemeDefinition d = CssThemeMapper::fromCss(css, QStringLiteral("tt"), QString());
+  require(elementStyleFor(d, QStringLiteral("h1"))->text.textTransform == 1, QStringLiteral("uppercase → 1"));
+  require(elementStyleFor(d, QStringLiteral("h2"))->text.textTransform == 3, QStringLiteral("capitalize → 3"));
+  require(elementStyleFor(d, QStringLiteral("h3"))->text.textTransform == 2, QStringLiteral("lowercase → 2"));
+  require(elementStyleFor(d, QStringLiteral("h4"))->text.textTransform == 0, QStringLiteral("none → 0"));
+}
+
+// General calc(): + - * /, nested parens, per-term units, % against the containing
+// box. Precedence is * / before + -. A malformed calc yields 0 (unset).
+void testCalcEvaluation() {
+  require(qAbs(CssThemeMapper::resolveLengthPx(QStringLiteral("calc(2em + 4px)"), {}, 16.0, -1.0) - 36.0) < 0.01,
+          QStringLiteral("calc(2em + 4px) = 36"));
+  require(qAbs(CssThemeMapper::resolveLengthPx(QStringLiteral("calc(100% - 45px)"), {}, 16.0, 200.0) - 155.0) < 0.01,
+          QStringLiteral("calc(100% - 45px) @200%% = 155"));
+  require(qAbs(CssThemeMapper::resolveLengthPx(QStringLiteral("calc(calc(1em * 2) + 3px)"), {}, 16.0, -1.0) - 35.0) < 0.01,
+          QStringLiteral("nested calc(calc(1em*2)+3px) = 35"));
+  require(qAbs(CssThemeMapper::resolveLengthPx(QStringLiteral("calc(10px * 2 - 5px)"), {}, 16.0, -1.0) - 15.0) < 0.01,
+          QStringLiteral("calc precedence: 10*2 - 5 = 15"));
+  require(qAbs(CssThemeMapper::resolveLengthPx(QStringLiteral("calc(10px / 4)"), {}, 16.0, -1.0) - 2.5) < 0.01,
+          QStringLiteral("calc(10px / 4) = 2.5"));
+}
+
+// conic-gradient parses to Kind::Conic with the `from <angle>` start and stops.
+void testConicGradientParse() {
+  const GradientSpec g = CssThemeMapper::parseGradient(
+      QStringLiteral("conic-gradient(from 45deg, #ff0000, #00ff00 50%, #0000ff)"), {});
+  require(g.kind == GradientSpec::Kind::Conic, QStringLiteral("conic kind"));
+  require(qAbs(g.conicStartDeg - 45.0) < 0.01, QStringLiteral("from 45deg captured"));
+  require(g.stops.size() >= 2, QStringLiteral("stops captured"));
+}
+
+// CSS `text-shadow: <ox> <oy> <blur>? <color>` parses to the element's text style.
+// Only the first of a comma list is honoured; `none` ⇒ no shadow.
+void testTextShadowParse() {
+  const QString css = QStringLiteral(
+      "#write { color:#222222; }"
+      "#write h1 { text-shadow: 2px 3px 4px #ff0000; }"
+      "#write h2 { text-shadow: 1px 1px #00ff00, 0 0 8px #0000ff; }"  // second ignored
+      "#write h3 { text-shadow: none; }");
+  const ThemeDefinition d = CssThemeMapper::fromCss(css, QStringLiteral("ts"), QString());
+  const TextShadow s1 = elementStyleFor(d, QStringLiteral("h1"))->text.textShadow;
+  require(s1.present, QStringLiteral("h1 text-shadow present"));
+  require(qAbs(s1.offset.x() - 2.0) < 0.01 && qAbs(s1.offset.y() - 3.0) < 0.01, QStringLiteral("offset 2,3"));
+  require(qAbs(s1.blur - 4.0) < 0.01, QStringLiteral("blur 4"));
+  require(s1.color == QColor(QStringLiteral("#ff0000")), QStringLiteral("shadow colour red"));
+  const TextShadow s2 = elementStyleFor(d, QStringLiteral("h2"))->text.textShadow;
+  require(s2.present && s2.color == QColor(QStringLiteral("#00ff00")), QStringLiteral("first comma shadow wins"));
+  require(!elementStyleFor(d, QStringLiteral("h3"))->text.textShadow.present, QStringLiteral("none ⇒ not present"));
+}
+
+// CSS `filter:` — a space-separated function list on the element's paint style.
+// blur takes px; brightness/contrast/opacity are multipliers; grayscale/sepia
+// accept 0..1 or %; hue-rotate takes deg/rad/turn/grad.
+void testFilterParse() {
+  const QString css = QStringLiteral(
+      "#write { color:#222222; }"
+      "#write h2 { background:#ff0000; filter: blur(4px) brightness(1.2) contrast(0.9) grayscale(50%) sepia(0.3) hue-rotate(90deg) opacity(0.8); }");
+  const ThemeDefinition d = CssThemeMapper::fromCss(css, QStringLiteral("f"), QString());
+  const ThemeElementPaintStyle& p = elementStyleFor(d, QStringLiteral("h2"))->paint;
+  require(p.filterPresent, QStringLiteral("filter present"));
+  require(qAbs(p.filterBlur - 4.0) < 0.01, QStringLiteral("blur 4px"));
+  require(qAbs(p.filterBrightness - 1.2) < 0.01, QStringLiteral("brightness 1.2"));
+  require(qAbs(p.filterContrast - 0.9) < 0.01, QStringLiteral("contrast 0.9"));
+  require(qAbs(p.filterGrayscale - 0.5) < 0.01, QStringLiteral("grayscale 50%% → 0.5"));
+  require(qAbs(p.filterSepia - 0.3) < 0.01, QStringLiteral("sepia 0.3"));
+  require(qAbs(p.filterHueRotateDeg - 90.0) < 0.01, QStringLiteral("hue-rotate 90deg"));
+  require(qAbs(p.filterOpacity - 0.8) < 0.01, QStringLiteral("opacity 0.8"));
+}
+
+// CSS `backdrop-filter:` parses like `filter:` but into the separate backdrop*
+// fields (the two are independent: a theme can set one without the other).
+void testBackdropFilterParse() {
+  const QString css = QStringLiteral(
+      "#write { color:#222222; }"
+      "#write h2 { backdrop-filter: blur(6px) brightness(1.1) sepia(0.2); }");
+  const ThemeDefinition d = CssThemeMapper::fromCss(css, QStringLiteral("bf"), QString());
+  const ThemeElementPaintStyle& p = elementStyleFor(d, QStringLiteral("h2"))->paint;
+  require(p.backdropPresent, QStringLiteral("backdrop present"));
+  require(qAbs(p.backdropBlur - 6.0) < 0.01, QStringLiteral("backdrop blur 6"));
+  require(qAbs(p.backdropBrightness - 1.1) < 0.01, QStringLiteral("backdrop brightness 1.1"));
+  require(qAbs(p.backdropSepia - 0.2) < 0.01, QStringLiteral("backdrop sepia 0.2"));
+  require(!p.filterPresent, QStringLiteral("filter stays separate from backdrop-filter"));
+}
+
 // Phase 5: @keyframes capture + `animation:` shorthand parse.
 void testKeyframesAndAnimationParse() {
   const QString css = QStringLiteral(
@@ -1419,6 +1577,14 @@ int main(int argc, char** argv) {
   RUN_TEST(testLinkBeforeMaskIconAndMarkGradient);
   RUN_TEST(testHoverEffectAndTransitionCapture);
   RUN_TEST(testHoverPseudoWidthAndHoverColorCapture);
+  RUN_TEST(testFocusStyleAndPseudoWidthCapture);
+  RUN_TEST(testLinkTextDecorationShorthandAndLonghands);
+  RUN_TEST(testTextTransformParse);
+  RUN_TEST(testCalcEvaluation);
+  RUN_TEST(testConicGradientParse);
+  RUN_TEST(testTextShadowParse);
+  RUN_TEST(testFilterParse);
+  RUN_TEST(testBackdropFilterParse);
   RUN_TEST(testKeyframesAndAnimationParse);
   RUN_TEST(testKeyframeSampling);
   RUN_TEST(testHeadingFitContentDetection);

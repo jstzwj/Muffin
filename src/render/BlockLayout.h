@@ -89,12 +89,16 @@ public:
     bool valid = false;
   };
 
-  // Hover state passed into paint so in-block properties (heading text colour,
-  // ::after width) animate with the SAME HoverAnimator phase the outer glow/bg/
-  // scale effects use. Defaults to inactive (base appearance).
-  struct BlockPaintHover {
-    bool active = false;
-    qreal phase = 0.0;  // 0..1
+  // Interactive state passed into paint so in-block properties (heading text
+  // colour, ::after width) animate with the SAME HoverAnimator/FocusAnimator
+  // phase the outer glow/bg/scale effects use. hover and focus are orthogonal —
+  // a block can be both under the cursor and contain the caret — so each carries
+  // its own active flag + phase. Defaults to inactive (base appearance).
+  struct BlockPaintState {
+    bool hoverActive = false;
+    qreal hoverPhase = 0.0;  // 0..1
+    bool focusActive = false;
+    qreal focusPhase = 0.0;  // 0..1
   };
 
   explicit BlockLayout(NodeId id = {});
@@ -194,7 +198,7 @@ public:
   QRectF tableCellRect(int row, int column) const;
 
   void paint(QPainter& painter, const RenderTheme& theme, qreal scrollY,
-             const CodeFenceScrollController* scroll = nullptr, BlockPaintHover hover = {}) const;
+             const CodeFenceScrollController* scroll = nullptr, BlockPaintState hover = {}) const;
   bool intersects(const QRectF& documentViewport) const;
   bool containsNode(NodeId id) const;
   bool containsInteractiveContent(QPointF documentPos, const RenderTheme& theme) const;
@@ -212,7 +216,7 @@ public:
   QVector<QRectF> selectionRectsSelfForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
 
 private:
-  void paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll, BlockPaintHover hover) const;
+  void paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll, BlockPaintState hover) const;
   void paintTable(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
   HitTestResult hitSelf(QPointF documentPos, const RenderTheme& theme, const CodeFenceScrollController* scroll) const;
   HitTestResult hitTable(QPointF documentPos, const RenderTheme& theme) const;

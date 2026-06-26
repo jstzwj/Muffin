@@ -1,13 +1,18 @@
 #include "theme/CssThemeMapper.h"
 
+#include "theme/CssCalc.h"
+#include "theme/CssContent.h"
 #include "theme/CssComputedStyleEngine.h"
 #include "theme/CssStyleDebug.h"
 #include "theme/ThemeDefinition.h"
 #include "theme/CssThemeParser.h"
+#include "theme/NodeCssElement.h"
+#include "document/MarkdownNode.h"
 
 #include <QColor>
 #include <QFont>
 #include <QPointF>
+#include <QTextCharFormat>
 #include <QRegularExpression>
 #include <QSet>
 #include <QString>
@@ -597,6 +602,12 @@ qreal lengthToPt(const QString& value, const QHash<QString, QString>& vars, qrea
 qreal lengthToPx(const QString& value, const QHash<QString, QString>& vars, qreal emPx = 16.0, qreal rootPx = -1.0, qreal containingPx = -1.0) {
   const QString resolved = CssThemeParser::resolveVars(value, vars).trimmed();
   if (resolved.isEmpty() || resolved == QStringLiteral("auto")) { return 0.0; }
+  // calc(<expr>) — a full + - * / expression with nested parens and per-term
+  // units (px/pt/em/rem/%). evalCalcPx resolves it to px; 0 ⇒ parse failure
+  // (treated as "unset", same as an unrecognised single value below).
+  if (resolved.startsWith(QStringLiteral("calc("), Qt::CaseInsensitive) && resolved.endsWith(QLatin1Char(')'))) {
+    return evalCalcPx(resolved.mid(5, resolved.size() - 6), emPx, rootPx, containingPx);
+  }
   int i = 0;
   while (i < resolved.size() && (resolved.at(i).isDigit() || resolved.at(i) == QLatin1Char('.') ||
                                  resolved.at(i) == QLatin1Char('-') || resolved.at(i) == QLatin1Char('+'))) {
@@ -940,6 +951,28 @@ void parseGradientDirection(const QString& part, GradientSpec& spec) {
   }
 }
 
+// Conic direction: `from <angle> [at <position>]`. Only `from` (the start angle)
+// is parsed here; the `at` center defaults to the box centre, which is what the
+// vast majority of conic themes use. Angles accept deg/rad/turn/grad.
+void parseConicDirection(const QString& part, GradientSpec& spec) {
+  const QString p = part.trimmed();
+  static const QRegularExpression fromRe(
+      QStringLiteral("from\\s+([+-]?\\d*\\.?\\d+)\\s*(deg|rad|turn|grad)?"),
+      QRegularExpression::CaseInsensitiveOption);
+  const QRegularExpressionMatch m = fromRe.match(p);
+  if (m.hasMatch()) {
+    bool ok = false;
+    qreal n = m.captured(1).toDouble(&ok);
+    if (ok) {
+      const QString u = m.captured(2).toLower();
+      if (u == QStringLiteral("rad")) { n = qRadiansToDegrees(n); }
+      else if (u == QStringLiteral("turn")) { n *= 360.0; }
+      else if (u == QStringLiteral("grad")) { n *= 0.9; }
+      spec.conicStartDeg = n;
+    }
+  }
+}
+
 GradientSpec parseGradientSpec(const QString& raw, const QHash<QString, QString>& vars) {
   GradientSpec spec;
   const QString resolved = CssThemeParser::resolveVars(raw, vars).trimmed();
@@ -950,12 +983,14 @@ GradientSpec parseGradientSpec(const QString& raw, const QHash<QString, QString>
   };
   if (startsWithKw("linear-gradient")) { spec.kind = GradientSpec::Kind::Linear; inner = gradientParenInner(resolved); }
   else if (startsWithKw("radial-gradient")) { spec.kind = GradientSpec::Kind::Radial; inner = gradientParenInner(resolved); }
+  else if (startsWithKw("conic-gradient")) { spec.kind = GradientSpec::Kind::Conic; inner = gradientParenInner(resolved); }
   else { return spec; }
   const QStringList parts = CssThemeParser::splitTopLevelCommas(inner);
   if (parts.isEmpty()) { spec.kind = GradientSpec::Kind::None; return spec; }
   int idx = 0;
   if (!parts.first().trimmed().isEmpty() && !gradientPartIsColor(parts.first(), vars)) {
-    parseGradientDirection(parts.first(), spec);
+    if (spec.kind == GradientSpec::Kind::Conic) { parseConicDirection(parts.first(), spec); }
+    else { parseGradientDirection(parts.first(), spec); }
     idx = 1;
   }
   std::vector<GradientStop> stops;
@@ -1221,12 +1256,13 @@ std::vector<ElementBackground> extractElementBackgrounds(const std::vector<FlatD
   return out;
 }
 
-// :hover + ::before/::after combos (phycat `#write h1:hover::after { width:100% }`).
-// These carry hover-state pseudo geometry that animates on hover; the base pseudo
-// rule is captured separately by extractPseudoRules, so here we only collect the
-// diff (e.g. width) keyed by the same host/pseudo. Pure :hover only — :focus etc.
-// are dropped to avoid conflating states.
-std::vector<FlatDecl> flattenHoverPseudo(const CssThemeSheet& sheet) {
+// A single state (:hover OR :focus) combined with ::before/::after (phycat
+// `#write h1:hover::after { width:100% }`). These carry state pseudo geometry that
+// animates on the matching animator; the base pseudo rule is captured separately by
+// extractPseudoRules, so here we only collect the diff (e.g. width) keyed by the
+// same host/pseudo. `state` selects which single state to collect; a selector with
+// MORE than one state set (e.g. :hover:focus) is dropped to avoid conflating them.
+std::vector<FlatDecl> flattenStatePseudo(const CssThemeSheet& sheet, bool SelInfo::* state) {
   std::vector<FlatDecl> out;
   int order = 0;
   for (const CssRule& rule : sheet.rules()) {
@@ -1234,9 +1270,12 @@ std::vector<FlatDecl> flattenHoverPseudo(const CssThemeSheet& sheet) {
     for (const QString& selector : rule.selectors) {
       if (selectorRequiresExportContext(selector)) { continue; }
       const SelInfo info = analyzeSelector(selector);
-      if (!info.hover) { continue; }
+      if (!(info.*state)) { continue; }
       if (info.pseudoElement != QStringLiteral("before") && info.pseudoElement != QStringLiteral("after")) { continue; }
-      if (info.unsupportedPseudoClass || info.focus || info.active || info.visited || info.mdFocus) { continue; }
+      if (info.unsupportedPseudoClass) { continue; }
+      // Pure single-state only: ignore compound states (:hover:focus, …).
+      const int states = info.hover + info.focus + info.active + info.visited + info.mdFocus;
+      if (states != 1) { continue; }
       const int spec = specificity(selector);
       for (const CssDeclaration& decl : rule.declarations) {
         FlatDecl fd;
@@ -1454,6 +1493,200 @@ qreal CssThemeMapper::resolveLengthPx(const QString& value, const QHash<QString,
   return lengthToPx(value, vars, emPx, -1.0, containingPx);
 }
 
+// Build a ThemeElementStyle from a CssComputedStyle, mirroring what the
+// makeElementStyle lambda in fromSheet does. Extracted so the real-tree layout
+// path (elementStyleForNode) can map a node's computed style the same way.
+// `emPx` is the box-geometry em basis; `fontSizeEmPx` (default emPx) is the
+// font-size em basis (parent computed font size); `bodyPx` resolves rem/%.
+ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssComputedStyle& style, qreal emPx, qreal bodyPx, qreal fontSizeEmPx) {
+  static const std::vector<QString> colorProps = {QStringLiteral("color")};
+  static const std::vector<QString> bgProps = {QStringLiteral("background-color"), QStringLiteral("background")};
+  const auto styleColor = [&](const std::vector<QString>& properties) {
+    for (const QString& property : properties) {
+      const QColor c = extractColor(style.resolvedValue(property), style.customProperties());
+      if (c.isValid()) { return c; }
+    }
+    return QColor();
+  };
+  const auto styleBox = [&](const QString& base) {
+    ThemeElementBoxStyle box;
+    const auto applySide = [&](const QString& side, auto setter) {
+      const QString raw = style.rawValue(base + QLatin1Char('-') + side);
+      if (raw.isEmpty()) { return; }
+      const qreal v = lengthToPx(raw, style.customProperties(), emPx, bodyPx);
+      setter(v);
+      box.present = true;
+    };
+    if (style.hasProperty(base)) {
+      const QMarginsF m = boxToMarginsPx(style.rawValue(base), style.customProperties(), emPx, bodyPx);
+      if (base == QStringLiteral("margin")) { box.margin = m; } else { box.padding = m; }
+      box.present = true;
+    }
+    QMarginsF& target = base == QStringLiteral("margin") ? box.margin : box.padding;
+    applySide(QStringLiteral("top"), [&](qreal v) { target.setTop(v); });
+    applySide(QStringLiteral("right"), [&](qreal v) { target.setRight(v); });
+    applySide(QStringLiteral("bottom"), [&](qreal v) { target.setBottom(v); });
+    applySide(QStringLiteral("left"), [&](qreal v) { target.setLeft(v); });
+    return box;
+  };
+  ThemeElementStyle out;
+  out.key = key;
+  out.box = styleBox(QStringLiteral("margin"));
+  const ThemeElementBoxStyle pad = styleBox(QStringLiteral("padding"));
+  out.box.padding = pad.padding;
+  out.box.present = out.box.present || pad.present;
+  const auto borderSide = [&](const QString& side, auto setW, auto setC) {
+    const QString sh = style.rawValue(QStringLiteral("border-") + side);
+    const QString wLong = style.rawValue(QStringLiteral("border-") + side + QStringLiteral("-width"));
+    const QString cLong = style.rawValue(QStringLiteral("border-") + side + QStringLiteral("-color"));
+    const QString globalSh = style.rawValue(QStringLiteral("border"));
+    const QString globalW = style.rawValue(QStringLiteral("border-width"));
+    const QString globalC = style.rawValue(QStringLiteral("border-color"));
+    const QString wRaw = !wLong.isEmpty() ? wLong : (!sh.isEmpty() ? sh : (!globalW.isEmpty() ? globalW : globalSh));
+    const QString cRaw = !cLong.isEmpty() ? cLong : (!sh.isEmpty() ? sh : (!globalC.isEmpty() ? globalC : globalSh));
+    if (const qreal w = borderWidthPx(wRaw, style.customProperties(), emPx); w > 0.0) { setW(w); out.box.present = true; }
+    if (const QColor c = extractColor(cRaw, style.customProperties()); c.isValid()) { setC(c); out.box.present = true; }
+  };
+  borderSide(QStringLiteral("top"),    [&](qreal v) { out.box.borderTopWidth = v; },    [&](const QColor& v) { out.box.borderTopColor = v; });
+  borderSide(QStringLiteral("right"),  [&](qreal v) { out.box.borderRightWidth = v; },  [&](const QColor& v) { out.box.borderRightColor = v; });
+  borderSide(QStringLiteral("bottom"), [&](qreal v) { out.box.borderBottomWidth = v; }, [&](const QColor& v) { out.box.borderBottomColor = v; });
+  borderSide(QStringLiteral("left"),   [&](qreal v) { out.box.borderLeftWidth = v; },   [&](const QColor& v) { out.box.borderLeftColor = v; });
+  if (const qreal radius = lengthToPx(style.rawValue(QStringLiteral("border-radius")), style.customProperties(), emPx, bodyPx); radius > 0.0) {
+    out.box.borderRadius = radius;
+    out.box.present = true;
+  }
+  const QString widthRaw = style.resolvedValue(QStringLiteral("width")).trimmed().toLower();
+  if (isIntrinsicPageWidthKeyword(widthRaw)) { out.box.widthFitContent = true; out.box.present = true; }
+  out.paint.color = styleColor(colorProps);
+  out.paint.backgroundColor = styleColor(bgProps);
+  out.paint.backgroundImage = parseGradientSpec(style.rawValue(QStringLiteral("background-image")), style.customProperties());
+  const QString shadow = style.rawValue(QStringLiteral("box-shadow"));
+  if (!shadow.isEmpty() && !shadow.contains(QStringLiteral("none"))) {
+    out.paint.boxShadowColor = extractColor(shadow, style.customProperties());
+    out.paint.boxShadowBlur = shadowBlurPx(shadow, style.customProperties());
+  }
+  const QString transform = style.resolvedValue(QStringLiteral("transform")).trimmed().toLower();
+  static const QRegularExpression scaleRe(QStringLiteral("scale\\(([^)]+)\\)"));
+  const QRegularExpressionMatch scaleMatch = scaleRe.match(transform);
+  if (scaleMatch.hasMatch()) {
+    bool ok = false;
+    const qreal s = scaleMatch.captured(1).trimmed().toDouble(&ok);
+    if (ok && s > 0.0) { out.paint.transformScale = s; }
+  }
+  // CSS `filter:` — a space-separated list of filter functions applied to the
+  // element's background box. Supports blur/brightness/contrast/grayscale/sepia/
+  // hue-rotate/opacity (invert/saturate/drop-shadow are out of scope). A bare
+  // number is a multiplier (0..1 for grayscale/sepia, × for the rest); `%` divides.
+  {
+    const auto parseFilterList = [&](const QString& raw, qreal blurEmPx) {
+      struct P { qreal blur=0, brightness=1, contrast=1, grayscale=0, sepia=0, hue=0, opacity=1; bool present=false; } p;
+      if (raw.isEmpty() || raw.startsWith(QStringLiteral("none"))) { return p; }
+      static const QRegularExpression funcRe(QStringLiteral("(\\w+)\\(([^)]+)\\)"));
+      auto it = funcRe.globalMatch(raw);
+      const auto numOrPct = [](const QString& v, qreal dflt) -> qreal {
+        QString t = v.trimmed();
+        const bool pct = t.endsWith(QLatin1Char('%'));
+        if (pct) { t.chop(1); }
+        bool ok = false;
+        const qreal n = t.trimmed().toDouble(&ok);
+        if (!ok) { return dflt; }
+        return pct ? n / 100.0 : n;
+      };
+      while (it.hasNext()) {
+        const QRegularExpressionMatch m = it.next();
+        const QString name = m.captured(1).toLower();
+        const QString arg = m.captured(2).trimmed();
+        if (name == QStringLiteral("blur")) { p.blur = lengthToPx(arg, style.customProperties(), blurEmPx, bodyPx); p.present = true; }
+        else if (name == QStringLiteral("brightness")) { p.brightness = numOrPct(arg, 1.0); p.present = true; }
+        else if (name == QStringLiteral("contrast")) { p.contrast = numOrPct(arg, 1.0); p.present = true; }
+        else if (name == QStringLiteral("opacity")) { p.opacity = numOrPct(arg, 1.0); p.present = true; }
+        else if (name == QStringLiteral("grayscale")) { p.grayscale = qBound(0.0, numOrPct(arg, 1.0), 1.0); p.present = true; }
+        else if (name == QStringLiteral("sepia")) { p.sepia = qBound(0.0, numOrPct(arg, 1.0), 1.0); p.present = true; }
+      }
+      static const QRegularExpression hueRe(QStringLiteral("hue-rotate\\s*\\(\\s*([+-]?\\d*\\.?\\d+)\\s*(deg|rad|turn|grad)?\\s*\\)"),
+                                            QRegularExpression::CaseInsensitiveOption);
+      if (const QRegularExpressionMatch hm = hueRe.match(raw); hm.hasMatch()) {
+        bool ok = false; qreal n = hm.captured(1).toDouble(&ok);
+        if (ok) {
+          const QString u = hm.captured(2).toLower();
+          if (u == QStringLiteral("rad")) { n = qRadiansToDegrees(n); }
+          else if (u == QStringLiteral("turn")) { n *= 360.0; }
+          else if (u == QStringLiteral("grad")) { n *= 0.9; }
+          p.hue = n; p.present = true;
+        }
+      }
+      return p;
+    };
+    const auto f = parseFilterList(style.resolvedValue(QStringLiteral("filter")).trimmed(), emPx);
+    if (f.present) {
+      out.paint.filterBlur = f.blur; out.paint.filterBrightness = f.brightness; out.paint.filterContrast = f.contrast;
+      out.paint.filterGrayscale = f.grayscale; out.paint.filterSepia = f.sepia; out.paint.filterHueRotateDeg = f.hue;
+      out.paint.filterOpacity = f.opacity; out.paint.filterPresent = true;
+    }
+    const auto b = parseFilterList(style.resolvedValue(QStringLiteral("backdrop-filter")).trimmed(), emPx);
+    if (b.present) {
+      out.paint.backdropBlur = b.blur; out.paint.backdropBrightness = b.brightness; out.paint.backdropContrast = b.contrast;
+      out.paint.backdropGrayscale = b.grayscale; out.paint.backdropSepia = b.sepia; out.paint.backdropHueRotateDeg = b.hue;
+      out.paint.backdropOpacity = b.opacity; out.paint.backdropPresent = true;
+    }
+  }
+  out.text.fontFamily = firstFamily(style.rawValue(QStringLiteral("font-family")), style.customProperties());
+  const qreal textEmPx = fontSizeEmPx > 0.0 ? fontSizeEmPx : emPx;
+  out.text.fontSizePx = lengthToPx(style.rawValue(QStringLiteral("font-size")), style.customProperties(), textEmPx, bodyPx);
+  out.text.lineHeight = parseLineHeightMultiplier(style.rawValue(QStringLiteral("line-height")), style.customProperties(), emPx);
+  out.text.wordSpacing = lengthToPx(style.rawValue(QStringLiteral("word-spacing")), style.customProperties(), emPx, bodyPx);
+  out.text.alignment = parseTextAlign(style.rawValue(QStringLiteral("text-align")), style.customProperties());
+  const QString ttRaw = style.resolvedValue(QStringLiteral("text-transform")).trimmed().toLower();
+  if (ttRaw == QStringLiteral("uppercase")) { out.text.textTransform = 1; }
+  else if (ttRaw == QStringLiteral("lowercase")) { out.text.textTransform = 2; }
+  else if (ttRaw == QStringLiteral("capitalize")) { out.text.textTransform = 3; }
+  // CSS `text-shadow: <ox> <oy> <blur>? <color>` (first of a comma list).
+  const QString tsRaw = style.resolvedValue(QStringLiteral("text-shadow")).trimmed();
+  if (!tsRaw.isEmpty() && !tsRaw.startsWith(QStringLiteral("none"))) {
+    const QString first = CssThemeParser::splitTopLevelCommas(tsRaw).first().trimmed();
+    const QColor sc = extractColor(first, style.customProperties());
+    if (sc.isValid()) {
+      static const QRegularExpression lenRe(QStringLiteral("([+-]?\\d*\\.?\\d+)\\s*(px|em|rem|pt)?"));
+      auto it = lenRe.globalMatch(first);
+      qreal nums[3] = {0, 0, 0};
+      int count = 0;
+      while (it.hasNext() && count < 3) { nums[count++] = it.next().captured(1).toDouble(); }
+      out.text.textShadow.offset = QPointF(nums[0], nums[1]);
+      out.text.textShadow.blur = count >= 3 ? nums[2] : 0.0;
+      out.text.textShadow.color = sc;
+      out.text.textShadow.present = true;
+    }
+  }
+  const ParsedFontWeight fw = parseFontWeight(style.rawValue(QStringLiteral("font-weight")), style.customProperties());
+  if (fw.present) { out.text.fontWeight = fw.weight; out.text.fontWeightSet = true; }
+  const ParsedItalic fs = parseFontItalic(style.rawValue(QStringLiteral("font-style")), style.customProperties());
+  if (fs.present) { out.text.italic = fs.italic; out.text.italicSet = true; }
+  return out;
+}
+
+// True if a selector needs the live document tree to match: sibling combinators
+// (`+`/`~`) or structural/content pseudo-classes. Inclusive on purpose — a false
+// positive just takes the (cached) per-node path; a false negative would silently
+// drop the rule.
+bool selectorIsStructural(const QString& selector) {
+  if (selector.contains(QLatin1String(":first-child")) || selector.contains(QLatin1String(":last-child")) ||
+      selector.contains(QLatin1String(":only-child")) || selector.contains(QLatin1String(":first-of-type")) ||
+      selector.contains(QLatin1String(":last-of-type")) || selector.contains(QLatin1String(":only-of-type")) ||
+      selector.contains(QLatin1String(":nth-child")) || selector.contains(QLatin1String(":nth-of-type")) ||
+      selector.contains(QLatin1String(":has("))) {
+    return true;
+  }
+  // `+` / `~` combinators (ignore any inside :not(...) by a coarse check — a
+  // stray `+`/`~` only opts into the structural path, which is safe).
+  bool inNot = false;
+  for (const QChar c : selector) {
+    if (c == QLatin1Char('(')) { inNot = true; }
+    else if (c == QLatin1Char(')')) { inNot = false; }
+    else if (!inNot && (c == QLatin1Char('+') || c == QLatin1Char('~'))) { return true; }
+  }
+  return false;
+}
+
 ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QString& id) {
   ThemeDefinition d;
   d.isBuiltIn = false;
@@ -1516,6 +1749,7 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
 
   qreal bodyPx = lengthToPx(bestValue(flat, sizeProps, isHtmlOrBody), vars, 16.0);
   if (bodyPx <= 0.0) { bodyPx = 16.0; }
+  d.bodyFontPx = bodyPx;
 
   // --- Computed-style gap fill (Phase 1) -------------------------------------
   // The flat last-compound extractor above is the primary source (it preserves
@@ -1546,7 +1780,7 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   CssElement csThead; csThead.tag = QStringLiteral("thead"); csThead.parent = &csTable;
   CssElement csTh; csTh.tag = QStringLiteral("th"); csTh.parent = &csThead;
   CssElement csTbody; csTbody.tag = QStringLiteral("tbody"); csTbody.parent = &csTable;
-  CssElement csTrEven; csTrEven.tag = QStringLiteral("tr"); csTrEven.nthEven = true; csTrEven.parent = &csTbody;
+  CssElement csTrEven; csTrEven.tag = QStringLiteral("tr"); csTrEven.childIndex = 1; csTrEven.parent = &csTbody;
 
   const CssComputedStyle csBodyStyle = styleEngine.styleFor(csBody);
   const CssComputedStyle csHtmlStyle = styleEngine.styleFor(csHtml);
@@ -1578,7 +1812,23 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   const qreal olFontPx = computedFontPx(csOlStyle, documentFontPx);
   const qreal liFontPx = computedFontPx(csLiStyle, ulFontPx);
   const qreal markerFontPx = computedFontPx(csLiMarkerStyle, liFontPx);
+  // CSS `list-style-type` on ul / ol / li (direct declarations). Read per-element
+  // because the prototype li hangs off ul only, so ol's value can't reach li via
+  // inheritance; the builder resolves by the real list's kind instead.
+  const auto listStyleTypeOf = [](const CssComputedStyle& style) -> QString {
+    QString v = style.resolvedValue(QStringLiteral("list-style-type")).trimmed().toLower();
+    if (v.isEmpty()) {
+      const QString sh = style.resolvedValue(QStringLiteral("list-style")).trimmed().toLower();
+      if (!sh.isEmpty()) { v = sh.section(QLatin1Char(' '), 0, 0); }  // first token of the shorthand
+    }
+    return v;
+  };
+  d.spacing.ulListStyleType = listStyleTypeOf(csUlStyle);
+  d.spacing.olListStyleType = listStyleTypeOf(csOlStyle);
+  d.spacing.liListStyleType = listStyleTypeOf(csLiStyle);
 
+  // First colour from a list of CSS properties on a computed style (used by the
+  // page/chrome token extraction below; makeElementStyleForComputed has its own).
   const auto styleColor = [&](const CssComputedStyle& style, const std::vector<QString>& properties) {
     for (const QString& property : properties) {
       const QColor c = extractColor(style.resolvedValue(property), style.customProperties());
@@ -1586,94 +1836,8 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
     }
     return QColor();
   };
-  const auto styleBox = [&](const CssComputedStyle& style, const QString& base, qreal emPx) {
-    ThemeElementBoxStyle box;
-    const auto applySide = [&](const QString& side, auto setter) {
-      const QString raw = style.rawValue(base + QLatin1Char('-') + side);
-      if (raw.isEmpty()) { return; }
-      const qreal v = lengthToPx(raw, style.customProperties(), emPx, bodyPx);
-      setter(v);
-      box.present = true;
-    };
-    if (style.hasProperty(base)) {
-      const QMarginsF m = boxToMarginsPx(style.rawValue(base), style.customProperties(), emPx, bodyPx);
-      if (base == QStringLiteral("margin")) { box.margin = m; } else { box.padding = m; }
-      box.present = true;
-    }
-    QMarginsF& target = base == QStringLiteral("margin") ? box.margin : box.padding;
-    applySide(QStringLiteral("top"), [&](qreal v) { target.setTop(v); });
-    applySide(QStringLiteral("right"), [&](qreal v) { target.setRight(v); });
-    applySide(QStringLiteral("bottom"), [&](qreal v) { target.setBottom(v); });
-    applySide(QStringLiteral("left"), [&](qreal v) { target.setLeft(v); });
-    return box;
-  };
   const auto makeElementStyle = [&](const QString& key, const CssComputedStyle& style, qreal emPx, qreal fontSizeEmPx = -1.0) {
-    ThemeElementStyle out;
-    out.key = key;
-    out.box = styleBox(style, QStringLiteral("margin"), emPx);
-    const ThemeElementBoxStyle pad = styleBox(style, QStringLiteral("padding"), emPx);
-    out.box.padding = pad.padding;
-    out.box.present = out.box.present || pad.present;
-    // Per-side borders: honour `border-{side}` longhands (e.g. phycat's
-    // `blockquote { border-left: 3px }`, the chunky keycap bottom), falling back to
-    // the global `border`/`border-width`/`border-color` so a uniform `border: 1px`
-    // still sets all four sides. Width via borderWidthPx, colour via extractColor
-    // (both handle the "Wpx style colour" shorthand form).
-    const auto borderSide = [&](const QString& side, auto setW, auto setC) {
-      const QString sh = style.rawValue(QStringLiteral("border-") + side);
-      const QString wLong = style.rawValue(QStringLiteral("border-") + side + QStringLiteral("-width"));
-      const QString cLong = style.rawValue(QStringLiteral("border-") + side + QStringLiteral("-color"));
-      const QString globalSh = style.rawValue(QStringLiteral("border"));
-      const QString globalW = style.rawValue(QStringLiteral("border-width"));
-      const QString globalC = style.rawValue(QStringLiteral("border-color"));
-      const QString wRaw = !wLong.isEmpty() ? wLong : (!sh.isEmpty() ? sh : (!globalW.isEmpty() ? globalW : globalSh));
-      const QString cRaw = !cLong.isEmpty() ? cLong : (!sh.isEmpty() ? sh : (!globalC.isEmpty() ? globalC : globalSh));
-      if (const qreal w = borderWidthPx(wRaw, style.customProperties(), emPx); w > 0.0) { setW(w); out.box.present = true; }
-      if (const QColor c = extractColor(cRaw, style.customProperties()); c.isValid()) { setC(c); out.box.present = true; }
-    };
-    borderSide(QStringLiteral("top"),    [&](qreal v) { out.box.borderTopWidth = v; },    [&](const QColor& v) { out.box.borderTopColor = v; });
-    borderSide(QStringLiteral("right"),  [&](qreal v) { out.box.borderRightWidth = v; },  [&](const QColor& v) { out.box.borderRightColor = v; });
-    borderSide(QStringLiteral("bottom"), [&](qreal v) { out.box.borderBottomWidth = v; }, [&](const QColor& v) { out.box.borderBottomColor = v; });
-    borderSide(QStringLiteral("left"),   [&](qreal v) { out.box.borderLeftWidth = v; },   [&](const QColor& v) { out.box.borderLeftColor = v; });
-    if (const qreal radius = lengthToPx(style.rawValue(QStringLiteral("border-radius")), style.customProperties(), emPx, bodyPx); radius > 0.0) {
-      out.box.borderRadius = radius;
-      out.box.present = true;
-    }
-    const QString widthRaw = style.resolvedValue(QStringLiteral("width")).trimmed().toLower();
-    if (isIntrinsicPageWidthKeyword(widthRaw)) { out.box.widthFitContent = true; out.box.present = true; }
-    out.paint.color = styleColor(style, colorProps);
-    out.paint.backgroundColor = styleColor(style, bgProps);
-    out.paint.backgroundImage = parseGradientSpec(style.rawValue(QStringLiteral("background-image")), style.customProperties());
-    const QString shadow = style.rawValue(QStringLiteral("box-shadow"));
-    if (!shadow.isEmpty() && !shadow.contains(QStringLiteral("none"))) {
-      out.paint.boxShadowColor = extractColor(shadow, style.customProperties());
-      out.paint.boxShadowBlur = shadowBlurPx(shadow, style.customProperties());
-    }
-    const QString transform = style.resolvedValue(QStringLiteral("transform")).trimmed().toLower();
-    static const QRegularExpression scaleRe(QStringLiteral("scale\\(([^)]+)\\)"));
-    const QRegularExpressionMatch scaleMatch = scaleRe.match(transform);
-    if (scaleMatch.hasMatch()) {
-      bool ok = false;
-      const qreal s = scaleMatch.captured(1).trimmed().toDouble(&ok);
-      if (ok && s > 0.0) { out.paint.transformScale = s; }
-    }
-    out.text.fontFamily = firstFamily(style.rawValue(QStringLiteral("font-family")), style.customProperties());
-    // CSS font-size participates in inheritance, so its em/% basis is the parent
-    // computed font size. Do not use `emPx` here: for headings that is the already-
-    // resolved heading size, reserved for the heading's own box geometry (margin /
-    // padding / border). Reusing it for font-size double-scales rules like
-    // GitHub's `h1 { font-size: 2.25em }` (2.25 * 36px instead of 2.25 * 16px).
-    // The optional override is the parent computed font size (for headings: #write).
-    const qreal textEmPx = fontSizeEmPx > 0.0 ? fontSizeEmPx : emPx;
-    out.text.fontSizePx = lengthToPx(style.rawValue(QStringLiteral("font-size")), style.customProperties(), textEmPx, bodyPx);
-    out.text.lineHeight = parseLineHeightMultiplier(style.rawValue(QStringLiteral("line-height")), style.customProperties(), emPx);
-    out.text.wordSpacing = lengthToPx(style.rawValue(QStringLiteral("word-spacing")), style.customProperties(), emPx, bodyPx);
-    out.text.alignment = parseTextAlign(style.rawValue(QStringLiteral("text-align")), style.customProperties());
-    const ParsedFontWeight fw = parseFontWeight(style.rawValue(QStringLiteral("font-weight")), style.customProperties());
-    if (fw.present) { out.text.fontWeight = fw.weight; out.text.fontWeightSet = true; }
-    const ParsedItalic fs = parseFontItalic(style.rawValue(QStringLiteral("font-style")), style.customProperties());
-    if (fs.present) { out.text.italic = fs.italic; out.text.italicSet = true; }
-    return out;
+    return makeElementStyleForComputed(key, style, emPx, bodyPx, fontSizeEmPx);
   };
   d.elementStyles.push_back(makeElementStyle(QStringLiteral("p"), csParagraphStyle, paragraphFontPx, documentFontPx));
   d.elementStyles.push_back(makeElementStyle(QStringLiteral("blockquote"), csBlockquoteStyle, blockquoteFontPx, documentFontPx));
@@ -1682,6 +1846,19 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   d.elementStyles.push_back(makeElementStyle(QStringLiteral("ol"), csOlStyle, olFontPx, documentFontPx));
   d.elementStyles.push_back(makeElementStyle(QStringLiteral("li"), csLiStyle, liFontPx, ulFontPx));
   d.elementStyles.push_back(makeElementStyle(QStringLiteral("li::marker"), csLiMarkerStyle, markerFontPx, liFontPx));
+  // `li::marker { content: … counter(list-item) … }` — a content-driven marker.
+  // Parse it into tokens; non-empty (with a counter) overrides list-style-type at
+  // layout time, resolved per item against the implicit list-item counter.
+  {
+    const QString markerContent = csLiMarkerStyle.resolvedValue(QStringLiteral("content")).trimmed();
+    if (!markerContent.isEmpty() && markerContent != QStringLiteral("none") && markerContent != QStringLiteral("normal")) {
+      const std::vector<ContentToken> tokens = parseContentTokens(markerContent);
+      if (std::any_of(tokens.begin(), tokens.end(),
+                      [](const ContentToken& t) { return t.kind != ContentToken::Kind::Literal; })) {
+        d.decorations.listMarkerContent = tokens;
+      }
+    }
+  }
   // Heading element styles are built LATE (just before return d) so their em-relative
   // geometry (margin/padding) resolves against the now-populated heading font sizes —
   // building them here would use bodyPx and shrink heading em margins/paddings.
@@ -1787,19 +1964,23 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   // ::before/::after decorations (gradients, SVG icons, text content, texture
   // masks), grouped by host. Empty for themes that declare none.
   d.decorations.pseudos = extractPseudoRules(allFlat, vars, emPxForHost);
-  // Hover-state pseudo width (phycat `h1:hover::after { width:100% }`). Attach the
+  // State pseudo widths (phycat `h1:hover::after { width:100% }`). Attach the
   // resolved-raw width to the matching base pseudo rule so the painter can lerp the
-  // base width → hover width by the HoverAnimator phase. Themes without a hover
-  // pseudo leave hoverWidthRaw empty (no widening, built-ins unchanged).
+  // base width → state width by the matching animator phase. Same recipe for hover
+  // and focus; themes without a state pseudo leave both raw fields empty.
   {
-    const std::vector<FlatDecl> flatHoverPseudo = flattenHoverPseudo(sheet);
-    for (PseudoElementRule& rule : d.decorations.pseudos) {
-      const auto pred = [&rule](const SelInfo& s) {
-        return pseudoHostKey(s) == rule.host && s.pseudoElement == rule.pseudo;
-      };
-      const QString wRaw = bestValue(flatHoverPseudo, {QStringLiteral("width")}, pred);
-      if (!wRaw.isEmpty()) { rule.hoverWidthRaw = CssThemeParser::resolveVars(wRaw, vars).trimmed(); }
-    }
+    const auto attachStateWidth = [&](bool SelInfo::* state, QString PseudoElementRule::* target) {
+      const std::vector<FlatDecl> flatStatePseudo = flattenStatePseudo(sheet, state);
+      for (PseudoElementRule& rule : d.decorations.pseudos) {
+        const auto pred = [&rule](const SelInfo& s) {
+          return pseudoHostKey(s) == rule.host && s.pseudoElement == rule.pseudo;
+        };
+        const QString wRaw = bestValue(flatStatePseudo, {QStringLiteral("width")}, pred);
+        if (!wRaw.isEmpty()) { (rule.*target) = CssThemeParser::resolveVars(wRaw, vars).trimmed(); }
+      }
+    };
+    attachStateWidth(&SelInfo::hover, &PseudoElementRule::hoverWidthRaw);
+    attachStateWidth(&SelInfo::focus, &PseudoElementRule::focusWidthRaw);
   }
   // Nested-list guide line from `li::before { border-left; left; top; height }`.
   d.decorations.listGuide = extractListGuide(allFlat, vars, bodyPx);
@@ -1932,8 +2113,42 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
     if (const QColor kc = extractColor(kbbc, vars); kc.isValid()) { d.typography.kbdBorderBottomColor = kc; }
   }
   if (const QColor ksc = extractColor(bestValue(flat, {QStringLiteral("box-shadow")}, isKeyboard), vars); ksc.isValid()) { d.typography.kbdShadowColor = ksc; }
-  const QString tdRaw = CssThemeParser::resolveVars(bestValue(flat, {QStringLiteral("text-decoration")}, isLink), vars).trimmed().toLower();
-  if (!tdRaw.isEmpty()) { d.typography.linkUnderlined = tdRaw.contains(QLatin1String("underline")); }
+  // CSS `a` text-decoration: <line> <style> <color>. Shorthand + longhands.
+  // linkUnderlined follows the `underline` line (false for `none`); style maps to a
+  // QTextCharFormat::UnderlineStyle; colour → linkUnderlineColor; overline captured
+  // separately. Qt has no colour for strike/overline (always text colour), so these
+  // apply to the link underline only.
+  {
+    const QString tdShorthand = CssThemeParser::resolveVars(bestValue(flat, {QStringLiteral("text-decoration")}, isLink), vars).trimmed().toLower();
+    const QString lineLong = CssThemeParser::resolveVars(bestValue(flat, {QStringLiteral("text-decoration-line")}, isLink), vars).trimmed().toLower();
+    const QString styleLong = CssThemeParser::resolveVars(bestValue(flat, {QStringLiteral("text-decoration-style")}, isLink), vars).trimmed().toLower();
+    const QString colorLong = CssThemeParser::resolveVars(bestValue(flat, {QStringLiteral("text-decoration-color")}, isLink), vars).trimmed();
+    const QString td = !lineLong.isEmpty() ? lineLong : tdShorthand;
+    if (!td.isEmpty()) {
+      d.typography.linkUnderlined = td.contains(QLatin1String("underline"));
+      d.typography.linkOverline = td.contains(QLatin1String("overline"));
+    }
+    const QString styleSrc = !styleLong.isEmpty() ? styleLong : tdShorthand;
+    static const QHash<QString, int> kDecoStyle = {
+        {QStringLiteral("solid"), int(QTextCharFormat::SingleUnderline)},
+        {QStringLiteral("double"), int(QTextCharFormat::SingleUnderline)},  // Qt has no double → single
+        {QStringLiteral("dotted"), int(QTextCharFormat::DotLine)},
+        {QStringLiteral("dashed"), int(QTextCharFormat::DashUnderline)},
+        {QStringLiteral("wavy"), int(QTextCharFormat::WaveUnderline)},
+    };
+    for (auto it = kDecoStyle.constBegin(); it != kDecoStyle.constEnd(); ++it) {
+      if (styleSrc.contains(it.key())) { d.typography.linkUnderlineStyle = it.value(); break; }
+    }
+    // Colour: prefer the longhand; else scan the shorthand tokens for a colour literal.
+    QColor color;
+    if (!colorLong.isEmpty()) { color = extractColor(colorLong, vars); }
+    if (!color.isValid() && !tdShorthand.isEmpty()) {
+      for (const QString& tok : tdShorthand.split(QLatin1Char(' '), Qt::SkipEmptyParts)) {
+        if ((color = extractColor(tok, vars)).isValid()) { break; }
+      }
+    }
+    if (color.isValid()) { d.typography.linkUnderlineColor = color; }
+  }
   for (int level = 1; level <= 6; ++level) {
     const qreal headingPx = headingEmPx(d.typography, level, bodyPx);
     d.typography.headingAlignment[level - 1] = parseTextAlign(bestValue(flat, alignProps, [level](const SelInfo& s) { return isHeading(s, level); }), vars);
@@ -2092,8 +2307,37 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
     CssElementState hover; hover.hover = true;
     d.elementStyles.push_back(makeElementStyle(QStringLiteral("h%1:hover").arg(level),
                                                styleEngine.styleFor(h, hover), headingEmPx(d.typography, level, bodyPx), documentFontPx));
+    // `:focus` — the heading containing the caret. Same query as :hover so the
+    // painter can look up `h{N}:focus` for focus glow/bg/scale/text-recolour.
+    CssElementState focus; focus.focus = true;
+    d.elementStyles.push_back(makeElementStyle(QStringLiteral("h%1:focus").arg(level),
+                                               styleEngine.styleFor(h, focus), headingEmPx(d.typography, level, bodyPx), documentFontPx));
   }
+  // Structural-selector detection: a theme that uses `+`/`~` combinators or
+  // structural pseudo-classes (`:first-child`, `:nth-child(n)`, `:has(...)`, …)
+  // needs the live MarkdownNode tree to match, so it takes the per-node layout
+  // path. Store the parsed sheet so that path can run the engine. Themes without
+  // such selectors stay on the load-time prototype precompute (no per-layout cost).
+  for (const CssRule& rule : sheet.rules()) {
+    if (rule.darkScope) { continue; }
+    for (const QString& sel : rule.selectors) {
+      if (selectorIsStructural(sel)) { d.hasStructuralRules = true; break; }
+    }
+    if (d.hasStructuralRules) { break; }
+  }
+  if (d.hasStructuralRules) { d.structuralSheet = std::make_shared<CssThemeSheet>(sheet); }
   return d;
+}
+
+ThemeElementStyle CssThemeMapper::elementStyleForNode(const CssComputedStyleEngine& engine, const MarkdownNode& node,
+                                                      const QString& key, qreal bodyPx) {
+  NodeCssElementBuilder builder;
+  const CssElement* element = builder.build(node);
+  const CssComputedStyle computed = engine.styleFor(*element);
+  // em basis = bodyPx for the structural path. (Heading em-relative geometry under
+  // a structural selector resolves against body px — a documented limitation;
+  // structural selectors on headings are rare.)
+  return makeElementStyleForComputed(key, computed, bodyPx, bodyPx, bodyPx);
 }
 
 }  // namespace muffin

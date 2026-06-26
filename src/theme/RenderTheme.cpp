@@ -1,5 +1,9 @@
 #include "theme/RenderTheme.h"
 
+#include "document/MarkdownNode.h"
+#include "theme/CssComputedStyleEngine.h"
+#include "theme/CssThemeMapper.h"
+
 #include <QFontDatabase>
 #include <QStringList>
 #include <QtGlobal>
@@ -165,6 +169,9 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   t.letterSpacing_ = ty.letterSpacing;
   t.codeLetterSpacing_ = ty.codeLetterSpacing;
   t.linkUnderlined_ = ty.linkUnderlined;
+  t.linkUnderlineStyle_ = ty.linkUnderlineStyle;
+  t.linkUnderlineColor_ = ty.linkUnderlineColor;
+  t.linkOverline_ = ty.linkOverline;
   t.inlineCodePaddingH_ = ty.inlineCodePaddingH;
   t.inlineCodePaddingV_ = ty.inlineCodePaddingV;
   t.inlineCodeBorderRadius_ = ty.inlineCodeBorderRadius;
@@ -213,6 +220,12 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
       break;
     }
   }
+  t.hasStructuralRules_ = definition.hasStructuralRules;
+  t.bodyFontPx_ = definition.bodyFontPx;
+  t.structuralSheet_ = definition.structuralSheet;
+  if (t.structuralSheet_) {
+    t.structuralEngine_ = std::make_shared<CssComputedStyleEngine>(*t.structuralSheet_);
+  }
   t.codeBlockPadding_ = definition.spacing.codeBlockPadding;
   t.codeBlockBorderRadius_ = definition.spacing.codeBlockBorderRadius;
   t.codeBlockBoxThemed_ = definition.spacing.codeBlockBoxThemed;
@@ -223,6 +236,9 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   t.tableMargin_ = definition.spacing.tableMargin;
   t.listMargin_ = definition.spacing.listMargin;
   t.listMarkerGap_ = definition.spacing.listMarkerGap;
+  t.ulListStyleType_ = definition.spacing.ulListStyleType;
+  t.olListStyleType_ = definition.spacing.olListStyleType;
+  t.liListStyleType_ = definition.spacing.liListStyleType;
   for (int i = 0; i < 6; ++i) {
     t.headingBeforeAdvance_[i] = definition.spacing.headingBeforeAdvance[i];
   }
@@ -308,6 +324,13 @@ qreal RenderTheme::listMarkerGap() const {
   return qMax(listIndent() * 0.2, scaled(kMarkerGapFloor));
 }
 
+QString RenderTheme::listStyleTypeForItem(bool ordered) const {
+  // Ordered items take `ol`'s type, bullet items `ul`'s; a direct `li` declaration
+  // is the fallback (covers `li { list-style-type }` with no per-list rule).
+  const QString type = ordered ? olListStyleType_ : ulListStyleType_;
+  return !type.isEmpty() ? type : liListStyleType_;
+}
+
 ListGuide RenderTheme::listGuide() const {
   // Scale the CSS-px geometry to the current zoom; colour and `present` pass through.
   ListGuide g = decorations_.listGuide;
@@ -362,9 +385,11 @@ QColor RenderTheme::pageShadowColor() const { return pageShadowColor_; }
 qreal RenderTheme::pageShadowBlur() const { return scaled(pageShadowBlur_); }
 qreal RenderTheme::pageShadowOffsetY() const { return scaled(pageShadowOffsetY_); }
 
-QMarginsF RenderTheme::blockMargin(BlockType type, int headingLevel) const {
+QMarginsF RenderTheme::blockMargin(BlockType type, int headingLevel, const MarkdownNode* node) const {
   // Element box geometry for p / h1-h6 / blockquote / list comes from elementStyles;
-  // pre/table (no element style) keep their legacy block-flow margins.
+  // pre/table (no element style) keep their legacy block-flow margins. When `node`
+  // is supplied and the theme uses structural selectors, the node's live position
+  // is matched first (so `li:first-child`, `p + p`, … override the base margin).
   QString key;
   QMarginsF m;  // null unless a block-flow margin or an element style sets it
   switch (type) {
@@ -378,7 +403,8 @@ QMarginsF RenderTheme::blockMargin(BlockType type, int headingLevel) const {
     default: break;
   }
   if (!key.isEmpty()) {
-    if (const ThemeElementStyle* style = elementStyle(key)) {
+    const ThemeElementStyle* style = node ? elementStyleForNode(*node, key) : elementStyle(key);
+    if (style) {
       if (style->box.present && !style->box.margin.isNull()) { m = style->box.margin; }
     }
   }
@@ -514,9 +540,9 @@ QFont RenderTheme::paragraphFont() const {
   return font;
 }
 
-QFont RenderTheme::textFontForElement(const QString& key) const {
+QFont RenderTheme::textFontForElement(const QString& key, const MarkdownNode* node) const {
   QFont font = paragraphFont();
-  const ThemeElementStyle* style = elementStyle(key);
+  const ThemeElementStyle* style = node ? elementStyleForNode(*node, key) : elementStyle(key);
   if (!style) { return font; }
   const QString& platform = serifBody_ ? serifFamily() : sansFamily();
   if (!style->text.fontFamily.isEmpty()) { font.setFamilies(themeFamilyList(style->text.fontFamily, platform)); }
@@ -528,32 +554,59 @@ QFont RenderTheme::textFontForElement(const QString& key) const {
   return font;
 }
 
-QColor RenderTheme::textColorForElement(const QString& key) const {
-  if (const ThemeElementStyle* style = elementStyle(key)) {
+QColor RenderTheme::textColorForElement(const QString& key, const MarkdownNode* node) const {
+  if (const ThemeElementStyle* style = node ? elementStyleForNode(*node, key) : elementStyle(key)) {
     if (style->paint.color.isValid()) { return style->paint.color; }
   }
   return textColor_;
 }
 
-qreal RenderTheme::lineHeightMultiplierForElement(const QString& key, BlockType fallbackType, int headingLevel) const {
-  if (const ThemeElementStyle* style = elementStyle(key)) {
+qreal RenderTheme::lineHeightMultiplierForElement(const QString& key, BlockType fallbackType, int headingLevel, const MarkdownNode* node) const {
+  if (const ThemeElementStyle* style = node ? elementStyleForNode(*node, key) : elementStyle(key)) {
     if (style->text.lineHeight > 0.0) { return style->text.lineHeight; }
   }
   return lineHeightMultiplier(fallbackType, headingLevel);
 }
 
-qreal RenderTheme::wordSpacingForElement(const QString& key) const {
-  if (const ThemeElementStyle* style = elementStyle(key)) {
+qreal RenderTheme::wordSpacingForElement(const QString& key, const MarkdownNode* node) const {
+  if (const ThemeElementStyle* style = node ? elementStyleForNode(*node, key) : elementStyle(key)) {
     if (style->text.wordSpacing != 0.0) { return scaled(style->text.wordSpacing); }
   }
   return 0.0;
 }
 
-Qt::Alignment RenderTheme::textAlignmentForElement(const QString& key, BlockType fallbackType, int headingLevel) const {
-  if (const ThemeElementStyle* style = elementStyle(key)) {
+Qt::Alignment RenderTheme::textAlignmentForElement(const QString& key, BlockType fallbackType, int headingLevel, const MarkdownNode* node) const {
+  if (const ThemeElementStyle* style = node ? elementStyleForNode(*node, key) : elementStyle(key)) {
     if (style->text.alignment != Qt::Alignment()) { return style->text.alignment; }
   }
   return textAlignment(fallbackType, headingLevel);
+}
+
+int RenderTheme::textTransformForElement(const QString& key, const MarkdownNode* node) const {
+  if (const ThemeElementStyle* style = node ? elementStyleForNode(*node, key) : elementStyle(key)) {
+    return style->text.textTransform;
+  }
+  return 0;
+}
+
+TextShadow RenderTheme::textShadowForElement(const QString& key, const MarkdownNode* node) const {
+  if (const ThemeElementStyle* style = node ? elementStyleForNode(*node, key) : elementStyle(key)) {
+    return style->text.textShadow;
+  }
+  return TextShadow{};
+}
+
+const ThemeElementStyle* RenderTheme::elementStyleForNode(const MarkdownNode& node, const QString& key) const {
+  if (!hasStructuralRules_ || !structuralEngine_) { return elementStyle(key); }
+  const auto it = nodeStyleCache_.constFind(node.id());
+  if (it != nodeStyleCache_.constEnd()) { return &it.value(); }
+  ThemeElementStyle resolved = CssThemeMapper::elementStyleForNode(*structuralEngine_, node, key, bodyFontPx_);
+  resolved.key = key;
+  return &nodeStyleCache_.insert(node.id(), std::move(resolved)).value();
+}
+
+void RenderTheme::clearStructuralCache() const {
+  nodeStyleCache_.clear();
 }
 
 QFont RenderTheme::headingFont(int level) const {
@@ -641,6 +694,15 @@ QColor RenderTheme::linkColor() const {
 bool RenderTheme::linkUnderlined() const {
   return linkUnderlined_;
 }
+int RenderTheme::linkUnderlineStyle() const {
+  return linkUnderlineStyle_;
+}
+QColor RenderTheme::linkUnderlineColor() const {
+  return linkUnderlineColor_;
+}
+bool RenderTheme::linkOverline() const {
+  return linkOverline_;
+}
 
 qreal RenderTheme::inlineCodePaddingH() const { return scaled(inlineCodePaddingH_); }
 qreal RenderTheme::inlineCodePaddingV() const { return scaled(inlineCodePaddingV_); }
@@ -725,9 +787,9 @@ const ThemeElementStyle* RenderTheme::elementStyle(const QString& key) const {
   return nullptr;
 }
 
-ThemeElementBoxStyle RenderTheme::elementBoxStyle(const QString& key) const {
+ThemeElementBoxStyle RenderTheme::elementBoxStyle(const QString& key, const MarkdownNode* node) const {
   ThemeElementBoxStyle out;
-  if (const ThemeElementStyle* style = elementStyle(key)) {
+  if (const ThemeElementStyle* style = node ? elementStyleForNode(*node, key) : elementStyle(key)) {
     out = style->box;
     out.margin = QMarginsF(scaled(out.margin.left()), scaled(out.margin.top()), scaled(out.margin.right()), scaled(out.margin.bottom()));
     out.padding = QMarginsF(scaled(out.padding.left()), scaled(out.padding.top()), scaled(out.padding.right()), scaled(out.padding.bottom()));

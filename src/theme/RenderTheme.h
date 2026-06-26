@@ -1,15 +1,23 @@
 #pragma once
 
 #include "document/MarkdownTypes.h"
+#include "document/NodeId.h"
 #include "render/CodeHighlight.h"
 #include "theme/ThemeDefinition.h"
 
 #include <QColor>
 #include <QFont>
+#include <QHash>
 #include <QMarginsF>
 #include <Qt>
 
 namespace muffin {
+
+class MarkdownNode;
+class CssComputedStyleEngine;
+class CssThemeSheet;
+struct CssElement;
+struct ThemeElementStyle;
 
 class RenderTheme {
 public:
@@ -37,6 +45,9 @@ public:
   qreal blockSpacing() const;
   qreal listIndent() const;
   qreal listMarkerGap() const;
+  // CSS `list-style-type` for a list item: the ordered/unordered list's declared
+  // type, falling back to a direct `li` declaration. Empty ⇒ legacy marker.
+  QString listStyleTypeForItem(bool ordered) const;
   qreal blockQuoteIndent() const;
   // Nested-list guide line with geometry scaled to the current zoom (colour and
   // the `present` flag pass through unchanged). Invalid when the theme styled no
@@ -52,7 +63,7 @@ public:
   QColor pageShadowColor() const;
   qreal pageShadowBlur() const;
   qreal pageShadowOffsetY() const;
-  QMarginsF blockMargin(BlockType type, int headingLevel = 0) const;
+  QMarginsF blockMargin(BlockType type, int headingLevel = 0, const MarkdownNode* node = nullptr) const;
   QMarginsF headingPadding(int level) const;
   // Phase 4a: CSS `blockquote` box (flow-aware). blockquoteBoxThemed() is the
   // switch from the legacy accent-bar + 16px indent to the CSS-driven path.
@@ -84,11 +95,28 @@ public:
   Qt::Alignment textAlignment(BlockType type, int headingLevel = 0) const;
 
   QFont paragraphFont() const;
-  QFont textFontForElement(const QString& key) const;
-  QColor textColorForElement(const QString& key) const;
-  qreal lineHeightMultiplierForElement(const QString& key, BlockType fallbackType, int headingLevel = 0) const;
-  qreal wordSpacingForElement(const QString& key) const;
-  Qt::Alignment textAlignmentForElement(const QString& key, BlockType fallbackType, int headingLevel = 0) const;
+  // Element-level getters. When the theme uses structural selectors and `node` is
+  // supplied, the node's live position is matched first (so `li:first-child`,
+  // `p:has(img)`, `li + li`, … override the base); otherwise the load-time
+  // prototype style (keyed by `key`) is used.
+  QFont textFontForElement(const QString& key, const MarkdownNode* node = nullptr) const;
+  QColor textColorForElement(const QString& key, const MarkdownNode* node = nullptr) const;
+  qreal lineHeightMultiplierForElement(const QString& key, BlockType fallbackType, int headingLevel = 0, const MarkdownNode* node = nullptr) const;
+  qreal wordSpacingForElement(const QString& key, const MarkdownNode* node = nullptr) const;
+  Qt::Alignment textAlignmentForElement(const QString& key, BlockType fallbackType, int headingLevel = 0, const MarkdownNode* node = nullptr) const;
+  // CSS text-transform for an element (0=none, 1=upper, 2=lower, 3=capitalize).
+  int textTransformForElement(const QString& key, const MarkdownNode* node = nullptr) const;
+  // CSS `text-shadow` for an element (present=false ⇒ none).
+  TextShadow textShadowForElement(const QString& key, const MarkdownNode* node = nullptr) const;
+  // Structural-selector support: true when the theme needs the live tree. The
+  // builder passes the node into the getters above so structural rules resolve.
+  bool hasStructuralRules() const { return hasStructuralRules_; }
+  // Node-resolved element style (cached per rebuild). Returns the precomputed base
+  // when the theme has no structural rules.
+  const ThemeElementStyle* elementStyleForNode(const MarkdownNode& node, const QString& key) const;
+  // Drop the per-node cache (call at the start of each layout rebuild so edited
+  // structure — a sibling added/removed — is re-evaluated).
+  void clearStructuralCache() const;
   QFont headingFont(int level) const;
   QFont codeFont() const;
   qreal codeLineHeight() const;
@@ -100,6 +128,11 @@ public:
   QColor linkColor() const;
   // Phase 3: `a` underline follows CSS `text-decoration` (false for `none`).
   bool linkUnderlined() const;
+  // CSS `a` text-decoration style/colour/overline. Underline style is a
+  // QTextCharFormat::UnderlineStyle; returns -1 when unset (caller applies Single).
+  int linkUnderlineStyle() const;
+  QColor linkUnderlineColor() const;  // invalid → caller uses the link text colour
+  bool linkOverline() const;
   // Phase 3b: inline-code chip geometry from CSS `code` (zoom-scaled). Paint-only.
   qreal inlineCodePaddingH() const;
   qreal inlineCodePaddingV() const;
@@ -141,7 +174,7 @@ public:
   QColor spellCheckColor() const;
   QColor listMarkerColor() const;
   const ThemeElementStyle* elementStyle(const QString& key) const;
-  ThemeElementBoxStyle elementBoxStyle(const QString& key) const;
+  ThemeElementBoxStyle elementBoxStyle(const QString& key, const MarkdownNode* node = nullptr) const;
   // Per-heading text colour from the theme; invalid when the theme doesn't set
   // one (caller falls back to textColor). level is 1..6.
   QColor headingColor(int level) const;
@@ -174,6 +207,9 @@ private:
   qreal letterSpacing_ = 0.0;
   qreal codeLetterSpacing_ = 0.0;
   bool linkUnderlined_ = true;
+  int linkUnderlineStyle_ = -1;
+  QColor linkUnderlineColor_;
+  bool linkOverline_ = false;
   qreal inlineCodePaddingH_ = 3.0;
   qreal inlineCodePaddingV_ = 1.0;
   qreal inlineCodeBorderRadius_ = 3.0;
@@ -216,6 +252,14 @@ private:
   ThemeDecorations decorations_;
   std::vector<ThemeElementStyle> elementStyles_;
   QColor listMarkerColor_;
+  // Structural-selector layout path. Populated only when the theme declares rules
+  // that need the live tree; the per-node cache is mutable (lazily filled, cleared
+  // per rebuild) so the const getters can populate it.
+  bool hasStructuralRules_ = false;
+  qreal bodyFontPx_ = 16.0;
+  std::shared_ptr<const CssThemeSheet> structuralSheet_;
+  std::shared_ptr<CssComputedStyleEngine> structuralEngine_;
+  mutable QHash<NodeId, ThemeElementStyle> nodeStyleCache_;
 
   qreal headingBeforeAdvance_[6] = {};
   QMarginsF codeBlockPadding_;
@@ -228,6 +272,9 @@ private:
   QMarginsF tableMargin_;
   QMarginsF listMargin_;
   qreal listMarkerGap_ = 0.0;
+  QString ulListStyleType_;
+  QString olListStyleType_;
+  QString liListStyleType_;
 
   QColor backgroundColor_ = QColor(QStringLiteral("#ffffff"));
   QColor textColor_ = QColor(QStringLiteral("#202124"));

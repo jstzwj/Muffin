@@ -3,6 +3,7 @@
 #include "render/KeyframeSampler.h"
 #include "theme/ThemeDefinition.h"
 
+#include <QElapsedTimer>
 #include <QHash>
 #include <QObject>
 #include <QSet>
@@ -10,7 +11,6 @@
 
 #include <functional>
 
-class QElapsedTimer;
 class QTimer;
 
 namespace muffin {
@@ -57,7 +57,7 @@ private:
   static qreal ease(qreal x, const QString& e);
 
   QTimer* timer_ = nullptr;
-  QElapsedTimer* clock_ = nullptr;
+  QElapsedTimer clock_;  // value member: QElapsedTimer is not a QObject, so a `new`-ed pointer would leak
   std::vector<AnimationDef> anims_;
   std::vector<KeyframesDef> keyframes_;
   QHash<QString, AnimatedSample> samples_;

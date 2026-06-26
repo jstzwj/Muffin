@@ -62,7 +62,7 @@ void testSelectorMatching() {
   CssElement pre; pre.tag = QStringLiteral("pre"); pre.classes = {QStringLiteral("md-fences")}; pre.parent = &write;
   CssElement table; table.tag = QStringLiteral("table"); table.parent = &write;
   CssElement tbody; tbody.tag = QStringLiteral("tbody"); tbody.parent = &table;
-  CssElement tr; tr.tag = QStringLiteral("tr"); tr.nthEven = true; tr.parent = &tbody;
+  CssElement tr; tr.tag = QStringLiteral("tr"); tr.childIndex = 1; tr.parent = &tbody;
 
   const QString css = QStringLiteral(
       "#write code:not(.md-fencescode) { background: #123456; }"

@@ -1,7 +1,9 @@
 #include "render/DecorationPainter.h"
 
 #include "theme/CssThemeMapper.h"
+#include "render/Filter.h"
 #include "render/GradientPainter.h"
+#include "theme/ThemeDefinition.h"
 
 #include <QBrush>
 #include <QFontMetricsF>
@@ -10,6 +12,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QPixmap>
+#include <QTransform>
 #include <QRectF>
 #include <QSvgRenderer>
 #include <QtMath>
@@ -106,14 +109,63 @@ void paintIcon(QPainter& painter, const QByteArray& svgData, const QRectF& targe
 void paintElementBackground(QPainter& painter, const RenderTheme& theme, const QString& host, const QRectF& rect) {
   const ElementBackground* eb = elementBackground(theme, host);
   if (!eb) { return; }
-  // Phase 2c: a fit-content heading pill (phycat h2) rounds its corners and may
-  // carry a top hairline. A host can have a border-radius / border-top WITHOUT a
-  // gradient, so do not bail on gradient==None — guard the gradient fill itself.
-  // border-radius % is box-relative, so clamp to half the smaller side (50% →
-  // disc). Clip to the rounded pill so the fill AND the border-top line follow
-  // the corner arcs instead of squaring them off.
-  painter.save();
   const qreal r = qBound(0.0, eb->borderRadius, qMin(rect.width(), rect.height()) / 2.0);
+  const ThemeElementStyle* es = theme.elementStyle(host);
+  // CSS `backdrop-filter:` — sample the content painted BEHIND the box (only when
+  // the paint device is a QImage, i.e. tests/export; the live screen editor paints
+  // to the widget and would need a QImage-backed viewport to show this), filter it,
+  // and composite it back so the element's own background sits on the frosted
+  // backdrop. A solid backdrop (no texture) blurs to itself, so this only shows on
+  // textured/gradient page backgrounds.
+  if (es && hasElementBackdrop(es->paint)) {
+    if (auto* devImg = dynamic_cast<QImage*>(painter.device())) {
+      const QRect devRect = painter.transform().mapRect(rect).toAlignedRect().intersected(devImg->rect());
+      if (!devRect.isEmpty()) {
+        QImage backdrop = devImg->copy(devRect);
+        applyElementBackdrop(backdrop, es->paint);
+        painter.save();
+        painter.setWorldTransform(QTransform());
+        painter.setClipRect(devRect);
+        painter.drawImage(devRect.topLeft(), backdrop);
+        painter.restore();
+      }
+    }
+  }
+  // CSS `filter:` on the element: render its background (fill + gradient) to an
+  // offscreen image, apply the filter chain (blur extends OUTSIDE the box — so the
+  // image is padded and drawn unclipped), then the border-top line on top. Skipped
+  // entirely when no filter is declared (the common fast path below).
+  if (es && hasElementFilter(es->paint)) {
+    const int pad = qCeil(es->paint.filterBlur + 2.0);
+    const QRectF imgRect = rect.adjusted(-pad, -pad, pad, pad);
+    QImage img(qCeil(imgRect.width()), qCeil(imgRect.height()), QImage::Format_ARGB32_Premultiplied);
+    img.fill(Qt::transparent);
+    {
+      QPainter ip(&img);
+      ip.setRenderHint(QPainter::Antialiasing, true);
+      ip.translate(-imgRect.topLeft());
+      if (r > 0.5) { QPainterPath pill; pill.addRoundedRect(rect, r, r); ip.setClipPath(pill); }
+      else { ip.setClipRect(rect); }
+      if (eb->color.isValid()) { ip.fillRect(rect, eb->color); }
+      if (eb->gradient.kind != GradientSpec::Kind::None) {
+        ip.setOpacity(eb->opacity);
+        ip.fillRect(rect, GradientPainter::makeBrush(eb->gradient, rect));
+      }
+    }
+    applyElementFilter(img, es->paint);
+    painter.save();
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    painter.drawImage(imgRect.topLeft(), img);
+    if (eb->borderTopColor.isValid() && eb->borderTopWidth > 0.0) {
+      painter.setOpacity(1.0);
+      painter.setPen(QPen(eb->borderTopColor, eb->borderTopWidth));
+      const qreal y = rect.top() + eb->borderTopWidth / 2.0;
+      painter.drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y));
+    }
+    painter.restore();
+    return;
+  }
+  painter.save();
   if (r > 0.5) {
     QPainterPath pill;
     pill.addRoundedRect(rect, r, r);
@@ -129,8 +181,6 @@ void paintElementBackground(QPainter& painter, const RenderTheme& theme, const Q
   if (eb->borderTopColor.isValid() && eb->borderTopWidth > 0.0) {
     painter.setOpacity(1.0);
     painter.setPen(QPen(eb->borderTopColor, eb->borderTopWidth));
-    // Draw just inside the top edge so the full pen width shows within the pill;
-    // the clip rounds it into the corners.
     const qreal y = rect.top() + eb->borderTopWidth / 2.0;
     painter.drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y));
   }
@@ -258,11 +308,16 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
       const qreal barH = (after->size.height() > 0 ? after->size.height() : qMax<qreal>(2.0, borderW));
       qreal barW = (after->size.width() > 0 ? after->size.width() : (ctx.textBounds.isValid() ? ctx.textBounds.width() : rect.width()));
       // Hover widens the bar toward its :hover width (phycat h1::after 40px → 100%),
-      // animated by the HoverAnimator phase. The centred anchor (textMid, below)
-      // keeps it growing symmetrically from the middle, matching the reference.
+      // animated by the HoverAnimator phase. Focus widens it toward its :focus
+      // width next (same recipe, FocusAnimator phase). The centred anchor (textMid,
+      // below) keeps it growing symmetrically from the middle, matching the reference.
       if (!after->hoverWidthRaw.isEmpty() && ctx.hoverPhase > 0.0) {
         const qreal hoverW = CssThemeMapper::resolveLengthPx(after->hoverWidthRaw, {}, em, rect.width());
         barW = barW + (qBound(0.0, hoverW, rect.width()) - barW) * ctx.hoverPhase;
+      }
+      if (!after->focusWidthRaw.isEmpty() && ctx.focusPhase > 0.0) {
+        const qreal focusW = CssThemeMapper::resolveLengthPx(after->focusWidthRaw, {}, em, rect.width());
+        barW = barW + (qBound(0.0, focusW, rect.width()) - barW) * ctx.focusPhase;
       }
       barW = qMin(barW, rect.width());
       const qreal textMid = ctx.textBounds.isValid() ? ctx.textBounds.center().x()

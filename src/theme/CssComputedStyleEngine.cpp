@@ -13,35 +13,8 @@
 namespace muffin {
 namespace {
 
-struct SimpleSelector {
-  QString tag;
-  QString id;
-  QStringList classes;
-  QStringList notClasses;
-  QString notId;
-  QString notTag;
-  QString pseudoElement;
-  bool hover = false;
-  bool focus = false;
-  bool active = false;
-  bool visited = false;
-  bool mdFocus = false;
-  bool nthEven = false;
-  bool unsupported = false;
-};
-
-struct SelectorPart {
-  SimpleSelector simple;
-  QChar combinator;  // relation to the part on the left: ' ' descendant, '>' child, 0 for leftmost
-};
-
-struct ParsedSelector {
-  QVector<SelectorPart> parts;
-  bool valid = false;
-  bool exportOnly = false;
-  bool interactive = false;
-  int specificity = 0;
-};
+// SimpleSelector / SelectorPart / ParsedSelector now live in the header — the
+// engine caches a vector<ParsedSelector> built once in its constructor.
 
 struct Candidate {
   QString value;
@@ -87,6 +60,44 @@ QString stripSimpleNot(QString compound, SimpleSelector& out) {
     searchFrom = at;
   }
   return compound;
+}
+
+// Parse a CSS An+B micro-syntax (the argument of :nth-child / :nth-of-type).
+// Accepts: `even`(2n), `odd`(2n+1), an integer N (the Nth, a=0), and `an+b`
+// forms: `2n`, `2n+1`, `n`, `n+3`, `-n+3`, `+3`. Returns valid=false for anything
+// else. `a=0` means "exactly the b-th" element.
+struct NthExpr { bool valid = false; int a = 0; int b = 0; };
+NthExpr parseNth(const QString& arg) {
+  NthExpr e;
+  const QString s = arg.trimmed().toLower();
+  if (s == QStringLiteral("even")) { return {true, 2, 0}; }
+  if (s == QStringLiteral("odd")) { return {true, 2, 1}; }
+  static const QRegularExpression re(QStringLiteral("^([+-]?\\d*)n\\s*([+-]\\s*\\d+)?$"));
+  const QRegularExpressionMatch m = re.match(s);
+  if (m.hasMatch()) {
+    const QString aStr = m.captured(1);
+    if (aStr.isEmpty() || aStr == QStringLiteral("+")) { e.a = 1; }
+    else if (aStr == QStringLiteral("-")) { e.a = -1; }
+    else { e.a = aStr.toInt(); }
+    QString bStr = m.captured(2);
+    if (!bStr.isEmpty()) { e.b = bStr.replace(QStringLiteral(" "), QString()).toInt(); }
+    e.valid = true;
+    return e;
+  }
+  bool ok = false;
+  const int n = s.toInt(&ok);
+  if (ok && n > 0) { return {true, 0, n}; }  // bare N → exactly the Nth
+  return e;
+}
+
+// 1-based position p matches An+B iff some integer k≥0 satisfies p = a*k + b.
+// For a==0 that is p==b. The `a*k+b==p` re-check guards against C++ truncation
+// giving a spurious k.
+bool nthPositionMatches(int a, int b, int p) {
+  if (a == 0) { return p == b; }
+  if (a * p < 0 && (p - b) % a != 0) { return false; }  // quick reject on sign mismatch
+  const int k = (p - b) / a;
+  return k >= 0 && a * k + b == p;
 }
 
 SimpleSelector parseCompound(QString compound) {
@@ -149,16 +160,47 @@ SimpleSelector parseCompound(QString compound) {
       else if (name == QStringLiteral("focus")) { out.focus = true; }
       else if (name == QStringLiteral("active")) { out.active = true; }
       else if (name == QStringLiteral("visited")) { out.visited = true; }
-      else if ((name == QStringLiteral("nth-child") || name == QStringLiteral("nth-of-type")) &&
-               (arg == QStringLiteral("even") || arg.contains(QStringLiteral("2n")))) {
-        out.nthEven = true;
+      else if (name == QStringLiteral("first-child")) { out.firstChild = true; }
+      else if (name == QStringLiteral("last-child")) { out.lastChild = true; }
+      else if (name == QStringLiteral("only-child")) { out.onlyChild = true; }
+      else if (name == QStringLiteral("first-of-type")) { out.firstOfType = true; }
+      else if (name == QStringLiteral("nth-child") || name == QStringLiteral("nth-of-type")) {
+        const NthExpr e = parseNth(arg);
+        if (!e.valid) { out.unsupported = true; }
+        else if (name == QStringLiteral("nth-child")) { out.nthChild = true; out.nthA = e.a; out.nthB = e.b; }
+        else { out.nthOfType = true; out.nthA = e.a; out.nthB = e.b; }
+      }
+      else if (name == QStringLiteral("has")) {
+        // :has(<simple>) where <simple> is [>] tag[.class] (.class), (.class), tag.
+        // Full relative-selector :has (e.g. :has(> div .x)) is out of scope; a
+        // compound argument marks the selector non-matching rather than risk a
+        // partial/incorrect match.
+        QString h = arg;
+        bool direct = false;
+        if (h.startsWith(QLatin1Char('>'))) { direct = true; h = h.mid(1).trimmed(); }
+        // Reject combinators inside the argument (descendant/child beyond the leading >).
+        if (h.contains(QLatin1Char(' ')) || h.contains(QLatin1Char('>'))) { out.unsupported = true; }
+        else {
+          QString tagPart = h;
+          QString clsPart;
+          const int dot = h.indexOf(QLatin1Char('.'));
+          if (dot >= 0) { clsPart = h.mid(dot + 1).trimmed().toLower(); tagPart = h.left(dot).trimmed(); }
+          if (tagPart == QStringLiteral("*")) { tagPart.clear(); }
+          if (tagPart.isEmpty() && clsPart.isEmpty()) { out.unsupported = true; }
+          else {
+            out.hasPresent = true;
+            out.hasDirect = direct;
+            out.hasTag = tagPart.toLower();
+            out.hasClass = clsPart;
+          }
+        }
       }
       else if (name == QStringLiteral("not") || name == QStringLiteral("root")) {
         // handled/safe no-op: :not(...) was stripped above; :root can match via variables elsewhere.
       }
       else {
-        // Structural/content pseudos such as :has(img), :last-child and :first-of-type
-        // cannot be evaluated against our prototype tree. Treating only the base tag
+        // Unsupported structural/content pseudos (:empty, :last-of-type, :only-of-type,
+        // :lang, …) cannot be evaluated against our model. Treating only the base tag
         // as a match would globalize targeted rules (e.g. p:has(img) centering every
         // paragraph), so make the selector non-matching.
         out.unsupported = true;
@@ -246,9 +288,9 @@ ParsedSelector parseSelector(const QString& selector) {
     if (c == QLatin1Char(')')) { paren = qMax(0, paren - 1); cur += c; continue; }
     if (c == QLatin1Char('[')) { ++brk; cur += c; continue; }
     if (c == QLatin1Char(']')) { brk = qMax(0, brk - 1); cur += c; continue; }
-    if (paren == 0 && brk == 0 && c == QLatin1Char('>')) {
+    if (paren == 0 && brk == 0 && (c == QLatin1Char('>') || c == QLatin1Char('+') || c == QLatin1Char('~'))) {
       flush();
-      nextRelation = QLatin1Char('>');
+      nextRelation = c;
       continue;
     }
     if (paren == 0 && brk == 0 && c.isSpace()) {
@@ -290,7 +332,27 @@ bool simpleMatches(const SimpleSelector& simple, const CssElement& element, cons
   if (!simple.id.isEmpty() && simple.id != id) { return false; }
   if (!simple.pseudoElement.isEmpty() && simple.pseudoElement != pseudo) { return false; }
   if (simple.pseudoElement.isEmpty() && !pseudo.isEmpty()) { return false; }
-  if (simple.nthEven && !element.nthEven) { return false; }
+  // Structural pseudo-classes need a real sibling-aware element (childIndex/typeIndex
+  // set by the adapter). On the load-time prototype they are -1, so these correctly
+  // fail to match there — structural selectors are evaluated only against the live tree.
+  if (simple.firstChild && element.childIndex != 0) { return false; }
+  if (simple.lastChild && !(element.childIndex >= 0 && element.nextSibling == nullptr)) { return false; }
+  if (simple.onlyChild && !(element.childIndex == 0 && element.nextSibling == nullptr)) { return false; }
+  if (simple.firstOfType && element.typeIndex != 0) { return false; }
+  if (simple.nthChild) {
+    if (element.childIndex < 0 || !nthPositionMatches(simple.nthA, simple.nthB, element.childIndex + 1)) { return false; }
+  }
+  if (simple.nthOfType) {
+    if (element.typeIndex < 0 || !nthPositionMatches(simple.nthA, simple.nthB, element.typeIndex + 1)) { return false; }
+  }
+  if (simple.hasPresent) {
+    // :has(tag)/:has(.cls) probed against the precomputed descendant (or direct-child)
+    // tag/class sets the adapter populated from the live subtree.
+    const QSet<QString>& tags = simple.hasDirect ? element.hasChildTags : element.hasDescendantTags;
+    const QSet<QString>& cls = simple.hasDirect ? element.hasChildClasses : element.hasDescendantClasses;
+    if (!simple.hasTag.isEmpty() && !tags.contains(simple.hasTag)) { return false; }
+    if (!simple.hasClass.isEmpty() && !cls.contains(simple.hasClass)) { return false; }
+  }
   QStringList classes;
   for (const QString& cls : element.classes) { classes << cls.toLower(); }
   for (const QString& cls : simple.classes) {
@@ -314,6 +376,17 @@ bool selectorMatchesAt(const ParsedSelector& selector, int index, const CssEleme
   if (rel == QLatin1Char('>')) {
     return selectorMatchesAt(selector, index - 1, element->parent, targetState);
   }
+  if (rel == QLatin1Char('+')) {
+    // Adjacent sibling: the element immediately to the left.
+    return selectorMatchesAt(selector, index - 1, element->previousSibling, targetState);
+  }
+  if (rel == QLatin1Char('~')) {
+    // General sibling: any element to the left.
+    for (const CssElement* s = element->previousSibling; s; s = s->previousSibling) {
+      if (selectorMatchesAt(selector, index - 1, s, targetState)) { return true; }
+    }
+    return false;
+  }
   for (const CssElement* p = element->parent; p; p = p->parent) {
     if (selectorMatchesAt(selector, index - 1, p, targetState)) { return true; }
   }
@@ -331,22 +404,67 @@ bool beats(const Candidate& a, const Candidate& b) {
   return a.order > b.order;
 }
 
-void applyStyleForElement(const CssThemeSheet& sheet, const CssElement& element, const CssElementState& state,
-                          CssComputedStyle& style) {
+// applyStyleForElement / parentStyleFor are now CssComputedStyleEngine members
+// (they read the cached parse + sheet_). Their definitions sit below, next to
+// the constructor.
+
+}  // namespace
+
+QString CssComputedStyle::rawValue(const QString& property) const {
+  const QString key = property.toLower();
+  if (key.startsWith(QStringLiteral("--"))) { return customProperties_.value(key); }
+  return properties_.value(key);
+}
+
+QString CssComputedStyle::resolvedValue(const QString& property) const {
+  return CssThemeParser::resolveVars(rawValue(property), customProperties_);
+}
+
+bool CssComputedStyle::hasProperty(const QString& property) const {
+  const QString key = property.toLower();
+  return key.startsWith(QStringLiteral("--")) ? customProperties_.contains(key) : properties_.contains(key);
+}
+
+CssComputedStyleEngine::CssComputedStyleEngine(const CssThemeSheet& sheet) : sheet_(sheet) {
+  // Pre-parse every selector once. The match path (applyStyleForElement) reads
+  // parsedSelectors_ / ruleSelectorRange_ instead of re-running parseSelector
+  // (regex + char walk) on every node × every ancestor level × every rule.
+  const auto& rules = sheet_.rules();
+  qsizetype totalSelectors = 0;
+  for (const CssRule& rule : rules) { totalSelectors += rule.selectors.size(); }
+  parsedSelectors_.reserve(static_cast<std::size_t>(totalSelectors));
+  ruleSelectorRange_.reserve(rules.size());
+  for (const CssRule& rule : rules) {
+    const int start = static_cast<int>(parsedSelectors_.size());
+    for (const QString& selector : rule.selectors) {
+      ParsedSelector ps = parseSelector(selector);
+      ps.selectorText = selector;
+      parsedSelectors_.push_back(std::move(ps));
+    }
+    ruleSelectorRange_.emplace_back(start, static_cast<int>(parsedSelectors_.size()));
+  }
+}
+
+void CssComputedStyleEngine::applyStyleForElement(const CssElement& element, const CssElementState& state,
+                                                  CssComputedStyle& style) const {
   QHash<QString, Candidate> winners;
   int order = 0;
-  for (const CssRule& rule : sheet.rules()) {
+  const auto& rules = sheet_.rules();
+  for (std::size_t ri = 0; ri < rules.size(); ++ri) {
+    const CssRule& rule = rules[ri];
     if (rule.darkScope) { continue; }
     bool matched = false;
     int spec = 0;
     QString matchedSelector;
-    for (const QString& selector : rule.selectors) {
-      const ParsedSelector parsed = parseSelector(selector);
+    const int sStart = ruleSelectorRange_[ri].first;
+    const int sEnd = ruleSelectorRange_[ri].second;
+    for (int si = sStart; si < sEnd; ++si) {
+      const ParsedSelector& parsed = parsedSelectors_[si];
       if (!selectorMatches(parsed, element, state)) { continue; }
       if (!matched || parsed.specificity > spec) {
         matched = true;
         spec = parsed.specificity;
-        matchedSelector = selector;
+        matchedSelector = parsed.selectorText;
       }
     }
     for (const CssDeclaration& decl : rule.declarations) {
@@ -367,19 +485,19 @@ void applyStyleForElement(const CssThemeSheet& sheet, const CssElement& element,
   }
 }
 
-CssComputedStyle parentStyleFor(const CssThemeSheet& sheet, const CssElement* parent) {
+CssComputedStyle CssComputedStyleEngine::parentStyleFor(const CssElement* parent) const {
   if (!parent) {
     CssComputedStyle root;
-    root.customProperties_ = sheet.variables();
+    root.customProperties_ = sheet_.variables();
     return root;
   }
-  CssComputedStyle inherited = parentStyleFor(sheet, parent->parent);
+  CssComputedStyle inherited = parentStyleFor(parent->parent);
   CssComputedStyle own;
   own.customProperties_ = inherited.customProperties_;
   for (auto it = inherited.properties_.constBegin(); it != inherited.properties_.constEnd(); ++it) {
     if (inheritedProperties().contains(it.key())) { own.properties_.insert(it.key(), it.value()); }
   }
-  applyStyleForElement(sheet, *parent, CssElementState{}, own);
+  applyStyleForElement(*parent, CssElementState{}, own);
   // CSS inheritance: a child inherits only the parent's inherited properties
   // (color, font-*, line-height, text-align) plus CSS variables — NOT padding,
   // margin, border, width, etc. Returning `own` verbatim leaked the parent's
@@ -396,32 +514,13 @@ CssComputedStyle parentStyleFor(const CssThemeSheet& sheet, const CssElement* pa
   return inheritable;
 }
 
-}  // namespace
-
-QString CssComputedStyle::rawValue(const QString& property) const {
-  const QString key = property.toLower();
-  if (key.startsWith(QStringLiteral("--"))) { return customProperties_.value(key); }
-  return properties_.value(key);
-}
-
-QString CssComputedStyle::resolvedValue(const QString& property) const {
-  return CssThemeParser::resolveVars(rawValue(property), customProperties_);
-}
-
-bool CssComputedStyle::hasProperty(const QString& property) const {
-  const QString key = property.toLower();
-  return key.startsWith(QStringLiteral("--")) ? customProperties_.contains(key) : properties_.contains(key);
-}
-
-CssComputedStyleEngine::CssComputedStyleEngine(const CssThemeSheet& sheet) : sheet_(sheet) {}
-
 CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element) const {
   return styleFor(element, CssElementState{});
 }
 
 CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element, const CssElementState& state) const {
-  CssComputedStyle style = parentStyleFor(sheet_, element.parent);
-  applyStyleForElement(sheet_, element, state, style);
+  CssComputedStyle style = parentStyleFor(element.parent);
+  applyStyleForElement(element, state, style);
   return style;
 }
 

@@ -111,12 +111,24 @@ struct SmartPunctRenderOptions {
   int singleQuoteStyle = 0;  // 0 = curly, 1 = straight
 };
 
+// CSS `text-transform`. Applied to projected display text only (length-preserving
+// per-code-point case mapping, so the source↔display offset algebra stays exact —
+// QString::toUpper() does special-casing like ß→SS which would change length and
+// desync the caret/selection, so it is NOT used).
+enum class TextTransform {
+  None,
+  Uppercase,
+  Lowercase,
+  Capitalize,
+};
+
 class InlineProjection {
 public:
   InlineProjection() = default;
   InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState state = {}, qsizetype sourceBase = -1,
                    qreal baseFontSize = 16.0, qsizetype pendingPrefixLength = 0,
-                   SmartPunctRenderOptions smartPunct = {}, bool breakOnSingleNewline = false);
+                   SmartPunctRenderOptions smartPunct = {}, bool breakOnSingleNewline = false,
+                   TextTransform textTransform = TextTransform::None);
 
   bool isValid() const;
   QString sourceText() const;
@@ -163,6 +175,7 @@ private:
     // markdown/breakOnSingleNewline (default on): render a single '\n' soft break as a line break
     // instead of joining it into one paragraph line (CommonMark).
     bool breakOnSingleNewline = false;
+    TextTransform textTransform = TextTransform::None;
     QString displayText;
     QString visibleText;
     QVector<InlineProjectionSpan> spans;

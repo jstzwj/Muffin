@@ -11,8 +11,7 @@
 namespace muffin {
 
 KeyframeAnimator::KeyframeAnimator(QObject* parent) : QObject(parent) {
-  clock_ = new QElapsedTimer();
-  clock_->start();
+  clock_.start();
   timer_ = new QTimer(this);
   timer_->setInterval(16);  // ~60 fps
   connect(timer_, &QTimer::timeout, this, &KeyframeAnimator::onTick);
@@ -66,7 +65,7 @@ void KeyframeAnimator::setVisibleHosts(const QSet<QString>& hosts) {
     if (!activeHosts_.contains(it.key())) { it = samples_.erase(it); } else { ++it; }
   }
   if (!activeHosts_.isEmpty()) {
-    if (!timer_->isActive()) { clock_->restart(); timer_->start(); }
+    if (!timer_->isActive()) { clock_.restart(); timer_->start(); }
   } else if (timer_->isActive()) {
     timer_->stop();
   }
@@ -78,7 +77,7 @@ const AnimatedSample* KeyframeAnimator::sampleFor(const QString& host) const {
 
 void KeyframeAnimator::onTick() {
   if (activeHosts_.isEmpty()) { timer_->stop(); return; }
-  const qint64 elapsed = clock_->elapsed();
+  const qint64 elapsed = clock_.elapsed();
   for (const QString& host : activeHosts_) {
     const AnimationDef* a = findAnim(host);
     if (!a) { continue; }

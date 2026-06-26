@@ -763,7 +763,7 @@ QRectF BlockLayout::tableCellRect(int row, int column) const {
   return tableRow.cells.at(static_cast<size_t>(column)).rect;
 }
 
-void BlockLayout::paint(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll, BlockPaintHover hover) const {
+void BlockLayout::paint(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll, BlockPaintState hover) const {
   paintSelf(painter, theme, scrollY, scroll, hover);
   for (const auto& child : children_) {
     child->paint(painter, theme, scrollY, scroll, hover);
@@ -833,7 +833,7 @@ QVector<QRectF> BlockLayout::selectionRectsForOffsets(qsizetype startOffset, qsi
   return rects;
 }
 
-void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll, BlockPaintHover hover) const {
+void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll, BlockPaintState hover) const {
   const QRectF viewRect = rect_.translated(0, -scrollY);
 
   switch (type_) {
@@ -849,11 +849,13 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
           DecorationPainter::paintElementBackground(
               painter, theme, QStringLiteral("h%1").arg(headingLevel_), cssBorderBox(theme).translated(0, -scrollY));
         }
-        // CSS `:hover { color }` on a heading (phycat h1 → accent) is baked into
-        // the inline layout at build time (it knows which runs inherit the colour);
-        // paint just needs the shared hover phase. Box-shadow glow / bg / scale
-        // effects still use their own DecorationPainter paths below.
-        const qreal hoverPhase = hover.active ? hover.phase : 0.0;
+        // CSS `:hover`/`:focus { color }` on a heading (phycat h1 → accent) is baked
+        // into the inline layout at build time (it knows which runs inherit the
+        // colour); paint just needs the shared hover + focus phases, blended there.
+        // Box-shadow glow / bg / scale effects still use their own DecorationPainter
+        // paths below.
+        const qreal hoverPhase = hover.hoverActive ? hover.hoverPhase : 0.0;
+        const qreal focusPhase = hover.focusActive ? hover.focusPhase : 0.0;
         if (hasListMarker()) {
           painter.save();
           painter.setFont(theme.paragraphFont());
@@ -915,10 +917,10 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
               painter.restore();
             }
           }
-          inlineLayout_->paint(painter, QPointF(contentX, viewRect.top()), hoverPhase);
+          inlineLayout_->paint(painter, QPointF(contentX, viewRect.top()), hoverPhase, focusPhase);
         } else {
           const QPointF textOrigin = inlineTextOrigin(theme) + QPointF(0, -scrollY);
-          inlineLayout_->paint(painter, textOrigin, hoverPhase);
+          inlineLayout_->paint(painter, textOrigin, hoverPhase, focusPhase);
         }
         if (!placeholderText_.isEmpty()) {
           painter.save();
@@ -968,6 +970,7 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
           dctx.textEnd = textBounds.isValid() ? QPointF(textBounds.right(), textBounds.top())
                                               : QPointF(textOrigin.x() + inlineLayout_->size().width(), textOrigin.y());
           dctx.hoverPhase = hoverPhase;
+          dctx.focusPhase = focusPhase;
           DecorationPainter::paintPseudoDecorations(
               painter, theme, QStringLiteral("h%1").arg(headingLevel_), hostRect, dctx);
         }

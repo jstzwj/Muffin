@@ -1,26 +1,26 @@
-#include "editor/HoverAnimator.h"
+#include "editor/FocusAnimator.h"
 
 #include <QElapsedTimer>
 #include <QTimer>
 
 namespace muffin {
 
-HoverAnimator::HoverAnimator(QObject* parent) : QObject(parent) {
+FocusAnimator::FocusAnimator(QObject* parent) : QObject(parent) {
   clock_.start();
   timer_ = new QTimer(this);
   timer_->setInterval(16);  // ~60 fps
-  connect(timer_, &QTimer::timeout, this, &HoverAnimator::onTick);
+  connect(timer_, &QTimer::timeout, this, &FocusAnimator::onTick);
 }
 
-bool HoverAnimator::isAnimating() const {
+bool FocusAnimator::isAnimating() const {
   return timer_ != nullptr && timer_->isActive();
 }
 
-void HoverAnimator::setHovered(NodeId blockId, qreal durationMs) {
-  // Already fully hovering this block (or fading it in) — nothing to do.
+void FocusAnimator::setFocused(NodeId blockId, qreal durationMs) {
+  // Already fully focused on this block (or fading it in) — nothing to do.
   if (blockId == blockId_ && target_ == 1.0) { return; }
 
-  // Erase the previously-animated block's glow when hover moves elsewhere.
+  // Erase the previously-animated block's focus effect when focus moves elsewhere.
   if (repaintBlock && blockId_.isValid() && blockId_ != blockId) {
     repaintBlock(blockId_);
   }
@@ -41,7 +41,7 @@ void HoverAnimator::setHovered(NodeId blockId, qreal durationMs) {
   if (repaintBlock && blockId_.isValid()) { repaintBlock(blockId_); }
 }
 
-void HoverAnimator::onTick() {
+void FocusAnimator::onTick() {
   if (!blockId_.isValid()) { timer_->stop(); return; }
   const qint64 now = clock_.elapsed();
   const qreal dt = static_cast<qreal>(now - lastTickMs_);

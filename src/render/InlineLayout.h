@@ -47,9 +47,18 @@ public:
     // Invalid → no hover recolour. Only the runs that INHERIT the element colour
     // are recoloured at paint time; links/code/del/kbd keep their own colours.
     QColor hoverTextColor;
+    // CSS `:focus { color }` target — same mechanism as hoverTextColor, blended
+    // on top of the hover target (focus first, then hover) so the two orthogonal
+    // states compose. Invalid → no focus recolour.
+    QColor focusTextColor;
     qreal lineHeightMultiplier = 0.0;
     qreal wordSpacing = 0.0;
     Qt::Alignment alignment;
+    // CSS text-transform (uppercase/lowercase/capitalize) applied to the projected
+    // display text. Length-preserving per-code-point mapping ⇒ offsets stay exact.
+    TextTransform textTransform = TextTransform::None;
+    // CSS `text-shadow` on the element; present=false ⇒ none.
+    TextShadow textShadow;
     // Render a single '\n' soft break as a line break instead of joining it
     // into the paragraph (CommonMark). Defaults off so standalone/test layouts stay CommonMark.
     bool breakOnSingleNewline = false;
@@ -75,15 +84,16 @@ public:
   // the same baseline as the painted text and the caret — which otherwise drift
   // apart under a large theme line-height.
   qreal firstLineBaselineY() const;
-  // Paint the laid-out text + atoms at `origin`. When `hoverPhase` > 0 and a
-  // hover colour was supplied at build, the heading's OWN text runs are recoloured
-  // toward that colour (visual lerp base→hover) — CSS `:hover { color }`
-  // animated by the HoverAnimator. Implemented by passing foreground-only
-  // `selection`s to QTextLayout::draw (a draw-time override), NOT a format swap:
-  // setFormats() after endLayout() is broken in this Qt build. Only the runs that
-  // inherit the element colour are recoloured; links/code/del/kbd keep their own
-  // colours, so the recolour never bleeds into styled spans.
-  void paint(QPainter& painter, QPointF origin, qreal hoverPhase = 0.0) const;
+  // Paint the laid-out text + atoms at `origin`. When a hover and/or focus colour
+  // was supplied at build and the corresponding phase > 0, the heading's OWN text
+  // runs are recoloured toward a blended target (focus applied first, then hover)
+  // — CSS `:hover`/`:focus { color }` animated by the HoverAnimator/FocusAnimator.
+  // Implemented by passing foreground-only `selection`s to QTextLayout::draw (a
+  // draw-time override), NOT a format swap: setFormats() after endLayout() is
+  // broken in this Qt build. Only the runs that inherit the element colour are
+  // recoloured; links/code/del/kbd keep their own colours, so the recolour never
+  // bleeds into styled spans.
+  void paint(QPainter& painter, QPointF origin, qreal hoverPhase = 0.0, qreal focusPhase = 0.0) const;
   qsizetype hitTestTextOffset(QPointF localPos) const;
   qsizetype hitTestSourceOffset(QPointF localPos) const;
   QRectF hitTestCursorRect(QPointF localPos) const;
@@ -193,6 +203,9 @@ private:
   void paintTextLayoutInlineDecorations(QPainter& painter, QPointF origin) const;
   void paintTextLayoutHtmlBackgrounds(QPainter& painter, QPointF origin) const;
   void paintTextLayoutHtmlKeyboardSpans(QPainter& painter, QPointF origin) const;
+  // Offscreen-render the text as an alpha mask, recolour to the shadow colour,
+  // blur, and composite at origin + offset (behind the crisp text).
+  void paintTextShadow(QPainter& painter, QPointF origin) const;
   void paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) const;
   void paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) const;
   void paintImagePreview(QPainter& painter, QPointF origin) const;
@@ -214,11 +227,13 @@ private:
   QColor textLayoutCodeBackgroundColor_;
   QColor baseTextColorOverride_;  // invalid → theme.textColor() for plain runs
   QColor hoverTextColor_;         // invalid → no hover recolour (CSS :hover colour)
+  QColor focusTextColor_;         // invalid → no focus recolour (CSS :focus colour)
   QColor baseRunColor_;           // the element base colour the own-text runs render in
-  QVector<QPair<int, int>> hoverRecolourRanges_;  // display-offset runs that inherit the base colour
+  QVector<QPair<int, int>> hoverRecolourRanges_;  // display-offset runs that inherit the base colour (used by both hover and focus recolour)
   qreal lineHeightMultiplier_ = 0.0;
   qreal wordSpacing_ = 0.0;
   Qt::Alignment alignment_;
+  TextShadow textShadow_;  // present=false ⇒ no shadow
   QColor textLayoutCodeBorderColor_;
   QColor textLayoutCodeTextColor_;
   bool darkTheme_ = false;

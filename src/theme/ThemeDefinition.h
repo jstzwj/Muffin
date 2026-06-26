@@ -8,10 +8,13 @@
 #include <QString>
 #include <Qt>
 
+#include <memory>
 #include <optional>
 #include <vector>
 
 namespace muffin {
+
+class CssThemeSheet;  // forward-decl; full type lives in CssThemeParser.h
 
 // Every colour the UI can theme, in one place. This is the single source of
 // truth that the editor (via RenderTheme), the chrome (menu bar, sidebar,
@@ -108,6 +111,13 @@ struct ThemeTypography {
   QColor inlineCodeTextColor;       // `code { color }`; invalid → inherit prose text
   QColor delColor;                  // `del { color }` (phycat mutes deleted text); invalid → inherit prose
   bool linkUnderlined = true;       // `a { text-decoration }` — false when `none`
+  // CSS `a { text-decoration: <line> <style> <color> }`. Underline style maps to a
+  // QTextCharFormat::UnderlineStyle value; -1 ⇒ unset (SingleUnderline). Qt has no
+  // separate colour for strike/overline (always the text colour), so these apply
+  // to the link underline only. colour invalid → inherits the link text colour.
+  int linkUnderlineStyle = -1;      // QTextCharFormat::UnderlineStyle; -1 ⇒ Single
+  QColor linkUnderlineColor;        // `text-decoration-color` on `a`; invalid → link colour
+  bool linkOverline = false;        // `text-decoration-line: overline` on `a`
   // Phase 3b: inline-code chip geometry from CSS `code` (paint-only box; advance
   // stays = text advance so editing/cursor/hit-test are unaffected). Padding +
   // radius defaults reproduce the legacy hardcoded chip (-3/+6 padding, radius 3).
@@ -180,6 +190,12 @@ struct ThemeBlockSpacing {
   // padding-left:13px) don't collapse the bullet onto the text, while large-indent
   // themes keep their proportional look. A theme may set an explicit px override.
   qreal listMarkerGap = 0.0;
+  // CSS `list-style-type` declared on ul / ol / li (the type keyword of the
+  // `list-style` shorthand too). Empty ⇒ legacy depth-based marker. Resolved per
+  // list kind at layout time (ordered → ol, bullet → ul, with li as a fallback).
+  QString ulListStyleType;
+  QString olListStyleType;
+  QString liListStyleType;
   // Phase 4b: CSS `pre`/`.md-fences` box. codeBlockBoxThemed flips codePadding()
   // to the CSS value (legacy scaled(12/10) otherwise) and rounds the fence box.
   QMarginsF codeBlockPadding;
@@ -201,12 +217,14 @@ struct GradientStop {
   QColor color;
 };
 struct GradientSpec {
-  enum class Kind { None, Linear, Radial };
+  enum class Kind { None, Linear, Radial, Conic };
   Kind kind = Kind::None;
   std::vector<GradientStop> stops;
   qreal angleDeg = 180.0;                       // linear: CSS angle (0=to top, 90=to right)
   QPointF radialCenter = QPointF(0.5, 0.5);     // radial: center as fractions of target rect
   qreal radialRadius = 0.5;                     // radial: radius as fraction of target's larger side
+  QPointF conicCenter = QPointF(0.5, 0.5);      // conic: center as fractions of target rect
+  qreal conicStartDeg = 0.0;                    // conic: CSS `from <angle>` (0=12 o'clock, clockwise)
 };
 
 // One `::before`/`::after` rule, resolved to a paint recipe against its host
@@ -240,6 +258,10 @@ struct PseudoElementRule {
   // the HoverAnimator phase. Empty ⇒ no hover widening. Carried raw so the painter
   // can resolve a `%` against the host box at paint time (like `sizeRawWidth`).
   QString hoverWidthRaw;
+  // Focus-state width for ::after/::before (parallel to hoverWidthRaw): the bar
+  // widens toward this on focus, animated by the FocusAnimator phase. Applied after
+  // the hover widening so the two compose. Empty ⇒ no focus widening.
+  QString focusWidthRaw;
   QMarginsF insets;       // top/left/bottom/right offsets (absolute pseudo left/top)
   QColor borderBottomColor;
   qreal borderBottomWidth = 0.0;
@@ -339,6 +361,17 @@ struct ListGuide {
   bool present = false;    // a usable guide (valid colour + positive width)
 };
 
+// A parsed piece of a CSS `content` value: a literal run, or a counter() call.
+// `counter(name[, style])` / `counters(name, sep[, style])` are resolved at layout
+// time against the live counter state (the implicit `list-item` counter for lists).
+struct ContentToken {
+  enum class Kind { Literal, Counter, Counters };
+  Kind kind = Kind::Literal;
+  QString text;    // Literal: the text; Counter/Counters: the counter name
+  QString style;   // Counter/Counters: list-style-type (empty ⇒ decimal)
+  QString sep;     // Counters: the separator string
+};
+
 struct ThemeDecorations {
   std::vector<PseudoElementRule> pseudos;     // ::before/::after, host-keyed
   std::vector<ElementBackground> backgrounds;  // element own background, host-keyed
@@ -347,6 +380,10 @@ struct ThemeDecorations {
   std::vector<KeyframesDef> keyframes;         // @keyframes defs, name-keyed
   std::vector<AnimationDef> animations;        // host → animation binding
   ListGuide listGuide;                         // nested-list guide line, host=li::before
+  // `li::marker { content: … counter(list-item) … }` parsed into tokens. Non-empty
+  // ⇒ the marker text is content-driven (counter resolved per item at layout time),
+  // overriding list-style-type.
+  std::vector<ContentToken> listMarkerContent;
 };
 
 struct ThemeElementBoxStyle {
@@ -377,6 +414,39 @@ struct ThemeElementPaintStyle {
   qreal boxShadowBlur = 0.0;
   qreal opacity = 1.0;
   qreal transformScale = 1.0;
+  // CSS `filter:` applied to the element's own background box (subtree content is
+  // not filtered). Defaults leave the image unchanged; present ⇒ any filter set.
+  qreal filterBlur = 0.0;
+  qreal filterBrightness = 1.0;   // 1 = unchanged
+  qreal filterContrast = 1.0;
+  qreal filterGrayscale = 0.0;    // 0..1
+  qreal filterSepia = 0.0;        // 0..1
+  qreal filterHueRotateDeg = 0.0;
+  qreal filterOpacity = 1.0;
+  bool filterPresent = false;
+  // CSS `backdrop-filter:` — same func set as `filter:`, applied to the backdrop
+  // (the content painted BEHIND the element's box) rather than the element's own
+  // background. Rendered by sampling the paint device behind the box (works when
+  // painting to a QImage — tests/export; the live screen editor would need a
+  // QImage-backed viewport). Defaults leave the backdrop unchanged.
+  qreal backdropBlur = 0.0;
+  qreal backdropBrightness = 1.0;
+  qreal backdropContrast = 1.0;
+  qreal backdropGrayscale = 0.0;
+  qreal backdropSepia = 0.0;
+  qreal backdropHueRotateDeg = 0.0;
+  qreal backdropOpacity = 1.0;
+  bool backdropPresent = false;
+};
+
+// CSS `text-shadow: <ox> <oy> <blur>? <color>`. Only the first shadow of a
+// comma list is honoured (multiple shadows are rare in themes). present ⇒ the
+// theme declared one with a valid colour.
+struct TextShadow {
+  QPointF offset;
+  qreal blur = 0.0;
+  QColor color;
+  bool present = false;
 };
 
 struct ThemeElementTextStyle {
@@ -389,6 +459,11 @@ struct ThemeElementTextStyle {
   bool italic = false;
   bool italicSet = false;
   Qt::Alignment alignment;
+  // CSS text-transform: 0=none, 1=uppercase, 2=lowercase, 3=capitalize (maps 1:1 to
+  // the TextTransform enum in InlineProjection.h). int (not the enum) keeps this
+  // header free of a projection include.
+  int textTransform = 0;
+  TextShadow textShadow;  // CSS `text-shadow` on the element; present=false ⇒ none
 };
 
 struct ThemeElementStyle {
@@ -410,6 +485,15 @@ struct ThemeDefinition {
   ThemeBlockSpacing spacing;
   ThemeDecorations decorations;
   std::vector<ThemeElementStyle> elementStyles;
+  // True when the theme uses selectors that need the live document tree to match
+  // (`+`/`~` combinators or structural pseudo-classes such as `:first-child`,
+  // `:nth-child(n)`, `:has(...)`). When set, `structuralSheet` carries the parsed
+  // CSS so the layout path can run the engine against each node's real position.
+  // Absent (false/null) for every theme without such selectors — the load-time
+  // prototype precompute is the whole answer, with no per-layout cost.
+  bool hasStructuralRules = false;
+  qreal bodyFontPx = 16.0;  // body font size in CSS px (em basis for the structural path)
+  std::shared_ptr<CssThemeSheet> structuralSheet;  // only populated when hasStructuralRules
   bool isBuiltIn = true;
 
   bool valid() const;

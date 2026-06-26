@@ -62,6 +62,50 @@ HeadingGeometry headingGeometry(const RenderTheme& theme, const QString& markdow
   return {block->cssBorderBox(theme), block->visualOverflowRect(theme), block->rect()};
 }
 
+// CSS `filter: blur()` on a heading background bleeds colour OUTSIDE the heading's
+// border box (the blur halo). Without the filter, a solid red background stays
+// inside the box. End-to-end proof of the offscreen-render + boxBlur + composite
+// path in DecorationPainter::paintElementBackground.
+void testFilterBlurBleedsOutsideBorderBox() {
+  struct RedCounts { int inside = 0; int outside = 0; };
+  auto counts = [](const QString& css) {
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral("## Blur Me\n"), false);
+    const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("fb"), QString()));
+    DocumentLayout layout;
+    layout.rebuild(session.document(), theme, 800.0);
+    const MarkdownNode* heading = findFirstBlock(session.document().root(), BlockType::Heading);
+    const BlockLayout* block = layout.block(heading->id());
+    const QRectF rect = block->rect();
+    const int margin = 40;  // room for the blur halo to land inside the image
+    QImage image(int(rect.width()) + margin * 2, int(rect.height()) + margin * 2, QImage::Format_ARGB32);
+    image.fill(QColor(Qt::white).rgb());
+    QPainter painter(&image);
+    painter.translate(margin - rect.left(), margin - rect.top());
+    block->paint(painter, theme, 0.0, nullptr);
+    painter.end();
+    const QRectF box = block->cssBorderBox(theme).translated(margin - rect.left(), margin - rect.top());
+    RedCounts out;
+    for (int y = 0; y < image.height(); ++y) {
+      for (int x = 0; x < image.width(); ++x) {
+        const QRgb p = image.pixel(x, y);
+        // "reddish" — catches solid red AND the pinkish fringe of a red blurred over white.
+        if (qRed(p) > qGreen(p) + 40 && qRed(p) > qBlue(p) + 40) {
+          if (box.contains(QPointF(x, y))) { ++out.inside; } else { ++out.outside; }
+        }
+      }
+    }
+    return out;
+  };
+  const QString base = QStringLiteral("#write { color:#222222; } #write h2 { background-image:linear-gradient(#ff0000,#ff0000); }");
+  const QString blurred = QStringLiteral("#write { color:#222222; } #write h2 { background-image:linear-gradient(#ff0000,#ff0000); filter: blur(8px); }");
+  const RedCounts baseCounts = counts(base);
+  require(baseCounts.inside > 50, QStringLiteral("red background should paint inside the box (inside=%1)").arg(baseCounts.inside));
+  require(baseCounts.outside == 0, QStringLiteral("no filter ⇒ red stays inside the box (outside=%1)").arg(baseCounts.outside));
+  const RedCounts blurredCounts = counts(blurred);
+  require(blurredCounts.outside > 50, QStringLiteral("filter: blur(8px) ⇒ red halo bleeds outside the box (outside=%1)").arg(blurredCounts.outside));
+}
+
 // `width: fit-content` on a heading shrinks its own background box to the text
 // (a left-aligned pill), so the painted background ink stops well before the
 // right edge of the content column. Without fit-content the same background
@@ -125,7 +169,7 @@ void testFitContentHeadingBackgroundIsPill() {
 // shoving the ::after bar to the border-box left edge.
 struct HoverPixels { int cyanish = 0; int darkish = 0; int cyanAboveBar = 0; QRect ink; };
 
-HoverPixels renderHoverHeading(const RenderTheme& theme, BlockLayout::BlockPaintHover hover) {
+HoverPixels renderHoverHeading(const RenderTheme& theme, BlockLayout::BlockPaintState hover) {
   DocumentSession session;
   session.setMarkdownText(QStringLiteral("# Heading One\n"), false);
   DocumentLayout layout;
@@ -168,8 +212,8 @@ void testHoverHeadingRecolourKeepsTextAndBar() {
       "#write h1:hover { color:#3db8bf; }"
       "#write h1:hover::after { width:100%; }");
   const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("hover"), QString()));
-  const HoverPixels base = renderHoverHeading(theme, BlockLayout::BlockPaintHover{false, 0.0});
-  const HoverPixels hover = renderHoverHeading(theme, BlockLayout::BlockPaintHover{true, 1.0});
+  const HoverPixels base = renderHoverHeading(theme, BlockLayout::BlockPaintState{false, 0.0});
+  const HoverPixels hover = renderHoverHeading(theme, BlockLayout::BlockPaintState{true, 1.0});
   require(base.darkish > 20, QStringLiteral("base heading should paint dark text (dark=%1)").arg(base.darkish));
   // Text survives hover and turns cyan (ink ABOVE the underline bar).
   require(hover.cyanAboveBar > 20,
@@ -187,9 +231,9 @@ void testHoverHeadingRecolourKeepsTextAndBar() {
 // `h1:hover { color }`, but the link and the code must keep their OWN colours —
 // the temp-image SourceIn overlay this replaced tinted every glyph in the bounds
 // (visible "other styles affected"). Selection-based recolouring is per-run.
-struct SpanHoverPixels { int cyanish = 0; int reddish = 0; int blueish = 0; };
+struct SpanHoverPixels { int cyanish = 0; int reddish = 0; int blueish = 0; int greenish = 0; };
 
-SpanHoverPixels renderSpanHoverHeading(const RenderTheme& theme, BlockLayout::BlockPaintHover hover) {
+SpanHoverPixels renderSpanHoverHeading(const RenderTheme& theme, BlockLayout::BlockPaintState hover) {
   DocumentSession session;
   session.setMarkdownText(QStringLiteral("# See [site](https://example.com) and `tag` here\n"), false);
   DocumentLayout layout;
@@ -214,6 +258,7 @@ SpanHoverPixels renderSpanHoverHeading(const RenderTheme& theme, BlockLayout::Bl
       if (b > 120 && g > 120 && r < 120) { ++out.cyanish; }        // recoloured plain text
       else if (r > 150 && g < 110 && b < 110) { ++out.reddish; }   // preserved inline code
       else if (b > 150 && r < 110 && g < 110) { ++out.blueish; }   // preserved link
+      else if (g > 120 && r < 110 && b < 110) { ++out.greenish; }  // recoloured plain text (focus→green)
     }
   }
   return out;
@@ -227,7 +272,7 @@ void testHoverRecolourPreservesLinkAndCodeColours() {
       "#write a { color:#0000ff; }"              // blue links
       "#write code { color:#ff0000; background:#f0f0f0; }");  // red inline code
   const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("spans"), QString()));
-  const SpanHoverPixels hover = renderSpanHoverHeading(theme, BlockLayout::BlockPaintHover{true, 1.0});
+  const SpanHoverPixels hover = renderSpanHoverHeading(theme, BlockLayout::BlockPaintState{true, 1.0});
   // Heading's own text recolours toward cyan.
   require(hover.cyanish > 30,
           QStringLiteral("hover plain text should turn cyan (cyanish=%1)").arg(hover.cyanish));
@@ -236,6 +281,30 @@ void testHoverRecolourPreservesLinkAndCodeColours() {
           QStringLiteral("link text should keep blue on hover, not be tinted (blueish=%1)").arg(hover.blueish));
   require(hover.reddish > 10,
           QStringLiteral("inline code should keep red on hover, not be tinted (reddish=%1)").arg(hover.reddish));
+}
+
+// :focus is the orthogonal-to-hover interactive state (the caret block). Driven by
+// the FocusAnimator phase, it recolours the heading's OWN text toward `h1:focus
+// { color }` via the SAME inherited-base-run selection mechanism — so links/code
+// keep their colours. Proves the focus plumbing end to end (mapper builds
+// h1:focus → builder sets focusTextColor → InlineLayout blends with focusPhase),
+// independent of hover (paintState here is focus-only).
+void testFocusRecolourPreservesLinkAndCodeColours() {
+  const QString css = QStringLiteral(
+      "#write { color:#222222; }"
+      "#write h1 { color:#222222; width:fit-content; text-align:center; }"
+      "#write h1:focus { color:#1aa85a; }"     // green focus target
+      "#write a { color:#0000ff; }"             // blue links
+      "#write code { color:#ff0000; background:#f0f0f0; }");  // red inline code
+  const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("fspans"), QString()));
+  // focus-only state: hover inactive, focus at full phase.
+  const SpanHoverPixels focus = renderSpanHoverHeading(theme, BlockLayout::BlockPaintState{false, 0.0, true, 1.0});
+  require(focus.greenish > 30,
+          QStringLiteral("focus plain text should turn green (greenish=%1)").arg(focus.greenish));
+  require(focus.blueish > 10,
+          QStringLiteral("link text should keep blue on focus, not be tinted (blueish=%1)").arg(focus.blueish));
+  require(focus.reddish > 10,
+          QStringLiteral("inline code should keep red on focus, not be tinted (reddish=%1)").arg(focus.reddish));
 }
 
 // Empirical probe of this Qt build's QTextLayout. The hover-text recolour must
@@ -373,6 +442,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testFitContentHeadingHoverUsesSameBorderBox);
   RUN_TEST(testHoverHeadingRecolourKeepsTextAndBar);
   RUN_TEST(testHoverRecolourPreservesLinkAndCodeColours);
+  RUN_TEST(testFocusRecolourPreservesLinkAndCodeColours);
+  RUN_TEST(testFilterBlurBleedsOutsideBorderBox);
 #undef RUN_TEST
   return 0;
 }

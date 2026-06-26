@@ -62,6 +62,39 @@ void testWordSpacingWidensText() {
           QStringLiteral("word-spacing must widen the inter-word gaps (base=%1 spaced=%2)").arg(baseWidth).arg(spacedWidth));
 }
 
+// CSS text-transform is applied to the projected display text only (length-
+// preserving per-code-point case mapping, so source↔display offsets stay exact).
+// Asserts on displayText() — deterministic, font-metric independent.
+void testTextTransformAppliesToDisplayText() {
+  const QString markdown = QStringLiteral("the quick brown fox\n");
+  const QString css = QStringLiteral("#write { color:#000000; } #write p { text-transform: uppercase; }");
+  DocumentSession session;
+  session.setMarkdownText(markdown, false);
+  const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("t"), QString()));
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+  const MarkdownNode* p = findFirstBlock(session.document().root(), BlockType::Paragraph);
+  require(p != nullptr, QStringLiteral("fixture should contain a paragraph"));
+  const BlockLayout* block = layout.block(p->id());
+  require(block != nullptr, QStringLiteral("paragraph block should be promoted"));
+  const InlineLayout* inlineLayout = block->inlineLayout();
+  require(inlineLayout != nullptr, QStringLiteral("paragraph should have an inline layout"));
+  require(inlineLayout->displayText().contains(QStringLiteral("THE QUICK BROWN FOX")),
+          QStringLiteral("text-transform: uppercase should upper-case the display text (got '%1')").arg(inlineLayout->displayText()));
+  // Length-preserving: the transformed display text is exactly as long as the
+  // un-transformed one (no ß→SS special-casing), so source↔display offsets stay valid.
+  const QString lower = QStringLiteral("#write { color:#000000; } #write p { text-transform: lowercase; }");
+  const RenderTheme lowerTheme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(lower, QStringLiteral("tl"), QString()));
+  DocumentLayout lowerLayout;
+  lowerLayout.rebuild(session.document(), lowerTheme, 800.0);
+  const InlineLayout* lowerInline = lowerLayout.block(p->id())->inlineLayout();
+  require(lowerInline != nullptr, QStringLiteral("lower paragraph inline layout"));
+  require(lowerInline->displayText().contains(QStringLiteral("the quick brown fox")),
+          QStringLiteral("text-transform: lowercase should lower-case the display text (got '%1')").arg(lowerInline->displayText()));
+  require(inlineLayout->displayText().size() == lowerInline->displayText().size(),
+          QStringLiteral("transform is length-preserving (upper=%1 lower=%2)").arg(inlineLayout->displayText().size()).arg(lowerInline->displayText().size()));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -72,6 +105,7 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testLetterSpacingWidensText);
   RUN_TEST(testWordSpacingWidensText);
+  RUN_TEST(testTextTransformAppliesToDisplayText);
 #undef RUN_TEST
   return 0;
 }

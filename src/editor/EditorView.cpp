@@ -6,6 +6,7 @@
 #include "editor/EditorViewGeometry.h"
 #include "editor/HtmlBlockHoverController.h"
 #include "editor/HoverAnimator.h"
+#include "editor/FocusAnimator.h"
 #include "editor/KeyframeAnimator.h"
 #include "editor/ResourceUrl.h"
 #include "editor/TableToolbar.h"
@@ -107,6 +108,8 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
   applyScrollBarStyle();
   hoverAnimator_ = new HoverAnimator(this);
   hoverAnimator_->repaintBlock = [this](NodeId id) { repaintHoverBlock(id); };
+  focusAnimator_ = new FocusAnimator(this);
+  focusAnimator_->repaintBlock = [this](NodeId id) { repaintFocusBlock(id); };
   keyframeAnimator_ = new KeyframeAnimator(this);
   keyframeAnimator_->repaintAnimated = [this]() { repaintAnimatedBlocks(); };
 
@@ -325,6 +328,7 @@ void EditorView::setCursorHit(HitTestResult hit) {
   refreshInlineProjectionForSelectionChange(previousSelection);
   ensureCodeFenceCursorVisible();
   updateTableToolbar();
+  updateBlockFocus();
 }
 
 void EditorView::setCursorPosition(CursorPosition position) {
@@ -336,6 +340,7 @@ void EditorView::setCursorPosition(CursorPosition position) {
   selection_.focus = cursorPosition_;
   refreshInlineProjectionForSelectionChange(previousSelection);
   updateTableToolbar();
+  updateBlockFocus();
 }
 
 void EditorView::setSelectionRange(SelectionRange selection) {
@@ -365,6 +370,7 @@ void EditorView::applySelectionRange(SelectionRange selection) {
   const SelectionRange previousSelection = selection_;
   selection_ = selection;
   cursorPosition_ = selection.focus;
+  updateBlockFocus();
   if (draggingSelection_) {
     cursorVisible_ = false;
     viewport()->update();
@@ -386,6 +392,7 @@ void EditorView::clearCursor() {
   draggingSelection_ = false;
   updateCodeLanguageEditor();
   updateTableToolbar();
+  updateBlockFocus();
   viewport()->update();
 }
 
@@ -659,7 +666,22 @@ void EditorView::paintEvent(QPaintEvent* event) {
     const AnimatedSample* anim = (keyframeAnimator_ && !host.isEmpty()) ? keyframeAnimator_->sampleFor(host) : nullptr;
     const bool hoverActive = hoverAnimator_ && block->nodeId() == hoverAnimator_->animatedBlockId() && hoverAnimator_->phase() > 0.0;
     const ThemeElementStyle* hoverStyle = (!host.isEmpty() && hoverActive) ? theme_.elementStyle(host + QStringLiteral(":hover")) : nullptr;
+    // CSS :focus — the top-level block holding the caret. Parallel to hover; the
+    // two are orthogonal (a block can be both hovered and focused).
+    const bool focusActive = focusAnimator_ && block->nodeId() == focusAnimator_->animatedBlockId() && focusAnimator_->phase() > 0.0;
+    const ThemeElementStyle* focusStyle = (!host.isEmpty() && focusActive) ? theme_.elementStyle(host + QStringLiteral(":focus")) : nullptr;
     const QRectF cssBox = block->cssBorderBox(theme_).translated(0, -scrollY());
+    // CSS :focus glow/bg, painted UNDER hover so hover wins on overlap.
+    if (focusActive && !host.isEmpty() && focusStyle) {
+      if (focusStyle->paint.boxShadowColor.isValid() && focusStyle->paint.boxShadowBlur > 0.0) {
+        DecorationPainter::paintGlow(painter, cssBox, focusStyle->paint.boxShadowColor, focusStyle->paint.boxShadowBlur, focusAnimator_->phase());
+      }
+      if (focusStyle->paint.backgroundColor.isValid()) {
+        QColor tint = focusStyle->paint.backgroundColor;
+        tint.setAlphaF(tint.alphaF() * focusAnimator_->phase());
+        painter.fillRect(cssBox, tint);
+      }
+    }
     // CSS :hover paint diff from the computed hover style. Prefer the element-style
     // path; legacy HoverEffect remains as fallback for themes not yet represented.
     if (hoverActive && !host.isEmpty()) {
@@ -678,9 +700,13 @@ void EditorView::paintEvent(QPaintEvent* event) {
     if (anim && anim->hasGlow) {
       DecorationPainter::paintGlow(painter, block->rect().translated(0, -scrollY()), anim->glowColor, anim->glowBlur, 1.0);
     }
+    // transform:scale() on :hover/:focus. When both are active, hover wins (it is
+    // the more transient interaction); themes rarely declare scale on both.
     const qreal hoverScale = hoverStyle ? (1.0 + (hoverStyle->paint.transformScale - 1.0) * hoverAnimator_->phase()) : 1.0;
-    const bool hoverWrap = qAbs(hoverScale - 1.0) > 0.001;
-    const bool wrap = hoverWrap || (anim && (anim->hasOpacity || (anim->hasScale && qAbs(anim->scale - 1.0) > 0.001)));
+    const qreal focusScale = focusStyle ? (1.0 + (focusStyle->paint.transformScale - 1.0) * focusAnimator_->phase()) : 1.0;
+    const qreal stateScale = qAbs(hoverScale - 1.0) > 0.001 ? hoverScale : focusScale;
+    const bool stateWrap = qAbs(stateScale - 1.0) > 0.001;
+    const bool wrap = stateWrap || (anim && (anim->hasOpacity || (anim->hasScale && qAbs(anim->scale - 1.0) > 0.001)));
     if (wrap) {
       painter.save();
       if (anim && anim->hasOpacity) { painter.setOpacity(anim->opacity); }
@@ -691,21 +717,22 @@ void EditorView::paintEvent(QPaintEvent* event) {
         painter.scale(anim->scale, anim->scale);
         painter.translate(-c);
       }
-      if (hoverWrap) {
+      if (stateWrap) {
         const QPointF c = cssBox.center();
         painter.translate(c);
-        painter.scale(hoverScale, hoverScale);
+        painter.scale(stateScale, stateScale);
         painter.translate(-c);
       }
     }
-    const BlockLayout::BlockPaintHover blockHover{hoverActive, hoverAnimator_ ? hoverAnimator_->phase() : 0.0};
+    const BlockLayout::BlockPaintState blockState{hoverActive, hoverAnimator_ ? hoverAnimator_->phase() : 0.0,
+                                                  focusActive, focusAnimator_ ? focusAnimator_->phase() : 0.0};
     if (focusMode_ && activeTopLevel.isValid() && block->nodeId() != activeTopLevel) {
       painter.save();
       painter.setOpacity(0.35);
-      block->paint(painter, theme_, scrollY(), codeFenceScroll_, blockHover);
+      block->paint(painter, theme_, scrollY(), codeFenceScroll_, blockState);
       painter.restore();
     } else {
-      block->paint(painter, theme_, scrollY(), codeFenceScroll_, blockHover);
+      block->paint(painter, theme_, scrollY(), codeFenceScroll_, blockState);
     }
     if (wrap) { painter.restore(); }
   }
@@ -1679,6 +1706,49 @@ void EditorView::repaintHoverBlock(NodeId blockId) {
 }
 
 qreal EditorView::hoverTransitionMs(const QString& host) const {
+  if (host.isEmpty()) { return 0.0; }
+  for (const TransitionSpec& t : theme_.decorations().transitions) {
+    if (t.host == host) { return t.durationMs; }
+  }
+  return 0.0;
+}
+
+void EditorView::updateBlockFocus() {
+  if (!layout_ || !focusAnimator_) { return; }
+  // The focused top-level block is the one holding the caret (mirrors focus-mode's
+  // activeTopLevel derivation). Scoped to headings/blockquotes — the only hosts
+  // with a CSS :focus style — so focusing body text does not light up a paragraph.
+  NodeId next;
+  if (cursorPosition_.isValid()) {
+    next = layout_->topLevelBlockIdFor(cursorPosition_.blockId);
+    if (next.isValid()) {
+      if (const BlockLayout* blk = layout_->blockIfPromoted(next)) {
+        if (hostKeyForBlock(*blk).isEmpty()) { next = NodeId(); }
+      }
+    }
+  }
+  if (next == focusedBlockId_) { return; }
+  focusedBlockId_ = next;
+  qreal duration = 0.0;
+  if (next.isValid()) {
+    if (const BlockLayout* blk = layout_->blockIfPromoted(next)) {
+      duration = focusTransitionMs(hostKeyForBlock(*blk));
+    }
+  }
+  focusAnimator_->setFocused(next, duration);
+}
+
+void EditorView::repaintFocusBlock(NodeId blockId) {
+  if (!layout_ || !blockId.isValid()) { return; }
+  const BlockLayout* blk = layout_->blockIfPromoted(blockId);
+  if (!blk) { return; }
+  const QRectF r = blk->visualOverflowRect(theme_).translated(0, -scrollY()).adjusted(-2, -2, 2, 2);
+  viewport()->update(r.toAlignedRect());
+}
+
+qreal EditorView::focusTransitionMs(const QString& host) const {
+  // Transitions are host-keyed (not state-keyed), so a `transition` on `h1` applies
+  // to both :hover and :focus — the fade duration is shared.
   if (host.isEmpty()) { return 0.0; }
   for (const TransitionSpec& t : theme_.decorations().transitions) {
     if (t.host == host) { return t.durationMs; }

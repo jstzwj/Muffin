@@ -199,6 +199,11 @@ private:
   void updateBlockHover(QPointF viewportPos);
   void repaintHoverBlock(NodeId blockId);
   qreal hoverTransitionMs(const QString& host) const;
+  // CSS `:focus` (the top-level block holding the caret): drive a FocusAnimator
+  // whose phase feeds the focus glow/bg/scale/text-recolour, parallel to hover.
+  void updateBlockFocus();
+  void repaintFocusBlock(NodeId blockId);
+  qreal focusTransitionMs(const QString& host) const;
   void repaintAnimatedBlocks();
   void clearHtmlHover();
   HtmlBlockHoverController::Inputs htmlHoverInputs() const;
@@ -245,6 +250,8 @@ private:
   HtmlBlockHoverController htmlHover_;
   class HoverAnimator* hoverAnimator_ = nullptr;
   NodeId hoveredBlockId_;  // top-level block under the cursor (for CSS :hover glow)
+  class FocusAnimator* focusAnimator_ = nullptr;
+  NodeId focusedBlockId_;  // top-level block holding the caret (for CSS :focus)
   class KeyframeAnimator* keyframeAnimator_ = nullptr;
   // True while a ScopedViewportPin (or restoreViewportAnchor) is reconciling the scrollbar, so the
   // implicit setRange -> clamp -> valueChanged -> scrollContentsBy -> ensureVisibleBuilt cascade

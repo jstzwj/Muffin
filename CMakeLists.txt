@@ -691,6 +691,8 @@ set(MUFFIN_UI_SOURCES
   src/editor/HtmlBlockHoverController.h
   src/editor/HoverAnimator.cpp
   src/editor/HoverAnimator.h
+  src/editor/FocusAnimator.cpp
+  src/editor/FocusAnimator.h
   src/editor/KeyframeAnimator.cpp
   src/editor/KeyframeAnimator.h
   src/editor/CodeLanguageEditor.cpp
@@ -762,6 +764,10 @@ set(MUFFIN_UI_SOURCES
   src/render/DocumentLayout.h
   src/render/GradientPainter.cpp
   src/render/GradientPainter.h
+  src/render/Blur.cpp
+  src/render/Blur.h
+  src/render/Filter.cpp
+  src/render/Filter.h
   src/render/DecorationPainter.cpp
   src/render/DecorationPainter.h
   src/render/KeyframeSampler.cpp
@@ -792,6 +798,12 @@ set(MUFFIN_UI_SOURCES
   src/theme/CssThemeParser.h
   src/theme/CssThemeMapper.cpp
   src/theme/CssThemeMapper.h
+  src/theme/NodeCssElement.cpp
+  src/theme/NodeCssElement.h
+  src/theme/CssCalc.cpp
+  src/theme/CssCalc.h
+  src/theme/CssContent.cpp
+  src/theme/CssContent.h
 )
 
 add_library(MuffinUi STATIC

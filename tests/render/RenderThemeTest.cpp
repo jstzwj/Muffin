@@ -256,6 +256,21 @@ void testAdjacentCssMarginsCollapseAcrossBlockTypes() {
           QStringLiteral("adjacent CSS margins should collapse to max(30,40), not sum to 70 (gap=%1)").arg(gap));
 }
 
+// Structural selectors reach the MARGIN path, not just the engine. `p + p` raises
+// the SECOND paragraph's top margin (it follows a p) while the first is unchanged —
+// the gap grows from the base `p { margin }` collapse to the larger `p + p` value.
+// Without the node-aware margin wiring, the structural rule would silently not apply.
+void testStructuralMarginSelectorAffectsLayout() {
+  const qreal base = interParagraphGap(QStringLiteral("#write { color:#000000; } #write p { margin: 10px; }"));
+  const qreal adj = interParagraphGap(QStringLiteral(
+      "#write { color:#000000; } #write p { margin: 10px; } #write p + p { margin-top: 60px; }"));
+  require(base > 0.0, QStringLiteral("base gap should be positive (=%1)").arg(base));
+  require(adj > base + 30.0,
+          QStringLiteral("p + p margin-top must grow the inter-paragraph gap (base=%1 adj=%2)").arg(base).arg(adj));
+  require(qAbs(adj - 60.0) < 2.0,
+          QStringLiteral("collapsed gap should equal the p+p margin-top 60 (adj=%1)").arg(adj));
+}
+
 void testBlockquoteCssBoxUsesPerSideBorderAndCompactNestedFlow() {
   DocumentSession session;
   session.setMarkdownText(QStringLiteral(
@@ -434,6 +449,56 @@ void testGithubBlockquoteNotPaddedByWriteLeak() {
   // for this content is roughly 100–130px.
   require(outer->rect().height() < 180.0,
           QStringLiteral("github blockquote must stay compact without the #write padding leak (height=%1)").arg(outer->rect().height()));
+}
+
+// Structural selectors resolve against the LIVE document tree, not the load-time
+// prototype. `li:first-child`, `li + li` (adjacent sibling) and `p:has(img)`
+// (descendant probe) each pick out nodes by position/contents — impossible on
+// the prototype, which has no siblings or descendants. The node-aware getters
+// (textColorForElement with a node) drive the real-tree cascade.
+void testStructuralSelectorsResolveAgainstLiveTree() {
+  const QString css = QStringLiteral(
+      "#write { color:#222222; }"
+      "#write p, #write li { color:#222222; }"
+      "#write li:first-child { color:#ff0000; }"   // first list item → red
+      "#write li + li { color:#0000ff; }"            // adjacent sibling li → blue
+      "#write p:has(img) { color:#00aa00; }");       // paragraph containing an image → green
+  const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("struct"), QString()));
+  require(theme.hasStructuralRules(), QStringLiteral("li:first-child / li+li / p:has(img) ⇒ hasStructuralRules"));
+
+  // List-item position selectors.
+  {
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral("- one\n- two\n- three\n"), false);
+    DocumentLayout layout;
+    layout.rebuild(session.document(), theme, 800.0);
+    QVector<const MarkdownNode*> items;
+    collectListItems(session.document().root(), items);
+    require(items.size() == 3, QStringLiteral("fixture should parse three list items"));
+    require(theme.textColorForElement(QStringLiteral("li"), items.at(0)) == QColor(QStringLiteral("#ff0000")),
+            QStringLiteral("first li should be red via :first-child"));
+    require(theme.textColorForElement(QStringLiteral("li"), items.at(1)) == QColor(QStringLiteral("#0000ff")),
+            QStringLiteral("second li should be blue via li + li"));
+    require(theme.textColorForElement(QStringLiteral("li"), items.at(2)) == QColor(QStringLiteral("#0000ff")),
+            QStringLiteral("third li should be blue via li + li"));
+  }
+
+  // :has(img) — a paragraph with an image vs a plain one.
+  {
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral("![alt](x.png)\n\nplain text\n"), false);
+    DocumentLayout layout;
+    layout.rebuild(session.document(), theme, 800.0);
+    const MarkdownNode* withImg = findFirstBlock(session.document().root(), BlockType::Paragraph);
+    require(withImg != nullptr, QStringLiteral("image paragraph should exist"));
+    const MarkdownNode* plain = withImg ? withImg->nextSibling() : nullptr;
+    while (plain && plain->type() != BlockType::Paragraph) { plain = plain->nextSibling(); }
+    require(plain != nullptr, QStringLiteral("plain paragraph should exist"));
+    require(theme.textColorForElement(QStringLiteral("p"), withImg) == QColor(QStringLiteral("#00aa00")),
+            QStringLiteral("paragraph with an image should be green via p:has(img)"));
+    require(theme.textColorForElement(QStringLiteral("p"), plain) == QColor(QStringLiteral("#222222")),
+            QStringLiteral("plain paragraph should stay the base colour"));
+  }
 }
 
 void testFromDefinitionReproducesBuiltIns() {
@@ -623,9 +688,11 @@ int main(int argc, char** argv) {
   RUN_TEST(testListMarkerGapFloor);
   RUN_TEST(testParagraphSpacingHonoursCssMargin);
   RUN_TEST(testAdjacentCssMarginsCollapseAcrossBlockTypes);
+  RUN_TEST(testStructuralMarginSelectorAffectsLayout);
   RUN_TEST(testBlockquoteCssBoxUsesPerSideBorderAndCompactNestedFlow);
   RUN_TEST(testBlockquoteListFlowStaysCompactUnderLazyPromotion);
   RUN_TEST(testGithubBlockquoteNotPaddedByWriteLeak);
+  RUN_TEST(testStructuralSelectorsResolveAgainstLiveTree);
   RUN_TEST(testCodeBorderNeverRendersBlack);
   runTest("testLayoutForTheme/github", [&] { testLayoutForTheme(document, RenderTheme::github(), QStringLiteral("github")); });
   runTest("testLayoutForTheme/newsprint", [&] { testLayoutForTheme(document, RenderTheme::newsprint(), QStringLiteral("newsprint")); });
