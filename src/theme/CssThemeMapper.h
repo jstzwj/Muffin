@@ -10,6 +10,16 @@ namespace muffin {
 
 class CssThemeSheet;  // defined in CssThemeParser.h
 
+// Construct a QColor from a CSS colour literal, correcting Qt's hex-alpha
+// byte order. CSS specifies alpha LAST (#RRGGBBAA / #RGBA); QColor reads 8- and
+// 4-digit hex with alpha FIRST (#AARRGGBB / #ARGB). Without this a theme value
+// like "#7aeaf018" (CSS: pale cyan @ 9% alpha) is read by Qt as a=7a,r=ea,g=f0,
+// b=18 — a saturated yellow-green. Every other form (6/3-digit hex, rgb()/hsl(),
+// named colours) is passed straight to QColor. This is the single CSS→QColor
+// boundary; extractColor(), varColor() and JSON-theme parseColor() all route
+// through it so the fix applies theme-wide.
+QColor cssColor(const QString& literal);
+
 // Translates a parsed CSS-theme sheet into a Muffin ThemeDefinition. This
 // is the "external-CSS compatibility" contract: a fixed table maps CSS selectors +
 // :root variables to Muffin semantic tokens (ThemeColors / ThemeTypography).
@@ -41,6 +51,11 @@ public:
   static QColor resolveColor(const QString& value, const QHash<QString, QString>& vars);
   // Resolve a CSS length (px/pt/em/rem/%) → pixels (emPx defaults to 16).
   static qreal resolveLengthPx(const QString& value, const QHash<QString, QString>& vars);
+  // Box-relative variant: a `%` resolves against `containingPx` (the host box's
+  // dimension) instead of 1em. For paint-time resolution of pseudo width/height
+  // where the % is relative to the rendered host (e.g. `h3::before { height: 61% }`).
+  static qreal resolveLengthPx(const QString& value, const QHash<QString, QString>& vars,
+                               qreal emPx, qreal containingPx);
 };
 
 }  // namespace muffin

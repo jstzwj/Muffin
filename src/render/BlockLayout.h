@@ -78,6 +78,25 @@ public:
     bool focused = false;
   };
 
+  struct CssBoxGeometry {
+    QString hostKey;
+    QRectF flowRect;
+    QRectF borderBox;
+    QRectF paddingBox;
+    QRectF contentBox;
+    QPointF inlineTextOrigin;
+    QRectF visualOverflow;
+    bool valid = false;
+  };
+
+  // Hover state passed into paint so in-block properties (heading text colour,
+  // ::after width) animate with the SAME HoverAnimator phase the outer glow/bg/
+  // scale effects use. Defaults to inactive (base appearance).
+  struct BlockPaintHover {
+    bool active = false;
+    qreal phase = 0.0;  // 0..1
+  };
+
   explicit BlockLayout(NodeId id = {});
 
   NodeId nodeId() const;
@@ -86,6 +105,11 @@ public:
 
   QRectF rect() const;
   void setRect(QRectF rect);
+  void setCssBoxGeometry(CssBoxGeometry geometry);
+  CssBoxGeometry cssBoxGeometry(const RenderTheme& theme) const;
+  QRectF cssBorderBox(const RenderTheme& theme) const;
+  QPointF inlineTextOrigin(const RenderTheme& theme) const;
+  QRectF visualOverflowRect(const RenderTheme& theme) const;
   void translate(qreal dx, qreal dy);
   void translateY(qreal dy);
 
@@ -170,7 +194,7 @@ public:
   QRectF tableCellRect(int row, int column) const;
 
   void paint(QPainter& painter, const RenderTheme& theme, qreal scrollY,
-             const CodeFenceScrollController* scroll = nullptr) const;
+             const CodeFenceScrollController* scroll = nullptr, BlockPaintHover hover = {}) const;
   bool intersects(const QRectF& documentViewport) const;
   bool containsNode(NodeId id) const;
   bool containsInteractiveContent(QPointF documentPos, const RenderTheme& theme) const;
@@ -188,7 +212,7 @@ public:
   QVector<QRectF> selectionRectsSelfForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
 
 private:
-  void paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll) const;
+  void paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll, BlockPaintHover hover) const;
   void paintTable(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
   HitTestResult hitSelf(QPointF documentPos, const RenderTheme& theme, const CodeFenceScrollController* scroll) const;
   HitTestResult hitTable(QPointF documentPos, const RenderTheme& theme) const;
@@ -207,6 +231,7 @@ private:
   NodeId id_;
   BlockType type_ = BlockType::Unknown;
   QRectF rect_;
+  CssBoxGeometry cssBoxGeometry_;
   std::unique_ptr<InlineLayout> inlineLayout_;
   QString literal_;
   QString codeLanguage_;

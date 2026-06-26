@@ -97,6 +97,16 @@ QSizeF scaledImageDisplaySize(const QImage& image, qreal zoom) {
   return size;
 }
 
+// Linear RGB-A blend of two opaque theme colours, used to animate a `:hover { color }`
+// between the element base colour and the hover target as the HoverAnimator phase ramps.
+QColor lerpColor(const QColor& from, const QColor& to, qreal t) {
+  t = qBound(0.0, t, 1.0);
+  return QColor(qRound(from.red() + (to.red() - from.red()) * t),
+                qRound(from.green() + (to.green() - from.green()) * t),
+                qRound(from.blue() + (to.blue() - from.blue()) * t),
+                qRound(from.alpha() + (to.alpha() - from.alpha()) * t));
+}
+
 }  // namespace
 
 struct InlineLayout::TextLayoutPointHit {
@@ -152,6 +162,8 @@ void InlineLayout::build(
   kbdRadius_ = theme.kbdBorderRadius();
   kbdBorder_ = theme.kbdBorderColor();
   kbdBorderWidth_ = theme.kbdBorderWidth();
+  kbdBorderBottomWidth_ = theme.kbdBorderBottomWidth();
+  kbdBorderBottomColor_ = theme.kbdBorderBottomColor();
   kbdShadow_ = theme.kbdShadowColor();
   codeBoxPaddingH_ = theme.inlineCodePaddingH();
   codeBoxPaddingV_ = theme.inlineCodePaddingV();
@@ -177,7 +189,9 @@ void InlineLayout::build(
     if (eb.host == QStringLiteral("mark")) { markGradient_ = eb.gradient; }
   }
   baseTextColorOverride_ = options.baseTextColor;
+  hoverTextColor_ = options.hoverTextColor;
   lineHeightMultiplier_ = options.lineHeightMultiplier;
+  wordSpacing_ = options.wordSpacing;
   alignment_ = options.alignment;
   projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState, options.sourceBase, baseFont.pointSizeF(),
                                  options.pendingPrefixLength, options.smartPunct, options.breakOnSingleNewline);
@@ -241,7 +255,7 @@ qreal InlineLayout::firstLineBaselineY() const {
   return line.isValid() ? (line.y() + line.ascent()) : 0.0;
 }
 
-void InlineLayout::paint(QPainter& painter, QPointF origin) const {
+void InlineLayout::paint(QPainter& painter, QPointF origin, qreal hoverPhase) const {
   if (!textLayout_) {
     return;
   }
@@ -251,7 +265,30 @@ void InlineLayout::paint(QPainter& painter, QPointF origin) const {
   paintTextLayoutCodeSpans(painter, origin);
   paintTextLayoutInlineDecorations(painter, origin);
   paintTextLayoutHtmlKeyboardSpans(painter, origin);
-  textLayout_->draw(&painter, origin);
+  // CSS `:hover { color }` recolours only the runs that inherit the element colour
+  // (pre-computed in hoverRecolourRanges_), animated by the HoverAnimator phase. It
+  // is applied as foreground-only `selection`s passed to draw() — a draw-time
+  // override of the foreground that needs NO setFormats() (broken after endLayout
+  // in this Qt build) and a NO second render, so glyph edges stay crisp and styled
+  // spans (links/code/del/kbd) keep their own colours. The selection replaces (not
+  // blends) the per-run colour, so the target is the lerped base→hover colour.
+  if (hoverTextColor_.isValid() && hoverPhase > 0.0 && !hoverRecolourRanges_.isEmpty()) {
+    const QColor target = lerpColor(baseRunColor_, hoverTextColor_, qBound(0.0, hoverPhase, 1.0));
+    QVector<QTextLayout::FormatRange> selections;
+    selections.reserve(hoverRecolourRanges_.size());
+    for (const QPair<int, int>& range : hoverRecolourRanges_) {
+      QTextCharFormat format;
+      format.setForeground(target);
+      QTextLayout::FormatRange selection;
+      selection.start = range.first;
+      selection.length = range.second - range.first;
+      selection.format = format;
+      selections.append(selection);
+    }
+    textLayout_->draw(&painter, origin, selections);
+  } else {
+    textLayout_->draw(&painter, origin);
+  }
   paintTextLayoutMathAtoms(painter, origin);
   paintTextLayoutImageAtoms(painter, origin);
   paintImagePreview(painter, origin);
@@ -426,7 +463,15 @@ void InlineLayout::paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) c
   }
 
   painter.save();
-  painter.setPen(QPen(textLayoutCodeBorderColor_, codeBoxBorderWidth_));
+  // Declared-only border: a width of 0 means the theme's CSS set no `border` on
+  // `code` — paint no edge. QPen(color, 0) is a cosmetic 1px line in Qt, so an
+  // explicit NoPen is required to actually suppress it. The background fill
+  // (brush) is independent and always applies.
+  if (codeBoxBorderWidth_ > 0.0) {
+    painter.setPen(QPen(textLayoutCodeBorderColor_, codeBoxBorderWidth_));
+  } else {
+    painter.setPen(Qt::NoPen);
+  }
   painter.setBrush(textLayoutCodeBackgroundColor_);
   // Phase 3b: chip geometry from CSS (defaults reproduce the legacy -3/+6 / r=3
   // chip). Advance stays = text advance (paint-only), so editing/cursor/hit-test
@@ -457,11 +502,17 @@ void InlineLayout::paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) c
       }
       const qreal x1 = line.cursorToX(rangeStart);
       const qreal x2 = line.cursorToX(rangeEnd);
+      // The chip wraps the code glyphs + CSS padding (paint-only, line-bounded).
+      // Vertical padding GROWS the box around the glyph height (naturalTextRect),
+      // mirroring the horizontal growth — sizing against the full line height and
+      // then subtracting padding collapses the chip to nothing when padV is large
+      // relative to the line (e.g. `code { padding:10px 14px }`).
+      const QRectF glyphs = line.naturalTextRect();
       const QRectF rect(
           origin.x() + qMin(x1, x2) - padH,
-          origin.y() + line.y() + padV,
+          origin.y() + glyphs.top() - padV,
           qAbs(x2 - x1) + padH * 2.0,
-          qMax<qreal>(1.0, line.height() - padV * 2.0));
+          qMax<qreal>(1.0, glyphs.height() + padV * 2.0));
       painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), radius, radius);
     }
   }
@@ -608,12 +659,30 @@ void InlineLayout::paintTextLayoutHtmlKeyboardSpans(QPainter& painter, QPointF o
           qAbs(x2 - x1) + padH * 2.0,
           qMax<qreal>(1.0, line.height() - 3.0));
 
+      const QRectF box = rect.adjusted(0.5, 0.5, -0.5, -0.5);
+      // 3D depth: phycat gives kbd a hard `box-shadow: 0 2px 0 <tint>` — a flush
+      // strip below the key in the shadow colour makes it look raised. Drawn first
+      // so the keycap body sits on top. (CSS shadow offset isn't captured; 2px
+      // matches phycat.) Only when the theme declares a kbd shadow.
+      if (themed && bottom.isValid()) {
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(bottom);
+        painter.drawRect(QRectF(box.left() + radius, box.bottom(), box.width() - radius * 2.0, 2.0));
+      }
+      // Keycap body: fill + uniform border.
       painter.setPen(QPen(border, borderWidth));
       painter.setBrush(fill);
-      painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), radius, radius);
-
-      painter.setPen(QPen(bottom, darkTheme_ && !themed ? 2.0 : 1.0));
-      painter.drawLine(rect.bottomLeft() + QPointF(2.0, -0.5), rect.bottomRight() + QPointF(-2.0, -0.5));
+      painter.drawRoundedRect(box, radius, radius);
+      // Bottom edge: phycat declares `border-bottom-width: 3px` for a chunky bottom.
+      if (themed && kbdBorderBottomWidth_ > 0.0) {
+        const QColor bc = kbdBorderBottomColor_.isValid() ? kbdBorderBottomColor_ : border;
+        painter.setPen(QPen(bc, kbdBorderBottomWidth_));
+        painter.drawLine(box.bottomLeft() + QPointF(radius, 0.0), box.bottomRight() + QPointF(-radius, 0.0));
+      } else if (!themed) {
+        // Legacy heuristic (built-ins): thin shadow-coloured bottom emphasis.
+        painter.setPen(QPen(bottom, darkTheme_ ? 2.0 : 1.0));
+        painter.drawLine(rect.bottomLeft() + QPointF(2.0, -0.5), rect.bottomRight() + QPointF(-2.0, -0.5));
+      }
     }
   }
   painter.restore();
@@ -1060,7 +1129,16 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
     option.setAlignment(alignment_);
   }
   textLayout_->setTextOption(option);
-  textLayout_->setFormats(textLayoutFormats(theme, baseFont));
+  const QVector<QTextLayout::FormatRange> formats = textLayoutFormats(theme, baseFont);
+  textLayout_->setFormats(formats);
+  // Pre-compute the runs a `:hover { color }` should recolour (only when the
+  // element actually declares a hover colour). Derived from the same `formats`
+  // the layout draws, so it stays in lock-step with span colouring.
+  if (hoverTextColor_.isValid()) {
+    computeHoverRecolourRanges(formats, theme);
+  } else {
+    hoverRecolourRanges_.clear();
+  }
 
   const qreal lineWidth = qMax<qreal>(1.0, width);
   qreal height = 0.0;
@@ -1112,6 +1190,35 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
     previewHeight_ += atom.displaySize.height() + kPreviewSpacing;
   }
   size_ = QSizeF(qMin(lineWidth, qMax<qreal>(maxWidth, 1.0)), height + previewHeight_);
+}
+
+void InlineLayout::computeHoverRecolourRanges(const QVector<QTextLayout::FormatRange>& formats, const RenderTheme& theme) {
+  hoverRecolourRanges_.clear();
+  const int n = displayText_.size();
+  if (n <= 0) { return; }
+  baseRunColor_ = baseTextColorOverride_.isValid() ? baseTextColorOverride_ : theme.textColor();
+  // Effective foreground per character, derived from the SAME format ranges the
+  // layout draws: every span that sets its own foreground (link / code / del /
+  // kbd / explicit HTML colour) overrides the base, and atom placeholders render
+  // transparent. A run therefore "inherits the element colour" exactly when its
+  // effective colour equals the base — those are the runs `:hover { color }`
+  // should recolour. (SpellCheck ranges set only an underline, no foreground, so
+  // misspelled prose still inherits and recolours — correct.)
+  QVector<QColor> effective(n, baseRunColor_);
+  for (const QTextLayout::FormatRange& fr : formats) {
+    const QColor fg = fr.format.foreground().color();
+    if (!fg.isValid()) { continue; }
+    const int start = qBound(0, fr.start, n);
+    const int end = qBound(0, fr.start + fr.length, n);
+    for (int i = start; i < end; ++i) { effective[i] = fg; }
+  }
+  int i = 0;
+  while (i < n) {
+    if (effective[i] != baseRunColor_) { ++i; continue; }
+    const int start = i;
+    while (i < n && effective[i] == baseRunColor_) { ++i; }
+    hoverRecolourRanges_.append({start, i});
+  }
 }
 
 void InlineLayout::paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) const {
@@ -1214,6 +1321,7 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
   QTextCharFormat baseFormat;
   baseFormat.setFont(baseFont);
   applyLetterSpacing(baseFormat, baseFont);
+  if (wordSpacing_ != 0.0) { baseFormat.setFontWordSpacing(wordSpacing_); }
   baseFormat.setForeground(baseTextColorOverride_.isValid() ? baseTextColorOverride_ : theme.textColor());
   QTextLayout::FormatRange baseRange;
   baseRange.start = 0;
@@ -1238,6 +1346,12 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     }
     if (span.strike) {
       format.setFontStrikeOut(true);
+      // Phase 5: CSS `del { color }` mutes deleted text (phycat → #999). The strike
+      // line itself can't be recoloured (Qt strikeOut uses the text colour), but the
+      // text colour is honoured when the theme declares one.
+      if (theme.delColor().isValid()) {
+        format.setForeground(theme.delColor());
+      }
     }
     if (span.underline) {
       format.setFontUnderline(true);

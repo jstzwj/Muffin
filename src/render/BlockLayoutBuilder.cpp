@@ -27,6 +27,13 @@ namespace {
 
 Q_LOGGING_CATEGORY(blockBuildPerf, "muffin.perf", QtWarningMsg)
 
+bool isInsideBlockquote(const MarkdownNode& node) {
+  for (const MarkdownNode* p = node.parent(); p; p = p->parent()) {
+    if (p->type() == BlockType::BlockQuote) { return true; }
+  }
+  return false;
+}
+
 bool hasHeadingAfterDecoration(const RenderTheme& theme, int level) {
   const QString host = QStringLiteral("h%1").arg(level);
   for (const PseudoElementRule& rule : theme.decorations().pseudos) {
@@ -37,6 +44,57 @@ bool hasHeadingAfterDecoration(const RenderTheme& theme, int level) {
     }
   }
   return false;
+}
+
+QMarginsF blockMarginForFlow(const MarkdownNode& node, const RenderTheme& theme) {
+  if (node.type() == BlockType::Paragraph && isInsideBlockquote(node)) {
+    const ThemeElementBoxStyle quoteParagraph = theme.elementBoxStyle(QStringLiteral("blockquote p"));
+    if (quoteParagraph.present && !quoteParagraph.margin.isNull()) { return quoteParagraph.margin; }
+  }
+  return theme.blockMargin(node.type(), node.headingLevel());
+}
+
+bool hasCssFlowMargin(const MarkdownNode& node, const RenderTheme& theme) {
+  return !blockMarginForFlow(node, theme).isNull();
+}
+
+qreal spacingBeforeInFlow(const MarkdownNode& node, const RenderTheme& theme) {
+  const QMarginsF margin = blockMarginForFlow(node, theme);
+  return !margin.isNull() ? margin.top() : 0.0;
+}
+
+qreal spacingAfterInFlow(const MarkdownNode& node, const RenderTheme& theme) {
+  const QMarginsF margin = blockMarginForFlow(node, theme);
+  return !margin.isNull() ? margin.bottom() : theme.blockSpacing();
+}
+
+bool isTightListItemSiblingPair(const MarkdownNode& prev, const MarkdownNode& next) {
+  const MarkdownNode* parent = prev.parent();
+  return parent && parent == next.parent() && parent->type() == BlockType::List && parent->listTight() &&
+         prev.type() == BlockType::ListItem && next.type() == BlockType::ListItem;
+}
+
+bool isTightListNestedChildPair(const MarkdownNode& prev, const MarkdownNode& next) {
+  if (prev.type() != BlockType::Paragraph || next.type() != BlockType::List) { return false; }
+  const MarkdownNode* item = next.parent();
+  const MarkdownNode* list = item ? item->parent() : nullptr;
+  return item && item == prev.parent() && item->type() == BlockType::ListItem && list && list->type() == BlockType::List && list->listTight();
+}
+
+qreal spacingBetweenInFlow(const MarkdownNode& prev, const MarkdownNode& next, const RenderTheme& theme) {
+  if (isTightListItemSiblingPair(prev, next) || isTightListNestedChildPair(prev, next)) { return 0.0; }
+  const qreal after = spacingAfterInFlow(prev, theme);
+  const qreal before = spacingBeforeInFlow(next, theme);
+  return (hasCssFlowMargin(prev, theme) || hasCssFlowMargin(next, theme)) ? qMax(after, before) : after + before;
+}
+
+bool isVirtualEmptyParagraphNode(const MarkdownNode& node) {
+  const SourceRange range = node.sourceRange();
+  return node.type() == BlockType::Paragraph && range.byteStart >= 0 && range.byteEnd == range.byteStart;
+}
+
+bool omitVirtualEmptyParagraphInRenderFlow(const MarkdownNode& node) {
+  return isVirtualEmptyParagraphNode(node) && isInsideBlockquote(node);
 }
 
 // markdown/showLineNumbers (default off): reserve a left gutter in code fences for line numbers.
@@ -365,7 +423,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   }
 
   auto inlineLayout = std::make_unique<InlineLayout>();
-  const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
+  const QString elementKey = node.type() == BlockType::Heading
+      ? QStringLiteral("h%1").arg(node.headingLevel())
+      : (isInsideBlockquote(node) ? QStringLiteral("blockquote p") : QStringLiteral("p"));
+  const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.textFontForElement(elementKey);
   const QMarginsF headingPadding = node.type() == BlockType::Heading ? theme.headingPadding(node.headingLevel()) : QMarginsF();
   // A heading with an inline `::before` marker (h4/h5/h6) reserves left space for
   // it (headingBeforeAdvance); the text wraps within the remaining width. The
@@ -396,13 +457,23 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   options.isMisspelled = spellMisspelledPredicate();
   options.smartPunct = smartPunctRenderOptions();
   options.breakOnSingleNewline = breakOnSingleNewlineEnabled();
-  // Per-heading text colour from the theme (CSS themes give h1-h6 their
-  // own colours). Invalid for themes that don't → falls back to textColor.
+  // Element-level computed text style: headings keep their legacy heading getter
+  // fallback, while paragraphs can now differ by context (`p` vs `blockquote p`).
   if (node.type() == BlockType::Heading) {
     options.baseTextColor = theme.headingColor(node.headingLevel());
+    // CSS `:hover { color }` target — the inline layout recolours only the runs
+    // that inherit the heading colour on hover (links/code keep their own).
+    if (const ThemeElementStyle* hover = theme.elementStyle(QStringLiteral("h%1:hover").arg(node.headingLevel()))) {
+      if (hover->paint.color.isValid()) {
+        options.hoverTextColor = hover->paint.color;
+      }
+    }
+  } else {
+    options.baseTextColor = theme.textColorForElement(elementKey);
   }
-  options.lineHeightMultiplier = theme.lineHeightMultiplier(node.type(), node.headingLevel());
-  options.alignment = theme.textAlignment(node.type(), node.headingLevel());
+  options.lineHeightMultiplier = theme.lineHeightMultiplierForElement(elementKey, node.type(), node.headingLevel());
+  options.wordSpacing = theme.wordSpacingForElement(elementKey);
+  options.alignment = theme.textAlignmentForElement(elementKey, node.type(), node.headingLevel());
   {
     BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
     inlineLayout->build(node.inlines(), editableSource, theme, textWidth, font, options);
@@ -414,8 +485,41 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
     height += theme.blockSpacing() * 0.35;
   }
   layout->setContentSourceStart(projectionBase);
-  layout->setRect(QRectF(x, y, width, height));
-
+  const QRectF flowRect(x, y, width, height);
+  layout->setRect(flowRect);
+  if (node.type() == BlockType::Heading) {
+    BlockLayout::CssBoxGeometry box;
+    box.hostKey = QStringLiteral("h%1").arg(node.headingLevel());
+    box.flowRect = flowRect;
+    box.borderBox = flowRect;
+    const QRectF visual = inlineLayout->visualTextBounds();
+    if (theme.headingFitContent(node.headingLevel()) && visual.isValid() && inlineLayout->height() > 0.0) {
+      // Pill left edge = block left + the text's intra-content-box left offset.
+      // The headingPadding.left()/beforeAdvance that position the text origin are
+      // symmetric with the pill's own left padding, so they cancel: the pill hugs
+      // the text's left side. (Exact for h1–h3, whose beforeAdvance is 0.)
+      const qreal left = qBound(flowRect.left(), flowRect.left() + visual.left(), flowRect.right());
+      const qreal right = qBound(left, flowRect.left() + headingPadding.left() + beforeAdvance + visual.right() + headingPadding.right(), flowRect.right());
+      box.borderBox = QRectF(left, flowRect.top(), qMax<qreal>(1.0, right - left), inlineLayout->height());
+    }
+    box.paddingBox = box.borderBox.marginsRemoved(headingPadding);
+    box.contentBox = box.paddingBox;
+    // QTextLayout still lays out against the full heading content width so CSS
+    // text-align:center/right works like a browser block. The fit-content border
+    // box is paint/hover geometry only; tying the text origin to that shrunken box
+    // double-applies the centred visual offset and pushes h1/h3 far right.
+    box.inlineTextOrigin = QPointF(flowRect.left() + headingPadding.left() + beforeAdvance, flowRect.top());
+    qreal overflow = 0.0;
+    if (const ThemeElementStyle* hover = theme.elementStyle(box.hostKey + QStringLiteral(":hover"))) {
+      overflow = qMax(overflow, hover->paint.boxShadowBlur);
+    }
+    for (const HoverEffect& he : theme.decorations().hoverEffects) {
+      if (he.host == box.hostKey) { overflow = qMax(overflow, he.glowBlur); }
+    }
+    box.visualOverflow = box.borderBox.adjusted(-overflow, -overflow, overflow, overflow);
+    box.valid = true;
+    layout->setCssBoxGeometry(box);
+  }
 
   layout->setInlineLayout(std::move(inlineLayout));
   return layout;
@@ -433,28 +537,65 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(
   layout->setDepth(depth);
   layout->setAlertKind(node.alertKind());
 
-  // Phase 4a: a CSS-themed blockquote applies its padding as real container flow
-  // (children inset by left/right, cursor starts after top padding, height grows
-  // by bottom padding). Non-themed quotes keep the legacy fixed left indent.
+  // Phase 4a: a CSS-themed blockquote applies its real box model to container
+  // flow. Padding and border inset the children; margin stays outside this block
+  // and is handled by the parent flow. Non-themed quotes keep the legacy fixed left
+  // indent.
   const bool quoteBox = node.type() == BlockType::BlockQuote && theme.blockquoteBoxThemed();
-  const QMarginsF qpad = quoteBox ? theme.blockquotePadding() : QMarginsF();
+  const ThemeElementBoxStyle qbox = quoteBox ? theme.elementBoxStyle(QStringLiteral("blockquote")) : ThemeElementBoxStyle{};
+  const QMarginsF qpad = quoteBox ? qbox.padding : QMarginsF();
+  const QMarginsF qborder = quoteBox ? QMarginsF(qbox.borderLeftWidth, qbox.borderTopWidth, qbox.borderRightWidth, qbox.borderBottomWidth) : QMarginsF();
   const qreal quoteIndent = (node.type() == BlockType::BlockQuote && !quoteBox) ? theme.blockQuoteIndent() : 0.0;
-  const qreal childX = x + quoteIndent + qpad.left();
-  const qreal childWidth = qMax<qreal>(1.0, width - quoteIndent - qpad.left() - qpad.right());
-  qreal cursorY = y + (quoteBox ? qpad.top() : 0.0);
+  const qreal childX = x + quoteIndent + qborder.left() + qpad.left();
+  const qreal childWidth = qMax<qreal>(1.0, width - quoteIndent - qborder.left() - qborder.right() - qpad.left() - qpad.right());
+  qreal cursorY = y + qborder.top() + qpad.top();
   std::vector<std::unique_ptr<BlockLayout>> children;
+  const MarkdownNode* previousChild = nullptr;
+  bool omittedOnlyRenderChildren = !node.children().empty();
 
+  const bool firstChildMarginCollapses = qFuzzyIsNull(qborder.top() + qpad.top());
+  const bool lastChildMarginCollapses = qFuzzyIsNull(qborder.bottom() + qpad.bottom());
   for (const auto& child : node.children()) {
+    if (omitVirtualEmptyParagraphInRenderFlow(*child)) { continue; }
+    omittedOnlyRenderChildren = false;
+    if (previousChild) { cursorY += spacingBetweenInFlow(*previousChild, *child, theme); }
+    else if (!firstChildMarginCollapses) { cursorY += spacingBeforeInFlow(*child, theme); }
     auto childLayout = build(*child, theme, childX, cursorY, childWidth, depth + 1);
-    cursorY = childLayout->rect().bottom() + theme.blockSpacing();
+    cursorY = childLayout->rect().bottom();
+    previousChild = child.get();
     children.push_back(std::move(childLayout));
   }
 
-  qreal height = children.empty() ? QFontMetricsF(theme.paragraphFont()).height() : qMax<qreal>(0, cursorY - y - theme.blockSpacing());
-  if (quoteBox) {
-    height += qpad.bottom();
+  qreal height = 0.0;
+  if (children.empty()) {
+    height = quoteBox && omittedOnlyRenderChildren
+                 ? qborder.top() + qpad.top() + qpad.bottom() + qborder.bottom()
+                 : qborder.top() + qpad.top() + QFontMetricsF(theme.paragraphFont()).height() + qpad.bottom() + qborder.bottom();
+  } else {
+    const qreal trailingChildMargin = lastChildMarginCollapses ? 0.0 : spacingAfterInFlow(*previousChild, theme);
+    height = cursorY + trailingChildMargin + qpad.bottom() + qborder.bottom() - y;
   }
-  layout->setRect(QRectF(x, y, width, height));
+  const QRectF flowRect(x, y, width, height);
+  layout->setRect(flowRect);
+  if (quoteBox) {
+    BlockLayout::CssBoxGeometry box;
+    box.hostKey = QStringLiteral("blockquote");
+    box.flowRect = flowRect;
+    box.borderBox = flowRect;
+    box.paddingBox = flowRect.marginsRemoved(qborder);
+    box.contentBox = box.paddingBox.marginsRemoved(qpad);
+    box.inlineTextOrigin = box.contentBox.topLeft();
+    qreal overflow = 0.0;
+    if (const ThemeElementStyle* hover = theme.elementStyle(box.hostKey + QStringLiteral(":hover"))) {
+      overflow = qMax(overflow, hover->paint.boxShadowBlur);
+    }
+    for (const HoverEffect& he : theme.decorations().hoverEffects) {
+      if (he.host == box.hostKey) { overflow = qMax(overflow, he.glowBlur); }
+    }
+    box.visualOverflow = box.borderBox.adjusted(-overflow, -overflow, overflow, overflow);
+    box.valid = true;
+    layout->setCssBoxGeometry(box);
+  }
   layout->setChildren(std::move(children));
   return layout;
 }
@@ -490,7 +631,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
     layout->setListMarker(QStringLiteral("•"));
   }
 
-  const qreal markerGap = theme.listIndent() * 0.2;
+  const qreal markerGap = theme.listMarkerGap();
   qreal contentIndent = theme.listIndent();
   if (layout->listMarkerKind() == BlockLayout::ListMarkerKind::OrderedText && listParent) {
     const QFontMetricsF metrics(theme.paragraphFont());
@@ -504,9 +645,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
 
   const qreal contentX = x + contentIndent;
   const qreal contentWidth = qMax<qreal>(1.0, width - contentIndent);
-  qreal cursorY = y;
 
   auto inlineLayout = std::make_unique<InlineLayout>();
+  const QString elementKey = isInsideBlockquote(node) ? QStringLiteral("blockquote p") : QStringLiteral("li");
   InlineLayout::BuildOptions options;
   QString listSourceText;
   if (const MarkdownNode* paragraph = primaryParagraph(node)) {
@@ -521,24 +662,34 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   options.breakOnSingleNewline = breakOnSingleNewlineEnabled();
   {
     BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
-    inlineLayout->build(primaryInlinesForListItem(node), listSourceText, theme, contentWidth, theme.paragraphFont(), options);
+    options.baseTextColor = theme.textColorForElement(elementKey);
+    options.lineHeightMultiplier = theme.lineHeightMultiplierForElement(elementKey, BlockType::Paragraph);
+    options.wordSpacing = theme.wordSpacingForElement(elementKey);
+    options.alignment = theme.textAlignmentForElement(elementKey, BlockType::Paragraph);
+    inlineLayout->build(primaryInlinesForListItem(node), listSourceText, theme, contentWidth, theme.textFontForElement(elementKey), options);
   }
   layout->setInlineLayout(std::move(inlineLayout));
 
-  qreal height = layout->inlineLayout() ? layout->inlineLayout()->height() : QFontMetricsF(theme.paragraphFont()).height();
+  const qreal inlineHeight = layout->inlineLayout() ? layout->inlineLayout()->height() : QFontMetricsF(theme.paragraphFont()).height();
+  qreal flowBottom = y + inlineHeight;
   std::vector<std::unique_ptr<BlockLayout>> children;
 
   bool skippedPrimaryParagraph = false;
+  const MarkdownNode* previousChild = nullptr;
   for (const auto& child : node.children()) {
+    if (omitVirtualEmptyParagraphInRenderFlow(*child)) { continue; }
     if (!skippedPrimaryParagraph && child->type() == BlockType::Paragraph) {
       skippedPrimaryParagraph = true;
+      previousChild = child.get();
       continue;
     }
-    cursorY = y + height + theme.blockSpacing();
-    auto childLayout = build(*child, theme, contentX, cursorY, contentWidth, depth + 1);
-    height = childLayout->rect().bottom() - y;
+    flowBottom += previousChild ? spacingBetweenInFlow(*previousChild, *child, theme) : theme.blockSpacing();
+    auto childLayout = build(*child, theme, contentX, flowBottom, contentWidth, depth + 1);
+    flowBottom = childLayout->rect().bottom();
+    previousChild = child.get();
     children.push_back(std::move(childLayout));
   }
+  const qreal height = flowBottom - y;
 
   // Identity ("is this a task item at all?") and state ("is it checked?") are
   // independent: an unchecked task item has isTaskItem()==true but
@@ -1158,7 +1309,17 @@ qreal estimateWrappedLines(QStringView text, qreal charsPerLine) {
 }  // namespace
 
 qreal BlockLayoutBuilder::estimateLineHeight(const QFont& font) const {
-  // Matches InlineLayout's per-line height: ceil(QFontMetricsF::height() * 1.16).
+  // Matches InlineLayout's fallback per-line height: ceil(QFontMetricsF::height() * 1.16).
+  return std::ceil(QFontMetricsF(font).height() * 1.16);
+}
+
+qreal estimateLineHeightForElement(const RenderTheme& theme, const QString& elementKey, BlockType type, int headingLevel = 0) {
+  const QFont font = type == BlockType::Heading ? theme.headingFont(headingLevel) : theme.textFontForElement(elementKey);
+  const qreal multiplier = theme.lineHeightMultiplierForElement(elementKey, type, headingLevel);
+  if (multiplier > 0.0) {
+    const qreal pointSize = font.pointSizeF() > 0.0 ? font.pointSizeF() : 12.0;
+    return std::ceil(pointSize * (96.0 / 72.0) * multiplier);
+  }
   return std::ceil(QFontMetricsF(font).height() * 1.16);
 }
 
@@ -1223,8 +1384,10 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateHeight(const Mark
 
 BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateParagraphLike(const MarkdownNode& node, const RenderTheme& theme, qreal width) const {
   const bool isHeading = node.type() == BlockType::Heading;
-  const QFont font = isHeading ? theme.headingFont(node.headingLevel()) : theme.paragraphFont();
-  const qreal lineHeight = estimateLineHeight(font);
+  const QString elementKey = isHeading ? QStringLiteral("h%1").arg(node.headingLevel())
+                                      : (isInsideBlockquote(node) ? QStringLiteral("blockquote p") : QStringLiteral("p"));
+  const QFont font = isHeading ? theme.headingFont(node.headingLevel()) : theme.textFontForElement(elementKey);
+  const qreal lineHeight = estimateLineHeightForElement(theme, elementKey, node.type(), node.headingLevel());
   const QString text = InlineProjection::plainTextForInlines(node.inlines(), breakOnSingleNewlineEnabled());
   // Mirror buildParagraphLike: an inline ::before marker narrows the wrap width.
   const qreal beforeAdvance = isHeading ? theme.headingBeforeAdvance(node.headingLevel()) : 0.0;
@@ -1245,18 +1408,30 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateContainer(const M
   }
   const bool isQuote = node.type() == BlockType::BlockQuote;
   const bool quoteBox = isQuote && theme.blockquoteBoxThemed();
-  const QMarginsF qpad = quoteBox ? theme.blockquotePadding() : QMarginsF();
+  const ThemeElementBoxStyle qbox = quoteBox ? theme.elementBoxStyle(QStringLiteral("blockquote")) : ThemeElementBoxStyle{};
+  const QMarginsF qpad = quoteBox ? qbox.padding : QMarginsF();
+  const QMarginsF qborder = quoteBox ? QMarginsF(qbox.borderLeftWidth, qbox.borderTopWidth, qbox.borderRightWidth, qbox.borderBottomWidth) : QMarginsF();
   const qreal quoteIndent = (isQuote && !quoteBox) ? theme.blockQuoteIndent() : 0.0;
-  const qreal childWidth = std::max<qreal>(1.0, width - quoteIndent - qpad.left() - qpad.right());
-  qreal total = quoteBox ? qpad.top() : 0.0;
+  const qreal childWidth = std::max<qreal>(1.0, width - quoteIndent - qborder.left() - qborder.right() - qpad.left() - qpad.right());
+  const bool firstChildMarginCollapses = qFuzzyIsNull(qborder.top() + qpad.top());
+  const bool lastChildMarginCollapses = qFuzzyIsNull(qborder.bottom() + qpad.bottom());
+  qreal total = qborder.top() + qpad.top();
   bool mustMeasure = false;
+  const MarkdownNode* previousChild = nullptr;
+  bool omittedOnlyRenderChildren = !node.children().empty();
   for (const auto& child : node.children()) {
+    if (omitVirtualEmptyParagraphInRenderFlow(*child)) { continue; }
+    omittedOnlyRenderChildren = false;
+    if (previousChild) { total += spacingBetweenInFlow(*previousChild, *child, theme); }
+    else if (!firstChildMarginCollapses) { total += spacingBeforeInFlow(*child, theme); }
     const EstimateResult r = estimateHeight(*child, theme, childWidth, depth + 1);
     total += r.height;
     mustMeasure = mustMeasure || r.mustMeasure;
+    previousChild = child.get();
   }
-  total += theme.blockSpacing() * static_cast<qreal>(static_cast<qsizetype>(node.children().size()) - 1);
-  if (quoteBox) { total += qpad.bottom(); }
+  if (previousChild && !lastChildMarginCollapses) { total += spacingAfterInFlow(*previousChild, theme); }
+  total += qpad.bottom() + qborder.bottom();
+  if (!previousChild && !(quoteBox && omittedOnlyRenderChildren)) { total += QFontMetricsF(theme.paragraphFont()).height(); }
   return {total, mustMeasure};
 }
 
@@ -1270,30 +1445,37 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateListItem(const Ma
     for (qsizetype i = 0; i < static_cast<qsizetype>(listParent->children().size()); ++i) {
       widestMarker = std::max(widestMarker, metrics.horizontalAdvance(textForListMarker(*listParent, i)));
     }
-    contentIndent = std::max(theme.listIndent(), widestMarker + theme.listIndent() * 0.2);
+    contentIndent = std::max(theme.listIndent(), widestMarker + theme.listMarkerGap());
   }
   const qreal contentWidth = std::max<qreal>(1.0, width - contentIndent);
 
   const QVector<InlineNode> primary = primaryInlinesForListItem(node);
-  qreal height = QFontMetricsF(theme.paragraphFont()).height();
+  const QString elementKey = isInsideBlockquote(node) ? QStringLiteral("blockquote p") : QStringLiteral("li");
+  const QFont font = theme.textFontForElement(elementKey);
+  const qreal lineHeight = estimateLineHeightForElement(theme, elementKey, BlockType::Paragraph);
+  qreal inlineHeight = lineHeight;
   bool mustMeasure = false;
   if (!primary.isEmpty()) {
-    const QFont font = theme.paragraphFont();
     const QString text = InlineProjection::plainTextForInlines(primary, breakOnSingleNewlineEnabled());
     const qreal charsPerLine = std::max(qreal(1.0), std::floor(contentWidth / avgCharWidthForText(QStringView(text), font)));
-    height = estimateWrappedLines(QStringView(text), charsPerLine) * estimateLineHeight(font);
+    inlineHeight = estimateWrappedLines(QStringView(text), charsPerLine) * lineHeight;
     mustMeasure = inlinesContainSizedContent(primary);
   }
+  qreal height = inlineHeight;
 
   bool skippedPrimary = false;
+  const MarkdownNode* previousChild = nullptr;
   for (const auto& child : node.children()) {
+    if (omitVirtualEmptyParagraphInRenderFlow(*child)) { continue; }
     if (!skippedPrimary && child->type() == BlockType::Paragraph) {
       skippedPrimary = true;
+      previousChild = child.get();
       continue;
     }
     const EstimateResult r = estimateHeight(*child, theme, contentWidth, depth + 1);
-    height += theme.blockSpacing() + r.height;
+    height += (previousChild ? spacingBetweenInFlow(*previousChild, *child, theme) : theme.blockSpacing()) + r.height;
     mustMeasure = mustMeasure || r.mustMeasure;
+    previousChild = child.get();
   }
   return {height, mustMeasure};
 }

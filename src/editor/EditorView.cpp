@@ -657,36 +657,55 @@ void EditorView::paintEvent(QPaintEvent* event) {
   for (const BlockLayout* block : blocks) {
     const QString host = hostKeyForBlock(*block);
     const AnimatedSample* anim = (keyframeAnimator_ && !host.isEmpty()) ? keyframeAnimator_->sampleFor(host) : nullptr;
-    // CSS :hover box-shadow glow (phase-animated by HoverAnimator).
-    if (hoverAnimator_ && block->nodeId() == hoverAnimator_->animatedBlockId() && hoverAnimator_->phase() > 0.0) {
-      if (!host.isEmpty()) {
-        DecorationPainter::paintBlockHoverGlow(painter, theme_, host,
-                                               block->rect().translated(0, -scrollY()), hoverAnimator_->phase());
+    const bool hoverActive = hoverAnimator_ && block->nodeId() == hoverAnimator_->animatedBlockId() && hoverAnimator_->phase() > 0.0;
+    const ThemeElementStyle* hoverStyle = (!host.isEmpty() && hoverActive) ? theme_.elementStyle(host + QStringLiteral(":hover")) : nullptr;
+    const QRectF cssBox = block->cssBorderBox(theme_).translated(0, -scrollY());
+    // CSS :hover paint diff from the computed hover style. Prefer the element-style
+    // path; legacy HoverEffect remains as fallback for themes not yet represented.
+    if (hoverActive && !host.isEmpty()) {
+      if (hoverStyle && hoverStyle->paint.boxShadowColor.isValid() && hoverStyle->paint.boxShadowBlur > 0.0) {
+        DecorationPainter::paintGlow(painter, cssBox, hoverStyle->paint.boxShadowColor, hoverStyle->paint.boxShadowBlur, hoverAnimator_->phase());
+      } else {
+        DecorationPainter::paintBlockHoverGlow(painter, theme_, host, cssBox, hoverAnimator_->phase());
+      }
+      if (hoverStyle && hoverStyle->paint.backgroundColor.isValid()) {
+        QColor tint = hoverStyle->paint.backgroundColor;
+        tint.setAlphaF(tint.alphaF() * hoverAnimator_->phase());
+        painter.fillRect(cssBox, tint);
       }
     }
     // @keyframes glow (colour/blur from the sampled frame).
     if (anim && anim->hasGlow) {
       DecorationPainter::paintGlow(painter, block->rect().translated(0, -scrollY()), anim->glowColor, anim->glowBlur, 1.0);
     }
-    const bool wrap = anim && (anim->hasOpacity || (anim->hasScale && qAbs(anim->scale - 1.0) > 0.001));
+    const qreal hoverScale = hoverStyle ? (1.0 + (hoverStyle->paint.transformScale - 1.0) * hoverAnimator_->phase()) : 1.0;
+    const bool hoverWrap = qAbs(hoverScale - 1.0) > 0.001;
+    const bool wrap = hoverWrap || (anim && (anim->hasOpacity || (anim->hasScale && qAbs(anim->scale - 1.0) > 0.001)));
     if (wrap) {
       painter.save();
-      if (anim->hasOpacity) { painter.setOpacity(anim->opacity); }
-      if (anim->hasScale) {
+      if (anim && anim->hasOpacity) { painter.setOpacity(anim->opacity); }
+      if (anim && anim->hasScale) {
         const QRectF br = block->rect().translated(0, -scrollY());
         const QPointF c = br.center();
         painter.translate(c);
         painter.scale(anim->scale, anim->scale);
         painter.translate(-c);
       }
+      if (hoverWrap) {
+        const QPointF c = cssBox.center();
+        painter.translate(c);
+        painter.scale(hoverScale, hoverScale);
+        painter.translate(-c);
+      }
     }
+    const BlockLayout::BlockPaintHover blockHover{hoverActive, hoverAnimator_ ? hoverAnimator_->phase() : 0.0};
     if (focusMode_ && activeTopLevel.isValid() && block->nodeId() != activeTopLevel) {
       painter.save();
       painter.setOpacity(0.35);
-      block->paint(painter, theme_, scrollY(), codeFenceScroll_);
+      block->paint(painter, theme_, scrollY(), codeFenceScroll_, blockHover);
       painter.restore();
     } else {
-      block->paint(painter, theme_, scrollY(), codeFenceScroll_);
+      block->paint(painter, theme_, scrollY(), codeFenceScroll_, blockHover);
     }
     if (wrap) { painter.restore(); }
   }
@@ -1630,8 +1649,15 @@ void EditorView::clearHtmlHover() {
 
 void EditorView::updateBlockHover(QPointF viewportPos) {
   if (!layout_ || !hoverAnimator_) { return; }
+  const QPointF documentPos(viewportPos.x(), viewportPos.y() + scrollY());
   const HitTestResult hit = hitTest(viewportPos);
-  const NodeId next = hit.isValid() ? layout_->topLevelBlockIdFor(hit.blockId) : NodeId();
+  NodeId next = hit.isValid() ? layout_->topLevelBlockIdFor(hit.blockId) : NodeId();
+  if (next.isValid()) {
+    if (const BlockLayout* blk = layout_->blockIfPromoted(next)) {
+      const QString host = hostKeyForBlock(*blk);
+      if (!host.isEmpty() && !blk->cssBorderBox(theme_).contains(documentPos)) { next = NodeId(); }
+    }
+  }
   if (next == hoveredBlockId_) { return; }
   hoveredBlockId_ = next;
   // Drive the animator only for hosts that actually declare a hover glow.
@@ -1648,7 +1674,7 @@ void EditorView::repaintHoverBlock(NodeId blockId) {
   if (!layout_ || !blockId.isValid()) { return; }
   const BlockLayout* blk = layout_->blockIfPromoted(blockId);
   if (!blk) { return; }
-  const QRectF r = blk->rect().translated(0, -scrollY()).adjusted(-20, -20, 20, 20);
+  const QRectF r = blk->visualOverflowRect(theme_).translated(0, -scrollY()).adjusted(-2, -2, 2, 2);
   viewport()->update(r.toAlignedRect());
 }
 

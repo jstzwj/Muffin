@@ -97,6 +97,61 @@ void testFilteringAndPseudoIsolation() {
           QStringLiteral("#write::before should still be matchable as a pseudo target"));
 }
 
+void testNestedBlockquoteParagraphAndMarker() {
+  CssElement body; body.tag = QStringLiteral("body");
+  CssElement write; write.id = QStringLiteral("write"); write.parent = &body;
+  CssElement p; p.tag = QStringLiteral("p"); p.parent = &write;
+  CssElement blockquote; blockquote.tag = QStringLiteral("blockquote"); blockquote.parent = &write;
+  CssElement quoteP; quoteP.tag = QStringLiteral("p"); quoteP.parent = &blockquote;
+  CssElement ul; ul.tag = QStringLiteral("ul"); ul.parent = &write;
+  CssElement li; li.tag = QStringLiteral("li"); li.parent = &ul;
+  CssElement marker; marker.tag = QStringLiteral("li"); marker.pseudoElement = QStringLiteral("marker"); marker.parent = &li;
+  const QString css = QStringLiteral(
+      ":root { --quote:#7aeaf0; --marker:#3db8bf; }"
+      "#write p { color:#222222; }"
+      "#write blockquote { --quote:#089ba3; }"
+      "#write blockquote p { color:var(--quote); }"
+      "#write li::marker { color:var(--marker); }");
+  require(styleFor(css, p).resolvedValue(QStringLiteral("color")) == QStringLiteral("#222222"),
+          QStringLiteral("normal paragraph keeps #write p colour"));
+  require(styleFor(css, quoteP).resolvedValue(QStringLiteral("color")) == QStringLiteral("#089ba3"),
+          QStringLiteral("blockquote p should resolve inherited blockquote custom property"));
+  require(styleFor(css, marker).resolvedValue(QStringLiteral("color")) == QStringLiteral("#3db8bf"),
+          QStringLiteral("li::marker should match as a pseudo element under li"));
+}
+
+void testUnsupportedStructuralPseudosDoNotLeak() {
+  CssElement write; write.id = QStringLiteral("write");
+  CssElement p; p.tag = QStringLiteral("p"); p.parent = &write;
+  const QString css = QStringLiteral(
+      "#write { color:#111111; text-align:left; }"
+      "#write p { color:#222222; }"
+      "#write p:has(img) { text-align:center; color:#ff00ff; }");
+  const CssComputedStyle s = styleFor(css, p);
+  require(s.resolvedValue(QStringLiteral("color")) == QStringLiteral("#222222"),
+          QStringLiteral("p:has(img) colour must not leak into every prototype p"));
+  require(s.resolvedValue(QStringLiteral("text-align")) == QStringLiteral("left"),
+          QStringLiteral("p:has(img) text-align must not center every prototype p"));
+}
+
+void testHoverStateQuery() {
+  CssElement write; write.id = QStringLiteral("write");
+  CssElement h2; h2.tag = QStringLiteral("h2"); h2.parent = &write;
+  const QString css = QStringLiteral(
+      "#write h2 { color:#111111; }"
+      "#write h2:hover { color:#3db8bf; box-shadow:0 0 16px #3db8bf; }");
+  const CssThemeSheet sheet = CssThemeParser::parse(css, QString());
+  CssComputedStyleEngine engine(sheet);
+  require(engine.styleFor(h2).resolvedValue(QStringLiteral("color")) == QStringLiteral("#111111"),
+          QStringLiteral("static h2 should ignore hover colour"));
+  CssElementState hover; hover.hover = true;
+  const CssComputedStyle hovered = engine.styleFor(h2, hover);
+  require(hovered.resolvedValue(QStringLiteral("color")) == QStringLiteral("#3db8bf"),
+          QStringLiteral("hover query should apply h2:hover colour"));
+  require(hovered.resolvedValue(QStringLiteral("box-shadow")).contains(QStringLiteral("16px")),
+          QStringLiteral("hover query should expose h2:hover shadow"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -106,6 +161,9 @@ int main(int argc, char** argv) {
   RUN_TEST(testInheritanceAndCustomProperties);
   RUN_TEST(testSelectorMatching);
   RUN_TEST(testFilteringAndPseudoIsolation);
+  RUN_TEST(testNestedBlockquoteParagraphAndMarker);
+  RUN_TEST(testUnsupportedStructuralPseudosDoNotLeak);
+  RUN_TEST(testHoverStateQuery);
 #undef RUN_TEST
   return 0;
 }

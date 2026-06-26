@@ -151,6 +151,36 @@ void paintUnorderedListMarker(QPainter& painter, BlockLayout::ListMarkerKind kin
   }
 }
 
+void paintCssBox(QPainter& painter, const ThemeElementBoxStyle& box, const QColor& background, const QRectF& borderBox) {
+  if (!borderBox.isValid()) { return; }
+  painter.save();
+  if (background.isValid()) {
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(background);
+    if (box.borderRadius > 0.0) { painter.drawRoundedRect(borderBox, box.borderRadius, box.borderRadius); }
+    else { painter.drawRect(borderBox); }
+  }
+  const auto drawSide = [&](qreal width, const QColor& color, const QLineF& line) {
+    if (width <= 0.0 || !color.isValid()) { return; }
+    painter.setBrush(Qt::NoBrush);
+    painter.setPen(QPen(color, width, Qt::SolidLine, Qt::SquareCap));
+    painter.drawLine(line);
+  };
+  drawSide(box.borderTopWidth, box.borderTopColor,
+           QLineF(QPointF(borderBox.left(), borderBox.top() + box.borderTopWidth * 0.5),
+                  QPointF(borderBox.right(), borderBox.top() + box.borderTopWidth * 0.5)));
+  drawSide(box.borderRightWidth, box.borderRightColor,
+           QLineF(QPointF(borderBox.right() - box.borderRightWidth * 0.5, borderBox.top()),
+                  QPointF(borderBox.right() - box.borderRightWidth * 0.5, borderBox.bottom())));
+  drawSide(box.borderBottomWidth, box.borderBottomColor,
+           QLineF(QPointF(borderBox.left(), borderBox.bottom() - box.borderBottomWidth * 0.5),
+                  QPointF(borderBox.right(), borderBox.bottom() - box.borderBottomWidth * 0.5)));
+  drawSide(box.borderLeftWidth, box.borderLeftColor,
+           QLineF(QPointF(borderBox.left() + box.borderLeftWidth * 0.5, borderBox.top()),
+                  QPointF(borderBox.left() + box.borderLeftWidth * 0.5, borderBox.bottom())));
+  painter.restore();
+}
+
 QPointF tableCellTextOrigin(const BlockLayout::TableCellLayout& cell, const RenderTheme& theme) {
   const QRectF contentRect = cell.rect.marginsRemoved(theme.tableCellPadding());
   qreal textX = contentRect.left();
@@ -351,10 +381,57 @@ QRectF BlockLayout::rect() const {
 
 void BlockLayout::setRect(QRectF rect) {
   rect_ = rect;
+  // A new rect invalidates any previously-set CSS box geometry. Today the builder
+  // always re-sets both on a fresh block, but resetting here keeps the cached box
+  // from going stale if a future path re-rects an existing block.
+  cssBoxGeometry_.valid = false;
+}
+
+void BlockLayout::setCssBoxGeometry(CssBoxGeometry geometry) {
+  cssBoxGeometry_ = std::move(geometry);
+}
+
+BlockLayout::CssBoxGeometry BlockLayout::cssBoxGeometry(const RenderTheme& theme) const {
+  if (cssBoxGeometry_.valid) { return cssBoxGeometry_; }
+  CssBoxGeometry g;
+  g.flowRect = rect_;
+  g.borderBox = rect_;
+  g.paddingBox = rect_;
+  g.contentBox = rect_;
+  g.visualOverflow = rect_;
+  g.inlineTextOrigin = QPointF(
+      hasListMarker() ? rect_.left() + listContentIndent_
+                      : (type_ == BlockType::Heading
+                             ? rect_.left() + theme.headingPadding(headingLevel_).left() + theme.headingBeforeAdvance(headingLevel_)
+                             : rect_.left()),
+      rect_.top());
+  g.valid = true;
+  return g;
+}
+
+QRectF BlockLayout::cssBorderBox(const RenderTheme& theme) const {
+  return cssBoxGeometry(theme).borderBox;
+}
+
+QPointF BlockLayout::inlineTextOrigin(const RenderTheme& theme) const {
+  return cssBoxGeometry(theme).inlineTextOrigin;
+}
+
+QRectF BlockLayout::visualOverflowRect(const RenderTheme& theme) const {
+  CssBoxGeometry g = cssBoxGeometry(theme);
+  return g.visualOverflow.isValid() ? g.visualOverflow : g.borderBox;
 }
 
 void BlockLayout::translate(qreal dx, qreal dy) {
   rect_.translate(dx, dy);
+  if (cssBoxGeometry_.valid) {
+    cssBoxGeometry_.flowRect.translate(dx, dy);
+    cssBoxGeometry_.borderBox.translate(dx, dy);
+    cssBoxGeometry_.paddingBox.translate(dx, dy);
+    cssBoxGeometry_.contentBox.translate(dx, dy);
+    cssBoxGeometry_.visualOverflow.translate(dx, dy);
+    cssBoxGeometry_.inlineTextOrigin += QPointF(dx, dy);
+  }
   for (auto& child : children_) {
     child->translate(dx, dy);
   }
@@ -634,7 +711,12 @@ AlertKind BlockLayout::alertKind() const {
 QRectF BlockLayout::taskCheckboxRect(const RenderTheme& theme) const {
   const qreal markerX = rect_.left() + theme.listIndent() * 0.45;
   const QFontMetricsF metrics(theme.paragraphFont());
-  const qreal top = rect_.top() + qMax<qreal>(2.0, (metrics.height() - 13.0) / 2.0);
+  qreal top = rect_.top() + qMax<qreal>(2.0, (metrics.height() - 13.0) / 2.0);
+  if (inlineLayout_) {
+    const qreal firstBaseline = inlineLayout_->firstLineBaselineY();
+    const qreal textCenter = rect_.top() + firstBaseline + (metrics.descent() - metrics.ascent()) * 0.5;
+    top = textCenter - 13.0 * 0.5;
+  }
   return QRectF(markerX, top, 13.0, 13.0);
 }
 
@@ -681,10 +763,10 @@ QRectF BlockLayout::tableCellRect(int row, int column) const {
   return tableRow.cells.at(static_cast<size_t>(column)).rect;
 }
 
-void BlockLayout::paint(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll) const {
-  paintSelf(painter, theme, scrollY, scroll);
+void BlockLayout::paint(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll, BlockPaintHover hover) const {
+  paintSelf(painter, theme, scrollY, scroll, hover);
   for (const auto& child : children_) {
-    child->paint(painter, theme, scrollY, scroll);
+    child->paint(painter, theme, scrollY, scroll, hover);
   }
 }
 
@@ -751,7 +833,7 @@ QVector<QRectF> BlockLayout::selectionRectsForOffsets(qsizetype startOffset, qsi
   return rects;
 }
 
-void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll) const {
+void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll, BlockPaintHover hover) const {
   const QRectF viewRect = rect_.translated(0, -scrollY);
 
   switch (type_) {
@@ -761,24 +843,17 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
       if (inlineLayout_) {
         if (type_ == BlockType::Heading) {
           // CSS element background gradient (e.g. phycat's h2 radial "fusion glass"
-          // glow) sits behind the heading text. When the heading declares
-          // `width: fit-content`, the glow/tint box shrinks to the text + heading
-          // padding (a left-aligned pill, or centred for `margin: auto` + center
-          // text) instead of spanning the full block — matching how a browser
-          // sizes an inline-shrink heading. Block rect stays full width, so this
-          // is paint-only: layout, hit-test and selection are unaffected.
-          const QMarginsF hpad = theme.headingPadding(headingLevel_);
-          const qreal headingPaintX = viewRect.left() + hpad.left();
-          const QRectF textBounds = inlineLayout_->visualTextBounds().translated(headingPaintX, viewRect.top());
-          QRectF bgRect = viewRect;
-          if (theme.headingFitContent(headingLevel_) && textBounds.isValid() && inlineLayout_->height() > 0.0) {
-            const qreal left = qBound(viewRect.left(), textBounds.left() - hpad.left(), viewRect.right());
-            const qreal right = qBound(left, textBounds.right() + hpad.right(), viewRect.right());
-            bgRect = QRectF(left, viewRect.top(), qMax<qreal>(1.0, right - left), inlineLayout_->height());
-          }
+          // glow) sits behind the heading text. Its rect comes from the same shared
+          // CSS border box that hover/hit-test/selection use, so fit-content pills do
+          // not drift into full-row effects.
           DecorationPainter::paintElementBackground(
-              painter, theme, QStringLiteral("h%1").arg(headingLevel_), bgRect);
+              painter, theme, QStringLiteral("h%1").arg(headingLevel_), cssBorderBox(theme).translated(0, -scrollY));
         }
+        // CSS `:hover { color }` on a heading (phycat h1 → accent) is baked into
+        // the inline layout at build time (it knows which runs inherit the colour);
+        // paint just needs the shared hover phase. Box-shadow glow / bg / scale
+        // effects still use their own DecorationPainter paths below.
+        const qreal hoverPhase = hover.active ? hover.phase : 0.0;
         if (hasListMarker()) {
           painter.save();
           painter.setFont(theme.paragraphFont());
@@ -790,8 +865,10 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
           const qreal firstBaseline = inlineLayout_->firstLineBaselineY();
           const qreal markerX = viewRect.left() + theme.listIndent() * 0.45;
           const qreal contentX = viewRect.left() + listContentIndent_;
-          // Gap between a marker glyph and the content, scaled with the theme indent.
-          const qreal markerGap = theme.listIndent() * 0.2;
+          // Gap between a marker glyph and the content. Theme-overridable; floored
+          // for small-indent themes so the marker never crowds the text.
+          const qreal markerGap = theme.listMarkerGap();
+          const QColor markerColor = theme.listMarkerColor();
           if (taskListItem_) {
             const QRectF box = taskCheckboxRect(theme).translated(0, -scrollY);
             painter.setBrush(theme.backgroundColor());
@@ -803,36 +880,55 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
               painter.drawLine(QPointF(box.left() + 5.5, box.bottom() - 3), QPointF(box.right() - 3, box.top() + 3));
             }
           } else if (listMarkerKind_ == ListMarkerKind::OrderedText) {
+            painter.setPen(markerColor);
             // Right-align the number to the content gutter so wide multi-digit markers
             // (e.g. "34.", "100.") never overlap the content or the caret.
             const qreal orderedX = contentX - markerGap - metrics.horizontalAdvance(listMarker_);
             painter.drawText(QPointF(orderedX, viewRect.top() + firstBaseline), listMarker_);
           } else {
-            const QPointF markerCenter(markerX + metrics.horizontalAdvance(QStringLiteral("0")) * 0.35, viewRect.top() + firstBaseline - metrics.xHeight() * 0.45);
-            paintUnorderedListMarker(painter, listMarkerKind_, markerCenter, metrics.height(), theme.textColor());
+            QPointF markerCenter(markerX + metrics.horizontalAdvance(QStringLiteral("0")) * 0.35, viewRect.top() + firstBaseline - metrics.xHeight() * 0.45);
+            // Non-regressive clamp: with a small indent the default marker column
+            // would land inside the content gutter. Shift the bullet left so its
+            // right edge honours listMarkerGap() — only moves it when it would
+            // otherwise crowd the text (large-indent themes are untouched).
+            const qreal bulletRadius = qBound<qreal>(4.2, metrics.height() * 0.34, 6.2) / 2.0;
+            const qreal maxX = contentX - markerGap - bulletRadius;
+            if (markerCenter.x() > maxX) { markerCenter.setX(qMax<qreal>(viewRect.left(), maxX)); }
+            paintUnorderedListMarker(painter, listMarkerKind_, markerCenter, metrics.height(), markerColor);
           }
           painter.restore();
-          inlineLayout_->paint(painter, QPointF(contentX, viewRect.top()));
+          // Nested-list guide line (phycat's li::before border-left). Each item
+          // draws its own vertical segment at the CSS-declared `left` offset from
+          // the item's left edge (the li padding box == viewRect.left()); deeper
+          // nesting shifts each item's left edge right by one indent, so the
+          // per-item segments stack into the tree automatically. No-op when the
+          // theme styled no li::before guide.
+          const ListGuide guide = theme.listGuide();
+          if (guide.present) {
+            const qreal lineX = viewRect.left() + guide.leftOffset;
+            const qreal y1 = viewRect.top() + guide.topInset;
+            const qreal y2 = viewRect.bottom() - guide.bottomInset;
+            if (y2 > y1) {
+              painter.save();
+              painter.setPen(QPen(guide.color, guide.width));
+              painter.drawLine(QPointF(lineX, y1), QPointF(lineX, y2));
+              painter.restore();
+            }
+          }
+          inlineLayout_->paint(painter, QPointF(contentX, viewRect.top()), hoverPhase);
         } else {
-          // For headings with left padding (+ inline ::before advance), offset the
-          // paint position so text aligns with the wrapped width used during layout.
-          // Paragraph/List items have no padding/advance.
-          const qreal paintX = type_ == BlockType::Heading
-                                   ? viewRect.left() + theme.headingPadding(headingLevel_).left() + theme.headingBeforeAdvance(headingLevel_)
-                                   : viewRect.left();
-          inlineLayout_->paint(painter, QPointF(paintX, viewRect.top()));
+          const QPointF textOrigin = inlineTextOrigin(theme) + QPointF(0, -scrollY);
+          inlineLayout_->paint(painter, textOrigin, hoverPhase);
         }
         if (!placeholderText_.isEmpty()) {
           painter.save();
           painter.setFont(theme.paragraphFont());
           painter.setPen(theme.mutedTextColor());
-          const qreal placeholderX = type_ == BlockType::Heading
-                                         ? viewRect.left() + theme.headingPadding(headingLevel_).left() + theme.headingBeforeAdvance(headingLevel_)
-                                         : viewRect.left();
+          const QPointF textOrigin = inlineTextOrigin(theme) + QPointF(0, -scrollY);
           // Align with the first text line's baseline (line-height aware) so the
           // placeholder sits where the caret and typed text will, not at the raw
           // block top + ascent.
-          painter.drawText(QPointF(placeholderX, viewRect.top() + inlineLayout_->firstLineBaselineY()), placeholderText_);
+          painter.drawText(QPointF(textOrigin.x(), textOrigin.y() + inlineLayout_->firstLineBaselineY()), placeholderText_);
           painter.restore();
         }
         if (type_ == BlockType::Heading) {
@@ -858,19 +954,22 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
           DecorationPainter::PaintContext dctx;
           dctx.headingLevel = headingLevel_;
           dctx.font = theme.headingFont(headingLevel_);
-          const qreal headingPaintX = viewRect.left() + theme.headingPadding(headingLevel_).left();
+          const BlockLayout::CssBoxGeometry box = cssBoxGeometry(theme);
+          const QPointF textOrigin = box.inlineTextOrigin + QPointF(0, -scrollY);
+          const QRectF hostRect = box.borderBox.translated(0, -scrollY);
           const qreal beforeAdvance = theme.headingBeforeAdvance(headingLevel_);
           // textBounds reflects the shifted text origin so ::after anchors to the
-          // real text end; contentLeftX (== headingPaintX) lets an inline ::before
-          // marker place itself in the reserved [contentLeftX, textStart) zone.
-          const QRectF textBounds = inlineLayout_->visualTextBounds().translated(headingPaintX + beforeAdvance, viewRect.top());
+          // real text end; contentLeftX lets an inline ::before marker place itself
+          // in the reserved zone immediately before the shared text origin.
+          const QRectF textBounds = inlineLayout_->visualTextBounds().translated(textOrigin);
           dctx.textBounds = textBounds;
-          dctx.contentLeftX = headingPaintX;
-          dctx.textStart = textBounds.isValid() ? textBounds.topLeft() : QPointF(headingPaintX + beforeAdvance, viewRect.top());
+          dctx.contentLeftX = textOrigin.x() - beforeAdvance;
+          dctx.textStart = textBounds.isValid() ? textBounds.topLeft() : textOrigin;
           dctx.textEnd = textBounds.isValid() ? QPointF(textBounds.right(), textBounds.top())
-                                              : QPointF(headingPaintX + beforeAdvance + inlineLayout_->size().width(), viewRect.top());
+                                              : QPointF(textOrigin.x() + inlineLayout_->size().width(), textOrigin.y());
+          dctx.hoverPhase = hoverPhase;
           DecorationPainter::paintPseudoDecorations(
-              painter, theme, QStringLiteral("h%1").arg(headingLevel_), viewRect, dctx);
+              painter, theme, QStringLiteral("h%1").arg(headingLevel_), hostRect, dctx);
         }
       }
       break;
@@ -889,25 +988,20 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
         painter.drawRoundedRect(QRectF(viewRect.left(), viewRect.top() + 3.0, 4.0, viewRect.height() - 6.0),
                                 2.0, 2.0);
       } else if (theme.blockquoteBoxThemed()) {
-        // Phase 4a: CSS-driven quote box — themed radius/background/border. The
-        // content is already inset by the theme's padding (buildContainer), so the
-        // box paints edge-to-edge over the block rect.
-        const qreal r = theme.blockquoteBorderRadius();
-        if (theme.blockquoteBackgroundColor().isValid()) {
-          painter.setBrush(theme.blockquoteBackgroundColor());
-          painter.setPen(Qt::NoPen);
-          painter.drawRoundedRect(viewRect, r, r);
+        // CSS-driven quote box: paint the real per-side box model. A declaration
+        // like `border-left` is only a left edge; only `border` produces four sides.
+        const ThemeElementBoxStyle boxStyle = theme.elementBoxStyle(QStringLiteral("blockquote"));
+        const QRectF boxRect = cssBorderBox(theme).translated(0, -scrollY);
+        QColor background = theme.blockquoteBackgroundColor();
+        if (const ThemeElementStyle* style = theme.elementStyle(QStringLiteral("blockquote"))) {
+          if (style->paint.backgroundColor.isValid()) { background = style->paint.backgroundColor; }
         }
-        if (theme.blockquoteBorderWidth() > 0.0 && theme.blockquoteBorderColor().isValid()) {
-          painter.setBrush(Qt::NoBrush);
-          painter.setPen(QPen(theme.blockquoteBorderColor(), theme.blockquoteBorderWidth()));
-          painter.drawRoundedRect(viewRect, r, r);
-        }
+        paintCssBox(painter, boxStyle, background, boxRect);
         // CSS ::before content (e.g. a 💡 glyph) at the quote's top-left.
         DecorationPainter::PaintContext qctx;
         qctx.font = theme.paragraphFont();
         DecorationPainter::paintPseudoDecorations(
-            painter, theme, QStringLiteral("blockquote"), viewRect, qctx);
+            painter, theme, QStringLiteral("blockquote"), boxRect, qctx);
       } else {
         // Optional quote fill (CSS themes that tint blockquote backgrounds).
         if (theme.blockquoteBackgroundColor().isValid()) {
@@ -1101,10 +1195,7 @@ QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection,
     return rects;
   }
 
-  const qreal textLeft = hasListMarker() ? rect_.left() + listContentIndent_
-                                         : (type_ == BlockType::Heading ? rect_.left() + theme.headingPadding(headingLevel_).left()
-                                                                           : rect_.left());
-  const QPointF origin(textLeft, rect_.top());
+  const QPointF origin = inlineTextOrigin(theme);
   const qsizetype localAnchorSourceOffset =
       selection.anchor.text.sourceOffset >= 0 && contentSourceStart_ >= 0 ? selection.anchor.text.sourceOffset - contentSourceStart_ : -1;
   const qsizetype localFocusSourceOffset =
@@ -1163,10 +1254,7 @@ QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset,
     return rects;
   }
 
-  const qreal textLeft = hasListMarker() ? rect_.left() + listContentIndent_
-                                         : (type_ == BlockType::Heading ? rect_.left() + theme.headingPadding(headingLevel_).left()
-                                                                           : rect_.left());
-  const QPointF origin(textLeft, rect_.top());
+  const QPointF origin = inlineTextOrigin(theme);
   for (QRectF rect : inlineLayout_->selectionRects(startOffset, endOffset)) {
     rect.translate(origin);
     rects.push_back(rect.adjusted(-1.0, 0, 1.0, 0));
@@ -1397,13 +1485,12 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
     case BlockType::Paragraph:
     case BlockType::ListItem:
       if (inlineLayout_) {
-        const qreal textLeft = hasListMarker() ? rect_.left() + listContentIndent_
-                                               : (type_ == BlockType::Heading ? rect_.left() + theme.headingPadding(headingLevel_).left()
-                                                                                 : rect_.left());
-        const QRectF textRect(textLeft, rect_.top(), qMax<qreal>(1.0, rect_.right() - textLeft), rect_.height());
+        const QPointF origin = inlineTextOrigin(theme);
+        const qreal textLeft = origin.x();
+        const QRectF textRect(origin, QSizeF(qMax<qreal>(1.0, rect_.right() - textLeft), rect_.height()));
         if (hasListMarker() && documentPos.x() < textLeft) {
           result.zone = HitTestResult::Zone::Marker;
-          result.cursorRect = QRectF(textLeft, rect_.top(), 1.0, rect_.height());
+          result.cursorRect = QRectF(textLeft, origin.y(), 1.0, rect_.height());
           // A task item's whole gutter is the checkbox affordance; widening the
           // hit rect a little makes the 13px box comfortably clickable.
           if (taskListItem_ && taskCheckboxRect(theme).adjusted(-3.0, -3.0, 3.0, 3.0).contains(documentPos)) {

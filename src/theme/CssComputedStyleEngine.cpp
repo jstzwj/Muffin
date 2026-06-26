@@ -27,6 +27,7 @@ struct SimpleSelector {
   bool visited = false;
   bool mdFocus = false;
   bool nthEven = false;
+  bool unsupported = false;
 };
 
 struct SelectorPart {
@@ -152,6 +153,16 @@ SimpleSelector parseCompound(QString compound) {
                (arg == QStringLiteral("even") || arg.contains(QStringLiteral("2n")))) {
         out.nthEven = true;
       }
+      else if (name == QStringLiteral("not") || name == QStringLiteral("root")) {
+        // handled/safe no-op: :not(...) was stripped above; :root can match via variables elsewhere.
+      }
+      else {
+        // Structural/content pseudos such as :has(img), :last-child and :first-of-type
+        // cannot be evaluated against our prototype tree. Treating only the base tag
+        // as a match would globalize targeted rules (e.g. p:has(img) centering every
+        // paragraph), so make the selector non-matching.
+        out.unsupported = true;
+      }
       i = j;
     } else if (c == QLatin1Char('[')) {
       int close = compound.indexOf(QLatin1Char(']'), i);
@@ -260,7 +271,18 @@ ParsedSelector parseSelector(const QString& selector) {
   return parsed;
 }
 
-bool simpleMatches(const SimpleSelector& simple, const CssElement& element) {
+bool stateMatches(const SimpleSelector& simple, const CssElementState& state) {
+  if (simple.unsupported) { return false; }
+  if (simple.hover && !state.hover) { return false; }
+  if (simple.focus && !state.focus) { return false; }
+  if (simple.active && !state.active) { return false; }
+  if (simple.visited && !state.visited) { return false; }
+  if (simple.mdFocus && !state.mdFocus) { return false; }
+  return true;
+}
+
+bool simpleMatches(const SimpleSelector& simple, const CssElement& element, const CssElementState& state) {
+  if (!stateMatches(simple, state)) { return false; }
   const QString tag = element.tag.toLower();
   const QString id = element.id.toLower();
   const QString pseudo = element.pseudoElement.toLower();
@@ -282,23 +304,25 @@ bool simpleMatches(const SimpleSelector& simple, const CssElement& element) {
   return true;
 }
 
-bool selectorMatchesAt(const ParsedSelector& selector, int index, const CssElement* element) {
+bool selectorMatchesAt(const ParsedSelector& selector, int index, const CssElement* element,
+                       const CssElementState& targetState) {
   if (!element || index < 0) { return false; }
-  if (!simpleMatches(selector.parts.at(index).simple, *element)) { return false; }
+  const CssElementState state = index == selector.parts.size() - 1 ? targetState : CssElementState{};
+  if (!simpleMatches(selector.parts.at(index).simple, *element, state)) { return false; }
   if (index == 0) { return true; }
   const QChar rel = selector.parts.at(index).combinator;
   if (rel == QLatin1Char('>')) {
-    return selectorMatchesAt(selector, index - 1, element->parent);
+    return selectorMatchesAt(selector, index - 1, element->parent, targetState);
   }
   for (const CssElement* p = element->parent; p; p = p->parent) {
-    if (selectorMatchesAt(selector, index - 1, p)) { return true; }
+    if (selectorMatchesAt(selector, index - 1, p, targetState)) { return true; }
   }
   return false;
 }
 
-bool selectorMatches(const ParsedSelector& selector, const CssElement& element) {
-  if (!selector.valid || selector.exportOnly || selector.interactive || selector.parts.isEmpty()) { return false; }
-  return selectorMatchesAt(selector, selector.parts.size() - 1, &element);
+bool selectorMatches(const ParsedSelector& selector, const CssElement& element, const CssElementState& state) {
+  if (!selector.valid || selector.exportOnly || selector.parts.isEmpty()) { return false; }
+  return selectorMatchesAt(selector, selector.parts.size() - 1, &element, state);
 }
 
 bool beats(const Candidate& a, const Candidate& b) {
@@ -307,7 +331,8 @@ bool beats(const Candidate& a, const Candidate& b) {
   return a.order > b.order;
 }
 
-void applyStyleForElement(const CssThemeSheet& sheet, const CssElement& element, CssComputedStyle& style) {
+void applyStyleForElement(const CssThemeSheet& sheet, const CssElement& element, const CssElementState& state,
+                          CssComputedStyle& style) {
   QHash<QString, Candidate> winners;
   int order = 0;
   for (const CssRule& rule : sheet.rules()) {
@@ -317,7 +342,7 @@ void applyStyleForElement(const CssThemeSheet& sheet, const CssElement& element,
     QString matchedSelector;
     for (const QString& selector : rule.selectors) {
       const ParsedSelector parsed = parseSelector(selector);
-      if (!selectorMatches(parsed, element)) { continue; }
+      if (!selectorMatches(parsed, element, state)) { continue; }
       if (!matched || parsed.specificity > spec) {
         matched = true;
         spec = parsed.specificity;
@@ -354,8 +379,21 @@ CssComputedStyle parentStyleFor(const CssThemeSheet& sheet, const CssElement* pa
   for (auto it = inherited.properties_.constBegin(); it != inherited.properties_.constEnd(); ++it) {
     if (inheritedProperties().contains(it.key())) { own.properties_.insert(it.key(), it.value()); }
   }
-  applyStyleForElement(sheet, *parent, own);
-  return own;
+  applyStyleForElement(sheet, *parent, CssElementState{}, own);
+  // CSS inheritance: a child inherits only the parent's inherited properties
+  // (color, font-*, line-height, text-align) plus CSS variables — NOT padding,
+  // margin, border, width, etc. Returning `own` verbatim leaked the parent's
+  // non-inherited declarations into every descendant. Concrete symptom: github's
+  // `#write { padding: 30px; padding-bottom: 100px }` injected padding-bottom:100px
+  // into every element, and blockquote — which declares only the `padding`
+  // shorthand, never the `padding-bottom` longhand — kept the leaked 100px,
+  // growing every quote ~112px too tall.
+  CssComputedStyle inheritable;
+  inheritable.customProperties_ = own.customProperties_;
+  for (auto it = own.properties_.constBegin(); it != own.properties_.constEnd(); ++it) {
+    if (inheritedProperties().contains(it.key())) { inheritable.properties_.insert(it.key(), it.value()); }
+  }
+  return inheritable;
 }
 
 }  // namespace
@@ -378,8 +416,12 @@ bool CssComputedStyle::hasProperty(const QString& property) const {
 CssComputedStyleEngine::CssComputedStyleEngine(const CssThemeSheet& sheet) : sheet_(sheet) {}
 
 CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element) const {
+  return styleFor(element, CssElementState{});
+}
+
+CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element, const CssElementState& state) const {
   CssComputedStyle style = parentStyleFor(sheet_, element.parent);
-  applyStyleForElement(sheet_, element, style);
+  applyStyleForElement(sheet_, element, state, style);
   return style;
 }
 

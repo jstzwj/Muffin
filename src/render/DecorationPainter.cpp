@@ -1,5 +1,6 @@
 #include "render/DecorationPainter.h"
 
+#include "theme/CssThemeMapper.h"
 #include "render/GradientPainter.h"
 
 #include <QBrush>
@@ -30,6 +31,31 @@ std::shared_ptr<QSvgRenderer> svgIcon(const QByteArray& data) {
   if (!r->isValid()) { r.reset(); }
   cache.insert(data, r);
   return r;
+}
+
+// Render an SVG as an alpha mask tinted with `tint`, into a tile of `size` (px).
+// Mask semantics: the SVG's alpha (its shape) becomes the tint's coverage, so a
+// `mask-image: url(svg)` declaration paints the SVG shape in the ::before's
+// background-colour. Returns a null image when the SVG is invalid or the size is
+// degenerate. Shared by paintIcon (icon recolour) and paintWriteTexture (page
+// texture tiling) — both are the same "alpha mask + tint" recipe at heart.
+QImage renderMaskTile(const QByteArray& svgData, const QColor& tint, QSize size) {
+  const auto icon = svgIcon(svgData);
+  if (!icon || !tint.isValid() || size.width() <= 0 || size.height() <= 0) { return QImage(); }
+  QImage shape(size.width(), size.height(), QImage::Format_ARGB32_Premultiplied);
+  shape.fill(Qt::transparent);
+  { QPainter sp(&shape);
+    sp.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    icon->render(&sp, QRectF(0, 0, size.width(), size.height()));
+  }
+  QImage out(size.width(), size.height(), QImage::Format_ARGB32_Premultiplied);
+  out.fill(Qt::transparent);
+  { QPainter op(&out);
+    op.fillRect(out.rect(), tint);
+    op.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+    op.drawImage(0, 0, shape);
+  }
+  return out;
 }
 
 const ElementBackground* elementBackground(const RenderTheme& theme, const QString& host) {
@@ -66,26 +92,14 @@ void paintIcon(QPainter& painter, const QByteArray& svgData, const QRectF& targe
     painter.restore();
     return;
   }
-  // Mask recolour: render the SVG (an alpha shape — phycat's mask icons carry no
-  // fill) into a temp, then keep `tint` where the shape has alpha.
-  const int w = qMax(1, int(qCeil(target.width())));
-  const int h = qMax(1, int(qCeil(target.height())));
-  QImage shape(w, h, QImage::Format_ARGB32_Premultiplied);
-  shape.fill(Qt::transparent);
-  { QPainter sp(&shape);
-    sp.setRenderHint(QPainter::SmoothPixmapTransform, true);
-    icon->render(&sp, QRectF(0, 0, w, h));
-  }
-  QImage out(w, h, QImage::Format_ARGB32_Premultiplied);
-  out.fill(Qt::transparent);
-  { QPainter op(&out);
-    op.fillRect(out.rect(), tint);
-    op.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-    op.drawImage(0, 0, shape);
-  }
+  // Mask recolour: render the SVG as an alpha mask tinted with `tint`, then blit.
+  // (phycat's mask icons carry no fill of their own — only shape.)
+  const QSize size(qMax(1, int(qCeil(target.width()))), qMax(1, int(qCeil(target.height()))));
+  const QImage tile = renderMaskTile(svgData, tint, size);
+  if (tile.isNull()) { return; }
   painter.save();
   painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-  painter.drawImage(target, out);
+  painter.drawImage(target, tile);
   painter.restore();
 }
 
@@ -169,9 +183,16 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
     if (isHeading) {
       if (before->absolute) {
         // position:absolute left bar (phycat h3): anchored to the heading padding
-        // box (rect.left), vertically centred on the text line.
-        const qreal w = before->size.width() > 0.0 ? before->size.width() : qMax<qreal>(2.0, em * 0.25);
-        const qreal h = before->size.height() > 0.0 ? before->size.height() : em;
+        // box (rect.left), vertically centred on the text line. Resolve width/
+        // height against the HOST rect when the CSS used a `%` (phycat's `height:
+        // 61%` is 61% of the rendered heading, not 0.61em — the map-time value in
+        // `size` is em-relative and made the bar too short).
+        const qreal w = !before->sizeRawWidth.isEmpty()
+            ? CssThemeMapper::resolveLengthPx(before->sizeRawWidth, {}, em, rect.width())
+            : (before->size.width() > 0.0 ? before->size.width() : qMax<qreal>(2.0, em * 0.25));
+        const qreal h = !before->sizeRawHeight.isEmpty()
+            ? CssThemeMapper::resolveLengthPx(before->sizeRawHeight, {}, em, rect.height())
+            : (before->size.height() > 0.0 ? before->size.height() : em);
         paintShapeBox(painter, *before, QRectF(rect.left() + before->insets.left(), vCenter - h / 2.0, w, h));
       } else if (!before->svgData.isEmpty()) {
         // Legacy: an inline SVG ::before painted into the left margin (no advance).
@@ -199,10 +220,19 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
         }
       }
     } else if (!before->content.isEmpty() && host == QStringLiteral("blockquote")) {
+      // Honor CSS geometry: position:absolute left/top anchor the glyph and
+      // font-size scales it (phycat's ✨ at left:16px/top:18px/font-size:20px).
+      // Falls back to the legacy inset (left+4, baseline+2, host font) when the
+      // theme declared no positioning, preserving prior behaviour.
+      QFont f = ctx.font;
+      if (before->fontSizePx > 0.0) { f.setPointSizeF(before->fontSizePx * 72.0 / 96.0); }
+      const QFontMetricsF m(f);
+      const qreal x = rect.left() + (before->absolute ? before->insets.left() : 4.0);
+      const qreal y = rect.top() + (before->insetsTop >= 0.0 ? before->insetsTop : m.ascent() + 2.0);
       painter.save();
-      painter.setFont(ctx.font);
+      painter.setFont(f);
       painter.setPen(before->color.isValid() ? before->color : theme.textColor());
-      painter.drawText(QPointF(rect.left() + 4.0, rect.top() + fm.ascent() + 2.0), before->content);
+      painter.drawText(QPointF(x, y), before->content);
       painter.restore();
     }
   }
@@ -227,6 +257,13 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
       const qreal borderW = after->borderBottomWidth > 0.0 ? after->borderBottomWidth : 0.0;
       const qreal barH = (after->size.height() > 0 ? after->size.height() : qMax<qreal>(2.0, borderW));
       qreal barW = (after->size.width() > 0 ? after->size.width() : (ctx.textBounds.isValid() ? ctx.textBounds.width() : rect.width()));
+      // Hover widens the bar toward its :hover width (phycat h1::after 40px → 100%),
+      // animated by the HoverAnimator phase. The centred anchor (textMid, below)
+      // keeps it growing symmetrically from the middle, matching the reference.
+      if (!after->hoverWidthRaw.isEmpty() && ctx.hoverPhase > 0.0) {
+        const qreal hoverW = CssThemeMapper::resolveLengthPx(after->hoverWidthRaw, {}, em, rect.width());
+        barW = barW + (qBound(0.0, hoverW, rect.width()) - barW) * ctx.hoverPhase;
+      }
       barW = qMin(barW, rect.width());
       const qreal textMid = ctx.textBounds.isValid() ? ctx.textBounds.center().x()
                             : (ctx.textStart.x() >= 0 && ctx.textEnd.x() >= 0
@@ -251,21 +288,34 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
 
 void paintWriteTexture(QPainter& painter, const RenderTheme& theme, const QRectF& pageRect) {
   const PseudoElementRule* rule = pseudoRule(theme, QStringLiteral("#write"), QStringLiteral("before"));
-  if (!rule || rule->maskPattern.kind == GradientSpec::Kind::None) { return; }
+  if (!rule) { return; }
+  // A #write::before texture is a MASK — either a gradient mask (maskPattern) or
+  // an SVG url() mask (svgData). Both supply shape; the ::before background-colour
+  // (maskTint) supplies the visible colour, painted at the rule's opacity. The old
+  // code only handled the gradient case and dropped url(svg) masks entirely
+  // (phycat's diamond/cross grid), leaving the page blank.
+  const bool hasGradientMask = rule->maskPattern.kind != GradientSpec::Kind::None;
+  const bool hasSvgMask = !rule->svgData.isEmpty();
+  if (!hasGradientMask && !hasSvgMask) { return; }
+  const QColor tint = rule->maskTint.isValid() ? rule->maskTint : theme.textColor();
   const qreal tileW = qBound(2.0, rule->maskTile.width(), 256.0);
   const qreal tileH = qBound(2.0, rule->maskTile.height(), 256.0);
-  // Recolour the mask gradient stops to the tint (a mask is colour-agnostic; the
-  // ::before background-colour supplies the visible tint).
-  GradientSpec tinted = rule->maskPattern;
-  const QColor tint = rule->maskTint.isValid() ? rule->maskTint : theme.textColor();
-  for (GradientStop& s : tinted.stops) {
-    if (s.color != QColor(Qt::transparent)) { s.color = tint; }
+  QImage tile;
+  if (hasGradientMask) {
+    // Recolour the mask gradient stops to the tint (a mask is colour-agnostic).
+    GradientSpec tinted = rule->maskPattern;
+    for (GradientStop& s : tinted.stops) {
+      if (s.color != QColor(Qt::transparent)) { s.color = tint; }
+    }
+    tile = QImage(int(qCeil(tileW)), int(qCeil(tileH)), QImage::Format_ARGB32_Premultiplied);
+    tile.fill(Qt::transparent);
+    { QPainter tp(&tile);
+      tp.fillRect(tile.rect(), GradientPainter::makeBrush(tinted, QRectF(0, 0, tileW, tileH)));
+    }
+  } else {
+    tile = renderMaskTile(rule->svgData, tint, QSize(int(qCeil(tileW)), int(qCeil(tileH))));
   }
-  QImage tile(int(qCeil(tileW)), int(qCeil(tileH)), QImage::Format_ARGB32_Premultiplied);
-  tile.fill(Qt::transparent);
-  { QPainter tp(&tile);
-    tp.fillRect(tile.rect(), GradientPainter::makeBrush(tinted, QRectF(0, 0, tileW, tileH)));
-  }
+  if (tile.isNull()) { return; }
   QBrush pattern(QPixmap::fromImage(tile));  // QBrush(QPixmap) → TexturePattern, tiles
   painter.save();
   painter.setOpacity(rule->opacity);

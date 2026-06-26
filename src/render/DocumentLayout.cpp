@@ -123,12 +123,16 @@ void logRebuildPerf(const RebuildPerfStats& stats, qreal viewportWidth, qreal pa
 }
 
 qreal spacingAfterBlock(const MarkdownNode& node, const RenderTheme& theme) {
-  // Paragraphs sit tight — only slightly more than a soft line break — regardless of the theme's CSS
-  // paragraph margin. Adjacent block margins are summed here (not CSS-collapsed), so a theme's
-  // top+bottom paragraph margin (e.g. github's 0.8em = 12.8px each) summed to a 25.6px gap, far more
-  // than a soft break. The paragraph's top margin is dropped in spacingBeforeBlock, so this single
-  // bottom gap is the whole inter-paragraph separation.
-  if (node.type() == BlockType::Paragraph) { return theme.blockSpacing() * 0.4; }
+  // Paragraphs honour CSS margin-collapsing: the top margin is dropped in
+  // spacingBeforeBlock, so the single bottom gap IS the whole inter-paragraph
+  // separation (max(prev.bottom, next.top) collapses to bottom when top=0).
+  // When a theme declares no paragraph margin, keep the legacy tight floor
+  // (slightly more than a soft break) so such themes are unchanged.
+  if (node.type() == BlockType::Paragraph) {
+    const QMarginsF pm = theme.blockMargin(BlockType::Paragraph);
+    if (pm.bottom() > 0.0) { return pm.bottom(); }
+    return theme.blockSpacing() * 0.4;
+  }
   const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel());
   if (!css.isNull()) { return css.bottom(); }
   if (node.type() == BlockType::Heading) { return theme.blockSpacing() * 0.65; }
@@ -136,10 +140,12 @@ qreal spacingAfterBlock(const MarkdownNode& node, const RenderTheme& theme) {
 }
 
 qreal spacingBeforeBlock(const MarkdownNode& node, const RenderTheme& theme, qreal cursorY) {
-  // No top margin for paragraphs: the inter-paragraph gap lives entirely in spacingAfterBlock, so the
-  // theme's top+bottom margins are not summed into a double-wide gap. (This is the practical
-  // equivalent of CSS margin collapsing for the paragraph-paragraph case.)
-  if (node.type() == BlockType::Paragraph) { return 0; }
+  // CSS paragraph top margins participate in adjacent margin collapse. Themes with
+  // no paragraph margin keep the legacy no-before-spacing path.
+  if (node.type() == BlockType::Paragraph) {
+    const QMarginsF pm = theme.blockMargin(BlockType::Paragraph);
+    return !pm.isNull() ? pm.top() : 0.0;
+  }
   const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel());
   if (!css.isNull()) { return css.top(); }
   if (node.type() != BlockType::Heading || cursorY <= theme.topMargin()) {
@@ -149,6 +155,22 @@ qreal spacingBeforeBlock(const MarkdownNode& node, const RenderTheme& theme, qre
     return theme.blockSpacing() * 1.1;
   }
   return node.headingLevel() < 2 ? theme.blockSpacing() * 1.25 : theme.blockSpacing() * 0.7;
+}
+
+bool hasCssBlockMargin(const MarkdownNode& node, const RenderTheme& theme) {
+  return !theme.blockMargin(node.type(), node.headingLevel()).isNull();
+}
+
+qreal spacingBetweenBlocks(const MarkdownNode& prev, const MarkdownNode& next, const RenderTheme& theme) {
+  const qreal after = spacingAfterBlock(prev, theme);
+  const qreal before = spacingBeforeBlock(next, theme, theme.topMargin() + 1.0);
+  // CSS adjacent vertical margins collapse: the gap is the larger positive margin,
+  // not bottom+top. Keep the legacy additive rhythm only for blocks with no CSS
+  // margins at all.
+  if (hasCssBlockMargin(prev, theme) || hasCssBlockMargin(next, theme)) {
+    return qMax(after, before);
+  }
+  return after + before;
 }
 
 struct PageMetrics {
@@ -274,8 +296,10 @@ void DocumentLayout::rebuild(
     if (collectPerf) {
       estTimer.start();
     }
+    const MarkdownNode* previous = nullptr;
     for (const auto& child : children) {
-      cursorY += spacingBeforeBlock(*child, theme, cursorY);
+      cursorY += previous ? spacingBetweenBlocks(*previous, *child, theme)
+                          : spacingBeforeBlock(*child, theme, cursorY);
       const BlockLayoutBuilder::EstimateResult est = builder_.estimateHeight(*child, theme, pageWidth_);
       BlockSlot slot;
       slot.nodeId = child->id();
@@ -283,7 +307,8 @@ void DocumentLayout::rebuild(
       slot.top = cursorY;
       slot.height = est.height;
       slot.measured = false;
-      cursorY += est.height + spacingAfterBlock(*child, theme);
+      cursorY += est.height;
+      previous = child.get();
       tops_.push_back(slot.top);
       slots_.push_back(std::move(slot));
     }
@@ -291,8 +316,10 @@ void DocumentLayout::rebuild(
       estimateMs = nsToMs(estTimer.nsecsElapsed());
     }
   } else {
+    const MarkdownNode* previous = nullptr;
     for (const auto& child : children) {
-      cursorY += spacingBeforeBlock(*child, theme, cursorY);
+      cursorY += previous ? spacingBetweenBlocks(*previous, *child, theme)
+                          : spacingBeforeBlock(*child, theme, cursorY);
       QElapsedTimer buildTimer;
       if (collectPerf) {
         buildTimer.start();
@@ -309,7 +336,8 @@ void DocumentLayout::rebuild(
       slot.top = cursorY;
       slot.height = block->height();
       slot.measured = true;
-      cursorY = block->rect().bottom() + spacingAfterBlock(*child, theme);
+      cursorY = block->rect().bottom();
+      previous = child.get();
       indexLayoutBlock(*block);
       tops_.push_back(slot.top);
       slot.detail = std::move(block);
@@ -431,9 +459,11 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
   auto replacement = builder_.build(*node, theme, pageLeft_, slot.top, pageWidth_);
   result.newRect = replacement->rect();
 
-  qreal newNextTop = replacement->rect().bottom() + spacingAfterBlock(*node, theme);
+  qreal newNextTop = replacement->rect().bottom();
   if (index + 1 < static_cast<qsizetype>(documentBlocks.size())) {
-    newNextTop += spacingBeforeBlock(*documentBlocks.at(static_cast<size_t>(index + 1)), theme, newNextTop);
+    newNextTop += spacingBetweenBlocks(*node, *documentBlocks.at(static_cast<size_t>(index + 1)), theme);
+  } else {
+    newNextTop += spacingAfterBlock(*node, theme);
   }
   const qreal trailingHeight = trailingHeightForLastBlock(replacement.get(), theme);
   const qreal delta =
@@ -535,21 +565,20 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   replacements.reserve(static_cast<size_t>(range.newCount));
 
   qreal cursorY = theme.pageMargin().top() + theme.pagePadding().top();
+  const MarkdownNode* previousNode = nullptr;
   if (range.first > 0) {
-    const MarkdownNode& previousNode = *documentBlocks.at(static_cast<size_t>(range.first - 1));
+    previousNode = documentBlocks.at(static_cast<size_t>(range.first - 1)).get();
     const BlockSlot& prev = slots_.at(static_cast<size_t>(range.first - 1));
-    cursorY = prev.top + prev.height + spacingAfterBlock(previousNode, theme);
-  }
-  if (range.newCount > 0) {
-    cursorY += spacingBeforeBlock(*documentBlocks.at(static_cast<size_t>(range.first)), theme, cursorY);
+    cursorY = prev.top + prev.height;
   }
 
   QRectF newRectUnion;
   for (qsizetype i = 0; i < range.newCount; ++i) {
     const MarkdownNode& node = *documentBlocks.at(static_cast<size_t>(range.first + i));
-    cursorY += i == 0 ? 0 : spacingBeforeBlock(node, theme, cursorY);
+    cursorY += previousNode ? spacingBetweenBlocks(*previousNode, node, theme)
+                            : spacingBeforeBlock(node, theme, cursorY);
     auto block = builder_.build(node, theme, pageLeft_, cursorY, pageWidth_);
-    cursorY = block->rect().bottom() + spacingAfterBlock(node, theme);
+    cursorY = block->rect().bottom();
     newRectUnion = newRectUnion.isNull() ? block->rect() : newRectUnion.united(block->rect());
     BlockSlot slot;
     slot.nodeId = node.id();
@@ -559,13 +588,17 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
     slot.measured = true;
     indexLayoutBlock(*block);
     slot.detail = std::move(block);
+    previousNode = &node;
     replacements.push_back(std::move(slot));
   }
   result.newRect = newRectUnion;
 
   qreal newNextTop = cursorY;
   if (newSuffixFirst < documentCount) {
-    newNextTop += spacingBeforeBlock(*documentBlocks.at(static_cast<size_t>(newSuffixFirst)), theme, newNextTop);
+    newNextTop += previousNode ? spacingBetweenBlocks(*previousNode, *documentBlocks.at(static_cast<size_t>(newSuffixFirst)), theme)
+                               : spacingBeforeBlock(*documentBlocks.at(static_cast<size_t>(newSuffixFirst)), theme, newNextTop);
+  } else if (previousNode) {
+    newNextTop += spacingAfterBlock(*previousNode, theme);
   }
 
   const qreal oldNextTop = oldSuffixFirst < layoutCount ? slots_.at(static_cast<size_t>(oldSuffixFirst)).top : totalHeight_;

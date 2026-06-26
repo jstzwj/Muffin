@@ -51,6 +51,17 @@ void testLetterSpacingWidensText() {
           QStringLiteral("letter-spacing must widen the (unwrapped) text (base=%1 spaced=%2)").arg(baseWidth).arg(spacedWidth));
 }
 
+void testWordSpacingWidensText() {
+  const QString markdown = QStringLiteral("one two three four\n");  // three inter-word spaces, no wrapping
+  const QString base = QStringLiteral("#write { color:#000000; }");
+  const QString spaced = QStringLiteral("#write { color:#000000; } #write p { word-spacing:10px; }");
+  const qreal baseWidth = paragraphNaturalWidth(base, markdown);
+  const qreal spacedWidth = paragraphNaturalWidth(spaced, markdown);
+  require(baseWidth > 40.0, QStringLiteral("baseline paragraph should have measurable width (=%1)").arg(baseWidth));
+  require(spacedWidth > baseWidth + 20.0,
+          QStringLiteral("word-spacing must widen the inter-word gaps (base=%1 spaced=%2)").arg(baseWidth).arg(spacedWidth));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -60,6 +71,7 @@ int main(int argc, char** argv) {
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testLetterSpacingWidensText);
+  RUN_TEST(testWordSpacingWidensText);
 #undef RUN_TEST
   return 0;
 }

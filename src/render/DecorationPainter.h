@@ -26,6 +26,10 @@ struct PaintContext {
   QPointF textStart = QPointF(-1.0, -1.0);  // where heading text starts (for a ::before icon)
   QRectF textBounds;                         // visual text bounds after QTextLayout alignment
   qreal contentLeftX = -1.0;       // heading content-box left (inline ::before marker zone start)
+  // Hover animation phase (0..1) for the host block, from the HoverAnimator. 0 ⇒
+  // base (not hovered); drives hover-state pseudo geometry such as a widening
+  // ::after underline (phycat `h1:hover::after { width:100% }`).
+  qreal hoverPhase = 0.0;
 };
 
 // Fill the host element's own background gradient (e.g. h2 radial glow) into

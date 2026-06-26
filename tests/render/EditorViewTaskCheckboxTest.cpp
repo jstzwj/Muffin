@@ -30,6 +30,33 @@ void testUncheckedTaskItemRendersAsCheckbox() {
 
 // Clicking inside the checkbox affordance flags the hit so the view toggles the
 // item; clicking the content text does not.
+void testCheckboxAlignsWithFirstLine() {
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  controller.attach(&session, &view);
+
+  session.setMarkdownText(QStringLiteral("- [x] Parse CommonMark blocks"), false);
+  view.resize(800, 240);
+  view.setDocument(session.document());
+
+  const NodeId itemId = listItemAt(session, 0, 0)->id();
+  const BlockLayout* item = view.blockLayoutForNode(itemId);
+  require(item != nullptr, "task item layout should exist");
+  require(item->isTaskListItem(), "item should be a task item");
+  const InlineLayout* inlineLayout = item->inlineLayout();
+  require(inlineLayout != nullptr, "task item should have inline text layout");
+
+  const RenderTheme theme = view.theme();
+  const QFontMetricsF metrics(theme.paragraphFont());
+  const qreal expectedTextCenter = item->rect().top() + inlineLayout->firstLineBaselineY() +
+                                   (metrics.descent() - metrics.ascent()) * 0.5;
+  const QRectF box = item->taskCheckboxRect(theme);
+  require(qAbs(box.center().y() - expectedTextCenter) < 0.75,
+          QStringLiteral("checkbox should be centered on the first rendered text line (box=%1 expected=%2)")
+              .arg(box.center().y()).arg(expectedTextCenter));
+}
+
 void testCheckboxClickTarget() {
   DocumentSession session;
   EditorController controller;
@@ -67,6 +94,7 @@ int main(int argc, char** argv) {
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testUncheckedTaskItemRendersAsCheckbox);
+  RUN_TEST(testCheckboxAlignsWithFirstLine);
   RUN_TEST(testCheckboxClickTarget);
 #undef RUN_TEST
   return 0;

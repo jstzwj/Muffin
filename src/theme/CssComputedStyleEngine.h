@@ -17,6 +17,14 @@ struct CssElement {
   const CssElement* parent = nullptr;
 };
 
+struct CssElementState {
+  bool hover = false;
+  bool focus = false;
+  bool active = false;
+  bool visited = false;
+  bool mdFocus = false;
+};
+
 class CssComputedStyle {
 public:
   QString rawValue(const QString& property) const;
@@ -34,6 +42,7 @@ public:
   explicit CssComputedStyleEngine(const CssThemeSheet& sheet);
 
   CssComputedStyle styleFor(const CssElement& element) const;
+  CssComputedStyle styleFor(const CssElement& element, const CssElementState& state) const;
 
 private:
   const CssThemeSheet& sheet_;

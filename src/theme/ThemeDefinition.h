@@ -106,14 +106,20 @@ struct ThemeTypography {
   qreal letterSpacing = 0.0;        // body + heading (inherited from #write/body)
   qreal codeLetterSpacing = 0.0;    // inline + fenced code
   QColor inlineCodeTextColor;       // `code { color }`; invalid → inherit prose text
+  QColor delColor;                  // `del { color }` (phycat mutes deleted text); invalid → inherit prose
   bool linkUnderlined = true;       // `a { text-decoration }` — false when `none`
   // Phase 3b: inline-code chip geometry from CSS `code` (paint-only box; advance
-  // stays = text advance so editing/cursor/hit-test are unaffected). Defaults
-  // reproduce the legacy hardcoded chip (-3/+6 padding, radius 3, 1px border).
+  // stays = text advance so editing/cursor/hit-test are unaffected). Padding +
+  // radius defaults reproduce the legacy hardcoded chip (-3/+6 padding, radius 3).
+  // Border is DECLARED-ONLY: width defaults to 0 (no border) unless the CSS sets
+  // `border`/`border-width` on `code`. The old 1px default invented an edge the
+  // theme never declared — Typora renders a border-less `code` rule with no
+  // border, so a non-zero default deviated from the source CSS (phycat, plus the
+  // newsprint/night/pixyll/whitey built-ins, all declare no code border).
   qreal inlineCodePaddingH = 3.0;
   qreal inlineCodePaddingV = 1.0;
   qreal inlineCodeBorderRadius = 3.0;
-  qreal inlineCodeBorderWidth = 1.0;
+  qreal inlineCodeBorderWidth = 0.0;
   // Phase 3c: HTML <kbd> keycap box driven by CSS `kbd`. Invalid/zero → fall
   // back to the legacy light/dark keycap heuristic so built-ins are unchanged.
   QColor kbdBackground;           // `kbd { background-color }`
@@ -124,6 +130,11 @@ struct ThemeTypography {
   qreal kbdBorderRadius = 0.0;
   QColor kbdBorderColor;
   qreal kbdBorderWidth = 0.0;
+  // Phase 4: `kbd { border-bottom-width / border-bottom-color }` — phycat's chunky
+  // 3D keycap uses a thicker bottom edge than the other three sides. Zero/invalid
+  // → fall back to the uniform border width/colour so the legacy keycap is intact.
+  qreal kbdBorderBottomWidth = 0.0;
+  QColor kbdBorderBottomColor;
   QColor kbdShadowColor;          // bottom-edge "raised key" line colour
 };
 
@@ -150,36 +161,25 @@ struct ThemePage {
   qreal pageShadowOffsetY = 0.0;
 };
 
+// Element VISUAL-BOX geometry (margin/padding/border/radius/fit-content of p,
+// h1–h6, blockquote, and the list indent) lives in `ThemeDecorations::elementStyles`
+// (ThemeElementStyle::box) — the single source for those properties. This struct
+// holds only what that system does NOT cover: layout-flow block margins, the box
+// flags/padding for `pre`/`table` (which have no element style), the heading
+// `::before` marker advance, and the render-layer list-marker gap.
 struct ThemeBlockSpacing {
-  QMarginsF paragraphMargin;
-  QMarginsF headingMargin[6];
-  QMarginsF headingPadding[6];
-  QColor headingBorderBottomColor[6];
-  qreal headingBorderBottomWidth[6] = {};
-  QColor headingBorderLeftColor[6];
-  qreal headingBorderLeftWidth[6] = {};
-  // CSS `width: fit-content` (or max-content/min-content) on a heading: the
-  // heading's own background/decoration box shrinks to the text width instead of
-  // spanning the full block (e.g. phycat's h2 "fusion glass" pill). Paint-only —
-  // the block rect stays full width so layout/hit-test/selection are unaffected.
-  bool headingFitContent[6] = {};
   // Px the heading text is inset from its left padding edge to reserve room for
   // an inline `::before` marker (phycat h4/h5/h6). 0 for absolute befores (h3,
   // which sits in the heading's own padding gap) and headings with no before.
   qreal headingBeforeAdvance[6] = {};
-  QMarginsF blockquoteMargin;
   QMarginsF codeBlockMargin;
   QMarginsF tableMargin;
   QMarginsF listMargin;
-  qreal listPaddingLeft = 0.0;
-  // Phase 4a: CSS `blockquote` box. `blockquoteBoxThemed` flips the whole quote
-  // to the CSS-driven path (padding as real container flow, full border, radius);
-  // false → legacy accent-bar + 16px indent (built-ins byte-identical).
-  QMarginsF blockquotePadding;
-  qreal blockquoteBorderWidth = 0.0;
-  QColor blockquoteBorderColor;
-  qreal blockquoteBorderRadius = 0.0;
-  bool blockquoteBoxThemed = false;
+  // Gap between the list marker and the content text. 0 ⇒ "auto": the renderer
+  // floors it at a readable minimum so small-indent themes (phycat's
+  // padding-left:13px) don't collapse the bullet onto the text, while large-indent
+  // themes keep their proportional look. A theme may set an explicit px override.
+  qreal listMarkerGap = 0.0;
   // Phase 4b: CSS `pre`/`.md-fences` box. codeBlockBoxThemed flips codePadding()
   // to the CSS value (legacy scaled(12/10) otherwise) and rounds the fence box.
   QMarginsF codeBlockPadding;
@@ -227,6 +227,19 @@ struct PseudoElementRule {
   GradientSpec maskPattern;          // mask-image (radial-gradient dots, …)
   QSizeF maskTile = QSizeF(20, 20);  // mask-size
   QSizeF size;            // width/height (invalid/0 ⇒ content/auto)
+  // The var-resolved raw width/height declarations, carried so the painter can
+  // resolve a `%` against the HOST box (e.g. heading height) instead of the
+  // em-relative value `size` bakes at map-time. phycat's `h3::before { height:
+  // 61% }` is 61% of the rendered heading, not 0.61em — resolving at map-time
+  // (before the box exists) made the bar too short. Empty when the CSS sets no
+  // width/height; the painter then falls back to `size` / em.
+  QString sizeRawWidth;
+  QString sizeRawHeight;
+  // Hover-state width for ::after/::before (phycat `h1:hover::after { width:100% }`):
+  // the bar widens from its base `size.width()` toward this on hover, animated by
+  // the HoverAnimator phase. Empty ⇒ no hover widening. Carried raw so the painter
+  // can resolve a `%` against the host box at paint time (like `sizeRawWidth`).
+  QString hoverWidthRaw;
   QMarginsF insets;       // top/left/bottom/right offsets (absolute pseudo left/top)
   QColor borderBottomColor;
   qreal borderBottomWidth = 0.0;
@@ -241,6 +254,12 @@ struct PseudoElementRule {
   qreal borderWidth = 0.0;
   qreal marginLeft = 0.0;
   qreal marginRight = 0.0;
+  // `top` offset (absolute pseudo) and `font-size` (e.g. blockquote ✨ at
+  // font-size:20px). 0 ⇒ inherit the host's font/top behaviour. `left` already
+  // lives in insets.left(); `top` has its own slot so the painter can tell an
+  // explicit top from "unset" (QMarginsF defaults every side to 0).
+  qreal insetsTop = -1.0;  // < 0 ⇒ unset (fall back to text-baseline anchoring)
+  qreal fontSizePx = 0.0;
   qreal opacity = 1.0;
   bool present = false;
 };
@@ -306,6 +325,20 @@ struct AnimationDef {
 };
 
 // Pseudo-element decorations + hover effects + transitions (+ future @keyframes).
+// A nested-list guide line drawn from a `li::before { border-left: …; left;
+// top; height: calc(100% - Npx) }` rule (phycat's tree guide). Distinct from the
+// generic pseudo-element painter because it is a per-item vertical decoration,
+// not a marker/icon: each list item draws its own segment, and nesting depth
+// (each item's indented left edge) produces the stacked tree automatically.
+struct ListGuide {
+  QColor color;
+  qreal width = 0.0;       // border-left width; 0 ⇒ no line
+  qreal leftOffset = 0.0;  // li-relative X offset of the line (may be negative)
+  qreal topInset = 0.0;    // px below the item's top where the line begins
+  qreal bottomInset = 0.0; // px above the item's bottom where the line ends
+  bool present = false;    // a usable guide (valid colour + positive width)
+};
+
 struct ThemeDecorations {
   std::vector<PseudoElementRule> pseudos;     // ::before/::after, host-keyed
   std::vector<ElementBackground> backgrounds;  // element own background, host-keyed
@@ -313,6 +346,56 @@ struct ThemeDecorations {
   std::vector<TransitionSpec> transitions;     // transition duration, host-keyed
   std::vector<KeyframesDef> keyframes;         // @keyframes defs, name-keyed
   std::vector<AnimationDef> animations;        // host → animation binding
+  ListGuide listGuide;                         // nested-list guide line, host=li::before
+};
+
+struct ThemeElementBoxStyle {
+  bool present = false;
+  QMarginsF margin;
+  QMarginsF padding;
+  qreal borderTopWidth = 0.0;
+  qreal borderRightWidth = 0.0;
+  qreal borderBottomWidth = 0.0;
+  qreal borderLeftWidth = 0.0;
+  QColor borderTopColor;
+  QColor borderRightColor;
+  QColor borderBottomColor;
+  QColor borderLeftColor;
+  qreal borderRadius = 0.0;
+  // `width: fit-content` (or max-content/min-content) on the element: its own
+  // background/decoration box shrinks to the text instead of spanning the block.
+  // Other width values (auto/%/px) leave this false — only fit-content is a
+  // paint-time concern; layout/hit-test stay full-width regardless.
+  bool widthFitContent = false;
+};
+
+struct ThemeElementPaintStyle {
+  QColor color;
+  QColor backgroundColor;
+  GradientSpec backgroundImage;
+  QColor boxShadowColor;
+  qreal boxShadowBlur = 0.0;
+  qreal opacity = 1.0;
+  qreal transformScale = 1.0;
+};
+
+struct ThemeElementTextStyle {
+  QString fontFamily;
+  qreal fontSizePx = 0.0;
+  qreal lineHeight = 0.0;
+  qreal wordSpacing = 0.0;
+  int fontWeight = 0;
+  bool fontWeightSet = false;
+  bool italic = false;
+  bool italicSet = false;
+  Qt::Alignment alignment;
+};
+
+struct ThemeElementStyle {
+  QString key;  // e.g. "h2", "blockquote p", "li::marker"
+  ThemeElementBoxStyle box;
+  ThemeElementPaintStyle paint;
+  ThemeElementTextStyle text;
 };
 
 // A complete, serializable theme. Built-in themes are produced by builtIns();
@@ -326,6 +409,7 @@ struct ThemeDefinition {
   ThemePage page;
   ThemeBlockSpacing spacing;
   ThemeDecorations decorations;
+  std::vector<ThemeElementStyle> elementStyles;
   bool isBuiltIn = true;
 
   bool valid() const;

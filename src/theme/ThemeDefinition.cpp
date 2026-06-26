@@ -10,6 +10,7 @@
 #include <QJsonObject>
 #include <QSet>
 #include <QStringList>
+#include <QtGlobal>
 
 namespace muffin {
 
@@ -20,7 +21,7 @@ QColor parseColor(const QJsonObject& colors, const char* key) {
   if (!v.isString()) {
     return QColor();
   }
-  QColor c(v.toString());
+  QColor c = cssColor(v.toString());
   return c.isValid() ? c : QColor();
 }
 
@@ -67,14 +68,29 @@ void registerThemeFonts(const CssThemeSheet& sheet) {
   static QSet<QString> registered;
   for (const CssFontFace& ff : sheet.fontFaces()) {
     if (ff.srcPath.isEmpty() || registered.contains(ff.srcPath)) { continue; }
-    if (!QFileInfo(ff.srcPath).isFile()) { continue; }
+    if (!QFileInfo(ff.srcPath).isFile()) {
+      // A silently-skipped @font-face (wrong path, file not installed) makes the
+      // theme fall back to a heavier system typeface — the most common reason a
+      // theme's text looks "blacker/sharper" than in Typora. Surface it.
+      qWarning("Muffin theme: @font-face file not found for declared family \"%s\": %s",
+               qPrintable(ff.family), qPrintable(ff.srcPath));
+      registered.insert(ff.srcPath);
+      continue;
+    }
     const int id = QFontDatabase::addApplicationFont(ff.srcPath);
     registered.insert(ff.srcPath);
+    if (id < 0) {
+      qWarning("Muffin theme: QFontDatabase::addApplicationFont failed for declared family \"%s\": %s",
+               qPrintable(ff.family), qPrintable(ff.srcPath));
+      continue;
+    }
     // Map the @font-face declared name to the family name Qt actually registered
     // (the font's internal name, which often differs from the declared alias).
-    if (id >= 0) {
-      const QStringList fams = QFontDatabase::applicationFontFamilies(id);
-      if (!fams.isEmpty()) { fontFaceAliases().insert(ff.family.toLower(), fams.first()); }
+    const QStringList fams = QFontDatabase::applicationFontFamilies(id);
+    if (!fams.isEmpty()) {
+      fontFaceAliases().insert(ff.family.toLower(), fams.first());
+      qWarning("Muffin theme: registered @font-face family \"%s\" -> \"%s\" (%s)",
+               qPrintable(ff.family), qPrintable(fams.first()), qPrintable(ff.srcPath));
     }
   }
 }

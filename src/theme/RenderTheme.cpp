@@ -170,6 +170,7 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   t.inlineCodeBorderRadius_ = ty.inlineCodeBorderRadius;
   t.inlineCodeBorderWidth_ = ty.inlineCodeBorderWidth;
   t.inlineCodeTextColor_ = ty.inlineCodeTextColor;
+  t.delColor_ = ty.delColor;
   t.kbdBackground_ = ty.kbdBackground;
   t.kbdTextColor_ = ty.kbdTextColor;
   t.kbdFont_ = ty.kbdFont;
@@ -178,6 +179,8 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   t.kbdBorderRadius_ = ty.kbdBorderRadius;
   t.kbdBorderColor_ = ty.kbdBorderColor;
   t.kbdBorderWidth_ = ty.kbdBorderWidth;
+  t.kbdBorderBottomWidth_ = ty.kbdBorderBottomWidth;
+  t.kbdBorderBottomColor_ = ty.kbdBorderBottomColor;
   t.kbdShadowColor_ = ty.kbdShadowColor;
   t.bodyAlignment_ = ty.bodyAlignment;
   for (int i = 0; i < 6; ++i) {
@@ -203,13 +206,13 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   t.pageShadowBlur_ = definition.page.pageShadowBlur;
   t.pageShadowOffsetY_ = definition.page.pageShadowOffsetY;
   t.decorations_ = definition.decorations;
-  t.paragraphMargin_ = definition.spacing.paragraphMargin;
-  t.blockquoteMargin_ = definition.spacing.blockquoteMargin;
-  t.blockquotePadding_ = definition.spacing.blockquotePadding;
-  t.blockquoteBorderWidth_ = definition.spacing.blockquoteBorderWidth;
-  t.blockquoteBorderColor_ = definition.spacing.blockquoteBorderColor;
-  t.blockquoteBorderRadius_ = definition.spacing.blockquoteBorderRadius;
-  t.blockquoteBoxThemed_ = definition.spacing.blockquoteBoxThemed;
+  t.elementStyles_ = definition.elementStyles;
+  for (const ThemeElementStyle& style : t.elementStyles_) {
+    if (style.key == QStringLiteral("li::marker") && style.paint.color.isValid()) {
+      t.listMarkerColor_ = style.paint.color;
+      break;
+    }
+  }
   t.codeBlockPadding_ = definition.spacing.codeBlockPadding;
   t.codeBlockBorderRadius_ = definition.spacing.codeBlockBorderRadius;
   t.codeBlockBoxThemed_ = definition.spacing.codeBlockBoxThemed;
@@ -219,15 +222,8 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   t.codeBlockMargin_ = definition.spacing.codeBlockMargin;
   t.tableMargin_ = definition.spacing.tableMargin;
   t.listMargin_ = definition.spacing.listMargin;
-  t.listPaddingLeft_ = definition.spacing.listPaddingLeft;
+  t.listMarkerGap_ = definition.spacing.listMarkerGap;
   for (int i = 0; i < 6; ++i) {
-    t.headingMargin_[i] = definition.spacing.headingMargin[i];
-    t.headingPadding_[i] = definition.spacing.headingPadding[i];
-    t.headingBorderBottomColor_[i] = definition.spacing.headingBorderBottomColor[i];
-    t.headingBorderBottomWidth_[i] = definition.spacing.headingBorderBottomWidth[i];
-    t.headingBorderLeftColor_[i] = definition.spacing.headingBorderLeftColor[i];
-    t.headingBorderLeftWidth_[i] = definition.spacing.headingBorderLeftWidth[i];
-    t.headingFitContent_[i] = definition.spacing.headingFitContent[i];
     t.headingBeforeAdvance_[i] = definition.spacing.headingBeforeAdvance[i];
   }
   t.codeBlockBackground_ = c.codeBlockBackground;
@@ -292,7 +288,34 @@ qreal RenderTheme::blockSpacing() const {
 }
 
 qreal RenderTheme::listIndent() const {
-  return scaled(listPaddingLeft_ > 0.0 ? listPaddingLeft_ : 30.0);
+  // List indent comes from the `ul` element style's left padding; themes that set
+  // none (JSON themes, or CSS without `ul` padding) fall back to 30px — the legacy
+  // default that keeps built-in list spacing intact.
+  if (const ThemeElementStyle* style = elementStyle(QStringLiteral("ul"))) {
+    if (style->box.padding.left() > 0.0) { return scaled(style->box.padding.left()); }
+  }
+  return scaled(30.0);
+}
+
+qreal RenderTheme::listMarkerGap() const {
+  // An explicit theme override wins. Otherwise "auto": keep the legacy
+  // proportional gap (0.2 × indent, already zoomed via listIndent()) BUT floor
+  // it so small-indent themes don't collapse the marker onto the text. The floor
+  // is small enough that large-indent themes (e.g. github's 30px → 6px) are
+  // visually unchanged.
+  if (listMarkerGap_ > 0.0) { return scaled(listMarkerGap_); }
+  constexpr qreal kMarkerGapFloor = 4.5;
+  return qMax(listIndent() * 0.2, scaled(kMarkerGapFloor));
+}
+
+ListGuide RenderTheme::listGuide() const {
+  // Scale the CSS-px geometry to the current zoom; colour and `present` pass through.
+  ListGuide g = decorations_.listGuide;
+  g.width = scaled(g.width);
+  g.leftOffset = scaled(g.leftOffset);
+  g.topInset = scaled(g.topInset);
+  g.bottomInset = scaled(g.bottomInset);
+  return g;
 }
 
 qreal RenderTheme::blockQuoteIndent() const {
@@ -340,46 +363,77 @@ qreal RenderTheme::pageShadowBlur() const { return scaled(pageShadowBlur_); }
 qreal RenderTheme::pageShadowOffsetY() const { return scaled(pageShadowOffsetY_); }
 
 QMarginsF RenderTheme::blockMargin(BlockType type, int headingLevel) const {
-  QMarginsF m;
+  // Element box geometry for p / h1-h6 / blockquote / list comes from elementStyles;
+  // pre/table (no element style) keep their legacy block-flow margins.
+  QString key;
+  QMarginsF m;  // null unless a block-flow margin or an element style sets it
   switch (type) {
-    case BlockType::Heading:
-      m = headingMargin_[qBound(0, headingLevel - 1, 5)];
-      break;
-    case BlockType::Paragraph:
-      m = paragraphMargin_;
-      break;
-    case BlockType::BlockQuote:
-      m = blockquoteMargin_;
-      break;
+    case BlockType::Heading:      key = QStringLiteral("h%1").arg(headingLevel); break;
+    case BlockType::Paragraph:    key = QStringLiteral("p"); break;
+    case BlockType::BlockQuote:   key = QStringLiteral("blockquote"); break;
     case BlockType::CodeFence:
-    case BlockType::FrontMatter:
-      m = codeBlockMargin_;
-      break;
-    case BlockType::Table:
-      m = tableMargin_;
-      break;
-    case BlockType::List:
-      m = listMargin_;
-      break;
-    default:
-      break;
+    case BlockType::FrontMatter:  key = QStringLiteral("pre"); m = codeBlockMargin_; break;
+    case BlockType::Table:        key = QStringLiteral("table"); m = tableMargin_; break;
+    case BlockType::List:         key = QStringLiteral("ul"); m = listMargin_; break;
+    default: break;
+  }
+  if (!key.isEmpty()) {
+    if (const ThemeElementStyle* style = elementStyle(key)) {
+      if (style->box.present && !style->box.margin.isNull()) { m = style->box.margin; }
+    }
   }
   return QMarginsF(scaled(m.left()), scaled(m.top()), scaled(m.right()), scaled(m.bottom()));
 }
 
 QMarginsF RenderTheme::headingPadding(int level) const {
-  const QMarginsF p = headingPadding_[qBound(0, level - 1, 5)];
-  return QMarginsF(scaled(p.left()), scaled(p.top()), scaled(p.right()), scaled(p.bottom()));
+  if (const ThemeElementStyle* style = elementStyle(QStringLiteral("h%1").arg(level))) {
+    if (!style->box.padding.isNull()) {
+      const QMarginsF& p = style->box.padding;
+      return QMarginsF(scaled(p.left()), scaled(p.top()), scaled(p.right()), scaled(p.bottom()));
+    }
+  }
+  return QMarginsF();  // no CSS padding → flush (the legacy default was null too)
 }
 
-bool RenderTheme::blockquoteBoxThemed() const { return blockquoteBoxThemed_; }
-QMarginsF RenderTheme::blockquotePadding() const {
-  return QMarginsF(scaled(blockquotePadding_.left()), scaled(blockquotePadding_.top()),
-                   scaled(blockquotePadding_.right()), scaled(blockquotePadding_.bottom()));
+bool RenderTheme::blockquoteBoxThemed() const {
+  // Flips to the CSS box only when the author styled padding/border/radius — NOT
+  // margin alone (that draws no box). Derived from elementStyles so it can't drift
+  // from the unified per-side box painter.
+  if (const ThemeElementStyle* style = elementStyle(QStringLiteral("blockquote"))) {
+    const ThemeElementBoxStyle& b = style->box;
+    return !b.padding.isNull() || b.borderTopWidth > 0.0 || b.borderRightWidth > 0.0 ||
+           b.borderBottomWidth > 0.0 || b.borderLeftWidth > 0.0 || b.borderRadius > 0.0 ||
+           style->paint.backgroundColor.isValid();
+  }
+  return false;
 }
-qreal RenderTheme::blockquoteBorderWidth() const { return scaled(blockquoteBorderWidth_); }
-QColor RenderTheme::blockquoteBorderColor() const { return blockquoteBorderColor_; }
-qreal RenderTheme::blockquoteBorderRadius() const { return scaled(blockquoteBorderRadius_); }
+QMarginsF RenderTheme::blockquotePadding() const {
+  if (const ThemeElementStyle* style = elementStyle(QStringLiteral("blockquote"))) {
+    if (!style->box.padding.isNull()) {
+      const QMarginsF& p = style->box.padding;
+      return QMarginsF(scaled(p.left()), scaled(p.top()), scaled(p.right()), scaled(p.bottom()));
+    }
+  }
+  return QMarginsF();
+}
+qreal RenderTheme::blockquoteBorderWidth() const {
+  if (const ThemeElementStyle* style = elementStyle(QStringLiteral("blockquote"))) {
+    if (style->box.borderLeftWidth > 0.0) { return scaled(style->box.borderLeftWidth); }
+  }
+  return 0.0;
+}
+QColor RenderTheme::blockquoteBorderColor() const {
+  if (const ThemeElementStyle* style = elementStyle(QStringLiteral("blockquote"))) {
+    return style->box.borderLeftColor;  // invalid when unset
+  }
+  return QColor();
+}
+qreal RenderTheme::blockquoteBorderRadius() const {
+  if (const ThemeElementStyle* style = elementStyle(QStringLiteral("blockquote"))) {
+    if (style->box.borderRadius > 0.0) { return scaled(style->box.borderRadius); }
+  }
+  return 0.0;
+}
 
 bool RenderTheme::codeBlockBoxThemed() const { return codeBlockBoxThemed_; }
 qreal RenderTheme::codeBlockBorderRadius() const { return scaled(codeBlockBorderRadius_); }
@@ -388,20 +442,35 @@ bool RenderTheme::tableBoxThemed() const { return tableBoxThemed_; }
 qreal RenderTheme::tableBorderRadius() const { return scaled(tableBorderRadius_); }
 
 QColor RenderTheme::headingBorderBottomColor(int level) const {
-  return headingBorderBottomColor_[qBound(0, level - 1, 5)];
+  if (const ThemeElementStyle* style = elementStyle(QStringLiteral("h%1").arg(level))) {
+    return style->box.borderBottomColor;  // invalid when unset
+  }
+  return QColor();
 }
 qreal RenderTheme::headingBorderBottomWidth(int level) const {
-  return scaled(headingBorderBottomWidth_[qBound(0, level - 1, 5)]);
+  if (const ThemeElementStyle* style = elementStyle(QStringLiteral("h%1").arg(level))) {
+    if (style->box.borderBottomWidth > 0.0) { return scaled(style->box.borderBottomWidth); }
+  }
+  return 0.0;
 }
 QColor RenderTheme::headingBorderLeftColor(int level) const {
-  return headingBorderLeftColor_[qBound(0, level - 1, 5)];
+  if (const ThemeElementStyle* style = elementStyle(QStringLiteral("h%1").arg(level))) {
+    return style->box.borderLeftColor;  // invalid when unset
+  }
+  return QColor();
 }
 qreal RenderTheme::headingBorderLeftWidth(int level) const {
-  return scaled(headingBorderLeftWidth_[qBound(0, level - 1, 5)]);
+  if (const ThemeElementStyle* style = elementStyle(QStringLiteral("h%1").arg(level))) {
+    if (style->box.borderLeftWidth > 0.0) { return scaled(style->box.borderLeftWidth); }
+  }
+  return 0.0;
 }
 
 bool RenderTheme::headingFitContent(int level) const {
-  return headingFitContent_[qBound(0, level - 1, 5)];
+  if (const ThemeElementStyle* style = elementStyle(QStringLiteral("h%1").arg(level))) {
+    return style->box.widthFitContent;
+  }
+  return false;
 }
 
 qreal RenderTheme::headingBeforeAdvance(int level) const {
@@ -445,23 +514,80 @@ QFont RenderTheme::paragraphFont() const {
   return font;
 }
 
+QFont RenderTheme::textFontForElement(const QString& key) const {
+  QFont font = paragraphFont();
+  const ThemeElementStyle* style = elementStyle(key);
+  if (!style) { return font; }
+  const QString& platform = serifBody_ ? serifFamily() : sansFamily();
+  if (!style->text.fontFamily.isEmpty()) { font.setFamilies(themeFamilyList(style->text.fontFamily, platform)); }
+  if (style->text.fontSizePx > 0.0) { font.setPointSizeF(scaledFont(style->text.fontSizePx * 72.0 / 96.0)); }
+  if (style->text.fontWeightSet) {
+    font.setWeight(static_cast<QFont::Weight>(qBound(static_cast<int>(QFont::Thin), style->text.fontWeight, static_cast<int>(QFont::Black))));
+  }
+  if (style->text.italicSet) { font.setItalic(style->text.italic); }
+  return font;
+}
+
+QColor RenderTheme::textColorForElement(const QString& key) const {
+  if (const ThemeElementStyle* style = elementStyle(key)) {
+    if (style->paint.color.isValid()) { return style->paint.color; }
+  }
+  return textColor_;
+}
+
+qreal RenderTheme::lineHeightMultiplierForElement(const QString& key, BlockType fallbackType, int headingLevel) const {
+  if (const ThemeElementStyle* style = elementStyle(key)) {
+    if (style->text.lineHeight > 0.0) { return style->text.lineHeight; }
+  }
+  return lineHeightMultiplier(fallbackType, headingLevel);
+}
+
+qreal RenderTheme::wordSpacingForElement(const QString& key) const {
+  if (const ThemeElementStyle* style = elementStyle(key)) {
+    if (style->text.wordSpacing != 0.0) { return scaled(style->text.wordSpacing); }
+  }
+  return 0.0;
+}
+
+Qt::Alignment RenderTheme::textAlignmentForElement(const QString& key, BlockType fallbackType, int headingLevel) const {
+  if (const ThemeElementStyle* style = elementStyle(key)) {
+    if (style->text.alignment != Qt::Alignment()) { return style->text.alignment; }
+  }
+  return textAlignment(fallbackType, headingLevel);
+}
+
 QFont RenderTheme::headingFont(int level) const {
   static constexpr qreal sizes[] = {24.0, 19.0, 16.0, 14.0, 12.5, 12.0};
   QFont font = paragraphFont();
   const int idx = qBound(0, level - 1, 5);
-  if (headingFontWeightSet_[idx]) {
-    font.setWeight(static_cast<QFont::Weight>(qBound(static_cast<int>(QFont::Thin), headingFontWeight_[idx], static_cast<int>(QFont::Black))));
+  // Like the other element-text getters, the CSS computed style wins and the legacy
+  // typography fields are the fallback for JSON / hand-built themes (no elementStyles).
+  const ThemeElementStyle* style = elementStyle(QStringLiteral("h%1").arg(level));
+  const auto applyWeight = [&](int w) {
+    font.setWeight(static_cast<QFont::Weight>(qBound(static_cast<int>(QFont::Thin), w, static_cast<int>(QFont::Black))));
+  };
+  // font-weight: element-style → legacy heading weight → bold (built-in default).
+  if (style && style->text.fontWeightSet) {
+    applyWeight(style->text.fontWeight);
+  } else if (headingFontWeightSet_[idx]) {
+    applyWeight(headingFontWeight_[idx]);
   } else {
     font.setBold(true);
   }
-  if (headingItalicSet_[idx]) {
+  // italic: applied only when explicitly declared (element-style or legacy).
+  if (style && style->text.italicSet) {
+    font.setItalic(style->text.italic);
+  } else if (headingItalicSet_[idx]) {
     font.setItalic(headingItalic_[idx]);
   }
-  const qreal themeSize = headingSizePt_[idx];
-  font.setPointSizeF(scaledFont(themeSize > 0.0 ? themeSize : sizes[idx]));
-  if (!headingFont_.isEmpty()) {
-    const QString& platform = serifBody_ ? serifFamily() : sansFamily();
-    font.setFamilies(themeFamilyList(headingFont_, platform));
+  // font-size: element-style → legacy heading size → built-in table.
+  const qreal elementPt = (style && style->text.fontSizePx > 0.0) ? style->text.fontSizePx * 72.0 / 96.0 : 0.0;
+  const qreal sizePt = elementPt > 0.0 ? elementPt : (headingSizePt_[idx] > 0.0 ? headingSizePt_[idx] : sizes[idx]);
+  font.setPointSizeF(scaledFont(sizePt));
+  // font-family: element-style → legacy heading family.
+  const QString family = (style && !style->text.fontFamily.isEmpty()) ? style->text.fontFamily : headingFont_;
+  if (!family.isEmpty()) {
+    font.setFamilies(themeFamilyList(family, serifBody_ ? serifFamily() : sansFamily()));
   }
   return font;
 }
@@ -521,6 +647,7 @@ qreal RenderTheme::inlineCodePaddingV() const { return scaled(inlineCodePaddingV
 qreal RenderTheme::inlineCodeBorderRadius() const { return scaled(inlineCodeBorderRadius_); }
 qreal RenderTheme::inlineCodeBorderWidth() const { return scaled(inlineCodeBorderWidth_); }
 QColor RenderTheme::inlineCodeTextColor() const { return inlineCodeTextColor_; }
+QColor RenderTheme::delColor() const { return delColor_; }
 QColor RenderTheme::kbdBackgroundColor() const { return kbdBackground_; }
 QColor RenderTheme::kbdTextColor() const { return kbdTextColor_; }
 QString RenderTheme::kbdFont() const { return kbdFont_; }
@@ -529,6 +656,8 @@ qreal RenderTheme::kbdPaddingV() const { return scaled(kbdPaddingV_); }
 qreal RenderTheme::kbdBorderRadius() const { return scaled(kbdBorderRadius_); }
 QColor RenderTheme::kbdBorderColor() const { return kbdBorderColor_; }
 qreal RenderTheme::kbdBorderWidth() const { return scaled(kbdBorderWidth_); }
+qreal RenderTheme::kbdBorderBottomWidth() const { return scaled(kbdBorderBottomWidth_); }
+QColor RenderTheme::kbdBorderBottomColor() const { return kbdBorderBottomColor_; }
 QColor RenderTheme::kbdShadowColor() const { return kbdShadowColor_; }
 
 QColor RenderTheme::codeBackgroundColor() const {
@@ -583,6 +712,32 @@ QColor RenderTheme::selectionColor() const {
 
 QColor RenderTheme::spellCheckColor() const {
   return spellCheckColor_;
+}
+
+QColor RenderTheme::listMarkerColor() const {
+  return listMarkerColor_.isValid() ? listMarkerColor_ : textColor_;
+}
+
+const ThemeElementStyle* RenderTheme::elementStyle(const QString& key) const {
+  for (const ThemeElementStyle& style : elementStyles_) {
+    if (style.key == key) { return &style; }
+  }
+  return nullptr;
+}
+
+ThemeElementBoxStyle RenderTheme::elementBoxStyle(const QString& key) const {
+  ThemeElementBoxStyle out;
+  if (const ThemeElementStyle* style = elementStyle(key)) {
+    out = style->box;
+    out.margin = QMarginsF(scaled(out.margin.left()), scaled(out.margin.top()), scaled(out.margin.right()), scaled(out.margin.bottom()));
+    out.padding = QMarginsF(scaled(out.padding.left()), scaled(out.padding.top()), scaled(out.padding.right()), scaled(out.padding.bottom()));
+    out.borderTopWidth = scaled(out.borderTopWidth);
+    out.borderRightWidth = scaled(out.borderRightWidth);
+    out.borderBottomWidth = scaled(out.borderBottomWidth);
+    out.borderLeftWidth = scaled(out.borderLeftWidth);
+    out.borderRadius = scaled(out.borderRadius);
+  }
+  return out;
 }
 
 QColor RenderTheme::headingColor(int level) const {

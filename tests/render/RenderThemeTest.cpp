@@ -4,6 +4,7 @@
 #include "render/DecorationPainter.h"
 #include "render/DocumentLayout.h"
 #include "render/BlockLayout.h"
+#include "theme/CssThemeMapper.h"
 #include "theme/RenderTheme.h"
 #include "theme/ThemeDefinition.h"
 #include "theme/ThemeManager.h"
@@ -178,6 +179,263 @@ void testThemeTypographyWeightStyleAndAlignment() {
   require(theme.headingFont(3).italic(), QStringLiteral("explicit heading italic should apply"));
 }
 
+void testListMarkerGapFloor() {
+  ThemeDefinition def;
+  def.colors.text = QColor(QStringLiteral("#333333"));
+  def.colors.background = QColor(QStringLiteral("#ffffff"));
+  ThemeElementStyle ul;
+  ul.key = QStringLiteral("ul");
+  ul.box.present = true;
+  def.elementStyles.push_back(ul);
+  const auto setUlIndent = [&](qreal left) { def.elementStyles.back().box.padding.setLeft(left); };
+  // Small indent (phycat-style 13px): 0.2*13 = 2.6 is below the 4.5 floor.
+  setUlIndent(13.0);
+  const RenderTheme small = RenderTheme::fromDefinition(def);
+  require(qAbs(small.listMarkerGap() - 4.5) < 0.01,
+          QStringLiteral("small-indent gap floors at 4.5px, not 2.6"));
+  // Large indent (github-style 30px): 0.2*30 = 6px beats the floor → unchanged.
+  setUlIndent(30.0);
+  def.spacing.listMarkerGap = 0.0;
+  const RenderTheme large = RenderTheme::fromDefinition(def);
+  require(qAbs(large.listMarkerGap() - 6.0) < 0.01,
+          QStringLiteral("large-indent gap stays 6px (0.2*30), no regression"));
+  // Explicit override wins regardless of indent.
+  def.spacing.listMarkerGap = 12.0;
+  const RenderTheme over = RenderTheme::fromDefinition(def);
+  require(qAbs(over.listMarkerGap() - 12.0) < 0.01,
+          QStringLiteral("explicit listMarkerGap overrides the auto value"));
+}
+
+// Two consecutive paragraphs: the inter-paragraph gap must reflect the theme's
+// CSS `p { margin }` (collapsed to the bottom margin), not the legacy tight floor.
+// Regression guard for phycat's `#write p { margin: 10px 10px }`.
+qreal interParagraphGap(const QString& css) {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("first paragraph\n\nsecond paragraph\n"), false);
+  const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("gap"), QString()));
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+  QVector<const MarkdownNode*> paras;
+  for (const auto& child : session.document().root().children()) {
+    if (child->type() == BlockType::Paragraph) { paras.push_back(child.get()); }
+  }
+  require(paras.size() >= 2, QStringLiteral("fixture should contain two top-level paragraphs"));
+  const BlockLayout* a = layout.block(paras.at(0)->id());
+  const BlockLayout* b = layout.block(paras.at(1)->id());
+  require(a != nullptr && b != nullptr, QStringLiteral("both paragraphs should be promoted"));
+  return b->rect().top() - a->rect().bottom();
+}
+
+void testParagraphSpacingHonoursCssMargin() {
+  const qreal tight = interParagraphGap(QStringLiteral("#write { color:#000000; }"));
+  const qreal spaced = interParagraphGap(QStringLiteral("#write { color:#000000; } #write p { margin: 30px 10px; }"));
+  require(tight > 0.0, QStringLiteral("baseline paragraph gap should be positive (=%1)").arg(tight));
+  // CSS bottom margin 30px → the gap must grow well beyond the legacy tight floor.
+  require(spaced > tight + 20.0,
+          QStringLiteral("declared p margin-bottom must drive the inter-paragraph gap (tight=%1 spaced=%2)").arg(tight).arg(spaced));
+  require(qAbs(spaced - 30.0) < 1.5,
+          QStringLiteral("collapsed paragraph gap should equal the CSS bottom margin (spaced=%1)").arg(spaced));
+}
+
+void testAdjacentCssMarginsCollapseAcrossBlockTypes() {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("# Heading\n\nParagraph\n"), false);
+  const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(
+      QStringLiteral("#write { color:#000000; } h1 { margin: 20px 0 30px 0; } p { margin: 40px 0; }"),
+      QStringLiteral("collapse"), QString()));
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+  const MarkdownNode* heading = findFirstBlock(session.document().root(), BlockType::Heading);
+  const MarkdownNode* paragraph = findFirstBlock(session.document().root(), BlockType::Paragraph);
+  require(heading != nullptr && paragraph != nullptr, QStringLiteral("heading/paragraph fixture parsed"));
+  const BlockLayout* h = layout.block(heading->id());
+  const BlockLayout* p = layout.block(paragraph->id());
+  require(h != nullptr && p != nullptr, QStringLiteral("heading/paragraph layout blocks exist"));
+  const qreal gap = p->rect().top() - h->rect().bottom();
+  require(qAbs(gap - 40.0) < 1.5,
+          QStringLiteral("adjacent CSS margins should collapse to max(30,40), not sum to 70 (gap=%1)").arg(gap));
+}
+
+void testBlockquoteCssBoxUsesPerSideBorderAndCompactNestedFlow() {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral(
+      "> A block quote can contain paragraphs.\n"
+      ">\n"
+      ">\n"
+      "> It can also contain **formatting**, `code`, and nested quotes.\n"
+      ">\n"
+      ">\n"
+      "> > Nested quote.\n"
+      "\n"
+      "After\n"), false);
+  const QString css = QStringLiteral(
+      "body { color:#333333; font-size:16px; }"
+      "#write { color:#333333; }"
+      "p, blockquote { margin: 0.8em 0; }"
+      "blockquote { border-left: 4px solid #dfe2e5; padding: 0 15px; color: #777777; }");
+  const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("quote"), QString()));
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+
+  QVector<const MarkdownNode*> quotes;
+  QVector<const MarkdownNode*> quoteVeps;
+  int quoteDepth = 0;
+  std::function<void(const MarkdownNode&)> collectQuotes = [&](const MarkdownNode& node) {
+    const bool isQuote = node.type() == BlockType::BlockQuote;
+    if (isQuote) { ++quoteDepth; quotes.push_back(&node); }
+    const SourceRange range = node.sourceRange();
+    if (quoteDepth > 0 && node.type() == BlockType::Paragraph && range.byteStart >= 0 && range.byteEnd == range.byteStart) {
+      quoteVeps.push_back(&node);
+    }
+    for (const auto& child : node.children()) { collectQuotes(*child); }
+    if (isQuote) { --quoteDepth; }
+  };
+  collectQuotes(session.document().root());
+  require(quotes.size() == 2, QStringLiteral("fixture should contain outer and nested blockquotes"));
+  require(!quoteVeps.isEmpty(), QStringLiteral("fixture should contain quote-internal virtual empty paragraphs"));
+  const BlockLayout* outer = layout.block(quotes.at(0)->id());
+  const BlockLayout* nested = layout.block(quotes.at(1)->id());
+  require(outer != nullptr && nested != nullptr, QStringLiteral("blockquote layout blocks exist"));
+  for (const MarkdownNode* vep : quoteVeps) {
+    require(layout.block(vep->id()) == nullptr,
+            QStringLiteral("quote virtual empty paragraph should not participate in normal render flow"));
+  }
+
+  const ThemeElementBoxStyle box = theme.elementBoxStyle(QStringLiteral("blockquote"));
+  require(qAbs(box.borderLeftWidth - 4.0) < 0.01, QStringLiteral("border-left width captured"));
+  require(box.borderTopWidth == 0.0 && box.borderRightWidth == 0.0 && box.borderBottomWidth == 0.0,
+          QStringLiteral("border-left must not become a four-sided border"));
+
+  const BlockLayout::CssBoxGeometry outerBox = outer->cssBoxGeometry(theme);
+  require(qAbs(outerBox.contentBox.left() - (outer->rect().left() + 4.0 + 15.0)) < 0.5,
+          QStringLiteral("blockquote content should be inset by left border + padding"));
+  require(qAbs(outerBox.contentBox.right() - (outer->rect().right() - 15.0)) < 0.5,
+          QStringLiteral("blockquote content should be inset by right padding only"));
+  require(nested->rect().height() < 60.0,
+          QStringLiteral("nested blockquote should stay compact, not reserve a large empty box (height=%1)").arg(nested->rect().height()));
+  require(outer->rect().height() < 110.0,
+          QStringLiteral("outer blockquote should omit virtual blank paragraphs from paint flow (height=%1)").arg(outer->rect().height()));
+
+  SelectionRange focusedVep;
+  focusedVep.anchor.blockId = quotes.at(0)->id();
+  focusedVep.anchor.text.nodeId = quoteVeps.first()->id();
+  focusedVep.anchor.text.sourceOffset = quoteVeps.first()->sourceRange().byteStart;
+  focusedVep.focus = focusedVep.anchor;
+  DocumentLayout focusedLayout;
+  focusedLayout.rebuild(session.document(), theme, 800.0, focusedVep, QString());
+  const BlockLayout* focusedOuter = focusedLayout.block(quotes.at(0)->id());
+  require(focusedOuter != nullptr, QStringLiteral("focused blockquote layout exists"));
+  require(qAbs(focusedOuter->cssBorderBox(theme).height() - outer->cssBorderBox(theme).height()) < 0.5,
+          QStringLiteral("quote border height should not depend on focused virtual blank paragraph (unfocused=%1 focused=%2)")
+              .arg(outer->cssBorderBox(theme).height()).arg(focusedOuter->cssBorderBox(theme).height()));
+  require(focusedLayout.block(quoteVeps.first()->id()) == nullptr,
+          QStringLiteral("focused quote virtual empty paragraph remains editor-only, not render-flow content"));
+
+  QImage img(QSize(800, qCeil(layout.totalHeight()) + 20), QImage::Format_ARGB32);
+  img.fill(QColor(QStringLiteral("#ffffff")).rgba());
+  QPainter painter(&img);
+  for (const BlockLayout* block : layout.promotedBlocks()) { block->paint(painter, theme, 0.0, nullptr); }
+  painter.end();
+  const QRectF r = outer->cssBorderBox(theme);
+  const QColor leftPixel = QColor::fromRgba(img.pixel(qRound(r.left() + 2.0), qRound(r.center().y())));
+  const QColor rightPixel = QColor::fromRgba(img.pixel(qRound(r.right() - 2.0), qRound(r.center().y())));
+  require(leftPixel.name(QColor::HexRgb) == QStringLiteral("#dfe2e5"),
+          QStringLiteral("left border should paint the declared blockquote border-left (got %1)").arg(leftPixel.name(QColor::HexRgb)));
+  require(rightPixel.name(QColor::HexRgb) != QStringLiteral("#dfe2e5"),
+          QStringLiteral("right edge must not paint a phantom border from border-left"));
+}
+
+void testBlockquoteListFlowStaysCompactUnderLazyPromotion() {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral(
+      "> Intro\n"
+      ">\n"
+      "> - one\n"
+      ">   - nested\n"
+      ">\n"
+      "> Outro\n"
+      "\n"
+      "After\n"), false);
+  const QString css = QStringLiteral(
+      "body { color:#333333; font-size:16px; line-height:1.6; }"
+      "#write { color:#333333; }"
+      "p, blockquote, ul, ol { margin: 0.8em 0; }"
+      "li>ol, li>ul { margin: 0 0; }"
+      "ul, ol { padding-left: 30px; }"
+      "blockquote { border-left: 4px solid #dfe2e5; padding: 0 15px; }");
+  const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("quote-list"), QString()));
+
+  DocumentLayout eager;
+  eager.rebuild(session.document(), theme, 800.0);
+  const MarkdownNode* quote = findFirstBlock(session.document().root(), BlockType::BlockQuote);
+  require(quote != nullptr, QStringLiteral("fixture should contain a blockquote"));
+  const BlockLayout* eagerQuote = eager.block(quote->id());
+  require(eagerQuote != nullptr, QStringLiteral("eager quote layout exists"));
+  const qreal eagerQuoteHeight = eagerQuote->rect().height();
+  require(eagerQuoteHeight < 150.0,
+          QStringLiteral("blockquote containing a list should stay compact, not include blank quote VEPs (height=%1)").arg(eagerQuoteHeight));
+
+  QVector<const MarkdownNode*> listItems;
+  collectListItems(session.document().root(), listItems);
+  require(listItems.size() >= 2, QStringLiteral("fixture should contain parent and nested list items"));
+  const BlockLayout* parentItem = eager.block(listItems.at(0)->id());
+  const BlockLayout* nestedItem = eager.block(listItems.at(1)->id());
+  require(parentItem != nullptr && nestedItem != nullptr, QStringLiteral("list item layouts exist"));
+  require(nestedItem->rect().top() - parentItem->rect().bottom() < 1.0,
+          QStringLiteral("tight nested list should not add extra vertical spacing inside blockquote (gap=%1)")
+              .arg(nestedItem->rect().top() - parentItem->rect().bottom()));
+  require(nestedItem->rect().left() > parentItem->rect().left(), QStringLiteral("nested list item should be indented"));
+
+  DocumentLayout lazy;
+  lazy.rebuild(session.document(), theme, 800.0, SelectionRange(), QString(), DocumentLayout::BuildPolicy::Lazy);
+  require(lazy.slotCount() == eager.slotCount(), QStringLiteral("lazy/eager slot count should match"));
+  const qreal estimatedHeight = lazy.slotHeight(lazy.topLevelIndexFor(quote->id()));
+  lazy.buildAll(theme);
+  const BlockLayout* promotedQuote = lazy.block(quote->id());
+  require(promotedQuote != nullptr, QStringLiteral("lazy quote should promote"));
+  require(qAbs(estimatedHeight - promotedQuote->rect().height()) < 1.5,
+          QStringLiteral("lazy list/quote estimate should match promoted height (estimated=%1 promoted=%2)")
+              .arg(estimatedHeight).arg(promotedQuote->rect().height()));
+}
+
+// Regression for the CSS cascade leak where `#write { padding: 30px;
+// padding-bottom: 100px }` (github.css) injected padding-bottom:100px into
+// every descendant. blockquote only declares the `padding` shorthand, so the
+// leaked `padding-bottom` longhand survived and grew every quote ~112px (a
+// border bar far taller than its text). Uses the REAL built-in github theme,
+// which carries the offending `#write` rule — a synthetic CSS fixture would
+// miss it entirely.
+void testGithubBlockquoteNotPaddedByWriteLeak() {
+  const RenderTheme theme = RenderTheme::github();
+  const ThemeElementBoxStyle quoteBox = theme.elementBoxStyle(QStringLiteral("blockquote"));
+  require(quoteBox.borderLeftWidth > 0.0, QStringLiteral("github blockquote declares border-left"));
+  require(qAbs(quoteBox.padding.bottom()) < 1.0,
+          QStringLiteral("github blockquote padding-bottom must not leak #write's 100px (got %1)").arg(quoteBox.padding.bottom()));
+  require(qAbs(quoteBox.padding.top()) < 1.0,
+          QStringLiteral("github blockquote padding-top should be 0 (got %1)").arg(quoteBox.padding.top()));
+
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral(
+      "> A block quote can contain paragraphs.\n"
+      ">\n"
+      "> It can also contain formatting and nested quotes.\n"
+      ">\n"
+      "> > Nested quote.\n"
+      "\n"
+      "## Lists\n"), false);
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 1000.0);
+  const MarkdownNode* quote = findFirstBlock(session.document().root(), BlockType::BlockQuote);
+  require(quote != nullptr, QStringLiteral("fixture should contain a blockquote"));
+  const BlockLayout* outer = layout.block(quote->id());
+  require(outer != nullptr, QStringLiteral("outer quote layout exists"));
+  // Three short text lines + two collapsed 0.8em gaps + the nested quote must
+  // stay well under the ~355px the leak produced; compact browser/Typora rhythm
+  // for this content is roughly 100–130px.
+  require(outer->rect().height() < 180.0,
+          QStringLiteral("github blockquote must stay compact without the #write padding leak (height=%1)").arg(outer->rect().height()));
+}
+
 void testFromDefinitionReproducesBuiltIns() {
   // The whole theme-unification design hinges on fromDefinition(definition(id))
   // reproducing the matching built-in factory exactly — otherwise switching the
@@ -222,6 +480,10 @@ void testFromDefinitionReproducesBuiltIns() {
             QStringLiteral("%1 selection via fromDefinition should match factory").arg(e.id));
     require(viaDef.spellCheckColor().name() == e.factory.spellCheckColor().name(),
             QStringLiteral("%1 spell-check via fromDefinition should match factory").arg(e.id));
+    // Declared-only inline-code border: github (declares `border` on code) → 1px;
+    // the other four declare none → 0. Both paths load the same CSS, so they match.
+    require(qAbs(viaDef.inlineCodeBorderWidth() - e.factory.inlineCodeBorderWidth()) < 0.01,
+            QStringLiteral("%1 inline-code border width via fromDefinition should match factory").arg(e.id));
   }
 }
 
@@ -358,6 +620,12 @@ int main(int argc, char** argv) {
   RUN_TEST(testThemeManagerSupportsBuiltInThemes);
   RUN_TEST(testThemeTypographyWeightStyleAndAlignment);
   RUN_TEST(testFromDefinitionReproducesBuiltIns);
+  RUN_TEST(testListMarkerGapFloor);
+  RUN_TEST(testParagraphSpacingHonoursCssMargin);
+  RUN_TEST(testAdjacentCssMarginsCollapseAcrossBlockTypes);
+  RUN_TEST(testBlockquoteCssBoxUsesPerSideBorderAndCompactNestedFlow);
+  RUN_TEST(testBlockquoteListFlowStaysCompactUnderLazyPromotion);
+  RUN_TEST(testGithubBlockquoteNotPaddedByWriteLeak);
   RUN_TEST(testCodeBorderNeverRendersBlack);
   runTest("testLayoutForTheme/github", [&] { testLayoutForTheme(document, RenderTheme::github(), QStringLiteral("github")); });
   runTest("testLayoutForTheme/newsprint", [&] { testLayoutForTheme(document, RenderTheme::newsprint(), QStringLiteral("newsprint")); });

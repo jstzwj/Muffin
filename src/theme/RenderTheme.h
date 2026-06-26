@@ -36,7 +36,12 @@ public:
   qreal bottomMargin() const;
   qreal blockSpacing() const;
   qreal listIndent() const;
+  qreal listMarkerGap() const;
   qreal blockQuoteIndent() const;
+  // Nested-list guide line with geometry scaled to the current zoom (colour and
+  // the `present` flag pass through unchanged). Invalid when the theme styled no
+  // li::before guide; painters should no-op in that case.
+  ListGuide listGuide() const;
   QColor viewportBackgroundColor() const;
   QColor pageBackgroundColor() const;
   QColor pageBorderColor() const;
@@ -79,6 +84,11 @@ public:
   Qt::Alignment textAlignment(BlockType type, int headingLevel = 0) const;
 
   QFont paragraphFont() const;
+  QFont textFontForElement(const QString& key) const;
+  QColor textColorForElement(const QString& key) const;
+  qreal lineHeightMultiplierForElement(const QString& key, BlockType fallbackType, int headingLevel = 0) const;
+  qreal wordSpacingForElement(const QString& key) const;
+  Qt::Alignment textAlignmentForElement(const QString& key, BlockType fallbackType, int headingLevel = 0) const;
   QFont headingFont(int level) const;
   QFont codeFont() const;
   qreal codeLineHeight() const;
@@ -96,6 +106,8 @@ public:
   qreal inlineCodeBorderRadius() const;
   qreal inlineCodeBorderWidth() const;
   QColor inlineCodeTextColor() const;
+  // Phase 5: CSS `del { color }` (deleted-text colour). Invalid → inherit prose.
+  QColor delColor() const;
   // Phase 3c: HTML <kbd> keycap box (CSS-driven). Invalid/zero getters signal
   // the caller to fall back to the legacy light/dark keycap heuristic.
   QColor kbdBackgroundColor() const;
@@ -106,6 +118,9 @@ public:
   qreal kbdBorderRadius() const;
   QColor kbdBorderColor() const;
   qreal kbdBorderWidth() const;
+  // Phase 4: per-side bottom border (phycat's 3D keycap). Zero/invalid → uniform.
+  qreal kbdBorderBottomWidth() const;
+  QColor kbdBorderBottomColor() const;
   QColor kbdShadowColor() const;
   QColor codeBackgroundColor() const;
   // Fenced code-block fill. Distinct from inline code when the theme sets it;
@@ -124,6 +139,9 @@ public:
   QColor tableAlternateBackgroundColor() const;
   QColor selectionColor() const;
   QColor spellCheckColor() const;
+  QColor listMarkerColor() const;
+  const ThemeElementStyle* elementStyle(const QString& key) const;
+  ThemeElementBoxStyle elementBoxStyle(const QString& key) const;
   // Per-heading text colour from the theme; invalid when the theme doesn't set
   // one (caller falls back to textColor). level is 1..6.
   QColor headingColor(int level) const;
@@ -159,14 +177,17 @@ private:
   qreal inlineCodePaddingH_ = 3.0;
   qreal inlineCodePaddingV_ = 1.0;
   qreal inlineCodeBorderRadius_ = 3.0;
-  qreal inlineCodeBorderWidth_ = 1.0;
+  qreal inlineCodeBorderWidth_ = 0.0;
   QColor inlineCodeTextColor_;
+  QColor delColor_;
   QColor kbdBackground_, kbdTextColor_, kbdBorderColor_, kbdShadowColor_;
   QString kbdFont_;
   qreal kbdPaddingH_ = 0.0;
   qreal kbdPaddingV_ = 0.0;
   qreal kbdBorderRadius_ = 0.0;
   qreal kbdBorderWidth_ = 0.0;
+  qreal kbdBorderBottomWidth_ = 0.0;
+  QColor kbdBorderBottomColor_;
   qreal headingSizePt_[6] = {};
   qreal headingLineHeight_[6] = {};
   QColor headingColor_[6];
@@ -193,22 +214,10 @@ private:
   // ::before/::after decorations (gradients, SVG icons, text content, texture
   // masks) keyed by host. Empty for themes that declare none (all built-ins).
   ThemeDecorations decorations_;
+  std::vector<ThemeElementStyle> elementStyles_;
+  QColor listMarkerColor_;
 
-  QMarginsF paragraphMargin_;
-  QMarginsF headingMargin_[6];
-  QMarginsF headingPadding_[6];
-  QColor headingBorderBottomColor_[6];
-  qreal headingBorderBottomWidth_[6] = {};
-  QColor headingBorderLeftColor_[6];
-  qreal headingBorderLeftWidth_[6] = {};
-  bool headingFitContent_[6] = {};
   qreal headingBeforeAdvance_[6] = {};
-  QMarginsF blockquoteMargin_;
-  QMarginsF blockquotePadding_;
-  qreal blockquoteBorderWidth_ = 0.0;
-  QColor blockquoteBorderColor_;
-  qreal blockquoteBorderRadius_ = 0.0;
-  bool blockquoteBoxThemed_ = false;
   QMarginsF codeBlockPadding_;
   qreal codeBlockBorderRadius_ = 0.0;
   bool codeBlockBoxThemed_ = false;
@@ -218,7 +227,7 @@ private:
   QMarginsF codeBlockMargin_;
   QMarginsF tableMargin_;
   QMarginsF listMargin_;
-  qreal listPaddingLeft_ = 0.0;
+  qreal listMarkerGap_ = 0.0;
 
   QColor backgroundColor_ = QColor(QStringLiteral("#ffffff"));
   QColor textColor_ = QColor(QStringLiteral("#202124"));

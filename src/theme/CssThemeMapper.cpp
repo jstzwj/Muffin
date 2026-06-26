@@ -21,6 +21,28 @@
 #include <vector>
 
 namespace muffin {
+
+QColor cssColor(const QString& literal) {
+  const QString s = literal.trimmed();
+  if (s.size() == 9 && s.at(0) == QLatin1Char('#')) {
+    // CSS #RRGGBBAA (alpha LAST). Qt's QColor reads 8-hex as #AARRGGBB (alpha
+    // first), so parse the channels explicitly and reassemble in CSS order.
+    bool ok = false;
+    const quint32 v = s.mid(1).toUInt(&ok, 16);  // toUInt validates the whole string
+    if (ok) {
+      return QColor((v >> 24) & 0xff, (v >> 16) & 0xff, (v >> 8) & 0xff, v & 0xff);
+    }
+  } else if (s.size() == 5 && s.at(0) == QLatin1Char('#')) {
+    // CSS #RGBA (alpha last) == #RRGGBBAA with each digit doubled.
+    const QChar hash('#');
+    const QString doubled = hash + QString(s.at(1)) + QString(s.at(1))
+        + QString(s.at(2)) + QString(s.at(2)) + QString(s.at(3)) + QString(s.at(3))
+        + QString(s.at(4)) + QString(s.at(4));
+    return cssColor(doubled);
+  }
+  return QColor(literal);
+}
+
 namespace {
 
 // Analysed right-most compound of a selector — enough to decide which semantic
@@ -449,7 +471,7 @@ QColor extractColor(const QString& value, const QHash<QString, QString>& vars) {
   if (const QString mixInner = findColorMixInner(resolved); !mixInner.isEmpty()) {
     if (QColor mixed = parseColorMix(mixInner, vars); mixed.isValid()) { return mixed; }
   }
-  QColor direct(resolved);
+  QColor direct = cssColor(resolved);
   if (direct.isValid()) { return direct; }
   // Functional rgb()/rgba()/hsl()/hsla() — parsed numerically.
   static const QRegularExpression funcRe(QStringLiteral("(rgba?|hsla?)\\(([^)]*)\\)"),
@@ -464,7 +486,7 @@ QColor extractColor(const QString& value, const QHash<QString, QString>& vars) {
   static const QRegularExpression hexRe(QStringLiteral("#[0-9a-fA-F]{3,8}"));
   auto hit = hexRe.globalMatch(resolved);
   while (hit.hasNext()) {
-    QColor c(hit.next().captured(0));
+    QColor c = cssColor(hit.next().captured(0));
     if (c.isValid()) { return c; }
   }
   // Bare named colour word (e.g. `red`) — last resort, skipping style keywords.
@@ -572,7 +594,7 @@ qreal lengthToPt(const QString& value, const QHash<QString, QString>& vars, qrea
   return 0.0;
 }
 
-qreal lengthToPx(const QString& value, const QHash<QString, QString>& vars, qreal emPx = 16.0, qreal rootPx = -1.0) {
+qreal lengthToPx(const QString& value, const QHash<QString, QString>& vars, qreal emPx = 16.0, qreal rootPx = -1.0, qreal containingPx = -1.0) {
   const QString resolved = CssThemeParser::resolveVars(value, vars).trimmed();
   if (resolved.isEmpty() || resolved == QStringLiteral("auto")) { return 0.0; }
   int i = 0;
@@ -588,7 +610,11 @@ qreal lengthToPx(const QString& value, const QHash<QString, QString>& vars, qrea
   if (unit == QStringLiteral("pt")) { return n * 96.0 / 72.0; }
   if (unit == QStringLiteral("em")) { return n * emPx; }
   if (unit == QStringLiteral("rem")) { return n * (rootPx > 0.0 ? rootPx : emPx); }  // rem is root-relative
-  if (unit == QStringLiteral("%")) { return n / 100.0 * emPx; }
+  // A `%` is normally em-relative (local box shorthand). When the caller supplies
+  // a real containing-block dimension (containingPx > 0), resolve against THAT —
+  // for pseudo width/height like phycat's `h3::before { height: 61% }`, where the %
+  // is relative to the rendered heading height, not the font size.
+  if (unit == QStringLiteral("%")) { return n / 100.0 * (containingPx > 0.0 ? containingPx : emPx); }
   return 0.0;
 }
 
@@ -714,7 +740,7 @@ QString varValue(const QHash<QString, QString>& vars, const char* name) {
 QColor varColor(const QHash<QString, QString>& vars, const char* name) {
   const QString v = varValue(vars, name);
   if (v.isEmpty()) { return QColor(); }
-  QColor c(v);
+  QColor c = cssColor(v);
   return c.isValid() ? c : QColor();
 }
 
@@ -775,6 +801,9 @@ bool isInlineCode(const SelInfo& s) {
 }
 bool isKeyboard(const SelInfo& s) {
   return s.tag == QStringLiteral("kbd");
+}
+bool isDeleted(const SelInfo& s) {
+  return s.tag == QStringLiteral("del");
 }
 bool isCodeBlock(const SelInfo& s) {
   return s.tag == QStringLiteral("pre") || s.classFences;
@@ -999,6 +1028,47 @@ std::vector<FlatDecl> filterPseudoFlat(const std::vector<FlatDecl>& flat, const 
   return out;
 }
 
+// Minimal `calc(100% - <len>)` parser for a li::before guide-line height, where
+// the line spans the item minus a fixed inset (phycat's `height: calc(100% - 45px)`
+// ⇒ bottom inset 45px). Returns the inset in px; any other calc/% form ⇒ 0
+// (line spans the full item). Full calc() is out of scope for this one use.
+qreal parseCalcPercentMinusPx(const QString& value, const QHash<QString, QString>& vars, qreal emPx) {
+  const QString v = CssThemeParser::resolveVars(value, vars).trimmed();
+  static const QRegularExpression re(QStringLiteral("calc\\(\\s*100%\\s*-\\s*([0-9.]+)(px|em|rem)?\\s*\\)"),
+                                     QRegularExpression::CaseInsensitiveOption);
+  const QRegularExpressionMatch m = re.match(v);
+  if (!m.hasMatch()) { return 0.0; }
+  bool ok = false;
+  qreal n = m.captured(1).toDouble(&ok);
+  if (!ok) { return 0.0; }
+  const QString unit = m.captured(2).toLower();
+  if (unit == QStringLiteral("em") || unit == QStringLiteral("rem")) { n *= emPx; }
+  return n;
+}
+
+// Nested-list guide line from a `li::before { border-left: …; left; top; height:
+// calc(100% - Npx) }` rule. phycat draws the per-item vertical tree line this way;
+// it is a list decoration rather than a generic pseudo marker, so it gets its own
+// model. present ⇒ the theme styled it (valid colour + positive width).
+ListGuide extractListGuide(const std::vector<FlatDecl>& flat, const QHash<QString, QString>& vars, qreal bodyPx) {
+  ListGuide g;
+  const std::vector<FlatDecl> sub = filterPseudoFlat(flat, QStringLiteral("li"), QStringLiteral("before"));
+  if (sub.empty()) { return g; }
+  const auto allPred = [](const SelInfo&) { return true; };
+  const QString blColorRaw = bestValue(sub, {QStringLiteral("border-left-color"), QStringLiteral("border-left"),
+                                              QStringLiteral("border-color"), QStringLiteral("border")}, allPred);
+  const QString blWidthRaw = bestValue(sub, {QStringLiteral("border-left-width"), QStringLiteral("border-left"),
+                                              QStringLiteral("border-width"), QStringLiteral("border")}, allPred);
+  g.color = extractColor(blColorRaw, vars);
+  g.width = borderWidthPx(blWidthRaw, vars, bodyPx);
+  g.leftOffset = lengthToPx(bestValue(sub, {QStringLiteral("left")}, allPred), vars, bodyPx);
+  const QString topRaw = bestValue(sub, {QStringLiteral("top")}, allPred);
+  if (!topRaw.isEmpty()) { g.topInset = lengthToPx(topRaw, vars, bodyPx); }
+  g.bottomInset = parseCalcPercentMinusPx(bestValue(sub, {QStringLiteral("height")}, allPred), vars, bodyPx);
+  g.present = g.color.isValid() && g.width > 0.0;
+  return g;
+}
+
 std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& flat,
                                                    const QHash<QString, QString>& vars,
                                                    const std::function<qreal(const QString&)>& emPxForHost) {
@@ -1012,6 +1082,11 @@ std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& f
     if (fd.info.pseudoElement != QStringLiteral("before") && fd.info.pseudoElement != QStringLiteral("after")) { continue; }
     const QString h = pseudoHostKey(fd.info);
     if (h.isEmpty()) { continue; }
+    // `li::before` is the nested-list guide-line channel, consumed exclusively by
+    // extractListGuide → decorations.listGuide. No renderer paints a generic `li`
+    // pseudo (paintPseudoDecorations is only called for headings/blockquote), so
+    // emitting one here is dead data — skip it. (`li::after` is untouched.)
+    if (h == QStringLiteral("li") && fd.info.pseudoElement == QStringLiteral("before")) { continue; }
     if (!seen(h, fd.info.pseudoElement)) { keys.push_back({h, fd.info.pseudoElement}); }
   }
   std::vector<PseudoElementRule> out;
@@ -1051,14 +1126,27 @@ std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& f
         if (w > 0 && h > 0) { rule.maskTile = QSizeF(w, h); }
       }
     }
-    const qreal w = lengthToPx(bestValue(sub, {QStringLiteral("width")}, allPred), vars, emPx);
-    const qreal h = lengthToPx(bestValue(sub, {QStringLiteral("height")}, allPred), vars, emPx);
+    // Keep the var-resolved raw width/height so the painter can resolve a `%`
+    // against the host box later (map-time `lengthToPx` is em-relative, which is
+    // wrong for box-relative `%` like phycat's `h3::before { height: 61% }`).
+    const QString widthRaw = bestValue(sub, {QStringLiteral("width")}, allPred);
+    const QString heightRaw = bestValue(sub, {QStringLiteral("height")}, allPred);
+    rule.sizeRawWidth = CssThemeParser::resolveVars(widthRaw, vars).trimmed();
+    rule.sizeRawHeight = CssThemeParser::resolveVars(heightRaw, vars).trimmed();
+    const qreal w = lengthToPx(widthRaw, vars, emPx);
+    const qreal h = lengthToPx(heightRaw, vars, emPx);
     if (w > 0 || h > 0) { rule.size = QSizeF(w, h); }
     // Phase 2b geometry: position/border-radius/outline-border/margin for
     // heading ::before/::after markers (phycat h3 left bar, h4/h5 discs, etc.).
     const QString posRaw = CssThemeParser::resolveVars(bestValue(sub, {QStringLiteral("position")}, allPred), vars).trimmed().toLower();
     rule.absolute = (posRaw == QStringLiteral("absolute"));
     rule.insets.setLeft(lengthToPx(bestValue(sub, {QStringLiteral("left")}, allPred), vars, emPx));
+    // `top` carries its own sentinel slot so the painter can tell an explicit
+    // top:0 from "no top declared" (QMarginsF defaults every side to 0). `font-size`
+    // drives pseudo text size (blockquote ✨ at font-size:20px); 0 ⇒ inherit host font.
+    const QString topRaw = bestValue(sub, {QStringLiteral("top")}, allPred);
+    if (!topRaw.isEmpty()) { rule.insetsTop = lengthToPx(topRaw, vars, emPx); }
+    rule.fontSizePx = lengthToPx(bestValue(sub, {QStringLiteral("font-size")}, allPred), vars, emPx);
     rule.borderRadius = lengthToPx(bestValue(sub, {QStringLiteral("border-radius")}, allPred), vars, emPx);
     const QString bord = bestValue(sub, {QStringLiteral("border"), QStringLiteral("border-color")}, allPred);
     rule.borderColor = extractColor(bord, vars);
@@ -1129,6 +1217,38 @@ std::vector<ElementBackground> extractElementBackgrounds(const std::vector<FlatD
     eb.borderTopWidth = borderTopWidth;
     eb.present = true;
     out.push_back(std::move(eb));
+  }
+  return out;
+}
+
+// :hover + ::before/::after combos (phycat `#write h1:hover::after { width:100% }`).
+// These carry hover-state pseudo geometry that animates on hover; the base pseudo
+// rule is captured separately by extractPseudoRules, so here we only collect the
+// diff (e.g. width) keyed by the same host/pseudo. Pure :hover only — :focus etc.
+// are dropped to avoid conflating states.
+std::vector<FlatDecl> flattenHoverPseudo(const CssThemeSheet& sheet) {
+  std::vector<FlatDecl> out;
+  int order = 0;
+  for (const CssRule& rule : sheet.rules()) {
+    if (rule.darkScope) { continue; }
+    for (const QString& selector : rule.selectors) {
+      if (selectorRequiresExportContext(selector)) { continue; }
+      const SelInfo info = analyzeSelector(selector);
+      if (!info.hover) { continue; }
+      if (info.pseudoElement != QStringLiteral("before") && info.pseudoElement != QStringLiteral("after")) { continue; }
+      if (info.unsupportedPseudoClass || info.focus || info.active || info.visited || info.mdFocus) { continue; }
+      const int spec = specificity(selector);
+      for (const CssDeclaration& decl : rule.declarations) {
+        FlatDecl fd;
+        fd.info = info;
+        fd.property = decl.property;
+        fd.value = decl.value;
+        fd.important = decl.important;
+        fd.spec = spec;
+        fd.order = order++;
+        out.push_back(std::move(fd));
+      }
+    }
   }
   return out;
 }
@@ -1326,6 +1446,14 @@ qreal CssThemeMapper::resolveLengthPx(const QString& value, const QHash<QString,
   return lengthToPx(value, vars, 16.0);
 }
 
+qreal CssThemeMapper::resolveLengthPx(const QString& value, const QHash<QString, QString>& vars,
+                                      qreal emPx, qreal containingPx) {
+  // Box-relative variant: a `%` resolves against `containingPx` (the host box's
+  // own dimension) rather than 1em. For paint-time resolution of pseudo width/
+  // height (e.g. `h3::before { height: 61% }` → 61% of the heading rect).
+  return lengthToPx(value, vars, emPx, -1.0, containingPx);
+}
+
 ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QString& id) {
   ThemeDefinition d;
   d.isBuiltIn = false;
@@ -1409,6 +1537,11 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   CssElement csMark; csMark.tag = QStringLiteral("mark"); csMark.parent = &csParagraph;
   CssElement csSelection; csSelection.pseudoElement = QStringLiteral("selection"); csSelection.parent = &csWrite;
   CssElement csBlockquote; csBlockquote.tag = QStringLiteral("blockquote"); csBlockquote.parent = &csWrite;
+  CssElement csBlockquoteParagraph; csBlockquoteParagraph.tag = QStringLiteral("p"); csBlockquoteParagraph.parent = &csBlockquote;
+  CssElement csUl; csUl.tag = QStringLiteral("ul"); csUl.parent = &csWrite;
+  CssElement csOl; csOl.tag = QStringLiteral("ol"); csOl.parent = &csWrite;
+  CssElement csLi; csLi.tag = QStringLiteral("li"); csLi.parent = &csUl;
+  CssElement csLiMarker; csLiMarker.tag = QStringLiteral("li"); csLiMarker.pseudoElement = QStringLiteral("marker"); csLiMarker.parent = &csLi;
   CssElement csTable; csTable.tag = QStringLiteral("table"); csTable.parent = &csWrite;
   CssElement csThead; csThead.tag = QStringLiteral("thead"); csThead.parent = &csTable;
   CssElement csTh; csTh.tag = QStringLiteral("th"); csTh.parent = &csThead;
@@ -1425,9 +1558,26 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   const CssComputedStyle csMarkStyle = styleEngine.styleFor(csMark);
   const CssComputedStyle csSelectionStyle = styleEngine.styleFor(csSelection);
   const CssComputedStyle csBlockquoteStyle = styleEngine.styleFor(csBlockquote);
+  const CssComputedStyle csBlockquoteParagraphStyle = styleEngine.styleFor(csBlockquoteParagraph);
+  const CssComputedStyle csUlStyle = styleEngine.styleFor(csUl);
+  const CssComputedStyle csOlStyle = styleEngine.styleFor(csOl);
+  const CssComputedStyle csLiStyle = styleEngine.styleFor(csLi);
+  const CssComputedStyle csLiMarkerStyle = styleEngine.styleFor(csLiMarker);
   const CssComputedStyle csTableStyle = styleEngine.styleFor(csTable);
   const CssComputedStyle csThStyle = styleEngine.styleFor(csTh);
   const CssComputedStyle csTrEvenStyle = styleEngine.styleFor(csTrEven);
+  const auto computedFontPx = [&](const CssComputedStyle& style, qreal parentFontPx) {
+    const qreal px = lengthToPx(style.rawValue(QStringLiteral("font-size")), style.customProperties(), parentFontPx, bodyPx);
+    return px > 0.0 ? px : parentFontPx;
+  };
+  const qreal documentFontPx = computedFontPx(csWriteStyle, bodyPx);
+  const qreal paragraphFontPx = computedFontPx(csParagraphStyle, documentFontPx);
+  const qreal blockquoteFontPx = computedFontPx(csBlockquoteStyle, documentFontPx);
+  const qreal blockquoteParagraphFontPx = computedFontPx(csBlockquoteParagraphStyle, blockquoteFontPx);
+  const qreal ulFontPx = computedFontPx(csUlStyle, documentFontPx);
+  const qreal olFontPx = computedFontPx(csOlStyle, documentFontPx);
+  const qreal liFontPx = computedFontPx(csLiStyle, ulFontPx);
+  const qreal markerFontPx = computedFontPx(csLiMarkerStyle, liFontPx);
 
   const auto styleColor = [&](const CssComputedStyle& style, const std::vector<QString>& properties) {
     for (const QString& property : properties) {
@@ -1436,6 +1586,106 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
     }
     return QColor();
   };
+  const auto styleBox = [&](const CssComputedStyle& style, const QString& base, qreal emPx) {
+    ThemeElementBoxStyle box;
+    const auto applySide = [&](const QString& side, auto setter) {
+      const QString raw = style.rawValue(base + QLatin1Char('-') + side);
+      if (raw.isEmpty()) { return; }
+      const qreal v = lengthToPx(raw, style.customProperties(), emPx, bodyPx);
+      setter(v);
+      box.present = true;
+    };
+    if (style.hasProperty(base)) {
+      const QMarginsF m = boxToMarginsPx(style.rawValue(base), style.customProperties(), emPx, bodyPx);
+      if (base == QStringLiteral("margin")) { box.margin = m; } else { box.padding = m; }
+      box.present = true;
+    }
+    QMarginsF& target = base == QStringLiteral("margin") ? box.margin : box.padding;
+    applySide(QStringLiteral("top"), [&](qreal v) { target.setTop(v); });
+    applySide(QStringLiteral("right"), [&](qreal v) { target.setRight(v); });
+    applySide(QStringLiteral("bottom"), [&](qreal v) { target.setBottom(v); });
+    applySide(QStringLiteral("left"), [&](qreal v) { target.setLeft(v); });
+    return box;
+  };
+  const auto makeElementStyle = [&](const QString& key, const CssComputedStyle& style, qreal emPx, qreal fontSizeEmPx = -1.0) {
+    ThemeElementStyle out;
+    out.key = key;
+    out.box = styleBox(style, QStringLiteral("margin"), emPx);
+    const ThemeElementBoxStyle pad = styleBox(style, QStringLiteral("padding"), emPx);
+    out.box.padding = pad.padding;
+    out.box.present = out.box.present || pad.present;
+    // Per-side borders: honour `border-{side}` longhands (e.g. phycat's
+    // `blockquote { border-left: 3px }`, the chunky keycap bottom), falling back to
+    // the global `border`/`border-width`/`border-color` so a uniform `border: 1px`
+    // still sets all four sides. Width via borderWidthPx, colour via extractColor
+    // (both handle the "Wpx style colour" shorthand form).
+    const auto borderSide = [&](const QString& side, auto setW, auto setC) {
+      const QString sh = style.rawValue(QStringLiteral("border-") + side);
+      const QString wLong = style.rawValue(QStringLiteral("border-") + side + QStringLiteral("-width"));
+      const QString cLong = style.rawValue(QStringLiteral("border-") + side + QStringLiteral("-color"));
+      const QString globalSh = style.rawValue(QStringLiteral("border"));
+      const QString globalW = style.rawValue(QStringLiteral("border-width"));
+      const QString globalC = style.rawValue(QStringLiteral("border-color"));
+      const QString wRaw = !wLong.isEmpty() ? wLong : (!sh.isEmpty() ? sh : (!globalW.isEmpty() ? globalW : globalSh));
+      const QString cRaw = !cLong.isEmpty() ? cLong : (!sh.isEmpty() ? sh : (!globalC.isEmpty() ? globalC : globalSh));
+      if (const qreal w = borderWidthPx(wRaw, style.customProperties(), emPx); w > 0.0) { setW(w); out.box.present = true; }
+      if (const QColor c = extractColor(cRaw, style.customProperties()); c.isValid()) { setC(c); out.box.present = true; }
+    };
+    borderSide(QStringLiteral("top"),    [&](qreal v) { out.box.borderTopWidth = v; },    [&](const QColor& v) { out.box.borderTopColor = v; });
+    borderSide(QStringLiteral("right"),  [&](qreal v) { out.box.borderRightWidth = v; },  [&](const QColor& v) { out.box.borderRightColor = v; });
+    borderSide(QStringLiteral("bottom"), [&](qreal v) { out.box.borderBottomWidth = v; }, [&](const QColor& v) { out.box.borderBottomColor = v; });
+    borderSide(QStringLiteral("left"),   [&](qreal v) { out.box.borderLeftWidth = v; },   [&](const QColor& v) { out.box.borderLeftColor = v; });
+    if (const qreal radius = lengthToPx(style.rawValue(QStringLiteral("border-radius")), style.customProperties(), emPx, bodyPx); radius > 0.0) {
+      out.box.borderRadius = radius;
+      out.box.present = true;
+    }
+    const QString widthRaw = style.resolvedValue(QStringLiteral("width")).trimmed().toLower();
+    if (isIntrinsicPageWidthKeyword(widthRaw)) { out.box.widthFitContent = true; out.box.present = true; }
+    out.paint.color = styleColor(style, colorProps);
+    out.paint.backgroundColor = styleColor(style, bgProps);
+    out.paint.backgroundImage = parseGradientSpec(style.rawValue(QStringLiteral("background-image")), style.customProperties());
+    const QString shadow = style.rawValue(QStringLiteral("box-shadow"));
+    if (!shadow.isEmpty() && !shadow.contains(QStringLiteral("none"))) {
+      out.paint.boxShadowColor = extractColor(shadow, style.customProperties());
+      out.paint.boxShadowBlur = shadowBlurPx(shadow, style.customProperties());
+    }
+    const QString transform = style.resolvedValue(QStringLiteral("transform")).trimmed().toLower();
+    static const QRegularExpression scaleRe(QStringLiteral("scale\\(([^)]+)\\)"));
+    const QRegularExpressionMatch scaleMatch = scaleRe.match(transform);
+    if (scaleMatch.hasMatch()) {
+      bool ok = false;
+      const qreal s = scaleMatch.captured(1).trimmed().toDouble(&ok);
+      if (ok && s > 0.0) { out.paint.transformScale = s; }
+    }
+    out.text.fontFamily = firstFamily(style.rawValue(QStringLiteral("font-family")), style.customProperties());
+    // CSS font-size participates in inheritance, so its em/% basis is the parent
+    // computed font size. Do not use `emPx` here: for headings that is the already-
+    // resolved heading size, reserved for the heading's own box geometry (margin /
+    // padding / border). Reusing it for font-size double-scales rules like
+    // GitHub's `h1 { font-size: 2.25em }` (2.25 * 36px instead of 2.25 * 16px).
+    // The optional override is the parent computed font size (for headings: #write).
+    const qreal textEmPx = fontSizeEmPx > 0.0 ? fontSizeEmPx : emPx;
+    out.text.fontSizePx = lengthToPx(style.rawValue(QStringLiteral("font-size")), style.customProperties(), textEmPx, bodyPx);
+    out.text.lineHeight = parseLineHeightMultiplier(style.rawValue(QStringLiteral("line-height")), style.customProperties(), emPx);
+    out.text.wordSpacing = lengthToPx(style.rawValue(QStringLiteral("word-spacing")), style.customProperties(), emPx, bodyPx);
+    out.text.alignment = parseTextAlign(style.rawValue(QStringLiteral("text-align")), style.customProperties());
+    const ParsedFontWeight fw = parseFontWeight(style.rawValue(QStringLiteral("font-weight")), style.customProperties());
+    if (fw.present) { out.text.fontWeight = fw.weight; out.text.fontWeightSet = true; }
+    const ParsedItalic fs = parseFontItalic(style.rawValue(QStringLiteral("font-style")), style.customProperties());
+    if (fs.present) { out.text.italic = fs.italic; out.text.italicSet = true; }
+    return out;
+  };
+  d.elementStyles.push_back(makeElementStyle(QStringLiteral("p"), csParagraphStyle, paragraphFontPx, documentFontPx));
+  d.elementStyles.push_back(makeElementStyle(QStringLiteral("blockquote"), csBlockquoteStyle, blockquoteFontPx, documentFontPx));
+  d.elementStyles.push_back(makeElementStyle(QStringLiteral("blockquote p"), csBlockquoteParagraphStyle, blockquoteParagraphFontPx, blockquoteFontPx));
+  d.elementStyles.push_back(makeElementStyle(QStringLiteral("ul"), csUlStyle, ulFontPx, documentFontPx));
+  d.elementStyles.push_back(makeElementStyle(QStringLiteral("ol"), csOlStyle, olFontPx, documentFontPx));
+  d.elementStyles.push_back(makeElementStyle(QStringLiteral("li"), csLiStyle, liFontPx, ulFontPx));
+  d.elementStyles.push_back(makeElementStyle(QStringLiteral("li::marker"), csLiMarkerStyle, markerFontPx, liFontPx));
+  // Heading element styles are built LATE (just before return d) so their em-relative
+  // geometry (margin/padding) resolves against the now-populated heading font sizes —
+  // building them here would use bodyPx and shrink heading em margins/paddings.
+
   const auto fill = [&](QColor ThemeColors::* member, const QColor& resolved) {
     if (!(k.*member).isValid() && resolved.isValid()) { k.*member = resolved; }
   };
@@ -1522,7 +1772,7 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
     QColor hc = colorToken(flat, vars, colorProps, [level](const SelInfo& s) { return isHeading(s, level); });
     if (!hc.isValid()) { hc = headingInheritedColor; }
     if (hc.isValid()) { d.typography.headingColor[level - 1] = hc; }
-    const qreal hs = lengthToPt(bestValue(flat, sizeProps, [level](const SelInfo& s) { return isHeading(s, level); }), vars, bodyPx);
+    const qreal hs = lengthToPt(bestValue(flat, sizeProps, [level](const SelInfo& s) { return isHeading(s, level); }), vars, documentFontPx);
     if (hs > 0.0) { d.typography.headingSizePt[level - 1] = hs; }
   }
   k.headingAccentColor = colorToken(flat, vars, borderLeftProps, [](const SelInfo& s) {
@@ -1537,27 +1787,27 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   // ::before/::after decorations (gradients, SVG icons, text content, texture
   // masks), grouped by host. Empty for themes that declare none.
   d.decorations.pseudos = extractPseudoRules(allFlat, vars, emPxForHost);
-
-  // CSS document-flow metrics.
-  d.spacing.paragraphMargin = boxToMarginsPx(bestValue(flat, marginProps, [](const SelInfo& s) { return s.tag == QStringLiteral("p"); }), vars, bodyPx);
-  d.spacing.blockquoteMargin = boxToMarginsPx(bestValue(flat, marginProps, isBlockquote), vars, bodyPx);
-  // Phase 4a: CSS `blockquote` box (padding/border/radius). The quote flips to
-  // the themed path only when the author actually styled it — absent rules leave
-  // the legacy accent-bar + 16px indent intact (built-ins byte-identical).
+  // Hover-state pseudo width (phycat `h1:hover::after { width:100% }`). Attach the
+  // resolved-raw width to the matching base pseudo rule so the painter can lerp the
+  // base width → hover width by the HoverAnimator phase. Themes without a hover
+  // pseudo leave hoverWidthRaw empty (no widening, built-ins unchanged).
   {
-    const QMarginsF bp = readBox(flat, vars, isBlockquote, QStringLiteral("padding"), bodyPx).margins;
-    if (!bp.isNull()) { d.spacing.blockquotePadding = bp; d.spacing.blockquoteBoxThemed = true; }
-    const QString qbb = bestValue(flat, {QStringLiteral("border"), QStringLiteral("border-width")}, isBlockquote);
-    if (const qreal qw = borderWidthPx(qbb, vars, bodyPx); qw > 0.0) {
-      d.spacing.blockquoteBorderWidth = qw;
-      if (const QColor qc = extractColor(qbb, vars); qc.isValid()) { d.spacing.blockquoteBorderColor = qc; }
-      d.spacing.blockquoteBoxThemed = true;
-    }
-    if (const qreal qr = lengthToPx(bestValue(flat, {QStringLiteral("border-radius")}, isBlockquote), vars, bodyPx); qr > 0.0) {
-      d.spacing.blockquoteBorderRadius = qr;
-      d.spacing.blockquoteBoxThemed = true;
+    const std::vector<FlatDecl> flatHoverPseudo = flattenHoverPseudo(sheet);
+    for (PseudoElementRule& rule : d.decorations.pseudos) {
+      const auto pred = [&rule](const SelInfo& s) {
+        return pseudoHostKey(s) == rule.host && s.pseudoElement == rule.pseudo;
+      };
+      const QString wRaw = bestValue(flatHoverPseudo, {QStringLiteral("width")}, pred);
+      if (!wRaw.isEmpty()) { rule.hoverWidthRaw = CssThemeParser::resolveVars(wRaw, vars).trimmed(); }
     }
   }
+  // Nested-list guide line from `li::before { border-left; left; top; height }`.
+  d.decorations.listGuide = extractListGuide(allFlat, vars, bodyPx);
+
+  // CSS document-flow block margins + pre/table boxes. Element box geometry for
+  // p / h1-h6 / blockquote (margin/padding/border/radius) and the list indent come
+  // from `elementStyles` above; only the pre/table boxes and block-flow margins
+  // remain here (pre/table have no element style).
   d.spacing.codeBlockMargin = boxToMarginsPx(bestValue(flat, marginProps, isCodeBlock), vars, bodyPx);
   // Phase 4b: CSS `pre`/`.md-fences` box (padding + radius). Border colour is
   // already captured on `codeBorder`; this adds flow-aware padding and rounded
@@ -1583,30 +1833,11 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
     }
   }
   d.spacing.listMargin = boxToMarginsPx(bestValue(flat, marginProps, [](const SelInfo& s) { return s.tag == QStringLiteral("ul") || s.tag == QStringLiteral("ol"); }), vars, bodyPx);
-  d.spacing.listPaddingLeft = lengthToPx(bestValue(flat, {QStringLiteral("padding-left")}, [](const SelInfo& s) { return s.tag == QStringLiteral("ul") || s.tag == QStringLiteral("ol"); }), vars, bodyPx);
-  if (d.spacing.listPaddingLeft <= 0.0) {
-    d.spacing.listPaddingLeft = boxToMarginsPx(bestValue(flat, paddingProps, [](const SelInfo& s) { return s.tag == QStringLiteral("ul") || s.tag == QStringLiteral("ol"); }), vars, bodyPx).left();
-  }
   for (int level = 1; level <= 6; ++level) {
     const qreal headingPx = headingEmPx(d.typography, level, bodyPx);
-    // Heading MARGIN: "em" is heading-relative (uses headingPx), but "rem" is root-relative (uses
-    // bodyPx). readBox threads both so e.g. github's "1rem" → root, while an "em" margin stays
-    // heading-sized. Padding below stays purely heading-relative.
-    d.spacing.headingMargin[level - 1] = readBox(flat, vars, [level](const SelInfo& s) { return isHeading(s, level); }, QStringLiteral("margin"), headingPx, bodyPx).margins;
-    d.spacing.headingPadding[level - 1] = readBox(flat, vars, [level](const SelInfo& s) { return isHeading(s, level); }, QStringLiteral("padding"), headingPx).margins;
-    const qreal headingPadLeft = lengthToPx(bestValue(flat, {QStringLiteral("padding-left")}, [level](const SelInfo& s) { return isHeading(s, level); }), vars, headingPx);
-    if (headingPadLeft > 0.0) { d.spacing.headingPadding[level - 1].setLeft(headingPadLeft); }
-    const QString bb = bestValue(flat, {QStringLiteral("border-bottom"), QStringLiteral("border-bottom-color")}, [level](const SelInfo& s) { return isHeading(s, level); });
-    d.spacing.headingBorderBottomColor[level - 1] = extractColor(bb, vars);
-    d.spacing.headingBorderBottomWidth[level - 1] = borderWidthPx(bb, vars, headingPx);
-    const QString bl = bestValue(flat, {QStringLiteral("border-left"), QStringLiteral("border-left-color")}, [level](const SelInfo& s) { return isHeading(s, level); });
-    d.spacing.headingBorderLeftColor[level - 1] = extractColor(bl, vars);
-    d.spacing.headingBorderLeftWidth[level - 1] = borderWidthPx(bl, vars, headingPx);
-    // `width: fit-content`/`max-content`/`min-content` → the heading's own
-    // background/decoration box shrinks to the text (phycat's h2 pill). Auto/%
-    // and pixel widths stay full-width (the legacy behaviour).
-    const QString hw = CssThemeParser::resolveVars(bestValue(flat, {QStringLiteral("width")}, [level](const SelInfo& s) { return isHeading(s, level); }), vars).trimmed().toLower();
-    d.spacing.headingFitContent[level - 1] = isIntrinsicPageWidthKeyword(hw);
+    // Element box geometry for this heading (margin/padding/border/fit-content)
+    // lives in `elementStyles` (the "h{level}" entry). Only the inline ::before
+    // marker's left advance remains a spacing concern here.
     // Reserve left space for an INLINE ::before marker (h4/h5/h6 disc / h6 dash).
     // Absolute befores (h3 left bar) sit in the heading's own padding gap, so they
     // advance the text by 0. SVG befores keep the legacy "painted into the left
@@ -1654,6 +1885,10 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   if (cls > 0.0) { d.typography.codeLetterSpacing = cls; }
   // Phase 3b: inline-code chip geometry + text colour from `code`.
   d.typography.inlineCodeTextColor = colorToken(flat, vars, colorProps, isInlineCode);
+  // Phase 5: `del { color }` — deleted-text colour (phycat mutes it to #999). The
+  // strike line itself can't be separately coloured (Qt strikeOut has no line
+  // colour), but the text colour is honoured.
+  d.typography.delColor = colorToken(flat, vars, colorProps, isDeleted);
   const QMarginsF codePadding = boxToMarginsPx(bestValue(flat, paddingProps, isInlineCode), vars, bodyPx);
   if (!codePadding.isNull()) {
     d.typography.inlineCodePaddingH = qMax(codePadding.left(), codePadding.right());
@@ -1686,6 +1921,15 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
     const QString kb = bestValue(flat, {QStringLiteral("border"), QStringLiteral("border-color")}, isKeyboard);
     if (const QColor kc = extractColor(kb, vars); kc.isValid()) { d.typography.kbdBorderColor = kc; }
     if (const qreal kw = borderWidthPx(kb, vars, bodyPx); kw > 0.0) { d.typography.kbdBorderWidth = kw; }
+  }
+  // Phase 4: per-side bottom border (phycat `border-bottom-width: 3px`). Read
+  // separately so the keycap can have a chunkier bottom edge than the other sides.
+  // Width/colour each prefer their longhand, then the `border-bottom` shorthand.
+  {
+    const QString kbbw = bestValue(flat, {QStringLiteral("border-bottom-width"), QStringLiteral("border-bottom")}, isKeyboard);
+    if (const qreal kw = borderWidthPx(kbbw, vars, bodyPx); kw > 0.0) { d.typography.kbdBorderBottomWidth = kw; }
+    const QString kbbc = bestValue(flat, {QStringLiteral("border-bottom-color"), QStringLiteral("border-bottom")}, isKeyboard);
+    if (const QColor kc = extractColor(kbbc, vars); kc.isValid()) { d.typography.kbdBorderBottomColor = kc; }
   }
   if (const QColor ksc = extractColor(bestValue(flat, {QStringLiteral("box-shadow")}, isKeyboard), vars); ksc.isValid()) { d.typography.kbdShadowColor = ksc; }
   const QString tdRaw = CssThemeParser::resolveVars(bestValue(flat, {QStringLiteral("text-decoration")}, isLink), vars).trimmed().toLower();
@@ -1838,6 +2082,16 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   }
   if (themeStyleLog().isDebugEnabled()) {
     qCDebug(themeStyleLog).noquote() << formatThemeDefinitionSummary(d);
+  }
+  // Heading element styles: built last so em-relative margin/padding/border resolve
+  // against the populated heading font sizes (headingEmPx), matching how a browser
+  // sizes a heading's own em units.
+  for (int level = 1; level <= 6; ++level) {
+    CssElement h; h.tag = QStringLiteral("h%1").arg(level); h.parent = &csWrite;
+    d.elementStyles.push_back(makeElementStyle(h.tag, styleEngine.styleFor(h), headingEmPx(d.typography, level, bodyPx), documentFontPx));
+    CssElementState hover; hover.hover = true;
+    d.elementStyles.push_back(makeElementStyle(QStringLiteral("h%1:hover").arg(level),
+                                               styleEngine.styleFor(h, hover), headingEmPx(d.typography, level, bodyPx), documentFontPx));
   }
   return d;
 }

@@ -10,6 +10,7 @@
 
 #include <QColor>
 #include <QImage>
+#include <QPair>
 #include <QPointF>
 #include <QRectF>
 #include <QSizeF>
@@ -42,7 +43,12 @@ public:
     // the layout falls back to theme.textColor() for plain Text runs. Span-level
     // colours (links, code, highlight) still take precedence per span.
     QColor baseTextColor;
+    // CSS `:hover { color }` target for the owning element (e.g. a heading).
+    // Invalid → no hover recolour. Only the runs that INHERIT the element colour
+    // are recoloured at paint time; links/code/del/kbd keep their own colours.
+    QColor hoverTextColor;
     qreal lineHeightMultiplier = 0.0;
+    qreal wordSpacing = 0.0;
     Qt::Alignment alignment;
     // Render a single '\n' soft break as a line break instead of joining it
     // into the paragraph (CommonMark). Defaults off so standalone/test layouts stay CommonMark.
@@ -69,7 +75,15 @@ public:
   // the same baseline as the painted text and the caret — which otherwise drift
   // apart under a large theme line-height.
   qreal firstLineBaselineY() const;
-  void paint(QPainter& painter, QPointF origin) const;
+  // Paint the laid-out text + atoms at `origin`. When `hoverPhase` > 0 and a
+  // hover colour was supplied at build, the heading's OWN text runs are recoloured
+  // toward that colour (visual lerp base→hover) — CSS `:hover { color }`
+  // animated by the HoverAnimator. Implemented by passing foreground-only
+  // `selection`s to QTextLayout::draw (a draw-time override), NOT a format swap:
+  // setFormats() after endLayout() is broken in this Qt build. Only the runs that
+  // inherit the element colour are recoloured; links/code/del/kbd keep their own
+  // colours, so the recolour never bleeds into styled spans.
+  void paint(QPainter& painter, QPointF origin, qreal hoverPhase = 0.0) const;
   qsizetype hitTestTextOffset(QPointF localPos) const;
   qsizetype hitTestSourceOffset(QPointF localPos) const;
   QRectF hitTestCursorRect(QPointF localPos) const;
@@ -169,6 +183,12 @@ private:
   void buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
   QString texForInlineMathSpan(const QVector<InlineNode>& inlines, const InlineProjectionSpan& span) const;
   void buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont);
+  // From the layout's own format ranges, collect the contiguous display-offset
+  // runs whose effective foreground is the element's base colour (i.e. they
+  // inherit it) — exactly the runs a `:hover { color }` should recolour. Spans
+  // with their own foreground (links/code/del/kbd/HTML-colour) and transparent
+  // atom placeholders are excluded by construction. Computed once at build.
+  void computeHoverRecolourRanges(const QVector<QTextLayout::FormatRange>& formats, const RenderTheme& theme);
   void paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) const;
   void paintTextLayoutInlineDecorations(QPainter& painter, QPointF origin) const;
   void paintTextLayoutHtmlBackgrounds(QPainter& painter, QPointF origin) const;
@@ -193,7 +213,11 @@ private:
   QSizeF size_;
   QColor textLayoutCodeBackgroundColor_;
   QColor baseTextColorOverride_;  // invalid → theme.textColor() for plain runs
+  QColor hoverTextColor_;         // invalid → no hover recolour (CSS :hover colour)
+  QColor baseRunColor_;           // the element base colour the own-text runs render in
+  QVector<QPair<int, int>> hoverRecolourRanges_;  // display-offset runs that inherit the base colour
   qreal lineHeightMultiplier_ = 0.0;
+  qreal wordSpacing_ = 0.0;
   Qt::Alignment alignment_;
   QColor textLayoutCodeBorderColor_;
   QColor textLayoutCodeTextColor_;
@@ -205,6 +229,9 @@ private:
   qreal kbdPadV_ = 0.0;
   qreal kbdRadius_ = 0.0;
   qreal kbdBorderWidth_ = 0.0;
+  // Phase 4: per-side bottom border (phycat 3D keycap). Zero/invalid → uniform.
+  qreal kbdBorderBottomWidth_ = 0.0;
+  QColor kbdBorderBottomColor_;
   // Phase 3b: inline-code box geometry from CSS (defaults reproduce the legacy
   // -3/+6 / radius-3 / 1px chip so built-ins are unchanged).
   qreal codeBoxPaddingH_ = 3.0;
