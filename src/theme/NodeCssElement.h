@@ -4,6 +4,7 @@
 #include "theme/CssComputedStyleEngine.h"
 
 #include <QHash>
+#include <QSet>
 
 #include <memory>
 #include <vector>
@@ -37,12 +38,14 @@ public:
 
 private:
   const CssElement* ensure(const MarkdownNode& node);
+  void linkSiblingsIteratively(const MarkdownNode& parent);
   CssElement* makeOwned();
   void populateHas(CssElement& element, const MarkdownNode& node);
   void collectDescendants(CssElement& element, const MarkdownNode& node);
 
   std::vector<std::unique_ptr<CssElement>> pool_;
   QHash<NodeId, CssElement*> cache_;
+  QSet<NodeId> linkedParents_;  // parents whose child sibling chain has been wired (once each)
   CssElement* html_ = nullptr;
   CssElement* body_ = nullptr;
 };

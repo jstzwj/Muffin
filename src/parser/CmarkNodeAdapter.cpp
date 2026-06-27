@@ -201,11 +201,21 @@ std::unique_ptr<MarkdownNode> CmarkNodeAdapter::convertBlock(cmark_node* node) {
     }
   }
 
-  for (cmark_node* child = cmark_node_first_child(node); child; child = cmark_node_next(child)) {
-    const auto type = cmark_node_get_type(child);
+  // Iterate block children, converting each then freeing its cmark subtree immediately. cmark is
+  // per-node malloc (NOT arena), so cmark_node_free releases real memory now. Without this the
+  // whole cmark tree overlaps the Muffin tree being built until function return — the dominant
+  // ~800MB slice of the open-time peak on large files. Save `next` BEFORE freeing: cmark_node_free
+  // unlinks the node (mutating the sibling/parent chain). A block's inline children were read in
+  // Phase 2 above and ride inside its subtree, freed here with it.
+  cmark_node* child = cmark_node_first_child(node);
+  while (child) {
+    cmark_node* next = cmark_node_next(child);
+    const cmark_node_type type = cmark_node_get_type(child);
     if (isBlockType(type)) {
       result->appendChild(convertBlock(child));
+      cmark_node_free(child);
     }
+    child = next;
   }
 
   return result;

@@ -122,31 +122,35 @@ void logRebuildPerf(const RebuildPerfStats& stats, qreal viewportWidth, qreal pa
   logTypeTiming("other", stats.otherCount, stats.otherNs);
 }
 
-qreal spacingAfterBlock(const MarkdownNode& node, const RenderTheme& theme) {
+qreal spacingAfterBlock(const MarkdownNode& node, const RenderTheme& theme, bool fast = false) {
   // Paragraphs honour CSS margin-collapsing: the top margin is dropped in
   // spacingBeforeBlock, so the single bottom gap IS the whole inter-paragraph
   // separation (max(prev.bottom, next.top) collapses to bottom when top=0).
   // When a theme declares no paragraph margin, keep the legacy tight floor
   // (slightly more than a soft break) so such themes are unchanged.
+  // `fast` (Lazy estimate path) resolves the prototype style only — skips the per-node structural
+  // cascade, which is the difference between an O(n) and O(n²) rebuild on a flat block list.
+  const MarkdownNode* styleNode = fast ? nullptr : &node;
   if (node.type() == BlockType::Paragraph) {
-    const QMarginsF pm = theme.blockMargin(BlockType::Paragraph, 0, &node);
+    const QMarginsF pm = theme.blockMargin(BlockType::Paragraph, 0, styleNode);
     if (pm.bottom() > 0.0) { return pm.bottom(); }
     return theme.blockSpacing() * 0.4;
   }
-  const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel(), &node);
+  const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel(), styleNode);
   if (!css.isNull()) { return css.bottom(); }
   if (node.type() == BlockType::Heading) { return theme.blockSpacing() * 0.65; }
   return theme.blockSpacing();
 }
 
-qreal spacingBeforeBlock(const MarkdownNode& node, const RenderTheme& theme, qreal cursorY) {
+qreal spacingBeforeBlock(const MarkdownNode& node, const RenderTheme& theme, qreal cursorY, bool fast = false) {
   // CSS paragraph top margins participate in adjacent margin collapse. Themes with
   // no paragraph margin keep the legacy no-before-spacing path.
+  const MarkdownNode* styleNode = fast ? nullptr : &node;
   if (node.type() == BlockType::Paragraph) {
-    const QMarginsF pm = theme.blockMargin(BlockType::Paragraph, 0, &node);
+    const QMarginsF pm = theme.blockMargin(BlockType::Paragraph, 0, styleNode);
     return !pm.isNull() ? pm.top() : 0.0;
   }
-  const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel(), &node);
+  const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel(), styleNode);
   if (!css.isNull()) { return css.top(); }
   if (node.type() != BlockType::Heading || cursorY <= theme.topMargin()) {
     return 0;
@@ -157,17 +161,17 @@ qreal spacingBeforeBlock(const MarkdownNode& node, const RenderTheme& theme, qre
   return node.headingLevel() < 2 ? theme.blockSpacing() * 1.25 : theme.blockSpacing() * 0.7;
 }
 
-bool hasCssBlockMargin(const MarkdownNode& node, const RenderTheme& theme) {
-  return !theme.blockMargin(node.type(), node.headingLevel(), &node).isNull();
+bool hasCssBlockMargin(const MarkdownNode& node, const RenderTheme& theme, bool fast = false) {
+  return !theme.blockMargin(node.type(), node.headingLevel(), fast ? nullptr : &node).isNull();
 }
 
-qreal spacingBetweenBlocks(const MarkdownNode& prev, const MarkdownNode& next, const RenderTheme& theme) {
-  const qreal after = spacingAfterBlock(prev, theme);
-  const qreal before = spacingBeforeBlock(next, theme, theme.topMargin() + 1.0);
+qreal spacingBetweenBlocks(const MarkdownNode& prev, const MarkdownNode& next, const RenderTheme& theme, bool fast = false) {
+  const qreal after = spacingAfterBlock(prev, theme, fast);
+  const qreal before = spacingBeforeBlock(next, theme, theme.topMargin() + 1.0, fast);
   // CSS adjacent vertical margins collapse: the gap is the larger positive margin,
   // not bottom+top. Keep the legacy additive rhythm only for blocks with no CSS
   // margins at all.
-  if (hasCssBlockMargin(prev, theme) || hasCssBlockMargin(next, theme)) {
+  if (hasCssBlockMargin(prev, theme, fast) || hasCssBlockMargin(next, theme, fast)) {
     return qMax(after, before);
   }
   return after + before;
@@ -265,6 +269,7 @@ void DocumentLayout::rebuild(
   // position; drop the cache so edited structure (a sibling added/removed) is
   // re-evaluated. Cheap when the theme has no structural rules (empty cache).
   theme.clearStructuralCache();
+  theme.dropStructuralBuilder();  // full rebuild: node tree replaced → CSS element pointers dangle
   document_ = &document;
   documentPath_ = std::move(documentPath);
   viewportWidth_ = viewportWidth;
@@ -302,8 +307,8 @@ void DocumentLayout::rebuild(
     }
     const MarkdownNode* previous = nullptr;
     for (const auto& child : children) {
-      cursorY += previous ? spacingBetweenBlocks(*previous, *child, theme)
-                          : spacingBeforeBlock(*child, theme, cursorY);
+      cursorY += previous ? spacingBetweenBlocks(*previous, *child, theme, /*fast=*/true)
+                          : spacingBeforeBlock(*child, theme, cursorY, /*fast=*/true);
       const BlockLayoutBuilder::EstimateResult est = builder_.estimateHeight(*child, theme, pageWidth_);
       BlockSlot slot;
       slot.nodeId = child->id();
@@ -521,6 +526,7 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   result.oldCount = range.oldCount;
   result.newCount = range.newCount;
   theme.clearStructuralCache();
+  theme.dropStructuralBuilder();  // top-level splice: blocks added/removed → CSS element pointers dangle
   if (!range.isValid() || document_ != &document || viewportWidth_ <= 0) {
     return result;
   }

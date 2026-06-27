@@ -2329,9 +2329,11 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   return d;
 }
 
-ThemeElementStyle CssThemeMapper::elementStyleForNode(const CssComputedStyleEngine& engine, const MarkdownNode& node,
-                                                      const QString& key, qreal bodyPx) {
-  NodeCssElementBuilder builder;
+ThemeElementStyle CssThemeMapper::elementStyleForNode(NodeCssElementBuilder& builder, const CssComputedStyleEngine& engine,
+                                                      const MarkdownNode& node, const QString& key, qreal bodyPx) {
+  // `builder` is persistent (owned by RenderTheme) and memoized in its cache_, so the CSS element
+  // tree — incl. the full sibling chain linkSiblingsIteratively wires on the first build() — is
+  // built once per rebuild, not rebuilt for every node (O(n) per node → O(n²) on flat lists).
   const CssElement* element = builder.build(node);
   const CssComputedStyle computed = engine.styleFor(*element);
   // em basis = bodyPx for the structural path. (Heading em-relative geometry under

@@ -200,6 +200,12 @@ private:
   // assignment and adding a field can never be silently dropped — the flat layout previously let
   // clone() miss taskItem_, which shipped as a round-trip bug.
   struct BlockMetadata {
+    // Custom copy: the domain fields above copy trivially, but `definition` is a unique_ptr that
+    // must deep-copy. Defined out-of-line in MarkdownNode.cpp; keep the field list in sync there
+    // when adding a field (the old flat-layout taskItem_ bug bit us once).
+    BlockMetadata() = default;
+    BlockMetadata(const BlockMetadata&);
+    BlockMetadata& operator=(const BlockMetadata&);
     QVector<InlineNode> inlines;
     QString literal;
     HeadingInfo heading;
@@ -209,7 +215,9 @@ private:
     QuoteInfo quote;
     MathDelimiter mathDelimiter = MathDelimiter::Dollar;
     FrontMatterFormat frontMatterFormat = FrontMatterFormat::None;
-    DefinitionBlock definition;
+    // Null for ~99.99% of blocks (only link/footnote definitions allocate). Heap-allocated on
+    // demand instead of inlined 160B in every block node — saves ~152B × every block.
+    std::unique_ptr<DefinitionBlock> definition;
     SourceRange sourceRange;
     // Set on a top-level block by relativizeDescendants() once its subtree's offsets have been
     // converted to block-relative. Lives IN this aggregate on purpose: clone() copies metadata_ in

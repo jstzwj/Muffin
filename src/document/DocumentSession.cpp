@@ -4,6 +4,7 @@
 #include "document/PendingBlockMarker.h"
 #include "document/SourceRangeUtil.h"
 #include "parser/MarkdownSerializer.h"
+#include "diagnostics/ProcessMemory.h"
 
 #include <QFileInfo>
 #include <QElapsedTimer>
@@ -27,7 +28,8 @@ public:
 
   ~PerfTimer() {
     if (enabled_) {
-      qCDebug(sessionPerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0 << " ms";
+      qCDebug(sessionPerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0
+                                     << " ms ws=" << (muffin::diag::workingSetBytes() >> 20) << "MB";
     }
   }
 
@@ -704,6 +706,9 @@ void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector
     PerfTimer relativizePerf("session.relativize");
     for (const auto& child : document_.root().children()) {
       if (child) {
+        // textDoc left null: InlineNode text-sharing is implemented (bindSharedText) but currently
+        // DISABLED — it caused a table-undo correctness regression (block-relative offset ×
+        // clone/snapshot interaction). Re-enable after that's resolved. Infrastructure is inert.
         child->relativizeDescendants();
       }
     }

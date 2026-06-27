@@ -9,6 +9,7 @@
 #include <QPoint>
 #include <QPointer>
 #include <QRectF>
+#include <QHash>
 
 #include <memory>
 
@@ -245,6 +246,12 @@ private:
   bool focusMode_ = false;
   QPropertyAnimation* scrollAnimation_ = nullptr;
   NodeId editingHtmlBlockId_;
+  // Per-block coalesce of the per-keystroke double-refresh (immediate selection refresh + deferred
+  // BrushQueue edit refresh both rebuild the same block). A block is skipped only if it was last
+  // built with the CURRENT selection AND the CURRENT document revision — so a genuinely different
+  // selection or a content edit still wins. Cleared on full rebuild (setDocument).
+  struct BuiltStamp { SelectionRange selection; quint64 revision; };
+  QHash<NodeId, BuiltStamp> blockBuiltAt_;
   CodeFenceScrollController* codeFenceScroll_ = nullptr;
   NodeId codeFenceScrollDragId_;  // block being horizontally dragged via its scrollbar (invalid when idle)
   HtmlBlockHoverController htmlHover_;

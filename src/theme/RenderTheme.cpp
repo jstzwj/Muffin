@@ -3,6 +3,7 @@
 #include "document/MarkdownNode.h"
 #include "theme/CssComputedStyleEngine.h"
 #include "theme/CssThemeMapper.h"
+#include "theme/NodeCssElement.h"
 
 #include <QFontDatabase>
 #include <QStringList>
@@ -541,6 +542,14 @@ QFont RenderTheme::paragraphFont() const {
 }
 
 QFont RenderTheme::textFontForElement(const QString& key, const MarkdownNode* node) const {
+  // Prototype path (no live node — the Lazy estimate loop): the result depends only on the theme's
+  // prototype style + zoom/fontSize, fixed between rebuilds, so cache it per key. Without this every
+  // estimated paragraph built two fresh QFonts (font + line-height), ~80µs each on Windows — the
+  // dominant per-block cost that made a 112k-paragraph Lazy rebuild take ~21s.
+  if (!node) {
+    const auto it = prototypeFontCache_.constFind(key);
+    if (it != prototypeFontCache_.constEnd()) { return it.value(); }
+  }
   QFont font = paragraphFont();
   const ThemeElementStyle* style = node ? elementStyleForNode(*node, key) : elementStyle(key);
   if (!style) { return font; }
@@ -551,6 +560,7 @@ QFont RenderTheme::textFontForElement(const QString& key, const MarkdownNode* no
     font.setWeight(static_cast<QFont::Weight>(qBound(static_cast<int>(QFont::Thin), style->text.fontWeight, static_cast<int>(QFont::Black))));
   }
   if (style->text.italicSet) { font.setItalic(style->text.italic); }
+  if (!node) { prototypeFontCache_.insert(key, font); }
   return font;
 }
 
@@ -600,13 +610,25 @@ const ThemeElementStyle* RenderTheme::elementStyleForNode(const MarkdownNode& no
   if (!hasStructuralRules_ || !structuralEngine_) { return elementStyle(key); }
   const auto it = nodeStyleCache_.constFind(node.id());
   if (it != nodeStyleCache_.constEnd()) { return &it.value(); }
-  ThemeElementStyle resolved = CssThemeMapper::elementStyleForNode(*structuralEngine_, node, key, bodyFontPx_);
+  // Reuse one NodeCssElementBuilder across all queries in this rebuild: build() is memoized, so the
+  // first call wires the full sibling chain (linkSiblingsIteratively) and every later node is an
+  // O(1) cache hit. A fresh builder per call rebuilt the chain per node → O(n²) on flat block lists.
+  if (!structuralBuilder_) { structuralBuilder_ = std::make_shared<NodeCssElementBuilder>(); }
+  ThemeElementStyle resolved = CssThemeMapper::elementStyleForNode(*structuralBuilder_, *structuralEngine_, node, key, bodyFontPx_);
   resolved.key = key;
   return &nodeStyleCache_.insert(node.id(), std::move(resolved)).value();
 }
 
 void RenderTheme::clearStructuralCache() const {
   nodeStyleCache_.clear();
+  prototypeFontCache_.clear();
+}
+
+void RenderTheme::dropStructuralBuilder() const {
+  // Only the node-tree-replaced/reordered paths (full rebuild, top-level splice) call this — see
+  // the header note. clearStructuralCache() deliberately does NOT reset it, so the many
+  // selection/cursor-driven rebuildBlock refreshes reuse the warm builder (O(1) instead of O(n)).
+  structuralBuilder_.reset();
 }
 
 QFont RenderTheme::headingFont(int level) const {

@@ -6,6 +6,7 @@
 #include "document/PendingBlockMarker.h"
 #include "parser/CmarkNodeAdapter.h"
 #include "parser/MarkdownSerializer.h"
+#include "diagnostics/ProcessMemory.h"
 
 #include <QByteArray>
 #include <QElapsedTimer>
@@ -36,7 +37,8 @@ public:
   }
   ~ParsePerfTimer() {
     if (enabled_) {
-      qCDebug(parsePerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0 << " ms";
+      qCDebug(parsePerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0
+                                   << " ms ws=" << (muffin::diag::workingSetBytes() >> 20) << "MB";
     }
   }
 
@@ -1347,6 +1349,13 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
     ParsePerfTimer t("parse.toUtf8");
     utf8 = cmarkInput.toUtf8();
   }
+  // mathConverted / remapped only back `cmarkInput` for the toUtf8 above; the bytes now live in
+  // `utf8` (cmark_parser_feed copies them again). Release the ~1x-document QString copies now
+  // rather than at function return — a big slice of the open-time peak on files that trigger
+  // math-convert (`\[`) or unicode remap. cmarkInput is unused past this point.
+  mathConverted = {};
+  remapped = {};
+  cmarkInput = {};
   QVector<DefinitionParseResult> definitions;
   {
     ParsePerfTimer t("parse.scanDefinitions");
@@ -1361,6 +1370,11 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
     cmark_parser_feed(parser, utf8.constData(), static_cast<size_t>(utf8.size()));
     document = cmark_parser_finish(parser);
   }
+  // cmark dups every literal (cmark_chunk_dup) into its own arena during feed/finish, so `utf8` is
+  // never referenced again — not by convertBlock (it walks the cmark tree) nor by any later pass.
+  // Drop it now instead of carrying ~1x the document through the whole parse tail. On a large file
+  // this buffer surviving until function return is a big slice of the open-time memory peak.
+  utf8 = {};
 
   const LineStartOffsetCache lineOffsets = [markdownToParse] {
     ParsePerfTimer t("parse.lineOffsets");
@@ -1383,6 +1397,15 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
       qCDebug(parsePerf).nospace() << "lineOffset.byteColumn " << LineStartOffsetCache::byteColPerfMs() << " ms";
     }
   }
+  // The Muffin tree (result.root) is fully built; every remaining pass reads only it +
+  // markdownToParse + lineOffsets — never the cmark tree. Free document + parser here instead of
+  // carrying them through ~15 annotation passes (previously freed at function return). On a large
+  // file this drops roughly the document's worth of UTF-8 again from the peak window, exactly when
+  // the Muffin tree (which re-holds the same text as UTF-16) is at its largest.
+  cmark_node_free(document);
+  cmark_parser_free(parser);
+  document = nullptr;
+  parser = nullptr;
   {
     ParsePerfTimer t("parse.insertVirtualEmptyParagraphs");
     insertVirtualEmptyParagraphs(markdownToParse, *result.root, lineOffsets);
@@ -1465,9 +1488,8 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   }
 
   result.elapsedMs = timer.elapsed();
-
-  cmark_node_free(document);
-  cmark_parser_free(parser);
+  // cmark document + parser freed right after convertBlock above; nothing past that point touches
+  // the cmark tree.
   return result;
 }
 

@@ -10,6 +10,7 @@ namespace muffin {
 
 class CssThemeSheet;  // defined in CssThemeParser.h
 class CssComputedStyleEngine;  // defined in CssComputedStyleEngine.h
+class NodeCssElementBuilder;  // defined in NodeCssElement.h
 class MarkdownNode;
 
 // Construct a QColor from a CSS colour literal, correcting Qt's hex-alpha
@@ -62,8 +63,10 @@ public:
   // live ancestors/siblings/position), run the cascade through `engine`, and map
   // the result to a ThemeElementStyle the same way the load-time precompute does.
   // Used by the structural-selector layout path. `bodyPx` is the em/rem basis.
-  static ThemeElementStyle elementStyleForNode(const CssComputedStyleEngine& engine, const MarkdownNode& node,
-                                               const QString& key, qreal bodyPx);
+  // `builder` is the caller-owned (persistent) CSS element tree, so the sibling chain is built once
+  // per rebuild instead of per node (the latter was O(n²) on flat block lists).
+  static ThemeElementStyle elementStyleForNode(NodeCssElementBuilder& builder, const CssComputedStyleEngine& engine,
+                                               const MarkdownNode& node, const QString& key, qreal bodyPx);
 };
 
 }  // namespace muffin

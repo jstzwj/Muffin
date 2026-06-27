@@ -16,6 +16,7 @@ namespace muffin {
 class MarkdownNode;
 class CssComputedStyleEngine;
 class CssThemeSheet;
+class NodeCssElementBuilder;  // persistent CSS element tree (structural-selector path)
 struct CssElement;
 struct ThemeElementStyle;
 
@@ -117,6 +118,11 @@ public:
   // Drop the per-node cache (call at the start of each layout rebuild so edited
   // structure — a sibling added/removed — is re-evaluated).
   void clearStructuralCache() const;
+  // Drop the CSS element tree. Call ONLY when the node tree is replaced/reordered (full rebuild,
+  // top-level splice) — its elements hold MarkdownNode pointers that dangle then. Do NOT call from
+  // single-block refreshes (rebuildBlock), which selection/cursor changes fire many times/second:
+  // resetting there forced the next style query to rebuild the whole sibling chain (O(n)).
+  void dropStructuralBuilder() const;
   QFont headingFont(int level) const;
   QFont codeFont() const;
   qreal codeLineHeight() const;
@@ -259,7 +265,16 @@ private:
   qreal bodyFontPx_ = 16.0;
   std::shared_ptr<const CssThemeSheet> structuralSheet_;
   std::shared_ptr<CssComputedStyleEngine> structuralEngine_;
+  // CSS element tree for the structural-selector path. Shared (not unique) so RenderTheme stays
+  // copyable (it's copied by value into setTheme). Persistent across per-node style queries within
+  // one rebuild so the sibling chain is built ONCE — a fresh builder per call rebuilt it per node,
+  // O(n) each → O(n²) on a flat block list. Reset by clearStructuralCache() each rebuild.
+  mutable std::shared_ptr<NodeCssElementBuilder> structuralBuilder_;
   mutable QHash<NodeId, ThemeElementStyle> nodeStyleCache_;
+  // Prototype (load-time) QFont per element key, used by the Lazy estimate path so it doesn't
+  // rebuild a QFont per block (~80µs each on Windows). Cleared by clearStructuralCache() since
+  // zoom/fontSize can change between rebuilds.
+  mutable QHash<QString, QFont> prototypeFontCache_;
 
   qreal headingBeforeAdvance_[6] = {};
   QMarginsF codeBlockPadding_;

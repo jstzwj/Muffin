@@ -1,9 +1,37 @@
 #include "document/MarkdownNode.h"
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 
 namespace muffin {
+
+// BlockMetadata is no longer an aggregate (custom copy for the unique_ptr definition). Every field
+// is listed explicitly — keep in sync with the struct in MarkdownNode.h when adding a field.
+MarkdownNode::BlockMetadata::BlockMetadata(const BlockMetadata& o)
+    : inlines(o.inlines), literal(o.literal), heading(o.heading), list(o.list), code(o.code),
+      table(o.table), quote(o.quote), mathDelimiter(o.mathDelimiter),
+      frontMatterFormat(o.frontMatterFormat),
+      definition(o.definition ? std::make_unique<DefinitionBlock>(*o.definition) : nullptr),
+      sourceRange(o.sourceRange), offsetsRelative(o.offsetsRelative) {}
+
+MarkdownNode::BlockMetadata& MarkdownNode::BlockMetadata::operator=(const BlockMetadata& o) {
+  if (this != &o) {
+    inlines = o.inlines;
+    literal = o.literal;
+    heading = o.heading;
+    list = o.list;
+    code = o.code;
+    table = o.table;
+    quote = o.quote;
+    mathDelimiter = o.mathDelimiter;
+    frontMatterFormat = o.frontMatterFormat;
+    definition.reset(o.definition ? new DefinitionBlock(*o.definition) : nullptr);
+    sourceRange = o.sourceRange;
+    offsetsRelative = o.offsetsRelative;
+  }
+  return *this;
+}
 
 MarkdownNode::MarkdownNode(BlockType type, NodeId id)
     : id_(std::move(id)), type_(type) {}
@@ -214,7 +242,7 @@ void MarkdownNode::setFrontMatterFormat(FrontMatterFormat format) {
 }
 
 DefinitionBlock MarkdownNode::definition() const {
-  DefinitionBlock def = metadata_.definition;
+  DefinitionBlock def = metadata_.definition ? *metadata_.definition : DefinitionBlock{};
   if (!def.isValid()) {
     return def;
   }
@@ -243,7 +271,7 @@ DefinitionBlock MarkdownNode::definition() const {
 }
 
 void MarkdownNode::setDefinition(DefinitionBlock definition) {
-  metadata_.definition = std::move(definition);
+  metadata_.definition = std::make_unique<DefinitionBlock>(std::move(definition));
 }
 
 QVector<TableAlignment> MarkdownNode::tableAlignments() const {
@@ -355,7 +383,9 @@ void MarkdownNode::relativizeNodeAndDescendants(const MarkdownNode* topLevel, qs
     range.lineEnd -= lineBase;
   }
   metadata_.sourceRange = range;
-  subtractDefinitionFields(metadata_.definition, byteBase);
+  if (metadata_.definition) {
+    subtractDefinitionFields(*metadata_.definition, byteBase);
+  }
   shiftInlineSourcePositions(metadata_.inlines, -byteBase);
   for (const auto& child : children_) {
     if (child) {
@@ -372,7 +402,9 @@ void MarkdownNode::relativizeDescendants() {
   const int lineBase = metadata_.sourceRange.lineStart;
   metadata_.offsetsRelative = true;
   topLevelCache_ = this;  // this block is its own top-level
-  subtractDefinitionFields(metadata_.definition, byteBase);
+  if (metadata_.definition) {
+    subtractDefinitionFields(*metadata_.definition, byteBase);
+  }
   shiftInlineSourcePositions(metadata_.inlines, -byteBase);
   for (const auto& child : children_) {
     if (child) {

@@ -178,6 +178,7 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
 void EditorView::setDocument(const MarkdownDocument& document, QString documentPath) {
   document_ = &document;
   documentPath_ = std::move(documentPath);
+  blockBuiltAt_.clear();  // fresh document: every block's build stamp is stale
   rebuildLayout();
   updateTableToolbar();
 }
@@ -195,10 +196,19 @@ bool EditorView::refreshBlock(NodeId blockId, const MarkdownDocument& document) 
   DocumentLayout::BlockRebuildResult result;
   {
     ScopedViewportPin pin(*this);
-    result = layout_->rebuildBlock(blockId, document, theme_, selection_);
-    if (!result.rebuilt) {
-      return false;  // pin reconciles (nothing moved); caller falls back to setDocument
+    const auto it = blockBuiltAt_.constFind(blockId);
+    const bool current = it != blockBuiltAt_.constEnd()
+                         && sameSelectionRange(it.value().selection, selection_)
+                         && it.value().revision == document.revision();
+    if (!current) {
+      result = layout_->rebuildBlock(blockId, document, theme_, selection_);
+      if (!result.rebuilt) {
+        return false;  // pin reconciles (nothing moved); caller falls back to setDocument
+      }
+      blockBuiltAt_[blockId] = {selection_, document.revision()};
     }
+    // else: already built with the current selection + revision (the immediate selection refresh,
+    // same keystroke) — skip the O(block) rebuildBlock; the caret/fence/dirty work below still runs.
   }
 
   updateCursorHitFromPosition();
@@ -236,12 +246,19 @@ bool EditorView::refreshBlocks(const QVector<NodeId>& blockIds, const MarkdownDo
   QVector<DocumentLayout::BlockRebuildResult> results;
   {
     ScopedViewportPin pin(*this);
+    const quint64 revision = document.revision();
     for (NodeId blockId : blockIds) {
+      const auto it = blockBuiltAt_.constFind(blockId);
+      if (it != blockBuiltAt_.constEnd() && sameSelectionRange(it.value().selection, selection_)
+          && it.value().revision == revision) {
+        continue;  // already built with the current selection + revision — skip the O(block) rebuild
+      }
       const DocumentLayout::BlockRebuildResult result = layout_->rebuildBlock(blockId, document, theme_, selection_);
       if (!result.rebuilt) {
         return false;
       }
       results.append(result);
+      blockBuiltAt_[blockId] = {selection_, revision};
     }
   }
 
@@ -318,6 +335,7 @@ void EditorView::setTheme(RenderTheme theme) {
 }
 
 void EditorView::setCursorHit(HitTestResult hit) {
+  PerfTimer perf("view.setCursorHit");
   dragSelectionPending_ = false;
   draggingSelection_ = false;
   const SelectionRange previousSelection = selection_;
@@ -568,6 +586,7 @@ const BlockLayout* EditorView::blockLayoutForNode(NodeId id) const {
 }
 
 HitTestResult EditorView::hitTest(QPointF viewportPos) const {
+  PerfTimer perf("view.hitTest");
   if (!layout_) {
     return {};
   }
@@ -811,6 +830,7 @@ void EditorView::wheelEvent(QWheelEvent* event) {
 }
 
 void EditorView::mousePressEvent(QMouseEvent* event) {
+  PerfTimer perf("view.mousePress");
   if (event->button() == Qt::LeftButton) {
     setFocus(Qt::MouseFocusReason);
     const NodeId htmlToggleBlockId = editingHtmlBlockId_.isValid() ? editingHtmlBlockId_ : htmlHover_.visibleBlockId();
@@ -873,6 +893,7 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
 }
 
 void EditorView::mouseMoveEvent(QMouseEvent* event) {
+  PerfTimer perf("view.mouseMove");
   if (codeFenceScrollDragId_.isValid() && (event->buttons() & Qt::LeftButton)) {
     dragCodeFenceScrollBarTo(codeFenceScrollDragId_, event->position());
     event->accept();
@@ -1698,6 +1719,7 @@ void EditorView::updateBlockHover(QPointF viewportPos) {
 }
 
 void EditorView::repaintHoverBlock(NodeId blockId) {
+  PerfTimer perf("view.repaintHover");
   if (!layout_ || !blockId.isValid()) { return; }
   const BlockLayout* blk = layout_->blockIfPromoted(blockId);
   if (!blk) { return; }
@@ -1739,6 +1761,7 @@ void EditorView::updateBlockFocus() {
 }
 
 void EditorView::repaintFocusBlock(NodeId blockId) {
+  PerfTimer perf("view.repaintFocus");
   if (!layout_ || !blockId.isValid()) { return; }
   const BlockLayout* blk = layout_->blockIfPromoted(blockId);
   if (!blk) { return; }
@@ -1757,6 +1780,7 @@ qreal EditorView::focusTransitionMs(const QString& host) const {
 }
 
 void EditorView::repaintAnimatedBlocks() {
+  PerfTimer perf("view.repaintAnim");
   if (!layout_ || !keyframeAnimator_) { return; }
   const QRectF visible = documentViewportRect();
   const QVector<const BlockLayout*> blocks = layout_->visibleBlocks(visible.adjusted(0, -40, 0, 40), theme_);
@@ -1771,6 +1795,7 @@ void EditorView::repaintAnimatedBlocks() {
 }
 
 void EditorView::updateDragSelection(QPointF viewportPos) {
+  PerfTimer perf("view.dragSel");
   if (!dragAnchorHit_.isValid()) {
     return;
   }

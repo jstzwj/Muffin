@@ -85,20 +85,12 @@ const CssElement* NodeCssElementBuilder::ensure(const MarkdownNode& node) {
     e->parent = body_;
   }
 
-  // Sibling position + index among the parent's element children. The document
-  // root's parent (body) is synthetic and has no child list, so it stays -1.
+  // Wire this node's sibling group ITERATIVELY (once per parent). The old code recursed along the
+  // sibling chain via ensure(nextSibling)/ensure(previousSibling) — recursion depth = sibling
+  // count, which overflowed the 1MB stack on long flat block lists (100k+ top-level blocks →
+  // APPCRASH 0xc00000fd). linkSiblingsIteratively builds every sibling in a loop instead.
   if (MarkdownNode* p = node.parent()) {
-    const auto& siblings = p->children();
-    int idx = 0;
-    int typeIdx = 0;
-    const QString myTag = e->tag;
-    for (const std::unique_ptr<MarkdownNode>& s : siblings) {
-      if (s.get() == &node) { e->childIndex = idx; e->typeIndex = typeIdx; break; }
-      ++idx;
-      if (cssTagForNode(*s) == myTag) { ++typeIdx; }
-    }
-    e->previousSibling = node.previousSibling() ? ensure(*node.previousSibling()) : nullptr;
-    e->nextSibling = node.nextSibling() ? ensure(*node.nextSibling()) : nullptr;
+    linkSiblingsIteratively(*p);
   }
 
   populateHas(*e, node);
@@ -107,6 +99,33 @@ const CssElement* NodeCssElementBuilder::ensure(const MarkdownNode& node) {
 
 const CssElement* NodeCssElementBuilder::build(const MarkdownNode& node) {
   return ensure(node);
+}
+
+void NodeCssElementBuilder::linkSiblingsIteratively(const MarkdownNode& parent) {
+  // Build every child's element and wire the sibling chain in ONE pass. Idempotent via
+  // linkedParents_ — the N children each reach here through ensure, but only the first does the
+  // work; the rest short-circuit. This replaces the recursive ensure(nextSibling) chain that
+  // overflowed the stack on long flat block lists.
+  if (linkedParents_.contains(parent.id())) {
+    return;
+  }
+  linkedParents_.insert(parent.id());
+
+  const auto& siblings = parent.children();
+  CssElement* prev = nullptr;
+  int idx = 0;
+  QHash<QString, int> typeCounts;
+  for (const std::unique_ptr<MarkdownNode>& s : siblings) {
+    CssElement* cur = const_cast<CssElement*>(ensure(*s));  // memoized; ensure no longer recurses siblings
+    cur->childIndex = idx++;
+    cur->typeIndex = typeCounts[cur->tag]++;
+    cur->previousSibling = prev;
+    cur->nextSibling = nullptr;
+    if (prev) {
+      prev->nextSibling = cur;
+    }
+    prev = cur;
+  }
 }
 
 // Populate the precomputed :has tag sets: direct children (block children + the

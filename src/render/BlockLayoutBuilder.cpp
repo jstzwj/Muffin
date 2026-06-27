@@ -1463,8 +1463,12 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateParagraphLike(con
   const bool isHeading = node.type() == BlockType::Heading;
   const QString elementKey = isHeading ? QStringLiteral("h%1").arg(node.headingLevel())
                                       : (isInsideBlockquote(node) ? QStringLiteral("blockquote p") : QStringLiteral("p"));
-  const QFont font = isHeading ? theme.headingFont(node.headingLevel()) : theme.textFontForElement(elementKey, &node);
-  const qreal lineHeight = estimateLineHeightForElement(theme, elementKey, node.type(), &node, node.headingLevel());
+  // Estimate resolves the load-time PROTOTYPE style only (nullptr node → elementStyle fast path),
+  // skipping the per-node structural cascade. github's structural selectors match only lists/tables,
+  // so paragraph estimates are identical to the structural result; the visible-window build
+  // (promoteSlot → buildParagraphLike) still resolves structural style for exact heights.
+  const QFont font = isHeading ? theme.headingFont(node.headingLevel()) : theme.textFontForElement(elementKey, nullptr);
+  const qreal lineHeight = estimateLineHeightForElement(theme, elementKey, node.type(), nullptr, node.headingLevel());
   const QString text = InlineProjection::plainTextForInlines(node.inlines(), breakOnSingleNewlineEnabled());
   // Mirror buildParagraphLike: an inline ::before marker narrows the wrap width.
   const qreal beforeAdvance = isHeading ? theme.headingBeforeAdvance(node.headingLevel()) : 0.0;
@@ -1528,8 +1532,9 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateListItem(const Ma
 
   const QVector<InlineNode> primary = primaryInlinesForListItem(node);
   const QString elementKey = isInsideBlockquote(node) ? QStringLiteral("blockquote p") : QStringLiteral("li");
-  const QFont font = theme.textFontForElement(elementKey, &node);
-  const qreal lineHeight = estimateLineHeightForElement(theme, elementKey, BlockType::Paragraph, &node);
+  // Estimate uses the prototype style only (see estimateParagraphLike) — no per-node structural cascade.
+  const QFont font = theme.textFontForElement(elementKey, nullptr);
+  const qreal lineHeight = estimateLineHeightForElement(theme, elementKey, BlockType::Paragraph, nullptr);
   qreal inlineHeight = lineHeight;
   bool mustMeasure = false;
   if (!primary.isEmpty()) {
