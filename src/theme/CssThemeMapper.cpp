@@ -1140,6 +1140,15 @@ std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& f
                                 (content.front() == QLatin1Char('\'') && content.back() == QLatin1Char('\'')))) {
       content = content.mid(1, content.size() - 2);
     }
+    // CSS `content: none` / `normal` on ::before/::after means "no generated content"
+    // (suppress the pseudo), NOT the literal text "none". newsprint declares
+    // `blockquote:before { content: ''; content: none }` and bestValue picks the later
+    // `none`; without this it rendered the word "none" before every blockquote. Mirrors
+    // the listMarkerContent none/normal guard below.
+    if (content.compare(QStringLiteral("none"), Qt::CaseInsensitive) == 0 ||
+        content.compare(QStringLiteral("normal"), Qt::CaseInsensitive) == 0) {
+      content.clear();
+    }
     rule.content = content;
     // Tokenize so a heading ::before content like `counter(h1) ". "` can be
     // resolved against live counter state at layout time. Pure-literal content

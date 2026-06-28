@@ -157,6 +157,35 @@ void testAfterIconPaintsRightOfText() {
                                      .arg(greenLeft).arg(blackRight));
 }
 
+// CSS `content: none` (and `normal`) on ::before/::after means "no generated
+// content", not the literal word "none". newsprint declares `blockquote:before
+// { content:''; content:none }`; bestValue picks the later `none`, so without the
+// guard the blockquote ::before content was stored as "none" and painted verbatim
+// before every blockquote. Assert the rule's content is blanked.
+void testContentNoneIsNotLiteralText() {
+  const QString css = QStringLiteral(
+      "#write { color:#000000; }"
+      "blockquote:before, blockquote:after { content:''; content:none; }");
+  const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("none"), QString()));
+  const PseudoElementRule* rule = nullptr;
+  for (const PseudoElementRule& r : theme.decorations().pseudos) {
+    if (r.host == QStringLiteral("blockquote") && r.pseudo == QStringLiteral("before")) { rule = &r; break; }
+  }
+  require(rule != nullptr, QStringLiteral("blockquote::before rule should be extracted"));
+  require(rule->content.isEmpty(),
+          QStringLiteral("content:none must suppress the pseudo (got literal '%1')").arg(rule->content));
+
+  // `content: normal` is the same no-content keyword.
+  const QString css2 = QStringLiteral("#write { color:#000000; } h1::before { content: normal; }");
+  const RenderTheme theme2 = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css2, QStringLiteral("normal"), QString()));
+  const PseudoElementRule* r2 = nullptr;
+  for (const PseudoElementRule& r : theme2.decorations().pseudos) {
+    if (r.host == QStringLiteral("h1") && r.pseudo == QStringLiteral("before")) { r2 = &r; break; }
+  }
+  require(r2 != nullptr, QStringLiteral("h1::before rule should be extracted"));
+  require(r2->content.isEmpty(), QStringLiteral("content:normal must suppress the pseudo"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -170,6 +199,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testInlineBeforeDashShiftsText);
   RUN_TEST(testInlineBeforeHollowRingShiftsText);
   RUN_TEST(testAfterIconPaintsRightOfText);
+  RUN_TEST(testContentNoneIsNotLiteralText);
 #undef RUN_TEST
   return 0;
 }
