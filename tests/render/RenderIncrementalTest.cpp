@@ -2,6 +2,7 @@
 #include "document/MarkdownDocument.h"
 #include "parser/CmarkGfmParser.h"
 #include "render/DocumentLayout.h"
+#include "theme/CssThemeMapper.h"
 #include "theme/RenderTheme.h"
 
 #include <QApplication>
@@ -104,6 +105,39 @@ void testIncrementalTopLevelRangeRebuildContract() {
 
 }  // namespace
 
+// A structural (adjacent-sibling) spacing rule is honored by the structural cascade
+// (fast=false) but not the prototype estimate (fast=true). Before the fix, promoteSlot
+// left a promoted block's gap at the prototype value while rebuildBlock recomputed it
+// structurally — so a Lazy layout's gaps differed from an Eager (structural) layout, and
+// clicking a paragraph snapped the gap (the "bottom margin jumps" effect). After the fix,
+// promotion snaps to the structural gap via the shared nextTopAfterBuild formula, so
+// Lazy+promote matches Eager block-for-block.
+void testLazyPromoteMatchesEagerGap() {
+  const QString css = QStringLiteral(
+      "#write { color:#000000; }"
+      "p { margin-bottom: 10px; }"
+      "p + ul { margin-top: 80px; }");  // exaggerated: prototype sees ul margin-top 0, structural sees 80
+  const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("gap"), QString()));
+
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("para\n\n- one\n- two\n"), false);
+  const NodeId paraId = mutableBlockAt(session.document(), 0)->id();
+  const NodeId ulId = mutableBlockAt(session.document(), 1)->id();
+
+  DocumentLayout eager;
+  eager.rebuild(session.document(), theme, 800.0);  // Eager default → structural spacing throughout
+  const qreal eagerGap = eager.block(ulId)->rect().top() - eager.block(paraId)->rect().bottom();
+  require(qAbs(eagerGap - 80.0) < 1.0,
+          QStringLiteral("Eager (structural) must honor p+ul margin-top:80px (gap=%1)").arg(eagerGap));
+
+  DocumentLayout lazy;
+  lazy.rebuild(session.document(), theme, 800.0, SelectionRange{}, QString{}, DocumentLayout::BuildPolicy::Lazy);
+  lazy.ensureBuilt(0, lazy.slotCount() - 1, theme);  // promote every slot → snap gaps to structural
+
+  requireSameTopLevelLayout(lazy, eager, session.document(),
+                            QStringLiteral("Lazy+promote must match Eager (structural spacing, no gap jump)"));
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -112,6 +146,7 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testIncrementalBlockRebuildContract);
   RUN_TEST(testIncrementalTopLevelRangeRebuildContract);
+  RUN_TEST(testLazyPromoteMatchesEagerGap);
 #undef RUN_TEST
   return 0;
 }

@@ -179,6 +179,22 @@ qreal spacingBetweenBlocks(const MarkdownNode& prev, const MarkdownNode& next, c
   return after + before;
 }
 
+// Where the next sibling block starts after `built`, using STRUCTURAL (per-node) CSS
+// spacing. Shared by rebuildBlock and promoteSlot so a block lands at the same Y whether
+// it was promoted (lazy estimate → visible) or rebuilt (interaction). The Lazy estimate
+// positions off-screen blocks with prototype spacing (fast=true); without this shared
+// formula, promoteSlot left the promoted block's gap at the prototype value while
+// rebuildBlock recomputed it structurally — so clicking a paragraph snapped the gap and
+// shifted the suffix (the visible "bottom margin jumps" effect). Snapping to structural
+// here, inside the caller's viewport pin, makes promotion and rebuild agree → no jump.
+qreal nextTopAfterBuild(const MarkdownNode& node, const BlockLayout& built,
+                        const MarkdownNode* nextSibling, const RenderTheme& theme) {
+  if (nextSibling) {
+    return built.rect().bottom() + spacingBetweenBlocks(node, *nextSibling, theme);
+  }
+  return built.rect().bottom() + spacingAfterBlock(node, theme);
+}
+
 struct PageMetrics {
   qreal outerLeft = 0;
   qreal outerWidth = 0;
@@ -474,12 +490,11 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
   auto replacement = builder_.build(*node, theme, pageLeft_, slot.top, pageWidth_);
   result.newRect = replacement->rect();
 
-  qreal newNextTop = replacement->rect().bottom();
-  if (index + 1 < static_cast<qsizetype>(documentBlocks.size())) {
-    newNextTop += spacingBetweenBlocks(*node, *documentBlocks.at(static_cast<size_t>(index + 1)), theme);
-  } else {
-    newNextTop += spacingAfterBlock(*node, theme);
-  }
+  // Shared structural-spacing formula (nextTopAfterBuild) — promoteSlot uses the same,
+  // so a block lands at the same Y whether promoted or rebuilt (no click-induced jump).
+  const MarkdownNode* nextNode = (index + 1 < static_cast<qsizetype>(documentBlocks.size()))
+      ? documentBlocks.at(static_cast<size_t>(index + 1)).get() : nullptr;
+  const qreal newNextTop = nextTopAfterBuild(*node, *replacement, nextNode, theme);
   const qreal trailingHeight = trailingHeightForLastBlock(replacement.get(), theme);
   const qreal delta =
       index + 1 < static_cast<qsizetype>(slots_.size())
@@ -1084,13 +1099,24 @@ qreal DocumentLayout::promoteSlot(qsizetype index, const RenderTheme& theme) {
   const auto& children = document_->root().children();
   const MarkdownNode& node = *children.at(static_cast<size_t>(index));
   auto built = builder_.build(node, theme, pageLeft_, slot.top, pageWidth_);
-  const qreal delta = built->height() - slot.height;
   slot.height = built->height();
   slot.measured = true;
   slot.top = built->rect().top();  // unchanged; keep invariant exact
   tops_.at(static_cast<size_t>(index)) = slot.top;
   indexLayoutBlock(*built);
+  // Snap the gap below to STRUCTURAL spacing (the same nextTopAfterBuild rebuildBlock
+  // uses). The Lazy estimate positioned this block with prototype spacing (fast=true);
+  // without this, the promoted block kept the prototype gap while a later click/rebuild
+  // recomputed it structurally → the suffix jumped (visible "bottom margin shrinks").
+  // The shift runs inside the caller's viewport pin, so it is invisible on scroll.
+  const MarkdownNode* nextNode = (index + 1 < static_cast<qsizetype>(children.size()))
+      ? children.at(static_cast<size_t>(index + 1)).get() : nullptr;
+  const qreal newNextTop = nextTopAfterBuild(node, *built, nextNode, theme);
   slot.detail = std::move(built);
+  qreal delta = 0.0;
+  if (index + 1 < static_cast<qsizetype>(slots_.size())) {
+    delta = newNextTop - slots_.at(static_cast<size_t>(index + 1)).top;
+  }
   shiftSuffixFrom(index + 1, delta);
   recomputeTotalHeight(theme);
   return delta;
