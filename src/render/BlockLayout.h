@@ -204,8 +204,15 @@ public:
   const std::vector<TableRowLayout>& tableRows() const;
   QRectF tableCellRect(int row, int column) const;
 
+  // NOTE: `hover` is fully specified, not `{}`. Clang (macOS/Xcode) rejects an
+  // aggregate-with-NSDMI (BlockPaintState) used in a `= {}` default argument declared within
+  // this enclosing class ("default member initializer needed within definition of enclosing
+  // class outside of member functions"); MSVC accepts `{}` so this only surfaces on macOS.
+  // Explicit values avoid needing the NSDMI here. Keep these four fields synced with
+  // BlockPaintState's inactive defaults (hover/focus inactive, phases 0).
   void paint(QPainter& painter, const RenderTheme& theme, qreal scrollY,
-             const CodeFenceScrollController* scroll = nullptr, BlockPaintState hover = {}) const;
+             const CodeFenceScrollController* scroll = nullptr,
+             BlockPaintState hover = BlockPaintState{false, 0.0, false, 0.0}) const;
   bool intersects(const QRectF& documentViewport) const;
   bool containsNode(NodeId id) const;
   bool containsInteractiveContent(QPointF documentPos, const RenderTheme& theme) const;
