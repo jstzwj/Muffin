@@ -64,9 +64,34 @@ struct SelInfo {
   bool active = false;
   bool unsupportedPseudoClass = false;  // structural pseudos like :has/:last-child are not modelled here
   bool nthEven = false;   // :nth-child(even) / :nth-of-type(even)
+  // Typora editor-only selector (chrome/UI Muffin never renders). Rules carrying one of
+  // these classes are dropped at flatten so their editor-only hacks never reach element
+  // matching — see isTyporaEditorOnlyClass.
+  bool editorOnly = false;
 };
 
 constexpr qreal kUnboundedPageWidth = 100000.0;
+
+// Typora editor chrome / UI constructs Muffin never renders. Community themes stash
+// editor-only hacks in their rules (e.g. pixyll `pre.md-meta-block { padding-top:2000px;
+// margin-top:-2010px; width:100vw }` to position the front-matter strip in Typora's
+// editor). Those hacks must not leak into Muffin's element-style matching, so any rule
+// whose selector carries one of these classes is dropped at flatten. Functional classes
+// Muffin DOES use — md-fences, md-focus, md-image, md-task-list-item, md-heading — are
+// intentionally NOT here. Confirmed: none of these are referenced anywhere in src/.
+bool isTyporaEditorOnlyClass(const QString& cls) {
+  if (cls.startsWith(QStringLiteral("md-toc")) || cls.startsWith(QStringLiteral("outline-")) ||
+      cls.startsWith(QStringLiteral("megamenu")) || cls.startsWith(QStringLiteral("modal-")) ||
+      cls.startsWith(QStringLiteral("ty-"))) { return true; }
+  static const QSet<QString> exact = {
+      QStringLiteral("md-meta"), QStringLiteral("md-meta-block"),
+      QStringLiteral("md-comment"), QStringLiteral("md-raw"), QStringLiteral("md-rawblock"),
+      QStringLiteral("md-search-hit"), QStringLiteral("md-search-panel"),
+      QStringLiteral("md-search-input"), QStringLiteral("md-search-tip"),
+      QStringLiteral("md-expand"), QStringLiteral("sidebar-content"), QStringLiteral("footer-item"),
+  };
+  return exact.contains(cls);
+}
 
 // Extract the last compound of a selector (after the final combinator
 // space/>/+/~), respecting (...) and [...].
@@ -124,6 +149,7 @@ SelInfo analyzeSelector(const QString& selector) {
       const QString cls = compound.mid(i, j - i).toLower();
       if (cls == QStringLiteral("md-fences")) { info.classFences = true; }
       else if (cls == QStringLiteral("md-focus")) { info.mdFocus = true; }
+      if (isTyporaEditorOnlyClass(cls)) { info.editorOnly = true; }
       i = j;
     } else if (c == QLatin1Char(':')) {
       bool element = (i + 1 < n && compound.at(i + 1) == QLatin1Char(':'));
@@ -279,7 +305,7 @@ std::vector<FlatDecl> flatten(const CssThemeSheet& sheet) {
       // Also drop unsupported structural pseudo-classes. This flat mapper knows
       // only the semantic target, not real sibling/descendant contents; keeping a
       // selector like `p:has(img)` would make its declarations apply to all `p`.
-      if (info.hover || info.focus || info.active || info.visited || info.mdFocus || info.unsupportedPseudoClass) { continue; }
+      if (info.hover || info.focus || info.active || info.visited || info.mdFocus || info.unsupportedPseudoClass || info.editorOnly) { continue; }
       const int spec = specificity(selector);
       for (const CssDeclaration& decl : rule.declarations) {
         FlatDecl fd;
@@ -620,7 +646,13 @@ qreal lengthToPx(const QString& value, const QHash<QString, QString>& vars, qrea
   if (unit == QStringLiteral("px") || unit.isEmpty()) { return n; }
   if (unit == QStringLiteral("pt")) { return n * 96.0 / 72.0; }
   if (unit == QStringLiteral("em")) { return n * emPx; }
-  if (unit == QStringLiteral("rem")) { return n * (rootPx > 0.0 ? rootPx : emPx); }  // rem is root-relative
+  // CSS `rem` is the ROOT em (the html element's font, 16px by default) — NOT the
+  // current element's em. When a theme sets `body { font-size: 1.5rem }` (→ 24px),
+  // resolving subsequent `rem` values against that body em (the old `emPx` fallback)
+  // made EVERY rem size 1.5× too big: pixyll's `h2 { font-size: 1.5rem }` became 36px
+  // instead of 24px. The root reference (16) is the same base bodyPx itself is computed
+  // against, so this keeps rem consistent with how the body size is derived.
+  if (unit == QStringLiteral("rem")) { return n * (rootPx > 0.0 ? rootPx : 16.0); }
   // A `%` is normally em-relative (local box shorthand). When the caller supplies
   // a real containing-block dimension (containingPx > 0), resolve against THAT —
   // for pseudo width/height like phycat's `h3::before { height: 61% }`, where the %
@@ -734,6 +766,8 @@ qreal parseLineHeightMultiplier(const QString& raw, const QHash<QString, QString
   const qreal n = v.toDouble(&ok);
   if (ok && n > 0.0) { return n; }
   if (fontPx <= 0.0) { return 0.0; }
+  // rem resolves root-relative inside lengthToPx (16px), so the multiplier round-trips:
+  // cssFontPx × (lengthPx / fontPx) = lengthPx at apply time.
   const qreal px = lengthToPx(v, vars, fontPx);
   return px > 0.0 ? px / fontPx : 0.0;
 }
@@ -1527,7 +1561,7 @@ ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssCompu
     const auto applySide = [&](const QString& side, auto setter) {
       const QString raw = style.rawValue(base + QLatin1Char('-') + side);
       if (raw.isEmpty()) { return; }
-      const qreal v = lengthToPx(raw, style.customProperties(), emPx, bodyPx);
+      const qreal v = lengthToPx(raw, style.customProperties(), emPx);
       setter(v);
       box.present = true;
     };
@@ -1565,7 +1599,7 @@ ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssCompu
   borderSide(QStringLiteral("right"),  [&](qreal v) { out.box.borderRightWidth = v; },  [&](const QColor& v) { out.box.borderRightColor = v; });
   borderSide(QStringLiteral("bottom"), [&](qreal v) { out.box.borderBottomWidth = v; }, [&](const QColor& v) { out.box.borderBottomColor = v; });
   borderSide(QStringLiteral("left"),   [&](qreal v) { out.box.borderLeftWidth = v; },   [&](const QColor& v) { out.box.borderLeftColor = v; });
-  if (const qreal radius = lengthToPx(style.rawValue(QStringLiteral("border-radius")), style.customProperties(), emPx, bodyPx); radius > 0.0) {
+  if (const qreal radius = lengthToPx(style.rawValue(QStringLiteral("border-radius")), style.customProperties(), emPx); radius > 0.0) {
     out.box.borderRadius = radius;
     out.box.present = true;
   }
@@ -1610,7 +1644,7 @@ ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssCompu
         const QRegularExpressionMatch m = it.next();
         const QString name = m.captured(1).toLower();
         const QString arg = m.captured(2).trimmed();
-        if (name == QStringLiteral("blur")) { p.blur = lengthToPx(arg, style.customProperties(), blurEmPx, bodyPx); p.present = true; }
+        if (name == QStringLiteral("blur")) { p.blur = lengthToPx(arg, style.customProperties(), blurEmPx); p.present = true; }
         else if (name == QStringLiteral("brightness")) { p.brightness = numOrPct(arg, 1.0); p.present = true; }
         else if (name == QStringLiteral("contrast")) { p.contrast = numOrPct(arg, 1.0); p.present = true; }
         else if (name == QStringLiteral("opacity")) { p.opacity = numOrPct(arg, 1.0); p.present = true; }
@@ -1646,9 +1680,9 @@ ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssCompu
   }
   out.text.fontFamily = firstFamily(style.rawValue(QStringLiteral("font-family")), style.customProperties());
   const qreal textEmPx = fontSizeEmPx > 0.0 ? fontSizeEmPx : emPx;
-  out.text.fontSizePx = lengthToPx(style.rawValue(QStringLiteral("font-size")), style.customProperties(), textEmPx, bodyPx);
+  out.text.fontSizePx = lengthToPx(style.rawValue(QStringLiteral("font-size")), style.customProperties(), textEmPx);
   out.text.lineHeight = parseLineHeightMultiplier(style.rawValue(QStringLiteral("line-height")), style.customProperties(), emPx);
-  out.text.wordSpacing = lengthToPx(style.rawValue(QStringLiteral("word-spacing")), style.customProperties(), emPx, bodyPx);
+  out.text.wordSpacing = lengthToPx(style.rawValue(QStringLiteral("word-spacing")), style.customProperties(), emPx);
   out.text.alignment = parseTextAlign(style.rawValue(QStringLiteral("text-align")), style.customProperties());
   const QString ttRaw = style.resolvedValue(QStringLiteral("text-transform")).trimmed().toLower();
   if (ttRaw == QStringLiteral("uppercase")) { out.text.textTransform = 1; }
@@ -1815,7 +1849,7 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   const CssComputedStyle csThStyle = styleEngine.styleFor(csTh);
   const CssComputedStyle csTrEvenStyle = styleEngine.styleFor(csTrEven);
   const auto computedFontPx = [&](const CssComputedStyle& style, qreal parentFontPx) {
-    const qreal px = lengthToPx(style.rawValue(QStringLiteral("font-size")), style.customProperties(), parentFontPx, bodyPx);
+    const qreal px = lengthToPx(style.rawValue(QStringLiteral("font-size")), style.customProperties(), parentFontPx);
     return px > 0.0 ? px : parentFontPx;
   };
   const qreal documentFontPx = computedFontPx(csWriteStyle, bodyPx);

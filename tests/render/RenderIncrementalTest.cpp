@@ -228,6 +228,44 @@ void testCaretOnMidBlockquoteVepRenders() {
   }
 }
 
+// CSS `rem` is the ROOT em (the html element's font, 16px default), NOT the body em.
+// A theme with `body { font-size: 1.5rem }` (→ 24px) must still resolve other `rem`
+// values against the root (16): `h2 { font-size: 1.5rem }` = 24px, not 1.5×24 = 36px.
+// Before the fix lengthToPx fell back to emPx (= bodyPx) for rem, inflating every rem
+// size 1.5× in pixyll (and any theme with a large body font) — the "tall headings" bug.
+void testRemResolvesAgainstRootNotBodyEm() {
+  const QString css = QStringLiteral(
+      "#write { color:#000000; }"
+      "body { font-size: 1.5rem; }"      // bodyPx = 24
+      "h2 { font-size: 1.5rem; line-height: 1.0; }");  // h2 font must be 24 (root), not 36 (body)
+  const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("rem"), QString()));
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("## H\n"), false);
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+  const MarkdownNode* h = findFirstBlock(session.document().root(), BlockType::Heading);
+  const qreal h2height = layout.block(h->id())->rect().height();
+  // 24px font @ line-height 1.0 ⇒ ~28px (min-line-height floor). The bug (36px font) ⇒ ~40px.
+  require(h2height < 34.0,
+          QStringLiteral("h2 1.5rem must resolve root-relative (24px font, height %1); the bug gave 36px (~40)") .arg(h2height));
+}
+
+// `#write pre.md-meta-block` is Typora's FRONT-MATTER block. Community themes stuff
+// editor-only hacks into it (pixyll: `margin-top:-2010px; padding-top:2000px`) to
+// position the meta strip in Typora's editor. Those must NOT leak into real code-fence
+// geometry — but `isCodeBlock` matched any `pre`, so the 2000px padding-top (and
+// -2010px margin) was applied to every code fence (a one-line fence rendered 2036px
+// tall, code pinned to the bottom). isCodeBlock now excludes .md-meta-block.
+void testCodeFenceIgnoresMdMetaBlockHack() {
+  const QString css = QStringLiteral(
+      "#write { color:#000000; }"
+      ".md-fences { padding: 8px; }"
+      "pre.md-meta-block { padding-top: 2000px; padding-bottom: 10px; margin-top: -2010px; }");
+  const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("meta"), QString()));
+  require(theme.codePadding().top() < 50.0,
+          QStringLiteral("code-fence padding must ignore pre.md-meta-block hack (top=%1, should be ~8 not 2000)") .arg(theme.codePadding().top()));
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -239,6 +277,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testLazyPromoteMatchesEagerGap);
   RUN_TEST(testTrailingEmptyNestedBlockquoteLineRenders);
   RUN_TEST(testCaretOnMidBlockquoteVepRenders);
+  RUN_TEST(testRemResolvesAgainstRootNotBodyEm);
+  RUN_TEST(testCodeFenceIgnoresMdMetaBlockHack);
 #undef RUN_TEST
   return 0;
 }
