@@ -51,10 +51,18 @@ void testLinkBeforeIconReservesFlow() {
       "<path d='M0 0L10 10'/></svg>\") center/contain; }");
   const qreal baseWidth = paragraphNaturalWidth(base, markdown);
   const qreal iconWidth = paragraphNaturalWidth(icon, markdown);
-  require(baseWidth > 20.0, QStringLiteral("baseline link paragraph should have measurable width (=%1)").arg(baseWidth));
-  // icon advance = 16px + 6px margin = 22px of reserved flow.
-  require(iconWidth > baseWidth + 15.0,
-          QStringLiteral("a::before icon must reserve inline flow (base=%1 icon=%2)").arg(baseWidth).arg(iconWidth));
+  // The icon's reserved flow is a DELTA, not an absolute width. The ::before is fixed
+  // at width:16px + margin-right:6px = 22 CSS pixels, which advances the line by the
+  // same amount on every platform (the "ab" text width cancels: it appears in both
+  // baseWidth and iconWidth). The absolute widths themselves vary with the offscreen
+  // font (Windows >20px, macOS ~19px), so an absolute floor on baseWidth flakes —
+  // assert the cross-platform delta instead. See offscreen-test-harness-broken-font-metrics.
+  const qreal reserved = iconWidth - baseWidth;
+  require(baseWidth > 1.0,
+          QStringLiteral("baseline link paragraph should render (width=%1)").arg(baseWidth));
+  require(reserved > 15.0 && reserved < 30.0,
+          QStringLiteral("a::before icon must reserve ~22px (16w+6margin) of flow (base=%1 icon=%2 delta=%3)")
+              .arg(baseWidth).arg(iconWidth).arg(reserved));
 }
 
 }  // namespace

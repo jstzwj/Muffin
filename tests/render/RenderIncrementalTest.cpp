@@ -5,6 +5,7 @@
 #include "render/DocumentLayout.h"
 #include "theme/CssThemeMapper.h"
 #include "theme/RenderTheme.h"
+#include "theme/ThemeDefinition.h"
 
 #include <QApplication>
 #include <QDebug>
@@ -237,17 +238,20 @@ void testRemResolvesAgainstRootNotBodyEm() {
   const QString css = QStringLiteral(
       "#write { color:#000000; }"
       "body { font-size: 1.5rem; }"      // bodyPx = 24
-      "h2 { font-size: 1.5rem; line-height: 1.0; }");  // h2 font must be 24 (root), not 36 (body)
+      "h2 { font-size: 1.5rem; }");      // h2 font must be 24 (root), not 36 (body)
   const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("rem"), QString()));
-  DocumentSession session;
-  session.setMarkdownText(QStringLiteral("## H\n"), false);
-  DocumentLayout layout;
-  layout.rebuild(session.document(), theme, 800.0);
-  const MarkdownNode* h = findFirstBlock(session.document().root(), BlockType::Heading);
-  const qreal h2height = layout.block(h->id())->rect().height();
-  // 24px font @ line-height 1.0 ⇒ ~28px (min-line-height floor). The bug (36px font) ⇒ ~40px.
-  require(h2height < 34.0,
-          QStringLiteral("h2 1.5rem must resolve root-relative (24px font, height %1); the bug gave 36px (~40)") .arg(h2height));
+  // Assert on the RESOLVED FONT SIZE, not the rendered block height. font-size is pure
+  // CSS-unit arithmetic (1.5×16 = 24 vs the bug's 1.5×24 = 36), so it is identical on
+  // every platform. A block's pixel HEIGHT, by contrast, depends on the offscreen font
+  // metrics (a 24px font renders ~28px tall on Windows but ~36px on macOS), which made
+  // a height threshold flake cross-platform. See offscreen-test-harness-broken-font-metrics.
+  const ThemeElementStyle* h2 = theme.elementStyle(QStringLiteral("h2"));
+  require(h2 != nullptr && h2->text.fontSizePx > 0.0,
+          QStringLiteral("h2 should resolve an element style (fontSizePx=%1)")
+              .arg(h2 ? h2->text.fontSizePx : qreal(-1)));
+  require(qAbs(h2->text.fontSizePx - 24.0) < 1.0,
+          QStringLiteral("h2 1.5rem must resolve root-relative (font-size=%1px, expected 24; the body-em bug gave 36px)")
+              .arg(h2->text.fontSizePx));
 }
 
 // `#write pre.md-meta-block` is Typora's FRONT-MATTER block. Community themes stuff
