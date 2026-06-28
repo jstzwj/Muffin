@@ -232,10 +232,27 @@ struct GradientSpec {
 // the host's existing rect); see the decoration painters. `present` marks a rule
 // that the theme actually declared (so callers can tell "no ::after" from
 // "::after with empty content + a background").
+// A parsed piece of a CSS `content` value: a literal run, or a counter() call.
+// `counter(name[, style])` / `counters(name, sep[, style])` are resolved at layout
+// time against the live counter state (the implicit `list-item` counter for lists;
+// the heading outline counters h1..h6 for heading ::before auto-numbering).
+struct ContentToken {
+  enum class Kind { Literal, Counter, Counters };
+  Kind kind = Kind::Literal;
+  QString text;    // Literal: the text; Counter/Counters: the counter name
+  QString style;   // Counter/Counters: list-style-type (empty ⇒ decimal)
+  QString sep;     // Counters: the separator string
+};
+
 struct PseudoElementRule {
   QString host;           // "h2","blockquote","a","#write","li","pre",…
   QString pseudo;         // "before" | "after"
   QString content;        // literal text / "" / "attr(data-language)"
+  // `content` split into tokens so heading ::before content like `counter(h1) ". "`
+  // can be resolved against the live counter state at layout time (mirrors
+  // ThemeDecorations::listMarkerContent). Empty for content with no counter() —
+  // the painter then draws `content` verbatim (the legacy literal fast path).
+  std::vector<ContentToken> contentTokens;
   QByteArray svgData;     // decoded url(data:image/svg+xml,…)
   bool svgFromMask = false;  // svgData came from `mask:` → render as alpha mask tinted with `color`/`backgroundColor`
   GradientSpec background;
@@ -361,17 +378,6 @@ struct ListGuide {
   bool present = false;    // a usable guide (valid colour + positive width)
 };
 
-// A parsed piece of a CSS `content` value: a literal run, or a counter() call.
-// `counter(name[, style])` / `counters(name, sep[, style])` are resolved at layout
-// time against the live counter state (the implicit `list-item` counter for lists).
-struct ContentToken {
-  enum class Kind { Literal, Counter, Counters };
-  Kind kind = Kind::Literal;
-  QString text;    // Literal: the text; Counter/Counters: the counter name
-  QString style;   // Counter/Counters: list-style-type (empty ⇒ decimal)
-  QString sep;     // Counters: the separator string
-};
-
 struct ThemeDecorations {
   std::vector<PseudoElementRule> pseudos;     // ::before/::after, host-keyed
   std::vector<ElementBackground> backgrounds;  // element own background, host-keyed
@@ -384,6 +390,21 @@ struct ThemeDecorations {
   // ⇒ the marker text is content-driven (counter resolved per item at layout time),
   // overriding list-style-type.
   std::vector<ContentToken> listMarkerContent;
+
+  // CSS counter-reset / counter-increment declarations, captured per host so heading
+  // ::before content like `counter(h1) ". "` can be resolved against a real outline
+  // state machine at layout time (DocumentLayout walks the AST in document order,
+  // applies each heading host's resets then increments). `none` is the absence of ops.
+  // Keyed by host: "h1".."h6", plus "#write"/"body" for the document-root reset.
+  struct CounterOps {
+    QVector<QPair<QString, int>> resets;      // name → reset value (default 0)
+    QVector<QPair<QString, int>> increments;  // name → increment step (default 1)
+  };
+  QHash<QString, CounterOps> hostCounterOps;
+  // True iff some h1..h6 ::before rule has a counter()/counters() token. Gates the
+  // whole heading-counter subsystem: when false, DocumentLayout never walks the AST
+  // for counters and builders never look up — zero cost for ordinary themes.
+  bool hasHeadingCounters = false;
 };
 
 struct ThemeElementBoxStyle {

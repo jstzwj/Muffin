@@ -152,6 +152,13 @@ public:
   void setHeadingLevel(int level);
   int headingLevel() const;
 
+  // Resolved ::before text for headings, e.g. "1. " from `content: counter(h1) ". "`.
+  // Empty when the heading has no counter-driven ::before (non-counter themes, or a
+  // heading whose ::before is a literal glyph/shape). Painted by DecorationPainter in
+  // place of the rule's raw `content` so counter() evaluates to real outline numbers.
+  void setHeadingBeforeText(QString text);
+  QString headingBeforeText() const;
+
   void setListMarker(QString marker);
   QString listMarker() const;
   void setListMarkerKind(ListMarkerKind kind);
@@ -247,6 +254,7 @@ private:
   qreal lineNumberGutterWidth_ = 0.0;
   qreal codeMaxLineWidth_ = 0.0;
   int headingLevel_ = 0;
+  QString headingBeforeText_;
   QString listMarker_;
   ListMarkerKind listMarkerKind_ = ListMarkerKind::None;
   qreal listContentIndent_ = 0.0;

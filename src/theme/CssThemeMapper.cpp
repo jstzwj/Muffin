@@ -1141,6 +1141,11 @@ std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& f
       content = content.mid(1, content.size() - 2);
     }
     rule.content = content;
+    // Tokenize so a heading ::before content like `counter(h1) ". "` can be
+    // resolved against live counter state at layout time. Pure-literal content
+    // yields an all-Literal vector (the painter still draws `rule.content` when
+    // no counter token is present — see DecorationPainter's resolved-text branch).
+    rule.contentTokens = parseContentTokens(content);
     rule.color = colorToken(sub, vars, {QStringLiteral("color")}, allPred);
     rule.backgroundColor = colorToken(sub, vars, {QStringLiteral("background-color"), QStringLiteral("background")}, allPred);
     const QString bgImg = bestValue(sub, {QStringLiteral("background-image"), QStringLiteral("background")}, allPred);
@@ -1859,6 +1864,48 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
       }
     }
   }
+
+  // CSS counter-reset / counter-increment for heading auto-numbering (phycat-style
+  // `counter(h1) ". "`). Captured per host so DocumentLayout can run a real counter
+  // state machine over the document-order heading sequence. Tokens are `name` or
+  // `name <int>`; `none` ⇒ no ops. Defaults: reset→0, increment→1.
+  const auto parseCounterPairs = [&vars](const QString& value, int defaultStep) -> QVector<QPair<QString, int>> {
+    QVector<QPair<QString, int>> out;
+    const QStringList parts = splitTopLevelSpaces(CssThemeParser::resolveVars(value, vars));
+    for (int i = 0; i < parts.size(); ++i) {
+      const QString name = parts.at(i).trimmed().toLower();
+      if (name.compare(QStringLiteral("none"), Qt::CaseInsensitive) == 0) { return {}; }
+      if (name.isEmpty()) { continue; }
+      int step = defaultStep;
+      if (i + 1 < parts.size()) {
+        bool ok = false;
+        const int n = parts.at(i + 1).toInt(&ok);
+        if (ok) { step = n; ++i; }
+      }
+      out.append({name, step});
+    }
+    return out;
+  };
+  for (int level = 1; level <= 6; ++level) {
+    ThemeDecorations::CounterOps ops;
+    // Read from `allFlat` (not `flat`): themes declare counter-increment on the
+    // ::before pseudo (phycat `#write h1:before { counter-increment: h1 }`), which
+    // `flat` filters out. isHeading matches both the bare element and its pseudos.
+    ops.resets = parseCounterPairs(bestValue(allFlat, {QStringLiteral("counter-reset")}, [level](const SelInfo& s) { return isHeading(s, level); }), 0);
+    ops.increments = parseCounterPairs(bestValue(allFlat, {QStringLiteral("counter-increment")}, [level](const SelInfo& s) { return isHeading(s, level); }), 1);
+    if (!ops.resets.isEmpty() || !ops.increments.isEmpty()) {
+      d.decorations.hostCounterOps.insert(QStringLiteral("h%1").arg(level), ops);
+    }
+  }
+  // Document-root reset (phycat `#write { counter-reset: h1 }`): applied at the start
+  // of the document-order walk. Falls back to body/html if #write declares none.
+  {
+    QString rootReset = bestValue(allFlat, {QStringLiteral("counter-reset")}, isWrite);
+    if (rootReset.isEmpty()) { rootReset = bestValue(allFlat, {QStringLiteral("counter-reset")}, isHtmlOrBody); }
+    ThemeDecorations::CounterOps rootOps;
+    rootOps.resets = parseCounterPairs(rootReset, 0);
+    if (!rootOps.resets.isEmpty()) { d.decorations.hostCounterOps.insert(QStringLiteral("#write"), rootOps); }
+  }
   // Heading element styles are built LATE (just before return d) so their em-relative
   // geometry (margin/padding) resolves against the now-populated heading font sizes —
   // building them here would use bodyPx and shrink heading em margins/paddings.
@@ -1964,6 +2011,19 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   // ::before/::after decorations (gradients, SVG icons, text content, texture
   // masks), grouped by host. Empty for themes that declare none.
   d.decorations.pseudos = extractPseudoRules(allFlat, vars, emPxForHost);
+  // Gate the heading-counter subsystem: active only when some h1..h6 ::before rule
+  // has a counter()/counters() token (its content was tokenized in extractPseudoRules).
+  // Non-counter themes pay nothing downstream — DocumentLayout skips the AST walk and
+  // builders never look up. Must run AFTER pseudos is populated.
+  d.decorations.hasHeadingCounters = std::any_of(
+      d.decorations.pseudos.begin(), d.decorations.pseudos.end(),
+      [](const PseudoElementRule& r) {
+        if (r.pseudo != QStringLiteral("before") || r.host.size() != 2 || r.host.at(0) != QLatin1Char('h')) { return false; }
+        const QChar c = r.host.at(1);
+        if (c < QLatin1Char('1') || c > QLatin1Char('6')) { return false; }
+        return std::any_of(r.contentTokens.begin(), r.contentTokens.end(),
+                           [](const ContentToken& t) { return t.kind != ContentToken::Kind::Literal; });
+      });
   // State pseudo widths (phycat `h1:hover::after { width:100% }`). Attach the
   // resolved-raw width to the matching base pseudo rule so the painter can lerp the
   // base width → state width by the matching animator phase. Same recipe for hover

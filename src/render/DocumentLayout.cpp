@@ -2,6 +2,7 @@
 
 #include "blocks/code/CodeFenceScrollController.h"
 #include "render/BlockLayoutBuilder.h"
+#include "theme/CssContent.h"
 #include "theme/CssStyleDebug.h"
 
 #include <QElapsedTimer>
@@ -10,6 +11,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 
 namespace muffin {
 namespace {
@@ -289,6 +291,9 @@ void DocumentLayout::rebuild(
   pageWidth_ = metrics.contentWidth;
 
   configureBuilder(selection);
+  // Full rebuild ⇒ recompute every heading's counter text from a clean document-order
+  // walk. The build loop below then reads headingCounterText_ by NodeId.
+  recomputeHeadingCounters(document, theme);
 
   const auto& children = document.root().children();
   slots_.reserve(children.size());
@@ -573,6 +578,11 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   }
 
   configureBuilder(selection);
+  // A structural edit can change the heading outline (and shift every subsequent
+  // heading's ordinal), so recompute the whole-document counter map before building
+  // the range. Single-block rebuilds (rebuildBlock) deliberately skip this — they
+  // reuse the map, since per-keystroke edits never change the outline.
+  recomputeHeadingCounters(document, theme);
   std::vector<BlockSlot> replacements;
   replacements.reserve(static_cast<size_t>(range.newCount));
 
@@ -991,6 +1001,57 @@ void DocumentLayout::collectNestedToTopLevel(const MarkdownNode& node, NodeId to
   }
 }
 
+void DocumentLayout::recomputeHeadingCounters(const MarkdownDocument& document, const RenderTheme& theme) {
+  headingCounterText_.clear();
+  if (!theme.decorations().hasHeadingCounters) {
+    return;  // ordinary themes pay nothing
+  }
+
+  // The live counter state: name → current value, advanced in document order.
+  QHash<QString, int> counters;
+  const auto& ops = theme.decorations().hostCounterOps;
+  // Document-root reset first (phycat `#write { counter-reset: h1 }`), so the walk
+  // starts from the theme-declared base. Only resets are meaningful at the root.
+  if (const auto it = ops.constFind(QStringLiteral("#write")); it != ops.constEnd()) {
+    for (const auto& r : it.value().resets) { counters[r.first] = r.second; }
+  }
+
+  const auto applyHost = [&](const QString& host) {
+    const auto it = ops.constFind(host);
+    if (it == ops.constEnd()) { return; }
+    // CSS processes counter-reset before counter-increment on an element.
+    for (const auto& r : it.value().resets) { counters[r.first] = r.second; }
+    for (const auto& inc : it.value().increments) { counters[inc.first] += inc.second; }
+  };
+
+  // Document-order DFS so headings nested in blockquotes/lists still count, matching
+  // CSS counter semantics. A heading first applies its host's reset+increment, then
+  // resolves its ::before content against the now-current counter values.
+  const std::function<void(const MarkdownNode&)> walk = [&](const MarkdownNode& node) {
+    if (node.type() == BlockType::Heading && node.headingLevel() >= 1 && node.headingLevel() <= 6) {
+      const QString host = QStringLiteral("h%1").arg(node.headingLevel());
+      applyHost(host);
+      for (const PseudoElementRule& rule : theme.decorations().pseudos) {
+        if (rule.host != host || rule.pseudo != QStringLiteral("before")) { continue; }
+        bool hasCounter = false;
+        for (const ContentToken& t : rule.contentTokens) {
+          if (t.kind != ContentToken::Kind::Literal) { hasCounter = true; break; }
+        }
+        if (hasCounter) {
+          const auto value = [&counters](const QString& name) { return counters.value(name, 0); };
+          // Headings are a single flat scope: counters() joins the one in-scope value.
+          const auto chain = [&counters](const QString& name) { return QVector<int>{counters.value(name, 0)}; };
+          headingCounterText_.insert(node.id(), resolveContentTokens(rule.contentTokens, value, chain));
+        }
+        break;
+      }
+    }
+    for (const auto& child : node.children()) { walk(*child); }
+  };
+
+  for (const auto& child : document.root().children()) { walk(*child); }
+}
+
 void DocumentLayout::rebuildTops() {
   tops_.clear();
   tops_.reserve(slots_.size());
@@ -1009,6 +1070,7 @@ void DocumentLayout::configureBuilder(SelectionRange selection) {
   builder_.setEditingHtmlBlock(editingHtmlBlockId_);
   builder_.setDocumentPath(documentPath_);
   builder_.setCodeFenceScroll(codeFenceScroll_);
+  builder_.setHeadingCounterText(&headingCounterText_);
 }
 
 qreal DocumentLayout::promoteSlot(qsizetype index, const RenderTheme& theme) {

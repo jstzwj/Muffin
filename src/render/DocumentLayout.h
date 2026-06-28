@@ -112,6 +112,10 @@ class DocumentLayout {
   void removeLayoutIndexFor(const BlockLayout& block);
   void buildNestedIndex(const MarkdownDocument& document);
   void collectNestedToTopLevel(const MarkdownNode& node, NodeId topLevelId);
+  // Walk the AST in document order and resolve each heading's ::before counter()
+  // content (e.g. `counter(h1) ". "` → "1. ") against a live counter state machine,
+  // storing the result keyed by NodeId. No-op for themes without heading counters.
+  void recomputeHeadingCounters(const MarkdownDocument& document, const RenderTheme& theme);
   void rebuildTops();
 
   void configureBuilder(SelectionRange selection);
@@ -132,6 +136,7 @@ class DocumentLayout {
   std::vector<qreal> tops_;                         // slots_[i].top mirror, for binary search
   QHash<NodeId, qsizetype> topLevelIndex_;          // top-level node id -> slot index
   QHash<NodeId, NodeId> nestedToTopLevel_;          // any node id -> top-level node id
+  QHash<NodeId, QString> headingCounterText_;       // heading node id -> resolved ::before counter text ("1. ")
   QHash<NodeId, const BlockLayout*> layoutIndex_;   // node id -> built BlockLayout* (lazy-populated)
 
   qreal pageLeft_ = 0;       // content left

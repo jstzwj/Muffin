@@ -43,6 +43,7 @@ muffin_add_test(NAME MuffinRenderHtmlPaintTest        SOURCE tests/render/Render
 muffin_add_test(NAME MuffinRenderTreeSitterTest       SOURCE tests/render/RenderTreeSitterTest.cpp       LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderHeadingFitContentTest SOURCE tests/render/RenderHeadingFitContentTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderHeadingPseudoTest SOURCE tests/render/RenderHeadingPseudoTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinRenderHeadingCounterTest SOURCE tests/render/HeadingCounterTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderHeadingPillTest SOURCE tests/render/RenderHeadingPillTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderLetterSpacingTest SOURCE tests/render/RenderLetterSpacingTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderInlineCodeBoxTest SOURCE tests/render/RenderInlineCodeBoxTest.cpp LINK MuffinUi RESOURCE_LOCK)

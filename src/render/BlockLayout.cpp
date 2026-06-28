@@ -569,6 +569,14 @@ int BlockLayout::headingLevel() const {
   return headingLevel_;
 }
 
+void BlockLayout::setHeadingBeforeText(QString text) {
+  headingBeforeText_ = std::move(text);
+}
+
+QString BlockLayout::headingBeforeText() const {
+  return headingBeforeText_;
+}
+
 void BlockLayout::setListMarker(QString marker) {
   listMarker_ = std::move(marker);
 }
@@ -955,6 +963,7 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
           // text, an underline-gradient bar, etc.
           DecorationPainter::PaintContext dctx;
           dctx.headingLevel = headingLevel_;
+          dctx.beforeContent = headingBeforeText_;
           dctx.font = theme.headingFont(headingLevel_);
           const BlockLayout::CssBoxGeometry box = cssBoxGeometry(theme);
           const QPointF textOrigin = box.inlineTextOrigin + QPointF(0, -scrollY);

@@ -360,6 +360,10 @@ void BlockLayoutBuilder::setCodeFenceScroll(CodeFenceScrollController* controlle
   codeFenceScroll_ = controller;
 }
 
+void BlockLayoutBuilder::setHeadingCounterText(const QHash<NodeId, QString>* map) {
+  headingCounterText_ = map;
+}
+
 BlockLayoutBuilder::BlockLayoutBuilder() : perfEnabled_(blockBuildPerf().isDebugEnabled()) {}
 
 void BlockLayoutBuilder::refreshRenderSettings() {
@@ -434,6 +438,14 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   layout->setType(node.type());
   layout->setDepth(depth);
   layout->setHeadingLevel(node.headingLevel());
+  // Counter-driven ::before text (e.g. "1. ") for heading auto-numbering themes.
+  // The map is computed once per structural/full layout pass (DocumentLayout) and
+  // reused verbatim on per-keystroke single-block rebuilds, where the document
+  // outline is unchanged — so a heading always reads its correct ordinal.
+  if (headingCounterText_ && node.type() == BlockType::Heading) {
+    const auto it = headingCounterText_->constFind(node.id());
+    if (it != headingCounterText_->constEnd()) { layout->setHeadingBeforeText(it.value()); }
+  }
   if (isEmptyDocumentParagraph(md(), node)) {
     layout->setPlaceholderText(QCoreApplication::translate("muffin::BlockLayoutBuilder", "Start writing..."));
   }

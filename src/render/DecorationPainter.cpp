@@ -260,12 +260,15 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
           const qreal h = before->size.height() > 0.0 ? before->size.height() : em;
           paintShapeBox(painter, *before, QRectF(zoneRight - w, vCenter - h / 2.0, w, h));
         } else if (!before->content.isEmpty() && zoneRight > zoneLeft) {
+          // Prefer the layout-resolved text (counter() evaluated to "1. " etc.) over
+          // the rule's literal `content` (which still holds `counter(h1) ". "` raw).
+          const QString text = ctx.beforeContent.isEmpty() ? before->content : ctx.beforeContent;
           painter.save();
           painter.setOpacity(before->opacity);
           painter.setFont(ctx.font);
           painter.setPen(before->color.isValid() ? before->color : theme.textColor());
           painter.drawText(QRectF(zoneLeft, ctx.textBounds.top(), zoneRight - zoneLeft, ctx.textBounds.height()),
-                           Qt::AlignVCenter | Qt::AlignRight, before->content);
+                           Qt::AlignVCenter | Qt::AlignRight, text);
           painter.restore();
         }
       }

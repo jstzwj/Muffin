@@ -31,6 +31,11 @@ public:
   // owned outside the rebuilt BlockLayouts. The builder writes the measured line width so the
   // paint path and scrollbar thumb agree on scrollability.
   void setCodeFenceScroll(CodeFenceScrollController* controller);
+  // DocumentLayout's heading-counter map (NodeId → resolved ::before text, e.g.
+  // "1. "). Owned by the layout; the builder only reads it. nullptr/empty for
+  // non-counter themes. Set every pass by configureBuilder so single-block and
+  // range rebuilds share the same map the full/range pass just recomputed.
+  void setHeadingCounterText(const QHash<NodeId, QString>* map);
 
   // Read the render-affecting markdown/* settings ONCE per layout pass (call from configureBuilder)
   // into the members below, so the per-block estimate/build loops don't hit QSettings (Windows
@@ -161,6 +166,7 @@ private:
   const LineStartOffsetCache* lineOffsets_ = &emptyLineOffsets_;
   SelectionRange selection_;
   NodeId editingHtmlBlockId_;
+  const QHash<NodeId, QString>* headingCounterText_ = nullptr;
   // Cached once per layout pass by refreshRenderSettings() (configureBuilder). The per-block
   // estimate/build loops read these instead of hitting QSettings per block.
   bool breakOnSingleNewline_ = true;

@@ -26,6 +26,10 @@ struct PaintContext {
   QPointF textStart = QPointF(-1.0, -1.0);  // where heading text starts (for a ::before icon)
   QRectF textBounds;                         // visual text bounds after QTextLayout alignment
   qreal contentLeftX = -1.0;       // heading content-box left (inline ::before marker zone start)
+  // Resolved ::before text for headings (e.g. "1. " from `content: counter(h1) ". "`),
+  // computed by the layout pass against the live counter state. Empty ⇒ fall back to
+  // the rule's literal `content` (the legacy path for non-counter themes / literal glyphs).
+  QString beforeContent;
   // Hover animation phase (0..1) for the host block, from the HoverAnimator. 0 ⇒
   // base (not hovered); drives hover-state pseudo geometry such as a widening
   // ::after underline (phycat `h1:hover::after { width:100% }`).
