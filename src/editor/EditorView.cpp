@@ -30,6 +30,7 @@
 #include <QLoggingCategory>
 #include <QScrollBar>
 #include <QPropertyAnimation>
+#include <QTimer>
 #include <QVector>
 #include <QWheelEvent>
 #include <QMouseEvent>
@@ -112,6 +113,15 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
   focusAnimator_->repaintBlock = [this](NodeId id) { repaintFocusBlock(id); };
   keyframeAnimator_ = new KeyframeAnimator(this);
   keyframeAnimator_->repaintAnimated = [this]() { repaintAnimatedBlocks(); };
+  // Idle-gated spinner driver: runs only while loading_ (set by setLoading), advancing the
+  // bright wave around the dot ring and repainting. Costs nothing on a loaded document.
+  loadingTimer_ = new QTimer(this);
+  loadingTimer_->setInterval(33);  // ~30 fps — smooth for a flowing dot ring
+  QObject::connect(loadingTimer_, &QTimer::timeout, this, [this] {
+    loadingPhase_ += 1.0 / 36.0;  // ~1.2 s per revolution at 30 fps
+    if (loadingPhase_ >= 1.0) loadingPhase_ -= 1.0;
+    viewport()->update();
+  });
 
   codeLanguageEditor_ = new CodeLanguageEditor(viewport(), this);
   codeLanguageEditor_->setSuggestions({
@@ -186,6 +196,12 @@ void EditorView::setDocument(const MarkdownDocument& document, QString documentP
 void EditorView::setLoading(bool loading) {
   if (loading_ != loading) {
     loading_ = loading;
+    if (loading_) {
+      loadingPhase_ = 0.0;        // each load animates from the top of the ring
+      loadingTimer_->start();
+    } else {
+      loadingTimer_->stop();
+    }
     viewport()->update();
   }
 }
@@ -611,6 +627,54 @@ HitTestResult EditorView::hitTest(QPointF viewportPos) const {
   return hit;
 }
 
+void EditorView::paintLoadingOverlay(QPainter& painter) const {
+  const QFont font = theme_.headingFont(1);
+  const QFontMetricsF metrics(font);
+  const QString text = QCoreApplication::translate("muffin::EditorView", "Loading…");
+
+  const QRectF rect = viewport()->rect();
+  const qreal textHeight = metrics.height();
+  const qreal ringRadius = textHeight * 0.8;
+  const qreal dotRadius = qMax(2.0, ringRadius * 0.13);
+  const qreal gap = textHeight * 0.45;
+  const qreal ringExtent = 2.0 * (ringRadius + dotRadius);  // top dot top → bottom dot bottom
+  const qreal totalHeight = ringExtent + gap + textHeight;
+
+  const qreal centerX = rect.left() + rect.width() / 2.0;
+  const qreal blockTop = rect.top() + (rect.height() - totalHeight) / 2.0;
+  const qreal ringCenterY = blockTop + ringExtent / 2.0;
+
+  painter.setRenderHint(QPainter::Antialiasing, true);
+
+  // Pulsing-dot spinner: 12 dots around a ring. A bright wave whose head sits at loadingPhase_
+  // sweeps clockwise; each dot's brightness falls off with its distance behind the head, with a
+  // faint floor so the full ring stays legible. Dot radius subtly scales with brightness.
+  const QColor dotBase = theme_.textColorForElement(QStringLiteral("p"), nullptr);
+  constexpr int kDotCount = 12;
+  painter.setPen(Qt::NoPen);
+  for (int i = 0; i < kDotCount; ++i) {
+    // Distance of this dot behind the advancing head, in [0,1); 0 == head (brightest). The +1
+    // and single fold keep it positive without fmod: loadingPhase_ - i/N ∈ (-1,1) ⇒ ∈ [0,1) here.
+    qreal behind = loadingPhase_ - qreal(i) / qreal(kDotCount) + 1.0;
+    if (behind >= 1.0) behind -= 1.0;
+    const qreal brightness = (1.0 - behind) * (1.0 - behind);
+    QColor c = dotBase;
+    c.setAlphaF(0.12 + 0.88 * brightness);
+    painter.setBrush(c);
+    const qreal r = dotRadius * (0.6 + 0.4 * brightness);
+    painter.save();
+    painter.translate(centerX, ringCenterY);
+    painter.rotate(i * (360.0 / kDotCount));  // dot 0 at 12 o'clock, advancing clockwise
+    painter.drawEllipse(QPointF(0.0, -ringRadius), r, r);
+    painter.restore();
+  }
+
+  painter.setFont(font);
+  painter.setPen(theme_.textColorForElement(QStringLiteral("h1"), nullptr));
+  const QRectF textRect(rect.left(), blockTop + ringExtent + gap, rect.width(), textHeight);
+  painter.drawText(textRect, Qt::AlignCenter, text);
+}
+
 void EditorView::paintEvent(QPaintEvent* event) {
   PerfTimer perf("view.paint");
   Q_UNUSED(event);
@@ -619,10 +683,9 @@ void EditorView::paintEvent(QPaintEvent* event) {
   painter.fillRect(viewport()->rect(), theme_.viewportBackgroundColor());
 
   if (loading_) {
-    // Async open parse is in flight (no document yet, or a stale one): show a centered hint instead
-    // of the stale page so the user sees feedback while the worker parses.
-    painter.setPen(theme_.textColorForElement(QStringLiteral("p"), nullptr));
-    painter.drawText(viewport()->rect(), Qt::AlignCenter, QStringLiteral("Loading…"));
+    // Async open parse is in flight (no document yet, or a stale one): show a centered spinner +
+    // label instead of the stale page so the user sees feedback while the worker parses.
+    paintLoadingOverlay(painter);
     return;
   }
 

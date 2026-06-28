@@ -14,6 +14,7 @@
 #include <memory>
 
 class QPropertyAnimation;
+class QTimer;
 class QWidget;
 
 namespace muffin {
@@ -196,6 +197,9 @@ private:
   void paintInsertionCursor(QPainter& painter) const;
   void paintHeadingBadge(QPainter& painter) const;
   void paintHtmlHoverOverlay(QPainter& painter) const;
+  // Centered spinner + H1-sized translatable "Loading…" shown while an async open parse is
+  // in flight, replacing the stale/empty page so the user gets immediate feedback.
+  void paintLoadingOverlay(QPainter& painter) const;
   HeadingBadge headingBadgeForBlock(NodeId blockId) const;
   QRectF headingBadgeViewportRectForBlock(NodeId blockId) const;
   QRectF htmlHoverButtonViewportRect() const;
@@ -268,6 +272,8 @@ private:
   // cannot re-enter layout and re-promote mid-transaction.
   bool inScrollBuild_ = false;
   bool loading_ = false;  // set by setLoading; paintEvent shows a loading hint while true
+  QTimer* loadingTimer_ = nullptr;  // idle-gated: runs only while loading_, advancing loadingPhase_
+  qreal loadingPhase_ = 0.0;  // 0..1 head position of the bright wave around the dot ring
 };
 
 }  // namespace muffin
