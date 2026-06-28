@@ -224,6 +224,8 @@ void InputController::applyLocalEdit(
     if (editedOffset >= 0) {
       demoteOffsets.append(editedOffset);
     }
+    qCDebug(inputEditPerf).nospace() << "applyLocalEdit.fullReparseFallback label=" << label
+        << " start=" << sourceStart << " removedLen=" << removedLength << " insertedLen=" << insertedText.size();
     ctx_.session->applyMarkdownText(nextText, true, std::move(demoteOffsets));
   }
 

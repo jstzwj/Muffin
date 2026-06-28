@@ -31,7 +31,10 @@ class MarkdownNode;
 // match exactly as they do at theme-load time.
 class NodeCssElementBuilder {
 public:
-  NodeCssElementBuilder();
+  // maintainTypeIndex=false lets linkSiblingsIteratively skip the per-sibling typeCounts
+  // QHash<QString> lookup + typeIndex assignment — typeIndex is read only by :*-of-type
+  // selectors, so themes without them (every bundled theme) pay nothing for it.
+  explicit NodeCssElementBuilder(bool maintainTypeIndex = true);
 
   // Build (or return the cached) CssElement for `node`. Never null.
   const CssElement* build(const MarkdownNode& node);
@@ -56,6 +59,7 @@ private:
   std::vector<std::unique_ptr<CssElement>> pool_;
   QHash<NodeId, CssElement*> cache_;
   QSet<NodeId> linkedParents_;  // parents whose child sibling chain has been wired (once each)
+  bool maintainTypeIndex_ = true;  // false ⇒ skip typeCounts/typeIndex (no :*-of-type selectors)
   CssElement* html_ = nullptr;
   CssElement* body_ = nullptr;
 };

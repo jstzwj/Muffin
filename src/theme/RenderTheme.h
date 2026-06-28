@@ -269,6 +269,7 @@ private:
   // that need the live tree; the per-node cache is mutable (lazily filled, cleared
   // per rebuild) so the const getters can populate it.
   bool hasStructuralRules_ = false;
+  bool hasNthOfType_ = false;  // some selector reads typeIndex (:*-of-type); else skip typeCounts
   qreal bodyFontPx_ = 16.0;
   std::shared_ptr<const CssThemeSheet> structuralSheet_;
   std::shared_ptr<CssComputedStyleEngine> structuralEngine_;

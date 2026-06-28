@@ -513,6 +513,10 @@ struct ThemeDefinition {
   // Absent (false/null) for every theme without such selectors — the load-time
   // prototype precompute is the whole answer, with no per-layout cost.
   bool hasStructuralRules = false;
+  // True only when some selector reads typeIndex (:nth-of-type / :first-of-type / :last-of-type /
+  // :only-of-type). When false (every bundled theme), the structural builder skips the per-sibling
+  // typeCounts QString-hash maintenance — the dominant cost of the per-splice sibling re-link.
+  bool hasNthOfType = false;
   qreal bodyFontPx = 16.0;  // body font size in CSS px (em basis for the structural path)
   std::shared_ptr<CssThemeSheet> structuralSheet;  // only populated when hasStructuralRules
   bool isBuiltIn = true;

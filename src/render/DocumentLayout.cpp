@@ -686,7 +686,8 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
     shiftSuffixFrom(newSuffixFirst, result.heightDelta);
   }
   if (dbg) {
-    qCDebug(layoutPerf).nospace() << "layout.range.shift from=" << newSuffixFirst << " "
+    qCDebug(layoutPerf).nospace() << "layout.range.shift from=" << newSuffixFirst << " n="
+                                  << (static_cast<qsizetype>(slots_.size()) - newSuffixFirst) << " "
                                   << buildTimer.nsecsElapsed() / 1000000.0 << " ms";
   }
 

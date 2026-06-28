@@ -27,17 +27,25 @@ qreal paragraphBlockHeight(const QString& markdown) {
   return block->rect().height();
 }
 
-// A tall inline atom (a fraction is ~2x text height) must grow its line, so the
-// paragraph block is taller than the same prose without the math. Before the
-// fix the line was not grown for math atoms, so the painted fraction overflowed
-// into the neighbour line. Relative (same offscreen font), so robust to the
-// offscreen metric differences that make absolute geometry unreliable.
+// A tall inline atom (a fraction is ~2x text height on a real font) must grow its
+// line, so the paragraph block is taller than the same prose without the math.
+// Before the fix the line was not grown for math atoms, so the painted fraction
+// overflowed into the neighbour line. The block-height comparison is relative (same
+// offscreen font for plain and withMath), but the growth MAGNITUDE depends on how
+// tall that font renders the fraction — so the assertion is proportional, not an
+// absolute pixel margin (see offscreen-test-harness-broken-font-metrics).
 void testTallInlineMathGrowsLine() {
   const qreal plain = paragraphBlockHeight(QStringLiteral("alpha bravo charlie\n"));
   const qreal withMath = paragraphBlockHeight(QStringLiteral("alpha $\\frac{1}{2}$ bravo\n"));
   require(plain > 8.0, QStringLiteral("plain paragraph should have measurable height (=%1)").arg(plain));
-  // A fraction renders ~2x the text height; the line must grow by a clear margin.
-  require(withMath > plain + 6.0,
+  // The line must grow when it holds a tall inline atom. The growth MAGNITUDE is
+  // font-dependent: a real font renders the fraction ~2x text height (exercised on
+  // Windows CI), but the offscreen/fontconfig font on Linux CI renders it near-text
+  // (plain≈23, withMath≈27 — only ~17% taller). An absolute pixel margin (+6) failed
+  // on the smaller Linux metrics, so assert PROPORTIONAL growth (>5%, beyond rounding),
+  // which scales with the font. The regression this guards is ZERO growth — the line
+  // not being grown for math atoms, so the painted fraction overflowed its neighbour.
+  require(withMath > plain * 1.05,
           QStringLiteral("a tall inline fraction must grow its line (plain=%1 withMath=%2)").arg(plain).arg(withMath));
 }
 

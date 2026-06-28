@@ -1735,6 +1735,18 @@ bool selectorIsStructural(const QString& selector) {
   return false;
 }
 
+// typeIndex (the per-tag ordinal among siblings) is read ONLY by the `:*-of-type` family
+// (:nth-of-type, :first-of-type, :last-of-type, :only-of-type). No bundled theme uses any of
+// these, so maintaining it — a QHash<QString> lookup per sibling in linkSiblingsIteratively,
+// the dominant cost of the per-splice sibling re-link on huge flat docs — is pure waste there.
+// Detecting it lets the builder skip that work entirely when no selector can read typeIndex.
+bool selectorHasNthOfType(const QString& selector) {
+  return selector.contains(QLatin1String(":nth-of-type")) ||
+         selector.contains(QLatin1String(":first-of-type")) ||
+         selector.contains(QLatin1String(":last-of-type")) ||
+         selector.contains(QLatin1String(":only-of-type"));
+}
+
 ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QString& id) {
   ThemeDefinition d;
   d.isBuiltIn = false;
@@ -2424,9 +2436,10 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   for (const CssRule& rule : sheet.rules()) {
     if (rule.darkScope) { continue; }
     for (const QString& sel : rule.selectors) {
-      if (selectorIsStructural(sel)) { d.hasStructuralRules = true; break; }
+      if (selectorIsStructural(sel)) { d.hasStructuralRules = true; }
+      if (selectorHasNthOfType(sel)) { d.hasNthOfType = true; }
     }
-    if (d.hasStructuralRules) { break; }
+    if (d.hasStructuralRules && d.hasNthOfType) { break; }
   }
   if (d.hasStructuralRules) { d.structuralSheet = std::make_shared<CssThemeSheet>(sheet); }
   return d;

@@ -222,6 +222,7 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
     }
   }
   t.hasStructuralRules_ = definition.hasStructuralRules;
+  t.hasNthOfType_ = definition.hasNthOfType;
   t.bodyFontPx_ = definition.bodyFontPx;
   t.structuralSheet_ = definition.structuralSheet;
   if (t.structuralSheet_) {
@@ -613,7 +614,7 @@ const ThemeElementStyle* RenderTheme::elementStyleForNode(const MarkdownNode& no
   // Reuse one NodeCssElementBuilder across all queries in this rebuild: build() is memoized, so the
   // first call wires the full sibling chain (linkSiblingsIteratively) and every later node is an
   // O(1) cache hit. A fresh builder per call rebuilt the chain per node → O(n²) on flat block lists.
-  if (!structuralBuilder_) { structuralBuilder_ = std::make_shared<NodeCssElementBuilder>(); }
+  if (!structuralBuilder_) { structuralBuilder_ = std::make_shared<NodeCssElementBuilder>(hasNthOfType_); }
   ThemeElementStyle resolved = CssThemeMapper::elementStyleForNode(*structuralBuilder_, *structuralEngine_, node, key, bodyFontPx_);
   resolved.key = key;
   return &nodeStyleCache_.insert(node.id(), std::move(resolved)).value();

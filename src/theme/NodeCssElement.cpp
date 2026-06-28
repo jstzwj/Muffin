@@ -50,7 +50,7 @@ QString cssTagForNode(const MarkdownNode& node) {
   }
 }
 
-NodeCssElementBuilder::NodeCssElementBuilder() {
+NodeCssElementBuilder::NodeCssElementBuilder(bool maintainTypeIndex) : maintainTypeIndex_(maintainTypeIndex) {
   // Synthetic ancestors above the document root, matching the prototype tree so
   // `body …` / `html …` / `#write …` selectors resolve identically at layout time.
   html_ = makeOwned();
@@ -127,11 +127,13 @@ void NodeCssElementBuilder::linkSiblingsIteratively(const MarkdownNode& parent) 
   const auto& siblings = parent.children();
   CssElement* prev = nullptr;
   int idx = 0;
-  QHash<QString, int> typeCounts;
+  QHash<QString, int> typeCounts;  // only touched when maintainTypeIndex_ (else unused, ~free)
   for (const std::unique_ptr<MarkdownNode>& s : siblings) {
     CssElement* cur = const_cast<CssElement*>(ensure(*s));  // memoized; ensure no longer recurses siblings
     cur->childIndex = idx++;
-    cur->typeIndex = typeCounts[cur->tag]++;
+    if (maintainTypeIndex_) {
+      cur->typeIndex = typeCounts[cur->tag]++;  // the per-sibling QString hash — skipped when no :*-of-type
+    }
     cur->previousSibling = prev;
     cur->nextSibling = nullptr;
     if (prev) {

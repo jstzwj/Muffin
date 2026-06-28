@@ -45,6 +45,8 @@ struct TopLevelSlice {
   qsizetype count = 0;
   qsizetype sourceStart = -1;
   qsizetype sourceEnd = -1;
+  bool startsAtEditStart = false;  // the preceding block(s) were skipped (trailing-newline touch);
+                                  // a leading VEP in the replacements is a separator artifact
 };
 
 void warnLocalEditRejected(
@@ -93,27 +95,26 @@ void warnLocalEditSliceRejected(
       << " sliceSrc=[" << slice.sourceStart << "," << slice.sourceEnd << "]";
 }
 
-bool isEditableTopLevelType(muffin::BlockType type) {
-  switch (type) {
-    case muffin::BlockType::Paragraph:
-    case muffin::BlockType::Heading:
-    case muffin::BlockType::List:
-    case muffin::BlockType::BlockQuote:
-    case muffin::BlockType::FrontMatter:
-    case muffin::BlockType::CodeFence:
-    case muffin::BlockType::HtmlBlock:
-    case muffin::BlockType::MathBlock:
-    case muffin::BlockType::Table:
-    case muffin::BlockType::LinkDefinition:
-    case muffin::BlockType::FootnoteDefinition:
-      return true;
-    default:
-      return false;
-  }
-}
-
 muffin::SourceRange usableRange(const muffin::MarkdownNode& node) {
   return node.sourceRange();
+}
+
+// True when editStart sits inside the block's trailing-newline region: every byte from editStart
+// to the block's byteEnd is a line terminator. Such a block's CONTENT is entirely before editStart,
+// so a deletion beginning there leaves the block unchanged (cmark re-assigns the trailing newline
+// from the new following context) — chooseTopLevelSlice skips it to keep its original node/range.
+bool editStartInTrailingNewlines(const muffin::PieceTable& text, const muffin::MarkdownNode& block, qsizetype editStart) {
+  const muffin::SourceRange r = block.sourceRange();
+  if (r.byteStart < 0 || editStart < r.byteStart || editStart >= r.byteEnd) {
+    return false;
+  }
+  for (qsizetype i = editStart; i < r.byteEnd; ++i) {
+    const QChar c = text.at(i);
+    if (c != QLatin1Char('\n') && c != QLatin1Char('\r')) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool isVirtualEmptyParagraph(const muffin::MarkdownNode& node) {
@@ -204,7 +205,7 @@ void demotePendingMarkersAtOffsets(const QString& markdown, muffin::MarkdownNode
   }
 }
 
-TopLevelSlice chooseTopLevelSlice(const muffin::MarkdownDocument& document, qsizetype editStart, qsizetype editEnd, bool blankLineStructuralEdit) {
+TopLevelSlice chooseTopLevelSlice(const muffin::MarkdownDocument& document, qsizetype editStart, qsizetype editEnd, bool blankLineStructuralEdit, bool isPureDeletion) {
   TopLevelSlice slice;
   const auto& blocks = document.root().children();
   if (blocks.empty()) {
@@ -249,31 +250,47 @@ TopLevelSlice chooseTopLevelSlice(const muffin::MarkdownDocument& document, qsiz
     }
     hiExcl = a;
   }
-  // An edit that overlaps a NON-editable top-level block (a thematic break, …) is removing or
-  // reshaping structure the slice cannot represent: the slice only re-parses editable blocks, so it
-  // would splice the surviving editable neighbours around a block it silently dropped — corrupting
-  // the live tree (stale ranges, duplicate nodes) even though the source text ends up correct.
-  // The classic trigger is deleting a `---` from a caret nested inside an adjacent list/block quote:
-  // the edit window spans the editable container AND the divider, the slice picks only the container,
-  // and the removed divider leaves a stale node. Force a full re-parse instead (the caller's
-  // !appliedLocally fallback). Strict overlap (byteStart < editEnd && byteEnd > editStart) excludes a
-  // block that merely touches the edit at a boundary, e.g. an insertion whose end lands on a
-  // divider's start — those don't remove the divider and slice normally.
-  for (qsizetype i = lo; i < hiExcl; ++i) {
-    const muffin::MarkdownNode& block = *blocks.at(static_cast<size_t>(i));
-    if (isEditableTopLevelType(block.type())) {
-      continue;
-    }
-    const muffin::SourceRange range = usableRange(block);
-    if (range.byteStart < editEnd && range.byteEnd > editStart) {
-      return slice;  // first == -1 → caller rejects the slice and full-reparses
+  // A pure deletion that begins inside a block's trailing-newline region (caret at the end of a
+  // block's content — the classic "delete at end of a paragraph/list eats the following divider")
+  // leaves that block's CONTENT unchanged: only trailing whitespace is removed, and cmark
+  // re-assigns the trailing newline from the new following context. Skip such blocks so they keep
+  // their original node + source range; re-parsing them in slice isolation would give cmark a
+  // context-dependent range (off by the trailing newline) that mismatches a full re-parse. The
+  // deletion must extend past the block (editEnd >= byteEnd) so its trailing newlines are fully
+  // consumed and cmark re-derives them — a deletion that stops mid-whitespace still owns the rest.
+  bool sliceStartsAtEditStart = false;
+  // Only when a surviving block follows the window (hiExcl < blocks.size()): cmark then re-assigns
+  // the skipped block's trailing newline from that following content, so keeping its original node
+  // + range stays correct. If the skipped block would become the last block (nothing follows), its
+  // range would shrink and the original would go stale — so don't skip in that case (re-parse it).
+  if (isPureDeletion && hiExcl < static_cast<qsizetype>(blocks.size())) {
+    const muffin::PieceTable& src = document.pieceText();
+    while (lo < hiExcl) {
+      const muffin::MarkdownNode& blk = *blocks.at(static_cast<size_t>(lo));
+      const muffin::SourceRange r = usableRange(blk);
+      if (editEnd < r.byteEnd || !editStartInTrailingNewlines(src, blk, editStart)) {
+        break;
+      }
+      ++lo;
+      sliceStartsAtEditStart = true;
     }
   }
+  // The slice spans the FULL overlap window [lo, hiExcl) — including NON-editable top-level
+  // blocks (a thematic break). A slice is just a contiguous source region re-parsed in
+  // isolation; editability is a rendering concern the parser ignores. Spanning the whole window
+  // guarantees slice.sourceStart <= editStart and slice.sourceEnd >= editEnd, so the slice text
+  // (built in tryApplyTopLevelLocalEdit as pre-edit + replacement + post-edit) is exactly the
+  // post-edit text of that region — re-parsing it reproduces the correct blocks and
+  // replaceTopLevelRange swaps them in. A `---` being deleted simply isn't among the re-parsed
+  // blocks, so it is removed from the live tree instead of forcing a whole-document re-parse.
+  // (Earlier this SKIPPED non-editable blocks, which left slice.sourceStart past editStart and a
+  // stale divider node + duplicates; the refuse-and-full-reparse was the workaround. Including
+  // them is the fundamental fix — guarded by testDeleteRuleFromNestedListItemKeepsLiveTreeConsistent.)
   for (qsizetype i = lo; i < hiExcl; ++i) {
     const muffin::MarkdownNode& block = *blocks.at(static_cast<size_t>(i));
     const muffin::SourceRange range = usableRange(block);
-    if (range.byteStart < 0 || range.byteEnd < range.byteStart || !isEditableTopLevelType(block.type())) {
-      continue;
+    if (range.byteStart < 0 || range.byteEnd < range.byteStart) {
+      continue;  // skip only invalid ranges — NOT non-editable blocks (see comment above)
     }
     if (slice.first < 0) {
       slice.first = i;
@@ -335,6 +352,12 @@ TopLevelSlice chooseTopLevelSlice(const muffin::MarkdownDocument& document, qsiz
     // Snap the slice start to the line boundary (shared helper) so block-leading indentation —
     // notably indented-code blocks, whose node range begins at the content — is re-parsed intact.
     slice.sourceStart = muffin::lineStartOffset(document.pieceText(), slice.sourceStart);
+    if (sliceStartsAtEditStart) {
+      // Override the snap: the edit began in a skipped block's trailing whitespace, not at a
+      // re-parseable line boundary. The slice must still cover editStart, so start exactly there.
+      slice.sourceStart = editStart;
+    }
+    slice.startsAtEditStart = sliceStartsAtEditStart;
     return slice;
   }
 
@@ -644,6 +667,8 @@ bool muffin::DocumentSession::applyTextDelta(
     return false;
   }
   if (!tryApplyTopLevelLocalEdit(sourceStart, sourceStart + removedLength, insertedText, modified, nodeHints)) {
+    qCDebug(sessionPerf).nospace() << "localEdit.rejected start=" << sourceStart << " removedLen=" << removedLength
+        << " insertedLen=" << insertedText.size() << " -> caller full-reparses";
     lastLocalEditChangedTopLevelStructure_ = false;
     lastLocalTopLevelRangeChange_ = {};
     return false;
@@ -828,7 +853,9 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
   PerfTimer perf("session.localParse");
   const PieceTable& oldText = document_.pieceText();  // Phase 2a: read the piece-table, not the QString cache
   const QString removedText = oldText.mid(sourceStart, sourceEnd - sourceStart);
-  TopLevelSlice slice = chooseTopLevelSlice(document_, sourceStart, sourceEnd, isBlankLineStructuralEdit(removedText, replacementText));
+  TopLevelSlice slice = chooseTopLevelSlice(document_, sourceStart, sourceEnd, isBlankLineStructuralEdit(removedText, replacementText), replacementText.isEmpty());
+  qCDebug(sessionPerf).nospace() << "slice.chosen first=" << slice.first << " count=" << slice.count
+      << " src=[" << slice.sourceStart << "," << slice.sourceEnd << "]";
   if (slice.first < 0 || slice.sourceStart < 0 || slice.sourceEnd < slice.sourceStart) {
     warnLocalEditSliceRejected(
         "could not choose a valid top-level slice",
@@ -932,6 +959,15 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
   if (slice.count == 0 && slice.first > 0) {
     stripSeparatorVirtualEmptyParagraphs(replacements);
   }
+  // When the slice started at editStart because the preceding block was skipped (its trailing
+  // newlines were touched by the deletion), any leading VEP in the replacements is a separator
+  // artifact synthesized from residual whitespace after the removed block — not intended content.
+  // The skipped block is the real preceding content, so drop the leading VEP(s).
+  if (slice.startsAtEditStart) {
+    while (!replacements.empty() && isVirtualEmptyParagraph(*replacements.front())) {
+      replacements.erase(replacements.begin());
+    }
+  }
   inheritIdsForUnchangedTopLevelBlocks(document_, slice, replacements, sourceStart, sourceEnd, editDelta);
   applyNodeHints(document_, replacements, nodeHints);
   const qsizetype replacementCount = static_cast<qsizetype>(replacements.size());
@@ -949,6 +985,8 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
     for (qsizetype i = firstFollowing; i < static_cast<qsizetype>(existingBlocks.size()); ++i) {
       existingBlocks.at(static_cast<size_t>(i))->shiftOwnSourceRange(editDelta, editLineDelta);
     }
+    qCDebug(sessionPerf).nospace() << "session.local.shiftSuffixCount n="
+        << (static_cast<qsizetype>(existingBlocks.size()) - firstFollowing);
   }
 
   document_.replaceTopLevelRange(slice.first, slice.count, std::move(replacements), sourceStart, sourceEnd, replacementText);
