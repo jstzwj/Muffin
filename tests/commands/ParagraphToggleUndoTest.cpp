@@ -27,7 +27,7 @@ void testToggleCodeBlockUndo() {
   setSourceCursor(selection, blockAt(session, 0), 5, 5);
 
   require(paragraph.toggleCodeBlock(), "split should succeed");
-  require(session.markdownText() != original, "text should change after split");
+  require(session.markdownText().toString() != original, "text should change after split");
 
   const EditTransaction undo = requireTextDeltaCommand(undoStack, "toggle code block undo should be TextDeltaCommand");
   session.applyTextDelta(
@@ -35,7 +35,7 @@ void testToggleCodeBlockUndo() {
       undo.textDeltaCommand().delta.insertedText.size(),
       undo.textDeltaCommand().delta.removedText,
       true);
-  require(session.markdownText() == original, "undo should restore original text");
+  require(session.markdownText().toString() == original, "undo should restore original text");
 }
 
 void testToggleCodeBlockUndoConvertBack() {
@@ -58,7 +58,7 @@ void testToggleCodeBlockUndoConvertBack() {
       undo.textDeltaCommand().delta.insertedText.size(),
       undo.textDeltaCommand().delta.removedText,
       true);
-  require(session.markdownText() == original, "convert back undo should restore original");
+  require(session.markdownText().toString() == original, "convert back undo should restore original");
 }
 
 void testToggleCodeBlockMultiBlockDocument() {
@@ -75,7 +75,7 @@ void testToggleCodeBlockMultiBlockDocument() {
   setSourceCursor(selection, blockAt(session, 1), 3, 3 + 7);
   require(paragraph.toggleCodeBlock(), "split middle block should succeed");
 
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(md.startsWith(QLatin1String("First")), "first block should be unchanged");
   require(md.contains(QLatin1String("```\n\n```")), "should contain code fence");
 
@@ -101,7 +101,7 @@ void testToggleCodeBlockAfterTable() {
 
   require(paragraph.toggleCodeBlock(), "code block after table should succeed");
 
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(md.contains(QLatin1String("| a |")), "table should still exist");
   require(md.contains(QLatin1String("```\n\n```")), "should insert code block after table");
   require(md.indexOf(QLatin1String("| a |")) < md.indexOf(QLatin1String("```")), "table should be before code block");
@@ -119,7 +119,7 @@ void testToggleFormulaBlockWithSelection() {
   setSourceSelection(selection, blockAt(session, 0), 3, 3, 8, 8);
   require(paragraph.toggleFormulaBlock(), "selection wrap in formula block should succeed");
 
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(md.contains(QLatin1String("$$\nlo wo\n$$")), "selected text should be in formula block");
 }
 

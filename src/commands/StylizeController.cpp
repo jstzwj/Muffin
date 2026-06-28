@@ -672,7 +672,7 @@ bool StylizeController::toggleMultiBlock(
             });
 
   // Process each block
-  const QString markdown = ctx_.session->markdownText();
+  const PieceTable& markdown = ctx_.session->markdownText();
   const qsizetype totalStart = blocks.last().contentBase;
   const qsizetype totalEnd = blocks.first().contentEnd;
   QString replacement = markdown.mid(totalStart, totalEnd - totalStart);

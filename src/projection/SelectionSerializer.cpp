@@ -83,8 +83,8 @@ QString SelectionSerializer::exportMarkdown(const MarkdownDocument& document, co
   qsizetype start = 0;
   qsizetype end = 0;
   if (selectionContext(document, selection, context, start, end)) {
-    const QString markdown = document.markdownText();
-    const qsizetype prefixStart = structuredLineStart(markdown, context.sourceStart);
+    const PieceTable& markdown = document.markdownText();
+    const qsizetype prefixStart = structuredLineStart(markdown.toString(),context.sourceStart);
     const qsizetype selectedStart = context.sourceStart + qBound<qsizetype>(0, start, context.sourceText.size());
     const qsizetype selectedEnd = context.sourceStart + qBound<qsizetype>(0, end, context.sourceText.size());
     if (selectedEnd <= selectedStart) {
@@ -118,8 +118,8 @@ QString SelectionSerializer::exportMarkdown(const MarkdownDocument& document, co
       qSwap(sourceStart, sourceEnd);
       startContext = focusContextStart;
     }
-    const QString markdown = document.markdownText();
-    const qsizetype prefixStart = structuredLineStart(markdown, startContext);
+    const PieceTable& markdown = document.markdownText();
+    const qsizetype prefixStart = structuredLineStart(markdown.toString(),startContext);
     const QString prefix = prefixStart < startContext ? markdown.mid(prefixStart, startContext - prefixStart) : QString();
     return prefix + markdown.mid(sourceStart, sourceEnd - sourceStart);
   }
@@ -147,7 +147,7 @@ QString SelectionSerializer::exportPlainText(const MarkdownDocument& document, c
   qsizetype sourceEnd = 0;
   if (selectionSourceRange(document, selection, sourceStart, sourceEnd) ||
       blockSelectionSourceRange(document, selection, sourceStart, sourceEnd)) {
-    return plainTextForMarkdownRange(document.markdownText(), sourceStart, sourceEnd);
+    return plainTextForMarkdownRange(document.markdownText().toString(), sourceStart, sourceEnd);
   }
   return {};
 }
@@ -225,7 +225,7 @@ bool SelectionSerializer::selectionContext(
 
 bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, const MarkdownNode& displayNode, EditableContext& context) const {
   const MarkdownNode* editable = &displayNode;
-  const QString markdown = document.markdownText();
+  const PieceTable& markdown = document.markdownText();
   if (displayNode.type() == BlockType::ListItem) {
     editable = primaryParagraph(displayNode);
     if (!editable) {
@@ -236,7 +236,7 @@ bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, c
       qsizetype lineStart = -1;
       qsizetype contentStart = -1;
       qsizetype lineEnd = -1;
-      if (markerContext.sourceStart >= 0 && listItemLineBounds(markdown, markerContext, lineStart, contentStart, lineEnd)) {
+      if (markerContext.sourceStart >= 0 && listItemLineBounds(markdown.toString(),markerContext, lineStart, contentStart, lineEnd)) {
         context.node = &displayNode;
         context.editableNode = nullptr;
         const ListLineInfo info = listLineInfoFor(markdown.mid(lineStart, lineEnd - lineStart));
@@ -419,7 +419,7 @@ bool SelectionSerializer::blockSourceRange(const MarkdownDocument& document, con
   if (range.lineStart <= 0 || range.lineEnd < range.lineStart) {
     return false;
   }
-  const QString markdown = document.markdownText();
+  const PieceTable& markdown = document.markdownText();
   start = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
   end = sourceOffsetForLineEnd(markdown, range.lineEnd);
   if (end >= 0 && range.lineEnd > range.lineStart && end < markdown.size()) {
@@ -459,7 +459,7 @@ bool SelectionSerializer::literalContentSourceRange(const MarkdownDocument& docu
   if (!blockSourceRange(document, node, blockStart, blockEnd)) {
     return false;
   }
-  const QString markdown = document.markdownText();
+  const PieceTable& markdown = document.markdownText();
   if (node.type() == BlockType::CodeFence || node.type() == BlockType::MathBlock ||
       (node.type() == BlockType::FrontMatter && node.frontMatterFormat() != FrontMatterFormat::Json)) {
     const qsizetype firstNewline = markdown.indexOf(QLatin1Char('\n'), blockStart);

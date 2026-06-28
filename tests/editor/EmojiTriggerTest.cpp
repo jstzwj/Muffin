@@ -60,7 +60,7 @@ struct Harness {
 // Type `:smi`, assert the popup opens, then accept via Tab and assert the shortcode is replaced.
 void typeShortcode(Harness& h, const QString& doc) {
   h.session.setMarkdownText(doc, false);
-  const qsizetype end = h.session.markdownText().size();
+  const qsizetype end = h.session.markdownText().toString().size();
   setSourceCursor(h.selection, blockAt(h.session, 0), end, end);
   for (QChar c : QStringLiteral(":smi")) {
     h.input.insertText(QString(c));
@@ -74,7 +74,7 @@ void testEmojiPopupOpensAndAccepts() {
   require(h.input.emojiCompleter() != nullptr, "emoji completer should be created after typing a trigger");
   require(h.input.emojiCompleter()->isVisible(), "popup should be visible after typing ':smi'");
   pressKey(h.input, &h.view, Qt::Key_Tab);  // accept the (single) candidate
-  require(h.session.markdownText() == QStringLiteral("Hello😄"), "Tab should replace ':smi' with the emoji");
+  require(h.session.markdownText().toString() == QStringLiteral("Hello😄"), "Tab should replace ':smi' with the emoji");
 }
 
 void testEmojiAcceptOnEnter() {
@@ -83,7 +83,7 @@ void testEmojiAcceptOnEnter() {
   typeShortcode(h, QStringLiteral("word "));
   require(h.input.emojiCompleter()->isVisible(), "popup should be visible mid-word");
   pressKey(h.input, &h.view, Qt::Key_Return);
-  require(h.session.markdownText() == QStringLiteral("word 😄"), "Enter should accept the candidate");
+  require(h.session.markdownText().toString() == QStringLiteral("word 😄"), "Enter should accept the candidate");
 }
 
 void testEmojiEscapeCancels() {
@@ -93,7 +93,7 @@ void testEmojiEscapeCancels() {
   require(h.input.emojiCompleter()->isVisible(), "popup should be visible");
   pressKey(h.input, &h.view, Qt::Key_Escape);
   require(!h.input.emojiCompleter()->isVisible(), "Escape should hide the popup");
-  require(h.session.markdownText() == QStringLiteral("x:smi"), "Escape should leave the shortcode text intact");
+  require(h.session.markdownText().toString() == QStringLiteral("x:smi"), "Escape should leave the shortcode text intact");
 }
 
 void testEmojiHidesOnNonShortcodeChar() {

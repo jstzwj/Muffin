@@ -69,14 +69,14 @@ void testEnterEditAndTextEditing() {
   require(selection.cursorPosition().text.textOffset == math->literal().size(), "enter math edit cursor mismatch");
 
   require(controller.insertText(QStringLiteral("\n+c")), "math insert should work");
-  require(session.markdownText().contains(QStringLiteral("a=b\n+c")), "math insert markdown mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("a=b\n+c")), "math insert markdown mismatch");
   require(undoStack.canUndo(), "math insert should push undo");
   EditTransaction mathInsertUndo = undoStack.takeUndo();
   require(mathInsertUndo.isReplaceNodeCommand(), "math insert should use ReplaceNodeCommand");
   require(mathInsertUndo.replaceNodeCommand().nodeType == BlockType::MathBlock, "math insert command type mismatch");
 
   require(controller.deleteBackward(), "math backspace should work");
-  require(session.markdownText().contains(QStringLiteral("a=b\n+")), "math backspace markdown mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("a=b\n+")), "math backspace markdown mismatch");
 }
 
 void testSetTexAndRoundtripFence() {
@@ -94,7 +94,7 @@ void testSetTexAndRoundtripFence() {
 
   require(controller.enterEditMode(), "enter math edit should work for set tex test");
   require(controller.setContent(QStringLiteral("E = mc^2\n\\\\int_0^1 x dx")), "set tex should work");
-  require(session.markdownText().contains(QStringLiteral("$$\nE = mc^2\n\\\\int_0^1 x dx\n$$")), "math fence roundtrip mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("$$\nE = mc^2\n\\\\int_0^1 x dx\n$$")), "math fence roundtrip mismatch");
   require(undoStack.canUndo(), "set tex should push undo");
   EditTransaction setTexUndo = undoStack.takeUndo();
   require(setTexUndo.isReplaceNodeCommand(), "set tex should use ReplaceNodeCommand");
@@ -118,7 +118,7 @@ void testBracketMathLiteralEditingPreservesBracketDelimiters() {
   require(controller.enterEditMode(), "enter bracket math edit should work");
   require(selection.cursorPosition().text.textOffset == math->literal().size(), "bracket math edit cursor mismatch");
   require(controller.setContent(QStringLiteral("E = mc^2")), "set bracket math tex should work");
-  require(session.markdownText() == QStringLiteral("before\n\n\\[\nE = mc^2\n\\]\n\nafter"),
+  require(session.markdownText().toString() == QStringLiteral("before\n\n\\[\nE = mc^2\n\\]\n\nafter"),
           "bracket math setContent should preserve bracket delimiters exactly");
 
   math = firstMathBlock(session);
@@ -129,7 +129,7 @@ void testBracketMathLiteralEditingPreservesBracketDelimiters() {
   setMathHit(selection, math, math->literal().size());
   require(controller.enterEditMode(), "re-enter bracket math edit should work");
   require(controller.insertText(QStringLiteral("\n+ c")), "bracket math insert should work");
-  require(session.markdownText() == QStringLiteral("before\n\n\\[\nE = mc^2\n+ c\n\\]\n\nafter"),
+  require(session.markdownText().toString() == QStringLiteral("before\n\n\\[\nE = mc^2\n+ c\n\\]\n\nafter"),
           "bracket math insert should keep closing bracket delimiter outside literal");
 }
 

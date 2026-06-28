@@ -11,8 +11,13 @@
 #include "editor/EditorView.h"
 #include "unicode/WordBoundary.h"
 
+#include <QDebug>
+#include <QLoggingCategory>
+
 namespace muffin {
 namespace {
+
+Q_LOGGING_CATEGORY(controllerPerf, "muffin.perf", QtWarningMsg)
 
 LiteralBlockSpec frontMatterSpec() {
   return LiteralBlockSpec{
@@ -143,7 +148,7 @@ bool fillSourceOffsetForTextHit(const DocumentSession& session, HitTestResult& h
   }
 
   const SourceRange range = editable->sourceRange();
-  const QString markdown = session.markdownText();
+  const PieceTable& markdown = session.markdownText();
   qsizetype start = range.byteEnd > range.byteStart
                      ? range.byteStart
                      : sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
@@ -280,12 +285,23 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
     if (!session_ || !view_) {
       return;
     }
+    qCDebug(controllerPerf).nospace() << "refresh.consumer fullLayoutDirty=" << request.fullLayoutDirty
+        << " rangeValid=" << request.topLevelRangeDirty.isValid()
+        << " rangeRev=" << request.topLevelRangeDirty.documentRevision
+        << " docRev=" << session_->document().revision()
+        << " dirtyBlocks=" << request.layoutDirtyBlocks.size();
     if (request.fullLayoutDirty) {
+      qCDebug(controllerPerf) << "refresh.consumer → setDocument (fullLayoutDirty) ← FULL REBUILD";
       view_->setDocument(session_->document(), session_->filePath());
       return;
     }
     if (request.topLevelRangeDirty.isValid()) {
-      if (request.topLevelRangeDirty.documentRevision != session_->document().revision() || !view_->refreshTopLevelRange(request.topLevelRangeDirty, session_->document())) {
+      const bool rangeOk = request.topLevelRangeDirty.documentRevision == session_->document().revision() &&
+                           view_->refreshTopLevelRange(request.topLevelRangeDirty, session_->document());
+      if (!rangeOk) {
+        qCDebug(controllerPerf).nospace() << "refresh.consumer → setDocument (range "
+            << (request.topLevelRangeDirty.documentRevision != session_->document().revision() ? "revisionMismatch" : "refreshTopLevelRangeFailed")
+            << ") ← FULL REBUILD";
         view_->setDocument(session_->document(), session_->filePath());
         return;
       }
@@ -296,9 +312,11 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
       if (!request.layoutDirtyBlocks.isEmpty()) {
         if (request.layoutDirtyBlocks.size() == 1) {
           if (!view_->refreshBlock(request.layoutDirtyBlocks.first(), session_->document())) {
+            qCDebug(controllerPerf) << "refresh.consumer → setDocument (range+refreshBlock failed) ← FULL REBUILD";
             view_->setDocument(session_->document(), session_->filePath());
           }
         } else if (!view_->refreshBlocks(request.layoutDirtyBlocks, session_->document())) {
+          qCDebug(controllerPerf) << "refresh.consumer → setDocument (range+refreshBlocks failed) ← FULL REBUILD";
           view_->setDocument(session_->document(), session_->filePath());
         }
       }
@@ -306,11 +324,13 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
     }
     if (request.layoutDirtyBlocks.size() == 1) {
       if (!view_->refreshBlock(request.layoutDirtyBlocks.first(), session_->document())) {
+        qCDebug(controllerPerf) << "refresh.consumer → setDocument (refreshBlock failed) ← FULL REBUILD";
         view_->setDocument(session_->document(), session_->filePath());
       }
       return;
     }
     if (!request.layoutDirtyBlocks.isEmpty() && !view_->refreshBlocks(request.layoutDirtyBlocks, session_->document())) {
+      qCDebug(controllerPerf) << "refresh.consumer → setDocument (refreshBlocks failed) ← FULL REBUILD";
       view_->setDocument(session_->document(), session_->filePath());
     }
   });
@@ -929,7 +949,7 @@ bool EditorController::moveBlockDown() {
 }
 
 bool EditorController::swapTopLevelBlocks(MarkdownNode& upper, MarkdownNode& lower) {
-  const QString& markdown = session_->markdownText();
+  const PieceTable& markdown = session_->markdownText();
   const SourceRange upperRange = upper.sourceRange();
   const SourceRange lowerRange = lower.sourceRange();
 
@@ -1113,7 +1133,7 @@ MarkdownNode* EditorController::htmlImageBlockAtCursor() const {
     return nullptr;
   }
   qsizetype start = 0, end = 0;
-  return htmlBlockImageRange(*block, session_->markdownText(), start, end) ? block : nullptr;
+  return htmlBlockImageRange(*block, session_->markdownText().toString(), start, end) ? block : nullptr;
 }
 
 QString EditorController::imageSrcAtCursor() const {
@@ -1133,7 +1153,7 @@ QString EditorController::imageSrcAtCursor() const {
   // Standalone <img> HTML block (cmark parses a line-leading <img> as an HtmlBlock, not inline).
   if (MarkdownNode* block = htmlImageBlockAtCursor()) {
     qsizetype start = 0, end = 0;
-    if (htmlBlockImageRange(*block, session_->markdownText(), start, end)) {
+    if (htmlBlockImageRange(*block, session_->markdownText().toString(), start, end)) {
       return image_syntax::parse(session_->markdownText().mid(start, end - start)).src;
     }
   }
@@ -1179,7 +1199,7 @@ bool EditorController::imageSourceRangeAtCursor(qsizetype& outStart, qsizetype& 
   }
   // Standalone <img> HTML block (HtmlBlock — no inline projection).
   if (MarkdownNode* block = htmlImageBlockAtCursor()) {
-    return htmlBlockImageRange(*block, session_->markdownText(), outStart, outEnd);
+    return htmlBlockImageRange(*block, session_->markdownText().toString(), outStart, outEnd);
   }
   return false;
 }

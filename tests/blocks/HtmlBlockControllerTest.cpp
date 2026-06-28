@@ -71,14 +71,14 @@ void testEnterEditAndTextEditing() {
   require(selection.cursorPosition().text.textOffset == html->literal().size(), "enter html edit cursor mismatch");
 
   require(controller.insertText(QStringLiteral("\n<span>beta</span>")), "html insert should work");
-  require(session.markdownText().contains(QStringLiteral("<span>beta</span>")), "html insert markdown mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("<span>beta</span>")), "html insert markdown mismatch");
   require(undoStack.canUndo(), "html insert should push undo");
   EditTransaction htmlInsertUndo = undoStack.takeUndo();
   require(htmlInsertUndo.isReplaceNodeCommand(), "html insert should use ReplaceNodeCommand");
   require(htmlInsertUndo.replaceNodeCommand().nodeType == BlockType::HtmlBlock, "html insert command type mismatch");
 
   require(controller.deleteBackward(), "html backspace should work");
-  require(session.markdownText().contains(QStringLiteral("<span>beta</span")), "html backspace markdown mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("<span>beta</span")), "html backspace markdown mismatch");
 }
 
 void testSetHtmlRoundtripAndSanitizer() {
@@ -97,7 +97,7 @@ void testSetHtmlRoundtripAndSanitizer() {
   require(controller.enterEditMode(), "enter html edit should work for set html test");
   const QString source = QStringLiteral("<div onclick=\"evil()\"><a href=\"javascript:alert(1)\">x</a><script>alert(2)</script></div>");
   require(controller.setContent(source), "set html should work");
-  require(session.markdownText().contains(QStringLiteral("onclick=\"evil()\"")), "raw html roundtrip mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("onclick=\"evil()\"")), "raw html roundtrip mismatch");
   require(undoStack.canUndo(), "set html should push undo");
   EditTransaction setHtmlUndo = undoStack.takeUndo();
   require(setHtmlUndo.isReplaceNodeCommand(), "set html should use ReplaceNodeCommand");

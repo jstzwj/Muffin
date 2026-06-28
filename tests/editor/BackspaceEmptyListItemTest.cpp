@@ -37,7 +37,7 @@ void testBackspaceEmptyTrailingUnorderedItem() {
   setCursor(h.selection, listItemAt(h.session, 0, 2), 0);
 
   require(h.input.deleteBackward(), "backspace on empty trailing item should be handled");
-  require(h.session.markdownText() == QStringLiteral("* 123\n* 123"),
+  require(h.session.markdownText().toString() == QStringLiteral("* 123\n* 123"),
           "empty trailing item should be removed, leaving the two real items");
   require(h.selection.hasCursor(), "caret must remain valid (the reported disappearance bug)");
   require(h.selection.cursorPosition().blockId == listItemAt(h.session, 0, 1)->id(),
@@ -53,7 +53,7 @@ void testBackspaceEmptyTrailingOrderedItem() {
   setCursor(h.selection, listItemAt(h.session, 0, 2), 0);
 
   require(h.input.deleteBackward(), "backspace on empty ordered trailing item should be handled");
-  require(h.session.markdownText() == QStringLiteral("1. 123\n2. 123"),
+  require(h.session.markdownText().toString() == QStringLiteral("1. 123\n2. 123"),
           "empty ordered trailing item should be removed");
   require(h.selection.hasCursor(), "caret must remain valid for ordered lists");
   require(h.selection.cursorPosition().blockId == listItemAt(h.session, 0, 1)->id(),
@@ -70,7 +70,7 @@ void testBackspaceEmptyMiddleItem() {
   setCursor(h.selection, listItemAt(h.session, 0, 1), 0);
 
   require(h.input.deleteBackward(), "backspace on empty middle item should be handled");
-  require(h.session.markdownText() == QStringLiteral("* 123\n* 456"),
+  require(h.session.markdownText().toString() == QStringLiteral("* 123\n* 456"),
           "empty middle item should be removed, list stays contiguous");
   require(h.selection.hasCursor(), "caret must remain valid after middle-item removal");
   require(h.selection.cursorPosition().blockId == listItemAt(h.session, 0, 0)->id(),
@@ -87,7 +87,7 @@ void testBackspaceSoleEmptyItemStillOutdents() {
   setCursor(h.selection, listItemAt(h.session, 0, 0), 0);
 
   require(h.input.deleteBackward(), "backspace on sole empty item should be handled");
-  require(h.session.markdownText() == QStringLiteral(""), "sole empty item should outdent to an empty document");
+  require(h.session.markdownText().toString() == QStringLiteral(""), "sole empty item should outdent to an empty document");
   require(h.selection.hasCursor(), "caret must remain valid after outdenting the sole item");
 }
 

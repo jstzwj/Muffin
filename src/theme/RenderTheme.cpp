@@ -631,6 +631,12 @@ void RenderTheme::dropStructuralBuilder() const {
   structuralBuilder_.reset();
 }
 
+void RenderTheme::invalidateStructuralSiblingLinks() const {
+  if (structuralBuilder_) {
+    structuralBuilder_->resetSiblingLinks();
+  }
+}
+
 QFont RenderTheme::headingFont(int level) const {
   static constexpr qreal sizes[] = {24.0, 19.0, 16.0, 14.0, 12.5, 12.0};
   QFont font = paragraphFont();

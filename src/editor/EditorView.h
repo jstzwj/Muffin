@@ -30,6 +30,9 @@ public:
   explicit EditorView(QWidget* parent = nullptr);
 
   void setDocument(const MarkdownDocument& document, QString documentPath = {});
+  // True while an async open parse is in flight: paintEvent shows a centered loading hint instead of
+  // the (stale/empty) page.
+  void setLoading(bool loading);
   bool refreshBlock(NodeId blockId, const MarkdownDocument& document);
   bool refreshBlocks(const QVector<NodeId>& blockIds, const MarkdownDocument& document);
   // Re-runs the per-block rebuild only for currently-promoted (visible) top-level blocks — used
@@ -264,6 +267,7 @@ private:
   // implicit setRange -> clamp -> valueChanged -> scrollContentsBy -> ensureVisibleBuilt cascade
   // cannot re-enter layout and re-promote mid-transaction.
   bool inScrollBuild_ = false;
+  bool loading_ = false;  // set by setLoading; paintEvent shows a loading hint while true
 };
 
 }  // namespace muffin

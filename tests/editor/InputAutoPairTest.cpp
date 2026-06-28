@@ -31,14 +31,14 @@ void testBracketAutoPair() {
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 2);
   require(input.insertText(QStringLiteral("(")), "bracket opener should auto-pair");
-  require(session.markdownText() == QStringLiteral("al()pha"), "bracket pair should be inserted");
+  require(session.markdownText().toString() == QStringLiteral("al()pha"), "bracket pair should be inserted");
   require(selection.cursorPosition().text.textOffset == 3, "caret should land between the bracket pair");
 
   // Skip-over: typing the closer while the caret is already before it steps over, no duplicate.
   session.setMarkdownText(QStringLiteral("()"), false);
   setCursor(selection, blockAt(session, 0), 1);
   require(input.insertText(QStringLiteral(")")), "closer before a closer should skip over");
-  require(session.markdownText() == QStringLiteral("()"), "skip-over should not insert a duplicate closer");
+  require(session.markdownText().toString() == QStringLiteral("()"), "skip-over should not insert a duplicate closer");
   require(selection.cursorPosition().text.textOffset == 2, "skip-over should advance the caret past the closer");
 }
 
@@ -56,14 +56,14 @@ void testMarkdownAutoPairAndWrap() {
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 0);
   require(input.insertText(QStringLiteral("*")), "markdown opener should auto-pair");
-  require(session.markdownText() == QStringLiteral("**alpha"), "markdown pair should be inserted");
+  require(session.markdownText().toString() == QStringLiteral("**alpha"), "markdown pair should be inserted");
   require(selection.cursorPosition().text.textOffset == 1, "caret should land between the markdown pair");
 
   // Wrapping a selection types the opener around the selected text.
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setSelection(selection, blockAt(session, 0), 1, 3);  // "lp"
   require(input.insertText(QStringLiteral("*")), "wrap should consume the selection");
-  require(session.markdownText() == QStringLiteral("a*lp*ha"), "wrap should surround the selection with the pair");
+  require(session.markdownText().toString() == QStringLiteral("a*lp*ha"), "wrap should surround the selection with the pair");
 }
 
 void testMarkdownPairingOffInsertsLone() {
@@ -79,7 +79,7 @@ void testMarkdownPairingOffInsertsLone() {
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 0);
   require(input.insertText(QStringLiteral("*")), "lone '*' should insert when markdown pairing is off");
-  require(session.markdownText() == QStringLiteral("*alpha"), "no markdown pair should be inserted when the setting is off");
+  require(session.markdownText().toString() == QStringLiteral("*alpha"), "no markdown pair should be inserted when the setting is off");
 }
 
 void testApostropheContractionGuard() {
@@ -96,13 +96,13 @@ void testApostropheContractionGuard() {
   session.setMarkdownText(QStringLiteral("dont"), false);
   setCursor(selection, blockAt(session, 0), 3);  // between "don" and "t"
   require(input.insertText(QStringLiteral("'")), "apostrophe between letters should insert normally");
-  require(session.markdownText() == QStringLiteral("don't"), "contraction should not become a paired quote");
+  require(session.markdownText().toString() == QStringLiteral("don't"), "contraction should not become a paired quote");
 
   // At the start (not between letters) the quote still pairs.
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 0);
   require(input.insertText(QStringLiteral("'")), "quote at the start should pair");
-  require(session.markdownText() == QStringLiteral("''alpha"), "leading quote should produce a pair");
+  require(session.markdownText().toString() == QStringLiteral("''alpha"), "leading quote should produce a pair");
 }
 
 void testBracketPairingDisabled() {
@@ -118,7 +118,7 @@ void testBracketPairingDisabled() {
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 0);
   require(input.insertText(QStringLiteral("(")), "bracket should insert normally when pairing disabled");
-  require(session.markdownText() == QStringLiteral("(alpha"), "no pair should be inserted when both settings are off");
+  require(session.markdownText().toString() == QStringLiteral("(alpha"), "no pair should be inserted when both settings are off");
 }
 
 int main(int argc, char** argv) {

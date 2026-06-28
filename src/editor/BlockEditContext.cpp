@@ -43,7 +43,8 @@ bool isDefinitionBlock(BlockType type) {
 
 // Byte offset of the first editable literal character: just past the opening fence/marker line.
 // For "```\nfoo\n```" that is index 4 (the 'f'); for an empty "```\n\n```" it is the blank line.
-qsizetype literalContentStartOffset(const QString& markdown, const MarkdownNode& node) {
+template <typename Text>
+qsizetype literalContentStartOffset(const Text& markdown, const MarkdownNode& node) {
   const SourceRange range = node.sourceRange();
   const qsizetype start = qBound<qsizetype>(0, range.byteStart, markdown.size());
   const qsizetype newlineAt = markdown.indexOf(QLatin1Char('\n'), start);
@@ -51,7 +52,8 @@ qsizetype literalContentStartOffset(const QString& markdown, const MarkdownNode&
   return (newlineAt >= 0 && newlineAt < bound) ? newlineAt + 1 : start;
 }
 
-qsizetype taskContentStartForListLine(const QString& markdown, qsizetype lineStart, qsizetype lineEnd, qsizetype markerContentStart) {
+template <typename Text>
+qsizetype taskContentStartForListLine(const Text& markdown, qsizetype lineStart, qsizetype lineEnd, qsizetype markerContentStart) {
   const QString line = markdown.mid(lineStart, lineEnd - lineStart);
   const ListLineInfo info = listLineInfoFor(line);
   if (!info.valid || !info.task) {
@@ -180,7 +182,7 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
   }
 
   const SourceRange range = editable->sourceRange();
-  const QString markdown = session_->markdownText();
+  const PieceTable& markdown = session_->markdownText();
   qsizetype start = range.byteEnd > range.byteStart
                        ? range.byteStart
                        : sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
@@ -334,7 +336,7 @@ bool BlockEditContextResolver::blockSourceRange(const MarkdownNode& node, qsizet
   if (range.lineStart <= 0 || range.lineEnd < range.lineStart) {
     return false;
   }
-  const QString markdown = session_->markdownText();
+  const PieceTable& markdown = session_->markdownText();
   start = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
   end = sourceOffsetForLineEnd(markdown, range.lineEnd);
   if (end >= 0 && range.lineEnd > range.lineStart && end < markdown.size()) {
@@ -352,7 +354,7 @@ bool BlockEditContextResolver::listItemLineBounds(
     return false;
   }
 
-  const QString markdown = session_->markdownText();
+  const PieceTable& markdown = session_->markdownText();
   lineStart = context.contentRange.byteStart;
   while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
     --lineStart;

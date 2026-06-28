@@ -3,9 +3,13 @@
 #include "document/MarkdownNode.h"
 #include "document/MarkdownTypes.h"
 
+#include <QElapsedTimer>
+#include <QLoggingCategory>
 #include <QString>
 
 namespace muffin {
+
+Q_LOGGING_CATEGORY(cssPerf, "muffin.perf", QtWarningMsg)
 
 namespace {
 
@@ -101,6 +105,10 @@ const CssElement* NodeCssElementBuilder::build(const MarkdownNode& node) {
   return ensure(node);
 }
 
+void NodeCssElementBuilder::resetSiblingLinks() {
+  linkedParents_.clear();
+}
+
 void NodeCssElementBuilder::linkSiblingsIteratively(const MarkdownNode& parent) {
   // Build every child's element and wire the sibling chain in ONE pass. Idempotent via
   // linkedParents_ — the N children each reach here through ensure, but only the first does the
@@ -111,6 +119,11 @@ void NodeCssElementBuilder::linkSiblingsIteratively(const MarkdownNode& parent) 
   }
   linkedParents_.insert(parent.id());
 
+  QElapsedTimer linkTimer;
+  const bool measure = cssPerf().isDebugEnabled();
+  if (measure) {
+    linkTimer.start();
+  }
   const auto& siblings = parent.children();
   CssElement* prev = nullptr;
   int idx = 0;
@@ -125,6 +138,10 @@ void NodeCssElementBuilder::linkSiblingsIteratively(const MarkdownNode& parent) 
       prev->nextSibling = cur;
     }
     prev = cur;
+  }
+  if (measure) {
+    qCDebug(cssPerf).nospace() << "css.linkSiblings n=" << siblings.size() << " "
+                               << linkTimer.nsecsElapsed() / 1000000.0 << " ms";
   }
 }
 

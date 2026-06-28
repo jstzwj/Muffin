@@ -91,7 +91,7 @@ void testTableCellSourceEditMixedTableTokensAndInlineMarkers() {
           "mixed bold marker visible offset should account for table tokens");
   const qsizetype boldCellSourceStart = boldCell->sourceRange().byteStart;
   require(tableController.insertText(QStringLiteral("X")), "mixed bold marker insert should work");
-  require(session.markdownText().contains(QStringLiteral("| a \\| b<br> **Xbold** |")), "mixed bold insert markdown mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("| a \\| b<br> **Xbold** |")), "mixed bold insert markdown mismatch");
   require(selection.cursorPosition().text.sourceOffset ==
               boldCellSourceStart + boldContent.indexOf(QStringLiteral("**bold")) + 3,
           "mixed bold insert source cursor mismatch");
@@ -112,7 +112,7 @@ void testTableCellSourceEditMixedTableTokensAndInlineMarkers() {
           "mixed code marker visible offset should account for table tokens");
   const qsizetype codeCellSourceStart = codeCell->sourceRange().byteStart;
   require(tableController.deleteBackward(), "mixed code marker backspace should be handled");
-  require(session.markdownText().contains(QStringLiteral("| a \\| b<br> code` |")), "mixed code marker backspace removes opening marker");
+  require(session.markdownText().toString().contains(QStringLiteral("| a \\| b<br> code` |")), "mixed code marker backspace removes opening marker");
   require(selection.cursorPosition().text.sourceOffset ==
               codeCellSourceStart + codeContent.indexOf(QStringLiteral("`code")),
           "mixed code marker backspace source cursor mismatch");
@@ -133,7 +133,7 @@ void testTableCellSourceEditMixedTableTokensAndInlineMarkers() {
           "mixed link hidden syntax visible offset should account for table tokens");
   const qsizetype linkCellSourceStart = linkCell->sourceRange().byteStart;
   require(tableController.deleteForward(), "mixed link hidden syntax delete should be handled");
-  require(session.markdownText().contains(QStringLiteral("| a \\| b<br> [label(url) |")), "mixed link hidden syntax delete removes hidden syntax");
+  require(session.markdownText().toString().contains(QStringLiteral("| a \\| b<br> [label(url) |")), "mixed link hidden syntax delete removes hidden syntax");
   require(selection.cursorPosition().text.sourceOffset ==
               linkCellSourceStart + linkContent.indexOf(QStringLiteral("](url)")),
           "mixed link delete source cursor mismatch");
@@ -150,8 +150,8 @@ void testTableControllerInsertTable() {
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   require(tableController.insertTable(), "insert table should work");
-  require(session.markdownText().contains(QStringLiteral("|  |  |")), "insert table header mismatch");
-  require(session.markdownText().contains(QStringLiteral("| --- | --- |")), "insert table delimiter mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("|  |  |")), "insert table header mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("| --- | --- |")), "insert table delimiter mismatch");
   require(undoStack.canUndo(), "insert table should push undo");
   EditTransaction insertTableUndo = undoStack.takeUndo();
   require(insertTableUndo.isInsertNodeCommand(), "insert table should use InsertNodeCommand");
@@ -182,7 +182,7 @@ void testTableControllerFormatSource() {
   selection.setHitResult(hit);
 
   require(tableController.formatCurrentTableSource(), "format table source should work");
-  require(session.markdownText() == QStringLiteral("| A | B |\n| --- | :---: |\n| 1 | 2 |"), "format table source markdown mismatch");
+  require(session.markdownText().toString() == QStringLiteral("| A | B |\n| --- | :---: |\n| 1 | 2 |"), "format table source markdown mismatch");
   require(undoStack.canUndo(), "format table source should push undo");
   EditTransaction formatUndo = undoStack.takeUndo();
   require(formatUndo.isTextDeltaCommand(), "format table source should use TextDeltaCommand");
@@ -203,7 +203,7 @@ void testTableControllerInsertInsideBr() {
   session.setMarkdownText(QStringLiteral("| A |\n| --- |\n| a<br>b |"), false);
   setTableCellCursor(session, selection, 1, 0, QStringLiteral("a<br").size(), 2);
   require(tableController.insertText(QStringLiteral(" ")), "insert inside <br> should work");
-  require(session.markdownText().contains(QStringLiteral("| a<br >b |")),
+  require(session.markdownText().toString().contains(QStringLiteral("| a<br >b |")),
           "insert inside <br> should land in place (making <br >), not snap past the tag");
 }
 

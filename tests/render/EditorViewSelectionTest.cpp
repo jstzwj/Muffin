@@ -27,7 +27,7 @@ void testEditorViewHitTestActivatesInlineSourceEditing() {
   controller.activateHit(hit);
   require(controller.selection().cursorPosition().text.sourceOffset == 11, "view hit should resolve source offset");
   require(controller.inputController().insertText(QStringLiteral("X")), "typing after view hit should edit inline");
-  require(session.markdownText() == QStringLiteral("before **boXld** after"), "view hit inline insert mismatch");
+  require(session.markdownText().toString() == QStringLiteral("before **boXld** after"), "view hit inline insert mismatch");
 }
 
 void testEditorViewInlineProjectionStateChanges() {

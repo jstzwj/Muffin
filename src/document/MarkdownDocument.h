@@ -2,6 +2,7 @@
 
 #include "document/LineStartOffsetCache.h"
 #include "document/NodeIndex.h"
+#include "document/PieceTable.h"
 
 #include <QObject>
 
@@ -19,7 +20,12 @@ public:
   NodeIndex& index();
   const NodeIndex& index() const;
 
-  const QString& markdownText() const;
+  // The whole document text as the zero-copy piece-table view. Callers that only need size/mid/at/
+  // isEmpty/indexOf(QChar) read it directly (no materialization); callers needing a real QString
+  // (save/export/find/countWords/regex) call .toString() and pay O(n) -- all occasional paths. The
+  // per-keystroke edit path goes through replaceTopLevelRange, which mutates text_ directly.
+  const PieceTable& markdownText() const { return text_; }
+  const PieceTable& pieceText() const { return text_; }
   const LineStartOffsetCache& lineOffsets() const;
   void setMarkdownText(QString text, std::unique_ptr<MarkdownNode> root);
   void replaceTopLevelRange(
@@ -43,7 +49,7 @@ signals:
   void modifiedChanged(bool modified);
 
 private:
-  QString markdownText_;
+  PieceTable text_;  // the edit master: replaceTopLevelRange edits this (O(pieces)); sole source of truth
   LineStartOffsetCache lineOffsets_;
   std::unique_ptr<MarkdownNode> root_;
   NodeIndex index_;

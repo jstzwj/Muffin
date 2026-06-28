@@ -2,6 +2,7 @@
 
 #include "document/LineStartOffsetCache.h"
 #include "document/MarkdownNode.h"
+#include "document/PieceTable.h"
 #include "html/HtmlRenderer.h"
 #include "math/MathRenderer.h"
 #include "render/BlockLayout.h"
@@ -19,10 +20,10 @@ class CodeFenceScrollController;
 
 class BlockLayoutBuilder {
 public:
-  // Holds a non-owning view onto the document's markdown text (the document outlives every build,
-  // and configureBuilder refreshes it before each build/estimate). Avoids copying the whole
-  // document text into the builder on every per-keystroke rebuildBlock.
-  void setMarkdownText(const QString& markdownText, const LineStartOffsetCache& lineOffsets);
+  // Holds a non-owning view onto the document's piece-table text (the document outlives every
+  // build, and configureBuilder refreshes it before each build/estimate). Avoids materializing the
+  // whole document text into the builder on every per-keystroke rebuildBlock.
+  void setMarkdownText(const PieceTable& markdownText, const LineStartOffsetCache& lineOffsets);
   void setSelection(SelectionRange selection);
   void setEditingHtmlBlock(NodeId id);
   void setDocumentPath(QString path);
@@ -30,6 +31,13 @@ public:
   // owned outside the rebuilt BlockLayouts. The builder writes the measured line width so the
   // paint path and scrollbar thumb agree on scrollability.
   void setCodeFenceScroll(CodeFenceScrollController* controller);
+
+  // Read the render-affecting markdown/* settings ONCE per layout pass (call from configureBuilder)
+  // into the members below, so the per-block estimate/build loops don't hit QSettings (Windows
+  // registry, ~100µs/read) hundreds of thousands of times — that alone was ~25s of the open/re-layout
+  // estimate on a 250k-block doc. Settings change only via the prefs dialog, which forces a full
+  // refresh anyway, so per-pass caching is always fresh enough.
+  void refreshRenderSettings();
 
   BlockLayoutBuilder();
 
@@ -114,10 +122,10 @@ private:
   qsizetype sourceContentEndForEditableNode(const MarkdownNode& node) const;
   qsizetype sourceOffsetForLineColumn(int line, int column) const;
   qsizetype sourceOffsetForLineEnd(int line) const;
-  // The live document text (non-owning view set by configureBuilder). Always non-null: it defaults
-  // to emptyText_ and is refreshed with the live document before every build/estimate, so a stray
-  // build without configureBuilder yields an empty layout instead of a null dereference.
-  const QString& md() const;
+  // The live document text (non-owning piece-table view set by configureBuilder). Always non-null:
+  // it defaults to emptyText_ and is refreshed with the live document before every build/estimate,
+  // so a stray build without configureBuilder yields an empty layout instead of a null dereference.
+  const PieceTable& md() const;
   qreal textHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width, const QMarginsF& padding, bool wrap = true) const;
 
   // Height-estimate helpers mirroring the build* dispatch. Never touch QTextLayout.
@@ -132,6 +140,15 @@ private:
   // (CJK/fullwidth ~1em) or narrow (~half-em) using cached per-font metrics. Lets the estimate
   // track CJK vs ASCII density per block without measuring full text widths.
   qreal avgCharWidthForText(QStringView text, const QFont& font) const;
+  // O(1) variant: cached narrow advance only, no per-char walk. Used by the estimate path to skip
+  // inline-text materialization (see estimateParagraphLike). Exact for ASCII; CJK imprecision is
+  // acceptable since the estimate is only a scrollbar placeholder.
+  qreal avgCharWidthForFont(const QFont& font) const;
+  // Cached estimateLineHeightForElement per element key — avoids re-creating QFont + QFontMetricsF
+  // every block (~14µs/block otherwise, dominating the estimate loop on 250k-block docs).
+  qreal cachedEstimateLineHeight(const RenderTheme& theme, const QString& elementKey, BlockType type, int headingLevel) const;
+  // Cached avgCharWidthForFont per element key — avoids creating QFont + QFontMetricsF per block.
+  qreal cachedAvgCharWidthForElement(const RenderTheme& theme, const QString& elementKey, bool isHeading, int headingLevel) const;
 
   QString documentPath_;
   // Stable empty fallbacks so the non-owning views below are NEVER null. A build/estimate that runs
@@ -139,11 +156,16 @@ private:
   // line-offset cache — a graceful no-op — instead of dereferencing a null pointer. The owning-
   // text overload of setMarkdownText was removed, so these no longer get repopulated; they exist
   // purely as the safe default pointees.
-  QString emptyText_;
+  PieceTable emptyText_;
   LineStartOffsetCache emptyLineOffsets_;
   const LineStartOffsetCache* lineOffsets_ = &emptyLineOffsets_;
   SelectionRange selection_;
   NodeId editingHtmlBlockId_;
+  // Cached once per layout pass by refreshRenderSettings() (configureBuilder). The per-block
+  // estimate/build loops read these instead of hitting QSettings per block.
+  bool breakOnSingleNewline_ = true;
+  bool codeBlockWrap_ = true;
+  bool showLineNumbers_ = false;
   CodeFenceScrollController* codeFenceScroll_ = nullptr;
   TreeSitterHighlighter codeHighlighter_;
   math::MathRenderer mathRenderer_;
@@ -157,8 +179,10 @@ private:
   qint64 literalTextNs_ = 0;
   bool perfEnabled_ = false;
   mutable QHash<QString, QPair<qreal, qreal>> fontMetricsCache_;  // QFont::key() -> {wideAdvance, narrowAdvance}
+  mutable QHash<QString, qreal> lineHeightCache_;  // "elementKey|headingLevel" -> estimated line height
+  mutable QHash<QString, qreal> avgCharWidthCache_;  // "elementKey|headingLevel" -> cached narrow advance
 
-  const QString* markdownText_ = &emptyText_;  // non-owning; refreshed by configureBuilder before each build
+  const PieceTable* markdownText_ = &emptyText_;  // non-owning; refreshed by configureBuilder before each build
 };
 
 }  // namespace muffin

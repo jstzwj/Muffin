@@ -81,14 +81,14 @@ void testEnterEditAndTextEditing() {
   require(selection.cursorPosition().text.textOffset == code->literal().size(), "enter edit cursor mismatch");
 
   require(controller.insertText(QStringLiteral("\n// done")), "code insert should work");
-  require(session.markdownText().contains(QStringLiteral("// done")), "code insert markdown mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("// done")), "code insert markdown mismatch");
   require(undoStack.canUndo(), "code insert should push undo");
   EditTransaction codeInsertUndo = undoStack.takeUndo();
   require(codeInsertUndo.isReplaceNodeCommand(), "code insert should use ReplaceNodeCommand");
   require(codeInsertUndo.replaceNodeCommand().nodeType == BlockType::CodeFence, "code insert command type mismatch");
 
   require(controller.deleteBackward(), "code backspace should work");
-  require(!session.markdownText().contains(QStringLiteral("// done")), "code backspace markdown mismatch");
+  require(!session.markdownText().toString().contains(QStringLiteral("// done")), "code backspace markdown mismatch");
 }
 
 void testSetLanguageAndContent() {
@@ -106,7 +106,7 @@ void testSetLanguageAndContent() {
 
   require(controller.enterEditMode(), "enter code edit should work for language test");
   require(controller.setLanguage(QStringLiteral("powershell")), "set language should work");
-  require(session.markdownText().startsWith(QStringLiteral("```powershell")), "set language markdown mismatch");
+  require(session.markdownText().toString().startsWith(QStringLiteral("```powershell")), "set language markdown mismatch");
   EditTransaction languageUndo = undoStack.takeUndo();
   require(languageUndo.isSetNodeAttrCommand(), "set language should use SetNodeAttrCommand");
   require(languageUndo.setNodeAttrCommand().attribute == NodeAttribute::CodeLanguage, "set language attribute mismatch");
@@ -114,7 +114,7 @@ void testSetLanguageAndContent() {
   require(std::get<QString>(languageUndo.setNodeAttrCommand().afterValue) == QStringLiteral("powershell"), "set language after value mismatch");
 
   require(controller.setContent(QStringLiteral("conan install\ncmake --build")), "set content should work");
-  require(session.markdownText().contains(QStringLiteral("conan install\ncmake --build")), "set content markdown mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("conan install\ncmake --build")), "set content markdown mismatch");
   EditTransaction contentUndo = undoStack.takeUndo();
   require(contentUndo.isReplaceNodeCommand(), "set content should use ReplaceNodeCommand");
 }
@@ -134,8 +134,8 @@ void testSetLanguageForSpecificFenceKeepsCursor() {
   setCodeHit(selection, first, 2);
 
   require(controller.setLanguageFor(second->id(), QStringLiteral("python")), "set language for target fence should work");
-  require(session.markdownText().contains(QStringLiteral("```cpp\nfirst\n```")), "first code language should remain unchanged");
-  require(session.markdownText().contains(QStringLiteral("```python\nsecond\n```")), "second code language mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("```cpp\nfirst\n```")), "first code language should remain unchanged");
+  require(session.markdownText().toString().contains(QStringLiteral("```python\nsecond\n```")), "second code language mismatch");
   require(selection.cursorPosition().text.textOffset == 2, "target language edit should keep cursor offset");
   require(undoStack.canUndo(), "target language edit should push undo");
   EditTransaction targetLanguageUndo = undoStack.takeUndo();
@@ -160,11 +160,11 @@ void testSelectionReplaceAndDelete() {
 
   setCodeSelection(selection, firstCodeFence(session), 1, 4);
   require(controller.insertText(QStringLiteral("X")), "code selection typing should replace selection");
-  require(session.markdownText().contains(QStringLiteral("aXef")), "code selection replace mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("aXef")), "code selection replace mismatch");
 
   setCodeSelection(selection, firstCodeFence(session), 1, 2);
   require(controller.deleteBackward(), "code selection backspace should delete selection");
-  require(session.markdownText().contains(QStringLiteral("aef")), "code selection delete mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("aef")), "code selection delete mismatch");
 }
 
 void testIndentedCodeEditingStaysIndented() {
@@ -186,7 +186,7 @@ void testIndentedCodeEditingStaysIndented() {
 
   // Type at the end of the block — must stay indented, NOT be rewritten as a fenced block.
   require(controller.insertText(QStringLiteral("2")), "insert into indented code should work");
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(!md.contains(QLatin1String("```")), "indented code must not be rewritten as fenced on edit");
   require(md.contains(QLatin1String("    cmake --build2")), "indented code edit should preserve 4-space indent");
   MarkdownNode* after = firstCodeFence(session);
@@ -194,13 +194,13 @@ void testIndentedCodeEditingStaysIndented() {
 
   // setContent must also preserve the indented form.
   require(controller.setContent(QStringLiteral("alpha\nbeta")), "setContent on indented code should work");
-  const QString md2 = session.markdownText();
+  const QString md2 = session.markdownText().toString();
   require(!md2.contains(QLatin1String("```")), "setContent must not rewrite indented code as fenced");
   require(md2.contains(QLatin1String("    alpha")), "setContent should re-indent indented code");
 
   // deleteBackward must also preserve the indented form.
   require(controller.deleteBackward(), "deleteBackward on indented code should work");
-  require(!session.markdownText().contains(QLatin1String("```")), "deleteBackward must not rewrite indented code as fenced");
+  require(!session.markdownText().toString().contains(QLatin1String("```")), "deleteBackward must not rewrite indented code as fenced");
 }
 
 // Regression for the user-reported scenario: an indented code block that follows a
@@ -225,18 +225,18 @@ void testIndentedCodeAfterParagraphStaysIndented() {
 
   // Typing a character must keep the block indented.
   require(controller.insertText(QStringLiteral("2")), "type into indented code (after paragraph) should work");
-  require(!session.markdownText().contains(QLatin1String("```")), "indented code must not become fenced after typing");
-  require(session.markdownText().contains(QLatin1String("    cmake --build2")), "typed text should land on the indented line");
+  require(!session.markdownText().toString().contains(QLatin1String("```")), "indented code must not become fenced after typing");
+  require(session.markdownText().toString().contains(QLatin1String("    cmake --build2")), "typed text should land on the indented line");
   require(firstCodeFence(session)->isIndentedCode(), "indented flag must survive typing");
 
   // Pressing Enter (new line) must keep the block indented.
   require(controller.insertText(QStringLiteral("\n")), "Enter in indented code (after paragraph) should work");
-  require(!session.markdownText().contains(QLatin1String("```")), "indented code must not become fenced after Enter");
+  require(!session.markdownText().toString().contains(QLatin1String("```")), "indented code must not become fenced after Enter");
   require(firstCodeFence(session)->isIndentedCode(), "indented flag must survive Enter");
 
   // A second typed character after the Enter must still be indented.
   require(controller.insertText(QStringLiteral("x")), "type after Enter should work");
-  require(!session.markdownText().contains(QLatin1String("```")), "indented code must not become fenced on second edit");
+  require(!session.markdownText().toString().contains(QLatin1String("```")), "indented code must not become fenced on second edit");
   require(firstCodeFence(session)->isIndentedCode(), "indented flag must survive repeated edits");
 }
 
@@ -262,9 +262,9 @@ void testEnterAtEndOfIndentedCodeShowsPhantomLine() {
 
   // Enter at the end must NOT mutate the source (cmark would strip a real trailing empty line);
   // instead it extends the node literal with a phantom trailing newline (the phantom IS that '\n').
-  const QString beforeEnter = session.markdownText();
+  const QString beforeEnter = session.markdownText().toString();
   require(controller.insertText(QStringLiteral("\n")), "Enter at end should be handled");
-  require(session.markdownText() == beforeEnter, "Enter at end must not mutate the source");
+  require(session.markdownText().toString() == beforeEnter, "Enter at end must not mutate the source");
   MarkdownNode* afterEnter = firstCodeFence(session);
   require(afterEnter != nullptr, "code block still present after phantom Enter");
   require(controller.hasPendingTrailingNewline(), "phantom line should be present after Enter");
@@ -274,8 +274,8 @@ void testEnterAtEndOfIndentedCodeShowsPhantomLine() {
   require(controller.insertText(QStringLiteral("x")), "commit character should be accepted");
   MarkdownNode* afterCommit = firstCodeFence(session);
   require(afterCommit != nullptr && !controller.hasPendingTrailingNewline(), "phantom must clear after commit");
-  require(session.markdownText().contains(QStringLiteral("    line2\n    x")), "committed line should be indented code");
-  require(!session.markdownText().contains(QLatin1String("```")), "must stay indented, not become fenced");
+  require(session.markdownText().toString().contains(QStringLiteral("    line2\n    x")), "committed line should be indented code");
+  require(!session.markdownText().toString().contains(QLatin1String("```")), "must stay indented, not become fenced");
 
   // Clearing the phantom undoes it without touching the source.
   session.setMarkdownText(source, false);
@@ -286,7 +286,7 @@ void testEnterAtEndOfIndentedCodeShowsPhantomLine() {
   controller.clearPendingTrailingNewline();
   require(!controller.hasPendingTrailingNewline(), "phantom should clear after clear");
   require(firstCodeFence(session)->literal() == QStringLiteral("line1\nline2"), "literal should be restored");
-  require(session.markdownText() == source, "source should be unchanged after clear");
+  require(session.markdownText().toString() == source, "source should be unchanged after clear");
 }
 
 }  // namespace

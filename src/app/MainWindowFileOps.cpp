@@ -273,7 +273,7 @@ void muffin::MainWindow::showDocumentProperties() {
                                   QDir::toNativeSeparators(info.absolutePath()),
                                   QString::number(info.size()),
                                   QLocale().toString(info.lastModified(), QLocale::ShortFormat),
-                                  QString::number(MainWindow::countWords(session_.markdownText())),
+                                  QString::number(MainWindow::countWords(session_.markdownText().toString())),
                                   QString::number(session_.lastParseElapsedMs()));
   QMessageBox::information(this, tr("Properties"), message);
 }
@@ -404,7 +404,7 @@ void muffin::MainWindow::snapshotDraft() {
   // encode + sync write internally — no 50MB copy/compare here on every fire.
   const quint64 revision = session_.document().revision();
   if (revision != lastDraftSnapshotRevision_ && !session_.markdownText().isEmpty()) {
-    drafts_.snapshot(session_.markdownText(), session_.filePath());
+    drafts_.snapshot(session_.markdownText().toString(), session_.filePath());
     lastDraftSnapshotRevision_ = revision;
   }
   // Heartbeat: re-arm for as long as the document stays dirty. modifiedChanged
@@ -678,7 +678,7 @@ bool writeExportBytes(const QString& path, const QByteArray& bytes, QString* err
 }  // namespace
 
 void muffin::MainWindow::exportAs(ExportFormat format) {
-  const QString markdown = session_.markdownText();
+  const QString markdown = session_.markdownText().toString();
   if (markdown.trimmed().isEmpty()) {
     statusBar()->showMessage(tr("Nothing to export"), 4000);
     return;

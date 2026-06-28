@@ -123,6 +123,13 @@ public:
   // single-block refreshes (rebuildBlock), which selection/cursor changes fire many times/second:
   // resetting there forced the next style query to rebuild the whole sibling chain (O(n)).
   void dropStructuralBuilder() const;
+  // Lighter than dropStructuralBuilder for a top-level splice: clears the builder's sibling-link
+  // memo (so the changed root child list re-links) but KEEPS the per-node CssElement cache. The
+  // re-link is then O(num top-level blocks) of CACHE HITS (~ms) instead of O(n) element recreation
+  // (~1s on a 375k-block doc). Safe because the cache is NodeId-keyed and CssElements copy node
+  // data (destroyed splice nodes don't dangle). Use this for rebuildTopLevelRange; keep
+  // dropStructuralBuilder for the full rebuild (whole tree replaced → every NodeId changes).
+  void invalidateStructuralSiblingLinks() const;
   QFont headingFont(int level) const;
   QFont codeFont() const;
   qreal codeLineHeight() const;

@@ -103,7 +103,7 @@ void testSetParseOptionsReparsesOnlyOnChange() {
   changed.enableMath = false;
   session.setParseOptions(changed);
   require(parsedCount > afterInit, "changed options should trigger a re-parse");
-  require(session.markdownText() == QStringLiteral("Hello world"), "re-parse must preserve text");
+  require(session.markdownText().toString() == QStringLiteral("Hello world"), "re-parse must preserve text");
 }
 
 // Strict mode (markdown/strictMode) disables the always-on GFM block extensions (tables,

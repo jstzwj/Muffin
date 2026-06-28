@@ -193,6 +193,13 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
       return false;
     }
     if (event->type() == QEvent::KeyPress) {
+      // While an async open parse is in flight (parseBusy) document_ is the stale pre-open text:
+      // swallow the keystroke entirely so it can't drive a local edit, which would land on that
+      // stale text and supersede (discard) the worker's parsed result for the file being opened.
+      // The view shows a loading hint meanwhile; editing resumes once parseBusy(false) fires.
+      if (ctx_.session && ctx_.session->isAsyncParseInProgress()) {
+        return true;  // swallow — no edit, no fallback reparse
+      }
       return handleKeyPress(static_cast<QKeyEvent*>(event));
     }
   }
@@ -282,7 +289,7 @@ bool InputController::tryAutoPairOrWrap(QChar ch) {
   // textOffset) rather than cursorPosition().text.sourceOffset, which callers that place the cursor
   // programmatically may leave unset (-1).
   const qsizetype off = resolved ? context.cursorSourceOffset : -1;
-  const QString& markdown = ctx_.session ? ctx_.session->markdownText() : QString();
+  const PieceTable& markdown = ctx_.session ? ctx_.session->markdownText() : PieceTable::empty();
 
   // A character right after a backslash is an escape / LaTeX sequence (e.g. "\[", "\(", "\{"),
   // so auto-pairing it would corrupt the delimiter — insert it literally instead.
@@ -354,7 +361,7 @@ bool InputController::trySmartDashes(QChar ch) {
   if (!resolver.current(context) || !context.node) {
     return false;
   }
-  const QString& md = ctx_.session ? ctx_.session->markdownText() : QString();
+  const PieceTable& md = ctx_.session ? ctx_.session->markdownText() : PieceTable::empty();
   const qsizetype off = context.cursorSourceOffset;
   if (off < 1 || off > md.size()) {
     return false;
@@ -386,7 +393,7 @@ bool InputController::trySmartEllipsis(QChar ch) {
   if (!resolver.current(context) || !context.node) {
     return false;
   }
-  const QString& md = ctx_.session ? ctx_.session->markdownText() : QString();
+  const PieceTable& md = ctx_.session ? ctx_.session->markdownText() : PieceTable::empty();
   const qsizetype off = context.cursorSourceOffset;
   if (off < 1 || off > md.size()) {
     return false;
@@ -423,7 +430,7 @@ QString InputController::maybeConvertSmartPunctuation(QString text) {
   BlockEditContext context;
   const bool resolved = resolver.current(context) && context.node;
   const qsizetype off = resolved ? context.cursorSourceOffset : -1;
-  const QString& md = ctx_.session ? ctx_.session->markdownText() : QString();
+  const PieceTable& md = ctx_.session ? ctx_.session->markdownText() : PieceTable::empty();
 
   QString out;
   out.reserve(text.size() + 4);
@@ -487,7 +494,7 @@ void InputController::maybeUpdateEmojiPopup() {
   }
   const CursorPosition cursor = ctx_.selection->cursorPosition();
   const qsizetype caret = cursor.text.sourceOffset;
-  const QString& markdown = ctx_.session->markdownText();
+  const PieceTable& markdown = ctx_.session->markdownText();
   if (!cursor.isValid() || caret < 0 || caret > markdown.size()) {
     hideEmojiPopup();
     return;
@@ -507,7 +514,7 @@ void InputController::maybeUpdateEmojiPopup() {
     hideEmojiPopup();
     return;
   }
-  const QStringView code = QStringView(markdown).mid(colon + 1, caret - colon - 1);
+  const QString code = markdown.mid(colon + 1, caret - colon - 1);
   // A valid partial shortcode is non-empty and only [A-Za-z0-9_+-]; anything else (a space, the
   // closing ':', etc.) breaks the trigger.
   if (code.isEmpty()) {
@@ -532,7 +539,7 @@ void InputController::maybeUpdateEmojiPopup() {
   const QRectF caretDocRect = ctx_.selection->currentHit().cursorRect;
   const QPointF caretViewport = ctx_.view->mapDocumentToViewport(
       caretDocRect.isEmpty() ? QPointF(0, 0) : QPointF(caretDocRect.left(), caretDocRect.bottom()));
-  completer->present(code.toString(), QPoint(qRound(caretViewport.x()), qRound(caretViewport.y())));
+  completer->present(code, QPoint(qRound(caretViewport.x()), qRound(caretViewport.y())));
 }
 
 void InputController::insertEmoji(const QString& glyph) {
@@ -582,7 +589,7 @@ bool InputController::insertBlockAfterCurrentBlock(QString text) {
   }
 
   qsizetype insertOffset = range.byteEnd;
-  const QString& markdown = ctx_.session->markdownText();
+  const PieceTable& markdown = ctx_.session->markdownText();
   if (insertOffset < markdown.size() && markdown.at(insertOffset) == QLatin1Char('\r')) {
     ++insertOffset;
   }
@@ -1901,7 +1908,7 @@ bool InputController::selectNextOccurrence() {
   if (!selectionSourceRange(start, end) || end <= start) {
     return false;  // nothing selected — caller expands to the current word first
   }
-  const QString& markdown = ctx_.session->markdownText();
+  const QString markdown = ctx_.session->markdownText().toString();
   const QString needle = markdown.mid(start, end - start);
   if (needle.isEmpty()) {
     return false;

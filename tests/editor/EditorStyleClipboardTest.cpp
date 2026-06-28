@@ -29,27 +29,27 @@ void testStylizeCollapsedSkeletons() {
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(stylize.toggleBold(), "bold should wrap word");
-  require(session.markdownText() == QStringLiteral("**alpha**"), "bold word-wrap text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("**alpha**"), "bold word-wrap text mismatch");
   require(selection.cursorPosition().text.textOffset == 7, "bold word-wrap cursor mismatch");
   require(selection.cursorPosition().text.sourceOffset == 7, "bold word-wrap source cursor mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(stylize.toggleItalic(), "italic should wrap word");
-  require(session.markdownText() == QStringLiteral("*alpha*"), "italic word-wrap text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("*alpha*"), "italic word-wrap text mismatch");
   require(selection.cursorPosition().text.textOffset == 6, "italic word-wrap cursor mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(stylize.toggleCode(), "code should wrap word");
-  require(session.markdownText() == QStringLiteral("`alpha`"), "code word-wrap text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("`alpha`"), "code word-wrap text mismatch");
   require(selection.cursorPosition().text.textOffset == 6, "code word-wrap cursor mismatch");
   require(selection.cursorPosition().text.sourceOffset == 6, "code word-wrap source cursor mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(stylize.insertLink(), "link skeleton should insert");
-  require(session.markdownText() == QStringLiteral("alpha[](url)"), "link skeleton text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("alpha[](url)"), "link skeleton text mismatch");
   require(selection.cursorPosition().text.textOffset == 6, "link skeleton cursor mismatch");
 }
 void testTypingIntoCollapsedStyleSkeletons() {
@@ -66,19 +66,19 @@ void testTypingIntoCollapsedStyleSkeletons() {
   setCursor(selection, blockAt(session, 0), 2);
   require(stylize.toggleBold(), "bold skeleton should insert before typing");
   require(input.insertText(QStringLiteral("B")), "typing into bold skeleton should work");
-  require(session.markdownText() == QStringLiteral("a **B** b"), "bold skeleton typing mismatch");
+  require(session.markdownText().toString() == QStringLiteral("a **B** b"), "bold skeleton typing mismatch");
 
   session.setMarkdownText(QStringLiteral("a  b"), false);
   setCursor(selection, blockAt(session, 0), 2);
   require(stylize.toggleCode(), "code skeleton should insert before typing");
   require(input.insertText(QStringLiteral("C")), "typing into code skeleton should work");
-  require(session.markdownText() == QStringLiteral("a `C` b"), "code skeleton typing mismatch");
+  require(session.markdownText().toString() == QStringLiteral("a `C` b"), "code skeleton typing mismatch");
 
   session.setMarkdownText(QStringLiteral("a  b"), false);
   setCursor(selection, blockAt(session, 0), 2);
   require(stylize.toggleItalic(), "italic skeleton should insert before typing");
   require(input.insertText(QStringLiteral("I")), "typing into italic skeleton should work");
-  require(session.markdownText() == QStringLiteral("a *I* b"), "italic skeleton typing mismatch");
+  require(session.markdownText().toString() == QStringLiteral("a *I* b"), "italic skeleton typing mismatch");
 }
 void testStylizeSelectionWrap() {
   DocumentSession session;
@@ -91,7 +91,7 @@ void testStylizeSelectionWrap() {
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setSelection(selection, blockAt(session, 0), 1, 4);
   require(stylize.toggleBold(), "bold should wrap selection");
-  require(session.markdownText() == QStringLiteral("a**lph**a"), "bold wrap text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("a**lph**a"), "bold wrap text mismatch");
   require(!selection.selection().isCollapsed(), "bold wrap should preserve selected text range");
   require(selection.selection().startOffset() == 3, "bold wrap selection start mismatch");
   require(selection.selection().endOffset() == 6, "bold wrap selection end mismatch");
@@ -99,17 +99,17 @@ void testStylizeSelectionWrap() {
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setSelection(selection, blockAt(session, 0), 1, 4);
   require(stylize.toggleItalic(), "italic should wrap selection");
-  require(session.markdownText() == QStringLiteral("a*lph*a"), "italic wrap text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("a*lph*a"), "italic wrap text mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setSelection(selection, blockAt(session, 0), 1, 4);
   require(stylize.toggleCode(), "code should wrap selection");
-  require(session.markdownText() == QStringLiteral("a`lph`a"), "code wrap text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("a`lph`a"), "code wrap text mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setSelection(selection, blockAt(session, 0), 1, 4);
   require(stylize.insertLink(), "link should wrap selection");
-  require(session.markdownText() == QStringLiteral("a[lph](url)a"), "link wrap text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("a[lph](url)a"), "link wrap text mismatch");
 }
 void testStylizeUndoRedoTextDelta() {
   DocumentSession session;
@@ -134,7 +134,7 @@ void testStylizeUndoRedoTextDelta() {
       undo.textDeltaCommand().delta.removedText,
       true);
   selection.setCursorPosition(undo.textDeltaCommand().beforeCursor);
-  require(session.markdownText() == QStringLiteral("alpha"), "style undo text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("alpha"), "style undo text mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "style undo cursor mismatch");
 
   const EditTransaction redo = undoStack.takeRedo();
@@ -145,7 +145,7 @@ void testStylizeUndoRedoTextDelta() {
       redo.textDeltaCommand().delta.insertedText,
       true);
   selection.setCursorPosition(redo.textDeltaCommand().afterCursor);
-  require(session.markdownText() == QStringLiteral("**alpha**"), "style redo text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("**alpha**"), "style redo text mismatch");
   require(selection.cursorPosition().text.textOffset == 7, "style redo cursor mismatch");
 }
 void testHeadingAndListItemStylize() {
@@ -159,19 +159,19 @@ void testHeadingAndListItemStylize() {
   session.setMarkdownText(QStringLiteral("# Title!"), false);
   setSelection(selection, blockAt(session, 0), 0, 5);
   require(stylize.toggleBold(), "heading selection style should wrap body text");
-  require(session.markdownText() == QStringLiteral("# **Title**!"), "heading style should preserve marker");
+  require(session.markdownText().toString() == QStringLiteral("# **Title**!"), "heading style should preserve marker");
   require(selection.selection().startOffset() == 2, "heading style selection start mismatch");
   require(selection.selection().endOffset() == 7, "heading style selection end mismatch");
 
   session.setMarkdownText(QStringLiteral("- alpha!\n- beta"), false);
   setSelection(selection, listItemAt(session, 0, 0), 0, 5);
   require(stylize.toggleItalic(), "unordered list style should wrap item body");
-  require(session.markdownText() == QStringLiteral("- *alpha*!\n- beta"), "unordered list style should preserve marker");
+  require(session.markdownText().toString() == QStringLiteral("- *alpha*!\n- beta"), "unordered list style should preserve marker");
 
   session.setMarkdownText(QStringLiteral("1. alpha\n2. beta"), false);
   setSelection(selection, listItemAt(session, 0, 0), 0, 5);
   require(stylize.toggleCode(), "ordered list style should wrap item body");
-  require(session.markdownText() == QStringLiteral("1. `alpha`\n2. beta"), "ordered list style should preserve marker");
+  require(session.markdownText().toString() == QStringLiteral("1. `alpha`\n2. beta"), "ordered list style should preserve marker");
 }
 void testStylizeCrossParagraphSelectionWrap() {
   DocumentSession session;
@@ -184,17 +184,17 @@ void testStylizeCrossParagraphSelectionWrap() {
   session.setMarkdownText(QStringLiteral("alpha\n\nbeta\n\ngamma"), false);
   setCrossSelection(selection, blockAt(session, 0), 2, blockAt(session, 2), 3);
   require(stylize.toggleBold(), "bold should wrap cross paragraph selection by block");
-  require(session.markdownText() == QStringLiteral("al**pha**\n\n**beta**\n\n**gam**ma"), "cross paragraph bold wrap mismatch");
+  require(session.markdownText().toString() == QStringLiteral("al**pha**\n\n**beta**\n\n**gam**ma"), "cross paragraph bold wrap mismatch");
 
   session.setMarkdownText(QStringLiteral("# Title\n\n- alpha\n- beta\n\nomega"), false);
   setCrossSelection(selection, blockAt(session, 0), 2, listItemAt(session, 1, 1), 2);
   require(stylize.toggleItalic(), "italic should wrap cross block selection by block");
-  require(session.markdownText() == QStringLiteral("# Ti*tle*\n\n- *alpha*\n- *be*ta\n\nomega"), "cross block italic wrap mismatch");
+  require(session.markdownText().toString() == QStringLiteral("# Ti*tle*\n\n- *alpha*\n- *be*ta\n\nomega"), "cross block italic wrap mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha\n\nbeta"), false);
   setCrossSelection(selection, blockAt(session, 1), 2, blockAt(session, 0), 2);
   require(stylize.toggleCode(), "code should wrap reverse cross paragraph selection by block");
-  require(session.markdownText() == QStringLiteral("al`pha`\n\n`be`ta"), "reverse cross paragraph code wrap mismatch");
+  require(session.markdownText().toString() == QStringLiteral("al`pha`\n\n`be`ta"), "reverse cross paragraph code wrap mismatch");
 }
 void testClipboardPlainText() {
   DocumentSession session;
@@ -213,11 +213,11 @@ void testClipboardPlainText() {
 
   require(clipboard.cut(), "cut should use editable selection");
   require(QApplication::clipboard()->text() == QStringLiteral("lph"), "clipboard cut text mismatch");
-  require(session.markdownText() == QStringLiteral("aa"), "clipboard cut document mismatch");
+  require(session.markdownText().toString() == QStringLiteral("aa"), "clipboard cut document mismatch");
 
   QApplication::clipboard()->setText(QStringLiteral("XYZ"));
   require(clipboard.paste(), "paste should insert clipboard text");
-  require(session.markdownText() == QStringLiteral("aXYZa"), "clipboard paste document mismatch");
+  require(session.markdownText().toString() == QStringLiteral("aXYZa"), "clipboard paste document mismatch");
 }
 void testClipboardMarkdownPreservesLinePrefix() {
   DocumentSession session;
@@ -342,12 +342,12 @@ void testClearFormatting() {
     session.setMarkdownText(c.input, false);
     setCursor(selection, blockAt(session, 0), c.cursor);
     require(stylize.clearFormatting(), "clearFormatting should report a change when formatting is present");
-    if (session.markdownText() != c.expected) {
+    if (session.markdownText().toString() != c.expected) {
       std::cerr << "clearFormatting text mismatch: input [" << c.input.toUtf8().data()
                 << "] expected [" << c.expected.toUtf8().data() << "] got ["
-                << session.markdownText().toUtf8().data() << "]\n";
+                << session.markdownText().toString().toUtf8().data() << "]\n";
     }
-    require(session.markdownText() == c.expected, "clearFormatting should strip markers, keep content");
+    require(session.markdownText().toString() == c.expected, "clearFormatting should strip markers, keep content");
     require(selection.cursorPosition().blockId.isValid(), "clearFormatting should keep a valid cursor");
     require(selection.cursorPosition().text.textOffset == c.expectedCursor,
             "clearFormatting should preserve the cursor's visible position");
@@ -359,14 +359,14 @@ void testClearFormatting() {
   session.setMarkdownText(QStringLiteral("just plain text"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(!stylize.clearFormatting(), "clearFormatting should be a no-op when no formatting is present");
-  require(session.markdownText() == QStringLiteral("just plain text"), "clearFormatting no-op must not alter text");
+  require(session.markdownText().toString() == QStringLiteral("just plain text"), "clearFormatting no-op must not alter text");
   require(!undoStack.canUndo(), "clearFormatting no-op must not push undo");
 
   // Math/images alone are content, not formatting → also a no-op.
   session.setMarkdownText(QStringLiteral("$x^2$ and ![alt](u)"), false);
   setCursor(selection, blockAt(session, 0), 2);
   require(!stylize.clearFormatting(), "clearFormatting should not treat math/images as formatting");
-  require(session.markdownText() == QStringLiteral("$x^2$ and ![alt](u)"), "clearFormatting must leave math/images untouched");
+  require(session.markdownText().toString() == QStringLiteral("$x^2$ and ![alt](u)"), "clearFormatting must leave math/images untouched");
 }
 
 void testClearFormattingUndoRedo() {
@@ -380,7 +380,7 @@ void testClearFormattingUndoRedo() {
   session.setMarkdownText(QStringLiteral("**bold** and *italic*"), false);
   setCursor(selection, blockAt(session, 0), 3);
   require(stylize.clearFormatting(), "clearFormatting should clear the paragraph");
-  require(session.markdownText() == QStringLiteral("bold and italic"), "clearFormatting text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("bold and italic"), "clearFormatting text mismatch");
 
   const EditTransaction undo = undoStack.takeUndo();
   require(undo.isTextDeltaCommand(), "clearFormatting undo should use TextDeltaCommand");
@@ -393,7 +393,7 @@ void testClearFormattingUndoRedo() {
                          undo.textDeltaCommand().delta.insertedText.size(),
                          undo.textDeltaCommand().delta.removedText, true);
   selection.setCursorPosition(undo.textDeltaCommand().beforeCursor);
-  require(session.markdownText() == QStringLiteral("**bold** and *italic*"), "clearFormatting undo should restore formatting");
+  require(session.markdownText().toString() == QStringLiteral("**bold** and *italic*"), "clearFormatting undo should restore formatting");
 
   // Redo: re-apply the clearing.
   const EditTransaction redo = undoStack.takeRedo();
@@ -402,7 +402,7 @@ void testClearFormattingUndoRedo() {
                          redo.textDeltaCommand().delta.removedText.size(),
                          redo.textDeltaCommand().delta.insertedText, true);
   selection.setCursorPosition(redo.textDeltaCommand().afterCursor);
-  require(session.markdownText() == QStringLiteral("bold and italic"), "clearFormatting redo should re-clear");
+  require(session.markdownText().toString() == QStringLiteral("bold and italic"), "clearFormatting redo should re-clear");
 }
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {

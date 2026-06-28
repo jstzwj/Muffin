@@ -119,7 +119,7 @@ void muffin::MainWindow::updateBlockSourceLabel(const HitTestResult& hit) {
     statusBar_->setBlockSource(QString(), QString());
     return;
   }
-  const QString& markdown = session_.markdownText();
+  const PieceTable& markdown = session_.markdownText();
   const QString raw = markdown.mid(range.byteStart, range.byteEnd - range.byteStart);
   // Flatten to a single status-bar line so multi-line blocks stay readable.
   QString flat = raw;
@@ -135,7 +135,7 @@ void muffin::MainWindow::syncSourceEditorIfNeeded() {
   if (!editor_ || !sourceEditorDirty_) {
     return;
   }
-  editor_->setText(session_.markdownText());
+  editor_->setText(session_.markdownText().toString());
   sourceEditorDirty_ = false;
 }
 
@@ -153,7 +153,7 @@ void muffin::MainWindow::updateWordCountNow() {
   if (!statusBar_ || !wordCountDirty_) {
     return;
   }
-  statusBar_->setWordCount(MainWindow::countWords(session_.markdownText()));
+  statusBar_->setWordCount(MainWindow::countWords(session_.markdownText().toString()));
   wordCountDirty_ = false;
 }
 
@@ -272,7 +272,7 @@ void muffin::MainWindow::insertLocalImageWithDialog() {
   muffin::ImageInsertRequest req;
   req.sourcePath = filePath;
   req.documentPath = session_.filePath();
-  req.documentText = session_.markdownText();
+  req.documentText = session_.markdownText().toString();
   req.alt = QFileInfo(filePath).completeBaseName();
   QSettings settings;
   const muffin::ImageInsertResult res = muffin::ImageInsertionPolicy::resolveHref(req, settings, this);

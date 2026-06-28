@@ -131,14 +131,20 @@ void testBrushQueueBatchesRefreshRequests() {
   queue.requestTopLevelRangeRefresh(TopLevelRangeChange{2, 1, 2, 7});
   queue.flush();
 
-  require(requests.size() == 3, "incompatible range refreshes should emit one fallback batch");
-  require(requests.last().fullLayoutDirty, "incompatible range refreshes should fall back to full refresh");
-  require(!requests.last().topLevelRangeDirty.isValid(), "full refresh should clear range dirty state");
+  // Distinct pending ranges used to escalate to a whole-document refresh; that was catastrophic on
+  // huge docs (rapid structural undos each record a range with a different block count → 22s full
+  // rebuild). Now the pending range is flushed synchronously and the new range queued, so both are
+  // localized range refreshes that rebuild against the correct layout state.
+  require(requests.size() == 4, "incompatible range refreshes should flush the first range then queue the second");
+  require(!requests.at(2).fullLayoutDirty, "first incompatible range should flush as a localized range, not full");
+  require(requests.at(2).topLevelRangeDirty == range, "first incompatible range should preserve its range");
+  require(!requests.last().fullLayoutDirty, "second incompatible range should be a localized range, not full");
+  require(requests.last().topLevelRangeDirty == TopLevelRangeChange{2, 1, 2, 7}, "second incompatible range should preserve its range");
 
   queue.requestTopLevelRangeRefresh({});
   queue.flush();
 
-  require(requests.size() == 4, "invalid range refresh should emit fallback batch");
+  require(requests.size() == 5, "invalid range refresh should emit fallback batch");
   require(requests.last().fullLayoutDirty, "invalid range refresh should become full refresh");
 
   queue.requestBlockRefresh(first);
@@ -146,7 +152,7 @@ void testBrushQueueBatchesRefreshRequests() {
   queue.requestBlockRefresh(second);
   queue.flush();
 
-  require(requests.size() == 5, "brush queue should emit full refresh batch");
+  require(requests.size() == 6, "brush queue should emit full refresh batch");
   require(requests.last().fullLayoutDirty, "full refresh should dominate batched block refreshes");
   require(requests.last().layoutDirtyBlocks.isEmpty(), "full refresh should clear block dirty ids");
 }

@@ -14,6 +14,7 @@ muffin_add_test(NAME MuffinOpenRenderMemBench SOURCE tests/perf/OpenRenderMemBen
 muffin_add_test(NAME MuffinParserBasicTest      SOURCE tests/parser/ParserBasicTest.cpp      LINK MuffinCore)
 muffin_add_test(NAME MuffinParserDefinitionTest SOURCE tests/parser/ParserDefinitionTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinParserMathCodeTest   SOURCE tests/parser/ParserMathCodeTest.cpp   LINK MuffinCore)
+muffin_add_test(NAME MuffinPieceTableTest       SOURCE tests/document/PieceTableTest.cpp     LINK MuffinCore)
 muffin_add_test(NAME MuffinRelativeOffsetTest   SOURCE tests/parser/RelativeOffsetTest.cpp   LINK MuffinCore)
 muffin_add_test(NAME MuffinRelativeOffsetOracleTest SOURCE tests/parser/RelativeOffsetOracleTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinOutlineBuilderTest   SOURCE tests/document/OutlineBuilderTest.cpp LINK MuffinCore)
@@ -23,6 +24,7 @@ muffin_add_test(NAME MuffinAlertBoxParseTest       SOURCE tests/document/AlertBo
 muffin_add_test(NAME MuffinHighlightParseTest      SOURCE tests/document/HighlightParseTest.cpp      LINK MuffinCore)
 muffin_add_test(NAME MuffinSubscriptSuperscriptParseTest SOURCE tests/document/SubscriptSuperscriptParseTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinDraftRecoveryTest SOURCE tests/app/DraftRecoveryTest.cpp LINK MuffinCore)
+muffin_add_test(NAME MuffinDocumentSessionAsyncParseTest SOURCE tests/document/DocumentSessionAsyncParseTest.cpp LINK MuffinCore)
 
 # --- render (link MuffinUi, take the render_smoke fixture, lock the GUI) ---
 muffin_add_test(NAME MuffinRenderThemeTest            SOURCE tests/render/RenderThemeTest.cpp            LINK MuffinUi EXTRA_SOURCES src/themes.qrc FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK DISABLED_ON APPLE)

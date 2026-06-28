@@ -57,7 +57,7 @@ void testInputEmptyCodeFenceBackspaceRemovesBlock() {
   require(codeFence.isEditing(), "code fence should be editing");
 
   require(input.deleteBackward(), "backspace on empty code fence should succeed");
-  require(!session.markdownText().contains(QStringLiteral("```")), "empty code fence should be removed after backspace");
+  require(!session.markdownText().toString().contains(QStringLiteral("```")), "empty code fence should be removed after backspace");
   require(session.document().root().children().size() >= 1, "should have at least 1 block after removing code fence");
   require(!codeFence.isEditing(), "code fence should no longer be editing after removal");
 
@@ -105,7 +105,7 @@ void testInputEmptyCodeFenceDeleteRemovesBlock() {
   require(codeFence.enterEditMode(), "enter code edit should work");
 
   require(input.deleteForward(), "delete on empty code fence should succeed");
-  require(!session.markdownText().contains(QStringLiteral("```")), "empty code fence should be removed after delete");
+  require(!session.markdownText().toString().contains(QStringLiteral("```")), "empty code fence should be removed after delete");
 }
 
 // testInputNonEmptyCodeFenceBackspaceDoesNotRemoveBlock (lines 1407-1446)
@@ -146,7 +146,7 @@ void testInputNonEmptyCodeFenceBackspaceDoesNotRemoveBlock() {
   require(codeFence.enterEditMode(), "enter code edit should work");
 
   require(input.deleteBackward(), "backspace should succeed");
-  require(session.markdownText().contains(QStringLiteral("```cpp")), "non-empty code fence should not be removed");
+  require(session.markdownText().toString().contains(QStringLiteral("```cpp")), "non-empty code fence should not be removed");
 }
 
 // Repro for user bug: empty $$ math block + Backspace should remove the block.
@@ -183,7 +183,7 @@ void testInputEmptyMathBlockBackspaceRemovesBlock() {
   require(mathBlock.enterEditMode(), "enter math edit should work");
 
   require(input.deleteBackward(), "backspace on empty math block should succeed");
-  require(!session.markdownText().contains(QStringLiteral("$$")), "empty math block should be removed after backspace");
+  require(!session.markdownText().toString().contains(QStringLiteral("$$")), "empty math block should be removed after backspace");
 }
 
 // Repro for user bug: pressing Enter inside a math block should insert a newline that survives round-trip.
@@ -260,7 +260,7 @@ void testDefinitionBlockFieldEditing() {
   titleHit.definitionField = HitTestResult::DefinitionField::Title;
   selection.setHitResult(titleHit);
   require(input.insertText(QStringLiteral("Example")), "typing title should edit link definition");
-  require(session.markdownText() == QStringLiteral("[1]: https://example.com  \"Example\""), "link definition markdown mismatch");
+  require(session.markdownText().toString() == QStringLiteral("[1]: https://example.com  \"Example\""), "link definition markdown mismatch");
 
   session.setMarkdownText(QStringLiteral("[^]: "), false);
   MarkdownNode* footnote = blockAt(session, 0);
@@ -268,7 +268,7 @@ void testDefinitionBlockFieldEditing() {
   const DefinitionBlock emptyFootnote = footnote->definition();
   setSourceCursor(selection, footnote, emptyFootnote.noteRange.start - emptyFootnote.markerRange.start, emptyFootnote.noteRange.start);
   require(input.insertText(QStringLiteral("note")), "typing note should edit footnote definition");
-  require(session.markdownText() == QStringLiteral("[^]: note"), "footnote markdown mismatch");
+  require(session.markdownText().toString() == QStringLiteral("[^]: note"), "footnote markdown mismatch");
 }
 
 // testEmptyDefinitionBackspaceDeletesBlock (lines 1492-1510)
@@ -288,8 +288,8 @@ void testEmptyDefinitionBackspaceDeletesBlock() {
   require(link->definition().title.isEmpty(), QStringLiteral("empty link title expected: '%1'").arg(link->definition().title));
   setSourceCursor(selection, link, 0, link->definition().markerRange.start);
   require(input.deleteBackward(), "backspace should delete empty link definition");
-  require(session.markdownText() == QStringLiteral("alpha"),
-          QStringLiteral("empty link definition deletion mismatch: '%1'").arg(session.markdownText()));
+  require(session.markdownText().toString() == QStringLiteral("alpha"),
+          QStringLiteral("empty link definition deletion mismatch: '%1'").arg(session.markdownText().toString()));
 }
 
 // testOptionalLinkDefinitionTitleInsertionAddsQuotes (lines 1512-1538)
@@ -317,8 +317,8 @@ void testOptionalLinkDefinitionTitleInsertionAddsQuotes() {
   selection.setHitResult(titleHit);
 
   require(input.insertText(QStringLiteral("Example")), "typing optional title should add quoted title");
-  require(session.markdownText() == QStringLiteral("[1]: url  \"Example\""),
-          QStringLiteral("optional title insertion mismatch: '%1'").arg(session.markdownText()));
+  require(session.markdownText().toString() == QStringLiteral("[1]: url  \"Example\""),
+          QStringLiteral("optional title insertion mismatch: '%1'").arg(session.markdownText().toString()));
 }
 
 // testDefinitionDestinationEditDoesNotRestoreStaleSourceText (lines 1540-1566)
@@ -344,10 +344,10 @@ void testDefinitionDestinationEditDoesNotRestoreStaleSourceText() {
       definition.destinationRange.end);
 
   require(input.insertText(QStringLiteral("https://new.example/path")), "replacing destination should edit definition");
-  require(session.markdownText() == QStringLiteral("[ref]: <https://new.example/path> \"\""),
-          QStringLiteral("edited destination should keep angle destination and empty title shape: '%1'").arg(session.markdownText()));
-  require(!session.markdownText().contains(QStringLiteral("https://old.example/a b")),
-          QStringLiteral("stale sourceText destination should not be restored: '%1'").arg(session.markdownText()));
+  require(session.markdownText().toString() == QStringLiteral("[ref]: <https://new.example/path> \"\""),
+          QStringLiteral("edited destination should keep angle destination and empty title shape: '%1'").arg(session.markdownText().toString()));
+  require(!session.markdownText().toString().contains(QStringLiteral("https://old.example/a b")),
+          QStringLiteral("stale sourceText destination should not be restored: '%1'").arg(session.markdownText().toString()));
 }
 
 // Enter at the end of an indented code block cannot persist a trailing empty line (cmark strips
@@ -380,21 +380,21 @@ void testInputIndentedCodePhantomEnterLine() {
 
   // Enter at the end creates a phantom line without touching the source.
   require(pressKey(input, &view, Qt::Key_Return), "Enter keypress should be handled");
-  require(session.markdownText() == QStringLiteral("    code"), "phantom Enter must not mutate source");
+  require(session.markdownText().toString() == QStringLiteral("    code"), "phantom Enter must not mutate source");
   require(codeFence.hasPendingTrailingNewline(), "phantom line should be present after Enter");
 
   // Backspace undoes the phantom (still no source change).
   require(pressKey(input, &view, Qt::Key_Backspace), "backspace keypress should be handled");
   require(!codeFence.hasPendingTrailingNewline(), "phantom should clear on backspace");
-  require(session.markdownText() == QStringLiteral("    code"), "backspace on phantom must not mutate source");
+  require(session.markdownText().toString() == QStringLiteral("    code"), "backspace on phantom must not mutate source");
 
   // Re-create the phantom, then type a character to commit it as a real indented line.
   require(pressKey(input, &view, Qt::Key_Return), "phantom Enter recreated");
   QKeyEvent letter(QEvent::KeyPress, Qt::Key_X, Qt::NoModifier, QStringLiteral("x"));
   require(input.eventFilter(&view, &letter), "letter keypress should commit the phantom");
   require(!codeFence.hasPendingTrailingNewline(), "phantom should clear after commit");
-  require(session.markdownText().contains(QStringLiteral("    code\n    x")), "committed line should be indented code");
-  require(!session.markdownText().contains(QLatin1String("```")), "must stay indented, not become fenced");
+  require(session.markdownText().toString().contains(QStringLiteral("    code\n    x")), "committed line should be indented code");
+  require(!session.markdownText().toString().contains(QLatin1String("```")), "must stay indented, not become fenced");
 }
 
 // A second Enter on the phantom empty line exits the indented code block to a new paragraph
@@ -432,7 +432,7 @@ void testInputIndentedCodeSecondEnterExitsToParagraph() {
   require(blockAt(session, 0)->type() == BlockType::CodeFence, "code block should remain first");
   require(blockAt(session, 1)->type() == BlockType::Paragraph, "a paragraph should follow the code block");
   require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "cursor should land in the new paragraph");
-  require(!session.markdownText().contains(QLatin1String("```")), "code must stay indented, not become fenced");
+  require(!session.markdownText().toString().contains(QLatin1String("```")), "code must stay indented, not become fenced");
 }
 
 int main(int argc, char** argv) {

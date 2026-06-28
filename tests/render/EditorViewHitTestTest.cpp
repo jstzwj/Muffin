@@ -50,7 +50,7 @@ void testDefinitionPlaceholderHitKeepsCursorInSlot() {
 
   controller.activateHit(hit);
   require(controller.inputController().insertText(QStringLiteral("123")), "typing after definition placeholder hit should insert destination");
-  require(session.markdownText() == QStringLiteral("[]: 123"), "definition placeholder input markdown mismatch");
+  require(session.markdownText().toString() == QStringLiteral("[]: 123"), "definition placeholder input markdown mismatch");
 }
 
 void testEmptyLinkDefinitionTitlePlaceholderOnlyWhenFocused() {

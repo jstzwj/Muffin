@@ -25,20 +25,20 @@ void testSetHeadingLevel() {
   session.setMarkdownText(QStringLiteral("Hello world"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(paragraph.setHeadingLevel(1), "paragraph -> H1 should succeed");
-  require(session.markdownText() == QStringLiteral("# Hello world"), "paragraph -> H1 text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("# Hello world"), "paragraph -> H1 text mismatch");
   require(blockAt(session, 0)->type() == BlockType::Heading, "H1 block type mismatch");
   require(blockAt(session, 0)->headingLevel() == 1, "H1 level mismatch");
 
   require(paragraph.setHeadingLevel(3), "H1 -> H3 should succeed");
-  require(session.markdownText() == QStringLiteral("### Hello world"), "H1 -> H3 text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("### Hello world"), "H1 -> H3 text mismatch");
   require(blockAt(session, 0)->headingLevel() == 3, "H3 level mismatch");
 
   require(paragraph.setHeadingLevel(0), "H3 -> paragraph should succeed");
-  require(session.markdownText() == QStringLiteral("Hello world"), "H3 -> paragraph text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("Hello world"), "H3 -> paragraph text mismatch");
   require(blockAt(session, 0)->type() == BlockType::Paragraph, "paragraph block type mismatch");
 
   require(paragraph.setHeadingLevel(0), "paragraph -> paragraph should be no-op");
-  require(session.markdownText() == QStringLiteral("Hello world"), "paragraph no-op text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("Hello world"), "paragraph no-op text mismatch");
 }
 
 void testPromoteDemoteHeading() {
@@ -53,19 +53,19 @@ void testPromoteDemoteHeading() {
   setCursor(selection, blockAt(session, 0), 3);
 
   require(paragraph.promoteHeading(), "promote H3 -> H2 should succeed");
-  require(session.markdownText() == QStringLiteral("## Title"), "promote H3 -> H2 text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("## Title"), "promote H3 -> H2 text mismatch");
   require(blockAt(session, 0)->headingLevel() == 2, "promote level mismatch");
 
   require(paragraph.promoteHeading(), "promote H2 -> H1 should succeed");
-  require(session.markdownText() == QStringLiteral("# Title"), "promote H2 -> H1 text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("# Title"), "promote H2 -> H1 text mismatch");
 
   require(!paragraph.promoteHeading(), "promote H1 should fail");
 
   require(paragraph.demoteHeading(), "demote H1 -> H2 should succeed");
-  require(session.markdownText() == QStringLiteral("## Title"), "demote H1 -> H2 text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("## Title"), "demote H1 -> H2 text mismatch");
 
   require(paragraph.demoteHeading(), "demote H2 -> H3 should succeed");
-  require(session.markdownText() == QStringLiteral("### Title"), "demote H2 -> H3 text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("### Title"), "demote H2 -> H3 text mismatch");
 
   paragraph.setHeadingLevel(6);
   require(!paragraph.demoteHeading(), "demote H6 should fail");
@@ -88,7 +88,7 @@ void testHeadingUndoRedo() {
   setCursor(selection, blockAt(session, 0), 3);
 
   require(paragraph.setHeadingLevel(2), "set H2 should succeed");
-  require(session.markdownText() == QStringLiteral("## Hello"), "set H2 text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("## Hello"), "set H2 text mismatch");
 
   const EditTransaction undo = undoStack.takeUndo();
   require(undo.isTextDeltaCommand(), "heading undo should use TextDeltaCommand");
@@ -98,7 +98,7 @@ void testHeadingUndoRedo() {
       undo.textDeltaCommand().delta.removedText,
       true);
   selection.setCursorPosition(undo.textDeltaCommand().beforeCursor);
-  require(session.markdownText() == QStringLiteral("Hello"), "heading undo text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("Hello"), "heading undo text mismatch");
 
   const EditTransaction redo = undoStack.takeRedo();
   session.applyTextDelta(
@@ -107,7 +107,7 @@ void testHeadingUndoRedo() {
       redo.textDeltaCommand().delta.insertedText,
       true);
   selection.setCursorPosition(redo.textDeltaCommand().afterCursor);
-  require(session.markdownText() == QStringLiteral("## Hello"), "heading redo text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("## Hello"), "heading redo text mismatch");
 }
 
 void testHeadingEmptyContent() {
@@ -140,7 +140,7 @@ void testHeadingPreservesCursorInContent() {
   session.setMarkdownText(QStringLiteral("Hello world"), false);
   setSourceCursor(selection, blockAt(session, 0), 5, 5);
   require(paragraph.setHeadingLevel(1), "set H1 should succeed");
-  require(session.markdownText() == QStringLiteral("# Hello world"), "H1 text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("# Hello world"), "H1 text mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "cursor should stay at content offset 5");
 }
 
@@ -157,7 +157,7 @@ void testHeadingMultiBlockDocument() {
 
   setCursor(selection, blockAt(session, 1), 3);
   require(paragraph.setHeadingLevel(2), "convert second block to H2 should succeed");
-  require(session.markdownText() == QStringLiteral("First\n\n## Second\n\nThird"), "multi-block H2 text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("First\n\n## Second\n\nThird"), "multi-block H2 text mismatch");
 
   require(blockAt(session, 0)->type() == BlockType::Paragraph, "first block should stay paragraph");
   require(blockAt(session, 2)->type() == BlockType::Paragraph, "third block should stay paragraph");

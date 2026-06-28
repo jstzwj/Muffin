@@ -1,4 +1,5 @@
 #include "document/LineStartOffsetCache.h"
+#include "document/PieceTable.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 #include "document/SourceRangeUtil.h"
@@ -122,7 +123,7 @@ void testLineStartOffsetCacheApplyEditMatchesRebuild() {
       postEdit.replace(srcStart, removedLen, insertion);
 
       LineStartOffsetCache reference{QStringView(postEdit)};
-      cache.applyEdit(srcStart, removedLen, insertion.size(), QStringView(postEdit));
+      cache.applyEdit(srcStart, removedLen, insertion.size(), PieceTable(postEdit));
 
       require(cache.lineCount() == reference.lineCount(),
               QStringLiteral("applyEdit lineCount drift at iter %1 step %2").arg(iter).arg(step));

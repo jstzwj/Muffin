@@ -28,7 +28,8 @@ struct TableCellSourceRange {
   }
 };
 
-TableCellSourceRange sourceRangeForTableCellContent(const QString& markdown, const MarkdownNode& cell) {
+template <typename Text>
+TableCellSourceRange sourceRangeForTableCellContent(const Text& markdown, const MarkdownNode& cell) {
   if (cell.type() != BlockType::TableCell) {
     return {};
   }
@@ -286,7 +287,7 @@ bool TableController::copyCurrentTable() const {
   }
 
   const SourceRange range = table->sourceRange();
-  const QString& markdown = ctx_.session->markdownText();
+  const PieceTable& markdown = ctx_.session->markdownText();
   if (range.byteStart < 0 || range.byteEnd < range.byteStart || range.byteEnd > markdown.size()) {
     return false;
   }
@@ -312,7 +313,7 @@ bool TableController::formatCurrentTableSource() {
   }
 
   const SourceRange range = table->sourceRange();
-  const QString beforeText = ctx_.session->markdownText();
+  const PieceTable& beforeText = ctx_.session->markdownText();
   if (range.byteStart < 0 || range.byteEnd < range.byteStart || range.byteEnd > beforeText.size()) {
     return false;
   }
@@ -374,7 +375,7 @@ bool TableController::deleteCurrentTable() {
   const SourceRange tableRange = table->sourceRange();
   qsizetype blockStart = tableRange.byteStart;
   qsizetype blockEnd = tableRange.byteEnd;
-  const QString beforeText = ctx_.session->markdownText();
+  const PieceTable& beforeText = ctx_.session->markdownText();
   if (blockStart < 0 || blockEnd < blockStart || blockEnd > beforeText.size()) {
     return false;
   }
@@ -531,7 +532,7 @@ bool TableController::insertTable(int rows, int columns) {
   columns = qMax(1, columns);
 
   const CursorPosition beforeCursor = ctx_.selection ? ctx_.selection->cursorPosition() : CursorPosition();
-  const QString beforeText = ctx_.session->markdownText();
+  const PieceTable& beforeText = ctx_.session->markdownText();
 
   auto table = std::make_unique<MarkdownNode>(BlockType::Table);
   const NodeId insertedTableId = table->id();
@@ -668,7 +669,7 @@ bool TableController::editCurrentCellSource(
   }
 
   const CursorPosition beforeCursor = ctx_.selection->cursorPosition();
-  const QString beforeText = ctx_.session->markdownText();
+  const PieceTable& beforeText = ctx_.session->markdownText();
   MarkdownNode* table = tableForLocation(beforeLocation);
   if (!table) {
     return false;

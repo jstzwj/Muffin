@@ -78,7 +78,7 @@ bool ClipboardController::paste() {
       muffin::ImageInsertRequest req;
       req.pastedImage = image;
       req.documentPath = ctx_.session->filePath();
-      req.documentText = ctx_.session->markdownText();
+      req.documentText = ctx_.session->markdownText().toString();
       QSettings settings;
       const muffin::ImageInsertResult res = muffin::ImageInsertionPolicy::resolveHref(req, settings, nullptr);
       if (res.ok) {

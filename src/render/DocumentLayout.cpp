@@ -526,7 +526,7 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   result.oldCount = range.oldCount;
   result.newCount = range.newCount;
   theme.clearStructuralCache();
-  theme.dropStructuralBuilder();  // top-level splice: blocks added/removed → CSS element pointers dangle
+  theme.invalidateStructuralSiblingLinks();  // splice changed the root child list → re-link sibling chains, but KEEP the per-node CssElement cache (O(n) cache hits vs dropStructuralBuilder's O(n) recreation ~1s @ 375k blocks)
   if (!range.isValid() || document_ != &document || viewportWidth_ <= 0) {
     return result;
   }
@@ -585,6 +585,11 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   }
 
   QRectF newRectUnion;
+  QElapsedTimer buildTimer;
+  const bool dbg = layoutPerf().isDebugEnabled();
+  if (dbg) {
+    buildTimer.start();
+  }
   for (qsizetype i = 0; i < range.newCount; ++i) {
     const MarkdownNode& node = *documentBlocks.at(static_cast<size_t>(range.first + i));
     cursorY += previousNode ? spacingBetweenBlocks(*previousNode, node, theme)
@@ -602,6 +607,10 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
     slot.detail = std::move(block);
     previousNode = &node;
     replacements.push_back(std::move(slot));
+  }
+  if (dbg) {
+    qCDebug(layoutPerf).nospace() << "layout.range.build n=" << range.newCount << " "
+                                  << buildTimer.nsecsElapsed() / 1000000.0 << " ms";
   }
   result.newRect = newRectUnion;
 
@@ -639,10 +648,21 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   slots_.insert(slots_.begin() + range.first, std::make_move_iterator(replacements.begin()), std::make_move_iterator(replacements.end()));
 
   // ids changed -> rebuild doc-tree indexes; recompute tops over the new slot vector; shift suffix.
+  if (dbg) {
+    buildTimer.start();
+  }
   buildNestedIndex(document);
   rebuildTops();
+  if (dbg) {
+    qCDebug(layoutPerf).nospace() << "layout.range.nestedIndex+tops " << buildTimer.nsecsElapsed() / 1000000.0 << " ms";
+    buildTimer.start();
+  }
   if (newSuffixFirst < static_cast<qsizetype>(slots_.size())) {
     shiftSuffixFrom(newSuffixFirst, result.heightDelta);
+  }
+  if (dbg) {
+    qCDebug(layoutPerf).nospace() << "layout.range.shift from=" << newSuffixFirst << " "
+                                  << buildTimer.nsecsElapsed() / 1000000.0 << " ms";
   }
 
   QRectF shiftedRect;
@@ -982,8 +1002,9 @@ void DocumentLayout::rebuildTops() {
 void DocumentLayout::configureBuilder(SelectionRange selection) {
   selection_ = selection;
   if (document_) {
-    builder_.setMarkdownText(document_->markdownText(), document_->lineOffsets());
+    builder_.setMarkdownText(document_->pieceText(), document_->lineOffsets());
   }
+  builder_.refreshRenderSettings();  // read markdown/* settings once per pass (avoids per-block QSettings hits)
   builder_.setSelection(selection);
   builder_.setEditingHtmlBlock(editingHtmlBlockId_);
   builder_.setDocumentPath(documentPath_);

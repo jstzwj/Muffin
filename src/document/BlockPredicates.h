@@ -20,7 +20,8 @@ inline bool isLiteralBlockType(BlockType type) {
 // the indent, but the editable content begins at the line start. Walk back over up to 3 leading
 // spaces to find that line start, and fall back to astStart when the indent does not reach the line
 // start — so this never over-selects content sitting after a partial indent.
-inline qsizetype paragraphContentStartIncludingCommonMarkIndent(const QString& markdown, qsizetype astStart) {
+template <typename Text>
+inline qsizetype paragraphContentStartIncludingCommonMarkIndent(const Text& markdown, qsizetype astStart) {
   qsizetype lineStart = astStart;
   while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
     --lineStart;

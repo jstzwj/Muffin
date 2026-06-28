@@ -32,7 +32,7 @@ void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
   setCursor(selection, blockAt(session, 0), 0);
   const NodeId originalAlphaId = blockAt(session, 0)->id();
   require(input.insertParagraphBreak(), "enter at paragraph start should create empty paragraph");
-  require(session.markdownText() == QStringLiteral("\n\nalpha"), "paragraph start enter text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("\n\nalpha"), "paragraph start enter text mismatch");
   require(session.document().root().children().size() == 2, "paragraph start enter should create virtual empty block");
   require(session.lastLocalEditChangedTopLevelStructure(), "paragraph start enter should mark top-level structure changed");
   brushQueue.flush();
@@ -47,7 +47,7 @@ void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
   require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "paragraph start enter cursor should stay on original paragraph");
   require(selection.cursorPosition().text.textOffset == 0, "paragraph start enter cursor offset mismatch");
   require(input.insertText(QStringLiteral("x")), "typing after paragraph start enter should edit original paragraph");
-  require(session.markdownText() == QStringLiteral("\n\nxalpha"), "typing after paragraph start enter should insert at original paragraph start");
+  require(session.markdownText().toString() == QStringLiteral("\n\nxalpha"), "typing after paragraph start enter should insert at original paragraph start");
   require(!session.lastLocalEditChangedTopLevelStructure(), "typing after paragraph start enter should keep original paragraph identity stable");
   brushQueue.flush();
   require(requests.size() == 2, "typing after paragraph start enter should request another refresh");
@@ -62,29 +62,29 @@ void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
   require(input.insertParagraphBreak(), "enter at paragraph start should create empty paragraph for repeat case");
   require(input.insertParagraphBreak(), "repeated enter in leading empty paragraph should create another empty paragraph");
   require(input.insertParagraphBreak(), "third enter in leading empty paragraph should create another empty paragraph");
-  require(session.markdownText() == QStringLiteral("\n\n\n\n\n\nalpha"), "leading empty paragraph repeated enter text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("\n\n\n\n\n\nalpha"), "leading empty paragraph repeated enter text mismatch");
   require(session.document().root().children().size() == 4, "leading empty paragraph repeated enter should create virtual blocks");
   require(blockAt(session, 3)->id() == repeatedAlphaId, "repeated paragraph start enter should keep original paragraph id");
   require(selection.cursorPosition().blockId == blockAt(session, 3)->id(), "repeated paragraph start enter cursor should stay on original paragraph");
   require(selection.cursorPosition().text.textOffset == 0, "repeated paragraph start enter cursor offset mismatch");
   require(input.insertText(QStringLiteral("123")), "typing after repeated paragraph start enter should edit original paragraph");
-  require(session.markdownText() == QStringLiteral("\n\n\n\n\n\n123alpha"), "typing after repeated paragraph start enter text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("\n\n\n\n\n\n123alpha"), "typing after repeated paragraph start enter text mismatch");
   require(session.document().root().children().size() == 4, "typing after repeated paragraph start enter should preserve virtual paragraph count");
   require(blockAt(session, 3)->id() == repeatedAlphaId, "typing after repeated paragraph start enter should keep original paragraph once");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(input.insertParagraphBreak(), "enter at paragraph end should create empty paragraph");
-  require(session.markdownText() == QStringLiteral("alpha\n\n"), "paragraph end enter text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("alpha\n\n"), "paragraph end enter text mismatch");
   require(session.document().root().children().size() == 2, "paragraph end enter should create virtual empty block");
   require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "paragraph end enter cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 0, "paragraph end enter cursor offset mismatch");
   require(input.insertParagraphBreak(), "enter in trailing empty paragraph should create another empty paragraph");
-  require(session.markdownText() == QStringLiteral("alpha\n\n\n\n"), "trailing empty paragraph repeated enter text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("alpha\n\n\n\n"), "trailing empty paragraph repeated enter text mismatch");
   require(session.document().root().children().size() == 3, "trailing empty paragraph repeated enter should create another virtual block");
   require(selection.cursorPosition().blockId == blockAt(session, 2)->id(), "trailing empty paragraph repeated enter cursor block mismatch");
   require(input.insertText(QStringLiteral("after")), "typing into trailing empty paragraph should work");
-  require(session.markdownText() == QStringLiteral("alpha\n\n\n\nafter"), "typing into trailing empty paragraph text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("alpha\n\n\n\nafter"), "typing into trailing empty paragraph text mismatch");
 
   session.setMarkdownText(QString(12, QLatin1Char('\n')), false);
   const qsizetype emptyRunCount = session.document().root().children().size();
@@ -92,7 +92,7 @@ void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
   const NodeId fourthEmptyId = blockAt(session, 3)->id();
   setCursor(selection, blockAt(session, 2), 0);
   require(input.insertParagraphBreak(), "enter in middle empty paragraph should create immediate empty paragraph");
-  require(session.markdownText() == QString(14, QLatin1Char('\n')), "middle empty paragraph enter text mismatch");
+  require(session.markdownText().toString() == QString(14, QLatin1Char('\n')), "middle empty paragraph enter text mismatch");
   require(session.document().root().children().size() == emptyRunCount + 1, "middle empty paragraph enter block count mismatch");
   require(blockAt(session, 2)->id() == thirdEmptyId, "middle empty paragraph enter should preserve current empty id");
   require(blockAt(session, 4)->id() == fourthEmptyId, "middle empty paragraph enter should shift old next empty paragraph");
@@ -107,7 +107,7 @@ void testInputEnterAtParagraphEdgesCreatesEditableEmptyParagraph() {
   const NodeId betaId = blockAt(session, 7)->id();
   setCursor(selection, blockAt(session, 3), 0);
   require(input.insertParagraphBreak(), "enter in surrounded middle empty paragraph should create immediate empty paragraph");
-  require(session.markdownText() == QStringLiteral("alpha") + QString(15, QLatin1Char('\n')) + QStringLiteral("beta"),
+  require(session.markdownText().toString() == QStringLiteral("alpha") + QString(15, QLatin1Char('\n')) + QStringLiteral("beta"),
           "surrounded middle empty paragraph enter text mismatch");
   require(session.document().root().children().size() == surroundedRunCount + 1,
           "surrounded middle empty paragraph enter block count mismatch");
@@ -141,7 +141,7 @@ void testBlockQuoteEnterKeepsInsertedBlankLineInsideQuote() {
   setCursor(selection, nestedParagraph, 13);
 
   require(input.insertParagraphBreak(), "enter after nested quote paragraph should stay inside quote");
-  require(session.markdownText() == QStringLiteral(
+  require(session.markdownText().toString() == QStringLiteral(
                                       "> A block quote can contain paragraphs.\n"
                                       ">\n"
                                       "> It can also contain **formatting**, `code`, and nested quotes.\n"
@@ -158,7 +158,7 @@ void testBlockQuoteEnterKeepsInsertedBlankLineInsideQuote() {
   EditTransaction enterUndo = undoStack.takeUndo();
   require(enterUndo.isSnapshot(), "blockquote structural enter should use snapshot undo");
   require(enterUndo.before().markdownText == markdown, "blockquote enter undo before text mismatch");
-  require(enterUndo.after().markdownText == session.markdownText(), "blockquote enter undo after text mismatch");
+  require(enterUndo.after().markdownText == session.markdownText().toString(), "blockquote enter undo after text mismatch");
 
   session.setMarkdownText(markdown, false);
   quote = blockAt(session, 0);
@@ -166,7 +166,7 @@ void testBlockQuoteEnterKeepsInsertedBlankLineInsideQuote() {
   setCursor(selection, secondParagraph, QStringLiteral("It can also contain formatting, code, and nested quotes.").size());
 
   require(input.insertParagraphBreak(), "enter after quote paragraph before nested quote should stay inside quote");
-  require(session.markdownText() == QStringLiteral(
+  require(session.markdownText().toString() == QStringLiteral(
                                       "> A block quote can contain paragraphs.\n"
                                       ">\n"
                                       "> It can also contain **formatting**, `code`, and nested quotes.\n"
@@ -176,7 +176,7 @@ void testBlockQuoteEnterKeepsInsertedBlankLineInsideQuote() {
                                       "> > Nested quote."),
           "outer blockquote enter before nested quote text mismatch");
   require(input.insertText(QStringLiteral("Continuation")), "typing after quote enter should edit inserted quote paragraph");
-  require(session.markdownText() == QStringLiteral(
+  require(session.markdownText().toString() == QStringLiteral(
                                       "> A block quote can contain paragraphs.\n"
                                       ">\n"
                                       "> It can also contain **formatting**, `code`, and nested quotes.\n"
@@ -207,7 +207,7 @@ void testBlockQuoteEmptyParagraphEnterOutdentsQuoteLevel() {
   setCursor(selection, emptyParagraph, 0);
 
   require(input.insertParagraphBreak(), "enter on empty quote paragraph should outdent quote level");
-  require(session.markdownText() == QStringLiteral(
+  require(session.markdownText().toString() == QStringLiteral(
                                       "> A block quote can contain paragraphs.\n"
                                       "> It can also contain **formatting**, `code`, and nested quotes.\n"
                                       ">\n"
@@ -217,7 +217,7 @@ void testBlockQuoteEmptyParagraphEnterOutdentsQuoteLevel() {
           "empty quote paragraph outdent text mismatch");
   require(session.document().root().children().size() == 3, "outdented quote line should create top-level empty paragraph");
   require(input.insertText(QStringLiteral("Plain")), "typing after quote outdent should edit plain paragraph");
-  require(session.markdownText() == QStringLiteral(
+  require(session.markdownText().toString() == QStringLiteral(
                                       "> A block quote can contain paragraphs.\n"
                                       "> It can also contain **formatting**, `code`, and nested quotes.\n"
                                       ">\n"
@@ -233,9 +233,9 @@ void testBlockQuoteEmptyParagraphEnterOutdentsQuoteLevel() {
   setCursor(selection, emptyParagraph, 0);
 
   require(input.insertParagraphBreak(), "enter on nested empty quote paragraph should outdent one quote level");
-  require(session.markdownText() == QStringLiteral("> > alpha\n> >\n> \n> \n> > beta"), "nested empty quote paragraph outdent text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("> > alpha\n> >\n> \n> \n> > beta"), "nested empty quote paragraph outdent text mismatch");
   require(input.insertText(QStringLiteral("outer")), "typing after nested quote outdent should edit parent quote paragraph");
-  require(session.markdownText() == QStringLiteral("> > alpha\n> >\n> \n> outer\n> > beta"), "typing after nested quote outdent text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("> > alpha\n> >\n> \n> outer\n> > beta"), "typing after nested quote outdent text mismatch");
 }
 
 void testBlockQuoteBackspaceOutdentsQuoteLevel() {
@@ -252,7 +252,7 @@ void testBlockQuoteBackspaceOutdentsQuoteLevel() {
   MarkdownNode* paragraph = childAt(quote, 0);
   setCursor(selection, paragraph, 0);
   require(input.deleteBackward(), "single-level quote backspace should outdent");
-  require(session.markdownText() == QStringLiteral("hello"), "single-level quote outdent text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("hello"), "single-level quote outdent text mismatch");
   require(blockAt(session, 0)->type() == BlockType::Paragraph, "single-level quote outdent should yield top-level paragraph");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "single-level quote outdent cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 0, "single-level quote outdent cursor offset mismatch");
@@ -267,9 +267,9 @@ void testBlockQuoteBackspaceOutdentsQuoteLevel() {
   paragraph = childAt(childAt(quote, 0), 0);
   setCursor(selection, paragraph, 0);
   require(input.deleteBackward(), "nested quote backspace should drop one level");
-  require(session.markdownText() == QStringLiteral("> nested"), "nested quote outdent text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("> nested"), "nested quote outdent text mismatch");
   require(input.deleteBackward(), "outdented quote backspace should exit quote");
-  require(session.markdownText() == QStringLiteral("nested"), "nested quote second outdent text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("nested"), "nested quote second outdent text mismatch");
 
   // Three levels: "> > > deep" -> "> > deep" -> "> deep" -> "deep".
   session.setMarkdownText(QStringLiteral("> > > deep"), false);
@@ -277,11 +277,11 @@ void testBlockQuoteBackspaceOutdentsQuoteLevel() {
   paragraph = childAt(childAt(childAt(quote, 0), 0), 0);
   setCursor(selection, paragraph, 0);
   require(input.deleteBackward(), "three-level quote first backspace");
-  require(session.markdownText() == QStringLiteral("> > deep"), "three-level quote first outdent mismatch");
+  require(session.markdownText().toString() == QStringLiteral("> > deep"), "three-level quote first outdent mismatch");
   require(input.deleteBackward(), "three-level quote second backspace");
-  require(session.markdownText() == QStringLiteral("> deep"), "three-level quote second outdent mismatch");
+  require(session.markdownText().toString() == QStringLiteral("> deep"), "three-level quote second outdent mismatch");
   require(input.deleteBackward(), "three-level quote third backspace");
-  require(session.markdownText() == QStringLiteral("deep"), "three-level quote third outdent mismatch");
+  require(session.markdownText().toString() == QStringLiteral("deep"), "three-level quote third outdent mismatch");
 
   // User's exact scenario: nested quote paragraph outdents one level into the outer quote.
   const QString markdown = QStringLiteral(
@@ -296,7 +296,7 @@ void testBlockQuoteBackspaceOutdentsQuoteLevel() {
   paragraph = childAt(nestedQuote, 0);
   setCursor(selection, paragraph, 0);
   require(input.deleteBackward(), "nested quote paragraph backspace should outdent one level");
-  require(session.markdownText() == QStringLiteral(
+  require(session.markdownText().toString() == QStringLiteral(
                                       "> A block quote can contain paragraphs.\n"
                                       "> It can also contain **formatting**, `code`, and nested quotes.\n"
                                       ">\n"
@@ -316,7 +316,7 @@ void testBlockQuoteBackspaceOutdentsQuoteLevel() {
   MarkdownNode* heading = firstChildOfType(quote, BlockType::Heading);
   setCursor(selection, heading, 0);
   require(input.deleteBackward(), "quoted heading backspace should outdent quote");
-  require(session.markdownText() == QStringLiteral("# Title"), "quoted heading outdent text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("# Title"), "quoted heading outdent text mismatch");
   require(blockAt(session, 0)->type() == BlockType::Heading, "quoted heading outdent should keep heading at top level");
 }
 
@@ -334,7 +334,7 @@ void testBlockQuoteBackspaceOutdentsMultilineQuoteParagraph() {
   MarkdownNode* paragraph = childAt(childAt(quote, 0), 0);
   setCursor(selection, paragraph, 0);
   require(input.deleteBackward(), "multiline nested quote backspace should outdent one level");
-  require(session.markdownText() == QStringLiteral("> foo\n> bar"), "multiline nested quote outdent text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("> foo\n> bar"), "multiline nested quote outdent text mismatch");
 
   // Multi-line lazy continuation (line 2 carries no ">"): only line 1 loses its marker,
   // the lazy line is unchanged. Result is robust whether cmark keeps "bar" lazy-in-quote
@@ -346,7 +346,7 @@ void testBlockQuoteBackspaceOutdentsMultilineQuoteParagraph() {
   }
   setCursor(selection, first, 0);
   require(input.deleteBackward(), "multiline lazy quote backspace should outdent");
-  require(session.markdownText() == QStringLiteral("foo\nbar"), "multiline lazy quote outdent text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("foo\nbar"), "multiline lazy quote outdent text mismatch");
 }
 
 void testBlockQuoteBackspacePreservesQuoteWhenNotFirstChild() {
@@ -367,7 +367,7 @@ void testBlockQuoteBackspacePreservesQuoteWhenNotFirstChild() {
   require(input.deleteBackward(), "non-first quote child backspace should be handled");
   require(firstBlockOfType(session, BlockType::BlockQuote) != nullptr,
           "non-first quote child backspace should not outdent the quote away");
-  require(session.markdownText() != QStringLiteral("> alpha\n>\nbeta"),
+  require(session.markdownText().toString() != QStringLiteral("> alpha\n>\nbeta"),
           "non-first quote child backspace should not drop beta to top level");
 
   // Mid-block caret: backspace deletes one character, no outdent.
@@ -376,7 +376,7 @@ void testBlockQuoteBackspacePreservesQuoteWhenNotFirstChild() {
   MarkdownNode* paragraph = childAt(quote, 0);
   setCursor(selection, paragraph, 2);
   require(input.deleteBackward(), "mid-block quote backspace should delete a character");
-  require(session.markdownText() == QStringLiteral("> hllo"), "mid-block quote backspace text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("> hllo"), "mid-block quote backspace text mismatch");
 
   // Caret at the start of a lazy-continuation line is a non-zero paragraph offset, so it never
   // reaches the outdent branch: the line-1 quote marker must survive.
@@ -387,7 +387,7 @@ void testBlockQuoteBackspacePreservesQuoteWhenNotFirstChild() {
   }
   setCursor(selection, first, 4);
   require(input.deleteBackward(), "lazy-continuation backspace should be handled");
-  require(session.markdownText().startsWith(QStringLiteral("> fo")),
+  require(session.markdownText().toString().startsWith(QStringLiteral("> fo")),
           "lazy-continuation backspace should preserve the quote marker on line 1");
 }
 
@@ -411,7 +411,7 @@ void testBlockQuoteBackspaceOutdentsEmptyFirstChildQuote() {
   const NodeId emptyId = emptyFirst->id();
   setCursor(selection, emptyFirst, 0);
   require(input.deleteBackward(), "empty first-child quote backspace should outdent");
-  require(session.markdownText() == QStringLiteral("\n\n> text"), "empty first-child outdent text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("\n\n> text"), "empty first-child outdent text mismatch");
   require(session.document().root().children().size() == 2, "empty first-child outdent should pop empty to top level");
   require(blockAt(session, 0)->type() == BlockType::Paragraph, "empty first-child outdent should yield top-level empty paragraph");
   require(blockAt(session, 1)->type() == BlockType::BlockQuote, "empty first-child outdent should keep remaining quote");
@@ -427,7 +427,7 @@ void testBlockQuoteBackspaceOutdentsEmptyFirstChildQuote() {
   emptyFirst = childAt(quote, 0);
   setCursor(selection, emptyFirst, 0);
   require(input.deleteBackward(), "empty first-child before nested quote backspace should outdent");
-  require(session.markdownText() == QStringLiteral("\n\n> > nested"), "empty first-child before nested quote outdent text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("\n\n> > nested"), "empty first-child before nested quote outdent text mismatch");
   require(session.document().root().children().size() == 2, "empty first-child before nested quote outdent should pop empty to top level");
   require(blockAt(session, 0)->type() == BlockType::Paragraph, "nested-quote case should yield top-level empty paragraph");
   require(blockAt(session, 1)->type() == BlockType::BlockQuote, "nested-quote case should keep the nested quote");
@@ -483,7 +483,7 @@ void testBlockQuoteBackspaceUserScenarios() {
   require(deepAsd->parent()->previousSibling() == nullptr, "EX1 deep paragraph should be the quote's first child");
   setCursor(selection, deepAsd, 0);
   require(input.deleteBackward(), "EX1 deep nested quote backspace should outdent");
-  require(session.markdownText() == QStringLiteral(
+  require(session.markdownText().toString() == QStringLiteral(
                                         "> A block quote can contain paragraphs.\n"
                                         ">\n"
                                         "\n"
@@ -515,7 +515,7 @@ void testBlockQuoteBackspaceUserScenarios() {
   require(itCanAlso->previousSibling() == nullptr, "EX2 paragraph should be the first child of its quote");
   setCursor(selection, itCanAlso, 0);
   require(input.deleteBackward(), "EX2 first quote paragraph backspace should outdent to top level");
-  require(session.markdownText() == QStringLiteral(
+  require(session.markdownText().toString() == QStringLiteral(
                                         "> A block quote can contain paragraphs.\n"
                                         ">\n"
                                         "\n"
@@ -539,7 +539,7 @@ void testBlockQuoteBackspaceUserScenarios() {
   require(trailingAsd->previousSibling() != nullptr, "EX3 paragraph should NOT be the first child");
   setCursor(selection, trailingAsd, 0);
   require(input.deleteBackward(), "EX3 non-first quote paragraph backspace should merge");
-  require(session.markdownText() == QStringLiteral(">> Nested quote.asd"), "EX3 merge text mismatch");
+  require(session.markdownText().toString() == QStringLiteral(">> Nested quote.asd"), "EX3 merge text mismatch");
 }
 
 // testLocalReparsePreservesUntouchedNodeIds (lines 539-563)
@@ -557,7 +557,7 @@ void testLocalReparsePreservesUntouchedNodeIds() {
   setCursor(selection, blockAt(session, 0), 5);
 
   require(input.insertText(QStringLiteral("!")), "local text input should work");
-  require(session.markdownText() == QStringLiteral("alpha!\n\nbeta\n\ngamma"), "local input text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("alpha!\n\nbeta\n\ngamma"), "local input text mismatch");
   require(blockAt(session, 1)->id() == secondId, "local input should preserve untouched second paragraph id");
   require(blockAt(session, 2)->id() == thirdId, "local input should preserve untouched third paragraph id");
 
@@ -565,7 +565,7 @@ void testLocalReparsePreservesUntouchedNodeIds() {
   const NodeId alphaId = blockAt(session, 1)->id();
   setCursor(selection, blockAt(session, 0), 0);
   require(input.insertText(QStringLiteral("x")), "typing into leading empty paragraph should work");
-  require(session.markdownText() == QStringLiteral("x\n\nalpha"), "leading empty paragraph fill text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("x\n\nalpha"), "leading empty paragraph fill text mismatch");
   require(blockAt(session, 1)->id() == alphaId, "filling leading empty paragraph should preserve following paragraph id");
 }
 
@@ -674,7 +674,7 @@ void testInputMergeParagraphs() {
   setCursor(selection, blockAt(session, 1), 0);
 
   require(input.deleteBackward(), "backspace at paragraph start should merge previous paragraph");
-  require(session.markdownText() == QStringLiteral("alphabeta"), "backspace merge result mismatch");
+  require(session.markdownText().toString() == QStringLiteral("alphabeta"), "backspace merge result mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "backspace merge cursor mismatch");
   EditTransaction mergeUndo = requireTextDeltaCommand(undoStack, "backspace merge should use text delta command");
   require(mergeUndo.textDeltaCommand().delta.removedText == QStringLiteral("\n\n"), "backspace merge removed text mismatch");
@@ -684,7 +684,7 @@ void testInputMergeParagraphs() {
   setCursor(selection, blockAt(session, 0), 5);
 
   require(input.deleteForward(), "delete at paragraph end should merge next paragraph");
-  require(session.markdownText() == QStringLiteral("alphabeta"), "delete merge result mismatch");
+  require(session.markdownText().toString() == QStringLiteral("alphabeta"), "delete merge result mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "delete merge cursor mismatch");
   mergeUndo = requireTextDeltaCommand(undoStack, "delete merge should use text delta command");
   require(mergeUndo.textDeltaCommand().delta.removedText == QStringLiteral("\n\n"), "delete merge removed text mismatch");
@@ -703,7 +703,7 @@ void testInputBackspaceAtParagraphStartDeletesStructuralBoundary() {
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 0);
   require(input.deleteBackward(), "backspace at document start should be handled as no-op");
-  require(session.markdownText() == QStringLiteral("alpha"), "backspace at document start should not change text");
+  require(session.markdownText().toString() == QStringLiteral("alpha"), "backspace at document start should not change text");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "backspace at document start cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 0, "backspace at document start cursor offset mismatch");
 
@@ -711,7 +711,7 @@ void testInputBackspaceAtParagraphStartDeletesStructuralBoundary() {
   const NodeId betaId = blockAt(session, 2)->id();
   setCursor(selection, blockAt(session, 2), 0);
   require(input.deleteBackward(), "backspace after empty paragraph should remove one empty boundary");
-  require(session.markdownText() == QStringLiteral("alpha\n\nbeta"), "backspace empty paragraph boundary mismatch");
+  require(session.markdownText().toString() == QStringLiteral("alpha\n\nbeta"), "backspace empty paragraph boundary mismatch");
   require(blockAt(session, 1)->id() == betaId, "backspace empty paragraph should preserve following paragraph id");
   require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "backspace empty boundary cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 0, "backspace empty boundary cursor offset mismatch");
@@ -720,7 +720,7 @@ void testInputBackspaceAtParagraphStartDeletesStructuralBoundary() {
   const NodeId secondEmptyId = blockAt(session, 1)->id();
   setCursor(selection, blockAt(session, 1), 0);
   require(input.deleteBackward(), "backspace from second empty paragraph should remove one empty boundary");
-  require(session.markdownText() == QStringLiteral("\n\nalpha"), "backspace second empty paragraph text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("\n\nalpha"), "backspace second empty paragraph text mismatch");
   require(session.document().root().children().size() == 2, "backspace second empty paragraph block count mismatch");
   require(blockAt(session, 0)->id() == secondEmptyId, "backspace second empty paragraph should preserve current empty id");
   require(selection.hasCursor(), "backspace second empty paragraph should keep cursor");
@@ -732,7 +732,7 @@ void testInputBackspaceAtParagraphStartDeletesStructuralBoundary() {
   const NodeId thirdEmptyId = blockAt(session, 2)->id();
   setCursor(selection, blockAt(session, 2), 0);
   require(input.deleteBackward(), "backspace from third empty paragraph should remove one empty boundary");
-  require(session.markdownText() == QStringLiteral("\n\n\n\nalpha"), "backspace third empty paragraph text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("\n\n\n\nalpha"), "backspace third empty paragraph text mismatch");
   require(session.document().root().children().size() == 3, "backspace third empty paragraph block count mismatch");
   require(blockAt(session, 1)->id() == thirdEmptyId, "backspace third empty paragraph should preserve current empty id");
   require(selection.hasCursor(), "backspace third empty paragraph should keep cursor");
@@ -743,7 +743,7 @@ void testInputBackspaceAtParagraphStartDeletesStructuralBoundary() {
   session.setMarkdownText(QStringLiteral("\n\n#### Heading Level 4 With `code`"), false);
   setCursor(selection, blockAt(session, 1), 0);
   require(input.deleteBackward(), "backspace from heading after empty paragraph should remove empty boundary");
-  require(session.markdownText() == QStringLiteral("#### Heading Level 4 With `code`"), "backspace should preserve current heading marker");
+  require(session.markdownText().toString() == QStringLiteral("#### Heading Level 4 With `code`"), "backspace should preserve current heading marker");
   require(blockAt(session, 0)->type() == BlockType::Heading, "backspace should keep current block as heading");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "backspace preserved heading cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 0, "backspace preserved heading cursor offset mismatch");
@@ -751,14 +751,14 @@ void testInputBackspaceAtParagraphStartDeletesStructuralBoundary() {
   session.setMarkdownText(QStringLiteral("# Title\n\nbody"), false);
   setCursor(selection, blockAt(session, 1), 0);
   require(input.deleteBackward(), "backspace after heading should merge into heading");
-  require(session.markdownText() == QStringLiteral("# Titlebody"), "backspace heading merge mismatch");
+  require(session.markdownText().toString() == QStringLiteral("# Titlebody"), "backspace heading merge mismatch");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "backspace heading merge cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "backspace heading merge cursor offset mismatch");
 
   session.setMarkdownText(QStringLiteral("before **bold**\n\nafter"), false);
   setCursor(selection, blockAt(session, 1), 0);
   require(input.deleteBackward(), "backspace after complex inline paragraph should merge");
-  require(session.markdownText() == QStringLiteral("before **bold**after"), "backspace complex inline merge mismatch");
+  require(session.markdownText().toString() == QStringLiteral("before **bold**after"), "backspace complex inline merge mismatch");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "backspace complex inline cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 11, "backspace complex inline cursor offset mismatch");
 }
@@ -775,14 +775,14 @@ void testInputDeleteAtParagraphEndDeletesStructuralBoundary() {
   session.setMarkdownText(QStringLiteral("alpha\n\n# Title"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(input.deleteForward(), "delete before heading should merge heading into paragraph");
-  require(session.markdownText() == QStringLiteral("alphaTitle"), "delete heading merge mismatch");
+  require(session.markdownText().toString() == QStringLiteral("alphaTitle"), "delete heading merge mismatch");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "delete heading merge cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "delete heading merge cursor offset mismatch");
 
   session.setMarkdownText(QStringLiteral("\n\n#### Heading Level 4 With `code`"), false);
   setCursor(selection, blockAt(session, 0), 0);
   require(input.deleteForward(), "delete from empty paragraph before heading should remove empty boundary");
-  require(session.markdownText() == QStringLiteral("#### Heading Level 4 With `code`"), "delete should preserve next heading marker");
+  require(session.markdownText().toString() == QStringLiteral("#### Heading Level 4 With `code`"), "delete should preserve next heading marker");
   require(blockAt(session, 0)->type() == BlockType::Heading, "delete should keep next block as heading");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "delete preserved heading cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 0, "delete preserved heading cursor offset mismatch");
@@ -790,7 +790,7 @@ void testInputDeleteAtParagraphEndDeletesStructuralBoundary() {
   session.setMarkdownText(QStringLiteral("before **bold**\n\nafter"), false);
   setCursor(selection, blockAt(session, 0), 11);
   require(input.deleteForward(), "delete after complex inline paragraph should merge");
-  require(session.markdownText() == QStringLiteral("before **bold**after"), "delete complex inline merge mismatch");
+  require(session.markdownText().toString() == QStringLiteral("before **bold**after"), "delete complex inline merge mismatch");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "delete complex inline cursor block mismatch");
   require(selection.cursorPosition().text.textOffset == 11, "delete complex inline cursor offset mismatch");
 }

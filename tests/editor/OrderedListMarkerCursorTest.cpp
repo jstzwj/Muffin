@@ -68,7 +68,7 @@ void testConversionProducesList() {
   setCursor(controller.selection(), blockAt(session, 0), 3);
   controller.inputController().insertText(QStringLiteral(" "));
 
-  require(session.markdownText() == QStringLiteral("34. "), "typing space should form '34. '");
+  require(session.markdownText().toString() == QStringLiteral("34. "), "typing space should form '34. '");
   require(blockAt(session, 0)->type() == BlockType::List, "document root child should be a List");
 
   const CursorPosition c = controller.selection().cursorPosition();

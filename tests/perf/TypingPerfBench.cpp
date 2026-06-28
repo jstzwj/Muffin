@@ -191,16 +191,16 @@ int main(int argc, char** argv) {
 
   const auto& topBlocks = session.document().root().children();
   const qsizetype lastBlockStart = topBlocks.empty() ? 0 : topBlocks.back()->sourceRange().byteStart;
-  const qsizetype midOffset = session.markdownText().size() / 2;
+  const qsizetype midOffset = session.markdownText().toString().size() / 2;
 
   typeAt(session, 0, iters);
   report("NEAR TOP (insert @0, worst case)", doc.size(), blocks, inlines, iters);
 
   typeAt(session, midOffset, iters);
-  report("MID DOC (insert @mid)", session.markdownText().size(), blocks, inlines, iters);
+  report("MID DOC (insert @mid)", session.markdownText().toString().size(), blocks, inlines, iters);
 
   typeAt(session, lastBlockStart + 1, iters);
-  report("NEAR END (inside last block, best case)", session.markdownText().size(), blocks, inlines, iters);
+  report("NEAR END (inside last block, best case)", session.markdownText().toString().size(), blocks, inlines, iters);
 
   // Isolated cost of the InputController-path O(doc) operation that the session bench above
   // BYPASSES (it calls session.applyTextDelta directly, skipping InputController). This runs once
@@ -208,7 +208,7 @@ int main(int argc, char** argv) {
   // bench (~tens of ms) and perceived lag. (BlockLayoutBuilder::setMarkdownText also copies the
   // whole text per rebuildBlock — ~the memmove cost — but its header pulls Qt GUI, unreachable here.)
   {
-    const QString& md = session.markdownText();
+    const QString md = session.markdownText().toString();
     const muffin::MarkdownNode& root = session.document().root();
     const int reps = 5;
 

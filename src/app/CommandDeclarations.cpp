@@ -1200,7 +1200,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
            const QString relPath = QDir(docDir).relativeFilePath(newPath);
            qsizetype srcStart = 0, srcEnd = 0;
            if (window.renderCommands_.imageSourceRangeAtCursor(srcStart, srcEnd)) {
-             const QString& md = window.session_.markdownText();
+             const PieceTable& md = window.session_.markdownText();
              const QString oldImage = md.mid(srcStart, srcEnd - srcStart);
              // Replace the src URL in the image syntax
              QString newImage = oldImage;
@@ -1237,7 +1237,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
            const QString relPath = QDir(docDir).relativeFilePath(newPath);
            qsizetype srcStart = 0, srcEnd = 0;
            if (window.renderCommands_.imageSourceRangeAtCursor(srcStart, srcEnd)) {
-             const QString& md = window.session_.markdownText();
+             const PieceTable& md = window.session_.markdownText();
              const QString oldImage = md.mid(srcStart, srcEnd - srcStart);
              QString newImage = oldImage;
              const int urlStart = oldImage.indexOf(QStringLiteral("](")) + 2;
@@ -1281,7 +1281,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
          const QString url = res.urls.first();
          qsizetype srcStart = 0, srcEnd = 0;
          if (window.renderCommands_.imageSourceRangeAtCursor(srcStart, srcEnd)) {
-           const QString& md = window.session_.markdownText();
+           const PieceTable& md = window.session_.markdownText();
            const QString oldImage = md.mid(srcStart, srcEnd - srcStart);
            const int urlStart = oldImage.indexOf(QStringLiteral("](")) + 2;
            if (urlStart > 1) {
@@ -1339,7 +1339,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
            pathToUrl.insert(paths[i], res.urls[i]);
          }
          // Rewrite each ref's href in reverse so earlier offsets stay valid.
-         QString md = window.session_.markdownText();
+         QString md = window.session_.markdownText().toString();
          int uploaded = 0;
          for (int i = refs.size() - 1; i >= 0; --i) {
            const auto& ref = refs[i];
@@ -1502,7 +1502,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
          }
          // After moving, update all relative paths in the markdown
          const QString relPrefix = QDir(docDir).relativeFilePath(destDir);
-         QString md = window.session_.markdownText();
+         QString md = window.session_.markdownText().toString();
          // Re-collect refs after text may have shifted — use the originals from before
          // Since we only moved files, the markdown hasn't changed yet. Update hrefs now.
          for (int i = refs.size() - 1; i >= 0; --i) {

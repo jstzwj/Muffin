@@ -40,7 +40,7 @@ void testTableStructureUndoUsesTableCommand() {
 
   require(controller.tableController().insertColumnAfter(), "table insert column should work");
   require(session.lastParseWasLocalEdit(), "table insert column should use local table apply");
-  require(session.markdownText().contains(QStringLiteral("| A | B |  |")), "table insert column text mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("| A | B |  |")), "table insert column text mismatch");
   require(controller.undoStack().canUndo(), "table insert column should push undo");
   require(controller.undoStack().undoText() == QStringLiteral("Insert Table Column After"), "table command undo label mismatch");
 
@@ -54,11 +54,11 @@ void testTableStructureUndoUsesTableCommand() {
   controller.undoStack().push(transaction);
 
   controller.undo();
-  require(session.markdownText() == QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), "table command undo text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), "table command undo text mismatch");
   require(controller.selection().hasCursor(), "table command undo should keep cursor");
 
   controller.redo();
-  require(session.markdownText().contains(QStringLiteral("| A | B |  |")), "table command redo text mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("| A | B |  |")), "table command redo text mismatch");
   require(controller.selection().hasCursor(), "table command redo should keep cursor");
 }
 
@@ -83,7 +83,7 @@ void testTableCellTextUndoUsesTextDeltaCommand() {
   controller.activateHit(cellHit);
 
   require(controller.inputController().insertText(QStringLiteral("|X")), "table cell input should work");
-  require(session.markdownText().contains(QStringLiteral("| 1 | 2\\|X |")), "table cell input should escape pipe");
+  require(session.markdownText().toString().contains(QStringLiteral("| 1 | 2\\|X |")), "table cell input should escape pipe");
   require(controller.undoStack().canUndo(), "table cell input should push undo");
 
   const EditTransaction transaction = controller.undoStack().takeUndo();
@@ -92,12 +92,12 @@ void testTableCellTextUndoUsesTextDeltaCommand() {
   controller.undoStack().push(transaction);
 
   controller.undo();
-  require(session.markdownText() == QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), "table cell text undo mismatch");
+  require(session.markdownText().toString() == QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), "table cell text undo mismatch");
   require(controller.selection().hasCursor(), "table cell text undo should keep cursor");
   require(controller.selection().cursorPosition().text.nodeId.isValid(), "table cell text undo should keep text node");
 
   controller.redo();
-  require(session.markdownText().contains(QStringLiteral("| 1 | 2\\|X |")), "table cell text redo mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("| 1 | 2\\|X |")), "table cell text redo mismatch");
   require(controller.selection().hasCursor(), "table cell text redo should keep cursor");
 }
 
@@ -112,7 +112,7 @@ void testInsertTableUndoUsesInsertNodeCommand() {
   setCursor(controller.selection(), paragraph, 5);
 
   require(controller.tableController().insertTable(), "insert table should work");
-  require(session.markdownText().startsWith(QStringLiteral("alpha\n\n|  |  |")), "insert table text mismatch");
+  require(session.markdownText().toString().startsWith(QStringLiteral("alpha\n\n|  |  |")), "insert table text mismatch");
   require(controller.undoStack().canUndo(), "insert table should push undo");
 
   const EditTransaction transaction = controller.undoStack().takeUndo();
@@ -122,10 +122,10 @@ void testInsertTableUndoUsesInsertNodeCommand() {
   controller.undoStack().push(transaction);
 
   controller.undo();
-  require(session.markdownText() == QStringLiteral("alpha"), "insert table undo text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("alpha"), "insert table undo text mismatch");
 
   controller.redo();
-  require(session.markdownText().startsWith(QStringLiteral("alpha\n\n|  |  |")), "insert table redo text mismatch");
+  require(session.markdownText().toString().startsWith(QStringLiteral("alpha\n\n|  |  |")), "insert table redo text mismatch");
   require(controller.selection().hasCursor(), "insert table redo should keep cursor");
   require(controller.tableController().currentCell().isValid(), "insert table redo should restore table cursor");
 }
@@ -144,16 +144,16 @@ void testInsertTableUsesCaretBlock() {
   setCursor(controller.selection(), bravo, 2);
 
   require(controller.tableController().insertTable(), "insert table should work");
-  const QString after = session.markdownText();
+  const QString after = session.markdownText().toString();
   require(after.startsWith(QStringLiteral("alpha\n\nbravo\n\n|  |  |")), "insert table should splice after the caret block");
   require(after.endsWith(QStringLiteral("charlie")), "insert table must not drop the trailing block");
   require(controller.undoStack().canUndo(), "insert table should push undo");
 
   controller.undo();
-  require(session.markdownText() == QStringLiteral("alpha\n\nbravo\n\ncharlie"), "insert table undo should restore the original document");
+  require(session.markdownText().toString() == QStringLiteral("alpha\n\nbravo\n\ncharlie"), "insert table undo should restore the original document");
 
   controller.redo();
-  require(session.markdownText().startsWith(QStringLiteral("alpha\n\nbravo\n\n|  |  |")), "insert table redo should keep the table after the caret block");
+  require(session.markdownText().toString().startsWith(QStringLiteral("alpha\n\nbravo\n\n|  |  |")), "insert table redo should keep the table after the caret block");
   require(controller.tableController().currentCell().isValid(), "insert table redo should restore the table cursor");
 }
 
@@ -175,7 +175,7 @@ void testResizeTableUndoUsesTableCommand() {
   controller.activateHit(cellHit);
 
   require(controller.tableController().resizeCurrentTable(2, 2), "resize table should work");
-  require(session.markdownText() == QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), "resize table crop markdown mismatch");
+  require(session.markdownText().toString() == QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), "resize table crop markdown mismatch");
   require(controller.undoStack().canUndo(), "resize table should push undo");
   const EditTransaction transaction = controller.undoStack().takeUndo();
   require(transaction.isTableCommand(), "resize table should use TableCommand");
@@ -184,11 +184,11 @@ void testResizeTableUndoUsesTableCommand() {
   controller.undoStack().push(transaction);
 
   controller.undo();
-  require(session.markdownText().contains(QStringLiteral("| A | B | C |")), "resize table undo text mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("| A | B | C |")), "resize table undo text mismatch");
   require(controller.selection().hasCursor(), "resize table undo should keep cursor");
 
   controller.redo();
-  require(session.markdownText() == QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), "resize table redo text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("| A | B |\n| --- | --- |\n| 1 | 2 |"), "resize table redo text mismatch");
   require(controller.selection().hasCursor(), "resize table redo should keep cursor");
 }
 
@@ -210,7 +210,7 @@ void testDeleteTableUndoUsesRemoveNodeCommand() {
   controller.activateHit(cellHit);
 
   require(controller.tableController().deleteCurrentTable(), "delete table should work");
-  require(session.markdownText() == QStringLiteral("before\n\nafter"), "delete table markdown mismatch");
+  require(session.markdownText().toString() == QStringLiteral("before\n\nafter"), "delete table markdown mismatch");
   require(controller.undoStack().canUndo(), "delete table should push undo");
   const EditTransaction transaction = controller.undoStack().takeUndo();
   require(transaction.isRemoveNodeCommand(), "delete table should use RemoveNodeCommand");
@@ -219,10 +219,10 @@ void testDeleteTableUndoUsesRemoveNodeCommand() {
   controller.undoStack().push(transaction);
 
   controller.undo();
-  require(session.markdownText().contains(QStringLiteral("| A | B |")), "delete table undo text mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("| A | B |")), "delete table undo text mismatch");
 
   controller.redo();
-  require(session.markdownText() == QStringLiteral("before\n\nafter"), "delete table redo text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("before\n\nafter"), "delete table redo text mismatch");
 }
 
 // testStructuredNodeCommandModels (lines 448-498)
@@ -255,14 +255,14 @@ void testStructuredNodeCommandModels() {
   session.applyNodeSnapshot(heading->id(), BlockType::Heading, 0, *afterHeading, true);
   controller.undoStack().push(attrTransaction);
   controller.undo();
-  require(session.markdownText() == QStringLiteral("# Title"), "set node attr undo mismatch");
+  require(session.markdownText().toString() == QStringLiteral("# Title"), "set node attr undo mismatch");
   controller.redo();
-  require(session.markdownText() == QStringLiteral("## Title"), "set node attr redo mismatch");
+  require(session.markdownText().toString() == QStringLiteral("## Title"), "set node attr redo mismatch");
   controller.undo();
-  require(session.markdownText() == QStringLiteral("# Title"), "set node attr second undo mismatch");
+  require(session.markdownText().toString() == QStringLiteral("# Title"), "set node attr second undo mismatch");
 
   heading = firstBlockOfType(session, BlockType::Heading);
-  const QString removedText = session.markdownText();
+  const QString removedText = session.markdownText().toString();
   RemoveNodeCommand removeCommand{
       heading->id(),
       BlockType::Heading,

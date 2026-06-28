@@ -66,7 +66,7 @@ void testBacktickFenceCommitCaretInsideBlock() {
 
   // Typing routes into the fence (proves the caret is genuinely inside, not just visually).
   require(h.controller.inputController().insertText(QStringLiteral("x")), "typing into the committed fence should succeed");
-  require(h.session.markdownText() == QStringLiteral("```\nx\n```"), "typed text should land inside the code fence");
+  require(h.session.markdownText().toString() == QStringLiteral("```\nx\n```"), "typed text should land inside the code fence");
   require(firstBlockOfType(h.session, BlockType::CodeFence)->literal() == QStringLiteral("x"),
           "code fence literal should hold the typed text");
 }
@@ -116,12 +116,12 @@ void testTypingAfterCommitUndoStillWorks() {
 
   h.controller.undo();
   require(blockAt(h.session, 0)->type() == BlockType::Paragraph, "undo should restore the pending paragraph");
-  require(h.session.markdownText() == QStringLiteral("```"), "undo should restore the '```' text");
+  require(h.session.markdownText().toString() == QStringLiteral("```"), "undo should restore the '```' text");
 
-  setCursor(h.controller.selection(), blockAt(h.session, 0), h.session.markdownText().size());
+  setCursor(h.controller.selection(), blockAt(h.session, 0), h.session.markdownText().toString().size());
   require(h.controller.inputController().insertText(QStringLiteral("x")),
           "typing after undo must succeed (stale editor must not swallow it)");
-  require(h.session.markdownText() == QStringLiteral("```x"), "typing should edit the restored paragraph");
+  require(h.session.markdownText().toString() == QStringLiteral("```x"), "typing should edit the restored paragraph");
   require(blockAt(h.session, 0)->type() == BlockType::Paragraph, "typing should not recommit to a code fence");
   require(!h.controller.codeFenceController().isEditing(), "stale code editor should be exited before typing");
 }

@@ -59,8 +59,22 @@ void BrushQueue::requestTopLevelRangeRefresh(TopLevelRangeChange range) {
     return;
   }
   if (pending_.topLevelRangeDirty.isValid() && pending_.topLevelRangeDirty != range) {
-    requestFullRefresh();
-    return;
+    // A different range is already pending — the classic trigger is rapid successive structural
+    // edits/undos (each records a range with a different block count: old=7→6→5…). Previously this
+    // escalated to requestFullRefresh, a whole-document layout rebuild that is ≈22s on a 100MB doc
+    // (the Ctrl+Z-rapid-press hang). Instead, flush the pending range NOW (synchronously, via
+    // refreshRequested) so the layout catches up to it, then queue the new range. Each range then
+    // flushes against the layout state produced by the previous range — exactly as if the edits had
+    // been spaced out — so each satisfies rebuildTopLevelRange's
+    // layoutCount-oldCount+newCount==documentCount invariant and rebuilds locally. Block-level
+    // dirty ids pending alongside the flushed range are processed by the same consumer call.
+    flush();
+    if (pending_.fullLayoutDirty) {
+      // flush() can itself escalate (e.g. an empty/invalid block batch); don't override that with
+      // a range refresh on top.
+      scheduleFlush();
+      return;
+    }
   }
   // Preserve any pending block-level refreshes.  The downstream handler
   // processes both the top-level range and remaining dirty blocks so that

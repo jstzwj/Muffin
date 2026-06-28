@@ -220,7 +220,7 @@ bool RenderEditorBackend::isSourceMode() const {
 
 void RenderEditorBackend::find(const QString& text, bool forward) {
   // Render mode: search the full markdown source text
-  const QString& markdown = session_.markdownText();
+  const QString markdown = session_.markdownText().toString();
   qsizetype lastOffset = -1;
 
   qsizetype startPos = 0;
@@ -267,7 +267,7 @@ void RenderEditorBackend::replaceSelection(const QString& text) {
 }
 
 QString RenderEditorBackend::fullText() const {
-  return session_.markdownText();
+  return session_.markdownText().toString();
 }
 
 void RenderEditorBackend::setFullText(const QString& text) {

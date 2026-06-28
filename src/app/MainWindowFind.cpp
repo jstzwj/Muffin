@@ -66,7 +66,7 @@ void MainWindow::performFind(const QString& text, bool forward) {
   }
 
   // Render mode: search the full markdown source text
-  const QString& markdown = session_.markdownText();
+  const QString markdown = session_.markdownText().toString();
 
   int startPos = 0;
   if (lastFindOffset_ >= 0) {
@@ -138,7 +138,7 @@ void MainWindow::performReplace(const QString& findText, const QString& replaceT
     }
     editor_->editor()->find(findText);
   } else {
-    const QString& markdown = session_.markdownText();
+    const QString markdown = session_.markdownText().toString();
     qsizetype startOffset = 0;
     if (editorController_.selection().hasCursor()) {
       startOffset = qMax<qsizetype>(0, editorController_.selection().cursorPosition().text.sourceOffset);

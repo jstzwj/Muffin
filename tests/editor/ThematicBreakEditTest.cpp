@@ -57,7 +57,7 @@ MarkdownNode* findThematicBreak(MarkdownNode* node) {
 // reparse the resulting source to assert on the tree — this also proves the edit produced valid,
 // well-structured markdown rather than a corrupted fragment.
 bool reparsedRootHasBlockType(DocumentSession& session, BlockType type) {
-  session.setMarkdownText(session.markdownText(), true);
+  session.setMarkdownText(session.markdownText().toString(), true);
   for (const auto& c : session.document().root().children()) {
     if (c->type() == type) return true;
   }
@@ -93,7 +93,7 @@ void testBackspaceEmptyParagraphAfterRuleEatsIt() {
   h.placeInEmptyParagraph();
 
   require(h.controller.inputController().deleteBackward(), "backspace should be handled");
-  require(h.session.markdownText() == QStringLiteral("alpha\n\n"), "divider + empty paragraph collapse to 'alpha\\n\\n'");
+  require(h.session.markdownText().toString() == QStringLiteral("alpha\n\n"), "divider + empty paragraph collapse to 'alpha\\n\\n'");
 
   const CursorPosition c = h.controller.selection().cursorPosition();
   require(h.controller.selection().hasCursor(), "caret should remain valid");
@@ -113,7 +113,7 @@ void testBackspaceStartOfParagraphAfterRuleEatsIt() {
   setCursor(h.controller.selection(), beta, 0);
 
   require(h.controller.inputController().deleteBackward(), "backspace should be handled");
-  require(h.session.markdownText() == QStringLiteral("alpha\n\nbeta"), "rule removed, two paragraphs remain");
+  require(h.session.markdownText().toString() == QStringLiteral("alpha\n\nbeta"), "rule removed, two paragraphs remain");
 
   const CursorPosition c = h.controller.selection().cursorPosition();
   require(h.controller.selection().hasCursor(), "caret should remain valid");
@@ -133,7 +133,7 @@ void testDeleteEndOfParagraphBeforeRuleEatsIt() {
   setCursor(h.controller.selection(), alpha, 5);
 
   require(h.controller.inputController().deleteForward(), "delete should be handled");
-  require(h.session.markdownText() == QStringLiteral("alpha\n\nbeta"), "rule removed, paragraphs must NOT merge");
+  require(h.session.markdownText().toString() == QStringLiteral("alpha\n\nbeta"), "rule removed, paragraphs must NOT merge");
 
   const CursorPosition c = h.controller.selection().cursorPosition();
   require(h.controller.selection().hasCursor(), "caret should remain valid");
@@ -152,7 +152,7 @@ void testLeadingRuleBackspaceIsSafe() {
   h.load(QStringLiteral("---\n\n"));
   h.placeInEmptyParagraph();
   h.controller.inputController().deleteBackward();
-  require(h.session.markdownText().contains(QStringLiteral("---")), "leading rule must survive backspace");
+  require(h.session.markdownText().toString().contains(QStringLiteral("---")), "leading rule must survive backspace");
   require(h.controller.selection().hasCursor(), "caret should remain valid");
 }
 
@@ -165,7 +165,7 @@ void testBackspaceAfterRulePreservesPrecedingList() {
   setCursor(h.controller.selection(), beta, 0);
 
   require(h.controller.inputController().deleteBackward(), "backspace should be handled");
-  require(h.session.markdownText() == QStringLiteral("- item\n\nbeta"), "rule removed, list preserved");
+  require(h.session.markdownText().toString() == QStringLiteral("- item\n\nbeta"), "rule removed, list preserved");
   require(reparsedRootHasBlockType(h.session, BlockType::List), "list must survive");
   require(!reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "thematic break should be removed");
 }
@@ -178,7 +178,7 @@ void testUndoRestoresRule() {
   setCursor(h.controller.selection(), beta, 0);
   require(h.controller.inputController().deleteBackward(), "backspace should be handled");
   h.controller.undo();
-  require(h.session.markdownText() == QStringLiteral("alpha\n\n---\n\nbeta"), "undo should restore the source");
+  require(h.session.markdownText().toString() == QStringLiteral("alpha\n\n---\n\nbeta"), "undo should restore the source");
   require(reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "undo should restore the rule");
 
   // Forward delete + undo.
@@ -187,7 +187,7 @@ void testUndoRestoresRule() {
   setCursor(h.controller.selection(), alpha, 5);
   require(h.controller.inputController().deleteForward(), "delete should be handled");
   h.controller.undo();
-  require(h.session.markdownText() == QStringLiteral("alpha\n\n---\n\nbeta"), "undo should restore the source after delete");
+  require(h.session.markdownText().toString() == QStringLiteral("alpha\n\n---\n\nbeta"), "undo should restore the source after delete");
   require(reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "undo should restore the rule after delete");
 }
 
@@ -220,7 +220,7 @@ void testDeleteOnRuleRemovesIt() {
   setCursor(h.controller.selection(), hr, 0);
 
   require(h.controller.inputController().deleteForward(), "delete on rule should be handled");
-  require(h.session.markdownText() == QStringLiteral("alpha\n\nbeta"), "rule should be removed");
+  require(h.session.markdownText().toString() == QStringLiteral("alpha\n\nbeta"), "rule should be removed");
   require(!reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "thematic break should be gone");
   const CursorPosition c = h.controller.selection().cursorPosition();
   require(h.controller.selection().hasCursor(), "caret should remain valid");
@@ -235,7 +235,7 @@ void testBackspaceOnRuleRemovesIt() {
   setCursor(h.controller.selection(), hr, 0);
 
   require(h.controller.inputController().deleteBackward(), "backspace on rule should be handled");
-  require(h.session.markdownText() == QStringLiteral("alpha\n\nbeta"), "rule should be removed");
+  require(h.session.markdownText().toString() == QStringLiteral("alpha\n\nbeta"), "rule should be removed");
   require(!reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "thematic break should be gone");
   const CursorPosition c = h.controller.selection().cursorPosition();
   require(h.controller.selection().hasCursor(), "caret should remain valid");
@@ -258,7 +258,7 @@ void testTrailingCaretBelowRuleEatsIt() {
   require(h.controller.selection().cursorPosition().afterBlock, "caret should start in the trailing area");
 
   require(h.controller.inputController().deleteBackward(), "backspace should be handled");
-  require(h.session.markdownText() == QStringLiteral("alpha"), "rule should be removed, leaving 'alpha'");
+  require(h.session.markdownText().toString() == QStringLiteral("alpha"), "rule should be removed, leaving 'alpha'");
   require(!reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "thematic break should be gone");
   require(h.controller.selection().hasCursor(), "caret should remain valid");
 }
@@ -274,8 +274,8 @@ void testDeleteFromBlockBeforeRuleAcrossContainer() {
   setCursor(h.controller.selection(), quote, 5);
 
   require(h.controller.inputController().deleteForward(), "delete should be handled");
-  require(h.session.markdownText() == QStringLiteral("> quote\n\n## H"),
-          "rule removed, block quote + heading survive; got: " + h.session.markdownText());
+  require(h.session.markdownText().toString() == QStringLiteral("> quote\n\n## H"),
+          "rule removed, block quote + heading survive; got: " + h.session.markdownText().toString());
   require(!reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "thematic break should be gone");
   require(reparsedRootHasBlockType(h.session, BlockType::BlockQuote), "block quote must survive");
   require(reparsedRootHasBlockType(h.session, BlockType::Heading), "heading must survive");
@@ -292,8 +292,8 @@ void testDeleteFromLastListItemBeforeRule() {
   setCursor(h.controller.selection(), item, 4);
 
   require(h.controller.inputController().deleteForward(), "delete should be handled");
-  require(h.session.markdownText() == QStringLiteral("- item"),
-          "rule removed, list item survives; got: " + h.session.markdownText());
+  require(h.session.markdownText().toString() == QStringLiteral("- item"),
+          "rule removed, list item survives; got: " + h.session.markdownText().toString());
   require(!reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "thematic break should be gone");
   require(reparsedRootHasBlockType(h.session, BlockType::List), "list must survive");
 }
@@ -309,8 +309,8 @@ void testDeleteMergesParagraphOutOfBlockquote() {
   setCursor(h.controller.selection(), quote, 5);
 
   require(h.controller.inputController().deleteForward(), "delete should be handled");
-  require(h.session.markdownText() == QStringLiteral("> quotebeta"),
-          "quote should merge into the following paragraph; got: " + h.session.markdownText());
+  require(h.session.markdownText().toString() == QStringLiteral("> quotebeta"),
+          "quote should merge into the following paragraph; got: " + h.session.markdownText().toString());
   require(h.controller.selection().hasCursor(), "caret should remain valid");
 }
 
@@ -323,8 +323,8 @@ void testDeleteMergesParagraphOutOfBlockquoteIntoList() {
   setCursor(h.controller.selection(), quote, 5);
 
   require(h.controller.inputController().deleteForward(), "delete should be handled");
-  require(h.session.markdownText() == QStringLiteral("> quoteitem"),
-          "quote should merge into the list's first item; got: " + h.session.markdownText());
+  require(h.session.markdownText().toString() == QStringLiteral("> quoteitem"),
+          "quote should merge into the list's first item; got: " + h.session.markdownText().toString());
 }
 
 // Deleting a top-level `---` from a caret nested DEEP inside an adjacent list must leave the LIVE
@@ -345,8 +345,8 @@ void testDeleteRuleFromNestedListItemKeepsLiveTreeConsistent() {
   setCursor(h.controller.selection(), innerItem, 18);  // end of "inner content here"
 
   require(h.controller.inputController().deleteForward(), "delete should be handled");
-  require(!h.session.markdownText().contains(QStringLiteral("---\n\n## Heading Two")),
-          "the second divider should be gone from the source; got: " + h.session.markdownText());
+  require(!h.session.markdownText().toString().contains(QStringLiteral("---\n\n## Heading Two")),
+          "the second divider should be gone from the source; got: " + h.session.markdownText().toString());
 
   // Capture the LIVE tree's top-level signature, then compare it against a fresh reparse of the
   // (correct) source. A corrupt incremental update diverges here even though the source is right.
@@ -361,7 +361,7 @@ void testDeleteRuleFromNestedListItemKeepsLiveTreeConsistent() {
     return out.trimmed();
   };
   const QString live = signature(h.session);
-  h.session.setMarkdownText(h.session.markdownText(), true);  // full re-parse = ground truth
+  h.session.setMarkdownText(h.session.markdownText().toString(), true);  // full re-parse = ground truth
   const QString truth = signature(h.session);
   require(live == truth,
           "live tree must match a fresh re-parse (no stale/duplicate nodes); live={" + live +
@@ -376,7 +376,7 @@ void testUndoRestoresRuleRemovedFromOnIt() {
   setCursor(h.controller.selection(), hr, 0);
   require(h.controller.inputController().deleteForward(), "delete on rule should be handled");
   h.controller.undo();
-  require(h.session.markdownText() == QStringLiteral("alpha\n\n---\n\nbeta"), "undo should restore the source");
+  require(h.session.markdownText().toString() == QStringLiteral("alpha\n\n---\n\nbeta"), "undo should restore the source");
   require(reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "undo should restore the rule");
 }
 

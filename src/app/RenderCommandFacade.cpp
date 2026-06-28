@@ -363,7 +363,7 @@ bool RenderCommandFacade::replaceImageUnderCursor(const std::function<QString(co
     if (!session) {
       return false;
     }
-    const QString& md = session->markdownText();
+    const QString md = session->markdownText().toString();
     const QString source = md.mid(start, end - start);
     const QString replacement = transform(source);
     if (replacement == source) {

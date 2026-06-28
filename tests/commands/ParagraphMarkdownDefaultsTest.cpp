@@ -25,7 +25,7 @@ void testHeadingSetext() {
   session.setMarkdownText(QStringLiteral("Title"), false);
   setCursor(selection, blockAt(session, 0), 2);
   require(paragraph.setHeadingLevel(1), "setext H1 should succeed");
-  require(session.markdownText() == QStringLiteral("Title\n====="), "setext H1 should be content + === underline");
+  require(session.markdownText().toString() == QStringLiteral("Title\n====="), "setext H1 should be content + === underline");
   require(blockAt(session, 0)->type() == BlockType::Heading, "setext should still parse as a heading");
   require(blockAt(session, 0)->headingLevel() == 1, "setext H1 level mismatch");
 }
@@ -42,7 +42,7 @@ void testUnorderedListMarker() {
   session.setMarkdownText(QStringLiteral("item"), false);
   setCursor(selection, blockAt(session, 0), 2);
   require(paragraph.convertToUnorderedList(), "convert to unordered list should succeed");
-  require(session.markdownText() == QStringLiteral("* item"), "unordered list should use the '*' marker");
+  require(session.markdownText().toString() == QStringLiteral("* item"), "unordered list should use the '*' marker");
 }
 
 void testDefaultCodeLang() {
@@ -57,7 +57,7 @@ void testDefaultCodeLang() {
 
   session.setMarkdownText(QString(), false);
   require(paragraph.insertCodeBlock(), "insert code block should succeed");
-  require(session.markdownText() == QStringLiteral("```cpp\n\n```"), "code fence should carry the default language");
+  require(session.markdownText().toString() == QStringLiteral("```cpp\n\n```"), "code fence should carry the default language");
 }
 
 int main(int argc, char** argv) {

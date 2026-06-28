@@ -56,7 +56,7 @@ QVector<qsizetype> collectPendingMarkerOffsetsForSession(DocumentSession* sessio
   if (!session) {
     return {};
   }
-  return collectPendingMarkerOffsets(session->markdownText(), session->document().root());
+  return collectPendingMarkerOffsets(session->markdownText().toString(), session->document().root());
 }
 
 // For a single-line edit, the line being typed may itself be a (possibly brand-new) pending marker.
@@ -181,7 +181,7 @@ void InputController::applyLocalEdit(
   }
 
   const CursorPosition beforeCursor = ctx_.selection && ctx_.selection->hasCursor() ? ctx_.selection->cursorPosition() : CursorPosition();
-  const QString& currentText = ctx_.session->markdownText();
+  const PieceTable& currentText = ctx_.session->markdownText();
   if (sourceStart + removedLength > currentText.size()) {
     return;
   }
@@ -200,14 +200,14 @@ void InputController::applyLocalEdit(
   QVector<qsizetype> beforeOffsets = needsPreEditMarkerOffsets
       ? collectPendingMarkerOffsetsForSession(ctx_.session)
       : QVector<qsizetype>{};
-  QString beforeText = snapshotUndoLikely ? QString(currentText) : QString();
+  QString beforeText = snapshotUndoLikely ? currentText.toString() : QString();
   bool beforeTextCaptured = snapshotUndoLikely;
   const bool appliedLocally =
       ctx_.session->applyTextDelta(sourceStart, removedLength, insertedText, true, std::move(nodeHints));
   QString nextText;
   if (!appliedLocally) {
     if (!beforeTextCaptured) {
-      beforeText = currentText;
+      beforeText = currentText.toString();
       beforeTextCaptured = true;
     }
     nextText = beforeText;
@@ -257,12 +257,12 @@ void InputController::applyLocalEdit(
               std::move(affectedNodes)}));
     } else {
       if (!beforeTextCaptured) {
-        beforeText = ctx_.session->markdownText();
+        beforeText = ctx_.session->markdownText().toString();
         beforeText.replace(sourceStart, insertedText.size(), removedText);
         beforeTextCaptured = true;
       }
       if (nextText.isEmpty()) {
-        nextText = ctx_.session->markdownText();
+        nextText = ctx_.session->markdownText().toString();
       }
       const QVector<qsizetype> afterOffsets = collectPendingMarkerOffsetsForSession(ctx_.session);
       ctx_.undoStack->push(
@@ -307,7 +307,7 @@ void InputController::applyEdit(
     bool preferLaterEmptyAtOffset) {
   PerfTimer perf("input.applyEdit.diffFallback");
   const CursorPosition beforeCursor = ctx_.selection && ctx_.selection->hasCursor() ? ctx_.selection->cursorPosition() : CursorPosition();
-  const QString beforeText = ctx_.session->markdownText();
+  const QString beforeText = ctx_.session->markdownText().toString();
 
   qsizetype prefix = 0;
   const qsizetype minSize = qMin(beforeText.size(), nextText.size());

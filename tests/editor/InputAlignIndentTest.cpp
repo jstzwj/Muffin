@@ -29,13 +29,13 @@ void testAlignIndentOffMatchesDefault() {
   session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
   setCursor(selection, listItemAt(session, 0, 0), 2);
   require(input.insertParagraphBreak(), "enter should split unordered list item with align off");
-  require(session.markdownText() == QStringLiteral("- al\n- pha\n- beta"),
+  require(session.markdownText().toString() == QStringLiteral("- al\n- pha\n- beta"),
           "align off: unordered split should stay flat (byte-identical to historical behaviour)");
 
   session.setMarkdownText(QStringLiteral("1. alpha\n2. beta"), false);
   setCursor(selection, listItemAt(session, 0, 0), 2);
   require(input.insertParagraphBreak(), "enter should split ordered list item with align off");
-  require(session.markdownText() == QStringLiteral("1. al\n2. pha\n3. beta"),
+  require(session.markdownText().toString() == QStringLiteral("1. al\n2. pha\n3. beta"),
           "align off: ordered split should stay flat");
 }
 
@@ -52,7 +52,7 @@ void testAlignIndentOnAlignsUnderContent() {
   session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
   setCursor(selection, listItemAt(session, 0, 0), 2);
   require(input.insertParagraphBreak(), "enter should split unordered list item with align on");
-  require(session.markdownText() == QStringLiteral("- al\n  - pha\n- beta"),
+  require(session.markdownText().toString() == QStringLiteral("- al\n  - pha\n- beta"),
           "align on: unordered split should indent the new item under the parent content");
 
   // Ordered lists stay flat even with align on: nesting a numbered item would collide with the
@@ -61,7 +61,7 @@ void testAlignIndentOnAlignsUnderContent() {
   session.setMarkdownText(QStringLiteral("1. alpha\n2. beta"), false);
   setCursor(selection, listItemAt(session, 0, 0), 2);
   require(input.insertParagraphBreak(), "enter should split ordered list item with align on");
-  require(session.markdownText() == QStringLiteral("1. al\n2. pha\n3. beta"),
+  require(session.markdownText().toString() == QStringLiteral("1. al\n2. pha\n3. beta"),
           "align on: ordered split should stay flat (renumber + nesting would collide)");
 }
 

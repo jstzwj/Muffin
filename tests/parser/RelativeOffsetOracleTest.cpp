@@ -96,7 +96,7 @@ bool compareNode(const MarkdownNode& fresh, const MarkdownNode& session, QString
 // blocks is their own absolute byteStart (each top-level block relativizes against itself).
 bool documentMatchesFreshParse(const DocumentSession& session, QString& err) {
   CmarkGfmParser parser;
-  const ParseResult fresh = parser.parseDocument(QStringView(session.markdownText()), ParseOptions{});
+  const ParseResult fresh = parser.parseDocument(QStringView(session.markdownText().toString()), ParseOptions{});
   const auto& freshChildren = fresh.root->children();
   const auto& sessChildren = session.document().root().children();
   if (freshChildren.size() != sessChildren.size()) {

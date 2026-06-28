@@ -58,7 +58,7 @@ void testLoneHeadingMarkersStayParagraph() {
     typeString(h.input, marker);
     require(blockAt(h.session, 0)->type() == BlockType::Paragraph,
             QStringLiteral("lone '%1' should stay paragraph").arg(marker));
-    require(h.session.markdownText() == marker, QStringLiteral("text should remain '%1'").arg(marker));
+    require(h.session.markdownText().toString() == marker, QStringLiteral("text should remain '%1'").arg(marker));
     requireActiveInlineText(h, marker, marker, "lone heading marker");
   }
 }
@@ -67,7 +67,7 @@ void testHeadingWithoutSpaceStaysParagraph() {
   Harness h;
   typeString(h.input, QStringLiteral("###123"));
   require(blockAt(h.session, 0)->type() == BlockType::Paragraph, "'###123' should stay paragraph");
-  require(h.session.markdownText() == QStringLiteral("###123"), "text should be '###123'");
+  require(h.session.markdownText().toString() == QStringLiteral("###123"), "text should be '###123'");
   requireActiveInlineText(h, QStringLiteral("###123"), QStringLiteral("###123"), "heading without space");
 }
 
@@ -78,7 +78,7 @@ void testHeadingWithSpaceHidesPrefixWhenActive() {
   typeString(h.input, QStringLiteral("### 123"));
   require(blockAt(h.session, 0)->type() == BlockType::Heading, "'### 123' should parse as heading");
   require(blockAt(h.session, 0)->headingLevel() == 3, "'### 123' should be h3");
-  require(h.session.markdownText() == QStringLiteral("### 123"), "heading markdown should be preserved");
+  require(h.session.markdownText().toString() == QStringLiteral("### 123"), "heading markdown should be preserved");
   requireActiveInlineText(h, QStringLiteral("123"), QStringLiteral("123"), "active heading");
 }
 
@@ -87,18 +87,18 @@ void testLoneBulletStaysParagraphUntilSpace() {
   Harness h;
   require(h.input.insertText(QStringLiteral("*")), "insert lone bullet");
   require(blockAt(h.session, 0)->type() == BlockType::Paragraph, "lone '*' should stay a paragraph");
-  require(h.session.markdownText() == QStringLiteral("*"), "text should be '*'");
+  require(h.session.markdownText().toString() == QStringLiteral("*"), "text should be '*'");
 
   require(h.input.insertText(QStringLiteral(" ")), "insert trailing space");
   require(blockAt(h.session, 0)->type() == BlockType::List, "'* ' should become a list");
-  require(h.session.markdownText() == QStringLiteral("* "), "text should be '* '");
+  require(h.session.markdownText().toString() == QStringLiteral("* "), "text should be '* '");
 }
 
 void testLoneOrderedMarkerStaysParagraphUntilSpace() {
   Harness h;
   typeString(h.input, QStringLiteral("1."));
   require(blockAt(h.session, 0)->type() == BlockType::Paragraph, "lone '1.' should stay a paragraph");
-  require(h.session.markdownText() == QStringLiteral("1."), "text should be '1.'");
+  require(h.session.markdownText().toString() == QStringLiteral("1."), "text should be '1.'");
 
   require(h.input.insertText(QStringLiteral(" ")), "insert trailing space");
   require(blockAt(h.session, 0)->type() == BlockType::List, "'1. ' should become an ordered list");
@@ -116,7 +116,7 @@ void testAllListMarkersStayParagraphUntilSpace() {
     typeString(h.input, marker);
     require(blockAt(h.session, 0)->type() == BlockType::Paragraph,
             QStringLiteral("lone list marker '%1' should stay paragraph").arg(marker));
-    require(h.session.markdownText() == marker, QStringLiteral("text should remain '%1'").arg(marker));
+    require(h.session.markdownText().toString() == marker, QStringLiteral("text should remain '%1'").arg(marker));
 
     require(h.input.insertText(QStringLiteral(" ")), QStringLiteral("space after '%1' should succeed").arg(marker));
     require(blockAt(h.session, 0)->type() == BlockType::List,
@@ -128,7 +128,7 @@ void testLoneBulletWithTextStaysParagraphUntilSpace() {
   Harness h;
   typeString(h.input, QStringLiteral("*x"));
   require(blockAt(h.session, 0)->type() == BlockType::Paragraph, "'*x' has no space, should stay paragraph");
-  require(h.session.markdownText() == QStringLiteral("*x"), "text should be '*x'");
+  require(h.session.markdownText().toString() == QStringLiteral("*x"), "text should be '*x'");
 }
 
 // A fenced code opener (``` or ~~~) stays a paragraph while being typed.
@@ -136,7 +136,7 @@ void testLoneFenceStaysParagraph() {
   Harness h;
   typeString(h.input, QStringLiteral("```"));
   require(blockAt(h.session, 0)->type() == BlockType::Paragraph, "lone '```' should stay a paragraph");
-  require(h.session.markdownText() == QStringLiteral("```"), "text should be '```'");
+  require(h.session.markdownText().toString() == QStringLiteral("```"), "text should be '```'");
 
   Harness tilde;
   typeString(tilde.input, QStringLiteral("~~~"));
@@ -154,7 +154,7 @@ void testFencePrefixesStayParagraphWhileTyping() {
     typeString(h.input, sample);
     require(blockAt(h.session, 0)->type() == BlockType::Paragraph,
             QStringLiteral("pending fence '%1' should stay paragraph").arg(sample));
-    require(h.session.markdownText() == sample, QStringLiteral("text should remain '%1'").arg(sample));
+    require(h.session.markdownText().toString() == sample, QStringLiteral("text should remain '%1'").arg(sample));
     requireActiveInlineText(h, sample, sample, "pending fence");
   }
 }
@@ -163,7 +163,7 @@ void testLoneFenceWithLanguageStaysParagraph() {
   Harness h;
   typeString(h.input, QStringLiteral("```js"));
   require(blockAt(h.session, 0)->type() == BlockType::Paragraph, "lone '```js' should stay a paragraph");
-  require(h.session.markdownText() == QStringLiteral("```js"), "text should be '```js'");
+  require(h.session.markdownText().toString() == QStringLiteral("```js"), "text should be '```js'");
 }
 
 // A display-math opener ($$) stays a paragraph while being typed.
@@ -171,19 +171,19 @@ void testLoneDollarMathStaysParagraph() {
   Harness h;
   typeString(h.input, QStringLiteral("$$"));
   require(blockAt(h.session, 0)->type() == BlockType::Paragraph, "lone '$$' should stay a paragraph");
-  require(h.session.markdownText() == QStringLiteral("$$"), "text should be '$$'");
+  require(h.session.markdownText().toString() == QStringLiteral("$$"), "text should be '$$'");
 }
 
 void testDollarMathPrefixStates() {
   Harness oneDollar;
   typeString(oneDollar.input, QStringLiteral("$"));
   require(blockAt(oneDollar.session, 0)->type() == BlockType::Paragraph, "single '$' should stay paragraph");
-  require(oneDollar.session.markdownText() == QStringLiteral("$"), "single dollar text mismatch");
+  require(oneDollar.session.markdownText().toString() == QStringLiteral("$"), "single dollar text mismatch");
 
   Harness twoDollar;
   typeString(twoDollar.input, QStringLiteral("$$"));
   require(blockAt(twoDollar.session, 0)->type() == BlockType::Paragraph, "'$$' should stay paragraph until Enter");
-  require(twoDollar.session.markdownText() == QStringLiteral("$$"), "double dollar text mismatch");
+  require(twoDollar.session.markdownText().toString() == QStringLiteral("$$"), "double dollar text mismatch");
   requireActiveInlineText(twoDollar, QStringLiteral("$$"), QStringLiteral("$$"), "pending dollar math");
 }
 
@@ -192,19 +192,19 @@ void testLoneBracketMathStaysParagraph() {
   Harness h;
   typeString(h.input, QStringLiteral("\\["));
   require(blockAt(h.session, 0)->type() == BlockType::Paragraph, "lone '\\[' should stay a paragraph");
-  require(h.session.markdownText() == QStringLiteral("\\["), "text should be '\\['");
+  require(h.session.markdownText().toString() == QStringLiteral("\\["), "text should be '\\['");
 }
 
 void testBracketMathPrefixStates() {
   Harness slash;
   typeString(slash.input, QStringLiteral("\\"));
   require(blockAt(slash.session, 0)->type() == BlockType::Paragraph, "single backslash should stay paragraph");
-  require(slash.session.markdownText() == QStringLiteral("\\"), "single backslash text mismatch");
+  require(slash.session.markdownText().toString() == QStringLiteral("\\"), "single backslash text mismatch");
 
   Harness bracket;
   typeString(bracket.input, QStringLiteral("\\["));
   require(blockAt(bracket.session, 0)->type() == BlockType::Paragraph, "'\\[' should stay paragraph until Enter");
-  require(bracket.session.markdownText() == QStringLiteral("\\["), "bracket opener text mismatch");
+  require(bracket.session.markdownText().toString() == QStringLiteral("\\["), "bracket opener text mismatch");
   requireActiveInlineText(bracket, QStringLiteral("\\["), QStringLiteral("\\["), "pending bracket math");
 }
 
@@ -234,7 +234,7 @@ void testEnterOnFenceConvertsToCodeBlock() {
   require(blockAt(h.session, 0)->type() == BlockType::Paragraph, "precondition: '```' is a paragraph");
   require(h.input.insertParagraphBreak(), "enter on '```' should succeed");
   require(blockAt(h.session, 0)->type() == BlockType::CodeFence, "'```' + Enter should become a code block");
-  require(h.session.markdownText().contains(QStringLiteral("```\n\n```")), "markdown should contain a code fence");
+  require(h.session.markdownText().toString().contains(QStringLiteral("```\n\n```")), "markdown should contain a code fence");
 }
 
 void testEnterOnFenceWithLanguageConvertsToCodeBlock() {
@@ -279,7 +279,7 @@ void testEnterOnBracketMathConvertsToMathBlock() {
   require(h.input.insertParagraphBreak(), "enter on '\\[' should succeed");
   require(blockAt(h.session, 0)->type() == BlockType::MathBlock, "'\\[' + Enter should become a math block");
   require(blockAt(h.session, 0)->mathDelimiter() == MathDelimiter::Bracket, "bracket math delimiter flag missing");
-  require(h.session.markdownText().contains(QStringLiteral("\\[\n\n\\]")), "markdown should contain a bracket math block");
+  require(h.session.markdownText().toString().contains(QStringLiteral("\\[\n\n\\]")), "markdown should contain a bracket math block");
 }
 
 // The edit-driven full-reparse fallback (applyMarkdownText with an offset) must still demote a
@@ -290,7 +290,7 @@ void testApplyMarkdownTextDemotesHeadingMarkerAtOffset() {
   h.session.applyMarkdownText(QStringLiteral("###"), true, {0});
   require(blockAt(h.session, 0)->type() == BlockType::Paragraph,
           "applyMarkdownText with offset 0 should demote lone '###' to paragraph");
-  require(h.session.markdownText() == QStringLiteral("###"), "markdown should remain '###'");
+  require(h.session.markdownText().toString() == QStringLiteral("###"), "markdown should remain '###'");
 }
 
 // Without an offset, applyMarkdownText must NOT demote (default off) so load / undo / find /
@@ -407,7 +407,7 @@ void requireUndoRedoPendingMarkerCommit(const QString& marker, BlockType committ
   }
 
   controller.undo();
-  require(session.markdownText() == marker, QStringLiteral("%1 undo should restore marker text").arg(QString::fromUtf8(label)));
+  require(session.markdownText().toString() == marker, QStringLiteral("%1 undo should restore marker text").arg(QString::fromUtf8(label)));
   require(blockAt(session, 0)->type() == BlockType::Paragraph,
           QStringLiteral("%1 undo should restore pending paragraph state").arg(QString::fromUtf8(label)));
 
@@ -448,7 +448,7 @@ void testLoneBulletStaysParagraphAfterSplit() {
   require(input.insertText(QStringLiteral("*")), "insert '*' in new paragraph should succeed");
   require(blockAt(session, 1)->type() == BlockType::Paragraph,
           "lone '*' in non-empty document should stay a paragraph");
-  require(session.markdownText().endsWith(QLatin1Char('*')),
+  require(session.markdownText().toString().endsWith(QLatin1Char('*')),
           "markdown should end with '*'");
 
   // Add a trailing space → commits to list.
@@ -509,13 +509,13 @@ void testLoneBulletStaysParagraphBetweenBlocks() {
           "lone '*' between blocks should stay a paragraph, not become a list");
   // The '*' is inserted in the virtual empty paragraph's position.
   // It should appear before the list in the source, not merged into it.
-  require(session.markdownText().contains(QLatin1Char('*')),
+  require(session.markdownText().toString().contains(QLatin1Char('*')),
           "markdown should contain the typed '*'");
 
   // Now add a space → should become a list
   require(input.insertText(QStringLiteral(" ")), "insert space after '*' should succeed");
   // The "* " is now a list item, so we should have two lists or a merged list
-  require(session.markdownText().contains(QLatin1String("* ")), "markdown should contain '* '");
+  require(session.markdownText().toString().contains(QLatin1String("* ")), "markdown should contain '* '");
 }
 
 void testLoneBulletStaysParagraphBetweenHeadingAndList() {
@@ -615,7 +615,7 @@ void testLoneBacktickRendersOnce() {
   {
     Harness h;
     typeString(h.input, QStringLiteral("`"));
-    require(h.session.markdownText() == QStringLiteral("`"), "lone backtick source should be a single backtick");
+    require(h.session.markdownText().toString() == QStringLiteral("`"), "lone backtick source should be a single backtick");
     requireActiveInlineText(h, QStringLiteral("`"), QStringLiteral("`"), "lone backtick");
   }
   {

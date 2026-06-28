@@ -26,7 +26,7 @@ void testInsertCodeBlock() {
   setCursor(selection, blockAt(session, 0), 3);
   require(paragraph.insertCodeBlock(), "insert code block should succeed");
 
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(md.contains(QLatin1String("```")), "code block should contain fence markers");
   require(md.startsWith(QLatin1String("Hello")), "code block should preserve original text");
 
@@ -37,7 +37,7 @@ void testInsertCodeBlock() {
       undo.textDeltaCommand().delta.insertedText.size(),
       undo.textDeltaCommand().delta.removedText,
       true);
-  require(session.markdownText() == QStringLiteral("Hello"), "code block undo text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("Hello"), "code block undo text mismatch");
 }
 
 void testInsertFormulaBlock() {
@@ -52,7 +52,7 @@ void testInsertFormulaBlock() {
   setCursor(selection, blockAt(session, 0), 3);
   require(paragraph.insertFormulaBlock(), "insert formula block should succeed");
 
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(md.contains(QLatin1String("$$")), "formula block should contain $$ markers");
   require(md.startsWith(QLatin1String("Hello")), "formula block should preserve original text");
 
@@ -63,7 +63,7 @@ void testInsertFormulaBlock() {
       undo.textDeltaCommand().delta.insertedText.size(),
       undo.textDeltaCommand().delta.removedText,
       true);
-  require(session.markdownText() == QStringLiteral("Hello"), "formula block undo text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("Hello"), "formula block undo text mismatch");
 }
 
 void testInsertLinkReference() {
@@ -78,7 +78,7 @@ void testInsertLinkReference() {
   setCursor(selection, blockAt(session, 0), 3);
   require(paragraph.insertLinkReference(), "insert link reference should succeed");
 
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(md.contains(QLatin1String("[]: ")), "link reference should contain empty template");
   require(md.startsWith(QLatin1String("Hello")), "link reference should preserve original text");
   require(blockAt(session, 1)->type() == BlockType::LinkDefinition, "link reference should parse as a rendered definition block");
@@ -95,7 +95,7 @@ void testInsertLinkReferenceIntoEmptyDocument() {
   session.setMarkdownText(QString(), false);
   require(paragraph.insertLinkReference(), "insert link reference into empty document should succeed");
 
-  require(session.markdownText() == QStringLiteral("[]: "), "empty document link reference markdown mismatch");
+  require(session.markdownText().toString() == QStringLiteral("[]: "), "empty document link reference markdown mismatch");
   require(session.document().root().children().size() == 1, "empty document link reference should render as one block");
   require(blockAt(session, 0)->type() == BlockType::LinkDefinition, "empty document link reference should parse as definition block");
 }
@@ -112,7 +112,7 @@ void testInsertFootnoteDefinition() {
   setCursor(selection, blockAt(session, 0), 3);
   require(paragraph.insertFootnoteDefinition(), "insert footnote should succeed");
 
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(md.contains(QLatin1String("[^]: ")), "footnote should contain empty template");
   require(md.startsWith(QLatin1String("Hello")), "footnote should preserve original text");
   require(blockAt(session, 1)->type() == BlockType::FootnoteDefinition, "footnote should parse as a rendered definition block");
@@ -130,7 +130,7 @@ void testInsertHorizontalRule() {
   setCursor(selection, blockAt(session, 0), 3);
   require(paragraph.insertHorizontalRule(), "insert horizontal rule should succeed");
 
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(md.contains(QLatin1String("---")), "horizontal rule should contain thematic break markdown");
   require(md.startsWith(QLatin1String("Hello")), "horizontal rule should preserve original text");
   require(blockAt(session, 1)->type() == BlockType::ThematicBreak, "horizontal rule should parse as a thematic break block");
@@ -148,7 +148,7 @@ void testInsertTableOfContents() {
   setCursor(selection, blockAt(session, 0), 3);
   require(paragraph.insertTableOfContents(), "insert table of contents should succeed");
 
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(md.contains(QLatin1String("[TOC]")), "table of contents should contain the [TOC] directive");
   require(md.startsWith(QLatin1String("Hello")), "table of contents should preserve original text");
   require(blockAt(session, 1)->type() == BlockType::Paragraph, "table of contents should parse as a paragraph block");
@@ -160,7 +160,7 @@ void testInsertTableOfContents() {
       undo.textDeltaCommand().delta.insertedText.size(),
       undo.textDeltaCommand().delta.removedText,
       true);
-  require(session.markdownText() == QStringLiteral("Hello"), "table of contents undo text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("Hello"), "table of contents undo text mismatch");
 }
 
 void testInsertParagraphBeforeAndAfter() {
@@ -202,7 +202,7 @@ void testInsertParagraphAroundCodeBlock() {
   require(session.document().root().children().size() == 2, "insert before should create 2 blocks");
   require(blockAt(session, 0)->type() == BlockType::Paragraph, "block before code fence should be a paragraph");
   require(blockAt(session, 1)->type() == BlockType::CodeFence, "code fence should remain after insert");
-  require(session.markdownText().contains(QStringLiteral("code")), "code content should be preserved");
+  require(session.markdownText().toString().contains(QStringLiteral("code")), "code content should be preserved");
   require(cursorBlock(session, selection) == blockAt(session, 0), "cursor should jump to the new paragraph before the fence");
 
   // Insert after: blank paragraph appears after the closing fence.
@@ -232,7 +232,7 @@ void testInsertParagraphAroundIndentedCode() {
   require(session.document().root().children().size() == 2, "insert before should create 2 blocks");
   require(blockAt(session, 0)->type() == BlockType::Paragraph, "block before indented code should be a paragraph");
   require(blockAt(session, 1)->type() == BlockType::CodeFence, "indented code must remain a code block");
-  require(session.markdownText().contains(QStringLiteral("conan install")), "code content should be preserved");
+  require(session.markdownText().toString().contains(QStringLiteral("conan install")), "code content should be preserved");
   require(cursorBlock(session, selection) == blockAt(session, 0), "cursor should jump to the new paragraph before indented code");
 
   // Insert after.
@@ -311,7 +311,7 @@ void testInsertIntoEmptyDocument() {
   session.setMarkdownText(QString(), false);
   setCursor(selection, blockAt(session, 0), 0);
   require(paragraph.insertCodeBlock(), "insert code block into empty doc should succeed");
-  require(session.markdownText().contains(QLatin1String("```")), "empty doc code block should contain fence");
+  require(session.markdownText().toString().contains(QLatin1String("```")), "empty doc code block should contain fence");
 }
 
 void testToggleQuote() {
@@ -325,7 +325,7 @@ void testToggleQuote() {
   session.setMarkdownText(QStringLiteral("Hello world"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(paragraph.toggleQuote(), "wrap in quote should succeed");
-  require(session.markdownText() == QStringLiteral("> Hello world"), "quote wrap text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("> Hello world"), "quote wrap text mismatch");
 
   MarkdownNode* quote = blockAt(session, 0);
   require(quote->type() == BlockType::BlockQuote, "should create block quote");
@@ -334,7 +334,7 @@ void testToggleQuote() {
   setCursor(selection, firstChildOfType(quote, BlockType::Paragraph), 5);
   require(paragraph.toggleQuote(), "unwrap quote should succeed");
 
-  require(session.markdownText() == QStringLiteral("Hello world"), "quote unwrap text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("Hello world"), "quote unwrap text mismatch");
   require(blockAt(session, 0)->type() == BlockType::Paragraph, "unwrapped should be paragraph");
 }
 
@@ -349,7 +349,7 @@ void testConvertToUnorderedList() {
   session.setMarkdownText(QStringLiteral("Item text"), false);
   setCursor(selection, blockAt(session, 0), 4);
   require(paragraph.convertToUnorderedList(), "convert to unordered list should succeed");
-  require(session.markdownText() == QStringLiteral("- Item text"), "unordered list text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("- Item text"), "unordered list text mismatch");
   require(blockAt(session, 0)->type() == BlockType::List, "should create list block");
 
   const EditTransaction undo = undoStack.takeUndo();
@@ -359,7 +359,7 @@ void testConvertToUnorderedList() {
       undo.textDeltaCommand().delta.insertedText.size(),
       undo.textDeltaCommand().delta.removedText,
       true);
-  require(session.markdownText() == QStringLiteral("Item text"), "list undo text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("Item text"), "list undo text mismatch");
 }
 
 void testConvertToOrderedList() {
@@ -373,7 +373,7 @@ void testConvertToOrderedList() {
   session.setMarkdownText(QStringLiteral("First item"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(paragraph.convertToOrderedList(), "convert to ordered list should succeed");
-  require(session.markdownText() == QStringLiteral("1. First item"), "ordered list text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("1. First item"), "ordered list text mismatch");
   require(blockAt(session, 0)->type() == BlockType::List, "should create list block");
 
   const EditTransaction undo = undoStack.takeUndo();
@@ -382,7 +382,7 @@ void testConvertToOrderedList() {
       undo.textDeltaCommand().delta.insertedText.size(),
       undo.textDeltaCommand().delta.removedText,
       true);
-  require(session.markdownText() == QStringLiteral("First item"), "ordered list undo text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("First item"), "ordered list undo text mismatch");
 }
 
 void testConvertToTaskList() {
@@ -396,7 +396,7 @@ void testConvertToTaskList() {
   session.setMarkdownText(QStringLiteral("Task item"), false);
   setCursor(selection, blockAt(session, 0), 4);
   require(paragraph.convertToTaskList(), "convert to task list should succeed");
-  require(session.markdownText() == QStringLiteral("- [ ] Task item"), "task list text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("- [ ] Task item"), "task list text mismatch");
   require(blockAt(session, 0)->type() == BlockType::List, "should create list block");
 
   const EditTransaction undo = undoStack.takeUndo();
@@ -405,7 +405,7 @@ void testConvertToTaskList() {
       undo.textDeltaCommand().delta.insertedText.size(),
       undo.textDeltaCommand().delta.removedText,
       true);
-  require(session.markdownText() == QStringLiteral("Task item"), "task list undo text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("Task item"), "task list undo text mismatch");
 }
 
 void testConversionFromHeading() {
@@ -419,13 +419,13 @@ void testConversionFromHeading() {
   session.setMarkdownText(QStringLiteral("## Title"), false);
   setCursor(selection, blockAt(session, 0), 3);
   require(paragraph.convertToUnorderedList(), "heading -> list should succeed");
-  require(session.markdownText() == QStringLiteral("- Title"), "heading -> list text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("- Title"), "heading -> list text mismatch");
   require(blockAt(session, 0)->type() == BlockType::List, "heading -> list type mismatch");
 
   session.setMarkdownText(QStringLiteral("### Quote me"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(paragraph.toggleQuote(), "heading -> quote should succeed");
-  require(session.markdownText() == QStringLiteral("> ### Quote me"), "heading -> quote text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("> ### Quote me"), "heading -> quote text mismatch");
 }
 
 void testIsOnEditableBlock() {

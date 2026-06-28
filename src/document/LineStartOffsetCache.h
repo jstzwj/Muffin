@@ -5,6 +5,8 @@
 
 namespace muffin {
 
+class PieceTable;  // applyEdit indexes the post-edit text via the piece-table (Phase 2)
+
 class LineStartOffsetCache {
 public:
   LineStartOffsetCache();
@@ -14,7 +16,7 @@ public:
   // Patch lineStarts_ for an in-place text edit without rescanning the whole document.
   // fullPostEditText is the document text AFTER the replace; sourceStart/removedLen describe the
   // pre-edit removed range and insertedLen the length of its replacement.
-  void applyEdit(qsizetype sourceStart, qsizetype removedLen, qsizetype insertedLen, QStringView fullPostEditText);
+  void applyEdit(qsizetype sourceStart, qsizetype removedLen, qsizetype insertedLen, const PieceTable& fullPostEditText);
   qsizetype offsetForLineColumn(int line, int column) const;
   // text is the document the cache indexes; the cache no longer owns a copy (see applyEdit/rebuild).
   qsizetype offsetForLineByteColumn(QStringView text, int line, int column) const;

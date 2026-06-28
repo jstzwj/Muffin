@@ -223,6 +223,9 @@ void muffin::MainWindow::connectSessionSignals() {
   // document's recovery draft — see FileController::documentBecameClean.
   QObject::connect(&window.fileController_, &FileController::documentBecameClean, &window,
                    [&window](const QString& filePath) { window.drafts_.markClean(filePath); });
+  QObject::connect(&window.session_, &DocumentSession::parseBusy, &window, [&window](bool busy) {
+    window.renderView_->setLoading(busy);
+  });
   QObject::connect(&window.session_, &DocumentSession::parsed, &window, [&window] {
     PerfTimer perf("main.parsed.consumer");
     if (window.session_.lastParseWasLocalEdit()) {
@@ -337,9 +340,9 @@ void muffin::MainWindow::connectChromeSignals() {
     if (!window.statusBar_) {
       return;
     }
-    const QString& md = window.session_.markdownText();
+    const PieceTable& md = window.session_.markdownText();
     muffin::StatusBarStats stats;
-    stats.words = muffin::MainWindow::countWords(md);
+    stats.words = muffin::MainWindow::countWords(md.toString());
     stats.characters = md.size();
     stats.lines = window.session_.document().lineOffsets().lineCount();
     stats.readingMinutes = qMax(1, stats.words / 200);

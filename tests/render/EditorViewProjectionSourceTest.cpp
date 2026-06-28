@@ -207,7 +207,7 @@ void testHorizontalNavigationEntersInlineMarkers() {
   require(pressKey(input, &view, Qt::Key_Right), "right arrow should move into strong opener");
   require(selection.cursorPosition().text.sourceOffset == 1, "strong opener marker source offset mismatch");
   require(input.insertText(QStringLiteral("X")), "typing inside strong opener marker should edit source");
-  require(session.markdownText() == QStringLiteral("*X*bold**"), "strong opener marker edit mismatch");
+  require(session.markdownText().toString() == QStringLiteral("*X*bold**"), "strong opener marker edit mismatch");
 
   session.setMarkdownText(QStringLiteral("*italic*"), false);
   setSourceCursor(selection, blockAt(session, 0), 0, 0);
@@ -219,7 +219,7 @@ void testHorizontalNavigationEntersInlineMarkers() {
   require(pressKey(input, &view, Qt::Key_Right), "right arrow should move into strike opener");
   require(selection.cursorPosition().text.sourceOffset == 1, "strike opener marker source offset mismatch");
   require(input.deleteBackward(), "backspace inside strike opener should edit source");
-  require(session.markdownText() == QStringLiteral("~through~~"), "strike opener backspace mismatch");
+  require(session.markdownText().toString() == QStringLiteral("~through~~"), "strike opener backspace mismatch");
 
   session.setMarkdownText(QStringLiteral("`code`"), false);
   setSourceCursor(selection, blockAt(session, 0), 0, 0);
@@ -247,7 +247,7 @@ void testTextHitActivationAddsSourceOffsetForInlineEditing() {
 
   require(controller.selection().cursorPosition().text.sourceOffset == 11, "text hit should resolve strong source offset");
   require(controller.inputController().insertText(QStringLiteral("X")), "typing after text hit should edit strong inline");
-  require(session.markdownText() == QStringLiteral("before **boXld** after"), "text hit inline insert mismatch");
+  require(session.markdownText().toString() == QStringLiteral("before **boXld** after"), "text hit inline insert mismatch");
 }
 
 void testEditorViewInlineLayoutSmoke() {

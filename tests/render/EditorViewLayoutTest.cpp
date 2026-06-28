@@ -93,11 +93,11 @@ void testEditorViewListInlineMathHitEditing() {
               .arg(hit.textOffset));
   controller.activateHit(hit);
   require(controller.inputController().insertText(QStringLiteral("0")), "typing after list inline math hit should edit source");
-  require(session.markdownText() == QStringLiteral("- before $x0+y$ after"), "list inline math hit insert should not drift");
+  require(session.markdownText().toString() == QStringLiteral("- before $x0+y$ after"), "list inline math hit insert should not drift");
   require(controller.selection().cursorPosition().text.sourceOffset == QStringLiteral("- before $x0").size(),
           "list inline math cursor source should stay after inserted text");
   require(controller.inputController().insertText(QStringLiteral("1")), "consecutive typing after list inline math hit should edit source");
-  require(session.markdownText() == QStringLiteral("- before $x01+y$ after"), "consecutive list inline math insert should not drift");
+  require(session.markdownText().toString() == QStringLiteral("- before $x01+y$ after"), "consecutive list inline math insert should not drift");
 }
 
 void testEditorViewWrappedInlineLayout() {
@@ -188,7 +188,7 @@ void testEditorViewTableCellInlineCodeEndHit() {
   const qsizetype cellSourceStart = cellNode->sourceRange().byteStart;
   controller.activateHit(hit);
   require(controller.inputController().insertText(QStringLiteral("!")), "table inline code end insert should work");
-  require(session.markdownText().contains(QStringLiteral("| vendored `cmark-gfm`! |")),
+  require(session.markdownText().toString().contains(QStringLiteral("| vendored `cmark-gfm`! |")),
           "table inline code end insert should append after inline code");
   require(controller.selection().cursorPosition().text.sourceOffset ==
               cellSourceStart + cellContent.size() + 1,
@@ -232,7 +232,7 @@ void testTableCellRichInlineSelectionDeleteAndCopyUseSourceOffsets() {
   require(QApplication::clipboard()->text() == QStringLiteral("cmark-gfm"), "table rich inline clipboard text mismatch");
 
   require(controller.inputController().deleteBackward(), "table rich inline selection backspace should delete selection");
-  require(session.markdownText().contains(QStringLiteral("| vendored `` tail |")),
+  require(session.markdownText().toString().contains(QStringLiteral("| vendored `` tail |")),
           "table rich inline selection delete should preserve code markers");
   require(controller.selection().cursorPosition().text.sourceOffset == cellStart + codeStart,
           "table rich inline selection delete source cursor mismatch");
@@ -249,7 +249,7 @@ void testTableCellRichInlineSelectionDeleteAndCopyUseSourceOffsets() {
       QStringLiteral("vendored cmark-gfm").size(),
       cell->sourceRange().byteStart + codeEnd);
   require(controller.inputController().deleteForward(), "table rich inline selection delete should delete selection");
-  require(session.markdownText().contains(QStringLiteral("| vendored `` tail |")),
+  require(session.markdownText().toString().contains(QStringLiteral("| vendored `` tail |")),
           "table rich inline delete key should preserve code markers");
 }
 
@@ -270,7 +270,7 @@ void testMixedInlineParagraphHitEditingBeforeAutolink() {
   boldHit.textOffset = QStringLiteral("Plain text can mix bo").size();
   controller.activateHit(boldHit);
   require(controller.inputController().insertText(QStringLiteral("X")), "typing in mixed paragraph bold should work");
-  require(session.markdownText().contains(QStringLiteral("**boXld**")), "mixed paragraph bold insert mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("**boXld**")), "mixed paragraph bold insert mismatch");
 
   session.setMarkdownText(markdown, false);
   HitTestResult italicHit;
@@ -280,7 +280,7 @@ void testMixedInlineParagraphHitEditingBeforeAutolink() {
   italicHit.textOffset = QStringLiteral("Plain text can mix bold, ita").size();
   controller.activateHit(italicHit);
   require(controller.inputController().insertText(QStringLiteral("Y")), "typing in mixed paragraph italic should work");
-  require(session.markdownText().contains(QStringLiteral("*itaYlic*")), "mixed paragraph italic insert mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("*itaYlic*")), "mixed paragraph italic insert mismatch");
 
   session.setMarkdownText(markdown, false);
   HitTestResult strikeHit;
@@ -290,7 +290,7 @@ void testMixedInlineParagraphHitEditingBeforeAutolink() {
   strikeHit.textOffset = QStringLiteral("Plain text can mix bold, italic, strike").size();
   controller.activateHit(strikeHit);
   require(controller.inputController().insertText(QStringLiteral("Z")), "typing in mixed paragraph strike should work");
-  require(session.markdownText().contains(QStringLiteral("~~strikeZthrough~~")), "mixed paragraph strike insert mismatch");
+  require(session.markdownText().toString().contains(QStringLiteral("~~strikeZthrough~~")), "mixed paragraph strike insert mismatch");
 }
 
 void testInlineSelectionRects() {

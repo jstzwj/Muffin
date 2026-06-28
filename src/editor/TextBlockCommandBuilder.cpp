@@ -31,7 +31,8 @@ int blockQuoteDepth(const MarkdownNode* node) {
   return depth;
 }
 
-qsizetype lineStartForOffset(const QString& text, qsizetype offset) {
+template <typename Text>
+qsizetype lineStartForOffset(const Text& text, qsizetype offset) {
   qsizetype lineStart = qBound<qsizetype>(0, offset, text.size());
   while (lineStart > 0 && text.at(lineStart - 1) != QLatin1Char('\n')) {
     --lineStart;
@@ -119,7 +120,8 @@ bool orderedListSequential() {
   return QSettings().value(QStringLiteral("markdown/orderedList"), 0).toInt() != 1;
 }
 
-qsizetype lineEndForOffset(const QString& text, qsizetype offset) {
+template <typename Text>
+qsizetype lineEndForOffset(const Text& text, qsizetype offset) {
   qsizetype lineEnd = qBound<qsizetype>(0, offset, text.size());
   while (lineEnd < text.size() && text.at(lineEnd) != QLatin1Char('\n')) {
     ++lineEnd;
@@ -127,11 +129,13 @@ qsizetype lineEndForOffset(const QString& text, qsizetype offset) {
   return lineEnd;
 }
 
-qsizetype nextLineStart(const QString& text, qsizetype lineEnd) {
+template <typename Text>
+qsizetype nextLineStart(const Text& text, qsizetype lineEnd) {
   return lineEnd < text.size() && text.at(lineEnd) == QLatin1Char('\n') ? lineEnd + 1 : lineEnd;
 }
 
-qsizetype orderedSiblingRunEnd(const QString& markdown, qsizetype start, qsizetype markerColumn) {
+template <typename Text>
+qsizetype orderedSiblingRunEnd(const Text& markdown, qsizetype start, qsizetype markerColumn) {
   qsizetype pos = qBound<qsizetype>(0, start, markdown.size());
   while (pos < markdown.size()) {
     const qsizetype lineEnd = lineEndForOffset(markdown, pos);
@@ -583,7 +587,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPrevious
     return command;
   }
 
-  const QString markdown = session_->markdownText();
+  const PieceTable& markdown = session_->markdownText();
   const SourceRange full = fullBlockSourceRange(*prev, markdown);
   if (full.byteStart < 0 || full.byteEnd <= full.byteStart || full.byteEnd > markdown.size()) {
     return command;
@@ -788,7 +792,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildRemoveFollowingTh
     return command;
   }
 
-  const QString markdown = session_->markdownText();
+  const PieceTable& markdown = session_->markdownText();
   // End of the rule's own line (exclusive of its trailing newline). Removing [contentEnd, lineEnd)
   // deletes the blank line(s) that separated the paragraph from the rule PLUS the rule itself,
   // while leaving the blank line(s) after the rule intact — so the post-rule block stays a
@@ -825,7 +829,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(con
     return command;
   }
 
-  const QString markdown = session_->markdownText();
+  const PieceTable& markdown = session_->markdownText();
   const QString line = markdown.mid(lineStart, lineEnd - lineStart);
   const ListLineInfo info = listLineInfoFor(line);
   if (!info.valid) {
@@ -885,7 +889,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildExitListItem(cons
     return command;
   }
 
-  const QString markdown = session_->markdownText();
+  const PieceTable& markdown = session_->markdownText();
   const QString line = markdown.mid(lineStart, lineEnd - lineStart);
   const ListLineInfo info = listLineInfoFor(line);
   if (!info.valid) {
@@ -945,7 +949,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildInsertListItemAbo
   command.label = QStringLiteral("Insert List Item Above");
   command.fallbackSourceOffset = lineStart + insertion.size() - 1;
   if (info.ordered) {
-    const QString markdown = session_->markdownText();
+    const PieceTable& markdown = session_->markdownText();
     const qsizetype runEnd = orderedSiblingRunEnd(markdown, lineStart, markerColumn);
     command.removedLength = runEnd - lineStart;
     command.insertedText = insertion + renumberOrderedSiblings(markdown.mid(lineStart, runEnd - lineStart), markerColumn, info.orderedNumber + 1);
@@ -989,7 +993,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPrevious
     return command;
   }
 
-  const QString& markdown = session_->markdownText();
+  const PieceTable& markdown = session_->markdownText();
   const QString curLine = markdown.mid(curLineStart, curLineEnd - curLineStart);
   const ListLineInfo curInfo = listLineInfoFor(curLine);
   if (!curInfo.valid) {
@@ -1046,7 +1050,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithNextList
     return command;
   }
 
-  const QString& markdown = session_->markdownText();
+  const PieceTable& markdown = session_->markdownText();
   const QString nextLine = markdown.mid(nextLineStart, nextLineEnd - nextLineStart);
   const ListLineInfo nextInfo = listLineInfoFor(nextLine);
   if (!nextInfo.valid) {
@@ -1083,7 +1087,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(c
     return command;
   }
 
-  const QString& markdown = session_->markdownText();
+  const PieceTable& markdown = session_->markdownText();
   const QString line = markdown.mid(lineStart, lineEnd - lineStart);
   const ListLineInfo info = listLineInfoFor(line);
   if (!info.valid) {
@@ -1200,7 +1204,7 @@ QString TextBlockCommandBuilder::paragraphSeparatorFor(const BlockEditContext& c
     return QStringLiteral("\n\n");
   }
 
-  const QString& markdown = session_->markdownText();
+  const PieceTable& markdown = session_->markdownText();
   const qsizetype referenceOffset = context.contentRange.byteStart >= 0 ? context.contentRange.byteStart : context.blockRange.byteStart;
   const qsizetype lineStart = lineStartForOffset(markdown, referenceOffset);
   qsizetype lineEnd = lineStart;
@@ -1235,7 +1239,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentBlockQuote
     return command;
   }
 
-  const QString& markdown = session_->markdownText();
+  const PieceTable& markdown = session_->markdownText();
 
   // Source span whose depth-th ">" marker gets stripped on every line — the source-text
   // equivalent of a tree-level up-stream (pop the block out one level).
@@ -1307,7 +1311,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentBlockQuote
     return command;
   }
 
-  const QString& markdown = session_->markdownText();
+  const PieceTable& markdown = session_->markdownText();
   const qsizetype lineStart = lineStartForOffset(markdown, context.contentRange.byteStart);
   qsizetype lineEnd = lineStart;
   while (lineEnd < markdown.size() && markdown.at(lineEnd) != QLatin1Char('\n')) {

@@ -49,7 +49,7 @@ bool muffin::FileController::open(DocumentSession& session, QWidget* parent, QSt
   }
 
   session.setFilePath(path);
-  session.setMarkdownText(text, false);
+  session.openDocumentAsync(text);  // async parse keeps the UI responsive on huge files
   return true;
 }
 
@@ -57,7 +57,7 @@ bool muffin::FileController::save(DocumentSession& session, QWidget* parent) {
   if (session.filePath().isEmpty()) {
     return saveAs(session, parent);
   }
-  if (!writeTextFile(session.filePath(), session.markdownText(), parent)) {
+  if (!writeTextFile(session.filePath(), session.markdownText().toString(), parent)) {
     return false;
   }
   session.document().setModified(false);
@@ -100,7 +100,7 @@ bool muffin::FileController::saveAs(DocumentSession& session, QWidget* parent) {
   if (path.isEmpty()) {
     return false;
   }
-  if (!writeTextFile(path, session.markdownText(), parent)) {
+  if (!writeTextFile(path, session.markdownText().toString(), parent)) {
     return false;
   }
   // The previous path's draft (if any) is now obsolete: the content lives at `path`.

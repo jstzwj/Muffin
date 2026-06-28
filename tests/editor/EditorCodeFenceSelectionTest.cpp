@@ -107,8 +107,8 @@ void testCodeFenceSelectionCutDeletesLiteralOffsets() {
 
   require(controller.clipboardController().cut(), "code fence cut should delete active literal selection");
   require(QApplication::clipboard()->text().contains(QStringLiteral("beta")), "code fence cut clipboard should contain selected literal text");
-  require(session.markdownText().contains(QStringLiteral("alpha  gamma")), "code fence cut should remove selected literal text");
-  require(!session.markdownText().contains(QStringLiteral("beta")), "code fence cut should not leave selected literal text behind");
+  require(session.markdownText().toString().contains(QStringLiteral("alpha  gamma")), "code fence cut should remove selected literal text");
+  require(!session.markdownText().toString().contains(QStringLiteral("beta")), "code fence cut should not leave selected literal text behind");
 }
 
 // testKeyboardNavigationBasics (lines 829-848)

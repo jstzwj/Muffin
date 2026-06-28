@@ -72,7 +72,7 @@ void testEmptyParagraphAfterTable() {
   h.placeInEmptyParagraph();
 
   require(h.controller.inputController().deleteBackward(), "backspace should be handled");
-  require(h.session.markdownText() == table, "table source must be intact (no corruption)");
+  require(h.session.markdownText().toString() == table, "table source must be intact (no corruption)");
   require(rootHasOnlyBlockType(h.session, BlockType::Table), "empty paragraph after table should be removed");
 
   const CursorPosition c = h.controller.selection().cursorPosition();
@@ -90,7 +90,7 @@ void testTrailingCaretAfterTable() {
   require(h.controller.selection().cursorPosition().afterBlock, "caret should start on the trailing paragraph");
 
   require(h.controller.inputController().deleteBackward(), "backspace should be handled");
-  require(h.session.markdownText() == table, "trailing backspace must not change the table source");
+  require(h.session.markdownText().toString() == table, "trailing backspace must not change the table source");
   const CursorPosition c = h.controller.selection().cursorPosition();
   require(!c.afterBlock, "caret should leave the trailing paragraph");
   MarkdownNode* block = h.session.document().node(c.blockId);
@@ -106,7 +106,7 @@ void testEmptyParagraphAfterHtmlBlock() {
 
   require(h.controller.inputController().deleteBackward(), "backspace should be handled");
   require(rootHasOnlyBlockType(h.session, BlockType::HtmlBlock), "empty paragraph after HTML block should be removed");
-  require(h.session.markdownText().contains(html), "html source must be intact");
+  require(h.session.markdownText().toString().contains(html), "html source must be intact");
   const CursorPosition c = h.controller.selection().cursorPosition();
   require(!c.afterBlock, "caret should leave the empty paragraph");
   MarkdownNode* block = h.session.document().node(c.blockId);
@@ -122,7 +122,7 @@ void testEmptyParagraphAfterFrontMatterIsSafe() {
   h.load(fm + QStringLiteral("\n\n"));
   h.placeInEmptyParagraph();
   h.controller.inputController().deleteBackward();
-  require(h.session.markdownText().contains(fm), "front matter must survive backspace");
+  require(h.session.markdownText().toString().contains(fm), "front matter must survive backspace");
   require(h.controller.selection().hasCursor(), "caret should remain valid after backspace near front matter");
 }
 
@@ -146,7 +146,7 @@ void testEmptyParagraphAfterCommonBlocks() {
     h.load(k.source + QStringLiteral("\n\n"));
     h.placeInEmptyParagraph();
     require(h.controller.inputController().deleteBackward(), "backspace should be handled");
-    require(h.session.markdownText() == k.source, "empty paragraph after common block should be removed");
+    require(h.session.markdownText().toString() == k.source, "empty paragraph after common block should be removed");
     require(h.controller.selection().cursorPosition().isValid(), "caret should remain valid");
   }
 }
@@ -164,7 +164,7 @@ void testEmptyParagraphAfterThematicBreakIsSafe() {
   h.controller.inputController().deleteBackward();
   require(h.controller.selection().hasCursor(), "caret should remain valid after backspace near a thematic break");
   // Document must not be corrupted (the table bug class): still contains the thematic break.
-  require(h.session.markdownText().contains(QStringLiteral("---")), "thematic break must survive backspace");
+  require(h.session.markdownText().toString().contains(QStringLiteral("---")), "thematic break must survive backspace");
 }
 
 // Regression: typing "---" (→ thematic break), then clicking the virtual trailing area below it
@@ -188,7 +188,7 @@ void testTypingAfterThematicBreakRendersNoStaleMarker() {
   h.controller.inputController().insertText(QStringLiteral("123"));
 
   // Source must be exactly the break followed by the typed paragraph.
-  require(h.session.markdownText() == QStringLiteral("---\n\n123"), "markdown should be '---\\n\\n123'");
+  require(h.session.markdownText().toString() == QStringLiteral("---\n\n123"), "markdown should be '---\\n\\n123'");
 
   // The tree must hold only the thematic break and the new paragraph — no phantom in between.
   const auto& kids = h.session.document().root().children();
@@ -217,7 +217,7 @@ void testTypingAfterLoadedThematicBreakRendersNoStaleMarker() {
   h.placeInTrailing();
   h.controller.inputController().insertText(QStringLiteral("xyz"));
 
-  require(h.session.markdownText() == QStringLiteral("---\n\nxyz"), "markdown should be '---\\n\\nxyz'");
+  require(h.session.markdownText().toString() == QStringLiteral("---\n\nxyz"), "markdown should be '---\\n\\nxyz'");
   require(h.session.document().root().children().size() == 2, "should be exactly 2 blocks, no phantom");
 
   DocumentLayout layout;

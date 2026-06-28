@@ -18,7 +18,7 @@ void testInlineProjectionEntityDisplayAfterEdit() {
   require(session.applyTextDelta(0, 0, QStringLiteral("a"), true),
           "entity edit should apply");
 
-  const QString editedMarkdown = session.markdownText();
+  const QString editedMarkdown = session.markdownText().toString();
   require(editedMarkdown == QStringLiteral("aEntities are decoded by renderers: &amp; &lt; &gt; &copy;."),
           QStringLiteral("entity edited text mismatch: %1").arg(editedMarkdown));
 
@@ -102,8 +102,8 @@ void testInlineProjectionKeepsValidEntitiesDecodedAfterBrokenEntityEdit() {
   require(session.applyTextDelta(copyAmp, 1, QString(), true), "copy entity ampersand delete should apply");
 
   const QString markdown = QStringLiteral("Entities are decoded by renderers: &amp; &lt; &gt; copy;.");
-  require(session.markdownText() == markdown,
-          QStringLiteral("broken trailing entity markdown mismatch: %1").arg(session.markdownText()));
+  require(session.markdownText().toString() == markdown,
+          QStringLiteral("broken trailing entity markdown mismatch: %1").arg(session.markdownText().toString()));
   MarkdownNode* block = blockAt(session, 0);
 
   InlineProjection projection(block->inlines(), markdown, InlineProjectionState{}, 0);
@@ -138,7 +138,7 @@ void testInlineProjectionEntityDisplayAfterEditMultiParagraph() {
   require(session.applyTextDelta(0, 0, QStringLiteral("x"), true),
           "multi-paragraph entity edit should apply");
 
-  const QString editedMarkdown = session.markdownText();
+  const QString editedMarkdown = session.markdownText().toString();
   require(editedMarkdown == QStringLiteral("xFirst paragraph.\n\nEntities: &amp; &lt; &gt; &copy;."),
           QStringLiteral("multi-paragraph edited text mismatch: %1").arg(editedMarkdown));
 

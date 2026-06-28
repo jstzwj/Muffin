@@ -1,5 +1,7 @@
 #include "document/LineStartOffsetCache.h"
 
+#include "document/PieceTable.h"
+
 #include <QElapsedTimer>
 #include <QLoggingCategory>
 
@@ -75,7 +77,7 @@ void LineStartOffsetCache::rebuild(QStringView text) {
 }
 
 void LineStartOffsetCache::applyEdit(
-    qsizetype sourceStart, qsizetype removedLen, qsizetype insertedLen, QStringView fullPostEditText) {
+    qsizetype sourceStart, qsizetype removedLen, qsizetype insertedLen, const PieceTable& fullPostEditText) {
   if (sourceStart < 0 || removedLen < 0 || sourceStart + removedLen > textSize_) {
     return;
   }

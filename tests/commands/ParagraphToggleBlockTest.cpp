@@ -26,7 +26,7 @@ void testToggleCodeBlockSplitMiddle() {
   setSourceCursor(selection, blockAt(session, 0), 5, 5);
   require(paragraph.toggleCodeBlock(), "split code block at middle should succeed");
 
-  require(session.markdownText() == QStringLiteral("Hello\n\n```\n\n```\n\nworld"),
+  require(session.markdownText().toString() == QStringLiteral("Hello\n\n```\n\n```\n\nworld"),
           "split middle text mismatch");
 
   require(session.document().root().children().size() >= 3, "should have at least 3 blocks");
@@ -47,7 +47,7 @@ void testToggleCodeBlockSplitAtStart() {
   setSourceCursor(selection, blockAt(session, 0), 0, 0);
   require(paragraph.toggleCodeBlock(), "split code block at start should succeed");
 
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(md.contains(QLatin1String("```\n\n```")), "should contain empty code fence");
   require(md.contains(QLatin1String("Hello")), "text should be preserved after code fence");
   bool foundCodeFence = false;
@@ -69,7 +69,7 @@ void testToggleCodeBlockSplitAtEnd() {
   setSourceCursor(selection, blockAt(session, 0), 5, 5);
   require(paragraph.toggleCodeBlock(), "split code block at end should succeed");
 
-  require(session.markdownText() == QStringLiteral("Hello\n\n```\n\n```\n\n"),
+  require(session.markdownText().toString() == QStringLiteral("Hello\n\n```\n\n```\n\n"),
           "split at end text mismatch");
   require(blockAt(session, 0)->type() == BlockType::Paragraph, "first block should be paragraph");
   require(blockAt(session, 1)->type() == BlockType::CodeFence, "second block should be code fence");
@@ -87,7 +87,7 @@ void testToggleCodeBlockHeadingSplit() {
   setSourceCursor(selection, blockAt(session, 0), 5, 8);
   require(paragraph.toggleCodeBlock(), "heading split should succeed");
 
-  require(session.markdownText() == QStringLiteral("## Hello\n\n```\n\n```\n\n## world"),
+  require(session.markdownText().toString() == QStringLiteral("## Hello\n\n```\n\n```\n\n## world"),
           "heading split text mismatch");
   require(blockAt(session, 0)->type() == BlockType::Heading, "first should be heading");
   require(blockAt(session, 0)->headingLevel() == 2, "first heading level should be 2");
@@ -108,7 +108,7 @@ void testToggleCodeBlockInlineBold() {
   setSourceCursor(selection, blockAt(session, 0), 13, 13);
   require(paragraph.toggleCodeBlock(), "inline bold split should succeed");
 
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(md.contains(QLatin1String("```\n\n```")), "should contain empty code fence");
   require(md.startsWith(QLatin1String("before **bold**")), "bold should be closed in first paragraph");
   require(md.contains(QLatin1String("**text** after")), "bold should be reopened in last paragraph");
@@ -126,7 +126,7 @@ void testToggleCodeBlockWithSelection() {
   setSourceSelection(selection, blockAt(session, 0), 3, 3, 8, 8);
   require(paragraph.toggleCodeBlock(), "selection wrap in code block should succeed");
 
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(md.contains(QLatin1String("```\nlo wo\n```")), "selected text should be in code block");
   require(md.startsWith(QLatin1String("Hel")), "before text should be paragraph A");
   require(md.contains(QLatin1String("rld")), "after text should be paragraph B");
@@ -144,7 +144,7 @@ void testToggleCodeBlockSelectionHeading() {
   setSourceSelection(selection, blockAt(session, 0), 3, 6, 8, 11);
   require(paragraph.toggleCodeBlock(), "heading selection wrap should succeed");
 
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(md.contains(QLatin1String("```\nlo wo\n```")), "selected text in code block");
   require(md.contains(QLatin1String("## Hel")), "before part keeps heading prefix");
   require(md.contains(QLatin1String("## rld")), "after part gets heading prefix");
@@ -165,7 +165,7 @@ void testToggleCodeBlockConvertsBack() {
   require(paragraph.toggleCodeBlock(), "code -> paragraph should succeed");
 
   require(blockAt(session, 0)->type() == BlockType::Paragraph, "should become paragraph");
-  require(session.markdownText() == QStringLiteral("code here"), "code -> paragraph text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("code here"), "code -> paragraph text mismatch");
 }
 
 void testToggleCodeBlockEmptyConvertsBack() {
@@ -200,7 +200,7 @@ void testToggleCodeBlockMathToCode() {
   require(paragraph.toggleCodeBlock(), "math -> code should succeed");
 
   require(blockAt(session, 0)->type() == BlockType::CodeFence, "should become code fence");
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(md.contains(QLatin1String("```\nx=1\n```")), "math -> code text mismatch");
 }
 
@@ -216,7 +216,7 @@ void testToggleFormulaBlockSplitMiddle() {
   setSourceCursor(selection, blockAt(session, 0), 5, 5);
   require(paragraph.toggleFormulaBlock(), "formula split at middle should succeed");
 
-  require(session.markdownText() == QStringLiteral("Hello\n\n$$\n\n$$\n\nworld"),
+  require(session.markdownText().toString() == QStringLiteral("Hello\n\n$$\n\n$$\n\nworld"),
           "formula split text mismatch");
   require(blockAt(session, 0)->type() == BlockType::Paragraph, "first should be paragraph");
   require(blockAt(session, 1)->type() == BlockType::MathBlock, "second should be math block");
@@ -238,7 +238,7 @@ void testToggleFormulaBlockConvertsBack() {
   require(paragraph.toggleFormulaBlock(), "math -> paragraph should succeed");
 
   require(blockAt(session, 0)->type() == BlockType::Paragraph, "should become paragraph");
-  require(session.markdownText() == QStringLiteral("x^2"), "math -> paragraph text mismatch");
+  require(session.markdownText().toString() == QStringLiteral("x^2"), "math -> paragraph text mismatch");
 }
 
 void testToggleFormulaBlockCodeToMath() {
@@ -256,7 +256,7 @@ void testToggleFormulaBlockCodeToMath() {
   require(paragraph.toggleFormulaBlock(), "code -> math should succeed");
 
   require(blockAt(session, 0)->type() == BlockType::MathBlock, "should become math block");
-  const QString md = session.markdownText();
+  const QString md = session.markdownText().toString();
   require(md.contains(QLatin1String("$$\ncode\n$$")), "code -> math text mismatch");
 }
 

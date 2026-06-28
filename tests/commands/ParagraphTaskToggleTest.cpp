@@ -39,7 +39,7 @@ void testToggleUncheckedToChecked() {
   require(!item->taskChecked(), "first item should start unchecked");
 
   require(paragraph.toggleTaskListItem(item->id()), "toggle should succeed");
-  require(session.markdownText() == QStringLiteral("- [x] buy milk"), "unchecked item should become [x]");
+  require(session.markdownText().toString() == QStringLiteral("- [x] buy milk"), "unchecked item should become [x]");
 }
 
 void testToggleCheckedToUnchecked() {
@@ -54,7 +54,7 @@ void testToggleCheckedToUnchecked() {
   require(listItem(session, 0)->taskChecked(), "item should start checked");
 
   require(paragraph.toggleTaskListItem(listItem(session, 0)->id()), "toggle should succeed");
-  require(session.markdownText() == QStringLiteral("- [ ] done"), "checked item should become [ ]");
+  require(session.markdownText().toString() == QStringLiteral("- [ ] done"), "checked item should become [ ]");
 }
 
 void testTogglePreservesSiblingsAndContent() {
@@ -68,7 +68,7 @@ void testTogglePreservesSiblingsAndContent() {
   session.setMarkdownText(QStringLiteral("- [ ] a\n- [x] b\n- [ ] c"), false);
   // Toggle only the middle item.
   require(paragraph.toggleTaskListItem(listItem(session, 1)->id()), "toggling the middle item should succeed");
-  require(session.markdownText() == QStringLiteral("- [ ] a\n- [ ] b\n- [ ] c"),
+  require(session.markdownText().toString() == QStringLiteral("- [ ] a\n- [ ] b\n- [ ] c"),
           "only the toggled item's marker should change; siblings and content stay untouched");
 }
 
@@ -82,10 +82,10 @@ void testToggleUppercaseXNormalizesToLowercase() {
 
   session.setMarkdownText(QStringLiteral("- [X] done"), false);
   require(paragraph.toggleTaskListItem(listItem(session, 0)->id()), "toggling an uppercase-X item should succeed");
-  require(session.markdownText() == QStringLiteral("- [ ] done"), "[X] should uncheck to [ ]");
+  require(session.markdownText().toString() == QStringLiteral("- [ ] done"), "[X] should uncheck to [ ]");
   // Toggling back re-checks with a normalized lowercase x.
   require(paragraph.toggleTaskListItem(listItem(session, 0)->id()), "toggle back should succeed");
-  require(session.markdownText() == QStringLiteral("- [x] done"), "re-check should normalize to lowercase [x]");
+  require(session.markdownText().toString() == QStringLiteral("- [x] done"), "re-check should normalize to lowercase [x]");
 }
 
 void testToggleUndoRestores() {
@@ -101,7 +101,7 @@ void testToggleUndoRestores() {
   setSourceCursor(selection, listItem(session, 0), 0, 0);
 
   require(paragraph.toggleTaskListItem(listItem(session, 0)->id()), "toggle should succeed");
-  require(session.markdownText() == QStringLiteral("- [x] task"), "should be checked after toggle");
+  require(session.markdownText().toString() == QStringLiteral("- [x] task"), "should be checked after toggle");
 
   const EditTransaction undo = requireTextDeltaCommand(undoStack, "toggle task undo should be a TextDeltaCommand");
   session.applyTextDelta(
@@ -109,7 +109,7 @@ void testToggleUndoRestores() {
       undo.textDeltaCommand().delta.insertedText.size(),
       undo.textDeltaCommand().delta.removedText,
       true);
-  require(session.markdownText() == original, "undo should restore the original marker");
+  require(session.markdownText().toString() == original, "undo should restore the original marker");
 }
 
 void testToggleNonTaskItemFails() {
@@ -127,7 +127,7 @@ void testToggleNonTaskItemFails() {
   require(!item->isTaskItem(), "a plain bullet is not a task item");
 
   require(!paragraph.toggleTaskListItem(item->id()), "toggling a non-task item should fail");
-  require(session.markdownText() == original, "a failed toggle should leave the source unchanged");
+  require(session.markdownText().toString() == original, "a failed toggle should leave the source unchanged");
   require(!paragraph.toggleTaskListItem(NodeId{}), "toggling an invalid id should fail");
 }
 
@@ -148,7 +148,7 @@ void testTogglePreservesCaret() {
   require(paragraph.toggleTaskListItem(listItem(session, 1)->id()), "toggling the second item should succeed");
   require(selection.cursorPosition().text.sourceOffset == caretBefore,
           "a 1-character marker swap must not shift the caret");
-  require(session.markdownText() == QStringLiteral("- [ ] alpha\n- [ ] beta"), "second item should be unchecked");
+  require(session.markdownText().toString() == QStringLiteral("- [ ] alpha\n- [ ] beta"), "second item should be unchecked");
 }
 
 int main(int argc, char** argv) {

@@ -57,25 +57,29 @@ bool hasHeadingAfterDecoration(const RenderTheme& theme, int level) {
   return false;
 }
 
-QMarginsF blockMarginForFlow(const MarkdownNode& node, const RenderTheme& theme) {
-  if (node.type() == BlockType::Paragraph && isInsideBlockquote(node)) {
+// `fast` skips the per-node structural CSS cascade (mirrors spacingBetweenBlocks' fast path): the
+// estimate path passes fast=true to resolve load-time PROTOTYPE margins (nullptr node → elementStyle,
+// O(1)) instead of elementStyleForNode (O(sibling chain) on github). estimateContainer/estimateListItem
+// call these once per child, so the cascade was ~8s of the dense-file estimate.
+QMarginsF blockMarginForFlow(const MarkdownNode& node, const RenderTheme& theme, bool fast = false) {
+  if (!fast && node.type() == BlockType::Paragraph && isInsideBlockquote(node)) {
     const ThemeElementBoxStyle quoteParagraph = theme.elementBoxStyle(QStringLiteral("blockquote p"), &node);
     if (quoteParagraph.present && !quoteParagraph.margin.isNull()) { return quoteParagraph.margin; }
   }
-  return theme.blockMargin(node.type(), node.headingLevel(), &node);
+  return theme.blockMargin(node.type(), node.headingLevel(), fast ? nullptr : &node);
 }
 
-bool hasCssFlowMargin(const MarkdownNode& node, const RenderTheme& theme) {
-  return !blockMarginForFlow(node, theme).isNull();
+bool hasCssFlowMargin(const MarkdownNode& node, const RenderTheme& theme, bool fast = false) {
+  return !blockMarginForFlow(node, theme, fast).isNull();
 }
 
-qreal spacingBeforeInFlow(const MarkdownNode& node, const RenderTheme& theme) {
-  const QMarginsF margin = blockMarginForFlow(node, theme);
+qreal spacingBeforeInFlow(const MarkdownNode& node, const RenderTheme& theme, bool fast = false) {
+  const QMarginsF margin = blockMarginForFlow(node, theme, fast);
   return !margin.isNull() ? margin.top() : 0.0;
 }
 
-qreal spacingAfterInFlow(const MarkdownNode& node, const RenderTheme& theme) {
-  const QMarginsF margin = blockMarginForFlow(node, theme);
+qreal spacingAfterInFlow(const MarkdownNode& node, const RenderTheme& theme, bool fast = false) {
+  const QMarginsF margin = blockMarginForFlow(node, theme, fast);
   return !margin.isNull() ? margin.bottom() : theme.blockSpacing();
 }
 
@@ -92,11 +96,11 @@ bool isTightListNestedChildPair(const MarkdownNode& prev, const MarkdownNode& ne
   return item && item == prev.parent() && item->type() == BlockType::ListItem && list && list->type() == BlockType::List && list->listTight();
 }
 
-qreal spacingBetweenInFlow(const MarkdownNode& prev, const MarkdownNode& next, const RenderTheme& theme) {
+qreal spacingBetweenInFlow(const MarkdownNode& prev, const MarkdownNode& next, const RenderTheme& theme, bool fast = false) {
   if (isTightListItemSiblingPair(prev, next) || isTightListNestedChildPair(prev, next)) { return 0.0; }
-  const qreal after = spacingAfterInFlow(prev, theme);
-  const qreal before = spacingBeforeInFlow(next, theme);
-  return (hasCssFlowMargin(prev, theme) || hasCssFlowMargin(next, theme)) ? qMax(after, before) : after + before;
+  const qreal after = spacingAfterInFlow(prev, theme, fast);
+  const qreal before = spacingBeforeInFlow(next, theme, fast);
+  return (hasCssFlowMargin(prev, theme, fast) || hasCssFlowMargin(next, theme, fast)) ? qMax(after, before) : after + before;
 }
 
 bool isVirtualEmptyParagraphNode(const MarkdownNode& node) {
@@ -106,11 +110,6 @@ bool isVirtualEmptyParagraphNode(const MarkdownNode& node) {
 
 bool omitVirtualEmptyParagraphInRenderFlow(const MarkdownNode& node) {
   return isVirtualEmptyParagraphNode(node) && isInsideBlockquote(node);
-}
-
-// markdown/showLineNumbers (default off): reserve a left gutter in code fences for line numbers.
-bool showLineNumbersEnabled() {
-  return QSettings().value(QStringLiteral("markdown/showLineNumbers"), false).toBool();
 }
 
 // Width to right-align 1..lineCount in a code-fence gutter, measured with the zoom-aware code font
@@ -127,19 +126,6 @@ qreal codeLineNumberGutterWidth(const QString& literal, const RenderTheme& theme
   // Gutter = 1-char left padding + the digits + a 2-char gap to the code. paintCodeLineNumbers
   // right-aligns the number leaving that 2-char gap (numRightX = codeRect.left() - 2*digitWidth).
   return static_cast<qreal>(digits + 1 + 2) * digitWidth;
-}
-
-// markdown/codeBlockWrap (default on): whether code-fence source lines soft-wrap. Mirrors the
-// same-named helper in BlockLayout.cpp so build-time height/scroll math and paint agree.
-bool codeBlockWrapEnabled() {
-  return QSettings().value(QStringLiteral("markdown/codeBlockWrap"), true).toBool();
-}
-
-// markdown/breakOnSingleNewline (default on): render a single '\n' soft break as a line break
-// instead of joining it into the paragraph (CommonMark). Read at build time so a
-// preference toggle + refreshVisibleBlocks re-renders without a reparse — same model as codeBlockWrap.
-bool breakOnSingleNewlineEnabled() {
-  return QSettings().value(QStringLiteral("markdown/breakOnSingleNewline"), true).toBool();
 }
 
 // markdown/convertOnRendering + the smart-quotes/dashes sub-toggles drive display-only SmartyPants
@@ -290,12 +276,15 @@ bool selectionFocusesNode(const SelectionRange& selection, NodeId nodeId) {
   return nodeId.isValid() && selection.focus.blockId == nodeId && selection.focus.text.nodeId == nodeId;
 }
 
-bool isEmptyDocumentParagraph(const QString& markdown, const MarkdownNode& node) {
+// Templated so it reads the document text from either a QString or a PieceTable -- both expose
+// isEmpty(). The builder passes its PieceTable view (md()).
+template <typename Text>
+bool isEmptyDocumentParagraph(const Text& markdown, const MarkdownNode& node) {
   const SourceRange range = node.sourceRange();
   return markdown.isEmpty() && node.type() == BlockType::Paragraph && range.byteStart == 0 && range.byteEnd == 0;
 }
 
-QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& theme, qreal width) {
+QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& theme, qreal width, bool breakOnSingleNewline) {
   int columnCount = 0;
   for (const auto& row : table.children()) {
     columnCount = qMax(columnCount, static_cast<int>(row->children().size()));
@@ -315,7 +304,7 @@ QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& t
       }
       const MarkdownNode& cell = *row->children().at(static_cast<size_t>(column));
       const QFont font = row->tableRowIsHeader() ? theme.headingFont(6) : theme.paragraphFont();
-      preferred = qMax(preferred, maxLiteralLineWidth(InlineProjection::plainTextForInlines(cell.inlines(), breakOnSingleNewlineEnabled()), font));
+      preferred = qMax(preferred, maxLiteralLineWidth(InlineProjection::plainTextForInlines(cell.inlines(), breakOnSingleNewline), font));
     }
     widths[column] = preferred + padding.left() + padding.right();
     preferredTotal += widths[column];
@@ -346,12 +335,12 @@ QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& t
 
 }  // namespace
 
-void BlockLayoutBuilder::setMarkdownText(const QString& markdownText, const LineStartOffsetCache& lineOffsets) {
+void BlockLayoutBuilder::setMarkdownText(const PieceTable& markdownText, const LineStartOffsetCache& lineOffsets) {
   markdownText_ = &markdownText;  // non-owning view; the document outlives the build
   lineOffsets_ = &lineOffsets;
 }
 
-const QString& BlockLayoutBuilder::md() const {
+const PieceTable& BlockLayoutBuilder::md() const {
   return *markdownText_;  // defaults to emptyText_; configureBuilder refreshes it before each build
 }
 
@@ -372,6 +361,22 @@ void BlockLayoutBuilder::setCodeFenceScroll(CodeFenceScrollController* controlle
 }
 
 BlockLayoutBuilder::BlockLayoutBuilder() : perfEnabled_(blockBuildPerf().isDebugEnabled()) {}
+
+void BlockLayoutBuilder::refreshRenderSettings() {
+  // One QSettings hit per setting per layout pass, not per block. See header note.
+  QSettings s;
+  breakOnSingleNewline_ = s.value(QStringLiteral("markdown/breakOnSingleNewline"), true).toBool();
+  codeBlockWrap_ = s.value(QStringLiteral("markdown/codeBlockWrap"), true).toBool();
+  showLineNumbers_ = s.value(QStringLiteral("markdown/showLineNumbers"), false).toBool();
+  // The estimate caches are keyed by elementKey|headingLevel only (no theme dimension), so a theme
+  // switch would otherwise keep serving the previous theme's lineHeight/avgCharWidth. Clearing here
+  // (once per layout pass) keeps them fresh: they re-populate within a single estimate pass — many
+  // blocks share the same elementKey — but never leak across passes or theme changes.
+  // fontMetricsCache_ is keyed by QFont::key() and already self-invalidates on a font change, so
+  // it is left alone.
+  lineHeightCache_.clear();
+  avgCharWidthCache_.clear();
+}
 
 void BlockLayoutBuilder::dumpBuildBreakdown() const {
   if (!perfEnabled_) {
@@ -467,7 +472,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   options.pendingPrefixLength = pendingPrefixLengthFor(node, editableSource);
   options.isMisspelled = spellMisspelledPredicate();
   options.smartPunct = smartPunctRenderOptions();
-  options.breakOnSingleNewline = breakOnSingleNewlineEnabled();
+  options.breakOnSingleNewline = breakOnSingleNewline_;
   // Element-level computed text style: headings keep their legacy heading getter
   // fallback, while paragraphs can now differ by context (`p` vs `blockquote p`).
   if (node.type() == BlockType::Heading) {
@@ -680,7 +685,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   }
   options.isMisspelled = spellMisspelledPredicate();
   options.smartPunct = smartPunctRenderOptions();
-  options.breakOnSingleNewline = breakOnSingleNewlineEnabled();
+  options.breakOnSingleNewline = breakOnSingleNewline_;
   {
     BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
     options.baseTextColor = theme.textColorForElement(elementKey, &node);
@@ -759,12 +764,12 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
                               (node.type() == BlockType::HtmlBlock && editingHtmlBlockId_ == node.id());
   layout->setLiteralEditing(editingLiteral);
   const qreal lineNumberGutter =
-      (node.type() == BlockType::CodeFence && showLineNumbersEnabled())
+      (node.type() == BlockType::CodeFence && showLineNumbers_)
           ? codeLineNumberGutterWidth(layout->literal(), theme)
           : 0.0;
   layout->setLineNumberGutterWidth(lineNumberGutter);
   // Code fences honor markdown/codeBlockWrap; other literal blocks always wrap.
-  const bool codeWrap = node.type() == BlockType::CodeFence ? codeBlockWrapEnabled() : true;
+  const bool codeWrap = node.type() == BlockType::CodeFence ? codeBlockWrap_ : true;
   // Measure the widest source line so the block knows whether it is horizontally scrollable and
   // the scrollbar thumb ratio. Reserved strip height makes room for the always-on scrollbar.
   qreal reservedStrip = 0.0;
@@ -879,7 +884,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
     return layout;
   }
 
-  const QVector<qreal> columnWidths = tableColumnWidths(node, theme, width);
+  const QVector<qreal> columnWidths = tableColumnWidths(node, theme, width, breakOnSingleNewline_);
   const QMarginsF padding = theme.tableCellPadding();
   const QVector<TableAlignment> alignments = node.tableAlignments();
   std::vector<BlockLayout::TableRowLayout> rows;
@@ -906,7 +911,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       }
       options.isMisspelled = spellMisspelledPredicate();
       options.smartPunct = smartPunctRenderOptions();
-      options.breakOnSingleNewline = breakOnSingleNewlineEnabled();
+      options.breakOnSingleNewline = breakOnSingleNewline_;
   options.smartPunct = smartPunctRenderOptions();
       {
         BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
@@ -1382,6 +1387,17 @@ qreal estimateWrappedLines(QStringView text, qreal charsPerLine) {
   return std::max(lines, qreal(1.0));
 }
 
+// O(1) wrapped-line estimate from a plain character count and an average characters-per-line
+// capacity — no text scan. Paragraph source rarely embeds hard newlines (SoftBreak inlines split
+// at parse time), so a pure char-budget count is a close approximation; the visible-window build
+// still resolves exact heights on promotion. Used by the estimate path to avoid materializing
+// inline text (plainTextForInlines + per-char walks), which was ~20-30s of the open estimate on a
+// 250k-block / 2.1M-inline doc.
+qreal estimateWrappedLinesFromCharCount(qsizetype charCount, qreal charsPerLine) {
+  const qreal cpl = std::max(charsPerLine, qreal(1.0));
+  return std::max(qreal(1.0), std::ceil(static_cast<qreal>(std::max<qsizetype>(charCount, 0)) / cpl));
+}
+
 }  // namespace
 
 qreal BlockLayoutBuilder::estimateLineHeight(const QFont& font) const {
@@ -1431,6 +1447,48 @@ qreal BlockLayoutBuilder::avgCharWidthForText(QStringView text, const QFont& fon
   return count > 0 ? total / static_cast<qreal>(count) : wideAdvance;
 }
 
+// O(1) variant of avgCharWidthForText: returns the cached narrow advance only, with no per-char
+// classification walk. The estimate path assumes narrow-char density (exact for ASCII; for CJK it
+// over-estimates chars-per-line, under-estimating wrapped lines). Since the estimate is only a
+// scrollbar placeholder — mustMeasure blocks and viewport promotion resolve exact heights — the CJK
+// imprecision is acceptable and lets the lazy estimate loop skip inline-text materialization.
+qreal BlockLayoutBuilder::avgCharWidthForFont(const QFont& font) const {
+  const QString key = font.key();
+  auto it = fontMetricsCache_.constFind(key);
+  if (it != fontMetricsCache_.constEnd()) {
+    return it.value().second;  // narrowAdvance
+  }
+  const QFontMetricsF metrics(font);
+  const qreal wideAdvance = metrics.horizontalAdvance(QChar(0x5B57));    // '字' (CJK ideograph)
+  const qreal narrowAdvance = metrics.horizontalAdvance(QStringLiteral("abcdefghijklmnopqrstuvwxyz0123456789 ")) /
+                              static_cast<qreal>(37);
+  fontMetricsCache_.insert(key, {wideAdvance, narrowAdvance});
+  return narrowAdvance;
+}
+
+qreal BlockLayoutBuilder::cachedEstimateLineHeight(const RenderTheme& theme, const QString& elementKey, BlockType type, int headingLevel) const {
+  const QString cacheKey = elementKey + QLatin1Char('|') + QString::number(headingLevel);
+  auto it = lineHeightCache_.constFind(cacheKey);
+  if (it != lineHeightCache_.constEnd()) {
+    return it.value();
+  }
+  const qreal h = estimateLineHeightForElement(theme, elementKey, type, nullptr, headingLevel);
+  lineHeightCache_.insert(cacheKey, h);
+  return h;
+}
+
+qreal BlockLayoutBuilder::cachedAvgCharWidthForElement(const RenderTheme& theme, const QString& elementKey, bool isHeading, int headingLevel) const {
+  const QString cacheKey = elementKey + QLatin1Char('|') + QString::number(headingLevel);
+  auto it = avgCharWidthCache_.constFind(cacheKey);
+  if (it != avgCharWidthCache_.constEnd()) {
+    return it.value();
+  }
+  const QFont font = isHeading ? theme.headingFont(headingLevel) : theme.textFontForElement(elementKey, nullptr);
+  const qreal w = avgCharWidthForFont(font);
+  avgCharWidthCache_.insert(cacheKey, w);
+  return w;
+}
+
 BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateHeight(const MarkdownNode& node, const RenderTheme& theme, qreal width, int depth) const {
   switch (node.type()) {
     case BlockType::Paragraph:
@@ -1467,17 +1525,26 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateParagraphLike(con
   // skipping the per-node structural cascade. github's structural selectors match only lists/tables,
   // so paragraph estimates are identical to the structural result; the visible-window build
   // (promoteSlot → buildParagraphLike) still resolves structural style for exact heights.
-  const QFont font = isHeading ? theme.headingFont(node.headingLevel()) : theme.textFontForElement(elementKey, nullptr);
-  const qreal lineHeight = estimateLineHeightForElement(theme, elementKey, node.type(), nullptr, node.headingLevel());
-  const QString text = InlineProjection::plainTextForInlines(node.inlines(), breakOnSingleNewlineEnabled());
+  const qreal lineHeight = cachedEstimateLineHeight(theme, elementKey, node.type(), node.headingLevel());
+  // O(1) estimate: derive the wrapped-line count from the block's source char count (sourceRange is
+  // UTF-16 code units ≈ visible chars) + a cached per-font narrow advance, WITHOUT materializing
+  // the inline text. plainTextForInlines + per-char walks were ~20-30s of open on a 2.1M-inline doc.
+  // sourceRange().byteLength() over-counts inline markup (`**`, `[](url)`) and markers, but the
+  // estimate is only a scrollbar placeholder (mustMeasure + viewport promotion resolve exact
+  // heights), so the imprecision is harmless.
+  const qsizetype charCount = node.sourceRange().byteLength();
   // Mirror buildParagraphLike: an inline ::before marker narrows the wrap width.
   const qreal beforeAdvance = isHeading ? theme.headingBeforeAdvance(node.headingLevel()) : 0.0;
-  const qreal charsPerLine = std::max(qreal(1.0), std::floor(std::max<qreal>(1.0, width - beforeAdvance) / avgCharWidthForText(QStringView(text), font)));
-  qreal height = estimateWrappedLines(QStringView(text), charsPerLine) * lineHeight;
+  const qreal avgCharWidth = cachedAvgCharWidthForElement(theme, elementKey, isHeading, node.headingLevel());
+  const qreal charsPerLine = std::max(qreal(1.0), std::floor(std::max<qreal>(1.0, width - beforeAdvance) / avgCharWidth));
+  qreal height = estimateWrappedLinesFromCharCount(charCount, charsPerLine) * lineHeight;
   if (isHeading && node.headingLevel() <= 2) {
     height += theme.blockSpacing() * 0.35;
   }
-  return {height, inlinesContainSizedContent(node.inlines())};
+  // mustMeasure dropped: DocumentLayout never reads EstimateResult.mustMeasure (promotion is purely
+  // viewport-visibility-driven), so the inlinesContainSizedContent walk was pure waste on the
+  // estimate path (~2s of the 250k-block open estimate).
+  return {height, false};
 }
 
 BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateContainer(const MarkdownNode& node, const RenderTheme& theme, qreal width, int depth) const {
@@ -1503,14 +1570,14 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateContainer(const M
   for (const auto& child : node.children()) {
     if (omitVirtualEmptyParagraphInRenderFlow(*child)) { continue; }
     omittedOnlyRenderChildren = false;
-    if (previousChild) { total += spacingBetweenInFlow(*previousChild, *child, theme); }
-    else if (!firstChildMarginCollapses) { total += spacingBeforeInFlow(*child, theme); }
+    if (previousChild) { total += spacingBetweenInFlow(*previousChild, *child, theme, /*fast=*/true); }
+    else if (!firstChildMarginCollapses) { total += spacingBeforeInFlow(*child, theme, /*fast=*/true); }
     const EstimateResult r = estimateHeight(*child, theme, childWidth, depth + 1);
     total += r.height;
     mustMeasure = mustMeasure || r.mustMeasure;
     previousChild = child.get();
   }
-  if (previousChild && !lastChildMarginCollapses) { total += spacingAfterInFlow(*previousChild, theme); }
+  if (previousChild && !lastChildMarginCollapses) { total += spacingAfterInFlow(*previousChild, theme, /*fast=*/true); }
   total += qpad.bottom() + qborder.bottom();
   if (!previousChild && !(quoteBox && omittedOnlyRenderChildren)) { total += QFontMetricsF(theme.paragraphFont()).height(); }
   return {total, mustMeasure};
@@ -1521,11 +1588,14 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateListItem(const Ma
   qreal contentIndent = theme.listIndent();
   const bool ordered = listParent && listParent->listKind() == ListKind::Ordered;
   if (ordered && listParent) {
+    // O(1) marker width: an ordered marker is at most "<itemCount>.", so its digit count bounds the
+    // width. The old loop measured EVERY sibling's marker here (O(N) per item, and estimateContainer
+    // calls this once per item → O(N²) per list — ~5s on the dense-file estimate).
     const QFontMetricsF metrics(theme.paragraphFont());
-    qreal widestMarker = 0;
-    for (qsizetype i = 0; i < static_cast<qsizetype>(listParent->children().size()); ++i) {
-      widestMarker = std::max(widestMarker, metrics.horizontalAdvance(textForListMarker(*listParent, i)));
-    }
+    const qsizetype itemCount = listParent->children().size();
+    const int digits = itemCount <= 0 ? 1 : static_cast<int>(std::log10(static_cast<qreal>(itemCount))) + 1;
+    const qreal widestMarker =
+        metrics.horizontalAdvance(QLatin1Char('0')) * digits + metrics.horizontalAdvance(QStringLiteral("."));
     contentIndent = std::max(theme.listIndent(), widestMarker + theme.listMarkerGap());
   }
   const qreal contentWidth = std::max<qreal>(1.0, width - contentIndent);
@@ -1533,15 +1603,17 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateListItem(const Ma
   const QVector<InlineNode> primary = primaryInlinesForListItem(node);
   const QString elementKey = isInsideBlockquote(node) ? QStringLiteral("blockquote p") : QStringLiteral("li");
   // Estimate uses the prototype style only (see estimateParagraphLike) — no per-node structural cascade.
-  const QFont font = theme.textFontForElement(elementKey, nullptr);
-  const qreal lineHeight = estimateLineHeightForElement(theme, elementKey, BlockType::Paragraph, nullptr);
+  const qreal lineHeight = cachedEstimateLineHeight(theme, elementKey, BlockType::Paragraph, 0);
   qreal inlineHeight = lineHeight;
   bool mustMeasure = false;
   if (!primary.isEmpty()) {
-    const QString text = InlineProjection::plainTextForInlines(primary, breakOnSingleNewlineEnabled());
-    const qreal charsPerLine = std::max(qreal(1.0), std::floor(contentWidth / avgCharWidthForText(QStringView(text), font)));
-    inlineHeight = estimateWrappedLines(QStringView(text), charsPerLine) * lineHeight;
-    mustMeasure = inlinesContainSizedContent(primary);
+    // O(1) estimate from the item's source char count (see estimateParagraphLike). byteLength
+    // includes the list marker and any nested-block source, so it over-counts, but the estimate is
+    // only a scrollbar placeholder (promotion resolves the exact height).
+    const qsizetype charCount = node.sourceRange().byteLength();
+    const qreal charsPerLine = std::max(qreal(1.0), std::floor(contentWidth / cachedAvgCharWidthForElement(theme, elementKey, false, 0)));
+    inlineHeight = estimateWrappedLinesFromCharCount(charCount, charsPerLine) * lineHeight;
+    // mustMeasure dropped (see estimateParagraphLike) — unconsumed by DocumentLayout.
   }
   qreal height = inlineHeight;
 
@@ -1555,7 +1627,7 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateListItem(const Ma
       continue;
     }
     const EstimateResult r = estimateHeight(*child, theme, contentWidth, depth + 1);
-    height += (previousChild ? spacingBetweenInFlow(*previousChild, *child, theme) : theme.blockSpacing()) + r.height;
+    height += (previousChild ? spacingBetweenInFlow(*previousChild, *child, theme, /*fast=*/true) : theme.blockSpacing()) + r.height;
     mustMeasure = mustMeasure || r.mustMeasure;
     previousChild = child.get();
   }
@@ -1569,12 +1641,12 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateLiteralBlock(cons
   const qreal lineHeight = isMath ? std::max<qreal>(14.0, QFontMetricsF(theme.mathFont()).height()) : theme.codeLineHeight();
   const QMarginsF padding = theme.codePadding();
   const qreal lineNumberGutter =
-      (node.type() == BlockType::CodeFence && showLineNumbersEnabled()) ? codeLineNumberGutterWidth(literal, theme) : 0.0;
+      (node.type() == BlockType::CodeFence && showLineNumbers_) ? codeLineNumberGutterWidth(literal, theme) : 0.0;
   const qreal innerWidth = std::max<qreal>(1.0, width - padding.left() - padding.right() - lineNumberGutter);
-  const qreal avgCharWidth = avgCharWidthForText(QStringView(literal), font);
+  const qreal avgCharWidth = avgCharWidthForFont(font);
   qreal lines;
   qreal reservedStrip = 0.0;
-  if (node.type() == BlockType::CodeFence && !codeBlockWrapEnabled()) {
+  if (node.type() == BlockType::CodeFence && !codeBlockWrap_) {
     // NoWrap: one visual line per physical line; reserve the scrollbar strip if the widest line
     // (estimated) overflows, matching the build path so the scrollbar range doesn't jump on promotion.
     lines = literal.isEmpty() ? 1.0 : qreal(literal.count(QLatin1Char('\n'))) + 1.0;
@@ -1611,34 +1683,32 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateTable(const Markd
   if (rowCount == 0 || columnCount == 0) {
     return {QFontMetricsF(theme.paragraphFont()).height(), false};
   }
-  const QVector<qreal> columnWidths = tableColumnWidths(node, theme, width);
+  // O(1) per cell: equal-split column widths + each cell's source char count, instead of
+  // tableColumnWidths (which materializes every cell's inline text) and per-cell plainTextForInlines.
+  // The build path (buildTable) still resolves exact column widths via tableColumnWidths; this
+  // estimate only sizes the scrollbar (mustMeasure/promotion resolve exact heights).
   const QMarginsF padding = theme.tableCellPadding();
+  const qreal columnWidth = width / columnCount;
+  const qreal innerWidth = std::max<qreal>(1.0, columnWidth - padding.left() - padding.right());
   const QFont paraFont = theme.paragraphFont();
   const QFont headFont = theme.headingFont(6);
   const qreal paraLineHeight = estimateLineHeight(paraFont);
   const qreal headLineHeight = estimateLineHeight(headFont);
+  const qreal paraCharsPerLine = std::max(qreal(1.0), std::floor(innerWidth / avgCharWidthForFont(paraFont)));
+  const qreal headCharsPerLine = std::max(qreal(1.0), std::floor(innerWidth / avgCharWidthForFont(headFont)));
   qreal total = 0;
-  bool mustMeasure = false;
   for (const auto& row : node.children()) {
-    qreal rowHeight = QFontMetricsF(theme.paragraphFont()).height() + padding.top() + padding.bottom();
-    int column = 0;
+    qreal rowHeight = QFontMetricsF(paraFont).height() + padding.top() + padding.bottom();
+    const bool header = row->tableRowIsHeader();
     for (const auto& cell : row->children()) {
-      const qreal columnWidth = column < columnWidths.size() ? columnWidths.at(column) : width / columnCount;
-      const qreal innerWidth = std::max<qreal>(1.0, columnWidth - padding.left() - padding.right());
-      const bool header = row->tableRowIsHeader();
-      const QString text = InlineProjection::plainTextForInlines(cell->inlines(), breakOnSingleNewlineEnabled());
-      const qreal charsPerLine = std::max(qreal(1.0), std::floor(innerWidth / avgCharWidthForText(QStringView(text), header ? headFont : paraFont)));
-      const qreal lines = estimateWrappedLines(QStringView(text), charsPerLine);
+      const qsizetype charCount = cell->sourceRange().byteLength();
+      const qreal lines = estimateWrappedLinesFromCharCount(charCount, header ? headCharsPerLine : paraCharsPerLine);
       const qreal cellHeight = lines * (header ? headLineHeight : paraLineHeight) + padding.top() + padding.bottom();
       rowHeight = std::max(rowHeight, cellHeight);
-      if (inlinesContainSizedContent(cell->inlines())) {
-        mustMeasure = true;
-      }
-      ++column;
     }
     total += rowHeight;
   }
-  return {total, mustMeasure};
+  return {total, false};  // mustMeasure dropped — unconsumed by DocumentLayout
 }
 
 BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateDefinition(const MarkdownNode& node, const RenderTheme& theme, qreal width) const {

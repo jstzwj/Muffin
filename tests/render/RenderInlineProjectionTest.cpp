@@ -339,7 +339,7 @@ void testEntityDisplayAfterEdit() {
   require(session.applyTextDelta(0, 0, QStringLiteral("a"), true),
           "entity edit should apply");
 
-  const QString edited = session.markdownText();
+  const QString edited = session.markdownText().toString();
   const QVector<InlineNode> editedInlines = session.document().root().children().front()->inlines();
 
   InlineLayout editedLayout;
@@ -461,7 +461,7 @@ void testTableCellEscapedPipeRendersDecoded() {
     require(cell != nullptr, QStringLiteral("escaped pipe cell missing for: %1").arg(c.markdown));
 
     const SourceRange sr = cell->sourceRange();
-    const QString md = session.markdownText();
+    const QString md = session.markdownText().toString();
     const QString sourceSlice = md.mid(sr.byteStart, sr.byteEnd - sr.byteStart);
     options.sourceBase = sr.byteStart;
 
@@ -558,7 +558,7 @@ void testBrTagRendersAsHardBreakInTableCell() {
     const MarkdownNode* cell = TableModelOps::cellAt(*table, 1, 0);
     require(cell != nullptr, QStringLiteral("br table cell missing for tag %1").arg(tag));
     const SourceRange sr = cell->sourceRange();
-    const QString md = session.markdownText();
+    const QString md = session.markdownText().toString();
     const QString sourceSlice = md.mid(sr.byteStart, sr.byteEnd - sr.byteStart);
     options.sourceBase = sr.byteStart;
 
@@ -669,7 +669,7 @@ void testEmptyTableCellRendersEmpty() {
   MarkdownNode& table = *session.document().root().children().front();
   selectTableCell(selection, table, 1, 0);
   require(controller.insertColumnAfter(), QStringLiteral("insertColumnAfter should succeed"));
-  const QStringList afterColumn = tableCellDisplayTexts(session.markdownText());
+  const QStringList afterColumn = tableCellDisplayTexts(session.markdownText().toString());
   require(afterColumn.size() == 6, QStringLiteral("table should have 6 cells after column insert: %1").arg(afterColumn.size()));
   for (int i = 0; i < afterColumn.size(); ++i) {
     require(!afterColumn.at(i).contains(QLatin1Char('|')),
@@ -685,7 +685,7 @@ void testEmptyTableCellRendersEmpty() {
   MarkdownNode& rowTable = *session.document().root().children().front();
   selectTableCell(selection, rowTable, 1, 0);
   require(controller.insertRowAfter(), QStringLiteral("insertRowAfter should succeed"));
-  const QStringList afterRow = tableCellDisplayTexts(session.markdownText());
+  const QStringList afterRow = tableCellDisplayTexts(session.markdownText().toString());
   require(afterRow.size() == 6, QStringLiteral("table should have 6 cells after row insert: %1").arg(afterRow.size()));
   for (int i = 0; i < afterRow.size(); ++i) {
     require(!afterRow.at(i).contains(QLatin1Char('|')),

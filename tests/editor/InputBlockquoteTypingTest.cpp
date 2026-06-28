@@ -63,7 +63,7 @@ void testTypeBlockquoteOpenerFromEmptyDocumentKeepsCaretValid() {
   BrushQueue brushQueue;
   InputController input;
   wireInput(input, session, selection, undoStack, brushQueue, nullptr, {});
-  require(session.markdownText().isEmpty(), "start empty");
+  require(session.markdownText().toString().isEmpty(), "start empty");
 
   require(input.insertText(QStringLiteral(">")), "insert '>' should succeed");
   require(selection.cursorPosition().blockId.isValid(), "caret must remain valid after typing '>'");
@@ -74,7 +74,7 @@ void testTypeBlockquoteOpenerFromEmptyDocumentKeepsCaretValid() {
   // Real content now follows: the quote must materialise and the caret must land inside the child
   // paragraph (not on the container and not lost).
   require(input.insertText(QStringLiteral("H")), "insert 'H' should succeed");
-  require(session.markdownText() == QStringLiteral("> H"), "text should be '> H'");
+  require(session.markdownText().toString() == QStringLiteral("> H"), "text should be '> H'");
   const MarkdownNode* quote = firstChild(session.document().root());
   require(quote != nullptr && quote->type() == BlockType::BlockQuote, "should now be a real blockquote");
   const MarkdownNode* inner = firstChild(*quote);

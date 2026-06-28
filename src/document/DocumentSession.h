@@ -4,9 +4,12 @@
 #include "document/TopLevelRangeChange.h"
 #include "parser/CmarkGfmParser.h"
 
+#include <QFutureWatcher>
 #include <QObject>
 #include <QString>
 #include <QVector>
+
+#include <memory>
 
 namespace muffin {
 
@@ -27,15 +30,28 @@ public:
 
   QString filePath() const;
   QString displayName() const;
-  const QString& markdownText() const;
+  // Zero-copy view of the document's piece-table text (delegates to MarkdownDocument). Callers that
+  // need a contiguous QString call .toString(); most read size/mid/at directly. See MarkdownDocument.
+  const PieceTable& markdownText() const { return document_.markdownText(); }
   qint64 lastParseElapsedMs() const;
   bool lastParseWasLocalEdit() const;
   bool lastLocalEditChangedTopLevelStructure() const;
   TopLevelRangeChange lastLocalTopLevelRangeChange() const;
+  // True while an async open parse (openDocumentAsync) is in flight on the worker thread. document_
+  // holds the stale pre-open text during this window, so callers MUST treat the document as
+  // read-only: applyTextDelta rejects edits and InputController drops keystrokes, so a stray edit
+  // can't land on the stale text and supersede (discard) the worker's parsed result for the open.
+  bool isAsyncParseInProgress() const;
 
   void newDocument();
   void setFilePath(QString path);
   void setMarkdownText(QString text, bool modified);
+  // Asynchronous full-parse entry used by FileController::open: runs parser_.parseDocument on a
+  // worker thread so the UI stays responsive on huge files, then finishes (setMarkdownText +
+  // relativize + emit parsed) on the GUI thread via finishAsyncParse. All other entry points stay
+  // synchronous. Supersession: any newer parse or local edit bumps parseGeneration_, so a stale
+  // worker's result is discarded.
+  void openDocumentAsync(QString text);
   void updateFromEditor(QString text);
   // Applies new parse options. When they differ from the current ones the document is re-parsed
   // (full path: parseAndStore sets lastParseWasLocalEdit_=false, so the rendered view rebuilds via
@@ -64,10 +80,13 @@ signals:
   void documentLocallyEdited(qsizetype start, qsizetype removedLength, QString insertedText);
   void filePathChanged(QString path);
   void parsed(qint64 elapsedMs);
+  void parseBusy(bool busy);  // true while an async open parse is in flight (view shows a loading state)
   void modifiedChanged(bool modified);
 
 private:
-  void parseAndStore(QString text, bool modified, QVector<qsizetype> demoteAtOffsets = {});
+  void parseAndStore(QString text, bool modified, QVector<qsizetype> demoteAtOffsets = {}, bool async = false);
+  // GUI-thread completion of an async parseAndStore (async=true). Discards the result if superseded.
+  void finishAsyncParse();
   bool tryApplyTopLevelLocalEdit(
       qsizetype sourceStart,
       qsizetype sourceEnd,
@@ -83,6 +102,14 @@ private:
   bool lastParseWasLocalEdit_ = false;
   bool lastLocalEditChangedTopLevelStructure_ = false;
   TopLevelRangeChange lastLocalTopLevelRangeChange_;
+  // Async open-parse state. Only the FileController::open path passes async=true; everything else
+  // runs the synchronous code path unchanged.
+  QFutureWatcher<std::shared_ptr<ParseResult>>* parseWatcher_ = nullptr;
+  quint64 parseGeneration_ = 0;   // bumped on every parseAndStore + local edit; supersedes in-flight workers
+  quint64 launchGeneration_ = 0;  // generation captured when the current worker was launched
+  QString pendingText_;           // text held for the GUI-thread finish step
+  bool pendingModified_ = false;
+  QVector<qsizetype> pendingDemoteAtOffsets_;
 };
 
 }  // namespace muffin

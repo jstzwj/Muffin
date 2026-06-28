@@ -39,10 +39,10 @@ void testDefinitionTitleEditDoesNotRestoreSingleQuotedSourceText() {
       definition.titleRange.end);
 
   require(input.insertText(QStringLiteral("new title")), "replacing title should edit definition");
-  require(session.markdownText() == QStringLiteral("[ref]: url 'new title'"),
-          QStringLiteral("edited title should keep single quote shape: '%1'").arg(session.markdownText()));
-  require(!session.markdownText().contains(QStringLiteral("old title")),
-          QStringLiteral("stale single-quoted title should not be restored: '%1'").arg(session.markdownText()));
+  require(session.markdownText().toString() == QStringLiteral("[ref]: url 'new title'"),
+          QStringLiteral("edited title should keep single quote shape: '%1'").arg(session.markdownText().toString()));
+  require(!session.markdownText().toString().contains(QStringLiteral("old title")),
+          QStringLiteral("stale single-quoted title should not be restored: '%1'").arg(session.markdownText().toString()));
 }
 
 // testFootnoteDefinitionEnterAtNoteEndCreatesParagraphAfter (lines 1596-1616)
@@ -61,8 +61,8 @@ void testFootnoteDefinitionEnterAtNoteEndCreatesParagraphAfter() {
   setSourceCursor(selection, footnote, definition.noteRange.end - definition.markerRange.start, definition.noteRange.end);
 
   require(input.insertParagraphBreak(), "enter at footnote note end should create paragraph after definition");
-  require(session.markdownText() == QStringLiteral("[^1]: note\n\n"),
-          QStringLiteral("footnote enter markdown mismatch: '%1'").arg(session.markdownText()));
+  require(session.markdownText().toString() == QStringLiteral("[^1]: note\n\n"),
+          QStringLiteral("footnote enter markdown mismatch: '%1'").arg(session.markdownText().toString()));
   require(session.document().root().children().size() == 2, "footnote enter should create trailing empty paragraph");
   require(blockAt(session, 1)->type() == BlockType::Paragraph, "footnote enter should focus trailing paragraph");
   require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "footnote enter cursor should move to trailing paragraph");
@@ -84,7 +84,7 @@ void testEmptyHeadingBackspaceConvertsToParagraph() {
 
   require(input.deleteBackward(), "backspace on empty heading should convert to paragraph");
   require(blockAt(session, 0)->type() == BlockType::Paragraph, "empty heading should become paragraph after backspace");
-  require(!session.markdownText().contains(QLatin1Char('#')), "backspace should remove heading prefix");
+  require(!session.markdownText().toString().contains(QLatin1Char('#')), "backspace should remove heading prefix");
   require(selection.cursorPosition().blockId == blockAt(session, 0)->id(), "cursor should stay on converted block");
 
   session.setMarkdownText(QStringLiteral("## "), false);
@@ -93,7 +93,7 @@ void testEmptyHeadingBackspaceConvertsToParagraph() {
 
   require(input.deleteBackward(), "backspace on solo empty heading should convert to paragraph");
   require(blockAt(session, 0)->type() == BlockType::Paragraph, "solo empty heading should become paragraph");
-  require(session.markdownText().isEmpty() || !session.markdownText().contains(QLatin1Char('#')),
+  require(session.markdownText().toString().isEmpty() || !session.markdownText().toString().contains(QLatin1Char('#')),
           "solo empty heading backspace should remove marker");
 
   session.setMarkdownText(QStringLiteral("## Title\n\nafter"), false);
@@ -102,7 +102,7 @@ void testEmptyHeadingBackspaceConvertsToParagraph() {
 
   require(input.deleteBackward(), "backspace on non-empty heading start should not convert");
   require(blockAt(session, 0)->type() == BlockType::Heading, "non-empty heading should remain heading after backspace");
-  require(session.markdownText().contains(QLatin1String("## Title")), "non-empty heading backspace should preserve marker");
+  require(session.markdownText().toString().contains(QLatin1String("## Title")), "non-empty heading backspace should preserve marker");
 }
 
 // testEmptyHeadingDeleteRemovesBlock (lines 1657-1692)
@@ -120,8 +120,8 @@ void testEmptyHeadingDeleteRemovesBlock() {
   setCursor(selection, blockAt(session, 1), 0);
 
   require(input.deleteForward(), "delete on empty heading should remove block");
-  require(session.markdownText() == QStringLiteral("before\n\nafter"),
-          QStringLiteral("empty heading delete text mismatch: '%1'").arg(session.markdownText()));
+  require(session.markdownText().toString() == QStringLiteral("before\n\nafter"),
+          QStringLiteral("empty heading delete text mismatch: '%1'").arg(session.markdownText().toString()));
   require(selection.cursorPosition().blockId == blockAt(session, 1)->id(), "cursor should move to next paragraph");
 
   session.setMarkdownText(QStringLiteral("### "), false);
@@ -129,7 +129,7 @@ void testEmptyHeadingDeleteRemovesBlock() {
   setCursor(selection, blockAt(session, 0), 0);
 
   require(input.deleteForward(), "delete on solo empty heading with no next block should be handled");
-  require(session.markdownText() == QStringLiteral("### "),
+  require(session.markdownText().toString() == QStringLiteral("### "),
           "solo empty heading delete with no next block should be a no-op");
 
   session.setMarkdownText(QStringLiteral("## Title\n\nafter"), false);
@@ -137,7 +137,7 @@ void testEmptyHeadingDeleteRemovesBlock() {
   setCursor(selection, blockAt(session, 0), 6);
 
   require(input.deleteForward(), "delete at non-empty heading end should merge, not remove");
-  require(session.markdownText().contains(QLatin1String("Title")), "non-empty heading delete should preserve content");
+  require(session.markdownText().toString().contains(QLatin1String("Title")), "non-empty heading delete should preserve content");
 }
 
 int main(int argc, char** argv) {

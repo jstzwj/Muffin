@@ -60,7 +60,7 @@ void testShiftTabDedentsSelectedLines() {
   setupFenceSelection(controller, session, view, code, 0, code.size());
   sendBackTab(controller, view);
 
-  require(session.markdownText() == QStringLiteral("```cpp\nline one\nline two\n```"),
+  require(session.markdownText().toString() == QStringLiteral("```cpp\nline one\nline two\n```"),
           "Shift+Tab should strip one indent unit from every selected line");
 }
 
@@ -76,7 +76,7 @@ void testShiftTabMinRuleStripsOnlyPresentSpaces() {
   setupFenceSelection(controller, session, view, code, 0, code.size());
   sendBackTab(controller, view);
 
-  require(session.markdownText() == QStringLiteral("```cpp\nshort\nlong\n```"),
+  require(session.markdownText().toString() == QStringLiteral("```cpp\nshort\nlong\n```"),
           "Shift+Tab min-rule should strip no more spaces than a line has");
 }
 
@@ -98,7 +98,7 @@ void testShiftTabCollapsedCaretDedentsLine() {
   controller.selection().setCursorPosition(caret);
   sendBackTab(controller, view);
 
-  require(session.markdownText() == QStringLiteral("```cpp\nline one\n    line two\n```"),
+  require(session.markdownText().toString() == QStringLiteral("```cpp\nline one\n    line two\n```"),
           "Shift+Tab with a collapsed caret should dedent only the caret's line");
 }
 
@@ -120,7 +120,7 @@ void testShiftTabUnindentedLineIsNoop() {
   controller.selection().setCursorPosition(caret);
   sendBackTab(controller, view);
 
-  require(session.markdownText() == QStringLiteral("```cpp\nline one\n```"),
+  require(session.markdownText().toString() == QStringLiteral("```cpp\nline one\n```"),
           "Shift+Tab on an unindented line should be a no-op (no tab inserted)");
 }
 

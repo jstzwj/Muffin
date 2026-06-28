@@ -42,7 +42,7 @@ void testBackspaceFromTrailingAfterList() {
 
   require(controller.inputController().deleteBackward(), "backspace from trailing paragraph should be handled");
 
-  require(session.markdownText() == QStringLiteral("345. 123"), "trailing-paragraph backspace must not change the document text");
+  require(session.markdownText().toString() == QStringLiteral("345. 123"), "trailing-paragraph backspace must not change the document text");
   const CursorPosition c = controller.selection().cursorPosition();
   require(!c.afterBlock, "caret should leave the virtual trailing paragraph");
   MarkdownNode* block = session.document().node(c.blockId);
@@ -52,7 +52,7 @@ void testBackspaceFromTrailingAfterList() {
 
   // A second backspace now deletes from the content end, proving the caret is real and editable.
   require(controller.inputController().deleteBackward(), "second backspace should delete a content character");
-  require(session.markdownText() == QStringLiteral("345. 12"), "second backspace should delete the trailing '3'");
+  require(session.markdownText().toString() == QStringLiteral("345. 12"), "second backspace should delete the trailing '3'");
 }
 
 // Companion: the same behavior for a plain paragraph (guards the generic case and the existing
@@ -70,7 +70,7 @@ void testBackspaceFromTrailingAfterParagraph() {
   require(controller.selection().cursorPosition().afterBlock, "caret should start on the trailing paragraph");
 
   require(controller.inputController().deleteBackward(), "backspace from trailing paragraph should be handled");
-  require(session.markdownText() == QStringLiteral("alpha"), "trailing-paragraph backspace must not change plain paragraph text");
+  require(session.markdownText().toString() == QStringLiteral("alpha"), "trailing-paragraph backspace must not change plain paragraph text");
   const CursorPosition c = controller.selection().cursorPosition();
   require(!c.afterBlock, "caret should leave the virtual trailing paragraph");
   require(c.text.sourceOffset == 5, "caret should sit at the end of 'alpha'");

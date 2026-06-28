@@ -27,7 +27,7 @@ if(MSVC)
   add_compile_options(/utf-8)
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg PrintSupport Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg PrintSupport Network Concurrent)
 find_package(ICU REQUIRED COMPONENTS uc i18n)
 find_package(WebP REQUIRED)
 # dav1d is libavif's AV1 decoder; found here (Conan provides dav1d::dav1d) so libavif's own
@@ -443,6 +443,8 @@ set(MUFFIN_CORE_SOURCES
   src/document/InlineNode.h
   src/document/MarkdownNode.cpp
   src/document/MarkdownNode.h
+  src/document/PieceTable.cpp
+  src/document/PieceTable.h
   src/document/TextSelection.h
   src/document/NodeIndex.cpp
   src/document/NodeIndex.h
@@ -469,6 +471,7 @@ target_link_libraries(MuffinCore
   PUBLIC
     Qt6::Core
   PRIVATE
+    Qt6::Concurrent
     libcmark-gfm-extensions_static
     libcmark-gfm_static
 )

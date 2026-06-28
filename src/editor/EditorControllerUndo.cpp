@@ -7,17 +7,77 @@
 #include "editor/EditorView.h"
 
 #include <QDebug>
+#include <QElapsedTimer>
 #include <QLoggingCategory>
 
+#include <cstring>
 #include <optional>
 
 namespace muffin {
 namespace {
 
 Q_LOGGING_CATEGORY(undoLog, "muffin.undo", QtWarningMsg)
+Q_LOGGING_CATEGORY(undoPerf, "muffin.perf", QtWarningMsg)
+
+// Scoped perf probe routed to the muffin.perf category (captured by MUFFIN_PERF_LOG). No-op when
+// perf debugging is off. Used to localize the Ctrl+Z-hangs-on-a-huge-document regression: the
+// blocking cost is a synchronous full reparse (applyMarkdownText) + full layout rebuild fired when
+// the undo's localized edit can't be applied (applyTextDelta returns false). These probes record
+// which undo branch ran, the snapshot-diff region, and whether the localized path succeeded.
+class UndoPerfTimer {
+public:
+  explicit UndoPerfTimer(const char* label) : label_(label), enabled_(undoPerf().isDebugEnabled()) {
+    if (enabled_) {
+      timer_.start();
+    }
+  }
+  ~UndoPerfTimer() {
+    if (enabled_) {
+      qCDebug(undoPerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0 << " ms";
+    }
+  }
+
+private:
+  const char* label_;
+  bool enabled_ = false;
+  QElapsedTimer timer_;
+};
 
 const char* undoDirection(bool undo) {
   return undo ? "undo" : "redo";
+}
+
+// Common leading char count of two QStrings, compared in 4K-char chunks via memcmp (SIMD-fast on
+// matching runs) so a 100MB common prefix skips in O(doc/chunk) instead of O(doc) char-by-char.
+qsizetype commonPrefixLength(const QString& a, const QString& b) {
+  const qsizetype chunk = 4096;
+  const qsizetype minLen = qMin(a.size(), b.size());
+  qsizetype p = 0;
+  for (; p + chunk <= minLen; p += chunk) {
+    if (std::memcmp(a.utf16() + p, b.utf16() + p, static_cast<size_t>(chunk) * sizeof(QChar)) != 0) {
+      break;
+    }
+  }
+  for (; p < minLen && a.at(p) == b.at(p); ++p) {
+  }
+  return p;
+}
+
+// Common trailing char count (counted from the end), stopping before `prefix` so prefix and suffix
+// can't overlap. Also chunked via memcmp.
+qsizetype commonSuffixLength(const QString& a, const QString& b, qsizetype prefix) {
+  const qsizetype chunk = 4096;
+  const qsizetype maxSuffix = qMax<qsizetype>(0, qMin(a.size(), b.size()) - prefix);
+  qsizetype s = 0;
+  for (; s + chunk <= maxSuffix; s += chunk) {
+    if (std::memcmp(a.utf16() + a.size() - s - chunk, b.utf16() + b.size() - s - chunk,
+                    static_cast<size_t>(chunk) * sizeof(QChar)) != 0) {
+      break;
+    }
+  }
+  for (; s < maxSuffix && a.at(a.size() - 1 - s) == b.at(b.size() - 1 - s); ++s) {
+  }
+  return s;
 }
 
 void warnUndoApplyFailed(bool undo, const char* command, const char* reason) {
@@ -295,7 +355,7 @@ bool applyTextReplacement(DocumentSession& session, qsizetype replaceStart, qsiz
     return true;
   }
 
-  QString text = session.markdownText();
+  QString text = session.markdownText().toString();
   if (replaceStart < 0 || replaceLength < 0 || replaceStart + replaceLength > text.size()) {
     return false;
   }
@@ -341,8 +401,38 @@ QVector<NodeId> refreshNodesFor(DocumentSession& session, const QVector<NodeId>&
 }
 
 void requestRefreshForNodes(BrushQueue& brushQueue, DocumentSession& session, const QVector<NodeId>& affectedNodes, CursorPosition cursor = {}) {
+  // If the just-applied local edit changed top-level block structure (a split/merge/insert/remove
+  // altered the block count), a localized block refresh can't represent the new structure —
+  // refreshBlock fails to find the reshuffled/removed slot and the brush-queue consumer falls back
+  // to a whole-document layout rebuild (≈22s on a 100MB doc; this was the Ctrl+Z-hangs regression).
+  // Refresh the precise top-level range the local edit recorded instead, exactly like applySnapshot
+  // and the forward-edit path. Only non-structural local edits take the cheap block-refresh path.
+  if (session.lastLocalEditChangedTopLevelStructure()) {
+    const TopLevelRangeChange range = session.lastLocalTopLevelRangeChange();
+    if (range.isValid()) {
+      qCDebug(undoPerf).nospace() << "undo.refresh.structural → requestTopLevelRangeRefresh"
+          << " first=" << range.first << " old=" << range.oldCount << " new=" << range.newCount;
+      brushQueue.requestTopLevelRangeRefresh(range);
+      return;
+    }
+  }
   QVector<NodeId> refreshNodes = refreshNodesFor(session, affectedNodes, cursor);
   if (refreshNodes.isEmpty()) {
+    // The edit applied locally but none of the stored affected/cursor nodes resolve in the live
+    // tree (a block merged away on undo). We only reach here on the appliedLocally branches of
+    // applyTransaction, so the session just recorded a precise top-level range change for the edit.
+    // Refresh that range (localized) instead of falling back to a whole-document layout refresh,
+    // which is ≈20s on a 100MB doc. The range change is authoritative: it covers exactly the
+    // top-level blocks tryApplyTopLevelLocalEdit spliced.
+    const TopLevelRangeChange range = session.lastLocalTopLevelRangeChange();
+    if (range.isValid()) {
+      qCDebug(undoPerf).nospace() << "undo.refresh.emptyRefreshNodes → requestTopLevelRangeRefresh"
+          << " first=" << range.first << " old=" << range.oldCount << " new=" << range.newCount;
+      brushQueue.requestTopLevelRangeRefresh(range);
+      return;
+    }
+    qCDebug(undoPerf).nospace() << "undo.refresh.emptyRefreshNodes → requestFullRefresh (no range)"
+        << " affectedNodes=" << affectedNodes.size() << " cursorValid=" << cursor.isValid();
     brushQueue.requestFullRefresh();
     return;
   }
@@ -356,20 +446,55 @@ void EditorController::applySnapshot(const DocumentSnapshot& snapshot) {
     return;
   }
 
-  session_->applyMarkdownText(snapshot.markdownText, true, snapshot.demoteAtOffsets);
+  UndoPerfTimer perf("undo.applySnapshot");
+  // Undo/redo only changed a localized region (the originating edit was local), so the diff between
+  // the current LIVE text and the snapshot text is small. Apply it as a LOCAL edit (slice reparse)
+  // via applyTextDelta instead of applyMarkdownText's full-document reparse — that full reparse was
+  // the Ctrl+Z-hangs-on-a-huge-document regression (O(doc) parse + full view rebuild). The chunked
+  // common-prefix/suffix skips the (typically huge) unchanged runs in O(doc/chunk). Falls back to
+  // the full reparse only when the local edit is rejected (a wholesale change the slice logic can't
+  // localize), which is rare for ordinary edits.
+  const QString current = session_->markdownText().toString();
+  const QString& target = snapshot.markdownText;
+  const qsizetype prefix = commonPrefixLength(current, target);
+  const qsizetype commonSuffix = commonSuffixLength(current, target, prefix);
+  const qsizetype curSuffix = current.size() - commonSuffix;
+  const qsizetype tgtSuffix = target.size() - commonSuffix;
+  const QString inserted = target.mid(prefix, tgtSuffix - prefix);
+  const bool appliedLocally = session_->applyTextDelta(prefix, curSuffix - prefix, inserted, true);
+  // Record the diff region + outcome so the perf trace shows exactly why a snapshot undo either
+  // localized (fast) or fell back to a full reparse (the ~20s regression). curSize/tgtSize make a
+  // pathological "whole document changed" diff obvious at a glance.
+  qCDebug(undoPerf).nospace() << "undo.snapshot diff curSize=" << current.size()
+      << " tgtSize=" << target.size() << " prefix=" << prefix << " suffix=" << commonSuffix
+      << " curReplaceLen=" << (curSuffix - prefix) << " insertedLen=" << inserted.size()
+      << " appliedLocally=" << appliedLocally;
+  if (!appliedLocally) {
+    UndoPerfTimer fullParsePerf("undo.snapshot.fullParseFallback");
+    session_->applyMarkdownText(target, true, snapshot.demoteAtOffsets);
+  }
+
   const CursorPosition cursor = remapSnapshotCursor(snapshot.cursor);
   if (cursor.isValid()) {
     selection_.setCursorPosition(cursor);
   } else {
     selection_.clear();
   }
-  brushQueue_.requestFullRefresh();
+  if (appliedLocally) {
+    brushQueue_.requestTopLevelRangeRefresh(session_->lastLocalTopLevelRangeChange());
+  } else {
+    brushQueue_.requestFullRefresh();
+  }
 }
 
 void EditorController::applyTransaction(const EditTransaction& transaction, bool undo) {
   if (!session_ || !transaction.isValid()) {
     return;
   }
+
+  UndoPerfTimer perf(undo ? "undo.applyTransaction" : "redo.applyTransaction");
+  qCDebug(undoPerf).nospace() << (undo ? "undo" : "redo") << ".begin label=\"" << transaction.label()
+      << "\" snapshot=" << transaction.isSnapshot() << " textDelta=" << transaction.isTextDeltaCommand();
 
   if (transaction.isSnapshot()) {
     applySnapshot(undo ? transaction.before() : transaction.after());
@@ -541,6 +666,9 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     nodeHints.push_back(LocalEditNodeHint{nodeId, replaceStart, BlockType::Unknown});
   }
   const bool appliedLocally = session_->applyTextDelta(replaceStart, replaceEnd - replaceStart, replacement, true, std::move(nodeHints));
+  qCDebug(undoPerf).nospace() << "undo.textDelta replaceStart=" << replaceStart
+      << " replaceLen=" << (replaceEnd - replaceStart) << " replacementLen=" << replacement.size()
+      << " affectedNodes=" << command.affectedNodes.size() << " appliedLocally=" << appliedLocally;
   const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
   CursorPosition cursor = tableCellTextCursor(*session_, storedCursor);
   if (!cursor.isValid()) {
@@ -554,7 +682,7 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
 
   if (!appliedLocally) {
     warnUndoApplyFallback(undo, "text delta command", "text delta could not be applied locally");
-    QString text = session_->markdownText();
+    QString text = session_->markdownText().toString();
     if (replaceStart < 0 || replaceEnd < replaceStart || replaceEnd > text.size()) {
       warnUndoApplyFailed(
           undo,
@@ -566,7 +694,10 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
       return;
     }
     text.replace(replaceStart, replaceEnd - replaceStart, replacement);
-    session_->applyMarkdownText(std::move(text), true);
+    {
+      UndoPerfTimer fullParsePerf("undo.textDelta.fullParseFallback");
+      session_->applyMarkdownText(std::move(text), true);
+    }
     brushQueue_.requestFullRefresh();
   } else {
     requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
@@ -641,7 +772,7 @@ CursorPosition EditorController::remapSnapshotCursor(const CursorPosition& snaps
     return cursor;
   }
 
-  const QString markdown = session_->markdownText();
+  const PieceTable& markdown = session_->markdownText();
   const qsizetype sourceOffset = qBound<qsizetype>(0, snapshotCursor.text.sourceOffset >= 0 ? snapshotCursor.text.sourceOffset : markdown.size(), markdown.size());
   if (MarkdownNode* node = resolver.nodeAtContentSourceOffset(session_->document().root(), sourceOffset)) {
     BlockEditContext context;

@@ -36,6 +36,16 @@ public:
   // Build (or return the cached) CssElement for `node`. Never null.
   const CssElement* build(const MarkdownNode& node);
 
+  // Force sibling chains to be re-wired on the next build(), WITHOUT discarding the per-node
+  // CssElement cache. Use after a top-level splice (blocks added/removed): the document root's
+  // child list changed so its sibling chain + childIndex/typeIndex are stale, but every UNCHANGED
+  // node's CssElement is still valid (keyed by stable NodeId; data is copied, no live node
+  // pointers, so destroyed splice nodes don't dangle). Re-linking then hits the cache per child
+  // (O(1)) instead of dropStructuralBuilder's full O(n) element recreation (~1s on a 375k-block
+  // doc). Destroyed splice nodes' stale cache entries are never re-queried (monotonic NodeIds) and
+  // just ride along in the pool until the builder is rebuilt wholesale.
+  void resetSiblingLinks();
+
 private:
   const CssElement* ensure(const MarkdownNode& node);
   void linkSiblingsIteratively(const MarkdownNode& parent);

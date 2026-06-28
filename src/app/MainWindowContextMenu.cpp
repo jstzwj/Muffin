@@ -48,7 +48,7 @@ void muffin::MainWindow::buildEditorContextMenu(const HitTestResult& hit, QPoint
   // apply — the spell menu used to live in EditorView::contextMenuEvent.
   auto& checker = SpellChecker::instance();
   if (checker.isEnabled() && hit.zone == HitTestResult::Zone::Text && hit.sourceOffset >= 0) {
-    const QString& markdown = session_.document().markdownText();
+    const QString markdown = session_.document().markdownText().toString();
     const WordSegment seg = findWordSegment(markdown, hit.sourceOffset);
     if (seg.isWord && seg.end > seg.start && seg.start < markdown.size()) {
       const QString word = markdown.mid(seg.start, seg.end - seg.start);

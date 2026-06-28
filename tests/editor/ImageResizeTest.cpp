@@ -43,7 +43,7 @@ struct ImageHarness {
     if (!controller.imageSourceRangeAtCursor(start, end)) {
       return {};
     }
-    const QString source = session.markdownText().mid(start, end - start);
+    const QString source = session.markdownText().toString().mid(start, end - start);
     const QString replacement = transform(source);
     session.applyTextDelta(start, end - start, replacement, true);
     return replacement;
@@ -61,7 +61,7 @@ void testMarkdownImageDetected() {
           QStringLiteral("markdown image src resolved"));
   qsizetype start = 0, end = 0;
   require(h.controller.imageSourceRangeAtCursor(start, end), QStringLiteral("markdown image range resolved"));
-  require(h.session.markdownText().mid(start, end - start) == QStringLiteral("![a](x.png)"),
+  require(h.session.markdownText().toString().mid(start, end - start) == QStringLiteral("![a](x.png)"),
           QStringLiteral("range spans the whole markdown image"));
 }
 
@@ -79,7 +79,7 @@ void testCursorInUrlStillDetected() {
           QStringLiteral("image src resolved from a URL-position cursor"));
   qsizetype start = 0, end = 0;
   require(h.controller.imageSourceRangeAtCursor(start, end), QStringLiteral("range resolved from URL cursor"));
-  require(h.session.markdownText().mid(start, end - start) == QStringLiteral("![a](x.png)"),
+  require(h.session.markdownText().toString().mid(start, end - start) == QStringLiteral("![a](x.png)"),
           QStringLiteral("range spans the whole image from a URL-position cursor"));
 }
 
@@ -96,7 +96,7 @@ void testNonFirstBlockImageDetectedAndResizable() {
   MarkdownNode* para = firstBlockOfType(h.session, BlockType::Paragraph);
   require(para != nullptr, QStringLiteral("image paragraph exists after the heading"));
 
-  const QString md = h.session.markdownText();
+  const QString md = h.session.markdownText().toString();
   const qsizetype img = md.indexOf(QStringLiteral("![a](x.png)"));
   require(img > 0, QStringLiteral("image sits at a non-zero document offset"));
 
@@ -129,7 +129,7 @@ void testInlineHtmlImageDetected() {
   require(h.controller.imageSrcAtCursor() == QStringLiteral("x.png"), QStringLiteral("<img> src resolved"));
   qsizetype start = 0, end = 0;
   require(h.controller.imageSourceRangeAtCursor(start, end), QStringLiteral("<img> range resolved"));
-  require(image_syntax::zoomPercent(h.session.markdownText().mid(start, end - start)) == 50,
+  require(image_syntax::zoomPercent(h.session.markdownText().toString().mid(start, end - start)) == 50,
           QStringLiteral("inline <img> zoom:50% reads as 50"));
 }
 
@@ -140,7 +140,7 @@ void testResizeMarkdownImageWritesZoomStyle() {
   const QString snippet = h.applyTransform([](const QString& s) { return image_syntax::setZoom(s, 25); });
   require(snippet.contains(QStringLiteral("style=\"zoom: 25%;\"")),
           QStringLiteral("resize produced a zoom style snippet"));
-  const QString md = h.session.markdownText();
+  const QString md = h.session.markdownText().toString();
   require(md.contains(QStringLiteral("<img src=\"x.png\" alt=\"a\"")),
           QStringLiteral("markdown image promoted to <img> in the document"));
   require(md.contains(QStringLiteral("style=\"zoom: 25%;\"")),
@@ -152,9 +152,9 @@ void testResizeHtmlImageUpdatesZoom() {
   h.cursorOn(h.firstParagraph(), 2);
 
   h.applyTransform([](const QString& s) { return image_syntax::setZoom(s, 100); });
-  require(h.session.markdownText().contains(QStringLiteral("<img src=\"x.png\" alt=\"a\">")),
+  require(h.session.markdownText().toString().contains(QStringLiteral("<img src=\"x.png\" alt=\"a\">")),
           QStringLiteral("100% strips the zoom style, leaving a bare <img>"));
-  require(!h.session.markdownText().contains(QStringLiteral("zoom")),
+  require(!h.session.markdownText().toString().contains(QStringLiteral("zoom")),
           QStringLiteral("no zoom declaration remains at 100%"));
 }
 
@@ -163,7 +163,7 @@ void testConvertMarkdownToHtml() {
   h.cursorOn(h.firstParagraph(), 2);
 
   h.applyTransform([](const QString& s) { return image_syntax::toHtml(s); });
-  require(h.session.markdownText().contains(QStringLiteral("<img src=\"x.png\" alt=\"a\">")),
+  require(h.session.markdownText().toString().contains(QStringLiteral("<img src=\"x.png\" alt=\"a\">")),
           QStringLiteral("Convert ▸ HTML produced an <img> tag"));
 }
 
@@ -172,7 +172,7 @@ void testConvertHtmlToMarkdown() {
   h.cursorOn(h.firstParagraph(), 2);
 
   h.applyTransform([](const QString& s) { return image_syntax::toMarkdown(s); });
-  require(h.session.markdownText().contains(QStringLiteral("![a](x.png)")),
+  require(h.session.markdownText().toString().contains(QStringLiteral("![a](x.png)")),
           QStringLiteral("Convert ▸ Standard restored the markdown image"));
 }
 
@@ -190,9 +190,9 @@ void testStandaloneHtmlBlockImageDetected() {
           QStringLiteral("block image src resolved"));
   qsizetype start = 0, end = 0;
   require(h.controller.imageSourceRangeAtCursor(start, end), QStringLiteral("block image range resolved"));
-  require(h.session.markdownText().mid(start, end - start).startsWith(QStringLiteral("<img")),
+  require(h.session.markdownText().toString().mid(start, end - start).startsWith(QStringLiteral("<img")),
           QStringLiteral("range spans the <img> tag"));
-  require(image_syntax::zoomPercent(h.session.markdownText().mid(start, end - start)) == 50,
+  require(image_syntax::zoomPercent(h.session.markdownText().toString().mid(start, end - start)) == 50,
           QStringLiteral("block image zoom:50% reads as 50"));
 }
 
@@ -203,9 +203,9 @@ void testStandaloneHtmlBlockImageResize() {
   const QString snippet = h.applyTransform([](const QString& s) { return image_syntax::setZoom(s, 25); });
   require(snippet.contains(QStringLiteral("style=\"zoom: 25%;\"")),
           QStringLiteral("resizing a block image updated the zoom"));
-  require(h.session.markdownText().contains(QStringLiteral("zoom: 25%;")),
+  require(h.session.markdownText().toString().contains(QStringLiteral("zoom: 25%;")),
           QStringLiteral("resize written into the HTML block"));
-  require(!h.session.markdownText().contains(QStringLiteral("zoom: 50%")),
+  require(!h.session.markdownText().toString().contains(QStringLiteral("zoom: 50%")),
           QStringLiteral("old zoom replaced"));
 }
 
@@ -214,7 +214,7 @@ void testStandaloneHtmlBlockImageConvertToMarkdown() {
   h.cursorOn(blockAt(h.session, 0), 0);
 
   h.applyTransform([](const QString& s) { return image_syntax::toMarkdown(s); });
-  require(h.session.markdownText().contains(QStringLiteral("![a](x.png)")),
+  require(h.session.markdownText().toString().contains(QStringLiteral("![a](x.png)")),
           QStringLiteral("Convert ▸ Standard turned the <img> block into a markdown image"));
 }
 

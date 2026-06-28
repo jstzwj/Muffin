@@ -173,7 +173,7 @@ bool ParagraphController::resolveBlockContext(BlockContext& context) const {
     return false;
   }
 
-  const QString markdown = ctx_.session->markdownText();
+  const PieceTable& markdown = ctx_.session->markdownText();
   qsizetype blockStart = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
   const qsizetype blockEnd = sourceOffsetForLineEnd(markdown, range.lineEnd);
   if (blockStart < 0 || blockEnd < blockStart) {
@@ -385,7 +385,7 @@ bool ParagraphController::insertFormulaBlock() {
     if (!ctx_.hasSession()) {
       return false;
     }
-    const QString markdown = ctx_.session->markdownText();
+    const PieceTable& markdown = ctx_.session->markdownText();
     const QString inserted = markdown.isEmpty() ? QStringLiteral("$$\n\n$$") : QStringLiteral("\n\n$$\n\n$$");
     const qsizetype offset = markdown.size();
     return applyBlockDelta(
@@ -411,7 +411,7 @@ bool ParagraphController::insertCodeBlock() {
     if (!ctx_.hasSession()) {
       return false;
     }
-    const QString markdown = ctx_.session->markdownText();
+    const PieceTable& markdown = ctx_.session->markdownText();
     const QString open = codeFenceOpen();
     const QString inserted = markdown.isEmpty() ? open + QStringLiteral("\n\n```")
                                                 : QStringLiteral("\n\n") + open + QStringLiteral("\n\n```");
@@ -440,7 +440,7 @@ bool ParagraphController::insertLinkReference() {
     if (!ctx_.hasSession()) {
       return false;
     }
-    const QString markdown = ctx_.session->markdownText();
+    const PieceTable& markdown = ctx_.session->markdownText();
     const QString inserted = markdown.isEmpty() ? QStringLiteral("[]: ") : QStringLiteral("\n\n[]: ");
     const qsizetype offset = markdown.size();
     return applyBlockDelta(
@@ -466,7 +466,7 @@ bool ParagraphController::insertFootnoteDefinition() {
     if (!ctx_.hasSession()) {
       return false;
     }
-    const QString markdown = ctx_.session->markdownText();
+    const PieceTable& markdown = ctx_.session->markdownText();
     const QString inserted = markdown.isEmpty() ? QStringLiteral("[^]: ") : QStringLiteral("\n\n[^]: ");
     const qsizetype offset = markdown.size();
     return applyBlockDelta(
@@ -492,7 +492,7 @@ bool ParagraphController::insertHorizontalRule() {
     if (!ctx_.hasSession()) {
       return false;
     }
-    const QString markdown = ctx_.session->markdownText();
+    const PieceTable& markdown = ctx_.session->markdownText();
     const QString inserted = markdown.isEmpty() ? QStringLiteral("---\n\n") : QStringLiteral("\n\n---\n\n");
     const qsizetype offset = markdown.size();
     return applyBlockDelta(
@@ -518,7 +518,7 @@ bool ParagraphController::insertTableOfContents() {
     if (!ctx_.hasSession()) {
       return false;
     }
-    const QString markdown = ctx_.session->markdownText();
+    const PieceTable& markdown = ctx_.session->markdownText();
     const QString inserted = markdown.isEmpty() ? QStringLiteral("[TOC]\n\n") : QStringLiteral("\n\n[TOC]\n\n");
     const qsizetype offset = markdown.size();
     return applyBlockDelta(
@@ -571,7 +571,7 @@ bool ParagraphController::toggleQuote() {
 
     // The parent BlockQuote's source range is what we replace
     const SourceRange parentRange = parent->sourceRange();
-    const QString markdown = ctx_.session->markdownText();
+    const PieceTable& markdown = ctx_.session->markdownText();
     const qsizetype parentStart = sourceOffsetForLineColumn(markdown, parentRange.lineStart, qMax(1, parentRange.columnStart));
     const qsizetype parentEnd = sourceOffsetForLineEnd(markdown, parentRange.lineEnd);
 
@@ -699,7 +699,7 @@ bool ParagraphController::toggleTaskListItem(NodeId blockId) {
     return false;
   }
 
-  const QString markdown = ctx_.session->markdownText();
+  const PieceTable& markdown = ctx_.session->markdownText();
   // The toggle target is the inner character of "[ ]"/"[x]" on the item's first
   // source line. Resolve that line and reuse the shared list-line scanner so the
   // offset agrees with how the parser and serializer see the marker.
@@ -789,7 +789,7 @@ bool ParagraphController::insertAlert(AlertKind kind) {
     if (!ctx_.hasSession()) {
       return false;
     }
-    const QString markdown = ctx_.session->markdownText();
+    const PieceTable& markdown = ctx_.session->markdownText();
     const QString inserted = markdown.isEmpty()
         ? QStringLiteral("> [!%1]\n> ").arg(markerStr)
         : body;
@@ -947,7 +947,7 @@ bool ParagraphController::insertCodeBlockWithSplit() {
   BlockContext context;
   if (!resolveBlockContext(context)) return false;
 
-  const QString markdown = ctx_.session->markdownText();
+  const PieceTable& markdown = ctx_.session->markdownText();
   const SelectionRange sel = ctx_.selection->selection();
 
   // Extract heading prefix for the second paragraph (same as buildSplitTextBlock)
@@ -1021,7 +1021,7 @@ bool ParagraphController::insertFormulaBlockWithSplit() {
   BlockContext context;
   if (!resolveBlockContext(context)) return false;
 
-  const QString markdown = ctx_.session->markdownText();
+  const PieceTable& markdown = ctx_.session->markdownText();
   const SelectionRange sel = ctx_.selection->selection();
 
   QString headingPrefix;

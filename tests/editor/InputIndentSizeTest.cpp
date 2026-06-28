@@ -28,7 +28,7 @@ void testIndentUnitDefaultIsTwoSpaces() {
   session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
   setCursor(selection, listItemAt(session, 0, 1), 0);
   require(input.indentListItem(), "indent at unit 2 should succeed");
-  require(session.markdownText() == QStringLiteral("- alpha\n  - beta"), "indent at unit 2 should add 2 spaces");
+  require(session.markdownText().toString() == QStringLiteral("- alpha\n  - beta"), "indent at unit 2 should add 2 spaces");
 }
 
 void testIndentUnitFourSpaces() {
@@ -43,13 +43,13 @@ void testIndentUnitFourSpaces() {
   session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
   setCursor(selection, listItemAt(session, 0, 1), 0);
   require(input.indentListItem(), "indent at unit 4 should succeed");
-  require(session.markdownText() == QStringLiteral("- alpha\n    - beta"), "indent at unit 4 should add 4 spaces");
+  require(session.markdownText().toString() == QStringLiteral("- alpha\n    - beta"), "indent at unit 4 should add 4 spaces");
 
   MarkdownNode* nestedList = maybeFirstChildOfType(listItemAt(session, 0, 0), BlockType::List);
   require(nestedList != nullptr, "4-space indent should nest the item");
   setCursor(selection, childAt(nestedList, 0), 0);
   require(input.outdentListItem(), "outdent at unit 4 should succeed");
-  require(session.markdownText() == QStringLiteral("- alpha\n- beta"), "outdent at unit 4 should remove 4 spaces");
+  require(session.markdownText().toString() == QStringLiteral("- alpha\n- beta"), "outdent at unit 4 should remove 4 spaces");
 
   // Graceful min-rule: with unit 4, outdenting a stray 2-indent removes only 2 (never more than present).
   session.setMarkdownText(QStringLiteral("- alpha\n  - beta"), false);
@@ -57,7 +57,7 @@ void testIndentUnitFourSpaces() {
   require(nestedList != nullptr, "stray 2-indent item should parse as nested");
   setCursor(selection, childAt(nestedList, 0), 0);
   require(input.outdentListItem(), "outdent should succeed on stray 2-indent at unit 4");
-  require(session.markdownText() == QStringLiteral("- alpha\n- beta"), "outdent at unit 4 on a 2-indent should remove min(4,2)=2 spaces");
+  require(session.markdownText().toString() == QStringLiteral("- alpha\n- beta"), "outdent at unit 4 on a 2-indent should remove min(4,2)=2 spaces");
 }
 
 void testIndentUnitEightSpaces() {
@@ -70,11 +70,11 @@ void testIndentUnitEightSpaces() {
   wireInput(input, session, selection, undoStack, brushQueue);
 
   // Assert the exact source text (8 leading spaces). The command inserts indentUnit() spaces at the
-  // line start; the AST may re-shape at such depth, but markdownText() reflects the command verbatim.
+  // line start; the AST may re-shape at such depth, but markdownText().toString() reflects the command verbatim.
   session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
   setCursor(selection, listItemAt(session, 0, 1), 0);
   require(input.indentListItem(), "indent at unit 8 should succeed");
-  require(session.markdownText() == QStringLiteral("- alpha\n        - beta"), "indent at unit 8 should add 8 spaces");
+  require(session.markdownText().toString() == QStringLiteral("- alpha\n        - beta"), "indent at unit 8 should add 8 spaces");
 }
 
 void testExitEmptyItemRemovesFullUnit() {
@@ -92,7 +92,7 @@ void testExitEmptyItemRemovesFullUnit() {
   require(nestedList != nullptr, "4-space nested empty item should parse as a nested list");
   setCursor(selection, childAt(nestedList, 0), 0);
   require(input.insertParagraphBreak(), "enter on nested empty item at unit 4 should outdent");
-  require(session.markdownText() == QStringLiteral("- alpha\n- "), "exit-on-empty at unit 4 should remove 4 spaces");
+  require(session.markdownText().toString() == QStringLiteral("- alpha\n- "), "exit-on-empty at unit 4 should remove 4 spaces");
 }
 
 int main(int argc, char** argv) {

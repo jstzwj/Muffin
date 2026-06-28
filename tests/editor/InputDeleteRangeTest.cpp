@@ -52,7 +52,7 @@ void testDeleteWordInParagraph() {
   MarkdownNode* para = blockAt(h.session, 0);
   h.placeIn(para, 6);  // caret at start of "world"
   h.backend.deleteRange(DeleteTarget::Word);
-  require(h.session.markdownText() == QStringLiteral("hello "), "delete word should remove \"world\"");
+  require(h.session.markdownText().toString() == QStringLiteral("hello "), "delete word should remove \"world\"");
 }
 
 // A caret in the middle of a word still selects (and deletes) the whole word.
@@ -62,7 +62,7 @@ void testDeleteWordMidWord() {
   MarkdownNode* para = blockAt(h.session, 0);
   h.placeIn(para, 8);  // caret inside "world"
   h.backend.deleteRange(DeleteTarget::Word);
-  require(h.session.markdownText() == QStringLiteral("hello "), "delete word from mid-word should remove the whole word");
+  require(h.session.markdownText().toString() == QStringLiteral("hello "), "delete word from mid-word should remove the whole word");
 }
 
 // deleteRange(Word) on a bare caret between words is a safe no-op.
@@ -72,7 +72,7 @@ void testDeleteWordNoWordAtCursor() {
   MarkdownNode* para = blockAt(h.session, 0);
   h.placeIn(para, 6);  // caret in the run of spaces
   h.backend.deleteRange(DeleteTarget::Word);
-  require(h.session.markdownText() == QStringLiteral("hello   world"), "delete word on whitespace should be a no-op");
+  require(h.session.markdownText().toString() == QStringLiteral("hello   world"), "delete word on whitespace should be a no-op");
 }
 
 // deleteRange(FormatSpan) removes the inline-format span's visible text.
@@ -82,7 +82,7 @@ void testDeleteFormatSpanBold() {
   MarkdownNode* para = blockAt(h.session, 0);
   h.placeIn(para, 5);  // caret inside "bold"
   h.backend.deleteRange(DeleteTarget::FormatSpan);
-  require(!h.session.markdownText().contains(QStringLiteral("bold")), "delete format span should remove the bold text");
+  require(!h.session.markdownText().toString().contains(QStringLiteral("bold")), "delete format span should remove the bold text");
 }
 
 // deleteRange(Line) clears a heading's content but keeps the marker ("## ").
@@ -92,7 +92,7 @@ void testDeleteLineHeadingKeepsMarker() {
   MarkdownNode* heading = blockAt(h.session, 0);
   h.placeIn(heading, 2);  // caret inside the title text
   h.backend.deleteRange(DeleteTarget::Line);
-  require(h.session.markdownText() == QStringLiteral("## "), "delete line on a heading should keep the \"## \" marker");
+  require(h.session.markdownText().toString() == QStringLiteral("## "), "delete line on a heading should keep the \"## \" marker");
   require(h.session.document().root().children().size() == 1, "heading block should still exist");
 }
 
@@ -104,7 +104,7 @@ void testDeleteLineParagraphRemovesBlock() {
   MarkdownNode* para = blockAt(h.session, 0);
   h.placeIn(para, 1);
   h.backend.deleteRange(DeleteTarget::Line);
-  require(h.session.markdownText() == QStringLiteral("beta"), "delete line on a paragraph should remove the block");
+  require(h.session.markdownText().toString() == QStringLiteral("beta"), "delete line on a paragraph should remove the block");
 }
 
 // deleteRange(Block) removes a whole heading block and joins neighbours.
@@ -114,7 +114,7 @@ void testDeleteBlockHeading() {
   MarkdownNode* heading = blockAt(h.session, 0);
   h.placeIn(heading, 2);
   h.backend.deleteRange(DeleteTarget::Block);
-  require(h.session.markdownText() == QStringLiteral("body"), "delete block should remove the heading and its separators");
+  require(h.session.markdownText().toString() == QStringLiteral("body"), "delete block should remove the heading and its separators");
   require(h.session.document().root().children().size() == 1, "one block should remain");
 }
 
@@ -125,8 +125,8 @@ void testDeleteBlockOnlyBlock() {
   MarkdownNode* para = blockAt(h.session, 0);
   h.placeIn(para, 1);
   h.backend.deleteRange(DeleteTarget::Block);
-  require(h.session.markdownText().isEmpty(), "deleting the only block should empty the document");
-  require(!h.session.markdownText().contains(QLatin1String("alpha")), "no block content should remain");
+  require(h.session.markdownText().toString().isEmpty(), "deleting the only block should empty the document");
+  require(!h.session.markdownText().toString().contains(QLatin1String("alpha")), "no block content should remain");
 }
 
 // deleteRange(Block) removes a code fence entirely.
@@ -137,7 +137,7 @@ void testDeleteBlockCodeFence() {
   require(code->type() == BlockType::CodeFence, "first block should be a code fence");
   h.placeIn(code, 2);
   h.backend.deleteRange(DeleteTarget::Block);
-  require(h.session.markdownText().isEmpty(), "deleting the code fence should empty the document");
+  require(h.session.markdownText().toString().isEmpty(), "deleting the code fence should empty the document");
 }
 
 // deleteRange(Block) inside a list removes the entire list (v1: list-item-level
@@ -152,7 +152,7 @@ void testDeleteBlockListRemovesWholeList() {
   MarkdownNode* itemPara = firstChildOfType(item, BlockType::Paragraph);
   h.placeIn(itemPara, 1);
   h.backend.deleteRange(DeleteTarget::Block);
-  require(h.session.markdownText().isEmpty(), "delete block in a list should remove the whole list");
+  require(h.session.markdownText().toString().isEmpty(), "delete block in a list should remove the whole list");
 }
 
 // deleteRange(Block) on the trailing caret is a no-op (must not delete the last block).
@@ -162,7 +162,7 @@ void testDeleteBlockTrailingCaretIsNoOp() {
   h.placeInTrailing();
   require(h.controller.selection().cursorPosition().afterBlock, "caret should be on the trailing paragraph");
   h.backend.deleteRange(DeleteTarget::Block);
-  require(h.session.markdownText() == QStringLiteral("alpha"), "delete block from trailing caret must not change the document");
+  require(h.session.markdownText().toString() == QStringLiteral("alpha"), "delete block from trailing caret must not change the document");
 }
 
 // deleteRange(Block) produces a single undoable RemoveNodeCommand; redo re-applies.
@@ -171,18 +171,18 @@ void testDeleteBlockUndoRedo() {
   h.load(QStringLiteral("## Title\n\nbody"));
   MarkdownNode* heading = blockAt(h.session, 0);
   h.placeIn(heading, 2);
-  const QString before = h.session.markdownText();
+  const QString before = h.session.markdownText().toString();
 
   h.backend.deleteRange(DeleteTarget::Block);
-  require(h.session.markdownText() == QStringLiteral("body"), "block should be removed");
+  require(h.session.markdownText().toString() == QStringLiteral("body"), "block should be removed");
 
   require(h.controller.canUndo(), "delete block should be undoable");
   h.controller.undo();
-  require(h.session.markdownText() == before, "undo should restore the deleted block");
+  require(h.session.markdownText().toString() == before, "undo should restore the deleted block");
 
   require(h.controller.canRedo(), "redo should be available after undo");
   h.controller.redo();
-  require(h.session.markdownText() == QStringLiteral("body"), "redo should re-remove the block");
+  require(h.session.markdownText().toString() == QStringLiteral("body"), "redo should re-remove the block");
 }
 
 // deleteRange(Forward) preserves the legacy "delete selection else one char" semantics.
@@ -192,7 +192,7 @@ void testDeleteRangeForwardCollapsesSelection() {
   MarkdownNode* para = blockAt(h.session, 0);
   h.placeIn(para, 0);
   h.backend.deleteRange(DeleteTarget::Forward);
-  require(h.session.markdownText() == QStringLiteral("lpha"), "forward delete should remove one char");
+  require(h.session.markdownText().toString() == QStringLiteral("lpha"), "forward delete should remove one char");
 }
 
 int main(int argc, char** argv) {

@@ -183,6 +183,13 @@ void EditorView::setDocument(const MarkdownDocument& document, QString documentP
   updateTableToolbar();
 }
 
+void EditorView::setLoading(bool loading) {
+  if (loading_ != loading) {
+    loading_ = loading;
+    viewport()->update();
+  }
+}
+
 bool EditorView::refreshBlock(NodeId blockId, const MarkdownDocument& document) {
   PerfTimer perf("view.refreshBlock");
   if (!layout_ || document_ != &document) {
@@ -610,6 +617,14 @@ void EditorView::paintEvent(QPaintEvent* event) {
 
   QPainter painter(viewport());
   painter.fillRect(viewport()->rect(), theme_.viewportBackgroundColor());
+
+  if (loading_) {
+    // Async open parse is in flight (no document yet, or a stale one): show a centered hint instead
+    // of the stale page so the user sees feedback while the worker parses.
+    painter.setPen(theme_.textColorForElement(QStringLiteral("p"), nullptr));
+    painter.drawText(viewport()->rect(), Qt::AlignCenter, QStringLiteral("Loading…"));
+    return;
+  }
 
   if (!layout_) {
     return;
