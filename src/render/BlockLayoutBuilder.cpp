@@ -108,8 +108,29 @@ bool isVirtualEmptyParagraphNode(const MarkdownNode& node) {
   return node.type() == BlockType::Paragraph && range.byteStart >= 0 && range.byteEnd == range.byteStart;
 }
 
-bool omitVirtualEmptyParagraphInRenderFlow(const MarkdownNode& node) {
-  return isVirtualEmptyParagraphNode(node) && isInsideBlockquote(node);
+bool omitVirtualEmptyParagraphInRenderFlow(const MarkdownNode& node, const SelectionRange& selection) {
+  if (!isVirtualEmptyParagraphNode(node) || !isInsideBlockquote(node)) {
+    return false;
+  }
+  // Render (a) the quote's TRAILING VEP — Typora shows trailing blank lines, and it's
+  // where the caret lands after Enter at the end of the last quote line — and (b) the
+  // VEP the caret is currently ON, i.e. the new empty line Enter creates BETWEEN other
+  // blocks (e.g. an outer-quote paragraph and a nested quote). Without (b), pressing
+  // Enter mid-quote changed the source but the view didn't change at all: the caret's
+  // VEP was omitted, so it had no BlockLayout (the caret vanished) and added no height
+  // (no new line appeared). Other (inter-paragraph separator) VEPs stay omitted — they
+  // are already expressed as paragraph spacing, and rendering them would double-space
+  // the quote.
+  const MarkdownNode* parent = node.parent();
+  const bool trailing = parent != nullptr && !parent->children().empty() && parent->children().back().get() == &node;
+  const auto caretOnVep = [&](const CursorPosition& p) {
+    return p.text.nodeId == node.id() ||
+           (p.text.sourceOffset >= 0 && node.sourceRange().byteStart == p.text.sourceOffset);
+  };
+  if (trailing || caretOnVep(selection.focus) || caretOnVep(selection.anchor)) {
+    return false;
+  }
+  return true;
 }
 
 // Width to right-align 1..lineCount in a code-fence gutter, measured with the zoom-aware code font
@@ -592,7 +613,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(
   const bool firstChildMarginCollapses = qFuzzyIsNull(qborder.top() + qpad.top());
   const bool lastChildMarginCollapses = qFuzzyIsNull(qborder.bottom() + qpad.bottom());
   for (const auto& child : node.children()) {
-    if (omitVirtualEmptyParagraphInRenderFlow(*child)) { continue; }
+    if (omitVirtualEmptyParagraphInRenderFlow(*child, selection_)) { continue; }
     omittedOnlyRenderChildren = false;
     if (previousChild) { cursorY += spacingBetweenInFlow(*previousChild, *child, theme); }
     else if (!firstChildMarginCollapses) { cursorY += spacingBeforeInFlow(*child, theme); }
@@ -717,7 +738,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   bool skippedPrimaryParagraph = false;
   const MarkdownNode* previousChild = nullptr;
   for (const auto& child : node.children()) {
-    if (omitVirtualEmptyParagraphInRenderFlow(*child)) { continue; }
+    if (omitVirtualEmptyParagraphInRenderFlow(*child, selection_)) { continue; }
     if (!skippedPrimaryParagraph && child->type() == BlockType::Paragraph) {
       skippedPrimaryParagraph = true;
       previousChild = child.get();
@@ -1580,7 +1601,7 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateContainer(const M
   const MarkdownNode* previousChild = nullptr;
   bool omittedOnlyRenderChildren = !node.children().empty();
   for (const auto& child : node.children()) {
-    if (omitVirtualEmptyParagraphInRenderFlow(*child)) { continue; }
+    if (omitVirtualEmptyParagraphInRenderFlow(*child, selection_)) { continue; }
     omittedOnlyRenderChildren = false;
     if (previousChild) { total += spacingBetweenInFlow(*previousChild, *child, theme, /*fast=*/true); }
     else if (!firstChildMarginCollapses) { total += spacingBeforeInFlow(*child, theme, /*fast=*/true); }
@@ -1632,7 +1653,7 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateListItem(const Ma
   bool skippedPrimary = false;
   const MarkdownNode* previousChild = nullptr;
   for (const auto& child : node.children()) {
-    if (omitVirtualEmptyParagraphInRenderFlow(*child)) { continue; }
+    if (omitVirtualEmptyParagraphInRenderFlow(*child, selection_)) { continue; }
     if (!skippedPrimary && child->type() == BlockType::Paragraph) {
       skippedPrimary = true;
       previousChild = child.get();

@@ -340,11 +340,15 @@ void testBlockquoteCssBoxUsesPerSideBorderAndCompactNestedFlow() {
   focusedLayout.rebuild(session.document(), theme, 800.0, focusedVep, QString());
   const BlockLayout* focusedOuter = focusedLayout.block(quotes.at(0)->id());
   require(focusedOuter != nullptr, QStringLiteral("focused blockquote layout exists"));
-  require(qAbs(focusedOuter->cssBorderBox(theme).height() - outer->cssBorderBox(theme).height()) < 0.5,
-          QStringLiteral("quote border height should not depend on focused virtual blank paragraph (unfocused=%1 focused=%2)")
+  // Focusing a quote VEP now RENDERS it (one line height): that's the empty line Enter
+  // creates inside the quote and where the caret lands — it must be visible, or pressing
+  // Enter mid-quote changes the source but not the view. The unfocused quote still omits
+  // its separator VEPs (no double-space); only the caret's VEP renders.
+  require(focusedOuter->cssBorderBox(theme).height() > outer->cssBorderBox(theme).height() + 5.0,
+          QStringLiteral("focusing a quote VEP renders the Enter line — border height grows (unfocused=%1 focused=%2)")
               .arg(outer->cssBorderBox(theme).height()).arg(focusedOuter->cssBorderBox(theme).height()));
-  require(focusedLayout.block(quoteVeps.first()->id()) == nullptr,
-          QStringLiteral("focused quote virtual empty paragraph remains editor-only, not render-flow content"));
+  require(focusedLayout.block(quoteVeps.first()->id()) != nullptr,
+          QStringLiteral("the focused quote VEP must have a BlockLayout so the caret lands on the new line"));
 
   QImage img(QSize(800, qCeil(layout.totalHeight()) + 20), QImage::Format_ARGB32);
   img.fill(QColor(QStringLiteral("#ffffff")).rgba());

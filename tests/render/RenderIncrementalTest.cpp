@@ -1,5 +1,6 @@
 #include "document/DocumentSession.h"
 #include "document/MarkdownDocument.h"
+#include "document/TextSelection.h"
 #include "parser/CmarkGfmParser.h"
 #include "render/DocumentLayout.h"
 #include "theme/CssThemeMapper.h"
@@ -138,6 +139,95 @@ void testLazyPromoteMatchesEagerGap() {
                             QStringLiteral("Lazy+promote must match Eager (structural spacing, no gap jump)"));
 }
 
+// A trailing empty line in a (nested) blockquote — what Enter creates at the end of a
+// quote line — must render and be caret-able. Before the fix, omitVirtualEmptyParagraph-
+// InRenderFlow dropped EVERY blockquote VEP, so the Enter-continuation line had no
+// BlockLayout (the caret vanished) and the blockquote height didn't grow (no visible
+// change). After the fix the trailing VEP renders.
+void testTrailingEmptyNestedBlockquoteLineRenders() {
+  const RenderTheme theme = RenderTheme::github();
+
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("> > Nested quote.\n> >\n> > "), false);
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+
+  const MarkdownNode* bq = findFirstBlock(session.document().root(), BlockType::BlockQuote);
+  require(bq != nullptr, QStringLiteral("fixture should parse a blockquote"));
+  // The trailing `> > ` line is a zero-width paragraph (VEP) inside the quote.
+  const std::function<const MarkdownNode*(const MarkdownNode&)> findVep = [&](const MarkdownNode& n) -> const MarkdownNode* {
+    if (n.type() == BlockType::Paragraph) {
+      const SourceRange r = n.sourceRange();
+      if (r.byteStart >= 0 && r.byteEnd == r.byteStart) { return &n; }
+    }
+    for (const auto& c : n.children()) { if (const MarkdownNode* f = findVep(*c)) { return f; } }
+    return nullptr;
+  };
+  const MarkdownNode* vep = findVep(*bq);
+  require(vep != nullptr, QStringLiteral("trailing empty line should parse as a VEP"));
+  require(layout.block(vep->id()) != nullptr,
+          QStringLiteral("trailing blockquote VEP must have a BlockLayout so the caret can land on the new line"));
+
+  // And it adds visible height vs the same quote without the trailing line.
+  DocumentSession bare;
+  bare.setMarkdownText(QStringLiteral("> > Nested quote."), false);
+  DocumentLayout bareLayout;
+  bareLayout.rebuild(bare.document(), theme, 800.0);
+  const qreal bareHeight = bareLayout.block(mutableBlockAt(bare.document(), 0)->id())->height();
+  const qreal withVepHeight = layout.block(mutableBlockAt(session.document(), 0)->id())->height();
+  require(withVepHeight > bareHeight + 5.0,
+          QStringLiteral("trailing empty line must add visible height (%1 > %2)").arg(withVepHeight).arg(bareHeight));
+}
+
+// Pressing Enter at the end of an outer-quote paragraph that is FOLLOWED by more quote
+// content (a nested quote) creates a VEP BETWEEN the paragraph and the nested quote — a
+// NON-trailing VEP. Before the fix every blockquote VEP was omitted, so this mid-quote
+// Enter line was invisible and the caret vanished. After the fix the VEP the caret is on
+// renders, wherever it sits. (Separator VEPs with no caret stay omitted — no double-space.)
+void testCaretOnMidBlockquoteVepRenders() {
+  const RenderTheme theme = RenderTheme::github();
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("> Outer paragraph.\n>\n> \n>\n> > Nested.\n"), false);
+
+  const MarkdownNode* outerBq = findFirstBlock(session.document().root(), BlockType::BlockQuote);
+  require(outerBq != nullptr, QStringLiteral("expected an outer blockquote"));
+  const std::function<const MarkdownNode*(const MarkdownNode&, const MarkdownNode*)> findMidVep =
+      [&](const MarkdownNode& n, const MarkdownNode* bq) -> const MarkdownNode* {
+    if (n.type() == BlockType::Paragraph && bq) {
+      const SourceRange r = n.sourceRange();
+      if (r.byteStart >= 0 && r.byteEnd == r.byteStart) {
+        const auto& sibs = bq->children();
+        if (sibs.empty() || sibs.back().get() != &n) { return &n; }  // non-trailing
+      }
+    }
+    const MarkdownNode* childBq = (n.type() == BlockType::BlockQuote) ? &n : bq;
+    for (const auto& c : n.children()) { if (const MarkdownNode* f = findMidVep(*c, childBq)) { return f; } }
+    return nullptr;
+  };
+  const MarkdownNode* vep = findMidVep(*outerBq, outerBq);
+  require(vep != nullptr, QStringLiteral("parser should create a non-trailing VEP for the empty `> ` line"));
+
+  // Caret elsewhere → the mid VEP stays omitted (renders no double-space).
+  {
+    DocumentLayout layout;
+    layout.rebuild(session.document(), theme, 800.0);
+    require(layout.block(vep->id()) == nullptr,
+            QStringLiteral("non-trailing blockquote VEP must stay omitted when the caret is elsewhere"));
+  }
+  // Caret ON the VEP → it renders (the new line is visible, the caret lands on it).
+  {
+    SelectionRange sel;
+    sel.focus.blockId = outerBq->id();
+    sel.focus.text.nodeId = vep->id();
+    sel.focus.text.sourceOffset = vep->sourceRange().byteStart;
+    sel.anchor = sel.focus;
+    DocumentLayout layout;
+    layout.rebuild(session.document(), theme, 800.0, sel, QString(), DocumentLayout::BuildPolicy::Eager);
+    require(layout.block(vep->id()) != nullptr,
+            QStringLiteral("the caret's VEP (mid-quote Enter line) must render so the new line is visible"));
+  }
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -147,6 +237,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testIncrementalBlockRebuildContract);
   RUN_TEST(testIncrementalTopLevelRangeRebuildContract);
   RUN_TEST(testLazyPromoteMatchesEagerGap);
+  RUN_TEST(testTrailingEmptyNestedBlockquoteLineRenders);
+  RUN_TEST(testCaretOnMidBlockquoteVepRenders);
 #undef RUN_TEST
   return 0;
 }

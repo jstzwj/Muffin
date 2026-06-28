@@ -1641,8 +1641,22 @@ void BlockLayout::paintTable(QPainter& painter, const RenderTheme& theme, qreal 
     const QRectF rowRect = row.rect.translated(0, -scrollY);
     for (const TableCellLayout& cell : row.cells) {
       const QRectF cellRect = cell.rect.translated(0, -scrollY);
+      // Resolve the cell background with validity guards: a theme that declares no
+      // header/stripe background (e.g. whitey — only padding/borders, no `th`/`tr:nth-
+      // child` bg) leaves those tokens invalid. Painting an invalid QColor fills SOLID
+      // BLACK, so fall back to the page background instead — undeclared ⇒ transparent
+      // over the page, matching Typora. Header bg applies only to header cells, stripe
+      // bg only to alternate rows, each only when the theme actually declared it.
+      QColor cellBg = theme.backgroundColor();
+      if (cell.header) {
+        const QColor headerBg = theme.tableHeaderBackgroundColor();
+        if (headerBg.isValid()) { cellBg = headerBg; }
+      } else if (cell.alternate) {
+        const QColor stripeBg = theme.tableAlternateBackgroundColor();
+        if (stripeBg.isValid()) { cellBg = stripeBg; }
+      }
       painter.setPen(theme.tableBorderColor());
-      painter.setBrush(cell.header ? theme.tableHeaderBackgroundColor() : (cell.alternate ? theme.tableAlternateBackgroundColor() : theme.backgroundColor()));
+      painter.setBrush(cellBg);
       // Phase 4c: a CSS-themed table rounds its cells; legacy tables stay square.
       if (theme.tableBoxThemed() && theme.tableBorderRadius() > 0.0) {
         painter.drawRoundedRect(cellRect.adjusted(0.5, 0.5, -0.5, -0.5), theme.tableBorderRadius(), theme.tableBorderRadius());
