@@ -5,6 +5,38 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-06-30
+
+### Added
+- **CSS computed-style engine** - A real computed-style cascade now resolves CSS values for rendered elements, adding `calc()` expressions, `conic-gradient()` backgrounds, `text-shadow` (offscreen blur composite), a `filter` suite (blur and color filters), per-code-point `text-transform`, and text-decoration color/style - so imported CSS themes that rely on these properties now render at full fidelity
+- **Focus animation and structural selectors** - Themes can now use `:focus` (with a smooth blend against hover), sibling and general-sibling combinators (`+`, `~`), and structural pseudo-classes (`:first-child`, `:nth-child(an+b)`, `:has(tag|.class)`) via a real-tree matcher; themes without structural rules keep the fast load-time prototype path
+- **Heading auto-numbering** - CSS `counter()` on headings (e.g. phycat's `counter(h1)`) now renders as real numbers instead of literal text; a counter-reset/increment state machine runs on full and range rebuilds and is reused on single-block edits so the heading outline never shifts
+- **Thematic-break editing experience** - Editing around a `---` thematic break now stays smooth and seamless, with stable selection and layout through insert and delete gestures, including next to nested containers
+- **Animated loading overlay** - Asynchronous document loads now show an animated overlay instead of a bare "Loading…" paint
+- **data: URI images** - Inline `data:` URI images are now decoded and rendered
+- **HTML export theme embedding** - Export to HTML (styled) now embeds the active theme's CSS, recursively inlining local `@import` sheets so multi-file themes export with their full styling
+- **Pandoc auto-detect** - The export and import pipeline now auto-detects a system Pandoc installation and resolves its path more robustly
+- **Disabled-state theme colors** - Themes can declare disabled-state color tokens, and chrome color derivation now fills them
+
+### Changed
+- **PieceTable text storage** - The document text buffer is now a zero-copy PieceTable, eliminating full-buffer copies on every edit
+- **Large-file performance and stability** - Opening and editing very large files (tens to hundreds of MB) is now dramatically faster and no longer crashes. Fixes include a stack overflow in the CSS sibling-chain traversal, an O(n²) structural-cascade rebuild on flat block lists, O(document) marker and cursor-resolution scans on every keystroke, per-block registry reads in the layout-estimate loop, and major memory reductions during parse (freeing the UTF-8 and cmark trees as soon as they are consumed). Undo on a huge document dropped from roughly 20 seconds to milliseconds
+- **Theme and render refactor** - Consolidated theme parsing and rendering, with element box geometry (margin, padding, border, radius, fit-content) now single-sourced from element styles instead of duplicated across spacing fields
+
+### Fixed
+- **Inline image offset under CSS line-height** - Inline images no longer draw offset from their line under themes that set a custom `line-height`
+- **`content: none` rendered as literal text** - Pseudo-elements declaring `content: none` or `normal` no longer paint the word "none"
+- **`rem` unit resolution** - `rem` now resolves against the root font size rather than the body font size, fixing oversized text in themes such as pixyll
+- **Lazy-promote layout gap** - Promoting an off-screen block into view no longer snaps its spacing gap once on the first click
+- **Undeclared table background rendered black** - Tables in themes without an explicit background color (e.g. Whitey) no longer render solid-black header and stripe rows; undeclared backgrounds fall back to transparent over the page
+- **Nested-blockquote trailing empty paragraph** - Pressing Enter inside a nested blockquote now produces a visible, editable empty line instead of the caret vanishing
+- **Editor-only CSS hacks leaking** - Editor-only CSS hacks carried by imported themes (e.g. `pre.md-meta-block`) no longer leak into code fences and inflate their height
+- **CSS cascade leaking non-inherited properties** - Parent padding, margin, and border no longer leak into children; only inherited and custom properties propagate down the tree
+- **CSS hex-alpha color byte order** - `#RRGGBBAA` colors are now read in the correct byte order (previously read as `#AARRGGBB`, turning pale low-alpha colors bright)
+- **Async open parse/edit race** - Keystrokes typed while an asynchronous parse is in flight no longer clobber the document being loaded; the input pipeline now gates on parse-in-progress
+- **Local-edit top-level block handling** - Editing near non-editable top-level blocks no longer corrupts the live tree or triggers a full re-parse
+- **macOS build** - Fixed a default-argument compile error in `BlockLayout::paint`
+
 ## [0.4.1] - 2026-06-24
 
 ### Fixed
@@ -396,8 +428,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.5.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.5.0
 [0.4.1]: https://github.com/jstzwj/Muffin/releases/tag/v0.4.1
-[0.4.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.4.0
 [0.3.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.3.0
 [0.2.8]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.8
 [0.2.7]: https://github.com/jstzwj/Muffin/releases/tag/v0.2.7
