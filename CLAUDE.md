@@ -79,3 +79,7 @@ cmake --build --preset conan-release --target dist
 ```
 
 Use subagents to modify `.ts` files in parallel — avoid bulk Python/sed scripts for XML manipulation as they are error-prone (losing closing tags, removing valid entries, etc.).
+
+
+其他注意点：
+* 当你自己commit的时候，**严禁把co author加上claude code**

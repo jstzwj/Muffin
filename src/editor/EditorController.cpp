@@ -12,12 +12,32 @@
 #include "unicode/WordBoundary.h"
 
 #include <QDebug>
+#include <QElapsedTimer>
 #include <QLoggingCategory>
 
 namespace muffin {
 namespace {
 
 Q_LOGGING_CATEGORY(controllerPerf, "muffin.perf", QtWarningMsg)
+
+class PerfTimer {
+public:
+  explicit PerfTimer(const char* label) : label_(label), enabled_(controllerPerf().isDebugEnabled()) {
+    if (enabled_) {
+      timer_.start();
+    }
+  }
+  ~PerfTimer() {
+    if (enabled_) {
+      qCDebug(controllerPerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0 << " ms";
+    }
+  }
+
+private:
+  const char* label_;
+  bool enabled_;
+  QElapsedTimer timer_;
+};
 
 LiteralBlockSpec frontMatterSpec() {
   return LiteralBlockSpec{
@@ -267,7 +287,10 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
   connect(&selection_, &SelectionController::selectionChanged, this, [this](SelectionRange selection, HitTestResult hit) {
     // A command (e.g. insert-paragraph-before/after) may have moved the caret off the literal
     // block being edited; leave that editor so the caret and the next keystroke follow the caret.
-    inputController_.reconcileLiteralEditorForCursor();
+    {
+      PerfTimer t("selectionChanged.reconcileLiteral");
+      inputController_.reconcileLiteralEditorForCursor();
+    }
     if (view_) {
       if (selection.focus.isValid() && !selection.isCollapsed()) {
         view_->setSelectionRange(selection);
@@ -277,8 +300,14 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
         view_->clearCursor();
       }
     }
-    emit cursorChanged(hit);
-    emit stateChanged();
+    {
+      PerfTimer t("selectionChanged.cursorChangedEmit");
+      emit cursorChanged(hit);
+    }
+    {
+      PerfTimer t("selectionChanged.stateChangedEmit");
+      emit stateChanged();
+    }
   });
   connect(&undoStack_, &UndoStack::stateChanged, this, &EditorController::stateChanged);
   connect(&brushQueue_, &BrushQueue::refreshRequested, this, [this](const BrushQueue::RefreshRequest& request) {
@@ -1221,6 +1250,33 @@ void EditorController::activateHit(HitTestResult hit) {
                                 htmlLiteral_.currentBlockId() == hit.blockId;
   if (!preserveHtmlEdit) {
     exitAllLiteralEditModes();
+  }
+  // Clicking a non-text block (a thematic break) selects the whole block — a Typora-style outline
+  // is drawn around it and Del/Backspace/Enter remove it. Build a whole-block SelectionRange
+  // (anchor at the block's start, focus at its end) so deleteSelection / tryRemoveExactWholeBlockSelection
+  // fire. The rule has no inline text, so a caret is useless here.
+  if (hit.zone == HitTestResult::Zone::SelectBlock && session_) {
+    const MarkdownNode* node = session_->document().node(hit.blockId);
+    if (node) {
+      BlockEditContextResolver resolver(const_cast<DocumentSession*>(session_), const_cast<SelectionController*>(&selection_));
+      qsizetype blockStart = 0;
+      qsizetype blockEnd = 0;
+      if (resolver.blockSourceRange(*node, blockStart, blockEnd) && blockEnd > blockStart) {
+        CursorPosition anchor;
+        anchor.blockId = node->id();
+        anchor.text.nodeId = node->id();
+        anchor.text.textOffset = 0;
+        anchor.text.sourceOffset = blockStart;
+        CursorPosition focus = anchor;
+        focus.text.textOffset = blockEnd - blockStart;
+        focus.text.sourceOffset = blockEnd;
+        SelectionRange whole;
+        whole.anchor = anchor;
+        whole.focus = focus;
+        selection_.setSelection(whole);
+        return;
+      }
+    }
   }
   selection_.setHitResult(hit);
   if (hit.zone != HitTestResult::Zone::Html && enterLiteralEditMode(hit.zone)) {

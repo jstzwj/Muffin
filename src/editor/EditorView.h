@@ -186,6 +186,8 @@ private:
   // the same amount and be clipped to the visible text window (the content rect minus the scrollbar
   // strip) — otherwise the highlight sits at the content's natural x while the text has scrolled.
   void paintSelectionRectsForBlock(QPainter& painter, const BlockLayout* block, const QVector<QRectF>& documentRects) const;
+  // Typora-style thin blue outline around a whole-selected thematic break (no text to highlight).
+  void paintSelectedRuleOutline(QPainter& painter, const BlockLayout* block) const;
   // True for a code fence that paints a horizontal scrollbar (wrap off + a line wider than content).
   bool isScrollableCodeFence(const BlockLayout* block) const;
   // True when `viewportPos` falls inside the current selection's painted rects.

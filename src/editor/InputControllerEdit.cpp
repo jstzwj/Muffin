@@ -56,6 +56,7 @@ QVector<qsizetype> collectPendingMarkerOffsetsForSession(DocumentSession* sessio
   if (!session) {
     return {};
   }
+  PerfTimer pendingMarkerTimer("input.collectPendingMarkerOffsets");
   return collectPendingMarkerOffsets(session->markdownText().toString(), session->document().root());
 }
 
@@ -229,22 +230,45 @@ void InputController::applyLocalEdit(
     ctx_.session->applyMarkdownText(nextText, true, std::move(demoteOffsets));
   }
 
-  CursorPosition nextCursor = cursorAfterEdit(preferredCursor, fallbackSourceOffset, preferLaterEmptyAtOffset);
+  CursorPosition nextCursor;
+  {
+    PerfTimer cursorAfterEditTimer("input.applyLocalEdit.cursorAfterEdit");
+    nextCursor = cursorAfterEdit(preferredCursor, fallbackSourceOffset, preferLaterEmptyAtOffset);
+  }
   if (ctx_.selection) {
+    PerfTimer setSelectionTimer("input.applyLocalEdit.setSelection");
     if (!nextCursor.isValid()) {
+      PerfTimer endOfDocTimer("input.applyLocalEdit.setSelection.endOfDocFallback");
       nextCursor = cursorForSourceOffset(ctx_.session->markdownText().size());
     }
-    ctx_.selection->setCursorPosition(nextCursor);
+    if (!nextCursor.isValid()) {
+      // Even end-of-document resolution failed: the caret's block became a non-text top-level block
+      // (e.g. paragraph "--" + "-" → thematic break) and no text block resolves the offset. Land
+      // block-after the edited block so the caret stays resolvable and local. Without this the caret
+      // was cleared, which forced this edit onto the O(document) snapshot-undo path
+      // (collectPendingMarkerOffsets walks every paragraph) plus an O(document) selection-clear
+      // chain — ~49s on a 112k-block document. A valid, local caret keeps it on the cheap
+      // TextDeltaCommand path like any ordinary keystroke.
+      if (MarkdownNode* host = ctx_.session->document().topLevelBlockAtOffset(fallbackSourceOffset)) {
+        nextCursor = cursorForBlockAfter(*host, fallbackSourceOffset);
+      }
+    }
+    {
+      PerfTimer setCursorPosTimer("input.applyLocalEdit.setSelection.setCursorPos");
+      ctx_.selection->setCursorPosition(nextCursor);
+    }
   }
   // A structure edit (e.g. committing "```"/"$$" with Enter) can leave the caret inside a newly
   // created literal block. Activate that block's inline editor so the caret paints as an editing
   // caret and subsequent keystrokes route into it rather than being rejected. syncLiteralEditMode
   // is a no-op when the caret is on a plain text block, so this is safe for ordinary edits.
   if (nextCursor.isValid()) {
+    PerfTimer syncLiteralTimer("input.applyLocalEdit.syncLiteral");
     syncLiteralEditMode(nextCursor.blockId);
   }
 
   if (ctx_.undoStack) {
+    PerfTimer undoTimer("input.applyLocalEdit.undo");
     const bool textDeltaUndoEligible = appliedLocally && !structureEdit && beforeCursor.isValid() && nextCursor.isValid();
     if (textDeltaUndoEligible) {
       QVector<NodeId> affectedNodes;
@@ -272,6 +296,7 @@ void InputController::applyLocalEdit(
     }
   }
   if (ctx_.brushQueue) {
+    PerfTimer brushNotifyTimer("input.applyLocalEdit.brushNotify");
     if (!appliedLocally) {
       ctx_.brushQueue->requestFullRefresh();
     } else if (structureEdit || ctx_.session->lastLocalEditChangedTopLevelStructure()) {
@@ -279,6 +304,14 @@ void InputController::applyLocalEdit(
     } else {
       ctx_.brushQueue->requestBlockRefresh(refreshNodeFor(ctx_.session, nextCursor.blockId));
     }
+    // Flush synchronously so the layout reflects this edit before control returns to the event
+    // loop. BrushQueue otherwise defers via a 0-ms timer (scheduleFlush → QTimer::singleShot(0)),
+    // leaving a window where the view paints a STALE layout: the freshly inserted block still at
+    // h=0 and every following block still at its pre-edit Y. On Enter that looked like "the
+    // following paragraphs jump up to the caret". Each refresh is cheap (view.refreshBlocks is
+    // sub-ms), and a single keystroke is a single edit, so the coalescing the deferral provided is
+    // not needed here.
+    ctx_.brushQueue->flush();
   }
 }
 

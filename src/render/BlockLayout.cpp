@@ -1588,6 +1588,20 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
     case BlockType::LinkDefinition:
     case BlockType::FootnoteDefinition:
       return hitDefinition(documentPos, theme);
+    case BlockType::ThematicBreak: {
+      // A thematic break hosts no editable text, so clicking it SELECTS the whole break
+      // (Typora-style: a thin outline is drawn around it and Del/Backspace/Enter remove it). Only a
+      // click INSIDE the rule's rect selects it; a click in the half-blockSpacing padded margin
+      // above/below returns invalid ({}), so DocumentLayout::hitTest's window loop moves on and the
+      // neighbouring block claims the gap — preserving "click above → caret before the rule" and
+      // "click below → caret after it / into the empty paragraph beneath".
+      if (rect_.contains(documentPos)) {
+        result.zone = HitTestResult::Zone::SelectBlock;
+      } else {
+        return {};
+      }
+      break;
+    }
     default:
       result.cursorRect = QRectF(rect_.topLeft(), QSizeF(1.0, rect_.height()));
       break;

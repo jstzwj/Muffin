@@ -379,9 +379,18 @@ void EditorView::setCursorPosition(CursorPosition position) {
   cursorPosition_ = position;
   selection_.anchor = cursorPosition_;
   selection_.focus = cursorPosition_;
-  refreshInlineProjectionForSelectionChange(previousSelection);
-  updateTableToolbar();
-  updateBlockFocus();
+  {
+    PerfTimer t("view.setSelection.refreshInlineProjection");
+    refreshInlineProjectionForSelectionChange(previousSelection);
+  }
+  {
+    PerfTimer t("view.setSelection.updateTableToolbar");
+    updateTableToolbar();
+  }
+  {
+    PerfTimer t("view.setSelection.updateBlockFocus");
+    updateBlockFocus();
+  }
 }
 
 void EditorView::setSelectionRange(SelectionRange selection) {
@@ -1560,6 +1569,11 @@ void EditorView::paintSelection(QPainter& painter) const {
     const BlockLayout* block = layout_->blockIfPromoted(selection_.focus.blockId);
     if (block) {
       paintSelectionRectsForBlock(painter, block, block->selectionRects(selection_, theme_));
+      // A whole-selected non-text block (a thematic break) has no text to highlight, so paint a
+      // thin Typora-style outline around it instead.
+      if (block->type() == BlockType::ThematicBreak) {
+        paintSelectedRuleOutline(painter, block);
+      }
     }
   } else {
     const bool anchorFirst = blockComesBefore(*layout_, selection_.anchor.blockId, selection_.focus.blockId);
@@ -1622,6 +1636,23 @@ void EditorView::paintSelectionRectsForBlock(QPainter& painter, const BlockLayou
     }
     painter.drawRoundedRect(rect, 2, 2);
   }
+}
+
+void EditorView::paintSelectedRuleOutline(QPainter& painter, const BlockLayout* block) const {
+  if (block == nullptr) {
+    return;
+  }
+  // Frame the <hr> line (drawn at rect().center().y()) with a thin blue rounded outline — the
+  // Typora-style "this block is selected" affordance for a rule, which has no text to highlight.
+  // Document coords → view coords via the same -scrollY translate paintSelectionRectsForBlock uses.
+  const QRectF box = block->rect();
+  const qreal cy = box.center().y();
+  const qreal frameH = qMax(theme_.blockSpacing() * 0.8, 14.0);
+  QRectF outline(box.left() + 2.0, cy - frameH / 2.0, qMax<qreal>(1.0, box.width() - 4.0), frameH);
+  outline.translate(0.0, -scrollY());
+  painter.setBrush(Qt::NoBrush);
+  painter.setPen(QPen(QColor(79, 143, 247), 1.0));  // the selection accent blue
+  painter.drawRoundedRect(outline, 4.0, 4.0);
 }
 
 bool EditorView::isScrollableCodeFence(const BlockLayout* block) const {

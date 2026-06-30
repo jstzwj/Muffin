@@ -26,7 +26,11 @@ struct HitTestResult {
     Math,
     Html,
     FrontMatter,
-    BlockAfter
+    BlockAfter,
+    // A click that should SELECT the whole block (a thematic break — a non-text leaf). The view
+    // turns it into a whole-block SelectionRange (anchor at the block start, focus at its end) so
+    // Del/Backspace/Enter remove it and a Typora-style outline is drawn around it.
+    SelectBlock
   };
 
   Zone zone = Zone::None;

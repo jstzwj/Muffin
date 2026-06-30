@@ -3,12 +3,16 @@
 #include "editor/SourceEditorWidget.h"
 
 #include <QAction>
+#include <QElapsedTimer>
 #include <QFileInfo>
+#include <QLoggingCategory>
 #include <QMenu>
 #include <QPlainTextEdit>
 #include <QSettings>
 
 namespace muffin {
+
+Q_LOGGING_CATEGORY(actionProbe, "muffin.perf", QtWarningMsg)
 
 // Every command's handler comes from the declaration table (CommandDeclarations.cpp);
 // bindCommands just wires each one to its id. The handler is captured by value —
@@ -79,10 +83,24 @@ void MainWindow::updateActionsForCategory(CommandCategory category) {
       continue;
     }
     if (decl.enabled) {
-      action->setEnabled(decl.enabled(*this));
+      QElapsedTimer t;
+      t.start();
+      const bool enabled = decl.enabled(*this);
+      const double ms = t.nsecsElapsed() / 1000000.0;
+      if (ms > 5.0) {
+        qCDebug(actionProbe).nospace() << "actionProbe.slowEnabled id=" << decl.id << " " << ms << " ms";
+      }
+      action->setEnabled(enabled);
     }
     if (decl.checked) {
-      action->setChecked(decl.checked(*this));
+      QElapsedTimer t;
+      t.start();
+      const bool checked = decl.checked(*this);
+      const double ms = t.nsecsElapsed() / 1000000.0;
+      if (ms > 5.0) {
+        qCDebug(actionProbe).nospace() << "actionProbe.slowChecked id=" << decl.id << " " << ms << " ms";
+      }
+      action->setChecked(checked);
     }
   }
 }

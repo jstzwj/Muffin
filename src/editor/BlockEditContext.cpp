@@ -103,6 +103,13 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
   if (!session_) {
     return false;
   }
+  // O(log n) line/column → byte offset via the incrementally-maintained cache. Empty /
+  // degenerate-range nodes (freshly-created paragraphs, VEPs) carry no byte span, so their content
+  // bounds must be recovered from line/column; the sourceOffsetForLineColumn/sourceOffsetForLineEnd
+  // free functions scan from byte 0 (O(document)), which froze the editor on every Enter that
+  // creates an empty paragraph (~145 ms ×2 per Enter on an 18 MB doc — fill() runs both inside the
+  // caret-resolve walk and again after the match is found).
+  const auto& lineOffsets = session_->document().lineOffsets();
 
   MarkdownNode* editable = &displayNode;
   if (isDefinitionBlock(displayNode.type())) {
@@ -154,8 +161,8 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
       qsizetype lineEnd = -1;
       BlockEditContext markerContext;
       markerContext.node = &displayNode;
-      markerContext.contentRange.byteStart = sourceOffsetForLineColumn(
-          session_->markdownText(), displayNode.sourceRange().lineStart, qMax(1, displayNode.sourceRange().columnStart));
+      markerContext.contentRange.byteStart = lineOffsets.offsetForLineColumn(
+          displayNode.sourceRange().lineStart, qMax(1, displayNode.sourceRange().columnStart));
       if (markerContext.contentRange.byteStart >= 0 && listItemLineBounds(markerContext, lineStart, contentStart, lineEnd)) {
         const qsizetype textStart = taskContentStartForListLine(session_->markdownText(), lineStart, lineEnd, contentStart);
         context.node = &displayNode;
@@ -185,12 +192,12 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
   const PieceTable& markdown = session_->markdownText();
   qsizetype start = range.byteEnd > range.byteStart
                        ? range.byteStart
-                       : sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
+                       : lineOffsets.offsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
   const qsizetype end = editable->type() == BlockType::Heading
                             ? headingContentEndOffset(*editable, markdown)
                             : (range.byteEnd > range.byteStart
                                    ? range.byteEnd
-                                   : sourceOffsetForLineEnd(markdown, range.lineEnd));
+                                   : lineOffsets.lineEndOffset(range.lineEnd));
   if (start < 0 || end < start) {
     return false;
   }
@@ -422,6 +429,16 @@ MarkdownNode* BlockEditContextResolver::nodeAtContentSourceOffset(
   }
 
   for (const auto& child : node.children()) {
+    // Prune subtrees whose source range cannot contain the offset. Without this the walk is
+    // O(total nodes) whenever the offset matches no inline-text block (a gap between blocks, a
+    // non-text block, or — with preferLaterEmptyAtOffset — any match, since it does not early-return).
+    // That made cursorForSourceOffset ~15 s/call on a 112k-block document: typing right after a
+    // `---` rule (insertBlockAfterCurrentBlock, preferLaterEmptyAtOffset=true) froze ~50 s, and the
+    // 3rd dash that creates the rule froze ~47 s. sourceRange is a superset of the content range the
+    // match test uses, so this prunes only subtrees that could not match anyway.
+    if (!child->sourceRange().containsByte(sourceOffset)) {
+      continue;
+    }
     if (MarkdownNode* found = nodeAtContentSourceOffset(*child, sourceOffset, preferLaterEmptyAtOffset)) {
       matched = found;
       if (!preferLaterEmptyAtOffset) {
@@ -470,6 +487,9 @@ MarkdownNode* BlockEditContextResolver::literalBlockAtSourceOffset(
     }
   }
   for (const auto& child : node.children()) {
+    if (!child->sourceRange().containsByte(sourceOffset)) {
+      continue;  // prune: this subtree's source cannot contain the offset (see nodeAtContentSourceOffset)
+    }
     if (MarkdownNode* found = literalBlockAtSourceOffset(*child, sourceOffset, contentStartOut)) {
       return found;
     }

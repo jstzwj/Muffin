@@ -174,8 +174,16 @@ bool ParagraphController::resolveBlockContext(BlockContext& context) const {
   }
 
   const PieceTable& markdown = ctx_.session->markdownText();
-  qsizetype blockStart = sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
-  const qsizetype blockEnd = sourceOffsetForLineEnd(markdown, range.lineEnd);
+  // O(log n) line/column -> byte offset via the incrementally-maintained line-offset cache. The old
+  // sourceOffsetForLineColumn/markdown scan walked from byte 0 to the line on every call
+  // (O(document) — ~150 ms/call on an 18 MB doc). resolveBlockContext underpins every paragraph
+  // command's enabled/checked predicate, so updateContextActions was ~1.3 s per
+  // cursorChanged/stateChanged on large docs (the "type after a `---` rule" freeze).
+  const auto& lineOffsets = ctx_.session->document().lineOffsets();
+  qsizetype blockStart = lineOffsets.offsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
+  const qsizetype lineEndStart = lineOffsets.offsetForLineColumn(range.lineEnd, 1);
+  const qsizetype newlineAt = lineEndStart >= 0 ? markdown.indexOf(QLatin1Char('\n'), lineEndStart) : -1;
+  const qsizetype blockEnd = newlineAt >= 0 ? newlineAt : markdown.size();
   if (blockStart < 0 || blockEnd < blockStart) {
     return false;
   }

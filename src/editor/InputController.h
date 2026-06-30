@@ -119,6 +119,15 @@ private:
   bool tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, const QString& label);
   bool tryRemoveThematicBreak(bool forward);
   bool collapseTrailingCaretToEndOfLastBlock();
+  // True for a top-level block that hosts NO inline-editable text anywhere AND is not a literal
+  // block (code/math/html/front matter edit through their own controllers; lists/tables/quotes have
+  // editable descendants). Currently only a thematic break, but expressed structurally so a future
+  // editor-less non-text leaf is covered without touching every call site. The shared predicate for
+  // the Enter/typing routing that has nothing to split or type into.
+  bool isNonTextLeafBlock(MarkdownNode& node) const;
+  // True when the caret rests on such a non-text leaf — in its afterBlock virtual area or landed on
+  // it directly via arrow nav — so Enter/typing must insert a fresh paragraph after the block.
+  bool caretRestsOnNonTextBlock() const;
   bool selectionSourceRange(qsizetype& start, qsizetype& end) const;
   bool blockSelectionSourceRange(qsizetype& start, qsizetype& end) const;
   BlockEditContextResolver contextResolver() const;
@@ -126,6 +135,9 @@ private:
   CursorPosition cursorForNode(MarkdownNode& node, qsizetype offset) const;
   CursorPosition cursorForSourceOffset(qsizetype sourceOffset, bool preferLaterEmptyAtOffset = false) const;
   CursorPosition cursorAfterEdit(CursorPosition preferredCursor, qsizetype fallbackSourceOffset, bool preferLaterEmptyAtOffset = false) const;
+  // A caret that sits block-after a non-text top-level block (thematic break, etc.) — the only kind
+  // of caret an offset on such a block can resolve to, since they host no inline-editable text.
+  CursorPosition cursorForBlockAfter(const MarkdownNode& host, qsizetype sourceOffset) const;
   MarkdownNode* paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset, bool preferLaterEmptyAtOffset = false) const;
   MarkdownNode* selectableBlockByDirection(NodeId current, int direction) const;
   qsizetype selectableTextLength(const MarkdownNode& node) const;

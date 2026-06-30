@@ -9,6 +9,9 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MuffinTestFunctions.cmake)
 muffin_add_test(NAME MuffinTypingPerfBench SOURCE tests/perf/TypingPerfBench.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinOpenMemBench SOURCE tests/perf/OpenMemBench.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinOpenRenderMemBench SOURCE tests/perf/OpenRenderMemBench.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinThirdDashProbe SOURCE tests/perf/ThirdDashProbe.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinSplitAfterRuleProbe SOURCE tests/perf/SplitAfterRuleProbe.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinThematicBreakRangeProbe SOURCE tests/perf/ThematicBreakRangeProbe.cpp LINK MuffinUi RESOURCE_LOCK)
 
 # --- parser / document (pure logic; link MuffinCore, no Qt GUI lock) ---
 muffin_add_test(NAME MuffinParserBasicTest      SOURCE tests/parser/ParserBasicTest.cpp      LINK MuffinCore)

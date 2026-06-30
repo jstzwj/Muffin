@@ -13,19 +13,6 @@ using namespace muffin;
 
 namespace {
 
-MarkdownNode* findEmptyParagraph(MarkdownNode* node) {
-  if (!node) return nullptr;
-  if (node->type() == BlockType::Paragraph) {
-    const SourceRange r = node->sourceRange();
-    if (r.byteStart == r.byteEnd) return node;
-  }
-  MarkdownNode* found = nullptr;
-  for (const auto& c : node->children()) {
-    if (MarkdownNode* f = findEmptyParagraph(c.get())) found = f;
-  }
-  return found;
-}
-
 MarkdownNode* findFirstParagraph(MarkdownNode* node) {
   if (node && node->type() == BlockType::Paragraph) return node;
   for (const auto& c : node->children()) {
@@ -76,24 +63,42 @@ struct Harness {
     session.setMarkdownText(md, false);
     view.setDocument(session.document());
   }
-  void placeInEmptyParagraph() {
-    MarkdownNode* empty = findEmptyParagraph(&session.document().root());
-    require(empty != nullptr, "document should contain an empty paragraph");
-    setCursor(controller.selection(), empty, 0);
+  // Rest the caret in a block's afterBlock virtual area (Zone::BlockAfter) — the caret target for
+  // the space after a non-editable leaf like a thematic break, now that no VEP node is synthesized
+  // there.
+  void placeAfter(MarkdownNode* block) {
+    HitTestResult hit;
+    hit.zone = HitTestResult::Zone::BlockAfter;
+    hit.blockId = block->id();
+    hit.textNodeId = block->id();
+    controller.activateHit(hit);
+  }
+  // Simulate clicking the rule's box — the hit the view produces for a click on a thematic break
+  // (Zone::SelectBlock). activateHit turns it into a whole-block selection.
+  void selectBlock(MarkdownNode* block) {
+    HitTestResult hit;
+    hit.zone = HitTestResult::Zone::SelectBlock;
+    hit.blockId = block->id();
+    hit.textNodeId = block->id();
+    controller.activateHit(hit);
   }
 };
 
-// A thematic break carries no editable text, so the generic paragraph-merge path (which only
-// looks at editable-text siblings) silently no-ops next to one. Backspace from the empty
-// paragraph after a rule must instead EAT the divider: the rule is removed and the caret
-// retreats to the end of the preceding editable block. (Previously a stuck no-op.)
-void testBackspaceEmptyParagraphAfterRuleEatsIt() {
+// A thematic break carries no editable text. The caret rests in its afterBlock virtual area (no
+// VEP node is synthesized after a rule). Backspace there must EAT the divider: the rule is removed
+// and the caret retreats to the end of the preceding editable block. (Previously, with a VEP, the
+// caret sat on that empty paragraph; now it sits afterBlock on the rule — same outcome via
+// tryRemoveThematicBreak.)
+void testBackspaceAfterRuleEatsIt() {
   Harness h;
   h.load(QStringLiteral("alpha\n\n---\n\n"));
-  h.placeInEmptyParagraph();
+  MarkdownNode* hr = findThematicBreak(&h.session.document().root());
+  require(hr != nullptr, "document should contain a thematic break");
+  h.placeAfter(hr);
+  require(h.controller.selection().cursorPosition().afterBlock, "caret should start in the rule's afterBlock area");
 
   require(h.controller.inputController().deleteBackward(), "backspace should be handled");
-  require(h.session.markdownText().toString() == QStringLiteral("alpha\n\n"), "divider + empty paragraph collapse to 'alpha\\n\\n'");
+  require(h.session.markdownText().toString() == QStringLiteral("alpha\n\n"), "divider should collapse to 'alpha\\n\\n'");
 
   const CursorPosition c = h.controller.selection().cursorPosition();
   require(h.controller.selection().hasCursor(), "caret should remain valid");
@@ -144,16 +149,23 @@ void testDeleteEndOfParagraphBeforeRuleEatsIt() {
   require(!reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "thematic break should be removed");
 }
 
-// A rule as the leading block (nothing editable before it) followed by an empty paragraph:
-// backspace cannot eat the divider (there is nowhere to retreat the caret). It must remain a
-// safe no-op — document intact, caret valid, never corrupted or dropped.
-void testLeadingRuleBackspaceIsSafe() {
+// A rule as the leading (and only) block: the caret rests afterBlock on it. Backspace eats the
+// divider (consistent with the mid-document afterBlock case) and leaves a clean empty document —
+// the caret lands on the leading virtual paragraph, never corrupted or dropped. (Previously, with
+// a VEP after the rule, the caret sat on that empty paragraph and backspace was a stuck no-op; the
+// afterBlock caret routes the same keystroke through tryRemoveThematicBreak instead.)
+void testBackspaceOnLeadingRuleRemovesIt() {
   Harness h;
   h.load(QStringLiteral("---\n\n"));
-  h.placeInEmptyParagraph();
-  h.controller.inputController().deleteBackward();
-  require(h.session.markdownText().toString().contains(QStringLiteral("---")), "leading rule must survive backspace");
-  require(h.controller.selection().hasCursor(), "caret should remain valid");
+  MarkdownNode* hr = findThematicBreak(&h.session.document().root());
+  require(hr != nullptr, "document should contain a thematic break");
+  h.placeAfter(hr);
+  require(h.controller.selection().cursorPosition().afterBlock, "caret should start in the rule's afterBlock area");
+
+  require(h.controller.inputController().deleteBackward(), "backspace should be handled");
+  require(h.session.markdownText().toString().isEmpty(), "leading rule should be removed, leaving an empty document");
+  require(h.controller.selection().hasCursor(), "caret should remain valid on the leading virtual paragraph");
+  require(!reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "thematic break should be gone");
 }
 
 // A rule sitting between a list and a paragraph: backspace from the paragraph eats the divider
@@ -206,6 +218,65 @@ void testEnterBeforeRuleInsertsParagraph() {
   require(kids.at(0)->type() == BlockType::Paragraph && kids.at(1)->type() == BlockType::Paragraph,
           "alpha should be followed by the new empty paragraph");
   require(h.controller.selection().hasCursor(), "caret should land in the new empty paragraph");
+}
+
+// Typing from the afterBlock caret on a MID-DOCUMENT rule (content follows it) must insert the text
+// as a SEPARATE paragraph between the rule and the following block — never merged into it. The
+// afterBlock path (insertBlockAfterCurrentBlock) was built for the document-trailing case; without
+// a trailing separator the typed text used to fuse with the next block ("hibeta").
+void testTypeAfterMidDocRuleStaysSeparate() {
+  Harness h;
+  h.load(QStringLiteral("alpha\n\n---\n\nbeta"));
+  MarkdownNode* hr = findThematicBreak(&h.session.document().root());
+  require(hr != nullptr, "document should contain a thematic break");
+  h.placeAfter(hr);
+  require(h.controller.selection().cursorPosition().afterBlock, "caret should start afterBlock on the rule");
+
+  require(h.controller.inputController().insertText(QStringLiteral("hi")), "typing should be handled");
+  const QString src = h.session.markdownText().toString();
+  require(!src.contains(QStringLiteral("hibeta")), "typed text must NOT merge into the following block; got: " + src);
+  require(src.contains(QStringLiteral("hi")), "typed text should be present; got: " + src);
+  require(reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "rule must survive typing after it");
+  require(h.controller.selection().hasCursor(), "caret should remain valid");
+}
+
+// Enter from the afterBlock caret on a rule widens the trailing gap and keeps the caret afterBlock
+// on the rule (mirroring the document-trailing caret: blank lines alone create no paragraph in
+// Markdown — only typed text does). The caret must stay valid across repeated Enter, and a
+// subsequent typed character must form its OWN paragraph after the rule, never merging into the
+// following block.
+void testEnterAfterRuleThenRepeat() {
+  Harness h;
+  h.load(QStringLiteral("alpha\n\n---\n\nbeta"));
+  MarkdownNode* hr = findThematicBreak(&h.session.document().root());
+  require(hr != nullptr, "document should contain a thematic break");
+  h.placeAfter(hr);
+
+  for (int i = 0; i < 3; ++i) {
+    require(h.controller.inputController().insertParagraphBreak(), "enter should be handled");
+    require(h.controller.selection().hasCursor(), "caret should remain valid after each enter");
+  }
+  // Typing after the Enters must land in a real, separate paragraph after the rule. Do this BEFORE
+  // any full-reparse assertion: reparsedRootHasBlockType rebuilds the tree with fresh node ids,
+  // which would stale the caret's blockId and falsely make the typed keystroke unhandled.
+  require(h.controller.inputController().insertText(QStringLiteral("z")), "typing should be handled");
+  const QString src = h.session.markdownText().toString();
+  require(!src.contains(QStringLiteral("zbeta")) && src.contains(QStringLiteral("z")),
+          "typed text should form its own paragraph after the rule; got: " + src);
+  require(reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "rule must survive repeated enter");
+}
+
+// Typing from the afterBlock caret on a TRAILING rule (the document's last block) keeps working:
+// the text becomes a new paragraph after the rule (the regression guard that already existed for
+// the trailing case, now reached via the afterBlock caret instead of a VEP).
+void testTypeAfterTrailingRule() {
+  Harness h;
+  h.load(QStringLiteral("---"));
+  MarkdownNode* hr = findThematicBreak(&h.session.document().root());
+  require(hr != nullptr, "document should contain a thematic break");
+  h.placeAfter(hr);
+  require(h.controller.inputController().insertText(QStringLiteral("123")), "typing should be handled");
+  require(h.session.markdownText().toString() == QStringLiteral("---\n\n123"), "trailing rule + '123' -> '---\\n\\n123'");
 }
 
 // The caret can rest ON the thematic break itself — arrow-key navigation lands there because
@@ -380,6 +451,192 @@ void testUndoRestoresRuleRemovedFromOnIt() {
   require(reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "undo should restore the rule");
 }
 
+// Clicking a thematic break SELECTS the whole block (Typora-style): the selection becomes a non-
+// collapsed range spanning the rule. From that state Backspace, Forward-Delete AND Enter each
+// remove it cleanly (no leftover blank lines, neighbours stay distinct).
+void testSelectRuleThenBackspaceRemovesIt() {
+  Harness h;
+  h.load(QStringLiteral("alpha\n\n---\n\nbeta"));
+  MarkdownNode* hr = findThematicBreak(&h.session.document().root());
+  require(hr != nullptr, "document should contain a thematic break");
+  h.selectBlock(hr);
+  const SelectionRange sel = h.controller.selection().selection();
+  require(!sel.isCollapsed(), "clicking the rule should select the whole block");
+  require(sel.anchor.blockId == hr->id() && sel.focus.blockId == hr->id(), "selection should be on the rule");
+
+  require(h.controller.inputController().deleteBackward(), "backspace should be handled");
+  require(h.session.markdownText().toString() == QStringLiteral("alpha\n\nbeta"), "rule should be removed cleanly");
+  require(!reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "thematic break should be gone");
+  require(h.controller.selection().hasCursor(), "caret should remain valid");
+}
+
+void testSelectRuleThenDeleteRemovesIt() {
+  Harness h;
+  h.load(QStringLiteral("alpha\n\n---\n\nbeta"));
+  MarkdownNode* hr = findThematicBreak(&h.session.document().root());
+  h.selectBlock(hr);
+  require(!h.controller.selection().selection().isCollapsed(), "rule should be selected");
+
+  require(h.controller.inputController().deleteForward(), "delete should be handled");
+  require(h.session.markdownText().toString() == QStringLiteral("alpha\n\nbeta"), "rule should be removed cleanly");
+  require(!reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "thematic break should be gone");
+}
+
+void testSelectRuleThenEnterRemovesIt() {
+  Harness h;
+  h.load(QStringLiteral("alpha\n\n---\n\nbeta"));
+  MarkdownNode* hr = findThematicBreak(&h.session.document().root());
+  h.selectBlock(hr);
+  require(!h.controller.selection().selection().isCollapsed(), "rule should be selected");
+
+  require(h.controller.inputController().insertParagraphBreak(), "enter should be handled");
+  require(h.session.markdownText().toString() == QStringLiteral("alpha\n\nbeta"), "selected rule should be removed on enter");
+  require(!reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "thematic break should be gone");
+}
+
+// Guard: the caret resting ON a virtual empty paragraph in the blank gap below a rule (a real click
+// target, not the afterBlock area) must keep a valid caret — and a valid view cursorHit (what
+// paintInsertionCursor gates on) — across repeated Enter, in mid-doc / trailing / leading-rule / lazy
+// (far-below-viewport) configurations. A sibling regression (3rd-dash → afterBlock → Enter) is
+// covered by testEnterAfterThirdDashConversionKeepsCaret.
+void testEnterOnEmptyParagraphBelowRuleKeepsCaret() {
+  struct Case { const char* name; const char* md; int prependParagraphs = 0; };
+  const Case cases[] = {
+    {"mid-doc 2-blank", "alpha\n\n---\n\n\n\nbeta"},
+    {"mid-doc 3-blank", "alpha\n\n---\n\n\n\n\nbeta"},
+    {"trailing 2-blank", "alpha\n\n---\n\n\n"},
+    {"trailing 3-blank", "alpha\n\n---\n\n\n\n"},
+    {"leading-rule trailing", "---\n\n\n"},
+    {"far-below-viewport (lazy)", "alpha\n\n---\n\n\n\nbeta", 120},
+  };
+  for (const Case& tc : cases) {
+    Harness h;
+    QString md = QString::fromLatin1(tc.md);
+    if (tc.prependParagraphs > 0) {
+      // Push the rule + its VEP far below the viewport so the VEP's layout slot starts in the
+      // lazy/estimated state — the real-app condition the tiny-doc harness misses.
+      QString prefix;
+      for (int i = 0; i < tc.prependParagraphs; ++i) {
+        prefix += QStringLiteral("para %1\n\n").arg(i);
+      }
+      md = prefix + md;
+    }
+    h.load(md);
+    MarkdownNode* hr = findThematicBreak(&h.session.document().root());
+    require(hr != nullptr, QString::fromLatin1(tc.name) + ": document should contain a thematic break");
+    // The VEP is the paragraph immediately following the rule at the top level.
+    MarkdownNode* vep = nullptr;
+    const auto& kids = h.session.document().root().children();
+    for (qsizetype i = 0; i + 1 < static_cast<qsizetype>(kids.size()); ++i) {
+      if (kids.at(static_cast<size_t>(i)).get() == hr && kids.at(i + 1)->type() == BlockType::Paragraph) {
+        vep = kids.at(i + 1).get();
+        break;
+      }
+    }
+    require(vep != nullptr, QString::fromLatin1(tc.name) + ": a virtual empty paragraph should sit below the rule");
+    setCursor(h.controller.selection(), vep, 0);
+
+    // Repeated Enter on the resulting empty paragraphs — the user's "press Enter, caret disappears"
+    // flow. Both the caret AND the view's resolved cursorHit must stay valid on every iteration (the
+    // view's hit is what paintInsertionCursor gates on — if it goes invalid the caret stops painting).
+    for (int iter = 0; iter < 4; ++iter) {
+      require(h.controller.inputController().insertParagraphBreak(),
+              QString::fromLatin1(tc.name) + ": enter #" + QString::number(iter) + " should be handled");
+      // Flush deferred timers / animations the real event loop would run between keystrokes. If an
+      // async op invalidates the view's caret-hit after Enter, this surfaces it (the headless harness
+      // otherwise resolves the hit synchronously and masks the disappearance).
+      QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+      const CursorPosition c = h.controller.selection().cursorPosition();
+      require(c.blockId.isValid(),
+              QString::fromLatin1(tc.name) + ": caret #" + QString::number(iter) + " was cleared");
+      require(h.view.cursorHit().isValid(),
+              QString::fromLatin1(tc.name) + ": view.cursorHit #" + QString::number(iter) + " went invalid");
+    }
+  }
+}
+
+// The user's report: type `--` then `-` (the 3rd dash) → the paragraph converts to a thematic break,
+// and the caret lands in the rule's afterBlock area (between the rule and the next paragraph). Pressing
+// Enter from THAT state lost the caret: insertBlockAfterCurrentBlock set caretOffset past the inserted
+// "\n\n", which landed in a blank gap no block covers, so the caret fell back to END-OF-DOCUMENT (the
+// end of the following paragraph) and looked like it vanished. Now it lands on the new empty paragraph.
+void testEnterAfterThirdDashConversionKeepsCaret() {
+  struct Case { const char* name; const char* md; };
+  const Case cases[] = {
+    {"-- then beta", "--\n\nbeta"},
+    {"-- trailing", "--"},
+    {"-- then blank then beta", "--\n\n\nbeta"},
+  };
+  for (const Case& tc : cases) {
+    Harness h;
+    h.load(QString::fromLatin1(tc.md));
+    MarkdownNode* dashPara = findFirstParagraph(&h.session.document().root());
+    require(dashPara != nullptr, QString::fromLatin1(tc.name) + ": should start with a '--' paragraph");
+    setCursor(h.controller.selection(), dashPara, 2);  // caret at end of "--"
+
+    // Type the 3rd dash: "--" + "-" -> "---" -> a thematic break; the caret lands afterBlock on the rule.
+    require(h.controller.inputController().insertText(QStringLiteral("-")),
+            QString::fromLatin1(tc.name) + ": typing the 3rd dash should be handled");
+    require(findThematicBreak(&h.session.document().root()) != nullptr,
+            QString::fromLatin1(tc.name) + ": the 3rd dash should create a rule");
+
+    // Enter from that afterBlock caret (the user's "Enter loses focus" step).
+    require(h.controller.inputController().insertParagraphBreak(),
+            QString::fromLatin1(tc.name) + ": enter should be handled");
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+
+    const CursorPosition afterEnter = h.controller.selection().cursorPosition();
+    require(afterEnter.blockId.isValid(),
+            QString::fromLatin1(tc.name) + ": caret should remain valid after Enter (not cleared)");
+    require(h.view.cursorHit().isValid(),
+            QString::fromLatin1(tc.name) + ": view.cursorHit should remain valid after Enter");
+    // For a rule followed by a paragraph, the caret must land on the NEW empty paragraph in the gap
+    // (a VEP just below the rule) — NOT fall back to end-of-document (end of the following paragraph).
+    if (QString::fromLatin1(tc.md).contains(QStringLiteral("beta"))) {
+      require(afterEnter.text.sourceOffset < h.session.markdownText().toString().indexOf(QStringLiteral("beta")),
+              QString::fromLatin1(tc.name) + ": caret should land in the gap below the rule, not at end-of-doc");
+    }
+  }
+}
+
+// Guard for the structureEdit=false change in insertBlockAfterCurrentBlock: typing after a non-text
+// block is now a plain TextDeltaCommand edit (not the O(document) snapshot-undo path that
+// structureEdit=true forced). Undo must restore the source exactly and leave the rule intact + caret
+// valid — for both a mid-doc and a trailing rule. If TextDeltaCommand mishandles the "\n\n…" insert
+// that creates a new top-level paragraph, this catches it.
+void testUndoTypeAfterBlock() {
+  {
+    Harness h;
+    h.load(QStringLiteral("alpha\n\n---\n\nbeta"));
+    MarkdownNode* hr = findThematicBreak(&h.session.document().root());
+    require(hr != nullptr, "document should contain a thematic break");
+    h.placeAfter(hr);
+    require(h.controller.inputController().insertText(QStringLiteral("hi")), "typing after the rule should be handled");
+    const QString after = h.session.markdownText().toString();
+    require(after.contains(QStringLiteral("hi")) && !after.contains(QStringLiteral("hibeta")),
+            "typed text should form its own paragraph; got: " + after);
+
+    h.controller.undo();
+    require(h.session.markdownText().toString() == QStringLiteral("alpha\n\n---\n\nbeta"),
+            "undo should restore the source after type-after-block");
+    require(reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "rule should survive undo");
+    require(h.controller.selection().hasCursor(), "caret should remain valid after undo");
+  }
+  {
+    Harness h;
+    h.load(QStringLiteral("---"));
+    MarkdownNode* hr = findThematicBreak(&h.session.document().root());
+    require(hr != nullptr, "document should contain a thematic break");
+    h.placeAfter(hr);
+    require(h.controller.inputController().insertText(QStringLiteral("123")), "typing after trailing rule should be handled");
+    require(h.session.markdownText().toString() == QStringLiteral("---\n\n123"), "trailing rule + '123' -> '---\\n\\n123'");
+
+    h.controller.undo();
+    require(h.session.markdownText().toString() == QStringLiteral("---"), "undo should restore the trailing rule");
+    require(reparsedRootHasBlockType(h.session, BlockType::ThematicBreak), "rule should survive undo");
+  }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -387,13 +644,17 @@ int main(int argc, char** argv) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
   }
   QApplication app(argc, argv);
-  testBackspaceEmptyParagraphAfterRuleEatsIt();
+  testBackspaceAfterRuleEatsIt();
   testBackspaceStartOfParagraphAfterRuleEatsIt();
   testDeleteEndOfParagraphBeforeRuleEatsIt();
-  testLeadingRuleBackspaceIsSafe();
+  testBackspaceOnLeadingRuleRemovesIt();
   testBackspaceAfterRulePreservesPrecedingList();
   testUndoRestoresRule();
   testEnterBeforeRuleInsertsParagraph();
+  testEnterAfterRuleThenRepeat();
+  testTypeAfterMidDocRuleStaysSeparate();
+  testTypeAfterTrailingRule();
+  testUndoTypeAfterBlock();
   testDeleteOnRuleRemovesIt();
   testBackspaceOnRuleRemovesIt();
   testTrailingCaretBelowRuleEatsIt();
@@ -403,5 +664,10 @@ int main(int argc, char** argv) {
   testDeleteMergesParagraphOutOfBlockquote();
   testDeleteMergesParagraphOutOfBlockquoteIntoList();
   testDeleteRuleFromNestedListItemKeepsLiveTreeConsistent();
+  testSelectRuleThenBackspaceRemovesIt();
+  testSelectRuleThenDeleteRemovesIt();
+  testSelectRuleThenEnterRemovesIt();
+  testEnterOnEmptyParagraphBelowRuleKeepsCaret();
+  testEnterAfterThirdDashConversionKeepsCaret();
   return 0;
 }

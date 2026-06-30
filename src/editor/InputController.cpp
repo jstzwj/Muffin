@@ -214,6 +214,13 @@ bool InputController::insertText(QString text) {
   if (hasActiveLiteralEditor()) {
     return insertTextIntoActiveLiteral(std::move(text));
   }
+  // A caret resting on a non-text block (a thematic break) has no inline text to type into — insert
+  // a fresh paragraph after it carrying the typed text. Routed BEFORE smart-punct / auto-pair so the
+  // character lands verbatim (no prose context to convert, and no pair logic to misfire on the rule).
+  if (caretRestsOnNonTextBlock()) {
+    hideEmojiPopup();
+    return insertBlockAfterCurrentBlock(std::move(text));
+  }
   // Smart punctuation (markdown/*): turn quotes into curly/smart forms and collapse "--"/"---" into
   // en/em dashes. Only in prose (the literal path above already returned for code/math blocks) and
   // only with a collapsed selection — the selection path is owned by auto-pair/wrap & replace.
@@ -569,6 +576,24 @@ bool InputController::insertParagraphBreak() {
   if (hasActiveLiteralEditor()) {
     return insertTextIntoActiveLiteral(QStringLiteral("\n"));
   }
+  // A whole-selected non-text leaf (currently a thematic break) is removed on Enter — Typora-style
+  // select-to-delete. Backspace/Forward-Delete already route through deleteSelection →
+  // tryRemoveExactWholeBlockSelection; Enter lands here, so handle it. Scoped to non-text leaves so a
+  // whole-selected text block keeps its normal Enter behaviour.
+  if (ctx_.selection && ctx_.hasSession() && !ctx_.selection->selection().isCollapsed()) {
+    MarkdownNode* selNode = ctx_.session->document().node(ctx_.selection->selection().focus.blockId);
+    if (selNode != nullptr && isNonTextLeafBlock(*selNode) &&
+        tryRemoveExactWholeBlockSelection(EditTransaction::Kind::DeleteText, QStringLiteral("Delete Rule (Enter)"))) {
+      return true;
+    }
+  }
+  // A caret resting on a non-text block (a thematic break) has no inline text to split, so Enter
+  // inserts a fresh empty paragraph after it. Virtual empty paragraphs are allowed in the rule's gap
+  // (the byteEnd clamp + endLine gap logic keep their count stable across the slice re-parse), so
+  // this drops the caret into a real, editable empty paragraph instead of being a silent no-op.
+  if (caretRestsOnNonTextBlock()) {
+    return insertBlockAfterCurrentBlock();
+  }
   if (ctx_.selection && ctx_.selection->currentHit().zone == HitTestResult::Zone::BlockAfter) {
     return insertBlockAfterCurrentBlock();
   }
@@ -588,8 +613,14 @@ bool InputController::insertBlockAfterCurrentBlock(QString text) {
     return false;
   }
 
-  qsizetype insertOffset = range.byteEnd;
+  // Literal blocks (front matter / code fence / math / html) already end on a fence boundary, so a
+  // single newline starts a fresh block. Content blocks (paragraph, heading, list, thematic break…)
+  // need a blank line (\n\n) to form a separate paragraph instead of a soft line break.
+  const bool isLiteralBlock = node->type() == BlockType::FrontMatter || node->type() == BlockType::CodeFence ||
+                              node->type() == BlockType::MathBlock || node->type() == BlockType::HtmlBlock;
+
   const PieceTable& markdown = ctx_.session->markdownText();
+  qsizetype insertOffset = range.byteEnd;
   if (insertOffset < markdown.size() && markdown.at(insertOffset) == QLatin1Char('\r')) {
     ++insertOffset;
   }
@@ -597,15 +628,50 @@ bool InputController::insertBlockAfterCurrentBlock(QString text) {
     ++insertOffset;
   }
 
-  // Literal blocks (front matter / code fence / math / html) already end on a
-  // fence boundary, so a single newline starts a fresh block. Content blocks
-  // (paragraph, heading, list, ...) need a blank line (\n\n) to form a separate
-  // paragraph instead of a soft line break within the current block.
-  const bool isLiteralBlock = node->type() == BlockType::FrontMatter || node->type() == BlockType::CodeFence ||
-                              node->type() == BlockType::MathBlock || node->type() == BlockType::HtmlBlock;
-  const QString insertedText = text.isEmpty() ? QStringLiteral("\n\n")
-      : isLiteralBlock                          ? QStringLiteral("\n%1").arg(text)
-                                               : QStringLiteral("\n\n%1").arg(text);
+  // When typing into the afterBlock caret of a block that has a FOLLOWING top-level block, insert
+  // the new paragraph just before that following block (text + separator). The node's own separator
+  // already precedes it, and the trailing separator keeps the typed text from merging into the next
+  // block — without this, "type after a mid-document rule" produced "rule\n\nTbeta". Empty Enter and
+  // the trailing case (no following block) keep the original insert-at-byteEnd behaviour below.
+  MarkdownNode* following = nullptr;
+  if (!text.isEmpty() && node->parent()) {
+    const auto& siblings = node->parent()->children();
+    for (size_t i = 0; i < siblings.size(); ++i) {
+      if (siblings.at(i).get() == node) {
+        if (i + 1 < siblings.size()) {
+          following = siblings.at(i + 1).get();
+        }
+        break;
+      }
+    }
+  }
+
+  qsizetype caretOffset;
+  QString insertedText;
+  // Only a REAL following block (one with content, not a zero-width virtual empty paragraph)
+  // forces the insert-before-it path. A trailing VEP is just the caret target, not a block to stay
+  // separate from — treating it as `following` merged the typed text into this node's last line.
+  if (following && following->sourceRange().byteEnd > following->sourceRange().byteStart) {
+    insertOffset = following->sourceRange().byteStart;
+    insertedText = text + (isLiteralBlock ? QStringLiteral("\n") : QStringLiteral("\n\n"));
+    caretOffset = insertOffset + text.size();  // inside the new paragraph, before its trailing separator
+  } else {
+    if (text.isEmpty()) {
+      insertedText = QStringLiteral("\n\n");
+      // For a literal block (code/math/html) the new paragraph sits AFTER the separator, so the caret
+      // lands at insertOffset + size. But for a non-text leaf like a rule, the new "paragraph" is a
+      // virtual empty paragraph at the START of the inserted blank-line run (the parser places the VEP
+      // on the first blank line of the gap). Pointing the caret past the "\n\n" there landed in a
+      // blank gap no block covers, so cursorForSourceOffset failed and the caret fell back to
+      // END-OF-DOCUMENT — which looked like it vanished ("press Enter below the rule → caret
+      // disappears"). With preferLaterEmptyAtOffset=true (passed below) the VEP at insertOffset
+      // resolves cleanly.
+      caretOffset = isLiteralBlock ? (insertOffset + insertedText.size()) : insertOffset;
+    } else {
+      insertedText = isLiteralBlock ? QStringLiteral("\n%1").arg(text) : QStringLiteral("\n\n%1").arg(text);
+      caretOffset = insertOffset + insertedText.size();
+    }
+  }
   applyLocalEdit(
       EditTransaction::Kind::SplitParagraph,
       text.isEmpty() ? QStringLiteral("Insert Paragraph After") : QStringLiteral("Insert Text After Block"),
@@ -613,11 +679,32 @@ bool InputController::insertBlockAfterCurrentBlock(QString text) {
       0,
       insertedText,
       CursorPosition(),
-      insertOffset + insertedText.size(),
+      caretOffset,
       QVector<LocalEditNodeHint>{LocalEditNodeHint{node->id(), range.byteStart, node->type()}},
       true,
-      true);
+      false);  // structureEdit=false: this is a plain "\n\n…" text insert, so a TextDeltaCommand
+               // undo suffices. structureEdit=true forced the O(document) snapshot-undo path
+               // (full-doc toString ×3 + collectPendingMarkerOffsets ×2 ≈ 7s on an 18MB doc) on
+               // every "type after a block" keystroke.
   return true;
+}
+
+bool InputController::isNonTextLeafBlock(MarkdownNode& node) const {
+  // No inline-editable text anywhere in the subtree AND not a literal block (which edits through its
+  // own controller). Currently only a thematic break satisfies this; expressed structurally so a
+  // future editor-less non-text leaf is covered without touching the call sites. NOTE: this is
+  // narrower than the cursorForSourceOffset check (!firstEditableDescendant) — that one intentionally
+  // ALSO covers literal-block gap offsets, which resolve to a block-after caret; here we must EXCLUDE
+  // literal blocks because typing/Enter on them is owned by their literal editor or insert-after path.
+  return !isLiteralBlockType(node.type()) && contextResolver().firstEditableDescendant(node) == nullptr;
+}
+
+bool InputController::caretRestsOnNonTextBlock() const {
+  if (!ctx_.hasSession() || !ctx_.selection || !ctx_.selection->hasCursor()) {
+    return false;
+  }
+  MarkdownNode* node = ctx_.session->document().node(ctx_.selection->cursorPosition().blockId);
+  return node != nullptr && isNonTextLeafBlock(*node);
 }
 
 bool InputController::deleteBackward() {
@@ -1683,9 +1770,7 @@ CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset, bo
 
   // A source offset that lands inside a literal block (code/math/HTML/front matter) resolves to
   // that block. nodeAtContentSourceOffset only matches inline-editable text, so without this a
-  // freshly committed "```"/"$$" block would leave the post-edit caret unresolvable — and, since
-  // the fallback (end-of-document) is also unresolvable, the selection cursor would be cleared,
-  // making the caret vanish entirely.
+  // freshly committed "```"/"$$" block would leave the post-edit caret unresolvable.
   qsizetype literalContentStart = -1;
   if (MarkdownNode* literal =
           resolver.literalBlockAtSourceOffset(ctx_.session->document().root(), sourceOffset, literalContentStart)) {
@@ -1694,6 +1779,21 @@ CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset, bo
     cursor.text.textOffset = qBound<qsizetype>(0, sourceOffset - literalContentStart, literal->literal().size());
     cursor.text.sourceOffset = sourceOffset;
     return cursor;
+  }
+
+  // If the offset is on a top-level block whose subtree hosts NO inline-editable text, resolve it
+  // straight to a block-after caret instead of walking the tree. This is intentionally BROADER than
+  // isNonTextLeafBlock (caretRestsOnNonTextBlock): it ALSO covers literal blocks (code/math/html/
+  // front matter) whose offset sits outside their literal content region — those have no inline text
+  // to land on either, so a block-after caret is the right resolution (offsets INSIDE a literal were
+  // already returned by literalBlockAtSourceOffset above). Containers (lists/tables/quotes) have
+  // editable descendants, so firstEditableDescendant is non-null for them and this is skipped —
+  // leaving list-exit / table-caret resolution on its existing path (which relies on
+  // cursorForSourceOffset returning invalid there).
+  if (MarkdownNode* host = ctx_.session->document().topLevelBlockAtOffset(sourceOffset)) {
+    if (!resolver.firstEditableDescendant(*host)) {
+      return cursorForBlockAfter(*host, sourceOffset);
+    }
   }
 
   MarkdownNode* node = paragraphAtSourceOffset(ctx_.session->document().root(), sourceOffset, preferLaterEmptyAtOffset);
@@ -1730,6 +1830,15 @@ CursorPosition InputController::cursorAfterEdit(CursorPosition preferredCursor, 
     }
   }
   return cursorForSourceOffset(fallbackSourceOffset, preferLaterEmptyAtOffset);
+}
+
+CursorPosition InputController::cursorForBlockAfter(const MarkdownNode& host, qsizetype sourceOffset) const {
+  CursorPosition cursor;
+  cursor.blockId = host.id();
+  cursor.text.nodeId = host.id();
+  cursor.text.sourceOffset = sourceOffset;
+  cursor.afterBlock = true;
+  return cursor;
 }
 
 MarkdownNode* InputController::paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset, bool preferLaterEmptyAtOffset) const {

@@ -48,14 +48,46 @@ private:
   QElapsedTimer timer_;
 };
 
+bool isBlankLine(QStringView line);
+
+// The last non-blank line within [range.lineStart, range.lineEnd] (clamped to [1, totalLines]), or
+// range.lineEnd when the range is degenerate (lineStart<=0 or lineEnd<=lineStart). cmark-gfm
+// over-reports some blocks' lineEnd by absorbing trailing blank lines (thematic breaks, container
+// blocks), so the real content end must be recovered by scanning. Both the byte-range annotation
+// (for a thematic break) and the virtual-empty-paragraph gap math (for any block) need this —
+// single-sourced here instead of duplicated as a downward for-loop at each call site.
+int lastNonBlankLine(const LineStartOffsetCache& lineOffsets, QStringView markdown, const SourceRange& range, int totalLines) {
+  if (range.lineStart <= 0 || range.lineEnd <= range.lineStart) {
+    return range.lineEnd;
+  }
+  for (int line = range.lineEnd; line >= range.lineStart; --line) {
+    if (line >= 1 && line <= totalLines && !isBlankLine(lineOffsets.lineText(markdown, line))) {
+      return line;
+    }
+  }
+  return range.lineEnd;
+}
+
 void annotateSourceOffsets(const LineStartOffsetCache& lineOffsets, QStringView markdown, MarkdownNode& node) {
   SourceRange range = node.sourceRange();
   if (range.lineStart > 0) {
+    // A thematic break is a single content line, but cmark-gfm absorbs the following blank lines
+    // into its end_line, over-reporting byteEnd to cover the whole blank gap. topLevelBlockAtOffset
+    // (inclusive containsByte, first-match-wins in document order) would then resolve EVERY offset in
+    // the gap to the rule instead of the caret-driven VEPs that live there. Clamp to the rule's actual
+    // last non-blank line. Safe: rule deletion uses its NEIGHBOURS' boundaries (tryRemoveThematicBreak),
+    // not its own byteEnd, and the rule is a leaf with no descendants. Other block types keep their
+    // reported lineEnd unchanged (conservative — their byte ranges feed deletion/slice/serialization).
+    int endLine = range.lineEnd;
+    if (node.type() == BlockType::ThematicBreak) {
+      endLine = lastNonBlankLine(lineOffsets, markdown, range, lineOffsets.lineCount());
+    }
     const qsizetype start = lineOffsets.offsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
-    const qsizetype end = lineOffsets.lineEndOffset(range.lineEnd);
+    const qsizetype end = lineOffsets.lineEndOffset(endLine);
     if (start >= 0 && end >= start) {
       range.byteStart = start;
       range.byteEnd = end;
+      range.lineEnd = endLine;
       node.setSourceRange(range);
     }
   }
@@ -1576,7 +1608,14 @@ void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, Markdown
       }
     }
 
-    previousEndLine = qMax(previousEndLine, range.lineEnd);
+    // Some blocks (notably ThematicBreak, and container blocks) over-report lineEnd to include
+    // trailing blank lines. Using it raw would shrink the FOLLOWING sibling's gap and drop the VEPs
+    // that belong there (the caret-driven VEP after a `---` would collapse on the next Enter's
+    // re-parse — the "content jumps up after Enter" bug). Use the block's actual last non-blank line;
+    // lastNonBlankLine returns range.lineEnd unchanged for degenerate ranges, so this applies
+    // unconditionally.
+    const int endLine = lastNonBlankLine(lineOffsets, markdown, range, totalLines);
+    previousEndLine = qMax(previousEndLine, endLine);
     ++childIndex;
   }
 
