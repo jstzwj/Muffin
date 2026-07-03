@@ -1,4 +1,5 @@
 #include "render/InlineLayout.h"
+#include "render/RenderMetrics.h"
 
 #include "document/ImageSyntaxOps.h"
 #include "render/Blur.h"
@@ -1182,7 +1183,7 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
         minLineHeight = qMax(minLineHeight, atom.layout->size.height());
       }
     }
-    qreal lineHeight = std::ceil(minLineHeight * 1.16);
+    qreal lineHeight = std::ceil(minLineHeight * kLineHeightFactor);
     if (lineHeightMultiplier_ > 0.0) {
       // CSS `line-height: N` is N * font-size, not N * the platform font
       // metrics line box. Multiplying QTextLine::height() made CSS themes too

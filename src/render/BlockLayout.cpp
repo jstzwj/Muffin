@@ -1,4 +1,5 @@
 #include "render/BlockLayout.h"
+#include "render/RenderMetrics.h"
 
 #include "blocks/code/CodeFenceScrollController.h"
 #include "document/BlockPredicates.h"
@@ -874,293 +875,24 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
     case BlockType::Heading:
     case BlockType::Paragraph:
     case BlockType::ListItem:
-      if (inlineLayout_) {
-        if (type_ == BlockType::Heading) {
-          // CSS element background gradient (e.g. phycat's h2 radial "fusion glass"
-          // glow) sits behind the heading text. Its rect comes from the same shared
-          // CSS border box that hover/hit-test/selection use, so fit-content pills do
-          // not drift into full-row effects.
-          DecorationPainter::paintElementBackground(
-              painter, theme, QStringLiteral("h%1").arg(headingLevel_), cssBorderBox(theme).translated(0, -scrollY));
-        }
-        // CSS `:hover`/`:focus { color }` on a heading (phycat h1 → accent) is baked
-        // into the inline layout at build time (it knows which runs inherit the
-        // colour); paint just needs the shared hover + focus phases, blended there.
-        // Box-shadow glow / bg / scale effects still use their own DecorationPainter
-        // paths below.
-        const qreal hoverPhase = hover.hoverActive ? hover.hoverPhase : 0.0;
-        const qreal focusPhase = hover.focusActive ? hover.focusPhase : 0.0;
-        if (hasListMarker()) {
-          painter.save();
-          painter.setFont(theme.paragraphFont());
-          painter.setPen(theme.textColor());
-          const QFontMetricsF metrics(painter.font());
-          // Baseline of the first text line, including the line-height centering
-          // offset — markers must ride this baseline or they drift above the text
-          // (and the caret) under a large theme line-height.
-          const qreal firstBaseline = inlineLayout_->firstLineBaselineY();
-          const qreal markerX = viewRect.left() + theme.listIndent() * 0.45;
-          const qreal contentX = viewRect.left() + listContentIndent_;
-          // Gap between a marker glyph and the content. Theme-overridable; floored
-          // for small-indent themes so the marker never crowds the text.
-          const qreal markerGap = theme.listMarkerGap();
-          const QColor markerColor = theme.listMarkerColor();
-          if (taskListItem_) {
-            const QRectF box = taskCheckboxRect(theme).translated(0, -scrollY);
-            painter.setBrush(theme.backgroundColor());
-            painter.setPen(QPen(theme.tableBorderColor(), 1));
-            painter.drawRoundedRect(box, 2, 2);
-            if (taskChecked_) {
-              painter.setPen(QPen(theme.linkColor(), 1.8));
-              painter.drawLine(QPointF(box.left() + 3, box.center().y()), QPointF(box.left() + 5.5, box.bottom() - 3));
-              painter.drawLine(QPointF(box.left() + 5.5, box.bottom() - 3), QPointF(box.right() - 3, box.top() + 3));
-            }
-          } else if (listMarkerKind_ == ListMarkerKind::OrderedText) {
-            painter.setPen(markerColor);
-            // Right-align the number to the content gutter so wide multi-digit markers
-            // (e.g. "34.", "100.") never overlap the content or the caret.
-            const qreal orderedX = contentX - markerGap - metrics.horizontalAdvance(listMarker_);
-            painter.drawText(QPointF(orderedX, viewRect.top() + firstBaseline), listMarker_);
-          } else {
-            QPointF markerCenter(markerX + metrics.horizontalAdvance(QStringLiteral("0")) * 0.35, viewRect.top() + firstBaseline - metrics.xHeight() * 0.45);
-            // Non-regressive clamp: with a small indent the default marker column
-            // would land inside the content gutter. Shift the bullet left so its
-            // right edge honours listMarkerGap() — only moves it when it would
-            // otherwise crowd the text (large-indent themes are untouched).
-            const qreal bulletRadius = qBound<qreal>(4.2, metrics.height() * 0.34, 6.2) / 2.0;
-            const qreal maxX = contentX - markerGap - bulletRadius;
-            if (markerCenter.x() > maxX) { markerCenter.setX(qMax<qreal>(viewRect.left(), maxX)); }
-            paintUnorderedListMarker(painter, listMarkerKind_, markerCenter, metrics.height(), markerColor);
-          }
-          painter.restore();
-          // Nested-list guide line (phycat's li::before border-left). Each item
-          // draws its own vertical segment at the CSS-declared `left` offset from
-          // the item's left edge (the li padding box == viewRect.left()); deeper
-          // nesting shifts each item's left edge right by one indent, so the
-          // per-item segments stack into the tree automatically. No-op when the
-          // theme styled no li::before guide.
-          const ListGuide guide = theme.listGuide();
-          if (guide.present) {
-            const qreal lineX = viewRect.left() + guide.leftOffset;
-            const qreal y1 = viewRect.top() + guide.topInset;
-            const qreal y2 = viewRect.bottom() - guide.bottomInset;
-            if (y2 > y1) {
-              painter.save();
-              painter.setPen(QPen(guide.color, guide.width));
-              painter.drawLine(QPointF(lineX, y1), QPointF(lineX, y2));
-              painter.restore();
-            }
-          }
-          inlineLayout_->paint(painter, QPointF(contentX, viewRect.top()), hoverPhase, focusPhase);
-        } else {
-          const QPointF textOrigin = inlineTextOrigin(theme) + QPointF(0, -scrollY);
-          inlineLayout_->paint(painter, textOrigin, hoverPhase, focusPhase);
-        }
-        if (!placeholderText_.isEmpty()) {
-          painter.save();
-          painter.setFont(theme.paragraphFont());
-          painter.setPen(theme.mutedTextColor());
-          const QPointF textOrigin = inlineTextOrigin(theme) + QPointF(0, -scrollY);
-          // Align with the first text line's baseline (line-height aware) so the
-          // placeholder sits where the caret and typed text will, not at the raw
-          // block top + ascent.
-          painter.drawText(QPointF(textOrigin.x(), textOrigin.y() + inlineLayout_->firstLineBaselineY()), placeholderText_);
-          painter.restore();
-        }
-        if (type_ == BlockType::Heading) {
-          painter.save();
-          const QMarginsF pad = theme.headingPadding(headingLevel_);
-          const QColor leftColor = theme.headingBorderLeftColor(headingLevel_);
-          const qreal leftWidth = theme.headingBorderLeftWidth(headingLevel_);
-          if (leftColor.isValid() && leftWidth > 0.0) {
-            painter.setPen(Qt::NoPen);
-            painter.setBrush(leftColor);
-            painter.drawRect(QRectF(viewRect.left() - pad.left(), viewRect.top(), leftWidth, inlineLayout_->height()));
-          }
-          const QColor bottomColor = theme.headingBorderBottomColor(headingLevel_);
-          const qreal bottomWidth = theme.headingBorderBottomWidth(headingLevel_);
-          if (bottomColor.isValid() && bottomWidth > 0.0) {
-            painter.setPen(QPen(bottomColor, bottomWidth));
-            const qreal y = viewRect.top() + inlineLayout_->height() + theme.blockSpacing() * 0.15;
-            painter.drawLine(QPointF(viewRect.left() - pad.left(), y), QPointF(viewRect.right(), y));
-          }
-          painter.restore();
-          // CSS ::before/::after decorations: a trailing SVG icon after the heading
-          // text, an underline-gradient bar, etc.
-          DecorationPainter::PaintContext dctx;
-          dctx.headingLevel = headingLevel_;
-          dctx.beforeContent = headingBeforeText_;
-          dctx.font = theme.headingFont(headingLevel_);
-          const BlockLayout::CssBoxGeometry box = cssBoxGeometry(theme);
-          const QPointF textOrigin = box.inlineTextOrigin + QPointF(0, -scrollY);
-          const QRectF hostRect = box.borderBox.translated(0, -scrollY);
-          const qreal beforeAdvance = theme.headingBeforeAdvance(headingLevel_);
-          // textBounds reflects the shifted text origin so ::after anchors to the
-          // real text end; contentLeftX lets an inline ::before marker place itself
-          // in the reserved zone immediately before the shared text origin.
-          const QRectF textBounds = inlineLayout_->visualTextBounds().translated(textOrigin);
-          dctx.textBounds = textBounds;
-          dctx.contentLeftX = textOrigin.x() - beforeAdvance;
-          dctx.textStart = textBounds.isValid() ? textBounds.topLeft() : textOrigin;
-          dctx.textEnd = textBounds.isValid() ? QPointF(textBounds.right(), textBounds.top())
-                                              : QPointF(textOrigin.x() + inlineLayout_->size().width(), textOrigin.y());
-          dctx.hoverPhase = hoverPhase;
-          dctx.focusPhase = focusPhase;
-          DecorationPainter::paintPseudoDecorations(
-              painter, theme, QStringLiteral("h%1").arg(headingLevel_), hostRect, dctx);
-        }
-      }
+      paintInlineBlock(painter, theme, viewRect, scrollY, hover);
       break;
-    case BlockType::BlockQuote: {
-      painter.save();
-      painter.setPen(Qt::NoPen);
-      if (alertKind_ != AlertKind::None) {
-        // GitHub-style alert card: tinted background (semi-transparent accent, so it adapts to the
-        // page background of any theme) with a solid accent left bar. v1 keeps the `[!KIND]` first
-        // line visible; an icon/title row is a later enhancement.
-        QColor tint = theme.alertAccent(alertKind_);
-        tint.setAlphaF(0.10f);
-        painter.setBrush(tint);
-        painter.drawRoundedRect(viewRect, 6.0, 6.0);
-        painter.setBrush(theme.alertAccent(alertKind_));
-        painter.drawRoundedRect(QRectF(viewRect.left(), viewRect.top() + 3.0, 4.0, viewRect.height() - 6.0),
-                                2.0, 2.0);
-      } else if (theme.blockquoteBoxThemed()) {
-        // CSS-driven quote box: paint the real per-side box model. A declaration
-        // like `border-left` is only a left edge; only `border` produces four sides.
-        const ThemeElementBoxStyle boxStyle = theme.elementBoxStyle(QStringLiteral("blockquote"));
-        const QRectF boxRect = cssBorderBox(theme).translated(0, -scrollY);
-        QColor background = theme.blockquoteBackgroundColor();
-        if (const ThemeElementStyle* style = theme.elementStyle(QStringLiteral("blockquote"))) {
-          if (style->paint.backgroundColor.isValid()) { background = style->paint.backgroundColor; }
-        }
-        paintCssBox(painter, boxStyle, background, boxRect);
-        // CSS ::before content (e.g. a 💡 glyph) at the quote's top-left.
-        DecorationPainter::PaintContext qctx;
-        qctx.font = theme.paragraphFont();
-        DecorationPainter::paintPseudoDecorations(
-            painter, theme, QStringLiteral("blockquote"), boxRect, qctx);
-      } else {
-        // Optional quote fill (CSS themes that tint blockquote backgrounds).
-        if (theme.blockquoteBackgroundColor().isValid()) {
-          painter.setBrush(theme.blockquoteBackgroundColor());
-          painter.drawRoundedRect(viewRect, 6.0, 6.0);
-        }
-        painter.setBrush(theme.quoteBorderColor());
-        painter.drawRect(QRectF(viewRect.left(), viewRect.top(), 4, viewRect.height()));
-        // CSS ::before content (e.g. a 💡 glyph) at the quote's top-left, clear of
-        // the 4px accent border.
-        DecorationPainter::PaintContext qctx;
-        qctx.font = theme.paragraphFont();
-        DecorationPainter::paintPseudoDecorations(
-            painter, theme, QStringLiteral("blockquote"), viewRect.adjusted(8, 0, -4, 0), qctx);
-      }
-      painter.restore();
+    case BlockType::BlockQuote:
+      paintBlockQuote(painter, theme, viewRect, scrollY);
       break;
-    }
     case BlockType::FrontMatter:
     case BlockType::CodeFence:
       paintCodeFence(painter, theme, viewRect, scroll);
       break;
-    case BlockType::MathBlock: {
-      painter.save();
-      painter.setPen(theme.codeBorderColor());
-      painter.setBrush(theme.codeBackgroundColor());
-      if (theme.codeBlockBoxThemed() && theme.codeBlockBorderRadius() > 0.0) {
-        painter.drawRoundedRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5), theme.codeBlockBorderRadius(), theme.codeBlockBorderRadius());
-      } else {
-        painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
-      }
-      if (literalEditing_) {
-        const QRectF sourceRect = mathEditorSourceRect(theme).translated(0, -scrollY);
-        const QRectF previewRect = mathPreviewContentRect(theme).translated(0, -scrollY);
-        const QMarginsF padding = theme.codePadding();
-        const QFont codeFont = theme.codeFont();
-        const QFontMetricsF codeMetrics(codeFont);
-        const qreal markerHeight = qMax<qreal>(14.0, codeMetrics.height());
-        const qreal sourcePanelBottom = sourceRect.bottom() + markerHeight + padding.bottom();
-        const QRectF sourcePanel(viewRect.left(), viewRect.top(), viewRect.width(), qMax<qreal>(1.0, sourcePanelBottom - viewRect.top()));
-        const QRectF previewPanel(viewRect.left(), sourcePanel.bottom(), viewRect.width(), qMax<qreal>(1.0, viewRect.bottom() - sourcePanel.bottom()));
-
-        painter.fillRect(sourcePanel, theme.codeBackgroundColor());
-        painter.fillRect(previewPanel, theme.backgroundColor());
-        painter.setPen(theme.textColor());
-        painter.setFont(codeFont);
-        QTextOption option;
-        option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-        const QString openMarker = mathOpeningDelimiter(mathDelimiter_);
-        const QString closeMarker = mathClosingDelimiter(mathDelimiter_);
-        painter.drawText(QPointF(sourceRect.left(), viewRect.top() + padding.top() + codeMetrics.ascent()), openMarker);
-        paintLiteralSource(painter, theme, sourceRect, highlightMathTex(literal_), true);
-        painter.drawText(QPointF(sourceRect.left(), sourceRect.bottom() + codeMetrics.ascent()), closeMarker);
-        painter.setPen(QPen(theme.codeBorderColor(), 1));
-        const qreal dividerY = sourcePanel.bottom() + 0.5;
-        painter.drawLine(QPointF(viewRect.left(), dividerY), QPointF(viewRect.right(), dividerY));
-        if (mathLayout_ && mathLayout_->valid()) {
-          const qreal x = previewRect.left() + qMax<qreal>(0.0, (previewRect.width() - mathLayout_->size.width()) / 2.0);
-          const qreal y = previewRect.top() + qMax<qreal>(0.0, (previewRect.height() - mathLayout_->size.height()) / 2.0);
-          mathLayout_->paint(painter, QPointF(x, y));
-        }
-      } else if (!mathLayout_ || !mathLayout_->valid()) {
-        painter.setPen(theme.textColor());
-        painter.setFont(theme.mathFont());
-        QTextOption option;
-        option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-        painter.drawText(viewRect.marginsRemoved(theme.codePadding()), literal_, option);
-      } else {
-        const QRectF contentRect = viewRect.marginsRemoved(theme.codePadding());
-        const qreal x = contentRect.left() + qMax<qreal>(0.0, (contentRect.width() - mathLayout_->size.width()) / 2.0);
-        const qreal y = contentRect.top() + qMax<qreal>(0.0, (contentRect.height() - mathLayout_->size.height()) / 2.0);
-        mathLayout_->paint(painter, QPointF(x, y));
-      }
-      painter.restore();
+    case BlockType::MathBlock:
+      paintMathBlock(painter, theme, viewRect, scrollY);
       break;
-    }
-    case BlockType::HtmlBlock: {
-      if (literalEditing_) {
-        painter.save();
-        painter.setPen(theme.codeBorderColor());
-        painter.setBrush(theme.codeBackgroundColor());
-        if (theme.codeBlockBoxThemed() && theme.codeBlockBorderRadius() > 0.0) {
-          painter.drawRoundedRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5), theme.codeBlockBorderRadius(), theme.codeBlockBorderRadius());
-        } else {
-          painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
-        }
-        // HTML literal source always wraps (unlike code fences, which honour
-        // markdown/codeBlockWrap and gain a horizontal scrollbar instead). This
-        // must match the build/estimate/selection/hit-test paths, all of which
-        // treat HtmlBlock as wrap=true — otherwise the reserved height (wrapped)
-        // and the painted text (NoWrap, clipped, no scrollbar) disagree.
-        paintLiteralSource(painter, theme, viewRect.marginsRemoved(theme.codePadding()), codeHighlightSpans_, true);
-        painter.restore();
-      } else if (htmlLayout_ && htmlLayout_->valid()) {
-        htmlLayout_->paint(painter, viewRect.marginsRemoved(theme.codePadding()).topLeft());
-      } else {
-        // Fallback: the HTML did not render (invalid) or rendered with no visible content
-        // (just <div>/<br>/whitespace). Show the source, syntax-highlighted like edit mode.
-        // codeHighlightSpans_ is populated for this case by buildLiteralBlock().
-        painter.save();
-        painter.setPen(theme.codeBorderColor());
-        painter.setBrush(theme.codeBackgroundColor());
-        painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
-        paintLiteralSource(painter, theme, viewRect.marginsRemoved(theme.codePadding()), codeHighlightSpans_, true);
-        painter.restore();
-      }
+    case BlockType::HtmlBlock:
+      paintHtmlBlock(painter, theme, viewRect);
       break;
-    }
-    case BlockType::ThematicBreak: {
-      painter.save();
-      if (DecorationPainter::hasElementBackground(theme, QStringLiteral("hr"))) {
-        // CSS hr background-image gradient (e.g. phycat's fading rule).
-        DecorationPainter::paintHrGradient(painter, theme, viewRect);
-      } else {
-        painter.setPen(QPen(theme.codeBorderColor(), 1));
-        const qreal y = viewRect.center().y();
-        painter.drawLine(QPointF(viewRect.left(), y), QPointF(viewRect.right(), y));
-      }
-      painter.restore();
+    case BlockType::ThematicBreak:
+      paintThematicBreak(painter, theme, viewRect);
       break;
-    }
     case BlockType::Table:
       paintTable(painter, theme, scrollY);
       break;
@@ -1172,6 +904,292 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
       break;
   }
 }
+
+void BlockLayout::paintInlineBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect, qreal scrollY, BlockPaintState hover) const {
+  if (inlineLayout_) {
+    if (type_ == BlockType::Heading) {
+      // CSS element background gradient (e.g. phycat's h2 radial "fusion glass"
+      // glow) sits behind the heading text. Its rect comes from the same shared
+      // CSS border box that hover/hit-test/selection use, so fit-content pills do
+      // not drift into full-row effects.
+      DecorationPainter::paintElementBackground(
+          painter, theme, QStringLiteral("h%1").arg(headingLevel_), cssBorderBox(theme).translated(0, -scrollY));
+    }
+    // CSS `:hover`/`:focus { color }` on a heading (phycat h1 → accent) is baked
+    // into the inline layout at build time (it knows which runs inherit the
+    // colour); paint just needs the shared hover + focus phases, blended there.
+    // Box-shadow glow / bg / scale effects still use their own DecorationPainter
+    // paths below.
+    const qreal hoverPhase = hover.hoverActive ? hover.hoverPhase : 0.0;
+    const qreal focusPhase = hover.focusActive ? hover.focusPhase : 0.0;
+    if (hasListMarker()) {
+      painter.save();
+      painter.setFont(theme.paragraphFont());
+      painter.setPen(theme.textColor());
+      const QFontMetricsF metrics(painter.font());
+      // Baseline of the first text line, including the line-height centering
+      // offset — markers must ride this baseline or they drift above the text
+      // (and the caret) under a large theme line-height.
+      const qreal firstBaseline = inlineLayout_->firstLineBaselineY();
+      const qreal markerX = viewRect.left() + theme.listIndent() * 0.45;
+      const qreal contentX = viewRect.left() + listContentIndent_;
+      // Gap between a marker glyph and the content. Theme-overridable; floored
+      // for small-indent themes so the marker never crowds the text.
+      const qreal markerGap = theme.listMarkerGap();
+      const QColor markerColor = theme.listMarkerColor();
+      if (taskListItem_) {
+        const QRectF box = taskCheckboxRect(theme).translated(0, -scrollY);
+        painter.setBrush(theme.backgroundColor());
+        painter.setPen(QPen(theme.tableBorderColor(), 1));
+        painter.drawRoundedRect(box, 2, 2);
+        if (taskChecked_) {
+          painter.setPen(QPen(theme.linkColor(), 1.8));
+          painter.drawLine(QPointF(box.left() + 3, box.center().y()), QPointF(box.left() + 5.5, box.bottom() - 3));
+          painter.drawLine(QPointF(box.left() + 5.5, box.bottom() - 3), QPointF(box.right() - 3, box.top() + 3));
+        }
+      } else if (listMarkerKind_ == ListMarkerKind::OrderedText) {
+        painter.setPen(markerColor);
+        // Right-align the number to the content gutter so wide multi-digit markers
+        // (e.g. "34.", "100.") never overlap the content or the caret.
+        const qreal orderedX = contentX - markerGap - metrics.horizontalAdvance(listMarker_);
+        painter.drawText(QPointF(orderedX, viewRect.top() + firstBaseline), listMarker_);
+      } else {
+        QPointF markerCenter(markerX + metrics.horizontalAdvance(QStringLiteral("0")) * 0.35, viewRect.top() + firstBaseline - metrics.xHeight() * 0.45);
+        // Non-regressive clamp: with a small indent the default marker column
+        // would land inside the content gutter. Shift the bullet left so its
+        // right edge honours listMarkerGap() — only moves it when it would
+        // otherwise crowd the text (large-indent themes are untouched).
+        const qreal bulletRadius = qBound<qreal>(4.2, metrics.height() * 0.34, 6.2) / 2.0;
+        const qreal maxX = contentX - markerGap - bulletRadius;
+        if (markerCenter.x() > maxX) { markerCenter.setX(qMax<qreal>(viewRect.left(), maxX)); }
+        paintUnorderedListMarker(painter, listMarkerKind_, markerCenter, metrics.height(), markerColor);
+      }
+      painter.restore();
+      // Nested-list guide line (phycat's li::before border-left). Each item
+      // draws its own vertical segment at the CSS-declared `left` offset from
+      // the item's left edge (the li padding box == viewRect.left()); deeper
+      // nesting shifts each item's left edge right by one indent, so the
+      // per-item segments stack into the tree automatically. No-op when the
+      // theme styled no li::before guide.
+      const ListGuide guide = theme.listGuide();
+      if (guide.present) {
+        const qreal lineX = viewRect.left() + guide.leftOffset;
+        const qreal y1 = viewRect.top() + guide.topInset;
+        const qreal y2 = viewRect.bottom() - guide.bottomInset;
+        if (y2 > y1) {
+          painter.save();
+          painter.setPen(QPen(guide.color, guide.width));
+          painter.drawLine(QPointF(lineX, y1), QPointF(lineX, y2));
+          painter.restore();
+        }
+      }
+      inlineLayout_->paint(painter, QPointF(contentX, viewRect.top()), hoverPhase, focusPhase);
+    } else {
+      const QPointF textOrigin = inlineTextOrigin(theme) + QPointF(0, -scrollY);
+      inlineLayout_->paint(painter, textOrigin, hoverPhase, focusPhase);
+    }
+    if (!placeholderText_.isEmpty()) {
+      painter.save();
+      painter.setFont(theme.paragraphFont());
+      painter.setPen(theme.mutedTextColor());
+      const QPointF textOrigin = inlineTextOrigin(theme) + QPointF(0, -scrollY);
+      // Align with the first text line's baseline (line-height aware) so the
+      // placeholder sits where the caret and typed text will, not at the raw
+      // block top + ascent.
+      painter.drawText(QPointF(textOrigin.x(), textOrigin.y() + inlineLayout_->firstLineBaselineY()), placeholderText_);
+      painter.restore();
+    }
+    if (type_ == BlockType::Heading) {
+      painter.save();
+      const QMarginsF pad = theme.headingPadding(headingLevel_);
+      const QColor leftColor = theme.headingBorderLeftColor(headingLevel_);
+      const qreal leftWidth = theme.headingBorderLeftWidth(headingLevel_);
+      if (leftColor.isValid() && leftWidth > 0.0) {
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(leftColor);
+        painter.drawRect(QRectF(viewRect.left() - pad.left(), viewRect.top(), leftWidth, inlineLayout_->height()));
+      }
+      const QColor bottomColor = theme.headingBorderBottomColor(headingLevel_);
+      const qreal bottomWidth = theme.headingBorderBottomWidth(headingLevel_);
+      if (bottomColor.isValid() && bottomWidth > 0.0) {
+        painter.setPen(QPen(bottomColor, bottomWidth));
+        const qreal y = viewRect.top() + inlineLayout_->height() + theme.blockSpacing() * 0.15;
+        painter.drawLine(QPointF(viewRect.left() - pad.left(), y), QPointF(viewRect.right(), y));
+      }
+      painter.restore();
+      // CSS ::before/::after decorations: a trailing SVG icon after the heading
+      // text, an underline-gradient bar, etc.
+      DecorationPainter::PaintContext dctx;
+      dctx.headingLevel = headingLevel_;
+      dctx.beforeContent = headingBeforeText_;
+      dctx.font = theme.headingFont(headingLevel_);
+      const BlockLayout::CssBoxGeometry box = cssBoxGeometry(theme);
+      const QPointF textOrigin = box.inlineTextOrigin + QPointF(0, -scrollY);
+      const QRectF hostRect = box.borderBox.translated(0, -scrollY);
+      const qreal beforeAdvance = theme.headingBeforeAdvance(headingLevel_);
+      // textBounds reflects the shifted text origin so ::after anchors to the
+      // real text end; contentLeftX lets an inline ::before marker place itself
+      // in the reserved zone immediately before the shared text origin.
+      const QRectF textBounds = inlineLayout_->visualTextBounds().translated(textOrigin);
+      dctx.textBounds = textBounds;
+      dctx.contentLeftX = textOrigin.x() - beforeAdvance;
+      dctx.textStart = textBounds.isValid() ? textBounds.topLeft() : textOrigin;
+      dctx.textEnd = textBounds.isValid() ? QPointF(textBounds.right(), textBounds.top())
+                                          : QPointF(textOrigin.x() + inlineLayout_->size().width(), textOrigin.y());
+      dctx.hoverPhase = hoverPhase;
+      dctx.focusPhase = focusPhase;
+      DecorationPainter::paintPseudoDecorations(
+          painter, theme, QStringLiteral("h%1").arg(headingLevel_), hostRect, dctx);
+    }
+  }
+}
+
+void BlockLayout::paintBlockQuote(QPainter& painter, const RenderTheme& theme, QRectF viewRect, qreal scrollY) const {
+  painter.save();
+  painter.setPen(Qt::NoPen);
+  if (alertKind_ != AlertKind::None) {
+    // GitHub-style alert card: tinted background (semi-transparent accent, so it adapts to the
+    // page background of any theme) with a solid accent left bar. v1 keeps the `[!KIND]` first
+    // line visible; an icon/title row is a later enhancement.
+    QColor tint = theme.alertAccent(alertKind_);
+    tint.setAlphaF(0.10f);
+    painter.setBrush(tint);
+    painter.drawRoundedRect(viewRect, 6.0, 6.0);
+    painter.setBrush(theme.alertAccent(alertKind_));
+    painter.drawRoundedRect(QRectF(viewRect.left(), viewRect.top() + 3.0, 4.0, viewRect.height() - 6.0),
+                            2.0, 2.0);
+  } else if (theme.blockquoteBoxThemed()) {
+    // CSS-driven quote box: paint the real per-side box model. A declaration
+    // like `border-left` is only a left edge; only `border` produces four sides.
+    const ThemeElementBoxStyle boxStyle = theme.elementBoxStyle(QStringLiteral("blockquote"));
+    const QRectF boxRect = cssBorderBox(theme).translated(0, -scrollY);
+    QColor background = theme.blockquoteBackgroundColor();
+    if (const ThemeElementStyle* style = theme.elementStyle(QStringLiteral("blockquote"))) {
+      if (style->paint.backgroundColor.isValid()) { background = style->paint.backgroundColor; }
+    }
+    paintCssBox(painter, boxStyle, background, boxRect);
+    // CSS ::before content (e.g. a 💡 glyph) at the quote's top-left.
+    DecorationPainter::PaintContext qctx;
+    qctx.font = theme.paragraphFont();
+    DecorationPainter::paintPseudoDecorations(
+        painter, theme, QStringLiteral("blockquote"), boxRect, qctx);
+  } else {
+    // Optional quote fill (CSS themes that tint blockquote backgrounds).
+    if (theme.blockquoteBackgroundColor().isValid()) {
+      painter.setBrush(theme.blockquoteBackgroundColor());
+      painter.drawRoundedRect(viewRect, 6.0, 6.0);
+    }
+    painter.setBrush(theme.quoteBorderColor());
+    painter.drawRect(QRectF(viewRect.left(), viewRect.top(), 4, viewRect.height()));
+    // CSS ::before content (e.g. a 💡 glyph) at the quote's top-left, clear of
+    // the 4px accent border.
+    DecorationPainter::PaintContext qctx;
+    qctx.font = theme.paragraphFont();
+    DecorationPainter::paintPseudoDecorations(
+        painter, theme, QStringLiteral("blockquote"), viewRect.adjusted(8, 0, -4, 0), qctx);
+  }
+  painter.restore();
+}
+
+void BlockLayout::paintMathBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect, qreal scrollY) const {
+  painter.save();
+  painter.setPen(theme.codeBorderColor());
+  painter.setBrush(theme.codeBackgroundColor());
+  if (theme.codeBlockBoxThemed() && theme.codeBlockBorderRadius() > 0.0) {
+    painter.drawRoundedRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5), theme.codeBlockBorderRadius(), theme.codeBlockBorderRadius());
+  } else {
+    painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
+  }
+  if (literalEditing_) {
+    const QRectF sourceRect = mathEditorSourceRect(theme).translated(0, -scrollY);
+    const QRectF previewRect = mathPreviewContentRect(theme).translated(0, -scrollY);
+    const QMarginsF padding = theme.codePadding();
+    const QFont codeFont = theme.codeFont();
+    const QFontMetricsF codeMetrics(codeFont);
+    const qreal markerHeight = qMax<qreal>(14.0, codeMetrics.height());
+    const qreal sourcePanelBottom = sourceRect.bottom() + markerHeight + padding.bottom();
+    const QRectF sourcePanel(viewRect.left(), viewRect.top(), viewRect.width(), qMax<qreal>(1.0, sourcePanelBottom - viewRect.top()));
+    const QRectF previewPanel(viewRect.left(), sourcePanel.bottom(), viewRect.width(), qMax<qreal>(1.0, viewRect.bottom() - sourcePanel.bottom()));
+
+    painter.fillRect(sourcePanel, theme.codeBackgroundColor());
+    painter.fillRect(previewPanel, theme.backgroundColor());
+    painter.setPen(theme.textColor());
+    painter.setFont(codeFont);
+    QTextOption option;
+    option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+    const QString openMarker = mathOpeningDelimiter(mathDelimiter_);
+    const QString closeMarker = mathClosingDelimiter(mathDelimiter_);
+    painter.drawText(QPointF(sourceRect.left(), viewRect.top() + padding.top() + codeMetrics.ascent()), openMarker);
+    paintLiteralSource(painter, theme, sourceRect, highlightMathTex(literal_), true);
+    painter.drawText(QPointF(sourceRect.left(), sourceRect.bottom() + codeMetrics.ascent()), closeMarker);
+    painter.setPen(QPen(theme.codeBorderColor(), 1));
+    const qreal dividerY = sourcePanel.bottom() + 0.5;
+    painter.drawLine(QPointF(viewRect.left(), dividerY), QPointF(viewRect.right(), dividerY));
+    if (mathLayout_ && mathLayout_->valid()) {
+      const qreal x = previewRect.left() + qMax<qreal>(0.0, (previewRect.width() - mathLayout_->size.width()) / 2.0);
+      const qreal y = previewRect.top() + qMax<qreal>(0.0, (previewRect.height() - mathLayout_->size.height()) / 2.0);
+      mathLayout_->paint(painter, QPointF(x, y));
+    }
+  } else if (!mathLayout_ || !mathLayout_->valid()) {
+    painter.setPen(theme.textColor());
+    painter.setFont(theme.mathFont());
+    QTextOption option;
+    option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+    painter.drawText(viewRect.marginsRemoved(theme.codePadding()), literal_, option);
+  } else {
+    const QRectF contentRect = viewRect.marginsRemoved(theme.codePadding());
+    const qreal x = contentRect.left() + qMax<qreal>(0.0, (contentRect.width() - mathLayout_->size.width()) / 2.0);
+    const qreal y = contentRect.top() + qMax<qreal>(0.0, (contentRect.height() - mathLayout_->size.height()) / 2.0);
+    mathLayout_->paint(painter, QPointF(x, y));
+  }
+  painter.restore();
+}
+
+void BlockLayout::paintHtmlBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
+  if (literalEditing_) {
+    painter.save();
+    painter.setPen(theme.codeBorderColor());
+    painter.setBrush(theme.codeBackgroundColor());
+    if (theme.codeBlockBoxThemed() && theme.codeBlockBorderRadius() > 0.0) {
+      painter.drawRoundedRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5), theme.codeBlockBorderRadius(), theme.codeBlockBorderRadius());
+    } else {
+      painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
+    }
+    // HTML literal source always wraps (unlike code fences, which honour
+    // markdown/codeBlockWrap and gain a horizontal scrollbar instead). This
+    // must match the build/estimate/selection/hit-test paths, all of which
+    // treat HtmlBlock as wrap=true — otherwise the reserved height (wrapped)
+    // and the painted text (NoWrap, clipped, no scrollbar) disagree.
+    paintLiteralSource(painter, theme, viewRect.marginsRemoved(theme.codePadding()), codeHighlightSpans_, true);
+    painter.restore();
+  } else if (htmlLayout_ && htmlLayout_->valid()) {
+    htmlLayout_->paint(painter, viewRect.marginsRemoved(theme.codePadding()).topLeft());
+  } else {
+    // Fallback: the HTML did not render (invalid) or rendered with no visible content
+    // (just <div>/<br>/whitespace). Show the source, syntax-highlighted like edit mode.
+    // codeHighlightSpans_ is populated for this case by buildLiteralBlock().
+    painter.save();
+    painter.setPen(theme.codeBorderColor());
+    painter.setBrush(theme.codeBackgroundColor());
+    painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
+    paintLiteralSource(painter, theme, viewRect.marginsRemoved(theme.codePadding()), codeHighlightSpans_, true);
+    painter.restore();
+  }
+}
+
+void BlockLayout::paintThematicBreak(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
+  painter.save();
+  if (DecorationPainter::hasElementBackground(theme, QStringLiteral("hr"))) {
+    // CSS hr background-image gradient (e.g. phycat's fading rule).
+    DecorationPainter::paintHrGradient(painter, theme, viewRect);
+  } else {
+    painter.setPen(QPen(theme.codeBorderColor(), 1));
+    const qreal y = viewRect.center().y();
+    painter.drawLine(QPointF(viewRect.left(), y), QPointF(viewRect.right(), y));
+  }
+  painter.restore();
+}
+
 
 QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection, const RenderTheme& theme) const {
   QVector<QRectF> rects;
@@ -1746,7 +1764,7 @@ void BlockLayout::paintDefinition(QPainter& painter, const RenderTheme& theme, Q
 
   // Paint continuation lines below the token model for multi-line footnotes
   if (!literal_.isEmpty() && type_ == BlockType::FootnoteDefinition) {
-    const qreal lineHeightF = std::ceil(metrics.height() * 1.16);
+    const qreal lineHeightF = std::ceil(metrics.height() * kLineHeightFactor);
     qreal noteX = viewRect.right();
     for (const DefinitionTokenLayout& token : definitionTokens_) {
       if (token.field == DefinitionSlotLayout::Field::Note) {

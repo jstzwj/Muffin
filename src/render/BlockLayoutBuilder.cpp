@@ -1,4 +1,5 @@
 #include "render/BlockLayoutBuilder.h"
+#include "render/RenderMetrics.h"
 
 #include "blocks/code/CodeFenceScrollController.h"
 #include "blocks/html/HtmlSanitizer.h"
@@ -1033,7 +1034,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildDefinition(
 
   const QFont font = theme.paragraphFont();
   const QFontMetricsF metrics(font);
-  const qreal lineHeight = std::ceil(metrics.height() * 1.16);
+  const qreal lineHeight = std::ceil(metrics.height() * kLineHeightFactor);
   qreal cursorX = x;
   QVector<BlockLayout::DefinitionTokenLayout> definitionTokens;
   auto syntax = [&](const QString& text) {
@@ -1447,7 +1448,7 @@ qreal estimateWrappedLinesFromCharCount(qsizetype charCount, qreal charsPerLine)
 
 qreal BlockLayoutBuilder::estimateLineHeight(const QFont& font) const {
   // Matches InlineLayout's fallback per-line height: ceil(QFontMetricsF::height() * 1.16).
-  return std::ceil(QFontMetricsF(font).height() * 1.16);
+  return std::ceil(QFontMetricsF(font).height() * kLineHeightFactor);
 }
 
 qreal estimateLineHeightForElement(const RenderTheme& theme, const QString& elementKey, BlockType type,
@@ -1458,7 +1459,7 @@ qreal estimateLineHeightForElement(const RenderTheme& theme, const QString& elem
     const qreal pointSize = font.pointSizeF() > 0.0 ? font.pointSizeF() : 12.0;
     return std::ceil(pointSize * (96.0 / 72.0) * multiplier);
   }
-  return std::ceil(QFontMetricsF(font).height() * 1.16);
+  return std::ceil(QFontMetricsF(font).height() * kLineHeightFactor);
 }
 
 qreal BlockLayoutBuilder::avgCharWidthForText(QStringView text, const QFont& font) const {

@@ -23,6 +23,12 @@ Q_DECLARE_LOGGING_CATEGORY(themeWarn)
 inline qreal pxToPt(qreal px) { return px * 72.0 / 96.0; }
 inline qreal ptToPx(qreal pt) { return pt * 96.0 / 72.0; }
 
+// The CSS root em default (browser default font-size = 16px). Used wherever a length must be
+// resolved without a configured root/body size: the rem fallback, the body-size default, and the
+// default emPx handed to lengthToPx when there is no inherited context. Single-sourced so a
+// future root-default change is one edit.
+constexpr qreal kRootEmPx = 16.0;
+
 // Parse a CSS colour literal with the CORRECT alpha byte order. CSS specifies #RRGGBBAA
 // (alpha LAST); Qt's QColor(QString) reads 8-hex as #AARRGGBB (alpha FIRST), which silently
 // misreads every alpha-bearing hex colour (e.g. #7aeaf018 → yellow-green instead of pale cyan).

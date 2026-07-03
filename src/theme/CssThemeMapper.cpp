@@ -248,7 +248,7 @@ qreal parseLineHeightMultiplier(const QString& raw, const QHash<QString, QString
 qreal headingEmPx(const ThemeTypography& ty, int level, qreal bodyPx) {
   const int idx = qBound(0, level - 1, 5);
   if (ty.headingSizePt[idx] > 0.0) { return ptToPx(ty.headingSizePt[idx]); }
-  return bodyPx > 0.0 ? bodyPx : 16.0;
+  return bodyPx > 0.0 ? bodyPx : kRootEmPx;
 }
 
 QString varValue(const QHash<QString, QString>& vars, const char* name) {
@@ -415,7 +415,7 @@ QColor CssThemeMapper::resolveColor(const QString& value, const QHash<QString, Q
 }
 
 qreal CssThemeMapper::resolveLengthPx(const QString& value, const QHash<QString, QString>& vars) {
-  return lengthToPx(value, vars, 16.0);
+  return lengthToPx(value, vars, kRootEmPx);
 }
 
 qreal CssThemeMapper::resolveLengthPx(const QString& value, const QHash<QString, QString>& vars,
@@ -692,8 +692,8 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   k.tableAlternateBackground = colorToken(flat, vars, bgProps, isAltRow);
   k.codeBorder = colorToken(flat, vars, borderProps, [](const SelInfo& s) { return isInlineCode(s) || isCodeBlock(s); });
 
-  qreal bodyPx = lengthToPx(bestValue(flat, sizeProps, isHtmlOrBody), vars, 16.0);
-  if (bodyPx <= 0.0) { bodyPx = 16.0; }
+  qreal bodyPx = lengthToPx(bestValue(flat, sizeProps, isHtmlOrBody), vars, kRootEmPx);
+  if (bodyPx <= 0.0) { bodyPx = kRootEmPx; }
   d.bodyFontPx = bodyPx;
 
   // --- Computed-style gap fill (Phase 1) -------------------------------------
@@ -1047,7 +1047,7 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   if (d.typography.headingFont.isEmpty()) { d.typography.headingFont = d.typography.bodyFont; }
   if (fontStackLooksSerif(d.typography.bodyFont) || fontStackLooksSerif(d.typography.headingFont)) { k.serifBody = true; }
   d.typography.codeFont = firstFamily(bestValue(flat, familyProps, [](const SelInfo& s) { return isInlineCode(s) || isCodeBlock(s); }), vars);
-  d.typography.bodySizePt = lengthToPt(bestValue(flat, sizeProps, isHtmlOrBody), vars, 16.0);
+  d.typography.bodySizePt = lengthToPt(bestValue(flat, sizeProps, isHtmlOrBody), vars, kRootEmPx);
   d.typography.bodyAlignment = parseTextAlign(bestValue(flat, alignProps, [](const SelInfo& s) {
     return isParagraphText(s) || isWrite(s) || isHtmlOrBody(s);
   }), vars);

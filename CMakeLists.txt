@@ -138,6 +138,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/document/DocumentSession.cpp
   src/editor/EditorView.cpp
   src/editor/EditorViewPaint.cpp
+  src/editor/EditorViewViewport.cpp
   src/editor/SourceEditorWidget.cpp
   src/editor/FindBarWidget.cpp
   src/render/BlockLayoutBuilder.cpp
@@ -689,6 +690,7 @@ set(MUFFIN_UI_SOURCES
   src/editor/EditorControllerUndo.cpp
   src/editor/EditorView.cpp
   src/editor/EditorViewPaint.cpp
+  src/editor/EditorViewViewport.cpp
   src/editor/EditorView.h
   src/editor/EditorViewGeometry.cpp
   src/editor/EditorViewGeometry.h
@@ -709,6 +711,10 @@ set(MUFFIN_UI_SOURCES
   src/editor/TableToolbar.h
   src/editor/InputController.cpp
   src/editor/InputController.h
+  src/editor/InputControllerAutoPair.cpp
+  src/editor/InputControllerSmartPunct.cpp
+  src/editor/InputControllerEmoji.cpp
+  src/editor/InputControllerRemoval.cpp
   src/editor/InputControllerEdit.cpp
   src/io/ImageFileOps.cpp
   src/io/ImageFileOps.h

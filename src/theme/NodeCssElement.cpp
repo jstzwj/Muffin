@@ -7,6 +7,8 @@
 #include <QLoggingCategory>
 #include <QString>
 
+#include <vector>
+
 namespace muffin {
 
 Q_LOGGING_CATEGORY(cssPerf, "muffin.perf", QtWarningMsg)
@@ -171,14 +173,30 @@ void NodeCssElementBuilder::populateHas(CssElement& element, const MarkdownNode&
 }
 
 void NodeCssElementBuilder::collectDescendants(CssElement& element, const MarkdownNode& node) {
-  for (const std::unique_ptr<MarkdownNode>& child : node.children()) {
-    const QString t = cssTagForNode(*child);
-    if (!t.isEmpty()) { element.hasDescendantTags.insert(t); }
-    collectDescendants(element, *child);
-  }
+  // The passed node's own inlines count as descendants (they are its element children).
   for (const InlineNode& in : node.inlines()) {
     const QString t = cssTagForInline(in.type());
     if (!t.isEmpty()) { element.hasDescendantTags.insert(t); }
+  }
+  // Iterative DFS over the strict descendants. A recursive walk (the natural form) overflows the
+  // stack on a deeply nested document — the same failure mode as the sibling-chain recursion
+  // fixed by linkSiblingsIteratively. Explicit stack keeps depth bounded only by heap.
+  std::vector<const MarkdownNode*> stack;
+  for (const std::unique_ptr<MarkdownNode>& child : node.children()) {
+    stack.push_back(child.get());
+  }
+  while (!stack.empty()) {
+    const MarkdownNode* cur = stack.back();
+    stack.pop_back();
+    const QString t = cssTagForNode(*cur);
+    if (!t.isEmpty()) { element.hasDescendantTags.insert(t); }
+    for (const InlineNode& in : cur->inlines()) {
+      const QString it = cssTagForInline(in.type());
+      if (!it.isEmpty()) { element.hasDescendantTags.insert(it); }
+    }
+    for (const std::unique_ptr<MarkdownNode>& child : cur->children()) {
+      stack.push_back(child.get());
+    }
   }
 }
 

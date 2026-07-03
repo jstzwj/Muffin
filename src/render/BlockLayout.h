@@ -231,6 +231,13 @@ public:
 
 private:
   void paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll, BlockPaintState hover) const;
+  // per-type paint dispatch targets (paintSelf switches over these). viewRect is the
+  // scrollY-translated block rect computed once in paintSelf.
+  void paintInlineBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect, qreal scrollY, BlockPaintState hover) const;
+  void paintBlockQuote(QPainter& painter, const RenderTheme& theme, QRectF viewRect, qreal scrollY) const;
+  void paintMathBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect, qreal scrollY) const;
+  void paintHtmlBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
+  void paintThematicBreak(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
   void paintTable(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
   HitTestResult hitSelf(QPointF documentPos, const RenderTheme& theme, const CodeFenceScrollController* scroll) const;
   HitTestResult hitTable(QPointF documentPos, const RenderTheme& theme) const;

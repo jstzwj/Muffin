@@ -52,6 +52,12 @@ private:
   std::unique_ptr<MathRenderNode> makeDelimSizing(const MathParseNode& node);
   std::unique_ptr<MathRenderNode> makeLeftRight(const MathParseNode& node);
   std::unique_ptr<MathRenderNode> makeArray(const MathParseNode& node);
+  std::unique_ptr<MathRenderNode> makeColor(const MathParseNode& node);
+  std::unique_ptr<MathRenderNode> makeStyling(const MathParseNode& node);
+  std::unique_ptr<MathRenderNode> makeSizing(const MathParseNode& node);
+  std::unique_ptr<MathRenderNode> makeClass(const MathParseNode& node);
+  std::unique_ptr<MathRenderNode> makeText(const MathParseNode& node);
+  std::unique_ptr<MathRenderNode> makeOperator(const MathParseNode& node);
   std::unique_ptr<MathRenderNode> makeDelimiter(const QString& delimiter, qreal targetHeight, MathNodeType type);
   std::unique_ptr<MathRenderNode> makeStretchyAccent(const MathParseNode& node, const MathRenderNode& body);
   std::unique_ptr<MathRenderNode> makeBraceGlyph(const MathParseNode& node, const MathRenderNode& body);

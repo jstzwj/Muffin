@@ -415,7 +415,7 @@ qreal lengthToPt(const QString& value, const QHash<QString, QString>& vars, qrea
   if (!ok) { return 0.0; }
   if (unit == QStringLiteral("px")) { return pxToPt(n); }
   if (unit == QStringLiteral("pt")) { return n; }
-  if (unit == QStringLiteral("rem")) { return pxToPt(n * 16.0); }
+  if (unit == QStringLiteral("rem")) { return pxToPt(n * kRootEmPx); }
   if (unit == QStringLiteral("em")) { return pxToPt(n * emPx); }
   if (unit == QStringLiteral("%")) { return pxToPt(n / 100.0 * emPx); }
   if (unit.isEmpty()) { return pxToPt(n); }  // bare number → treat as px
@@ -449,7 +449,7 @@ qreal lengthToPx(const QString& value, const QHash<QString, QString>& vars, qrea
   // made EVERY rem size 1.5× too big: pixyll's `h2 { font-size: 1.5rem }` became 36px
   // instead of 24px. The root reference (16) is the same base bodyPx itself is computed
   // against, so this keeps rem consistent with how the body size is derived.
-  if (unit == QStringLiteral("rem")) { return n * (rootPx > 0.0 ? rootPx : 16.0); }
+  if (unit == QStringLiteral("rem")) { return n * (rootPx > 0.0 ? rootPx : kRootEmPx); }
   // A `%` is normally em-relative (local box shorthand). When the caller supplies
   // a real containing-block dimension (containingPx > 0), resolve against THAT —
   // for pseudo width/height like phycat's `h3::before { height: 61% }`, where the %
@@ -488,7 +488,7 @@ qreal shadowBlurPx(const QString& shadowRaw, const QHash<QString, QString>& vars
                           t.at(0) == QLatin1Char('-') || t.at(0) == QLatin1Char('.'))) {
       continue;
     }
-    nums.append(lengthToPx(t, vars, 16.0));  // handles 15px / 0 / em
+    nums.append(lengthToPx(t, vars, kRootEmPx));  // handles 15px / 0 / em
   }
   if (nums.size() >= 3) { return nums.at(2); }
   if (nums.size() >= 2) { return 8.0; }

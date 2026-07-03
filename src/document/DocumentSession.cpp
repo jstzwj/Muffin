@@ -782,9 +782,10 @@ void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector
     PerfTimer relativizePerf("session.relativize");
     for (const auto& child : document_.root().children()) {
       if (child) {
-        // textDoc left null: InlineNode text-sharing is implemented (bindSharedText) but currently
+        // TODO(text-sharing): InlineNode text-sharing is implemented (bindSharedText) but currently
         // DISABLED — it caused a table-undo correctness regression (block-relative offset ×
-        // clone/snapshot interaction). Re-enable after that's resolved. Infrastructure is inert.
+        // clone/snapshot interaction). Re-enable after that's resolved. Infrastructure is inert;
+        // textDoc is intentionally left null here so each InlineNode owns its text copy.
         child->relativizeDescendants();
       }
     }

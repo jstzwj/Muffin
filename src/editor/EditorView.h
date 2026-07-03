@@ -243,8 +243,11 @@ private:
   // refresh so a moved caret is erased at its old position, even when that
   // position lies outside any block (e.g. the virtual trailing paragraph).
   mutable QRectF lastPaintedCaretDocumentRect_;
-  bool draggingSelection_ = false;
-  bool dragSelectionPending_ = false;
+  // Mouse drag-selection state machine: Idle (no button) → Pending (pressed, below drag
+  // threshold) → Dragging (threshold crossed). Replaces the draggingSelection_/dragSelectionPending_
+  // bool pair. `dragState_ != Idle` covers the old `(pending || dragging)` "armed" check.
+  enum class DragState { Idle, Pending, Dragging };
+  DragState dragState_ = DragState::Idle;
   SelectionRange preDragSelection_;
   QPointF dragStartViewportPos_;
   HitTestResult dragAnchorHit_;

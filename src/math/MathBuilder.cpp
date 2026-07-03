@@ -162,234 +162,14 @@ std::unique_ptr<MathRenderNode> MathBuilder::buildNode(const MathParseNode& node
       return makeLeftRight(node);
     case MathNodeType::Array:
       return makeArray(node);
-    case MathNodeType::Color: {
-      QColor color(node.color);
-      if (!color.isValid()) {
-        static const QHash<QString, QColor> namedColors{
-            {QStringLiteral("red"), QColor(QStringLiteral("#df0030"))},
-            {QStringLiteral("blue"), QColor(QStringLiteral("#0057d8"))},
-            {QStringLiteral("green"), QColor(QStringLiteral("#008000"))},
-            {QStringLiteral("black"), QColor(QStringLiteral("#000000"))},
-            {QStringLiteral("white"), QColor(QStringLiteral("#ffffff"))},
-            {QStringLiteral("gray"), QColor(QStringLiteral("#808080"))},
-            {QStringLiteral("grey"), QColor(QStringLiteral("#808080"))},
-            {QStringLiteral("purple"), QColor(QStringLiteral("#800080"))},
-            {QStringLiteral("orange"), QColor(QStringLiteral("#ff8000"))}};
-        color = namedColors.value(node.color, options_.color());
-      }
-      return MathBuilder(options_.withColor(color)).buildExpression(node.body);
-    }
-    case MathNodeType::Styling: {
-      MathStyle style = options_.style();
-      if (node.style == QStringLiteral("\\displaystyle")) style = MathStyle::display();
-      else if (node.style == QStringLiteral("\\textstyle")) style = MathStyle::textStyle();
-      else if (node.style == QStringLiteral("\\scriptstyle")) style = MathStyle::script();
-      else if (node.style == QStringLiteral("\\scriptscriptstyle")) style = MathStyle::scriptScript();
-      return MathBuilder(options_.havingStyle(style)).buildExpression(node.body);
-    }
-    case MathNodeType::Sizing: {
-      static const QHash<QString, qreal> scales{
-          {QStringLiteral("\\tiny"), 0.5},       {QStringLiteral("\\sixptsize"), 0.55}, {QStringLiteral("\\scriptsize"), 0.7},
-          {QStringLiteral("\\footnotesize"), 0.8}, {QStringLiteral("\\small"), 0.9},      {QStringLiteral("\\normalsize"), 1.0},
-          {QStringLiteral("\\large"), 1.2},      {QStringLiteral("\\Large"), 1.44},      {QStringLiteral("\\LARGE"), 1.73},
-          {QStringLiteral("\\huge"), 2.07},      {QStringLiteral("\\Huge"), 2.49}};
-      return MathBuilder(options_.havingSizeScale(scales.value(node.size, 1.0))).buildExpression(node.body);
-    }
-    case MathNodeType::Class:
-      if (!node.fontClass.isEmpty()) {
-        std::vector<std::unique_ptr<MathRenderNode>> children;
-        for (const MathParseNode& childNode : node.body) {
-          if (!childNode.text.isEmpty()) {
-            // Multi-character Operator text (e.g. \log inside \boldsymbol)
-            // must be split into individual character Symbols to match KaTeX's
-            // glyph count.  Only split Operator nodes; other multi-char text
-            // (e.g. Error nodes) should remain as single Symbols.
-            if (childNode.type == MathNodeType::Operator && childNode.text.size() > 1) {
-              children.push_back(makeTextSpan(childNode.text, childNode.type, options_, node.fontClass));
-            } else {
-              children.push_back(makeSymbol(childNode.text, childNode.type, options_, node.fontClass));
-            }
-          } else {
-            children.push_back(buildNode(childNode));
-          }
-        }
-        return makeSpan(std::move(children));
-      }
-      return buildExpression(node.body);
+    case MathNodeType::Color: return makeColor(node);
+    case MathNodeType::Styling: return makeStyling(node);
+    case MathNodeType::Sizing: return makeSizing(node);
+    case MathNodeType::Class: return makeClass(node);
     case MathNodeType::Error:
       return makeError(node.text, options_);
-    case MathNodeType::Text: {
-      const bool isMathFont = isMathFontCommand(node.label);
-      const MathNodeType fontNodeType = isMathFont ? MathNodeType::Ord : MathNodeType::Text;
-      // Text-mode processing (symbol conversion, ligatures) applies to content
-      // parsed in text mode.  Math font commands (\\mathrm, \\mathtt, etc.) have
-      // math-mode content and should NOT get text ligatures.  Text-mode font
-      // switches (\\it, \\tt, \\bf, etc.) inside \\text{...} DO get ligatures.
-      const bool contentIsMath = node.label.startsWith(QStringLiteral("\\math")) ||
-                                 node.label == QStringLiteral("\\Bbb") ||
-                                 node.label == QStringLiteral("\\frak") ||
-                                 node.label == QStringLiteral("\\bold");
-      if (!node.body.isEmpty()) {
-        // Collect text body children.  For text-mode commands (\text, \texttt, etc.)
-        // we convert math symbols to text equivalents (minus → hyphen, prime → apostrophe).
-        // For math font commands (\mathtt, \mathrm, etc.) we skip this conversion —
-        // the content is math-mode and should keep its original glyphs.
-        QVector<MathParseNode> textBody;
-        for (const MathParseNode& childNode : node.body) {
-          if (childNode.text.isEmpty() && childNode.body.isEmpty()) {
-            textBody.push_back(childNode);
-          } else if (!childNode.text.isEmpty()) {
-            MathParseNode resolved = childNode;
-            if (!contentIsMath) {
-              if (resolved.text == QString(QChar(0x2212))) resolved.text = QStringLiteral("-");  // − → -
-              if (resolved.text == QString(QChar(0x2032))) resolved.text = QString(QChar(0x0027));  // ′ → ‘
-            }
-            textBody.push_back(std::move(resolved));
-          } else {
-            textBody.push_back(childNode);
-          }
-        }
-        // Form text ligatures (matching KaTeX’s formLigatures in Parser.ts):
-        // --- → em dash, -- → en dash, `` → left double quote, ‘’ → right double quote.
-        // Only for text-mode commands; math font commands (\mathtt etc.) don’t form ligatures.
-        if (!contentIsMath) {
-          for (int i = 0; i < textBody.size(); ++i) {
-            if (i + 2 < textBody.size() &&
-                textBody[i].text == QStringLiteral("-") &&
-                textBody[i+1].text == QStringLiteral("-") &&
-                textBody[i+2].text == QStringLiteral("-")) {
-              textBody[i].text = QString(QChar(0x2014));  // em dash
-              textBody.remove(i+1, 2);
-            }
-          }
-          for (int i = 0; i < textBody.size(); ++i) {
-            if (i + 1 < textBody.size() &&
-                textBody[i].text == QStringLiteral("-") &&
-                textBody[i+1].text == QStringLiteral("-")) {
-              textBody[i].text = QString(QChar(0x2013));  // en dash
-              textBody.remove(i+1, 1);
-            }
-          }
-          // The parser converts backtick ` (U+0060) → U+2018 (left single quotation mark)
-          // before we see it, so the ligature check uses U+2018.
-          for (int i = 0; i < textBody.size(); ++i) {
-            if (i + 1 < textBody.size() &&
-                textBody[i].text == QString(QChar(0x2018)) &&
-                textBody[i+1].text == QString(QChar(0x2018))) {
-              textBody[i].text = QString(QChar(0x201C));  // left double quote
-              textBody.remove(i+1, 1);
-            }
-          }
-          // The parser leaves apostrophe ‘ as U+0027; ligature checks for U+0027.
-          for (int i = 0; i < textBody.size(); ++i) {
-            if (i + 1 < textBody.size() &&
-                textBody[i].text == QString(QChar(0x0027)) &&
-                textBody[i+1].text == QString(QChar(0x0027))) {
-              textBody[i].text = QString(QChar(0x201D));  // right double quote
-              textBody.remove(i+1, 1);
-            }
-          }
-          // KaTeX’s Typewriter font deconstructs ligatures back to individual chars
-          // (buildCommon.ts detects Typewriter-Regular).  We do the same here.
-          if (node.fontClass == QStringLiteral("typewriter")) {
-            for (int i = textBody.size() - 1; i >= 0; --i) {
-              const QString& t = textBody[i].text;
-              if (t.size() == 1) {
-                const QChar ch = t.at(0);
-                auto ordNode = [](const QString& text) {
-                  MathParseNode n;
-                  n.type = MathNodeType::Ord;
-                  n.text = text;
-                  return n;
-                };
-                if (ch == QChar(0x201C)) {      // " → ` `
-                  textBody[i].text = QString(QChar(0x2018));
-                  textBody.insert(i + 1, ordNode(QString(QChar(0x2018))));
-                } else if (ch == QChar(0x201D)) {  // " → ‘ ‘
-                  textBody[i].text = QString(QChar(0x0027));
-                  textBody.insert(i + 1, ordNode(QString(QChar(0x0027))));
-                } else if (ch == QChar(0x2018)) {  // ‘ → `
-                  // Left single quote stays as-is in typewriter (already individual)
-                } else if (ch == QChar(0x2019)) {  // ‘ → ‘
-                  // Right single quote stays as-is
-                } else if (ch == QChar(0x2014)) {  // — → - - -
-                  textBody[i].text = QStringLiteral("-");
-                  textBody.insert(i + 1, ordNode(QStringLiteral("-")));
-                  textBody.insert(i + 2, ordNode(QStringLiteral("-")));
-                } else if (ch == QChar(0x2013)) {  // – → - -
-                  textBody[i].text = QStringLiteral("-");
-                  textBody.insert(i + 1, ordNode(QStringLiteral("-")));
-                }
-              }
-            }
-          }
-        }
-
-        std::vector<std::unique_ptr<MathRenderNode>> children;
-        for (const MathParseNode& childNode : textBody) {
-          // Spacing nodes (from ~, \, etc.) inside text should not produce visible glyphs.
-          // KaTeX treats them as part of the text flow, not separate glyph elements.
-          if (childNode.type == MathNodeType::Spacing) {
-            auto spacer = std::make_unique<MathRenderNode>();
-            spacer->kind = MathRenderKind::Span;
-            spacer->atomClass = QStringLiteral("mspace");
-            spacer->width = options_.fontPointSize() * 0.25;
-            children.push_back(std::move(spacer));
-            continue;
-          }
-          if (childNode.text.isEmpty() && childNode.body.isEmpty()) {
-            children.push_back(buildNode(childNode));
-          } else if (!childNode.text.isEmpty()) {
-            children.push_back(makeSymbol(childNode.text, fontNodeType, options_, node.fontClass));
-          } else if (childNode.type == MathNodeType::Text) {
-            // Inner Text nodes (from \it, \tt, etc. inside \text) must be built
-            // via buildNode to preserve text-mode processing (ligatures, fonts).
-            // Using buildExpression would render the body as math, losing text context.
-            children.push_back(buildNode(childNode));
-          } else {
-            children.push_back(MathBuilder(options_).buildExpression(childNode.body));
-          }
-        }
-        return makeSpan(std::move(children));
-      }
-      if (node.text.size() > 1) {
-        return makeTextSpan(node.text, fontNodeType, options_, node.fontClass);
-      }
-      return makeSymbol(node.text, fontNodeType, options_, node.fontClass);
-    }
-    case MathNodeType::Operator:
-      if (!node.body.isEmpty()) {
-        // KaTeX: \operatorname body is built with mathrm font.
-        // Render each child symbol with "main" font to get upright roman.
-        const QString fontClass = node.opSymbol ? QString() : QStringLiteral("main");
-        std::vector<std::unique_ptr<MathRenderNode>> children;
-        for (const MathParseNode& childNode : node.body) {
-          // Spacing nodes (e.g. \, inside \operatorname*{lim\,sup})
-          // must go through buildNode() → makeSpacing() to produce an
-          // invisible Span, not a visible Symbol glyph.
-          if (!childNode.text.isEmpty() && childNode.type != MathNodeType::Spacing) {
-            children.push_back(makeSymbol(childNode.text, childNode.type, options_, fontClass));
-          } else {
-            children.push_back(buildNode(childNode));
-          }
-        }
-        auto opBody = makeSpan(std::move(children));
-        opBody->fontClass = QStringLiteral("main");
-        return opBody;
-      }
-      if (node.opSymbol) {
-        const bool large = operatorCanGrow(node) && options_.style().id() == MathStyle::Display;
-        auto op = makeSymbol(node.text, node.type, options_, large ? QStringLiteral("size2") : QStringLiteral("size1"));
-        const qreal shift = (op->height - op->depth) / 2.0 - axisHeight(options_);
-        if (!qFuzzyIsNull(shift)) {
-          op->yOffset = -shift;
-        }
-        return op;
-      }
-      if (node.text.size() > 1) {
-        return makeTextSpan(node.text, node.type, options_, QStringLiteral("main"));
-      }
-      return makeSymbol(node.text, node.type, options_, node.fontClass.isEmpty() ? QStringLiteral("main") : node.fontClass);
+    case MathNodeType::Text: return makeText(node);
+    case MathNodeType::Operator: return makeOperator(node);
     case MathNodeType::Spacing:
       return makeSpacing(node);
     default:
@@ -400,6 +180,241 @@ std::unique_ptr<MathRenderNode> MathBuilder::buildNode(const MathParseNode& node
       return makeSymbol(node.text, node.type, options_, node.fontClass);
   }
 }
+
+std::unique_ptr<MathRenderNode> MathBuilder::makeColor(const MathParseNode& node) {
+  QColor color(node.color);
+  if (!color.isValid()) {
+    static const QHash<QString, QColor> namedColors{
+        {QStringLiteral("red"), QColor(QStringLiteral("#df0030"))},
+        {QStringLiteral("blue"), QColor(QStringLiteral("#0057d8"))},
+        {QStringLiteral("green"), QColor(QStringLiteral("#008000"))},
+        {QStringLiteral("black"), QColor(QStringLiteral("#000000"))},
+        {QStringLiteral("white"), QColor(QStringLiteral("#ffffff"))},
+        {QStringLiteral("gray"), QColor(QStringLiteral("#808080"))},
+        {QStringLiteral("grey"), QColor(QStringLiteral("#808080"))},
+        {QStringLiteral("purple"), QColor(QStringLiteral("#800080"))},
+        {QStringLiteral("orange"), QColor(QStringLiteral("#ff8000"))}};
+    color = namedColors.value(node.color, options_.color());
+  }
+  return MathBuilder(options_.withColor(color)).buildExpression(node.body);
+}
+
+std::unique_ptr<MathRenderNode> MathBuilder::makeStyling(const MathParseNode& node) {
+  MathStyle style = options_.style();
+  if (node.style == QStringLiteral("\\displaystyle")) style = MathStyle::display();
+  else if (node.style == QStringLiteral("\\textstyle")) style = MathStyle::textStyle();
+  else if (node.style == QStringLiteral("\\scriptstyle")) style = MathStyle::script();
+  else if (node.style == QStringLiteral("\\scriptscriptstyle")) style = MathStyle::scriptScript();
+  return MathBuilder(options_.havingStyle(style)).buildExpression(node.body);
+}
+
+std::unique_ptr<MathRenderNode> MathBuilder::makeSizing(const MathParseNode& node) {
+  static const QHash<QString, qreal> scales{
+      {QStringLiteral("\\tiny"), 0.5},       {QStringLiteral("\\sixptsize"), 0.55}, {QStringLiteral("\\scriptsize"), 0.7},
+      {QStringLiteral("\\footnotesize"), 0.8}, {QStringLiteral("\\small"), 0.9},      {QStringLiteral("\\normalsize"), 1.0},
+      {QStringLiteral("\\large"), 1.2},      {QStringLiteral("\\Large"), 1.44},      {QStringLiteral("\\LARGE"), 1.73},
+      {QStringLiteral("\\huge"), 2.07},      {QStringLiteral("\\Huge"), 2.49}};
+  return MathBuilder(options_.havingSizeScale(scales.value(node.size, 1.0))).buildExpression(node.body);
+}
+
+std::unique_ptr<MathRenderNode> MathBuilder::makeClass(const MathParseNode& node) {
+  if (!node.fontClass.isEmpty()) {
+    std::vector<std::unique_ptr<MathRenderNode>> children;
+    for (const MathParseNode& childNode : node.body) {
+      if (!childNode.text.isEmpty()) {
+        // Multi-character Operator text (e.g. \log inside \boldsymbol)
+        // must be split into individual character Symbols to match KaTeX's
+        // glyph count.  Only split Operator nodes; other multi-char text
+        // (e.g. Error nodes) should remain as single Symbols.
+        if (childNode.type == MathNodeType::Operator && childNode.text.size() > 1) {
+          children.push_back(makeTextSpan(childNode.text, childNode.type, options_, node.fontClass));
+        } else {
+          children.push_back(makeSymbol(childNode.text, childNode.type, options_, node.fontClass));
+        }
+      } else {
+        children.push_back(buildNode(childNode));
+      }
+    }
+    return makeSpan(std::move(children));
+  }
+  return buildExpression(node.body);
+}
+
+std::unique_ptr<MathRenderNode> MathBuilder::makeText(const MathParseNode& node) {
+  const bool isMathFont = isMathFontCommand(node.label);
+  const MathNodeType fontNodeType = isMathFont ? MathNodeType::Ord : MathNodeType::Text;
+  // Text-mode processing (symbol conversion, ligatures) applies to content
+  // parsed in text mode.  Math font commands (\\mathrm, \\mathtt, etc.) have
+  // math-mode content and should NOT get text ligatures.  Text-mode font
+  // switches (\\it, \\tt, \\bf, etc.) inside \\text{...} DO get ligatures.
+  const bool contentIsMath = node.label.startsWith(QStringLiteral("\\math")) ||
+                             node.label == QStringLiteral("\\Bbb") ||
+                             node.label == QStringLiteral("\\frak") ||
+                             node.label == QStringLiteral("\\bold");
+  if (!node.body.isEmpty()) {
+    // Collect text body children.  For text-mode commands (\text, \texttt, etc.)
+    // we convert math symbols to text equivalents (minus → hyphen, prime → apostrophe).
+    // For math font commands (\mathtt, \mathrm, etc.) we skip this conversion —
+    // the content is math-mode and should keep its original glyphs.
+    QVector<MathParseNode> textBody;
+    for (const MathParseNode& childNode : node.body) {
+      if (childNode.text.isEmpty() && childNode.body.isEmpty()) {
+        textBody.push_back(childNode);
+      } else if (!childNode.text.isEmpty()) {
+        MathParseNode resolved = childNode;
+        if (!contentIsMath) {
+          if (resolved.text == QString(QChar(0x2212))) resolved.text = QStringLiteral("-");  // − → -
+          if (resolved.text == QString(QChar(0x2032))) resolved.text = QString(QChar(0x0027));  // ′ → ‘
+        }
+        textBody.push_back(std::move(resolved));
+      } else {
+        textBody.push_back(childNode);
+      }
+    }
+    // Form text ligatures (matching KaTeX’s formLigatures in Parser.ts):
+    // --- → em dash, -- → en dash, `` → left double quote, ‘’ → right double quote.
+    // Only for text-mode commands; math font commands (\mathtt etc.) don’t form ligatures.
+    if (!contentIsMath) {
+      for (int i = 0; i < textBody.size(); ++i) {
+        if (i + 2 < textBody.size() &&
+            textBody[i].text == QStringLiteral("-") &&
+            textBody[i+1].text == QStringLiteral("-") &&
+            textBody[i+2].text == QStringLiteral("-")) {
+          textBody[i].text = QString(QChar(0x2014));  // em dash
+          textBody.remove(i+1, 2);
+        }
+      }
+      for (int i = 0; i < textBody.size(); ++i) {
+        if (i + 1 < textBody.size() &&
+            textBody[i].text == QStringLiteral("-") &&
+            textBody[i+1].text == QStringLiteral("-")) {
+          textBody[i].text = QString(QChar(0x2013));  // en dash
+          textBody.remove(i+1, 1);
+        }
+      }
+      // The parser converts backtick ` (U+0060) → U+2018 (left single quotation mark)
+      // before we see it, so the ligature check uses U+2018.
+      for (int i = 0; i < textBody.size(); ++i) {
+        if (i + 1 < textBody.size() &&
+            textBody[i].text == QString(QChar(0x2018)) &&
+            textBody[i+1].text == QString(QChar(0x2018))) {
+          textBody[i].text = QString(QChar(0x201C));  // left double quote
+          textBody.remove(i+1, 1);
+        }
+      }
+      // The parser leaves apostrophe ‘ as U+0027; ligature checks for U+0027.
+      for (int i = 0; i < textBody.size(); ++i) {
+        if (i + 1 < textBody.size() &&
+            textBody[i].text == QString(QChar(0x0027)) &&
+            textBody[i+1].text == QString(QChar(0x0027))) {
+          textBody[i].text = QString(QChar(0x201D));  // right double quote
+          textBody.remove(i+1, 1);
+        }
+      }
+      // KaTeX’s Typewriter font deconstructs ligatures back to individual chars
+      // (buildCommon.ts detects Typewriter-Regular).  We do the same here.
+      if (node.fontClass == QStringLiteral("typewriter")) {
+        for (int i = textBody.size() - 1; i >= 0; --i) {
+          const QString& t = textBody[i].text;
+          if (t.size() == 1) {
+            const QChar ch = t.at(0);
+            auto ordNode = [](const QString& text) {
+              MathParseNode n;
+              n.type = MathNodeType::Ord;
+              n.text = text;
+              return n;
+            };
+            if (ch == QChar(0x201C)) {      // " → ` `
+              textBody[i].text = QString(QChar(0x2018));
+              textBody.insert(i + 1, ordNode(QString(QChar(0x2018))));
+            } else if (ch == QChar(0x201D)) {  // " → ‘ ‘
+              textBody[i].text = QString(QChar(0x0027));
+              textBody.insert(i + 1, ordNode(QString(QChar(0x0027))));
+            } else if (ch == QChar(0x2018)) {  // ‘ → `
+              // Left single quote stays as-is in typewriter (already individual)
+            } else if (ch == QChar(0x2019)) {  // ‘ → ‘
+              // Right single quote stays as-is
+            } else if (ch == QChar(0x2014)) {  // — → - - -
+              textBody[i].text = QStringLiteral("-");
+              textBody.insert(i + 1, ordNode(QStringLiteral("-")));
+              textBody.insert(i + 2, ordNode(QStringLiteral("-")));
+            } else if (ch == QChar(0x2013)) {  // – → - -
+              textBody[i].text = QStringLiteral("-");
+              textBody.insert(i + 1, ordNode(QStringLiteral("-")));
+            }
+          }
+        }
+      }
+    }
+
+    std::vector<std::unique_ptr<MathRenderNode>> children;
+    for (const MathParseNode& childNode : textBody) {
+      // Spacing nodes (from ~, \, etc.) inside text should not produce visible glyphs.
+      // KaTeX treats them as part of the text flow, not separate glyph elements.
+      if (childNode.type == MathNodeType::Spacing) {
+        auto spacer = std::make_unique<MathRenderNode>();
+        spacer->kind = MathRenderKind::Span;
+        spacer->atomClass = QStringLiteral("mspace");
+        spacer->width = options_.fontPointSize() * 0.25;
+        children.push_back(std::move(spacer));
+        continue;
+      }
+      if (childNode.text.isEmpty() && childNode.body.isEmpty()) {
+        children.push_back(buildNode(childNode));
+      } else if (!childNode.text.isEmpty()) {
+        children.push_back(makeSymbol(childNode.text, fontNodeType, options_, node.fontClass));
+      } else if (childNode.type == MathNodeType::Text) {
+        // Inner Text nodes (from \it, \tt, etc. inside \text) must be built
+        // via buildNode to preserve text-mode processing (ligatures, fonts).
+        // Using buildExpression would render the body as math, losing text context.
+        children.push_back(buildNode(childNode));
+      } else {
+        children.push_back(MathBuilder(options_).buildExpression(childNode.body));
+      }
+    }
+    return makeSpan(std::move(children));
+  }
+  if (node.text.size() > 1) {
+    return makeTextSpan(node.text, fontNodeType, options_, node.fontClass);
+  }
+  return makeSymbol(node.text, fontNodeType, options_, node.fontClass);
+}
+
+std::unique_ptr<MathRenderNode> MathBuilder::makeOperator(const MathParseNode& node) {
+  if (!node.body.isEmpty()) {
+    // KaTeX: \operatorname body is built with mathrm font.
+    // Render each child symbol with "main" font to get upright roman.
+    const QString fontClass = node.opSymbol ? QString() : QStringLiteral("main");
+    std::vector<std::unique_ptr<MathRenderNode>> children;
+    for (const MathParseNode& childNode : node.body) {
+      // Spacing nodes (e.g. \, inside \operatorname*{lim\,sup})
+      // must go through buildNode() → makeSpacing() to produce an
+      // invisible Span, not a visible Symbol glyph.
+      if (!childNode.text.isEmpty() && childNode.type != MathNodeType::Spacing) {
+        children.push_back(makeSymbol(childNode.text, childNode.type, options_, fontClass));
+      } else {
+        children.push_back(buildNode(childNode));
+      }
+    }
+    auto opBody = makeSpan(std::move(children));
+    opBody->fontClass = QStringLiteral("main");
+    return opBody;
+  }
+  if (node.opSymbol) {
+    const bool large = operatorCanGrow(node) && options_.style().id() == MathStyle::Display;
+    auto op = makeSymbol(node.text, node.type, options_, large ? QStringLiteral("size2") : QStringLiteral("size1"));
+    const qreal shift = (op->height - op->depth) / 2.0 - axisHeight(options_);
+    if (!qFuzzyIsNull(shift)) {
+      op->yOffset = -shift;
+    }
+    return op;
+  }
+  if (node.text.size() > 1) {
+    return makeTextSpan(node.text, node.type, options_, QStringLiteral("main"));
+  }
+  return makeSymbol(node.text, node.type, options_, node.fontClass.isEmpty() ? QStringLiteral("main") : node.fontClass);
+}
+
 
 std::unique_ptr<MathRenderNode> MathBuilder::makeUnderline(const MathParseNode& node) {
   auto body = MathBuilder(options_.cramped()).buildExpression(node.base);
