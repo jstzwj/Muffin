@@ -218,6 +218,29 @@ void testHeadingFontSizeEmUsesInheritedFontButBoxEmUsesHeadingFont() {
           QStringLiteral("h1 padding-left .25em should use resolved heading font size"));
 }
 
+void testNumericFontWeightMapsToQtEnum() {
+  // CSS numeric font-weights (100-900) must MAP onto Qt's QFont::Weight enum scale, not
+  // clamp to Black. Previously qBound(0, numeric, 87) collapsed almost every numeric weight
+  // to QFont::Black (e.g. `font-weight: 400` rendered as Black).
+  const QString css = QStringLiteral(
+      "h1 { font-weight: 400; }"   // → Normal
+      "h2 { font-weight: 700; }"   // → Bold
+      "h3 { font-weight: 300; }"   // → Light
+      "h4 { font-weight: 900; }"   // → Black
+      "h5 { font-weight: 760; }"); // snaps to nearest step 800 → ExtraBold
+  const ThemeDefinition d = CssThemeMapper::fromCss(css, QStringLiteral("weights"), QString());
+  require(d.typography.headingFontWeight[0] == QFont::Normal,
+          QStringLiteral("font-weight:400 should map to Normal, not Black"));
+  require(d.typography.headingFontWeight[1] == QFont::Bold,
+          QStringLiteral("font-weight:700 should map to Bold"));
+  require(d.typography.headingFontWeight[2] == QFont::Light,
+          QStringLiteral("font-weight:300 should map to Light"));
+  require(d.typography.headingFontWeight[3] == QFont::Black,
+          QStringLiteral("font-weight:900 should map to Black"));
+  require(d.typography.headingFontWeight[4] == QFont::ExtraBold,
+          QStringLiteral("font-weight:760 should snap to 800 → ExtraBold"));
+}
+
 void testMistBlueFixture(const QString& path) {
   QFile f(path);
   require(f.open(QIODevice::ReadOnly | QIODevice::Text), QStringLiteral("could not open mist-blue fixture"));
@@ -1549,6 +1572,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testSampleTheme);
   RUN_TEST(testWhiteyTypographySemantics);
   RUN_TEST(testHeadingFontSizeEmUsesInheritedFontButBoxEmUsesHeadingFont);
+  RUN_TEST(testNumericFontWeightMapsToQtEnum);
   RUN_TEST(testPureVariableTheme);
   RUN_TEST(testCascadeBeatsVariable);
   RUN_TEST(testTextOnlySynthesisesBackground);

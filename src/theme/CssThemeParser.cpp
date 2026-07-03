@@ -417,10 +417,24 @@ void parseRules(const QString& text, CssThemeSheet& sheet, bool darkScope, const
       const bool isRoot =
           selectors.size() == 1 && selectors.first().trimmed() == QStringLiteral(":root");
       if (isRoot) {
+        std::vector<CssDeclaration> elementDecls;
         for (const CssDeclaration& d : parseDeclarations(blockText)) {
           if (d.property.startsWith(QLatin1String("--"))) {
             sheet.setVariable(d.property, d.value);
+          } else {
+            elementDecls.push_back(d);
           }
+        }
+        // Keep the non-variable :root declarations as a rule so they reach the CSS
+        // engines, which model :root as the html root element — this lets
+        // `:root { font-size / color / background / … }` apply instead of being
+        // silently dropped. (Variables are still resolved separately above.)
+        if (!elementDecls.empty()) {
+          CssRule rule;
+          rule.selectors = selectors;
+          rule.declarations = std::move(elementDecls);
+          rule.darkScope = darkScope;
+          sheet.addRule(std::move(rule));
         }
       } else {
         CssRule rule;

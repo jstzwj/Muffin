@@ -30,7 +30,32 @@ struct LiteralVisualLine {
   QRectF rect;
 };
 
+// Single-entry memoization for layoutLiteralVisualLines. It is a pure function of
+// (literal, font, width, lineHeight, wrap) — no member/theme state — but four helpers
+// (literalOffsetForPoint / literalCursorRectForOffset / literalSelectionRectsForRange /
+// literalTextHeight) call it for the SAME block within a single frame, each redoing the full
+// per-line QTextLayout (beginLayout/createLine/endLayout). Cache the most recent result: the
+// common case (repeated calls for one block) is an O(1) hit because QString == short-circuits
+// on implicit-shared identity (the same literal_ object across calls shares its d-ptr). Full
+// input equality (no hash) means there is zero collision risk — a stale entry is impossible.
+// GUI-thread only: the literal render/hit-test path is single-threaded.
+struct LiteralLayoutCache {
+  QString literal;
+  QFont font;
+  qreal width = -1.0;
+  qreal lineHeight = -1.0;
+  bool wrap = false;
+  QVector<LiteralVisualLine> visualLines;
+  bool valid = false;
+};
+LiteralLayoutCache g_literalLayoutCache;
+
 QVector<LiteralVisualLine> layoutLiteralVisualLines(const QString& literal, const QFont& font, qreal width, qreal lineHeight, bool wrap) {
+  if (g_literalLayoutCache.valid && g_literalLayoutCache.width == width &&
+      g_literalLayoutCache.lineHeight == lineHeight && g_literalLayoutCache.wrap == wrap &&
+      g_literalLayoutCache.font == font && g_literalLayoutCache.literal == literal) {
+    return g_literalLayoutCache.visualLines;
+  }
   QVector<LiteralVisualLine> visualLines;
   const QStringList physicalLines = literal.isEmpty() ? QStringList{QString()} : literal.split(QLatin1Char('\n'));
   const qreal lineWidth = qMax<qreal>(1.0, width);
@@ -68,6 +93,7 @@ QVector<LiteralVisualLine> layoutLiteralVisualLines(const QString& literal, cons
     }
     globalStart += sourceLine.size() + 1;
   }
+  g_literalLayoutCache = {literal, font, width, lineHeight, wrap, visualLines, true};
   return visualLines;
 }
 
@@ -1393,11 +1419,24 @@ void BlockLayout::paintLiteralSource(QPainter& painter, const RenderTheme& theme
 
   qreal y = contentRect.top();
   qsizetype lineStartOffset = 0;
+  // spans is sorted by start (TreeSitterHighlighter::normalizeSpans sorts tree-sitter output;
+  // highlightMathTex walks the text monotonically). Walk it with a two-pointer so each span is
+  // considered only across the lines it overlaps, instead of re-scanning every span for every
+  // line — O(spans×lines) → O(spans+lines). Long code fences are repainted on every scroll/
+  // caret/hover, so this matters on big blocks.
+  qsizetype spanIdx = 0;
   const qreal codeLineHeight = theme.codeLineHeight();
   for (const QString& sourceLine : lines) {
     const QString lineText = sourceLine.isEmpty() ? QStringLiteral(" ") : sourceLine;
     QTextLayout layout(lineText, theme.codeFont());
     layout.setTextOption(option);
+
+    const qsizetype lineEndOffset = lineStartOffset + sourceLine.size();
+    // Drop spans that ended at/before this line's start — once end <= lineStart they can't
+    // overlap this or any later line.
+    while (spanIdx < spans.size() && spans[spanIdx].end <= lineStartOffset) {
+      ++spanIdx;
+    }
 
     QVector<QTextLayout::FormatRange> formats;
     QTextLayout::FormatRange baseRange;
@@ -1406,8 +1445,11 @@ void BlockLayout::paintLiteralSource(QPainter& painter, const RenderTheme& theme
     baseRange.format = baseFormat;
     formats.push_back(baseRange);
 
-    for (const CodeHighlightSpan& span : spans) {
-      const qsizetype lineEndOffset = lineStartOffset + sourceLine.size();
+    for (qsizetype s = spanIdx; s < spans.size(); ++s) {
+      const CodeHighlightSpan& span = spans[s];
+      if (span.start >= lineEndOffset) {
+        break;  // sorted by start: the rest begin after this line
+      }
       const qsizetype start = qMax(span.start, lineStartOffset);
       const qsizetype end = qMin(span.end, lineEndOffset);
       if (end <= start) {

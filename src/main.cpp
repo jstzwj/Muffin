@@ -6,6 +6,7 @@
 #include <QCommandLineParser>
 #include <QCoreApplication>
 #include <QDateTime>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QFont>
@@ -14,6 +15,7 @@
 #include <QLoggingCategory>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QStandardPaths>
 #include <QTextStream>
 
 namespace {
@@ -40,7 +42,17 @@ void installPerfFileLogger() {
     return;
   }
 
-  perfLogFile.setFileName(QString::fromLocal8Bit(logPath));
+  QString path = QString::fromLocal8Bit(logPath);
+  // A relative path (e.g. MUFFIN_PERF_LOG=perf.log) resolves against the process working
+  // directory, which during development is typically the repo root — silently littering
+  // perf traces into the source tree. Anchor relative paths under the OS temp dir instead.
+  if (QFileInfo(path).isRelative()) {
+    path = QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation))
+               .filePath(QStringLiteral("muffin/%1").arg(path));
+    QDir().mkpath(QFileInfo(path).absolutePath());
+  }
+
+  perfLogFile.setFileName(path);
   if (!perfLogFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
     return;
   }

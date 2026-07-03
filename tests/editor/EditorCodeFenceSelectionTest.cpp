@@ -205,6 +205,71 @@ void testSelectAllContextSemantics() {
           "ctrl+a keypress should select whole document from paragraph");
 }
 
+// A PARTIAL selection inside a code fence must copy just the highlighted code text — NOT the
+// ```cpp opener. Only a whole-block (or cross-block) selection needs the fence prefix to stay a
+// valid fenced block. (Whole-block is covered by testCodeFenceSelectionCopyUsesLiteralOffsets.)
+void testCodeFencePartialSelectionCopyOmitsFencePrefix() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  ClipboardController clipboard;
+  wireInput(input, session, selection, undoStack, brushQueue);
+  wireClipboard(clipboard, session, selection, input);
+
+  const QString code = QStringLiteral("alpha\nbeta\ngamma\n");
+  session.setMarkdownText(QStringLiteral("```cpp\n%1```").arg(code), false);
+  MarkdownNode* fence = blockAt(session, 0);
+  SelectionRange range;
+  range.anchor.blockId = fence->id();
+  range.anchor.text.nodeId = fence->id();
+  range.anchor.text.textOffset = 2;   // inside "alpha"
+  range.focus.blockId = fence->id();
+  range.focus.text.nodeId = fence->id();
+  range.focus.text.textOffset = 10;   // inside "beta" region — partial, does not reach content end
+  selection.setSelection(range);
+
+  require(clipboard.copy(), "partial in-fence copy should work");
+  const QString copied = QApplication::clipboard()->text();
+  require(!copied.contains(QStringLiteral("```cpp")),
+          "partial in-fence copy must NOT include the fence prefix");
+  require(copied == code.mid(2, 10 - 2),
+          "partial in-fence copy should be exactly the selected code text");
+}
+
+// Home/End inside a code fence navigate the CURRENT line, not the whole block: End jumps to the
+// end of the current physical line (before its newline), Home to its start.
+void testCodeFenceHomeEndNavigatesWithinLine() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  EditorView view;
+  wireInput(input, session, selection, undoStack, brushQueue, &view);
+
+  session.setMarkdownText(QStringLiteral("```cpp\nline one\nline two\nline three\n```"), false);
+  MarkdownNode* fence = blockAt(session, 0);
+  const QString literal = fence->literal();
+  const int firstNl = literal.indexOf(QLatin1Char('\n'));
+  const int secondNl = literal.indexOf(QLatin1Char('\n'), firstNl + 1);
+  require(firstNl > 0 && secondNl > firstNl, "code fence literal should span at least three lines");
+  const int lineMid = (firstNl + 1 + secondNl) / 2;  // middle of the second line ("line two")
+
+  setCursor(selection, fence, lineMid);
+  QKeyEvent endKey(QEvent::KeyPress, Qt::Key_End, Qt::NoModifier);
+  require(input.eventFilter(&view, &endKey), "End should be handled inside a code fence");
+  require(selection.cursorPosition().text.textOffset == secondNl,
+          "End should move to the current line end (before its newline), not the block end");
+
+  setCursor(selection, fence, lineMid);
+  QKeyEvent homeKey(QEvent::KeyPress, Qt::Key_Home, Qt::NoModifier);
+  require(input.eventFilter(&view, &homeKey), "Home should be handled inside a code fence");
+  require(selection.cursorPosition().text.textOffset == firstNl + 1,
+          "Home should move to the current line start (after the previous newline), not the block start");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -214,6 +279,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testClipboardBlockSelectionFallback);
   RUN_TEST(testCodeFenceSelectionCopyUsesLiteralOffsets);
   RUN_TEST(testCodeFenceSelectionCutDeletesLiteralOffsets);
+  RUN_TEST(testCodeFencePartialSelectionCopyOmitsFencePrefix);
+  RUN_TEST(testCodeFenceHomeEndNavigatesWithinLine);
   RUN_TEST(testKeyboardNavigationBasics);
   RUN_TEST(testSelectAllContextSemantics);
 #undef RUN_TEST

@@ -1,6 +1,8 @@
 #include "theme/CssComputedStyleEngine.h"
 
 #include "theme/CssThemeParser.h"
+#include "theme/CssSelectorUtils.h"
+#include "theme/TyporaEditorOnly.h"
 
 #include <QRegularExpression>
 #include <QSet>
@@ -30,10 +32,6 @@ const QSet<QString>& inheritedProperties() {
       QStringLiteral("line-height"), QStringLiteral("text-align"), QStringLiteral("font-weight"),
       QStringLiteral("font-style")};
   return props;
-}
-
-bool isIdentChar(QChar c) {
-  return c.isLetterOrNumber() || c == QLatin1Char('-') || c == QLatin1Char('_');
 }
 
 QString stripSimpleNot(QString compound, SimpleSelector& out) {
@@ -128,6 +126,7 @@ SimpleSelector parseCompound(QString compound) {
       const QString cls = compound.mid(i, j - i).toLower();
       out.classes << cls;
       if (cls == QStringLiteral("md-focus")) { out.mdFocus = true; }
+      if (isTyporaEditorOnlyClass(cls)) { out.editorOnly = true; }
       i = j;
     } else if (c == QLatin1Char(':')) {
       const bool element = (i + 1 < n && compound.at(i + 1) == QLatin1Char(':'));
@@ -195,8 +194,14 @@ SimpleSelector parseCompound(QString compound) {
           }
         }
       }
-      else if (name == QStringLiteral("not") || name == QStringLiteral("root")) {
-        // handled/safe no-op: :not(...) was stripped above; :root can match via variables elsewhere.
+      else if (name == QStringLiteral("root")) {
+        // :root matches the document root element (html). Model it as a tag selector for
+        // "html" so :root element declarations reach the root element (the adapter exposes
+        // the root with tag "html"). :root variables are still collected at parse time.
+        if (out.tag.isEmpty()) { out.tag = QStringLiteral("html"); }
+      }
+      else if (name == QStringLiteral("not")) {
+        // handled/safe no-op: :not(...) was stripped above by stripSimpleNot.
       }
       else {
         // Unsupported structural/content pseudos (:empty, :last-of-type, :only-of-type,
@@ -216,45 +221,8 @@ SimpleSelector parseCompound(QString compound) {
   return out;
 }
 
-bool selectorRequiresExportContext(const QString& selector) {
-  int paren = 0, brk = 0;
-  bool inString = false;
-  QChar quote;
-  for (int i = 0; i < selector.size(); ++i) {
-    const QChar c = selector.at(i);
-    if (inString) {
-      if (c == quote) { inString = false; }
-      else if (c == QLatin1Char('\\') && i + 1 < selector.size()) { ++i; }
-      continue;
-    }
-    if (c == QLatin1Char('"') || c == QLatin1Char('\'')) { inString = true; quote = c; continue; }
-    if (c == QLatin1Char('(')) { ++paren; continue; }
-    if (c == QLatin1Char(')')) { paren = qMax(0, paren - 1); continue; }
-    if (c == QLatin1Char('[')) { ++brk; continue; }
-    if (c == QLatin1Char(']')) { brk = qMax(0, brk - 1); continue; }
-    if (paren != 0 || brk != 0 || c != QLatin1Char('.')) { continue; }
-    int j = i + 1;
-    while (j < selector.size() && isIdentChar(selector.at(j))) { ++j; }
-    const QString cls = selector.mid(i + 1, j - i - 1).toLower();
-    if (cls == QStringLiteral("typora-export") || cls == QStringLiteral("typora-export-sidebar") ||
-        cls == QStringLiteral("typora-export-content")) {
-      return true;
-    }
-    i = j - 1;
-  }
-  return false;
-}
-
-int specificityOf(const QString& selector) {
-  int a = selector.count(QLatin1Char('#'));
-  int b = selector.count(QLatin1Char('.')) + selector.count(QLatin1Char('[')) + selector.count(QLatin1Char(':'));
-  static const QRegularExpression tagRe(QStringLiteral("(^|[\\s>+~])[a-zA-Z]"));
-  int c = 0;
-  auto it = tagRe.globalMatch(selector);
-  while (it.hasNext()) { ++c; it.next(); }
-  return a * 10000 + b * 100 + c;
-}
-
+// selectorRequiresExportContext / specificityOf / isIdentChar live in theme/CssSelectorUtils.h
+// (shared with CssThemeMapper).
 ParsedSelector parseSelector(const QString& selector) {
   ParsedSelector parsed;
   parsed.exportOnly = selectorRequiresExportContext(selector);
@@ -309,6 +277,10 @@ ParsedSelector parseSelector(const QString& selector) {
                          part.simple.visited || part.simple.mdFocus;
     parsed.parts.push_back(part);
   }
+  // Mirror the flat mapper: a rule whose rightmost compound carries a Typora editor-only
+  // class (md-meta-block, ty-*, …) is editor chrome Muffin never renders — drop it at match
+  // time so its hacks (e.g. pixyll's 2000px padding) never leak into computed styles.
+  parsed.editorOnly = !parsed.parts.isEmpty() && parsed.parts.last().simple.editorOnly;
   parsed.valid = true;
   return parsed;
 }
@@ -394,7 +366,7 @@ bool selectorMatchesAt(const ParsedSelector& selector, int index, const CssEleme
 }
 
 bool selectorMatches(const ParsedSelector& selector, const CssElement& element, const CssElementState& state) {
-  if (!selector.valid || selector.exportOnly || selector.parts.isEmpty()) { return false; }
+  if (!selector.valid || selector.exportOnly || selector.editorOnly || selector.parts.isEmpty()) { return false; }
   return selectorMatchesAt(selector, selector.parts.size() - 1, &element, state);
 }
 

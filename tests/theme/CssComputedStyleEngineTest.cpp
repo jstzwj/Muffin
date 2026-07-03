@@ -152,6 +152,40 @@ void testHoverStateQuery() {
           QStringLiteral("hover query should expose h2:hover shadow"));
 }
 
+void testTyporaEditorOnlyClassDropped() {
+  CssElement body; body.tag = QStringLiteral("body");
+  CssElement write; write.id = QStringLiteral("write"); write.parent = &body;
+  CssElement pre; pre.tag = QStringLiteral("pre"); pre.parent = &write;
+  // pixyll-style editor-only hacks (md-meta-block / ty-*) must never leak into a
+  // rendered element, even when the selector is structural and routes through this
+  // computed-style engine (not just the flat mapper). See theme/TyporaEditorOnly.h.
+  const QString css = QStringLiteral(
+      "pre { background:#111111; }"
+      "pre.md-meta-block { background:#ff0000; padding-top:2000px; }"
+      ".ty-search-panel { background:#00ff00; }");
+  const CssComputedStyle s = styleFor(css, pre);
+  require(s.resolvedValue(QStringLiteral("background")) == QStringLiteral("#111111"),
+          QStringLiteral("pre.md-meta-block editor-only hack must not leak into rendered pre"));
+  require(!s.hasProperty(QStringLiteral("padding-top")),
+          QStringLiteral("editor-only padding-top must not reach the element"));
+}
+
+void testRootSelectorAppliesToHtml() {
+  CssElement html; html.tag = QStringLiteral("html");
+  CssElement body; body.tag = QStringLiteral("body"); body.parent = &html;
+  // :root element declarations (not just :root variables) must reach the root element.
+  const QString css = QStringLiteral(
+      ":root { color:#123456; font-size:16px; }"
+      "body { color:#999999; }");
+  const CssComputedStyle rootStyle = styleFor(css, html);
+  require(rootStyle.resolvedValue(QStringLiteral("color")) == QStringLiteral("#123456"),
+          QStringLiteral(":root element declarations should apply to the html root element"));
+  require(rootStyle.resolvedValue(QStringLiteral("font-size")) == QStringLiteral("16px"),
+          QStringLiteral(":root font-size should reach the root element"));
+  require(styleFor(css, body).resolvedValue(QStringLiteral("color")) == QStringLiteral("#999999"),
+          QStringLiteral(":root must not leak into body — it matches only the root"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -164,6 +198,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testNestedBlockquoteParagraphAndMarker);
   RUN_TEST(testUnsupportedStructuralPseudosDoNotLeak);
   RUN_TEST(testHoverStateQuery);
+  RUN_TEST(testTyporaEditorOnlyClassDropped);
+  RUN_TEST(testRootSelectorAppliesToHtml);
 #undef RUN_TEST
   return 0;
 }

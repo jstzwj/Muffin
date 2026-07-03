@@ -187,6 +187,12 @@ private:
   mutable QHash<QString, QPair<qreal, qreal>> fontMetricsCache_;  // QFont::key() -> {wideAdvance, narrowAdvance}
   mutable QHash<QString, qreal> lineHeightCache_;  // "elementKey|headingLevel" -> estimated line height
   mutable QHash<QString, qreal> avgCharWidthCache_;  // "elementKey|headingLevel" -> cached narrow advance
+  // Widest ordered-list marker width per list (keyed by the list NodeId), so buildListItem
+  // doesn't re-measure every sibling on every item (O(N²) per list). Cleared per pass in
+  // refreshRenderSettings — a list's marker width can change across a theme switch or an
+  // item add/remove (both trigger a rebuild pass); within one pass the first item of each
+  // list measures once and the rest reuse it.
+  QHash<NodeId, qreal> widestOrderedMarkerCache_;
 
   const PieceTable* markdownText_ = &emptyText_;  // non-owning; refreshed by configureBuilder before each build
 };

@@ -15,6 +15,7 @@
 #include <QLoggingCategory>
 #include <QStringList>
 #include <QVector>
+#include <mutex>
 
 extern "C" {
 #include "cmark-gfm-core-extensions.h"
@@ -1530,7 +1531,12 @@ ParseResult CmarkGfmParser::parseBlock(QStringView markdown, BlockType, const Pa
 }
 
 void CmarkGfmParser::ensureExtensionsRegistered() {
-  cmark_gfm_core_extensions_ensure_registered();
+  // cmark_gfm_core_extensions_ensure_registered mutates cmark's process-wide
+  // global extension registry, which is NOT thread-safe. Multiple
+  // CmarkGfmParser instances (e.g. one constructed on a worker thread) could
+  // race here, so guard the registration with std::call_once.
+  static std::once_flag onceFlag;
+  std::call_once(onceFlag, [] { cmark_gfm_core_extensions_ensure_registered(); });
 }
 
 void CmarkGfmParser::attachExtensions(cmark_parser* parser, const ParseOptions& options) {

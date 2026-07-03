@@ -3,6 +3,7 @@
 #include <QElapsedTimer>
 #include <QLoggingCategory>
 
+#include <algorithm>
 #include <utility>
 
 namespace {
@@ -143,15 +144,26 @@ MarkdownNode* MarkdownDocument::node(NodeId id) const {
 }
 
 MarkdownNode* MarkdownDocument::topLevelBlockAtOffset(qsizetype offset) const {
-  for (const auto& child : root_->children()) {
-    if (child->sourceRange().containsByte(offset)) {
-      return child.get();
-    }
+  const auto& children = root_->children();
+  if (children.empty()) { return nullptr; }
+  // Children are in document order with non-decreasing byteEnd. Find the first block whose
+  // byteEnd >= offset — the earliest block that could contain offset (earlier blocks end
+  // before it). Binary-searching on byteEnd (rather than byteStart) preserves the previous
+  // linear "first containsByte(offset)" semantics exactly, including the shared-boundary
+  // tie (A.byteEnd == B.byteStart == offset resolves to the earlier block A) and the gap
+  // fallback (returns the last block when no block contains offset). O(log n) instead of
+  // O(blocks) — caret resolution hits this on every edit at large sizes (~250k blocks).
+  auto it = std::lower_bound(children.begin(), children.end(), offset,
+      [](const std::unique_ptr<MarkdownNode>& child, qsizetype off) {
+        return child->sourceRange().byteEnd < off;
+      });
+  if (it != children.end() && (*it)->sourceRange().byteStart <= offset) {
+    return it->get();
   }
-  if (!root_->children().empty()) {
-    return root_->children().back().get();
-  }
-  return nullptr;
+  // No block contains offset (gap, or offset past the last block's content) — preserve the
+  // historical fallback to the last top-level block (load-bearing for caret resolution
+  // after non-text blocks like ThematicBreak).
+  return children.back().get();
 }
 
 void MarkdownDocument::replaceRoot(std::unique_ptr<MarkdownNode> root) {

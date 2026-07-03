@@ -3,7 +3,9 @@
 #include "theme/CssCalc.h"
 #include "theme/CssContent.h"
 #include "theme/CssComputedStyleEngine.h"
+#include "theme/CssSelectorUtils.h"
 #include "theme/CssStyleDebug.h"
+#include "theme/TyporaEditorOnly.h"
 #include "theme/ThemeDefinition.h"
 #include "theme/CssThemeParser.h"
 #include "theme/NodeCssElement.h"
@@ -11,6 +13,7 @@
 
 #include <QColor>
 #include <QFont>
+#include <QLoggingCategory>
 #include <QPointF>
 #include <QTextCharFormat>
 #include <QRegularExpression>
@@ -26,6 +29,11 @@
 #include <vector>
 
 namespace muffin {
+
+// Theme-resolution warnings (e.g. a colour value that failed every parse strategy and would
+// otherwise silently render default/black). Default-off (QtCriticalMsg threshold): enable on
+// demand with QT_LOGGING_RULES="muffin.theme.warn=true" when chasing a black/missing render.
+Q_LOGGING_CATEGORY(themeWarn, "muffin.theme.warn", QtCriticalMsg)
 
 QColor cssColor(const QString& literal) {
   const QString s = literal.trimmed();
@@ -72,26 +80,7 @@ struct SelInfo {
 
 constexpr qreal kUnboundedPageWidth = 100000.0;
 
-// Typora editor chrome / UI constructs Muffin never renders. Community themes stash
-// editor-only hacks in their rules (e.g. pixyll `pre.md-meta-block { padding-top:2000px;
-// margin-top:-2010px; width:100vw }` to position the front-matter strip in Typora's
-// editor). Those hacks must not leak into Muffin's element-style matching, so any rule
-// whose selector carries one of these classes is dropped at flatten. Functional classes
-// Muffin DOES use — md-fences, md-focus, md-image, md-task-list-item, md-heading — are
-// intentionally NOT here. Confirmed: none of these are referenced anywhere in src/.
-bool isTyporaEditorOnlyClass(const QString& cls) {
-  if (cls.startsWith(QStringLiteral("md-toc")) || cls.startsWith(QStringLiteral("outline-")) ||
-      cls.startsWith(QStringLiteral("megamenu")) || cls.startsWith(QStringLiteral("modal-")) ||
-      cls.startsWith(QStringLiteral("ty-"))) { return true; }
-  static const QSet<QString> exact = {
-      QStringLiteral("md-meta"), QStringLiteral("md-meta-block"),
-      QStringLiteral("md-comment"), QStringLiteral("md-raw"), QStringLiteral("md-rawblock"),
-      QStringLiteral("md-search-hit"), QStringLiteral("md-search-panel"),
-      QStringLiteral("md-search-input"), QStringLiteral("md-search-tip"),
-      QStringLiteral("md-expand"), QStringLiteral("sidebar-content"), QStringLiteral("footer-item"),
-  };
-  return exact.contains(cls);
-}
+// isTyporaEditorOnlyClass is shared with CssComputedStyleEngine — see theme/TyporaEditorOnly.h.
 
 // Extract the last compound of a selector (after the final combinator
 // space/>/+/~), respecting (...) and [...].
@@ -179,10 +168,16 @@ SelInfo analyzeSelector(const QString& selector) {
         else if (name == QStringLiteral("focus")) { info.focus = true; }
         else if (name == QStringLiteral("visited")) { info.visited = true; }
         else if (name == QStringLiteral("active")) { info.active = true; }
-        else if (name == QStringLiteral("not") || name == QStringLiteral("root")) {
+        else if (name == QStringLiteral("root")) {
+          // :root matches the document root element (html). Route it as a tag selector for
+          // "html" so :root element declarations (font-size, color, background, …) reach the
+          // root via the isHtmlOrBody predicate, instead of being silently dropped. (:root CSS
+          // variables are still collected earlier by CssThemeParser.)
+          if (info.tag.isEmpty()) { info.tag = QStringLiteral("html"); }
+        }
+        else if (name == QStringLiteral("not")) {
           // Safe no-op in the flattened semantic mapper: `a:not(.md-toc-inner)`
-          // should still feed the normal link token, and :root variables are
-          // collected by CssThemeParser before flattening.
+          // should still feed the normal link token. (Complex :not() args aren't modelled here.)
         }
         else if ((name == QStringLiteral("nth-child") || name == QStringLiteral("nth-of-type")) &&
                  (arg == QStringLiteral("even") || arg.contains(QStringLiteral("2n")))) {
@@ -207,57 +202,8 @@ SelInfo analyzeSelector(const QString& selector) {
   return info;
 }
 
-bool isIdentChar(QChar c) {
-  return c.isLetterOrNumber() || c == QLatin1Char('-') || c == QLatin1Char('_');
-}
-
-bool selectorRequiresExportContext(const QString& selector) {
-  int paren = 0, brk = 0;
-  bool inString = false;
-  QChar quote;
-  for (int i = 0; i < selector.size(); ++i) {
-    const QChar c = selector.at(i);
-    if (inString) {
-      if (c == quote) { inString = false; }
-      else if (c == QLatin1Char('\\') && i + 1 < selector.size()) { ++i; }
-      continue;
-    }
-    if (c == QLatin1Char('"') || c == QLatin1Char('\'')) { inString = true; quote = c; continue; }
-    if (c == QLatin1Char('(')) { ++paren; continue; }
-    if (c == QLatin1Char(')')) { paren = qMax(0, paren - 1); continue; }
-    if (c == QLatin1Char('[')) { ++brk; continue; }
-    if (c == QLatin1Char(']')) { brk = qMax(0, brk - 1); continue; }
-    if (paren != 0 || brk != 0 || c != QLatin1Char('.')) { continue; }
-    int j = i + 1;
-    while (j < selector.size() && isIdentChar(selector.at(j))) { ++j; }
-    const QString cls = selector.mid(i + 1, j - i - 1).toLower();
-    // Export/outline/sidebar shells from community themes are not present in
-    // Muffin's live editor DOM. If these selectors enter the semantic cascade as
-    // plain `#write` or `h2` rules, their higher specificity lets export-only page
-    // sizing and decorations override the live editor style (e.g. `width: 90%`).
-    if (cls == QStringLiteral("typora-export") || cls == QStringLiteral("typora-export-sidebar") ||
-        cls == QStringLiteral("typora-export-content")) {
-      return true;
-    }
-    i = j - 1;
-  }
-  return false;
-}
-
-// Coarse CSS specificity for the whole selector: (a=#id, b=class/attr/pseudo,
-// c=type). Packed so larger == more specific. Good enough for cascade ties
-// (themes rarely set the same token on conflicting selectors).
-int specificity(const QString& selector) {
-  int a = selector.count(QLatin1Char('#'));
-  int b = selector.count(QLatin1Char('.')) + selector.count(QLatin1Char('[')) + selector.count(QLatin1Char(':'));
-  // type selectors: a letter starting a compound (after a combinator or at start),
-  // i.e. not attached to # . : [
-  static const QRegularExpression tagRe(QStringLiteral("(^|[\\s>+~])[a-zA-Z]"));
-  int c = 0;
-  auto it = tagRe.globalMatch(selector);
-  while (it.hasNext()) { ++c; it.next(); }
-  return a * 10000 + b * 100 + c;
-}
+// isIdentChar / selectorRequiresExportContext / specificityOf live in theme/CssSelectorUtils.h
+// (shared with CssComputedStyleEngine so a fix applies to both engines at once).
 
 struct Candidate {
   QString rawValue;
@@ -306,7 +252,7 @@ std::vector<FlatDecl> flatten(const CssThemeSheet& sheet) {
       // only the semantic target, not real sibling/descendant contents; keeping a
       // selector like `p:has(img)` would make its declarations apply to all `p`.
       if (info.hover || info.focus || info.active || info.visited || info.mdFocus || info.unsupportedPseudoClass || info.editorOnly) { continue; }
-      const int spec = specificity(selector);
+      const int spec = specificityOf(selector);
       for (const CssDeclaration& decl : rule.declarations) {
         FlatDecl fd;
         fd.info = info;
@@ -534,6 +480,11 @@ QColor extractColor(const QString& value, const QHash<QString, QString>& vars) {
     QColor c(w);
     if (c.isValid()) { return c; }
   }
+  // Non-empty input survived no parse strategy — a malformed/unresolved colour that would
+  // otherwise silently become "no value" upstream (and, reaching a QPainter brush unguarded,
+  // solid black). Surface it so the failure is observable during theme work — enable with
+  // QT_LOGGING_RULES="muffin.theme.warn=true".
+  qCWarning(themeWarn).nospace() << "unresolved colour value \"" << resolved << "\"";
   return QColor();
 }
 
@@ -738,16 +689,55 @@ Qt::Alignment parseTextAlign(const QString& raw, const QHash<QString, QString>& 
   return Qt::Alignment();
 }
 
+// Map a CSS numeric font-weight (100-900) onto Qt's QFont::Weight enum scale (0-99).
+// Qt's enum is non-linear (Thin=0, ExtraLight=12, Light=25, Normal=50, Medium, DemiBold=63,
+// Bold=75, ExtraBold=81, Black=87), so snap the CSS value to the nearest standard step and
+// return the matching QFont::Weight constant. Previously this clamped the raw CSS number into
+// [0,87], which collapsed almost every numeric weight to Black (e.g. `font-weight:400` → 87).
+int cssWeightToQt(int cssWeight) {
+  switch (qBound(1, (cssWeight + 50) / 100, 9)) {
+    case 1: return QFont::Thin;
+    case 2: return QFont::ExtraLight;
+    case 3: return QFont::Light;
+    case 4: return QFont::Normal;
+    case 5: return QFont::Medium;
+    case 6: return QFont::DemiBold;
+    case 7: return QFont::Bold;
+    case 8: return QFont::ExtraBold;
+    case 9: return QFont::Black;
+  }
+  return QFont::Normal;
+}
+
+// CSS2.1 bolder/lighter: the resulting CSS weight (100-900) given the inherited one.
+int bolderCssWeight(int inheritedCss) {
+  if (inheritedCss < 350) return 400;   // 100-300 → 400
+  if (inheritedCss < 550) return 700;   // 400-500 → 700
+  return 900;                           // 600-900 → 900
+}
+int lighterCssWeight(int inheritedCss) {
+  if (inheritedCss < 550) return 100;   // 100-500 → 100
+  if (inheritedCss < 750) return 400;   // 600-700 → 400
+  return 700;                           // 800-900 → 700
+}
+
 struct ParsedFontWeight { int weight = 0; bool present = false; };
-ParsedFontWeight parseFontWeight(const QString& raw, const QHash<QString, QString>& vars) {
+// `inheritedCssWeight` (CSS 100-900 scale) drives the relative bolder/lighter keywords.
+// It defaults to 400 (normal) because the parent's resolved weight isn't wired to the call
+// sites yet; that is correct for the only realistic case (bolder/lighter on normal text) and
+// no built-in theme uses these keywords today. Pass the real inherited weight to honour them
+// exactly on already-bold/light text.
+ParsedFontWeight parseFontWeight(const QString& raw, const QHash<QString, QString>& vars,
+                                 int inheritedCssWeight = 400) {
   const QString v = CssThemeParser::resolveVars(raw, vars).trimmed().toLower();
   if (v.isEmpty()) { return {}; }
   if (v == QStringLiteral("normal")) { return {QFont::Normal, true}; }
-  if (v == QStringLiteral("bold") || v == QStringLiteral("bolder")) { return {QFont::Bold, true}; }
-  if (v == QStringLiteral("lighter")) { return {QFont::Light, true}; }
+  if (v == QStringLiteral("bold")) { return {QFont::Bold, true}; }
+  if (v == QStringLiteral("bolder")) { return {cssWeightToQt(bolderCssWeight(inheritedCssWeight)), true}; }
+  if (v == QStringLiteral("lighter")) { return {cssWeightToQt(lighterCssWeight(inheritedCssWeight)), true}; }
   bool ok = false;
   const int numeric = v.toInt(&ok);
-  if (ok) { return {qBound(static_cast<int>(QFont::Thin), numeric, static_cast<int>(QFont::Black)), true}; }
+  if (ok) { return {cssWeightToQt(numeric), true}; }
   return {};
 }
 
@@ -1324,7 +1314,7 @@ std::vector<FlatDecl> flattenStatePseudo(const CssThemeSheet& sheet, bool SelInf
       // Pure single-state only: ignore compound states (:hover:focus, …).
       const int states = info.hover + info.focus + info.active + info.visited + info.mdFocus;
       if (states != 1) { continue; }
-      const int spec = specificity(selector);
+      const int spec = specificityOf(selector);
       for (const CssDeclaration& decl : rule.declarations) {
         FlatDecl fd;
         fd.info = info;
@@ -1351,7 +1341,7 @@ std::vector<FlatDecl> flattenHover(const CssThemeSheet& sheet) {
       if (selectorRequiresExportContext(selector)) { continue; }
       const SelInfo info = analyzeSelector(selector);
       if (!info.hover || !info.pseudoElement.isEmpty()) { continue; }
-      const int spec = specificity(selector);
+      const int spec = specificityOf(selector);
       for (const CssDeclaration& decl : rule.declarations) {
         FlatDecl fd;
         fd.info = info;

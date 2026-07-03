@@ -554,6 +554,11 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   const auto& documentBlocks = document.root().children();
   const qsizetype layoutCount = static_cast<qsizetype>(slots_.size());
   const qsizetype documentCount = static_cast<qsizetype>(documentBlocks.size());
+  // Splice invariant: removing oldCount slots and inserting newCount must reproduce the
+  // document count. A violation is a programmer error (inconsistent range); the Q_ASSERT
+  // surfaces it loudly in debug, while the guard below bails gracefully (returns an unbuilt
+  // result) in release so the edit is re-parsed rather than corrupting the slot vector.
+  Q_ASSERT(layoutCount - range.oldCount + range.newCount == documentCount);
   if (range.documentRevision != document.revision() || range.first < 0 || range.oldCount < 0 || range.newCount < 0 || range.first > layoutCount ||
       range.first > documentCount || range.first + range.oldCount > layoutCount || range.first + range.newCount > documentCount ||
       layoutCount - range.oldCount + range.newCount != documentCount) {

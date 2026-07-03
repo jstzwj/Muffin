@@ -264,6 +264,10 @@ private:
   // masks) keyed by host. Empty for themes that declare none (all built-ins).
   ThemeDecorations decorations_;
   std::vector<ThemeElementStyle> elementStyles_;
+  // O(1) lookup of elementStyles_ by key, built once alongside the vector in fromDefinition.
+  // The vector is the source of truth (returned pointers index into it); this hash mirrors
+  // first-occurrence positions so elementStyle() matches the previous linear "first match".
+  QHash<QString, qsizetype> elementStyleIndex_;
   QColor listMarkerColor_;
   // Structural-selector layout path. Populated only when the theme declares rules
   // that need the live tree; the per-node cache is mutable (lazily filled, cleared

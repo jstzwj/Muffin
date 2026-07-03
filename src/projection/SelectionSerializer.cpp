@@ -102,7 +102,21 @@ QString SelectionSerializer::exportMarkdown(const MarkdownDocument& document, co
     const qsizetype sourceStart = qMin(literalAnchorOffset, literalFocusOffset);
     const qsizetype sourceEnd = qMax(literalAnchorOffset, literalFocusOffset);
     const MarkdownNode* node = document.node(selection.anchor.blockId);
-    return (node ? literalMarkdownPrefix(document, *node) : QString()) + document.markdownText().mid(sourceStart, sourceEnd - sourceStart);
+    // Emit the fence prefix (```cpp / $$ etc.) ONLY when the selection spans the ENTIRE literal
+    // content — then the copied markdown needs the opener to stay a valid fenced block. A partial
+    // in-block selection copies just the highlighted code text (no ```cpp), matching what the user
+    // selected. literalCursorSourceOffset clamps offsets to [contentStart, contentEnd], so the
+    // whole-content test is exact-equality. Cross-block selections don't reach this path.
+    QString prefix;
+    if (node) {
+      qsizetype contentStart = -1;
+      qsizetype contentEnd = -1;
+      if (literalContentSourceRange(document, *node, contentStart, contentEnd) &&
+          sourceStart <= contentStart && sourceEnd >= contentEnd) {
+        prefix = literalMarkdownPrefix(document, *node);
+      }
+    }
+    return prefix + document.markdownText().mid(sourceStart, sourceEnd - sourceStart);
   }
 
   qsizetype anchorOffset = -1;

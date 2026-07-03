@@ -143,7 +143,7 @@ private:
   qsizetype selectableTextLength(const MarkdownNode& node) const;
   bool moveCursorHorizontal(int direction, bool extendSelection);
   bool moveCursorVertical(int direction, bool extendSelection);
-  enum class JumpTarget { BlockStart, BlockEnd, DocumentStart, DocumentEnd };
+  enum class JumpTarget { LineStart, LineEnd, DocumentStart, DocumentEnd };
   bool moveJump(JumpTarget target, bool extendSelection);
   void setCursorOrExtend(CursorPosition cursor, bool extendSelection);
   void applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText, qsizetype nextSourceOffset);

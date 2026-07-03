@@ -401,6 +401,9 @@ void BlockLayoutBuilder::refreshRenderSettings() {
   // it is left alone.
   lineHeightCache_.clear();
   avgCharWidthCache_.clear();
+  // Same per-pass freshness reasoning: an ordered list's widest marker can change with the
+  // theme (decimal → roman) or with item add/remove, both of which force a rebuild pass.
+  widestOrderedMarkerCache_.clear();
 }
 
 void BlockLayoutBuilder::dumpBuildBreakdown() const {
@@ -693,10 +696,20 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   qreal contentIndent = theme.listIndent();
   if (layout->listMarkerKind() == BlockLayout::ListMarkerKind::OrderedText && listParent) {
     const QFontMetricsF metrics(theme.paragraphFont());
+    // Measure the widest sibling marker once per list per pass (cached by the list NodeId);
+    // previously every item re-scanned all siblings → O(N²) on large ordered lists. All items
+    // of a list see the same widestMarker, so caching changes only the cost, not the result.
+    const auto cached = widestOrderedMarkerCache_.constFind(listParent->id());
     qreal widestMarker = 0.0;
-    for (qsizetype index = 0; index < static_cast<qsizetype>(listParent->children().size()); ++index) {
-      // Size the gutter to the widest CSS-styled marker too (e.g. roman "viii").
-      widestMarker = qMax(widestMarker, metrics.horizontalAdvance(resolveListMarker(*listParent->children().at(index), theme, index).text));
+    if (cached != widestOrderedMarkerCache_.cend()) {
+      widestMarker = cached.value();
+    } else {
+      const qsizetype itemCount = static_cast<qsizetype>(listParent->children().size());
+      for (qsizetype index = 0; index < itemCount; ++index) {
+        // Size the gutter to the widest CSS-styled marker too (e.g. roman "viii").
+        widestMarker = qMax(widestMarker, metrics.horizontalAdvance(resolveListMarker(*listParent->children().at(index), theme, index).text));
+      }
+      widestOrderedMarkerCache_.insert(listParent->id(), widestMarker);
     }
     contentIndent = qMax(theme.listIndent(), widestMarker + markerGap);
   }
@@ -945,7 +958,6 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       options.isMisspelled = spellMisspelledPredicate();
       options.smartPunct = smartPunctRenderOptions();
       options.breakOnSingleNewline = breakOnSingleNewline_;
-  options.smartPunct = smartPunctRenderOptions();
       {
         BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
         cell.text.build(

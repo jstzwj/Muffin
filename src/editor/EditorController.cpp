@@ -1,5 +1,7 @@
 #include "editor/EditorController.h"
 
+#include "diagnostics/ScopedPerfProbe.h"
+
 #include "document/BlockPredicates.h"
 #include "document/ImageSyntaxOps.h"
 #include "html/HtmlBox.h"
@@ -20,23 +22,8 @@ namespace {
 
 Q_LOGGING_CATEGORY(controllerPerf, "muffin.perf", QtWarningMsg)
 
-class PerfTimer {
-public:
-  explicit PerfTimer(const char* label) : label_(label), enabled_(controllerPerf().isDebugEnabled()) {
-    if (enabled_) {
-      timer_.start();
-    }
-  }
-  ~PerfTimer() {
-    if (enabled_) {
-      qCDebug(controllerPerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0 << " ms";
-    }
-  }
-
-private:
-  const char* label_;
-  bool enabled_;
-  QElapsedTimer timer_;
+struct PerfTimer : diag::ScopedPerfProbe {
+  explicit PerfTimer(const char* label) : diag::ScopedPerfProbe(label, controllerPerf()) {}
 };
 
 LiteralBlockSpec frontMatterSpec() {

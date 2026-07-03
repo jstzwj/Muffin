@@ -1,5 +1,7 @@
 #include "editor/InputController.h"
 
+#include "diagnostics/ScopedPerfProbe.h"
+
 #include "document/DocumentSession.h"
 #include "document/MarkdownNode.h"
 #include "document/PendingBlockMarker.h"
@@ -18,24 +20,8 @@ namespace {
 
 Q_LOGGING_CATEGORY(inputEditPerf, "muffin.perf", QtWarningMsg)
 
-class PerfTimer {
-public:
-  explicit PerfTimer(const char* label) : label_(label), enabled_(inputEditPerf().isDebugEnabled()) {
-    if (enabled_) {
-      timer_.start();
-    }
-  }
-
-  ~PerfTimer() {
-    if (enabled_) {
-      qCDebug(inputEditPerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0 << " ms";
-    }
-  }
-
-private:
-  const char* label_;
-  bool enabled_ = false;
-  QElapsedTimer timer_;
+struct PerfTimer : diag::ScopedPerfProbe {
+  explicit PerfTimer(const char* label) : diag::ScopedPerfProbe(label, inputEditPerf()) {}
 };
 
 NodeId refreshNodeFor(DocumentSession* session, NodeId nodeId) {

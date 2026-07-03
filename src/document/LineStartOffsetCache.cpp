@@ -123,6 +123,10 @@ void LineStartOffsetCache::applyEdit(
   }
 
   lineStarts_ = std::move(result);
+  // The line-start table always begins at offset 0 (the first line starts at the document
+  // start). applyEdit preserves the prefix including lineStarts_[0]; assert it cheaply to
+  // catch a corrupted splice in debug builds.
+  Q_ASSERT(!lineStarts_.isEmpty() && lineStarts_.first() == 0);
   textSize_ = fullPostEditText.size();
   // applyEdit maintains lineStarts_ incrementally but not the per-line ASCII flags (the only
   // offsetForLineByteColumn caller is the parse path, which uses a freshly rebuilt cache). Clear

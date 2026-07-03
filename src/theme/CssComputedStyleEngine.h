@@ -94,6 +94,9 @@ struct SimpleSelector {
   QString hasClass;
   bool hasDirect = false;
   bool unsupported = false;
+  // Rightmost compound carries a Typora editor-only class (md-meta-block, ty-*, …) —
+  // propagated to ParsedSelector.editorOnly; such selectors never match (see TyporaEditorOnly.h).
+  bool editorOnly = false;
 };
 
 struct SelectorPart {
@@ -106,6 +109,9 @@ struct ParsedSelector {
   bool valid = false;
   bool exportOnly = false;
   bool interactive = false;
+  // True when the rightmost compound carries a Typora editor-only class — selector is
+  // dropped at match time (selectorMatches) so editor hacks never apply. Mirrors exportOnly.
+  bool editorOnly = false;
   int specificity = 0;
   QString selectorText;  // original selector string (kept for Candidate.selector trace/debug)
 };

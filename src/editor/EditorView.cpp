@@ -1,5 +1,7 @@
 #include "editor/EditorView.h"
 
+#include "diagnostics/ScopedPerfProbe.h"
+
 #include "blocks/code/CodeFenceScrollController.h"
 #include "document/MarkdownDocument.h"
 #include "editor/CodeLanguageEditor.h"
@@ -68,24 +70,8 @@ bool sameSelectionRange(const SelectionRange& a, const SelectionRange& b) {
   return sameCursorPosition(a.anchor, b.anchor) && sameCursorPosition(a.focus, b.focus);
 }
 
-class PerfTimer {
-public:
-  explicit PerfTimer(const char* label) : label_(label), enabled_(viewPerf().isDebugEnabled()) {
-    if (enabled_) {
-      timer_.start();
-    }
-  }
-
-  ~PerfTimer() {
-    if (enabled_) {
-      qCDebug(viewPerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0 << " ms";
-    }
-  }
-
-private:
-  const char* label_;
-  bool enabled_ = false;
-  QElapsedTimer timer_;
+struct PerfTimer : diag::ScopedPerfProbe {
+  explicit PerfTimer(const char* label) : diag::ScopedPerfProbe(label, viewPerf()) {}
 };
 
 }  // namespace
@@ -170,7 +156,11 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
   connect(tableToolbar_, &TableToolbar::resizeRequested, this, &EditorView::tableResizeRequested);
 
   connect(&ImageLoader::instance(), &ImageLoader::imageReady, this, [this](const QString&) {
-    if (document_) {
+    if (document_ && !loading_) {
+      // Skip while an async open parse is in flight: document_ still points at
+      // the pre-open (stale) document, so rebuilding here would lay out stale
+      // content right before the worker's result lands. The freshly parsed
+      // document triggers its own rebuild via the parsed-signal path.
       setDocument(*document_, documentPath_);
     }
   });

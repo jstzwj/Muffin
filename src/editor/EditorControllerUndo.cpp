@@ -1,5 +1,7 @@
 #include "editor/EditorController.h"
 
+#include "diagnostics/ScopedPerfProbe.h"
+
 #include "blocks/table/TableModelOps.h"
 #include "document/MarkdownNode.h"
 #include "editor/BlockEditContext.h"
@@ -24,23 +26,8 @@ Q_LOGGING_CATEGORY(undoPerf, "muffin.perf", QtWarningMsg)
 // blocking cost is a synchronous full reparse (applyMarkdownText) + full layout rebuild fired when
 // the undo's localized edit can't be applied (applyTextDelta returns false). These probes record
 // which undo branch ran, the snapshot-diff region, and whether the localized path succeeded.
-class UndoPerfTimer {
-public:
-  explicit UndoPerfTimer(const char* label) : label_(label), enabled_(undoPerf().isDebugEnabled()) {
-    if (enabled_) {
-      timer_.start();
-    }
-  }
-  ~UndoPerfTimer() {
-    if (enabled_) {
-      qCDebug(undoPerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0 << " ms";
-    }
-  }
-
-private:
-  const char* label_;
-  bool enabled_ = false;
-  QElapsedTimer timer_;
+struct UndoPerfTimer : diag::ScopedPerfProbe {
+  explicit UndoPerfTimer(const char* label) : diag::ScopedPerfProbe(label, undoPerf()) {}
 };
 
 const char* undoDirection(bool undo) {

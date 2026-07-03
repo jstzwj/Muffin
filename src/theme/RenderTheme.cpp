@@ -215,6 +215,12 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   t.pageShadowOffsetY_ = definition.page.pageShadowOffsetY;
   t.decorations_ = definition.decorations;
   t.elementStyles_ = definition.elementStyles;
+  // Build the key→index lookup that elementStyle() queries on every paint. Iterate in
+  // reverse so a duplicate key keeps its FIRST occurrence (matching the old linear scan).
+  t.elementStyleIndex_.reserve(static_cast<int>(t.elementStyles_.size()));
+  for (qsizetype i = static_cast<qsizetype>(t.elementStyles_.size()) - 1; i >= 0; --i) {
+    t.elementStyleIndex_[t.elementStyles_[i].key] = i;
+  }
   for (const ThemeElementStyle& style : t.elementStyles_) {
     if (style.key == QStringLiteral("li::marker") && style.paint.color.isValid()) {
       t.listMarkerColor_ = style.paint.color;
@@ -810,10 +816,9 @@ QColor RenderTheme::listMarkerColor() const {
 }
 
 const ThemeElementStyle* RenderTheme::elementStyle(const QString& key) const {
-  for (const ThemeElementStyle& style : elementStyles_) {
-    if (style.key == key) { return &style; }
-  }
-  return nullptr;
+  const auto it = elementStyleIndex_.constFind(key);
+  if (it == elementStyleIndex_.cend()) { return nullptr; }
+  return &elementStyles_[static_cast<std::size_t>(it.value())];
 }
 
 ThemeElementBoxStyle RenderTheme::elementBoxStyle(const QString& key, const MarkdownNode* node) const {

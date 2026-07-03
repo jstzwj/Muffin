@@ -1,5 +1,7 @@
 #include "editor/InputController.h"
 
+#include "diagnostics/ScopedPerfProbe.h"
+
 #include "document/BlockPredicates.h"
 #include "document/DocumentSession.h"
 #include "document/InlineNode.h"
@@ -87,24 +89,8 @@ QVector<PairedChar> activePairedChars() {
   return pairs;
 }
 
-class PerfTimer {
-public:
-  explicit PerfTimer(const char* label) : label_(label), enabled_(inputPerf().isDebugEnabled()) {
-    if (enabled_) {
-      timer_.start();
-    }
-  }
-
-  ~PerfTimer() {
-    if (enabled_) {
-      qCDebug(inputPerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0 << " ms";
-    }
-  }
-
-private:
-  const char* label_;
-  bool enabled_ = false;
-  QElapsedTimer timer_;
+struct PerfTimer : diag::ScopedPerfProbe {
+  explicit PerfTimer(const char* label) : diag::ScopedPerfProbe(label, inputPerf()) {}
 };
 
 QString plainTextForNode(const MarkdownNode& node) {
@@ -953,6 +939,11 @@ bool InputController::tryRemoveExactWholeBlockSelection(EditTransaction::Kind ki
     } else {
       ctx_.brushQueue->requestFullRefresh();
     }
+    // Flush synchronously so the layout reflects this deletion before control returns to
+    // the event loop — mirrors applyLocalEdit (see InputControllerEdit.cpp). Without it,
+    // BrushQueue defers via a 0-ms timer and the view paints one frame of stale layout
+    // (following blocks still at their pre-deletion Y).
+    ctx_.brushQueue->flush();
   }
   return true;
 }
@@ -1224,6 +1215,11 @@ bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, con
     } else {
       ctx_.brushQueue->requestFullRefresh();
     }
+    // Flush synchronously so the layout reflects this deletion before control returns to
+    // the event loop — mirrors applyLocalEdit (see InputControllerEdit.cpp). Without it,
+    // BrushQueue defers via a 0-ms timer and the view paints one frame of stale layout
+    // (following blocks still at their pre-deletion Y).
+    ctx_.brushQueue->flush();
   }
   return true;
 }
@@ -1344,6 +1340,11 @@ bool InputController::tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, 
     } else {
       ctx_.brushQueue->requestFullRefresh();
     }
+    // Flush synchronously so the layout reflects this deletion before control returns to
+    // the event loop — mirrors applyLocalEdit (see InputControllerEdit.cpp). Without it,
+    // BrushQueue defers via a 0-ms timer and the view paints one frame of stale layout
+    // (following blocks still at their pre-deletion Y).
+    ctx_.brushQueue->flush();
   }
   return true;
 }
@@ -1669,10 +1670,10 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
     case Qt::Key_Down:
       return moveCursorVertical(1, event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_Home:
-      return moveJump(event->modifiers().testFlag(Qt::ControlModifier) ? JumpTarget::DocumentStart : JumpTarget::BlockStart,
+      return moveJump(event->modifiers().testFlag(Qt::ControlModifier) ? JumpTarget::DocumentStart : JumpTarget::LineStart,
                       event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_End:
-      return moveJump(event->modifiers().testFlag(Qt::ControlModifier) ? JumpTarget::DocumentEnd : JumpTarget::BlockEnd,
+      return moveJump(event->modifiers().testFlag(Qt::ControlModifier) ? JumpTarget::DocumentEnd : JumpTarget::LineEnd,
                       event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_Escape:
       return exitActiveLiteralEditor();
@@ -1968,13 +1969,32 @@ bool InputController::moveJump(JumpTarget target, bool extendSelection) {
     return false;
   }
   switch (target) {
-    case JumpTarget::BlockStart:
-    case JumpTarget::BlockEnd: {
+    case JumpTarget::LineStart:
+    case JumpTarget::LineEnd: {
       MarkdownNode* node = ctx_.session->document().node(ctx_.selection->cursorPosition().blockId);
       if (!node) {
         return false;
       }
-      const qsizetype offset = target == JumpTarget::BlockStart ? 0 : selectableTextLength(*node);
+      // Home/End navigate within the CURRENT LINE. For literal blocks (code/math/html/front
+      // matter) the selectable text spans many physical lines, so jump to the current line's
+      // boundaries (the previous/next '\n'); for single-line blocks (paragraph/heading) there
+      // are no internal newlines and this reduces to block start/end — the previous behaviour.
+      const BlockType t = node->type();
+      const bool isLiteral = (t == BlockType::CodeFence || t == BlockType::MathBlock ||
+                              t == BlockType::HtmlBlock || t == BlockType::FrontMatter);
+      qsizetype offset;
+      if (isLiteral) {
+        const QString text = node->literal();
+        const qsizetype cur = qBound<qsizetype>(0, ctx_.selection->cursorPosition().text.textOffset, text.size());
+        if (target == JumpTarget::LineStart) {
+          offset = cur <= 0 ? 0 : (text.lastIndexOf(QLatin1Char('\n'), cur - 1) + 1);
+        } else {
+          const qsizetype nl = text.indexOf(QLatin1Char('\n'), cur);
+          offset = nl < 0 ? text.size() : nl;
+        }
+      } else {
+        offset = target == JumpTarget::LineStart ? 0 : selectableTextLength(*node);
+      }
       setCursorOrExtend(cursorForNode(*node, offset), extendSelection);
       return true;
     }
