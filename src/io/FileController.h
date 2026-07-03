@@ -17,8 +17,11 @@ public:
 
   bool newFile(DocumentSession& session, QWidget* parent);
   bool open(DocumentSession& session, QWidget* parent, QString path = {});
-  bool save(DocumentSession& session, QWidget* parent);
-  bool saveAs(DocumentSession& session, QWidget* parent);
+  // `defaultDir` seeds the Save As dialog for an untitled document (it is ignored
+  // once the document has a path). Pass MainWindow::defaultSaveDirectory() so a
+  // file saved while a folder is open in the sidebar lands there by default.
+  bool save(DocumentSession& session, QWidget* parent, const QString& defaultDir = {});
+  bool saveAs(DocumentSession& session, QWidget* parent, const QString& defaultDir = {});
   bool reopenWithEncoding(DocumentSession& session, QWidget* parent, const QString& encodingName);
   bool moveTo(DocumentSession& session, QWidget* parent);
 

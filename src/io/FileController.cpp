@@ -3,6 +3,7 @@
 #include "document/DocumentSession.h"
 
 #include <QFile>
+#include <QDir>
 #include <QSettings>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -53,9 +54,9 @@ bool muffin::FileController::open(DocumentSession& session, QWidget* parent, QSt
   return true;
 }
 
-bool muffin::FileController::save(DocumentSession& session, QWidget* parent) {
+bool muffin::FileController::save(DocumentSession& session, QWidget* parent, const QString& defaultDir) {
   if (session.filePath().isEmpty()) {
-    return saveAs(session, parent);
+    return saveAs(session, parent, defaultDir);
   }
   if (!writeTextFile(session.filePath(), session.markdownText().toString(), parent)) {
     return false;
@@ -79,6 +80,8 @@ QString muffin::FileController::defaultUntitledName() const {
 }
 
 void muffin::FileController::autoSaveOnSwitchIfEnabled(DocumentSession& session, QWidget* parent) {
+  // The internal Save paths below intentionally keep defaultDir = {} — only the
+  // explicit Save / Save As commands (which know the sidebar folder) seed it.
   // Silently persist a pathed, modified document before switching away, so the
   // confirm-discard prompt below is skipped. No-op unless files/autoSaveOnSwitch is on.
   QSettings settings;
@@ -91,11 +94,20 @@ void muffin::FileController::autoSaveOnSwitchIfEnabled(DocumentSession& session,
   save(session, parent);
 }
 
-bool muffin::FileController::saveAs(DocumentSession& session, QWidget* parent) {
+bool muffin::FileController::saveAs(DocumentSession& session, QWidget* parent, const QString& defaultDir) {
+  // For an untitled document, anchor the dialog in the requested directory
+  // (typically the sidebar's open folder) rather than the working directory.
+  QString startingPath;
+  if (!session.filePath().isEmpty()) {
+    startingPath = session.filePath();
+  } else {
+    const QString name = defaultUntitledName();
+    startingPath = defaultDir.isEmpty() ? name : QDir(defaultDir).filePath(name);
+  }
   QString path = QFileDialog::getSaveFileName(
       parent,
       tr("Save As"),
-      session.filePath().isEmpty() ? defaultUntitledName() : session.filePath(),
+      startingPath,
       tr("Markdown files (*.md *.markdown);;Text files (*.txt);;All files (*.*)"));
   if (path.isEmpty()) {
     return false;

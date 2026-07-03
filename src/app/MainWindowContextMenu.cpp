@@ -8,11 +8,15 @@
 
 #include <QAction>
 #include <QCoreApplication>
+#include <QFileInfo>
 #include <QMenu>
+#include <QPoint>
 #include <QString>
 #include <QStringList>
 
+#include <functional>
 #include <initializer_list>
+#include <utility>
 
 // Rendered-mode right-click menu. Defined out-of-namespace (no `namespace muffin`
 // wrapper) because this translation unit contains tr() calls — see the lupdate
@@ -178,6 +182,50 @@ void muffin::MainWindow::buildEditorContextMenu(const HitTestResult& hit, QPoint
 
   addCommand(QStringLiteral("edit.find"));
   addCommand(QStringLiteral("edit.replace"));
+
+  menu.exec(globalPos);
+}
+
+// Sidebar file-tree right-click menu. Built from ad-hoc actions (no command
+// registry) since every entry targets a specific path rather than the open
+// document. The variant is decided from `onItem`/`isDir`: a file gets the full
+// set, a directory or empty space gets the reduced set (per spec). New File /
+// New Folder target the clicked directory, or the file's parent for a file.
+void muffin::MainWindow::buildSidebarContextMenu(QString path, bool isDir, bool onItem, QPoint globalPos) {
+  QMenu menu(this);
+  const QString targetDir = isDir ? path : QFileInfo(path).absolutePath();
+
+  const auto add = [&menu, this](const QString& label, std::function<void()> slot) {
+    QAction* action = menu.addAction(label);
+    connect(action, &QAction::triggered, this, [this, slot = std::move(slot)] { slot(); });
+    return action;
+  };
+
+  if (onItem && !isDir) {
+    add(tr("Open"), [this, path] { openFile(path); });
+    add(tr("Open in New Window"), [this, path] { openFileInNewWindow(path); });
+    menu.addSeparator();
+    add(tr("New File"), [this, targetDir] { newFileInDirectory(targetDir); });
+    add(tr("New Folder"), [this, targetDir] { newFolderInDirectory(targetDir); });
+    menu.addSeparator();
+    add(tr("Rename"), [this, path] { renamePath(path); });
+    add(tr("Duplicate"), [this, path] { duplicateFile(path); });
+    add(tr("Delete"), [this, path] { deletePath(path); });
+    menu.addSeparator();
+    add(tr("Properties"), [this, path] { showPathProperties(path); });
+    menu.addSeparator();
+    add(tr("Copy Path"), [this, path] { copyPathToClipboard(path); });
+    add(tr("Reveal in File Manager"), [this, path] { revealPathInManager(path); });
+  } else {
+    // Directory, or empty space (path is then the folder root).
+    add(tr("Open in New Window"), [this, path] { openFolderInNewWindow(path); });
+    menu.addSeparator();
+    add(tr("New File"), [this, targetDir] { newFileInDirectory(targetDir); });
+    add(tr("New Folder"), [this, targetDir] { newFolderInDirectory(targetDir); });
+    menu.addSeparator();
+    add(tr("Copy Path"), [this, path] { copyPathToClipboard(path); });
+    add(tr("Reveal in File Manager"), [this, path] { revealPathInManager(path); });
+  }
 
   menu.exec(globalPos);
 }

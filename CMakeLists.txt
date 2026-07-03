@@ -718,6 +718,8 @@ set(MUFFIN_UI_SOURCES
   src/editor/InputControllerEdit.cpp
   src/io/ImageFileOps.cpp
   src/io/ImageFileOps.h
+  src/io/FilePathOps.cpp
+  src/io/FilePathOps.h
   src/image/ImageInsertionPolicy.cpp
   src/image/ImageInsertionPolicy.h
   src/image/CustomCommandUploader.cpp

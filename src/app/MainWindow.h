@@ -197,6 +197,11 @@ private:
   void addRecentFile(QString path);
   QStringList recentFiles() const;
   void setRecentFiles(const QStringList& paths) const;
+  // Directory offered by Save As for an untitled document: the sidebar's open
+  // folder if one is set, else empty (falls back to the working directory).
+  QString defaultSaveDirectory() const;
+  // Suggested name for the sidebar New File prompt, honoring files/defaultExtension.
+  QString defaultUntitledSuggestion() const;
   void showDocumentProperties();
   void showPreferences();
   void printDocument();
@@ -221,6 +226,25 @@ private:
   void saveAllOpenFiles();
   void showInSidebar();
   void deleteFile();
+  // ---- Sidebar file-tree context menu operations ----
+  // Build and exec the right-click menu for the file tree; the variant (file /
+  // directory / empty space) is decided from the click target.
+  void buildSidebarContextMenu(QString path, bool isDir, bool onItem, QPoint globalPos);
+  void newFileInDirectory(QString dir);
+  void newFolderInDirectory(QString dir);
+  void renamePath(QString path);
+  void duplicateFile(QString path);
+  void deletePath(QString path);
+  void showPathProperties(QString path);
+  void copyPathToClipboard(QString path) const;
+  // Reveal in the OS file manager, selecting the item where the platform allows.
+  // revealCurrentFile() delegates here so the menu command shares the behavior.
+  void revealPathInManager(QString path);
+  void openFileInNewWindow(QString path);
+  void openFolderInNewWindow(QString path);
+  // Shared body of openFolder() and the new-window path: sets the sidebar root
+  // and switches to the Files panel.
+  void openFolderAtPath(QString path);
   void insertTableWithDialog();
   void insertImageWithDialog();
   void insertLocalImageWithDialog();

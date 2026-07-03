@@ -118,7 +118,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .text = muffin::MainWindow::tr("Save"),
        .shortcut = QKeySequence::Save,
        .handler = [](MainWindow& window) {
-         if (window.fileController_.save(window.session_, &window)) {
+         if (window.fileController_.save(window.session_, &window, window.defaultSaveDirectory())) {
            window.addRecentFile(window.session_.filePath());
          }
        }},
@@ -127,7 +127,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .text = muffin::MainWindow::tr("Save As..."),
        .shortcut = QKeySequence::SaveAs,
        .handler = [](MainWindow& window) {
-         if (window.fileController_.saveAs(window.session_, &window)) {
+         if (window.fileController_.saveAs(window.session_, &window, window.defaultSaveDirectory())) {
            window.addRecentFile(window.session_.filePath());
          }
        }},

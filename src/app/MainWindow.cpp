@@ -309,9 +309,7 @@ void muffin::MainWindow::openFolder() {
   if (path.isEmpty()) {
     return;
   }
-  sidebarFolderRoot_ = path;
-  sidebar_->setFolderRoot(path);
-  setSidebarPanel(SidebarWidget::Panel::Files);
+  openFolderAtPath(path);
 }
 
 void muffin::MainWindow::openNewWindow() {

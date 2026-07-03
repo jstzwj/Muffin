@@ -7,11 +7,13 @@
 #include "editor/EditorView.h"
 #include "export/HtmlExporter.h"
 #include "export/PandocRunner.h"
+#include "io/FilePathOps.h"
 #include "theme/ThemeDefinition.h"
 
 #include <QAbstractItemView>
 #include <QAction>
 #include <QApplication>
+#include <QClipboard>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDialog>
@@ -20,9 +22,11 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QInputDialog>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
+#include <QLineEdit>
 #include <QLocale>
 #include <QListWidget>
 #include <QListWidgetItem>
@@ -233,6 +237,10 @@ void muffin::MainWindow::setRecentFiles(const QStringList& paths) const {
   settings.setValue(QStringLiteral("recentFiles"), paths);
 }
 
+QString muffin::MainWindow::defaultSaveDirectory() const {
+  return sidebarFolderRoot_;
+}
+
 void muffin::MainWindow::restoreStartupFile() {
   // files/startupBehavior: 0 = open new file, 1 = reopen last file.
   QSettings settings;
@@ -361,8 +369,7 @@ void muffin::MainWindow::revealCurrentFile() {
   if (session_.filePath().isEmpty()) {
     return;
   }
-  const QFileInfo info(session_.filePath());
-  QDesktopServices::openUrl(QUrl::fromLocalFile(info.absolutePath()));
+  revealPathInManager(session_.filePath());
 }
 
 bool muffin::MainWindow::saveCurrentDocument() {
@@ -965,6 +972,223 @@ void muffin::MainWindow::deleteFile() {
   recent.removeAll(QFileInfo(filePath).absoluteFilePath());
   setRecentFiles(recent);
   rebuildRecentFilesMenu();
+}
+
+// ---- Sidebar file-tree context menu operations ------------------------------
+//
+// These act on arbitrary paths (the file/dir under the right-click), unlike the
+// commands above which operate on session_.filePath(). The filesystem work lives
+// in FilePathOps; here we only prompt + integrate with the editor/sidebar.
+
+void muffin::MainWindow::openFolderAtPath(QString path) {
+  sidebarFolderRoot_ = std::move(path);
+  if (sidebar_) {
+    sidebar_->setFolderRoot(sidebarFolderRoot_);
+    setSidebarPanel(SidebarWidget::Panel::Files);
+  }
+}
+
+void muffin::MainWindow::openFileInNewWindow(QString path) {
+  auto* window = new MainWindow();
+  window->setAttribute(Qt::WA_DeleteOnClose);
+  window->openFile(path);  // before show() so the document parses during construction
+  window->show();
+}
+
+void muffin::MainWindow::openFolderInNewWindow(QString path) {
+  auto* window = new MainWindow();
+  window->setAttribute(Qt::WA_DeleteOnClose);
+  window->openFolderAtPath(path);
+  window->show();
+}
+
+void muffin::MainWindow::newFileInDirectory(QString dir) {
+  if (dir.isEmpty()) {
+    return;
+  }
+  bool ok = false;
+  QString name = QInputDialog::getText(this, tr("New File"), tr("File name:"),
+      QLineEdit::Normal, defaultUntitledSuggestion(), &ok);
+  if (!ok || name.trimmed().isEmpty()) {
+    return;
+  }
+  name = FilePathOps::normalizeMarkdownFileName(name.trimmed());
+  const QString fullPath = QDir(dir).filePath(name);
+  QString error;
+  if (!FilePathOps::createFile(fullPath, &error)) {
+    QMessageBox::critical(this, tr("New File"),
+        tr("Could not create file:\n%1\n\n%2").arg(QDir::toNativeSeparators(fullPath), error));
+    return;
+  }
+  if (sidebar_) {
+    sidebar_->setCurrentPath(fullPath);
+  }
+  openFile(fullPath);
+}
+
+void muffin::MainWindow::newFolderInDirectory(QString dir) {
+  if (dir.isEmpty()) {
+    return;
+  }
+  bool ok = false;
+  const QString name = QInputDialog::getText(this, tr("New Folder"), tr("Folder name:"),
+      QLineEdit::Normal, tr("New Folder"), &ok);
+  if (!ok || name.trimmed().isEmpty()) {
+    return;
+  }
+  const QString fullPath = QDir(dir).filePath(name.trimmed());
+  QString error;
+  if (!FilePathOps::createFolder(fullPath, &error)) {
+    QMessageBox::critical(this, tr("New Folder"),
+        tr("Could not create folder:\n%1\n\n%2").arg(QDir::toNativeSeparators(fullPath), error));
+    return;
+  }
+  if (sidebar_) {
+    sidebar_->setCurrentPath(fullPath);
+  }
+}
+
+void muffin::MainWindow::renamePath(QString path) {
+  if (path.isEmpty()) {
+    return;
+  }
+  const QFileInfo info(path);
+  const QString oldName = info.fileName();
+  bool ok = false;
+  const QString newName = QInputDialog::getText(this, tr("Rename"), tr("New name:"),
+      QLineEdit::Normal, oldName, &ok);
+  if (!ok || newName.trimmed().isEmpty() || newName.trimmed() == oldName) {
+    return;
+  }
+  const QString newPath = QDir(info.absolutePath()).filePath(newName.trimmed());
+  QString error;
+  if (!FilePathOps::renamePath(path, newPath, &error)) {
+    QMessageBox::critical(this, tr("Rename"),
+        tr("Could not rename:\n%1\n\n%2").arg(QDir::toNativeSeparators(path), error));
+    return;
+  }
+  if (sidebar_) {
+    sidebar_->setCurrentPath(newPath);
+  }
+  // Keep the editor in sync when the renamed entry was the open document.
+  if (path == session_.filePath()) {
+    const QString oldAbs = QFileInfo(path).absoluteFilePath();
+    session_.setFilePath(newPath);
+    updateTitle();
+    refreshSidebarDocumentInfo();
+    addRecentFile(newPath);
+    QStringList recent = recentFiles();
+    recent.removeAll(oldAbs);
+    setRecentFiles(recent);
+    rebuildRecentFilesMenu();
+  }
+}
+
+void muffin::MainWindow::duplicateFile(QString path) {
+  if (path.isEmpty() || !QFileInfo(path).isFile()) {
+    return;
+  }
+  const QString dest = FilePathOps::uniqueDuplicatePath(path);
+  QString error;
+  if (!FilePathOps::copyFile(path, dest, &error)) {
+    QMessageBox::critical(this, tr("Duplicate"),
+        tr("Could not create a copy:\n%1\n\n%2").arg(QDir::toNativeSeparators(path), error));
+    return;
+  }
+  if (sidebar_) {
+    sidebar_->setCurrentPath(dest);
+  }
+}
+
+void muffin::MainWindow::deletePath(QString path) {
+  if (path.isEmpty() || !QFileInfo::exists(path)) {
+    return;
+  }
+  const QFileInfo info(path);
+  const QString windowTitle = info.isDir() ? tr("Delete Folder") : tr("Delete File");
+  const QString trashPrompt = info.isDir()
+      ? tr("Are you sure you want to move \"%1\" and all its contents to the trash?\n\nThis action cannot be undone.").arg(info.fileName())
+      : tr("Are you sure you want to move \"%1\" to the trash?\n\nThis action cannot be undone.").arg(info.fileName());
+  if (QMessageBox::warning(this, windowTitle, trashPrompt, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes) {
+    return;
+  }
+
+  QString error;
+  bool removed = FilePathOps::moveToTrash(path, &error);
+  if (!removed) {
+    // Trash unavailable (e.g. some Linux backends): offer a permanent delete.
+    if (QMessageBox::critical(this, windowTitle,
+            tr("Could not move to trash. Permanently delete \"%1\"?\n\nThis action cannot be undone.").arg(info.fileName()),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes) {
+      removed = FilePathOps::removePermanently(path, &error);
+    }
+  }
+  if (!removed) {
+    if (!error.isEmpty()) {
+      QMessageBox::critical(this, tr("Delete Failed"),
+          tr("Could not delete:\n%1").arg(QDir::toNativeSeparators(path)));
+    }
+    return;
+  }
+
+  // If the deleted entry was the open document, reset it without a discard
+  // prompt (the file is gone) and clear its draft. Drop it from recents either way.
+  const QString abs = QFileInfo(path).absoluteFilePath();
+  if (path == session_.filePath()) {
+    session_.document().setModified(false);
+    drafts_.markClean(path);
+    fileController_.newFile(session_, this);
+    editorController_.clearHistoryAndSelection();
+  }
+  QStringList recent = recentFiles();
+  recent.removeAll(abs);
+  setRecentFiles(recent);
+  rebuildRecentFilesMenu();
+}
+
+void muffin::MainWindow::showPathProperties(QString path) {
+  const QFileInfo info(path);
+  if (!info.exists()) {
+    return;
+  }
+  const QString type = info.isDir() ? tr("Folder") : tr("File", "properties: entry type");
+  const QString location = QDir::toNativeSeparators(info.absolutePath());
+  const QString sizeLine = info.isFile() ? tr("Size: %1 bytes\n").arg(QString::number(info.size())) : QString();
+  const QString message = tr("Name: %1\nType: %2\nLocation: %3\n%4Modified: %5")
+                              .arg(info.fileName(), type, location, sizeLine,
+                                   QLocale().toString(info.lastModified(), QLocale::ShortFormat));
+  QMessageBox::information(this, tr("Properties"), message);
+}
+
+void muffin::MainWindow::copyPathToClipboard(QString path) const {
+  if (path.isEmpty()) {
+    return;
+  }
+  QApplication::clipboard()->setText(QDir::toNativeSeparators(QFileInfo(path).absoluteFilePath()));
+}
+
+void muffin::MainWindow::revealPathInManager(QString path) {
+  if (path.isEmpty()) {
+    return;
+  }
+  QString error;
+  if (!FilePathOps::revealPathInManager(path, &error)) {
+    QMessageBox::warning(this, tr("Reveal in File Manager"),
+        tr("Could not reveal:\n%1").arg(QDir::toNativeSeparators(path)));
+  }
+}
+
+QString muffin::MainWindow::defaultUntitledSuggestion() const {
+  // Reuse the files/defaultExtension setting so the New File prompt matches the
+  // Save As untitled name (.md/.markdown/.txt).
+  switch (QSettings().value(QStringLiteral("files/defaultExtension"), 0).toInt()) {
+    case 1:
+      return QStringLiteral("Untitled.markdown");
+    case 2:
+      return QStringLiteral("Untitled.txt");
+    default:
+      return QStringLiteral("Untitled.md");
+  }
 }
 
 bool muffin::MainWindow::maybeSaveChanges() {

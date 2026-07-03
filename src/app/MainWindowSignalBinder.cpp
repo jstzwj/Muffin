@@ -398,5 +398,9 @@ void muffin::MainWindow::connectSidebarSignals() {
   QObject::connect(window.sidebar_, &SidebarWidget::fileOpenRequested, &window, [&window](const QString& path) {
     window.openFile(path);
   });
+  QObject::connect(window.sidebar_, &SidebarWidget::fileTreeContextMenuRequested, &window,
+      [&window](const QString& path, bool isDir, bool onItem, const QPoint& globalPos) {
+        window.buildSidebarContextMenu(path, isDir, onItem, globalPos);
+      });
   QObject::connect(window.sidebar_, &SidebarWidget::outlineActivated, &window, &MainWindow::activateOutlineNode);
 }

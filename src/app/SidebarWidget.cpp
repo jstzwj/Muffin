@@ -98,6 +98,7 @@ void muffin::SidebarWidget::setupFilesPanel() {
   fileTree_->setMouseTracking(true);
   fileTree_->setEditTriggers(QAbstractItemView::NoEditTriggers);
   fileTree_->setSelectionMode(QAbstractItemView::SingleSelection);
+  fileTree_->setContextMenuPolicy(Qt::CustomContextMenu);
   for (int column = 1; column < fileModel_->columnCount(); ++column) {
     fileTree_->hideColumn(column);
   }
@@ -122,6 +123,28 @@ void muffin::SidebarWidget::setupFilesPanel() {
     if (QFileInfo(path).isFile()) {
       emit fileOpenRequested(path);
     }
+  });
+  // Right-click: move the selection to the clicked row (standard file-manager
+  // behavior) then hand the context off to MainWindow, which builds the menu.
+  // A click on empty space targets the folder root instead.
+  connect(fileTree_, &QTreeView::customContextMenuRequested, this, [this](const QPoint& pos) {
+    const QModelIndex index = fileTree_->indexAt(pos);
+    QString path;
+    bool isDir = true;
+    bool onItem = false;
+    if (index.isValid()) {
+      path = fileModel_->filePath(index);
+      isDir = QFileInfo(path).isDir();
+      onItem = true;
+      fileTree_->setCurrentIndex(index);
+    } else {
+      path = folderRoot_;
+      onItem = false;
+    }
+    if (path.isEmpty()) {
+      return;  // no folder open and no item: nothing to act on
+    }
+    emit fileTreeContextMenuRequested(path, isDir, onItem, fileTree_->viewport()->mapToGlobal(pos));
   });
 
   stack_->addWidget(filesPanel_);
@@ -218,6 +241,29 @@ void muffin::SidebarWidget::setFolderRoot(QString path) {
 
 QString muffin::SidebarWidget::folderRoot() const {
   return folderRoot_;
+}
+
+void muffin::SidebarWidget::setCurrentPath(QString path) {
+  if (path.isEmpty()) {
+    return;
+  }
+  // A freshly-created entry in a folder the model never listed won't have an
+  // index until that parent's children are fetched, so expand/fetch every
+  // ancestor first (the QFileSystemModel populates lazily per directory).
+  QModelIndex index = fileModel_->index(path);
+  if (!index.isValid()) {
+    QModelIndex ancestor = fileModel_->index(QFileInfo(path).absolutePath());
+    while (ancestor.isValid()) {
+      fileTree_->expand(ancestor);
+      fileModel_->fetchMore(ancestor);
+      ancestor = ancestor.parent();
+    }
+    index = fileModel_->index(path);
+  }
+  if (index.isValid()) {
+    fileTree_->setCurrentIndex(index);
+    fileTree_->scrollTo(index, QAbstractItemView::PositionAtCenter);
+  }
 }
 
 void muffin::SidebarWidget::setOutline(const QVector<OutlineEntry>& entries) {

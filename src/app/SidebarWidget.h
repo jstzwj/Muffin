@@ -3,6 +3,7 @@
 #include "document/OutlineBuilder.h"
 #include "theme/ThemeDefinition.h"
 
+#include <QPoint>
 #include <QWidget>
 
 class QFileSystemModel;
@@ -28,6 +29,9 @@ public:
   void setCurrentDocument(QString displayName, QString filePath, bool modified);
   void setFolderRoot(QString path);
   QString folderRoot() const;
+  // Select and scroll to a path after create/rename. Expands ancestors first so a
+  // fresh entry in a never-expanded folder resolves to a valid index.
+  void setCurrentPath(QString path);
   void setOutline(const QVector<OutlineEntry>& entries);
   void setOutlineFoldable(bool foldable);
   void applyTheme(const ThemeDefinition& theme);
@@ -38,6 +42,10 @@ signals:
   void newWindowRequested();
   void openFolderRequested();
   void fileOpenRequested(QString path);
+  // Right-click on the file tree. `path` is the clicked file/dir, or the folder
+  // root when the click landed on empty space. `isDir` says which. `onItem` is
+  // false for empty space (menu omits per-item actions). Empty path ⇒ no menu.
+  void fileTreeContextMenuRequested(QString path, bool isDir, bool onItem, QPoint globalPos);
   void outlineActivated(NodeId nodeId, SourceRange sourceRange);
 
 private:
