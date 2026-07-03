@@ -1,5 +1,6 @@
 #pragma once
 
+#include "theme/CssValueParser.h"
 #include "theme/ThemeDefinition.h"
 
 #include <QHash>
@@ -13,15 +14,8 @@ class CssComputedStyleEngine;  // defined in CssComputedStyleEngine.h
 class NodeCssElementBuilder;  // defined in NodeCssElement.h
 class MarkdownNode;
 
-// Construct a QColor from a CSS colour literal, correcting Qt's hex-alpha
-// byte order. CSS specifies alpha LAST (#RRGGBBAA / #RGBA); QColor reads 8- and
-// 4-digit hex with alpha FIRST (#AARRGGBB / #ARGB). Without this a theme value
-// like "#7aeaf018" (CSS: pale cyan @ 9% alpha) is read by Qt as a=7a,r=ea,g=f0,
-// b=18 — a saturated yellow-green. Every other form (6/3-digit hex, rgb()/hsl(),
-// named colours) is passed straight to QColor. This is the single CSS→QColor
-// boundary; extractColor(), varColor() and JSON-theme parseColor() all route
-// through it so the fix applies theme-wide.
-QColor cssColor(const QString& literal);
+// cssColor() is declared in theme/CssValueParser.h (included above) — the shared CSS→QColor
+// chokepoint used by extractColor()/varColor()/JSON parseColor() and HtmlBoxBuilder.
 
 // Translates a parsed CSS-theme sheet into a Muffin ThemeDefinition. This
 // is the "external-CSS compatibility" contract: a fixed table maps CSS selectors +

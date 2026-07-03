@@ -137,6 +137,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/StatusBarWidget.cpp
   src/document/DocumentSession.cpp
   src/editor/EditorView.cpp
+  src/editor/EditorViewPaint.cpp
   src/editor/SourceEditorWidget.cpp
   src/editor/FindBarWidget.cpp
   src/render/BlockLayoutBuilder.cpp
@@ -687,6 +688,7 @@ set(MUFFIN_UI_SOURCES
   src/app/SourceEditorBackend.h
   src/editor/EditorControllerUndo.cpp
   src/editor/EditorView.cpp
+  src/editor/EditorViewPaint.cpp
   src/editor/EditorView.h
   src/editor/EditorViewGeometry.cpp
   src/editor/EditorViewGeometry.h
@@ -801,6 +803,13 @@ set(MUFFIN_UI_SOURCES
   src/theme/CssThemeParser.h
   src/theme/CssThemeMapper.cpp
   src/theme/CssThemeMapper.h
+  src/theme/CssSelectorAnalysis.cpp
+  src/theme/CssSelectorAnalysis.h
+  src/theme/CssDecorationExtractor.cpp
+  src/theme/CssDecorationExtractor.h
+  src/theme/CssFlatDecl.h
+  src/theme/CssValueParser.cpp
+  src/theme/CssValueParser.h
   src/theme/NodeCssElement.cpp
   src/theme/NodeCssElement.h
   src/theme/CssCalc.cpp

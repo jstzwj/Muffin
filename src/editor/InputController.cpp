@@ -839,6 +839,89 @@ bool InputController::replaceSelection(QString text, EditTransaction::Kind kind,
   return true;
 }
 
+int InputController::topLevelBlockIndex(const MarkdownNode& node) const {
+  const auto& blocks = ctx_.session->document().root().children();
+  for (int i = 0; i < static_cast<int>(blocks.size()); ++i) {
+    if (blocks.at(static_cast<size_t>(i)).get() == &node) { return i; }
+  }
+  return -1;
+}
+
+bool InputController::computeStandardRemovalRange(qsizetype blockStart, qsizetype blockEnd, int nodeIndex,
+                                                   qsizetype& deleteStart, qsizetype& deleteEnd) const {
+  const auto& blocks = ctx_.session->document().root().children();
+  deleteStart = blockStart;
+  deleteEnd = blockEnd;
+  if (blocks.size() == 1) {
+    deleteStart = 0;
+    deleteEnd = ctx_.session->markdownText().size();
+  } else if (nodeIndex + 1 < static_cast<int>(blocks.size())) {
+    deleteEnd = blocks.at(static_cast<size_t>(nodeIndex + 1))->sourceRange().byteStart;
+  } else {
+    deleteStart = blocks.at(static_cast<size_t>(nodeIndex - 1))->sourceRange().byteEnd;
+  }
+  const qsizetype textSize = ctx_.session->markdownText().size();
+  deleteStart = qBound<qsizetype>(0, deleteStart, textSize);
+  deleteEnd = qBound<qsizetype>(deleteStart, deleteEnd, textSize);
+  return deleteStart < deleteEnd;
+}
+
+bool InputController::removeTopLevelBlock(MarkdownNode& node, int nodeIndex, qsizetype blockStart,
+                                          qsizetype deleteStart, qsizetype deleteEnd, EditTransaction::Kind kind,
+                                          const QString& label, bool exitLiteralEditorFirst) {
+  const CursorPosition beforeCursor = ctx_.selection->cursorPosition();
+  const QString removedText = ctx_.session->markdownText().mid(deleteStart, deleteEnd - deleteStart);
+  std::unique_ptr<MarkdownNode> removedNode = node.clone(CloneMode::PreserveIds);
+  const NodeId removedNodeId = node.id();
+  const BlockType removedNodeType = node.type();
+
+  // Exit edit mode before removing a literal block to clear stale editing state.
+  if (exitLiteralEditorFirst) {
+    if (codeFenceController_ && codeFenceController_->isEditing()) {
+      codeFenceController_->exitEditMode();
+    } else if (LiteralBlockController* math = ctx_.literalEditors.value(static_cast<int>(BlockType::MathBlock))) {
+      if (math->isEditing()) { math->exitEditMode(); }
+    }
+  }
+
+  QVector<LocalEditNodeHint> nodeHints;
+  nodeHints.push_back(LocalEditNodeHint{removedNodeId, blockStart, removedNodeType});
+  if (!ctx_.session->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
+    return false;
+  }
+
+  CursorPosition nextCursor = cursorAfterEdit(CursorPosition(), deleteStart, true);
+  if (nextCursor.isValid()) {
+    ctx_.selection->setCursorPosition(nextCursor);
+  } else {
+    ctx_.selection->clear();
+  }
+
+  if (ctx_.undoStack) {
+    QVector<NodeId> affectedNodes{removedNodeId};
+    if (nextCursor.isValid() && !affectedNodes.contains(nextCursor.blockId)) {
+      affectedNodes.push_back(nextCursor.blockId);
+    }
+    ctx_.undoStack->push(EditTransaction(
+        kind, label,
+        RemoveNodeCommand{removedNodeId, removedNodeType, nodeIndex,
+                          TextDelta{deleteStart, removedText, QString()}, blockStart,
+                          std::move(removedNode), beforeCursor, nextCursor, std::move(affectedNodes)}));
+  }
+  if (ctx_.brushQueue) {
+    if (nextCursor.isValid()) {
+      ctx_.brushQueue->requestBlockRefresh(nextCursor.blockId);
+    } else {
+      ctx_.brushQueue->requestFullRefresh();
+    }
+    // Flush synchronously so the layout reflects this deletion before control returns to the
+    // event loop (mirrors applyLocalEdit); otherwise BrushQueue defers via a 0-ms timer and the
+    // view paints one frame of stale layout.
+    ctx_.brushQueue->flush();
+  }
+  return true;
+}
+
 bool InputController::tryRemoveExactWholeBlockSelection(EditTransaction::Kind kind, const QString& label) {
   if (!ctx_.hasSession() || !ctx_.hasCursor() || ctx_.selection->selection().isCollapsed()) {
     return false;
@@ -867,85 +950,18 @@ bool InputController::tryRemoveExactWholeBlockSelection(EditTransaction::Kind ki
     return false;
   }
 
-  const auto& blocks = ctx_.session->document().root().children();
-  int nodeIndex = -1;
-  for (int i = 0; i < static_cast<int>(blocks.size()); ++i) {
-    if (blocks.at(static_cast<size_t>(i)).get() == node) {
-      nodeIndex = i;
-      break;
-    }
-  }
+  const int nodeIndex = topLevelBlockIndex(*node);
   if (nodeIndex < 0) {
     return false;
   }
 
-  qsizetype deleteStart = blockStart;
-  qsizetype deleteEnd = blockEnd;
-  if (blocks.size() == 1) {
-    deleteStart = 0;
-    deleteEnd = ctx_.session->markdownText().size();
-  } else if (nodeIndex + 1 < static_cast<int>(blocks.size())) {
-    deleteEnd = blocks.at(static_cast<size_t>(nodeIndex + 1))->sourceRange().byteStart;
-  } else {
-    deleteStart = blocks.at(static_cast<size_t>(nodeIndex - 1))->sourceRange().byteEnd;
-  }
-  deleteStart = qBound<qsizetype>(0, deleteStart, ctx_.session->markdownText().size());
-  deleteEnd = qBound<qsizetype>(deleteStart, deleteEnd, ctx_.session->markdownText().size());
-  if (deleteStart >= deleteEnd) {
+  qsizetype deleteStart = 0;
+  qsizetype deleteEnd = 0;
+  if (!computeStandardRemovalRange(blockStart, blockEnd, nodeIndex, deleteStart, deleteEnd)) {
     return false;
   }
-
-  const CursorPosition beforeCursor = ctx_.selection->cursorPosition();
-  const QString removedText = ctx_.session->markdownText().mid(deleteStart, deleteEnd - deleteStart);
-  std::unique_ptr<MarkdownNode> removedNode = node->clone(CloneMode::PreserveIds);
-  const NodeId removedNodeId = node->id();
-  const BlockType removedNodeType = node->type();
-
-  QVector<LocalEditNodeHint> nodeHints;
-  nodeHints.push_back(LocalEditNodeHint{removedNodeId, blockStart, removedNodeType});
-  if (!ctx_.session->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
-    return false;
-  }
-
-  CursorPosition nextCursor = cursorAfterEdit(CursorPosition(), deleteStart, true);
-  if (nextCursor.isValid()) {
-    ctx_.selection->setCursorPosition(nextCursor);
-  } else {
-    ctx_.selection->clear();
-  }
-
-  if (ctx_.undoStack) {
-    QVector<NodeId> affectedNodes{removedNodeId};
-    if (nextCursor.isValid() && !affectedNodes.contains(nextCursor.blockId)) {
-      affectedNodes.push_back(nextCursor.blockId);
-    }
-    ctx_.undoStack->push(EditTransaction(
-        kind,
-        label,
-        RemoveNodeCommand{
-            removedNodeId,
-            removedNodeType,
-            nodeIndex,
-            TextDelta{deleteStart, removedText, QString()},
-            blockStart,
-            std::move(removedNode),
-            beforeCursor,
-            nextCursor,
-            std::move(affectedNodes)}));
-  }
-  if (ctx_.brushQueue) {
-    if (nextCursor.isValid()) {
-      ctx_.brushQueue->requestBlockRefresh(nextCursor.blockId);
-    } else {
-      ctx_.brushQueue->requestFullRefresh();
-    }
-    // Flush synchronously so the layout reflects this deletion before control returns to
-    // the event loop — mirrors applyLocalEdit (see InputControllerEdit.cpp). Without it,
-    // BrushQueue defers via a 0-ms timer and the view paints one frame of stale layout
-    // (following blocks still at their pre-deletion Y).
-    ctx_.brushQueue->flush();
-  }
-  return true;
+  return removeTopLevelBlock(*node, nodeIndex, blockStart, deleteStart, deleteEnd, kind, label,
+                             /*exitLiteralEditorFirst=*/false);
 }
 
 bool InputController::handleInputMethod(QInputMethodEvent* event) {
@@ -1135,93 +1151,18 @@ bool InputController::tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, con
     return false;
   }
 
-  const auto& blocks = ctx_.session->document().root().children();
-  int nodeIndex = -1;
-  for (int i = 0; i < static_cast<int>(blocks.size()); ++i) {
-    if (blocks.at(static_cast<size_t>(i)).get() == node) {
-      nodeIndex = i;
-      break;
-    }
-  }
+  const int nodeIndex = topLevelBlockIndex(*node);
   if (nodeIndex < 0) {
     return false;
   }
 
-  qsizetype deleteStart = blockStart;
-  qsizetype deleteEnd = blockEnd;
-  if (blocks.size() == 1) {
-    deleteStart = 0;
-    deleteEnd = ctx_.session->markdownText().size();
-  } else if (nodeIndex + 1 < static_cast<int>(blocks.size())) {
-    deleteEnd = blocks.at(static_cast<size_t>(nodeIndex + 1))->sourceRange().byteStart;
-  } else {
-    deleteStart = blocks.at(static_cast<size_t>(nodeIndex - 1))->sourceRange().byteEnd;
-  }
-  deleteStart = qBound<qsizetype>(0, deleteStart, ctx_.session->markdownText().size());
-  deleteEnd = qBound<qsizetype>(deleteStart, deleteEnd, ctx_.session->markdownText().size());
-  if (deleteStart >= deleteEnd) {
+  qsizetype deleteStart = 0;
+  qsizetype deleteEnd = 0;
+  if (!computeStandardRemovalRange(blockStart, blockEnd, nodeIndex, deleteStart, deleteEnd)) {
     return false;
   }
-
-  const CursorPosition beforeCursor = ctx_.selection->cursorPosition();
-  const QString removedText = ctx_.session->markdownText().mid(deleteStart, deleteEnd - deleteStart);
-  std::unique_ptr<MarkdownNode> removedNode = node->clone(CloneMode::PreserveIds);
-  const NodeId removedNodeId = node->id();
-
-  // Exit edit mode before removing the block to clear stale editing state
-  if (codeFenceController_ && codeFenceController_->isEditing()) {
-    codeFenceController_->exitEditMode();
-  } else if (LiteralBlockController* math = ctx_.literalEditors.value(static_cast<int>(BlockType::MathBlock))) {
-    if (math->isEditing()) {
-      math->exitEditMode();
-    }
-  }
-
-  QVector<LocalEditNodeHint> nodeHints;
-  nodeHints.push_back(LocalEditNodeHint{removedNodeId, blockStart, nodeType});
-  if (!ctx_.session->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
-    return false;
-  }
-
-  CursorPosition nextCursor = cursorAfterEdit(CursorPosition(), deleteStart, true);
-  if (nextCursor.isValid()) {
-    ctx_.selection->setCursorPosition(nextCursor);
-  } else {
-    ctx_.selection->clear();
-  }
-
-  if (ctx_.undoStack) {
-    QVector<NodeId> affectedNodes{removedNodeId};
-    if (nextCursor.isValid() && !affectedNodes.contains(nextCursor.blockId)) {
-      affectedNodes.push_back(nextCursor.blockId);
-    }
-    ctx_.undoStack->push(EditTransaction(
-        kind,
-        label,
-        RemoveNodeCommand{
-            removedNodeId,
-            nodeType,
-            nodeIndex,
-            TextDelta{deleteStart, removedText, QString()},
-            blockStart,
-            std::move(removedNode),
-            beforeCursor,
-            nextCursor,
-            std::move(affectedNodes)}));
-  }
-  if (ctx_.brushQueue) {
-    if (nextCursor.isValid()) {
-      ctx_.brushQueue->requestBlockRefresh(nextCursor.blockId);
-    } else {
-      ctx_.brushQueue->requestFullRefresh();
-    }
-    // Flush synchronously so the layout reflects this deletion before control returns to
-    // the event loop — mirrors applyLocalEdit (see InputControllerEdit.cpp). Without it,
-    // BrushQueue defers via a 0-ms timer and the view paints one frame of stale layout
-    // (following blocks still at their pre-deletion Y).
-    ctx_.brushQueue->flush();
-  }
-  return true;
+  return removeTopLevelBlock(*node, nodeIndex, blockStart, deleteStart, deleteEnd, kind, label,
+                             /*exitLiteralEditorFirst=*/true);
 }
 
 bool InputController::tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, const QString& label) {
@@ -1249,13 +1190,7 @@ bool InputController::tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, 
   }
 
   const auto& blocks = ctx_.session->document().root().children();
-  int nodeIndex = -1;
-  for (int i = 0; i < static_cast<int>(blocks.size()); ++i) {
-    if (blocks.at(static_cast<size_t>(i)).get() == node) {
-      nodeIndex = i;
-      break;
-    }
-  }
+  const int nodeIndex = topLevelBlockIndex(*node);
   if (nodeIndex < 0) {
     return false;
   }
@@ -1296,57 +1231,8 @@ bool InputController::tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, 
     return false;
   }
 
-  const CursorPosition beforeCursor = ctx_.selection->cursorPosition();
-  const QString removedText = ctx_.session->markdownText().mid(deleteStart, deleteEnd - deleteStart);
-  std::unique_ptr<MarkdownNode> removedNode = node->clone(CloneMode::PreserveIds);
-  const NodeId removedNodeId = node->id();
-  const BlockType removedNodeType = node->type();
-
-  QVector<LocalEditNodeHint> nodeHints;
-  nodeHints.push_back(LocalEditNodeHint{removedNodeId, blockStart, removedNodeType});
-  if (!ctx_.session->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
-    return false;
-  }
-
-  CursorPosition nextCursor = cursorAfterEdit(CursorPosition(), deleteStart, true);
-  if (nextCursor.isValid()) {
-    ctx_.selection->setCursorPosition(nextCursor);
-  } else {
-    ctx_.selection->clear();
-  }
-
-  if (ctx_.undoStack) {
-    QVector<NodeId> affectedNodes{removedNodeId};
-    if (nextCursor.isValid() && !affectedNodes.contains(nextCursor.blockId)) {
-      affectedNodes.push_back(nextCursor.blockId);
-    }
-    ctx_.undoStack->push(EditTransaction(
-        kind,
-        label,
-        RemoveNodeCommand{
-            removedNodeId,
-            removedNodeType,
-            nodeIndex,
-            TextDelta{deleteStart, removedText, QString()},
-            blockStart,
-            std::move(removedNode),
-            beforeCursor,
-            nextCursor,
-            std::move(affectedNodes)}));
-  }
-  if (ctx_.brushQueue) {
-    if (nextCursor.isValid()) {
-      ctx_.brushQueue->requestBlockRefresh(nextCursor.blockId);
-    } else {
-      ctx_.brushQueue->requestFullRefresh();
-    }
-    // Flush synchronously so the layout reflects this deletion before control returns to
-    // the event loop — mirrors applyLocalEdit (see InputControllerEdit.cpp). Without it,
-    // BrushQueue defers via a 0-ms timer and the view paints one frame of stale layout
-    // (following blocks still at their pre-deletion Y).
-    ctx_.brushQueue->flush();
-  }
-  return true;
+  return removeTopLevelBlock(*node, nodeIndex, blockStart, deleteStart, deleteEnd, kind, label,
+                             /*exitLiteralEditorFirst=*/false);
 }
 
 bool InputController::tryRemoveThematicBreak(bool forward) {

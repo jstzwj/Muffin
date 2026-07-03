@@ -1,6 +1,7 @@
 #include "html/HtmlBoxBuilder.h"
 #include "html/HtmlBox.h"
 #include "html/HtmlParser.h"
+#include "theme/CssValueParser.h"
 
 #include <lexbor/dom/interfaces/document.h>
 #include <lexbor/dom/interfaces/element.h>
@@ -542,11 +543,11 @@ void HtmlBoxBuilder::extractInlineStyle(HtmlBox& box, const char* styleAttr, siz
     auto& style = box.style();
 
     if (property == QStringLiteral("color")) {
-      style.color = QColor(value);
+      style.color = cssColor(value);
     } else if (property == QStringLiteral("background-color")) {
-      style.backgroundColor = QColor(value);
+      style.backgroundColor = cssColor(value);
     } else if (property == QStringLiteral("background")) {
-      QColor c(value);
+      QColor c = cssColor(value);
       if (c.isValid()) {
         style.backgroundColor = c;
       }
@@ -739,7 +740,7 @@ void HtmlBoxBuilder::extractInlineStyle(HtmlBox& box, const char* styleAttr, siz
             continue;
           }
           // Try as color
-          QColor c(part);
+          QColor c = cssColor(part);
           if (c.isValid()) {
             style.borderColor = c;
             continue;

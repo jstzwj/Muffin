@@ -118,6 +118,19 @@ private:
   bool tryRemoveEmptyLiteralBlock(EditTransaction::Kind kind, const QString& label);
   bool tryRemoveEmptyDefinitionBlock(EditTransaction::Kind kind, const QString& label);
   bool tryRemoveThematicBreak(bool forward);
+  // Shared top-level block-removal helpers used by the tryRemove* handlers above.
+  int topLevelBlockIndex(const MarkdownNode& node) const;
+  // Standard removal range: extend [blockStart, blockEnd] to swallow the inter-block separator
+  // (the next block's leading bytes, or the previous block's trailing bytes) so the deletion
+  // leaves no blank line. Returns false if the resulting range is empty.
+  bool computeStandardRemovalRange(qsizetype blockStart, qsizetype blockEnd, int nodeIndex,
+                                   qsizetype& deleteStart, qsizetype& deleteEnd) const;
+  // Apply a top-level block deletion: capture undo state, optionally exit a literal editor
+  // first, apply the text delta, place the post-edit caret, push the undo transaction, and
+  // flush the brush queue synchronously. `exitLiteralEditorFirst` is set by the literal handler.
+  bool removeTopLevelBlock(MarkdownNode& node, int nodeIndex, qsizetype blockStart,
+                           qsizetype deleteStart, qsizetype deleteEnd, EditTransaction::Kind kind,
+                           const QString& label, bool exitLiteralEditorFirst);
   bool collapseTrailingCaretToEndOfLastBlock();
   // True for a top-level block that hosts NO inline-editable text anywhere AND is not a literal
   // block (code/math/html/front matter edit through their own controllers; lists/tables/quotes have
