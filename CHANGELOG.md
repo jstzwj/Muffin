@@ -5,6 +5,22 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-07-04
+
+An internal-architecture release. No user-visible behavior changes — every edit is behavior-preserving and gated by the full test suite — but the largest source files have been decomposed into focused modules for navigability and future maintenance.
+
+### Changed
+- **CSS theme mapper decomposed** - The 2461-line theme mapper is split into focused modules: `CssValueParser` (colour/length/gradient value parsing — the shared chokepoint), `CssSelectorAnalysis` (selector parsing), and `CssDecorationExtractor` (pseudo-element / hover / animation extraction). It is now 1346 lines, and every colour and length resolution has a single source of truth. The HTML inline-style resolver now shares the same parsing path
+- **Editor view decomposed** - The 2012-line editor view is split into a paint module (`EditorViewPaint`) and a viewport / scroll / coordinate module (`EditorViewViewport`), leaving the core file to event handling and state
+- **Input controller decomposed** - The 1982-line input controller is split into auto-pair, smart-punctuation, emoji-autocomplete, and block-removal modules, isolating each editing feature behind its own translation unit
+- **Math parser and builder decomposed** - The LaTeX function-command switches (`parseFunction`'s 594-line switch and `buildNode`'s inline cases) are now per-command handler methods behind a thin dispatch, so each `\command`'s parse/build logic is independently navigable
+- **Per-type block paint** - `BlockLayout::paintSelf` is now a thin dispatch over `paintInlineBlock` / `paintBlockQuote` / `paintMathBlock` / `paintHtmlBlock` / `paintThematicBreak`
+- **Unified block-removal path** - The `tryRemove*` block-deletion handlers share a single parameterized skeleton (`removeTopLevelBlock`), removing roughly 500 lines of duplicated structure
+- **Single performance-probe header** - Five duplicated `PerfTimer` RAII probes across the codebase are consolidated into one `diagnostics/ScopedPerfProbe` header
+- **Drag-selection state enum** - The drag-selection boolean pair is replaced with an explicit `Idle` / `Pending` / `Dragging` state enum
+- **Named render metrics** - The root-em (16px) and line-height factor (1.16) magic numbers are now named constants (`kRootEmPx`, `kLineHeightFactor`) shared across the render layer
+- **Iterative CSS descendant traversal** - The `:has(...)` descendant tag collection now uses an iterative depth-first walk, extending the earlier sibling-chain stack-overflow fix to deeply nested documents
+
 ## [0.5.0] - 2026-06-30
 
 ### Added
