@@ -42,8 +42,8 @@ QString mainWindowStyleSheet(const ThemeDefinition& d) {
       "QMenuBar { background: %1; color: %8; padding: 0; font-size: 13px; }"
       "QMenuBar::item { padding: 4px 9px; background: transparent; }"
       "QMenuBar::item:selected { background: %3; }"
-      "QMenu { background: %4; color: %8; border: 1px solid %5; padding: 4px 0; }"
-      "QMenu::item { padding: 5px 34px 5px 24px; }"
+      "QMenu { background: %4; color: %8; border: 1px solid %5; padding: 4px 0 4px 8px; }"
+      "QMenu::item { padding: 5px 34px 5px 16px; }"
       "QMenu::item:selected { background: %6; }"
       // %9 = chromeDisabled (the body ink faded toward the page background), so
       // disabled items read as clearly unavailable — NOT chromeMuted (%7), which

@@ -195,8 +195,11 @@ private:
   void openThemesFolder();
   void rebuildRecentFilesMenu();
   void addRecentFile(QString path);
+  void addRecentFolder(QString path);
   QStringList recentFiles() const;
   void setRecentFiles(const QStringList& paths) const;
+  QStringList recentFolders() const;
+  void setRecentFolders(const QStringList& paths) const;
   // Directory offered by Save As for an untitled document: the sidebar's open
   // folder if one is set, else empty (falls back to the working directory).
   QString defaultSaveDirectory() const;

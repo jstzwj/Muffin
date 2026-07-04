@@ -39,6 +39,7 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QStatusBar>
+#include <QStyle>
 #include <QTimer>
 #include <QUrl>
 #include <QVariant>
@@ -63,22 +64,57 @@ void muffin::MainWindow::rebuildRecentFilesMenu() {
   }
 
   recentFilesMenu_->clear();
-  const QStringList paths = recentFiles();
-  recentFilesMenu_->setEnabled(!paths.isEmpty());
+  const QStringList files = recentFiles();
+  const QStringList folders = recentFolders();
+  recentFilesMenu_->setEnabled(!files.isEmpty() || !folders.isEmpty());
 
-  for (const QString& path : paths) {
+  // The menu is split by a separator: recent files on top, recent folders below.
+  bool addedAny = false;
+
+  // ---- Recent files ----
+  for (const QString& path : files) {
     QAction* action = recentFilesMenu_->addAction(elidedPath(path));
     action->setToolTip(QDir::toNativeSeparators(path));
     connect(action, &QAction::triggered, this, [this, path] {
       openFile(path);
     });
+    addedAny = true;
   }
-
-  if (!paths.isEmpty()) {
+  if (!files.isEmpty()) {
     recentFilesMenu_->addSeparator();
     QAction* clearAction = recentFilesMenu_->addAction(tr("Clear Recent Files"));
     connect(clearAction, &QAction::triggered, this, [this] {
       setRecentFiles({});
+      rebuildRecentFilesMenu();
+    });
+    addedAny = true;
+  }
+
+  // ---- Recent folders ----
+  if (!folders.isEmpty()) {
+    if (addedAny) {
+      recentFilesMenu_->addSeparator();
+    }
+    const QIcon folderIcon = style()->standardIcon(QStyle::SP_DirIcon, nullptr, this);
+    for (const QString& path : folders) {
+      QAction* action = recentFilesMenu_->addAction(folderIcon, elidedPath(path));
+      action->setToolTip(QDir::toNativeSeparators(path));
+      connect(action, &QAction::triggered, this, [this, path] {
+        // Prune stale entries (folder removed since it was recorded).
+        if (!QFileInfo::exists(path) || !QFileInfo(path).isDir()) {
+          QStringList kept = recentFolders();
+          kept.removeAll(path);
+          setRecentFolders(kept);
+          rebuildRecentFilesMenu();
+          return;
+        }
+        openFolderAtPath(path);
+      });
+    }
+    recentFilesMenu_->addSeparator();
+    QAction* clearAction = recentFilesMenu_->addAction(tr("Clear Recent Folders"));
+    connect(clearAction, &QAction::triggered, this, [this] {
+      setRecentFolders({});
       rebuildRecentFilesMenu();
     });
   }
@@ -235,6 +271,37 @@ QStringList muffin::MainWindow::recentFiles() const {
 void muffin::MainWindow::setRecentFiles(const QStringList& paths) const {
   QSettings settings;
   settings.setValue(QStringLiteral("recentFiles"), paths);
+}
+
+QStringList muffin::MainWindow::recentFolders() const {
+  QSettings settings;
+  return settings.value(QStringLiteral("recentFolders")).toStringList();
+}
+
+void muffin::MainWindow::setRecentFolders(const QStringList& paths) const {
+  QSettings settings;
+  settings.setValue(QStringLiteral("recentFolders"), paths);
+}
+
+void muffin::MainWindow::addRecentFolder(QString path) {
+  if (path.isEmpty()) {
+    return;
+  }
+  // Same files/recordHistory gate as recent files.
+  QSettings settings;
+  if (!settings.value(QStringLiteral("files/recordHistory"), true).toBool()) {
+    return;
+  }
+  path = QFileInfo(path).absoluteFilePath();
+
+  QStringList paths = recentFolders();
+  paths.removeAll(path);
+  paths.prepend(path);
+  while (paths.size() > 10) {
+    paths.removeLast();
+  }
+  setRecentFolders(paths);
+  rebuildRecentFilesMenu();
 }
 
 QString muffin::MainWindow::defaultSaveDirectory() const {
@@ -981,11 +1048,13 @@ void muffin::MainWindow::deleteFile() {
 // in FilePathOps; here we only prompt + integrate with the editor/sidebar.
 
 void muffin::MainWindow::openFolderAtPath(QString path) {
+  const QString openedPath = path;  // capture before the move, for recent-folders recording
   sidebarFolderRoot_ = std::move(path);
   if (sidebar_) {
     sidebar_->setFolderRoot(sidebarFolderRoot_);
     setSidebarPanel(SidebarWidget::Panel::Files);
   }
+  addRecentFolder(openedPath);
 }
 
 void muffin::MainWindow::openFileInNewWindow(QString path) {

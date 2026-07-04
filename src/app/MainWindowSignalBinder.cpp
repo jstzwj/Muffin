@@ -154,8 +154,9 @@ void muffin::MainWindow::connectRenderSignals() {
     if (action == 1) {
       QDesktopServices::openUrl(QUrl::fromLocalFile(path));
     } else if (window.sidebar_) {
-      window.sidebar_->setFolderRoot(path);
-      window.setSidebarPanel(SidebarWidget::Panel::Files);
+      // Route through openFolderAtPath so the drop also updates the persistent
+      // sidebar root and records the folder in Open Recent.
+      window.openFolderAtPath(path);
     }
   });
   QObject::connect(window.renderView_, &EditorView::markdownFileDropped, &window, [&window](const QString& path) {
