@@ -184,3 +184,28 @@ QString muffin::FilePathOps::normalizeMarkdownFileName(const QString& name) {
   }
   return name + QStringLiteral(".md");
 }
+
+QString muffin::FilePathOps::linkTargetForPath(const QString& filePath, const QString& documentDir) {
+  QString target;
+  if (!documentDir.isEmpty()) {
+    // relativeFilePath normalizes to forward slashes and returns an absolute path when the
+    // file is on a different drive (Windows) or documentDir is empty. A leading ".." means
+    // the file escapes documentDir upwards — treat that as "not inside the doc tree".
+    const QString rel = QDir(documentDir).relativeFilePath(filePath);
+    const bool inside = !rel.isEmpty()
+        && !rel.startsWith(QStringLiteral(".."))
+        && !QFileInfo(rel).isAbsolute();
+    if (inside) {
+      target = rel;
+    }
+  }
+  if (target.isEmpty()) {
+    target = QFileInfo(filePath).absoluteFilePath();
+  }
+  return QDir::toNativeSeparators(target);
+}
+
+QString muffin::FilePathOps::markdownLinkForFile(const QString& filePath, const QString& documentDir) {
+  const QString label = QFileInfo(filePath).fileName();
+  return QStringLiteral("[%1](%2)").arg(label, linkTargetForPath(filePath, documentDir));
+}

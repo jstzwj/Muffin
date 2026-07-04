@@ -43,6 +43,18 @@ public:
   /// Append ".md" when a filename has no extension; otherwise return it unchanged.
   static QString normalizeMarkdownFileName(const QString& name);
 
+  /// Resolve a file path as it should appear inside a markdown link target: relative to
+  /// `documentDir` when the file lives inside that directory tree (a subdir or a sibling
+  /// file directly under it), otherwise absolute. `QDir::relativeFilePath` returns an
+  /// absolute path when the file is on a different drive on Windows or when `documentDir`
+  /// is empty; both fall back to the absolute path. The result uses native separators
+  /// (backslash on Windows) so a dropped link mirrors what the user sees in the shell.
+  static QString linkTargetForPath(const QString& filePath, const QString& documentDir);
+
+  /// Build a markdown link `[fileName](target)` for a file, where the target is resolved
+  /// by linkTargetForPath against `documentDir`. Used by drag-from-file-tree insertion.
+  static QString markdownLinkForFile(const QString& filePath, const QString& documentDir);
+
 private:
   FilePathOps() = delete;
 };

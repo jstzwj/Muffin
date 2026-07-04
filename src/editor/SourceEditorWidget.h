@@ -24,6 +24,8 @@ public:
   void setZoomPercent(int percent);
   void setFontSizePx(int px);
   void setTheme(const RenderTheme& theme);
+  // Forwarded to the inner edit so file-tree drops resolve links relative to the document.
+  void setDocumentPath(const QString& path);
 
   QPlainTextEdit* editor();
   const QPlainTextEdit* editor() const;

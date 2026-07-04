@@ -12,6 +12,8 @@
 #include "editor/KeyframeAnimator.h"
 #include "editor/ResourceUrl.h"
 #include "editor/TableToolbar.h"
+#include "io/FilePathOps.h"
+#include "io/MuffinMime.h"
 #include "render/DecorationPainter.h"
 #include "render/ImageLoader.h"
 #include "render/KeyframeSampler.h"
@@ -68,6 +70,17 @@ bool sameCursorPosition(const CursorPosition& a, const CursorPosition& b) {
 
 bool sameSelectionRange(const SelectionRange& a, const SelectionRange& b) {
   return sameCursorPosition(a.anchor, b.anchor) && sameCursorPosition(a.focus, b.focus);
+}
+
+// Image extensions whose drop inserts an inline ![alt](path) rather than a [name](path)
+// link. Shared by the file-tree-drop and external-image-drop paths.
+bool isImageSuffix(QStringView suffix) {
+  static const QSet<QString> kImageSuffixes = {
+      QStringLiteral("png"), QStringLiteral("jpg"), QStringLiteral("jpeg"),
+      QStringLiteral("gif"), QStringLiteral("svg"), QStringLiteral("webp"),
+      QStringLiteral("bmp"), QStringLiteral("ico"), QStringLiteral("tiff"),
+      QStringLiteral("tif")};
+  return kImageSuffixes.contains(suffix.toString().toLower());
 }
 
 struct PerfTimer : diag::ScopedPerfProbe {
@@ -1137,6 +1150,18 @@ void EditorView::dragMoveEvent(QDragMoveEvent* event) {
   }
 }
 
+void EditorView::moveCaretToViewportPos(QPointF viewportPos) {
+  // Mirror mousePressEvent: resolve the hit under the point and drive the selection
+  // controller through blockClicked so the caret lands where the user dropped. setCursorHit
+  // is non-emitting; the caret move only propagates via the explicit blockClicked signal.
+  const HitTestResult hit = hitTest(viewportPos);
+  if (!hit.isValid()) {
+    return;  // dropped on empty space — keep the existing caret and insert there.
+  }
+  setCursorHit(hit);
+  emit blockClicked(hit);
+}
+
 void EditorView::dropEvent(QDropEvent* event) {
   if (!event->mimeData()->hasUrls()) {
     event->ignore();
@@ -1155,25 +1180,46 @@ void EditorView::dropEvent(QDropEvent* event) {
   event->acceptProposedAction();
   const QString filePath = url.toLocalFile();
   const QFileInfo info(filePath);
-  const QString suffix = info.suffix().toLower();
+  const QString suffix = info.suffix();
 
-  // Folders and non-image files are routed to the main window (open the file /
-  // set the sidebar root / future import). Only images are inserted inline.
+  // Folders always go to the main window (open as sidebar root), whether the drag came from
+  // the file tree or an external source.
   if (info.isDir()) {
     emit folderDropped(filePath);
     return;
   }
-  if (suffix == QStringLiteral("png") || suffix == QStringLiteral("jpg") ||
-      suffix == QStringLiteral("jpeg") || suffix == QStringLiteral("gif") ||
-      suffix == QStringLiteral("svg") || suffix == QStringLiteral("webp") ||
-      suffix == QStringLiteral("bmp") || suffix == QStringLiteral("ico") ||
-      suffix == QStringLiteral("tiff") || suffix == QStringLiteral("tif")) {
+
+  // A drag that originated in Muffin's sidebar file tree carries the kMuffinFileTreeDragMime
+  // marker. Route it as "insert at the drop position": a markdown link for any file, or an
+  // inline image for image files. The path is resolved relative to the current document dir
+  // when the file lives inside it (portable), otherwise absolute. External file:// drops
+  // keep their existing open-as-document / open-as-folder behaviour.
+  if (event->mimeData()->hasFormat(kMuffinFileTreeDragMime)) {
+    moveCaretToViewportPos(event->position());
+    const QString alt = info.baseName();
+    if (isImageSuffix(suffix)) {
+      const QString target = FilePathOps::linkTargetForPath(filePath, documentPath_);
+      emit textCommitted(QStringLiteral("![%1](%2)").arg(alt, target));
+    } else {
+      emit textCommitted(FilePathOps::markdownLinkForFile(filePath, documentPath_));
+    }
+    return;
+  }
+
+  // External drop of an image file: insert inline at the drop position. (Pre-move-caret fix:
+  // this used to land at the stale caret because the drop position was never resolved.)
+  if (isImageSuffix(suffix)) {
+    moveCaretToViewportPos(event->position());
     const QString alt = info.baseName();
     emit textCommitted(QStringLiteral("![%1](%2)").arg(alt, filePath));
     return;
   }
-  if (suffix == QStringLiteral("md") || suffix == QStringLiteral("markdown") ||
-      suffix == QStringLiteral("mdown") || suffix == QStringLiteral("txt")) {
+  // Markdown is Muffin's native format, so a dropped .md/.txt opens. Other files are routed
+  // through the importable-file preference.
+  if (suffix.compare(QStringLiteral("md"), Qt::CaseInsensitive) == 0 ||
+      suffix.compare(QStringLiteral("markdown"), Qt::CaseInsensitive) == 0 ||
+      suffix.compare(QStringLiteral("mdown"), Qt::CaseInsensitive) == 0 ||
+      suffix.compare(QStringLiteral("txt"), Qt::CaseInsensitive) == 0) {
     emit markdownFileDropped(filePath);
     return;
   }

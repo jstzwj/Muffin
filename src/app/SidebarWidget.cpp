@@ -12,6 +12,7 @@
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
+#include <QMimeData>
 #include <QSize>
 #include <QStackedWidget>
 #include <QToolButton>
@@ -19,6 +20,8 @@
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
+
+#include "io/MuffinMime.h"
 
 #include <utility>
 
@@ -41,6 +44,25 @@ QToolButton* createFlatButton(const QString& text, QWidget* parent) {
   button->setCursor(Qt::PointingHandCursor);
   return button;
 }
+
+// QFileSystemModel whose drag mime data carries the kMuffinFileTreeDragMime marker in
+// addition to the standard text/uri-list URLs. Drop targets in the editor check for that
+// marker to route an in-app file-tree drop as "insert a markdown link" instead of the
+// external-drop behaviour (open as document / open as folder). No Q_OBJECT: the model only
+// overrides a virtual and adds no signals/slots of its own.
+class FileTreeModel final : public QFileSystemModel {
+ public:
+  using QFileSystemModel::QFileSystemModel;
+
+ protected:
+  QMimeData* mimeData(const QModelIndexList& indexes) const override {
+    QMimeData* data = QFileSystemModel::mimeData(indexes);
+    if (data) {
+      data->setData(muffin::kMuffinFileTreeDragMime, QByteArray());
+    }
+    return data;
+  }
+};
 
 }  // namespace
 
@@ -85,7 +107,7 @@ void muffin::SidebarWidget::setupFilesPanel() {
   layout->setContentsMargins(0, 12, 0, 0);
   layout->setSpacing(0);
 
-  fileModel_ = new QFileSystemModel(this);
+  fileModel_ = new FileTreeModel(this);
   fileModel_->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
 
   fileTree_ = new QTreeView(filesPanel_);
@@ -99,6 +121,12 @@ void muffin::SidebarWidget::setupFilesPanel() {
   fileTree_->setEditTriggers(QAbstractItemView::NoEditTriggers);
   fileTree_->setSelectionMode(QAbstractItemView::SingleSelection);
   fileTree_->setContextMenuPolicy(Qt::CustomContextMenu);
+  // Allow dragging file/folder rows out of the tree onto the editor (DragOnly: the tree is a
+  // drag source, never a drop target). FileTreeModel tags the drag with kMuffinFileTreeDragMime
+  // so the editor inserts a markdown link instead of treating it as an external file:// drop.
+  fileTree_->setDragEnabled(true);
+  fileTree_->setDragDropMode(QAbstractItemView::DragOnly);
+  fileTree_->setDefaultDropAction(Qt::CopyAction);
   for (int column = 1; column < fileModel_->columnCount(); ++column) {
     fileTree_->hideColumn(column);
   }

@@ -22,6 +22,7 @@ muffin_add_test(NAME MuffinRelativeOffsetTest   SOURCE tests/parser/RelativeOffs
 muffin_add_test(NAME MuffinRelativeOffsetOracleTest SOURCE tests/parser/RelativeOffsetOracleTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinOutlineBuilderTest   SOURCE tests/document/OutlineBuilderTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinImageSyntaxOpsTest   SOURCE tests/document/ImageSyntaxOpsTest.cpp LINK MuffinCore)
+muffin_add_test(NAME MuffinFilePathOpsLinkTest  SOURCE tests/io/FilePathOpsLinkTest.cpp     LINK MuffinUi)
 muffin_add_test(NAME MuffinMarkdownParseOptionsTest SOURCE tests/document/MarkdownParseOptionsTest.cpp EXTRA_SOURCES src/app/MarkdownSettings.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinAlertBoxParseTest       SOURCE tests/document/AlertBoxParseTest.cpp       LINK MuffinCore)
 muffin_add_test(NAME MuffinHighlightParseTest      SOURCE tests/document/HighlightParseTest.cpp      LINK MuffinCore)

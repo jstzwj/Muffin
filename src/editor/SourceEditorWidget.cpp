@@ -1,5 +1,7 @@
 #include "editor/SourceEditorWidget.h"
 
+#include "io/FilePathOps.h"
+#include "io/MuffinMime.h"
 #include "spellcheck/SpellChecker.h"
 #include "theme/RenderTheme.h"
 
@@ -7,11 +9,13 @@
 #include <QAction>
 #include <QContextMenuEvent>
 #include <QEvent>
+#include <QFileInfo>
 #include <QFont>
 #include <QFontMetricsF>
 #include <QHBoxLayout>
 #include <QList>
 #include <QMenu>
+#include <QMimeData>
 #include <QPainter>
 #include <QPair>
 #include <QPlainTextEdit>
@@ -24,6 +28,7 @@
 #include <QTextBlockFormat>
 #include <QTextCursor>
 #include <QTextDocument>
+#include <QUrl>
 #include <cmath>
 #include <utility>
 
@@ -350,6 +355,8 @@ public:
     setLineSpacingForFont(font);
   }
 
+  void setDocumentPath(QString path) { documentPath_ = std::move(path); }
+
   int lineNumberAreaWidth() const {
     return kLineNumberWidth;
   }
@@ -388,6 +395,11 @@ private:
     setExtraSelections({currentLine});
   }
 
+  // Directory of the document currently shown in the source editor (empty for an unsaved
+  // buffer). Used to resolve a dropped file-tree path relative to the document when it lives
+  // inside the document dir, so the inserted markdown link stays portable.
+  QString documentPath_;
+
   void setLineSpacingForFont(const QFont& font) {
     const qreal lineHeight = qMax<qreal>(14.0, std::ceil(QFontMetricsF(font).lineSpacing() * kSourceLineSpacingScale));
     QTextBlockFormat blockFormat;
@@ -398,6 +410,36 @@ private:
   }
 
 protected:
+  // Accept an in-app file-tree drag so QPlainTextEdit delivers it to insertFromMimeData
+  // (its default canInsertFromMimeData already accepts hasUrls(), but being explicit about
+  // the file-tree marker keeps the source-mode link insertion localized to that gesture).
+  bool canInsertFromMimeData(const QMimeData* data) const override {
+    if (data && data->hasFormat(muffin::kMuffinFileTreeDragMime) && data->hasUrls()) {
+      return true;
+    }
+    return QPlainTextEdit::canInsertFromMimeData(data);
+  }
+
+  // A file dragged from the sidebar into the source editor inserts a markdown link at the
+  // drop position (QPlainTextEdit has already moved the cursor there). External file://
+  // drops fall through to the base behavior.
+  void insertFromMimeData(const QMimeData* data) override {
+    if (data && data->hasFormat(muffin::kMuffinFileTreeDragMime) && data->hasUrls()) {
+      const QList<QUrl> urls = data->urls();
+      if (!urls.isEmpty()) {
+        const QUrl url = urls.first();
+        if (url.isLocalFile()) {
+          const QString filePath = url.toLocalFile();
+          if (!QFileInfo(filePath).isDir()) {
+            textCursor().insertText(muffin::FilePathOps::markdownLinkForFile(filePath, documentPath_));
+            return;
+          }
+        }
+      }
+    }
+    QPlainTextEdit::insertFromMimeData(data);
+  }
+
   void contextMenuEvent(QContextMenuEvent* event) override {
     QTextCursor cursor = cursorForPosition(event->pos());
     cursor.select(QTextCursor::WordUnderCursor);
@@ -555,6 +597,10 @@ void muffin::SourceEditorWidget::setText(const QString& text) {
   editor_->setPlainText(text);
   editor_->setSourceFont(editor_->font());
   emitCursorPosition();
+}
+
+void muffin::SourceEditorWidget::setDocumentPath(const QString& path) {
+  editor_->setDocumentPath(path);
 }
 
 void muffin::SourceEditorWidget::setWordWrapEnabled(bool enabled) {

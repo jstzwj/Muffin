@@ -720,6 +720,7 @@ set(MUFFIN_UI_SOURCES
   src/io/ImageFileOps.h
   src/io/FilePathOps.cpp
   src/io/FilePathOps.h
+  src/io/MuffinMime.h
   src/image/ImageInsertionPolicy.cpp
   src/image/ImageInsertionPolicy.h
   src/image/CustomCommandUploader.cpp

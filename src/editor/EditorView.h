@@ -197,6 +197,10 @@ private:
   // commands target the clicked location.
   bool selectionContainsViewportPoint(const HitTestResult& hit, QPointF viewportPos) const;
   void paintInsertionCursor(QPainter& painter) const;
+  // Move the caret to the block/inline hit under a viewport position (the same hitTest +
+  // setCursorHit + blockClicked sequence mousePressEvent uses). Used by dropEvent so a
+  // dropped file-link/image lands where the user released, not at the stale caret.
+  void moveCaretToViewportPos(QPointF viewportPos);
   void paintHeadingBadge(QPainter& painter) const;
   void paintHtmlHoverOverlay(QPainter& painter) const;
   // Centered spinner + H1-sized translatable "Loading…" shown while an async open parse is

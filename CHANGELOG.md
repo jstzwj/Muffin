@@ -5,6 +5,13 @@ All notable changes to Muffin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Drag a file from the sidebar into the editor to insert a link** - Dragging a file from the file tree onto the rendered page or the source editor inserts a markdown link at the drop position, e.g. `[拔牙日记1.md](日记\拔牙日记1.md)`. Image files insert as inline images (`![alt](...)`); folders keep their existing "open as sidebar root" behavior. The target path is resolved relative to the current document's directory when the file lives inside it (portable across folder moves), otherwise absolute, with native separators. Only drags that originate in Muffin's file tree insert a link; external `file://` drops keep the prior open-as-document behavior. As part of this change, dropped images now also land at the drop position instead of the stale caret
+
+> Note: link targets use native path separators (backslash on Windows). A path segment that starts with ASCII punctuation right after a separator (for example `dir\.gitignore`) is shortened by CommonMark's backslash-escape rule; rename or use forward slashes for such paths if a renderer mis-parses the link.
+
 ## [0.5.1] - 2026-07-04
 
 An internal-architecture release. No user-visible behavior changes — every edit is behavior-preserving and gated by the full test suite — but the largest source files have been decomposed into focused modules for navigability and future maintenance.

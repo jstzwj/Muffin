@@ -195,6 +195,12 @@ void muffin::MainWindow::connectSessionSignals() {
     window.updateFileActions();
   });
   QObject::connect(&window.session_, &DocumentSession::filePathChanged, &window, &MainWindow::refreshSidebarDocumentInfo);
+  // Keep the source editor's document-path in sync so a file-tree drop into source mode
+  // resolves the inserted link relative to the current document dir (open / save-as / rename
+  // all flow through filePathChanged). Initialized below with the value held at connect time.
+  QObject::connect(&window.session_, &DocumentSession::filePathChanged, window.editor_,
+                   [&window](const QString& path) { window.editor_->setDocumentPath(path); });
+  window.editor_->setDocumentPath(window.session_.filePath());
   QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, &MainWindow::updateTitle);
   QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, &MainWindow::updateStatus);
   QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, &MainWindow::refreshSidebarDocumentInfo);
