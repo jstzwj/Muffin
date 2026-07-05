@@ -63,13 +63,66 @@ bool muffin::FilePathOps::createFolder(const QString& path, QString* error) {
 }
 
 bool muffin::FilePathOps::renamePath(const QString& oldPath, const QString& newPath, QString* error) {
-  if (!QFile::rename(oldPath, newPath)) {
+  if (QFile::rename(oldPath, newPath)) {
+    return true;
+  }
+  // A case-only rename on a case-insensitive filesystem (e.g. "a.md" -> "A.md" on
+  // Windows/macOS) fails the direct rename because the target "already exists" — it resolves
+  // to the same file. Detect that (the two paths name the same canonical file yet differ) and
+  // apply a two-step rename through a unique temp name so the case change actually takes
+  // effect. On a case-sensitive filesystem the canonical paths differ, so this branch is
+  // skipped and the original failure stands.
+  const QString oldCanonical = QFileInfo(oldPath).canonicalFilePath();
+  const bool caseOnly = !oldCanonical.isEmpty()
+      && oldPath != newPath
+      && oldCanonical == QFileInfo(newPath).canonicalFilePath();
+  if (!caseOnly) {
     if (error) {
       *error = QStringLiteral("could not rename (target may exist or the move crosses volumes)");
     }
     return false;
   }
-  return true;
+  const QString tempPath = uniqueDuplicatePath(oldPath);
+  if (!QFile::rename(oldPath, tempPath)) {
+    if (error) {
+      *error = QStringLiteral("could not rename (case-change intermediate step failed)");
+    }
+    return false;
+  }
+  if (QFile::rename(tempPath, newPath)) {
+    return true;
+  }
+  // Best-effort revert so the file is not left stranded under the temp name.
+  QFile::rename(tempPath, oldPath);
+  if (error) {
+    *error = QStringLiteral("could not rename (case-change final step failed)");
+  }
+  return false;
+}
+
+bool muffin::FilePathOps::targetNameCollides(const QString& oldPath, const QString& newDir, const QString& newName) {
+  if (newName.isEmpty()) {
+    return false;  // an empty name is invalid, not a collision (the caller rejects it separately)
+  }
+  const QDir dir(newDir);
+  if (!dir.exists()) {
+    return false;  // nothing to collide with
+  }
+  const QString oldCanonical = QFileInfo(oldPath).canonicalFilePath();
+  const QStringList siblings = dir.entryList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot);
+  for (const QString& sibling : siblings) {
+    if (sibling.compare(newName, Qt::CaseInsensitive) != 0) {
+      continue;
+    }
+    if (oldCanonical.isEmpty()) {
+      return true;  // a case-insensitive match is a collision when old can't be resolved
+    }
+    if (QFileInfo(dir.filePath(sibling)).canonicalFilePath() != oldCanonical) {
+      return true;  // a different file already occupies this name
+    }
+    // Otherwise it's the entry being renamed itself (case-only) — not a collision; keep scanning.
+  }
+  return false;
 }
 
 bool muffin::FilePathOps::copyFile(const QString& srcPath, const QString& destPath, QString* error) {

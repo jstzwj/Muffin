@@ -239,6 +239,11 @@ private:
   void duplicateFile(QString path);
   void deletePath(QString path);
   void showPathProperties(QString path);
+  // Inline file-tree edit handlers (validate / commit / cancel), connected to SidebarWidget
+  // signals. The FS op + preserved post-steps (open doc sync, open-on-create) live here.
+  void onInlineValidate(muffin::InlineEditContext ctx, const QString& name, muffin::InlineValidation* out);
+  void onInlineCommit(muffin::InlineEditContext ctx, const QString& name);
+  void onInlineCancel(muffin::InlineEditContext ctx);
   void copyPathToClipboard(QString path) const;
   // Reveal in the OS file manager, selecting the item where the platform allows.
   // revealCurrentFile() delegates here so the menu command shares the behavior.

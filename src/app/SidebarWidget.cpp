@@ -5,17 +5,26 @@
 
 #include <QAbstractItemView>
 #include <QDir>
+#include <QScrollBar>
 #include <QSettings>
 #include <QEvent>
 #include <QFileInfo>
+#include <QFocusEvent>
 #include <QFileSystemModel>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QKeyEvent>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMimeData>
+#include <QPersistentModelIndex>
+#include <QPointer>
 #include <QSize>
 #include <QStackedWidget>
+#include <QStyledItemDelegate>
+#include <QTimer>
 #include <QToolButton>
+#include <QToolTip>
 #include <QTreeView>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
@@ -23,6 +32,7 @@
 
 #include "io/MuffinMime.h"
 
+#include <functional>
 #include <utility>
 
 namespace {
@@ -62,6 +72,116 @@ class FileTreeModel final : public QFileSystemModel {
     }
     return data;
   }
+};
+
+// Inline filename editor: a QLineEdit shown as a child of the file-tree viewport, positioned
+// over the row being renamed / created. It bypasses QAbstractItemView's edit machinery entirely
+// (no dependence on ItemIsEditable / editTriggers / the commitData→closeEditor chain), so opening
+// it from a context-menu action can't be silently no-op'd by the model's flags and can't be
+// auto-closed by the menu's teardown focus events. focusOutEvent is the gate the QAbstractItemView
+// chain lacks: it discriminates the focus reason — only a genuine mouse/tab navigation commits;
+// popup (menu/tooltip) and window-activation focus losses re-grab focus so the editor stays open.
+// Owns no FS logic; SidebarWidget wires validateFn / commitFn / cancelFn, forwarding to MainWindow
+// (the file-ops owner). No Q_OBJECT: only virtual overrides + std::function members.
+class FileNameEdit final : public QLineEdit {
+ public:
+  explicit FileNameEdit(QWidget* parent) : QLineEdit(parent) {}
+
+  std::function<muffin::InlineValidation(muffin::InlineEditContext, QString)> validateFn;
+  std::function<void(muffin::InlineEditContext, QString)> commitFn;
+  std::function<void(muffin::InlineEditContext)> cancelFn;
+
+  void setContext(muffin::InlineEditContext ctx) { ctx_ = std::move(ctx); }
+
+  // Windows-Explorer style: select the basename, leave the extension (if any) unselected so a
+  // retype keeps it. Directories and leading-dot / extension-less names select all.
+  void selectBasename() {
+    const QString name = text();
+    const int dot = name.lastIndexOf(QLatin1Char('.'));
+    if (dot > 0) {
+      setSelection(0, dot);
+    } else {
+      selectAll();
+    }
+  }
+
+ protected:
+  void keyPressEvent(QKeyEvent* event) override {
+    const int key = event->key();
+    if (key == Qt::Key_Enter || key == Qt::Key_Return) {
+      // tryCommit commits+closes on Valid/NoChange (or cancels+closes on Empty-of-a-pending-create);
+      // on Duplicate / Empty-rename it shows the inline error and we keep the editor open.
+      if (tryCommit()) {
+        closeSelf();
+      }
+      return;  // swallow Enter either way — never let it bubble to a parent handler
+    }
+    if (key == Qt::Key_Escape) {
+      if (cancelFn) {
+        cancelFn(ctx_);
+      }
+      closeSelf();
+      return;
+    }
+    QLineEdit::keyPressEvent(event);
+  }
+
+  void focusOutEvent(QFocusEvent* event) override {
+    QLineEdit::focusOutEvent(event);
+    const Qt::FocusReason reason = event->reason();
+    // Popup (context-menu teardown, tooltip) and window-activation focus changes are NOT user
+    // commits — re-grab focus so the editor survives the menu closing. (This is the case the
+    // QAbstractItemView edit chain cannot handle: its FocusOut unconditionally commits+ closes.)
+    const bool transient = reason == Qt::PopupFocusReason || reason == Qt::ActiveWindowFocusReason;
+    if (transient || !tryCommit()) {
+      QTimer::singleShot(0, this, [this] {
+        if (isVisible()) {
+          setFocus(Qt::OtherFocusReason);
+          selectBasename();
+        }
+      });
+      return;
+    }
+    closeSelf();
+  }
+
+ private:
+  // Validate + decide. Returns true if the editor should close (a valid commit, a no-change, or
+  // an empty name on a pending create which cancels). Returns false (after showing the inline
+  // error) for Duplicate or Empty-on-rename, keeping the editor open.
+  bool tryCommit() {
+    const QString name = text().trimmed();
+    const muffin::InlineValidation v = validateFn ? validateFn(ctx_, name) : muffin::InlineValidation{};
+    if (v.kind == muffin::InlineValidation::Valid || v.kind == muffin::InlineValidation::NoChange) {
+      if (commitFn) {
+        commitFn(ctx_, name);
+      }
+      return true;
+    }
+    if (v.kind == muffin::InlineValidation::Empty && ctx_.pendingCreate) {
+      if (cancelFn) {
+        cancelFn(ctx_);
+      }
+      return true;
+    }
+    showInlineError(v);
+    return false;
+  }
+
+  void showInlineError(const muffin::InlineValidation& v) const {
+    if (v.errorText.isEmpty()) {
+      return;
+    }
+    const QPoint pos = mapToGlobal(QPoint(width() / 2, height()));
+    QToolTip::showText(pos, v.errorText, const_cast<FileNameEdit*>(this));
+  }
+
+  void closeSelf() {
+    QToolTip::hideText();
+    deleteLater();  // owner's QPointer<QWidget> auto-nulls on destruction
+  }
+
+  muffin::InlineEditContext ctx_;
 };
 
 }  // namespace
@@ -127,6 +247,28 @@ void muffin::SidebarWidget::setupFilesPanel() {
   fileTree_->setDragEnabled(true);
   fileTree_->setDragDropMode(QAbstractItemView::DragOnly);
   fileTree_->setDefaultDropAction(Qt::CopyAction);
+  // Inline rename / new-file / new-folder editing is done with a FileNameEdit overlay (a child
+  // QLineEdit of this viewport), NOT via QAbstractItemView::edit — see showInlineEditor. The
+  // tree itself stays non-editable; the overlay is opened manually on the target row.
+  // Safety net: if the model resets mid-edit (e.g. the user opens another folder while an inline
+  // editor is open), the editing row vanishes and a pending-create temp would be stranded on
+  // disk — close the editor and cancel any pending create so MainWindow deletes it.
+  connect(fileModel_, &QFileSystemModel::modelReset, this, [this]() {
+    if (inlineEditor_) {
+      inlineEditor_->deleteLater();
+    }
+    editingIndex_ = QPersistentModelIndex();
+    if (pendingCreatePaths_.isEmpty()) {
+      return;
+    }
+    for (const QString& path : std::as_const(pendingCreatePaths_)) {
+      muffin::InlineEditContext ctx;
+      ctx.oldPath = path;
+      ctx.pendingCreate = true;
+      emit inlineCancelRequested(ctx);
+    }
+    pendingCreatePaths_.clear();
+  });
   for (int column = 1; column < fileModel_->columnCount(); ++column) {
     fileTree_->hideColumn(column);
   }
@@ -292,6 +434,150 @@ void muffin::SidebarWidget::setCurrentPath(QString path) {
     fileTree_->setCurrentIndex(index);
     fileTree_->scrollTo(index, QAbstractItemView::PositionAtCenter);
   }
+}
+
+void muffin::SidebarWidget::beginInlineRename(QString path) {
+  if (path.isEmpty() || !fileTree_ || !fileModel_) {
+    return;
+  }
+  setCurrentPath(path);  // expands ancestors + selects + scrolls to the row
+  const QModelIndex idx = fileModel_->index(path);
+  if (!idx.isValid() || !QFileInfo(path).isWritable()) {
+    return;  // unresolvable or read-only: no inline editor (silent no-op)
+  }
+  showInlineEditor(idx);
+}
+
+void muffin::SidebarWidget::beginInlineCreate(QString tempPath) {
+  if (tempPath.isEmpty() || !fileTree_ || !fileModel_) {
+    return;
+  }
+  pendingCreatePaths_.insert(tempPath);
+  const QString parentDir = QFileInfo(tempPath).absolutePath();
+  const QModelIndex parentIdx = fileModel_->index(parentDir);
+  if (parentIdx.isValid()) {
+    fileTree_->expand(parentIdx);
+  }
+  // The temp entry was just created on disk; QFileSystemModel refreshes async via its worker,
+  // so index(tempPath) is usually invalid until directoryLoaded fires for the parent. Resolve
+  // immediately if possible; otherwise wait for directoryLoaded (one-shot) with a short timer
+  // fallback. Both paths route through the idempotent resolveAndEdit.
+  if (fileModel_->index(tempPath).isValid()) {
+    resolveAndEdit(tempPath);
+    return;
+  }
+  if (directoryLoadedConn_) {
+    QObject::disconnect(directoryLoadedConn_);
+  }
+  directoryLoadedConn_ = QObject::connect(
+      fileModel_, &QFileSystemModel::directoryLoaded, this,
+      [this, tempPath, parentDir](const QString& loadedDir) {
+        if (loadedDir != parentDir) {
+          return;
+        }
+        if (directoryLoadedConn_) {
+          QObject::disconnect(directoryLoadedConn_);
+          directoryLoadedConn_ = QMetaObject::Connection{};
+        }
+        resolveAndEdit(tempPath);
+      });
+  QTimer::singleShot(150, this, [this, tempPath] { resolveAndEdit(tempPath); });
+}
+
+void muffin::SidebarWidget::resolveAndEdit(QString path) {
+  if (!fileTree_ || !fileModel_) {
+    return;
+  }
+  // Idempotent: directoryLoaded and the fallback timer can both fire.
+  if (inlineEditor_) {
+    return;  // an editor is already open
+  }
+  const QModelIndex idx = fileModel_->index(path);
+  if (!idx.isValid()) {
+    return;  // entry gone (cancelled / deleted) before it could be resolved
+  }
+  showInlineEditor(idx);
+}
+
+void muffin::SidebarWidget::showInlineEditor(QModelIndex idx) {
+  if (!fileTree_ || !fileModel_ || !idx.isValid()) {
+    return;
+  }
+  // One editor at a time: discard any still-open editor from a prior gesture.
+  if (inlineEditor_) {
+    inlineEditor_->deleteLater();
+  }
+  editingIndex_ = idx;
+  fileTree_->setCurrentIndex(idx);
+  fileTree_->scrollTo(idx, QAbstractItemView::PositionAtCenter);
+  // Defer creation to the next event-loop iteration so it happens AFTER any active context-menu
+  // exec() loop has fully torn down — the menu's focus events then land before the editor exists
+  // (FileNameEdit::focusOutEvent also ignores PopupFocusReason as belt-and-braces). The
+  // QPersistentModelIndex survives the model refresh the file watcher may emit in the meantime.
+  const QPersistentModelIndex persistent(idx);
+  QTimer::singleShot(0, fileTree_, [this, persistent]() {
+    if (!fileTree_ || !fileModel_) {
+      return;
+    }
+    const QModelIndex i = persistent;
+    if (!i.isValid()) {
+      return;
+    }
+    const QRect rowRect = fileTree_->visualRect(i);
+    if (rowRect.isNull()) {
+      return;  // row not laid out / scrolled out of view
+    }
+    auto* editor = new FileNameEdit(fileTree_->viewport());
+    inlineEditor_ = editor;
+    editor->setContext(contextForIndex(i));
+    editor->setText(fileModel_->fileName(i));
+    editor->setGeometry(rowRect);
+    editor->selectBasename();
+    editor->validateFn = [this](muffin::InlineEditContext ctx, const QString& name) {
+      muffin::InlineValidation out;
+      emit inlineValidateRequested(ctx, name, &out);
+      return out;
+    };
+    editor->commitFn = [this](muffin::InlineEditContext ctx, const QString& name) {
+      forgetPendingCreate(ctx.oldPath);
+      emit inlineCommitRequested(ctx, name);
+    };
+    editor->cancelFn = [this](muffin::InlineEditContext ctx) {
+      forgetPendingCreate(ctx.oldPath);
+      emit inlineCancelRequested(ctx);
+    };
+    connect(editor, &QObject::destroyed, this, [this] { editingIndex_ = QPersistentModelIndex(); });
+    // Keep the editor glued to its row while the tree scrolls (otherwise the viewport scrolls
+    // under the static child widget). Auto-disconnects when `editor` is destroyed.
+    if (auto* bar = fileTree_->verticalScrollBar()) {
+      connect(bar, &QAbstractSlider::valueChanged, editor, [this, editor](int) {
+        if (!inlineEditor_ || !editingIndex_.isValid()) {
+          return;
+        }
+        const QRect rect = fileTree_->visualRect(QModelIndex(editingIndex_));
+        if (!rect.isNull()) {
+          editor->setGeometry(rect);
+        }
+      });
+    }
+    editor->show();
+    editor->setFocus(Qt::OtherFocusReason);
+  });
+}
+
+muffin::InlineEditContext muffin::SidebarWidget::contextForIndex(const QModelIndex& index) const {
+  muffin::InlineEditContext ctx;
+  if (!fileModel_ || !index.isValid()) {
+    return ctx;
+  }
+  ctx.oldPath = fileModel_->filePath(index);
+  ctx.isFolder = fileModel_->isDir(index);
+  ctx.pendingCreate = pendingCreatePaths_.contains(ctx.oldPath);
+  return ctx;
+}
+
+void muffin::SidebarWidget::forgetPendingCreate(const QString& path) {
+  pendingCreatePaths_.remove(path);
 }
 
 void muffin::SidebarWidget::setOutline(const QVector<OutlineEntry>& entries) {

@@ -55,6 +55,13 @@ public:
   /// by linkTargetForPath against `documentDir`. Used by drag-from-file-tree insertion.
   static QString markdownLinkForFile(const QString& filePath, const QString& documentDir);
 
+  /// True if renaming `oldPath` to `newName` (within `newDir`) would collide with an existing
+  /// sibling. The comparison is case-insensitive so a Windows/macOS filesystem treats
+  /// "Readme.md" and "readme.md" as the same name, while the entry being renamed itself is
+  /// excluded (a case-only rename is not a collision). Used by inline rename/create to detect
+  /// duplicates BEFORE attempting the FS op, so the editor can stay open with feedback.
+  static bool targetNameCollides(const QString& oldPath, const QString& newDir, const QString& newName);
+
 private:
   FilePathOps() = delete;
 };

@@ -22,11 +22,9 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
-#include <QInputDialog>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
-#include <QLineEdit>
 #include <QLocale>
 #include <QListWidget>
 #include <QListWidgetItem>
@@ -1075,45 +1073,40 @@ void muffin::MainWindow::newFileInDirectory(QString dir) {
   if (dir.isEmpty()) {
     return;
   }
-  bool ok = false;
-  QString name = QInputDialog::getText(this, tr("New File"), tr("File name:"),
-      QLineEdit::Normal, defaultUntitledSuggestion(), &ok);
-  if (!ok || name.trimmed().isEmpty()) {
-    return;
+  // Create a uniquely-named temp entry on disk so the file tree shows a real row to rename
+  // inline (OS-style). The actual name is finalized on commit; cancelling / clearing the
+  // editor deletes the temp. The untitled suggestion respects files/defaultExtension.
+  QString tempPath = QDir(dir).filePath(defaultUntitledSuggestion());
+  if (QFileInfo::exists(tempPath)) {
+    tempPath = FilePathOps::uniqueDuplicatePath(tempPath);
   }
-  name = FilePathOps::normalizeMarkdownFileName(name.trimmed());
-  const QString fullPath = QDir(dir).filePath(name);
   QString error;
-  if (!FilePathOps::createFile(fullPath, &error)) {
+  if (!FilePathOps::createFile(tempPath, &error)) {
     QMessageBox::critical(this, tr("New File"),
-        tr("Could not create file:\n%1\n\n%2").arg(QDir::toNativeSeparators(fullPath), error));
+        tr("Could not create file:\n%1\n\n%2").arg(QDir::toNativeSeparators(tempPath), error));
     return;
   }
   if (sidebar_) {
-    sidebar_->setCurrentPath(fullPath);
+    sidebar_->beginInlineCreate(tempPath);
   }
-  openFile(fullPath);
 }
 
 void muffin::MainWindow::newFolderInDirectory(QString dir) {
   if (dir.isEmpty()) {
     return;
   }
-  bool ok = false;
-  const QString name = QInputDialog::getText(this, tr("New Folder"), tr("Folder name:"),
-      QLineEdit::Normal, tr("New Folder"), &ok);
-  if (!ok || name.trimmed().isEmpty()) {
-    return;
+  QString tempPath = QDir(dir).filePath(tr("New Folder"));
+  if (QFileInfo::exists(tempPath)) {
+    tempPath = FilePathOps::uniqueDuplicatePath(tempPath);
   }
-  const QString fullPath = QDir(dir).filePath(name.trimmed());
   QString error;
-  if (!FilePathOps::createFolder(fullPath, &error)) {
+  if (!FilePathOps::createFolder(tempPath, &error)) {
     QMessageBox::critical(this, tr("New Folder"),
-        tr("Could not create folder:\n%1\n\n%2").arg(QDir::toNativeSeparators(fullPath), error));
+        tr("Could not create folder:\n%1\n\n%2").arg(QDir::toNativeSeparators(tempPath), error));
     return;
   }
   if (sidebar_) {
-    sidebar_->setCurrentPath(fullPath);
+    sidebar_->beginInlineCreate(tempPath);
   }
 }
 
@@ -1121,27 +1114,74 @@ void muffin::MainWindow::renamePath(QString path) {
   if (path.isEmpty()) {
     return;
   }
-  const QFileInfo info(path);
-  const QString oldName = info.fileName();
-  bool ok = false;
-  const QString newName = QInputDialog::getText(this, tr("Rename"), tr("New name:"),
-      QLineEdit::Normal, oldName, &ok);
-  if (!ok || newName.trimmed().isEmpty() || newName.trimmed() == oldName) {
+  // Opens the inline rename editor on the row; the actual rename happens in onInlineCommit.
+  if (sidebar_) {
+    sidebar_->beginInlineRename(path);
+  }
+}
+
+// Validate an inline name WITHOUT touching the filesystem — the delegate uses this to decide
+// whether to keep the editor open (Duplicate / Empty) or let the commit proceed.
+void muffin::MainWindow::onInlineValidate(muffin::InlineEditContext ctx, const QString& name,
+                                          muffin::InlineValidation* out) {
+  if (!out) {
     return;
   }
-  const QString newPath = QDir(info.absolutePath()).filePath(newName.trimmed());
-  QString error;
-  if (!FilePathOps::renamePath(path, newPath, &error)) {
-    QMessageBox::critical(this, tr("Rename"),
-        tr("Could not rename:\n%1\n\n%2").arg(QDir::toNativeSeparators(path), error));
+  const QString trimmed = name.trimmed();
+  if (trimmed.isEmpty()) {
+    out->kind = muffin::InlineValidation::Empty;
+    out->errorText = tr("Name cannot be empty.");
     return;
   }
+  // Only append ".md" for a brand-new file (matches the old New File prompt); a rename never
+  // forces an extension (the user may be changing it on purpose).
+  const QString normalized = (ctx.pendingCreate && !ctx.isFolder)
+      ? FilePathOps::normalizeMarkdownFileName(trimmed) : trimmed;
+  if (normalized == QFileInfo(ctx.oldPath).fileName()) {
+    out->kind = muffin::InlineValidation::NoChange;
+    return;
+  }
+  const QString dir = QFileInfo(ctx.oldPath).absolutePath();
+  if (FilePathOps::targetNameCollides(ctx.oldPath, dir, normalized)) {
+    out->kind = muffin::InlineValidation::Duplicate;
+    out->errorText = tr("An item named \"%1\" already exists.").arg(normalized);
+    return;
+  }
+  out->kind = muffin::InlineValidation::Valid;
+}
+
+// Commit the inline edit: perform the rename, then run the preserved post-steps (select the
+// new path, open a newly-created file, sync the session when the renamed entry was the open
+// document). The name has already been validated.
+void muffin::MainWindow::onInlineCommit(muffin::InlineEditContext ctx, const QString& name) {
+  const QString trimmed = name.trimmed();
+  const QString normalized = (ctx.pendingCreate && !ctx.isFolder)
+      ? FilePathOps::normalizeMarkdownFileName(trimmed) : trimmed;
+  const QString oldName = QFileInfo(ctx.oldPath).fileName();
+  const QString newPath = QDir(QFileInfo(ctx.oldPath).absolutePath()).filePath(normalized);
+  if (normalized != oldName) {
+    QString error;
+    if (!FilePathOps::renamePath(ctx.oldPath, newPath, &error)) {
+      statusBar()->showMessage(tr("Could not rename: %1").arg(error), 5000);
+      return;  // editor already closed on commit; best-effort surface via the status bar
+    }
+  }
+  if (ctx.pendingCreate) {
+    if (sidebar_) {
+      sidebar_->setCurrentPath(newPath);
+    }
+    if (!ctx.isFolder) {
+      openFile(newPath);  // preserve the old New File behavior of opening the new document
+    }
+    return;
+  }
+  // Existing-item rename — keep editor/sidebar in sync. Preserved verbatim from the old modal
+  // rename flow so an open document that was renamed continues to track its new path.
   if (sidebar_) {
     sidebar_->setCurrentPath(newPath);
   }
-  // Keep the editor in sync when the renamed entry was the open document.
-  if (path == session_.filePath()) {
-    const QString oldAbs = QFileInfo(path).absoluteFilePath();
+  if (ctx.oldPath == session_.filePath()) {
+    const QString oldAbs = QFileInfo(ctx.oldPath).absoluteFilePath();
     session_.setFilePath(newPath);
     updateTitle();
     refreshSidebarDocumentInfo();
@@ -1150,6 +1190,18 @@ void muffin::MainWindow::renamePath(QString path) {
     recent.removeAll(oldAbs);
     setRecentFiles(recent);
     rebuildRecentFilesMenu();
+  }
+}
+
+// Cancel a pending new-item create: the user pressed Escape or submitted an empty name, so
+// delete the temp entry that was provisionally created on disk. Renames have nothing to undo.
+void muffin::MainWindow::onInlineCancel(muffin::InlineEditContext ctx) {
+  if (!ctx.pendingCreate || ctx.oldPath.isEmpty()) {
+    return;
+  }
+  QString error;
+  if (!FilePathOps::moveToTrash(ctx.oldPath, &error)) {
+    FilePathOps::removePermanently(ctx.oldPath, nullptr);  // fallback so no temp is stranded
   }
 }
 

@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Drag a file from the sidebar into the editor to insert a link** - Dragging a file from the file tree onto the rendered page or the source editor inserts a markdown link at the drop position, e.g. `[拔牙日记1.md](日记\拔牙日记1.md)`. Image files insert as inline images (`![alt](...)`); folders keep their existing "open as sidebar root" behavior. The target path is resolved relative to the current document's directory when the file lives inside it (portable across folder moves), otherwise absolute, with native separators. Only drags that originate in Muffin's file tree insert a link; external `file://` drops keep the prior open-as-document behavior. As part of this change, dropped images now also land at the drop position instead of the stale caret
 
+### Changed
+- **Inline rename / new file / new folder in the sidebar** - The right-click Rename, New File and New Folder actions no longer pop a modal dialog. The filename becomes an in-place editable field (basename selected, Windows-Explorer style); a new file or folder appears as a fresh row pre-filled with `Untitled.md` / `New Folder`. Enter or clicking away commits, Escape cancels. A name that collides with an existing sibling (case-insensitive on Windows/macOS) keeps the editor open with a non-modal inline error instead of rejecting silently, and a case-only rename like `a.md` → `A.md` now works instead of failing
+
 > Note: link targets use native path separators (backslash on Windows). A path segment that starts with ASCII punctuation right after a separator (for example `dir\.gitignore`) is shortened by CommonMark's backslash-escape rule; rename or use forward slashes for such paths if a renderer mis-parses the link.
 
 ## [0.5.1] - 2026-07-04

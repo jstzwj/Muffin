@@ -413,19 +413,19 @@ protected:
   // Accept an in-app file-tree drag so QPlainTextEdit delivers it to insertFromMimeData
   // (its default canInsertFromMimeData already accepts hasUrls(), but being explicit about
   // the file-tree marker keeps the source-mode link insertion localized to that gesture).
-  bool canInsertFromMimeData(const QMimeData* data) const override {
-    if (data && data->hasFormat(muffin::kMuffinFileTreeDragMime) && data->hasUrls()) {
+  bool canInsertFromMimeData(const QMimeData* mimeData) const override {
+    if (mimeData && mimeData->hasFormat(muffin::kMuffinFileTreeDragMime) && mimeData->hasUrls()) {
       return true;
     }
-    return QPlainTextEdit::canInsertFromMimeData(data);
+    return QPlainTextEdit::canInsertFromMimeData(mimeData);
   }
 
   // A file dragged from the sidebar into the source editor inserts a markdown link at the
   // drop position (QPlainTextEdit has already moved the cursor there). External file://
   // drops fall through to the base behavior.
-  void insertFromMimeData(const QMimeData* data) override {
-    if (data && data->hasFormat(muffin::kMuffinFileTreeDragMime) && data->hasUrls()) {
-      const QList<QUrl> urls = data->urls();
+  void insertFromMimeData(const QMimeData* mimeData) override {
+    if (mimeData && mimeData->hasFormat(muffin::kMuffinFileTreeDragMime) && mimeData->hasUrls()) {
+      const QList<QUrl> urls = mimeData->urls();
       if (!urls.isEmpty()) {
         const QUrl url = urls.first();
         if (url.isLocalFile()) {
@@ -437,7 +437,7 @@ protected:
         }
       }
     }
-    QPlainTextEdit::insertFromMimeData(data);
+    QPlainTextEdit::insertFromMimeData(mimeData);
   }
 
   void contextMenuEvent(QContextMenuEvent* event) override {

@@ -409,5 +409,20 @@ void muffin::MainWindow::connectSidebarSignals() {
       [&window](const QString& path, bool isDir, bool onItem, const QPoint& globalPos) {
         window.buildSidebarContextMenu(path, isDir, onItem, globalPos);
       });
+  // Inline file-tree edit lifecycle: validate is synchronous (out-param) so the delegate can
+  // decide commit-vs-keep-open on the same call; commit does the FS op + post-steps; cancel
+  // deletes a pending-create temp.
+  QObject::connect(window.sidebar_, &SidebarWidget::inlineValidateRequested, &window,
+      [&window](const muffin::InlineEditContext& ctx, const QString& name, muffin::InlineValidation* out) {
+        window.onInlineValidate(ctx, name, out);
+      });
+  QObject::connect(window.sidebar_, &SidebarWidget::inlineCommitRequested, &window,
+      [&window](const muffin::InlineEditContext& ctx, const QString& name) {
+        window.onInlineCommit(ctx, name);
+      });
+  QObject::connect(window.sidebar_, &SidebarWidget::inlineCancelRequested, &window,
+      [&window](const muffin::InlineEditContext& ctx) {
+        window.onInlineCancel(ctx);
+      });
   QObject::connect(window.sidebar_, &SidebarWidget::outlineActivated, &window, &MainWindow::activateOutlineNode);
 }
