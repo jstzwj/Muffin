@@ -342,17 +342,17 @@ void ThemeDefinition::deriveChromeDefaults(ThemeColors& k) {
     k.canvas = base.lightness() < 128 ? base.darker(112) : k.surface.darker(104);
   }
   if (!k.border.isValid()) {
-    // Chrome hairline (splitter, menu/status-bar separators). codeBorder is the
-    // first choice, but a theme may set neither (e.g. minimal/variable-only CSS
-    // themes) — leaving it invalid makes every consumer render an unset QPen as
-    // solid black (the "black line above the status bar"). Fall back to a subtle
-    // step off the chrome background so the hairline is always visible-but-soft.
-    if (k.codeBorder.isValid()) {
-      k.border = k.codeBorder;
-    } else {
-      const QColor base = k.chromeBackground.isValid() ? k.chromeBackground : k.background;
-      k.border = base.lightness() < 128 ? base.lighter(140) : base.darker(112);
-    }
+    // Chrome hairline (splitter, menu/status-bar separators, control outlines).
+    // This is a UI-delimiter job: it needs ENOUGH contrast against the chrome
+    // background to read. codeBorder is a DIFFERENT job — theme authors tune it
+    // deliberately faint (e.g. github #e7eaed) so `code` blends into prose.
+    // Reusing codeBorder here made every control/menu/splitter edge inherit a
+    // prose-blend tone, washing borders out on light themes (the "preferences
+    // inputs look too pale under github" report). Derive the hairline
+    // independently with a stronger step so it reads on every theme; codeBorder
+    // (and thus code-fence outlines) stays exactly as the theme declared it.
+    const QColor base = k.chromeBackground.isValid() ? k.chromeBackground : k.background;
+    k.border = base.lightness() < 128 ? base.lighter(140) : base.darker(125);
   }
   // Code background — the FILL of inline code spans / code fences / math+HTML
   // block bodies. A theme that declares no `background` on `code` / `.md-fences`
