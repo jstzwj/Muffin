@@ -61,6 +61,7 @@ signals:
   void statsClicked();
 
 protected:
+  bool event(QEvent* event) override;
   void paintEvent(QPaintEvent* event) override;
   void resizeEvent(QResizeEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;

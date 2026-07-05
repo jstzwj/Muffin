@@ -1507,7 +1507,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="574"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1870"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1873"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="154"/>
         <source>Paragraph</source>
         <translation>Абзац</translation>
@@ -1527,8 +1527,8 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>Понизить уровень заголовка</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1883"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1962"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1906"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1970"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="110"/>
         <source>Table</source>
         <translation>Таблица</translation>
@@ -1544,12 +1544,12 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>Блок кода</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1909"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1932"/>
         <source>Code Tools</source>
         <translation>Инструменты кода</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1920"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1944"/>
         <source>Alert</source>
         <translation>Предупреждение</translation>
     </message>
@@ -1574,12 +1574,12 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>Список задач</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1934"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1890"/>
         <source>Task Status</source>
         <translation>Статус задачи</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1939"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1895"/>
         <source>List Indent</source>
         <translation>Отступ списка</translation>
     </message>
@@ -1614,7 +1614,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>Оглавление</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1954"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1953"/>
         <source>Front Matter</source>
         <translation>Метаданные</translation>
     </message>
@@ -1634,7 +1634,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>JSON</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1995"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2003"/>
         <source>Format</source>
         <translation>Формат</translation>
     </message>
@@ -1679,12 +1679,12 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>Гиперссылка</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2008"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2015"/>
         <source>Link Actions</source>
         <translation>Действия со ссылкой</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2014"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2021"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="93"/>
         <source>Image</source>
         <translation>Изображение</translation>
@@ -1730,7 +1730,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>Перезагрузить все изображения</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2030"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2037"/>
         <source>Resize Image</source>
         <translation>Изменить размер изображения</translation>
     </message>
@@ -1765,7 +1765,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>Другой...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2041"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2048"/>
         <source>Convert Image Syntax</source>
         <translation>Преобразовать синтаксис изображения</translation>
     </message>
@@ -1985,7 +1985,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
 Живой предпросмотр и редактирование исходного кода; экспорт в PDF, HTML и множество других форматов через Pandoc; вставка изображений с копированием в папку и загрузкой через пользовательскую команду; проверка орфографии; темы; поиск и замена; структура; быстрое открытие; и восстановление черновиков, устойчивое к сбоям.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1971"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1979"/>
         <source>Code</source>
         <translation>Код</translation>
     </message>
@@ -2009,7 +2009,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>Задать язык...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1987"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1995"/>
         <source>Math</source>
         <translation>Математика</translation>
     </message>
@@ -2024,7 +2024,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>Задать HTML...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2055"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2062"/>
         <source>View</source>
         <translation>Вид</translation>
     </message>
@@ -2108,12 +2108,17 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Платформа:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Автор:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;Лицензия:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Сайт:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2079"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1903"/>
+        <source>Insert</source>
+        <translation>Вставка</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2088"/>
         <source>Theme</source>
         <translation>Тема</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2081"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2090"/>
         <source>Help</source>
         <translation>Справка</translation>
     </message>
@@ -2174,6 +2179,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="189"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1987"/>
         <source>HTML</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3103,32 +3109,32 @@ Would you like to open the download page?</source>
         <translation>Настройки</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="211"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
         <source>Files</source>
         <translation>Файлы</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="212"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="213"/>
         <source>Editor</source>
         <translation>Редактор</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="213"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="215"/>
         <source>Image</source>
         <translation>Изображение</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="215"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
         <source>Export</source>
         <translation>Экспорт</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="212"/>
         <source>Appearance</source>
         <translation>Внешний вид</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="211"/>
         <source>General</source>
         <translation>Общие</translation>
     </message>
@@ -4037,22 +4043,21 @@ Would you like to open the download page?</source>
 <context>
     <name>muffin::SidebarWidget</name>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="610"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="609"/>
         <source>Files</source>
         <translation>Файлы</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="613"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="612"/>
         <source>Outline</source>
         <translation>Структура</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="616"/>
         <source>New File</source>
-        <translation>Новый файл</translation>
+        <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="619"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="615"/>
         <source>No Headings</source>
         <translation>Нет заголовков</translation>
     </message>
@@ -4068,49 +4073,74 @@ Would you like to open the download page?</source>
 <context>
     <name>muffin::StatusBarWidget</name>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="176"/>
-        <location filename="../src/app/StatusBarWidget.cpp" line="432"/>
-        <location filename="../src/app/StatusBarWidget.cpp" line="456"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="179"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="473"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="497"/>
         <source>%1 words</source>
         <translation>%1 слов</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="408"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="318"/>
+        <source>Click to view document statistics</source>
+        <translation>Щёлкните, чтобы просмотреть статистику документа</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="321"/>
+        <source>Click to change the spell-check language</source>
+        <translation>Щёлкните, чтобы изменить язык проверки орфографии</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="322"/>
+        <source>Spell check is off — click to enable</source>
+        <translation>Проверка орфографии отключена — щёлкните, чтобы включить</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="325"/>
+        <source>Cursor position (line : column)</source>
+        <translation>Положение курсора (строка : столбец)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="328"/>
+        <source>File encoding · line ending</source>
+        <translation>Кодировка файла · конец строки</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="449"/>
         <source>Spell Check</source>
         <translation>Проверка орфографии</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="427"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="468"/>
         <source>Words</source>
         <translation>Слова</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="428"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="469"/>
         <source>Characters</source>
         <translation>Символы</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="429"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="470"/>
         <source>Lines</source>
         <translation>Строки</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="430"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="471"/>
         <source>Reading time</source>
         <translation>Время чтения</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="430"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="471"/>
         <source>&lt; 1 min</source>
         <translation>&lt; 1 мин</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="430"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="471"/>
         <source>%1 min</source>
         <translation>%1 мин</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="432"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="473"/>
         <source>Selected</source>
         <translation>Выбрано</translation>
     </message>

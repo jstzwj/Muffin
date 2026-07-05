@@ -1511,7 +1511,7 @@ Szybki, lekki natywny edytor Markdown zbudowany w C++ i Qt 6 Widgets.</translati
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="574"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1870"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1873"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="154"/>
         <source>Paragraph</source>
         <translation>Akapit</translation>
@@ -1531,8 +1531,8 @@ Szybki, lekki natywny edytor Markdown zbudowany w C++ i Qt 6 Widgets.</translati
         <translation>Obniż poziom nagłówka</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1883"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1962"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1906"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1970"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="110"/>
         <source>Table</source>
         <translation>Tabela</translation>
@@ -1548,12 +1548,12 @@ Szybki, lekki natywny edytor Markdown zbudowany w C++ i Qt 6 Widgets.</translati
         <translation>Blok kodu</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1909"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1932"/>
         <source>Code Tools</source>
         <translation>Narzędzia kodu</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1920"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1944"/>
         <source>Alert</source>
         <translation>Alert</translation>
     </message>
@@ -1578,12 +1578,12 @@ Szybki, lekki natywny edytor Markdown zbudowany w C++ i Qt 6 Widgets.</translati
         <translation>Lista zadań</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1934"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1890"/>
         <source>Task Status</source>
         <translation>Stan zadania</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1939"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1895"/>
         <source>List Indent</source>
         <translation>Wcięcie listy</translation>
     </message>
@@ -1618,7 +1618,7 @@ Szybki, lekki natywny edytor Markdown zbudowany w C++ i Qt 6 Widgets.</translati
         <translation>Spis treści</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1954"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1953"/>
         <source>Front Matter</source>
         <translation>Front Matter</translation>
     </message>
@@ -1638,7 +1638,7 @@ Szybki, lekki natywny edytor Markdown zbudowany w C++ i Qt 6 Widgets.</translati
         <translation>JSON</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1995"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2003"/>
         <source>Format</source>
         <translation>Format</translation>
     </message>
@@ -1683,12 +1683,12 @@ Szybki, lekki natywny edytor Markdown zbudowany w C++ i Qt 6 Widgets.</translati
         <translation>Hiperłącze</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2008"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2015"/>
         <source>Link Actions</source>
         <translation>Akcje linku</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2014"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2021"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="93"/>
         <source>Image</source>
         <translation>Obraz</translation>
@@ -1734,7 +1734,7 @@ Szybki, lekki natywny edytor Markdown zbudowany w C++ i Qt 6 Widgets.</translati
         <translation>Odśwież wszystkie obrazy</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2030"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2037"/>
         <source>Resize Image</source>
         <translation>Zmień rozmiar obrazu</translation>
     </message>
@@ -1769,7 +1769,7 @@ Szybki, lekki natywny edytor Markdown zbudowany w C++ i Qt 6 Widgets.</translati
         <translation>Niestandardowy...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2041"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2048"/>
         <source>Convert Image Syntax</source>
         <translation>Konwertuj składnię obrazu</translation>
     </message>
@@ -1989,7 +1989,7 @@ Szybki, lekki, natywny edytor Markdown zbudowany przy użyciu C++ i Qt 6.
 Podgląd na żywo i edycja źródła; eksport do formatów PDF, HTML i wielu innych przez Pandoc; wstawianie obrazów z kopiowaniem do folderu i przesyłaniem własnym poleceniem; sprawdzanie pisowni; motywy; znajdź i zamień; konspekt; szybkie otwieranie; oraz odzyskiwanie szkiców odporne na awarię.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1971"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1979"/>
         <source>Code</source>
         <translation>Kod</translation>
     </message>
@@ -2013,7 +2013,7 @@ Podgląd na żywo i edycja źródła; eksport do formatów PDF, HTML i wielu inn
         <translation>Ustaw język...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1987"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1995"/>
         <source>Math</source>
         <translation>Matematyka</translation>
     </message>
@@ -2028,7 +2028,7 @@ Podgląd na żywo i edycja źródła; eksport do formatów PDF, HTML i wielu inn
         <translation>Ustaw HTML...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2055"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2062"/>
         <source>View</source>
         <translation>Widok</translation>
     </message>
@@ -2112,12 +2112,17 @@ Podgląd na żywo i edycja źródła; eksport do formatów PDF, HTML i wielu inn
         <translation>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Platforma:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Autor:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;Licencja:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Witryna:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2079"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1903"/>
+        <source>Insert</source>
+        <translation>Wstaw</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2088"/>
         <source>Theme</source>
         <translation>Motyw</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2081"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2090"/>
         <source>Help</source>
         <translation>Pomoc</translation>
     </message>
@@ -2178,6 +2183,7 @@ Podgląd na żywo i edycja źródła; eksport do formatów PDF, HTML i wielu inn
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="189"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1987"/>
         <source>HTML</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3107,32 +3113,32 @@ Czy chcesz otworzyć stronę pobierania?</translation>
         <translation>Preferencje</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="211"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
         <source>Files</source>
         <translation>Pliki</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="212"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="213"/>
         <source>Editor</source>
         <translation>Edytor</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="213"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="215"/>
         <source>Image</source>
         <translation>Obraz</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="215"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
         <source>Export</source>
         <translation>Eksportuj</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="212"/>
         <source>Appearance</source>
         <translation>Wygląd</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="211"/>
         <source>General</source>
         <translation>Ogólne</translation>
     </message>
@@ -4041,22 +4047,21 @@ Czy chcesz otworzyć stronę pobierania?</translation>
 <context>
     <name>muffin::SidebarWidget</name>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="610"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="609"/>
         <source>Files</source>
         <translation>Pliki</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="613"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="612"/>
         <source>Outline</source>
         <translation>Konspekt</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="616"/>
         <source>New File</source>
-        <translation>Nowy plik</translation>
+        <translation type="vanished">Nowy plik</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="619"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="615"/>
         <source>No Headings</source>
         <translation>Brak nagłówków</translation>
     </message>
@@ -4072,49 +4077,74 @@ Czy chcesz otworzyć stronę pobierania?</translation>
 <context>
     <name>muffin::StatusBarWidget</name>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="176"/>
-        <location filename="../src/app/StatusBarWidget.cpp" line="432"/>
-        <location filename="../src/app/StatusBarWidget.cpp" line="456"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="179"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="473"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="497"/>
         <source>%1 words</source>
         <translation>%1 słów</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="408"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="318"/>
+        <source>Click to view document statistics</source>
+        <translation>Kliknij, aby wyświetlić statystyki dokumentu</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="321"/>
+        <source>Click to change the spell-check language</source>
+        <translation>Kliknij, aby zmienić język sprawdzania pisowni</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="322"/>
+        <source>Spell check is off — click to enable</source>
+        <translation>Sprawdzanie pisowni jest wyłączone — kliknij, aby włączyć</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="325"/>
+        <source>Cursor position (line : column)</source>
+        <translation>Pozycja kursora (wiersz : kolumna)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="328"/>
+        <source>File encoding · line ending</source>
+        <translation>Kodowanie pliku · koniec wiersza</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="449"/>
         <source>Spell Check</source>
         <translation>Sprawdzanie pisowni</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="427"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="468"/>
         <source>Words</source>
         <translation>Słowa</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="428"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="469"/>
         <source>Characters</source>
         <translation>Znaki</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="429"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="470"/>
         <source>Lines</source>
         <translation>Wiersze</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="430"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="471"/>
         <source>Reading time</source>
         <translation>Czas czytania</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="430"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="471"/>
         <source>&lt; 1 min</source>
         <translation>&lt; 1 min</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="430"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="471"/>
         <source>%1 min</source>
         <translation>%1 min</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="432"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="473"/>
         <source>Selected</source>
         <translation>Zaznaczono</translation>
     </message>

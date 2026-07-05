@@ -1511,7 +1511,7 @@ Một trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằ
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="574"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1870"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1873"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="154"/>
         <source>Paragraph</source>
         <translation>Đoạn văn</translation>
@@ -1531,8 +1531,8 @@ Một trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằ
         <translation>Giảm cấp tiêu đề</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1883"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1962"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1906"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1970"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="110"/>
         <source>Table</source>
         <translation>Bảng</translation>
@@ -1548,12 +1548,12 @@ Một trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằ
         <translation>Khối mã</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1909"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1932"/>
         <source>Code Tools</source>
         <translation>Công cụ mã</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1920"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1944"/>
         <source>Alert</source>
         <translation>Cảnh báo</translation>
     </message>
@@ -1578,12 +1578,12 @@ Một trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằ
         <translation>Danh sách tác vụ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1934"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1890"/>
         <source>Task Status</source>
         <translation>Trạng thái tác vụ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1939"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1895"/>
         <source>List Indent</source>
         <translation>Thụt lề danh sách</translation>
     </message>
@@ -1618,7 +1618,7 @@ Một trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằ
         <translation>Mục lục</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1954"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1953"/>
         <source>Front Matter</source>
         <translation>Front Matter</translation>
     </message>
@@ -1638,7 +1638,7 @@ Một trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằ
         <translation>JSON</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1995"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2003"/>
         <source>Format</source>
         <translation>Định dạng</translation>
     </message>
@@ -1683,12 +1683,12 @@ Một trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằ
         <translation>Siêu liên kết</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2008"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2015"/>
         <source>Link Actions</source>
         <translation>Thao tác liên kết</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2014"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2021"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="93"/>
         <source>Image</source>
         <translation>Hình ảnh</translation>
@@ -1734,7 +1734,7 @@ Một trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằ
         <translation>Tải lại tất cả hình ảnh</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2030"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2037"/>
         <source>Resize Image</source>
         <translation>Thay đổi kích thước hình ảnh</translation>
     </message>
@@ -1769,7 +1769,7 @@ Một trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằ
         <translation>Tùy chỉnh...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2041"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2048"/>
         <source>Convert Image Syntax</source>
         <translation>Chuyển đổi cú pháp hình ảnh</translation>
     </message>
@@ -1985,7 +1985,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation type="vanished">Xem trước trực tiếp và chỉnh sửa mã nguồn; xuất sang PDF, HTML và nhiều định dạng khác thông qua Pandoc; chèn hình ảnh với sao chép vào thư mục và tải lên bằng lệnh tùy chỉnh; kiểm tra chính tả; chủ đề; tìm và thay thế; dàn ý; mở nhanh; và khôi phục bản nháp chống sự cố.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1971"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1979"/>
         <source>Code</source>
         <translation>Mã</translation>
     </message>
@@ -2009,7 +2009,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>Đặt ngôn ngữ...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1987"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1995"/>
         <source>Math</source>
         <translation>Toán học</translation>
     </message>
@@ -2024,7 +2024,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>Đặt HTML...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2055"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2062"/>
         <source>View</source>
         <translation>Xem</translation>
     </message>
@@ -2108,12 +2108,17 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Nền tảng:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Tác giả:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;Giấy phép:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Trang web:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2079"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1903"/>
+        <source>Insert</source>
+        <translation>Chèn</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2088"/>
         <source>Theme</source>
         <translation>Chủ đề</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2081"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2090"/>
         <source>Help</source>
         <translation>Trợ giúp</translation>
     </message>
@@ -2174,6 +2179,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="189"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1987"/>
         <source>HTML</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3099,32 +3105,32 @@ Bạn có muốn mở trang tải xuống không?</translation>
         <translation>Tùy chỉnh</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="211"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
         <source>Files</source>
         <translation>Tệp</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="212"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="213"/>
         <source>Editor</source>
         <translation>Trình soạn thảo</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="213"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="215"/>
         <source>Image</source>
         <translation>Hình ảnh</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="215"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
         <source>Export</source>
         <translation>Xuất</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="212"/>
         <source>Appearance</source>
         <translation>Giao diện</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="211"/>
         <source>General</source>
         <translation>Chung</translation>
     </message>
@@ -4033,22 +4039,21 @@ Bạn có muốn mở trang tải xuống không?</translation>
 <context>
     <name>muffin::SidebarWidget</name>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="610"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="609"/>
         <source>Files</source>
         <translation>Tệp</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="613"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="612"/>
         <source>Outline</source>
         <translation>Dàn ý</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="616"/>
         <source>New File</source>
-        <translation>Tệp mới</translation>
+        <translation type="vanished">Tệp mới</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="619"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="615"/>
         <source>No Headings</source>
         <translation>Không có tiêu đề</translation>
     </message>
@@ -4064,49 +4069,74 @@ Bạn có muốn mở trang tải xuống không?</translation>
 <context>
     <name>muffin::StatusBarWidget</name>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="176"/>
-        <location filename="../src/app/StatusBarWidget.cpp" line="432"/>
-        <location filename="../src/app/StatusBarWidget.cpp" line="456"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="179"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="473"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="497"/>
         <source>%1 words</source>
         <translation>%1 từ</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="408"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="318"/>
+        <source>Click to view document statistics</source>
+        <translation>Nhấp để xem thống kê tài liệu</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="321"/>
+        <source>Click to change the spell-check language</source>
+        <translation>Nhấp để đổi ngôn ngữ kiểm tra chính tả</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="322"/>
+        <source>Spell check is off — click to enable</source>
+        <translation>Kiểm tra chính tả đang tắt — nhấp để bật</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="325"/>
+        <source>Cursor position (line : column)</source>
+        <translation>Vị trí con trỏ (dòng : cột)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="328"/>
+        <source>File encoding · line ending</source>
+        <translation>Mã hóa tệp · kết thúc dòng</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="449"/>
         <source>Spell Check</source>
         <translation>Kiểm tra chính tả</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="427"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="468"/>
         <source>Words</source>
         <translation>Từ</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="428"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="469"/>
         <source>Characters</source>
         <translation>Ký tự</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="429"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="470"/>
         <source>Lines</source>
         <translation>Dòng</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="430"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="471"/>
         <source>Reading time</source>
         <translation>Thời gian đọc</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="430"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="471"/>
         <source>&lt; 1 min</source>
         <translation>&lt; 1 phút</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="430"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="471"/>
         <source>%1 min</source>
         <translation>%1 phút</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="432"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="473"/>
         <source>Selected</source>
         <translation>Đã chọn</translation>
     </message>

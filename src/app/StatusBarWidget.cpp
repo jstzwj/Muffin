@@ -4,6 +4,9 @@
 
 #include <QFontDatabase>
 #include <QFontMetrics>
+#include <QEvent>
+#include <QHelpEvent>
+#include <QToolTip>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QMenu>
@@ -297,6 +300,44 @@ void muffin::StatusBarWidget::drawSegmentText(QPainter& p, const QString& text, 
                                               const QColor& color, int flags) const {
   p.setPen(color);
   p.drawText(rect, flags, text);
+}
+
+bool muffin::StatusBarWidget::event(QEvent* event) {
+  // The status bar is a single self-painted widget whose segments are clickable
+  // (stats popup, spell-language menu) but expose nothing to Qt's tooltip/accessibility
+  // layer — so a hover over "EN" or the word count gives no hint that it's interactive.
+  // Intercept the tooltip event and route it per-segment via the same layout test the
+  // paint/mouse handlers use.
+  if (event->type() == QEvent::ToolTip) {
+    auto* he = static_cast<QHelpEvent*>(event);
+    const SegmentRects r = layoutSegments();
+    const QPoint pos = he->pos();
+    QString tip;
+    QRect area;
+    if (r.stats.contains(pos)) {
+      tip = tr("Click to view document statistics");
+      area = r.stats;
+    } else if (r.spell.contains(pos)) {
+      tip = spellEnabled_ ? tr("Click to change the spell-check language")
+                          : tr("Spell check is off — click to enable");
+      area = r.spell;
+    } else if (r.cursor.contains(pos)) {
+      tip = tr("Cursor position (line : column)");
+      area = r.cursor;
+    } else if (r.encoding.contains(pos)) {
+      tip = tr("File encoding · line ending");
+      area = r.encoding;
+    } else if (!blockSourceToolTip_.isEmpty() && r.blockSource.contains(pos)) {
+      tip = blockSourceToolTip_;
+      area = r.blockSource;
+    }
+    if (!tip.isEmpty()) {
+      QToolTip::showText(he->globalPos(), tip, this, area);
+      return true;
+    }
+    QToolTip::hideText();
+  }
+  return QWidget::event(event);
 }
 
 void muffin::StatusBarWidget::paintEvent(QPaintEvent*) {

@@ -26,13 +26,13 @@ namespace {
 // of always landing on General. The translated labels can't be used as keys — they change with the
 // UI language.
 const QStringList kCategoryKeys = {
-    QStringLiteral("files"),
-    QStringLiteral("editor"),
-    QStringLiteral("image"),
-    QStringLiteral("markdown"),
-    QStringLiteral("export"),
-    QStringLiteral("appearance"),
     QStringLiteral("general"),
+    QStringLiteral("appearance"),
+    QStringLiteral("editor"),
+    QStringLiteral("markdown"),
+    QStringLiteral("image"),
+    QStringLiteral("files"),
+    QStringLiteral("export"),
 };
 const QString kLastCategorySetting = QStringLiteral("preferences/lastCategory");
 }  // namespace
@@ -71,27 +71,27 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
   contentStack_->setStyleSheet(QStringLiteral("QStackedWidget { background:transparent; }"));
   rootLayout->addWidget(contentStack_, 1);
 
-  // Page 0: Files
+  // Page 0: General
   {
     auto* scroll = makeScrollArea();
-    filesPage_ = new PrefsFilesPage(scroll);
-    scroll->setWidget(filesPage_);
+    auto* generalPage = new PrefsGeneralPage(scroll);
+    scroll->setWidget(generalPage);
     contentStack_->addWidget(scroll);
   }
 
-  // Page 1: Editor
+  // Page 1: Appearance
+  {
+    auto* scroll = makeScrollArea();
+    appearancePage_ = new PrefsAppearancePage(scroll);
+    scroll->setWidget(appearancePage_);
+    contentStack_->addWidget(scroll);
+  }
+
+  // Page 2: Editor
   {
     auto* scroll = makeScrollArea();
     editorPage_ = new PrefsEditorPage(scroll);
     scroll->setWidget(editorPage_);
-    contentStack_->addWidget(scroll);
-  }
-
-  // Page 2: Image
-  {
-    auto* scroll = makeScrollArea();
-    imagePage_ = new PrefsImagePage(scroll);
-    scroll->setWidget(imagePage_);
     contentStack_->addWidget(scroll);
   }
 
@@ -103,27 +103,27 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
     contentStack_->addWidget(scroll);
   }
 
-  // Page 4: Export
+  // Page 4: Image
+  {
+    auto* scroll = makeScrollArea();
+    imagePage_ = new PrefsImagePage(scroll);
+    scroll->setWidget(imagePage_);
+    contentStack_->addWidget(scroll);
+  }
+
+  // Page 5: Files
+  {
+    auto* scroll = makeScrollArea();
+    filesPage_ = new PrefsFilesPage(scroll);
+    scroll->setWidget(filesPage_);
+    contentStack_->addWidget(scroll);
+  }
+
+  // Page 6: Export
   {
     auto* scroll = makeScrollArea();
     exportPage_ = new PrefsExportPage(scroll);
     scroll->setWidget(exportPage_);
-    contentStack_->addWidget(scroll);
-  }
-
-  // Page 5: Appearance
-  {
-    auto* scroll = makeScrollArea();
-    appearancePage_ = new PrefsAppearancePage(scroll);
-    scroll->setWidget(appearancePage_);
-    contentStack_->addWidget(scroll);
-  }
-
-  // Page 6: General
-  {
-    auto* scroll = makeScrollArea();
-    auto* generalPage = new PrefsGeneralPage(scroll);
-    scroll->setWidget(generalPage);
     contentStack_->addWidget(scroll);
   }
 
@@ -208,13 +208,13 @@ void muffin::PreferencesDialog::retranslateUi() {
   }
 
   const QStringList categories = {
-      tr("Files"),
-      tr("Editor"),
-      tr("Image"),
-      QStringLiteral("Markdown"),
-      tr("Export"),
-      tr("Appearance"),
       tr("General"),
+      tr("Appearance"),
+      tr("Editor"),
+      QStringLiteral("Markdown"),
+      tr("Image"),
+      tr("Files"),
+      tr("Export"),
   };
 
   int currentRow = categoryList_->currentRow();

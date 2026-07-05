@@ -1496,7 +1496,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="574"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1870"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1873"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="154"/>
         <source>Paragraph</source>
         <translation>段落(&amp;P)</translation>
@@ -1516,8 +1516,8 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>降低标题级别</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1883"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1962"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1906"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1970"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="110"/>
         <source>Table</source>
         <translation>表格(&amp;B)</translation>
@@ -1533,12 +1533,12 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>代码块</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1909"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1932"/>
         <source>Code Tools</source>
         <translation>代码工具</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1920"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1944"/>
         <source>Alert</source>
         <translation>警示块</translation>
     </message>
@@ -1563,12 +1563,12 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>任务列表</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1934"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1890"/>
         <source>Task Status</source>
         <translation>任务状态</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1939"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1895"/>
         <source>List Indent</source>
         <translation>列表缩进</translation>
     </message>
@@ -1603,7 +1603,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>目录</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1954"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1953"/>
         <source>Front Matter</source>
         <translation>文档前言</translation>
     </message>
@@ -1623,7 +1623,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>JSON</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1995"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2003"/>
         <source>Format</source>
         <translation>格式(&amp;O)</translation>
     </message>
@@ -1668,12 +1668,12 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>超链接</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2008"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2015"/>
         <source>Link Actions</source>
         <translation>链接操作</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2014"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2021"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="93"/>
         <source>Image</source>
         <translation>图像</translation>
@@ -1719,7 +1719,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>重新加载所有图片</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2030"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2037"/>
         <source>Resize Image</source>
         <translation>调整图片大小</translation>
     </message>
@@ -1754,7 +1754,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation>自定义...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2041"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2048"/>
         <source>Convert Image Syntax</source>
         <translation>转换图片语法</translation>
     </message>
@@ -1974,7 +1974,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
 实时预览与源码编辑；通过 Pandoc 导出为 PDF、HTML 及更多格式；图片插入（复制到文件夹 / 自定义命令上传）；拼写检查；主题；查找与替换；大纲；快速打开；以及崩溃安全的草稿恢复。</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1971"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1979"/>
         <source>Code</source>
         <translation>代码(&amp;C)</translation>
     </message>
@@ -1998,7 +1998,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>设置语言...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1987"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1995"/>
         <source>Math</source>
         <translation>公式(&amp;M)</translation>
     </message>
@@ -2013,7 +2013,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>设置 HTML...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2055"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2062"/>
         <source>View</source>
         <translation>视图(&amp;V)</translation>
     </message>
@@ -2097,12 +2097,17 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;平台:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;作者:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;许可证:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;网站:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2079"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1903"/>
+        <source>Insert</source>
+        <translation>插入</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2088"/>
         <source>Theme</source>
         <translation>主题(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2081"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2090"/>
         <source>Help</source>
         <translation>帮助(&amp;H)</translation>
     </message>
@@ -2163,6 +2168,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="189"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1987"/>
         <source>HTML</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3142,32 +3148,32 @@ Would you like to open the download page?</source>
         <translation>偏好设置</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="211"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
         <source>Files</source>
         <translation>文件</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="212"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="213"/>
         <source>Editor</source>
         <translation>编辑器</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="213"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="215"/>
         <source>Image</source>
         <translation>图片</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="215"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
         <source>Export</source>
         <translation>导出</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="212"/>
         <source>Appearance</source>
         <translation>外观</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="211"/>
         <source>General</source>
         <translation>通用</translation>
     </message>
@@ -4076,22 +4082,21 @@ Would you like to open the download page?</source>
 <context>
     <name>muffin::SidebarWidget</name>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="610"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="609"/>
         <source>Files</source>
         <translation>文件</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="613"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="612"/>
         <source>Outline</source>
         <translation>大纲</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="616"/>
         <source>New File</source>
-        <translation>新建文件</translation>
+        <translation type="vanished">新建文件</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="619"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="615"/>
         <source>No Headings</source>
         <translation>没有标题</translation>
     </message>
@@ -4107,49 +4112,74 @@ Would you like to open the download page?</source>
 <context>
     <name>muffin::StatusBarWidget</name>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="176"/>
-        <location filename="../src/app/StatusBarWidget.cpp" line="432"/>
-        <location filename="../src/app/StatusBarWidget.cpp" line="456"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="179"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="473"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="497"/>
         <source>%1 words</source>
         <translation>%1 个词</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="408"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="318"/>
+        <source>Click to view document statistics</source>
+        <translation>点击查看文档统计</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="321"/>
+        <source>Click to change the spell-check language</source>
+        <translation>点击更改拼写检查语言</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="322"/>
+        <source>Spell check is off — click to enable</source>
+        <translation>拼写检查已关闭 — 点击启用</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="325"/>
+        <source>Cursor position (line : column)</source>
+        <translation>光标位置（行 : 列）</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="328"/>
+        <source>File encoding · line ending</source>
+        <translation>文件编码 · 行尾</translation>
+    </message>
+    <message>
+        <location filename="../src/app/StatusBarWidget.cpp" line="449"/>
         <source>Spell Check</source>
         <translation>拼写检查</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="427"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="468"/>
         <source>Words</source>
         <translation>字数</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="428"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="469"/>
         <source>Characters</source>
         <translation>字符</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="429"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="470"/>
         <source>Lines</source>
         <translation>行数</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="430"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="471"/>
         <source>Reading time</source>
         <translation>阅读时间</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="430"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="471"/>
         <source>&lt; 1 min</source>
         <translation>&lt; 1 分钟</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="430"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="471"/>
         <source>%1 min</source>
         <translation>%1 分钟</translation>
     </message>
     <message>
-        <location filename="../src/app/StatusBarWidget.cpp" line="432"/>
+        <location filename="../src/app/StatusBarWidget.cpp" line="473"/>
         <source>Selected</source>
         <translation>已选</translation>
     </message>

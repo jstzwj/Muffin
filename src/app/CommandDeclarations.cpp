@@ -1866,7 +1866,10 @@ const std::vector<MenuSpec>& mainMenuSpec() {
                 {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.find_previous")},
             }},
        }},
-      // Paragraph
+      // Paragraph — paragraph/block structure: heading levels, body type
+      // (paragraph / quote / lists) and list indent. Block-level *inserts*
+      // (tables, math/code blocks, alerts, front matter, hr, toc, footnotes)
+      // moved to the Insert menu below.
       {muffin::MainWindow::tr("Paragraph"),
        {
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.heading_1")},
@@ -1879,6 +1882,26 @@ const std::vector<MenuSpec>& mainMenuSpec() {
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.promote_heading")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.demote_heading")},
            {.kind = MenuItem::Kind::Separator},
+           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.quote")},
+           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.ordered_list")},
+           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.unordered_list")},
+           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.task_list")},
+           {.kind = MenuItem::Kind::Submenu,
+            .title = muffin::MainWindow::tr("Task Status"),
+            .children = {
+                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.task_toggle")},
+            }},
+           {.kind = MenuItem::Kind::Submenu,
+            .title = muffin::MainWindow::tr("List Indent"),
+            .children = {
+                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.indent_list")},
+                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.outdent_list")},
+            }},
+       }},
+      // Insert — block-level content added to the document body (tables,
+      // math/code blocks, alerts, front matter, rules, toc, footnotes, links).
+      {muffin::MainWindow::tr("Insert"),
+       {
            {.kind = MenuItem::Kind::Submenu,
             .title = muffin::MainWindow::tr("Table"),
             .children = {
@@ -1916,6 +1939,7 @@ const std::vector<MenuSpec>& mainMenuSpec() {
                 {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("code.indent_block")},
                 {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("code.dedent_block")},
             }},
+           {.kind = MenuItem::Kind::Separator},
            {.kind = MenuItem::Kind::Submenu,
             .title = muffin::MainWindow::tr("Alert"),
             .children = {
@@ -1925,31 +1949,6 @@ const std::vector<MenuSpec>& mainMenuSpec() {
                 {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.insert_alert_warning")},
                 {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.insert_alert_caution")},
             }},
-           {.kind = MenuItem::Kind::Separator},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.quote")},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.ordered_list")},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.unordered_list")},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.task_list")},
-           {.kind = MenuItem::Kind::Submenu,
-            .title = muffin::MainWindow::tr("Task Status"),
-            .children = {
-                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.task_toggle")},
-            }},
-           {.kind = MenuItem::Kind::Submenu,
-            .title = muffin::MainWindow::tr("List Indent"),
-            .children = {
-                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.indent_list")},
-                {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.outdent_list")},
-            }},
-           {.kind = MenuItem::Kind::Separator},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.insert_before")},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.insert_after")},
-           {.kind = MenuItem::Kind::Separator},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.link_ref")},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.footnote")},
-           {.kind = MenuItem::Kind::Separator},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.hr")},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.toc")},
            {.kind = MenuItem::Kind::Submenu,
             .title = muffin::MainWindow::tr("Front Matter"),
             .children = {
@@ -1957,6 +1956,15 @@ const std::vector<MenuSpec>& mainMenuSpec() {
                 {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.toml")},
                 {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.json")},
             }},
+           {.kind = MenuItem::Kind::Separator},
+           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.link_ref")},
+           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.footnote")},
+           {.kind = MenuItem::Kind::Separator},
+           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.hr")},
+           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.toc")},
+           {.kind = MenuItem::Kind::Separator},
+           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.insert_before")},
+           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.insert_after")},
        }},
       // Table (top-level, hidden)
       {.title = muffin::MainWindow::tr("Table"),
@@ -1976,7 +1984,7 @@ const std::vector<MenuSpec>& mainMenuSpec() {
        },
        .hidden = true},
       // HTML (hidden)
-      {.title = QStringLiteral("HTML(&H)"),
+      {.title = muffin::MainWindow::tr("HTML"),
        .items = {
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("html.enter_edit")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("html.exit_edit")},
@@ -2002,7 +2010,6 @@ const std::vector<MenuSpec>& mainMenuSpec() {
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("format.inline_math")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("format.strike")},
            {.kind = MenuItem::Kind::Separator},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("format.comment")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("format.link")},
            {.kind = MenuItem::Kind::Submenu,
             .title = muffin::MainWindow::tr("Link Actions"),
@@ -2054,24 +2061,26 @@ const std::vector<MenuSpec>& mainMenuSpec() {
       // View
       {muffin::MainWindow::tr("View"),
        {
+           // Panels
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.sidebar")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.outline")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.file_tree")},
            {.kind = MenuItem::Kind::Separator},
+           // Editor modes
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.source_mode")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.word_wrap")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.focus")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.typewriter")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.status_bar")},
            {.kind = MenuItem::Kind::Separator},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.word_count")},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.fullscreen")},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.always_on_top")},
-           {.kind = MenuItem::Kind::Separator},
+           // Zoom
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.actual_size")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.zoom_in")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.zoom_out")},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.window_switch")},
+           {.kind = MenuItem::Kind::Separator},
+           // Window
+           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.fullscreen")},
+           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.always_on_top")},
        }},
       // Theme — top-level menu populated dynamically from ThemeManager::definitions()
       // (built-ins + any imported custom themes). buildMenus captures it into
@@ -2082,7 +2091,6 @@ const std::vector<MenuSpec>& mainMenuSpec() {
        {
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("help.quick_start")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("help.markdown_ref")},
-           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("help.custom_themes")},
            {.kind = MenuItem::Kind::Separator},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("help.acknowledgements")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("help.changelog")},
