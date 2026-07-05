@@ -30,10 +30,10 @@ void testRelativeInsideDocumentDir() {
 void testRelativeInSubdirectory() {
   const QString base = QDir::tempPath();
   const QString docDir = base + QStringLiteral("/proj");
-  const QString file = docDir + QStringLiteral("/sub/拔牙日记1.md");
+  const QString file = docDir + QStringLiteral("/sub/示例.md");
 
   const QString target = FilePathOps::linkTargetForPath(file, docDir);
-  requireEq(target, QDir::toNativeSeparators(QStringLiteral("sub/拔牙日记1.md")),
+  requireEq(target, QDir::toNativeSeparators(QStringLiteral("sub/示例.md")),
             QStringLiteral("file in a subdir → relative subdir path, native separators"));
 }
 
