@@ -387,11 +387,6 @@ void muffin::MainWindow::connectChromeSignals() {
 
 void muffin::MainWindow::connectSidebarSignals() {
   auto& window = *this;
-  QObject::connect(window.sidebar_, &SidebarWidget::newFileRequested, &window, [&window] {
-    if (QAction* action = window.commands_.action(QStringLiteral("file.new"))) {
-      action->trigger();
-    }
-  });
   QObject::connect(window.sidebar_, &SidebarWidget::newWindowRequested, &window, [&window] {
     if (QAction* action = window.commands_.action(QStringLiteral("file.new_window"))) {
       action->trigger();

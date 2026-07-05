@@ -76,8 +76,7 @@ QString sidebarStyleSheet(const ThemeDefinition& d, bool outlineFoldable) {
       "#FileTree, #OutlineTree { background: %1; color: %5; border: 0; padding: 4px 0; outline: 0; }"
       "#FileTree::item, #OutlineTree::item { min-height: 22px; padding: 1px 4px; border: 0; }"
       "#FileTree::item:hover, #OutlineTree::item:hover { background: %4; color: %5; }"
-      "#FileTree::item:selected, #OutlineTree::item:selected { background: %6; color: %5; }"
-      "#SidebarNewFileButton { min-width: 32px; min-height: 24px; padding: 0; color: %3; }")
+      "#FileTree::item:selected, #OutlineTree::item:selected { background: %6; color: %5; }")
       .arg(hexRgb(c.surface),
            hexRgb(c.border),
            hexRgb(c.chromeMuted),

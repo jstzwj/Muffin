@@ -68,7 +68,6 @@ public:
   void beginInlineCreate(QString tempPath);
 
 signals:
-  void newFileRequested();
   void newWindowRequested();
   void openFolderRequested();
   void fileOpenRequested(QString path);
@@ -111,7 +110,6 @@ private:
   QStackedWidget* stack_ = nullptr;
   QWidget* filesPanel_ = nullptr;
   QWidget* outlinePanel_ = nullptr;
-  QToolButton* newFileButton_ = nullptr;
   QFileSystemModel* fileModel_ = nullptr;
   QTreeView* fileTree_ = nullptr;
   QTreeWidget* outlineTree_ = nullptr;

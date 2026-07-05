@@ -274,16 +274,6 @@ void muffin::SidebarWidget::setupFilesPanel() {
   }
   layout->addWidget(fileTree_, 1);
 
-  auto* footerLayout = new QHBoxLayout();
-  footerLayout->setContentsMargins(0, 0, 0, 0);
-  footerLayout->setSpacing(0);
-  newFileButton_ = createFlatButton(QStringLiteral("+"), filesPanel_);
-  newFileButton_->setObjectName(QStringLiteral("SidebarNewFileButton"));
-  footerLayout->addWidget(newFileButton_);
-  footerLayout->addStretch(1);
-  layout->addLayout(footerLayout);
-
-  connect(newFileButton_, &QToolButton::clicked, this, &SidebarWidget::newFileRequested);
   connect(fileTree_, &QTreeView::doubleClicked, this, [this](const QModelIndex& index) {
     const QString path = fileModel_->filePath(index);
     if (QFileInfo(path).isDir()) {
@@ -620,9 +610,6 @@ void muffin::SidebarWidget::retranslateUi() {
   }
   if (outlineTabButton_) {
     outlineTabButton_->setText(tr("Outline"));
-  }
-  if (newFileButton_) {
-    newFileButton_->setToolTip(tr("New File"));
   }
   if (outlineEmptyLabel_) {
     outlineEmptyLabel_->setText(tr("No Headings"));
