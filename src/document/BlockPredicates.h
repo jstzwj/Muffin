@@ -16,6 +16,14 @@ inline bool isLiteralBlockType(BlockType type) {
          type == BlockType::HtmlBlock || type == BlockType::FrontMatter;
 }
 
+// Inline-editable text blocks (the caret is anchored as a visible/source offset into the block's
+// projected inline content). Includes ListItem (whose content is its primaryParagraph) and the
+// definition blocks. Shared by the editor subsystem (BlockEditContext, InputController).
+inline bool isEditableTextBlock(BlockType type) {
+  return type == BlockType::Paragraph || type == BlockType::Heading || type == BlockType::ListItem ||
+         type == BlockType::TableCell || type == BlockType::LinkDefinition || type == BlockType::FootnoteDefinition;
+}
+
 // A paragraph may begin with up to 3 spaces of CommonMark indentation; the AST start lands after
 // the indent, but the editable content begins at the line start. Walk back over up to 3 leading
 // spaces to find that line start, and fall back to astStart when the indent does not reach the line

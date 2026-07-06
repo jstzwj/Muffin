@@ -839,7 +839,7 @@ void EditorView::rebuildLayout() {
     }
     ensureVisibleBuilt();  // promote the visible window; self-pinned so the promotion snap is invisible
     if (cursorPosition_.isValid()) {
-      cursorHit_ = hitForCursorPosition(*layout_, theme_, cursorPosition_);
+      cursorHit_ = editor_geometry::hitForCursorPosition(*layout_, theme_, cursorPosition_);
       cursorVisible_ = cursorHit_.isValid();
       ensureCodeFenceCursorVisible();
     }
@@ -875,7 +875,7 @@ void EditorView::updateTableToolbar() {
 }
 
 void EditorView::updateCursorHitFromPosition() {
-  cursorHit_ = hitForCursorPosition(*layout_, theme_, cursorPosition_);
+  cursorHit_ = editor_geometry::hitForCursorPosition(*layout_, theme_, cursorPosition_);
   cursorVisible_ = cursorHit_.isValid();
   updateCodeLanguageEditor();
   updateTableToolbar();

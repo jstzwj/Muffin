@@ -9,6 +9,7 @@
 #include "editor/InputController.h"
 #include "editor/SelectionController.h"
 #include "projection/SelectionSerializer.h"
+#include "render/BlockLayout.h"
 
 #include "EditorTestUtils.h"
 
@@ -270,6 +271,152 @@ void testCodeFenceHomeEndNavigatesWithinLine() {
           "Home should move to the current line start (after the previous newline), not the block start");
 }
 
+// Up/Down inside a code fence move one literal line at a time and preserve the horizontal column
+// (goal column), instead of jumping out of the block. Uses two equal-length lines so a preserved
+// column maps to an exact offset on each line.
+void testCodeFenceUpDownMovesLineByLinePreservingColumn() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+
+  session.setMarkdownText(QStringLiteral("```\nabcdefghij\nklmnopqrst\n```"), false);
+  view.setDocument(session.document());
+  MarkdownNode* fence = blockAt(session, 0);
+  require(fence != nullptr && fence->type() == BlockType::CodeFence, "fixture should build a code fence");
+  const QString literal = fence->literal();  // "abcdefghij\nklmnopqrst"
+  const int firstNl = literal.indexOf(QLatin1Char('\n'));
+  require(firstNl == 10, "first literal line should be 10 chars");
+
+  // Caret at column 5 of line 0 (mid "abcde|fghij"). activateHit enters literal edit mode, which
+  // rebuilds the layout — so fetch the BlockLayout fresh at each use rather than holding a pointer.
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Code;
+  hit.blockId = fence->id();
+  hit.textNodeId = fence->id();
+  hit.textOffset = 5;
+  controller.activateHit(hit);
+  require(view.blockLayoutForNode(fence->id()) != nullptr, "code fence layout should be available");
+  require(view.blockLayoutForNode(fence->id())->literalVisualLineCount(view.theme()) == 2,
+          "fixture should expose two literal visual lines");
+
+  require(pressKey(controller.inputController(), &view, Qt::Key_Down), "Down inside a code fence should be handled");
+  CursorPosition cursor = controller.selection().cursorPosition();
+  require(cursor.blockId == fence->id(), "Down should stay inside the code fence");
+  require(view.blockLayoutForNode(fence->id())->literalVisualLineIndexForOffset(cursor.text.textOffset, view.theme()) == 1,
+          "Down should move to the next literal visual line");
+  require(cursor.text.textOffset == firstNl + 1 + 5, "Down should preserve the column on the next line");
+
+  // Up returns to the original offset (goal column round-trips for equal-length lines).
+  require(pressKey(controller.inputController(), &view, Qt::Key_Up), "Up inside a code fence should be handled");
+  cursor = controller.selection().cursorPosition();
+  require(cursor.blockId == fence->id(), "Up should stay inside the code fence");
+  require(view.blockLayoutForNode(fence->id())->literalVisualLineIndexForOffset(cursor.text.textOffset, view.theme()) == 0,
+          "Up should return to the first literal visual line");
+  require(cursor.text.textOffset == 5, "Up should restore the original column");
+}
+
+// Up from the first literal line and Down from the last literal line leave the fence for the
+// neighbouring block (the line-aware path falls through to the existing block-crossing behaviour).
+void testCodeFenceUpDownLeavesBlockAtBoundaries() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+
+  session.setMarkdownText(QStringLiteral("before\n\n```\nline one\nline two\n```\n\nafter"), false);
+  view.setDocument(session.document());
+  MarkdownNode* before = blockAt(session, 0);
+  MarkdownNode* fence = blockAt(session, 1);
+  MarkdownNode* after = blockAt(session, 2);
+  require(before != nullptr && fence != nullptr && after != nullptr, "fixture should have before / fence / after");
+  require(fence->type() == BlockType::CodeFence, "middle block should be the code fence");
+  const QString literal = fence->literal();  // "line one\nline two"
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Code;
+  hit.blockId = fence->id();
+  hit.textNodeId = fence->id();
+  hit.textOffset = 0;  // start of the first literal line
+  controller.activateHit(hit);
+  require(pressKey(controller.inputController(), &view, Qt::Key_Up), "Up from the first line should be handled");
+  require(controller.selection().cursorPosition().blockId == before->id(),
+          "Up from the first literal line should leave the fence to the previous block");
+
+  hit.textOffset = literal.size();  // end of the last literal line
+  controller.activateHit(hit);
+  require(pressKey(controller.inputController(), &view, Qt::Key_Down), "Down from the last line should be handled");
+  require(controller.selection().cursorPosition().blockId == after->id(),
+          "Down from the last literal line should leave the fence to the next block");
+}
+
+// Left/Right inside a code fence wrap at line boundaries: Right at a line end lands on the next
+// line's start, Left at a line start lands on the previous line's end. (This already worked via the
+// generic textOffset ± 1 path; the test locks it in.)
+void testCodeFenceLeftRightWrapsAtLineBoundaries() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+
+  session.setMarkdownText(QStringLiteral("```\nline one\nline two\n```"), false);
+  view.setDocument(session.document());
+  MarkdownNode* fence = blockAt(session, 0);
+  const QString literal = fence->literal();  // "line one\nline two"
+  const int firstNl = literal.indexOf(QLatin1Char('\n'));
+  require(firstNl == 8, "first literal line should be 8 chars");
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Code;
+  hit.blockId = fence->id();
+  hit.textNodeId = fence->id();
+
+  hit.textOffset = firstNl;  // end of line 0 (just before the newline)
+  controller.activateHit(hit);
+  require(pressKey(controller.inputController(), &view, Qt::Key_Right), "Right at a line end should be handled");
+  require(controller.selection().cursorPosition().text.textOffset == firstNl + 1,
+          "Right at a line end should land on the next line start");
+
+  hit.textOffset = firstNl + 1;  // start of line 1
+  controller.activateHit(hit);
+  require(pressKey(controller.inputController(), &view, Qt::Key_Left), "Left at a line start should be handled");
+  require(controller.selection().cursorPosition().text.textOffset == firstNl,
+          "Left at a line start should land on the previous line end");
+}
+
+// Up/Down inside a math block move one literal source line at a time (the literal path is shared
+// with code fences). Math always wraps and uses the math font, exercising that branch.
+void testMathBlockUpDownMovesLineByLine() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+
+  session.setMarkdownText(QStringLiteral("$$\na = b\n\\sum x\n$$"), false);
+  view.setDocument(session.document());
+  MarkdownNode* math = blockAt(session, 0);
+  require(math != nullptr && math->type() == BlockType::MathBlock, "fixture should build a math block");
+  const QString literal = math->literal();  // "a = b\n\\sum x"
+  const int firstNl = literal.indexOf(QLatin1Char('\n'));
+  require(firstNl > 0, "math literal should span two lines");
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Math;
+  hit.blockId = math->id();
+  hit.textNodeId = math->id();
+  hit.textOffset = 1;  // inside the first line
+  controller.activateHit(hit);
+  require(view.blockLayoutForNode(math->id()) != nullptr &&
+          view.blockLayoutForNode(math->id())->literalVisualLineCount(view.theme()) >= 2,
+          "math block should expose at least two literal visual lines");
+
+  require(pressKey(controller.inputController(), &view, Qt::Key_Down), "Down inside a math block should be handled");
+  const CursorPosition cursor = controller.selection().cursorPosition();
+  require(cursor.blockId == math->id(), "Down should stay inside the math block");
+  require(view.blockLayoutForNode(math->id())->literalVisualLineIndexForOffset(cursor.text.textOffset, view.theme()) == 1,
+          "Down should move to the second math source line");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -281,6 +428,10 @@ int main(int argc, char** argv) {
   RUN_TEST(testCodeFenceSelectionCutDeletesLiteralOffsets);
   RUN_TEST(testCodeFencePartialSelectionCopyOmitsFencePrefix);
   RUN_TEST(testCodeFenceHomeEndNavigatesWithinLine);
+  RUN_TEST(testCodeFenceUpDownMovesLineByLinePreservingColumn);
+  RUN_TEST(testCodeFenceUpDownLeavesBlockAtBoundaries);
+  RUN_TEST(testCodeFenceLeftRightWrapsAtLineBoundaries);
+  RUN_TEST(testMathBlockUpDownMovesLineByLine);
   RUN_TEST(testKeyboardNavigationBasics);
   RUN_TEST(testSelectAllContextSemantics);
 #undef RUN_TEST

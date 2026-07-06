@@ -425,6 +425,84 @@ QRectF InlineLayout::cursorRectForSourceOffset(qsizetype sourceOffset) const {
   return textLayoutCursorRectForDisplayOffset(displayOffset);
 }
 
+int InlineLayout::visualLineCount() const {
+  return textLayout_ ? textLayout_->lineCount() : 0;
+}
+
+int InlineLayout::visualLineIndexForTextOffset(qsizetype textOffset) const {
+  if (!textLayout_) {
+    return -1;
+  }
+  const qsizetype displayOffset = displayOffsetForVisibleOffset(textOffset);
+  for (int i = 0; i < textLayout_->lineCount(); ++i) {
+    const QTextLine line = textLayout_->lineAt(i);
+    if (!line.isValid()) { continue; }
+    const int lineStart = line.textStart();
+    const int lineEnd = lineStart + line.textLength();
+    if (displayOffset >= lineStart && displayOffset <= lineEnd) {
+      return i;
+    }
+  }
+  return textLayout_->lineCount() > 0 ? textLayout_->lineCount() - 1 : -1;
+}
+
+int InlineLayout::visualLineIndexForSourceOffset(qsizetype sourceOffset) const {
+  if (!textLayout_) {
+    return -1;
+  }
+  qsizetype displayOffset = -1;
+  if (!layoutDisplayOffsetForSourceOffset(sourceOffset, InlineProjectionBias::Forward, displayOffset)) {
+    return visualLineIndexForTextOffset(sourceOffset);
+  }
+  for (int i = 0; i < textLayout_->lineCount(); ++i) {
+    const QTextLine line = textLayout_->lineAt(i);
+    if (!line.isValid()) { continue; }
+    const int lineStart = line.textStart();
+    const int lineEnd = lineStart + line.textLength();
+    if (displayOffset >= lineStart && displayOffset <= lineEnd) {
+      return i;
+    }
+  }
+  return textLayout_->lineCount() > 0 ? textLayout_->lineCount() - 1 : -1;
+}
+
+QRectF InlineLayout::visualLineRect(int lineIndex) const {
+  if (!textLayout_ || lineIndex < 0 || lineIndex >= textLayout_->lineCount()) {
+    return {};
+  }
+  const QTextLine line = textLayout_->lineAt(lineIndex);
+  if (!line.isValid()) {
+    return {};
+  }
+  const int lineStart = line.textStart();
+  const int lineEnd = lineStart + line.textLength();
+  const qreal x1 = line.cursorToX(lineStart);
+  const qreal x2 = line.cursorToX(lineEnd);
+  return QRectF(qMin(x1, x2), line.y(), qAbs(x2 - x1), line.height());
+}
+
+qsizetype InlineLayout::textOffsetAtVisualLineX(int lineIndex, qreal localX) const {
+  if (!textLayout_ || lineIndex < 0 || lineIndex >= textLayout_->lineCount()) {
+    return 0;
+  }
+  const QTextLine line = textLayout_->lineAt(lineIndex);
+  if (!line.isValid()) {
+    return 0;
+  }
+  return hitTestTextOffset(QPointF(localX, line.y() + line.height() * 0.5));
+}
+
+qsizetype InlineLayout::sourceOffsetAtVisualLineX(int lineIndex, qreal localX) const {
+  if (!textLayout_ || lineIndex < 0 || lineIndex >= textLayout_->lineCount()) {
+    return 0;
+  }
+  const QTextLine line = textLayout_->lineAt(lineIndex);
+  if (!line.isValid()) {
+    return 0;
+  }
+  return hitTestSourceOffset(QPointF(localX, line.y() + line.height() * 0.5));
+}
+
 QVector<QRectF> InlineLayout::selectionRects(qsizetype startOffset, qsizetype endOffset) const {
   const qsizetype startDisplayOffset = displayOffsetForVisibleOffset(qMin(startOffset, endOffset));
   const qsizetype endDisplayOffset = displayOffsetForVisibleOffset(qMax(startOffset, endOffset));

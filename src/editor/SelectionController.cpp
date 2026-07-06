@@ -1,5 +1,7 @@
 #include "editor/SelectionController.h"
 
+#include <utility>
+
 namespace muffin {
 
 SelectionController::SelectionController(QObject* parent) : QObject(parent) {}
@@ -39,12 +41,7 @@ void SelectionController::setCursorPosition(CursorPosition position) {
     return;
   }
 
-  currentHit_ = {};
-  currentHit_.blockId = position.blockId;
-  currentHit_.textNodeId = position.text.nodeId;
-  currentHit_.textOffset = position.text.textOffset;
-  currentHit_.sourceOffset = position.text.sourceOffset;
-  currentHit_.zone = position.afterBlock ? HitTestResult::Zone::BlockAfter : HitTestResult::Zone::None;
+  currentHit_ = HitTestResult::from(position);
   selection_.anchor = position;
   selection_.focus = position;
   hasCursor_ = true;
@@ -52,18 +49,17 @@ void SelectionController::setCursorPosition(CursorPosition position) {
 }
 
 void SelectionController::setSelection(SelectionRange selection) {
+  setSelection(std::move(selection), HitTestResult::from(selection.focus));
+}
+
+void SelectionController::setSelection(SelectionRange selection, HitTestResult focusHit) {
   if (!selection.focus.isValid()) {
     clear();
     return;
   }
 
   selection_ = selection;
-  currentHit_ = {};
-  currentHit_.blockId = selection.focus.blockId;
-  currentHit_.textNodeId = selection.focus.text.nodeId;
-  currentHit_.textOffset = selection.focus.text.textOffset;
-  currentHit_.sourceOffset = selection.focus.text.sourceOffset;
-  currentHit_.zone = selection.focus.afterBlock ? HitTestResult::Zone::BlockAfter : HitTestResult::Zone::None;
+  currentHit_ = focusHit.isValid() ? focusHit : HitTestResult::from(selection.focus);
   hasCursor_ = true;
   emit selectionChanged(selection_, currentHit_);
 }

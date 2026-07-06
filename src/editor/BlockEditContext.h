@@ -59,6 +59,11 @@ public:
   // node and sets contentStartOut to the byte offset just past the opening fence/marker line
   // (the first character of the editable literal content). Returns null for inline-text offsets.
   MarkdownNode* literalBlockAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset, qsizetype& contentStartOut) const;
+  // Byte offset of the first editable literal character of `node` — just past the opening fence /
+  // marker line. `node` is assumed to be a literal block (code fence / math / HTML / front matter).
+  // Equivalent to the contentStartOut of literalBlockAtSourceOffset when you already hold the node,
+  // without the source-offset containment walk.
+  qsizetype literalContentStartOffset(const MarkdownNode& node) const;
 
 private:
   DocumentSession* session_ = nullptr;

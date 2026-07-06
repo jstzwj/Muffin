@@ -9,11 +9,14 @@
 #include <QObject>
 #include <QVector>
 
+#include <optional>
+
 class QKeyEvent;
 class QInputMethodEvent;
 
 namespace muffin {
 
+class BlockLayout;
 class CodeFenceController;
 class EditorView;
 class EmojiCompleter;
@@ -147,18 +150,38 @@ private:
   CursorPosition cursorFor(NodeId blockId, qsizetype offset) const;
   CursorPosition cursorForNode(MarkdownNode& node, qsizetype offset) const;
   CursorPosition cursorForSourceOffset(qsizetype sourceOffset, bool preferLaterEmptyAtOffset = false) const;
+  // Resolve an absolute source offset that is known to land inside the editable-text `node`
+  // (paragraph / heading / list item / cell / definition). O(block) — it fills the node's edit
+  // context and maps source→visible locally, instead of cursorForSourceOffset's document-wide
+  // tree walk to LOCATE the node. Use this whenever the block is already in hand (vertical
+  // navigation, which fires per key press).
+  CursorPosition cursorForSourceInNode(MarkdownNode& node, qsizetype sourceOffset) const;
   CursorPosition cursorAfterEdit(CursorPosition preferredCursor, qsizetype fallbackSourceOffset, bool preferLaterEmptyAtOffset = false) const;
   // A caret that sits block-after a non-text top-level block (thematic break, etc.) — the only kind
   // of caret an offset on such a block can resolve to, since they host no inline-editable text.
   CursorPosition cursorForBlockAfter(const MarkdownNode& host, qsizetype sourceOffset) const;
   MarkdownNode* paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset, bool preferLaterEmptyAtOffset = false) const;
   MarkdownNode* selectableBlockByDirection(NodeId current, int direction) const;
+  // The neighbour block in DOCUMENT ORDER, climbing out of containers (lists / block quotes) so a
+  // nested caret can reach the editable block that visually follows/precedes it. Unlike
+  // selectableBlockByDirection (top-level only), this crosses list items and quoted paragraphs.
+  MarkdownNode* neighborBlockInDocumentDirection(const MarkdownNode& node, int direction) const;
+  // The LAST editable block in document order within a subtree, descending into a list item's nested
+  // children (unlike the resolver's lastEditableDescendant, which short-circuits on a ListItem).
+  MarkdownNode* deepestLastEditableInSubtree(MarkdownNode& node) const;
   qsizetype selectableTextLength(const MarkdownNode& node) const;
   bool moveCursorHorizontal(int direction, bool extendSelection);
   bool moveCursorVertical(int direction, bool extendSelection);
+  bool moveTableCellHorizontal(int direction, bool extendSelection);
+  bool moveTableCellVertical(int direction, bool extendSelection, qreal documentX);
+  bool moveLiteralVertical(const BlockLayout& block, MarkdownNode& node, int direction, bool extendSelection);
   enum class JumpTarget { LineStart, LineEnd, DocumentStart, DocumentEnd };
   bool moveJump(JumpTarget target, bool extendSelection);
+  HitTestResult richHitForCursor(CursorPosition cursor) const;
+  HitTestResult visualEdgeHitForBlock(NodeId blockId, int direction, qreal documentX) const;
   void setCursorOrExtend(CursorPosition cursor, bool extendSelection);
+  void setHitOrExtend(HitTestResult hit, bool extendSelection);
+  void clearVerticalNavigationX();
   void applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText, qsizetype nextSourceOffset);
   void applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText, qsizetype nextSourceOffset, bool preferLaterEmptyAtOffset);
   void applyLocalEdit(
@@ -189,6 +212,9 @@ private:
   TableController* tableController_ = nullptr;
   EmojiCompleter* emojiCompleter_ = nullptr;
   const EmojiProvider* emojiProvider_ = nullptr;
+  bool hasVerticalNavigationX_ = false;
+  qreal verticalNavigationX_ = 0.0;
+  CursorPosition verticalNavigationCursor_;
   qsizetype emojiColonStart_ = -1;  // source offset of the leading ':' of the active shortcode
 };
 

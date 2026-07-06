@@ -74,6 +74,7 @@ public:
   // Direct layout lookup by node id (resolves nested blocks such as a list item,
   // unlike blockAtViewportPos which returns the innermost block under a point).
   const BlockLayout* blockLayoutForNode(NodeId id) const;
+  HitTestResult hitForCursorPosition(CursorPosition position) const;
   HitTestResult hitTest(QPointF viewportPos) const;
   // The caret's document-space rect with a scrollable code fence's horizontal offset subtracted, so
   // it matches where the translated text is actually drawn. paintInsertionCursor / the IME cursor

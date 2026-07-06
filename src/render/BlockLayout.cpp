@@ -588,6 +588,60 @@ QRectF BlockLayout::literalContentRect(const RenderTheme& theme) const {
   return content;
 }
 
+BlockLayout::LiteralLayoutParams BlockLayout::literalLayoutParams(const RenderTheme& theme) const {
+  // Mirror buildLiteralBlock's per-type choices (BlockLayoutBuilder.cpp) so the visual-line queries
+  // match the RENDERED lines. Note Math uses mathFont (not codeFont) and a metrics-derived line
+  // height, exactly as the builder lays it out.
+  LiteralLayoutParams params;
+  params.width = literalContentRect(theme).width();
+  params.wrap = type_ == BlockType::CodeFence ? codeBlockWrapEnabled() : true;
+  if (type_ == BlockType::MathBlock) {
+    params.font = theme.mathFont();
+    params.lineHeight = qMax<qreal>(14.0, QFontMetricsF(theme.mathFont()).height());
+  } else {
+    params.font = theme.codeFont();
+    params.lineHeight = theme.codeLineHeight();
+  }
+  return params;
+}
+
+int BlockLayout::literalVisualLineCount(const RenderTheme& theme) const {
+  const LiteralLayoutParams params = literalLayoutParams(theme);
+  return layoutLiteralVisualLines(literal_, params.font, params.width, params.lineHeight, params.wrap).size();
+}
+
+int BlockLayout::literalVisualLineIndexForOffset(qsizetype localOffset, const RenderTheme& theme) const {
+  const LiteralLayoutParams params = literalLayoutParams(theme);
+  localOffset = qBound<qsizetype>(0, localOffset, literal_.size());
+  const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal_, params.font, params.width, params.lineHeight, params.wrap);
+  for (int i = 0; i < lines.size(); ++i) {
+    const qsizetype lineEnd = lines.at(i).start + lines.at(i).length;
+    if (localOffset >= lines.at(i).start && localOffset <= lineEnd) {
+      return i;
+    }
+  }
+  return lines.isEmpty() ? -1 : lines.size() - 1;
+}
+
+qsizetype BlockLayout::literalOffsetAtVisualLineX(int lineIndex, qreal localX, const RenderTheme& theme) const {
+  const LiteralLayoutParams params = literalLayoutParams(theme);
+  const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal_, params.font, params.width, params.lineHeight, params.wrap);
+  if (lineIndex < 0 || lineIndex >= lines.size()) {
+    return 0;
+  }
+  const LiteralVisualLine& line = lines.at(lineIndex);
+  // localX is already un-scrolled content-local, so pass xOffset = 0; seed the point's y with the
+  // target line's centre so literalOffsetForPoint resolves to that line regardless of x.
+  return literalOffsetForPoint(literal_, QPointF(localX, line.rect.center().y()), params.font, params.width,
+                               params.lineHeight, params.wrap, /*xOffset=*/0.0);
+}
+
+QRectF BlockLayout::literalVisualCursorRect(qsizetype localOffset, const RenderTheme& theme) const {
+  const LiteralLayoutParams params = literalLayoutParams(theme);
+  const QPointF origin = literalContentRect(theme).topLeft();
+  return literalCursorRectForOffset(literal_, localOffset, params.font, origin, params.width, params.lineHeight, params.wrap);
+}
+
 void BlockLayout::setHeadingLevel(int level) {
   headingLevel_ = level;
 }

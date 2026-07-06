@@ -28,11 +28,6 @@ SmartPunctRenderOptions smartPunctRenderOptions() {
   return opts;
 }
 
-bool isEditableTextBlock(BlockType type) {
-  return type == BlockType::Paragraph || type == BlockType::Heading || type == BlockType::ListItem || type == BlockType::TableCell ||
-         type == BlockType::LinkDefinition || type == BlockType::FootnoteDefinition;
-}
-
 bool isInlineEditableNode(BlockType type) {
   return type == BlockType::Paragraph || type == BlockType::Heading || type == BlockType::TableCell;
 }
@@ -44,7 +39,7 @@ bool isDefinitionBlock(BlockType type) {
 // Byte offset of the first editable literal character: just past the opening fence/marker line.
 // For "```\nfoo\n```" that is index 4 (the 'f'); for an empty "```\n\n```" it is the blank line.
 template <typename Text>
-qsizetype literalContentStartOffset(const Text& markdown, const MarkdownNode& node) {
+qsizetype literalContentStartOffsetOf(const Text& markdown, const MarkdownNode& node) {
   const SourceRange range = node.sourceRange();
   const qsizetype start = qBound<qsizetype>(0, range.byteStart, markdown.size());
   const qsizetype newlineAt = markdown.indexOf(QLatin1Char('\n'), start);
@@ -482,7 +477,7 @@ MarkdownNode* BlockEditContextResolver::literalBlockAtSourceOffset(
   if (isLiteralBlockType(node.type())) {
     const SourceRange range = node.sourceRange();
     if (sourceOffset >= range.byteStart && sourceOffset <= range.byteEnd) {
-      contentStartOut = literalContentStartOffset(session_->markdownText(), node);
+      contentStartOut = literalContentStartOffsetOf(session_->markdownText(), node);
       return &node;
     }
   }
@@ -495,6 +490,13 @@ MarkdownNode* BlockEditContextResolver::literalBlockAtSourceOffset(
     }
   }
   return nullptr;
+}
+
+qsizetype BlockEditContextResolver::literalContentStartOffset(const MarkdownNode& node) const {
+  if (!session_) {
+    return node.sourceRange().byteStart;
+  }
+  return literalContentStartOffsetOf(session_->markdownText(), node);
 }
 
 }  // namespace muffin

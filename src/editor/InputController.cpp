@@ -5,6 +5,8 @@
 #include "document/BlockPredicates.h"
 #include "document/DocumentSession.h"
 #include "document/InlineNode.h"
+#include "document/NodeNavigation.h"
+#include "document/SourceRangeUtil.h"
 #include "projection/InlineProjection.h"
 #include "document/MarkdownNode.h"
 #include "editor/BrushQueue.h"
@@ -18,6 +20,8 @@
 #include "blocks/code/CodeFenceController.h"
 #include "blocks/literal/LiteralBlockController.h"
 #include "blocks/table/TableController.h"
+#include "editor/EditorViewGeometry.h"
+#include "render/BlockLayout.h"
 
 #include <QEvent>
 #include <QElapsedTimer>
@@ -26,6 +30,9 @@
 #include <QInputMethodEvent>
 #include <QPoint>
 #include <QSettings>
+
+#include <cmath>
+#include <limits>
 
 namespace muffin {
 namespace {
@@ -136,6 +143,7 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
 }
 
 bool InputController::insertText(QString text) {
+  clearVerticalNavigationX();
   if (ctx_.hasSession() && ctx_.session->markdownText().isEmpty()) {
     return insertIntoEmptyDocument(std::move(text));
   }
@@ -199,6 +207,7 @@ bool InputController::insertText(QString text) {
 }
 
 bool InputController::insertParagraphBreak() {
+  clearVerticalNavigationX();
   if (hasActiveLiteralEditor()) {
     return insertTextIntoActiveLiteral(QStringLiteral("\n"));
   }
@@ -334,6 +343,7 @@ bool InputController::caretRestsOnNonTextBlock() const {
 }
 
 bool InputController::deleteBackward() {
+  clearVerticalNavigationX();
   reconcileLiteralEditorForCursor();
   if (hasActiveLiteralEditor()) {
     return deleteBackwardInActiveLiteral();
@@ -366,6 +376,7 @@ bool InputController::deleteBackward() {
 }
 
 bool InputController::deleteForward() {
+  clearVerticalNavigationX();
   reconcileLiteralEditorForCursor();
   if (hasActiveLiteralEditor()) {
     return deleteForwardInActiveLiteral();
@@ -962,19 +973,22 @@ CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset, bo
   if (!node) {
     return cursor;
   }
+  return cursorForSourceInNode(*node, sourceOffset);
+}
 
+CursorPosition InputController::cursorForSourceInNode(MarkdownNode& node, qsizetype sourceOffset) const {
   BlockEditContext context;
-  if (!resolver.fill(*node, context)) {
-    return cursor;
+  if (!contextResolver().fill(node, context)) {
+    return {};
   }
   const qsizetype localSourceOffset = qBound<qsizetype>(0, sourceOffset - context.contentRange.byteStart, context.contentText.size());
   qsizetype visibleOffset = -1;
   if (context.inlineProjection.visibleOffsetForSourceOffset(localSourceOffset, visibleOffset)) {
-    CursorPosition cursorForVisible = cursorFor(node->id(), visibleOffset);
+    CursorPosition cursorForVisible = cursorFor(node.id(), visibleOffset);
     cursorForVisible.text.sourceOffset = sourceOffset;
     return cursorForVisible;
   }
-  CursorPosition fallbackCursor = cursorFor(node->id(), qBound<qsizetype>(0, localSourceOffset, context.visibleText.size()));
+  CursorPosition fallbackCursor = cursorFor(node.id(), qBound<qsizetype>(0, localSourceOffset, context.visibleText.size()));
   fallbackCursor.text.sourceOffset = sourceOffset;
   return fallbackCursor;
 }
@@ -1025,6 +1039,69 @@ MarkdownNode* InputController::selectableBlockByDirection(NodeId current, int di
   return nullptr;
 }
 
+MarkdownNode* InputController::neighborBlockInDocumentDirection(const MarkdownNode& node, int direction) const {
+  MarkdownNode* mut = const_cast<MarkdownNode*>(&node);
+  if (direction > 0) {
+    // A list item's nested content (a sublist, or further paragraphs in a loose item) follows the
+    // item's own text in document order, so descend into the children after the primary paragraph
+    // before climbing to the next sibling. selectableBlockByDirection only walked top-level blocks,
+    // so Down from a parent item used to skip its sublist and jump to the next sibling.
+    if (node.type() == BlockType::ListItem) {
+      const MarkdownNode* const primary = primaryParagraph(node);
+      BlockEditContextResolver resolver = contextResolver();
+      for (const auto& child : node.children()) {
+        if (primary != nullptr && child.get() == primary) {
+          continue;  // the item's own paragraph is where the caret already is
+        }
+        if (resolver.firstEditableDescendant(*child) != nullptr) {
+          return child.get();  // raw child (e.g. a nested List); visualEdgeHitForBlock descends
+        }
+      }
+    }
+    return nextSiblingAcrossContainers(*mut);
+  }
+  // Backward: climb to the previous sibling across containers, then descend to the LAST editable
+  // block in its subtree (so Up from a block that follows a nested list lands on the last nested
+  // item, not the parent). A list item's primary paragraph is an AST child of the ListItem, but the
+  // caret/layout live on the ListItem, so when the previous sibling IS that paragraph, return the
+  // ListItem itself (its own line precedes the nested content the caret came from).
+  if (MarkdownNode* prev = previousSiblingAcrossContainers(*mut)) {
+    if (prev->type() == BlockType::Paragraph && prev->parent() != nullptr &&
+        prev->parent()->type() == BlockType::ListItem) {
+      return prev->parent();
+    }
+    return deepestLastEditableInSubtree(*prev);
+  }
+  return nullptr;
+}
+
+MarkdownNode* InputController::deepestLastEditableInSubtree(MarkdownNode& node) const {
+  if (node.type() == BlockType::ListItem) {
+    const MarkdownNode* const primary = primaryParagraph(node);
+    auto& children = node.children();
+    for (auto it = children.rbegin(); it != children.rend(); ++it) {
+      if (primary != nullptr && it->get() == primary) {
+        continue;
+      }
+      if (MarkdownNode* e = deepestLastEditableInSubtree(*it->get())) {
+        return e;
+      }
+    }
+    return &node;  // a leaf list item (no nested content)
+  }
+  if (!isEditableTextBlock(node.type())) {
+    // Container (List / BlockQuote): descend into the last child's subtree.
+    auto& children = node.children();
+    for (auto it = children.rbegin(); it != children.rend(); ++it) {
+      if (MarkdownNode* e = deepestLastEditableInSubtree(*it->get())) {
+        return e;
+      }
+    }
+    return nullptr;
+  }
+  return &node;  // editable leaf (Paragraph / Heading / ...)
+}
+
 qsizetype InputController::selectableTextLength(const MarkdownNode& node) const {
   switch (node.type()) {
     case BlockType::Paragraph:
@@ -1047,9 +1124,281 @@ qsizetype InputController::selectableTextLength(const MarkdownNode& node) const 
   }
 }
 
+HitTestResult InputController::richHitForCursor(CursorPosition cursor) const {
+  if (ctx_.view && cursor.isValid()) {
+    HitTestResult hit = ctx_.view->hitForCursorPosition(cursor);
+    if (hit.isValid()) {
+      return hit;
+    }
+  }
+  HitTestResult hit;
+  hit.blockId = cursor.blockId;
+  hit.textNodeId = cursor.text.nodeId;
+  hit.textOffset = cursor.text.textOffset;
+  hit.sourceOffset = cursor.text.sourceOffset;
+  hit.zone = cursor.afterBlock ? HitTestResult::Zone::BlockAfter : HitTestResult::Zone::None;
+  return hit;
+}
+
+HitTestResult InputController::visualEdgeHitForBlock(NodeId blockId, int direction, qreal documentX) const {
+  HitTestResult result;
+  if (!ctx_.hasSession() || !ctx_.view || !blockId.isValid()) {
+    return result;
+  }
+
+  MarkdownNode* node = ctx_.session->document().node(blockId);
+  if (!node) {
+    return result;
+  }
+
+  if (node->type() == BlockType::Table) {
+    const BlockLayout* tableLayout = ctx_.view->blockLayoutForNode(node->id());
+    if (!tableLayout || tableLayout->tableRows().empty()) {
+      return result;
+    }
+    const int rowIndex = direction > 0 ? 0 : static_cast<int>(tableLayout->tableRows().size()) - 1;
+    const auto& row = tableLayout->tableRows().at(static_cast<size_t>(rowIndex));
+    if (row.cells.empty()) {
+      return result;
+    }
+    int columnIndex = 0;
+    qreal bestDistance = std::numeric_limits<qreal>::max();
+    for (int i = 0; i < static_cast<int>(row.cells.size()); ++i) {
+      const qreal clampedX = qBound(row.cells.at(static_cast<size_t>(i)).rect.left(), documentX,
+                                    row.cells.at(static_cast<size_t>(i)).rect.right());
+      const qreal distance = qAbs(clampedX - documentX);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        columnIndex = i;
+      }
+    }
+    const auto& cell = row.cells.at(static_cast<size_t>(columnIndex));
+    const int line = direction > 0 ? 0 : qMax(0, cell.text.visualLineCount() - 1);
+    const QPointF origin = editor_geometry::tableCellTextOrigin(cell, ctx_.view->theme());
+    const qsizetype localSource = cell.text.sourceOffsetAtVisualLineX(line, documentX - origin.x());
+    result.zone = HitTestResult::Zone::TableCell;
+    result.blockId = node->id();
+    result.textNodeId = cell.nodeId;
+    result.tableRow = rowIndex;
+    result.tableColumn = columnIndex;
+    result.sourceOffset = cell.contentSourceStart >= 0 ? cell.contentSourceStart + localSource : localSource;
+    result.textOffset = cell.text.textOffsetAtVisualLineX(line, documentX - origin.x());
+    result.blockRect = tableLayout->rect();
+    result.cursorRect = cell.text.cursorRectForSourceOffset(localSource).translated(origin);
+    return result;
+  }
+
+  BlockEditContextResolver resolver = contextResolver();
+  MarkdownNode* editable = direction > 0 ? resolver.firstEditableDescendant(*node) : resolver.lastEditableDescendant(*node);
+  if (!editable) {
+    return result;
+  }
+
+  const BlockLayout* block = ctx_.view->blockLayoutForNode(editable->id());
+  if (!block || !block->inlineLayout()) {
+    const CursorPosition cursor = cursorForNode(*editable, direction > 0 ? 0 : selectableTextLength(*editable));
+    return richHitForCursor(cursor);
+  }
+
+  const InlineLayout* inlineLayout = block->inlineLayout();
+  const int line = direction > 0 ? 0 : qMax(0, inlineLayout->visualLineCount() - 1);
+  const QPointF origin = block->inlineTextOrigin(ctx_.view->theme());
+  const qsizetype localSource = inlineLayout->sourceOffsetAtVisualLineX(line, documentX - origin.x());
+  const CursorPosition cursor = cursorForSourceInNode(*editable, block->contentSourceStart() + localSource);
+  return richHitForCursor(cursor);
+}
+
+bool InputController::moveTableCellHorizontal(int direction, bool extendSelection) {
+  if (!tableController_ || !ctx_.hasSession() || !ctx_.view || direction == 0) {
+    return false;
+  }
+  const TableLocation location = tableController_->currentCell();
+  if (!location.isValid() || !location.tableId.isValid()) {
+    return false;
+  }
+  const BlockLayout* tableLayout = ctx_.view->blockLayoutForNode(location.tableId);
+  if (!tableLayout || location.row < 0 || location.row >= static_cast<int>(tableLayout->tableRows().size())) {
+    return false;
+  }
+  const auto& row = tableLayout->tableRows().at(static_cast<size_t>(location.row));
+  if (location.column < 0 || location.column >= static_cast<int>(row.cells.size())) {
+    return false;
+  }
+
+  MarkdownNode* table = ctx_.session->document().node(location.tableId);
+  MarkdownNode* cellNode = ctx_.session->document().node(row.cells.at(static_cast<size_t>(location.column)).nodeId);
+  if (!table || !cellNode) {
+    return false;
+  }
+
+  BlockEditContext context;
+  if (!contextResolver().fill(*cellNode, context)) {
+    return false;
+  }
+  const CursorPosition current = ctx_.selection->cursorPosition();
+  qsizetype currentSource = current.text.sourceOffset;
+  if (currentSource < context.contentRange.byteStart || currentSource > context.contentRange.byteEnd) {
+    qsizetype local = -1;
+    if (!context.inlineProjection.sourceOffsetForVisibleOffset(current.text.textOffset, local)) {
+      local = qBound<qsizetype>(0, current.text.textOffset, context.contentText.size());
+    }
+    currentSource = context.contentRange.byteStart + local;
+  }
+
+  qsizetype nextSource = currentSource + direction;
+  int targetRow = location.row;
+  int targetColumn = location.column;
+  bool targetEnd = false;
+  if (nextSource < context.contentRange.byteStart) {
+    if (targetColumn > 0) {
+      --targetColumn;
+      targetEnd = true;
+    } else if (targetRow > 0) {
+      --targetRow;
+      targetColumn = static_cast<int>(tableLayout->tableRows().at(static_cast<size_t>(targetRow)).cells.size()) - 1;
+      targetEnd = true;
+    } else if (MarkdownNode* previous = neighborBlockInDocumentDirection(*table, -1)) {
+      setHitOrExtend(visualEdgeHitForBlock(previous->id(), -1, ctx_.view->effectiveCursorRect().left()), extendSelection);
+      return true;
+    } else {
+      nextSource = context.contentRange.byteStart;
+    }
+  } else if (nextSource > context.contentRange.byteEnd) {
+    if (targetColumn + 1 < static_cast<int>(row.cells.size())) {
+      ++targetColumn;
+    } else if (targetRow + 1 < static_cast<int>(tableLayout->tableRows().size())) {
+      ++targetRow;
+      targetColumn = 0;
+    } else if (MarkdownNode* next = neighborBlockInDocumentDirection(*table, 1)) {
+      setHitOrExtend(visualEdgeHitForBlock(next->id(), 1, ctx_.view->effectiveCursorRect().left()), extendSelection);
+      return true;
+    } else {
+      nextSource = context.contentRange.byteEnd;
+    }
+  } else {
+    const qsizetype localNext = nextSource - context.contentRange.byteStart;
+    qsizetype tokenStart = 0, tokenEnd = 0;
+    if (context.inlineProjection.foldedSpanInterior(localNext, tokenStart, tokenEnd)) {
+      nextSource = context.contentRange.byteStart + (direction > 0 ? tokenEnd : tokenStart);
+    }
+  }
+
+  if (targetRow != location.row || targetColumn != location.column) {
+    const auto& targetRowLayout = tableLayout->tableRows().at(static_cast<size_t>(targetRow));
+    if (targetColumn < 0 || targetColumn >= static_cast<int>(targetRowLayout.cells.size())) {
+      return false;
+    }
+    const auto& targetCell = targetRowLayout.cells.at(static_cast<size_t>(targetColumn));
+    MarkdownNode* targetNode = ctx_.session->document().node(targetCell.nodeId);
+    if (!targetNode) {
+      return false;
+    }
+    BlockEditContext targetContext;
+    if (!contextResolver().fill(*targetNode, targetContext)) {
+      return false;
+    }
+    nextSource = targetEnd ? targetContext.contentRange.byteEnd : targetContext.contentRange.byteStart;
+  }
+
+  const auto& finalRow = tableLayout->tableRows().at(static_cast<size_t>(targetRow));
+  const auto& finalCell = finalRow.cells.at(static_cast<size_t>(targetColumn));
+  MarkdownNode* finalNode = ctx_.session->document().node(finalCell.nodeId);
+  BlockEditContext finalContext;
+  if (!finalNode || !contextResolver().fill(*finalNode, finalContext)) {
+    return false;
+  }
+  qsizetype visibleOffset = -1;
+  const qsizetype localSource = qBound<qsizetype>(0, nextSource - finalContext.contentRange.byteStart, finalContext.contentText.size());
+  if (!finalContext.inlineProjection.visibleOffsetForSourceOffset(localSource, visibleOffset)) {
+    visibleOffset = localSource;
+  }
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::TableCell;
+  hit.blockId = table->id();
+  hit.textNodeId = finalCell.nodeId;
+  hit.tableRow = targetRow;
+  hit.tableColumn = targetColumn;
+  hit.sourceOffset = nextSource;
+  hit.textOffset = visibleOffset;
+  hit.blockRect = tableLayout->rect();
+  const QPointF origin = editor_geometry::tableCellTextOrigin(finalCell, ctx_.view->theme());
+  hit.cursorRect = finalCell.text.cursorRectForSourceOffset(localSource).translated(origin);
+  setHitOrExtend(hit, extendSelection);
+  return true;
+}
+
+bool InputController::moveTableCellVertical(int direction, bool extendSelection, qreal documentX) {
+  if (!tableController_ || !ctx_.hasSession() || !ctx_.view || direction == 0) {
+    return false;
+  }
+  const TableLocation location = tableController_->currentCell();
+  if (!location.isValid() || !location.tableId.isValid()) {
+    return false;
+  }
+  const BlockLayout* tableLayout = ctx_.view->blockLayoutForNode(location.tableId);
+  if (!tableLayout || location.row < 0 || location.row >= static_cast<int>(tableLayout->tableRows().size())) {
+    return false;
+  }
+  const int targetRow = location.row + direction;
+  if (targetRow < 0 || targetRow >= static_cast<int>(tableLayout->tableRows().size())) {
+    if (MarkdownNode* table = ctx_.session->document().node(location.tableId)) {
+      if (MarkdownNode* target = neighborBlockInDocumentDirection(*table, direction)) {
+        setHitOrExtend(visualEdgeHitForBlock(target->id(), direction, documentX), extendSelection);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  const auto& currentRow = tableLayout->tableRows().at(static_cast<size_t>(location.row));
+  if (location.column < 0 || location.column >= static_cast<int>(currentRow.cells.size())) {
+    return false;
+  }
+  const auto& currentCell = currentRow.cells.at(static_cast<size_t>(location.column));
+  int currentLine = 0;
+  const CursorPosition current = ctx_.selection->cursorPosition();
+  if (current.text.sourceOffset >= 0 && currentCell.contentSourceStart >= 0) {
+    currentLine = currentCell.text.visualLineIndexForSourceOffset(current.text.sourceOffset - currentCell.contentSourceStart);
+  }
+  if (currentLine < 0) {
+    currentLine = currentCell.text.visualLineIndexForTextOffset(current.text.textOffset);
+  }
+  currentLine = qMax(0, currentLine);
+
+  const auto& row = tableLayout->tableRows().at(static_cast<size_t>(targetRow));
+  if (row.cells.empty()) {
+    return false;
+  }
+  const int targetColumn = qBound(0, location.column, static_cast<int>(row.cells.size()) - 1);
+  const auto& targetCell = row.cells.at(static_cast<size_t>(targetColumn));
+  const int lineCount = qMax(1, targetCell.text.visualLineCount());
+  const int targetLine = qBound(0, currentLine, lineCount - 1);
+  const QPointF origin = editor_geometry::tableCellTextOrigin(targetCell, ctx_.view->theme());
+  const qreal localX = documentX - origin.x();
+  const qsizetype localSource = targetCell.text.sourceOffsetAtVisualLineX(targetLine, localX);
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::TableCell;
+  hit.blockId = location.tableId;
+  hit.textNodeId = targetCell.nodeId;
+  hit.tableRow = targetRow;
+  hit.tableColumn = targetColumn;
+  hit.sourceOffset = targetCell.contentSourceStart >= 0 ? targetCell.contentSourceStart + localSource : localSource;
+  hit.textOffset = targetCell.text.textOffsetAtVisualLineX(targetLine, localX);
+  hit.blockRect = tableLayout->rect();
+  hit.cursorRect = targetCell.text.cursorRectForSourceOffset(localSource).translated(origin);
+  setHitOrExtend(hit, extendSelection);
+  return true;
+}
+
 bool InputController::moveCursorHorizontal(int direction, bool extendSelection) {
+  clearVerticalNavigationX();
   if (!ctx_.hasSession() || !ctx_.hasCursor() || direction == 0) {
     return false;
+  }
+  if (moveTableCellHorizontal(direction, extendSelection)) {
+    return true;
   }
 
   CursorPosition current = ctx_.selection->cursorPosition();
@@ -1116,16 +1465,124 @@ bool InputController::moveCursorVertical(int direction, bool extendSelection) {
   if (!ctx_.hasSession() || !ctx_.hasCursor() || direction == 0) {
     return false;
   }
-  MarkdownNode* target = selectableBlockByDirection(ctx_.selection->cursorPosition().blockId, direction);
+
+  const CursorPosition current = ctx_.selection->cursorPosition();
+  if (hasVerticalNavigationX_ && (verticalNavigationCursor_.blockId != current.blockId ||
+                                  verticalNavigationCursor_.text.nodeId != current.text.nodeId ||
+                                  verticalNavigationCursor_.text.textOffset != current.text.textOffset ||
+                                  verticalNavigationCursor_.text.sourceOffset != current.text.sourceOffset ||
+                                  verticalNavigationCursor_.afterBlock != current.afterBlock)) {
+    clearVerticalNavigationX();
+  }
+
+  MarkdownNode* node = ctx_.session->document().node(current.blockId);
+  if (!node) {
+    return false;
+  }
+  const BlockLayout* block = ctx_.view ? ctx_.view->blockLayoutForNode(current.blockId) : nullptr;
+
+  if (!hasVerticalNavigationX_) {
+    QRectF cursorRect;
+    if (block && isLiteralBlockType(node->type())) {
+      // Literal blocks use the UN-SCROLLED content cursor rect so the preserved column is the real
+      // character column. effectiveCursorRect subtracts the horizontal-scroll offset for scrollable
+      // code fences, which would drift the goal column on each press.
+      cursorRect = block->literalVisualCursorRect(current.text.textOffset, ctx_.view->theme());
+    } else if (ctx_.view) {
+      cursorRect = ctx_.view->effectiveCursorRect();
+      if (cursorRect.isEmpty()) {
+        cursorRect = richHitForCursor(current).cursorRect;
+      }
+    }
+    verticalNavigationX_ = cursorRect.isEmpty() ? 0.0 : cursorRect.left();
+    hasVerticalNavigationX_ = true;
+  }
+
+  if (moveTableCellVertical(direction, extendSelection, verticalNavigationX_)) {
+    verticalNavigationCursor_ = ctx_.selection->cursorPosition();
+    return true;
+  }
+
+  if (block && isLiteralBlockType(node->type()) && hasActiveLiteralEditor()) {
+    if (moveLiteralVertical(*block, *node, direction, extendSelection)) {
+      verticalNavigationCursor_ = ctx_.selection->cursorPosition();
+      return true;
+    }
+  }
+
+  if (block && block->inlineLayout()) {
+    const InlineLayout* inlineLayout = block->inlineLayout();
+    int line = -1;
+    if (current.text.sourceOffset >= 0 && block->contentSourceStart() >= 0) {
+      line = inlineLayout->visualLineIndexForSourceOffset(current.text.sourceOffset - block->contentSourceStart());
+    }
+    if (line < 0) {
+      line = inlineLayout->visualLineIndexForTextOffset(current.text.textOffset);
+    }
+    const int targetLine = line + direction;
+    if (targetLine >= 0 && targetLine < inlineLayout->visualLineCount()) {
+      const QPointF origin = block->inlineTextOrigin(ctx_.view->theme());
+      const qreal localX = verticalNavigationX_ - origin.x();
+      const CursorPosition target = block->contentSourceStart() >= 0
+          ? cursorForSourceInNode(*node, block->contentSourceStart() + inlineLayout->sourceOffsetAtVisualLineX(targetLine, localX))
+          : cursorForNode(*node, inlineLayout->textOffsetAtVisualLineX(targetLine, localX));
+      setHitOrExtend(richHitForCursor(target), extendSelection);
+      verticalNavigationCursor_ = ctx_.selection->cursorPosition();
+      return true;
+    }
+  }
+
+  MarkdownNode* target = neighborBlockInDocumentDirection(*node, direction);
   if (!target) {
     return false;
   }
+  if (ctx_.view) {
+    const HitTestResult hit = visualEdgeHitForBlock(target->id(), direction, verticalNavigationX_);
+    if (hit.isValid()) {
+      setHitOrExtend(hit, extendSelection);
+      verticalNavigationCursor_ = ctx_.selection->cursorPosition();
+      return true;
+    }
+  }
   const qsizetype offset = direction > 0 ? 0 : selectableTextLength(*target);
   setCursorOrExtend(cursorForNode(*target, offset), extendSelection);
+  verticalNavigationCursor_ = ctx_.selection->cursorPosition();
+  return true;
+}
+
+bool InputController::moveLiteralVertical(const BlockLayout& block, MarkdownNode& node, int direction, bool extendSelection) {
+  if (!ctx_.view || !ctx_.hasSession()) {
+    return false;
+  }
+  const RenderTheme& theme = ctx_.view->theme();
+  const CursorPosition current = ctx_.selection->cursorPosition();
+
+  const int count = block.literalVisualLineCount(theme);
+  if (count <= 0) {
+    return false;
+  }
+  const int line = block.literalVisualLineIndexForOffset(current.text.textOffset, theme);
+  const int targetLine = line + direction;
+  if (targetLine < 0 || targetLine >= count) {
+    return false;  // past the first/last visual line — caller falls through to leave the block
+  }
+
+  // Resolve the literal's ABSOLUTE content start (BlockLayout::contentSourceStart() is not populated
+  // for literal blocks) and build the caret directly: a literal caret is just nodeId + offset into
+  // node.literal(), so there is no document-wide offset walk as cursorForSourceOffset would do.
+  const qsizetype literalStartSource = contextResolver().literalContentStartOffset(node);
+  const QRectF contentRect = block.literalContentRect(theme);
+  const qreal localX = verticalNavigationX_ - contentRect.left();
+  const qsizetype targetLocal =
+      qBound<qsizetype>(0, block.literalOffsetAtVisualLineX(targetLine, localX, theme), node.literal().size());
+  CursorPosition target = cursorFor(node.id(), targetLocal);
+  target.text.sourceOffset = literalStartSource + targetLocal;
+  setHitOrExtend(richHitForCursor(target), extendSelection);
   return true;
 }
 
 bool InputController::moveJump(JumpTarget target, bool extendSelection) {
+  clearVerticalNavigationX();
   if (!ctx_.hasSession() || !ctx_.hasCursor()) {
     return false;
   }
@@ -1237,6 +1694,33 @@ void InputController::setCursorOrExtend(CursorPosition cursor, bool extendSelect
   }
   range.focus = cursor;
   ctx_.selection->setSelection(range);
+}
+
+void InputController::setHitOrExtend(HitTestResult hit, bool extendSelection) {
+  if (!ctx_.selection || !hit.isValid()) {
+    return;
+  }
+  const CursorPosition cursor = hit.cursorPosition();
+  if (!cursor.isValid()) {
+    return;
+  }
+  if (!extendSelection) {
+    ctx_.selection->setHitResult(hit);
+    syncLiteralEditMode(cursor.blockId);
+    return;
+  }
+  SelectionRange range = ctx_.selection->selection();
+  if (!range.anchor.isValid()) {
+    range.anchor = ctx_.selection->cursorPosition();
+  }
+  range.focus = cursor;
+  ctx_.selection->setSelection(range, hit);
+}
+
+void InputController::clearVerticalNavigationX() {
+  hasVerticalNavigationX_ = false;
+  verticalNavigationX_ = 0.0;
+  verticalNavigationCursor_ = CursorPosition();
 }
 
 QString InputController::printableText(QKeyEvent* event) const {

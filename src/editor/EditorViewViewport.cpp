@@ -193,6 +193,13 @@ const BlockLayout* EditorView::blockLayoutForNode(NodeId id) const {
   return layout_->block(id, theme_);
 }
 
+HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
+  if (!layout_) {
+    return {};
+  }
+  return editor_geometry::hitForCursorPosition(*layout_, theme_, position);
+}
+
 HitTestResult EditorView::hitTest(QPointF viewportPos) const {
   PerfTimer perf("view.hitTest");
   if (!layout_) {

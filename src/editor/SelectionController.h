@@ -20,6 +20,7 @@ public:
   void setHitResult(HitTestResult hit);
   void setCursorPosition(CursorPosition position);
   void setSelection(SelectionRange selection);
+  void setSelection(SelectionRange selection, HitTestResult focusHit);
   void clear();
 
 signals:

@@ -101,6 +101,12 @@ public:
   QString imageSrcAtLocalPos(QPointF localPos) const;
   QRectF cursorRect(qsizetype textOffset) const;
   QRectF cursorRectForSourceOffset(qsizetype sourceOffset) const;
+  int visualLineCount() const;
+  int visualLineIndexForTextOffset(qsizetype textOffset) const;
+  int visualLineIndexForSourceOffset(qsizetype sourceOffset) const;
+  QRectF visualLineRect(int lineIndex) const;
+  qsizetype textOffsetAtVisualLineX(int lineIndex, qreal localX) const;
+  qsizetype sourceOffsetAtVisualLineX(int lineIndex, qreal localX) const;
   QVector<QRectF> selectionRects(qsizetype startOffset, qsizetype endOffset) const;
   QVector<QRectF> selectionRectsForSourceOffsets(qsizetype startSourceOffset, qsizetype endSourceOffset) const;
 

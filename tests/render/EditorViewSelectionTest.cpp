@@ -367,6 +367,256 @@ void testEditorViewVerticalDragSelectionHitsWrappedLine() {
 // Drag from the virtual trailing paragraph (below the last block) back up into
 // an earlier block must select across blocks, treating the trailing position as
 // the end of the last block — and the selection must serialize for copy.
+void testKeyboardDownMovesWithinWrappedParagraphLine() {
+  const QString markdown = QStringLiteral(
+      "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau");
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(150, 500);
+  session.setMarkdownText(markdown, false);
+  view.setDocument(session.document());
+
+  MarkdownNode* block = blockAt(session, 0);
+  const InlineLayout* layout = requireViewInlineLayout(view, block->id(), QStringLiteral("wrapped keyboard down"));
+  require(layout->visualLineCount() >= 2, "keyboard down fixture should wrap to at least two visual lines");
+
+  const qreal localX = layout->visualLineRect(0).left() + 35.0;
+  const qsizetype startSource = layout->sourceOffsetAtVisualLineX(0, localX);
+  const qsizetype expectedSource = layout->sourceOffsetAtVisualLineX(1, localX);
+  setSourceCursor(controller.selection(), block, startSource, startSource);
+
+  require(pressKey(controller.inputController(), &view, Qt::Key_Down), "Down should be handled in wrapped paragraph");
+  const CursorPosition cursor = controller.selection().cursorPosition();
+  require(cursor.blockId == block->id(), "Down inside wrapped paragraph should stay in the same block");
+  const InlineLayout* layoutAfter = requireViewInlineLayout(view, block->id(), QStringLiteral("wrapped keyboard down after"));
+  require(layoutAfter->visualLineIndexForSourceOffset(cursor.text.sourceOffset) == 1, "Down should land on visual line 1");
+  const qsizetype actualSource = layoutAfter->sourceOffsetAtVisualLineX(1, localX);
+  require(cursor.text.sourceOffset == actualSource, "Down should preserve x on the next visual line");
+  Q_UNUSED(expectedSource)
+}
+
+void testKeyboardVerticalCrossesParagraphsByVisualEdges() {
+  const QString first = QStringLiteral(
+      "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau");
+  const QString second = QStringLiteral("next paragraph keeps going");
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(150, 500);
+  session.setMarkdownText(first + QStringLiteral("\n\n") + second, false);
+  view.setDocument(session.document());
+
+  MarkdownNode* firstBlock = blockAt(session, 0);
+  MarkdownNode* secondBlock = blockAt(session, 1);
+  const InlineLayout* firstLayout = requireViewInlineLayout(view, firstBlock->id(), QStringLiteral("wrapped cross first"));
+  requireViewInlineLayout(view, secondBlock->id(), QStringLiteral("wrapped cross second"));
+  require(firstLayout->visualLineCount() >= 2, "cross-paragraph fixture should wrap first paragraph");
+
+  const int lastLine = firstLayout->visualLineCount() - 1;
+  const qreal localX = firstLayout->visualLineRect(lastLine).left() + 30.0;
+  const qreal documentX = view.nodeRect(firstBlock->id()).left() + localX;
+  setSourceCursor(controller.selection(), firstBlock,
+                  firstLayout->sourceOffsetAtVisualLineX(lastLine, localX),
+                  firstLayout->sourceOffsetAtVisualLineX(lastLine, localX));
+
+  require(pressKey(controller.inputController(), &view, Qt::Key_Down), "Down from last visual line should be handled");
+  CursorPosition cursor = controller.selection().cursorPosition();
+  require(cursor.blockId == secondBlock->id(), "Down from last visual line should enter next paragraph");
+  const InlineLayout* secondLayoutDown = requireViewInlineLayout(view, secondBlock->id(), QStringLiteral("wrapped cross second after down"));
+  const qsizetype expectedSecondSource = secondLayoutDown->sourceOffsetAtVisualLineX(0, documentX - view.nodeRect(secondBlock->id()).left());
+  require(cursor.text.sourceOffset == secondBlock->sourceRange().byteStart + expectedSecondSource,
+          "Down into next paragraph should preserve document x on first visual line");
+  require(secondLayoutDown->visualLineIndexForSourceOffset(cursor.text.sourceOffset - secondBlock->sourceRange().byteStart) == 0,
+          "Down into next paragraph should land on its first visual line");
+
+  require(pressKey(controller.inputController(), &view, Qt::Key_Up), "Up should return to previous paragraph");
+  cursor = controller.selection().cursorPosition();
+  require(cursor.blockId == firstBlock->id(), "Up from first visual line should return to previous paragraph");
+  const InlineLayout* firstLayoutUp = requireViewInlineLayout(view, firstBlock->id(), QStringLiteral("wrapped cross first after up"));
+  require(firstLayoutUp->visualLineIndexForSourceOffset(cursor.text.sourceOffset - firstBlock->sourceRange().byteStart) == lastLine,
+          "Up should land on the previous paragraph's last visual line");
+}
+
+HitTestResult tableCellHit(EditorView& view, NodeId tableId, int row, int column, qsizetype localSource) {
+  const BlockLayout* table = requireViewBlock(view, tableId, QStringLiteral("keyboard table fresh"));
+  const auto& tableRows = table->tableRows();
+  require(row >= 0 && row < static_cast<int>(tableRows.size()), "table hit row out of range");
+  const auto& cells = tableRows.at(static_cast<size_t>(row)).cells;
+  require(column >= 0 && column < static_cast<int>(cells.size()), "table hit column out of range");
+  const auto& cell = cells.at(static_cast<size_t>(column));
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::TableCell;
+  hit.blockId = table->nodeId();
+  hit.textNodeId = cell.nodeId;
+  hit.tableRow = row;
+  hit.tableColumn = column;
+  hit.textOffset = localSource;
+  hit.sourceOffset = cell.contentSourceStart + localSource;
+  hit.blockRect = table->rect();
+  hit.cursorRect = cell.text.cursorRectForSourceOffset(localSource).translated(cell.rect.topLeft());
+  return hit;
+}
+
+void testKeyboardTableArrowsMoveByCellGrid() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+  session.setMarkdownText(QStringLiteral(
+      "before\n\n"
+      "| A | B |\n"
+      "|---|---|\n"
+      "| c1 | d1 |\n"
+      "| c2 | d2 |\n"
+      "\n"
+      "after"), false);
+  view.setDocument(session.document());
+
+  MarkdownNode* tableNode = blockAt(session, 1);
+  require(requireViewBlock(view, tableNode->id(), QStringLiteral("keyboard table"))->tableRows().size() >= 3,
+          "table fixture should expose header and two body rows");
+  const NodeId tableId = tableNode->id();
+
+  controller.activateHit(tableCellHit(view, tableId, 2, 1, 1));
+  require(pressKey(controller.inputController(), &view, Qt::Key_Up), "Up in table should be handled");
+  HitTestResult hit = controller.selection().currentHit();
+  require(hit.zone == HitTestResult::Zone::TableCell, "Up in table should preserve table hit zone");
+  require(hit.tableRow == 1 && hit.tableColumn == 1, "Up in table should move to the cell above");
+
+  require(pressKey(controller.inputController(), &view, Qt::Key_Down), "Down in table should be handled");
+  hit = controller.selection().currentHit();
+  require(hit.tableRow == 2 && hit.tableColumn == 1, "Down in table should move back to the cell below");
+
+  controller.activateHit(tableCellHit(view, tableId, 1, 1, 0));
+  require(pressKey(controller.inputController(), &view, Qt::Key_Left), "Left from a cell start should be handled");
+  hit = controller.selection().currentHit();
+  require(hit.tableRow == 1 && hit.tableColumn == 0, "Left from cell start should move to previous cell");
+  require(hit.textOffset == 2, "Left from cell start should land at previous cell end");
+
+  controller.activateHit(tableCellHit(view, tableId, 1, 1, 2));
+  require(pressKey(controller.inputController(), &view, Qt::Key_Right), "Right from a row-end cell should be handled");
+  hit = controller.selection().currentHit();
+  require(hit.tableRow == 2 && hit.tableColumn == 0, "Right from row end should wrap to next row first cell");
+  require(hit.textOffset == 0, "Right from row end should land at next cell start");
+}
+
+// Up/Down inside a list move between sibling items at the preserved horizontal column. A nested
+// caret used to be a silent no-op because the cross-block fallthrough only walked top-level blocks.
+void testKeyboardUpDownMovesBetweenListItems() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(800, 500);  // wide enough that each short item is a single visual line
+
+  session.setMarkdownText(QStringLiteral("- alpha\n- bravo\n- charlie"), false);
+  view.setDocument(session.document());
+  MarkdownNode* item0 = listItemAt(session, 0, 0);
+  MarkdownNode* item1 = listItemAt(session, 0, 1);
+  MarkdownNode* item2 = listItemAt(session, 0, 2);
+  require(item0 != nullptr && item1 != nullptr && item2 != nullptr, "fixture should build three list items");
+
+  setCursor(controller.selection(), item0, 2);  // "al|pha"
+  require(pressKey(controller.inputController(), &view, Qt::Key_Down), "Down inside a list should be handled");
+  CursorPosition cursor = controller.selection().cursorPosition();
+  require(cursor.blockId == item1->id(), "Down should move to the next list item");
+  require(cursor.text.textOffset == 2, "Down should preserve the column across list items");
+
+  require(pressKey(controller.inputController(), &view, Qt::Key_Down), "Down to the third item should be handled");
+  cursor = controller.selection().cursorPosition();
+  require(cursor.blockId == item2->id(), "Down should move to the third list item");
+
+  require(pressKey(controller.inputController(), &view, Qt::Key_Up), "Up should return to the previous item");
+  cursor = controller.selection().cursorPosition();
+  require(cursor.blockId == item1->id(), "Up should move back to the second list item");
+  require(cursor.text.textOffset == 2, "Up should preserve the column across list items");
+}
+
+// Up from the first list item and Down from the last list item leave the list for the neighbouring
+// block (the container-climbing fallthrough reaches the block before/after the whole list).
+void testKeyboardUpDownLeavesListAtBoundaries() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(800, 500);
+
+  session.setMarkdownText(QStringLiteral("before\n\n- alpha\n- bravo\n\nafter"), false);
+  view.setDocument(session.document());
+  MarkdownNode* before = blockAt(session, 0);
+  MarkdownNode* firstItem = listItemAt(session, 1, 0);
+  MarkdownNode* lastItem = listItemAt(session, 1, 1);
+  MarkdownNode* after = blockAt(session, 2);
+  require(before != nullptr && firstItem != nullptr && lastItem != nullptr && after != nullptr,
+          "fixture should have before / list / after");
+
+  setCursor(controller.selection(), firstItem, 0);
+  require(pressKey(controller.inputController(), &view, Qt::Key_Up), "Up from the first item should be handled");
+  require(controller.selection().cursorPosition().blockId == before->id(),
+          "Up from the first list item should leave the list to the previous block");
+
+  setCursor(controller.selection(), lastItem, 0);
+  require(pressKey(controller.inputController(), &view, Qt::Key_Down), "Down from the last item should be handled");
+  require(controller.selection().cursorPosition().blockId == after->id(),
+          "Down from the last list item should leave the list to the next block");
+}
+
+// Down from a parent item that contains a nested sublist descends to its first nested child, then
+// onwards through the nested children to the parent's sibling; Up retraces the exact same path.
+void testKeyboardUpDownDescendsIntoAndOutOfNestedSublist() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(800, 500);
+
+  session.setMarkdownText(QStringLiteral("- parent\n  - child one\n  - child two\n- sibling"), false);
+  view.setDocument(session.document());
+  MarkdownNode* parent = listItemAt(session, 0, 0);
+  MarkdownNode* sibling = listItemAt(session, 0, 1);
+  require(parent != nullptr && sibling != nullptr, "fixture should build parent and sibling items");
+  MarkdownNode* nestedList = nullptr;
+  for (const auto& child : parent->children()) {
+    if (child->type() == BlockType::List) {
+      nestedList = child.get();
+      break;
+    }
+  }
+  require(nestedList != nullptr, "parent item should contain a nested list");
+  MarkdownNode* childOne = childAt(nestedList, 0);
+  MarkdownNode* childTwo = childAt(nestedList, 1);
+  require(childOne != nullptr && childTwo != nullptr, "nested list should expose two child items");
+
+  setCursor(controller.selection(), parent, 0);
+  require(pressKey(controller.inputController(), &view, Qt::Key_Down), "Down from the parent should be handled");
+  require(controller.selection().cursorPosition().blockId == childOne->id(),
+          "Down from a parent item should descend to its first nested child, not skip to the sibling");
+  require(pressKey(controller.inputController(), &view, Qt::Key_Down), "Down to the second child should be handled");
+  require(controller.selection().cursorPosition().blockId == childTwo->id(),
+          "Down should move to the second nested child");
+  require(pressKey(controller.inputController(), &view, Qt::Key_Down), "Down to the sibling should be handled");
+  require(controller.selection().cursorPosition().blockId == sibling->id(),
+          "Down from the last nested child should move to the parent's sibling");
+
+  // Up retraces the path: sibling -> childTwo -> childOne -> parent.
+  require(pressKey(controller.inputController(), &view, Qt::Key_Up), "Up from the sibling should be handled");
+  require(controller.selection().cursorPosition().blockId == childTwo->id(),
+          "Up from the sibling should return to the last nested child, not the parent");
+  require(pressKey(controller.inputController(), &view, Qt::Key_Up), "Up to the first child should be handled");
+  require(controller.selection().cursorPosition().blockId == childOne->id(),
+          "Up should return to the first nested child");
+  require(pressKey(controller.inputController(), &view, Qt::Key_Up), "Up to the parent should be handled");
+  require(controller.selection().cursorPosition().blockId == parent->id(),
+          "Up from the first nested child should return to the parent item");
+}
+
+// Drag from the virtual trailing paragraph (below the last block) back up into
+// an earlier block must select across blocks, treating the trailing position as
+// the end of the last block — and the selection must serialize for copy.
 void testEditorViewDragFromTrailingParagraphSelectsBack() {
   DocumentSession session;
   EditorView view;
@@ -548,6 +798,12 @@ int main(int argc, char** argv) {
   RUN_TEST(testEditorViewInlineClickDoesNotSelectAfterMarkerExpansion);
   RUN_TEST(testEditorViewDragSelectionContinuesAcrossMoves);
   RUN_TEST(testEditorViewVerticalDragSelectionHitsWrappedLine);
+  RUN_TEST(testKeyboardDownMovesWithinWrappedParagraphLine);
+  RUN_TEST(testKeyboardVerticalCrossesParagraphsByVisualEdges);
+  RUN_TEST(testKeyboardTableArrowsMoveByCellGrid);
+  RUN_TEST(testKeyboardUpDownMovesBetweenListItems);
+  RUN_TEST(testKeyboardUpDownLeavesListAtBoundaries);
+  RUN_TEST(testKeyboardUpDownDescendsIntoAndOutOfNestedSublist);
   RUN_TEST(testEditorViewDragFromTrailingParagraphSelectsBack);
   RUN_TEST(testEditorViewBackwardNestedSelectionCoversBothBlocks);
   RUN_TEST(testListItemOwnSelectionRectsDoNotLeakToNested);

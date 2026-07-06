@@ -139,6 +139,14 @@ public:
   void setLiteralEditing(bool editing);
   bool literalEditing() const;
   QRectF literalContentRect(const RenderTheme& theme) const;
+  // Visual-line queries over a literal block's source (code/math/HTML/front matter). Offsets are
+  // LOCAL to the literal (0..literal().size()), matching CursorPosition::textOffset for these
+  // blocks. The cursor rect is UN-SCROLLED document space (origin = literalContentRect().topLeft()),
+  // so it reflects the real character column even in a horizontally-scrollable code fence.
+  int literalVisualLineCount(const RenderTheme& theme) const;
+  int literalVisualLineIndexForOffset(qsizetype localOffset, const RenderTheme& theme) const;
+  qsizetype literalOffsetAtVisualLineX(int lineIndex, qreal localX, const RenderTheme& theme) const;
+  QRectF literalVisualCursorRect(qsizetype localOffset, const RenderTheme& theme) const;
   // Width reserved at the left of a code-fence content rect for line numbers (0 when off).
   void setLineNumberGutterWidth(qreal width);
   qreal lineNumberGutterWidth() const;
@@ -244,6 +252,15 @@ private:
   QVector<QRectF> selectionRectsSelf(const SelectionRange& selection, const RenderTheme& theme) const;
   QVector<QRectF> literalSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
   QRectF mathEditorSourceRect(const RenderTheme& theme) const;
+  // (font, width, lineHeight, wrap) used to lay out this block's literal — mirrors the per-type
+  // choices in paint/hit-test so the visual-line queries match what is rendered.
+  struct LiteralLayoutParams {
+    QFont font;
+    qreal width = 0.0;
+    qreal lineHeight = 0.0;
+    bool wrap = true;
+  };
+  LiteralLayoutParams literalLayoutParams(const RenderTheme& theme) const;
   QRectF mathPreviewContentRect(const RenderTheme& theme) const;
   void paintCodeFence(QPainter& painter, const RenderTheme& theme, QRectF viewRect, const CodeFenceScrollController* scroll) const;
   void paintLiteralSource(QPainter& painter, const RenderTheme& theme, QRectF contentRect, const QVector<CodeHighlightSpan>& spans, bool wrap) const;

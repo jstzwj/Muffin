@@ -238,7 +238,8 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
 
   if (view_) {
     connect(view_, &EditorView::blockClicked, this, &EditorController::activateHit);
-    connect(view_, &EditorView::selectionChanged, &selection_, &SelectionController::setSelection);
+    connect(view_, &EditorView::selectionChanged, &selection_,
+            static_cast<void (SelectionController::*)(SelectionRange, HitTestResult)>(&SelectionController::setSelection));
     connect(view_, &EditorView::textCommitted, &inputController_, &InputController::insertText);
     connect(view_, &EditorView::htmlEditToggleRequested, this, [this](NodeId blockId) {
       if (!blockId.isValid()) {

@@ -64,6 +64,20 @@ struct HitTestResult {
     position.afterBlock = zone == Zone::BlockAfter;
     return position;
   }
+
+  // The inverse of cursorPosition() for the fields a caret carries: a minimal, geometry-less hit
+  // for a caret placed programmatically (not via a real hit test). The zone is BlockAfter when the
+  // caret sits block-after, else None — Marker (in-meta) is intentionally NOT reconstructed, since
+  // callers that need it go through a real hit test.
+  static HitTestResult from(const CursorPosition& cursor) {
+    HitTestResult hit;
+    hit.blockId = cursor.blockId;
+    hit.textNodeId = cursor.text.nodeId;
+    hit.textOffset = cursor.text.textOffset;
+    hit.sourceOffset = cursor.text.sourceOffset;
+    hit.zone = cursor.afterBlock ? Zone::BlockAfter : Zone::None;
+    return hit;
+  }
 };
 
 }  // namespace muffin
