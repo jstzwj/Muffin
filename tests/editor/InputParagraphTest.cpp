@@ -795,6 +795,45 @@ void testInputDeleteAtParagraphEndDeletesStructuralBoundary() {
   require(selection.cursorPosition().text.textOffset == 11, "delete complex inline cursor offset mismatch");
 }
 
+void testEnterOnTrailingHeadingBlockAfterKeepsCaretInEmptyParagraph() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  const QString markdown = QStringLiteral("# 1. 你好世界\n\n\n## 1.1 你好");
+  session.setMarkdownText(markdown, false);
+  MarkdownNode* heading = blockAt(session, static_cast<qsizetype>(session.document().root().children().size()) - 1);
+  require(heading->type() == BlockType::Heading && heading->headingLevel() == 2, "last block should be the h2 heading");
+  const NodeId headingId = heading->id();
+  const qsizetype headingEnd = heading->sourceRange().byteEnd;
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::BlockAfter;
+  hit.blockId = headingId;
+  hit.textNodeId = headingId;
+  selection.setHitResult(hit);
+
+  require(input.insertParagraphBreak(), "enter on heading BlockAfter should be handled");
+  require(session.markdownText().toString() == markdown + QStringLiteral("\n\n"), "heading BlockAfter enter text mismatch");
+
+  const CursorPosition afterEnter = selection.cursorPosition();
+  require(afterEnter.blockId.isValid(), "heading BlockAfter enter should keep a valid caret");
+  require(afterEnter.blockId != headingId, "heading BlockAfter enter should not snap the caret back to the heading");
+  require(afterEnter.text.sourceOffset == headingEnd + 2, "heading BlockAfter enter source offset should target the new empty paragraph");
+  MarkdownNode* caretBlock = session.document().node(afterEnter.blockId);
+  require(caretBlock != nullptr && caretBlock->type() == BlockType::Paragraph, "heading BlockAfter enter should land on an empty paragraph");
+  require(caretBlock->sourceRange().byteStart == afterEnter.text.sourceOffset,
+          "heading BlockAfter enter caret should sit on the materialized trailing empty paragraph");
+  require(afterEnter.text.textOffset == 0, "heading BlockAfter enter cursor offset mismatch");
+
+  require(input.insertText(QStringLiteral("正文")), "typing after heading BlockAfter enter should edit the new paragraph");
+  require(session.markdownText().toString() == markdown + QStringLiteral("\n\n正文"),
+          "typing after heading BlockAfter enter should not merge into the heading");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -815,6 +854,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testInputMergeParagraphs);
   RUN_TEST(testInputBackspaceAtParagraphStartDeletesStructuralBoundary);
   RUN_TEST(testInputDeleteAtParagraphEndDeletesStructuralBoundary);
+  RUN_TEST(testEnterOnTrailingHeadingBlockAfterKeepsCaretInEmptyParagraph);
 #undef RUN_TEST
   return 0;
 }

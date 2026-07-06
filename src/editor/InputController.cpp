@@ -284,15 +284,15 @@ bool InputController::insertBlockAfterCurrentBlock(QString text) {
   } else {
     if (text.isEmpty()) {
       insertedText = QStringLiteral("\n\n");
-      // For a literal block (code/math/html) the new paragraph sits AFTER the separator, so the caret
-      // lands at insertOffset + size. But for a non-text leaf like a rule, the new "paragraph" is a
-      // virtual empty paragraph at the START of the inserted blank-line run (the parser places the VEP
-      // on the first blank line of the gap). Pointing the caret past the "\n\n" there landed in a
-      // blank gap no block covers, so cursorForSourceOffset failed and the caret fell back to
-      // END-OF-DOCUMENT — which looked like it vanished ("press Enter below the rule → caret
-      // disappears"). With preferLaterEmptyAtOffset=true (passed below) the VEP at insertOffset
-      // resolves cleanly.
-      caretOffset = isLiteralBlock ? (insertOffset + insertedText.size()) : insertOffset;
+      // Materialize the layout-only BlockAfter caret. For ordinary text/container blocks, the new
+      // trailing empty paragraph is represented by the blank line AFTER the inserted separator, so the
+      // caret must resolve at insertOffset + size; leaving it at insertOffset hits the previous block's
+      // inclusive end boundary (e.g. a trailing heading) and visually snaps back into that block.
+      //
+      // Non-text leaves are different: a thematic break's editable target lives at the START of the
+      // blank-line run below the rule. Pointing past the "\n\n" there lands in a gap no block covers,
+      // so keep the established rule-specific offset and let preferLaterEmptyAtOffset resolve that VEP.
+      caretOffset = (!isLiteralBlock && isNonTextLeafBlock(*node)) ? insertOffset : (insertOffset + insertedText.size());
     } else {
       insertedText = isLiteralBlock ? QStringLiteral("\n%1").arg(text) : QStringLiteral("\n\n%1").arg(text);
       caretOffset = insertOffset + insertedText.size();
