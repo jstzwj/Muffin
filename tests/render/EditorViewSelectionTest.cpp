@@ -869,20 +869,24 @@ void testInlinePreeditSplicesInTableCellAndKeepsAlignment() {
   const NodeId tableId = table->id();
   const auto& rows0 = requireViewBlock(view, tableId, QStringLiteral("cell rows setup"))->tableRows();
   require(rows0.size() >= 2, "table fixture should expose header + body row");
-  const auto& cell0 = rows0.at(1).cells.at(1);  // "defg", right-aligned column
+  const auto& cellSetup = rows0.at(1).cells.at(1);  // "defg", right-aligned column
 
   // Caret between 'd' and 'e' of "defg".
   HitTestResult hit;
   hit.zone = HitTestResult::Zone::TableCell;
   hit.blockId = tableId;
-  hit.textNodeId = cell0.nodeId;
+  hit.textNodeId = cellSetup.nodeId;
   hit.tableRow = 1;
   hit.tableColumn = 1;
   hit.textOffset = 1;
-  hit.sourceOffset = cell0.contentSourceStart + 1;
+  hit.sourceOffset = cellSetup.contentSourceStart + 1;
   controller.activateHit(hit);
   QApplication::processEvents();
 
+  // activateHit rebuilds the table block (entering the cell's edit layout), so the references captured
+  // above dangle — reading them below would hit freed memory that, on ARM, is already reused (the
+  // alignment field read as garbage). Re-fetch the cell before measuring it.
+  const auto& cell0 = requireViewBlock(view, tableId, QStringLiteral("cell rows after activate"))->tableRows().at(1).cells.at(1);
   const qreal widthBefore = cell0.text.size().width();
   require(cell0.alignment == TableAlignment::Right,
           QStringLiteral("fixture: column 1 should be right-aligned (got %1)").arg(static_cast<int>(cell0.alignment)));
