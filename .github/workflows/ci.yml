@@ -243,7 +243,7 @@ jobs:
             libxcb-xfixes0-dev \
             libxcb-xinerama0-dev \
             libxcb-dri2-0-dev \
-            libxcb-dri3-0-dev \
+            libxcb-dri3-dev \
             libxcb-present-dev \
             libxcb-composite0-dev \
             libxcb-ewmh-dev \
