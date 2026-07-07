@@ -498,6 +498,59 @@ void testEmojiRevealsLiteralWhenActive() {
               .arg(smile, inactiveLayout.displayText()));
 }
 
+void testFootnoteReferenceRendersAsSuperscriptLink() {
+  // `[^1]` renders as the resolved ordinal ("1") carrying a `#fn:1` link range;
+  // the literal `[^1]` is hidden while the caret is outside. (The superscript + link
+  // colour are applied by the renderer from the span flags; here we verify the
+  // projection's display text and its registered link range.)
+  DocumentSession session;
+  const QString markdown = QStringLiteral("Text[^1] ref\n\n[^1]: note\n");
+  session.setMarkdownText(markdown, false);
+  const MarkdownNode& para = *session.document().root().children().front();
+  const QString paraSource = markdown.mid(para.sourceRange().byteStart, para.sourceRange().byteEnd - para.sourceRange().byteStart);
+  const QVector<InlineNode> inlines = para.inlines();
+
+  InlineProjection proj(inlines, paraSource);
+  require(proj.isValid(), QStringLiteral("footnote projection should be valid"));
+  require(proj.displayText() == QStringLiteral("Text1 ref"),
+          QStringLiteral("inactive footnote ref shows the ordinal, not the literal: %1").arg(proj.displayText()));
+  require(proj.linkHrefAtDisplayOffset(4) == QStringLiteral("#fn:1"),
+          QStringLiteral("the ordinal carries the footnote's #fn: link href (got '%1')")
+              .arg(proj.linkHrefAtDisplayOffset(4)));
+}
+
+void testFootnoteReferenceRevealsLiteralWhenActive() {
+  // With the caret inside `[^1]`, the raw source is revealed for editing.
+  DocumentSession session;
+  const QString markdown = QStringLiteral("Text[^1] ref\n\n[^1]: note\n");
+  session.setMarkdownText(markdown, false);
+  const MarkdownNode& para = *session.document().root().children().front();
+  const QString paraSource = markdown.mid(para.sourceRange().byteStart, para.sourceRange().byteEnd - para.sourceRange().byteStart);
+  const QVector<InlineNode> inlines = para.inlines();
+
+  InlineProjectionState state;
+  state.cursorSourceOffset = 6;  // inside "[^1]" (the '1'), relative to the paragraph source
+  InlineProjection proj(inlines, paraSource, state);
+  require(proj.displayText().contains(QStringLiteral("[^1]")),
+          QStringLiteral("active footnote ref reveals the literal source: %1").arg(proj.displayText()));
+}
+
+void testFootnoteReferenceResolvesToDefinition() {
+  // The `#fn:<label>` navigation target resolves to the footnote-definition block.
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("Body[^a]\n\n[^a]: the note\n"), false);
+  RenderTheme theme = RenderTheme::github();
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+  const NodeId defId = layout.footnoteDefinitionIdForLabel(QStringLiteral("a"));
+  require(defId.isValid(), QStringLiteral("label 'a' should resolve to a footnote-definition block"));
+  const BlockLayout* def = layout.block(defId);
+  require(def != nullptr && def->type() == BlockType::FootnoteDefinition,
+          QStringLiteral("resolved block should be a footnote definition"));
+  require(def->definition().label == QStringLiteral("a"),
+          QStringLiteral("resolved definition carries label 'a' (got '%1')").arg(def->definition().label));
+}
+
 void testInlineCodeEndSourceHitUsesForwardBias() {
   RenderTheme theme = RenderTheme::github();
   QVector<InlineNode> inlines;
@@ -945,6 +998,9 @@ int main(int argc, char** argv) {
   RUN_TEST(testEmojiOffsetMapping);
   RUN_TEST(testEmojiAndEscapeMix);
   RUN_TEST(testEmojiRevealsLiteralWhenActive);
+  RUN_TEST(testFootnoteReferenceRendersAsSuperscriptLink);
+  RUN_TEST(testFootnoteReferenceRevealsLiteralWhenActive);
+  RUN_TEST(testFootnoteReferenceResolvesToDefinition);
   RUN_TEST(testInlineCodeEndSourceHitUsesForwardBias);
   RUN_TEST(testPendingPrefixFallbackDoesNotDuplicateSource);
   RUN_TEST(testSmartPunctRenderConvertsQuotesAndDashes);

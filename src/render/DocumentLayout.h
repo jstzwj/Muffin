@@ -86,6 +86,10 @@ class DocumentLayout {
   qreal slotHeight(qsizetype index) const;
   NodeId slotNodeId(qsizetype index) const;
   qsizetype topLevelIndexFor(NodeId id) const;  // slot index of the top-level block owning id, or -1
+  // NodeId of the footnote-definition block whose label matches, or invalid. Footnote
+  // references encode their target as a `#fn:<label>` href; this resolves the label
+  // back to a scrollable block (footnote defs are few, so a document-tree scan is fine).
+  NodeId footnoteDefinitionIdForLabel(const QString& label) const;
   // Inclusive [first,last] slot range whose vertical extent overlaps [yTop,yBottom]; returns
   // {-1,-1} when nothing overlaps (e.g. empty document).
   QPair<qsizetype, qsizetype> slotRangeOverlappingY(qreal yTop, qreal yBottom) const;

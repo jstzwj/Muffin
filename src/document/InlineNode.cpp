@@ -214,6 +214,14 @@ InlineNode InlineNode::inlineMath(QString tex) {
   return node;
 }
 
+InlineNode InlineNode::footnoteReference(QString label, QString ordinal) {
+  InlineNode node(InlineType::FootnoteReference);
+  node.setText(std::move(ordinal));                  // displayed as a superscript link
+  node.setMarker(label);                             // bare label, for markdown reconstruction ([^label])
+  node.setHref(QStringLiteral("#fn:") + label);      // in-document navigation target
+  return node;
+}
+
 void shiftInlineSourcePositions(QVector<InlineNode>& inlines, qsizetype delta) {
   auto shiftRange = [delta](InlineRange range) {
     if (range.isValid()) {

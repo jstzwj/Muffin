@@ -250,6 +250,15 @@ InlineNode CmarkNodeAdapter::convertInline(cmark_node* node) {
           fromUtf8(cmark_node_get_url(node)),
           fromUtf8(cmark_node_get_title(node)),
           convertInlineChildren(node));
+    case InlineType::FootnoteReference: {
+      // cmark resolves footnotes at parse time (process_footnotes): the reference's
+      // literal becomes the resolved ordinal ("1"), and parent_footnote_def points at
+      // the definition (whose literal is still the bare label).
+      const QString ordinal = fromUtf8(cmark_node_get_literal(node));
+      cmark_node* def = cmark_node_parent_footnote_def(node);
+      const QString label = def ? fromUtf8(cmark_node_get_literal(def)) : ordinal;
+      return InlineNode::footnoteReference(label, ordinal);
+    }
     case InlineType::Image: {
       const auto children = convertInlineChildren(node);
       QString alt;
@@ -305,6 +314,7 @@ InlineType CmarkNodeAdapter::mapInlineType(cmark_node* node) const {
   if (type == CMARK_NODE_IMAGE) return InlineType::Image;
   if (type == CMARK_NODE_STRIKETHROUGH) return InlineType::Strikethrough;
   if (type == CMARK_NODE_INLINE_MATH) return InlineType::InlineMath;
+  if (type == CMARK_NODE_FOOTNOTE_REFERENCE) return InlineType::FootnoteReference;
   return InlineType::Unknown;
 }
 
@@ -406,6 +416,12 @@ void CmarkNodeAdapter::annotateInlineSource(cmark_node* cmarkNode, InlineNode& i
         ranges.closeMarker = inlineRange(sourceEnd - closeLength, sourceEnd);
         ranges.content = inlineRange(ranges.openMarker.end, ranges.closeMarker.start);
       }
+      break;
+    }
+    case InlineType::FootnoteReference: {
+      // cmark's range covers the whole `[^label]` token; the projection renders the
+      // resolved ordinal but reveals this raw source when the caret is inside.
+      setPlainInlineRanges(ranges, start, end);
       break;
     }
     case InlineType::Emphasis:

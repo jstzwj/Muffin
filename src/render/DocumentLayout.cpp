@@ -771,6 +771,18 @@ qsizetype DocumentLayout::topLevelIndexFor(NodeId id) const {
   return topLevelIndex_.value(topId, -1);
 }
 
+NodeId DocumentLayout::footnoteDefinitionIdForLabel(const QString& label) const {
+  if (!document_ || label.isEmpty()) {
+    return {};
+  }
+  for (const auto& child : document_->root().children()) {
+    if (child->type() == BlockType::FootnoteDefinition && child->definition().label == label) {
+      return child->id();
+    }
+  }
+  return {};
+}
+
 qsizetype DocumentLayout::slotIndexAtY(qreal y) const {
   if (tops_.empty()) {
     return -1;

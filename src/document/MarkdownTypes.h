@@ -45,6 +45,7 @@ enum class InlineType {
   Highlight,
   Subscript,
   Superscript,
+  FootnoteReference,
   Unknown
 };
 

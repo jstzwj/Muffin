@@ -556,6 +556,16 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
         event->accept();
         return;
       }
+      // Footnote reference navigation: a `#fn:<label>` fragment emitted by a
+      // footnote-reference inline scrolls to its definition block.
+      if (hit.linkHref.startsWith(QLatin1String("#fn:"))) {
+        const NodeId target = layout_ ? layout_->footnoteDefinitionIdForLabel(hit.linkHref.mid(4)) : NodeId();
+        if (target.isValid()) {
+          scrollToNode(target);
+        }
+        event->accept();
+        return;
+      }
       QDesktopServices::openUrl(resolvedUrlForDocumentResource(hit.linkHref, documentPath_));
       event->accept();
       return;

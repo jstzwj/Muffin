@@ -717,6 +717,8 @@ QString InlineProjection::markdownForInline(const InlineNode& node) {
           node.href(),
           node.title().isEmpty() ? QString() : QStringLiteral(" \"%1\"").arg(node.title()));
     }
+    case InlineType::FootnoteReference:
+      return QStringLiteral("[^%1]").arg(node.marker().isEmpty() ? node.text() : node.marker());
     case InlineType::Image:
       return QStringLiteral("![%1](%2%3)").arg(
           node.alt(),
@@ -751,6 +753,8 @@ QString InlineProjection::plainTextForInline(const InlineNode& node, bool breakO
       return QStringLiteral("\n");
     case InlineType::Image:
       return node.alt();
+    case InlineType::FootnoteReference:
+      return node.text();  // the resolved ordinal (e.g. "1") — what copy/column-width see
     default:
       return plainTextForInlines(node.children(), breakOnSingleNewline);
   }
@@ -1453,6 +1457,21 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
       if (labelEnd < sourceEnd) {
         appendTextSpan(state, node.type(), InlineSpanKind::HiddenSyntax, labelEnd, sourceEnd, state.sourceText->mid(labelEnd, sourceEnd - labelEnd), false);
       }
+      break;
+    }
+    case InlineType::FootnoteReference: {
+      // Source `[^label]` renders as the resolved ordinal (e.g. "1") — a superscript
+      // link atom (N:1 source→display, like an image). When the caret is inside, the
+      // raw `[^label]` source is revealed for editing (plain, no superscript/link).
+      if (active) {
+        appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd,
+                       state.sourceText->mid(sourceStart, sourceEnd - sourceStart), true);
+        break;
+      }
+      appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, node.text(), true);
+      state.spans.last().superscript = true;
+      state.spans.last().link = true;
+      state.linkRanges.push_back({displayStart, state.displayOffset, node.href()});
       break;
     }
     default:
