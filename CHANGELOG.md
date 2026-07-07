@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-07-07
+
+### Added
+- **IME composition (preedit) rendering** - Composing text with an input method (e.g. Chinese pinyin) now renders the in-progress characters at the caret and pushes following text to the right, wrapping naturally at line edges, instead of overlapping or clipping it. This works mid-sentence, at paragraph ends, around inline code and inline math (which shift along with the text), inside revealed link URLs, and inside table cells - including right-, center-, and left-aligned cells, which re-anchor to the wider laid-out text. Previously the composition was invisible or painted over the following glyphs
+- **Visual-line and table navigation** - Arrow Up/Down now move the caret by rendered visual line, crossing wrapped lines and block boundaries with a cached goal column so the horizontal position holds across blocks of differing width. Arrow keys also navigate directionally between table cells, entering and exiting the table at its edges
+
+### Changed
+- **Menu and preferences layout** - The main menu now separates paragraph operations from insert-content actions into distinct menus, and the Preferences dialog's page categories have been reordered
+- **Status bar tooltips** - The status bar now displays custom hover tooltips
+- **Chrome border contrast** - Control and chrome borders are now derived independently from the chrome background instead of reusing the code-border color, fixing overly-faint borders on light themes; code blocks keep their existing border styling
+
+### Fixed
+- **Cursor after Enter at a trailing heading** - Pressing Enter at the end of a heading that is the last block in the document now leaves the caret in the newly created empty paragraph, instead of jumping back into the heading
+
 ## [0.5.2] - 2026-07-05
 
 ### Added
