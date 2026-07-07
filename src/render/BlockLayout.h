@@ -78,6 +78,17 @@ public:
     bool focused = false;
   };
 
+  // One rendered row of a `[TOC]` block: the heading's title, its level (for
+  // indentation), the target heading's NodeId (encoded into a `#toc:` href so the
+  // existing Ctrl+click link path navigates), and the row's document-coordinate
+  // rect (the click target, shared by paint + hit-test so it never drifts).
+  struct TocEntryLayout {
+    QRectF rect;
+    NodeId target;
+    QString title;
+    int level = 1;
+  };
+
   struct CssBoxGeometry {
     QString hostKey;
     QRectF flowRect;
@@ -195,6 +206,14 @@ public:
   // GitHub-style alert kind for a blockquote rendered as a themed card; None for a plain quote.
   void setAlertKind(AlertKind kind);
   AlertKind alertKind() const;
+  // A `[TOC]` paragraph rendered as a generated indented link list of the document's
+  // headings. While the caret is NOT in the block it shows the preview (isToc() true);
+  // when the caret enters, the builder rebuilds it as a normal paragraph showing the
+  // literal `[TOC]` for editing (isToc() false).
+  void setIsToc(bool isToc);
+  bool isToc() const;
+  void setTocEntries(QVector<TocEntryLayout> entries);
+  const QVector<TocEntryLayout>& tocEntries() const;
   // Document-coordinate rect of the checkbox drawn for a task-list item (empty
   // when this block is not a task item). Single source of truth shared by the
   // painter and the hit tester so a click target never drifts from the glyph.
@@ -268,6 +287,7 @@ private:
   void paintCodeFenceScrollBar(QPainter& painter, const RenderTheme& theme, QRectF contentRect, qreal offset, qreal maxLineWidth) const;
   void paintDefinition(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
   HitTestResult hitDefinition(QPointF documentPos, const RenderTheme& theme) const;
+  void paintToc(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
   QVector<QRectF> definitionSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
 
   NodeId id_;
@@ -297,6 +317,8 @@ private:
   bool taskListItem_ = false;
   bool taskChecked_ = false;
   AlertKind alertKind_ = AlertKind::None;
+  bool isToc_ = false;
+  QVector<TocEntryLayout> tocEntries_;
   int depth_ = 0;
   std::vector<std::unique_ptr<BlockLayout>> children_;
   std::vector<TableRowLayout> tableRows_;

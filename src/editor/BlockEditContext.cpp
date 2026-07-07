@@ -250,7 +250,8 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
   // sourceBase must be the content offset within the block (start - top-level byteStart).
   const qsizetype inlineBase = start - editable->topLevelBlock()->sourceRange().byteStart;
   context.inlineProjection = InlineProjection(editable->inlines(), context.contentText, projectionState, inlineBase,
-                                              16.0, 0, smartPunctRenderOptions());
+                                              16.0, 0, smartPunctRenderOptions(), false, TextTransform::None,
+                                              QSettings().value(QStringLiteral("markdown/renderEmoji"), true).toBool());
   context.visibleText = context.inlineProjection.visibleText();
   context.plainInlineEditable = InlineProjection::isPlainInlineSource(editable->inlines(), context.contentText, inlineBase);
   qsizetype localSourceOffset = -1;

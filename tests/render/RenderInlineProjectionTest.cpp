@@ -5,6 +5,7 @@
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
+#include "editor/EmojiDictionary.h"
 #include "editor/SelectionController.h"
 #include "parser/CmarkGfmParser.h"
 #include "render/DocumentLayout.h"
@@ -390,6 +391,111 @@ void testEscapedPunctuationOffsetMapping() {
             QStringLiteral("escape offset mapping for '%1' at visible %2: expected source %3, got %4")
                 .arg(c.markdown).arg(c.visibleOffset).arg(c.expectedSource).arg(mapped));
   }
+}
+
+void testEmojiShortcodeDisplay() {
+  // `:shortcode:` decodes to its glyph at display time via the same N:1 decode-span
+  // path as escapes/entities. cmark leaves the literal `:smile:` in node.text(); the
+  // projection must still substitute the glyph (and keep the offset map exact) and
+  // must NOT mutate the source.
+  const QString smile = emojiShortcodeMap().value(QStringLiteral("smile"));
+  require(!smile.isEmpty(), QStringLiteral("smile shortcode must exist in the emoji dictionary"));
+
+  DocumentSession session;
+  const QString markdown = QStringLiteral("a :smile: b");
+  session.setMarkdownText(markdown, false);
+  const QVector<InlineNode> inlines = session.document().root().children().front()->inlines();
+
+  RenderTheme theme = RenderTheme::github();
+  InlineLayout layout;
+  InlineLayout::BuildOptions options;
+  layout.build(inlines, markdown, theme, 400.0, theme.paragraphFont(), options);
+  require(layout.displayText() == QStringLiteral("a ") + smile + QStringLiteral(" b"),
+          QStringLiteral("emoji decode mismatch: expected 'a %1 b', got '%2'").arg(smile, layout.displayText()));
+  require(session.markdownText().toString() == markdown,
+          QStringLiteral("emoji decode must not mutate the source"));
+}
+
+void testEmojiOffsetMapping() {
+  // `:smile:` consumes 7 source chars but shows a (possibly multi-QChar) glyph, so
+  // the projection splits the Text node around it. cursorRect(visibleOffset) is the
+  // visual caret; hitTestSourceOffset must map it back to the correct source offset.
+  const QString smile = emojiShortcodeMap().value(QStringLiteral("smile"));
+  require(smile.size() >= 1, QStringLiteral("smile glyph must be non-empty"));
+  // ":smile:end" -> display = smile + "end". A caret right after the glyph sits at
+  // visible offset == smile.size() and must map to source offset 7 (the 'e' of "end").
+  const QString markdown = QStringLiteral(":smile:end");
+
+  DocumentSession session;
+  session.setMarkdownText(markdown, false);
+  const QVector<InlineNode> inlines = session.document().root().children().front()->inlines();
+
+  RenderTheme theme = RenderTheme::github();
+  InlineLayout::BuildOptions options;
+  InlineLayout layout;
+  layout.build(inlines, markdown, theme, 400.0, theme.paragraphFont(), options);
+  require(layout.displayText() == smile + QStringLiteral("end"),
+          QStringLiteral("emoji offset fixture display mismatch: expected '%1', got '%2'")
+              .arg(smile + QStringLiteral("end"), layout.displayText()));
+
+  const QRectF caretAfterGlyph = layout.cursorRect(smile.size());
+  const qsizetype mappedAfter = layout.hitTestSourceOffset(caretAfterGlyph.center());
+  require(mappedAfter == 7,
+          QStringLiteral("caret after emoji glyph: expected source 7, got %1").arg(mappedAfter));
+
+  const QRectF caretBefore = layout.cursorRect(0);
+  const qsizetype mappedBefore = layout.hitTestSourceOffset(caretBefore.center());
+  require(mappedBefore == 0,
+          QStringLiteral("caret before emoji glyph: expected source 0, got %1").arg(mappedBefore));
+}
+
+void testEmojiAndEscapeMix() {
+  // An escape (`\*`) and a shortcode (`:smile:`) in one Text node both become decode
+  // spans; the plain segment between them still renders correctly. This exercises the
+  // alignment check with a mix of escape and emoji spans.
+  const QString smile = emojiShortcodeMap().value(QStringLiteral("smile"));
+  const QString markdown = QStringLiteral("a \\* :smile: b");
+
+  DocumentSession session;
+  session.setMarkdownText(markdown, false);
+  const QVector<InlineNode> inlines = session.document().root().children().front()->inlines();
+
+  RenderTheme theme = RenderTheme::github();
+  InlineLayout layout;
+  InlineLayout::BuildOptions options;
+  layout.build(inlines, markdown, theme, 400.0, theme.paragraphFont(), options);
+  require(layout.displayText() == QStringLiteral("a * ") + smile + QStringLiteral(" b"),
+          QStringLiteral("escape+emoji mix display mismatch: expected 'a * %1 b', got '%2'")
+              .arg(smile, layout.displayText()));
+}
+
+void testEmojiRevealsLiteralWhenActive() {
+  // When the caret sits inside `:smile:`, the literal shortcode is revealed
+  // (Typora-style), mirroring how `\*` reveals its backslash. When the caret is
+  // elsewhere, only the glyph shows.
+  const QString smile = emojiShortcodeMap().value(QStringLiteral("smile"));
+  const QString markdown = QStringLiteral(":smile:");
+
+  DocumentSession session;
+  session.setMarkdownText(markdown, false);
+  const QVector<InlineNode> inlines = session.document().root().children().front()->inlines();
+
+  RenderTheme theme = RenderTheme::github();
+
+  // Caret inside the shortcode (source offset 3) -> reveal the literal `:smile:`.
+  InlineLayout::BuildOptions active;
+  active.projectionState.cursorSourceOffset = 3;
+  InlineLayout activeLayout;
+  activeLayout.build(inlines, markdown, theme, 400.0, theme.paragraphFont(), active);
+  require(activeLayout.displayText().contains(QStringLiteral(":smile:")),
+          QStringLiteral("active emoji should reveal the literal shortcode: %1").arg(activeLayout.displayText()));
+
+  // Caret elsewhere -> only the glyph, no literal colon run.
+  InlineLayout inactiveLayout;
+  inactiveLayout.build(inlines, markdown, theme, 400.0, theme.paragraphFont(), InlineLayout::BuildOptions{});
+  require(inactiveLayout.displayText() == smile,
+          QStringLiteral("inactive emoji should show only the glyph: expected '%1', got '%2'")
+              .arg(smile, inactiveLayout.displayText()));
 }
 
 void testInlineCodeEndSourceHitUsesForwardBias() {
@@ -835,6 +941,10 @@ int main(int argc, char** argv) {
   RUN_TEST(testActiveLoadedImageKeepsSourceTextAndAddsPreviewSpace);
   RUN_TEST(testEntityDisplayAfterEdit);
   RUN_TEST(testEscapedPunctuationOffsetMapping);
+  RUN_TEST(testEmojiShortcodeDisplay);
+  RUN_TEST(testEmojiOffsetMapping);
+  RUN_TEST(testEmojiAndEscapeMix);
+  RUN_TEST(testEmojiRevealsLiteralWhenActive);
   RUN_TEST(testInlineCodeEndSourceHitUsesForwardBias);
   RUN_TEST(testPendingPrefixFallbackDoesNotDuplicateSource);
   RUN_TEST(testSmartPunctRenderConvertsQuotesAndDashes);

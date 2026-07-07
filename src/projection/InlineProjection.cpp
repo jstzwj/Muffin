@@ -1,5 +1,6 @@
 #include "projection/InlineProjection.h"
 
+#include "editor/EmojiDictionary.h"
 #include "editor/SmartPunctuation.h"
 #include "houdini.h"
 #include "html/InlineHtmlRenderer.h"
@@ -125,13 +126,18 @@ SmartPunctResult applySmartPunctForRender(const QString& text, QChar prev, const
 
 // A source substring that decodes to a shorter visible run, breaking the 1:1
 // source/visible correspondence the projection offset-mapping relies on. Covers
-// both CommonMark backslash escapes (`\*` -> `*`) and HTML entities
-// (`&amp;` -> `&`); the Text-node builder splits the node around these so each
-// resulting plain segment keeps a clean 1:1 mapping.
+// three kinds: CommonMark backslash escapes (`\*` -> `*`), HTML entities
+// (`&amp;` -> `&`), and emoji shortcodes (`:smile:` -> 😄). The Text-node
+// builder splits the node around these so each resulting plain segment keeps a
+// clean 1:1 mapping. `isEmoji` marks shortcode spans because cmark leaves the
+// literal `:name:` in `node.text()` (it does not decode shortcodes), so the
+// alignment check compares the RAW source slice for those — whereas escapes and
+// entities are compared against cmark's already-decoded text.
 struct DecodeSpan {
   qsizetype sourceStart;  // offset within the local source slice
   qsizetype sourceEnd;    // past-the-end offset
   QString decodedText;
+  bool isEmoji = false;
 };
 
 QString decodeHtmlEntity(QStringView rawEntity) {
@@ -162,15 +168,19 @@ bool isBackslashEscapablePunct(QChar ch) {
          !((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
 }
 
-// Source-ordered, non-overlapping escape and entity runs. An escaped ampersand
-// (`\&`) is consumed as an escape, so it never also opens an entity scan.
-QVector<DecodeSpan> findDecodeSpans(QStringView source) {
+// Source-ordered, non-overlapping escape, entity, and (when enabled) emoji
+// shortcode runs. An escaped ampersand (`\&`) is consumed as an escape, so it
+// never also opens an entity scan; likewise `\:` consumes the colon so an
+// escaped `\:smile:` never opens a shortcode scan. Emoji shortcodes are gated by
+// `renderEmoji` (the markdown/renderEmoji setting) so users who want literal
+// `:text:` can disable them.
+QVector<DecodeSpan> findDecodeSpans(QStringView source, bool renderEmoji) {
   QVector<DecodeSpan> spans;
   qsizetype i = 0;
   while (i < source.size()) {
     if (source.at(i) == QLatin1Char('\\') && i + 1 < source.size() &&
         isBackslashEscapablePunct(source.at(i + 1))) {
-      spans.push_back({i, i + 2, QString(source.at(i + 1))});
+      spans.push_back({i, i + 2, QString(source.at(i + 1)), false});
       i += 2;
       continue;
     }
@@ -179,10 +189,19 @@ QVector<DecodeSpan> findDecodeSpans(QStringView source) {
       if (semi >= 0 && semi - i <= 33) {
         const QString decoded = decodeHtmlEntity(source.mid(i, semi + 1 - i));
         if (!decoded.isEmpty()) {
-          spans.push_back({i, semi + 1, decoded});
+          spans.push_back({i, semi + 1, decoded, false});
           i = semi + 1;
           continue;
         }
+      }
+    }
+    if (renderEmoji && source.at(i) == QLatin1Char(':')) {
+      const qsizetype len = emojiShortcodeLengthAt(source, i);
+      if (len > 0) {
+        const QStringView name = source.mid(i + 1, len - 2);
+        spans.push_back({i, i + len, emojiShortcodeMap().value(name.toString()), true});
+        i += len;
+        continue;
       }
     }
     ++i;
@@ -347,7 +366,7 @@ InlineProjectionState InlineProjectionState::forSelection(
 
 InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState projectionState, qsizetype sourceBase,
                                    qreal baseFontSize, qsizetype pendingPrefixLength, SmartPunctRenderOptions smartPunct, bool breakOnSingleNewline,
-                                   TextTransform textTransform)
+                                   TextTransform textTransform, bool renderEmoji)
     : sourceText_(std::move(sourceText)), visibleText_(plainTextForInlines(inlines)) {
   BuildState state;
   state.sourceText = &sourceText_;
@@ -357,6 +376,7 @@ InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString s
   state.smartPunct = smartPunct;
   state.breakOnSingleNewline = breakOnSingleNewline;
   state.textTransform = textTransform;
+  state.renderEmoji = renderEmoji;
   QVector<HtmlInlineFormatData> htmlData;
   if (pendingPrefixLength > 0 && pendingPrefixLength <= sourceText_.size()) {
     // A still-uncommitted fence/math opener: show the marker in the muted "syntax" color the
@@ -1201,21 +1221,27 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
     case InlineType::Text: {
       const QString source = state.sourceText->mid(sourceStart, sourceEnd - sourceStart);
       const QString& decoded = node.text();
-      if (source == decoded) {
+      // Fast path: the source IS the visible text (cmark decoded nothing) AND no
+      // emoji shortcode can hide in it. The ':' guard forces a `:smile:`-only node
+      // off the fast path so findDecodeSpans runs and emits the glyph.
+      const bool mayHaveEmoji = state.renderEmoji && source.contains(QLatin1Char(':'));
+      if (source == decoded && !mayHaveEmoji) {
         appendSmartPunctTextSpans(state, sourceStart, sourceEnd, decoded);
         break;
       }
-      // decoded differs from source only via escapes and HTML entities, each of
-      // which consumes more source chars than it shows. Split around them so every
-      // plain segment keeps a 1:1 source/visible mapping (correct offset math).
-      const QVector<DecodeSpan> segments = findDecodeSpans(source);
+      // decoded differs from source via escapes, HTML entities, and (if enabled)
+      // emoji shortcodes — each consuming more source chars than it shows. Split
+      // around them so every plain segment keeps a 1:1 source/visible mapping.
+      const QVector<DecodeSpan> segments = findDecodeSpans(source, state.renderEmoji);
       if (segments.isEmpty()) {
-        appendTextSpan(state, node.type(), InlineSpanKind::Text, sourceStart, sourceEnd, decoded, true);
+        appendSmartPunctTextSpans(state, sourceStart, sourceEnd, decoded);
         break;
       }
-      // Sanity-check that the segments actually reconstruct decoded; if something
-      // else (a cmark decoding we don't model) is at play, fall back to a single
-      // span rather than emit a misaligned projection.
+      // Sanity-check that the segments reconstruct decoded. For escapes/entities
+      // the decoded text must match cmark; for emoji shortcodes cmark left the
+      // literal `:name:` in decoded, so the RAW source slice must match instead.
+      // If some other cmark decoding is at play, fall back to a single span
+      // rather than emit a misaligned projection.
       bool aligned = true;
       qsizetype sourcePos = 0;
       qsizetype decodedPos = 0;
@@ -1226,11 +1252,14 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
           break;
         }
         decodedPos += plainSource.size();
-        if (!textMatchesAt(decoded, decodedPos, QStringView(segment.decodedText))) {
+        const QStringView segText = segment.isEmoji
+            ? QStringView(source).mid(segment.sourceStart, segment.sourceEnd - segment.sourceStart)
+            : QStringView(segment.decodedText);
+        if (!textMatchesAt(decoded, decodedPos, segText)) {
           aligned = false;
           break;
         }
-        decodedPos += segment.decodedText.size();
+        decodedPos += segText.size();
         sourcePos = segment.sourceEnd;
       }
       if (aligned && !textMatchesAt(decoded, decodedPos, QStringView(source).mid(sourcePos))) {
@@ -1241,19 +1270,20 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
         break;
       }
 
+      // Emit. Plain segments go through smart-punct so `--`/quotes convert even
+      // when interspersed with escapes/entities/shortcodes (this path previously
+      // skipped smart punct). Visible offsets are read from state.visibleOffset
+      // (maintained exactly by appendTextSpan) so a smart-punct fold inside a
+      // plain segment never desyncs the reveal check.
       sourcePos = 0;
-      decodedPos = 0;
       for (const DecodeSpan& segment : segments) {
         if (segment.sourceStart > sourcePos) {
-          const qsizetype plainLen = segment.sourceStart - sourcePos;
-          appendTextSpan(state, node.type(), InlineSpanKind::Text,
-                          sourceStart + sourcePos, sourceStart + segment.sourceStart,
-                          source.mid(sourcePos, plainLen), true);
-          decodedPos += plainLen;
+          appendSmartPunctTextSpans(state, sourceStart + sourcePos, sourceStart + segment.sourceStart,
+                                    source.mid(sourcePos, segment.sourceStart - sourcePos));
         }
         const qsizetype segmentSourceStart = sourceStart + segment.sourceStart;
         const qsizetype segmentSourceEnd = sourceStart + segment.sourceEnd;
-        const qsizetype segmentVisibleStart = visibleStart + decodedPos;
+        const qsizetype segmentVisibleStart = state.visibleOffset;
         const qsizetype segmentVisibleEnd = segmentVisibleStart + segment.decodedText.size();
         const bool revealSyntax = state.projectionState.shouldRevealSourceRange(segmentSourceStart, segmentSourceEnd) ||
                                   state.projectionState.shouldRevealVisibleRange(segmentVisibleStart, segmentVisibleEnd);
@@ -1267,12 +1297,9 @@ void InlineProjection::appendInline(BuildState& state, const InlineNode& node, q
                           source.mid(segment.sourceStart, segment.sourceEnd - segment.sourceStart), false);
         }
         sourcePos = segment.sourceEnd;
-        decodedPos += segment.decodedText.size();
       }
       if (sourcePos < source.size()) {
-        appendTextSpan(state, node.type(), InlineSpanKind::Text,
-                        sourceStart + sourcePos, sourceEnd,
-                        decoded.mid(decodedPos), true);
+        appendSmartPunctTextSpans(state, sourceStart + sourcePos, sourceEnd, source.mid(sourcePos));
       }
       break;
     }

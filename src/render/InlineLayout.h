@@ -39,6 +39,10 @@ public:
     std::function<bool(QStringView)> isMisspelled;
     // Display-only smart punctuation (Convert on Rendering); no-op by default.
     SmartPunctRenderOptions smartPunct;
+    // markdown/renderEmoji (default on): decode `:shortcode:` emoji at display
+    // time via the projection's decode-span path. Supplied by the builder from
+    // the same setting so the painted projection and the editing projection agree.
+    bool renderEmoji = true;
     // Base text colour override (e.g. a theme's per-heading colour). Invalid →
     // the layout falls back to theme.textColor() for plain Text runs. Span-level
     // colours (links, code, highlight) still take precedence per span.

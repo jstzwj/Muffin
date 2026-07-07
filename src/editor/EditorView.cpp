@@ -544,6 +544,18 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
       return;
     }
     if (event->modifiers().testFlag(Qt::ControlModifier) && hit.isValid() && !hit.linkHref.isEmpty()) {
+      // In-document `[TOC]` navigation: a `#toc:<nodeId>` fragment emitted by a TOC
+      // entry's hit-test scrolls to the heading instead of being handed to the OS
+      // (which has no target for a bare fragment). Falls through to normal URL
+      // handling for every other href.
+      if (hit.linkHref.startsWith(QLatin1String("#toc:"))) {
+        const NodeId target = NodeId::fromString(hit.linkHref.mid(5));
+        if (target.isValid()) {
+          scrollToNode(target);
+        }
+        event->accept();
+        return;
+      }
       QDesktopServices::openUrl(resolvedUrlForDocumentResource(hit.linkHref, documentPath_));
       event->accept();
       return;

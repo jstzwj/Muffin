@@ -310,6 +310,8 @@ void DocumentLayout::rebuild(
   // Full rebuild ⇒ recompute every heading's counter text from a clean document-order
   // walk. The build loop below then reads headingCounterText_ by NodeId.
   recomputeHeadingCounters(document, theme);
+  // Refresh the `[TOC]` outline (shared by every `[TOC]` block) from the same clean walk.
+  tocEntries_ = buildOutline(document);
 
   const auto& children = document.root().children();
   slots_.reserve(children.size());
@@ -603,6 +605,9 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   // the range. Single-block rebuilds (rebuildBlock) deliberately skip this — they
   // reuse the map, since per-keystroke edits never change the outline.
   recomputeHeadingCounters(document, theme);
+  // Same cadence: a structural edit can add/remove/reorder headings, so refresh the
+  // `[TOC]` outline. Per-keystroke rebuildBlock reuses the cached entries.
+  tocEntries_ = buildOutline(document);
   std::vector<BlockSlot> replacements;
   replacements.reserve(static_cast<size_t>(range.newCount));
 
@@ -1093,6 +1098,7 @@ void DocumentLayout::configureBuilder(SelectionRange selection) {
   builder_.setDocumentPath(documentPath_);
   builder_.setCodeFenceScroll(codeFenceScroll_);
   builder_.setHeadingCounterText(&headingCounterText_);
+  builder_.setTocEntries(&tocEntries_);
 }
 
 void DocumentLayout::setPreedit(QString text, QVector<QTextLayout::FormatRange> formats, int cursor) {

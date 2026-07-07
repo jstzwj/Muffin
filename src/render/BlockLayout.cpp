@@ -797,6 +797,22 @@ AlertKind BlockLayout::alertKind() const {
   return alertKind_;
 }
 
+void BlockLayout::setIsToc(bool isToc) {
+  isToc_ = isToc;
+}
+
+bool BlockLayout::isToc() const {
+  return isToc_;
+}
+
+void BlockLayout::setTocEntries(QVector<TocEntryLayout> entries) {
+  tocEntries_ = std::move(entries);
+}
+
+const QVector<BlockLayout::TocEntryLayout>& BlockLayout::tocEntries() const {
+  return tocEntries_;
+}
+
 QRectF BlockLayout::taskCheckboxRect(const RenderTheme& theme) const {
   const qreal markerX = rect_.left() + theme.listIndent() * 0.45;
   const QFontMetricsF metrics(theme.paragraphFont());
@@ -927,9 +943,18 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
 
   switch (type_) {
     case BlockType::Heading:
-    case BlockType::Paragraph:
     case BlockType::ListItem:
       paintInlineBlock(painter, theme, viewRect, scrollY, hover);
+      break;
+    case BlockType::Paragraph:
+      // A `[TOC]` paragraph paints a generated heading list while the caret is
+      // elsewhere; when the caret is in the block the builder rebuilds it as a
+      // normal paragraph (isToc_ false), so the literal "[TOC]" shows for editing.
+      if (isToc_) {
+        paintToc(painter, theme, viewRect);
+      } else {
+        paintInlineBlock(painter, theme, viewRect, scrollY, hover);
+      }
       break;
     case BlockType::BlockQuote:
       paintBlockQuote(painter, theme, viewRect, scrollY);
@@ -1610,6 +1635,19 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
     case BlockType::Heading:
     case BlockType::Paragraph:
     case BlockType::ListItem:
+      // A `[TOC]` preview block is non-editable: no caret is placed. A click on an
+      // entry's row resolves to a `#toc:<nodeId>` href so the existing Ctrl+click
+      // link path scrolls to the heading; a click elsewhere selects the block.
+      if (isToc_) {
+        result.zone = HitTestResult::Zone::SelectBlock;
+        for (const TocEntryLayout& entry : tocEntries_) {
+          if (entry.rect.contains(documentPos)) {
+            result.linkHref = QStringLiteral("#toc:") + entry.target.toString();
+            break;
+          }
+        }
+        return result;
+      }
       if (inlineLayout_) {
         const QPointF origin = inlineTextOrigin(theme);
         const qreal textLeft = origin.x();
@@ -1848,6 +1886,43 @@ void BlockLayout::paintDefinition(QPainter& painter, const RenderTheme& theme, Q
     layout.draw(&painter, QPointF(0, 0));
   }
 
+  painter.restore();
+}
+
+void BlockLayout::paintToc(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
+  // Each entry's row rect was laid out at build time (document-absolute); here we
+  // only translate it into view coordinates and draw the title indented by level,
+  // in the theme's link colour so the entries read as clickable (matching how real
+  // links render). Long titles elide to the row width.
+  if (tocEntries_.isEmpty()) {
+    return;
+  }
+  const qreal scrollOffset = viewRect.top() - rect_.top();  // = -scrollY
+  painter.save();
+  const QFont font = theme.paragraphFont();
+  painter.setFont(font);
+  const QFontMetricsF fm(font);
+  const QColor linkColor = theme.linkColor();
+  const qreal indentStep = theme.listIndent();
+  const qreal topInset = 2.0;
+  for (const TocEntryLayout& entry : tocEntries_) {
+    const QRectF row = entry.rect.translated(0, scrollOffset);
+    const qreal dx = static_cast<qreal>(entry.level - 1) * indentStep;
+    const qreal textX = row.left() + dx;
+    const qreal baselineY = row.top() + topInset + fm.ascent();
+    const qreal avail = row.right() - textX - 8.0;
+    QString title = entry.title;
+    if (avail > 0.0 && fm.horizontalAdvance(title) > avail) {
+      title = fm.elidedText(title, Qt::ElideRight, avail);
+    }
+    painter.setPen(linkColor);
+    painter.drawText(QPointF(textX, baselineY), title);
+    if (theme.linkUnderlined()) {
+      const qreal w = fm.horizontalAdvance(title);
+      const qreal underlineY = baselineY + 1.0;
+      painter.drawLine(QPointF(textX, underlineY), QPointF(textX + w, underlineY));
+    }
+  }
   painter.restore();
 }
 

@@ -82,6 +82,8 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   subscriptCheck_ = new QCheckBox(extCard);
   superscriptCheck_ = new QCheckBox(extCard);
   highlightCheck_ = new QCheckBox(extCard);
+  renderEmojiCheck_ = new QCheckBox(extCard);
+  renderEmojiCheck_->setChecked(true);
   alertBoxCheck_ = new QCheckBox(extCard);
   alertBoxCheck_->setChecked(true);
   diagramsCheck_ = new QCheckBox(extCard);
@@ -101,6 +103,7 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   extLayout->addWidget(subscriptCheck_);
   extLayout->addWidget(superscriptCheck_);
   extLayout->addWidget(highlightCheck_);
+  extLayout->addWidget(renderEmojiCheck_);
   extLayout->addWidget(alertBoxCheck_);
   extLayout->addLayout(diagramRow);
   cardColumn->addWidget(extCard);
@@ -210,6 +213,7 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   wireBoolSetting(subscriptCheck_, QStringLiteral("markdown/subscript"));
   wireBoolSetting(superscriptCheck_, QStringLiteral("markdown/superscript"));
   wireBoolSetting(highlightCheck_, QStringLiteral("markdown/highlight"));
+  wireBoolSetting(renderEmojiCheck_, QStringLiteral("markdown/renderEmoji"));
   wireBoolSetting(alertBoxCheck_, QStringLiteral("markdown/alertBox"));
   wireBoolSetting(diagramsCheck_, QStringLiteral("markdown/diagrams"));
   wireComboIndexSetting(convertOnInputCombo_, QStringLiteral("markdown/convertOnInput"));
@@ -270,6 +274,10 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
   subscriptCheck_->setText(tr("Subscript") + QStringLiteral(" (H~2~O)"));
   superscriptCheck_->setText(tr("Superscript") + QStringLiteral(" (X^2^)"));
   highlightCheck_->setText(tr("Highlight") + QStringLiteral(" (==key==)"));
+  renderEmojiCheck_->setText(tr("Render Emoji Shortcodes") + QStringLiteral(" (:smile:)"));
+  renderEmojiCheck_->setToolTip(tr(
+      "Convert GitHub-style shortcodes like :smile: and :heart: into emoji glyphs when rendering. "
+      "Turn off to keep the literal :shortcode: text (e.g. for technical documentation)."));
   alertBoxCheck_->setText(tr("Github Style Alert Box"));
   diagramsCheck_->setText(tr("Diagrams (Sequence, Flowchart, Mermaid)"));
   diagramOptionsButton_->setText(tr("Diagram Options"));
@@ -308,6 +316,7 @@ void muffin::PrefsMarkdownPage::loadSettings() {
   loadCheck(subscriptCheck_, QStringLiteral("markdown/subscript"), false);
   loadCheck(superscriptCheck_, QStringLiteral("markdown/superscript"), false);
   loadCheck(highlightCheck_, QStringLiteral("markdown/highlight"), false);
+  loadCheck(renderEmojiCheck_, QStringLiteral("markdown/renderEmoji"), true);
   loadCheck(alertBoxCheck_, QStringLiteral("markdown/alertBox"), true);
   loadCheck(diagramsCheck_, QStringLiteral("markdown/diagrams"), true);
   loadComboIndex(convertOnInputCombo_, QStringLiteral("markdown/convertOnInput"), 0);

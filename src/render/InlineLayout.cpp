@@ -202,7 +202,8 @@ void InlineLayout::build(
   textShadow_ = options.textShadow;
   alignment_ = options.alignment;
   projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState, options.sourceBase, baseFont.pointSizeF(),
-                                 options.pendingPrefixLength, options.smartPunct, options.breakOnSingleNewline, options.textTransform);
+                                 options.pendingPrefixLength, options.smartPunct, options.breakOnSingleNewline, options.textTransform,
+                                 options.renderEmoji);
   buildOffsetMapFromProjection();
   buildMathAtoms(inlines, theme, width);
   buildImageAtoms(inlines, theme, width);

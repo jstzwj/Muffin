@@ -2,6 +2,7 @@
 
 #include "document/LineStartOffsetCache.h"
 #include "document/MarkdownNode.h"
+#include "document/OutlineBuilder.h"
 #include "document/PieceTable.h"
 #include "html/HtmlRenderer.h"
 #include "math/MathRenderer.h"
@@ -40,6 +41,11 @@ public:
   // non-counter themes. Set every pass by configureBuilder so single-block and
   // range rebuilds share the same map the full/range pass just recomputed.
   void setHeadingCounterText(const QHash<NodeId, QString>* map);
+  // DocumentLayout's heading outline (for `[TOC]` block rendering). Owned by the
+  // layout; the builder only reads it. nullptr/empty when there are no headings (or
+  // before the first full/range rebuild). Set every pass by configureBuilder so the
+  // per-keystroke single-block rebuild reuses the cached outline.
+  void setTocEntries(const QVector<OutlineEntry>* entries);
 
   // Read the render-affecting markdown/* settings ONCE per layout pass (call from configureBuilder)
   // into the members below, so the per-block estimate/build loops don't hit QSettings (Windows
@@ -73,6 +79,17 @@ private:
   // as the caret block. Called at every inline-build site (paragraph / list item / table cell).
   void applyPreedit(InlineLayout::BuildOptions& options) const;
   std::unique_ptr<BlockLayout> buildParagraphLike(
+      const MarkdownNode& node,
+      const RenderTheme& theme,
+      qreal x,
+      qreal y,
+      qreal width,
+      int depth);
+  // A `[TOC]` paragraph rendered as a generated indented link list of the cached
+  // document headings. Used only while the caret is outside the block; when the
+  // caret is inside, buildParagraphLike falls through to a normal paragraph build
+  // (showing the literal "[TOC]") so the marker stays editable.
+  std::unique_ptr<BlockLayout> buildTocPreview(
       const MarkdownNode& node,
       const RenderTheme& theme,
       qreal x,
@@ -177,11 +194,13 @@ private:
   int preeditCursor_ = -1;
   NodeId editingHtmlBlockId_;
   const QHash<NodeId, QString>* headingCounterText_ = nullptr;
+  const QVector<OutlineEntry>* tocEntries_ = nullptr;
   // Cached once per layout pass by refreshRenderSettings() (configureBuilder). The per-block
   // estimate/build loops read these instead of hitting QSettings per block.
   bool breakOnSingleNewline_ = true;
   bool codeBlockWrap_ = true;
   bool showLineNumbers_ = false;
+  bool renderEmoji_ = true;
   CodeFenceScrollController* codeFenceScroll_ = nullptr;
   TreeSitterHighlighter codeHighlighter_;
   math::MathRenderer mathRenderer_;

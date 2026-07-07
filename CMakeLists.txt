@@ -707,6 +707,8 @@ set(MUFFIN_UI_SOURCES
   src/editor/EmojiCompleter.cpp
   src/editor/EmojiCompleter.h
   src/editor/EmojiProvider.h
+  src/editor/EmojiDictionary.cpp
+  src/editor/EmojiDictionary.h
   src/editor/TableToolbar.cpp
   src/editor/TableToolbar.h
   src/editor/InputController.cpp

@@ -298,6 +298,18 @@ bool selectionFocusesNode(const SelectionRange& selection, NodeId nodeId) {
   return nodeId.isValid() && selection.focus.blockId == nodeId && selection.focus.text.nodeId == nodeId;
 }
 
+// A `[TOC]` marker: a paragraph whose single inline is the literal text "[TOC]"
+// (case-insensitive, surrounding whitespace tolerated). cmark parses it as an
+// ordinary paragraph; this predicate is what lets the builder special-case it.
+bool isTocMarkerParagraph(const MarkdownNode& node) {
+  if (node.type() != BlockType::Paragraph || node.inlines().size() != 1) {
+    return false;
+  }
+  const InlineNode& only = node.inlines().constFirst();
+  return only.type() == InlineType::Text &&
+         only.text().trimmed().compare(QStringLiteral("[TOC]"), Qt::CaseInsensitive) == 0;
+}
+
 // Templated so it reads the document text from either a QString or a PieceTable -- both expose
 // isEmpty(). The builder passes its PieceTable view (md()).
 template <typename Text>
@@ -406,6 +418,10 @@ void BlockLayoutBuilder::setHeadingCounterText(const QHash<NodeId, QString>* map
   headingCounterText_ = map;
 }
 
+void BlockLayoutBuilder::setTocEntries(const QVector<OutlineEntry>* entries) {
+  tocEntries_ = entries;
+}
+
 BlockLayoutBuilder::BlockLayoutBuilder() : perfEnabled_(blockBuildPerf().isDebugEnabled()) {}
 
 void BlockLayoutBuilder::refreshRenderSettings() {
@@ -414,6 +430,7 @@ void BlockLayoutBuilder::refreshRenderSettings() {
   breakOnSingleNewline_ = s.value(QStringLiteral("markdown/breakOnSingleNewline"), true).toBool();
   codeBlockWrap_ = s.value(QStringLiteral("markdown/codeBlockWrap"), true).toBool();
   showLineNumbers_ = s.value(QStringLiteral("markdown/showLineNumbers"), false).toBool();
+  renderEmoji_ = s.value(QStringLiteral("markdown/renderEmoji"), true).toBool();
   // The estimate caches are keyed by elementKey|headingLevel only (no theme dimension), so a theme
   // switch would otherwise keep serving the previous theme's lineHeight/avgCharWidth. Clearing here
   // (once per layout pass) keeps them fresh: they re-populate within a single estimate pass — many
@@ -483,6 +500,15 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   layout->setType(node.type());
   layout->setDepth(depth);
   layout->setHeadingLevel(node.headingLevel());
+  // [TOC] marker: while the caret is NOT in this block (and the document has at
+  // least one heading), render a generated indented heading list. When the caret
+  // is in the block, fall through to the normal paragraph build below so the
+  // literal "[TOC]" shows for editing — the caret-move triggers a single-block
+  // rebuild that flips isToc off. Empty outline ⇒ literal "[TOC]" too.
+  if (node.type() == BlockType::Paragraph && isTocMarkerParagraph(node) &&
+      !selectionFocusesNode(selection_, node.id()) && tocEntries_ && !tocEntries_->isEmpty()) {
+    return buildTocPreview(node, theme, x, y, width, depth);
+  }
   // Counter-driven ::before text (e.g. "1. ") for heading auto-numbering themes.
   // The map is computed once per structural/full layout pass (DocumentLayout) and
   // reused verbatim on per-keystroke single-block rebuilds, where the document
@@ -530,6 +556,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   options.isMisspelled = spellMisspelledPredicate();
   options.smartPunct = smartPunctRenderOptions();
   options.breakOnSingleNewline = breakOnSingleNewline_;
+  options.renderEmoji = renderEmoji_;
   // Element-level computed text style: headings keep their legacy heading getter
   // fallback, while paragraphs can now differ by context (`p` vs `blockquote p`).
   if (node.type() == BlockType::Heading) {
@@ -604,6 +631,49 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   }
 
   layout->setInlineLayout(std::move(inlineLayout));
+  return layout;
+}
+
+std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTocPreview(
+    const MarkdownNode& node,
+    const RenderTheme& theme,
+    qreal x,
+    qreal y,
+    qreal width,
+    int depth) {
+  // Generated, non-editable preview: one row per document heading, indented by
+  // level, painted in the link colour (paintToc) and Ctrl+clickable to scroll to
+  // the heading (hitSelf emits a `#toc:<nodeId>` href). Height = rows × line
+  // height; the row rects are document-absolute so paint and hit-test share them.
+  auto layout = std::make_unique<BlockLayout>(node.id());
+  layout->setType(BlockType::Paragraph);
+  layout->setDepth(depth);
+  layout->setIsToc(true);
+
+  const QString elementKey = QStringLiteral("p");
+  const QFont font = theme.textFontForElement(elementKey, &node);
+  const QFontMetricsF fm(font);
+  qreal multiplier = theme.lineHeightMultiplierForElement(elementKey, node.type(), node.headingLevel(), &node);
+  if (multiplier <= 0.0) {
+    multiplier = 1.0;
+  }
+  const qreal lineHeight = fm.height() * multiplier;
+
+  QVector<BlockLayout::TocEntryLayout> entries;
+  entries.reserve(tocEntries_->size());
+  for (int i = 0; i < tocEntries_->size(); ++i) {
+    const OutlineEntry& e = tocEntries_->at(i);
+    BlockLayout::TocEntryLayout row;
+    row.rect = QRectF(x, y + static_cast<qreal>(i) * lineHeight, width, lineHeight);
+    row.target = e.nodeId;
+    row.title = e.title;
+    row.level = e.level;
+    entries.append(std::move(row));
+  }
+  layout->setTocEntries(std::move(entries));
+
+  layout->setContentSourceStart(sourceContentStartForEditableNode(node));
+  layout->setRect(QRectF(x, y, width, static_cast<qreal>(tocEntries_->size()) * lineHeight));
   return layout;
 }
 
@@ -754,6 +824,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   options.isMisspelled = spellMisspelledPredicate();
   options.smartPunct = smartPunctRenderOptions();
   options.breakOnSingleNewline = breakOnSingleNewline_;
+  options.renderEmoji = renderEmoji_;
   {
     BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
     options.baseTextColor = theme.textColorForElement(elementKey, &node);
@@ -981,6 +1052,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       options.isMisspelled = spellMisspelledPredicate();
       options.smartPunct = smartPunctRenderOptions();
       options.breakOnSingleNewline = breakOnSingleNewline_;
+  options.renderEmoji = renderEmoji_;
       {
         BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
         applyPreedit(options);  // only the focused cell has projectionState.cursorSourceOffset set

@@ -128,7 +128,7 @@ public:
   InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState state = {}, qsizetype sourceBase = -1,
                    qreal baseFontSize = 16.0, qsizetype pendingPrefixLength = 0,
                    SmartPunctRenderOptions smartPunct = {}, bool breakOnSingleNewline = false,
-                   TextTransform textTransform = TextTransform::None);
+                   TextTransform textTransform = TextTransform::None, bool renderEmoji = true);
 
   bool isValid() const;
   QString sourceText() const;
@@ -176,6 +176,10 @@ private:
     // instead of joining it into one paragraph line (CommonMark).
     bool breakOnSingleNewline = false;
     TextTransform textTransform = TextTransform::None;
+    // markdown/renderEmoji (default on): decode `:shortcode:` emoji at display time
+    // (the same N:1 decode-span machinery as escapes/entities). Gated so users who
+    // want literal `:text:` can disable it.
+    bool renderEmoji = true;
     QString displayText;
     QString visibleText;
     QVector<InlineProjectionSpan> spans;

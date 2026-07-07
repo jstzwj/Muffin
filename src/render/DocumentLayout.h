@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/MarkdownDocument.h"
+#include "document/OutlineBuilder.h"
 #include "document/TopLevelRangeChange.h"
 #include "editor/CursorPosition.h"
 #include "render/BlockLayout.h"
@@ -142,6 +143,7 @@ class DocumentLayout {
   QHash<NodeId, qsizetype> topLevelIndex_;          // top-level node id -> slot index
   QHash<NodeId, NodeId> nestedToTopLevel_;          // any node id -> top-level node id
   QHash<NodeId, QString> headingCounterText_;       // heading node id -> resolved ::before counter text ("1. ")
+  QVector<OutlineEntry> tocEntries_;                // document headings for `[TOC]` block rendering
   QHash<NodeId, const BlockLayout*> layoutIndex_;   // node id -> built BlockLayout* (lazy-populated)
 
   qreal pageLeft_ = 0;       // content left

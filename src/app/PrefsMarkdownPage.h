@@ -38,6 +38,7 @@ private:
   QCheckBox* subscriptCheck_ = nullptr;
   QCheckBox* superscriptCheck_ = nullptr;
   QCheckBox* highlightCheck_ = nullptr;
+  QCheckBox* renderEmojiCheck_ = nullptr;
   QCheckBox* alertBoxCheck_ = nullptr;
   QCheckBox* diagramsCheck_ = nullptr;
   QPushButton* diagramOptionsButton_ = nullptr;
