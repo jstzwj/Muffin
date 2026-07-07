@@ -388,19 +388,27 @@ void testKeyboardDownMovesWithinWrappedParagraphLine() {
   const InlineLayout* layout = requireViewInlineLayout(view, block->id(), QStringLiteral("wrapped keyboard down"));
   require(layout->visualLineCount() >= 2, "keyboard down fixture should wrap to at least two visual lines");
 
-  const qreal localX = layout->visualLineRect(0).left() + 35.0;
-  const qsizetype startSource = layout->sourceOffsetAtVisualLineX(0, localX);
-  const qsizetype expectedSource = layout->sourceOffsetAtVisualLineX(1, localX);
+  // Probe a starting caret somewhere on visual line 0. The goal column Down preserves is the
+  // caret's OWN rect X (InputController caches effectiveCursorRect().left()), not this synthetic
+  // probe X: sourceOffsetAtVisualLineX snaps to a character boundary, so the caret rect sits at a
+  // (possibly different) boundary X whenever the probe lands mid-glyph. That snap is font-dependent
+  // (passes on Windows, flakes on macOS), so derive the expected target from the caret's real rect
+  // — then the assertion matches exactly what the controller resolves and is platform-independent.
+  const qreal probeX = layout->visualLineRect(0).left() + 35.0;
+  const qsizetype startSource = layout->sourceOffsetAtVisualLineX(0, probeX);
   setSourceCursor(controller.selection(), block, startSource, startSource);
+  // setSourceCursor mutates the selection, which can rebuild this block — the `layout` pointer
+  // captured above may dangle afterwards. Re-fetch before reading the caret rect.
+  const InlineLayout* layoutAtCaret = requireViewInlineLayout(view, block->id(), QStringLiteral("wrapped keyboard down caret"));
+  const qreal goalLocalX = layoutAtCaret->cursorRectForSourceOffset(startSource).left();
 
   require(pressKey(controller.inputController(), &view, Qt::Key_Down), "Down should be handled in wrapped paragraph");
   const CursorPosition cursor = controller.selection().cursorPosition();
   require(cursor.blockId == block->id(), "Down inside wrapped paragraph should stay in the same block");
   const InlineLayout* layoutAfter = requireViewInlineLayout(view, block->id(), QStringLiteral("wrapped keyboard down after"));
   require(layoutAfter->visualLineIndexForSourceOffset(cursor.text.sourceOffset) == 1, "Down should land on visual line 1");
-  const qsizetype actualSource = layoutAfter->sourceOffsetAtVisualLineX(1, localX);
-  require(cursor.text.sourceOffset == actualSource, "Down should preserve x on the next visual line");
-  Q_UNUSED(expectedSource)
+  const qsizetype expectedSource = layoutAfter->sourceOffsetAtVisualLineX(1, goalLocalX);
+  require(cursor.text.sourceOffset == expectedSource, "Down should preserve the caret x on the next visual line");
 }
 
 void testKeyboardVerticalCrossesParagraphsByVisualEdges() {
@@ -741,11 +749,23 @@ void testInlinePreeditAtRightEdgeWraps() {
   const InlineLayout* layout = requireViewInlineLayout(view, block->id(), QStringLiteral("preedit wrap before"));
   require(layout->visualLineCount() == 1, "fixture: 'abc' should occupy one visual line");
 
-  QInputMethodEvent imeEvent(QStringLiteral("abcdefghijklmnopqrstuvwxyz"), {});
+  // Size the preedit from the font's OWN 'a' advance so it is guaranteed to exceed the line width
+  // on every platform. A fixed short preedit (the alphabet) fits on one line on CI Linux, whose
+  // fontconfig-less fallback font renders Latin narrow enough that 26 chars fit the ~150px line,
+  // so the wrap is never observed. Built against the view width (an upper bound on the wrap
+  // width), n*advanceA > viewWidth >= wrapWidth by construction, so the preedit necessarily
+  // overflows and (with WrapAtWordBoundaryOrAnywhere) wraps — deterministically, any font.
+  const qreal advanceA = QFontMetricsF(view.theme().paragraphFont()).horizontalAdvance(QStringLiteral("a"));
+  const qreal widthBudget = qMax(qreal(160.0), view.width() + 10.0);
+  const int n = advanceA > 0.0 ? static_cast<int>(widthBudget / advanceA) + 5 : 100;
+  const QString preedit = QStringLiteral("a").repeated(qMax(n, 60));
+
+  QInputMethodEvent imeEvent(preedit, {});
   QApplication::sendEvent(&view, &imeEvent);
   QApplication::processEvents();
 
   const InlineLayout* layoutAfter = requireViewInlineLayout(view, block->id(), QStringLiteral("preedit wrap after"));
+  require(layoutAfter->hasPreedit(), "the caret block's inline layout should have the preedit spliced in");
   require(layoutAfter->visualLineCount() >= 2,
           "a preedit at the right edge should wrap to a new line, not be clipped");
 }
