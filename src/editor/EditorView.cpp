@@ -39,6 +39,8 @@
 #include <QWheelEvent>
 #include <QMouseEvent>
 #include <QInputMethodEvent>
+#include <QTextCharFormat>
+#include <QTextLayout>
 #include <QFontMetricsF>
 #include <QUrl>
 #include <QKeyEvent>
@@ -787,8 +789,50 @@ bool EditorView::selectionContainsViewportPoint(const HitTestResult& hit, QPoint
 }
 
 void EditorView::inputMethodEvent(QInputMethodEvent* event) {
+  // The composition (preedit) is a paint-layer-only echo of in-progress IME text: it shows at the
+  // caret WITHOUT touching the document — only the eventual commitString is inserted. The preedit
+  // renders in paintPreedit, folded into the caret's dirty-rect machinery so a changing composition
+  // is erased and redrawn exactly like a moving caret.
+  const QString previousPreedit = preedit_;
+  preedit_ = event->preeditString();
+  preeditCursor_ = -1;
+  preeditFormats_.clear();
+  if (!preedit_.isEmpty()) {
+    // Default underline so a composition is visible even when the platform IME sends no TextFormat
+    // attributes; the IME's own ranges (typed highlight, active segment) then override sub-ranges.
+    QTextCharFormat underline;
+    underline.setFontUnderline(true);
+    preeditFormats_.append({0, static_cast<int>(preedit_.length()), underline});
+    for (const QInputMethodEvent::Attribute& attr : event->attributes()) {
+      if (attr.type == QInputMethodEvent::TextFormat && attr.length > 0) {
+        preeditFormats_.append({attr.start, attr.length, attr.value.value<QTextFormat>().toCharFormat()});
+      } else if (attr.type == QInputMethodEvent::Cursor) {
+        preeditCursor_ = attr.start;
+      }
+    }
+  }
+
   if (!event->commitString().isEmpty()) {
+    // Clear the splice then commit: the edit-driven refresh rebuilds the caret block without a
+    // preedit, so the old composition is erased and the committed text lands at the caret.
+    if (layout_) {
+      layout_->setPreedit({}, {}, -1);
+    }
     emit textCommitted(event->commitString());
+  } else if (preedit_ != previousPreedit) {
+    // Pure composition change: push the preedit to the layout and rebuild the caret block so its
+    // inline layout re-splices the preedit (following text shifts/wraps) and repaints. The block's
+    // BuiltStamp is dropped so the cached build is discarded; refreshBlocks resolves a nested caret
+    // (list item / quote paragraph) up to its top-level block. configureBuilder forwards the preedit.
+    if (layout_ && document_ && cursorPosition_.blockId.isValid()) {
+      layout_->setPreedit(preedit_, preeditFormats_, preeditCursor_);
+      blockBuiltAt_.remove(cursorPosition_.blockId);
+      refreshBlocks({cursorPosition_.blockId}, *document_);
+    } else {
+      QRect dirty = uniteDocumentRectDirty({}, lastPaintedCaretDocumentRect_, scrollY(), viewport()->size());
+      dirty = uniteDocumentRectDirty(dirty, effectiveCursorRect(), scrollY(), viewport()->size());
+      viewport()->update(dirty.isEmpty() ? viewport()->rect() : dirty);
+    }
   }
   event->accept();
 }

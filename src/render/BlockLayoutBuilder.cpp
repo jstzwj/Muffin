@@ -370,6 +370,26 @@ void BlockLayoutBuilder::setSelection(SelectionRange selection) {
   selection_ = selection;
 }
 
+void BlockLayoutBuilder::setPreedit(QString text, QVector<QTextLayout::FormatRange> formats, int cursor) {
+  preeditText_ = std::move(text);
+  preeditFormats_ = std::move(formats);
+  preeditCursor_ = cursor;
+}
+
+void BlockLayoutBuilder::applyPreedit(InlineLayout::BuildOptions& options) const {
+  // cursorSourceOffset >= 0 identifies the caret block (and the caret's content-local source offset).
+  // Source-offset (not visible-offset) is the splice anchor: a caret inside a revealed-syntax span
+  // (e.g. a link's URL) has a granular source offset but a visible offset that collapses to the span
+  // boundary, which would splice the preedit at the wrong place.
+  if (preeditText_.isEmpty() || options.projectionState.cursorSourceOffset < 0) {
+    return;
+  }
+  options.preeditText = preeditText_;
+  options.preeditFormats = preeditFormats_;
+  options.preeditCursor = preeditCursor_;
+  options.preeditInsertAtSourceOffset = options.projectionState.cursorSourceOffset;
+}
+
 void BlockLayoutBuilder::setEditingHtmlBlock(NodeId id) {
   editingHtmlBlockId_ = id;
 }
@@ -537,6 +557,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   options.textShadow = theme.textShadowForElement(elementKey, &node);
   {
     BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
+    applyPreedit(options);
     inlineLayout->build(node.inlines(), editableSource, theme, textWidth, font, options);
   }
   qreal height = inlineLayout->height();
@@ -741,6 +762,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
     options.alignment = theme.textAlignmentForElement(elementKey, BlockType::Paragraph, 0, &node);
     options.textTransform = static_cast<TextTransform>(theme.textTransformForElement(elementKey, &node));
     options.textShadow = theme.textShadowForElement(elementKey, &node);
+    applyPreedit(options);
     inlineLayout->build(primaryInlinesForListItem(node), listSourceText, theme, contentWidth, theme.textFontForElement(elementKey, &node), options);
   }
   layout->setInlineLayout(std::move(inlineLayout));
@@ -961,6 +983,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       options.breakOnSingleNewline = breakOnSingleNewline_;
       {
         BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
+        applyPreedit(options);  // only the focused cell has projectionState.cursorSourceOffset set
         cell.text.build(
             cellNode->inlines(),
             sourceTextForEditableNode(*cellNode),

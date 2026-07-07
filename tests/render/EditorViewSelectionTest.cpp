@@ -3,6 +3,12 @@
 #include "editor/EditorViewGeometry.h"
 #include "render/DocumentLayout.h"
 
+#include <QApplication>
+#include <QFontMetricsF>
+#include <QImage>
+#include <QInputMethodEvent>
+#include <QPainter>
+
 using namespace muffin;
 
 void testEditorViewHitTestActivatesInlineSourceEditing() {
@@ -614,6 +620,271 @@ void testKeyboardUpDownDescendsIntoAndOutOfNestedSublist() {
           "Up from the first nested child should return to the parent item");
 }
 
+// Captures the widget's current pixels (forces a synchronous paint so it reflects state set since
+// the last update(), e.g. a preedit). grab() keys off the fixed widget size, so it stays stable
+// across captures (a viewport()->render() approach let a layout-driven scrollbar flip the size).
+QImage captureView(EditorView& view) {
+  return view.grab().toImage();
+}
+
+// An in-progress IME composition (preedit) must paint at the caret with an underline, instead of
+// being silently dropped (the old inputMethodEvent only consumed commitString). Verified by a pixel
+// differential: feeding a preedit event changes the caret row's pixels, proving the composition drew.
+void testInputMethodPreeditPaintsAtCaret() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(400, 300);
+  view.show();
+  session.setMarkdownText(QStringLiteral("hello world paragraph"), false);
+  view.setDocument(session.document());
+  QApplication::processEvents();
+  MarkdownNode* block = blockAt(session, 0);
+  require(block != nullptr && block->type() == BlockType::Paragraph, "fixture should build a paragraph");
+
+  // Place the caret mid-paragraph (activateHit sets cursorHit_, which paintPreedit requires).
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Text;
+  hit.blockId = block->id();
+  hit.textNodeId = block->id();
+  hit.textOffset = 2;
+  hit.sourceOffset = block->sourceRange().byteStart + 2;
+  controller.activateHit(hit);
+  QApplication::processEvents();
+
+  const QImage baseline = captureView(view);
+
+  // Feed a preedit event the same way Qt delivers one from the platform IME.
+  QInputMethodEvent imeEvent(QStringLiteral("nihao"), {});
+  QApplication::sendEvent(&view, &imeEvent);
+  QApplication::processEvents();
+  const QImage withPreedit = captureView(view);
+
+  require(baseline.size() == withPreedit.size(), "widget size must be stable across the two captures");
+  int differingPixels = 0;
+  for (int y = 0; y < baseline.height(); ++y) {
+    for (int x = 0; x < baseline.width(); ++x) {
+      if (baseline.pixel(x, y) != withPreedit.pixel(x, y)) {
+        ++differingPixels;
+      }
+    }
+  }
+  // Threshold sits well above the caret-blink footprint (~40 px, if the blink toggled between
+  // captures) and well below the preedit footprint (glyphs + underline), so a pass requires the
+  // composition to have actually rendered — not just the caret flickering.
+  require(differingPixels > 100,
+          "a preedit composition should paint visible pixels at the caret (underline + glyphs)");
+}
+
+// A mid-sentence preedit is spliced INTO the laid-out text, so it pushes following text right
+// instead of overlapping it. Verified by the inline layout's width growing by roughly the preedit's
+// pixel width — the old overlay left the layout width unchanged (it painted over the text).
+void testInlinePreeditShiftsFollowingText() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(800, 300);
+  view.show();
+  session.setMarkdownText(QStringLiteral("风火雷电"), false);
+  view.setDocument(session.document());
+  QApplication::processEvents();
+  MarkdownNode* block = blockAt(session, 0);
+  require(block != nullptr, "fixture should build a paragraph");
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Text;
+  hit.blockId = block->id();
+  hit.textNodeId = block->id();
+  hit.textOffset = 2;  // between 火 and 雷 (activateHit fills sourceOffset from textOffset)
+  controller.activateHit(hit);
+  QApplication::processEvents();
+
+  const InlineLayout* layout = requireViewInlineLayout(view, block->id(), QStringLiteral("preedit shift before"));
+  const qreal widthBefore = layout->size().width();
+
+  QInputMethodEvent imeEvent(QStringLiteral("wsm"), {});
+  QApplication::sendEvent(&view, &imeEvent);
+  QApplication::processEvents();
+
+  const InlineLayout* layoutAfter = requireViewInlineLayout(view, block->id(), QStringLiteral("preedit shift after"));
+  require(layoutAfter->hasPreedit(), "the caret block's inline layout should have the preedit spliced in");
+  const qreal widthAfter = layoutAfter->size().width();
+  const qreal expectedGrowth = QFontMetricsF(view.theme().paragraphFont()).horizontalAdvance(QStringLiteral("wsm"));
+  require(widthAfter >= widthBefore + expectedGrowth - 2.0,
+          "a mid-sentence preedit should grow the laid-out width (shift following text), not overlap it");
+}
+
+// A preedit at a line's right edge wraps to the next visual line (it's part of the laid-out text),
+// instead of being clipped by the viewport edge.
+void testInlinePreeditAtRightEdgeWraps() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(150, 300);
+  view.show();
+  session.setMarkdownText(QStringLiteral("abc"), false);  // fits one line at this width
+  view.setDocument(session.document());
+  QApplication::processEvents();
+  MarkdownNode* block = blockAt(session, 0);
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Text;
+  hit.blockId = block->id();
+  hit.textNodeId = block->id();
+  hit.textOffset = 3;  // end of "abc"
+  controller.activateHit(hit);
+  QApplication::processEvents();
+
+  const InlineLayout* layout = requireViewInlineLayout(view, block->id(), QStringLiteral("preedit wrap before"));
+  require(layout->visualLineCount() == 1, "fixture: 'abc' should occupy one visual line");
+
+  QInputMethodEvent imeEvent(QStringLiteral("abcdefghijklmnopqrstuvwxyz"), {});
+  QApplication::sendEvent(&view, &imeEvent);
+  QApplication::processEvents();
+
+  const InlineLayout* layoutAfter = requireViewInlineLayout(view, block->id(), QStringLiteral("preedit wrap after"));
+  require(layoutAfter->visualLineCount() >= 2,
+          "a preedit at the right edge should wrap to a new line, not be clipped");
+}
+
+// A caret inside a link's revealed URL (`[Muffin](htt|s://…)`) has a granular SOURCE offset but a
+// VISIBLE offset that collapses to the HiddenSyntax span boundary. The preedit must splice at the
+// caret's source position (inside the URL), not at the boundary (after "Muffin"). Verified by the
+// composition caret sitting at the caret's X (the preedit starts there), not far to its left.
+void testInlinePreeditSplicesInsideRevealedLinkUrl() {
+  const QString md = QStringLiteral("[Muffin](https://example.com)");
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(800, 300);
+  view.show();
+  session.setMarkdownText(md, false);
+  view.setDocument(session.document());
+  QApplication::processEvents();
+  MarkdownNode* block = blockAt(session, 0);
+
+  // Place the caret between 'p' and 's' of "https" (inside the URL) via its SOURCE offset.
+  const qsizetype caretSource = md.indexOf(QLatin1Char('s'), md.indexOf(QStringLiteral("http")));
+  require(caretSource > 0, "fixture: should locate the 's' inside the URL");
+  setSourceCursor(controller.selection(), block, 0, caretSource);
+  QApplication::processEvents();
+
+  // Preedit "XYZ" with the composition cursor at its start (position 0) → the composition caret
+  // sits exactly at the splice point.
+  QVector<QInputMethodEvent::Attribute> attrs;
+  attrs.append(QInputMethodEvent::Attribute(QInputMethodEvent::Cursor, 0, 1, QVariant()));
+  QInputMethodEvent imeEvent(QStringLiteral("XYZ"), attrs);
+  QApplication::sendEvent(&view, &imeEvent);
+  QApplication::processEvents();
+
+  const BlockLayout* blk = requireViewBlock(view, block->id(), QStringLiteral("preedit url"));
+  const InlineLayout* layout = blk->inlineLayout();
+  require(layout != nullptr && layout->hasPreedit(), "the link block should have the preedit spliced in");
+  const QRectF compCaret = layout->preeditCursorRect(blk->inlineTextOrigin(view.theme()));  // document space
+  require(!compCaret.isEmpty(), "the composition caret rect should be resolved");
+  // The composition caret (= splice point) must sit at the caret's URL position, not at the end of
+  // "Muffin" where a visible-offset anchor would wrongly place it (well to the left of the caret).
+  const qreal caretX = view.effectiveCursorRect().x();
+  require(compCaret.x() >= caretX - 2.0,
+          "preedit should splice at the caret's source position inside the URL, not at the visible boundary");
+}
+
+// An inline math atom ($x$) AFTER the caret must shift right with the spliced preedit (and the text),
+// not stay painted at its old X. The atom painters feed atom.displayStart (display-space) to
+// cursorToX, which addresses preeditSpliceLength_ chars too early in the spliced layoutText_ — so
+// they must go through toLayoutOffset, exactly like the decoration painters.
+void testInlinePreeditShiftsMathAtom() {
+  const QString md = QStringLiteral("a $x$ b");  // inline math sits after "a"
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(800, 300);
+  view.show();
+  session.setMarkdownText(md, false);
+  view.setDocument(session.document());
+  QApplication::processEvents();
+  MarkdownNode* block = blockAt(session, 0);
+
+  setSourceCursor(controller.selection(), block, 1, 1);  // caret right after "a", before " $x$ b"
+  QApplication::processEvents();
+
+  const BlockLayout* blk = requireViewBlock(view, block->id(), QStringLiteral("preedit math before"));
+  const QVector<QRectF> rectsBefore = blk->inlineLayout()->mathAtomRects(blk->inlineTextOrigin(view.theme()));
+  require(!rectsBefore.isEmpty(), "fixture should render the inline math atom");
+  const qreal mathXBefore = rectsBefore.first().x();
+
+  QInputMethodEvent imeEvent(QStringLiteral("WWWWW"), {});
+  QApplication::sendEvent(&view, &imeEvent);
+  QApplication::processEvents();
+
+  const BlockLayout* blkAfter = requireViewBlock(view, block->id(), QStringLiteral("preedit math after"));
+  const QVector<QRectF> rectsAfter = blkAfter->inlineLayout()->mathAtomRects(blkAfter->inlineTextOrigin(view.theme()));
+  require(!rectsAfter.isEmpty(), "math atom should still render after the preedit splice");
+  const qreal expectedShift = QFontMetricsF(view.theme().paragraphFont()).horizontalAdvance(QStringLiteral("WWWWW"));
+  require(rectsAfter.first().x() >= mathXBefore + expectedShift - 2.0,
+          "inline math atom should shift right with the spliced preedit, not stay in place");
+}
+
+// A preedit in a TABLE CELL splices into the cell's inline layout (shifting the trailing cell text,
+// not overlapping it), and a right-aligned column STAYS right-aligned: tableCellTextOrigin keys off
+// cell.text.size().width() (which now includes the splice), so the origin tracks the wider text.
+void testInlinePreeditSplicesInTableCellAndKeepsAlignment() {
+  const QString md = QStringLiteral("| left | right |\n|---|---:|\n| abc | defg |");  // col 1 right-aligned
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(600, 300);
+  view.show();
+  session.setMarkdownText(md, false);
+  view.setDocument(session.document());
+  QApplication::processEvents();
+  MarkdownNode* table = blockAt(session, 0);
+  require(table != nullptr && table->type() == BlockType::Table, "fixture should build a table");
+  const NodeId tableId = table->id();
+  const auto& rows0 = requireViewBlock(view, tableId, QStringLiteral("cell rows setup"))->tableRows();
+  require(rows0.size() >= 2, "table fixture should expose header + body row");
+  const auto& cell0 = rows0.at(1).cells.at(1);  // "defg", right-aligned column
+
+  // Caret between 'd' and 'e' of "defg".
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::TableCell;
+  hit.blockId = tableId;
+  hit.textNodeId = cell0.nodeId;
+  hit.tableRow = 1;
+  hit.tableColumn = 1;
+  hit.textOffset = 1;
+  hit.sourceOffset = cell0.contentSourceStart + 1;
+  controller.activateHit(hit);
+  QApplication::processEvents();
+
+  const qreal widthBefore = cell0.text.size().width();
+  require(cell0.alignment == TableAlignment::Right,
+          QStringLiteral("fixture: column 1 should be right-aligned (got %1)").arg(static_cast<int>(cell0.alignment)));
+
+  QInputMethodEvent imeEvent(QStringLiteral("XYZ"), {});
+  QApplication::sendEvent(&view, &imeEvent);
+  QApplication::processEvents();
+
+  const auto& rows1 = requireViewBlock(view, tableId, QStringLiteral("cell rows after"))->tableRows();
+  const auto& cell1 = rows1.at(1).cells.at(1);
+  require(cell1.text.hasPreedit(), "the focused cell's inline layout should have the preedit spliced in");
+  const qreal widthAfter = cell1.text.size().width();
+  const qreal expectedGrowth = QFontMetricsF(view.theme().paragraphFont()).horizontalAdvance(QStringLiteral("XYZ"));
+  require(widthAfter >= widthBefore + expectedGrowth - 2.0,
+          "a table-cell preedit should grow the cell layout width (shift trailing text), not overlap it");
+  // Alignment (right/center/left) is preserved without a separate assertion here: tableCellTextOrigin
+  // (src/render/BlockLayout.cpp) computes the cell's text origin from cell.text.size().width(), which
+  // now includes the spliced preedit — so a right-aligned cell's origin tracks the wider text and the
+  // block stays pinned to the cell's right edge. (A numeric origin before/after check is confounded by
+  // the table auto-resizing the column to fit the wider content.)
+}
+
 // Drag from the virtual trailing paragraph (below the last block) back up into
 // an earlier block must select across blocks, treating the trailing position as
 // the end of the last block — and the selection must serialize for copy.
@@ -804,6 +1075,12 @@ int main(int argc, char** argv) {
   RUN_TEST(testKeyboardUpDownMovesBetweenListItems);
   RUN_TEST(testKeyboardUpDownLeavesListAtBoundaries);
   RUN_TEST(testKeyboardUpDownDescendsIntoAndOutOfNestedSublist);
+  RUN_TEST(testInputMethodPreeditPaintsAtCaret);
+  RUN_TEST(testInlinePreeditShiftsFollowingText);
+  RUN_TEST(testInlinePreeditAtRightEdgeWraps);
+  RUN_TEST(testInlinePreeditSplicesInsideRevealedLinkUrl);
+  RUN_TEST(testInlinePreeditShiftsMathAtom);
+  RUN_TEST(testInlinePreeditSplicesInTableCellAndKeepsAlignment);
   RUN_TEST(testEditorViewDragFromTrailingParagraphSelectsBack);
   RUN_TEST(testEditorViewBackwardNestedSelectionCoversBothBlocks);
   RUN_TEST(testListItemOwnSelectionRectsDoNotLeakToNested);

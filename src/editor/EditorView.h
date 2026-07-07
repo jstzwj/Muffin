@@ -10,6 +10,7 @@
 #include <QPointer>
 #include <QRectF>
 #include <QHash>
+#include <QTextLayout>
 
 #include <memory>
 
@@ -198,6 +199,12 @@ private:
   // commands target the clicked location.
   bool selectionContainsViewportPoint(const HitTestResult& hit, QPointF viewportPos) const;
   void paintInsertionCursor(QPainter& painter) const;
+  // Render the active IME composition (preedit) at the caret, in place of the blinking caret. While
+  // a composition is active it owns lastPaintedCaretDocumentRect_, so the existing caret dirty-rect
+  // machinery erases/redraws it on every change — no separate preedit repaint hooks.
+  void paintPreedit(QPainter& painter) const;
+  // The rendered font at the caret, so the preedit baseline-aligns with surrounding text.
+  QFont preeditFont() const;
   // Move the caret to the block/inline hit under a viewport position (the same hitTest +
   // setCursorHit + blockClicked sequence mousePressEvent uses). Used by dropEvent so a
   // dropped file-link/image lands where the user released, not at the stale caret.
@@ -248,6 +255,11 @@ private:
   // refresh so a moved caret is erased at its old position, even when that
   // position lies outside any block (e.g. the virtual trailing paragraph).
   mutable QRectF lastPaintedCaretDocumentRect_;
+  // Active IME composition (paint-layer only — never touches the document; only commitString is
+  // inserted). Empty when no composition is in progress. Set in inputMethodEvent, read in paintPreedit.
+  QString preedit_;
+  QVector<QTextLayout::FormatRange> preeditFormats_;  // underline/highlight ranges over preedit_
+  int preeditCursor_ = -1;  // caret position within preedit_ from the IME's Cursor attribute (-1 = none)
   // Mouse drag-selection state machine: Idle (no button) → Pending (pressed, below drag
   // threshold) → Dragging (threshold crossed). Replaces the draggingSelection_/dragSelectionPending_
   // bool pair. `dragState_ != Idle` covers the old `(pending || dragging)` "armed" check.

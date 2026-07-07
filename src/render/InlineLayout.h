@@ -62,6 +62,14 @@ public:
     // Render a single '\n' soft break as a line break instead of joining it
     // into the paragraph (CommonMark). Defaults off so standalone/test layouts stay CommonMark.
     bool breakOnSingleNewline = false;
+    // Active IME composition to splice into the laid-out text at the caret, so the in-progress
+    // glyphs push following text right (and wrap) instead of overlapping it. Set only on the caret
+    // block. All offsets are PREEDIT-relative (over [0, preeditText.length()]); buildTextLayout
+    // shifts them by the caret's display offset when splicing into layoutText_.
+    QString preeditText;
+    QVector<QTextLayout::FormatRange> preeditFormats;
+    int preeditCursor = -1;                       // composition caret within the preedit (-1 = none)
+    qsizetype preeditInsertAtSourceOffset = -1;   // caret CONTENT-LOCAL source offset in this block
   };
 
   InlineLayout() = default;
@@ -101,6 +109,15 @@ public:
   QString imageSrcAtLocalPos(QPointF localPos) const;
   QRectF cursorRect(qsizetype textOffset) const;
   QRectF cursorRectForSourceOffset(qsizetype sourceOffset) const;
+  // Rect of the composition caret within the spliced preedit (empty when no preedit is active).
+  // Origin is the layout's top-left, same as cursorRect. EditorView draws the caret from this.
+  QRectF preeditCursorRect(QPointF origin) const;
+  // True when this layout has an IME preedit spliced into its laid-out text (the composition is
+  // rendered by the normal text paint, so EditorView draws only the caret — not overlay glyphs).
+  bool hasPreedit() const { return preeditSpliceLength_ > 0; }
+  // Painted rects (document space, origin-relative) of the inline math atoms — the same rects
+  // paintTextLayoutMathAtoms draws. Exposed so tests can verify atoms shift with the spliced preedit.
+  QVector<QRectF> mathAtomRects(QPointF origin) const;
   int visualLineCount() const;
   int visualLineIndexForTextOffset(qsizetype textOffset) const;
   int visualLineIndexForSourceOffset(qsizetype sourceOffset) const;
@@ -199,6 +216,10 @@ private:
   void buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
   QString texForInlineMathSpan(const QVector<InlineNode>& inlines, const InlineProjectionSpan& span) const;
   void buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont);
+  // Map a displayText_-space offset to a layoutText_ offset, accounting for the spliced preedit
+  // (offsets strictly after the splice point advance by the preedit length; the splice point itself
+  // and everything before are unchanged). Identity when no preedit is spliced.
+  int toLayoutOffset(int displayOffset) const;
   // From the layout's own format ranges, collect the contiguous display-offset
   // runs whose effective foreground is the element's base colour (i.e. they
   // inherit it) — exactly the runs a `:hover { color }` should recolour. Spans
@@ -274,6 +295,15 @@ private:
   bool isEmpty_ = true;
   QString displayText_;
   QString layoutText_;
+  // Active IME preedit spliced into layoutText_ (NOT displayText_ — the projection/offset maps stay
+  // pristine). Empty/-1 when no composition is active. Set from BuildOptions in build(); read in
+  // buildTextLayout (splice), the decoration painters (toLayoutOffset), and preeditCursorRect.
+  QString preeditText_;
+  QVector<QTextLayout::FormatRange> preeditFormats_;
+  int preeditCursor_ = -1;                 // composition caret within the preedit
+  qsizetype preeditInsertAtSourceOffset_ = -1;
+  int preeditSpliceInsertAt_ = -1;         // layoutText_ offset where the preedit was spliced
+  int preeditSpliceLength_ = 0;            // preeditText_.length() (0 ⇒ no splice)
   QVector<OffsetMapEntry> offsetMap_;
   QVector<MathAtom> mathAtoms_;
   QVector<ImageAtom> imageAtoms_;

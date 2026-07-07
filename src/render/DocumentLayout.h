@@ -64,6 +64,8 @@ class DocumentLayout {
   // Per-code-fence horizontal scroll state; forwarded to the builder (writes longest-line width)
   // and to BlockLayout hit-test (reads the offset). Owned by EditorController.
   void setCodeFenceScroll(CodeFenceScrollController* controller);
+  // Forward the active IME composition to the builder (spliced into the caret block's inline layout).
+  void setPreedit(QString text, QVector<QTextLayout::FormatRange> formats, int cursor);
   CodeFenceScrollController* codeFenceScroll() const;
   bool relayoutForViewportWidth(const RenderTheme& theme, qreal viewportWidth);
   BlockRebuildResult rebuildBlock(NodeId blockId, const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
@@ -129,6 +131,9 @@ class DocumentLayout {
   NodeId editingHtmlBlockId_;
   CodeFenceScrollController* codeFenceScroll_ = nullptr;
   SelectionRange selection_;
+  QString preeditText_;
+  QVector<QTextLayout::FormatRange> preeditFormats_;
+  int preeditCursor_ = -1;
   qreal viewportWidth_ = 0;
   BuildPolicy buildPolicy_ = BuildPolicy::Eager;
 

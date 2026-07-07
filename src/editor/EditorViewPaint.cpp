@@ -19,6 +19,7 @@
 #include <QPainter>
 #include <QPen>
 #include <QSet>
+#include <QTextLayout>
 
 namespace muffin {
 
@@ -258,6 +259,7 @@ void EditorView::paintEvent(QPaintEvent* event) {
   paintSelection(painter);
   paintCurrentTableCell(painter);
   paintHtmlHoverOverlay(painter);
+  paintPreedit(painter);
   paintInsertionCursor(painter);
   paintHeadingBadge(painter);
 }
@@ -394,7 +396,103 @@ void EditorView::paintCurrentTableCell(QPainter& painter) const {
   painter.restore();
 }
 
+void EditorView::paintPreedit(QPainter& painter) const {
+  if (preedit_.isEmpty()) {
+    return;  // no composition — paintInsertionCursor owns lastPaintedCaretDocumentRect_
+  }
+  const QRectF caretDoc = effectiveCursorRect();
+  if (!cursorHit_.isValid() || caretDoc.isEmpty()) {
+    lastPaintedCaretDocumentRect_ = {};
+    return;
+  }
+
+  // Inline-editable blocks (paragraph / heading / list item / TABLE CELL): the preedit is spliced
+  // into the block's laid-out text (buildTextLayout), so the glyphs are already rendered by the
+  // normal block paint and following text has shifted to make room — including the cell's right/
+  // center alignment (tableCellTextOrigin keys off cell.text.size().width(), which includes the
+  // splice). Draw ONLY the composition caret from the layout; overlaying glyphs would double-paint.
+  if (layout_) {
+    const BlockLayout* block = layout_->blockIfPromoted(cursorHit_.blockId);
+    const InlineLayout* inlineLayout = nullptr;
+    QPointF origin;
+    if (block && cursorHit_.zone == HitTestResult::Zone::Text) {
+      inlineLayout = block->inlineLayout();
+      if (inlineLayout) {
+        origin = block->inlineTextOrigin(theme_);
+      }
+    } else if (block && cursorHit_.zone == HitTestResult::Zone::TableCell &&
+               cursorHit_.tableRow >= 0 && cursorHit_.tableColumn >= 0) {
+      const auto& rows = block->tableRows();
+      if (cursorHit_.tableRow < static_cast<int>(rows.size())) {
+        const auto& cells = rows.at(static_cast<size_t>(cursorHit_.tableRow)).cells;
+        if (cursorHit_.tableColumn < static_cast<int>(cells.size())) {
+          const auto& cell = cells.at(static_cast<size_t>(cursorHit_.tableColumn));
+          inlineLayout = &cell.text;
+          origin = editor_geometry::tableCellTextOrigin(cell, theme_);
+        }
+      }
+    }
+    if (inlineLayout && inlineLayout->hasPreedit()) {
+      const QRectF cr = inlineLayout->preeditCursorRect(origin);  // document space
+      if (!cr.isEmpty()) {
+        painter.save();
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(theme_.linkColor());
+        painter.drawRect(cr.translated(0, -scrollY()));
+        painter.restore();
+      }
+      lastPaintedCaretDocumentRect_ = cr;
+      return;
+    }
+  }
+
+  // Literal blocks (code/math/html/front-matter): the preedit is not in the inline layout, so render
+  // it as an overlay at the caret (the original approach).
+  const QRectF caretView = caretDoc.translated(0, -scrollY());  // document -> viewport coords
+
+  QTextLayout layout(preedit_, preeditFont(), painter.device());
+  layout.setFormats(preeditFormats_);
+  layout.beginLayout();
+  QTextLine line = layout.createLine();
+  line.setLineWidth(qMax<qreal>(1.0, viewport()->width() - caretView.left() - 4.0));
+  line.setPosition(QPointF(0, 0));
+  layout.endLayout();
+
+  painter.save();
+  layout.draw(&painter, caretView.topLeft());
+  if (preeditCursor_ >= 0 && preeditCursor_ <= preedit_.length()) {
+    layout.drawCursor(&painter, caretView.topLeft(), preeditCursor_, 1.5);
+  }
+  painter.restore();
+
+  // Record the painted overlay rect (document space) so the caret dirty-rect machinery erases it on
+  // the next change/scroll — the same contract paintInsertionCursor honours for the blinking caret.
+  lastPaintedCaretDocumentRect_ =
+      QRectF(caretDoc.left(), caretDoc.top(), line.naturalTextWidth(), line.height());
+}
+
+QFont EditorView::preeditFont() const {
+  // Match the rendered font at the caret so the composition baseline-aligns with surrounding text:
+  // code/math/html/front-matter literals use their monospace/math font; everything else the body font.
+  if (cursorHit_.isValid()) {
+    switch (cursorHit_.zone) {
+      case HitTestResult::Zone::Code:
+      case HitTestResult::Zone::Html:
+      case HitTestResult::Zone::FrontMatter:
+        return theme_.codeFont();
+      case HitTestResult::Zone::Math:
+        return theme_.mathFont();
+      default:
+        break;
+    }
+  }
+  return theme_.paragraphFont();
+}
+
 void EditorView::paintInsertionCursor(QPainter& painter) const {
+  if (!preedit_.isEmpty()) {
+    return;  // a composition is active — paintPreedit drew the composition caret and owns the rect
+  }
   if (!cursorVisible_ || !cursorHit_.isValid()) {
     lastPaintedCaretDocumentRect_ = {};
     return;

@@ -12,6 +12,7 @@
 #include <QHash>
 #include <QPair>
 #include <QStringView>
+#include <QTextLayout>
 #include <memory>
 
 namespace muffin {
@@ -25,6 +26,9 @@ public:
   // whole document text into the builder on every per-keystroke rebuildBlock.
   void setMarkdownText(const PieceTable& markdownText, const LineStartOffsetCache& lineOffsets);
   void setSelection(SelectionRange selection);
+  // The active IME composition (paint-layer only) to splice into the caret block's inline layout,
+  // so the in-progress text shifts following text instead of overlapping it. Empty when none.
+  void setPreedit(QString text, QVector<QTextLayout::FormatRange> formats, int cursor);
   void setEditingHtmlBlock(NodeId id);
   void setDocumentPath(QString path);
   // Per-code-fence horizontal scroll state (offset + longest-line width), keyed by NodeId and
@@ -65,6 +69,9 @@ public:
   std::unique_ptr<BlockLayout> build(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth = 0);
 
 private:
+  // Copy the active preedit (if any) onto `options` when `options.projectionState` marks this block
+  // as the caret block. Called at every inline-build site (paragraph / list item / table cell).
+  void applyPreedit(InlineLayout::BuildOptions& options) const;
   std::unique_ptr<BlockLayout> buildParagraphLike(
       const MarkdownNode& node,
       const RenderTheme& theme,
@@ -165,6 +172,9 @@ private:
   LineStartOffsetCache emptyLineOffsets_;
   const LineStartOffsetCache* lineOffsets_ = &emptyLineOffsets_;
   SelectionRange selection_;
+  QString preeditText_;
+  QVector<QTextLayout::FormatRange> preeditFormats_;
+  int preeditCursor_ = -1;
   NodeId editingHtmlBlockId_;
   const QHash<NodeId, QString>* headingCounterText_ = nullptr;
   // Cached once per layout pass by refreshRenderSettings() (configureBuilder). The per-block

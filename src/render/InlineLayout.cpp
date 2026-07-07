@@ -193,6 +193,10 @@ void InlineLayout::build(
   baseTextColorOverride_ = options.baseTextColor;
   hoverTextColor_ = options.hoverTextColor;
   focusTextColor_ = options.focusTextColor;
+  preeditText_ = options.preeditText;
+  preeditFormats_ = options.preeditFormats;
+  preeditCursor_ = options.preeditCursor;
+  preeditInsertAtSourceOffset_ = options.preeditInsertAtSourceOffset;
   lineHeightMultiplier_ = options.lineHeightMultiplier;
   wordSpacing_ = options.wordSpacing;
   textShadow_ = options.textShadow;
@@ -503,6 +507,59 @@ qsizetype InlineLayout::sourceOffsetAtVisualLineX(int lineIndex, qreal localX) c
   return hitTestSourceOffset(QPointF(localX, line.y() + line.height() * 0.5));
 }
 
+int InlineLayout::toLayoutOffset(int displayOffset) const {
+  // layoutText_ has the preedit spliced in at preeditSpliceInsertAt_; a displayText_-space offset
+  // strictly after that point addresses preeditSpliceLength_ chars later in layoutText_. The splice
+  // point itself maps to itself (it is the caret boundary). Identity when no preedit is spliced.
+  if (preeditSpliceLength_ <= 0 || displayOffset <= preeditSpliceInsertAt_) {
+    return displayOffset;
+  }
+  return displayOffset + preeditSpliceLength_;
+}
+
+QRectF InlineLayout::preeditCursorRect(QPointF origin) const {
+  if (!textLayout_ || preeditSpliceLength_ <= 0 || preeditCursor_ < 0) {
+    return {};
+  }
+  const int pos = preeditSpliceInsertAt_ + qBound(0, preeditCursor_, preeditSpliceLength_);
+  for (int i = 0; i < textLayout_->lineCount(); ++i) {
+    const QTextLine line = textLayout_->lineAt(i);
+    if (line.isValid() && pos >= line.textStart() && pos <= line.textStart() + line.textLength()) {
+      return QRectF(origin.x() + line.cursorToX(pos), origin.y() + line.y(), 1.5, line.height());
+    }
+  }
+  return {};
+}
+
+QVector<QRectF> InlineLayout::mathAtomRects(QPointF origin) const {
+  QVector<QRectF> rects;
+  if (!textLayout_) {
+    return rects;
+  }
+  for (const MathAtom& atom : mathAtoms_) {
+    if (!atom.layout || !atom.layout->valid()) {
+      continue;
+    }
+    const int atomStart = toLayoutOffset(static_cast<int>(atom.displayStart));
+    for (int i = 0; i < textLayout_->lineCount(); ++i) {
+      const QTextLine line = textLayout_->lineAt(i);
+      if (!line.isValid()) {
+        continue;
+      }
+      const int lineStart = line.textStart();
+      const int lineEnd = lineStart + line.textLength();
+      if (atomStart >= lineStart && atomStart <= lineEnd) {
+        const qreal x = line.cursorToX(atomStart);
+        const qreal baseline = origin.y() + line.y() + line.ascent();
+        rects.append(QRectF(origin.x() + x, baseline - atom.layout->baseline,
+                            atom.layout->size.width(), atom.layout->size.height()));
+        break;
+      }
+    }
+  }
+  return rects;
+}
+
 QVector<QRectF> InlineLayout::selectionRects(qsizetype startOffset, qsizetype endOffset) const {
   const qsizetype startDisplayOffset = displayOffsetForVisibleOffset(qMin(startOffset, endOffset));
   const qsizetype endDisplayOffset = displayOffsetForVisibleOffset(qMax(startOffset, endOffset));
@@ -588,8 +645,8 @@ void InlineLayout::paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) c
       if (!layoutRange.valid) {
         continue;
       }
-      const int rangeStart = qMax(lineStart, static_cast<int>(layoutRange.start));
-      const int rangeEnd = qMin(lineEnd, static_cast<int>(layoutRange.end));
+      const int rangeStart = qMax(lineStart, toLayoutOffset(static_cast<int>(layoutRange.start)));
+      const int rangeEnd = qMin(lineEnd, toLayoutOffset(static_cast<int>(layoutRange.end)));
       if (rangeStart >= rangeEnd) {
         continue;
       }
@@ -630,8 +687,8 @@ void InlineLayout::paintTextLayoutInlineDecorations(QPainter& painter, QPointF o
         const int lineEnd = lineStart + line.textLength();
         const DisplayOffsetRange lr = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
         if (!lr.valid) { continue; }
-        const int rs = qMax(lineStart, static_cast<int>(lr.start));
-        const int re = qMin(lineEnd, static_cast<int>(lr.end));
+        const int rs = qMax(lineStart, toLayoutOffset(static_cast<int>(lr.start)));
+        const int re = qMin(lineEnd, toLayoutOffset(static_cast<int>(lr.end)));
         if (rs >= re) { continue; }
         const qreal x1 = line.cursorToX(rs);
         const qreal x2 = line.cursorToX(re);
@@ -657,9 +714,11 @@ void InlineLayout::paintTextLayoutInlineDecorations(QPainter& painter, QPointF o
         if (!line.isValid()) { continue; }
         const int lineStart = line.textStart();
         const int lineEnd = lineStart + line.textLength();
-        if (atom.displayStart < lineStart || atom.displayStart >= lineEnd) { continue; }
-        const qreal x1 = line.cursorToX(static_cast<int>(atom.displayStart));
-        const qreal x2 = line.cursorToX(static_cast<int>(atom.displayEnd));
+        const int atomStart = toLayoutOffset(static_cast<int>(atom.displayStart));
+        const int atomEnd = toLayoutOffset(static_cast<int>(atom.displayEnd));
+        if (atomStart < lineStart || atomStart >= lineEnd) { continue; }
+        const qreal x1 = line.cursorToX(atomStart);
+        const qreal x2 = line.cursorToX(atomEnd);
         const QRectF target(origin.x() + qMin(x1, x2),
                             origin.y() + line.y() + (line.height() - iconH) / 2.0, iconW, iconH);
         DecorationPainter::paintIcon(painter, linkBeforeIcon_, target, linkBeforeIconTint_, linkBeforeIconFromMask_);
@@ -687,8 +746,8 @@ void InlineLayout::paintTextLayoutHtmlBackgrounds(QPainter& painter, QPointF ori
       }
       const int lineStart = line.textStart();
       const int lineEnd = lineStart + line.textLength();
-      const int rangeStart = qMax(lineStart, hs.layoutStart);
-      const int rangeEnd = qMin(lineEnd, hs.layoutEnd);
+      const int rangeStart = qMax(lineStart, toLayoutOffset(hs.layoutStart));
+      const int rangeEnd = qMin(lineEnd, toLayoutOffset(hs.layoutEnd));
       if (rangeStart >= rangeEnd) {
         continue;
       }
@@ -738,8 +797,8 @@ void InlineLayout::paintTextLayoutHtmlKeyboardSpans(QPainter& painter, QPointF o
       }
       const int lineStart = line.textStart();
       const int lineEnd = lineStart + line.textLength();
-      const int rangeStart = qMax(lineStart, hs.layoutStart);
-      const int rangeEnd = qMin(lineEnd, hs.layoutEnd);
+      const int rangeStart = qMax(lineStart, toLayoutOffset(hs.layoutStart));
+      const int rangeEnd = qMin(lineEnd, toLayoutOffset(hs.layoutEnd));
       if (rangeStart >= rangeEnd) {
         continue;
       }
@@ -1215,6 +1274,64 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
 
 void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont) {
   layoutText_ = layoutTextForDisplayText(displayText_);
+  QVector<QTextLayout::FormatRange> formats = textLayoutFormats(theme, baseFont);
+
+  // Splice the active IME preedit into layoutText_ at the caret so following text shifts/wraps
+  // naturally instead of being overlapped. displayText_ and the projection offset maps stay
+  // pristine — only the rendered QTextLayout carries the preedit (consumed by paint and
+  // preeditCursorRect). The format ranges above are in displayText_/layoutText_ offsets (1:1
+  // pre-splice); split any range straddling the splice point so no span styles the preedit, then
+  // add the preedit's own formats on top.
+  const int preeditLen = static_cast<int>(preeditText_.length());
+  int insertAt = -1;
+  if (!preeditText_.isEmpty() && preeditLen > 0 && preeditInsertAtSourceOffset_ >= 0) {
+    // Anchor the splice at the caret's rendered position via its SOURCE offset — the same mapping
+    // the blinking caret uses (cursorRectForSourceOffset). A visible-offset anchor would collapse
+    // for a caret inside revealed syntax (a link's URL), splicing at the span boundary instead.
+    qsizetype displayOffset = -1;
+    if (layoutDisplayOffsetForSourceOffset(preeditInsertAtSourceOffset_, InlineProjectionBias::Forward, displayOffset)) {
+      insertAt = qBound(0, static_cast<int>(displayOffset), static_cast<int>(layoutText_.size()));
+    }
+  }
+  if (insertAt >= 0) {
+    const QColor baseForeground = baseTextColorOverride_.isValid() ? baseTextColorOverride_ : theme.textColor();
+    QVector<QTextLayout::FormatRange> shifted;
+    shifted.reserve(formats.size() + preeditFormats_.size() + 1);
+    for (const QTextLayout::FormatRange& fr : formats) {
+      const int s = fr.start;
+      const int end = s + fr.length;
+      if (fr.length <= 0 || end <= insertAt) {
+        shifted.append(fr);
+      } else if (s >= insertAt) {
+        shifted.append({s + preeditLen, fr.length, fr.format});
+      } else {  // straddle: split — keep [s, insertAt) and [insertAt+P, end); never cover the preedit
+        shifted.append({s, insertAt - s, fr.format});
+        shifted.append({insertAt + preeditLen, end - insertAt, fr.format});
+      }
+    }
+    if (preeditFormats_.isEmpty()) {
+      QTextCharFormat underline;
+      underline.setForeground(baseForeground);
+      underline.setFontUnderline(true);
+      shifted.append({insertAt, preeditLen, underline});
+    } else {
+      for (const QTextLayout::FormatRange& pf : preeditFormats_) {
+        QTextCharFormat fmt = pf.format;
+        if (!fmt.hasProperty(QTextFormat::ForegroundBrush)) {
+          fmt.setForeground(baseForeground);
+        }
+        shifted.append({insertAt + pf.start, pf.length, fmt});
+      }
+    }
+    formats = std::move(shifted);
+    layoutText_.insert(insertAt, preeditText_);
+    preeditSpliceInsertAt_ = insertAt;
+    preeditSpliceLength_ = preeditLen;
+  } else {
+    preeditSpliceInsertAt_ = -1;
+    preeditSpliceLength_ = 0;
+  }
+
   textLayout_ = std::make_unique<QTextLayout>(layoutText_.isEmpty() ? QStringLiteral(" ") : layoutText_, baseFont);
   QTextOption option;
   option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
@@ -1222,7 +1339,6 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
     option.setAlignment(alignment_);
   }
   textLayout_->setTextOption(option);
-  const QVector<QTextLayout::FormatRange> formats = textLayoutFormats(theme, baseFont);
   textLayout_->setFormats(formats);
   // Pre-compute the runs a `:hover { color }` should recolour (only when the
   // element actually declares a hover colour). Derived from the same `formats`
@@ -1252,12 +1368,14 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
     const int lineStart = line.textStart();
     const int lineEnd = lineStart + line.textLength();
     for (const ImageAtom& atom : imageAtoms_) {
-      if (atom.loaded && atom.displayStart >= lineStart && atom.displayStart <= lineEnd) {
+      const int atomStart = toLayoutOffset(static_cast<int>(atom.displayStart));
+      if (atom.loaded && atomStart >= lineStart && atomStart <= lineEnd) {
         minLineHeight = qMax(minLineHeight, atom.displaySize.height());
       }
     }
     for (const MathAtom& atom : mathAtoms_) {
-      if (atom.layout && atom.layout->valid() && atom.displayStart >= lineStart && atom.displayStart <= lineEnd) {
+      const int atomStart = toLayoutOffset(static_cast<int>(atom.displayStart));
+      if (atom.layout && atom.layout->valid() && atomStart >= lineStart && atomStart <= lineEnd) {
         minLineHeight = qMax(minLineHeight, atom.layout->size.height());
       }
     }
@@ -1355,10 +1473,11 @@ void InlineLayout::paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) c
       }
       const int lineStart = line.textStart();
       const int lineEnd = lineStart + line.textLength();
-      if (atom.displayStart < lineStart || atom.displayStart > lineEnd) {
+      const int atomStart = toLayoutOffset(static_cast<int>(atom.displayStart));
+      if (atomStart < lineStart || atomStart > lineEnd) {
         continue;
       }
-      const qreal x = line.cursorToX(static_cast<int>(atom.displayStart));
+      const qreal x = line.cursorToX(atomStart);
       const qreal baseline = origin.y() + line.y() + line.ascent();
       atom.layout->paint(painter, QPointF(origin.x() + x, baseline - atom.layout->baseline));
       break;
@@ -1381,10 +1500,11 @@ void InlineLayout::paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) 
       }
       const int lineStart = line.textStart();
       const int lineEnd = lineStart + line.textLength();
-      if (atom.displayStart < lineStart || atom.displayStart > lineEnd) {
+      const int atomStart = toLayoutOffset(static_cast<int>(atom.displayStart));
+      if (atomStart < lineStart || atomStart > lineEnd) {
         continue;
       }
-      const qreal x = line.cursorToX(static_cast<int>(atom.displayStart));
+      const qreal x = line.cursorToX(atomStart);
       // Vertically place the image exactly where buildTextLayout allocated the line.
       // line.y() is the centred top of the line's minLineHeight content; the image grew
       // minLineHeight to its own height, so it starts at line.y() when it is the tallest

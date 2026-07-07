@@ -1088,10 +1088,17 @@ void DocumentLayout::configureBuilder(SelectionRange selection) {
   }
   builder_.refreshRenderSettings();  // read markdown/* settings once per pass (avoids per-block QSettings hits)
   builder_.setSelection(selection);
+  builder_.setPreedit(preeditText_, preeditFormats_, preeditCursor_);
   builder_.setEditingHtmlBlock(editingHtmlBlockId_);
   builder_.setDocumentPath(documentPath_);
   builder_.setCodeFenceScroll(codeFenceScroll_);
   builder_.setHeadingCounterText(&headingCounterText_);
+}
+
+void DocumentLayout::setPreedit(QString text, QVector<QTextLayout::FormatRange> formats, int cursor) {
+  preeditText_ = std::move(text);
+  preeditFormats_ = std::move(formats);
+  preeditCursor_ = cursor;
 }
 
 qreal DocumentLayout::promoteSlot(qsizetype index, const RenderTheme& theme) {
