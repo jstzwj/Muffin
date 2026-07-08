@@ -612,6 +612,8 @@ set(MUFFIN_UI_SOURCES
   src/projection/InlineProjection.h
   src/projection/SelectionSerializer.cpp
   src/projection/SelectionSerializer.h
+  src/projection/MarkdownHtmlSerializer.cpp
+  src/projection/MarkdownHtmlSerializer.h
   src/export/HtmlExporter.cpp
   src/export/HtmlExporter.h
   src/export/PandocRunner.cpp

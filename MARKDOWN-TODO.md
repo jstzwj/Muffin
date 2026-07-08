@@ -25,22 +25,9 @@
 
 ### 2. HTML 导出扩展与编辑器不一致
 
-- [ ] 让导出路径复用主解析器的扩展配置，或补一遍相同后处理 pass
+- [x] 让导出路径复用主解析器的扩展配置，或补一遍相同后处理 pass
 
-**现状：** 导出路径（`renderMarkdownToHtml`）用的是**另一个独立的 cmark 实例**，它只接 cmark 原生扩展（table / strikethrough / autolink / tasklist / math），**不知道 Muffin 自己的 `splitDelimInlines` 那一套**。结果：编辑器里能渲染的特性，导出 HTML 时会消失：
-
-| 特性 | 编辑器 | HTML 导出 |
-|---|:---:|:---:|
-| 高亮 `==text==` | ✅ | ❌ 丢失 |
-| 下标 `~text~` | ✅ | ❌ 丢失 |
-| 上标 `^text^` | ✅ | ❌ 丢失 |
-| GitHub Alerts（`> [!NOTE]` 等） | ✅ | ❌ 无 alert 标注 |
-
-**证据：** `src/projection/SelectionSerializer.cpp:174-207`（独立的 cmark parser，扩展配置与主解析器不同）
-
-**建议方案：**
-- 方案 A：抽取主解析器的扩展配置 + 后处理 pass，导出路径复用。
-- 方案 B：在导出的 cmark 输出之后，补一遍 highlight / subscript / superscript / alerts 的 HTML 后处理（与编辑器口径一致）。
+**已实现（2026-07-08，方案 A 单源真值）：** 新增 `src/projection/MarkdownHtmlSerializer.{h,cpp}`，`SelectionSerializer::renderMarkdownToHtml` 不再用独立裸 cmark，改为把导出 markdown 喂给**编辑器自己的** `CmarkGfmParser::parseDocument`（跑完整流水线：cmark 解析 + `splitDelimInlines` + `annotateAlertKinds` + 全部 pass），再把得到的 `MarkdownNode` 树序列化为 cmark-gfm 兼容 HTML。因为树已完全解析（autolink/math/tasklist/table/代码语言都由 cmark 扩展在解析期就绪），序列化器是纯节点→HTML 映射，零再检测。结果：高亮→`<mark>`、下标→`<sub>`、上标→`<sup>`、GitHub Alerts→`<blockquote class="markdown-alert …">`+标题（并剥去 `[!KIND]` 标记）、emoji `:smile:`→字形，全部按设置门控（与编辑器口径一致）。镜像 cmark 的 HTML 约定（含打过补丁的 `mfn-inline-math`/`mfn-math-block` 类、tasklist 属性串、表格 `align=`、紧凑/松散列表 `<p>`），并复刻 cmark 的安全 URL 过滤（丢弃 `javascript:`/`vbscript:`/`data:`，`data:image/` 放行）以防 XSS。剪贴板复制 / 源码模式复制 / 文件导出 三路同受益。测试：`tests/projection/MarkdownHtmlSerializerTest.cpp`（逐类型精确串 + 安全 + emoji + 设置门控）。
 
 ---
 
@@ -168,5 +155,5 @@
 | 块渲染分发 | `src/render/BlockLayout.cpp:925-959` |
 | 内联投影 | `src/projection/InlineProjection.cpp:1192-1435` |
 | 内联渲染 | `src/render/InlineLayout.cpp` |
-| HTML 导出 | `src/projection/SelectionSerializer.cpp:174-207` |
+| HTML 导出 | `src/projection/SelectionSerializer.cpp:renderMarkdownToHtml` → `src/projection/MarkdownHtmlSerializer.cpp`（树→HTML 序列化） |
 | 自定义分隔符内联（高亮/上下标） | `src/parser/CmarkGfmParser.cpp:1458-1475`（`splitDelimInlines`） |

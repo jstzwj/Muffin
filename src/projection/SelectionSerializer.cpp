@@ -5,12 +5,8 @@
 #include "document/MarkdownNode.h"
 #include "parser/CmarkGfmParser.h"
 #include "projection/InlineProjection.h"
+#include "projection/MarkdownHtmlSerializer.h"
 
-extern "C" {
-#include "cmark-gfm-core-extensions.h"
-}
-
-#include <QSettings>
 #include <QStringList>
 
 namespace muffin {
@@ -175,35 +171,11 @@ QString SelectionSerializer::renderMarkdownToHtml(const QString& markdown) {
   if (markdown.isEmpty()) {
     return {};
   }
-  const QByteArray utf8 = markdown.toUtf8();
-  cmark_parser* parser = cmark_parser_new(CMARK_OPT_DEFAULT | CMARK_OPT_FOOTNOTES);
-  cmark_gfm_core_extensions_ensure_registered();
-  const auto attach = [parser](const char* name) {
-    if (cmark_syntax_extension* extension = cmark_find_syntax_extension(name)) {
-      cmark_parser_attach_syntax_extension(parser, extension);
-    }
-  };
-  attach("table");
-  attach("strikethrough");
-  attach("autolink");
-  attach("tasklist");
-  attach("math");
-  cmark_parser_feed(parser, utf8.constData(), static_cast<size_t>(utf8.size()));
-  cmark_node* doc = cmark_parser_finish(parser);
-  // markdown/breakOnSingleNewline (default on): emit soft breaks as <br> so exported HTML matches
-  // the editor view. cmark keeps a single '\n' as a softbreak node;
-  // CMARK_OPT_HARDBREAKS is what turns it into <br> at render time (parser classification is
-  // trailing-space-based and unaffected by the option).
-  int renderOpts = CMARK_OPT_DEFAULT;
-  if (QSettings().value(QStringLiteral("markdown/breakOnSingleNewline"), true).toBool()) {
-    renderOpts |= CMARK_OPT_HARDBREAKS;
-  }
-  char* html = cmark_render_html(doc, renderOpts, cmark_parser_get_syntax_extensions(parser));
-  QString result = QString::fromUtf8(html);
-  free(html);
-  cmark_node_free(doc);
-  cmark_parser_free(parser);
-  return result;
+  // Parse through the editor's own CmarkGfmParser (runs splitDelimInlines + annotateAlertKinds +
+  // all post-parse passes) and serialize the annotated tree to HTML. This makes export fidelity a
+  // structural property of the editor's parse tree rather than a second cmark instance to keep in
+  // sync — highlight / subscript / superscript / GitHub Alerts / emoji now survive export.
+  return MarkdownHtmlSerializer::serializeSource(markdown);
 }
 
 bool SelectionSerializer::selectionContext(
