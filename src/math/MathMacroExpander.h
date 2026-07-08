@@ -6,6 +6,7 @@
 #include <QString>
 #include <QVector>
 
+#include <memory>
 #include <optional>
 
 namespace muffin::math {
@@ -20,7 +21,7 @@ public:
     bool treatAsRelax = false;
   };
 
-  explicit MathMacroExpander(MathSettings settings = {});
+  explicit MathMacroExpander(MathSettings settings = {}, std::shared_ptr<int> sharedExpansionCount = nullptr);
 
   QString expand(QString input);
   void defineMacro(QString name, QString replacement);
@@ -51,7 +52,10 @@ private:
   QHash<QString, Macro> builtins_;
   QVector<QHash<QString, std::optional<Macro>>> undoStack_;
   MathSettings settings_;
-  int expansionCount_ = 0;
+  // Shared across re-entrant \edef/\xdef sub-expanders so a fresh sub-expander can't reset the
+  // maxExpand budget (DoS bypass). The outermost expander owns a fresh counter (make_shared<int>(0)).
+  std::shared_ptr<int> expansionCount_;
+  int expandDepth_ = 0;  // bounds \expandafter's C++ recursion in expandOnce
 };
 
 }  // namespace muffin::math

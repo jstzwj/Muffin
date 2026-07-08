@@ -1,5 +1,7 @@
 #include "blocks/html/HtmlSanitizer.h"
 
+#include "blocks/html/HtmlUrlSafety.h"
+
 #include <lexbor/dom/interfaces/attr.h>
 #include <lexbor/dom/interfaces/document.h>
 #include <lexbor/dom/interfaces/element.h>
@@ -99,59 +101,9 @@ const QSet<QString>& urlAttributes() {
   return attrs;
 }
 
-// True if the URL value carries a scheme that is unsafe for a preview context.
-// Mirrors how browsers normalize URLs (strip leading whitespace and embedded
-// C0/DEL controls) so " java\nscript:" and "java\tscript:" cannot slip through.
-bool hasUnsafeUrlScheme(const QString& rawValue) {
-  QString collapsed;
-  collapsed.reserve(rawValue.size());
-  for (const QChar c : rawValue) {
-    const ushort code = c.unicode();
-    if (code < 0x20 || code == 0x7F) continue;  // browsers strip C0 controls + DEL
-    collapsed += c;
-  }
-  collapsed = collapsed.trimmed().toLower();
-  if (collapsed.isEmpty()) return false;
-  const QChar first = collapsed.at(0);
-  if (first == QLatin1Char('#') || first == QLatin1Char('/') || first == QLatin1Char('?')) {
-    return false;  // fragment / absolute / relative path
-  }
-
-  // data: images are allowed; SVG data URIs can carry <script>, so block them.
-  if (collapsed.startsWith(QStringLiteral("data:image/svg"))) return true;
-  if (collapsed.startsWith(QStringLiteral("data:image/"))) return false;
-
-  static const QStringList safeSchemes = {QStringLiteral("http://"), QStringLiteral("https://"),
-      QStringLiteral("mailto:"), QStringLiteral("tel:"), QStringLiteral("ftp://"),
-      QStringLiteral("ftps://")};
-  for (const QString& scheme : safeSchemes) {
-    if (collapsed.startsWith(scheme)) return false;
-  }
-
-  // Any other explicit scheme (javascript:, vbscript:, file:, blob:, about:,
-  // ...) is unsafe. A ':' before any non-scheme char (e.g. "foo: bar") means
-  // there is no real scheme, so treat it as a relative URL.
-  const int colon = collapsed.indexOf(QLatin1Char(':'));
-  if (colon <= 0) return false;
-
-  // Windows drive-letter absolute path ("C:/..." / "C:\..."): the single drive
-  // letter + colon parses as a one-token "scheme", but it is a local file path,
-  // not a URL scheme — and not a script vector — so treat it as safe. Without
-  // this, an <img src="C:/.../x.svg"> has its src rewritten to "#" and never loads.
-  if (colon == 1 && collapsed.size() > 2 &&
-      (collapsed.at(2) == QLatin1Char('/') || collapsed.at(2) == QLatin1Char('\\'))) {
-    return false;
-  }
-
-  for (int i = 0; i < colon; ++i) {
-    const QChar c = collapsed.at(i);
-    if (!(c.isLetterOrNumber() || c == QLatin1Char('+') || c == QLatin1Char('-') ||
-          c == QLatin1Char('.'))) {
-      return false;  // not a scheme token -> relative URL
-    }
-  }
-  return true;
-}
+// URL scheme safety lives in HtmlUrlSafety.h (muffin::isSafeUrl), shared with the HTML export
+// path so the on-screen preview and the exported file can't drift — one blocked a vector the
+// other let through (data:image/svg XSS, control-char scheme hiding, etc.).
 
 QString escapeText(QString text) {
   return text.replace(QLatin1Char('&'), QStringLiteral("&amp;"))
@@ -212,7 +164,7 @@ void sanitizeAttributes(lxb_dom_element_t* element, QString& out) {
       value = scrubStyle(value);
       if (value.isEmpty()) continue;
     } else if (urlAttributes().contains(name)) {
-      if (hasUnsafeUrlScheme(value)) value = QStringLiteral("#");
+      if (!isSafeUrl(value, true)) value = QStringLiteral("#");
     }
 
     out += QLatin1Char(' ');

@@ -202,6 +202,24 @@ void testHtmlInline() {
   const QString out = serialize(QStringLiteral("text <b>bold</b> more"));
   require(out.contains(QStringLiteral("<b>bold</b>")), QStringLiteral("html inline raw passthrough"));
 }
+void testHtmlInlineScriptSanitized() {
+  // Raw <script> (inline) must not survive into exported HTML — both tag and content are dropped
+  // (HtmlSanitizer drops the script subtree).
+  const QString out = serialize(QStringLiteral("a <script>alert(1)</script> b"));
+  require(!out.contains(QStringLiteral("<script")), QStringLiteral("inline <script> tag stripped"));
+  require(!out.contains(QStringLiteral("alert")), QStringLiteral("inline script content dropped"));
+}
+void testHtmlInlineOnerrorSanitized() {
+  // Event-handler attributes are stripped; the otherwise-safe <img> survives.
+  const QString out = serialize(QStringLiteral("text <img src=x onerror=alert(1)>"));
+  require(out.contains(QStringLiteral("<img")), QStringLiteral("safe img kept"));
+  require(!out.contains(QStringLiteral("onerror")), QStringLiteral("onerror handler stripped"));
+}
+void testHtmlBlockScriptSanitized() {
+  const QString out = serialize(QStringLiteral("<script>alert(1)</script>"));
+  require(!out.contains(QStringLiteral("<script")), QStringLiteral("block <script> stripped"));
+  require(!out.contains(QStringLiteral("alert")), QStringLiteral("block script content dropped"));
+}
 
 // --- footnotes ---
 void testFootnoteReference() {
@@ -328,6 +346,9 @@ int main(int argc, char** argv) {
   testSoftBreakNewline();
   testLineBreak();
   testHtmlInline();
+  testHtmlInlineScriptSanitized();
+  testHtmlInlineOnerrorSanitized();
+  testHtmlBlockScriptSanitized();
   testFootnoteReference();
   testTightList();
   testLooseList();

@@ -12,6 +12,31 @@
 
 namespace muffin::math {
 
+namespace {
+// KaTeX caps parse recursion; unbounded descent over {{{...}}} / \sqrt{\sqrt{...}} /
+// \left(\left(...\right)\right) / \text{\text{...}} blows the 1MB GUI-thread stack (the same
+// class of crash NodeCssElement was fixed to avoid). The guard counts active recursive frames;
+// linear scanning (a long run of atoms, or a long \text{...} body) does NOT accumulate depth —
+// only genuine nesting does, so the limit never trips on realistic input.
+constexpr int kMaxMathDepth = 512;
+}  // namespace
+
+// RAII: bump depth_ on entry, roll it back on exit (incl. exception unwind). Throwing from the
+// constructor turns a would-be stack overflow into a rendered error node (caught in MathRenderer).
+class MathParser::DepthGuard {
+public:
+  explicit DepthGuard(MathParser& parser) : parser_(parser) {
+    if (++parser_.depth_ > kMaxMathDepth) {
+      throw MathParseError(QStringLiteral("LaTeX input is too deeply nested"));
+    }
+  }
+  ~DepthGuard() { --parser_.depth_; }
+  DepthGuard(const DepthGuard&) = delete;
+  DepthGuard& operator=(const DepthGuard&) = delete;
+private:
+  MathParser& parser_;
+};
+
 MathParser::MathParser(QString input, MathSettings settings)
     : lexer_(MathMacroExpander(settings).expand(std::move(input))), settings_(std::move(settings)) {}
 
@@ -20,6 +45,7 @@ QVector<MathParseNode> MathParser::parse() {
 }
 
 QVector<MathParseNode> MathParser::parseExpression(const QString& breakOn) {
+  DepthGuard frameGuard(*this);
   // Save and propagate break tokens so inner handlers (Styling, Sizing, Color)
   // respect the enclosing context (e.g. \right inside \left...\right,
   // & or \\ inside array cells).
@@ -53,6 +79,7 @@ QVector<MathParseNode> MathParser::parseExpression(const QString& breakOn) {
 }
 
 QVector<MathParseNode> MathParser::parseExpressionUntilAny(const QVector<QString>& breakTokens) {
+  DepthGuard frameGuard(*this);
   // Save and propagate break tokens so inner handlers (Styling, Sizing, Color,
   // numArgs=0 Text) respect the enclosing context.
   QVector<QString> prevBreakTokens = outerBreakTokens_;
@@ -229,6 +256,7 @@ MathParseNode MathParser::makeInfixFraction(const MathToken& token,
 }
 
 MathParseNode MathParser::parseAtom() {
+  DepthGuard frameGuard(*this);
   const MathToken token = lexer_.next();
   if (token.text == QStringLiteral("\\\\")) {
     return parseCr(token);
@@ -906,6 +934,7 @@ bool MathParser::canStartRequiredArgument(const MathToken& token) const {
 }
 
 QString MathParser::parseRawGroupText(const QString& command) {
+  DepthGuard frameGuard(*this);
   if (lexer_.peek().text != QStringLiteral("{")) {
     const MathToken token = lexer_.peek();
     return errorNode(QStringLiteral("%1 expects a group").arg(command), &token).text;

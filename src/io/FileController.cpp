@@ -50,20 +50,31 @@ bool muffin::FileController::open(DocumentSession& session, QWidget* parent, QSt
   }
 
   session.setFilePath(path);
+  session.recordFileBaseline();  // baseline the file as it was at open (external-change detection)
   session.openDocumentAsync(text);  // async parse keeps the UI responsive on huge files
   return true;
 }
 
-bool muffin::FileController::save(DocumentSession& session, QWidget* parent, const QString& defaultDir) {
+muffin::SaveOutcome muffin::FileController::save(DocumentSession& session, QWidget* parent, const QString& defaultDir) {
+  // Refuse to persist while an async open parse is in flight: document_ still holds the pre-open
+  // text, but filePath_ already points at the new file — writing would clobber it with stale content.
+  if (session.isAsyncParseInProgress()) {
+    return SaveOutcome::SkippedBusy;
+  }
   if (session.filePath().isEmpty()) {
     return saveAs(session, parent, defaultDir);
   }
+  if (!confirmOverwriteIfChanged(session, parent)) {
+    return SaveOutcome::Failed;  // user declined to overwrite the externally-modified file
+  }
+  DocumentSession::SelfWriteGuard guard(session);  // absorb our own commit's fileChanged signal
   if (!writeTextFile(session.filePath(), session.markdownText().toString(), parent)) {
-    return false;
+    return SaveOutcome::Failed;
   }
   session.document().setModified(false);
+  session.recordFileBaseline();  // re-baseline after our write (2nd line of self-trigger defense)
   emit documentBecameClean(session.filePath());
-  return true;
+  return SaveOutcome::Saved;
 }
 
 QString muffin::FileController::defaultUntitledName() const {
@@ -94,7 +105,10 @@ void muffin::FileController::autoSaveOnSwitchIfEnabled(DocumentSession& session,
   save(session, parent);
 }
 
-bool muffin::FileController::saveAs(DocumentSession& session, QWidget* parent, const QString& defaultDir) {
+muffin::SaveOutcome muffin::FileController::saveAs(DocumentSession& session, QWidget* parent, const QString& defaultDir) {
+  if (session.isAsyncParseInProgress()) {
+    return SaveOutcome::SkippedBusy;
+  }
   // For an untitled document, anchor the dialog in the requested directory
   // (typically the sidebar's open folder) rather than the working directory.
   QString startingPath;
@@ -110,16 +124,18 @@ bool muffin::FileController::saveAs(DocumentSession& session, QWidget* parent, c
       startingPath,
       tr("Markdown files (*.md *.markdown);;Text files (*.txt);;All files (*.*)"));
   if (path.isEmpty()) {
-    return false;
+    return SaveOutcome::Failed;
   }
+  DocumentSession::SelfWriteGuard guard(session);
   if (!writeTextFile(path, session.markdownText().toString(), parent)) {
-    return false;
+    return SaveOutcome::Failed;
   }
   // The previous path's draft (if any) is now obsolete: the content lives at `path`.
   emit documentBecameClean(session.filePath());
-  session.setFilePath(path);
+  session.setFilePath(path);  // also re-points the QFileSystemWatcher to the new path
   session.document().setModified(false);
-  return true;
+  session.recordFileBaseline();  // baseline the new path
+  return SaveOutcome::Saved;
 }
 
 bool muffin::FileController::confirmDiscardIfModified(DocumentSession& session, QWidget* parent) {
@@ -138,10 +154,31 @@ bool muffin::FileController::confirmDiscardIfModified(DocumentSession& session, 
     return false;
   }
   if (choice == QMessageBox::Save) {
-    return save(session, parent);  // save() emits documentBecameClean on success.
+    return save(session, parent) == SaveOutcome::Saved;  // save() emits documentBecameClean on success.
   }
   emit documentBecameClean(session.filePath());
   return true;
+}
+
+bool muffin::FileController::confirmOverwriteIfChanged(DocumentSession& session, QWidget* parent) {
+  if (!session.hasFileBaseline()) {
+    return true;  // no baseline (first save / freshly opened before baseline recorded) → just write
+  }
+  const QFileInfo info(session.filePath());
+  if (!info.exists()) {
+    QMessageBox::warning(parent, tr("File Missing"),
+                         tr("The file \"%1\" no longer exists on disk. Use Save As to write it to a new location.")
+                             .arg(session.filePath()));
+    return false;
+  }
+  if (info.lastModified() == session.fileBaselineMtime() && info.size() == session.fileBaselineSize()) {
+    return true;  // unchanged since the open/last-save baseline
+  }
+  const QMessageBox::StandardButton choice = QMessageBox::warning(
+      parent, tr("File Changed on Disk"),
+      tr("The file \"%1\" has been changed outside Muffin. Overwrite it?").arg(info.fileName()),
+      QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+  return choice == QMessageBox::Yes;
 }
 
 bool muffin::FileController::readTextFile(const QString& path, QString* out, QWidget* parent) const {
@@ -262,7 +299,7 @@ bool muffin::FileController::reopenWithEncoding(
       return false;
     }
     if (choice == QMessageBox::Save) {
-      if (!save(session, parent)) {
+      if (save(session, parent) != SaveOutcome::Saved) {
         return false;
       }
     } else {
@@ -285,7 +322,7 @@ bool muffin::FileController::moveTo(DocumentSession& session, QWidget* parent) {
   }
 
   if (session.document().isModified()) {
-    if (!save(session, parent)) {
+    if (save(session, parent) != SaveOutcome::Saved) {
       return false;
     }
   }
@@ -306,5 +343,22 @@ bool muffin::FileController::moveTo(DocumentSession& session, QWidget* parent) {
 
   session.setFilePath(newPath);
   session.document().setModified(false);
+  session.recordFileBaseline();  // baseline the moved file
+  return true;
+}
+
+bool muffin::FileController::reload(DocumentSession& session, QWidget* parent) {
+  if (session.filePath().isEmpty()) {
+    return false;
+  }
+  QString text;
+  if (!readTextFile(session.filePath(), &text, parent)) {
+    return false;
+  }
+  // Discards unsaved edits (caller already confirmed). Does NOT route through open(), which would
+  // trigger autoSaveOnSwitch and overwrite the very external change being reloaded. Re-baseline so
+  // the watcher treats the reloaded content as the new reference.
+  session.setMarkdownText(text, false);
+  session.recordFileBaseline();
   return true;
 }

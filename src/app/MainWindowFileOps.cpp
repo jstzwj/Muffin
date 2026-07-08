@@ -438,7 +438,7 @@ void muffin::MainWindow::revealCurrentFile() {
 }
 
 bool muffin::MainWindow::saveCurrentDocument() {
-  if (fileController_.save(session_, this)) {
+  if (fileController_.save(session_, this) == SaveOutcome::Saved) {
     addRecentFile(session_.filePath());
     drafts_.markClean(session_.filePath());
     return true;
@@ -460,8 +460,11 @@ void muffin::MainWindow::performAutoSave() {
   if (session_.filePath().isEmpty() || !session_.document().isModified()) {
     return;
   }
-  if (fileController_.save(session_, this)) {
+  const SaveOutcome outcome = fileController_.save(session_, this);
+  if (outcome == SaveOutcome::Saved) {
     drafts_.markClean(session_.filePath());
+  } else if (outcome == SaveOutcome::SkippedBusy) {
+    autoSaveTimer_->start();  // async parse still in flight — retry once it settles
   }
 }
 
@@ -1328,7 +1331,7 @@ bool muffin::MainWindow::maybeSaveChanges() {
     return false;
   }
   if (choice == QMessageBox::Save) {
-    return fileController_.save(session_, this);  // save() emits documentBecameClean.
+    return fileController_.save(session_, this) == SaveOutcome::Saved;  // save() emits documentBecameClean.
   }
   // Discard: the user explicitly abandoned the unsaved work — drop its recovery
   // draft so the next launch doesn't offer to restore what was just thrown away.

@@ -1,5 +1,6 @@
 #include "math/MathFontMetrics.h"
 #include "math/MathMacroExpander.h"
+#include "math/MathParser.h"
 #include "math/MathParseError.h"
 #include "math/MathRenderer.h"
 #include "math/MathSvgGeometry.h"
@@ -97,6 +98,40 @@ void testMathMetricsMacrosAndState() {
   require(blockLayout != nullptr && blockLayout->mathLayout() != nullptr && blockLayout->mathLayout()->valid(),
           QStringLiteral("metrics/macro/state block should have native layout"));
   require(blockLayout->mathLayout()->size.width() > 40.0, QStringLiteral("metrics/macro/state layout should have measurable width"));
+}
+
+void testRecursionGuards() {
+  // Deeply nested {{...x...}} must hit the parser depth limit (a rendered error node), not
+  // overflow the 1MB GUI-thread stack — the same class of crash NodeCssElement was fixed to avoid.
+  {
+    QString deep;
+    for (int i = 0; i < 2000; ++i) { deep += QLatin1Char('{'); }
+    deep += QLatin1Char('x');
+    for (int i = 0; i < 2000; ++i) { deep += QLatin1Char('}'); }
+    bool threw = false;
+    try {
+      math::MathParser parser(deep);
+      parser.parse();
+    } catch (const math::MathParseError&) {
+      threw = true;
+    }
+    require(threw, QStringLiteral("deeply nested groups must hit the depth limit, not overflow the stack"));
+  }
+  // A long \expandafter chain is direct C++ recursion in expandOnce; it must hit the expand-depth
+  // limit instead of overflowing.
+  {
+    math::MathMacroExpander expander;
+    QString chain;
+    for (int i = 0; i < 500; ++i) { chain += QStringLiteral("\\expandafter"); }
+    chain += QStringLiteral("\\relax");
+    bool threw = false;
+    try {
+      expander.expand(chain);
+    } catch (const math::MathParseError&) {
+      threw = true;
+    }
+    require(threw, QStringLiteral("deep \\expandafter chain must hit the recursion limit, not overflow"));
+  }
 }
 
 void testMathFixtureRenderTreeDumps(const QString& fixturePath) {
@@ -323,6 +358,7 @@ int main(int argc, char** argv) {
   const QFileInfo smokeFixtureInfo(QString::fromLocal8Bit(argv[1]));
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testMathMetricsMacrosAndState);
+  RUN_TEST(testRecursionGuards);
   runTest("testMathFixtureRenderTreeDumps", [&] {
     testMathFixtureRenderTreeDumps(smokeFixtureInfo.dir().filePath(QStringLiteral("math/core.json")));
   });

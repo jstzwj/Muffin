@@ -338,29 +338,45 @@ bool simpleMatches(const SimpleSelector& simple, const CssElement& element, cons
   return true;
 }
 
+// Explicit-stack matcher. The recursive form recursed over every ancestor (descendant ' ') and
+// every previous sibling ('~'); on a deep tree or a 100k+ flat block list that re-introduced the
+// exact stack-overflow NodeCssElementBuilder was fixed to avoid (see NodeCssElement::collectDescendants).
+// A heap work-stack of (part index, element) pairs replaces the C++ recursion — same left-to-right
+// OR semantics, short-circuits to true on the first full match. kMaxMatcherSteps bounds a
+// pathological selector/structure from running away.
 bool selectorMatchesAt(const ParsedSelector& selector, int index, const CssElement* element,
                        const CssElementState& targetState) {
   if (!element || index < 0) { return false; }
-  const CssElementState state = index == selector.parts.size() - 1 ? targetState : CssElementState{};
-  if (!simpleMatches(selector.parts.at(index).simple, *element, state)) { return false; }
-  if (index == 0) { return true; }
-  const QChar rel = selector.parts.at(index).combinator;
-  if (rel == QLatin1Char('>')) {
-    return selectorMatchesAt(selector, index - 1, element->parent, targetState);
-  }
-  if (rel == QLatin1Char('+')) {
-    // Adjacent sibling: the element immediately to the left.
-    return selectorMatchesAt(selector, index - 1, element->previousSibling, targetState);
-  }
-  if (rel == QLatin1Char('~')) {
-    // General sibling: any element to the left.
-    for (const CssElement* s = element->previousSibling; s; s = s->previousSibling) {
-      if (selectorMatchesAt(selector, index - 1, s, targetState)) { return true; }
+  const int last = selector.parts.size() - 1;
+  std::vector<std::pair<int, const CssElement*>> stack;
+  stack.emplace_back(index, element);
+  constexpr int kMaxMatcherSteps = 100000;
+  int steps = 0;
+  while (!stack.empty()) {
+    if (++steps > kMaxMatcherSteps) { return false; }
+    const auto [idx, el] = stack.back();
+    stack.pop_back();
+    if (!el || idx < 0) { continue; }
+    const CssElementState state = idx == last ? targetState : CssElementState{};
+    if (!simpleMatches(selector.parts.at(idx).simple, *el, state)) { continue; }
+    if (idx == 0) { return true; }  // every part matched, left to right
+    const QChar rel = selector.parts.at(idx).combinator;
+    if (rel == QLatin1Char('>')) {
+      stack.emplace_back(idx - 1, el->parent);
+    } else if (rel == QLatin1Char('+')) {
+      // Adjacent sibling: the element immediately to the left.
+      stack.emplace_back(idx - 1, el->previousSibling);
+    } else if (rel == QLatin1Char('~')) {
+      // General sibling: any element to the left.
+      for (const CssElement* s = el->previousSibling; s; s = s->previousSibling) {
+        stack.emplace_back(idx - 1, s);
+      }
+    } else {
+      // Descendant combinator (' '): any ancestor.
+      for (const CssElement* p = el->parent; p; p = p->parent) {
+        stack.emplace_back(idx - 1, p);
+      }
     }
-    return false;
-  }
-  for (const CssElement* p = element->parent; p; p = p->parent) {
-    if (selectorMatchesAt(selector, index - 1, p, targetState)) { return true; }
   }
   return false;
 }

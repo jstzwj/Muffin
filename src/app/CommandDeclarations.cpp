@@ -20,6 +20,7 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QHash>
+#include <QStatusBar>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QImage>
@@ -118,8 +119,11 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .text = muffin::MainWindow::tr("Save"),
        .shortcut = QKeySequence::Save,
        .handler = [](MainWindow& window) {
-         if (window.fileController_.save(window.session_, &window, window.defaultSaveDirectory())) {
+         const auto outcome = window.fileController_.save(window.session_, &window, window.defaultSaveDirectory());
+         if (outcome == muffin::SaveOutcome::Saved) {
            window.addRecentFile(window.session_.filePath());
+         } else if (outcome == muffin::SaveOutcome::SkippedBusy) {
+           window.statusBar()->showMessage(muffin::MainWindow::tr("Document is still loading…"), 3000);
          }
        }},
       {.id = QStringLiteral("file.save_as"),
@@ -127,7 +131,8 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .text = muffin::MainWindow::tr("Save As..."),
        .shortcut = QKeySequence::SaveAs,
        .handler = [](MainWindow& window) {
-         if (window.fileController_.saveAs(window.session_, &window, window.defaultSaveDirectory())) {
+         if (window.fileController_.saveAs(window.session_, &window, window.defaultSaveDirectory()) ==
+             muffin::SaveOutcome::Saved) {
            window.addRecentFile(window.session_.filePath());
          }
        }},

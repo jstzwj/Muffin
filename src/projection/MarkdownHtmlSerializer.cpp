@@ -1,5 +1,7 @@
 #include "projection/MarkdownHtmlSerializer.h"
 
+#include "blocks/html/HtmlSanitizer.h"
+#include "blocks/html/HtmlUrlSafety.h"
 #include "document/DefinitionBlock.h"
 #include "document/InlineNode.h"
 #include "document/MarkdownNode.h"
@@ -51,6 +53,8 @@ QString escapeHref(QStringView url) {
       const QString hex = QString::number(u, 16).toUpper();
       if (hex.size() < 2) out += QLatin1Char('0');
       out += hex;
+    } else if (ch == QLatin1Char('%')) {
+      out += QStringLiteral("%25");  // encode literal % so it can't smuggle a pre-encoded scheme
     } else if (ch == QLatin1Char('&')) {
       out += QStringLiteral("&amp;");
     } else if (ch == QLatin1Char('"')) {
@@ -81,27 +85,8 @@ QString escapeAttr(QStringView text) {
   return out;
 }
 
-// cmark omits dangerous URL schemes (javascript:/vbscript:/data:) from href/src under the safe
-// default (CMARK_OPT_DEFAULT, not UNSAFE). For images, `data:image/...` is allowed (Muffin embeds
-// images as data URIs). Replicate this so exported HTML can't carry an XSS payload.
-bool isDangerousUrl(QStringView url, bool allowDataImage) {
-  const QStringView s = url.trimmed();
-  const int colon = s.indexOf(QLatin1Char(':'));
-  if (colon <= 0) {
-    return false;  // relative URL or scheme-less — safe
-  }
-  const QString scheme = s.left(colon).toString().toLower();
-  if (scheme == QLatin1String("javascript") || scheme == QLatin1String("vbscript")) {
-    return true;
-  }
-  if (scheme == QLatin1String("data")) {
-    if (allowDataImage) {
-      return !s.mid(colon + 1).startsWith(QLatin1String("image/"));
-    }
-    return true;
-  }
-  return false;
-}
+// URL safety is shared with the on-screen HtmlSanitizer via HtmlUrlSafety.h (muffin::isSafeUrl),
+// so the export path and the preview can't drift — one used to block vectors the other let through.
 
 // Decode `:shortcode:` runs to glyphs (mirrors InlineProjection's third decode-span). Called before
 // escapeText since the glyph is a normal char the escaper leaves untouched.
@@ -209,6 +194,7 @@ QVector<InlineNode> stripAlertMarker(QVector<InlineNode> inlines, AlertKind kind
 struct Serializer {
   QString out;
   MarkdownHtmlOptions opts;
+  HtmlSanitizer sanitizer;  // sanitizes raw HTML blocks/inlines so export can't carry an XSS payload
   // Footnote definitions are hoisted to a trailing <section> (mirrors cmark), collected during the
   // block walk and emitted once at the end.
   QVector<const MarkdownNode*> footnotes;
@@ -227,7 +213,7 @@ struct Serializer {
       case BlockType::List: emitList(node); break;
       case BlockType::ThematicBreak: out += QStringLiteral("<hr />\n"); break;
       case BlockType::CodeFence: emitCode(node); break;
-      case BlockType::HtmlBlock: out += node.literal(); break;  // raw, unescaped (matches cmark default)
+      case BlockType::HtmlBlock: out += sanitizer.sanitizedPreview(node.literal()); break;  // XSS-sanitized
       case BlockType::MathBlock: emitMathBlock(node); break;
       case BlockType::Table: emitTable(node); break;
       case BlockType::FootnoteDefinition: footnotes.append(&node); break;  // hoist to trailing section
@@ -377,8 +363,37 @@ struct Serializer {
   }
 
   void emitInlines(const QVector<InlineNode>& inlines) {
-    for (const InlineNode& node : inlines) {
-      emitInline(node);
+    // cmark splits `<b>bold</b>` into separate HtmlInline tokens (`<b>`, `</b>`) around a Text
+    // node. Sanitizing each token alone would auto-close `<b>` and drop the stray `</b>`, breaking
+    // the pairing. So coalesce each maximal Text|HtmlInline run: if it holds any raw HTML, rebuild
+    // it as ONE HTML fragment and sanitize the whole (structure preserved, attributes still
+    // scrubbed); otherwise emit the plain text nodes normally (with emoji decoding).
+    int i = 0;
+    while (i < inlines.size()) {
+      const InlineType t = inlines.at(i).type();
+      if (t != InlineType::Text && t != InlineType::HtmlInline) {
+        emitInline(inlines.at(i));
+        ++i;
+        continue;
+      }
+      int j = i;
+      bool hasHtml = false;
+      while (j < inlines.size()) {
+        const InlineType tj = inlines.at(j).type();
+        if (tj != InlineType::Text && tj != InlineType::HtmlInline) { break; }
+        if (tj == InlineType::HtmlInline) { hasHtml = true; }
+        ++j;
+      }
+      if (hasHtml) {
+        QString raw;
+        for (int k = i; k < j; ++k) { raw += inlines.at(k).text(); }
+        out += sanitizer.sanitizedPreview(raw);
+      } else {
+        for (int k = i; k < j; ++k) {
+          out += escapeText(opts.renderEmoji ? decodeEmoji(inlines.at(k).text()) : inlines.at(k).text());
+        }
+      }
+      i = j;
     }
   }
 
@@ -405,7 +420,7 @@ struct Serializer {
       case InlineType::InlineMath: emitInlineMath(node); break;
       case InlineType::Link: emitLink(node); break;
       case InlineType::Image: emitImage(node); break;
-      case InlineType::HtmlInline: out += node.text(); break;  // raw
+      case InlineType::HtmlInline: out += sanitizer.sanitizedPreview(node.text()); break;  // XSS-sanitized
       case InlineType::FootnoteReference: emitFootnoteRef(node); break;
       default: out += escapeText(node.text()); break;
     }
@@ -424,7 +439,7 @@ struct Serializer {
   }
 
   void emitLink(const InlineNode& node) {
-    if (isDangerousUrl(node.href(), false)) {
+    if (!isSafeUrl(node.href(), false)) {
       emitInlines(node.children());  // unsafe scheme: emit label text only, no href
       return;
     }
@@ -438,7 +453,7 @@ struct Serializer {
   }
 
   void emitImage(const InlineNode& node) {
-    if (isDangerousUrl(node.href(), true)) {  // href holds the src (InlineNode::image factory)
+    if (!isSafeUrl(node.href(), true)) {  // href holds the src (InlineNode::image factory)
       return;  // cmark omits a dangerous image entirely
     }
     out += QStringLiteral("<img src=\"") + escapeHref(node.href()) + QStringLiteral("\" alt=\"") +

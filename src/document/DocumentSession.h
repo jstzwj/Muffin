@@ -4,6 +4,8 @@
 #include "document/TopLevelRangeChange.h"
 #include "parser/CmarkGfmParser.h"
 
+#include <QDateTime>
+#include <QFileSystemWatcher>
 #include <QFutureWatcher>
 #include <QObject>
 #include <QString>
@@ -42,6 +44,26 @@ public:
   // read-only: applyTextDelta rejects edits and InputController drops keystrokes, so a stray edit
   // can't land on the stale text and supersede (discard) the worker's parsed result for the open.
   bool isAsyncParseInProgress() const;
+
+  // External-modification detection: snapshot the on-disk mtime+size so a later save can detect
+  // drift (git pull, sync client, another editor) and the QFileSystemWatcher can prompt proactively.
+  // Recorded by FileController after open/save/saveAs/moveTo; cleared on newDocument/setFilePath.
+  void recordFileBaseline();
+  bool hasFileBaseline() const { return baselineSize_ >= 0; }
+  QDateTime fileBaselineMtime() const { return baselineMtime_; }
+  qint64 fileBaselineSize() const { return baselineSize_; }
+
+  // RAII: suppresses externalFileChanged across FileController's own write. The fileChanged signal
+  // from QSaveFile::commit races the synchronous recordFileBaseline; this guard (plus the baseline
+  // re-stat in onFileChanged) closes the self-trigger false-fire.
+  class SelfWriteGuard {
+  public:
+    explicit SelfWriteGuard(DocumentSession& s) : session_(s) { session_.suppressExternalChange_ = true; }
+    ~SelfWriteGuard() { session_.suppressExternalChange_ = false; }
+    Q_DISABLE_COPY(SelfWriteGuard)
+  private:
+    DocumentSession& session_;
+  };
 
   void newDocument();
   void setFilePath(QString path);
@@ -82,6 +104,10 @@ signals:
   void parsed(qint64 elapsedMs);
   void parseBusy(bool busy);  // true while an async open parse is in flight (view shows a loading state)
   void modifiedChanged(bool modified);
+  void externalFileChanged();  // the file changed on disk vs. our last known baseline
+
+private slots:
+  void onFileChanged();  // QFileSystemWatcher::fileChanged → drift check → externalFileChanged
 
 private:
   void parseAndStore(QString text, bool modified, QVector<qsizetype> demoteAtOffsets = {}, bool async = false);
@@ -110,6 +136,13 @@ private:
   QString pendingText_;           // text held for the GUI-thread finish step
   bool pendingModified_ = false;
   QVector<qsizetype> pendingDemoteAtOffsets_;
+
+  // External-modification detection. The watcher tracks filePath_; the baseline is the mtime+size
+  // at open/last-save. suppressExternalChange_ is set by SelfWriteGuard during our own writes.
+  QDateTime baselineMtime_;
+  qint64 baselineSize_ = -1;
+  QFileSystemWatcher* fileWatcher_ = nullptr;
+  bool suppressExternalChange_ = false;
 };
 
 }  // namespace muffin

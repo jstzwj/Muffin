@@ -214,6 +214,22 @@ void muffin::MainWindow::connectSessionSignals() {
       window.autoSaveTimer_->stop();
     }
   });
+  // External-modification detection: when the file changes on disk (git pull, sync client, another
+  // editor), offer to reload it. Self-trigger from our own save is suppressed in DocumentSession.
+  QObject::connect(&window.session_, &DocumentSession::externalFileChanged, &window, [&window]() {
+    if (window.session_.filePath().isEmpty()) {
+      return;
+    }
+    const auto choice = QMessageBox::question(
+        &window, muffin::MainWindow::tr("File Changed on Disk"),
+        muffin::MainWindow::tr("The file \"%1\" has changed outside Muffin. Reload it?\n"
+                               "Unsaved changes in the editor will be lost.")
+            .arg(window.session_.filePath()),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+    if (choice == QMessageBox::Yes) {
+      window.fileController_.reload(window.session_, &window);
+    }
+  });
   // Arm the crash-recovery snapshot timer whenever the document becomes dirty;
   // snapshotDraft() re-arms it (the heartbeat) while it stays dirty, and stops
   // here once clean. Resetting the content tracker lets the next dirty period

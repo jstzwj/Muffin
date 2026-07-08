@@ -11,6 +11,21 @@
 namespace muffin::math {
 namespace {
 
+constexpr int kMaxExpandDepth = 200;
+
+// RAII frame bounding \expandafter's recursive expandOnce call. The destructor rolls back on
+// exception unwind so a thrown MathParseError never leaves expandDepth_ bumped.
+struct ExpandDepthFrame {
+  int& depth;
+  qsizetype position;
+  ExpandDepthFrame(int& d, qsizetype pos) : depth(d), position(pos) {
+    if (++depth > kMaxExpandDepth) {
+      throw MathParseError(QStringLiteral("Too many nested \\expandafter"), {}, position, position);
+    }
+  }
+  ~ExpandDepthFrame() { --depth; }
+};
+
 bool spaceAfterDotsToken(const QString& token) {
   static const QSet<QString> tokens{
       QStringLiteral(")"),        QStringLiteral("]"),       QStringLiteral("\\rbrack"),
@@ -297,7 +312,9 @@ QVector<MacroToken> applyArgs(QVector<MacroToken> body, const QVector<QVector<Ma
 
 }  // namespace
 
-MathMacroExpander::MathMacroExpander(MathSettings settings) : settings_(std::move(settings)) {
+MathMacroExpander::MathMacroExpander(MathSettings settings, std::shared_ptr<int> sharedExpansionCount)
+    : settings_(std::move(settings)),
+      expansionCount_(sharedExpansionCount ? std::move(sharedExpansionCount) : std::make_shared<int>(0)) {
   // Simple aliases (not duplicated in sections below)
   defineMacro(QStringLiteral("\\lt"), QStringLiteral("<"));
   defineMacro(QStringLiteral("\\gt"), QStringLiteral(">"));
@@ -696,14 +713,17 @@ void MathMacroExpander::undefineMacro(const QString& name, bool global) {
 }
 
 void MathMacroExpander::countExpansion(int amount, qsizetype position, qsizetype endPosition) {
-  expansionCount_ += amount;
-  if (settings_.maxExpand >= 0 && expansionCount_ > settings_.maxExpand) {
+  *expansionCount_ += amount;
+  if (settings_.maxExpand >= 0 && *expansionCount_ > settings_.maxExpand) {
     throw MathParseError(QStringLiteral("Too many expansions: infinite loop or need to increase maxExpand setting"), {}, position, endPosition);
   }
 }
 
 QString MathMacroExpander::expand(QString input) {
-  expansionCount_ = 0;
+  // The shared expansion budget is seeded at construction (make_shared<int>(0)) and reused by
+  // re-entrant \edef expanders, so it is NOT reset here — only the local \expandafter depth resets
+  // per top-level expand (a fresh call starts a new recursion frontier).
+  expandDepth_ = 0;
   TokenStream stream(std::move(input));
   QVector<MacroToken> output;
   while (!stream.empty()) {
@@ -766,6 +786,7 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
   }
 
   if (command == QStringLiteral("\\expandafter")) {
+    ExpandDepthFrame frame{expandDepth_, token.position};  // bounds the C++ recursion in expandOnce
     MacroToken held = stream.popToken();
     expandOnce(stream);
     stream.pushToken(held);
@@ -854,7 +875,7 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
     const QString parameterText = stream.consumeUntilGroupStart();
     QString replacement = stream.consumeArgText();
     if (actualCommand == QStringLiteral("\\edef") || actualCommand == QStringLiteral("\\xdef")) {
-      replacement = MathMacroExpander(settings_).expand(replacement);
+      replacement = MathMacroExpander(settings_, expansionCount_).expand(replacement);
     }
     if (!name.isEmpty()) {
       setMacro(name, Macro{replacement, countDefArgs(parameterText), false}, global);

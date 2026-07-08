@@ -563,6 +563,8 @@ muffin::DocumentSession::DocumentSession(QObject* parent) : QObject(parent) {
   newDocument();
   parseWatcher_ = new QFutureWatcher<std::shared_ptr<ParseResult>>(this);
   connect(parseWatcher_, &QFutureWatcher<std::shared_ptr<ParseResult>>::finished, this, &DocumentSession::finishAsyncParse);
+  fileWatcher_ = new QFileSystemWatcher(this);
+  connect(fileWatcher_, &QFileSystemWatcher::fileChanged, this, &DocumentSession::onFileChanged);
 }
 
 muffin::MarkdownDocument& muffin::DocumentSession::document() {
@@ -601,7 +603,13 @@ muffin::TopLevelRangeChange muffin::DocumentSession::lastLocalTopLevelRangeChang
 }
 
 void muffin::DocumentSession::newDocument() {
+  if (fileWatcher_ && !filePath_.isEmpty()) {
+    fileWatcher_->removePath(filePath_);
+  }
   filePath_.clear();
+  baselineMtime_ = QDateTime();
+  baselineSize_ = -1;
+  suppressExternalChange_ = false;
   emit filePathChanged(filePath_);
   parseAndStore(QString(), false);
   emit documentTextChanged(QString());
@@ -611,8 +619,41 @@ void muffin::DocumentSession::setFilePath(QString path) {
   if (filePath_ == path) {
     return;
   }
+  if (fileWatcher_ && !filePath_.isEmpty()) {
+    fileWatcher_->removePath(filePath_);  // stop watching the old path
+  }
   filePath_ = std::move(path);
+  baselineMtime_ = QDateTime();
+  baselineSize_ = -1;  // new path: no baseline until FileController records one after open/write
+  suppressExternalChange_ = false;
+  if (fileWatcher_ && !filePath_.isEmpty()) {
+    fileWatcher_->addPath(filePath_);  // watch the new path (silently ignored if it doesn't exist yet)
+  }
   emit filePathChanged(filePath_);
+}
+
+void muffin::DocumentSession::recordFileBaseline() {
+  if (filePath_.isEmpty()) {
+    baselineMtime_ = QDateTime();
+    baselineSize_ = -1;
+    return;
+  }
+  const QFileInfo info(filePath_);
+  baselineMtime_ = info.lastModified();
+  baselineSize_ = info.size();
+}
+
+void muffin::DocumentSession::onFileChanged() {
+  if (suppressExternalChange_ || !hasFileBaseline() || filePath_.isEmpty()) {
+    return;
+  }
+  // A real external change: re-stat and compare to the baseline. Our own save re-baselines
+  // synchronously after commit, so even a self-triggered signal that slips past the suppress flag
+  // finds stat == baseline and is ignored.
+  const QFileInfo info(filePath_);
+  if (!info.exists() || info.lastModified() != baselineMtime_ || info.size() != baselineSize_) {
+    emit externalFileChanged();
+  }
 }
 
 void muffin::DocumentSession::setMarkdownText(QString text, bool modified) {

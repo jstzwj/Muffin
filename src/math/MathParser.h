@@ -17,6 +17,7 @@ public:
   QVector<MathParseNode> parse();
 
 private:
+  class DepthGuard;  // RAII recursion-depth guard, defined in the .cpp
   QVector<MathParseNode> parseExpression(const QString& breakOn = {});
   QVector<MathParseNode> parseExpressionUntilAny(const QVector<QString>& breakTokens);
   MathParseNode parseInfixFraction(const MathToken& token, QVector<MathParseNode> numerator, const QString& breakOn);
@@ -111,6 +112,11 @@ private:
   // When true, $ is treated as a math-mode switch inside text body parsing.
   // KaTeX registers $ as a text-mode function that switches to inline math.
   bool inTextBody_ = false;
+
+  // Active recursive-parse frame count (RAII-bumped by DepthGuard). Caps nesting so deeply
+  // nested {{{...}}} / \sqrt{...} / \left..\right / \text{...} input can't overflow the
+  // GUI-thread stack — same class of crash NodeCssElement was fixed to avoid.
+  int depth_ = 0;
 };
 
 }  // namespace muffin::math
