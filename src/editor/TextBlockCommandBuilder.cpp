@@ -889,41 +889,39 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(con
 
 TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildExitListItem(const BlockEditContext& context) const {
   Command command;
-  if (!session_ || !resolver_) {
+  if (!session_ || !resolver_ || !context.node) {
     return command;
   }
+  // An empty item's Enter outdents one level (or exits the list at the top level). The outdent is
+  // the same operation as Shift+Tab, so delegate to buildOutdentListItem when there is an outer
+  // item — this shares the marker-column-aligned outdent + ordered renumber, instead of the old
+  // fixed-indentUnit removal that mis-nested ordered children (the same root bug as Tab indent at
+  // a different entry point).
+  MarkdownNode* parentList = context.node->parent();
+  MarkdownNode* outer = (parentList && parentList->type() == BlockType::List) ? parentList->parent() : nullptr;
+  if (outer && outer->type() == BlockType::ListItem) {
+    return buildOutdentListItem(context);
+  }
 
+  // Top-level list (no outer item): delete the whole marker line and leave a newline so a trailing
+  // paragraph remains as a caret landing spot after the list.
   qsizetype lineStart = -1;
   qsizetype contentStart = -1;
   qsizetype lineEnd = -1;
   if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd)) {
     return command;
   }
-
   const PieceTable& markdown = session_->markdownText();
-  const QString line = markdown.mid(lineStart, lineEnd - lineStart);
-  const ListLineInfo info = listLineInfoFor(line);
+  const ListLineInfo info = listLineInfoFor(markdown.mid(lineStart, lineEnd - lineStart));
   if (!info.valid) {
     return command;
   }
-
-  // Outdent one configured level (min with the leading spaces actually present, so a stray
-  // shorter indent still collapses gracefully instead of underflowing).
-  const qsizetype exitRemove = qMin<qsizetype>(indentUnit(), info.markerStart);
-  if (exitRemove > 0) {
-    command.sourceStart = lineStart;
-    command.removedLength = exitRemove;
-    command.insertedText.clear();
-    command.fallbackSourceOffset = qMax<qsizetype>(lineStart, context.contentRange.byteStart - exitRemove);
-    command.label = QStringLiteral("Outdent List Item");
-  } else {
-    command.sourceStart = lineStart;
-    command.removedLength = lineEnd - lineStart;
-    command.insertedText = QLatin1Char('\n');
-    command.fallbackSourceOffset = lineStart;
-    command.label = QStringLiteral("Exit List Item");
-  }
+  command.sourceStart = lineStart;
+  command.removedLength = lineEnd - lineStart;
+  command.insertedText = QLatin1Char('\n');
   command.kind = EditTransaction::Kind::DeleteText;
+  command.label = QStringLiteral("Exit List Item");
+  command.fallbackSourceOffset = lineStart;
   command.structureEdit = true;
   command.valid = true;
   command.handled = true;
@@ -958,7 +956,17 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildInsertListItemAbo
   command.insertedText = insertion;
   command.kind = EditTransaction::Kind::SplitParagraph;
   command.label = QStringLiteral("Insert List Item Above");
-  command.fallbackSourceOffset = lineStart + insertion.size() - 1;
+  // The caret follows the original content into the NEXT item (the current item, holding its
+  // content, shifts down and renumbers) — not the newly inserted empty item above. At content start
+  // the user's intent is "follow the content". Resolve by source offset into the renumbered
+  // following line: the current item's node identity is not guaranteed to survive the re-parse
+  // (this command sets no nodeHints), so a node-id preferredCursor is unreliable, but an offset
+  // one line down — past the inserted marker line, the renumbered marker, and the task prefix — is
+  // exact and locates the content start directly.
+  const qsizetype followingMarkerWidth = info.ordered
+      ? (QString::number(info.orderedNumber + 1).size() + 2)  // renumbered digit + delimiter + space
+      : info.marker.size();
+  command.fallbackSourceOffset = lineStart + insertion.size() + followingMarkerWidth + taskPrefix.size();
   if (info.ordered) {
     const PieceTable& markdown = session_->markdownText();
     const qsizetype runEnd = orderedSiblingRunEnd(markdown, lineStart, markerColumn);
@@ -1087,7 +1095,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithNextList
 
 TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(const BlockEditContext& context) const {
   Command command;
-  if (!session_ || !resolver_) {
+  if (!session_ || !resolver_ || !context.node) {
     return command;
   }
 
@@ -1097,35 +1105,80 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(c
   if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd)) {
     return command;
   }
-
   const PieceTable& markdown = session_->markdownText();
   const QString line = markdown.mid(lineStart, lineEnd - lineStart);
   const ListLineInfo info = listLineInfoFor(line);
   if (!info.valid) {
     return command;
   }
-  const qsizetype outdentRemove = qMin<qsizetype>(indentUnit(), info.markerStart);
-  if (outdentRemove > 0) {
+
+  // Outdent aligns this item to the enclosing list's parent-item marker column — the inverse of
+  // indent. No outer ListItem means a top-level list: drop the marker to exit into a paragraph.
+  MarkdownNode* parentList = context.node->parent();
+  MarkdownNode* outer = (parentList && parentList->type() == BlockType::List) ? parentList->parent() : nullptr;
+  if (!outer || outer->type() != BlockType::ListItem) {
     command.sourceStart = lineStart;
-    command.removedLength = outdentRemove;
+    const qsizetype textStart = info.task ? lineStart + info.taskContentStart : contentStart;
+    command.removedLength = textStart - lineStart;
     command.insertedText.clear();
     command.kind = EditTransaction::Kind::DeleteText;
-    command.label = QStringLiteral("Outdent List Item");
-    command.fallbackSourceOffset =
-        qMax<qsizetype>(lineStart, context.contentRange.byteStart + context.cursorTextOffset - outdentRemove);
+    command.label = QStringLiteral("Exit List Item");
+    command.fallbackSourceOffset = lineStart;
     command.structureEdit = true;
     command.valid = true;
     command.handled = true;
     return command;
   }
 
+  BlockEditContext outerContext;
+  qsizetype outerLineStart = -1;
+  qsizetype outerContentStart = -1;
+  qsizetype outerLineEnd = -1;
+  if (!resolver_->fill(*outer, outerContext) ||
+      !resolver_->listItemLineBounds(outerContext, outerLineStart, outerContentStart, outerLineEnd)) {
+    return command;
+  }
+  const ListLineInfo outerInfo = listLineInfoFor(markdown.mid(outerLineStart, outerLineEnd - outerLineStart));
+  if (!outerInfo.valid) {
+    return command;
+  }
+
+  const qsizetype targetColumn = outerInfo.markerStart;
+  if (info.markerStart <= targetColumn) {
+    return command;  // not deeper than the outer item — nothing to outdent
+  }
+
+  // Replace the marker region to the outer column. An ordered item rejoining the outer list takes
+  // the number right after the outer item's, and the outer run is renumbered from there (the
+  // inverse of indent's tail renumber).
+  const qsizetype prefixEnd = info.task ? info.taskContentStart : info.contentStart;
+  const QString taskPart = info.task ? line.mid(info.taskMarkerStart, info.taskContentStart - info.taskMarkerStart)
+                                     : QString();
+  const int outerNextNumber = outerInfo.ordered ? outerInfo.orderedNumber + 1 : 1;
+  const QString newMarker = info.ordered
+      ? (QString::number(outerNextNumber) + info.orderedDelimiter + QLatin1Char(' '))
+      : info.marker;
+  const QString newPrefix = leadingSpaces(targetColumn) + newMarker + taskPart;
+
   command.sourceStart = lineStart;
-  const qsizetype textStart = info.task ? lineStart + info.taskContentStart : contentStart;
-  command.removedLength = textStart - lineStart;
-  command.insertedText.clear();
+  command.insertedText = newPrefix;
   command.kind = EditTransaction::Kind::DeleteText;
-  command.label = QStringLiteral("Exit List Item");
-  command.fallbackSourceOffset = lineStart;
+  command.label = QStringLiteral("Outdent List Item");
+
+  if (info.ordered) {
+    const qsizetype runEnd = orderedSiblingRunEnd(markdown, nextLineStart(markdown, lineEnd), targetColumn);
+    const QString currentContent = line.mid(prefixEnd);
+    const QString tail = markdown.mid(lineEnd, runEnd - lineEnd);
+    command.removedLength = runEnd - lineStart;
+    // The outvented item itself takes outerNextNumber (its new marker), so the outer-list tail that
+    // follows must renumber from outerNextNumber + 1, not outerNextNumber (which would duplicate it).
+    command.insertedText = newPrefix + currentContent + renumberOrderedSiblings(tail, targetColumn, outerNextNumber + 1);
+  } else {
+    command.removedLength = prefixEnd;
+  }
+
+  const qsizetype newContentColumn = targetColumn + newMarker.size() + taskPart.size();
+  command.fallbackSourceOffset = lineStart + newContentColumn + qMax<qsizetype>(0, context.cursorTextOffset);
   command.structureEdit = true;
   command.valid = true;
   command.handled = true;
@@ -1140,7 +1193,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildIndentListItem(co
 
   const MarkdownNode* previous = context.node->previousSibling();
   if (!previous || previous->type() != BlockType::ListItem) {
-    return command;
+    return command;  // first item has nothing to nest under
   }
 
   qsizetype lineStart = -1;
@@ -1149,13 +1202,70 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildIndentListItem(co
   if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd)) {
     return command;
   }
+  const PieceTable& markdown = session_->markdownText();
+  const QString line = markdown.mid(lineStart, lineEnd - lineStart);
+  const ListLineInfo info = listLineInfoFor(line);
+  if (!info.valid) {
+    return command;
+  }
+
+  // The previous sibling becomes this item's parent. Its content column is the minimum a child
+  // list marker must reach to nest (CommonMark: child marker column >= parent content column).
+  MarkdownNode* prevNode = const_cast<MarkdownNode*>(previous);
+  BlockEditContext prevContext;
+  qsizetype prevLineStart = -1;
+  qsizetype prevContentStart = -1;
+  qsizetype prevLineEnd = -1;
+  if (!resolver_->fill(*prevNode, prevContext) ||
+      !resolver_->listItemLineBounds(prevContext, prevLineStart, prevContentStart, prevLineEnd)) {
+    return command;
+  }
+  const ListLineInfo prevInfo = listLineInfoFor(markdown.mid(prevLineStart, prevLineEnd - prevLineStart));
+  if (!prevInfo.valid) {
+    return command;
+  }
+
+  // delta honours the user's indentSize preference but never undershoots the gap to the parent's
+  // content column — otherwise an ordered item (marker width 3) indented by the default 2 spaces
+  // lands short of the content column and cmark does NOT nest it (the root cause: "3." stayed a
+  // top-level sibling instead of becoming a "1." child, and the caret drifted off the geometry).
+  const qsizetype gap = prevInfo.contentStart - info.markerStart;
+  if (gap <= 0) {
+    return command;  // already nested under (or deeper than) the previous item
+  }
+  const qsizetype delta = qMax<qsizetype>(indentUnit(), gap);
+  const qsizetype targetColumn = info.markerStart + delta;
+
+  // Replace the whole marker region (leading spaces + marker + task prefix) so the content is
+  // untouched. An ordered item's digit is rewritten to '1' so the new child list restarts
+  // numbering (cmark listStart <- 1, rendered as 1.) — the inverse of outdent's run renumber.
+  const qsizetype prefixEnd = info.task ? info.taskContentStart : info.contentStart;
+  const QString newMarker = info.ordered ? QStringLiteral("1") + info.orderedDelimiter + QLatin1Char(' ')
+                                         : info.marker;
+  const QString taskPart = info.task ? line.mid(info.taskMarkerStart, info.taskContentStart - info.taskMarkerStart)
+                                     : QString();
+  const QString newPrefix = leadingSpaces(targetColumn) + newMarker + taskPart;
 
   command.sourceStart = lineStart;
-  command.removedLength = 0;
-  command.insertedText = leadingSpaces(indentUnit());
+  command.insertedText = newPrefix;
   command.kind = EditTransaction::Kind::InsertText;
   command.label = QStringLiteral("Indent List Item");
-  command.fallbackSourceOffset = context.contentRange.byteStart + context.cursorTextOffset + indentUnit();
+
+  if (info.ordered) {
+    // The vacated number in the parent list is filled by renumbering the same-column ordered
+    // siblings that follow (same pattern as buildInsertListItemAbove / Enter split). The current
+    // item's rewritten line plus the renumbered tail form one contiguous replace.
+    const qsizetype runEnd = orderedSiblingRunEnd(markdown, nextLineStart(markdown, lineEnd), info.markerStart);
+    const QString currentContent = line.mid(prefixEnd);
+    const QString tail = markdown.mid(lineEnd, runEnd - lineEnd);
+    command.removedLength = runEnd - lineStart;
+    command.insertedText = newPrefix + currentContent + renumberOrderedSiblings(tail, info.markerStart, info.orderedNumber);
+  } else {
+    command.removedLength = prefixEnd;
+  }
+
+  const qsizetype newContentColumn = targetColumn + newMarker.size() + taskPart.size();
+  command.fallbackSourceOffset = lineStart + newContentColumn + qMax<qsizetype>(0, context.cursorTextOffset);
   command.structureEdit = true;
   command.valid = true;
   command.handled = true;

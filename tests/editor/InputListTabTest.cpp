@@ -282,7 +282,10 @@ void testTabInRenderedTextInsertsZeroWidthSpace() {
   setSourceCursor(selection, listItemAt(session, 0, 1), 0, QStringLiteral("1. alpha\n2. ").size());
   QKeyEvent orderedListTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
   require(input.eventFilter(&view, &orderedListTab), "tab on ordered list item should indent structurally");
-  require(session.markdownText().toString() == QStringLiteral("1. alpha\n  2. beta"), "ordered list tab should add structural leading spaces");
+  require(session.markdownText().toString() == QStringLiteral("1. alpha\n   1. beta"),
+          "ordered list tab should nest under the previous item and restart numbering at 1 (3-space indent reaches the parent content column)");
+  require(maybeFirstChildOfType(listItemAt(session, 0, 0), BlockType::List) != nullptr,
+          "ordered list tab should create a real nested list, not a same-level sibling");
   require(!session.markdownText().toString().contains(QChar(0x200b)), "ordered list tab should not insert U+200B");
   brushQueue.flush();
   require(!tabRefreshes.isEmpty() && !tabRefreshes.last().fullLayoutDirty, "ordered list structural tab should not request full refresh");
@@ -321,7 +324,7 @@ void testTabInRenderedTextInsertsZeroWidthSpace() {
   setSourceCursor(selection, listItemAt(session, 0, 1), 1, QStringLiteral("1. alpha\n2. b").size());
   QKeyEvent orderedVisualStartTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
   require(input.eventFilter(&view, &orderedVisualStartTab), "tab near ordered item visual start should indent structurally");
-  require(session.markdownText().toString() == QStringLiteral("1. alpha\n  2. beta"), "ordered visual-start tab should indent item");
+  require(session.markdownText().toString() == QStringLiteral("1. alpha\n   1. beta"), "ordered visual-start tab should nest the item and restart at 1");
 
   DocumentSession realSession;
   EditorController controller;
@@ -399,7 +402,7 @@ void testListTabFromRenderedClick() {
   QApplication::sendEvent(view.viewport(), &orderedRelease);
   QKeyEvent orderedTab(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
   QApplication::sendEvent(&view, &orderedTab);
-  require(session.markdownText().toString() == QStringLiteral("1. alpha\n  2. beta"), "clicking ordered item start then tab should indent item");
+  require(session.markdownText().toString() == QStringLiteral("1. alpha\n   1. beta"), "clicking ordered item start then tab should nest and restart at 1");
 
   session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
   view.setDocument(session.document());
@@ -485,8 +488,8 @@ void testIndentEmptyListItemDoesNotPromotePreviousToHeading() {
   session.setMarkdownText(QStringLiteral("1. First item\n2. \n3. Second item"), false);
   setCursor(selection, listItemAt(session, 0, 1), 0);
   require(input.indentListItem(), "tab should indent the empty ordered middle item");
-  require(session.markdownText().toString() == QStringLiteral("1. First item\n  2. \n3. Second item"),
-          "indenting empty ordered item should only add leading spaces");
+  require(session.markdownText().toString() == QStringLiteral("1. First item\n   1. \n2. Second item"),
+          "indenting empty ordered item should nest it and renumber the following sibling");
   require(maybeFirstChildOfType(listItemAt(session, 0, 0), BlockType::Heading) == nullptr,
           "ordered preceding item must not become a heading");
 
@@ -618,6 +621,125 @@ void testIndentTrailingEmptyListItem() {
   }
 }
 
+// Ordered-list Tab nests the item under its previous sibling (reaching the parent content column),
+// restarts the child list at 1, and renumbers the now-vacated siblings that follow.
+void testOrderedListTabNestsAndRestartsNumbering() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  // Last item -> nested child; its "3." restarts at "1.".
+  session.setMarkdownText(QStringLiteral("1. a\n2. b\n3. c"), false);
+  setCursor(selection, listItemAt(session, 0, 2), 0);
+  require(input.indentListItem(), "tab should indent the ordered item");
+  require(session.markdownText().toString() == QStringLiteral("1. a\n2. b\n   1. c"),
+          "ordered tab should nest the last item and restart its number at 1");
+  require(maybeFirstChildOfType(listItemAt(session, 0, 1), BlockType::List) != nullptr,
+          "ordered tab should create a nested list under the previous item");
+
+  // Middle item -> vacated number refilled by renumbering the following sibling (3. -> 2.).
+  session.setMarkdownText(QStringLiteral("1. a\n2. b\n3. c"), false);
+  setCursor(selection, listItemAt(session, 0, 1), 0);
+  require(input.indentListItem(), "tab should indent the middle ordered item");
+  require(session.markdownText().toString() == QStringLiteral("1. a\n   1. b\n2. c"),
+          "ordered tab on a middle item should nest it and renumber the following sibling to fill the gap");
+}
+
+// Shift+Tab outdents a nested ordered item back to the outer list's marker column and gives it the
+// number that follows the outer item (the inverse of indent).
+void testOrderedListShiftTabOutdentsAndRenumbers() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("1. a\n   1. b"), false);
+  MarkdownNode* nested = maybeFirstChildOfType(listItemAt(session, 0, 0), BlockType::List);
+  require(nested != nullptr, "setup should have a nested ordered list");
+  setCursor(selection, childAt(nested, 0), 0);
+  require(input.outdentListItem(), "shift-tab should outdent the nested ordered item");
+  require(session.markdownText().toString() == QStringLiteral("1. a\n2. b"),
+          "ordered shift-tab should rejoin the outer list and take the next number");
+}
+
+// Backward-compat guard: unordered indent/outdent stay byte-identical to the historical behaviour
+// (marker width 2 == default indentUnit, so delta = 2 either way; the max() changes nothing here).
+void testUnorderedListIndentOutdentRoundTrip() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
+  setCursor(selection, listItemAt(session, 0, 1), 0);
+  require(input.indentListItem(), "tab should indent the unordered item");
+  require(session.markdownText().toString() == QStringLiteral("- alpha\n  - beta"),
+          "unordered indent should remain a 2-space nested marker");
+  MarkdownNode* nestedList = maybeFirstChildOfType(listItemAt(session, 0, 0), BlockType::List);
+  require(nestedList != nullptr, "unordered indent should create a nested list");
+  setCursor(selection, childAt(nestedList, 0), 0);
+  require(input.outdentListItem(), "shift-tab should outdent the nested unordered item");
+  require(session.markdownText().toString() == QStringLiteral("- alpha\n- beta"),
+          "unordered outdent should restore the flat list");
+}
+
+// At the very start of a list item's content, Enter inserts an empty item above — but the caret
+// must follow the original content into the NEXT item (the renumbered original), not land on the
+// empty item above. The user's intent at content-start is "follow the content".
+void testEnterAtListItemContentStartFollowsContent() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("1. alpha\n2. beta\n3. gamma"), false);
+  setCursor(selection, listItemAt(session, 0, 1), 0);  // item "beta" content start
+  require(input.insertParagraphBreak(), "enter at ordered item content start should insert an item above");
+  require(session.markdownText().toString() == QStringLiteral("1. alpha\n2. \n3. beta\n4. gamma"),
+          "ordered start-enter should renumber the following items");
+  require(selection.cursorPosition().blockId == listItemAt(session, 0, 2)->id(),
+          "cursor should follow the content into the next item (the renumbered original), not the empty item above");
+  require(selection.cursorPosition().text.textOffset == 0, "cursor should sit at the next item's content start");
+
+  session.setMarkdownText(QStringLiteral("- alpha\n- beta"), false);
+  setCursor(selection, listItemAt(session, 0, 1), 0);
+  require(input.insertParagraphBreak(), "enter at unordered item content start should insert an item above");
+  require(session.markdownText().toString() == QStringLiteral("- alpha\n- \n- beta"),
+          "unordered start-enter should keep the content in the following item");
+  require(selection.cursorPosition().blockId == listItemAt(session, 0, 2)->id(),
+          "cursor should follow the content into the next unordered item");
+}
+
+// Enter on an empty nested ordered item outdents one level, realigning to the outer marker column
+// (not the old fixed-indentUnit removal that mis-nested ordered children) and renumbering the outer
+// run after it (the same operation as Shift+Tab, shared via buildExitListItem -> buildOutdentListItem).
+void testEnterOnEmptyNestedOrderedItemOutdentsAligned() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("1. a\n   1. b\n   2. \n2. c"), false);
+  MarkdownNode* nested = maybeFirstChildOfType(listItemAt(session, 0, 0), BlockType::List);
+  require(nested != nullptr, "setup should have a nested ordered list under item 1");
+  require(nested->children().size() >= 2, "nested list should have a content item and an empty item");
+  setCursor(selection, childAt(nested, 1), 0);  // empty nested item (the 2nd)
+  require(input.insertParagraphBreak(), "enter on empty nested ordered item should outdent one level");
+  require(session.markdownText().toString() == QStringLiteral("1. a\n   1. b\n2. \n3. c"),
+          "empty nested ordered item Enter should rejoin the outer list aligned, renumbering the following '2. c' to '3. c'");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -632,6 +754,11 @@ int main(int argc, char** argv) {
   RUN_TEST(testListTabFromRenderedClick);
   RUN_TEST(testIndentEmptyListItemDoesNotPromotePreviousToHeading);
   RUN_TEST(testIndentTrailingEmptyListItem);
+  RUN_TEST(testOrderedListTabNestsAndRestartsNumbering);
+  RUN_TEST(testOrderedListShiftTabOutdentsAndRenumbers);
+  RUN_TEST(testUnorderedListIndentOutdentRoundTrip);
+  RUN_TEST(testEnterAtListItemContentStartFollowsContent);
+  RUN_TEST(testEnterOnEmptyNestedOrderedItemOutdentsAligned);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;
