@@ -1,6 +1,7 @@
 #include "projection/MarkdownHtmlSerializer.h"
 
 #include "document/MarkdownNode.h"
+#include "editor/EmojiDictionary.h"
 #include "parser/CmarkGfmParser.h"
 #include "parser/MarkdownParser.h"
 
@@ -268,8 +269,14 @@ void testDataImage() {
 
 // --- emoji parity (bonus) ---
 void testEmoji() {
-  require(serialize(QStringLiteral(":smile:")).contains(QStringLiteral("\xf0\x9f\x98\x84")),  // 😄 UTF-8
-          QStringLiteral("emoji shortcode decodes when renderEmoji on"));
+  // Compare against the map's glyph (a proper QString) rather than hardcoded UTF-8 bytes: QStringLiteral
+  // interprets `\xNN` byte escapes per-platform (UTF-8 on MSVC, individual chars on GCC), which made a
+  // byte-literal expectation fail under Linux ASan. Both the serializer and this lookup use the same map.
+  const QString smile = muffin::emojiShortcodeMap().value(QStringLiteral("smile"));
+  require(!smile.isEmpty(), QStringLiteral(":smile: must be in the emoji map"));
+  const QString on = serialize(QStringLiteral(":smile:"));
+  require(on.contains(smile), QStringLiteral("emoji shortcode decodes when renderEmoji on"));
+  require(!on.contains(QStringLiteral(":smile:")), QStringLiteral("shortcode fully decoded when renderEmoji on"));
   muffin::MarkdownHtmlOptions hopts;
   hopts.renderEmoji = false;
   require(serialize(QStringLiteral(":smile:"), {}, hopts).contains(QStringLiteral(":smile:")),
