@@ -1,7 +1,8 @@
 <RCC>
   <qresource prefix="/icons/statusbar">
-    <file alias="sidebar-toggle.svg">icons/statusbar/sidebar-toggle.svg</file>
-    <file alias="code-brackets.svg">icons/statusbar/code-brackets.svg</file>
+    <file alias="sidebar-collapse.svg">icons/statusbar/sidebar-collapse.svg</file>
+    <file alias="sidebar-expand.svg">icons/statusbar/sidebar-expand.svg</file>
+    <file alias="source-code.svg">icons/statusbar/source-code.svg</file>
   </qresource>
   <qresource prefix="/icons/table-toolbar">
     <file alias="resize.svg">icons/table-toolbar/resize.svg</file>

@@ -23,15 +23,16 @@
 
 namespace {
 
-enum class IconKind { Sidebar, SourceMode };
+enum class IconKind { SidebarExpand, SidebarCollapse, SourceMode };
 
 // Load a status-bar SVG, recolor it to `ink`, and rasterize it as a multi-size
 // QIcon. Mirrors the free function that used to live in MainWindow.cpp.
 QIcon makeStatusIcon(IconKind kind, const QColor& ink) {
   const char* path = nullptr;
   switch (kind) {
-    case IconKind::Sidebar: path = ":/icons/statusbar/sidebar-toggle.svg"; break;
-    case IconKind::SourceMode: path = ":/icons/statusbar/code-brackets.svg"; break;
+    case IconKind::SidebarExpand: path = ":/icons/statusbar/sidebar-expand.svg"; break;
+    case IconKind::SidebarCollapse: path = ":/icons/statusbar/sidebar-collapse.svg"; break;
+    case IconKind::SourceMode: path = ":/icons/statusbar/source-code.svg"; break;
   }
   QFile svgFile(QString::fromLatin1(path));
   if (!svgFile.open(QIODevice::ReadOnly)) {
@@ -156,6 +157,10 @@ muffin::StatusBarWidget::StatusBarWidget(QWidget* parent) : QWidget(parent) {
   sourceModeButton_->setAutoRaise(true);
   sourceModeButton_->setFocusPolicy(Qt::NoFocus);
 
+  // The sidebar icon flips between collapse « (sidebar visible) and expand » (hidden) on every
+  // toggle, so the button always shows the action the next click will perform.
+  connect(sidebarButton_, &QToolButton::toggled, this, [this] { updateSidebarIcon(); });
+
   // Defaults until applyThemeColors() is called.
   bg_ = QColor(0xff, 0xff, 0xff);
   text_ = QColor(0x11, 0x11, 0x11);
@@ -213,11 +218,23 @@ void muffin::StatusBarWidget::setSpellLanguage(const QString& localeCode, bool e
 }
 
 void muffin::StatusBarWidget::setSidebarChecked(bool checked) {
-  if (sidebarButton_) sidebarButton_->setChecked(checked);
+  if (sidebarButton_) {
+    sidebarButton_->setChecked(checked);
+    updateSidebarIcon();
+  }
 }
 
 void muffin::StatusBarWidget::setSourceModeChecked(bool checked) {
   if (sourceModeButton_) sourceModeButton_->setChecked(checked);
+}
+
+void muffin::StatusBarWidget::updateSidebarIcon() {
+  if (!sidebarButton_) {
+    return;
+  }
+  // Sidebar visible (checked) → collapse « (the next click hides it); hidden → expand ».
+  const IconKind kind = sidebarButton_->isChecked() ? IconKind::SidebarCollapse : IconKind::SidebarExpand;
+  sidebarButton_->setIcon(makeStatusIcon(kind, muted_));
 }
 
 void muffin::StatusBarWidget::applyThemeColors(const QColor& bg, const QColor& text, const QColor& muted,
@@ -238,8 +255,8 @@ void muffin::StatusBarWidget::applyThemeColors(const QColor& bg, const QColor& t
       "QToolButton:checked { background: %2; }").arg(hover.name(QColor::HexRgb), checked.name(QColor::HexRgb)));
 
   const QColor ink = muted;
-  sidebarButton_->setIcon(makeStatusIcon(IconKind::Sidebar, ink));
   sourceModeButton_->setIcon(makeStatusIcon(IconKind::SourceMode, ink));
+  updateSidebarIcon();
   update();
 }
 
