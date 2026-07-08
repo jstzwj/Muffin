@@ -1401,6 +1401,9 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
   for (const ImageAtom& atom : previewAtoms_) {
     previewHeight_ += atom.displaySize.height() + kPreviewSpacing;
   }
+  if (!previewAtoms_.isEmpty()) {
+    previewHeight_ += kPreviewSpacing;  // leading gap: paintImagePreview starts one spacing below the text
+  }
   size_ = QSizeF(qMin(lineWidth, qMax<qreal>(maxWidth, 1.0)), height + previewHeight_);
 }
 

@@ -170,6 +170,9 @@ private:
   // children (unlike the resolver's lastEditableDescendant, which short-circuits on a ListItem).
   MarkdownNode* deepestLastEditableInSubtree(MarkdownNode& node) const;
   qsizetype selectableTextLength(const MarkdownNode& node) const;
+  // The selectable text itself (mirrors selectableTextLength's per-type source), used for
+  // grapheme-aware caret stepping.
+  QString selectableTextOf(const MarkdownNode& node) const;
   bool moveCursorHorizontal(int direction, bool extendSelection);
   bool moveCursorVertical(int direction, bool extendSelection);
   bool moveTableCellHorizontal(int direction, bool extendSelection);

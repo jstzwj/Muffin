@@ -496,11 +496,12 @@ bool TableController::setCurrentColumnAlignment(TableAlignment alignment) {
     afterLocation.tableIndex = tableIndexFor(*reparsedTable);
   }
   const CursorPosition nextCursor = cursorForLocation(afterLocation);
-  if (!nextCursor.isValid()) {
-    return false;
-  }
-  if (ctx_.selection) {
-    ctx_.selection->setCursorPosition(nextCursor);
+  // applyNodeSnapshot already mutated the document above, so we must NOT bail out here on an invalid
+  // cursor — that would leave the change on disk with no undo record. Fall back to beforeCursor so
+  // the edit is still reversible (and the caret lands somewhere sane on redo).
+  const CursorPosition effectiveCursor = nextCursor.isValid() ? nextCursor : beforeCursor;
+  if (ctx_.selection && effectiveCursor.isValid()) {
+    ctx_.selection->setCursorPosition(effectiveCursor);
   }
   if (ctx_.undoStack) {
     ctx_.undoStack->push(EditTransaction(
@@ -514,7 +515,7 @@ bool TableController::setCurrentColumnAlignment(TableAlignment alignment) {
             beforeAlignments,
             afterAlignments,
             beforeCursor,
-            nextCursor,
+            effectiveCursor,
             QVector<NodeId>{beforeLocation.tableId}}));
   }
   if (ctx_.brushQueue) {

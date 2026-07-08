@@ -1596,9 +1596,10 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeLeftRight(const MathParseNode& 
           sized->atomClass = QStringLiteral("middle");
           child = std::move(sized);
         }
-        if (child->kind == MathRenderKind::Span) {
-          resize(*child);
-        }
+        // Recurse into every composite kind (not just Span) so a \middle inside a Fraction/Accent/
+        // VList/Array/LeftRight/SupSub/Phantom child of the \left..\right body is resized too. Leaf
+        // kinds (Symbol/Rule/Rect/Error) have no children, so this is a harmless no-op there.
+        resize(*child);
       }
     }
   };

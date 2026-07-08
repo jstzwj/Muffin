@@ -61,6 +61,10 @@ public:
   bool moveBlockStart();   // start of the current block's text (≈ line start)
   bool moveBlockEnd();     // end of the current block's text (≈ line end)
   bool selectNextOccurrence();  // select the next occurrence of the current selection/word
+  // Apply a full-document text replacement (re-parse) as ONE undoable step. Use this instead of
+  // session->applyMarkdownText for batch operations (Find/Replace, image transforms, Upload/Move
+  // All Images) so they land on the undo stack — otherwise Ctrl+Z skips them entirely.
+  void applyMarkdownTextWithUndo(QString text, const QString& label);
   // Select the whole current top-level block's source range (markers included)
   // so a subsequent delete removes the entire block via the exact-whole-block
   // path. Returns false on the trailing caret to avoid deleting the last block.

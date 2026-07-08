@@ -147,7 +147,7 @@ void MainWindow::performReplace(const QString& findText, const QString& replaceT
     if (idx >= 0) {
       QString newText = markdown;
       newText.replace(idx, findText.size(), replaceText);
-      session_.applyMarkdownText(newText, true);
+      editorController_.applyMarkdownTextWithUndo(newText, tr("Replace"));
       lastFindOffset_ = idx + replaceText.size();
     }
   }

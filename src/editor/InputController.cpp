@@ -30,6 +30,7 @@
 #include <QInputMethodEvent>
 #include <QPoint>
 #include <QSettings>
+#include <QTextBoundaryFinder>
 
 #include <cmath>
 #include <limits>
@@ -66,6 +67,23 @@ QString plainTextForNode(const MarkdownNode& node) {
     default:
       return node.literal();
   }
+}
+
+// Snap a UTF-16 offset to the nearest grapheme-cluster boundary in the step direction, so the caret
+// never lands between a surrogate pair or inside a base+combining-mark cluster (emoji, CJK ext B,
+// accented input). Qt's Grapheme finder handles those common cases; for pure-ASCII text every offset
+// is already a boundary, so this is a no-op there (existing caret tests are unaffected).
+qsizetype snapOffsetToGrapheme(const QString& text, qsizetype offset, int direction) {
+  if (offset <= 0 || offset >= text.size()) {
+    return offset;
+  }
+  QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, text);
+  finder.setPosition(static_cast<int>(offset));
+  if (finder.isAtBoundary()) {
+    return offset;
+  }
+  const int snapped = direction > 0 ? finder.toNextBoundary() : finder.toPreviousBoundary();
+  return snapped >= 0 ? static_cast<qsizetype>(snapped) : offset;
 }
 
 bool isDeadKey(int key) {
@@ -144,6 +162,9 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
 
 bool InputController::insertText(QString text) {
   clearVerticalNavigationX();
+  if (ctx_.session && ctx_.session->isAsyncParseInProgress()) {
+    return false;  // document_ holds stale pre-open text during async parse — drop input (same gate as KeyPress)
+  }
   if (ctx_.hasSession() && ctx_.session->markdownText().isEmpty()) {
     return insertIntoEmptyDocument(std::move(text));
   }
@@ -270,13 +291,23 @@ bool InputController::insertBlockAfterCurrentBlock(QString text) {
   // the trailing case (no following block) keep the original insert-at-byteEnd behaviour below.
   MarkdownNode* following = nullptr;
   if (!text.isEmpty() && node->parent()) {
-    const auto& siblings = node->parent()->children();
-    for (size_t i = 0; i < siblings.size(); ++i) {
-      if (siblings.at(i).get() == node) {
-        if (i + 1 < siblings.size()) {
-          following = siblings.at(i + 1).get();
+    // "the block after this one" is a TOP-LEVEL sibling. A nested caret (list item / quote
+    // paragraph) would otherwise find its sibling INSIDE the same container and insert there,
+    // merging into the wrong block. Climb to the Document child, then look for its following
+    // top-level sibling.
+    MarkdownNode* scope = node;
+    while (scope->parent() != nullptr && scope->parent()->type() != BlockType::Document) {
+      scope = scope->parent();
+    }
+    if (scope->parent() != nullptr) {
+      const auto& siblings = scope->parent()->children();
+      for (size_t i = 0; i < siblings.size(); ++i) {
+        if (siblings.at(i).get() == scope) {
+          if (i + 1 < siblings.size()) {
+            following = siblings.at(i + 1).get();
+          }
+          break;
         }
-        break;
       }
     }
   }
@@ -1124,6 +1155,23 @@ qsizetype InputController::selectableTextLength(const MarkdownNode& node) const 
   }
 }
 
+QString InputController::selectableTextOf(const MarkdownNode& node) const {
+  switch (node.type()) {
+    case BlockType::Paragraph:
+    case BlockType::Heading:
+      return InlineProjection::plainTextForInlines(node.inlines());
+    case BlockType::ListItem:
+      return plainTextForNode(node);
+    case BlockType::FrontMatter:
+    case BlockType::CodeFence:
+    case BlockType::MathBlock:
+    case BlockType::HtmlBlock:
+      return node.literal();
+    default:
+      return {};  // Table / link / footnote defs: caret stepping is rare here — skip grapheme snap
+  }
+}
+
 HitTestResult InputController::richHitForCursor(CursorPosition cursor) const {
   if (ctx_.view && cursor.isValid()) {
     HitTestResult hit = ctx_.view->hitForCursorPosition(cursor);
@@ -1437,6 +1485,12 @@ bool InputController::moveCursorHorizontal(int direction, bool extendSelection) 
         nextSourceOffset = context.contentRange.byteStart + (direction > 0 ? tokenEnd : tokenStart);
       }
     }
+    {
+      // Grapheme step: never land the caret between a surrogate pair or inside a base+combining cluster.
+      const qsizetype localNext = nextSourceOffset - context.contentRange.byteStart;
+      nextSourceOffset = context.contentRange.byteStart +
+          snapOffsetToGrapheme(context.contentText, localNext, direction);
+    }
     setCursorOrExtend(cursorForSourceOffset(nextSourceOffset), extendSelection);
     return true;
   }
@@ -1456,6 +1510,7 @@ bool InputController::moveCursorHorizontal(int direction, bool extendSelection) 
     }
     nextOffset = length;
   }
+  nextOffset = snapOffsetToGrapheme(selectableTextOf(*node), nextOffset, direction);
 
   setCursorOrExtend(cursorForNode(*node, nextOffset), extendSelection);
   return true;

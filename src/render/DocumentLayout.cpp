@@ -124,15 +124,30 @@ void logRebuildPerf(const RebuildPerfStats& stats, qreal viewportWidth, qreal pa
   logTypeTiming("other", stats.otherCount, stats.otherNs);
 }
 
+// Prototype-only spacing-after (no per-node structural cascade). Single source of truth shared by
+// spacingAfterBlock(fast) AND recomputeTotalHeight (which has no live node, only the slot's
+// type/level), so the lazy estimate, the promote-slot recompute, and the structural rebuild all
+// agree on the trailing gap — no scrollbar jump when the last block promotes into view.
+qreal spacingAfterBlockPrototype(BlockType type, int headingLevel, const RenderTheme& theme) {
+  // Paragraphs honour CSS margin-collapsing: the top margin is dropped in spacingBeforeBlock, so
+  // the single bottom gap IS the whole inter-paragraph separation. When a theme declares no
+  // paragraph margin, keep the legacy tight floor (slightly more than a soft break).
+  if (type == BlockType::Paragraph) {
+    const QMarginsF pm = theme.blockMargin(BlockType::Paragraph, 0, nullptr);
+    if (pm.bottom() > 0.0) { return pm.bottom(); }
+    return theme.blockSpacing() * 0.4;
+  }
+  const QMarginsF css = theme.blockMargin(type, headingLevel, nullptr);
+  if (!css.isNull()) { return css.bottom(); }
+  if (type == BlockType::Heading) { return theme.blockSpacing() * 0.65; }
+  return theme.blockSpacing();
+}
+
 qreal spacingAfterBlock(const MarkdownNode& node, const RenderTheme& theme, bool fast = false) {
-  // Paragraphs honour CSS margin-collapsing: the top margin is dropped in
-  // spacingBeforeBlock, so the single bottom gap IS the whole inter-paragraph
-  // separation (max(prev.bottom, next.top) collapses to bottom when top=0).
-  // When a theme declares no paragraph margin, keep the legacy tight floor
-  // (slightly more than a soft break) so such themes are unchanged.
   // `fast` (Lazy estimate path) resolves the prototype style only — skips the per-node structural
   // cascade, which is the difference between an O(n) and O(n²) rebuild on a flat block list.
-  const MarkdownNode* styleNode = fast ? nullptr : &node;
+  if (fast) { return spacingAfterBlockPrototype(node.type(), node.headingLevel(), theme); }
+  const MarkdownNode* styleNode = &node;  // structural cascade
   if (node.type() == BlockType::Paragraph) {
     const QMarginsF pm = theme.blockMargin(BlockType::Paragraph, 0, styleNode);
     if (pm.bottom() > 0.0) { return pm.bottom(); }
@@ -1175,9 +1190,7 @@ void DocumentLayout::recomputeTotalHeight(const RenderTheme& theme) {
   if (!slots_.empty()) {
     const BlockSlot& last = slots_.back();
     const int level = last.detail ? last.detail->headingLevel() : 0;
-    const QMarginsF css = theme.blockMargin(last.type, level);
-    const qreal spacingAfter = !css.isNull() ? css.bottom()
-                                             : (last.type == BlockType::Heading ? theme.blockSpacing() * 0.65 : theme.blockSpacing());
+    const qreal spacingAfter = spacingAfterBlockPrototype(last.type, level, theme);
     cursorY = last.top + last.height + spacingAfter;
     trailingHeight = trailingHeightForLastBlock(last.detail ? last.detail.get() : nullptr, theme);
   }

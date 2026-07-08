@@ -385,6 +385,19 @@ const UndoStack& EditorController::undoStack() const {
   return undoStack_;
 }
 
+void EditorController::applyMarkdownTextWithUndo(QString text, const QString& label) {
+  if (!session_) { return; }
+  const QString beforeText = session_->markdownText().toString();
+  const CursorPosition beforeCursor = selection_.hasCursor() ? selection_.cursorPosition() : CursorPosition();
+  session_->applyMarkdownText(std::move(text), true);
+  const QString afterText = session_->markdownText().toString();
+  // applyMarkdownText re-parses but doesn't resolve a caret; reuse the pre-edit caret so undo/redo
+  // restores it to a known spot. The batch op's own caret move (e.g. Find jumping to the match) is
+  // driven by the caller/view after this returns.
+  undoStack_.push(EditTransaction(EditTransaction::Kind::ReplaceDocumentText, label,
+      DocumentSnapshot{beforeText, beforeCursor, {}}, DocumentSnapshot{afterText, beforeCursor, {}}));
+}
+
 InputController& EditorController::inputController() {
   return inputController_;
 }
@@ -982,7 +995,18 @@ bool EditorController::swapTopLevelBlocks(MarkdownNode& upper, MarkdownNode& low
   const QString lowerText = markdown.mid(lowerRange.byteStart, lowerEnd - lowerRange.byteStart);
 
   // Compute new cursor source offset: same relative position within the moved block
-  const qsizetype cursorSrcOff = selection_.cursorPosition().text.sourceOffset;
+  const CursorPosition caret = selection_.cursorPosition();
+  qsizetype cursorSrcOff = caret.text.sourceOffset;
+  if (cursorSrcOff < 0) {
+    // A caret placed by hit-test or programmatic navigation may carry no source offset (-1). Resolve
+    // it from the caret's block so the post-swap caret stays on the moved block instead of falling
+    // through to the document-start fallback.
+    if (caret.blockId == upper.id()) {
+      cursorSrcOff = upperStart;
+    } else if (caret.blockId == lower.id()) {
+      cursorSrcOff = lowerRange.byteStart;
+    }
+  }
   qsizetype newCursorOffset = cursorSrcOff;
 
   // The block moves by the difference in text lengths

@@ -187,8 +187,13 @@ void InputController::applyLocalEdit(
   QVector<qsizetype> beforeOffsets = needsPreEditMarkerOffsets
       ? collectPendingMarkerOffsetsForSession(ctx_.session)
       : QVector<qsizetype>{};
-  QString beforeText = snapshotUndoLikely ? currentText.toString() : QString();
-  bool beforeTextCaptured = snapshotUndoLikely;
+  // Capture beforeText up front whenever the snapshot undo path is reachable (structural edit, or
+  // no valid pre-edit cursor). Reconstructing it AFTER applyTextDelta from the post-edit document
+  // (the !beforeTextCaptured fallback below) is only correct for a pure text delta: a structural
+  // edit's slice re-parse reflows separators, so the post-edit doc is NOT `before + simple replace`
+  // and the reverse-substitution lands at the wrong offset — corrupting the undo snapshot.
+  QString beforeText = needsPreEditMarkerOffsets ? currentText.toString() : QString();
+  bool beforeTextCaptured = needsPreEditMarkerOffsets;
   const bool appliedLocally =
       ctx_.session->applyTextDelta(sourceStart, removedLength, insertedText, true, std::move(nodeHints));
   QString nextText;

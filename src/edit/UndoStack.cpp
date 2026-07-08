@@ -98,8 +98,17 @@ bool UndoStack::tryMergeWithLast(EditTransaction& next) {
   } else if (prev.kind() == EditTransaction::Kind::DeleteText) {
     mergeable = nextDelta.start + nextDelta.removedText.size() == prevDelta.start;
   }
-
   if (!mergeable) {
+    return false;
+  }
+
+  // Don't coalesce across a caret relocation: type, click elsewhere, then type again within the
+  // merge window would otherwise fuse into one undo step. Require the next edit to begin exactly
+  // where the previous one left the caret (same block + offset + source offset + after-block flag).
+  const CursorPosition& prevEnd = prev.textDeltaCommand().afterCursor;
+  const CursorPosition& nextStart = next.textDeltaCommand().beforeCursor;
+  if (prevEnd.blockId != nextStart.blockId || prevEnd.text.textOffset != nextStart.text.textOffset ||
+      prevEnd.text.sourceOffset != nextStart.text.sourceOffset || prevEnd.afterBlock != nextStart.afterBlock) {
     return false;
   }
 

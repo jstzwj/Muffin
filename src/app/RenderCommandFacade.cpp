@@ -369,7 +369,7 @@ bool RenderCommandFacade::replaceImageUnderCursor(const std::function<QString(co
     if (replacement == source) {
       return true;  // no change (e.g. markdown at 100%, or already in the target syntax)
     }
-    session->applyMarkdownText(md.left(start) + replacement + md.mid(end), true);
+    editorController_.applyMarkdownTextWithUndo(md.left(start) + replacement + md.mid(end), QString::fromLatin1(name));
     return true;
   });
 }

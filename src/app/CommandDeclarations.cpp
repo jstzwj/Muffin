@@ -1026,7 +1026,12 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .text = muffin::MainWindow::tr("Clear Style"),
        .shortcut = QKeySequence(QStringLiteral("Ctrl+\\")),
        .handler = [](MainWindow& window) { window.backend_->clearFormatting(); },
-       .enabled = [](const MainWindow& w) { return inlineFormat(w); }},
+       .enabled = [](const MainWindow& w) {
+         // clearFormatting is paragraph-scoped (it strips ALL formatting in the caret's block), so
+         // require a collapsed caret — with an active selection it would wipe formatting outside the
+         // selection too, which is surprising. Selection-scoped clearing is a separate feature.
+         return inlineFormat(w) && w.editorController_.selection().selection().isCollapsed();
+       }},
 
       // ---------------- Math ----------------
       {.id = QStringLiteral("math.refresh_all"),
@@ -1368,7 +1373,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
            md.replace(urlStart, urlEnd - urlStart, it.value());
            ++uploaded;
          }
-         window.session_.applyMarkdownText(md, true);
+         window.editorController_.applyMarkdownTextWithUndo(md, muffin::MainWindow::tr("Upload All Images"));
          QMessageBox::information(&window, muffin::MainWindow::tr("Upload All Images"),
              muffin::MainWindow::tr("Uploaded %1 image(s).").arg(uploaded));
        },
@@ -1533,7 +1538,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
            }
            md.replace(urlStart, urlEnd - urlStart, newRelPath);
          }
-         window.session_.applyMarkdownText(md, true);
+         window.editorController_.applyMarkdownTextWithUndo(md, muffin::MainWindow::tr("Move All Images"));
          QMessageBox::information(&window, muffin::MainWindow::tr("Move All Images"), muffin::MainWindow::tr("Moved %1 image(s).").arg(moved));
        },
        .enabled = [](const MainWindow& w) { return !w.backend_->isSourceMode(); }},

@@ -1130,8 +1130,11 @@ EscapeAwareMatch escapeAwareFind(QStringView content, QStringView needle, qsizet
     qsizetype ni = 0;
     while (ni < needle.size() && ci < content.size()) {
       const QChar c = content.at(ci);
-      if (c == QLatin1Char('\\') && ci + 1 < content.size() && content.at(ci + 1) == QLatin1Char('|')) {
-        if (needle.at(ni) != QLatin1Char('|')) {
+      if (c == QLatin1Char('\\') && ci + 1 < content.size()) {
+        // CommonMark backslash escape: `\` + any ASCII punctuation decodes to that punctuation char.
+        // The serialized needle carries the DECODED text, so match the escaped char against needle —
+        // covers `\|` table-cell escapes plus `\.` `\\` `\*` etc. (the old code only handled `\|`).
+        if (needle.at(ni) != content.at(ci + 1)) {
           break;
         }
         ci += 2;
