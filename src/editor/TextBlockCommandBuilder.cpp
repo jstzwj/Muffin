@@ -654,22 +654,33 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildRemoveEmptyParagr
     return command;
   }
   // The empty paragraph is zero-width in the source, so its own range under-states the bytes
-  // that must go. Removing the whole trailing run (previous block end through document end)
-  // is correct when it is the last top-level block — the common "trailing empty paragraph"
-  // case. Mid-document empty paragraphs are left to the generic merge path.
-  if (context.node->nextSibling() != nullptr) {
-    return command;
-  }
-
+  // that must go — the deletion spans the separator run around it.
+  //  - Trailing empty paragraph (last top-level block): remove [prevEnd, docEnd).
+  //  - Mid-document empty paragraph: remove [prevEnd, nextStart) and re-insert "\n\n" so the
+  //    preceding leaf block (table / HTML) and the following block stay distinct. A bare
+  //    concatenation would let the table's last row run into the next block's first line,
+  //    which cmark's table-termination may mis-parse; the re-inserted blank line guarantees a
+  //    clean block boundary (worst case it leaves one extra blank line — cosmetic, not corrupt).
+  //    The closing pipes sit before prevEnd, so they are never touched.
   const qsizetype prevEnd = prev->sourceRange().byteEnd;
-  const qsizetype docEnd = session_->markdownText().size();
-  if (prevEnd < 0 || docEnd < prevEnd) {
-    return command;
+  MarkdownNode* const next = context.node->nextSibling();
+  if (next == nullptr) {
+    const qsizetype docEnd = session_->markdownText().size();
+    if (prevEnd < 0 || docEnd < prevEnd) {
+      return command;
+    }
+    command.sourceStart = prevEnd;
+    command.removedLength = docEnd - prevEnd;
+    command.insertedText.clear();
+  } else {
+    const qsizetype nextStart = next->sourceRange().byteStart;
+    if (prevEnd < 0 || nextStart < prevEnd) {
+      return command;
+    }
+    command.sourceStart = prevEnd;
+    command.removedLength = nextStart - prevEnd;
+    command.insertedText = QStringLiteral("\n\n");
   }
-
-  command.sourceStart = prevEnd;
-  command.removedLength = docEnd - prevEnd;
-  command.insertedText.clear();
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Delete Empty Paragraph");
   command.structureEdit = true;

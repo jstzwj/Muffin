@@ -779,23 +779,28 @@ bool EditorView::selectionContainsViewportPoint(const HitTestResult& hit, QPoint
       return false;
     }
     const bool anchorFirst = blockComesBefore(*layout_, anchorBlock, focusBlock);
+    // The click is inside one of the selection's covered blocks. Compute its per-block selected
+    // [start, end] range exactly as paintSelection does. The default [0, selectableLength] covers a
+    // fully-selected middle block; the anchor/focus endpoints narrow it to their text offsets.
+    // (A table reached here would use selectableLength()==1 and select its whole rect via
+    // selectionRectsSelfForOffsets, but a table-cell right-click is classified as onObject in
+    // contextMenuEvent and never reaches this point.)
     qsizetype start = 0;
     qsizetype end = selectableLength(block);
     const bool isAnchor = clickTop == anchorBlock;
     const bool isFocus = clickTop == focusBlock;
-    const bool isTable = block->type() == BlockType::Table;
     if (isAnchor) {
       if (anchorFirst) {
-        start = isTable ? 0 : selection_.anchor.text.textOffset;
+        start = selection_.anchor.text.textOffset;
       } else {
-        end = isTable ? selectableLength(block) : selection_.anchor.text.textOffset;
+        end = selection_.anchor.text.textOffset;
       }
     }
     if (isFocus) {
       if (anchorFirst) {
-        end = isTable ? selectableLength(block) : selection_.focus.text.textOffset;
+        end = selection_.focus.text.textOffset;
       } else {
-        start = isTable ? 0 : selection_.focus.text.textOffset;
+        start = selection_.focus.text.textOffset;
       }
     }
     rects = block->selectionRectsForOffsets(start, end, theme_);

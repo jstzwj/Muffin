@@ -66,6 +66,27 @@ void testMarkdownAutoPairAndWrap() {
   require(session.markdownText().toString() == QStringLiteral("a*lp*ha"), "wrap should surround the selection with the pair");
 }
 
+// #21 pinning guard: wrapping an INTERIOR selection inside inline markers must preserve the
+// surrounding markers. The projection maps the visible selection to a source range that excludes
+// the hidden markers, so wrapping visible "ol" in "**bold**" with '(' yields "**b(ol)d**" — the
+// outer bold markers survive. Locks the correct behaviour so it cannot silently regress.
+void testWrapInsideInlineMarkersPreservesThem() {
+  SettingsOverride brackets("editor/matchBrackets", true);
+  SettingsOverride markdown("editor/matchMarkdown", true);
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("**bold**"), false);
+  setSelection(selection, blockAt(session, 0), 1, 3);  // visible "ol", interior to the bold span
+  require(input.insertText(QStringLiteral("(")), "wrap should consume the interior selection");
+  require(session.markdownText().toString() == QStringLiteral("**b(ol)d**"),
+          "wrapping an interior selection must preserve the surrounding ** markers");
+}
+
 void testMarkdownPairingOffInsertsLone() {
   SettingsOverride brackets("editor/matchBrackets", true);
   SettingsOverride markdown("editor/matchMarkdown", false);
@@ -132,6 +153,7 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testBracketAutoPair);
   RUN_TEST(testMarkdownAutoPairAndWrap);
+  RUN_TEST(testWrapInsideInlineMarkersPreservesThem);
   RUN_TEST(testMarkdownPairingOffInsertsLone);
   RUN_TEST(testApostropheContractionGuard);
   RUN_TEST(testBracketPairingDisabled);

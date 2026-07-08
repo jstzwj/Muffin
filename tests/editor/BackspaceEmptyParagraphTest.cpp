@@ -97,6 +97,50 @@ void testTrailingCaretAfterTable() {
   require(block != nullptr && block->type() == BlockType::TableCell, "caret should retreat into the last table cell");
 }
 
+// Mid-document regression: an empty paragraph sitting BETWEEN a table and a following block.
+// Previously the mid-document case fell through to the generic paragraph-merge, which treated the
+// table's last cell as the "previous editable text block" and deleted up to the empty paragraph —
+// eating the table's closing pipes. Now the empty paragraph is removed and a clean "\n\n" separator
+// is kept, so the table and the following block stay distinct; the caret lands in the last cell.
+void testEmptyParagraphBetweenTableAndNextBlock() {
+  Harness h;
+  const QString table = QStringLiteral("| a | b |\n|---|---|\n| 1 | 2 |");
+  const QString following = QStringLiteral("after");
+  h.load(table + QStringLiteral("\n\n") + following);  // [Table, Paragraph("after")]
+
+  const auto& kids0 = h.session.document().root().children();
+  require(kids0.size() == 2 && kids0.at(0)->type() == BlockType::Table &&
+              kids0.at(1)->type() == BlockType::Paragraph,
+          "setup should be [Table, Paragraph]");
+
+  // Create the mid-document empty paragraph by splitting the following paragraph at its start
+  // (Enter there inserts a fresh empty paragraph before it).
+  setCursor(h.controller.selection(), kids0.at(1).get(), 0);
+  require(h.controller.inputController().insertParagraphBreak(), "Enter should split the paragraph");
+  MarkdownNode* empty = findEmptyParagraph(&h.session.document().root());
+  require(empty != nullptr && empty->previousSibling() != nullptr &&
+              empty->previousSibling()->type() == BlockType::Table && empty->nextSibling() != nullptr,
+          "Enter should create a mid-document empty paragraph after the table");
+  setCursor(h.controller.selection(), empty, 0);
+
+  require(h.controller.inputController().deleteBackward(), "backspace should be handled");
+
+  // The table's closing pipes must survive, the following block must survive, and the empty
+  // paragraph must be gone — leaving exactly [Table, Paragraph].
+  const QString result = h.session.markdownText().toString();
+  require(result.contains(QStringLiteral("| 1 | 2 |")), "table closing pipes must be intact (no corruption)");
+  require(result.contains(following), "following block must survive");
+  const auto& kids = h.session.document().root().children();
+  require(kids.size() == 2 && kids.at(0)->type() == BlockType::Table &&
+              kids.at(1)->type() == BlockType::Paragraph,
+          "empty paragraph should be removed, leaving [Table, Paragraph]");
+
+  const CursorPosition c = h.controller.selection().cursorPosition();
+  require(!c.afterBlock, "caret should leave the empty paragraph");
+  MarkdownNode* block = h.session.document().node(c.blockId);
+  require(block != nullptr && block->type() == BlockType::TableCell, "caret should land in the last table cell");
+}
+
 // Empty paragraph after an HTML block: deleted, caret at the block's content end (was a no-op).
 void testEmptyParagraphAfterHtmlBlock() {
   Harness h;
@@ -235,6 +279,7 @@ int main(int argc, char** argv) {
   }
   QApplication app(argc, argv);
   testEmptyParagraphAfterTable();
+  testEmptyParagraphBetweenTableAndNextBlock();
   testTrailingCaretAfterTable();
   testEmptyParagraphAfterHtmlBlock();
   testEmptyParagraphAfterFrontMatterIsSafe();
