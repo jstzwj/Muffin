@@ -18,6 +18,7 @@
 // table can be built as a free function (no instance capture) and reused across
 // windows.
 
+#include <QAction>
 #include <QKeySequence>
 #include <QString>
 
@@ -55,6 +56,10 @@ struct CommandDeclaration {
   // Some navigation actions must not steal keystrokes from the focused editor or
   // line edits, so they use Qt::WidgetShortcut (shown in the menu, not global).
   bool shortcutWidgetContext = false;
+  // macOS menu role. NoRole leaves it to Qt's text-based detection (which only
+  // matches English); QuitRole etc. forces the item into the application menu
+  // regardless of the active UI language.
+  QAction::MenuRole menuRole = QAction::NoRole;
   // Non-empty actions are grouped into an exclusive QActionGroup (radio items).
   QString actionGroup;
 

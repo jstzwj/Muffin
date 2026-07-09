@@ -32,6 +32,7 @@ QAction* MainWindow::registerAction(QMenu* menu, const QString& id) {
   if (decl->shortcutWidgetContext) {
     action->setShortcutContext(Qt::WidgetShortcut);
   }
+  action->setMenuRole(decl->menuRole);
   commands_.registerAction(id, action);
 
   // Exclusive radio group (e.g. image resize, image insert action). One

@@ -18,6 +18,7 @@
 #include "theme/ThemeDefinition.h"
 
 #include <QAction>
+#include <QApplication>
 #include <QCloseEvent>
 #include <QDir>
 #include <QFontDatabase>
@@ -131,6 +132,13 @@ void muffin::MainWindow::closeEvent(QCloseEvent* event) {
   } else {
     event->ignore();
   }
+}
+
+void muffin::MainWindow::quitApplication() {
+  // Single quit path behind File → Quit and macOS Cmd+Q. Closing every top-level
+  // window lets each one run its closeEvent (auto-save + unsaved-changes prompt);
+  // Qt leaves the event loop once the last window closes.
+  QApplication::closeAllWindows();
 }
 
 void muffin::MainWindow::changeEvent(QEvent* event) {

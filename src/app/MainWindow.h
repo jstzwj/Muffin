@@ -60,6 +60,10 @@ public:
   bool offerDraftRecovery();
   bool saveCurrentDocument();
   bool isDocumentModified() const;
+  // Quit the application (File → Quit / macOS Cmd+Q). Closes every top-level
+  // window so each runs its closeEvent (unsaved-changes prompt); the event loop
+  // ends when the last window closes.
+  void quitApplication();
 
   // Composite editor-state queries backing the command declaration predicates
   // (CommandDeclarations.cpp). Exposed so the predicate table — which lives

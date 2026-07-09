@@ -265,6 +265,12 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .text = muffin::MainWindow::tr("Close"),
        .shortcut = QKeySequence::Close,
        .handler = [](MainWindow& window) { window.close(); }},
+      {.id = QStringLiteral("app.quit"),
+       .category = CommandCategory::File,
+       .text = muffin::MainWindow::tr("Quit"),
+       .shortcut = QKeySequence::Quit,
+       .menuRole = QAction::QuitRole,
+       .handler = [](MainWindow& window) { window.quitApplication(); }},
 
       // ---------------- Edit ----------------
       {.id = QStringLiteral("edit.undo"),
@@ -1797,6 +1803,13 @@ const std::vector<MenuSpec>& mainMenuSpec() {
            {.kind = MenuItem::Kind::Separator},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("file.preferences")},
            {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("file.close")},
+#ifdef Q_OS_DARWIN
+           // Quit belongs in the application menu on macOS (moved there by QuitRole). On
+           // Windows/Linux the window close button, Alt+F4 and Ctrl+W already exit, and a second
+           // "Quit" next to "Close" in the same File menu reads as redundant for a single-window app.
+           {.kind = MenuItem::Kind::Separator},
+           {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("app.quit")},
+#endif
        }},
       // Edit
       {muffin::MainWindow::tr("Edit"),
