@@ -740,6 +740,57 @@ void testEnterOnEmptyNestedOrderedItemOutdentsAligned() {
           "empty nested ordered item Enter should rejoin the outer list aligned, renumbering the following '2. c' to '3. c'");
 }
 
+// Merging two adjacent list items must keep the previous item's child sublist. Regression: the
+// delete range used to span the previous item's sublist, so backspace at "3." (after "2. / sub")
+// deleted "2."'s entire sublist — the "whole child list vanishes" bug.
+void testMergeListItemPreservesPreviousSublist() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("1. 123\n2. 123\n   1. 282829\n3. 123\n   1. 123123\n   2. 123123\n   3. 123"), false);
+  setCursor(selection, listItemAt(session, 0, 2), 0);  // top item 3, content start
+  require(input.deleteBackward(), "backspace at item 3 start should merge it into item 2");
+  const QString result = session.markdownText().toString();
+  require(result.contains(QStringLiteral("282829")), "previous item's sublist (282829) must survive the merge");
+  require(result.contains(QStringLiteral("123123")), "current item's sublist must survive the merge too");
+  // The two top-level items (2. and 3.) merged into one, so the root list now has 2 items, not 3.
+  const auto& rootKids = session.document().root().children();
+  require(!rootKids.empty() && rootKids.at(0)->type() == BlockType::List, "root should hold one list");
+  require(rootKids.at(0)->children().size() == 2, "top-level list should have 2 items after the merge");
+}
+
+// Backspacing an empty list item that follows a sibling with a multi-level sublist must retreat the
+// caret to the END of that sibling's DEEPEST last line — walking down every nesting level — not stop
+// at the sibling's own marker line. This is the recursive "find the deepest last item" behaviour.
+void testBackspaceOnEmptySiblingRetreatsToDeepestSubItem() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  // Item 1 owns a two-level sublist (sub a -> deep one / deep two); item 2 is empty.
+  session.setMarkdownText(QStringLiteral("1. first\n   - sub a\n     - deep one\n     - deep two\n2. \n"), false);
+  setCursor(selection, listItemAt(session, 0, 1), 0);  // empty item 2, content start
+  require(input.deleteBackward(), "backspace at empty item 2 should delete it");
+  const QString result = session.markdownText().toString();
+  require(result.contains(QStringLiteral("deep two")), "item 1's nested sublist must survive the delete");
+  require(!result.contains(QStringLiteral("2. \n")), "the empty item 2 should be gone");
+
+  MarkdownNode* subList = firstChildOfType(listItemAt(session, 0, 0), BlockType::List);
+  require(subList != nullptr && !subList->children().empty(), "item 1 should still own its sublist");
+  MarkdownNode* subSubList = firstChildOfType(subList->children().back().get(), BlockType::List);
+  require(subSubList != nullptr && !subSubList->children().empty(), "sub-item should still own its sub-sublist");
+  MarkdownNode* deepestLast = subSubList->children().back().get();  // "deep two"
+  require(selection.cursorPosition().blockId == deepestLast->id(),
+          "caret must retreat to item 1's deepest last sub-item, not its marker line");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -759,6 +810,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testUnorderedListIndentOutdentRoundTrip);
   RUN_TEST(testEnterAtListItemContentStartFollowsContent);
   RUN_TEST(testEnterOnEmptyNestedOrderedItemOutdentsAligned);
+  RUN_TEST(testMergeListItemPreservesPreviousSublist);
+  RUN_TEST(testBackspaceOnEmptySiblingRetreatsToDeepestSubItem);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

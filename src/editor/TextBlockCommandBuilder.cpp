@@ -1025,11 +1025,38 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPrevious
       (!prevContext.contentText.trimmed().isEmpty() && !curText.trimmed().isEmpty()) ? QStringLiteral(" ") : QString();
 
   command.sourceStart = prevLineEnd;
-  command.removedLength = curContentRealStart - prevLineEnd;
-  command.insertedText = separator;
+  // When the previous item owns a child sublist, the delete range [prevLineEnd, curContentStart)
+  // spans it — so rebuild to keep the sublist: append the current content to the previous item
+  // (one merged line), then re-emit the previous sublist below it. The current item's own sublist
+  // (after curLineEnd) stays and continues the previous one. Without this, merging "2. / sub / 3."
+  // deleted the "2." sublist. When there is no sublist, the historical single-segment delete is
+  // byte-exact, so keep it.
+  bool prevHasSublist = false;
+  for (const auto& c : previous->children()) {
+    if (c->type() == BlockType::List) { prevHasSublist = true; break; }
+  }
+  if (prevHasSublist) {
+    const QString prevSublist = markdown.mid(prevLineEnd, curLineStart - prevLineEnd);
+    command.removedLength = qMin(curLineEnd + 1, markdown.size()) - prevLineEnd;
+    command.insertedText = separator + curText + prevSublist;
+    // The caret retreats to the END of the previous item's deepest last line, not its marker-line
+    // end. prevSublist is re-emitted verbatim (preserving every nesting level), so the tail of the
+    // inserted text IS the deepest last line; scanning back over trailing newlines lands the caret
+    // right after that line's last visible char — recursing one level deeper per child sublist,
+    // exactly the "find the deepest last item" behaviour users expect from backspacing an empty
+    // sibling out of a nested list.
+    qsizetype deepestTail = command.insertedText.size();
+    while (deepestTail > 0 && command.insertedText.at(deepestTail - 1) == QLatin1Char('\n')) {
+      --deepestTail;
+    }
+    command.fallbackSourceOffset = command.sourceStart + deepestTail;
+  } else {
+    command.removedLength = curContentRealStart - prevLineEnd;
+    command.insertedText = separator;
+    command.fallbackSourceOffset = prevLineEnd + separator.size();
+  }
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Merge List Items");
-  command.fallbackSourceOffset = prevLineEnd + separator.size();
   command.structureEdit = true;
   command.valid = true;
   command.handled = true;
@@ -1082,8 +1109,20 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithNextList
       (!context.contentText.trimmed().isEmpty() && !nextText.trimmed().isEmpty()) ? QStringLiteral(" ") : QString();
 
   command.sourceStart = curLineEnd;
-  command.removedLength = nextContentRealStart - curLineEnd;
-  command.insertedText = separator;
+  // Symmetric to buildMergeWithPreviousListItem: only rebuild when the current item owns a child
+  // sublist (otherwise the historical single-segment delete is byte-exact).
+  bool curHasSublist = false;
+  for (const auto& c : context.node->children()) {
+    if (c->type() == BlockType::List) { curHasSublist = true; break; }
+  }
+  if (curHasSublist) {
+    const QString curSublist = markdown.mid(curLineEnd, nextLineStart - curLineEnd);
+    command.removedLength = qMin(nextLineEnd + 1, markdown.size()) - curLineEnd;
+    command.insertedText = separator + nextText + curSublist;
+  } else {
+    command.removedLength = nextContentRealStart - curLineEnd;
+    command.insertedText = separator;
+  }
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Merge List Items");
   command.fallbackSourceOffset = curLineEnd + separator.size();
