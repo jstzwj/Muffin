@@ -31,6 +31,9 @@
 #include <QMessageBox>
 #include <QPainter>
 #include <QPixmap>
+#include <QPropertyAnimation>
+#include <QVariantAnimation>
+#include <QGraphicsOpacityEffect>
 #include <QSettings>
 #include <QSplitter>
 #include <QStackedWidget>
@@ -191,6 +194,31 @@ void muffin::MainWindow::setupUi() {
   centralSplitter_->setStretchFactor(1, 1);
   sidebar_->setVisible(false);
   setCentralWidget(centralSplitter_);
+
+  // Sidebar show/hide width transition. min+max move in lockstep so the splitter tracks the value
+  // exactly (a lone maximumWidth wouldn't pull the widget wider than its sizeHint). On finish we
+  // restore the 220–360 drag range — the live width already sits inside it, so there's no snap.
+  sidebarAnimation_ = new QVariantAnimation(this);
+  sidebarAnimation_->setEasingCurve(QEasingCurve::OutCubic);
+  sidebarAnimation_->setDuration(180);
+  connect(sidebarAnimation_, &QVariantAnimation::valueChanged, this, [this](const QVariant& value) {
+    if (!sidebar_) {
+      return;
+    }
+    const int w = value.toInt();
+    sidebar_->setMinimumWidth(w);
+    sidebar_->setMaximumWidth(w);
+  });
+  connect(sidebarAnimation_, &QVariantAnimation::finished, this, [this] {
+    if (!sidebar_) {
+      return;
+    }
+    if (sidebar_->maximumWidth() == 0) {
+      sidebar_->setVisible(false);
+    }
+    sidebar_->setMinimumWidth(220);
+    sidebar_->setMaximumWidth(360);
+  });
 }
 
 void muffin::MainWindow::setupMenuBar() {
@@ -274,8 +302,41 @@ void muffin::MainWindow::updateSidebarMode() {
   }
   const QAction* action = commands_.action(QStringLiteral("view.sidebar"));
   const bool sidebarVisible = action && action->isChecked();
-  sidebar_->setVisible(sidebarVisible);
   sidebarButton_->setChecked(sidebarVisible);
+
+  // No transition at startup (window not shown yet) or when reduced motion is requested.
+  if (!isVisible() || reducedMotion() || !sidebarAnimation_) {
+    sidebar_->setMinimumWidth(220);
+    sidebar_->setMaximumWidth(360);
+    sidebar_->setVisible(sidebarVisible);
+    return;
+  }
+
+  if (sidebarVisible) {
+    sidebar_->setMinimumWidth(0);
+    sidebar_->setMaximumWidth(0);
+    sidebar_->setVisible(true);
+    sidebarTargetWidth_ = qBound(220, sidebarTargetWidth_, 360);
+    animateSidebarWidth(0, sidebarTargetWidth_);
+  } else {
+    const int currentWidth = qBound(0, sidebar_->width(), 360);
+    sidebarTargetWidth_ = qBound(220, currentWidth, 360);  // remember for next show
+    animateSidebarWidth(currentWidth, 0);
+  }
+}
+
+bool muffin::MainWindow::reducedMotion() const {
+  return QSettings().value(QStringLiteral("appearance/reducedMotion"), false).toBool();
+}
+
+void muffin::MainWindow::animateSidebarWidth(int from, int to) {
+  if (!sidebarAnimation_) {
+    return;
+  }
+  sidebarAnimation_->stop();
+  sidebarAnimation_->setStartValue(from);
+  sidebarAnimation_->setEndValue(to);
+  sidebarAnimation_->start();
 }
 
 void muffin::MainWindow::setSidebarPanel(SidebarWidget::Panel panel) {
@@ -372,7 +433,15 @@ void muffin::MainWindow::updateViewMode() {
       editor_->editor()->centerCursor();
     }
   }
+  // Snapshot the outgoing page just before the swap, then crossfade it out over the new page.
+  QPixmap outgoingSnapshot;
+  if (isVisible() && !reducedMotion() && viewStack_->currentWidget() != nullptr) {
+    outgoingSnapshot = viewStack_->currentWidget()->grab();
+  }
   viewStack_->setCurrentWidget(sourceMode ? static_cast<QWidget*>(editor_) : static_cast<QWidget*>(renderView_));
+  if (!outgoingSnapshot.isNull()) {
+    showViewSwitchOverlay(outgoingSnapshot);
+  }
   if (sourceModeButton_) {
     sourceModeButton_->setChecked(sourceMode);
   }
@@ -386,6 +455,38 @@ void muffin::MainWindow::updateViewMode() {
     renderView_->setFocus(Qt::OtherFocusReason);
   }
   updateStatus();
+}
+
+void muffin::MainWindow::showViewSwitchOverlay(const QPixmap& snapshot) {
+  if (!viewStack_ || snapshot.isNull()) {
+    return;
+  }
+  // A reusable QLabel overlaid on the stack, showing a grab() of the outgoing page and faded out
+  // over 120ms. The QGraphicsOpacityEffect is attached to this lightweight label only — never to
+  // the live EditorView/QPlainTextEdit, which would force an offscreen backing store every frame.
+  if (!viewSwitchOverlay_) {
+    viewSwitchOverlay_ = new QLabel(viewStack_);
+    viewSwitchOverlay_->setAlignment(Qt::AlignCenter);
+    auto* opacity = new QGraphicsOpacityEffect(viewSwitchOverlay_);
+    opacity->setOpacity(1.0);
+    viewSwitchOverlay_->setGraphicsEffect(opacity);
+    overlayOpacityAnimation_ = new QPropertyAnimation(opacity, QByteArrayLiteral("opacity"), this);
+    overlayOpacityAnimation_->setDuration(120);
+    overlayOpacityAnimation_->setEasingCurve(QEasingCurve::OutCubic);
+    connect(overlayOpacityAnimation_, &QPropertyAnimation::finished, this, [this] {
+      if (viewSwitchOverlay_) {
+        viewSwitchOverlay_->hide();
+      }
+    });
+  }
+  viewSwitchOverlay_->setPixmap(snapshot);
+  viewSwitchOverlay_->setGeometry(viewStack_->rect());
+  viewSwitchOverlay_->raise();
+  viewSwitchOverlay_->show();
+  overlayOpacityAnimation_->stop();
+  overlayOpacityAnimation_->setStartValue(1.0);
+  overlayOpacityAnimation_->setEndValue(0.0);
+  overlayOpacityAnimation_->start();
 }
 
 void muffin::MainWindow::printDocument() {

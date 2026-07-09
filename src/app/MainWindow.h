@@ -27,6 +27,8 @@ class QSplitter;
 class QStackedWidget;
 class QToolButton;
 class QWidget;
+class QVariantAnimation;
+class QPropertyAnimation;
 
 namespace muffin {
 
@@ -152,6 +154,11 @@ private:
   void updateBlockSourceLabel(const HitTestResult& hit);
   void updateSidebarMode();
   void updateViewMode();
+  // Sidebar width transition + mode-switch crossfade. Skipped when reducedMotion() is set or the
+  // window isn't shown yet (animating before showEvent leaves chrome mid-transition at startup).
+  bool reducedMotion() const;
+  void animateSidebarWidth(int from, int to);
+  void showViewSwitchOverlay(const QPixmap& snapshot);
   int zoomPercent() const;
   void setZoomPercent(int percent);
   int fontSizePx() const;
@@ -292,6 +299,13 @@ private:
   QToolButton* sidebarButton_ = nullptr;
   QToolButton* sourceModeButton_ = nullptr;
   StatusBarWidget* statusBar_ = nullptr;
+  // Sidebar width transition (QVariantAnimation drives min+max in lockstep so the splitter tracks
+  // the value exactly) and the mode-switch snapshot overlay (a grab()'d pixmap QLabel faded out by
+  // overlayOpacityAnimation_ — never a live QGraphicsOpacityEffect on the heavy editor widgets).
+  QVariantAnimation* sidebarAnimation_ = nullptr;
+  QPropertyAnimation* overlayOpacityAnimation_ = nullptr;
+  QLabel* viewSwitchOverlay_ = nullptr;
+  int sidebarTargetWidth_ = 260;
   QTimer* wordCountTimer_ = nullptr;
   QTimer* outlineTimer_ = nullptr;
   QTimer* autoSaveTimer_ = nullptr;

@@ -1,5 +1,7 @@
 #include "app/StatusBarWidget.h"
 
+#include "app/UiMetrics.h"
+
 #include "spellcheck/SpellChecker.h"
 
 #include <QFontDatabase>
@@ -135,7 +137,7 @@ void drawChevron(QPainter& p, int cx, int cy, const QColor& color) {
 }  // namespace
 
 muffin::StatusBarWidget::StatusBarWidget(QWidget* parent) : QWidget(parent) {
-  setFixedHeight(28);
+  setFixedHeight(muffin::ui_metrics::kStatusBarHeight);
   setMouseTracking(true);
   setAttribute(Qt::WA_StyledBackground, false);
 
@@ -146,16 +148,18 @@ muffin::StatusBarWidget::StatusBarWidget(QWidget* parent) : QWidget(parent) {
   setFont(barFont);
 
   sidebarButton_ = new QToolButton(this);
-  sidebarButton_->setIconSize(QSize(16, 16));
+  sidebarButton_->setIconSize(QSize(muffin::ui_metrics::kStatusIconSize, muffin::ui_metrics::kStatusIconSize));
   sidebarButton_->setCheckable(true);
   sidebarButton_->setAutoRaise(true);
   sidebarButton_->setFocusPolicy(Qt::NoFocus);
+  sidebarButton_->setCursor(Qt::PointingHandCursor);
 
   sourceModeButton_ = new QToolButton(this);
-  sourceModeButton_->setIconSize(QSize(16, 16));
+  sourceModeButton_->setIconSize(QSize(muffin::ui_metrics::kStatusIconSize, muffin::ui_metrics::kStatusIconSize));
   sourceModeButton_->setCheckable(true);
   sourceModeButton_->setAutoRaise(true);
   sourceModeButton_->setFocusPolicy(Qt::NoFocus);
+  sourceModeButton_->setCursor(Qt::PointingHandCursor);
 
   // The sidebar icon flips between collapse « (sidebar visible) and expand » (hidden) on every
   // toggle, so the button always shows the action the next click will perform.
@@ -264,7 +268,7 @@ muffin::StatusBarWidget::SegmentRects muffin::StatusBarWidget::layoutSegments() 
   SegmentRects r;
   const QFontMetrics fm(font());
   const int h = height();
-  const int gap = 18;
+  const int gap = muffin::ui_metrics::kStatusGap;
   const int rightPad = 12;
   const int chev = 14;
 

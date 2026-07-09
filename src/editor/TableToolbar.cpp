@@ -11,6 +11,7 @@
 #include <QIcon>
 #include <QPainter>
 #include <QPixmap>
+#include <QGuiApplication>
 #include <QToolButton>
 
 #include <functional>
@@ -31,7 +32,12 @@ QIcon toolbarIcon(IconKind kind) {
   constexpr int iconSize = 16;
   const QColor ink(17, 24, 39);
   const QColor mutedInk(17, 24, 39, 150);
-  QPixmap pixmap(iconSize, iconSize);
+  // DPR-aware backing store: a bare QPixmap(16,16) rasterizes at 1× and is upscaled (blurry) on
+  // HiDPI. Render at physical pixels (iconSize*dpr) and tag the devicePixelRatio so Qt composites
+  // it at the right logical size — the painter coordinates below stay in logical space.
+  const qreal dpr = qApp ? qApp->devicePixelRatio() : qreal(1.0);
+  QPixmap pixmap(static_cast<int>(iconSize * dpr), static_cast<int>(iconSize * dpr));
+  pixmap.setDevicePixelRatio(dpr);
   pixmap.fill(Qt::transparent);
 
   QPainter painter(&pixmap);
