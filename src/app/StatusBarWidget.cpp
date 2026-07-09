@@ -56,7 +56,11 @@ QIcon makeStatusIcon(IconKind kind, const QColor& ink) {
     px.fill(Qt::transparent);
     QPainter p(&px);
     p.setRenderHint(QPainter::Antialiasing);
-    renderer.render(&p);
+    // Explicit logical target rect: render(&p) without bounds paints into the painter's
+    // viewport, which is the *physical* size (sz*dpr) on a high-DPI pixmap — so the SVG would
+    // rasterize at dpr× scale and only its top-left corner would fit. Pass the logical sz×sz so
+    // the painter's ×dpr transform maps it exactly onto the physical backing store.
+    renderer.render(&p, QRectF(0, 0, sz, sz));
     icon.addPixmap(px);
   }
   return icon;

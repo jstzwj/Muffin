@@ -155,7 +155,9 @@ QImage decodeSvg(const QByteArray& data) {
 
   QPainter painter(&image);
   painter.setRenderHint(QPainter::Antialiasing);
-  renderer.render(&painter);
+  // Explicit logical target rect — see the note in StatusBarWidget::makeStatusIcon. Without it
+  // the SVG rasterizes at dpr× scale on HiDPI and only its corner fits the image.
+  renderer.render(&painter, QRectF(0, 0, svgSize.width(), svgSize.height()));
 
   return image;
 }
