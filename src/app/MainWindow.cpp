@@ -609,7 +609,16 @@ void muffin::MainWindow::loadAppearanceSettings() {
   themeManager_.setTheme(themeName);
   setStatusBarVisible(settings.value(QStringLiteral("appearance/showStatusBar"), true).toBool());
   setZoomPercent(settings.value(QStringLiteral("appearance/zoomPercent"), 100).toInt());
-  setFontSizePx(settings.value(QStringLiteral("appearance/fontSizePx"), 16).toInt());
+#ifdef Q_OS_DARWIN
+  // macOS renders body text small at the Windows-tuned 16px default: 16px → 12pt body, which
+  // reads cramped next to the system's 13pt UI and native mac editors that default larger.
+  // 20px (≈15pt) matches comfortable mac reading size. Only affects users who never set their
+  // own size; a persisted appearance/fontSizePx still wins.
+  constexpr int kDefaultFontSizePx = 20;
+#else
+  constexpr int kDefaultFontSizePx = 16;
+#endif
+  setFontSizePx(settings.value(QStringLiteral("appearance/fontSizePx"), kDefaultFontSizePx).toInt());
 
   restorePersistentActionStates();
 
