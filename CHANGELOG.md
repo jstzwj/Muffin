@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-07-09
+
+### Added
+- **List Backspace retreats to the deepest sibling's child** - Backspacing an empty list item that follows a sibling with a (multi-level) sublist now moves the caret recursively to the end of the previous sibling's deepest last line, instead of stopping at the sibling's same-level marker line
+- **Sidebar and view-mode transition animations** - Opening and closing the sidebar now animates its width smoothly, and switching between source and rendered mode crossfades through a short snapshot overlay. A new `appearance/reducedMotion` preference disables both for accessibility
+- **Dynamic status-bar icons** - The sidebar toggle icon now flips between its collapse and expand glyphs to reflect the next action, and the source-mode icon reflects the active mode
+
+### Changed
+- **Unified status-bar icon system** - The three lower-left status-bar icons are now a consistent stroke-style set rendered 1:1 at 16px (crisp on HiDPI, with matching stroke weight and optical size), replacing the previous mix of solid-fill 16- and 24-viewBox glyphs. Chrome spacing values are consolidated into named `UiMetrics` constants, and a stray non-DPR-aware pixmap in the table toolbar is corrected as part of the same pass
+- **CSS selector matching and math recursion** - The CSS selector matching path is reworked, and the math parser gained recursion-depth protection to avoid stack overflows on deeply nested input
+- **Undo support for replace and batch operations** - The undo path behind replace and batch editing operations is refactored
+
+### Fixed
+- **Sublist loss when merging list items** - Merging an item into its previous sibling no longer drops the previous item's sublist content
+- **Ordered-list indent, outdent, and Enter behavior** - Several logic errors in ordered-list indentation, outdenting, and Enter handling are corrected
+- **Selection click and empty-paragraph deletion** - Multiple issues around selection clicks and empty-paragraph deletion are fixed
+
 ## [0.5.3] - 2026-07-07
 
 ### Added
