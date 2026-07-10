@@ -72,6 +72,11 @@ public:
   // newline lookup); not a hot path. Returns -1 if not found.
   qsizetype indexOf(QChar ch, qsizetype from = 0) const;
 
+  // Streaming exact-text search across piece boundaries. These never materialize the document;
+  // matching is O(size + needle.size) with O(needle.size) temporary storage.
+  qsizetype indexOf(QStringView needle, qsizetype from = 0) const;
+  qsizetype lastIndexOf(QStringView needle, qsizetype from = -1) const;
+
   int lineForOffset(qsizetype offset) const;
   qsizetype lineStartOffset(int line) const;
   qsizetype lineEndOffset(int line) const;

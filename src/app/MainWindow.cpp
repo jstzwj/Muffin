@@ -40,11 +40,9 @@
 #include <QStackedWidget>
 #include <QStatusBar>
 #include <QSvgRenderer>
-#include <QPlainTextEdit>
 #include <QPrintDialog>
 #include <QPrinter>
 #include <QTextBlock>
-#include <QTextCursor>
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -195,6 +193,7 @@ void muffin::MainWindow::setupUi() {
   viewStack_ = new QStackedWidget(editorContainer);
   renderView_ = new EditorView(viewStack_);
   editor_ = new SourceEditorWidget(editorContainer);
+  editor_->bindSession(&session_);
   viewStack_->addWidget(renderView_);
   viewStack_->addWidget(editor_);
 
@@ -442,12 +441,9 @@ void muffin::MainWindow::openNewWindow() {
 void muffin::MainWindow::activateOutlineNode(NodeId nodeId, SourceRange sourceRange) {
   if (backend_->isSourceMode()) {
     syncSourceEditorIfNeeded();
-    QTextCursor cursor = editor_->editor()->textCursor();
-    const int position = qBound(0, static_cast<int>(sourceRange.byteStart), editor_->editor()->document()->characterCount() - 1);
-    cursor.setPosition(position);
-    editor_->editor()->setTextCursor(cursor);
-    editor_->editor()->centerCursor();
-    editor_->editor()->setFocus(Qt::OtherFocusReason);
+    editor_->setCursorPosition(sourceRange.byteStart);
+    editor_->centerCursor();
+    editor_->setFocus(Qt::OtherFocusReason);
     return;
   }
   renderView_->scrollToNode(nodeId);
@@ -486,11 +482,8 @@ void muffin::MainWindow::updateViewMode() {
       }
     }
     if (targetOffset >= 0) {
-      QTextCursor cursor = editor_->editor()->textCursor();
-      const int maxPos = qMax(0, editor_->editor()->document()->characterCount() - 1);
-      cursor.setPosition(qBound(0, static_cast<int>(targetOffset), maxPos));
-      editor_->editor()->setTextCursor(cursor);
-      editor_->editor()->centerCursor();
+      editor_->setCursorPosition(targetOffset);
+      editor_->centerCursor();
     }
   }
   // Snapshot the outgoing page just before the swap, then crossfade it out over the new page.
@@ -506,9 +499,13 @@ void muffin::MainWindow::updateViewMode() {
     sourceModeButton_->setChecked(sourceMode);
   }
   if (!sourceMode) {
+    if (renderViewDirty_) {
+      renderView_->setDocument(session_.document(), session_.filePath());
+      renderViewDirty_ = false;
+    }
     // Source → Render: scroll to the block at the source cursor position
-    const int sourcePos = editor_->editor()->textCursor().position();
-    MarkdownNode* block = session_.document().topLevelBlockAtOffset(static_cast<qsizetype>(sourcePos));
+    const qsizetype sourcePos = editor_->cursorPosition();
+    MarkdownNode* block = session_.document().topLevelBlockAtOffset(sourcePos);
     if (block) {
       renderView_->scrollToNode(block->id());
     }
@@ -523,7 +520,7 @@ void muffin::MainWindow::showViewSwitchOverlay(const QPixmap& snapshot) {
   }
   // A reusable QLabel overlaid on the stack, showing a grab() of the outgoing page and faded out
   // over 120ms. The QGraphicsOpacityEffect is attached to this lightweight label only — never to
-  // the live EditorView/QPlainTextEdit, which would force an offscreen backing store every frame.
+  // the live editor views, which would force an offscreen backing store every frame.
   if (!viewSwitchOverlay_) {
     viewSwitchOverlay_ = new QLabel(viewStack_);
     viewSwitchOverlay_->setAlignment(Qt::AlignCenter);

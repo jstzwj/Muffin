@@ -2,8 +2,6 @@
 
 #include "app/EditorBackend.h"
 
-class QPlainTextEdit;
-
 namespace muffin {
 
 class SourceEditorWidget;
@@ -62,7 +60,6 @@ public:
   QString cursorStatusText() const override;
 
 private:
-  QPlainTextEdit* plainEdit() const;
   bool maybeCopyWholeLine(bool cut);
 
   SourceEditorWidget* editor_;

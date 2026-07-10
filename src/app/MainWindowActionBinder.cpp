@@ -7,7 +7,6 @@
 #include <QFileInfo>
 #include <QLoggingCategory>
 #include <QMenu>
-#include <QPlainTextEdit>
 #include <QSettings>
 #include <QTimer>
 
@@ -45,7 +44,7 @@ bool MainWindow::commandHasSelection() const {
     return commandContextSnapshot_.hasSelection;
   }
   if (backend_->isSourceMode()) {
-    return editor_->editor()->textCursor().hasSelection();
+    return editor_->hasSelection();
   }
   return commandHasCursor() && !editorController_.selection().selection().isCollapsed();
 }
@@ -101,7 +100,7 @@ MainWindow::CommandContextSnapshot MainWindow::captureCommandContext() const {
   const bool sourceMode = backend_->isSourceMode();
   snapshot.hasCursor = sourceMode || editorController_.selection().hasCursor();
   snapshot.hasSelection = sourceMode
-      ? editor_->editor()->textCursor().hasSelection()
+      ? editor_->hasSelection()
       : snapshot.hasCursor && !editorController_.selection().selection().isCollapsed();
   if (sourceMode) {
     return snapshot;

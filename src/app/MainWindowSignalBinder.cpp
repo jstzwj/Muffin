@@ -51,18 +51,6 @@ private:
 
 void muffin::MainWindow::connectEditorSignals() {
   auto& window = *this;  // preserves the window.X call sites after the friend→member split
-  QObject::connect(window.editor_, &SourceEditorWidget::textEdited, &window.session_, [&window](const QString& text) {
-    // In render mode the (hidden, possibly empty) source widget is a shadow, not the source
-    // of truth — the user edits through the rendered view. Its textChanged must not write
-    // back to the document, because the source widget may be empty/out of sync (it is only
-    // populated on entering source mode). Otherwise a spurious textChanged — e.g. from
-    // QSyntaxHighlighter::rehighlight when toggling spell check — would call updateFromEditor
-    // with an empty string and wipe the document. Only the source-mode backend edits via it.
-    if (!window.backend_ || !window.backend_->isSourceMode()) {
-      return;
-    }
-    window.session_.updateFromEditor(text);
-  });
   QObject::connect(window.editor_, &SourceEditorWidget::cursorPositionChanged, &window, [&window](int line, int column) {
     window.updateCursorStatus(line, column);
     if (window.typewriterMode_ && window.backend_->isSourceMode()) {
@@ -139,7 +127,7 @@ void muffin::MainWindow::connectRenderSignals() {
   QObject::connect(window.renderView_, &EditorView::contextMenuRequested, &window,
       [&window](HitTestResult hit, QPoint globalPos) {
         if (window.backend_->isSourceMode()) {
-          return;  // source mode keeps the native QPlainTextEdit context menu
+          return;  // the virtual source view owns its source-offset context menu
         }
         window.buildEditorContextMenu(hit, globalPos);
       });
@@ -175,18 +163,16 @@ void muffin::MainWindow::connectRenderSignals() {
 
 void muffin::MainWindow::connectSessionSignals() {
   auto& window = *this;
-  QObject::connect(&window.session_, &DocumentSession::documentTextChanged, &window, [&window](const QString& text) {
+  QObject::connect(&window.session_, &DocumentSession::documentTextChanged, &window, [&window](const QString&) {
     PerfTimer perf("main.documentTextChanged.consumer");
-    if (window.backend_->isSourceMode()) {
-      window.editor_->setText(text);
-      window.sourceEditorDirty_ = false;
-      return;
-    }
-    window.sourceEditorDirty_ = true;
+    window.editor_->syncFromSession();
   });
   QObject::connect(&window.session_, &DocumentSession::documentLocallyEdited, &window, [&window](qsizetype, qsizetype, const QString&) {
     PerfTimer perf("main.documentLocallyEdited.consumer");
-    window.sourceEditorDirty_ = true;
+    window.editor_->notifyDocumentChanged();
+    if (window.backend_ && window.backend_->isSourceMode()) {
+      window.renderViewDirty_ = true;
+    }
   });
   QObject::connect(&window.session_, &DocumentSession::filePathChanged, &window, &MainWindow::updateTitle);
   QObject::connect(&window.session_, &DocumentSession::filePathChanged, &window, [&window] {
@@ -248,6 +234,7 @@ void muffin::MainWindow::connectSessionSignals() {
                    [&window](const QString& filePath) { window.drafts_.markClean(filePath, window.draftKey_); });
   QObject::connect(&window.session_, &DocumentSession::parseBusy, &window, [&window](bool busy) {
     window.renderView_->setLoading(busy);
+    window.editor_->setReadOnly(busy);
   });
   QObject::connect(&window.session_, &DocumentSession::parsed, &window, [&window] {
     PerfTimer perf("main.parsed.consumer");
@@ -266,7 +253,12 @@ void muffin::MainWindow::connectSessionSignals() {
     } else {
       // Full parse (open/import/options change): the view and outline may have changed wholesale.
       window.outlineTimer_->stop();
-      window.renderView_->setDocument(window.session_.document(), window.session_.filePath());
+      if (window.backend_ && window.backend_->isSourceMode()) {
+        window.renderViewDirty_ = true;
+      } else {
+        window.renderView_->setDocument(window.session_.document(), window.session_.filePath());
+        window.renderViewDirty_ = false;
+      }
       if (outlineVisible) {
         window.refreshSidebarOutline();
       } else {

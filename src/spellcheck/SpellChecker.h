@@ -20,7 +20,7 @@ namespace muffin {
 
 // Process-wide spell checker built on nuspell. Loads the Hunspell dictionary for the
 // configured locale from the bundled ":/dicts/" resources (falling back to en_US) and
-// answers fast spell/suggest queries used by both the source-mode QSyntaxHighlighter
+// answers fast spell/suggest queries used by both the virtual source editor
 // and the rendered-mode squiggle overlay. GUI-thread only.
 class SpellChecker : public QObject {
   Q_OBJECT

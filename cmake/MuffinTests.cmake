@@ -89,6 +89,7 @@ muffin_add_test(NAME MuffinEditorViewLayoutTest     SOURCE tests/render/EditorVi
 
 # --- editor input / controller ---
 muffin_add_test(NAME MuffinEditorCoreTest              SOURCE tests/editor/EditorCoreTest.cpp              LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinSourceLineHeightIndexTest   SOURCE tests/editor/SourceLineHeightIndexTest.cpp   LINK MuffinUi)
 muffin_add_test(NAME MuffinImageResizeTest             SOURCE tests/editor/ImageResizeTest.cpp            LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEditorStyleClipboardTest    SOURCE tests/editor/EditorStyleClipboardTest.cpp    LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEditorCodeFenceSelectionTest SOURCE tests/editor/EditorCodeFenceSelectionTest.cpp LINK MuffinUi RESOURCE_LOCK)

@@ -130,11 +130,8 @@ void muffin::MainWindow::updateBlockSourceLabel(const HitTestResult& hit) {
 }
 
 void muffin::MainWindow::syncSourceEditorIfNeeded() {
-  if (!editor_ || !sourceEditorDirty_) {
-    return;
-  }
-  editor_->setText(session_.markdownText().toString());
-  sourceEditorDirty_ = false;
+  if (!editor_) return;
+  editor_->syncFromSession();
 }
 
 void muffin::MainWindow::scheduleWordCountUpdate() {

@@ -103,6 +103,24 @@ static void testCoalescesConsecutiveAppends() {
               .arg(initialPieces + 1).arg(pt.pieceCount()));
 }
 
+static void testStreamingSearchAcrossPieces() {
+  PieceTable table(QStringLiteral("alpha beta omega"));
+  table.replace(6, 10, QStringLiteral("BE"));
+  table.replace(8, 8, QStringLiteral("TA"));
+
+  require(table.toString() == QStringLiteral("alpha BETA omega"), "search fixture");
+  require(table.indexOf(QStringLiteral("alpha")) == 0, "search at start");
+  require(table.indexOf(QStringLiteral("BETA")) == 6, "search spans change pieces");
+  require(table.indexOf(QStringLiteral("TA o")) == 8, "search spans change/original boundary");
+  require(table.indexOf(QStringLiteral("alpha"), 1) == -1, "search honors start offset");
+  require(table.indexOf(QStringView(), 4) == 4, "empty search returns start offset");
+
+  table.replace(table.size(), table.size(), QStringLiteral(" alpha BETA"));
+  require(table.lastIndexOf(QStringLiteral("alpha")) == 17, "reverse search finds final match");
+  require(table.lastIndexOf(QStringLiteral("BETA"), 7) == 6, "reverse search honors start");
+  require(table.lastIndexOf(QStringLiteral("missing")) == -1, "reverse search missing");
+}
+
 static void requireLineIndexMatches(const PieceTable& table, const QString& text, const QString& label) {
   QVector<qsizetype> starts{0};
   for (qsizetype i = 0; i < text.size(); ++i) {
@@ -274,6 +292,7 @@ int main(int argc, char** argv) {
   runTest("delete and replace whole", testDeleteAndReplaceWhole);
   runTest("cjk and surrogate pairs", testCjkAndSurrogates);
   runTest("coalesces consecutive appends", testCoalescesConsecutiveAppends);
+  runTest("streaming search across pieces", testStreamingSearchAcrossPieces);
   runTest("fuzz mirrors QString", testFuzzMirrorsQString);
   runTest("dual-write stays in sync", testDualWriteStaysInSyncWithMarkdownText);
   runTest("pending marker cache tracks local edits", testPendingMarkerCacheTracksLocalEdits);

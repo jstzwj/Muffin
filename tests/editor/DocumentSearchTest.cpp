@@ -1,5 +1,7 @@
 #include "editor/DocumentSearch.h"
 
+#include "document/PieceTable.h"
+
 #include <QCoreApplication>
 #include <QDebug>
 
@@ -30,6 +32,15 @@ int main(int argc, char** argv) {
       QStringLiteral("Alpha alpha"), QStringLiteral("alpha"), {false, true});
   require(sensitive.matches.size() == 1 && sensitive.matches.first().start == 6,
           QStringLiteral("Case-sensitive search mismatch"));
+
+  PieceTable fragmented(QStringLiteral("Alpha alpha ALPHA"));
+  fragmented.replace(4, 8, QStringLiteral("a al"));
+  SearchResults streamed = DocumentSearch::findAll(
+      fragmented, QStringLiteral("alpha"), {});
+  require(fragmented.toString() == QStringLiteral("Alpha alpha ALPHA"),
+          QStringLiteral("Piece search fixture mismatch"));
+  require(streamed.matches.size() == 3 && streamed.matches.at(1).start == 6,
+          QStringLiteral("Piece search should cross fragmented boundaries"));
 
   QString replaced;
   SearchResults captures = DocumentSearch::replaceAll(

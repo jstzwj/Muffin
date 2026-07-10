@@ -1,398 +1,133 @@
 #include "app/SourceEditorBackend.h"
 
-#include "projection/SelectionSerializer.h"
 #include "editor/SourceEditorWidget.h"
+#include "projection/SelectionSerializer.h"
 
 #include <QApplication>
 #include <QClipboard>
 #include <QMimeData>
-#include <QPlainTextEdit>
 #include <QSettings>
-#include <QTextBlock>
-#include <QTextCursor>
-#include <QTextDocument>
 
 namespace muffin {
 
 SourceEditorBackend::SourceEditorBackend(SourceEditorWidget* editor) : editor_(editor) {}
 
-QPlainTextEdit* SourceEditorBackend::plainEdit() const {
-  return editor_->editor();
-}
-
-// editor/copyLineNoSelection (default off): with no selection, copy/cut the whole current line
-// instead of being a no-op. Returns true when it handled the line copy/cut.
 bool SourceEditorBackend::maybeCopyWholeLine(bool cut) {
-  if (!QSettings().value(QStringLiteral("editor/copyLineNoSelection"), false).toBool()) {
+  if (!QSettings().value(QStringLiteral("editor/copyLineNoSelection"), false).toBool() ||
+      editor_->hasSelection()) {
     return false;
   }
-  QPlainTextEdit* edit = plainEdit();
-  QTextCursor cursor = edit->textCursor();
-  if (cursor.hasSelection()) {
-    return false;  // an explicit selection takes precedence
-  }
-  const int savedPosition = cursor.position();
-  cursor.movePosition(QTextCursor::StartOfBlock);
-  cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
-  edit->setTextCursor(cursor);
-  if (cut) {
-    edit->cut();  // removes the line content; leave the caret at the deletion point
-  } else {
-    edit->copy();
-    cursor.setPosition(savedPosition);
-    edit->setTextCursor(cursor);  // restore the collapsed caret
-  }
+  const qsizetype saved = editor_->cursorPosition();
+  editor_->selectLine();
+  QApplication::clipboard()->setText(editor_->selectedText());
+  if (cut) editor_->deleteLineContent();
+  else editor_->setCursorPosition(saved);
   return true;
 }
 
 void SourceEditorBackend::cut() {
-  if (!maybeCopyWholeLine(/*cut=*/true)) {
-    plainEdit()->cut();
-  }
+  if (editor_->isReadOnly()) return;
+  if (maybeCopyWholeLine(true)) return;
+  if (!editor_->hasSelection()) return;
+  QApplication::clipboard()->setText(editor_->selectedText());
+  editor_->deleteForward();
 }
 
 void SourceEditorBackend::copy() {
-  if (!maybeCopyWholeLine(/*cut=*/false)) {
-    plainEdit()->copy();
-  }
+  if (maybeCopyWholeLine(false)) return;
+  if (editor_->hasSelection()) QApplication::clipboard()->setText(editor_->selectedText());
 }
 
 void SourceEditorBackend::paste() {
-  plainEdit()->paste();
+  if (!editor_->isReadOnly()) editor_->insertText(QApplication::clipboard()->text());
 }
 
 void SourceEditorBackend::deleteRange(DeleteTarget target) {
-  QTextCursor cursor = plainEdit()->textCursor();
   switch (target) {
-    case DeleteTarget::Forward:
-      if (cursor.hasSelection()) {
-        cursor.removeSelectedText();
-      } else {
-        cursor.deleteChar();
-      }
-      break;
-    case DeleteTarget::Backward:
-      if (cursor.hasSelection()) {
-        cursor.removeSelectedText();
-      } else {
-        cursor.deletePreviousChar();
-      }
-      break;
+    case DeleteTarget::Forward: editor_->deleteForward(); break;
+    case DeleteTarget::Backward: editor_->deleteBackward(); break;
     case DeleteTarget::Word:
-    case DeleteTarget::FormatSpan: {
-      // Source mode has no markdown-aware inline-format notion; both map to
-      // the word under the cursor (consistent with selectFormatSpan).
-      QTextCursor word = cursor;
-      word.select(QTextCursor::WordUnderCursor);
-      if (word.hasSelection()) {
-        word.removeSelectedText();
-        cursor = word;
-      }
-      break;
-    }
-    case DeleteTarget::Line: {
-      // Clear the current line's text but keep the (now empty) line in place.
-      QTextCursor line = cursor;
-      line.movePosition(QTextCursor::StartOfBlock);
-      line.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
-      if (line.hasSelection()) {
-        line.removeSelectedText();
-        cursor = line;
-      }
-      break;
-    }
-    case DeleteTarget::Block: {
-      // Remove the current line entirely (VS Code "delete line"). When a
-      // following line exists, select from this line's start to the next line's
-      // start (covers the line text + its trailing newline). On the last line,
-      // select to the end of the document.
-      QTextCursor block = cursor;
-      block.movePosition(QTextCursor::StartOfBlock);
-      const QTextBlock current = block.block();
-      if (current.next().isValid()) {
-        block.setPosition(current.next().position(), QTextCursor::KeepAnchor);
-      } else {
-        block.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
-      }
-      if (block.hasSelection()) {
-        block.removeSelectedText();
-        cursor = block;
-      }
-      break;
-    }
-  }
-  plainEdit()->setTextCursor(cursor);
-}
-
-void SourceEditorBackend::selectAll() {
-  plainEdit()->selectAll();
-}
-
-void SourceEditorBackend::selectLine() {
-  QTextCursor cursor = plainEdit()->textCursor();
-  cursor.movePosition(QTextCursor::StartOfBlock);
-  cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
-  plainEdit()->setTextCursor(cursor);
-}
-
-void SourceEditorBackend::selectFormatSpan() {
-  QTextCursor cursor = plainEdit()->textCursor();
-  cursor.select(QTextCursor::WordUnderCursor);
-  plainEdit()->setTextCursor(cursor);
-}
-
-void SourceEditorBackend::selectBlock() {
-  // Source mode is raw text: a "block" is just the current text line.
-  selectLine();
-}
-
-void SourceEditorBackend::selectWord() {
-  QTextCursor cursor = plainEdit()->textCursor();
-  cursor.select(QTextCursor::WordUnderCursor);
-  plainEdit()->setTextCursor(cursor);
-}
-
-void SourceEditorBackend::moveDocumentStart() {
-  QTextCursor cursor = plainEdit()->textCursor();
-  cursor.movePosition(QTextCursor::Start);
-  plainEdit()->setTextCursor(cursor);
-}
-
-void SourceEditorBackend::moveDocumentEnd() {
-  QTextCursor cursor = plainEdit()->textCursor();
-  cursor.movePosition(QTextCursor::End);
-  plainEdit()->setTextCursor(cursor);
-}
-
-void SourceEditorBackend::moveLineStart() {
-  QTextCursor cursor = plainEdit()->textCursor();
-  cursor.movePosition(QTextCursor::StartOfBlock);
-  plainEdit()->setTextCursor(cursor);
-}
-
-void SourceEditorBackend::moveLineEnd() {
-  QTextCursor cursor = plainEdit()->textCursor();
-  cursor.movePosition(QTextCursor::EndOfBlock);
-  plainEdit()->setTextCursor(cursor);
-}
-
-void SourceEditorBackend::selectNextOccurrence() {
-  QPlainTextEdit* edit = plainEdit();
-  QTextCursor cursor = edit->textCursor();
-  QString needle = cursor.selectedText();
-  if (needle.isEmpty()) {
-    QTextCursor word = cursor;
-    word.select(QTextCursor::WordUnderCursor);
-    needle = word.selectedText();
-  }
-  if (needle.isEmpty()) {
-    return;
-  }
-  // QTextCursor::selectedText uses U+2029 for paragraph separators; map back so
-  // indexOf over the document text matches real newlines.
-  needle.replace(QChar(0x2029), QChar('\n'));
-
-  const QString text = edit->toPlainText();
-  const int from = cursor.selectionEnd();
-  int idx = text.indexOf(needle, from);
-  if (idx < 0) {
-    idx = text.indexOf(needle, 0);  // wrap around
-  }
-  if (idx >= 0) {
-    QTextCursor found = cursor;
-    found.setPosition(idx);
-    found.setPosition(idx + needle.size(), QTextCursor::KeepAnchor);
-    edit->setTextCursor(found);
+    case DeleteTarget::FormatSpan: editor_->deleteWord(); break;
+    case DeleteTarget::Line: editor_->deleteLineContent(); break;
+    case DeleteTarget::Block: editor_->deleteWholeLine(); break;
   }
 }
 
-void SourceEditorBackend::moveLineUp() {
-  QTextCursor cursor = plainEdit()->textCursor();
-  QTextBlock currentBlock = cursor.block();
-  QTextBlock prevBlock = currentBlock.previous();
-  if (!prevBlock.isValid()) {
-    return;
-  }
+void SourceEditorBackend::selectAll() { editor_->selectAll(); }
+void SourceEditorBackend::selectLine() { editor_->selectLine(); }
+void SourceEditorBackend::selectBlock() { editor_->selectLine(); }
+void SourceEditorBackend::selectWord() { editor_->selectWord(); }
+void SourceEditorBackend::selectFormatSpan() { editor_->selectWord(); }
+void SourceEditorBackend::moveDocumentStart() { editor_->moveDocumentStart(); }
+void SourceEditorBackend::moveDocumentEnd() { editor_->moveDocumentEnd(); }
+void SourceEditorBackend::moveLineStart() { editor_->moveLineStart(); }
+void SourceEditorBackend::moveLineEnd() { editor_->moveLineEnd(); }
+void SourceEditorBackend::selectNextOccurrence() { editor_->selectNextOccurrence(); }
+void SourceEditorBackend::moveLineUp() { editor_->moveCurrentLineUp(); }
+void SourceEditorBackend::moveLineDown() { editor_->moveCurrentLineDown(); }
+bool SourceEditorBackend::canUndo() const { return editor_->canUndo(); }
+bool SourceEditorBackend::canRedo() const { return editor_->canRedo(); }
+void SourceEditorBackend::undo() { editor_->undo(); }
+void SourceEditorBackend::redo() { editor_->redo(); }
 
-  const int cursorPosInBlock = cursor.position() - currentBlock.position();
-  cursor.beginEditBlock();
-  cursor.movePosition(QTextCursor::StartOfBlock);
-  cursor.movePosition(QTextCursor::PreviousBlock);
-  cursor.movePosition(QTextCursor::StartOfBlock);
-  cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
-  cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
-  const QString currentText = currentBlock.text();
-  const QString prevText = prevBlock.text();
-  cursor.insertText(currentText + QLatin1Char('\n') + prevText);
-  cursor.endEditBlock();
-
-  cursor.movePosition(QTextCursor::StartOfBlock);
-  const int newPos = qMin(cursorPosInBlock, currentText.size());
-  cursor.setPosition(cursor.block().position() + newPos);
-  plainEdit()->setTextCursor(cursor);
-}
-
-void SourceEditorBackend::moveLineDown() {
-  QTextCursor cursor = plainEdit()->textCursor();
-  QTextBlock currentBlock = cursor.block();
-  QTextBlock nextBlock = currentBlock.next();
-  if (!nextBlock.isValid()) {
-    return;
-  }
-
-  const int cursorPosInBlock = cursor.position() - currentBlock.position();
-  cursor.beginEditBlock();
-  cursor.movePosition(QTextCursor::StartOfBlock);
-  cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
-  cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
-  cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
-  const QString currentText = currentBlock.text();
-  const QString nextText = nextBlock.text();
-  cursor.insertText(nextText + QLatin1Char('\n') + currentText);
-  cursor.endEditBlock();
-
-  cursor.movePosition(QTextCursor::StartOfBlock);
-  cursor.movePosition(QTextCursor::EndOfBlock);
-  const int newPos = qMin(cursorPosInBlock, currentText.size());
-  cursor.setPosition(cursor.block().position() + newPos);
-  plainEdit()->setTextCursor(cursor);
-}
-
-bool SourceEditorBackend::canUndo() const {
-  return plainEdit()->document()->isUndoAvailable();
-}
-
-bool SourceEditorBackend::canRedo() const {
-  return plainEdit()->document()->isRedoAvailable();
-}
-
-void SourceEditorBackend::undo() {
-  plainEdit()->undo();
-}
-
-void SourceEditorBackend::redo() {
-  plainEdit()->redo();
-}
-
-void SourceEditorBackend::copyAsPlainText() {
-  const QTextCursor cursor = plainEdit()->textCursor();
-  if (cursor.hasSelection()) {
-    QApplication::clipboard()->setText(cursor.selectedText());
-  }
-}
+void SourceEditorBackend::copyAsPlainText() { copy(); }
 
 void SourceEditorBackend::copyAsMarkdown() {
-  const QTextCursor cursor = plainEdit()->textCursor();
-  if (cursor.hasSelection()) {
-    auto* mimeData = new QMimeData();
-    mimeData->setText(cursor.selectedText());
-    mimeData->setData(QStringLiteral("text/markdown"), cursor.selectedText().toUtf8());
-    QApplication::clipboard()->setMimeData(mimeData);
-  }
+  if (!editor_->hasSelection()) return;
+  const QString selected = editor_->selectedText();
+  auto* mime = new QMimeData();
+  mime->setText(selected);
+  mime->setData(QStringLiteral("text/markdown"), selected.toUtf8());
+  QApplication::clipboard()->setMimeData(mime);
 }
 
 void SourceEditorBackend::copyAsHtml() {
-  const QTextCursor cursor = plainEdit()->textCursor();
-  if (cursor.hasSelection()) {
-    const QString html = SelectionSerializer::renderMarkdownToHtml(cursor.selectedText());
-    if (!html.isEmpty()) {
-      auto* mimeData = new QMimeData();
-      mimeData->setHtml(html);
-      mimeData->setText(html);
-      QApplication::clipboard()->setMimeData(mimeData);
-    }
-  }
+  if (!editor_->hasSelection()) return;
+  const QString html = SelectionSerializer::renderMarkdownToHtml(editor_->selectedText());
+  if (html.isEmpty()) return;
+  auto* mime = new QMimeData();
+  mime->setHtml(html);
+  mime->setText(html);
+  QApplication::clipboard()->setMimeData(mime);
 }
 
-void SourceEditorBackend::pasteAsPlainText() {
-  const QString text = QApplication::clipboard()->text();
-  if (!text.isEmpty()) {
-    plainEdit()->insertPlainText(text);
-  }
-}
-
-void SourceEditorBackend::toggleBold() {
-  plainEdit()->insertPlainText(QStringLiteral("****"));
-}
-
-void SourceEditorBackend::toggleItalic() {
-  plainEdit()->insertPlainText(QStringLiteral("**"));
-}
-
-void SourceEditorBackend::toggleCode() {
-  plainEdit()->insertPlainText(QStringLiteral("``"));
-}
-
-void SourceEditorBackend::toggleStrikethrough() {
-  plainEdit()->insertPlainText(QStringLiteral("~~~~"));
-}
-
-void SourceEditorBackend::toggleInlineMath() {
-  plainEdit()->insertPlainText(QStringLiteral("$$"));
-}
-
-void SourceEditorBackend::toggleUnderline() {
-  plainEdit()->insertPlainText(QStringLiteral("<u></u>"));
-}
-
-void SourceEditorBackend::insertLink() {
-  plainEdit()->insertPlainText(QStringLiteral("[](url)"));
-}
-
-void SourceEditorBackend::insertImage() {
-  plainEdit()->insertPlainText(QStringLiteral("![alt](url)"));
-}
-
-void SourceEditorBackend::clearFormatting() {
-  // No-op: the command is disabled in source mode (the Format menu's enabled
-  // predicate gates on !isSourceMode), and stripping markers reliably requires
-  // the parsed inline tree this backend does not maintain.
-}
-
-bool SourceEditorBackend::hasSelection() const {
-  return plainEdit()->textCursor().hasSelection();
-}
-
-bool SourceEditorBackend::isSourceMode() const {
-  return true;
-}
+void SourceEditorBackend::pasteAsPlainText() { paste(); }
+void SourceEditorBackend::toggleBold() { editor_->insertText(QStringLiteral("****")); }
+void SourceEditorBackend::toggleItalic() { editor_->insertText(QStringLiteral("**")); }
+void SourceEditorBackend::toggleCode() { editor_->insertText(QStringLiteral("``")); }
+void SourceEditorBackend::toggleStrikethrough() { editor_->insertText(QStringLiteral("~~~~")); }
+void SourceEditorBackend::toggleInlineMath() { editor_->insertText(QStringLiteral("$$")); }
+void SourceEditorBackend::toggleUnderline() { editor_->insertText(QStringLiteral("<u></u>")); }
+void SourceEditorBackend::insertLink() { editor_->insertText(QStringLiteral("[](url)")); }
+void SourceEditorBackend::insertImage() { editor_->insertText(QStringLiteral("![alt](url)")); }
+void SourceEditorBackend::clearFormatting() {}
+bool SourceEditorBackend::hasSelection() const { return editor_->hasSelection(); }
+bool SourceEditorBackend::isSourceMode() const { return true; }
 
 void SourceEditorBackend::find(const QString& text, bool forward) {
-  QTextDocument::FindFlags flags;
-  if (!forward) {
-    flags |= QTextDocument::FindBackward;
+  if (text.isEmpty()) return;
+  qsizetype found = forward
+      ? editor_->findText(text, editor_->selectionEnd())
+      : editor_->findTextBackward(text, qMax<qsizetype>(0, editor_->selectionStart() - 1));
+  if (found < 0) {
+    found = forward ? editor_->findText(text) : editor_->findTextBackward(text);
   }
-  plainEdit()->find(text, flags);
+  if (found >= 0) editor_->setSelection(found, found + text.size());
 }
 
-QString SourceEditorBackend::selectedText() const {
-  const QTextCursor cursor = plainEdit()->textCursor();
-  return cursor.hasSelection() ? cursor.selectedText() : QString();
-}
-
-void SourceEditorBackend::replaceSelection(const QString& text) {
-  QTextCursor cursor = plainEdit()->textCursor();
-  if (cursor.hasSelection()) {
-    cursor.insertText(text);
-    plainEdit()->setTextCursor(cursor);
-  }
-}
-
-QString SourceEditorBackend::fullText() const {
-  return plainEdit()->toPlainText();
-}
+QString SourceEditorBackend::selectedText() const { return editor_->selectedText(); }
+void SourceEditorBackend::replaceSelection(const QString& text) { editor_->replaceSelection(text); }
+QString SourceEditorBackend::fullText() const { return editor_->text(); }
 
 void SourceEditorBackend::setFullText(const QString& text) {
-  plainEdit()->setPlainText(text);
+  editor_->selectAll();
+  editor_->insertText(text);
 }
 
-void SourceEditorBackend::centerCursor() {
-  plainEdit()->centerCursor();
-}
+void SourceEditorBackend::centerCursor() { editor_->centerCursor(); }
 
 QString SourceEditorBackend::cursorStatusText() const {
-  const QTextCursor cursor = plainEdit()->textCursor();
-  return QStringLiteral("%1:%2").arg(cursor.blockNumber() + 1).arg(cursor.positionInBlock() + 1);
+  return QStringLiteral("%1:%2").arg(editor_->cursorLine()).arg(editor_->cursorColumn());
 }
 
 }  // namespace muffin

@@ -6,6 +6,8 @@
 
 namespace muffin {
 
+class PieceTable;
+
 struct SearchOptions {
   bool regularExpression = false;
   bool caseSensitive = false;
@@ -26,6 +28,8 @@ struct SearchResults {
 class DocumentSearch final {
 public:
   static SearchResults findAll(const QString& text, const QString& pattern,
+                               SearchOptions options);
+  static SearchResults findAll(const PieceTable& text, const QString& pattern,
                                SearchOptions options);
   static QString expandReplacement(const QString& replacement,
                                    const SearchMatch& match,

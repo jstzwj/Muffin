@@ -220,6 +220,96 @@ qsizetype PieceTable::indexOf(QChar ch, qsizetype from) const {
   return -1;
 }
 
+qsizetype PieceTable::indexOf(QStringView needle, qsizetype from) const {
+  from = qMax<qsizetype>(0, from);
+  if (needle.isEmpty()) {
+    return from <= size() ? from : -1;
+  }
+  if (from >= size() || needle.size() > size() - from) {
+    return -1;
+  }
+
+  QVector<qsizetype> fallback(needle.size(), 0);
+  for (qsizetype i = 1, matched = 0; i < needle.size(); ++i) {
+    while (matched > 0 && needle.at(i) != needle.at(matched)) {
+      matched = fallback.at(matched - 1);
+    }
+    if (needle.at(i) == needle.at(matched)) {
+      ++matched;
+    }
+    fallback[i] = matched;
+  }
+
+  auto [pieceIndex, inPiece] = locate(from);
+  qsizetype logical = from;
+  qsizetype matched = 0;
+  for (; pieceIndex < static_cast<qsizetype>(pieces_.size()); ++pieceIndex, inPiece = 0) {
+    const Piece& piece = pieces_.at(static_cast<size_t>(pieceIndex));
+    const QStringView chunk = QStringView(buffer(piece.fromChanges)).mid(
+        piece.start + inPiece, piece.length - inPiece);
+    for (QChar ch : chunk) {
+      while (matched > 0 && ch != needle.at(matched)) {
+        matched = fallback.at(matched - 1);
+      }
+      if (ch == needle.at(matched)) {
+        ++matched;
+      }
+      if (matched == needle.size()) {
+        return logical - needle.size() + 1;
+      }
+      ++logical;
+    }
+  }
+  return -1;
+}
+
+qsizetype PieceTable::lastIndexOf(QStringView needle, qsizetype from) const {
+  if (needle.isEmpty()) {
+    return from < 0 ? size() : qMin(from, size());
+  }
+  if (needle.size() > size()) {
+    return -1;
+  }
+  const qsizetype latestStart = from < 0 ? size() - needle.size()
+                                         : qMin(from, size() - needle.size());
+
+  QVector<qsizetype> fallback(needle.size(), 0);
+  for (qsizetype i = 1, matched = 0; i < needle.size(); ++i) {
+    while (matched > 0 && needle.at(i) != needle.at(matched)) {
+      matched = fallback.at(matched - 1);
+    }
+    if (needle.at(i) == needle.at(matched)) {
+      ++matched;
+    }
+    fallback[i] = matched;
+  }
+
+  qsizetype result = -1;
+  qsizetype logical = 0;
+  qsizetype matched = 0;
+  const qsizetype scanEnd = latestStart + needle.size();
+  for (const Piece& piece : pieces_) {
+    const QStringView chunk = QStringView(buffer(piece.fromChanges)).mid(piece.start, piece.length);
+    for (QChar ch : chunk) {
+      if (logical >= scanEnd) {
+        return result;
+      }
+      while (matched > 0 && ch != needle.at(matched)) {
+        matched = fallback.at(matched - 1);
+      }
+      if (ch == needle.at(matched)) {
+        ++matched;
+      }
+      if (matched == needle.size()) {
+        result = logical - needle.size() + 1;
+        matched = fallback.at(matched - 1);
+      }
+      ++logical;
+    }
+  }
+  return result;
+}
+
 int PieceTable::lineForOffset(qsizetype offset) const {
   const qsizetype bounded = qBound<qsizetype>(0, offset, size());
   if (bounded == size()) {

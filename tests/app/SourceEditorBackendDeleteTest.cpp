@@ -1,13 +1,14 @@
 #include "app/SourceEditorBackend.h"
+#include "document/DocumentSession.h"
 #include "editor/SourceEditorWidget.h"
+#include "editor/VirtualSourceEdit.h"
 
 #include "../TestUtils.h"
 
 #include <QApplication>
 #include <QClipboard>
-#include <QPlainTextEdit>
-#include <QTextCursor>
-
+#include <QImage>
+#include <QScrollBar>
 #include <iostream>
 
 using namespace muffin;
@@ -25,16 +26,11 @@ struct Harness {
   }
   // Place the caret at a flat document position.
   void placeAt(int position) {
-    QTextCursor c = editor.editor()->textCursor();
-    c.setPosition(position);
-    editor.editor()->setTextCursor(c);
+    editor.setCursorPosition(position);
   }
   // Select the closed interval [start, end] (end exclusive).
   void select(int start, int end) {
-    QTextCursor c = editor.editor()->textCursor();
-    c.setPosition(start);
-    c.setPosition(end, QTextCursor::KeepAnchor);
-    editor.editor()->setTextCursor(c);
+    editor.setSelection(start, end);
   }
   QString text() const {
     return editor.text();
@@ -120,6 +116,84 @@ void testSourceDeleteBlockOnly() {
   require(h.text().isEmpty(), "delete block on the only line should empty the document");
 }
 
+void testSessionBackedSourceEditsAndUndo() {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("alpha\nbeta"), false);
+  SourceEditorWidget editor;
+  editor.bindSession(&session);
+  SourceEditorBackend backend(&editor);
+
+  editor.setCursorPosition(QStringLiteral("alpha").size());
+  editor.insertText(QStringLiteral("!"));
+  require(session.markdownText().toString() == QStringLiteral("alpha!\nbeta"),
+          "source edit should update the session PieceTable directly");
+  require(backend.canUndo(), "session-backed source edit should be undoable");
+  backend.undo();
+  require(session.markdownText().toString() == QStringLiteral("alpha\nbeta"),
+          "source undo should apply the inverse PieceTable delta");
+  backend.redo();
+  require(session.markdownText().toString() == QStringLiteral("alpha!\nbeta"),
+          "source redo should reapply the PieceTable delta");
+
+  editor.setSelection(0, 5);
+  editor.replaceSelection(QStringLiteral("A"));
+  require(session.markdownText().toString() == QStringLiteral("A!\nbeta"),
+          "source selection replacement should update the session");
+}
+
+void testReadOnlySourceRejectsMutationWithoutDamagingUndo() {
+  Harness h;
+  h.load(QStringLiteral("alpha"));
+  h.placeAt(5);
+  h.editor.insertText(QStringLiteral("!"));
+  require(h.backend.canUndo(), "fixture edit should be undoable");
+
+  h.editor.setReadOnly(true);
+  h.editor.insertText(QStringLiteral(" ignored"));
+  h.backend.undo();
+  require(h.text() == QStringLiteral("alpha!"),
+          "read-only input and undo must leave text and undo history unchanged");
+
+  h.editor.setReadOnly(false);
+  h.backend.undo();
+  require(h.text() == QStringLiteral("alpha"),
+          "undo history should remain usable after read-only mode ends");
+}
+
+void testVirtualSourceViewportAffordances() {
+  SourceEditorWidget editor;
+  editor.resize(720, 300);
+  editor.setText(QStringLiteral("source line\n").repeated(1000));
+  editor.show();
+  QApplication::processEvents();
+
+  VirtualSourceEdit* view = editor.findChild<VirtualSourceEdit*>();
+  require(view != nullptr, "source widget should own a virtual source view");
+  require(view->verticalScrollBarPolicy() == Qt::ScrollBarAsNeeded,
+          "large source documents should expose a vertical scrollbar");
+  require(view->verticalScrollBar()->maximum() > 0 && view->verticalScrollBar()->isVisible(),
+          "vertical scrollbar should be visible for overflowing source text");
+  require(view->viewport()->cursor().shape() == Qt::IBeamCursor,
+          "source text viewport should use an I-beam cursor");
+
+  const QImage viewportImage = view->viewport()->grab().toImage();
+  bool foundDarkBodyPixel = false;
+  for (int y = 0; y < qMin(50, viewportImage.height()) && !foundDarkBodyPixel; ++y) {
+    for (int x = 72; x < qMin(220, viewportImage.width()); ++x) {
+      if (qGray(viewportImage.pixel(x, y)) < 130) {
+        foundDarkBodyPixel = true;
+        break;
+      }
+    }
+  }
+  require(foundDarkBodyPixel,
+          "plain source text should use the theme body color, not the pale line-number color");
+
+  editor.setWordWrapEnabled(false);
+  require(view->horizontalScrollBarPolicy() == Qt::ScrollBarAsNeeded,
+          "unwrapped source text should expose a horizontal scrollbar when needed");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -134,6 +208,9 @@ int main(int argc, char** argv) {
   testSourceDeleteBlockMiddle();
   testSourceDeleteBlockLast();
   testSourceDeleteBlockOnly();
+  testSessionBackedSourceEditsAndUndo();
+  testReadOnlySourceRejectsMutationWithoutDamagingUndo();
+  testVirtualSourceViewportAffordances();
   QApplication::clipboard()->clear();
   return 0;
 }

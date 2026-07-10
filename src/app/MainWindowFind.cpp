@@ -5,9 +5,6 @@
 #include "editor/FindBarWidget.h"
 #include "editor/SourceEditorWidget.h"
 
-#include <QPlainTextEdit>
-#include <QTextCursor>
-
 namespace {
 
 QPair<qsizetype, qsizetype> renderSelectionSourceRange(
@@ -54,8 +51,7 @@ void muffin::MainWindow::performFind(const QString& text, bool forward,
                                      bool regularExpression, bool caseSensitive) {
   if (text.isEmpty()) { return; }
   const SearchOptions options{regularExpression, caseSensitive};
-  const QString documentText = backend_->fullText();
-  const SearchResults results = DocumentSearch::findAll(documentText, text, options);
+  const SearchResults results = DocumentSearch::findAll(session_.markdownText(), text, options);
   if (!results.valid) {
     findBar_->setErrorText(tr("Invalid regular expression: %1").arg(results.error));
     return;
@@ -89,8 +85,7 @@ void muffin::MainWindow::performFind(const QString& text, bool forward,
   if (selectedIndex < 0) {
     qsizetype cursorOffset = 0;
     if (backend_->isSourceMode()) {
-      const QTextCursor cursor = editor_->editor()->textCursor();
-      cursorOffset = forward ? cursor.selectionEnd() : cursor.selectionStart();
+      cursorOffset = forward ? editor_->selectionEnd() : editor_->selectionStart();
     } else if (editorController_.selection().hasCursor()) {
       cursorOffset = editorController_.selection().cursorPosition().text.sourceOffset;
     }
@@ -113,11 +108,8 @@ void muffin::MainWindow::performFind(const QString& text, bool forward,
   const SearchMatch& match = results.matches.at(selectedIndex);
   lastFindOffset_ = match.start;
   if (backend_->isSourceMode()) {
-    QTextCursor cursor(editor_->editor()->document());
-    cursor.setPosition(match.start);
-    cursor.setPosition(match.start + match.length, QTextCursor::KeepAnchor);
-    editor_->editor()->setTextCursor(cursor);
-    editor_->editor()->ensureCursorVisible();
+    editor_->setSelection(match.start, match.start + match.length);
+    editor_->ensureCursorVisible();
   } else {
     editorController_.inputController().selectSourceRange(match.start, match.start + match.length);
     if (MarkdownNode* block = session_.document().topLevelBlockAtOffset(match.start)) {
@@ -143,8 +135,7 @@ void muffin::MainWindow::performReplace(const QString& findText, const QString& 
                                         bool regularExpression, bool caseSensitive) {
   if (findText.isEmpty()) { return; }
   const SearchOptions options{regularExpression, caseSensitive};
-  const QString documentText = backend_->fullText();
-  const SearchResults results = DocumentSearch::findAll(documentText, findText, options);
+  const SearchResults results = DocumentSearch::findAll(session_.markdownText(), findText, options);
   if (!results.valid) {
     findBar_->setErrorText(tr("Invalid regular expression: %1").arg(results.error));
     return;
@@ -152,8 +143,7 @@ void muffin::MainWindow::performReplace(const QString& findText, const QString& 
 
   QPair<qsizetype, qsizetype> selected{-1, -1};
   if (backend_->isSourceMode()) {
-    const QTextCursor cursor = editor_->editor()->textCursor();
-    selected = {cursor.selectionStart(), cursor.selectionEnd()};
+    selected = {editor_->selectionStart(), editor_->selectionEnd()};
   } else {
     selected = renderSelectionSourceRange(editorController_);
   }
@@ -173,11 +163,9 @@ void muffin::MainWindow::performReplace(const QString& findText, const QString& 
   const QString replacement = DocumentSearch::expandReplacement(
       replaceText, *current, regularExpression);
   if (backend_->isSourceMode()) {
-    QTextCursor cursor = editor_->editor()->textCursor();
-    cursor.insertText(replacement);
-    editor_->editor()->setTextCursor(cursor);
+    editor_->replaceSelection(replacement);
   } else {
-    QString changed = documentText;
+    QString changed = backend_->fullText();
     changed.replace(current->start, current->length, replacement);
     editorController_.applyMarkdownTextWithUndo(changed, tr("Replace"));
   }
@@ -201,11 +189,8 @@ void muffin::MainWindow::performReplaceAll(const QString& findText, const QStrin
     return;
   }
   if (backend_->isSourceMode()) {
-    QTextCursor cursor(editor_->editor()->document());
-    cursor.beginEditBlock();
-    cursor.select(QTextCursor::Document);
-    cursor.insertText(changed);
-    cursor.endEditBlock();
+    editor_->selectAll();
+    editor_->insertText(changed);
   } else {
     editorController_.applyMarkdownTextWithUndo(changed, tr("Replace All"));
   }

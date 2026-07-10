@@ -1,5 +1,7 @@
 #include "editor/DocumentSearch.h"
 
+#include "document/PieceTable.h"
+
 #include <QRegularExpression>
 
 #include <utility>
@@ -34,6 +36,50 @@ SearchResults DocumentSearch::findAll(const QString& text, const QString& patter
     }
     result.matches.append(std::move(item));
   }
+  return result;
+}
+
+SearchResults DocumentSearch::findAll(const PieceTable& text, const QString& pattern,
+                                      SearchOptions options) {
+  if (options.regularExpression) {
+    return findAll(text.toString(), pattern, options);
+  }
+
+  SearchResults result;
+  if (pattern.isEmpty()) return result;
+
+  const auto normalized = [caseSensitive = options.caseSensitive](QChar ch) {
+    return caseSensitive ? ch : ch.toCaseFolded();
+  };
+  QVector<QChar> needle;
+  needle.reserve(pattern.size());
+  for (QChar ch : pattern) needle.push_back(normalized(ch));
+
+  QVector<qsizetype> fallback(needle.size(), 0);
+  for (qsizetype i = 1, matched = 0; i < needle.size(); ++i) {
+    while (matched > 0 && needle.at(i) != needle.at(matched)) {
+      matched = fallback.at(matched - 1);
+    }
+    if (needle.at(i) == needle.at(matched)) ++matched;
+    fallback[i] = matched;
+  }
+
+  qsizetype logical = 0;
+  qsizetype matched = 0;
+  text.forEachChunk([&](QStringView chunk) {
+    for (QChar raw : chunk) {
+      const QChar ch = normalized(raw);
+      while (matched > 0 && ch != needle.at(matched)) {
+        matched = fallback.at(matched - 1);
+      }
+      if (ch == needle.at(matched)) ++matched;
+      if (matched == needle.size()) {
+        result.matches.push_back(SearchMatch{logical - needle.size() + 1, needle.size(), {}});
+        matched = 0;  // QRegularExpression::globalMatch reports non-overlapping matches.
+      }
+      ++logical;
+    }
+  });
   return result;
 }
 

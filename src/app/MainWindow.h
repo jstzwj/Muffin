@@ -349,7 +349,7 @@ private:
   QString sidebarFolderRoot_;
   int zoomPercent_ = 100;
   int fontSizePx_ = 16;
-  bool sourceEditorDirty_ = false;
+  bool renderViewDirty_ = false;
   bool wordCountDirty_ = true;
   bool outlineDirty_ = true;
   bool showBlockSourceEnabled_ = false;

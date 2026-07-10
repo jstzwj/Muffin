@@ -140,6 +140,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/editor/EditorViewPaint.cpp
   src/editor/EditorViewViewport.cpp
   src/editor/SourceEditorWidget.cpp
+  src/editor/VirtualSourceEdit.cpp
   src/editor/FindBarWidget.cpp
   src/render/BlockLayoutBuilder.cpp
   src/io/FileController.cpp
@@ -665,6 +666,10 @@ set(MUFFIN_UI_SOURCES
   src/app/StatusBarWidget.h
   src/editor/SourceEditorWidget.cpp
   src/editor/SourceEditorWidget.h
+  src/editor/SourceLineHeightIndex.cpp
+  src/editor/SourceLineHeightIndex.h
+  src/editor/VirtualSourceEdit.cpp
+  src/editor/VirtualSourceEdit.h
   src/editor/FindBarWidget.cpp
   src/editor/FindBarWidget.h
   src/editor/DocumentSearch.cpp
