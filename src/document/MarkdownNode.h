@@ -116,6 +116,10 @@ public:
   // current byteStart, so for a slice-assembled block call BEFORE adding slice.sourceStart to it.
   void relativizeDescendants();
 
+  // Replace inline-owned strings that exactly match immutable source slices with shared views.
+  // The source coordinates are captured now, before block-relative offset conversion.
+  qsizetype bindSharedInlineText(const std::shared_ptr<const QString>& source);
+
   std::unique_ptr<MarkdownNode> clone(CloneMode mode = CloneMode::PreserveIds) const;
 
   // Generic subtree traversal, replacing hand-written recursive walks scattered across the
@@ -248,6 +252,7 @@ private:
   // Block-relative offset helpers (see public relativizeDescendants).
   void relativizeNodeAndDescendants(const MarkdownNode* topLevel, qsizetype byteBase, int lineBase);
   static void subtractDefinitionFields(DefinitionBlock& def, qsizetype byteBase);
+  qsizetype bindSharedInlineTextRecursive(const std::shared_ptr<const QString>& source);
 };
 
 }  // namespace muffin

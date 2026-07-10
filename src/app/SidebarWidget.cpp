@@ -1,4 +1,5 @@
 #include "app/SidebarWidget.h"
+#include "app/OutlineModel.h"
 
 #include "theme/ChromeStyleSheet.h"
 #include "theme/ThemeDefinition.h"
@@ -26,8 +27,6 @@
 #include <QToolButton>
 #include <QToolTip>
 #include <QTreeView>
-#include <QTreeWidget>
-#include <QTreeWidgetItem>
 #include <QVBoxLayout>
 
 #include "io/MuffinMime.h"
@@ -36,16 +35,6 @@
 #include <utility>
 
 namespace {
-
-enum OutlineRole {
-  NodeIdRole = Qt::UserRole + 1,
-  SourceStartRole,
-  SourceEndRole,
-  LineStartRole,
-  LineEndRole,
-  ColumnStartRole,
-  ColumnEndRole
-};
 
 QToolButton* createFlatButton(const QString& text, QWidget* parent) {
   auto* button = new QToolButton(parent);
@@ -326,9 +315,13 @@ void muffin::SidebarWidget::setupOutlinePanel() {
   outlineEmptyLabel_->setObjectName(QStringLiteral("OutlineEmptyLabel"));
   outlineEmptyLabel_->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
 
-  outlineTree_ = new QTreeWidget(outlinePanel_);
+  outlineModel_ = new muffin::OutlineModel(this);
+  outlineModel_->setFoldable(outlineFoldable_);
+  outlineTree_ = new QTreeView(outlinePanel_);
   outlineTree_->setObjectName(QStringLiteral("OutlineTree"));
+  outlineTree_->setModel(outlineModel_);
   outlineTree_->setHeaderHidden(true);
+  outlineTree_->setUniformRowHeights(true);
   outlineTree_->setIndentation(outlineFoldable_ ? 14 : 0);
   outlineTree_->setRootIsDecorated(outlineFoldable_);
   outlineTree_->setItemsExpandable(outlineFoldable_);
@@ -344,23 +337,19 @@ void muffin::SidebarWidget::setupOutlinePanel() {
   layout->addWidget(outlineTree_, 1);
   outlineTree_->hide();
 
-  connect(outlineTree_, &QTreeWidget::itemClicked, this, [this](QTreeWidgetItem* item) {
-    const QList<QTreeWidgetItem*> allItems = outlineTree_->findItems(QStringLiteral("*"), Qt::MatchWildcard | Qt::MatchRecursive);
-    for (QTreeWidgetItem* current : allItems) {
-      QFont font = current->font(0);
-      font.setBold(current == item);
-      current->setFont(0, font);
-    }
-    emitOutlineItem(item);
-  });
+  connect(outlineTree_, &QTreeView::clicked, this, &muffin::SidebarWidget::emitOutlineItem);
 
   stack_->addWidget(outlinePanel_);
 }
 
 void muffin::SidebarWidget::setPanel(Panel panel) {
+  const bool changed = panel_ != panel;
   panel_ = panel;
   stack_->setCurrentWidget(panel == Panel::Files ? filesPanel_ : outlinePanel_);
   updateTabButtons();
+  if (changed) {
+    emit panelChanged(panel);
+  }
 }
 
 muffin::SidebarWidget::Panel muffin::SidebarWidget::panel() const {
@@ -570,21 +559,20 @@ void muffin::SidebarWidget::forgetPendingCreate(const QString& path) {
   pendingCreatePaths_.remove(path);
 }
 
-void muffin::SidebarWidget::setOutline(const QVector<OutlineEntry>& entries) {
-  lastOutlineEntries_ = entries;
-  outlineTree_->clear();
-  QVector<QTreeWidgetItem*> items;
-  items.reserve(entries.size());
-
-  for (const OutlineEntry& entry : entries) {
-    QTreeWidgetItem* parent = entry.parentIndex >= 0 && entry.parentIndex < items.size() ? items[entry.parentIndex] : nullptr;
-    items.push_back(addOutlineItem(entry, parent));
-  }
-
-  outlineTree_->expandAll();
+void muffin::SidebarWidget::setOutline(QVector<OutlineEntry> entries) {
   const bool empty = entries.isEmpty();
+  outlineModel_->setEntries(std::move(entries));
+  if (outlineFoldable_) {
+    outlineTree_->expandAll();
+  }
   outlineEmptyLabel_->setVisible(empty);
   outlineTree_->setVisible(!empty);
+}
+
+void muffin::SidebarWidget::clearOutline() {
+  outlineModel_->clear();
+  outlineTree_->hide();
+  outlineEmptyLabel_->show();
 }
 
 void muffin::SidebarWidget::setOutlineFoldable(bool foldable) {
@@ -595,8 +583,11 @@ void muffin::SidebarWidget::setOutlineFoldable(bool foldable) {
   outlineTree_->setIndentation(foldable ? 14 : 0);
   outlineTree_->setRootIsDecorated(foldable);
   outlineTree_->setItemsExpandable(foldable);
+  outlineModel_->setFoldable(foldable);
   applyStyle();                     // toggle the expand-arrow rule
-  setOutline(lastOutlineEntries_);  // rebuild items (prefix logic depends on foldable)
+  if (foldable) {
+    outlineTree_->expandAll();
+  }
 }
 
 void muffin::SidebarWidget::applyTheme(const ThemeDefinition& theme) {
@@ -632,37 +623,10 @@ void muffin::SidebarWidget::applyStyle() {
   setStyleSheet(sidebarStyleSheet(currentTheme_, outlineFoldable_));
 }
 
-QTreeWidgetItem* muffin::SidebarWidget::addOutlineItem(const OutlineEntry& entry, QTreeWidgetItem* parent) {
-  auto* item = parent ? new QTreeWidgetItem(parent) : new QTreeWidgetItem(outlineTree_);
-  item->setText(0, entry.title);
-  item->setData(0, NodeIdRole, entry.nodeId.toString());
-  item->setData(0, SourceStartRole, static_cast<qlonglong>(entry.sourceRange.byteStart));
-  item->setData(0, SourceEndRole, static_cast<qlonglong>(entry.sourceRange.byteEnd));
-  item->setData(0, LineStartRole, entry.sourceRange.lineStart);
-  item->setData(0, LineEndRole, entry.sourceRange.lineEnd);
-  item->setData(0, ColumnStartRole, entry.sourceRange.columnStart);
-  item->setData(0, ColumnEndRole, entry.sourceRange.columnEnd);
-  item->setTextAlignment(0, Qt::AlignVCenter | Qt::AlignLeft);
-  item->setSizeHint(0, QSize(0, 22));
-  // Flat mode fakes hierarchy with leading spaces; foldable mode relies on the
-  // tree's own indentation, so no prefix.
-  const QString title = outlineFoldable_
-      ? entry.title
-      : QString(qMax(0, entry.level - 1) * 2, QChar(0x2002)) + entry.title;
-  item->setText(0, title);
-  return item;
-}
-
-void muffin::SidebarWidget::emitOutlineItem(QTreeWidgetItem* item) {
-  if (!item) {
+void muffin::SidebarWidget::emitOutlineItem(const QModelIndex& index) {
+  const OutlineEntry* entry = outlineModel_->entry(index);
+  if (!entry) {
     return;
   }
-  SourceRange range;
-  range.byteStart = item->data(0, SourceStartRole).toLongLong();
-  range.byteEnd = item->data(0, SourceEndRole).toLongLong();
-  range.lineStart = item->data(0, LineStartRole).toInt();
-  range.lineEnd = item->data(0, LineEndRole).toInt();
-  range.columnStart = item->data(0, ColumnStartRole).toInt();
-  range.columnEnd = item->data(0, ColumnEndRole).toInt();
-  emit outlineActivated(NodeId::fromString(item->data(0, NodeIdRole).toString()), range);
+  emit outlineActivated(entry->nodeId, entry->sourceRange);
 }

@@ -413,12 +413,43 @@ void MarkdownNode::relativizeDescendants() {
   }
 }
 
+qsizetype MarkdownNode::bindSharedInlineText(const std::shared_ptr<const QString>& source) {
+  return source ? bindSharedInlineTextRecursive(source) : 0;
+}
+
+qsizetype MarkdownNode::bindSharedInlineTextRecursive(const std::shared_ptr<const QString>& source) {
+  qsizetype bound = 0;
+  const auto bindInline = [&](const auto& self, InlineNode& inlineNode) -> void {
+    if (inlineNode.bindSharedText(source)) {
+      ++bound;
+    }
+    for (InlineNode& child : inlineNode.children()) {
+      self(self, child);
+    }
+  };
+  for (InlineNode& inlineNode : metadata_.inlines) {
+    bindInline(bindInline, inlineNode);
+  }
+  for (const auto& child : children_) {
+    if (child) {
+      bound += child->bindSharedInlineTextRecursive(source);
+    }
+  }
+  return bound;
+}
+
 std::unique_ptr<MarkdownNode> MarkdownNode::clone(CloneMode mode) const {
   auto copy = std::make_unique<MarkdownNode>(
       type_, mode == CloneMode::PreserveIds ? id_ : NodeId::create());
   // A single aggregate copy carries every domain field, so adding a field can no longer be
   // silently dropped here (the flat layout previously let clone() miss taskItem_).
   copy->metadata_ = metadata_;
+  // A snapshot must be self-contained. Keeping shared slices here would retain an entire source
+  // buffer for a tiny table/node undo entry and historically made table clones read text in the
+  // wrong coordinate frame after block-relative offsets shifted.
+  for (InlineNode& inlineNode : copy->metadata_.inlines) {
+    inlineNode.detachSharedText();
+  }
   for (const auto& child : children_) {
     copy->appendChild(child->clone(mode));
   }

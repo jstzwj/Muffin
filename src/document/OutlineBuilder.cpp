@@ -16,7 +16,7 @@ void appendInlineText(const InlineNode& node, QString& text) {
     case InlineType::HtmlInline:
     case InlineType::InlineMath:
     case InlineType::TaskMarker:
-      text += node.text();
+      text.append(node.textView());
       return;
     case InlineType::Image:
       text += node.alt();

@@ -8,6 +8,7 @@
 #include "editor/EditorView.h"
 #include "editor/FindBarWidget.h"
 #include "editor/SourceEditorWidget.h"
+#include "document/TextStats.h"
 #include "spellcheck/SpellChecker.h"
 
 #include <QAction>
@@ -251,15 +252,25 @@ void muffin::MainWindow::connectSessionSignals() {
   });
   QObject::connect(&window.session_, &DocumentSession::parsed, &window, [&window] {
     PerfTimer perf("main.parsed.consumer");
+    window.outlineDirty_ = true;
+    const QAction* sidebarAction = window.commands_.action(QStringLiteral("view.sidebar"));
+    const bool outlineVisible = sidebarAction && sidebarAction->isChecked() &&
+                                window.sidebar_->panel() == SidebarWidget::Panel::Outline;
     if (window.session_.lastParseWasLocalEdit()) {
       // Local edit (typing): debounce the outline rebuild so a full-tree heading walk does not
       // run on every keystroke. Word count is already debounced; status is O(1).
-      window.outlineTimer_->start();
+      if (outlineVisible) {
+        window.outlineTimer_->start();
+      }
     } else {
       // Full parse (open/import/options change): the view and outline may have changed wholesale.
       window.outlineTimer_->stop();
       window.renderView_->setDocument(window.session_.document(), window.session_.filePath());
-      window.refreshSidebarOutline();
+      if (outlineVisible) {
+        window.refreshSidebarOutline();
+      } else {
+        window.sidebar_->clearOutline();
+      }
     }
     window.scheduleWordCountUpdate();
     window.updateStatus();
@@ -367,7 +378,7 @@ void muffin::MainWindow::connectChromeSignals() {
     }
     const PieceTable& md = window.session_.markdownText();
     muffin::StatusBarStats stats;
-    stats.words = muffin::MainWindow::countWords(md.toString());
+    stats.words = muffin::text_stats::countWords(md);
     stats.characters = md.size();
     stats.lines = window.session_.document().lineOffsets().lineCount();
     stats.readingMinutes = qMax(1, stats.words / 200);
@@ -382,7 +393,7 @@ void muffin::MainWindow::connectChromeSignals() {
       }
     }
     if (!selected.isEmpty()) {
-      stats.selectedWords = muffin::MainWindow::countWords(selected);
+      stats.selectedWords = muffin::text_stats::countWords(QStringView(selected));
       stats.selectedCharacters = selected.size();
     }
     window.statusBar_->showStatsPopup(stats);
@@ -405,6 +416,16 @@ void muffin::MainWindow::connectChromeSignals() {
 
 void muffin::MainWindow::connectSidebarSignals() {
   auto& window = *this;
+  QObject::connect(window.sidebar_, &SidebarWidget::panelChanged, &window,
+      [&window](SidebarWidget::Panel panel) {
+        if (panel == SidebarWidget::Panel::Outline) {
+          window.refreshSidebarOutline();
+        } else {
+          window.outlineTimer_->stop();
+          window.sidebar_->clearOutline();
+          window.outlineDirty_ = true;
+        }
+      });
   QObject::connect(window.sidebar_, &SidebarWidget::newWindowRequested, &window, [&window] {
     if (QAction* action = window.commands_.action(QStringLiteral("file.new_window"))) {
       action->trigger();

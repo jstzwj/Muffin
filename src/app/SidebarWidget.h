@@ -15,10 +15,10 @@ class QLabel;
 class QStackedWidget;
 class QToolButton;
 class QTreeView;
-class QTreeWidget;
-class QTreeWidgetItem;
 
 namespace muffin {
+
+class OutlineModel;
 
 // Context for an in-progress inline edit of a file-tree row. `pendingCreate` marks a temp
 // entry the MainWindow created on disk so the tree shows a row to rename; on cancel/empty
@@ -52,7 +52,8 @@ public:
   // Select and scroll to a path after create/rename. Expands ancestors first so a
   // fresh entry in a never-expanded folder resolves to a valid index.
   void setCurrentPath(QString path);
-  void setOutline(const QVector<OutlineEntry>& entries);
+  void setOutline(QVector<OutlineEntry> entries);
+  void clearOutline();
   void setOutlineFoldable(bool foldable);
   void applyTheme(const ThemeDefinition& theme);
   void retranslateUi();
@@ -68,6 +69,7 @@ public:
   void beginInlineCreate(QString tempPath);
 
 signals:
+  void panelChanged(muffin::SidebarWidget::Panel panel);
   void newWindowRequested();
   void openFolderRequested();
   void fileOpenRequested(QString path);
@@ -88,8 +90,7 @@ private:
   void setupOutlinePanel();
   void updateTabButtons();
   void applyStyle();
-  QTreeWidgetItem* addOutlineItem(const OutlineEntry& entry, QTreeWidgetItem* parent);
-  void emitOutlineItem(QTreeWidgetItem* item);
+  void emitOutlineItem(const QModelIndex& index);
   // Resolve a just-created entry's index (waiting on the QFileSystemModel async refresh if
   // needed) and open the inline editor on it. Idempotent: skips if an editor is already open.
   void resolveAndEdit(QString path);
@@ -112,14 +113,14 @@ private:
   QWidget* outlinePanel_ = nullptr;
   QFileSystemModel* fileModel_ = nullptr;
   QTreeView* fileTree_ = nullptr;
-  QTreeWidget* outlineTree_ = nullptr;
+  QTreeView* outlineTree_ = nullptr;
+  OutlineModel* outlineModel_ = nullptr;
   QLabel* outlineEmptyLabel_ = nullptr;
   Panel panel_ = Panel::Files;
   QString currentFilePath_;
   QString folderRoot_;
   bool outlineFoldable_ = false;
   ThemeDefinition currentTheme_;
-  QVector<OutlineEntry> lastOutlineEntries_;
   // Inline-edit state: the row being edited (only one editor is open at a time) and the set
   // of temp paths the MainWindow created for a New File / New Folder gesture (so the delegate
   // can tell a "pending create" commit from a plain rename, and cancel can delete the temp).

@@ -54,6 +54,15 @@ public:
   QString toString() const;
   QByteArray toUtf8() const;
 
+  // Visit each logical text run without materializing the full document. Views are valid only for
+  // the duration of the callback and arrive in document order.
+  template <typename Visitor>
+  void forEachChunk(Visitor&& visitor) const {
+    for (const Piece& piece : pieces_) {
+      visitor(QStringView(buffer(piece.fromChanges)).mid(piece.start, piece.length));
+    }
+  }
+
   // Replace [start, end) with `text`. start/end clamped to [0, size]; start<=end enforced.
   // O(pieces): appends text to changes_ and rewires pieces — no whole-document memmove.
   void replace(qsizetype start, qsizetype end, QStringView text);

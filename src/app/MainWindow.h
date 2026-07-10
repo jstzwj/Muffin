@@ -187,7 +187,6 @@ private:
   void syncSourceEditorIfNeeded();
   void scheduleWordCountUpdate();
   void updateWordCountNow();
-  static int countWords(const QString& text);
   void undoEdit();
   void redoEdit();
   void applyTheme(QString name);
@@ -339,6 +338,7 @@ private:
   int fontSizePx_ = 16;
   bool sourceEditorDirty_ = false;
   bool wordCountDirty_ = true;
+  bool outlineDirty_ = true;
   std::unique_ptr<EditorBackend> backend_;
   bool focusMode_ = false;
   bool typewriterMode_ = false;

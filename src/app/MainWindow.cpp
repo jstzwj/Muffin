@@ -338,12 +338,22 @@ void muffin::MainWindow::updateSidebarMode() {
   const QAction* action = commands_.action(QStringLiteral("view.sidebar"));
   const bool sidebarVisible = action && action->isChecked();
   sidebarButton_->setChecked(sidebarVisible);
+  if (!sidebarVisible) {
+    if (outlineTimer_) {
+      outlineTimer_->stop();
+    }
+    sidebar_->clearOutline();
+    outlineDirty_ = true;
+  }
 
   // No transition at startup (window not shown yet) or when reduced motion is requested.
   if (!isVisible() || reducedMotion() || !sidebarAnimation_) {
     sidebar_->setMinimumWidth(220);
     sidebar_->setMaximumWidth(360);
     sidebar_->setVisible(sidebarVisible);
+    if (sidebarVisible && sidebar_->panel() == SidebarWidget::Panel::Outline) {
+      refreshSidebarOutline();
+    }
     return;
   }
 
@@ -353,6 +363,9 @@ void muffin::MainWindow::updateSidebarMode() {
     sidebar_->setVisible(true);
     sidebarTargetWidth_ = qBound(220, sidebarTargetWidth_, 360);
     animateSidebarWidth(0, sidebarTargetWidth_);
+    if (sidebar_->panel() == SidebarWidget::Panel::Outline) {
+      refreshSidebarOutline();
+    }
   } else {
     const int currentWidth = qBound(0, sidebar_->width(), 360);
     sidebarTargetWidth_ = qBound(220, currentWidth, 360);  // remember for next show
@@ -383,6 +396,13 @@ void muffin::MainWindow::setSidebarPanel(SidebarWidget::Panel panel) {
     action->setChecked(true);
   }
   updateSidebarMode();
+  if (panel == SidebarWidget::Panel::Outline) {
+    refreshSidebarOutline();
+  } else {
+    outlineTimer_->stop();
+    sidebar_->clearOutline();
+    outlineDirty_ = true;
+  }
 }
 
 void muffin::MainWindow::refreshSidebarDocumentInfo() {
@@ -393,10 +413,13 @@ void muffin::MainWindow::refreshSidebarDocumentInfo() {
 }
 
 void muffin::MainWindow::refreshSidebarOutline() {
-  if (!sidebar_) {
+  const QAction* sidebarAction = commands_.action(QStringLiteral("view.sidebar"));
+  if (!sidebar_ || !outlineDirty_ || !sidebarAction || !sidebarAction->isChecked() ||
+      sidebar_->panel() != SidebarWidget::Panel::Outline) {
     return;
   }
   sidebar_->setOutline(buildOutline(session_.document()));
+  outlineDirty_ = false;
 }
 
 void muffin::MainWindow::openFolder() {
@@ -737,17 +760,4 @@ void muffin::MainWindow::applyTheme(QString name) {
   }
 
   applyNativeTitleBarDarkMode(def.colors.isDark);
-}
-
-int muffin::MainWindow::countWords(const QString& text) {
-  int count = 0;
-  bool inWord = false;
-  for (const QChar ch : text) {
-    const bool wordChar = ch.isLetterOrNumber() || ch == QLatin1Char('_');
-    if (wordChar && !inWord) {
-      ++count;
-    }
-    inWord = wordChar;
-  }
-  return count;
 }

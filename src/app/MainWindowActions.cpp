@@ -4,6 +4,7 @@
 #include "document/SourceRangeUtil.h"
 #include "editor/EditorView.h"
 #include "editor/SourceEditorWidget.h"
+#include "document/TextStats.h"
 #include "image/ImageInsertionPolicy.h"
 #include "app/StatusBarWidget.h"
 
@@ -153,7 +154,8 @@ void muffin::MainWindow::updateWordCountNow() {
   if (!statusBar_ || !wordCountDirty_) {
     return;
   }
-  statusBar_->setWordCount(MainWindow::countWords(session_.markdownText().toString()));
+  const int words = text_stats::countWords(session_.markdownText());
+  statusBar_->setWordCount(words);
   wordCountDirty_ = false;
 }
 

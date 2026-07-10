@@ -4,6 +4,7 @@
 #include "app/PreferencesDialog.h"
 #include "app/QuickOpenDialog.h"
 #include "app/SidebarWidget.h"
+#include "document/TextStats.h"
 #include "editor/EditorView.h"
 #include "export/HtmlExporter.h"
 #include "export/PandocRunner.h"
@@ -348,7 +349,7 @@ void muffin::MainWindow::showDocumentProperties() {
                                   QDir::toNativeSeparators(info.absolutePath()),
                                   QString::number(info.size()),
                                   QLocale().toString(info.lastModified(), QLocale::ShortFormat),
-                                  QString::number(MainWindow::countWords(session_.markdownText().toString())),
+                                  QString::number(text_stats::countWords(session_.markdownText())),
                                   QString::number(session_.lastParseElapsedMs()));
   QMessageBox::information(this, tr("Properties"), message);
 }

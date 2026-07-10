@@ -1,5 +1,6 @@
 #include "document/InlineNode.h"
 
+#include <limits>
 #include <utility>
 
 namespace muffin {
@@ -19,11 +20,68 @@ InlineType InlineNode::type() const {
 }
 
 QString InlineNode::text() const {
-  return text_;
+  if (const auto* owned = std::get_if<QString>(&text_)) {
+    return *owned;
+  }
+  return textView().toString();
+}
+
+QStringView InlineNode::textView() const {
+  if (const auto* owned = std::get_if<QString>(&text_)) {
+    return QStringView(*owned);
+  }
+  const SharedTextSlice& shared = std::get<SharedTextSlice>(text_);
+  return shared.source
+      ? QStringView(*shared.source).mid(shared.start, shared.length)
+      : QStringView();
 }
 
 void InlineNode::setText(QString text) {
   text_ = std::move(text);
+}
+
+bool InlineNode::bindSharedText(const std::shared_ptr<const QString>& source) {
+  if (!source || source->size() > std::numeric_limits<int>::max()) {
+    return false;
+  }
+  const QStringView value = textView();
+  if (value.isEmpty()) {
+    return false;
+  }
+  const QStringView sourceView(*source);
+  const auto bindRange = [&](InlineRange range) {
+    if (!range.isValid() || range.start > sourceView.size() || range.end > sourceView.size()) {
+      return false;
+    }
+    const QStringView candidate = sourceView.mid(range.start, range.length());
+    if (candidate == value) {
+      text_ = SharedTextSlice{source, int(range.start), int(range.length())};
+      return true;
+    }
+    const qsizetype relative = candidate.indexOf(value);
+    if (relative >= 0) {
+      text_ = SharedTextSlice{source, int(range.start + relative), int(value.size())};
+      return true;
+    }
+    return false;
+  };
+  if (bindRange(sourceRanges_.content) || bindRange(sourceRanges_.source)) {
+    return true;
+  }
+  return false;
+}
+
+void InlineNode::detachSharedText() {
+  if (std::holds_alternative<SharedTextSlice>(text_)) {
+    text_ = textView().toString();
+  }
+  for (InlineNode& child : children_) {
+    child.detachSharedText();
+  }
+}
+
+bool InlineNode::usesSharedText() const {
+  return std::holds_alternative<SharedTextSlice>(text_);
 }
 
 QString InlineNode::marker() const {

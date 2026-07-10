@@ -6,6 +6,9 @@
 #include <QStringView>
 #include <QVector>
 
+#include <memory>
+#include <variant>
+
 namespace muffin {
 
 struct InlineRange {
@@ -45,7 +48,11 @@ public:
 
   InlineType type() const;
   QString text() const;
+  QStringView textView() const;
   void setText(QString text);
+  bool bindSharedText(const std::shared_ptr<const QString>& source);
+  void detachSharedText();
+  bool usesSharedText() const;
 
   QString marker() const;
   void setMarker(QString marker);
@@ -99,8 +106,14 @@ public:
   static InlineNode footnoteReference(QString label, QString ordinal);
 
 private:
+  struct SharedTextSlice {
+    std::shared_ptr<const QString> source;
+    int start = 0;
+    int length = 0;
+  };
+
   InlineType type_ = InlineType::Text;
-  QString text_;
+  std::variant<QString, SharedTextSlice> text_;
   QString marker_;
   QString href_;
   QString title_;

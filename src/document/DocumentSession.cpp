@@ -835,6 +835,7 @@ void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector
     return;
   }
   PerfTimer perf("session.fullParse");
+  const auto sharedText = std::make_shared<const QString>(text);
   ParseResult result;
   {
     PerfTimer parsePerf("session.parse");
@@ -858,10 +859,7 @@ void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector
     PerfTimer relativizePerf("session.relativize");
     for (const auto& child : document_.root().children()) {
       if (child) {
-        // TODO(text-sharing): InlineNode text-sharing is implemented (bindSharedText) but currently
-        // DISABLED — it caused a table-undo correctness regression (block-relative offset ×
-        // clone/snapshot interaction). Re-enable after that's resolved. Infrastructure is inert;
-        // textDoc is intentionally left null here so each InlineNode owns its text copy.
+        child->bindSharedInlineText(sharedText);
         child->relativizeDescendants();
       }
     }
@@ -879,6 +877,7 @@ void muffin::DocumentSession::finishAsyncParse() {
   PerfTimer perf("session.fullParse");
   std::shared_ptr<ParseResult> resultPtr = parseWatcher_->result();
   ParseResult& result = *resultPtr;
+  const auto sharedText = std::make_shared<const QString>(pendingText_);
   lastParseElapsedMs_ = result.elapsedMs;
   lastParseWasLocalEdit_ = false;
   lastLocalEditChangedTopLevelStructure_ = false;
@@ -896,6 +895,7 @@ void muffin::DocumentSession::finishAsyncParse() {
     PerfTimer relativizePerf("session.relativize");
     for (const auto& child : document_.root().children()) {
       if (child) {
+        child->bindSharedInlineText(sharedText);
         child->relativizeDescendants();
       }
     }
@@ -996,6 +996,7 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
       }
     }
   }
+  const auto sharedSliceText = std::make_shared<const QString>(sliceMarkdown);
 
   std::vector<std::unique_ptr<MarkdownNode>> replacements;
   int sliceLineDelta;
@@ -1013,6 +1014,7 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
     // SLICE-RELATIVE (the base is the block's slice-relative byteStart), THEN absolutize the
     // block's own range. Descendants stay relative-to-block; sourceRange() resolves them to
     // absolute via the block's now-absolute byteStart.
+    child->bindSharedInlineText(sharedSliceText);
     child->relativizeDescendants();
     SourceRange own = child->sourceRange();  // detached top-level block: stored, slice-relative
     if (own.byteStart >= 0 && own.byteEnd >= own.byteStart) {

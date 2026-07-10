@@ -448,6 +448,8 @@ set(MUFFIN_CORE_SOURCES
   src/document/MarkdownNode.h
   src/document/PieceTable.cpp
   src/document/PieceTable.h
+  src/document/TextStats.cpp
+  src/document/TextStats.h
   src/document/TextSelection.h
   src/document/NodeIndex.cpp
   src/document/NodeIndex.h
@@ -655,6 +657,8 @@ set(MUFFIN_UI_SOURCES
   src/blocks/table/TableCellSourceEdit.h
   src/app/SidebarWidget.cpp
   src/app/SidebarWidget.h
+  src/app/OutlineModel.cpp
+  src/app/OutlineModel.h
   src/app/StatusBarWidget.cpp
   src/app/StatusBarWidget.h
   src/editor/SourceEditorWidget.cpp
