@@ -31,7 +31,7 @@
 #include <QSysInfo>
 #include <QUrl>
 
-namespace muffin {
+using namespace muffin;
 
 namespace {
 // Thin wrappers over MainWindow's composite state queries so predicate lambdas
@@ -74,7 +74,7 @@ bool& menuSpecValid() {
 }
 }  // namespace
 
-const std::vector<CommandDeclaration>& commandDeclarations() {
+const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
   if (!commandsValid()) {
     commandTable() = std::vector<CommandDeclaration>{
       // ---------------- File ----------------
@@ -83,8 +83,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .text = muffin::MainWindow::tr("New"),
        .shortcut = QKeySequence::New,
        .handler = [](MainWindow& window) {
-         window.editorController_.clearHistoryAndSelection();
-         window.fileController_.newFile(window.session_, &window);
+         window.startNewDocument();
        }},
       {.id = QStringLiteral("file.new_window"),
        .category = CommandCategory::File,
@@ -100,10 +99,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
        .text = muffin::MainWindow::tr("Open..."),
        .shortcut = QKeySequence::Open,
        .handler = [](MainWindow& window) {
-         if (window.fileController_.open(window.session_, &window)) {
-           window.editorController_.clearHistoryAndSelection();
-           window.addRecentFile(window.session_.filePath());
-         }
+         window.openFile({});
        }},
       {.id = QStringLiteral("file.quick_open"),
        .category = CommandCategory::File,
@@ -1500,52 +1496,21 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
          if (destDir.isEmpty()) {
            return;
          }
-         const auto refs = ImageFileOps::collectImageRefs(window.session_.document());
-         int moved = 0;
-         // Move files and update markdown references
-         for (const auto& ref : refs) {
-           if (!ImageFileOps::isLocalImageSrc(ref.href)) {
-             continue;
-           }
-           const QString resolved = ImageFileOps::resolveImagePath(ref.href, docDir);
-           if (resolved.isEmpty()) {
-             continue;
-           }
-           QString newPath;
-           if (ImageFileOps::moveImageTo(resolved, QDir(destDir), &newPath)) {
-             ++moved;
-           }
+         const auto result = ImageFileOps::moveAllImages(
+             window.session_.document(), window.session_.markdownText().toString(),
+             docDir, QDir(destDir));
+         if (!result.success) {
+           QMessageBox::warning(&window, muffin::MainWindow::tr("Move All Images"),
+               muffin::MainWindow::tr("Could not move images:\n%1").arg(result.error));
+           return;
          }
-         // After moving, update all relative paths in the markdown
-         const QString relPrefix = QDir(docDir).relativeFilePath(destDir);
-         QString md = window.session_.markdownText().toString();
-         // Re-collect refs after text may have shifted — use the originals from before
-         // Since we only moved files, the markdown hasn't changed yet. Update hrefs now.
-         for (int i = refs.size() - 1; i >= 0; --i) {
-           const auto& ref = refs[i];
-           if (!ImageFileOps::isLocalImageSrc(ref.href)) {
-             continue;
-           }
-           const QString resolved = ImageFileOps::resolveImagePath(ref.href, docDir);
-           if (resolved.isEmpty()) {
-             continue;
-           }
-           const QString fileName = QFileInfo(resolved).fileName();
-           const QString newRelPath = relPrefix.isEmpty() ? fileName : relPrefix + QChar('/') + fileName;
-           // Replace href in the source range — find the url portion
-           const int urlSearchStart = md.indexOf(QStringLiteral("]("), ref.sourceStart);
-           if (urlSearchStart < 0 || urlSearchStart >= ref.sourceEnd) {
-             continue;
-           }
-           const int urlStart = urlSearchStart + 2;
-           int urlEnd = urlStart;
-           while (urlEnd < md.size() && urlEnd <= ref.sourceEnd && md[urlEnd] != QChar(')') && md[urlEnd] != QChar(' ')) {
-             ++urlEnd;
-           }
-           md.replace(urlStart, urlEnd - urlStart, newRelPath);
+         const QString md = result.markdown;
+         if (md != window.session_.markdownText().toString()) {
+           window.editorController_.applyMarkdownTextWithUndo(
+               md, muffin::MainWindow::tr("Move All Images"));
          }
-         window.editorController_.applyMarkdownTextWithUndo(md, muffin::MainWindow::tr("Move All Images"));
-         QMessageBox::information(&window, muffin::MainWindow::tr("Move All Images"), muffin::MainWindow::tr("Moved %1 image(s).").arg(moved));
+         QMessageBox::information(&window, muffin::MainWindow::tr("Move All Images"),
+             muffin::MainWindow::tr("Moved %1 image(s).").arg(result.movedCount));
        },
        .enabled = [](const MainWindow& w) { return !w.backend_->isSourceMode(); }},
       {.id = QStringLiteral("image.global_settings"),
@@ -1716,7 +1681,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
       {.id = QStringLiteral("help.update"),
        .category = CommandCategory::Help,
        .text = muffin::MainWindow::tr("Check for Updates..."),
-       .handler = [](MainWindow&) { UpdateChecker::instance().checkForUpdates(); }},
+       .handler = [](MainWindow& window) { UpdateChecker::instance().checkForUpdates(&window); }},
       {.id = QStringLiteral("help.about"),
        .category = CommandCategory::Help,
        .text = muffin::MainWindow::tr("About"),
@@ -1738,7 +1703,7 @@ const std::vector<CommandDeclaration>& commandDeclarations() {
   return commandTable();
 }
 
-const CommandDeclaration* commandDeclaration(const QString& id) {
+const muffin::CommandDeclaration* muffin::commandDeclaration(const QString& id) {
   for (const CommandDeclaration& decl : commandDeclarations()) {
     if (decl.id == id) {
       return &decl;
@@ -1747,7 +1712,7 @@ const CommandDeclaration* commandDeclaration(const QString& id) {
   return nullptr;
 }
 
-void refreshDeclarations() {
+void muffin::refreshDeclarations() {
   commandsValid() = false;
   menuSpecValid() = false;
   commandDeclarations();
@@ -1756,7 +1721,7 @@ void refreshDeclarations() {
 
 // ---- Menu layout -----------------------------------------------------------
 
-const std::vector<MenuSpec>& mainMenuSpec() {
+const std::vector<muffin::MenuSpec>& muffin::mainMenuSpec() {
   if (!menuSpecValid()) {
     menuSpecTable() = std::vector<MenuSpec>{
       // File
@@ -2128,5 +2093,3 @@ const std::vector<MenuSpec>& mainMenuSpec() {
   }
   return menuSpecTable();
 }
-
-}  // namespace muffin

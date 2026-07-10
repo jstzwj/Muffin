@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QPointer>
 #include <QSettings>
 #include <QVersionNumber>
 
@@ -17,13 +18,9 @@ muffin::UpdateChecker& muffin::UpdateChecker::instance() {
   return checker;
 }
 
-bool muffin::UpdateChecker::isUserInitiated() const {
-  return userInitiated_;
-}
-
-void muffin::UpdateChecker::checkForUpdates() {
+bool muffin::UpdateChecker::checkForUpdates(QObject* requester) {
   if (checking_) {
-    return;
+    return false;
   }
   checking_ = true;
 
@@ -34,14 +31,17 @@ void muffin::UpdateChecker::checkForUpdates() {
   request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
 
   QNetworkReply* reply = network_.get(request);
-  connect(reply, &QNetworkReply::finished, this, [this, reply] {
+  const QPointer<QObject> requestOwner(requester);
+  const bool manualRequest = requester != nullptr;
+  connect(reply, &QNetworkReply::finished, this, [this, reply, requestOwner, manualRequest] {
     reply->deleteLater();
     checking_ = false;
-
-    QSettings().setValue(QStringLiteral("update/lastChecked"), QDateTime::currentDateTime());
+    if (manualRequest && requestOwner.isNull()) {
+      return;
+    }
 
     if (reply->error() != QNetworkReply::NoError) {
-      emit checkFailed(reply->errorString());
+      emit checkFailed(reply->errorString(), requestOwner.data());
       return;
     }
 
@@ -49,7 +49,7 @@ void muffin::UpdateChecker::checkForUpdates() {
     QJsonParseError parseError;
     const QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
     if (parseError.error != QJsonParseError::NoError) {
-      emit checkFailed(parseError.errorString());
+      emit checkFailed(parseError.errorString(), requestOwner.data());
       return;
     }
 
@@ -63,13 +63,20 @@ void muffin::UpdateChecker::checkForUpdates() {
 
     const QVersionNumber remote = QVersionNumber::fromString(remoteVersion);
     const QVersionNumber current = QVersionNumber::fromString(currentVersion);
+    if (remote.isNull() || current.isNull()) {
+      emit checkFailed(tr("The update server returned an invalid version."), requestOwner.data());
+      return;
+    }
+
+    QSettings().setValue(QStringLiteral("update/lastChecked"), QDateTime::currentDateTime());
 
     if (remote > current) {
-      emit updateAvailable(remoteVersion, htmlUrl);
+      emit updateAvailable(remoteVersion, htmlUrl, requestOwner.data());
     } else {
-      emit upToDate();
+      emit upToDate(requestOwner.data());
     }
   });
+  return true;
 }
 
 void muffin::UpdateChecker::maybeAutoCheck() {
@@ -84,6 +91,5 @@ void muffin::UpdateChecker::maybeAutoCheck() {
     return;  // Less than 24 hours since last check
   }
 
-  userInitiated_ = false;
-  checkForUpdates();
+  checkForUpdates(nullptr);
 }

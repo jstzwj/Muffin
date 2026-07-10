@@ -565,6 +565,7 @@ muffin::DocumentSession::DocumentSession(QObject* parent) : QObject(parent) {
   connect(parseWatcher_, &QFutureWatcher<std::shared_ptr<ParseResult>>::finished, this, &DocumentSession::finishAsyncParse);
   fileWatcher_ = new QFileSystemWatcher(this);
   connect(fileWatcher_, &QFileSystemWatcher::fileChanged, this, &DocumentSession::onFileChanged);
+  connect(fileWatcher_, &QFileSystemWatcher::directoryChanged, this, &DocumentSession::onFileChanged);
 }
 
 muffin::MarkdownDocument& muffin::DocumentSession::document() {
@@ -605,11 +606,15 @@ muffin::TopLevelRangeChange muffin::DocumentSession::lastLocalTopLevelRangeChang
 void muffin::DocumentSession::newDocument() {
   if (fileWatcher_ && !filePath_.isEmpty()) {
     fileWatcher_->removePath(filePath_);
+    fileWatcher_->removePath(QFileInfo(filePath_).absolutePath());
   }
   filePath_.clear();
+  fileFormat_ = {};
   baselineMtime_ = QDateTime();
   baselineSize_ = -1;
   suppressExternalChange_ = false;
+  lastNotifiedMtime_ = QDateTime();
+  lastNotifiedSize_ = -2;
   emit filePathChanged(filePath_);
   parseAndStore(QString(), false);
   emit documentTextChanged(QString());
@@ -621,14 +626,15 @@ void muffin::DocumentSession::setFilePath(QString path) {
   }
   if (fileWatcher_ && !filePath_.isEmpty()) {
     fileWatcher_->removePath(filePath_);  // stop watching the old path
+    fileWatcher_->removePath(QFileInfo(filePath_).absolutePath());
   }
   filePath_ = std::move(path);
   baselineMtime_ = QDateTime();
   baselineSize_ = -1;  // new path: no baseline until FileController records one after open/write
   suppressExternalChange_ = false;
-  if (fileWatcher_ && !filePath_.isEmpty()) {
-    fileWatcher_->addPath(filePath_);  // watch the new path (silently ignored if it doesn't exist yet)
-  }
+  lastNotifiedMtime_ = QDateTime();
+  lastNotifiedSize_ = -2;
+  refreshFileWatch();
   emit filePathChanged(filePath_);
 }
 
@@ -636,14 +642,36 @@ void muffin::DocumentSession::recordFileBaseline() {
   if (filePath_.isEmpty()) {
     baselineMtime_ = QDateTime();
     baselineSize_ = -1;
+    lastNotifiedMtime_ = QDateTime();
+    lastNotifiedSize_ = -2;
     return;
   }
   const QFileInfo info(filePath_);
   baselineMtime_ = info.lastModified();
   baselineSize_ = info.size();
+  lastNotifiedMtime_ = QDateTime();
+  lastNotifiedSize_ = -2;
+  refreshFileWatch();
+}
+
+void muffin::DocumentSession::refreshFileWatch() {
+  if (!fileWatcher_ || filePath_.isEmpty()) {
+    return;
+  }
+  const QString directory = QFileInfo(filePath_).absolutePath();
+  if (!fileWatcher_->directories().contains(directory)) {
+    fileWatcher_->addPath(directory);
+  }
+  if (QFileInfo::exists(filePath_) && !fileWatcher_->files().contains(filePath_)) {
+    fileWatcher_->addPath(filePath_);
+  }
 }
 
 void muffin::DocumentSession::onFileChanged() {
+  // Atomic writers replace the watched inode/file entry. Re-arm before any
+  // early return; the directory watch keeps this callback alive even when the
+  // file watch itself was dropped by the platform backend.
+  refreshFileWatch();
   if (suppressExternalChange_ || !hasFileBaseline() || filePath_.isEmpty()) {
     return;
   }
@@ -652,6 +680,13 @@ void muffin::DocumentSession::onFileChanged() {
   // finds stat == baseline and is ignored.
   const QFileInfo info(filePath_);
   if (!info.exists() || info.lastModified() != baselineMtime_ || info.size() != baselineSize_) {
+    const QDateTime observedMtime = info.exists() ? info.lastModified() : QDateTime();
+    const qint64 observedSize = info.exists() ? info.size() : -1;
+    if (observedMtime == lastNotifiedMtime_ && observedSize == lastNotifiedSize_) {
+      return;
+    }
+    lastNotifiedMtime_ = observedMtime;
+    lastNotifiedSize_ = observedSize;
     emit externalFileChanged();
   }
 }

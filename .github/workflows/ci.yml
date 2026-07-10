@@ -157,21 +157,16 @@ jobs:
       - name: Test
         run: ${{ matrix.test-command }}
 
-  # Diagnostic Linux build with AddressSanitizer. The render/inline-projection tests hit a
-  # non-deterministic heap corruption that glibc reports only as a cryptic `free(): invalid size`.
-  # ASan turns that into a precise use-after-free / heap-buffer-overflow report with file:line and
-  # alloc/free stacks, so the offending site can be located and fixed.
+  # Blocking Linux build with AddressSanitizer. Memory errors are release
+  # failures, even when they are nondeterministic in an unsanitized build.
   #
   # Qt stays Release (a RelWithDebInfo Conan install would force a ~30min Qt rebuild from source);
   # the sanitizer flags are added to OUR code only, and ASan's global allocator interceptors still
   # catch UAF/OOB across Qt and the third-party libs. `-g` carries line numbers into the report.
   #
-  # continue-on-error: this job surfaces the report WITHOUT blocking PRs/releases (read its log when
-  # it finds something). Flip to a normal blocking job once the corruption is fixed.
   linux-asan:
-    name: Linux ASan (diagnostic)
+    name: Linux ASan (blocking)
     runs-on: ubuntu-latest
-    continue-on-error: true
     env:
       # detect_leaks=0: Qt/threads trip the leak detector with noise. abort_on_error=1 lets ctest
       # see the fault as a failure; print_stacktrace=1 + symbolize=1 produce the actionable report.

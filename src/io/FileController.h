@@ -8,6 +8,7 @@ class QWidget;
 namespace muffin {
 
 class DocumentSession;
+struct TextFileFormat;
 
 // Outcome of a save attempt. SkippedBusy = an async open parse is in flight (document_ still holds
 // stale pre-open text while filePath_ already points at the new file, so we refuse to persist and
@@ -50,9 +51,12 @@ private:
   // Silently persist a pathed, modified document before switching to another, so
   // the confirm-discard prompt is skipped. No-op unless files/autoSaveOnSwitch is on.
   void autoSaveOnSwitchIfEnabled(DocumentSession& session, QWidget* parent);
-  bool readTextFile(const QString& path, QString* out, QWidget* parent) const;
-  bool readTextFileWithEncoding(const QString& path, QString* out, QWidget* parent, const QString& encodingName) const;
-  bool writeTextFile(const QString& path, const QString& text, QWidget* parent) const;
+  bool readTextFile(const QString& path, QString* out, TextFileFormat* format, QWidget* parent) const;
+  bool readTextFileWithEncoding(const QString& path, QString* out, TextFileFormat* format,
+                                QWidget* parent, const QString& encodingName) const;
+  bool writeTextFile(const QString& path, const QString& text, const TextFileFormat& format,
+                     QString* normalizedText, QWidget* parent) const;
+  TextFileFormat formatForNewFile() const;
 };
 
 }  // namespace muffin

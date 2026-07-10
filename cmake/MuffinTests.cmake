@@ -24,12 +24,14 @@ muffin_add_test(NAME MuffinOutlineBuilderTest   SOURCE tests/document/OutlineBui
 muffin_add_test(NAME MuffinImageSyntaxOpsTest   SOURCE tests/document/ImageSyntaxOpsTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinFilePathOpsLinkTest  SOURCE tests/io/FilePathOpsLinkTest.cpp     LINK MuffinUi)
 muffin_add_test(NAME MuffinFilePathOpsRenameTest SOURCE tests/io/FilePathOpsRenameTest.cpp LINK MuffinUi)
+muffin_add_test(NAME MuffinFileControllerFormatTest SOURCE tests/io/FileControllerFormatTest.cpp LINK MuffinUi EXTRA_SOURCES src/io/FileController.cpp RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMarkdownParseOptionsTest SOURCE tests/document/MarkdownParseOptionsTest.cpp EXTRA_SOURCES src/app/MarkdownSettings.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinAlertBoxParseTest       SOURCE tests/document/AlertBoxParseTest.cpp       LINK MuffinCore)
 muffin_add_test(NAME MuffinHighlightParseTest      SOURCE tests/document/HighlightParseTest.cpp      LINK MuffinCore)
 muffin_add_test(NAME MuffinSubscriptSuperscriptParseTest SOURCE tests/document/SubscriptSuperscriptParseTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinDraftRecoveryTest SOURCE tests/app/DraftRecoveryTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinDocumentSessionAsyncParseTest SOURCE tests/document/DocumentSessionAsyncParseTest.cpp LINK MuffinCore)
+muffin_add_test(NAME MuffinDocumentSessionFileWatchTest SOURCE tests/document/DocumentSessionFileWatchTest.cpp LINK MuffinCore)
 
 # --- render (link MuffinUi, take the render_smoke fixture, lock the GUI) ---
 muffin_add_test(NAME MuffinRenderThemeTest            SOURCE tests/render/RenderThemeTest.cpp            LINK MuffinUi EXTRA_SOURCES src/themes.qrc FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK DISABLED_ON APPLE)
@@ -70,6 +72,7 @@ muffin_add_test(NAME MuffinCssThemeMapperTest SOURCE tests/theme/CssThemeMapperT
 
 # --- image subsystem (link MuffinUi; pure logic under QCoreApplication, no GUI lock) ---
 muffin_add_test(NAME MuffinImageInsertionPolicyTest  SOURCE tests/image/ImageInsertionPolicyTest.cpp  LINK MuffinUi)
+muffin_add_test(NAME MuffinImageFileOpsMoveTest       SOURCE tests/image/ImageFileOpsMoveTest.cpp       LINK MuffinUi)
 muffin_add_test(NAME MuffinCustomCommandUploaderTest SOURCE tests/image/CustomCommandUploaderTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinImageDecoderTest          SOURCE tests/image/ImageDecoderTest.cpp          LINK MuffinUi)
 
@@ -104,6 +107,7 @@ muffin_add_test(NAME MuffinThematicBreakEditTest       SOURCE tests/editor/Thema
 muffin_add_test(NAME MuffinBackspaceEmptyParagraphTest SOURCE tests/editor/BackspaceEmptyParagraphTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputDeleteRangeTest        SOURCE tests/editor/InputDeleteRangeTest.cpp        LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinSourceEditorBackendDeleteTest SOURCE tests/app/SourceEditorBackendDeleteTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinDocumentSearchTest             SOURCE tests/editor/DocumentSearchTest.cpp       LINK MuffinUi)
 muffin_add_test(NAME MuffinInputLiteralMergeTest       SOURCE tests/editor/InputLiteralMergeTest.cpp       LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinCodeFenceCommitCursorTest   SOURCE tests/editor/CodeFenceCommitCursorTest.cpp   LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputBlockEditingTest       SOURCE tests/editor/InputBlockEditingTest.cpp       LINK MuffinUi RESOURCE_LOCK)

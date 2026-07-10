@@ -62,6 +62,25 @@ void testUntitledSnapshotHasEmptySource() {
   require(drafts.first().sourcePath.isEmpty(), QStringLiteral("Untitled sourcePath should be empty"));
 }
 
+void testExplicitKeysIsolateUntitledDocuments() {
+  QTemporaryDir dir;
+  DraftRecovery recovery = makeRecovery(dir);
+  const QString firstKey = DraftRecovery::createDraftKey();
+  const QString secondKey = DraftRecovery::createDraftKey();
+  require(firstKey != secondKey, QStringLiteral("Draft keys must be unique"));
+
+  recovery.snapshot(QStringLiteral("first"), QString(), firstKey);
+  recovery.snapshot(QStringLiteral("second"), QString(), secondKey);
+  const auto drafts = recovery.pendingDrafts();
+  require(drafts.size() == 2, QStringLiteral("Two untitled documents need independent drafts"));
+
+  recovery.markClean(QString(), firstKey);
+  const auto remaining = recovery.pendingDrafts();
+  require(remaining.size() == 1, QStringLiteral("Cleaning one untitled draft must retain the other"));
+  require(recovery.loadDraft(remaining.first()) == QStringLiteral("second"),
+          QStringLiteral("Wrong untitled draft survived cleanup"));
+}
+
 void testEmptyTextIsIgnored() {
   QTemporaryDir dir;
   DraftRecovery recovery = makeRecovery(dir);
@@ -115,20 +134,26 @@ void writeSourceFile(const QString& path) {
   f.close();
 }
 
-void testPruneRemovesDraftsForDeletedSource() {
+void testPruneKeepsDraftsForDeletedSource() {
   QTemporaryDir dir;
   DraftRecovery recovery = makeRecovery(dir);
   // A real on-disk source: its draft survives pruning.
   const QString alivePath = dir.filePath(QStringLiteral("alive.md"));
   writeSourceFile(alivePath);
   recovery.snapshot(QStringLiteral("alive"), alivePath);
-  // A source that was never on disk (deleted before next launch): pruned.
+  // A source that was deleted before next launch remains recoverable as untitled.
   recovery.snapshot(QStringLiteral("ghost"), QStringLiteral("/tmp/muffin-no-such-file.md"));
   require(recovery.pendingDrafts().size() == 2, QStringLiteral("Both drafts listed before prune"));
   recovery.pruneOrphaned();
   const auto after = recovery.pendingDrafts();
-  require(after.size() == 1, QStringLiteral("Only the on-disk-source draft survives prune"));
-  require(after.first().sourcePath == alivePath, QStringLiteral("Surviving draft should be the on-disk source"));
+  require(after.size() == 2, QStringLiteral("Complete drafts must survive regardless of source existence"));
+  bool foundMissingSource = false;
+  for (const auto& draft : after) {
+    if (draft.sourcePath == QStringLiteral("/tmp/muffin-no-such-file.md")) {
+      foundMissingSource = recovery.loadDraft(draft) == QStringLiteral("ghost");
+    }
+  }
+  require(foundMissingSource, QStringLiteral("Missing-source draft should remain loadable"));
 }
 
 void testPruneRemovesHalfWrittenPairs() {
@@ -168,12 +193,13 @@ int main(int argc, char** argv) {
   testEmptyDirectoryHasNoDrafts();
   testSnapshotRoundTrips();
   testUntitledSnapshotHasEmptySource();
+  testExplicitKeysIsolateUntitledDocuments();
   testEmptyTextIsIgnored();
   testMarkCleanRemovesDraft();
   testDiscardRemovesDraft();
   testSnapshotOverwritesSameKey();
   testMultipleDraftsListNewestFirst();
-  testPruneRemovesDraftsForDeletedSource();
+  testPruneKeepsDraftsForDeletedSource();
   testPruneRemovesHalfWrittenPairs();
   testPruneLeavesUntitledAndStrayFiles();
   return 0;

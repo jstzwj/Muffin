@@ -14,7 +14,7 @@ namespace muffin {
 class DraftRecovery {
 public:
   struct PendingDraft {
-    QString key;          // stable id: hash of the absolute source path, or "untitled"
+    QString key;          // stable per-document id (legacy drafts may use a path hash or "untitled")
     QString sourcePath;   // original file path; empty for untitled documents
     qint64 timestamp = 0; // msecs since epoch of the last snapshot
     qsizetype charCount = 0;
@@ -24,23 +24,29 @@ public:
   // a temp dir.
   explicit DraftRecovery(QString directory = QString());
 
+  // Create a filesystem-safe identity for one logical document instance. The
+  // identity is independent of sourcePath so several untitled windows (or two
+  // windows editing the same file) never overwrite each other's recovery data.
+  static QString createDraftKey();
+
   // Write a snapshot for the given source path (empty path = untitled). No-op if
   // the text is empty (nothing worth recovering).
-  void snapshot(const QString& markdownText, const QString& sourceFilePath);
+  void snapshot(const QString& markdownText, const QString& sourceFilePath,
+                const QString& draftKey = QString());
 
   // Remove the snapshot for this source path (called after a successful save).
-  void markClean(const QString& sourceFilePath);
+  void markClean(const QString& sourceFilePath, const QString& draftKey = QString());
 
   QVector<PendingDraft> pendingDrafts() const;
   QString loadDraft(const PendingDraft& draft) const;
   void discard(const PendingDraft& draft);
-  // Drop drafts whose source file no longer exists, plus half-written
-  // (.md/.meta) pairs left behind by a crash mid-snapshot. Untitled drafts are
-  // always kept. Call before pendingDrafts() at the recovery entry point.
+  // Drop only half-written (.md/.meta) pairs left behind by a crash
+  // mid-snapshot. A complete draft is retained even when its source file was
+  // moved or deleted: that is recoverable user data, restored as untitled.
   void pruneOrphaned();
 
 private:
-  QString keyFor(const QString& sourceFilePath) const;
+  QString keyFor(const QString& sourceFilePath, const QString& draftKey) const;
   QString draftPath(const QString& key) const;
   QString metaPath(const QString& key) const;
 

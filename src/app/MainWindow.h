@@ -84,6 +84,7 @@ protected:
   void showEvent(QShowEvent* event) override;
 
 private:
+  bool startNewDocument();
   // Create and register one QAction for a declared command, pulling its label,
   // shortcut, checkable state and action-group from the declaration table. The
   // menu walker (buildMenus) calls this for every Action item in mainMenuSpec().
@@ -271,11 +272,13 @@ private:
   void showFindBar();
   void showReplaceBar();
   void hideFindBar();
-  void performFind(const QString& text, bool forward);
+  void performFind(const QString& text, bool forward, bool regularExpression, bool caseSensitive);
   void performFindNext();
   void performFindPrevious();
-  void performReplace(const QString& findText, const QString& replaceText);
-  void performReplaceAll(const QString& findText, const QString& replaceText);
+  void performReplace(const QString& findText, const QString& replaceText,
+                      bool regularExpression, bool caseSensitive);
+  void performReplaceAll(const QString& findText, const QString& replaceText,
+                         bool regularExpression, bool caseSensitive);
   void performAutoSave();
   void snapshotDraft();
   // Crash-recovery heartbeat interval, scaled by document length: floor 3s, then +1s per ~2k
@@ -284,11 +287,12 @@ private:
   // size (a "50MB on disk" CJK doc is ~25M code units → ~12s, not ~25s). Bounds typing-at-risk on a
   // crash while keeping the O(doc) encode + sync write off the typing path on large documents.
   int draftSnapshotIntervalMs() const;
-  void restoreDraft(const DraftRecovery::PendingDraft& draft);
+  bool restoreDraft(const DraftRecovery::PendingDraft& draft);
 
   DocumentSession session_;
   FileController fileController_;
   DraftRecovery drafts_;
+  QString draftKey_ = DraftRecovery::createDraftKey();
   CommandRegistry commands_;
   ThemeManager themeManager_;
   EditorController editorController_;
@@ -328,6 +332,8 @@ private:
   int cursorLine_ = 1;
   int cursorColumn_ = 1;
   QString renderCursorStatus_;
+  bool lastFindRegularExpression_ = false;
+  bool lastFindCaseSensitive_ = false;
   QString sidebarFolderRoot_;
   int zoomPercent_ = 100;
   int fontSizePx_ = 16;

@@ -1,6 +1,7 @@
 #include "io/ImageFileOps.h"
 
 #include "document/InlineNode.h"
+#include "document/ImageSyntaxOps.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 
@@ -9,8 +10,39 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QImage>
+#include <QHash>
+#include <QSet>
+
+#include <algorithm>
 
 namespace {
+
+bool moveFileWithFallback(const QString& source, const QString& destination) {
+  if (source == destination) { return true; }
+  if (QFile::rename(source, destination)) { return true; }
+  if (!QFile::copy(source, destination)) { return false; }
+  if (QFile::remove(source)) { return true; }
+  QFile::remove(destination);
+  return false;
+}
+
+QString plannedDestination(const QString& source, const QDir& destination,
+                           QSet<QString>& reserved) {
+  const QFileInfo info(source);
+  QString candidate = destination.filePath(info.fileName());
+  const QString candidateAbs = QFileInfo(candidate).absoluteFilePath();
+  if (candidateAbs == info.absoluteFilePath()) { return candidateAbs; }
+  int counter = 1;
+  while (QFileInfo::exists(candidate) || reserved.contains(QFileInfo(candidate).absoluteFilePath())) {
+    const QString name = info.suffix().isEmpty()
+        ? QStringLiteral("%1_%2").arg(info.completeBaseName()).arg(counter++)
+        : QStringLiteral("%1_%2.%3").arg(info.completeBaseName()).arg(counter++).arg(info.suffix());
+    candidate = destination.filePath(name);
+  }
+  candidate = QFileInfo(candidate).absoluteFilePath();
+  reserved.insert(candidate);
+  return candidate;
+}
 
 void collectInlineImageRefs(const muffin::InlineNode& inlineNode, qsizetype topLevelByteStart, QVector<muffin::ImageFileOps::ImageRef>& refs) {
   if (inlineNode.type() == muffin::InlineType::Image) {
@@ -129,13 +161,78 @@ bool muffin::ImageFileOps::moveImageTo(const QString& srcPath, const QDir& destD
       ++counter;
     } while (QFileInfo::exists(destPath));
   }
-  if (!QFile::rename(srcPath, destPath)) {
+  if (!moveFileWithFallback(QFileInfo(srcPath).absoluteFilePath(), QFileInfo(destPath).absoluteFilePath())) {
     return false;
   }
   if (outNewPath) {
     *outNewPath = destPath;
   }
   return true;
+}
+
+muffin::ImageFileOps::MoveAllResult muffin::ImageFileOps::moveAllImages(
+    const MarkdownDocument& document, const QString& markdown,
+    const QString& documentDir, const QDir& destDir) {
+  MoveAllResult result;
+  if (documentDir.isEmpty() || !destDir.exists()) {
+    result.error = QStringLiteral("source or destination directory is unavailable");
+    return result;
+  }
+
+  QVector<ImageRef> refs = collectImageRefs(document);
+  std::sort(refs.begin(), refs.end(), [](const ImageRef& left, const ImageRef& right) {
+    return left.sourceStart < right.sourceStart;
+  });
+  QHash<QString, QString> destinations;
+  QSet<QString> reserved;
+  for (const ImageRef& ref : refs) {
+    if (!isLocalImageSrc(ref.href)) { continue; }
+    const QString source = resolveImagePath(ref.href, documentDir);
+    if (source.isEmpty() || destinations.contains(source)) { continue; }
+    destinations.insert(source, plannedDestination(source, destDir, reserved));
+  }
+
+  QString rewritten = markdown;
+  for (auto it = refs.crbegin(); it != refs.crend(); ++it) {
+    if (!isLocalImageSrc(it->href)) { continue; }
+    const QString source = resolveImagePath(it->href, documentDir);
+    const auto destination = destinations.constFind(source);
+    if (destination == destinations.cend()) { continue; }
+    const QString snippet = rewritten.mid(it->sourceStart, it->sourceEnd - it->sourceStart);
+    const QString relative = QDir::fromNativeSeparators(
+        QDir(documentDir).relativeFilePath(destination.value()));
+    const QString replaced = image_syntax::replaceSource(snippet, relative);
+    if (replaced == snippet && relative != it->href) {
+      result.error = QStringLiteral("could not locate an image destination in the document source");
+      return result;
+    }
+    rewritten.replace(it->sourceStart, it->sourceEnd - it->sourceStart, replaced);
+  }
+
+  QVector<QPair<QString, QString>> completed;
+  for (auto it = destinations.cbegin(); it != destinations.cend(); ++it) {
+    if (it.key() == it.value()) { continue; }
+    if (!moveFileWithFallback(it.key(), it.value())) {
+      QStringList rollbackFailures;
+      for (auto rollback = completed.crbegin(); rollback != completed.crend(); ++rollback) {
+        if (!moveFileWithFallback(rollback->second, rollback->first)) {
+          rollbackFailures.append(rollback->first);
+        }
+      }
+      result.error = QStringLiteral("could not move %1").arg(it.key());
+      if (!rollbackFailures.isEmpty()) {
+        result.error += QStringLiteral("; rollback failed for %1")
+                            .arg(rollbackFailures.join(QStringLiteral(", ")));
+      }
+      return result;
+    }
+    completed.append({it.key(), it.value()});
+  }
+
+  result.success = true;
+  result.movedCount = completed.size();
+  result.markdown = std::move(rewritten);
+  return result;
 }
 
 bool muffin::ImageFileOps::deleteImageFile(const QString& path) {

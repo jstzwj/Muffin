@@ -71,33 +71,43 @@ muffin::PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(pa
     retranslateUi();
   });
 
+  // Request-scoped response connections live for the page lifetime. Creating
+  // three SingleShot connections per click leaves the two non-emitted signals
+  // behind and can produce duplicate dialogs on a later check.
+  auto& checker = muffin::UpdateChecker::instance();
+  connect(&checker, &muffin::UpdateChecker::updateAvailable, this,
+      [this](const QString& version, const QString&, QObject* requester) {
+        if (requester != this) { return; }
+        checkUpdateButton_->setEnabled(true);
+        retranslateUi();
+        QMessageBox::information(window(), tr("Update Available"),
+            tr("A new version of Muffin (%1) is available.").arg(version));
+      });
+  connect(&checker, &muffin::UpdateChecker::upToDate, this,
+      [this](QObject* requester) {
+        if (requester != this) { return; }
+        checkUpdateButton_->setEnabled(true);
+        retranslateUi();
+        QMessageBox::information(window(), tr("Up to Date"),
+            tr("You are running the latest version of Muffin."));
+      });
+  connect(&checker, &muffin::UpdateChecker::checkFailed, this,
+      [this](const QString& errorMessage, QObject* requester) {
+        if (requester != this) { return; }
+        checkUpdateButton_->setEnabled(true);
+        retranslateUi();
+        QMessageBox::warning(window(), tr("Update Check Failed"),
+            tr("Could not check for updates:\n%1").arg(errorMessage));
+      });
+
   // --- Update check button ---
   connect(checkUpdateButton_, &QPushButton::clicked, this, [this] {
     checkUpdateButton_->setEnabled(false);
     checkUpdateButton_->setText(tr("Checking..."));
-    auto& checker = muffin::UpdateChecker::instance();
-    connect(&checker, &muffin::UpdateChecker::updateAvailable, this,
-        [this](const QString& version, const QString& url) {
-          checkUpdateButton_->setEnabled(true);
-          retranslateUi();
-          QMessageBox::information(window(), tr("Update Available"),
-              tr("A new version of Muffin (%1) is available.").arg(version));
-        }, Qt::SingleShotConnection);
-    connect(&checker, &muffin::UpdateChecker::upToDate, this,
-        [this]() {
-          checkUpdateButton_->setEnabled(true);
-          retranslateUi();
-          QMessageBox::information(window(), tr("Up to Date"),
-              tr("You are running the latest version of Muffin."));
-        }, Qt::SingleShotConnection);
-    connect(&checker, &muffin::UpdateChecker::checkFailed, this,
-        [this](const QString& errorMessage) {
-          checkUpdateButton_->setEnabled(true);
-          retranslateUi();
-          QMessageBox::warning(window(), tr("Update Check Failed"),
-              tr("Could not check for updates:\n%1").arg(errorMessage));
-        }, Qt::SingleShotConnection);
-    checker.checkForUpdates();
+    if (!muffin::UpdateChecker::instance().checkForUpdates(this)) {
+      checkUpdateButton_->setEnabled(true);
+      retranslateUi();
+    }
   });
 
   // --- Auto-update checkbox ---

@@ -35,6 +35,21 @@ public:
   /// Move an image file to a destination directory, returning the new path.
   static bool moveImageTo(const QString& srcPath, const QDir& destDir, QString* outNewPath);
 
+  struct MoveAllResult {
+    bool success = false;
+    int movedCount = 0;
+    QString markdown;
+    QString error;
+  };
+
+  // Move every unique local image referenced by document and rewrite all
+  // references. The complete rewrite is validated before touching disk; a
+  // failed move rolls back all earlier moves.
+  static MoveAllResult moveAllImages(const MarkdownDocument& document,
+                                     const QString& markdown,
+                                     const QString& documentDir,
+                                     const QDir& destDir);
+
   /// Delete an image file.
   static bool deleteImageFile(const QString& path);
 

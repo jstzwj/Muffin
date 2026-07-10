@@ -437,6 +437,7 @@ set(MUFFIN_CORE_SOURCES
   src/document/LineStartOffsetCache.h
   src/document/TopLevelRangeChange.h
   src/document/MarkdownTypes.h
+  src/io/TextFileFormat.h
   src/document/ImageSyntaxOps.cpp
   src/document/ImageSyntaxOps.h
   src/document/DefinitionBlock.cpp
@@ -660,6 +661,8 @@ set(MUFFIN_UI_SOURCES
   src/editor/SourceEditorWidget.h
   src/editor/FindBarWidget.cpp
   src/editor/FindBarWidget.h
+  src/editor/DocumentSearch.cpp
+  src/editor/DocumentSearch.h
   src/spellcheck/SpellChecker.cpp
   src/spellcheck/SpellChecker.h
   src/blocks/table/TableModelOps.cpp
@@ -1067,10 +1070,6 @@ set(MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS)
 if(MUFFIN_QT_CORE_LOCATION_RELEASE)
   get_filename_component(MUFFIN_QT_RUNTIME_DIR "${MUFFIN_QT_CORE_LOCATION_RELEASE}" DIRECTORY)
   list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "PATH=path_list_prepend:${MUFFIN_QT_RUNTIME_DIR}")
-endif()
-set(MUFFIN_CONAN_QT_BUILD_BIN "C:/Users/jstzw/.conan2/p/b/qt584dfe634b273/b/build/qtbase/bin")
-if(EXISTS "${MUFFIN_CONAN_QT_BUILD_BIN}")
-  list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "PATH=path_list_prepend:${MUFFIN_CONAN_QT_BUILD_BIN}")
 endif()
 if(MUFFIN_QT_PLUGIN_DIRS_ARG)
   list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "QT_PLUGIN_PATH=set:${MUFFIN_QT_PLUGIN_DIRS_ARG}")

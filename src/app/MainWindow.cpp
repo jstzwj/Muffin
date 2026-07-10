@@ -112,11 +112,21 @@ muffin::MainWindow::MainWindow(QWidget* parent)
 
 bool muffin::MainWindow::openFile(QString path) {
   if (fileController_.open(session_, this, path)) {
+    draftKey_ = DraftRecovery::createDraftKey();
     editorController_.clearHistoryAndSelection();
     addRecentFile(session_.filePath());
     return true;
   }
   return false;
+}
+
+bool muffin::MainWindow::startNewDocument() {
+  if (!fileController_.newFile(session_, this)) {
+    return false;
+  }
+  draftKey_ = DraftRecovery::createDraftKey();
+  editorController_.clearHistoryAndSelection();
+  return true;
 }
 
 void muffin::MainWindow::closeEvent(QCloseEvent* event) {
@@ -247,7 +257,7 @@ void muffin::MainWindow::setupStatusBar() {
   sourceModeButton_ = statusBar_->sourceModeButton();
   statusBar_->setSpellLanguage(SpellChecker::instance().language(), SpellChecker::instance().isEnabled());
   const int lineBreak = QSettings().value(QStringLiteral("editor/defaultLineBreak"), 1).toInt();
-  statusBar_->setEncodingLineEnding(QStringLiteral("UTF-8 · %1").arg(
+  statusBar_->setEncodingLineEnding(QStringLiteral("UTF-8 | %1").arg(
       lineBreak == 1 ? QStringLiteral("CRLF") : QStringLiteral("LF")));
   wordCountTimer_ = new QTimer(this);
   wordCountTimer_->setSingleShot(true);
@@ -292,6 +302,23 @@ void muffin::MainWindow::updateStatus() {
   } else {
     statusBar_->setCursorStatus(QStringLiteral("%1:%2").arg(cursorLine_).arg(cursorColumn_));
   }
+  const TextFileFormat& format = session_.fileFormat();
+  QString lineEnding;
+  if (!format.existingFile && session_.filePath().isEmpty()) {
+    lineEnding = QSettings().value(QStringLiteral("editor/defaultLineBreak"), 1).toInt() == 1
+        ? QStringLiteral("CRLF") : QStringLiteral("LF");
+  } else {
+    switch (format.lineEnding) {
+      case TextLineEnding::Crlf: lineEnding = QStringLiteral("CRLF"); break;
+      case TextLineEnding::Cr: lineEnding = QStringLiteral("CR"); break;
+      case TextLineEnding::Lf: lineEnding = QStringLiteral("LF"); break;
+    }
+  }
+  statusBar_->setEncodingLineEnding(
+      QStringLiteral("%1%2 | %3")
+          .arg(format.encodingName,
+               format.writeBom ? QStringLiteral(" BOM") : QString(),
+               lineEnding));
   // The block-source preview is render-mode only; clear any stale text when editing source.
   if (backend_ && backend_->isSourceMode()) {
     statusBar_->setBlockSource(QString(), QString());

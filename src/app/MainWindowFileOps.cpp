@@ -43,6 +43,8 @@
 #include <QVariant>
 #include <QVBoxLayout>
 
+#include <algorithm>
+
 namespace {
 
 QString elidedPath(const QString& path) {
@@ -440,7 +442,7 @@ void muffin::MainWindow::revealCurrentFile() {
 bool muffin::MainWindow::saveCurrentDocument() {
   if (fileController_.save(session_, this) == SaveOutcome::Saved) {
     addRecentFile(session_.filePath());
-    drafts_.markClean(session_.filePath());
+    drafts_.markClean(session_.filePath(), draftKey_);
     return true;
   }
   return false;
@@ -462,7 +464,7 @@ void muffin::MainWindow::performAutoSave() {
   }
   const SaveOutcome outcome = fileController_.save(session_, this);
   if (outcome == SaveOutcome::Saved) {
-    drafts_.markClean(session_.filePath());
+    drafts_.markClean(session_.filePath(), draftKey_);
   } else if (outcome == SaveOutcome::SkippedBusy) {
     autoSaveTimer_->start();  // async parse still in flight — retry once it settles
   }
@@ -479,7 +481,7 @@ void muffin::MainWindow::snapshotDraft() {
   // encode + sync write internally — no 50MB copy/compare here on every fire.
   const quint64 revision = session_.document().revision();
   if (revision != lastDraftSnapshotRevision_ && !session_.markdownText().isEmpty()) {
-    drafts_.snapshot(session_.markdownText().toString(), session_.filePath());
+    drafts_.snapshot(session_.markdownText().toString(), session_.filePath(), draftKey_);
     lastDraftSnapshotRevision_ = revision;
   }
   // Heartbeat: re-arm for as long as the document stays dirty. modifiedChanged
@@ -547,8 +549,8 @@ bool muffin::MainWindow::offerDraftRecovery() {
   bool restoredAny = false;
   if (result == Restore) {
     if (list->currentItem() != nullptr) {
-      restoreDraft(list->currentItem()->data(Qt::UserRole).value<DraftRecovery::PendingDraft>());
-      restoredAny = true;
+      restoredAny = restoreDraft(
+          list->currentItem()->data(Qt::UserRole).value<DraftRecovery::PendingDraft>());
     }
   } else if (result == Discard) {
     for (const DraftRecovery::PendingDraft& d : drafts) {
@@ -559,25 +561,29 @@ bool muffin::MainWindow::offerDraftRecovery() {
   return restoredAny;
 }
 
-void muffin::MainWindow::restoreDraft(const DraftRecovery::PendingDraft& draft) {
+bool muffin::MainWindow::restoreDraft(const DraftRecovery::PendingDraft& draft) {
   const QString content = drafts_.loadDraft(draft);
   if (content.isEmpty()) {
-    return;
+    return false;
   }
   if (!draft.sourcePath.isEmpty() && QFileInfo(draft.sourcePath).isFile()) {
     // Reopen the on-disk file (restores path and undo history), then overlay the
     // recovered content and mark it modified — the recovered text is the newer version.
-    openFile(draft.sourcePath);
-    editorController_.clearHistoryAndSelection();
+    if (!openFile(draft.sourcePath)) {
+      return false;
+    }
     session_.setMarkdownText(content, true);
   } else {
     // Untitled draft, or the source file no longer exists: load into a new untitled doc.
-    fileController_.newFile(session_, this);
-    editorController_.clearHistoryAndSelection();
+    if (!startNewDocument()) {
+      return false;
+    }
     session_.setMarkdownText(content, true);
   }
+  draftKey_ = draft.key;
   // The restored draft becomes the active document; its key is reused by the next
   // snapshot, so we don't discard here.
+  return true;
 }
 
 bool muffin::MainWindow::isDocumentModified() const {
@@ -667,8 +673,9 @@ void muffin::MainWindow::importFile() {
     return;
   }
 
-  fileController_.newFile(session_, this);  // confirms discarding unsaved work first
-  editorController_.clearHistoryAndSelection();
+  if (!startNewDocument()) {  // confirms discarding unsaved work first
+    return;
+  }
   session_.setMarkdownText(QString::fromUtf8(result.out), true);  // imported content is unsaved
   statusBar()->showMessage(tr("Imported %1").arg(QFileInfo(sourcePath).fileName()), 4000);
 }
@@ -1011,6 +1018,19 @@ void muffin::MainWindow::deleteFile() {
     return;
   }
 
+  if (session_.document().isModified()) {
+    const QMessageBox::StandardButton unsaved = QMessageBox::warning(
+        this, tr("Muffin"), tr("The current document has unsaved changes."),
+        QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
+        QMessageBox::Save);
+    if (unsaved == QMessageBox::Cancel) {
+      return;
+    }
+    if (unsaved == QMessageBox::Save && !saveCurrentDocument()) {
+      return;
+    }
+  }
+
   bool trashed = QFile::moveToTrash(filePath);
 
   if (!trashed) {
@@ -1033,8 +1053,9 @@ void muffin::MainWindow::deleteFile() {
     }
   }
 
-  fileController_.newFile(session_, this);
-  editorController_.clearHistoryAndSelection();
+  drafts_.markClean(filePath, draftKey_);
+  session_.document().setModified(false);
+  startNewDocument();
 
   QStringList recent = recentFiles();
   recent.removeAll(QFileInfo(filePath).absoluteFilePath());
@@ -1162,6 +1183,10 @@ void muffin::MainWindow::onInlineCommit(muffin::InlineEditContext ctx, const QSt
       ? FilePathOps::normalizeMarkdownFileName(trimmed) : trimmed;
   const QString oldName = QFileInfo(ctx.oldPath).fileName();
   const QString newPath = QDir(QFileInfo(ctx.oldPath).absolutePath()).filePath(normalized);
+  const QString previousDocumentPath = session_.filePath();
+  const QString remappedDocumentPath = ctx.isFolder
+      ? FilePathOps::remapDescendant(previousDocumentPath, ctx.oldPath, newPath)
+      : (ctx.oldPath == previousDocumentPath ? newPath : previousDocumentPath);
   if (normalized != oldName) {
     QString error;
     if (!FilePathOps::renamePath(ctx.oldPath, newPath, &error)) {
@@ -1183,12 +1208,13 @@ void muffin::MainWindow::onInlineCommit(muffin::InlineEditContext ctx, const QSt
   if (sidebar_) {
     sidebar_->setCurrentPath(newPath);
   }
-  if (ctx.oldPath == session_.filePath()) {
-    const QString oldAbs = QFileInfo(ctx.oldPath).absoluteFilePath();
-    session_.setFilePath(newPath);
+  if (remappedDocumentPath != previousDocumentPath) {
+    const QString oldAbs = QFileInfo(previousDocumentPath).absoluteFilePath();
+    session_.setFilePath(remappedDocumentPath);
+    session_.recordFileBaseline();
     updateTitle();
     refreshSidebarDocumentInfo();
-    addRecentFile(newPath);
+    addRecentFile(remappedDocumentPath);
     QStringList recent = recentFiles();
     recent.removeAll(oldAbs);
     setRecentFiles(recent);
@@ -1237,6 +1263,16 @@ void muffin::MainWindow::deletePath(QString path) {
     return;
   }
 
+  const bool deletesCurrentDocument = FilePathOps::isSameOrDescendant(session_.filePath(), path);
+  if (deletesCurrentDocument && session_.document().isModified()) {
+    const QMessageBox::StandardButton unsaved = QMessageBox::warning(
+        this, tr("Muffin"), tr("The current document has unsaved changes."),
+        QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
+        QMessageBox::Save);
+    if (unsaved == QMessageBox::Cancel) { return; }
+    if (unsaved == QMessageBox::Save && !saveCurrentDocument()) { return; }
+  }
+
   QString error;
   bool removed = FilePathOps::moveToTrash(path, &error);
   if (!removed) {
@@ -1257,15 +1293,16 @@ void muffin::MainWindow::deletePath(QString path) {
 
   // If the deleted entry was the open document, reset it without a discard
   // prompt (the file is gone) and clear its draft. Drop it from recents either way.
-  const QString abs = QFileInfo(path).absoluteFilePath();
-  if (path == session_.filePath()) {
+  if (deletesCurrentDocument) {
+    const QString currentPath = session_.filePath();
     session_.document().setModified(false);
-    drafts_.markClean(path);
-    fileController_.newFile(session_, this);
-    editorController_.clearHistoryAndSelection();
+    drafts_.markClean(currentPath, draftKey_);
+    startNewDocument();
   }
   QStringList recent = recentFiles();
-  recent.removeAll(abs);
+  recent.erase(std::remove_if(recent.begin(), recent.end(), [&path](const QString& item) {
+    return FilePathOps::isSameOrDescendant(item, path);
+  }), recent.end());
   setRecentFiles(recent);
   rebuildRecentFilesMenu();
 }
@@ -1335,6 +1372,6 @@ bool muffin::MainWindow::maybeSaveChanges() {
   }
   // Discard: the user explicitly abandoned the unsaved work — drop its recovery
   // draft so the next launch doesn't offer to restore what was just thrown away.
-  drafts_.markClean(session_.filePath());
+  drafts_.markClean(session_.filePath(), draftKey_);
   return true;
 }

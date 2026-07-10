@@ -1,6 +1,7 @@
 #include "document/ImageSyntaxOps.h"
 
 #include <QRegularExpression>
+#include <QDir>
 #include <QStringView>
 
 namespace muffin::image_syntax {
@@ -190,6 +191,79 @@ Image parse(const QString& source) {
   return img;
 }
 
+SourceLocation findSource(QStringView source) {
+  qsizetype left = 0;
+  qsizetype right = source.size();
+  while (left < right && source.at(left).isSpace()) { ++left; }
+  while (right > left && source.at(right - 1).isSpace()) { --right; }
+  const QStringView s = source.mid(left, right - left);
+
+  if (s.startsWith(QStringLiteral("!["))) {
+    const qsizetype labelEnd = s.indexOf(QLatin1Char(']'), 2);
+    const qsizetype openParen = labelEnd >= 0 ? s.indexOf(QLatin1Char('('), labelEnd) : -1;
+    if (openParen < 0) { return {}; }
+    qsizetype start = openParen + 1;
+    while (start < s.size() && s.at(start).isSpace()) { ++start; }
+    if (start >= s.size()) { return {}; }
+    if (s.at(start) == QLatin1Char('<')) {
+      const qsizetype close = s.indexOf(QLatin1Char('>'), start + 1);
+      return close < 0 ? SourceLocation{} : SourceLocation{true, left + start, left + close + 1};
+    }
+
+    qsizetype depth = 0;
+    bool escaped = false;
+    qsizetype end = start;
+    for (; end < s.size(); ++end) {
+      const QChar ch = s.at(end);
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (ch == QLatin1Char('\\')) {
+        escaped = true;
+      } else if (ch == QLatin1Char('(')) {
+        ++depth;
+      } else if (ch == QLatin1Char(')')) {
+        if (depth == 0) { break; }
+        --depth;
+      } else if (ch.isSpace() && depth == 0) {
+        break;
+      }
+    }
+    return end > start ? SourceLocation{true, left + start, left + end} : SourceLocation{};
+  }
+
+  if (s.left(4).compare(QStringLiteral("<img"), Qt::CaseInsensitive) == 0) {
+    const QRegularExpression sourceAttribute = quotedAttrRE(QStringLiteral("src"));
+    const QRegularExpressionMatch match = sourceAttribute.matchView(s);
+    if (!match.hasMatch()) { return {}; }
+    const int capture = match.captured(1).isNull() ? 2 : 1;
+    return {true, left + match.capturedStart(capture), left + match.capturedEnd(capture)};
+  }
+  return {};
+}
+
+QString replaceSource(const QString& source, const QString& replacement) {
+  const SourceLocation location = findSource(source);
+  if (!location.found) { return source; }
+  QString value = QDir::fromNativeSeparators(replacement);
+  const Image image = parse(source);
+  if (image.syntax == Syntax::Markdown) {
+    const bool wasBracketed = source.at(location.start) == QLatin1Char('<');
+    if (wasBracketed || value.contains(QLatin1Char(' ')) || value.contains(QLatin1Char(')'))) {
+      value.replace(QLatin1Char('>'), QStringLiteral("%3E"));
+      value = QLatin1Char('<') + value + QLatin1Char('>');
+    }
+  } else if (image.syntax == Syntax::Html) {
+    value.replace(QLatin1Char('&'), QStringLiteral("&amp;"));
+    const QChar quote = location.start > 0 ? source.at(location.start - 1) : QLatin1Char('"');
+    value.replace(quote, quote == QLatin1Char('"') ? QStringLiteral("&quot;") : QStringLiteral("&#39;"));
+  }
+  QString result = source;
+  result.replace(location.start, location.end - location.start, value);
+  return result;
+}
+
 int zoomPercent(const QString& source) {
   const Image img = parse(source);
   if (img.syntax == Syntax::None) {
@@ -263,7 +337,7 @@ QString toHtml(const QString& source) {
 }
 
 ImgTagLocation findImgTag(QStringView source) {
-  const QRegularExpressionMatch m = kImgTagRE.match(source);
+  const QRegularExpressionMatch m = kImgTagRE.matchView(source);
   if (!m.hasMatch()) {
     return {false, 0, 0};
   }

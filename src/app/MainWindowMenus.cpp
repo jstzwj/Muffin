@@ -9,12 +9,10 @@
 #include <QMenuBar>
 #include <QToolButton>
 
-namespace muffin {
-
 // Create and register one QAction for a declared command. The label, shortcut,
 // checkable/checked initial state, shortcut context and action-group all come
 // from the declaration table — this function adds no per-command knowledge.
-QAction* MainWindow::registerAction(QMenu* menu, const QString& id) {
+QAction* muffin::MainWindow::registerAction(QMenu* menu, const QString& id) {
   const CommandDeclaration* decl = commandDeclaration(id);
   if (!decl) {
     return nullptr;
@@ -48,7 +46,7 @@ QAction* MainWindow::registerAction(QMenu* menu, const QString& id) {
   return action;
 }
 
-void MainWindow::buildMenuItems(QMenu* parent, const std::vector<MenuItem>& items) {
+void muffin::MainWindow::buildMenuItems(QMenu* parent, const std::vector<MenuItem>& items) {
   for (const MenuItem& item : items) {
     switch (item.kind) {
       case MenuItem::Kind::Action:
@@ -87,7 +85,7 @@ void MainWindow::buildMenuItems(QMenu* parent, const std::vector<MenuItem>& item
   }
 }
 
-void MainWindow::buildMenus() {
+void muffin::MainWindow::buildMenus() {
   for (const MenuSpec& spec : mainMenuSpec()) {
     QMenu* menu = menuBar()->addMenu(spec.title);
     if (spec.hidden) {
@@ -112,31 +110,31 @@ void MainWindow::buildMenus() {
 namespace {
 // Recursively update submenu titles in place by re-walking the live menu against
 // its spec. Creates/deletes nothing — safe during a language change.
-void retranslateMenuItemTitles(QMenu* menu, const std::vector<MenuItem>& items) {
+void retranslateMenuItemTitles(QMenu* menu, const std::vector<muffin::MenuItem>& items) {
   const QList<QAction*> actions = menu->actions();
   for (qsizetype i = 0; i < static_cast<qsizetype>(items.size()) && i < actions.size(); ++i) {
-    const MenuItem& item = items[static_cast<size_t>(i)];
+    const muffin::MenuItem& item = items[static_cast<size_t>(i)];
     QAction* action = actions[i];
     switch (item.kind) {
-      case MenuItem::Kind::Submenu:
+      case muffin::MenuItem::Kind::Submenu:
         action->setText(item.title);
         if (QMenu* sub = action->menu()) {
           retranslateMenuItemTitles(sub, item.children);
         }
         break;
-      case MenuItem::Kind::PlaceholderSubmenu:
-      case MenuItem::Kind::DynamicSubmenu:
+      case muffin::MenuItem::Kind::PlaceholderSubmenu:
+      case muffin::MenuItem::Kind::DynamicSubmenu:
         action->setText(item.title);
         break;
-      case MenuItem::Kind::Action:
-      case MenuItem::Kind::Separator:
+      case muffin::MenuItem::Kind::Action:
+      case muffin::MenuItem::Kind::Separator:
         break;  // command action labels are updated via the registry; separators have no text
     }
   }
 }
 }  // namespace
 
-void MainWindow::retranslateMenuTexts() {
+void muffin::MainWindow::retranslateMenuTexts() {
   // Rebuild the declaration table so its tr() labels reflect the new locale, then
   // update existing actions/menus in place. No QActions/QMenus are deleted or
   // created here — that deletion (setupMenuBar's clear+rebuild) was what corrupted
@@ -158,7 +156,7 @@ void MainWindow::retranslateMenuTexts() {
   }
 }
 
-void MainWindow::retranslateUi() {
+void muffin::MainWindow::retranslateUi() {
   const bool sidebarChecked =
       commands_.action(QStringLiteral("view.sidebar")) && commands_.action(QStringLiteral("view.sidebar"))->isChecked();
   const bool sourceChecked =
@@ -223,5 +221,3 @@ void MainWindow::retranslateUi() {
   wordCountDirty_ = true;
   updateWordCountNow();
 }
-
-}  // namespace muffin

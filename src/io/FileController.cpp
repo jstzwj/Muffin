@@ -10,11 +10,164 @@
 #include <QMessageBox>
 #include <QSaveFile>
 #include <QStringConverter>
-#include <QTextStream>
 #include <QWidget>
 
 #include <unicode/ucnv.h>
-#include <unicode/ustring.h>
+#include <unicode/ucnv_err.h>
+#include <unicode/ucsdet.h>
+
+namespace {
+
+bool decodeWithIcu(const QByteArray& raw, const QString& encodingName, QString* out) {
+  UErrorCode status = U_ZERO_ERROR;
+  UConverter* converter = ucnv_open(encodingName.toUtf8().constData(), &status);
+  if (U_FAILURE(status)) { return false; }
+  ucnv_setToUCallBack(converter, UCNV_TO_U_CALLBACK_STOP, nullptr, nullptr, nullptr, &status);
+  if (U_FAILURE(status)) {
+    ucnv_close(converter);
+    return false;
+  }
+  const int32_t capacity = ucnv_toUChars(
+      converter, nullptr, 0, raw.constData(), raw.size(), &status);
+  if (status == U_BUFFER_OVERFLOW_ERROR) { status = U_ZERO_ERROR; }
+  if (U_FAILURE(status)) {
+    ucnv_close(converter);
+    return false;
+  }
+  QVector<UChar> buffer(capacity + 1);
+  const int32_t length = ucnv_toUChars(
+      converter, buffer.data(), buffer.size(), raw.constData(), raw.size(), &status);
+  ucnv_close(converter);
+  if (U_FAILURE(status)) { return false; }
+  *out = QString(reinterpret_cast<const QChar*>(buffer.constData()), length);
+  return true;
+}
+
+bool encodeWithIcu(const QString& text, const QString& encodingName, QByteArray* out) {
+  UErrorCode status = U_ZERO_ERROR;
+  UConverter* converter = ucnv_open(encodingName.toUtf8().constData(), &status);
+  if (U_FAILURE(status)) { return false; }
+  ucnv_setFromUCallBack(converter, UCNV_FROM_U_CALLBACK_STOP, nullptr, nullptr, nullptr, &status);
+  if (U_FAILURE(status)) {
+    ucnv_close(converter);
+    return false;
+  }
+  const auto* source = reinterpret_cast<const UChar*>(text.utf16());
+  const int32_t capacity = ucnv_fromUChars(converter, nullptr, 0, source, text.size(), &status);
+  if (status == U_BUFFER_OVERFLOW_ERROR) { status = U_ZERO_ERROR; }
+  if (U_FAILURE(status)) {
+    ucnv_close(converter);
+    return false;
+  }
+  QByteArray encoded(capacity, Qt::Uninitialized);
+  const int32_t length = ucnv_fromUChars(
+      converter, encoded.data(), encoded.size(), source, text.size(), &status);
+  ucnv_close(converter);
+  if (U_FAILURE(status)) { return false; }
+  encoded.resize(length);
+  *out = std::move(encoded);
+  return true;
+}
+
+muffin::TextLineEnding detectLineEnding(QStringView text) {
+  qsizetype crlf = 0;
+  qsizetype lf = 0;
+  qsizetype cr = 0;
+  for (qsizetype i = 0; i < text.size(); ++i) {
+    if (text.at(i) == QLatin1Char('\r')) {
+      if (i + 1 < text.size() && text.at(i + 1) == QLatin1Char('\n')) {
+        ++crlf;
+        ++i;
+      } else {
+        ++cr;
+      }
+    } else if (text.at(i) == QLatin1Char('\n')) {
+      ++lf;
+    }
+  }
+  if (crlf >= lf && crlf >= cr && crlf > 0) { return muffin::TextLineEnding::Crlf; }
+  if (cr > lf && cr > 0) { return muffin::TextLineEnding::Cr; }
+  return muffin::TextLineEnding::Lf;
+}
+
+void normalizeLineEndings(QString* text) {
+  text->replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
+  text->replace(QLatin1Char('\r'), QLatin1Char('\n'));
+}
+
+bool decodeText(const QByteArray& raw, const QString& requestedEncoding,
+                QString* text, muffin::TextFileFormat* format) {
+  QByteArray payload = raw;
+  QString encoding = requestedEncoding;
+  bool bom = false;
+
+  struct BomEntry {
+    QByteArray bytes;
+    QString name;
+    QStringConverter::Encoding qtEncoding;
+  };
+  const BomEntry bomEntries[] = {
+      {QByteArray::fromHex("0000feff"), QStringLiteral("UTF-32BE"), QStringConverter::Utf32BE},
+      {QByteArray::fromHex("fffe0000"), QStringLiteral("UTF-32LE"), QStringConverter::Utf32LE},
+      {QByteArray::fromHex("efbbbf"), QStringLiteral("UTF-8"), QStringConverter::Utf8},
+      {QByteArray::fromHex("feff"), QStringLiteral("UTF-16BE"), QStringConverter::Utf16BE},
+      {QByteArray::fromHex("fffe"), QStringLiteral("UTF-16LE"), QStringConverter::Utf16LE},
+  };
+  for (const BomEntry& entry : bomEntries) {
+    if (payload.startsWith(entry.bytes)) {
+      bom = true;
+      encoding = entry.name;
+      payload.remove(0, entry.bytes.size());
+      QStringDecoder decoder(entry.qtEncoding);
+      *text = decoder(payload);
+      if (decoder.hasError()) { return false; }
+      break;
+    }
+  }
+
+  if (text->isNull()) {
+    if (encoding.isEmpty()) {
+      QStringDecoder utf8(QStringConverter::Utf8);
+      const QString decoded = utf8(payload);
+      if (!utf8.hasError()) {
+        encoding = QStringLiteral("UTF-8");
+        *text = decoded;
+      } else {
+        UErrorCode status = U_ZERO_ERROR;
+        UCharsetDetector* detector = ucsdet_open(&status);
+        if (U_FAILURE(status)) { return false; }
+        ucsdet_setText(detector, payload.constData(), payload.size(), &status);
+        const UCharsetMatch* match = U_SUCCESS(status) ? ucsdet_detect(detector, &status) : nullptr;
+        const char* detected = match && U_SUCCESS(status) ? ucsdet_getName(match, &status) : nullptr;
+        if (detected && U_SUCCESS(status)) { encoding = QString::fromLatin1(detected); }
+        ucsdet_close(detector);
+        if (encoding.isEmpty() || !decodeWithIcu(payload, encoding, text)) { return false; }
+      }
+    } else if (!decodeWithIcu(payload, encoding, text)) {
+      return false;
+    }
+  }
+
+  format->encodingName = encoding;
+  format->writeBom = bom;
+  format->lineEnding = detectLineEnding(*text);
+  format->ensureTrailingNewline = text->endsWith(QLatin1Char('\n')) || text->endsWith(QLatin1Char('\r'));
+  format->existingFile = true;
+  normalizeLineEndings(text);
+  return true;
+}
+
+QByteArray bomForEncoding(const QString& encoding) {
+  const QString upper = encoding.toUpper();
+  if (upper == QLatin1String("UTF-8")) { return QByteArray::fromHex("efbbbf"); }
+  if (upper == QLatin1String("UTF-16LE")) { return QByteArray::fromHex("fffe"); }
+  if (upper == QLatin1String("UTF-16BE")) { return QByteArray::fromHex("feff"); }
+  if (upper == QLatin1String("UTF-32LE")) { return QByteArray::fromHex("fffe0000"); }
+  if (upper == QLatin1String("UTF-32BE")) { return QByteArray::fromHex("0000feff"); }
+  return {};
+}
+
+}  // namespace
 
 muffin::FileController::FileController(QObject* parent) : QObject(parent) {}
 
@@ -28,11 +181,6 @@ bool muffin::FileController::newFile(DocumentSession& session, QWidget* parent) 
 }
 
 bool muffin::FileController::open(DocumentSession& session, QWidget* parent, QString path) {
-  autoSaveOnSwitchIfEnabled(session, parent);
-  if (!confirmDiscardIfModified(session, parent)) {
-    return false;
-  }
-
   if (path.isEmpty()) {
     path = QFileDialog::getOpenFileName(
         parent,
@@ -45,11 +193,21 @@ bool muffin::FileController::open(DocumentSession& session, QWidget* parent, QSt
   }
 
   QString text;
-  if (!readTextFile(path, &text, parent)) {
+  TextFileFormat format;
+  if (!readTextFile(path, &text, &format, parent)) {
+    return false;
+  }
+
+  // Do not resolve the current document until the target is known to be
+  // readable. Canceling the picker or failing to read must leave its dirty
+  // state and recovery snapshot untouched.
+  autoSaveOnSwitchIfEnabled(session, parent);
+  if (!confirmDiscardIfModified(session, parent)) {
     return false;
   }
 
   session.setFilePath(path);
+  session.setFileFormat(format);
   session.recordFileBaseline();  // baseline the file as it was at open (external-change detection)
   session.openDocumentAsync(text);  // async parse keeps the UI responsive on huge files
   return true;
@@ -68,10 +226,16 @@ muffin::SaveOutcome muffin::FileController::save(DocumentSession& session, QWidg
     return SaveOutcome::Failed;  // user declined to overwrite the externally-modified file
   }
   DocumentSession::SelfWriteGuard guard(session);  // absorb our own commit's fileChanged signal
-  if (!writeTextFile(session.filePath(), session.markdownText().toString(), parent)) {
+  QString normalizedText;
+  if (!writeTextFile(session.filePath(), session.markdownText().toString(),
+                     session.fileFormat(), &normalizedText, parent)) {
     return SaveOutcome::Failed;
   }
-  session.document().setModified(false);
+  if (normalizedText != session.markdownText().toString()) {
+    session.setMarkdownText(normalizedText, false);
+  } else {
+    session.document().setModified(false);
+  }
   session.recordFileBaseline();  // re-baseline after our write (2nd line of self-trigger defense)
   emit documentBecameClean(session.filePath());
   return SaveOutcome::Saved;
@@ -126,14 +290,25 @@ muffin::SaveOutcome muffin::FileController::saveAs(DocumentSession& session, QWi
   if (path.isEmpty()) {
     return SaveOutcome::Failed;
   }
+  TextFileFormat format = session.fileFormat();
+  if (!format.existingFile) {
+    format = formatForNewFile();
+  }
   DocumentSession::SelfWriteGuard guard(session);
-  if (!writeTextFile(path, session.markdownText().toString(), parent)) {
+  QString normalizedText;
+  if (!writeTextFile(path, session.markdownText().toString(), format, &normalizedText, parent)) {
     return SaveOutcome::Failed;
   }
   // The previous path's draft (if any) is now obsolete: the content lives at `path`.
   emit documentBecameClean(session.filePath());
   session.setFilePath(path);  // also re-points the QFileSystemWatcher to the new path
-  session.document().setModified(false);
+  format.existingFile = true;
+  session.setFileFormat(format);
+  if (normalizedText != session.markdownText().toString()) {
+    session.setMarkdownText(normalizedText, false);
+  } else {
+    session.document().setModified(false);
+  }
   session.recordFileBaseline();  // baseline the new path
   return SaveOutcome::Saved;
 }
@@ -181,52 +356,72 @@ bool muffin::FileController::confirmOverwriteIfChanged(DocumentSession& session,
   return choice == QMessageBox::Yes;
 }
 
-bool muffin::FileController::readTextFile(const QString& path, QString* out, QWidget* parent) const {
+bool muffin::FileController::readTextFile(
+    const QString& path, QString* out, TextFileFormat* format, QWidget* parent) const {
   QFile file(path);
   if (!file.open(QIODevice::ReadOnly)) {
     QMessageBox::critical(parent, tr("Open Failed"), file.errorString());
     return false;
   }
 
-  // Read the whole file as bytes in one shot and decode once. QTextStream::readAll() accumulates
-  // its result in small chunks, which is O(n^2)-ish in the buffer size and catastrophically slow on
-  // large files (~160s for 100MB vs <1s here). QFile::readAll() + QString::fromUtf8 is O(n) and is
-  // the Qt-recommended way to slurp a file. Line-ending normalization is unchanged.
+  // Decode the complete byte stream once so charset detection and BOM handling see the whole file.
   const QByteArray raw = file.readAll();
-  QString text = QString::fromUtf8(raw);
-  // Normalize line endings to LF for internal use
-  text.replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
-  text.replace(QLatin1Char('\r'), QLatin1Char('\n'));
-  *out = text;
+  QString text;
+  if (!decodeText(raw, {}, &text, format)) {
+    QMessageBox::critical(parent, tr("Encoding Error"),
+                          tr("Could not detect a lossless text encoding for this file."));
+    return false;
+  }
+  *out = std::move(text);
   return true;
 }
 
-bool muffin::FileController::writeTextFile(const QString& path, const QString& text, QWidget* parent) const {
+bool muffin::FileController::writeTextFile(
+    const QString& path, const QString& text, const TextFileFormat& format,
+    QString* normalizedText, QWidget* parent) const {
   QSaveFile file(path);
   if (!file.open(QIODevice::WriteOnly)) {
     QMessageBox::critical(parent, tr("Save Failed"), file.errorString());
     return false;
   }
 
-  QSettings settings;
   QString content = text;
 
-  // Ensure trailing newline
-  if (settings.value(QStringLiteral("editor/trailingNewline"), true).toBool()) {
+  if (format.ensureTrailingNewline) {
     if (!content.isEmpty() && !content.endsWith(QLatin1Char('\n'))) {
       content += QLatin1Char('\n');
     }
   }
 
   // Apply line endings (internal text is always LF)
-  const int lb = settings.value(QStringLiteral("editor/defaultLineBreak"), 1).toInt();
-  if (lb == 1) {
-    content.replace(QLatin1Char('\n'), QStringLiteral("\r\n"));
+  if (normalizedText) {
+    *normalizedText = content;
   }
 
-  QTextStream stream(&file);
-  stream.setEncoding(QStringConverter::Utf8);
-  stream << content;
+  QString diskText = content;
+  if (format.lineEnding == TextLineEnding::Crlf) {
+    diskText.replace(QLatin1Char('\n'), QStringLiteral("\r\n"));
+  } else if (format.lineEnding == TextLineEnding::Cr) {
+    diskText.replace(QLatin1Char('\n'), QLatin1Char('\r'));
+  }
+
+  QByteArray encoded;
+  if (format.encodingName.compare(QStringLiteral("UTF-8"), Qt::CaseInsensitive) == 0) {
+    encoded = diskText.toUtf8();
+  } else if (!encodeWithIcu(diskText, format.encodingName, &encoded)) {
+    QMessageBox::critical(parent, tr("Encoding Error"),
+                          tr("The document cannot be encoded as %1.").arg(format.encodingName));
+    file.cancelWriting();
+    return false;
+  }
+  if (format.writeBom) {
+    encoded.prepend(bomForEncoding(format.encodingName));
+  }
+  if (file.write(encoded) != encoded.size()) {
+    QMessageBox::critical(parent, tr("Save Failed"), file.errorString());
+    file.cancelWriting();
+    return false;
+  }
   if (!file.commit()) {
     QMessageBox::critical(parent, tr("Save Failed"), file.errorString());
     return false;
@@ -234,51 +429,33 @@ bool muffin::FileController::writeTextFile(const QString& path, const QString& t
   return true;
 }
 
+muffin::TextFileFormat muffin::FileController::formatForNewFile() const {
+  QSettings settings;
+  TextFileFormat format;
+  format.encodingName = QStringLiteral("UTF-8");
+  format.lineEnding = settings.value(QStringLiteral("editor/defaultLineBreak"), 1).toInt() == 1
+      ? TextLineEnding::Crlf : TextLineEnding::Lf;
+  format.ensureTrailingNewline =
+      settings.value(QStringLiteral("editor/trailingNewline"), true).toBool();
+  return format;
+}
+
 bool muffin::FileController::readTextFileWithEncoding(
-    const QString& path, QString* out, QWidget* parent,
-    const QString& encodingName) const {
+    const QString& path, QString* out, TextFileFormat* format,
+    QWidget* parent, const QString& encodingName) const {
   QFile file(path);
   if (!file.open(QIODevice::ReadOnly)) {
     QMessageBox::critical(parent, tr("Open Failed"), file.errorString());
     return false;
   }
 
-  const QByteArray raw = file.readAll();
-
-  UErrorCode status = U_ZERO_ERROR;
-  UConverter* conv = ucnv_open(encodingName.toUtf8().constData(), &status);
-  if (U_FAILURE(status)) {
-    QMessageBox::critical(parent, tr("Encoding Error"),
-                          tr("Unsupported encoding: %1").arg(encodingName));
-    return false;
-  }
-
-  // Required destination buffer length (in UChar, NOT including NUL)
-  const int32_t destCapacity = ucnv_toUChars(conv, nullptr, 0,
-      raw.constData(), raw.size(), &status);
-  if (status == U_BUFFER_OVERFLOW_ERROR) {
-    status = U_ZERO_ERROR;
-  }
-  if (U_FAILURE(status)) {
-    QMessageBox::critical(parent, tr("Encoding Error"),
-                          tr("Failed to decode file with encoding: %1").arg(encodingName));
-    ucnv_close(conv);
-    return false;
-  }
-
-  QByteArray utf16(sizeof(char16_t) * (destCapacity + 1), Qt::Uninitialized);
-  auto* dest = reinterpret_cast<UChar*>(utf16.data());
-  ucnv_toUChars(conv, dest, destCapacity + 1,
-      raw.constData(), raw.size(), &status);
-  ucnv_close(conv);
-
-  if (U_FAILURE(status)) {
+  QString text;
+  if (!decodeText(file.readAll(), encodingName, &text, format)) {
     QMessageBox::critical(parent, tr("Encoding Error"),
                           tr("Failed to decode file with encoding: %1").arg(encodingName));
     return false;
   }
-
-  *out = QString(reinterpret_cast<const QChar*>(dest), destCapacity);
+  *out = std::move(text);
   return true;
 }
 
@@ -308,10 +485,12 @@ bool muffin::FileController::reopenWithEncoding(
   }
 
   QString text;
-  if (!readTextFileWithEncoding(session.filePath(), &text, parent, encodingName)) {
+  TextFileFormat format;
+  if (!readTextFileWithEncoding(session.filePath(), &text, &format, parent, encodingName)) {
     return false;
   }
 
+  session.setFileFormat(format);
   session.setMarkdownText(text, false);
   return true;
 }
@@ -352,12 +531,14 @@ bool muffin::FileController::reload(DocumentSession& session, QWidget* parent) {
     return false;
   }
   QString text;
-  if (!readTextFile(session.filePath(), &text, parent)) {
+  TextFileFormat format;
+  if (!readTextFile(session.filePath(), &text, &format, parent)) {
     return false;
   }
   // Discards unsaved edits (caller already confirmed). Does NOT route through open(), which would
   // trigger autoSaveOnSwitch and overwrite the very external change being reloaded. Re-baseline so
   // the watcher treats the reloaded content as the new reference.
+  session.setFileFormat(format);
   session.setMarkdownText(text, false);
   session.recordFileBaseline();
   return true;

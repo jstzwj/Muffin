@@ -262,3 +262,22 @@ QString muffin::FilePathOps::markdownLinkForFile(const QString& filePath, const 
   const QString label = QFileInfo(filePath).fileName();
   return QStringLiteral("[%1](%2)").arg(label, linkTargetForPath(filePath, documentDir));
 }
+
+bool muffin::FilePathOps::isSameOrDescendant(const QString& candidate, const QString& root) {
+  if (candidate.isEmpty() || root.isEmpty()) { return false; }
+  const QString candidateAbs = QDir::cleanPath(QFileInfo(candidate).absoluteFilePath());
+  const QString rootAbs = QDir::cleanPath(QFileInfo(root).absoluteFilePath());
+  if (candidateAbs == rootAbs) { return true; }
+  const QString relative = QDir(rootAbs).relativeFilePath(candidateAbs);
+  return relative != QStringLiteral("..")
+      && !relative.startsWith(QStringLiteral("../"))
+      && !QFileInfo(relative).isAbsolute();
+}
+
+QString muffin::FilePathOps::remapDescendant(
+    const QString& candidate, const QString& oldRoot, const QString& newRoot) {
+  if (!isSameOrDescendant(candidate, oldRoot)) { return candidate; }
+  const QString relative = QDir(QFileInfo(oldRoot).absoluteFilePath()).relativeFilePath(
+      QFileInfo(candidate).absoluteFilePath());
+  return QFileInfo(QDir(newRoot).filePath(relative)).absoluteFilePath();
+}

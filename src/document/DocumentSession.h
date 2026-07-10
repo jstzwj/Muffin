@@ -2,6 +2,7 @@
 
 #include "document/MarkdownDocument.h"
 #include "document/TopLevelRangeChange.h"
+#include "io/TextFileFormat.h"
 #include "parser/CmarkGfmParser.h"
 
 #include <QDateTime>
@@ -12,6 +13,7 @@
 #include <QVector>
 
 #include <memory>
+#include <utility>
 
 namespace muffin {
 
@@ -52,6 +54,8 @@ public:
   bool hasFileBaseline() const { return baselineSize_ >= 0; }
   QDateTime fileBaselineMtime() const { return baselineMtime_; }
   qint64 fileBaselineSize() const { return baselineSize_; }
+  const TextFileFormat& fileFormat() const { return fileFormat_; }
+  void setFileFormat(TextFileFormat format) { fileFormat_ = std::move(format); }
 
   // RAII: suppresses externalFileChanged across FileController's own write. The fileChanged signal
   // from QSaveFile::commit races the synchronous recordFileBaseline; this guard (plus the baseline
@@ -110,6 +114,7 @@ private slots:
   void onFileChanged();  // QFileSystemWatcher::fileChanged → drift check → externalFileChanged
 
 private:
+  void refreshFileWatch();
   void parseAndStore(QString text, bool modified, QVector<qsizetype> demoteAtOffsets = {}, bool async = false);
   // GUI-thread completion of an async parseAndStore (async=true). Discards the result if superseded.
   void finishAsyncParse();
@@ -124,6 +129,7 @@ private:
   CmarkGfmParser parser_;
   ParseOptions parseOptions_;
   QString filePath_;
+  TextFileFormat fileFormat_;
   qint64 lastParseElapsedMs_ = 0;
   bool lastParseWasLocalEdit_ = false;
   bool lastLocalEditChangedTopLevelStructure_ = false;
@@ -143,6 +149,8 @@ private:
   qint64 baselineSize_ = -1;
   QFileSystemWatcher* fileWatcher_ = nullptr;
   bool suppressExternalChange_ = false;
+  QDateTime lastNotifiedMtime_;
+  qint64 lastNotifiedSize_ = -2;
 };
 
 }  // namespace muffin

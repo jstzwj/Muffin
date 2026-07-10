@@ -24,6 +24,17 @@ struct Image {
 /// of None for anything that is not a recognizable markdown or HTML image.
 Image parse(const QString& source);
 
+struct SourceLocation {
+  bool found = false;
+  qsizetype start = 0;
+  qsizetype end = 0;
+};
+
+// Locate and replace only the image destination while preserving the rest of
+// the Markdown image or HTML <img> syntax (alt text, title, style, attributes).
+SourceLocation findSource(QStringView source);
+QString replaceSource(const QString& source, const QString& replacement);
+
 /// Zoom percent encoded in a `style="zoom:N%"` declaration. Returns 100 when the
 /// snippet carries no zoom (or an unparseable one) — i.e. the natural size.
 int zoomPercent(const QString& source);

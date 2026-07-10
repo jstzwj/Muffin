@@ -5,6 +5,7 @@
 class QLineEdit;
 class QPushButton;
 class QLabel;
+class QCheckBox;
 
 namespace muffin {
 
@@ -16,17 +17,20 @@ public:
 
   void setSearchText(const QString& text);
   QString searchText() const;
+  bool regularExpressionEnabled() const;
+  bool caseSensitiveEnabled() const;
   void setReplaceVisible(bool visible);
   void activateFind();
   void activateReplace();
   void setResultInfo(int current, int total);
+  void setErrorText(const QString& error);
 
 signals:
-  void findRequested(QString text, bool forward);
+  void findRequested(QString text, bool forward, bool regularExpression, bool caseSensitive);
   void findNextRequested();
   void findPreviousRequested();
-  void replaceRequested(QString findText, QString replaceText);
-  void replaceAllRequested(QString findText, QString replaceText);
+  void replaceRequested(QString findText, QString replaceText, bool regularExpression, bool caseSensitive);
+  void replaceAllRequested(QString findText, QString replaceText, bool regularExpression, bool caseSensitive);
   void closed();
 
 protected:
@@ -46,6 +50,8 @@ private:
   QPushButton* replaceButton_ = nullptr;
   QPushButton* replaceAllButton_ = nullptr;
   QLabel* resultLabel_ = nullptr;
+  QCheckBox* regexCheck_ = nullptr;
+  QCheckBox* caseCheck_ = nullptr;
   QWidget* replaceRow_ = nullptr;
 };
 

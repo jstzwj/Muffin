@@ -144,6 +144,7 @@ jobs:
             libxcb-res0-dev \
             libxcb-cursor-dev \
             libxcb-util-dev \
+            patchelf \
             uuid-dev \
             xvfb
 
@@ -208,6 +209,28 @@ jobs:
       - name: Build distribution
         run: cmake --build --preset conan-release --target dist
 
+      # BuildDMG runs macdeployqt against build/Release/dist/Muffin.app. Do it
+      # before the Unix tar archive so both published macOS artifacts contain
+      # the deployed Qt frameworks.
+      - name: Build DMG disk image
+        if: runner.os == 'macOS'
+        run: cmake --build --preset conan-release --target dmg
+
+      - name: Smoke test Windows distribution
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: build/dist/Muffin.exe --version
+
+      - name: Smoke test Unix distribution
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            env -i HOME="$HOME" QT_QPA_PLATFORM=offscreen build/Release/dist/Muffin.app/Contents/MacOS/Muffin --version
+          else
+            env -i HOME="$HOME" QT_QPA_PLATFORM=offscreen build/Release/dist/Muffin --version
+          fi
+
       - name: Archive Windows distribution
         if: runner.os == 'Windows'
         shell: pwsh
@@ -239,10 +262,6 @@ jobs:
           name: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}-msi
           path: build/Muffin-*-${{ matrix.artifact-suffix }}.msi
           if-no-files-found: error
-
-      - name: Build DMG disk image
-        if: runner.os == 'macOS'
-        run: cmake --build --preset conan-release --target dmg
 
       - name: Upload DMG artifact
         if: runner.os == 'macOS'

@@ -221,7 +221,6 @@ bool RenderEditorBackend::isSourceMode() const {
 void RenderEditorBackend::find(const QString& text, bool forward) {
   // Render mode: search the full markdown source text
   const QString markdown = session_.markdownText().toString();
-  qsizetype lastOffset = -1;
 
   qsizetype startPos = 0;
   if (controller_.selection().hasCursor()) {

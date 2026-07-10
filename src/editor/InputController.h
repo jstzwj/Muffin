@@ -57,6 +57,7 @@ public:
   // selection is collapsed the caller is expected to expand to the current word
   // first; returns false when there is nothing to search for.
   bool selectNextOccurrence();
+  bool selectSourceRange(qsizetype start, qsizetype end);
 
   void performLocalEdit(
       EditTransaction::Kind kind,

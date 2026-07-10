@@ -9,6 +9,7 @@
 #include <QJsonObject>
 #include <QSaveFile>
 #include <QStandardPaths>
+#include <QUuid>
 
 #include <QSet>
 
@@ -48,7 +49,16 @@ DraftRecovery::DraftRecovery(QString directory) : directory_(std::move(directory
   }
 }
 
-QString DraftRecovery::keyFor(const QString& sourceFilePath) const {
+QString DraftRecovery::createDraftKey() {
+  const QByteArray hash = QCryptographicHash::hash(
+      QUuid::createUuid().toByteArray(QUuid::WithoutBraces), QCryptographicHash::Sha256);
+  return QString::fromLatin1(hash.toHex().left(16));
+}
+
+QString DraftRecovery::keyFor(const QString& sourceFilePath, const QString& draftKey) const {
+  if (isDraftKey(draftKey) && draftKey != QStringLiteral("untitled")) {
+    return draftKey;
+  }
   if (sourceFilePath.isEmpty()) {
     return QStringLiteral("untitled");
   }
@@ -65,14 +75,15 @@ QString DraftRecovery::metaPath(const QString& key) const {
   return directory_ + QLatin1Char('/') + key + QStringLiteral(".meta");
 }
 
-void DraftRecovery::snapshot(const QString& markdownText, const QString& sourceFilePath) {
+void DraftRecovery::snapshot(const QString& markdownText, const QString& sourceFilePath,
+                             const QString& draftKey) {
   if (markdownText.isEmpty()) {
     return;
   }
   if (directory_.isEmpty() || !QDir().mkpath(directory_)) {
     return;
   }
-  const QString key = keyFor(sourceFilePath);
+  const QString key = keyFor(sourceFilePath, draftKey);
 
   // Content + sidecar meta are written independently (each via QSaveFile, which is
   // atomic on its own). pendingDrafts() only lists a draft when its .md survives.
@@ -93,8 +104,8 @@ void DraftRecovery::snapshot(const QString& markdownText, const QString& sourceF
   }
 }
 
-void DraftRecovery::markClean(const QString& sourceFilePath) {
-  const QString key = keyFor(sourceFilePath);
+void DraftRecovery::markClean(const QString& sourceFilePath, const QString& draftKey) {
+  const QString key = keyFor(sourceFilePath, draftKey);
   QFile::remove(draftPath(key));
   QFile::remove(metaPath(key));
 }
@@ -145,13 +156,7 @@ void DraftRecovery::pruneOrphaned() {
   if (!dir.exists()) {
     return;
   }
-  // 1. Discard complete drafts whose source file is gone (deleted/moved).
-  for (const PendingDraft& d : pendingDrafts()) {
-    if (!d.sourcePath.isEmpty() && !QFileInfo(d.sourcePath).isFile()) {
-      discard(d);
-    }
-  }
-  // 2. Remove half-written pairs left by a crash mid-snapshot: a .meta whose
+  // Remove half-written pairs left by a crash mid-snapshot: a .meta whose
   //    .md never landed, or a .md whose .meta never landed. Only stems that look
   //    like real draft keys are touched, to protect unrelated files in the dir.
   QSet<QString> mdKeys, metaKeys;

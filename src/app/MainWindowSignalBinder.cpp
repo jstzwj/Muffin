@@ -245,7 +245,7 @@ void muffin::MainWindow::connectSessionSignals() {
   // When unsaved work is resolved (saved or explicitly discarded), clear that
   // document's recovery draft — see FileController::documentBecameClean.
   QObject::connect(&window.fileController_, &FileController::documentBecameClean, &window,
-                   [&window](const QString& filePath) { window.drafts_.markClean(filePath); });
+                   [&window](const QString& filePath) { window.drafts_.markClean(filePath, window.draftKey_); });
   QObject::connect(&window.session_, &DocumentSession::parseBusy, &window, [&window](bool busy) {
     window.renderView_->setLoading(busy);
   });
@@ -306,8 +306,9 @@ void muffin::MainWindow::connectApplicationSignals() {
   QObject::connect(&SpellChecker::instance(), &SpellChecker::languageChanged, &window, refreshSpellOverlay);
 
   auto& updateChecker = muffin::UpdateChecker::instance();
-  QObject::connect(&updateChecker, &muffin::UpdateChecker::updateAvailable, &window, [&window](const QString& version, const QString& url) {
-    if (muffin::UpdateChecker::instance().isUserInitiated()) {
+  QObject::connect(&updateChecker, &muffin::UpdateChecker::updateAvailable, &window,
+      [&window](const QString& version, const QString& url, QObject* requester) {
+    if (requester == &window) {
       const int result = QMessageBox::information(&window,
           muffin::MainWindow::tr("Update Available"),
           muffin::MainWindow::tr("A new version of Muffin (%1) is available.\n\nWould you like to open the download page?").arg(version),
@@ -315,21 +316,22 @@ void muffin::MainWindow::connectApplicationSignals() {
       if (result == QMessageBox::Yes) {
         QDesktopServices::openUrl(QUrl(url));
       }
-    } else if (window.statusBar() && window.statusBar()->isVisible()) {
+    } else if (requester == nullptr && window.statusBar() && window.statusBar()->isVisible()) {
       window.statusBar()->showMessage(
           muffin::MainWindow::tr("Muffin %1 is available. Use Help > Check for Updates to download.").arg(version),
           15000);
     }
   });
-  QObject::connect(&updateChecker, &muffin::UpdateChecker::upToDate, &window, [&window] {
-    if (muffin::UpdateChecker::instance().isUserInitiated()) {
+  QObject::connect(&updateChecker, &muffin::UpdateChecker::upToDate, &window, [&window](QObject* requester) {
+    if (requester == &window) {
       QMessageBox::information(&window,
           muffin::MainWindow::tr("Up to Date"),
           muffin::MainWindow::tr("You are running the latest version of Muffin."));
     }
   });
-  QObject::connect(&updateChecker, &muffin::UpdateChecker::checkFailed, &window, [&window](const QString& errorMessage) {
-    if (muffin::UpdateChecker::instance().isUserInitiated()) {
+  QObject::connect(&updateChecker, &muffin::UpdateChecker::checkFailed, &window,
+      [&window](const QString& errorMessage, QObject* requester) {
+    if (requester == &window) {
       QMessageBox::warning(&window,
           muffin::MainWindow::tr("Update Check Failed"),
           muffin::MainWindow::tr("Could not check for updates:\n%1").arg(errorMessage));

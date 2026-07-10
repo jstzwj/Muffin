@@ -1734,6 +1734,21 @@ bool InputController::selectNextOccurrence() {
   return true;
 }
 
+bool InputController::selectSourceRange(qsizetype start, qsizetype end) {
+  if (!ctx_.hasSession() || !ctx_.selection || start < 0 || end < start
+      || end > ctx_.session->markdownText().size()) {
+    return false;
+  }
+  CursorPosition anchor = cursorForSourceOffset(start);
+  CursorPosition focus = cursorForSourceOffset(end);
+  if (!anchor.isValid() || !focus.isValid()) { return false; }
+  SelectionRange range;
+  range.anchor = anchor;
+  range.focus = focus;
+  ctx_.selection->setSelection(range);
+  return true;
+}
+
 void InputController::setCursorOrExtend(CursorPosition cursor, bool extendSelection) {
   if (!ctx_.selection || !cursor.isValid()) {
     return;

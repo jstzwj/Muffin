@@ -62,6 +62,10 @@ public:
   /// duplicates BEFORE attempting the FS op, so the editor can stay open with feedback.
   static bool targetNameCollides(const QString& oldPath, const QString& newDir, const QString& newName);
 
+  static bool isSameOrDescendant(const QString& candidate, const QString& root);
+  static QString remapDescendant(const QString& candidate, const QString& oldRoot,
+                                 const QString& newRoot);
+
 private:
   FilePathOps() = delete;
 };

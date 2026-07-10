@@ -116,6 +116,20 @@ void testCaseOnlyRenameLandsAsNewCase() {
           QStringLiteral("directory no longer lists the old case low.md"));
 }
 
+void testDescendantRemapping() {
+  WorkDir wd;
+  const QString oldRoot = wd.file(QStringLiteral("old"));
+  const QString newRoot = wd.file(QStringLiteral("new"));
+  const QString document = QDir(oldRoot).filePath(QStringLiteral("nested/doc.md"));
+  require(FilePathOps::isSameOrDescendant(document, oldRoot),
+          QStringLiteral("Nested document should be detected as a descendant"));
+  require(!FilePathOps::isSameOrDescendant(wd.file(QStringLiteral("old-sibling/doc.md")), oldRoot),
+          QStringLiteral("Prefix sibling must not be treated as a descendant"));
+  requireEq(FilePathOps::remapDescendant(document, oldRoot, newRoot),
+            QFileInfo(QDir(newRoot).filePath(QStringLiteral("nested/doc.md"))).absoluteFilePath(),
+            QStringLiteral("Nested document path should follow a folder rename"));
+}
+
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
   testCollidesWithDifferentFile();
@@ -125,5 +139,6 @@ int main(int argc, char** argv) {
   testRenameToNewNameSucceeds();
   testRenameOntoExistingFails();
   testCaseOnlyRenameLandsAsNewCase();
+  testDescendantRemapping();
   return 0;
 }

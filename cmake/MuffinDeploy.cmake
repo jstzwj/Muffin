@@ -29,6 +29,7 @@ if(APPLE)
 else()
   # --- Windows (and Linux): flat directory layout ---
   file(COPY "${APP_FILE}" DESTINATION "${DIST_DIR}")
+  get_filename_component(APP_FILE_NAME "${APP_FILE}" NAME)
 
   set(runtime_dlls "")
   if(DEFINED RUNTIME_DLLS AND NOT RUNTIME_DLLS STREQUAL "")
@@ -75,6 +76,56 @@ else()
       endif()
     endif()
   endforeach()
+
+  if(UNIX AND NOT APPLE)
+    # TARGET_RUNTIME_DLLS is empty on ELF platforms. Resolve the executable and
+    # plugin dependency graph directly, copy only non-system libraries, then
+    # make every binary find the flat bundle without Conan's cache paths.
+    file(GLOB_RECURSE bundled_plugins "${DIST_DIR}/*.so")
+    file(GET_RUNTIME_DEPENDENCIES
+      EXECUTABLES "${DIST_DIR}/${APP_FILE_NAME}"
+      LIBRARIES ${bundled_plugins}
+      RESOLVED_DEPENDENCIES_VAR resolved_dependencies
+      UNRESOLVED_DEPENDENCIES_VAR unresolved_dependencies
+      CONFLICTING_DEPENDENCIES_PREFIX conflicting_dependencies
+      POST_EXCLUDE_REGEXES "^/lib/" "^/lib64/" "^/usr/lib/" "^/usr/lib64/"
+    )
+    if(unresolved_dependencies)
+      message(FATAL_ERROR "Unresolved Linux runtime dependencies: ${unresolved_dependencies}")
+    endif()
+    if(conflicting_dependencies_FILENAMES)
+      message(FATAL_ERROR
+        "Conflicting Linux runtime dependencies: ${conflicting_dependencies_FILENAMES}")
+    endif()
+    foreach(dependency IN LISTS resolved_dependencies)
+      # Runtime dependency resolution commonly returns a versioned symlink.
+      # Copy the complete relative link chain so the DT_NEEDED name resolves.
+      file(COPY "${dependency}" DESTINATION "${DIST_DIR}" FOLLOW_SYMLINK_CHAIN)
+      get_filename_component(dependency_name "${dependency}" NAME)
+      list(APPEND bundled_dependencies "${DIST_DIR}/${dependency_name}")
+    endforeach()
+    list(REMOVE_DUPLICATES bundled_dependencies)
+
+    find_program(PATCHELF_EXECUTABLE NAMES patchelf REQUIRED)
+    function(muffin_set_bundle_rpath binary new_rpath)
+      execute_process(
+        COMMAND "${PATCHELF_EXECUTABLE}" --set-rpath "${new_rpath}" "${binary}"
+        RESULT_VARIABLE patchelf_result
+        ERROR_VARIABLE patchelf_error
+      )
+      if(NOT patchelf_result EQUAL 0)
+        message(FATAL_ERROR "Could not set RPATH on ${binary}: ${patchelf_error}")
+      endif()
+    endfunction()
+
+    muffin_set_bundle_rpath("${DIST_DIR}/${APP_FILE_NAME}" "$ORIGIN")
+    foreach(plugin IN LISTS bundled_plugins)
+      muffin_set_bundle_rpath("${plugin}" "$ORIGIN/..")
+    endforeach()
+    foreach(dependency IN LISTS bundled_dependencies)
+      muffin_set_bundle_rpath("${dependency}" "$ORIGIN")
+    endforeach()
+  endif()
 
   file(WRITE "${DIST_DIR}/qt.conf" "[Paths]\nPlugins = .\n")
   message(STATUS "Muffin dist written to ${DIST_DIR}")
