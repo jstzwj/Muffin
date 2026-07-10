@@ -119,6 +119,62 @@ void testInputEnterSplitsComplexInlineParagraphs() {
   setSourceCursor(selection, blockAt(session, 0), QStringLiteral("before x").size(), QStringLiteral("before $x").size());
   require(input.insertParagraphBreak(), "enter inside math inline should split wrapper");
   require(session.markdownText().toString() == QStringLiteral("before $x$\n\n$+y$ after"), "math inline wrapper split mismatch");
+
+  const QString separatedStrong =
+      QStringLiteral("Another bold phrase with **size** words plus a **scrolling** phrase.");
+  session.setMarkdownText(separatedStrong, false);
+  const qsizetype separatedStrongCursor = separatedStrong.indexOf(QStringLiteral(" plus"));
+  setSourceCursor(
+      selection,
+      blockAt(session, 0),
+      separatedStrongCursor - QStringLiteral("****").size(),
+      separatedStrongCursor);
+  require(input.insertParagraphBreak(), "enter between separate strong spans should split paragraph");
+  require(
+      session.markdownText().toString() ==
+          QStringLiteral("Another bold phrase with **size** words\n\nplus a **scrolling** phrase."),
+      "separate strong spans must not be paired across the cursor");
+
+  session.setMarkdownText(QStringLiteral("before __boldtext__ after"), false);
+  setSourceCursor(
+      selection,
+      blockAt(session, 0),
+      QStringLiteral("before bold").size(),
+      QStringLiteral("before __bold").size());
+  require(input.insertParagraphBreak(), "enter inside underscore strong should split wrapper");
+  require(
+      session.markdownText().toString() == QStringLiteral("before __bold__\n\n__text__ after"),
+      "underscore strong split should preserve authored markers");
+
+  session.setMarkdownText(QStringLiteral("before ``codeword`` after"), false);
+  setSourceCursor(
+      selection,
+      blockAt(session, 0),
+      QStringLiteral("before code").size(),
+      QStringLiteral("before ``code").size());
+  require(input.insertParagraphBreak(), "enter inside double-backtick code should split wrapper");
+  require(
+      session.markdownText().toString() == QStringLiteral("before ``code``\n\n``word`` after"),
+      "code split should preserve the exact delimiter width");
+
+  const QString nested = QStringLiteral("**outer *innertext* tail**");
+  const qsizetype nestedCursor = nested.indexOf(QStringLiteral("inner")) + QStringLiteral("inner").size();
+  session.setMarkdownText(nested, false);
+  setSourceCursor(selection, blockAt(session, 0), QStringLiteral("outer inner").size(), nestedCursor);
+  require(input.insertParagraphBreak(), "enter inside nested inline wrappers should split all wrappers");
+  require(
+      session.markdownText().toString() == QStringLiteral("**outer *inner***\n\n***text* tail**"),
+      "nested wrappers should close inside-out and reopen outside-in");
+
+  const QString link = QStringLiteral("before [abcdef](https://example.com) after");
+  const qsizetype linkCursor = link.indexOf(QStringLiteral("abcdef")) + 3;
+  session.setMarkdownText(link, false);
+  setSourceCursor(selection, blockAt(session, 0), QStringLiteral("before abc").size(), linkCursor);
+  require(input.insertParagraphBreak(), "enter inside link label should split wrapper");
+  require(
+      session.markdownText().toString() ==
+          QStringLiteral("before [abc](https://example.com)\n\n[def](https://example.com) after"),
+      "link split should preserve its destination on both paragraphs");
 }
 
 // testInputEditsComplexInlineSourcePositions (lines 317-353)

@@ -11,6 +11,7 @@
 #include "edit/UndoStack.h"
 
 #include <algorithm>
+#include <utility>
 #include <QSettings>
 
 namespace {
@@ -970,13 +971,19 @@ bool ParagraphController::insertCodeBlockWithSplit() {
 
   if (sel.isCollapsed()) {
     // No selection: split at cursor — same as buildSplitTextBlock with code block in between
-    qsizetype contentOffset = context.cursorSourceOffset - context.contentStart;
+    const qsizetype contentOffset = qBound<qsizetype>(
+        0, context.cursorSourceOffset - context.contentStart, context.contentText.size());
+    const InlineSplitPlan splitPlan = inlineSplitPlanAt(
+        *context.editableNode,
+        QStringView(context.contentText),
+        context.contentStart,
+        context.contentStart + contentOffset);
     qsizetype nextOffset = normalizeSplitOffset(nextContent, contentOffset);
 
     // blockBreak: paragraph-break + code-block + paragraph-break + heading-prefix
     const QString open = codeFenceOpen();
     QString blockBreak = QStringLiteral("\n\n") + open + QStringLiteral("\n\n```\n\n") + headingPrefix;
-    blockBreak = insertionWithInlineSplit(blockBreak, nextContent, nextOffset);
+    blockBreak = splitPlan.wrap(std::move(blockBreak));
     nextContent.insert(nextOffset, blockBreak);
 
     // Cursor inside the empty code block content area
@@ -1000,6 +1007,12 @@ bool ParagraphController::insertCodeBlockWithSplit() {
   const qsizetype selContentEnd = qBound<qsizetype>(0, selEnd - context.contentStart, nextContent.size());
 
   const QString selectedText = nextContent.mid(selContentStart, selContentEnd - selContentStart);
+  const InlineSplitPlan splitPlan = inlineSplitPlanForRange(
+      *context.editableNode,
+      QStringView(context.contentText),
+      context.contentStart,
+      selStart,
+      selEnd);
 
   // Remove selected text, then split at the removal point (same as collapsed case)
   nextContent.remove(selContentStart, selContentEnd - selContentStart);
@@ -1008,7 +1021,7 @@ bool ParagraphController::insertCodeBlockWithSplit() {
 
   const QString open = codeFenceOpen();
   QString blockBreak = (QStringLiteral("\n\n") + open + QStringLiteral("\n%1\n```\n\n")).arg(selectedText) + headingPrefix;
-  blockBreak = insertionWithInlineSplit(blockBreak, nextContent, nextOffset);
+  blockBreak = splitPlan.wrap(std::move(blockBreak));
   nextContent.insert(nextOffset, blockBreak);
 
   // Cursor at the end of selected text inside the code block
@@ -1041,11 +1054,17 @@ bool ParagraphController::insertFormulaBlockWithSplit() {
   QString nextContent = context.contentText;
 
   if (sel.isCollapsed()) {
-    qsizetype contentOffset = context.cursorSourceOffset - context.contentStart;
+    const qsizetype contentOffset = qBound<qsizetype>(
+        0, context.cursorSourceOffset - context.contentStart, context.contentText.size());
+    const InlineSplitPlan splitPlan = inlineSplitPlanAt(
+        *context.editableNode,
+        QStringView(context.contentText),
+        context.contentStart,
+        context.contentStart + contentOffset);
     qsizetype nextOffset = normalizeSplitOffset(nextContent, contentOffset);
 
     QString blockBreak = QStringLiteral("\n\n$$\n\n$$\n\n") + headingPrefix;
-    blockBreak = insertionWithInlineSplit(blockBreak, nextContent, nextOffset);
+    blockBreak = splitPlan.wrap(std::move(blockBreak));
     nextContent.insert(nextOffset, blockBreak);
 
     const qsizetype codeContentPos = blockBreak.indexOf(QStringLiteral("$$\n")) + 3;
@@ -1067,13 +1086,19 @@ bool ParagraphController::insertFormulaBlockWithSplit() {
   const qsizetype selContentEnd = qBound<qsizetype>(0, selEnd - context.contentStart, nextContent.size());
 
   const QString selectedText = nextContent.mid(selContentStart, selContentEnd - selContentStart);
+  const InlineSplitPlan splitPlan = inlineSplitPlanForRange(
+      *context.editableNode,
+      QStringView(context.contentText),
+      context.contentStart,
+      selStart,
+      selEnd);
 
   nextContent.remove(selContentStart, selContentEnd - selContentStart);
   qsizetype nextOffset = selContentStart;
   nextOffset = normalizeSplitOffset(nextContent, nextOffset);
 
   QString blockBreak = QStringLiteral("\n\n$$\n%1\n$$\n\n").arg(selectedText) + headingPrefix;
-  blockBreak = insertionWithInlineSplit(blockBreak, nextContent, nextOffset);
+  blockBreak = splitPlan.wrap(std::move(blockBreak));
   nextContent.insert(nextOffset, blockBreak);
 
   const qsizetype codeContentPos = blockBreak.indexOf(QStringLiteral("$$\n")) + 3;

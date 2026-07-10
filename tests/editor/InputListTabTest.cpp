@@ -100,6 +100,18 @@ void testListItemEditingCommands() {
   require(input.insertParagraphBreak(), "enter inside math inline list item should split wrapper");
   require(session.markdownText().toString() == QStringLiteral("- before $x$\n- $+y$ after\n- beta"), "math inline list wrapper split mismatch");
 
+  const QString separatedStrongList = QStringLiteral("- **first** middle **second**\n- beta");
+  session.setMarkdownText(separatedStrongList, false);
+  setSourceCursor(
+      selection,
+      listItemAt(session, 0, 0),
+      QStringLiteral("first middle").size(),
+      QStringLiteral("- **first** middle").size());
+  require(input.insertParagraphBreak(), "enter between separate strong spans should split list item");
+  require(
+      session.markdownText().toString() == QStringLiteral("- **first** middle\n- **second**\n- beta"),
+      "list split must not pair separate strong spans across the cursor");
+
   session.setMarkdownText(QStringLiteral("- \n- beta"), false);
   setCursor(selection, listItemAt(session, 0, 0), 0);
   require(input.insertParagraphBreak(), "enter on empty list item should exit list");

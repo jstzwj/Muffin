@@ -9,6 +9,8 @@
 #include <QSettings>
 #include <QStringList>
 
+#include <utility>
+
 namespace muffin {
 namespace {
 
@@ -471,15 +473,25 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitTextBlock(
     return command;
   }
 
+  const qsizetype boundedContentOffset =
+      qBound<qsizetype>(0, contentOffset, context.contentText.size());
+  const InlineSplitPlan splitPlan = context.editableNode
+      ? inlineSplitPlanAt(
+            *context.editableNode,
+            QStringView(context.contentText),
+            context.contentRange.byteStart,
+            context.contentRange.byteStart + boundedContentOffset)
+      : InlineSplitPlan{};
+
   QString nextContent = context.contentText;
-  qsizetype nextOffset = normalizeSplitOffset(nextContent, contentOffset);
+  qsizetype nextOffset = normalizeSplitOffset(nextContent, boundedContentOffset);
   const QString separator = paragraphSeparatorFor(context);
   QString insertion = separator;
   if (context.blockType == BlockType::Heading && context.blockRange.byteStart >= 0 &&
       context.blockRange.byteStart < context.contentRange.byteStart) {
     insertion += session_->markdownText().mid(context.blockRange.byteStart, context.contentRange.byteStart - context.blockRange.byteStart);
   }
-  insertion = insertionWithInlineSplit(insertion, nextContent, nextOffset);
+  insertion = splitPlan.wrap(std::move(insertion));
   nextContent.insert(nextOffset, insertion);
   nextOffset += insertion.size();
 
@@ -847,9 +859,22 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(con
     return command;
   }
 
+  const qsizetype contentOffset = context.plainInlineEditable
+      ? context.cursorTextOffset
+      : context.cursorSourceOffset - context.contentRange.byteStart;
+  const qsizetype boundedContentOffset =
+      qBound<qsizetype>(0, contentOffset, context.contentText.size());
+  const InlineSplitPlan splitPlan = context.editableNode
+      ? inlineSplitPlanAt(
+            *context.editableNode,
+            QStringView(context.contentText),
+            context.contentRange.byteStart,
+            context.contentRange.byteStart + boundedContentOffset)
+      : InlineSplitPlan{};
+
   QString nextLineContent = context.contentText;
-  qsizetype contentOffset = context.plainInlineEditable ? context.cursorTextOffset : context.cursorSourceOffset - context.contentRange.byteStart;
-  const qsizetype splitContentOffset = normalizeSplitOffset(nextLineContent, contentOffset);
+  const qsizetype splitContentOffset =
+      normalizeSplitOffset(nextLineContent, boundedContentOffset);
   const qsizetype splitOffset = context.contentRange.byteStart + splitContentOffset;
   const qsizetype markerColumn = info.markerStart;
   // When alignIndent is on, the new item's marker lines up under the parent item's *content*
@@ -867,7 +892,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(con
                                  : info.marker;
   const QString taskPrefix = info.task ? QStringLiteral("[ ] ") : QString();
   QString insertion = QLatin1Char('\n') + leadingSpaces(markerColumn + alignExtra) + nextMarker + taskPrefix;
-  insertion = insertionWithInlineSplit(insertion, nextLineContent, splitContentOffset);
+  insertion = splitPlan.wrap(std::move(insertion));
   nextLineContent.insert(splitContentOffset, insertion);
   command.sourceStart = context.contentRange.byteStart;
   command.removedLength = context.contentRange.byteEnd - context.contentRange.byteStart;

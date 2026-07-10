@@ -66,6 +66,56 @@ void testInsertFormulaBlock() {
   require(session.markdownText().toString() == QStringLiteral("Hello"), "formula block undo text mismatch");
 }
 
+void testInsertBlocksBetweenSeparateInlineSpans() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+
+  const QString source = QStringLiteral("**first** middle **second**");
+  const qsizetype sourceCursor = QStringLiteral("**first** middle").size();
+  const qsizetype visibleCursor = QStringLiteral("first middle").size();
+
+  session.setMarkdownText(source, false);
+  setSourceCursor(selection, blockAt(session, 0), visibleCursor, sourceCursor);
+  require(paragraph.toggleCodeBlock(), "insert code block between separate strong spans should succeed");
+  QString markdown = session.markdownText().toString();
+  require(markdown.startsWith(QStringLiteral("**first** middle\n\n")),
+          "code insertion must not close an unrelated strong span");
+  require(markdown.endsWith(QStringLiteral("\n\n**second**")),
+          "code insertion must not reopen an unrelated strong span");
+
+  session.setMarkdownText(source, false);
+  setSourceCursor(selection, blockAt(session, 0), visibleCursor, sourceCursor);
+  require(paragraph.toggleFormulaBlock(), "insert formula block between separate strong spans should succeed");
+  markdown = session.markdownText().toString();
+  require(markdown.startsWith(QStringLiteral("**first** middle\n\n")),
+          "formula insertion must not close an unrelated strong span");
+  require(markdown.endsWith(QStringLiteral("\n\n**second**")),
+          "formula insertion must not reopen an unrelated strong span");
+
+  const QString crossWrapperSelection = QStringLiteral("__first__ middle **second**");
+  const qsizetype selectionStart = QStringLiteral("__fi").size();
+  const qsizetype selectionEnd =
+      crossWrapperSelection.indexOf(QStringLiteral("second")) + QStringLiteral("se").size();
+  session.setMarkdownText(crossWrapperSelection, false);
+  setSourceSelection(
+      selection,
+      blockAt(session, 0),
+      QStringLiteral("fi").size(),
+      selectionStart,
+      QStringLiteral("first middle se").size(),
+      selectionEnd);
+  require(paragraph.toggleCodeBlock(), "insert code block across different strong spans should succeed");
+  markdown = session.markdownText().toString();
+  require(markdown.startsWith(QStringLiteral("__fi__\n\n")),
+          "selection split should close the wrapper active at its start");
+  require(markdown.endsWith(QStringLiteral("\n\n**cond**")),
+          "selection split should reopen the wrapper active at its end");
+}
+
 void testInsertLinkReference() {
   DocumentSession session;
   SelectionController selection;
@@ -473,6 +523,7 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testInsertCodeBlock);
   RUN_TEST(testInsertFormulaBlock);
+  RUN_TEST(testInsertBlocksBetweenSeparateInlineSpans);
   RUN_TEST(testInsertLinkReference);
   RUN_TEST(testInsertLinkReferenceIntoEmptyDocument);
   RUN_TEST(testInsertFootnoteDefinition);
