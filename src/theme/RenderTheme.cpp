@@ -617,9 +617,8 @@ const ThemeElementStyle* RenderTheme::elementStyleForNode(const MarkdownNode& no
   if (!hasStructuralRules_ || !structuralEngine_) { return elementStyle(key); }
   const auto it = nodeStyleCache_.constFind(node.id());
   if (it != nodeStyleCache_.constEnd()) { return &it.value(); }
-  // Reuse one NodeCssElementBuilder across all queries in this rebuild: build() is memoized, so the
-  // first call wires the full sibling chain (linkSiblingsIteratively) and every later node is an
-  // O(1) cache hit. A fresh builder per call rebuilt the chain per node → O(n²) on flat block lists.
+  // Reuse one sparse adapter across all queries in this rebuild. It materializes only
+  // nodes reached by selector navigation, while final styles remain cached by NodeId.
   if (!structuralBuilder_) { structuralBuilder_ = std::make_shared<NodeCssElementBuilder>(hasNthOfType_); }
   ThemeElementStyle resolved = CssThemeMapper::elementStyleForNode(*structuralBuilder_, *structuralEngine_, node, key, bodyFontPx_);
   resolved.key = key;
@@ -629,19 +628,17 @@ const ThemeElementStyle* RenderTheme::elementStyleForNode(const MarkdownNode& no
 void RenderTheme::clearStructuralCache() const {
   nodeStyleCache_.clear();
   prototypeFontCache_.clear();
+  // The adapter views live MarkdownNodes. Rebuilding it is cheap now that it is sparse,
+  // and guarantees edits/deletions cannot leave copied tags or :has results behind.
+  structuralBuilder_.reset();
 }
 
 void RenderTheme::dropStructuralBuilder() const {
-  // Only the node-tree-replaced/reordered paths (full rebuild, top-level splice) call this — see
-  // the header note. clearStructuralCache() deliberately does NOT reset it, so the many
-  // selection/cursor-driven rebuildBlock refreshes reuse the warm builder (O(1) instead of O(n)).
   structuralBuilder_.reset();
 }
 
 void RenderTheme::invalidateStructuralSiblingLinks() const {
-  if (structuralBuilder_) {
-    structuralBuilder_->resetSiblingLinks();
-  }
+  structuralBuilder_.reset();
 }
 
 QFont RenderTheme::headingFont(int level) const {

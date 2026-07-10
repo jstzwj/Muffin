@@ -1350,6 +1350,22 @@ a:not(.md-toc-inner) { text-decoration:none; }
           QStringLiteral("supported :not(.class) selector should still feed normal link styles"));
 }
 
+void testStructuralCapabilitiesComeFromParsedSelectors() {
+  const ThemeDefinition unsupported = CssThemeMapper::fromCss(
+      QStringLiteral("#write { color:#111111; } p:last-of-type { color:#ff0000; }"),
+      QStringLiteral("unsupported-structural"), QString());
+  require(!unsupported.hasStructuralRules,
+          QStringLiteral("an unsupported pseudo must not activate the live structural path"));
+
+  const ThemeDefinition supported = CssThemeMapper::fromCss(
+      QStringLiteral("#write { color:#111111; } p:nth-of-type(2) { color:#ff0000; }"),
+      QStringLiteral("supported-structural"), QString());
+  require(supported.hasStructuralRules,
+          QStringLiteral("a parsed nth-of-type selector should activate the live structural path"));
+  require(supported.hasNthOfType,
+          QStringLiteral("nth-of-type should request a type index from the live adapter"));
+}
+
 // Phase 3: link `text-decoration` drives linkUnderlined; letter-spacing is
 // captured for body+heading and code (baked into the theme fonts by RenderTheme).
 void testLinkDecorationAndLetterSpacing() {
@@ -1614,6 +1630,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testHeadingFitContentDetection);
   RUN_TEST(testBorderOnlyHostProducesElementBackground);
   RUN_TEST(testUnsupportedStructuralPseudosDoNotLeak);
+  RUN_TEST(testStructuralCapabilitiesComeFromParsedSelectors);
   RUN_TEST(testLinkDecorationAndLetterSpacing);
   RUN_TEST(testInlineCodeBoxGeometry);
   RUN_TEST(testDeletedColorCapture);

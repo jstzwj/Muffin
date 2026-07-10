@@ -597,41 +597,6 @@ ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssCompu
   return out;
 }
 
-// True if a selector needs the live document tree to match: sibling combinators
-// (`+`/`~`) or structural/content pseudo-classes. Inclusive on purpose — a false
-// positive just takes the (cached) per-node path; a false negative would silently
-// drop the rule.
-bool selectorIsStructural(const QString& selector) {
-  if (selector.contains(QLatin1String(":first-child")) || selector.contains(QLatin1String(":last-child")) ||
-      selector.contains(QLatin1String(":only-child")) || selector.contains(QLatin1String(":first-of-type")) ||
-      selector.contains(QLatin1String(":last-of-type")) || selector.contains(QLatin1String(":only-of-type")) ||
-      selector.contains(QLatin1String(":nth-child")) || selector.contains(QLatin1String(":nth-of-type")) ||
-      selector.contains(QLatin1String(":has("))) {
-    return true;
-  }
-  // `+` / `~` combinators (ignore any inside :not(...) by a coarse check — a
-  // stray `+`/`~` only opts into the structural path, which is safe).
-  bool inNot = false;
-  for (const QChar c : selector) {
-    if (c == QLatin1Char('(')) { inNot = true; }
-    else if (c == QLatin1Char(')')) { inNot = false; }
-    else if (!inNot && (c == QLatin1Char('+') || c == QLatin1Char('~'))) { return true; }
-  }
-  return false;
-}
-
-// typeIndex (the per-tag ordinal among siblings) is read ONLY by the `:*-of-type` family
-// (:nth-of-type, :first-of-type, :last-of-type, :only-of-type). No bundled theme uses any of
-// these, so maintaining it — a QHash<QString> lookup per sibling in linkSiblingsIteratively,
-// the dominant cost of the per-splice sibling re-link on huge flat docs — is pure waste there.
-// Detecting it lets the builder skip that work entirely when no selector can read typeIndex.
-bool selectorHasNthOfType(const QString& selector) {
-  return selector.contains(QLatin1String(":nth-of-type")) ||
-         selector.contains(QLatin1String(":first-of-type")) ||
-         selector.contains(QLatin1String(":last-of-type")) ||
-         selector.contains(QLatin1String(":only-of-type"));
-}
-
 ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QString& id) {
   ThemeDefinition d;
   d.isBuiltIn = false;
@@ -1313,28 +1278,18 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
     d.elementStyles.push_back(makeElementStyle(QStringLiteral("h%1:focus").arg(level),
                                                styleEngine.styleFor(h, focus), headingEmPx(d.typography, level, bodyPx), documentFontPx));
   }
-  // Structural-selector detection: a theme that uses `+`/`~` combinators or
-  // structural pseudo-classes (`:first-child`, `:nth-child(n)`, `:has(...)`, …)
-  // needs the live MarkdownNode tree to match, so it takes the per-node layout
-  // path. Store the parsed sheet so that path can run the engine. Themes without
-  // such selectors stay on the load-time prototype precompute (no per-layout cost).
-  for (const CssRule& rule : sheet.rules()) {
-    if (rule.darkScope) { continue; }
-    for (const QString& sel : rule.selectors) {
-      if (selectorIsStructural(sel)) { d.hasStructuralRules = true; }
-      if (selectorHasNthOfType(sel)) { d.hasNthOfType = true; }
-    }
-    if (d.hasStructuralRules && d.hasNthOfType) { break; }
-  }
+  // Derive structural capabilities from the same parsed selectors the matcher
+  // executes. This avoids a second string scanner disagreeing about unsupported
+  // pseudo-classes and needlessly activating the live-tree path.
+  d.hasStructuralRules = styleEngine.selectorFeatures().hasStructuralRules;
+  d.hasNthOfType = styleEngine.selectorFeatures().needsTypeIndex;
   if (d.hasStructuralRules) { d.structuralSheet = std::make_shared<CssThemeSheet>(sheet); }
   return d;
 }
 
 ThemeElementStyle CssThemeMapper::elementStyleForNode(NodeCssElementBuilder& builder, const CssComputedStyleEngine& engine,
                                                       const MarkdownNode& node, const QString& key, qreal bodyPx) {
-  // `builder` is persistent (owned by RenderTheme) and memoized in its cache_, so the CSS element
-  // tree — incl. the full sibling chain linkSiblingsIteratively wires on the first build() — is
-  // built once per rebuild, not rebuilt for every node (O(n) per node → O(n²) on flat lists).
+  // The sparse builder memoizes only nodes reached by this rebuild's selector queries.
   const CssElement* element = builder.build(node);
   const CssComputedStyle computed = engine.styleFor(*element);
   // em basis = bodyPx for the structural path. (Heading em-relative geometry under

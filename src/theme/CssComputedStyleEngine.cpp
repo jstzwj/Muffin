@@ -295,6 +295,32 @@ bool stateMatches(const SimpleSelector& simple, const CssElementState& state) {
   return true;
 }
 
+const CssElement* previousSiblingOf(const CssElement& element) {
+  return element.navigator ? element.navigator->previousSibling(element) : element.previousSibling;
+}
+
+const CssElement* nextSiblingOf(const CssElement& element) {
+  return element.navigator ? element.navigator->nextSibling(element) : element.nextSibling;
+}
+
+int childIndexOf(const CssElement& element) {
+  return element.navigator ? element.navigator->childIndex(element) : element.childIndex;
+}
+
+int typeIndexOf(const CssElement& element) {
+  return element.navigator ? element.navigator->typeIndex(element) : element.typeIndex;
+}
+
+bool hasTag(const CssElement& element, const QString& tag, bool directChild) {
+  if (element.navigator) { return element.navigator->hasTag(element, tag, directChild); }
+  return (directChild ? element.hasChildTags : element.hasDescendantTags).contains(tag);
+}
+
+bool hasClass(const CssElement& element, const QString& className, bool directChild) {
+  if (element.navigator) { return element.navigator->hasClass(element, className, directChild); }
+  return (directChild ? element.hasChildClasses : element.hasDescendantClasses).contains(className);
+}
+
 bool simpleMatches(const SimpleSelector& simple, const CssElement& element, const CssElementState& state) {
   if (!stateMatches(simple, state)) { return false; }
   const QString tag = element.tag.toLower();
@@ -304,26 +330,25 @@ bool simpleMatches(const SimpleSelector& simple, const CssElement& element, cons
   if (!simple.id.isEmpty() && simple.id != id) { return false; }
   if (!simple.pseudoElement.isEmpty() && simple.pseudoElement != pseudo) { return false; }
   if (simple.pseudoElement.isEmpty() && !pseudo.isEmpty()) { return false; }
-  // Structural pseudo-classes need a real sibling-aware element (childIndex/typeIndex
-  // set by the adapter). On the load-time prototype they are -1, so these correctly
-  // fail to match there — structural selectors are evaluated only against the live tree.
-  if (simple.firstChild && element.childIndex != 0) { return false; }
-  if (simple.lastChild && !(element.childIndex >= 0 && element.nextSibling == nullptr)) { return false; }
-  if (simple.onlyChild && !(element.childIndex == 0 && element.nextSibling == nullptr)) { return false; }
-  if (simple.firstOfType && element.typeIndex != 0) { return false; }
+  // Structural pseudo-classes query the live navigator when present. Prototype
+  // elements use their explicitly populated fields and otherwise fail to match.
+  if (simple.firstChild && !(element.navigator ? previousSiblingOf(element) == nullptr : element.childIndex == 0)) { return false; }
+  if (simple.lastChild && !(element.navigator ? nextSiblingOf(element) == nullptr
+                                               : element.childIndex >= 0 && element.nextSibling == nullptr)) { return false; }
+  if (simple.onlyChild && !(element.navigator ? previousSiblingOf(element) == nullptr && nextSiblingOf(element) == nullptr
+                                               : element.childIndex == 0 && element.nextSibling == nullptr)) { return false; }
+  if (simple.firstOfType && typeIndexOf(element) != 0) { return false; }
   if (simple.nthChild) {
-    if (element.childIndex < 0 || !nthPositionMatches(simple.nthA, simple.nthB, element.childIndex + 1)) { return false; }
+    const int index = childIndexOf(element);
+    if (index < 0 || !nthPositionMatches(simple.nthA, simple.nthB, index + 1)) { return false; }
   }
   if (simple.nthOfType) {
-    if (element.typeIndex < 0 || !nthPositionMatches(simple.nthA, simple.nthB, element.typeIndex + 1)) { return false; }
+    const int index = typeIndexOf(element);
+    if (index < 0 || !nthPositionMatches(simple.nthA, simple.nthB, index + 1)) { return false; }
   }
   if (simple.hasPresent) {
-    // :has(tag)/:has(.cls) probed against the precomputed descendant (or direct-child)
-    // tag/class sets the adapter populated from the live subtree.
-    const QSet<QString>& tags = simple.hasDirect ? element.hasChildTags : element.hasDescendantTags;
-    const QSet<QString>& cls = simple.hasDirect ? element.hasChildClasses : element.hasDescendantClasses;
-    if (!simple.hasTag.isEmpty() && !tags.contains(simple.hasTag)) { return false; }
-    if (!simple.hasClass.isEmpty() && !cls.contains(simple.hasClass)) { return false; }
+    if (!simple.hasTag.isEmpty() && !hasTag(element, simple.hasTag, simple.hasDirect)) { return false; }
+    if (!simple.hasClass.isEmpty() && !hasClass(element, simple.hasClass, simple.hasDirect)) { return false; }
   }
   QStringList classes;
   for (const QString& cls : element.classes) { classes << cls.toLower(); }
@@ -338,43 +363,53 @@ bool simpleMatches(const SimpleSelector& simple, const CssElement& element, cons
   return true;
 }
 
-// Explicit-stack matcher. The recursive form recursed over every ancestor (descendant ' ') and
-// every previous sibling ('~'); on a deep tree or a 100k+ flat block list that re-introduced the
-// exact stack-overflow NodeCssElementBuilder was fixed to avoid (see NodeCssElement::collectDescendants).
-// A heap work-stack of (part index, element) pairs replaces the C++ recursion — same left-to-right
-// OR semantics, short-circuits to true on the first full match. kMaxMatcherSteps bounds a
-// pathological selector/structure from running away.
+// Explicit-stack matcher. Previous-sibling alternatives are advanced lazily: a
+// common `p ~ p` match inspects only the adjacent paragraph instead of first
+// materializing every preceding sibling. kMaxMatcherSteps bounds pathological
+// selectors/structures without using the C++ call stack.
 bool selectorMatchesAt(const ParsedSelector& selector, int index, const CssElement* element,
-                       const CssElementState& targetState) {
+                        const CssElementState& targetState) {
   if (!element || index < 0) { return false; }
   const int last = selector.parts.size() - 1;
-  std::vector<std::pair<int, const CssElement*>> stack;
-  stack.emplace_back(index, element);
+  enum class WorkKind { Match, PreviousSibling };
+  struct WorkItem {
+    int index;
+    const CssElement* element;
+    WorkKind kind;
+  };
+  std::vector<WorkItem> stack;
+  stack.push_back({index, element, WorkKind::Match});
   constexpr int kMaxMatcherSteps = 100000;
   int steps = 0;
   while (!stack.empty()) {
     if (++steps > kMaxMatcherSteps) { return false; }
-    const auto [idx, el] = stack.back();
+    const WorkItem work = stack.back();
     stack.pop_back();
+    const int idx = work.index;
+    const CssElement* el = work.element;
     if (!el || idx < 0) { continue; }
+    if (work.kind == WorkKind::PreviousSibling) {
+      if (const CssElement* previous = previousSiblingOf(*el)) {
+        stack.push_back({idx, previous, WorkKind::PreviousSibling});
+        stack.push_back({idx, previous, WorkKind::Match});
+      }
+      continue;
+    }
     const CssElementState state = idx == last ? targetState : CssElementState{};
     if (!simpleMatches(selector.parts.at(idx).simple, *el, state)) { continue; }
     if (idx == 0) { return true; }  // every part matched, left to right
     const QChar rel = selector.parts.at(idx).combinator;
     if (rel == QLatin1Char('>')) {
-      stack.emplace_back(idx - 1, el->parent);
+      stack.push_back({idx - 1, el->parent, WorkKind::Match});
     } else if (rel == QLatin1Char('+')) {
       // Adjacent sibling: the element immediately to the left.
-      stack.emplace_back(idx - 1, el->previousSibling);
+      stack.push_back({idx - 1, previousSiblingOf(*el), WorkKind::Match});
     } else if (rel == QLatin1Char('~')) {
-      // General sibling: any element to the left.
-      for (const CssElement* s = el->previousSibling; s; s = s->previousSibling) {
-        stack.emplace_back(idx - 1, s);
-      }
+      stack.push_back({idx - 1, el, WorkKind::PreviousSibling});
     } else {
       // Descendant combinator (' '): any ancestor.
       for (const CssElement* p = el->parent; p; p = p->parent) {
-        stack.emplace_back(idx - 1, p);
+        stack.push_back({idx - 1, p, WorkKind::Match});
       }
     }
   }
@@ -427,6 +462,20 @@ CssComputedStyleEngine::CssComputedStyleEngine(const CssThemeSheet& sheet) : she
     for (const QString& selector : rule.selectors) {
       ParsedSelector ps = parseSelector(selector);
       ps.selectorText = selector;
+      const bool supported = std::none_of(ps.parts.cbegin(), ps.parts.cend(),
+                                          [](const SelectorPart& part) { return part.simple.unsupported; });
+      if (!rule.darkScope && ps.valid && supported && !ps.exportOnly && !ps.editorOnly) {
+        for (const SelectorPart& part : ps.parts) {
+          const SimpleSelector& simple = part.simple;
+          const bool positional = simple.firstChild || simple.lastChild || simple.onlyChild ||
+                                  simple.firstOfType || simple.nthChild || simple.nthOfType;
+          const bool sibling = part.combinator == QLatin1Char('+') || part.combinator == QLatin1Char('~');
+          selectorFeatures_.hasStructuralRules = selectorFeatures_.hasStructuralRules || positional ||
+                                                 simple.hasPresent || sibling;
+          selectorFeatures_.needsTypeIndex = selectorFeatures_.needsTypeIndex ||
+                                             simple.firstOfType || simple.nthOfType;
+        }
+      }
       parsedSelectors_.push_back(std::move(ps));
     }
     ruleSelectorRange_.emplace_back(start, static_cast<int>(parsedSelectors_.size()));

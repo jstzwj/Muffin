@@ -5,6 +5,8 @@
 #include "render/DocumentLayout.h"
 #include "render/BlockLayout.h"
 #include "theme/CssThemeMapper.h"
+#include "theme/CssComputedStyleEngine.h"
+#include "theme/NodeCssElement.h"
 #include "theme/RenderTheme.h"
 #include "theme/ThemeDefinition.h"
 #include "theme/ThemeManager.h"
@@ -505,6 +507,73 @@ void testStructuralSelectorsResolveAgainstLiveTree() {
   }
 }
 
+void testStructuralAdapterStaysSparseOnFlatDocuments() {
+  MarkdownNode root(BlockType::Document);
+  constexpr int kParagraphCount = 20000;
+  for (int i = 0; i < kParagraphCount; ++i) {
+    root.appendChild(std::make_unique<MarkdownNode>(BlockType::Paragraph));
+  }
+
+  NodeCssElementBuilder builder(false);
+  const CssElement* target = builder.build(*root.children().at(kParagraphCount / 2));
+  require(builder.materializedElementCount() == 4,
+          QStringLiteral("building one flat node should materialize only html/body/root/target"));
+
+  const CssThemeSheet sheet = CssThemeParser::parse(
+      QStringLiteral("#write p + p { color:#123456; }"), QString());
+  const CssComputedStyle style = CssComputedStyleEngine(sheet).styleFor(*target);
+  require(style.resolvedValue(QStringLiteral("color")) == QStringLiteral("#123456"),
+          QStringLiteral("sparse adapter should still resolve adjacent siblings"));
+  require(builder.materializedElementCount() == 5,
+          QStringLiteral("adjacent matching should materialize only the previous sibling"));
+
+  NodeCssElementBuilder generalSiblingBuilder(false);
+  const CssElement* generalTarget = generalSiblingBuilder.build(*root.children().at(kParagraphCount / 2));
+  const CssThemeSheet generalSheet = CssThemeParser::parse(
+      QStringLiteral("#write p ~ p { color:#654321; }"), QString());
+  const CssComputedStyle generalStyle = CssComputedStyleEngine(generalSheet).styleFor(*generalTarget);
+  require(generalStyle.resolvedValue(QStringLiteral("color")) == QStringLiteral("#654321"),
+          QStringLiteral("sparse adapter should resolve general siblings"));
+  require(generalSiblingBuilder.materializedElementCount() == 5,
+          QStringLiteral("general sibling matching should stop after the nearest match"));
+}
+
+void testStructuralHasTraversesNestedInlines() {
+  const QString css = QStringLiteral(
+      "#write { color:#222222; } #write p:has(img) { color:#00aa00; }");
+  const RenderTheme theme = RenderTheme::fromDefinition(
+      CssThemeMapper::fromCss(css, QStringLiteral("nested-has"), QString()));
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("***![alt](x.png)***\n"), false);
+  const MarkdownNode* paragraph = findFirstBlock(session.document().root(), BlockType::Paragraph);
+  require(paragraph != nullptr, QStringLiteral("nested-inline fixture should contain a paragraph"));
+  require(theme.textColorForElement(QStringLiteral("p"), paragraph) == QColor(QStringLiteral("#00aa00")),
+          QStringLiteral(":has(img) should inspect nested inline children"));
+}
+
+void testStructuralCacheRefreshesSameNodeIdContent() {
+  const QString css = QStringLiteral(
+      "#write { color:#222222; } #write p:has(img) { color:#00aa00; }");
+  const RenderTheme theme = RenderTheme::fromDefinition(
+      CssThemeMapper::fromCss(css, QStringLiteral("has-refresh"), QString()));
+  const NodeId stableId = NodeId::fromString(QStringLiteral("stable-paragraph"));
+
+  MarkdownNode firstRoot(BlockType::Document);
+  auto imageParagraph = std::make_unique<MarkdownNode>(BlockType::Paragraph, stableId);
+  imageParagraph->inlines().append(InlineNode::image(QStringLiteral("x.png"), QStringLiteral("alt"), QString()));
+  const MarkdownNode* first = &firstRoot.appendChild(std::move(imageParagraph));
+  require(theme.textColorForElement(QStringLiteral("p"), first) == QColor(QStringLiteral("#00aa00")),
+          QStringLiteral("image paragraph should initially match :has(img)"));
+
+  MarkdownNode secondRoot(BlockType::Document);
+  auto plainParagraph = std::make_unique<MarkdownNode>(BlockType::Paragraph, stableId);
+  plainParagraph->inlines().append(InlineNode::text(QStringLiteral("plain")));
+  const MarkdownNode* second = &secondRoot.appendChild(std::move(plainParagraph));
+  theme.clearStructuralCache();
+  require(theme.textColorForElement(QStringLiteral("p"), second) == QColor(QStringLiteral("#222222")),
+          QStringLiteral("clearing structural styles must discard stale :has data for a reused NodeId"));
+}
+
 void testFromDefinitionReproducesBuiltIns() {
   // The whole theme-unification design hinges on fromDefinition(definition(id))
   // reproducing the matching built-in factory exactly — otherwise switching the
@@ -697,6 +766,9 @@ int main(int argc, char** argv) {
   RUN_TEST(testBlockquoteListFlowStaysCompactUnderLazyPromotion);
   RUN_TEST(testGithubBlockquoteNotPaddedByWriteLeak);
   RUN_TEST(testStructuralSelectorsResolveAgainstLiveTree);
+  RUN_TEST(testStructuralAdapterStaysSparseOnFlatDocuments);
+  RUN_TEST(testStructuralHasTraversesNestedInlines);
+  RUN_TEST(testStructuralCacheRefreshesSameNodeIdContent);
   RUN_TEST(testCodeBorderNeverRendersBlack);
   runTest("testLayoutForTheme/github", [&] { testLayoutForTheme(document, RenderTheme::github(), QStringLiteral("github")); });
   runTest("testLayoutForTheme/newsprint", [&] { testLayoutForTheme(document, RenderTheme::newsprint(), QStringLiteral("newsprint")); });

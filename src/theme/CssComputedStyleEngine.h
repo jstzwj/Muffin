@@ -14,6 +14,24 @@
 
 namespace muffin {
 
+struct CssElement;
+
+// Optional live-tree navigation used by layout-time elements. Prototype elements
+// keep navigator=null and use the materialized fields below. Keeping navigation
+// behind this narrow interface lets the selector engine query MarkdownNode's
+// existing parent/sibling links without duplicating the whole document tree.
+class CssElementNavigator {
+public:
+  virtual ~CssElementNavigator() = default;
+
+  virtual const CssElement* previousSibling(const CssElement& element) const = 0;
+  virtual const CssElement* nextSibling(const CssElement& element) const = 0;
+  virtual int childIndex(const CssElement& element) const = 0;
+  virtual int typeIndex(const CssElement& element) const = 0;
+  virtual bool hasTag(const CssElement& element, const QString& tag, bool directChild) const = 0;
+  virtual bool hasClass(const CssElement& element, const QString& className, bool directChild) const = 0;
+};
+
 // A node the selector engine matches against. The load-time prototype tree
 // (CssThemeMapper::fromSheet) fills only tag/id/classes/pseudoElement/parent —
 // the sibling/index/has fields stay default (null/-1/empty), so sibling
@@ -39,6 +57,7 @@ struct CssElement {
   QSet<QString> hasDescendantClasses;
   QSet<QString> hasChildTags;
   QSet<QString> hasChildClasses;
+  const CssElementNavigator* navigator = nullptr;  // live adapter only; never owned
 };
 
 struct CssElementState {
@@ -116,12 +135,18 @@ struct ParsedSelector {
   QString selectorText;  // original selector string (kept for Candidate.selector trace/debug)
 };
 
+struct CssSelectorFeatures {
+  bool hasStructuralRules = false;
+  bool needsTypeIndex = false;
+};
+
 class CssComputedStyleEngine {
 public:
   explicit CssComputedStyleEngine(const CssThemeSheet& sheet);
 
   CssComputedStyle styleFor(const CssElement& element) const;
   CssComputedStyle styleFor(const CssElement& element, const CssElementState& state) const;
+  const CssSelectorFeatures& selectorFeatures() const { return selectorFeatures_; }
 
 private:
   void applyStyleForElement(const CssElement& element, const CssElementState& state,
@@ -131,6 +156,7 @@ private:
   const CssThemeSheet& sheet_;
   std::vector<ParsedSelector> parsedSelectors_;          // every selector of every rule, flattened
   std::vector<std::pair<int, int>> ruleSelectorRange_;   // per-rule [start,end) into parsedSelectors_
+  CssSelectorFeatures selectorFeatures_;
 };
 
 }  // namespace muffin

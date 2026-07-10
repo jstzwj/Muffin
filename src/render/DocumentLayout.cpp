@@ -563,7 +563,7 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   result.oldCount = range.oldCount;
   result.newCount = range.newCount;
   theme.clearStructuralCache();
-  theme.invalidateStructuralSiblingLinks();  // splice changed the root child list → re-link sibling chains, but KEEP the per-node CssElement cache (O(n) cache hits vs dropStructuralBuilder's O(n) recreation ~1s @ 375k blocks)
+  theme.invalidateStructuralSiblingLinks();
   if (!range.isValid() || document_ != &document || viewportWidth_ <= 0) {
     return result;
   }

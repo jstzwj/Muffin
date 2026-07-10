@@ -16,7 +16,7 @@ namespace muffin {
 class MarkdownNode;
 class CssComputedStyleEngine;
 class CssThemeSheet;
-class NodeCssElementBuilder;  // persistent CSS element tree (structural-selector path)
+class NodeCssElementBuilder;  // sparse live-tree adapter for structural selectors
 struct CssElement;
 struct ThemeElementStyle;
 
@@ -115,20 +115,11 @@ public:
   // Node-resolved element style (cached per rebuild). Returns the precomputed base
   // when the theme has no structural rules.
   const ThemeElementStyle* elementStyleForNode(const MarkdownNode& node, const QString& key) const;
-  // Drop the per-node cache (call at the start of each layout rebuild so edited
-  // structure — a sibling added/removed — is re-evaluated).
+  // Drop resolved styles and the sparse live-tree adapter. Recreating the adapter
+  // is proportional to the selector paths queried, so every edit gets fresh data.
   void clearStructuralCache() const;
-  // Drop the CSS element tree. Call ONLY when the node tree is replaced/reordered (full rebuild,
-  // top-level splice) — its elements hold MarkdownNode pointers that dangle then. Do NOT call from
-  // single-block refreshes (rebuildBlock), which selection/cursor changes fire many times/second:
-  // resetting there forced the next style query to rebuild the whole sibling chain (O(n)).
+  // Compatibility hooks for layout rebuild paths; both discard the sparse adapter.
   void dropStructuralBuilder() const;
-  // Lighter than dropStructuralBuilder for a top-level splice: clears the builder's sibling-link
-  // memo (so the changed root child list re-links) but KEEPS the per-node CssElement cache. The
-  // re-link is then O(num top-level blocks) of CACHE HITS (~ms) instead of O(n) element recreation
-  // (~1s on a 375k-block doc). Safe because the cache is NodeId-keyed and CssElements copy node
-  // data (destroyed splice nodes don't dangle). Use this for rebuildTopLevelRange; keep
-  // dropStructuralBuilder for the full rebuild (whole tree replaced → every NodeId changes).
   void invalidateStructuralSiblingLinks() const;
   QFont headingFont(int level) const;
   QFont codeFont() const;
@@ -277,10 +268,8 @@ private:
   qreal bodyFontPx_ = 16.0;
   std::shared_ptr<const CssThemeSheet> structuralSheet_;
   std::shared_ptr<CssComputedStyleEngine> structuralEngine_;
-  // CSS element tree for the structural-selector path. Shared (not unique) so RenderTheme stays
-  // copyable (it's copied by value into setTheme). Persistent across per-node style queries within
-  // one rebuild so the sibling chain is built ONCE — a fresh builder per call rebuilt it per node,
-  // O(n) each → O(n²) on a flat block list. Reset by clearStructuralCache() each rebuild.
+  // Sparse live-node adapter for structural selector navigation. Shared (not unique)
+  // so RenderTheme remains copyable; reset with the computed style cache on edits.
   mutable std::shared_ptr<NodeCssElementBuilder> structuralBuilder_;
   mutable QHash<NodeId, ThemeElementStyle> nodeStyleCache_;
   // Prototype (load-time) QFont per element key, used by the Lazy estimate path so it doesn't
