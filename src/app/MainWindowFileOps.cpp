@@ -421,6 +421,10 @@ void muffin::MainWindow::showPreferences() {
 
   dialog.exec();
 
+  showBlockSourceEnabled_ =
+      QSettings().value(QStringLiteral("editor/showBlockSource"), false).toBool();
+  scheduleEditorStateRefresh();
+
   // Re-apply markdown preferences now that the modal dialog has closed. Doing this AFTER exec()
   // (rather than live during the dialog) is deliberate: a full setDocument re-render while the
   // modal PreferencesDialog is open races its window-blocking and can blank the viewport (see the

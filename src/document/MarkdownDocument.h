@@ -2,7 +2,9 @@
 
 #include "document/LineStartOffsetCache.h"
 #include "document/NodeIndex.h"
+#include "document/OutlineBuilder.h"
 #include "document/PieceTable.h"
+#include "document/SourcePositionIndex.h"
 
 #include <QObject>
 
@@ -35,6 +37,9 @@ public:
       qsizetype sourceStart,
       qsizetype sourceEnd,
       const QString& replacementText);
+  void shiftTopLevelSuffix(qsizetype first, qsizetype byteDelta, int lineDelta);
+  QVector<OutlineEntry> outline() const;
+  quint64 outlineRevision() const { return outlineRevision_; }
 
   quint64 revision() const;
   bool isModified() const;
@@ -49,10 +54,20 @@ signals:
   void modifiedChanged(bool modified);
 
 private:
+  void bindSourcePositionSlots();
+  void rebuildOutlineIndex();
+  void replaceOutlineRange(
+      qsizetype first,
+      qsizetype count,
+      const std::vector<std::unique_ptr<MarkdownNode>>& replacements);
+
   PieceTable text_;  // the edit master: replaceTopLevelRange edits this (O(pieces)); sole source of truth
   LineStartOffsetCache lineOffsets_;
   std::unique_ptr<MarkdownNode> root_;
   NodeIndex index_;
+  SourcePositionIndex sourcePositions_;
+  QVector<OutlineEntry> outlineEntries_;
+  quint64 outlineRevision_ = 0;
   quint64 revision_ = 0;
   bool modified_ = false;
 };

@@ -3,6 +3,7 @@
 #include "document/TextSelection.h"
 #include "parser/CmarkGfmParser.h"
 #include "render/DocumentLayout.h"
+#include "render/LayoutPositionIndex.h"
 #include "theme/CssThemeMapper.h"
 #include "theme/RenderTheme.h"
 #include "theme/ThemeDefinition.h"
@@ -49,6 +50,18 @@ void testIncrementalBlockRebuildContract() {
   const QRectF firstBefore = layout.block(firstParagraphId)->rect();
   const QRectF secondBefore = layout.block(secondParagraphId)->rect();
   const qreal totalBefore = layout.totalHeight();
+
+  const DocumentLayout::BlockRebuildResult unchangedResult =
+      layout.rebuildBlock(firstParagraphId, session.document(), theme, {});
+  require(unchangedResult.rebuilt, QStringLiteral("unchanged paragraph rebuild should succeed"));
+  require(qFuzzyIsNull(unchangedResult.heightDelta),
+          QStringLiteral("unchanged paragraph rebuild should have zero height delta"));
+  require(unchangedResult.shiftedRect.isEmpty(),
+          QStringLiteral("zero-height-delta rebuild must not dirty the suffix"));
+  require(layout.block(secondParagraphId)->rect().top() == secondBefore.top(),
+          QStringLiteral("zero-height-delta rebuild must not move following blocks"));
+  require(layout.totalHeight() == totalBefore,
+          QStringLiteral("zero-height-delta rebuild must not change total height"));
 
   require(session.applyTextDelta(
               5,
@@ -103,6 +116,62 @@ void testIncrementalTopLevelRangeRebuildContract() {
   verifyRangeEdit(QStringLiteral("alpha\n\nbeta\n\ngamma"), 5, 2, QStringLiteral(" "), QStringLiteral("paragraph merge"));
   verifyRangeEdit(QStringLiteral("# Heading\n\nalpha\n\nbeta"), 9, 0, QStringLiteral("\n\n"), QStringLiteral("heading boundary insert"));
   verifyRangeEdit(QStringLiteral("alpha\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\nomega"), 5, 0, QStringLiteral("\n\ninserted"), QStringLiteral("table suffix shift"));
+}
+
+void testLayoutPositionIndexPreservesLazySuffixAcrossSplice() {
+  LayoutPositionIndex index;
+  const QVector<LayoutPositionToken*> original = index.reset(5);
+  index.addSuffix(2, 12.5);
+
+  auto firstReplacement = index.makeToken();
+  LayoutPositionToken* firstReplacementPtr = firstReplacement.get();
+  auto secondReplacement = index.makeToken();
+  LayoutPositionToken* secondReplacementPtr = secondReplacement.get();
+  auto replacements = LayoutPositionIndex::merge(std::move(firstReplacement), std::move(secondReplacement));
+  index.replace(1, 2, std::move(replacements));
+
+  const QVector<LayoutPositionToken*> expectedOrder{
+      original.at(0), firstReplacementPtr, secondReplacementPtr, original.at(3), original.at(4)};
+  for (qsizetype i = 0; i < expectedOrder.size(); ++i) {
+    require(index.rank(expectedOrder.at(i)) == i,
+            QStringLiteral("layout position rank mismatch at %1").arg(i));
+  }
+  require(qFuzzyIsNull(index.adjustmentFor(firstReplacementPtr)),
+          QStringLiteral("fresh layout token must start without an inherited shift"));
+  require(qAbs(index.adjustmentFor(original.at(3)) - 12.5) < 0.001,
+          QStringLiteral("unchanged layout suffix must retain its lazy shift through splice"));
+}
+
+void testRangeRebuildAfterLazySuffixShiftMatchesFullLayout() {
+  const RenderTheme theme = RenderTheme::github();
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("alpha\n\nbeta\n\ngamma delta\n\nomega"), false);
+  DocumentLayout incremental;
+  incremental.rebuild(session.document(), theme, 360.0);
+
+  const NodeId firstId = mutableBlockAt(session.document(), 0)->id();
+  require(session.applyTextDelta(
+              5, 0,
+              QStringLiteral(" alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha"),
+              true, {LocalEditNodeHint{firstId, 0, BlockType::Paragraph}}),
+          QStringLiteral("height-changing edit should apply"));
+  require(incremental.rebuildBlock(firstId, session.document(), theme, {}).rebuilt,
+          QStringLiteral("height-changing block rebuild should succeed"));
+
+  const QString current = session.markdownText().toString();
+  const qsizetype splitAt = current.indexOf(QStringLiteral("gamma")) + 5;
+  require(session.applyTextDelta(splitAt, 0, QStringLiteral("\n\n"), true),
+          QStringLiteral("structural split after lazy suffix shift should apply"));
+  const TopLevelRangeChange range = session.lastLocalTopLevelRangeChange();
+  require(range.isValid(), QStringLiteral("structural split should expose a range change"));
+  require(incremental.rebuildTopLevelRange(range, session.document(), theme, {}).rebuilt,
+          QStringLiteral("range rebuild after lazy suffix shift should succeed"));
+
+  DocumentLayout full;
+  full.rebuild(session.document(), theme, 360.0);
+  requireSameTopLevelLayout(
+      incremental, full, session.document(),
+      QStringLiteral("range rebuild after accumulated lazy suffix shift"));
 }
 
 }  // namespace
@@ -278,6 +347,8 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testIncrementalBlockRebuildContract);
   RUN_TEST(testIncrementalTopLevelRangeRebuildContract);
+  RUN_TEST(testLayoutPositionIndexPreservesLazySuffixAcrossSplice);
+  RUN_TEST(testRangeRebuildAfterLazySuffixShiftMatchesFullLayout);
   RUN_TEST(testLazyPromoteMatchesEagerGap);
   RUN_TEST(testTrailingEmptyNestedBlockquoteLineRenders);
   RUN_TEST(testCaretOnMidBlockquoteVepRenders);

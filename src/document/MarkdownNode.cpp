@@ -1,5 +1,7 @@
 #include "document/MarkdownNode.h"
 
+#include "document/SourcePositionIndex.h"
+
 #include <algorithm>
 #include <memory>
 #include <utility>
@@ -34,7 +36,7 @@ MarkdownNode::BlockMetadata& MarkdownNode::BlockMetadata::operator=(const BlockM
 }
 
 MarkdownNode::MarkdownNode(BlockType type, NodeId id)
-    : id_(std::move(id)), type_(type) {}
+    : id_(std::move(id)), type_(type), sourcePositionIndex_(nullptr) {}
 
 NodeId MarkdownNode::id() const {
   return id_;
@@ -62,6 +64,54 @@ MarkdownNode* MarkdownNode::previousSibling() const {
 
 MarkdownNode* MarkdownNode::nextSibling() const {
   return next_;
+}
+
+quint8 MarkdownNode::siblingKind() const {
+  switch (type_) {
+    case BlockType::Paragraph: return 1;
+    case BlockType::Heading: return static_cast<quint8>(1 + std::clamp(metadata_.heading.level, 1, 6));
+    case BlockType::BlockQuote: return 8;
+    case BlockType::List: return metadata_.list.kind == ListKind::Ordered ? 9 : 10;
+    case BlockType::ListItem: return 11;
+    case BlockType::CodeFence:
+    case BlockType::FrontMatter: return 12;
+    case BlockType::Table: return 13;
+    case BlockType::TableRow: return 14;
+    case BlockType::TableCell: return 15;
+    case BlockType::ThematicBreak: return 16;
+    default: return 0;
+  }
+}
+
+int MarkdownNode::siblingIndex() const {
+  if (!parent_) {
+    return -1;
+  }
+  if (!parent_->parent_ && parent_->sourcePositionIndex_) {
+    return static_cast<int>(parent_->sourcePositionIndex_->rank(sourcePositionToken_));
+  }
+  int index = 0;
+  for (const MarkdownNode* previous = previous_; previous; previous = previous->previous_) {
+    ++index;
+  }
+  return index;
+}
+
+int MarkdownNode::siblingTypeIndex() const {
+  if (!parent_) {
+    return -1;
+  }
+  if (!parent_->parent_ && parent_->sourcePositionIndex_) {
+    return static_cast<int>(parent_->sourcePositionIndex_->typeRank(sourcePositionToken_));
+  }
+  const quint8 kind = siblingKind();
+  int index = 0;
+  for (const MarkdownNode* previous = previous_; previous; previous = previous->previous_) {
+    if (previous->siblingKind() == kind) {
+      ++index;
+    }
+  }
+  return index;
 }
 
 std::vector<std::unique_ptr<MarkdownNode>>& MarkdownNode::children() {
@@ -254,7 +304,7 @@ DefinitionBlock MarkdownNode::definition() const {
   // Post-relativize: field ranges are stored relative to the owning top-level block's byteStart;
   // resolve to absolute. For a top-level definition block topLevelBlock() == this, so the base is
   // the block's own byteStart (its fields are relative to itself) — still correct.
-  const qsizetype byteBase = top->metadata_.sourceRange.byteStart;
+  const qsizetype byteBase = top->sourceRange().byteStart;
   const auto shift = [byteBase](DefinitionFieldRange& field) {
     if (field.isValid()) {
       field.start += byteBase;
@@ -294,7 +344,23 @@ SourceRange MarkdownNode::sourceRange() const {
   SourceRange range = metadata_.sourceRange;
   // Top-level block (parent is the document root) or the root itself (parent_ == null): stored
   // ABSOLUTE — return as-is.
-  if (!parent_ || !parent_->parent_) {
+  if (!parent_) {
+    return range;
+  }
+  if (!parent_->parent_) {
+    if (parent_->sourcePositionIndex_) {
+      const SourcePositionDelta delta = parent_->sourcePositionIndex_->adjustmentFor(sourcePositionToken_);
+      if (range.byteStart >= 0 && range.byteEnd >= range.byteStart) {
+        range.byteStart += delta.bytes;
+        range.byteEnd += delta.bytes;
+      }
+      if (range.lineStart > 0) {
+        range.lineStart += delta.lines;
+      }
+      if (range.lineEnd > 0) {
+        range.lineEnd += delta.lines;
+      }
+    }
     return range;
   }
   const MarkdownNode* top = topLevelBlock();
@@ -306,7 +372,7 @@ SourceRange MarkdownNode::sourceRange() const {
   // Post-relativize: stored RELATIVE to the owning top-level block's byteStart/lineStart — resolve.
   // Lines resolve inside the byte-valid branch (mirror relativizeNodeAndDescendants) so a valid line
   // that relativized to 0 still round-trips.
-  const SourceRange topRange = top->metadata_.sourceRange;
+  const SourceRange topRange = top->sourceRange();
   if (range.byteStart >= 0 && range.byteEnd >= range.byteStart) {
     range.byteStart += topRange.byteStart;
     range.byteEnd += topRange.byteStart;
@@ -444,6 +510,11 @@ std::unique_ptr<MarkdownNode> MarkdownNode::clone(CloneMode mode) const {
   // A single aggregate copy carries every domain field, so adding a field can no longer be
   // silently dropped here (the flat layout previously let clone() miss taskItem_).
   copy->metadata_ = metadata_;
+  if (parent_ && !parent_->parent_) {
+    // A detached snapshot has no document position index. Store the resolved top-level range so
+    // it remains self-contained even when this block currently carries lazy suffix deltas.
+    copy->metadata_.sourceRange = sourceRange();
+  }
   // A snapshot must be self-contained. Keeping shared slices here would retain an entire source
   // buffer for a tiny table/node undo entry and historically made table clones read text in the
   // wrong coordinate frame after block-relative offsets shifted.

@@ -202,11 +202,9 @@ int main(int argc, char** argv) {
   typeAt(session, lastBlockStart + 1, iters);
   report("NEAR END (inside last block, best case)", session.markdownText().toString().size(), blocks, inlines, iters);
 
-  // Isolated cost of the InputController-path O(doc) operation that the session bench above
-  // BYPASSES (it calls session.applyTextDelta directly, skipping InputController). This runs once
-  // per keystroke in the real app ON TOP of session.localParse, so it explains the gap between the
-  // bench (~tens of ms) and perceived lag. (BlockLayoutBuilder::setMarkdownText also copies the
-  // whole text per rebuildBlock — ~the memmove cost — but its header pulls Qt GUI, unreachable here.)
+  // Legacy full-scan oracle retained as a scale reference. The incremental pending-marker index
+  // removed this operation from both InputController and debounce callbacks; calling it explicitly
+  // here prevents its O(document) cost from being mistaken for current typing behavior.
   {
     const QString md = session.markdownText().toString();
     const muffin::MarkdownNode& root = session.document().root();
@@ -221,8 +219,8 @@ int main(int argc, char** argv) {
       pendingMin = std::min(pendingMin, t.elapsed() / 1.0);
     }
 
-    std::fprintf(stdout, "\n=== ISOLATED InputController O(doc) op (min of %d) ===\n", reps);
-    std::fprintf(stdout, "collectPendingMarkerOffsets (every keystroke):  %.2f ms\n", pendingMin);
+    std::fprintf(stdout, "\n=== ISOLATED legacy full scan, not on the edit path (min of %d) ===\n", reps);
+    std::fprintf(stdout, "collectPendingMarkerOffsets oracle:  %.2f ms\n", pendingMin);
   }
 
   std::fflush(stdout);

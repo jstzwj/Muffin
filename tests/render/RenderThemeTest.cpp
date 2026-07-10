@@ -538,6 +538,30 @@ void testStructuralAdapterStaysSparseOnFlatDocuments() {
           QStringLiteral("general sibling matching should stop after the nearest match"));
 }
 
+void testTopLevelNthSelectorsUseDocumentOrderIndex() {
+  const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(
+      QStringLiteral(
+          "#write { color:#222222; }"
+          "#write p { color:#222222; }"
+          "#write p:nth-child(3) { color:#ff0000; }"
+          "#write p:nth-of-type(3) { color:#00aa00; }"),
+      QStringLiteral("top-level-nth"), QString()));
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("one\n\n# heading\n\ntwo\n\nthree\n"), false);
+  const auto& blocks = session.document().root().children();
+  require(blocks.size() == 4, QStringLiteral("nth selector fixture should have four top-level blocks"));
+  const MarkdownNode* secondParagraph = blocks.at(2).get();
+  const MarkdownNode* thirdParagraph = blocks.at(3).get();
+  require(secondParagraph->siblingIndex() == 2 && secondParagraph->siblingTypeIndex() == 1,
+          QStringLiteral("top-level rank/type-rank should come from the persistent order index"));
+  require(thirdParagraph->siblingIndex() == 3 && thirdParagraph->siblingTypeIndex() == 2,
+          QStringLiteral("third paragraph rank/type-rank mismatch"));
+  require(theme.textColorForElement(QStringLiteral("p"), secondParagraph) == QColor(QStringLiteral("#ff0000")),
+          QStringLiteral(":nth-child(3) should match the third top-level child"));
+  require(theme.textColorForElement(QStringLiteral("p"), thirdParagraph) == QColor(QStringLiteral("#00aa00")),
+          QStringLiteral(":nth-of-type(3) should match the third top-level paragraph"));
+}
+
 void testStructuralHasTraversesNestedInlines() {
   const QString css = QStringLiteral(
       "#write { color:#222222; } #write p:has(img) { color:#00aa00; }");
@@ -767,6 +791,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testGithubBlockquoteNotPaddedByWriteLeak);
   RUN_TEST(testStructuralSelectorsResolveAgainstLiveTree);
   RUN_TEST(testStructuralAdapterStaysSparseOnFlatDocuments);
+  RUN_TEST(testTopLevelNthSelectorsUseDocumentOrderIndex);
   RUN_TEST(testStructuralHasTraversesNestedInlines);
   RUN_TEST(testStructuralCacheRefreshesSameNodeIdContent);
   RUN_TEST(testCodeBorderNeverRendersBlack);

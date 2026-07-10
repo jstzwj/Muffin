@@ -69,9 +69,6 @@ void muffin::MainWindow::connectEditorSignals() {
       window.backend_->centerCursor();
     }
   });
-  QObject::connect(window.editor_, &SourceEditorWidget::cursorPositionChanged, &window, [&window](int, int) {
-    window.updateEditActions();
-  });
 }
 
 void muffin::MainWindow::connectRenderSignals() {
@@ -203,7 +200,9 @@ void muffin::MainWindow::connectSessionSignals() {
                    [&window](const QString& path) { window.editor_->setDocumentPath(path); });
   window.editor_->setDocumentPath(window.session_.filePath());
   QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, &MainWindow::updateTitle);
-  QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, &MainWindow::updateStatus);
+  QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, [&window] {
+    window.scheduleEditorStateRefresh();
+  });
   QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, &MainWindow::refreshSidebarDocumentInfo);
   // Drive auto-save: arm the debounce timer when a pathed document becomes dirty
   // (and files/autoSave is on); stop it once clean. The timer does the gated write.
@@ -252,14 +251,16 @@ void muffin::MainWindow::connectSessionSignals() {
   });
   QObject::connect(&window.session_, &DocumentSession::parsed, &window, [&window] {
     PerfTimer perf("main.parsed.consumer");
-    window.outlineDirty_ = true;
+    const bool outlineChanged =
+        window.sidebarOutlineRevision_ != window.session_.document().outlineRevision();
+    window.outlineDirty_ = window.outlineDirty_ || outlineChanged;
     const QAction* sidebarAction = window.commands_.action(QStringLiteral("view.sidebar"));
     const bool outlineVisible = sidebarAction && sidebarAction->isChecked() &&
                                 window.sidebar_->panel() == SidebarWidget::Panel::Outline;
     if (window.session_.lastParseWasLocalEdit()) {
-      // Local edit (typing): debounce the outline rebuild so a full-tree heading walk does not
-      // run on every keystroke. Word count is already debounced; status is O(1).
-      if (outlineVisible) {
+      // Paragraph edits leave the incremental outline revision unchanged and do not start this
+      // timer. Heading edits debounce only the model update from the compact heading index.
+      if (outlineVisible && outlineChanged) {
         window.outlineTimer_->start();
       }
     } else {
@@ -273,15 +274,14 @@ void muffin::MainWindow::connectSessionSignals() {
       }
     }
     window.scheduleWordCountUpdate();
-    window.updateStatus();
+    window.scheduleEditorStateRefresh();
   });
 }
 
 void muffin::MainWindow::connectApplicationSignals() {
   auto& window = *this;
   QObject::connect(&window.editorController_, &EditorController::stateChanged, &window, [&window] {
-    window.updateStatus();
-    window.updateContextActions();
+    window.scheduleEditorStateRefresh();
   });
   QObject::connect(&window.themeManager_, &ThemeManager::themeChanged, &window, [&window](const QString& name) {
     window.applyTheme(name);

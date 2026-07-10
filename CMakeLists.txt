@@ -455,6 +455,8 @@ set(MUFFIN_CORE_SOURCES
   src/document/NodeIndex.h
   src/document/MarkdownDocument.cpp
   src/document/MarkdownDocument.h
+  src/document/SourcePositionIndex.cpp
+  src/document/SourcePositionIndex.h
   src/document/OutlineBuilder.cpp
   src/document/OutlineBuilder.h
   src/parser/MarkdownParser.h
@@ -787,6 +789,8 @@ set(MUFFIN_UI_SOURCES
   src/render/BlockLayoutBuilder.h
   src/render/DocumentLayout.cpp
   src/render/DocumentLayout.h
+  src/render/LayoutPositionIndex.cpp
+  src/render/LayoutPositionIndex.h
   src/render/GradientPainter.cpp
   src/render/GradientPainter.h
   src/render/Blur.cpp

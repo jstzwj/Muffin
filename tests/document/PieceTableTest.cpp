@@ -4,6 +4,8 @@
 // (empty, boundary insert, delete, replace-whole, CJK, surrogate-pair emoji).
 #include "document/PieceTable.h"
 #include "document/DocumentSession.h"
+#include "document/PendingBlockMarker.h"
+#include "document/SourcePositionIndex.h"
 
 #include "../TestUtils.h"
 
@@ -101,6 +103,31 @@ static void testCoalescesConsecutiveAppends() {
               .arg(initialPieces + 1).arg(pt.pieceCount()));
 }
 
+static void requireLineIndexMatches(const PieceTable& table, const QString& text, const QString& label) {
+  QVector<qsizetype> starts{0};
+  for (qsizetype i = 0; i < text.size(); ++i) {
+    if (text.at(i) == QLatin1Char('\n')) {
+      starts.push_back(i + 1);
+    }
+  }
+  require(table.lineCount() == starts.size(), label + QStringLiteral(": line count"));
+  for (int line = 1; line <= starts.size(); ++line) {
+    const qsizetype expectedEnd = line < starts.size() ? starts.at(line) - 1 : text.size();
+    require(table.lineStartOffset(line) == starts.at(line - 1),
+            label + QStringLiteral(": line %1 start").arg(line));
+    require(table.lineEndOffset(line) == expectedEnd,
+            label + QStringLiteral(": line %1 end").arg(line));
+  }
+  int expectedLine = 1;
+  for (qsizetype offset = 0; offset <= text.size(); ++offset) {
+    while (expectedLine < starts.size() && starts.at(expectedLine) <= offset) {
+      ++expectedLine;
+    }
+    require(table.lineForOffset(offset) == expectedLine,
+            label + QStringLiteral(": offset %1 line").arg(offset));
+  }
+}
+
 // The core safety net: mirror a long random replace sequence against QString and assert the
 // PieceTable stays QChar-identical at every step (size, at, mid, toString, toUtf8). Random edits
 // include inserts (span 0), deletes (empty repl), CJK, and surrogate-pair emoji.
@@ -133,6 +160,8 @@ static void testFuzzMirrorsQString() {
 
     ref.replace(start, span, repl);
     pt.replace(start, start + span, repl);
+
+    requireLineIndexMatches(pt, ref, QStringLiteral("line index @ iter %1").arg(iter));
 
     require(pt.size() == ref.size(),
             QStringLiteral("size mismatch @ iter %1: pt=%2 ref=%3").arg(iter).arg(pt.size()).arg(ref.size()));
@@ -168,6 +197,11 @@ static void testDualWriteStaysInSyncWithMarkdownText() {
   const auto checkSync = [&](const char* label) {
     require(session.document().pieceText().toString() == session.document().markdownText().toString(),
             QStringLiteral("dual-write out of sync %1").arg(QString::fromUtf8(label)));
+    const QString text = session.document().markdownText().toString();
+    requireLineIndexMatches(session.document().pieceText(), text,
+                            QStringLiteral("document line index %1").arg(QString::fromUtf8(label)));
+    require(session.document().lineOffsets().lineCount() == session.document().pieceText().lineCount(),
+            QStringLiteral("line-offset facade count %1").arg(QString::fromUtf8(label)));
   };
 
   require(session.applyTextDelta(0, 0, QStringLiteral("X"), false, {}), "insert X at 0");
@@ -185,6 +219,54 @@ static void testDualWriteStaysInSyncWithMarkdownText() {
           "dual-write: final toUtf8 match");
 }
 
+static void testPendingMarkerCacheTracksLocalEdits() {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("alpha\n\n*\n\nomega"), false);
+  const auto requireCache = [&](const char* label) {
+    const QString text = session.markdownText().toString();
+    const QVector<qsizetype> oracle =
+        collectPendingMarkerOffsets(QStringView(text), session.document().root());
+    require(session.pendingMarkerOffsets() == oracle,
+            QStringLiteral("pending marker cache mismatch %1").arg(QString::fromUtf8(label)));
+  };
+  requireCache("after full parse");
+  require(session.applyTextDelta(0, 0, QStringLiteral("x"), true),
+          "pending marker prefix insert should apply locally");
+  requireCache("after suffix shift");
+  const qsizetype marker = session.markdownText().toString().indexOf(QLatin1Char('*'));
+  require(session.applyTextDelta(marker + 1, 0, QStringLiteral(" item"), true),
+          "pending marker completion should apply locally");
+  requireCache("after marker completion");
+}
+
+static void testSourcePositionIndexPreservesOrderAndTypeRanksAcrossSplices() {
+  SourcePositionIndex index;
+  const QVector<SourcePositionToken*> original = index.reset(QVector<quint8>{1, 2, 1, 3, 1});
+  index.addSuffix(2, 100, 4);
+
+  auto firstReplacement = index.makeToken(1);
+  SourcePositionToken* firstReplacementPtr = firstReplacement.get();
+  auto secondReplacement = index.makeToken(2);
+  SourcePositionToken* secondReplacementPtr = secondReplacement.get();
+  auto replacements = SourcePositionIndex::merge(std::move(firstReplacement), std::move(secondReplacement));
+  index.replace(1, 2, std::move(replacements));
+
+  const QVector<SourcePositionToken*> expectedOrder{
+      original.at(0), firstReplacementPtr, secondReplacementPtr, original.at(3), original.at(4)};
+  const QVector<qsizetype> expectedTypeRanks{0, 1, 0, 0, 2};
+  for (qsizetype i = 0; i < expectedOrder.size(); ++i) {
+    require(index.rank(expectedOrder.at(i)) == i,
+            QStringLiteral("source position rank mismatch at %1").arg(i));
+    require(index.typeRank(expectedOrder.at(i)) == expectedTypeRanks.at(i),
+            QStringLiteral("source position type rank mismatch at %1").arg(i));
+  }
+  require(index.adjustmentFor(firstReplacementPtr).bytes == 0,
+          "fresh replacement must not inherit the removed range's source shift");
+  require(index.adjustmentFor(original.at(3)).bytes == 100 &&
+              index.adjustmentFor(original.at(3)).lines == 4,
+          "unchanged suffix token must preserve its lazy source shift through splice");
+}
+
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
   runTest("empty table", testEmptyTable);
@@ -194,5 +276,7 @@ int main(int argc, char** argv) {
   runTest("coalesces consecutive appends", testCoalescesConsecutiveAppends);
   runTest("fuzz mirrors QString", testFuzzMirrorsQString);
   runTest("dual-write stays in sync", testDualWriteStaysInSyncWithMarkdownText);
+  runTest("pending marker cache tracks local edits", testPendingMarkerCacheTracksLocalEdits);
+  runTest("source position index preserves ranks", testSourcePositionIndexPreservesOrderAndTypeRanksAcrossSplices);
   return 0;
 }

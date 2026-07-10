@@ -5,6 +5,7 @@
 
 #include <QByteArray>
 #include <QChar>
+#include <QVector>
 
 #include <utility>
 #include <vector>
@@ -71,18 +72,40 @@ public:
   // newline lookup); not a hot path. Returns -1 if not found.
   qsizetype indexOf(QChar ch, qsizetype from = 0) const;
 
+  int lineForOffset(qsizetype offset) const;
+  qsizetype lineStartOffset(int line) const;
+  qsizetype lineEndOffset(int line) const;
+  int lineCount() const;
+  int wordCount() const;
+
 private:
   struct Piece {
     bool fromChanges = false;  // false → original_, true → changes_
     qsizetype start = 0;       // offset into the buffer
     qsizetype length = 0;
+    qsizetype newlineCount = 0;
+    qint64 wordCount = 0;
+    bool startsWithWord = false;
+    bool endsWithWord = false;
+  };
+
+  struct WordSummary {
+    qint64 count = 0;
+    bool startsWithWord = false;
+    bool endsWithWord = false;
   };
 
   const QString& buffer(bool fromChanges) const { return fromChanges ? changes_ : original_; }
+  const QVector<qsizetype>& newlines(bool fromChanges) const {
+    return fromChanges ? changesNewlines_ : originalNewlines_;
+  }
 
   // Returns {piece index, offset within that piece} for `offset` in [0, size).
   std::pair<qsizetype, qsizetype> locate(qsizetype offset) const;
   void rebuildPrefix();
+  qsizetype countNewlines(bool fromChanges, qsizetype start, qsizetype length) const;
+  WordSummary wordSummary(bool fromChanges, qsizetype start, qsizetype length) const;
+  static bool isWordChar(QChar ch);
 
   QString original_;                  // immutable initial text
   QString changes_;                   // append-only edit buffer
@@ -90,7 +113,14 @@ private:
   // prefix_[k] = total length of pieces_[0..k); prefix_.size() == pieces_.size()+1; sorted ascending
   // so `locate` binary-searches it for O(log n) offset→piece resolution.
   std::vector<qint64> prefix_;
+  std::vector<qint64> prefixNewlines_;
+  QVector<qsizetype> originalNewlines_;
+  QVector<qsizetype> changesNewlines_;
+  QVector<qsizetype> originalWordStarts_;
+  QVector<qsizetype> changesWordStarts_;
   qint64 totalLength_ = 0;
+  qint64 totalNewlines_ = 0;
+  qint64 totalWords_ = 0;
 };
 
 }  // namespace muffin

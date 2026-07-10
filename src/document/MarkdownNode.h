@@ -13,6 +13,10 @@
 
 namespace muffin {
 
+class MarkdownDocument;
+class SourcePositionIndex;
+struct SourcePositionToken;
+
 class MarkdownNode {
 public:
   explicit MarkdownNode(BlockType type, NodeId id = NodeId::create());
@@ -29,6 +33,10 @@ public:
   MarkdownNode* parent() const;
   MarkdownNode* previousSibling() const;
   MarkdownNode* nextSibling() const;
+  // Zero-based CSS sibling ordinals. Direct document children use the persistent top-level
+  // order index (O(log n)); nested block-local sibling groups use their short linked lists.
+  int siblingIndex() const;
+  int siblingTypeIndex() const;
 
   std::vector<std::unique_ptr<MarkdownNode>>& children();
   const std::vector<std::unique_ptr<MarkdownNode>>& children() const;
@@ -178,6 +186,8 @@ public:
   }
 
 private:
+  friend class MarkdownDocument;
+
   struct HeadingInfo {
     int level = 0;
     bool setext = false;
@@ -249,10 +259,19 @@ private:
   // differs from the original's, so clone() must leave it null (lazy recompute).
   mutable const MarkdownNode* topLevelCache_ = nullptr;
 
+  // On the document root this stores the owning position index; on a direct root child it stores
+  // that block's slot. Descendants use neither. The role-dependent union keeps the lazy source
+  // position binding to one machine word per block node.
+  union {
+    SourcePositionIndex* sourcePositionIndex_;
+    SourcePositionToken* sourcePositionToken_;
+  };
+
   // Block-relative offset helpers (see public relativizeDescendants).
   void relativizeNodeAndDescendants(const MarkdownNode* topLevel, qsizetype byteBase, int lineBase);
   static void subtractDefinitionFields(DefinitionBlock& def, qsizetype byteBase);
   qsizetype bindSharedInlineTextRecursive(const std::shared_ptr<const QString>& source);
+  quint8 siblingKind() const;
 };
 
 }  // namespace muffin

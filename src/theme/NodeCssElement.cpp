@@ -26,16 +26,6 @@ QString cssTagForInline(InlineType type) {
   }
 }
 
-bool sameCssTag(const MarkdownNode& left, const MarkdownNode& right) {
-  if (left.type() == right.type()) {
-    if (left.type() == BlockType::Heading) { return left.headingLevel() == right.headingLevel(); }
-    if (left.type() == BlockType::List) { return left.listKind() == right.listKind(); }
-    return true;
-  }
-  return (left.type() == BlockType::CodeFence || left.type() == BlockType::FrontMatter) &&
-         (right.type() == BlockType::CodeFence || right.type() == BlockType::FrontMatter);
-}
-
 bool inlineTreeHasTag(const QVector<InlineNode>& roots, const QString& tag, bool descendants) {
   std::vector<const InlineNode*> pending;
   pending.reserve(static_cast<std::size_t>(roots.size()));
@@ -125,21 +115,13 @@ const CssElement* NodeCssElementBuilder::nextSibling(const CssElement& element) 
 
 int NodeCssElementBuilder::childIndex(const CssElement& element) const {
   const MarkdownNode* node = nodeFor(element);
-  if (!node || !node->parent()) { return -1; }
-  int index = 0;
-  for (const MarkdownNode* previous = node->previousSibling(); previous; previous = previous->previousSibling()) { ++index; }
-  return index;
+  return node ? node->siblingIndex() : -1;
 }
 
 int NodeCssElementBuilder::typeIndex(const CssElement& element) const {
   if (!maintainTypeIndex_) { return -1; }
   const MarkdownNode* node = nodeFor(element);
-  if (!node || !node->parent()) { return -1; }
-  int index = 0;
-  for (const MarkdownNode* previous = node->previousSibling(); previous; previous = previous->previousSibling()) {
-    if (sameCssTag(*node, *previous)) { ++index; }
-  }
-  return index;
+  return node ? node->siblingTypeIndex() : -1;
 }
 
 bool NodeCssElementBuilder::hasTag(const CssElement& element, const QString& tag, bool directChild) const {

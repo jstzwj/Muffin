@@ -16,6 +16,7 @@
 #include <QFont>
 #include <QFontMetricsF>
 #include <QLoggingCategory>
+#include <QPaintEvent>
 #include <QPainter>
 #include <QPen>
 #include <QSet>
@@ -100,10 +101,16 @@ void EditorView::paintLoadingOverlay(QPainter& painter) const {
 
 void EditorView::paintEvent(QPaintEvent* event) {
   PerfTimer perf("view.paint");
-  Q_UNUSED(event);
+  const QRegion dirtyRegion = event ? event->region() : QRegion(viewport()->rect());
+  if (dirtyRegion.isEmpty()) {
+    return;
+  }
 
   QPainter painter(viewport());
-  painter.fillRect(viewport()->rect(), theme_.viewportBackgroundColor());
+  painter.setClipRegion(dirtyRegion);
+  for (const QRect& rect : dirtyRegion) {
+    painter.fillRect(rect, theme_.viewportBackgroundColor());
+  }
 
   if (loading_) {
     // Async open parse is in flight (no document yet, or a stale one): show a centered spinner +
@@ -163,7 +170,10 @@ void EditorView::paintEvent(QPaintEvent* event) {
   ensureVisibleBuilt();
 
   const QRectF visible = documentViewportRect();
-  const QVector<const BlockLayout*> blocks = layout_->visibleBlocks(visible.adjusted(0, -80, 0, 80), theme_);
+  const QRect dirtyBounds = dirtyRegion.boundingRect().intersected(viewport()->rect());
+  const QRectF dirtyDocument = QRectF(dirtyBounds).translated(0, scrollY());
+  const QVector<const BlockLayout*> blocks =
+      layout_->visibleBlocks(dirtyDocument.intersected(visible).adjusted(0, -80, 0, 80), theme_);
   painter.setRenderHint(QPainter::Antialiasing, true);
   painter.setRenderHint(QPainter::TextAntialiasing, true);
 
@@ -174,7 +184,9 @@ void EditorView::paintEvent(QPaintEvent* event) {
   // infinite animations and starts/stops its timer accordingly).
   if (keyframeAnimator_ && keyframeAnimator_->hasAnimations()) {
     QSet<QString> visibleHosts;
-    for (const BlockLayout* b : blocks) {
+    const QVector<const BlockLayout*> animationBlocks =
+        layout_->visibleBlocks(visible.adjusted(0, -80, 0, 80), theme_);
+    for (const BlockLayout* b : animationBlocks) {
       const QString h = hostKeyForBlock(*b);
       if (!h.isEmpty()) { visibleHosts.insert(h); }
     }

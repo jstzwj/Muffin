@@ -42,8 +42,7 @@ QVector<qsizetype> collectPendingMarkerOffsetsForSession(DocumentSession* sessio
   if (!session) {
     return {};
   }
-  PerfTimer pendingMarkerTimer("input.collectPendingMarkerOffsets");
-  return collectPendingMarkerOffsets(session->markdownText().toString(), session->document().root());
+  return session->pendingMarkerOffsets();
 }
 
 // For a single-line edit, the line being typed may itself be a (possibly brand-new) pending marker.
@@ -288,21 +287,20 @@ void InputController::applyLocalEdit(
   }
   if (ctx_.brushQueue) {
     PerfTimer brushNotifyTimer("input.applyLocalEdit.brushNotify");
+    bool blockOnlyRefresh = false;
     if (!appliedLocally) {
       ctx_.brushQueue->requestFullRefresh();
     } else if (structureEdit || ctx_.session->lastLocalEditChangedTopLevelStructure()) {
       ctx_.brushQueue->requestTopLevelRangeRefresh(ctx_.session->lastLocalTopLevelRangeChange());
     } else {
       ctx_.brushQueue->requestBlockRefresh(refreshNodeFor(ctx_.session, nextCursor.blockId));
+      blockOnlyRefresh = true;
     }
-    // Flush synchronously so the layout reflects this edit before control returns to the event
-    // loop. BrushQueue otherwise defers via a 0-ms timer (scheduleFlush → QTimer::singleShot(0)),
-    // leaving a window where the view paints a STALE layout: the freshly inserted block still at
-    // h=0 and every following block still at its pre-edit Y. On Enter that looked like "the
-    // following paragraphs jump up to the caret". Each refresh is cheap (view.refreshBlocks is
-    // sub-ms), and a single keystroke is a single edit, so the coalescing the deferral provided is
-    // not needed here.
-    ctx_.brushQueue->flush();
+    // Keep the current block synchronous for caret geometry. Structural suffix layout remains
+    // queued on BrushQueue's zero timer so position and repaint changes commit together.
+    if (blockOnlyRefresh) {
+      ctx_.brushQueue->flush();
+    }
   }
 }
 

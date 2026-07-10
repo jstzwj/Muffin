@@ -971,18 +971,33 @@ CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset, bo
   }
 
   BlockEditContextResolver resolver = contextResolver();
+  MarkdownNode* host = ctx_.session->document().topLevelBlockAtOffset(sourceOffset);
+  if (!host) {
+    return cursor;
+  }
+
+  // topLevelBlockAtOffset returns the earliest containing block at a shared boundary. Preserve
+  // preferLaterEmptyAtOffset by considering only the immediately following top-level blocks whose
+  // inclusive source ranges contain the same offset. In normal text there is exactly one candidate.
+  QVector<MarkdownNode*> candidates;
+  candidates.push_back(host);
+  for (MarkdownNode* next = host->nextSibling(); next && next->sourceRange().containsByte(sourceOffset);
+       next = next->nextSibling()) {
+    candidates.push_back(next);
+  }
 
   // A source offset that lands inside a literal block (code/math/HTML/front matter) resolves to
   // that block. nodeAtContentSourceOffset only matches inline-editable text, so without this a
   // freshly committed "```"/"$$" block would leave the post-edit caret unresolvable.
-  qsizetype literalContentStart = -1;
-  if (MarkdownNode* literal =
-          resolver.literalBlockAtSourceOffset(ctx_.session->document().root(), sourceOffset, literalContentStart)) {
-    cursor.blockId = literal->id();
-    cursor.text.nodeId = literal->id();
-    cursor.text.textOffset = qBound<qsizetype>(0, sourceOffset - literalContentStart, literal->literal().size());
-    cursor.text.sourceOffset = sourceOffset;
-    return cursor;
+  for (MarkdownNode* candidate : candidates) {
+    qsizetype literalContentStart = -1;
+    if (MarkdownNode* literal = resolver.literalBlockAtSourceOffset(*candidate, sourceOffset, literalContentStart)) {
+      cursor.blockId = literal->id();
+      cursor.text.nodeId = literal->id();
+      cursor.text.textOffset = qBound<qsizetype>(0, sourceOffset - literalContentStart, literal->literal().size());
+      cursor.text.sourceOffset = sourceOffset;
+      return cursor;
+    }
   }
 
   // If the offset is on a top-level block whose subtree hosts NO inline-editable text, resolve it
@@ -994,13 +1009,19 @@ CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset, bo
   // editable descendants, so firstEditableDescendant is non-null for them and this is skipped —
   // leaving list-exit / table-caret resolution on its existing path (which relies on
   // cursorForSourceOffset returning invalid there).
-  if (MarkdownNode* host = ctx_.session->document().topLevelBlockAtOffset(sourceOffset)) {
-    if (!resolver.firstEditableDescendant(*host)) {
-      return cursorForBlockAfter(*host, sourceOffset);
-    }
+  if (!resolver.firstEditableDescendant(*host)) {
+    return cursorForBlockAfter(*host, sourceOffset);
   }
 
-  MarkdownNode* node = paragraphAtSourceOffset(ctx_.session->document().root(), sourceOffset, preferLaterEmptyAtOffset);
+  MarkdownNode* node = nullptr;
+  for (MarkdownNode* candidate : candidates) {
+    if (MarkdownNode* found = paragraphAtSourceOffset(*candidate, sourceOffset, preferLaterEmptyAtOffset)) {
+      node = found;
+      if (!preferLaterEmptyAtOffset) {
+        break;
+      }
+    }
+  }
   if (!node) {
     return cursor;
   }

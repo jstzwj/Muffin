@@ -1,4 +1,5 @@
 #include "document/MarkdownDocument.h"
+#include "document/DocumentSession.h"
 #include "document/OutlineBuilder.h"
 #include "parser/CmarkGfmParser.h"
 
@@ -89,6 +90,31 @@ void testInlineTextFlattening() {
           QStringLiteral("Inline heading text was not flattened: %1").arg(outline[0].title));
 }
 
+void testOutlineIndexTracksLocalEdits() {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("# A\n\nbody\n\n## B\n"), false);
+  const quint64 initialRevision = session.document().outlineRevision();
+  const qsizetype oldBStart = session.document().outline().at(1).sourceRange.byteStart;
+
+  require(session.applyTextDelta(8, 0, QStringLiteral("x"), true),
+          QStringLiteral("Body edit should apply locally"));
+  require(session.document().outlineRevision() == initialRevision,
+          QStringLiteral("Non-heading edit should not invalidate heading index"));
+  require(session.document().outline().at(1).sourceRange.byteStart == oldBStart + 1,
+          QStringLiteral("Lazy heading source range did not shift"));
+
+  require(session.applyTextDelta(3, 0, QStringLiteral("x"), true),
+          QStringLiteral("Heading edit should apply locally"));
+  const QVector<OutlineEntry> outline = session.document().outline();
+  require(session.document().outlineRevision() > initialRevision,
+          QStringLiteral("Heading edit should advance outline revision"));
+  require(outline.size() == 2 && outline.at(0).title == QStringLiteral("Ax") &&
+              outline.at(1).title == QStringLiteral("B"),
+          QStringLiteral("Incremental outline titles/order mismatch"));
+  require(outline.at(1).parentIndex == 0,
+          QStringLiteral("Incremental outline hierarchy mismatch"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -97,5 +123,6 @@ int main(int argc, char** argv) {
   testHeadingLevelsAndRanges();
   testSkippedHeadingLevelsUseNearestLowerParent();
   testInlineTextFlattening();
+  testOutlineIndexTracksLocalEdits();
   return 0;
 }

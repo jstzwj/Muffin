@@ -310,10 +310,11 @@ void DocumentLayout::rebuild(
   selection_ = selection;
 
   slots_.clear();
-  tops_.clear();
+  positionIndex_.reset(0);
   topLevelIndex_.clear();
   layoutIndex_.clear();
   nestedToTopLevel_.clear();
+  nestedIdsByTopLevel_.clear();
 
   const PageMetrics metrics = pageMetricsFor(theme, viewportWidth);
   pageOuterLeft_ = metrics.outerLeft;
@@ -325,12 +326,9 @@ void DocumentLayout::rebuild(
   // Full rebuild ⇒ recompute every heading's counter text from a clean document-order
   // walk. The build loop below then reads headingCounterText_ by NodeId.
   recomputeHeadingCounters(document, theme);
-  // Refresh the `[TOC]` outline (shared by every `[TOC]` block) from the same clean walk.
-  tocEntries_ = buildOutline(document);
 
   const auto& children = document.root().children();
   slots_.reserve(children.size());
-  tops_.reserve(children.size());
 
   RebuildPerfStats perf;
   qreal estimateMs = 0.0;
@@ -356,7 +354,6 @@ void DocumentLayout::rebuild(
       slot.measured = false;
       cursorY += est.height;
       previous = child.get();
-      tops_.push_back(slot.top);
       slots_.push_back(std::move(slot));
     }
     if (collectPerf) {
@@ -386,12 +383,16 @@ void DocumentLayout::rebuild(
       cursorY = block->rect().bottom();
       previous = child.get();
       indexLayoutBlock(*block);
-      tops_.push_back(slot.top);
       slot.detail = std::move(block);
       slots_.push_back(std::move(slot));
     }
   }
 
+  const QVector<LayoutPositionToken*> positionTokens =
+      positionIndex_.reset(static_cast<qsizetype>(slots_.size()));
+  for (qsizetype i = 0; i < static_cast<qsizetype>(slots_.size()); ++i) {
+    slots_.at(static_cast<size_t>(i)).positionToken = positionTokens.at(i);
+  }
   buildNestedIndex(document);
   recomputeTotalHeight(theme);
 
@@ -409,8 +410,8 @@ void DocumentLayout::rebuild(
       const BlockSlot& sl = slots_[size_t(i)];
       qCDebug(renderLayoutDebugLog).nospace()
           << "layout.slot[" << i << "] type=" << static_cast<int>(sl.type)
-          << " top=" << sl.top << " h=" << sl.height
-          << " bottom=" << (sl.top + sl.height);
+          << " top=" << slotTop(i) << " h=" << sl.height
+          << " bottom=" << (slotTop(i) + sl.height);
     }
   }
 
@@ -489,7 +490,7 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
   if (indexIt == topLevelIndex_.constEnd()) {
     return result;
   }
-  const qsizetype index = indexIt.value();
+  const qsizetype index = positionIndex_.rank(indexIt.value());
   if (index < 0 || index >= static_cast<qsizetype>(documentBlocks.size()) ||
       documentBlocks.at(static_cast<size_t>(index))->id() != node->id()) {
     return result;
@@ -497,14 +498,17 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
 
   configureBuilder(selection);
   BlockSlot& slot = slots_.at(static_cast<size_t>(index));
+  ensureSlotDetailPosition(index);
+  const qreal currentTop = slotTop(index);
+  const qreal currentShift = slotShift(index);
   result.blockId = node->id();
-  result.oldRect = slot.detail ? slot.detail->rect() : QRectF(pageLeft_, slot.top, pageWidth_, slot.height);
+  result.oldRect = slot.detail ? slot.detail->rect() : QRectF(pageLeft_, currentTop, pageWidth_, slot.height);
 
   // Drop the old subtree's layout-index entries before the detail is replaced.
   if (slot.detail) {
     removeLayoutIndexFor(*slot.detail);
   }
-  auto replacement = builder_.build(*node, theme, pageLeft_, slot.top, pageWidth_);
+  auto replacement = builder_.build(*node, theme, pageLeft_, currentTop, pageWidth_);
   result.newRect = replacement->rect();
 
   // Shared structural-spacing formula (nextTopAfterBuild) — promoteSlot uses the same,
@@ -515,33 +519,29 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
   const qreal trailingHeight = trailingHeightForLastBlock(replacement.get(), theme);
   const qreal delta =
       index + 1 < static_cast<qsizetype>(slots_.size())
-          ? newNextTop - slots_.at(static_cast<size_t>(index + 1)).top
+          ? newNextTop - slotTop(index + 1)
           : qMax(newNextTop + theme.bottomMargin() + trailingHeight, theme.topMargin() + theme.bottomMargin()) - totalHeight_;
   result.heightDelta = delta;
 
   slot.height = replacement->height();
   slot.measured = true;
-  slot.top = replacement->rect().top();
-  tops_.at(static_cast<size_t>(index)) = slot.top;
+  slot.top = replacement->rect().top() - currentShift;
+  slot.detailShift = currentShift;
   indexLayoutBlock(*replacement);
   slot.detail = std::move(replacement);
 
-  // Capture suffix rects, shift, then union for the shifted dirty rect. For promoted slots
-  // (all of them under Eager) this is identical to pre-virtualization behavior; for
-  // un-promoted slots (Lazy runtime) the slot rect is an acceptable dirty approximation.
-  QVector<QRectF> suffixOld;
-  for (qsizetype i = index + 1; i < static_cast<qsizetype>(slots_.size()); ++i) {
-    const BlockSlot& s = slots_.at(static_cast<size_t>(i));
-    suffixOld.append(s.detail ? s.detail->rect() : QRectF(pageLeft_, s.top, pageWidth_, s.height));
+  // Most keystrokes do not change the paragraph's wrapped height. Keep that path strictly O(1):
+  // no suffix rectangle allocation, walk, or dirty union. When height does change, every suffix
+  // slot moves by the same delta, so its dirty bounding rectangle is derived from the first/last
+  // slot in O(1); shiftSuffixFrom applies the geometry update itself.
+  if (!qFuzzyIsNull(delta) && index + 1 < static_cast<qsizetype>(slots_.size())) {
+    const BlockSlot& lastSuffix = slots_.back();
+    const qreal oldTop = slotTop(index + 1);
+    const qreal oldBottom = slotTop(static_cast<qsizetype>(slots_.size()) - 1) + lastSuffix.height;
+    const QRectF oldSuffixRect(pageLeft_, oldTop, pageWidth_, qMax<qreal>(0.0, oldBottom - oldTop));
+    shiftSuffixFrom(index + 1, delta);
+    result.shiftedRect = oldSuffixRect.united(oldSuffixRect.translated(0.0, delta));
   }
-  shiftSuffixFrom(index + 1, delta);
-  QRectF shiftedRect;
-  for (qsizetype i = index + 1, k = 0; i < static_cast<qsizetype>(slots_.size()); ++i, ++k) {
-    const BlockSlot& s = slots_.at(static_cast<size_t>(i));
-    const QRectF newRect = s.detail ? s.detail->rect() : QRectF(pageLeft_, s.top, pageWidth_, s.height);
-    shiftedRect = shiftedRect.isNull() ? suffixOld.at(k).united(newRect) : shiftedRect.united(suffixOld.at(k)).united(newRect);
-  }
-  result.shiftedRect = shiftedRect;
 
   if (index + 1 < static_cast<qsizetype>(slots_.size())) {
     totalHeight_ += delta;
@@ -582,15 +582,20 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
     return result;
   }
 
-  for (qsizetype i = 0; i < range.first; ++i) {
-    if (slots_.at(static_cast<size_t>(i)).nodeId != documentBlocks.at(static_cast<size_t>(i))->id()) {
-      return result;
-    }
+  // The change contract already supplies exact old/new counts. Validate only the unchanged
+  // boundaries: scanning the complete prefix and suffix here made a one-block Enter edit O(n).
+  if (range.first > 0 &&
+      slots_.at(static_cast<size_t>(range.first - 1)).nodeId !=
+          documentBlocks.at(static_cast<size_t>(range.first - 1))->id()) {
+    return result;
   }
   const qsizetype oldSuffixFirst = range.first + range.oldCount;
   const qsizetype newSuffixFirst = range.first + range.newCount;
-  for (qsizetype oldIndex = oldSuffixFirst, newIndex = newSuffixFirst; oldIndex < layoutCount && newIndex < documentCount; ++oldIndex, ++newIndex) {
-    if (slots_.at(static_cast<size_t>(oldIndex)).nodeId != documentBlocks.at(static_cast<size_t>(newIndex))->id()) {
+  if (oldSuffixFirst < layoutCount) {
+    if (newSuffixFirst >= documentCount ||
+        slots_.at(static_cast<size_t>(oldSuffixFirst)).nodeId !=
+            documentBlocks.at(static_cast<size_t>(newSuffixFirst))->id() ||
+        slots_.back().nodeId != documentBlocks.back()->id()) {
       return result;
     }
   }
@@ -599,7 +604,7 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
     QRectF oldRectUnion;
     for (qsizetype i = range.first; i < range.first + range.oldCount; ++i) {
       const BlockSlot& s = slots_.at(static_cast<size_t>(i));
-      const QRectF r = s.detail ? s.detail->rect() : QRectF(pageLeft_, s.top, pageWidth_, s.height);
+      const QRectF r(pageLeft_, slotTop(i), pageWidth_, s.height);
       oldRectUnion = oldRectUnion.isNull() ? r : oldRectUnion.united(r);
     }
     result.oldRect = oldRectUnion;
@@ -609,9 +614,12 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   // unchanged block at the edit boundary (e.g. a heading) keeps its NodeId, so removing by id after
   // the replacements are indexed would wipe the freshly-added entry too.
   for (qsizetype i = range.first; i < range.first + range.oldCount; ++i) {
-    if (slots_.at(static_cast<size_t>(i)).detail) {
-      removeLayoutIndexFor(*slots_.at(static_cast<size_t>(i)).detail);
+    const BlockSlot& oldSlot = slots_.at(static_cast<size_t>(i));
+    if (oldSlot.detail) {
+      removeLayoutIndexFor(*oldSlot.detail);
     }
+    removeNestedIndexForTopLevel(oldSlot.nodeId);
+    topLevelIndex_.remove(oldSlot.nodeId);
   }
 
   configureBuilder(selection);
@@ -620,18 +628,16 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   // the range. Single-block rebuilds (rebuildBlock) deliberately skip this — they
   // reuse the map, since per-keystroke edits never change the outline.
   recomputeHeadingCounters(document, theme);
-  // Same cadence: a structural edit can add/remove/reorder headings, so refresh the
-  // `[TOC]` outline. Per-keystroke rebuildBlock reuses the cached entries.
-  tocEntries_ = buildOutline(document);
   std::vector<BlockSlot> replacements;
   replacements.reserve(static_cast<size_t>(range.newCount));
+  std::unique_ptr<LayoutPositionToken> replacementPositions;
 
   qreal cursorY = theme.pageMargin().top() + theme.pagePadding().top();
   const MarkdownNode* previousNode = nullptr;
   if (range.first > 0) {
     previousNode = documentBlocks.at(static_cast<size_t>(range.first - 1)).get();
     const BlockSlot& prev = slots_.at(static_cast<size_t>(range.first - 1));
-    cursorY = prev.top + prev.height;
+    cursorY = slotTop(range.first - 1) + prev.height;
   }
 
   QRectF newRectUnion;
@@ -652,6 +658,10 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
     slot.type = node.type();
     slot.top = block->rect().top();
     slot.height = block->height();
+    auto positionToken = positionIndex_.makeToken();
+    slot.positionToken = positionToken.get();
+    replacementPositions = LayoutPositionIndex::merge(
+        std::move(replacementPositions), std::move(positionToken));
     slot.measured = true;
     indexLayoutBlock(*block);
     slot.detail = std::move(block);
@@ -672,7 +682,7 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
     newNextTop += spacingAfterBlock(*previousNode, theme);
   }
 
-  const qreal oldNextTop = oldSuffixFirst < layoutCount ? slots_.at(static_cast<size_t>(oldSuffixFirst)).top : totalHeight_;
+  const qreal oldNextTop = oldSuffixFirst < layoutCount ? slotTop(oldSuffixFirst) : totalHeight_;
   const BlockLayout* newLastBlock = nullptr;
   if (newSuffixFirst < documentCount) {
     // last block is in the unchanged suffix — may be un-promoted; trailing uses default then
@@ -686,25 +696,32 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   const qreal newTotalHeight = qMax(newNextTop + theme.bottomMargin() + trailingHeight, theme.topMargin() + theme.bottomMargin());
   result.heightDelta = oldSuffixFirst < layoutCount ? newNextTop - oldNextTop : newTotalHeight - totalHeight_;
 
-  // Capture the unchanged suffix's old rects (for the shifted dirty rect) before the structural edit.
-  QVector<QRectF> suffixOld;
-  for (qsizetype i = oldSuffixFirst; i < layoutCount; ++i) {
-    const BlockSlot& s = slots_.at(static_cast<size_t>(i));
-    suffixOld.append(s.detail ? s.detail->rect() : QRectF(pageLeft_, s.top, pageWidth_, s.height));
+  QRectF oldSuffixRect;
+  if (oldSuffixFirst < layoutCount) {
+    const qreal oldTop = slotTop(oldSuffixFirst);
+    const BlockSlot& oldLast = slots_.back();
+    oldSuffixRect = QRectF(pageLeft_, oldTop, pageWidth_,
+                           qMax<qreal>(0.0, slotTop(layoutCount - 1) + oldLast.height - oldTop));
   }
 
   // Erase the old slice, insert the replacements.
   slots_.erase(slots_.begin() + range.first, slots_.begin() + range.first + range.oldCount);
   slots_.insert(slots_.begin() + range.first, std::make_move_iterator(replacements.begin()), std::make_move_iterator(replacements.end()));
+  positionIndex_.replace(range.first, range.oldCount, std::move(replacementPositions));
 
-  // ids changed -> rebuild doc-tree indexes; recompute tops over the new slot vector; shift suffix.
+  // Index only the replacement subtrees. Stable position tokens keep every unchanged suffix id
+  // valid through the splice, including its current rank and accumulated vertical adjustment.
   if (dbg) {
     buildTimer.start();
   }
-  buildNestedIndex(document);
-  rebuildTops();
+  for (qsizetype i = 0; i < range.newCount; ++i) {
+    const qsizetype index = range.first + i;
+    const MarkdownNode& node = *documentBlocks.at(static_cast<size_t>(index));
+    topLevelIndex_.insert(node.id(), slots_.at(static_cast<size_t>(index)).positionToken);
+    collectNestedToTopLevel(node, node.id());
+  }
   if (dbg) {
-    qCDebug(layoutPerf).nospace() << "layout.range.nestedIndex+tops " << buildTimer.nsecsElapsed() / 1000000.0 << " ms";
+    qCDebug(layoutPerf).nospace() << "layout.range.localIndex " << buildTimer.nsecsElapsed() / 1000000.0 << " ms";
     buildTimer.start();
   }
   if (newSuffixFirst < static_cast<qsizetype>(slots_.size())) {
@@ -716,14 +733,9 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
                                   << buildTimer.nsecsElapsed() / 1000000.0 << " ms";
   }
 
-  QRectF shiftedRect;
-  for (qsizetype i = newSuffixFirst, k = 0; i < static_cast<qsizetype>(slots_.size()); ++i, ++k) {
-    const BlockSlot& s = slots_.at(static_cast<size_t>(i));
-    const QRectF r = s.detail ? s.detail->rect() : QRectF(pageLeft_, s.top, pageWidth_, s.height);
-    const QRectF oldR = k < suffixOld.size() ? suffixOld.at(k) : r;
-    shiftedRect = shiftedRect.isNull() ? oldR.united(r) : shiftedRect.united(oldR).united(r);
+  if (!oldSuffixRect.isEmpty() && newSuffixFirst < static_cast<qsizetype>(slots_.size())) {
+    result.shiftedRect = oldSuffixRect.united(oldSuffixRect.translated(0.0, result.heightDelta));
   }
-  result.shiftedRect = shiftedRect;
   totalHeight_ = oldSuffixFirst < layoutCount ? totalHeight_ + result.heightDelta : newTotalHeight;
 
   result.rebuilt = true;
@@ -767,7 +779,7 @@ qsizetype DocumentLayout::slotCount() const {
 }
 
 qreal DocumentLayout::slotTop(qsizetype index) const {
-  return slots_.at(static_cast<size_t>(index)).top;
+  return slots_.at(static_cast<size_t>(index)).top + slotShift(index);
 }
 
 qreal DocumentLayout::slotHeight(qsizetype index) const {
@@ -783,7 +795,7 @@ qsizetype DocumentLayout::topLevelIndexFor(NodeId id) const {
   if (!topId.isValid()) {
     return -1;
   }
-  return topLevelIndex_.value(topId, -1);
+  return positionIndex_.rank(topLevelIndex_.value(topId, nullptr));
 }
 
 NodeId DocumentLayout::footnoteDefinitionIdForLabel(const QString& label) const {
@@ -799,19 +811,22 @@ NodeId DocumentLayout::footnoteDefinitionIdForLabel(const QString& label) const 
 }
 
 qsizetype DocumentLayout::slotIndexAtY(qreal y) const {
-  if (tops_.empty()) {
+  if (slots_.empty()) {
     return -1;
   }
-  // Last slot whose top <= y.
-  auto it = std::upper_bound(tops_.begin(), tops_.end(), y);
-  qsizetype idx = static_cast<qsizetype>(it - tops_.begin()) - 1;
-  if (idx < 0) {
-    idx = 0;
+  // Last slot whose logical top <= y. Position-token adjustment is O(log n), making
+  // this binary search O(log^2 n) while suffix shifts and structural splices stay O(log n).
+  qsizetype low = 0;
+  qsizetype high = static_cast<qsizetype>(slots_.size());
+  while (low < high) {
+    const qsizetype mid = low + (high - low) / 2;
+    if (slotTop(mid) <= y) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
   }
-  if (idx >= static_cast<qsizetype>(slots_.size())) {
-    idx = static_cast<qsizetype>(slots_.size()) - 1;
-  }
-  return idx;
+  return qBound(qsizetype(0), low - 1, static_cast<qsizetype>(slots_.size()) - 1);
 }
 
 QPair<qsizetype, qsizetype> DocumentLayout::slotRangeOverlappingY(qreal yTop, qreal yBottom) const {
@@ -820,7 +835,8 @@ QPair<qsizetype, qsizetype> DocumentLayout::slotRangeOverlappingY(qreal yTop, qr
   }
   qsizetype first = slotIndexAtY(yTop);
   // Skip slots entirely above the window.
-  while (first < static_cast<qsizetype>(slots_.size()) && slots_.at(static_cast<size_t>(first)).top + slots_.at(static_cast<size_t>(first)).height <= yTop) {
+  while (first < static_cast<qsizetype>(slots_.size()) &&
+         slotTop(first) + slots_.at(static_cast<size_t>(first)).height <= yTop) {
     ++first;
   }
   qsizetype last = slotIndexAtY(yBottom);
@@ -839,6 +855,8 @@ void DocumentLayout::ensureBuilt(qsizetype first, qsizetype last, const RenderTh
   for (qsizetype i = first; i <= last; ++i) {
     if (!slots_.at(static_cast<size_t>(i)).detail) {
       promoteSlot(i, theme);
+    } else {
+      ensureSlotDetailPosition(i);
     }
   }
 }
@@ -847,6 +865,8 @@ void DocumentLayout::buildAll(const RenderTheme& theme) {
   for (qsizetype i = 0; i < static_cast<qsizetype>(slots_.size()); ++i) {
     if (!slots_.at(static_cast<size_t>(i)).detail) {
       promoteSlot(i, theme);
+    } else {
+      ensureSlotDetailPosition(i);
     }
   }
 }
@@ -863,7 +883,9 @@ QVector<NodeId> DocumentLayout::promotedTopLevelIds() const {
 
 QVector<const BlockLayout*> DocumentLayout::promotedBlocks() const {
   QVector<const BlockLayout*> result;
-  for (const BlockSlot& slot : slots_) {
+  for (qsizetype i = 0; i < static_cast<qsizetype>(slots_.size()); ++i) {
+    ensureSlotDetailPosition(i);
+    const BlockSlot& slot = slots_.at(static_cast<size_t>(i));
     if (slot.detail) {
       result.push_back(slot.detail.get());
     }
@@ -902,14 +924,23 @@ const BlockLayout* DocumentLayout::block(NodeId id, const RenderTheme& theme) {
   if (indexIt == topLevelIndex_.constEnd()) {
     return nullptr;
   }
-  const qsizetype index = indexIt.value();
+  const qsizetype index = positionIndex_.rank(indexIt.value());
+  if (index < 0 || index >= static_cast<qsizetype>(slots_.size())) {
+    return nullptr;
+  }
   if (!slots_.at(static_cast<size_t>(index)).detail) {
     promoteSlot(index, theme);
+  } else {
+    ensureSlotDetailPosition(index);
   }
   return layoutIndex_.value(id, nullptr);
 }
 
 const BlockLayout* DocumentLayout::blockIfPromoted(NodeId id) const {
+  const qsizetype index = topLevelIndexFor(id);
+  if (index >= 0) {
+    ensureSlotDetailPosition(index);
+  }
   return layoutIndex_.value(id, nullptr);
 }
 
@@ -958,15 +989,15 @@ HitTestResult DocumentLayout::hitTest(QPointF documentPos, const RenderTheme& th
     }
   }
 
-  // Nearest block by center-Y (computed from slot metrics, no promotion needed).
-  const qsizetype nearest = qBound(qsizetype(0), idx, static_cast<qsizetype>(slots_.size()) - 1);
-  qreal nearestCenter = slots_.at(static_cast<size_t>(nearest)).top + slots_.at(static_cast<size_t>(nearest)).height / 2.0;
-  qsizetype nearestIdx = nearest;
-  for (qsizetype i = 0; i < static_cast<qsizetype>(slots_.size()); ++i) {
-    const qreal center = slots_.at(static_cast<size_t>(i)).top + slots_.at(static_cast<size_t>(i)).height / 2.0;
-    if (std::abs(center - documentPos.y()) < std::abs(nearestCenter - documentPos.y())) {
-      nearestCenter = center;
-      nearestIdx = i;
+  // slotIndexAtY found the last top at/before the point, so only that slot and its
+  // immediate successor can have the nearest centre. Avoid a whole-document scan.
+  qsizetype nearestIdx = qBound(qsizetype(0), idx, static_cast<qsizetype>(slots_.size()) - 1);
+  qreal nearestCenter = slotTop(nearestIdx) + slots_.at(static_cast<size_t>(nearestIdx)).height / 2.0;
+  if (nearestIdx + 1 < static_cast<qsizetype>(slots_.size())) {
+    const qreal nextCenter = slotTop(nearestIdx + 1) + slots_.at(static_cast<size_t>(nearestIdx + 1)).height / 2.0;
+    if (std::abs(nextCenter - documentPos.y()) < std::abs(nearestCenter - documentPos.y())) {
+      nearestCenter = nextCenter;
+      ++nearestIdx;
     }
   }
   ensureBuilt(nearestIdx, nearestIdx, theme);
@@ -1040,17 +1071,33 @@ void DocumentLayout::removeLayoutIndexFor(const BlockLayout& block) {
 void DocumentLayout::buildNestedIndex(const MarkdownDocument& document) {
   topLevelIndex_.clear();
   nestedToTopLevel_.clear();
+  nestedIdsByTopLevel_.clear();
   const auto& children = document.root().children();
   for (qsizetype i = 0; i < static_cast<qsizetype>(children.size()); ++i) {
-    topLevelIndex_.insert(children.at(static_cast<size_t>(i))->id(), i);
+    topLevelIndex_.insert(
+        children.at(static_cast<size_t>(i))->id(),
+        slots_.at(static_cast<size_t>(i)).positionToken);
     collectNestedToTopLevel(*children.at(static_cast<size_t>(i)), children.at(static_cast<size_t>(i))->id());
   }
 }
 
 void DocumentLayout::collectNestedToTopLevel(const MarkdownNode& node, NodeId topLevelId) {
   nestedToTopLevel_.insert(node.id(), topLevelId);
+  // Flat paragraphs/headings dominate large documents. Do not allocate one QVector/QHash entry
+  // per leaf top-level block; the top id is removed directly and only real descendants need a list.
+  if (node.id() != topLevelId) {
+    nestedIdsByTopLevel_[topLevelId].push_back(node.id());
+  }
   for (const auto& child : node.children()) {
     collectNestedToTopLevel(*child, topLevelId);
+  }
+}
+
+void DocumentLayout::removeNestedIndexForTopLevel(NodeId topLevelId) {
+  nestedToTopLevel_.remove(topLevelId);
+  const QVector<NodeId> nestedIds = nestedIdsByTopLevel_.take(topLevelId);
+  for (NodeId id : nestedIds) {
+    nestedToTopLevel_.remove(id);
   }
 }
 
@@ -1105,18 +1152,37 @@ void DocumentLayout::recomputeHeadingCounters(const MarkdownDocument& document, 
   for (const auto& child : document.root().children()) { walk(*child); }
 }
 
-void DocumentLayout::rebuildTops() {
-  tops_.clear();
-  tops_.reserve(slots_.size());
-  for (const BlockSlot& slot : slots_) {
-    tops_.push_back(slot.top);
+qreal DocumentLayout::slotShift(qsizetype index) const {
+  if (index < 0 || index >= static_cast<qsizetype>(slots_.size())) {
+    return 0.0;
   }
+  return positionIndex_.adjustmentFor(slots_.at(static_cast<size_t>(index)).positionToken);
+}
+
+void DocumentLayout::ensureSlotDetailPosition(qsizetype index) const {
+  if (index < 0 || index >= static_cast<qsizetype>(slots_.size())) {
+    return;
+  }
+  BlockSlot& slot = const_cast<BlockSlot&>(slots_.at(static_cast<size_t>(index)));
+  if (!slot.detail) {
+    return;
+  }
+  const qreal shift = slotShift(index);
+  const qreal delta = shift - slot.detailShift;
+  if (!qFuzzyIsNull(delta)) {
+    slot.detail->translateY(delta);
+  }
+  slot.detailShift = shift;
 }
 
 void DocumentLayout::configureBuilder(SelectionRange selection) {
   selection_ = selection;
   if (document_) {
     builder_.setMarkdownText(document_->pieceText(), document_->lineOffsets());
+    if (tocOutlineRevision_ != document_->outlineRevision()) {
+      tocEntries_ = document_->outline();
+      tocOutlineRevision_ = document_->outlineRevision();
+    }
   }
   builder_.refreshRenderSettings();  // read markdown/* settings once per pass (avoids per-block QSettings hits)
   builder_.setSelection(selection);
@@ -1140,15 +1206,17 @@ qreal DocumentLayout::promoteSlot(qsizetype index, const RenderTheme& theme) {
   }
   BlockSlot& slot = slots_.at(static_cast<size_t>(index));
   if (slot.detail) {
+    ensureSlotDetailPosition(index);
     return 0.0;  // already promoted
   }
   const auto& children = document_->root().children();
   const MarkdownNode& node = *children.at(static_cast<size_t>(index));
-  auto built = builder_.build(node, theme, pageLeft_, slot.top, pageWidth_);
+  const qreal currentShift = slotShift(index);
+  auto built = builder_.build(node, theme, pageLeft_, slotTop(index), pageWidth_);
   slot.height = built->height();
   slot.measured = true;
-  slot.top = built->rect().top();  // unchanged; keep invariant exact
-  tops_.at(static_cast<size_t>(index)) = slot.top;
+  slot.top = built->rect().top() - currentShift;
+  slot.detailShift = currentShift;
   indexLayoutBlock(*built);
   // Snap the gap below to STRUCTURAL spacing (the same nextTopAfterBuild rebuildBlock
   // uses). The Lazy estimate positioned this block with prototype spacing (fast=true);
@@ -1161,7 +1229,7 @@ qreal DocumentLayout::promoteSlot(qsizetype index, const RenderTheme& theme) {
   slot.detail = std::move(built);
   qreal delta = 0.0;
   if (index + 1 < static_cast<qsizetype>(slots_.size())) {
-    delta = newNextTop - slots_.at(static_cast<size_t>(index + 1)).top;
+    delta = newNextTop - slotTop(index + 1);
   }
   shiftSuffixFrom(index + 1, delta);
   recomputeTotalHeight(theme);
@@ -1169,17 +1237,10 @@ qreal DocumentLayout::promoteSlot(qsizetype index, const RenderTheme& theme) {
 }
 
 void DocumentLayout::shiftSuffixFrom(qsizetype index, qreal delta) {
-  if (qFuzzyIsNull(delta)) {
+  if (qFuzzyIsNull(delta) || index < 0 || index >= static_cast<qsizetype>(slots_.size())) {
     return;
   }
-  for (qsizetype i = index; i < static_cast<qsizetype>(slots_.size()); ++i) {
-    BlockSlot& slot = slots_.at(static_cast<size_t>(i));
-    slot.top += delta;
-    tops_.at(static_cast<size_t>(i)) = slot.top;
-    if (slot.detail) {
-      slot.detail->translateY(delta);
-    }
-  }
+  positionIndex_.addSuffix(index, delta);
 }
 
 void DocumentLayout::recomputeTotalHeight(const RenderTheme& theme) {
@@ -1191,7 +1252,7 @@ void DocumentLayout::recomputeTotalHeight(const RenderTheme& theme) {
     const BlockSlot& last = slots_.back();
     const int level = last.detail ? last.detail->headingLevel() : 0;
     const qreal spacingAfter = spacingAfterBlockPrototype(last.type, level, theme);
-    cursorY = last.top + last.height + spacingAfter;
+    cursorY = slotTop(static_cast<qsizetype>(slots_.size()) - 1) + last.height + spacingAfter;
     trailingHeight = trailingHeightForLastBlock(last.detail ? last.detail.get() : nullptr, theme);
   }
   totalHeight_ = qMax(cursorY + pagePadding.bottom() + pageMargin.bottom() + trailingHeight,

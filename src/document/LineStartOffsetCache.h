@@ -13,6 +13,7 @@ public:
   explicit LineStartOffsetCache(QStringView text);
 
   void rebuild(QStringView text);
+  void bind(const PieceTable& text);
   // Patch lineStarts_ for an in-place text edit without rescanning the whole document.
   // fullPostEditText is the document text AFTER the replace; sourceStart/removedLen describe the
   // pre-edit removed range and insertedLen the length of its replacement.
@@ -38,6 +39,7 @@ public:
   static qreal byteColPerfMs();
 
 private:
+  const PieceTable* pieceText_ = nullptr;
   QVector<qsizetype> lineStarts_;
   // Per-line "all code points <= 0x7F" flag, computed for free during rebuild()'s '\n' scan. Lets
   // offsetForLineByteColumn take an O(1) ASCII fast path (byte column == code-unit column) instead

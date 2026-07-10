@@ -9,6 +9,7 @@
 #include <QMenu>
 #include <QPlainTextEdit>
 #include <QSettings>
+#include <QTimer>
 
 namespace muffin {
 
@@ -33,10 +34,16 @@ void MainWindow::bindCommands() {
 // enable/checked state without private access.
 
 bool MainWindow::commandHasCursor() const {
+  if (commandContextSnapshotActive_) {
+    return commandContextSnapshot_.hasCursor;
+  }
   return backend_->isSourceMode() ? true : editorController_.selection().hasCursor();
 }
 
 bool MainWindow::commandHasSelection() const {
+  if (commandContextSnapshotActive_) {
+    return commandContextSnapshot_.hasSelection;
+  }
   if (backend_->isSourceMode()) {
     return editor_->editor()->textCursor().hasSelection();
   }
@@ -44,31 +51,71 @@ bool MainWindow::commandHasSelection() const {
 }
 
 bool MainWindow::commandOnEditableParagraph() const {
+  if (commandContextSnapshotActive_) {
+    return commandContextSnapshot_.onEditableParagraph;
+  }
   return !backend_->isSourceMode() && renderCommands_.isOnEditableParagraphBlock();
 }
 
 int MainWindow::commandHeadingLevel() const {
+  if (commandContextSnapshotActive_) {
+    return commandContextSnapshot_.headingLevel;
+  }
   return backend_->isSourceMode() ? -1 : renderCommands_.currentHeadingLevel();
 }
 
 bool MainWindow::commandInlineFormatEnabled() const {
+  if (commandContextSnapshotActive_) {
+    return commandContextSnapshot_.inlineFormatEnabled;
+  }
   return !backend_->isSourceMode() && renderCommands_.isInlineFormatEnabled();
 }
 
 bool MainWindow::commandInTableCell() const {
+  if (commandContextSnapshotActive_) {
+    return commandContextSnapshot_.inTableCell;
+  }
   return !backend_->isSourceMode() && renderCommands_.hasCurrentTableCell();
 }
 
 bool MainWindow::commandOnImage() const {
+  if (commandContextSnapshotActive_) {
+    return commandContextSnapshot_.onImage;
+  }
   return !backend_->isSourceMode() && renderCommands_.isOnImage();
 }
 
 bool MainWindow::commandOnLocalImage() const {
+  if (commandContextSnapshotActive_) {
+    return commandContextSnapshot_.onLocalImage;
+  }
   if (!commandOnImage()) {
     return false;
   }
   const QString src = renderCommands_.imageSrcAtCursor();
   return !src.isEmpty() && QFileInfo(src).isFile();
+}
+
+MainWindow::CommandContextSnapshot MainWindow::captureCommandContext() const {
+  CommandContextSnapshot snapshot;
+  const bool sourceMode = backend_->isSourceMode();
+  snapshot.hasCursor = sourceMode || editorController_.selection().hasCursor();
+  snapshot.hasSelection = sourceMode
+      ? editor_->editor()->textCursor().hasSelection()
+      : snapshot.hasCursor && !editorController_.selection().selection().isCollapsed();
+  if (sourceMode) {
+    return snapshot;
+  }
+  snapshot.onEditableParagraph = renderCommands_.isOnEditableParagraphBlock();
+  snapshot.headingLevel = renderCommands_.currentHeadingLevel();
+  snapshot.inlineFormatEnabled = renderCommands_.isInlineFormatEnabled();
+  snapshot.inTableCell = renderCommands_.hasCurrentTableCell();
+  snapshot.onImage = renderCommands_.isOnImage();
+  if (snapshot.onImage) {
+    const QString src = renderCommands_.imageSrcAtCursor();
+    snapshot.onLocalImage = !src.isEmpty() && QFileInfo(src).isFile();
+  }
+  return snapshot;
 }
 
 // ---- action state refresh (table-driven) -----------------------------------
@@ -106,6 +153,8 @@ void MainWindow::updateActionsForCategory(CommandCategory category) {
 }
 
 void MainWindow::updateAllActions() {
+  commandContextSnapshot_ = captureCommandContext();
+  commandContextSnapshotActive_ = true;
   for (const CommandDeclaration& decl : commandDeclarations()) {
     if (QAction* action = commands_.action(decl.id)) {
       if (decl.enabled) {
@@ -116,6 +165,7 @@ void MainWindow::updateAllActions() {
       }
     }
   }
+  commandContextSnapshotActive_ = false;
 }
 
 void MainWindow::updateFileActions() {
@@ -137,14 +187,47 @@ void MainWindow::updateFormatActions() { updateActionsForCategory(CommandCategor
 void MainWindow::updateThemeActions() { updateActionsForCategory(CommandCategory::Theme); }
 
 void MainWindow::updateContextActions() {
-  updateEditActions();
-  updateTableActions();
-  updateParagraphActions();
-  updateCodeActions();
-  updateHtmlActions();
-  updateMathActions();
-  updateImageActions();
-  updateFormatActions();
+  commandContextSnapshot_ = captureCommandContext();
+  commandContextSnapshotActive_ = true;
+  for (const CommandDeclaration& decl : commandDeclarations()) {
+    switch (decl.category) {
+      case CommandCategory::Edit:
+      case CommandCategory::Table:
+      case CommandCategory::Paragraph:
+      case CommandCategory::Code:
+      case CommandCategory::Html:
+      case CommandCategory::Math:
+      case CommandCategory::Image:
+      case CommandCategory::Format:
+        break;
+      default:
+        continue;
+    }
+    QAction* action = commands_.action(decl.id);
+    if (!action) {
+      continue;
+    }
+    if (decl.enabled) {
+      action->setEnabled(decl.enabled(*this));
+    }
+    if (decl.checked) {
+      action->setChecked(decl.checked(*this));
+    }
+  }
+  commandContextSnapshotActive_ = false;
+}
+
+void MainWindow::scheduleEditorStateRefresh() {
+  if (editorStateRefreshScheduled_) {
+    return;
+  }
+  editorStateRefreshScheduled_ = true;
+  QTimer::singleShot(0, this, [this] {
+    editorStateRefreshScheduled_ = false;
+    updateBlockSourceLabel(editorController_.selection().currentHit());
+    updateStatus();
+    updateContextActions();
+  });
 }
 
 // Restore persisted checkable action states (line break, trailing newline, word

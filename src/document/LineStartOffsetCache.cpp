@@ -55,6 +55,7 @@ LineStartOffsetCache::LineStartOffsetCache(QStringView text) {
 }
 
 void LineStartOffsetCache::rebuild(QStringView text) {
+  pieceText_ = nullptr;
   textSize_ = text.size();
   lineStarts_.clear();
   lineStarts_.reserve(qMax<qsizetype>(1, text.size() / 48));
@@ -76,8 +77,22 @@ void LineStartOffsetCache::rebuild(QStringView text) {
   lineIsAscii_.push_back(ascii ? 1 : 0);  // the final line (no trailing newline)
 }
 
+void LineStartOffsetCache::bind(const PieceTable& text) {
+  pieceText_ = &text;
+  textSize_ = text.size();
+  lineStarts_.clear();
+  lineIsAscii_.clear();
+}
+
 void LineStartOffsetCache::applyEdit(
     qsizetype sourceStart, qsizetype removedLen, qsizetype insertedLen, const PieceTable& fullPostEditText) {
+  if (pieceText_) {
+    Q_UNUSED(sourceStart)
+    Q_UNUSED(removedLen)
+    Q_UNUSED(insertedLen)
+    bind(fullPostEditText);
+    return;
+  }
   if (sourceStart < 0 || removedLen < 0 || sourceStart + removedLen > textSize_) {
     return;
   }
@@ -135,10 +150,11 @@ void LineStartOffsetCache::applyEdit(
 }
 
 qsizetype LineStartOffsetCache::offsetForLineColumn(int line, int column) const {
-  if (line <= 0 || column <= 0 || line > lineStarts_.size()) {
+  const int count = lineCount();
+  if (line <= 0 || column <= 0 || line > count) {
     return -1;
   }
-  const qsizetype start = lineStarts_.at(line - 1);
+  const qsizetype start = lineStartOffset(line);
   const qsizetype end = lineEndOffset(line);
   if (end < start) {
     return -1;
@@ -148,10 +164,10 @@ qsizetype LineStartOffsetCache::offsetForLineColumn(int line, int column) const 
 
 qsizetype LineStartOffsetCache::offsetForLineByteColumn(QStringView text, int line, int column) const {
   ByteColGuard guard(g_byteColNs);
-  if (line <= 0 || column <= 0 || line > lineStarts_.size()) {
+  if (line <= 0 || column <= 0 || line > lineCount()) {
     return -1;
   }
-  const qsizetype start = lineStarts_.at(line - 1);
+  const qsizetype start = lineStartOffset(line);
   const qsizetype end = lineEndOffset(line);
   if (end < start) {
     return -1;
@@ -199,6 +215,9 @@ qsizetype LineStartOffsetCache::offsetForLineByteColumn(QStringView text, int li
 }
 
 qsizetype LineStartOffsetCache::lineStartOffset(int line) const {
+  if (pieceText_) {
+    return pieceText_->lineStartOffset(line);
+  }
   if (line <= 0 || line > lineStarts_.size()) {
     return -1;
   }
@@ -206,10 +225,10 @@ qsizetype LineStartOffsetCache::lineStartOffset(int line) const {
 }
 
 QStringView LineStartOffsetCache::lineText(QStringView doc, int line) const {
-  if (line <= 0 || line > lineStarts_.size()) {
+  if (line <= 0 || line > lineCount()) {
     return {};
   }
-  const qsizetype start = lineStarts_.at(line - 1);
+  const qsizetype start = lineStartOffset(line);
   const qsizetype end = lineEndOffset(line);  // '\n' position (exclusive content end); textSize_ for the last line
   if (end < start || end > doc.size()) {
     return {};
@@ -218,6 +237,9 @@ QStringView LineStartOffsetCache::lineText(QStringView doc, int line) const {
 }
 
 qsizetype LineStartOffsetCache::lineEndOffset(int line) const {
+  if (pieceText_) {
+    return pieceText_->lineEndOffset(line);
+  }
   if (line <= 0 || line > lineStarts_.size()) {
     return -1;
   }
@@ -228,6 +250,9 @@ qsizetype LineStartOffsetCache::lineEndOffset(int line) const {
 }
 
 int LineStartOffsetCache::lineForOffset(qsizetype offset) const {
+  if (pieceText_) {
+    return pieceText_->lineForOffset(offset);
+  }
   if (lineStarts_.isEmpty()) {
     return 0;
   }
@@ -237,6 +262,9 @@ int LineStartOffsetCache::lineForOffset(qsizetype offset) const {
 }
 
 int LineStartOffsetCache::lineCount() const {
+  if (pieceText_) {
+    return pieceText_->lineCount();
+  }
   return static_cast<int>(lineStarts_.size());
 }
 

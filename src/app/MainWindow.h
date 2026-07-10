@@ -128,6 +128,7 @@ private:
   // stay unchanged). updateAllActions() refreshes every category.
   void updateActionsForCategory(CommandCategory category);
   void updateAllActions();
+  void scheduleEditorStateRefresh();
 
   // Qt signal wiring, split out for readability (formerly MainWindowSignalBinder).
   void connectEditorSignals();
@@ -268,6 +269,18 @@ private:
   void insertImageWithDialog();
   void insertLocalImageWithDialog();
 
+  struct CommandContextSnapshot {
+    bool hasCursor = false;
+    bool hasSelection = false;
+    bool onEditableParagraph = false;
+    int headingLevel = -1;
+    bool inlineFormatEnabled = false;
+    bool inTableCell = false;
+    bool onImage = false;
+    bool onLocalImage = false;
+  };
+  CommandContextSnapshot captureCommandContext() const;
+
   void showFindBar();
   void showReplaceBar();
   void hideFindBar();
@@ -339,6 +352,11 @@ private:
   bool sourceEditorDirty_ = false;
   bool wordCountDirty_ = true;
   bool outlineDirty_ = true;
+  bool showBlockSourceEnabled_ = false;
+  bool editorStateRefreshScheduled_ = false;
+  mutable bool commandContextSnapshotActive_ = false;
+  mutable CommandContextSnapshot commandContextSnapshot_;
+  quint64 sidebarOutlineRevision_ = 0;
   std::unique_ptr<EditorBackend> backend_;
   bool focusMode_ = false;
   bool typewriterMode_ = false;

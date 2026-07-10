@@ -41,6 +41,7 @@ public:
   bool lastParseWasLocalEdit() const;
   bool lastLocalEditChangedTopLevelStructure() const;
   TopLevelRangeChange lastLocalTopLevelRangeChange() const;
+  const QVector<qsizetype>& pendingMarkerOffsets() const { return pendingMarkerOffsets_; }
   // True while an async open parse (openDocumentAsync) is in flight on the worker thread. document_
   // holds the stale pre-open text during this window, so callers MUST treat the document as
   // read-only: applyTextDelta rejects edits and InputController drops keystrokes, so a stray edit
@@ -142,6 +143,7 @@ private:
   QString pendingText_;           // text held for the GUI-thread finish step
   bool pendingModified_ = false;
   QVector<qsizetype> pendingDemoteAtOffsets_;
+  QVector<qsizetype> pendingMarkerOffsets_;
 
   // External-modification detection. The watcher tracks filePath_; the baseline is the mtime+size
   // at open/last-save. suppressExternalChange_ is set by SelfWriteGuard during our own writes.

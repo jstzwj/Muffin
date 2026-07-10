@@ -61,7 +61,7 @@ void collectHeadings(const MarkdownNode& node, QVector<OutlineEntry>& entries, Q
     }
 
     const int parentIndex = levelStack.isEmpty() ? -1 : levelStack.last();
-    entries.push_back({title, level, node.id(), node.sourceRange(), parentIndex});
+    entries.push_back({title, level, node.id(), node.sourceRange(), parentIndex, {}});
     levelStack.push_back(entries.size() - 1);
   }
 
@@ -73,9 +73,16 @@ void collectHeadings(const MarkdownNode& node, QVector<OutlineEntry>& entries, Q
 }  // namespace
 
 QVector<OutlineEntry> buildOutline(const MarkdownDocument& document) {
+  return document.outline();
+}
+
+QVector<OutlineEntry> buildOutlineFragment(const MarkdownNode& topLevel) {
   QVector<OutlineEntry> entries;
   QVector<int> levelStack;
-  collectHeadings(document.root(), entries, levelStack);
+  collectHeadings(topLevel, entries, levelStack);
+  for (OutlineEntry& entry : entries) {
+    entry.topLevelId = topLevel.id();
+  }
   return entries;
 }
 

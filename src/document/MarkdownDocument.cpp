@@ -2,6 +2,7 @@
 
 #include <QElapsedTimer>
 #include <QLoggingCategory>
+#include <QSet>
 
 #include <algorithm>
 #include <utility>
@@ -38,6 +39,7 @@ namespace muffin {
 
 MarkdownDocument::MarkdownDocument(QObject* parent)
     : QObject(parent), root_(std::make_unique<MarkdownNode>(BlockType::Document)) {
+  bindSourcePositionSlots();
   index_.rebuild(*root_);
 }
 
@@ -62,11 +64,8 @@ const LineStartOffsetCache& MarkdownDocument::lineOffsets() const {
 }
 
 void MarkdownDocument::setMarkdownText(QString text, std::unique_ptr<MarkdownNode> root) {
-  // Rebuild the line-offset cache from the full text BEFORE moving it into the piece-table (the
-  // table owns the buffer afterwards, and it is not a contiguous QStringView). text_ becomes the
-  // sole source of truth; markdownText() materializes from it on demand.
-  lineOffsets_.rebuild(QStringView(text));
   text_ = PieceTable(std::move(text));
+  lineOffsets_.bind(text_);
   replaceRoot(std::move(root));
 }
 
@@ -78,6 +77,17 @@ void MarkdownDocument::replaceTopLevelRange(
     qsizetype sourceEnd,
     const QString& replacementText) {
   PerfTimer totalPerf("session.local.replaceRange");
+  replaceOutlineRange(first, count, replacements);
+  std::unique_ptr<SourcePositionToken> replacementTokens;
+  for (auto& replacement : replacements) {
+    auto token = sourcePositions_.makeToken(replacement->siblingKind());
+    replacement->sourcePositionToken_ = token.get();
+    replacementTokens = SourcePositionIndex::merge(std::move(replacementTokens), std::move(token));
+  }
+  // New nodes already carry absolute post-edit ranges, so their fresh tokens start at zero.
+  // Existing suffix tokens retain every accumulated delta while the implicit treap splices the
+  // range in O(log n), even when Enter changes the number of top-level blocks.
+  sourcePositions_.replace(first, count, std::move(replacementTokens));
   {
     // The piece-table is the edit master. text_.replace is O(pieces) -- NO whole-document memmove
     // (the O(doc)-per-keystroke cost the single-QString model paid). There is no separate
@@ -121,6 +131,118 @@ void MarkdownDocument::replaceTopLevelRange(
 
   ++revision_;
   emit documentReset();
+}
+
+void MarkdownDocument::shiftTopLevelSuffix(qsizetype first, qsizetype byteDelta, int lineDelta) {
+  sourcePositions_.addSuffix(first, byteDelta, lineDelta);
+}
+
+QVector<OutlineEntry> MarkdownDocument::outline() const {
+  QVector<OutlineEntry> result = outlineEntries_;
+  QVector<int> levelStack;
+  for (qsizetype i = 0; i < result.size(); ++i) {
+    OutlineEntry& entry = result[i];
+    const int level = qBound(1, entry.level, 6);
+    while (levelStack.size() >= level) {
+      levelStack.removeLast();
+    }
+    entry.parentIndex = levelStack.isEmpty() ? -1 : levelStack.last();
+    if (const MarkdownNode* heading = node(entry.nodeId)) {
+      entry.sourceRange = heading->sourceRange();
+    }
+    levelStack.push_back(static_cast<int>(i));
+  }
+  return result;
+}
+
+void MarkdownDocument::bindSourcePositionSlots() {
+  root_->sourcePositionIndex_ = &sourcePositions_;
+  const auto& children = root_->children();
+  QVector<quint8> siblingKinds;
+  siblingKinds.reserve(static_cast<qsizetype>(children.size()));
+  for (const auto& child : children) {
+    siblingKinds.push_back(child->siblingKind());
+  }
+  const QVector<SourcePositionToken*> tokens = sourcePositions_.reset(siblingKinds);
+  for (qsizetype i = 0; i < static_cast<qsizetype>(children.size()); ++i) {
+    children.at(static_cast<size_t>(i))->sourcePositionToken_ = tokens.at(i);
+  }
+}
+
+void MarkdownDocument::rebuildOutlineIndex() {
+  outlineEntries_.clear();
+  for (const auto& topLevel : root_->children()) {
+    outlineEntries_ += buildOutlineFragment(*topLevel);
+  }
+  ++outlineRevision_;
+}
+
+void MarkdownDocument::replaceOutlineRange(
+    qsizetype first,
+    qsizetype count,
+    const std::vector<std::unique_ptr<MarkdownNode>>& replacements) {
+  const auto& children = root_->children();
+  first = qBound<qsizetype>(0, first, static_cast<qsizetype>(children.size()));
+  count = qBound<qsizetype>(0, count, static_cast<qsizetype>(children.size()) - first);
+
+  QSet<NodeId> removedTopLevelIds;
+  qsizetype oldStart = first < static_cast<qsizetype>(children.size())
+      ? children.at(static_cast<size_t>(first))->sourceRange().byteStart
+      : text_.size();
+  qsizetype oldEnd = oldStart;
+  for (qsizetype i = 0; i < count; ++i) {
+    const MarkdownNode& topLevel = *children.at(static_cast<size_t>(first + i));
+    removedTopLevelIds.insert(topLevel.id());
+    oldEnd = qMax(oldEnd, topLevel.sourceRange().byteEnd);
+  }
+
+  const auto entryStart = [this](const OutlineEntry& entry) {
+    if (const MarkdownNode* heading = node(entry.nodeId)) {
+      return heading->sourceRange().byteStart;
+    }
+    return entry.sourceRange.byteStart;
+  };
+  qsizetype eraseFirst = static_cast<qsizetype>(std::lower_bound(
+      outlineEntries_.cbegin(), outlineEntries_.cend(), oldStart,
+      [&entryStart](const OutlineEntry& entry, qsizetype offset) {
+        return entryStart(entry) < offset;
+      }) - outlineEntries_.cbegin());
+  while (eraseFirst < outlineEntries_.size() &&
+         !removedTopLevelIds.contains(outlineEntries_.at(eraseFirst).topLevelId) &&
+         entryStart(outlineEntries_.at(eraseFirst)) <= oldEnd) {
+    ++eraseFirst;
+  }
+  qsizetype eraseEnd = eraseFirst;
+  while (eraseEnd < outlineEntries_.size() &&
+         removedTopLevelIds.contains(outlineEntries_.at(eraseEnd).topLevelId)) {
+    ++eraseEnd;
+  }
+
+  QVector<OutlineEntry> inserted;
+  for (const auto& replacement : replacements) {
+    inserted += buildOutlineFragment(*replacement);
+  }
+
+  bool changed = eraseEnd - eraseFirst != inserted.size();
+  if (!changed) {
+    for (qsizetype i = 0; i < inserted.size(); ++i) {
+      const OutlineEntry& oldEntry = outlineEntries_.at(eraseFirst + i);
+      const OutlineEntry& newEntry = inserted.at(i);
+      if (oldEntry.nodeId != newEntry.nodeId || oldEntry.level != newEntry.level ||
+          oldEntry.title != newEntry.title) {
+        changed = true;
+        break;
+      }
+    }
+  }
+
+  outlineEntries_.remove(eraseFirst, eraseEnd - eraseFirst);
+  for (qsizetype i = 0; i < inserted.size(); ++i) {
+    outlineEntries_.insert(eraseFirst + i, std::move(inserted[i]));
+  }
+  if (changed) {
+    ++outlineRevision_;
+  }
 }
 
 quint64 MarkdownDocument::revision() const {
@@ -171,7 +293,9 @@ void MarkdownDocument::replaceRoot(std::unique_ptr<MarkdownNode> root) {
   if (!root_) {
     root_ = std::make_unique<MarkdownNode>(BlockType::Document);
   }
+  bindSourcePositionSlots();
   index_.rebuild(*root_);
+  rebuildOutlineIndex();
   ++revision_;
   emit documentReset();
 }

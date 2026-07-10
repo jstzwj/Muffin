@@ -1,6 +1,7 @@
 #include "document/PieceTable.h"
 
 #include <algorithm>
+#include <limits>
 
 namespace muffin {
 
@@ -10,8 +11,19 @@ const PieceTable& PieceTable::empty() {
 }
 
 PieceTable::PieceTable(QString initial) : original_(std::move(initial)) {
+  bool previousWord = false;
+  for (qsizetype i = 0; i < original_.size(); ++i) {
+    const bool word = isWordChar(original_.at(i));
+    if (word && !previousWord) {
+      originalWordStarts_.push_back(i);
+    }
+    previousWord = word;
+    if (original_.at(i) == QLatin1Char('\n')) {
+      originalNewlines_.push_back(i);
+    }
+  }
   if (!original_.isEmpty()) {
-    pieces_.push_back(Piece{false, 0, original_.size()});
+    pieces_.push_back(Piece{false, 0, original_.size(), originalNewlines_.size()});
   }
   rebuildPrefix();
 }
@@ -68,6 +80,17 @@ void PieceTable::replace(qsizetype start, qsizetype end, QStringView text) {
   const qsizetype changesStart = changes_.size();
   changes_.append(text);
   const qsizetype insertedLen = text.length();
+  bool previousChangeWord = changesStart > 0 && isWordChar(changes_.at(changesStart - 1));
+  for (qsizetype i = 0; i < text.size(); ++i) {
+    const bool word = isWordChar(text.at(i));
+    if (word && !previousChangeWord) {
+      changesWordStarts_.push_back(changesStart + i);
+    }
+    previousChangeWord = word;
+    if (text.at(i) == QLatin1Char('\n')) {
+      changesNewlines_.push_back(changesStart + i);
+    }
+  }
 
   // Locate the pieces spanning the [start, end) boundaries. start/end == totalLength_ means "at the
   // very end" — the boundary is just past the last piece (pieces_.size()).
@@ -124,13 +147,68 @@ void PieceTable::replace(qsizetype start, qsizetype end, QStringView text) {
 
 void PieceTable::rebuildPrefix() {
   prefix_.assign(pieces_.size() + 1, 0);
+  prefixNewlines_.assign(pieces_.size() + 1, 0);
   qint64 acc = 0;
+  qint64 newlineAcc = 0;
+  qint64 wordAcc = 0;
+  bool haveText = false;
+  bool previousEndsWithWord = false;
   for (size_t i = 0; i < pieces_.size(); ++i) {
     prefix_[i] = acc;
+    prefixNewlines_[i] = newlineAcc;
+    pieces_[i].newlineCount = countNewlines(
+        pieces_[i].fromChanges, pieces_[i].start, pieces_[i].length);
+    const WordSummary words = wordSummary(
+        pieces_[i].fromChanges, pieces_[i].start, pieces_[i].length);
+    pieces_[i].wordCount = words.count;
+    pieces_[i].startsWithWord = words.startsWithWord;
+    pieces_[i].endsWithWord = words.endsWithWord;
     acc += pieces_[i].length;
+    newlineAcc += pieces_[i].newlineCount;
+    wordAcc += words.count;
+    if (haveText && previousEndsWithWord && words.startsWithWord) {
+      --wordAcc;
+    }
+    if (pieces_[i].length > 0) {
+      haveText = true;
+      previousEndsWithWord = words.endsWithWord;
+    }
   }
   prefix_[pieces_.size()] = acc;
+  prefixNewlines_[pieces_.size()] = newlineAcc;
   totalLength_ = acc;
+  totalNewlines_ = newlineAcc;
+  totalWords_ = wordAcc;
+}
+
+qsizetype PieceTable::countNewlines(bool fromChanges, qsizetype start, qsizetype length) const {
+  const QVector<qsizetype>& positions = newlines(fromChanges);
+  const auto first = std::lower_bound(positions.cbegin(), positions.cend(), start);
+  const auto last = std::lower_bound(first, positions.cend(), start + length);
+  return last - first;
+}
+
+bool PieceTable::isWordChar(QChar ch) {
+  return ch.isLetterOrNumber() || ch == QLatin1Char('_');
+}
+
+PieceTable::WordSummary PieceTable::wordSummary(
+    bool fromChanges, qsizetype start, qsizetype length) const {
+  WordSummary result;
+  if (length <= 0) {
+    return result;
+  }
+  const QString& source = buffer(fromChanges);
+  const QVector<qsizetype>& starts = fromChanges ? changesWordStarts_ : originalWordStarts_;
+  const auto first = std::lower_bound(starts.cbegin(), starts.cend(), start);
+  const auto last = std::lower_bound(first, starts.cend(), start + length);
+  result.count = last - first;
+  result.startsWithWord = isWordChar(source.at(start));
+  result.endsWithWord = isWordChar(source.at(start + length - 1));
+  if (result.startsWithWord && start > 0 && isWordChar(source.at(start - 1))) {
+    ++result.count;
+  }
+  return result;
 }
 
 qsizetype PieceTable::indexOf(QChar ch, qsizetype from) const {
@@ -140,6 +218,56 @@ qsizetype PieceTable::indexOf(QChar ch, qsizetype from) const {
     }
   }
   return -1;
+}
+
+int PieceTable::lineForOffset(qsizetype offset) const {
+  const qsizetype bounded = qBound<qsizetype>(0, offset, size());
+  if (bounded == size()) {
+    return static_cast<int>(qMin<qint64>(totalNewlines_ + 1, std::numeric_limits<int>::max()));
+  }
+  const auto [pieceIndex, inPiece] = locate(bounded);
+  const Piece& piece = pieces_.at(static_cast<size_t>(pieceIndex));
+  const qsizetype localNewlines = countNewlines(piece.fromChanges, piece.start, inPiece);
+  return static_cast<int>(qMin<qint64>(
+      prefixNewlines_.at(static_cast<size_t>(pieceIndex)) + localNewlines + 1,
+      std::numeric_limits<int>::max()));
+}
+
+qsizetype PieceTable::lineStartOffset(int line) const {
+  if (line <= 0 || static_cast<qint64>(line) > totalNewlines_ + 1) {
+    return -1;
+  }
+  if (line == 1) {
+    return 0;
+  }
+  const qint64 ordinal = static_cast<qint64>(line) - 2;
+  const auto boundary = std::upper_bound(prefixNewlines_.begin(), prefixNewlines_.end(), ordinal);
+  const qsizetype pieceIndex = static_cast<qsizetype>(boundary - prefixNewlines_.begin()) - 1;
+  const Piece& piece = pieces_.at(static_cast<size_t>(pieceIndex));
+  const QVector<qsizetype>& positions = newlines(piece.fromChanges);
+  const auto first = std::lower_bound(positions.cbegin(), positions.cend(), piece.start);
+  const qsizetype withinPiece = static_cast<qsizetype>(ordinal - prefixNewlines_.at(static_cast<size_t>(pieceIndex)));
+  const qsizetype newline = *(first + withinPiece);
+  return static_cast<qsizetype>(prefix_.at(static_cast<size_t>(pieceIndex))) +
+      (newline - piece.start) + 1;
+}
+
+qsizetype PieceTable::lineEndOffset(int line) const {
+  if (line <= 0 || static_cast<qint64>(line) > totalNewlines_ + 1) {
+    return -1;
+  }
+  if (static_cast<qint64>(line) == totalNewlines_ + 1) {
+    return size();
+  }
+  return lineStartOffset(line + 1) - 1;
+}
+
+int PieceTable::lineCount() const {
+  return static_cast<int>(qMin<qint64>(totalNewlines_ + 1, std::numeric_limits<int>::max()));
+}
+
+int PieceTable::wordCount() const {
+  return static_cast<int>(qMin<qint64>(totalWords_, std::numeric_limits<int>::max()));
 }
 
 }  // namespace muffin

@@ -33,9 +33,7 @@ int countWords(QStringView text) {
 }
 
 int countWords(const PieceTable& text) {
-  WordCounter counter;
-  text.forEachChunk([&counter](QStringView chunk) { counter.append(chunk); });
-  return counter.count();
+  return text.wordCount();
 }
 
 }  // namespace muffin::text_stats

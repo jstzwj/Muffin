@@ -864,6 +864,7 @@ void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector
       }
     }
   }
+  pendingMarkerOffsets_ = collectPendingMarkerOffsets(QStringView(*sharedText), document_.root());
   emit parsed(lastParseElapsedMs_);
 }
 
@@ -900,6 +901,7 @@ void muffin::DocumentSession::finishAsyncParse() {
       }
     }
   }
+  pendingMarkerOffsets_ = collectPendingMarkerOffsets(QStringView(*sharedText), document_.root());
   emit parsed(lastParseElapsedMs_);
   emit documentTextChanged(pendingText_);
   emit parseBusy(false);
@@ -996,6 +998,8 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
       }
     }
   }
+  const QVector<qsizetype> slicePendingMarkerOffsets =
+      collectPendingMarkerOffsets(QStringView(sliceMarkdown), *parsedSlice.root);
   const auto sharedSliceText = std::make_shared<const QString>(sliceMarkdown);
 
   std::vector<std::unique_ptr<MarkdownNode>> replacements;
@@ -1056,17 +1060,32 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(
     PerfTimer shiftSuffixPerf("session.local.shiftSuffix");
     const int editLineDelta = countNewlines(QStringView(replacementText)) - countNewlines(oldText.mid(sourceStart, sourceEnd - sourceStart));
     const qsizetype firstFollowing = slice.first + slice.count;
-    auto& existingBlocks = document_.root().children();
-    // Block-relative offsets: only each suffix top-level block's OWN sourceRange shifts
-    // (descendants are relative to it and stay invariant). O(num top-level blocks), no recursion —
-    // replaces the old O(all suffix nodes+inlines) shiftRanges sweep. shiftOwnSourceRange mutates
-    // metadata_ in place (no SourceRange struct copy-out/copy-in per block).
-    for (qsizetype i = firstFollowing; i < static_cast<qsizetype>(existingBlocks.size()); ++i) {
-      existingBlocks.at(static_cast<size_t>(i))->shiftOwnSourceRange(editDelta, editLineDelta);
-    }
+    const auto& existingBlocks = document_.root().children();
+    // Descendants are block-relative and invariant. The implicit position tree applies this
+    // suffix delta lazily in O(log n), including across later top-level insert/remove splices.
+    document_.shiftTopLevelSuffix(firstFollowing, editDelta, editLineDelta);
     qCDebug(sessionPerf).nospace() << "session.local.shiftSuffixCount n="
         << (static_cast<qsizetype>(existingBlocks.size()) - firstFollowing);
   }
+
+  QVector<qsizetype> nextPendingMarkerOffsets;
+  nextPendingMarkerOffsets.reserve(
+      pendingMarkerOffsets_.size() + slicePendingMarkerOffsets.size());
+  for (const qsizetype offset : pendingMarkerOffsets_) {
+    if (offset < slice.sourceStart) {
+      nextPendingMarkerOffsets.push_back(offset);
+    } else if (offset >= slice.sourceEnd) {
+      nextPendingMarkerOffsets.push_back(offset + editDelta);
+    }
+  }
+  for (const qsizetype offset : slicePendingMarkerOffsets) {
+    nextPendingMarkerOffsets.push_back(slice.sourceStart + offset);
+  }
+  std::sort(nextPendingMarkerOffsets.begin(), nextPendingMarkerOffsets.end());
+  nextPendingMarkerOffsets.erase(
+      std::unique(nextPendingMarkerOffsets.begin(), nextPendingMarkerOffsets.end()),
+      nextPendingMarkerOffsets.end());
+  pendingMarkerOffsets_ = std::move(nextPendingMarkerOffsets);
 
   document_.replaceTopLevelRange(slice.first, slice.count, std::move(replacements), sourceStart, sourceEnd, replacementText);
   lastLocalTopLevelRangeChange_ = {slice.first, slice.count, replacementCount, document_.revision()};

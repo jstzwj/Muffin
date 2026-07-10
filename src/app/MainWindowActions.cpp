@@ -91,17 +91,14 @@ void muffin::MainWindow::updateRenderCursorStatus(const HitTestResult& hit) {
     const int column = lineStart >= 0 ? static_cast<int>(hit.textOffset - lineStart) + 1 : 1;
     renderCursorStatus_ = QStringLiteral("%1:%2").arg(line).arg(column);
   }
-  updateBlockSourceLabel(hit);
-  updateContextActions();
-  updateStatus();
+  scheduleEditorStateRefresh();
 }
 
 void muffin::MainWindow::updateBlockSourceLabel(const HitTestResult& hit) {
   if (!statusBar_) {
     return;
   }
-  const bool enabled = QSettings().value(QStringLiteral("editor/showBlockSource"), false).toBool();
-  if (!enabled || !backend_ || backend_->isSourceMode() || !hit.isValid()) {
+  if (!showBlockSourceEnabled_ || !backend_ || backend_->isSourceMode() || !hit.isValid()) {
     statusBar_->setBlockSource(QString(), QString());
     return;
   }
@@ -143,9 +140,8 @@ void muffin::MainWindow::syncSourceEditorIfNeeded() {
 void muffin::MainWindow::scheduleWordCountUpdate() {
   wordCountDirty_ = true;
   if (wordCountTimer_) {
-    // Restart on every call so the O(document) word count runs only after typing pauses (250ms),
-    // not every 250ms mid-burst. The old !isActive gate fired it periodically during continuous
-    // typing — an O(doc) hitch (countWords scans every QChar) that stuttered large documents.
+    // PieceTable maintains this count incrementally. The debounce coalesces status repaints; the
+    // callback itself is O(1), independent of document size.
     wordCountTimer_->start();
   }
 }

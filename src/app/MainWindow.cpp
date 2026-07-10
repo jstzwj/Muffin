@@ -103,6 +103,7 @@ muffin::MainWindow::MainWindow(QWidget* parent)
   setupStatusBar();
   setupConnections();
   loadAppearanceSettings();
+  showBlockSourceEnabled_ = QSettings().value(QStringLiteral("editor/showBlockSource"), false).toBool();
   // Apply markdown parse preferences (markdown/autoLink, markdown/inlineMath, ...) before the first
   // real parse. parseOptions_ defaults to all-on, so this is a no-op re-parse unless the user has
   // disabled an extension.
@@ -264,8 +265,8 @@ void muffin::MainWindow::setupStatusBar() {
   wordCountTimer_->setInterval(250);
   connect(wordCountTimer_, &QTimer::timeout, this, &muffin::MainWindow::updateWordCountNow);
 
-  // Outline refresh is debounced for local edits so typing in a large document does not trigger a
-  // full-tree heading walk (collectHeadings) on every keystroke. Full parses refresh immediately.
+  // Only heading-index revisions schedule this debounce; paragraph typing does no outline work.
+  // Full parses refresh immediately.
   outlineTimer_ = new QTimer(this);
   outlineTimer_->setSingleShot(true);
   outlineTimer_->setInterval(200);
@@ -328,7 +329,7 @@ void muffin::MainWindow::updateStatus() {
 void muffin::MainWindow::updateCursorStatus(int line, int column) {
   cursorLine_ = line;
   cursorColumn_ = column;
-  updateStatus();
+  scheduleEditorStateRefresh();
 }
 
 void muffin::MainWindow::updateSidebarMode() {
@@ -418,7 +419,8 @@ void muffin::MainWindow::refreshSidebarOutline() {
       sidebar_->panel() != SidebarWidget::Panel::Outline) {
     return;
   }
-  sidebar_->setOutline(buildOutline(session_.document()));
+  sidebar_->setOutline(session_.document().outline());
+  sidebarOutlineRevision_ = session_.document().outlineRevision();
   outlineDirty_ = false;
 }
 
