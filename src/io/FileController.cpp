@@ -7,6 +7,7 @@
 #include <QSettings>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QHash>
 #include <QMessageBox>
 #include <QSaveFile>
 #include <QStringConverter>
@@ -115,6 +116,69 @@ bool looksLikeWesternSingleByteText(const QByteArray& bytes) {
       highBytes * 4 <= bytes.size();
 }
 
+bool decodeWindows1252(const QByteArray& bytes, QString* text) {
+  static constexpr char16_t kC1Mapping[32] = {
+      0x20ac, 0x0000, 0x201a, 0x0192, 0x201e, 0x2026, 0x2020, 0x2021,
+      0x02c6, 0x2030, 0x0160, 0x2039, 0x0152, 0x0000, 0x017d, 0x0000,
+      0x0000, 0x2018, 0x2019, 0x201c, 0x201d, 0x2022, 0x2013, 0x2014,
+      0x02dc, 0x2122, 0x0161, 0x203a, 0x0153, 0x0000, 0x017e, 0x0178};
+
+  QString decoded;
+  decoded.reserve(bytes.size());
+  for (const unsigned char byte : bytes) {
+    if (byte >= 0x80 && byte <= 0x9f) {
+      const char16_t mapped = kC1Mapping[byte - 0x80];
+      if (mapped == 0) return false;  // Undefined Windows-1252 byte: preserve lossless detection.
+      decoded.append(QChar(mapped));
+    } else {
+      decoded.append(QChar(byte));
+    }
+  }
+  *text = std::move(decoded);
+  return true;
+}
+
+bool encodeWindows1252(QStringView text, QByteArray* bytes) {
+  static const QHash<char16_t, unsigned char> kSpecialBytes = {
+      {0x20ac, 0x80}, {0x201a, 0x82}, {0x0192, 0x83}, {0x201e, 0x84},
+      {0x2026, 0x85}, {0x2020, 0x86}, {0x2021, 0x87}, {0x02c6, 0x88},
+      {0x2030, 0x89}, {0x0160, 0x8a}, {0x2039, 0x8b}, {0x0152, 0x8c},
+      {0x017d, 0x8e}, {0x2018, 0x91}, {0x2019, 0x92}, {0x201c, 0x93},
+      {0x201d, 0x94}, {0x2022, 0x95}, {0x2013, 0x96}, {0x2014, 0x97},
+      {0x02dc, 0x98}, {0x2122, 0x99}, {0x0161, 0x9a}, {0x203a, 0x9b},
+      {0x0153, 0x9c}, {0x017e, 0x9e}, {0x0178, 0x9f}};
+
+  QByteArray encoded;
+  encoded.reserve(text.size());
+  for (QChar ch : text) {
+    const char16_t value = ch.unicode();
+    if (value <= 0x7f || (value >= 0x00a0 && value <= 0x00ff)) {
+      encoded.append(static_cast<char>(value));
+      continue;
+    }
+    const auto special = kSpecialBytes.constFind(value);
+    if (special == kSpecialBytes.cend()) return false;
+    encoded.append(static_cast<char>(special.value()));
+  }
+  *bytes = std::move(encoded);
+  return true;
+}
+
+bool decodeLegacyText(
+    const QByteArray& bytes, const QString& encodingName, QString* text) {
+  if (encodingName.compare(QStringLiteral("windows-1252"), Qt::CaseInsensitive) == 0) {
+    return decodeWindows1252(bytes, text);
+  }
+  return decodeWithIcu(bytes, encodingName, text);
+}
+
+bool encodeLegacyText(const QString& text, const QString& encodingName, QByteArray* bytes) {
+  if (encodingName.compare(QStringLiteral("windows-1252"), Qt::CaseInsensitive) == 0) {
+    return encodeWindows1252(text, bytes);
+  }
+  return encodeWithIcu(text, encodingName, bytes);
+}
+
 bool decodeText(const QByteArray& raw, const QString& requestedEncoding,
                 QString* text, muffin::TextFileFormat* format) {
   QByteArray payload = raw;
@@ -152,8 +216,7 @@ bool decodeText(const QByteArray& raw, const QString& requestedEncoding,
       if (!utf8.hasError()) {
         encoding = QStringLiteral("UTF-8");
         *text = decoded;
-      } else if (looksLikeWesternSingleByteText(payload) &&
-                 decodeWithIcu(payload, QStringLiteral("windows-1252"), text)) {
+      } else if (looksLikeWesternSingleByteText(payload) && decodeWindows1252(payload, text)) {
         encoding = QStringLiteral("windows-1252");
       } else {
         UErrorCode status = U_ZERO_ERROR;
@@ -166,7 +229,7 @@ bool decodeText(const QByteArray& raw, const QString& requestedEncoding,
         ucsdet_close(detector);
         if (encoding.isEmpty() || !decodeWithIcu(payload, encoding, text)) { return false; }
       }
-    } else if (!decodeWithIcu(payload, encoding, text)) {
+    } else if (!decodeLegacyText(payload, encoding, text)) {
       return false;
     }
   }
@@ -431,7 +494,7 @@ bool muffin::FileController::writeTextFile(
   QByteArray encoded;
   if (format.encodingName.compare(QStringLiteral("UTF-8"), Qt::CaseInsensitive) == 0) {
     encoded = diskText.toUtf8();
-  } else if (!encodeWithIcu(diskText, format.encodingName, &encoded)) {
+  } else if (!encodeLegacyText(diskText, format.encodingName, &encoded)) {
     QMessageBox::critical(parent, tr("Encoding Error"),
                           tr("The document cannot be encoded as %1.").arg(format.encodingName));
     file.cancelWriting();

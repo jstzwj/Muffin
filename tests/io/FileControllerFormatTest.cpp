@@ -65,10 +65,13 @@ void testLegacyEncodingRoundTrips(const QString& path) {
   FileController controller;
   require(controller.open(session, nullptr, path), QStringLiteral("Could not open legacy file"));
   waitForParse(session);
-  require(session.markdownText().toString().startsWith(QStringLiteral("caf\u00e9")),
-          QStringLiteral("Legacy text was not decoded"));
-  require(session.fileFormat().encodingName.compare(QStringLiteral("UTF-8"), Qt::CaseInsensitive) != 0,
-          QStringLiteral("Legacy file was incorrectly classified as UTF-8"));
+  const QString decoded = session.markdownText().toString();
+  const QString encoding = session.fileFormat().encodingName;
+  require(decoded.startsWith(QStringLiteral("caf\u00e9")),
+          QStringLiteral("Legacy text was not decoded: encoding=%1, utf8=%2")
+              .arg(encoding, QString::fromLatin1(decoded.toUtf8().toHex())));
+  require(encoding.compare(QStringLiteral("windows-1252"), Qt::CaseInsensitive) == 0,
+          QStringLiteral("Legacy file was classified as %1 instead of windows-1252").arg(encoding));
   session.setMarkdownText(QStringLiteral("caf\u00e9\nfin"), true);
   require(controller.save(session, nullptr) == SaveOutcome::Saved,
           QStringLiteral("Could not save legacy file"));
@@ -76,6 +79,30 @@ void testLegacyEncodingRoundTrips(const QString& path) {
   require(saved.contains(QByteArray("\xe9", 1)), QStringLiteral("Legacy encoding was not preserved"));
   require(!saved.contains(QByteArray::fromHex("c3a9")), QStringLiteral("Legacy file was silently converted to UTF-8"));
   require(saved.contains("\r\n"), QStringLiteral("CRLF was not preserved"));
+}
+
+void testWindows1252PunctuationRoundTrips(const QString& path) {
+  QByteArray raw("say ", 4);
+  raw.append(QByteArray::fromHex("93"));
+  raw.append("hello");
+  raw.append(QByteArray::fromHex("94"));
+  writeBytes(path, raw);
+
+  DocumentSession session;
+  FileController controller;
+  require(controller.open(session, nullptr, path), QStringLiteral("Could not open Windows-1252 file"));
+  waitForParse(session);
+  require(session.markdownText().toString() == QStringLiteral("say \u201chello\u201d"),
+          QStringLiteral("Windows-1252 punctuation was not decoded deterministically"));
+  require(controller.reopenWithEncoding(session, nullptr, QStringLiteral("windows-1252")),
+          QStringLiteral("Could not reopen Windows-1252 file explicitly"));
+  waitForParse(session);
+  require(session.markdownText().toString() == QStringLiteral("say \u201chello\u201d"),
+          QStringLiteral("Explicit Windows-1252 decoding was not deterministic"));
+  session.setMarkdownText(session.markdownText().toString(), true);
+  require(controller.save(session, nullptr) == SaveOutcome::Saved,
+          QStringLiteral("Could not save Windows-1252 file"));
+  require(readBytes(path) == raw, QStringLiteral("Windows-1252 punctuation did not round-trip"));
 }
 
 }  // namespace
@@ -92,5 +119,6 @@ int main(int argc, char** argv) {
   require(dir.isValid(), QStringLiteral("Temp dir invalid"));
   testExistingLfFileIgnoresNewFileDefault(dir.filePath(QStringLiteral("lf.md")));
   testLegacyEncodingRoundTrips(dir.filePath(QStringLiteral("legacy.md")));
+  testWindows1252PunctuationRoundTrips(dir.filePath(QStringLiteral("windows1252.md")));
   return 0;
 }
