@@ -95,6 +95,26 @@ void normalizeLineEndings(QString* text) {
   text->replace(QLatin1Char('\r'), QLatin1Char('\n'));
 }
 
+bool looksLikeWesternSingleByteText(const QByteArray& bytes) {
+  if (bytes.isEmpty()) return false;
+  qsizetype printableAscii = 0;
+  qsizetype highBytes = 0;
+  for (const unsigned char byte : bytes) {
+    if (byte == 0) return false;
+    if (byte >= 0x80) {
+      ++highBytes;
+    } else if (byte == '\t' || byte == '\n' || byte == '\r' ||
+               (byte >= 0x20 && byte <= 0x7e)) {
+      ++printableAscii;
+    }
+  }
+  // Short Western documents are fundamentally ambiguous to statistical detectors. A mostly
+  // ASCII byte stream with sparse high bytes is the common Windows-1252 shape; East Asian
+  // multibyte encodings have a materially higher high-byte density and continue through ICU.
+  return highBytes > 0 && printableAscii * 4 >= bytes.size() * 3 &&
+      highBytes * 4 <= bytes.size();
+}
+
 bool decodeText(const QByteArray& raw, const QString& requestedEncoding,
                 QString* text, muffin::TextFileFormat* format) {
   QByteArray payload = raw;
@@ -132,6 +152,9 @@ bool decodeText(const QByteArray& raw, const QString& requestedEncoding,
       if (!utf8.hasError()) {
         encoding = QStringLiteral("UTF-8");
         *text = decoded;
+      } else if (looksLikeWesternSingleByteText(payload) &&
+                 decodeWithIcu(payload, QStringLiteral("windows-1252"), text)) {
+        encoding = QStringLiteral("windows-1252");
       } else {
         UErrorCode status = U_ZERO_ERROR;
         UCharsetDetector* detector = ucsdet_open(&status);

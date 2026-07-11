@@ -242,7 +242,7 @@ bool rangeWithin(InlineRange range, qsizetype start, qsizetype end) {
 // For "</b>", returns empty (closing tag).
 // For "<br>", "<br/>" returns "br".
 // For non-tag text, returns empty.
-QStringView extractOpeningTagName(const QString& text) {
+QStringView extractOpeningTagName(QStringView text) {
   if (text.size() < 2 || text[0] != QLatin1Char('<')) {
     return {};
   }
@@ -253,10 +253,10 @@ QStringView extractOpeningTagName(const QString& text) {
   while (end < text.size() && (text[end].isLetter() || text[end].isDigit())) {
     ++end;
   }
-  return end > 1 ? QStringView(text).mid(1, end - 1) : QStringView();
+  return end > 1 ? text.mid(1, end - 1) : QStringView();
 }
 
-QStringView extractClosingTagName(const QString& text) {
+QStringView extractClosingTagName(QStringView text) {
   if (text.size() < 3 || text[0] != QLatin1Char('<') || text[1] != QLatin1Char('/')) {
     return {};
   }
@@ -264,7 +264,7 @@ QStringView extractClosingTagName(const QString& text) {
   while (end < text.size() && (text[end].isLetter() || text[end].isDigit())) {
     ++end;
   }
-  return end > 2 ? QStringView(text).mid(2, end - 2) : QStringView();
+  return end > 2 ? text.mid(2, end - 2) : QStringView();
 }
 
 // Extract a named attribute value from raw HTML tag text.
@@ -936,7 +936,7 @@ void InlineProjection::appendInlines(BuildState& state, const QVector<InlineNode
     // Try to group inline HTML sequences into a single renderable unit.
     if (node.type() == InlineType::HtmlInline) {
       // Handle standalone <img> tags as inline images (same as Markdown ![alt](src))
-      const QStringView imgTagName = extractOpeningTagName(node.text());
+      const QStringView imgTagName = extractOpeningTagName(node.textView());
       if (imgTagName.compare(u"img", Qt::CaseInsensitive) == 0) {
         if (appendHtmlImageAtom(state, node.text(), nodeStart, nodeEnd, nodeStart, nodeEnd)) {
           searchFrom = nodeEnd;
@@ -1038,7 +1038,7 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
                                                qsizetype nodeStart, qsizetype sourceEnd, qsizetype& searchFrom,
                                                QVector<HtmlInlineFormatData>& htmlFormatData) {
   const InlineNode& openNode = inlines[index];
-  const QString& openText = openNode.text();
+  const QStringView openText = openNode.textView();
 
   // <br> is handled in appendInlines (gray markup + line break) and never reaches
   // this grouping path, so only paired renderable tags are considered here.
@@ -1053,7 +1053,7 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
   int closeIndex = -1;
   for (int j = index + 1; j < inlines.size(); ++j) {
     if (inlines[j].type() == InlineType::HtmlInline) {
-      const QStringView closingName = extractClosingTagName(inlines[j].text());
+      const QStringView closingName = extractClosingTagName(inlines[j].textView());
       if (closingName.compare(tagName, Qt::CaseInsensitive) == 0) {
         closeIndex = j;
         break;
@@ -1176,7 +1176,7 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
       for (int j = index + 1; j < closeIndex; ++j) {
         const InlineNode& mid = inlines[j];
         if (mid.type() == InlineType::HtmlInline) {
-          const QStringView midTag = extractOpeningTagName(mid.text());
+          const QStringView midTag = extractOpeningTagName(mid.textView());
           if (midTag.compare(u"img", Qt::CaseInsensitive) == 0) {
             appendedImage = appendHtmlImageAtom(state, mid.text(), openStart, closeEnd, openEnd, closeNodeStart) || appendedImage;
           }
