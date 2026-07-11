@@ -706,7 +706,7 @@ void muffin::DocumentSession::applyMarkdownText(QString text, bool modified, QVe
 }
 
 bool muffin::DocumentSession::isAsyncParseInProgress() const {
-  return parseWatcher_ != nullptr && parseWatcher_->isRunning();
+  return asyncParsePending_;
 }
 
 bool muffin::DocumentSession::applyTextDelta(
@@ -827,6 +827,7 @@ void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector
     pendingDemoteAtOffsets_ = std::move(demoteAtOffsets);
     const ParseOptions options = parseOptions_;
     launchGeneration_ = parseGeneration_;
+    asyncParsePending_ = true;
     emit parseBusy(true);
     parseWatcher_->setFuture(QtConcurrent::run(
         [text = std::move(text), options, this]() -> std::shared_ptr<ParseResult> {
@@ -872,6 +873,7 @@ void muffin::DocumentSession::finishAsyncParse() {
   // A newer parse/edit may have landed while this worker ran; its result would clobber the live
   // document, so discard it. (The worker still ran to completion — cmark isn't cancellable.)
   if (launchGeneration_ != parseGeneration_) {
+    asyncParsePending_ = false;
     emit parseBusy(false);
     return;
   }
@@ -902,6 +904,7 @@ void muffin::DocumentSession::finishAsyncParse() {
     }
   }
   pendingMarkerOffsets_ = collectPendingMarkerOffsets(QStringView(*sharedText), document_.root());
+  asyncParsePending_ = false;
   emit parsed(lastParseElapsedMs_);
   emit documentTextChanged(pendingText_);
   emit parseBusy(false);

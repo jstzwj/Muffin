@@ -138,6 +138,10 @@ private:
   // Async open-parse state. Only the FileController::open path passes async=true; everything else
   // runs the synchronous code path unchanged.
   QFutureWatcher<std::shared_ptr<ParseResult>>* parseWatcher_ = nullptr;
+  // Covers the complete async-open transaction, including the interval after the worker finishes
+  // but before its queued `finished` slot commits pendingText_ on the GUI thread. QFutureWatcher's
+  // isRunning() does not cover that interval, so it cannot safely gate editing or saving.
+  bool asyncParsePending_ = false;
   quint64 parseGeneration_ = 0;   // bumped on every parseAndStore + local edit; supersedes in-flight workers
   quint64 launchGeneration_ = 0;  // generation captured when the current worker was launched
   QString pendingText_;           // text held for the GUI-thread finish step

@@ -6,6 +6,7 @@
 #include <QCoreApplication>
 #include <QEventLoop>
 #include <QObject>
+#include <QThread>
 #include <QTimer>
 
 using namespace muffin;
@@ -55,6 +56,31 @@ void testOpenDocumentAsyncEmitsParseBusy() {
 
   require(sawBusy, "openDocumentAsync should signal parseBusy(true) on launch");
   require(sawIdle, "finishAsyncParse should signal parseBusy(false) on completion");
+}
+
+// A finished worker is not a finished open: its result is installed by a queued GUI-thread slot.
+// Keep the GUI thread blocked long enough for a tiny parse to finish and verify that the session
+// remains busy until that slot has committed the new document.
+void testAsyncStateCoversPendingGuiCommit() {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("old\n"), false);
+
+  QEventLoop loop;
+  QObject::connect(&session, &DocumentSession::parsed, [&loop](qint64) { loop.quit(); });
+  session.openDocumentAsync(QStringLiteral("new\n"));
+  QThread::msleep(100);
+
+  require(session.isAsyncParseInProgress(),
+          "async open must remain busy until the GUI thread commits the worker result");
+  require(session.markdownText().toString() == QStringLiteral("old\n"),
+          "the live document should remain unchanged before the GUI commit");
+
+  QTimer::singleShot(5000, &loop, &QEventLoop::quit);
+  loop.exec();
+  require(!session.isAsyncParseInProgress(),
+          "async open should become idle after the GUI commit");
+  require(session.markdownText().toString() == QStringLiteral("new\n"),
+          "the GUI commit should install the worker result");
 }
 
 // A second open supersedes the first: only the latest text survives (the stale worker's result is
@@ -126,6 +152,7 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testOpenDocumentAsyncEmitsParsed);
   RUN_TEST(testOpenDocumentAsyncEmitsParseBusy);
+  RUN_TEST(testAsyncStateCoversPendingGuiCommit);
   RUN_TEST(testOpenDocumentAsyncSupersedesInFlight);
   RUN_TEST(testApplyTextDeltaRejectedWhileAsyncInFlight);
 #undef RUN_TEST
