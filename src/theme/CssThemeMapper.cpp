@@ -1183,12 +1183,13 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
     // (previously only reachable via --muffin-*).
     gap(&ThemeColors::chromeBackground,    {"--side-bar-bg-color"});
     gap(&ThemeColors::surface,             {"--side-bar-bg-color"});
-    // chromeText is the general UI/control text colour → --control-text-color.
-    // NOT --active-file-text-color: that's the text of the *highlighted* active
-    // file item (typically white-on-highlight), which would make all menu text
-    // white/invisible (e.g. newsprint sets it to `white`).
-    gap(&ThemeColors::chromeText,          {"--control-text-color"});
-    gap(&ThemeColors::chromeMuted,         {"--text-color-secondary", "--text-color-tertiary"});
+    // Typora's --control-text-color is secondary UI ink (sidebar controls and
+    // captions), not primary navigation text. Mapping it to chromeText made the
+    // GitHub menu #777 instead of its primary #333. Leave chromeText unset so
+    // deriveChromeDefaults takes the document's primary text; a theme that needs
+    // a distinct primary chrome colour can declare --muffin-chrome-text.
+    gap(&ThemeColors::chromeMuted,
+        {"--control-text-color", "--text-color-secondary", "--text-color-tertiary"});
     gap(&ThemeColors::hover,               {"--item-hover-bg-color"});
     gap(&ThemeColors::selected,            {"--active-file-bg-color"});
   }

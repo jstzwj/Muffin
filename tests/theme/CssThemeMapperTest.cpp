@@ -329,8 +329,10 @@ void testPureVariableTheme() {
           QStringLiteral("hover should come from --item-hover-bg-color"));
   require(d.colors.selected.name(QColor::HexRgb) == QStringLiteral("#11203a"),
           QStringLiteral("selected should come from --active-file-bg-color"));
-  require(d.colors.chromeText.name(QColor::HexRgb) == QStringLiteral("#c8d3e5"),
-          QStringLiteral("chrome text should come from --control-text-color (NOT --active-file-text-color, which is the active-item highlight text)"));
+  require(d.colors.chromeText.name(QColor::HexRgb) == QStringLiteral("#d6deeb"),
+          QStringLiteral("primary chrome text should derive from the document text"));
+  require(d.colors.chromeMuted.name(QColor::HexRgb) == QStringLiteral("#c8d3e5"),
+          QStringLiteral("--control-text-color should map to secondary chrome text"));
   require(d.colors.isDark == true, QStringLiteral("dark --bg-color should set isDark"));
 }
 

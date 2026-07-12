@@ -32,24 +32,22 @@ QString accentSelectionTint(const ThemeColors& c) {
 
 QString mainWindowStyleSheet(const ThemeDefinition& d) {
   const ThemeColors& c = d.colors;
-  // %8 is the document text colour, used for the menu bar + popup menu items.
-  // Those are primary chrome navigation, so they read in the theme's body ink
-  // (matches common Markdown editors, whose header / megamenu inherits the body colour) — NOT the
-  // muted --control-text-color, which themes reserve for the sidebar (github sets
-  // it to #777, which reads as washed-out pale grey on a menu bar).
+  // Menu labels are primary application chrome, so they use chromeText. Keep the
+  // colour on the item subcontrols too: QSS inheritance into QMenu::item and
+  // QMenuBar::item varies by platform style, while an explicit colour is stable.
   return QStringLiteral(
       "QMainWindow { background: %1; }"
-      "QMenuBar { background: %1; color: %8; padding: 0; font-size: 13px; }"
-      "QMenuBar::item { padding: 4px 9px; background: transparent; }"
+      "QMenuBar { background: %1; color: %2; padding: 0; font-size: 13px; }"
+      "QMenuBar::item { padding: 4px 9px; background: transparent; color: %2; }"
       "QMenuBar::item:selected { background: %3; }"
-      "QMenu { background: %4; color: %8; border: 1px solid %5; padding: 4px 0 4px 8px; }"
-      "QMenu::item { padding: 5px 34px 5px 16px; }"
+      "QMenu { background: %4; color: %2; border: 1px solid %5; padding: 4px 0 4px 8px; }"
+      "QMenu::item { padding: 5px 34px 5px 16px; color: %2; }"
       "QMenu::item:selected { background: %6; }"
-      // %9 = chromeDisabled (the body ink faded toward the page background), so
+      // %8 = chromeDisabled (the body ink faded toward the page background), so
       // disabled items read as clearly unavailable — NOT chromeMuted (%7), which
       // is only a hair lighter than the ink on light themes and also drives the
       // toolbar/sidebar's ACTIVE secondary text.
-      "QMenu::item:disabled { color: %9; }"
+      "QMenu::item:disabled { color: %8; }"
       "QToolButton { background: transparent; border: 0; color: %7; padding: 0 8px;"
       "  min-width: 22px; min-height: 18px; font-size: 13px; }"
       "QToolButton:hover { background: %3; }"
@@ -61,7 +59,6 @@ QString mainWindowStyleSheet(const ThemeDefinition& d) {
            hexRgb(c.border),
            accentSelectionTint(c),
            hexRgb(c.chromeMuted),
-           hexRgb(c.text),
            hexRgb(c.chromeDisabled));
 }
 

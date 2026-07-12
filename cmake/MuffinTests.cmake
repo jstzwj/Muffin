@@ -72,6 +72,7 @@ muffin_add_test(NAME MuffinMarkdownHtmlSerializerTest SOURCE tests/projection/Ma
 # --- theme CSS mapper (link MuffinUi; pure logic under QCoreApplication, no GUI lock) ---
 muffin_add_test(NAME MuffinCssComputedStyleEngineTest SOURCE tests/theme/CssComputedStyleEngineTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinCssThemeMapperTest SOURCE tests/theme/CssThemeMapperTest.cpp LINK MuffinUi EXTRA_SOURCES src/themes.qrc FIXTURE tests/fixtures/theme/mist-blue.css)
+muffin_add_test(NAME MuffinThemeAccessibilityTest SOURCE tests/theme/ThemeAccessibilityTest.cpp LINK MuffinUi EXTRA_SOURCES src/themes.qrc)
 
 # --- image subsystem (link MuffinUi; pure logic under QCoreApplication, no GUI lock) ---
 muffin_add_test(NAME MuffinImageInsertionPolicyTest  SOURCE tests/image/ImageInsertionPolicyTest.cpp  LINK MuffinUi)

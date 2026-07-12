@@ -166,6 +166,48 @@ int boundedScrollRange(qint64 value) {
       qint64(0), value, static_cast<qint64>(std::numeric_limits<int>::max())));
 }
 
+QColor mixColor(const QColor& from, const QColor& to, qreal amount) {
+  const qreal t = qBound<qreal>(0.0, amount, 1.0);
+  return QColor::fromRgbF(
+      from.redF() + (to.redF() - from.redF()) * t,
+      from.greenF() + (to.greenF() - from.greenF()) * t,
+      from.blueF() + (to.blueF() - from.blueF()) * t,
+      from.alphaF() + (to.alphaF() - from.alphaF()) * t);
+}
+
+qreal linearColorChannel(qreal channel) {
+  return channel <= 0.04045 ? channel / 12.92 : std::pow((channel + 0.055) / 1.055, 2.4);
+}
+
+qreal colorLuminance(const QColor& color) {
+  return 0.2126 * linearColorChannel(color.redF()) +
+         0.7152 * linearColorChannel(color.greenF()) +
+         0.0722 * linearColorChannel(color.blueF());
+}
+
+qreal colorContrast(const QColor& a, const QColor& b) {
+  const qreal lighter = qMax(colorLuminance(a), colorLuminance(b));
+  const qreal darker = qMin(colorLuminance(a), colorLuminance(b));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+QColor ensureContrast(const QColor& color, const QColor& background, qreal minimum, bool dark) {
+  if (colorContrast(color, background) >= minimum) return color;
+
+  const QColor target = dark ? QColor(Qt::white) : QColor(Qt::black);
+  qreal low = 0.0;
+  qreal high = 1.0;
+  for (int i = 0; i < 12; ++i) {
+    const qreal middle = (low + high) / 2.0;
+    if (colorContrast(mixColor(color, target, middle), background) >= minimum) {
+      high = middle;
+    } else {
+      low = middle;
+    }
+  }
+  return mixColor(color, target, high);
+}
+
 }  // namespace
 
 struct VirtualSourceEdit::LineLayout {
@@ -196,9 +238,12 @@ SourceEditorColors SourceEditorColors::fromTheme(const RenderTheme& theme) {
   colors.fence = dark ? QColor(QStringLiteral("#e0a85a")) : QColor(QStringLiteral("#8a5a00"));
   colors.quote = dark ? QColor(QStringLiteral("#8b949e")) : QColor(QStringLiteral("#7a7a7a"));
   colors.table = dark ? QColor(QStringLiteral("#6cb6ff")) : QColor(QStringLiteral("#1a60a8"));
-  colors.lineNumber = dark ? QColor(QStringLiteral("#6e7681")) : QColor(QStringLiteral("#c9cdd3"));
-  colors.gutterBackground = dark ? QColor(QStringLiteral("#191c21")) : QColor(QStringLiteral("#fafbfc"));
-  colors.currentLine = dark ? QColor(QStringLiteral("#2a3038")) : QColor(QStringLiteral("#f3f3f3"));
+  // Keep source chrome in the active theme's tonal range. The old fixed
+  // near-black gutter detached medium-dark themes such as Night from the page.
+  colors.gutterBackground = mixColor(colors.background, QColor(Qt::black), dark ? 0.08 : 0.025);
+  colors.lineNumber = ensureContrast(
+      mixColor(colors.background, colors.text, 0.65), colors.gutterBackground, 3.1, dark);
+  colors.currentLine = mixColor(colors.background, QColor(Qt::black), dark ? 0.12 : 0.04);
   colors.zeroWidthText = colors.heading;
   colors.zeroWidthBackground = dark ? QColor(QStringLiteral("#3a2230")) : QColor(QStringLiteral("#fff0f6"));
   return colors;
