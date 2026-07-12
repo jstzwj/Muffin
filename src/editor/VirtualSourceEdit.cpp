@@ -5,6 +5,7 @@
 #include "io/MuffinMime.h"
 #include "projection/SelectionSerializer.h"
 #include "spellcheck/SpellChecker.h"
+#include "theme/FontRendering.h"
 #include "theme/RenderTheme.h"
 
 #include <QApplication>
@@ -263,6 +264,7 @@ VirtualSourceEdit::VirtualSourceEdit(QWidget* parent)
   sourceFont_.setStyleHint(QFont::Monospace);
   sourceFont_.setFixedPitch(true);
   sourceFont_.setPointSizeF(13.0);
+  font_rendering::configureForScreen(sourceFont_);
   lineNumberFont_ = sourceFont_;
   lineNumberFont_.setPointSizeF(10.0);
   cursorTimer_ = new QTimer(this);
@@ -751,6 +753,7 @@ void VirtualSourceEdit::applyScrollBarStyle() {
 
 void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
   QPainter painter(viewport());
+  painter.setRenderHint(QPainter::TextAntialiasing, true);
   painter.fillRect(event->rect(), colors_.background);
   painter.fillRect(QRect(0, event->rect().top(), kGutterWidth, event->rect().height()), colors_.gutterBackground);
 
@@ -961,6 +964,7 @@ void VirtualSourceEdit::setSourceFont(QFont font) {
   sourceFont_ = std::move(font);
   sourceFont_.setStyleHint(QFont::Monospace);
   sourceFont_.setFixedPitch(true);
+  font_rendering::configureForScreen(sourceFont_);
   lineNumberFont_ = sourceFont_;
   lineNumberFont_.setPointSizeF(qMax(8.0, sourceFont_.pointSizeF() * 10.0 / 13.0));
   resetGeometryIndex(true);

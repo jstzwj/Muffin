@@ -1,11 +1,14 @@
 #include "document/DocumentSession.h"
 #include "document/MarkdownDocument.h"
+#include "html/HtmlBox.h"
+#include "html/HtmlStyleResolver.h"
 #include "parser/CmarkGfmParser.h"
 #include "render/DecorationPainter.h"
 #include "render/DocumentLayout.h"
 #include "render/BlockLayout.h"
 #include "theme/CssThemeMapper.h"
 #include "theme/CssComputedStyleEngine.h"
+#include "theme/FontRendering.h"
 #include "theme/NodeCssElement.h"
 #include "theme/RenderTheme.h"
 #include "theme/ThemeDefinition.h"
@@ -16,6 +19,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QFontDatabase>
+#include <QGlyphRun>
 #include <QImage>
 #include <QPainter>
 #include <QTextLayout>
@@ -29,6 +33,109 @@
 using namespace muffin;
 
 namespace {
+
+void testScreenFontRenderingPolicy() {
+  QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
+  font.setPointSizeF(10.5);
+  font.setWeight(QFont::Medium);
+  font.setItalic(true);
+  font.setLetterSpacing(QFont::AbsoluteSpacing, 0.25);
+  const QStringList families = font.families();
+  const qreal pointSize = font.pointSizeF();
+  const QFont::Weight weight = font.weight();
+  const bool italic = font.italic();
+  const qreal letterSpacing = font.letterSpacing();
+
+  font_rendering::configureForScreen(font);
+
+  require(font.families() == families, QStringLiteral("screen rendering policy must not replace font families"));
+  require(qAbs(font.pointSizeF() - pointSize) < 0.001,
+          QStringLiteral("screen rendering policy must not change font size"));
+  require(font.weight() == weight && font.italic() == italic,
+          QStringLiteral("screen rendering policy must not change weight or style"));
+  require(qAbs(font.letterSpacing() - letterSpacing) < 0.001,
+          QStringLiteral("screen rendering policy must not change letter spacing"));
+
+#if defined(Q_OS_WIN)
+  require(font.hintingPreference() == QFont::PreferVerticalHinting,
+          QStringLiteral("Windows screen fonts should use DirectWrite Natural-compatible hinting"));
+
+  QTextLayout layout(QStringLiteral("Typography AVATAR 0123456789"), font);
+  layout.beginLayout();
+  QTextLine line = layout.createLine();
+  require(line.isValid(), QStringLiteral("screen font sample should create a text line"));
+  line.setLineWidth(1000.0);
+  layout.endLayout();
+  bool hasFractionalGlyphPosition = false;
+  for (const QGlyphRun& run : layout.glyphRuns()) {
+    for (const QPointF& position : run.positions()) {
+      if (qAbs(position.x() - qRound(position.x())) > 0.01) {
+        hasFractionalGlyphPosition = true;
+        break;
+      }
+    }
+  }
+  require(hasFractionalGlyphPosition,
+          QStringLiteral("Windows Natural text should retain horizontal subpixel glyph positions"));
+
+  // The normal suite uses the headless offscreen plugin, which has no Windows
+  // system-font rasterizer. Exercise pixels only when this test is explicitly
+  // run with QT_QPA_PLATFORM=windows on a real DirectWrite backend.
+  if (QGuiApplication::platformName() == QStringLiteral("windows")) {
+    const auto rasterize = [](const QFont& rasterFont) {
+      QImage image(QSize(520, 72), QImage::Format_ARGB32_Premultiplied);
+      image.fill(Qt::white);
+      QPainter painter(&image);
+      painter.setRenderHint(QPainter::TextAntialiasing, true);
+      painter.setFont(rasterFont);
+      painter.setPen(Qt::black);
+      painter.drawText(QPointF(8.0, 46.0), QStringLiteral("Typography AVATAR 0123456789"));
+      return image;
+    };
+
+    QFont defaultHinted = font;
+    defaultHinted.setHintingPreference(QFont::PreferDefaultHinting);
+    const QImage naturalRaster = rasterize(font);
+    const QImage defaultRaster = rasterize(defaultHinted);
+    int changedPixels = 0;
+    int antialiasedEdgePixels = 0;
+    for (int y = 0; y < naturalRaster.height(); ++y) {
+      for (int x = 0; x < naturalRaster.width(); ++x) {
+        if (naturalRaster.pixel(x, y) != defaultRaster.pixel(x, y)) {
+          ++changedPixels;
+        }
+        const QColor pixel = naturalRaster.pixelColor(x, y);
+        const bool background = pixel.red() == 255 && pixel.green() == 255 && pixel.blue() == 255;
+        const bool solidInk = pixel.red() == 0 && pixel.green() == 0 && pixel.blue() == 0;
+        if (!background && !solidInk) {
+          ++antialiasedEdgePixels;
+        }
+      }
+    }
+    require(changedPixels > 0,
+            QStringLiteral("Natural hinting should materially change Windows small-text rasterization"));
+    require(antialiasedEdgePixels > 0,
+            QStringLiteral("Natural Windows text should retain antialiased edge coverage"));
+  }
+#endif
+}
+
+void testScreenFontRenderingReachesEveryDocumentFontPath() {
+#if defined(Q_OS_WIN)
+  const RenderTheme theme = RenderTheme::github();
+  const QVector<QFont> themeFonts{
+      theme.paragraphFont(), theme.headingFont(1), theme.codeFont(), theme.mathFont()};
+  for (const QFont& font : themeFonts) {
+    require(font.hintingPreference() == QFont::PreferVerticalHinting,
+            QStringLiteral("all theme font paths should use the Windows screen rendering policy"));
+  }
+
+  html::HtmlBox htmlBody(html::HtmlTag::Body);
+  html::HtmlStyleResolver().resolve(htmlBody, 12.0);
+  require(htmlBody.style().font.hintingPreference() == QFont::PreferVerticalHinting,
+          QStringLiteral("inline HTML fonts should use the Windows screen rendering policy"));
+#endif
+}
 
 void testThemeCodeFontFallbackOrder() {
   const RenderTheme theme = RenderTheme::github();
@@ -880,6 +987,8 @@ int main(int argc, char** argv) {
   document.setMarkdownText(markdown, std::move(parsed.root));
 
 #define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testScreenFontRenderingPolicy);
+  RUN_TEST(testScreenFontRenderingReachesEveryDocumentFontPath);
   RUN_TEST(testThemeCodeFontFallbackOrder);
   RUN_TEST(testCssFontStackPreservesPlatformAliasesBeforeCjkFallback);
   RUN_TEST(testThemeCodeHighlightPalette);

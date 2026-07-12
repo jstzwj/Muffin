@@ -1,5 +1,7 @@
 #include "html/HtmlStyleResolver.h"
 
+#include "theme/FontRendering.h"
+
 namespace muffin::html {
 
 HtmlStyleResolver::HtmlStyleResolver() = default;
@@ -37,6 +39,7 @@ void HtmlStyleResolver::resolveBox(HtmlBox& box, qreal fontSize, bool inheritCol
   } else if (!effectiveFontFamily.isEmpty()) {
     font.setFamily(effectiveFontFamily);
   }
+  font_rendering::configureForScreen(font);
 
   // Inherit color if not set
   if (!box.style().color.isValid() && inheritColor) {

@@ -1,6 +1,7 @@
 #include "app/MainWindow.h"
 
 #include "app/LanguageManager.h"
+#include "theme/FontRendering.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -80,12 +81,10 @@ int main(int argc, char *argv[]) {
   // and this makes the decoration appear immediately at launch.
   QApplication::setWindowIcon(QIcon(QStringLiteral(":/app/muffin.png")));
 
-  // Smoother chrome text (menu bar / status bar / dialogs): hint only the
-  // vertical strokes so curves and diagonal edges anti-alias instead of being
-  // grid-fitted into hard steps. This is the Qt lever closest to the smooth
-  // "anti-aliased" look of Chromium/Electron text on Windows.
+  // Keep application chrome on the same screen-rasterization policy as the
+  // document, source editor, and inline HTML text.
   QFont uiFont = QApplication::font();
-  uiFont.setHintingPreference(QFont::PreferVerticalHinting);
+  muffin::font_rendering::configureForScreen(uiFont);
   QApplication::setFont(uiFont);
 
   muffin::LanguageManager::instance().initialize();

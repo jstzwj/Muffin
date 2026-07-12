@@ -1,5 +1,7 @@
 #include "theme/RenderTheme.h"
 
+#include "theme/FontRendering.h"
+
 #include "document/MarkdownNode.h"
 #include "theme/CssComputedStyleEngine.h"
 #include "theme/CssThemeMapper.h"
@@ -581,6 +583,7 @@ QFont RenderTheme::paragraphFont() const {
   if (letterSpacing_ > 0.0) {
     font.setLetterSpacing(QFont::AbsoluteSpacing, scaled(letterSpacing_));
   }
+  font_rendering::configureForScreen(font);
   return font;
 }
 
@@ -725,6 +728,7 @@ QFont RenderTheme::codeFont() const {
   if (codeLetterSpacing_ > 0.0) {
     font.setLetterSpacing(QFont::AbsoluteSpacing, scaled(codeLetterSpacing_));
   }
+  font_rendering::configureForScreen(font);
   return font;
 }
 
@@ -740,6 +744,7 @@ QFont RenderTheme::mathFont() const {
     font.setFamily(mathFamily());
   }
   font.setPointSizeF(scaledFont(mathSizePt_ > 0.0 ? mathSizePt_ : 12.5));
+  font_rendering::configureForScreen(font);
   return font;
 }
 

@@ -818,6 +818,8 @@ set(MUFFIN_UI_SOURCES
   src/render/InlineLayout.h
   src/render/TreeSitterHighlighter.cpp
   src/render/TreeSitterHighlighter.h
+  src/theme/FontRendering.cpp
+  src/theme/FontRendering.h
   src/theme/RenderTheme.cpp
   src/theme/RenderTheme.h
   src/theme/ThemeDefinition.cpp

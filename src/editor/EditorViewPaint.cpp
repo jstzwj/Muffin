@@ -107,6 +107,8 @@ void EditorView::paintEvent(QPaintEvent* event) {
   }
 
   QPainter painter(viewport());
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  painter.setRenderHint(QPainter::TextAntialiasing, true);
   painter.setClipRegion(dirtyRegion);
   for (const QRect& rect : dirtyRegion) {
     painter.fillRect(rect, theme_.viewportBackgroundColor());
@@ -153,9 +155,6 @@ void EditorView::paintEvent(QPaintEvent* event) {
   const QRectF dirtyDocument = QRectF(dirtyBounds).translated(0, scrollY());
   const QVector<const BlockLayout*> blocks =
       layout_->visibleBlocks(dirtyDocument.intersected(visible).adjusted(0, -80, 0, 80), theme_);
-  painter.setRenderHint(QPainter::Antialiasing, true);
-  painter.setRenderHint(QPainter::TextAntialiasing, true);
-
   const NodeId activeTopLevel =
       (focusMode_ && cursorPosition_.isValid()) ? layout_->topLevelBlockIdFor(cursorPosition_.blockId) : NodeId();
 
