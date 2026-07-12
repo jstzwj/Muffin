@@ -27,15 +27,6 @@ QString firstAvailableFontFamily(std::initializer_list<QString> candidates) {
   return systemFamily.isEmpty() ? QStringLiteral("sans-serif") : systemFamily;
 }
 
-bool familyAvailable(const QString& family, const QStringList& availableFamilies) {
-  for (const QString& available : availableFamilies) {
-    if (available.compare(family, Qt::CaseInsensitive) == 0) {
-      return true;
-    }
-  }
-  return false;
-}
-
 // Resolved per-platform fallback families, each cached on first use. Used both as
 // the legacy default (when a theme supplies no font) and as the substitution tail
 // appended after a theme-supplied family so missing glyphs (CJK, symbols) resolve.
@@ -85,6 +76,38 @@ QString genericFamilyTail(const QString& generic) {
   if (lower == QStringLiteral("monospace")) { return codeFamily(); }
   return sansFamily();
 }
+
+QString availableFamilyNamed(const QString& wanted, const QStringList& available) {
+  for (const QString& family : available) {
+    if (family.compare(wanted, Qt::CaseInsensitive) == 0) { return family; }
+  }
+  return {};
+}
+
+QString platformCssFamilyAlias(const QString& requested, const QStringList& available) {
+  if (const QString exact = availableFamilyNamed(requested, available); !exact.isEmpty()) {
+    return exact;
+  }
+#if defined(Q_OS_WIN)
+  // Chromium resolves these traditional CSS/PostScript names through Windows
+  // aliases. DirectWrite via QFont::setFamilies does not, so make the same
+  // substitutions only when the concrete Windows family is installed.
+  const QString lower = requested.toLower();
+  QString target;
+  if (lower == QStringLiteral("times")) target = QStringLiteral("Times New Roman");
+  else if (lower == QStringLiteral("helvetica")) target = QStringLiteral("Arial");
+  else if (lower == QStringLiteral("courier")) target = QStringLiteral("Courier New");
+  if (!target.isEmpty()) {
+    if (const QString actual = availableFamilyNamed(target, available); !actual.isEmpty()) {
+      return actual;
+    }
+  }
+#else
+  Q_UNUSED(available);
+#endif
+  return requested;
+}
+
 QStringList themeFamilyList(const QString& raw, const QString& platformTail) {
   QStringList requested = raw.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
   for (QString& f : requested) { f = f.trimmed(); }
@@ -109,13 +132,16 @@ QStringList themeFamilyList(const QString& raw, const QString& platformTail) {
     if (const QString alias = ThemeDefinition::fontFamilyAlias(family); !alias.isEmpty()) {
       resolved = alias;
     }
-    if (familyAvailable(resolved, availableFamilies) && !out.contains(resolved, Qt::CaseInsensitive)) {
-      out << resolved;
-    }
+    resolved = platformCssFamilyAlias(resolved, availableFamilies);
+    // Keep unresolved CSS names in their declared order. Qt's font matcher owns
+    // platform aliases/substitutions (for example CSS `Times` -> Times New Roman
+    // on Windows) and per-glyph fallback. Pre-filtering against the exact names
+    // returned by QFontDatabase removes those aliases and can promote a later CJK
+    // family to the primary font for Latin text.
+    if (!out.contains(resolved, Qt::CaseInsensitive)) { out << resolved; }
   }
   if (!genericTail.isEmpty() && !out.contains(genericTail, Qt::CaseInsensitive)) { out << genericTail; }
   if (!platformTail.isEmpty() && !out.contains(platformTail, Qt::CaseInsensitive)) { out << platformTail; }
-  if (out.isEmpty()) { out = requested; }
   return out;
 }
 

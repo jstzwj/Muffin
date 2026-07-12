@@ -15,9 +15,12 @@
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
+#include <QFontDatabase>
 #include <QImage>
 #include <QPainter>
+#include <QTextLayout>
 
+#include <algorithm>
 #include <functional>
 #include <iostream>
 
@@ -507,6 +510,48 @@ void testStructuralSelectorsResolveAgainstLiveTree() {
   }
 }
 
+void testCssFontStackPreservesPlatformAliasesBeforeCjkFallback() {
+  const ThemeDefinition definition = CssThemeMapper::fromCss(
+      QStringLiteral(":root { --base-latin-font:'Definitely Missing Latin', Times; "
+                     "--base-chinese-font:FangSong; } "
+                     "#write { background:#fff; color:#222; "
+                     "font-family:var(--base-latin-font),var(--base-chinese-font),serif; }"),
+      QStringLiteral("mixed-script-font-stack"), QString());
+  const QFont font = RenderTheme::fromDefinition(definition).paragraphFont();
+  const QStringList families = font.families();
+  const int missing = families.indexOf(QStringLiteral("Definitely Missing Latin"));
+  int times = families.indexOf(QStringLiteral("Times"));
+  if (times < 0) { times = families.indexOf(QStringLiteral("Times New Roman")); }
+  const int fangSong = families.indexOf(QStringLiteral("FangSong"));
+  require(missing == 0,
+          QStringLiteral("unresolved CSS family should remain first for Qt substitution"));
+  require(times > missing && fangSong > times,
+          QStringLiteral("Latin aliases must remain ahead of the Chinese fallback"));
+#if defined(Q_OS_WIN)
+  const QStringList available = QFontDatabase::families();
+  const auto availableFamily = [&available](const QString& wanted) {
+    return std::any_of(available.cbegin(), available.cend(), [&wanted](const QString& family) {
+      return family.compare(wanted, Qt::CaseInsensitive) == 0;
+    });
+  };
+  // Conan's offscreen Qt platform has no font directory, so glyph shaping is
+  // meaningful only when the real Windows families are visible to this process.
+  if (availableFamily(QStringLiteral("Times New Roman")) && availableFamily(QStringLiteral("FangSong"))) {
+    QTextLayout layout(QStringLiteral("English"), font);
+    layout.beginLayout();
+    QTextLine line = layout.createLine();
+    require(line.isValid(), QStringLiteral("Latin regression text should create a line"));
+    line.setLineWidth(300.0);
+    layout.endLayout();
+    const QList<QGlyphRun> runs = layout.glyphRuns();
+    require(!runs.isEmpty() && runs.first().rawFont().isValid(),
+            QStringLiteral("Latin regression text should shape a valid glyph run"));
+    require(runs.first().rawFont().familyName().compare(QStringLiteral("FangSong"), Qt::CaseInsensitive) != 0,
+            QStringLiteral("Latin glyphs must not fall through to the Chinese FangSong family"));
+  }
+#endif
+}
+
 void testThemeMathFontUsesMappedMathJaxSize() {
   const ThemeDefinition definition = CssThemeMapper::fromCss(
       QStringLiteral(":root { --base-font-size:9.5pt; --math-font-size:1em; } "
@@ -836,6 +881,7 @@ int main(int argc, char** argv) {
 
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testThemeCodeFontFallbackOrder);
+  RUN_TEST(testCssFontStackPreservesPlatformAliasesBeforeCjkFallback);
   RUN_TEST(testThemeCodeHighlightPalette);
   RUN_TEST(testThemeMathFontUsesMappedMathJaxSize);
   RUN_TEST(testStaticBoxShadowBlursSpreadEdge);
