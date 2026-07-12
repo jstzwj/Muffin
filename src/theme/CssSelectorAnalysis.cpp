@@ -62,6 +62,7 @@ SelInfo analyzeSelector(const QString& selector) {
                        compound.at(j) == QLatin1Char('_'))) { ++j; }
       const QString cls = compound.mid(i, j - i).toLower();
       if (cls == QStringLiteral("md-fences")) { info.classFences = true; }
+      else if (cls == QStringLiteral("mathjax")) { info.classMathJax = true; }
       else if (cls == QStringLiteral("md-focus")) { info.mdFocus = true; }
       if (isTyporaEditorOnlyClass(cls)) { info.editorOnly = true; }
       i = j;

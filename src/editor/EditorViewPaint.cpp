@@ -126,31 +126,10 @@ void EditorView::paintEvent(QPaintEvent* event) {
   const QRectF page = layout_->pageRect(theme_, viewport()->height()).translated(0, -scrollY());
   painter.save();
   painter.setRenderHint(QPainter::Antialiasing, true);
-  if (theme_.pageShadowColor().isValid() && theme_.pageShadowBlur() > 0.0) {
-    // CSS box-shadow blur is a Gaussian falloff. We approximate it with N
-    // concentric rounded-rect shells, each grown further out and carrying an
-    // equal slice of the peak alpha. Drawn outer-first, the overdraw builds a
-    // soft core at the offset position and fades to nothing ~blur px out —
-    // instead of one hard-edged rect that, behind a translucent paper (e.g.
-    // mist-blue's rgba(248,250,253,0.58) card), read as a second panel offset
-    // below the card.
-    QColor base = theme_.pageShadowColor();
-    base.setAlpha(qMin(base.alpha(), 42));
-    const qreal peakAlphaF = base.alphaF();
-    const qreal blur = theme_.pageShadowBlur();
-    const qreal offsetY = theme_.pageShadowOffsetY();
-    const qreal r = theme_.pageBorderRadius();
-    const QRectF core = page.translated(0, offsetY);
-    painter.setPen(Qt::NoPen);
-    constexpr int kLayers = 8;
-    for (int i = kLayers; i >= 1; --i) {
-      const qreal grow = blur * (i / qreal(kLayers));
-      QColor shell = base;
-      shell.setAlphaF(peakAlphaF / kLayers);
-      painter.setBrush(shell);
-      painter.drawRoundedRect(core.adjusted(-grow, -grow, grow, grow), r + grow, r + grow);
-    }
-  }
+  DecorationPainter::paintBoxShadow(
+      painter, page, theme_.pageBorderRadius(), theme_.pageShadowColor(),
+      theme_.pageShadowOffsetX(), theme_.pageShadowOffsetY(),
+      theme_.pageShadowBlur(), theme_.pageShadowSpread());
   painter.setBrush(theme_.pageBackgroundColor());
   if (theme_.pageBorderColor().isValid() && theme_.pageBorderWidth() > 0.0) {
     painter.setPen(QPen(theme_.pageBorderColor(), theme_.pageBorderWidth()));

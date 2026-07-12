@@ -10,6 +10,7 @@ struct SelInfo {
   QString tag;            // rightmost type selector, lowercased ("body","h2",…)
   bool idWrite = false;   // rightmost compound targets #write
   bool classFences = false;  // .md-fences (community code-fence class)
+  bool classMathJax = false;  // .MathJax (Typora's rendered math host)
   bool mdFocus = false;      // .md-focus (community editor's focused/active-block class)
   QString pseudoElement;  // "selection","before","after","marker",… (without ::)
   bool hover = false;

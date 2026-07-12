@@ -81,6 +81,13 @@ void paintBlockHoverGlow(QPainter& painter, const RenderTheme& theme, const QStr
 // keyframe sample already carries the animated colour/blur).
 void paintGlow(QPainter& painter, const QRectF& rect, const QColor& color, qreal blur, qreal alpha);
 
+// Paint the first CSS outset box-shadow with its complete geometry. Unlike the
+// deliberately subdued interactive glow above, this preserves the CSS alpha and
+// spread because it is part of the theme's static box appearance.
+void paintBoxShadow(QPainter& painter, const QRectF& rect, qreal borderRadius,
+                    const QColor& color, qreal offsetX, qreal offsetY,
+                    qreal blur, qreal spread);
+
 }  // namespace DecorationPainter
 
 }  // namespace muffin

@@ -94,7 +94,8 @@ private:
 // simplified) winning-decl selection. Handles: comments, "..." / '...' strings,
 // url(...)/var(...) parens, `@import url(...)` (resolved relative to baseDir,
 // merged first, recursive, missing/remote skipped), `@media (prefers-color-
-// scheme: dark)` (marks rules), `@font-face` (family + local src captured for
+// scheme: dark)` (marks rules), static screen media (`screen`, `all`, `not print`),
+// `@font-face` (family + local src captured for
 // font registration), `:root` (→ variables), and skips other at-rules
 // (@keyframes/@page/…) by balanced-brace matching.
 class CssThemeParser {

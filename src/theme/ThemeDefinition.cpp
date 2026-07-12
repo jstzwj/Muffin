@@ -151,6 +151,7 @@ ThemeDefinition ThemeDefinition::fromJson(const QJsonObject& json, const QString
     ty.codeFont = t.value(QStringLiteral("codeFont")).toString();
     ty.mathFont = t.value(QStringLiteral("mathFont")).toString();
     ty.bodySizePt = t.value(QStringLiteral("bodySizePt")).toDouble(0.0);
+    ty.mathSizePt = t.value(QStringLiteral("mathSizePt")).toDouble(0.0);
     ty.lineHeight = t.value(QStringLiteral("lineHeight")).toDouble(0.0);
     const QJsonArray sizes = t.value(QStringLiteral("headingSizePt")).toArray();
     for (int i = 0; i < 6 && i < sizes.size(); ++i) {
@@ -241,7 +242,7 @@ QJsonObject ThemeDefinition::toJson() const {
   }
   const bool hasTypo = !(ty.bodyFont.isEmpty() && ty.headingFont.isEmpty() &&
                          ty.codeFont.isEmpty() && ty.mathFont.isEmpty() &&
-                         ty.bodySizePt == 0.0 && ty.lineHeight == 0.0 &&
+                         ty.bodySizePt == 0.0 && ty.mathSizePt == 0.0 && ty.lineHeight == 0.0 &&
                          ty.bodyAlignment == Qt::Alignment() && !anyHeadingTypography);
   if (hasTypo) {
     QJsonObject t;
@@ -250,6 +251,7 @@ QJsonObject ThemeDefinition::toJson() const {
     if (!ty.codeFont.isEmpty()) t.insert(QStringLiteral("codeFont"), ty.codeFont);
     if (!ty.mathFont.isEmpty()) t.insert(QStringLiteral("mathFont"), ty.mathFont);
     if (ty.bodySizePt != 0.0) t.insert(QStringLiteral("bodySizePt"), ty.bodySizePt);
+    if (ty.mathSizePt != 0.0) t.insert(QStringLiteral("mathSizePt"), ty.mathSizePt);
     if (ty.lineHeight != 0.0) t.insert(QStringLiteral("lineHeight"), ty.lineHeight);
     QJsonArray sizes;
     bool anySize = false;

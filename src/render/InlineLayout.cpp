@@ -171,6 +171,11 @@ void InlineLayout::build(
   codeBoxPaddingV_ = theme.inlineCodePaddingV();
   codeBoxRadius_ = theme.inlineCodeBorderRadius();
   codeBoxBorderWidth_ = theme.inlineCodeBorderWidth();
+  codeBoxShadowColor_ = theme.inlineCodeShadowColor();
+  codeBoxShadowOffsetX_ = theme.inlineCodeShadowOffsetX();
+  codeBoxShadowOffsetY_ = theme.inlineCodeShadowOffsetY();
+  codeBoxShadowBlur_ = theme.inlineCodeShadowBlur();
+  codeBoxShadowSpread_ = theme.inlineCodeShadowSpread();
   // CSS inline decorations: link ::before icon (mask-tinted SVG) + mark gradient.
   linkBeforeIcon_.clear();
   linkBeforeIconTint_ = QColor();
@@ -664,6 +669,9 @@ void InlineLayout::paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) c
           origin.y() + glyphs.top() - padV,
           qAbs(x2 - x1) + padH * 2.0,
           qMax<qreal>(1.0, glyphs.height() + padV * 2.0));
+      DecorationPainter::paintBoxShadow(
+          painter, rect, radius, codeBoxShadowColor_, codeBoxShadowOffsetX_,
+          codeBoxShadowOffsetY_, codeBoxShadowBlur_, codeBoxShadowSpread_);
       painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), radius, radius);
     }
   }

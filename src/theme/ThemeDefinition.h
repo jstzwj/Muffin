@@ -81,6 +81,7 @@ struct ThemeTypography {
   // Point sizes at the 16px / 100% reference (same scale as RenderTheme's
   // hard-coded sizes). Zero → fall back to the built-in size.
   qreal bodySizePt = 0.0;
+  qreal mathSizePt = 0.0;           // `.MathJax { font-size }`; 0 -> built-in
   qreal lineHeight = 0.0;           // unitless CSS line-height multiplier
   qreal headingSizePt[6] = {};      // h1..h6; 0 → fall back
   qreal headingLineHeight[6] = {};  // h1..h6; 0 → lineHeight/default
@@ -130,6 +131,11 @@ struct ThemeTypography {
   qreal inlineCodePaddingV = 1.0;
   qreal inlineCodeBorderRadius = 3.0;
   qreal inlineCodeBorderWidth = 0.0;
+  QColor inlineCodeShadowColor;
+  qreal inlineCodeShadowOffsetX = 0.0;
+  qreal inlineCodeShadowOffsetY = 0.0;
+  qreal inlineCodeShadowBlur = 0.0;
+  qreal inlineCodeShadowSpread = 0.0;
   // Phase 3c: HTML <kbd> keycap box driven by CSS `kbd`. Invalid/zero → fall
   // back to the legacy light/dark keycap heuristic so built-ins are unchanged.
   QColor kbdBackground;           // `kbd { background-color }`
@@ -167,8 +173,10 @@ struct ThemePage {
   bool pageMarginExplicit = false;
   qreal pageMaxWidth = 0.0;
   QColor pageShadowColor;
+  qreal pageShadowOffsetX = 0.0;
   qreal pageShadowBlur = 0.0;
   qreal pageShadowOffsetY = 0.0;
+  qreal pageShadowSpread = 0.0;
 };
 
 // Element VISUAL-BOX geometry (margin/padding/border/radius/fit-content of p,

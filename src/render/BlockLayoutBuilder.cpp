@@ -58,6 +58,25 @@ bool hasHeadingAfterDecoration(const RenderTheme& theme, int level) {
   return false;
 }
 
+qreal measuredHeadingBeforeAdvance(const RenderTheme& theme, int level,
+                                   const QString& resolvedText, const QFont& font) {
+  const qreal fallback = theme.headingBeforeAdvance(level);
+  if (resolvedText.isEmpty()) return fallback;
+
+  qreal marginRight = 0.0;
+  const QString host = QStringLiteral("h%1").arg(level);
+  for (const PseudoElementRule& rule : theme.decorations().pseudos) {
+    if (rule.host == host && rule.pseudo == QStringLiteral("before")) {
+      marginRight = rule.marginRight;
+      break;
+    }
+  }
+  // Counter text is known at layout time, so use its exact inline advance.
+  // Keeping the mapper's 1em fallback here leaves spare space for short values
+  // such as "1" and right-aligns them away from the shared heading edge.
+  return QFontMetricsF(font).horizontalAdvance(resolvedText) + marginRight;
+}
+
 // `fast` skips the per-node structural CSS cascade (mirrors spacingBetweenBlocks' fast path): the
 // estimate path passes fast=true to resolve load-time PROTOTYPE margins (nullptr node → elementStyle,
 // O(1)) instead of elementStyleForNode (O(sibling chain) on github). estimateContainer/estimateListItem
@@ -530,7 +549,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   // A heading with an inline `::before` marker (h4/h5/h6) reserves left space for
   // it (headingBeforeAdvance); the text wraps within the remaining width. The
   // block rect stays full width so hit-test/selection geometry is unchanged.
-  const qreal beforeAdvance = node.type() == BlockType::Heading ? theme.headingBeforeAdvance(node.headingLevel()) : 0.0;
+  const qreal beforeAdvance = node.type() == BlockType::Heading
+      ? measuredHeadingBeforeAdvance(theme, node.headingLevel(), layout->headingBeforeText(), font)
+      : 0.0;
   // Text width accounts for heading padding (+ before-marker advance) so content
   // wraps within the padded/marked area. The rect itself stays at the original x
   // position so hitTest/cursor calculations remain consistent with the paint offset.

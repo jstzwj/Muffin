@@ -4,8 +4,12 @@
 
 namespace muffin {
 
+// Convert a CSS absolute length to px using the spec's fixed 96px/in ratio.
+// Recognises px, pt, pc, in, cm, mm and Q (passed lower-cased as "q").
+qreal absoluteCssLengthToPx(qreal value, const QString& unit, bool* recognised = nullptr);
+
 // Evaluate a CSS `calc(<expr>)` expression to pixels. Supports `+ - * /`, nested
-// parentheses, and per-term units (px/pt/em/rem/%). `emPx` resolves em, `rootPx`
+// parentheses, and per-term units (absolute units plus em/rem/%). `emPx` resolves em, `rootPx`
 // resolves rem (defaults to emPx), `containingPx` resolves `%` (defaults to emPx).
 // Lenient: CSS requires consistent units on +/- and a dimensionless operand on
 // `*`/`/`, but every operand is resolved to px first and combined numerically.

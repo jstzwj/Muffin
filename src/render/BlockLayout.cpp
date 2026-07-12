@@ -1105,7 +1105,8 @@ void BlockLayout::paintInlineBlock(QPainter& painter, const RenderTheme& theme, 
       const BlockLayout::CssBoxGeometry box = cssBoxGeometry(theme);
       const QPointF textOrigin = box.inlineTextOrigin + QPointF(0, -scrollY);
       const QRectF hostRect = box.borderBox.translated(0, -scrollY);
-      const qreal beforeAdvance = theme.headingBeforeAdvance(headingLevel_);
+      const qreal beforeAdvance = qMax<qreal>(
+          0.0, box.inlineTextOrigin.x() - box.flowRect.left() - theme.headingPadding(headingLevel_).left());
       // textBounds reflects the shifted text origin so ::after anchors to the
       // real text end; contentLeftX lets an inline ::before marker place itself
       // in the reserved zone immediately before the shared text origin.

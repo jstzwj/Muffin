@@ -1,5 +1,6 @@
 #include "render/DecorationPainter.h"
 
+#include "render/Blur.h"
 #include "theme/CssThemeMapper.h"
 #include "render/Filter.h"
 #include "render/GradientPainter.h"
@@ -268,7 +269,7 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
           painter.setFont(ctx.font);
           painter.setPen(before->color.isValid() ? before->color : theme.textColor());
           painter.drawText(QRectF(zoneLeft, ctx.textBounds.top(), zoneRight - zoneLeft, ctx.textBounds.height()),
-                           Qt::AlignVCenter | Qt::AlignRight, text);
+                           Qt::AlignVCenter | Qt::AlignLeft, text);
           painter.restore();
         }
       }
@@ -395,6 +396,61 @@ void paintGlow(QPainter& painter, const QRectF& rect, const QColor& color, qreal
     painter.setBrush(shell);
     painter.drawRoundedRect(rect.adjusted(-grow, -grow, grow, grow), grow, grow);
   }
+  painter.restore();
+}
+
+void paintBoxShadow(QPainter& painter, const QRectF& rect, qreal borderRadius,
+                    const QColor& color, qreal offsetX, qreal offsetY,
+                    qreal blur, qreal spread) {
+  if (!color.isValid()) { return; }
+  if (qFuzzyIsNull(offsetX) && qFuzzyIsNull(offsetY) &&
+      qFuzzyIsNull(blur) && qFuzzyIsNull(spread)) {
+    return;
+  }
+
+  const QRectF core = rect.translated(offsetX, offsetY)
+                          .adjusted(-spread, -spread, spread, spread);
+  if (core.isEmpty()) { return; }
+
+  const qreal clampedBlur = qMax<qreal>(0.0, blur);
+  const qreal coreRadius = qMax<qreal>(0.0, borderRadius + spread);
+  if (clampedBlur <= 0.0) {
+    painter.save();
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(color);
+    painter.drawRoundedRect(core, coreRadius, coreRadius);
+    painter.restore();
+    return;
+  }
+
+  // CSS blurs the spread-expanded shape itself; drawing an opaque spread core
+  // after translucent shells creates a hard band outside the page. Render the
+  // shape into an alpha image and blur it instead. Three box passes approximate
+  // a Gaussian, matching the text/filter blur path already used by Muffin.
+  const int blurRadius = qMax(1, qRound(clampedBlur / 2.0));
+  const qreal blurExtent = blurRadius * 3.0 + 2.0;
+  QRectF paintBounds = core.adjusted(-blurExtent, -blurExtent, blurExtent, blurExtent);
+  if (painter.hasClipping()) {
+    paintBounds = paintBounds.intersected(
+        painter.clipBoundingRect().adjusted(-blurExtent, -blurExtent, blurExtent, blurExtent));
+  }
+  const QRect imageBounds = paintBounds.toAlignedRect();
+  if (imageBounds.isEmpty()) { return; }
+
+  QImage shadow(imageBounds.size(), QImage::Format_ARGB32_Premultiplied);
+  shadow.fill(Qt::transparent);
+  {
+    QPainter maskPainter(&shadow);
+    maskPainter.setRenderHint(QPainter::Antialiasing, true);
+    maskPainter.translate(-imageBounds.topLeft());
+    maskPainter.setPen(Qt::NoPen);
+    maskPainter.setBrush(color);
+    maskPainter.drawRoundedRect(core, coreRadius, coreRadius);
+  }
+  boxBlur(shadow, blurRadius);
+
+  painter.save();
+  painter.drawImage(imageBounds.topLeft(), shadow);
   painter.restore();
 }
 

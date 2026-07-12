@@ -370,28 +370,75 @@ void testTextOnlySynthesisesBackground() {
 // colour before validation instead of rejecting an otherwise valid CSS theme.
 void testBackgroundOnlySynthesisesText() {
   const char* lightCss = R"(
-:root { --link-color-light: #2e67d3; }
-#write { background-color: white; }
+:root { --link-color-light: #2e67d3; --base-font-size:9.5pt; --math-font-size:1em;
+        --set-margin:1.8cm 2cm 1.2cm 2cm !important; }
+#write { max-width:21cm; background-color:white; font-size:var(--base-font-size); }
+@media print { #write { padding:0; box-shadow:none; } }
+@media screen {
+  #write { padding:var(--set-margin); box-shadow:0 0 24px 12px #cccccc; }
+}
+@media screen and (max-width:760px) { #write { padding:22px; } }
 #write a { color: var(--link-color-light); }
+.MathJax { font-size:var(--math-font-size); }
 .footnotes-area { color: var(--text-color); }
 )";
   const ThemeDefinition light = CssThemeMapper::fromCss(
       QString::fromUtf8(lightCss), QStringLiteral("latex-like"), QString());
   require(light.valid(), QStringLiteral("a background-only light theme should be valid"));
   require(light.colors.background == QColor(Qt::white), QStringLiteral("explicit white page background"));
-  require(light.colors.text == QColor(Qt::black), QStringLiteral("light page should receive browser-like black ink"));
-  require(light.colors.chromeText == QColor(Qt::black), QStringLiteral("derived chrome should share the readable ink"));
+  require(light.colors.text == QColor(QStringLiteral("#333333")),
+          QStringLiteral("light page should inherit Typora-compatible host ink"));
+  require(light.colors.chromeText == light.colors.text,
+          QStringLiteral("derived chrome should share the readable ink"));
+  require(light.page.viewportBackground == QColor(QStringLiteral("#f3f3f3")),
+          QStringLiteral("a #write-only white page should sit on a distinct host canvas"));
+  require(qAbs(light.page.pageMaxWidth - 21.0 * 96.0 / 2.54) < 0.01,
+          QStringLiteral("LaTeX A4 max-width should resolve from cm"));
+  require(qAbs(light.page.pagePadding.left() - 2.0 * 96.0 / 2.54) < 0.01 &&
+              qAbs(light.page.pagePadding.top() - 1.8 * 96.0 / 2.54) < 0.01,
+          QStringLiteral("LaTeX page padding should resolve cm shorthand"));
+  require(light.page.pageShadowColor == QColor(QStringLiteral("#cccccc")) &&
+              qAbs(light.page.pageShadowOffsetX) < 0.01 &&
+              qAbs(light.page.pageShadowOffsetY) < 0.01 &&
+              qAbs(light.page.pageShadowBlur - 24.0) < 0.01 &&
+              qAbs(light.page.pageShadowSpread - 12.0) < 0.01,
+          QStringLiteral("LaTeX page shadow should preserve all four lengths"));
+  require(qAbs(light.typography.mathSizePt - 9.5) < 0.01,
+          QStringLiteral("MathJax 1em should inherit the #write 9.5pt font size"));
 
   const ThemeDefinition dark = CssThemeMapper::fromCss(
       QStringLiteral("#write { background:#181818; }"), QStringLiteral("dark-page"), QString());
   require(dark.valid(), QStringLiteral("a background-only dark theme should be valid"));
-  require(dark.colors.text == QColor(Qt::white), QStringLiteral("dark page should receive readable white ink"));
+  require(dark.colors.text == QColor(QStringLiteral("#dddddd")),
+          QStringLiteral("dark page should inherit Typora-compatible host ink"));
   require(dark.colors.isDark, QStringLiteral("dark background-only theme should infer dark mode"));
 
   const ThemeDefinition saturated = CssThemeMapper::fromCss(
       QStringLiteral("#write { background:#0000ff; }"), QStringLiteral("blue-page"), QString());
-  require(saturated.colors.text == QColor(Qt::white),
-          QStringLiteral("saturated blue should choose white by relative luminance, not HSL lightness"));
+  require(saturated.colors.text == QColor(QStringLiteral("#dddddd")),
+          QStringLiteral("saturated blue should choose light ink by relative luminance, not HSL lightness"));
+}
+
+void testStaticScreenMediaQueries() {
+  const char* css = R"(
+#write { background:#ffffff; color:#111111; }
+@media print { #write { color:#ff0000; padding:99px; } }
+@media only screen { #write { padding:12px 18px; } }
+@media screen and (max-width:760px) { #write { color:#222222; padding:22px; } }
+@media not print { #write { border-radius:7px; } }
+@media print, screen { #write { max-width:700px; } }
+)";
+  const ThemeDefinition d = CssThemeMapper::fromCss(
+      QString::fromUtf8(css), QStringLiteral("screen-media"), QString());
+  require(d.colors.text == QColor(QStringLiteral("#111111")),
+          QStringLiteral("print and unresolved responsive rules must not override screen ink"));
+  require(qAbs(d.page.pagePadding.left() - 18.0) < 0.01 &&
+              qAbs(d.page.pagePadding.top() - 12.0) < 0.01,
+          QStringLiteral("only screen should apply its desktop padding"));
+  require(qAbs(d.page.pageBorderRadius - 7.0) < 0.01,
+          QStringLiteral("not print should match Muffin's screen medium"));
+  require(qAbs(d.page.pageMaxWidth - 700.0) < 0.01,
+          QStringLiteral("a media list with a screen branch should match"));
 }
 
 // Regression for the pixyll "everything turns black" bug: pixyll declares
@@ -1197,6 +1244,14 @@ void testCalcEvaluation() {
           QStringLiteral("calc precedence: 10*2 - 5 = 15"));
   require(qAbs(CssThemeMapper::resolveLengthPx(QStringLiteral("calc(10px / 4)"), {}, 16.0, -1.0) - 2.5) < 0.01,
           QStringLiteral("calc(10px / 4) = 2.5"));
+  require(qAbs(CssThemeMapper::resolveLengthPx(QStringLiteral("21cm"), {}) - 21.0 * 96.0 / 2.54) < 0.01,
+          QStringLiteral("21cm uses CSS 96px/in"));
+  require(qAbs(CssThemeMapper::resolveLengthPx(QStringLiteral("calc(2cm + 10mm)"), {}) - 3.0 * 96.0 / 2.54) < 0.01,
+          QStringLiteral("absolute units work inside calc"));
+  require(qAbs(CssThemeMapper::resolveLengthPx(QStringLiteral("6pc"), {}) - 96.0) < 0.01,
+          QStringLiteral("6pc equals 1in"));
+  require(qAbs(CssThemeMapper::resolveLengthPx(QStringLiteral("101.6q"), {}) - 96.0) < 0.01,
+          QStringLiteral("101.6Q equals 1in"));
 }
 
 // conic-gradient parses to Kind::Conic with the `from <angle>` start and stops.
@@ -1426,7 +1481,8 @@ a { text-decoration:none; }
 void testInlineCodeBoxGeometry() {
   const char* css = R"(
 #write { color:#000000; }
-code { color:#00f3ff; padding:2px 6px; border-radius:6px; border:1px solid #888888; }
+code { color:#00f3ff; padding:2px 6px; border-radius:6px; border:1px solid #888888;
+       box-shadow:0 0 1px 1px #c8d3df; }
 )";
   const ThemeDefinition d = CssThemeMapper::fromCss(QString::fromUtf8(css), QStringLiteral("b"), QString());
   require(d.typography.inlineCodeTextColor.name(QColor::HexRgb) == QStringLiteral("#00f3ff"), QStringLiteral("code color should map to inline code text colour"));
@@ -1434,6 +1490,12 @@ code { color:#00f3ff; padding:2px 6px; border-radius:6px; border:1px solid #8888
   require(qAbs(d.typography.inlineCodePaddingV - 2.0) < 0.01, QStringLiteral("code padding vertical → 2px"));
   require(qAbs(d.typography.inlineCodeBorderRadius - 6.0) < 0.01, QStringLiteral("code border-radius → 6"));
   require(qAbs(d.typography.inlineCodeBorderWidth - 1.0) < 0.01, QStringLiteral("declared code border-width → 1"));
+  require(d.typography.inlineCodeShadowColor == QColor(QStringLiteral("#c8d3df")) &&
+              qAbs(d.typography.inlineCodeShadowOffsetX) < 0.01 &&
+              qAbs(d.typography.inlineCodeShadowOffsetY) < 0.01 &&
+              qAbs(d.typography.inlineCodeShadowBlur - 1.0) < 0.01 &&
+              qAbs(d.typography.inlineCodeShadowSpread - 1.0) < 0.01,
+          QStringLiteral("code box-shadow should preserve offset, blur, and spread"));
 
   const ThemeDefinition e = CssThemeMapper::fromCss(QStringLiteral("#write { color:#000000; }"),
                                                     QStringLiteral("e"), QString());
@@ -1624,6 +1686,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testCascadeBeatsVariable);
   RUN_TEST(testTextOnlySynthesisesBackground);
   RUN_TEST(testBackgroundOnlySynthesisesText);
+  RUN_TEST(testStaticScreenMediaQueries);
   RUN_TEST(testPixyllHasNoInvalidBlackProneTokens);
   RUN_TEST(testCommentsDoNotDropDeclarations);
   RUN_TEST(testWriteBeforeDoesNotLeakBackground);

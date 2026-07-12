@@ -327,6 +327,62 @@ std::vector<CssKeyframeStop> parseKeyframesStops(const QString& blockText) {
   return stops;
 }
 
+enum class ScreenMediaMatch {
+  NoMatch,
+  LightScope,
+  DarkScope,
+};
+
+// Theme CSS is evaluated for Muffin's editor surface, which is always a screen
+// medium. Resolve only queries whose truth is independent of the current
+// viewport. Width/orientation/resolution queries stay unresolved (and are
+// therefore skipped) until the theme model can evaluate them per viewport.
+// A comma-separated media list is OR: any unconditional screen branch wins.
+ScreenMediaMatch matchScreenMediaQuery(const QString& rawQuery) {
+  bool matchedDark = false;
+  for (QString query : CssThemeParser::splitTopLevelCommas(rawQuery)) {
+    query = query.simplified().toLower();
+    if (query.isEmpty()) { continue; }
+
+    if (query.startsWith(QStringLiteral("only "))) {
+      query = query.mid(5).trimmed();
+    }
+    if (query.startsWith(QStringLiteral("not "))) {
+      const QString negated = query.mid(4).trimmed();
+      if (negated == QStringLiteral("print") || negated == QStringLiteral("speech")) {
+        return ScreenMediaMatch::LightScope;
+      }
+      // `not screen`, `not all`, and feature negation do not provide an
+      // unconditional screen match.
+      continue;
+    }
+
+    QString conditions;
+    if (query == QStringLiteral("screen") || query == QStringLiteral("all")) {
+      return ScreenMediaMatch::LightScope;
+    }
+    if (query.startsWith(QStringLiteral("screen and "))) {
+      conditions = query.mid(11).trimmed();
+    } else if (query.startsWith(QStringLiteral("all and "))) {
+      conditions = query.mid(8).trimmed();
+    } else if (query.startsWith(QLatin1Char('('))) {
+      conditions = query;
+    } else {
+      // `print`, `speech`, unknown media types, and malformed queries.
+      continue;
+    }
+
+    if (conditions == QStringLiteral("(prefers-color-scheme: light)")) {
+      return ScreenMediaMatch::LightScope;
+    }
+    if (conditions == QStringLiteral("(prefers-color-scheme: dark)")) {
+      matchedDark = true;
+    }
+    // Any other feature depends on runtime environment/viewport and is skipped.
+  }
+  return matchedDark ? ScreenMediaMatch::DarkScope : ScreenMediaMatch::NoMatch;
+}
+
 // Parse top-level + @media-nested rules out of `text` into `sheet`. `baseDir`
 // is the owning CSS file's directory — used to resolve @font-face src url() to
 // absolute font paths (a font declared in an @import'd base must resolve
@@ -365,14 +421,10 @@ void parseRules(const QString& text, CssThemeSheet& sheet, bool darkScope, const
       int end = matchingBrace(text, brace, n);
       const QString blockText = text.mid(brace + 1, (end < 0 ? n : end) - (brace + 1));
       if (keyword == QLatin1String("media")) {
-        const QString query = text.mid(k, brace - k).toLower();
-        // v1 only understands colour-scheme media. Responsive media queries such
-        // as `@media (max-width:760px)` are viewport-dependent and must NOT be
-        // applied unconditionally to the desktop theme, or mobile #write rules
-        // (margin:0, padding:22px, no radius) overwrite the intended desktop card.
-        if (query.contains(QStringLiteral("prefers-color-scheme"))) {
-          const bool subDark = darkScope || query.contains(QStringLiteral("dark"));
-          parseRules(blockText, sheet, subDark, baseDir);
+        const ScreenMediaMatch match = matchScreenMediaQuery(text.mid(k, brace - k));
+        if (match != ScreenMediaMatch::NoMatch) {
+          parseRules(blockText, sheet,
+                     darkScope || match == ScreenMediaMatch::DarkScope, baseDir);
         }
       } else if (keyword == QLatin1String("font-face")) {
         // Capture family + local src font files so they can be registered with

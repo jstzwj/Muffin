@@ -7,12 +7,16 @@
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 #include "render/BlockLayout.h"
+#include "render/DecorationPainter.h"
 #include "render/DocumentLayout.h"
 #include "theme/CssThemeMapper.h"
 #include "theme/RenderTheme.h"
 #include "theme/ThemeDefinition.h"
 
 #include <QApplication>
+#include <QFontMetricsF>
+#include <QImage>
+#include <QPainter>
 
 #include <functional>
 
@@ -136,6 +140,79 @@ void testNestedHeadingInBlockquoteCounted() {
           QStringLiteral("blockquote-nested h1 → '2. ' (got '%1')").arg(layout.block(headings.at(1)->id())->headingBeforeText()));
 }
 
+void testMultiLevelCounterReservesMeasuredWidth() {
+  const QString css = QStringLiteral(
+      "#write { color:#000; counter-reset:h2 h3 h4 h5 h6; }"
+      "h2 { counter-reset:h3 h4 h5 h6; } h3 { counter-reset:h4 h5 h6; }"
+      "h4 { counter-reset:h5 h6; } h5 { counter-reset:h6; }"
+      "h2:before { counter-increment:h2; content:counter(h2); margin-right:1.2em; }"
+      "h3:before { counter-increment:h3; content:counter(h2) '.' counter(h3); margin-right:1.2em; }"
+      "h4:before { counter-increment:h4; content:counter(h2) '.' counter(h3) '.' counter(h4); margin-right:1.2em; }"
+      "h5:before { counter-increment:h5; content:counter(h2) '.' counter(h3) '.' counter(h4) '.' counter(h5); margin-right:1.2em; }"
+      "h6:before { counter-increment:h6; content:counter(h2) '.' counter(h3) '.' counter(h4) '.' counter(h5) '.' counter(h6); margin-right:1.2em; }");
+  const RenderTheme theme = RenderTheme::fromDefinition(
+      CssThemeMapper::fromCss(css, QStringLiteral("latex-counters"), QString()));
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("## A\n### B\n#### C\n##### D\n###### E\n"), false);
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+  QVector<const MarkdownNode*> headings;
+  collectHeadings(session.document().root(), headings);
+  require(headings.size() == 5, QStringLiteral("fixture should parse five headings"));
+
+  const BlockLayout* h6 = layout.block(headings.last()->id());
+  require(h6->headingBeforeText() == QStringLiteral("1.1.1.1.1"),
+          QStringLiteral("h6 should resolve the full counter chain"));
+  const qreal advance = h6->inlineTextOrigin(theme).x() - h6->rect().left() - theme.headingPadding(6).left();
+  const qreal textWidth = QFontMetricsF(theme.headingFont(6)).horizontalAdvance(h6->headingBeforeText());
+  require(advance > textWidth,
+          QStringLiteral("counter marker advance must fit measured text plus its margin"));
+
+  int commonPaintLeft = -1;
+  for (int i = 0; i < headings.size(); ++i) {
+    const int level = i + 2;
+    const BlockLayout* block = layout.block(headings.at(i)->id());
+    qreal marginRight = 0.0;
+    for (const PseudoElementRule& rule : theme.decorations().pseudos) {
+      if (rule.host == QStringLiteral("h%1").arg(level) && rule.pseudo == QStringLiteral("before")) {
+        marginRight = rule.marginRight;
+        break;
+      }
+    }
+    const qreal actualAdvance = block->inlineTextOrigin(theme).x() - block->rect().left() -
+                                theme.headingPadding(level).left();
+    const qreal expectedAdvance = QFontMetricsF(theme.headingFont(level))
+                                      .horizontalAdvance(block->headingBeforeText()) + marginRight;
+    require(qAbs(actualAdvance - expectedAdvance) < 0.01,
+            QStringLiteral("h%1 counter column should use exact text width plus margin").arg(level));
+
+    QImage markerImage(140, 50, QImage::Format_ARGB32_Premultiplied);
+    markerImage.fill(Qt::transparent);
+    {
+      QPainter painter(&markerImage);
+      DecorationPainter::PaintContext ctx;
+      ctx.headingLevel = level;
+      ctx.beforeContent = block->headingBeforeText();
+      ctx.font = theme.headingFont(level);
+      ctx.contentLeftX = 20.0;
+      ctx.textStart = QPointF(100.0, 5.0);
+      ctx.textBounds = QRectF(100.0, 5.0, 30.0, 35.0);
+      DecorationPainter::paintPseudoDecorations(
+          painter, theme, QStringLiteral("h%1").arg(level), QRectF(20.0, 5.0, 110.0, 35.0), ctx);
+    }
+    int paintedLeft = markerImage.width();
+    for (int y = 0; y < markerImage.height(); ++y) {
+      for (int x = 0; x < markerImage.width(); ++x) {
+        if (qAlpha(markerImage.pixel(x, y)) > 0) { paintedLeft = qMin(paintedLeft, x); }
+      }
+    }
+    require(paintedLeft < markerImage.width(), QStringLiteral("h%1 counter should paint pixels").arg(level));
+    if (commonPaintLeft < 0) commonPaintLeft = paintedLeft;
+    require(qAbs(paintedLeft - commonPaintLeft) <= 1,
+            QStringLiteral("h2-h6 counter text should share one left edge"));
+  }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -149,6 +226,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testLiteralContentIsFastPath);
   RUN_TEST(testSingleColonBeforeNormalizes);
   RUN_TEST(testNestedHeadingInBlockquoteCounted);
+  RUN_TEST(testMultiLevelCounterReservesMeasuredWidth);
 #undef RUN_TEST
   return 0;
 }

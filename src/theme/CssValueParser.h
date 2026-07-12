@@ -63,7 +63,7 @@ QStringList splitTopLevelSpaces(const QString& text);
 // input (and logs the offending value to themeWarn when that category is enabled).
 QColor extractColor(const QString& value, const QHash<QString, QString>& vars);
 
-// CSS length → pixels. Accepts px/pt/em/rem/%/calc()/bare-number. `rem` resolves against
+// CSS length → pixels. Accepts CSS absolute units, em/rem/%/calc()/bare-number. `rem` resolves against
 // rootPx (the root html font, 16px default — NOT the local em, which is the historic
 // 1.5×-too-big bug); `%` resolves against containingPx when supplied (pseudo width/height)
 // else against emPx. Returns 0 for unset/auto/unrecognised. Defined in CssValueParser.cpp.

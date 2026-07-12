@@ -57,6 +57,57 @@ QColor highestContrastInk(const QColor& background) {
   return relativeLuminance(background) > 0.179 ? QColor(Qt::black) : QColor(Qt::white);
 }
 
+qreal contrastRatio(const QColor& a, const QColor& b) {
+  const qreal lighter = qMax(relativeLuminance(a), relativeLuminance(b));
+  const qreal darker = qMin(relativeLuminance(a), relativeLuminance(b));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+QColor typoraHostInk(const QColor& background) {
+  const QColor candidate = relativeLuminance(background) > 0.179
+      ? QColor(QStringLiteral("#333333"))
+      : QColor(QStringLiteral("#dddddd"));
+  return contrastRatio(candidate, background) >= 4.5 ? candidate : highestContrastInk(background);
+}
+
+struct ParsedBoxShadow {
+  QColor color;
+  qreal offsetX = 0.0;
+  qreal offsetY = 0.0;
+  qreal blur = 0.0;
+  qreal spread = 0.0;
+  bool present = false;
+};
+
+ParsedBoxShadow parseFirstBoxShadow(const QString& raw,
+                                    const QHash<QString, QString>& vars,
+                                    qreal emPx) {
+  ParsedBoxShadow out;
+  const QString resolved = CssThemeParser::resolveVars(raw, vars).trimmed();
+  if (resolved.isEmpty() || resolved.compare(QStringLiteral("none"), Qt::CaseInsensitive) == 0) {
+    return out;
+  }
+
+  const QString first = CssThemeParser::splitTopLevelCommas(resolved).value(0).trimmed();
+  out.color = extractColor(first, vars);
+  static const QRegularExpression lengthToken(
+      QStringLiteral(R"(^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[a-zA-Z%]+)?$)"));
+  QVector<qreal> lengths;
+  for (const QString& token : splitTopLevelSpaces(first)) {
+    const QString value = token.trimmed();
+    if (value.compare(QStringLiteral("inset"), Qt::CaseInsensitive) == 0) { continue; }
+    if (!lengthToken.match(value).hasMatch()) { continue; }
+    lengths.push_back(lengthToPx(value, vars, emPx));
+  }
+  if (lengths.size() < 2 || !out.color.isValid()) { return out; }
+  out.offsetX = lengths.at(0);
+  out.offsetY = lengths.at(1);
+  if (lengths.size() > 2) { out.blur = qMax<qreal>(0.0, lengths.at(2)); }
+  if (lengths.size() > 3) { out.spread = lengths.at(3); }
+  out.present = true;
+  return out;
+}
+
 // isIdentChar / selectorRequiresExportContext / specificityOf live in theme/CssSelectorUtils.h
 // (shared with CssComputedStyleEngine so a fix applies to both engines at once).
 
@@ -330,6 +381,12 @@ bool isHeading(const SelInfo& s, int level) {
 }
 bool isInlineCode(const SelInfo& s) {
   return s.tag == QStringLiteral("code") || s.tag == QStringLiteral("tt") || s.tag == QStringLiteral("kbd");
+}
+bool isCodeText(const SelInfo& s) {
+  return s.tag == QStringLiteral("code") || s.tag == QStringLiteral("tt");
+}
+bool isMathJax(const SelInfo& s) {
+  return s.classMathJax;
 }
 bool isKeyboard(const SelInfo& s) {
   return s.tag == QStringLiteral("kbd");
@@ -899,12 +956,14 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   d.page.pageBorderColor = colorToken(flat, vars, borderProps, isWrite);
   d.page.pageBorderWidth = borderWidthPx(bestValue(flat, {QStringLiteral("border")}, isWrite), vars, bodyPx);
   d.page.pageBorderRadius = lengthToPx(bestValue(flat, {QStringLiteral("border-radius")}, isWrite), vars, bodyPx);
-  const QString shadowRaw = bestValue(flat, {QStringLiteral("box-shadow")}, isWrite);
-  d.page.pageShadowColor = extractColor(shadowRaw, vars);
-  const QStringList shadowParts = splitTopLevelSpaces(CssThemeParser::resolveVars(shadowRaw, vars));
-  if (shadowParts.size() >= 3) {
-    d.page.pageShadowOffsetY = lengthToPx(shadowParts.at(1), vars, bodyPx);
-    d.page.pageShadowBlur = lengthToPx(shadowParts.at(2), vars, bodyPx);
+  const ParsedBoxShadow pageShadow = parseFirstBoxShadow(
+      bestValue(flat, {QStringLiteral("box-shadow")}, isWrite), vars, documentFontPx);
+  if (pageShadow.present) {
+    d.page.pageShadowColor = pageShadow.color;
+    d.page.pageShadowOffsetX = pageShadow.offsetX;
+    d.page.pageShadowOffsetY = pageShadow.offsetY;
+    d.page.pageShadowBlur = pageShadow.blur;
+    d.page.pageShadowSpread = pageShadow.spread;
   }
 
   // Per-heading colour + the h2 accent bar (cheap decoration).
@@ -1027,6 +1086,7 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   if (fontStackLooksSerif(d.typography.bodyFont) || fontStackLooksSerif(d.typography.headingFont)) { k.serifBody = true; }
   d.typography.codeFont = firstFamily(bestValue(flat, familyProps, [](const SelInfo& s) { return isInlineCode(s) || isCodeBlock(s); }), vars);
   d.typography.bodySizePt = lengthToPt(bestValue(flat, sizeProps, isHtmlOrBody), vars, kRootEmPx);
+  d.typography.mathSizePt = lengthToPt(bestValue(flat, sizeProps, isMathJax), vars, documentFontPx);
   d.typography.bodyAlignment = parseTextAlign(bestValue(flat, alignProps, [](const SelInfo& s) {
     return isParagraphText(s) || isWrite(s) || isHtmlOrBody(s);
   }), vars);
@@ -1058,6 +1118,15 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   if (codeRadius > 0.0) { d.typography.inlineCodeBorderRadius = codeRadius; }
   const qreal codeBorderW = borderWidthPx(bestValue(flat, {QStringLiteral("border"), QStringLiteral("border-width")}, isInlineCode), vars, bodyPx);
   if (codeBorderW > 0.0) { d.typography.inlineCodeBorderWidth = codeBorderW; }
+  const ParsedBoxShadow codeShadow = parseFirstBoxShadow(
+      bestValue(flat, {QStringLiteral("box-shadow")}, isCodeText), vars, documentFontPx);
+  if (codeShadow.present) {
+    d.typography.inlineCodeShadowColor = codeShadow.color;
+    d.typography.inlineCodeShadowOffsetX = codeShadow.offsetX;
+    d.typography.inlineCodeShadowOffsetY = codeShadow.offsetY;
+    d.typography.inlineCodeShadowBlur = codeShadow.blur;
+    d.typography.inlineCodeShadowSpread = codeShadow.spread;
+  }
   // Phase 3c: HTML <kbd> keycap box from CSS `kbd`. Captured separately from
   // inline code so a theme can style the keycap distinctly (phycat gives it a
   // dark raised-key look). Reads are guarded: absent declarations leave the
@@ -1248,11 +1317,19 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   // inherited text colour. Muffin has no UA sheet beneath imported CSS, so
   // materialise a contrast-safe equivalent before validating the palette.
   if (!k.text.isValid() && k.background.isValid()) {
-    k.text = highestContrastInk(k.background);
+    k.text = typoraHostInk(k.background);
   }
   if (!k.background.isValid() && k.text.isValid()) {
     k.background = k.text.lightness() >= 128 ? QColor(0x18, 0x18, 0x18) : QColor(0xff, 0xff, 0xff);
     if (!d.page.viewportBackground.isValid()) { d.page.viewportBackground = k.background; }
+  }
+  // A #write-only background is a document card over Typora's host canvas, not
+  // a request to paint the whole viewport the same colour. Supply the missing
+  // host surface only when body/html did not explicitly paint one.
+  if (!d.page.viewportBackground.isValid() && d.page.pageBackground.isValid()) {
+    d.page.viewportBackground = relativeLuminance(d.page.pageBackground) > 0.179
+        ? QColor(QStringLiteral("#f3f3f3"))
+        : QColor(QStringLiteral("#202124"));
   }
   // Derive chrome defaults for anything still unset, then resolve isDark.
   ThemeDefinition::deriveChromeDefaults(k);

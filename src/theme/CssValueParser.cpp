@@ -413,12 +413,12 @@ qreal lengthToPt(const QString& value, const QHash<QString, QString>& vars, qrea
   bool ok = false;
   const qreal n = numStr.toDouble(&ok);
   if (!ok) { return 0.0; }
-  if (unit == QStringLiteral("px")) { return pxToPt(n); }
-  if (unit == QStringLiteral("pt")) { return n; }
+  bool absolute = false;
+  const qreal absolutePx = absoluteCssLengthToPx(n, unit, &absolute);
+  if (absolute) { return pxToPt(absolutePx); }
   if (unit == QStringLiteral("rem")) { return pxToPt(n * kRootEmPx); }
   if (unit == QStringLiteral("em")) { return pxToPt(n * emPx); }
   if (unit == QStringLiteral("%")) { return pxToPt(n / 100.0 * emPx); }
-  if (unit.isEmpty()) { return pxToPt(n); }  // bare number → treat as px
   return 0.0;
 }
 
@@ -440,8 +440,9 @@ qreal lengthToPx(const QString& value, const QHash<QString, QString>& vars, qrea
   const qreal n = resolved.left(i).toDouble(&ok);
   if (!ok) { return 0.0; }
   const QString unit = resolved.mid(i).trimmed().toLower();
-  if (unit == QStringLiteral("px") || unit.isEmpty()) { return n; }
-  if (unit == QStringLiteral("pt")) { return n * 96.0 / 72.0; }
+  bool absolute = false;
+  const qreal absolutePx = absoluteCssLengthToPx(n, unit, &absolute);
+  if (absolute) { return absolutePx; }
   if (unit == QStringLiteral("em")) { return n * emPx; }
   // CSS `rem` is the ROOT em (the html element's font, 16px by default) — NOT the
   // current element's em. When a theme sets `body { font-size: 1.5rem }` (→ 24px),

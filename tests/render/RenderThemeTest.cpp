@@ -507,6 +507,64 @@ void testStructuralSelectorsResolveAgainstLiveTree() {
   }
 }
 
+void testThemeMathFontUsesMappedMathJaxSize() {
+  const ThemeDefinition definition = CssThemeMapper::fromCss(
+      QStringLiteral(":root { --base-font-size:9.5pt; --math-font-size:1em; } "
+                     "#write { background:white; font-size:var(--base-font-size); } "
+                     ".MathJax { font-size:var(--math-font-size); }"),
+      QStringLiteral("latex-math"), QString());
+  const RenderTheme theme = RenderTheme::fromDefinition(definition);
+  require(qAbs(theme.mathFont().pointSizeF() - 9.5) < 0.01,
+          QStringLiteral("render math font should consume the mapped MathJax size"));
+}
+
+void testLatexScreenPageGeometry(const MarkdownDocument& document) {
+  const ThemeDefinition definition = CssThemeMapper::fromCss(
+      QStringLiteral(":root { --set-margin:1.8cm 2cm 1.2cm 2cm; } "
+                     "#write { max-width:21cm; background:white; } "
+                     "@media print { #write { padding:0; } } "
+                     "@media screen { #write { padding:var(--set-margin); "
+                     "box-shadow:0 0 24px 12px #ccc; } }"),
+      QStringLiteral("latex-page"), QString());
+  const RenderTheme theme = RenderTheme::fromDefinition(definition);
+  DocumentLayout layout;
+  constexpr qreal viewportWidth = 960.0;
+  layout.rebuild(document, theme, viewportWidth);
+
+  const qreal a4Width = 21.0 * 96.0 / 2.54;
+  const qreal horizontalPadding = 2.0 * 96.0 / 2.54;
+  require(qAbs(layout.pageOuterWidth() - a4Width) < 0.01,
+          QStringLiteral("LaTeX page should keep its 21cm A4 border-box width"));
+  require(qAbs(layout.pageOuterLeft() - (viewportWidth - a4Width) / 2.0) < 0.01,
+          QStringLiteral("CSS page box should be centered without the legacy offset"));
+  require(qAbs(layout.pageLeft() - (layout.pageOuterLeft() + horizontalPadding)) < 0.01,
+          QStringLiteral("content should start 2cm inside the paper"));
+  require(qAbs(layout.pageWidth() - (a4Width - horizontalPadding * 2.0)) < 0.01,
+          QStringLiteral("content width should subtract both 2cm page paddings"));
+  require(qAbs(layout.pageRect(theme, 1000.0).top()) < 0.01,
+          QStringLiteral("screen padding should suppress Muffin's legacy 30px page margin"));
+  require(!layout.promotedBlocks().isEmpty() &&
+              layout.promotedBlocks().front()->rect().top() >= 1.8 * 96.0 / 2.54 - 0.01,
+          QStringLiteral("first rendered block should begin below the 1.8cm top padding"));
+}
+
+void testStaticBoxShadowBlursSpreadEdge() {
+  QImage image(120, 80, QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::transparent);
+  {
+    QPainter painter(&image);
+    DecorationPainter::paintBoxShadow(
+        painter, QRectF(30.0, 20.0, 60.0, 40.0), 0.0,
+        QColor(QStringLiteral("#cccccc")), 0.0, 0.0, 12.0, 6.0);
+  }
+  const int nearAlpha = qAlpha(image.pixel(28, 40));
+  const int farAlpha = qAlpha(image.pixel(8, 40));
+  require(farAlpha > 0 && nearAlpha > farAlpha,
+          QStringLiteral("blurred shadow alpha should fall off with distance"));
+  require(nearAlpha < 250,
+          QStringLiteral("blurred spread edge must not become an opaque hard band"));
+}
+
 void testStructuralAdapterStaysSparseOnFlatDocuments() {
   MarkdownNode root(BlockType::Document);
   constexpr int kParagraphCount = 20000;
@@ -779,6 +837,8 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testThemeCodeFontFallbackOrder);
   RUN_TEST(testThemeCodeHighlightPalette);
+  RUN_TEST(testThemeMathFontUsesMappedMathJaxSize);
+  RUN_TEST(testStaticBoxShadowBlursSpreadEdge);
   RUN_TEST(testThemeManagerSupportsBuiltInThemes);
   RUN_TEST(testThemeTypographyWeightStyleAndAlignment);
   RUN_TEST(testFromDefinitionReproducesBuiltIns);
@@ -795,6 +855,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testStructuralHasTraversesNestedInlines);
   RUN_TEST(testStructuralCacheRefreshesSameNodeIdContent);
   RUN_TEST(testCodeBorderNeverRendersBlack);
+  runTest("testLatexScreenPageGeometry", [&] { testLatexScreenPageGeometry(document); });
   runTest("testLayoutForTheme/github", [&] { testLayoutForTheme(document, RenderTheme::github(), QStringLiteral("github")); });
   runTest("testLayoutForTheme/newsprint", [&] { testLayoutForTheme(document, RenderTheme::newsprint(), QStringLiteral("newsprint")); });
   runTest("testLayoutForTheme/night", [&] { testLayoutForTheme(document, RenderTheme::night(), QStringLiteral("night")); });

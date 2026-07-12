@@ -166,6 +166,7 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   t.codeFont_ = ty.codeFont;
   t.mathFont_ = ty.mathFont;
   t.bodySizePt_ = ty.bodySizePt;
+  t.mathSizePt_ = ty.mathSizePt;
   t.lineHeight_ = ty.lineHeight;
   t.letterSpacing_ = ty.letterSpacing;
   t.codeLetterSpacing_ = ty.codeLetterSpacing;
@@ -177,6 +178,11 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   t.inlineCodePaddingV_ = ty.inlineCodePaddingV;
   t.inlineCodeBorderRadius_ = ty.inlineCodeBorderRadius;
   t.inlineCodeBorderWidth_ = ty.inlineCodeBorderWidth;
+  t.inlineCodeShadowColor_ = ty.inlineCodeShadowColor;
+  t.inlineCodeShadowOffsetX_ = ty.inlineCodeShadowOffsetX;
+  t.inlineCodeShadowOffsetY_ = ty.inlineCodeShadowOffsetY;
+  t.inlineCodeShadowBlur_ = ty.inlineCodeShadowBlur;
+  t.inlineCodeShadowSpread_ = ty.inlineCodeShadowSpread;
   t.inlineCodeTextColor_ = ty.inlineCodeTextColor;
   t.delColor_ = ty.delColor;
   t.kbdBackground_ = ty.kbdBackground;
@@ -211,8 +217,10 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   t.pageMarginExplicit_ = definition.page.pageMarginExplicit;
   t.pageMaxWidth_ = definition.page.pageMaxWidth;
   t.pageShadowColor_ = definition.page.pageShadowColor;
+  t.pageShadowOffsetX_ = definition.page.pageShadowOffsetX;
   t.pageShadowBlur_ = definition.page.pageShadowBlur;
   t.pageShadowOffsetY_ = definition.page.pageShadowOffsetY;
+  t.pageShadowSpread_ = definition.page.pageShadowSpread;
   t.decorations_ = definition.decorations;
   t.elementStyles_ = definition.elementStyles;
   // Build the key→index lookup that elementStyle() queries on every paint. Iterate in
@@ -390,8 +398,10 @@ QMarginsF RenderTheme::pageMargin() const {
 }
 
 QColor RenderTheme::pageShadowColor() const { return pageShadowColor_; }
+qreal RenderTheme::pageShadowOffsetX() const { return scaled(pageShadowOffsetX_); }
 qreal RenderTheme::pageShadowBlur() const { return scaled(pageShadowBlur_); }
 qreal RenderTheme::pageShadowOffsetY() const { return scaled(pageShadowOffsetY_); }
+qreal RenderTheme::pageShadowSpread() const { return scaled(pageShadowSpread_); }
 
 QMarginsF RenderTheme::blockMargin(BlockType type, int headingLevel, const MarkdownNode* node) const {
   // Element box geometry for p / h1-h6 / blockquote / list comes from elementStyles;
@@ -703,7 +713,7 @@ QFont RenderTheme::mathFont() const {
   } else {
     font.setFamily(mathFamily());
   }
-  font.setPointSizeF(scaledFont(12.5));
+  font.setPointSizeF(scaledFont(mathSizePt_ > 0.0 ? mathSizePt_ : 12.5));
   return font;
 }
 
@@ -740,6 +750,11 @@ qreal RenderTheme::inlineCodePaddingH() const { return scaled(inlineCodePaddingH
 qreal RenderTheme::inlineCodePaddingV() const { return scaled(inlineCodePaddingV_); }
 qreal RenderTheme::inlineCodeBorderRadius() const { return scaled(inlineCodeBorderRadius_); }
 qreal RenderTheme::inlineCodeBorderWidth() const { return scaled(inlineCodeBorderWidth_); }
+QColor RenderTheme::inlineCodeShadowColor() const { return inlineCodeShadowColor_; }
+qreal RenderTheme::inlineCodeShadowOffsetX() const { return scaled(inlineCodeShadowOffsetX_); }
+qreal RenderTheme::inlineCodeShadowOffsetY() const { return scaled(inlineCodeShadowOffsetY_); }
+qreal RenderTheme::inlineCodeShadowBlur() const { return scaled(inlineCodeShadowBlur_); }
+qreal RenderTheme::inlineCodeShadowSpread() const { return scaled(inlineCodeShadowSpread_); }
 QColor RenderTheme::inlineCodeTextColor() const { return inlineCodeTextColor_; }
 QColor RenderTheme::delColor() const { return delColor_; }
 QColor RenderTheme::kbdBackgroundColor() const { return kbdBackground_; }

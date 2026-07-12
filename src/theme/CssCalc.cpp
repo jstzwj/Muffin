@@ -6,6 +6,21 @@
 
 namespace muffin {
 
+qreal absoluteCssLengthToPx(qreal value, const QString& unit, bool* recognised) {
+  qreal scale = 0.0;
+  bool ok = true;
+  if (unit.isEmpty() || unit == QStringLiteral("px")) scale = 1.0;
+  else if (unit == QStringLiteral("pt")) scale = 96.0 / 72.0;
+  else if (unit == QStringLiteral("pc")) scale = 16.0;
+  else if (unit == QStringLiteral("in")) scale = 96.0;
+  else if (unit == QStringLiteral("cm")) scale = 96.0 / 2.54;
+  else if (unit == QStringLiteral("mm")) scale = 96.0 / 25.4;
+  else if (unit == QStringLiteral("q")) scale = 96.0 / 101.6;
+  else ok = false;
+  if (recognised) *recognised = ok;
+  return ok ? value * scale : 0.0;
+}
+
 namespace {
 
 // Recursive-descent calc() evaluator. Grammar:
@@ -62,9 +77,10 @@ struct CalcParser {
     while (u < s.size() && (s.at(u).isLetter() || s.at(u) == QLatin1Char('%'))) { ++u; }
     const QString unit = s.mid(i, u - i).toLower();
     i = u;
-    if (unit == QStringLiteral("px") || unit.isEmpty()) { out = n; }
-    else if (unit == QStringLiteral("pt")) { out = n * 96.0 / 72.0; }
-    else if (unit == QStringLiteral("em")) { out = n * emPx; }
+    bool absolute = false;
+    out = absoluteCssLengthToPx(n, unit, &absolute);
+    if (!absolute && unit == QStringLiteral("em")) { out = n * emPx; }
+    else if (absolute) { return true; }
     else if (unit == QStringLiteral("rem")) { out = n * (rootPx > 0.0 ? rootPx : emPx); }
     else if (unit == QStringLiteral("%")) { out = n / 100.0 * (containingPx > 0.0 ? containingPx : emPx); }
     else { return false; }

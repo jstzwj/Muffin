@@ -62,8 +62,10 @@ public:
   QMarginsF pagePadding() const;
   QMarginsF pageMargin() const;
   QColor pageShadowColor() const;
+  qreal pageShadowOffsetX() const;
   qreal pageShadowBlur() const;
   qreal pageShadowOffsetY() const;
+  qreal pageShadowSpread() const;
   QMarginsF blockMargin(BlockType type, int headingLevel = 0, const MarkdownNode* node = nullptr) const;
   QMarginsF headingPadding(int level) const;
   // Phase 4a: CSS `blockquote` box (flow-aware). blockquoteBoxThemed() is the
@@ -142,6 +144,11 @@ public:
   qreal inlineCodePaddingV() const;
   qreal inlineCodeBorderRadius() const;
   qreal inlineCodeBorderWidth() const;
+  QColor inlineCodeShadowColor() const;
+  qreal inlineCodeShadowOffsetX() const;
+  qreal inlineCodeShadowOffsetY() const;
+  qreal inlineCodeShadowBlur() const;
+  qreal inlineCodeShadowSpread() const;
   QColor inlineCodeTextColor() const;
   // Phase 5: CSS `del { color }` (deleted-text colour). Invalid → inherit prose.
   QColor delColor() const;
@@ -207,6 +214,7 @@ private:
   // per-platform families / built-in sizes below, so built-in themes are unchanged.
   QString bodyFont_, headingFont_, codeFont_, mathFont_;
   qreal bodySizePt_ = 0.0;
+  qreal mathSizePt_ = 0.0;
   qreal lineHeight_ = 0.0;
   qreal letterSpacing_ = 0.0;
   qreal codeLetterSpacing_ = 0.0;
@@ -218,6 +226,11 @@ private:
   qreal inlineCodePaddingV_ = 1.0;
   qreal inlineCodeBorderRadius_ = 3.0;
   qreal inlineCodeBorderWidth_ = 0.0;
+  QColor inlineCodeShadowColor_;
+  qreal inlineCodeShadowOffsetX_ = 0.0;
+  qreal inlineCodeShadowOffsetY_ = 0.0;
+  qreal inlineCodeShadowBlur_ = 0.0;
+  qreal inlineCodeShadowSpread_ = 0.0;
   QColor inlineCodeTextColor_;
   QColor delColor_;
   QColor kbdBackground_, kbdTextColor_, kbdBorderColor_, kbdShadowColor_;
@@ -248,8 +261,10 @@ private:
   bool pageMarginExplicit_ = false;  // theme declared a #write margin (or padding→default 0)
   qreal pageMaxWidth_ = 0.0;
   QColor pageShadowColor_;
+  qreal pageShadowOffsetX_ = 0.0;
   qreal pageShadowBlur_ = 0.0;
   qreal pageShadowOffsetY_ = 0.0;
+  qreal pageShadowSpread_ = 0.0;
 
   // ::before/::after decorations (gradients, SVG icons, text content, texture
   // masks) keyed by host. Empty for themes that declare none (all built-ins).

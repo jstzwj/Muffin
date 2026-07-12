@@ -284,6 +284,11 @@ private:
   qreal codeBoxPaddingV_ = 1.0;
   qreal codeBoxRadius_ = 3.0;
   qreal codeBoxBorderWidth_ = 1.0;
+  QColor codeBoxShadowColor_;
+  qreal codeBoxShadowOffsetX_ = 0.0;
+  qreal codeBoxShadowOffsetY_ = 0.0;
+  qreal codeBoxShadowBlur_ = 0.0;
+  qreal codeBoxShadowSpread_ = 0.0;
   // CSS inline decorations (Phase 3). link ::before icon (mask-tinted SVG) +
   // mark background-image gradient. Empty/None → nothing painted.
   QByteArray linkBeforeIcon_;

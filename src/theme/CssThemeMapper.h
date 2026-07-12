@@ -46,7 +46,7 @@ public:
   // Resolve a CSS colour value (var/color-mix/rgb/hex/named) → QColor. Exposed so
   // the keyframe sampler can interpolate stop colours at paint time.
   static QColor resolveColor(const QString& value, const QHash<QString, QString>& vars);
-  // Resolve a CSS length (px/pt/em/rem/%) → pixels (emPx defaults to 16).
+  // Resolve a CSS length (absolute units/em/rem/%) → pixels (emPx defaults to 16).
   static qreal resolveLengthPx(const QString& value, const QHash<QString, QString>& vars);
   // Box-relative variant: a `%` resolves against `containingPx` (the host box's
   // dimension) instead of 1em. For paint-time resolution of pseudo width/height
