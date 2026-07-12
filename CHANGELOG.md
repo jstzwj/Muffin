@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-07-12
+
+### Added
+- **Relaxed inline math parsing** - A new Markdown preference lets inline math delimiters tolerate surrounding spaces and tabs (e.g. `$ E = mc^2 $`), so formulas wrapped in whitespace now parse correctly. The default strict mode is preserved to avoid ambiguity with currency symbols
+- **Windows-1252 encoding support** - Files in the Western European (Windows-1252) encoding are now decoded and encoded losslessly, with automatic detection on open, so legacy documents no longer arrive as mojibake or get re-saved in the wrong encoding
+- **Configurable text file format** - A unified text-file format layer now governs encoding, line-ending style, and BOM handling, giving consistent round-trip behavior across mixed-format documents
+- **CSS box-shadow rendering** - Imported themes that declare `box-shadow` on inline code, code blocks, and the page card now render real drop shadows through a shared decoration painter, instead of the shadow being silently dropped. The theme parser also gained absolute CSS length units, static media-query handling, and MathJax-style font-size/class selectors for math blocks
+- **Batch image move with reference rewriting** - Moving referenced images now rewrites their Markdown and HTML sources in one atomic pass, and a file-path migration helper keeps links valid after a containing folder is renamed
+- **Per-document draft recovery** - The draft recovery system now isolates each unsaved untitled document, so recovering after a crash or unsaved exit no longer conflates multiple drafts
+
+### Changed
+- **Virtual source editor** - The source-mode editor is rebuilt on a custom document-less widget backed directly by the PieceTable, replacing `QPlainTextEdit`. A compressed line-height index and streaming search over the PieceTable make scrolling and find/replace on very large documents dramatically smoother, with no full `QTextDocument` copy
+- **Incremental outline, layout, and source-position indexes** - Outline generation, layout offsets, and source positions now update in O(log n) per edit through implicit-tree indexes instead of walking the whole document, and word counting uses the PieceTable's built-in counter - together eliminating full-tree traversals on every keystroke
+- **Sparse structural CSS selector matcher** - Structural CSS selectors (`:nth-child`, `:has`, sibling combinators) are now resolved through a lazy sparse adapter that walks siblings on demand rather than pre-building the full document tree, speeding up rendering on long documents and removing the old stack-overflow path
+- **Inline-tag-aware line splitting** - Splitting a text block or list item across inline formatting tags now auto-closes and re-opens the tags at the break through a dedicated `InlineSplit` utility, so bold/italic/code/link formatting is preserved across the split instead of being broken
+- **Unified font rendering strategy** - Vertical-stroke hinting is now applied consistently across the editor, the rendered document text, and the chrome UI through a single shared helper, improving on-screen glyph sharpness and removing duplicated rendering setup
+- **Theme-driven chrome contrast** - Editor gutter, line-number, and menu colors are now derived from the active theme's native chrome text color instead of hardcoded values, improving contrast compliance across themes
+- **macOS default font size** - The default font size on macOS is now larger to match platform conventions; only users who have not manually set a font size are affected
+
+### Fixed
+- **HiDPI SVG icon rendering** - SVG icons (status bar glyphs, decoded SVG images) are no longer scaled and clipped to their top-left corner on high-DPI displays; an explicit target paint rectangle keeps them crisp at the intended size
+- **macOS menu roles and quit** - Menu items now declare macOS-appropriate roles (Quit, Preferences), and quitting the app closes all top-level windows through a unified path instead of being a no-op on macOS
+- **Async parse gating through the GUI commit phase** - The "parse in progress" gate now covers the GUI commit phase as well, preventing edits submitted from queued GUI events from racing an asynchronous parse and clobbering the document being loaded
+- **CJK font fallback order on Windows** - The font stack no longer drops platform font aliases (Times / Helvetica / Courier) before checking availability, so Latin aliases are honored ahead of the CJK fallback and Western text keeps its intended typeface
+- **Text color for background-only themes** - Themes that declare only a background color (e.g. themes styling only the `#write` container) now synthesize a readable foreground text color, instead of falling back to an unreadable default
+- **Heading counter alignment** - CSS `counter()` auto-numbering on headings now computes its width and alignment correctly, so multi-digit heading numbers line up
+
 ## [0.5.4] - 2026-07-09
 
 ### Added
@@ -487,6 +514,9 @@ An internal-architecture release. No user-visible behavior changes — every edi
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.5.5]: https://github.com/jstzwj/Muffin/releases/tag/v0.5.5
+[0.5.4]: https://github.com/jstzwj/Muffin/releases/tag/v0.5.4
+[0.5.3]: https://github.com/jstzwj/Muffin/releases/tag/v0.5.3
 [0.5.2]: https://github.com/jstzwj/Muffin/releases/tag/v0.5.2
 [0.5.1]: https://github.com/jstzwj/Muffin/releases/tag/v0.5.1
 [0.5.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.5.0
