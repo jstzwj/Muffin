@@ -68,6 +68,9 @@ void testParseOptionsEquality() {
   b = a;
   b.enableTable = false;
   require(!(a == b), "differing enableTable should be unequal");
+  b = a;
+  b.relaxedInlineMath = false;
+  require(!(a == b), "differing relaxedInlineMath should be unequal");
 }
 
 void testEnableMathGatesMathBlockParsing() {
@@ -142,12 +145,14 @@ void testStrictOptionsDisableExtensions() {
 void testMarkdownParseOptionsStrictModeDoesNotOverrideSwitches() {
   QSettings().setValue(QStringLiteral("markdown/strictMode"), true);
   QSettings().setValue(QStringLiteral("markdown/inlineMath"), true);
+  QSettings().setValue(QStringLiteral("markdown/relaxedInlineMath"), false);
   QSettings().setValue(QStringLiteral("markdown/autoLink"), true);
   QSettings().setValue(QStringLiteral("markdown/subscript"), true);
   QSettings().setValue(QStringLiteral("markdown/highlight"), true);
 
   const ParseOptions opts = markdownParseOptions();
   require(opts.enableMath, "strict mode must NOT disable explicitly-enabled inline math");
+  require(!opts.relaxedInlineMath, "relaxedInlineMath=false should flow through markdownParseOptions");
   require(opts.enableAutolink, "strict mode must NOT disable explicitly-enabled autolinks");
   require(opts.enableSubscript, "strict mode must NOT disable explicitly-enabled subscript");
   require(opts.enableHighlight, "strict mode must NOT disable explicitly-enabled highlight");

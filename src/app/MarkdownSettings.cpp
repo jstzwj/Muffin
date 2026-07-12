@@ -8,6 +8,7 @@ ParseOptions markdownParseOptions() {
   ParseOptions options;  // defaults match the parser: all GFM extensions + front matter on
   options.enableAutolink = QSettings().value(QStringLiteral("markdown/autoLink"), true).toBool();
   options.enableMath = QSettings().value(QStringLiteral("markdown/inlineMath"), true).toBool();
+  options.relaxedInlineMath = QSettings().value(QStringLiteral("markdown/relaxedInlineMath"), true).toBool();
   options.enableAlertBox = QSettings().value(QStringLiteral("markdown/alertBox"), true).toBool();
   options.enableHighlight = QSettings().value(QStringLiteral("markdown/highlight"), false).toBool();
   options.enableSubscript = QSettings().value(QStringLiteral("markdown/subscript"), false).toBool();

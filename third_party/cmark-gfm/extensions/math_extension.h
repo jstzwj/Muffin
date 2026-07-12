@@ -6,5 +6,6 @@
 extern cmark_node_type CMARK_NODE_INLINE_MATH, CMARK_NODE_MATH_BLOCK;
 
 cmark_syntax_extension *create_math_extension(void);
+cmark_syntax_extension *create_relaxed_math_extension(void);
 
 #endif

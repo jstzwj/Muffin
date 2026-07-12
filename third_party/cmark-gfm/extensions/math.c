@@ -9,12 +9,18 @@
 
 cmark_node_type CMARK_NODE_INLINE_MATH, CMARK_NODE_MATH_BLOCK;
 
+static int relaxed_inline_math_mode = 1;
+
 static int is_line_end(unsigned char c) {
   return c == '\n' || c == '\r';
 }
 
 static int is_space(unsigned char c) {
   return c == ' ' || c == '\t' || is_line_end(c);
+}
+
+static int is_digit(unsigned char c) {
+  return c >= '0' && c <= '9';
 }
 
 static int is_escaped(cmark_chunk *chunk, int pos) {
@@ -53,13 +59,14 @@ static cmark_node *match_inline_math(cmark_syntax_extension *self, cmark_parser 
 
   const int start = cmark_inline_parser_get_offset(inline_parser);
   cmark_chunk *chunk = cmark_inline_parser_get_chunk(inline_parser);
+  const int relaxed = cmark_syntax_extension_get_private(self) != NULL;
   if (start > 0 && chunk->data[start - 1] == '$') {
     return NULL;
   }
   if (start + 2 <= chunk->len && chunk->data[start + 1] == '$') {
     return NULL;
   }
-  if (start + 1 >= chunk->len || is_space(chunk->data[start + 1])) {
+  if (start + 1 >= chunk->len || (!relaxed && is_space(chunk->data[start + 1]))) {
     return NULL;
   }
   if (is_escaped(chunk, start)) {
@@ -76,8 +83,20 @@ static cmark_node *match_inline_math(cmark_syntax_extension *self, cmark_parser 
     if (i + 1 < chunk->len && chunk->data[i + 1] == '$') {
       continue;
     }
-    if (i == start + 1 || is_space(chunk->data[i - 1])) {
+    if (i == start + 1 || (!relaxed && is_space(chunk->data[i - 1]))) {
       continue;
+    }
+    if (!relaxed && i + 1 < chunk->len && is_digit(chunk->data[i + 1])) {
+      continue;
+    }
+    if (relaxed) {
+      int content = start + 1;
+      while (content < i && (chunk->data[content] == ' ' || chunk->data[content] == '\t')) {
+        content++;
+      }
+      if (content == i) {
+        continue;
+      }
     }
 
     cmark_chunk tex = cmark_chunk_dup(chunk, start + 1, i - start - 1);
@@ -203,13 +222,18 @@ static void html_render(cmark_syntax_extension *extension,
   }
 }
 
-cmark_syntax_extension *create_math_extension(void) {
-  cmark_syntax_extension *ext = cmark_syntax_extension_new("math");
+static cmark_syntax_extension *create_math_extension_with_mode(const char *name, int relaxed) {
+  cmark_syntax_extension *ext = cmark_syntax_extension_new(name);
   cmark_llist *special_chars = NULL;
   cmark_mem *mem = cmark_get_default_mem_allocator();
 
-  CMARK_NODE_INLINE_MATH = cmark_syntax_extension_add_node(1);
-  CMARK_NODE_MATH_BLOCK = cmark_syntax_extension_add_node(0);
+  if (CMARK_NODE_INLINE_MATH == 0) {
+    CMARK_NODE_INLINE_MATH = cmark_syntax_extension_add_node(1);
+    CMARK_NODE_MATH_BLOCK = cmark_syntax_extension_add_node(0);
+  }
+  /* Both registered extensions are process-wide. Keep their modes immutable so
+   * strict and relaxed parsers can run concurrently without shared mutation. */
+  cmark_syntax_extension_set_private(ext, relaxed ? &relaxed_inline_math_mode : NULL, NULL);
 
   cmark_syntax_extension_set_get_type_string_func(ext, get_type_string);
   cmark_syntax_extension_set_open_block_func(ext, try_opening_math_block);
@@ -226,4 +250,12 @@ cmark_syntax_extension *create_math_extension(void) {
   cmark_syntax_extension_set_special_inline_chars(ext, special_chars);
 
   return ext;
+}
+
+cmark_syntax_extension *create_math_extension(void) {
+  return create_math_extension_with_mode("math", 0);
+}
+
+cmark_syntax_extension *create_relaxed_math_extension(void) {
+  return create_math_extension_with_mode("math-relaxed", 1);
 }

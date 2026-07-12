@@ -1559,7 +1559,7 @@ void CmarkGfmParser::attachExtensions(cmark_parser* parser, const ParseOptions& 
   // if (options.enableStrikethrough) attach("strikethrough");  // intentionally disabled — see above
   if (options.enableAutolink) attach("autolink");
   if (options.enableTaskList) attach("tasklist");
-  if (options.enableMath) attach("math");
+  if (options.enableMath) attach(options.relaxedInlineMath ? "math-relaxed" : "math");
 }
 
 void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, MarkdownNode& root, const LineStartOffsetCache& lineOffsets) const {

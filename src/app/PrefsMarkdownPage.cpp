@@ -79,6 +79,8 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   autoLinkCheck_->setChecked(true);
   inlineMathCheck_ = new QCheckBox(extCard);
   inlineMathCheck_->setChecked(true);
+  relaxedInlineMathCheck_ = new QCheckBox(extCard);
+  relaxedInlineMathCheck_->setChecked(true);
   subscriptCheck_ = new QCheckBox(extCard);
   superscriptCheck_ = new QCheckBox(extCard);
   highlightCheck_ = new QCheckBox(extCard);
@@ -100,6 +102,11 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   extLayout->addSpacing(2);
   extLayout->addWidget(autoLinkCheck_);
   extLayout->addWidget(inlineMathCheck_);
+  auto* relaxedMathRow = new QHBoxLayout();
+  relaxedMathRow->addSpacing(28);
+  relaxedMathRow->addWidget(relaxedInlineMathCheck_);
+  relaxedMathRow->addStretch(1);
+  extLayout->addLayout(relaxedMathRow);
   extLayout->addWidget(subscriptCheck_);
   extLayout->addWidget(superscriptCheck_);
   extLayout->addWidget(highlightCheck_);
@@ -210,6 +217,8 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   wireComboIndexSetting(orderedListCombo_, QStringLiteral("markdown/orderedList"));
   wireBoolSetting(autoLinkCheck_, QStringLiteral("markdown/autoLink"));
   wireBoolSetting(inlineMathCheck_, QStringLiteral("markdown/inlineMath"));
+  wireBoolSetting(relaxedInlineMathCheck_, QStringLiteral("markdown/relaxedInlineMath"));
+  connect(inlineMathCheck_, &QCheckBox::toggled, relaxedInlineMathCheck_, &QWidget::setEnabled);
   wireBoolSetting(subscriptCheck_, QStringLiteral("markdown/subscript"));
   wireBoolSetting(superscriptCheck_, QStringLiteral("markdown/superscript"));
   wireBoolSetting(highlightCheck_, QStringLiteral("markdown/highlight"));
@@ -271,6 +280,10 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
   extSyntaxLabel_->setText(tr("Markdown Extended Syntax"));
   autoLinkCheck_->setText(tr("Auto Recognize Links"));
   inlineMathCheck_->setText(tr("Inline Formula") + QStringLiteral(" ($\\LaTeX$)"));
+  relaxedInlineMathCheck_->setText(tr("Allow Spaces Inside Formula Delimiters") + QStringLiteral(" ($ x $)"));
+  relaxedInlineMathCheck_->setToolTip(tr(
+      "Accept spaces or tabs next to inline formula delimiters. Turn this off for Pandoc-style "
+      "parsing that avoids ambiguous currency text."));
   subscriptCheck_->setText(tr("Subscript") + QStringLiteral(" (H~2~O)"));
   superscriptCheck_->setText(tr("Superscript") + QStringLiteral(" (X^2^)"));
   highlightCheck_->setText(tr("Highlight") + QStringLiteral(" (==key==)"));
@@ -313,6 +326,8 @@ void muffin::PrefsMarkdownPage::loadSettings() {
   loadComboIndex(orderedListCombo_, QStringLiteral("markdown/orderedList"), 0);
   loadCheck(autoLinkCheck_, QStringLiteral("markdown/autoLink"), true);
   loadCheck(inlineMathCheck_, QStringLiteral("markdown/inlineMath"), true);
+  loadCheck(relaxedInlineMathCheck_, QStringLiteral("markdown/relaxedInlineMath"), true);
+  relaxedInlineMathCheck_->setEnabled(inlineMathCheck_->isChecked());
   loadCheck(subscriptCheck_, QStringLiteral("markdown/subscript"), false);
   loadCheck(superscriptCheck_, QStringLiteral("markdown/superscript"), false);
   loadCheck(highlightCheck_, QStringLiteral("markdown/highlight"), false);

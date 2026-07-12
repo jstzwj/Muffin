@@ -92,13 +92,62 @@ void testMathInHeadingsAndTables() {
           QStringLiteral("Serialized table math missing"));
 }
 
+void testRelaxedInlineMathWhitespace() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QStringLiteral(
+      "Symmetric $ E = mc^2 $ spacing.\n\n"
+      "Opening only $ x$ spacing.\n\n"
+      "Closing only $y $ spacing.\n\n"
+      "Tabs $\tz + 1\t$ spacing.\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for relaxed inline math"));
+  require(countInlineMath(*parsed.root) == 4,
+          QStringLiteral("Relaxed inline math should accept delimiter-adjacent spaces and tabs"));
+  require(containsInlineMathText(*parsed.root, QStringLiteral(" E = mc^2 ")),
+          QStringLiteral("Symmetric formula padding should remain in the inline node"));
+  require(containsInlineMathText(*parsed.root, QStringLiteral(" x")),
+          QStringLiteral("Opening formula padding should remain in the inline node"));
+  require(containsInlineMathText(*parsed.root, QStringLiteral("y ")),
+          QStringLiteral("Closing formula padding should remain in the inline node"));
+  require(containsInlineMathText(*parsed.root, QStringLiteral("\tz + 1\t")),
+          QStringLiteral("Formula tab padding should remain in the inline node"));
+
+  MarkdownDocument document;
+  document.setMarkdownText(markdown, std::move(parsed.root));
+  const QString serialized = MarkdownSerializer().serializeDocument(document);
+  require(serialized.contains(QStringLiteral("$ E = mc^2 $")),
+          QStringLiteral("Serialization should preserve symmetric formula padding"));
+  require(serialized.contains(QStringLiteral("$ x$")) && serialized.contains(QStringLiteral("$y $")),
+          QStringLiteral("Serialization should preserve one-sided formula padding"));
+}
+
+void testStrictInlineMathDelimiters() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  options.relaxedInlineMath = false;
+  const QString markdown = QStringLiteral(
+      "Valid $x$ formula.\n\n"
+      "Spaced opening $ x$ stays literal.\n\n"
+      "Spaced closing $x $ stays literal.\n\n"
+      "Currency between $5 and $10 stays literal.\n\n"
+      "Closing delimiter before a digit $y$2 stays literal.\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr, QStringLiteral("Parser returned null root for strict inline math"));
+  require(countInlineMath(*parsed.root) == 1,
+          QStringLiteral("Strict inline math should reject padding and digit-followed closers"));
+  require(containsInlineMathText(*parsed.root, QStringLiteral("x")),
+          QStringLiteral("Strict inline math should still parse an unambiguous formula"));
+}
+
 void testMathEdgeCases() {
   CmarkGfmParser parser;
   ParseOptions options;
   const QString markdown = QStringLiteral(
       "Escaped \\$x$ stays literal.\n\n"
-      "Spaced opening $ x$ stays literal.\n\n"
-      "Spaced closing $x $ stays literal.\n\n"
+      "Whitespace-only $ \t $ stays literal.\n\n"
       "Unclosed $x stays literal.\n\n"
       "Double dollars $$x$$ stay literal inline.\n\n"
       "$$\n"
@@ -111,7 +160,7 @@ void testMathEdgeCases() {
   require(countInlineMath(*parsed.root) == 0, QStringLiteral("Invalid inline math edge case was parsed"));
   require(countMathBlocks(*parsed.root) == 1, QStringLiteral("Multiline math block was not parsed"));
 
-  const MarkdownNode& mathBlock = childAt(*parsed.root, 5);
+  const MarkdownNode& mathBlock = childAt(*parsed.root, 4);
   require(mathBlock.type() == BlockType::MathBlock, QStringLiteral("Expected final math block"));
   require(mathBlock.literal().contains(QStringLiteral("a &= b + c")),
           QStringLiteral("Math block first line missing"));
@@ -637,6 +686,8 @@ int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
   testMathSupport();
   testMathInHeadingsAndTables();
+  testRelaxedInlineMathWhitespace();
+  testStrictInlineMathDelimiters();
   testMathEdgeCases();
   testLegacyBracketMathBlock();
   testLegacyBracketMathInsideCodeFenceUntouched();

@@ -104,6 +104,24 @@ void testMathRenderingLayout() {
               !userParagraphLayout->inlineLayout()->displayText().contains(QStringLiteral("a_1")),
           QStringLiteral("inactive single dollar math should be collapsed to native atoms"));
   {
+    const QString paddedMathSample = QStringLiteral("before $ E = mc^2 $ after");
+    ParseResult paddedParsed = parser.parseDocument(paddedMathSample, {});
+    require(paddedParsed.root != nullptr, QStringLiteral("padded inline math sample should parse"));
+    MarkdownDocument paddedDocument;
+    paddedDocument.setMarkdownText(paddedMathSample, std::move(paddedParsed.root));
+    DocumentLayout paddedLayout;
+    paddedLayout.rebuild(paddedDocument, theme, 800.0);
+    const MarkdownNode* paddedParagraph = findFirstBlock(paddedDocument.root(), BlockType::Paragraph);
+    require(paddedParagraph != nullptr, QStringLiteral("padded inline math paragraph should exist"));
+    const BlockLayout* paddedParagraphLayout = paddedLayout.block(paddedParagraph->id());
+    require(paddedParagraphLayout != nullptr && paddedParagraphLayout->inlineLayout() != nullptr,
+            QStringLiteral("padded inline math layout should exist"));
+    require(paddedParagraphLayout->inlineLayout()->mathAtomCount() == 1,
+            QStringLiteral("delimiter padding should be ignored by native formula rendering"));
+    require(!paddedParagraphLayout->inlineLayout()->displayText().contains(QStringLiteral("mc^2")),
+            QStringLiteral("padded inline math should collapse to a native formula atom"));
+  }
+  {
     const QString inlineMathSample = QStringLiteral("before $E=mc^2$ after");
     ParseResult inlineParsed = parser.parseDocument(inlineMathSample, {});
     require(inlineParsed.root != nullptr, QStringLiteral("inline math exact placeholder sample should parse"));

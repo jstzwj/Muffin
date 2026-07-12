@@ -35,6 +35,7 @@ private:
   QLabel* extSyntaxLabel_ = nullptr;
   QCheckBox* autoLinkCheck_ = nullptr;
   QCheckBox* inlineMathCheck_ = nullptr;
+  QCheckBox* relaxedInlineMathCheck_ = nullptr;
   QCheckBox* subscriptCheck_ = nullptr;
   QCheckBox* superscriptCheck_ = nullptr;
   QCheckBox* highlightCheck_ = nullptr;
