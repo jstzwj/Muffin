@@ -365,6 +365,35 @@ void testTextOnlySynthesisesBackground() {
   require(d.colors.isDark == true, QStringLiteral("light text on no-bg should infer a dark canvas"));
 }
 
+// Typora runs themes over a browser/host stylesheet, so a theme may paint only
+// #write and inherit the default text ink. Muffin must materialise that implicit
+// colour before validation instead of rejecting an otherwise valid CSS theme.
+void testBackgroundOnlySynthesisesText() {
+  const char* lightCss = R"(
+:root { --link-color-light: #2e67d3; }
+#write { background-color: white; }
+#write a { color: var(--link-color-light); }
+.footnotes-area { color: var(--text-color); }
+)";
+  const ThemeDefinition light = CssThemeMapper::fromCss(
+      QString::fromUtf8(lightCss), QStringLiteral("latex-like"), QString());
+  require(light.valid(), QStringLiteral("a background-only light theme should be valid"));
+  require(light.colors.background == QColor(Qt::white), QStringLiteral("explicit white page background"));
+  require(light.colors.text == QColor(Qt::black), QStringLiteral("light page should receive browser-like black ink"));
+  require(light.colors.chromeText == QColor(Qt::black), QStringLiteral("derived chrome should share the readable ink"));
+
+  const ThemeDefinition dark = CssThemeMapper::fromCss(
+      QStringLiteral("#write { background:#181818; }"), QStringLiteral("dark-page"), QString());
+  require(dark.valid(), QStringLiteral("a background-only dark theme should be valid"));
+  require(dark.colors.text == QColor(Qt::white), QStringLiteral("dark page should receive readable white ink"));
+  require(dark.colors.isDark, QStringLiteral("dark background-only theme should infer dark mode"));
+
+  const ThemeDefinition saturated = CssThemeMapper::fromCss(
+      QStringLiteral("#write { background:#0000ff; }"), QStringLiteral("blue-page"), QString());
+  require(saturated.colors.text == QColor(Qt::white),
+          QStringLiteral("saturated blue should choose white by relative luminance, not HSL lightness"));
+}
+
 // Regression for the pixyll "everything turns black" bug: pixyll declares
 // `code { color:#7a7a7a }` with NO background and no mark / ::selection, so the
 // code-background fill, highlight, selection, and the hover/selected tokens that
@@ -1594,6 +1623,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testPureVariableTheme);
   RUN_TEST(testCascadeBeatsVariable);
   RUN_TEST(testTextOnlySynthesisesBackground);
+  RUN_TEST(testBackgroundOnlySynthesisesText);
   RUN_TEST(testPixyllHasNoInvalidBlackProneTokens);
   RUN_TEST(testCommentsDoNotDropDeclarations);
   RUN_TEST(testWriteBeforeDoesNotLeakBackground);

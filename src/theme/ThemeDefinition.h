@@ -539,7 +539,8 @@ struct ThemeDefinition {
   // Load a CSS theme file (filesystem path or :/resource) and
   // translate it into a ThemeDefinition via the CssThemeMapper. `id` overrides
   // any name the CSS declares (usually derived from the file stem). Returns an
-  // invalid definition if the file can't be read or lacks background + text.
+  // invalid definition if the file can't be read or no usable text colour can
+  // be resolved/derived from its CSS palette.
   // Also registers any @font-face fonts with QFontDatabase as a side effect.
   static ThemeDefinition fromCss(const QString& cssPath, const QString& id);
   // Resolve a CSS @font-face declared family name to the name QFontDatabase

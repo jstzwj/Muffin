@@ -43,6 +43,20 @@ namespace {
 
 constexpr qreal kUnboundedPageWidth = 100000.0;
 
+qreal relativeLuminance(const QColor& color) {
+  const auto linear = [](qreal channel) {
+    return channel <= 0.04045 ? channel / 12.92 : qPow((channel + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * linear(color.redF()) +
+         0.7152 * linear(color.greenF()) +
+         0.0722 * linear(color.blueF());
+}
+
+QColor highestContrastInk(const QColor& background) {
+  // Black has contrast (L + .05) / .05; white has 1.05 / (L + .05).
+  return relativeLuminance(background) > 0.179 ? QColor(Qt::black) : QColor(Qt::white);
+}
+
 // isIdentChar / selectorRequiresExportContext / specificityOf live in theme/CssSelectorUtils.h
 // (shared with CssComputedStyleEngine so a fix applies to both engines at once).
 
@@ -1226,12 +1240,16 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   if (QColor ca = varColor(vars, "--muffin-accent"); ca.isValid()) { k.accent = ca; }
   if (truthy(varValue(vars, "--muffin-serif-body"))) { k.serifBody = true; }
 
-  // Derived muted text: if the theme gave a link/accent but no muted text, leave
-  // it for deriveChromeDefaults to fall back to text.
-  // Last-resort background: a theme that declared text but no background at all
-  // (no painted rule, no --bg-color). Pick a contrasting canvas from the text
+  // Complete either half of a one-sided document palette before deriving the
+  // remaining chrome and muted tokens. For text-only themes, choose a canvas by
   // luminance so isDark and chrome derivation stay sane — mirrors a browser's
   // default white/dark page when CSS specifies none.
+  // Typora themes may only paint #write and rely on the browser/host sheet's
+  // inherited text colour. Muffin has no UA sheet beneath imported CSS, so
+  // materialise a contrast-safe equivalent before validating the palette.
+  if (!k.text.isValid() && k.background.isValid()) {
+    k.text = highestContrastInk(k.background);
+  }
   if (!k.background.isValid() && k.text.isValid()) {
     k.background = k.text.lightness() >= 128 ? QColor(0x18, 0x18, 0x18) : QColor(0xff, 0xff, 0xff);
     if (!d.page.viewportBackground.isValid()) { d.page.viewportBackground = k.background; }
