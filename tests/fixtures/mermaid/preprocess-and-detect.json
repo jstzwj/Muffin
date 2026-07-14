@@ -1,0 +1,565 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "license": "MIT"
+  },
+  "detection": [
+    {
+      "id": "error",
+      "source": "error",
+      "config": {},
+      "diagramType": "error"
+    },
+    {
+      "id": "invalid-frontmatter",
+      "source": "---\nnot closed",
+      "config": {},
+      "diagramType": "---"
+    },
+    {
+      "id": "flowchart-elk-explicit",
+      "source": "flowchart-elk LR\na-->b",
+      "config": {
+        "layout": "elk"
+      },
+      "diagramType": "flowchart-elk"
+    },
+    {
+      "id": "flowchart-elk-config",
+      "source": "graph LR\na-->b",
+      "config": {
+        "flowchart": {
+          "defaultRenderer": "elk"
+        },
+        "layout": "elk"
+      },
+      "diagramType": "flowchart-elk"
+    },
+    {
+      "id": "mindmap",
+      "source": "mindmap\n root",
+      "config": {},
+      "diagramType": "mindmap"
+    },
+    {
+      "id": "architecture",
+      "source": "architecture-beta\n group api(cloud)",
+      "config": {},
+      "diagramType": "architecture"
+    },
+    {
+      "id": "c4",
+      "source": "C4Context\nPerson(a, A)",
+      "config": {},
+      "diagramType": "c4"
+    },
+    {
+      "id": "c4-upstream-alternation",
+      "source": "prefix C4Container suffix",
+      "config": {},
+      "diagramType": "c4"
+    },
+    {
+      "id": "kanban",
+      "source": "kanban\n column",
+      "config": {},
+      "diagramType": "kanban"
+    },
+    {
+      "id": "class-v2-explicit",
+      "source": "classDiagram-v2\nA <|-- B",
+      "config": {},
+      "diagramType": "classDiagram"
+    },
+    {
+      "id": "class-v2-config",
+      "source": "classDiagram\nA <|-- B",
+      "config": {
+        "class": {
+          "defaultRenderer": "dagre-wrapper"
+        }
+      },
+      "diagramType": "classDiagram"
+    },
+    {
+      "id": "class-legacy",
+      "source": "classDiagram\nA <|-- B",
+      "config": {},
+      "diagramType": "class"
+    },
+    {
+      "id": "er",
+      "source": "erDiagram\nA ||--o{ B : has",
+      "config": {},
+      "diagramType": "er"
+    },
+    {
+      "id": "gantt",
+      "source": "gantt\ntitle x",
+      "config": {},
+      "diagramType": "gantt"
+    },
+    {
+      "id": "info",
+      "source": "info",
+      "config": {},
+      "diagramType": "info"
+    },
+    {
+      "id": "pie",
+      "source": "pie\n\"A\" : 1",
+      "config": {},
+      "diagramType": "pie"
+    },
+    {
+      "id": "requirement",
+      "source": "requirementDiagram\nrequirement x {}",
+      "config": {},
+      "diagramType": "requirement"
+    },
+    {
+      "id": "sequence",
+      "source": "sequenceDiagram\nA->>B: hi",
+      "config": {},
+      "diagramType": "sequence"
+    },
+    {
+      "id": "swimlane",
+      "source": "swimlane-beta\nA",
+      "config": {},
+      "diagramType": "swimlane"
+    },
+    {
+      "id": "flow-v2",
+      "source": "flowchart LR\na-->b",
+      "config": {},
+      "diagramType": "flowchart-v2"
+    },
+    {
+      "id": "flow-v2-config",
+      "source": "graph LR\na-->b",
+      "config": {
+        "flowchart": {
+          "defaultRenderer": "dagre-wrapper"
+        }
+      },
+      "diagramType": "flowchart-v2"
+    },
+    {
+      "id": "flow-legacy",
+      "source": "graph LR\na-->b",
+      "config": {},
+      "diagramType": "flowchart"
+    },
+    {
+      "id": "timeline",
+      "source": "timeline\n2024 : x",
+      "config": {},
+      "diagramType": "timeline"
+    },
+    {
+      "id": "git",
+      "source": "gitGraph\ncommit",
+      "config": {},
+      "diagramType": "gitGraph"
+    },
+    {
+      "id": "state-v2",
+      "source": "stateDiagram-v2\n[*] --> A",
+      "config": {},
+      "diagramType": "stateDiagram"
+    },
+    {
+      "id": "state-v2-config",
+      "source": "stateDiagram\n[*] --> A",
+      "config": {
+        "state": {
+          "defaultRenderer": "dagre-wrapper"
+        }
+      },
+      "diagramType": "stateDiagram"
+    },
+    {
+      "id": "state-legacy",
+      "source": "stateDiagram\n[*] --> A",
+      "config": {},
+      "diagramType": "state"
+    },
+    {
+      "id": "journey",
+      "source": "journey\ntitle x",
+      "config": {},
+      "diagramType": "journey"
+    },
+    {
+      "id": "quadrant",
+      "source": "quadrantChart\nx-axis a --> b",
+      "config": {},
+      "diagramType": "quadrantChart"
+    },
+    {
+      "id": "sankey",
+      "source": "sankey-beta\na,b,1",
+      "config": {},
+      "diagramType": "sankey"
+    },
+    {
+      "id": "packet",
+      "source": "packet-beta\n0-7: x",
+      "config": {},
+      "diagramType": "packet"
+    },
+    {
+      "id": "xychart",
+      "source": "xychart-beta\nx-axis [1]",
+      "config": {},
+      "diagramType": "xychart"
+    },
+    {
+      "id": "block",
+      "source": "block-beta\na",
+      "config": {},
+      "diagramType": "block"
+    },
+    {
+      "id": "eventmodeling",
+      "source": "eventmodeling\ncommands:",
+      "config": {},
+      "diagramType": "eventmodeling"
+    },
+    {
+      "id": "tree",
+      "source": "treeView-beta\nroot",
+      "config": {},
+      "diagramType": "treeView"
+    },
+    {
+      "id": "radar",
+      "source": "radar-beta\naxis a",
+      "config": {},
+      "diagramType": "radar"
+    },
+    {
+      "id": "ishikawa-case",
+      "source": "ISHIKAWA-beta\nproblem: x",
+      "config": {},
+      "diagramType": "ishikawa"
+    },
+    {
+      "id": "treemap",
+      "source": "treemap\nroot",
+      "config": {},
+      "diagramType": "treemap"
+    },
+    {
+      "id": "railroad",
+      "source": "railroad-beta\nA ::= 'a'",
+      "config": {},
+      "diagramType": "railroad"
+    },
+    {
+      "id": "railroad-ebnf",
+      "source": "railroad-ebnf-beta\nA = 'a';",
+      "config": {},
+      "diagramType": "railroadEbnf"
+    },
+    {
+      "id": "railroad-abnf",
+      "source": "railroad-abnf-beta\nA = %s\"a\"",
+      "config": {},
+      "diagramType": "railroadAbnf"
+    },
+    {
+      "id": "railroad-peg",
+      "source": "railroad-peg-beta\nA <- 'a'",
+      "config": {},
+      "diagramType": "railroadPeg"
+    },
+    {
+      "id": "venn",
+      "source": "venn-beta\nset A",
+      "config": {},
+      "diagramType": "venn"
+    },
+    {
+      "id": "wardley",
+      "source": "WARDLEY-beta\ntitle x",
+      "config": {},
+      "diagramType": "wardley"
+    },
+    {
+      "id": "cynefin",
+      "source": "cynefin-beta:\nclear",
+      "config": {},
+      "diagramType": "cynefin"
+    },
+    {
+      "id": "preamble",
+      "source": "---\ntitle: T\n---\n%% comment\n%%{init: {\"theme\": \"dark\"}}%%\nsequenceDiagram\nA->>B: hi",
+      "config": {},
+      "diagramType": "sequence"
+    },
+    {
+      "id": "unknown",
+      "source": "definitely not a diagram",
+      "config": {},
+      "diagramType": null
+    }
+  ],
+  "preprocess": [
+    {
+      "id": "plain",
+      "source": "graph LR\r\nA[\"x\"] --> B\r\n",
+      "expected": {
+        "code": "graph LR\nA[\"x\"] --> B\n",
+        "config": {}
+      }
+    },
+    {
+      "id": "comments",
+      "source": "  %% first\n%% second\nsequenceDiagram\nA->>B: hi\n%% tail",
+      "expected": {
+        "code": "sequenceDiagram\nA->>B: hi\n",
+        "config": {}
+      }
+    },
+    {
+      "id": "html-attributes",
+      "source": "flowchart LR\nA[<span class=\"x\" data-v=\"a b\">Hi</span>]",
+      "expected": {
+        "code": "flowchart LR\nA[<span class='x' data-v='a b'>Hi</span>]",
+        "config": {}
+      }
+    },
+    {
+      "id": "frontmatter",
+      "source": "---\ntitle: Example\ndisplayMode: compact\nconfig:\n  theme: forest\n  flowchart:\n    curve: basis\n---\ngantt\ntitle Work",
+      "expected": {
+        "code": "gantt\ntitle Work",
+        "title": "Example",
+        "config": {
+          "theme": "forest",
+          "flowchart": {
+            "curve": "basis"
+          },
+          "gantt": {
+            "displayMode": "compact"
+          }
+        }
+      }
+    },
+    {
+      "id": "indented-frontmatter",
+      "source": "  ---\n  title: Indented\n  config:\n    theme: dark\n  ---\nflowchart LR\na-->b",
+      "expected": {
+        "code": "flowchart LR\na-->b",
+        "title": "Indented",
+        "config": {
+          "theme": "dark"
+        }
+      }
+    },
+    {
+      "id": "init",
+      "source": "%%{init: {\"theme\": \"dark\", \"flowchart\": {\"curve\": \"linear\"}}}%%\nflowchart LR\na-->b",
+      "expected": {
+        "code": "flowchart LR\na-->b",
+        "config": {
+          "theme": "dark",
+          "flowchart": {
+            "curve": "linear"
+          }
+        }
+      }
+    },
+    {
+      "id": "legacy-config-init",
+      "source": "%%{initialize: {\"config\": {\"curve\": \"step\"}}}%%\nflowchart LR\na-->b",
+      "expected": {
+        "code": "flowchart LR\na-->b",
+        "config": {
+          "flowchart": {
+            "curve": "step"
+          }
+        }
+      }
+    },
+    {
+      "id": "multiple-and-wrap",
+      "source": "%%{init: {\"theme\": \"forest\"}}%%\n%%{init: {\"flowchart\": {\"curve\": \"basis\"}}}%%\n%%{wrap}%%\nflowchart LR\na-->b",
+      "expected": {
+        "code": "flowchart LR\na-->b",
+        "config": {
+          "theme": "forest",
+          "flowchart": {
+            "curve": "basis"
+          },
+          "wrap": true
+        }
+      }
+    },
+    {
+      "id": "sanitize",
+      "source": "%%{init: {\"theme\": \"dark\", \"unknownKey\": 1, \"__proto__\": {\"x\": 1}}}%%\nflowchart LR\na-->b",
+      "expected": {
+        "code": "flowchart LR\na-->b",
+        "config": {
+          "theme": "dark",
+          "unknownKey": 1
+        }
+      }
+    },
+    {
+      "id": "json-schema-scalars",
+      "source": "---\ntitle: yes\nconfig:\n  darkMode: true\n  handDrawnSeed: 12\n---\nflowchart LR\na-->b",
+      "expected": {
+        "code": "flowchart LR\na-->b",
+        "title": "yes",
+        "config": {
+          "darkMode": true,
+          "handDrawnSeed": 12
+        }
+      }
+    },
+    {
+      "id": "quoted-scalars",
+      "source": "---\ntitle: \"true\"\nconfig:\n  darkMode: \"false\"\n---\nflowchart LR\na-->b",
+      "expected": {
+        "code": "flowchart LR\na-->b",
+        "title": "true",
+        "config": {
+          "darkMode": "false"
+        }
+      }
+    },
+    {
+      "id": "numeric-title",
+      "source": "---\ntitle: 42\n---\npie\n\"A\" : 1",
+      "expected": {
+        "code": "pie\n\"A\" : 1",
+        "title": "42",
+        "config": {}
+      }
+    },
+    {
+      "id": "empty-title",
+      "source": "---\ntitle: \"\"\n---\ninfo",
+      "expected": {
+        "code": "info",
+        "config": {}
+      }
+    },
+    {
+      "id": "non-map-frontmatter",
+      "source": "---\n- one\n- two\n---\ninfo",
+      "expected": {
+        "code": "info",
+        "config": {}
+      }
+    },
+    {
+      "id": "frontmatter-closing-indent-guard",
+      "source": "---\ntitle: Outer\nvalue: |\n  inside\n  ---\n---\ninfo",
+      "expected": {
+        "code": "info",
+        "title": "Outer",
+        "config": {}
+      }
+    },
+    {
+      "id": "carriage-returns",
+      "source": "%% comment\rgraph LR\rA-->B\r",
+      "expected": {
+        "code": "graph LR\nA-->B\n",
+        "config": {}
+      }
+    },
+    {
+      "id": "directive-is-not-comment",
+      "source": "%%{wrap}%%\n%% ordinary\nflowchart LR\na-->b",
+      "expected": {
+        "code": "flowchart LR\na-->b",
+        "config": {
+          "wrap": true
+        }
+      }
+    },
+    {
+      "id": "single-quoted-init",
+      "source": "%%{init: {'theme': 'neutral'}}%%\nflowchart LR\na-->b",
+      "expected": {
+        "code": "flowchart LR\na-->b",
+        "config": {
+          "theme": "neutral"
+        }
+      }
+    },
+    {
+      "id": "malformed-init-json",
+      "source": "%%{init: {broken: true}}%%\nflowchart LR\na-->b",
+      "expected": {
+        "code": "flowchart LR\na-->b",
+        "config": {}
+      }
+    },
+    {
+      "id": "multiple-init-sanitizes",
+      "source": "%%{init: {\"theme\": \"dark\", \"unknownKey\": 1}}%%\n%%{init: {\"flowchart\": {\"curve\": \"linear\"}}}%%\nflowchart LR\na-->b",
+      "expected": {
+        "code": "flowchart LR\na-->b",
+        "config": {
+          "theme": "dark",
+          "flowchart": {
+            "curve": "linear"
+          }
+        }
+      }
+    },
+    {
+      "id": "multiple-init-full-sanitizer",
+      "source": "%%{init: {\"themeCSS\": \"a {\", \"radar\": {\"graticuleOpacity\": 0.5}, \"themeVariables\": {\"primaryColor\": \"#fff\", \"unknownThemeKey\": \"red\", \"lineColor\": \"url(x)\"}, \"treeView\": {\"filenameIcons\": {\"README\": \"logos:readme\", \"bad\": \"x y\"}}}}%%\n%%{init: {\"theme\": \"dark\"}}%%\nflowchart LR\na-->b",
+      "expected": {
+        "code": "flowchart LR\na-->b",
+        "config": {
+          "themeCSS": "{ /* ERROR: Unbalanced CSS */ }",
+          "radar": {
+            "graticuleOpacity": 0.5
+          },
+          "themeVariables": {
+            "primaryColor": "#fff",
+            "lineColor": "url(x)"
+          },
+          "treeView": {
+            "filenameIcons": {
+              "README": "logos:readme"
+            }
+          },
+          "theme": "dark"
+        }
+      }
+    },
+    {
+      "id": "frontmatter-init-merge",
+      "source": "---\nconfig:\n  theme: forest\n  flowchart:\n    curve: basis\n---\n%%{init: {\"theme\": \"dark\", \"flowchart\": {\"defaultRenderer\": \"dagre-wrapper\"}}}%%\ngraph LR\na-->b",
+      "expected": {
+        "code": "graph LR\na-->b",
+        "config": {
+          "theme": "dark",
+          "flowchart": {
+            "curve": "basis",
+            "defaultRenderer": "dagre-wrapper"
+          }
+        }
+      }
+    },
+    {
+      "id": "comment-without-final-newline",
+      "source": "flowchart LR\na-->b\n%% tail",
+      "expected": {
+        "code": "flowchart LR\na-->b\n",
+        "config": {}
+      }
+    }
+  ]
+}

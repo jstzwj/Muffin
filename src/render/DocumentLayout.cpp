@@ -436,6 +436,14 @@ void DocumentLayout::setCodeFenceScroll(CodeFenceScrollController* controller) {
   codeFenceScroll_ = controller;
 }
 
+void DocumentLayout::setMermaidRenderCache(mermaid::editor::MermaidRenderCache* cache) {
+  mermaidCache_ = cache;
+}
+
+void DocumentLayout::setMermaidSyncMode(bool sync) {
+  mermaidSyncMode_ = sync;
+}
+
 CodeFenceScrollController* DocumentLayout::codeFenceScroll() const {
   return codeFenceScroll_;
 }
@@ -1190,6 +1198,8 @@ void DocumentLayout::configureBuilder(SelectionRange selection) {
   builder_.setEditingHtmlBlock(editingHtmlBlockId_);
   builder_.setDocumentPath(documentPath_);
   builder_.setCodeFenceScroll(codeFenceScroll_);
+  builder_.setMermaidRenderCache(mermaidCache_);
+  builder_.setMermaidSyncMode(mermaidSyncMode_);
   builder_.setHeadingCounterText(&headingCounterText_);
   builder_.setTocEntries(&tocEntries_);
 }

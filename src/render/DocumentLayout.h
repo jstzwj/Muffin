@@ -20,6 +20,7 @@
 namespace muffin {
 
 class CodeFenceScrollController;
+namespace mermaid::editor { class MermaidRenderCache; }
 
 class DocumentLayout {
  public:
@@ -71,6 +72,10 @@ class DocumentLayout {
   // Per-code-fence horizontal scroll state; forwarded to the builder (writes longest-line width)
   // and to BlockLayout hit-test (reads the offset). Owned by EditorController.
   void setCodeFenceScroll(CodeFenceScrollController* controller);
+  // Mermaid render cache (milestone I). Forwarded to the builder each pass.
+  // syncMode = true for export/print (render synchronously); false for the editor.
+  void setMermaidRenderCache(mermaid::editor::MermaidRenderCache* cache);
+  void setMermaidSyncMode(bool sync);
   // Forward the active IME composition to the builder (spliced into the caret block's inline layout).
   void setPreedit(QString text, QVector<QTextLayout::FormatRange> formats, int cursor);
   CodeFenceScrollController* codeFenceScroll() const;
@@ -143,6 +148,8 @@ class DocumentLayout {
   QString documentPath_;
   NodeId editingHtmlBlockId_;
   CodeFenceScrollController* codeFenceScroll_ = nullptr;
+  mermaid::editor::MermaidRenderCache* mermaidCache_ = nullptr;
+  bool mermaidSyncMode_ = false;
   SelectionRange selection_;
   QString preeditText_;
   QVector<QTextLayout::FormatRange> preeditFormats_;

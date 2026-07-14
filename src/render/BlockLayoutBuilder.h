@@ -19,6 +19,7 @@
 namespace muffin {
 
 class CodeFenceScrollController;
+namespace mermaid::editor { class MermaidRenderCache; }
 
 class BlockLayoutBuilder {
 public:
@@ -36,6 +37,11 @@ public:
   // owned outside the rebuilt BlockLayouts. The builder writes the measured line width so the
   // paint path and scrollbar thumb agree on scrollability.
   void setCodeFenceScroll(CodeFenceScrollController* controller);
+  // Mermaid render cache (milestone I). Non-owning; nullptr disables mermaid
+  // rendering (the fence paints as plain source). syncMode = render synchronously
+  // (export/print); async = the editor path (request → renderReady → refresh).
+  void setMermaidRenderCache(mermaid::editor::MermaidRenderCache* cache);
+  void setMermaidSyncMode(bool sync);
   // DocumentLayout's heading-counter map (NodeId → resolved ::before text, e.g.
   // "1. "). Owned by the layout; the builder only reads it. nullptr/empty for
   // non-counter themes. Set every pass by configureBuilder so single-block and
@@ -202,6 +208,9 @@ private:
   bool showLineNumbers_ = false;
   bool renderEmoji_ = true;
   CodeFenceScrollController* codeFenceScroll_ = nullptr;
+  mermaid::editor::MermaidRenderCache* mermaidCache_ = nullptr;
+  bool mermaidSyncMode_ = false;
+  bool showMermaidAsSource_ = false;
   TreeSitterHighlighter codeHighlighter_;
   math::MathRenderer mathRenderer_;
   html::HtmlRenderer htmlRenderer_;

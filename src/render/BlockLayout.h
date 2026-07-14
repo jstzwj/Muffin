@@ -4,6 +4,7 @@
 #include "editor/CursorPosition.h"
 #include "html/HtmlLayoutResult.h"
 #include "math/MathRenderNode.h"
+#include "mermaid/scene/FlowScene.h"
 #include "render/CodeHighlight.h"
 #include "render/InlineLayout.h"
 #include "theme/RenderTheme.h"
@@ -147,6 +148,17 @@ public:
   MathDelimiter mathDelimiter() const;
   void setHtmlLayout(std::shared_ptr<html::HtmlLayoutResult> layout);
   const html::HtmlLayoutResult* htmlLayout() const;
+  // Mermaid diagram (milestone I). When state == Ready the block paints the
+  // cached FlowScene scaled to fit the content width instead of the source code.
+  enum class MermaidState { None, Loading, Ready, Error, Unsupported };
+  void setMermaidScene(std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> scene, QSizeF naturalSize);
+  const muffin::mermaid::flowscene::FlowScene* mermaidScene() const;
+  QSizeF mermaidNaturalSize() const;
+  void setMermaidState(MermaidState state);
+  MermaidState mermaidState() const;
+  void setMermaidErrorMessage(const QString& message);
+  const QString& mermaidErrorMessage() const;
+  bool isMermaidRendered() const;
   void setLiteralEditing(bool editing);
   bool literalEditing() const;
   QRectF literalContentRect(const RenderTheme& theme) const;
@@ -263,6 +275,11 @@ private:
   void paintInlineBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect, qreal scrollY, BlockPaintState hover) const;
   void paintBlockQuote(QPainter& painter, const RenderTheme& theme, QRectF viewRect, qreal scrollY) const;
   void paintMathBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect, qreal scrollY) const;
+  void paintMermaidDiagram(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
+  void paintMermaidError(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
+  // If a rendered mermaid diagram has a SAFE link on the node under documentPos, return it
+  // (empty otherwise). Used by hitSelf so Ctrl+click on a mermaid node follows the link.
+  QString mermaidLinkAt(QPointF documentPos, const RenderTheme& theme) const;
   void paintHtmlBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
   void paintThematicBreak(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
   void paintTable(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
@@ -301,6 +318,10 @@ private:
   std::shared_ptr<math::MathLayoutResult> mathLayout_;
   MathDelimiter mathDelimiter_ = MathDelimiter::Dollar;
   std::shared_ptr<html::HtmlLayoutResult> htmlLayout_;
+  std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> mermaidScene_;
+  QSizeF mermaidNaturalSize_;
+  MermaidState mermaidState_ = MermaidState::None;
+  QString mermaidErrorMessage_;
   bool literalEditing_ = false;
   qreal lineNumberGutterWidth_ = 0.0;
   qreal codeMaxLineWidth_ = 0.0;

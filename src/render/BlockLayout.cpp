@@ -2,8 +2,10 @@
 #include "render/RenderMetrics.h"
 
 #include "blocks/code/CodeFenceScrollController.h"
+#include "blocks/html/HtmlUrlSafety.h"
 #include "document/BlockPredicates.h"
 #include "document/SourceRangeUtil.h"
+#include "mermaid/scene/FlowScenePainter.h"
 #include "render/DecorationPainter.h"
 
 #include <QFontMetricsF>
@@ -548,6 +550,39 @@ const html::HtmlLayoutResult* BlockLayout::htmlLayout() const {
   return htmlLayout_.get();
 }
 
+void BlockLayout::setMermaidScene(std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> scene, QSizeF naturalSize) {
+  mermaidScene_ = std::move(scene);
+  mermaidNaturalSize_ = naturalSize;
+}
+
+const muffin::mermaid::flowscene::FlowScene* BlockLayout::mermaidScene() const {
+  return mermaidScene_.get();
+}
+
+QSizeF BlockLayout::mermaidNaturalSize() const {
+  return mermaidNaturalSize_;
+}
+
+void BlockLayout::setMermaidState(MermaidState state) {
+  mermaidState_ = state;
+}
+
+BlockLayout::MermaidState BlockLayout::mermaidState() const {
+  return mermaidState_;
+}
+
+void BlockLayout::setMermaidErrorMessage(const QString& message) {
+  mermaidErrorMessage_ = message;
+}
+
+const QString& BlockLayout::mermaidErrorMessage() const {
+  return mermaidErrorMessage_;
+}
+
+bool BlockLayout::isMermaidRendered() const {
+  return mermaidState_ == MermaidState::Ready && mermaidScene_ != nullptr;
+}
+
 void BlockLayout::setLiteralEditing(bool editing) {
   literalEditing_ = editing;
 }
@@ -961,7 +996,12 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
       break;
     case BlockType::FrontMatter:
     case BlockType::CodeFence:
-      paintCodeFence(painter, theme, viewRect, scroll);
+      if (isMermaidRendered())
+        paintMermaidDiagram(painter, theme, viewRect);
+      else {
+        paintCodeFence(painter, theme, viewRect, scroll);
+        if (mermaidState_ == MermaidState::Error) paintMermaidError(painter, theme, viewRect);
+      }
       break;
     case BlockType::MathBlock:
       paintMathBlock(painter, theme, viewRect, scrollY);
@@ -1223,6 +1263,83 @@ void BlockLayout::paintMathBlock(QPainter& painter, const RenderTheme& theme, QR
     mathLayout_->paint(painter, QPointF(x, y));
   }
   painter.restore();
+}
+
+void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
+  if (!mermaidScene_) return;
+  painter.save();
+  painter.setPen(theme.codeBorderColor());
+  painter.setBrush(theme.codeBackgroundColor());
+  if (theme.codeBlockBoxThemed() && theme.codeBlockBorderRadius() > 0.0) {
+    painter.drawRoundedRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5), theme.codeBlockBorderRadius(), theme.codeBlockBorderRadius());
+  } else {
+    painter.drawRect(viewRect.adjusted(0.5, 0.5, -0.5, -0.5));
+  }
+  // Scale the scene's natural size to fit the content width (never upscale beyond 1:1),
+  // then center it in the code box — mirrors paintMathBlock's centered layout.
+  const QRectF content = viewRect.marginsRemoved(theme.codePadding());
+  const qreal natW = mermaidNaturalSize_.width();
+  const qreal natH = mermaidNaturalSize_.height();
+  if (natW > 0.0 && natH > 0.0) {
+    const qreal scale = qMin<qreal>(1.0, content.width() / natW);
+    const qreal drawW = natW * scale;
+    const qreal drawH = natH * scale;
+    const qreal dx = content.left() + qMax<qreal>(0.0, (content.width() - drawW) / 2.0);
+    const qreal dy = content.top() + qMax<qreal>(0.0, (content.height() - drawH) / 2.0);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::TextAntialiasing, true);
+    painter.translate(dx, dy);
+    painter.scale(scale, scale);
+    painter.translate(-mermaidScene_->bounds.left(), -mermaidScene_->bounds.top());
+    muffin::mermaid::flowscene::paintFlowScene(*mermaidScene_, painter, QStringLiteral("Arial"));
+  }
+  painter.restore();
+}
+
+void BlockLayout::paintMermaidError(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
+  if (mermaidErrorMessage_.isEmpty()) return;
+  painter.save();
+  const QFont font = theme.codeFont();
+  painter.setFont(font);
+  const QFontMetricsF fm(font);
+  const qreal lineH = fm.height();
+  const QRectF strip(viewRect.left() + theme.codePadding().left(),
+                     viewRect.bottom() - theme.codePadding().bottom() - lineH,
+                     viewRect.width() - theme.codePadding().left() - theme.codePadding().right(),
+                     lineH);
+  painter.setPen(theme.alertAccent(AlertKind::Caution));  // red — parse/limit error
+  const QString prefix = QStringLiteral("⚠ ");
+  QString msg = mermaidErrorMessage_;
+  msg.replace(QLatin1Char('\n'), QLatin1Char(' '));  // collapse to one line
+  const qreal avail = strip.width() - fm.horizontalAdvance(prefix);
+  if (avail > 0.0) msg = fm.elidedText(msg, Qt::ElideRight, avail);
+  painter.drawText(strip, Qt::AlignLeft | Qt::AlignVCenter, prefix + msg);
+  painter.restore();
+}
+
+QString BlockLayout::mermaidLinkAt(QPointF documentPos, const RenderTheme& theme) const {
+  if (!isMermaidRendered()) return {};
+  const QRectF content = rect_.marginsRemoved(theme.codePadding());
+  const qreal natW = mermaidNaturalSize_.width();
+  const qreal natH = mermaidNaturalSize_.height();
+  if (natW <= 0.0 || natH <= 0.0) return {};
+  const qreal s = qMin<qreal>(1.0, content.width() / natW);
+  const qreal drawW = natW * s;
+  const qreal drawH = natH * s;
+  const qreal dx = content.left() + qMax<qreal>(0.0, (content.width() - drawW) / 2.0);
+  const qreal dy = content.top() + qMax<qreal>(0.0, (content.height() - drawH) / 2.0);
+  // Inverse of the paint transform: document → scene coordinates.
+  const QPointF scenePos((documentPos.x() - dx) / s + mermaidScene_->bounds.left(),
+                         (documentPos.y() - dy) / s + mermaidScene_->bounds.top());
+  for (const auto& node : mermaidScene_->nodes) {
+    if (node.link.isEmpty()) continue;
+    const QRectF nr(node.cx - node.width / 2.0, node.cy - node.height / 2.0, node.width, node.height);
+    if (nr.contains(scenePos)) {
+      // Strict policy: only follow URLs that pass the safety check (drops javascript:/data:/…).
+      return isSafeUrl(node.link, false) ? node.link : QString();
+    }
+  }
+  return {};
 }
 
 void BlockLayout::paintHtmlBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
@@ -1691,6 +1808,15 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
         }
       }
       result.zone = type_ == BlockType::FrontMatter ? HitTestResult::Zone::FrontMatter : HitTestResult::Zone::Code;
+      // Rendered mermaid diagram: a click on a node carrying a safe link follows it
+      // (Ctrl+click in EditorView); otherwise fall through to caret placement below.
+      if (isMermaidRendered()) {
+        const QString link = mermaidLinkAt(documentPos, theme);
+        if (!link.isEmpty()) {
+          result.linkHref = link;
+          return result;
+        }
+      }
       // Code fences honor the wrap setting (and subtract the horizontal scroll offset when mapping
       // a click); FrontMatter always wraps. Previously both hardcoded wrap, so click mapping was
       // wrong whenever code-block wrap was off.

@@ -1,0 +1,103 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0"
+  },
+  "cases": [
+    {
+      "id": "no-header",
+      "source": "This is not a mermaid diagram at all.",
+      "upstreamError": true,
+      "upstreamMessage": "No diagram type detected matching given configuration for text: This is not a mermaid diagram at all.",
+      "expectedCategory": "MissingHeader",
+      "expectedLine": 1
+    },
+    {
+      "id": "unclosed-subgraph",
+      "source": "flowchart TB\nsubgraph S[Group]\nA --> B",
+      "upstreamError": true,
+      "upstreamMessage": "Parse error on line 4:\n...ph S[Group]A --> B\n---------------------^\nExpecting 'SEMI', 'NEWLINE', 'SPACE', 'EOF', 'subgraph', 'end', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'AMP', 'COLON', 'STYLE', 'LINKSTYLE', 'CLASSDEF', 'CLASS', 'CLICK', 'DOWN', 'DEFAULT', 'NUM', 'COMMA', 'NODE_STRING', 'BRKT', 'MINUS', 'MULT', 'UNICODE_TEXT', 'direction_tb', 'direction_bt', 'direction_rl', 'direction_lr', 'direction_td', got '1'",
+      "expectedCategory": "UnclosedSubgraph",
+      "expectedLine": 0
+    },
+    {
+      "id": "unexpected-end",
+      "source": "flowchart TB\nend",
+      "upstreamError": true,
+      "upstreamMessage": "Parse error on line 2:\nflowchart TBend\n------------^\nExpecting 'SEMI', 'NEWLINE', 'SPACE', 'EOF', 'subgraph', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'AMP', 'COLON', 'STYLE', 'LINKSTYLE', 'CLASSDEF', 'CLASS', 'CLICK', 'DOWN', 'DEFAULT', 'NUM', 'COMMA', 'NODE_STRING', 'BRKT', 'MINUS', 'MULT', 'UNICODE_TEXT', 'direction_tb', 'direction_bt', 'direction_rl', 'direction_lr', 'direction_td', got 'end'",
+      "expectedCategory": "UnexpectedEnd",
+      "expectedLine": 2
+    },
+    {
+      "id": "linkstyle-oob",
+      "source": "flowchart TB\nA --> B\nlinkStyle 5 stroke:red",
+      "upstreamError": true,
+      "upstreamMessage": "Cannot set properties of undefined (setting 'style')",
+      "expectedCategory": "LinkStyleBounds",
+      "expectedLine": 3
+    },
+    {
+      "id": "bad-classdef",
+      "source": "flowchart TB\nclassDef x",
+      "upstreamError": true,
+      "upstreamMessage": "Parse error on line 2:\n...wchart TBclassDef x\n----------------------^\nExpecting 'SPACE', 'AMP', 'COLON', 'DOWN', 'DEFAULT', 'NUM', 'COMMA', 'NODE_STRING', 'BRKT', 'MINUS', 'MULT', 'UNICODE_TEXT', got 'NEWLINE'",
+      "expectedCategory": "InvalidDirective",
+      "expectedLine": 2
+    },
+    {
+      "id": "text-limit",
+      "source": "flowchart TB\nA --> B",
+      "upstreamError": false,
+      "upstreamMessage": "",
+      "expectedCategory": "LimitExceeded",
+      "expectedLine": 0,
+      "options": {
+        "maxTextSize": 8
+      }
+    },
+    {
+      "id": "edge-limit",
+      "source": "flowchart TB\nA --> B\nC --> D",
+      "upstreamError": false,
+      "upstreamMessage": "",
+      "expectedCategory": "LimitExceeded",
+      "expectedLine": 3,
+      "options": {
+        "maxEdges": 1
+      }
+    },
+    {
+      "id": "vertex-limit",
+      "source": "flowchart TB\nA --> B",
+      "upstreamError": false,
+      "upstreamMessage": "",
+      "expectedCategory": "LimitExceeded",
+      "expectedLine": 2,
+      "limits": {
+        "maxVertices": 1
+      }
+    },
+    {
+      "id": "subgraph-depth-limit",
+      "source": "flowchart TB\nsubgraph S1\nsubgraph S2\nend\nend",
+      "upstreamError": false,
+      "upstreamMessage": "",
+      "expectedCategory": "LimitExceeded",
+      "expectedLine": 3,
+      "limits": {
+        "maxSubgraphDepth": 1
+      }
+    },
+    {
+      "id": "nodeid-length-limit",
+      "source": "flowchart TB\nABC",
+      "upstreamError": false,
+      "upstreamMessage": "",
+      "expectedCategory": "LimitExceeded",
+      "expectedLine": 2,
+      "limits": {
+        "maxNodeIdLength": 2
+      }
+    }
+  ]
+}

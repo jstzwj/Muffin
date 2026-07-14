@@ -35,6 +35,7 @@ private:
   QCheckBox* emojiAutocompleteCheck_ = nullptr;
   QLabel* liveRenderLabel_ = nullptr;
   QCheckBox* showBlockSourceCheck_ = nullptr;
+  QCheckBox* showMermaidAsSourceCheck_ = nullptr;
   QLabel* copyLabel_ = nullptr;
   QCheckBox* copyAsMarkdownCheck_ = nullptr;
   QCheckBox* copyLineWhenNoSelectionCheck_ = nullptr;

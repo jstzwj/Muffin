@@ -99,6 +99,14 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
   setAttribute(Qt::WA_InputMethodEnabled, true);
   viewport()->setMouseTracking(true);
   viewport()->setAutoFillBackground(false);
+  // When an async mermaid render finishes, refresh the visible blocks so the
+  // diagram replaces its loading placeholder at the correct height (the cache is
+  // queried again during the rebuild and now returns Ready). ScopedViewportPin
+  // inside refreshVisibleBlocks keeps the scroll position stable.
+  layout_->setMermaidRenderCache(&mermaidCache_);
+  connect(&mermaidCache_, &muffin::mermaid::editor::MermaidRenderCache::renderReady, this, [this]() {
+    if (document_) refreshVisibleBlocks(*document_);
+  });
   // Enable external drag-and-drop. acceptDrops defaults to false, so without
   // this the overridden drag*/dropEvent handlers are never delivered and drops
   // of folders/.md/.txt/images onto the window are silently ignored. The
@@ -886,6 +894,7 @@ void EditorView::rebuildLayout() {
   // codeFenceScroll_ directly) scrolls the text — so drag selections desynchronized from the text,
   // the shift growing with the horizontal scroll offset.
   layout_->setCodeFenceScroll(codeFenceScroll_);
+  layout_->setMermaidRenderCache(&mermaidCache_);
 
   if (document_) {
     layout_->setEditingHtmlBlock(editingHtmlBlockId_);
@@ -917,6 +926,7 @@ void EditorView::rebuildLayout() {
   } else {
     layout_ = std::make_unique<DocumentLayout>();
     layout_->setCodeFenceScroll(codeFenceScroll_);
+  layout_->setMermaidRenderCache(&mermaidCache_);
     updateScrollBars();
   }
   updateCodeLanguageEditor();

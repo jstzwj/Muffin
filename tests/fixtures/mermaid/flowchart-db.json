@@ -1,0 +1,1328 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "license": "MIT"
+  },
+  "cases": [
+    {
+      "id": "basic-labelled-edge",
+      "source": "flowchart LR\nA[Start] -->|go| B((End))",
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "Start",
+            "type": "square",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "End",
+            "type": "circle",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "go",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "duplicate-bare-reference",
+      "source": "flowchart TB\nA[Alpha] --> B[Beta] --> C[Gamma] --> A",
+      "expected": {
+        "direction": "TB",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "Alpha",
+            "type": "square",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "Beta",
+            "type": "square",
+            "props": {}
+          },
+          {
+            "id": "C",
+            "labelType": "text",
+            "domId": "flowchart-C-2",
+            "styles": [],
+            "classes": [],
+            "text": "Gamma",
+            "type": "square",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          },
+          {
+            "start": "B",
+            "end": "C",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_B_C_0"
+          },
+          {
+            "start": "C",
+            "end": "A",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_C_A_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "directions",
+      "source": "graph TD\nA --> B",
+      "expected": {
+        "direction": "TB",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "legacy-shapes",
+      "source": "flowchart TB\nsquare[Square]\nround(Round)\nstadium([Stadium])\nsubroutine[[Subroutine]]\ncylinder[(Database)]\ncircle((Circle))\nasymmetric>Flag]\ndiamond{Decision}\nhexagon{{Hexagon}}\ntrapezoid[/Trapezoid\\]\ninvTrapezoid[\\Inverse/]\nleanRight[/Lean/]\nleanLeft[\\Lean\\]",
+      "expected": {
+        "direction": "TB",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "square",
+            "labelType": "text",
+            "domId": "flowchart-square-0",
+            "styles": [],
+            "classes": [],
+            "text": "Square",
+            "type": "square",
+            "props": {}
+          },
+          {
+            "id": "round",
+            "labelType": "text",
+            "domId": "flowchart-round-1",
+            "styles": [],
+            "classes": [],
+            "text": "Round",
+            "type": "round",
+            "props": {}
+          },
+          {
+            "id": "stadium",
+            "labelType": "text",
+            "domId": "flowchart-stadium-2",
+            "styles": [],
+            "classes": [],
+            "text": "Stadium",
+            "type": "stadium",
+            "props": {}
+          },
+          {
+            "id": "subroutine",
+            "labelType": "text",
+            "domId": "flowchart-subroutine-3",
+            "styles": [],
+            "classes": [],
+            "text": "Subroutine",
+            "type": "subroutine",
+            "props": {}
+          },
+          {
+            "id": "cylinder",
+            "labelType": "text",
+            "domId": "flowchart-cylinder-4",
+            "styles": [],
+            "classes": [],
+            "text": "Database",
+            "type": "cylinder",
+            "props": {}
+          },
+          {
+            "id": "circle",
+            "labelType": "text",
+            "domId": "flowchart-circle-5",
+            "styles": [],
+            "classes": [],
+            "text": "Circle",
+            "type": "circle",
+            "props": {}
+          },
+          {
+            "id": "asymmetric",
+            "labelType": "text",
+            "domId": "flowchart-asymmetric-6",
+            "styles": [],
+            "classes": [],
+            "text": "Flag",
+            "type": "odd",
+            "props": {}
+          },
+          {
+            "id": "diamond",
+            "labelType": "text",
+            "domId": "flowchart-diamond-7",
+            "styles": [],
+            "classes": [],
+            "text": "Decision",
+            "type": "diamond",
+            "props": {}
+          },
+          {
+            "id": "hexagon",
+            "labelType": "text",
+            "domId": "flowchart-hexagon-8",
+            "styles": [],
+            "classes": [],
+            "text": "Hexagon",
+            "type": "hexagon",
+            "props": {}
+          },
+          {
+            "id": "trapezoid",
+            "labelType": "text",
+            "domId": "flowchart-trapezoid-9",
+            "styles": [],
+            "classes": [],
+            "text": "Trapezoid",
+            "type": "trapezoid",
+            "props": {}
+          },
+          {
+            "id": "invTrapezoid",
+            "labelType": "text",
+            "domId": "flowchart-invTrapezoid-10",
+            "styles": [],
+            "classes": [],
+            "text": "Inverse",
+            "type": "inv_trapezoid",
+            "props": {}
+          },
+          {
+            "id": "leanRight",
+            "labelType": "text",
+            "domId": "flowchart-leanRight-11",
+            "styles": [],
+            "classes": [],
+            "text": "Lean",
+            "type": "lean_right",
+            "props": {}
+          },
+          {
+            "id": "leanLeft",
+            "labelType": "text",
+            "domId": "flowchart-leanLeft-12",
+            "styles": [],
+            "classes": [],
+            "text": "Lean",
+            "type": "lean_left",
+            "props": {}
+          }
+        ],
+        "edges": [],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "edge-forms",
+      "source": "flowchart LR\nA --> B\nB --- C\nC -. dotted .-> D\nD ==> E\nE -- open --- F\nF --x G\nG --o H\nH <--> I",
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          },
+          {
+            "id": "C",
+            "labelType": "text",
+            "domId": "flowchart-C-3",
+            "styles": [],
+            "classes": [],
+            "text": "C",
+            "props": {}
+          },
+          {
+            "id": "D",
+            "labelType": "text",
+            "domId": "flowchart-D-5",
+            "styles": [],
+            "classes": [],
+            "text": "D",
+            "props": {}
+          },
+          {
+            "id": "E",
+            "labelType": "text",
+            "domId": "flowchart-E-7",
+            "styles": [],
+            "classes": [],
+            "text": "E",
+            "props": {}
+          },
+          {
+            "id": "F",
+            "labelType": "text",
+            "domId": "flowchart-F-9",
+            "styles": [],
+            "classes": [],
+            "text": "F",
+            "props": {}
+          },
+          {
+            "id": "G",
+            "labelType": "text",
+            "domId": "flowchart-G-11",
+            "styles": [],
+            "classes": [],
+            "text": "G",
+            "props": {}
+          },
+          {
+            "id": "H",
+            "labelType": "text",
+            "domId": "flowchart-H-13",
+            "styles": [],
+            "classes": [],
+            "text": "H",
+            "props": {}
+          },
+          {
+            "id": "I",
+            "labelType": "text",
+            "domId": "flowchart-I-15",
+            "styles": [],
+            "classes": [],
+            "text": "I",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          },
+          {
+            "start": "B",
+            "end": "C",
+            "type": "arrow_open",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_B_C_0"
+          },
+          {
+            "start": "C",
+            "end": "D",
+            "type": "arrow_point",
+            "text": "dotted",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "dotted",
+            "length": 1,
+            "id": "L_C_D_0"
+          },
+          {
+            "start": "D",
+            "end": "E",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "thick",
+            "length": 1,
+            "id": "L_D_E_0"
+          },
+          {
+            "start": "E",
+            "end": "F",
+            "type": "arrow_open",
+            "text": "open",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_E_F_0"
+          },
+          {
+            "start": "F",
+            "end": "G",
+            "type": "arrow_cross",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_F_G_0"
+          },
+          {
+            "start": "G",
+            "end": "H",
+            "type": "arrow_circle",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_G_H_0"
+          },
+          {
+            "start": "H",
+            "end": "I",
+            "type": "double_arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_H_I_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "chains-and-groups",
+      "source": "flowchart LR\nA & B --> C & D --> E",
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          },
+          {
+            "id": "C",
+            "labelType": "text",
+            "domId": "flowchart-C-2",
+            "styles": [],
+            "classes": [],
+            "text": "C",
+            "props": {}
+          },
+          {
+            "id": "D",
+            "labelType": "text",
+            "domId": "flowchart-D-3",
+            "styles": [],
+            "classes": [],
+            "text": "D",
+            "props": {}
+          },
+          {
+            "id": "E",
+            "labelType": "text",
+            "domId": "flowchart-E-4",
+            "styles": [],
+            "classes": [],
+            "text": "E",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "C",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_C_0"
+          },
+          {
+            "start": "A",
+            "end": "D",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_D_0"
+          },
+          {
+            "start": "B",
+            "end": "C",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_B_C_0"
+          },
+          {
+            "start": "B",
+            "end": "D",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_B_D_0"
+          },
+          {
+            "start": "C",
+            "end": "E",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_C_E_0"
+          },
+          {
+            "start": "D",
+            "end": "E",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_D_E_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "parallel-edge-ids",
+      "source": "flowchart LR\nA --> B\nA --> B\nA --> B",
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          },
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_2"
+          },
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_3"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "classes-and-styles",
+      "source": "flowchart LR\nA[Alpha]:::hot --> B[Beta]\nclassDef hot fill:#f00,color:#fff,stroke-width:2px\nclass B hot\nstyle B fill:#0f0,stroke:#333\nlinkStyle 0 stroke:#00f,stroke-width:3px",
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [
+              "hot"
+            ],
+            "text": "Alpha",
+            "type": "square",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [
+              "fill:#0f0",
+              "stroke:#333"
+            ],
+            "classes": [
+              "hot"
+            ],
+            "text": "Beta",
+            "type": "square",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0",
+            "style": [
+              "stroke:#00f",
+              "stroke-width:3px",
+              "fill:none"
+            ]
+          }
+        ],
+        "classes": [
+          {
+            "id": "hot",
+            "styles": [
+              "fill:#f00",
+              "color:#fff",
+              "stroke-width:2px"
+            ],
+            "textStyles": [
+              "color:#fff"
+            ]
+          }
+        ],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "subgraphs",
+      "source": "flowchart TB\nsubgraph outer[Outer group]\ndirection LR\nA --> B\nsubgraph inner[Inner]\nC --> D\nend\nend\nB --> C",
+      "expected": {
+        "direction": "TB",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          },
+          {
+            "id": "C",
+            "labelType": "text",
+            "domId": "flowchart-C-2",
+            "styles": [],
+            "classes": [],
+            "text": "C",
+            "props": {}
+          },
+          {
+            "id": "D",
+            "labelType": "text",
+            "domId": "flowchart-D-3",
+            "styles": [],
+            "classes": [],
+            "text": "D",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          },
+          {
+            "start": "C",
+            "end": "D",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_C_D_0"
+          },
+          {
+            "start": "B",
+            "end": "C",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_B_C_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [
+          {
+            "id": "inner",
+            "nodes": [
+              "D",
+              "C"
+            ],
+            "title": "Inner",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          },
+          {
+            "id": "outer",
+            "nodes": [
+              "B",
+              "A",
+              "inner"
+            ],
+            "title": "Outer group",
+            "classes": [],
+            "dir": "LR",
+            "hasExplicitDir": true,
+            "labelType": "text"
+          }
+        ],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "quoted-and-markdown-labels",
+      "source": "flowchart LR\nA[\"quoted label\"] --> B[\"`**bold** and text`\"]",
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "string",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "quoted label",
+            "type": "square",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "markdown",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "**bold** and text",
+            "type": "square",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "accessibility",
+      "source": "flowchart LR\naccTitle: Accessible title\naccDescr: Accessible description\nA --> B",
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "Accessible title",
+        "accDescription": "Accessible description",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "click-and-links",
+      "source": "flowchart LR\nA --> B\nclick A href \"https://example.com\" \"Open example\" _blank\nclick B callback \"Run callback\"",
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "A",
+            "props": {},
+            "link": "https://example.com/",
+            "linkTarget": "_blank"
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "B",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {
+          "A": "Open example",
+          "B": "Run callback"
+        }
+      }
+    },
+    {
+      "id": "node-metadata",
+      "source": "flowchart LR\nA@{ shape: rounded, label: \"Alpha\" } --> B@{ shape: bang, label: \"Beta\" }",
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "markdown",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "Alpha",
+            "props": {},
+            "type": "rounded"
+          },
+          {
+            "id": "B",
+            "labelType": "markdown",
+            "domId": "flowchart-B-2",
+            "styles": [],
+            "classes": [],
+            "text": "Beta",
+            "props": {},
+            "type": "bang"
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "edge-id-and-metadata",
+      "source": "flowchart LR\nA e1@--> B\ne1@{ animate: true, animation: fast, curve: basis }",
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": true,
+            "interpolate": "basis",
+            "stroke": "normal",
+            "length": 1,
+            "id": "e1",
+            "animate": true,
+            "animation": "fast"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "long-links",
+      "source": "flowchart LR\nA ----> B\nB -..-> C\nC ====> D",
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          },
+          {
+            "id": "C",
+            "labelType": "text",
+            "domId": "flowchart-C-3",
+            "styles": [],
+            "classes": [],
+            "text": "C",
+            "props": {}
+          },
+          {
+            "id": "D",
+            "labelType": "text",
+            "domId": "flowchart-D-5",
+            "styles": [],
+            "classes": [],
+            "text": "D",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 3,
+            "id": "L_A_B_0"
+          },
+          {
+            "start": "B",
+            "end": "C",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "dotted",
+            "length": 2,
+            "id": "L_B_C_0"
+          },
+          {
+            "start": "C",
+            "end": "D",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "thick",
+            "length": 3,
+            "id": "L_C_D_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "default-link-style",
+      "source": "flowchart LR\nA --> B --> C\nlinkStyle default stroke:#999,stroke-width:2px",
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          },
+          {
+            "id": "C",
+            "labelType": "text",
+            "domId": "flowchart-C-2",
+            "styles": [],
+            "classes": [],
+            "text": "C",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          },
+          {
+            "start": "B",
+            "end": "C",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_B_C_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    }
+  ]
+}

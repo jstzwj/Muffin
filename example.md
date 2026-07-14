@@ -369,13 +369,43 @@ The raw HTML below is intentionally unsafe. Muffin should preserve it as source 
   <script>alert('blocked');</script>
 </div>
 
+## Mermaid
+
+A complex flowchart exercising nested subgraphs, cluster-crossing edges, several node shapes, edge labels, a self-loop, and a cycle.
+
+> The native Mermaid renderer renders this fence as a live diagram (parse → Dagre layout → Qt paint, no JS/browser runtime). The cached render is async; editing the fence shows the source. PDF/print and HTML export include the diagram too.
+
+```mermaid
+flowchart TB
+    subgraph Client["Client Tier"]
+        A([Browser]) --> B[Web App]
+        B --> C{Cache hit?}
+        C -- yes --> D[(Cache)]
+    end
+    subgraph Server["Server Tier"]
+        subgraph Sync["Synchronous"]
+            E[API Gateway] --> F[Auth Service]
+            F --> G[(User DB)]
+            E --> H[Order Service]
+            H --> I[(Orders DB)]
+        end
+        J[Notifier] -.-> K((Message Queue))
+    end
+    C -- no --> E
+    D --> E
+    K --> H
+    B --> B
+    I --> H
+    G --> I
+```
+
 ## Unsupported or Planned Markdown-Adjacent Features
 
 The following syntax is useful for compatibility tests, but full editing/rendering support is not complete yet:
 
 - Footnotes: `A note reference[^sample-note]`
 - Definition lists
-- Mermaid diagrams
+- Mermaid diagrams: flowchart is rendered natively; other diagram types (sequence, state, …) fall back to source
 - Front matter editor
 - Embedded rich media
 

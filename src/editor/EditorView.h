@@ -2,6 +2,7 @@
 
 #include "document/TopLevelRangeChange.h"
 #include "editor/HtmlBlockHoverController.h"
+#include "mermaid/editor/MermaidRenderCache.h"
 #include "render/DocumentLayout.h"
 #include "theme/RenderTheme.h"
 
@@ -52,6 +53,9 @@ public:
   // Per-code-fence horizontal scroll state (owned by EditorController). EditorView mutates the
   // offset on Shift+wheel / scrollbar drag and passes it down to paint/hit-test.
   void setCodeFenceScroll(CodeFenceScrollController* controller);
+  // The shared mermaid render cache (milestone I); print/PDF export reuses it in
+  // sync mode so diagrams appear without a second render.
+  muffin::mermaid::editor::MermaidRenderCache* mermaidRenderCache() { return &mermaidCache_; }
   void clearCursor();
   void setCodeLanguageSuggestions(QStringList languages);
 
@@ -282,6 +286,10 @@ private:
   struct BuiltStamp { SelectionRange selection; quint64 revision; };
   QHash<NodeId, BuiltStamp> blockBuiltAt_;
   CodeFenceScrollController* codeFenceScroll_ = nullptr;
+  // Cached, async mermaid renderer (milestone I). Owned by the view; the layout
+  // builder reads it. When a render finishes, the visible blocks are refreshed so
+  // the diagram replaces its loading placeholder at the correct height.
+  muffin::mermaid::editor::MermaidRenderCache mermaidCache_;
   NodeId codeFenceScrollDragId_;  // block being horizontally dragged via its scrollbar (invalid when idle)
   HtmlBlockHoverController htmlHover_;
   class HoverAnimator* hoverAnimator_ = nullptr;

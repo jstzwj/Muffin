@@ -1,0 +1,124 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0"
+  },
+  "source": "flowchart LR\nA[Plain] --> B[ClassOnly]:::clsB\nB -->|lbl1| C[Inline]\nC --> D[ClassAndInline]:::clsA\nC --> E[TextCls]:::clsE\nstyle C fill:#00ff00,stroke:#333333,stroke-width:2px,color:#ff0000\nstyle D fill:#0000ff\nlinkStyle 1 stroke:#0000ff,stroke-width:3px\nlinkStyle 2 stroke:#ff0000,stroke-dasharray:4 2,color:#008800\nclassDef clsA fill:#ffff00,stroke:#ff00ff,color:#000000\nclassDef clsB fill:#aaaaaa,color:#ffffff,font-weight:bold\nclassDef clsE fill:#eeeeee,color:#110000,font-weight:bold,font-size:20px",
+  "nodes": [
+    {
+      "id": "A",
+      "containerStyleAttr": "",
+      "labelStyleAttr": "",
+      "fill": "rgb(236, 236, 255)",
+      "stroke": "rgb(147, 112, 219)",
+      "strokeWidth": "1px",
+      "strokeDasharray": "none",
+      "color": "rgb(51, 51, 51)",
+      "fontFamily": "Arial",
+      "fontSize": "16px",
+      "fontWeight": "400"
+    },
+    {
+      "id": "B",
+      "containerStyleAttr": "fill:#aaaaaa !important",
+      "labelStyleAttr": "color:#ffffff !important;font-weight:bold !important",
+      "fill": "rgb(170, 170, 170)",
+      "stroke": "rgb(147, 112, 219)",
+      "strokeWidth": "1px",
+      "strokeDasharray": "none",
+      "color": "rgb(255, 255, 255)",
+      "fontFamily": "Arial",
+      "fontSize": "16px",
+      "fontWeight": "700"
+    },
+    {
+      "id": "C",
+      "containerStyleAttr": "fill:#00ff00 !important;stroke:#333333 !important;stroke-width:2px !important",
+      "labelStyleAttr": "color:#ff0000 !important",
+      "fill": "rgb(0, 255, 0)",
+      "stroke": "rgb(51, 51, 51)",
+      "strokeWidth": "2px",
+      "strokeDasharray": "none",
+      "color": "rgb(255, 0, 0)",
+      "fontFamily": "Arial",
+      "fontSize": "16px",
+      "fontWeight": "400"
+    },
+    {
+      "id": "D",
+      "containerStyleAttr": "fill:#0000ff !important;stroke:#ff00ff !important",
+      "labelStyleAttr": "color:#000000 !important",
+      "fill": "rgb(0, 0, 255)",
+      "stroke": "rgb(255, 0, 255)",
+      "strokeWidth": "1px",
+      "strokeDasharray": "none",
+      "color": "rgb(0, 0, 0)",
+      "fontFamily": "Arial",
+      "fontSize": "16px",
+      "fontWeight": "400"
+    },
+    {
+      "id": "E",
+      "containerStyleAttr": "fill:#eeeeee !important",
+      "labelStyleAttr": "color:#110000 !important;font-weight:bold !important;font-size:20px !important",
+      "fill": "rgb(238, 238, 238)",
+      "stroke": "rgb(147, 112, 219)",
+      "strokeWidth": "1px",
+      "strokeDasharray": "none",
+      "color": "rgb(17, 0, 0)",
+      "fontFamily": "Arial",
+      "fontSize": "20px",
+      "fontWeight": "700"
+    }
+  ],
+  "edges": [
+    {
+      "index": 0,
+      "pathStyleAttr": ";",
+      "stroke": "rgb(51, 51, 51)",
+      "strokeWidth": "1px",
+      "strokeDasharray": "0px",
+      "markerEnd": "url(#flow-style-cascade_flowchart-v2-pointEnd)",
+      "markerStart": null,
+      "labelColor": "rgb(51, 51, 51)",
+      "labelFontSize": "16px",
+      "labelBg": "rgba(232, 232, 232, 0.8)"
+    },
+    {
+      "index": 1,
+      "pathStyleAttr": "stroke:#0000ff;stroke-width:3px;fill:none;;;stroke:#0000ff;stroke-width:3px;fill:none",
+      "stroke": "rgb(0, 0, 255)",
+      "strokeWidth": "3px",
+      "strokeDasharray": "0px",
+      "markerEnd": "url(#flow-style-cascade_flowchart-v2-pointEnd__0000ff)",
+      "markerStart": null,
+      "labelColor": "rgb(51, 51, 51)",
+      "labelFontSize": "16px",
+      "labelBg": "rgba(232, 232, 232, 0.8)"
+    },
+    {
+      "index": 2,
+      "pathStyleAttr": "stroke:#ff0000;stroke-dasharray:4 2;color:#008800;fill:none;;;stroke:#ff0000;stroke-dasharray:4 2;color:#008800;fill:none",
+      "stroke": "rgb(255, 0, 0)",
+      "strokeWidth": "1px",
+      "strokeDasharray": "4px, 2px",
+      "markerEnd": "url(#flow-style-cascade_flowchart-v2-pointEnd__ff0000)",
+      "markerStart": null,
+      "labelColor": "rgb(51, 51, 51)",
+      "labelFontSize": "16px",
+      "labelBg": "rgba(232, 232, 232, 0.8)"
+    },
+    {
+      "index": 3,
+      "pathStyleAttr": ";",
+      "stroke": "rgb(51, 51, 51)",
+      "strokeWidth": "1px",
+      "strokeDasharray": "0px",
+      "markerEnd": "url(#flow-style-cascade_flowchart-v2-pointEnd)",
+      "markerStart": null,
+      "labelColor": "rgb(51, 51, 51)",
+      "labelFontSize": "16px",
+      "labelBg": "rgba(232, 232, 232, 0.8)"
+    }
+  ]
+}

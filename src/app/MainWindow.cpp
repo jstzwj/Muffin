@@ -567,6 +567,12 @@ void muffin::MainWindow::paintDocumentToPrinter(QPrinter* printer) {
   const QRectF page = printer->pageRect(QPrinter::DevicePixel);
 
   DocumentLayout layout;
+  // Reuse the editor's mermaid render cache in sync mode so diagrams render into
+  // the print/PDF output via the same BlockLayout paint path (milestone I-4).
+  if (renderView_ && renderView_->mermaidRenderCache()) {
+    layout.setMermaidRenderCache(renderView_->mermaidRenderCache());
+    layout.setMermaidSyncMode(true);
+  }
   layout.rebuild(session_.document(), theme, page.width());
 
   QPainter painter(printer);

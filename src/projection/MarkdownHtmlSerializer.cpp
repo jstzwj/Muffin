@@ -5,6 +5,7 @@
 #include "document/DefinitionBlock.h"
 #include "document/InlineNode.h"
 #include "document/MarkdownNode.h"
+#include "mermaid/editor/MermaidRenderCache.h"
 #include "document/MarkdownTypes.h"
 #include "editor/EmojiDictionary.h"
 #include "parser/CmarkGfmParser.h"
@@ -242,8 +243,22 @@ struct Serializer {
   }
 
   void emitCode(const MarkdownNode& node) {
-    out += QStringLiteral("<pre><code");
     const QString lang = node.codeLanguage();  // already the first whitespace-delimited token
+    // Mermaid (milestone I-5): render the diagram to an inline PNG so the exported
+    // HTML shows it with no JS/browser dependency. On any render failure (malformed,
+    // unsupported diagram type) fall through to the source so content is never lost.
+    if (lang == QLatin1String("mermaid")) {
+      const QString dataUrl = mermaid::editor::MermaidRenderCache::renderMermaidSourceToPngDataUrl(node.literal());
+      if (!dataUrl.isEmpty()) {
+        out += QStringLiteral("<img class=\"mfn-mermaid\" alt=\"mermaid diagram\" src=\"") + dataUrl +
+               QStringLiteral("\" />\n");
+        out += QStringLiteral("<details class=\"mfn-mermaid-source\"><summary>") + escapeText(QStringLiteral("source")) +
+               QStringLiteral("</summary><pre><code class=\"language-mermaid\">") + escapeText(node.literal()) +
+               QStringLiteral("</code></pre></details>\n");
+        return;
+      }
+    }
+    out += QStringLiteral("<pre><code");
     if (!lang.isEmpty()) {
       out += QStringLiteral(" class=\"language-") + escapeAttr(lang) + QStringLiteral("\"");
     }

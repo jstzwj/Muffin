@@ -1,0 +1,85 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0"
+  },
+  "cases": [
+    {
+      "id": "theme-default",
+      "theme": "default",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "enforceInterior": true,
+      "file": "theme-default.png"
+    },
+    {
+      "id": "theme-base",
+      "theme": "base",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "enforceInterior": true,
+      "file": "theme-base.png"
+    },
+    {
+      "id": "theme-dark",
+      "theme": "dark",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "enforceInterior": true,
+      "file": "theme-dark.png"
+    },
+    {
+      "id": "theme-forest",
+      "theme": "forest",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "enforceInterior": true,
+      "file": "theme-forest.png"
+    },
+    {
+      "id": "theme-neutral",
+      "theme": "neutral",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "enforceInterior": true,
+      "file": "theme-neutral.png"
+    },
+    {
+      "id": "dir-TB",
+      "theme": "default",
+      "source": "flowchart TB\nA[Alpha] --> B[Beta] --> C[Gamma] --> D[Delta]",
+      "enforceInterior": true,
+      "file": "dir-TB.png"
+    },
+    {
+      "id": "dir-BT",
+      "theme": "default",
+      "source": "flowchart BT\nA[Alpha] --> B[Beta] --> C[Gamma] --> D[Delta]",
+      "enforceInterior": true,
+      "file": "dir-BT.png"
+    },
+    {
+      "id": "dir-LR",
+      "theme": "default",
+      "source": "flowchart LR\nA[Alpha] --> B[Beta] --> C[Gamma] --> D[Delta]",
+      "enforceInterior": true,
+      "file": "dir-LR.png"
+    },
+    {
+      "id": "dir-RL",
+      "theme": "default",
+      "source": "flowchart RL\nA[Alpha] --> B[Beta] --> C[Gamma] --> D[Delta]",
+      "enforceInterior": true,
+      "file": "dir-RL.png"
+    },
+    {
+      "id": "edge-marker-matrix",
+      "theme": "default",
+      "source": "flowchart LR\nA[Start] --> B[Point]\nB --x C[Cross]\nC --o D[Circle]\nD --- E[Open]\nE -.-> F[Dotted]\nF ==> G[Thick]\nA o--o H[CircleBoth]\nH x--x I[CrossBoth]",
+      "enforceInterior": true,
+      "file": "edge-marker-matrix.png"
+    },
+    {
+      "id": "shape-matrix",
+      "theme": "default",
+      "source": "flowchart LR\nA[Rect] --> B(Round)\nB --> C((Circle))\nC --> D{Diamond}\nD --> E[/Trapezoid/]\nE --> F[(Database)]\nF --> G{{Hexagon}}\nG --> H([Stadium])",
+      "enforceInterior": true,
+      "file": "shape-matrix.png"
+    }
+  ]
+}

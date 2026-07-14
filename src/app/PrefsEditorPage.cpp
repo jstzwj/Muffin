@@ -78,9 +78,11 @@ muffin::PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(pare
   auto* liveLayout = makeCardLayout(liveCard);
   liveRenderLabel_ = makeSectionLabel(liveCard);
   showBlockSourceCheck_ = new QCheckBox(liveCard);
+  showMermaidAsSourceCheck_ = new QCheckBox(liveCard);
   liveLayout->addWidget(liveRenderLabel_);
   liveLayout->addSpacing(2);
   liveLayout->addWidget(showBlockSourceCheck_);
+  liveLayout->addWidget(showMermaidAsSourceCheck_);
   cardColumn->addWidget(liveCard);
 
   // --- Card 5: Default Copy Behavior ---
@@ -158,6 +160,7 @@ muffin::PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(pare
   wireBoolSetting(matchMarkdownCheck_, QStringLiteral("editor/matchMarkdown"));
   wireBoolSetting(emojiAutocompleteCheck_, QStringLiteral("editor/emojiAutocomplete"));
   wireBoolSetting(showBlockSourceCheck_, QStringLiteral("editor/showBlockSource"));
+  wireBoolSetting(showMermaidAsSourceCheck_, QStringLiteral("editor/showMermaidAsSource"));
   wireBoolSetting(copyAsMarkdownCheck_, QStringLiteral("editor/copyAsMarkdown"));
   wireBoolSetting(copyLineWhenNoSelectionCheck_, QStringLiteral("editor/copyLineNoSelection"));
   connect(lineBreakLfRadio_, &QRadioButton::toggled, this,
@@ -191,6 +194,7 @@ void muffin::PrefsEditorPage::retranslateUi() {
 
   liveRenderLabel_->setText(tr("Live Rendering"));
   showBlockSourceCheck_->setText(tr("Show Markdown source of the current block element"));
+  showMermaidAsSourceCheck_->setText(tr("Show Mermaid diagrams as source code instead of rendering"));
 
   copyLabel_->setText(tr("Default Copy Behavior"));
   copyAsMarkdownCheck_->setText(tr("Copy Markdown source when copying plain text"));
@@ -217,6 +221,7 @@ void muffin::PrefsEditorPage::loadSettings() {
   loadCheck(matchMarkdownCheck_, QStringLiteral("editor/matchMarkdown"), false);
   loadCheck(emojiAutocompleteCheck_, QStringLiteral("editor/emojiAutocomplete"), true);
   loadCheck(showBlockSourceCheck_, QStringLiteral("editor/showBlockSource"), false);
+  loadCheck(showMermaidAsSourceCheck_, QStringLiteral("editor/showMermaidAsSource"), false);
   loadCheck(copyAsMarkdownCheck_, QStringLiteral("editor/copyAsMarkdown"), true);
   loadCheck(copyLineWhenNoSelectionCheck_, QStringLiteral("editor/copyLineNoSelection"), false);
 

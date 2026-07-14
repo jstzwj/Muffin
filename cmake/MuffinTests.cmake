@@ -14,6 +14,27 @@ muffin_add_test(NAME MuffinSplitAfterRuleProbe SOURCE tests/perf/SplitAfterRuleP
 muffin_add_test(NAME MuffinThematicBreakRangeProbe SOURCE tests/perf/ThematicBreakRangeProbe.cpp LINK MuffinUi RESOURCE_LOCK)
 
 # --- parser / document (pure logic; link MuffinCore, no Qt GUI lock) ---
+muffin_add_test(NAME MuffinMermaidCompatibilityTest SOURCE tests/mermaid/MermaidCompatibilityTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/preprocess-and-detect.json)
+muffin_add_test(NAME MuffinMermaidFlowchartParserTest SOURCE tests/mermaid/MermaidFlowchartParserTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/flowchart-db.json)
+muffin_add_test(NAME MuffinMermaidParserErrorTest SOURCE tests/mermaid/MermaidParserErrorTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/flowchart-errors.json)
+muffin_add_test(NAME MuffinMermaidSecurityTest SOURCE tests/mermaid/MermaidSecurityTest.cpp LINK MuffinCore)
+muffin_add_test(NAME MuffinMermaidFuzzTest SOURCE tests/mermaid/MermaidFuzzTest.cpp LINK MuffinCore)
+muffin_add_test(NAME MuffinMermaidRenderCacheTest SOURCE tests/mermaid/MermaidRenderCacheTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui RESOURCE_LOCK)
+muffin_add_test(NAME MuffinRenderMermaidBlockTest SOURCE tests/render/RenderMermaidBlockTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinMermaidFlowchartLayoutTest SOURCE tests/mermaid/MermaidFlowchartLayoutTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/flowchart-geometry.json RESOURCE_LOCK)
+muffin_add_test(NAME MuffinMermaidDagreLayoutTest SOURCE tests/mermaid/MermaidDagreLayoutTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/flowchart-geometry.json RESOURCE_LOCK)
+muffin_add_test(NAME MuffinMermaidDagreSnapshotTest SOURCE tests/mermaid/MermaidDagreSnapshotTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/flowchart-geometry.json RESOURCE_LOCK)
+# MuffinMermaidDagreLayoutTest (tests/mermaid/MermaidDagreLayoutTest.cpp) is the
+# milestone-C acceptance gate for layoutFlowchartNodesDagre; temporarily
+# registered while debugging the remaining cases (compound-crossing mirror,
+# self-edge). Skips compound-crossing via pendingNative.
+muffin_add_test(NAME MuffinMermaidGraphTest SOURCE tests/mermaid/MermaidGraphTest.cpp LINK MuffinCore)
+muffin_add_test(NAME MuffinMermaidShapeRegistryTest SOURCE tests/mermaid/MermaidShapeRegistryTest.cpp LINK MuffinCore)
+muffin_add_test(NAME MuffinMermaidThemeTest SOURCE tests/mermaid/MermaidThemeTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/flowchart-theme.json)
+muffin_add_test(NAME MuffinMermaidFlowStyleResolveTest SOURCE tests/mermaid/MermaidFlowStyleResolveTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/flowchart-style-cascade.json)
+muffin_add_test(NAME MuffinMermaidFlowchartSceneTest SOURCE tests/mermaid/MermaidFlowchartSceneTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/flowchart-scene.json RESOURCE_LOCK)
+muffin_add_test(NAME MuffinMermaidGoldenPixelTest SOURCE tests/mermaid/MermaidGoldenPixelTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/golden-pixel/manifest.json RESOURCE_LOCK)
+muffin_add_test(NAME MuffinMermaidDagreCompoundTest SOURCE tests/mermaid/MermaidDagreCompoundTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinParserBasicTest      SOURCE tests/parser/ParserBasicTest.cpp      LINK MuffinCore)
 muffin_add_test(NAME MuffinParserDefinitionTest SOURCE tests/parser/ParserDefinitionTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinParserMathCodeTest   SOURCE tests/parser/ParserMathCodeTest.cpp   LINK MuffinCore)

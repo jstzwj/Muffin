@@ -1,0 +1,238 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0"
+  },
+  "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+  "background": "white",
+  "bounds": {
+    "x": -57.179,
+    "y": -57.679,
+    "width": 115.359,
+    "height": 115.359
+  },
+  "clusters": [
+    {
+      "id": "flow-scene-S",
+      "cx": 93.461,
+      "cy": 119.461,
+      "width": 170.922,
+      "height": 222.922,
+      "fill": "rgb(255, 255, 222)",
+      "stroke": "rgb(170, 170, 51)",
+      "strokeWidth": "1px",
+      "label": {
+        "text": "Group",
+        "color": "rgb(0, 0, 0)"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "flow-scene-L_A_B_0",
+      "path": "M93.461,87L93.461,92.917C93.461,98.833,93.461,110.667,93.461,121.833C93.461,133,93.461,143.5,93.461,148.75L93.461,154",
+      "stroke": "rgb(51, 51, 51)",
+      "strokeWidth": "1px",
+      "strokeDasharray": "0px",
+      "markerEnd": "url(#flow-scene_flowchart-v2-pointEnd)",
+      "markerStart": null,
+      "label": {
+        "text": "go",
+        "background": "rgba(232, 232, 232, 0.8)"
+      }
+    },
+    {
+      "id": "flow-scene-L_B_C_0",
+      "path": "M93.461,205.922L93.461,210.089C93.461,214.255,93.461,222.589,93.461,230.922C93.461,239.255,93.461,247.589,93.461,255.922C93.461,264.255,93.461,272.589,93.461,276.755L93.461,280.922",
+      "stroke": "rgb(51, 51, 51)",
+      "strokeWidth": "1px",
+      "strokeDasharray": "0px",
+      "markerEnd": "url(#flow-scene_flowchart-v2-crossEnd)",
+      "markerStart": null,
+      "label": {
+        "text": "",
+        "background": "rgba(232, 232, 232, 0.8)"
+      }
+    },
+    {
+      "id": "flow-scene-L_C_D_0",
+      "path": "M93.461,396.281L93.461,400.448C93.461,404.615,93.461,412.948,93.461,421.281C93.461,429.615,93.461,437.948,93.461,442.115L93.461,446.281",
+      "stroke": "rgb(51, 51, 51)",
+      "strokeWidth": "1px",
+      "strokeDasharray": "0px",
+      "markerEnd": "url(#flow-scene_flowchart-v2-circleEnd)",
+      "markerStart": null,
+      "label": {
+        "text": "",
+        "background": "rgba(232, 232, 232, 0.8)"
+      }
+    },
+    {
+      "id": "flow-scene-L_D_E_0",
+      "path": "M93.461,500.281L93.461,504.448C93.461,508.615,93.461,516.948,93.461,525.281C93.461,533.615,93.461,541.948,93.461,546.115L93.461,550.281",
+      "stroke": "rgb(51, 51, 51)",
+      "strokeWidth": "1px",
+      "strokeDasharray": "0px",
+      "markerEnd": null,
+      "markerStart": null,
+      "label": {
+        "text": "",
+        "background": "rgba(232, 232, 232, 0.8)"
+      }
+    },
+    {
+      "id": "flow-scene-L_E_F_0",
+      "path": "M93.461,604.281L93.461,608.448C93.461,612.615,93.461,620.948,93.461,628.615C93.461,636.281,93.461,643.281,93.461,646.781L93.461,650.281",
+      "stroke": "rgb(0, 0, 255)",
+      "strokeWidth": "3px",
+      "strokeDasharray": "2px",
+      "markerEnd": "url(#flow-scene_flowchart-v2-pointEnd__0000ff)",
+      "markerStart": null,
+      "label": {
+        "text": "",
+        "background": "rgba(232, 232, 232, 0.8)"
+      }
+    },
+    {
+      "id": "flow-scene-L_F_G_0",
+      "path": "M93.461,708.281L93.461,712.448C93.461,716.615,93.461,724.948,93.461,732.615C93.461,740.281,93.461,747.281,93.461,750.781L93.461,754.281",
+      "stroke": "rgb(51, 51, 51)",
+      "strokeWidth": "3.5px",
+      "strokeDasharray": "0px",
+      "markerEnd": "url(#flow-scene_flowchart-v2-pointEnd)",
+      "markerStart": null,
+      "label": {
+        "text": "",
+        "background": "rgba(232, 232, 232, 0.8)"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "A",
+      "shapeKind": "rect",
+      "cx": 0,
+      "cy": 0,
+      "width": 100.922,
+      "height": 54,
+      "fill": "rgb(255, 0, 0)",
+      "stroke": "rgb(0, 0, 0)",
+      "strokeWidth": "2px",
+      "label": {
+        "text": "Alpha",
+        "color": "rgb(51, 51, 51)",
+        "fontFamily": "Arial",
+        "fontSize": "16px",
+        "fontWeight": "400"
+      }
+    },
+    {
+      "id": "B",
+      "shapeKind": "ellipse",
+      "cx": 0,
+      "cy": 0,
+      "width": 47.922,
+      "height": 47.922,
+      "fill": "rgb(170, 170, 170)",
+      "stroke": "rgb(147, 112, 219)",
+      "strokeWidth": "1px",
+      "label": {
+        "text": "Beta",
+        "color": "rgb(255, 255, 255)",
+        "fontFamily": "Arial",
+        "fontSize": "16px",
+        "fontWeight": "400"
+      }
+    },
+    {
+      "id": "C",
+      "shapeKind": "polygon",
+      "cx": 0.5,
+      "cy": 0,
+      "width": 115.359,
+      "height": 115.359,
+      "fill": "rgb(236, 236, 255)",
+      "stroke": "rgb(147, 112, 219)",
+      "strokeWidth": "1px",
+      "label": {
+        "text": "Decision",
+        "color": "rgb(51, 51, 51)",
+        "fontFamily": "Arial",
+        "fontSize": "16px",
+        "fontWeight": "400"
+      }
+    },
+    {
+      "id": "D",
+      "shapeKind": "rect",
+      "cx": 0,
+      "cy": 0,
+      "width": 97.359,
+      "height": 54,
+      "fill": "rgb(236, 236, 255)",
+      "stroke": "rgb(147, 112, 219)",
+      "strokeWidth": "1px",
+      "label": {
+        "text": "Delta",
+        "color": "rgb(51, 51, 51)",
+        "fontFamily": "Arial",
+        "fontSize": "16px",
+        "fontWeight": "400"
+      }
+    },
+    {
+      "id": "E",
+      "shapeKind": "rect",
+      "cx": 0,
+      "cy": 0,
+      "width": 95.578,
+      "height": 54,
+      "fill": "rgb(236, 236, 255)",
+      "stroke": "rgb(147, 112, 219)",
+      "strokeWidth": "1px",
+      "label": {
+        "text": "Plain",
+        "color": "rgb(51, 51, 51)",
+        "fontFamily": "Arial",
+        "fontSize": "16px",
+        "fontWeight": "400"
+      }
+    },
+    {
+      "id": "F",
+      "shapeKind": "rect",
+      "cx": 0,
+      "cy": 0,
+      "width": 107.141,
+      "height": 54,
+      "fill": "rgb(236, 236, 255)",
+      "stroke": "rgb(147, 112, 219)",
+      "strokeWidth": "1px",
+      "label": {
+        "text": "Dotted",
+        "color": "rgb(51, 51, 51)",
+        "fontFamily": "Arial",
+        "fontSize": "16px",
+        "fontWeight": "400"
+      }
+    },
+    {
+      "id": "G",
+      "shapeKind": "rect",
+      "cx": 0,
+      "cy": 0,
+      "width": 98.234,
+      "height": 54,
+      "fill": "rgb(236, 236, 255)",
+      "stroke": "rgb(147, 112, 219)",
+      "strokeWidth": "1px",
+      "label": {
+        "text": "Thick",
+        "color": "rgb(51, 51, 51)",
+        "fontFamily": "Arial",
+        "fontSize": "16px",
+        "fontWeight": "400"
+      }
+    }
+  ]
+}

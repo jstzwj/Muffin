@@ -36,6 +36,7 @@ find_package(WebP REQUIRED)
 find_package(dav1d REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(PNG REQUIRED)
+find_package(yaml-cpp REQUIRED)
 find_package(Python3 COMPONENTS Interpreter QUIET)
 set(MUFFIN_QT_LINGUIST_BIN "" CACHE PATH "Optional Qt Linguist tool directory")
 set(MUFFIN_QT_TRANSLATION_SOURCE_DIR "" CACHE PATH "Optional directory containing Qt qtbase_*.qm translation files")
@@ -425,6 +426,57 @@ else()
 endif()
 
 set(MUFFIN_CORE_SOURCES
+  src/mermaid/MermaidDiagramDetector.cpp
+  src/mermaid/MermaidDiagramDetector.h
+  src/mermaid/MermaidPreprocessor.cpp
+  src/mermaid/MermaidPreprocessor.h
+  src/mermaid/flowchart/Flowchart.cpp
+  src/mermaid/flowchart/Flowchart.h
+  src/mermaid/flowchart/FlowchartLayout.cpp
+  src/mermaid/flowchart/FlowchartLayout.h
+  src/mermaid/flowchart/FlowchartShapes.cpp
+  src/mermaid/flowchart/FlowchartShapes.h
+  src/mermaid/graphlib/Graph.h
+  src/mermaid/dagre/DagreLabels.h
+  src/mermaid/dagre/DagreUtil.cpp
+  src/mermaid/dagre/DagreUtil.h
+  src/mermaid/dagre/NestingGraph.cpp
+  src/mermaid/dagre/NestingGraph.h
+  src/mermaid/dagre/AddBorderSegments.cpp
+  src/mermaid/dagre/AddBorderSegments.h
+  src/mermaid/dagre/ParentDummyChains.cpp
+  src/mermaid/dagre/ParentDummyChains.h
+  src/mermaid/dagre/Acyclic.cpp
+  src/mermaid/dagre/Acyclic.h
+  src/mermaid/dagre/Normalize.cpp
+  src/mermaid/dagre/Normalize.h
+  src/mermaid/dagre/CoordinateSystem.cpp
+  src/mermaid/dagre/CoordinateSystem.h
+  src/mermaid/dagre/Rank.cpp
+  src/mermaid/dagre/Rank.h
+  src/mermaid/dagre/Order.cpp
+  src/mermaid/dagre/Order.h
+  src/mermaid/dagre/Position.cpp
+  src/mermaid/dagre/Position.h
+  src/mermaid/dagre/Layout.cpp
+  src/mermaid/dagre/Layout.h
+  src/mermaid/theme/MermaidColor.cpp
+  src/mermaid/theme/MermaidColor.h
+  src/mermaid/theme/FlowTheme.cpp
+  src/mermaid/theme/FlowTheme.h
+  src/mermaid/theme/FlowStyleResolve.cpp
+  src/mermaid/theme/FlowStyleResolve.h
+  src/mermaid/security/MermaidSecurityPolicy.h
+  src/mermaid/scene/FlowMarkers.cpp
+  src/mermaid/scene/FlowMarkers.h
+  src/mermaid/scene/FlowScene.cpp
+  src/mermaid/scene/FlowScene.h
+  src/mermaid/scene/FlowSceneCompare.cpp
+  src/mermaid/scene/FlowSceneCompare.h
+  src/mermaid/scene/FlowScenePainter.cpp
+  src/mermaid/scene/FlowScenePainter.h
+  src/mermaid/editor/MermaidRenderCache.cpp
+  src/mermaid/editor/MermaidRenderCache.h
   src/document/DocumentSession.cpp
   src/document/DocumentSession.h
   src/document/NodeId.cpp
@@ -480,6 +532,8 @@ target_link_libraries(MuffinCore
     Qt6::Core
   PRIVATE
     Qt6::Concurrent
+    Qt6::Gui
+    yaml-cpp::yaml-cpp
     libcmark-gfm-extensions_static
     libcmark-gfm_static
 )

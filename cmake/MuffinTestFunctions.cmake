@@ -6,7 +6,7 @@
 # had them 94 lines apart because several executables were declared in a row and linked later.
 #
 #   muffin_add_test(NAME <target> SOURCE <cpp> LINK <lib>
-#                   [EXTRA_SOURCES <src>...] [FIXTURE <rel-path>]
+#                   [EXTRA_SOURCES <src>...] [EXTRA_LINK <lib>...] [FIXTURE <rel-path>]
 #                   [RESOURCE_LOCK] [DISABLED_ON APPLE ...])
 #
 # ENVIRONMENT_MODIFICATION is always applied from MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS (built in
@@ -17,13 +17,13 @@
 function(muffin_add_test)
   set(options RESOURCE_LOCK)
   set(oneValueArgs NAME SOURCE LINK FIXTURE)
-  set(multiValueArgs EXTRA_SOURCES DISABLED_ON)
+  set(multiValueArgs EXTRA_SOURCES EXTRA_LINK DISABLED_ON)
   cmake_parse_arguments(MUFFIN_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   add_executable(${MUFFIN_TEST_NAME}
       ${MUFFIN_TEST_SOURCE}
       ${MUFFIN_TEST_EXTRA_SOURCES})
-  target_link_libraries(${MUFFIN_TEST_NAME} PRIVATE ${MUFFIN_TEST_LINK})
+  target_link_libraries(${MUFFIN_TEST_NAME} PRIVATE ${MUFFIN_TEST_LINK} ${MUFFIN_TEST_EXTRA_LINK})
 
   if(MUFFIN_TEST_FIXTURE)
     add_test(NAME ${MUFFIN_TEST_NAME}

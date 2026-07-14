@@ -225,8 +225,16 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
+          # Linux dist is a bare exe that locates Qt via the Conan Qt's
+          # compiled-in plugin path (no display → drive it headless with the
+          # offscreen plugin). macOS dist is a macdeployqt bundle whose
+          # PlugIns/platforms ships ONLY cocoa — offscreen is never bundled —
+          # and macos-latest runs a real window server, so launch it under the
+          # default cocoa platform. --version exits inside QCommandLineParser
+          # before any window is shown. env -i keeps both honest about not
+          # relying on leaked env vars to find Qt.
           if [ "${{ runner.os }}" = "macOS" ]; then
-            env -i HOME="$HOME" QT_QPA_PLATFORM=offscreen build/Release/dist/Muffin.app/Contents/MacOS/Muffin --version
+            env -i HOME="$HOME" build/Release/dist/Muffin.app/Contents/MacOS/Muffin --version
           else
             env -i HOME="$HOME" QT_QPA_PLATFORM=offscreen build/Release/dist/Muffin --version
           fi

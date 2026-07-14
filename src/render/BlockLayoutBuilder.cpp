@@ -6,6 +6,7 @@
 #include "document/BlockPredicates.h"
 #include "document/PendingBlockMarker.h"
 #include "document/SourceRangeUtil.h"
+#include "mermaid/editor/MermaidRenderCache.h"
 #include "projection/InlineProjection.h"
 #include "spellcheck/SpellChecker.h"
 #include "theme/CssContent.h"
@@ -25,6 +26,7 @@
 #include <utility>
 
 namespace muffin {
+using namespace muffin::mermaid::editor;
 namespace {
 
 Q_LOGGING_CATEGORY(blockBuildPerf, "muffin.perf", QtWarningMsg)
@@ -433,6 +435,14 @@ void BlockLayoutBuilder::setCodeFenceScroll(CodeFenceScrollController* controlle
   codeFenceScroll_ = controller;
 }
 
+void BlockLayoutBuilder::setMermaidRenderCache(mermaid::editor::MermaidRenderCache* cache) {
+  mermaidCache_ = cache;
+}
+
+void BlockLayoutBuilder::setMermaidSyncMode(bool sync) {
+  mermaidSyncMode_ = sync;
+}
+
 void BlockLayoutBuilder::setHeadingCounterText(const QHash<NodeId, QString>* map) {
   headingCounterText_ = map;
 }
@@ -450,6 +460,7 @@ void BlockLayoutBuilder::refreshRenderSettings() {
   codeBlockWrap_ = s.value(QStringLiteral("markdown/codeBlockWrap"), true).toBool();
   showLineNumbers_ = s.value(QStringLiteral("markdown/showLineNumbers"), false).toBool();
   renderEmoji_ = s.value(QStringLiteral("markdown/renderEmoji"), true).toBool();
+  showMermaidAsSource_ = s.value(QStringLiteral("editor/showMermaidAsSource"), false).toBool();
   // The estimate caches are keyed by elementKey|headingLevel only (no theme dimension), so a theme
   // switch would otherwise keep serving the previous theme's lineHeight/avgCharWidth. Clearing here
   // (once per layout pass) keeps them fresh: they re-populate within a single estimate pass — many
@@ -976,6 +987,28 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
                            theme.codePadding().bottom() + theme.codePadding().top() + previewHeight + theme.codePadding().bottom());
       }
       layout->setMathLayout(std::move(mathLayout));
+    }
+  }
+  // Mermaid diagram (milestone I): render the ```mermaid fence as the native
+  // diagram when the caret is OUT of the fence and "show as source" is off.
+  // Editing/unsupported/error/loading fall through to the code-fence source paint.
+  if (node.type() == BlockType::CodeFence && node.codeLanguage() == QLatin1String("mermaid") &&
+      !showMermaidAsSource_ && !selectionFocusesNode(selection_, node.id()) && mermaidCache_ != nullptr) {
+    const QString source = layout->literal();
+    const MermaidRenderKey key = mermaidCache_->makeKey(source);
+    const MermaidRenderEntry entry = mermaidSyncMode_ ? mermaidCache_->getSync(key, source) : mermaidCache_->request(key, source);
+    layout->setMermaidState(static_cast<BlockLayout::MermaidState>(
+        static_cast<int>(entry.status)));  // MermaidRenderStatus ↔ BlockLayout::MermaidState are ordered identically
+    if (entry.status == MermaidRenderStatus::Ready && entry.scene) {
+      layout->setMermaidScene(entry.scene, entry.naturalSize);
+      const int contentWidth = static_cast<int>(qMax<qreal>(1.0, width - theme.codePadding().left() - theme.codePadding().right()));
+      const qreal natW = entry.naturalSize.width();
+      const qreal scale = natW > 0.0 ? qMin<qreal>(1.0, contentWidth / natW) : 1.0;
+      height = std::ceil(entry.naturalSize.height() * scale + theme.codePadding().top() + theme.codePadding().bottom());
+    } else if (entry.status == MermaidRenderStatus::Error) {
+      layout->setMermaidErrorMessage(entry.errorMessage);
+      // Reserve a strip for the error annotation painted below the source.
+      height += theme.codeLineHeight();
     }
   }
   if (node.type() == BlockType::HtmlBlock && editingLiteral) {
