@@ -18,6 +18,7 @@ qreal r3(qreal v) { return std::round(v * 1000.0) / 1000.0; }
 QJsonObject labelJson(const FlowSceneLabel& l) {
   QJsonObject o;
   o[QStringLiteral("text")] = l.text;
+  o[QStringLiteral("labelType")] = l.labelType;
   o[QStringLiteral("x")] = r3(l.x);
   o[QStringLiteral("y")] = r3(l.y);
   if (!l.color.isEmpty()) o[QStringLiteral("color")] = l.color;
@@ -56,6 +57,7 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
     sc.strokeWidth = clusterStrokeWidth;
     if (const flowchart::FlowSubgraph* s = subgraphById.value(c.id)) {
       sc.label.text = s->title;
+      sc.label.labelType = s->labelType;
       sc.label.color = theme.titleColor;
       sc.label.fontFamily = theme.fontFamily;
       sc.label.fontSize = theme.fontSize;
@@ -70,7 +72,9 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
     se.path = e.path;
     const flowchart::FlowEdge* fe = edgeById.value(e.id);
     if (fe) {
-      const flowstyle::ResolvedEdgeStyle rs = flowstyle::resolveEdgeStyle(*fe, theme);
+      flowchart::FlowEdge effectiveEdge = *fe;
+      effectiveEdge.style = data.defaultEdgeStyles + effectiveEdge.style;
+      const flowstyle::ResolvedEdgeStyle rs = flowstyle::resolveEdgeStyle(effectiveEdge, theme);
       se.stroke = rs.stroke;
       se.strokeWidth = rs.strokeWidth;
       se.strokeDasharray = rs.strokeDasharray;
@@ -87,6 +91,7 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
       }
       if (!fe->text.isEmpty() && e.hasLabelPosition) {
         se.label.text = fe->text;
+        se.label.labelType = fe->labelType;
         se.label.x = e.labelX; se.label.y = e.labelY;
         se.label.background = theme.edgeLabelBackground;
         se.label.color = theme.textColor;
@@ -117,6 +122,8 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
       sn.radiusY = geom.radiusY;
       sn.points = geom.points;
       sn.label.text = v->text;
+      sn.label.labelType = v->labelType;
+      sn.label.mathEnabled = true;
       sn.label.x = n.x; sn.label.y = n.y;  // mermaid centers the label at the node centre
       sn.label.color = rs.color;
       sn.label.fontFamily = rs.fontFamily;

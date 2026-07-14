@@ -25,6 +25,7 @@ namespace muffin::mermaid::flowscene {
 
 struct FlowSceneLabel {
   QString text;
+  QString labelType = QStringLiteral("text");
   qreal x = 0.0;          // center, scene coords (relative to diagram origin)
   qreal y = 0.0;
   QString color;          // resolved text colour
@@ -32,6 +33,7 @@ struct FlowSceneLabel {
   QString fontSize;
   QString fontWeight;
   QString background;     // edge-label bg (edgeLabelBackground); empty for nodes
+  bool mathEnabled = false;  // Mermaid enables MathML only for node labels.
 };
 
 struct FlowSceneNode {

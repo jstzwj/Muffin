@@ -8,6 +8,11 @@
       "id": "theme-default",
       "theme": "default",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "dpr": 1,
+      "content": {
+        "width": 170.921875,
+        "height": 804.28125
+      },
       "enforceInterior": true,
       "file": "theme-default.png"
     },
@@ -15,6 +20,11 @@
       "id": "theme-base",
       "theme": "base",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "dpr": 1,
+      "content": {
+        "width": 170.921875,
+        "height": 804.28125
+      },
       "enforceInterior": true,
       "file": "theme-base.png"
     },
@@ -22,6 +32,11 @@
       "id": "theme-dark",
       "theme": "dark",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "dpr": 1,
+      "content": {
+        "width": 170.921875,
+        "height": 804.28125
+      },
       "enforceInterior": true,
       "file": "theme-dark.png"
     },
@@ -29,6 +44,11 @@
       "id": "theme-forest",
       "theme": "forest",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "dpr": 1,
+      "content": {
+        "width": 170.921875,
+        "height": 804.28125
+      },
       "enforceInterior": true,
       "file": "theme-forest.png"
     },
@@ -36,6 +56,11 @@
       "id": "theme-neutral",
       "theme": "neutral",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "dpr": 1,
+      "content": {
+        "width": 170.921875,
+        "height": 804.28125
+      },
       "enforceInterior": true,
       "file": "theme-neutral.png"
     },
@@ -43,6 +68,11 @@
       "id": "dir-TB",
       "theme": "default",
       "source": "flowchart TB\nA[Alpha] --> B[Beta] --> C[Gamma] --> D[Delta]",
+      "dpr": 1,
+      "content": {
+        "width": 116.90625,
+        "height": 366
+      },
       "enforceInterior": true,
       "file": "dir-TB.png"
     },
@@ -50,6 +80,11 @@
       "id": "dir-BT",
       "theme": "default",
       "source": "flowchart BT\nA[Alpha] --> B[Beta] --> C[Gamma] --> D[Delta]",
+      "dpr": 1,
+      "content": {
+        "width": 116.90625,
+        "height": 366
+      },
       "enforceInterior": true,
       "file": "dir-BT.png"
     },
@@ -57,6 +92,11 @@
       "id": "dir-LR",
       "theme": "default",
       "source": "flowchart LR\nA[Alpha] --> B[Beta] --> C[Gamma] --> D[Delta]",
+      "dpr": 1,
+      "content": {
+        "width": 558.109375,
+        "height": 54
+      },
       "enforceInterior": true,
       "file": "dir-LR.png"
     },
@@ -64,6 +104,11 @@
       "id": "dir-RL",
       "theme": "default",
       "source": "flowchart RL\nA[Alpha] --> B[Beta] --> C[Gamma] --> D[Delta]",
+      "dpr": 1,
+      "content": {
+        "width": 558.109375,
+        "height": 54
+      },
       "enforceInterior": true,
       "file": "dir-RL.png"
     },
@@ -71,6 +116,11 @@
       "id": "edge-marker-matrix",
       "theme": "default",
       "source": "flowchart LR\nA[Start] --> B[Point]\nB --x C[Cross]\nC --o D[Circle]\nD --- E[Open]\nE -.-> F[Dotted]\nF ==> G[Thick]\nA o--o H[CircleBoth]\nH x--x I[CrossBoth]",
+      "dpr": 1,
+      "content": {
+        "width": 1067.71875,
+        "height": 158
+      },
       "enforceInterior": true,
       "file": "edge-marker-matrix.png"
     },
@@ -78,8 +128,157 @@
       "id": "shape-matrix",
       "theme": "default",
       "source": "flowchart LR\nA[Rect] --> B(Round)\nB --> C((Circle))\nC --> D{Diamond}\nD --> E[/Trapezoid/]\nE --> F[(Database)]\nF --> G{{Hexagon}}\nG --> H([Stadium])",
+      "dpr": 1,
+      "content": {
+        "width": 1084.02685546875,
+        "height": 118.03125
+      },
       "enforceInterior": true,
       "file": "shape-matrix.png"
+    },
+    {
+      "id": "label-html",
+      "theme": "default",
+      "source": "flowchart LR\nA[\"<b>Bold</b> &amp; <i>italic</i><br/>next\"] --> B[Plain]",
+      "dpr": 1,
+      "content": {
+        "width": 292.703125,
+        "height": 78
+      },
+      "enforceInterior": true,
+      "file": "label-html.png"
+    },
+    {
+      "id": "label-markdown",
+      "theme": "default",
+      "source": "flowchart LR\nA[\"`**Bold** and *italic*<br/>next`\"] --> B[Plain]",
+      "dpr": 1,
+      "content": {
+        "width": 308.734375,
+        "height": 78
+      },
+      "enforceInterior": true,
+      "file": "label-markdown.png"
+    },
+    {
+      "id": "label-math",
+      "theme": "default",
+      "source": "flowchart LR\nA[\"`Value $$x^2 + \\frac{1}{2}$$`\"] --> B[Plain]",
+      "dpr": 1,
+      "content": {
+        "width": 291.53125,
+        "height": 62.8125
+      },
+      "enforceInterior": true,
+      "file": "label-math.png"
+    },
+    {
+      "id": "edge-label-rich",
+      "theme": "default",
+      "source": "flowchart LR\nA[Start] -- \"`**bold** $$x^2$$`\" --> B[Finish]",
+      "dpr": 1,
+      "content": {
+        "width": 348.796875,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "edge-label-rich.png"
+    },
+    {
+      "id": "cluster-label-rich",
+      "theme": "default",
+      "source": "flowchart TB\nsubgraph S[\"`**Group** $$x^2$$`\"]\nA[Inside]\nend",
+      "dpr": 1,
+      "content": {
+        "width": 177.703125,
+        "height": 124
+      },
+      "enforceInterior": true,
+      "file": "cluster-label-rich.png"
+    },
+    {
+      "id": "label-cjk",
+      "theme": "default",
+      "source": "flowchart LR\nA[中文标签] -->|处理| B[日本語テキスト]",
+      "dpr": 1,
+      "content": {
+        "width": 381.53125,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "label-cjk.png"
+    },
+    {
+      "id": "label-bidi",
+      "theme": "default",
+      "source": "flowchart LR\nA[\"שלום עולם\"] -->|\"مرحبا بالعالم\"| B[\"English العربية\"]",
+      "dpr": 1,
+      "content": {
+        "width": 396.28125,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "label-bidi.png"
+    },
+    {
+      "id": "integration-2x",
+      "theme": "default",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "dpr": 2,
+      "content": {
+        "width": 170.921875,
+        "height": 804.28125
+      },
+      "enforceInterior": true,
+      "file": "integration-2x.png"
+    },
+    {
+      "id": "label-cjk-2x",
+      "theme": "default",
+      "source": "flowchart LR\nA[中文标签] -->|处理| B[日本語テキスト]",
+      "dpr": 2,
+      "content": {
+        "width": 381.53125,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "label-cjk-2x.png"
+    },
+    {
+      "id": "label-bidi-2x",
+      "theme": "default",
+      "source": "flowchart LR\nA[\"שלום עולם\"] -->|\"مرحبا بالعالم\"| B[\"English العربية\"]",
+      "dpr": 2,
+      "content": {
+        "width": 396.28125,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "label-bidi-2x.png"
+    },
+    {
+      "id": "label-math-2x",
+      "theme": "default",
+      "source": "flowchart LR\nA[\"`Value $$x^2 + \\frac{1}{2}$$`\"] --> B[Plain]",
+      "dpr": 2,
+      "content": {
+        "width": 291.53125,
+        "height": 62.8125
+      },
+      "enforceInterior": true,
+      "file": "label-math-2x.png"
+    },
+    {
+      "id": "recursive-cluster-three-level",
+      "theme": "default",
+      "source": "flowchart TB\nsubgraph Outer[Outer Group]\nsubgraph Middle[Middle Group]\nsubgraph Inner[Inner Group]\nA[Alpha] --> B[Beta]\nend\nC[Gamma]\nend\nD[Delta]\nend",
+      "dpr": 1,
+      "content": {
+        "width": 482.828125,
+        "height": 632
+      },
+      "enforceInterior": true,
+      "file": "recursive-cluster-three-level.png"
     }
   ]
 }

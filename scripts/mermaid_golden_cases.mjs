@@ -1,9 +1,8 @@
 // Single source of truth for the Level-3 pixel golden matrix (milestone G3).
 // Both the Chrome golden generator (generate_mermaid_golden_pixel.mjs) and the
 // native test (MermaidGoldenPixelTest) consume this via the manifest, so adding a
-// case is a one-line edit here. Axes covered @1x DPR, plain labels (the look
-// variants / HTML-CJK-bidi labels / 2x DPR axes are deferred to F4 / F-polish;
-// the framework absorbs them by adding rows here later).
+// case is a one-line edit here. Axes covered @1x DPR include rich node, edge,
+// and cluster labels. Look variants, CJK/bidi, and 2x DPR remain separate axes.
 
 export const integrationSource = [
   "flowchart TB",
@@ -34,6 +33,9 @@ export const allThemes = [
 export const pixelThemes = ["default", "base", "dark", "forest", "neutral"];
 
 const table = [];
+const cjkSource = 'flowchart LR\nA[中文标签] -->|处理| B[日本語テキスト]';
+const bidiSource = 'flowchart LR\nA["שלום עולם"] -->|"مرحبا بالعالم"| B["English العربية"]';
+const mathSource = 'flowchart LR\nA["`Value $$x^2 + \\frac{1}{2}$$`"] --> B[Plain]';
 // Axis 1 — the legacy-compatible themes on the style-matrix integration diagram.
 for (const theme of pixelThemes) {
   table.push({ id: `theme-${theme}`, theme, source: integrationSource });
@@ -75,6 +77,57 @@ table.push({
     "E --> F[(Database)]",
     "F --> G{{Hexagon}}",
     "G --> H([Stadium])",
+  ].join("\n"),
+});
+// Axis 5 - HTML, Markdown, and Math label rendering.
+table.push({
+  id: "label-html",
+  theme: "default",
+  source: 'flowchart LR\nA["<b>Bold</b> &amp; <i>italic</i><br/>next"] --> B[Plain]',
+});
+table.push({
+  id: "label-markdown",
+  theme: "default",
+  source: 'flowchart LR\nA["`**Bold** and *italic*<br/>next`"] --> B[Plain]',
+});
+table.push({
+  id: "label-math",
+  theme: "default",
+  source: mathSource,
+});
+table.push({
+  id: "edge-label-rich",
+  theme: "default",
+  source: 'flowchart LR\nA[Start] -- "`**bold** $$x^2$$`" --> B[Finish]',
+});
+table.push({
+  id: "cluster-label-rich",
+  theme: "default",
+  source: 'flowchart TB\nsubgraph S["`**Group** $$x^2$$`"]\nA[Inside]\nend',
+});
+// Axis 6 - CJK and bidirectional shaping.
+table.push({ id: "label-cjk", theme: "default", source: cjkSource });
+table.push({ id: "label-bidi", theme: "default", source: bidiSource });
+// Axis 7 - true high-DPI rasterization (Chrome and native both render at 2x).
+table.push({ id: "integration-2x", theme: "default", source: integrationSource, dpr: 2 });
+table.push({ id: "label-cjk-2x", theme: "default", source: cjkSource, dpr: 2 });
+table.push({ id: "label-bidi-2x", theme: "default", source: bidiSource, dpr: 2 });
+table.push({ id: "label-math-2x", theme: "default", source: mathSource, dpr: 2 });
+// Axis 8 - recursively extracted nested clusters.
+table.push({
+  id: "recursive-cluster-three-level",
+  theme: "default",
+  source: [
+    "flowchart TB",
+    "subgraph Outer[Outer Group]",
+    "subgraph Middle[Middle Group]",
+    "subgraph Inner[Inner Group]",
+    "A[Alpha] --> B[Beta]",
+    "end",
+    "C[Gamma]",
+    "end",
+    "D[Delta]",
+    "end",
   ].join("\n"),
 });
 // Axis 5 — nested compound + self/parallel/long edge is DEFERRED: that case

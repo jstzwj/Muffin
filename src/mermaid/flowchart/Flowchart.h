@@ -1,5 +1,7 @@
 #pragma once
 
+#include "mermaid/flowchart/FlowchartDiagnostic.h"
+
 #include <QJsonObject>
 #include <QMap>
 #include <QString>
@@ -70,6 +72,10 @@ struct FlowchartData {
   QString accDescription;
   QVector<FlowVertex> vertices;
   QVector<FlowEdge> edges;
+  // Renderer projection state from linkStyle default. Mermaid keeps these on
+  // its edge collection rather than serializing them into each raw DB edge.
+  QStringList defaultEdgeStyles;
+  QString defaultEdgeInterpolate;
   QVector<FlowClass> classes;
   QVector<FlowSubgraph> subgraphs;
   QMap<QString, QString> tooltips;
@@ -103,34 +109,22 @@ struct FlowchartLimits {
 // against upstream is the CATEGORY (+ line/column where determinable), not the
 // human message — messages legitimately diverge between a JS grammar and a C++
 // hand-written parser. `Syntax` is the default for legacy message-only throws.
-enum class FlowchartErrorCategory {
-  Syntax,
-  MissingHeader,
-  UnclosedSubgraph,
-  UnexpectedEnd,
-  InvalidNode,
-  InvalidDirective,
-  LinkStyleBounds,
-  LimitExceeded,
-  SecurityViolation,
-};
-
 class FlowchartParseError final : public std::runtime_error {
 public:
-  // Legacy message-only constructor: category = Syntax, line/column = 0.
-  // Retained so existing throw sites compile unchanged; categorized throws use
-  // the 3-arg constructor below.
-  explicit FlowchartParseError(const QString& message);
-  FlowchartParseError(const QString& message, FlowchartErrorCategory category, int line = 0, int column = 0);
+  explicit FlowchartParseError(FlowchartDiagnostic diagnostic);
 
   FlowchartErrorCategory category() const noexcept { return category_; }
-  int line() const noexcept { return line_; }
-  int column() const noexcept { return column_; }
+  FlowchartErrorStage stage() const noexcept { return diagnostic_.stage; }
+  FlowchartErrorCode code() const noexcept { return diagnostic_.code; }
+  const FlowchartDiagnostic& diagnostic() const noexcept { return diagnostic_; }
+  int line() const noexcept { return diagnostic_.span.line; }
+  int column() const noexcept { return diagnostic_.span.column; }
+  qsizetype offset() const noexcept { return diagnostic_.span.offset; }
+  qsizetype length() const noexcept { return diagnostic_.span.length; }
 
 private:
   FlowchartErrorCategory category_ = FlowchartErrorCategory::Syntax;
-  int line_ = 0;
-  int column_ = 0;
+  FlowchartDiagnostic diagnostic_;
 };
 
 class Flowchart {

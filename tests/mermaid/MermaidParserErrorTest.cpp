@@ -58,7 +58,10 @@ int main(int argc, char** argv) {
     const QString id = fixture.value(QStringLiteral("id")).toString();
     const QString source = fixture.value(QStringLiteral("source")).toString();
     const FlowchartErrorCategory expectedCategory = parseCategory(fixture.value(QStringLiteral("expectedCategory")).toString());
+    const QString expectedStage = fixture.value(QStringLiteral("expectedStage")).toString();
+    const QString expectedCode = fixture.value(QStringLiteral("expectedCode")).toString();
     const int expectedLine = fixture.value(QStringLiteral("expectedLine")).toInt();
+    const int expectedColumn = fixture.value(QStringLiteral("expectedColumn")).toInt();
 
     FlowchartParseOptions options;
     if (fixture.contains(QStringLiteral("options"))) {
@@ -87,15 +90,26 @@ int main(int argc, char** argv) {
       require(error.category() == expectedCategory,
               QStringLiteral("Case %1 category mismatch: got %2 expected %3 (line %4)")
                   .arg(id).arg(static_cast<int>(error.category())).arg(static_cast<int>(expectedCategory)).arg(error.line()));
+      require(flowchartErrorStageName(error.stage()) == expectedStage,
+              QStringLiteral("Case %1 stage mismatch: got %2 expected %3")
+                  .arg(id, flowchartErrorStageName(error.stage()), expectedStage));
+      require(flowchartErrorCodeName(error.code()) == expectedCode,
+              QStringLiteral("Case %1 code mismatch: got %2 expected %3")
+                  .arg(id, flowchartErrorCodeName(error.code()), expectedCode));
       // expectedLine == 0 means "not determinable" (e.g. thrown before/after the line loop);
       // only assert the position where the contract pins it.
       if (expectedLine > 0)
         require(error.line() == expectedLine,
                 QStringLiteral("Case %1 line mismatch: got %2 expected %3").arg(id).arg(error.line()).arg(expectedLine));
+      if (expectedColumn > 0)
+        require(error.column() == expectedColumn,
+                QStringLiteral("Case %1 column mismatch: got %2 expected %3")
+                    .arg(id).arg(error.column()).arg(expectedColumn));
     }
     require(threw, QStringLiteral("Case %1 should have thrown %2").arg(id).arg(fixture.value(QStringLiteral("expectedCategory")).toString()));
   }
 
-  qDebug().noquote() << "MermaidParserErrorTest:" << cases.size() << "error cases throw the expected category + position";
+  qDebug().noquote() << "MermaidParserErrorTest:" << cases.size()
+                     << "error cases match category, stage, code, and stable position";
   return 0;
 }

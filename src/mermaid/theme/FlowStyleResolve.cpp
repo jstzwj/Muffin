@@ -134,6 +134,10 @@ ResolvedEdgeStyle resolveEdgeStyle(const flowchart::FlowEdge& edge,
     else if (key == QStringLiteral("stroke-dasharray")) r.strokeDasharray = value;
     else if (key == QStringLiteral("fill")) r.fill = value;
   }
+  // Mermaid's edge-animation-fast/slow CSS applies this with !important, so it
+  // wins over both the edge pattern class and linkStyle stroke-dasharray.
+  if (edge.animate || !edge.animation.isEmpty())
+    r.strokeDasharray = QStringLiteral("9,5");
   return r;
 }
 

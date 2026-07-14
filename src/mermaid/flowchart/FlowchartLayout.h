@@ -71,6 +71,12 @@ struct FlowTextOptions {
 // measureFlowchartNodes and by flowShapeGeometry for shapes whose outline
 // depends on the label (bang, cloud).
 QSizeF measureLabel(const QString& text, const FlowTextOptions& options = {});
+QSizeF measureLabel(const QString& text, const QString& labelType,
+                    const FlowTextOptions& options = {});
+QSizeF measureFlowchartEdgeLabel(const FlowEdge& edge,
+                                 const FlowTextOptions& options = {});
+QSizeF measureFlowchartClusterLabel(const FlowSubgraph& subgraph,
+                                    const FlowTextOptions& options = {});
 
 QMap<QString, QSizeF> measureFlowchartNodes(const FlowchartData& data,
                                             FlowTextOptions options = {});

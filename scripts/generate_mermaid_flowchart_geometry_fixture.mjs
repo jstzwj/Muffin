@@ -34,6 +34,91 @@ const cases = [
   },
   { id: "multiline-text", source: "flowchart TB\nA[First<br/>Second] --> B[中文标签]" },
   {
+    id: "label-html",
+    source: 'flowchart LR\nA["<b>Bold</b> &amp; <i>italic</i><br/>next"] --> B[Plain]',
+  },
+  {
+    id: "label-markdown",
+    source: 'flowchart LR\nA["`**Bold** and *italic*<br/>next`"] --> B[Plain]',
+  },
+  {
+    id: "label-math-only",
+    source: 'flowchart LR\nA["`$$x^2 + \\frac{1}{2}$$`"] --> B[Plain]',
+  },
+  {
+    id: "label-math",
+    source: 'flowchart LR\nA["`Value $$x^2 + \\frac{1}{2}$$`"] --> B[Plain]',
+  },
+  {
+    id: "edge-label-rich",
+    source: 'flowchart LR\nA[Start] -- "`**bold** $$x^2$$`" --> B[Finish]',
+  },
+  {
+    id: "cluster-label-plain",
+    source: 'flowchart TB\nsubgraph S[Group]\nA[Inside]\nend',
+  },
+  {
+    id: "cluster-label-markdown",
+    source: 'flowchart TB\nsubgraph S["`**Group**`"]\nA[Inside]\nend',
+  },
+  {
+    id: "cluster-label-math",
+    source: 'flowchart TB\nsubgraph S["`$$x^2$$`"]\nA[Inside]\nend',
+  },
+  {
+    id: "cluster-label-rich",
+    source: 'flowchart TB\nsubgraph S["`**Group** $$x^2$$`"]\nA[Inside]\nend',
+  },
+  {
+    id: "label-cjk",
+    source: 'flowchart LR\nA[中文标签] -->|处理| B[日本語テキスト]',
+  },
+  {
+    id: "label-bidi",
+    source: 'flowchart LR\nA["שלום עולם"] -->|"مرحبا بالعالم"| B["English العربية"]',
+  },
+  {
+    id: "recursive-cluster-three-level",
+    source: [
+      "flowchart TB",
+      "subgraph Outer[Outer Group]",
+      "subgraph Middle[Middle Group]",
+      "subgraph Inner[Inner Group]",
+      "A[Alpha] --> B[Beta]",
+      "end",
+      "C[Gamma]",
+      "end",
+      "D[Delta]",
+      "end",
+    ].join("\n"),
+  },
+  {
+    id: "recursive-cluster-mixed-boundary",
+    source: [
+      "flowchart TB",
+      "subgraph Outer[Outer]",
+      "subgraph Inner[Inner]",
+      "A[Alpha] --> B[Beta]",
+      "end",
+      "B --> C[Gamma]",
+      "end",
+    ].join("\n"),
+  },
+  {
+    id: "recursive-cluster-explicit-directions",
+    source: [
+      "flowchart LR",
+      "subgraph Outer[Outer]",
+      "direction TB",
+      "subgraph Inner[Inner]",
+      "direction RL",
+      "A[Alpha] --> B[Beta]",
+      "end",
+      "C[Gamma]",
+      "end",
+    ].join("\n"),
+  },
+  {
     id: "basic-shapes",
     source: "flowchart LR\nA[Rectangle] --> B(Rounded) --> C((Circle)) --> D{Diamond}",
   },
@@ -178,6 +263,45 @@ const cases = [
       "F[Zeta] --> O",
     ].join("\n"),
   },
+  {
+    id: "grammar-double-ended",
+    source: [
+      "flowchart LR",
+      "A[Alpha] o--o B[Beta]",
+      "B x==x C[Gamma]",
+      "C <--> D[Delta]",
+      'D -- "`**markdown edge**`" --> A',
+    ].join("\n"),
+  },
+  {
+    id: "grammar-edge-id-action-order",
+    source: [
+      "flowchart TB",
+      "subgraph Ordered[Ordered]",
+      "A[Alpha] edgeOne@--> B[Beta]",
+      "end",
+      "A --> C[Gamma]",
+      "edgeOne@{ animate: false, animation: slow, curve: basis }",
+      "edgeOne@{ animate: true, animation: fast, curve: linear }",
+    ].join("\n"),
+  },
+  {
+    id: "grammar-linkstyle-action-order",
+    source: [
+      "flowchart LR",
+      "A[Alpha] --> B[Beta] --> C[Gamma] --> D[Delta]",
+      "linkStyle default stroke:#999",
+      "linkStyle 0,1 stroke:#0f0,stroke-width:2px",
+      "linkStyle default interpolate basis stroke:#999",
+      "linkStyle 0,1 interpolate linear stroke:#f00",
+      "linkStyle default interpolate step",
+      "linkStyle 2 interpolate stepAfter",
+    ].join("\n"),
+  },
+  {
+    id: "grammar-grouped-links",
+    source: "flowchart TB\nA[Alpha] & B[Beta] --> C[Gamma] & D[Delta]",
+  },
 ];
 const browser = await puppeteer.launch({
   headless: true,
@@ -192,13 +316,59 @@ try {
     async ({ cases, mermaidModule }) => {
       const { default: mermaid } = await import(mermaidModule);
       const number = (value) => Math.round(value * 1000) / 1000;
-      const relativePath = (pathData, originX, originY) => {
-        let coordinate = 0;
-        return pathData.replace(/-?\d+(?:\.\d+)?(?:e[-+]?\d+)?/gi, (token) => {
-          const offset = coordinate++ % 2 === 0 ? originX : originY;
-          return String(number(Number(token) - offset));
-        });
+      const attributes = (element, names) => {
+        if (!element) return {};
+        const result = {};
+        for (const name of names)
+          if (element.hasAttribute(name)) result[name] = element.getAttribute(name);
+        return result;
       };
+      const computedStyle = (element, names) => {
+        if (!element) return {};
+        const style = getComputedStyle(element);
+        const result = {};
+        for (const name of names) result[name] = style.getPropertyValue(name);
+        return result;
+      };
+      const normalizeMarker = (value) => {
+        if (!value) return "";
+        const semantic = value.match(/(pointEnd|pointStart|circleEnd|circleStart|crossEnd|crossStart)/);
+        if (semantic) return semantic[1];
+        const match = value.match(/[-_]([A-Za-z]+)\)$/);
+        return match ? match[1] : value;
+      };
+      const relativePath = (pathData, originX, originY, matrix) => {
+        let coordinate = 0;
+        let pendingX = 0;
+        return pathData.replace(/-?\d+(?:\.\d+)?(?:e[-+]?\d+)?/gi, (token) => {
+          if (coordinate++ % 2 === 0) {
+            pendingX = Number(token);
+            return `__x${pendingX}__`;
+          }
+          const point = new DOMPoint(pendingX, Number(token)).matrixTransform(matrix);
+          return `${String(number(point.x - originX))},${String(number(point.y - originY))}`;
+        }).replace(/__x-?\d+(?:\.\d+)?(?:e[-+]?\d+)?__,/gi, "");
+      };
+      const elementMatrix = (element, rootInverse) =>
+        rootInverse.multiply(element.getScreenCTM());
+      const absoluteBox = (element, rootInverse) => {
+        if (!element || !rootInverse) return null;
+        const box = element.getBBox();
+        const matrix = elementMatrix(element, rootInverse);
+        const corners = [
+          new DOMPoint(box.x, box.y),
+          new DOMPoint(box.x + box.width, box.y),
+          new DOMPoint(box.x, box.y + box.height),
+          new DOMPoint(box.x + box.width, box.y + box.height),
+        ].map((point) => point.matrixTransform(matrix));
+        const left = Math.min(...corners.map((point) => point.x));
+        const right = Math.max(...corners.map((point) => point.x));
+        const top = Math.min(...corners.map((point) => point.y));
+        const bottom = Math.max(...corners.map((point) => point.y));
+        return { x: left, y: top, width: right - left, height: bottom - top };
+      };
+      const absoluteOrigin = (element, rootInverse) =>
+        new DOMPoint(0, 0).matrixTransform(elementMatrix(element, rootInverse));
       const rasterizeShape = async (shape) => {
         const box = shape.getBBox();
         // Parse the shape's own translate() to place the viewBox at the
@@ -252,10 +422,11 @@ try {
         const { svg } = await mermaid.render(svgId, fixture.source);
         document.getElementById("container").innerHTML = svg;
         const root = document.querySelector("svg");
+        const rootInverse = root.getScreenCTM()?.inverse();
         const nodeElements = [...root.querySelectorAll("g.node")];
         const nodes = nodeElements.map((node) => {
-          const transform = node.getAttribute("transform").match(/translate\(([-\d.]+),\s*([-\d.]+)\)/);
           const box = node.getBBox();
+          const position = absoluteOrigin(node, rootInverse);
           const labelBox = node.querySelector(".label")?.getBBox();
           const shape = node.querySelector(".label-container");
           const shapeAttributes = {};
@@ -265,13 +436,30 @@ try {
           const id = node.id.replace(`${svgId}-flowchart-`, "").replace(/-\d+$/, "");
           return {
             id,
-            x: number(Number(transform[1])),
-            y: number(Number(transform[2])),
+            x: number(position.x),
+            y: number(position.y),
             width: number(box.width),
             height: number(box.height),
             labelWidth: number(labelBox?.width ?? 0),
             labelHeight: number(labelBox?.height ?? 0),
-            shape: { tag: shape?.tagName.toLowerCase() ?? "", attributes: shapeAttributes },
+            group: attributes(node, ["class", "data-id", "data-node"]),
+            label: {
+              tag: node.querySelector(".label")?.tagName.toLowerCase() ?? "",
+              attributes: attributes(node.querySelector(".label"), ["class", "transform", "style"]),
+              computed: computedStyle(node.querySelector(".label"), [
+                "color", "fill", "font-family", "font-size", "font-weight",
+              ]),
+            },
+            shape: {
+              tag: shape?.tagName.toLowerCase() ?? "",
+              attributes: {
+                ...shapeAttributes,
+                ...attributes(shape, ["class", "style", "fill", "stroke", "stroke-width"]),
+              },
+              computed: computedStyle(shape, [
+                "fill", "stroke", "stroke-width", "stroke-dasharray",
+              ]),
+            },
           };
         });
         if (fixture.id === "basic-shapes" || fixture.id === "legacy-shapes" || fixture.id === "expanded-shapes" || fixture.id === "expanded-shapes-2") {
@@ -279,7 +467,10 @@ try {
             const shape = nodeElements[nodeIndex].querySelector(".label-container");
             // Label-less shapes (fork, filled_circle, crossed_circle, hourglass, bolt)
             // have no .label-container element — skip their silhouette.
-            nodes[nodeIndex].pixel = shape ? await rasterizeShape(shape) : null;
+            nodes[nodeIndex].pixel = shape && shape.tagName.toLowerCase() !== "g" &&
+                                     !shape.classList.contains("outer-path")
+              ? await rasterizeShape(shape)
+              : null;
           }
         }
         const originX = nodes[0].x;
@@ -290,17 +481,32 @@ try {
           delete node.x;
           delete node.y;
         }
-        const edges = [...root.querySelectorAll(".edgePaths path")].map((edge) => ({
-          id: edge.id.replace(`${svgId}-`, ""),
-          d: relativePath(edge.getAttribute("d"), originX, originY),
-        }));
+        const edges = [...root.querySelectorAll(".edgePaths path")].map((edge) => {
+          const edgeAttributes = attributes(edge, [
+            "class", "style", "fill", "stroke", "stroke-width", "stroke-dasharray",
+            "marker-start", "marker-end",
+          ]);
+          if (edgeAttributes["marker-start"])
+            edgeAttributes["marker-start"] = normalizeMarker(edgeAttributes["marker-start"]);
+          if (edgeAttributes["marker-end"])
+            edgeAttributes["marker-end"] = normalizeMarker(edgeAttributes["marker-end"]);
+          return {
+            id: edge.id.replace(`${svgId}-`, ""),
+            d: relativePath(edge.getAttribute("d"), originX, originY,
+                            elementMatrix(edge, rootInverse)),
+            attributes: edgeAttributes,
+            computed: computedStyle(edge, [
+              "fill", "stroke", "stroke-width", "stroke-dasharray",
+            ]),
+          };
+        });
         const edgeLabels = [...root.querySelectorAll(".edgeLabels .edgeLabel")].map((label) => {
           const box = label.getBBox();
           const content = label.querySelector(".label")?.getBBox();
           const textElement = label.querySelector("text");
           const textBox = textElement?.getBBox();
           const style = getComputedStyle(textElement ?? label);
-          const transform = label.getAttribute("transform")?.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/);
+          const position = absoluteOrigin(label, rootInverse);
           return {
             width: number(box.width),
             height: number(box.height),
@@ -310,22 +516,58 @@ try {
             textHeight: number(textBox?.height ?? box.height),
             fontFamily: style.fontFamily,
             fontSize: style.fontSize,
-            dx: number(Number(transform?.[1] ?? 0) - originX),
-            dy: number(Number(transform?.[2] ?? 0) - originY),
+            dx: number(position.x - originX),
+            dy: number(position.y - originY),
           };
         });
         edgeLabels.forEach((label, index) => Object.assign(edges[index], { label }));
-        const clusters = [...root.querySelectorAll("g.cluster")].map((cluster) => {
-          const box = cluster.getBBox();
+        const transformedBox = (element) => {
+          const box = absoluteBox(element, rootInverse);
+          if (!box) return null;
           return {
-            id: cluster.id.replace(`${svgId}-`, ""),
-            dx: number(box.x + box.width / 2 - originX),
-            dy: number(box.y + box.height / 2 - originY),
+            x: number(box.x - originX),
+            y: number(box.y - originY),
             width: number(box.width),
             height: number(box.height),
           };
+        };
+        const clusters = [...root.querySelectorAll("g.cluster")].map((cluster) => {
+          const rect = cluster.querySelector("rect");
+          const label = cluster.querySelector(".cluster-label");
+          const rectBox = transformedBox(rect);
+          return {
+            id: cluster.id.replace(`${svgId}-`, ""),
+            dx: number(rectBox.x + rectBox.width / 2),
+            dy: number(rectBox.y + rectBox.height / 2),
+            width: rectBox.width,
+            height: rectBox.height,
+            group: attributes(cluster, ["class", "data-id", "data-look"]),
+            rect: rectBox,
+            rectAttributes: attributes(rect, [
+              "class", "style", "x", "y", "width", "height", "rx", "ry",
+              "fill", "stroke", "stroke-width",
+            ]),
+            rectComputed: computedStyle(rect, [
+              "fill", "stroke", "stroke-width", "stroke-dasharray",
+            ]),
+            label: {
+              ...transformedBox(label),
+              attributes: attributes(label, ["class", "transform", "style"]),
+              computed: computedStyle(label, [
+                "color", "fill", "font-family", "font-size", "font-weight",
+              ]),
+            },
+          };
         });
-        results.push({ ...fixture, expected: { nodes, edges, clusters } });
+        results.push({
+          ...fixture,
+          expected: {
+            svg: attributes(root, ["class", "role", "aria-roledescription", "style"]),
+            nodes,
+            edges,
+            clusters,
+          },
+        });
       }
       return results;
     },

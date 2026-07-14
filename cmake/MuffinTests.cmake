@@ -16,6 +16,7 @@ muffin_add_test(NAME MuffinThematicBreakRangeProbe SOURCE tests/perf/ThematicBre
 # --- parser / document (pure logic; link MuffinCore, no Qt GUI lock) ---
 muffin_add_test(NAME MuffinMermaidCompatibilityTest SOURCE tests/mermaid/MermaidCompatibilityTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/preprocess-and-detect.json)
 muffin_add_test(NAME MuffinMermaidFlowchartParserTest SOURCE tests/mermaid/MermaidFlowchartParserTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/flowchart-db.json)
+muffin_add_test(NAME MuffinMermaidFlowchartDifferentialFuzzTest SOURCE tests/mermaid/MermaidFlowchartDifferentialFuzzTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/flowchart-differential-fuzz.json)
 muffin_add_test(NAME MuffinMermaidParserErrorTest SOURCE tests/mermaid/MermaidParserErrorTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/flowchart-errors.json)
 muffin_add_test(NAME MuffinMermaidSecurityTest SOURCE tests/mermaid/MermaidSecurityTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinMermaidFuzzTest SOURCE tests/mermaid/MermaidFuzzTest.cpp LINK MuffinCore)

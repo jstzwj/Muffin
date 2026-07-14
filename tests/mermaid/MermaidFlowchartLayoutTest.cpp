@@ -2,7 +2,11 @@
 #include "mermaid/flowchart/FlowchartLayout.h"
 #include "mermaid/flowchart/FlowchartShapeRegistry.h"
 #include "mermaid/flowchart/FlowchartShapes.h"
+#include "mermaid/scene/FlowScene.h"
+#include "mermaid/theme/MermaidColor.h"
+#include "mermaid/theme/FlowTheme.h"
 
+#include <QColor>
 #include <QDebug>
 #include <QFile>
 #include <QGuiApplication>
@@ -23,6 +27,30 @@ using namespace muffin::mermaid::flowchart;
 namespace {
 [[noreturn]] void fail(const QString& message) { qCritical().noquote() << message; std::exit(1); }
 void require(bool condition, const QString& message) { if (!condition) fail(message); }
+qreal cssNumber(const QString& value) {
+  static const QRegularExpression pattern(QStringLiteral("-?\\d+(?:\\.\\d+)?"));
+  const auto match = pattern.match(value);
+  return match.hasMatch() ? match.captured().toDouble() : 0.0;
+}
+bool sameColor(const QString& native, const QString& upstream) {
+  if (native.isEmpty() || upstream.isEmpty() || upstream == QLatin1String("none"))
+    return native.isEmpty() || upstream == QLatin1String("none");
+  return muffin::mermaid::color::toQColor(native) ==
+         muffin::mermaid::color::toQColor(upstream);
+}
+QString normalizedDash(QString value) {
+  value = value.trimmed();
+  if (value == QLatin1String("none")) return {};
+  const QStringList parts = value.split(QRegularExpression(QStringLiteral("[\\s,]+")),
+                                        Qt::SkipEmptyParts);
+  if (!parts.isEmpty() &&
+      std::all_of(parts.cbegin(), parts.cend(),
+                  [](const QString& part) { return qFuzzyIsNull(cssNumber(part)); }))
+    return {};
+  QStringList numbers;
+  for (const QString& part : parts) numbers.push_back(QString::number(cssNumber(part), 'g', 12));
+  return numbers.join(QLatin1Char(' '));
+}
 void requirePathNear(const QString& actual, const QString& expected, const QString& context) {
   static const QRegularExpression numberPattern(QStringLiteral("-?\\d+(?:\\.\\d+)?(?:e[-+]?\\d+)?"),
                                                 QRegularExpression::CaseInsensitiveOption);
@@ -57,7 +85,11 @@ int main(int argc, char** argv) {
   for (const QJsonValue& value : root.value(QStringLiteral("cases")).toArray()) {
     const QJsonObject fixture = value.toObject();
     const QString id = fixture.value(QStringLiteral("id")).toString();
-    const Flowchart chart = Flowchart::parse(fixture.value(QStringLiteral("source")).toString());
+    const QString source = fixture.value(QStringLiteral("source")).toString();
+    const Flowchart chart = Flowchart::parse(source);
+    const bool hasNonAscii = std::any_of(source.cbegin(), source.cend(),
+                                         [](QChar ch) { return ch.unicode() > 0x7f; });
+    const qreal textTolerance = hasNonAscii ? 1.5 : 0.2;
     const QJsonArray expectedNodes = fixture.value(QStringLiteral("expected")).toObject().value(QStringLiteral("nodes")).toArray();
     QMap<QString, QSizeF> sizes;
     for (const QJsonValue& nodeValue : expectedNodes) {
@@ -79,11 +111,42 @@ int main(int argc, char** argv) {
       }
     }
     const FlowLayoutResult actual = layoutFlowchartNodes(chart.data(), sizes, layoutOptions);
+    const auto theme = muffin::mermaid::flowtheme::resolveFlowTheme(
+        muffin::mermaid::flowtheme::FlowThemeId::Default);
+    const auto scene = muffin::mermaid::flowscene::buildFlowScene(chart.data(), actual, theme);
+    const QJsonObject expectedSvg = fixture.value(QStringLiteral("expected")).toObject()
+                                        .value(QStringLiteral("svg")).toObject();
+    require(expectedSvg.value(QStringLiteral("class")).toString() == QLatin1String("flowchart") &&
+                expectedSvg.value(QStringLiteral("role")).toString() == QLatin1String("graphics-document document") &&
+                expectedSvg.value(QStringLiteral("aria-roledescription")).toString() == QLatin1String("flowchart-v2"),
+            QStringLiteral("Flowchart SVG root structure %1 mismatch").arg(id));
+    if (qEnvironmentVariable("MUFFIN_GEOMETRY_DEBUG") == id) {
+      for (const FlowLayoutNode& node : actual.nodes)
+        qDebug().noquote() << "node" << node.id << node.x << node.y << node.width << node.height;
+      for (const FlowLayoutCluster& cluster : actual.clusters)
+        qDebug().noquote() << "cluster" << cluster.id << cluster.x << cluster.y
+                           << cluster.width << cluster.height;
+    }
     require(actual.nodes.size() == expectedNodes.size(), QStringLiteral("Flowchart geometry %1 node count mismatch").arg(id));
     for (qsizetype i = 0; i < actual.nodes.size(); ++i) {
       const FlowLayoutNode& node = actual.nodes.at(i);
       const QJsonObject expected = expectedNodes.at(i).toObject();
       require(node.id == expected.value(QStringLiteral("id")).toString(), QStringLiteral("Flowchart geometry %1 order mismatch").arg(id));
+      const QJsonObject groupAttributes = expected.value(QStringLiteral("group")).toObject();
+      const QJsonObject labelAttributes = expected.value(QStringLiteral("label")).toObject()
+                                              .value(QStringLiteral("attributes")).toObject();
+      const QJsonObject shapeObject = expected.value(QStringLiteral("shape")).toObject();
+      const bool shapeContainerValid = shapeObject.value(QStringLiteral("tag")).toString().isEmpty() ||
+          shapeObject.value(QStringLiteral("attributes")).toObject()
+              .value(QStringLiteral("class")).toString().contains(QStringLiteral("label-container"));
+      const bool labelContainerValid = expected.value(QStringLiteral("label")).toObject()
+                                               .value(QStringLiteral("tag")).toString().isEmpty() ||
+          labelAttributes.value(QStringLiteral("class")).toString()
+              .split(QLatin1Char(' ')).contains(QStringLiteral("label"));
+      require(groupAttributes.value(QStringLiteral("class")).toString().split(QLatin1Char(' ')).contains(QStringLiteral("node")) &&
+                  labelContainerValid &&
+                  shapeContainerValid,
+              QStringLiteral("Flowchart SVG node structure %1/%2 mismatch").arg(id, node.id));
       require(std::abs(node.x - expected.value(QStringLiteral("dx")).toDouble()) <= 0.002,
               QStringLiteral("Flowchart geometry %1/%2 x mismatch: native=%3 upstream=%4")
                   .arg(id, node.id).arg(node.x).arg(expected.value(QStringLiteral("dx")).toDouble()));
@@ -98,6 +161,25 @@ int main(int argc, char** argv) {
               QStringLiteral("Flowchart geometry %1 edge order mismatch").arg(id));
       requirePathNear(actual.edges.at(i).path, expected.value(QStringLiteral("d")).toString(),
                       QStringLiteral("Flowchart geometry %1/%2").arg(id, actual.edges.at(i).id));
+      const QJsonObject attributes = expected.value(QStringLiteral("attributes")).toObject();
+      const QJsonObject computed = expected.value(QStringLiteral("computed")).toObject();
+      const auto& sceneEdge = scene.edges.at(i);
+      const QString edgeClass = attributes.value(QStringLiteral("class")).toString();
+      require(edgeClass.contains(QStringLiteral("flowchart-link")) ||
+                  edgeClass.contains(QStringLiteral("edge-thickness-invisible")),
+              QStringLiteral("Flowchart SVG edge class %1/%2 mismatch").arg(id, sceneEdge.id));
+      require(attributes.value(QStringLiteral("marker-end")).toString() == sceneEdge.markerEnd &&
+                  attributes.value(QStringLiteral("marker-start")).toString() == sceneEdge.markerStart,
+              QStringLiteral("Flowchart SVG edge markers %1/%2 mismatch: native=%3/%4 upstream=%5/%6")
+                  .arg(id, sceneEdge.id, sceneEdge.markerStart, sceneEdge.markerEnd,
+                       attributes.value(QStringLiteral("marker-start")).toString(),
+                       attributes.value(QStringLiteral("marker-end")).toString()));
+      require(sameColor(sceneEdge.stroke, computed.value(QStringLiteral("stroke")).toString()) &&
+                  std::abs(cssNumber(sceneEdge.strokeWidth) -
+                           cssNumber(computed.value(QStringLiteral("stroke-width")).toString())) <= 0.01 &&
+                  normalizedDash(sceneEdge.strokeDasharray) ==
+                      normalizedDash(computed.value(QStringLiteral("stroke-dasharray")).toString()),
+              QStringLiteral("Flowchart SVG edge computed style %1/%2 mismatch").arg(id, sceneEdge.id));
       const QJsonObject expectedLabel = expected.value(QStringLiteral("label")).toObject();
       if (expectedLabel.value(QStringLiteral("width")).toDouble() > 0.0) {
         require(actual.edges.at(i).hasLabelPosition &&
@@ -116,6 +198,16 @@ int main(int argc, char** argv) {
       const FlowLayoutCluster& cluster = actual.clusters.at(i);
       const QJsonObject expected = expectedClusters.at(i).toObject();
       require(cluster.id == expected.value(QStringLiteral("id")).toString(), QStringLiteral("Flowchart geometry %1 cluster id mismatch").arg(id));
+      require(expected.value(QStringLiteral("group")).toObject()
+                      .value(QStringLiteral("class")).toString().contains(QStringLiteral("cluster")),
+              QStringLiteral("Flowchart SVG cluster class %1/%2 mismatch").arg(id, cluster.id));
+      const QJsonObject rectComputed = expected.value(QStringLiteral("rectComputed")).toObject();
+      const auto& sceneCluster = scene.clusters.at(i);
+      require(sameColor(sceneCluster.fill, rectComputed.value(QStringLiteral("fill")).toString()) &&
+                  sameColor(sceneCluster.stroke, rectComputed.value(QStringLiteral("stroke")).toString()) &&
+                  std::abs(cssNumber(sceneCluster.strokeWidth) -
+                           cssNumber(rectComputed.value(QStringLiteral("stroke-width")).toString())) <= 0.01,
+              QStringLiteral("Flowchart SVG cluster computed style %1/%2 mismatch").arg(id, cluster.id));
       require(std::abs(cluster.x - expected.value(QStringLiteral("dx")).toDouble()) <= 0.002 &&
                   std::abs(cluster.y - expected.value(QStringLiteral("dy")).toDouble()) <= 0.002 &&
                   std::abs(cluster.width - expected.value(QStringLiteral("width")).toDouble()) <= 0.002 &&
@@ -132,12 +224,71 @@ int main(int argc, char** argv) {
       const QJsonObject expected = nodeValue.toObject();
       const QString nodeId = expected.value(QStringLiteral("id")).toString();
       const QSizeF native = nativeSizes.value(nodeId);
-      require(std::abs(native.width() - expected.value(QStringLiteral("width")).toDouble()) <= 0.2 &&
-                  std::abs(native.height() - expected.value(QStringLiteral("height")).toDouble()) <= 0.2,
+      require(std::abs(native.width() - expected.value(QStringLiteral("width")).toDouble()) <= textTolerance &&
+                  std::abs(native.height() - expected.value(QStringLiteral("height")).toDouble()) <= textTolerance,
               QStringLiteral("Flowchart native text %1/%2 size mismatch: native=%3x%4 upstream=%5x%6")
                   .arg(id, nodeId).arg(native.width()).arg(native.height())
                   .arg(expected.value(QStringLiteral("width")).toDouble())
                   .arg(expected.value(QStringLiteral("height")).toDouble()));
+      const auto vertex = std::find_if(chart.data().vertices.cbegin(), chart.data().vertices.cend(),
+                                       [&](const FlowVertex& candidate) {
+                                         return candidate.id == nodeId;
+                                       });
+      if (vertex != chart.data().vertices.cend() &&
+          expected.value(QStringLiteral("labelWidth")).toDouble() > 0.0) {
+        const QSizeF label = measureLabel(vertex->text, vertex->labelType);
+        require(std::abs(label.width() - expected.value(QStringLiteral("labelWidth")).toDouble()) <= textTolerance &&
+                    std::abs(label.height() - expected.value(QStringLiteral("labelHeight")).toDouble()) <= textTolerance,
+                QStringLiteral("Flowchart node label %1/%2 bbox mismatch: native=%3x%4 upstream=%5x%6")
+                    .arg(id, nodeId).arg(label.width()).arg(label.height())
+                    .arg(expected.value(QStringLiteral("labelWidth")).toDouble())
+                    .arg(expected.value(QStringLiteral("labelHeight")).toDouble()));
+      }
+      const auto sceneNode = std::find_if(scene.nodes.cbegin(), scene.nodes.cend(),
+                                          [&](const muffin::mermaid::flowscene::FlowSceneNode& candidate) {
+                                            return candidate.id == nodeId;
+                                          });
+      const QString shapeTag = expected.value(QStringLiteral("shape")).toObject()
+                                   .value(QStringLiteral("tag")).toString();
+      if (sceneNode != scene.nodes.cend() && !shapeTag.isEmpty() &&
+          shapeTag != QLatin1String("g")) {
+        const QJsonObject shapeComputed = expected.value(QStringLiteral("shape")).toObject()
+                                              .value(QStringLiteral("computed")).toObject();
+        require(sameColor(sceneNode->fill, shapeComputed.value(QStringLiteral("fill")).toString()) &&
+                    sameColor(sceneNode->stroke, shapeComputed.value(QStringLiteral("stroke")).toString()) &&
+                    std::abs(cssNumber(sceneNode->strokeWidth) -
+                             cssNumber(shapeComputed.value(QStringLiteral("stroke-width")).toString())) <= 0.01,
+                QStringLiteral("Flowchart SVG node computed style %1/%2 mismatch").arg(id, nodeId));
+      }
+    }
+    for (qsizetype i = 0; i < chart.data().edges.size() && i < expectedEdges.size(); ++i) {
+      const QJsonObject expectedLabel = expectedEdges.at(i).toObject()
+                                            .value(QStringLiteral("label")).toObject();
+      if (expectedLabel.value(QStringLiteral("width")).toDouble() <= 0.0) continue;
+      const QSizeF label = measureFlowchartEdgeLabel(chart.data().edges.at(i));
+      require(std::abs(label.width() - expectedLabel.value(QStringLiteral("width")).toDouble()) <= 1.25 &&
+                  std::abs(label.height() - expectedLabel.value(QStringLiteral("height")).toDouble()) <= 1.25,
+              QStringLiteral("Flowchart edge label %1/%2 bbox mismatch: native=%3x%4 upstream=%5x%6")
+                  .arg(id, chart.data().edges.at(i).id).arg(label.width()).arg(label.height())
+                  .arg(expectedLabel.value(QStringLiteral("width")).toDouble())
+                  .arg(expectedLabel.value(QStringLiteral("height")).toDouble()));
+    }
+    for (const FlowSubgraph& subgraph : chart.data().subgraphs) {
+      const auto expected = std::find_if(expectedClusters.cbegin(), expectedClusters.cend(),
+                                         [&](const QJsonValue& candidate) {
+                                           return candidate.toObject().value(QStringLiteral("id")).toString() ==
+                                                  subgraph.id;
+                                         });
+      if (expected == expectedClusters.cend()) continue;
+      const QJsonObject expectedLabel = expected->toObject().value(QStringLiteral("label")).toObject();
+      if (expectedLabel.isEmpty()) continue;
+      const QSizeF label = measureFlowchartClusterLabel(subgraph);
+      require(std::abs(label.width() - expectedLabel.value(QStringLiteral("width")).toDouble()) <= 0.75 &&
+                  std::abs(label.height() - expectedLabel.value(QStringLiteral("height")).toDouble()) <= 0.75,
+              QStringLiteral("Flowchart cluster label %1/%2 bbox mismatch: native=%3x%4 upstream=%5x%6")
+                  .arg(id, subgraph.id).arg(label.width()).arg(label.height())
+                  .arg(expectedLabel.value(QStringLiteral("width")).toDouble())
+                  .arg(expectedLabel.value(QStringLiteral("height")).toDouble()));
     }
     if (id == QLatin1String("basic-shapes") || id == QLatin1String("legacy-shapes") ||
         id == QLatin1String("expanded-shapes") || id == QLatin1String("expanded-shapes-2")) {

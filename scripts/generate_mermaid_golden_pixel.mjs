@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { PNG } from "pngjs";
 import { cases } from "./mermaid_golden_cases.mjs";
 
 // Master Level-3 pixel golden generator (milestone G3). Renders every case from
@@ -31,9 +32,13 @@ try {
   const page = await browser.newPage();
   await page.goto(pathToFileURL(path.join(path.dirname(mermaidRoot), "..", "index.html")).href);
   const mermaidModule = pathToFileURL(path.join(mermaidRoot, "dist", "mermaid.esm.mjs")).href;
-  const results = await page.evaluate(async ({ cases, mermaidModule }) => {
-    const { default: mermaid } = await import(mermaidModule);
-    const renderOne = async (fixture, index) => {
+  const results = [];
+  for (let index = 0; index < cases.length; ++index) {
+    const fixture = cases[index];
+    const dpr = fixture.dpr ?? 1;
+    await page.setViewport({ width: 1600, height: 1200, deviceScaleFactor: dpr });
+    const content = await page.evaluate(async ({ fixture, index, mermaidModule }) => {
+      const { default: mermaid } = await import(mermaidModule);
       mermaid.initialize({
         startOnLoad: false,
         securityLevel: "strict",
@@ -50,37 +55,50 @@ try {
       // and the native render (first-node-relative) can be aligned by their actual
       // painted content (see FlowSceneCompare).
       const bb = root.getBBox();
-      const clone = root.cloneNode(true);
-      clone.setAttribute("viewBox", `${bb.x} ${bb.y} ${bb.width} ${bb.height}`);
-      clone.setAttribute("width", bb.width);
-      clone.setAttribute("height", bb.height);
-      const img = new Image();
-      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(clone.outerHTML)}`; });
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.ceil(bb.width);
-      canvas.height = Math.ceil(bb.height);
-      canvas.getContext("2d").drawImage(img, 0, 0, bb.width, bb.height);
-      return { content: { width: bb.width, height: bb.height }, png: canvas.toDataURL("image/png").split(",")[1] };
-    };
-    const out = [];
-    for (let i = 0; i < cases.length; ++i) {
-      const r = await renderOne(cases[i], i);
-      out.push({ id: cases[i].id, theme: cases[i].theme, source: cases[i].source, viewBox: r.viewBox, png: r.png });
-    }
-    return out;
-  }, { cases, mermaidModule });
+      root.setAttribute("viewBox", `${bb.x} ${bb.y} ${bb.width} ${bb.height}`);
+      root.setAttribute("width", Math.ceil(bb.width));
+      root.setAttribute("height", Math.ceil(bb.height));
+      root.style.maxWidth = "none";
+      root.style.display = "block";
+      root.style.width = `${Math.ceil(bb.width)}px`;
+      root.style.height = `${Math.ceil(bb.height)}px`;
+      document.documentElement.style.margin = "0";
+      document.body.style.margin = "0";
+      const container = document.getElementById("container");
+      container.style.position = "absolute";
+      container.style.left = "0";
+      container.style.top = "0";
+      for (const element of root.querySelectorAll("*")) {
+        element.style.animation = "none";
+        element.style.transition = "none";
+      }
+      await document.fonts.ready;
+      await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+      return { width: bb.width, height: bb.height };
+    }, { fixture, index, mermaidModule });
+    const element = await page.$("#container svg");
+    if (!element) throw new Error(`Case ${fixture.id}: rendered SVG is missing`);
+    const screenshot = await element.screenshot({ omitBackground: true });
+    const png = PNG.sync.write(PNG.sync.read(screenshot), {
+      colorType: 6,
+      inputColorType: 6,
+      bitDepth: 8,
+    });
+    results.push({ ...fixture, dpr, content, png });
+  }
 
   fs.mkdirSync(outDir, { recursive: true });
   const manifestCases = [];
   for (const r of results) {
     const file = `${r.id}.png`;
-    fs.writeFileSync(path.join(outDir, file), Buffer.from(r.png, "base64"));
+    fs.writeFileSync(path.join(outDir, file), r.png);
     // Neo/redux themes have a known F1 colour-derivation gap (redux-color
     // borderColorArray / cScale + neo-look fills under classic look not yet
     // ported). They are kept in the matrix but their INTERIOR check is not
     // enforced until F1 completes; boundary/text/empty still are.
     const enforceInterior = !(r.theme.includes("neo") || r.theme.includes("redux"));
-    manifestCases.push({ id: r.id, theme: r.theme, source: r.source, content: r.content, enforceInterior, file });
+    manifestCases.push({ id: r.id, theme: r.theme, source: r.source, dpr: r.dpr,
+                         content: r.content, enforceInterior, file });
   }
   const manifest = { upstream: { package: "mermaid", version: packageJson.version }, cases: manifestCases };
   fs.writeFileSync(path.join(outDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);

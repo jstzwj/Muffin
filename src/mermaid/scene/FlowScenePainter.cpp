@@ -1,5 +1,6 @@
 #include "mermaid/scene/FlowScenePainter.h"
 
+#include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/flowchart/FlowchartShapes.h"
 #include "mermaid/scene/FlowMarkers.h"
 #include "mermaid/theme/MermaidColor.h"
@@ -127,7 +128,7 @@ void drawMarker(QPainter& painter, const QString& type, const QPointF& at,
 // glyphs (matches Chrome's foreignObject label box instead of a char-count
 // heuristic).
 QFont labelFont(const FlowSceneLabel& label, const QString& fontFamily) {
-  QFont font(fontFamily);
+  QFont font(label.fontFamily.isEmpty() ? fontFamily : label.fontFamily);
   font.setPixelSize(static_cast<int>(std::round(pxSize(label.fontSize.isEmpty() ? QStringLiteral("16px") : label.fontSize))));
   if (label.fontWeight == QLatin1String("bold")) font.setBold(true);
   return font;
@@ -136,12 +137,16 @@ QFont labelFont(const FlowSceneLabel& label, const QString& fontFamily) {
 void drawLabel(QPainter& painter, const FlowSceneLabel& label, const QRectF& rect,
                const QString& fontFamily, bool center, PaintMode mode) {
   if (label.text.isEmpty()) return;
-  painter.setFont(labelFont(label, fontFamily));
-  painter.setPen(mode == PaintMode::CategoryMask
-                     ? QColor(kCatText)
-                     : qcolor(label.color.isEmpty() ? QStringLiteral("#333333") : label.color));
-  const int flags = center ? Qt::AlignCenter : (Qt::AlignHCenter | Qt::AlignTop);
-  painter.drawText(rect, flags, label.text);
+  const QFont font = labelFont(label, fontFamily);
+  const flowchart::FlowLabelDocument document = flowchart::parseFlowLabel(
+      label.text, label.labelType, label.mathEnabled);
+  const qreal lineHeight = (font.pixelSize() > 0 ? font.pixelSize() : 16.0) * 1.5;
+  const QColor color = mode == PaintMode::CategoryMask
+                           ? QColor(kCatText)
+                           : qcolor(label.color.isEmpty() ? QStringLiteral("#333333")
+                                                          : label.color);
+  flowchart::paintFlowLabel(painter, document, rect, font.family(), font.pixelSize(),
+                            lineHeight, color, center);
 }
 
 }  // namespace
@@ -202,11 +207,17 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter, const QString& fo
     // Edge label.
     if (!e.label.text.isEmpty()) {
       const QFont font = labelFont(e.label, fontFamily);
-      const QFontMetrics fm(font);
-      const qreal pad = 4.0;
-      const qreal w = fm.horizontalAdvance(e.label.text) + pad * 2.0;
-      const qreal h = fm.height() + pad * 2.0;
-      const QRectF lr(e.label.x - w / 2.0, e.label.y - h / 2.0, w, h);
+      flowchart::FlowEdge semanticLabel;
+      semanticLabel.text = e.label.text;
+      semanticLabel.labelType = e.label.labelType;
+      flowchart::FlowTextOptions textOptions;
+      textOptions.fontFamily = font.family();
+      textOptions.fontPixelSize = font.pixelSize() > 0 ? font.pixelSize() : 16.0;
+      textOptions.lineHeight = textOptions.fontPixelSize * 1.5;
+      const QSizeF measured = flowchart::measureFlowchartEdgeLabel(semanticLabel, textOptions);
+      const QRectF lr(e.label.x - measured.width() / 2.0,
+                      e.label.y - measured.height() / 2.0,
+                      measured.width(), measured.height());
       painter.setPen(Qt::NoPen); painter.setBrush(paletteColor(e.label.background, kCatEdgeLabelBg));
       painter.drawRoundedRect(lr, 2, 2);
       drawLabel(painter, e.label, lr, fontFamily, true, mode);

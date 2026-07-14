@@ -96,12 +96,13 @@ int main(int argc, char** argv) {
   const QJsonArray computed = computeAll(cases);
 
   QFile snapshotFile(snapshotPath);
-  if (!snapshotFile.exists()) {
-    // Regeneration path: write the golden. (CI always has the committed file.)
+  const bool updateGolden = qEnvironmentVariableIntValue("MUFFIN_UPDATE_GOLDENS") == 1;
+  if (updateGolden || !snapshotFile.exists()) {
     QJsonObject root;
     root.insert(QStringLiteral("upstream"), geometryRoot.value(QStringLiteral("upstream")).toObject());
     root.insert(QStringLiteral("cases"), computed);
-    require(snapshotFile.open(QIODevice::WriteOnly), QStringLiteral("Could not write snapshot golden"));
+    require(snapshotFile.open(QIODevice::WriteOnly | QIODevice::Truncate),
+            QStringLiteral("Could not write snapshot golden"));
     snapshotFile.write(QJsonDocument(root).toJson());
     qDebug().noquote() << "MermaidDagreSnapshotTest: generated" << snapshotPath;
     return 0;

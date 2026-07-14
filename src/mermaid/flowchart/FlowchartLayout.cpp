@@ -1,5 +1,7 @@
 #include "mermaid/flowchart/FlowchartLayout.h"
 
+#include "mermaid/flowchart/FlowLabel.h"
+
 #include "mermaid/flowchart/D3Curves.h"
 #include "mermaid/flowchart/FlowchartShapeRegistry.h"
 #include "mermaid/flowchart/FlowchartShapes.h"
@@ -25,17 +27,6 @@ namespace muffin::mermaid::flowchart {
 namespace {
 
 namespace d = muffin::mermaid::dagre;  // visible to the anon-namespace helpers below
-
-QString plainLabel(QString text) {
-  static const QRegularExpression breakPattern(QStringLiteral("<br\\s*/?>"),
-                                                QRegularExpression::CaseInsensitiveOption);
-  text.replace(breakPattern, QStringLiteral("\n"));
-  text.remove(QRegularExpression(QStringLiteral("<[^>]*>")));
-  if (text.startsWith(QLatin1Char('`')) && text.endsWith(QLatin1Char('`')) && text.size() >= 2) {
-    text = text.mid(1, text.size() - 2);
-  }
-  return text;
-}
 
 // Edge path generation is a 1:1 port of d3-shape's curve state machines
 // (basis/linear/step/stepBefore/stepAfter/cardinal/monotoneX/monotoneY/bumpX/
@@ -204,34 +195,39 @@ QPointF intersectNodeForShape(const d::DagreNodeLabel& node, const QString& type
 }  // namespace
 
 // measureLabel is exported (external linkage) so FlowchartShapes.cpp can measure
-// a label for shapes whose outline depends on it (bang, cloud). plainLabel
-// stays internal (anonymous) but is visible here in the enclosing namespace.
+// a label for shapes whose outline depends on it (bang, cloud).
 QSizeF measureLabel(const QString& text, const FlowTextOptions& options) {
-  QFont font(options.fontFamily);
-  font.setPixelSize(qRound(options.fontPixelSize));
-  font.setHintingPreference(QFont::PreferNoHinting);
-  const QFontMetricsF metrics(font);
-  const QStringList lines = plainLabel(text).split(QLatin1Char('\n'));
-  qreal width = 0.0;
-  for (const QString& line : lines) {
-    QTextLayout layout(line, font);
-    QTextOption textOption;
-    textOption.setUseDesignMetrics(true);
-    layout.setTextOption(textOption);
-    layout.beginLayout();
-    QTextLine textLine = layout.createLine();
-    if (textLine.isValid()) textLine.setLineWidth(std::numeric_limits<qreal>::max());
-    layout.endLayout();
-    width = std::max(width, textLine.isValid() ? textLine.naturalTextWidth()
-                                               : metrics.horizontalAdvance(line));
-  }
-  return QSizeF(width, std::max<qsizetype>(1, lines.size()) * options.lineHeight);
+  return measureLabel(text, QStringLiteral("text"), options);
+}
+
+QSizeF measureLabel(const QString& text, const QString& labelType,
+                    const FlowTextOptions& options) {
+  return measureFlowLabel(parseFlowLabel(text, labelType), options.fontFamily,
+                          options.fontPixelSize, options.lineHeight);
+}
+
+QSizeF measureFlowchartEdgeLabel(const FlowEdge& edge, const FlowTextOptions& options) {
+  QSizeF size = measureFlowLabel(parseFlowLabel(edge.text, edge.labelType, false),
+                                 options.fontFamily, options.fontPixelSize,
+                                 options.lineHeight);
+  size.rwidth() += 4.0;
+  size.setHeight(21.0);
+  return size;
+}
+
+QSizeF measureFlowchartClusterLabel(const FlowSubgraph& subgraph,
+                                    const FlowTextOptions& options) {
+  FlowTextOptions clusterOptions = options;
+  clusterOptions.lineHeight = 17.0;
+  return measureFlowLabel(parseFlowLabel(subgraph.title, subgraph.labelType, false),
+                          clusterOptions.fontFamily, clusterOptions.fontPixelSize,
+                          clusterOptions.lineHeight);
 }
 
 QMap<QString, QSizeF> measureFlowchartNodes(const FlowchartData& data, FlowTextOptions options) {
   QMap<QString, QSizeF> result;
   for (const FlowVertex& vertex : data.vertices) {
-    const QSizeF label = measureLabel(vertex.text, options);
+    const QSizeF label = measureLabel(vertex.text, vertex.labelType, options);
     QSizeF size;
     const QString type = canonicalShape(vertex.type);
     const qreal pad = options.verticalPadding;  // mermaid flowchart node.padding (default 15)
@@ -419,11 +415,107 @@ FlowLayoutResult layoutFlowchartNodes(const FlowchartData& data,
   return layoutFlowchartNodesDagre(data, measuredNodes, options);
 }
 
-FlowLayoutResult layoutFlowchartNodesDagre(const FlowchartData& data,
-                                           const QMap<QString, QSizeF>& measuredNodes,
-                                           FlowLayoutOptions options,
-                                           std::vector<dagre::DagreSnapshot>* dagreSnapshots) {
+static FlowLayoutResult layoutFlowchartNodesDagreScope(
+    const FlowchartData& data, const QMap<QString, QSizeF>& measuredNodes,
+    FlowLayoutOptions options, std::vector<dagre::DagreSnapshot>* dagreSnapshots,
+    const QString& retainedRoot) {
   namespace d = muffin::mermaid::dagre;
+  struct ExtractedCluster {
+    QString id;
+    QSet<QString> vertices;
+    QSet<QString> subgraphs;
+    FlowLayoutResult layout;
+    QPointF center;
+    QSizeF size;
+  };
+
+  QSet<QString> subgraphIds;
+  QHash<QString, QString> subgraphParent;
+  for (const FlowSubgraph& sg : data.subgraphs) subgraphIds.insert(sg.id);
+  for (const FlowSubgraph& sg : data.subgraphs)
+    for (const QString& child : sg.nodes)
+      if (subgraphIds.contains(child)) subgraphParent.insert(child, sg.id);
+  auto isSubgraphDescendant = [&](QString child, const QString& ancestor) {
+    QSet<QString> guard;
+    while (subgraphParent.contains(child) && !guard.contains(child)) {
+      guard.insert(child);
+      child = subgraphParent.value(child);
+      if (child == ancestor) return true;
+    }
+    return false;
+  };
+
+  QVector<ExtractedCluster> extracted;
+  QSet<QString> claimedVertices;
+  QSet<QString> claimedSubgraphs;
+  for (auto it = data.subgraphs.rbegin(); it != data.subgraphs.rend(); ++it) {
+    if (it->id == retainedRoot || claimedSubgraphs.contains(it->id) || it->nodes.isEmpty()) continue;
+    QSet<QString> members;
+    for (const QString& id : it->nodes)
+      if (!subgraphIds.contains(id)) members.insert(id);
+    for (const FlowSubgraph& nested : data.subgraphs)
+      if (nested.id != it->id && isSubgraphDescendant(nested.id, it->id))
+        for (const QString& id : nested.nodes)
+          if (!subgraphIds.contains(id)) members.insert(id);
+    if (members.isEmpty()) continue;
+    bool externalConnection = false;
+    for (const FlowEdge& edge : data.edges) {
+      if (members.contains(edge.start) != members.contains(edge.end)) {
+        externalConnection = true;
+        break;
+      }
+    }
+    if (externalConnection) continue;
+
+    ExtractedCluster item;
+    item.id = it->id;
+    item.vertices = members;
+    item.subgraphs.insert(it->id);
+    for (const FlowSubgraph& nested : data.subgraphs)
+      if (isSubgraphDescendant(nested.id, it->id)) item.subgraphs.insert(nested.id);
+
+    FlowchartData inner;
+    const QString parentDirection = data.direction.toUpper().isEmpty()
+                                        ? QStringLiteral("TB")
+                                        : data.direction.toUpper();
+    inner.direction = it->hasExplicitDir && !it->dir.isEmpty()
+                          ? it->dir
+                          : (!retainedRoot.isEmpty()
+                                 ? QStringLiteral("TB")
+                                 : (parentDirection == QLatin1String("TB")
+                                        ? QStringLiteral("LR")
+                                        : QStringLiteral("TB")));
+    inner.title = data.title;
+    inner.accTitle = data.accTitle;
+    inner.accDescription = data.accDescription;
+    inner.classes = data.classes;
+    inner.tooltips = data.tooltips;
+    inner.defaultEdgeStyles = data.defaultEdgeStyles;
+    inner.defaultEdgeInterpolate = data.defaultEdgeInterpolate;
+    for (const FlowVertex& vertex : data.vertices)
+      if (item.vertices.contains(vertex.id)) inner.vertices.push_back(vertex);
+    for (const FlowEdge& edge : data.edges)
+      if (item.vertices.contains(edge.start) && item.vertices.contains(edge.end))
+        inner.edges.push_back(edge);
+    for (const FlowSubgraph& subgraph : data.subgraphs)
+      if (item.subgraphs.contains(subgraph.id)) inner.subgraphs.push_back(subgraph);
+
+    FlowLayoutOptions innerOptions = options;
+    innerOptions.rankSpacing += 25.0;
+    item.layout = layoutFlowchartNodesDagreScope(inner, measuredNodes, innerOptions,
+                                                 nullptr, item.id);
+    const auto root = std::find_if(item.layout.clusters.cbegin(), item.layout.clusters.cend(),
+                                   [&](const FlowLayoutCluster& cluster) {
+                                     return cluster.id == item.id;
+                                   });
+    if (root == item.layout.clusters.cend()) continue;
+    item.center = QPointF(root->x, root->y);
+    item.size = QSizeF(root->width, root->height);
+    claimedVertices.unite(item.vertices);
+    claimedSubgraphs.unite(item.subgraphs);
+    extracted.push_back(std::move(item));
+  }
+
   d::DagreGraph g({.directed = true, .multigraph = true, .compound = true});
   d::DagreGraphLabel gl;
   QString dir = data.direction.toUpper();
@@ -434,42 +526,50 @@ FlowLayoutResult layoutFlowchartNodesDagre(const FlowchartData& data,
   gl.ranksep = options.rankSpacing;
   g.setGraph(gl);
 
-  for (const FlowVertex& v : data.vertices) {
+  // flowDb.getData() emits cluster nodes first, in reverse declaration order,
+  // followed by vertices in insertion order. Dagre uses graph insertion order
+  // to break mirror-equivalent ordering ties, so this order is observable.
+  QHash<QString, QSizeF> extractedSizes;
+  for (const ExtractedCluster& item : extracted) extractedSizes.insert(item.id, item.size);
+  auto addSubgraphNode = [&](const FlowSubgraph& subgraph) {
+    if (claimedSubgraphs.contains(subgraph.id) && !extractedSizes.contains(subgraph.id)) return;
+    d::DagreNodeLabel label;
+    if (extractedSizes.contains(subgraph.id)) {
+      label.width = extractedSizes.value(subgraph.id).width();
+      label.height = extractedSizes.value(subgraph.id).height();
+    }
+    g.setNode(subgraph.id, label);
+  };
+  auto addVertexNode = [&](const FlowVertex& v) {
+    if (claimedVertices.contains(v.id)) return;
     const QSizeF sz = measuredNodes.value(v.id);
     d::DagreNodeLabel nl;
     nl.width = sz.width();
     nl.height = sz.height();
-    // forkJoin mutates node.width/height += state.padding/2 (default 8/2 = 4)
-    // AFTER updateNodeBounds, so dagre lays out with a size 4px larger (each
-    // axis) than the rendered bar's bbox. measureFlowchartNodes returns the bbox
-    // (matching the golden sizing check); apply the mutation here so layout
-    // positions match mermaid (which dagre-sized off the mutated value).
+    // Mermaid expands forkJoin by state.padding / 2 after measuring its bar.
     if (canonicalShape(v.type) == QLatin1String("fork")) {
       nl.width += 4.0;
       nl.height += 4.0;
     }
     g.setNode(v.id, nl);
+  };
+  if (!retainedRoot.isEmpty()) {
+    const auto root = std::find_if(data.subgraphs.cbegin(), data.subgraphs.cend(),
+                                   [&](const FlowSubgraph& subgraph) {
+                                     return subgraph.id == retainedRoot;
+                                   });
+    if (root != data.subgraphs.cend()) addSubgraphNode(*root);
   }
-  // Insert cluster nodes in REVERSE declaration order: dagre's nesting-graph and
-  // initOrder iterate g.children()/g.nodes() in insertion order, and for a
-  // symmetric compound graph (e.g. compound-crossing) that order picks one of two
-  // mirror-optimal layouts. Mermaid's dagre-wrapper constructs clusters in the
-  // order that yields the golden's chirality, which is the reverse of declaration
-  // order here. Asymmetric compound graphs are unaffected (their tie-break is
-  // forced), so this only flips the symmetric case.
-  for (auto it = data.subgraphs.rbegin(); it != data.subgraphs.rend(); ++it)
-    g.setNode(it->id, d::DagreNodeLabel{});
+  for (auto it = data.subgraphs.rbegin(); it != data.subgraphs.rend(); ++it) {
+    if (!retainedRoot.isEmpty() && it->id == retainedRoot) continue;
+    addSubgraphNode(*it);
+  }
+  for (const FlowVertex& vertex : data.vertices) addVertexNode(vertex);
   // The parser lists a node in every subgraph scope that references it (including
   // edge endpoints), so a node can appear in several subgraph node lists. dagre
   // wants each node parented to its DIRECT (innermost) subgraph. Reconstruct that
   // by parenting each node to its deepest containing subgraph, and nesting
   // subgraphs under the subgraph that lists them.
-  QSet<QString> subgraphIds;
-  for (const FlowSubgraph& sg : data.subgraphs) subgraphIds.insert(sg.id);
-  QHash<QString, QString> subgraphParent;
-  for (const FlowSubgraph& sg : data.subgraphs)
-    for (const QString& child : sg.nodes)
-      if (subgraphIds.contains(child)) subgraphParent.insert(child, sg.id);
   auto subgraphDepth = [&](const QString& id) {
     int depth = 1;
     QString p = subgraphParent.value(id);
@@ -482,9 +582,13 @@ FlowLayoutResult layoutFlowchartNodesDagre(const FlowchartData& data,
     return depth;
   };
   for (const FlowSubgraph& sg : data.subgraphs)
-    if (subgraphParent.contains(sg.id)) g.setParent(sg.id, subgraphParent.value(sg.id));
+    if (!claimedSubgraphs.contains(sg.id) && subgraphParent.contains(sg.id) &&
+        !claimedSubgraphs.contains(subgraphParent.value(sg.id)))
+      g.setParent(sg.id, subgraphParent.value(sg.id));
   for (const FlowSubgraph& sg : data.subgraphs) {
+    if (claimedSubgraphs.contains(sg.id)) continue;
     for (const QString& child : sg.nodes) {
+      if (claimedVertices.contains(child) || claimedSubgraphs.contains(child)) continue;
       if (subgraphIds.contains(child)) continue;  // nested subgraph, handled above
       QString best = sg.id;
       int bestDepth = subgraphDepth(sg.id);
@@ -499,8 +603,13 @@ FlowLayoutResult layoutFlowchartNodesDagre(const FlowchartData& data,
       g.setParent(child, best);
     }
   }
+  for (const ExtractedCluster& item : extracted) {
+    const QString parent = subgraphParent.value(item.id);
+    if (!parent.isEmpty() && g.hasNode(parent)) g.setParent(item.id, parent);
+  }
 
   for (const FlowEdge& fe : data.edges) {
+    if (claimedVertices.contains(fe.start) && claimedVertices.contains(fe.end)) continue;
     d::DagreEdgeLabel el;
     el.minlen = 1;
     el.weight = 1;
@@ -509,9 +618,7 @@ FlowLayoutResult layoutFlowchartNodesDagre(const FlowchartData& data,
     if (!fe.text.isEmpty()) {
       QSizeF lbl = options.measuredEdgeLabels.value(fe.id);
       if (!lbl.isValid() || lbl.isEmpty()) {
-        lbl = measureLabel(fe.text, {});
-        lbl.rwidth() += 4.0;
-        lbl.setHeight(21.0);
+        lbl = measureFlowchartEdgeLabel(fe);
       }
       el.width = lbl.width();
       el.height = lbl.height();
@@ -526,12 +633,14 @@ FlowLayoutResult layoutFlowchartNodesDagre(const FlowchartData& data,
 
   FlowLayoutResult result;
   QPointF origin(0.0, 0.0);
-  if (!data.vertices.isEmpty()) {
-    if (const d::DagreNodeLabel* n = g.node(data.vertices.first().id))
+  for (const FlowVertex& vertex : data.vertices)
+    if (const d::DagreNodeLabel* n = g.node(vertex.id)) {
       origin = QPointF(n->x.value_or(0.0), n->y.value_or(0.0));
-  }
+      break;
+    }
 
   for (const FlowVertex& v : data.vertices) {
+    if (claimedVertices.contains(v.id)) continue;
     const d::DagreNodeLabel* n = g.node(v.id);
     FlowLayoutNode node;
     node.id = v.id;
@@ -549,6 +658,7 @@ FlowLayoutResult layoutFlowchartNodesDagre(const FlowchartData& data,
   for (const FlowVertex& v : data.vertices) vertexType.insert(v.id, v.type);
 
   for (const FlowEdge& fe : data.edges) {
+    if (claimedVertices.contains(fe.start) && claimedVertices.contains(fe.end)) continue;
     FlowLayoutEdge out;
     out.id = fe.id;
     if (fe.start == fe.end) {
@@ -579,7 +689,12 @@ FlowLayoutResult layoutFlowchartNodesDagre(const FlowchartData& data,
         out.points = points;
         QVector<QPointF> rendered = points;
         clipForMarkers(rendered, fe.type);
-        out.path = pathForCurve(rendered, fe.interpolate.isEmpty() ? options.curve : fe.interpolate);
+        const QString curve = !fe.interpolate.isEmpty()
+                                  ? fe.interpolate
+                                  : (!data.defaultEdgeInterpolate.isEmpty()
+                                         ? data.defaultEdgeInterpolate
+                                         : options.curve);
+        out.path = pathForCurve(rendered, curve);
         result.edges.push_back(out);
         continue;
       }
@@ -633,12 +748,18 @@ FlowLayoutResult layoutFlowchartNodesDagre(const FlowchartData& data,
     }
     QVector<QPointF> rendered = out.points;
     clipForMarkers(rendered, fe.type);
-    out.path = pathForCurve(rendered, fe.interpolate.isEmpty() ? options.curve : fe.interpolate);
+    const QString curve = !fe.interpolate.isEmpty()
+                              ? fe.interpolate
+                              : (!data.defaultEdgeInterpolate.isEmpty()
+                                     ? data.defaultEdgeInterpolate
+                                     : options.curve);
+    out.path = pathForCurve(rendered, curve);
     result.edges.push_back(out);
   }
 
   // Clusters: reverse subgraph order, matching the existing extraction.
   for (auto it = data.subgraphs.rbegin(); it != data.subgraphs.rend(); ++it) {
+    if (claimedSubgraphs.contains(it->id)) continue;
     const d::DagreNodeLabel* n = g.node(it->id);
     if (!n || n->width <= 0.0) continue;
     FlowLayoutCluster c;
@@ -649,7 +770,90 @@ FlowLayoutResult layoutFlowchartNodesDagre(const FlowchartData& data,
     c.height = n->height;
     result.clusters.push_back(c);
   }
-  return result;
+
+  for (const ExtractedCluster& item : extracted) {
+    const d::DagreNodeLabel* atom = g.node(item.id);
+    if (!atom) continue;
+    const QPointF atomCenter(atom->x.value_or(0.0) - origin.x(),
+                             atom->y.value_or(0.0) - origin.y());
+    const QPointF delta = atomCenter - item.center;
+    for (FlowLayoutNode node : item.layout.nodes) {
+      node.x += delta.x();
+      node.y += delta.y();
+      result.nodes.push_back(std::move(node));
+    }
+    for (FlowLayoutEdge edge : item.layout.edges) {
+      for (QPointF& point : edge.points) point += delta;
+      if (edge.hasLabelPosition) {
+        edge.labelX += delta.x();
+        edge.labelY += delta.y();
+      }
+      result.edges.push_back(std::move(edge));
+    }
+    for (FlowLayoutCluster cluster : item.layout.clusters) {
+      cluster.x += delta.x();
+      cluster.y += delta.y();
+      result.clusters.push_back(std::move(cluster));
+    }
+  }
+
+  QHash<QString, FlowLayoutNode> nodesById;
+  for (FlowLayoutNode& node : result.nodes) nodesById.insert(node.id, std::move(node));
+  QHash<QString, FlowLayoutEdge> edgesById;
+  for (FlowLayoutEdge& edge : result.edges) edgesById.insert(edge.id, std::move(edge));
+  QHash<QString, FlowLayoutCluster> clustersById;
+  for (FlowLayoutCluster& cluster : result.clusters)
+    clustersById.insert(cluster.id, std::move(cluster));
+
+  FlowLayoutResult ordered;
+  for (const FlowVertex& vertex : data.vertices)
+    if (nodesById.contains(vertex.id)) ordered.nodes.push_back(nodesById.take(vertex.id));
+  for (const FlowEdge& edge : data.edges)
+    if (edgesById.contains(edge.id)) ordered.edges.push_back(edgesById.take(edge.id));
+  for (auto it = data.subgraphs.rbegin(); it != data.subgraphs.rend(); ++it)
+    if (clustersById.contains(it->id)) ordered.clusters.push_back(clustersById.take(it->id));
+
+  QPointF finalOrigin;
+  if (!ordered.nodes.isEmpty()) finalOrigin = QPointF(ordered.nodes.first().x, ordered.nodes.first().y);
+  if (!finalOrigin.isNull()) {
+    for (FlowLayoutNode& node : ordered.nodes) {
+      node.x -= finalOrigin.x();
+      node.y -= finalOrigin.y();
+    }
+    for (FlowLayoutEdge& edge : ordered.edges) {
+      for (QPointF& point : edge.points) point -= finalOrigin;
+      if (edge.hasLabelPosition) {
+        edge.labelX -= finalOrigin.x();
+        edge.labelY -= finalOrigin.y();
+      }
+    }
+    for (FlowLayoutCluster& cluster : ordered.clusters) {
+      cluster.x -= finalOrigin.x();
+      cluster.y -= finalOrigin.y();
+    }
+  }
+  QHash<QString, const FlowEdge*> semanticEdges;
+  for (const FlowEdge& edge : data.edges) semanticEdges.insert(edge.id, &edge);
+  for (FlowLayoutEdge& edge : ordered.edges) {
+    QVector<QPointF> rendered = edge.points;
+    const FlowEdge* semantic = semanticEdges.value(edge.id);
+    if (semantic) clipForMarkers(rendered, semantic->type);
+    const QString curve = semantic && !semantic->interpolate.isEmpty()
+                              ? semantic->interpolate
+                              : (!data.defaultEdgeInterpolate.isEmpty()
+                                     ? data.defaultEdgeInterpolate
+                                     : options.curve);
+    edge.path = pathForCurve(rendered, curve);
+  }
+  return ordered;
+}
+
+FlowLayoutResult layoutFlowchartNodesDagre(const FlowchartData& data,
+                                           const QMap<QString, QSizeF>& measuredNodes,
+                                           FlowLayoutOptions options,
+                                           std::vector<dagre::DagreSnapshot>* dagreSnapshots) {
+  return layoutFlowchartNodesDagreScope(data, measuredNodes, std::move(options),
+                                        dagreSnapshots, {});
 }
 
 }  // namespace muffin::mermaid::flowchart

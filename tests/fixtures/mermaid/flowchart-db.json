@@ -2,12 +2,5436 @@
   "upstream": {
     "package": "mermaid",
     "version": "11.16.0",
-    "license": "MIT"
+    "license": "MIT",
+    "grammar": {
+      "url": "https://raw.githubusercontent.com/mermaid-js/mermaid/mermaid%4011.16.0/packages/mermaid/src/diagrams/flowchart/parser/flow.jison",
+      "sha256": "b95d5a12271ece39b9be35fdc082801ed73c179e54f2903b472452394991e384"
+    }
   },
+  "productions": [
+    {
+      "id": 1,
+      "lhs": "start",
+      "alternative": 1,
+      "rhsLength": 2,
+      "native": "Parser::parse",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "graphConfig",
+        "document"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [
+        1,
+        2
+      ],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 2,
+      "lhs": "document",
+      "alternative": 1,
+      "rhsLength": 0,
+      "native": "Parser::parseDocument",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [],
+      "terminals": [],
+      "nullable": true,
+      "nullableBoundaries": [
+        0
+      ],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 3,
+      "lhs": "document",
+      "alternative": 2,
+      "rhsLength": 2,
+      "native": "Parser::parseDocument",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "document",
+        "line"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [
+        0,
+        1
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 4,
+      "lhs": "line",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "scanStatements",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "statement"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 5,
+      "lhs": "line",
+      "alternative": 2,
+      "rhsLength": 1,
+      "native": "scanStatements",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-subgraph"
+      ],
+      "errors": [],
+      "rhs": [
+        "SEMI"
+      ],
+      "terminals": [
+        "SEMI"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SEMI"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 6,
+      "lhs": "line",
+      "alternative": 3,
+      "rhsLength": 1,
+      "native": "scanStatements",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-statements"
+      ],
+      "errors": [],
+      "rhs": [
+        "NEWLINE"
+      ],
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 7,
+      "lhs": "line",
+      "alternative": 4,
+      "rhsLength": 1,
+      "native": "scanStatements",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-statements"
+      ],
+      "errors": [],
+      "rhs": [
+        "SPACE"
+      ],
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 8,
+      "lhs": "line",
+      "alternative": 5,
+      "rhsLength": 1,
+      "native": "scanStatements",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "EOF"
+      ],
+      "terminals": [
+        "EOF"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "EOF"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 9,
+      "lhs": "graphConfig",
+      "alternative": 1,
+      "rhsLength": 2,
+      "native": "Parser::parseGraphConfig",
+      "status": "unreachable",
+      "reason": "Mermaid API preprocessing strips leading SPACE before graphConfig",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "SPACE",
+        "graphConfig"
+      ],
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 10,
+      "lhs": "graphConfig",
+      "alternative": 2,
+      "rhsLength": 2,
+      "native": "Parser::parseGraphConfig",
+      "status": "unreachable",
+      "reason": "Mermaid API preprocessing strips leading NEWLINE before graphConfig",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "NEWLINE",
+        "graphConfig"
+      ],
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 11,
+      "lhs": "graphConfig",
+      "alternative": 3,
+      "rhsLength": 2,
+      "native": "Parser::parseGraphConfig",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-style-separators"
+      ],
+      "errors": [],
+      "rhs": [
+        "GRAPH",
+        "NODIR"
+      ],
+      "terminals": [
+        "GRAPH",
+        "NODIR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 12,
+      "lhs": "graphConfig",
+      "alternative": 4,
+      "rhsLength": 3,
+      "native": "Parser::parseGraphConfig",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "GRAPH",
+        "DIR",
+        "FirstStmtSeparator"
+      ],
+      "terminals": [
+        "GRAPH",
+        "DIR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 13,
+      "lhs": "ending",
+      "alternative": 1,
+      "rhsLength": 2,
+      "native": "unreachable",
+      "status": "unreachable",
+      "reason": "ending is not referenced by any production",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "endToken",
+        "ending"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 14,
+      "lhs": "ending",
+      "alternative": 2,
+      "rhsLength": 1,
+      "native": "unreachable",
+      "status": "unreachable",
+      "reason": "ending is not referenced by any production",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "endToken"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 15,
+      "lhs": "endToken",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "unreachable",
+      "status": "unreachable",
+      "reason": "endToken is reachable only through unused ending",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "NEWLINE"
+      ],
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 16,
+      "lhs": "endToken",
+      "alternative": 2,
+      "rhsLength": 1,
+      "native": "unreachable",
+      "status": "unreachable",
+      "reason": "endToken is reachable only through unused ending",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "SPACE"
+      ],
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 17,
+      "lhs": "endToken",
+      "alternative": 3,
+      "rhsLength": 1,
+      "native": "unreachable",
+      "status": "unreachable",
+      "reason": "endToken is reachable only through unused ending",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "EOF"
+      ],
+      "terminals": [
+        "EOF"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "EOF"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 18,
+      "lhs": "FirstStmtSeparator",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "Parser::parseGraphConfig",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-statements"
+      ],
+      "errors": [],
+      "rhs": [
+        "SEMI"
+      ],
+      "terminals": [
+        "SEMI"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SEMI"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 19,
+      "lhs": "FirstStmtSeparator",
+      "alternative": 2,
+      "rhsLength": 1,
+      "native": "Parser::parseGraphConfig",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "NEWLINE"
+      ],
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 20,
+      "lhs": "FirstStmtSeparator",
+      "alternative": 3,
+      "rhsLength": 2,
+      "native": "Parser::parseGraphConfig",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "leading-and-trailing-space-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "spaceList",
+        "NEWLINE"
+      ],
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 21,
+      "lhs": "spaceListNewline",
+      "alternative": 1,
+      "rhsLength": 2,
+      "native": "unreachable",
+      "status": "unreachable",
+      "reason": "spaceListNewline is not referenced by any production",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "SPACE",
+        "spaceListNewline"
+      ],
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 22,
+      "lhs": "spaceListNewline",
+      "alternative": 2,
+      "rhsLength": 2,
+      "native": "unreachable",
+      "status": "unreachable",
+      "reason": "spaceListNewline is not referenced by any production",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "NEWLINE",
+        "spaceListNewline"
+      ],
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 23,
+      "lhs": "spaceListNewline",
+      "alternative": 3,
+      "rhsLength": 1,
+      "native": "unreachable",
+      "status": "unreachable",
+      "reason": "spaceListNewline is not referenced by any production",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "NEWLINE"
+      ],
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 24,
+      "lhs": "spaceListNewline",
+      "alternative": 4,
+      "rhsLength": 1,
+      "native": "unreachable",
+      "status": "unreachable",
+      "reason": "spaceListNewline is not referenced by any production",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "SPACE"
+      ],
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 25,
+      "lhs": "spaceList",
+      "alternative": 1,
+      "rhsLength": 2,
+      "native": "TokenCursor::skipSpace",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "leading-and-trailing-space-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "SPACE",
+        "spaceList"
+      ],
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 26,
+      "lhs": "spaceList",
+      "alternative": 2,
+      "rhsLength": 1,
+      "native": "TokenCursor::skipSpace",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "link-id-labelled-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "SPACE"
+      ],
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 27,
+      "lhs": "statement",
+      "alternative": 1,
+      "rhsLength": 2,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "vertexStatement",
+        "separator"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 28,
+      "lhs": "statement",
+      "alternative": 2,
+      "rhsLength": 2,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-style-separators"
+      ],
+      "errors": [],
+      "rhs": [
+        "styleStatement",
+        "separator"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 29,
+      "lhs": "statement",
+      "alternative": 3,
+      "rhsLength": 2,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "link-style-interpolate-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "linkStyleStatement",
+        "separator"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 30,
+      "lhs": "statement",
+      "alternative": 4,
+      "rhsLength": 2,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "classes-and-styles"
+      ],
+      "errors": [],
+      "rhs": [
+        "classDefStatement",
+        "separator"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 31,
+      "lhs": "statement",
+      "alternative": 5,
+      "rhsLength": 2,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "classes-and-styles"
+      ],
+      "errors": [],
+      "rhs": [
+        "classStatement",
+        "separator"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 32,
+      "lhs": "statement",
+      "alternative": 6,
+      "rhsLength": 2,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "clickStatement",
+        "separator"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 33,
+      "lhs": "statement",
+      "alternative": 7,
+      "rhsLength": 9,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-subgraph"
+      ],
+      "errors": [],
+      "rhs": [
+        "subgraph",
+        "SPACE",
+        "textNoTags",
+        "SQS",
+        "text",
+        "SQE",
+        "separator",
+        "document",
+        "end"
+      ],
+      "terminals": [
+        "subgraph",
+        "SPACE",
+        "SQS",
+        "SQE",
+        "end"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        7,
+        8
+      ],
+      "recursive": true,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": {
+        "open": "SQS",
+        "close": "SQE"
+      }
+    },
+    {
+      "id": 34,
+      "lhs": "statement",
+      "alternative": 8,
+      "rhsLength": 6,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-token-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "subgraph",
+        "SPACE",
+        "textNoTags",
+        "separator",
+        "document",
+        "end"
+      ],
+      "terminals": [
+        "subgraph",
+        "SPACE",
+        "end"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        4,
+        5
+      ],
+      "recursive": true,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 35,
+      "lhs": "statement",
+      "alternative": 9,
+      "rhsLength": 4,
+      "native": "Parser::parseStatement",
+      "status": "upstream-error",
+      "reason": "anonymous subgraph action dereferences undefined.text in Mermaid 11.16.0",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "subgraph",
+        "separator",
+        "document",
+        "end"
+      ],
+      "terminals": [
+        "subgraph",
+        "end"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        2,
+        3
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 36,
+      "lhs": "statement",
+      "alternative": 10,
+      "rhsLength": 1,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-direction-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "direction"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 37,
+      "lhs": "statement",
+      "alternative": 11,
+      "rhsLength": 2,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "accessibility"
+      ],
+      "errors": [],
+      "rhs": [
+        "acc_title",
+        "acc_title_value"
+      ],
+      "terminals": [
+        "acc_title",
+        "acc_title_value"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 38,
+      "lhs": "statement",
+      "alternative": 12,
+      "rhsLength": 2,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "accessibility"
+      ],
+      "errors": [],
+      "rhs": [
+        "acc_descr",
+        "acc_descr_value"
+      ],
+      "terminals": [
+        "acc_descr",
+        "acc_descr_value"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 39,
+      "lhs": "statement",
+      "alternative": 13,
+      "rhsLength": 1,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "multiline-accessibility"
+      ],
+      "errors": [],
+      "rhs": [
+        "acc_descr_multiline_value"
+      ],
+      "terminals": [
+        "acc_descr_multiline_value"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 40,
+      "lhs": "separator",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "scanStatements",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "NEWLINE"
+      ],
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 41,
+      "lhs": "separator",
+      "alternative": 2,
+      "rhsLength": 1,
+      "native": "scanStatements",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-statements"
+      ],
+      "errors": [],
+      "rhs": [
+        "SEMI"
+      ],
+      "terminals": [
+        "SEMI"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SEMI"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 42,
+      "lhs": "separator",
+      "alternative": 3,
+      "rhsLength": 1,
+      "native": "scanStatements",
+      "status": "unreachable",
+      "reason": "EOF is reduced as line EOF instead of separator EOF",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "EOF"
+      ],
+      "terminals": [
+        "EOF"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "EOF"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 43,
+      "lhs": "shapeData",
+      "alternative": 1,
+      "rhsLength": 2,
+      "native": "FlowchartTokenizer::lexShapeData",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "shape-data-group-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "shapeData",
+        "SHAPE_DATA"
+      ],
+      "terminals": [
+        "SHAPE_DATA"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 44,
+      "lhs": "shapeData",
+      "alternative": 2,
+      "rhsLength": 1,
+      "native": "FlowchartTokenizer::lexShapeData",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "shape-data-group-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "SHAPE_DATA"
+      ],
+      "terminals": [
+        "SHAPE_DATA"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 45,
+      "lhs": "vertexStatement",
+      "alternative": 1,
+      "rhsLength": 4,
+      "native": "Parser::parseGraphStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "node-metadata"
+      ],
+      "errors": [],
+      "rhs": [
+        "vertexStatement",
+        "link",
+        "node",
+        "shapeData"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 46,
+      "lhs": "vertexStatement",
+      "alternative": 2,
+      "rhsLength": 3,
+      "native": "Parser::parseGraphStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "vertexStatement",
+        "link",
+        "node"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 47,
+      "lhs": "vertexStatement",
+      "alternative": 3,
+      "rhsLength": 4,
+      "native": "Parser::parseGraphStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "leading-and-trailing-space-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "vertexStatement",
+        "link",
+        "node",
+        "spaceList"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 48,
+      "lhs": "vertexStatement",
+      "alternative": 4,
+      "rhsLength": 2,
+      "native": "Parser::parseGraphStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "link-id-labelled-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "node",
+        "spaceList"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 49,
+      "lhs": "vertexStatement",
+      "alternative": 5,
+      "rhsLength": 2,
+      "native": "Parser::parseGraphStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "node-metadata"
+      ],
+      "errors": [],
+      "rhs": [
+        "node",
+        "shapeData"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 50,
+      "lhs": "vertexStatement",
+      "alternative": 6,
+      "rhsLength": 1,
+      "native": "Parser::parseGraphStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "node"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 51,
+      "lhs": "node",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "Parser::parseNodeGroup",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "styledVertex"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 52,
+      "lhs": "node",
+      "alternative": 2,
+      "rhsLength": 6,
+      "native": "Parser::parseNodeGroup",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "shape-data-group-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "node",
+        "shapeData",
+        "spaceList",
+        "AMP",
+        "spaceList",
+        "styledVertex"
+      ],
+      "terminals": [
+        "AMP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "AMP"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 53,
+      "lhs": "node",
+      "alternative": 3,
+      "rhsLength": 5,
+      "native": "Parser::parseNodeGroup",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "chains-and-groups"
+      ],
+      "errors": [],
+      "rhs": [
+        "node",
+        "spaceList",
+        "AMP",
+        "spaceList",
+        "styledVertex"
+      ],
+      "terminals": [
+        "AMP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "AMP"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 54,
+      "lhs": "styledVertex",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "vertex"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 55,
+      "lhs": "styledVertex",
+      "alternative": 2,
+      "rhsLength": 3,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "classes-and-styles"
+      ],
+      "errors": [],
+      "rhs": [
+        "vertex",
+        "STYLE_SEPARATOR",
+        "idString"
+      ],
+      "terminals": [
+        "STYLE_SEPARATOR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 56,
+      "lhs": "vertex",
+      "alternative": 1,
+      "rhsLength": 4,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-statements"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "SQS",
+        "text",
+        "SQE"
+      ],
+      "terminals": [
+        "SQS",
+        "SQE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": {
+        "open": "SQS",
+        "close": "SQE"
+      }
+    },
+    {
+      "id": 57,
+      "lhs": "vertex",
+      "alternative": 2,
+      "rhsLength": 4,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "remaining-vertex-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "DOUBLECIRCLESTART",
+        "text",
+        "DOUBLECIRCLEEND"
+      ],
+      "terminals": [
+        "DOUBLECIRCLESTART",
+        "DOUBLECIRCLEEND"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": {
+        "open": "DOUBLECIRCLESTART",
+        "close": "DOUBLECIRCLEEND"
+      }
+    },
+    {
+      "id": 58,
+      "lhs": "vertex",
+      "alternative": 3,
+      "rhsLength": 6,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "basic-labelled-edge"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "PS",
+        "PS",
+        "text",
+        "PE",
+        "PE"
+      ],
+      "terminals": [
+        "PS",
+        "PS",
+        "PE",
+        "PE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": {
+        "open": "PS",
+        "close": "PE"
+      }
+    },
+    {
+      "id": 59,
+      "lhs": "vertex",
+      "alternative": 4,
+      "rhsLength": 4,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "remaining-vertex-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "(-",
+        "text",
+        "-)"
+      ],
+      "terminals": [
+        "(-",
+        "-)"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": {
+        "open": "(-",
+        "close": "-)"
+      }
+    },
+    {
+      "id": 60,
+      "lhs": "vertex",
+      "alternative": 5,
+      "rhsLength": 4,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "legacy-shapes"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "STADIUMSTART",
+        "text",
+        "STADIUMEND"
+      ],
+      "terminals": [
+        "STADIUMSTART",
+        "STADIUMEND"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": {
+        "open": "STADIUMSTART",
+        "close": "STADIUMEND"
+      }
+    },
+    {
+      "id": 61,
+      "lhs": "vertex",
+      "alternative": 6,
+      "rhsLength": 4,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "legacy-shapes"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "SUBROUTINESTART",
+        "text",
+        "SUBROUTINEEND"
+      ],
+      "terminals": [
+        "SUBROUTINESTART",
+        "SUBROUTINEEND"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": {
+        "open": "SUBROUTINESTART",
+        "close": "SUBROUTINEEND"
+      }
+    },
+    {
+      "id": 62,
+      "lhs": "vertex",
+      "alternative": 7,
+      "rhsLength": 8,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "remaining-vertex-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "VERTEX_WITH_PROPS_START",
+        "NODE_STRING",
+        "COLON",
+        "NODE_STRING",
+        "PIPE",
+        "text",
+        "SQE"
+      ],
+      "terminals": [
+        "VERTEX_WITH_PROPS_START",
+        "NODE_STRING",
+        "COLON",
+        "NODE_STRING",
+        "PIPE",
+        "SQE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "COLON",
+        "PIPE"
+      ],
+      "delimiter": {
+        "open": "PIPE",
+        "close": "PIPE"
+      }
+    },
+    {
+      "id": 63,
+      "lhs": "vertex",
+      "alternative": 8,
+      "rhsLength": 4,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "legacy-shapes"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "CYLINDERSTART",
+        "text",
+        "CYLINDEREND"
+      ],
+      "terminals": [
+        "CYLINDERSTART",
+        "CYLINDEREND"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": {
+        "open": "CYLINDERSTART",
+        "close": "CYLINDEREND"
+      }
+    },
+    {
+      "id": 64,
+      "lhs": "vertex",
+      "alternative": 9,
+      "rhsLength": 4,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "legacy-shapes"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "PS",
+        "text",
+        "PE"
+      ],
+      "terminals": [
+        "PS",
+        "PE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": {
+        "open": "PS",
+        "close": "PE"
+      }
+    },
+    {
+      "id": 65,
+      "lhs": "vertex",
+      "alternative": 10,
+      "rhsLength": 4,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "legacy-shapes"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "DIAMOND_START",
+        "text",
+        "DIAMOND_STOP"
+      ],
+      "terminals": [
+        "DIAMOND_START",
+        "DIAMOND_STOP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": {
+        "open": "DIAMOND_START",
+        "close": "DIAMOND_STOP"
+      }
+    },
+    {
+      "id": 66,
+      "lhs": "vertex",
+      "alternative": 11,
+      "rhsLength": 6,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "legacy-shapes"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "DIAMOND_START",
+        "DIAMOND_START",
+        "text",
+        "DIAMOND_STOP",
+        "DIAMOND_STOP"
+      ],
+      "terminals": [
+        "DIAMOND_START",
+        "DIAMOND_START",
+        "DIAMOND_STOP",
+        "DIAMOND_STOP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": {
+        "open": "DIAMOND_START",
+        "close": "DIAMOND_STOP"
+      }
+    },
+    {
+      "id": 67,
+      "lhs": "vertex",
+      "alternative": 12,
+      "rhsLength": 4,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "legacy-shapes"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "TAGEND",
+        "text",
+        "SQE"
+      ],
+      "terminals": [
+        "TAGEND",
+        "SQE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 68,
+      "lhs": "vertex",
+      "alternative": 13,
+      "rhsLength": 4,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "legacy-shapes"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "TRAPSTART",
+        "text",
+        "TRAPEND"
+      ],
+      "terminals": [
+        "TRAPSTART",
+        "TRAPEND"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": {
+        "open": "TRAPSTART",
+        "close": "TRAPEND"
+      }
+    },
+    {
+      "id": 69,
+      "lhs": "vertex",
+      "alternative": 14,
+      "rhsLength": 4,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "legacy-shapes"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "INVTRAPSTART",
+        "text",
+        "INVTRAPEND"
+      ],
+      "terminals": [
+        "INVTRAPSTART",
+        "INVTRAPEND"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": {
+        "open": "INVTRAPSTART",
+        "close": "INVTRAPEND"
+      }
+    },
+    {
+      "id": 70,
+      "lhs": "vertex",
+      "alternative": 15,
+      "rhsLength": 4,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "legacy-shapes"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "TRAPSTART",
+        "text",
+        "INVTRAPEND"
+      ],
+      "terminals": [
+        "TRAPSTART",
+        "INVTRAPEND"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 71,
+      "lhs": "vertex",
+      "alternative": 16,
+      "rhsLength": 4,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "legacy-shapes"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "INVTRAPSTART",
+        "text",
+        "TRAPEND"
+      ],
+      "terminals": [
+        "INVTRAPSTART",
+        "TRAPEND"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 72,
+      "lhs": "vertex",
+      "alternative": 17,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 73,
+      "lhs": "link",
+      "alternative": 1,
+      "rhsLength": 2,
+      "native": "findTokenLinks",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "linkStatement",
+        "arrowText"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 74,
+      "lhs": "link",
+      "alternative": 2,
+      "rhsLength": 3,
+      "native": "findTokenLinks",
+      "status": "unreachable",
+      "reason": "TESTSTR has no lexer rule",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "linkStatement",
+        "TESTSTR",
+        "SPACE"
+      ],
+      "terminals": [
+        "TESTSTR",
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 75,
+      "lhs": "link",
+      "alternative": 3,
+      "rhsLength": 3,
+      "native": "findTokenLinks",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "basic-labelled-edge"
+      ],
+      "errors": [],
+      "rhs": [
+        "linkStatement",
+        "arrowText",
+        "SPACE"
+      ],
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 76,
+      "lhs": "link",
+      "alternative": 4,
+      "rhsLength": 1,
+      "native": "findTokenLinks",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "linkStatement"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 77,
+      "lhs": "link",
+      "alternative": 5,
+      "rhsLength": 3,
+      "native": "findTokenLinks",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "START_LINK",
+        "edgeText",
+        "LINK"
+      ],
+      "terminals": [
+        "START_LINK",
+        "LINK"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 78,
+      "lhs": "link",
+      "alternative": 6,
+      "rhsLength": 4,
+      "native": "findTokenLinks",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "link-id-labelled-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "LINK_ID",
+        "START_LINK",
+        "edgeText",
+        "LINK"
+      ],
+      "terminals": [
+        "LINK_ID",
+        "START_LINK",
+        "LINK"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 79,
+      "lhs": "edgeText",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "findTokenLinks",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "edgeTextToken"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 80,
+      "lhs": "edgeText",
+      "alternative": 2,
+      "rhsLength": 2,
+      "native": "findTokenLinks",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "edgeText",
+        "edgeTextToken"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 81,
+      "lhs": "edgeText",
+      "alternative": 3,
+      "rhsLength": 1,
+      "native": "findTokenLinks",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "link-id-labelled-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "STR"
+      ],
+      "terminals": [
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 82,
+      "lhs": "edgeText",
+      "alternative": 4,
+      "rhsLength": 1,
+      "native": "findTokenLinks",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "edge-label-type-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "MD_STR"
+      ],
+      "terminals": [
+        "MD_STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 83,
+      "lhs": "linkStatement",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "findTokenLinks",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "LINK"
+      ],
+      "terminals": [
+        "LINK"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 84,
+      "lhs": "linkStatement",
+      "alternative": 2,
+      "rhsLength": 2,
+      "native": "findTokenLinks",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "edge-id-and-metadata"
+      ],
+      "errors": [],
+      "rhs": [
+        "LINK_ID",
+        "LINK"
+      ],
+      "terminals": [
+        "LINK_ID",
+        "LINK"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 85,
+      "lhs": "arrowText",
+      "alternative": 1,
+      "rhsLength": 3,
+      "native": "Parser::parseGraphStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "basic-labelled-edge"
+      ],
+      "errors": [],
+      "rhs": [
+        "PIPE",
+        "text",
+        "PIPE"
+      ],
+      "terminals": [
+        "PIPE",
+        "PIPE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "PIPE",
+        "PIPE"
+      ],
+      "delimiter": {
+        "open": "PIPE",
+        "close": "PIPE"
+      }
+    },
+    {
+      "id": 86,
+      "lhs": "text",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-statements"
+      ],
+      "errors": [],
+      "rhs": [
+        "textToken"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 87,
+      "lhs": "text",
+      "alternative": 2,
+      "rhsLength": 2,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "remaining-vertex-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "text",
+        "textToken"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 88,
+      "lhs": "text",
+      "alternative": 3,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-inside-label"
+      ],
+      "errors": [],
+      "rhs": [
+        "STR"
+      ],
+      "terminals": [
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 89,
+      "lhs": "text",
+      "alternative": 4,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-inside-label"
+      ],
+      "errors": [],
+      "rhs": [
+        "MD_STR"
+      ],
+      "terminals": [
+        "MD_STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 90,
+      "lhs": "keywords",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-token-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "STYLE"
+      ],
+      "terminals": [
+        "STYLE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 91,
+      "lhs": "keywords",
+      "alternative": 2,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-keyword-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "LINKSTYLE"
+      ],
+      "terminals": [
+        "LINKSTYLE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 92,
+      "lhs": "keywords",
+      "alternative": 3,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-keyword-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLASSDEF"
+      ],
+      "terminals": [
+        "CLASSDEF"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 93,
+      "lhs": "keywords",
+      "alternative": 4,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-keyword-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLASS"
+      ],
+      "terminals": [
+        "CLASS"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 94,
+      "lhs": "keywords",
+      "alternative": 5,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "unreachable",
+      "reason": "click enters click lexer state and cannot serve as stable textNoTags",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "CLICK"
+      ],
+      "terminals": [
+        "CLICK"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 95,
+      "lhs": "keywords",
+      "alternative": 6,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-keyword-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "GRAPH"
+      ],
+      "terminals": [
+        "GRAPH"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 96,
+      "lhs": "keywords",
+      "alternative": 7,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "unreachable",
+      "reason": "DIR is emitted only in graph-header lexer state",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "DIR"
+      ],
+      "terminals": [
+        "DIR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 97,
+      "lhs": "keywords",
+      "alternative": 8,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-keyword-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "subgraph"
+      ],
+      "terminals": [
+        "subgraph"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 98,
+      "lhs": "keywords",
+      "alternative": 9,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "unreachable",
+      "reason": "end is resolved as the subgraph terminator before textNoTags",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "end"
+      ],
+      "terminals": [
+        "end"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 99,
+      "lhs": "keywords",
+      "alternative": 10,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-text-token-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "DOWN"
+      ],
+      "terminals": [
+        "DOWN"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 100,
+      "lhs": "keywords",
+      "alternative": 11,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-token-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "UP"
+      ],
+      "terminals": [
+        "UP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 101,
+      "lhs": "textNoTags",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-subgraph"
+      ],
+      "errors": [],
+      "rhs": [
+        "textNoTagsToken"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 102,
+      "lhs": "textNoTags",
+      "alternative": 2,
+      "rhsLength": 2,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-token-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "textNoTags",
+        "textNoTagsToken"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 103,
+      "lhs": "textNoTags",
+      "alternative": 3,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-token-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "STR"
+      ],
+      "terminals": [
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 104,
+      "lhs": "textNoTags",
+      "alternative": 4,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-token-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "MD_STR"
+      ],
+      "terminals": [
+        "MD_STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 105,
+      "lhs": "classDefStatement",
+      "alternative": 1,
+      "rhsLength": 5,
+      "native": "Parser::parseClassDefStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "classes-and-styles"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLASSDEF",
+        "SPACE",
+        "idString",
+        "SPACE",
+        "stylesOpt"
+      ],
+      "terminals": [
+        "CLASSDEF",
+        "SPACE",
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE",
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 106,
+      "lhs": "classStatement",
+      "alternative": 1,
+      "rhsLength": 5,
+      "native": "Parser::parseClassStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "classes-and-styles"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLASS",
+        "SPACE",
+        "idString",
+        "SPACE",
+        "idString"
+      ],
+      "terminals": [
+        "CLASS",
+        "SPACE",
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE",
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 107,
+      "lhs": "clickStatement",
+      "alternative": 1,
+      "rhsLength": 2,
+      "native": "Parser::parseClickStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "click-production-matrix"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLICK",
+        "CALLBACKNAME"
+      ],
+      "terminals": [
+        "CLICK",
+        "CALLBACKNAME"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 108,
+      "lhs": "clickStatement",
+      "alternative": 2,
+      "rhsLength": 4,
+      "native": "Parser::parseClickStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "click-production-matrix"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLICK",
+        "CALLBACKNAME",
+        "SPACE",
+        "STR"
+      ],
+      "terminals": [
+        "CLICK",
+        "CALLBACKNAME",
+        "SPACE",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 109,
+      "lhs": "clickStatement",
+      "alternative": 3,
+      "rhsLength": 3,
+      "native": "Parser::parseClickStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "click-production-matrix"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLICK",
+        "CALLBACKNAME",
+        "CALLBACKARGS"
+      ],
+      "terminals": [
+        "CLICK",
+        "CALLBACKNAME",
+        "CALLBACKARGS"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 110,
+      "lhs": "clickStatement",
+      "alternative": 4,
+      "rhsLength": 5,
+      "native": "Parser::parseClickStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "click-production-matrix"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLICK",
+        "CALLBACKNAME",
+        "CALLBACKARGS",
+        "SPACE",
+        "STR"
+      ],
+      "terminals": [
+        "CLICK",
+        "CALLBACKNAME",
+        "CALLBACKARGS",
+        "SPACE",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 111,
+      "lhs": "clickStatement",
+      "alternative": 5,
+      "rhsLength": 3,
+      "native": "Parser::parseClickStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "click-production-matrix"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLICK",
+        "HREF",
+        "STR"
+      ],
+      "terminals": [
+        "CLICK",
+        "HREF",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 112,
+      "lhs": "clickStatement",
+      "alternative": 6,
+      "rhsLength": 5,
+      "native": "Parser::parseClickStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "click-production-matrix"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLICK",
+        "HREF",
+        "STR",
+        "SPACE",
+        "STR"
+      ],
+      "terminals": [
+        "CLICK",
+        "HREF",
+        "STR",
+        "SPACE",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 113,
+      "lhs": "clickStatement",
+      "alternative": 7,
+      "rhsLength": 5,
+      "native": "Parser::parseClickStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "click-production-matrix"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLICK",
+        "HREF",
+        "STR",
+        "SPACE",
+        "LINK_TARGET"
+      ],
+      "terminals": [
+        "CLICK",
+        "HREF",
+        "STR",
+        "SPACE",
+        "LINK_TARGET"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 114,
+      "lhs": "clickStatement",
+      "alternative": 8,
+      "rhsLength": 7,
+      "native": "Parser::parseClickStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "click-production-matrix"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLICK",
+        "HREF",
+        "STR",
+        "SPACE",
+        "STR",
+        "SPACE",
+        "LINK_TARGET"
+      ],
+      "terminals": [
+        "CLICK",
+        "HREF",
+        "STR",
+        "SPACE",
+        "STR",
+        "SPACE",
+        "LINK_TARGET"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE",
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 115,
+      "lhs": "clickStatement",
+      "alternative": 9,
+      "rhsLength": 2,
+      "native": "Parser::parseClickStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLICK",
+        "alphaNum"
+      ],
+      "terminals": [
+        "CLICK"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 116,
+      "lhs": "clickStatement",
+      "alternative": 10,
+      "rhsLength": 4,
+      "native": "Parser::parseClickStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "click-production-matrix"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLICK",
+        "alphaNum",
+        "SPACE",
+        "STR"
+      ],
+      "terminals": [
+        "CLICK",
+        "SPACE",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 117,
+      "lhs": "clickStatement",
+      "alternative": 11,
+      "rhsLength": 2,
+      "native": "Parser::parseClickStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "click-production-matrix"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLICK",
+        "STR"
+      ],
+      "terminals": [
+        "CLICK",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 118,
+      "lhs": "clickStatement",
+      "alternative": 12,
+      "rhsLength": 4,
+      "native": "Parser::parseClickStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "click-production-matrix"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLICK",
+        "STR",
+        "SPACE",
+        "STR"
+      ],
+      "terminals": [
+        "CLICK",
+        "STR",
+        "SPACE",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 119,
+      "lhs": "clickStatement",
+      "alternative": 13,
+      "rhsLength": 4,
+      "native": "Parser::parseClickStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "click-production-matrix"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLICK",
+        "STR",
+        "SPACE",
+        "LINK_TARGET"
+      ],
+      "terminals": [
+        "CLICK",
+        "STR",
+        "SPACE",
+        "LINK_TARGET"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 120,
+      "lhs": "clickStatement",
+      "alternative": 14,
+      "rhsLength": 6,
+      "native": "Parser::parseClickStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "click-production-matrix"
+      ],
+      "errors": [],
+      "rhs": [
+        "CLICK",
+        "STR",
+        "SPACE",
+        "STR",
+        "SPACE",
+        "LINK_TARGET"
+      ],
+      "terminals": [
+        "CLICK",
+        "STR",
+        "SPACE",
+        "STR",
+        "SPACE",
+        "LINK_TARGET"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE",
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 121,
+      "lhs": "styleStatement",
+      "alternative": 1,
+      "rhsLength": 5,
+      "native": "Parser::parseStyleStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-style-separators"
+      ],
+      "errors": [],
+      "rhs": [
+        "STYLE",
+        "SPACE",
+        "idString",
+        "SPACE",
+        "stylesOpt"
+      ],
+      "terminals": [
+        "STYLE",
+        "SPACE",
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE",
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 122,
+      "lhs": "linkStyleStatement",
+      "alternative": 1,
+      "rhsLength": 5,
+      "native": "Parser::parseLinkStyleStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "link-style-interpolate-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "LINKSTYLE",
+        "SPACE",
+        "DEFAULT",
+        "SPACE",
+        "stylesOpt"
+      ],
+      "terminals": [
+        "LINKSTYLE",
+        "SPACE",
+        "DEFAULT",
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE",
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 123,
+      "lhs": "linkStyleStatement",
+      "alternative": 2,
+      "rhsLength": 5,
+      "native": "Parser::parseLinkStyleStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "link-style-interpolate-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "LINKSTYLE",
+        "SPACE",
+        "numList",
+        "SPACE",
+        "stylesOpt"
+      ],
+      "terminals": [
+        "LINKSTYLE",
+        "SPACE",
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE",
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 124,
+      "lhs": "linkStyleStatement",
+      "alternative": 3,
+      "rhsLength": 9,
+      "native": "Parser::parseLinkStyleStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "link-style-interpolate-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "LINKSTYLE",
+        "SPACE",
+        "DEFAULT",
+        "SPACE",
+        "INTERPOLATE",
+        "SPACE",
+        "alphaNum",
+        "SPACE",
+        "stylesOpt"
+      ],
+      "terminals": [
+        "LINKSTYLE",
+        "SPACE",
+        "DEFAULT",
+        "SPACE",
+        "INTERPOLATE",
+        "SPACE",
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE",
+        "SPACE",
+        "SPACE",
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 125,
+      "lhs": "linkStyleStatement",
+      "alternative": 4,
+      "rhsLength": 9,
+      "native": "Parser::parseLinkStyleStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "link-style-interpolate-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "LINKSTYLE",
+        "SPACE",
+        "numList",
+        "SPACE",
+        "INTERPOLATE",
+        "SPACE",
+        "alphaNum",
+        "SPACE",
+        "stylesOpt"
+      ],
+      "terminals": [
+        "LINKSTYLE",
+        "SPACE",
+        "SPACE",
+        "INTERPOLATE",
+        "SPACE",
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE",
+        "SPACE",
+        "SPACE",
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 126,
+      "lhs": "linkStyleStatement",
+      "alternative": 5,
+      "rhsLength": 7,
+      "native": "Parser::parseLinkStyleStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "link-style-interpolate-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "LINKSTYLE",
+        "SPACE",
+        "DEFAULT",
+        "SPACE",
+        "INTERPOLATE",
+        "SPACE",
+        "alphaNum"
+      ],
+      "terminals": [
+        "LINKSTYLE",
+        "SPACE",
+        "DEFAULT",
+        "SPACE",
+        "INTERPOLATE",
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE",
+        "SPACE",
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 127,
+      "lhs": "linkStyleStatement",
+      "alternative": 6,
+      "rhsLength": 7,
+      "native": "Parser::parseLinkStyleStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "link-style-interpolate-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "LINKSTYLE",
+        "SPACE",
+        "numList",
+        "SPACE",
+        "INTERPOLATE",
+        "SPACE",
+        "alphaNum"
+      ],
+      "terminals": [
+        "LINKSTYLE",
+        "SPACE",
+        "SPACE",
+        "INTERPOLATE",
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE",
+        "SPACE",
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 128,
+      "lhs": "numList",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "Parser::parseLinkStyleStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "link-style-interpolate-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "NUM"
+      ],
+      "terminals": [
+        "NUM"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 129,
+      "lhs": "numList",
+      "alternative": 2,
+      "rhsLength": 3,
+      "native": "Parser::parseLinkStyleStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "link-style-interpolate-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "numList",
+        "COMMA",
+        "NUM"
+      ],
+      "terminals": [
+        "COMMA",
+        "NUM"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "COMMA"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 130,
+      "lhs": "stylesOpt",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "Parser::parseStyles",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-style-separators"
+      ],
+      "errors": [],
+      "rhs": [
+        "style"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 131,
+      "lhs": "stylesOpt",
+      "alternative": 2,
+      "rhsLength": 3,
+      "native": "Parser::parseStyles",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-style-separators"
+      ],
+      "errors": [],
+      "rhs": [
+        "stylesOpt",
+        "COMMA",
+        "style"
+      ],
+      "terminals": [
+        "COMMA"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "COMMA"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 132,
+      "lhs": "style",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "Parser::parseStyles",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-style-separators"
+      ],
+      "errors": [],
+      "rhs": [
+        "styleComponent"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 133,
+      "lhs": "style",
+      "alternative": 2,
+      "rhsLength": 2,
+      "native": "Parser::parseStyles",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-style-separators"
+      ],
+      "errors": [],
+      "rhs": [
+        "style",
+        "styleComponent"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 134,
+      "lhs": "styleComponent",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "TokenCursor::parseList",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-style-separators"
+      ],
+      "errors": [],
+      "rhs": [
+        "NUM"
+      ],
+      "terminals": [
+        "NUM"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 135,
+      "lhs": "styleComponent",
+      "alternative": 2,
+      "rhsLength": 1,
+      "native": "TokenCursor::parseList",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-style-separators"
+      ],
+      "errors": [],
+      "rhs": [
+        "NODE_STRING"
+      ],
+      "terminals": [
+        "NODE_STRING"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 136,
+      "lhs": "styleComponent",
+      "alternative": 3,
+      "rhsLength": 1,
+      "native": "TokenCursor::parseList",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-style-separators"
+      ],
+      "errors": [],
+      "rhs": [
+        "COLON"
+      ],
+      "terminals": [
+        "COLON"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "COLON"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 137,
+      "lhs": "styleComponent",
+      "alternative": 4,
+      "rhsLength": 1,
+      "native": "TokenCursor::parseList",
+      "status": "unreachable",
+      "reason": "UNIT has no lexer rule",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "UNIT"
+      ],
+      "terminals": [
+        "UNIT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 138,
+      "lhs": "styleComponent",
+      "alternative": 5,
+      "rhsLength": 1,
+      "native": "TokenCursor::parseList",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "SPACE"
+      ],
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 139,
+      "lhs": "styleComponent",
+      "alternative": 6,
+      "rhsLength": 1,
+      "native": "TokenCursor::parseList",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-style-separators"
+      ],
+      "errors": [],
+      "rhs": [
+        "BRKT"
+      ],
+      "terminals": [
+        "BRKT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 140,
+      "lhs": "styleComponent",
+      "alternative": 7,
+      "rhsLength": 1,
+      "native": "TokenCursor::parseList",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "STYLE"
+      ],
+      "terminals": [
+        "STYLE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 141,
+      "lhs": "styleComponent",
+      "alternative": 8,
+      "rhsLength": 1,
+      "native": "TokenCursor::parseList",
+      "status": "unreachable",
+      "reason": "PCT has no lexer rule",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "PCT"
+      ],
+      "terminals": [
+        "PCT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 142,
+      "lhs": "idStringToken",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "NUM"
+      ],
+      "terminals": [
+        "NUM"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 143,
+      "lhs": "idStringToken",
+      "alternative": 2,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "NODE_STRING"
+      ],
+      "terminals": [
+        "NODE_STRING"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 144,
+      "lhs": "idStringToken",
+      "alternative": 3,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "DOWN"
+      ],
+      "terminals": [
+        "DOWN"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 145,
+      "lhs": "idStringToken",
+      "alternative": 4,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "unreachable",
+      "reason": "MINUS is consumed by the longer NODE_STRING rule in idString contexts",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "MINUS"
+      ],
+      "terminals": [
+        "MINUS"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 146,
+      "lhs": "idStringToken",
+      "alternative": 5,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "DEFAULT"
+      ],
+      "terminals": [
+        "DEFAULT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 147,
+      "lhs": "idStringToken",
+      "alternative": 6,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "COMMA"
+      ],
+      "terminals": [
+        "COMMA"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "COMMA"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 148,
+      "lhs": "idStringToken",
+      "alternative": 7,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "COLON"
+      ],
+      "terminals": [
+        "COLON"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "COLON"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 149,
+      "lhs": "idStringToken",
+      "alternative": 8,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "AMP"
+      ],
+      "terminals": [
+        "AMP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "AMP"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 150,
+      "lhs": "idStringToken",
+      "alternative": 9,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "BRKT"
+      ],
+      "terminals": [
+        "BRKT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 151,
+      "lhs": "idStringToken",
+      "alternative": 10,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "MULT"
+      ],
+      "terminals": [
+        "MULT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 152,
+      "lhs": "idStringToken",
+      "alternative": 11,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "UNICODE_TEXT"
+      ],
+      "terminals": [
+        "UNICODE_TEXT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 153,
+      "lhs": "textToken",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-statements"
+      ],
+      "errors": [],
+      "rhs": [
+        "TEXT"
+      ],
+      "terminals": [
+        "TEXT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 154,
+      "lhs": "textToken",
+      "alternative": 2,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "unreachable",
+      "reason": "TAGSTART is consumed by the earlier TEXT rule in text state",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "TAGSTART"
+      ],
+      "terminals": [
+        "TAGSTART"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 155,
+      "lhs": "textToken",
+      "alternative": 3,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "unreachable",
+      "reason": "TAGEND is consumed by the earlier TEXT rule in text state",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "TAGEND"
+      ],
+      "terminals": [
+        "TAGEND"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 156,
+      "lhs": "textToken",
+      "alternative": 4,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "unreachable",
+      "reason": "UNICODE_TEXT is consumed by the earlier TEXT rule in text state",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "UNICODE_TEXT"
+      ],
+      "terminals": [
+        "UNICODE_TEXT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 157,
+      "lhs": "textNoTagsToken",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-text-token-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "NUM"
+      ],
+      "terminals": [
+        "NUM"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 158,
+      "lhs": "textNoTagsToken",
+      "alternative": 2,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "semicolon-subgraph"
+      ],
+      "errors": [],
+      "rhs": [
+        "NODE_STRING"
+      ],
+      "terminals": [
+        "NODE_STRING"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 159,
+      "lhs": "textNoTagsToken",
+      "alternative": 3,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-text-token-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "SPACE"
+      ],
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 160,
+      "lhs": "textNoTagsToken",
+      "alternative": 4,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "unreachable",
+      "reason": "MINUS is consumed by NODE_STRING in textNoTags contexts",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "MINUS"
+      ],
+      "terminals": [
+        "MINUS"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 161,
+      "lhs": "textNoTagsToken",
+      "alternative": 5,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-text-token-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "AMP"
+      ],
+      "terminals": [
+        "AMP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "AMP"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 162,
+      "lhs": "textNoTagsToken",
+      "alternative": 6,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-text-token-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "UNICODE_TEXT"
+      ],
+      "terminals": [
+        "UNICODE_TEXT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 163,
+      "lhs": "textNoTagsToken",
+      "alternative": 7,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-text-token-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "COLON"
+      ],
+      "terminals": [
+        "COLON"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "COLON"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 164,
+      "lhs": "textNoTagsToken",
+      "alternative": 8,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-text-token-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "MULT"
+      ],
+      "terminals": [
+        "MULT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 165,
+      "lhs": "textNoTagsToken",
+      "alternative": 9,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-text-token-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "BRKT"
+      ],
+      "terminals": [
+        "BRKT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 166,
+      "lhs": "textNoTagsToken",
+      "alternative": 10,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-token-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "keywords"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 167,
+      "lhs": "textNoTagsToken",
+      "alternative": 11,
+      "rhsLength": 1,
+      "native": "parseNode",
+      "status": "unreachable",
+      "reason": "START_LINK enters edgeText state and cannot terminate textNoTags",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "START_LINK"
+      ],
+      "terminals": [
+        "START_LINK"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 168,
+      "lhs": "edgeTextToken",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "findTokenLinks",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "EDGE_TEXT"
+      ],
+      "terminals": [
+        "EDGE_TEXT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 169,
+      "lhs": "edgeTextToken",
+      "alternative": 2,
+      "rhsLength": 1,
+      "native": "findTokenLinks",
+      "status": "unreachable",
+      "reason": "UNICODE_TEXT loses the lexer tie to EDGE_TEXT in edgeText state",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "UNICODE_TEXT"
+      ],
+      "terminals": [
+        "UNICODE_TEXT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 170,
+      "lhs": "alphaNumToken",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "NUM"
+      ],
+      "terminals": [
+        "NUM"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 171,
+      "lhs": "alphaNumToken",
+      "alternative": 2,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "UNICODE_TEXT"
+      ],
+      "terminals": [
+        "UNICODE_TEXT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 172,
+      "lhs": "alphaNumToken",
+      "alternative": 3,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "link-style-interpolate-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "NODE_STRING"
+      ],
+      "terminals": [
+        "NODE_STRING"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 173,
+      "lhs": "alphaNumToken",
+      "alternative": 4,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "unreachable",
+      "reason": "DIR is emitted only in graph-header lexer state",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "DIR"
+      ],
+      "terminals": [
+        "DIR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 174,
+      "lhs": "alphaNumToken",
+      "alternative": 5,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "DOWN"
+      ],
+      "terminals": [
+        "DOWN"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 175,
+      "lhs": "alphaNumToken",
+      "alternative": 6,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "unreachable",
+      "reason": "MINUS is consumed by NODE_STRING in alphaNum contexts",
+      "fixtures": [],
+      "errors": [],
+      "rhs": [
+        "MINUS"
+      ],
+      "terminals": [
+        "MINUS"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 176,
+      "lhs": "alphaNumToken",
+      "alternative": 7,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "COMMA"
+      ],
+      "terminals": [
+        "COMMA"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "COMMA"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 177,
+      "lhs": "alphaNumToken",
+      "alternative": 8,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "COLON"
+      ],
+      "terminals": [
+        "COLON"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "COLON"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 178,
+      "lhs": "alphaNumToken",
+      "alternative": 9,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "AMP"
+      ],
+      "terminals": [
+        "AMP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "AMP"
+      ],
+      "delimiter": null
+    },
+    {
+      "id": 179,
+      "lhs": "alphaNumToken",
+      "alternative": 10,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "BRKT"
+      ],
+      "terminals": [
+        "BRKT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 180,
+      "lhs": "alphaNumToken",
+      "alternative": 11,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "MULT"
+      ],
+      "terminals": [
+        "MULT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 181,
+      "lhs": "idString",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "keyword-prefix-node-production"
+      ],
+      "errors": [],
+      "rhs": [
+        "idStringToken"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 182,
+      "lhs": "idString",
+      "alternative": 2,
+      "rhsLength": 2,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "idString",
+        "idStringToken"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 183,
+      "lhs": "alphaNum",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "link-style-interpolate-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "alphaNumToken"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 184,
+      "lhs": "alphaNum",
+      "alternative": 2,
+      "rhsLength": 2,
+      "native": "TokenCursor::consumeUntil",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "token-list-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "alphaNum",
+        "alphaNumToken"
+      ],
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 185,
+      "lhs": "direction",
+      "alternative": 1,
+      "rhsLength": 1,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-direction-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "direction_tb"
+      ],
+      "terminals": [
+        "direction_tb"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 186,
+      "lhs": "direction",
+      "alternative": 2,
+      "rhsLength": 1,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-direction-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "direction_bt"
+      ],
+      "terminals": [
+        "direction_bt"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 187,
+      "lhs": "direction",
+      "alternative": 3,
+      "rhsLength": 1,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-direction-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "direction_rl"
+      ],
+      "terminals": [
+        "direction_rl"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 188,
+      "lhs": "direction",
+      "alternative": 4,
+      "rhsLength": 1,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-direction-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "direction_lr"
+      ],
+      "terminals": [
+        "direction_lr"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    },
+    {
+      "id": 189,
+      "lhs": "direction",
+      "alternative": 5,
+      "rhsLength": 1,
+      "native": "Parser::parseStatement",
+      "status": "covered",
+      "reason": "",
+      "fixtures": [
+        "subgraph-direction-productions"
+      ],
+      "errors": [],
+      "rhs": [
+        "direction_td"
+      ],
+      "terminals": [
+        "direction_td"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null
+    }
+  ],
+  "invalidCases": [
+    {
+      "id": "style-extra-space",
+      "source": "flowchart LR\nstyle  A fill:#fff",
+      "rejected": true
+    },
+    {
+      "id": "class-def-extra-space",
+      "source": "flowchart LR\nclassDef  hot fill:#fff",
+      "rejected": true
+    },
+    {
+      "id": "class-extra-space",
+      "source": "flowchart LR\nclass  A hot",
+      "rejected": true
+    },
+    {
+      "id": "link-style-extra-space",
+      "source": "flowchart LR\nA-->B\nlinkStyle  0 stroke:red",
+      "rejected": true
+    },
+    {
+      "id": "style-missing-space",
+      "source": "flowchart LR\nstyle Afill:#fff",
+      "rejected": true
+    }
+  ],
   "cases": [
+    {
+      "id": "keyword-prefix-node-production",
+      "source": "flowchart LR\nstyleA-->classDefB-->clickC-->endD",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        143,
+        181
+      ],
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "styleA",
+            "labelType": "text",
+            "domId": "flowchart-styleA-0",
+            "styles": [],
+            "classes": [],
+            "text": "styleA",
+            "props": {}
+          },
+          {
+            "id": "classDefB",
+            "labelType": "text",
+            "domId": "flowchart-classDefB-1",
+            "styles": [],
+            "classes": [],
+            "text": "classDefB",
+            "props": {}
+          },
+          {
+            "id": "clickC",
+            "labelType": "text",
+            "domId": "flowchart-clickC-2",
+            "styles": [],
+            "classes": [],
+            "text": "clickC",
+            "props": {}
+          },
+          {
+            "id": "endD",
+            "labelType": "text",
+            "domId": "flowchart-endD-3",
+            "styles": [],
+            "classes": [],
+            "text": "endD",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "styleA",
+            "end": "classDefB",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_styleA_classDefB_0"
+          },
+          {
+            "start": "classDefB",
+            "end": "clickC",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_classDefB_clickC_0"
+          },
+          {
+            "start": "clickC",
+            "end": "endD",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_clickC_endD_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "semicolon-statements",
+      "source": "flowchart TD; A[Alpha]-->B[Beta]; B-->C[Gamma];",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        12,
+        18,
+        27,
+        41,
+        46,
+        50,
+        51,
+        54,
+        56,
+        72,
+        76,
+        83,
+        86,
+        143,
+        153,
+        181
+      ],
+      "expected": {
+        "direction": "TB",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "Alpha",
+            "type": "square",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "Beta",
+            "type": "square",
+            "props": {}
+          },
+          {
+            "id": "C",
+            "labelType": "text",
+            "domId": "flowchart-C-3",
+            "styles": [],
+            "classes": [],
+            "text": "Gamma",
+            "type": "square",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          },
+          {
+            "start": "B",
+            "end": "C",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_B_C_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "semicolon-style-separators",
+      "source": "graph\nA[Alpha]; style A fill:#f00,stroke:#000,stroke-width:2px;",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        7,
+        8,
+        11,
+        27,
+        28,
+        40,
+        41,
+        50,
+        51,
+        54,
+        56,
+        86,
+        121,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        139,
+        143,
+        153,
+        181
+      ],
+      "expected": {
+        "direction": "TB",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [
+              "fill:#f00",
+              "stroke:#000",
+              "stroke-width:2px"
+            ],
+            "classes": [],
+            "text": "Alpha",
+            "type": "square",
+            "props": {}
+          }
+        ],
+        "edges": [],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "semicolon-inside-label",
+      "source": "flowchart LR; A[\"one; two\"] --> B[\"`**three; four**`\"]",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        7,
+        8,
+        12,
+        18,
+        27,
+        40,
+        46,
+        50,
+        51,
+        54,
+        56,
+        76,
+        83,
+        88,
+        89,
+        143,
+        181
+      ],
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "string",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "one; two",
+            "type": "square",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "markdown",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "**three; four**",
+            "type": "square",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "semicolon-subgraph",
+      "source": "flowchart TB; subgraph cluster[Group]; A-->B; end;",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        12,
+        18,
+        27,
+        33,
+        41,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        86,
+        101,
+        143,
+        153,
+        158,
+        181
+      ],
+      "expected": {
+        "direction": "TB",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [
+          {
+            "id": "cluster",
+            "nodes": [
+              "B",
+              "A"
+            ],
+            "title": "Group",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          }
+        ],
+        "tooltips": {}
+      }
+    },
     {
       "id": "basic-labelled-edge",
       "source": "flowchart LR\nA[Start] -->|go| B((End))",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        46,
+        50,
+        51,
+        54,
+        56,
+        58,
+        75,
+        83,
+        85,
+        86,
+        143,
+        153,
+        181
+      ],
       "expected": {
         "direction": "LR",
         "title": "",
@@ -57,6 +5481,29 @@
     {
       "id": "duplicate-bare-reference",
       "source": "flowchart TB\nA[Alpha] --> B[Beta] --> C[Gamma] --> A",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        46,
+        50,
+        51,
+        54,
+        56,
+        72,
+        76,
+        83,
+        86,
+        143,
+        153,
+        181
+      ],
       "expected": {
         "direction": "TB",
         "title": "",
@@ -140,6 +5587,26 @@
     {
       "id": "directions",
       "source": "graph TD\nA --> B",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        143,
+        181
+      ],
       "expected": {
         "direction": "TB",
         "title": "",
@@ -187,6 +5654,37 @@
     {
       "id": "legacy-shapes",
       "source": "flowchart TB\nsquare[Square]\nround(Round)\nstadium([Stadium])\nsubroutine[[Subroutine]]\ncylinder[(Database)]\ncircle((Circle))\nasymmetric>Flag]\ndiamond{Decision}\nhexagon{{Hexagon}}\ntrapezoid[/Trapezoid\\]\ninvTrapezoid[\\Inverse/]\nleanRight[/Lean/]\nleanLeft[\\Lean\\]",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        50,
+        51,
+        54,
+        56,
+        58,
+        60,
+        61,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        86,
+        143,
+        153,
+        181
+      ],
       "expected": {
         "direction": "TB",
         "title": "",
@@ -331,8 +5829,2725 @@
       }
     },
     {
+      "id": "remaining-vertex-productions",
+      "source": "flowchart TB\ndouble(((Double circle)))\nellipse(-Ellipse-)\nprops[|role:service|Service]",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        50,
+        51,
+        54,
+        57,
+        59,
+        62,
+        86,
+        87,
+        143,
+        153,
+        181
+      ],
+      "expected": {
+        "direction": "TB",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "double",
+            "labelType": "text",
+            "domId": "flowchart-double-0",
+            "styles": [],
+            "classes": [],
+            "text": "Double circle",
+            "type": "doublecircle",
+            "props": {}
+          },
+          {
+            "id": "ellipse",
+            "labelType": "text",
+            "domId": "flowchart-ellipse-1",
+            "styles": [],
+            "classes": [],
+            "text": "Ellipse",
+            "type": "ellipse",
+            "props": {}
+          },
+          {
+            "id": "props",
+            "labelType": "text",
+            "domId": "flowchart-props-2",
+            "styles": [],
+            "classes": [],
+            "text": "Service",
+            "type": "rect",
+            "props": {
+              "role": "service"
+            }
+          }
+        ],
+        "edges": [],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "multiline-accessibility",
+      "source": "flowchart LR\naccDescr {\n  First line\n  Second line\n}\nA-->B",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        12,
+        19,
+        27,
+        39,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        143,
+        181
+      ],
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "First line\nSecond line",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "link-style-interpolate-productions",
+      "source": "flowchart LR\nA-->B-->C-->D\nlinkStyle default stroke:#999\nlinkStyle 0,1 stroke:#0f0\nlinkStyle default interpolate basis stroke:#999\nlinkStyle 0,1 interpolate linear stroke:#f00\nlinkStyle default interpolate step\nlinkStyle 2 interpolate stepAfter",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        29,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        132,
+        133,
+        134,
+        135,
+        136,
+        139,
+        143,
+        172,
+        181,
+        183
+      ],
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          },
+          {
+            "id": "C",
+            "labelType": "text",
+            "domId": "flowchart-C-2",
+            "styles": [],
+            "classes": [],
+            "text": "C",
+            "props": {}
+          },
+          {
+            "id": "D",
+            "labelType": "text",
+            "domId": "flowchart-D-3",
+            "styles": [],
+            "classes": [],
+            "text": "D",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "interpolate": "linear",
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0",
+            "style": [
+              "stroke:#f00",
+              "fill:none"
+            ]
+          },
+          {
+            "start": "B",
+            "end": "C",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "interpolate": "linear",
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_B_C_0",
+            "style": [
+              "stroke:#f00",
+              "fill:none"
+            ]
+          },
+          {
+            "start": "C",
+            "end": "D",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "interpolate": "stepAfter",
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_C_D_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "token-list-productions",
+      "source": "flowchart TB\nv\ndefault\na,b\na:b\nhash#id\nstar*id\n123\n-minus\n#hash\n*star\nA&B\n-\n&\nunicode节点\ntagStart[<]\ntagEnd[>]\nunicodeLabel[中]\nhtmlLabel[<b>bold</b>]\nA -- 中文 --> B\nB-->|pipe|C\nstyle A fill: red,width:12px,color:#fff,opacity:50%\nstyle A px\nstyle A %\nstyle A style\nclick A 1中callback-v,:&#*\nclick B v\nclick C -callback\nclick C -",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        28,
+        32,
+        40,
+        46,
+        50,
+        51,
+        54,
+        56,
+        72,
+        73,
+        77,
+        79,
+        80,
+        83,
+        85,
+        86,
+        115,
+        121,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        138,
+        139,
+        140,
+        142,
+        143,
+        144,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        168,
+        170,
+        171,
+        172,
+        174,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184
+      ],
+      "expected": {
+        "direction": "TB",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "v",
+            "labelType": "text",
+            "domId": "flowchart-v-0",
+            "styles": [],
+            "classes": [],
+            "text": "v",
+            "props": {}
+          },
+          {
+            "id": "default",
+            "labelType": "text",
+            "domId": "flowchart-default-1",
+            "styles": [],
+            "classes": [],
+            "text": "default",
+            "props": {}
+          },
+          {
+            "id": "a,b",
+            "labelType": "text",
+            "domId": "flowchart-a,b-2",
+            "styles": [],
+            "classes": [],
+            "text": "a,b",
+            "props": {}
+          },
+          {
+            "id": "a:b",
+            "labelType": "text",
+            "domId": "flowchart-a:b-3",
+            "styles": [],
+            "classes": [],
+            "text": "a:b",
+            "props": {}
+          },
+          {
+            "id": "hash#id",
+            "labelType": "text",
+            "domId": "flowchart-hash#id-4",
+            "styles": [],
+            "classes": [],
+            "text": "hash#id",
+            "props": {}
+          },
+          {
+            "id": "star*id",
+            "labelType": "text",
+            "domId": "flowchart-star*id-5",
+            "styles": [],
+            "classes": [],
+            "text": "star*id",
+            "props": {}
+          },
+          {
+            "id": "123",
+            "labelType": "text",
+            "domId": "flowchart-123-6",
+            "styles": [],
+            "classes": [],
+            "text": "123",
+            "props": {}
+          },
+          {
+            "id": "-minus",
+            "labelType": "text",
+            "domId": "flowchart--minus-7",
+            "styles": [],
+            "classes": [],
+            "text": "-minus",
+            "props": {}
+          },
+          {
+            "id": "#hash",
+            "labelType": "text",
+            "domId": "flowchart-#hash-8",
+            "styles": [],
+            "classes": [],
+            "text": "#hash",
+            "props": {}
+          },
+          {
+            "id": "*star",
+            "labelType": "text",
+            "domId": "flowchart-*star-9",
+            "styles": [],
+            "classes": [],
+            "text": "*star",
+            "props": {}
+          },
+          {
+            "id": "A&B",
+            "labelType": "text",
+            "domId": "flowchart-A&B-10",
+            "styles": [],
+            "classes": [],
+            "text": "A&B",
+            "props": {}
+          },
+          {
+            "id": "-",
+            "labelType": "text",
+            "domId": "flowchart---11",
+            "styles": [],
+            "classes": [],
+            "text": "-",
+            "props": {}
+          },
+          {
+            "id": "&",
+            "labelType": "text",
+            "domId": "flowchart-&-12",
+            "styles": [],
+            "classes": [],
+            "text": "&",
+            "props": {}
+          },
+          {
+            "id": "unicode节点",
+            "labelType": "text",
+            "domId": "flowchart-unicode节点-13",
+            "styles": [],
+            "classes": [],
+            "text": "unicode节点",
+            "props": {}
+          },
+          {
+            "id": "tagStart",
+            "labelType": "text",
+            "domId": "flowchart-tagStart-14",
+            "styles": [],
+            "classes": [],
+            "text": "&lt;",
+            "type": "square",
+            "props": {}
+          },
+          {
+            "id": "tagEnd",
+            "labelType": "text",
+            "domId": "flowchart-tagEnd-15",
+            "styles": [],
+            "classes": [],
+            "text": ">",
+            "type": "square",
+            "props": {}
+          },
+          {
+            "id": "unicodeLabel",
+            "labelType": "text",
+            "domId": "flowchart-unicodeLabel-16",
+            "styles": [],
+            "classes": [],
+            "text": "中",
+            "type": "square",
+            "props": {}
+          },
+          {
+            "id": "htmlLabel",
+            "labelType": "text",
+            "domId": "flowchart-htmlLabel-17",
+            "styles": [],
+            "classes": [],
+            "text": "<b>bold</b>",
+            "type": "square",
+            "props": {}
+          },
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-18",
+            "styles": [
+              "fill: red",
+              "width:12px",
+              "color:#fff",
+              "opacity:50%",
+              "px",
+              "%",
+              "style"
+            ],
+            "classes": [
+              "clickable"
+            ],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-19",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "B",
+            "props": {}
+          },
+          {
+            "id": "C",
+            "labelType": "text",
+            "domId": "flowchart-C-21",
+            "styles": [],
+            "classes": [
+              "clickable",
+              "clickable"
+            ],
+            "text": "C",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "中文",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          },
+          {
+            "start": "B",
+            "end": "C",
+            "type": "arrow_point",
+            "text": "pipe",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_B_C_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "subgraph-token-productions",
+      "source": "flowchart TB\nsubgraph plain\nA-->B\nend\nsubgraph \"quoted title\"\nC-->D\nend\nsubgraph \"`**markdown title**`\"\nE-->F\nend\nsubgraph style-linkStyle-classDef-class-click-graph-subgraph-end-v-^\nG-->H\nend",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        34,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        90,
+        100,
+        101,
+        102,
+        103,
+        104,
+        143,
+        158,
+        166,
+        181
+      ],
+      "expected": {
+        "direction": "TB",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          },
+          {
+            "id": "C",
+            "labelType": "text",
+            "domId": "flowchart-C-2",
+            "styles": [],
+            "classes": [],
+            "text": "C",
+            "props": {}
+          },
+          {
+            "id": "D",
+            "labelType": "text",
+            "domId": "flowchart-D-3",
+            "styles": [],
+            "classes": [],
+            "text": "D",
+            "props": {}
+          },
+          {
+            "id": "E",
+            "labelType": "text",
+            "domId": "flowchart-E-4",
+            "styles": [],
+            "classes": [],
+            "text": "E",
+            "props": {}
+          },
+          {
+            "id": "F",
+            "labelType": "text",
+            "domId": "flowchart-F-5",
+            "styles": [],
+            "classes": [],
+            "text": "F",
+            "props": {}
+          },
+          {
+            "id": "G",
+            "labelType": "text",
+            "domId": "flowchart-G-6",
+            "styles": [],
+            "classes": [],
+            "text": "G",
+            "props": {}
+          },
+          {
+            "id": "H",
+            "labelType": "text",
+            "domId": "flowchart-H-7",
+            "styles": [],
+            "classes": [],
+            "text": "H",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          },
+          {
+            "start": "C",
+            "end": "D",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_C_D_0"
+          },
+          {
+            "start": "E",
+            "end": "F",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_E_F_0"
+          },
+          {
+            "start": "G",
+            "end": "H",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_G_H_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [
+          {
+            "id": "plain",
+            "nodes": [
+              "B",
+              "A"
+            ],
+            "title": "plain",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          },
+          {
+            "id": "subGraph1",
+            "nodes": [
+              "D",
+              "C"
+            ],
+            "title": "quoted title",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          },
+          {
+            "id": "subGraph2",
+            "nodes": [
+              "F",
+              "E"
+            ],
+            "title": "**markdown title**",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "markdown"
+          },
+          {
+            "id": "style-linkStyle-classDef-class-click-graph-subgraph-end-v-^",
+            "nodes": [
+              "H",
+              "G"
+            ],
+            "title": "style-linkStyle-classDef-class-click-graph-subgraph-end-v-^",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          }
+        ],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "subgraph-keyword-productions",
+      "source": "flowchart TB\nsubgraph linkStyle\nK0-->L0\nend\nsubgraph classDef\nK1-->L1\nend\nsubgraph class\nK2-->L2\nend\nsubgraph graph\nK3-->L3\nend\nsubgraph subgraph\nK4-->L4\nend",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        34,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        91,
+        92,
+        93,
+        95,
+        97,
+        101,
+        143,
+        166,
+        181
+      ],
+      "expected": {
+        "direction": "TB",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "K0",
+            "labelType": "text",
+            "domId": "flowchart-K0-0",
+            "styles": [],
+            "classes": [],
+            "text": "K0",
+            "props": {}
+          },
+          {
+            "id": "L0",
+            "labelType": "text",
+            "domId": "flowchart-L0-1",
+            "styles": [],
+            "classes": [],
+            "text": "L0",
+            "props": {}
+          },
+          {
+            "id": "K1",
+            "labelType": "text",
+            "domId": "flowchart-K1-2",
+            "styles": [],
+            "classes": [],
+            "text": "K1",
+            "props": {}
+          },
+          {
+            "id": "L1",
+            "labelType": "text",
+            "domId": "flowchart-L1-3",
+            "styles": [],
+            "classes": [],
+            "text": "L1",
+            "props": {}
+          },
+          {
+            "id": "K2",
+            "labelType": "text",
+            "domId": "flowchart-K2-4",
+            "styles": [],
+            "classes": [],
+            "text": "K2",
+            "props": {}
+          },
+          {
+            "id": "L2",
+            "labelType": "text",
+            "domId": "flowchart-L2-5",
+            "styles": [],
+            "classes": [],
+            "text": "L2",
+            "props": {}
+          },
+          {
+            "id": "K3",
+            "labelType": "text",
+            "domId": "flowchart-K3-6",
+            "styles": [],
+            "classes": [],
+            "text": "K3",
+            "props": {}
+          },
+          {
+            "id": "L3",
+            "labelType": "text",
+            "domId": "flowchart-L3-7",
+            "styles": [],
+            "classes": [],
+            "text": "L3",
+            "props": {}
+          },
+          {
+            "id": "K4",
+            "labelType": "text",
+            "domId": "flowchart-K4-8",
+            "styles": [],
+            "classes": [],
+            "text": "K4",
+            "props": {}
+          },
+          {
+            "id": "L4",
+            "labelType": "text",
+            "domId": "flowchart-L4-9",
+            "styles": [],
+            "classes": [],
+            "text": "L4",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "K0",
+            "end": "L0",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_K0_L0_0"
+          },
+          {
+            "start": "K1",
+            "end": "L1",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_K1_L1_0"
+          },
+          {
+            "start": "K2",
+            "end": "L2",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_K2_L2_0"
+          },
+          {
+            "start": "K3",
+            "end": "L3",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_K3_L3_0"
+          },
+          {
+            "start": "K4",
+            "end": "L4",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_K4_L4_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [
+          {
+            "id": "linkStyle",
+            "nodes": [
+              "L0",
+              "K0"
+            ],
+            "title": "linkStyle",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          },
+          {
+            "id": "classDef",
+            "nodes": [
+              "L1",
+              "K1"
+            ],
+            "title": "classDef",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          },
+          {
+            "id": "class",
+            "nodes": [
+              "L2",
+              "K2"
+            ],
+            "title": "class",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          },
+          {
+            "id": "graph",
+            "nodes": [
+              "L3",
+              "K3"
+            ],
+            "title": "graph",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          },
+          {
+            "id": "subgraph",
+            "nodes": [
+              "L4",
+              "K4"
+            ],
+            "title": "subgraph",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          }
+        ],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "subgraph-text-token-productions",
+      "source": "flowchart TB\nsubgraph 123\nA-->B\nend\nsubgraph two words\nC-->D\nend\nsubgraph -\nE-->F\nend\nsubgraph &\nG-->H\nend\nsubgraph 中\nI-->J\nend\nsubgraph :\nK-->L\nend\nsubgraph *\nM-->N\nend\nsubgraph #\nO-->P\nend\nsubgraph v\nQ-->R\nend",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        34,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        99,
+        101,
+        102,
+        143,
+        157,
+        158,
+        159,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        181
+      ],
+      "expected": {
+        "direction": "TB",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          },
+          {
+            "id": "C",
+            "labelType": "text",
+            "domId": "flowchart-C-2",
+            "styles": [],
+            "classes": [],
+            "text": "C",
+            "props": {}
+          },
+          {
+            "id": "D",
+            "labelType": "text",
+            "domId": "flowchart-D-3",
+            "styles": [],
+            "classes": [],
+            "text": "D",
+            "props": {}
+          },
+          {
+            "id": "E",
+            "labelType": "text",
+            "domId": "flowchart-E-4",
+            "styles": [],
+            "classes": [],
+            "text": "E",
+            "props": {}
+          },
+          {
+            "id": "F",
+            "labelType": "text",
+            "domId": "flowchart-F-5",
+            "styles": [],
+            "classes": [],
+            "text": "F",
+            "props": {}
+          },
+          {
+            "id": "G",
+            "labelType": "text",
+            "domId": "flowchart-G-6",
+            "styles": [],
+            "classes": [],
+            "text": "G",
+            "props": {}
+          },
+          {
+            "id": "H",
+            "labelType": "text",
+            "domId": "flowchart-H-7",
+            "styles": [],
+            "classes": [],
+            "text": "H",
+            "props": {}
+          },
+          {
+            "id": "I",
+            "labelType": "text",
+            "domId": "flowchart-I-8",
+            "styles": [],
+            "classes": [],
+            "text": "I",
+            "props": {}
+          },
+          {
+            "id": "J",
+            "labelType": "text",
+            "domId": "flowchart-J-9",
+            "styles": [],
+            "classes": [],
+            "text": "J",
+            "props": {}
+          },
+          {
+            "id": "K",
+            "labelType": "text",
+            "domId": "flowchart-K-10",
+            "styles": [],
+            "classes": [],
+            "text": "K",
+            "props": {}
+          },
+          {
+            "id": "L",
+            "labelType": "text",
+            "domId": "flowchart-L-11",
+            "styles": [],
+            "classes": [],
+            "text": "L",
+            "props": {}
+          },
+          {
+            "id": "M",
+            "labelType": "text",
+            "domId": "flowchart-M-12",
+            "styles": [],
+            "classes": [],
+            "text": "M",
+            "props": {}
+          },
+          {
+            "id": "N",
+            "labelType": "text",
+            "domId": "flowchart-N-13",
+            "styles": [],
+            "classes": [],
+            "text": "N",
+            "props": {}
+          },
+          {
+            "id": "O",
+            "labelType": "text",
+            "domId": "flowchart-O-14",
+            "styles": [],
+            "classes": [],
+            "text": "O",
+            "props": {}
+          },
+          {
+            "id": "P",
+            "labelType": "text",
+            "domId": "flowchart-P-15",
+            "styles": [],
+            "classes": [],
+            "text": "P",
+            "props": {}
+          },
+          {
+            "id": "Q",
+            "labelType": "text",
+            "domId": "flowchart-Q-16",
+            "styles": [],
+            "classes": [],
+            "text": "Q",
+            "props": {}
+          },
+          {
+            "id": "R",
+            "labelType": "text",
+            "domId": "flowchart-R-17",
+            "styles": [],
+            "classes": [],
+            "text": "R",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          },
+          {
+            "start": "C",
+            "end": "D",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_C_D_0"
+          },
+          {
+            "start": "E",
+            "end": "F",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_E_F_0"
+          },
+          {
+            "start": "G",
+            "end": "H",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_G_H_0"
+          },
+          {
+            "start": "I",
+            "end": "J",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_I_J_0"
+          },
+          {
+            "start": "K",
+            "end": "L",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_K_L_0"
+          },
+          {
+            "start": "M",
+            "end": "N",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_M_N_0"
+          },
+          {
+            "start": "O",
+            "end": "P",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_O_P_0"
+          },
+          {
+            "start": "Q",
+            "end": "R",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_Q_R_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [
+          {
+            "id": "123",
+            "nodes": [
+              "B",
+              "A"
+            ],
+            "title": "123",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          },
+          {
+            "id": "subGraph1",
+            "nodes": [
+              "D",
+              "C"
+            ],
+            "title": "two words",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          },
+          {
+            "id": "-",
+            "nodes": [
+              "F",
+              "E"
+            ],
+            "title": "-",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          },
+          {
+            "id": "&",
+            "nodes": [
+              "H",
+              "G"
+            ],
+            "title": "&",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          },
+          {
+            "id": "中",
+            "nodes": [
+              "J",
+              "I"
+            ],
+            "title": "中",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          },
+          {
+            "id": ":",
+            "nodes": [
+              "L",
+              "K"
+            ],
+            "title": ":",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          },
+          {
+            "id": "*",
+            "nodes": [
+              "N",
+              "M"
+            ],
+            "title": "*",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          },
+          {
+            "id": "#",
+            "nodes": [
+              "P",
+              "O"
+            ],
+            "title": "#",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          },
+          {
+            "id": "v",
+            "nodes": [
+              "R",
+              "Q"
+            ],
+            "title": "v",
+            "classes": [],
+            "hasExplicitDir": false,
+            "labelType": "text"
+          }
+        ],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "link-id-labelled-production",
+      "source": "flowchart LR\nA e1@-- \"edge\" --> B\nA e2@-. 中文 .-> B",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        26,
+        27,
+        40,
+        46,
+        48,
+        51,
+        54,
+        72,
+        78,
+        79,
+        80,
+        81,
+        143,
+        168,
+        181
+      ],
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "edge",
+            "labelType": "string",
+            "classes": [],
+            "isUserDefinedId": true,
+            "stroke": "normal",
+            "length": 1,
+            "id": "e1"
+          },
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "中文",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": true,
+            "stroke": "dotted",
+            "length": 1,
+            "id": "e2"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "shape-data-group-production",
+      "source": "flowchart LR\nA@{ shape: rounded } & B --> C",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        26,
+        27,
+        40,
+        43,
+        44,
+        46,
+        50,
+        51,
+        52,
+        54,
+        72,
+        76,
+        83,
+        143,
+        181
+      ],
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {},
+            "type": "rounded"
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          },
+          {
+            "id": "C",
+            "labelType": "text",
+            "domId": "flowchart-C-3",
+            "styles": [],
+            "classes": [],
+            "text": "C",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "C",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_C_0"
+          },
+          {
+            "start": "B",
+            "end": "C",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_B_C_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "leading-and-trailing-space-productions",
+      "source": "\n flowchart LR   \nA --> B   \n",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        20,
+        25,
+        26,
+        27,
+        40,
+        47,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        143,
+        181
+      ],
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "direction-production-tb",
+      "source": "flowchart TB\nA-->B",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        143,
+        181
+      ],
+      "expected": {
+        "direction": "TB",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "direction-production-bt",
+      "source": "flowchart BT\nA-->B",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        143,
+        181
+      ],
+      "expected": {
+        "direction": "BT",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "direction-production-rl",
+      "source": "flowchart RL\nA-->B",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        143,
+        181
+      ],
+      "expected": {
+        "direction": "RL",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "direction-production-lr",
+      "source": "flowchart LR\nA-->B",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        143,
+        181
+      ],
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "direction-production-td",
+      "source": "flowchart TD\nA-->B",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        143,
+        181
+      ],
+      "expected": {
+        "direction": "TB",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "subgraph-direction-productions",
+      "source": "flowchart TB\nsubgraph direction0\ndirection TB\nD0-->E0\nend\nsubgraph direction1\ndirection BT\nD1-->E1\nend\nsubgraph direction2\ndirection RL\nD2-->E2\nend\nsubgraph direction3\ndirection LR\nD3-->E3\nend\nsubgraph direction4\ndirection TD\nD4-->E4\nend",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        12,
+        19,
+        27,
+        34,
+        36,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        101,
+        143,
+        158,
+        181,
+        185,
+        186,
+        187,
+        188,
+        189
+      ],
+      "expected": {
+        "direction": "TB",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "D0",
+            "labelType": "text",
+            "domId": "flowchart-D0-0",
+            "styles": [],
+            "classes": [],
+            "text": "D0",
+            "props": {}
+          },
+          {
+            "id": "E0",
+            "labelType": "text",
+            "domId": "flowchart-E0-1",
+            "styles": [],
+            "classes": [],
+            "text": "E0",
+            "props": {}
+          },
+          {
+            "id": "D1",
+            "labelType": "text",
+            "domId": "flowchart-D1-2",
+            "styles": [],
+            "classes": [],
+            "text": "D1",
+            "props": {}
+          },
+          {
+            "id": "E1",
+            "labelType": "text",
+            "domId": "flowchart-E1-3",
+            "styles": [],
+            "classes": [],
+            "text": "E1",
+            "props": {}
+          },
+          {
+            "id": "D2",
+            "labelType": "text",
+            "domId": "flowchart-D2-4",
+            "styles": [],
+            "classes": [],
+            "text": "D2",
+            "props": {}
+          },
+          {
+            "id": "E2",
+            "labelType": "text",
+            "domId": "flowchart-E2-5",
+            "styles": [],
+            "classes": [],
+            "text": "E2",
+            "props": {}
+          },
+          {
+            "id": "D3",
+            "labelType": "text",
+            "domId": "flowchart-D3-6",
+            "styles": [],
+            "classes": [],
+            "text": "D3",
+            "props": {}
+          },
+          {
+            "id": "E3",
+            "labelType": "text",
+            "domId": "flowchart-E3-7",
+            "styles": [],
+            "classes": [],
+            "text": "E3",
+            "props": {}
+          },
+          {
+            "id": "D4",
+            "labelType": "text",
+            "domId": "flowchart-D4-8",
+            "styles": [],
+            "classes": [],
+            "text": "D4",
+            "props": {}
+          },
+          {
+            "id": "E4",
+            "labelType": "text",
+            "domId": "flowchart-E4-9",
+            "styles": [],
+            "classes": [],
+            "text": "E4",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "D0",
+            "end": "E0",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_D0_E0_0"
+          },
+          {
+            "start": "D1",
+            "end": "E1",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_D1_E1_0"
+          },
+          {
+            "start": "D2",
+            "end": "E2",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_D2_E2_0"
+          },
+          {
+            "start": "D3",
+            "end": "E3",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_D3_E3_0"
+          },
+          {
+            "start": "D4",
+            "end": "E4",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_D4_E4_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [
+          {
+            "id": "direction0",
+            "nodes": [
+              "E0",
+              "D0"
+            ],
+            "title": "direction0",
+            "classes": [],
+            "dir": "TB",
+            "hasExplicitDir": true,
+            "labelType": "text"
+          },
+          {
+            "id": "direction1",
+            "nodes": [
+              "E1",
+              "D1"
+            ],
+            "title": "direction1",
+            "classes": [],
+            "dir": "BT",
+            "hasExplicitDir": true,
+            "labelType": "text"
+          },
+          {
+            "id": "direction2",
+            "nodes": [
+              "E2",
+              "D2"
+            ],
+            "title": "direction2",
+            "classes": [],
+            "dir": "RL",
+            "hasExplicitDir": true,
+            "labelType": "text"
+          },
+          {
+            "id": "direction3",
+            "nodes": [
+              "E3",
+              "D3"
+            ],
+            "title": "direction3",
+            "classes": [],
+            "dir": "LR",
+            "hasExplicitDir": true,
+            "labelType": "text"
+          },
+          {
+            "id": "direction4",
+            "nodes": [
+              "E4",
+              "D4"
+            ],
+            "title": "direction4",
+            "classes": [],
+            "dir": "TD",
+            "hasExplicitDir": true,
+            "labelType": "text"
+          }
+        ],
+        "tooltips": {}
+      }
+    },
+    {
+      "id": "click-production-matrix",
+      "source": "flowchart LR\nA-->B-->C-->D-->E-->F-->G-->H-->I-->J-->K-->L-->M-->N\nclick A call first()\nclick B call second() \"Second\"\nclick C call third(1, two)\nclick D call fourth(1, two) \"Fourth\"\nclick E href \"https://example.com/e\"\nclick F href \"https://example.com/f\" \"Sixth\"\nclick G href \"https://example.com/g\" _self\nclick H href \"https://example.com/h\" \"Eighth\" _blank\nclick I ninth\nclick J tenth \"Tenth\"\nclick K \"https://example.com/k\"\nclick L \"https://example.com/l\" \"Twelfth\"\nclick M \"https://example.com/m\" _parent\nclick N \"https://example.com/n\" \"Fourteenth\" _top",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        32,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        143,
+        172,
+        181,
+        183
+      ],
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "B",
+            "props": {}
+          },
+          {
+            "id": "C",
+            "labelType": "text",
+            "domId": "flowchart-C-2",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "C",
+            "props": {}
+          },
+          {
+            "id": "D",
+            "labelType": "text",
+            "domId": "flowchart-D-3",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "D",
+            "props": {}
+          },
+          {
+            "id": "E",
+            "labelType": "text",
+            "domId": "flowchart-E-4",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "E",
+            "props": {},
+            "link": "https://example.com/e"
+          },
+          {
+            "id": "F",
+            "labelType": "text",
+            "domId": "flowchart-F-5",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "F",
+            "props": {},
+            "link": "https://example.com/f"
+          },
+          {
+            "id": "G",
+            "labelType": "text",
+            "domId": "flowchart-G-6",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "G",
+            "props": {},
+            "link": "https://example.com/g",
+            "linkTarget": "_self"
+          },
+          {
+            "id": "H",
+            "labelType": "text",
+            "domId": "flowchart-H-7",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "H",
+            "props": {},
+            "link": "https://example.com/h",
+            "linkTarget": "_blank"
+          },
+          {
+            "id": "I",
+            "labelType": "text",
+            "domId": "flowchart-I-8",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "I",
+            "props": {}
+          },
+          {
+            "id": "J",
+            "labelType": "text",
+            "domId": "flowchart-J-9",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "J",
+            "props": {}
+          },
+          {
+            "id": "K",
+            "labelType": "text",
+            "domId": "flowchart-K-10",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "K",
+            "props": {},
+            "link": "https://example.com/k"
+          },
+          {
+            "id": "L",
+            "labelType": "text",
+            "domId": "flowchart-L-11",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "L",
+            "props": {},
+            "link": "https://example.com/l"
+          },
+          {
+            "id": "M",
+            "labelType": "text",
+            "domId": "flowchart-M-12",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "M",
+            "props": {},
+            "link": "https://example.com/m",
+            "linkTarget": "_parent"
+          },
+          {
+            "id": "N",
+            "labelType": "text",
+            "domId": "flowchart-N-13",
+            "styles": [],
+            "classes": [
+              "clickable"
+            ],
+            "text": "N",
+            "props": {},
+            "link": "https://example.com/n",
+            "linkTarget": "_top"
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          },
+          {
+            "start": "B",
+            "end": "C",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_B_C_0"
+          },
+          {
+            "start": "C",
+            "end": "D",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_C_D_0"
+          },
+          {
+            "start": "D",
+            "end": "E",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_D_E_0"
+          },
+          {
+            "start": "E",
+            "end": "F",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_E_F_0"
+          },
+          {
+            "start": "F",
+            "end": "G",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_F_G_0"
+          },
+          {
+            "start": "G",
+            "end": "H",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_G_H_0"
+          },
+          {
+            "start": "H",
+            "end": "I",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_H_I_0"
+          },
+          {
+            "start": "I",
+            "end": "J",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_I_J_0"
+          },
+          {
+            "start": "J",
+            "end": "K",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_J_K_0"
+          },
+          {
+            "start": "K",
+            "end": "L",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_K_L_0"
+          },
+          {
+            "start": "L",
+            "end": "M",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_L_M_0"
+          },
+          {
+            "start": "M",
+            "end": "N",
+            "type": "arrow_point",
+            "text": "",
+            "labelType": "text",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_M_N_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {
+          "B": "Second",
+          "D": "Fourth",
+          "F": "Sixth",
+          "H": "Eighth",
+          "J": "Tenth",
+          "L": "Twelfth",
+          "N": "Fourteenth"
+        }
+      }
+    },
+    {
       "id": "edge-forms",
       "source": "flowchart LR\nA --> B\nB --- C\nC -. dotted .-> D\nD ==> E\nE -- open --- F\nF --x G\nG --o H\nH <--> I",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        77,
+        79,
+        80,
+        83,
+        143,
+        168,
+        181
+      ],
       "expected": {
         "direction": "LR",
         "title": "",
@@ -525,8 +8740,166 @@
       }
     },
     {
+      "id": "edge-label-type-productions",
+      "source": "flowchart LR\nA -- \"quoted\" --> B\nB -- \"`**markdown**`\" --> C\nC -->|\"pipe quoted\"| D\nD -->|\"`*pipe markdown*`\"| E",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        75,
+        77,
+        81,
+        82,
+        83,
+        85,
+        88,
+        89,
+        143,
+        181
+      ],
+      "expected": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "vertices": [
+          {
+            "id": "A",
+            "labelType": "text",
+            "domId": "flowchart-A-0",
+            "styles": [],
+            "classes": [],
+            "text": "A",
+            "props": {}
+          },
+          {
+            "id": "B",
+            "labelType": "text",
+            "domId": "flowchart-B-1",
+            "styles": [],
+            "classes": [],
+            "text": "B",
+            "props": {}
+          },
+          {
+            "id": "C",
+            "labelType": "text",
+            "domId": "flowchart-C-3",
+            "styles": [],
+            "classes": [],
+            "text": "C",
+            "props": {}
+          },
+          {
+            "id": "D",
+            "labelType": "text",
+            "domId": "flowchart-D-5",
+            "styles": [],
+            "classes": [],
+            "text": "D",
+            "props": {}
+          },
+          {
+            "id": "E",
+            "labelType": "text",
+            "domId": "flowchart-E-7",
+            "styles": [],
+            "classes": [],
+            "text": "E",
+            "props": {}
+          }
+        ],
+        "edges": [
+          {
+            "start": "A",
+            "end": "B",
+            "type": "arrow_point",
+            "text": "quoted",
+            "labelType": "string",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_A_B_0"
+          },
+          {
+            "start": "B",
+            "end": "C",
+            "type": "arrow_point",
+            "text": "**markdown**",
+            "labelType": "markdown",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_B_C_0"
+          },
+          {
+            "start": "C",
+            "end": "D",
+            "type": "arrow_point",
+            "text": "pipe quoted",
+            "labelType": "string",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_C_D_0"
+          },
+          {
+            "start": "D",
+            "end": "E",
+            "type": "arrow_point",
+            "text": "*pipe markdown*",
+            "labelType": "markdown",
+            "classes": [],
+            "isUserDefinedId": false,
+            "stroke": "normal",
+            "length": 1,
+            "id": "L_D_E_0"
+          }
+        ],
+        "classes": [],
+        "subgraphs": [],
+        "tooltips": {}
+      }
+    },
+    {
       "id": "chains-and-groups",
       "source": "flowchart LR\nA & B --> C & D --> E",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        26,
+        27,
+        40,
+        46,
+        50,
+        51,
+        53,
+        54,
+        72,
+        76,
+        83,
+        143,
+        181
+      ],
       "expected": {
         "direction": "LR",
         "title": "",
@@ -661,6 +9034,26 @@
     {
       "id": "parallel-edge-ids",
       "source": "flowchart LR\nA --> B\nA --> B\nA --> B",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        143,
+        181
+      ],
       "expected": {
         "direction": "LR",
         "title": "",
@@ -732,6 +9125,46 @@
     {
       "id": "classes-and-styles",
       "source": "flowchart LR\nA[Alpha]:::hot --> B[Beta]\nclassDef hot fill:#f00,color:#fff,stroke-width:2px\nclass B hot\nstyle B fill:#0f0,stroke:#333\nlinkStyle 0 stroke:#00f,stroke-width:3px",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        28,
+        29,
+        30,
+        31,
+        40,
+        46,
+        50,
+        51,
+        54,
+        55,
+        56,
+        76,
+        83,
+        86,
+        105,
+        106,
+        121,
+        123,
+        128,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        139,
+        143,
+        153,
+        181
+      ],
       "expected": {
         "direction": "LR",
         "title": "",
@@ -805,6 +9238,34 @@
     {
       "id": "subgraphs",
       "source": "flowchart TB\nsubgraph outer[Outer group]\ndirection LR\nA --> B\nsubgraph inner[Inner]\nC --> D\nend\nend\nB --> C",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        12,
+        19,
+        27,
+        33,
+        36,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        86,
+        101,
+        143,
+        153,
+        158,
+        181,
+        188
+      ],
       "expected": {
         "direction": "TB",
         "title": "",
@@ -919,6 +9380,28 @@
     {
       "id": "quoted-and-markdown-labels",
       "source": "flowchart LR\nA[\"quoted label\"] --> B[\"`**bold** and text`\"]",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        46,
+        50,
+        51,
+        54,
+        56,
+        76,
+        83,
+        88,
+        89,
+        143,
+        181
+      ],
       "expected": {
         "direction": "LR",
         "title": "",
@@ -968,6 +9451,29 @@
     {
       "id": "accessibility",
       "source": "flowchart LR\naccTitle: Accessible title\naccDescr: Accessible description\nA --> B",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        12,
+        19,
+        27,
+        37,
+        38,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        143,
+        181
+      ],
       "expected": {
         "direction": "LR",
         "title": "",
@@ -1015,6 +9521,31 @@
     {
       "id": "click-and-links",
       "source": "flowchart LR\nA --> B\nclick A href \"https://example.com\" \"Open example\" _blank\nclick B callback \"Run callback\"",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        32,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        114,
+        116,
+        143,
+        172,
+        181,
+        183
+      ],
       "expected": {
         "direction": "LR",
         "title": "",
@@ -1071,6 +9602,28 @@
     {
       "id": "node-metadata",
       "source": "flowchart LR\nA@{ shape: rounded, label: \"Alpha\" } --> B@{ shape: bang, label: \"Beta\" }",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        43,
+        44,
+        45,
+        49,
+        51,
+        54,
+        72,
+        76,
+        83,
+        143,
+        181
+      ],
       "expected": {
         "direction": "LR",
         "title": "",
@@ -1120,6 +9673,30 @@
     {
       "id": "edge-id-and-metadata",
       "source": "flowchart LR\nA e1@--> B\ne1@{ animate: true, animation: fast, curve: basis }",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        26,
+        27,
+        40,
+        43,
+        44,
+        46,
+        48,
+        49,
+        51,
+        54,
+        72,
+        76,
+        84,
+        143,
+        181
+      ],
       "expected": {
         "direction": "LR",
         "title": "",
@@ -1170,6 +9747,26 @@
     {
       "id": "long-links",
       "source": "flowchart LR\nA ----> B\nB -..-> C\nC ====> D",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        143,
+        181
+      ],
       "expected": {
         "direction": "LR",
         "title": "",
@@ -1259,6 +9856,36 @@
     {
       "id": "default-link-style",
       "source": "flowchart LR\nA --> B --> C\nlinkStyle default stroke:#999,stroke-width:2px",
+      "productions": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        19,
+        27,
+        29,
+        40,
+        46,
+        50,
+        51,
+        54,
+        72,
+        76,
+        83,
+        122,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        139,
+        143,
+        181
+      ],
       "expected": {
         "direction": "LR",
         "title": "",

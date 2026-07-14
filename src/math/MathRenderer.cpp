@@ -8,8 +8,6 @@
 namespace muffin::math {
 namespace {
 
-constexpr qreal kKatexRootFontScale = 1.21;
-constexpr qreal kCssPixelsPerPoint = 96.0 / 72.0;
 constexpr qreal kKatexLineBoxHeightEm = 1.13636;
 constexpr qreal kKatexLineBoxHeightAboveBaselineEm = 0.88889;
 constexpr qreal kKatexLineBoxDepthBelowBaselineEm = kKatexLineBoxHeightEm - kKatexLineBoxHeightAboveBaselineEm;
@@ -133,18 +131,18 @@ std::unique_ptr<MathRenderNode> wrapKatexRoot(std::unique_ptr<MathRenderNode> bo
 
 }  // namespace
 
-qreal MathRenderer::katexRootFontPixelSize(const RenderTheme& theme) {
-  const qreal mathPointSize = theme.mathFont().pointSizeF();
-  return mathPointSize * kCssPixelsPerPoint * kKatexRootFontScale;
-}
-
-MathLayoutResult MathRenderer::render(const QString& tex, const RenderTheme& theme, bool displayMode, qreal maxWidth) const {
+MathLayoutResult MathRenderer::render(const QString& tex, qreal rootFontPixelSize,
+                                      const QColor& color, bool displayMode,
+                                      qreal maxWidth) const {
   MathSettings settings;
   settings.displayMode = displayMode;
-  return render(tex, theme, displayMode, settings, maxWidth);
+  return render(tex, rootFontPixelSize, color, displayMode, settings, maxWidth);
 }
 
-MathLayoutResult MathRenderer::render(const QString& tex, const RenderTheme& theme, bool displayMode, const MathSettings& inputSettings, qreal maxWidth) const {
+MathLayoutResult MathRenderer::render(const QString& tex, qreal rootFontPixelSize,
+                                      const QColor& color, bool displayMode,
+                                      const MathSettings& inputSettings,
+                                      qreal maxWidth) const {
   MathFontRegistry::ensureLoaded();
 
   MathSettings settings = inputSettings;
@@ -164,7 +162,7 @@ MathLayoutResult MathRenderer::render(const QString& tex, const RenderTheme& the
   }
 
   const MathStyle style = displayMode ? MathStyle::display() : MathStyle::textStyle();
-  MathOptions options(style, katexRootFontPixelSize(theme), theme.textColor(), settings);
+  MathOptions options(style, rootFontPixelSize, color, settings);
   MathBuilder builder(options);
 
   result.root = wrapKatexRoot(builder.buildExpression(tree), options, displayMode);

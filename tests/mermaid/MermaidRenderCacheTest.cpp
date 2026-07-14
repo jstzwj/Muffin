@@ -3,6 +3,7 @@
 // key stability.
 
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "mermaid/flowchart/FlowLabel.h"
 
 #include <QDebug>
 #include <QEventLoop>
@@ -108,6 +109,39 @@ int main(int argc, char** argv) {
     require(k1 == k2, QStringLiteral("same inputs must produce the same key"));
     const MermaidRenderKey k3 = MermaidRenderCache::makeKey(flow + QStringLiteral(" "));  // different source
     require(!(k1 == k3), QStringLiteral("different source must produce a different key"));
+  }
+
+  // --- complete config propagation: themeVariables + flowchart spacing/font ---
+  {
+    MermaidRenderCache cache;
+    const QString configured = QStringLiteral(
+        "%%{init: {\"themeVariables\": {\"mainBkg\": \"#123456\", \"fontSize\": \"14px\"}, "
+        "\"flowchart\": {\"nodeSpacing\": 120, \"rankSpacing\": 90, \"curve\": \"linear\"}}}%%\n"
+        "flowchart LR\nA[\"`**Bold** label`\"] --> B[Beta]");
+    const MermaidRenderEntry e = cache.getSync(MermaidRenderCache::makeKey(configured), configured);
+    require(e.status == kReady && e.scene != nullptr, QStringLiteral("configured flowchart must render"));
+    require(!e.scene->nodes.isEmpty() && e.scene->nodes.first().fill == QLatin1String("#123456"),
+            QStringLiteral("themeVariables.mainBkg must reach the rendered scene"));
+    require(e.scene->nodes.first().label.fontSize == QLatin1String("14px"),
+            QStringLiteral("themeVariables.fontSize must reach labels"));
+    require(e.scene->nodes.size() == 2 &&
+                qAbs(e.scene->nodes.at(1).cx - e.scene->nodes.at(0).cx) > 150.0,
+            QStringLiteral("flowchart spacing must reach Dagre"));
+  }
+
+  // --- structured labels: markers/tags affect formatting, not visible text ---
+  {
+    using muffin::mermaid::flowchart::parseFlowLabel;
+    const auto markdown = parseFlowLabel(QStringLiteral("**Bold** and `code`<br/>next"),
+                                         QStringLiteral("markdown"));
+    require(markdown.text == QLatin1String("Bold and code\nnext"),
+            QStringLiteral("markdown markers and br must be consumed by the label model"));
+    require(markdown.formats.size() == 2 && markdown.formats.first().format.fontWeight() == QFont::Bold,
+            QStringLiteral("markdown bold/code formatting must be represented structurally"));
+    const auto html = parseFlowLabel(QStringLiteral("<b>Bold</b><br><i>italic</i>"),
+                                     QStringLiteral("string"));
+    require(html.text == QLatin1String("Bold\nitalic") && html.formats.size() == 2,
+            QStringLiteral("safe inline HTML must use the same native label model"));
   }
 
   // --- regression: the example.md diagram (nested compound + cluster-crossing

@@ -21,6 +21,7 @@
 #include <QJsonObject>
 
 #include <cstdlib>
+#include <cmath>
 
 using namespace muffin::mermaid;
 
@@ -61,17 +62,26 @@ int main(int argc, char** argv) {
   const QString failDir = QDir::tempPath() + QStringLiteral("/muffin-golden-pixel-fail");
 
   int failures = 0;
+  int highDpiCases = 0;
+  bool sawCjk = false;
+  bool sawBidi = false;
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
   for (const QJsonValue& value : cases) {
     const QJsonObject fixture = value.toObject();
     const QString id = fixture.value(QStringLiteral("id")).toString();
+    const qreal dpr = fixture.value(QStringLiteral("dpr")).toDouble(1.0);
+    if (dpr > 1.0) ++highDpiCases;
+    sawCjk = sawCjk || id.contains(QStringLiteral("cjk"));
+    sawBidi = sawBidi || id.contains(QStringLiteral("bidi"));
     const QString source = fixture.value(QStringLiteral("source")).toString();
     const flowchart::Flowchart chart = flowchart::Flowchart::parse(source);
     const QMap<QString, QSizeF> sizes = flowchart::measureFlowchartNodes(chart.data());
 
     flowchart::FlowLayoutOptions options;
     for (const flowchart::FlowEdge& e : chart.data().edges)
-      if (!e.text.isEmpty()) options.measuredEdgeLabels.insert(e.id, flowchart::measureLabel(e.text));
+      if (!e.text.isEmpty())
+        options.measuredEdgeLabels.insert(e.id,
+                                          flowchart::measureFlowchartEdgeLabel(e));
     const flowchart::FlowLayoutResult layout = flowchart::layoutFlowchartNodes(chart.data(), sizes, options);
     const flowtheme::FlowThemeVariables theme = flowtheme::resolveFlowTheme(themeId(fixture.value(QStringLiteral("theme")).toString()));
     const flowscene::FlowScene scene = flowscene::buildFlowScene(chart.data(), layout, theme);
@@ -79,10 +89,15 @@ int main(int argc, char** argv) {
     QImage golden;
     require(golden.load(dir.filePath(fixture.value(QStringLiteral("file")).toString())),
             QStringLiteral("Case %1: could not load golden PNG").arg(id));
+    const QJsonObject content = fixture.value(QStringLiteral("content")).toObject();
+    require(std::abs(golden.width() - std::ceil(content.value(QStringLiteral("width")).toDouble() * dpr)) <= 1.0 &&
+                std::abs(golden.height() - std::ceil(content.value(QStringLiteral("height")).toDouble() * dpr)) <= 1.0,
+            QStringLiteral("Case %1: golden physical size is not content size x DPR").arg(id));
 
     const flowscene::CompareReport report = flowscene::compareLevel3(
         scene, golden, QStringLiteral("Arial"), flowscene::CompareThresholds{}, failDir + QStringLiteral("/") + id,
-        fixture.value(QStringLiteral("enforceInterior")).toBool(true));
+        fixture.value(QStringLiteral("enforceInterior")).toBool(true),
+        dpr);
     if (!report.passed) {
       ++failures;
       qCritical().noquote() << QStringLiteral("FAIL %1: %2").arg(id, report.summary);
@@ -94,6 +109,8 @@ int main(int argc, char** argv) {
   }
 
   if (failures > 0) fail(QStringLiteral("%1 of %2 golden-pixel cases FAILED (diagnostics in %3)").arg(failures).arg(cases.size()).arg(failDir));
+  require(highDpiCases >= 4 && sawCjk && sawBidi,
+          QStringLiteral("Golden-pixel CJK/bidi/high-DPI coverage matrix regressed"));
   qDebug().noquote() << "MermaidGoldenPixelTest:" << cases.size() << "cases pass Level-3 (interior exact + boundary RGBA + text IoU + empty)";
   return 0;
 }

@@ -426,12 +426,38 @@ else()
 endif()
 
 set(MUFFIN_CORE_SOURCES
+  src/katex_fonts.qrc
+  src/math/MathBuilder.cpp
+  src/math/MathBuilderArray.cpp
+  src/math/MathBuilderSpacing.cpp
+  src/math/MathDelimiter.cpp
+  src/math/MathFontMetrics.cpp
+  src/math/MathFontRegistry.cpp
+  src/math/MathDimension.cpp
+  src/math/MathFunctionRegistry.cpp
+  src/math/MathLexer.cpp
+  src/math/MathLayoutTree.cpp
+  src/math/MathMacroExpander.cpp
+  src/math/MathOptions.cpp
+  src/math/MathParseError.cpp
+  src/math/MathParser.cpp
+  src/math/MathParserEnvironment.cpp
+  src/math/MathRenderer.cpp
+  src/math/MathRenderNode.cpp
+  src/math/MathSettings.cpp
+  src/math/MathStyle.cpp
+  src/math/MathSvgGeometry.cpp
+  src/math/MathSymbols.cpp
   src/mermaid/MermaidDiagramDetector.cpp
   src/mermaid/MermaidDiagramDetector.h
   src/mermaid/MermaidPreprocessor.cpp
   src/mermaid/MermaidPreprocessor.h
   src/mermaid/flowchart/Flowchart.cpp
   src/mermaid/flowchart/Flowchart.h
+  src/mermaid/flowchart/FlowLabel.cpp
+  src/mermaid/flowchart/FlowLabel.h
+  src/mermaid/flowchart/FlowchartTokenizer.cpp
+  src/mermaid/flowchart/FlowchartTokenizer.h
   src/mermaid/flowchart/FlowchartLayout.cpp
   src/mermaid/flowchart/FlowchartLayout.h
   src/mermaid/flowchart/FlowchartShapes.cpp
@@ -663,7 +689,6 @@ add_executable(Muffin
 )
 
 set(MUFFIN_UI_SOURCES
-  src/katex_fonts.qrc
   third_party/katex/src/fontMetricsData.js
   third_party/katex/src/svgGeometry.ts
   third_party/katex/src/symbols.ts
@@ -803,45 +828,25 @@ set(MUFFIN_UI_SOURCES
   src/editor/SelectionController.h
   src/editor/TextBlockCommandBuilder.cpp
   src/editor/TextBlockCommandBuilder.h
-  src/math/MathBuilder.cpp
   src/math/MathBuilder.h
-  src/math/MathBuilderArray.cpp
-  src/math/MathBuilderSpacing.cpp
-  src/math/MathDelimiter.cpp
   src/math/MathDelimiter.h
-  src/math/MathFontMetrics.cpp
   src/math/MathFontMetrics.h
-  src/math/MathFontRegistry.cpp
   src/math/MathFontRegistry.h
-  src/math/MathDimension.cpp
   src/math/MathDimension.h
-  src/math/MathFunctionRegistry.cpp
   src/math/MathFunctionRegistry.h
-  src/math/MathLexer.cpp
   src/math/MathLexer.h
-  src/math/MathLayoutTree.cpp
   src/math/MathLayoutTree.h
-  src/math/MathMacroExpander.cpp
   src/math/MathMacroExpander.h
-  src/math/MathOptions.cpp
   src/math/MathOptions.h
   src/math/MathParseNode.h
-  src/math/MathParseError.cpp
   src/math/MathParseError.h
-  src/math/MathParser.cpp
   src/math/MathParser.h
-  src/math/MathParserEnvironment.cpp
-  src/math/MathRenderer.cpp
+  src/math/MathRendererTheme.cpp
   src/math/MathRenderer.h
-  src/math/MathRenderNode.cpp
   src/math/MathRenderNode.h
-  src/math/MathSettings.cpp
   src/math/MathSettings.h
-  src/math/MathStyle.cpp
   src/math/MathStyle.h
-  src/math/MathSvgGeometry.cpp
   src/math/MathSvgGeometry.h
-  src/math/MathSymbols.cpp
   src/math/MathSymbols.h
   src/render/BlockLayout.cpp
   src/render/BlockLayout.h

@@ -92,7 +92,8 @@ bool rectsIntersectAny(const QRectF& r, const QVector<QRectF>& rects) {
 
 // Alpha-mask IoU between native and golden ink over a label crop, maximized over
 // a ±1px shift to absorb Chrome-vs-Qt baseline placement differences.
-qreal labelIou(const QImage& native, const QImage& golden, const QRect& crop, int goldenOffX, int goldenOffY, int inkAlpha) {
+qreal labelIou(const QImage& native, const QImage& golden, const QRect& crop,
+               int goldenOffX, int goldenOffY, int inkAlpha, int searchRadius) {
   auto iouAt = [&](int dx, int dy) {
     qint64 inter = 0, uni = 0;
     for (int y = crop.top(); y <= crop.bottom(); ++y) {
@@ -108,16 +109,19 @@ qreal labelIou(const QImage& native, const QImage& golden, const QRect& crop, in
     return uni == 0 ? 1.0 : static_cast<qreal>(inter) / static_cast<qreal>(uni);
   };
   qreal best = 0.0;
-  for (int dy = -1; dy <= 1; ++dy)
-    for (int dx = -1; dx <= 1; ++dx) best = std::max(best, iouAt(dx, dy));
+  for (int dy = -searchRadius; dy <= searchRadius; ++dy)
+    for (int dx = -searchRadius; dx <= searchRadius; ++dx)
+      best = std::max(best, iouAt(dx, dy));
   return best;
 }
 
 }  // namespace
 
 CompareReport compareLevel3(const FlowScene& scene, const QImage& goldenIn, const QString& fontFamily,
-                            const CompareThresholds& thresholds, const QString& failureDir, bool enforceInterior) {
+                            const CompareThresholds& thresholds, const QString& failureDir,
+                            bool enforceInterior, qreal dpr) {
   CompareReport report;
+  dpr = std::max<qreal>(1.0, dpr);
   const bool debug = !qgetenv("MUFFIN_PIXEL_DEBUG").isEmpty();
   QHash<QString, qint64>* debugHistogram = debug ? new QHash<QString, qint64> : nullptr;
   QImage golden = goldenIn.convertToFormat(QImage::Format_ARGB32);
@@ -128,8 +132,8 @@ CompareReport compareLevel3(const FlowScene& scene, const QImage& goldenIn, cons
   const qreal margin = 80.0;
   const qreal originX = scene.bounds.left() - margin;
   const qreal originY = scene.bounds.top() - margin;
-  const int cw = static_cast<int>(std::ceil(scene.bounds.width() + margin * 2.0));
-  const int ch = static_cast<int>(std::ceil(scene.bounds.height() + margin * 2.0));
+  const int cw = static_cast<int>(std::ceil((scene.bounds.width() + margin * 2.0) * dpr));
+  const int ch = static_cast<int>(std::ceil((scene.bounds.height() + margin * 2.0) * dpr));
 
   QImage color(cw, ch, QImage::Format_ARGB32);
   color.fill(Qt::transparent);
@@ -139,11 +143,13 @@ CompareReport compareLevel3(const FlowScene& scene, const QImage& goldenIn, cons
     QPainter p(&color);
     p.setRenderHint(QPainter::Antialiasing);
     p.setRenderHint(QPainter::TextAntialiasing);
+    p.scale(dpr, dpr);
     p.translate(-originX, -originY);
     paintFlowScene(scene, p, fontFamily, PaintMode::Color);
   }
   {
     QPainter p(&mask);
+    p.scale(dpr, dpr);
     p.translate(-originX, -originY);
     paintFlowScene(scene, p, fontFamily, PaintMode::CategoryMask);
   }
@@ -172,8 +178,9 @@ CompareReport compareLevel3(const FlowScene& scene, const QImage& goldenIn, cons
   int offX = baseOffX, offY = baseOffY;
   {
     qint64 bestOverlap = -1;
-    for (int dy = -3; dy <= 3; ++dy) {
-      for (int dx = -3; dx <= 3; ++dx) {
+    const int alignmentRadius = static_cast<int>(std::ceil(3.0 * dpr));
+    for (int dy = -alignmentRadius; dy <= alignmentRadius; ++dy) {
+      for (int dx = -alignmentRadius; dx <= alignmentRadius; ++dx) {
         const int ox = baseOffX + dx, oy = baseOffY + dy;
         qint64 overlap = 0;
         for (int y = 0; y < nh; ++y) {
@@ -205,7 +212,9 @@ CompareReport compareLevel3(const FlowScene& scene, const QImage& goldenIn, cons
   QVector<QRectF> labelRects;
   labelRects.reserve(labelRectsScene.size());
   for (const QRectF& r : labelRectsScene) {
-    QRectF s = r.translated(-originX - nativeBB.left(), -originY - nativeBB.top());
+    QRectF s((r.x() - originX) * dpr - nativeBB.left(),
+             (r.y() - originY) * dpr - nativeBB.top(),
+             r.width() * dpr, r.height() * dpr);
     labelRects.append(s);
   }
 
@@ -278,7 +287,9 @@ CompareReport compareLevel3(const FlowScene& scene, const QImage& goldenIn, cons
     const QRect crop = lr.toRect().intersected(QRect(0, 0, nw, nh));
     if (crop.isEmpty()) continue;
     ++report.labels;
-    const qreal iou = labelIou(nativeCrop, goldenCrop, crop, offX, offY, thresholds.textInkAlpha);
+    const qreal iou = labelIou(nativeCrop, goldenCrop, crop, offX, offY,
+                               thresholds.textInkAlpha,
+                               static_cast<int>(std::ceil(dpr)));
     if (iou < report.worstLabelIou) {
       report.worstLabelIou = iou;
       report.worstLabel = QStringLiteral("%1,%2 %3x%4").arg(crop.x()).arg(crop.y()).arg(crop.width()).arg(crop.height());

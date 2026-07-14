@@ -74,6 +74,7 @@ struct CompareReport {
 // `failureDir` (optional): where to dump diagnostic PNGs on failure.
 CompareReport compareLevel3(const FlowScene& scene, const QImage& golden, const QString& fontFamily,
                             const CompareThresholds& thresholds = {},
-                            const QString& failureDir = QString(), bool enforceInterior = true);
+                            const QString& failureDir = QString(), bool enforceInterior = true,
+                            qreal dpr = 1.0);
 
 }  // namespace muffin::mermaid::flowscene
