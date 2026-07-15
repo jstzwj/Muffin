@@ -28,6 +28,14 @@ Stats stats(const QImage& image) {
   }
   return result;
 }
+QRect alphaBounds(const QImage& image) {
+  QRect result;
+  for (int y=0;y<image.height();++y) for (int x=0;x<image.width();++x) {
+    if (image.pixelColor(x,y).alpha()<32) continue;
+    result = result.isNull() ? QRect(x,y,1,1) : result.united(QRect(x,y,1,1));
+  }
+  return result;
+}
 qreal alphaIou(const QImage& a, const QImage& b) {
   const QImage left=a.scaled(400,400,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
   const QImage right=b.scaled(400,400,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
@@ -63,10 +71,13 @@ int main(int argc,char** argv) {
     const qreal nativeRatio=qreal(native.width())/native.height(), goldenRatio=qreal(golden.width())/golden.height();
     const qreal ratioDrift=qAbs(nativeRatio-goldenRatio)/goldenRatio;
     const qreal iou=alphaIou(native,golden);
-    qDebug().noquote() << id << "ratio-drift" << ratioDrift << "alpha-IoU" << iou;
-    require(ratioDrift<=0.20,
+    qDebug().noquote() << id << "native" << native.size() << alphaBounds(native)
+                       << "golden" << golden.size() << alphaBounds(golden)
+                       << "scene" << entry.sequenceScene->bounds
+                       << "ratio-drift" << ratioDrift << "alpha-IoU" << iou;
+    require(ratioDrift<=0.05,
             QStringLiteral("%1 canvas ratio mismatch: %2 vs %3").arg(id).arg(nativeRatio).arg(goldenRatio));
-    require(iou>=0.60,QStringLiteral("%1 alpha IoU too low: %2").arg(id).arg(iou));
+    require(iou>=0.80,QStringLiteral("%1 alpha IoU too low: %2").arg(id).arg(iou));
     const Stats ns=stats(native), gs=stats(golden);
     require(ns.opaque>100&&gs.opaque>100,QStringLiteral("%1 rendered blank").arg(id));
     const auto average=[](qint64 sum,int count){return count?qreal(sum)/count:0.0;};

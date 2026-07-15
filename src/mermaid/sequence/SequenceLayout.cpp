@@ -388,7 +388,6 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     participant.topY = 0.0;
     result.participants.append(participant);
     placedActor.insert(actor.id, static_cast<int>(index));
-    bounds.insert(x, 0.0, x + actorWidths[index], options.height);
     previousWidth += actorWidths[index] + previousMargin;
     previousMargin = actorMargins[index];
   }
