@@ -1,0 +1,3166 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0"
+  },
+  "fixtureDigest": "b84a517e40ec88a0b3beaf150bd4cdedc7c0f96d63bc63a306b1be5600e53a01",
+  "cases": [
+    {
+      "id": "participants-and-arrows",
+      "source": "sequenceDiagram\nparticipant A as Alice\nactor B as Bob\nA->>B:solid open\nB-->>A:dotted open\nA->B:solid\nB-->A:dotted\nA-xB:cross\nB--)A:point\nA<<->>B:bidirectional",
+      "reductions": [
+        3,
+        4,
+        5,
+        7,
+        8,
+        15,
+        18,
+        49,
+        51,
+        75,
+        78,
+        79,
+        80,
+        81,
+        98,
+        99,
+        101,
+        104,
+        105
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sequenceNumbers": false,
+        "actors": [
+          {
+            "id": "A",
+            "name": "A",
+            "description": "Alice",
+            "wrap": false,
+            "prevActor": null,
+            "nextActor": "B",
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          },
+          {
+            "id": "B",
+            "name": "B",
+            "description": "Bob",
+            "wrap": false,
+            "prevActor": "A",
+            "nextActor": null,
+            "type": "actor",
+            "box": null,
+            "links": {},
+            "properties": {}
+          }
+        ],
+        "messages": [
+          {
+            "id": "0",
+            "from": "A",
+            "to": "B",
+            "message": "solid open",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "1",
+            "from": "B",
+            "to": "A",
+            "message": "dotted open",
+            "wrap": false,
+            "type": 1,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "2",
+            "from": "A",
+            "to": "B",
+            "message": "solid",
+            "wrap": false,
+            "type": 5,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "3",
+            "from": "B",
+            "to": "A",
+            "message": "dotted",
+            "wrap": false,
+            "type": 6,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "4",
+            "from": "A",
+            "to": "B",
+            "message": "cross",
+            "wrap": false,
+            "type": 3,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "5",
+            "from": "B",
+            "to": "A",
+            "message": "point",
+            "wrap": false,
+            "type": 25,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "6",
+            "from": "A",
+            "to": "B",
+            "message": "bidirectional",
+            "wrap": false,
+            "type": 33,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          }
+        ],
+        "boxes": [],
+        "createdActors": {},
+        "destroyedActors": {}
+      }
+    },
+    {
+      "id": "notes-and-activation",
+      "source": "sequenceDiagram\nA->>+B:call\nactivate A\nNote left of A: left note\nNote right of B: right note\nNote over A,B: shared note\ndeactivate A\nB-->>-A:return",
+      "reductions": [
+        3,
+        4,
+        5,
+        7,
+        8,
+        18,
+        23,
+        24,
+        25,
+        58,
+        59,
+        66,
+        68,
+        69,
+        70,
+        71,
+        78,
+        81,
+        99,
+        105
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sequenceNumbers": false,
+        "actors": [
+          {
+            "id": "A",
+            "name": "A",
+            "description": "A",
+            "wrap": false,
+            "prevActor": null,
+            "nextActor": "B",
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          },
+          {
+            "id": "B",
+            "name": "B",
+            "description": "B",
+            "wrap": false,
+            "prevActor": "A",
+            "nextActor": null,
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          }
+        ],
+        "messages": [
+          {
+            "id": "0",
+            "from": "A",
+            "to": "B",
+            "message": "call",
+            "wrap": false,
+            "type": 0,
+            "activate": true,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "1",
+            "from": "B",
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 17,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "2",
+            "from": "A",
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 17,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "3",
+            "from": "A",
+            "to": "A",
+            "message": "left note",
+            "wrap": false,
+            "type": 2,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": 0
+          },
+          {
+            "id": "4",
+            "from": "B",
+            "to": "B",
+            "message": "right note",
+            "wrap": false,
+            "type": 2,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": 1
+          },
+          {
+            "id": "5",
+            "from": "A",
+            "to": "B",
+            "message": "shared note",
+            "wrap": false,
+            "type": 2,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": 2
+          },
+          {
+            "id": "6",
+            "from": "A",
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 18,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "7",
+            "from": "B",
+            "to": "A",
+            "message": "return",
+            "wrap": false,
+            "type": 1,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "8",
+            "from": "B",
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 18,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          }
+        ],
+        "boxes": [],
+        "createdActors": {},
+        "destroyedActors": {}
+      }
+    },
+    {
+      "id": "fragments",
+      "source": "sequenceDiagram\nloop Every minute\nA->>B:tick\nend\nopt Available\nB-->>A:ok\nend\nalt Success\nA->>B:yes\nelse Failure\nA-->>B:no\nend\npar First\nA->>B:one\nand Second\nB->>A:two\nend",
+      "reductions": [
+        3,
+        4,
+        5,
+        7,
+        8,
+        18,
+        35,
+        37,
+        38,
+        39,
+        45,
+        46,
+        47,
+        48,
+        75,
+        78,
+        81,
+        99,
+        105
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sequenceNumbers": false,
+        "actors": [
+          {
+            "id": "A",
+            "name": "A",
+            "description": "A",
+            "wrap": false,
+            "prevActor": null,
+            "nextActor": "B",
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          },
+          {
+            "id": "B",
+            "name": "B",
+            "description": "B",
+            "wrap": false,
+            "prevActor": "A",
+            "nextActor": null,
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          }
+        ],
+        "messages": [
+          {
+            "id": "0",
+            "from": null,
+            "to": null,
+            "message": "Every minute",
+            "wrap": false,
+            "type": 10,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "1",
+            "from": "A",
+            "to": "B",
+            "message": "tick",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "2",
+            "from": null,
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 11,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "3",
+            "from": null,
+            "to": null,
+            "message": "Available",
+            "wrap": false,
+            "type": 15,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "4",
+            "from": "B",
+            "to": "A",
+            "message": "ok",
+            "wrap": false,
+            "type": 1,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "5",
+            "from": null,
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 16,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "6",
+            "from": null,
+            "to": null,
+            "message": "Success",
+            "wrap": false,
+            "type": 12,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "7",
+            "from": "A",
+            "to": "B",
+            "message": "yes",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "8",
+            "from": null,
+            "to": null,
+            "message": "Failure",
+            "wrap": false,
+            "type": 13,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "9",
+            "from": "A",
+            "to": "B",
+            "message": "no",
+            "wrap": false,
+            "type": 1,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "10",
+            "from": null,
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 14,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "11",
+            "from": null,
+            "to": null,
+            "message": "First",
+            "wrap": false,
+            "type": 19,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "12",
+            "from": "A",
+            "to": "B",
+            "message": "one",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "13",
+            "from": null,
+            "to": null,
+            "message": "Second",
+            "wrap": false,
+            "type": 20,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "14",
+            "from": "B",
+            "to": "A",
+            "message": "two",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "15",
+            "from": null,
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 21,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          }
+        ],
+        "boxes": [],
+        "createdActors": {},
+        "destroyedActors": {}
+      }
+    },
+    {
+      "id": "critical-break-rect",
+      "source": "sequenceDiagram\ncritical Establish connection\nA->>B:connect\noption Timeout\nA-->>B:retry\nend\nbreak Abort when offline\nB-->>A:offline\nend\nrect rgb(240, 240, 255)\nA->>B:inside\nend",
+      "reductions": [
+        3,
+        4,
+        5,
+        7,
+        8,
+        18,
+        36,
+        41,
+        42,
+        43,
+        44,
+        75,
+        78,
+        81,
+        99,
+        105
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sequenceNumbers": false,
+        "actors": [
+          {
+            "id": "A",
+            "name": "A",
+            "description": "A",
+            "wrap": false,
+            "prevActor": null,
+            "nextActor": "B",
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          },
+          {
+            "id": "B",
+            "name": "B",
+            "description": "B",
+            "wrap": false,
+            "prevActor": "A",
+            "nextActor": null,
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          }
+        ],
+        "messages": [
+          {
+            "id": "0",
+            "from": null,
+            "to": null,
+            "message": "Establish connection",
+            "wrap": false,
+            "type": 27,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "1",
+            "from": "A",
+            "to": "B",
+            "message": "connect",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "2",
+            "from": null,
+            "to": null,
+            "message": "Timeout",
+            "wrap": false,
+            "type": 28,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "3",
+            "from": "A",
+            "to": "B",
+            "message": "retry",
+            "wrap": false,
+            "type": 1,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "4",
+            "from": null,
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 29,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "5",
+            "from": null,
+            "to": null,
+            "message": "Abort when offline",
+            "wrap": false,
+            "type": 30,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "6",
+            "from": "B",
+            "to": "A",
+            "message": "offline",
+            "wrap": false,
+            "type": 1,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "7",
+            "from": null,
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 31,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "8",
+            "from": null,
+            "to": null,
+            "message": "rgb(240, 240, 255)",
+            "wrap": false,
+            "type": 22,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "9",
+            "from": "A",
+            "to": "B",
+            "message": "inside",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "10",
+            "from": null,
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 23,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          }
+        ],
+        "boxes": [],
+        "createdActors": {},
+        "destroyedActors": {}
+      }
+    },
+    {
+      "id": "create-destroy",
+      "source": "sequenceDiagram\nparticipant A as Factory\ncreate participant B as Worker\nA->>B:create\ndestroy B\nB-->>A:done",
+      "reductions": [
+        3,
+        4,
+        5,
+        7,
+        8,
+        15,
+        16,
+        18,
+        49,
+        53,
+        75,
+        78,
+        81,
+        99,
+        105
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sequenceNumbers": false,
+        "actors": [
+          {
+            "id": "A",
+            "name": "A",
+            "description": "Factory",
+            "wrap": false,
+            "prevActor": null,
+            "nextActor": "B",
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          },
+          {
+            "id": "B",
+            "name": "B",
+            "description": "Worker",
+            "wrap": false,
+            "prevActor": "A",
+            "nextActor": null,
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          }
+        ],
+        "messages": [
+          {
+            "id": "0",
+            "from": "A",
+            "to": "B",
+            "message": "create",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "1",
+            "from": "B",
+            "to": "A",
+            "message": "done",
+            "wrap": false,
+            "type": 1,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          }
+        ],
+        "boxes": [],
+        "createdActors": {
+          "B": 0
+        },
+        "destroyedActors": {
+          "B": 1
+        }
+      }
+    },
+    {
+      "id": "box-and-autonumber",
+      "source": "sequenceDiagram\nautonumber 10 5\nbox rgb(230, 240, 255) Services\nparticipant A\nparticipant B\nend\nA->>B:numbered\nautonumber off",
+      "reductions": [
+        3,
+        4,
+        5,
+        7,
+        8,
+        10,
+        11,
+        13,
+        14,
+        17,
+        18,
+        19,
+        21,
+        50,
+        75,
+        78,
+        81,
+        105
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sequenceNumbers": false,
+        "actors": [
+          {
+            "id": "A",
+            "name": "A",
+            "description": "A",
+            "wrap": false,
+            "prevActor": null,
+            "nextActor": "B",
+            "type": "participant",
+            "box": "Services",
+            "links": {},
+            "properties": {}
+          },
+          {
+            "id": "B",
+            "name": "B",
+            "description": "B",
+            "wrap": false,
+            "prevActor": "A",
+            "nextActor": null,
+            "type": "participant",
+            "box": "Services",
+            "links": {},
+            "properties": {}
+          }
+        ],
+        "messages": [
+          {
+            "id": "0",
+            "from": null,
+            "to": null,
+            "message": {
+              "start": 10,
+              "step": 5,
+              "visible": true
+            },
+            "wrap": false,
+            "type": 26,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "1",
+            "from": "A",
+            "to": "B",
+            "message": "numbered",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "2",
+            "from": null,
+            "to": null,
+            "message": {
+              "visible": false
+            },
+            "wrap": false,
+            "type": 26,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          }
+        ],
+        "boxes": [
+          {
+            "name": "Services",
+            "fill": "rgb(230, 240, 255)",
+            "wrap": false,
+            "actorKeys": [
+              "A",
+              "B"
+            ]
+          }
+        ],
+        "createdActors": {},
+        "destroyedActors": {}
+      }
+    },
+    {
+      "id": "wrap-title-accessibility",
+      "source": "sequenceDiagram\ntitle: Sequence title\naccTitle: Accessible title\naccDescr: Accessible description\nparticipant A as wrap:Wrapped actor\nA->>A:nowrap:Do not wrap",
+      "reductions": [
+        3,
+        4,
+        5,
+        7,
+        8,
+        15,
+        18,
+        31,
+        32,
+        33,
+        49,
+        75,
+        78,
+        81,
+        105
+      ],
+      "expected": {
+        "title": "Sequence title",
+        "accTitle": "Accessible title",
+        "accDescription": "Accessible description",
+        "sequenceNumbers": false,
+        "actors": [
+          {
+            "id": "A",
+            "name": "A",
+            "description": "Wrapped actor",
+            "wrap": true,
+            "prevActor": null,
+            "nextActor": null,
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          }
+        ],
+        "messages": [
+          {
+            "id": "0",
+            "from": "A",
+            "to": "A",
+            "message": "Do not wrap",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          }
+        ],
+        "boxes": [],
+        "createdActors": {},
+        "destroyedActors": {}
+      }
+    },
+    {
+      "id": "arrow-production-matrix",
+      "source": "sequenceDiagram\nA<<-->>B:bidirectional dotted\nA--xB:dotted cross\nA-)B:solid point\nA--|\\B:solid top dotted\nA--|/B:solid bottom dotted\nA--\\\\B:stick top dotted\nA--//B:stick bottom dotted\nA/|--B:solid reverse top dotted\nA\\|--B:solid reverse bottom dotted\nA//--B:stick reverse top dotted\nA\\\\--B:stick reverse bottom dotted\nA-|\\B:solid top\nA-|/B:solid bottom\nA-\\\\B:stick top\nA-//B:stick bottom\nA/|-B:solid reverse top\nA\\|-B:solid reverse bottom\nA//-B:stick reverse top\nA\\\\-B:stick reverse bottom",
+      "reductions": [
+        3,
+        4,
+        5,
+        7,
+        8,
+        18,
+        75,
+        78,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        100,
+        102,
+        103,
+        105
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sequenceNumbers": false,
+        "actors": [
+          {
+            "id": "A",
+            "name": "A",
+            "description": "A",
+            "wrap": false,
+            "prevActor": null,
+            "nextActor": "B",
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          },
+          {
+            "id": "B",
+            "name": "B",
+            "description": "B",
+            "wrap": false,
+            "prevActor": "A",
+            "nextActor": null,
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          }
+        ],
+        "messages": [
+          {
+            "id": "0",
+            "from": "A",
+            "to": "B",
+            "message": "bidirectional dotted",
+            "wrap": false,
+            "type": 34,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "1",
+            "from": "A",
+            "to": "B",
+            "message": "dotted cross",
+            "wrap": false,
+            "type": 4,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "2",
+            "from": "A",
+            "to": "B",
+            "message": "solid point",
+            "wrap": false,
+            "type": 24,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "3",
+            "from": "A",
+            "to": "B",
+            "message": "solid top dotted",
+            "wrap": false,
+            "type": 51,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "4",
+            "from": "A",
+            "to": "B",
+            "message": "solid bottom dotted",
+            "wrap": false,
+            "type": 52,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "5",
+            "from": "A",
+            "to": "B",
+            "message": "stick top dotted",
+            "wrap": false,
+            "type": 53,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "6",
+            "from": "A",
+            "to": "B",
+            "message": "stick bottom dotted",
+            "wrap": false,
+            "type": 54,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "7",
+            "from": "A",
+            "to": "B",
+            "message": "solid reverse top dotted",
+            "wrap": false,
+            "type": 55,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "8",
+            "from": "A",
+            "to": "B",
+            "message": "solid reverse bottom dotted",
+            "wrap": false,
+            "type": 56,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "9",
+            "from": "A",
+            "to": "B",
+            "message": "stick reverse top dotted",
+            "wrap": false,
+            "type": 57,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "10",
+            "from": "A",
+            "to": "B",
+            "message": "stick reverse bottom dotted",
+            "wrap": false,
+            "type": 58,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "11",
+            "from": "A",
+            "to": "B",
+            "message": "solid top",
+            "wrap": false,
+            "type": 41,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "12",
+            "from": "A",
+            "to": "B",
+            "message": "solid bottom",
+            "wrap": false,
+            "type": 42,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "13",
+            "from": "A",
+            "to": "B",
+            "message": "stick top",
+            "wrap": false,
+            "type": 43,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "14",
+            "from": "A",
+            "to": "B",
+            "message": "stick bottom",
+            "wrap": false,
+            "type": 44,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "15",
+            "from": "A",
+            "to": "B",
+            "message": "solid reverse top",
+            "wrap": false,
+            "type": 45,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "16",
+            "from": "A",
+            "to": "B",
+            "message": "solid reverse bottom",
+            "wrap": false,
+            "type": 46,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "17",
+            "from": "A",
+            "to": "B",
+            "message": "stick reverse top",
+            "wrap": false,
+            "type": 47,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "18",
+            "from": "A",
+            "to": "B",
+            "message": "stick reverse bottom",
+            "wrap": false,
+            "type": 48,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          }
+        ],
+        "boxes": [],
+        "createdActors": {},
+        "destroyedActors": {}
+      }
+    },
+    {
+      "id": "participant-config-and-statements",
+      "source": "sequenceDiagram\nparticipant A@{ \"type\": \"database\", \"alias\": \"Primary DB\" }\nactor B\nlinks A: {\"Docs\":\"https://example.com/docs\"}\nlink A: Status @ https://example.com/status\nproperties A: {\"role\":\"storage\",\"tier\":1}\ndetails A: missing-details-element\nA->>B:configured",
+      "reductions": [
+        3,
+        4,
+        5,
+        7,
+        8,
+        15,
+        18,
+        26,
+        27,
+        28,
+        29,
+        52,
+        55,
+        60,
+        61,
+        62,
+        63,
+        75,
+        76,
+        77,
+        78,
+        81,
+        105
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sequenceNumbers": false,
+        "actors": [
+          {
+            "id": "A",
+            "name": "A",
+            "description": "Primary DB",
+            "wrap": false,
+            "prevActor": null,
+            "nextActor": "B",
+            "type": "database",
+            "box": null,
+            "links": {
+              "Docs": "https://example.com/docs",
+              "Status": "https://example.com/status"
+            },
+            "properties": {
+              "role": "storage",
+              "tier": 1
+            }
+          },
+          {
+            "id": "B",
+            "name": "B",
+            "description": "B",
+            "wrap": false,
+            "prevActor": "A",
+            "nextActor": null,
+            "type": "actor",
+            "box": null,
+            "links": {},
+            "properties": {}
+          }
+        ],
+        "messages": [
+          {
+            "id": "0",
+            "from": "A",
+            "to": "B",
+            "message": "configured",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          }
+        ],
+        "boxes": [],
+        "createdActors": {},
+        "destroyedActors": {}
+      }
+    },
+    {
+      "id": "statement-variants",
+      "source": "sequenceDiagram;\ntitle Legacy sequence title;\nautonumber;\nA->>B:first;\nautonumber 7\nA-->>B:second;\npar_over Across participants;\nA->>B:parallel;\nend;\nbox;\nactor C;\nend;",
+      "reductions": [
+        3,
+        4,
+        5,
+        7,
+        8,
+        10,
+        11,
+        13,
+        14,
+        17,
+        18,
+        20,
+        22,
+        30,
+        40,
+        45,
+        52,
+        75,
+        78,
+        81,
+        99,
+        105
+      ],
+      "expected": {
+        "title": "Legacy sequence title",
+        "accTitle": "",
+        "accDescription": "",
+        "sequenceNumbers": false,
+        "actors": [
+          {
+            "id": "A",
+            "name": "A",
+            "description": "A",
+            "wrap": false,
+            "prevActor": null,
+            "nextActor": "B",
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          },
+          {
+            "id": "B",
+            "name": "B",
+            "description": "B",
+            "wrap": false,
+            "prevActor": "A",
+            "nextActor": "C",
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          },
+          {
+            "id": "C",
+            "name": "C",
+            "description": "C",
+            "wrap": false,
+            "prevActor": "B",
+            "nextActor": null,
+            "type": "actor",
+            "box": null,
+            "links": {},
+            "properties": {}
+          }
+        ],
+        "messages": [
+          {
+            "id": "0",
+            "from": null,
+            "to": null,
+            "message": {
+              "visible": true
+            },
+            "wrap": false,
+            "type": 26,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "1",
+            "from": "A",
+            "to": "B",
+            "message": "first",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "2",
+            "from": null,
+            "to": null,
+            "message": {
+              "start": 7,
+              "step": 1,
+              "visible": true
+            },
+            "wrap": false,
+            "type": 26,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "3",
+            "from": "A",
+            "to": "B",
+            "message": "second",
+            "wrap": false,
+            "type": 1,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "4",
+            "from": null,
+            "to": null,
+            "message": "Across participants",
+            "wrap": false,
+            "type": 32,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "5",
+            "from": "A",
+            "to": "B",
+            "message": "parallel",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "6",
+            "from": null,
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 21,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          }
+        ],
+        "boxes": [
+          {
+            "name": null,
+            "fill": "transparent",
+            "wrap": false,
+            "actorKeys": [
+              "C"
+            ]
+          }
+        ],
+        "createdActors": {},
+        "destroyedActors": {}
+      }
+    },
+    {
+      "id": "configured-participant-variants",
+      "source": "sequenceDiagram\nparticipant C@{ \"type\": \"control\" } as Controller\nactor D@{ \"type\": \"boundary\" } as Boundary\nactor E@{ \"type\": \"entity\", \"alias\": \"Entity\" }\nC->>D:one\nD->>E:two",
+      "reductions": [
+        3,
+        4,
+        5,
+        7,
+        8,
+        15,
+        18,
+        54,
+        56,
+        57,
+        75,
+        76,
+        77,
+        78,
+        81,
+        105
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sequenceNumbers": false,
+        "actors": [
+          {
+            "id": "C",
+            "name": "C",
+            "description": "Controller",
+            "wrap": false,
+            "prevActor": null,
+            "nextActor": "D",
+            "type": "control",
+            "box": null,
+            "links": {},
+            "properties": {}
+          },
+          {
+            "id": "D",
+            "name": "D",
+            "description": "Boundary",
+            "wrap": false,
+            "prevActor": "C",
+            "nextActor": "E",
+            "type": "boundary",
+            "box": null,
+            "links": {},
+            "properties": {}
+          },
+          {
+            "id": "E",
+            "name": "E",
+            "description": "Entity",
+            "wrap": false,
+            "prevActor": "D",
+            "nextActor": null,
+            "type": "entity",
+            "box": null,
+            "links": {},
+            "properties": {}
+          }
+        ],
+        "messages": [
+          {
+            "id": "0",
+            "from": "C",
+            "to": "D",
+            "message": "one",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "1",
+            "from": "D",
+            "to": "E",
+            "message": "two",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          }
+        ],
+        "boxes": [],
+        "createdActors": {},
+        "destroyedActors": {}
+      }
+    },
+    {
+      "id": "central-and-single-over",
+      "source": "sequenceDiagram\nA->>()B:forward central\nA()->>B:reverse central\nA()->>()B:dual central\nNote over A:single actor note",
+      "reductions": [
+        3,
+        4,
+        5,
+        7,
+        8,
+        18,
+        25,
+        59,
+        67,
+        72,
+        73,
+        74,
+        78,
+        81,
+        105
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sequenceNumbers": false,
+        "actors": [
+          {
+            "id": "A",
+            "name": "A",
+            "description": "A",
+            "wrap": false,
+            "prevActor": null,
+            "nextActor": "B",
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          },
+          {
+            "id": "B",
+            "name": "B",
+            "description": "B",
+            "wrap": false,
+            "prevActor": "A",
+            "nextActor": null,
+            "type": "participant",
+            "box": null,
+            "links": {},
+            "properties": {}
+          }
+        ],
+        "messages": [
+          {
+            "id": "0",
+            "from": "A",
+            "to": "B",
+            "message": "forward central",
+            "wrap": false,
+            "type": 0,
+            "activate": true,
+            "centralConnection": 59,
+            "placement": null
+          },
+          {
+            "id": "1",
+            "from": "B",
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 59,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "2",
+            "from": "A",
+            "to": "B",
+            "message": "reverse central",
+            "wrap": false,
+            "type": 0,
+            "activate": false,
+            "centralConnection": 60,
+            "placement": null
+          },
+          {
+            "id": "3",
+            "from": "A",
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 60,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "4",
+            "from": "A",
+            "to": "B",
+            "message": "dual central",
+            "wrap": false,
+            "type": 0,
+            "activate": true,
+            "centralConnection": 61,
+            "placement": null
+          },
+          {
+            "id": "5",
+            "from": "B",
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 59,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "6",
+            "from": "A",
+            "to": null,
+            "message": "",
+            "wrap": false,
+            "type": 60,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": null
+          },
+          {
+            "id": "7",
+            "from": "A",
+            "to": "A",
+            "message": "single actor note",
+            "wrap": false,
+            "type": 2,
+            "activate": false,
+            "centralConnection": 0,
+            "placement": 2
+          }
+        ],
+        "boxes": [],
+        "createdActors": {},
+        "destroyedActors": {}
+      }
+    },
+    {
+      "id": "multiline-accessibility-and-spacing",
+      "source": "sequenceDiagram\naccDescr {\n  First accessible line\n  Second accessible line\n}\nbox Services\n\n  participant A\nend\nlinks   A: {\"Home\":\"https://example.com\"}",
+      "reductions": [
+        3,
+        4,
+        5,
+        7,
+        8,
+        10,
+        11,
+        13,
+        14,
+        17,
+        26,
+        34,
+        50,
+        60,
+        78,
+        105
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "First accessible line\nSecond accessible line",
+        "sequenceNumbers": false,
+        "actors": [
+          {
+            "id": "A",
+            "name": "A",
+            "description": "A",
+            "wrap": false,
+            "prevActor": null,
+            "nextActor": null,
+            "type": "participant",
+            "box": "Services",
+            "links": {
+              "Home": "https://example.com"
+            },
+            "properties": {}
+          }
+        ],
+        "messages": [],
+        "boxes": [
+          {
+            "name": "Services",
+            "fill": "transparent",
+            "wrap": false,
+            "actorKeys": [
+              "A"
+            ]
+          }
+        ],
+        "createdActors": {},
+        "destroyedActors": {}
+      }
+    }
+  ],
+  "invalidCases": [
+    {
+      "id": "missing-header",
+      "source": "A->>B:hello",
+      "rejected": true,
+      "error": {
+        "message": "No diagram type detected matching given configuration for text: A->>B:hello",
+        "token": null,
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "id": "unclosed-loop",
+      "source": "sequenceDiagram\nloop open\nA->>B:x",
+      "rejected": true,
+      "error": {
+        "message": "Parse error on line 4:\n...mloop openA->>B:x\n--------------------^\nExpecting 'SPACE', 'NEWLINE', 'INVALID', 'create', 'box', 'end', 'autonumber', 'activate', 'deactivate', 'title', 'legacy_title', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'loop', 'rect', 'opt', 'alt', 'par', 'par_over', 'critical', 'break', 'participant', 'participant_actor', 'destroy', 'note', 'links', 'link', 'properties', 'details', 'ACTOR', got '1'",
+        "token": 1,
+        "line": 4,
+        "column": 0
+      }
+    },
+    {
+      "id": "unexpected-end",
+      "source": "sequenceDiagram\nend",
+      "rejected": true,
+      "error": {
+        "message": "Parse error on line 2:\nsequenceDiagramend\n---------------^\nExpecting 'SPACE', 'NEWLINE', 'INVALID', 'create', 'box', 'autonumber', 'activate', 'deactivate', 'title', 'legacy_title', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'loop', 'rect', 'opt', 'alt', 'par', 'par_over', 'critical', 'break', 'participant', 'participant_actor', 'destroy', 'note', 'links', 'link', 'properties', 'details', 'ACTOR', got 'end'",
+        "token": "end",
+        "line": 1,
+        "column": 15
+      }
+    },
+    {
+      "id": "inactive-deactivate",
+      "source": "sequenceDiagram\ndeactivate A",
+      "rejected": true,
+      "error": {
+        "message": "Trying to inactivate an inactive participant (A)",
+        "token": "->>-",
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "create-without-message",
+      "source": "sequenceDiagram\ncreate participant B\nA->>C:no",
+      "rejected": true,
+      "error": {
+        "message": "The created participant undefined does not have an associated creating message after its declaration. Please check the sequence diagram.",
+        "token": null,
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "id": "destroy-without-message",
+      "source": "sequenceDiagram\nparticipant B\ndestroy B\nA->>C:no",
+      "rejected": true,
+      "error": {
+        "message": "The destroyed participant undefined does not have an associated destroying message after its declaration. Please check the sequence diagram.",
+        "token": null,
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "id": "duplicate-create",
+      "source": "sequenceDiagram\nparticipant B\ncreate participant B",
+      "rejected": true,
+      "error": {
+        "message": "It is not possible to have actors with the same id, even if one is destroyed before the next is created. Use 'AS' aliases to simulate the behavior",
+        "token": null,
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "id": "malformed-arrow",
+      "source": "sequenceDiagram\nA=>B:bad",
+      "rejected": true,
+      "error": {
+        "message": "Parse error on line 2:\nsequenceDiagramA=>B:bad\n-----------------^\nExpecting 'NEWLINE', ',', '()', 'SOLID_OPEN_ARROW', 'DOTTED_OPEN_ARROW', 'SOLID_ARROW', 'SOLID_ARROW_TOP', 'SOLID_ARROW_BOTTOM', 'STICK_ARROW_TOP', 'STICK_ARROW_BOTTOM', 'SOLID_ARROW_TOP_DOTTED', 'SOLID_ARROW_BOTTOM_DOTTED', 'STICK_ARROW_TOP_DOTTED', 'STICK_ARROW_BOTTOM_DOTTED', 'SOLID_ARROW_TOP_REVERSE', 'SOLID_ARROW_BOTTOM_REVERSE', 'STICK_ARROW_TOP_REVERSE', 'STICK_ARROW_BOTTOM_REVERSE', 'SOLID_ARROW_TOP_REVERSE_DOTTED', 'SOLID_ARROW_BOTTOM_REVERSE_DOTTED', 'STICK_ARROW_TOP_REVERSE_DOTTED', 'STICK_ARROW_BOTTOM_REVERSE_DOTTED', 'BIDIRECTIONAL_SOLID_ARROW', 'DOTTED_ARROW', 'BIDIRECTIONAL_DOTTED_ARROW', 'SOLID_CROSS', 'DOTTED_CROSS', 'SOLID_POINT', 'DOTTED_POINT', 'TXT', got 'INVALID'",
+        "token": "INVALID",
+        "line": 2,
+        "column": 0
+      }
+    }
+  ],
+  "coverageOnly": [
+    {
+      "id": "direct-leading-space",
+      "source": " sequenceDiagram\nA->>B:x",
+      "reductions": [
+        4,
+        8,
+        5,
+        78,
+        81,
+        105,
+        75,
+        18,
+        7,
+        3
+      ]
+    },
+    {
+      "id": "direct-leading-newline",
+      "source": "\nsequenceDiagram\nA->>B:x",
+      "reductions": [
+        4,
+        8,
+        5,
+        78,
+        81,
+        105,
+        75,
+        18,
+        7,
+        3
+      ]
+    },
+    {
+      "id": "direct-empty-lines",
+      "source": "sequenceDiagram\n\nA->>B:x\n",
+      "reductions": [
+        4,
+        8,
+        5,
+        78,
+        81,
+        105,
+        75,
+        18,
+        7,
+        3
+      ]
+    }
+  ],
+  "productions": [
+    {
+      "id": 1,
+      "lhs": "start",
+      "rhsLength": 2,
+      "native": "parseStart",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "INITIAL whitespace is skipped by the lexer before start reduction"
+    },
+    {
+      "id": 2,
+      "lhs": "start",
+      "rhsLength": 2,
+      "native": "parseStart",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "INITIAL newline whitespace is folded into the lexer NEWLINE path"
+    },
+    {
+      "id": 3,
+      "lhs": "start",
+      "rhsLength": 2,
+      "native": "parseStart",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows",
+        "notes-and-activation",
+        "fragments",
+        "critical-break-rect",
+        "create-destroy",
+        "box-and-autonumber",
+        "wrap-title-accessibility",
+        "arrow-production-matrix",
+        "participant-config-and-statements",
+        "statement-variants",
+        "configured-participant-variants",
+        "central-and-single-over",
+        "multiline-accessibility-and-spacing",
+        "direct-leading-space",
+        "direct-leading-newline",
+        "direct-empty-lines"
+      ]
+    },
+    {
+      "id": 4,
+      "lhs": "document",
+      "rhsLength": 0,
+      "native": "parseDocument",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows",
+        "notes-and-activation",
+        "fragments",
+        "critical-break-rect",
+        "create-destroy",
+        "box-and-autonumber",
+        "wrap-title-accessibility",
+        "arrow-production-matrix",
+        "participant-config-and-statements",
+        "statement-variants",
+        "configured-participant-variants",
+        "central-and-single-over",
+        "multiline-accessibility-and-spacing",
+        "direct-leading-space",
+        "direct-leading-newline",
+        "direct-empty-lines"
+      ]
+    },
+    {
+      "id": 5,
+      "lhs": "document",
+      "rhsLength": 2,
+      "native": "parseDocument",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows",
+        "notes-and-activation",
+        "fragments",
+        "critical-break-rect",
+        "create-destroy",
+        "box-and-autonumber",
+        "wrap-title-accessibility",
+        "arrow-production-matrix",
+        "participant-config-and-statements",
+        "statement-variants",
+        "configured-participant-variants",
+        "central-and-single-over",
+        "multiline-accessibility-and-spacing",
+        "direct-leading-space",
+        "direct-leading-newline",
+        "direct-empty-lines"
+      ]
+    },
+    {
+      "id": 6,
+      "lhs": "line",
+      "rhsLength": 2,
+      "native": "parseLine",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "SPACE is skipped before the line nonterminal can shift it"
+    },
+    {
+      "id": 7,
+      "lhs": "line",
+      "rhsLength": 1,
+      "native": "parseLine",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows",
+        "notes-and-activation",
+        "fragments",
+        "critical-break-rect",
+        "create-destroy",
+        "box-and-autonumber",
+        "wrap-title-accessibility",
+        "arrow-production-matrix",
+        "participant-config-and-statements",
+        "statement-variants",
+        "configured-participant-variants",
+        "central-and-single-over",
+        "multiline-accessibility-and-spacing",
+        "direct-leading-space",
+        "direct-leading-newline",
+        "direct-empty-lines"
+      ]
+    },
+    {
+      "id": 8,
+      "lhs": "line",
+      "rhsLength": 1,
+      "native": "parseLine",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows",
+        "notes-and-activation",
+        "fragments",
+        "critical-break-rect",
+        "create-destroy",
+        "box-and-autonumber",
+        "wrap-title-accessibility",
+        "arrow-production-matrix",
+        "participant-config-and-statements",
+        "statement-variants",
+        "configured-participant-variants",
+        "central-and-single-over",
+        "multiline-accessibility-and-spacing",
+        "direct-leading-space",
+        "direct-leading-newline",
+        "direct-empty-lines"
+      ]
+    },
+    {
+      "id": 9,
+      "lhs": "line",
+      "rhsLength": 1,
+      "native": "parseLine",
+      "status": "negative-only",
+      "fixtures": [],
+      "reason": "INVALID line recovery is reachable only after a lexer/parser error"
+    },
+    {
+      "id": 10,
+      "lhs": "box_section",
+      "rhsLength": 0,
+      "native": "parseBoxSection",
+      "status": "covered",
+      "fixtures": [
+        "box-and-autonumber",
+        "statement-variants",
+        "multiline-accessibility-and-spacing"
+      ]
+    },
+    {
+      "id": 11,
+      "lhs": "box_section",
+      "rhsLength": 2,
+      "native": "parseBoxSection",
+      "status": "covered",
+      "fixtures": [
+        "box-and-autonumber",
+        "statement-variants",
+        "multiline-accessibility-and-spacing"
+      ]
+    },
+    {
+      "id": 12,
+      "lhs": "box_line",
+      "rhsLength": 2,
+      "native": "parseBoxLine",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "SPACE is skipped before the box_line nonterminal can shift it"
+    },
+    {
+      "id": 13,
+      "lhs": "box_line",
+      "rhsLength": 1,
+      "native": "parseBoxLine",
+      "status": "covered",
+      "fixtures": [
+        "box-and-autonumber",
+        "statement-variants",
+        "multiline-accessibility-and-spacing"
+      ]
+    },
+    {
+      "id": 14,
+      "lhs": "box_line",
+      "rhsLength": 1,
+      "native": "parseBoxLine",
+      "status": "covered",
+      "fixtures": [
+        "box-and-autonumber",
+        "statement-variants",
+        "multiline-accessibility-and-spacing"
+      ]
+    },
+    {
+      "id": 15,
+      "lhs": "statement",
+      "rhsLength": 1,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows",
+        "create-destroy",
+        "wrap-title-accessibility",
+        "participant-config-and-statements",
+        "configured-participant-variants"
+      ]
+    },
+    {
+      "id": 16,
+      "lhs": "statement",
+      "rhsLength": 2,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "create-destroy"
+      ]
+    },
+    {
+      "id": 17,
+      "lhs": "statement",
+      "rhsLength": 4,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "box-and-autonumber",
+        "statement-variants",
+        "multiline-accessibility-and-spacing"
+      ]
+    },
+    {
+      "id": 18,
+      "lhs": "statement",
+      "rhsLength": 2,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows",
+        "notes-and-activation",
+        "fragments",
+        "critical-break-rect",
+        "create-destroy",
+        "box-and-autonumber",
+        "wrap-title-accessibility",
+        "arrow-production-matrix",
+        "participant-config-and-statements",
+        "statement-variants",
+        "configured-participant-variants",
+        "central-and-single-over",
+        "direct-leading-space",
+        "direct-leading-newline",
+        "direct-empty-lines"
+      ]
+    },
+    {
+      "id": 19,
+      "lhs": "statement",
+      "rhsLength": 4,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "box-and-autonumber"
+      ]
+    },
+    {
+      "id": 20,
+      "lhs": "statement",
+      "rhsLength": 3,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "statement-variants"
+      ]
+    },
+    {
+      "id": 21,
+      "lhs": "statement",
+      "rhsLength": 3,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "box-and-autonumber"
+      ]
+    },
+    {
+      "id": 22,
+      "lhs": "statement",
+      "rhsLength": 2,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "statement-variants"
+      ]
+    },
+    {
+      "id": 23,
+      "lhs": "statement",
+      "rhsLength": 3,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "notes-and-activation"
+      ]
+    },
+    {
+      "id": 24,
+      "lhs": "statement",
+      "rhsLength": 3,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "notes-and-activation"
+      ]
+    },
+    {
+      "id": 25,
+      "lhs": "statement",
+      "rhsLength": 2,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "notes-and-activation",
+        "central-and-single-over"
+      ]
+    },
+    {
+      "id": 26,
+      "lhs": "statement",
+      "rhsLength": 2,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "participant-config-and-statements",
+        "multiline-accessibility-and-spacing"
+      ]
+    },
+    {
+      "id": 27,
+      "lhs": "statement",
+      "rhsLength": 2,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "participant-config-and-statements"
+      ]
+    },
+    {
+      "id": 28,
+      "lhs": "statement",
+      "rhsLength": 2,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "participant-config-and-statements"
+      ]
+    },
+    {
+      "id": 29,
+      "lhs": "statement",
+      "rhsLength": 2,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "participant-config-and-statements"
+      ]
+    },
+    {
+      "id": 30,
+      "lhs": "statement",
+      "rhsLength": 1,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "statement-variants"
+      ]
+    },
+    {
+      "id": 31,
+      "lhs": "statement",
+      "rhsLength": 1,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "wrap-title-accessibility"
+      ]
+    },
+    {
+      "id": 32,
+      "lhs": "statement",
+      "rhsLength": 2,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "wrap-title-accessibility"
+      ]
+    },
+    {
+      "id": 33,
+      "lhs": "statement",
+      "rhsLength": 2,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "wrap-title-accessibility"
+      ]
+    },
+    {
+      "id": 34,
+      "lhs": "statement",
+      "rhsLength": 1,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "multiline-accessibility-and-spacing"
+      ]
+    },
+    {
+      "id": 35,
+      "lhs": "statement",
+      "rhsLength": 4,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "fragments"
+      ]
+    },
+    {
+      "id": 36,
+      "lhs": "statement",
+      "rhsLength": 4,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "critical-break-rect"
+      ]
+    },
+    {
+      "id": 37,
+      "lhs": "statement",
+      "rhsLength": 4,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "fragments"
+      ]
+    },
+    {
+      "id": 38,
+      "lhs": "statement",
+      "rhsLength": 4,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "fragments"
+      ]
+    },
+    {
+      "id": 39,
+      "lhs": "statement",
+      "rhsLength": 4,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "fragments"
+      ]
+    },
+    {
+      "id": 40,
+      "lhs": "statement",
+      "rhsLength": 4,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "statement-variants"
+      ]
+    },
+    {
+      "id": 41,
+      "lhs": "statement",
+      "rhsLength": 4,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "critical-break-rect"
+      ]
+    },
+    {
+      "id": 42,
+      "lhs": "statement",
+      "rhsLength": 4,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "critical-break-rect"
+      ]
+    },
+    {
+      "id": 43,
+      "lhs": "option_sections",
+      "rhsLength": 1,
+      "native": "parseOptionSections",
+      "status": "covered",
+      "fixtures": [
+        "critical-break-rect"
+      ]
+    },
+    {
+      "id": 44,
+      "lhs": "option_sections",
+      "rhsLength": 4,
+      "native": "parseOptionSections",
+      "status": "covered",
+      "fixtures": [
+        "critical-break-rect"
+      ]
+    },
+    {
+      "id": 45,
+      "lhs": "par_sections",
+      "rhsLength": 1,
+      "native": "parseParSections",
+      "status": "covered",
+      "fixtures": [
+        "fragments",
+        "statement-variants"
+      ]
+    },
+    {
+      "id": 46,
+      "lhs": "par_sections",
+      "rhsLength": 4,
+      "native": "parseParSections",
+      "status": "covered",
+      "fixtures": [
+        "fragments"
+      ]
+    },
+    {
+      "id": 47,
+      "lhs": "else_sections",
+      "rhsLength": 1,
+      "native": "parseElseSections",
+      "status": "covered",
+      "fixtures": [
+        "fragments"
+      ]
+    },
+    {
+      "id": 48,
+      "lhs": "else_sections",
+      "rhsLength": 4,
+      "native": "parseElseSections",
+      "status": "covered",
+      "fixtures": [
+        "fragments"
+      ]
+    },
+    {
+      "id": 49,
+      "lhs": "participant_statement",
+      "rhsLength": 5,
+      "native": "parseParticipantStatement",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows",
+        "create-destroy",
+        "wrap-title-accessibility"
+      ]
+    },
+    {
+      "id": 50,
+      "lhs": "participant_statement",
+      "rhsLength": 3,
+      "native": "parseParticipantStatement",
+      "status": "covered",
+      "fixtures": [
+        "box-and-autonumber",
+        "multiline-accessibility-and-spacing"
+      ]
+    },
+    {
+      "id": 51,
+      "lhs": "participant_statement",
+      "rhsLength": 5,
+      "native": "parseParticipantStatement",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows"
+      ]
+    },
+    {
+      "id": 52,
+      "lhs": "participant_statement",
+      "rhsLength": 3,
+      "native": "parseParticipantStatement",
+      "status": "covered",
+      "fixtures": [
+        "participant-config-and-statements",
+        "statement-variants"
+      ]
+    },
+    {
+      "id": 53,
+      "lhs": "participant_statement",
+      "rhsLength": 3,
+      "native": "parseParticipantStatement",
+      "status": "covered",
+      "fixtures": [
+        "create-destroy"
+      ]
+    },
+    {
+      "id": 54,
+      "lhs": "participant_statement",
+      "rhsLength": 5,
+      "native": "parseParticipantStatement",
+      "status": "covered",
+      "fixtures": [
+        "configured-participant-variants"
+      ]
+    },
+    {
+      "id": 55,
+      "lhs": "participant_statement",
+      "rhsLength": 3,
+      "native": "parseParticipantStatement",
+      "status": "covered",
+      "fixtures": [
+        "participant-config-and-statements"
+      ]
+    },
+    {
+      "id": 56,
+      "lhs": "participant_statement",
+      "rhsLength": 5,
+      "native": "parseParticipantStatement",
+      "status": "covered",
+      "fixtures": [
+        "configured-participant-variants"
+      ]
+    },
+    {
+      "id": 57,
+      "lhs": "participant_statement",
+      "rhsLength": 3,
+      "native": "parseParticipantStatement",
+      "status": "covered",
+      "fixtures": [
+        "configured-participant-variants"
+      ]
+    },
+    {
+      "id": 58,
+      "lhs": "note_statement",
+      "rhsLength": 4,
+      "native": "parseNoteStatement",
+      "status": "covered",
+      "fixtures": [
+        "notes-and-activation"
+      ]
+    },
+    {
+      "id": 59,
+      "lhs": "note_statement",
+      "rhsLength": 4,
+      "native": "parseNoteStatement",
+      "status": "covered",
+      "fixtures": [
+        "notes-and-activation",
+        "central-and-single-over"
+      ]
+    },
+    {
+      "id": 60,
+      "lhs": "links_statement",
+      "rhsLength": 3,
+      "native": "parseLinksStatement",
+      "status": "covered",
+      "fixtures": [
+        "participant-config-and-statements",
+        "multiline-accessibility-and-spacing"
+      ]
+    },
+    {
+      "id": 61,
+      "lhs": "link_statement",
+      "rhsLength": 3,
+      "native": "parseLinkStatement",
+      "status": "covered",
+      "fixtures": [
+        "participant-config-and-statements"
+      ]
+    },
+    {
+      "id": 62,
+      "lhs": "properties_statement",
+      "rhsLength": 3,
+      "native": "parsePropertiesStatement",
+      "status": "covered",
+      "fixtures": [
+        "participant-config-and-statements"
+      ]
+    },
+    {
+      "id": 63,
+      "lhs": "details_statement",
+      "rhsLength": 3,
+      "native": "parseDetailsStatement",
+      "status": "covered",
+      "fixtures": [
+        "participant-config-and-statements"
+      ]
+    },
+    {
+      "id": 64,
+      "lhs": "spaceList",
+      "rhsLength": 2,
+      "native": "parseSpaceList",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "ID-state SPACE is skipped instead of returned to spaceList"
+    },
+    {
+      "id": 65,
+      "lhs": "spaceList",
+      "rhsLength": 1,
+      "native": "parseSpaceList",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "ID-state SPACE is skipped instead of returned to spaceList"
+    },
+    {
+      "id": 66,
+      "lhs": "actor_pair",
+      "rhsLength": 3,
+      "native": "parseActorPair",
+      "status": "covered",
+      "fixtures": [
+        "notes-and-activation"
+      ]
+    },
+    {
+      "id": 67,
+      "lhs": "actor_pair",
+      "rhsLength": 1,
+      "native": "parseActorPair",
+      "status": "covered",
+      "fixtures": [
+        "central-and-single-over"
+      ]
+    },
+    {
+      "id": 68,
+      "lhs": "placement",
+      "rhsLength": 1,
+      "native": "parsePlacement",
+      "status": "covered",
+      "fixtures": [
+        "notes-and-activation"
+      ]
+    },
+    {
+      "id": 69,
+      "lhs": "placement",
+      "rhsLength": 1,
+      "native": "parsePlacement",
+      "status": "covered",
+      "fixtures": [
+        "notes-and-activation"
+      ]
+    },
+    {
+      "id": 70,
+      "lhs": "signal",
+      "rhsLength": 5,
+      "native": "parseSignal",
+      "status": "covered",
+      "fixtures": [
+        "notes-and-activation"
+      ]
+    },
+    {
+      "id": 71,
+      "lhs": "signal",
+      "rhsLength": 5,
+      "native": "parseSignal",
+      "status": "covered",
+      "fixtures": [
+        "notes-and-activation"
+      ]
+    },
+    {
+      "id": 72,
+      "lhs": "signal",
+      "rhsLength": 5,
+      "native": "parseSignal",
+      "status": "covered",
+      "fixtures": [
+        "central-and-single-over"
+      ]
+    },
+    {
+      "id": 73,
+      "lhs": "signal",
+      "rhsLength": 5,
+      "native": "parseSignal",
+      "status": "covered",
+      "fixtures": [
+        "central-and-single-over"
+      ]
+    },
+    {
+      "id": 74,
+      "lhs": "signal",
+      "rhsLength": 6,
+      "native": "parseSignal",
+      "status": "covered",
+      "fixtures": [
+        "central-and-single-over"
+      ]
+    },
+    {
+      "id": 75,
+      "lhs": "signal",
+      "rhsLength": 4,
+      "native": "parseSignal",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows",
+        "fragments",
+        "critical-break-rect",
+        "create-destroy",
+        "box-and-autonumber",
+        "wrap-title-accessibility",
+        "arrow-production-matrix",
+        "participant-config-and-statements",
+        "statement-variants",
+        "configured-participant-variants",
+        "direct-leading-space",
+        "direct-leading-newline",
+        "direct-empty-lines"
+      ]
+    },
+    {
+      "id": 76,
+      "lhs": "actor_with_config",
+      "rhsLength": 2,
+      "native": "parseActorWithConfig",
+      "status": "covered",
+      "fixtures": [
+        "participant-config-and-statements",
+        "configured-participant-variants"
+      ]
+    },
+    {
+      "id": 77,
+      "lhs": "config_object",
+      "rhsLength": 3,
+      "native": "parseConfigObject",
+      "status": "covered",
+      "fixtures": [
+        "participant-config-and-statements",
+        "configured-participant-variants"
+      ]
+    },
+    {
+      "id": 78,
+      "lhs": "actor",
+      "rhsLength": 1,
+      "native": "parseActor",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows",
+        "notes-and-activation",
+        "fragments",
+        "critical-break-rect",
+        "create-destroy",
+        "box-and-autonumber",
+        "wrap-title-accessibility",
+        "arrow-production-matrix",
+        "participant-config-and-statements",
+        "statement-variants",
+        "configured-participant-variants",
+        "central-and-single-over",
+        "multiline-accessibility-and-spacing",
+        "direct-leading-space",
+        "direct-leading-newline",
+        "direct-empty-lines"
+      ]
+    },
+    {
+      "id": 79,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows"
+      ]
+    },
+    {
+      "id": 80,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows"
+      ]
+    },
+    {
+      "id": 81,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows",
+        "notes-and-activation",
+        "fragments",
+        "critical-break-rect",
+        "create-destroy",
+        "box-and-autonumber",
+        "wrap-title-accessibility",
+        "participant-config-and-statements",
+        "statement-variants",
+        "configured-participant-variants",
+        "central-and-single-over",
+        "direct-leading-space",
+        "direct-leading-newline",
+        "direct-empty-lines"
+      ]
+    },
+    {
+      "id": 82,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 83,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 84,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 85,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 86,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 87,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 88,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 89,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 90,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 91,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 92,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 93,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 94,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 95,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 96,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 97,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 98,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows"
+      ]
+    },
+    {
+      "id": 99,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows",
+        "notes-and-activation",
+        "fragments",
+        "critical-break-rect",
+        "create-destroy",
+        "statement-variants"
+      ]
+    },
+    {
+      "id": 100,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 101,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows"
+      ]
+    },
+    {
+      "id": 102,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 103,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "arrow-production-matrix"
+      ]
+    },
+    {
+      "id": 104,
+      "lhs": "signaltype",
+      "rhsLength": 1,
+      "native": "parseSignaltype",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows"
+      ]
+    },
+    {
+      "id": 105,
+      "lhs": "text2",
+      "rhsLength": 1,
+      "native": "parseText2",
+      "status": "covered",
+      "fixtures": [
+        "participants-and-arrows",
+        "notes-and-activation",
+        "fragments",
+        "critical-break-rect",
+        "create-destroy",
+        "box-and-autonumber",
+        "wrap-title-accessibility",
+        "arrow-production-matrix",
+        "participant-config-and-statements",
+        "statement-variants",
+        "configured-participant-variants",
+        "central-and-single-over",
+        "multiline-accessibility-and-spacing",
+        "direct-leading-space",
+        "direct-leading-newline",
+        "direct-empty-lines"
+      ]
+    }
+  ]
+}

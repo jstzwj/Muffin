@@ -506,6 +506,10 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/scene/FlowScenePainter.h
   src/mermaid/rough/RoughOps.cpp
   src/mermaid/rough/RoughOps.h
+  src/mermaid/sequence/SequenceDiagram.cpp
+  src/mermaid/sequence/SequenceDiagram.h
+  src/mermaid/sequence/SequenceTokenizer.cpp
+  src/mermaid/sequence/SequenceTokenizer.h
   src/mermaid/editor/MermaidRenderCache.cpp
   src/mermaid/editor/MermaidRenderCache.h
   src/document/DocumentSession.cpp
