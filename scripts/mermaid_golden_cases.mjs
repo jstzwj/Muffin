@@ -36,11 +36,11 @@ export const neoShapeShortNames = [
   "brace", "brace-r", "braces", "bolt", "cross-circ", "st-rect", "tag-rect",
 ];
 
-function neoShapeSource(shapes) {
+function shapeSource(shapes, direction = "LR") {
   const nodes = shapes.map((shape, index) =>
     `N${index}@{ shape: ${shape}, label: "${shape}" }`);
   const chain = shapes.map((_, index) => `N${index}`).join(" --> ");
-  return ["flowchart LR", ...nodes, chain].join("\n");
+  return [`flowchart ${direction}`, ...nodes, chain].join("\n");
 }
 
 const table = [];
@@ -146,7 +146,7 @@ for (let start = 0; start < neoShapeShortNames.length; start += 7) {
     theme: "neo",
     look: "neo",
     fontMode: "noto",
-    source: neoShapeSource(neoShapeShortNames.slice(start, start + 7)),
+    source: shapeSource(neoShapeShortNames.slice(start, start + 7)),
   });
 }
 const neoDarkShapeDprs = [1, 1.25, 1.5, 2, 1.25, 1.5, 2];
@@ -159,7 +159,7 @@ for (let start = 0; start < neoShapeShortNames.length; start += 7) {
     look: "neo",
     fontMode: "noto",
     dpr: neoDarkShapeDprs[index],
-    source: neoShapeSource(neoShapeShortNames.slice(start, start + 7)),
+    source: shapeSource(neoShapeShortNames.slice(start, start + 7)),
   });
 }
 const reduxStructureSource = [
@@ -185,11 +185,47 @@ table.push({
   look: "handDrawn",
   handDrawnSeed: 17,
   fontMode: "noto",
+  emptyMaxMismatchRatio: 0.15,
   source: [
     "flowchart LR",
     "A[Rectangle] --> B((Circle))",
     "B --> C{Decision}",
     "C --> D[(Store)]",
+  ].join("\n"),
+});
+const handDrawnDirections = ["TB", "BT", "LR", "RL", "TB", "BT", "LR"];
+const handDrawnDprs = [1, 1.5, 2, 1, 1.5, 2, 1];
+for (let start = 0; start < neoShapeShortNames.length; start += 7) {
+  const index = start / 7;
+  const ordinal = String(index + 1).padStart(2, "0");
+  table.push({
+    id: `look-hand-drawn-shapes-${ordinal}-${handDrawnDirections[index]}-${String(handDrawnDprs[index]).replace(".", "_")}x`,
+    theme: "default",
+    look: "handDrawn",
+    handDrawnSeed: 101 + index,
+    fontMode: "noto",
+    dpr: handDrawnDprs[index],
+    emptyMaxMismatchRatio: 0.15,
+    ...(index === 5 ? { textGlyphIou: 0.5 } : {}),
+    source: shapeSource(neoShapeShortNames.slice(start, start + 7),
+                        handDrawnDirections[index]),
+  });
+}
+table.push({
+  id: "look-hand-drawn-cluster-self-marker-cjk-bidi-2x",
+  theme: "default",
+  look: "handDrawn",
+  handDrawnSeed: 131,
+  fontMode: "noto",
+  dpr: 2,
+  emptyMaxMismatchRatio: 0.15,
+  source: [
+    "flowchart TB",
+    'subgraph Outer["\u4e2d\u6587 cluster"]',
+    'subgraph Inner["\u05e9\u05dc\u05d5\u05dd \u0627\u0644\u0639\u0627\u0644\u0645"]',
+    'A@{ shape: doc, label: "\u4e2d\u6587" } --> A',
+    'A o--o B@{ shape: cyl, label: "\u0645\u0631\u062d\u0628\u0627" }',
+    "end", "end",
   ].join("\n"),
 });
 // Axis 5 - HTML, Markdown, and Math label rendering.

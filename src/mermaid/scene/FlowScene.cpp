@@ -459,6 +459,9 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
         const qreal radius = std::max(5.0, h * 0.1);
         sn.label.x += radius - 9.0;
         sn.label.y += 1.5;
+      } else if (sn.shapeType == QLatin1String("brace_left") &&
+                 look == flowchart::FlowLook::HandDrawn) {
+        sn.label.x += 7.5;
       } else if (look == flowchart::FlowLook::Neo &&
                  (sn.shapeType == QLatin1String("brace_right") ||
                   sn.shapeType == QLatin1String("braces"))) {

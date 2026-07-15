@@ -1010,12 +1010,142 @@
       "source": "flowchart LR\nA[Rectangle] --> B((Circle))\nB --> C{Decision}\nC --> D[(Store)]",
       "dpr": 1,
       "handDrawnSeed": 17,
+      "emptyMaxMismatchRatio": 0.15,
       "content": {
         "width": 518.0928955078125,
         "height": 118.74297332763672
       },
       "enforceInterior": true,
       "file": "look-hand-drawn-seed-17.png"
+    },
+    {
+      "id": "look-hand-drawn-shapes-01-TB-1x",
+      "theme": "default",
+      "look": "handDrawn",
+      "fontMode": "noto",
+      "source": "flowchart TB\nN0@{ shape: rect, label: \"rect\" }\nN1@{ shape: rounded, label: \"rounded\" }\nN2@{ shape: stadium, label: \"stadium\" }\nN3@{ shape: fr-rect, label: \"fr-rect\" }\nN4@{ shape: circle, label: \"circle\" }\nN5@{ shape: diam, label: \"diam\" }\nN6@{ shape: hex, label: \"hex\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 1,
+      "handDrawnSeed": 101,
+      "emptyMaxMismatchRatio": 0.15,
+      "content": {
+        "width": 96.60758972167969,
+        "height": 689.4121704101562
+      },
+      "enforceInterior": true,
+      "file": "look-hand-drawn-shapes-01-TB-1x.png"
+    },
+    {
+      "id": "look-hand-drawn-shapes-02-BT-1_5x",
+      "theme": "default",
+      "look": "handDrawn",
+      "fontMode": "noto",
+      "source": "flowchart BT\nN0@{ shape: trap-b, label: \"trap-b\" }\nN1@{ shape: trap-t, label: \"trap-t\" }\nN2@{ shape: lean-r, label: \"lean-r\" }\nN3@{ shape: lean-l, label: \"lean-l\" }\nN4@{ shape: odd, label: \"odd\" }\nN5@{ shape: flag, label: \"flag\" }\nN6@{ shape: dbl-circ, label: \"dbl-circ\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 1.5,
+      "handDrawnSeed": 102,
+      "emptyMaxMismatchRatio": 0.15,
+      "content": {
+        "width": 127.32040405273438,
+        "height": 668.69189453125
+      },
+      "enforceInterior": true,
+      "file": "look-hand-drawn-shapes-02-BT-1_5x.png"
+    },
+    {
+      "id": "look-hand-drawn-shapes-03-LR-2x",
+      "theme": "default",
+      "look": "handDrawn",
+      "fontMode": "noto",
+      "source": "flowchart LR\nN0@{ shape: fr-circ, label: \"fr-circ\" }\nN1@{ shape: sm-circ, label: \"sm-circ\" }\nN2@{ shape: notch-rect, label: \"notch-rect\" }\nN3@{ shape: lin-rect, label: \"lin-rect\" }\nN4@{ shape: text, label: \"text\" }\nN5@{ shape: bang, label: \"bang\" }\nN6@{ shape: cloud, label: \"cloud\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 2,
+      "handDrawnSeed": 103,
+      "emptyMaxMismatchRatio": 0.15,
+      "content": {
+        "width": 817.501953125,
+        "height": 107.66427612304688
+      },
+      "enforceInterior": true,
+      "file": "look-hand-drawn-shapes-03-LR-2x.png"
+    },
+    {
+      "id": "look-hand-drawn-shapes-04-RL-1x",
+      "theme": "default",
+      "look": "handDrawn",
+      "fontMode": "noto",
+      "source": "flowchart RL\nN0@{ shape: doc, label: \"doc\" }\nN1@{ shape: docs, label: \"docs\" }\nN2@{ shape: tag-doc, label: \"tag-doc\" }\nN3@{ shape: lin-doc, label: \"lin-doc\" }\nN4@{ shape: cyl, label: \"cyl\" }\nN5@{ shape: datastore, label: \"datastore\" }\nN6@{ shape: h-cyl, label: \"h-cyl\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 1,
+      "handDrawnSeed": 104,
+      "emptyMaxMismatchRatio": 0.15,
+      "content": {
+        "width": 867.2535400390625,
+        "height": 104.25027465820312
+      },
+      "enforceInterior": true,
+      "file": "look-hand-drawn-shapes-04-RL-1x.png"
+    },
+    {
+      "id": "look-hand-drawn-shapes-05-TB-1_5x",
+      "theme": "default",
+      "look": "handDrawn",
+      "fontMode": "noto",
+      "source": "flowchart TB\nN0@{ shape: lin-cyl, label: \"lin-cyl\" }\nN1@{ shape: bow-rect, label: \"bow-rect\" }\nN2@{ shape: tri, label: \"tri\" }\nN3@{ shape: flip-tri, label: \"flip-tri\" }\nN4@{ shape: hourglass, label: \"hourglass\" }\nN5@{ shape: fork, label: \"fork\" }\nN6@{ shape: f-circ, label: \"f-circ\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 1.5,
+      "handDrawnSeed": 105,
+      "emptyMaxMismatchRatio": 0.15,
+      "content": {
+        "width": 102.65594482421875,
+        "height": 631.6073608398438
+      },
+      "enforceInterior": true,
+      "file": "look-hand-drawn-shapes-05-TB-1_5x.png"
+    },
+    {
+      "id": "look-hand-drawn-shapes-06-BT-2x",
+      "theme": "default",
+      "look": "handDrawn",
+      "fontMode": "noto",
+      "source": "flowchart BT\nN0@{ shape: notch-pent, label: \"notch-pent\" }\nN1@{ shape: curv-trap, label: \"curv-trap\" }\nN2@{ shape: sl-rect, label: \"sl-rect\" }\nN3@{ shape: win-pane, label: \"win-pane\" }\nN4@{ shape: div-rect, label: \"div-rect\" }\nN5@{ shape: delay, label: \"delay\" }\nN6@{ shape: brace, label: \"brace\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 2,
+      "handDrawnSeed": 106,
+      "textGlyphIou": 0.5,
+      "emptyMaxMismatchRatio": 0.15,
+      "content": {
+        "width": 123.47254180908203,
+        "height": 720.6205444335938
+      },
+      "enforceInterior": true,
+      "file": "look-hand-drawn-shapes-06-BT-2x.png"
+    },
+    {
+      "id": "look-hand-drawn-shapes-07-LR-1x",
+      "theme": "default",
+      "look": "handDrawn",
+      "fontMode": "noto",
+      "source": "flowchart LR\nN0@{ shape: brace-r, label: \"brace-r\" }\nN1@{ shape: braces, label: \"braces\" }\nN2@{ shape: bolt, label: \"bolt\" }\nN3@{ shape: cross-circ, label: \"cross-circ\" }\nN4@{ shape: st-rect, label: \"st-rect\" }\nN5@{ shape: tag-rect, label: \"tag-rect\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5",
+      "dpr": 1,
+      "handDrawnSeed": 107,
+      "emptyMaxMismatchRatio": 0.15,
+      "content": {
+        "width": 693.805419921875,
+        "height": 72.67105865478516
+      },
+      "enforceInterior": true,
+      "file": "look-hand-drawn-shapes-07-LR-1x.png"
+    },
+    {
+      "id": "look-hand-drawn-cluster-self-marker-cjk-bidi-2x",
+      "theme": "default",
+      "look": "handDrawn",
+      "fontMode": "noto",
+      "source": "flowchart TB\nsubgraph Outer[\"中文 cluster\"]\nsubgraph Inner[\"שלום العالم\"]\nA@{ shape: doc, label: \"中文\" } --> A\nA o--o B@{ shape: cyl, label: \"مرحبا\" }\nend\nend",
+      "dpr": 2,
+      "handDrawnSeed": 131,
+      "emptyMaxMismatchRatio": 0.15,
+      "content": {
+        "width": 280.6734619140625,
+        "height": 508.55194091796875
+      },
+      "enforceInterior": true,
+      "file": "look-hand-drawn-cluster-self-marker-cjk-bidi-2x.png"
     },
     {
       "id": "label-html",

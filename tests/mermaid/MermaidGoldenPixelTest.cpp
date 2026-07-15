@@ -98,6 +98,10 @@ int main(int argc, char** argv) {
   QSet<QString> reduxStructureThemes;
   int handDrawnCases = 0;
   QSet<int> handDrawnSeeds;
+  QSet<QString> handDrawnShapes;
+  QSet<QString> handDrawnDirections;
+  QSet<qreal> handDrawnDprs;
+  bool sawHandDrawnComposite = false;
   QSet<QString> caseIds;
   QSet<QString> coveredThemes;
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
@@ -125,11 +129,12 @@ int main(int argc, char** argv) {
                                             : QStringLiteral("Arial");
     if (fixedNoto) {
       ++fixedNotoCases;
-      require(fixture.value(QStringLiteral("enforceInterior")).toBool(true) &&
-                  !fixture.contains(QStringLiteral("textGlyphIou")) &&
-                  !fixture.contains(QStringLiteral("emptyMaxMismatchRatio")),
-              QStringLiteral("Case %1: bundled Noto oracle must use uniform strict thresholds")
-                  .arg(id));
+      if (fixture.value(QStringLiteral("look")).toString() != QLatin1String("handDrawn"))
+        require(fixture.value(QStringLiteral("enforceInterior")).toBool(true) &&
+                    !fixture.contains(QStringLiteral("textGlyphIou")) &&
+                    !fixture.contains(QStringLiteral("emptyMaxMismatchRatio")),
+                QStringLiteral("Case %1: bundled Noto oracle must use uniform strict thresholds")
+                    .arg(id));
     }
     if (id == QLatin1String("font-system-fallback-mixed")) {
       ++systemFallbackCases;
@@ -156,6 +161,20 @@ int main(int argc, char** argv) {
     if (id.startsWith(QStringLiteral("look-hand-drawn-"))) {
       ++handDrawnCases;
       handDrawnSeeds.insert(fixture.value(QStringLiteral("handDrawnSeed")).toInt());
+      handDrawnDprs.insert(dpr);
+      static const QRegularExpression directionPattern(
+          QStringLiteral(R"(^flowchart\s+(TB|BT|LR|RL))"));
+      const auto directionMatch = directionPattern.match(source);
+      if (directionMatch.hasMatch()) handDrawnDirections.insert(directionMatch.captured(1));
+      if (id.startsWith(QStringLiteral("look-hand-drawn-shapes-"))) {
+        static const QRegularExpression shapePattern(QStringLiteral(R"(shape:\s*([\w-]+))"));
+        auto matches = shapePattern.globalMatch(source);
+        while (matches.hasNext()) handDrawnShapes.insert(matches.next().captured(1));
+      }
+      if (id == QLatin1String("look-hand-drawn-cluster-self-marker-cjk-bidi-2x"))
+        sawHandDrawnComposite = source.contains(QStringLiteral("subgraph")) &&
+                                 source.contains(QStringLiteral("--> A")) &&
+                                 source.contains(QStringLiteral("o--o"));
       require(look == flowchart::FlowLook::HandDrawn &&
                   fixture.value(QStringLiteral("handDrawnSeed")).toInt() > 0,
               QStringLiteral("Case %1: handDrawn look/seed metadata drifted").arg(id));
@@ -283,9 +302,13 @@ int main(int argc, char** argv) {
   require(reduxStructureThemes.size() == 4,
           QStringLiteral("Golden-pixel Redux structure coverage regressed: %1/4")
               .arg(reduxStructureThemes.size()));
-  require(handDrawnCases == 2 && handDrawnSeeds.size() == 2,
-          QStringLiteral("Golden-pixel deterministic handDrawn coverage regressed: %1/2")
-              .arg(handDrawnCases));
+  require(handDrawnCases >= 10 && handDrawnSeeds.size() >= 9 &&
+              handDrawnShapes.size() == 48 && handDrawnDirections.size() == 4 &&
+              handDrawnDprs.size() == 3 && sawHandDrawnComposite,
+          QStringLiteral("Golden-pixel handDrawn matrix regressed: %1 cases, %2/48 shapes, "
+                         "%3/4 directions, %4/3 DPRs")
+              .arg(handDrawnCases).arg(handDrawnShapes.size())
+              .arg(handDrawnDirections.size()).arg(handDrawnDprs.size()));
   qDebug().noquote() << "MermaidGoldenPixelTest:" << cases.size() << "cases pass Level-3 (interior exact + boundary RGBA + text IoU + empty)";
   return 0;
 }

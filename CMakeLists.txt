@@ -504,6 +504,8 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/scene/FlowSceneCompare.h
   src/mermaid/scene/FlowScenePainter.cpp
   src/mermaid/scene/FlowScenePainter.h
+  src/mermaid/rough/RoughOps.cpp
+  src/mermaid/rough/RoughOps.h
   src/mermaid/editor/MermaidRenderCache.cpp
   src/mermaid/editor/MermaidRenderCache.h
   src/document/DocumentSession.cpp
