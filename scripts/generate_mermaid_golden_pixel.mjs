@@ -75,7 +75,7 @@ try {
         securityLevel: "strict",
         theme: fixture.theme,
         look: fixture.look ?? "classic",
-        handDrawnSeed: 17,
+        handDrawnSeed: fixture.handDrawnSeed ?? 17,
         fontFamily: fixture.fontMode === "noto" ? fixedFontStack : "Arial",
         flowchart: { defaultRenderer: "dagre-wrapper", htmlLabels: false },
       });
@@ -111,13 +111,34 @@ try {
       }
       await document.fonts.ready;
       await new Promise((resolve) => requestAnimationFrame(() => resolve()));
-      const nodeBoxes = fixture.id.startsWith("look-neo-shapes-")
+      const nodeBoxes = (fixture.id.startsWith("look-neo-shapes-") ||
+                         fixture.id.startsWith("look-neo-dark-shapes-"))
         ? [...root.querySelectorAll("g.node")].map((node) => {
             const box = node.getBBox();
             return { width: box.width, height: box.height };
           })
         : undefined;
-      return { width: bb.width, height: bb.height, ...(nodeBoxes ? { nodeBoxes } : {}) };
+      const computedStyles = fixture.id.startsWith("look-redux") ? (() => {
+        const nodePath = root.querySelector("g.node path, g.node rect, g.node polygon");
+        const clusterRect = root.querySelector("g.cluster rect");
+        const nodeStyle = nodePath ? getComputedStyle(nodePath) : null;
+        const clusterStyle = clusterRect ? getComputedStyle(clusterRect) : null;
+        return {
+          nodeFill: nodeStyle?.fill ?? "",
+          nodeStroke: nodeStyle?.stroke ?? "",
+          nodeFillOpacity: nodeStyle?.fillOpacity ?? "",
+          nodeOpacity: nodeStyle?.opacity ?? "",
+          nodeFilter: nodeStyle?.filter ?? "",
+          clusterFill: clusterStyle?.fill ?? "",
+          clusterStroke: clusterStyle?.stroke ?? "",
+          clusterFillOpacity: clusterStyle?.fillOpacity ?? "",
+          clusterOpacity: clusterStyle?.opacity ?? "",
+          clusterFilter: clusterStyle?.filter ?? "",
+        };
+      })() : undefined;
+      return { width: bb.width, height: bb.height,
+               ...(nodeBoxes ? { nodeBoxes } : {}),
+               ...(computedStyles ? { computedStyles } : {}) };
     }, { fixture, index, mermaidModule, fontFaces, fixedFontStack });
     const element = await page.$("#container svg");
     if (!element) throw new Error(`Case ${fixture.id}: rendered SVG is missing`);
@@ -139,6 +160,8 @@ try {
     manifestCases.push({ id: r.id, theme: r.theme, look: r.look ?? "classic",
                          fontMode: r.fontMode ?? "system",
                          source: r.source, dpr: r.dpr,
+                         ...(r.handDrawnSeed !== undefined
+                           ? { handDrawnSeed: r.handDrawnSeed } : {}),
                          ...(r.animationState ? { animationState: r.animationState } : {}),
                          ...(r.textGlyphIou !== undefined ? { textGlyphIou: r.textGlyphIou } : {}),
                          ...(r.emptyMaxMismatchRatio !== undefined

@@ -18,6 +18,7 @@
 #include "mermaid/theme/FlowTheme.h"
 
 #include <QRectF>
+#include <QPainterPath>
 #include <QString>
 #include <QVector>
 
@@ -34,6 +35,14 @@ struct FlowSceneLabel {
   QString fontWeight;
   QString background;     // edge-label bg (edgeLabelBackground); empty for nodes
   bool mathEnabled = false;  // Mermaid enables MathML only for node labels.
+};
+
+struct FlowSceneShapePath {
+  QPainterPath path;      // node-local coordinates, centred at (0, 0)
+  bool fill = true;
+  bool stroke = true;
+  QString fillOverride;
+  QString strokeOverride;
 };
 
 struct FlowSceneNode {
@@ -53,6 +62,7 @@ struct FlowSceneNode {
   qreal cornerRadius = 0.0;
   qreal radiusX = 0.0, radiusY = 0.0;
   QVector<QPointF> points;  // polygon outline (centred at origin)
+  QVector<FlowSceneShapePath> shapePaths;  // ordered like upstream SVG children
   // Edge endpoints + tangents for marker orientation (painter-only).
 };
 
@@ -85,9 +95,11 @@ struct FlowScene {
   QRectF bounds;          // diagram bounds (scene coords)
   QString background;     // theme.background
   flowchart::FlowLook look = flowchart::FlowLook::Classic;
+  quint32 handDrawnSeed = 0;
   bool useGradient = false;
   QString gradientStart;
   QString gradientStop;
+  QString lineColor;
   QString shadowColor;
   qreal shadowOpacity = 0.25;
   qreal shadowOffsetX = 0.0;
@@ -106,6 +118,7 @@ struct FlowScene {
 FlowScene buildFlowScene(const flowchart::FlowchartData& data,
                          const flowchart::FlowLayoutResult& layout,
                          const flowtheme::FlowThemeVariables& theme,
-                         flowchart::FlowLook look = flowchart::FlowLook::Classic);
+                         flowchart::FlowLook look = flowchart::FlowLook::Classic,
+                         quint32 handDrawnSeed = 0);
 
 }  // namespace muffin::mermaid::flowscene

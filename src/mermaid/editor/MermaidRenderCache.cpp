@@ -237,7 +237,10 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         layoutOptions.measuredEdgeLabels.insert(edge.id, flowchart::measureLabel(edge.text, edge.labelType, textOptions));
     }
     const flowchart::FlowLayoutResult layout = flowchart::layoutFlowchartNodes(chart.data(), sizes, layoutOptions);
-    flowscene::FlowScene scene = flowscene::buildFlowScene(chart.data(), layout, themeVars, look);
+    const quint32 handDrawnSeed = static_cast<quint32>(
+        std::max(0.0, configNumber(pre.config, QStringLiteral("handDrawnSeed"), 0.0)));
+    flowscene::FlowScene scene = flowscene::buildFlowScene(
+        chart.data(), layout, themeVars, look, handDrawnSeed);
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;
     entry.naturalSize = QSize(scene.bounds.width(), scene.bounds.height());

@@ -14,16 +14,19 @@ struct DagreSnapshot;  // defined in mermaid/dagre/Layout.h
 
 namespace muffin::mermaid::flowchart {
 
-enum class FlowLook { Classic, Neo };
+enum class FlowLook { Classic, Neo, HandDrawn };
 
 inline FlowLook parseFlowLook(const QString& value) {
-  return value.compare(QStringLiteral("neo"), Qt::CaseInsensitive) == 0
-             ? FlowLook::Neo
-             : FlowLook::Classic;
+  if (value.compare(QStringLiteral("neo"), Qt::CaseInsensitive) == 0) return FlowLook::Neo;
+  if (value.compare(QStringLiteral("handDrawn"), Qt::CaseInsensitive) == 0)
+    return FlowLook::HandDrawn;
+  return FlowLook::Classic;
 }
 
 inline QString flowLookName(FlowLook look) {
-  return look == FlowLook::Neo ? QStringLiteral("neo") : QStringLiteral("classic");
+  if (look == FlowLook::Neo) return QStringLiteral("neo");
+  if (look == FlowLook::HandDrawn) return QStringLiteral("handDrawn");
+  return QStringLiteral("classic");
 }
 
 struct FlowLayoutNode {

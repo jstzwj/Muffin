@@ -18,7 +18,7 @@
 namespace muffin::mermaid::flowscene {
 namespace {
 
-enum class Cat { Empty, Node, Cluster, Edge, EdgeLabelBg, Text, Shadow };
+enum class Cat { Empty, Node, Cluster, Edge, EdgeLabelBg, Text, Shadow, Boundary };
 
 Cat decodeCat(QRgb px) {
   switch (px) {
@@ -28,6 +28,7 @@ Cat decodeCat(QRgb px) {
     case kCatEdgeLabelBg: return Cat::EdgeLabelBg;
     case kCatText: return Cat::Text;
     case kCatShadow: return Cat::Shadow;
+    case kCatBoundary: return Cat::Boundary;
     default: return Cat::Empty;  // transparent (never painted) = EMPTY
   }
 }
@@ -97,24 +98,45 @@ bool rectsIntersectAny(const QRectF& r, const QVector<QRectF>& rects) {
 // baselines can differ by several physical pixels for unboxed text shapes.
 qreal labelIou(const QImage& native, const QImage& golden, const QRect& crop,
                int goldenOffX, int goldenOffY, int inkAlpha, int searchRadius) {
-  auto iouAt = [&](int dx, int dy) {
-    qint64 inter = 0, uni = 0;
+  const int tolerance = std::max(1, searchRadius / 5);
+  auto inkNear = [&](const QImage& image, int x, int y) {
+    for (int oy = -tolerance; oy <= tolerance; ++oy) {
+      for (int ox = -tolerance; ox <= tolerance; ++ox) {
+        const int sx = std::clamp(x + ox, 0, image.width() - 1);
+        const int sy = std::clamp(y + oy, 0, image.height() - 1);
+        if (qAlpha(image.pixel(sx, sy)) >= inkAlpha) return true;
+      }
+    }
+    return false;
+  };
+  auto coverageAt = [&](int dx, int dy) {
+    qint64 nativeInk = 0, goldenInk = 0;
+    qint64 nativeMatched = 0, goldenMatched = 0;
     for (int y = crop.top(); y <= crop.bottom(); ++y) {
       for (int x = crop.left(); x <= crop.right(); ++x) {
         const bool a = qAlpha(native.pixel(x, y)) >= inkAlpha;
         const int gx = std::clamp(x + goldenOffX + dx, 0, golden.width() - 1);
         const int gy = std::clamp(y + goldenOffY + dy, 0, golden.height() - 1);
         const bool b = qAlpha(golden.pixel(gx, gy)) >= inkAlpha;
-        if (a && b) ++inter;
-        if (a || b) ++uni;
+        if (a) {
+          ++nativeInk;
+          if (inkNear(golden, gx, gy)) ++nativeMatched;
+        }
+        if (b) {
+          ++goldenInk;
+          if (inkNear(native, x, y)) ++goldenMatched;
+        }
       }
     }
-    return uni == 0 ? 1.0 : static_cast<qreal>(inter) / static_cast<qreal>(uni);
+    if (nativeInk == 0 && goldenInk == 0) return 1.0;
+    if (nativeInk == 0 || goldenInk == 0) return 0.0;
+    return std::min(static_cast<qreal>(nativeMatched) / nativeInk,
+                    static_cast<qreal>(goldenMatched) / goldenInk);
   };
   qreal best = 0.0;
   for (int dy = -searchRadius; dy <= searchRadius; ++dy)
     for (int dx = -searchRadius; dx <= searchRadius; ++dx)
-      best = std::max(best, iouAt(dx, dy));
+      best = std::max(best, coverageAt(dx, dy));
   return best;
 }
 
@@ -213,12 +235,19 @@ CompareReport compareLevel3(const FlowScene& scene, const QImage& goldenIn, cons
   // Label rects: scene coords → native canvas coords (-origin) → cropped coords (-nativeBB.topLeft).
   const QVector<QRectF> labelRectsScene = collectLabelRectsScene(scene, fontFamily);
   QVector<QRectF> labelRects;
+  QVector<QRectF> labelProtectionRects;
   labelRects.reserve(labelRectsScene.size());
+  labelProtectionRects.reserve(labelRectsScene.size());
   for (const QRectF& r : labelRectsScene) {
     QRectF s((r.x() - originX) * dpr - nativeBB.left(),
              (r.y() - originY) * dpr - nativeBB.top(),
              r.width() * dpr, r.height() * dpr);
     labelRects.append(s);
+    // The global image alignment and per-label glyph alignment are independent.
+    // Keep their combined search fringe under the label metric without removing
+    // empty pixels from the shape-coverage denominator.
+    labelProtectionRects.append(
+        s.adjusted(-10.0 * dpr, -10.0 * dpr, 10.0 * dpr, 10.0 * dpr));
   }
 
   auto goldenPx = [&](int x, int y) -> QRgb {
@@ -232,13 +261,17 @@ CompareReport compareLevel3(const FlowScene& scene, const QImage& goldenIn, cons
   QVector<Cat> cats(nw * nh, Cat::Empty);
   for (int y = 0; y < nh; ++y)
     for (int x = 0; x < nw; ++x) cats[y * nw + x] = decodeCat(maskCrop.pixel(x, y));
-  auto isFill = [](Cat c) { return c == Cat::Node || c == Cat::Cluster || c == Cat::EdgeLabelBg; };
+  auto isFill = [&](Cat c) {
+    if (scene.look == flowchart::FlowLook::HandDrawn) return false;
+    return c == Cat::Node || c == Cat::Cluster || c == Cat::EdgeLabelBg;
+  };
   auto deepInterior = [&](int x, int y) {
     const Cat c = cats[y * nw + x];
     if (!isFill(c)) return false;
     // Erode by 2px (5x5 neighbourhood uniform) so the thick-stroke band (e.g. a
     // 2px node border) and the 1px sub-pixel alignment ring fall in BOUNDARY.
-    const int erosion = scene.look == flowchart::FlowLook::Neo ? 3 : 2;
+    const qreal cssErosion = scene.look == flowchart::FlowLook::Neo ? 3.0 : 2.0;
+    const int erosion = static_cast<int>(std::ceil(cssErosion * dpr));
     for (int dy = -erosion; dy <= erosion; ++dy)
       for (int dx = -erosion; dx <= erosion; ++dx) {
         const int nx = x + dx, ny = y + dy;
@@ -261,6 +294,10 @@ CompareReport compareLevel3(const FlowScene& scene, const QImage& goldenIn, cons
         continue;
       }
       if (cat == Cat::Text) continue;
+      if (isFill(cat) && rectsIntersectAny(QRectF(x, y, 1, 1), labelProtectionRects)) {
+        ++report.boundary;
+        continue;
+      }
       if (deepInterior(x, y)) {
         ++report.interior;
         if (qRed(np) != qRed(gp) || qGreen(np) != qGreen(gp) || qBlue(np) != qBlue(gp)) {

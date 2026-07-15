@@ -234,6 +234,21 @@
       "file": "edge-marker-matrix.png"
     },
     {
+      "id": "look-hand-drawn-cluster-1_5x",
+      "theme": "default",
+      "look": "handDrawn",
+      "fontMode": "noto",
+      "source": "flowchart TB\nsubgraph G[\"Sketch Group\"]\nA@{ shape: doc, label: \"Document\" } --> B@{ shape: cyl, label: \"Store\" }\nend\nB --> C@{ shape: braces, label: \"Brace\" }",
+      "dpr": 1.5,
+      "handDrawnSeed": 23,
+      "content": {
+        "width": 184.05760192871094,
+        "height": 334.38458251953125
+      },
+      "enforceInterior": true,
+      "file": "look-hand-drawn-cluster-1_5x.png"
+    },
+    {
       "id": "shape-matrix",
       "theme": "default",
       "look": "classic",
@@ -279,100 +294,99 @@
       "id": "look-neo-shapes-01",
       "theme": "neo",
       "look": "neo",
-      "fontMode": "system",
+      "fontMode": "noto",
       "source": "flowchart LR\nN0@{ shape: rect, label: \"rect\" }\nN1@{ shape: rounded, label: \"rounded\" }\nN2@{ shape: stadium, label: \"stadium\" }\nN3@{ shape: fr-rect, label: \"fr-rect\" }\nN4@{ shape: circle, label: \"circle\" }\nN5@{ shape: diam, label: \"diam\" }\nN6@{ shape: hex, label: \"hex\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
       "dpr": 1,
       "content": {
-        "width": 902.1643676757812,
-        "height": 96.671875,
+        "width": 922.6018676757812,
+        "height": 98.0625,
         "nodeBoxes": [
           {
-            "width": 55.34375,
+            "width": 57.1875,
             "height": 45
           },
           {
-            "width": 81.390625,
+            "width": 86.40625,
             "height": 51
           },
           {
-            "width": 100.25813293457031,
+            "width": 104.80500793457031,
             "height": 45
           },
           {
-            "width": 80.5625,
+            "width": 84.28125,
             "height": 33
           },
           {
-            "width": 96.671875,
-            "height": 96.671875
+            "width": 98.0625,
+            "height": 98.0625
           },
           {
-            "width": 81.359375,
-            "height": 81.359375
+            "width": 84.171875,
+            "height": 84.171875
           },
           {
-            "width": 106.578125,
+            "width": 107.6875,
             "height": 91
           }
         ]
       },
-      "enforceInterior": false,
+      "enforceInterior": true,
       "file": "look-neo-shapes-01.png"
     },
     {
       "id": "look-neo-shapes-02",
       "theme": "neo",
       "look": "neo",
-      "fontMode": "system",
+      "fontMode": "noto",
       "source": "flowchart LR\nN0@{ shape: trap-b, label: \"trap-b\" }\nN1@{ shape: trap-t, label: \"trap-t\" }\nN2@{ shape: lean-r, label: \"lean-r\" }\nN3@{ shape: lean-l, label: \"lean-l\" }\nN4@{ shape: odd, label: \"odd\" }\nN5@{ shape: flag, label: \"flag\" }\nN6@{ shape: dbl-circ, label: \"dbl-circ\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
       "dpr": 1,
       "content": {
-        "width": 956.625,
-        "height": 77.125,
+        "width": 975.953125,
+        "height": 79.90625,
         "nodeBoxes": [
           {
-            "width": 102.578125,
+            "width": 106.140625,
             "height": 36
           },
           {
-            "width": 143.6875,
+            "width": 147.59375,
             "height": 51
           },
           {
-            "width": 101.796875,
+            "width": 104.3125,
             "height": 36
           },
           {
-            "width": 100.25,
+            "width": 102.140625,
             "height": 36
           },
           {
-            "width": 76.609375,
+            "width": 78.953125,
             "height": 45
           },
           {
-            "width": 54.578125,
+            "width": 56.90625,
             "height": 61.479774475097656
           },
           {
-            "width": 77.125,
-            "height": 77.125
+            "width": 79.90625,
+            "height": 79.90625
           }
         ]
       },
-      "enforceInterior": false,
+      "enforceInterior": true,
       "file": "look-neo-shapes-02.png"
     },
     {
       "id": "look-neo-shapes-03",
       "theme": "neo",
       "look": "neo",
-      "fontMode": "system",
+      "fontMode": "noto",
       "source": "flowchart LR\nN0@{ shape: fr-circ, label: \"fr-circ\" }\nN1@{ shape: sm-circ, label: \"sm-circ\" }\nN2@{ shape: notch-rect, label: \"notch-rect\" }\nN3@{ shape: lin-rect, label: \"lin-rect\" }\nN4@{ shape: text, label: \"text\" }\nN5@{ shape: bang, label: \"bang\" }\nN6@{ shape: cloud, label: \"cloud\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
       "dpr": 1,
-      "textGlyphIou": 0.55,
       "content": {
-        "width": 778.0226440429688,
+        "width": 795.41455078125,
         "height": 101.25,
         "nodeBoxes": [
           {
@@ -384,100 +398,100 @@
             "height": 14
           },
           {
-            "width": 118.25,
+            "width": 123.234375,
             "height": 69
           },
           {
-            "width": 82.015625,
+            "width": 85.5625,
             "height": 45
           },
           {
-            "width": 37.578125,
+            "width": 40.140625,
             "height": 36
           },
           {
-            "width": 132.6953125,
+            "width": 135.91796875,
             "height": 101.25
           },
           {
-            "width": 78.71932983398438,
-            "height": 59.296669006347656
+            "width": 81.74259185791016,
+            "height": 60.55087661743164
           }
         ]
       },
-      "enforceInterior": false,
+      "enforceInterior": true,
       "file": "look-neo-shapes-03.png"
     },
     {
       "id": "look-neo-shapes-04",
       "theme": "neo",
       "look": "neo",
-      "fontMode": "system",
+      "fontMode": "noto",
       "source": "flowchart LR\nN0@{ shape: doc, label: \"doc\" }\nN1@{ shape: docs, label: \"docs\" }\nN2@{ shape: tag-doc, label: \"tag-doc\" }\nN3@{ shape: lin-doc, label: \"lin-doc\" }\nN4@{ shape: cyl, label: \"cyl\" }\nN5@{ shape: datastore, label: \"datastore\" }\nN6@{ shape: h-cyl, label: \"h-cyl\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
       "dpr": 1,
       "content": {
-        "width": 817.8317260742188,
+        "width": 832.73486328125,
         "height": 98.36488342285156,
         "nodeBoxes": [
           {
-            "width": 54.578125,
+            "width": 55.8125,
             "height": 67.49201202392578
           },
           {
-            "width": 81.578125,
+            "width": 82.515625,
             "height": 98.36487579345703
           },
           {
-            "width": 84.3734359741211,
+            "width": 87.8109359741211,
             "height": 63.7454719543457
           },
           {
-            "width": 80.57499694824219,
+            "width": 83.8062515258789,
             "height": 67.49201202392578
           },
           {
-            "width": 41.125,
-            "height": 63.566593170166016
+            "width": 41.484375,
+            "height": 63.68840408325195
           },
           {
-            "width": 118.375,
+            "width": 123,
             "height": 51
           },
           {
-            "width": 57.22705841064453,
+            "width": 58.30518341064453,
             "height": 33
           }
         ]
       },
-      "enforceInterior": false,
+      "enforceInterior": true,
       "file": "look-neo-shapes-04.png"
     },
     {
       "id": "look-neo-shapes-05",
       "theme": "neo",
       "look": "neo",
-      "fontMode": "system",
+      "fontMode": "noto",
       "source": "flowchart LR\nN0@{ shape: lin-cyl, label: \"lin-cyl\" }\nN1@{ shape: bow-rect, label: \"bow-rect\" }\nN2@{ shape: tri, label: \"tri\" }\nN3@{ shape: flip-tri, label: \"flip-tri\" }\nN4@{ shape: hourglass, label: \"hourglass\" }\nN5@{ shape: fork, label: \"fork\" }\nN6@{ shape: f-circ, label: \"f-circ\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
       "dpr": 1,
       "content": {
-        "width": 664.5986328125,
-        "height": 95.3697509765625,
+        "width": 678.6298828125,
+        "height": 95.88838195800781,
         "nodeBoxes": [
           {
-            "width": 67.78125,
-            "height": 95.3697509765625
+            "width": 69.859375,
+            "height": 95.88838195800781
           },
           {
-            "width": 90.89119720458984,
+            "width": 94.68807220458984,
             "height": 33
           },
           {
-            "width": 62.671875,
-            "height": 62.671875
+            "width": 65.453125,
+            "height": 65.453125
           },
           {
-            "width": 85.234375,
-            "height": 85.234375
+            "width": 90.609375,
+            "height": 90.609375
           },
           {
             "width": 30,
@@ -493,73 +507,70 @@
           }
         ]
       },
-      "enforceInterior": false,
+      "enforceInterior": true,
       "file": "look-neo-shapes-05.png"
     },
     {
       "id": "look-neo-shapes-06",
       "theme": "neo",
       "look": "neo",
-      "fontMode": "system",
+      "fontMode": "noto",
       "source": "flowchart LR\nN0@{ shape: notch-pent, label: \"notch-pent\" }\nN1@{ shape: curv-trap, label: \"curv-trap\" }\nN2@{ shape: sl-rect, label: \"sl-rect\" }\nN3@{ shape: win-pane, label: \"win-pane\" }\nN4@{ shape: div-rect, label: \"div-rect\" }\nN5@{ shape: delay, label: \"delay\" }\nN6@{ shape: brace, label: \"brace\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
       "dpr": 1,
-      "textGlyphIou": 0.35,
       "content": {
-        "width": 866.5510864257812,
+        "width": 890.5354614257812,
         "height": 67.5,
         "nodeBoxes": [
           {
-            "width": 98.171875,
+            "width": 104.28125,
             "height": 45
           },
           {
-            "width": 109.03141021728516,
+            "width": 114.73453521728516,
             "height": 45
           },
           {
-            "width": 70.125,
+            "width": 72,
             "height": 67.5
           },
           {
-            "width": 98.828125,
+            "width": 102.796875,
             "height": 55
           },
           {
-            "width": 61.90625,
+            "width": 65.015625,
             "height": 44.400001525878906
           },
           {
-            "width": 65.45719146728516,
+            "width": 67.11344146728516,
             "height": 45
           },
           {
-            "width": 63.031253814697266,
+            "width": 64.59375,
             "height": 43
           }
         ]
       },
-      "enforceInterior": false,
+      "enforceInterior": true,
       "file": "look-neo-shapes-06.png"
     },
     {
       "id": "look-neo-shapes-07",
       "theme": "neo",
       "look": "neo",
-      "fontMode": "system",
+      "fontMode": "noto",
       "source": "flowchart LR\nN0@{ shape: brace-r, label: \"brace-r\" }\nN1@{ shape: braces, label: \"braces\" }\nN2@{ shape: bolt, label: \"bolt\" }\nN3@{ shape: cross-circ, label: \"cross-circ\" }\nN4@{ shape: st-rect, label: \"st-rect\" }\nN5@{ shape: tag-rect, label: \"tag-rect\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5",
       "dpr": 1,
-      "textGlyphIou": 0.1,
-      "emptyMaxMismatchRatio": 0.08,
       "content": {
-        "width": 705.3069458007812,
+        "width": 715.3850708007812,
         "height": 70,
         "nodeBoxes": [
           {
-            "width": 90.359375,
+            "width": 92.875,
             "height": 55
           },
           {
-            "width": 90.53125,
+            "width": 91.796875,
             "height": 55
           },
           {
@@ -571,17 +582,440 @@
             "height": 60
           },
           {
-            "width": 90.890625,
+            "width": 93.453125,
             "height": 65
           },
           {
-            "width": 88.46875,
+            "width": 92.203125,
             "height": 45
           }
         ]
       },
-      "enforceInterior": false,
+      "enforceInterior": true,
       "file": "look-neo-shapes-07.png"
+    },
+    {
+      "id": "look-neo-dark-shapes-01-1x",
+      "theme": "neo-dark",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart LR\nN0@{ shape: rect, label: \"rect\" }\nN1@{ shape: rounded, label: \"rounded\" }\nN2@{ shape: stadium, label: \"stadium\" }\nN3@{ shape: fr-rect, label: \"fr-rect\" }\nN4@{ shape: circle, label: \"circle\" }\nN5@{ shape: diam, label: \"diam\" }\nN6@{ shape: hex, label: \"hex\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 1,
+      "content": {
+        "width": 922.6018676757812,
+        "height": 98.0625,
+        "nodeBoxes": [
+          {
+            "width": 57.1875,
+            "height": 45
+          },
+          {
+            "width": 86.40625,
+            "height": 51
+          },
+          {
+            "width": 104.80500793457031,
+            "height": 45
+          },
+          {
+            "width": 84.28125,
+            "height": 33
+          },
+          {
+            "width": 98.0625,
+            "height": 98.0625
+          },
+          {
+            "width": 84.171875,
+            "height": 84.171875
+          },
+          {
+            "width": 107.6875,
+            "height": 91
+          }
+        ]
+      },
+      "enforceInterior": true,
+      "file": "look-neo-dark-shapes-01-1x.png"
+    },
+    {
+      "id": "look-neo-dark-shapes-02-1_25x",
+      "theme": "neo-dark",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart LR\nN0@{ shape: trap-b, label: \"trap-b\" }\nN1@{ shape: trap-t, label: \"trap-t\" }\nN2@{ shape: lean-r, label: \"lean-r\" }\nN3@{ shape: lean-l, label: \"lean-l\" }\nN4@{ shape: odd, label: \"odd\" }\nN5@{ shape: flag, label: \"flag\" }\nN6@{ shape: dbl-circ, label: \"dbl-circ\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 1.25,
+      "content": {
+        "width": 975.953125,
+        "height": 79.90625,
+        "nodeBoxes": [
+          {
+            "width": 106.140625,
+            "height": 36
+          },
+          {
+            "width": 147.59375,
+            "height": 51
+          },
+          {
+            "width": 104.3125,
+            "height": 36
+          },
+          {
+            "width": 102.140625,
+            "height": 36
+          },
+          {
+            "width": 78.953125,
+            "height": 45
+          },
+          {
+            "width": 56.90625,
+            "height": 61.479774475097656
+          },
+          {
+            "width": 79.90625,
+            "height": 79.90625
+          }
+        ]
+      },
+      "enforceInterior": true,
+      "file": "look-neo-dark-shapes-02-1_25x.png"
+    },
+    {
+      "id": "look-neo-dark-shapes-03-1_5x",
+      "theme": "neo-dark",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart LR\nN0@{ shape: fr-circ, label: \"fr-circ\" }\nN1@{ shape: sm-circ, label: \"sm-circ\" }\nN2@{ shape: notch-rect, label: \"notch-rect\" }\nN3@{ shape: lin-rect, label: \"lin-rect\" }\nN4@{ shape: text, label: \"text\" }\nN5@{ shape: bang, label: \"bang\" }\nN6@{ shape: cloud, label: \"cloud\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 1.5,
+      "content": {
+        "width": 795.41455078125,
+        "height": 101.25,
+        "nodeBoxes": [
+          {
+            "width": 14.013293266296387,
+            "height": 14
+          },
+          {
+            "width": 14,
+            "height": 14
+          },
+          {
+            "width": 123.234375,
+            "height": 69
+          },
+          {
+            "width": 85.5625,
+            "height": 45
+          },
+          {
+            "width": 40.140625,
+            "height": 36
+          },
+          {
+            "width": 135.91796875,
+            "height": 101.25
+          },
+          {
+            "width": 81.74259185791016,
+            "height": 60.55087661743164
+          }
+        ]
+      },
+      "enforceInterior": true,
+      "file": "look-neo-dark-shapes-03-1_5x.png"
+    },
+    {
+      "id": "look-neo-dark-shapes-04-2x",
+      "theme": "neo-dark",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart LR\nN0@{ shape: doc, label: \"doc\" }\nN1@{ shape: docs, label: \"docs\" }\nN2@{ shape: tag-doc, label: \"tag-doc\" }\nN3@{ shape: lin-doc, label: \"lin-doc\" }\nN4@{ shape: cyl, label: \"cyl\" }\nN5@{ shape: datastore, label: \"datastore\" }\nN6@{ shape: h-cyl, label: \"h-cyl\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 2,
+      "content": {
+        "width": 832.73486328125,
+        "height": 98.36488342285156,
+        "nodeBoxes": [
+          {
+            "width": 55.8125,
+            "height": 67.49201202392578
+          },
+          {
+            "width": 82.515625,
+            "height": 98.36487579345703
+          },
+          {
+            "width": 87.8109359741211,
+            "height": 63.7454719543457
+          },
+          {
+            "width": 83.8062515258789,
+            "height": 67.49201202392578
+          },
+          {
+            "width": 41.484375,
+            "height": 63.68840408325195
+          },
+          {
+            "width": 123,
+            "height": 51
+          },
+          {
+            "width": 58.30518341064453,
+            "height": 33
+          }
+        ]
+      },
+      "enforceInterior": true,
+      "file": "look-neo-dark-shapes-04-2x.png"
+    },
+    {
+      "id": "look-neo-dark-shapes-05-1_25x",
+      "theme": "neo-dark",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart LR\nN0@{ shape: lin-cyl, label: \"lin-cyl\" }\nN1@{ shape: bow-rect, label: \"bow-rect\" }\nN2@{ shape: tri, label: \"tri\" }\nN3@{ shape: flip-tri, label: \"flip-tri\" }\nN4@{ shape: hourglass, label: \"hourglass\" }\nN5@{ shape: fork, label: \"fork\" }\nN6@{ shape: f-circ, label: \"f-circ\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 1.25,
+      "content": {
+        "width": 678.6298828125,
+        "height": 95.88838195800781,
+        "nodeBoxes": [
+          {
+            "width": 69.859375,
+            "height": 95.88838195800781
+          },
+          {
+            "width": 94.68807220458984,
+            "height": 33
+          },
+          {
+            "width": 65.453125,
+            "height": 65.453125
+          },
+          {
+            "width": 90.609375,
+            "height": 90.609375
+          },
+          {
+            "width": 30,
+            "height": 30
+          },
+          {
+            "width": 10,
+            "height": 70
+          },
+          {
+            "width": 14.013293266296387,
+            "height": 14
+          }
+        ]
+      },
+      "enforceInterior": true,
+      "file": "look-neo-dark-shapes-05-1_25x.png"
+    },
+    {
+      "id": "look-neo-dark-shapes-06-1_5x",
+      "theme": "neo-dark",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart LR\nN0@{ shape: notch-pent, label: \"notch-pent\" }\nN1@{ shape: curv-trap, label: \"curv-trap\" }\nN2@{ shape: sl-rect, label: \"sl-rect\" }\nN3@{ shape: win-pane, label: \"win-pane\" }\nN4@{ shape: div-rect, label: \"div-rect\" }\nN5@{ shape: delay, label: \"delay\" }\nN6@{ shape: brace, label: \"brace\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 1.5,
+      "content": {
+        "width": 890.5354614257812,
+        "height": 67.5,
+        "nodeBoxes": [
+          {
+            "width": 104.28125,
+            "height": 45
+          },
+          {
+            "width": 114.73453521728516,
+            "height": 45
+          },
+          {
+            "width": 72,
+            "height": 67.5
+          },
+          {
+            "width": 102.796875,
+            "height": 55
+          },
+          {
+            "width": 65.015625,
+            "height": 44.400001525878906
+          },
+          {
+            "width": 67.11344146728516,
+            "height": 45
+          },
+          {
+            "width": 64.59375,
+            "height": 43
+          }
+        ]
+      },
+      "enforceInterior": true,
+      "file": "look-neo-dark-shapes-06-1_5x.png"
+    },
+    {
+      "id": "look-neo-dark-shapes-07-2x",
+      "theme": "neo-dark",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart LR\nN0@{ shape: brace-r, label: \"brace-r\" }\nN1@{ shape: braces, label: \"braces\" }\nN2@{ shape: bolt, label: \"bolt\" }\nN3@{ shape: cross-circ, label: \"cross-circ\" }\nN4@{ shape: st-rect, label: \"st-rect\" }\nN5@{ shape: tag-rect, label: \"tag-rect\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5",
+      "dpr": 2,
+      "content": {
+        "width": 715.3850708007812,
+        "height": 70,
+        "nodeBoxes": [
+          {
+            "width": 92.875,
+            "height": 55
+          },
+          {
+            "width": 91.796875,
+            "height": 55
+          },
+          {
+            "width": 35,
+            "height": 70
+          },
+          {
+            "width": 60.05697250366211,
+            "height": 60
+          },
+          {
+            "width": 93.453125,
+            "height": 65
+          },
+          {
+            "width": 92.203125,
+            "height": 45
+          }
+        ]
+      },
+      "enforceInterior": true,
+      "file": "look-neo-dark-shapes-07-2x.png"
+    },
+    {
+      "id": "look-redux-structure",
+      "theme": "redux",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart TB\nsubgraph Group[Redux Group]\nA@{ shape: doc, label: \"Document\" } --> B@{ shape: cyl, label: \"Store\" }\nB --> C@{ shape: st-rect, label: \"Stacked\" }\nend\nC --> D@{ shape: diam, label: \"Decision\" }",
+      "dpr": 1,
+      "content": {
+        "width": 173.296875,
+        "height": 509.32342529296875,
+        "computedStyles": {
+          "nodeFill": "rgb(255, 255, 255)",
+          "nodeStroke": "rgb(40, 37, 61)",
+          "nodeFillOpacity": "1",
+          "nodeOpacity": "1",
+          "nodeFilter": "none",
+          "clusterFill": "rgb(249, 249, 251)",
+          "clusterStroke": "rgb(40, 37, 61)",
+          "clusterFillOpacity": "1",
+          "clusterOpacity": "1",
+          "clusterFilter": "url(\"#gp-34-drop-shadow\")"
+        }
+      },
+      "enforceInterior": true,
+      "file": "look-redux-structure.png"
+    },
+    {
+      "id": "look-redux-dark-structure",
+      "theme": "redux-dark",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart TB\nsubgraph Group[Redux Group]\nA@{ shape: doc, label: \"Document\" } --> B@{ shape: cyl, label: \"Store\" }\nB --> C@{ shape: st-rect, label: \"Stacked\" }\nend\nC --> D@{ shape: diam, label: \"Decision\" }",
+      "dpr": 1,
+      "content": {
+        "width": 173.296875,
+        "height": 509.32342529296875,
+        "computedStyles": {
+          "nodeFill": "rgb(17, 17, 19)",
+          "nodeStroke": "rgb(255, 255, 255)",
+          "nodeFillOpacity": "1",
+          "nodeOpacity": "1",
+          "nodeFilter": "none",
+          "clusterFill": "rgb(30, 26, 46)",
+          "clusterStroke": "rgb(255, 255, 255)",
+          "clusterFillOpacity": "1",
+          "clusterOpacity": "1",
+          "clusterFilter": "url(\"#gp-35-drop-shadow\")"
+        }
+      },
+      "enforceInterior": true,
+      "file": "look-redux-dark-structure.png"
+    },
+    {
+      "id": "look-redux-color-structure",
+      "theme": "redux-color",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart TB\nsubgraph Group[Redux Group]\nA@{ shape: doc, label: \"Document\" } --> B@{ shape: cyl, label: \"Store\" }\nB --> C@{ shape: st-rect, label: \"Stacked\" }\nend\nC --> D@{ shape: diam, label: \"Decision\" }",
+      "dpr": 1,
+      "content": {
+        "width": 173.296875,
+        "height": 509.32342529296875,
+        "computedStyles": {
+          "nodeFill": "rgb(255, 255, 255)",
+          "nodeStroke": "rgb(40, 37, 61)",
+          "nodeFillOpacity": "1",
+          "nodeOpacity": "1",
+          "nodeFilter": "none",
+          "clusterFill": "rgb(255, 255, 255)",
+          "clusterStroke": "rgb(40, 37, 61)",
+          "clusterFillOpacity": "1",
+          "clusterOpacity": "1",
+          "clusterFilter": "url(\"#gp-36-drop-shadow\")"
+        }
+      },
+      "enforceInterior": true,
+      "file": "look-redux-color-structure.png"
+    },
+    {
+      "id": "look-redux-dark-color-structure",
+      "theme": "redux-dark-color",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart TB\nsubgraph Group[Redux Group]\nA@{ shape: doc, label: \"Document\" } --> B@{ shape: cyl, label: \"Store\" }\nB --> C@{ shape: st-rect, label: \"Stacked\" }\nend\nC --> D@{ shape: diam, label: \"Decision\" }",
+      "dpr": 1,
+      "content": {
+        "width": 173.296875,
+        "height": 509.32342529296875,
+        "computedStyles": {
+          "nodeFill": "rgb(17, 17, 19)",
+          "nodeStroke": "rgb(255, 255, 255)",
+          "nodeFillOpacity": "1",
+          "nodeOpacity": "1",
+          "nodeFilter": "none",
+          "clusterFill": "rgb(30, 26, 46)",
+          "clusterStroke": "rgb(255, 255, 255)",
+          "clusterFillOpacity": "1",
+          "clusterOpacity": "1",
+          "clusterFilter": "url(\"#gp-37-drop-shadow\")"
+        }
+      },
+      "enforceInterior": true,
+      "file": "look-redux-dark-color-structure.png"
+    },
+    {
+      "id": "look-hand-drawn-seed-17",
+      "theme": "default",
+      "look": "handDrawn",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[Rectangle] --> B((Circle))\nB --> C{Decision}\nC --> D[(Store)]",
+      "dpr": 1,
+      "handDrawnSeed": 17,
+      "content": {
+        "width": 518.0928955078125,
+        "height": 118.74297332763672
+      },
+      "enforceInterior": true,
+      "file": "look-hand-drawn-seed-17.png"
     },
     {
       "id": "label-html",
@@ -874,7 +1308,7 @@
         "width": 237.796875,
         "height": 54
       },
-      "enforceInterior": false,
+      "enforceInterior": true,
       "file": "font-noto-arabic.png"
     },
     {
@@ -906,6 +1340,20 @@
       "file": "font-noto-mixed.png"
     },
     {
+      "id": "font-system-fallback-mixed",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
+      "source": "flowchart LR\nA[\"中文 abc שלום\"] --> B[\"日本語 العربية 123\"]",
+      "dpr": 1,
+      "content": {
+        "width": 386.90625,
+        "height": 54
+      },
+      "enforceInterior": false,
+      "file": "font-system-fallback-mixed.png"
+    },
+    {
       "id": "look-neo-dark-cluster-1x",
       "theme": "neo-dark",
       "look": "neo",
@@ -918,6 +1366,20 @@
       },
       "enforceInterior": true,
       "file": "look-neo-dark-cluster-1x.png"
+    },
+    {
+      "id": "look-neo-dark-cluster-1_25x",
+      "theme": "neo-dark",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart TB\nsubgraph Outer[\"外层 Outer\"]\ndirection LR\nsubgraph Inner[\"שלום Inner\"]\ndirection TB\nA@{ shape: doc, label: \"文档\" } --> B@{ shape: lin-cyl, label: \"قاعدة\" }\nB --> C@{ shape: st-rect, label: \"Stacked\" }\nend\nD@{ shape: braces, label: \"Brace\" }\nend\nA --> D\nD --> E@{ shape: tag-doc, label: \"Tagged\" }",
+      "dpr": 1.25,
+      "content": {
+        "width": 408.875,
+        "height": 713.2352294921875
+      },
+      "enforceInterior": true,
+      "file": "look-neo-dark-cluster-1_25x.png"
     },
     {
       "id": "look-neo-dark-cluster-1_5x",

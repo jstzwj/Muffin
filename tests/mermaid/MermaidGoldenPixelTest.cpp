@@ -9,9 +9,11 @@
 #include "mermaid/flowchart/FlowchartLayout.h"
 #include "mermaid/scene/FlowScene.h"
 #include "mermaid/scene/FlowSceneCompare.h"
+#include "mermaid/scene/FlowScenePainter.h"
 #include "mermaid/theme/FlowTheme.h"
 
 #include <QDebug>
+#include <QColor>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -55,6 +57,14 @@ qreal fontPixelSize(const QString& value) {
   const auto match = number.match(value);
   return match.hasMatch() ? match.captured(1).toDouble() : 16.0;
 }
+QColor cssRgb(const QString& value) {
+  static const QRegularExpression rgb(
+      QStringLiteral(R"(^rgb\((\d+),\s*(\d+),\s*(\d+)\)$)"));
+  const auto match = rgb.match(value);
+  require(match.hasMatch(), QStringLiteral("Invalid computed CSS color: %1").arg(value));
+  return QColor(match.captured(1).toInt(), match.captured(2).toInt(),
+                match.captured(3).toInt());
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -80,8 +90,14 @@ int main(int argc, char** argv) {
   bool sawDeterministicAnimation = false;
   int neoLookCases = 0;
   int fixedNotoCases = 0;
+  int systemFallbackCases = 0;
   QSet<QString> neoShapes;
+  QSet<QString> neoDarkShapes;
+  QSet<qreal> neoDarkShapeDprs;
   int neoDarkClusterCases = 0;
+  QSet<QString> reduxStructureThemes;
+  int handDrawnCases = 0;
+  QSet<int> handDrawnSeeds;
   QSet<QString> caseIds;
   QSet<QString> coveredThemes;
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
@@ -107,16 +123,43 @@ int main(int argc, char** argv) {
                            QLatin1String("noto");
     const QString renderFamily = fixedNoto ? MermaidFontRegistry::primaryFamily()
                                             : QStringLiteral("Arial");
-    if (fixedNoto) ++fixedNotoCases;
+    if (fixedNoto) {
+      ++fixedNotoCases;
+      require(fixture.value(QStringLiteral("enforceInterior")).toBool(true) &&
+                  !fixture.contains(QStringLiteral("textGlyphIou")) &&
+                  !fixture.contains(QStringLiteral("emptyMaxMismatchRatio")),
+              QStringLiteral("Case %1: bundled Noto oracle must use uniform strict thresholds")
+                  .arg(id));
+    }
+    if (id == QLatin1String("font-system-fallback-mixed")) {
+      ++systemFallbackCases;
+      require(!fixture.value(QStringLiteral("enforceInterior")).toBool(true),
+              QStringLiteral("System fallback oracle must remain compatibility-only"));
+    }
     if (id.startsWith(QStringLiteral("look-neo-shapes-"))) {
       static const QRegularExpression shapePattern(QStringLiteral(R"(shape:\s*([\w-]+))"));
       auto matches = shapePattern.globalMatch(source);
       while (matches.hasNext()) neoShapes.insert(matches.next().captured(1));
     }
+    if (id.startsWith(QStringLiteral("look-neo-dark-shapes-"))) {
+      static const QRegularExpression shapePattern(QStringLiteral(R"(shape:\s*([\w-]+))"));
+      auto matches = shapePattern.globalMatch(source);
+      while (matches.hasNext()) neoDarkShapes.insert(matches.next().captured(1));
+      neoDarkShapeDprs.insert(dpr);
+    }
     if (id.startsWith(QStringLiteral("look-neo-dark-cluster-"))) ++neoDarkClusterCases;
+    if (id.startsWith(QStringLiteral("look-redux")))
+      reduxStructureThemes.insert(fixture.value(QStringLiteral("theme")).toString());
     const flowchart::FlowLook look = flowchart::parseFlowLook(
         fixture.value(QStringLiteral("look")).toString(QStringLiteral("classic")));
     if (look == flowchart::FlowLook::Neo) ++neoLookCases;
+    if (id.startsWith(QStringLiteral("look-hand-drawn-"))) {
+      ++handDrawnCases;
+      handDrawnSeeds.insert(fixture.value(QStringLiteral("handDrawnSeed")).toInt());
+      require(look == flowchart::FlowLook::HandDrawn &&
+                  fixture.value(QStringLiteral("handDrawnSeed")).toInt() > 0,
+              QStringLiteral("Case %1: handDrawn look/seed metadata drifted").arg(id));
+    }
     const flowchart::Flowchart chart = flowchart::Flowchart::parse(source);
     const flowtheme::FlowThemeVariables theme = flowtheme::resolveFlowTheme(
         themeId(fixture.value(QStringLiteral("theme")).toString()),
@@ -136,13 +179,36 @@ int main(int argc, char** argv) {
         options.measuredEdgeLabels.insert(e.id,
                                           flowchart::measureFlowchartEdgeLabel(e, textOptions));
     const flowchart::FlowLayoutResult layout = flowchart::layoutFlowchartNodes(chart.data(), sizes, options);
-    const flowscene::FlowScene scene = flowscene::buildFlowScene(chart.data(), layout, theme, look);
+    const flowscene::FlowScene scene = flowscene::buildFlowScene(
+        chart.data(), layout, theme, look,
+        static_cast<quint32>(fixture.value(QStringLiteral("handDrawnSeed")).toInt()));
+    if (look == flowchart::FlowLook::HandDrawn) {
+      const QImage first = flowscene::renderFlowSceneToImage(scene, dpr, 8.0, renderFamily);
+      const QImage repeat = flowscene::renderFlowSceneToImage(scene, dpr, 8.0, renderFamily);
+      require(first == repeat,
+              QStringLiteral("Case %1: handDrawn rendering is not deterministic").arg(id));
+      flowscene::FlowScene alternate = scene;
+      ++alternate.handDrawnSeed;
+      require(first != flowscene::renderFlowSceneToImage(alternate, dpr, 8.0, renderFamily),
+              QStringLiteral("Case %1: handDrawn seed does not affect generated paths").arg(id));
+    }
 
     QImage golden;
     require(golden.load(dir.filePath(fixture.value(QStringLiteral("file")).toString())),
             QStringLiteral("Case %1: could not load golden PNG").arg(id));
     const QJsonObject content = fixture.value(QStringLiteral("content")).toObject();
-    if (id.startsWith(QStringLiteral("look-neo-shapes-"))) {
+    if (id.startsWith(QStringLiteral("look-redux"))) {
+      const QJsonObject styles = content.value(QStringLiteral("computedStyles")).toObject();
+      require(!scene.nodes.isEmpty() && !scene.clusters.isEmpty(),
+              QStringLiteral("Case %1: Redux structure scene is incomplete").arg(id));
+      require(QColor(scene.nodes.first().fill).rgb() == cssRgb(styles.value(QStringLiteral("nodeFill")).toString()).rgb() &&
+                  QColor(scene.nodes.first().stroke).rgb() == cssRgb(styles.value(QStringLiteral("nodeStroke")).toString()).rgb() &&
+                  QColor(scene.clusters.first().fill).rgb() == cssRgb(styles.value(QStringLiteral("clusterFill")).toString()).rgb() &&
+                  QColor(scene.clusters.first().stroke).rgb() == cssRgb(styles.value(QStringLiteral("clusterStroke")).toString()).rgb(),
+              QStringLiteral("Case %1: Redux computed node/cluster style drifted").arg(id));
+    }
+    if (id.startsWith(QStringLiteral("look-neo-shapes-")) ||
+        id.startsWith(QStringLiteral("look-neo-dark-shapes-"))) {
       const QJsonArray boxes = content.value(QStringLiteral("nodeBoxes")).toArray();
       require(boxes.size() == scene.nodes.size(),
               QStringLiteral("Case %1: upstream/native node count differs").arg(id));
@@ -196,11 +262,30 @@ int main(int argc, char** argv) {
           QStringLiteral("Golden-pixel neo look coverage regressed: %1/2").arg(neoLookCases));
   require(fixedNotoCases >= 5,
           QStringLiteral("Golden-pixel fixed Noto coverage regressed: %1/5").arg(fixedNotoCases));
+  require(systemFallbackCases == 1,
+          QStringLiteral("Golden-pixel system fallback coverage regressed: %1/1")
+              .arg(systemFallbackCases));
+  const QStringList bundledFamilies = MermaidFontRegistry::familyStack();
+  for (const QString& family : {QStringLiteral("Noto Sans"),
+                                QStringLiteral("Noto Sans CJK SC"),
+                                QStringLiteral("Noto Sans Arabic"),
+                                QStringLiteral("Noto Sans Hebrew")})
+    require(bundledFamilies.contains(family),
+            QStringLiteral("Bundled Mermaid font family is unavailable: %1").arg(family));
   require(neoShapes.size() == 48,
           QStringLiteral("Golden-pixel neo shape coverage regressed: %1/48").arg(neoShapes.size()));
-  require(neoDarkClusterCases == 3,
-          QStringLiteral("Golden-pixel neo-dark cluster/DPR coverage regressed: %1/3")
+  require(neoDarkShapes.size() == 48 && neoDarkShapeDprs.size() == 4,
+          QStringLiteral("Golden-pixel neo-dark shape/DPR coverage regressed: %1/48 shapes, %2/4 DPRs")
+              .arg(neoDarkShapes.size()).arg(neoDarkShapeDprs.size()));
+  require(neoDarkClusterCases == 4,
+          QStringLiteral("Golden-pixel neo-dark cluster/DPR coverage regressed: %1/4")
               .arg(neoDarkClusterCases));
+  require(reduxStructureThemes.size() == 4,
+          QStringLiteral("Golden-pixel Redux structure coverage regressed: %1/4")
+              .arg(reduxStructureThemes.size()));
+  require(handDrawnCases == 2 && handDrawnSeeds.size() == 2,
+          QStringLiteral("Golden-pixel deterministic handDrawn coverage regressed: %1/2")
+              .arg(handDrawnCases));
   qDebug().noquote() << "MermaidGoldenPixelTest:" << cases.size() << "cases pass Level-3 (interior exact + boundary RGBA + text IoU + empty)";
   return 0;
 }

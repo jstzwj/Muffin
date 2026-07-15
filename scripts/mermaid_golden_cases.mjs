@@ -81,6 +81,21 @@ table.push({
     "H x--x I[CrossBoth]",
   ].join("\n"),
 });
+table.push({
+  id: "look-hand-drawn-cluster-1_5x",
+  theme: "default",
+  look: "handDrawn",
+  handDrawnSeed: 23,
+  fontMode: "noto",
+  dpr: 1.5,
+  source: [
+    "flowchart TB",
+    'subgraph G["Sketch Group"]',
+    'A@{ shape: doc, label: "Document" } --> B@{ shape: cyl, label: "Store" }',
+    "end",
+    'B --> C@{ shape: braces, label: "Brace" }',
+  ].join("\n"),
+});
 // Axis 4 - canonical shapes (a representative spread; all 48 are L2-verified).
 table.push({
   id: "shape-matrix",
@@ -130,16 +145,53 @@ for (let start = 0; start < neoShapeShortNames.length; start += 7) {
     id: `look-neo-shapes-${ordinal}`,
     theme: "neo",
     look: "neo",
-    // Multi-path shapes intentionally overlap their fill paths. Geometry is
-    // guarded by nodeBoxes and the boundary/empty/text comparisons; treating
-    // the overlapped fill as a single INTERIOR category is renderer-dependent.
-    enforceInterior: false,
-    ...(ordinal === "03" ? { textGlyphIou: 0.55 } : {}),
-    ...(ordinal === "06" ? { textGlyphIou: 0.35 } : {}),
-    ...(ordinal === "07" ? { textGlyphIou: 0.1, emptyMaxMismatchRatio: 0.08 } : {}),
+    fontMode: "noto",
     source: neoShapeSource(neoShapeShortNames.slice(start, start + 7)),
   });
 }
+const neoDarkShapeDprs = [1, 1.25, 1.5, 2, 1.25, 1.5, 2];
+for (let start = 0; start < neoShapeShortNames.length; start += 7) {
+  const index = start / 7;
+  const ordinal = String(index + 1).padStart(2, "0");
+  table.push({
+    id: `look-neo-dark-shapes-${ordinal}-${String(neoDarkShapeDprs[index]).replace(".", "_")}x`,
+    theme: "neo-dark",
+    look: "neo",
+    fontMode: "noto",
+    dpr: neoDarkShapeDprs[index],
+    source: neoShapeSource(neoShapeShortNames.slice(start, start + 7)),
+  });
+}
+const reduxStructureSource = [
+  "flowchart TB",
+  "subgraph Group[Redux Group]",
+  'A@{ shape: doc, label: "Document" } --> B@{ shape: cyl, label: "Store" }',
+  'B --> C@{ shape: st-rect, label: "Stacked" }',
+  "end",
+  'C --> D@{ shape: diam, label: "Decision" }',
+].join("\n");
+for (const theme of ["redux", "redux-dark", "redux-color", "redux-dark-color"]) {
+  table.push({
+    id: `look-${theme}-structure`,
+    theme,
+    look: "neo",
+    fontMode: "noto",
+    source: reduxStructureSource,
+  });
+}
+table.push({
+  id: "look-hand-drawn-seed-17",
+  theme: "default",
+  look: "handDrawn",
+  handDrawnSeed: 17,
+  fontMode: "noto",
+  source: [
+    "flowchart LR",
+    "A[Rectangle] --> B((Circle))",
+    "B --> C{Decision}",
+    "C --> D[(Store)]",
+  ].join("\n"),
+});
 // Axis 5 - HTML, Markdown, and Math label rendering.
 table.push({
   id: "label-html",
@@ -205,7 +257,6 @@ table.push({
   id: "font-noto-arabic",
   theme: "default",
   fontMode: "noto",
-  enforceInterior: false,
   source: 'flowchart LR\nA["مرحبا"] --> B["العالم"]',
 });
 table.push({
@@ -215,6 +266,13 @@ table.push({
   source: 'flowchart LR\nA["שלום"] --> B["עולם"]',
 });
 table.push({ id: "font-noto-mixed", theme: "default", fontMode: "noto", source: mixedSource });
+table.push({
+  id: "font-system-fallback-mixed",
+  theme: "default",
+  fontMode: "system",
+  enforceInterior: false,
+  source: mixedSource,
+});
 const neoDarkClusterSource = [
   "flowchart TB",
   'subgraph Outer["外层 Outer"]',
@@ -229,7 +287,7 @@ const neoDarkClusterSource = [
   "A --> D",
   'D --> E@{ shape: tag-doc, label: "Tagged" }',
 ].join("\n");
-for (const dpr of [1, 1.5, 2]) {
+for (const dpr of [1, 1.25, 1.5, 2]) {
   table.push({
     id: `look-neo-dark-cluster-${String(dpr).replace(".", "_")}x`,
     theme: "neo-dark",

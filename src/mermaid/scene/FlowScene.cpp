@@ -16,6 +16,303 @@ namespace {
 
 qreal r3(qreal v) { return std::round(v * 1000.0) / 1000.0; }
 
+QPainterPath polygonPath(const QVector<QPointF>& points) {
+  QPainterPath path;
+  if (points.isEmpty()) return path;
+  path.moveTo(points.first());
+  for (qsizetype i = 1; i < points.size(); ++i) path.lineTo(points.at(i));
+  path.closeSubpath();
+  return path;
+}
+
+QPainterPath openPath(const QVector<QPointF>& points, const QPointF& offset = {}) {
+  QPainterPath path;
+  if (points.isEmpty()) return path;
+  path.moveTo(points.first() + offset);
+  for (qsizetype i = 1; i < points.size(); ++i) path.lineTo(points.at(i) + offset);
+  return path;
+}
+
+QVector<QPointF> circlePoints(qreal centerX, qreal centerY, qreal radius,
+                              int count, qreal startDegrees, qreal endDegrees,
+                              bool negate) {
+  QVector<QPointF> points;
+  points.reserve(count);
+  const qreal start = qDegreesToRadians(startDegrees);
+  const qreal range = qDegreesToRadians(endDegrees - startDegrees);
+  for (int i = 0; i < count; ++i) {
+    const qreal angle = start + range * i / (count - 1);
+    QPointF point(centerX + radius * std::cos(angle),
+                  centerY + radius * std::sin(angle));
+    points.append(negate ? -point : point);
+  }
+  return points;
+}
+
+void appendPoints(QVector<QPointF>& target, const QVector<QPointF>& source) {
+  target.reserve(target.size() + source.size());
+  for (const QPointF& point : source) target.append(point);
+}
+
+QPointF bboxCenter(const QVector<QPointF>& points) {
+  if (points.isEmpty()) return {};
+  qreal left = points.first().x(), right = left;
+  qreal top = points.first().y(), bottom = top;
+  for (const QPointF& point : points) {
+    left = std::min(left, point.x()); right = std::max(right, point.x());
+    top = std::min(top, point.y()); bottom = std::max(bottom, point.y());
+  }
+  return QPointF((left + right) / 2.0, (top + bottom) / 2.0);
+}
+
+void appendSine(QPainterPath& path, qreal x1, qreal x2, qreal y,
+                qreal amplitude, qreal cycles) {
+  constexpr int steps = 50;
+  for (int i = 1; i <= steps; ++i) {
+    const qreal t = qreal(i) / steps;
+    const qreal x = x1 + (x2 - x1) * t;
+    path.lineTo(x, y + amplitude * std::sin(2.0 * M_PI * cycles * t));
+  }
+}
+
+FlowSceneShapePath shapePath(QPainterPath path, bool fill = true, bool stroke = true,
+                             QString fillOverride = {}, QString strokeOverride = {}) {
+  return {std::move(path), fill, stroke, std::move(fillOverride), std::move(strokeOverride)};
+}
+
+QVector<FlowSceneShapePath> buildShapePaths(const FlowSceneNode& node) {
+  QVector<FlowSceneShapePath> paths;
+  const QRectF r(-node.width / 2.0, -node.height / 2.0, node.width, node.height);
+  const QString& type = node.shapeType;
+  if (type == QLatin1String("text")) return paths;
+
+  const auto documentPath = [](const QRectF& layer, qreal heightRatio,
+                               qreal amplitudeDivisor) {
+    const qreal internalH = layer.height() / heightRatio;
+    const qreal amplitude = internalH / amplitudeDivisor;
+    const qreal waveY = layer.bottom() - amplitude;
+    QPainterPath path(QPointF(layer.left(), waveY));
+    appendSine(path, layer.left(), layer.right(), waveY, amplitude, 0.8);
+    path.lineTo(layer.right(), layer.top());
+    path.lineTo(layer.left(), layer.top());
+    path.closeSubpath();
+    return path;
+  };
+
+  if (type == QLatin1String("multi_document")) {
+    constexpr qreal o = 10.0;
+    for (const QRectF& layer : {r.adjusted(2 * o, 0, 0, -2 * o),
+                                r.adjusted(o, o, -o, -o),
+                                r.adjusted(0, 2 * o, -2 * o, 0)})
+      paths.append(shapePath(documentPath(layer, 1.25, 4.0)));
+    return paths;
+  }
+  if (type == QLatin1String("document") || type == QLatin1String("lined_document") ||
+      type == QLatin1String("tagged_document")) {
+    const bool tagged = type == QLatin1String("tagged_document");
+    paths.append(shapePath(documentPath(r, tagged ? 1.25 : 1.5, tagged ? 8.0 : 4.0)));
+    const qreal internalH = r.height() / (tagged ? 1.25 : 1.5);
+    const qreal amplitude = internalH / (tagged ? 8.0 : 4.0);
+    const qreal waveY = r.bottom() - amplitude;
+    if (type == QLatin1String("lined_document")) {
+      QPainterPath line(QPointF(r.left() + r.width() / 11.0, r.top()));
+      line.lineTo(r.left() + r.width() / 11.0, waveY);
+      paths.append(shapePath(line, false, true));
+    } else if (tagged) {
+      const qreal tag = std::min(r.width(), internalH) * 0.22;
+      QPainterPath fold(QPointF(r.right() - tag, r.bottom() - amplitude * 0.2));
+      fold.lineTo(r.right() - tag, r.bottom() - tag - amplitude * 0.2);
+      fold.lineTo(r.right(), r.bottom() - amplitude * 0.2);
+      paths.append(shapePath(fold, false, true));
+    }
+    return paths;
+  }
+  if (type == QLatin1String("flag")) {
+    const qreal internalH = r.height() / 1.5;
+    const qreal amplitude = internalH / 8.0;
+    const qreal top = r.top() + amplitude, bottom = r.bottom() - amplitude;
+    QPainterPath path(QPointF(r.left(), bottom));
+    appendSine(path, r.left(), r.right(), bottom, amplitude, 1.0);
+    path.lineTo(r.right(), top);
+    appendSine(path, r.right(), r.left(), top, -amplitude, -1.0);
+    path.closeSubpath();
+    paths.append(shapePath(path));
+    return paths;
+  }
+  if (type == QLatin1String("stacked_rect")) {
+    const qreal o = node.width > 80.0 && node.height > 60.0 ? 10.0 : 5.0;
+    for (const QRectF& layer : {r.adjusted(2 * o, 0, 0, -2 * o),
+                                r.adjusted(o, o, -o, -o),
+                                r.adjusted(0, 2 * o, -2 * o, 0)}) {
+      QPainterPath path; path.addRect(layer); paths.append(shapePath(path));
+    }
+    return paths;
+  }
+  if (type == QLatin1String("tagged_rect")) {
+    const qreal tag = r.height() * 0.2;
+    QPainterPath outer(QPointF(r.left(), r.top()));
+    outer.lineTo(r.right() - tag, r.top()); outer.lineTo(r.right(), r.top() + tag);
+    outer.lineTo(r.right(), r.bottom()); outer.lineTo(r.left(), r.bottom()); outer.closeSubpath();
+    paths.append(shapePath(outer));
+    QPainterPath fold(QPointF(r.right() - tag, r.top()));
+    fold.lineTo(r.right() - tag, r.top() + tag); fold.lineTo(r.right(), r.top() + tag);
+    paths.append(shapePath(fold, false, true));
+    return paths;
+  }
+  if (type == QLatin1String("brace_left") || type == QLatin1String("brace_right") ||
+      type == QLatin1String("braces")) {
+    qreal h, radius;
+    if (node.height >= 60.0) {
+      h = node.height / 1.2;
+      radius = h / 10.0;
+    } else {
+      radius = 5.0;
+      h = node.height - 2.0 * radius;
+    }
+    const qreal widthFactor = type == QLatin1String("braces") ? 2.5 : 2.0;
+    const qreal w = node.width - widthFactor * radius;
+    QVector<QPointF> bounds;
+
+    if (type == QLatin1String("brace_left")) {
+      QVector<QPointF> visible;
+      appendPoints(visible, circlePoints(w / 2, -h / 2, radius, 30, -90, 0, true));
+      visible.append(QPointF(-w / 2 - radius, radius));
+      appendPoints(visible, circlePoints(w / 2 + 2 * radius, -radius, radius, 20, -180, -270, true));
+      appendPoints(visible, circlePoints(w / 2 + 2 * radius, radius, radius, 20, -90, -180, true));
+      visible.append(QPointF(-w / 2 - radius, -h / 2));
+      appendPoints(visible, circlePoints(w / 2, h / 2, radius, 20, 0, 90, true));
+
+      bounds = {QPointF(w / 2, -h / 2 - radius), QPointF(-w / 2, -h / 2 - radius)};
+      appendPoints(bounds, circlePoints(w / 2, -h / 2, radius, 20, -90, 0, true));
+      bounds.append(QPointF(-w / 2 - radius, -radius));
+      appendPoints(bounds, circlePoints(w / 2 + w * 0.1, -radius, radius, 20, -180, -270, true));
+      appendPoints(bounds, circlePoints(w / 2 + w * 0.1, radius, radius, 20, -90, -180, true));
+      bounds.append(QPointF(-w / 2 - radius, h / 2));
+      appendPoints(bounds, circlePoints(w / 2, h / 2, radius, 20, 0, 90, true));
+      bounds.append(QPointF(-w / 2, h / 2 + radius));
+      bounds.append(QPointF(w / 2, h / 2 + radius));
+      const QPointF offset = -bboxCenter(bounds);
+      paths.append(shapePath(openPath(visible, offset), false, true));
+    } else if (type == QLatin1String("brace_right")) {
+      QVector<QPointF> visible;
+      appendPoints(visible, circlePoints(w / 2, -h / 2, radius, 20, -90, 0, false));
+      visible.append(QPointF(w / 2 + radius, -radius));
+      appendPoints(visible, circlePoints(w / 2 + 2 * radius, -radius, radius, 20, -180, -270, false));
+      appendPoints(visible, circlePoints(w / 2 + 2 * radius, radius, radius, 20, -90, -180, false));
+      visible.append(QPointF(w / 2 + radius, h / 2));
+      appendPoints(visible, circlePoints(w / 2, h / 2, radius, 20, 0, 90, false));
+
+      bounds = {QPointF(-w / 2, -h / 2 - radius), QPointF(w / 2, -h / 2 - radius)};
+      appendPoints(bounds, visible);
+      bounds.append(QPointF(w / 2, h / 2 + radius));
+      bounds.append(QPointF(-w / 2, h / 2 + radius));
+      const QPointF offset = -bboxCenter(bounds);
+      paths.append(shapePath(openPath(visible, offset), false, true));
+    } else {
+      QVector<QPointF> left, right;
+      appendPoints(left, circlePoints(w / 2, -h / 2, radius, 30, -90, 0, true));
+      left.append(QPointF(-w / 2 - radius, radius));
+      appendPoints(left, circlePoints(w / 2 + 2 * radius, -radius, radius, 20, -180, -270, true));
+      appendPoints(left, circlePoints(w / 2 + 2 * radius, radius, radius, 20, -90, -180, true));
+      left.append(QPointF(-w / 2 - radius, -h / 2));
+      appendPoints(left, circlePoints(w / 2, h / 2, radius, 20, 0, 90, true));
+      appendPoints(right, circlePoints(-w / 2 + 1.5 * radius, -h / 2, radius, 20, -90, -180, true));
+      right.append(QPointF(w / 2 - radius / 2, radius));
+      appendPoints(right, circlePoints(-w / 2 - radius / 2, -radius, radius, 20, 0, 90, true));
+      appendPoints(right, circlePoints(-w / 2 - radius / 2, radius, radius, 20, -90, 0, true));
+      right.append(QPointF(w / 2 - radius / 2, -radius));
+      appendPoints(right, circlePoints(-w / 2 + 1.5 * radius, h / 2, radius, 30, -180, -270, true));
+      bounds = left;
+      appendPoints(bounds, right);
+      bounds.append(QPointF(w / 2, -h / 2 - radius));
+      bounds.append(QPointF(-w / 2, -h / 2 - radius));
+      bounds.append(QPointF(-w / 2, h / 2 + radius));
+      bounds.append(QPointF(w / 2 - 1.5 * radius, h / 2 + radius));
+      const QPointF offset = -bboxCenter(bounds);
+      paths.append(shapePath(openPath(left, offset), false, true));
+      paths.append(shapePath(openPath(right, offset), false, true));
+    }
+    return paths;
+  }
+
+  if (node.shapeKind == QLatin1String("roundedRect") ||
+      node.shapeKind == QLatin1String("stadium")) {
+    QPainterPath path; path.addRoundedRect(r, node.cornerRadius, node.cornerRadius);
+    paths.append(shapePath(path));
+  } else if (node.shapeKind == QLatin1String("ellipse")) {
+    QPainterPath outer; outer.addEllipse(r);
+    paths.append(type == QLatin1String("filled_circle")
+                     ? shapePath(outer, true, true, node.stroke)
+                     : shapePath(outer));
+    if (type == QLatin1String("double_circle") || type == QLatin1String("framed_circle")) {
+      const qreal gap = type == QLatin1String("double_circle") ? 12.0 : 2.0;
+      QPainterPath inner; inner.addEllipse(r.adjusted(gap, gap, -gap, -gap));
+      paths.append(shapePath(inner));
+    }
+    if (type == QLatin1String("crossed_circle")) {
+      QPainterPath cross(r.topLeft()); cross.lineTo(r.bottomRight());
+      cross.moveTo(r.topRight()); cross.lineTo(r.bottomLeft());
+      paths.append(shapePath(cross, false, true));
+    }
+  } else if (node.shapeKind == QLatin1String("polygon")) {
+    paths.append(shapePath(polygonPath(node.points)));
+  } else if (node.shapeKind == QLatin1String("cylinder")) {
+    const QRectF top(r.left(), r.top(), r.width(), node.radiusY * 2.0);
+    const QRectF bottom(r.left(), r.bottom() - node.radiusY * 2.0,
+                        r.width(), node.radiusY * 2.0);
+    const qreal topCenter = r.top() + node.radiusY;
+    const qreal bottomCenter = r.bottom() - node.radiusY;
+    QPainterPath body(QPointF(r.left(), topCenter));
+    body.arcTo(top, 180, -180);
+    body.lineTo(r.right(), bottomCenter);
+    body.arcTo(bottom, 0, -180);
+    body.closeSubpath();
+    paths.append(shapePath(body));
+    QPainterPath rim;
+    rim.addEllipse(top);
+    paths.append(shapePath(rim, false, true));
+    if (type == QLatin1String("lined_cylinder")) {
+      const qreal outerOffset = (node.height - 2.0 * node.radiusY) * 0.1;
+      const QRectF offsetArc(r.left(), topCenter + outerOffset - node.radiusY,
+                             r.width(), 2.0 * node.radiusY);
+      QPainterPath line(QPointF(r.left(), topCenter + outerOffset));
+      line.arcTo(offsetArc, 180, -180);
+      paths.append(shapePath(line, false, true));
+    }
+  } else if (node.shapeKind == QLatin1String("horizontalCylinder")) {
+    QPainterPath body(QPointF(r.left() + node.radiusX, r.top()));
+    body.lineTo(r.right() - node.radiusX, r.top());
+    body.cubicTo(r.right() + node.radiusX, r.top(), r.right() + node.radiusX, r.bottom(),
+                 r.right() - node.radiusX, r.bottom());
+    body.lineTo(r.left() + node.radiusX, r.bottom());
+    body.cubicTo(r.left() - node.radiusX, r.bottom(), r.left() - node.radiusX, r.top(),
+                 r.left() + node.radiusX, r.top()); body.closeSubpath(); paths.append(shapePath(body));
+    QPainterPath cap; cap.addEllipse(QRectF(r.left(), r.top(), 2 * node.radiusX, r.height()));
+    paths.append(shapePath(cap, false, true));
+  } else {
+    QPainterPath rect; rect.addRect(r);
+    paths.append(shapePath(rect));
+    if (type == QLatin1String("subroutine") || type == QLatin1String("lined_process")) {
+      QPainterPath frames(QPointF(r.left() + 8.0, r.top()));
+      frames.lineTo(r.left() + 8.0, r.bottom());
+      if (type == QLatin1String("subroutine")) {
+        frames.moveTo(r.right() - 8.0, r.top()); frames.lineTo(r.right() - 8.0, r.bottom());
+      }
+      paths.append(shapePath(frames, false, true));
+    } else if (type == QLatin1String("window_pane")) {
+      QPainterPath div(QPointF(r.left() + 10.0, r.top()));
+      div.lineTo(r.left() + 10.0, r.bottom());
+      div.moveTo(r.left(), r.top() + 10.0); div.lineTo(r.right(), r.top() + 10.0);
+      paths.append(shapePath(div, false, true));
+    } else if (type == QLatin1String("divided_rect")) {
+      QPainterPath div(QPointF(r.left(), r.top() + r.height() / 6.0));
+      div.lineTo(r.right(), r.top() + r.height() / 6.0);
+      paths.append(shapePath(div, false, true));
+    }
+  }
+  return paths;
+}
+
 QJsonObject labelJson(const FlowSceneLabel& l) {
   QJsonObject o;
   o[QStringLiteral("text")] = l.text;
@@ -35,13 +332,16 @@ QJsonObject labelJson(const FlowSceneLabel& l) {
 FlowScene buildFlowScene(const flowchart::FlowchartData& data,
                          const flowchart::FlowLayoutResult& layout,
                          const flowtheme::FlowThemeVariables& theme,
-                         flowchart::FlowLook look) {
+                         flowchart::FlowLook look,
+                         quint32 handDrawnSeed) {
   FlowScene scene;
   scene.background = theme.background;
   scene.look = look;
+  scene.handDrawnSeed = handDrawnSeed;
   scene.useGradient = look == flowchart::FlowLook::Neo && theme.useGradient;
   scene.gradientStart = theme.gradientStart;
   scene.gradientStop = theme.gradientStop;
+  scene.lineColor = theme.lineColor;
   scene.shadowColor = theme.shadowColor;
   scene.shadowOpacity = theme.shadowOpacity;
   scene.shadowOffsetX = theme.shadowOffsetX;
@@ -63,7 +363,10 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
     sc.id = c.id;
     sc.cx = c.x; sc.cy = c.y; sc.width = c.width; sc.height = c.height;
     sc.fill = theme.clusterBkg;
-    sc.stroke = theme.clusterBorder;
+    // Neo's cluster CSS shares the node border token; clusterBorder is used by
+    // the classic flowchart stylesheet only.
+    sc.stroke = look == flowchart::FlowLook::Neo ? theme.nodeBorder
+                                                  : theme.clusterBorder;
     sc.strokeWidth = clusterStrokeWidth;
     if (const flowchart::FlowSubgraph* s = subgraphById.value(c.id)) {
       sc.label.text = s->title;
@@ -134,6 +437,7 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
       sn.radiusX = geom.radiusX;
       sn.radiusY = geom.radiusY;
       sn.points = geom.points;
+      sn.shapePaths = buildShapePaths(sn);
       sn.label.text = v->text;
       if (sn.shapeType == QLatin1String("framed_circle") ||
           sn.shapeType == QLatin1String("small_circle") ||
@@ -149,11 +453,48 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
           sn.shapeType == QLatin1String("stacked_rect")) {
         sn.label.x -= 10.0;
         sn.label.y += 10.0;
+      } else if (sn.shapeType == QLatin1String("brace_left") &&
+                 look == flowchart::FlowLook::Neo) {
+        const qreal h = sn.height >= 60.0 ? sn.height / 1.2 : sn.height - 10.0;
+        const qreal radius = std::max(5.0, h * 0.1);
+        sn.label.x += radius - 9.0;
+        sn.label.y += 1.5;
+      } else if (look == flowchart::FlowLook::Neo &&
+                 (sn.shapeType == QLatin1String("brace_right") ||
+                  sn.shapeType == QLatin1String("braces"))) {
+        sn.label.x -= 10.5;
+        sn.label.y -= 4.5;
       }
       sn.label.color = rs.color;
       sn.label.fontFamily = rs.fontFamily;
       sn.label.fontSize = rs.fontSize;
       sn.label.fontWeight = rs.fontWeight;
+      flowchart::FlowTextOptions labelOptions;
+      labelOptions.fontFamily = rs.fontFamily;
+      bool fontSizeOk = false;
+      labelOptions.fontPixelSize = rs.fontSize.endsWith(QLatin1String("px"))
+          ? rs.fontSize.chopped(2).toDouble(&fontSizeOk) : 16.0;
+      if (!fontSizeOk) labelOptions.fontPixelSize = 16.0;
+      labelOptions.lineHeight = labelOptions.fontPixelSize * 1.5;
+      labelOptions.look = look;
+      const QSizeF labelSize = flowchart::measureLabel(v->text, v->labelType, labelOptions);
+      if (sn.shapeType == QLatin1String("lined_cylinder")) {
+        sn.label.y += sn.radiusY;
+      } else if (sn.shapeType == QLatin1String("flipped_triangle")) {
+        sn.label.y += -sn.height / 2.0 + 7.5 + labelSize.height() / 2.0;
+      } else if (sn.shapeType == QLatin1String("sloped_rect")) {
+        const qreal h = sn.height / 1.5;
+        sn.label.x += -sn.width / 2.0 + 15.0 + labelSize.width() / 2.0;
+        sn.label.y += -h / 4.0 + 15.0 + labelSize.height() / 2.0;
+      } else if (sn.shapeType == QLatin1String("window_pane")) {
+        sn.label.x += 5.0;
+        sn.label.y += 5.0;
+      } else if (sn.shapeType == QLatin1String("divided_rect")) {
+        const qreal h = sn.height / 1.2;
+        const qreal offset = h * 0.2;
+        sn.label.x += -sn.width / 2.0 + 7.5 + labelSize.width() / 2.0;
+        sn.label.y += -h / 2.0 + offset / 2.0 + 7.5 + labelSize.height() / 2.0;
+      }
       sn.link = v->link;
       sn.tooltip = data.tooltips.value(v->id);
     }
@@ -177,6 +518,8 @@ QString FlowScene::toJson() const {
   QJsonObject root;
   root[QStringLiteral("background")] = background;
   root[QStringLiteral("look")] = flowchart::flowLookName(look);
+  if (look == flowchart::FlowLook::HandDrawn)
+    root[QStringLiteral("handDrawnSeed")] = static_cast<qint64>(handDrawnSeed);
   root[QStringLiteral("useGradient")] = useGradient;
   QJsonObject b;
   b[QStringLiteral("x")] = r3(bounds.x()); b[QStringLiteral("y")] = r3(bounds.y());

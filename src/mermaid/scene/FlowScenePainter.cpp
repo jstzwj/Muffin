@@ -24,10 +24,149 @@ namespace {
 
 QColor qcolor(const QString& s) { return color::toQColor(s); }
 
+QColor svgFilterQuantizedColor(const QColor& source) {
+  auto channel = [](int value) {
+    const qreal srgb = value / 255.0;
+    const qreal linear = srgb <= 0.04045 ? srgb / 12.92
+                                         : std::pow((srgb + 0.055) / 1.055, 2.4);
+    const qreal quantized = std::round(linear * 255.0) / 255.0;
+    const qreal encoded = quantized <= 0.0031308
+        ? quantized * 12.92
+        : 1.055 * std::pow(quantized, 1.0 / 2.4) - 0.055;
+    return std::clamp(static_cast<int>(std::round(encoded * 255.0)), 0, 255);
+  };
+  return QColor(channel(source.red()), channel(source.green()), channel(source.blue()),
+                source.alpha());
+}
+
 qreal pxSize(const QString& s) {
   static const QRegularExpression re(QStringLiteral("(\\d+(?:\\.\\d+)?)"));
   const QRegularExpressionMatch m = re.match(s);
   return m.hasMatch() ? m.captured(1).toDouble() : 16.0;
+}
+
+class RoughRandom {
+public:
+  explicit RoughRandom(quint32 seed) : seed_(seed) {}
+
+  qreal next() {
+    seed_ = (static_cast<quint64>(48271) * seed_) & 0x7fffffffU;
+    return static_cast<qreal>(seed_) / 2147483648.0;
+  }
+
+  qreal offset(qreal extent, qreal roughness, qreal gain = 1.0) {
+    return roughness * gain * (next() * 2.0 * extent - extent);
+  }
+
+private:
+  quint32 seed_;
+};
+
+void appendRoughLine(QPainterPath& output, const QPointF& from, const QPointF& to,
+                     RoughRandom& random, qreal roughness, bool overlay,
+                     bool move) {
+  const qreal length = QLineF(from, to).length();
+  const qreal gain = length < 200.0 ? 1.0
+      : length > 500.0 ? 0.4 : -0.0016668 * length + 1.233334;
+  qreal offset = 2.0;
+  if (offset * offset * 100.0 > length * length) offset = length / 10.0;
+  const qreal half = offset / 2.0;
+  const qreal diverge = 0.2 + random.next() * 0.2;
+  qreal midX = random.offset(std::abs((to.y() - from.y()) / 100.0), roughness, gain);
+  qreal midY = random.offset(std::abs((from.x() - to.x()) / 100.0), roughness, gain);
+  const qreal randomExtent = overlay ? half : offset;
+  if (move) output.moveTo(from + QPointF(random.offset(randomExtent, roughness, gain),
+                                          random.offset(randomExtent, roughness, gain)));
+  const auto jitter = [&] { return random.offset(randomExtent, roughness, gain); };
+  output.cubicTo(midX + from.x() + (to.x() - from.x()) * diverge + jitter(),
+                 midY + from.y() + (to.y() - from.y()) * diverge + jitter(),
+                 midX + from.x() + 2.0 * (to.x() - from.x()) * diverge + jitter(),
+                 midY + from.y() + 2.0 * (to.y() - from.y()) * diverge + jitter(),
+                 to.x() + jitter(), to.y() + jitter());
+}
+
+void appendRoughBezier(QPainterPath& output, const QPointF& from,
+                       const QPointF& control1, const QPointF& control2,
+                       const QPointF& to, RoughRandom& random, qreal roughness,
+                       bool overlay, bool move) {
+  const qreal extent = overlay ? 2.3 : 2.0;
+  if (move) {
+    if (overlay)
+      output.moveTo(from + QPointF(random.offset(2.0, roughness),
+                                    random.offset(2.0, roughness)));
+    else
+      output.moveTo(from);
+  }
+  const auto jitter = [&] { return random.offset(extent, roughness); };
+  output.cubicTo(control1.x() + jitter(), control1.y() + jitter(),
+                 control2.x() + jitter(), control2.y() + jitter(),
+                 to.x() + jitter(), to.y() + jitter());
+}
+
+QPainterPath roughPath(const QPainterPath& source, RoughRandom& random, qreal roughness,
+                       bool multiStroke, bool mergeMoves = false) {
+  QPainterPath output;
+  QPointF current;
+  bool firstSegment = true;
+  for (int i = 0; i < source.elementCount(); ++i) {
+    const auto element = source.elementAt(i);
+    const QPointF point(element.x, element.y);
+    if (element.isMoveTo()) {
+      current = point;
+      continue;
+    }
+    if (element.isLineTo()) {
+      appendRoughLine(output, current, point, random, roughness, false,
+                      !mergeMoves || firstSegment);
+      if (multiStroke)
+        appendRoughLine(output, current, point, random, roughness, true, true);
+      current = point;
+      firstSegment = false;
+      continue;
+    }
+    if (element.type == QPainterPath::CurveToElement && i + 2 < source.elementCount()) {
+      const auto c2 = source.elementAt(++i);
+      const auto end = source.elementAt(++i);
+      appendRoughBezier(output, current, point, QPointF(c2.x, c2.y),
+                        QPointF(end.x, end.y), random, roughness, false,
+                        !mergeMoves || firstSegment);
+      if (multiStroke)
+        appendRoughBezier(output, current, point, QPointF(c2.x, c2.y),
+                          QPointF(end.x, end.y), random, roughness, true, true);
+      current = QPointF(end.x, end.y);
+      firstSegment = false;
+    }
+  }
+  return output;
+}
+
+QPainterPath roughPath(const QPainterPath& source, quint32 seed, qreal roughness,
+                       bool multiStroke, bool mergeMoves = false) {
+  RoughRandom random(seed);
+  return roughPath(source, random, roughness, multiStroke, mergeMoves);
+}
+
+void drawHachure(QPainter& painter, const QPainterPath& clipPath, quint32 seed,
+                 const QPen& pen) {
+  const QRectF bounds = clipPath.boundingRect();
+  const qreal radius = std::hypot(bounds.width(), bounds.height());
+  const qreal angle = qDegreesToRadians(-41.0);
+  const QPointF direction(std::cos(angle), std::sin(angle));
+  const QPointF normal(-direction.y(), direction.x());
+  const QPointF center = bounds.center();
+  painter.save();
+  painter.setClipPath(clipPath);
+  painter.setBrush(Qt::NoBrush);
+  painter.setPen(pen);
+  int lineIndex = 0;
+  for (qreal distance = -radius; distance <= radius; distance += 8.0, ++lineIndex) {
+    const QPointF midpoint = center + normal * distance;
+    QPainterPath line(midpoint - direction * radius);
+    line.lineTo(midpoint + direction * radius);
+    painter.drawPath(roughPath(line, seed + static_cast<quint32>(lineIndex),
+                               1.0, true));
+  }
+  painter.restore();
 }
 
 // SVG path `d` -> QPainterPath, also extracting the path endpoints + tangent
@@ -154,8 +293,71 @@ void drawLabel(QPainter& painter, const FlowSceneLabel& label, const QRectF& rec
 }
 
 void drawNodeShape(QPainter& painter, const FlowSceneNode& n, QRectF r,
-                   const QPointF& offset = {}) {
+                   const QPointF& offset = {}, bool forceSilhouette = false,
+                   bool categoryMask = false, bool handDrawn = false,
+                   quint32 handDrawnSeed = 0) {
   r.translate(offset);
+  if (!n.shapePaths.isEmpty()) {
+    const QBrush fillBrush = painter.brush();
+    const QPen strokePen = painter.pen();
+    painter.save();
+    painter.translate(n.cx + offset.x(), n.cy + offset.y());
+    for (const FlowSceneShapePath& item : n.shapePaths) {
+      QBrush itemBrush = fillBrush;
+      if (!categoryMask && !forceSilhouette && !item.fillOverride.isEmpty())
+        itemBrush = QBrush(qcolor(item.fillOverride));
+      painter.setBrush(item.fill ? itemBrush : Qt::NoBrush);
+      if (item.stroke) {
+        if (categoryMask) {
+          QPen boundary{QColor(kCatBoundary)};
+          boundary.setWidthF(std::max<qreal>(1.0, pxSize(n.strokeWidth)));
+          painter.setPen(boundary);
+        } else if (forceSilhouette) {
+          QPen silhouette(fillBrush.color());
+          silhouette.setWidthF(std::max<qreal>(1.0, pxSize(n.strokeWidth)));
+          painter.setPen(silhouette);
+        } else {
+          QPen itemPen = strokePen;
+          if (!item.strokeOverride.isEmpty()) itemPen.setColor(qcolor(item.strokeOverride));
+          painter.setPen(itemPen);
+        }
+      } else {
+        painter.setPen(Qt::NoPen);
+      }
+      if (handDrawn && !forceSilhouette) {
+        // RoughJS computes the outline first, then continues the same drawable's
+        // seeded random stream while generating its fill operations.
+        RoughRandom random(handDrawnSeed);
+        const QPainterPath stroke = roughPath(item.path, random, 1.0, true);
+        const QPainterPath fill = roughPath(item.path, random, 1.8, false, true);
+        if (item.fill) {
+          painter.setPen(Qt::NoPen);
+          painter.setBrush(itemBrush);
+          painter.drawPath(fill);
+          QPen hachurePen(categoryMask ? QColor(kCatBoundary) : strokePen.color());
+          hachurePen.setWidthF(categoryMask ? 4.0
+                                            : std::max<qreal>(0.5, pxSize(n.strokeWidth) / 2.0));
+          drawHachure(painter, item.path, handDrawnSeed, hachurePen);
+        }
+        if (item.stroke) {
+          painter.setBrush(Qt::NoBrush);
+          painter.setPen(categoryMask ? QPen(QColor(kCatBoundary),
+                                             std::max<qreal>(5.0, pxSize(n.strokeWidth) + 4.0))
+                                      : painter.pen());
+          if (!categoryMask) {
+            QPen roughPen = strokePen;
+            if (!item.strokeOverride.isEmpty()) roughPen.setColor(qcolor(item.strokeOverride));
+            painter.setPen(roughPen);
+          }
+          painter.drawPath(stroke);
+        }
+      } else {
+        painter.drawPath(item.path);
+      }
+    }
+    painter.restore();
+    return;
+  }
   if (n.shapeType == QLatin1String("text")) return;
   const auto sineEdge = [](qreal x1, qreal x2, qreal y, qreal amplitude,
                            qreal cycles, QPainterPath& path) {
@@ -324,7 +526,7 @@ void drawNeoShadow(QPainter& painter, const FlowSceneNode& node, const QRectF& b
       shadow.setAlphaF(scene.shadowOpacity * weights[y + radius][x + radius] / sum);
       painter.setBrush(shadow);
       drawNodeShape(painter, node, bounds,
-                    QPointF(x + scene.shadowOffsetX, y + scene.shadowOffsetY));
+                    QPointF(x + scene.shadowOffsetX, y + scene.shadowOffsetY), true);
     }
   }
 }
@@ -334,7 +536,7 @@ void drawNeoShadowMask(QPainter& painter, const FlowSceneNode& node, const QRect
   painter.setBrush(QColor(kCatShadow));
   for (int y = -4; y <= 4; ++y)
     for (int x = -4; x <= 4; ++x)
-      drawNodeShape(painter, node, bounds, QPointF(x, y + 1));
+      drawNodeShape(painter, node, bounds, QPointF(x, y + 1), true);
 }
 
 }  // namespace
@@ -373,7 +575,11 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter, const QString& fo
         }
       }
     }
-    painter.setBrush(paletteColor(c.fill, kCatCluster));
+    QColor clusterFill = paletteColor(c.fill, kCatCluster);
+    if (mode == PaintMode::Color && scene.look == flowchart::FlowLook::Neo &&
+        !scene.useGradient)
+      clusterFill = svgFilterQuantizedColor(clusterFill);
+    painter.setBrush(clusterFill);
     QPen pen(paletteColor(c.stroke, kCatCluster)); pen.setWidthF(pxSize(c.strokeWidth));
     if (mode == PaintMode::Color && scene.useGradient) {
       QLinearGradient gradient(r.left(), 0.0, r.right(), 0.0);
@@ -382,7 +588,25 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter, const QString& fo
       pen.setBrush(gradient);
     }
     painter.setPen(pen);
-    painter.drawRoundedRect(r, 0, 0);
+    if (scene.look == flowchart::FlowLook::HandDrawn) {
+      QPainterPath clusterPath;
+      clusterPath.addRect(r);
+      painter.setPen(Qt::NoPen);
+      painter.setBrush(clusterFill);
+      painter.drawPath(roughPath(clusterPath, scene.handDrawnSeed, 1.8, false, true));
+      QPen hachurePen(mode == PaintMode::CategoryMask ? QColor(kCatBoundary)
+                                                       : qcolor(scene.lineColor));
+      hachurePen.setWidthF(mode == PaintMode::CategoryMask ? 4.0
+                                                           : std::max<qreal>(0.5, pen.widthF() / 2.0));
+      drawHachure(painter, clusterPath, scene.handDrawnSeed, hachurePen);
+      if (mode == PaintMode::CategoryMask)
+        pen.setWidthF(std::max<qreal>(5.0, pen.widthF() + 4.0));
+      painter.setBrush(Qt::NoBrush);
+      painter.setPen(pen);
+      painter.drawPath(roughPath(clusterPath, scene.handDrawnSeed, 1.0, true));
+    } else {
+      painter.drawRoundedRect(r, 0, 0);
+    }
     if (!c.label.text.isEmpty()) {
       QRectF lr(r.left() + 4, r.top() + 2, c.width - 8, 20);
       drawLabel(painter, c.label, lr, fontFamily, false, mode);
@@ -404,8 +628,15 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter, const QString& fo
       pen.setDashPattern(dash);
     }
     pen.setCapStyle(Qt::RoundCap); pen.setJoinStyle(Qt::RoundJoin);
-    painter.setPen(pen); painter.setBrush(Qt::NoBrush);
-    painter.drawPath(pp.path);
+    if (scene.look == flowchart::FlowLook::HandDrawn) {
+      if (mode == PaintMode::CategoryMask)
+        pen.setWidthF(std::max<qreal>(5.0, pen.widthF() + 4.0));
+      painter.setPen(pen); painter.setBrush(Qt::NoBrush);
+      painter.drawPath(roughPath(pp.path, scene.handDrawnSeed, 1.0, true));
+    } else {
+      painter.setPen(pen); painter.setBrush(Qt::NoBrush);
+      painter.drawPath(pp.path);
+    }
     // Markers.
     const QColor mc = paletteColor(e.stroke, kCatEdge);
     if (!e.markerEnd.isEmpty()) drawMarker(painter, e.markerEnd, pp.endPoint, pp.endTangent, mc, useMargin);
@@ -440,17 +671,25 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter, const QString& fo
       if (mode == PaintMode::Color) drawNeoShadow(painter, n, r, scene);
       else drawNeoShadowMask(painter, n, r);
     }
-    painter.setBrush(paletteColor(n.fill, kCatNode));
+    QColor nodeFill = paletteColor(n.fill, kCatNode);
+    if (mode == PaintMode::Color && scene.look == flowchart::FlowLook::Neo &&
+        !scene.useGradient)
+      nodeFill = svgFilterQuantizedColor(nodeFill);
+    painter.setBrush(nodeFill);
     QPen pen(paletteColor(n.stroke, kCatNode)); pen.setWidthF(pxSize(n.strokeWidth));
     if (mode == PaintMode::Color && scene.useGradient &&
         !scene.gradientStart.isEmpty() && !scene.gradientStop.isEmpty()) {
-      QLinearGradient gradient(r.left(), 0.0, r.right(), 0.0);
+      const qreal gradientLeft = n.shapePaths.isEmpty() ? r.left() : -n.width / 2.0;
+      const qreal gradientRight = n.shapePaths.isEmpty() ? r.right() : n.width / 2.0;
+      QLinearGradient gradient(gradientLeft, 0.0, gradientRight, 0.0);
       gradient.setColorAt(0.0, qcolor(scene.gradientStart));
       gradient.setColorAt(1.0, qcolor(scene.gradientStop));
       pen.setBrush(gradient);
     }
     painter.setPen(pen);
-    drawNodeShape(painter, n, r);
+    drawNodeShape(painter, n, r, {}, false, mode == PaintMode::CategoryMask,
+                  scene.look == flowchart::FlowLook::HandDrawn,
+                  scene.handDrawnSeed);
     // Node label centered.
     if (!n.label.text.isEmpty()) {
       QRectF labelRect = r;

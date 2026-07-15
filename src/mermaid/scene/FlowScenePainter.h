@@ -39,6 +39,7 @@ constexpr QRgb kCatEdge = 0xFF000103u;
 constexpr QRgb kCatEdgeLabelBg = 0xFF000104u;
 constexpr QRgb kCatText = 0xFF000105u;
 constexpr QRgb kCatShadow = 0xFF000106u;
+constexpr QRgb kCatBoundary = 0xFF000107u;
 
 // Paint the scene onto an already-configured painter. The painter's transform
 // maps scene coordinates to device coordinates (the caller sets the viewport).
