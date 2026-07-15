@@ -38,6 +38,7 @@ struct FlowSceneLabel {
 
 struct FlowSceneNode {
   QString id;
+  QString shapeType;      // canonical Mermaid shape id (painter-only)
   QString shapeKind;      // flowShapeGeometry.kind (rect/roundedRect/ellipse/polygon/...)
   qreal cx = 0.0, cy = 0.0;  // center, scene coords
   qreal width = 0.0, height = 0.0;
@@ -67,6 +68,7 @@ struct FlowSceneEdge {
   // Painter-only: path endpoints + tangent directions for marker orientation
   // (from FlowLayoutEdge.points; NOT serialized by toJson).
   QPointF startPoint, endPoint, startTangent, endTangent;
+  bool animated = false;
 };
 
 struct FlowSceneCluster {
@@ -82,6 +84,14 @@ struct FlowSceneCluster {
 struct FlowScene {
   QRectF bounds;          // diagram bounds (scene coords)
   QString background;     // theme.background
+  flowchart::FlowLook look = flowchart::FlowLook::Classic;
+  bool useGradient = false;
+  QString gradientStart;
+  QString gradientStop;
+  QString shadowColor;
+  qreal shadowOpacity = 0.25;
+  qreal shadowOffsetX = 0.0;
+  qreal shadowOffsetY = 1.0;
   // Draw order: clusters, then edges, then nodes (mermaid SVG order).
   QVector<FlowSceneCluster> clusters;
   QVector<FlowSceneEdge> edges;
@@ -95,6 +105,7 @@ struct FlowScene {
 // paths in `layout`; the scene does not recompute curves.
 FlowScene buildFlowScene(const flowchart::FlowchartData& data,
                          const flowchart::FlowLayoutResult& layout,
-                         const flowtheme::FlowThemeVariables& theme);
+                         const flowtheme::FlowThemeVariables& theme,
+                         flowchart::FlowLook look = flowchart::FlowLook::Classic);
 
 }  // namespace muffin::mermaid::flowscene

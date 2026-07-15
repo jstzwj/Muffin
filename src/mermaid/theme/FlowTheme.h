@@ -66,6 +66,13 @@ struct FlowThemeVariables {
   QString contrast;           // neutral theme only
   QString text;               // neutral theme only
   qreal strokeWidth = 1.0;
+  bool useGradient = true;
+  QString gradientStart;
+  QString gradientStop;
+  QString shadowColor = QStringLiteral("#000000");
+  qreal shadowOpacity = 0.25;
+  qreal shadowOffsetX = 0.0;
+  qreal shadowOffsetY = 1.0;
   int themeColorLimit = 12;
 
   // Complete 12-color theme palette.

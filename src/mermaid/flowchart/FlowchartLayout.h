@@ -14,6 +14,18 @@ struct DagreSnapshot;  // defined in mermaid/dagre/Layout.h
 
 namespace muffin::mermaid::flowchart {
 
+enum class FlowLook { Classic, Neo };
+
+inline FlowLook parseFlowLook(const QString& value) {
+  return value.compare(QStringLiteral("neo"), Qt::CaseInsensitive) == 0
+             ? FlowLook::Neo
+             : FlowLook::Classic;
+}
+
+inline QString flowLookName(FlowLook look) {
+  return look == FlowLook::Neo ? QStringLiteral("neo") : QStringLiteral("classic");
+}
+
 struct FlowLayoutNode {
   QString id;
   qreal x = 0.0;
@@ -54,6 +66,7 @@ struct FlowLayoutOptions {
   qreal nodePadding = 15.0;
   qreal clusterHorizontalPadding = 35.0;
   qreal clusterVerticalPadding = 25.0;
+  FlowLook look = FlowLook::Classic;
   QMap<QString, QSizeF> measuredEdgeLabels;
   // Edge curve: "basis" (default, d3 curveBasis), "linear" (curveLinear),
   // "step" (curveStep). Mirrors mermaid's flowchart.curve config.
@@ -66,6 +79,7 @@ struct FlowTextOptions {
   qreal lineHeight = 24.0;
   qreal horizontalPadding = 30.0;
   qreal verticalPadding = 15.0;
+  FlowLook look = FlowLook::Classic;
 };
 
 // Measures a label's bbox with the given text options (QFontMetrics). Used by

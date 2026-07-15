@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mermaid/flowchart/Flowchart.h"
+#include "mermaid/flowchart/FlowchartLayout.h"
 
 #include <QPainterPath>
 #include <QPointF>
@@ -29,7 +30,8 @@ struct FlowShapeGeometry {
 // applied — i.e. the points as they appear in the rendered SVG. Because the
 // polygon bbox aligns with the node bbox, intersectPolygon can use these same
 // centred points directly (min point = (-w/2, -h/2) maps to the node's top-left).
-QVector<QPointF> flowShapePolygonPoints(const QString& canonicalType, qreal width, qreal height);
+QVector<QPointF> flowShapePolygonPoints(const QString& canonicalType, qreal width, qreal height,
+                                        FlowLook look = FlowLook::Classic);
 
 // For the SVG-arc shapes (bang, cloud) the node bbox is an affine function of
 // the label-derived path parameters (effectiveW/H for bang, w/h for cloud) —
@@ -46,6 +48,7 @@ QSizeF flowShapeArcShapeSize(const QString& canonicalType, qreal labelW, qreal l
 // the path is built point-by-point and filled with WindingFill (== SVG nonzero).
 QPainterPath flowShapeHorizontalCylinderPath(const QRectF& bounds, qreal radiusX, qreal radiusY);
 
-FlowShapeGeometry flowShapeGeometry(const FlowVertex& vertex, const QSizeF& size);
+FlowShapeGeometry flowShapeGeometry(const FlowVertex& vertex, const QSizeF& size,
+                                    FlowLook look = FlowLook::Classic);
 
 }  // namespace muffin::mermaid::flowchart

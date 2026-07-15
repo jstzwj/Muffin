@@ -2,6 +2,7 @@
 
 #include "mermaid/MermaidDiagramDetector.h"
 #include "mermaid/MermaidPreprocessor.h"
+#include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/flowchart/Flowchart.h"
 #include "mermaid/flowchart/FlowchartLayout.h"
 #include "mermaid/scene/FlowScene.h"
@@ -61,6 +62,8 @@ QHash<QString, QString> themeOverrides(const QJsonObject& config) {
   }
   if (config.value(QStringLiteral("fontFamily")).isString())
     result.insert(QStringLiteral("fontFamily"), config.value(QStringLiteral("fontFamily")).toString());
+  if (!result.contains(QStringLiteral("fontFamily")))
+    result.insert(QStringLiteral("fontFamily"), MermaidFontRegistry::cssFamilyStack());
   return result;
 }
 
@@ -176,7 +179,8 @@ QString MermaidRenderCache::renderMermaidSourceToPngDataUrl(const QString& sourc
   const QString theme = makeKey(source).theme;
   const MermaidRenderEntry entry = renderSource(source, theme);
   if (entry.status != MermaidRenderStatus::Ready || !entry.scene) return {};
-  const QImage image = flowscene::renderFlowSceneToImage(*entry.scene, dpr, 8.0, QStringLiteral("Arial"));
+  const QImage image = flowscene::renderFlowSceneToImage(
+      *entry.scene, dpr, 8.0, MermaidFontRegistry::primaryFamily());
   QByteArray png;
   QBuffer buffer(&png);
   if (!buffer.open(QIODevice::WriteOnly)) return {};
@@ -210,6 +214,8 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     const flowtheme::FlowThemeVariables themeVars = flowtheme::resolveFlowTheme(
         themeIdFromName(configuredTheme.isEmpty() ? theme : configuredTheme), themeOverrides(pre.config));
     const QJsonObject flowConfig = pre.config.value(QStringLiteral("flowchart")).toObject();
+    const flowchart::FlowLook look = flowchart::parseFlowLook(
+        pre.config.value(QStringLiteral("look")).toString());
     flowchart::FlowTextOptions textOptions;
     textOptions.fontFamily = firstFontFamily(themeVars.fontFamily);
     textOptions.fontPixelSize = pixelValue(themeVars.fontSize, 16.0);
@@ -217,8 +223,10 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     const qreal padding = configNumber(flowConfig, QStringLiteral("padding"), 15.0);
     textOptions.horizontalPadding = padding * 2.0;
     textOptions.verticalPadding = padding;
+    textOptions.look = look;
     const QMap<QString, QSizeF> sizes = flowchart::measureFlowchartNodes(chart.data(), textOptions);
     flowchart::FlowLayoutOptions layoutOptions;
+    layoutOptions.look = look;
     layoutOptions.nodePadding = padding;
     layoutOptions.nodeSpacing = configNumber(flowConfig, QStringLiteral("nodeSpacing"), 50.0);
     layoutOptions.rankSpacing = configNumber(flowConfig, QStringLiteral("rankSpacing"), 50.0);
@@ -229,7 +237,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         layoutOptions.measuredEdgeLabels.insert(edge.id, flowchart::measureLabel(edge.text, edge.labelType, textOptions));
     }
     const flowchart::FlowLayoutResult layout = flowchart::layoutFlowchartNodes(chart.data(), sizes, layoutOptions);
-    flowscene::FlowScene scene = flowscene::buildFlowScene(chart.data(), layout, themeVars);
+    flowscene::FlowScene scene = flowscene::buildFlowScene(chart.data(), layout, themeVars, look);
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;
     entry.naturalSize = QSize(scene.bounds.width(), scene.bounds.height());

@@ -61,6 +61,7 @@ void applyDark(FlowThemeVariables& t) {
 }
 
 void applyDefault(FlowThemeVariables& t) {
+  t.useGradient = false;
   t.background = QStringLiteral("#f4f4f4");
   t.primaryColor = QStringLiteral("#ECECFF");
   t.secondaryColor = adjust(t.primaryColor, {.h = 120.0});
@@ -164,6 +165,9 @@ void applyNeo(FlowThemeVariables& t) {
   t.fontSize = QStringLiteral("14px");
   t.nodeBorder = QStringLiteral("#000000");
   t.tertiaryColor = QStringLiteral("#ffffff");
+  t.useGradient = true;
+  t.gradientStart = QStringLiteral("#0042eb");
+  t.gradientStop = QStringLiteral("#eb0042");
 }
 
 void applyNeoDark(FlowThemeVariables& t) {
@@ -184,9 +188,17 @@ void applyNeoDark(FlowThemeVariables& t) {
   t.textColor = QStringLiteral("#ccc");
   t.themeColorLimit = 12;
   t.strokeWidth = 1;
+  t.useGradient = true;
+  t.gradientStart = QStringLiteral("#0042eb");
+  t.gradientStop = QStringLiteral("#eb0042");
+  t.shadowColor = QStringLiteral("#b9b9b9");
+  t.shadowOpacity = 0.2;
+  t.shadowOffsetX = 1.0;
+  t.shadowOffsetY = 2.0;
 }
 
 void applyRedux(FlowThemeVariables& t) {
+  t.useGradient = false;
   t.background = QStringLiteral("#ffffff");
   t.primaryColor = QStringLiteral("#cccccc");
   t.mainBkg = QStringLiteral("#ffffff");
@@ -202,6 +214,7 @@ void applyRedux(FlowThemeVariables& t) {
 }
 
 void applyReduxDark(FlowThemeVariables& t) {
+  t.useGradient = false;
   t.background = QStringLiteral("#333");
   t.primaryColor = QStringLiteral("#1f2020");
   t.secondaryColor = lighten(t.primaryColor, 16);
@@ -225,6 +238,7 @@ void applyReduxDark(FlowThemeVariables& t) {
 }
 
 void applyReduxColor(FlowThemeVariables& t) {
+  t.useGradient = false;
   t.background = QStringLiteral("#ffffff");
   t.primaryColor = QStringLiteral("#cccccc");
   t.mainBkg = QStringLiteral("#ffffff");
@@ -563,6 +577,9 @@ QString FlowThemeVariables::get(const QString& key) const {
   if (key == QStringLiteral("nodeBorder")) return nodeBorder;
   if (key == QStringLiteral("defaultLinkColor")) return defaultLinkColor;
   if (key == QStringLiteral("strokeWidth")) return QString::number(strokeWidth);
+  if (key == QStringLiteral("useGradient")) return useGradient ? QStringLiteral("true") : QStringLiteral("false");
+  if (key == QStringLiteral("gradientStart")) return gradientStart;
+  if (key == QStringLiteral("gradientStop")) return gradientStop;
   if (key == QStringLiteral("THEME_COLOR_LIMIT")) return QString::number(themeColorLimit);
   for (int i = 0; i < 12; ++i) {
     if (key == QStringLiteral("cScale%1").arg(i)) return cScale[i];
@@ -599,6 +616,9 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("nodeBorder")) nodeBorder = value;
   else if (key == QStringLiteral("defaultLinkColor")) defaultLinkColor = value;
   else if (key == QStringLiteral("strokeWidth")) strokeWidth = value.toDouble();
+  else if (key == QStringLiteral("useGradient")) useGradient = value.compare(QStringLiteral("true"), Qt::CaseInsensitive) == 0;
+  else if (key == QStringLiteral("gradientStart")) gradientStart = value;
+  else if (key == QStringLiteral("gradientStop")) gradientStop = value;
   else if (key == QStringLiteral("THEME_COLOR_LIMIT")) themeColorLimit = value.toInt();
 }
 

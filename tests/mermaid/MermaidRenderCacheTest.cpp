@@ -115,7 +115,8 @@ int main(int argc, char** argv) {
   {
     MermaidRenderCache cache;
     const QString configured = QStringLiteral(
-        "%%{init: {\"themeVariables\": {\"mainBkg\": \"#123456\", \"fontSize\": \"14px\"}, "
+        "%%{init: {\"look\": \"neo\", "
+        "\"themeVariables\": {\"mainBkg\": \"#123456\", \"fontSize\": \"14px\"}, "
         "\"flowchart\": {\"nodeSpacing\": 120, \"rankSpacing\": 90, \"curve\": \"linear\"}}}%%\n"
         "flowchart LR\nA[\"`**Bold** label`\"] --> B[Beta]");
     const MermaidRenderEntry e = cache.getSync(MermaidRenderCache::makeKey(configured), configured);
@@ -124,6 +125,10 @@ int main(int argc, char** argv) {
             QStringLiteral("themeVariables.mainBkg must reach the rendered scene"));
     require(e.scene->nodes.first().label.fontSize == QLatin1String("14px"),
             QStringLiteral("themeVariables.fontSize must reach labels"));
+    require(e.scene->look == muffin::mermaid::flowchart::FlowLook::Neo,
+            QStringLiteral("top-level look must reach the rendered scene"));
+    require(e.scene->nodes.first().label.fontFamily.contains(QLatin1String("Noto Sans")),
+            QStringLiteral("default Mermaid labels must use the bundled Noto stack"));
     require(e.scene->nodes.size() == 2 &&
                 qAbs(e.scene->nodes.at(1).cx - e.scene->nodes.at(0).cx) > 150.0,
             QStringLiteral("flowchart spacing must reach Dagre"));

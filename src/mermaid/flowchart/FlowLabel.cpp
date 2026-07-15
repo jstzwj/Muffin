@@ -1,4 +1,5 @@
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/MermaidFontRegistry.h"
 
 #include "math/MathRenderer.h"
 
@@ -311,6 +312,7 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
                                        const QString& fontFamily,
                                        qreal fontPixelSize, qreal lineHeight) {
   QFont font(fontFamily);
+  MermaidFontRegistry::configureFont(font, fontFamily);
   font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
   font.setHintingPreference(QFont::PreferNoHinting);
   const QFontMetricsF metrics(font);
@@ -443,6 +445,8 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
     measured.baseline = (lineHeight - cssAscent - cssDescent) / 2.0 + cssAscent;
     if (textLine.isValid()) {
       const auto glyphRuns = textLine.glyphRuns(0, -1, QTextLayout::RetrieveAll);
+      bool hasGlyphRun = false;
+      bool allRunsRtl = true;
       for (const QGlyphRun& run : glyphRuns) {
         const QList<qsizetype> indexes = run.stringIndexes();
         if (indexes.isEmpty()) continue;
@@ -451,7 +455,15 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
         measured.runs.push_back({offset + *minimum, *maximum - *minimum + 1,
                                  bounds.x(), bounds.width(), run.isRightToLeft(), false,
                                  run.rawFont().familyName()});
+        hasGlyphRun = true;
+        allRunsRtl = allRunsRtl && run.isRightToLeft();
       }
+      // For the bundled Noto faces, SVG getBBox() uses the painted glyph bounds
+      // while QTextLine includes direction-dependent advances/bearings. Keep
+      // the legacy system-font correction path unchanged.
+      if (hasGlyphRun && allRunsRtl &&
+          font.family().contains(QStringLiteral("Noto Sans"), Qt::CaseInsensitive))
+        measured.width = metrics.tightBoundingRect(line).width();
       std::sort(measured.runs.begin(), measured.runs.end(),
                 [](const FlowLabelVisualRun& a, const FlowLabelVisualRun& b) {
                   return a.x < b.x;
@@ -478,6 +490,7 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
                     qreal fontPixelSize, qreal lineHeight,
                     const QColor& color, bool centerVertically) {
   QFont font(fontFamily);
+  MermaidFontRegistry::configureFont(font, fontFamily);
   font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
   font.setHintingPreference(QFont::PreferNoHinting);
   FlowLabelDocument paintedLabel = label;

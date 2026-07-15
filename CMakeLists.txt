@@ -427,6 +427,7 @@ endif()
 
 set(MUFFIN_CORE_SOURCES
   src/katex_fonts.qrc
+  src/mermaid_fonts.qrc
   src/math/MathBuilder.cpp
   src/math/MathBuilderArray.cpp
   src/math/MathBuilderSpacing.cpp
@@ -452,6 +453,8 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/MermaidDiagramDetector.h
   src/mermaid/MermaidPreprocessor.cpp
   src/mermaid/MermaidPreprocessor.h
+  src/mermaid/MermaidFontRegistry.cpp
+  src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
   src/mermaid/flowchart/Flowchart.h
   src/mermaid/flowchart/FlowLabel.cpp

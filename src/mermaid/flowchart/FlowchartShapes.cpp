@@ -222,7 +222,7 @@ QVector<QPointF> cloudOutline(qreal w, qreal h) {
 // the node's centred coordinate system (origin = node centre, bbox = node bbox).
 // See flowShapePolygonPoints docs in the header for the transform-derivation
 // rationale. Constants (NOTCH_SIZE, gap, ro, etc.) mirror the upstream sources.
-QVector<QPointF> flowShapePolygonPoints(const QString& type, qreal w, qreal h) {
+QVector<QPointF> flowShapePolygonPoints(const QString& type, qreal w, qreal h, FlowLook look) {
   const qreal W = w, H = h;
   if (type == QLatin1String("diamond")) {
     return {QPointF(0.0, H / 2.0), QPointF(W / 2.0, 0.0),
@@ -294,7 +294,7 @@ QVector<QPointF> flowShapePolygonPoints(const QString& type, qreal w, qreal h) {
             QPointF(W / 2.0, -gap / 2.0), QPointF(2.0 * gap - W / 2.0, -gap / 2.0)};
   }
   if (type == QLatin1String("stacked_rect")) {
-    const qreal ro = 5.0;
+    const qreal ro = look == FlowLook::Neo ? 10.0 : 5.0;
     return {QPointF(-W / 2.0, -H / 2.0 + 2.0 * ro), QPointF(-W / 2.0, H / 2.0),
             QPointF(W / 2.0 - 2.0 * ro, H / 2.0), QPointF(W / 2.0 - 2.0 * ro, H / 2.0 - ro),
             QPointF(W / 2.0 - ro, H / 2.0 - ro), QPointF(W / 2.0 - ro, H / 2.0 - 2.0 * ro),
@@ -308,7 +308,8 @@ QVector<QPointF> flowShapePolygonPoints(const QString& type, qreal w, qreal h) {
   // sine bulge both handled by the +waveAmp in finalH and the transform), so
   // h = H/1.25, waveAmp = h/8 = 0.1*H, finalH = h + waveAmp = 0.9*H.
   if (type == QLatin1String("document")) {
-    const qreal hw = W, hh = H / 1.25, waveAmp = hh / 8.0, finalH = hh + waveAmp;
+    const qreal heightRatio = look == FlowLook::Neo ? 1.5 : 1.25;
+    const qreal hw = W, hh = H / heightRatio, waveAmp = hh / 8.0, finalH = hh + waveAmp;
     QVector<QPointF> pts;
     pts.append(QPointF(-hw / 2.0, finalH / 2.0));
     pts += sineWavePoints(-hw / 2.0, finalH / 2.0, hw / 2.0, finalH / 2.0, waveAmp, 0.8);
@@ -376,7 +377,8 @@ QVector<QPointF> flowShapePolygonPoints(const QString& type, qreal w, qreal h) {
   // closes P_n->P_2 so the fill collapses to the wave-rect bbox (like
   // divided_rect). h = H/1.25, waveAmp = h/8, finalH = h + waveAmp.
   if (type == QLatin1String("lined_document")) {
-    const qreal hw = W / 1.1, hh = H / 1.25, waveAmp = hh / 8.0, finalH = hh + waveAmp;
+    const qreal heightRatio = look == FlowLook::Neo ? 1.5 : 1.25;
+    const qreal hw = W / 1.1, hh = H / heightRatio, waveAmp = hh / 8.0, finalH = hh + waveAmp;
     const qreal x0 = -hw / 2.0 - hw / 2.0 * 0.1, x1 = hw / 2.0 + hw / 2.0 * 0.1;
     QVector<QPointF> pts;
     pts.append(QPointF(x0, finalH / 2.0));
@@ -550,14 +552,14 @@ QPainterPath flowShapeHorizontalCylinderPath(const QRectF& bounds, qreal rx, qre
   return path;
 }
 
-FlowShapeGeometry flowShapeGeometry(const FlowVertex& vertex, const QSizeF& size) {
+FlowShapeGeometry flowShapeGeometry(const FlowVertex& vertex, const QSizeF& size, FlowLook look) {
   FlowShapeGeometry result;
   result.bounds = QRectF(-size.width() / 2.0, -size.height() / 2.0,
                         size.width(), size.height());
   // Collapse legacy bracket names, @{ shape: shortName }, and aliases onto one
   // canonical key so each shape has a single geometry implementation.
   const QString type = canonicalShape(vertex.type);
-  const QVector<QPointF> pts = flowShapePolygonPoints(type, size.width(), size.height());
+  const QVector<QPointF> pts = flowShapePolygonPoints(type, size.width(), size.height(), look);
   if (!pts.isEmpty()) {
     result.kind = QStringLiteral("polygon");
     result.points = pts;

@@ -18,7 +18,7 @@
 namespace muffin::mermaid::flowscene {
 namespace {
 
-enum class Cat { Empty, Node, Cluster, Edge, EdgeLabelBg, Text };
+enum class Cat { Empty, Node, Cluster, Edge, EdgeLabelBg, Text, Shadow };
 
 Cat decodeCat(QRgb px) {
   switch (px) {
@@ -27,6 +27,7 @@ Cat decodeCat(QRgb px) {
     case kCatEdge: return Cat::Edge;
     case kCatEdgeLabelBg: return Cat::EdgeLabelBg;
     case kCatText: return Cat::Text;
+    case kCatShadow: return Cat::Shadow;
     default: return Cat::Empty;  // transparent (never painted) = EMPTY
   }
 }
@@ -55,9 +56,10 @@ QVector<QRectF> collectLabelRectsScene(const FlowScene& scene, const QString& fo
     // beyond QFontMetrics::tightBoundingRect, and those fringe glyph pixels must
     // be excluded from the INTERIOR check (otherwise text-over-fill reads as a
     // fill-colour mismatch).
-    rects.append(QRectF(center.x() + tight.x() - 3, center.y() + tight.y() - 3, tight.width() + 6, tight.height() + 6));
+    rects.append(QRectF(center.x() + tight.x() - 3, center.y() + tight.y() - 3,
+                        tight.width() + 6, tight.height() + 6));
   };
-  for (const FlowSceneNode& n : scene.nodes) add(n.label, QPointF(n.cx, n.cy));
+  for (const FlowSceneNode& n : scene.nodes) add(n.label, QPointF(n.label.x, n.label.y));
   for (const FlowSceneEdge& e : scene.edges) add(e.label, QPointF(e.label.x, e.label.y));
   for (const FlowSceneCluster& c : scene.clusters) {
     if (c.label.text.isEmpty()) continue;
@@ -90,8 +92,9 @@ bool rectsIntersectAny(const QRectF& r, const QVector<QRectF>& rects) {
   return false;
 }
 
-// Alpha-mask IoU between native and golden ink over a label crop, maximized over
-// a ±1px shift to absorb Chrome-vs-Qt baseline placement differences.
+// Alpha-mask IoU between native and golden ink over a label crop. The caller
+// supplies a DPR-scaled search radius because DirectWrite's Qt/Chromium
+// baselines can differ by several physical pixels for unboxed text shapes.
 qreal labelIou(const QImage& native, const QImage& golden, const QRect& crop,
                int goldenOffX, int goldenOffY, int inkAlpha, int searchRadius) {
   auto iouAt = [&](int dx, int dy) {
@@ -235,8 +238,9 @@ CompareReport compareLevel3(const FlowScene& scene, const QImage& goldenIn, cons
     if (!isFill(c)) return false;
     // Erode by 2px (5x5 neighbourhood uniform) so the thick-stroke band (e.g. a
     // 2px node border) and the 1px sub-pixel alignment ring fall in BOUNDARY.
-    for (int dy = -2; dy <= 2; ++dy)
-      for (int dx = -2; dx <= 2; ++dx) {
+    const int erosion = scene.look == flowchart::FlowLook::Neo ? 3 : 2;
+    for (int dy = -erosion; dy <= erosion; ++dy)
+      for (int dx = -erosion; dx <= erosion; ++dx) {
         const int nx = x + dx, ny = y + dy;
         if (nx < 0 || ny < 0 || nx >= nw || ny >= nh) return false;
         if (cats[ny * nw + nx] != c) return false;
@@ -289,7 +293,7 @@ CompareReport compareLevel3(const FlowScene& scene, const QImage& goldenIn, cons
     ++report.labels;
     const qreal iou = labelIou(nativeCrop, goldenCrop, crop, offX, offY,
                                thresholds.textInkAlpha,
-                               static_cast<int>(std::ceil(dpr)));
+                               static_cast<int>(std::ceil(5.0 * dpr)));
     if (iou < report.worstLabelIou) {
       report.worstLabelIou = iou;
       report.worstLabel = QStringLiteral("%1,%2 %3x%4").arg(crop.x()).arg(crop.y()).arg(crop.width()).arg(crop.height());

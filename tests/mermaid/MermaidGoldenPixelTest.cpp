@@ -5,6 +5,7 @@
 // to a temp dir on failure.
 
 #include "mermaid/flowchart/Flowchart.h"
+#include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/flowchart/FlowchartLayout.h"
 #include "mermaid/scene/FlowScene.h"
 #include "mermaid/scene/FlowSceneCompare.h"
@@ -66,6 +67,10 @@ int main(int argc, char** argv) {
               QLatin1String("11.16.0"),
           QStringLiteral("Golden-pixel manifest version drifted"));
   const QDir dir = QFileInfo(file.fileName()).absoluteDir();
+  MermaidFontRegistry::ensureLoaded();
+  require(root.value(QStringLiteral("font")).toObject().value(QStringLiteral("mode")).toString() ==
+              QLatin1String("bundled"),
+          QStringLiteral("Golden-pixel fixed font metadata is missing"));
   const QString failDir = QDir::tempPath() + QStringLiteral("/muffin-golden-pixel-fail");
 
   int failures = 0;
@@ -73,6 +78,10 @@ int main(int argc, char** argv) {
   bool sawCjk = false;
   bool sawBidi = false;
   bool sawDeterministicAnimation = false;
+  int neoLookCases = 0;
+  int fixedNotoCases = 0;
+  QSet<QString> neoShapes;
+  int neoDarkClusterCases = 0;
   QSet<QString> caseIds;
   QSet<QString> coveredThemes;
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
@@ -94,34 +103,78 @@ int main(int argc, char** argv) {
       sawDeterministicAnimation = true;
     }
     const QString source = fixture.value(QStringLiteral("source")).toString();
+    const bool fixedNoto = fixture.value(QStringLiteral("fontMode")).toString() ==
+                           QLatin1String("noto");
+    const QString renderFamily = fixedNoto ? MermaidFontRegistry::primaryFamily()
+                                            : QStringLiteral("Arial");
+    if (fixedNoto) ++fixedNotoCases;
+    if (id.startsWith(QStringLiteral("look-neo-shapes-"))) {
+      static const QRegularExpression shapePattern(QStringLiteral(R"(shape:\s*([\w-]+))"));
+      auto matches = shapePattern.globalMatch(source);
+      while (matches.hasNext()) neoShapes.insert(matches.next().captured(1));
+    }
+    if (id.startsWith(QStringLiteral("look-neo-dark-cluster-"))) ++neoDarkClusterCases;
+    const flowchart::FlowLook look = flowchart::parseFlowLook(
+        fixture.value(QStringLiteral("look")).toString(QStringLiteral("classic")));
+    if (look == flowchart::FlowLook::Neo) ++neoLookCases;
     const flowchart::Flowchart chart = flowchart::Flowchart::parse(source);
     const flowtheme::FlowThemeVariables theme = flowtheme::resolveFlowTheme(
         themeId(fixture.value(QStringLiteral("theme")).toString()),
-        {{QStringLiteral("fontFamily"), QStringLiteral("Arial")}});
+        {{QStringLiteral("fontFamily"), fixedNoto ? MermaidFontRegistry::cssFamilyStack()
+                                                   : QStringLiteral("Arial")}});
     flowchart::FlowTextOptions textOptions;
-    textOptions.fontFamily = QStringLiteral("Arial");  // generator's explicit global override
+    textOptions.fontFamily = renderFamily;
     textOptions.fontPixelSize = fontPixelSize(theme.fontSize);
     textOptions.lineHeight = textOptions.fontPixelSize * 1.5;
+    textOptions.look = look;
     const QMap<QString, QSizeF> sizes = flowchart::measureFlowchartNodes(chart.data(), textOptions);
 
     flowchart::FlowLayoutOptions options;
+    options.look = look;
     for (const flowchart::FlowEdge& e : chart.data().edges)
       if (!e.text.isEmpty())
         options.measuredEdgeLabels.insert(e.id,
                                           flowchart::measureFlowchartEdgeLabel(e, textOptions));
     const flowchart::FlowLayoutResult layout = flowchart::layoutFlowchartNodes(chart.data(), sizes, options);
-    const flowscene::FlowScene scene = flowscene::buildFlowScene(chart.data(), layout, theme);
+    const flowscene::FlowScene scene = flowscene::buildFlowScene(chart.data(), layout, theme, look);
 
     QImage golden;
     require(golden.load(dir.filePath(fixture.value(QStringLiteral("file")).toString())),
             QStringLiteral("Case %1: could not load golden PNG").arg(id));
     const QJsonObject content = fixture.value(QStringLiteral("content")).toObject();
+    if (id.startsWith(QStringLiteral("look-neo-shapes-"))) {
+      const QJsonArray boxes = content.value(QStringLiteral("nodeBoxes")).toArray();
+      require(boxes.size() == scene.nodes.size(),
+              QStringLiteral("Case %1: upstream/native node count differs").arg(id));
+      for (qsizetype i = 0; i < scene.nodes.size(); ++i) {
+        const QJsonObject expected = boxes.at(i).toObject();
+        const auto& actual = scene.nodes.at(i);
+        constexpr qreal kGeometryTolerance = 0.2;
+        require(std::abs(actual.width - expected.value(QStringLiteral("width")).toDouble()) <=
+                        kGeometryTolerance &&
+                    std::abs(actual.height - expected.value(QStringLiteral("height")).toDouble()) <=
+                        kGeometryTolerance,
+                QStringLiteral("Case %1 shape %2: bbox %3x%4, upstream %5x%6")
+                    .arg(id, actual.id)
+                    .arg(actual.width, 0, 'f', 3)
+                    .arg(actual.height, 0, 'f', 3)
+                    .arg(expected.value(QStringLiteral("width")).toDouble(), 0, 'f', 3)
+                    .arg(expected.value(QStringLiteral("height")).toDouble(), 0, 'f', 3));
+      }
+    }
     require(std::abs(golden.width() - std::ceil(content.value(QStringLiteral("width")).toDouble() * dpr)) <= 1.0 &&
                 std::abs(golden.height() - std::ceil(content.value(QStringLiteral("height")).toDouble() * dpr)) <= 1.0,
             QStringLiteral("Case %1: golden physical size is not content size x DPR").arg(id));
 
+    flowscene::CompareThresholds thresholds;
+    if (fixture.contains(QStringLiteral("textGlyphIou")))
+      thresholds.textGlyphIou = fixture.value(QStringLiteral("textGlyphIou")).toDouble();
+    if (fixture.contains(QStringLiteral("emptyMaxMismatchRatio")))
+      thresholds.emptyMaxMismatchRatio =
+          fixture.value(QStringLiteral("emptyMaxMismatchRatio")).toDouble();
     const flowscene::CompareReport report = flowscene::compareLevel3(
-        scene, golden, QStringLiteral("Arial"), flowscene::CompareThresholds{}, failDir + QStringLiteral("/") + id,
+        scene, golden, renderFamily, thresholds,
+        failDir + QStringLiteral("/") + id,
         fixture.value(QStringLiteral("enforceInterior")).toBool(true),
         dpr);
     if (!report.passed) {
@@ -139,6 +192,15 @@ int main(int argc, char** argv) {
           QStringLiteral("Golden-pixel CJK/bidi/high-DPI coverage matrix regressed"));
   require(coveredThemes.size() == 11,
           QStringLiteral("Golden-pixel theme coverage regressed: %1/11").arg(coveredThemes.size()));
+  require(neoLookCases >= 2,
+          QStringLiteral("Golden-pixel neo look coverage regressed: %1/2").arg(neoLookCases));
+  require(fixedNotoCases >= 5,
+          QStringLiteral("Golden-pixel fixed Noto coverage regressed: %1/5").arg(fixedNotoCases));
+  require(neoShapes.size() == 48,
+          QStringLiteral("Golden-pixel neo shape coverage regressed: %1/48").arg(neoShapes.size()));
+  require(neoDarkClusterCases == 3,
+          QStringLiteral("Golden-pixel neo-dark cluster/DPR coverage regressed: %1/3")
+              .arg(neoDarkClusterCases));
   qDebug().noquote() << "MermaidGoldenPixelTest:" << cases.size() << "cases pass Level-3 (interior exact + boundary RGBA + text IoU + empty)";
   return 0;
 }

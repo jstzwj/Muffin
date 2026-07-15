@@ -3,10 +3,17 @@
     "package": "mermaid",
     "version": "11.16.0"
   },
+  "font": {
+    "family": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+    "source": "third_party/noto",
+    "mode": "bundled"
+  },
   "cases": [
     {
       "id": "theme-default",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
       "dpr": 1,
       "content": {
@@ -19,6 +26,8 @@
     {
       "id": "theme-base",
       "theme": "base",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
       "dpr": 1,
       "content": {
@@ -31,6 +40,8 @@
     {
       "id": "theme-dark",
       "theme": "dark",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
       "dpr": 1,
       "content": {
@@ -43,6 +54,8 @@
     {
       "id": "theme-forest",
       "theme": "forest",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
       "dpr": 1,
       "content": {
@@ -55,6 +68,8 @@
     {
       "id": "theme-neutral",
       "theme": "neutral",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
       "dpr": 1,
       "content": {
@@ -67,6 +82,8 @@
     {
       "id": "theme-neo",
       "theme": "neo",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
       "dpr": 1,
       "content": {
@@ -79,6 +96,8 @@
     {
       "id": "theme-neo-dark",
       "theme": "neo-dark",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
       "dpr": 1,
       "content": {
@@ -91,6 +110,8 @@
     {
       "id": "theme-redux",
       "theme": "redux",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
       "dpr": 1,
       "content": {
@@ -103,6 +124,8 @@
     {
       "id": "theme-redux-dark",
       "theme": "redux-dark",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
       "dpr": 1,
       "content": {
@@ -115,6 +138,8 @@
     {
       "id": "theme-redux-color",
       "theme": "redux-color",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
       "dpr": 1,
       "content": {
@@ -127,6 +152,8 @@
     {
       "id": "theme-redux-dark-color",
       "theme": "redux-dark-color",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
       "dpr": 1,
       "content": {
@@ -139,6 +166,8 @@
     {
       "id": "dir-TB",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nA[Alpha] --> B[Beta] --> C[Gamma] --> D[Delta]",
       "dpr": 1,
       "content": {
@@ -151,6 +180,8 @@
     {
       "id": "dir-BT",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart BT\nA[Alpha] --> B[Beta] --> C[Gamma] --> D[Delta]",
       "dpr": 1,
       "content": {
@@ -163,6 +194,8 @@
     {
       "id": "dir-LR",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[Alpha] --> B[Beta] --> C[Gamma] --> D[Delta]",
       "dpr": 1,
       "content": {
@@ -175,6 +208,8 @@
     {
       "id": "dir-RL",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart RL\nA[Alpha] --> B[Beta] --> C[Gamma] --> D[Delta]",
       "dpr": 1,
       "content": {
@@ -187,6 +222,8 @@
     {
       "id": "edge-marker-matrix",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[Start] --> B[Point]\nB --x C[Cross]\nC --o D[Circle]\nD --- E[Open]\nE -.-> F[Dotted]\nF ==> G[Thick]\nA o--o H[CircleBoth]\nH x--x I[CrossBoth]",
       "dpr": 1,
       "content": {
@@ -199,6 +236,8 @@
     {
       "id": "shape-matrix",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[Rect] --> B(Round)\nB --> C((Circle))\nC --> D{Diamond}\nD --> E[/Trapezoid/]\nE --> F[(Database)]\nF --> G{{Hexagon}}\nG --> H([Stadium])",
       "dpr": 1,
       "content": {
@@ -209,8 +248,346 @@
       "file": "shape-matrix.png"
     },
     {
+      "id": "look-neo-shape-matrix",
+      "theme": "neo",
+      "look": "neo",
+      "fontMode": "system",
+      "source": "flowchart LR\nA[Rect] --> B(Round)\nB --> C((Circle))\nC --> D{Diamond}\nD --> E[(Database)]\nE --> F{{Hexagon}}\nF --> G([Stadium])",
+      "dpr": 1,
+      "content": {
+        "width": 965.4456176757812,
+        "height": 107.03125
+      },
+      "enforceInterior": true,
+      "file": "look-neo-shape-matrix.png"
+    },
+    {
+      "id": "look-neo-edge-markers",
+      "theme": "neo",
+      "look": "neo",
+      "fontMode": "system",
+      "source": "flowchart LR\nA[Start] --> B[Point]\nB --x C[Cross]\nC --o D[Circle]\nA o--o E[CircleBoth]\nE x--x F[CrossBoth]",
+      "dpr": 1,
+      "content": {
+        "width": 473.3125,
+        "height": 140
+      },
+      "enforceInterior": true,
+      "file": "look-neo-edge-markers.png"
+    },
+    {
+      "id": "look-neo-shapes-01",
+      "theme": "neo",
+      "look": "neo",
+      "fontMode": "system",
+      "source": "flowchart LR\nN0@{ shape: rect, label: \"rect\" }\nN1@{ shape: rounded, label: \"rounded\" }\nN2@{ shape: stadium, label: \"stadium\" }\nN3@{ shape: fr-rect, label: \"fr-rect\" }\nN4@{ shape: circle, label: \"circle\" }\nN5@{ shape: diam, label: \"diam\" }\nN6@{ shape: hex, label: \"hex\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 1,
+      "content": {
+        "width": 902.1643676757812,
+        "height": 96.671875,
+        "nodeBoxes": [
+          {
+            "width": 55.34375,
+            "height": 45
+          },
+          {
+            "width": 81.390625,
+            "height": 51
+          },
+          {
+            "width": 100.25813293457031,
+            "height": 45
+          },
+          {
+            "width": 80.5625,
+            "height": 33
+          },
+          {
+            "width": 96.671875,
+            "height": 96.671875
+          },
+          {
+            "width": 81.359375,
+            "height": 81.359375
+          },
+          {
+            "width": 106.578125,
+            "height": 91
+          }
+        ]
+      },
+      "enforceInterior": false,
+      "file": "look-neo-shapes-01.png"
+    },
+    {
+      "id": "look-neo-shapes-02",
+      "theme": "neo",
+      "look": "neo",
+      "fontMode": "system",
+      "source": "flowchart LR\nN0@{ shape: trap-b, label: \"trap-b\" }\nN1@{ shape: trap-t, label: \"trap-t\" }\nN2@{ shape: lean-r, label: \"lean-r\" }\nN3@{ shape: lean-l, label: \"lean-l\" }\nN4@{ shape: odd, label: \"odd\" }\nN5@{ shape: flag, label: \"flag\" }\nN6@{ shape: dbl-circ, label: \"dbl-circ\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 1,
+      "content": {
+        "width": 956.625,
+        "height": 77.125,
+        "nodeBoxes": [
+          {
+            "width": 102.578125,
+            "height": 36
+          },
+          {
+            "width": 143.6875,
+            "height": 51
+          },
+          {
+            "width": 101.796875,
+            "height": 36
+          },
+          {
+            "width": 100.25,
+            "height": 36
+          },
+          {
+            "width": 76.609375,
+            "height": 45
+          },
+          {
+            "width": 54.578125,
+            "height": 61.479774475097656
+          },
+          {
+            "width": 77.125,
+            "height": 77.125
+          }
+        ]
+      },
+      "enforceInterior": false,
+      "file": "look-neo-shapes-02.png"
+    },
+    {
+      "id": "look-neo-shapes-03",
+      "theme": "neo",
+      "look": "neo",
+      "fontMode": "system",
+      "source": "flowchart LR\nN0@{ shape: fr-circ, label: \"fr-circ\" }\nN1@{ shape: sm-circ, label: \"sm-circ\" }\nN2@{ shape: notch-rect, label: \"notch-rect\" }\nN3@{ shape: lin-rect, label: \"lin-rect\" }\nN4@{ shape: text, label: \"text\" }\nN5@{ shape: bang, label: \"bang\" }\nN6@{ shape: cloud, label: \"cloud\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 1,
+      "textGlyphIou": 0.55,
+      "content": {
+        "width": 778.0226440429688,
+        "height": 101.25,
+        "nodeBoxes": [
+          {
+            "width": 14.013293266296387,
+            "height": 14
+          },
+          {
+            "width": 14,
+            "height": 14
+          },
+          {
+            "width": 118.25,
+            "height": 69
+          },
+          {
+            "width": 82.015625,
+            "height": 45
+          },
+          {
+            "width": 37.578125,
+            "height": 36
+          },
+          {
+            "width": 132.6953125,
+            "height": 101.25
+          },
+          {
+            "width": 78.71932983398438,
+            "height": 59.296669006347656
+          }
+        ]
+      },
+      "enforceInterior": false,
+      "file": "look-neo-shapes-03.png"
+    },
+    {
+      "id": "look-neo-shapes-04",
+      "theme": "neo",
+      "look": "neo",
+      "fontMode": "system",
+      "source": "flowchart LR\nN0@{ shape: doc, label: \"doc\" }\nN1@{ shape: docs, label: \"docs\" }\nN2@{ shape: tag-doc, label: \"tag-doc\" }\nN3@{ shape: lin-doc, label: \"lin-doc\" }\nN4@{ shape: cyl, label: \"cyl\" }\nN5@{ shape: datastore, label: \"datastore\" }\nN6@{ shape: h-cyl, label: \"h-cyl\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 1,
+      "content": {
+        "width": 817.8317260742188,
+        "height": 98.36488342285156,
+        "nodeBoxes": [
+          {
+            "width": 54.578125,
+            "height": 67.49201202392578
+          },
+          {
+            "width": 81.578125,
+            "height": 98.36487579345703
+          },
+          {
+            "width": 84.3734359741211,
+            "height": 63.7454719543457
+          },
+          {
+            "width": 80.57499694824219,
+            "height": 67.49201202392578
+          },
+          {
+            "width": 41.125,
+            "height": 63.566593170166016
+          },
+          {
+            "width": 118.375,
+            "height": 51
+          },
+          {
+            "width": 57.22705841064453,
+            "height": 33
+          }
+        ]
+      },
+      "enforceInterior": false,
+      "file": "look-neo-shapes-04.png"
+    },
+    {
+      "id": "look-neo-shapes-05",
+      "theme": "neo",
+      "look": "neo",
+      "fontMode": "system",
+      "source": "flowchart LR\nN0@{ shape: lin-cyl, label: \"lin-cyl\" }\nN1@{ shape: bow-rect, label: \"bow-rect\" }\nN2@{ shape: tri, label: \"tri\" }\nN3@{ shape: flip-tri, label: \"flip-tri\" }\nN4@{ shape: hourglass, label: \"hourglass\" }\nN5@{ shape: fork, label: \"fork\" }\nN6@{ shape: f-circ, label: \"f-circ\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 1,
+      "content": {
+        "width": 664.5986328125,
+        "height": 95.3697509765625,
+        "nodeBoxes": [
+          {
+            "width": 67.78125,
+            "height": 95.3697509765625
+          },
+          {
+            "width": 90.89119720458984,
+            "height": 33
+          },
+          {
+            "width": 62.671875,
+            "height": 62.671875
+          },
+          {
+            "width": 85.234375,
+            "height": 85.234375
+          },
+          {
+            "width": 30,
+            "height": 30
+          },
+          {
+            "width": 10,
+            "height": 70
+          },
+          {
+            "width": 14.013293266296387,
+            "height": 14
+          }
+        ]
+      },
+      "enforceInterior": false,
+      "file": "look-neo-shapes-05.png"
+    },
+    {
+      "id": "look-neo-shapes-06",
+      "theme": "neo",
+      "look": "neo",
+      "fontMode": "system",
+      "source": "flowchart LR\nN0@{ shape: notch-pent, label: \"notch-pent\" }\nN1@{ shape: curv-trap, label: \"curv-trap\" }\nN2@{ shape: sl-rect, label: \"sl-rect\" }\nN3@{ shape: win-pane, label: \"win-pane\" }\nN4@{ shape: div-rect, label: \"div-rect\" }\nN5@{ shape: delay, label: \"delay\" }\nN6@{ shape: brace, label: \"brace\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
+      "dpr": 1,
+      "textGlyphIou": 0.35,
+      "content": {
+        "width": 866.5510864257812,
+        "height": 67.5,
+        "nodeBoxes": [
+          {
+            "width": 98.171875,
+            "height": 45
+          },
+          {
+            "width": 109.03141021728516,
+            "height": 45
+          },
+          {
+            "width": 70.125,
+            "height": 67.5
+          },
+          {
+            "width": 98.828125,
+            "height": 55
+          },
+          {
+            "width": 61.90625,
+            "height": 44.400001525878906
+          },
+          {
+            "width": 65.45719146728516,
+            "height": 45
+          },
+          {
+            "width": 63.031253814697266,
+            "height": 43
+          }
+        ]
+      },
+      "enforceInterior": false,
+      "file": "look-neo-shapes-06.png"
+    },
+    {
+      "id": "look-neo-shapes-07",
+      "theme": "neo",
+      "look": "neo",
+      "fontMode": "system",
+      "source": "flowchart LR\nN0@{ shape: brace-r, label: \"brace-r\" }\nN1@{ shape: braces, label: \"braces\" }\nN2@{ shape: bolt, label: \"bolt\" }\nN3@{ shape: cross-circ, label: \"cross-circ\" }\nN4@{ shape: st-rect, label: \"st-rect\" }\nN5@{ shape: tag-rect, label: \"tag-rect\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5",
+      "dpr": 1,
+      "textGlyphIou": 0.1,
+      "emptyMaxMismatchRatio": 0.08,
+      "content": {
+        "width": 705.3069458007812,
+        "height": 70,
+        "nodeBoxes": [
+          {
+            "width": 90.359375,
+            "height": 55
+          },
+          {
+            "width": 90.53125,
+            "height": 55
+          },
+          {
+            "width": 35,
+            "height": 70
+          },
+          {
+            "width": 60.05697250366211,
+            "height": 60
+          },
+          {
+            "width": 90.890625,
+            "height": 65
+          },
+          {
+            "width": 88.46875,
+            "height": 45
+          }
+        ]
+      },
+      "enforceInterior": false,
+      "file": "look-neo-shapes-07.png"
+    },
+    {
       "id": "label-html",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[\"<b>Bold</b> &amp; <i>italic</i><br/>next\"] --> B[Plain]",
       "dpr": 1,
       "content": {
@@ -223,6 +600,8 @@
     {
       "id": "label-markdown",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[\"`**Bold** and *italic*<br/>next`\"] --> B[Plain]",
       "dpr": 1,
       "content": {
@@ -235,6 +614,8 @@
     {
       "id": "label-markdown-break-math",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[\"`**Bold**<br/>$$x^2 + 1$$`\"] --> B[Plain]",
       "dpr": 1,
       "content": {
@@ -247,6 +628,8 @@
     {
       "id": "label-math",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[\"`Value $$x^2 + \\frac{1}{2}$$`\"] --> B[Plain]",
       "dpr": 1,
       "content": {
@@ -259,6 +642,8 @@
     {
       "id": "edge-label-rich",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[Start] -- \"`**bold** $$x^2$$`\" --> B[Finish]",
       "dpr": 1,
       "content": {
@@ -271,6 +656,8 @@
     {
       "id": "cluster-label-rich",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph S[\"`**Group** $$x^2$$`\"]\nA[Inside]\nend",
       "dpr": 1,
       "content": {
@@ -283,6 +670,8 @@
     {
       "id": "terminal-and-long-edge-label",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA@{ shape: terminal, label: \"Terminal label\" }\nA -->|\"A deliberately long edge label that wraps at the upstream limit\"| B[Finish]",
       "dpr": 1,
       "content": {
@@ -295,6 +684,8 @@
     {
       "id": "label-cjk",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[中文标签] -->|处理| B[日本語テキスト]",
       "dpr": 1,
       "content": {
@@ -307,6 +698,8 @@
     {
       "id": "label-bidi",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[\"שלום עולם\"] -->|\"مرحبا بالعالم\"| B[\"English العربية\"]",
       "dpr": 1,
       "content": {
@@ -319,6 +712,8 @@
     {
       "id": "integration-2x",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
       "dpr": 2,
       "content": {
@@ -331,6 +726,8 @@
     {
       "id": "label-cjk-2x",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[中文标签] -->|处理| B[日本語テキスト]",
       "dpr": 2,
       "content": {
@@ -343,6 +740,8 @@
     {
       "id": "label-bidi-2x",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[\"שלום עולם\"] -->|\"مرحبا بالعالم\"| B[\"English العربية\"]",
       "dpr": 2,
       "content": {
@@ -355,6 +754,8 @@
     {
       "id": "label-math-2x",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[\"`Value $$x^2 + \\frac{1}{2}$$`\"] --> B[Plain]",
       "dpr": 2,
       "content": {
@@ -367,6 +768,8 @@
     {
       "id": "integration-1_25x",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
       "dpr": 1.25,
       "content": {
@@ -379,6 +782,8 @@
     {
       "id": "integration-1_5x",
       "theme": "dark",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
       "dpr": 1.5,
       "content": {
@@ -391,6 +796,8 @@
     {
       "id": "label-mixed-1_5x",
       "theme": "forest",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[\"中文 abc שלום\"] --> B[\"日本語 العربية 123\"]",
       "dpr": 1.5,
       "content": {
@@ -403,6 +810,8 @@
     {
       "id": "label-cjk-dark",
       "theme": "dark",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[中文标签] -->|处理| B[日本語テキスト]",
       "dpr": 1,
       "content": {
@@ -415,6 +824,8 @@
     {
       "id": "label-bidi-neutral",
       "theme": "neutral",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[\"שלום עולם\"] -->|\"مرحبا بالعالم\"| B[\"English العربية\"]",
       "dpr": 1,
       "content": {
@@ -425,8 +836,122 @@
       "file": "label-bidi-neutral.png"
     },
     {
+      "id": "font-noto-latin",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[Fixed Noto] --> B[Deterministic metrics]",
+      "dpr": 1,
+      "content": {
+        "width": 411.375,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "font-noto-latin.png"
+    },
+    {
+      "id": "font-noto-cjk",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[中文标签] -->|处理| B[日本語テキスト]",
+      "dpr": 1,
+      "content": {
+        "width": 383.53125,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "font-noto-cjk.png"
+    },
+    {
+      "id": "font-noto-arabic",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"مرحبا\"] --> B[\"العالم\"]",
+      "dpr": 1,
+      "content": {
+        "width": 237.796875,
+        "height": 54
+      },
+      "enforceInterior": false,
+      "file": "font-noto-arabic.png"
+    },
+    {
+      "id": "font-noto-hebrew",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"שלום\"] --> B[\"עולם\"]",
+      "dpr": 1,
+      "content": {
+        "width": 239.25,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "font-noto-hebrew.png"
+    },
+    {
+      "id": "font-noto-mixed",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"中文 abc שלום\"] --> B[\"日本語 العربية 123\"]",
+      "dpr": 1,
+      "content": {
+        "width": 396.96875,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "font-noto-mixed.png"
+    },
+    {
+      "id": "look-neo-dark-cluster-1x",
+      "theme": "neo-dark",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart TB\nsubgraph Outer[\"外层 Outer\"]\ndirection LR\nsubgraph Inner[\"שלום Inner\"]\ndirection TB\nA@{ shape: doc, label: \"文档\" } --> B@{ shape: lin-cyl, label: \"قاعدة\" }\nB --> C@{ shape: st-rect, label: \"Stacked\" }\nend\nD@{ shape: braces, label: \"Brace\" }\nend\nA --> D\nD --> E@{ shape: tag-doc, label: \"Tagged\" }",
+      "dpr": 1,
+      "content": {
+        "width": 408.875,
+        "height": 713.2352294921875
+      },
+      "enforceInterior": true,
+      "file": "look-neo-dark-cluster-1x.png"
+    },
+    {
+      "id": "look-neo-dark-cluster-1_5x",
+      "theme": "neo-dark",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart TB\nsubgraph Outer[\"外层 Outer\"]\ndirection LR\nsubgraph Inner[\"שלום Inner\"]\ndirection TB\nA@{ shape: doc, label: \"文档\" } --> B@{ shape: lin-cyl, label: \"قاعدة\" }\nB --> C@{ shape: st-rect, label: \"Stacked\" }\nend\nD@{ shape: braces, label: \"Brace\" }\nend\nA --> D\nD --> E@{ shape: tag-doc, label: \"Tagged\" }",
+      "dpr": 1.5,
+      "content": {
+        "width": 408.875,
+        "height": 713.2352294921875
+      },
+      "enforceInterior": true,
+      "file": "look-neo-dark-cluster-1_5x.png"
+    },
+    {
+      "id": "look-neo-dark-cluster-2x",
+      "theme": "neo-dark",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart TB\nsubgraph Outer[\"外层 Outer\"]\ndirection LR\nsubgraph Inner[\"שלום Inner\"]\ndirection TB\nA@{ shape: doc, label: \"文档\" } --> B@{ shape: lin-cyl, label: \"قاعدة\" }\nB --> C@{ shape: st-rect, label: \"Stacked\" }\nend\nD@{ shape: braces, label: \"Brace\" }\nend\nA --> D\nD --> E@{ shape: tag-doc, label: \"Tagged\" }",
+      "dpr": 2,
+      "content": {
+        "width": 408.875,
+        "height": 713.2352294921875
+      },
+      "enforceInterior": true,
+      "file": "look-neo-dark-cluster-2x.png"
+    },
+    {
       "id": "complex-cluster-1_25x",
       "theme": "neutral",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph Outer[Outer 中文]\nsubgraph Middle[Middle שלום]\nsubgraph Inner[Inner العربية]\nA[中文] --> B[שלום]\nend\nC[Gamma]\nend\nD[Delta]\nend",
       "dpr": 1.25,
       "content": {
@@ -439,6 +964,8 @@
     {
       "id": "recursive-cluster-three-level",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph Outer[Outer Group]\nsubgraph Middle[Middle Group]\nsubgraph Inner[Inner Group]\nA[Alpha] --> B[Beta]\nend\nC[Gamma]\nend\nD[Delta]\nend",
       "dpr": 1,
       "content": {
@@ -451,6 +978,8 @@
     {
       "id": "compound-self-parallel",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph Outer[Outer]\ndirection LR\nsubgraph Inner[Inner]\ndirection TB\nA[Alpha] --> A\nA --> B[Beta]\nA --> B\nend\nB --> C[Gamma]\nend\nC --> D[Delta]",
       "dpr": 1,
       "content": {
@@ -463,6 +992,8 @@
     {
       "id": "cluster-cross-layer-explicit-direction",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart TB\nsubgraph Left[Left]\ndirection LR\nA[Alpha] --> B[Beta]\nend\nsubgraph Right[Right]\ndirection RL\nC[Gamma] --> D[Delta]\nend\nA --> D\nB --> C",
       "dpr": 1,
       "content": {
@@ -475,6 +1006,8 @@
     {
       "id": "animated-edge-static-initial",
       "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
       "source": "flowchart LR\nA[Alpha] edgeFast@--> B[Beta]\nedgeFast@{ animate: true, animation: fast, curve: linear }",
       "dpr": 1,
       "animationState": "initial",

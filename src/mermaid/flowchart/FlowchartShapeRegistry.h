@@ -14,7 +14,7 @@
 // back to "rect", matching mermaid's default shape.
 //
 // The registry audit (mermaid 11.16.0 chunk-65BZPYT2.mjs `shapesDefs`) lists
-// 49 documented flowchart shapes selectable via `@{ shape: }`. `upstreamShortNames()`
+// 48 documented flowchart shapes selectable via `@{ shape: }`. `upstreamShortNames()`
 // returns that list for the registry-diff test (upstream - native must empty as
 // milestone E completes).
 
@@ -201,7 +201,7 @@ inline QString canonicalShape(const QString& type) {
   return it == map.constEnd() ? QStringLiteral("rect") : it.value();
 }
 
-// The 49 documented flowchart shape shortNames from mermaid 11.16.0's
+// The 48 documented flowchart shape shortNames from mermaid 11.16.0's
 // `shapesDefs` (chunk-65BZPYT2.mjs). The registry-diff test compares this
 // against the ported set.
 inline QStringList upstreamShortNames() {

@@ -9,8 +9,8 @@ import { cases } from "./mermaid_golden_cases.mjs";
 // writes one PNG per case + a manifest. The native test (MermaidGoldenPixelTest)
 // builds the same scene and runs FlowSceneCompare against each PNG.
 //
-// `look: "classic"` is forced for every case so the theme axis is a pure COLOUR
-// test (each theme's colours under the classic look the native painter renders).
+// `look` defaults to classic so the theme axis remains a pure colour test.
+// Dedicated cases opt into neo and exercise its independent geometry axis.
 // Animated cases declare a deterministic sampled state in the registry. The
 // handDrawn look remains a separate RoughJS milestone.
 
@@ -20,6 +20,20 @@ const mermaidRoot = path.resolve(
 const outDir = path.resolve(process.argv[3] ?? path.join("tests", "fixtures", "mermaid", "golden-pixel"));
 const chrome = process.argv[4] ?? "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const packageJson = JSON.parse(fs.readFileSync(path.join(mermaidRoot, "package.json"), "utf8"));
+const notoDir = path.resolve("third_party", "noto", "fonts");
+const fontFiles = [
+  ["Noto Sans", "NotoSans-Regular.ttf", "U+0000-024F,U+1E00-1EFF"],
+  ["Noto Sans CJK SC", "NotoSansCJKsc-Regular.otf", "U+2E80-9FFF,U+3040-30FF,U+AC00-D7AF"],
+  ["Noto Sans Arabic", "NotoSansArabic-Regular.ttf", "U+0600-06FF,U+0750-077F,U+08A0-08FF"],
+  ["Noto Sans Hebrew", "NotoSansHebrew-Regular.ttf", "U+0590-05FF"],
+];
+for (const [, file] of fontFiles) {
+  if (!fs.existsSync(path.join(notoDir, file))) throw new Error(`Missing bundled Noto font: ${file}`);
+}
+const fixedFontStack = '"Noto Sans", "Noto Sans CJK SC", "Noto Sans Arabic", "Noto Sans Hebrew", sans-serif';
+const fontFaces = fontFiles.map(([family, file, range]) =>
+  `@font-face{font-family:"${family}";src:url("${pathToFileURL(path.join(notoDir, file)).href}");font-weight:400;font-style:normal;unicode-range:${range};}`
+).join("\n");
 if (packageJson.version !== "11.16.0") {
   throw new Error(`Expected mermaid 11.16.0, found ${packageJson.version}`);
 }
@@ -27,7 +41,11 @@ const { default: puppeteer } = await import(
   pathToFileURL(path.join(path.dirname(mermaidRoot), "puppeteer", "lib", "puppeteer", "puppeteer.js"))
 );
 
-const browser = await puppeteer.launch({ headless: true, executablePath: chrome, args: ["--allow-file-access-from-files"] });
+const browser = await puppeteer.launch({
+  headless: true,
+  executablePath: chrome,
+  args: ["--allow-file-access-from-files"],
+});
 try {
   const page = await browser.newPage();
   const harnessUrl = pathToFileURL(path.join(path.dirname(mermaidRoot), "..", "index.html")).href;
@@ -38,14 +56,27 @@ try {
     const dpr = fixture.dpr ?? 1;
     await page.setViewport({ width: 1600, height: 1200, deviceScaleFactor: dpr });
     await page.goto(harnessUrl);
-    const content = await page.evaluate(async ({ fixture, index, mermaidModule }) => {
+    const content = await page.evaluate(async ({ fixture, index, mermaidModule, fontFaces, fixedFontStack }) => {
+      if (fixture.fontMode === "noto") {
+        const style = document.createElement("style");
+        style.textContent = fontFaces;
+        document.head.appendChild(style);
+        await Promise.all([
+          document.fonts.load('16px "Noto Sans"', "Fixed Noto"),
+          document.fonts.load('16px "Noto Sans CJK SC"', "中文日本語"),
+          document.fonts.load('16px "Noto Sans Arabic"', "مرحبا بالعالم"),
+          document.fonts.load('16px "Noto Sans Hebrew"', "שלום עולם"),
+        ]);
+        await document.fonts.ready;
+      }
       const { default: mermaid } = await import(mermaidModule);
       mermaid.initialize({
         startOnLoad: false,
         securityLevel: "strict",
         theme: fixture.theme,
-        look: "classic",
-        fontFamily: "Arial",
+        look: fixture.look ?? "classic",
+        handDrawnSeed: 17,
+        fontFamily: fixture.fontMode === "noto" ? fixedFontStack : "Arial",
         flowchart: { defaultRenderer: "dagre-wrapper", htmlLabels: false },
       });
       const { svg } = await mermaid.render(`gp-${index}`, fixture.source);
@@ -80,8 +111,14 @@ try {
       }
       await document.fonts.ready;
       await new Promise((resolve) => requestAnimationFrame(() => resolve()));
-      return { width: bb.width, height: bb.height };
-    }, { fixture, index, mermaidModule });
+      const nodeBoxes = fixture.id.startsWith("look-neo-shapes-")
+        ? [...root.querySelectorAll("g.node")].map((node) => {
+            const box = node.getBBox();
+            return { width: box.width, height: box.height };
+          })
+        : undefined;
+      return { width: bb.width, height: bb.height, ...(nodeBoxes ? { nodeBoxes } : {}) };
+    }, { fixture, index, mermaidModule, fontFaces, fixedFontStack });
     const element = await page.$("#container svg");
     if (!element) throw new Error(`Case ${fixture.id}: rendered SVG is missing`);
     const screenshot = await element.screenshot({ omitBackground: true });
@@ -98,12 +135,21 @@ try {
   for (const r of results) {
     const file = `${r.id}.png`;
     fs.writeFileSync(path.join(outDir, file), r.png);
-    const enforceInterior = true;
-    manifestCases.push({ id: r.id, theme: r.theme, source: r.source, dpr: r.dpr,
+    const enforceInterior = r.enforceInterior ?? true;
+    manifestCases.push({ id: r.id, theme: r.theme, look: r.look ?? "classic",
+                         fontMode: r.fontMode ?? "system",
+                         source: r.source, dpr: r.dpr,
                          ...(r.animationState ? { animationState: r.animationState } : {}),
+                         ...(r.textGlyphIou !== undefined ? { textGlyphIou: r.textGlyphIou } : {}),
+                         ...(r.emptyMaxMismatchRatio !== undefined
+                           ? { emptyMaxMismatchRatio: r.emptyMaxMismatchRatio } : {}),
                          content: r.content, enforceInterior, file });
   }
-  const manifest = { upstream: { package: "mermaid", version: packageJson.version }, cases: manifestCases };
+  const manifest = {
+    upstream: { package: "mermaid", version: packageJson.version },
+    font: { family: fixedFontStack, source: "third_party/noto", mode: "bundled" },
+    cases: manifestCases,
+  };
   fs.writeFileSync(path.join(outDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   console.log(`Wrote ${results.length} golden PNGs + manifest to ${outDir}`);
 } finally {

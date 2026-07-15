@@ -26,6 +26,23 @@ export const allThemes = [
 
 export const pixelThemes = allThemes;
 
+export const neoShapeShortNames = [
+  "rect", "rounded", "stadium", "fr-rect", "circle", "diam", "hex",
+  "trap-b", "trap-t", "lean-r", "lean-l", "odd", "flag", "dbl-circ",
+  "fr-circ", "sm-circ", "notch-rect", "lin-rect", "text", "bang", "cloud",
+  "doc", "docs", "tag-doc", "lin-doc", "cyl", "datastore", "h-cyl",
+  "lin-cyl", "bow-rect", "tri", "flip-tri", "hourglass", "fork", "f-circ",
+  "notch-pent", "curv-trap", "sl-rect", "win-pane", "div-rect", "delay",
+  "brace", "brace-r", "braces", "bolt", "cross-circ", "st-rect", "tag-rect",
+];
+
+function neoShapeSource(shapes) {
+  const nodes = shapes.map((shape, index) =>
+    `N${index}@{ shape: ${shape}, label: "${shape}" }`);
+  const chain = shapes.map((_, index) => `N${index}`).join(" --> ");
+  return ["flowchart LR", ...nodes, chain].join("\n");
+}
+
 const table = [];
 const cjkSource = 'flowchart LR\nA[中文标签] -->|处理| B[日本語テキスト]';
 const bidiSource = 'flowchart LR\nA["שלום עולם"] -->|"مرحبا بالعالم"| B["English العربية"]';
@@ -64,7 +81,7 @@ table.push({
     "H x--x I[CrossBoth]",
   ].join("\n"),
 });
-// Axis 4 — canonical shapes (a representative spread; full 49 are L2-verified).
+// Axis 4 - canonical shapes (a representative spread; all 48 are L2-verified).
 table.push({
   id: "shape-matrix",
   theme: "default",
@@ -79,6 +96,50 @@ table.push({
     "G --> H([Stadium])",
   ].join("\n"),
 });
+// Axis 4b - neo look is a geometry/rendering axis, independent from theme.
+table.push({
+  id: "look-neo-shape-matrix",
+  theme: "neo",
+  look: "neo",
+  source: [
+    "flowchart LR",
+    "A[Rect] --> B(Round)",
+    "B --> C((Circle))",
+    "C --> D{Diamond}",
+    "D --> E[(Database)]",
+    "E --> F{{Hexagon}}",
+    "F --> G([Stadium])",
+  ].join("\n"),
+});
+table.push({
+  id: "look-neo-edge-markers",
+  theme: "neo",
+  look: "neo",
+  source: [
+    "flowchart LR",
+    "A[Start] --> B[Point]",
+    "B --x C[Cross]",
+    "C --o D[Circle]",
+    "A o--o E[CircleBoth]",
+    "E x--x F[CrossBoth]",
+  ].join("\n"),
+});
+for (let start = 0; start < neoShapeShortNames.length; start += 7) {
+  const ordinal = String(start / 7 + 1).padStart(2, "0");
+  table.push({
+    id: `look-neo-shapes-${ordinal}`,
+    theme: "neo",
+    look: "neo",
+    // Multi-path shapes intentionally overlap their fill paths. Geometry is
+    // guarded by nodeBoxes and the boundary/empty/text comparisons; treating
+    // the overlapped fill as a single INTERIOR category is renderer-dependent.
+    enforceInterior: false,
+    ...(ordinal === "03" ? { textGlyphIou: 0.55 } : {}),
+    ...(ordinal === "06" ? { textGlyphIou: 0.35 } : {}),
+    ...(ordinal === "07" ? { textGlyphIou: 0.1, emptyMaxMismatchRatio: 0.08 } : {}),
+    source: neoShapeSource(neoShapeShortNames.slice(start, start + 7)),
+  });
+}
 // Axis 5 - HTML, Markdown, and Math label rendering.
 table.push({
   id: "label-html",
@@ -132,6 +193,52 @@ table.push({ id: "integration-1_5x", theme: "dark", source: integrationSource, d
 table.push({ id: "label-mixed-1_5x", theme: "forest", source: mixedSource, dpr: 1.5 });
 table.push({ id: "label-cjk-dark", theme: "dark", source: cjkSource });
 table.push({ id: "label-bidi-neutral", theme: "neutral", source: bidiSource });
+// Axis 7b - bundled fonts. These cases are independent of host font fallback.
+table.push({
+  id: "font-noto-latin",
+  theme: "default",
+  fontMode: "noto",
+  source: "flowchart LR\nA[Fixed Noto] --> B[Deterministic metrics]",
+});
+table.push({ id: "font-noto-cjk", theme: "default", fontMode: "noto", source: cjkSource });
+table.push({
+  id: "font-noto-arabic",
+  theme: "default",
+  fontMode: "noto",
+  enforceInterior: false,
+  source: 'flowchart LR\nA["مرحبا"] --> B["العالم"]',
+});
+table.push({
+  id: "font-noto-hebrew",
+  theme: "default",
+  fontMode: "noto",
+  source: 'flowchart LR\nA["שלום"] --> B["עולם"]',
+});
+table.push({ id: "font-noto-mixed", theme: "default", fontMode: "noto", source: mixedSource });
+const neoDarkClusterSource = [
+  "flowchart TB",
+  'subgraph Outer["外层 Outer"]',
+  "direction LR",
+  'subgraph Inner["שלום Inner"]',
+  "direction TB",
+  'A@{ shape: doc, label: "文档" } --> B@{ shape: lin-cyl, label: "قاعدة" }',
+  'B --> C@{ shape: st-rect, label: "Stacked" }',
+  "end",
+  'D@{ shape: braces, label: "Brace" }',
+  "end",
+  "A --> D",
+  'D --> E@{ shape: tag-doc, label: "Tagged" }',
+].join("\n");
+for (const dpr of [1, 1.5, 2]) {
+  table.push({
+    id: `look-neo-dark-cluster-${String(dpr).replace(".", "_")}x`,
+    theme: "neo-dark",
+    look: "neo",
+    fontMode: "noto",
+    dpr,
+    source: neoDarkClusterSource,
+  });
+}
 table.push({ id: "complex-cluster-1_25x", theme: "neutral", source: complexClusterSource, dpr: 1.25 });
 // Axis 8 - recursively extracted nested clusters.
 table.push({

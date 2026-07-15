@@ -1,4 +1,5 @@
 #include "mermaid/flowchart/FlowchartLayout.h"
+#include "mermaid/MermaidFontRegistry.h"
 
 #include "mermaid/flowchart/FlowLabel.h"
 
@@ -159,7 +160,8 @@ QPointF intersectPolygon(const d::DagreNodeLabel& node, const QVector<QPointF>& 
 // polygon bbox aligns with the node bbox, so intersectPolygon places them
 // correctly. Everything else (rect/round/stadium/subroutine/cylinder/datastore/
 // text/tagged_rect/lined_process/divided_rect) falls through to intersectRect.
-QPointF intersectNodeForShape(const d::DagreNodeLabel& node, const QString& type, const QPointF& point) {
+QPointF intersectNodeForShape(const d::DagreNodeLabel& node, const QString& type,
+                              const QPointF& point, FlowLook look) {
   const QString ctype = canonicalShape(type);
   if (ctype == QLatin1String("circle") ||
       ctype == QLatin1String("double_circle") ||
@@ -175,7 +177,7 @@ QPointF intersectNodeForShape(const d::DagreNodeLabel& node, const QString& type
   if (ctype == QLatin1String("bang") || ctype == QLatin1String("cloud")) {
     return d::intersectRect(node, point);
   }
-  const QVector<QPointF> pts = flowShapePolygonPoints(ctype, node.width, node.height);
+  const QVector<QPointF> pts = flowShapePolygonPoints(ctype, node.width, node.height, look);
   if (!pts.isEmpty()) {
     QPointF hit = intersectPolygon(node, pts, point);
     // The diamond (`question`) is the one polygon whose handler compensates for
@@ -212,6 +214,7 @@ QSizeF measureFlowchartEdgeLabel(const FlowEdge& edge, const FlowTextOptions& op
                                 options.lineHeight);
   if (!document.text.contains(QLatin1Char('\n')) && size.width() > 196.0) {
     QFont font(options.fontFamily);
+    MermaidFontRegistry::configureFont(font, options.fontFamily);
     font.setPixelSize(static_cast<int>(std::round(options.fontPixelSize)));
     font.setHintingPreference(QFont::PreferNoHinting);
     QTextLayout layout(document.text, font);
@@ -258,66 +261,83 @@ QMap<QString, QSizeF> measureFlowchartNodes(const FlowchartData& data, FlowTextO
     QSizeF size;
     const QString type = canonicalShape(vertex.type);
     const qreal pad = options.verticalPadding;  // mermaid flowchart node.padding (default 15)
-    if (type == QLatin1String("round")) {
+    const bool neo = options.look == FlowLook::Neo;
+    if (neo && type == QLatin1String("rect")) {
+      // squareRect.ts: neo fixes the horizontal/vertical label padding at 16/12.
+      size = QSizeF(label.width() + 32.0, label.height() + 24.0);
+    } else if (type == QLatin1String("round")) {
       size = QSizeF(label.width() + options.horizontalPadding,
                     label.height() + options.verticalPadding * 2.0);
     } else if (type == QLatin1String("circle")) {
-      const qreal diameter = std::max(label.width(), label.height()) + options.verticalPadding;
+      // circle.ts deliberately derives the radius from label width only.
+      const qreal diameter = neo ? label.width() + 64.0
+                                 : std::max(label.width(), label.height()) + options.verticalPadding;
       size = QSizeF(diameter, diameter);
     } else if (type == QLatin1String("diamond")) {
       const qreal diameter = label.width() + label.height() + options.verticalPadding * 2.0;
       size = QSizeF(diameter, diameter);
     } else if (type == QLatin1String("stadium")) {
-      const qreal height = label.height() + options.verticalPadding;
-      size = QSizeF(label.width() + height / 4.0 + options.horizontalPadding / 2.0,
+      const qreal height = label.height() + (neo ? 24.0 : options.verticalPadding);
+      size = QSizeF(label.width() + height / 4.0 + (neo ? 40.0 : options.horizontalPadding / 2.0),
                     height);
     } else if (type == QLatin1String("subroutine")) {
-      size = QSizeF(label.width() + 16.0 + options.horizontalPadding / 2.0,
-                    label.height() + options.verticalPadding);
+      size = QSizeF(label.width() + 16.0 + (neo ? 28.0 : options.horizontalPadding / 2.0),
+                    label.height() + (neo ? 12.0 : options.verticalPadding));
     } else if (type == QLatin1String("cylinder")) {
-      const qreal width = label.width() + options.horizontalPadding / 2.0;
+      const qreal width = label.width() + (neo ? 24.0 : options.horizontalPadding / 2.0);
       const qreal radiusY = (width / 2.0) / (2.5 + width / 50.0);
-      size = QSizeF(width, label.height() + options.verticalPadding + radiusY * 3.0);
+      size = QSizeF(width, label.height() + (neo ? 24.0 : options.verticalPadding) + radiusY * 3.0);
     } else if (type == QLatin1String("odd")) {
-      const qreal height = label.height() + options.verticalPadding;
-      size = QSizeF(label.width() + options.horizontalPadding / 2.0 + height / 4.0,
-                    height);
+      if (neo) {
+        const qreal height = label.height() + 24.0;
+        size = QSizeF(label.width() + 42.0 + height / 4.0, height);
+      }
+      else {
+        const qreal height = label.height() + options.verticalPadding;
+        size = QSizeF(label.width() + options.horizontalPadding / 2.0 + height / 4.0,
+                      height);
+      }
     } else if (type == QLatin1String("hexagon")) {
-      const qreal height = label.height() + options.verticalPadding;
-      size = QSizeF(label.width() + options.horizontalPadding / 2.0 + height / 2.0,
+      const qreal height = label.height() + (neo ? 70.0 : options.verticalPadding);
+      size = QSizeF(label.width() + (neo ? 32.0 : options.horizontalPadding / 2.0) +
+                        2.0 * height / (neo ? 3.5 : 4.0),
                     height);
     } else if (type == QLatin1String("trapezoid")) {
       const qreal height = label.height() + options.verticalPadding;
-      size = QSizeF(label.width() + options.horizontalPadding / 2.0 + height,
+      size = QSizeF(label.width() + (neo ? 30.0 : options.horizontalPadding / 2.0) + height,
                     height);
     } else if (type == QLatin1String("inv_trapezoid")) {
       const qreal height = label.height() + options.verticalPadding * 2.0;
-      size = QSizeF(label.width() + options.horizontalPadding + height,
+      size = QSizeF(label.width() + (neo ? 60.0 : options.horizontalPadding) + height,
                     height);
     } else if (type == QLatin1String("lean_right") ||
                type == QLatin1String("lean_left")) {
       const qreal height = label.height() + options.verticalPadding;
-      size = QSizeF(label.width() + options.horizontalPadding / 2.0 + height,
+      size = QSizeF(label.width() + (neo ? 30.0 : options.horizontalPadding / 2.0) + height,
                     height);
     } else if (type == QLatin1String("triangle") ||
                type == QLatin1String("flipped_triangle")) {
       // triangle/flippedTriangle: w=h=labelW+labelH+pad (tw=h, post-override).
-      const qreal s = label.width() + label.height() + pad;
+      const qreal s = label.width() + label.height() + (neo ? 30.0 : pad);
       size = QSizeF(s, s);
     } else if (type == QLatin1String("hourglass")) {
       size = QSizeF(30.0, 30.0);  // label-less, fixed min 30x30
     } else if (type == QLatin1String("notched_pentagon")) {
-      size = QSizeF(label.width() + 2.0 * pad, label.height() + 2.0 * pad);
+      size = QSizeF(label.width() + (neo ? 32.0 : 2.0 * pad),
+                    label.height() + (neo ? 24.0 : 2.0 * pad));
     } else if (type == QLatin1String("card")) {
-      size = QSizeF(label.width() + pad + 12.0, label.height() + pad);  // NOTCH_SIZE=12
+      size = neo ? QSizeF(label.width() + 56.0, label.height() + 48.0)
+                 : QSizeF(label.width() + pad + 12.0, label.height() + pad);
     } else if (type == QLatin1String("sloped_rect")) {
-      size = QSizeF(label.width() + 2.0 * pad, (label.height() + 2.0 * pad) * 1.5);
+      size = QSizeF(label.width() + (neo ? 32.0 : 2.0 * pad),
+                    (label.height() + (neo ? 24.0 : 2.0 * pad)) * 1.5);
     } else if (type == QLatin1String("divided_rect")) {
-      size = QSizeF(label.width() + pad, (label.height() + pad) * 1.2);
+      const qreal p = neo ? 16.0 : pad;
+      size = QSizeF(label.width() + p, (label.height() + p) * 1.2);
     } else if (type == QLatin1String("lightning_bolt")) {
       size = QSizeF(35.0, 70.0);  // label-less, fixed 35x70 (bbox = w x 2h)
     } else if (type == QLatin1String("double_circle")) {
-      const qreal d = label.width() + 2.0 * pad;  // diameter = bbox.w + 2*labelPadding
+      const qreal d = label.width() + (neo ? 32.0 : 2.0 * pad);
       size = QSizeF(d, d);
     } else if (type == QLatin1String("filled_circle")) {
       size = QSizeF(14.0, 14.0);  // r=7
@@ -335,47 +355,51 @@ QMap<QString, QSizeF> measureFlowchartNodes(const FlowchartData& data, FlowTextO
       // drawRect delegate: labelPaddingX=2*pad (doubled), labelPaddingY=pad.
       size = QSizeF(label.width() + 4.0 * pad, label.height() + 2.0 * pad);
     } else if (type == QLatin1String("tagged_rect")) {
-      const qreal th = label.height() + 2.0 * pad;  // tagWidth = 0.2*totalHeight
-      size = QSizeF(label.width() + 2.0 * pad + 0.2 * th, th);
+      const qreal th = label.height() + (neo ? 24.0 : 2.0 * pad);
+      size = QSizeF(label.width() + (neo ? 32.0 : 2.0 * pad) + 0.2 * th, th);
     } else if (type == QLatin1String("stacked_rect")) {
-      size = QSizeF(label.width() + 2.0 * pad + 10.0, label.height() + 2.0 * pad + 10.0);  // rectOffset=5
+      const qreal offsets = neo ? 20.0 : 10.0;
+      size = QSizeF(label.width() + (neo ? 32.0 : 2.0 * pad) + offsets,
+                    label.height() + (neo ? 24.0 : 2.0 * pad) + offsets);
     } else if (type == QLatin1String("lined_process")) {
-      size = QSizeF(label.width() + 2.0 * pad + 16.0, label.height() + 2.0 * pad);  // FRAME_WIDTH=8
+      size = QSizeF(label.width() + (neo ? 32.0 : 2.0 * pad) + (neo ? 8.0 : 16.0),
+                    label.height() + (neo ? 24.0 : 2.0 * pad));
     } else if (type == QLatin1String("small_circle") ||
                type == QLatin1String("framed_circle")) {
       size = QSizeF(14.0, 14.0);  // stateStart/stateEnd: fixed r=7 (label-less)
     } else if (type == QLatin1String("window_pane")) {
       // windowPane: totalWidth = label.w + 2*pad + rectOffset(10) = label.w + 40.
-      size = QSizeF(label.width() + 2.0 * pad + 10.0, label.height() + 2.0 * pad + 10.0);
+      size = QSizeF(label.width() + (neo ? 32.0 : 2.0 * pad) + 10.0,
+                    label.height() + (neo ? 24.0 : 2.0 * pad) + 10.0);
     } else if (type == QLatin1String("lined_cylinder")) {
       // linedCylinder: w = label.w + 2*pad; ry = (w/2)/(2.5+w/50); node.height =
       // label.h + 2*pad + 3*ry (body + 2*ry for the top/bottom ellipse caps).
-      const qreal width = label.width() + 2.0 * pad;
+      const qreal width = label.width() + (neo ? 32.0 : 2.0 * pad);
       const qreal ry = (width / 2.0) / (2.5 + width / 50.0);
-      size = QSizeF(width, label.height() + 2.0 * pad + 3.0 * ry);
+      size = QSizeF(width, label.height() + (neo ? 48.0 : 2.0 * pad) + 3.0 * ry);
     } else if (type == QLatin1String("horizontal_cylinder")) {
       // tiltedCylinder: h = label.h + pad/2; ry = h/2; rx = ry/(2.5+h/50);
       // node.width = label.w + pad/2 + 3*rx (body + 2*rx caps).
-      const qreal height = label.height() + pad / 2.0;
+      const qreal height = label.height() + (neo ? 12.0 : pad / 2.0);
       const qreal ry = height / 2.0;
       const qreal rx = ry / (2.5 + height / 50.0);
-      size = QSizeF(label.width() + pad / 2.0 + 3.0 * rx, height);
+      size = QSizeF(label.width() + (neo ? 12.0 : pad / 2.0) + 3.0 * rx, height);
     } else if (type == QLatin1String("document")) {
       // waveEdgedRectangle: w = label.w + 2*pad; h = label.h + 2*pad; waveAmp = h/8;
       // node.height = h + 2*waveAmp = 1.25*h.
-      const qreal w = label.width() + 2.0 * pad;
-      const qreal h = label.height() + 2.0 * pad;
-      size = QSizeF(w, h * 1.25);
+      const qreal w = label.width() + (neo ? 32.0 : 2.0 * pad);
+      const qreal h = label.height() + (neo ? 24.0 : 2.0 * pad);
+      size = QSizeF(w, h * (neo ? 1.5 : 1.25));
     } else if (type == QLatin1String("flag")) {
       // waveRectangle: w = label.w + 2*pad; h = label.h + pad (labelPaddingY once);
       // node.height = h + 4*waveAmp = 1.5*h (sine bulges top AND bottom).
-      const qreal w = label.width() + 2.0 * pad;
-      const qreal h = label.height() + pad;
+      const qreal w = label.width() + (neo ? 32.0 : 2.0 * pad);
+      const qreal h = label.height() + (neo ? 20.0 : pad);
       size = QSizeF(w, h * 1.5);
     } else if (type == QLatin1String("multi_document")) {
       // multiWaveEdgedRectangle: w = label.w + 2*pad (h += 3*pad); node.width =
       // w + 2*rectOffset(10); node.height = 1.1875*h + 2*rectOffset.
-      const qreal w = label.width() + 2.0 * pad;
+      const qreal w = label.width() + (neo ? 32.0 : 2.0 * pad);
       const qreal h = label.height() + 3.0 * pad;
       size = QSizeF(w + 20.0, h * 1.1875 + 20.0);
     } else if (type == QLatin1String("tagged_document")) {
@@ -386,27 +410,28 @@ QMap<QString, QSizeF> measureFlowchartNodes(const FlowchartData& data, FlowTextO
       size = QSizeF(w * 1.1, h * 1.25);
     } else if (type == QLatin1String("lined_document")) {
       // linedWaveEdgedRect: same wave-rect bbox as tagged_document.
-      const qreal w = label.width() + 2.0 * pad;
-      const qreal h = label.height() + 2.0 * pad;
-      size = QSizeF(w * 1.1, h * 1.25);
+      const qreal w = label.width() + (neo ? 32.0 : 2.0 * pad);
+      const qreal h = label.height() + (neo ? 24.0 : 2.0 * pad);
+      size = QSizeF(w * 1.1, h * (neo ? 1.5 : 1.25));
     } else if (type == QLatin1String("bow_tie_rect")) {
       // bowTieRect: h = label.h + pad; ry = h/2; rx = ry/(2.5+h/50). The left
       // arc bulges OUT (to -w/2-rx) but the right arc bulges IN (to w/2-rx), so
       // the bbox's right edge is the rectangle corner at w/2 -> node.width =
       // w + rx (one rx, not two).
-      const qreal h = label.height() + pad;
+      const qreal h = label.height() + (neo ? 12.0 : pad);
       const qreal ry = h / 2.0;
       const qreal rx = ry / (2.5 + h / 50.0);
-      size = QSizeF(label.width() + 2.0 * pad + rx, h);
+      size = QSizeF(label.width() + (neo ? 32.0 : 2.0 * pad) + rx, h);
     } else if (type == QLatin1String("half_rounded_rect")) {
       // halfRoundedRectangle: w = label.w + 2*pad; h = label.h + 2*pad; radius=h/2.
-      size = QSizeF(label.width() + 2.0 * pad, label.height() + 2.0 * pad);
+      size = QSizeF(label.width() + (neo ? 32.0 : 2.0 * pad),
+                    label.height() + (neo ? 24.0 : 2.0 * pad));
     } else if (type == QLatin1String("curved_trapezoid")) {
       // curvedTrapezoid: w = max(20, (label.w+2*pad)*1.25); h = label.h + 2*pad;
       // the right-side arc bulges OUT to x=w (angle 270->90 passes through 180
       // where cos=-1 -> x = rw+radius = w), so node.width = w.
-      const qreal h = label.height() + 2.0 * pad;
-      const qreal w = std::max(20.0, (label.width() + 2.0 * pad) * 1.25);
+      const qreal h = label.height() + (neo ? 24.0 : 2.0 * pad);
+      const qreal w = std::max(20.0, (label.width() + (neo ? 32.0 : 2.0 * pad)) * 1.25);
       size = QSizeF(w, h);
     } else if (type == QLatin1String("brace_left") ||
                type == QLatin1String("brace_right") ||
@@ -414,8 +439,8 @@ QMap<QString, QSizeF> measureFlowchartNodes(const FlowchartData& data, FlowTextO
       // curlyBrace*: w = label.w + pad; h = label.h + pad; radius = max(5, 0.1*h);
       // node.height = h + 2*radius; node.width = w + k*radius where k=2 (left,
       // right) or 2.5 (braces: +radius/2 from the right brace's outer arc).
-      const qreal w = label.width() + pad;
-      const qreal h = label.height() + pad;
+      const qreal w = label.width() + (neo ? (type == QLatin1String("brace_left") ? 18.0 : 36.0) : pad);
+      const qreal h = label.height() + (neo ? (type == QLatin1String("brace_left") ? 12.0 : 24.0) : pad);
       const qreal radius = std::max(5.0, h * 0.1);
       const qreal kW = (type == QLatin1String("braces")) ? 2.5 : 2.0;
       size = QSizeF(w + kW * radius, h + 2.0 * radius);
@@ -586,7 +611,7 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     nl.width = sz.width();
     nl.height = sz.height();
     // Mermaid expands forkJoin by state.padding / 2 after measuring its bar.
-    if (canonicalShape(v.type) == QLatin1String("fork")) {
+    if (options.look == FlowLook::Classic && canonicalShape(v.type) == QLatin1String("fork")) {
       nl.width += 4.0;
       nl.height += 4.0;
     }
@@ -804,9 +829,9 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
           out.labelY = edge - depth - labelHeight / 2.0 - 4.0;
         }
         out.points.first() = intersectNodeForShape(*node, vertexType.value(start),
-                                                   out.points.at(1));
+                                                   out.points.at(1), options.look);
         out.points.last() = intersectNodeForShape(*node, vertexType.value(start),
-                                                  out.points.at(out.points.size() - 2));
+                                                  out.points.at(out.points.size() - 2), options.look);
         out.hasLabelPosition = !fe.text.isEmpty();
         for (QPointF& point : out.points) point -= origin;
         if (out.hasLabelPosition) {
@@ -844,11 +869,11 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
         QVector<QPointF> reintersected;
         reintersected.reserve(absPts.size());
         reintersected.append(tailNode ? intersectNodeForShape(*tailNode, vertexType.value(start),
-                                                               firstInterior)
+                                                               firstInterior, options.look)
                                       : absPts.first());
         for (qsizetype i = 1; i + 1 < absPts.size(); ++i) reintersected.append(absPts.at(i));
         reintersected.append(headNode ? intersectNodeForShape(*headNode, vertexType.value(end),
-                                                              lastInterior)
+                                                              lastInterior, options.look)
                                       : absPts.last());
         absPts = reintersected;
       } else if (absPts.size() == 2) {
@@ -858,9 +883,9 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
         // is already on the rect boundary); for polygon/circle shapes it snaps
         // the endpoint onto the shape's actual border.
         absPts = {
-            tailNode ? intersectNodeForShape(*tailNode, vertexType.value(start), absPts.at(0))
+            tailNode ? intersectNodeForShape(*tailNode, vertexType.value(start), absPts.at(0), options.look)
                      : absPts.at(0),
-            headNode ? intersectNodeForShape(*headNode, vertexType.value(end), absPts.at(1))
+            headNode ? intersectNodeForShape(*headNode, vertexType.value(end), absPts.at(1), options.look)
                      : absPts.at(1),
         };
       }

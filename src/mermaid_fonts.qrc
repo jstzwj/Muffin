@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="/mermaid/fonts">
+    <file alias="NotoSans-Regular.ttf">../third_party/noto/fonts/NotoSans-Regular.ttf</file>
+    <file alias="NotoSansCJKsc-Regular.otf">../third_party/noto/fonts/NotoSansCJKsc-Regular.otf</file>
+    <file alias="NotoSansArabic-Regular.ttf">../third_party/noto/fonts/NotoSansArabic-Regular.ttf</file>
+    <file alias="NotoSansHebrew-Regular.ttf">../third_party/noto/fonts/NotoSansHebrew-Regular.ttf</file>
+  </qresource>
+</RCC>

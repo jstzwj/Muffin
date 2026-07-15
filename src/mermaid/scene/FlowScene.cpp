@@ -1,4 +1,5 @@
 #include "mermaid/scene/FlowScene.h"
+#include "mermaid/flowchart/FlowchartShapeRegistry.h"
 
 #include "mermaid/flowchart/FlowchartShapes.h"
 #include "mermaid/scene/FlowMarkers.h"
@@ -33,9 +34,18 @@ QJsonObject labelJson(const FlowSceneLabel& l) {
 
 FlowScene buildFlowScene(const flowchart::FlowchartData& data,
                          const flowchart::FlowLayoutResult& layout,
-                         const flowtheme::FlowThemeVariables& theme) {
+                         const flowtheme::FlowThemeVariables& theme,
+                         flowchart::FlowLook look) {
   FlowScene scene;
   scene.background = theme.background;
+  scene.look = look;
+  scene.useGradient = look == flowchart::FlowLook::Neo && theme.useGradient;
+  scene.gradientStart = theme.gradientStart;
+  scene.gradientStop = theme.gradientStop;
+  scene.shadowColor = theme.shadowColor;
+  scene.shadowOpacity = theme.shadowOpacity;
+  scene.shadowOffsetX = theme.shadowOffsetX;
+  scene.shadowOffsetY = theme.shadowOffsetY;
 
   // Index vertices/subgraphs by id for O(1) lookup.
   QHash<QString, const flowchart::FlowVertex*> vertexById;
@@ -80,6 +90,7 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
       se.strokeDasharray = rs.strokeDasharray;
       se.markerEnd = markerEndType(fe->type);
       se.markerStart = markerStartType(fe->type);
+      se.animated = fe->animate || !fe->animation.isEmpty();
       // Path endpoints + tangents (for marker orientation in the painter).
       if (e.points.size() >= 2) {
         se.startPoint = e.points.first();
@@ -113,18 +124,32 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
     sn.id = n.id;
     sn.cx = n.x; sn.cy = n.y; sn.width = n.width; sn.height = n.height;
     if (const flowchart::FlowVertex* v = vertexById.value(n.id)) {
+      sn.shapeType = flowchart::canonicalShape(v->type);
       const flowstyle::ResolvedNodeStyle rs = flowstyle::resolveNodeStyle(*v, data.classes, theme);
       sn.fill = rs.fill; sn.stroke = rs.stroke; sn.strokeWidth = rs.strokeWidth;
-      const flowchart::FlowShapeGeometry geom = flowchart::flowShapeGeometry(*v, QSizeF(n.width, n.height));
+      const flowchart::FlowShapeGeometry geom =
+          flowchart::flowShapeGeometry(*v, QSizeF(n.width, n.height), look);
       sn.shapeKind = geom.kind;
       sn.cornerRadius = geom.cornerRadius;
       sn.radiusX = geom.radiusX;
       sn.radiusY = geom.radiusY;
       sn.points = geom.points;
       sn.label.text = v->text;
+      if (sn.shapeType == QLatin1String("framed_circle") ||
+          sn.shapeType == QLatin1String("small_circle") ||
+          sn.shapeType == QLatin1String("filled_circle") ||
+          sn.shapeType == QLatin1String("hourglass") ||
+          sn.shapeType == QLatin1String("fork") ||
+          sn.shapeType == QLatin1String("lightning_bolt"))
+        sn.label.text.clear();
       sn.label.labelType = v->labelType;
       sn.label.mathEnabled = true;
       sn.label.x = n.x; sn.label.y = n.y;  // mermaid centers the label at the node centre
+      if (sn.shapeType == QLatin1String("multi_document") ||
+          sn.shapeType == QLatin1String("stacked_rect")) {
+        sn.label.x -= 10.0;
+        sn.label.y += 10.0;
+      }
       sn.label.color = rs.color;
       sn.label.fontFamily = rs.fontFamily;
       sn.label.fontSize = rs.fontSize;
@@ -151,6 +176,8 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
 QString FlowScene::toJson() const {
   QJsonObject root;
   root[QStringLiteral("background")] = background;
+  root[QStringLiteral("look")] = flowchart::flowLookName(look);
+  root[QStringLiteral("useGradient")] = useGradient;
   QJsonObject b;
   b[QStringLiteral("x")] = r3(bounds.x()); b[QStringLiteral("y")] = r3(bounds.y());
   b[QStringLiteral("width")] = r3(bounds.width()); b[QStringLiteral("height")] = r3(bounds.height());
