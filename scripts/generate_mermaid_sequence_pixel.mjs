@@ -26,6 +26,11 @@ const cases = [
       "participant B as Bob", "A->>B:solid", "B-->>A:dotted", "A<<->>B:both",
       "A-)B:point", "B-xA:cross", "create participant C as Created", "A->>C:create",
       "destroy C", "C-->>A:destroy"].join("\n") },
+  { id: "central-autonumber", source: ["sequenceDiagram", "autonumber 10 5",
+      "A->>()B:forward central", "A()->>B:reverse central", "A()->>()B:dual central",
+      "B<<-->>A:bidirectional", "autonumber off", "A-->>B:unnumbered"].join("\n") },
+  { id: "self-autonumber", source: ["sequenceDiagram", "autonumber", "A->>A:self solid",
+      "A-->>A:self dotted", "A-xA:self cross", "A<<->>A:self both"].join("\n") },
 ];
 const { default: puppeteer } = await import(pathToFileURL(path.join(path.dirname(mermaidRoot), "puppeteer", "lib", "puppeteer", "puppeteer.js")));
 const browser = await puppeteer.launch({headless:true, executablePath:chrome, args:["--allow-file-access-from-files"]});

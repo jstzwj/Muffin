@@ -158,6 +158,50 @@ const cases = [
       "D-xB:destroy sender",
     ].join("\n"),
   },
+  {
+    id: "central-autonumber",
+    axes: ["central-connection", "autonumber", "activation-stack", "message-marker"],
+    source: [
+      "sequenceDiagram",
+      "autonumber 10 5",
+      "A->>()B:forward central",
+      "A()->>B:reverse central",
+      "A()->>()B:dual central",
+      "B<<-->>A:bidirectional numbered",
+      "A()<<->>()B:dual bidirectional central",
+      "B()/|-A:reverse marker central",
+      "autonumber off",
+      "A-->>B:unnumbered",
+      "autonumber 1234 0.25",
+      "A->>B:four digit number",
+      "autonumber 123456 1",
+      "B-->>A:six digit number",
+    ].join("\n"),
+  },
+  {
+    id: "self-right-angles",
+    axes: ["self-message", "right-angles", "autonumber", "message-marker"],
+    sequence: { rightAngles: true },
+    source: [
+      "sequenceDiagram",
+      "autonumber",
+      "A->>A:self solid",
+      "A-->>A:self dotted",
+      "A-xA:self cross",
+      "A<<->>A:self both",
+    ].join("\n"),
+  },
+  {
+    id: "self-curved-autonumber",
+    axes: ["self-message", "autonumber", "message-marker"],
+    source: [
+      "sequenceDiagram",
+      "autonumber",
+      "A->>A:self solid",
+      "A<<->>A:self both",
+      "A/|-A:self reverse",
+    ].join("\n"),
+  },
 ];
 
 const { default: puppeteer } = await import(
@@ -195,7 +239,7 @@ try {
         theme: "default",
         look: "classic",
         fontFamily: fontStack,
-        sequence: { useMaxWidth: false },
+        sequence: { useMaxWidth: false, ...(fixture.sequence ?? {}) },
       });
       const resolved = mermaid.mermaidAPI.getConfig().sequence;
       const { svg } = await mermaid.render(`sequence-layout-${index}`, fixture.source);
@@ -264,6 +308,13 @@ try {
           label: text(messageLabels[position]),
         };
       });
+      const centralConnections = [...root.querySelectorAll('circle[r="5"]')]
+        .filter((element) => !element.closest("defs"))
+        .map((element) => ({ cx: number(element, "cx"), cy: number(element, "cy"), r: number(element, "r") }));
+      const sequenceNumbers = [...root.querySelectorAll("text.sequenceNumber")].map((element) => ({
+        text: element.textContent ?? "", x: number(element, "x"), y: number(element, "y"),
+        fontSize: element.getAttribute("font-size") ?? "",
+      }));
       const activations = [...root.querySelectorAll('rect[class^="activation"]')].map((element, position) => ({
         position, className: element.getAttribute("class") ?? "",
         x: number(element, "x"), y: number(element, "y"),
@@ -325,7 +376,8 @@ try {
           ].map((key) => [key, resolved[key]])),
         },
         root: { viewBox: root.getAttribute("viewBox"), ...box(root) },
-        participants, footers, lifelines, messages, activations, notes, fragments,
+        participants, footers, lifelines, messages, centralConnections, sequenceNumbers,
+        activations, notes, fragments,
         svgStructure: { markers: markerStructure },
       };
     }, { fixture: cases[index], index, mermaidModule, fontFaces, fontStack });

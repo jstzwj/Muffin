@@ -120,6 +120,17 @@ struct SequenceLayoutMessage {
   QString markerStart;
   QString markerEnd;
   bool dashed = false;
+  QVector<QPointF> centralConnections;
+  QPainterPath painterPath;
+  QPointF markerStartDirection;
+  QPointF markerEndDirection;
+};
+
+struct SequenceLayoutNumber {
+  int messageIndex = -1;
+  QString text;
+  QPointF position;
+  qreal fontSize = 12.0;
 };
 
 struct SequenceLayoutActivation {
@@ -153,6 +164,7 @@ struct SequenceLayoutResult {
   QVector<SequenceLayoutActivation> activations;
   QVector<SequenceLayoutNote> notes;
   QVector<SequenceLayoutFragment> fragments;
+  QVector<SequenceLayoutNumber> sequenceNumbers;
   QRectF bounds;
 };
 

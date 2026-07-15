@@ -20,11 +20,15 @@ constexpr int kParStart = 19;
 constexpr int kParEnd = 21;
 constexpr int kRectStart = 22;
 constexpr int kRectEnd = 23;
+constexpr int kAutonumber = 26;
 constexpr int kCriticalStart = 27;
 constexpr int kCriticalEnd = 29;
 constexpr int kBreakStart = 30;
 constexpr int kBreakEnd = 31;
 constexpr int kParOverStart = 32;
+constexpr int kCentralConnection = 59;
+constexpr int kCentralConnectionReverse = 60;
+constexpr int kCentralConnectionDual = 61;
 
 bool isSignal(int type) {
   return (type >= 0 && type <= 6 && type != kNote) || type == 24 || type == 25 ||
@@ -181,12 +185,30 @@ bool adjustsStartForMarker(int type) {
   return type == 33 || type == 34 || type == 45 || type == 46 || type == 55 || type == 56;
 }
 
-QString selfMessagePath(qreal x, qreal y, bool rightAngles) {
+QString selfMessagePath(qreal startX, qreal endX, qreal y, bool rightAngles) {
   if (rightAngles)
-    return QStringLiteral("M %1,%2 H %3 V %4 H %1")
-        .arg(x).arg(y).arg(x + 75.0).arg(y + 25.0);
-  return QStringLiteral("M %1,%2 C %3,%4 %3,%5 %1,%6")
-      .arg(x).arg(y).arg(x + 60.0).arg(y - 10.0).arg(y + 30.0).arg(y + 20.0);
+    return QStringLiteral("M  %1,%2 H %3 V %4 H %5")
+        .arg(startX).arg(y).arg(endX + 75.0).arg(y + 25.0).arg(endX);
+  return QStringLiteral("M %1,%2 C %3,%4 %5,%6 %7,%8")
+      .arg(startX).arg(y).arg(startX + 60.0).arg(y - 10.0)
+      .arg(endX + 60.0).arg(y + 30.0).arg(endX).arg(y + 20.0);
+}
+
+QPainterPath selfPainterPath(qreal startX, qreal endX, qreal y, bool rightAngles) {
+  QPainterPath path(QPointF(startX, y));
+  if (rightAngles) {
+    path.lineTo(endX + 75.0, y);
+    path.lineTo(endX + 75.0, y + 25.0);
+    path.lineTo(endX, y + 25.0);
+  } else {
+    path.cubicTo(startX + 60.0, y - 10.0, endX + 60.0, y + 30.0,
+                 endX, y + 20.0);
+  }
+  return path;
+}
+
+bool isReverseArrow(int type) {
+  return (type >= 45 && type <= 48) || (type >= 55 && type <= 58);
 }
 
 struct ParticipantPaintGeometry {
@@ -394,6 +416,9 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
   bounds.vertical = options.height;
 
   QVector<OpenActivation> active;
+  qreal sequenceIndex = 1.0;
+  qreal sequenceIndexStep = 1.0;
+  bool sequenceNumbersVisible = false;
   auto participantFor = [&](const QString& id) -> const SequenceLayoutParticipant& {
     return result.participants[placedActor.value(id)];
   };
@@ -411,6 +436,15 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
   for (qsizetype messageIndex = 0; messageIndex < data.messages.size(); ++messageIndex) {
     const SequenceMessage& message = data.messages[messageIndex];
     const QString text = messageText(message.message);
+    if (message.type == kAutonumber) {
+      const QJsonObject config = message.message.toObject();
+      const qreal start = config.value(QStringLiteral("start")).toDouble();
+      const qreal step = config.value(QStringLiteral("step")).toDouble();
+      if (!qFuzzyIsNull(start)) sequenceIndex = start;
+      if (!qFuzzyIsNull(step)) sequenceIndexStep = step;
+      sequenceNumbersVisible = config.value(QStringLiteral("visible")).toBool();
+      continue;
+    }
     if (message.type == kActivationStart) {
       const auto& actor = participantFor(message.from);
       int stacked = 0;
@@ -524,6 +558,9 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     const bool rightward = fromRange.first <= toRange.first;
     qreal startX = rightward ? fromRange.second : fromRange.first;
     qreal stopX = rightward ? toRange.first : toRange.second;
+    if (message.centralConnection == kCentralConnectionReverse ||
+        message.centralConnection == kCentralConnectionDual)
+      startX += 4.0;
     const bool targetActivated = std::abs(toRange.first - toRange.second) > 2.0;
     const qreal direction = rightward ? -1.0 : 1.0;
     if (message.from == message.to) {
@@ -586,6 +623,32 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
       actor.lifelineStopY = actor.bottomY;
       bounds.vertical += actor.logicalRect.height() / 2.0;
     }
+    const qreal labelStartX = startX;
+    const qreal labelStopX = stopX;
+    qreal drawStartX = startX;
+    qreal drawStopX = stopX;
+    const bool bidirectional = message.type == 33 || message.type == 34;
+    const bool reverse = isReverseArrow(message.type);
+    if (sequenceNumbersVisible) {
+      if (bidirectional) {
+        if (startX < stopX) {
+          drawStartX = startX + 12.0;
+        } else {
+          drawStartX = startX - 6.0 - (message.centralConnection ? 5.0 : 0.0);
+          if (message.centralConnection == kCentralConnectionDual ||
+              message.centralConnection == kCentralConnectionReverse)
+            drawStartX -= 7.5;
+        }
+      } else if (reverse) {
+        drawStopX = stopX > startX ? stopX - 12.0 : stopX - 6.0;
+        if (message.centralConnection == kCentralConnectionDual ||
+            message.centralConnection == kCentralConnectionReverse)
+          drawStartX -= 7.5;
+        if (message.centralConnection) drawStopX += 15.0;
+      } else if (!qFuzzyCompare(startX + 1.0, stopX + 1.0)) {
+        drawStartX = startX + 6.0;
+      }
+    }
     const qreal modelHeight = lineHeight + totalOffset;
     bounds.insert(std::min({fromRange.first, fromRange.second, toRange.first, toRange.second}),
                   startY,
@@ -598,18 +661,67 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     placed.to = message.to;
     placed.label = text;
     placed.type = message.type;
-    placed.startX = startX;
-    placed.stopX = stopX;
+    placed.startX = drawStartX;
+    placed.stopX = drawStopX;
     placed.lineY = lineY;
-    placed.labelRect = QRectF((startX + stopX - measured.width()) / 2.0,
+    placed.labelRect = QRectF((labelStartX + labelStopX - measured.width()) / 2.0,
                               startY + 10.0, measured.width(), measured.height());
-    if (qFuzzyCompare(startX + 1.0, stopX + 1.0))
-      placed.path = selfMessagePath(startX, lineY, options.rightAngles);
+    if (qFuzzyCompare(labelStartX + 1.0, labelStopX + 1.0)) {
+      const qreal pathStartX = labelStartX +
+          (sequenceNumbersVisible && (reverse || bidirectional) ? 10.0 : 0.0);
+      placed.path = selfMessagePath(pathStartX, labelStopX, lineY, options.rightAngles);
+      placed.painterPath = selfPainterPath(pathStartX, labelStopX, lineY, options.rightAngles);
+    }
     placed.dashed = message.type == 1 || message.type == 4 || message.type == 6 || message.type == 25 ||
                     message.type == 34 || (message.type >= 51 && message.type <= 58);
     placed.markerEnd = markerEndForType(message.type);
     placed.markerStart = markerStartForType(message.type);
+    placed.markerStartDirection = QPointF(drawStartX - drawStopX, 0.0);
+    placed.markerEndDirection = QPointF(drawStopX - drawStartX, 0.0);
+    if (!placed.painterPath.isEmpty()) {
+      placed.markerStartDirection = QPointF(-60.0, options.rightAngles ? 0.0 : 10.0);
+      placed.markerEndDirection = QPointF(-60.0, options.rightAngles ? 0.0 : -10.0);
+    }
+    if (message.centralConnection) {
+      const auto& fromActor = participantFor(message.from);
+      const auto& toActor = participantFor(message.to);
+      qreal fromCenter = fromActor.anchorX;
+      qreal toCenter = toActor.anchorX;
+      if (sequenceNumbersVisible) {
+        const qreal baseOffset = fromCenter <= toCenter ? 16.5 : -16.5;
+        if (message.centralConnection == kCentralConnectionReverse && !reverse)
+          fromCenter += baseOffset;
+        else if (message.centralConnection == kCentralConnection && reverse)
+          toCenter -= baseOffset;
+        else if (message.centralConnection == kCentralConnectionDual) {
+          if (reverse) toCenter -= baseOffset;
+          else fromCenter += baseOffset;
+        }
+      }
+      if (message.centralConnection == kCentralConnectionReverse ||
+          message.centralConnection == kCentralConnectionDual)
+        placed.centralConnections.append(QPointF(fromCenter, lineY));
+      if (message.centralConnection == kCentralConnection ||
+          message.centralConnection == kCentralConnectionDual)
+        placed.centralConnections.append(QPointF(toCenter, lineY));
+    }
     result.messages.append(placed);
+    if (sequenceNumbersVisible) {
+      const qreal fromBounds = std::min({fromRange.first, fromRange.second,
+                                         toRange.first, toRange.second});
+      const qreal toBounds = std::max({fromRange.first, fromRange.second,
+                                       toRange.first, toRange.second});
+      qreal x = fromBounds + 1.0;
+      if (!qFuzzyCompare(labelStartX + 1.0, labelStopX + 1.0))
+        x = reverse ? (labelStartX <= labelStopX ? toBounds - 1.0 : fromBounds + 1.0)
+                    : (labelStartX <= labelStopX ? fromBounds + 1.0 : toBounds - 1.0);
+      const QString number = QString::number(sequenceIndex, 'g', 12);
+      const qreal fontSize = number.size() > 5 ? 7.0 : number.size() > 3 ? 9.0 : 12.0;
+      result.sequenceNumbers.append({static_cast<int>(messageIndex), number,
+                                     QPointF(x, lineY + 4.0), fontSize});
+      bounds.insert(x - 6.0, lineY - 6.0, x + 6.0, lineY + 6.0);
+    }
+    sequenceIndex = std::round((sequenceIndex + sequenceIndexStep) * 100.0) / 100.0;
   }
 
   std::sort(result.activations.begin(), result.activations.end(),

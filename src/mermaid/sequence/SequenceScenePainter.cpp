@@ -7,6 +7,7 @@
 #include <QPainter>
 #include <QPainterPath>
 
+#include <algorithm>
 #include <cmath>
 
 namespace muffin::mermaid::sequence {
@@ -115,22 +116,37 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter) {
     if (message.dashed) pen.setDashPattern({3.0, 3.0});
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
-    if (message.path.isEmpty()) {
+    if (message.painterPath.isEmpty()) {
       painter.drawLine(QPointF(message.startX, message.lineY), QPointF(message.stopX, message.lineY));
     } else {
-      QPainterPath path(QPointF(message.startX, message.lineY));
-      path.cubicTo(message.startX + 60, message.lineY - 10,
-                   message.startX + 60, message.lineY + 30,
-                   message.startX, message.lineY + 20);
-      painter.drawPath(path);
+      painter.drawPath(message.painterPath);
     }
-    const QPointF end(message.stopX, message.path.isEmpty() ? message.lineY : message.lineY + 20);
-    marker(painter, message.markerEnd, end,
-           message.path.isEmpty() ? QPointF(message.stopX - message.startX, 0) : QPointF(-60, -10),
+    for (const QPointF& center : message.centralConnections) {
+      painter.setPen(QPen(color(scene.style.signalColor), 1.0));
+      painter.setBrush(color(scene.style.actorFill));
+      painter.drawEllipse(center, 5.0, 5.0);
+    }
+    const QPointF end = message.painterPath.isEmpty()
+        ? QPointF(message.stopX, message.lineY) : message.painterPath.currentPosition();
+    marker(painter, message.markerEnd, end, message.markerEndDirection,
            color(scene.style.signalColor));
     marker(painter, message.markerStart, QPointF(message.startX, message.lineY),
-           QPointF(message.startX - message.stopX, 0), color(scene.style.signalColor));
+           message.markerStartDirection, color(scene.style.signalColor));
     centeredText(painter, message.label, message.labelRect, scene.style);
+    const auto number = std::find_if(scene.sequenceNumbers.cbegin(), scene.sequenceNumbers.cend(),
+        [&](const SequenceLayoutNumber& item) { return item.messageIndex == message.messageIndex; });
+    if (number != scene.sequenceNumbers.cend()) {
+      painter.setPen(QPen(color(scene.style.signalColor), 1.0));
+      painter.setBrush(color(scene.style.actorFill));
+      painter.drawEllipse(QPointF(number->position.x(), number->position.y() - 4.0), 6.0, 6.0);
+      QFont font(scene.style.fontFamily);
+      font.setPixelSize(qRound(number->fontSize));
+      MermaidFontRegistry::configureFont(font, scene.style.fontFamily);
+      painter.setFont(font);
+      painter.setPen(color(scene.style.textColor));
+      painter.drawText(QRectF(number->position.x() - 10.0, number->position.y() - 10.0,
+                              20.0, 14.0), Qt::AlignCenter, number->text);
+    }
   }
 }
 

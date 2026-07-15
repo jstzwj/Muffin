@@ -55,12 +55,12 @@ int main(int argc,char** argv) {
   const QJsonObject root=QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("mermaidVersion")).toString()==QLatin1String("11.16.0"),QStringLiteral("Sequence pixel version drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("673a4a00f812619eb87a547c55223adcbd0786dcba90271ce533cb14d261ac6b"),
+              QLatin1String("e2037a1eef7b81d7ce3caa90668e624b1f4592e7f6c5d9469db6c1f1c624dda2"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;
   const QJsonArray cases=root.value(QStringLiteral("cases")).toArray();
-  require(cases.size()==5,QStringLiteral("Sequence pixel matrix regressed"));
+  require(cases.size()==7,QStringLiteral("Sequence pixel matrix regressed"));
   for(const QJsonValue& value:cases) {
     const QJsonObject fixture=value.toObject(); const QString id=fixture.value(QStringLiteral("id")).toString();
     const auto entry=cache.getSync(cache.makeKey(fixture.value(QStringLiteral("source")).toString()),fixture.value(QStringLiteral("source")).toString());

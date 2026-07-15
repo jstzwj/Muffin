@@ -301,6 +301,8 @@
           }
         }
       ],
+      "centralConnections": [],
+      "sequenceNumbers": [],
       "activations": [],
       "notes": [],
       "fragments": [],
@@ -637,6 +639,8 @@
           }
         }
       ],
+      "centralConnections": [],
+      "sequenceNumbers": [],
       "activations": [
         {
           "position": 0,
@@ -883,6 +887,8 @@
         }
       ],
       "messages": [],
+      "centralConnections": [],
+      "sequenceNumbers": [],
       "activations": [],
       "notes": [
         {
@@ -1290,6 +1296,8 @@
           }
         }
       ],
+      "centralConnections": [],
+      "sequenceNumbers": [],
       "activations": [],
       "notes": [],
       "fragments": [
@@ -1869,6 +1877,8 @@
           }
         }
       ],
+      "centralConnections": [],
+      "sequenceNumbers": [],
       "activations": [
         {
           "position": 0,
@@ -2272,6 +2282,8 @@
           }
         }
       ],
+      "centralConnections": [],
+      "sequenceNumbers": [],
       "activations": [],
       "notes": [
         {
@@ -2870,6 +2882,8 @@
           }
         }
       ],
+      "centralConnections": [],
+      "sequenceNumbers": [],
       "activations": [],
       "notes": [],
       "fragments": [],
@@ -4173,6 +4187,8 @@
           }
         }
       ],
+      "centralConnections": [],
+      "sequenceNumbers": [],
       "activations": [],
       "notes": [],
       "fragments": [],
@@ -4244,7 +4260,1174 @@
           }
         ]
       }
+    },
+    {
+      "id": "central-autonumber",
+      "axes": [
+        "central-connection",
+        "autonumber",
+        "activation-stack",
+        "message-marker"
+      ],
+      "source": "sequenceDiagram\nautonumber 10 5\nA->>()B:forward central\nA()->>B:reverse central\nA()->>()B:dual central\nB<<-->>A:bidirectional numbered\nA()<<->>()B:dual bidirectional central\nB()/|-A:reverse marker central\nautonumber off\nA-->>B:unnumbered\nautonumber 1234 0.25\nA->>B:four digit number\nautonumber 123456 1\nB-->>A:six digit number",
+      "config": {
+        "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+        "fontSize": 16,
+        "actorMargin": 50,
+        "width": 150,
+        "height": 65,
+        "boxMargin": 10,
+        "boxTextMargin": 5,
+        "messageMargin": 35,
+        "noteMargin": 10,
+        "activationWidth": 10,
+        "diagramMarginX": 50,
+        "diagramMarginY": 10,
+        "mirrorActors": true,
+        "wrapPadding": 10,
+        "labelBoxWidth": 50,
+        "labelBoxHeight": 20,
+        "bottomMarginAdj": 1,
+        "rightAngles": false
+      },
+      "root": {
+        "viewBox": "-50 -10 506 657",
+        "x": 0,
+        "y": 0,
+        "width": 406,
+        "height": 636
+      },
+      "participants": [
+        {
+          "position": 0,
+          "id": "B",
+          "box": {
+            "x": 256,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "paintedBox": {
+            "x": 256,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 256,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "B",
+            "x": 325.797,
+            "y": 21.5,
+            "width": 10.406,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "participant",
+            "childTags": [
+              "rect",
+              "text"
+            ]
+          }
+        },
+        {
+          "position": 1,
+          "id": "A",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "paintedBox": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "A",
+            "x": 68.883,
+            "y": 21.5,
+            "width": 12,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "participant",
+            "childTags": [
+              "rect",
+              "text"
+            ]
+          }
+        }
+      ],
+      "footers": [
+        {
+          "id": "B",
+          "paintedBox": {
+            "x": 256,
+            "y": 571,
+            "width": 150,
+            "height": 65
+          }
+        },
+        {
+          "id": "A",
+          "paintedBox": {
+            "x": 0,
+            "y": 571,
+            "width": 150,
+            "height": 65
+          }
+        }
+      ],
+      "lifelines": [
+        {
+          "id": "B",
+          "x1": 331,
+          "y1": 65,
+          "x2": 331,
+          "y2": 571
+        },
+        {
+          "id": "A",
+          "x1": 75,
+          "y1": 65,
+          "x2": 75,
+          "y2": 571
+        }
+      ],
+      "messages": [
+        {
+          "position": 0,
+          "id": "i1",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 82,
+            "y": 119,
+            "width": 241,
+            "height": 0
+          },
+          "line": {
+            "x1": 82,
+            "y1": 119,
+            "x2": 323,
+            "y2": 119
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-8-arrowhead)"
+          },
+          "label": {
+            "text": "forward central",
+            "x": 141.297,
+            "y": 83.281,
+            "width": 116.406,
+            "height": 22
+          }
+        },
+        {
+          "position": 1,
+          "id": "i3",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 86,
+            "y": 173,
+            "width": 241,
+            "height": 0
+          },
+          "line": {
+            "x1": 86,
+            "y1": 173,
+            "x2": 327,
+            "y2": 173
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-8-arrowhead)"
+          },
+          "label": {
+            "text": "reverse central",
+            "x": 148.313,
+            "y": 137.281,
+            "width": 111.375,
+            "height": 22
+          }
+        },
+        {
+          "position": 2,
+          "id": "i5",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 86,
+            "y": 227,
+            "width": 237,
+            "height": 0
+          },
+          "line": {
+            "x1": 86,
+            "y1": 227,
+            "x2": 323,
+            "y2": 227
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-8-arrowhead)"
+          },
+          "label": {
+            "text": "dual central",
+            "x": 157.617,
+            "y": 191.281,
+            "width": 88.766,
+            "height": 22
+          }
+        },
+        {
+          "position": 3,
+          "id": "i8",
+          "from": "B",
+          "to": "A",
+          "box": {
+            "x": 79,
+            "y": 281,
+            "width": 242,
+            "height": 0
+          },
+          "line": {
+            "x1": 321,
+            "y1": 281,
+            "x2": 79,
+            "y2": 281
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "url(#sequence-layout-8-arrowhead)",
+            "markerEnd": "url(#sequence-layout-8-arrowhead)"
+          },
+          "label": {
+            "text": "bidirectional numbered",
+            "x": 114.789,
+            "y": 245.281,
+            "width": 176.422,
+            "height": 22
+          }
+        },
+        {
+          "position": 4,
+          "id": "i9",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 95,
+            "y": 335,
+            "width": 228,
+            "height": 0
+          },
+          "line": {
+            "x1": 95,
+            "y1": 335,
+            "x2": 323,
+            "y2": 335
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "url(#sequence-layout-8-arrowhead)",
+            "markerEnd": "url(#sequence-layout-8-arrowhead)"
+          },
+          "label": {
+            "text": "dual bidirectional central",
+            "x": 109.789,
+            "y": 299.281,
+            "width": 186.422,
+            "height": 22
+          }
+        },
+        {
+          "position": 5,
+          "id": "i12",
+          "from": "B",
+          "to": "A",
+          "box": {
+            "x": 85,
+            "y": 389,
+            "width": 238.5,
+            "height": 0
+          },
+          "line": {
+            "x1": 323.5,
+            "y1": 389,
+            "x2": 85,
+            "y2": 389
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "url(#sequence-layout-8-solidBottomArrowHead)",
+            "markerEnd": ""
+          },
+          "label": {
+            "text": "reverse marker central",
+            "x": 118.875,
+            "y": 353.281,
+            "width": 170.25,
+            "height": 22
+          }
+        },
+        {
+          "position": 6,
+          "id": "i15",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 443,
+            "width": 251,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 443,
+            "x2": 327,
+            "y2": 443
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-8-arrowhead)"
+          },
+          "label": {
+            "text": "unnumbered",
+            "x": 152.734,
+            "y": 407.281,
+            "width": 98.531,
+            "height": 22
+          }
+        },
+        {
+          "position": 7,
+          "id": "i17",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 82,
+            "y": 497,
+            "width": 245,
+            "height": 0
+          },
+          "line": {
+            "x1": 82,
+            "y1": 497,
+            "x2": 327,
+            "y2": 497
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-8-arrowhead)"
+          },
+          "label": {
+            "text": "four digit number",
+            "x": 134.039,
+            "y": 461.281,
+            "width": 135.312,
+            "height": 22
+          }
+        },
+        {
+          "position": 8,
+          "id": "i19",
+          "from": "B",
+          "to": "A",
+          "box": {
+            "x": 79,
+            "y": 551,
+            "width": 257,
+            "height": 0
+          },
+          "line": {
+            "x1": 336,
+            "y1": 551,
+            "x2": 79,
+            "y2": 551
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-8-arrowhead)"
+          },
+          "label": {
+            "text": "six digit number",
+            "x": 143.75,
+            "y": 515.281,
+            "width": 122.888,
+            "height": 22
+          }
+        }
+      ],
+      "centralConnections": [
+        {
+          "cx": 331,
+          "cy": 119,
+          "r": 5
+        },
+        {
+          "cx": 91.5,
+          "cy": 173,
+          "r": 5
+        },
+        {
+          "cx": 91.5,
+          "cy": 227,
+          "r": 5
+        },
+        {
+          "cx": 331,
+          "cy": 227,
+          "r": 5
+        },
+        {
+          "cx": 91.5,
+          "cy": 335,
+          "r": 5
+        },
+        {
+          "cx": 331,
+          "cy": 335,
+          "r": 5
+        },
+        {
+          "cx": 331,
+          "cy": 389,
+          "r": 5
+        }
+      ],
+      "sequenceNumbers": [
+        {
+          "text": "10",
+          "x": 75,
+          "y": 123,
+          "fontSize": "12px"
+        },
+        {
+          "text": "15",
+          "x": 75,
+          "y": 177,
+          "fontSize": "12px"
+        },
+        {
+          "text": "20",
+          "x": 75,
+          "y": 231,
+          "fontSize": "12px"
+        },
+        {
+          "text": "25",
+          "x": 331,
+          "y": 285,
+          "fontSize": "12px"
+        },
+        {
+          "text": "30",
+          "x": 75,
+          "y": 339,
+          "fontSize": "12px"
+        },
+        {
+          "text": "35",
+          "x": 75,
+          "y": 393,
+          "fontSize": "12px"
+        },
+        {
+          "text": "1234",
+          "x": 75,
+          "y": 501,
+          "fontSize": "9px"
+        },
+        {
+          "text": "123456",
+          "x": 331,
+          "y": 555,
+          "fontSize": "7px"
+        }
+      ],
+      "activations": [],
+      "notes": [],
+      "fragments": [],
+      "svgStructure": {
+        "markers": [
+          {
+            "id": "sequence-layout-8-arrowhead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.9",
+            "refY": "5",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-8-crosshead",
+            "markerWidth": "15",
+            "markerHeight": "8",
+            "refX": "4",
+            "refY": "4.5",
+            "orient": "auto"
+          },
+          {
+            "id": "sequence-layout-8-filled-head",
+            "markerWidth": "20",
+            "markerHeight": "28",
+            "refX": "15.5",
+            "refY": "7",
+            "orient": "auto"
+          },
+          {
+            "id": "sequence-layout-8-sequencenumber",
+            "markerWidth": "60",
+            "markerHeight": "40",
+            "refX": "15",
+            "refY": "15",
+            "orient": "auto"
+          },
+          {
+            "id": "sequence-layout-8-solidTopArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.9",
+            "refY": "7.25",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-8-solidBottomArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.9",
+            "refY": "0.75",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-8-stickTopArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.5",
+            "refY": "7",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-8-stickBottomArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.5",
+            "refY": "0",
+            "orient": "auto-start-reverse"
+          }
+        ]
+      }
+    },
+    {
+      "id": "self-right-angles",
+      "axes": [
+        "self-message",
+        "right-angles",
+        "autonumber",
+        "message-marker"
+      ],
+      "source": "sequenceDiagram\nautonumber\nA->>A:self solid\nA-->>A:self dotted\nA-xA:self cross\nA<<->>A:self both",
+      "config": {
+        "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+        "fontSize": 16,
+        "actorMargin": 50,
+        "width": 150,
+        "height": 65,
+        "boxMargin": 10,
+        "boxTextMargin": 5,
+        "messageMargin": 35,
+        "noteMargin": 10,
+        "activationWidth": 10,
+        "diagramMarginX": 50,
+        "diagramMarginY": 10,
+        "mirrorActors": true,
+        "wrapPadding": 10,
+        "labelBoxWidth": 50,
+        "labelBoxHeight": 20,
+        "bottomMarginAdj": 1,
+        "rightAngles": true
+      },
+      "root": {
+        "viewBox": "-50 -10 251 467",
+        "x": 0,
+        "y": 0,
+        "width": 151,
+        "height": 446
+      },
+      "participants": [
+        {
+          "position": 0,
+          "id": "A",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "paintedBox": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "A",
+            "x": 68.883,
+            "y": 21.5,
+            "width": 12,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "participant",
+            "childTags": [
+              "rect",
+              "text"
+            ]
+          }
+        }
+      ],
+      "footers": [
+        {
+          "id": "A",
+          "paintedBox": {
+            "x": 0,
+            "y": 381,
+            "width": 150,
+            "height": 65
+          }
+        }
+      ],
+      "lifelines": [
+        {
+          "id": "A",
+          "x1": 75,
+          "y1": 65,
+          "x2": 75,
+          "y2": 381
+        }
+      ],
+      "messages": [
+        {
+          "position": 0,
+          "id": "i1",
+          "from": "A",
+          "to": "A",
+          "box": {
+            "x": 76,
+            "y": 109,
+            "width": 75,
+            "height": 25
+          },
+          "line": null,
+          "path": "M  76,109 H 151 V 134 H 76",
+          "structure": {
+            "tag": "path",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-9-arrowhead)"
+          },
+          "label": {
+            "text": "self solid",
+            "x": 43.039,
+            "y": 83.281,
+            "width": 65.922,
+            "height": 22
+          }
+        },
+        {
+          "position": 1,
+          "id": "i2",
+          "from": "A",
+          "to": "A",
+          "box": {
+            "x": 76,
+            "y": 183,
+            "width": 75,
+            "height": 25
+          },
+          "line": null,
+          "path": "M  76,183 H 151 V 208 H 76",
+          "structure": {
+            "tag": "path",
+            "className": "messageLine1",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-9-arrowhead)"
+          },
+          "label": {
+            "text": "self dotted",
+            "x": 35.789,
+            "y": 157.281,
+            "width": 80.422,
+            "height": 22
+          }
+        },
+        {
+          "position": 2,
+          "id": "i3",
+          "from": "A",
+          "to": "A",
+          "box": {
+            "x": 76,
+            "y": 257,
+            "width": 75,
+            "height": 25
+          },
+          "line": null,
+          "path": "M  76,257 H 151 V 282 H 76",
+          "structure": {
+            "tag": "path",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-9-crosshead)"
+          },
+          "label": {
+            "text": "self cross",
+            "x": 41.266,
+            "y": 231.281,
+            "width": 69.792,
+            "height": 22
+          }
+        },
+        {
+          "position": 3,
+          "id": "i4",
+          "from": "A",
+          "to": "A",
+          "box": {
+            "x": 76,
+            "y": 331,
+            "width": 75,
+            "height": 25
+          },
+          "line": null,
+          "path": "M  86,331 H 151 V 356 H 76",
+          "structure": {
+            "tag": "path",
+            "className": "messageLine0",
+            "markerStart": "url(#sequence-layout-9-arrowhead)",
+            "markerEnd": "url(#sequence-layout-9-arrowhead)"
+          },
+          "label": {
+            "text": "self both",
+            "x": 43.164,
+            "y": 305.281,
+            "width": 65.672,
+            "height": 22
+          }
+        }
+      ],
+      "centralConnections": [],
+      "sequenceNumbers": [
+        {
+          "text": "1",
+          "x": 75,
+          "y": 113,
+          "fontSize": "12px"
+        },
+        {
+          "text": "2",
+          "x": 75,
+          "y": 187,
+          "fontSize": "12px"
+        },
+        {
+          "text": "3",
+          "x": 75,
+          "y": 261,
+          "fontSize": "12px"
+        },
+        {
+          "text": "4",
+          "x": 75,
+          "y": 335,
+          "fontSize": "12px"
+        }
+      ],
+      "activations": [],
+      "notes": [],
+      "fragments": [],
+      "svgStructure": {
+        "markers": [
+          {
+            "id": "sequence-layout-9-arrowhead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.9",
+            "refY": "5",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-9-crosshead",
+            "markerWidth": "15",
+            "markerHeight": "8",
+            "refX": "4",
+            "refY": "4.5",
+            "orient": "auto"
+          },
+          {
+            "id": "sequence-layout-9-filled-head",
+            "markerWidth": "20",
+            "markerHeight": "28",
+            "refX": "15.5",
+            "refY": "7",
+            "orient": "auto"
+          },
+          {
+            "id": "sequence-layout-9-sequencenumber",
+            "markerWidth": "60",
+            "markerHeight": "40",
+            "refX": "15",
+            "refY": "15",
+            "orient": "auto"
+          },
+          {
+            "id": "sequence-layout-9-solidTopArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.9",
+            "refY": "7.25",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-9-solidBottomArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.9",
+            "refY": "0.75",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-9-stickTopArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.5",
+            "refY": "7",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-9-stickBottomArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.5",
+            "refY": "0",
+            "orient": "auto-start-reverse"
+          }
+        ]
+      }
+    },
+    {
+      "id": "self-curved-autonumber",
+      "axes": [
+        "self-message",
+        "autonumber",
+        "message-marker"
+      ],
+      "source": "sequenceDiagram\nautonumber\nA->>A:self solid\nA<<->>A:self both\nA/|-A:self reverse",
+      "config": {
+        "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+        "fontSize": 16,
+        "actorMargin": 50,
+        "width": 150,
+        "height": 65,
+        "boxMargin": 10,
+        "boxTextMargin": 5,
+        "messageMargin": 35,
+        "noteMargin": 10,
+        "activationWidth": 10,
+        "diagramMarginX": 50,
+        "diagramMarginY": 10,
+        "mirrorActors": true,
+        "wrapPadding": 10,
+        "labelBoxWidth": 50,
+        "labelBoxHeight": 20,
+        "bottomMarginAdj": 1,
+        "rightAngles": false
+      },
+      "root": {
+        "viewBox": "-50 -10 251 423",
+        "x": 0,
+        "y": 0,
+        "width": 150,
+        "height": 402
+      },
+      "participants": [
+        {
+          "position": 0,
+          "id": "A",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "paintedBox": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "A",
+            "x": 68.883,
+            "y": 21.5,
+            "width": 12,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "participant",
+            "childTags": [
+              "rect",
+              "text"
+            ]
+          }
+        }
+      ],
+      "footers": [
+        {
+          "id": "A",
+          "paintedBox": {
+            "x": 0,
+            "y": 337,
+            "width": 150,
+            "height": 65
+          }
+        }
+      ],
+      "lifelines": [
+        {
+          "id": "A",
+          "x1": 75,
+          "y1": 65,
+          "x2": 75,
+          "y2": 337
+        }
+      ],
+      "messages": [
+        {
+          "position": 0,
+          "id": "i1",
+          "from": "A",
+          "to": "A",
+          "box": {
+            "x": 76,
+            "y": 117.381,
+            "width": 45,
+            "height": 23.238
+          },
+          "line": null,
+          "path": "M 76,119 C 136,109 136,149 76,139",
+          "structure": {
+            "tag": "path",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-10-arrowhead)"
+          },
+          "label": {
+            "text": "self solid",
+            "x": 43.039,
+            "y": 83.281,
+            "width": 65.922,
+            "height": 22
+          }
+        },
+        {
+          "position": 1,
+          "id": "i2",
+          "from": "A",
+          "to": "A",
+          "box": {
+            "x": 76,
+            "y": 201.381,
+            "width": 50.311,
+            "height": 23.238
+          },
+          "line": null,
+          "path": "M 86,203 C 146,193 136,233 76,223",
+          "structure": {
+            "tag": "path",
+            "className": "messageLine0",
+            "markerStart": "url(#sequence-layout-10-arrowhead)",
+            "markerEnd": "url(#sequence-layout-10-arrowhead)"
+          },
+          "label": {
+            "text": "self both",
+            "x": 43.164,
+            "y": 167.281,
+            "width": 65.672,
+            "height": 22
+          }
+        },
+        {
+          "position": 2,
+          "id": "i3",
+          "from": "A",
+          "to": "A",
+          "box": {
+            "x": 76,
+            "y": 285.381,
+            "width": 50.311,
+            "height": 23.238
+          },
+          "line": null,
+          "path": "M 86,287 C 146,277 136,317 76,307",
+          "structure": {
+            "tag": "path",
+            "className": "messageLine0",
+            "markerStart": "url(#sequence-layout-10-solidBottomArrowHead)",
+            "markerEnd": ""
+          },
+          "label": {
+            "text": "self reverse",
+            "x": 33.039,
+            "y": 251.281,
+            "width": 85.922,
+            "height": 22
+          }
+        }
+      ],
+      "centralConnections": [],
+      "sequenceNumbers": [
+        {
+          "text": "1",
+          "x": 75,
+          "y": 123,
+          "fontSize": "12px"
+        },
+        {
+          "text": "2",
+          "x": 75,
+          "y": 207,
+          "fontSize": "12px"
+        },
+        {
+          "text": "3",
+          "x": 75,
+          "y": 291,
+          "fontSize": "12px"
+        }
+      ],
+      "activations": [],
+      "notes": [],
+      "fragments": [],
+      "svgStructure": {
+        "markers": [
+          {
+            "id": "sequence-layout-10-arrowhead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.9",
+            "refY": "5",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-10-crosshead",
+            "markerWidth": "15",
+            "markerHeight": "8",
+            "refX": "4",
+            "refY": "4.5",
+            "orient": "auto"
+          },
+          {
+            "id": "sequence-layout-10-filled-head",
+            "markerWidth": "20",
+            "markerHeight": "28",
+            "refX": "15.5",
+            "refY": "7",
+            "orient": "auto"
+          },
+          {
+            "id": "sequence-layout-10-sequencenumber",
+            "markerWidth": "60",
+            "markerHeight": "40",
+            "refX": "15",
+            "refY": "15",
+            "orient": "auto"
+          },
+          {
+            "id": "sequence-layout-10-solidTopArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.9",
+            "refY": "7.25",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-10-solidBottomArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.9",
+            "refY": "0.75",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-10-stickTopArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.5",
+            "refY": "7",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-10-stickBottomArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.5",
+            "refY": "0",
+            "orient": "auto-start-reverse"
+          }
+        ]
+      }
     }
   ],
-  "fixtureSha256": "9630c4df0aec200a3d6a54d6e3a59858603017fde443c826b7d57a436c3b207e"
+  "fixtureSha256": "1e8742395c4d0784b32a9bdec3e4f8f79c488f5e50c295e82d23b9594e9c3aca"
 }

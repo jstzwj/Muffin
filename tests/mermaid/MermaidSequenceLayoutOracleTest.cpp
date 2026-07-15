@@ -77,11 +77,11 @@ int main(int argc, char** argv) {
   require(root.value(QStringLiteral("fontMode")).toString() == QLatin1String("bundled-noto"),
           QStringLiteral("Sequence layout must use the fixed Noto oracle"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("9630c4df0aec200a3d6a54d6e3a59858603017fde443c826b7d57a436c3b207e"),
+              QLatin1String("1e8742395c4d0784b32a9bdec3e4f8f79c488f5e50c295e82d23b9594e9c3aca"),
           QStringLiteral("Sequence layout fixture changed; audit geometry and update its digest"));
 
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-  require(cases.size() == 8, QStringLiteral("Sequence layout case count drifted"));
+  require(cases.size() == 11, QStringLiteral("Sequence layout case count drifted"));
   QSet<QString> ids, coveredAxes;
   int participantCount = 0, lifelineCount = 0, messageCount = 0;
   int activationCount = 0, noteCount = 0, fragmentCount = 0;
@@ -106,6 +106,8 @@ int main(int argc, char** argv) {
     const QJsonArray footers = fixture.value(QStringLiteral("footers")).toArray();
     const QJsonArray lifelines = fixture.value(QStringLiteral("lifelines")).toArray();
     const QJsonArray messages = fixture.value(QStringLiteral("messages")).toArray();
+    const QJsonArray centralConnections = fixture.value(QStringLiteral("centralConnections")).toArray();
+    const QJsonArray sequenceNumbers = fixture.value(QStringLiteral("sequenceNumbers")).toArray();
     const QJsonArray activations = fixture.value(QStringLiteral("activations")).toArray();
     const QJsonArray notes = fixture.value(QStringLiteral("notes")).toArray();
     const QJsonArray fragments = fixture.value(QStringLiteral("fragments")).toArray();
@@ -242,6 +244,33 @@ int main(int argc, char** argv) {
                       markerName(structure.value(QStringLiteral("markerStart")).toString()),
                       markerName(structure.value(QStringLiteral("markerEnd")).toString())));
     }
+    QVector<QPointF> nativeCentralConnections;
+    for (const SequenceLayoutMessage& message : layout.messages)
+      nativeCentralConnections += message.centralConnections;
+    require(nativeCentralConnections.size() == centralConnections.size(),
+            QStringLiteral("%1 central connection count mismatch").arg(id));
+    for (qsizetype index = 0; index < centralConnections.size(); ++index) {
+      const QJsonObject expected = centralConnections.at(index).toObject();
+      requireNear(nativeCentralConnections.at(index).x(), expected.value(QStringLiteral("cx")).toDouble(),
+                  QStringLiteral("%1 central %2 x").arg(id).arg(index));
+      requireNear(nativeCentralConnections.at(index).y(), expected.value(QStringLiteral("cy")).toDouble(),
+                  QStringLiteral("%1 central %2 y").arg(id).arg(index));
+    }
+    require(layout.sequenceNumbers.size() == sequenceNumbers.size(),
+            QStringLiteral("%1 sequence number count mismatch").arg(id));
+    for (qsizetype index = 0; index < sequenceNumbers.size(); ++index) {
+      const QJsonObject expected = sequenceNumbers.at(index).toObject();
+      const SequenceLayoutNumber& native = layout.sequenceNumbers.at(index);
+      require(native.text == expected.value(QStringLiteral("text")).toString(),
+              QStringLiteral("%1 sequence number %2 text mismatch").arg(id).arg(index));
+      requireNear(native.position.x(), expected.value(QStringLiteral("x")).toDouble(),
+                  QStringLiteral("%1 sequence number %2 x").arg(id).arg(index));
+      requireNear(native.position.y(), expected.value(QStringLiteral("y")).toDouble(),
+                  QStringLiteral("%1 sequence number %2 y").arg(id).arg(index));
+      requireNear(native.fontSize,
+                  expected.value(QStringLiteral("fontSize")).toString().chopped(2).toDouble(),
+                  QStringLiteral("%1 sequence number %2 font size").arg(id).arg(index));
+    }
 
     int activationStarts = 0;
     for (const SequenceLayoutActivationInput& activation : input.activations)
@@ -324,7 +353,8 @@ int main(int argc, char** argv) {
                 scene.messages.size() == layout.messages.size() &&
                 scene.activations.size() == layout.activations.size() &&
                 scene.notes.size() == layout.notes.size() &&
-                scene.fragments.size() == layout.fragments.size(),
+                scene.fragments.size() == layout.fragments.size() &&
+                scene.sequenceNumbers.size() == layout.sequenceNumbers.size(),
             QStringLiteral("%1 sequence scene lost ordered layout primitives").arg(id));
 
     participantCount += participants.size(); lifelineCount += lifelines.size();
@@ -334,6 +364,8 @@ int main(int argc, char** argv) {
 
   for (const QString& axis : {QStringLiteral("participant-size"), QStringLiteral("participant-painted-bounds"),
                               QStringLiteral("participant-lifecycle"), QStringLiteral("message-marker"), QStringLiteral("lifeline"),
+                              QStringLiteral("central-connection"), QStringLiteral("autonumber"),
+                              QStringLiteral("self-message"), QStringLiteral("right-angles"),
                               QStringLiteral("message-spacing"), QStringLiteral("activation-stack"),
                               QStringLiteral("note-geometry"), QStringLiteral("fragment-geometry")})
     require(coveredAxes.contains(axis), QStringLiteral("Sequence layout axis is uncovered: %1").arg(axis));

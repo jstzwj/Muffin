@@ -36,7 +36,21 @@
       "file": "create-destroy-markers.png",
       "width": 625,
       "height": 593
+    },
+    {
+      "id": "central-autonumber",
+      "source": "sequenceDiagram\nautonumber 10 5\nA->>()B:forward central\nA()->>B:reverse central\nA()->>()B:dual central\nB<<-->>A:bidirectional\nautonumber off\nA-->>B:unnumbered",
+      "file": "central-autonumber.png",
+      "width": 350,
+      "height": 420
+    },
+    {
+      "id": "self-autonumber",
+      "source": "sequenceDiagram\nautonumber\nA->>A:self solid\nA-->>A:self dotted\nA-xA:self cross\nA<<->>A:self both",
+      "file": "self-autonumber.png",
+      "width": 150,
+      "height": 486
     }
   ],
-  "fixtureSha256": "673a4a00f812619eb87a547c55223adcbd0786dcba90271ce533cb14d261ac6b"
+  "fixtureSha256": "e2037a1eef7b81d7ce3caa90668e624b1f4592e7f6c5d9469db6c1f1c624dda2"
 }

@@ -30,6 +30,7 @@ struct SequenceScene {
   QVector<SequenceLayoutActivation> activations;
   QVector<SequenceLayoutNote> notes;
   QVector<SequenceLayoutFragment> fragments;
+  QVector<SequenceLayoutNumber> sequenceNumbers;
   SequenceSceneStyle style;
 };
 
