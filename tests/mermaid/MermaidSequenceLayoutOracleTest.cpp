@@ -1,5 +1,6 @@
 #include "mermaid/sequence/SequenceDiagram.h"
 #include "mermaid/sequence/SequenceLayout.h"
+#include "mermaid/sequence/SequenceScene.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -10,6 +11,7 @@
 #include <QSet>
 
 #include <cmath>
+#include <algorithm>
 #include <cstdlib>
 
 using namespace muffin::mermaid::sequence;
@@ -29,6 +31,17 @@ QSizeF sizeOf(const QJsonObject& object) {
 qreal centerX(const QJsonObject& box) {
   return box.value(QStringLiteral("x")).toDouble() + box.value(QStringLiteral("width")).toDouble() / 2.0;
 }
+
+int messageIndex(const QString& id) {
+  bool ok = false;
+  const int result = id.startsWith(QLatin1Char('i')) ? id.mid(1).toInt(&ok) : -1;
+  return ok ? result : -1;
+}
+
+void requireNear(qreal actual, qreal expected, const QString& context) {
+  require(std::abs(actual - expected) <= 0.001,
+          QStringLiteral("%1: native=%2 upstream=%3").arg(context).arg(actual).arg(expected));
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -42,7 +55,7 @@ int main(int argc, char** argv) {
   require(root.value(QStringLiteral("fontMode")).toString() == QLatin1String("bundled-noto"),
           QStringLiteral("Sequence layout must use the fixed Noto oracle"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("2bfd8ae4133e334df003fa5cf4eba1fddec089bfaa33dec541006011e9f50b48"),
+              QLatin1String("cff04de008d5cb7db2019bfdf47ac13951f56b9bc9ea07e4f5b6602ca1f69bdb"),
           QStringLiteral("Sequence layout fixture changed; audit geometry and update its digest"));
 
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
@@ -78,15 +91,37 @@ int main(int argc, char** argv) {
       measurements.participants.insert(object.value(QStringLiteral("id")).toString(),
                                        sizeOf(object.value(QStringLiteral("label")).toObject()));
     }
-    for (const QJsonValue& message : messages)
-      measurements.messages.append(sizeOf(message.toObject().value(QStringLiteral("label")).toObject()));
-    for (const QJsonValue& note : notes)
-      measurements.notes.append(sizeOf(note.toObject().value(QStringLiteral("label")).toObject()));
+    for (const QJsonValue& message : messages) {
+      const QJsonObject object = message.toObject();
+      const QSizeF measured = sizeOf(object.value(QStringLiteral("label")).toObject());
+      measurements.messages.append(measured);
+      measurements.messagesByIndex.insert(messageIndex(object.value(QStringLiteral("id")).toString()), measured);
+    }
+    for (const QJsonValue& note : notes) {
+      const QJsonObject object = note.toObject();
+      const QSizeF measured = sizeOf(object.value(QStringLiteral("label")).toObject());
+      measurements.notes.append(measured);
+      measurements.notesByIndex.insert(messageIndex(object.value(QStringLiteral("id")).toString()), measured);
+    }
     for (const QJsonValue& fragment : fragments) {
       const QJsonArray labels = fragment.toObject().value(QStringLiteral("labels")).toArray();
       measurements.fragments.append(labels.isEmpty() ? QSizeF{} : sizeOf(labels.first().toObject()));
     }
     const SequenceLayoutInput input = buildSequenceLayoutInput(data, measurements);
+    SequenceLayoutOptions options;
+    options.actorMargin = config.value(QStringLiteral("actorMargin")).toDouble();
+    options.width = config.value(QStringLiteral("width")).toDouble();
+    options.height = config.value(QStringLiteral("height")).toDouble();
+    options.boxMargin = config.value(QStringLiteral("boxMargin")).toDouble();
+    options.boxTextMargin = config.value(QStringLiteral("boxTextMargin")).toDouble();
+    options.noteMargin = config.value(QStringLiteral("noteMargin")).toDouble();
+    options.activationWidth = config.value(QStringLiteral("activationWidth")).toDouble();
+    options.wrapPadding = config.value(QStringLiteral("wrapPadding")).toDouble();
+    options.labelBoxWidth = config.value(QStringLiteral("labelBoxWidth")).toDouble();
+    options.labelBoxHeight = config.value(QStringLiteral("labelBoxHeight")).toDouble();
+    options.rightAngles = config.value(QStringLiteral("rightAngles")).toBool();
+    const SequenceLayoutResult layout = layoutSequence(data, measurements, options);
+    const SequenceScene scene = buildSequenceScene(layout);
 
     require(input.participants.size() == participants.size() && lifelines.size() == participants.size(),
             QStringLiteral("%1 participant/lifeline input count mismatch").arg(id));
@@ -112,6 +147,15 @@ int main(int argc, char** argv) {
                        line.value(QStringLiteral("x2")).toDouble()) <= 0.001 && centeredShape &&
                   line.value(QStringLiteral("y2")).toDouble() > line.value(QStringLiteral("y1")).toDouble(),
               QStringLiteral("%1 lifeline %2 is not centered and vertical").arg(id, actorId));
+      const auto native = std::find_if(layout.participants.cbegin(), layout.participants.cend(),
+                                       [&](const auto& item) { return item.id == actorId; });
+      require(native != layout.participants.cend(), QStringLiteral("%1 native participant missing").arg(id));
+      requireNear(native->anchorX, line.value(QStringLiteral("x1")).toDouble(),
+                  QStringLiteral("%1/%2 anchor x").arg(id, actorId));
+      requireNear(native->lifelineStartY, line.value(QStringLiteral("y1")).toDouble(),
+                  QStringLiteral("%1/%2 lifeline start").arg(id, actorId));
+      requireNear(native->lifelineStopY, line.value(QStringLiteral("y2")).toDouble(),
+                  QStringLiteral("%1/%2 lifeline stop").arg(id, actorId));
     }
 
     require(input.messages.size() == messages.size(), QStringLiteral("%1 message input count mismatch").arg(id));
@@ -122,6 +166,21 @@ int main(int argc, char** argv) {
       const qreal y = box.value(QStringLiteral("y")).toDouble();
       require(y > previousMessageY, QStringLiteral("%1 message vertical order is unstable").arg(id));
       previousMessageY = y;
+      const qsizetype position = message.value(QStringLiteral("position")).toInteger();
+      const SequenceLayoutMessage& native = layout.messages.at(position);
+      const QJsonObject line = message.value(QStringLiteral("line")).toObject();
+      if (!line.isEmpty()) {
+        requireNear(native.startX, line.value(QStringLiteral("x1")).toDouble(),
+                    QStringLiteral("%1 message %2 x1").arg(id).arg(position));
+        requireNear(native.stopX, line.value(QStringLiteral("x2")).toDouble(),
+                    QStringLiteral("%1 message %2 x2").arg(id).arg(position));
+        requireNear(native.lineY, line.value(QStringLiteral("y1")).toDouble(),
+                    QStringLiteral("%1 message %2 y").arg(id).arg(position));
+      } else {
+        require(native.path == message.value(QStringLiteral("path")).toString(),
+                QStringLiteral("%1 message %2 self path mismatch:\nnative: %3\nupstream: %4")
+                    .arg(id).arg(position).arg(native.path, message.value(QStringLiteral("path")).toString()));
+      }
     }
 
     int activationStarts = 0;
@@ -133,6 +192,16 @@ int main(int argc, char** argv) {
       require(std::abs(activation.value(QStringLiteral("width")).toDouble() - 10.0) <= 0.001 &&
                   activation.value(QStringLiteral("height")).toDouble() > 0.0,
               QStringLiteral("%1 activation geometry drifted").arg(id));
+      const qsizetype position = activation.value(QStringLiteral("position")).toInteger();
+      const QRectF native = layout.activations.at(position).rect;
+      requireNear(native.x(), activation.value(QStringLiteral("x")).toDouble(),
+                  QStringLiteral("%1 activation %2 x").arg(id).arg(position));
+      requireNear(native.y(), activation.value(QStringLiteral("y")).toDouble(),
+                  QStringLiteral("%1 activation %2 y").arg(id).arg(position));
+      requireNear(native.width(), activation.value(QStringLiteral("width")).toDouble(),
+                  QStringLiteral("%1 activation %2 width").arg(id).arg(position));
+      requireNear(native.height(), activation.value(QStringLiteral("height")).toDouble(),
+                  QStringLiteral("%1 activation %2 height").arg(id).arg(position));
     }
 
     require(input.notes.size() == notes.size(), QStringLiteral("%1 note input count mismatch").arg(id));
@@ -141,13 +210,42 @@ int main(int argc, char** argv) {
       const QSizeF shape = sizeOf(note.value(QStringLiteral("shape")).toObject());
       require(shape.width() > 0.0 && shape.height() > 0.0,
               QStringLiteral("%1 note geometry is empty").arg(id));
+      const qsizetype position = note.value(QStringLiteral("position")).toInteger();
+      const QRectF native = layout.notes.at(position).rect;
+      const QJsonObject expected = note.value(QStringLiteral("shape")).toObject();
+      requireNear(native.x(), expected.value(QStringLiteral("x")).toDouble(),
+                  QStringLiteral("%1 note %2 x").arg(id).arg(position));
+      requireNear(native.y(), expected.value(QStringLiteral("y")).toDouble(),
+                  QStringLiteral("%1 note %2 y").arg(id).arg(position));
+      requireNear(native.width(), expected.value(QStringLiteral("width")).toDouble(),
+                  QStringLiteral("%1 note %2 width").arg(id).arg(position));
+      requireNear(native.height(), expected.value(QStringLiteral("height")).toDouble(),
+                  QStringLiteral("%1 note %2 height").arg(id).arg(position));
     }
     require(input.fragments.size() == fragments.size(), QStringLiteral("%1 fragment input count mismatch").arg(id));
     for (const QJsonValue& fragmentValue : fragments) {
       const QSizeF outline = sizeOf(fragmentValue.toObject().value(QStringLiteral("outline")).toObject());
       require(outline.width() > 0.0 && outline.height() > 0.0,
               QStringLiteral("%1 fragment geometry is empty").arg(id));
+      const qsizetype position = fragmentValue.toObject().value(QStringLiteral("position")).toInteger();
+      const QRectF native = layout.fragments.at(position).rect;
+      const QJsonObject expected = fragmentValue.toObject().value(QStringLiteral("outline")).toObject();
+      requireNear(native.x(), expected.value(QStringLiteral("x")).toDouble(),
+                  QStringLiteral("%1 fragment %2 x").arg(id).arg(position));
+      requireNear(native.y(), expected.value(QStringLiteral("y")).toDouble(),
+                  QStringLiteral("%1 fragment %2 y").arg(id).arg(position));
+      requireNear(native.width(), expected.value(QStringLiteral("width")).toDouble(),
+                  QStringLiteral("%1 fragment %2 width").arg(id).arg(position));
+      requireNear(native.height(), expected.value(QStringLiteral("height")).toDouble(),
+                  QStringLiteral("%1 fragment %2 height").arg(id).arg(position));
     }
+
+    require(scene.participants.size() == layout.participants.size() &&
+                scene.messages.size() == layout.messages.size() &&
+                scene.activations.size() == layout.activations.size() &&
+                scene.notes.size() == layout.notes.size() &&
+                scene.fragments.size() == layout.fragments.size(),
+            QStringLiteral("%1 sequence scene lost ordered layout primitives").arg(id));
 
     participantCount += participants.size(); lifelineCount += lifelines.size();
     messageCount += messages.size(); activationCount += activations.size();

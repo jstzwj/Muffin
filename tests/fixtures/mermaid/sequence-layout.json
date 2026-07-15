@@ -17,12 +17,18 @@
         "width": 150,
         "height": 65,
         "boxMargin": 10,
+        "boxTextMargin": 5,
         "messageMargin": 35,
         "noteMargin": 10,
         "activationWidth": 10,
         "diagramMarginX": 50,
         "diagramMarginY": 10,
-        "mirrorActors": true
+        "mirrorActors": true,
+        "wrapPadding": 10,
+        "labelBoxWidth": 50,
+        "labelBoxHeight": 20,
+        "bottomMarginAdj": 1,
+        "rightAngles": false
       },
       "root": {
         "viewBox": "-50 -10 773 333",
@@ -128,44 +134,80 @@
       "messages": [
         {
           "position": 0,
+          "id": "i0",
+          "from": "A",
+          "to": "B",
           "box": {
             "x": 76,
             "y": 119,
             "width": 195,
             "height": 0
           },
-          "line": null,
+          "line": {
+            "x1": 76,
+            "y1": 119,
+            "x2": 271,
+            "y2": 119
+          },
           "path": "",
           "label": {
-            "text": ""
+            "text": "short",
+            "x": 154.188,
+            "y": 83.281,
+            "width": 39.84,
+            "height": 22
           }
         },
         {
           "position": 1,
+          "id": "i1",
+          "from": "B",
+          "to": "C",
           "box": {
             "x": 276,
             "y": 173,
             "width": 318,
             "height": 0
           },
-          "line": null,
+          "line": {
+            "x1": 276,
+            "y1": 173,
+            "x2": 594,
+            "y2": 173
+          },
           "path": "",
           "label": {
-            "text": ""
+            "text": "A deliberately long message label",
+            "x": 308.008,
+            "y": 137.281,
+            "width": 252.984,
+            "height": 22
           }
         },
         {
           "position": 2,
+          "id": "i2",
+          "from": "C",
+          "to": "A",
           "box": {
             "x": 76,
             "y": 227,
             "width": 521,
             "height": 0
           },
-          "line": null,
+          "line": {
+            "x1": 597,
+            "y1": 227,
+            "x2": 76,
+            "y2": 227
+          },
           "path": "",
           "label": {
-            "text": ""
+            "text": "return",
+            "x": 313.258,
+            "y": 191.281,
+            "width": 47.484,
+            "height": 22
           }
         }
       ],
@@ -187,12 +229,18 @@
         "width": 150,
         "height": 65,
         "boxMargin": 10,
+        "boxTextMargin": 5,
         "messageMargin": 35,
         "noteMargin": 10,
         "activationWidth": 10,
         "diagramMarginX": 50,
         "diagramMarginY": 10,
-        "mirrorActors": true
+        "mirrorActors": true,
+        "wrapPadding": 10,
+        "labelBoxWidth": 50,
+        "labelBoxHeight": 20,
+        "bottomMarginAdj": 1,
+        "rightAngles": false
       },
       "root": {
         "viewBox": "-50 -10 460 447",
@@ -268,20 +316,35 @@
       "messages": [
         {
           "position": 0,
+          "id": "i0",
+          "from": "A",
+          "to": "B",
           "box": {
             "x": 76,
             "y": 119,
             "width": 191,
             "height": 0
           },
-          "line": null,
+          "line": {
+            "x1": 76,
+            "y1": 119,
+            "x2": 267,
+            "y2": 119
+          },
           "path": "",
           "label": {
-            "text": ""
+            "text": "first",
+            "x": 156.156,
+            "y": 83.281,
+            "width": 30.904,
+            "height": 22
           }
         },
         {
           "position": 1,
+          "id": "i2",
+          "from": "B",
+          "to": "B",
           "box": {
             "x": 280,
             "y": 171.381,
@@ -289,13 +352,20 @@
             "height": 23.238
           },
           "line": null,
-          "path": "",
+          "path": "M 280,173 C 340,163 340,203 280,193",
           "label": {
-            "text": ""
+            "text": "nested",
+            "x": 254.391,
+            "y": 137.281,
+            "width": 51.219,
+            "height": 22
           }
         },
         {
           "position": 2,
+          "id": "i4",
+          "from": "B",
+          "to": "B",
           "box": {
             "x": 285,
             "y": 255.381,
@@ -303,23 +373,39 @@
             "height": 23.238
           },
           "line": null,
-          "path": "",
+          "path": "M 285,257 C 345,247 345,287 285,277",
           "label": {
-            "text": ""
+            "text": "nested return",
+            "x": 233.57,
+            "y": 221.281,
+            "width": 102.859,
+            "height": 22
           }
         },
         {
           "position": 3,
+          "id": "i6",
+          "from": "B",
+          "to": "A",
           "box": {
             "x": 79,
             "y": 341,
             "width": 191,
             "height": 0
           },
-          "line": null,
+          "line": {
+            "x1": 270,
+            "y1": 341,
+            "x2": 79,
+            "y2": 341
+          },
           "path": "",
           "label": {
-            "text": ""
+            "text": "final return",
+            "x": 131.867,
+            "y": 305.281,
+            "width": 85.266,
+            "height": 22
           }
         }
       ],
@@ -330,7 +416,13 @@
           "x": 270,
           "y": 119,
           "width": 10,
-          "height": 222
+          "height": 222,
+          "box": {
+            "x": 270,
+            "y": 119,
+            "width": 10,
+            "height": 222
+          }
         },
         {
           "position": 1,
@@ -338,7 +430,13 @@
           "x": 275,
           "y": 205,
           "width": 10,
-          "height": 82
+          "height": 82,
+          "box": {
+            "x": 275,
+            "y": 205,
+            "width": 10,
+            "height": 82
+          }
         }
       ],
       "notes": [],
@@ -358,12 +456,18 @@
         "width": 150,
         "height": 65,
         "boxMargin": 10,
+        "boxTextMargin": 5,
         "messageMargin": 35,
         "noteMargin": 10,
         "activationWidth": 10,
         "diagramMarginX": 50,
         "diagramMarginY": 10,
-        "mirrorActors": true
+        "mirrorActors": true,
+        "wrapPadding": 10,
+        "labelBoxWidth": 50,
+        "labelBoxHeight": 20,
+        "bottomMarginAdj": 1,
+        "rightAngles": false
       },
       "root": {
         "viewBox": "-150 -10 650 379",
@@ -441,6 +545,7 @@
       "notes": [
         {
           "position": 0,
+          "id": "i0",
           "box": {
             "x": -100,
             "y": 75,
@@ -463,6 +568,7 @@
         },
         {
           "position": 1,
+          "id": "i1",
           "box": {
             "x": 300,
             "y": 127,
@@ -485,6 +591,7 @@
         },
         {
           "position": 2,
+          "id": "i2",
           "box": {
             "x": 0,
             "y": 179,
@@ -507,6 +614,7 @@
         },
         {
           "position": 3,
+          "id": "i3",
           "box": {
             "x": 50,
             "y": 231,
@@ -544,12 +652,18 @@
         "width": 150,
         "height": 65,
         "boxMargin": 10,
+        "boxTextMargin": 5,
         "messageMargin": 35,
         "noteMargin": 10,
         "activationWidth": 10,
         "diagramMarginX": 50,
         "diagramMarginY": 10,
-        "mirrorActors": true
+        "mirrorActors": true,
+        "wrapPadding": 10,
+        "labelBoxWidth": 50,
+        "labelBoxHeight": 20,
+        "bottomMarginAdj": 1,
+        "rightAngles": false
       },
       "root": {
         "viewBox": "-50 -10 450 551",
@@ -625,44 +739,80 @@
       "messages": [
         {
           "position": 0,
+          "id": "i2",
+          "from": "A",
+          "to": "B",
           "box": {
             "x": 76,
             "y": 213,
             "width": 195,
             "height": 0
           },
-          "line": null,
+          "line": {
+            "x1": 76,
+            "y1": 213,
+            "x2": 271,
+            "y2": 213
+          },
           "path": "",
           "label": {
-            "text": ""
+            "text": "request",
+            "x": 145.242,
+            "y": 177.281,
+            "width": 57.728,
+            "height": 22
           }
         },
         {
           "position": 1,
+          "id": "i4",
+          "from": "B",
+          "to": "A",
           "box": {
             "x": 79,
             "y": 314,
             "width": 195,
             "height": 0
           },
-          "line": null,
+          "line": {
+            "x1": 274,
+            "y1": 314,
+            "x2": 79,
+            "y2": 314
+          },
           "path": "",
           "label": {
-            "text": ""
+            "text": "response",
+            "x": 142.461,
+            "y": 278.281,
+            "width": 69.078,
+            "height": 22
           }
         },
         {
           "position": 2,
+          "id": "i8",
+          "from": "A",
+          "to": "B",
           "box": {
             "x": 76,
             "y": 435,
             "width": 195,
             "height": 0
           },
-          "line": null,
+          "line": {
+            "x1": 76,
+            "y1": 435,
+            "x2": 271,
+            "y2": 435
+          },
           "path": "",
           "label": {
-            "text": ""
+            "text": "error",
+            "x": 154.891,
+            "y": 399.281,
+            "width": 38.6,
+            "height": 22
           }
         }
       ],
@@ -788,12 +938,18 @@
         "width": 150,
         "height": 65,
         "boxMargin": 10,
+        "boxTextMargin": 5,
         "messageMargin": 35,
         "noteMargin": 10,
         "activationWidth": 10,
         "diagramMarginX": 50,
         "diagramMarginY": 10,
-        "mirrorActors": true
+        "mirrorActors": true,
+        "wrapPadding": 10,
+        "labelBoxWidth": 50,
+        "labelBoxHeight": 20,
+        "bottomMarginAdj": 1,
+        "rightAngles": false
       },
       "root": {
         "viewBox": "-50 -10 850 652",
@@ -929,58 +1085,106 @@
       "messages": [
         {
           "position": 0,
+          "id": "i1",
+          "from": "A",
+          "to": "B",
           "box": {
             "x": 76,
             "y": 166,
             "width": 191,
             "height": 0
           },
-          "line": null,
+          "line": {
+            "x1": 76,
+            "y1": 166,
+            "x2": 267,
+            "y2": 166
+          },
           "path": "",
           "label": {
-            "text": ""
+            "text": "one",
+            "x": 157.703,
+            "y": 130.281,
+            "width": 28.594,
+            "height": 22
           }
         },
         {
           "position": 1,
+          "id": "i4",
+          "from": "C",
+          "to": "D",
           "box": {
             "x": 476,
             "y": 267,
             "width": 195,
             "height": 0
           },
-          "line": null,
+          "line": {
+            "x1": 476,
+            "y1": 267,
+            "x2": 671,
+            "y2": 267
+          },
           "path": "",
           "label": {
-            "text": ""
+            "text": "two",
+            "x": 558.977,
+            "y": 231.281,
+            "width": 29.352,
+            "height": 22
           }
         },
         {
           "position": 2,
+          "id": "i7",
+          "from": "B",
+          "to": "A",
           "box": {
             "x": 79,
             "y": 378,
             "width": 191,
             "height": 0
           },
-          "line": null,
+          "line": {
+            "x1": 270,
+            "y1": 378,
+            "x2": 79,
+            "y2": 378
+          },
           "path": "",
           "label": {
-            "text": ""
+            "text": "ok",
+            "x": 165.883,
+            "y": 342.281,
+            "width": 18.68,
+            "height": 22
           }
         },
         {
           "position": 3,
+          "id": "i11",
+          "from": "A",
+          "to": "B",
           "box": {
             "x": 76,
             "y": 526,
             "width": 195,
             "height": 0
           },
-          "line": null,
+          "line": {
+            "x1": 76,
+            "y1": 526,
+            "x2": 271,
+            "y2": 526
+          },
           "path": "",
           "label": {
-            "text": ""
+            "text": "stop",
+            "x": 157.516,
+            "y": 490.281,
+            "width": 33.12,
+            "height": 22
           }
         }
       ],
@@ -991,7 +1195,13 @@
           "x": 270,
           "y": 168,
           "width": 10,
-          "height": 210
+          "height": 210,
+          "box": {
+            "x": 270,
+            "y": 168,
+            "width": 10,
+            "height": 210
+          }
         }
       ],
       "notes": [],
@@ -1123,12 +1333,18 @@
         "width": 150,
         "height": 65,
         "boxMargin": 10,
+        "boxTextMargin": 5,
         "messageMargin": 35,
         "noteMargin": 10,
         "activationWidth": 10,
         "diagramMarginX": 50,
         "diagramMarginY": 10,
-        "mirrorActors": true
+        "mirrorActors": true,
+        "wrapPadding": 10,
+        "labelBoxWidth": 50,
+        "labelBoxHeight": 20,
+        "bottomMarginAdj": 1,
+        "rightAngles": false
       },
       "root": {
         "viewBox": "-50 -10 513 277",
@@ -1204,16 +1420,28 @@
       "messages": [
         {
           "position": 0,
+          "id": "i0",
+          "from": "A",
+          "to": "B",
           "box": {
             "x": 76,
             "y": 119,
             "width": 258,
             "height": 0
           },
-          "line": null,
+          "line": {
+            "x1": 76,
+            "y1": 119,
+            "x2": 334,
+            "y2": 119
+          },
           "path": "",
           "label": {
-            "text": ""
+            "text": "שלום 世界 mixed message",
+            "x": 108.313,
+            "y": 83.281,
+            "width": 193.375,
+            "height": 22
           }
         }
       ],
@@ -1221,6 +1449,7 @@
       "notes": [
         {
           "position": 0,
+          "id": "i1",
           "box": {
             "x": 50,
             "y": 129,
@@ -1245,5 +1474,5 @@
       "fragments": []
     }
   ],
-  "fixtureSha256": "2bfd8ae4133e334df003fa5cf4eba1fddec089bfaa33dec541006011e9f50b48"
+  "fixtureSha256": "cff04de008d5cb7db2019bfdf47ac13951f56b9bc9ea07e4f5b6602ca1f69bdb"
 }

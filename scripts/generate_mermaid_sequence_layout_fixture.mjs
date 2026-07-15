@@ -154,6 +154,7 @@ try {
         fontFamily: fontStack,
         sequence: { useMaxWidth: false },
       });
+      const resolved = mermaid.mermaidAPI.getConfig().sequence;
       const { svg } = await mermaid.render(`sequence-layout-${index}`, fixture.source);
       document.getElementById("container").innerHTML = svg;
       const root = document.querySelector("svg");
@@ -175,35 +176,62 @@ try {
         x1: number(element, "x1"), y1: number(element, "y1"),
         x2: number(element, "x2"), y2: number(element, "y2"),
       }));
-      const messages = [...root.querySelectorAll('[data-et="message"]')].map((element, position) => ({
-        position,
-        box: box(element),
-        line: element.querySelector("line") ? {
-          x1: number(element.querySelector("line"), "x1"), y1: number(element.querySelector("line"), "y1"),
-          x2: number(element.querySelector("line"), "x2"), y2: number(element.querySelector("line"), "y2"),
-        } : null,
-        path: element.querySelector("path")?.getAttribute("d") ?? "",
-        label: text(element.querySelector("text")),
-      }));
+      const messageLabels = [...root.querySelectorAll(".messageText")];
+      const messages = [...root.querySelectorAll('[data-et="message"]')].map((element, position) => {
+        const line = element.tagName.toLowerCase() === "line" ? element : element.querySelector("line");
+        const path = element.tagName.toLowerCase() === "path" ? element : element.querySelector("path");
+        return {
+          position,
+          id: element.getAttribute("data-id") ?? "",
+          from: element.getAttribute("data-from") ?? "",
+          to: element.getAttribute("data-to") ?? "",
+          box: box(element),
+          line: line ? {
+            x1: number(line, "x1"), y1: number(line, "y1"),
+            x2: number(line, "x2"), y2: number(line, "y2"),
+          } : null,
+          path: path?.getAttribute("d") ?? "",
+          label: text(messageLabels[position]),
+        };
+      });
       const activations = [...root.querySelectorAll('rect[class^="activation"]')].map((element, position) => ({
-        position, className: element.getAttribute("class") ?? "", ...box(element),
+        position, className: element.getAttribute("class") ?? "",
+        x: number(element, "x"), y: number(element, "y"),
+        width: number(element, "width"), height: number(element, "height"),
+        box: box(element),
       }));
       const notes = [...root.querySelectorAll('[data-et="note"]')].map((element, position) => ({
-        position, box: box(element), shape: box(element.querySelector("rect, path") ?? element), label: text(element.querySelector("text")),
-      }));
-      const fragments = [...root.querySelectorAll('[data-et="control-structure"]')].map((element, position) => ({
         position, id: element.getAttribute("data-id") ?? "", box: box(element),
-        outline: box(element.querySelector("rect, path") ?? element),
-        labels: [...element.querySelectorAll("text")].map(text),
+        shape: (() => {
+          const shape = element.querySelector("rect, path");
+          return shape ? { x: number(shape, "x"), y: number(shape, "y"),
+            width: number(shape, "width"), height: number(shape, "height") } : box(element);
+        })(),
+        label: text(element.querySelector("text")),
       }));
+      const fragments = [...root.querySelectorAll('[data-et="control-structure"]')].map((element, position) => {
+        const lines = [...element.querySelectorAll(".loopLine")];
+        const xs = lines.flatMap((line) => [number(line, "x1"), number(line, "x2")]);
+        const ys = lines.flatMap((line) => [number(line, "y1"), number(line, "y2")]);
+        return {
+          position, id: element.getAttribute("data-id") ?? "", box: box(element),
+          outline: lines.length ? { x: Math.min(...xs), y: Math.min(...ys),
+            width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) } : box(element),
+          labels: [...element.querySelectorAll("text")].map(text),
+        };
+      });
       return {
         id: fixture.id,
         axes: fixture.axes,
         source: fixture.source,
         config: {
-          fontFamily: fontStack, fontSize: 16, actorMargin: 50, width: 150, height: 65,
-          boxMargin: 10, messageMargin: 35, noteMargin: 10, activationWidth: 10,
-          diagramMarginX: 50, diagramMarginY: 10, mirrorActors: true,
+          fontFamily: fontStack,
+          fontSize: 16,
+          ...Object.fromEntries([
+            "actorMargin", "width", "height", "boxMargin", "boxTextMargin", "messageMargin",
+            "noteMargin", "activationWidth", "diagramMarginX", "diagramMarginY", "mirrorActors",
+            "wrapPadding", "labelBoxWidth", "labelBoxHeight", "bottomMarginAdj", "rightAngles",
+          ].map((key) => [key, resolved[key]])),
         },
         root: { viewBox: root.getAttribute("viewBox"), ...box(root) },
         participants, lifelines, messages, activations, notes, fragments,
