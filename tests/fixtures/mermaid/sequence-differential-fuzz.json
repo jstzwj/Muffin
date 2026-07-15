@@ -1,0 +1,609 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0"
+  },
+  "generator": {
+    "name": "production-aware-sequence-mutation-fuzzer",
+    "caseCount": 15,
+    "operatorCounts": {
+      "break-paired-delimiter": 1,
+      "delete-required-terminal": 3,
+      "duplicate-separator": 2,
+      "insert-nullable-boundary-token": 4,
+      "replace-terminal-class": 4,
+      "truncate-recursive-production": 1
+    },
+    "stageCounts": {
+      "detector": 1,
+      "parser": 10,
+      "semantic": 4
+    },
+    "matrixCounts": {
+      "3:2|delete-required-terminal|detector|missing-header": 1,
+      "79:1|replace-terminal-class|parser|unexpected-token": 1,
+      "66:3|duplicate-separator|parser|unexpected-token": 1,
+      "15:1|truncate-recursive-production|parser|missing-end": 1,
+      "77:3|break-paired-delimiter|parser|unexpected-token": 1,
+      "4:0|insert-nullable-boundary-token|parser|unexpected-end": 1,
+      "70:5|delete-required-terminal|parser|unexpected-token": 2,
+      "47:1|insert-nullable-boundary-token|parser|unexpected-token": 1,
+      "45:1|insert-nullable-boundary-token|parser|unexpected-token": 1,
+      "43:1|insert-nullable-boundary-token|parser|unexpected-token": 1,
+      "15:1|replace-terminal-class|semantic|inactive-participant": 1,
+      "49:5|replace-terminal-class|semantic|invalid-create-message": 1,
+      "15:1|replace-terminal-class|semantic|invalid-destroy-message": 1,
+      "49:5|duplicate-separator|semantic|duplicate-participant": 1
+    },
+    "positionRuleCounts": {
+      "detector-source-start": 1,
+      "duplicate-token-start": 1,
+      "inserted-token-start": 4,
+      "missing-terminal-insertion-point": 2,
+      "opening-delimiter-start": 1,
+      "replacement-token-start": 1,
+      "semantic-offending-token": 4,
+      "unclosed-production-start": 1
+    },
+    "rawLocationCounts": {
+      "lines": 11,
+      "columns": 9
+    },
+    "unreachableStages": {
+      "lexer": "sequenceDiagram.jison has a final catch-all INVALID rule; invalid input reaches parser recovery"
+    },
+    "requiredNativeCodes": [
+      "duplicate-participant",
+      "inactive-participant",
+      "invalid-create-message",
+      "invalid-destroy-message",
+      "missing-end",
+      "missing-header",
+      "unexpected-end",
+      "unexpected-token"
+    ]
+  },
+  "negativeCases": [
+    {
+      "id": "delete-header",
+      "operator": "delete-required-terminal",
+      "targetProduction": 3,
+      "targetLhs": "start",
+      "targetRhsLength": 2,
+      "source": "A->>B:x",
+      "mutationPosition": {
+        "offset": 0,
+        "line": 1,
+        "column": 0
+      },
+      "diagnosticPosition": {
+        "offset": 0,
+        "line": 1,
+        "column": 0
+      },
+      "expectedNativeCode": "missing-header",
+      "upstreamError": {
+        "class": "detection",
+        "stage": "detector",
+        "code": "missing-header",
+        "token": "",
+        "raw": {
+          "line": 0,
+          "column": 0
+        },
+        "summary": "No diagram type detected matching given configuration for text: A->>B:x",
+        "normalized": {
+          "offset": 0,
+          "line": 1,
+          "column": 0
+        },
+        "positionRule": "detector-source-start"
+      }
+    },
+    {
+      "id": "replace-arrow-class",
+      "operator": "replace-terminal-class",
+      "targetProduction": 79,
+      "targetLhs": "signaltype",
+      "targetRhsLength": 1,
+      "source": "sequenceDiagram\nA=>B:bad",
+      "mutationPosition": {
+        "offset": 17,
+        "line": 2,
+        "column": 1
+      },
+      "diagnosticPosition": {
+        "offset": 17,
+        "line": 2,
+        "column": 1
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": "INVALID",
+        "raw": {
+          "line": 2,
+          "column": 0
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 17,
+          "line": 2,
+          "column": 1
+        },
+        "positionRule": "replacement-token-start"
+      }
+    },
+    {
+      "id": "duplicate-actor-separator",
+      "operator": "duplicate-separator",
+      "targetProduction": 66,
+      "targetLhs": "actor_pair",
+      "targetRhsLength": 3,
+      "source": "sequenceDiagram\nNote over A,,B:bad",
+      "mutationPosition": {
+        "offset": 28,
+        "line": 2,
+        "column": 12
+      },
+      "diagnosticPosition": {
+        "offset": 28,
+        "line": 2,
+        "column": 12
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": ",",
+        "raw": {
+          "line": 2,
+          "column": 11
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 28,
+          "line": 2,
+          "column": 12
+        },
+        "positionRule": "duplicate-token-start"
+      }
+    },
+    {
+      "id": "truncate-loop",
+      "operator": "truncate-recursive-production",
+      "targetProduction": 15,
+      "targetLhs": "statement",
+      "targetRhsLength": 1,
+      "source": "sequenceDiagram\nloop open\nA->>B:x",
+      "mutationPosition": {
+        "offset": 16,
+        "line": 2,
+        "column": 0
+      },
+      "diagnosticPosition": {
+        "offset": 16,
+        "line": 2,
+        "column": 0
+      },
+      "expectedNativeCode": "missing-end",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": 1,
+        "raw": {
+          "line": 4,
+          "column": 0
+        },
+        "summary": "Parse error on line 4:",
+        "normalized": {
+          "offset": 16,
+          "line": 2,
+          "column": 0
+        },
+        "positionRule": "unclosed-production-start"
+      }
+    },
+    {
+      "id": "break-config-delimiter",
+      "operator": "break-paired-delimiter",
+      "targetProduction": 77,
+      "targetLhs": "config_object",
+      "targetRhsLength": 3,
+      "source": "sequenceDiagram\nparticipant A@{ \"type\": \"actor\"\nA->>B:x",
+      "mutationPosition": {
+        "offset": 29,
+        "line": 2,
+        "column": 13
+      },
+      "diagnosticPosition": {
+        "offset": 29,
+        "line": 2,
+        "column": 13
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": 1,
+        "raw": {
+          "line": 2,
+          "column": 15
+        },
+        "summary": "Parse error on line 4:",
+        "normalized": {
+          "offset": 29,
+          "line": 2,
+          "column": 13
+        },
+        "positionRule": "opening-delimiter-start"
+      }
+    },
+    {
+      "id": "insert-end-at-nullable-boundary",
+      "operator": "insert-nullable-boundary-token",
+      "targetProduction": 4,
+      "targetLhs": "document",
+      "targetRhsLength": 0,
+      "source": "sequenceDiagram\nend",
+      "mutationPosition": {
+        "offset": 16,
+        "line": 2,
+        "column": 0
+      },
+      "diagnosticPosition": {
+        "offset": 16,
+        "line": 2,
+        "column": 0
+      },
+      "expectedNativeCode": "unexpected-end",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": "end",
+        "raw": {
+          "line": 1,
+          "column": 15
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 16,
+          "line": 2,
+          "column": 0
+        },
+        "positionRule": "inserted-token-start"
+      }
+    },
+    {
+      "id": "delete-required-actor",
+      "operator": "delete-required-terminal",
+      "targetProduction": 70,
+      "targetLhs": "signal",
+      "targetRhsLength": 5,
+      "source": "sequenceDiagram\nA->>:missing target",
+      "mutationPosition": {
+        "offset": 20,
+        "line": 2,
+        "column": 4
+      },
+      "diagnosticPosition": {
+        "offset": 20,
+        "line": 2,
+        "column": 4
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": "TXT",
+        "raw": {
+          "line": 2,
+          "column": 1
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 20,
+          "line": 2,
+          "column": 4
+        },
+        "positionRule": "missing-terminal-insertion-point"
+      }
+    },
+    {
+      "id": "delete-message-colon",
+      "operator": "delete-required-terminal",
+      "targetProduction": 70,
+      "targetLhs": "signal",
+      "targetRhsLength": 5,
+      "source": "sequenceDiagram\nA->>B missing colon",
+      "mutationPosition": {
+        "offset": 21,
+        "line": 2,
+        "column": 5
+      },
+      "diagnosticPosition": {
+        "offset": 21,
+        "line": 2,
+        "column": 5
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": "NEWLINE",
+        "raw": {
+          "line": 2,
+          "column": 4
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 21,
+          "line": 2,
+          "column": 5
+        },
+        "positionRule": "missing-terminal-insertion-point"
+      }
+    },
+    {
+      "id": "orphan-else",
+      "operator": "insert-nullable-boundary-token",
+      "targetProduction": 47,
+      "targetLhs": "else_sections",
+      "targetRhsLength": 1,
+      "source": "sequenceDiagram\nelse orphan",
+      "mutationPosition": {
+        "offset": 16,
+        "line": 2,
+        "column": 0
+      },
+      "diagnosticPosition": {
+        "offset": 16,
+        "line": 2,
+        "column": 0
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": "else",
+        "raw": {
+          "line": 1,
+          "column": 15
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 16,
+          "line": 2,
+          "column": 0
+        },
+        "positionRule": "inserted-token-start"
+      }
+    },
+    {
+      "id": "orphan-and",
+      "operator": "insert-nullable-boundary-token",
+      "targetProduction": 45,
+      "targetLhs": "par_sections",
+      "targetRhsLength": 1,
+      "source": "sequenceDiagram\nand orphan",
+      "mutationPosition": {
+        "offset": 16,
+        "line": 2,
+        "column": 0
+      },
+      "diagnosticPosition": {
+        "offset": 16,
+        "line": 2,
+        "column": 0
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": "and",
+        "raw": {
+          "line": 1,
+          "column": 15
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 16,
+          "line": 2,
+          "column": 0
+        },
+        "positionRule": "inserted-token-start"
+      }
+    },
+    {
+      "id": "orphan-option",
+      "operator": "insert-nullable-boundary-token",
+      "targetProduction": 43,
+      "targetLhs": "option_sections",
+      "targetRhsLength": 1,
+      "source": "sequenceDiagram\noption orphan",
+      "mutationPosition": {
+        "offset": 16,
+        "line": 2,
+        "column": 0
+      },
+      "diagnosticPosition": {
+        "offset": 16,
+        "line": 2,
+        "column": 0
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": "option",
+        "raw": {
+          "line": 1,
+          "column": 15
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 16,
+          "line": 2,
+          "column": 0
+        },
+        "positionRule": "inserted-token-start"
+      }
+    },
+    {
+      "id": "inactive-deactivate",
+      "operator": "replace-terminal-class",
+      "targetProduction": 15,
+      "targetLhs": "statement",
+      "targetRhsLength": 1,
+      "source": "sequenceDiagram\ndeactivate A",
+      "mutationPosition": {
+        "offset": 27,
+        "line": 2,
+        "column": 11
+      },
+      "diagnosticPosition": {
+        "offset": 27,
+        "line": 2,
+        "column": 11
+      },
+      "expectedNativeCode": "inactive-participant",
+      "upstreamError": {
+        "class": "semantic",
+        "stage": "semantic",
+        "code": "semantic-error",
+        "token": "->>-",
+        "raw": {
+          "line": 1,
+          "column": 1
+        },
+        "summary": "Trying to inactivate an inactive participant (A)",
+        "normalized": {
+          "offset": 27,
+          "line": 2,
+          "column": 11
+        },
+        "positionRule": "semantic-offending-token"
+      }
+    },
+    {
+      "id": "create-target-mismatch",
+      "operator": "replace-terminal-class",
+      "targetProduction": 49,
+      "targetLhs": "participant_statement",
+      "targetRhsLength": 5,
+      "source": "sequenceDiagram\ncreate participant B\nA->>C:no",
+      "mutationPosition": {
+        "offset": 41,
+        "line": 3,
+        "column": 4
+      },
+      "diagnosticPosition": {
+        "offset": 41,
+        "line": 3,
+        "column": 4
+      },
+      "expectedNativeCode": "invalid-create-message",
+      "upstreamError": {
+        "class": "semantic",
+        "stage": "semantic",
+        "code": "semantic-error",
+        "token": "",
+        "raw": {
+          "line": 0,
+          "column": 0
+        },
+        "summary": "The created participant undefined does not have an associated creating message after its declaration. Please check the sequence diagram.",
+        "normalized": {
+          "offset": 41,
+          "line": 3,
+          "column": 4
+        },
+        "positionRule": "semantic-offending-token"
+      }
+    },
+    {
+      "id": "destroy-target-mismatch",
+      "operator": "replace-terminal-class",
+      "targetProduction": 15,
+      "targetLhs": "statement",
+      "targetRhsLength": 1,
+      "source": "sequenceDiagram\nparticipant B\ndestroy B\nA->>C:no",
+      "mutationPosition": {
+        "offset": 44,
+        "line": 4,
+        "column": 4
+      },
+      "diagnosticPosition": {
+        "offset": 44,
+        "line": 4,
+        "column": 4
+      },
+      "expectedNativeCode": "invalid-destroy-message",
+      "upstreamError": {
+        "class": "semantic",
+        "stage": "semantic",
+        "code": "semantic-error",
+        "token": "",
+        "raw": {
+          "line": 0,
+          "column": 0
+        },
+        "summary": "The destroyed participant undefined does not have an associated destroying message after its declaration. Please check the sequence diagram.",
+        "normalized": {
+          "offset": 44,
+          "line": 4,
+          "column": 4
+        },
+        "positionRule": "semantic-offending-token"
+      }
+    },
+    {
+      "id": "duplicate-created-participant",
+      "operator": "duplicate-separator",
+      "targetProduction": 49,
+      "targetLhs": "participant_statement",
+      "targetRhsLength": 5,
+      "source": "sequenceDiagram\nparticipant B\ncreate participant B",
+      "mutationPosition": {
+        "offset": 49,
+        "line": 3,
+        "column": 19
+      },
+      "diagnosticPosition": {
+        "offset": 49,
+        "line": 3,
+        "column": 19
+      },
+      "expectedNativeCode": "duplicate-participant",
+      "upstreamError": {
+        "class": "semantic",
+        "stage": "semantic",
+        "code": "semantic-error",
+        "token": "",
+        "raw": {
+          "line": 0,
+          "column": 0
+        },
+        "summary": "It is not possible to have actors with the same id, even if one is destroyed before the next is created. Use 'AS' aliases to simulate the behavior",
+        "normalized": {
+          "offset": 49,
+          "line": 3,
+          "column": 19
+        },
+        "positionRule": "semantic-offending-token"
+      }
+    }
+  ],
+  "fixtureDigest": "11be1182acaf72d4b6771420051304f36116f560350f096f14a9af7a45970b96"
+}

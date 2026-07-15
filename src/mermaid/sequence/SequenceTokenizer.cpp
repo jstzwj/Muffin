@@ -131,7 +131,8 @@ SequenceToken SequenceTokenizer::next() {
     const qsizetype start = offset_;
     while (!atEnd() && !peek().isSpace() && peek() != QLatin1Char(';') &&
            peek() != QLatin1Char(':') && peek() != QLatin1Char(',') &&
-           peek() != QLatin1Char('+') && peek() != QLatin1Char('-')) {
+           peek() != QLatin1Char('+') && peek() != QLatin1Char('-') &&
+           peek() != QLatin1Char('=')) {
       bool arrowStart = false;
       for (const QString& arrow : arrows())
         arrowStart = arrowStart || QStringView(source_).mid(offset_, arrow.size()) == arrow;

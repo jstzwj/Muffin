@@ -508,6 +508,8 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/rough/RoughOps.h
   src/mermaid/sequence/SequenceDiagram.cpp
   src/mermaid/sequence/SequenceDiagram.h
+  src/mermaid/sequence/SequenceLayout.cpp
+  src/mermaid/sequence/SequenceLayout.h
   src/mermaid/sequence/SequenceTokenizer.cpp
   src/mermaid/sequence/SequenceTokenizer.h
   src/mermaid/editor/MermaidRenderCache.cpp

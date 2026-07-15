@@ -1,0 +1,1249 @@
+{
+  "mermaidVersion": "11.16.0",
+  "fontMode": "bundled-noto",
+  "cases": [
+    {
+      "id": "participants-and-spacing",
+      "axes": [
+        "participant-size",
+        "lifeline",
+        "message-spacing"
+      ],
+      "source": "sequenceDiagram\nparticipant A as Alice\nactor B as Bob Builder\nparticipant C as 中文参与者\nA->>B:short\nB-->>C:A deliberately long message label\nC->A:return",
+      "config": {
+        "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+        "fontSize": 16,
+        "actorMargin": 50,
+        "width": 150,
+        "height": 65,
+        "boxMargin": 10,
+        "messageMargin": 35,
+        "noteMargin": 10,
+        "activationWidth": 10,
+        "diagramMarginX": 50,
+        "diagramMarginY": 10,
+        "mirrorActors": true
+      },
+      "root": {
+        "viewBox": "-50 -10 773 333",
+        "x": 0,
+        "y": -5,
+        "width": 673,
+        "height": 330.5
+      },
+      "participants": [
+        {
+          "position": 0,
+          "id": "C",
+          "box": {
+            "x": 523,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 523,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "中文参与者",
+            "x": 558,
+            "y": 21.5,
+            "width": 81,
+            "height": 22
+          }
+        },
+        {
+          "position": 1,
+          "id": "A",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "Alice",
+            "x": 56.406,
+            "y": 21.5,
+            "width": 36.188,
+            "height": 22
+          }
+        },
+        {
+          "position": 2,
+          "id": "B",
+          "box": {
+            "x": 230.945,
+            "y": -5,
+            "width": 88.488,
+            "height": 83.5
+          },
+          "shape": {
+            "x": 275,
+            "y": 25,
+            "width": 0,
+            "height": 20
+          },
+          "label": {
+            "text": "Bob Builder",
+            "x": 230.945,
+            "y": 56.5,
+            "width": 88.488,
+            "height": 22
+          }
+        }
+      ],
+      "lifelines": [
+        {
+          "id": "C",
+          "x1": 598,
+          "y1": 65,
+          "x2": 598,
+          "y2": 247
+        },
+        {
+          "id": "B",
+          "x1": 275,
+          "y1": 80,
+          "x2": 275,
+          "y2": 247
+        },
+        {
+          "id": "A",
+          "x1": 75,
+          "y1": 65,
+          "x2": 75,
+          "y2": 247
+        }
+      ],
+      "messages": [
+        {
+          "position": 0,
+          "box": {
+            "x": 76,
+            "y": 119,
+            "width": 195,
+            "height": 0
+          },
+          "line": null,
+          "path": "",
+          "label": {
+            "text": ""
+          }
+        },
+        {
+          "position": 1,
+          "box": {
+            "x": 276,
+            "y": 173,
+            "width": 318,
+            "height": 0
+          },
+          "line": null,
+          "path": "",
+          "label": {
+            "text": ""
+          }
+        },
+        {
+          "position": 2,
+          "box": {
+            "x": 76,
+            "y": 227,
+            "width": 521,
+            "height": 0
+          },
+          "line": null,
+          "path": "",
+          "label": {
+            "text": ""
+          }
+        }
+      ],
+      "activations": [],
+      "notes": [],
+      "fragments": []
+    },
+    {
+      "id": "activation-stack",
+      "axes": [
+        "activation-stack",
+        "message-spacing"
+      ],
+      "source": "sequenceDiagram\nA->>+B:first\nB->>+B:nested\nB-->>-B:nested return\nB-->>-A:final return",
+      "config": {
+        "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+        "fontSize": 16,
+        "actorMargin": 50,
+        "width": 150,
+        "height": 65,
+        "boxMargin": 10,
+        "messageMargin": 35,
+        "noteMargin": 10,
+        "activationWidth": 10,
+        "diagramMarginX": 50,
+        "diagramMarginY": 10,
+        "mirrorActors": true
+      },
+      "root": {
+        "viewBox": "-50 -10 460 447",
+        "x": 0,
+        "y": 0,
+        "width": 350,
+        "height": 426
+      },
+      "participants": [
+        {
+          "position": 0,
+          "id": "B",
+          "box": {
+            "x": 200,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 200,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "B",
+            "x": 269.797,
+            "y": 21.5,
+            "width": 10.406,
+            "height": 22
+          }
+        },
+        {
+          "position": 1,
+          "id": "A",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "A",
+            "x": 68.883,
+            "y": 21.5,
+            "width": 12,
+            "height": 22
+          }
+        }
+      ],
+      "lifelines": [
+        {
+          "id": "B",
+          "x1": 275,
+          "y1": 65,
+          "x2": 275,
+          "y2": 361
+        },
+        {
+          "id": "A",
+          "x1": 75,
+          "y1": 65,
+          "x2": 75,
+          "y2": 361
+        }
+      ],
+      "messages": [
+        {
+          "position": 0,
+          "box": {
+            "x": 76,
+            "y": 119,
+            "width": 191,
+            "height": 0
+          },
+          "line": null,
+          "path": "",
+          "label": {
+            "text": ""
+          }
+        },
+        {
+          "position": 1,
+          "box": {
+            "x": 280,
+            "y": 171.381,
+            "width": 45,
+            "height": 23.238
+          },
+          "line": null,
+          "path": "",
+          "label": {
+            "text": ""
+          }
+        },
+        {
+          "position": 2,
+          "box": {
+            "x": 285,
+            "y": 255.381,
+            "width": 45,
+            "height": 23.238
+          },
+          "line": null,
+          "path": "",
+          "label": {
+            "text": ""
+          }
+        },
+        {
+          "position": 3,
+          "box": {
+            "x": 79,
+            "y": 341,
+            "width": 191,
+            "height": 0
+          },
+          "line": null,
+          "path": "",
+          "label": {
+            "text": ""
+          }
+        }
+      ],
+      "activations": [
+        {
+          "position": 0,
+          "className": "activation0",
+          "x": 270,
+          "y": 119,
+          "width": 10,
+          "height": 222
+        },
+        {
+          "position": 1,
+          "className": "activation1",
+          "x": 275,
+          "y": 205,
+          "width": 10,
+          "height": 82
+        }
+      ],
+      "notes": [],
+      "fragments": []
+    },
+    {
+      "id": "notes-all-placements",
+      "axes": [
+        "note-geometry",
+        "participant-size"
+      ],
+      "source": "sequenceDiagram\nparticipant A as Alice\nparticipant B as Bob\nNote left of A: left note\nNote right of B: right note\nNote over A: single note\nNote over A,B: shared note 中文",
+      "config": {
+        "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+        "fontSize": 16,
+        "actorMargin": 50,
+        "width": 150,
+        "height": 65,
+        "boxMargin": 10,
+        "messageMargin": 35,
+        "noteMargin": 10,
+        "activationWidth": 10,
+        "diagramMarginX": 50,
+        "diagramMarginY": 10,
+        "mirrorActors": true
+      },
+      "root": {
+        "viewBox": "-150 -10 650 379",
+        "x": -100,
+        "y": 0,
+        "width": 550,
+        "height": 358
+      },
+      "participants": [
+        {
+          "position": 0,
+          "id": "B",
+          "box": {
+            "x": 200,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 200,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "Bob",
+            "x": 260.039,
+            "y": 21.5,
+            "width": 30.08,
+            "height": 22
+          }
+        },
+        {
+          "position": 1,
+          "id": "A",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "Alice",
+            "x": 56.406,
+            "y": 21.5,
+            "width": 36.188,
+            "height": 22
+          }
+        }
+      ],
+      "lifelines": [
+        {
+          "id": "B",
+          "x1": 275,
+          "y1": 65,
+          "x2": 275,
+          "y2": 293
+        },
+        {
+          "id": "A",
+          "x1": 75,
+          "y1": 65,
+          "x2": 75,
+          "y2": 293
+        }
+      ],
+      "messages": [],
+      "activations": [],
+      "notes": [
+        {
+          "position": 0,
+          "box": {
+            "x": -100,
+            "y": 75,
+            "width": 150,
+            "height": 42
+          },
+          "shape": {
+            "x": -100,
+            "y": 75,
+            "width": 150,
+            "height": 42
+          },
+          "label": {
+            "text": "left note",
+            "x": -56.484,
+            "y": 83.281,
+            "width": 62.969,
+            "height": 22
+          }
+        },
+        {
+          "position": 1,
+          "box": {
+            "x": 300,
+            "y": 127,
+            "width": 150,
+            "height": 42
+          },
+          "shape": {
+            "x": 300,
+            "y": 127,
+            "width": 150,
+            "height": 42
+          },
+          "label": {
+            "text": "right note",
+            "x": 337.609,
+            "y": 135.281,
+            "width": 74.781,
+            "height": 22
+          }
+        },
+        {
+          "position": 2,
+          "box": {
+            "x": 0,
+            "y": 179,
+            "width": 150,
+            "height": 42
+          },
+          "shape": {
+            "x": 0,
+            "y": 179,
+            "width": 150,
+            "height": 42
+          },
+          "label": {
+            "text": "single note",
+            "x": 33.398,
+            "y": 187.281,
+            "width": 83.203,
+            "height": 22
+          }
+        },
+        {
+          "position": 3,
+          "box": {
+            "x": 50,
+            "y": 231,
+            "width": 250,
+            "height": 42
+          },
+          "shape": {
+            "x": 50,
+            "y": 231,
+            "width": 250,
+            "height": 42
+          },
+          "label": {
+            "text": "shared note 中文",
+            "x": 111.813,
+            "y": 239.281,
+            "width": 127.368,
+            "height": 22
+          }
+        }
+      ],
+      "fragments": []
+    },
+    {
+      "id": "nested-fragments",
+      "axes": [
+        "fragment-geometry",
+        "message-spacing"
+      ],
+      "source": "sequenceDiagram\nalt success\nloop retry\nA->>B:request\nopt cached\nB-->>A:response\nend\nend\nelse failure\nA-xB:error\nend",
+      "config": {
+        "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+        "fontSize": 16,
+        "actorMargin": 50,
+        "width": 150,
+        "height": 65,
+        "boxMargin": 10,
+        "messageMargin": 35,
+        "noteMargin": 10,
+        "activationWidth": 10,
+        "diagramMarginX": 50,
+        "diagramMarginY": 10,
+        "mirrorActors": true
+      },
+      "root": {
+        "viewBox": "-50 -10 450 551",
+        "x": 0,
+        "y": 0,
+        "width": 350,
+        "height": 530
+      },
+      "participants": [
+        {
+          "position": 0,
+          "id": "B",
+          "box": {
+            "x": 200,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 200,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "B",
+            "x": 269.797,
+            "y": 21.5,
+            "width": 10.406,
+            "height": 22
+          }
+        },
+        {
+          "position": 1,
+          "id": "A",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "A",
+            "x": 68.883,
+            "y": 21.5,
+            "width": 12,
+            "height": 22
+          }
+        }
+      ],
+      "lifelines": [
+        {
+          "id": "B",
+          "x1": 275,
+          "y1": 65,
+          "x2": 275,
+          "y2": 465
+        },
+        {
+          "id": "A",
+          "x1": 75,
+          "y1": 65,
+          "x2": 75,
+          "y2": 465
+        }
+      ],
+      "messages": [
+        {
+          "position": 0,
+          "box": {
+            "x": 76,
+            "y": 213,
+            "width": 195,
+            "height": 0
+          },
+          "line": null,
+          "path": "",
+          "label": {
+            "text": ""
+          }
+        },
+        {
+          "position": 1,
+          "box": {
+            "x": 79,
+            "y": 314,
+            "width": 195,
+            "height": 0
+          },
+          "line": null,
+          "path": "",
+          "label": {
+            "text": ""
+          }
+        },
+        {
+          "position": 2,
+          "box": {
+            "x": 76,
+            "y": 435,
+            "width": 195,
+            "height": 0
+          },
+          "line": null,
+          "path": "",
+          "label": {
+            "text": ""
+          }
+        }
+      ],
+      "activations": [],
+      "notes": [],
+      "fragments": [
+        {
+          "position": 0,
+          "id": "i5",
+          "box": {
+            "x": 64,
+            "y": 223,
+            "width": 222,
+            "height": 101
+          },
+          "outline": {
+            "x": 64,
+            "y": 223,
+            "width": 222,
+            "height": 101
+          },
+          "labels": [
+            {
+              "text": "opt",
+              "x": 76.352,
+              "y": 223.281,
+              "width": 25.52,
+              "height": 22
+            },
+            {
+              "text": "[cached]",
+              "x": 168.188,
+              "y": 224,
+              "width": 63.625,
+              "height": 22
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "id": "i6",
+          "box": {
+            "x": 54,
+            "y": 122,
+            "width": 242,
+            "height": 212
+          },
+          "outline": {
+            "x": 54,
+            "y": 122,
+            "width": 242,
+            "height": 212
+          },
+          "labels": [
+            {
+              "text": "loop",
+              "x": 62.336,
+              "y": 122.281,
+              "width": 33.488,
+              "height": 22
+            },
+            {
+              "text": "[retry]",
+              "x": 176.805,
+              "y": 123,
+              "width": 46.391,
+              "height": 22
+            }
+          ]
+        },
+        {
+          "position": 2,
+          "id": "i9",
+          "box": {
+            "x": 44,
+            "y": 75,
+            "width": 262,
+            "height": 370
+          },
+          "outline": {
+            "x": 44,
+            "y": 75,
+            "width": 262,
+            "height": 370
+          },
+          "labels": [
+            {
+              "text": "alt",
+              "x": 59.555,
+              "y": 75.281,
+              "width": 19.104,
+              "height": 22
+            },
+            {
+              "text": "[success]",
+              "x": 166.102,
+              "y": 76,
+              "width": 67.797,
+              "height": 22
+            },
+            {
+              "text": "[failure]",
+              "x": 145.766,
+              "y": 350,
+              "width": 58.469,
+              "height": 22
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parallel-critical-break",
+      "axes": [
+        "fragment-geometry",
+        "activation-stack"
+      ],
+      "source": "sequenceDiagram\npar first branch\nA->>+B:one\nand second branch\nC->>D:two\nend\ncritical must pass\nB-->>-A:ok\noption timeout\nbreak abort\nA-xB:stop\nend\nend",
+      "config": {
+        "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+        "fontSize": 16,
+        "actorMargin": 50,
+        "width": 150,
+        "height": 65,
+        "boxMargin": 10,
+        "messageMargin": 35,
+        "noteMargin": 10,
+        "activationWidth": 10,
+        "diagramMarginX": 50,
+        "diagramMarginY": 10,
+        "mirrorActors": true
+      },
+      "root": {
+        "viewBox": "-50 -10 850 652",
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 631
+      },
+      "participants": [
+        {
+          "position": 0,
+          "id": "D",
+          "box": {
+            "x": 600,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 600,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "D",
+            "x": 669.156,
+            "y": 21.5,
+            "width": 11.688,
+            "height": 22
+          }
+        },
+        {
+          "position": 1,
+          "id": "C",
+          "box": {
+            "x": 400,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 400,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "C",
+            "x": 469.938,
+            "y": 21.5,
+            "width": 10.125,
+            "height": 22
+          }
+        },
+        {
+          "position": 2,
+          "id": "B",
+          "box": {
+            "x": 200,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 200,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "B",
+            "x": 269.797,
+            "y": 21.5,
+            "width": 10.406,
+            "height": 22
+          }
+        },
+        {
+          "position": 3,
+          "id": "A",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "A",
+            "x": 68.883,
+            "y": 21.5,
+            "width": 12,
+            "height": 22
+          }
+        }
+      ],
+      "lifelines": [
+        {
+          "id": "D",
+          "x1": 675,
+          "y1": 65,
+          "x2": 675,
+          "y2": 566
+        },
+        {
+          "id": "C",
+          "x1": 475,
+          "y1": 65,
+          "x2": 475,
+          "y2": 566
+        },
+        {
+          "id": "B",
+          "x1": 275,
+          "y1": 65,
+          "x2": 275,
+          "y2": 566
+        },
+        {
+          "id": "A",
+          "x1": 75,
+          "y1": 65,
+          "x2": 75,
+          "y2": 566
+        }
+      ],
+      "messages": [
+        {
+          "position": 0,
+          "box": {
+            "x": 76,
+            "y": 166,
+            "width": 191,
+            "height": 0
+          },
+          "line": null,
+          "path": "",
+          "label": {
+            "text": ""
+          }
+        },
+        {
+          "position": 1,
+          "box": {
+            "x": 476,
+            "y": 267,
+            "width": 195,
+            "height": 0
+          },
+          "line": null,
+          "path": "",
+          "label": {
+            "text": ""
+          }
+        },
+        {
+          "position": 2,
+          "box": {
+            "x": 79,
+            "y": 378,
+            "width": 191,
+            "height": 0
+          },
+          "line": null,
+          "path": "",
+          "label": {
+            "text": ""
+          }
+        },
+        {
+          "position": 3,
+          "box": {
+            "x": 76,
+            "y": 526,
+            "width": 195,
+            "height": 0
+          },
+          "line": null,
+          "path": "",
+          "label": {
+            "text": ""
+          }
+        }
+      ],
+      "activations": [
+        {
+          "position": 0,
+          "className": "activation0",
+          "x": 270,
+          "y": 168,
+          "width": 10,
+          "height": 210
+        }
+      ],
+      "notes": [],
+      "fragments": [
+        {
+          "position": 0,
+          "id": "i5",
+          "box": {
+            "x": 64,
+            "y": 75,
+            "width": 622,
+            "height": 202
+          },
+          "outline": {
+            "x": 64,
+            "y": 75,
+            "width": 622,
+            "height": 202
+          },
+          "labels": [
+            {
+              "text": "par",
+              "x": 76.281,
+              "y": 75.281,
+              "width": 25.816,
+              "height": 22
+            },
+            {
+              "text": "[first branch]",
+              "x": 351.531,
+              "y": 76,
+              "width": 96.938,
+              "height": 22
+            },
+            {
+              "text": "[second branch]",
+              "x": 314.484,
+              "y": 182,
+              "width": 121.031,
+              "height": 22
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "id": "i12",
+          "box": {
+            "x": 64,
+            "y": 435,
+            "width": 222,
+            "height": 101
+          },
+          "outline": {
+            "x": 64,
+            "y": 435,
+            "width": 222,
+            "height": 101
+          },
+          "labels": [
+            {
+              "text": "break",
+              "x": 67.656,
+              "y": 435.281,
+              "width": 43.128,
+              "height": 22
+            },
+            {
+              "text": "[abort]",
+              "x": 174.289,
+              "y": 436,
+              "width": 51.422,
+              "height": 22
+            }
+          ]
+        },
+        {
+          "position": 2,
+          "id": "i13",
+          "box": {
+            "x": 54,
+            "y": 287,
+            "width": 242,
+            "height": 259
+          },
+          "outline": {
+            "x": 54,
+            "y": 287,
+            "width": 242,
+            "height": 259
+          },
+          "labels": [
+            {
+              "text": "critical",
+              "x": 54.445,
+              "y": 287.281,
+              "width": 49.109,
+              "height": 22
+            },
+            {
+              "text": "[must pass]",
+              "x": 156.438,
+              "y": 288,
+              "width": 87.125,
+              "height": 22
+            },
+            {
+              "text": "[timeout]",
+              "x": 140.117,
+              "y": 394,
+              "width": 69.766,
+              "height": 22
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bidi-cjk-geometry",
+      "axes": [
+        "participant-size",
+        "message-spacing",
+        "note-geometry"
+      ],
+      "source": "sequenceDiagram\nparticipant A as 中文 Alice\nparticipant B as مرحبا Bob\nA->>B:שלום 世界 mixed message\nNote over A,B: العربية 中文 note",
+      "config": {
+        "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+        "fontSize": 16,
+        "actorMargin": 50,
+        "width": 150,
+        "height": 65,
+        "boxMargin": 10,
+        "messageMargin": 35,
+        "noteMargin": 10,
+        "activationWidth": 10,
+        "diagramMarginX": 50,
+        "diagramMarginY": 10,
+        "mirrorActors": true
+      },
+      "root": {
+        "viewBox": "-50 -10 513 277",
+        "x": 0,
+        "y": 0,
+        "width": 413,
+        "height": 256
+      },
+      "participants": [
+        {
+          "position": 0,
+          "id": "B",
+          "box": {
+            "x": 263,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 263,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "مرحبا Bob",
+            "x": 304.117,
+            "y": 21.5,
+            "width": 67.912,
+            "height": 22
+          }
+        },
+        {
+          "position": 1,
+          "id": "A",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "中文 Alice",
+            "x": 39.32,
+            "y": 21.5,
+            "width": 71.359,
+            "height": 22
+          }
+        }
+      ],
+      "lifelines": [
+        {
+          "id": "B",
+          "x1": 338,
+          "y1": 65,
+          "x2": 338,
+          "y2": 191
+        },
+        {
+          "id": "A",
+          "x1": 75,
+          "y1": 65,
+          "x2": 75,
+          "y2": 191
+        }
+      ],
+      "messages": [
+        {
+          "position": 0,
+          "box": {
+            "x": 76,
+            "y": 119,
+            "width": 258,
+            "height": 0
+          },
+          "line": null,
+          "path": "",
+          "label": {
+            "text": ""
+          }
+        }
+      ],
+      "activations": [],
+      "notes": [
+        {
+          "position": 0,
+          "box": {
+            "x": 50,
+            "y": 129,
+            "width": 313,
+            "height": 42
+          },
+          "shape": {
+            "x": 50,
+            "y": 129,
+            "width": 313,
+            "height": 42
+          },
+          "label": {
+            "text": "العربية 中文 note",
+            "x": 149.297,
+            "y": 137.281,
+            "width": 115.406,
+            "height": 22
+          }
+        }
+      ],
+      "fragments": []
+    }
+  ],
+  "fixtureSha256": "2bfd8ae4133e334df003fa5cf4eba1fddec089bfaa33dec541006011e9f50b48"
+}

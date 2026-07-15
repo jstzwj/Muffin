@@ -304,7 +304,19 @@ private:
     const qsizetype configStart = statement.indexOf(QStringLiteral("@{"));
     if (configStart >= 0) {
       const qsizetype configEnd = statement.lastIndexOf(QLatin1Char('}'));
-      if (configEnd > configStart) {
+      if (configEnd <= configStart) {
+        SequenceToken opening = tokens[index];
+        const qsizetype local = opening.text.indexOf(QStringLiteral("@{"));
+        if (local >= 0) {
+          opening.offset += local;
+          opening.column += static_cast<int>(local);
+          opening.length = 2;
+          opening.text = QStringLiteral("@{");
+        }
+        throw parseError(opening, SequenceErrorStage::Parser,
+                         SequenceErrorCode::UnexpectedToken, QStringLiteral("config_object"),
+                         {QStringLiteral("}")});
+      } else {
         const QString prefix = statement.left(configStart).trimmed();
         id = prefix.section(QRegularExpression(QStringLiteral("\\s+")), -1);
         const QJsonObject config = QJsonDocument::fromJson(
@@ -334,9 +346,26 @@ private:
       if (tokens[i].kind == SequenceTokenKind::Arrow && arrow < 0) arrow = i;
       if (tokens[i].kind == SequenceTokenKind::Colon && arrow >= 0) { colon = i; break; }
     }
-    if (arrow <= 0 || colon < 0 || colon <= arrow + 1)
+    if (arrow <= 0)
       throw parseError(tokens.first(), SequenceErrorStage::Parser,
                        SequenceErrorCode::UnexpectedToken, QStringLiteral("signal"));
+    if (colon < 0) {
+      qsizetype target = arrow + 1;
+      if (target < tokens.size() && tokens[target].kind == SequenceTokenKind::Central) ++target;
+      if (target < tokens.size() && (tokens[target].kind == SequenceTokenKind::Plus ||
+                                     tokens[target].kind == SequenceTokenKind::Minus)) ++target;
+      SequenceToken end = target < tokens.size() ? tokens[target] : tokens[arrow];
+      end.offset += end.length;
+      end.column += static_cast<int>(end.length);
+      end.length = 1;
+      end.text = QStringLiteral("statement end");
+      throw parseError(end, SequenceErrorStage::Parser,
+                       SequenceErrorCode::UnexpectedToken, QStringLiteral("signal"),
+                       {QStringLiteral(":")});
+    }
+    if (colon <= arrow + 1)
+      throw parseError(tokens[colon], SequenceErrorStage::Parser,
+                       SequenceErrorCode::UnexpectedToken, QStringLiteral("actor"));
     const bool centralBefore = arrow > 0 && tokens[arrow - 1].kind == SequenceTokenKind::Central;
     const qsizetype fromEnd = centralBefore ? tokens[arrow - 1].offset : tokens[arrow].offset;
     const QString from = source_.mid(tokens.first().offset,
@@ -414,6 +443,19 @@ private:
                                     tokens[colon].offset - tokens[actorsStart].offset).trimmed();
     QStringList actors = actorText.split(QLatin1Char(','));
     for (QString& actor : actors) actor = actor.trimmed();
+    if (actors.size() > 2 || std::any_of(actors.cbegin(), actors.cend(),
+                                         [](const QString& actor) { return actor.isEmpty(); })) {
+      const auto duplicate = std::adjacent_find(tokens.cbegin() + actorsStart,
+                                                tokens.cbegin() + colon,
+                                                [](const SequenceToken& left,
+                                                   const SequenceToken& right) {
+                                                  return left.kind == SequenceTokenKind::Comma &&
+                                                         right.kind == SequenceTokenKind::Comma;
+                                                });
+      throw parseError(duplicate == tokens.cbegin() + colon ? tokens[actorsStart] : *(duplicate + 1),
+                       SequenceErrorStage::Parser, SequenceErrorCode::UnexpectedToken,
+                       QStringLiteral("actor_pair"));
+    }
     ensureActor(actors.first(), tokens[actorsStart]);
     if (actors.size() > 1) ensureActor(actors[1], tokens[actorsStart]);
     const MessageText message = parseMessageText(raw(tokens, colon + 1));
@@ -433,6 +475,12 @@ private:
 
   void parseStatement(const QVector<SequenceToken>& tokens) {
     lastToken_ = tokens.last();
+    const auto invalid = std::find_if(tokens.cbegin(), tokens.cend(), [](const SequenceToken& token) {
+      return token.kind == SequenceTokenKind::Invalid;
+    });
+    if (invalid != tokens.cend())
+      throw parseError(*invalid, SequenceErrorStage::Parser,
+                       SequenceErrorCode::UnexpectedToken, QStringLiteral("statement"));
     const SequenceTokenKind kind = tokens.first().kind;
     if (kind == SequenceTokenKind::Participant || kind == SequenceTokenKind::Actor) {
       parseParticipant(tokens, false);
