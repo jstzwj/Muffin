@@ -21,7 +21,6 @@ void require(bool condition, const QString& message) { if (!condition) fail(mess
 constexpr auto kReady = MermaidRenderStatus::Ready;
 constexpr auto kLoading = MermaidRenderStatus::Loading;
 constexpr auto kError = MermaidRenderStatus::Error;
-constexpr auto kUnsupported = MermaidRenderStatus::Unsupported;
 
 // Spin the event loop until `cache` signals renderReady for `key`, or timeout.
 bool waitForReady(MermaidRenderCache& cache, const MermaidRenderKey& key, int timeoutMs = 5000) {
@@ -70,7 +69,11 @@ int main(int argc, char** argv) {
     MermaidRenderCache cache;
     const MermaidRenderKey key = MermaidRenderCache::makeKey(sequence);
     const MermaidRenderEntry e = cache.getSync(key, sequence);
-    require(e.status == kUnsupported, QStringLiteral("sequenceDiagram should be Unsupported (got %1)").arg((int)e.status));
+    require(e.status == kReady && e.sequenceScene != nullptr,
+            QStringLiteral("sequenceDiagram should be Ready (got %1)").arg((int)e.status));
+    require(e.sequenceScene->participants.size() == 2 && e.sequenceScene->messages.size() == 1 &&
+                e.naturalSize.width() > 0 && e.naturalSize.height() > 0,
+            QStringLiteral("sequenceDiagram scene must contain participant/message geometry"));
   }
 
   // --- async request: Loading → renderReady → Ready ---

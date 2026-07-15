@@ -261,6 +261,7 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     SequenceLayoutParticipant participant;
     participant.id = actor.id;
     participant.type = actor.type;
+    participant.label = actor.description;
     participant.logicalRect = QRectF(x, 0.0, actorWidths[index], options.height);
     participant.margin = actorMargins[index];
     participant.anchorX = x + actorWidths[index] / 2.0;
@@ -458,14 +459,30 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
                               startY + 10.0, measured.width(), measured.height());
     if (qFuzzyCompare(startX + 1.0, stopX + 1.0))
       placed.path = selfMessagePath(startX, lineY, options.rightAngles);
+    placed.dashed = message.type == 1 || message.type == 4 || message.type == 6 ||
+                    message.type == 34 || (message.type >= 51 && message.type <= 58);
+    if (message.type == 0 || message.type == 1 || message.type == 33 || message.type == 34)
+      placed.markerEnd = QStringLiteral("arrow");
+    else if (message.type == 3 || message.type == 4)
+      placed.markerEnd = QStringLiteral("cross");
+    else if (message.type == 24 || message.type == 25)
+      placed.markerEnd = QStringLiteral("point");
+    else if (!isOpenArrow(message.type))
+      placed.markerEnd = QStringLiteral("half");
+    if (message.type == 33 || message.type == 34 || adjustsStartForMarker(message.type))
+      placed.markerStart = message.type == 33 || message.type == 34
+          ? QStringLiteral("arrow") : QStringLiteral("half");
     result.messages.append(placed);
   }
 
   std::sort(result.activations.begin(), result.activations.end(),
             [](const auto& left, const auto& right) { return left.messageIndex < right.messageIndex; });
   const qreal lifelineStop = bounds.vertical + 2.0 * options.boxMargin;
-  for (SequenceLayoutParticipant& participant : result.participants)
+  for (SequenceLayoutParticipant& participant : result.participants) {
     participant.lifelineStopY = lifelineStop;
+    bounds.insert(participant.logicalRect.left(), lifelineStop,
+                  participant.logicalRect.right(), lifelineStop + participant.logicalRect.height());
+  }
   result.bounds = bounds.hasBounds ? bounds.all : QRectF{};
   return result;
 }

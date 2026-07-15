@@ -17,6 +17,7 @@
 // QFutureWatcher + generation-guarded commit).
 
 #include "mermaid/scene/FlowScene.h"
+#include "mermaid/sequence/SequenceScene.h"
 
 #include <QHash>
 #include <QList>
@@ -43,6 +44,7 @@ enum class MermaidRenderStatus { Absent, Loading, Ready, Error, Unsupported };
 struct MermaidRenderEntry {
   MermaidRenderStatus status = MermaidRenderStatus::Absent;
   std::shared_ptr<const flowscene::FlowScene> scene;  // set when Ready
+  std::shared_ptr<const sequence::SequenceScene> sequenceScene;
   QSize naturalSize;                                   // scene.bounds size (logical px)
   QString errorMessage;                                // set when Error
 };

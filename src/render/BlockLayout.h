@@ -5,6 +5,7 @@
 #include "html/HtmlLayoutResult.h"
 #include "math/MathRenderNode.h"
 #include "mermaid/scene/FlowScene.h"
+#include "mermaid/sequence/SequenceScene.h"
 #include "render/CodeHighlight.h"
 #include "render/InlineLayout.h"
 #include "theme/RenderTheme.h"
@@ -152,6 +153,8 @@ public:
   // cached FlowScene scaled to fit the content width instead of the source code.
   enum class MermaidState { None, Loading, Ready, Error, Unsupported };
   void setMermaidScene(std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> scene, QSizeF naturalSize);
+  void setMermaidSequenceScene(std::shared_ptr<const muffin::mermaid::sequence::SequenceScene> scene,
+                               QSizeF naturalSize);
   const muffin::mermaid::flowscene::FlowScene* mermaidScene() const;
   QSizeF mermaidNaturalSize() const;
   void setMermaidState(MermaidState state);
@@ -319,6 +322,7 @@ private:
   MathDelimiter mathDelimiter_ = MathDelimiter::Dollar;
   std::shared_ptr<html::HtmlLayoutResult> htmlLayout_;
   std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> mermaidScene_;
+  std::shared_ptr<const muffin::mermaid::sequence::SequenceScene> mermaidSequenceScene_;
   QSizeF mermaidNaturalSize_;
   MermaidState mermaidState_ = MermaidState::None;
   QString mermaidErrorMessage_;

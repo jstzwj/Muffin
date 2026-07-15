@@ -1,0 +1,35 @@
+{
+  "mermaidVersion": "11.16.0",
+  "fontMode": "bundled-noto",
+  "cases": [
+    {
+      "id": "basic",
+      "source": "sequenceDiagram\nparticipant A as Alice\nactor B as Bob\nA->>B:Hello\nB-->>A:Return",
+      "file": "basic.png",
+      "width": 293,
+      "height": 277
+    },
+    {
+      "id": "activation-note",
+      "source": "sequenceDiagram\nA->>+B:Call\nNote over A,B:Working 中文\nB-->>-A:Done",
+      "file": "activation-note.png",
+      "width": 350,
+      "height": 310
+    },
+    {
+      "id": "nested-fragment",
+      "source": "sequenceDiagram\nalt Success\nloop Retry\nA->>B:Request\nend\nelse Failure\nA-xB:Error\nend",
+      "file": "nested-fragment.png",
+      "width": 350,
+      "height": 419
+    },
+    {
+      "id": "participant-types",
+      "source": "sequenceDiagram\nparticipant P as Plain\nactor A as Actor\nparticipant B@{ \"type\": \"boundary\" } as Boundary\nparticipant C@{ \"type\": \"control\" } as Control\nparticipant E@{ \"type\": \"entity\" } as Entity\nparticipant D@{ \"type\": \"database\" } as Database\nparticipant S@{ \"type\": \"collections\" } as Collections\nparticipant Q@{ \"type\": \"queue\" } as Queue\nP->>Q:All types",
+      "file": "participant-types.png",
+      "width": 1550,
+      "height": 225
+    }
+  ],
+  "fixtureSha256": "b8603569e232912a7822d79cd235dd7d8040a013c671ef74594a0c07db83bd93"
+}

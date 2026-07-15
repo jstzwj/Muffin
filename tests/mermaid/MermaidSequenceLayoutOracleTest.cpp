@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
   require(root.value(QStringLiteral("fontMode")).toString() == QLatin1String("bundled-noto"),
           QStringLiteral("Sequence layout must use the fixed Noto oracle"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("cff04de008d5cb7db2019bfdf47ac13951f56b9bc9ea07e4f5b6602ca1f69bdb"),
+              QLatin1String("e4fc4d3b5301c2e2553084ae8e5fceb8dde086d6081c6f530a7d7ed143604363"),
           QStringLiteral("Sequence layout fixture changed; audit geometry and update its digest"));
 
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
@@ -136,6 +136,12 @@ int main(int argc, char** argv) {
                   measurements.participants.value(actorId).width() > 0.0,
               QStringLiteral("%1 participant %2 has no measured label").arg(id, actorId));
       participantCenters.insert(actorId, centerX(participant.value(QStringLiteral("box")).toObject()));
+      const auto native = std::find_if(layout.participants.cbegin(), layout.participants.cend(),
+                                       [&](const auto& item) { return item.id == actorId; });
+      require(native != layout.participants.cend() &&
+                  participant.value(QStringLiteral("structure")).toObject()
+                      .value(QStringLiteral("dataType")).toString() == native->type,
+              QStringLiteral("%1/%2 participant SVG type mismatch").arg(id, actorId));
     }
     for (const QJsonValue& lineValue : lifelines) {
       const QJsonObject line = lineValue.toObject();
@@ -181,6 +187,14 @@ int main(int argc, char** argv) {
                 QStringLiteral("%1 message %2 self path mismatch:\nnative: %3\nupstream: %4")
                     .arg(id).arg(position).arg(native.path, message.value(QStringLiteral("path")).toString()));
       }
+      const QJsonObject structure = message.value(QStringLiteral("structure")).toObject();
+      require(structure.value(QStringLiteral("className")).toString() ==
+                  (native.dashed ? QLatin1String("messageLine1") : QLatin1String("messageLine0")),
+              QStringLiteral("%1 message %2 dash class mismatch").arg(id).arg(position));
+      const bool upstreamStart = !structure.value(QStringLiteral("markerStart")).toString().isEmpty();
+      const bool upstreamEnd = !structure.value(QStringLiteral("markerEnd")).toString().isEmpty();
+      require(upstreamStart == !native.markerStart.isEmpty() && upstreamEnd == !native.markerEnd.isEmpty(),
+              QStringLiteral("%1 message %2 marker structure mismatch").arg(id).arg(position));
     }
 
     int activationStarts = 0;
@@ -202,6 +216,9 @@ int main(int argc, char** argv) {
                   QStringLiteral("%1 activation %2 width").arg(id).arg(position));
       requireNear(native.height(), activation.value(QStringLiteral("height")).toDouble(),
                   QStringLiteral("%1 activation %2 height").arg(id).arg(position));
+      require(activation.value(QStringLiteral("className")).toString() ==
+                  QStringLiteral("activation%1").arg((layout.activations.at(position).depth - 1) % 3),
+              QStringLiteral("%1 activation %2 paint order/class mismatch").arg(id).arg(position));
     }
 
     require(input.notes.size() == notes.size(), QStringLiteral("%1 note input count mismatch").arg(id));
@@ -228,7 +245,8 @@ int main(int argc, char** argv) {
       require(outline.width() > 0.0 && outline.height() > 0.0,
               QStringLiteral("%1 fragment geometry is empty").arg(id));
       const qsizetype position = fragmentValue.toObject().value(QStringLiteral("position")).toInteger();
-      const QRectF native = layout.fragments.at(position).rect;
+      const SequenceLayoutFragment& nativeFragment = layout.fragments.at(position);
+      const QRectF native = nativeFragment.rect;
       const QJsonObject expected = fragmentValue.toObject().value(QStringLiteral("outline")).toObject();
       requireNear(native.x(), expected.value(QStringLiteral("x")).toDouble(),
                   QStringLiteral("%1 fragment %2 x").arg(id).arg(position));
@@ -238,6 +256,22 @@ int main(int argc, char** argv) {
                   QStringLiteral("%1 fragment %2 width").arg(id).arg(position));
       requireNear(native.height(), expected.value(QStringLiteral("height")).toDouble(),
                   QStringLiteral("%1 fragment %2 height").arg(id).arg(position));
+      const QJsonObject structure = fragmentValue.toObject().value(QStringLiteral("structure")).toObject();
+      require(structure.value(QStringLiteral("lineCount")).toInt() == 4 + nativeFragment.sectionY.size() &&
+                  structure.value(QStringLiteral("sectionLineCount")).toInt() == nativeFragment.sectionY.size(),
+              QStringLiteral("%1 fragment %2 SVG line structure mismatch").arg(id).arg(position));
+    }
+
+    const QJsonArray markerDefs = fixture.value(QStringLiteral("svgStructure")).toObject()
+                                      .value(QStringLiteral("markers")).toArray();
+    require(markerDefs.size() >= 8, QStringLiteral("%1 SVG marker defs coverage regressed").arg(id));
+    for (const QJsonValue& markerValue : markerDefs) {
+      const QJsonObject marker = markerValue.toObject();
+      require(!marker.value(QStringLiteral("id")).toString().isEmpty() &&
+                  !marker.value(QStringLiteral("markerWidth")).toString().isEmpty() &&
+                  !marker.value(QStringLiteral("markerHeight")).toString().isEmpty() &&
+                  !marker.value(QStringLiteral("orient")).toString().isEmpty(),
+              QStringLiteral("%1 incomplete SVG marker definition").arg(id));
     }
 
     require(scene.participants.size() == layout.participants.size() &&

@@ -191,6 +191,12 @@ try {
             x2: number(line, "x2"), y2: number(line, "y2"),
           } : null,
           path: path?.getAttribute("d") ?? "",
+          structure: {
+            tag: element.tagName.toLowerCase(),
+            className: element.getAttribute("class") ?? "",
+            markerStart: element.getAttribute("marker-start") ?? "",
+            markerEnd: element.getAttribute("marker-end") ?? "",
+          },
           label: text(messageLabels[position]),
         };
       });
@@ -218,8 +224,29 @@ try {
           outline: lines.length ? { x: Math.min(...xs), y: Math.min(...ys),
             width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) } : box(element),
           labels: [...element.querySelectorAll("text")].map(text),
+          structure: {
+            lineCount: lines.length,
+            sectionLineCount: lines.filter((line) => (line.getAttribute("style") ?? "").includes("stroke-dasharray")).length,
+            labelClasses: [...element.querySelectorAll("text")].map((label) => label.getAttribute("class") ?? ""),
+          },
         };
       });
+      const markerStructure = [...root.querySelectorAll("defs marker")].map((element) => ({
+        id: element.id,
+        markerWidth: element.getAttribute("markerWidth") ?? "",
+        markerHeight: element.getAttribute("markerHeight") ?? "",
+        refX: element.getAttribute("refX") ?? "",
+        refY: element.getAttribute("refY") ?? "",
+        orient: element.getAttribute("orient") ?? "",
+      }));
+      for (const participant of participants) {
+        const element = [...root.querySelectorAll('[data-et="participant"]')]
+          .find((candidate) => (candidate.getAttribute("data-id") ?? "") === participant.id);
+        participant.structure = {
+          dataType: element?.getAttribute("data-type") ?? "",
+          childTags: element ? [...element.querySelectorAll(":scope > *")].map((child) => child.tagName.toLowerCase()) : [],
+        };
+      }
       return {
         id: fixture.id,
         axes: fixture.axes,
@@ -235,6 +262,7 @@ try {
         },
         root: { viewBox: root.getAttribute("viewBox"), ...box(root) },
         participants, lifelines, messages, activations, notes, fragments,
+        svgStructure: { markers: markerStructure },
       };
     }, { fixture: cases[index], index, mermaidModule, fontFaces, fontStack });
     snapshots.push(snapshot);

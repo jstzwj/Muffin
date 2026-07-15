@@ -86,6 +86,7 @@ struct SequenceLayoutOptions {
 struct SequenceLayoutParticipant {
   QString id;
   QString type;
+  QString label;
   QRectF logicalRect;
   qreal margin = 0.0;
   qreal anchorX = 0.0;
@@ -105,6 +106,9 @@ struct SequenceLayoutMessage {
   qreal lineY = 0.0;
   QRectF labelRect;
   QString path;
+  QString markerStart;
+  QString markerEnd;
+  bool dashed = false;
 };
 
 struct SequenceLayoutActivation {

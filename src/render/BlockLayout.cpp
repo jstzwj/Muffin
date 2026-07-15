@@ -6,6 +6,7 @@
 #include "document/BlockPredicates.h"
 #include "document/SourceRangeUtil.h"
 #include "mermaid/scene/FlowScenePainter.h"
+#include "mermaid/sequence/SequenceScenePainter.h"
 #include "render/DecorationPainter.h"
 
 #include <QFontMetricsF>
@@ -555,6 +556,12 @@ void BlockLayout::setMermaidScene(std::shared_ptr<const muffin::mermaid::flowsce
   mermaidNaturalSize_ = naturalSize;
 }
 
+void BlockLayout::setMermaidSequenceScene(
+    std::shared_ptr<const muffin::mermaid::sequence::SequenceScene> scene, QSizeF naturalSize) {
+  mermaidSequenceScene_ = std::move(scene);
+  mermaidNaturalSize_ = naturalSize;
+}
+
 const muffin::mermaid::flowscene::FlowScene* BlockLayout::mermaidScene() const {
   return mermaidScene_.get();
 }
@@ -580,7 +587,8 @@ const QString& BlockLayout::mermaidErrorMessage() const {
 }
 
 bool BlockLayout::isMermaidRendered() const {
-  return mermaidState_ == MermaidState::Ready && mermaidScene_ != nullptr;
+  return mermaidState_ == MermaidState::Ready &&
+         (mermaidScene_ != nullptr || mermaidSequenceScene_ != nullptr);
 }
 
 void BlockLayout::setLiteralEditing(bool editing) {
@@ -1266,7 +1274,7 @@ void BlockLayout::paintMathBlock(QPainter& painter, const RenderTheme& theme, QR
 }
 
 void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
-  if (!mermaidScene_) return;
+  if (!mermaidScene_ && !mermaidSequenceScene_) return;
   painter.save();
   painter.setPen(theme.codeBorderColor());
   painter.setBrush(theme.codeBackgroundColor());
@@ -1290,8 +1298,12 @@ void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& them
     painter.setRenderHint(QPainter::TextAntialiasing, true);
     painter.translate(dx, dy);
     painter.scale(scale, scale);
-    painter.translate(-mermaidScene_->bounds.left(), -mermaidScene_->bounds.top());
-    muffin::mermaid::flowscene::paintFlowScene(*mermaidScene_, painter, QStringLiteral("Arial"));
+    const QRectF sceneBounds = mermaidScene_ ? mermaidScene_->bounds : mermaidSequenceScene_->bounds;
+    painter.translate(-sceneBounds.left(), -sceneBounds.top());
+    if (mermaidScene_)
+      muffin::mermaid::flowscene::paintFlowScene(*mermaidScene_, painter, QStringLiteral("Arial"));
+    else
+      muffin::mermaid::sequence::paintSequenceScene(*mermaidSequenceScene_, painter);
   }
   painter.restore();
 }
@@ -1319,6 +1331,7 @@ void BlockLayout::paintMermaidError(QPainter& painter, const RenderTheme& theme,
 
 QString BlockLayout::mermaidLinkAt(QPointF documentPos, const RenderTheme& theme) const {
   if (!isMermaidRendered()) return {};
+  if (!mermaidScene_) return {};
   const QRectF content = rect_.marginsRemoved(theme.codePadding());
   const qreal natW = mermaidNaturalSize_.width();
   const qreal natH = mermaidNaturalSize_.height();

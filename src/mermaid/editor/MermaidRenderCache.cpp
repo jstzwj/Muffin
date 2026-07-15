@@ -7,12 +7,18 @@
 #include "mermaid/flowchart/FlowchartLayout.h"
 #include "mermaid/scene/FlowScene.h"
 #include "mermaid/scene/FlowScenePainter.h"
+#include "mermaid/sequence/SequenceDiagram.h"
+#include "mermaid/sequence/SequenceLayout.h"
+#include "mermaid/sequence/SequenceScene.h"
+#include "mermaid/sequence/SequenceScenePainter.h"
 #include "mermaid/theme/FlowTheme.h"
 
 #include <QBuffer>
 #include <QCryptographicHash>
 #include <QFutureWatcher>
 #include <QImage>
+#include <QFont>
+#include <QFontMetricsF>
 #include <QJsonObject>
 #include <QRegularExpression>
 #include <QtConcurrent>
@@ -178,9 +184,10 @@ void MermaidRenderCache::clear() {
 QString MermaidRenderCache::renderMermaidSourceToPngDataUrl(const QString& source, qreal dpr) {
   const QString theme = makeKey(source).theme;
   const MermaidRenderEntry entry = renderSource(source, theme);
-  if (entry.status != MermaidRenderStatus::Ready || !entry.scene) return {};
-  const QImage image = flowscene::renderFlowSceneToImage(
-      *entry.scene, dpr, 8.0, MermaidFontRegistry::primaryFamily());
+  if (entry.status != MermaidRenderStatus::Ready || (!entry.scene && !entry.sequenceScene)) return {};
+  const QImage image = entry.scene
+      ? flowscene::renderFlowSceneToImage(*entry.scene, dpr, 8.0, MermaidFontRegistry::primaryFamily())
+      : sequence::renderSequenceSceneToImage(*entry.sequenceScene, dpr, 8.0);
   QByteArray png;
   QBuffer buffer(&png);
   if (!buffer.open(QIODevice::WriteOnly)) return {};
@@ -201,7 +208,8 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
   }
 
   const QString type = detectDiagramType(pre.code, pre.config);
-  if (type != QLatin1String("flowchart") && type != QLatin1String("flowchart-v2")) {
+  if (type != QLatin1String("flowchart") && type != QLatin1String("flowchart-v2") &&
+      type != QLatin1String("sequence")) {
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Unsupported;
     entry.errorMessage = QStringLiteral("Diagram type '%1' is not natively supported").arg(type);
@@ -209,6 +217,38 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
   }
 
   try {
+    if (type == QLatin1String("sequence")) {
+      const sequence::SequenceDiagram diagram = sequence::SequenceDiagram::parse(pre.code);
+      sequence::SequenceLayoutMeasurements measurements;
+      QFont font(MermaidFontRegistry::primaryFamily());
+      font.setPixelSize(16);
+      MermaidFontRegistry::configureFont(font, MermaidFontRegistry::cssFamilyStack());
+      const QFontMetricsF metrics(font);
+      const auto measure = [&](const QString& text) {
+        return QSizeF(metrics.horizontalAdvance(text), metrics.height());
+      };
+      for (const auto& actor : diagram.data().actors)
+        measurements.participants.insert(actor.id, measure(actor.description));
+      for (qsizetype index = 0; index < diagram.data().messages.size(); ++index) {
+        const auto& message = diagram.data().messages[index];
+        const QSizeF size = measure(message.message.toString());
+        if (message.type == 2) measurements.notesByIndex.insert(static_cast<int>(index), size);
+        else if (message.type == 10 || message.type == 12 || message.type == 15 ||
+                 message.type == 19 || message.type == 22 || message.type == 27 ||
+                 message.type == 30 || message.type == 32)
+          measurements.fragmentsByIndex.insert(static_cast<int>(index), size);
+        else measurements.messagesByIndex.insert(static_cast<int>(index), size);
+      }
+      const sequence::SequenceLayoutResult layout = sequence::layoutSequence(diagram.data(), measurements);
+      sequence::SequenceSceneStyle style;
+      style.fontFamily = MermaidFontRegistry::cssFamilyStack();
+      sequence::SequenceScene scene = sequence::buildSequenceScene(layout, style);
+      MermaidRenderEntry entry;
+      entry.status = MermaidRenderStatus::Ready;
+      entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
+      entry.sequenceScene = std::make_shared<const sequence::SequenceScene>(std::move(scene));
+      return entry;
+    }
     const flowchart::Flowchart chart = flowchart::Flowchart::parse(pre.code);
     const QString configuredTheme = themeFromConfig(pre.config);
     const flowtheme::FlowThemeVariables themeVars = flowtheme::resolveFlowTheme(
