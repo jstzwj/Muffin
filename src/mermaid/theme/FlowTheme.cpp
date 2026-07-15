@@ -289,6 +289,61 @@ void updateColorsFamilyA(FlowThemeVariables& t, const QString& primaryTextColorD
   assignIfEmpty(t.nodeTextColor, t.primaryTextColor);
 }
 
+void finishCScale(FlowThemeVariables& t, bool darkMode,
+                  bool darkColorLabels = false) {
+  for (int i = 0; i < t.themeColorLimit; ++i) {
+    assignIfEmpty(t.cScaleInv[i], invert(t.cScale[i]));
+    assignIfEmpty(t.cScalePeer[i], darkMode ? lighten(t.cScale[i], 10)
+                                            : darken(t.cScale[i], 10));
+    assignIfEmpty(t.cScaleLabel[i], darkColorLabels ? darken(t.cScale[i], 75)
+                                                     : t.primaryTextColor);
+  }
+}
+
+void populateAdjustedScale(FlowThemeVariables& t, const QString& primary,
+                           const QString& secondary, const QString& tertiary) {
+  assignIfEmpty(t.cScale[0], primary);
+  assignIfEmpty(t.cScale[1], secondary);
+  assignIfEmpty(t.cScale[2], tertiary);
+  const int hues[9] = {30, 60, 90, 120, 150, 210, 270, 300, 330};
+  for (int i = 0; i < 9; ++i) {
+    color::ChannelAdjust delta{.h = static_cast<double>(hues[i])};
+    if (i == 5) delta.l = 150.0;
+    assignIfEmpty(t.cScale[i + 3], adjust(primary, delta));
+  }
+}
+
+void updateBaseCScale(FlowThemeVariables& t, bool darkMode) {
+  populateAdjustedScale(t, t.primaryColor, t.secondaryColor, t.tertiaryColor);
+  for (int i = 0; i < t.themeColorLimit; ++i)
+    t.cScale[i] = darken(t.cScale[i], darkMode ? 75 : 25);
+  finishCScale(t, false);
+}
+
+void updateNeoCScale(FlowThemeVariables& t) {
+  const QString primary = QStringLiteral("#ECECFE");
+  const QString secondary = QStringLiteral("#E9E9F1");
+  populateAdjustedScale(t, primary, secondary, adjust(primary, {.h = 180.0, .l = 5.0}));
+  for (int i = 0; i < t.themeColorLimit; ++i) t.cScale[i] = darken(t.cScale[i], 25);
+  finishCScale(t, false);
+}
+
+void updateReduxCScale(FlowThemeVariables& t) {
+  for (int i = 0; i < t.themeColorLimit; ++i) {
+    assignIfEmpty(t.cScale[i], t.mainBkg);
+    t.cScale[i] = darken(t.cScale[i], 25);
+  }
+  finishCScale(t, false);
+}
+
+void updateReduxColorCScale(FlowThemeVariables& t, bool darkLabels) {
+  static const char* const colors[12] = {
+      "#f4a8ff", "#46ecd5", "#ffb86a", "#dab2ff", "#7bf1a8", "#c4b4ff",
+      "#ffa2a2", "#ffdf20", "#a3b3ff", "#bbf451", "#74d4ff", "#ffa1ad"};
+  for (int i = 0; i < 12; ++i) assignIfEmpty(t.cScale[i], QString::fromLatin1(colors[i]));
+  finishCScale(t, false, darkLabels);
+}
+
 // Default/forest cScale (chunk lines 1643-1673). The darken loop is
 // UNCONDITIONAL, so each call darkens cScale by 10 more — default runs this
 // twice (double-darken), forest once. cScalePeer/cScaleInv are `||`-guarded
@@ -313,15 +368,14 @@ void updateDefaultForestCScale(FlowThemeVariables& t) {
     assignIfEmpty(t.cScalePeer[i], darken(t.cScale[i], 25));
     assignIfEmpty(t.cScaleInv[i], adjust(t.cScale[i], {.h = 180.0}));
   }
-  // cScaleLabel: 0 and 3 invert labelTextColor; rest = labelTextColor.
-  // labelTextColor for default/forest derives from actor path (labelTextColor =
-  // actorTextColor = ...). The golden captures the resolved value; default's
-  // labelTextColor ends up "#131300" (invert-derived). Defer cScaleLabel to the
-  // golden-driven pass — it is not flowchart-critical.
 }
 
 void updateColorsDefault(FlowThemeVariables& t) {
   updateDefaultForestCScale(t);
+  for (int i = 0; i < t.themeColorLimit; ++i)
+    assignIfEmpty(t.cScaleLabel[i], (i == 0 || i == 3)
+                                              ? QStringLiteral("#ffffff")
+                                              : QStringLiteral("black"));
   t.nodeBkg = t.mainBkg;
   t.nodeBorder = t.border1;
   t.clusterBkg = t.secondBkg;
@@ -333,6 +387,8 @@ void updateColorsDefault(FlowThemeVariables& t) {
 
 void updateColorsForest(FlowThemeVariables& t) {
   updateDefaultForestCScale(t);
+  for (int i = 0; i < t.themeColorLimit; ++i)
+    assignIfEmpty(t.cScaleLabel[i], QStringLiteral("black"));
   t.nodeBkg = t.mainBkg;
   t.nodeBorder = t.border1;
   t.clusterBkg = t.secondBkg;
@@ -369,6 +425,7 @@ void updateColorsDark(FlowThemeVariables& t) {
   for (int i = 0; i < t.themeColorLimit; ++i) {
     assignIfEmpty(t.cScaleInv[i], invert(t.cScale[i]));
     assignIfEmpty(t.cScalePeer[i], lighten(t.cScale[i], 10));
+    assignIfEmpty(t.cScaleLabel[i], t.mainContrastColor);
   }
   // dark's final nodeBorder override (line 1502): nodeBorder = nodeBorder || "#999".
   assignIfEmpty(t.nodeBorder, QStringLiteral("#999"));
@@ -394,19 +451,29 @@ void updateColorsNeutral(FlowThemeVariables& t) {
     assignIfEmpty(t.cScale[i], literals[i]);
     assignIfEmpty(t.cScaleInv[i], invert(t.cScale[i]));
     assignIfEmpty(t.cScalePeer[i], darken(t.cScale[i], 10));  // darkMode false
+    assignIfEmpty(t.cScaleLabel[i], (i == 0 || i == 2)
+                                              ? QStringLiteral("#F4F4F4")
+                                              : QStringLiteral("#333"));
   }
   // neutral does NOT derive nodeTextColor (getStyles falls back to textColor).
 }
 
 void updateColors(FlowThemeId id, FlowThemeVariables& t) {
   switch (id) {
-    case FlowThemeId::Base: updateColorsFamilyA(t, QStringLiteral("#333"), false); break;
-    case FlowThemeId::Neo: updateColorsFamilyA(t, QStringLiteral("#333"), false); break;
-    case FlowThemeId::NeoDark: updateColorsFamilyA(t, QStringLiteral("#333"), true); break;
-    case FlowThemeId::Redux: updateColorsFamilyA(t, QStringLiteral("#28253D"), false); break;
-    case FlowThemeId::ReduxDark: updateColorsFamilyA(t, QStringLiteral("#FFFFFF"), true); break;
-    case FlowThemeId::ReduxColor: updateColorsFamilyA(t, QStringLiteral("#28253D"), false); break;
-    case FlowThemeId::ReduxDarkColor: updateColorsFamilyA(t, QStringLiteral("#FFFFFF"), true); break;
+    case FlowThemeId::Base:
+      updateColorsFamilyA(t, QStringLiteral("#333"), false); updateBaseCScale(t, false); break;
+    case FlowThemeId::Neo:
+      updateColorsFamilyA(t, QStringLiteral("#333"), false); updateNeoCScale(t); break;
+    case FlowThemeId::NeoDark:
+      updateColorsFamilyA(t, QStringLiteral("#333"), true); updateBaseCScale(t, false); break;
+    case FlowThemeId::Redux:
+      updateColorsFamilyA(t, QStringLiteral("#28253D"), false); updateReduxCScale(t); break;
+    case FlowThemeId::ReduxDark:
+      updateColorsFamilyA(t, QStringLiteral("#FFFFFF"), true); updateBaseCScale(t, false); break;
+    case FlowThemeId::ReduxColor:
+      updateColorsFamilyA(t, QStringLiteral("#28253D"), false); updateReduxColorCScale(t, false); break;
+    case FlowThemeId::ReduxDarkColor:
+      updateColorsFamilyA(t, QStringLiteral("#FFFFFF"), true); updateReduxColorCScale(t, true); break;
     case FlowThemeId::Default: updateColorsDefault(t); break;
     case FlowThemeId::Forest: updateColorsForest(t); break;
     case FlowThemeId::Dark: updateColorsDark(t); break;

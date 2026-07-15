@@ -6,11 +6,8 @@
 // `updateColors()` derivation + a `calculate(overrides)` two-pass driver.
 //
 // Scope: the flowchart renderer (chunk-YI7H2ERT.mjs getStyles) reads ~15
-// themeVariables fields. Those are ported for ALL 11 themes. The cScale color
-// palette (used by `classDef foo color:N`) is ported fully for `default` and
-// `dark` (the F3 pixel-golden targets); the other 9 themes' cScale variants
-// (neo's l:150, redux's mainBkg, redux-color's literals) are deferred — cScale
-// only affects rare `color:N` classDefs, not normal flowchart rendering.
+// themeVariables fields and all cScale/cScaleInv/cScalePeer/cScaleLabel palettes
+// are ported for all 11 registered themes.
 //
 // Critical fidelity note: the `default` theme's constructor calls
 // `this.updateColors()` (chunk line 1641), and `getThemeVariables` then calls
@@ -71,7 +68,7 @@ struct FlowThemeVariables {
   qreal strokeWidth = 1.0;
   int themeColorLimit = 12;
 
-  // cScale palette (default + dark ported fully; others left empty).
+  // Complete 12-color theme palette.
   QString cScale[12];
   QString cScaleInv[12];
   QString cScalePeer[12];

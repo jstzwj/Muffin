@@ -30,13 +30,14 @@ const { default: puppeteer } = await import(
 const browser = await puppeteer.launch({ headless: true, executablePath: chrome, args: ["--allow-file-access-from-files"] });
 try {
   const page = await browser.newPage();
-  await page.goto(pathToFileURL(path.join(path.dirname(mermaidRoot), "..", "index.html")).href);
+  const harnessUrl = pathToFileURL(path.join(path.dirname(mermaidRoot), "..", "index.html")).href;
   const mermaidModule = pathToFileURL(path.join(mermaidRoot, "dist", "mermaid.esm.mjs")).href;
   const results = [];
   for (let index = 0; index < cases.length; ++index) {
     const fixture = cases[index];
     const dpr = fixture.dpr ?? 1;
     await page.setViewport({ width: 1600, height: 1200, deviceScaleFactor: dpr });
+    await page.goto(harnessUrl);
     const content = await page.evaluate(async ({ fixture, index, mermaidModule }) => {
       const { default: mermaid } = await import(mermaidModule);
       mermaid.initialize({
@@ -97,11 +98,7 @@ try {
   for (const r of results) {
     const file = `${r.id}.png`;
     fs.writeFileSync(path.join(outDir, file), r.png);
-    // Neo/redux themes have a known F1 colour-derivation gap (redux-color
-    // borderColorArray / cScale + neo-look fills under classic look not yet
-    // ported). They are kept in the matrix but their INTERIOR check is not
-    // enforced until F1 completes; boundary/text/empty still are.
-    const enforceInterior = !(r.theme.includes("neo") || r.theme.includes("redux"));
+    const enforceInterior = true;
     manifestCases.push({ id: r.id, theme: r.theme, source: r.source, dpr: r.dpr,
                          ...(r.animationState ? { animationState: r.animationState } : {}),
                          content: r.content, enforceInterior, file });

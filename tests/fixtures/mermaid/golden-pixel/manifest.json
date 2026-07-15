@@ -65,6 +65,78 @@
       "file": "theme-neutral.png"
     },
     {
+      "id": "theme-neo",
+      "theme": "neo",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "dpr": 1,
+      "content": {
+        "width": 165.8125,
+        "height": 773.515625
+      },
+      "enforceInterior": true,
+      "file": "theme-neo.png"
+    },
+    {
+      "id": "theme-neo-dark",
+      "theme": "neo-dark",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "dpr": 1,
+      "content": {
+        "width": 165.8125,
+        "height": 773.515625
+      },
+      "enforceInterior": true,
+      "file": "theme-neo-dark.png"
+    },
+    {
+      "id": "theme-redux",
+      "theme": "redux",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "dpr": 1,
+      "content": {
+        "width": 165.8125,
+        "height": 773.515625
+      },
+      "enforceInterior": true,
+      "file": "theme-redux.png"
+    },
+    {
+      "id": "theme-redux-dark",
+      "theme": "redux-dark",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "dpr": 1,
+      "content": {
+        "width": 165.8125,
+        "height": 773.515625
+      },
+      "enforceInterior": true,
+      "file": "theme-redux-dark.png"
+    },
+    {
+      "id": "theme-redux-color",
+      "theme": "redux-color",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "dpr": 1,
+      "content": {
+        "width": 165.8125,
+        "height": 773.515625
+      },
+      "enforceInterior": true,
+      "file": "theme-redux-color.png"
+    },
+    {
+      "id": "theme-redux-dark-color",
+      "theme": "redux-dark-color",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "dpr": 1,
+      "content": {
+        "width": 165.8125,
+        "height": 773.515625
+      },
+      "enforceInterior": true,
+      "file": "theme-redux-dark-color.png"
+    },
+    {
       "id": "dir-TB",
       "theme": "default",
       "source": "flowchart TB\nA[Alpha] --> B[Beta] --> C[Gamma] --> D[Delta]",

@@ -24,13 +24,7 @@ export const allThemes = [
   "neo", "neo-dark", "redux", "redux-dark", "redux-color", "redux-dark-color",
 ];
 
-// Themes whose node fill = mainBkg (so the native node-fill default matches
-// mermaid) and which therefore have a complete Level-3 pixel golden. The
-// neo/redux family is DEFERRED: those themes set nodeBkg ≠ mainBkg and rely on
-// the neo look + cScale/borderColorArray colour derivation that F1 has not
-// ported; pixel-verifying them is blocked on that F1 follow-up (the registry
-// absorbs them by adding rows here once F1 lands).
-export const pixelThemes = ["default", "base", "dark", "forest", "neutral"];
+export const pixelThemes = allThemes;
 
 const table = [];
 const cjkSource = 'flowchart LR\nA[中文标签] -->|处理| B[日本語テキスト]';

@@ -52,19 +52,13 @@ const QStringList criticalFields() {
   };
 }
 
-// cScale is ported fully only for default + dark (the F3 pixel-golden targets).
-// The other 9 themes' cScale variants (neo l:150, redux mainBkg, redux-color
-// literals) are deferred — they only affect rare `classDef color:N`.
-QStringList fieldsForTheme(FlowThemeId id) {
+QStringList fieldsForTheme(FlowThemeId) {
   QStringList f = criticalFields();
-  if (id == FlowThemeId::Default || id == FlowThemeId::Dark) {
-    for (int i = 0; i <= 11; ++i) {
-      f.append(QStringLiteral("cScale%1").arg(i));
-      if (i <= 2) {
-        f.append(QStringLiteral("cScalePeer%1").arg(i));
-        f.append(QStringLiteral("cScaleInv%1").arg(i));
-      }
-    }
+  for (int i = 0; i <= 11; ++i) {
+    f.append(QStringLiteral("cScale%1").arg(i));
+    f.append(QStringLiteral("cScalePeer%1").arg(i));
+    f.append(QStringLiteral("cScaleInv%1").arg(i));
+    f.append(QStringLiteral("cScaleLabel%1").arg(i));
   }
   return f;
 }

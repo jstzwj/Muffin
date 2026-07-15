@@ -19,6 +19,8 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QRegularExpression>
+#include <QSet>
 
 #include <cstdlib>
 #include <cmath>
@@ -47,6 +49,11 @@ flowtheme::FlowThemeId themeId(const QString& name) {
   require(it != map.constEnd(), QStringLiteral("Unknown theme in manifest: %1").arg(name));
   return it.value();
 }
+qreal fontPixelSize(const QString& value) {
+  static const QRegularExpression number(QStringLiteral("(\\d+(?:\\.\\d+)?)"));
+  const auto match = number.match(value);
+  return match.hasMatch() ? match.captured(1).toDouble() : 16.0;
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -66,10 +73,16 @@ int main(int argc, char** argv) {
   bool sawCjk = false;
   bool sawBidi = false;
   bool sawDeterministicAnimation = false;
+  QSet<QString> caseIds;
+  QSet<QString> coveredThemes;
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
   for (const QJsonValue& value : cases) {
     const QJsonObject fixture = value.toObject();
     const QString id = fixture.value(QStringLiteral("id")).toString();
+    require(!caseIds.contains(id), QStringLiteral("Duplicate golden-pixel case id: %1").arg(id));
+    caseIds.insert(id);
+    if (id.startsWith(QStringLiteral("theme-")))
+      coveredThemes.insert(fixture.value(QStringLiteral("theme")).toString());
     const qreal dpr = fixture.value(QStringLiteral("dpr")).toDouble(1.0);
     if (dpr > 1.0) ++highDpiCases;
     sawCjk = sawCjk || id.contains(QStringLiteral("cjk"));
@@ -82,15 +95,21 @@ int main(int argc, char** argv) {
     }
     const QString source = fixture.value(QStringLiteral("source")).toString();
     const flowchart::Flowchart chart = flowchart::Flowchart::parse(source);
-    const QMap<QString, QSizeF> sizes = flowchart::measureFlowchartNodes(chart.data());
+    const flowtheme::FlowThemeVariables theme = flowtheme::resolveFlowTheme(
+        themeId(fixture.value(QStringLiteral("theme")).toString()),
+        {{QStringLiteral("fontFamily"), QStringLiteral("Arial")}});
+    flowchart::FlowTextOptions textOptions;
+    textOptions.fontFamily = QStringLiteral("Arial");  // generator's explicit global override
+    textOptions.fontPixelSize = fontPixelSize(theme.fontSize);
+    textOptions.lineHeight = textOptions.fontPixelSize * 1.5;
+    const QMap<QString, QSizeF> sizes = flowchart::measureFlowchartNodes(chart.data(), textOptions);
 
     flowchart::FlowLayoutOptions options;
     for (const flowchart::FlowEdge& e : chart.data().edges)
       if (!e.text.isEmpty())
         options.measuredEdgeLabels.insert(e.id,
-                                          flowchart::measureFlowchartEdgeLabel(e));
+                                          flowchart::measureFlowchartEdgeLabel(e, textOptions));
     const flowchart::FlowLayoutResult layout = flowchart::layoutFlowchartNodes(chart.data(), sizes, options);
-    const flowtheme::FlowThemeVariables theme = flowtheme::resolveFlowTheme(themeId(fixture.value(QStringLiteral("theme")).toString()));
     const flowscene::FlowScene scene = flowscene::buildFlowScene(chart.data(), layout, theme);
 
     QImage golden;
@@ -118,6 +137,8 @@ int main(int argc, char** argv) {
   if (failures > 0) fail(QStringLiteral("%1 of %2 golden-pixel cases FAILED (diagnostics in %3)").arg(failures).arg(cases.size()).arg(failDir));
   require(highDpiCases >= 4 && sawCjk && sawBidi && sawDeterministicAnimation,
           QStringLiteral("Golden-pixel CJK/bidi/high-DPI coverage matrix regressed"));
+  require(coveredThemes.size() == 11,
+          QStringLiteral("Golden-pixel theme coverage regressed: %1/11").arg(coveredThemes.size()));
   qDebug().noquote() << "MermaidGoldenPixelTest:" << cases.size() << "cases pass Level-3 (interior exact + boundary RGBA + text IoU + empty)";
   return 0;
 }
