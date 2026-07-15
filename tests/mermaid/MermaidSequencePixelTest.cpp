@@ -47,12 +47,12 @@ int main(int argc,char** argv) {
   const QJsonObject root=QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("mermaidVersion")).toString()==QLatin1String("11.16.0"),QStringLiteral("Sequence pixel version drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("b8603569e232912a7822d79cd235dd7d8040a013c671ef74594a0c07db83bd93"),
+              QLatin1String("673a4a00f812619eb87a547c55223adcbd0786dcba90271ce533cb14d261ac6b"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;
   const QJsonArray cases=root.value(QStringLiteral("cases")).toArray();
-  require(cases.size()==4,QStringLiteral("Sequence pixel matrix regressed"));
+  require(cases.size()==5,QStringLiteral("Sequence pixel matrix regressed"));
   for(const QJsonValue& value:cases) {
     const QJsonObject fixture=value.toObject(); const QString id=fixture.value(QStringLiteral("id")).toString();
     const auto entry=cache.getSync(cache.makeKey(fixture.value(QStringLiteral("source")).toString()),fixture.value(QStringLiteral("source")).toString());
@@ -61,10 +61,12 @@ int main(int argc,char** argv) {
     const QImage golden(dir.filePath(fixture.value(QStringLiteral("file")).toString()));
     require(!native.isNull()&&!golden.isNull(),QStringLiteral("%1 pixel image missing").arg(id));
     const qreal nativeRatio=qreal(native.width())/native.height(), goldenRatio=qreal(golden.width())/golden.height();
-    require(qAbs(nativeRatio-goldenRatio)/goldenRatio<=0.35,
-            QStringLiteral("%1 canvas ratio mismatch: %2 vs %3").arg(id).arg(nativeRatio).arg(goldenRatio));
+    const qreal ratioDrift=qAbs(nativeRatio-goldenRatio)/goldenRatio;
     const qreal iou=alphaIou(native,golden);
-    require(iou>=0.20,QStringLiteral("%1 alpha IoU too low: %2").arg(id).arg(iou));
+    qDebug().noquote() << id << "ratio-drift" << ratioDrift << "alpha-IoU" << iou;
+    require(ratioDrift<=0.20,
+            QStringLiteral("%1 canvas ratio mismatch: %2 vs %3").arg(id).arg(nativeRatio).arg(goldenRatio));
+    require(iou>=0.60,QStringLiteral("%1 alpha IoU too low: %2").arg(id).arg(iou));
     const Stats ns=stats(native), gs=stats(golden);
     require(ns.opaque>100&&gs.opaque>100,QStringLiteral("%1 rendered blank").arg(id));
     const auto average=[](qint64 sum,int count){return count?qreal(sum)/count:0.0;};

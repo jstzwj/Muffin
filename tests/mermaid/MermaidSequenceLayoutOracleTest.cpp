@@ -42,6 +42,28 @@ void requireNear(qreal actual, qreal expected, const QString& context) {
   require(std::abs(actual - expected) <= 0.001,
           QStringLiteral("%1: native=%2 upstream=%3").arg(context).arg(actual).arg(expected));
 }
+
+QString markerName(const QString& url) {
+  if (url.isEmpty()) return {};
+  const qsizetype dash = url.indexOf(QLatin1Char('-'), url.indexOf(QLatin1String("sequence-layout-")) + 16);
+  const qsizetype end = url.lastIndexOf(QLatin1Char(')'));
+  return dash >= 0 && end > dash ? url.mid(dash + 1, end - dash - 1) : QString{};
+}
+
+void requireRectNear(const QRectF& actual, const QJsonObject& expected, qreal tolerance,
+                     const QString& context) {
+  const QRectF wanted(expected.value(QStringLiteral("x")).toDouble(),
+                      expected.value(QStringLiteral("y")).toDouble(),
+                      expected.value(QStringLiteral("width")).toDouble(),
+                      expected.value(QStringLiteral("height")).toDouble());
+  require(std::abs(actual.x() - wanted.x()) <= tolerance &&
+              std::abs(actual.y() - wanted.y()) <= tolerance &&
+              std::abs(actual.width() - wanted.width()) <= tolerance &&
+              std::abs(actual.height() - wanted.height()) <= tolerance,
+          QStringLiteral("%1: native=[%2,%3 %4x%5] upstream=[%6,%7 %8x%9]")
+              .arg(context).arg(actual.x()).arg(actual.y()).arg(actual.width()).arg(actual.height())
+              .arg(wanted.x()).arg(wanted.y()).arg(wanted.width()).arg(wanted.height()));
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -55,11 +77,11 @@ int main(int argc, char** argv) {
   require(root.value(QStringLiteral("fontMode")).toString() == QLatin1String("bundled-noto"),
           QStringLiteral("Sequence layout must use the fixed Noto oracle"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("e4fc4d3b5301c2e2553084ae8e5fceb8dde086d6081c6f530a7d7ed143604363"),
+              QLatin1String("9630c4df0aec200a3d6a54d6e3a59858603017fde443c826b7d57a436c3b207e"),
           QStringLiteral("Sequence layout fixture changed; audit geometry and update its digest"));
 
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-  require(cases.size() == 6, QStringLiteral("Sequence layout case count drifted"));
+  require(cases.size() == 8, QStringLiteral("Sequence layout case count drifted"));
   QSet<QString> ids, coveredAxes;
   int participantCount = 0, lifelineCount = 0, messageCount = 0;
   int activationCount = 0, noteCount = 0, fragmentCount = 0;
@@ -81,6 +103,7 @@ int main(int argc, char** argv) {
     const SequenceData& data = diagram.data();
     SequenceLayoutMeasurements measurements;
     const QJsonArray participants = fixture.value(QStringLiteral("participants")).toArray();
+    const QJsonArray footers = fixture.value(QStringLiteral("footers")).toArray();
     const QJsonArray lifelines = fixture.value(QStringLiteral("lifelines")).toArray();
     const QJsonArray messages = fixture.value(QStringLiteral("messages")).toArray();
     const QJsonArray activations = fixture.value(QStringLiteral("activations")).toArray();
@@ -142,6 +165,27 @@ int main(int argc, char** argv) {
                   participant.value(QStringLiteral("structure")).toObject()
                       .value(QStringLiteral("dataType")).toString() == native->type,
               QStringLiteral("%1/%2 participant SVG type mismatch").arg(id, actorId));
+      if (fixture.value(QStringLiteral("axes")).toArray().contains(QStringLiteral("participant-painted-bounds")) ||
+          fixture.value(QStringLiteral("axes")).toArray().contains(QStringLiteral("participant-lifecycle")))
+        requireRectNear(native->topPaintedBounds,
+                        participant.value(QStringLiteral("paintedBox")).toObject(), 1.0,
+                        QStringLiteral("%1/%2 painted bbox").arg(id, actorId));
+      require(native->created == data.createdActors.contains(actorId) &&
+                  native->destroyed == data.destroyedActors.contains(actorId),
+              QStringLiteral("%1/%2 lifecycle flags mismatch").arg(id, actorId));
+    }
+    if (fixture.value(QStringLiteral("axes")).toArray().contains(QStringLiteral("participant-lifecycle"))) {
+      for (const QJsonValue& footerValue : footers) {
+        const QJsonObject footer = footerValue.toObject();
+        const QString actorId = footer.value(QStringLiteral("id")).toString();
+        const auto native = std::find_if(layout.participants.cbegin(), layout.participants.cend(),
+                                         [&](const auto& item) { return item.id == actorId; });
+        require(native != layout.participants.cend(),
+                QStringLiteral("%1 orphan footer %2").arg(id, actorId));
+        requireRectNear(native->bottomPaintedBounds,
+                        footer.value(QStringLiteral("paintedBox")).toObject(), 1.0,
+                        QStringLiteral("%1/%2 footer painted bbox").arg(id, actorId));
+      }
     }
     for (const QJsonValue& lineValue : lifelines) {
       const QJsonObject line = lineValue.toObject();
@@ -191,10 +235,12 @@ int main(int argc, char** argv) {
       require(structure.value(QStringLiteral("className")).toString() ==
                   (native.dashed ? QLatin1String("messageLine1") : QLatin1String("messageLine0")),
               QStringLiteral("%1 message %2 dash class mismatch").arg(id).arg(position));
-      const bool upstreamStart = !structure.value(QStringLiteral("markerStart")).toString().isEmpty();
-      const bool upstreamEnd = !structure.value(QStringLiteral("markerEnd")).toString().isEmpty();
-      require(upstreamStart == !native.markerStart.isEmpty() && upstreamEnd == !native.markerEnd.isEmpty(),
-              QStringLiteral("%1 message %2 marker structure mismatch").arg(id).arg(position));
+      require(markerName(structure.value(QStringLiteral("markerStart")).toString()) == native.markerStart &&
+                  markerName(structure.value(QStringLiteral("markerEnd")).toString()) == native.markerEnd,
+              QStringLiteral("%1 message %2 marker mismatch: native=%3/%4 upstream=%5/%6")
+                  .arg(id).arg(position).arg(native.markerStart, native.markerEnd,
+                      markerName(structure.value(QStringLiteral("markerStart")).toString()),
+                      markerName(structure.value(QStringLiteral("markerEnd")).toString())));
     }
 
     int activationStarts = 0;
@@ -286,11 +332,12 @@ int main(int argc, char** argv) {
     noteCount += notes.size(); fragmentCount += fragments.size();
   }
 
-  for (const QString& axis : {QStringLiteral("participant-size"), QStringLiteral("lifeline"),
+  for (const QString& axis : {QStringLiteral("participant-size"), QStringLiteral("participant-painted-bounds"),
+                              QStringLiteral("participant-lifecycle"), QStringLiteral("message-marker"), QStringLiteral("lifeline"),
                               QStringLiteral("message-spacing"), QStringLiteral("activation-stack"),
                               QStringLiteral("note-geometry"), QStringLiteral("fragment-geometry")})
     require(coveredAxes.contains(axis), QStringLiteral("Sequence layout axis is uncovered: %1").arg(axis));
-  require(participantCount >= 15 && lifelineCount == participantCount && messageCount >= 15 &&
+  require(participantCount >= 27 && lifelineCount == participantCount && messageCount >= 46 &&
               activationCount >= 3 && noteCount >= 5 && fragmentCount >= 6,
           QStringLiteral("Sequence layout geometry coverage regressed"));
 

@@ -3,6 +3,7 @@
 #include "mermaid/sequence/SequenceDiagram.h"
 
 #include <QMap>
+#include <QPainterPath>
 #include <QRectF>
 #include <QSizeF>
 
@@ -92,6 +93,16 @@ struct SequenceLayoutParticipant {
   qreal anchorX = 0.0;
   qreal lifelineStartY = 0.0;
   qreal lifelineStopY = 0.0;
+  qreal topY = 0.0;
+  qreal bottomY = 0.0;
+  bool created = false;
+  bool destroyed = false;
+  QVector<QPainterPath> topShapePaths;
+  QVector<QPainterPath> bottomShapePaths;
+  QRectF topLabelRect;
+  QRectF bottomLabelRect;
+  QRectF topPaintedBounds;
+  QRectF bottomPaintedBounds;
 };
 
 struct SequenceLayoutMessage {

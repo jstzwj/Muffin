@@ -22,6 +22,10 @@ const cases = [
       'participant E@{ "type": "entity" } as Entity', 'participant D@{ "type": "database" } as Database',
       'participant S@{ "type": "collections" } as Collections', 'participant Q@{ "type": "queue" } as Queue',
       "P->>Q:All types"].join("\n") },
+  { id: "create-destroy-markers", source: ["sequenceDiagram", "participant A as Alice",
+      "participant B as Bob", "A->>B:solid", "B-->>A:dotted", "A<<->>B:both",
+      "A-)B:point", "B-xA:cross", "create participant C as Created", "A->>C:create",
+      "destroy C", "C-->>A:destroy"].join("\n") },
 ];
 const { default: puppeteer } = await import(pathToFileURL(path.join(path.dirname(mermaidRoot), "puppeteer", "lib", "puppeteer", "puppeteer.js")));
 const browser = await puppeteer.launch({headless:true, executablePath:chrome, args:["--allow-file-access-from-files"]});

@@ -1,6 +1,7 @@
 #include "mermaid/sequence/SequenceLayout.h"
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 
 namespace muffin::mermaid::sequence {
@@ -173,7 +174,8 @@ struct PlacementBounds {
 bool isOpenArrow(int type) { return type == 5 || type == 6; }
 bool isStickOrOpenArrow(int type) {
   return isOpenArrow(type) || type == 43 || type == 44 || type == 47 || type == 48 ||
-         type == 53 || type == 54 || type == 55 || type == 56 || type == 45 || type == 46;
+         type == 53 || type == 54 || type == 55 || type == 56 || type == 57 || type == 58 ||
+         type == 45 || type == 46;
 }
 bool adjustsStartForMarker(int type) {
   return type == 33 || type == 34 || type == 45 || type == 46 || type == 55 || type == 56;
@@ -185,6 +187,112 @@ QString selfMessagePath(qreal x, qreal y, bool rightAngles) {
         .arg(x).arg(y).arg(x + 75.0).arg(y + 25.0);
   return QStringLiteral("M %1,%2 C %3,%4 %3,%5 %1,%6")
       .arg(x).arg(y).arg(x + 60.0).arg(y - 10.0).arg(y + 30.0).arg(y + 20.0);
+}
+
+struct ParticipantPaintGeometry {
+  QVector<QPainterPath> paths;
+  QRectF labelRect;
+  QRectF bounds;
+};
+
+ParticipantPaintGeometry participantGeometry(const SequenceLayoutParticipant& actor, qreal y,
+                                             bool footer, QSizeF labelSize) {
+  ParticipantPaintGeometry result;
+  const QRectF rect(actor.logicalRect.x(), y, actor.logicalRect.width(),
+                    actor.logicalRect.height());
+  const qreal cx = actor.anchorX;
+  auto add = [&](QPainterPath path) {
+    result.bounds = result.bounds.isNull() ? path.boundingRect() : result.bounds.united(path.boundingRect());
+    result.paths.append(std::move(path));
+  };
+  QPainterPath path;
+  if (actor.type == QLatin1String("actor")) {
+    path.addEllipse(QPointF(cx, y + 10.0), 15.0, 15.0);
+    path.moveTo(cx, y + 25.0); path.lineTo(cx, y + 45.0);
+    path.moveTo(cx - 18.0, y + 33.0); path.lineTo(cx + 18.0, y + 33.0);
+    path.moveTo(cx - 18.0, y + 60.0); path.lineTo(cx, y + 45.0); path.lineTo(cx + 16.0, y + 60.0);
+    add(path);
+    result.labelRect = QRectF(rect.x(), y + 56.5, rect.width(), labelSize.height());
+  } else if (actor.type == QLatin1String("collections")) {
+    path.addRoundedRect(rect, 0.0, 0.0); add(path); path = {};
+    path.addRoundedRect(rect.translated(-6.0, 6.0), 0.0, 0.0); add(path);
+    result.labelRect = QRectF(rect.x() - 6.0, y + 6.0 + (rect.height() - labelSize.height()) / 2.0,
+                              rect.width(), labelSize.height());
+  } else if (actor.type == QLatin1String("queue")) {
+    const qreal ry = rect.height() / 2.0;
+    const qreal rx = ry / (2.5 + rect.height() / 50.0);
+    path.moveTo(rect.left() + rx, rect.top());
+    path.arcTo(QRectF(rect.left(), rect.top(), 2.0 * rx, rect.height()), 90.0, 180.0);
+    path.lineTo(rect.right() - rx, rect.bottom());
+    path.arcTo(QRectF(rect.right() - 2.0 * rx, rect.top(), 2.0 * rx, rect.height()), 270.0, 180.0);
+    path.closeSubpath(); add(path); path = {};
+    path.moveTo(rect.right() - rx, rect.top());
+    path.arcTo(QRectF(rect.right() - 2.0 * rx, rect.top(), 2.0 * rx, rect.height()), 90.0, -180.0);
+    add(path); result.labelRect = QRectF(rect.x(), y + (rect.height() - labelSize.height()) / 2.0,
+                                         rect.width(), labelSize.height());
+  } else if (actor.type == QLatin1String("control")) {
+    path.addEllipse(QPointF(cx, y + 32.0), 22.0, 22.0);
+    path.moveTo(cx, y + 10.0); path.lineTo(cx + 8.0, y + 3.0); add(path);
+    result.bounds = QRectF(cx - 22.0, y + 10.0, 44.0, 44.0);
+    result.labelRect = QRectF(rect.x(), y + (footer ? 48.5 : 55.5), rect.width(), labelSize.height());
+  } else if (actor.type == QLatin1String("entity")) {
+    const qreal cy = y + (footer ? 10.0 : 25.0) + (footer ? 22.0 : 6.0);
+    path.addEllipse(QPointF(cx, cy), 22.0, 22.0);
+    path.moveTo(cx - 22.0, cy + 22.0); path.lineTo(cx + 22.0, cy + 22.0); add(path);
+    result.labelRect = QRectF(rect.x(), y + (footer ? 58.5 : 57.5), rect.width(), labelSize.height());
+  } else if (actor.type == QLatin1String("database")) {
+    const qreal w = rect.width() / 3.0, h = w, rx = w / 2.0;
+    const qreal ry = rx / (2.5 + w / 50.0), left = rect.x() + w, top = y + ry;
+    path.addEllipse(QRectF(left, top, w, 2.0 * ry));
+    path.moveTo(left, top + ry); path.lineTo(left, top + h - ry);
+    path.arcTo(QRectF(left, top + h - 2.0 * ry, w, 2.0 * ry), 180.0, -180.0);
+    path.lineTo(left + w, top + ry); add(path);
+    result.labelRect = QRectF(rect.x(), y + 56.5, rect.width(), labelSize.height());
+  } else if (actor.type == QLatin1String("boundary")) {
+    const qreal ty = y + 21.0;
+    path.moveTo(cx - 55.0, ty + 12.0); path.lineTo(cx - 15.0, ty + 12.0);
+    path.moveTo(cx - 55.0, ty + 2.0); path.lineTo(cx - 55.0, ty + 22.0);
+    path.addEllipse(QPointF(cx, ty + 12.0), 22.0, 22.0); add(path);
+    result.labelRect = QRectF(rect.x(), y + 57.5, rect.width(), labelSize.height());
+  } else {
+    path.addRoundedRect(rect, 3.0, 3.0); add(path);
+    result.labelRect = QRectF(rect.x(), y + (rect.height() - labelSize.height()) / 2.0,
+                              rect.width(), labelSize.height());
+  }
+  QRectF textBounds(result.labelRect.center().x() - labelSize.width() / 2.0,
+                    result.labelRect.center().y() - labelSize.height() / 2.0,
+                    labelSize.width(), labelSize.height());
+  result.bounds = result.bounds.united(textBounds);
+  return result;
+}
+
+QString markerEndForType(int type) {
+  switch (type) {
+    case 0: case 1: case 33: case 34: return QStringLiteral("arrowhead");
+    case 3: case 4: return QStringLiteral("crosshead");
+    case 24: case 25: return QStringLiteral("filled-head");
+    case 41: case 51: return QStringLiteral("solidTopArrowHead");
+    case 42: case 52: return QStringLiteral("solidBottomArrowHead");
+    case 43: case 53: return QStringLiteral("stickTopArrowHead");
+    case 44: case 54: return QStringLiteral("stickBottomArrowHead");
+    default: return {};
+  }
+}
+
+QString markerStartForType(int type) {
+  switch (type) {
+    case 33: case 34: return QStringLiteral("arrowhead");
+    case 45: case 55: return QStringLiteral("solidBottomArrowHead");
+    case 46: case 56: return QStringLiteral("solidTopArrowHead");
+    case 47: case 57: return QStringLiteral("stickBottomArrowHead");
+    case 48: case 58: return QStringLiteral("stickTopArrowHead");
+    default: return {};
+  }
+}
+
+bool narrowLifecycleActor(const QString& type) {
+  return type == QLatin1String("actor") || type == QLatin1String("control") ||
+         type == QLatin1String("entity") || type == QLatin1String("database");
 }
 
 }  // namespace
@@ -257,6 +365,11 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
   QMap<QString, int> placedActor;
   for (qsizetype index = 0; index < data.actors.size(); ++index) {
     const SequenceActor& actor = data.actors[index];
+    // Mermaid intentionally reserves half an actor before runtime-created
+    // participants so their creation message can terminate at the new box.
+    // The JS truthiness check excludes only a creation recorded at index 0.
+    if (data.createdActors.value(actor.id, 0) != 0)
+      previousMargin += actorWidths[index] / 2.0;
     const qreal x = previousWidth + previousMargin;
     SequenceLayoutParticipant participant;
     participant.id = actor.id;
@@ -265,8 +378,14 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     participant.logicalRect = QRectF(x, 0.0, actorWidths[index], options.height);
     participant.margin = actorMargins[index];
     participant.anchorX = x + actorWidths[index] / 2.0;
-    participant.lifelineStartY = actor.type == QLatin1String("actor")
-        ? options.height + 3.0 * options.boxTextMargin : options.height;
+    if (actor.type == QLatin1String("actor") || actor.type == QLatin1String("boundary"))
+      participant.lifelineStartY = 80.0;
+    else if (actor.type == QLatin1String("control") || actor.type == QLatin1String("entity") ||
+             actor.type == QLatin1String("database"))
+      participant.lifelineStartY = options.height + 2.0 * options.boxTextMargin;
+    else
+      participant.lifelineStartY = options.height;
+    participant.topY = 0.0;
     result.participants.append(participant);
     placedActor.insert(actor.id, static_cast<int>(index));
     bounds.insert(x, 0.0, x + actorWidths[index], options.height);
@@ -440,6 +559,34 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
       bounds.insert(startX, lineY - 10.0, stopX, lineY);
     }
     bounds.vertical += totalOffset;
+
+    auto lifecycleParticipant = [&](const QString& id) -> SequenceLayoutParticipant& {
+      return result.participants[placedActor.value(id)];
+    };
+    if (data.createdActors.value(message.to, -1) == messageIndex) {
+      SequenceLayoutParticipant& actor = lifecycleParticipant(message.to);
+      const qreal adjustment = narrowLifecycleActor(actor.type)
+          ? 21.0 : actor.logicalRect.width() / 2.0 + 3.0;
+      stopX += actor.anchorX < participantFor(message.from).anchorX ? adjustment : -adjustment;
+      actor.created = true;
+      actor.topY = lineY - actor.logicalRect.height() / 2.0;
+      actor.lifelineStartY += actor.topY;
+      bounds.vertical += actor.logicalRect.height() / 2.0;
+    } else if (data.destroyedActors.value(message.from, -1) == messageIndex ||
+               data.destroyedActors.value(message.to, -1) == messageIndex) {
+      const bool sender = data.destroyedActors.value(message.from, -1) == messageIndex;
+      SequenceLayoutParticipant& actor = lifecycleParticipant(sender ? message.from : message.to);
+      const qreal adjustment = narrowLifecycleActor(actor.type)
+          ? 18.0 + (sender ? 0.0 : 3.0) : actor.logicalRect.width() / 2.0 + (sender ? 0.0 : 3.0);
+      if (sender)
+        startX += actor.anchorX < participantFor(message.to).anchorX ? adjustment : -adjustment;
+      else
+        stopX += actor.anchorX < participantFor(message.from).anchorX ? adjustment : -adjustment;
+      actor.destroyed = true;
+      actor.bottomY = lineY - actor.logicalRect.height() / 2.0;
+      actor.lifelineStopY = actor.bottomY;
+      bounds.vertical += actor.logicalRect.height() / 2.0;
+    }
     const qreal modelHeight = lineHeight + totalOffset;
     bounds.insert(std::min({fromRange.first, fromRange.second, toRange.first, toRange.second}),
                   startY,
@@ -459,19 +606,10 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
                               startY + 10.0, measured.width(), measured.height());
     if (qFuzzyCompare(startX + 1.0, stopX + 1.0))
       placed.path = selfMessagePath(startX, lineY, options.rightAngles);
-    placed.dashed = message.type == 1 || message.type == 4 || message.type == 6 ||
+    placed.dashed = message.type == 1 || message.type == 4 || message.type == 6 || message.type == 25 ||
                     message.type == 34 || (message.type >= 51 && message.type <= 58);
-    if (message.type == 0 || message.type == 1 || message.type == 33 || message.type == 34)
-      placed.markerEnd = QStringLiteral("arrow");
-    else if (message.type == 3 || message.type == 4)
-      placed.markerEnd = QStringLiteral("cross");
-    else if (message.type == 24 || message.type == 25)
-      placed.markerEnd = QStringLiteral("point");
-    else if (!isOpenArrow(message.type))
-      placed.markerEnd = QStringLiteral("half");
-    if (message.type == 33 || message.type == 34 || adjustsStartForMarker(message.type))
-      placed.markerStart = message.type == 33 || message.type == 34
-          ? QStringLiteral("arrow") : QStringLiteral("half");
+    placed.markerEnd = markerEndForType(message.type);
+    placed.markerStart = markerStartForType(message.type);
     result.messages.append(placed);
   }
 
@@ -479,9 +617,24 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
             [](const auto& left, const auto& right) { return left.messageIndex < right.messageIndex; });
   const qreal lifelineStop = bounds.vertical + 2.0 * options.boxMargin;
   for (SequenceLayoutParticipant& participant : result.participants) {
-    participant.lifelineStopY = lifelineStop;
-    bounds.insert(participant.logicalRect.left(), lifelineStop,
-                  participant.logicalRect.right(), lifelineStop + participant.logicalRect.height());
+    if (!participant.destroyed) {
+      participant.lifelineStopY = lifelineStop;
+      participant.bottomY = lifelineStop;
+    }
+    const QSizeF labelSize = measurements.participants.value(
+        participant.id, QSizeF(0.0, defaultTextHeight));
+    const ParticipantPaintGeometry top = participantGeometry(
+        participant, participant.topY, false, labelSize);
+    const ParticipantPaintGeometry bottom = participantGeometry(
+        participant, participant.bottomY, true, labelSize);
+    participant.topShapePaths = top.paths;
+    participant.bottomShapePaths = bottom.paths;
+    participant.topLabelRect = top.labelRect;
+    participant.bottomLabelRect = bottom.labelRect;
+    participant.topPaintedBounds = top.bounds;
+    participant.bottomPaintedBounds = bottom.bounds;
+    bounds.insert(top.bounds.left(), top.bounds.top(), top.bounds.right(), top.bounds.bottom());
+    bounds.insert(bottom.bounds.left(), bottom.bounds.top(), bottom.bounds.right(), bottom.bounds.bottom());
   }
   result.bounds = bounds.hasBounds ? bounds.all : QRectF{};
   return result;

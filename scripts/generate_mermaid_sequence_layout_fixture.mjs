@@ -115,6 +115,49 @@ const cases = [
       "Note over A,B: العربية 中文 note",
     ].join("\n"),
   },
+  {
+    id: "participant-painted-bounds",
+    axes: ["participant-size", "participant-painted-bounds", "lifeline"],
+    source: [
+      "sequenceDiagram",
+      "participant P as Plain",
+      "actor A as Actor",
+      'participant B@{ "type": "boundary" } as Boundary',
+      'participant C@{ "type": "control" } as Control',
+      'participant E@{ "type": "entity" } as Entity',
+      'participant D@{ "type": "database" } as Database',
+      'participant S@{ "type": "collections" } as Collections',
+      'participant Q@{ "type": "queue" } as Queue',
+      "P->>Q:all participant bounds",
+    ].join("\n"),
+  },
+  {
+    id: "markers-create-destroy",
+    axes: ["message-marker", "participant-lifecycle", "lifeline"],
+    source: [
+      "sequenceDiagram",
+      "participant A as Alice",
+      "participant B as Bob",
+      "A->>B:solid", "B-->>A:dotted", "A-xB:cross", "B--xA:dotted cross",
+      "A-)B:point", "B--)A:dotted point", "A->B:open", "B-->A:dotted open",
+      "A<<->>B:bidirectional", "B<<-->>A:bidirectional dotted",
+      "A -|\\ B:solid top", "A -|/ B:solid bottom", "A -\\\\ B:stick top", "A -// B:stick bottom",
+      "A /|- B:reverse solid top", "A \\|- B:reverse solid bottom",
+      "A //- B:reverse stick top", "A \\\\- B:reverse stick bottom",
+      "A --|\\ B:dotted solid top", "A --|/ B:dotted solid bottom",
+      "A --\\\\ B:dotted stick top", "A --// B:dotted stick bottom",
+      "A /|-- B:dotted reverse solid top", "A \\|-- B:dotted reverse solid bottom",
+      "A //-- B:dotted reverse stick top", "A \\\\-- B:dotted reverse stick bottom",
+      "create participant C as Created",
+      "A->>C:create",
+      "destroy C",
+      "C-->>A:destroy receiver",
+      "create actor D as Runtime Actor",
+      "B->>D:create actor",
+      "destroy D",
+      "D-xB:destroy sender",
+    ].join("\n"),
+  },
 ];
 
 const { default: puppeteer } = await import(
@@ -163,19 +206,40 @@ try {
         const b = element.getBBox();
         return { x: round(b.x), y: round(b.y), width: round(b.width), height: round(b.height) };
       };
+      const paintedBox = (element) => {
+        const b = element.getBBox();
+        const rootMatrix = root.getScreenCTM();
+        const elementMatrix = element.getScreenCTM();
+        if (!rootMatrix || !elementMatrix) return box(element);
+        const matrix = rootMatrix.inverse().multiply(elementMatrix);
+        const points = [
+          new DOMPoint(b.x, b.y), new DOMPoint(b.x + b.width, b.y),
+          new DOMPoint(b.x, b.y + b.height), new DOMPoint(b.x + b.width, b.y + b.height),
+        ].map((point) => point.matrixTransform(matrix));
+        const xs = points.map((point) => point.x), ys = points.map((point) => point.y);
+        return { x: round(Math.min(...xs)), y: round(Math.min(...ys)),
+          width: round(Math.max(...xs) - Math.min(...xs)),
+          height: round(Math.max(...ys) - Math.min(...ys)) };
+      };
       const number = (element, name) => round(Number(element.getAttribute(name) ?? 0));
       const text = (element) => ({ text: element?.textContent ?? "", ...(element ? box(element) : {}) });
       const participants = [...root.querySelectorAll('[data-et="participant"]')]
         .filter((element) => !element.closest("g.actor-man") || element.matches("g.actor-man"))
         .map((element, position) => {
           const shape = element.querySelector("rect, circle, path, line, polygon") ?? element;
-          return { position, id: element.getAttribute("data-id") ?? "", box: box(element), shape: box(shape), label: text(element.querySelector("text")) };
+          return { position, id: element.getAttribute("data-id") ?? "", box: box(element),
+            paintedBox: paintedBox(element), shape: box(shape), label: text(element.querySelector("text")) };
         });
       const lifelines = [...root.querySelectorAll('[data-et="life-line"]')].map((element) => ({
         id: element.getAttribute("data-id") ?? "",
         x1: number(element, "x1"), y1: number(element, "y1"),
         x2: number(element, "x2"), y2: number(element, "y2"),
       }));
+      const footers = [...root.querySelectorAll(".actor-bottom")].map((element) => {
+        const container = element.tagName.toLowerCase() === "g" ? element : element.parentElement;
+        return { id: element.getAttribute("name") ?? container?.getAttribute("name") ?? "",
+          paintedBox: container ? paintedBox(container) : paintedBox(element) };
+      });
       const messageLabels = [...root.querySelectorAll(".messageText")];
       const messages = [...root.querySelectorAll('[data-et="message"]')].map((element, position) => {
         const line = element.tagName.toLowerCase() === "line" ? element : element.querySelector("line");
@@ -261,7 +325,7 @@ try {
           ].map((key) => [key, resolved[key]])),
         },
         root: { viewBox: root.getAttribute("viewBox"), ...box(root) },
-        participants, lifelines, messages, activations, notes, fragments,
+        participants, footers, lifelines, messages, activations, notes, fragments,
         svgStructure: { markers: markerStructure },
       };
     }, { fixture: cases[index], index, mermaidModule, fontFaces, fontStack });

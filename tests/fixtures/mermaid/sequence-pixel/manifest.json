@@ -29,7 +29,14 @@
       "file": "participant-types.png",
       "width": 1550,
       "height": 225
+    },
+    {
+      "id": "create-destroy-markers",
+      "source": "sequenceDiagram\nparticipant A as Alice\nparticipant B as Bob\nA->>B:solid\nB-->>A:dotted\nA<<->>B:both\nA-)B:point\nB-xA:cross\ncreate participant C as Created\nA->>C:create\ndestroy C\nC-->>A:destroy",
+      "file": "create-destroy-markers.png",
+      "width": 625,
+      "height": 593
     }
   ],
-  "fixtureSha256": "b8603569e232912a7822d79cd235dd7d8040a013c671ef74594a0c07db83bd93"
+  "fixtureSha256": "673a4a00f812619eb87a547c55223adcbd0786dcba90271ce533cb14d261ac6b"
 }

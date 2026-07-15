@@ -25,56 +25,17 @@ void centeredText(QPainter& painter, const QString& text, const QRectF& rect,
 }
 
 void participantShape(QPainter& painter, const SequenceLayoutParticipant& actor,
-                      qreal y, const SequenceSceneStyle& style) {
-  const QRectF rect(actor.logicalRect.x(), y, actor.logicalRect.width(),
-                    actor.logicalRect.height());
+                      bool footer, const SequenceSceneStyle& style) {
   painter.setPen(QPen(color(style.actorStroke), 2.0));
   painter.setBrush(color(style.actorFill));
-  const qreal cx = actor.anchorX;
-  const QString type = actor.type;
-  if (type == QLatin1String("actor")) {
+  const auto& paths = footer ? actor.bottomShapePaths : actor.topShapePaths;
+  const QRectF labelRect = footer ? actor.bottomLabelRect : actor.topLabelRect;
+  if (actor.type == QLatin1String("actor") || actor.type == QLatin1String("boundary") ||
+      actor.type == QLatin1String("control") || actor.type == QLatin1String("entity")) {
     painter.setBrush(Qt::NoBrush);
-    painter.drawEllipse(QPointF(cx, y + 10), 15, 15);
-    painter.drawLine(QPointF(cx, y + 25), QPointF(cx, y + 45));
-    painter.drawLine(QPointF(cx - 18, y + 33), QPointF(cx + 18, y + 33));
-    painter.drawLine(QPointF(cx, y + 45), QPointF(cx - 18, y + 60));
-    painter.drawLine(QPointF(cx, y + 45), QPointF(cx + 16, y + 60));
-    centeredText(painter, actor.label, QRectF(rect.x(), y + 35, rect.width(), 48), style);
-  } else if (type == QLatin1String("collections")) {
-    painter.drawRoundedRect(rect.translated(-6, 6), 3, 3);
-    painter.drawRoundedRect(rect, 3, 3);
-    centeredText(painter, actor.label, rect.translated(-6, 6), style);
-  } else if (type == QLatin1String("database")) {
-    QPainterPath path;
-    path.moveTo(rect.left(), y + 10);
-    path.cubicTo(rect.left(), y - 3, rect.right(), y - 3, rect.right(), y + 10);
-    path.lineTo(rect.right(), rect.bottom() - 10);
-    path.cubicTo(rect.right(), rect.bottom() + 3, rect.left(), rect.bottom() + 3, rect.left(), rect.bottom() - 10);
-    path.closeSubpath();
-    painter.drawPath(path);
-    painter.drawEllipse(QRectF(rect.left(), y, rect.width(), 20));
-    centeredText(painter, actor.label, rect, style);
-  } else if (type == QLatin1String("control")) {
-    painter.drawEllipse(QPointF(cx, y + 24), 20, 20);
-    painter.drawLine(QPointF(cx, y + 4), QPointF(cx + 9, y - 4));
-    centeredText(painter, actor.label, QRectF(rect.x(), y + 42, rect.width(), 25), style);
-  } else if (type == QLatin1String("boundary")) {
-    painter.drawEllipse(QPointF(cx, y + 24), 20, 20);
-    painter.drawLine(QPointF(cx - 20, y + 4), QPointF(cx - 20, y + 44));
-    painter.drawLine(QPointF(cx - 38, y + 24), QPointF(cx - 20, y + 24));
-    centeredText(painter, actor.label, QRectF(rect.x(), y + 42, rect.width(), 25), style);
-  } else if (type == QLatin1String("entity")) {
-    painter.drawEllipse(QPointF(cx, y + 24), 20, 20);
-    painter.drawLine(QPointF(cx - 20, y + 47), QPointF(cx + 20, y + 47));
-    centeredText(painter, actor.label, QRectF(rect.x(), y + 48, rect.width(), 20), style);
-  } else if (type == QLatin1String("queue")) {
-    painter.drawRoundedRect(rect, 16, 16);
-    painter.drawArc(QRectF(rect.right() - 25, y, 25, rect.height()), 90 * 16, 180 * 16);
-    centeredText(painter, actor.label, rect, style);
-  } else {
-    painter.drawRoundedRect(rect, 3, 3);
-    centeredText(painter, actor.label, rect, style);
   }
+  for (const QPainterPath& path : paths) painter.drawPath(path);
+  centeredText(painter, actor.label, labelRect, style);
 }
 
 void marker(QPainter& painter, const QString& type, QPointF point, QPointF direction,
@@ -84,17 +45,29 @@ void marker(QPainter& painter, const QString& type, QPointF point, QPointF direc
   const QPointF u(direction.x() / length, direction.y() / length);
   const QPointF n(-u.y(), u.x());
   painter.setPen(QPen(color, 2.0));
-  painter.setBrush(type == QLatin1String("arrow") || type == QLatin1String("point") ? color : Qt::NoBrush);
-  if (type == QLatin1String("cross")) {
-    painter.drawLine(point - u * 7 + n * 5, point + u * 3 - n * 5);
-    painter.drawLine(point - u * 7 - n * 5, point + u * 3 + n * 5);
-  } else if (type == QLatin1String("point")) {
-    painter.drawEllipse(point - u * 5, 4, 4);
+  auto map = [&](qreal x, qreal y, qreal refX, qreal refY) {
+    return point + u * (x - refX) + n * (y - refY);
+  };
+  QPainterPath path;
+  if (type == QLatin1String("arrowhead")) {
+    painter.setBrush(color); path.moveTo(map(-1,0,7.9,5)); path.lineTo(map(10,5,7.9,5));
+    path.lineTo(map(0,10,7.9,5)); path.closeSubpath();
+  } else if (type == QLatin1String("filled-head")) {
+    painter.setBrush(color); path.moveTo(map(18,7,15.5,7)); path.lineTo(map(9,13,15.5,7));
+    path.lineTo(map(14,7,15.5,7)); path.lineTo(map(9,1,15.5,7)); path.closeSubpath();
+  } else if (type == QLatin1String("crosshead")) {
+    painter.setBrush(Qt::NoBrush); path.moveTo(map(1,2,4,4.5)); path.lineTo(map(6,7,4,4.5));
+    path.moveTo(map(6,2,4,4.5)); path.lineTo(map(1,7,4,4.5));
   } else {
-    QPolygonF head{point, point - u * 10 + n * 5, point - u * 10 - n * 5};
-    if (type == QLatin1String("arrow")) painter.drawPolygon(head);
-    else painter.drawPolyline(head);
+    const bool solid = type.startsWith(QLatin1String("solid"));
+    const bool top = type.contains(QLatin1String("Top"));
+    const qreal refX = solid ? 7.9 : 7.5, refY = top ? (solid ? 7.25 : 7.0) : (solid ? 0.75 : 0.0);
+    painter.setBrush(solid ? color : Qt::NoBrush);
+    path.moveTo(map(0, top ? 0 : 7, refX, refY));
+    path.lineTo(map(solid ? 10 : 7, top ? 8 : 0, refX, refY));
+    if (solid) { path.lineTo(map(0, top ? 8 : 0, refX, refY)); path.closeSubpath(); }
   }
+  painter.drawPath(path);
 }
 
 }  // namespace
@@ -107,8 +80,8 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter) {
     painter.setPen(QPen(color(scene.style.lifelineColor), 0.5, Qt::DashLine));
     painter.drawLine(QPointF(actor.anchorX, actor.lifelineStartY),
                      QPointF(actor.anchorX, actor.lifelineStopY));
-    participantShape(painter, actor, 0.0, scene.style);
-    participantShape(painter, actor, actor.lifelineStopY, scene.style);
+    participantShape(painter, actor, false, scene.style);
+    participantShape(painter, actor, true, scene.style);
   }
   for (const auto& activation : scene.activations) {
     painter.setPen(QPen(color(scene.style.activationStroke), 1.0));

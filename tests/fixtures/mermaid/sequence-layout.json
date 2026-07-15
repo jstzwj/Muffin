@@ -47,6 +47,12 @@
             "width": 150,
             "height": 65
           },
+          "paintedBox": {
+            "x": 523,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
           "shape": {
             "x": 523,
             "y": 0,
@@ -72,6 +78,12 @@
           "position": 1,
           "id": "A",
           "box": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "paintedBox": {
             "x": 0,
             "y": 0,
             "width": 150,
@@ -107,6 +119,12 @@
             "width": 88.488,
             "height": 83.5
           },
+          "paintedBox": {
+            "x": 230.945,
+            "y": -5,
+            "width": 88.488,
+            "height": 83.5
+          },
           "shape": {
             "x": 275,
             "y": 25,
@@ -130,6 +148,35 @@
               "circle",
               "text"
             ]
+          }
+        }
+      ],
+      "footers": [
+        {
+          "id": "C",
+          "paintedBox": {
+            "x": 523,
+            "y": 247,
+            "width": 150,
+            "height": 65
+          }
+        },
+        {
+          "id": "A",
+          "paintedBox": {
+            "x": 0,
+            "y": 247,
+            "width": 150,
+            "height": 65
+          }
+        },
+        {
+          "id": "B",
+          "paintedBox": {
+            "x": 230.945,
+            "y": 242,
+            "width": 88.488,
+            "height": 83.5
           }
         }
       ],
@@ -370,6 +417,12 @@
             "width": 150,
             "height": 65
           },
+          "paintedBox": {
+            "x": 200,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
           "shape": {
             "x": 200,
             "y": 0,
@@ -400,6 +453,12 @@
             "width": 150,
             "height": 65
           },
+          "paintedBox": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
           "shape": {
             "x": 0,
             "y": 0,
@@ -419,6 +478,26 @@
               "rect",
               "text"
             ]
+          }
+        }
+      ],
+      "footers": [
+        {
+          "id": "B",
+          "paintedBox": {
+            "x": 200,
+            "y": 361,
+            "width": 150,
+            "height": 65
+          }
+        },
+        {
+          "id": "A",
+          "paintedBox": {
+            "x": 0,
+            "y": 361,
+            "width": 150,
+            "height": 65
           }
         }
       ],
@@ -703,6 +782,12 @@
             "width": 150,
             "height": 65
           },
+          "paintedBox": {
+            "x": 200,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
           "shape": {
             "x": 200,
             "y": 0,
@@ -733,6 +818,12 @@
             "width": 150,
             "height": 65
           },
+          "paintedBox": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
           "shape": {
             "x": 0,
             "y": 0,
@@ -752,6 +843,26 @@
               "rect",
               "text"
             ]
+          }
+        }
+      ],
+      "footers": [
+        {
+          "id": "B",
+          "paintedBox": {
+            "x": 200,
+            "y": 293,
+            "width": 150,
+            "height": 65
+          }
+        },
+        {
+          "id": "A",
+          "paintedBox": {
+            "x": 0,
+            "y": 293,
+            "width": 150,
+            "height": 65
           }
         }
       ],
@@ -981,6 +1092,12 @@
             "width": 150,
             "height": 65
           },
+          "paintedBox": {
+            "x": 200,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
           "shape": {
             "x": 200,
             "y": 0,
@@ -1011,6 +1128,12 @@
             "width": 150,
             "height": 65
           },
+          "paintedBox": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
           "shape": {
             "x": 0,
             "y": 0,
@@ -1030,6 +1153,26 @@
               "rect",
               "text"
             ]
+          }
+        }
+      ],
+      "footers": [
+        {
+          "id": "B",
+          "paintedBox": {
+            "x": 200,
+            "y": 465,
+            "width": 150,
+            "height": 65
+          }
+        },
+        {
+          "id": "A",
+          "paintedBox": {
+            "x": 0,
+            "y": 465,
+            "width": 150,
+            "height": 65
           }
         }
       ],
@@ -1392,6 +1535,12 @@
             "width": 150,
             "height": 65
           },
+          "paintedBox": {
+            "x": 600,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
           "shape": {
             "x": 600,
             "y": 0,
@@ -1417,6 +1566,12 @@
           "position": 1,
           "id": "C",
           "box": {
+            "x": 400,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "paintedBox": {
             "x": 400,
             "y": 0,
             "width": 150,
@@ -1452,6 +1607,12 @@
             "width": 150,
             "height": 65
           },
+          "paintedBox": {
+            "x": 200,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
           "shape": {
             "x": 200,
             "y": 0,
@@ -1482,6 +1643,12 @@
             "width": 150,
             "height": 65
           },
+          "paintedBox": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
           "shape": {
             "x": 0,
             "y": 0,
@@ -1501,6 +1668,44 @@
               "rect",
               "text"
             ]
+          }
+        }
+      ],
+      "footers": [
+        {
+          "id": "D",
+          "paintedBox": {
+            "x": 600,
+            "y": 566,
+            "width": 150,
+            "height": 65
+          }
+        },
+        {
+          "id": "C",
+          "paintedBox": {
+            "x": 400,
+            "y": 566,
+            "width": 150,
+            "height": 65
+          }
+        },
+        {
+          "id": "B",
+          "paintedBox": {
+            "x": 200,
+            "y": 566,
+            "width": 150,
+            "height": 65
+          }
+        },
+        {
+          "id": "A",
+          "paintedBox": {
+            "x": 0,
+            "y": 566,
+            "width": 150,
+            "height": 65
           }
         }
       ],
@@ -1933,6 +2138,12 @@
             "width": 150,
             "height": 65
           },
+          "paintedBox": {
+            "x": 263,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
           "shape": {
             "x": 263,
             "y": 0,
@@ -1963,6 +2174,12 @@
             "width": 150,
             "height": 65
           },
+          "paintedBox": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
           "shape": {
             "x": 0,
             "y": 0,
@@ -1982,6 +2199,26 @@
               "rect",
               "text"
             ]
+          }
+        }
+      ],
+      "footers": [
+        {
+          "id": "B",
+          "paintedBox": {
+            "x": 263,
+            "y": 191,
+            "width": 150,
+            "height": 65
+          }
+        },
+        {
+          "id": "A",
+          "paintedBox": {
+            "x": 0,
+            "y": 191,
+            "width": 150,
+            "height": 65
           }
         }
       ],
@@ -2130,7 +2367,1884 @@
           }
         ]
       }
+    },
+    {
+      "id": "participant-painted-bounds",
+      "axes": [
+        "participant-size",
+        "participant-painted-bounds",
+        "lifeline"
+      ],
+      "source": "sequenceDiagram\nparticipant P as Plain\nactor A as Actor\nparticipant B@{ \"type\": \"boundary\" } as Boundary\nparticipant C@{ \"type\": \"control\" } as Control\nparticipant E@{ \"type\": \"entity\" } as Entity\nparticipant D@{ \"type\": \"database\" } as Database\nparticipant S@{ \"type\": \"collections\" } as Collections\nparticipant Q@{ \"type\": \"queue\" } as Queue\nP->>Q:all participant bounds",
+      "config": {
+        "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+        "fontSize": 16,
+        "actorMargin": 50,
+        "width": 150,
+        "height": 65,
+        "boxMargin": 10,
+        "boxTextMargin": 5,
+        "messageMargin": 35,
+        "noteMargin": 10,
+        "activationWidth": 10,
+        "diagramMarginX": 50,
+        "diagramMarginY": 10,
+        "mirrorActors": true,
+        "wrapPadding": 10,
+        "labelBoxWidth": 50,
+        "labelBoxHeight": 20,
+        "bottomMarginAdj": 1,
+        "rightAngles": false
+      },
+      "root": {
+        "viewBox": "-50 -10 1650 244",
+        "x": 0,
+        "y": -5,
+        "width": 1550,
+        "height": 225
+      },
+      "participants": [
+        {
+          "position": 0,
+          "id": "Q",
+          "box": {
+            "x": 1400,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "paintedBox": {
+            "x": 1400,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 1391.447,
+            "y": 32.5,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "Queue",
+            "x": 1449.836,
+            "y": 21.5,
+            "width": 50.328,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "queue",
+            "childTags": [
+              "g",
+              "g",
+              "text"
+            ]
+          }
+        },
+        {
+          "position": 1,
+          "id": "S",
+          "box": {
+            "x": 1194,
+            "y": 0,
+            "width": 156,
+            "height": 71
+          },
+          "paintedBox": {
+            "x": 1194,
+            "y": 0,
+            "width": 156,
+            "height": 71
+          },
+          "shape": {
+            "x": 1200,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "Collections",
+            "x": 1228.055,
+            "y": 27.5,
+            "width": 82.224,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "collections",
+            "childTags": [
+              "rect",
+              "rect",
+              "text"
+            ]
+          }
+        },
+        {
+          "position": 2,
+          "id": "D",
+          "box": {
+            "x": 1039.539,
+            "y": 7.143,
+            "width": 70.922,
+            "height": 71.357
+          },
+          "paintedBox": {
+            "x": 1039.539,
+            "y": 7.143,
+            "width": 70.922,
+            "height": 71.357
+          },
+          "shape": {
+            "x": 1000,
+            "y": 0,
+            "width": 50,
+            "height": 50
+          },
+          "label": {
+            "text": "Database",
+            "x": 1039.539,
+            "y": 56.5,
+            "width": 70.922,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "database",
+            "childTags": [
+              "g",
+              "text"
+            ]
+          }
+        },
+        {
+          "position": 3,
+          "id": "P",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "paintedBox": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "Plain",
+            "x": 56.594,
+            "y": 21.5,
+            "width": 36.813,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "participant",
+            "childTags": [
+              "rect",
+              "text"
+            ]
+          }
+        },
+        {
+          "position": 4,
+          "id": "A",
+          "box": {
+            "x": 254.016,
+            "y": -5,
+            "width": 41.36,
+            "height": 83.5
+          },
+          "paintedBox": {
+            "x": 254.016,
+            "y": -5,
+            "width": 41.36,
+            "height": 83.5
+          },
+          "shape": {
+            "x": 275,
+            "y": 25,
+            "width": 0,
+            "height": 20
+          },
+          "label": {
+            "text": "Actor",
+            "x": 254.016,
+            "y": 56.5,
+            "width": 41.36,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "actor",
+            "childTags": [
+              "line",
+              "line",
+              "line",
+              "line",
+              "circle",
+              "text"
+            ]
+          }
+        },
+        {
+          "position": 5,
+          "id": "B",
+          "box": {
+            "x": 420,
+            "y": -10,
+            "width": 92.553,
+            "height": 68.5
+          },
+          "paintedBox": {
+            "x": 420,
+            "y": 11,
+            "width": 92.553,
+            "height": 68.5
+          },
+          "shape": {
+            "x": 420,
+            "y": 12,
+            "width": 40,
+            "height": 0
+          },
+          "label": {
+            "text": "Boundary",
+            "x": 438.273,
+            "y": 36.5,
+            "width": 74.28,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "boundary",
+            "childTags": [
+              "line",
+              "line",
+              "circle",
+              "text"
+            ]
+          }
+        },
+        {
+          "position": 6,
+          "id": "C",
+          "box": {
+            "x": 647.219,
+            "y": 10,
+            "width": 55.563,
+            "height": 67.5
+          },
+          "paintedBox": {
+            "x": 647.219,
+            "y": 10,
+            "width": 55.563,
+            "height": 67.5
+          },
+          "shape": {
+            "x": 7.2,
+            "y": 0.8,
+            "width": 7.2,
+            "height": 9.6
+          },
+          "label": {
+            "text": "Control",
+            "x": 647.219,
+            "y": 55.5,
+            "width": 55.563,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "control",
+            "childTags": [
+              "defs",
+              "circle",
+              "line",
+              "text"
+            ]
+          }
+        },
+        {
+          "position": 7,
+          "id": "E",
+          "box": {
+            "x": 853,
+            "y": 3,
+            "width": 44.151,
+            "height": 70.5
+          },
+          "paintedBox": {
+            "x": 853,
+            "y": 9,
+            "width": 44.151,
+            "height": 70.5
+          },
+          "shape": {
+            "x": 853,
+            "y": 3,
+            "width": 44,
+            "height": 44
+          },
+          "label": {
+            "text": "Entity",
+            "x": 853.688,
+            "y": 51.5,
+            "width": 43.464,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "entity",
+            "childTags": [
+              "circle",
+              "line",
+              "text"
+            ]
+          }
+        }
+      ],
+      "footers": [
+        {
+          "id": "",
+          "paintedBox": {
+            "x": 1400,
+            "y": 139,
+            "width": 150,
+            "height": 65
+          }
+        },
+        {
+          "id": "S",
+          "paintedBox": {
+            "x": 1194,
+            "y": 139,
+            "width": 156,
+            "height": 71
+          }
+        },
+        {
+          "id": "",
+          "paintedBox": {
+            "x": 1050,
+            "y": 146.143,
+            "width": 50,
+            "height": 50
+          }
+        },
+        {
+          "id": "P",
+          "paintedBox": {
+            "x": 0,
+            "y": 139,
+            "width": 150,
+            "height": 65
+          }
+        },
+        {
+          "id": "A",
+          "paintedBox": {
+            "x": 254.016,
+            "y": 134,
+            "width": 41.36,
+            "height": 83.5
+          }
+        },
+        {
+          "id": "B",
+          "paintedBox": {
+            "x": 420,
+            "y": 150,
+            "width": 92.553,
+            "height": 68
+          }
+        },
+        {
+          "id": "C",
+          "paintedBox": {
+            "x": 647.219,
+            "y": 149,
+            "width": 55.563,
+            "height": 70
+          }
+        },
+        {
+          "id": "E",
+          "paintedBox": {
+            "x": 853,
+            "y": 149,
+            "width": 44.151,
+            "height": 70
+          }
+        }
+      ],
+      "lifelines": [
+        {
+          "id": "Q",
+          "x1": 1475,
+          "y1": 65,
+          "x2": 1475,
+          "y2": 139
+        },
+        {
+          "id": "S",
+          "x1": 1275,
+          "y1": 65,
+          "x2": 1275,
+          "y2": 139
+        },
+        {
+          "id": "D",
+          "x1": 1075,
+          "y1": 75,
+          "x2": 1075,
+          "y2": 139
+        },
+        {
+          "id": "E",
+          "x1": 875,
+          "y1": 75,
+          "x2": 875,
+          "y2": 139
+        },
+        {
+          "id": "C",
+          "x1": 675,
+          "y1": 75,
+          "x2": 675,
+          "y2": 139
+        },
+        {
+          "id": "B",
+          "x1": 475,
+          "y1": 80,
+          "x2": 475,
+          "y2": 139
+        },
+        {
+          "id": "A",
+          "x1": 275,
+          "y1": 80,
+          "x2": 275,
+          "y2": 139
+        },
+        {
+          "id": "P",
+          "x1": 75,
+          "y1": 65,
+          "x2": 75,
+          "y2": 139
+        }
+      ],
+      "messages": [
+        {
+          "position": 0,
+          "id": "i0",
+          "from": "P",
+          "to": "Q",
+          "box": {
+            "x": 76,
+            "y": 119,
+            "width": 1395,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 119,
+            "x2": 1471,
+            "y2": 119
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-6-arrowhead)"
+          },
+          "label": {
+            "text": "all participant bounds",
+            "x": 692.016,
+            "y": 83.281,
+            "width": 164.304,
+            "height": 22
+          }
+        }
+      ],
+      "activations": [],
+      "notes": [],
+      "fragments": [],
+      "svgStructure": {
+        "markers": [
+          {
+            "id": "sequence-layout-6-arrowhead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.9",
+            "refY": "5",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-6-crosshead",
+            "markerWidth": "15",
+            "markerHeight": "8",
+            "refX": "4",
+            "refY": "4.5",
+            "orient": "auto"
+          },
+          {
+            "id": "sequence-layout-6-filled-head",
+            "markerWidth": "20",
+            "markerHeight": "28",
+            "refX": "15.5",
+            "refY": "7",
+            "orient": "auto"
+          },
+          {
+            "id": "sequence-layout-6-sequencenumber",
+            "markerWidth": "60",
+            "markerHeight": "40",
+            "refX": "15",
+            "refY": "15",
+            "orient": "auto"
+          },
+          {
+            "id": "sequence-layout-6-solidTopArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.9",
+            "refY": "7.25",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-6-solidBottomArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.9",
+            "refY": "0.75",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-6-stickTopArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.5",
+            "refY": "7",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-6-stickBottomArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.5",
+            "refY": "0",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-6-filled-head-control",
+            "markerWidth": "20",
+            "markerHeight": "28",
+            "refX": "11",
+            "refY": "5.8",
+            "orient": "172.5"
+          },
+          {
+            "id": "sequence-layout-6-filled-head-control",
+            "markerWidth": "20",
+            "markerHeight": "28",
+            "refX": "11",
+            "refY": "5.8",
+            "orient": "172.5"
+          }
+        ]
+      }
+    },
+    {
+      "id": "markers-create-destroy",
+      "axes": [
+        "message-marker",
+        "participant-lifecycle",
+        "lifeline"
+      ],
+      "source": "sequenceDiagram\nparticipant A as Alice\nparticipant B as Bob\nA->>B:solid\nB-->>A:dotted\nA-xB:cross\nB--xA:dotted cross\nA-)B:point\nB--)A:dotted point\nA->B:open\nB-->A:dotted open\nA<<->>B:bidirectional\nB<<-->>A:bidirectional dotted\nA -|\\ B:solid top\nA -|/ B:solid bottom\nA -\\\\ B:stick top\nA -// B:stick bottom\nA /|- B:reverse solid top\nA \\|- B:reverse solid bottom\nA //- B:reverse stick top\nA \\\\- B:reverse stick bottom\nA --|\\ B:dotted solid top\nA --|/ B:dotted solid bottom\nA --\\\\ B:dotted stick top\nA --// B:dotted stick bottom\nA /|-- B:dotted reverse solid top\nA \\|-- B:dotted reverse solid bottom\nA //-- B:dotted reverse stick top\nA \\\\-- B:dotted reverse stick bottom\ncreate participant C as Created\nA->>C:create\ndestroy C\nC-->>A:destroy receiver\ncreate actor D as Runtime Actor\nB->>D:create actor\ndestroy D\nD-xB:destroy sender",
+      "config": {
+        "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+        "fontSize": 16,
+        "actorMargin": 50,
+        "width": 150,
+        "height": 65,
+        "boxMargin": 10,
+        "boxTextMargin": 5,
+        "messageMargin": 35,
+        "noteMargin": 10,
+        "activationWidth": 10,
+        "diagramMarginX": 50,
+        "diagramMarginY": 10,
+        "mirrorActors": true,
+        "wrapPadding": 10,
+        "labelBoxWidth": 50,
+        "labelBoxHeight": 20,
+        "bottomMarginAdj": 1,
+        "rightAngles": false
+      },
+      "root": {
+        "viewBox": "-50 -10 1079 1921",
+        "x": 0,
+        "y": 0,
+        "width": 958.261,
+        "height": 1900
+      },
+      "participants": [
+        {
+          "position": 0,
+          "id": "C",
+          "box": {
+            "x": 554,
+            "y": 1490.5,
+            "width": 150,
+            "height": 65
+          },
+          "paintedBox": {
+            "x": 554,
+            "y": 1490.5,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 554,
+            "y": 1490.5,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "Created",
+            "x": 599.477,
+            "y": 1512,
+            "width": 59.047,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "participant",
+            "childTags": [
+              "rect",
+              "text"
+            ]
+          }
+        },
+        {
+          "position": 1,
+          "id": "B",
+          "box": {
+            "x": 279,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "paintedBox": {
+            "x": 279,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 279,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "Bob",
+            "x": 339.039,
+            "y": 21.5,
+            "width": 30.08,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "participant",
+            "childTags": [
+              "rect",
+              "text"
+            ]
+          }
+        },
+        {
+          "position": 2,
+          "id": "A",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "paintedBox": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "shape": {
+            "x": 0,
+            "y": 0,
+            "width": 150,
+            "height": 65
+          },
+          "label": {
+            "text": "Alice",
+            "x": 56.406,
+            "y": 21.5,
+            "width": 36.188,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "participant",
+            "childTags": [
+              "rect",
+              "text"
+            ]
+          }
+        },
+        {
+          "position": 3,
+          "id": "D",
+          "box": {
+            "x": 850.125,
+            "y": 1658.5,
+            "width": 108.136,
+            "height": 83.5
+          },
+          "paintedBox": {
+            "x": 850.125,
+            "y": 1658.5,
+            "width": 108.136,
+            "height": 83.5
+          },
+          "shape": {
+            "x": 904,
+            "y": 1688.5,
+            "width": 0,
+            "height": 20
+          },
+          "label": {
+            "text": "Runtime Actor",
+            "x": 850.125,
+            "y": 1720,
+            "width": 108.136,
+            "height": 22
+          },
+          "structure": {
+            "dataType": "actor",
+            "childTags": [
+              "line",
+              "line",
+              "line",
+              "line",
+              "circle",
+              "text"
+            ]
+          }
+        }
+      ],
+      "footers": [
+        {
+          "id": "C",
+          "paintedBox": {
+            "x": 554,
+            "y": 1577,
+            "width": 150,
+            "height": 65
+          }
+        },
+        {
+          "id": "B",
+          "paintedBox": {
+            "x": 279,
+            "y": 1835,
+            "width": 150,
+            "height": 65
+          }
+        },
+        {
+          "id": "A",
+          "paintedBox": {
+            "x": 0,
+            "y": 1835,
+            "width": 150,
+            "height": 65
+          }
+        },
+        {
+          "id": "D",
+          "paintedBox": {
+            "x": 850.125,
+            "y": 1745,
+            "width": 108.136,
+            "height": 83.5
+          }
+        }
+      ],
+      "lifelines": [
+        {
+          "id": "D",
+          "x1": 904,
+          "y1": 1743.5,
+          "x2": 904,
+          "y2": 1750
+        },
+        {
+          "id": "C",
+          "x1": 629,
+          "y1": 1555.5,
+          "x2": 629,
+          "y2": 1577
+        },
+        {
+          "id": "B",
+          "x1": 354,
+          "y1": 65,
+          "x2": 354,
+          "y2": 1835
+        },
+        {
+          "id": "A",
+          "x1": 75,
+          "y1": 65,
+          "x2": 75,
+          "y2": 1835
+        }
+      ],
+      "messages": [
+        {
+          "position": 0,
+          "id": "i0",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 119,
+            "width": 274,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 119,
+            "x2": 350,
+            "y2": 119
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-arrowhead)"
+          },
+          "label": {
+            "text": "solid",
+            "x": 195.273,
+            "y": 83.281,
+            "width": 35.453,
+            "height": 22
+          }
+        },
+        {
+          "position": 1,
+          "id": "i1",
+          "from": "B",
+          "to": "A",
+          "box": {
+            "x": 79,
+            "y": 173,
+            "width": 274,
+            "height": 0
+          },
+          "line": {
+            "x1": 353,
+            "y1": 173,
+            "x2": 79,
+            "y2": 173
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-arrowhead)"
+          },
+          "label": {
+            "text": "dotted",
+            "x": 191.031,
+            "y": 137.281,
+            "width": 49.938,
+            "height": 22
+          }
+        },
+        {
+          "position": 2,
+          "id": "i2",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 227,
+            "width": 274,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 227,
+            "x2": 350,
+            "y2": 227
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-crosshead)"
+          },
+          "label": {
+            "text": "cross",
+            "x": 193.508,
+            "y": 191.281,
+            "width": 39.312,
+            "height": 22
+          }
+        },
+        {
+          "position": 3,
+          "id": "i3",
+          "from": "B",
+          "to": "A",
+          "box": {
+            "x": 79,
+            "y": 281,
+            "width": 274,
+            "height": 0
+          },
+          "line": {
+            "x1": 353,
+            "y1": 281,
+            "x2": 79,
+            "y2": 281
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-crosshead)"
+          },
+          "label": {
+            "text": "dotted cross",
+            "x": 169.461,
+            "y": 245.281,
+            "width": 93.408,
+            "height": 22
+          }
+        },
+        {
+          "position": 4,
+          "id": "i4",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 335,
+            "width": 274,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 335,
+            "x2": 350,
+            "y2": 335
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-filled-head)"
+          },
+          "label": {
+            "text": "point",
+            "x": 193.344,
+            "y": 299.281,
+            "width": 39.536,
+            "height": 22
+          }
+        },
+        {
+          "position": 5,
+          "id": "i5",
+          "from": "B",
+          "to": "A",
+          "box": {
+            "x": 79,
+            "y": 389,
+            "width": 274,
+            "height": 0
+          },
+          "line": {
+            "x1": 353,
+            "y1": 389,
+            "x2": 79,
+            "y2": 389
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-filled-head)"
+          },
+          "label": {
+            "text": "dotted point",
+            "x": 169.289,
+            "y": 353.281,
+            "width": 93.632,
+            "height": 22
+          }
+        },
+        {
+          "position": 6,
+          "id": "i6",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 443,
+            "width": 277,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 443,
+            "x2": 353,
+            "y2": 443
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": ""
+          },
+          "label": {
+            "text": "open",
+            "x": 195.781,
+            "y": 407.281,
+            "width": 38.438,
+            "height": 22
+          }
+        },
+        {
+          "position": 7,
+          "id": "i7",
+          "from": "B",
+          "to": "A",
+          "box": {
+            "x": 76,
+            "y": 497,
+            "width": 277,
+            "height": 0
+          },
+          "line": {
+            "x1": 353,
+            "y1": 497,
+            "x2": 76,
+            "y2": 497
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "",
+            "markerEnd": ""
+          },
+          "label": {
+            "text": "dotted open",
+            "x": 168.734,
+            "y": 461.281,
+            "width": 92.531,
+            "height": 22
+          }
+        },
+        {
+          "position": 8,
+          "id": "i8",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 79,
+            "y": 551,
+            "width": 271,
+            "height": 0
+          },
+          "line": {
+            "x1": 79,
+            "y1": 551,
+            "x2": 350,
+            "y2": 551
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "url(#sequence-layout-7-arrowhead)",
+            "markerEnd": "url(#sequence-layout-7-arrowhead)"
+          },
+          "label": {
+            "text": "bidirectional",
+            "x": 168.242,
+            "y": 515.281,
+            "width": 93.516,
+            "height": 22
+          }
+        },
+        {
+          "position": 9,
+          "id": "i9",
+          "from": "B",
+          "to": "A",
+          "box": {
+            "x": 79,
+            "y": 605,
+            "width": 271,
+            "height": 0
+          },
+          "line": {
+            "x1": 350,
+            "y1": 605,
+            "x2": 79,
+            "y2": 605
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "url(#sequence-layout-7-arrowhead)",
+            "markerEnd": "url(#sequence-layout-7-arrowhead)"
+          },
+          "label": {
+            "text": "bidirectional dotted",
+            "x": 141.195,
+            "y": 569.281,
+            "width": 147.609,
+            "height": 22
+          }
+        },
+        {
+          "position": 10,
+          "id": "i10",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 659,
+            "width": 274,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 659,
+            "x2": 350,
+            "y2": 659
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-solidTopArrowHead)"
+          },
+          "label": {
+            "text": "solid top",
+            "x": 180.547,
+            "y": 623.281,
+            "width": 65.056,
+            "height": 22
+          }
+        },
+        {
+          "position": 11,
+          "id": "i11",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 713,
+            "width": 274,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 713,
+            "x2": 350,
+            "y2": 713
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-solidBottomArrowHead)"
+          },
+          "label": {
+            "text": "solid bottom",
+            "x": 165.344,
+            "y": 677.281,
+            "width": 95.313,
+            "height": 22
+          }
+        },
+        {
+          "position": 12,
+          "id": "i12",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 767,
+            "width": 277,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 767,
+            "x2": 353,
+            "y2": 767
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-stickTopArrowHead)"
+          },
+          "label": {
+            "text": "stick top",
+            "x": 183.375,
+            "y": 731.281,
+            "width": 63.408,
+            "height": 22
+          }
+        },
+        {
+          "position": 13,
+          "id": "i13",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 821,
+            "width": 277,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 821,
+            "x2": 353,
+            "y2": 821
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-stickBottomArrowHead)"
+          },
+          "label": {
+            "text": "stick bottom",
+            "x": 168.164,
+            "y": 785.281,
+            "width": 93.672,
+            "height": 22
+          }
+        },
+        {
+          "position": 14,
+          "id": "i14",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 79,
+            "y": 875,
+            "width": 274,
+            "height": 0
+          },
+          "line": {
+            "x1": 79,
+            "y1": 875,
+            "x2": 353,
+            "y2": 875
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "url(#sequence-layout-7-solidBottomArrowHead)",
+            "markerEnd": ""
+          },
+          "label": {
+            "text": "reverse solid top",
+            "x": 153.75,
+            "y": 839.281,
+            "width": 124.656,
+            "height": 22
+          }
+        },
+        {
+          "position": 15,
+          "id": "i15",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 79,
+            "y": 929,
+            "width": 274,
+            "height": 0
+          },
+          "line": {
+            "x1": 79,
+            "y1": 929,
+            "x2": 353,
+            "y2": 929
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "url(#sequence-layout-7-solidTopArrowHead)",
+            "markerEnd": ""
+          },
+          "label": {
+            "text": "reverse solid bottom",
+            "x": 138.539,
+            "y": 893.281,
+            "width": 154.922,
+            "height": 22
+          }
+        },
+        {
+          "position": 16,
+          "id": "i16",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 983,
+            "width": 277,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 983,
+            "x2": 353,
+            "y2": 983
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "url(#sequence-layout-7-stickBottomArrowHead)",
+            "markerEnd": ""
+          },
+          "label": {
+            "text": "reverse stick top",
+            "x": 153.57,
+            "y": 947.281,
+            "width": 123.008,
+            "height": 22
+          }
+        },
+        {
+          "position": 17,
+          "id": "i17",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 1037,
+            "width": 277,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 1037,
+            "x2": 353,
+            "y2": 1037
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "url(#sequence-layout-7-stickTopArrowHead)",
+            "markerEnd": ""
+          },
+          "label": {
+            "text": "reverse stick bottom",
+            "x": 138.367,
+            "y": 1001.281,
+            "width": 153.266,
+            "height": 22
+          }
+        },
+        {
+          "position": 18,
+          "id": "i18",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 1091,
+            "width": 274,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 1091,
+            "x2": 350,
+            "y2": 1091
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-solidTopArrowHead)"
+          },
+          "label": {
+            "text": "dotted solid top",
+            "x": 153.5,
+            "y": 1055.281,
+            "width": 119.152,
+            "height": 22
+          }
+        },
+        {
+          "position": 19,
+          "id": "i19",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 1145,
+            "width": 274,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 1145,
+            "x2": 350,
+            "y2": 1145
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-solidBottomArrowHead)"
+          },
+          "label": {
+            "text": "dotted solid bottom",
+            "x": 138.289,
+            "y": 1109.281,
+            "width": 149.422,
+            "height": 22
+          }
+        },
+        {
+          "position": 20,
+          "id": "i20",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 1199,
+            "width": 277,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 1199,
+            "x2": 353,
+            "y2": 1199
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-stickTopArrowHead)"
+          },
+          "label": {
+            "text": "dotted stick top",
+            "x": 156.32,
+            "y": 1163.281,
+            "width": 117.504,
+            "height": 22
+          }
+        },
+        {
+          "position": 21,
+          "id": "i21",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 1253,
+            "width": 277,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 1253,
+            "x2": 353,
+            "y2": 1253
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-stickBottomArrowHead)"
+          },
+          "label": {
+            "text": "dotted stick bottom",
+            "x": 141.117,
+            "y": 1217.281,
+            "width": 147.766,
+            "height": 22
+          }
+        },
+        {
+          "position": 22,
+          "id": "i22",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 79,
+            "y": 1307,
+            "width": 274,
+            "height": 0
+          },
+          "line": {
+            "x1": 79,
+            "y1": 1307,
+            "x2": 353,
+            "y2": 1307
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "url(#sequence-layout-7-solidBottomArrowHead)",
+            "markerEnd": ""
+          },
+          "label": {
+            "text": "dotted reverse solid top",
+            "x": 126.703,
+            "y": 1271.281,
+            "width": 178.752,
+            "height": 22
+          }
+        },
+        {
+          "position": 23,
+          "id": "i23",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 79,
+            "y": 1361,
+            "width": 274,
+            "height": 0
+          },
+          "line": {
+            "x1": 79,
+            "y1": 1361,
+            "x2": 353,
+            "y2": 1361
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "url(#sequence-layout-7-solidTopArrowHead)",
+            "markerEnd": ""
+          },
+          "label": {
+            "text": "dotted reverse solid bottom",
+            "x": 111.492,
+            "y": 1325.281,
+            "width": 209.016,
+            "height": 22
+          }
+        },
+        {
+          "position": 24,
+          "id": "i24",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 1415,
+            "width": 277,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 1415,
+            "x2": 353,
+            "y2": 1415
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "url(#sequence-layout-7-stickBottomArrowHead)",
+            "markerEnd": ""
+          },
+          "label": {
+            "text": "dotted reverse stick top",
+            "x": 126.523,
+            "y": 1379.281,
+            "width": 177.104,
+            "height": 22
+          }
+        },
+        {
+          "position": 25,
+          "id": "i25",
+          "from": "A",
+          "to": "B",
+          "box": {
+            "x": 76,
+            "y": 1469,
+            "width": 277,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 1469,
+            "x2": 353,
+            "y2": 1469
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "url(#sequence-layout-7-stickTopArrowHead)",
+            "markerEnd": ""
+          },
+          "label": {
+            "text": "dotted reverse stick bottom",
+            "x": 111.313,
+            "y": 1433.281,
+            "width": 207.375,
+            "height": 22
+          }
+        },
+        {
+          "position": 26,
+          "id": "i26",
+          "from": "A",
+          "to": "C",
+          "box": {
+            "x": 76,
+            "y": 1523,
+            "width": 471,
+            "height": 0
+          },
+          "line": {
+            "x1": 76,
+            "y1": 1523,
+            "x2": 547,
+            "y2": 1523
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-arrowhead)"
+          },
+          "label": {
+            "text": "create",
+            "x": 288.609,
+            "y": 1487.281,
+            "width": 46.781,
+            "height": 22
+          }
+        },
+        {
+          "position": 27,
+          "id": "i27",
+          "from": "C",
+          "to": "A",
+          "box": {
+            "x": 79,
+            "y": 1609.5,
+            "width": 474,
+            "height": 0
+          },
+          "line": {
+            "x1": 553,
+            "y1": 1609.5,
+            "x2": 79,
+            "y2": 1609.5
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine1",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-arrowhead)"
+          },
+          "label": {
+            "text": "destroy receiver",
+            "x": 255.906,
+            "y": 1574.281,
+            "width": 120.568,
+            "height": 22
+          }
+        },
+        {
+          "position": 28,
+          "id": "i28",
+          "from": "B",
+          "to": "D",
+          "box": {
+            "x": 355,
+            "y": 1696,
+            "width": 524,
+            "height": 0
+          },
+          "line": {
+            "x1": 355,
+            "y1": 1696,
+            "x2": 879,
+            "y2": 1696
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-arrowhead)"
+          },
+          "label": {
+            "text": "create actor",
+            "x": 572.172,
+            "y": 1660.281,
+            "width": 90.04,
+            "height": 22
+          }
+        },
+        {
+          "position": 29,
+          "id": "i29",
+          "from": "D",
+          "to": "B",
+          "box": {
+            "x": 358,
+            "y": 1782.5,
+            "width": 527,
+            "height": 0
+          },
+          "line": {
+            "x1": 885,
+            "y1": 1782.5,
+            "x2": 358,
+            "y2": 1782.5
+          },
+          "path": "",
+          "structure": {
+            "tag": "line",
+            "className": "messageLine0",
+            "markerStart": "",
+            "markerEnd": "url(#sequence-layout-7-crosshead)"
+          },
+          "label": {
+            "text": "destroy sender",
+            "x": 565.836,
+            "y": 1747.281,
+            "width": 112.712,
+            "height": 22
+          }
+        }
+      ],
+      "activations": [],
+      "notes": [],
+      "fragments": [],
+      "svgStructure": {
+        "markers": [
+          {
+            "id": "sequence-layout-7-arrowhead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.9",
+            "refY": "5",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-7-crosshead",
+            "markerWidth": "15",
+            "markerHeight": "8",
+            "refX": "4",
+            "refY": "4.5",
+            "orient": "auto"
+          },
+          {
+            "id": "sequence-layout-7-filled-head",
+            "markerWidth": "20",
+            "markerHeight": "28",
+            "refX": "15.5",
+            "refY": "7",
+            "orient": "auto"
+          },
+          {
+            "id": "sequence-layout-7-sequencenumber",
+            "markerWidth": "60",
+            "markerHeight": "40",
+            "refX": "15",
+            "refY": "15",
+            "orient": "auto"
+          },
+          {
+            "id": "sequence-layout-7-solidTopArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.9",
+            "refY": "7.25",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-7-solidBottomArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.9",
+            "refY": "0.75",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-7-stickTopArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.5",
+            "refY": "7",
+            "orient": "auto-start-reverse"
+          },
+          {
+            "id": "sequence-layout-7-stickBottomArrowHead",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "refX": "7.5",
+            "refY": "0",
+            "orient": "auto-start-reverse"
+          }
+        ]
+      }
     }
   ],
-  "fixtureSha256": "e4fc4d3b5301c2e2553084ae8e5fceb8dde086d6081c6f530a7d7ed143604363"
+  "fixtureSha256": "9630c4df0aec200a3d6a54d6e3a59858603017fde443c826b7d57a436c3b207e"
 }
