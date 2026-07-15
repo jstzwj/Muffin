@@ -14,6 +14,8 @@ namespace muffin::mermaid::flowchart {
 inline constexpr qreal kFlowMathMlScaleX = 46.21875 / 56.796875;
 inline constexpr qreal kFlowMathMlScaleY = 32.8125 / 38.864;
 inline constexpr qreal kFlowMathMlTextScaleX = 39.734375 / 44.140625;
+inline constexpr qreal kFlowMathMlLiteralFallbackScaleX =
+    kFlowMathMlScaleX * (44.21875 / 42.4375);
 
 struct FlowLabelMathSpan {
   qsizetype start = 0;
@@ -25,6 +27,7 @@ struct FlowLabelDocument {
   QString text;
   QVector<QTextLayout::FormatRange> formats;
   QVector<FlowLabelMathSpan> math;
+  bool literalMarkdownMathFallback = false;
 };
 
 struct FlowLabelVisualRun {

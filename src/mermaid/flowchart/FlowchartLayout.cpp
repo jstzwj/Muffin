@@ -447,6 +447,7 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     FlowLayoutOptions options, std::vector<dagre::DagreSnapshot>* dagreSnapshots,
     const QString& retainedRoot) {
   namespace d = muffin::mermaid::dagre;
+  constexpr qreal kSelfLoopLabelRectExtent = 0.1;
   struct ExtractedCluster {
     QString id;
     QSet<QString> vertices;
@@ -492,7 +493,11 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
         break;
       }
     }
-    if (externalConnection) continue;
+    // Mermaid recursively extracts explicit-direction clusters even when an
+    // edge crosses their boundary. The parent graph rebinds that endpoint to
+    // the extracted cluster atom; non-explicit clusters remain extractable only
+    // when they are closed.
+    if (externalConnection && !it->hasExplicitDir) continue;
 
     ExtractedCluster item;
     item.id = it->id;
@@ -559,6 +564,12 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
   // to break mirror-equivalent ordering ties, so this order is observable.
   QHash<QString, QSizeF> extractedSizes;
   for (const ExtractedCluster& item : extracted) extractedSizes.insert(item.id, item.size);
+  QHash<QString, QString> extractedEndpoint;
+  for (const ExtractedCluster& item : extracted)
+    for (const QString& vertex : item.vertices) extractedEndpoint.insert(vertex, item.id);
+  const auto layoutEndpoint = [&](const QString& vertex) {
+    return extractedEndpoint.value(vertex, vertex);
+  };
   auto addSubgraphNode = [&](const FlowSubgraph& subgraph) {
     if (claimedSubgraphs.contains(subgraph.id) && !extractedSizes.contains(subgraph.id)) return;
     d::DagreNodeLabel label;
@@ -580,6 +591,19 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
       nl.height += 4.0;
     }
     g.setNode(v.id, nl);
+    if (!retainedRoot.isEmpty()) {
+      const bool hasSelfLoop = std::any_of(data.edges.cbegin(), data.edges.cend(),
+                                           [&](const FlowEdge& edge) {
+                                             return edge.start == v.id && edge.end == v.id;
+                                           });
+      if (hasSelfLoop) {
+        d::DagreNodeLabel dummy;
+        dummy.width = kSelfLoopLabelRectExtent;
+        dummy.height = kSelfLoopLabelRectExtent;
+        g.setNode(v.id + QStringLiteral("---") + v.id + QStringLiteral("---1"), dummy);
+        g.setNode(v.id + QStringLiteral("---") + v.id + QStringLiteral("---2"), dummy);
+      }
+    }
   };
   if (!retainedRoot.isEmpty()) {
     const auto root = std::find_if(data.subgraphs.cbegin(), data.subgraphs.cend(),
@@ -636,25 +660,55 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     if (!parent.isEmpty() && g.hasNode(parent)) g.setParent(item.id, parent);
   }
 
+  auto edgeLabel = [&](const FlowEdge& edge) {
+    d::DagreEdgeLabel label;
+    label.minlen = 1;
+    label.weight = 1;
+    label.labelpos = QStringLiteral("c");
+    label.labeloffset = 10;
+    if (!edge.text.isEmpty()) {
+      QSizeF measured = options.measuredEdgeLabels.value(edge.id);
+      if (!measured.isValid() || measured.isEmpty()) measured = measureFlowchartEdgeLabel(edge);
+      label.width = measured.width();
+      label.height = measured.height();
+    }
+    return label;
+  };
   for (const FlowEdge& fe : data.edges) {
-    if (claimedVertices.contains(fe.start) && claimedVertices.contains(fe.end)) continue;
-    d::DagreEdgeLabel el;
-    el.minlen = 1;
-    el.weight = 1;
-    el.labelpos = QStringLiteral("c");  // mermaid default for all flowchart edges
-    el.labeloffset = 10;
-    if (!fe.text.isEmpty()) {
-      QSizeF lbl = options.measuredEdgeLabels.value(fe.id);
-      if (!lbl.isValid() || lbl.isEmpty()) {
-        lbl = measureFlowchartEdgeLabel(fe);
+    const QString start = layoutEndpoint(fe.start);
+    const QString end = layoutEndpoint(fe.end);
+    if (start == end && (start != fe.start || end != fe.end)) continue;
+    d::DagreEdgeLabel el = edgeLabel(fe);
+    if (start == end) {
+      // The flowchart renderer expands a self-loop into a three-edge cycle
+      // through two 10x10 layout nodes. Dagre's native self-edge mechanism has
+      // different compound bounds and is not used by Mermaid flowcharts.
+      const QString dummy1 = start + QStringLiteral("---") + start + QStringLiteral("---1");
+      const QString dummy2 = start + QStringLiteral("---") + start + QStringLiteral("---2");
+      // The placeholders are declared as 10x10 in Mermaid data, then Chrome's
+      // insertNode(labelRect) resolves their actual pre-Dagre SVG bbox to 0.1px.
+      d::DagreNodeLabel dummy;
+      dummy.width = kSelfLoopLabelRectExtent;
+      dummy.height = kSelfLoopLabelRectExtent;
+      g.setNode(dummy1, dummy);
+      g.setNode(dummy2, dummy);
+      const QString parent = g.parentOf(start);
+      if (!parent.isNull()) {
+        g.setParent(dummy1, parent);
+        g.setParent(dummy2, parent);
       }
-      el.width = lbl.width();
-      el.height = lbl.height();
+      d::DagreEdgeLabel empty = el;
+      empty.width = 0.0;
+      empty.height = 0.0;
+      g.setEdge(start, dummy1, empty, start + QStringLiteral("-cyclic-special-0"));
+      g.setEdge(dummy1, dummy2, el, start + QStringLiteral("-cyclic-special-1"));
+      g.setEdge(dummy2, start, empty, start + QStringLiteral("-cyclic-special-2"));
+      continue;
     }
     if (fe.id.isEmpty())
-      g.setEdge(fe.start, fe.end, el);
+      g.setEdge(start, end, el);
     else
-      g.setEdge(fe.start, fe.end, el, fe.id);
+      g.setEdge(start, end, el, fe.id);
   }
 
   d::runDagreLayout(g, dagreSnapshots);
@@ -686,36 +740,80 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
   for (const FlowVertex& v : data.vertices) vertexType.insert(v.id, v.type);
 
   for (const FlowEdge& fe : data.edges) {
-    if (claimedVertices.contains(fe.start) && claimedVertices.contains(fe.end)) continue;
+    const QString start = layoutEndpoint(fe.start);
+    const QString end = layoutEndpoint(fe.end);
+    if (start == end && (start != fe.start || end != fe.end)) continue;
     FlowLayoutEdge out;
     out.id = fe.id;
     if (fe.start == fe.end) {
-      // Self-edge: mermaid's renderer draws its own loop and does NOT use dagre's
-      // positionSelfEdges points. Replicate the flat pipeline's control-point
-      // geometry (which matches the golden) against dagre's node position.
-      const d::DagreNodeLabel* n = g.node(fe.start);
-      if (n) {
-        const qreal nx = n->x.value_or(0.0);
-        const qreal ny = n->y.value_or(0.0);
-        QPointF control1, control2;
-        if (dir == QLatin1String("BT")) {
-          control1 = QPointF(nx - 18.0, ny - n->height * 0.95);
-          control2 = QPointF(nx + 18.0, ny - n->height * 0.95);
-        } else if (dir == QLatin1String("LR") || dir == QLatin1String("RL")) {
-          const qreal side = dir == QLatin1String("LR") ? 1.0 : -1.0;
-          const qreal boundary = side * n->width / 2.0;
-          const qreal loop = side * n->height * 0.45;
-          control1 = QPointF(nx + boundary + loop, ny - 18.0);
-          control2 = QPointF(nx + boundary + loop, ny + 18.0);
-        } else {  // TB
-          control1 = QPointF(nx - 18.0, ny + n->height * 0.95);
-          control2 = QPointF(nx + 18.0, ny + n->height * 0.95);
+      const d::DagreNodeLabel* node = g.node(start);
+      const d::DagreNodeLabel* dummy1 = g.node(start + QStringLiteral("---") + start +
+                                               QStringLiteral("---1"));
+      const d::DagreNodeLabel* dummy2 = g.node(start + QStringLiteral("---") + start +
+                                               QStringLiteral("---2"));
+      if (node && dummy1 && dummy2) {
+        const QPointF center(node->x.value_or(0.0), node->y.value_or(0.0));
+        const QPointF hint((dummy1->x.value_or(0.0) + dummy2->x.value_or(0.0)) / 2.0,
+                           (dummy1->y.value_or(0.0) + dummy2->y.value_or(0.0)) / 2.0);
+        const QPointF delta = hint - center;
+        enum class LoopSide { Top, Right, Bottom, Left };
+        LoopSide side;
+        if (std::abs(delta.x()) > std::abs(delta.y()))
+          side = delta.x() > 0.0 ? LoopSide::Right : LoopSide::Left;
+        else if (std::abs(delta.y()) > 0.0)
+          side = delta.y() > 0.0 ? LoopSide::Bottom : LoopSide::Top;
+        else if (dir == QLatin1String("BT"))
+          side = LoopSide::Bottom;
+        else if (dir == QLatin1String("LR"))
+          side = LoopSide::Right;
+        else if (dir == QLatin1String("RL"))
+          side = LoopSide::Left;
+        else
+          side = LoopSide::Top;
+
+        const d::DagreEdgeLabel selfLabel = edgeLabel(fe);
+        const qreal labelWidth = selfLabel.width;
+        const qreal labelHeight = selfLabel.height;
+        const qreal maxSpan = std::max<qreal>(36.0, std::min<qreal>(100.0, node->width * 0.8));
+        const qreal span = std::clamp(std::max(labelWidth, node->width * 0.35), 36.0, maxSpan);
+        const qreal depth = std::clamp(std::min(node->width, node->height) * 0.45, 24.0, 48.0);
+        const qreal x = center.x(), y = center.y();
+        if (side == LoopSide::Bottom) {
+          const qreal edge = y + node->height / 2.0;
+          out.points = {{x - span / 2.0, edge}, {x - span / 2.0, edge + depth},
+                        {x + span / 2.0, edge + depth}, {x + span / 2.0, edge}};
+          out.labelX = x;
+          out.labelY = edge + depth + labelHeight / 2.0 + 4.0;
+        } else if (side == LoopSide::Right) {
+          const qreal edge = x + node->width / 2.0;
+          out.points = {{edge, y - span / 2.0}, {edge + depth, y - span / 2.0},
+                        {edge + depth, y + span / 2.0}, {edge, y + span / 2.0}};
+          out.labelX = edge + depth + labelWidth / 2.0 + 4.0;
+          out.labelY = y;
+        } else if (side == LoopSide::Left) {
+          const qreal edge = x - node->width / 2.0;
+          out.points = {{edge, y - span / 2.0}, {edge - depth, y - span / 2.0},
+                        {edge - depth, y + span / 2.0}, {edge, y + span / 2.0}};
+          out.labelX = edge - depth - labelWidth / 2.0 - 4.0;
+          out.labelY = y;
+        } else {
+          const qreal edge = y - node->height / 2.0;
+          out.points = {{x - span / 2.0, edge}, {x - span / 2.0, edge - depth},
+                        {x + span / 2.0, edge - depth}, {x + span / 2.0, edge}};
+          out.labelX = x;
+          out.labelY = edge - depth - labelHeight / 2.0 - 4.0;
         }
-        QVector<QPointF> points = {d::intersectRect(*n, control1), control1, control2,
-                                    d::intersectRect(*n, control2)};
-        for (QPointF& p : points) p -= origin;
-        out.points = points;
-        QVector<QPointF> rendered = points;
+        out.points.first() = intersectNodeForShape(*node, vertexType.value(start),
+                                                   out.points.at(1));
+        out.points.last() = intersectNodeForShape(*node, vertexType.value(start),
+                                                  out.points.at(out.points.size() - 2));
+        out.hasLabelPosition = !fe.text.isEmpty();
+        for (QPointF& point : out.points) point -= origin;
+        if (out.hasLabelPosition) {
+          out.labelX -= origin.x();
+          out.labelY -= origin.y();
+        }
+        QVector<QPointF> rendered = out.points;
         clipForMarkers(rendered, fe.type);
         const QString curve = !fe.interpolate.isEmpty()
                                   ? fe.interpolate
@@ -728,7 +826,7 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
       }
     }
     const d::DagreEdgeLabel* el =
-        fe.id.isEmpty() ? g.edge(fe.start, fe.end) : g.edge(fe.start, fe.end, fe.id);
+        fe.id.isEmpty() ? g.edge(start, end) : g.edge(start, end, fe.id);
     if (el) {
       // mermaid's renderer drops dagre's rect-intersected endpoints and
       // re-intersects the first/last interior point against each node's shape:
@@ -738,18 +836,18 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
       // For rect/round shapes this reproduces dagre's rect intersect exactly;
       // for circle/diamond it differs on diagonal approaches.
       QVector<QPointF> absPts = el->points;
-      const d::DagreNodeLabel* tailNode = g.node(fe.start);
-      const d::DagreNodeLabel* headNode = g.node(fe.end);
+      const d::DagreNodeLabel* tailNode = g.node(start);
+      const d::DagreNodeLabel* headNode = g.node(end);
       if (absPts.size() >= 3) {
         const QPointF firstInterior = absPts.at(1);
         const QPointF lastInterior = absPts.at(absPts.size() - 2);
         QVector<QPointF> reintersected;
         reintersected.reserve(absPts.size());
-        reintersected.append(tailNode ? intersectNodeForShape(*tailNode, vertexType.value(fe.start),
+        reintersected.append(tailNode ? intersectNodeForShape(*tailNode, vertexType.value(start),
                                                                firstInterior)
                                       : absPts.first());
         for (qsizetype i = 1; i + 1 < absPts.size(); ++i) reintersected.append(absPts.at(i));
-        reintersected.append(headNode ? intersectNodeForShape(*headNode, vertexType.value(fe.end),
+        reintersected.append(headNode ? intersectNodeForShape(*headNode, vertexType.value(end),
                                                               lastInterior)
                                       : absPts.last());
         absPts = reintersected;
@@ -760,9 +858,9 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
         // is already on the rect boundary); for polygon/circle shapes it snaps
         // the endpoint onto the shape's actual border.
         absPts = {
-            tailNode ? intersectNodeForShape(*tailNode, vertexType.value(fe.start), absPts.at(0))
+            tailNode ? intersectNodeForShape(*tailNode, vertexType.value(start), absPts.at(0))
                      : absPts.at(0),
-            headNode ? intersectNodeForShape(*headNode, vertexType.value(fe.end), absPts.at(1))
+            headNode ? intersectNodeForShape(*headNode, vertexType.value(end), absPts.at(1))
                      : absPts.at(1),
         };
       }
@@ -784,6 +882,14 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     out.path = pathForCurve(rendered, curve);
     result.edges.push_back(out);
   }
+
+  QSet<QString> selfEdgeIds;
+  for (const FlowEdge& edge : data.edges)
+    if (edge.start == edge.end) selfEdgeIds.insert(edge.id);
+  std::stable_partition(result.edges.begin(), result.edges.end(),
+                        [&](const FlowLayoutEdge& edge) {
+                          return !selfEdgeIds.contains(edge.id);
+                        });
 
   // Clusters: reverse subgraph order, matching the existing extraction.
   for (auto it = data.subgraphs.rbegin(); it != data.subgraphs.rend(); ++it) {
@@ -825,19 +931,38 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     }
   }
 
+  QSet<QString> semanticVertexIds;
+  for (const FlowVertex& vertex : data.vertices) semanticVertexIds.insert(vertex.id);
+  QStringList layoutNodeOrder;
+  for (const QString& id : g.nodes()) {
+    const auto extractedIt = std::find_if(extracted.cbegin(), extracted.cend(),
+                                          [&](const ExtractedCluster& item) {
+                                            return item.id == id;
+                                          });
+    if (extractedIt != extracted.cend()) {
+      for (const FlowLayoutNode& node : extractedIt->layout.nodes)
+        layoutNodeOrder.push_back(node.id);
+    } else if (semanticVertexIds.contains(id) && !claimedVertices.contains(id)) {
+      layoutNodeOrder.push_back(id);
+    }
+  }
+
   QHash<QString, FlowLayoutNode> nodesById;
   for (FlowLayoutNode& node : result.nodes) nodesById.insert(node.id, std::move(node));
   QHash<QString, FlowLayoutEdge> edgesById;
+  QStringList layoutEdgeOrder;
+  layoutEdgeOrder.reserve(result.edges.size());
+  for (const FlowLayoutEdge& edge : result.edges) layoutEdgeOrder.push_back(edge.id);
   for (FlowLayoutEdge& edge : result.edges) edgesById.insert(edge.id, std::move(edge));
   QHash<QString, FlowLayoutCluster> clustersById;
   for (FlowLayoutCluster& cluster : result.clusters)
     clustersById.insert(cluster.id, std::move(cluster));
 
   FlowLayoutResult ordered;
-  for (const FlowVertex& vertex : data.vertices)
-    if (nodesById.contains(vertex.id)) ordered.nodes.push_back(nodesById.take(vertex.id));
-  for (const FlowEdge& edge : data.edges)
-    if (edgesById.contains(edge.id)) ordered.edges.push_back(edgesById.take(edge.id));
+  for (const QString& nodeId : layoutNodeOrder)
+    if (nodesById.contains(nodeId)) ordered.nodes.push_back(nodesById.take(nodeId));
+  for (const QString& edgeId : layoutEdgeOrder)
+    if (edgesById.contains(edgeId)) ordered.edges.push_back(edgesById.take(edgeId));
   for (auto it = data.subgraphs.rbegin(); it != data.subgraphs.rend(); ++it)
     if (clustersById.contains(it->id)) ordered.clusters.push_back(clustersById.take(it->id));
 

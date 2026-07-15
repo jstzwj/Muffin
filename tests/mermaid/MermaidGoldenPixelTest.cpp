@@ -65,6 +65,7 @@ int main(int argc, char** argv) {
   int highDpiCases = 0;
   bool sawCjk = false;
   bool sawBidi = false;
+  bool sawDeterministicAnimation = false;
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
   for (const QJsonValue& value : cases) {
     const QJsonObject fixture = value.toObject();
@@ -73,6 +74,12 @@ int main(int argc, char** argv) {
     if (dpr > 1.0) ++highDpiCases;
     sawCjk = sawCjk || id.contains(QStringLiteral("cjk"));
     sawBidi = sawBidi || id.contains(QStringLiteral("bidi"));
+    if (id.contains(QStringLiteral("animated"))) {
+      require(fixture.value(QStringLiteral("animationState")).toString() ==
+                  QLatin1String("initial"),
+              QStringLiteral("Case %1: animated golden must declare a deterministic state").arg(id));
+      sawDeterministicAnimation = true;
+    }
     const QString source = fixture.value(QStringLiteral("source")).toString();
     const flowchart::Flowchart chart = flowchart::Flowchart::parse(source);
     const QMap<QString, QSizeF> sizes = flowchart::measureFlowchartNodes(chart.data());
@@ -109,7 +116,7 @@ int main(int argc, char** argv) {
   }
 
   if (failures > 0) fail(QStringLiteral("%1 of %2 golden-pixel cases FAILED (diagnostics in %3)").arg(failures).arg(cases.size()).arg(failDir));
-  require(highDpiCases >= 4 && sawCjk && sawBidi,
+  require(highDpiCases >= 4 && sawCjk && sawBidi && sawDeterministicAnimation,
           QStringLiteral("Golden-pixel CJK/bidi/high-DPI coverage matrix regressed"));
   qDebug().noquote() << "MermaidGoldenPixelTest:" << cases.size() << "cases pass Level-3 (interior exact + boundary RGBA + text IoU + empty)";
   return 0;

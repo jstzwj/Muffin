@@ -161,6 +161,18 @@
       "file": "label-markdown.png"
     },
     {
+      "id": "label-markdown-break-math",
+      "theme": "default",
+      "source": "flowchart LR\nA[\"`**Bold**<br/>$$x^2 + 1$$`\"] --> B[Plain]",
+      "dpr": 1,
+      "content": {
+        "width": 306.734375,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "label-markdown-break-math.png"
+    },
+    {
       "id": "label-math",
       "theme": "default",
       "source": "flowchart LR\nA[\"`Value $$x^2 + \\frac{1}{2}$$`\"] --> B[Plain]",
@@ -195,6 +207,18 @@
       },
       "enforceInterior": true,
       "file": "cluster-label-rich.png"
+    },
+    {
+      "id": "terminal-and-long-edge-label",
+      "theme": "default",
+      "source": "flowchart LR\nA@{ shape: terminal, label: \"Terminal label\" }\nA -->|\"A deliberately long edge label that wraps at the upstream limit\"| B[Finish]",
+      "dpr": 1,
+      "content": {
+        "width": 452.0580749511719,
+        "height": 56.19999694824219
+      },
+      "enforceInterior": true,
+      "file": "terminal-and-long-edge-label.png"
     },
     {
       "id": "label-cjk",
@@ -351,6 +375,43 @@
       },
       "enforceInterior": true,
       "file": "recursive-cluster-three-level.png"
+    },
+    {
+      "id": "compound-self-parallel",
+      "theme": "default",
+      "source": "flowchart TB\nsubgraph Outer[Outer]\ndirection LR\nsubgraph Inner[Inner]\ndirection TB\nA[Alpha] --> A\nA --> B[Beta]\nA --> B\nend\nB --> C[Gamma]\nend\nC --> D[Delta]",
+      "dpr": 1,
+      "content": {
+        "width": 507.453125,
+        "height": 582.0999755859375
+      },
+      "enforceInterior": true,
+      "file": "compound-self-parallel.png"
+    },
+    {
+      "id": "cluster-cross-layer-explicit-direction",
+      "theme": "default",
+      "source": "flowchart TB\nsubgraph Left[Left]\ndirection LR\nA[Alpha] --> B[Beta]\nend\nsubgraph Right[Right]\ndirection RL\nC[Gamma] --> D[Delta]\nend\nA --> D\nB --> C",
+      "dpr": 1,
+      "content": {
+        "width": 364.265625,
+        "height": 298
+      },
+      "enforceInterior": true,
+      "file": "cluster-cross-layer-explicit-direction.png"
+    },
+    {
+      "id": "animated-edge-static-initial",
+      "theme": "default",
+      "source": "flowchart LR\nA[Alpha] edgeFast@--> B[Beta]\nedgeFast@{ animate: true, animation: fast, curve: linear }",
+      "dpr": 1,
+      "animationState": "initial",
+      "content": {
+        "width": 243.84375,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "animated-edge-static-initial.png"
     }
   ]
 }

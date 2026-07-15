@@ -11,8 +11,8 @@ import { cases } from "./mermaid_golden_cases.mjs";
 //
 // `look: "classic"` is forced for every case so the theme axis is a pure COLOUR
 // test (each theme's colours under the classic look the native painter renders).
-// The neo/handDrawn LOOK axis is deferred to F-polish; HTML/CJK/bidi labels and
-// 2x DPR are deferred to F4. Adding those is a registry edit, not a code change.
+// Animated cases declare a deterministic sampled state in the registry. The
+// handDrawn look remains a separate RoughJS milestone.
 
 const mermaidRoot = path.resolve(
   process.argv[2] ?? path.join("..", "mermaid-cli", "node_modules", "mermaid"),
@@ -69,7 +69,12 @@ try {
       container.style.left = "0";
       container.style.top = "0";
       for (const element of root.querySelectorAll("*")) {
-        element.style.animation = "none";
+        if (fixture.animationState === "initial") {
+          element.style.animationPlayState = "paused";
+          element.style.animationDelay = "0s";
+        } else {
+          element.style.animation = "none";
+        }
         element.style.transition = "none";
       }
       await document.fonts.ready;
@@ -98,6 +103,7 @@ try {
     // enforced until F1 completes; boundary/text/empty still are.
     const enforceInterior = !(r.theme.includes("neo") || r.theme.includes("redux"));
     manifestCases.push({ id: r.id, theme: r.theme, source: r.source, dpr: r.dpr,
+                         ...(r.animationState ? { animationState: r.animationState } : {}),
                          content: r.content, enforceInterior, file });
   }
   const manifest = { upstream: { package: "mermaid", version: packageJson.version }, cases: manifestCases };

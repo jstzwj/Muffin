@@ -220,7 +220,21 @@ FlowLabelDocument parseMarkup(QString source, bool markdown, bool mathEnabled) {
 
 FlowLabelDocument parseFlowLabel(const QString& source, const QString& labelType,
                                  bool mathEnabled) {
-  if (labelType == QLatin1String("markdown")) return parseMarkup(source, true, mathEnabled);
+  if (labelType == QLatin1String("markdown")) {
+    // Mermaid's SVG-text Math path bypasses Markdown when a Markdown label also
+    // contains an HTML break. The markers stay literal and the break collapses
+    // between the adjacent text/Math spans.
+    if (mathEnabled && source.contains(QStringLiteral("$$")) &&
+        source.contains(QRegularExpression(QStringLiteral("<br\\s*/?>"),
+                                           QRegularExpression::CaseInsensitiveOption))) {
+      QString collapsed = normalizeBreaks(source);
+      collapsed.remove(QLatin1Char('\n'));
+      FlowLabelDocument result = parseMarkup(std::move(collapsed), false, true);
+      result.literalMarkdownMathFallback = true;
+      return result;
+    }
+    return parseMarkup(source, true, mathEnabled);
+  }
   if (source.contains(QLatin1Char('<')) ||
       (mathEnabled && source.contains(QStringLiteral("$$"))))
     return parseMarkup(source, false, mathEnabled);
@@ -354,7 +368,9 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
                        ? chromiumFallbackWidth(label, runStart,
                                                label.text.mid(runStart, runEnd - runStart),
                                                raw, fontPixelSize)
-                       : raw * kFlowMathMlTextScaleX;
+                       : raw * (label.literalMarkdownMathFallback
+                                    ? 1.0
+                                    : kFlowMathMlTextScaleX);
           runStart = runEnd;
         }
         return width;
@@ -368,7 +384,10 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
         const muffin::math::MathLayoutResult layout = renderer.render(
             math.source, fontPixelSize * 1.21, Qt::black, true);
         if (layout.valid()) {
-          const qreal mathWidth = layout.naturalSize.width() * kFlowMathMlScaleX;
+          const qreal mathScaleX = label.literalMarkdownMathFallback
+                                       ? kFlowMathMlLiteralFallbackScaleX
+                                       : kFlowMathMlScaleX;
+          const qreal mathWidth = layout.naturalSize.width() * mathScaleX;
           measured.runs.push_back({math.start, math.length, lineWidth, mathWidth,
                                    false, true, QStringLiteral("KaTeX_Main")});
           lineWidth += mathWidth;
@@ -383,7 +402,9 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
                                  tailWidth, false, false, font.family()});
       lineWidth += tailWidth;
       measured.width = lineWidth;
-      measured.height = actualLineHeight;
+      // The fallback is emitted as one SVG text range (17px ink box) inside
+      // the normal 24px label block.
+      measured.height = label.literalMarkdownMathFallback ? 17.0 : actualLineHeight;
       measured.ascent = cssAscent;
       measured.descent = cssDescent;
       measured.baseline = (actualLineHeight - cssAscent - cssDescent) / 2.0 + cssAscent;
@@ -537,10 +558,13 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
           const qreal mathHeight = mathLayout.naturalSize.height() * kFlowMathMlScaleY;
           painter.save();
           painter.translate(x, lineTop + (actualLineHeight - mathHeight) / 2.0);
-          painter.scale(kFlowMathMlScaleX, kFlowMathMlScaleY);
+          const qreal mathScaleX = paintedLabel.literalMarkdownMathFallback
+                                       ? kFlowMathMlLiteralFallbackScaleX
+                                       : kFlowMathMlScaleX;
+          painter.scale(mathScaleX, kFlowMathMlScaleY);
           mathLayout.paint(painter, QPointF());
           painter.restore();
-          x += mathLayout.naturalSize.width() * kFlowMathMlScaleX;
+          x += mathLayout.naturalSize.width() * mathScaleX;
         }
         cursor = mathSpans.at(i).start + mathSpans.at(i).length;
       }

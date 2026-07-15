@@ -97,6 +97,11 @@ table.push({
   source: 'flowchart LR\nA["`**Bold** and *italic*<br/>next`"] --> B[Plain]',
 });
 table.push({
+  id: "label-markdown-break-math",
+  theme: "default",
+  source: 'flowchart LR\nA["`**Bold**<br/>$$x^2 + 1$$`"] --> B[Plain]',
+});
+table.push({
   id: "label-math",
   theme: "default",
   source: mathSource,
@@ -110,6 +115,15 @@ table.push({
   id: "cluster-label-rich",
   theme: "default",
   source: 'flowchart TB\nsubgraph S["`**Group** $$x^2$$`"]\nA[Inside]\nend',
+});
+table.push({
+  id: "terminal-and-long-edge-label",
+  theme: "default",
+  source: [
+    "flowchart LR",
+    'A@{ shape: terminal, label: "Terminal label" }',
+    'A -->|"A deliberately long edge label that wraps at the upstream limit"| B[Finish]',
+  ].join("\n"),
 });
 // Axis 6 - CJK and bidirectional shaping.
 table.push({ id: "label-cjk", theme: "default", source: cjkSource });
@@ -142,10 +156,49 @@ table.push({
     "end",
   ].join("\n"),
 });
-// Axis 5 — nested compound + self/parallel/long edge is DEFERRED: that case
-// currently diverges at the LAYOUT level (native 233x572 vs golden 450x570 — a
-// compound/self-edge ordering difference), which is milestone C/D territory, not
-// pixel rasterization. Pixel-verifying it is blocked on the layout milestone;
-// add it back here once compound-crossing / self-edge layout lands.
-
+table.push({
+  id: "compound-self-parallel",
+  theme: "default",
+  source: [
+    "flowchart TB",
+    "subgraph Outer[Outer]",
+    "direction LR",
+    "subgraph Inner[Inner]",
+    "direction TB",
+    "A[Alpha] --> A",
+    "A --> B[Beta]",
+    "A --> B",
+    "end",
+    "B --> C[Gamma]",
+    "end",
+    "C --> D[Delta]",
+  ].join("\n"),
+});
+table.push({
+  id: "cluster-cross-layer-explicit-direction",
+  theme: "default",
+  source: [
+    "flowchart TB",
+    "subgraph Left[Left]",
+    "direction LR",
+    "A[Alpha] --> B[Beta]",
+    "end",
+    "subgraph Right[Right]",
+    "direction RL",
+    "C[Gamma] --> D[Delta]",
+    "end",
+    "A --> D",
+    "B --> C",
+  ].join("\n"),
+});
+table.push({
+  id: "animated-edge-static-initial",
+  theme: "default",
+  animationState: "initial",
+  source: [
+    "flowchart LR",
+    "A[Alpha] edgeFast@--> B[Beta]",
+    "edgeFast@{ animate: true, animation: fast, curve: linear }",
+  ].join("\n"),
+});
 export const cases = table;

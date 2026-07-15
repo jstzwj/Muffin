@@ -42,6 +42,24 @@ if (which === 'crossing') {
   g.setParent('C', 'Right');
   g.setParent('D', 'Right');
   for (const [v, w] of [['A', 'B'], ['C', 'D'], ['A', 'D'], ['C', 'B']]) g.setEdge(v, w, { minlen: 1, weight: 1 });
+} else if (which === 'compound-self-parallel') {
+  g.setGraph({ rankdir: 'TB', nodesep: 50, edgesep: 20, ranksep: 100, marginx: 0, marginy: 0 });
+  g.setNode('Inner', {});
+  g.setNode('A', { width: 100.922, height: 54 });
+  // Chrome's labelRect getBBox overwrites the declared 10x10 placeholder with
+  // a 0.1px minimum SVG bbox before Dagre runs.
+  g.setNode('A---A---1', { width: 0.1, height: 0.1 });
+  g.setNode('A---A---2', { width: 0.1, height: 0.1 });
+  g.setNode('B', { width: 92.922, height: 54 });
+  g.setParent('A', 'Inner');
+  g.setParent('B', 'Inner');
+  g.setParent('A---A---1', 'Inner');
+  g.setParent('A---A---2', 'Inner');
+  g.setEdge('A', 'A---A---1', { minlen: 1, weight: 1 }, 'A-cyclic-special-0');
+  g.setEdge('A---A---2', 'A', { minlen: 1, weight: 1 }, 'A-cyclic-special-2');
+  g.setEdge('A', 'B', { minlen: 1, weight: 1 }, 'L_A_B_0');
+  g.setEdge('A', 'B', { minlen: 1, weight: 1 }, 'L_A_B_2');
+  g.setEdge('A---A---1', 'A---A---2', { minlen: 1, weight: 1 }, 'A-cyclic-special-1');
 } else {
   // nested-cluster: Outer { Inner { A, B }, C }; C -> D
   for (const [id, w, h] of [
@@ -63,4 +81,8 @@ for (const id of g.nodes()) {
   const n = g.node(id);
   if (n && (n.x !== undefined || n.rank !== undefined))
     console.error(`${id}: x=${n.x} y=${n.y} w=${n.width} h=${n.height}`);
+}
+for (const edge of g.edges()) {
+  const value = g.edge(edge);
+  console.error(`${edge.name ?? ''}:${edge.v}->${edge.w}: ${JSON.stringify(value.points ?? [])}`);
 }
