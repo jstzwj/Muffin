@@ -78,6 +78,22 @@ const cases = [
     source: 'flowchart LR\nA["שלום עולם"] -->|"مرحبا بالعالم"| B["English العربية"]',
   },
   {
+    id: "label-cjk-bidi-mixed",
+    source: 'flowchart LR\nA["中文 abc שלום"] --> B["日本語 العربية 123"]',
+  },
+  {
+    id: "label-font-fallback",
+    source: 'flowchart LR\nA["Arial 中文 العربية 😀"] --> B["한글 Ελληνικά"]',
+  },
+  {
+    id: "label-cjk-bidi-markdown-lines",
+    source: 'flowchart LR\nA["`**中文 Bold**<br/>*שלום italic*`"] --> B[End]',
+  },
+  {
+    id: "label-cjk-math",
+    source: 'flowchart LR\nA["`值 $$x^2 + \\frac{1}{2}$$ 日本語`"] --> B[End]',
+  },
+  {
     id: "recursive-cluster-three-level",
     source: [
       "flowchart TB",
@@ -178,6 +194,19 @@ const cases = [
   // with LR and TB respectively.
   { id: "curve-monotoneX", curve: "monotoneX", source: "flowchart LR\nA[Start] --> B[Middle] --> C[End]" },
   { id: "curve-monotoneY", curve: "monotoneY", source: "flowchart TB\nA[Start] --> B[Middle] --> C[End]" },
+  {
+    id: "edge-long-label-bidirectional",
+    source: 'flowchart LR\nA[Start] o--o|"A deliberately long edge label 中文 שלום"| B[Finish]\nB x--x C[Both ends]',
+  },
+  {
+    id: "recursive-cluster-cross-boundary",
+    source: [
+      "flowchart TB", "subgraph Outer[Outer]", "subgraph Middle[Middle]",
+      "subgraph Inner[Inner]", "A[Alpha] --> B[Beta]", "end",
+      "B --> C[Gamma]", "end", "C --> D[Delta]", "end",
+      "A --> D", "D --> E[Outside]",
+    ].join("\n"),
+  },
   { id: "curve-bumpX", curve: "bumpX", source: "flowchart LR\nA[Start] --> B[Middle] --> C[End]" },
   { id: "curve-bumpY", curve: "bumpY", source: "flowchart TB\nA[Start] --> B[Middle] --> C[End]" },
   { id: "curve-catmullRom", curve: "catmullRom", source: "flowchart LR\nA[Start] --> B[Middle] --> C[End]" },
@@ -303,6 +332,11 @@ const cases = [
     source: "flowchart TB\nA[Alpha] & B[Beta] --> C[Gamma] & D[Delta]",
   },
 ];
+const duplicateCaseIds = cases
+  .map((fixture) => fixture.id)
+  .filter((id, index, ids) => ids.indexOf(id) !== index);
+if (duplicateCaseIds.length > 0)
+  throw new Error(`Duplicate geometry case ids: ${[...new Set(duplicateCaseIds)].join(", ")}`);
 const browser = await puppeteer.launch({
   headless: true,
   executablePath: chrome,
@@ -330,6 +364,167 @@ try {
         for (const name of names) result[name] = style.getPropertyValue(name);
         return result;
       };
+      const textLayout = (label) => {
+        if (!label) return [];
+        const text = label.querySelector("text");
+        const lineElements = text
+          ? [...text.querySelectorAll("tspan.text-outer-tspan")]
+          : [];
+        if (lineElements.length === 0) {
+          const rootMatrix = label.getScreenCTM();
+          const scaleX = rootMatrix ? Math.hypot(rootMatrix.a, rootMatrix.b) : 1;
+          const scaleY = rootMatrix ? Math.hypot(rootMatrix.c, rootMatrix.d) : 1;
+          const chars = [];
+          let logicalIndex = 0;
+          const visit = (node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const element = node;
+              if (element.matches(".katex-mathml, annotation, script, style") ||
+                  getComputedStyle(element).display === "none") return;
+              if (element.matches(".katex")) {
+                const rect = element.getBoundingClientRect();
+                const style = getComputedStyle(element);
+                chars.push({
+                  start: logicalIndex++, length: 1, text: "\ufffc",
+                  left: rect.left / scaleX, right: rect.right / scaleX,
+                  top: rect.top / scaleY, bottom: rect.bottom / scaleY,
+                  math: true, fontFamily: style.fontFamily, font: style.font,
+                  lineHeight: rect.height / scaleY,
+                });
+                return;
+              }
+              for (const child of element.childNodes) visit(child);
+              return;
+            }
+            if (node.nodeType !== Node.TEXT_NODE || !node.parentElement) return;
+            const parent = node.parentElement;
+            for (let index = 0; index < node.data.length;) {
+              const codepoint = node.data.codePointAt(index);
+              const length = codepoint > 0xffff ? 2 : 1;
+              const range = document.createRange();
+              range.setStart(node, index);
+              range.setEnd(node, index + length);
+              const rect = range.getBoundingClientRect();
+              if (rect.width > 0 || rect.height > 0) {
+                const style = getComputedStyle(parent);
+                chars.push({
+                  start: logicalIndex, length, text: node.data.slice(index, index + length),
+                  left: rect.left / scaleX, right: rect.right / scaleX,
+                  top: rect.top / scaleY, bottom: rect.bottom / scaleY,
+                  math: false, fontFamily: style.fontFamily, font: style.font,
+                  lineHeight: Number.parseFloat(style.lineHeight) || rect.height / scaleY,
+                });
+              }
+              logicalIndex += length;
+              index += length;
+            }
+          };
+          visit(label);
+          const grouped = [];
+          for (const char of chars) {
+            const center = (char.top + char.bottom) / 2;
+            let line = grouped.find((candidate) =>
+              Math.abs((candidate.top + candidate.bottom) / 2 - center) <= 5.0);
+            if (!line) {
+              line = { top: char.top, bottom: char.bottom, chars: [] };
+              grouped.push(line);
+            }
+            line.chars.push(char);
+            line.top = Math.min(line.top, char.top);
+            line.bottom = Math.max(line.bottom, char.bottom);
+          }
+          grouped.sort((a, b) => a.top - b.top);
+          const canvas = document.createElement("canvas");
+          const context = canvas.getContext("2d");
+          return grouped.map((line) => {
+            const left = Math.min(...line.chars.map((char) => char.left));
+            const right = Math.max(...line.chars.map((char) => char.right));
+            const math = line.chars.some((char) => char.math);
+            const lineHeight = math
+              ? line.bottom - line.top
+              : Math.max(...line.chars.map((char) => char.lineHeight));
+            const sample = line.chars.find((char) => !char.math) ?? line.chars[0];
+            context.font = sample.font;
+            const fontMetrics = context.measureText("Mg");
+            const ascent = fontMetrics.actualBoundingBoxAscent;
+            const descent = fontMetrics.actualBoundingBoxDescent;
+            const directions = line.chars.map((char, index) => {
+              const next = line.chars[index + 1];
+              const previous = line.chars[index - 1];
+              if (next && Math.abs(next.top - char.top) <= 1.0)
+                return next.left < char.left;
+              if (previous && Math.abs(previous.top - char.top) <= 1.0)
+                return char.left < previous.left;
+              return getComputedStyle(label).direction === "rtl";
+            });
+            const logicalRuns = [];
+            line.chars.forEach((char, index) => {
+              const rtl = directions[index];
+              const current = logicalRuns.at(-1);
+              if (!current || current.rtl !== rtl || current.math !== char.math ||
+                  current.start + current.length !== char.start) {
+                logicalRuns.push({ start: char.start, length: char.length,
+                                   left: char.left, right: char.right, rtl,
+                                   math: char.math, fontFamily: char.fontFamily });
+              } else {
+                current.length += char.length;
+                current.left = Math.min(current.left, char.left);
+                current.right = Math.max(current.right, char.right);
+              }
+            });
+            return {
+              text: line.chars.map((char) => char.text).join(""),
+              width: number(right - left), height: number(lineHeight),
+              baseline: math ? null : number((lineHeight - ascent - descent) / 2 + ascent),
+              ascent: math ? null : number(ascent),
+              descent: math ? null : number(descent),
+              runs: logicalRuns.map((run) => ({
+                start: run.start, length: run.length,
+                x: number(run.left - left), width: number(run.right - run.left),
+                rtl: run.rtl, math: run.math, fontFamily: run.fontFamily,
+              })).sort((a, b) => a.x - b.x),
+            };
+          });
+        }
+        return lineElements.map((line) => {
+          const box = line.getBBox();
+          const count = line.getNumberOfChars();
+          const baselineY = count > 0 ? line.getStartPositionOfChar(0).y : box.y;
+          const chars = [];
+          for (let index = 0; index < count; ++index) {
+            const start = line.getStartPositionOfChar(index);
+            const end = line.getEndPositionOfChar(index);
+            chars.push({ index, left: Math.min(start.x, end.x),
+                         right: Math.max(start.x, end.x), rtl: end.x < start.x });
+          }
+          const logicalRuns = [];
+          for (const char of chars) {
+            const current = logicalRuns.at(-1);
+            if (!current || current.rtl !== char.rtl || current.start + current.length !== char.index) {
+              logicalRuns.push({ start: char.index, length: 1, left: char.left,
+                                 right: char.right, rtl: char.rtl });
+            } else {
+              current.length += 1;
+              current.left = Math.min(current.left, char.left);
+              current.right = Math.max(current.right, char.right);
+            }
+          }
+          const family = getComputedStyle(line).fontFamily;
+          return {
+            text: line.textContent ?? "",
+            width: number(line.getComputedTextLength()),
+            height: number(box.height),
+            baseline: number(baselineY - box.y),
+            ascent: number(baselineY - box.y),
+            descent: number(box.y + box.height - baselineY),
+            runs: logicalRuns.map((run) => ({
+              start: run.start, length: run.length,
+              x: number(run.left - box.x), width: number(run.right - run.left),
+              rtl: run.rtl, math: false, fontFamily: family,
+            })).sort((a, b) => a.x - b.x),
+          };
+        });
+      };
       const normalizeMarker = (value) => {
         if (!value) return "";
         const semantic = value.match(/(pointEnd|pointStart|circleEnd|circleStart|crossEnd|crossStart)/);
@@ -337,6 +532,18 @@ try {
         const match = value.match(/[-_]([A-Za-z]+)\)$/);
         return match ? match[1] : value;
       };
+      const allAttributes = (element) => {
+        if (!element) return {};
+        return Object.fromEntries([...element.attributes].map((attribute) =>
+          [attribute.name, attribute.value]));
+      };
+      const shallowStructure = (element) => element ? {
+        tag: element.tagName.toLowerCase(),
+        class: element.getAttribute("class") ?? "",
+        children: [...element.children].map((child) => ({
+          tag: child.tagName.toLowerCase(), class: child.getAttribute("class") ?? "",
+        })),
+      } : null;
       const relativePath = (pathData, originX, originY, matrix) => {
         let coordinate = 0;
         let pendingX = 0;
@@ -449,6 +656,7 @@ try {
               computed: computedStyle(node.querySelector(".label"), [
                 "color", "fill", "font-family", "font-size", "font-weight",
               ]),
+              lines: textLayout(node.querySelector(".label")),
             },
             shape: {
               tag: shape?.tagName.toLowerCase() ?? "",
@@ -482,10 +690,7 @@ try {
           delete node.y;
         }
         const edges = [...root.querySelectorAll(".edgePaths path")].map((edge) => {
-          const edgeAttributes = attributes(edge, [
-            "class", "style", "fill", "stroke", "stroke-width", "stroke-dasharray",
-            "marker-start", "marker-end",
-          ]);
+          const edgeAttributes = allAttributes(edge);
           if (edgeAttributes["marker-start"])
             edgeAttributes["marker-start"] = normalizeMarker(edgeAttributes["marker-start"]);
           if (edgeAttributes["marker-end"])
@@ -497,6 +702,7 @@ try {
             attributes: edgeAttributes,
             computed: computedStyle(edge, [
               "fill", "stroke", "stroke-width", "stroke-dasharray",
+              "animation-name", "animation-duration", "animation-timing-function",
             ]),
           };
         });
@@ -516,6 +722,7 @@ try {
             textHeight: number(textBox?.height ?? box.height),
             fontFamily: style.fontFamily,
             fontSize: style.fontSize,
+            lines: textLayout(label.querySelector(".label")),
             dx: number(position.x - originX),
             dy: number(position.y - originY),
           };
@@ -556,13 +763,29 @@ try {
               computed: computedStyle(label, [
                 "color", "fill", "font-family", "font-size", "font-weight",
               ]),
+              lines: textLayout(label?.querySelector(".label") ?? label),
+              structure: shallowStructure(label),
             },
           };
         });
+        const markers = [...document.querySelectorAll("marker")]
+          .filter((marker) => marker.id.includes(svgId)).map((marker) => {
+          const markerAttributes = allAttributes(marker);
+          markerAttributes.id = normalizeMarker(`url(#${markerAttributes.id})`);
+          return {
+            attributes: markerAttributes,
+            children: [...marker.children].map((child) => ({
+              tag: child.tagName.toLowerCase(),
+              attributes: allAttributes(child),
+              computed: computedStyle(child, ["fill", "stroke", "stroke-width"]),
+            })),
+          };
+        }).sort((a, b) => a.attributes.id.localeCompare(b.attributes.id));
         results.push({
           ...fixture,
           expected: {
-            svg: attributes(root, ["class", "role", "aria-roledescription", "style"]),
+            svg: allAttributes(root),
+            defs: { markers },
             nodes,
             edges,
             clusters,

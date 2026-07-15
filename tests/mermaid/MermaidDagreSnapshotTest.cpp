@@ -128,6 +128,6 @@ int main(int argc, char** argv) {
     }
   }
 
-  qDebug().noquote() << "MermaidDagreSnapshotTest:" << computed.size() << "cases × 4 phase snapshots match golden";
+  qDebug().noquote() << "MermaidDagreSnapshotTest:" << computed.size() << "cases × 5 input/phase snapshots match golden";
   return 0;
 }

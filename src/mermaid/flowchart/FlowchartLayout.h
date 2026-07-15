@@ -51,6 +51,7 @@ struct FlowLayoutOptions {
   qreal nodeSpacing = 50.0;
   qreal rankSpacing = 50.0;
   qreal edgeSpacing = 20.0;
+  qreal nodePadding = 15.0;
   qreal clusterHorizontalPadding = 35.0;
   qreal clusterVerticalPadding = 25.0;
   QMap<QString, QSizeF> measuredEdgeLabels;

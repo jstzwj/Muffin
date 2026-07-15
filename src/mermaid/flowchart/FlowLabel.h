@@ -27,11 +27,42 @@ struct FlowLabelDocument {
   QVector<FlowLabelMathSpan> math;
 };
 
+struct FlowLabelVisualRun {
+  qsizetype start = 0;
+  qsizetype length = 0;
+  qreal x = 0.0;
+  qreal width = 0.0;
+  bool rightToLeft = false;
+  bool math = false;
+  QString fontFamily;
+};
+
+struct FlowLabelLineMetrics {
+  qsizetype start = 0;
+  qsizetype length = 0;
+  qreal width = 0.0;
+  qreal height = 0.0;
+  qreal baseline = 0.0;
+  qreal ascent = 0.0;
+  qreal descent = 0.0;
+  QVector<FlowLabelVisualRun> runs;
+};
+
+struct FlowLabelLayoutMetrics {
+  QSizeF size{0.0, 0.0};
+  QVector<FlowLabelLineMetrics> lines;
+};
+
 // Converts Mermaid's text/string/markdown label variants into a safe, native
 // text model. Formatting markers and the supported inline HTML tags never reach
 // QPainter as literal text and no HTML engine is involved.
 FlowLabelDocument parseFlowLabel(const QString& source, const QString& labelType,
                                  bool mathEnabled = true);
+
+FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
+                                       const QString& fontFamily,
+                                       qreal fontPixelSize,
+                                       qreal lineHeight);
 
 QSizeF measureFlowLabel(const FlowLabelDocument& label,
                         const QString& fontFamily,

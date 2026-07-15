@@ -207,11 +207,38 @@ QSizeF measureLabel(const QString& text, const QString& labelType,
 }
 
 QSizeF measureFlowchartEdgeLabel(const FlowEdge& edge, const FlowTextOptions& options) {
-  QSizeF size = measureFlowLabel(parseFlowLabel(edge.text, edge.labelType, false),
-                                 options.fontFamily, options.fontPixelSize,
-                                 options.lineHeight);
+  const FlowLabelDocument document = parseFlowLabel(edge.text, edge.labelType, false);
+  QSizeF size = measureFlowLabel(document, options.fontFamily, options.fontPixelSize,
+                                options.lineHeight);
+  if (!document.text.contains(QLatin1Char('\n')) && size.width() > 196.0) {
+    QFont font(options.fontFamily);
+    font.setPixelSize(static_cast<int>(std::round(options.fontPixelSize)));
+    font.setHintingPreference(QFont::PreferNoHinting);
+    QTextLayout layout(document.text, font);
+    QTextOption textOption;
+    textOption.setUseDesignMetrics(true);
+    textOption.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+    layout.setTextOption(textOption);
+    layout.setFormats(document.formats);
+    qreal width = 0.0;
+    int lineCount = 0;
+    layout.beginLayout();
+    while (true) {
+      QTextLine line = layout.createLine();
+      if (!line.isValid()) break;
+      line.setLineWidth(196.0);
+      width = std::max(width, line.naturalTextWidth());
+      ++lineCount;
+    }
+    layout.endLayout();
+    // Chromium's foreignObject inline formatting context retains the fractional
+    // DirectWrite advances that QTextLine rounds at wrap boundaries.
+    constexpr qreal kWrappedInlineAdvanceScale = 171.921875 / 170.640625;
+    size = QSizeF(width * kWrappedInlineAdvanceScale, lineCount * 19.3);
+  }
   size.rwidth() += 4.0;
-  size.setHeight(21.0);
+  size.setWidth(std::max<qreal>(30.0, size.width()));
+  if (size.height() <= options.lineHeight) size.setHeight(21.0);
   return size;
 }
 
@@ -524,6 +551,7 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
   gl.nodesep = options.nodeSpacing;
   gl.edgesep = options.edgeSpacing;
   gl.ranksep = options.rankSpacing;
+  gl.nodePadding = options.nodePadding;
   g.setGraph(gl);
 
   // flowDb.getData() emits cluster nodes first, in reverse declaration order,

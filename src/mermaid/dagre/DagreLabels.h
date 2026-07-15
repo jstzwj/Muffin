@@ -82,6 +82,7 @@ struct DagreGraphLabel {
   qreal ranksep = 50.0;
   qreal marginx = 0.0;
   qreal marginy = 0.0;
+  qreal nodePadding = 15.0;  // renderer input metadata; ignored by Dagre phases
   std::optional<int> maxRank;
   int nodeRankFactor = 0;
   QString nestingRoot;            // node id of the virtual root (nesting-graph)

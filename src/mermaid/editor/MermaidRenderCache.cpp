@@ -219,6 +219,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     textOptions.verticalPadding = padding;
     const QMap<QString, QSizeF> sizes = flowchart::measureFlowchartNodes(chart.data(), textOptions);
     flowchart::FlowLayoutOptions layoutOptions;
+    layoutOptions.nodePadding = padding;
     layoutOptions.nodeSpacing = configNumber(flowConfig, QStringLiteral("nodeSpacing"), 50.0);
     layoutOptions.rankSpacing = configNumber(flowConfig, QStringLiteral("rankSpacing"), 50.0);
     const QString curve = flowConfig.value(QStringLiteral("curve")).toString();

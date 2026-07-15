@@ -36,6 +36,12 @@ const table = [];
 const cjkSource = 'flowchart LR\nA[中文标签] -->|处理| B[日本語テキスト]';
 const bidiSource = 'flowchart LR\nA["שלום עולם"] -->|"مرحبا بالعالم"| B["English العربية"]';
 const mathSource = 'flowchart LR\nA["`Value $$x^2 + \\frac{1}{2}$$`"] --> B[Plain]';
+const mixedSource = 'flowchart LR\nA["中文 abc שלום"] --> B["日本語 العربية 123"]';
+const complexClusterSource = [
+  "flowchart TB", "subgraph Outer[Outer 中文]",
+  "subgraph Middle[Middle שלום]", "subgraph Inner[Inner العربية]",
+  "A[中文] --> B[שלום]", "end", "C[Gamma]", "end", "D[Delta]", "end",
+].join("\n");
 // Axis 1 — the legacy-compatible themes on the style-matrix integration diagram.
 for (const theme of pixelThemes) {
   table.push({ id: `theme-${theme}`, theme, source: integrationSource });
@@ -113,6 +119,12 @@ table.push({ id: "integration-2x", theme: "default", source: integrationSource, 
 table.push({ id: "label-cjk-2x", theme: "default", source: cjkSource, dpr: 2 });
 table.push({ id: "label-bidi-2x", theme: "default", source: bidiSource, dpr: 2 });
 table.push({ id: "label-math-2x", theme: "default", source: mathSource, dpr: 2 });
+table.push({ id: "integration-1_25x", theme: "default", source: integrationSource, dpr: 1.25 });
+table.push({ id: "integration-1_5x", theme: "dark", source: integrationSource, dpr: 1.5 });
+table.push({ id: "label-mixed-1_5x", theme: "forest", source: mixedSource, dpr: 1.5 });
+table.push({ id: "label-cjk-dark", theme: "dark", source: cjkSource });
+table.push({ id: "label-bidi-neutral", theme: "neutral", source: bidiSource });
+table.push({ id: "complex-cluster-1_25x", theme: "neutral", source: complexClusterSource, dpr: 1.25 });
 // Axis 8 - recursively extracted nested clusters.
 table.push({
   id: "recursive-cluster-three-level",

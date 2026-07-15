@@ -269,6 +269,78 @@
       "file": "label-math-2x.png"
     },
     {
+      "id": "integration-1_25x",
+      "theme": "default",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "dpr": 1.25,
+      "content": {
+        "width": 170.921875,
+        "height": 804.28125
+      },
+      "enforceInterior": true,
+      "file": "integration-1_25x.png"
+    },
+    {
+      "id": "integration-1_5x",
+      "theme": "dark",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Alpha] -->|go| B((Beta)):::clsB\nend\nB --x C{Decision}\nC --o D[Delta]\nD --- E[Plain]\nE -.-> F[Dotted]\nF ==> G[Thick]\nstyle A fill:#ff0000,stroke:#000000,stroke-width:2px\nclassDef clsB fill:#aaaaaa,color:#ffffff\nlinkStyle 4 stroke:#0000ff,stroke-width:3px",
+      "dpr": 1.5,
+      "content": {
+        "width": 170.921875,
+        "height": 804.28125
+      },
+      "enforceInterior": true,
+      "file": "integration-1_5x.png"
+    },
+    {
+      "id": "label-mixed-1_5x",
+      "theme": "forest",
+      "source": "flowchart LR\nA[\"中文 abc שלום\"] --> B[\"日本語 العربية 123\"]",
+      "dpr": 1.5,
+      "content": {
+        "width": 386.90625,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "label-mixed-1_5x.png"
+    },
+    {
+      "id": "label-cjk-dark",
+      "theme": "dark",
+      "source": "flowchart LR\nA[中文标签] -->|处理| B[日本語テキスト]",
+      "dpr": 1,
+      "content": {
+        "width": 381.53125,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "label-cjk-dark.png"
+    },
+    {
+      "id": "label-bidi-neutral",
+      "theme": "neutral",
+      "source": "flowchart LR\nA[\"שלום עולם\"] -->|\"مرحبا بالعالم\"| B[\"English العربية\"]",
+      "dpr": 1,
+      "content": {
+        "width": 396.28125,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "label-bidi-neutral.png"
+    },
+    {
+      "id": "complex-cluster-1_25x",
+      "theme": "neutral",
+      "source": "flowchart TB\nsubgraph Outer[Outer 中文]\nsubgraph Middle[Middle שלום]\nsubgraph Inner[Inner العربية]\nA[中文] --> B[שלום]\nend\nC[Gamma]\nend\nD[Delta]\nend",
+      "dpr": 1.25,
+      "content": {
+        "width": 473.953125,
+        "height": 632
+      },
+      "enforceInterior": true,
+      "file": "complex-cluster-1_25x.png"
+    },
+    {
       "id": "recursive-cluster-three-level",
       "theme": "default",
       "source": "flowchart TB\nsubgraph Outer[Outer Group]\nsubgraph Middle[Middle Group]\nsubgraph Inner[Inner Group]\nA[Alpha] --> B[Beta]\nend\nC[Gamma]\nend\nD[Delta]\nend",

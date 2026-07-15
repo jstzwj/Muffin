@@ -353,9 +353,54 @@ QJsonObject serializeGraph(const DagreGraph& g) {
   return state;
 }
 
+QJsonObject serializeInputGraph(const DagreGraph& g) {
+  QJsonObject graph;
+  if (const DagreGraphLabel* label = g.graph()) {
+    graph.insert(QStringLiteral("rankdir"), label->rankdir.toUpper());
+    graph.insert(QStringLiteral("nodesep"), label->nodesep);
+    graph.insert(QStringLiteral("edgesep"), label->edgesep);
+    graph.insert(QStringLiteral("ranksep"), label->ranksep);
+    graph.insert(QStringLiteral("padding"), label->nodePadding);
+  }
+  QJsonArray nodes;
+  for (const QString& id : g.nodes()) {
+    const DagreNodeLabel* node = g.node(id);
+    QJsonObject value;
+    value.insert(QStringLiteral("id"), id);
+    value.insert(QStringLiteral("width"), node ? node->width : 0.0);
+    value.insert(QStringLiteral("height"), node ? node->height : 0.0);
+    const QString parent = g.parentOf(id);
+    value.insert(QStringLiteral("parent"), parent.isEmpty()
+                                               ? QJsonValue(QJsonValue::Null)
+                                               : QJsonValue(parent));
+    nodes.append(value);
+  }
+  QJsonArray edges;
+  for (const graphlib::Edge& id : g.edges()) {
+    const DagreEdgeLabel* edge = g.edge(id);
+    QJsonObject value;
+    value.insert(QStringLiteral("id"), id.name);
+    value.insert(QStringLiteral("v"), id.v);
+    value.insert(QStringLiteral("w"), id.w);
+    value.insert(QStringLiteral("minlen"), edge ? edge->minlen : 0);
+    value.insert(QStringLiteral("weight"), edge ? edge->weight : 0);
+    value.insert(QStringLiteral("width"), edge ? edge->width : 0.0);
+    value.insert(QStringLiteral("height"), edge ? edge->height : 0.0);
+    value.insert(QStringLiteral("labelpos"), edge ? edge->labelpos : QString());
+    value.insert(QStringLiteral("labeloffset"), edge ? edge->labeloffset : 0);
+    edges.append(value);
+  }
+  QJsonObject state;
+  state.insert(QStringLiteral("graph"), graph);
+  state.insert(QStringLiteral("nodes"), nodes);
+  state.insert(QStringLiteral("edges"), edges);
+  return state;
+}
+
 }  // namespace
 
 void runDagreLayout(DagreGraph& g, std::vector<DagreSnapshot>* snapshots) {
+  if (snapshots) snapshots->push_back({QStringLiteral("input"), serializeInputGraph(g)});
   makeSpaceForEdgeLabels(g);
   removeSelfEdges(g);
   runAcyclic(g);

@@ -4,6 +4,7 @@
 
 #include <QFont>
 #include <QFontMetricsF>
+#include <QGlyphRun>
 #include <QMap>
 #include <QPainter>
 #include <QRectF>
@@ -54,6 +55,54 @@ QString normalizeBreaks(QString text) {
                                       QRegularExpression::CaseInsensitiveOption);
   text.replace(br, QStringLiteral("\n"));
   return text;
+}
+
+qreal chromiumFallbackWidth(const FlowLabelDocument& label, qsizetype lineStart,
+                            const QString& text, qreal qtWidth, qreal fontPixelSize) {
+  const bool japaneseRun = std::any_of(text.cbegin(), text.cend(), [](QChar ch) {
+    const ushort code = ch.unicode();
+    return (code >= 0x3040 && code <= 0x30ff) || (code >= 0x31f0 && code <= 0x31ff);
+  });
+  qreal width = qtWidth;
+  const qsizetype fullWidthCharacters = std::count_if(text.cbegin(), text.cend(), [](QChar ch) {
+    const ushort code = ch.unicode();
+    return (code >= 0x2e80 && code <= 0x9fff) ||
+           (code >= 0x3040 && code <= 0x30ff) ||
+           (code >= 0xac00 && code <= 0xd7af);
+  });
+  if (japaneseRun) {
+    // DirectWrite exposes Yu Gothic's 2040/2048-em advance to Chromium, while
+    // Qt normalizes the same fallback glyphs to exactly one em.
+    width -= fullWidthCharacters * fontPixelSize * (8.0 / 2048.0);
+  }
+  qsizetype syntheticBoldCjk = 0;
+  bool lineOnlyArabicWhitespace = true;
+  qsizetype arabicCharacters = 0;
+  for (QChar ch : text) {
+    const ushort code = ch.unicode();
+    if (code >= 0x0600 && code <= 0x06ff)
+      ++arabicCharacters;
+    else if (!ch.isSpace())
+      lineOnlyArabicWhitespace = false;
+  }
+  for (const auto& range : label.formats) {
+    if (range.format.fontWeight() < QFont::Bold) continue;
+    const qsizetype begin = std::max<qsizetype>(lineStart, range.start);
+    const qsizetype end = std::min<qsizetype>(lineStart + text.size(),
+                                              range.start + range.length);
+    for (qsizetype index = begin; index < end; ++index) {
+      const ushort code = label.text.at(index).unicode();
+      if ((code >= 0x2e80 && code <= 0x9fff) ||
+          (code >= 0x3040 && code <= 0x30ff))
+        ++syntheticBoldCjk;
+    }
+  }
+  // Qt synthesizes bold for SimSun by widening each glyph; Chromium selects a
+  // DirectWrite fallback face whose CJK advance remains one em.
+  width -= syntheticBoldCjk * fontPixelSize * (37.0 / 2048.0);
+  if (lineOnlyArabicWhitespace)
+    width += arabicCharacters * fontPixelSize * (8.0 / 2048.0);
+  return width;
 }
 
 void appendFormatted(FlowLabelDocument& result, const QString& text,
@@ -241,15 +290,29 @@ void drawTextRange(QPainter& painter, const FlowLabelDocument& label,
 
 QSizeF measureFlowLabel(const FlowLabelDocument& label, const QString& fontFamily,
                         qreal fontPixelSize, qreal lineHeight) {
+  return layoutFlowLabel(label, fontFamily, fontPixelSize, lineHeight).size;
+}
+
+FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
+                                       const QString& fontFamily,
+                                       qreal fontPixelSize, qreal lineHeight) {
   QFont font(fontFamily);
   font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
   font.setHintingPreference(QFont::PreferNoHinting);
   const QFontMetricsF metrics(font);
-  qreal width = 0.0;
-  qreal height = 0.0;
+  const QRectF inkMetrics = metrics.tightBoundingRect(QStringLiteral("Mg"));
+  // Canvas TextMetrics reports the pixel-aligned ink box used by Chromium's
+  // foreignObject labels. Qt exposes the fractional outline box; align its top
+  // outward and bottom inward to reproduce actualBoundingBoxAscent/Descent.
+  const qreal cssAscent = std::ceil(std::max<qreal>(0.0, -inkMetrics.top()));
+  const qreal cssDescent = std::floor(std::max<qreal>(0.0, inkMetrics.bottom()));
+  FlowLabelLayoutMetrics result;
   const QStringList lines = label.text.split(QLatin1Char('\n'));
   qsizetype offset = 0;
   for (const QString& line : lines) {
+    FlowLabelLineMetrics measured;
+    measured.start = offset;
+    measured.length = line.size();
     QVector<FlowLabelMathSpan> mathSpans;
     for (const FlowLabelMathSpan& math : label.math)
       if (math.start >= offset && math.start < offset + line.size()) mathSpans.push_back(math);
@@ -258,22 +321,75 @@ QSizeF measureFlowLabel(const FlowLabelDocument& label, const QString& fontFamil
       qreal actualLineHeight = lineHeight;
       qsizetype cursor = offset;
       muffin::math::MathRenderer renderer;
+      auto mathTextWidth = [&](qsizetype start, qsizetype length) {
+        qreal width = 0.0;
+        const qsizetype end = start + length;
+        const bool segmentHasFullWidth = std::any_of(
+            label.text.cbegin() + start, label.text.cbegin() + end, [](QChar ch) {
+              const ushort code = ch.unicode();
+              return (code >= 0x2e80 && code <= 0x9fff) ||
+                     (code >= 0x3040 && code <= 0x30ff) ||
+                     (code >= 0xac00 && code <= 0xd7af);
+            });
+        for (qsizetype runStart = start; runStart < end;) {
+          while (segmentHasFullWidth && runStart < end &&
+                 label.text.at(runStart).isSpace()) ++runStart;
+          if (runStart >= end) break;
+          const ushort code = label.text.at(runStart).unicode();
+          const bool fullWidth = (code >= 0x2e80 && code <= 0x9fff) ||
+                                 (code >= 0x3040 && code <= 0x30ff) ||
+                                 (code >= 0xac00 && code <= 0xd7af);
+          qsizetype runEnd = runStart + 1;
+          while (runEnd < end &&
+                 !(segmentHasFullWidth && label.text.at(runEnd).isSpace())) {
+            const ushort next = label.text.at(runEnd).unicode();
+            const bool nextFullWidth = (next >= 0x2e80 && next <= 0x9fff) ||
+                                       (next >= 0x3040 && next <= 0x30ff) ||
+                                       (next >= 0xac00 && next <= 0xd7af);
+            if (nextFullWidth != fullWidth) break;
+            ++runEnd;
+          }
+          const qreal raw = measureTextRange(label, runStart, runEnd - runStart, font);
+          width += fullWidth
+                       ? chromiumFallbackWidth(label, runStart,
+                                               label.text.mid(runStart, runEnd - runStart),
+                                               raw, fontPixelSize)
+                       : raw * kFlowMathMlTextScaleX;
+          runStart = runEnd;
+        }
+        return width;
+      };
       for (const FlowLabelMathSpan& math : mathSpans) {
-        lineWidth += measureTextRange(label, cursor, math.start - cursor, font) *
-                     kFlowMathMlTextScaleX;
+        const qreal textWidth = mathTextWidth(cursor, math.start - cursor);
+        if (math.start > cursor)
+          measured.runs.push_back({cursor, math.start - cursor, lineWidth, textWidth,
+                                   false, false, font.family()});
+        lineWidth += textWidth;
         const muffin::math::MathLayoutResult layout = renderer.render(
             math.source, fontPixelSize * 1.21, Qt::black, true);
         if (layout.valid()) {
-          lineWidth += layout.naturalSize.width() * kFlowMathMlScaleX;
+          const qreal mathWidth = layout.naturalSize.width() * kFlowMathMlScaleX;
+          measured.runs.push_back({math.start, math.length, lineWidth, mathWidth,
+                                   false, true, QStringLiteral("KaTeX_Main")});
+          lineWidth += mathWidth;
           actualLineHeight = std::max(actualLineHeight,
                                       layout.naturalSize.height() * kFlowMathMlScaleY);
         }
         cursor = math.start + math.length;
       }
-      lineWidth += measureTextRange(label, cursor, offset + line.size() - cursor, font) *
-                   kFlowMathMlTextScaleX;
-      width = std::max(width, lineWidth);
-      height += actualLineHeight;
+      const qreal tailWidth = mathTextWidth(cursor, offset + line.size() - cursor);
+      if (cursor < offset + line.size())
+        measured.runs.push_back({cursor, offset + line.size() - cursor, lineWidth,
+                                 tailWidth, false, false, font.family()});
+      lineWidth += tailWidth;
+      measured.width = lineWidth;
+      measured.height = actualLineHeight;
+      measured.ascent = cssAscent;
+      measured.descent = cssDescent;
+      measured.baseline = (actualLineHeight - cssAscent - cssDescent) / 2.0 + cssAscent;
+      result.size.setWidth(std::max(result.size.width(), lineWidth));
+      result.size.setHeight(result.size.height() + actualLineHeight);
+      result.lines.push_back(std::move(measured));
       offset += line.size() + 1;
       continue;
     }
@@ -297,12 +413,43 @@ QSizeF measureFlowLabel(const FlowLabelDocument& label, const QString& fontFamil
     QTextLine textLine = layout.createLine();
     if (textLine.isValid()) textLine.setLineWidth(1e9);
     layout.endLayout();
-    width = std::max(width, textLine.isValid() ? textLine.naturalTextWidth()
-                                               : metrics.horizontalAdvance(line));
-    height += lineHeight;
+    const qreal qtWidth = textLine.isValid() ? textLine.naturalTextWidth()
+                                             : metrics.horizontalAdvance(line);
+    measured.width = chromiumFallbackWidth(label, offset, line, qtWidth, fontPixelSize);
+    measured.height = lineHeight;
+    measured.ascent = cssAscent;
+    measured.descent = cssDescent;
+    measured.baseline = (lineHeight - cssAscent - cssDescent) / 2.0 + cssAscent;
+    if (textLine.isValid()) {
+      const auto glyphRuns = textLine.glyphRuns(0, -1, QTextLayout::RetrieveAll);
+      for (const QGlyphRun& run : glyphRuns) {
+        const QList<qsizetype> indexes = run.stringIndexes();
+        if (indexes.isEmpty()) continue;
+        const auto [minimum, maximum] = std::minmax_element(indexes.cbegin(), indexes.cend());
+        const QRectF bounds = run.boundingRect();
+        measured.runs.push_back({offset + *minimum, *maximum - *minimum + 1,
+                                 bounds.x(), bounds.width(), run.isRightToLeft(), false,
+                                 run.rawFont().familyName()});
+      }
+      std::sort(measured.runs.begin(), measured.runs.end(),
+                [](const FlowLabelVisualRun& a, const FlowLabelVisualRun& b) {
+                  return a.x < b.x;
+                });
+      if (qtWidth > 0.0 && measured.width != qtWidth) {
+        const qreal scale = measured.width / qtWidth;
+        for (auto& run : measured.runs) {
+          run.x *= scale;
+          run.width *= scale;
+        }
+      }
+    }
+    result.size.setWidth(std::max(result.size.width(), measured.width));
+    result.size.setHeight(result.size.height() + lineHeight);
+    result.lines.push_back(std::move(measured));
     offset += line.size() + 1;
   }
-  return {width, std::max(lineHeight, height)};
+  result.size.setHeight(std::max(lineHeight, result.size.height()));
+  return result;
 }
 
 void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
@@ -312,20 +459,46 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
   QFont font(fontFamily);
   font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
   font.setHintingPreference(QFont::PreferNoHinting);
-  const QSizeF measured = measureFlowLabel(label, fontFamily, fontPixelSize, lineHeight);
+  FlowLabelDocument paintedLabel = label;
+  bool autoWrapped = false;
+  const qreal availableWidth = std::max<qreal>(0.0, rect.width() - 4.0);
+  if (paintedLabel.math.isEmpty() && !paintedLabel.text.contains(QLatin1Char('\n')) &&
+      availableWidth > 0.0 &&
+      measureTextRange(paintedLabel, 0, paintedLabel.text.size(), font) > availableWidth) {
+    qsizetype lineStart = 0;
+    qsizetype separator = paintedLabel.text.indexOf(QLatin1Char(' '));
+    while (separator >= 0) {
+      const qsizetype nextSeparator = paintedLabel.text.indexOf(QLatin1Char(' '), separator + 1);
+      const qsizetype candidateEnd = nextSeparator >= 0 ? nextSeparator : paintedLabel.text.size();
+      if (measureTextRange(paintedLabel, lineStart, candidateEnd - lineStart, font) >
+              availableWidth && separator > lineStart) {
+        paintedLabel.text[separator] = QLatin1Char('\n');
+        autoWrapped = true;
+        lineStart = separator + 1;
+      }
+      separator = nextSeparator;
+    }
+  }
+  const qreal effectiveLineHeight = autoWrapped ? 19.3 : lineHeight;
+  const FlowLabelLayoutMetrics layoutMetrics =
+      layoutFlowLabel(paintedLabel, fontFamily, fontPixelSize, effectiveLineHeight);
+  const QSizeF measured = layoutMetrics.size;
+  const qreal qtAscent = QFontMetricsF(font).ascent();
   qreal lineTop = centerVertically
                       ? rect.top() + std::max<qreal>(0.0, (rect.height() - measured.height()) / 2.0)
                       : rect.top();
   painter.setPen(color);
-  const QStringList lines = label.text.split(QLatin1Char('\n'));
+  const QStringList lines = paintedLabel.text.split(QLatin1Char('\n'));
   qsizetype offset = 0;
+  qsizetype lineIndex = 0;
   muffin::math::MathRenderer renderer;
   for (const QString& line : lines) {
+    const FlowLabelLineMetrics& measuredLine = layoutMetrics.lines.at(lineIndex++);
     QVector<FlowLabelMathSpan> mathSpans;
-    for (const FlowLabelMathSpan& math : label.math)
+    for (const FlowLabelMathSpan& math : paintedLabel.math)
       if (math.start >= offset && math.start < offset + line.size()) mathSpans.push_back(math);
 
-    qreal actualLineHeight = lineHeight;
+    qreal actualLineHeight = effectiveLineHeight;
     std::vector<muffin::math::MathLayoutResult> mathLayouts;
     mathLayouts.reserve(mathSpans.size());
     for (const FlowLabelMathSpan& math : mathSpans) {
@@ -335,35 +508,30 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
                                     mathLayouts.back().naturalSize.height() * kFlowMathMlScaleY);
     }
 
-    qreal lineWidth = 0.0;
-    if (mathSpans.isEmpty()) {
-      lineWidth = measureTextRange(label, offset, line.size(), font);
-    } else {
-      qsizetype cursor = offset;
-      for (qsizetype i = 0; i < mathSpans.size(); ++i) {
-        lineWidth += measureTextRange(label, cursor, mathSpans.at(i).start - cursor, font) *
-                     kFlowMathMlTextScaleX;
-        if (mathLayouts.at(static_cast<size_t>(i)).valid())
-          lineWidth += mathLayouts.at(static_cast<size_t>(i)).naturalSize.width() * kFlowMathMlScaleX;
-        cursor = mathSpans.at(i).start + mathSpans.at(i).length;
-      }
-      lineWidth += measureTextRange(label, cursor, offset + line.size() - cursor, font) *
-                   kFlowMathMlTextScaleX;
-    }
+    const qreal lineWidth = measuredLine.width;
     qreal x = rect.left() + (rect.width() - lineWidth) / 2.0;
     if (mathSpans.isEmpty()) {
-      drawTextRange(painter, label, offset, line.size(), font,
-                    QPointF(x, lineTop + (actualLineHeight - lineHeight) / 2.0), 1.0);
+      const qreal rawWidth = measureTextRange(paintedLabel, offset, line.size(), font);
+      drawTextRange(painter, paintedLabel, offset, line.size(), font,
+                    QPointF(x, lineTop + measuredLine.baseline - qtAscent),
+                    rawWidth > 0.0 ? measuredLine.width / rawWidth : 1.0);
     } else {
       qsizetype cursor = offset;
+      qsizetype runIndex = 0;
       for (qsizetype i = 0; i < mathSpans.size(); ++i) {
         const qsizetype textLength = mathSpans.at(i).start - cursor;
-        const qreal textWidth = measureTextRange(label, cursor, textLength, font) *
-                                kFlowMathMlTextScaleX;
-        drawTextRange(painter, label, cursor, textLength, font,
-                      QPointF(x, lineTop + (actualLineHeight - lineHeight) / 2.0),
-                      kFlowMathMlTextScaleX);
+        const qreal rawTextWidth = measureTextRange(paintedLabel, cursor, textLength, font);
+        const FlowLabelVisualRun* textRun = nullptr;
+        if (textLength > 0 && runIndex < measuredLine.runs.size() &&
+            !measuredLine.runs.at(runIndex).math)
+          textRun = &measuredLine.runs.at(runIndex++);
+        const qreal textWidth = textRun ? textRun->width : 0.0;
+        drawTextRange(painter, paintedLabel, cursor, textLength, font,
+                      QPointF(x, lineTop + measuredLine.baseline - qtAscent),
+                      rawTextWidth > 0.0 ? textWidth / rawTextWidth : 1.0);
         x += textWidth;
+        if (runIndex < measuredLine.runs.size() && measuredLine.runs.at(runIndex).math)
+          ++runIndex;
         const auto& mathLayout = mathLayouts.at(static_cast<size_t>(i));
         if (mathLayout.valid()) {
           const qreal mathHeight = mathLayout.naturalSize.height() * kFlowMathMlScaleY;
@@ -377,9 +545,14 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
         cursor = mathSpans.at(i).start + mathSpans.at(i).length;
       }
       const qsizetype textLength = offset + line.size() - cursor;
-      drawTextRange(painter, label, cursor, textLength, font,
-                    QPointF(x, lineTop + (actualLineHeight - lineHeight) / 2.0),
-                    kFlowMathMlTextScaleX);
+      const qreal rawTextWidth = measureTextRange(paintedLabel, cursor, textLength, font);
+      const FlowLabelVisualRun* textRun = nullptr;
+      if (textLength > 0 && runIndex < measuredLine.runs.size() &&
+          !measuredLine.runs.at(runIndex).math)
+        textRun = &measuredLine.runs.at(runIndex);
+      drawTextRange(painter, paintedLabel, cursor, textLength, font,
+                    QPointF(x, lineTop + measuredLine.baseline - qtAscent),
+                    rawTextWidth > 0.0 && textRun ? textRun->width / rawTextWidth : 1.0);
     }
     lineTop += actualLineHeight;
     offset += line.size() + 1;
