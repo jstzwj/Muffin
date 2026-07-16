@@ -356,8 +356,12 @@ int main(int argc, char** argv) {
   QJsonObject actualCodeCounts;
   for (auto it = diagnosticCodeCounts.cbegin(); it != diagnosticCodeCounts.cend(); ++it)
     actualCodeCounts.insert(it.key(), it.value());
-  require(actualCodeCounts == diagnosticCoverage.value(QStringLiteral("codeCounts")).toObject(),
-          QStringLiteral("Flowchart diagnostic code coverage changed; regenerate and audit the matrix"));
+  const QJsonObject expectedCodeCounts =
+      diagnosticCoverage.value(QStringLiteral("codeCounts")).toObject();
+  require(actualCodeCounts == expectedCodeCounts,
+          QStringLiteral("Flowchart diagnostic code coverage changed\nexpected: %1\nactual: %2")
+              .arg(QString::fromUtf8(QJsonDocument(expectedCodeCounts).toJson(QJsonDocument::Compact)),
+                   QString::fromUtf8(QJsonDocument(actualCodeCounts).toJson(QJsonDocument::Compact))));
   QJsonObject actualMatrixCounts;
   for (auto it = diagnosticMatrixCounts.cbegin(); it != diagnosticMatrixCounts.cend(); ++it)
     actualMatrixCounts.insert(it.key(), it.value());

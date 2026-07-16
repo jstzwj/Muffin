@@ -96,10 +96,8 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
   const qreal containerWidth = result.size.width();
   qreal maximumWidth = 0.0;
   for (auto& line : result.lines) {
-    const auto primaryMath = std::find_if(label.richText.math.cbegin(), label.richText.math.cend(),
-        [&](const auto& math) {
-          return math.start >= line.start && math.start < line.start + line.length;
-        });
+    const auto primaryMath = std::find_if(line.runs.cbegin(), line.runs.cend(),
+        [](const auto& run) { return run.math; });
     if (label.kind == SequenceLabelKind::Participant || label.kind == SequenceLabelKind::Box) {
       line.baseline = line.ascent = line.height / 2.0;
       line.descent = line.height - line.baseline;
@@ -111,8 +109,8 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
       line.descent = line.height - line.baseline;
     } else if (label.kind == SequenceLabelKind::Note ||
                label.kind == SequenceLabelKind::Fragment) {
-      if (primaryMath != label.richText.math.cend() &&
-          primaryMath->source.contains(QStringLiteral("\\frac"))) {
+      if (primaryMath != line.runs.cend() &&
+          primaryMath->mathStructure == flowchart::FlowLabelMathStructure::Fraction) {
         const QString lineText = label.richText.text.mid(line.start, line.length);
         const bool mixedFallback = std::any_of(lineText.cbegin(), lineText.cend(), [](QChar ch) {
           return (ch.unicode() >= 0x2e80 && ch.unicode() <= 0x9fff) ||
@@ -120,12 +118,12 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
         });
         line.baseline = line.ascent = mixedFallback ? 25.906 : 26.0;
         line.descent = mixedFallback ? 12.906 : 12.813;
-      } else if (primaryMath != label.richText.math.cend() &&
-                 primaryMath->source.contains(QStringLiteral("\\sqrt"))) {
+      } else if (primaryMath != line.runs.cend() &&
+                 primaryMath->mathStructure == flowchart::FlowLabelMathStructure::Radical) {
         line.baseline = line.ascent = 20.75;
         line.descent = 5.016;
-      } else if (primaryMath != label.richText.math.cend() &&
-                 primaryMath->source.contains(QStringLiteral("\\begin{matrix}"))) {
+      } else if (primaryMath != line.runs.cend() &&
+                 primaryMath->mathStructure == flowchart::FlowLabelMathStructure::Array) {
         line.baseline = line.ascent = 21.5;
         line.descent = 12.5;
       } else {

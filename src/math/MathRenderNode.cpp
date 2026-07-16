@@ -35,6 +35,17 @@ QString renderKindName(MathRenderKind kind) {
   return QStringLiteral("Unknown");
 }
 
+QString semanticKindName(MathSemanticKind kind) {
+  switch (kind) {
+    case MathSemanticKind::None: return {};
+    case MathSemanticKind::Fraction: return QStringLiteral("Fraction");
+    case MathSemanticKind::Radical: return QStringLiteral("Radical");
+    case MathSemanticKind::SupSub: return QStringLiteral("SupSub");
+    case MathSemanticKind::Array: return QStringLiteral("Array");
+  }
+  return {};
+}
+
 double rounded(qreal value) {
   return std::round(value * 10000.0) / 10000.0;
 }
@@ -273,6 +284,8 @@ void MathRenderNode::paint(QPainter& painter, QPointF origin) const {
 QJsonObject MathRenderNode::toJson() const {
   QJsonObject object;
   object.insert(QStringLiteral("kind"), renderKindName(kind));
+  if (semanticKind != MathSemanticKind::None)
+    object.insert(QStringLiteral("semanticKind"), semanticKindName(semanticKind));
   if (!text.isEmpty()) object.insert(QStringLiteral("text"), text);
   if (!atomClass.isEmpty()) object.insert(QStringLiteral("atomClass"), atomClass);
   if (!fontClass.isEmpty()) object.insert(QStringLiteral("fontClass"), fontClass);
@@ -329,6 +342,7 @@ void MathLayoutResult::paint(QPainter& painter, QPointF origin) const {
 std::unique_ptr<MathRenderNode> cloneNode(const MathRenderNode& node) {
   auto copy = std::make_unique<MathRenderNode>();
   copy->kind = node.kind;
+  copy->semanticKind = node.semanticKind;
   copy->text = node.text;
   copy->atomClass = node.atomClass;
   copy->fontClass = node.fontClass;

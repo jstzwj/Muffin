@@ -32,6 +32,15 @@ struct FlowLabelDocument {
   Qt::LayoutDirection direction = Qt::LayoutDirectionAuto;
 };
 
+enum class FlowLabelMathStructure {
+  None,
+  Plain,
+  SupSub,
+  Fraction,
+  Radical,
+  Array
+};
+
 struct FlowLabelVisualRun {
   qsizetype start = 0;
   qsizetype length = 0;
@@ -40,6 +49,7 @@ struct FlowLabelVisualRun {
   bool rightToLeft = false;
   bool math = false;
   QString fontFamily;
+  FlowLabelMathStructure mathStructure = FlowLabelMathStructure::None;
 };
 
 struct FlowLabelLineMetrics {

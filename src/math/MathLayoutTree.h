@@ -21,6 +21,7 @@ enum class MathLayoutKind {
 struct MathLayoutNode {
   MathLayoutKind kind = MathLayoutKind::Span;
   MathRenderKind renderKind = MathRenderKind::Span;
+  MathSemanticKind semanticKind = MathSemanticKind::None;
   QString text;
   QString atomClass;
   QString fontClass;

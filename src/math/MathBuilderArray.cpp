@@ -151,6 +151,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeArray(const MathParseNode& node
 
   auto array = std::make_unique<MathRenderNode>();
   array->kind = MathRenderKind::Array;
+  array->semanticKind = MathSemanticKind::Array;
   array->columns = colCount;
   array->rows = rowCount;
   qreal totalHeight = 0.0;

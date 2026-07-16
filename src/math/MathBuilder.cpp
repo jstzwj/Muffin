@@ -834,8 +834,12 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSpan(std::vector<std::unique_pt
 }
 
 std::unique_ptr<MathRenderNode> MathBuilder::makeSupSub(const MathParseNode& node) {
+  const auto markSupSub = [](std::unique_ptr<MathRenderNode> result) {
+    if (result) result->semanticKind = MathSemanticKind::SupSub;
+    return result;
+  };
   if (node.base.size() == 1 && node.base.first().type == MathNodeType::HorizBrace) {
-    return makeHorizBraceSupSub(node);
+    return markSupSub(makeHorizBraceSupSub(node));
   }
   auto base = node.base.isEmpty() ? makeError(QStringLiteral("?"), options_) : MathBuilder(options_).buildExpression(node.base);
   const qreal em = options_.fontPointSize();
@@ -909,7 +913,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSupSub(const MathParseNode& nod
       entries.push_back(makeLayoutVListKern(metrics.bigOpSpacing5 * em));
       limitsLayout = makeLayoutVListBottom(bottom, std::move(entries));
     } else {
-      return renderNodeFromLayout(*baseLayout);
+      return markSupSub(renderNodeFromLayout(*baseLayout));
     }
     limitsLayout->width = width;
     auto limitsNode = renderNodeFromLayout(*limitsLayout);
@@ -925,9 +929,9 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSupSub(const MathParseNode& nod
       parts.push_back(std::move(limitsNode));
       auto wrapper = makeSpan(std::move(parts));
       wrapper->atomClass = QStringLiteral("mop");
-      return wrapper;
+      return markSupSub(std::move(wrapper));
     }
-    return limitsNode;
+    return markSupSub(std::move(limitsNode));
   }
 
   const qreal baseWidth = base->width;
@@ -993,7 +997,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSupSub(const MathParseNode& nod
   }
 
   if (scriptChildren.empty()) {
-    return base;
+    return markSupSub(std::move(base));
   }
 
   std::unique_ptr<MathLayoutNode> scriptLayout;
@@ -1013,7 +1017,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSupSub(const MathParseNode& nod
   std::vector<std::unique_ptr<MathLayoutNode>> supsubChildren;
   supsubChildren.push_back(layoutFromRenderNode(std::move(base)));
   supsubChildren.push_back(std::move(scriptLayout));
-  return renderNodeFromLayout(*makeLayoutSpan(std::move(supsubChildren)));
+  return markSupSub(renderNodeFromLayout(*makeLayoutSpan(std::move(supsubChildren))));
 }
 
 std::unique_ptr<MathRenderNode> MathBuilder::makeFraction(const MathParseNode& node) {
@@ -1092,7 +1096,9 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeFraction(const MathParseNode& n
     frac->depth *= rescale;
   }
 
-  return makeGenfrac(node, std::move(frac));
+  auto result = makeGenfrac(node, std::move(frac));
+  result->semanticKind = MathSemanticKind::Fraction;
+  return result;
 }
 
 std::unique_ptr<MathRenderNode> MathBuilder::makeGenfrac(const MathParseNode& node, std::unique_ptr<MathRenderNode> frac) {
@@ -1236,6 +1242,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSqrt(const MathParseNode& node)
   sqrtBodyLayout->width = qMax(sqrtBodyLayout->width, advanceWidthEm * em);
 
   auto sqrtBody = renderNodeFromLayout(*sqrtBodyLayout);
+  sqrtBody->semanticKind = MathSemanticKind::Radical;
   if (!node.rootIndex.isEmpty()) {
     auto index = MathBuilder(options_.havingStyle(MathStyle::scriptScript())).buildExpression(node.rootIndex);
     const qreal toShift = 0.6 * (sqrtBody->height - sqrtBody->depth);
@@ -1252,7 +1259,9 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSqrt(const MathParseNode& node)
     std::vector<std::unique_ptr<MathRenderNode>> indexedChildren;
     indexedChildren.push_back(std::move(root));
     indexedChildren.push_back(std::move(sqrtBody));
-    return makeSpan(std::move(indexedChildren));
+    auto indexed = makeSpan(std::move(indexedChildren));
+    indexed->semanticKind = MathSemanticKind::Radical;
+    return indexed;
   }
   return sqrtBody;
 }

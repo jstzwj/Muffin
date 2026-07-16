@@ -87,6 +87,7 @@ std::unique_ptr<MathLayoutNode> layoutFromRenderNode(std::unique_ptr<MathRenderN
   auto layout = std::make_unique<MathLayoutNode>();
   layout->kind = node->kind == MathRenderKind::Symbol ? MathLayoutKind::Symbol : MathLayoutKind::Span;
   layout->renderKind = node->kind;
+  layout->semanticKind = node->semanticKind;
   layout->text = std::move(node->text);
   layout->atomClass = std::move(node->atomClass);
   layout->fontClass = std::move(node->fontClass);
@@ -119,6 +120,7 @@ std::unique_ptr<MathLayoutNode> layoutFromRenderNode(std::unique_ptr<MathRenderN
 std::unique_ptr<MathRenderNode> renderNodeFromLayout(const MathLayoutNode& node) {
   auto render = std::make_unique<MathRenderNode>();
   render->kind = node.renderKind;
+  render->semanticKind = node.semanticKind;
   render->text = node.text;
   render->atomClass = node.atomClass;
   render->fontClass = node.fontClass;

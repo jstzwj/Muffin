@@ -90,17 +90,40 @@ void testStrictMathGeometryFeatures1() {
   const auto sqrtNodes = math::MathParser(QStringLiteral("\\sqrt{x_i^2}"), delimiterSettings).parse();
   std::unique_ptr<math::MathRenderNode> sqrtRoot =
       math::MathBuilder(delimiterOptions).buildExpression(sqrtNodes);
-  const std::function<const math::MathRenderNode*(const math::MathRenderNode*)> findRadical =
+  const std::function<const math::MathRenderNode*(const math::MathRenderNode*,
+                                                   math::MathSemanticKind)> findSemantic =
+      [&](const math::MathRenderNode* node,
+          math::MathSemanticKind kind) -> const math::MathRenderNode* {
+    if (node == nullptr) return nullptr;
+    if (node->semanticKind == kind) return node;
+    for (const auto& child : node->children)
+      if (const auto* result = findSemantic(child.get(), kind)) return result;
+    return nullptr;
+  };
+  const math::MathRenderNode* radicalBox =
+      findSemantic(sqrtRoot.get(), math::MathSemanticKind::Radical);
+  const std::function<const math::MathRenderNode*(const math::MathRenderNode*)> findRadicalPath =
       [&](const math::MathRenderNode* node) -> const math::MathRenderNode* {
     if (node == nullptr) return nullptr;
     if (node->pathName.startsWith(QStringLiteral("sqrt"))) return node;
     for (const auto& child : node->children)
-      if (const auto* result = findRadical(child.get())) return result;
+      if (const auto* result = findRadicalPath(child.get())) return result;
     return nullptr;
   };
-  const math::MathRenderNode* radical = findRadical(sqrtRoot.get());
-  require(radical != nullptr && radical->paintWidth > radical->width,
+  const math::MathRenderNode* radicalPath = findRadicalPath(sqrtRoot.get());
+  require(radicalBox != nullptr && radicalPath != nullptr &&
+              radicalPath->paintWidth > radicalPath->width,
           QStringLiteral("KaTeX sqrt SVG should paint across its expression while advancing by the delimiter"));
+  for (const auto& [source, kind] : {
+           std::pair{QStringLiteral("\\frac{a}{b}"), math::MathSemanticKind::Fraction},
+           std::pair{QStringLiteral("x_i^2"), math::MathSemanticKind::SupSub},
+           std::pair{QStringLiteral("\\begin{matrix}a&b\\\\c&d\\end{matrix}"),
+                     math::MathSemanticKind::Array}}) {
+    const auto nodes = math::MathParser(source, delimiterSettings).parse();
+    const auto root = math::MathBuilder(delimiterOptions).buildExpression(nodes);
+    require(findSemantic(root.get(), kind) != nullptr,
+            QStringLiteral("Math render tree should preserve semantic box kind for %1").arg(source));
+  }
 
   requireMathSnippetLayout(QStringLiteral("\\left\\lbrace\\frac{\\frac{a}{b}}{\\frac{c}{d}}\\right\\rbrace"), QStringLiteral("stacked brace delimiter"));
   requireMathSnippetLayout(QStringLiteral("\\left[\\begin{matrix}a\\\\\\frac{b}{c}\\\\d\\end{matrix}\\right]"), QStringLiteral("stacked bracket matrix delimiter"));

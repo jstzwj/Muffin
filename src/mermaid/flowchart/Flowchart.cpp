@@ -8,6 +8,8 @@
 #include <QUrl>
 
 #include <algorithm>
+#include <functional>
+#include <optional>
 
 namespace muffin::mermaid::flowchart {
 namespace {
@@ -292,12 +294,11 @@ private:
 };
 
 FlowTokenKind firstSignificantKind(const QString& source) {
-  TokenCursor cursor(source);
-  cursor.skipSpace();
-  if (!cursor.atEnd()) {
-    return cursor.peek().kind;
+  FlowchartTokenizer tokenizer(source, false);
+  for (;;) {
+    const FlowToken token = tokenizer.next();
+    if (token.kind != FlowTokenKind::Space) return token.kind;
   }
-  return FlowTokenKind::Eof;
 }
 
 struct TokenShape {
@@ -553,6 +554,11 @@ SourceFragment trimmedFragment(const QString& source, qsizetype start, qsizetype
 
 QVector<SourceFragment> splitGroups(const QString& source) {
   QVector<SourceFragment> result;
+  if (!source.contains(QLatin1Char('&'))) {
+    SourceFragment fragment = trimmedFragment(source, 0, source.size());
+    if (!fragment.text.isEmpty()) result.push_back(std::move(fragment));
+    return result;
+  }
   const QVector<FlowToken> tokens = FlowchartTokenizer(source, false).tokenize();
   qsizetype fragmentStart = 0;
   for (qsizetype i = 0; i < tokens.size(); ++i) {
@@ -596,11 +602,62 @@ struct SourceStatement {
   QChar terminator;
 };
 
-QVector<SourceStatement> scanStatements(const QString& source) {
-  QVector<SourceStatement> result;
-  QString normalized = source;
-  normalized.replace(QRegularExpression(QStringLiteral("\\r\\n?")), QStringLiteral("\n"));
-  const QVector<FlowToken> tokens = FlowchartTokenizer(normalized).tokenize();
+struct TokenValidationResult {
+  std::optional<FlowchartSourceSpan> vertexLimitSpan;
+};
+
+TokenValidationResult validateTokenStream(const QString& source, int maxVertices) {
+  FlowchartTokenizer tokenizer(source);
+  TokenValidationResult result;
+  QSet<QString> definiteVertices;
+  QString candidateId;
+  FlowToken candidateToken;
+  int candidatePhase = 0;
+  bool candidateInvalid = false;
+  const auto flushCandidate = [&] {
+    if (!candidateInvalid && candidatePhase == 3 && !candidateId.isEmpty() &&
+        !definiteVertices.contains(candidateId)) {
+      definiteVertices.insert(candidateId);
+      if (definiteVertices.size() > maxVertices && !result.vertexLimitSpan)
+        result.vertexLimitSpan = tokenSpan(candidateToken);
+    }
+    candidateId.clear();
+    candidatePhase = 0;
+    candidateInvalid = false;
+  };
+  for (;;) {
+    const FlowToken token = tokenizer.next();
+    if (token.kind == FlowTokenKind::Invalid)
+      throw tokenError(token, FlowchartErrorCategory::Syntax, FlowchartErrorStage::Lexer,
+                       token.diagnosticCode);
+    if (token.kind == FlowTokenKind::Eof) {
+      flushCandidate();
+      return result;
+    }
+    if (token.kind == FlowTokenKind::Newline || token.kind == FlowTokenKind::Semi ||
+        token.kind == FlowTokenKind::NoDir) {
+      flushCandidate();
+      continue;
+    }
+    if (token.kind == FlowTokenKind::Space) continue;
+    if (candidatePhase == 0 && token.kind == FlowTokenKind::NodeString) {
+      candidateId = token.text;
+      candidateToken = token;
+      candidatePhase = 1;
+    } else if (candidatePhase == 1 && token.kind == FlowTokenKind::Sqs) {
+      candidatePhase = 2;
+    } else if (candidatePhase == 2 && token.kind == FlowTokenKind::Sqe) {
+      candidatePhase = 3;
+    } else if (candidatePhase != 2) {
+      candidateInvalid = true;
+    }
+  }
+  throw std::runtime_error("flowchart lexer validation did not make progress");
+}
+
+void scanStatements(const QString& normalized,
+                    const std::function<void(const SourceStatement&)>& onStatement) {
+  FlowchartTokenizer tokenizer(normalized);
   qsizetype statementStart = 0;
   int statementLine = 1;
   int statementColumn = 1;
@@ -612,10 +669,12 @@ QVector<SourceStatement> scanStatements(const QString& source) {
     while (leading < statement.size() && statement.at(leading).isSpace()) ++leading;
     statement.remove(0, leading);
     if (!statement.trimmed().isEmpty() && !statement.startsWith(QStringLiteral("%%")))
-      result.push_back({statement, statementLine, statementColumn, statementOffset, terminator});
+      onStatement(SourceStatement{statement, statementLine, statementColumn,
+                                  statementOffset, terminator});
   };
 
-  for (const FlowToken& token : tokens) {
+  for (;;) {
+    const FlowToken token = tokenizer.next();
     if (token.kind == FlowTokenKind::Eof) {
       flushStatement(token.offset);
       break;
@@ -640,7 +699,6 @@ QVector<SourceStatement> scanStatements(const QString& source) {
                        token.diagnosticCode);
     }
   }
-  return result;
 }
 
 QVector<LinkToken> findTokenLinks(const QString& line) {
@@ -730,10 +788,32 @@ public:
       diagnostic.span = {0, normalized.isEmpty() ? 0 : 1, 1, 1};
       throw FlowchartParseError(std::move(diagnostic));
     }
-    const QVector<SourceStatement> statements = scanStatements(source);
-    qsizetype cursor = 0;
-    parseGraphConfig(statements, cursor);
-    parseDocument(statements, cursor, false);
+    const TokenValidationResult validation =
+        validateTokenStream(normalized, limits_.maxVertices);
+    if (validation.vertexLimitSpan)
+      throw resourceError(QStringLiteral("Maximum vertex count exceeded"),
+                          *validation.vertexLimitSpan);
+    bool hasHeader = false;
+    scanStatements(normalized, [&](const SourceStatement& statement) {
+      if (!hasHeader) {
+        const QVector<SourceStatement> header{statement};
+        qsizetype cursor = 0;
+        parseGraphConfig(header, cursor);
+        hasHeader = true;
+        return;
+      }
+      currentLine_ = statement.line;
+      currentColumn_ = statement.column;
+      currentOffset_ = statement.offset;
+      if (statement.text.size() > limits_.maxLineLength)
+        throw resourceError(QStringLiteral("Maximum line length exceeded"));
+      parseStatement(statement.text);
+    });
+    if (!hasHeader) {
+      const QVector<SourceStatement> statements;
+      qsizetype cursor = 0;
+      parseGraphConfig(statements, cursor);
+    }
     if (!contexts_.isEmpty()) throw unclosedSubgraphError();
     FlowchartData result;
     result.direction = direction_;
@@ -858,39 +938,6 @@ private:
     }
   }
 
-  void parseDocument(const QVector<SourceStatement>& statements, qsizetype& cursor, bool insideSubgraph) {
-    while (cursor < statements.size()) {
-      const SourceStatement& statement = statements.at(cursor);
-      currentLine_ = statement.line;
-      currentColumn_ = statement.column;
-      currentOffset_ = statement.offset;
-      if (statement.text.size() > limits_.maxLineLength)
-        throw resourceError(QStringLiteral("Maximum line length exceeded"));
-      if (statement.text == QLatin1String("end")) {
-        if (insideSubgraph) return;
-        parseStatement(statement.text);
-        ++cursor;
-        continue;
-      }
-      if (statement.text.startsWith(QStringLiteral("subgraph")) &&
-          (statement.text.size() == 8 || statement.text.at(8).isSpace())) {
-        parseStatement(statement.text);
-        ++cursor;
-        parseDocument(statements, cursor, true);
-        if (cursor >= statements.size()) throw unclosedSubgraphError();
-        currentLine_ = statements.at(cursor).line;
-        currentColumn_ = statements.at(cursor).column;
-        currentOffset_ = statements.at(cursor).offset;
-        parseStatement(statements.at(cursor).text);
-        ++cursor;
-        continue;
-      }
-      parseStatement(statement.text);
-      ++cursor;
-    }
-    if (insideSubgraph) throw unclosedSubgraphError();
-  }
-
   Vertex& addVertex(const ParsedNode& parsed, bool applyDefinition = true) {
     auto found = vertexLookup_.find(parsed.id);
     const bool newlyCreated = found == vertexLookup_.end();
@@ -954,6 +1001,8 @@ private:
     edge.stroke = token.stroke;
     edge.type = token.type;
     edge.length = token.length;
+    int& pairCount = edgePairCounts_[edge.start][edge.end];
+    const int existingPairCount = pairCount++;
     if (token.raw == QLatin1String("---") || token.raw.endsWith(QStringLiteral("---"))) edge.type = QStringLiteral("arrow_open");
     if (token.raw == QLatin1String("--x")) edge.type = QStringLiteral("arrow_cross");
     if (token.raw == QLatin1String("--o")) edge.type = QStringLiteral("arrow_circle");
@@ -965,11 +1014,7 @@ private:
       return;
     }
     const QString base = QStringLiteral("L_%1_%2_").arg(edge.start, edge.end);
-    int count = 0;
-    for (const Edge& existing : edges_) {
-      if (existing.start == edge.start && existing.end == edge.end) ++count;
-    }
-    edge.id = base + QString::number(count == 0 ? 0 : count + 1);
+    edge.id = base + QString::number(existingPairCount == 0 ? 0 : existingPairCount + 1);
     edges_.push_back(std::move(edge));
   }
 
@@ -1462,6 +1507,7 @@ private:
   QVector<Vertex> vertices_;
   QMap<QString, qsizetype> vertexLookup_;
   QVector<Edge> edges_;
+  QHash<QString, QHash<QString, int>> edgePairCounts_;
   QStringList defaultEdgeStyles_;
   QString defaultEdgeInterpolate_;
   QVector<FlowClass> classes_;

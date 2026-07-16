@@ -30,8 +30,17 @@ enum class MathRenderKind {
   Error
 };
 
+enum class MathSemanticKind {
+  None,
+  Fraction,
+  Radical,
+  SupSub,
+  Array
+};
+
 struct MathRenderNode {
   MathRenderKind kind = MathRenderKind::Span;
+  MathSemanticKind semanticKind = MathSemanticKind::None;
   QString text;
   QString atomClass;
   QString fontClass;

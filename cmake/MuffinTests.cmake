@@ -20,6 +20,7 @@ muffin_add_test(NAME MuffinMermaidFlowchartDifferentialFuzzTest SOURCE tests/mer
 muffin_add_test(NAME MuffinMermaidParserErrorTest SOURCE tests/mermaid/MermaidParserErrorTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/flowchart-errors.json)
 muffin_add_test(NAME MuffinMermaidSecurityTest SOURCE tests/mermaid/MermaidSecurityTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinMermaidFuzzTest SOURCE tests/mermaid/MermaidFuzzTest.cpp LINK MuffinCore)
+set_tests_properties(MuffinMermaidFuzzTest PROPERTIES RUN_SERIAL TRUE)
 muffin_add_test(NAME MuffinMermaidRenderCacheTest SOURCE tests/mermaid/MermaidRenderCacheTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderMermaidBlockTest SOURCE tests/render/RenderMermaidBlockTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidFlowchartLayoutTest SOURCE tests/mermaid/MermaidFlowchartLayoutTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/flowchart-geometry.json RESOURCE_LOCK)
