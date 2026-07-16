@@ -1,6 +1,7 @@
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/MermaidFontRegistry.h"
 
+#include "math/MathCssBox.h"
 #include "math/MathRenderer.h"
 
 #include <QFont>
@@ -12,7 +13,6 @@
 #include <QRegularExpression>
 
 #include <algorithm>
-#include <functional>
 #include <vector>
 
 namespace muffin::mermaid::flowchart {
@@ -28,104 +28,28 @@ struct MathMlInlineMetrics {
   qreal advance = 0.0;
   qreal height = 22.0;
   FlowLabelMathStructure structure = FlowLabelMathStructure::None;
+  qreal baseline = 0.0;
+  qreal inkTop = 0.0;
+  qreal inkBottom = 0.0;
 };
 
-bool mathTreeContains(const muffin::math::MathRenderNode* node,
-                      const std::function<bool(const muffin::math::MathRenderNode&)>& predicate) {
-  if (node == nullptr) return false;
-  if (predicate(*node)) return true;
-  return std::any_of(node->children.cbegin(), node->children.cend(), [&](const auto& child) {
-    return mathTreeContains(child.get(), predicate);
-  });
-}
-
-FlowLabelMathStructure mathStructure(const muffin::math::MathLayoutResult& layout) {
-  const auto containsSemantic = [&](muffin::math::MathSemanticKind kind) {
-    return mathTreeContains(layout.root.get(), [=](const auto& node) {
-      return node.semanticKind == kind;
-    });
-  };
-  if (containsSemantic(muffin::math::MathSemanticKind::Array))
-    return FlowLabelMathStructure::Array;
-  if (containsSemantic(muffin::math::MathSemanticKind::Radical))
-    return FlowLabelMathStructure::Radical;
-  if (containsSemantic(muffin::math::MathSemanticKind::Fraction))
-    return FlowLabelMathStructure::Fraction;
-  if (containsSemantic(muffin::math::MathSemanticKind::SupSub))
-    return FlowLabelMathStructure::SupSub;
+FlowLabelMathStructure flowMathStructure(muffin::math::MathSemanticKind kind) {
+  switch (kind) {
+    case muffin::math::MathSemanticKind::Fraction: return FlowLabelMathStructure::Fraction;
+    case muffin::math::MathSemanticKind::Radical: return FlowLabelMathStructure::Radical;
+    case muffin::math::MathSemanticKind::SupSub: return FlowLabelMathStructure::SupSub;
+    case muffin::math::MathSemanticKind::Array: return FlowLabelMathStructure::Array;
+    case muffin::math::MathSemanticKind::None: return FlowLabelMathStructure::Plain;
+  }
   return FlowLabelMathStructure::Plain;
 }
 
-const muffin::math::MathRenderNode* semanticNode(
-    const muffin::math::MathRenderNode* node, muffin::math::MathSemanticKind kind) {
-  if (node == nullptr) return nullptr;
-  if (node->semanticKind == kind) return node;
-  for (const auto& child : node->children)
-    if (const auto* result = semanticNode(child.get(), kind)) return result;
-  return nullptr;
-}
-
-qreal widestDescendant(const muffin::math::MathRenderNode* node,
-                       muffin::math::MathRenderKind kind) {
-  if (node == nullptr) return 0.0;
-  qreal width = node->kind == kind ? node->width : 0.0;
-  for (const auto& child : node->children)
-    width = std::max(width, widestDescendant(child.get(), kind));
-  return width;
-}
-
-int symbolCount(const muffin::math::MathRenderNode* node) {
-  if (node == nullptr) return 0;
-  int count = node->kind == muffin::math::MathRenderKind::Symbol ? 1 : 0;
-  for (const auto& child : node->children) count += symbolCount(child.get());
-  return count;
-}
-
-qreal cssPixelSnap(qreal value, qreal em) {
-  return std::round(value / em * 8.0) / 8.0 * em;
-}
-
 MathMlInlineMetrics sequenceMathMlMetrics(const muffin::math::MathLayoutResult& layout,
-                                          qreal fontPixelSize,
-                                          qreal nativeWidth, qreal nativeHeight) {
-  const qreal em = fontPixelSize / 16.0;
-  const FlowLabelMathStructure structure = mathStructure(layout);
-  if (structure == FlowLabelMathStructure::Array)
-    return {43.563 * em, 37.172 * em, 36.0 * em, structure};
-  if (structure == FlowLabelMathStructure::Radical)
-    return {nativeWidth * (63.344 / 67.631), nativeWidth * (62.687 / 67.631),
-            37.0 * em, structure};
-  if (structure == FlowLabelMathStructure::Fraction) {
-    const auto* fraction = semanticNode(layout.root.get(),
-                                        muffin::math::MathSemanticKind::Fraction);
-    // KaTeX's HTML tree surrounds a fraction with two nulldelimiter spans.
-    // Native MathML has no corresponding inline boxes: its advance is the
-    // fraction VList itself, snapped by Chromium to the CSS pixel grid.
-    const qreal fractionContentWidth = widestDescendant(
-        fraction, muffin::math::MathRenderKind::VList);
-    const qreal advance = std::round(fractionContentWidth / em) * em;
-    const qreal visualWidth = std::max(11.0 * em, advance);
-    const qreal cssHeight = std::ceil(nativeHeight / em) * em;
-    return {visualWidth, advance, cssHeight, structure};
-  }
-  if (structure == FlowLabelMathStructure::SupSub) {
-    const auto* scripts = semanticNode(layout.root.get(),
-                                       muffin::math::MathSemanticKind::SupSub);
-    qreal width = nativeWidth;
-    if (scripts != nullptr && scripts->children.size() == 2) {
-      constexpr qreal kNativeMathMlScriptInlineScale = 0.92;
-      const qreal baseWidth = scripts->children.front()->width * kFlowMathMlScaleX;
-      const qreal scriptWidth = scripts->children.back()->width *
-                                kNativeMathMlScriptInlineScale;
-      width = cssPixelSnap(baseWidth + scriptWidth, em);
-    }
-    // Chromium applies the MathML script minimum inline box before snapping.
-    width = std::max(16.125 * em, width);
-    return {width, width, std::max<qreal>(22.0 * em, nativeHeight), structure};
-  }
-  const qreal width = symbolCount(layout.root.get()) == 1
-      ? std::round(nativeWidth / em) * em : cssPixelSnap(nativeWidth, em);
-  return {width, width, std::max<qreal>(22.0 * em, nativeHeight), structure};
+                                          qreal renderFontPixelSize) {
+  const muffin::math::MathCssBox box = muffin::math::layoutMathMlCssBox(
+      layout, renderFontPixelSize, 16.0);
+  return {box.width, box.advance, box.height, flowMathStructure(box.semanticKind),
+          box.baseline, box.inkTop, box.inkBottom};
 }
 
 QString decodeEntity(QStringView source, qsizetype* consumed) {
@@ -539,13 +463,17 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
           const qreal nativeMathWidth = layout.naturalSize.width() * mathScaleX;
           const qreal nativeMathHeight = layout.naturalSize.height() * kFlowMathMlScaleY;
           const MathMlInlineMetrics mathMetrics = label.sequenceMathMlModel
-              ? sequenceMathMlMetrics(layout, fontPixelSize, nativeMathWidth,
-                                      nativeMathHeight)
+              ? sequenceMathMlMetrics(layout, fontPixelSize * 1.21)
               : MathMlInlineMetrics{nativeMathWidth, nativeMathWidth, nativeMathHeight,
                                     FlowLabelMathStructure::Plain};
           measured.runs.push_back({math.start, math.length, lineWidth, mathMetrics.visualWidth,
                                    false, true, QStringLiteral("KaTeX_Main"),
                                    mathMetrics.structure});
+          auto& mathRun = measured.runs.back();
+          mathRun.mathBoxHeight = mathMetrics.height;
+          mathRun.mathBaseline = mathMetrics.baseline;
+          mathRun.mathInkTop = mathMetrics.inkTop;
+          mathRun.mathInkBottom = mathMetrics.inkBottom;
           visualRight = std::max(visualRight, lineWidth + mathMetrics.visualWidth);
           lineWidth += mathMetrics.advance;
           actualLineHeight = std::max(actualLineHeight, mathMetrics.height);
@@ -711,8 +639,7 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
         const qreal nativeWidth = mathLayouts.back().naturalSize.width() * mathScaleX;
         const qreal nativeHeight = mathLayouts.back().naturalSize.height() * kFlowMathMlScaleY;
         mathMetrics.push_back(paintedLabel.sequenceMathMlModel
-            ? sequenceMathMlMetrics(mathLayouts.back(), fontPixelSize,
-                                    nativeWidth, nativeHeight)
+            ? sequenceMathMlMetrics(mathLayouts.back(), fontPixelSize * 1.21)
             : MathMlInlineMetrics{nativeWidth, nativeWidth, nativeHeight,
                                   FlowLabelMathStructure::Plain});
         actualLineHeight = std::max(actualLineHeight, mathMetrics.back().height);
@@ -750,7 +677,7 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
         if (mathLayout.valid()) {
           const auto& inlineMetrics = mathMetrics.at(static_cast<size_t>(i));
           const bool radical = paintedLabel.sequenceMathMlModel &&
-                               mathStructure(mathLayout) == FlowLabelMathStructure::Radical;
+                               inlineMetrics.structure == FlowLabelMathStructure::Radical;
           const QRectF inkBounds = radical && mathLayout.root
               ? mathLayout.root->boundsAt(QPointF(0.0, mathLayout.baseline)) : QRectF{};
           const qreal scaleX = radical && inkBounds.width() > 0.0

@@ -46,6 +46,16 @@ QString semanticKindName(MathSemanticKind kind) {
   return {};
 }
 
+QString scriptKindName(MathScriptKind kind) {
+  switch (kind) {
+    case MathScriptKind::None: return {};
+    case MathScriptKind::Superscript: return QStringLiteral("Superscript");
+    case MathScriptKind::Subscript: return QStringLiteral("Subscript");
+    case MathScriptKind::SubSup: return QStringLiteral("SubSup");
+  }
+  return {};
+}
+
 double rounded(qreal value) {
   return std::round(value * 10000.0) / 10000.0;
 }
@@ -286,6 +296,9 @@ QJsonObject MathRenderNode::toJson() const {
   object.insert(QStringLiteral("kind"), renderKindName(kind));
   if (semanticKind != MathSemanticKind::None)
     object.insert(QStringLiteral("semanticKind"), semanticKindName(semanticKind));
+  if (scriptKind != MathScriptKind::None)
+    object.insert(QStringLiteral("scriptKind"), scriptKindName(scriptKind));
+  if (radicalIndex) object.insert(QStringLiteral("radicalIndex"), true);
   if (!text.isEmpty()) object.insert(QStringLiteral("text"), text);
   if (!atomClass.isEmpty()) object.insert(QStringLiteral("atomClass"), atomClass);
   if (!fontClass.isEmpty()) object.insert(QStringLiteral("fontClass"), fontClass);
@@ -307,6 +320,26 @@ QJsonObject MathRenderNode::toJson() const {
   if (phantom) object.insert(QStringLiteral("phantom"), true);
   if (columns > 0) object.insert(QStringLiteral("columns"), columns);
   if (rows > 0) object.insert(QStringLiteral("rows"), rows);
+  if (!arrayColumnWidths.empty()) {
+    QJsonArray values;
+    for (qreal value : arrayColumnWidths) values.append(rounded(value));
+    object.insert(QStringLiteral("arrayColumnWidths"), values);
+  }
+  if (!arrayRowHeights.empty()) {
+    QJsonArray values;
+    for (qreal value : arrayRowHeights) values.append(rounded(value));
+    object.insert(QStringLiteral("arrayRowHeights"), values);
+  }
+  if (!arrayRowDepths.empty()) {
+    QJsonArray values;
+    for (qreal value : arrayRowDepths) values.append(rounded(value));
+    object.insert(QStringLiteral("arrayRowDepths"), values);
+  }
+  if (!arrayRowInkDescenders.empty()) {
+    QJsonArray values;
+    for (bool value : arrayRowInkDescenders) values.append(value);
+    object.insert(QStringLiteral("arrayRowInkDescenders"), values);
+  }
   if (!children.empty()) {
     QJsonArray childArray;
     for (const auto& child : children) {
@@ -343,6 +376,8 @@ std::unique_ptr<MathRenderNode> cloneNode(const MathRenderNode& node) {
   auto copy = std::make_unique<MathRenderNode>();
   copy->kind = node.kind;
   copy->semanticKind = node.semanticKind;
+  copy->scriptKind = node.scriptKind;
+  copy->radicalIndex = node.radicalIndex;
   copy->text = node.text;
   copy->atomClass = node.atomClass;
   copy->fontClass = node.fontClass;
@@ -367,6 +402,10 @@ std::unique_ptr<MathRenderNode> cloneNode(const MathRenderNode& node) {
   copy->phantom = node.phantom;
   copy->columns = node.columns;
   copy->rows = node.rows;
+  copy->arrayColumnWidths = node.arrayColumnWidths;
+  copy->arrayRowHeights = node.arrayRowHeights;
+  copy->arrayRowDepths = node.arrayRowDepths;
+  copy->arrayRowInkDescenders = node.arrayRowInkDescenders;
   copy->children.reserve(node.children.size());
   for (const auto& child : node.children) {
     copy->children.push_back(cloneNode(*child));

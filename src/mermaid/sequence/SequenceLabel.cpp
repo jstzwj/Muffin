@@ -109,23 +109,16 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
       line.descent = line.height - line.baseline;
     } else if (label.kind == SequenceLabelKind::Note ||
                label.kind == SequenceLabelKind::Fragment) {
-      if (primaryMath != line.runs.cend() &&
-          primaryMath->mathStructure == flowchart::FlowLabelMathStructure::Fraction) {
-        const QString lineText = label.richText.text.mid(line.start, line.length);
-        const bool mixedFallback = std::any_of(lineText.cbegin(), lineText.cend(), [](QChar ch) {
-          return (ch.unicode() >= 0x2e80 && ch.unicode() <= 0x9fff) ||
-                 (ch.unicode() >= 0x0600 && ch.unicode() <= 0x08ff);
-        });
-        line.baseline = line.ascent = mixedFallback ? 25.906 : 26.0;
-        line.descent = mixedFallback ? 12.906 : 12.813;
-      } else if (primaryMath != line.runs.cend() &&
-                 primaryMath->mathStructure == flowchart::FlowLabelMathStructure::Radical) {
-        line.baseline = line.ascent = 20.75;
-        line.descent = 5.016;
-      } else if (primaryMath != line.runs.cend() &&
-                 primaryMath->mathStructure == flowchart::FlowLabelMathStructure::Array) {
-        line.baseline = line.ascent = 21.5;
-        line.descent = 12.5;
+      if (primaryMath != line.runs.cend() && primaryMath->mathBoxHeight > 0.0) {
+        const qreal containerHeight = line.height;
+        const qreal mathTop = (containerHeight - primaryMath->mathBoxHeight) / 2.0;
+        const qreal textTop = (containerHeight - lineHeight) / 2.0;
+        const qreal containerBaseline = containerHeight / 2.0 + 6.0;
+        const qreal inkTop = std::min(textTop, mathTop + primaryMath->mathInkTop);
+        const qreal inkBottom = std::max(textTop + lineHeight,
+            mathTop + primaryMath->mathInkBottom);
+        line.baseline = line.ascent = containerBaseline - inkTop;
+        line.descent = inkBottom - containerBaseline;
       } else {
         line.baseline = line.ascent = 17.0;
         line.descent = 5.0;

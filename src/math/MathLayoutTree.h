@@ -22,6 +22,8 @@ struct MathLayoutNode {
   MathLayoutKind kind = MathLayoutKind::Span;
   MathRenderKind renderKind = MathRenderKind::Span;
   MathSemanticKind semanticKind = MathSemanticKind::None;
+  MathScriptKind scriptKind = MathScriptKind::None;
+  bool radicalIndex = false;
   QString text;
   QString atomClass;
   QString fontClass;
@@ -44,6 +46,12 @@ struct MathLayoutNode {
   bool allowBreak = false;
   bool tightSpacing = false;
   bool phantom = false;
+  int columns = 0;
+  int rows = 0;
+  std::vector<qreal> arrayColumnWidths;
+  std::vector<qreal> arrayRowHeights;
+  std::vector<qreal> arrayRowDepths;
+  std::vector<bool> arrayRowInkDescenders;
   std::vector<std::unique_ptr<MathLayoutNode>> children;
 };
 

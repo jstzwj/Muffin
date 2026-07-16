@@ -604,9 +604,11 @@ struct SourceStatement {
 
 struct TokenValidationResult {
   std::optional<FlowchartSourceSpan> vertexLimitSpan;
+  std::optional<FlowchartSourceSpan> edgeLimitSpan;
 };
 
-TokenValidationResult validateTokenStream(const QString& source, int maxVertices) {
+TokenValidationResult validateTokenStream(const QString& source, int maxVertices,
+                                          int maxEdges) {
   FlowchartTokenizer tokenizer(source);
   TokenValidationResult result;
   QSet<QString> definiteVertices;
@@ -614,6 +616,10 @@ TokenValidationResult validateTokenStream(const QString& source, int maxVertices
   FlowToken candidateToken;
   int candidatePhase = 0;
   bool candidateInvalid = false;
+  int edgePhase = 0;
+  int definiteEdges = 0;
+  bool edgeInvalid = false;
+  FlowToken edgeToken;
   const auto flushCandidate = [&] {
     if (!candidateInvalid && candidatePhase == 3 && !candidateId.isEmpty() &&
         !definiteVertices.contains(candidateId)) {
@@ -624,6 +630,13 @@ TokenValidationResult validateTokenStream(const QString& source, int maxVertices
     candidateId.clear();
     candidatePhase = 0;
     candidateInvalid = false;
+    if (!edgeInvalid && edgePhase == 3) {
+      ++definiteEdges;
+      if (definiteEdges > maxEdges && !result.edgeLimitSpan)
+        result.edgeLimitSpan = tokenSpan(edgeToken);
+    }
+    edgePhase = 0;
+    edgeInvalid = false;
   };
   for (;;) {
     const FlowToken token = tokenizer.next();
@@ -640,6 +653,16 @@ TokenValidationResult validateTokenStream(const QString& source, int maxVertices
       continue;
     }
     if (token.kind == FlowTokenKind::Space) continue;
+    if (edgePhase == 0 && token.kind == FlowTokenKind::NodeString) {
+      edgePhase = 1;
+    } else if (edgePhase == 1 && token.kind == FlowTokenKind::Link) {
+      edgeToken = token;
+      edgePhase = 2;
+    } else if (edgePhase == 2 && token.kind == FlowTokenKind::NodeString) {
+      edgePhase = 3;
+    } else {
+      edgeInvalid = true;
+    }
     if (candidatePhase == 0 && token.kind == FlowTokenKind::NodeString) {
       candidateId = token.text;
       candidateToken = token;
@@ -789,10 +812,13 @@ public:
       throw FlowchartParseError(std::move(diagnostic));
     }
     const TokenValidationResult validation =
-        validateTokenStream(normalized, limits_.maxVertices);
+        validateTokenStream(normalized, limits_.maxVertices, options_.maxEdges);
     if (validation.vertexLimitSpan)
       throw resourceError(QStringLiteral("Maximum vertex count exceeded"),
                           *validation.vertexLimitSpan);
+    if (validation.edgeLimitSpan)
+      throw resourceError(QStringLiteral("Edge limit exceeded"),
+                          *validation.edgeLimitSpan);
     bool hasHeader = false;
     scanStatements(normalized, [&](const SourceStatement& statement) {
       if (!hasHeader) {

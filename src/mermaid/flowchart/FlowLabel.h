@@ -50,6 +50,10 @@ struct FlowLabelVisualRun {
   bool math = false;
   QString fontFamily;
   FlowLabelMathStructure mathStructure = FlowLabelMathStructure::None;
+  qreal mathBoxHeight = 0.0;
+  qreal mathBaseline = 0.0;
+  qreal mathInkTop = 0.0;
+  qreal mathInkBottom = 0.0;
 };
 
 struct FlowLabelLineMetrics {

@@ -88,6 +88,8 @@ std::unique_ptr<MathLayoutNode> layoutFromRenderNode(std::unique_ptr<MathRenderN
   layout->kind = node->kind == MathRenderKind::Symbol ? MathLayoutKind::Symbol : MathLayoutKind::Span;
   layout->renderKind = node->kind;
   layout->semanticKind = node->semanticKind;
+  layout->scriptKind = node->scriptKind;
+  layout->radicalIndex = node->radicalIndex;
   layout->text = std::move(node->text);
   layout->atomClass = std::move(node->atomClass);
   layout->fontClass = std::move(node->fontClass);
@@ -110,6 +112,12 @@ std::unique_ptr<MathLayoutNode> layoutFromRenderNode(std::unique_ptr<MathRenderN
   layout->allowBreak = node->allowBreak;
   layout->tightSpacing = node->tightSpacing;
   layout->phantom = node->phantom;
+  layout->columns = node->columns;
+  layout->rows = node->rows;
+  layout->arrayColumnWidths = std::move(node->arrayColumnWidths);
+  layout->arrayRowHeights = std::move(node->arrayRowHeights);
+  layout->arrayRowDepths = std::move(node->arrayRowDepths);
+  layout->arrayRowInkDescenders = std::move(node->arrayRowInkDescenders);
   layout->children.reserve(node->children.size());
   for (auto& child : node->children) {
     layout->children.push_back(layoutFromRenderNode(std::move(child)));
@@ -121,6 +129,8 @@ std::unique_ptr<MathRenderNode> renderNodeFromLayout(const MathLayoutNode& node)
   auto render = std::make_unique<MathRenderNode>();
   render->kind = node.renderKind;
   render->semanticKind = node.semanticKind;
+  render->scriptKind = node.scriptKind;
+  render->radicalIndex = node.radicalIndex;
   render->text = node.text;
   render->atomClass = node.atomClass;
   render->fontClass = node.fontClass;
@@ -143,6 +153,12 @@ std::unique_ptr<MathRenderNode> renderNodeFromLayout(const MathLayoutNode& node)
   render->allowBreak = node.allowBreak;
   render->tightSpacing = node.tightSpacing;
   render->phantom = node.phantom;
+  render->columns = node.columns;
+  render->rows = node.rows;
+  render->arrayColumnWidths = node.arrayColumnWidths;
+  render->arrayRowHeights = node.arrayRowHeights;
+  render->arrayRowDepths = node.arrayRowDepths;
+  render->arrayRowInkDescenders = node.arrayRowInkDescenders;
   render->children.reserve(node.children.size());
   for (const auto& child : node.children) {
     render->children.push_back(renderNodeFromLayout(*child));

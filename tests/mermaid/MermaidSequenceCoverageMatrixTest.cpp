@@ -24,6 +24,11 @@ QSet<QString> uniqueIds(const QJsonArray& cases,const QString& fixture) {
   }
   return ids;
 }
+void collectMathMlTags(const QJsonObject& node,QSet<QString>* tags) {
+  tags->insert(node.value(QStringLiteral("tag")).toString());
+  for(const QJsonValue& child:node.value(QStringLiteral("children")).toArray())
+    collectMathMlTags(child.toObject(),tags);
+}
 }  // namespace
 
 int main(int argc,char** argv) {
@@ -35,17 +40,20 @@ int main(int argc,char** argv) {
   const QJsonObject layout=load(dir+QStringLiteral("/sequence-layout.json"));
   const QJsonObject label=load(dir+QStringLiteral("/sequence-label.json"));
   const QJsonObject pixel=load(dir+QStringLiteral("/sequence-pixel/manifest.json"));
+  const QJsonObject mathml=load(dir+QStringLiteral("/mathml-css-box.json"));
 
   const QJsonArray dbCases=db.value(QStringLiteral("cases")).toArray();
   const QJsonArray negativeCases=fuzz.value(QStringLiteral("negativeCases")).toArray();
   const QJsonArray layoutCases=layout.value(QStringLiteral("cases")).toArray();
   const QJsonArray labelCases=label.value(QStringLiteral("cases")).toArray();
   const QJsonArray pixelCases=pixel.value(QStringLiteral("cases")).toArray();
+  const QJsonArray mathmlCases=mathml.value(QStringLiteral("cases")).toArray();
   const QSet<QString> dbIds=uniqueIds(dbCases,QStringLiteral("sequence-db"));
   const QSet<QString> negativeIds=uniqueIds(negativeCases,QStringLiteral("sequence-differential-fuzz"));
   const QSet<QString> layoutIds=uniqueIds(layoutCases,QStringLiteral("sequence-layout"));
   const QSet<QString> labelIds=uniqueIds(labelCases,QStringLiteral("sequence-label"));
   const QSet<QString> pixelIds=uniqueIds(pixelCases,QStringLiteral("sequence-pixel"));
+  const QSet<QString> mathmlIds=uniqueIds(mathmlCases,QStringLiteral("mathml-css-box"));
 
   QSet<int> productions;
   for(const QJsonValue& value:dbCases)
@@ -100,10 +108,29 @@ int main(int argc,char** argv) {
               labelIds.contains(QStringLiteral("message-bidi-isolates"))&&
               labelIds.contains(QStringLiteral("participant-wrap-prefix")),
           QStringLiteral("sequence label structure axis regressed"));
+  QSet<QString> mathmlTags; QSet<QString> mathmlDprs; QSet<int> mathmlFonts;
+  for(const QJsonValue& value:mathmlCases) {
+    const QJsonObject item=value.toObject();
+    collectMathMlTags(item.value(QStringLiteral("tree")).toObject(),&mathmlTags);
+    mathmlDprs.insert(QString::number(item.value(QStringLiteral("dpr")).toDouble(),'g',3));
+    mathmlFonts.insert(item.value(QStringLiteral("fontSize")).toInt());
+  }
+  require(mathml.value(QStringLiteral("mermaidVersion")).toString()==QLatin1String("11.16.0")&&
+              mathmlCases.size()>=50&&mathmlDprs.size()>=4&&mathmlFonts.size()>=3&&
+              mathmlIds.contains(QStringLiteral("fraction-nested"))&&
+              mathmlIds.contains(QStringLiteral("fraction-sup"))&&
+              mathmlIds.contains(QStringLiteral("sqrt-fraction"))&&
+              mathmlIds.contains(QStringLiteral("matrix-3x3")),
+          QStringLiteral("sequence recursive MathML CSS box coverage regressed"));
+  for(const QString& tag:{QStringLiteral("math"),QStringLiteral("mfrac"),
+                          QStringLiteral("msup"),QStringLiteral("msub"),
+                          QStringLiteral("msubsup"),QStringLiteral("msqrt"),
+                          QStringLiteral("mroot"),QStringLiteral("mtable")})
+    require(mathmlTags.contains(tag),QStringLiteral("sequence MathML tag axis missing: %1").arg(tag));
   require(!dbIds.isEmpty()&&!negativeIds.isEmpty()&&!layoutIds.isEmpty(),
           QStringLiteral("sequence coverage fixtures unexpectedly empty"));
   qDebug()<<"MermaidSequenceCoverageMatrixTest:"<<productions.size()<<"productions,"
-          <<codes.size()<<"diagnostics,"<<labelCases.size()<<"labels and"
-          <<pixelCases.size()<<"pixel/SVG cases passed";
+          <<codes.size()<<"diagnostics,"<<labelCases.size()<<"labels,"
+          <<mathmlCases.size()<<"MathML boxes and"<<pixelCases.size()<<"pixel/SVG cases passed";
   return 0;
 }

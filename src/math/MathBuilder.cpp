@@ -834,8 +834,14 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSpan(std::vector<std::unique_pt
 }
 
 std::unique_ptr<MathRenderNode> MathBuilder::makeSupSub(const MathParseNode& node) {
-  const auto markSupSub = [](std::unique_ptr<MathRenderNode> result) {
-    if (result) result->semanticKind = MathSemanticKind::SupSub;
+  const MathScriptKind scriptKind = !node.sup.isEmpty() && !node.sub.isEmpty()
+      ? MathScriptKind::SubSup
+      : !node.sup.isEmpty() ? MathScriptKind::Superscript : MathScriptKind::Subscript;
+  const auto markSupSub = [scriptKind](std::unique_ptr<MathRenderNode> result) {
+    if (result) {
+      result->semanticKind = MathSemanticKind::SupSub;
+      result->scriptKind = scriptKind;
+    }
     return result;
   };
   if (node.base.size() == 1 && node.base.first().type == MathNodeType::HorizBrace) {
@@ -1261,6 +1267,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSqrt(const MathParseNode& node)
     indexedChildren.push_back(std::move(sqrtBody));
     auto indexed = makeSpan(std::move(indexedChildren));
     indexed->semanticKind = MathSemanticKind::Radical;
+    indexed->radicalIndex = true;
     return indexed;
   }
   return sqrtBody;

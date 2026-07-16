@@ -8,10 +8,30 @@
 #include <QHash>
 #include <QtGlobal>
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 
 namespace muffin::math {
+namespace {
+
+bool hasInkDescender(const MathRenderNode* node) {
+  if (node == nullptr) return false;
+  if (node->kind == MathRenderKind::Symbol) {
+    for (QChar ch : node->text) {
+      const QChar lower = ch.toLower();
+      if (lower == QLatin1Char('g') || lower == QLatin1Char('j') ||
+          lower == QLatin1Char('p') || lower == QLatin1Char('q') ||
+          lower == QLatin1Char('y'))
+        return true;
+    }
+  }
+  return std::any_of(node->children.cbegin(), node->children.cend(),
+                     [](const auto& child) { return hasInkDescender(child.get()); });
+}
+
+}  // namespace
+
 std::unique_ptr<MathRenderNode> MathBuilder::makeArray(const MathParseNode& node) {
   const int rowCount = node.rows.size();
   int colCount = 0;
@@ -26,6 +46,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeArray(const MathParseNode& node
   QVector<qreal> colWidths(colCount, 0.0);
   QVector<qreal> rowHeights(rowCount, 0.0);
   QVector<qreal> rowDepths(rowCount, 0.0);
+  QVector<bool> rowInkDescenders(rowCount, false);
   MathStyle cellStyle = options_.style().text();
   if (node.arrayCellStyle == QStringLiteral("script")) {
     cellStyle = MathStyle::script();
@@ -53,10 +74,14 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeArray(const MathParseNode& node
       colWidths[c] = qMax(colWidths[c], cell->width);
       rowHeights[r] = qMax(rowHeights[r], cell->height);
       rowDepths[r] = qMax(rowDepths[r], cell->depth);
+      rowInkDescenders[r] = rowInkDescenders[r] || hasInkDescender(cell.get());
       rowCells.push_back(std::move(cell));
     }
     cells.push_back(std::move(rowCells));
   }
+
+  const QVector<qreal> intrinsicRowHeights = rowHeights;
+  const QVector<qreal> intrinsicRowDepths = rowDepths;
 
   const GlobalFontMetrics fontMetrics = MathFontMetrics::globalMetrics(options_.style().size());
   const qreal pt = fontMetrics.ptPerEm > 0.0 ? 1.0 / fontMetrics.ptPerEm : 0.1;
@@ -154,6 +179,10 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeArray(const MathParseNode& node
   array->semanticKind = MathSemanticKind::Array;
   array->columns = colCount;
   array->rows = rowCount;
+  array->arrayColumnWidths.assign(colWidths.cbegin(), colWidths.cend());
+  array->arrayRowHeights.assign(intrinsicRowHeights.cbegin(), intrinsicRowHeights.cend());
+  array->arrayRowDepths.assign(intrinsicRowDepths.cbegin(), intrinsicRowDepths.cend());
+  array->arrayRowInkDescenders.assign(rowInkDescenders.cbegin(), rowInkDescenders.cend());
   qreal totalHeight = 0.0;
   QVector<qreal> rowPositions(rowCount, 0.0);
   QVector<qreal> hlinePositions(node.arrayLines.size(), 0.0);

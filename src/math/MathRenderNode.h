@@ -38,9 +38,18 @@ enum class MathSemanticKind {
   Array
 };
 
+enum class MathScriptKind {
+  None,
+  Superscript,
+  Subscript,
+  SubSup
+};
+
 struct MathRenderNode {
   MathRenderKind kind = MathRenderKind::Span;
   MathSemanticKind semanticKind = MathSemanticKind::None;
+  MathScriptKind scriptKind = MathScriptKind::None;
+  bool radicalIndex = false;
   QString text;
   QString atomClass;
   QString fontClass;
@@ -67,6 +76,10 @@ struct MathRenderNode {
   bool phantom = false;
   int columns = 0;
   int rows = 0;
+  std::vector<qreal> arrayColumnWidths;
+  std::vector<qreal> arrayRowHeights;
+  std::vector<qreal> arrayRowDepths;
+  std::vector<bool> arrayRowInkDescenders;
   std::vector<std::unique_ptr<MathRenderNode>> children;
 
   qreal totalHeight() const;

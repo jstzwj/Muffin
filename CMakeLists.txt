@@ -444,6 +444,7 @@ set(MUFFIN_CORE_SOURCES
   src/math/MathParser.cpp
   src/math/MathParserEnvironment.cpp
   src/math/MathRenderer.cpp
+  src/math/MathCssBox.cpp
   src/math/MathRenderNode.cpp
   src/math/MathSettings.cpp
   src/math/MathStyle.cpp

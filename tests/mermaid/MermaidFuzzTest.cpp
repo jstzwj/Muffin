@@ -22,11 +22,42 @@
 #include <random>
 #include <vector>
 
+#ifdef Q_OS_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#include <psapi.h>
+#pragma comment(lib, "psapi.lib")
+#elif defined(Q_OS_UNIX)
+#include <sys/resource.h>
+#endif
+
 using namespace muffin::mermaid::flowchart;
 
 namespace {
 [[noreturn]] void fail(const QString& message) { qCritical().noquote() << message; std::exit(1); }
 void require(bool condition, const QString& message) { if (!condition) fail(message); }
+
+quint64 residentSetBytes() {
+#ifdef Q_OS_WIN
+  PROCESS_MEMORY_COUNTERS_EX counters{};
+  counters.cb = sizeof(counters);
+  if (GetProcessMemoryInfo(GetCurrentProcess(),
+          reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&counters), sizeof(counters)))
+    return counters.WorkingSetSize;
+#elif defined(Q_OS_UNIX)
+  rusage usage{};
+  if (getrusage(RUSAGE_SELF, &usage) == 0) {
+#ifdef Q_OS_MACOS
+    return static_cast<quint64>(usage.ru_maxrss);
+#else
+    return static_cast<quint64>(usage.ru_maxrss) * 1024;
+#endif
+  }
+#endif
+  return 0;
+}
 
 // Deterministic adversarial-input generators. Each returns a syntactically
 // flowchart-shaped string designed to stress one robustness surface; with the
@@ -130,13 +161,18 @@ int main() {
 
   const int itersPerCategory = 250;
   int totalParsed = 0, totalThrew = 0, totalLimit = 0;
+  quint64 processPeakBytes = residentSetBytes();
 
   for (const Generator& gen : kGenerators) {
     const QByteArray only = qgetenv("MUFFIN_FUZZ_ONLY");
     if (!only.isEmpty() && only != gen.name) continue;
     int parsed = 0, threw = 0, limit = 0;
+    qint64 maximumElapsedMs = 0;
+    qsizetype maximumInputBytes = 0;
+    quint64 categoryPeakBytes = residentSetBytes();
     for (int i = 0; i < itersPerCategory; ++i) {
       const QString source = gen.fn(rng);
+      maximumInputBytes = std::max(maximumInputBytes, source.size() * 2);
       if (qgetenv("MUFFIN_FUZZ_TRACE").size()) {
         fprintf(stderr, "[%s #%d] %s\n", gen.name, i, QString(source).replace(QLatin1Char('\n'), QStringLiteral("\\n")).toUtf8().constData());
         fflush(stderr);
@@ -155,8 +191,11 @@ int main() {
         else ++threw;
       }
       // Watchdog: every input must terminate quickly (limits bound the work).
-      require(timer.elapsed() < 2000, QStringLiteral("'%1' input #%2 hung (%3 ms)")
-                                        .arg(QString::fromLatin1(gen.name)).arg(i).arg(timer.elapsed()));
+      const qint64 elapsedMs = timer.elapsed();
+      maximumElapsedMs = std::max(maximumElapsedMs, elapsedMs);
+      categoryPeakBytes = std::max(categoryPeakBytes, residentSetBytes());
+      require(elapsedMs < 2000, QStringLiteral("'%1' input #%2 hung (%3 ms)")
+                                        .arg(QString::fromLatin1(gen.name)).arg(i).arg(elapsedMs));
       if (gen.expectLimit) {
         require(threwError && cat == FlowchartErrorCategory::LimitExceeded,
                 QStringLiteral("'%1' input #%2 should have thrown LimitExceeded (seed=%3)")
@@ -167,11 +206,20 @@ int main() {
     totalParsed += parsed;
     totalThrew += threw;
     totalLimit += limit;
-    qDebug().noquote() << QStringLiteral("  %1: %2 parsed, %3 non-limit throws, %4 LimitExceeded")
-                              .arg(QString::fromLatin1(gen.name)).arg(parsed).arg(threw).arg(limit);
+    processPeakBytes = std::max(processPeakBytes, categoryPeakBytes);
+    require(categoryPeakBytes == 0 || categoryPeakBytes < 512ull * 1024ull * 1024ull,
+            QStringLiteral("'%1' exceeded 512 MiB resident memory (%2 MiB)")
+                .arg(QString::fromLatin1(gen.name))
+                .arg(categoryPeakBytes / (1024.0 * 1024.0), 0, 'f', 1));
+    qDebug().noquote() << QStringLiteral("  %1: %2 parsed, %3 non-limit, %4 LimitExceeded; max %5 ms, %6 KiB input, %7 MiB RSS")
+                              .arg(QString::fromLatin1(gen.name)).arg(parsed).arg(threw).arg(limit)
+                              .arg(maximumElapsedMs).arg(maximumInputBytes / 1024.0, 0, 'f', 1)
+                              .arg(categoryPeakBytes / (1024.0 * 1024.0), 0, 'f', 1);
   }
 
   qDebug().noquote() << QStringLiteral("MermaidFuzzTest: %1 inputs (seed=0x%2) — all terminated cleanly; %3 parsed, %4 non-limit, %5 LimitExceeded")
                             .arg(kGenerators.size() * itersPerCategory).arg(seed, 0, 16).arg(totalParsed).arg(totalThrew).arg(totalLimit);
+  qDebug().noquote() << QStringLiteral("  process resident-set high water: %1 MiB")
+                            .arg(processPeakBytes / (1024.0 * 1024.0), 0, 'f', 1);
   return 0;
 }
