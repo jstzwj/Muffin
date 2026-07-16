@@ -328,9 +328,16 @@ QJsonObject MathRenderNode::toJson() const {
   if (radicalIndex) object.insert(QStringLiteral("radicalIndex"), true);
   if (semanticKind == MathSemanticKind::Fraction)
     object.insert(QStringLiteral("fractionHasBarLine"), fractionHasBarLine);
+  if (semanticKind == MathSemanticKind::Fraction) {
+    object.insert(QStringLiteral("fractionLineThicknessEm"), rounded(fractionLineThicknessEm));
+    object.insert(QStringLiteral("fractionStyleSize"), fractionStyleSize);
+    object.insert(QStringLiteral("fractionSizeMultiplier"), rounded(fractionSizeMultiplier));
+  }
   if (!text.isEmpty()) object.insert(QStringLiteral("text"), text);
   if (!operatorText.isEmpty()) object.insert(QStringLiteral("operatorText"), operatorText);
   if (!accentLabel.isEmpty()) object.insert(QStringLiteral("accentLabel"), accentLabel);
+  if (!accentCharacter.isEmpty())
+    object.insert(QStringLiteral("accentCharacter"), accentCharacter);
   if (!leftDelimiter.isEmpty()) object.insert(QStringLiteral("leftDelimiter"), leftDelimiter);
   if (!rightDelimiter.isEmpty()) object.insert(QStringLiteral("rightDelimiter"), rightDelimiter);
   if (!atomClass.isEmpty()) object.insert(QStringLiteral("atomClass"), atomClass);
@@ -424,9 +431,13 @@ std::unique_ptr<MathRenderNode> cloneNode(const MathRenderNode& node) {
   copy->accentKind = node.accentKind;
   copy->radicalIndex = node.radicalIndex;
   copy->fractionHasBarLine = node.fractionHasBarLine;
+  copy->fractionLineThicknessEm = node.fractionLineThicknessEm;
+  copy->fractionStyleSize = node.fractionStyleSize;
+  copy->fractionSizeMultiplier = node.fractionSizeMultiplier;
   copy->text = node.text;
   copy->operatorText = node.operatorText;
   copy->accentLabel = node.accentLabel;
+  copy->accentCharacter = node.accentCharacter;
   copy->leftDelimiter = node.leftDelimiter;
   copy->rightDelimiter = node.rightDelimiter;
   copy->atomClass = node.atomClass;

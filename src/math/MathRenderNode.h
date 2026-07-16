@@ -70,9 +70,13 @@ struct MathRenderNode {
   MathAccentKind accentKind = MathAccentKind::None;
   bool radicalIndex = false;
   bool fractionHasBarLine = false;
+  qreal fractionLineThicknessEm = -1.0;
+  int fractionStyleSize = 1;
+  qreal fractionSizeMultiplier = 1.0;
   QString text;
   QString operatorText;
   QString accentLabel;
+  QString accentCharacter;
   QString leftDelimiter;
   QString rightDelimiter;
   QString atomClass;

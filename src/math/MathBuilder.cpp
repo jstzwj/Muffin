@@ -1132,6 +1132,9 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeFraction(const MathParseNode& n
   result->semanticKind = MathSemanticKind::Fraction;
   result->mathStyleSize = options_.style().size();
   result->fractionHasBarLine = hasBarLine;
+  result->fractionLineThicknessEm = node.lineThickness;
+  result->fractionStyleSize = localOptions.style().size();
+  result->fractionSizeMultiplier = localOptions.sizeMultiplier();
   result->leftDelimiter = node.leftDelim;
   result->rightDelimiter = node.rightDelim;
   return result;
@@ -1417,6 +1420,12 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeAccentUnder(const MathParseNode
   result->atomClass = QStringLiteral("mord");
   result->accentKind = MathAccentKind::Under;
   result->accentLabel = node.label;
+  if (node.label == QLatin1String("\\underleftarrow"))
+    result->accentCharacter = QString(QChar(0x2190));
+  else if (node.label == QLatin1String("\\underrightarrow"))
+    result->accentCharacter = QString(QChar(0x2192));
+  else if (node.label == QLatin1String("\\underleftrightarrow"))
+    result->accentCharacter = QString(QChar(0x2194));
   return result;
 }
 

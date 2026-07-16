@@ -93,9 +93,13 @@ std::unique_ptr<MathLayoutNode> layoutFromRenderNode(std::unique_ptr<MathRenderN
   layout->accentKind = node->accentKind;
   layout->radicalIndex = node->radicalIndex;
   layout->fractionHasBarLine = node->fractionHasBarLine;
+  layout->fractionLineThicknessEm = node->fractionLineThicknessEm;
+  layout->fractionStyleSize = node->fractionStyleSize;
+  layout->fractionSizeMultiplier = node->fractionSizeMultiplier;
   layout->text = std::move(node->text);
   layout->operatorText = std::move(node->operatorText);
   layout->accentLabel = std::move(node->accentLabel);
+  layout->accentCharacter = std::move(node->accentCharacter);
   layout->leftDelimiter = std::move(node->leftDelimiter);
   layout->rightDelimiter = std::move(node->rightDelimiter);
   layout->atomClass = std::move(node->atomClass);
@@ -147,9 +151,13 @@ std::unique_ptr<MathRenderNode> renderNodeFromLayout(const MathLayoutNode& node)
   render->accentKind = node.accentKind;
   render->radicalIndex = node.radicalIndex;
   render->fractionHasBarLine = node.fractionHasBarLine;
+  render->fractionLineThicknessEm = node.fractionLineThicknessEm;
+  render->fractionStyleSize = node.fractionStyleSize;
+  render->fractionSizeMultiplier = node.fractionSizeMultiplier;
   render->text = node.text;
   render->operatorText = node.operatorText;
   render->accentLabel = node.accentLabel;
+  render->accentCharacter = node.accentCharacter;
   render->leftDelimiter = node.leftDelimiter;
   render->rightDelimiter = node.rightDelimiter;
   render->atomClass = node.atomClass;

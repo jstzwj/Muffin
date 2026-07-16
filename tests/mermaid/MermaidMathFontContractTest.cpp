@@ -72,12 +72,24 @@ int main(int argc, char** argv) {
     require(stretchedBrace.has_value(), QStringLiteral("Stretchable brace assembly is missing"));
     near(stretchedBrace->extent, 100.0, 0.001,
          QStringLiteral("brace extender assembly extent"));
+    const auto assembledParen = font.verticalAssembly(QStringLiteral("("), 50.0);
+    require(assembledParen.has_value(), QStringLiteral("Parenthesis assembly is missing"));
+    near(assembledParen->extent, 52.768, 0.001,
+         QStringLiteral("parenthesis minimum assembly extent"));
     near(font.constants().stackTopDisplayStyleShiftUp, 12.48, 0.001,
          QStringLiteral("display stack top shift"));
     near(font.constants().stackBottomDisplayStyleShiftDown, 11.04, 0.001,
          QStringLiteral("display stack bottom shift"));
     near(font.constants().stackDisplayStyleGapMin, 4.8, 0.001,
          QStringLiteral("display stack gap"));
+    near(font.constants().overbarVerticalGap, 2.8, 0.001,
+         QStringLiteral("overbar vertical gap"));
+    near(font.constants().overbarRuleThickness, 1.088, 0.001,
+         QStringLiteral("overbar rule"));
+    near(font.constants().underbarVerticalGap, 2.8, 0.001,
+         QStringLiteral("underbar vertical gap"));
+    near(font.constants().underbarExtraDescender, 1.088, 0.001,
+         QStringLiteral("underbar extra descender"));
 
     std::cout << "MermaidMathFontContractTest: bundled STIX/OpenType MATH contract passed\n";
     return 0;

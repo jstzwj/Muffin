@@ -78,6 +78,18 @@ const formulas = [
   ["nested-delimiters", "\\left[\\frac{x}{\\left(y+1\\right)}\\right]"],
   ["greek-variants", "\\varepsilon+\\vartheta+\\varphi+\\varrho"],
   ["binomial", "\\binom{n}{k}"],
+  ["genfrac-display-rule", "\\genfrac{[}{]}{1pt}{0}{a+b}{c+d}"],
+  ["genfrac-text-stack", "\\genfrac{}{}{0pt}{1}{n}{k}"],
+  ["display-fraction", "\\dfrac{a+b}{c+d}"],
+  ["text-fraction", "\\tfrac{a+b}{c+d}"],
+  ["display-binomial", "\\dbinom{n+1}{k}"],
+  ["text-binomial", "\\tbinom{n+1}{k}"],
+  ["accent-underline", "\\underline{x+y}"],
+  ["accent-underbrace", "\\underbrace{x+y}_{n}"],
+  ["accent-overbrace", "\\overbrace{x+y}^{n}"],
+  ["accent-under-arrow", "\\underleftrightarrow{x+y}"],
+  ["tall-delimiter-assembly", "\\left\\{\\begin{matrix}a\\\\b\\\\c\\\\d\\\\e\\\\f\\end{matrix}\\right."],
+  ["nested-mathml-structure", "\\left(\\frac{\\underbrace{x+y}_{n}}{\\genfrac{[}{]}{0pt}{}{a}{b}}\\right)"],
 ];
 const cases = [];
 for (const [id, tex] of formulas) cases.push({id, tex, fontSize: 16, dpr: 1});

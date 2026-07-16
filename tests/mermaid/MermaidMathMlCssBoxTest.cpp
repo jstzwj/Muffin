@@ -36,6 +36,13 @@ void collectTags(const QJsonObject& node, QSet<QString>* tags) {
     collectTags(child.toObject(), tags);
 }
 
+void collectNodes(const QJsonObject& node, QStringView tag,
+                  QVector<QJsonObject>* nodes) {
+  if (node.value(QStringLiteral("tag")).toString() == tag) nodes->push_back(node);
+  for (const QJsonValue& child : node.value(QStringLiteral("children")).toArray())
+    collectNodes(child.toObject(), tag, nodes);
+}
+
 const math::MathRenderNode* findArray(const math::MathRenderNode* node) {
   if (!node) return nullptr;
   if (node->semanticKind == math::MathSemanticKind::Array) return node;
@@ -87,7 +94,7 @@ int main(int argc, char** argv) {
                 QLatin1String("bundled-noto-stix-two-math-2.13b171"),
             QStringLiteral("MathML CSS box must use the fixed STIX oracle"));
     require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-                QLatin1String("bf83d70d5a08edfe6faab7f55c56ffffde6d7ac6a9290ce5ad5c699fc9fd9fa4"),
+                QLatin1String("a5264ed84a6484b7dbfabca5c4ff0e46ae52b7be83b0d8c4e7373fe7820cdb1e"),
             QStringLiteral("MathML CSS box fixture changed; regenerate and audit"));
 
     const math::OpenTypeMathFont& mathFont = math::OpenTypeMathFont::instance();
@@ -116,7 +123,7 @@ int main(int argc, char** argv) {
     near(radicalVariant->extent, 37.936, 0.001,
          QStringLiteral("MATH radical variant extent"));
     const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-    require(cases.size() == 72, QStringLiteral("MathML CSS box case count regressed"));
+    require(cases.size() == 84, QStringLiteral("MathML CSS box case count regressed"));
     math::MathRenderer renderer;
     QSet<QString> tags;
     QHash<QString, QSizeF> invariantBoxes;
@@ -170,6 +177,28 @@ int main(int argc, char** argv) {
         require(fraction && !fraction->fractionHasBarLine,
                 id + QStringLiteral(" must preserve its zero-thickness fraction"));
       }
+      if (id.startsWith(QLatin1String("genfrac-")) ||
+          id.endsWith(QLatin1String("-fraction")) ||
+          id.endsWith(QLatin1String("-binomial"))) {
+        const auto* fraction = findSemantic(
+            layout.root.get(), math::MathSemanticKind::Fraction);
+        require(fraction, id + QStringLiteral(" must preserve fraction semantics"));
+        if (id == QLatin1String("genfrac-display-rule")) {
+          near(fraction->fractionLineThicknessEm, 0.1, 0.0001,
+               id + QStringLiteral(" line thickness"));
+          require(fraction->fractionStyleSize == 0,
+                  id + QStringLiteral(" display style was lost"));
+        }
+        if (id == QLatin1String("genfrac-text-stack")) {
+          require(!fraction->fractionHasBarLine && fraction->fractionStyleSize == 1,
+                  id + QStringLiteral(" text stack semantics were lost"));
+        }
+      }
+      if (id == QLatin1String("accent-under-arrow")) {
+        const auto* accent = findAccent(layout.root.get(), math::MathAccentKind::Under);
+        require(accent && accent->accentCharacter == QString(QChar(0x2194)),
+                id + QStringLiteral(" MathML operator character was lost"));
+      }
       const math::MathCssBox box = math::layoutMathMlCssBox(layout, kKatexRootFontSize);
       const QJsonObject expected = fixture.value(QStringLiteral("math")).toObject();
       near(box.width, expected.value(QStringLiteral("width")).toDouble(), 0.22,
@@ -180,6 +209,54 @@ int main(int argc, char** argv) {
                                      expected.value(QStringLiteral("y")).toDouble();
       near(box.baseline, expectedBaseline, 0.22, id + QStringLiteral(" flex baseline"));
       collectTags(fixture.value(QStringLiteral("tree")).toObject(), &tags);
+
+      const QJsonObject tree = fixture.value(QStringLiteral("tree")).toObject();
+      if (id == QLatin1String("genfrac-display-rule")) {
+        QVector<QJsonObject> styles;
+        QVector<QJsonObject> fractions;
+        collectNodes(tree, u"mstyle", &styles);
+        collectNodes(tree, u"mfrac", &fractions);
+        require(styles.size() == 1 && fractions.size() == 1,
+                id + QStringLiteral(" DOM nesting drifted"));
+        require(styles.front().value(QStringLiteral("attributes")).toObject()
+                    .value(QStringLiteral("displaystyle")).toString() == QLatin1String("true"),
+                id + QStringLiteral(" displaystyle attribute drifted"));
+        near(fractions.front().value(QStringLiteral("height")).toDouble(), 34.297, 0.001,
+             id + QStringLiteral(" mfrac height"));
+      }
+      if (id == QLatin1String("accent-underbrace")) {
+        QVector<QJsonObject> unders;
+        collectNodes(tree, u"munder", &unders);
+        require(unders.size() == 2, id + QStringLiteral(" nested munder drifted"));
+        near(unders.front().value(QStringLiteral("height")).toDouble(), 32.75, 0.001,
+             id + QStringLiteral(" annotated munder height"));
+        near(unders.back().value(QStringLiteral("height")).toDouble(), 22.875, 0.001,
+             id + QStringLiteral(" brace munder height"));
+      }
+      if (id == QLatin1String("tall-delimiter-assembly")) {
+        QVector<QJsonObject> tables;
+        QVector<QJsonObject> operators;
+        collectNodes(tree, u"mtable", &tables);
+        collectNodes(tree, u"mo", &operators);
+        require(tables.size() == 1 && !operators.isEmpty(),
+                id + QStringLiteral(" assembly DOM drifted"));
+        near(tables.front().value(QStringLiteral("height")).toDouble(), 105.375, 0.001,
+             id + QStringLiteral(" mtable height"));
+        near(operators.front().value(QStringLiteral("height")).toDouble(), 105.969, 0.001,
+             id + QStringLiteral(" assembled fence height"));
+      }
+      if (id == QLatin1String("nested-mathml-structure")) {
+        QVector<QJsonObject> fractions;
+        QVector<QJsonObject> unders;
+        collectNodes(tree, u"mfrac", &fractions);
+        collectNodes(tree, u"munder", &unders);
+        require(fractions.size() == 2 && unders.size() == 2,
+                id + QStringLiteral(" recursive DOM structure drifted"));
+        near(fractions.front().value(QStringLiteral("height")).toDouble(), 61.594, 0.001,
+             id + QStringLiteral(" outer mfrac height"));
+        near(fractions.back().value(QStringLiteral("height")).toDouble(), 19.672, 0.001,
+             id + QStringLiteral(" inner mfrac height"));
+      }
 
       if (fixture.value(QStringLiteral("fontSize")).toInt() == 16 &&
           fixture.value(QStringLiteral("dpr")).toDouble() == 1.0) {

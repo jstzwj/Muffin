@@ -130,12 +130,12 @@ int main(int argc,char** argv) {
               QLatin1String("bundled-noto-stix-two-math-2.13b171"),
           QStringLiteral("Sequence pixel font oracle drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("4d978067d79df6a5a3afff2029fe444722b7bbbdabd79df71dee83742cebe05c"),
+              QLatin1String("00dfec955561c48837806f92ba1e991e43680b66a2b307cd8e068c99ed045a84"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;
   const QJsonArray cases=root.value(QStringLiteral("cases")).toArray();
-  require(cases.size()==20,QStringLiteral("Sequence pixel matrix regressed"));
+  require(cases.size()==23,QStringLiteral("Sequence pixel matrix regressed"));
   QSet<QString> ids;
   for(const QJsonValue& value:cases) {
     const QJsonObject fixture=value.toObject(); const QString id=fixture.value(QStringLiteral("id")).toString();
@@ -184,14 +184,20 @@ int main(int argc,char** argv) {
                         <<"IoU"<<labelIou<<"glyph-coverage"<<glyphCoverage;
       const bool radicalLabel = fixture.value(QStringLiteral("source")).toString()
                                     .contains(QStringLiteral("\\sqrt"));
-      if (radicalLabel) {
-        // The SVG operation model is asserted in RenderMathGeometryTest; keep
-        // the remaining cross-rasterizer font hinting bounded independently.
+      const bool assembledDelimiterLabel =
+          fixture.value(QStringLiteral("source")).toString().contains(
+              QStringLiteral("\\begin{matrix}")) &&
+          fixture.value(QStringLiteral("source")).toString().contains(
+              QStringLiteral("\\left"));
+      if (radicalLabel || assembledDelimiterLabel) {
+        // Geometry is asserted by the SVG/MathML structural oracles; keep the
+        // remaining cross-rasterizer font hinting bounded independently.
         require(qAbs(nativeLabel.width()-browserLabel.width())<=2 &&
                     qAbs(nativeLabel.height()-browserLabel.height())<=2,
                 QStringLiteral("%1 radical painted bounds drifted").arg(id));
       }
-      const qreal minimumGlyphCoverage = radicalLabel ? 0.58 : 0.75;
+      const qreal minimumGlyphCoverage = radicalLabel ? 0.58
+          : assembledDelimiterLabel ? 0.64 : 0.75;
       require(glyphCoverage>=minimumGlyphCoverage,
               QStringLiteral("%1 tolerant glyph coverage too low: %2")
                                       .arg(id).arg(glyphCoverage));
@@ -207,6 +213,10 @@ int main(int argc,char** argv) {
                          QStringLiteral("label-dpr-150-math-rtl"),
                          QStringLiteral("label-dpr-200-dark-box-fragment")})
     require(ids.contains(id),QStringLiteral("Sequence DPR/theme pixel axis is uncovered: %1").arg(id));
+  for(const QString& id:{QStringLiteral("label-math-genfrac"),
+                         QStringLiteral("label-math-underbrace"),
+                         QStringLiteral("label-math-tall-assembly")})
+    require(ids.contains(id),QStringLiteral("Sequence structural Math crop is uncovered: %1").arg(id));
   qDebug()<<"MermaidSequencePixelTest:" << cases.size() << "Chrome/native pixel goldens passed";
   return 0;
 }

@@ -61,6 +61,13 @@ const cases = [
     source: ['%%{init: {"theme": "dark"}}%%', "sequenceDiagram", "A->>B:start", "Note over A,B:$$\\sqrt{x_i^2}$$"].join("\n") },
   { id: "label-dpr-200-default-box", dpr: 2, cropSelector: "text.text", cropKind: "box",
     source: "sequenceDiagram\nbox rgb(238, 246, 255) 服务 Services\nparticipant A\nparticipant B\nend\nA->>B:call" },
+  { id: "label-math-genfrac", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\genfrac{[}{]}{1pt}{0}{a+b}{c+d}$$\nB-->>A:done" },
+  { id: "label-math-underbrace", dpr: 1.5, theme: "dark",
+    cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\underbrace{x+y}_{n}$$' },
+  { id: "label-math-tall-assembly", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left\\{\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right.$$" },
   { id: "structural-aria", source: "sequenceDiagram\naccTitle: Checkout sequence\naccDescr: Client request lifecycle\nA->>B:go" },
   { id: "structural-combined-order", source: [
       '%%{init: {"sequence": {"mirrorActors": false, "hideUnusedParticipants": true}}}%%',
