@@ -231,6 +231,35 @@ int main(int argc, char** argv) {
             QStringLiteral("multiline label height must advance sequence geometry"));
   }
 
+  // --- production wrap uses the same participant/note/message documents ---
+  {
+    MermaidRenderCache cache;
+    const QString source = QStringLiteral(
+        "%%{init: {\"sequence\": {\"width\": 100, \"actorMargin\": 50, "
+        "\"wrapPadding\": 10}}}%%\n"
+        "sequenceDiagram\n"
+        "participant A as wrap:alpha beta gamma delta epsilon\n"
+        "participant B as Worker\n"
+        "A->>B:wrap:alpha beta gamma delta epsilon zeta\n"
+        "Note over A,B:wrap:alpha beta gamma delta epsilon zeta");
+    const MermaidRenderEntry e = cache.getSync(MermaidRenderCache::makeKey(source), source);
+    require(e.status == kReady && e.sequenceScene != nullptr &&
+                e.sequenceScene->participants.size() == 2 &&
+                e.sequenceScene->messages.size() == 1 && e.sequenceScene->notes.size() == 1,
+            QStringLiteral("wrapped sequence labels must render end-to-end"));
+    const auto& scene = *e.sequenceScene;
+    require(scene.participants.first().label.contains(QLatin1Char('\n')) &&
+                scene.messages.first().label.contains(QLatin1Char('\n')) &&
+                scene.notes.first().label.contains(QLatin1Char('\n')),
+            QStringLiteral("participant/message/note wrap display must reach the scene"));
+    const qreal anchorGap = scene.participants.at(1).anchorX - scene.participants.at(0).anchorX;
+    require(qAbs(anchorGap - 150.0) < 0.01,
+            QStringLiteral("wrapped message labels must not enlarge actor margins (gap=%1)")
+                .arg(anchorGap));
+    require(scene.participants.first().logicalRect.height() > 65.0,
+            QStringLiteral("wrapped participant height must reach participant geometry"));
+  }
+
   // --- regression: the example.md diagram (nested compound + cluster-crossing
   // edges + `-- text -->` labeled edges + self-loop + cycle). This previously
   // failed twice: (1) `A -- x --> B` labeled edges mis-parsed as a node, and

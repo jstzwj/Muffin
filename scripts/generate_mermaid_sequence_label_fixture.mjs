@@ -62,8 +62,151 @@ const cases = [
     kind: "message",
     label: "alpha beta gamma delta epsilon zeta eta theta",
     selector: ".messageText",
+    wrapWidth: 200,
     sequence: { wrap: true, wrapPadding: 10 },
     source: "sequenceDiagram\nA->>B:wrap:alpha beta gamma delta epsilon zeta eta theta",
+  },
+  {
+    id: "message-wrap-prefix-120",
+    kind: "message",
+    label: "alpha beta gamma delta epsilon zeta",
+    selector: ".messageText",
+    wrapWidth: 140,
+    sequence: { width: 70, actorMargin: 50 },
+    source: "sequenceDiagram\nA->>B:wrap:alpha beta gamma delta epsilon zeta",
+  },
+  {
+    id: "message-wrap-global-150",
+    kind: "message",
+    label: "alpha beta gamma delta epsilon zeta",
+    selector: ".messageText",
+    wrapWidth: 150,
+    sequence: { wrap: true, width: 100, actorMargin: 50 },
+    source: "sequenceDiagram\nA->>B:alpha beta gamma delta epsilon zeta",
+  },
+  {
+    id: "message-wrap-global-300",
+    kind: "message",
+    label: "alpha beta gamma delta epsilon zeta eta theta iota",
+    selector: ".messageText",
+    wrapWidth: 300,
+    sequence: { wrap: true, width: 250, actorMargin: 50 },
+    source: "sequenceDiagram\nA->>B:alpha beta gamma delta epsilon zeta eta theta iota",
+  },
+  {
+    id: "participant-wrap-prefix",
+    kind: "participant",
+    label: "alpha beta gamma delta epsilon",
+    selector: '[data-et="participant"][data-id="A"] text',
+    wrapWidth: 100,
+    sequence: { width: 120 },
+    source: "sequenceDiagram\nparticipant A as wrap:alpha beta gamma delta epsilon\nA->>B:ping",
+  },
+  {
+    id: "note-wrap-prefix",
+    kind: "note",
+    label: "alpha beta gamma delta epsilon zeta",
+    selector: '[data-et="note"] text',
+    wrapWidth: 180,
+    sequence: { width: 100, actorMargin: 50 },
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:wrap:alpha beta gamma delta epsilon zeta",
+  },
+  {
+    id: "message-wrap-explicit-break",
+    kind: "message",
+    label: "alpha beta<br/>gamma delta",
+    selector: ".messageText",
+    wrapWidth: 140,
+    sequence: { wrap: true, width: 70, actorMargin: 50 },
+    source: "sequenceDiagram\nA->>B:alpha beta<br/>gamma delta",
+  },
+  {
+    id: "message-arabic-only",
+    kind: "message",
+    label: "\u0645\u0631\u062d\u0628\u0627 \u0628\u0627\u0644\u0639\u0627\u0644\u0645",
+    selector: ".messageText",
+    source: "sequenceDiagram\nA->>B:\u0645\u0631\u062d\u0628\u0627 \u0628\u0627\u0644\u0639\u0627\u0644\u0645",
+  },
+  {
+    id: "message-hebrew-only",
+    kind: "message",
+    label: "\u05e9\u05dc\u05d5\u05dd \u05e2\u05d5\u05dc\u05dd",
+    selector: ".messageText",
+    source: "sequenceDiagram\nA->>B:\u05e9\u05dc\u05d5\u05dd \u05e2\u05d5\u05dc\u05dd",
+  },
+  {
+    id: "message-bidi-numbers-punctuation",
+    kind: "message",
+    label: "\u0645\u0631\u062d\u0628\u0627 123, \u05e9\u05dc\u05d5\u05dd 456!",
+    selector: ".messageText",
+    source: "sequenceDiagram\nA->>B:\u0645\u0631\u062d\u0628\u0627 123, \u05e9\u05dc\u05d5\u05dd 456!",
+  },
+  {
+    id: "message-bidi-isolates",
+    kind: "message",
+    label: "left \u2067\u05e9\u05dc\u05d5\u05dd 42\u2069 right",
+    selector: ".messageText",
+    logicalComparable: false,
+    source: "sequenceDiagram\nA->>B:left \u2067\u05e9\u05dc\u05d5\u05dd 42\u2069 right",
+  },
+  {
+    id: "message-cjk-unspaced",
+    kind: "message",
+    label: "\u8fd9\u662f\u4e00\u6bb5\u6ca1\u6709\u7a7a\u683c\u7684\u4e2d\u6587\u6807\u7b7e",
+    selector: ".messageText",
+    source: "sequenceDiagram\nA->>B:\u8fd9\u662f\u4e00\u6bb5\u6ca1\u6709\u7a7a\u683c\u7684\u4e2d\u6587\u6807\u7b7e",
+  },
+  {
+    id: "message-long-unbreakable",
+    kind: "message",
+    label: "SupercalifragilisticexpialidociousUnbreakableToken",
+    selector: ".messageText",
+    wrapWidth: 140,
+    sequence: { wrap: true, width: 70, actorMargin: 50 },
+    source: "sequenceDiagram\nA->>B:SupercalifragilisticexpialidociousUnbreakableToken",
+  },
+  {
+    id: "note-math-fraction",
+    kind: "note",
+    label: "fraction $$\\frac{a}{b}$$",
+    selector: '[data-et="note"] foreignObject',
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:fraction $$\\frac{a}{b}$$",
+  },
+  {
+    id: "note-math-sqrt-sub-sup",
+    kind: "note",
+    label: "root $$\\sqrt{x_i^2+y^2}$$",
+    selector: '[data-et="note"] foreignObject',
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:root $$\\sqrt{x_i^2+y^2}$$",
+  },
+  {
+    id: "note-math-matrix",
+    kind: "note",
+    label: "matrix $$\\begin{matrix}a&b\\\\c&d\\end{matrix}$$",
+    selector: '[data-et="note"] foreignObject',
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:matrix $$\\begin{matrix}a&b\\\\c&d\\end{matrix}$$",
+  },
+  {
+    id: "note-math-multiple-spans",
+    kind: "note",
+    label: "left $$x$$ middle $$y^2$$ right",
+    selector: '[data-et="note"] foreignObject',
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:left $$x$$ middle $$y^2$$ right",
+  },
+  {
+    id: "note-math-break",
+    kind: "note",
+    label: "before $$x$$<br/>after $$y$$",
+    selector: '[data-et="note"] foreignObject',
+    logicalComparable: false,
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:before $$x$$<br/>after $$y$$",
+  },
+  {
+    id: "note-math-cjk-rtl",
+    kind: "note",
+    label: "\u4e2d\u6587 $$\\frac{x}{2}$$ \u0645\u0631\u062d\u0628\u0627",
+    selector: '[data-et="note"] foreignObject',
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:\u4e2d\u6587 $$\\frac{x}{2}$$ \u0645\u0631\u062d\u0628\u0627",
   },
 ];
 
@@ -111,6 +254,7 @@ try {
       if (!element) throw new Error(`${fixture.id}: selector ${fixture.selector} resolved to nothing`);
 
       const round = (value) => Math.round(value * 1000) / 1000;
+      const hasExplicitBreak = /<br\s*\/?>/i.test(fixture.label);
       const rootInverse = root.getScreenCTM().inverse();
       const clientRectToRoot = (rect) => {
         const points = [new DOMPoint(rect.left, rect.top), new DOMPoint(rect.right, rect.top),
@@ -160,9 +304,16 @@ try {
             const rect = range.getBoundingClientRect();
             if (rect.width === 0 && rect.height === 0) continue;
             const extent = clientRectToRoot(rect);
-            chars.push({ logical, start: { x: extent.left, y: containerBaseline },
-              end: { x: extent.right, y: containerBaseline }, extent,
-              math: Boolean(node.parentElement.closest("math")) });
+            const mathElement = node.parentElement.closest("math");
+            const mathExtent = mathElement
+              ? clientRectToRoot(mathElement.getBoundingClientRect()) : null;
+            const measuredTextBaseline = extent.top +
+              Math.max(0, (extent.bottom - extent.top - containerInkHeight) / 2) +
+              containerMetrics.fontBoundingBoxAscent;
+            const textBaseline = hasExplicitBreak ? measuredTextBaseline : containerBaseline;
+            chars.push({ logical, start: { x: extent.left, y: mathElement ? containerBaseline : textBaseline },
+              end: { x: extent.right, y: mathElement ? containerBaseline : textBaseline }, extent,
+              math: Boolean(mathElement), mathExtent });
           }
         }
         const rect = clientRectToRoot(element.getBoundingClientRect());
@@ -170,7 +321,39 @@ try {
       }
       let renderedText = element.textContent;
       for (const extra of selected.slice(1)) {
-        if (!(extra instanceof SVGTextContentElement)) continue;
+        if (!(extra instanceof SVGTextContentElement)) {
+          const logicalBase = renderedText.length + 1;
+          renderedText += `\n${extra.textContent}`;
+          const walker = document.createTreeWalker(extra, NodeFilter.SHOW_TEXT);
+          const canvas = document.createElement("canvas");
+          const context = canvas.getContext("2d");
+          const container = clientRectToRoot(extra.getBoundingClientRect());
+          const containerStyle = getComputedStyle(extra.querySelector("div") ?? extra);
+          context.font = `${containerStyle.fontStyle} ${containerStyle.fontWeight} ${containerStyle.fontSize} ${containerStyle.fontFamily}`;
+          const containerMetrics = context.measureText("Hg");
+          const inkHeight = containerMetrics.fontBoundingBoxAscent + containerMetrics.fontBoundingBoxDescent;
+          const baseline = container.top + Math.max(0, (container.bottom - container.top - inkHeight) / 2) +
+            containerMetrics.fontBoundingBoxAscent;
+          let node, logical = logicalBase;
+          while ((node = walker.nextNode())) {
+            for (let offset = 0; offset < node.data.length; ++offset, ++logical) {
+              const range = document.createRange();
+              range.setStart(node, offset); range.setEnd(node, offset + 1);
+              const rect = range.getBoundingClientRect();
+              if (rect.width === 0 && rect.height === 0) continue;
+              const extent = clientRectToRoot(rect);
+              const mathElement = node.parentElement.closest("math");
+              const measuredTextBaseline = extent.top +
+                Math.max(0, (extent.bottom - extent.top - inkHeight) / 2) +
+                containerMetrics.fontBoundingBoxAscent;
+              const textBaseline = hasExplicitBreak ? measuredTextBaseline : baseline;
+              chars.push({ logical, start: { x: extent.left, y: mathElement ? baseline : textBaseline },
+                end: { x: extent.right, y: mathElement ? baseline : textBaseline }, extent, math: Boolean(mathElement),
+                mathExtent: mathElement ? clientRectToRoot(mathElement.getBoundingClientRect()) : null });
+            }
+          }
+          continue;
+        }
         const matrix = extra.getScreenCTM();
         const toRoot = (point) => new DOMPoint(point.x, point.y).matrixTransform(matrix).matrixTransform(rootInverse);
         const logicalBase = renderedText.length + 1;
@@ -191,6 +374,18 @@ try {
       }
       if (chars.length === 0) throw new Error(`${fixture.id}: label contains no measurable characters`);
 
+      const textChars = chars.filter((char) => !char.math);
+      for (const char of chars.filter((candidate) => candidate.math)) {
+        if (textChars.length === 0) continue;
+        const center = (char.extent.top + char.extent.bottom) / 2;
+        const nearest = textChars.reduce((best, candidate) => {
+          const candidateCenter = (candidate.extent.top + candidate.extent.bottom) / 2;
+          const bestCenter = (best.extent.top + best.extent.bottom) / 2;
+          return Math.abs(candidateCenter - center) < Math.abs(bestCenter - center) ? candidate : best;
+        });
+        char.start.y = char.end.y = nearest.start.y;
+      }
+
       const lineGroups = [];
       for (const char of chars) {
         let line = lineGroups.find((candidate) => Math.abs(candidate.baseline - char.start.y) <= 0.5);
@@ -202,32 +397,31 @@ try {
       }
       lineGroups.sort((left, right) => left.baseline - right.baseline);
       const lines = lineGroups.map((line) => {
-        line.chars.sort((left, right) => left.logical - right.logical);
-        const left = Math.min(...line.chars.map((char) => char.extent.left));
-        const right = Math.max(...line.chars.map((char) => char.extent.right));
-        const top = Math.min(...line.chars.map((char) => char.extent.top));
-        const bottom = Math.max(...line.chars.map((char) => char.extent.bottom));
-        const directions = line.chars.map((char, charIndex) => {
+        const logicalChars = [...line.chars].sort((left, right) => left.logical - right.logical);
+        const left = Math.min(...logicalChars.map((char) => char.extent.left));
+        const right = Math.max(...logicalChars.map((char) => char.extent.right));
+        const top = Math.min(...logicalChars.map((char) => char.extent.top));
+        const bottom = Math.max(...logicalChars.map((char) => char.extent.bottom));
+        const directions = logicalChars.map((char, charIndex) => {
           const value = renderedText.at(char.logical) ?? "";
           if (/^[\u0590-\u08ff]$/u.test(value)) return true;
+          if (/^\p{N}$/u.test(value)) return false;
           if (/^[\p{L}\p{M}]$/u.test(value)) return false;
-          const next = line.chars[charIndex + 1];
-          const previous = line.chars[charIndex - 1];
+          const next = logicalChars[charIndex + 1];
+          const previous = logicalChars[charIndex - 1];
           const delta = next ? next.start.x - char.start.x
                              : previous ? char.start.x - previous.start.x : char.end.x - char.start.x;
           return delta < -0.01;
         });
-        for (let directionIndex = 1; directionIndex < directions.length; ++directionIndex) {
-          const char = line.chars[directionIndex];
-          if (/^[\s\p{P}\p{N}]$/u.test(renderedText.at(char.logical) ?? ""))
-            directions[directionIndex] = directions[directionIndex - 1];
-        }
+        const directionByLogical = new Map(logicalChars.map((char, index) => [char.logical, directions[index]]));
+        const visualChars = [...logicalChars].sort((leftChar, rightChar) =>
+          leftChar.extent.left - rightChar.extent.left || leftChar.logical - rightChar.logical);
         const runs = [];
-        for (let charIndex = 0; charIndex < line.chars.length; ++charIndex) {
-          const char = line.chars[charIndex];
+        for (const char of visualChars) {
+          const direction = directionByLogical.get(char.logical);
           let run = runs.at(-1);
-          if (!run || run.rightToLeft !== directions[charIndex] || run.math !== char.math) {
-            run = { start: char.logical, length: 0, rightToLeft: directions[charIndex],
+          if (!run || run.rightToLeft !== direction || run.math !== char.math) {
+            run = { start: char.logical, length: 0, rightToLeft: direction,
               math: char.math, chars: [] };
             runs.push(run);
           }
@@ -235,15 +429,17 @@ try {
           run.chars.push(char);
         }
         return {
-          start: line.chars[0].logical,
-          length: line.chars.length,
+          start: logicalChars[0].logical,
+          length: logicalChars.length,
           width: round(right - left),
           baseline: round(line.baseline - top),
           ascent: round(line.baseline - top),
           descent: round(bottom - line.baseline),
           runs: runs.map((run) => {
-            const runLeft = Math.min(...run.chars.map((char) => char.extent.left));
-            const runRight = Math.max(...run.chars.map((char) => char.extent.right));
+            const boxes = run.chars.map((char) => run.math && char.mathExtent
+              ? char.mathExtent : char.extent);
+            const runLeft = Math.min(...boxes.map((box) => box.left));
+            const runRight = Math.max(...boxes.map((box) => box.right));
             return { start: run.start, length: run.length, x: round(runLeft - left),
               width: round(runRight - runLeft), rightToLeft: run.rightToLeft, math: run.math };
           }),
@@ -259,6 +455,8 @@ try {
         label: fixture.label,
         source: fixture.source,
         sequence: fixture.sequence ?? {},
+        wrapWidth: fixture.wrapWidth ?? 0,
+        logicalComparable: fixture.logicalComparable ?? true,
         text: renderedText,
         elementCount: selected.length,
         box: measuredBox,

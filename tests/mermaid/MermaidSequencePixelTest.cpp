@@ -1,7 +1,9 @@
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "mermaid/sequence/SequenceLabel.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 
 #include <QDebug>
+#include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -9,6 +11,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QPainter>
 #include <QSet>
 
 #include <cstdlib>
@@ -18,6 +21,10 @@ using namespace muffin::mermaid;
 namespace {
 [[noreturn]] void fail(const QString& message) { qCritical().noquote() << message; std::exit(1); }
 void require(bool value, const QString& message) { if (!value) fail(message); }
+QByteArray fileSha256(const QString& path) {
+  QFile file(path); if(!file.open(QIODevice::ReadOnly)) return {};
+  return QCryptographicHash::hash(file.readAll(),QCryptographicHash::Sha256).toHex();
+}
 
 struct Stats { int opaque = 0; qint64 red = 0, green = 0, blue = 0; };
 Stats stats(const QImage& image) {
@@ -47,6 +54,31 @@ qreal alphaIou(const QImage& a, const QImage& b) {
   }
   return united ? qreal(intersection)/united : 0.0;
 }
+QImage alphaTrimmed(const QImage& image) {
+  const QRect bounds=alphaBounds(image);
+  return bounds.isNull() ? image : image.copy(bounds);
+}
+QImage renderLabel(const sequence::SequenceScene& scene, const QString& kind, qreal dpr) {
+  const sequence::SequenceLabelDocument* label=nullptr;
+  if(kind==QLatin1String("participant")&&!scene.participantLabels.isEmpty()) label=&scene.participantLabels.first();
+  else if(kind==QLatin1String("message")&&!scene.messageLabels.isEmpty()) label=&scene.messageLabels.first();
+  else if(kind==QLatin1String("note")&&!scene.noteLabels.isEmpty()) label=&scene.noteLabels.first();
+  else if(kind==QLatin1String("fragment")&&!scene.fragmentLabels.isEmpty()) label=&scene.fragmentLabels.first();
+  else if(kind==QLatin1String("box")&&!scene.boxLabels.isEmpty()) label=&scene.boxLabels.first();
+  if(!label) return {};
+  const qreal lineHeight=scene.style.fontSize*1.375;
+  const auto metrics=sequence::layoutSequenceLabel(*label,scene.style.fontFamily,
+                                                    scene.style.fontSize,lineHeight);
+  constexpr qreal padding=4.0;
+  QImage image(qCeil((metrics.size.width()+2*padding)*dpr),
+               qCeil((metrics.size.height()+2*padding)*dpr),QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::transparent);
+  QPainter painter(&image); painter.scale(dpr,dpr);
+  sequence::paintSequenceLabel(painter,*label,QRectF(padding,padding,metrics.size.width(),metrics.size.height()),
+      scene.style.fontFamily,scene.style.fontSize,lineHeight,QColor(scene.style.textColor),true);
+  painter.end();
+  return alphaTrimmed(image);
+}
 }
 
 int main(int argc,char** argv) {
@@ -56,12 +88,12 @@ int main(int argc,char** argv) {
   const QJsonObject root=QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("mermaidVersion")).toString()==QLatin1String("11.16.0"),QStringLiteral("Sequence pixel version drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("bc06d7d5c0e25fbbc10a427fb32878d1defb4e9c3918f7b885645b4ca03bc991"),
+              QLatin1String("305fac299f6f9cead1a89874a7dc44bf98fbe5c0f6ce525dba1f75bf5d293112"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;
   const QJsonArray cases=root.value(QStringLiteral("cases")).toArray();
-  require(cases.size()==12,QStringLiteral("Sequence pixel matrix regressed"));
+  require(cases.size()==19,QStringLiteral("Sequence pixel matrix regressed"));
   QSet<QString> ids;
   for(const QJsonValue& value:cases) {
     const QJsonObject fixture=value.toObject(); const QString id=fixture.value(QStringLiteral("id")).toString();
@@ -69,8 +101,12 @@ int main(int argc,char** argv) {
     ids.insert(id);
     const auto entry=cache.getSync(cache.makeKey(fixture.value(QStringLiteral("source")).toString()),fixture.value(QStringLiteral("source")).toString());
     require(entry.status==editor::MermaidRenderStatus::Ready&&entry.sequenceScene,QStringLiteral("%1 native scene failed").arg(id));
-    const QImage native=sequence::renderSequenceSceneToImage(*entry.sequenceScene,1.0,0.0);
+    const qreal dpr=fixture.value(QStringLiteral("dpr")).toDouble(1.0);
+    const QImage native=sequence::renderSequenceSceneToImage(*entry.sequenceScene,dpr,0.0);
     const QImage golden(dir.filePath(fixture.value(QStringLiteral("file")).toString()));
+    require(fileSha256(dir.filePath(fixture.value(QStringLiteral("file")).toString()))==
+                fixture.value(QStringLiteral("sha256")).toString().toLatin1(),
+            QStringLiteral("%1 full pixel golden hash drifted").arg(id));
     require(!native.isNull()&&!golden.isNull(),QStringLiteral("%1 pixel image missing").arg(id));
     const qreal nativeRatio=qreal(native.width())/native.height(), goldenRatio=qreal(golden.width())/golden.height();
     const qreal ratioDrift=qAbs(nativeRatio-goldenRatio)/goldenRatio;
@@ -89,6 +125,20 @@ int main(int argc,char** argv) {
         qAbs(average(ns.green,ns.opaque)-average(gs.green,gs.opaque))+
         qAbs(average(ns.blue,ns.opaque)-average(gs.blue,gs.opaque));
     require(colorDistance<260.0,QStringLiteral("%1 mean color drift: %2").arg(id).arg(colorDistance));
+    const QString cropFile=fixture.value(QStringLiteral("cropFile")).toString();
+    if(!cropFile.isEmpty()) {
+      const QImage nativeLabel=renderLabel(*entry.sequenceScene,
+          fixture.value(QStringLiteral("cropKind")).toString(),dpr);
+      const QImage browserLabel=alphaTrimmed(QImage(dir.filePath(cropFile)));
+      require(fileSha256(dir.filePath(cropFile))==
+                  fixture.value(QStringLiteral("cropSha256")).toString().toLatin1(),
+              QStringLiteral("%1 label crop golden hash drifted").arg(id));
+      require(!nativeLabel.isNull()&&!browserLabel.isNull(),
+              QStringLiteral("%1 label crop image missing").arg(id));
+      const qreal labelIou=alphaIou(nativeLabel,browserLabel);
+      qDebug().noquote()<<id<<"label-crop"<<nativeLabel.size()<<browserLabel.size()<<"IoU"<<labelIou;
+      require(labelIou>=0.15,QStringLiteral("%1 label crop IoU too low: %2").arg(id).arg(labelIou));
+    }
   }
   for(const QString& id:{QStringLiteral("label-participant-html-cjk"),
                          QStringLiteral("label-message-wrap-bidi"),
@@ -96,6 +146,10 @@ int main(int argc,char** argv) {
                          QStringLiteral("label-fragment-html-rtl"),
                          QStringLiteral("label-box-markdown-math")})
     require(ids.contains(id),QStringLiteral("Sequence label pixel axis is uncovered: %1").arg(id));
+  for(const QString& id:{QStringLiteral("label-dpr-125-html-cjk"),
+                         QStringLiteral("label-dpr-150-math-rtl"),
+                         QStringLiteral("label-dpr-200-dark-box-fragment")})
+    require(ids.contains(id),QStringLiteral("Sequence DPR/theme pixel axis is uncovered: %1").arg(id));
   qDebug()<<"MermaidSequencePixelTest:" << cases.size() << "Chrome/native pixel goldens passed";
   return 0;
 }

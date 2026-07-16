@@ -6,86 +6,2453 @@
       "id": "basic",
       "source": "sequenceDiagram\nparticipant A as Alice\nactor B as Bob\nA->>B:Hello\nB-->>A:Return",
       "file": "basic.png",
+      "sha256": "d9e7478feb2f960e384420298c029902da32239dd01d2319fea506cd2c23452a",
       "width": 293,
-      "height": 277
+      "height": 277,
+      "structure": {
+        "viewBox": "0 -5 293 276.5",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 6,
+        "tspan": 4,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "",
+        "labelClass": "",
+        "labelParentTag": "",
+        "labelAttributes": {},
+        "labelParentAttributes": {},
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Alice"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Alice"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-man",
+            "text": "Bob"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "Hello"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "Return"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-man",
+            "text": "Bob"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {},
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "line:",
+          "line:",
+          "line:",
+          "line:",
+          "text:actor actor-man",
+          "text:messageText",
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine1",
+          "line:",
+          "line:",
+          "line:",
+          "line:",
+          "text:actor actor-man"
+        ]
+      }
     },
     {
       "id": "activation-note",
       "source": "sequenceDiagram\nA->>+B:Call\nNote over A,B:Working 中文\nB-->>-A:Done",
       "file": "activation-note.png",
+      "sha256": "ec97b0458462a689e0eb52c57cbda18545a4a9b93f0f5a796d275611e527458c",
       "width": 350,
-      "height": 310
+      "height": 310,
+      "structure": {
+        "viewBox": "0 0 350 310",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 7,
+        "tspan": 5,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "",
+        "labelClass": "",
+        "labelParentTag": "",
+        "labelAttributes": {},
+        "labelParentAttributes": {},
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "noteText",
+            "text": "Working 中文"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "Call"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "Done"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {
+            "fill": "rgb(255, 245, 173)",
+            "stroke": "rgb(170, 170, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "rect:activation0",
+          "rect:note",
+          "text:noteText",
+          "text:messageText",
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine1"
+        ]
+      }
     },
     {
       "id": "nested-fragment",
       "source": "sequenceDiagram\nalt Success\nloop Retry\nA->>B:Request\nend\nelse Failure\nA-xB:Error\nend",
       "file": "nested-fragment.png",
+      "sha256": "959a56414f6d83368bfc236517a99dacc7b9ae01298b5c92ac36a4b91ce0454d",
       "width": 350,
-      "height": 419
+      "height": 419,
+      "structure": {
+        "viewBox": "0 0 350 419",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 11,
+        "tspan": 6,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "",
+        "labelClass": "",
+        "labelParentTag": "",
+        "labelAttributes": {},
+        "labelParentAttributes": {},
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "labelText",
+            "text": "loop"
+          },
+          {
+            "tag": "text",
+            "class": "loopText",
+            "text": "[Retry]"
+          },
+          {
+            "tag": "text",
+            "class": "labelText",
+            "text": "alt"
+          },
+          {
+            "tag": "text",
+            "class": "loopText",
+            "text": "[Success]"
+          },
+          {
+            "tag": "text",
+            "class": "sectionTitle",
+            "text": "[Failure]"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "Request"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "Error"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {},
+          "loopText": {
+            "fill": "rgb(0, 0, 0)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          }
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "line:loopLine",
+          "line:loopLine",
+          "line:loopLine",
+          "line:loopLine",
+          "text:labelText",
+          "text:loopText",
+          "line:loopLine",
+          "line:loopLine",
+          "line:loopLine",
+          "line:loopLine",
+          "line:loopLine",
+          "text:labelText",
+          "text:loopText",
+          "text:sectionTitle",
+          "text:messageText",
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine0"
+        ]
+      }
     },
     {
       "id": "participant-types",
       "source": "sequenceDiagram\nparticipant P as Plain\nactor A as Actor\nparticipant B@{ \"type\": \"boundary\" } as Boundary\nparticipant C@{ \"type\": \"control\" } as Control\nparticipant E@{ \"type\": \"entity\" } as Entity\nparticipant D@{ \"type\": \"database\" } as Database\nparticipant S@{ \"type\": \"collections\" } as Collections\nparticipant Q@{ \"type\": \"queue\" } as Queue\nP->>Q:All types",
       "file": "participant-types.png",
+      "sha256": "136ccefaf98beb5f78046a4f922c69b001e9994913b04c1d896e801e5ef4413b",
       "width": 1550,
-      "height": 225
+      "height": 225,
+      "structure": {
+        "viewBox": "0 -5 1550 225",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 17,
+        "tspan": 16,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "",
+        "labelClass": "",
+        "labelParentTag": "",
+        "labelAttributes": {},
+        "labelParentAttributes": {},
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Queue"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Collections"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Database"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Plain"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Queue"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Collections"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Database"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Plain"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-man",
+            "text": "Actor"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-man",
+            "text": "Boundary"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-man",
+            "text": "Control"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-man",
+            "text": "Entity"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "All types"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-man",
+            "text": "Actor"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-man",
+            "text": "Boundary"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-man",
+            "text": "Control"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-man",
+            "text": "Entity"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {},
+          "loopText": {}
+        },
+        "domOrder": [
+          "path:",
+          "path:",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "rect:actor",
+          "text:actor actor-box",
+          "path:",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "path:",
+          "path:",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "rect:actor",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "path:",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "line:actor-line 200",
+          "line:actor-line 200",
+          "line:actor-line 200",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "line:",
+          "line:",
+          "line:",
+          "line:",
+          "text:actor actor-man",
+          "line:",
+          "line:",
+          "text:actor actor-man",
+          "path:",
+          "line:",
+          "text:actor actor-man",
+          "line:",
+          "text:actor actor-man",
+          "text:messageText",
+          "line:messageLine0",
+          "line:",
+          "line:",
+          "line:",
+          "line:",
+          "text:actor actor-man",
+          "line:",
+          "line:",
+          "text:actor actor-man",
+          "path:",
+          "line:",
+          "text:actor actor-man",
+          "line:",
+          "text:actor actor-man"
+        ]
+      }
     },
     {
       "id": "create-destroy-markers",
       "source": "sequenceDiagram\nparticipant A as Alice\nparticipant B as Bob\nA->>B:solid\nB-->>A:dotted\nA<<->>B:both\nA-)B:point\nB-xA:cross\ncreate participant C as Created\nA->>C:create\ndestroy C\nC-->>A:destroy",
       "file": "create-destroy-markers.png",
+      "sha256": "6ef7d06f54378542fe7aec5a3e2fb2144d087448b4dc7f0f077b0fe91c95450e",
       "width": 625,
-      "height": 593
+      "height": 593,
+      "structure": {
+        "viewBox": "0 0 625 593",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 13,
+        "tspan": 6,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "",
+        "labelClass": "",
+        "labelParentTag": "",
+        "labelAttributes": {},
+        "labelParentAttributes": {},
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Created"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Bob"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Alice"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Created"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Bob"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Alice"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "solid"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "dotted"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "both"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "point"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "cross"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "create"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "destroy"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {},
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "text:messageText",
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine1",
+          "text:messageText",
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine1"
+        ]
+      }
     },
     {
       "id": "central-autonumber",
       "source": "sequenceDiagram\nautonumber 10 5\nA->>()B:forward central\nA()->>B:reverse central\nA()->>()B:dual central\nB<<-->>A:bidirectional\nautonumber off\nA-->>B:unnumbered",
       "file": "central-autonumber.png",
+      "sha256": "32fbd68271524e64924190b1b7c71cb936ea652ed0a7627603e0816922d46188",
       "width": 350,
-      "height": 420
+      "height": 420,
+      "structure": {
+        "viewBox": "0 0 350 420",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 13,
+        "tspan": 4,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "",
+        "labelClass": "",
+        "labelParentTag": "",
+        "labelAttributes": {},
+        "labelParentAttributes": {},
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "forward central"
+          },
+          {
+            "tag": "text",
+            "class": "sequenceNumber",
+            "text": "10"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "reverse central"
+          },
+          {
+            "tag": "text",
+            "class": "sequenceNumber",
+            "text": "15"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "dual central"
+          },
+          {
+            "tag": "text",
+            "class": "sequenceNumber",
+            "text": "20"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "bidirectional"
+          },
+          {
+            "tag": "text",
+            "class": "sequenceNumber",
+            "text": "25"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "unnumbered"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {},
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "text:messageText",
+          "line:messageLine0",
+          "line:",
+          "text:sequenceNumber",
+          "text:messageText",
+          "line:messageLine0",
+          "line:",
+          "text:sequenceNumber",
+          "text:messageText",
+          "line:messageLine0",
+          "line:",
+          "text:sequenceNumber",
+          "text:messageText",
+          "line:messageLine1",
+          "line:",
+          "text:sequenceNumber",
+          "text:messageText",
+          "line:messageLine1"
+        ]
+      }
     },
     {
       "id": "self-autonumber",
       "source": "sequenceDiagram\nautonumber\nA->>A:self solid\nA-->>A:self dotted\nA-xA:self cross\nA<<->>A:self both",
       "file": "self-autonumber.png",
+      "sha256": "7f27373ee71ce714803c086ad70c7a8795e99fcafb97e6b602ab6ab62c148675",
       "width": 150,
-      "height": 486
+      "height": 486,
+      "structure": {
+        "viewBox": "0 0 150 486",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 10,
+        "tspan": 2,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "",
+        "labelClass": "",
+        "labelParentTag": "",
+        "labelAttributes": {},
+        "labelParentAttributes": {},
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "self solid"
+          },
+          {
+            "tag": "text",
+            "class": "sequenceNumber",
+            "text": "1"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "self dotted"
+          },
+          {
+            "tag": "text",
+            "class": "sequenceNumber",
+            "text": "2"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "self cross"
+          },
+          {
+            "tag": "text",
+            "class": "sequenceNumber",
+            "text": "3"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "self both"
+          },
+          {
+            "tag": "text",
+            "class": "sequenceNumber",
+            "text": "4"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {},
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "text:messageText",
+          "path:messageLine0",
+          "line:",
+          "text:sequenceNumber",
+          "text:messageText",
+          "path:messageLine1",
+          "line:",
+          "text:sequenceNumber",
+          "text:messageText",
+          "path:messageLine0",
+          "line:",
+          "text:sequenceNumber",
+          "text:messageText",
+          "path:messageLine0",
+          "line:",
+          "text:sequenceNumber"
+        ]
+      }
     },
     {
       "id": "label-participant-html-cjk",
+      "cropSelector": "[data-et=\"participant\"][data-id=\"A\"] text",
+      "cropKind": "participant",
       "source": "sequenceDiagram\nparticipant A as <b>Client</b><br/>客户端\nparticipant B as Server\nA->>B:ping",
       "file": "label-participant-html-cjk.png",
+      "sha256": "e7773293cf5ade81e89ff8abd52b756f08bfcd44a4ac8c7d91d74c0009fa0a6c",
+      "cropFile": "label-participant-html-cjk-label.png",
+      "cropSha256": "7143dff7d8f1b21583266d9b8a4712eb041047f073988ab673e7b73d190a6093",
       "width": 350,
-      "height": 204
+      "height": 204,
+      "structure": {
+        "viewBox": "0 0 350 204",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 7,
+        "tspan": 6,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "text",
+        "labelClass": "actor actor-box",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "x": "75",
+          "y": "32.5",
+          "dominant-baseline": "central",
+          "alignment-baseline": "central",
+          "class": "actor actor-box",
+          "style": "text-anchor: middle; font-size: 16px; font-weight: 400; font-family: \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif;"
+        },
+        "labelParentAttributes": {
+          "id": "root-0",
+          "data-et": "participant",
+          "data-type": "participant",
+          "data-id": "A"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Server"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "<b>Client</b>"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "客户端"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "Server"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "<b>Client</b>"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "客户端"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "ping"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {},
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "text:messageText",
+          "line:messageLine0"
+        ]
+      }
     },
     {
       "id": "label-message-wrap-bidi",
+      "cropSelector": ".messageText",
+      "cropCount": 2,
+      "cropKind": "message",
       "source": "%%{init: {\"sequence\": {\"wrap\": true, \"wrapPadding\": 10}}}%%\nsequenceDiagram\nA->>B:wrap:alpha beta gamma delta epsilon zeta eta theta\nB-->>A:Hello مرحبا שלום",
       "file": "label-message-wrap-bidi.png",
+      "sha256": "c359b16d734a61c4f271f00a7e3c1cba153d416c78ba6db8eb10f7d31735b548",
+      "cropFile": "label-message-wrap-bidi-label.png",
+      "cropSha256": "eb4da9ae67d640ef5879738878972e271cde103a62089f4db5d6761b0af38a99",
       "width": 350,
-      "height": 280
+      "height": 280,
+      "structure": {
+        "viewBox": "0 0 350 280",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 7,
+        "tspan": 4,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "text",
+        "labelClass": "messageText",
+        "labelParentTag": "svg",
+        "labelAttributes": {
+          "x": "174",
+          "y": "80",
+          "text-anchor": "middle",
+          "dominant-baseline": "middle",
+          "alignment-baseline": "middle",
+          "class": "messageText",
+          "dy": "1em",
+          "style": "font-family: \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif; font-size: 16px; font-weight: 400;"
+        },
+        "labelParentAttributes": {
+          "id": "sequence-pixel-8",
+          "width": "350",
+          "xmlns": "http://www.w3.org/2000/svg",
+          "height": "280",
+          "viewBox": "0 0 350 280",
+          "role": "graphics-document document",
+          "aria-roledescription": "sequence",
+          "style": "max-width: none; width: 350px; height: 280px;"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "alpha beta gamma delta"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "epsilon zeta eta theta"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "Hello مرحبا שלום"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {},
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "text:messageText",
+          "text:messageText",
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine1"
+        ]
+      }
     },
     {
       "id": "label-note-markdown-math",
+      "cropSelector": "[data-et=\"note\"] foreignObject",
+      "cropKind": "note",
       "source": "sequenceDiagram\nA->>B:start\nNote over A,B:`**Speed** $$x^2$$`\nB-->>A:done",
       "file": "label-note-markdown-math.png",
+      "sha256": "6e3d3d16dea2a5f1abe219da234b0c7e60ac7f6d188bccf0f9bb969faef67724",
+      "cropFile": "label-note-markdown-math-label.png",
+      "cropSha256": "a0cc38cf59f8e40353e0023d74f4234a9f2a433db16b9508c77fe7cd181f5ced",
       "width": 350,
-      "height": 310
+      "height": 310,
+      "structure": {
+        "viewBox": "0 0 350 310",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 6,
+        "tspan": 4,
+        "foreignObject": 1,
+        "math": 1,
+        "clipPath": 0,
+        "labelTag": "foreignObject",
+        "labelClass": "",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "height": "22",
+          "width": "107",
+          "x": "122",
+          "y": "139"
+        },
+        "labelParentAttributes": {
+          "data-et": "note",
+          "data-id": "i1"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "foreignObject",
+            "class": "",
+            "text": "`**Speed** x2`"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "start"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "done"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {
+            "fill": "rgb(255, 245, 173)",
+            "stroke": "rgb(170, 170, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "rect:note",
+          "foreignObject:",
+          "math:",
+          "text:messageText",
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine1"
+        ]
+      }
     },
     {
       "id": "label-fragment-html-rtl",
+      "cropSelector": ".loopText",
+      "cropKind": "fragment",
       "source": "sequenceDiagram\nalt <b>Success</b><br/>نجاح\nA->>B:ok\nelse fallback\nB-->>A:return\nend",
       "file": "label-fragment-html-rtl.png",
+      "sha256": "c6d45344af1ec556025ed76886f57a2167b3eb8c5679275382e8751fcc2fb71b",
+      "cropFile": "label-fragment-html-rtl-label.png",
+      "cropSha256": "6337a985f99d6be41aab8392da5ed6703df08860d7e8567cfda1b8faade652b6",
       "width": 350,
-      "height": 384
+      "height": 384,
+      "structure": {
+        "viewBox": "0 0 350 384",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 10,
+        "tspan": 6,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "text",
+        "labelClass": "loopText",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "x": "200",
+          "y": "93",
+          "text-anchor": "middle",
+          "class": "loopText",
+          "style": "font-family: \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif; font-size: 16px; font-weight: 400;"
+        },
+        "labelParentAttributes": {
+          "data-et": "control-structure",
+          "data-id": "i4"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "labelText",
+            "text": "alt"
+          },
+          {
+            "tag": "text",
+            "class": "loopText",
+            "text": "[<b>Success</b>"
+          },
+          {
+            "tag": "text",
+            "class": "loopText",
+            "text": "نجاح]"
+          },
+          {
+            "tag": "text",
+            "class": "sectionTitle",
+            "text": "[fallback]"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "ok"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "return"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {},
+          "loopText": {
+            "fill": "rgb(0, 0, 0)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          }
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "line:loopLine",
+          "line:loopLine",
+          "line:loopLine",
+          "line:loopLine",
+          "line:loopLine",
+          "text:labelText",
+          "text:loopText",
+          "text:loopText",
+          "text:sectionTitle",
+          "text:messageText",
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine1"
+        ]
+      }
     },
     {
       "id": "label-box-markdown-math",
+      "cropSelector": "text.text",
+      "cropKind": "box",
       "source": "sequenceDiagram\nbox rgb(238, 246, 255) `**Services** $$x$$`\nparticipant A\nparticipant B\nend\nA->>B:call",
       "file": "label-box-markdown-math.png",
+      "sha256": "2ed183047bae6380284b702594e30e09190f6c7e643d4b7cdcd7c74ac7651778",
+      "cropFile": "label-box-markdown-math-label.png",
+      "cropSha256": "43e53c3499ed72bf5d823ff0ca85ff84c631bee66fcd02efb9eb55e72a7d0aec",
       "width": 400,
-      "height": 261
+      "height": 261,
+      "structure": {
+        "viewBox": "-20 -5 400 261",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 6,
+        "tspan": 5,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "text",
+        "labelClass": "text",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "x": "180",
+          "y": "16",
+          "dominant-baseline": "central",
+          "alignment-baseline": "central",
+          "class": "text",
+          "style": "text-anchor: middle; font-size: 16px; font-weight: 400; font-family: \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif;"
+        },
+        "labelParentAttributes": {},
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "text",
+            "text": "`**Services** $$x$$`"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "call"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {},
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:rect",
+          "text:text",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "text:messageText",
+          "line:messageLine0"
+        ]
+      }
+    },
+    {
+      "id": "label-dpr-125-html-cjk",
+      "dpr": 1.25,
+      "cropSelector": "[data-et=\"participant\"][data-id=\"A\"] text",
+      "cropKind": "participant",
+      "source": "sequenceDiagram\nparticipant A as <b>Client</b><br/>客户端\nA->>B:ping",
+      "file": "label-dpr-125-html-cjk.png",
+      "sha256": "54ea28c3f729f920ee25af7ae29629d2eaf890a567e00e8ad2e8e1e4a4aeec8a",
+      "cropFile": "label-dpr-125-html-cjk-label.png",
+      "cropSha256": "a65b38c1195bd014e6782c4a6f4148dcc2609301a42ecb8177b0c7fd9cc3b5dc",
+      "width": 350,
+      "height": 204,
+      "structure": {
+        "viewBox": "0 0 350 204",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 7,
+        "tspan": 6,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "text",
+        "labelClass": "actor actor-box",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "x": "75",
+          "y": "32.5",
+          "dominant-baseline": "central",
+          "alignment-baseline": "central",
+          "class": "actor actor-box",
+          "style": "text-anchor: middle; font-size: 16px; font-weight: 400; font-family: \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif;"
+        },
+        "labelParentAttributes": {
+          "id": "root-0",
+          "data-et": "participant",
+          "data-type": "participant",
+          "data-id": "A"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "<b>Client</b>"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "客户端"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "<b>Client</b>"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "客户端"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "ping"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {},
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "text:messageText",
+          "line:messageLine0"
+        ]
+      }
+    },
+    {
+      "id": "label-dpr-150-math-rtl",
+      "dpr": 1.5,
+      "cropSelector": "[data-et=\"note\"] foreignObject",
+      "cropKind": "note",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:中文 $$\\frac{x}{2}$$ مرحبا",
+      "file": "label-dpr-150-math-rtl.png",
+      "sha256": "62ade7058f4c5490f17185f14646510836a34cc113aabcf59c54596df42cf175",
+      "cropFile": "label-dpr-150-math-rtl-label.png",
+      "cropSha256": "8920765972bbcdc165feeb991dd9843084ef877e1f3ea2e0c7d29f4428213aa4",
+      "width": 350,
+      "height": 264,
+      "structure": {
+        "viewBox": "0 0 350 264",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 5,
+        "tspan": 4,
+        "foreignObject": 1,
+        "math": 1,
+        "clipPath": 0,
+        "labelTag": "foreignObject",
+        "labelClass": "",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "height": "30",
+          "width": "73",
+          "x": "138",
+          "y": "139"
+        },
+        "labelParentAttributes": {
+          "data-et": "note",
+          "data-id": "i1"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "foreignObject",
+            "class": "",
+            "text": "中文 x2 مرحبا"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "start"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {
+            "fill": "rgb(255, 245, 173)",
+            "stroke": "rgb(170, 170, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "rect:note",
+          "foreignObject:",
+          "math:",
+          "text:messageText",
+          "line:messageLine0"
+        ]
+      }
+    },
+    {
+      "id": "label-dpr-200-dark-box-fragment",
+      "dpr": 2,
+      "theme": "dark",
+      "cropSelector": ".loopText",
+      "cropKind": "fragment",
+      "source": "%%{init: {\"theme\": \"dark\"}}%%\nsequenceDiagram\nbox rgb(45, 52, 64) Services\nparticipant A\nparticipant B\nend\nalt <b>成功</b> שלום\nA->>B:中文\nend",
+      "file": "label-dpr-200-dark-box-fragment.png",
+      "sha256": "61d51e00ae3cd96a6f801fe1677f9120ac61f88fe409cfb47a29b6ac5310f488",
+      "cropFile": "label-dpr-200-dark-box-fragment-label.png",
+      "cropSha256": "b292c968aaca0891d82243f05033bc6e05914449af108390e7c644d30847d678",
+      "width": 400,
+      "height": 318,
+      "structure": {
+        "viewBox": "-20 -5 400 318",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 8,
+        "tspan": 6,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "text",
+        "labelClass": "loopText",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "x": "205",
+          "y": "125",
+          "text-anchor": "middle",
+          "class": "loopText",
+          "style": "font-family: \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif; font-size: 16px; font-weight: 400;"
+        },
+        "labelParentAttributes": {
+          "data-et": "control-structure",
+          "data-id": "i2"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "text",
+            "text": "Services"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "labelText",
+            "text": "alt"
+          },
+          {
+            "tag": "text",
+            "class": "loopText",
+            "text": "[<b>成功</b> שלום]"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "中文"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(31, 32, 32)",
+            "stroke": "rgb(204, 204, 204)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(211, 211, 211)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(211, 211, 211)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {},
+          "loopText": {
+            "fill": "rgb(211, 211, 211)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          }
+        },
+        "domOrder": [
+          "rect:rect",
+          "text:text",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "line:loopLine",
+          "line:loopLine",
+          "line:loopLine",
+          "line:loopLine",
+          "text:labelText",
+          "text:loopText",
+          "text:messageText",
+          "line:messageLine0"
+        ]
+      }
+    },
+    {
+      "id": "label-dpr-125-dark-html",
+      "dpr": 1.25,
+      "theme": "dark",
+      "cropSelector": ".messageText",
+      "cropFirst": true,
+      "cropKind": "message",
+      "source": "%%{init: {\"theme\": \"dark\"}}%%\nsequenceDiagram\nA->>B:<b>中文</b> مرحبا",
+      "file": "label-dpr-125-dark-html.png",
+      "sha256": "685b83822ae615f99de9f1b8a15af1796bae43ad8f6dfae48fe826e5c727963f",
+      "cropFile": "label-dpr-125-dark-html-label.png",
+      "cropSha256": "a30e10f8461def81adaf0114563546a813824a7c9117c8235be034310c9f9592",
+      "width": 350,
+      "height": 204,
+      "structure": {
+        "viewBox": "0 0 350 204",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 5,
+        "tspan": 4,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "text",
+        "labelClass": "messageText",
+        "labelParentTag": "svg",
+        "labelAttributes": {
+          "x": "174",
+          "y": "80",
+          "text-anchor": "middle",
+          "dominant-baseline": "middle",
+          "alignment-baseline": "middle",
+          "class": "messageText",
+          "dy": "1em",
+          "style": "font-family: \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif; font-size: 16px; font-weight: 400;"
+        },
+        "labelParentAttributes": {
+          "id": "sequence-pixel-15",
+          "width": "350",
+          "xmlns": "http://www.w3.org/2000/svg",
+          "height": "204",
+          "viewBox": "0 0 350 204",
+          "role": "graphics-document document",
+          "aria-roledescription": "sequence",
+          "style": "max-width: none; width: 350px; height: 204px;"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "<b>中文</b> مرحبا"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(31, 32, 32)",
+            "stroke": "rgb(204, 204, 204)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(211, 211, 211)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(211, 211, 211)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {},
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "text:messageText",
+          "line:messageLine0"
+        ]
+      }
+    },
+    {
+      "id": "label-dpr-150-dark-math",
+      "dpr": 1.5,
+      "theme": "dark",
+      "cropSelector": "[data-et=\"note\"] foreignObject",
+      "cropKind": "note",
+      "source": "%%{init: {\"theme\": \"dark\"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\sqrt{x_i^2}$$",
+      "file": "label-dpr-150-dark-math.png",
+      "sha256": "85a53abcc29c9f2bce891604dbd3ac6d26ac3b09e3ec1eb6f93768067c31b757",
+      "cropFile": "label-dpr-150-dark-math-label.png",
+      "cropSha256": "624f8a0ba086c1599d9e41a5159e594d3359e2e3958ff157438d72af0ea9752c",
+      "width": 350,
+      "height": 271,
+      "structure": {
+        "viewBox": "0 0 350 271",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 5,
+        "tspan": 4,
+        "foreignObject": 1,
+        "math": 1,
+        "clipPath": 0,
+        "labelTag": "foreignObject",
+        "labelClass": "",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "height": "37",
+          "width": "28",
+          "x": "161",
+          "y": "139"
+        },
+        "labelParentAttributes": {
+          "data-et": "note",
+          "data-id": "i1"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "foreignObject",
+            "class": "",
+            "text": "xi2"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "start"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(31, 32, 32)",
+            "stroke": "rgb(204, 204, 204)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(211, 211, 211)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(211, 211, 211)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {
+            "fill": "rgb(71, 73, 73)",
+            "stroke": "rgb(47, 47, 47)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "rect:note",
+          "foreignObject:",
+          "math:",
+          "text:messageText",
+          "line:messageLine0"
+        ]
+      }
+    },
+    {
+      "id": "label-dpr-200-default-box",
+      "dpr": 2,
+      "cropSelector": "text.text",
+      "cropKind": "box",
+      "source": "sequenceDiagram\nbox rgb(238, 246, 255) 服务 Services\nparticipant A\nparticipant B\nend\nA->>B:call",
+      "file": "label-dpr-200-default-box.png",
+      "sha256": "9ddc21092fdc07e10414e635fb3001ade9ab1320313f04e69a28ad822d3a603c",
+      "cropFile": "label-dpr-200-default-box-label.png",
+      "cropSha256": "54e7c8b6dad0bd9ab9f85879947b4d8191a17d81b4eb662d237065603ceee734",
+      "width": 400,
+      "height": 261,
+      "structure": {
+        "viewBox": "-20 -5 400 261",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 6,
+        "tspan": 5,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "text",
+        "labelClass": "text",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "x": "180",
+          "y": "16",
+          "dominant-baseline": "central",
+          "alignment-baseline": "central",
+          "class": "text",
+          "style": "text-anchor: middle; font-size: 16px; font-weight: 400; font-family: \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif;"
+        },
+        "labelParentAttributes": {},
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "text",
+            "text": "服务 Services"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "call"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {},
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:rect",
+          "text:text",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "text:messageText",
+          "line:messageLine0"
+        ]
+      }
+    },
+    {
+      "id": "structural-aria",
+      "source": "sequenceDiagram\naccTitle: Checkout sequence\naccDescr: Client request lifecycle\nA->>B:go",
+      "file": "structural-aria.png",
+      "sha256": "98c945ea599fcf2942cc83e846f766f52d7a61ca758da5a77bce0cc06390ada9",
+      "width": 350,
+      "height": 204,
+      "structure": {
+        "viewBox": "0 0 350 204",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "chart-title-sequence-pixel-18",
+        "text": 5,
+        "tspan": 4,
+        "foreignObject": 0,
+        "math": 0,
+        "clipPath": 0,
+        "labelTag": "",
+        "labelClass": "",
+        "labelParentTag": "",
+        "labelAttributes": {},
+        "labelParentAttributes": {},
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "go"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {},
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "text:messageText",
+          "line:messageLine0"
+        ]
+      }
     }
   ],
-  "fixtureSha256": "bc06d7d5c0e25fbbc10a427fb32878d1defb4e9c3918f7b885645b4ca03bc991"
+  "fixtureSha256": "305fac299f6f9cead1a89874a7dc44bf98fbe5c0f6ce525dba1f75bf5d293112"
 }

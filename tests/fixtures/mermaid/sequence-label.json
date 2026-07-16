@@ -8,6 +8,8 @@
       "label": "<b>Client</b><br/>客户端",
       "source": "sequenceDiagram\nparticipant A as <b>Client</b><br/>客户端\nA->>B:ping",
       "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": true,
       "text": "<b>Client</b>\n客户端",
       "elementCount": 2,
       "box": {
@@ -59,6 +61,8 @@
       "label": "Hello <i>世界</i><br/>مرحبا שלום",
       "source": "sequenceDiagram\nA->>B:Hello <i>世界</i><br/>مرحبا שלום",
       "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": true,
       "text": "Hello <i>世界</i>\nمرحبا שלום",
       "elementCount": 2,
       "box": {
@@ -93,7 +97,7 @@
           "descent": 9.281,
           "runs": [
             {
-              "start": 16,
+              "start": 25,
               "length": 10,
               "x": 0,
               "width": 73.469,
@@ -110,6 +114,8 @@
       "label": "`**Speed** $$x^2$$`",
       "source": "sequenceDiagram\nA->>B:start\nNote over A,B:`**Speed** $$x^2$$`",
       "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": true,
       "text": "`**Speed** x2`",
       "elementCount": 1,
       "box": {
@@ -137,7 +143,7 @@
               "start": 11,
               "length": 2,
               "x": 86.281,
-              "width": 15.469,
+              "width": 16.125,
               "rightToLeft": false,
               "math": true
             },
@@ -159,6 +165,8 @@
       "label": "<b>Success</b><br/>نجاح",
       "source": "sequenceDiagram\nalt <b>Success</b><br/>نجاح\nA->>B:ok\nend",
       "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": true,
       "text": "[<b>Success</b>\nنجاح]",
       "elementCount": 2,
       "box": {
@@ -193,11 +201,19 @@
           "descent": 5,
           "runs": [
             {
-              "start": 16,
-              "length": 5,
+              "start": 19,
+              "length": 4,
               "x": 0,
-              "width": 34.656,
+              "width": 29.391,
               "rightToLeft": true,
+              "math": false
+            },
+            {
+              "start": 20,
+              "length": 1,
+              "x": 29.391,
+              "width": 5.266,
+              "rightToLeft": false,
               "math": false
             }
           ]
@@ -210,6 +226,8 @@
       "label": "`**Services** $$x$$`",
       "source": "sequenceDiagram\nbox rgb(238, 246, 255) `**Services** $$x$$`\nparticipant A\nparticipant B\nend\nA->>B:call",
       "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": true,
       "text": "`**Services** $$x$$`",
       "elementCount": 1,
       "box": {
@@ -246,6 +264,8 @@
         "wrap": true,
         "wrapPadding": 10
       },
+      "wrapWidth": 200,
+      "logicalComparable": true,
       "text": "alpha beta gamma delta\nepsilon zeta eta theta",
       "elementCount": 2,
       "box": {
@@ -290,7 +310,977 @@
           ]
         }
       ]
+    },
+    {
+      "id": "message-wrap-prefix-120",
+      "kind": "message",
+      "label": "alpha beta gamma delta epsilon zeta",
+      "source": "sequenceDiagram\nA->>B:wrap:alpha beta gamma delta epsilon zeta",
+      "sequence": {
+        "width": 70,
+        "actorMargin": 50
+      },
+      "wrapWidth": 140,
+      "logicalComparable": true,
+      "text": "alpha beta gamma\ndelta epsilon zeta",
+      "elementCount": 2,
+      "box": {
+        "width": 141.469,
+        "height": 44
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 16,
+          "width": 141.469,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 0,
+              "length": 16,
+              "x": 0,
+              "width": 141.469,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        },
+        {
+          "start": 17,
+          "length": 18,
+          "width": 131.719,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 17,
+              "length": 18,
+              "x": 0,
+              "width": 131.719,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "message-wrap-global-150",
+      "kind": "message",
+      "label": "alpha beta gamma delta epsilon zeta",
+      "source": "sequenceDiagram\nA->>B:alpha beta gamma delta epsilon zeta",
+      "sequence": {
+        "wrap": true,
+        "width": 100,
+        "actorMargin": 50
+      },
+      "wrapWidth": 150,
+      "logicalComparable": true,
+      "text": "alpha beta gamma\ndelta epsilon zeta",
+      "elementCount": 2,
+      "box": {
+        "width": 141.469,
+        "height": 44
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 16,
+          "width": 141.469,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 0,
+              "length": 16,
+              "x": 0,
+              "width": 141.469,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        },
+        {
+          "start": 17,
+          "length": 18,
+          "width": 131.719,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 17,
+              "length": 18,
+              "x": 0,
+              "width": 131.719,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "message-wrap-global-300",
+      "kind": "message",
+      "label": "alpha beta gamma delta epsilon zeta eta theta iota",
+      "source": "sequenceDiagram\nA->>B:alpha beta gamma delta epsilon zeta eta theta iota",
+      "sequence": {
+        "wrap": true,
+        "width": 250,
+        "actorMargin": 50
+      },
+      "wrapWidth": 300,
+      "logicalComparable": true,
+      "text": "alpha beta gamma delta epsilon zeta eta\ntheta iota",
+      "elementCount": 2,
+      "box": {
+        "width": 305.266,
+        "height": 44
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 39,
+          "width": 305.266,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 0,
+              "length": 39,
+              "x": 0,
+              "width": 305.266,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        },
+        {
+          "start": 40,
+          "length": 10,
+          "width": 72.172,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 40,
+              "length": 10,
+              "x": 0,
+              "width": 72.172,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "participant-wrap-prefix",
+      "kind": "participant",
+      "label": "alpha beta gamma delta epsilon",
+      "source": "sequenceDiagram\nparticipant A as wrap:alpha beta gamma delta epsilon\nA->>B:ping",
+      "sequence": {
+        "width": 120
+      },
+      "wrapWidth": 100,
+      "logicalComparable": true,
+      "text": "alpha beta\ngamma delta\nepsilon",
+      "elementCount": 3,
+      "box": {
+        "width": 99.625,
+        "height": 66
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 10,
+          "width": 79.594,
+          "baseline": 11,
+          "ascent": 11,
+          "descent": 11,
+          "runs": [
+            {
+              "start": 0,
+              "length": 10,
+              "x": 0,
+              "width": 79.594,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        },
+        {
+          "start": 11,
+          "length": 11,
+          "width": 99.625,
+          "baseline": 11,
+          "ascent": 11,
+          "descent": 11,
+          "runs": [
+            {
+              "start": 11,
+              "length": 11,
+              "x": 0,
+              "width": 99.625,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        },
+        {
+          "start": 23,
+          "length": 7,
+          "width": 54.359,
+          "baseline": 11,
+          "ascent": 11,
+          "descent": 11,
+          "runs": [
+            {
+              "start": 23,
+              "length": 7,
+              "x": 0,
+              "width": 54.359,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "note-wrap-prefix",
+      "kind": "note",
+      "label": "alpha beta gamma delta epsilon zeta",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:wrap:alpha beta gamma delta epsilon zeta",
+      "sequence": {
+        "width": 100,
+        "actorMargin": 50
+      },
+      "wrapWidth": 180,
+      "logicalComparable": true,
+      "text": "alpha beta gamma delta\nepsilon zeta",
+      "elementCount": 2,
+      "box": {
+        "width": 183.375,
+        "height": 44
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 22,
+          "width": 183.375,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 0,
+              "length": 22,
+              "x": 0,
+              "width": 183.375,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        },
+        {
+          "start": 23,
+          "length": 12,
+          "width": 89.813,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 23,
+              "length": 12,
+              "x": 0,
+              "width": 89.813,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "message-wrap-explicit-break",
+      "kind": "message",
+      "label": "alpha beta<br/>gamma delta",
+      "source": "sequenceDiagram\nA->>B:alpha beta<br/>gamma delta",
+      "sequence": {
+        "wrap": true,
+        "width": 70,
+        "actorMargin": 50
+      },
+      "wrapWidth": 140,
+      "logicalComparable": true,
+      "text": "alpha beta\ngamma delta",
+      "elementCount": 2,
+      "box": {
+        "width": 99.625,
+        "height": 44
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 10,
+          "width": 79.594,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 0,
+              "length": 10,
+              "x": 0,
+              "width": 79.594,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        },
+        {
+          "start": 11,
+          "length": 11,
+          "width": 99.625,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 11,
+              "length": 11,
+              "x": 0,
+              "width": 99.625,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "message-arabic-only",
+      "kind": "message",
+      "label": "مرحبا بالعالم",
+      "source": "sequenceDiagram\nA->>B:مرحبا بالعالم",
+      "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": true,
+      "text": "مرحبا بالعالم",
+      "elementCount": 1,
+      "box": {
+        "width": 78.094,
+        "height": 24
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 13,
+          "width": 77.094,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 12,
+              "length": 13,
+              "x": 0,
+              "width": 77.094,
+              "rightToLeft": true,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "message-hebrew-only",
+      "kind": "message",
+      "label": "שלום עולם",
+      "source": "sequenceDiagram\nA->>B:שלום עולם",
+      "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": true,
+      "text": "שלום עולם",
+      "elementCount": 1,
+      "box": {
+        "width": 73.406,
+        "height": 22
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 9,
+          "width": 73.406,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 8,
+              "length": 9,
+              "x": 0,
+              "width": 73.406,
+              "rightToLeft": true,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "message-bidi-numbers-punctuation",
+      "kind": "message",
+      "label": "مرحبا 123, שלום 456!",
+      "source": "sequenceDiagram\nA->>B:مرحبا 123, שלום 456!",
+      "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": true,
+      "text": "مرحبا 123, שלום 456!",
+      "elementCount": 1,
+      "box": {
+        "width": 145.328,
+        "height": 22
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 20,
+          "width": 145.328,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 16,
+              "length": 3,
+              "x": 0,
+              "width": 27.469,
+              "rightToLeft": false,
+              "math": false
+            },
+            {
+              "start": 15,
+              "length": 7,
+              "x": 27.469,
+              "width": 48.25,
+              "rightToLeft": true,
+              "math": false
+            },
+            {
+              "start": 6,
+              "length": 3,
+              "x": 75.719,
+              "width": 27.469,
+              "rightToLeft": false,
+              "math": false
+            },
+            {
+              "start": 5,
+              "length": 6,
+              "x": 103.188,
+              "width": 37.828,
+              "rightToLeft": true,
+              "math": false
+            },
+            {
+              "start": 19,
+              "length": 1,
+              "x": 141.016,
+              "width": 4.313,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "message-bidi-isolates",
+      "kind": "message",
+      "label": "left ⁧שלום 42⁩ right",
+      "source": "sequenceDiagram\nA->>B:left ⁧שלום 42⁩ right",
+      "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": false,
+      "text": "left ⁧שלום 42⁩ right",
+      "elementCount": 1,
+      "box": {
+        "width": 127.327,
+        "height": 22
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 20,
+          "width": 127.109,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 0,
+              "length": 8,
+              "x": 0,
+              "width": 46.906,
+              "rightToLeft": false,
+              "math": false
+            },
+            {
+              "start": 10,
+              "length": 5,
+              "x": 46.906,
+              "width": 39.797,
+              "rightToLeft": true,
+              "math": false
+            },
+            {
+              "start": 13,
+              "length": 7,
+              "x": 86.703,
+              "width": 40.406,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "message-cjk-unspaced",
+      "kind": "message",
+      "label": "这是一段没有空格的中文标签",
+      "source": "sequenceDiagram\nA->>B:这是一段没有空格的中文标签",
+      "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": true,
+      "text": "这是一段没有空格的中文标签",
+      "elementCount": 1,
+      "box": {
+        "width": 210,
+        "height": 22
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 13,
+          "width": 208,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 0,
+              "length": 13,
+              "x": 0,
+              "width": 208,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "message-long-unbreakable",
+      "kind": "message",
+      "label": "SupercalifragilisticexpialidociousUnbreakableToken",
+      "source": "sequenceDiagram\nA->>B:SupercalifragilisticexpialidociousUnbreakableToken",
+      "sequence": {
+        "wrap": true,
+        "width": 70,
+        "actorMargin": 50
+      },
+      "wrapWidth": 140,
+      "logicalComparable": true,
+      "text": "Supercalifragilistice-\nxpialidociousUnbre-\nakableToken",
+      "elementCount": 3,
+      "box": {
+        "width": 151.156,
+        "height": 66
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 22,
+          "width": 151.156,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 0,
+              "length": 22,
+              "x": 0,
+              "width": 151.156,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        },
+        {
+          "start": 23,
+          "length": 19,
+          "width": 150.125,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 23,
+              "length": 19,
+              "x": 0,
+              "width": 150.125,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        },
+        {
+          "start": 43,
+          "length": 11,
+          "width": 94.406,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 43,
+              "length": 11,
+              "x": 0,
+              "width": 94.406,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "note-math-fraction",
+      "kind": "note",
+      "label": "fraction $$\\frac{a}{b}$$",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:fraction $$\\frac{a}{b}$$",
+      "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": true,
+      "text": "fraction ab",
+      "elementCount": 1,
+      "box": {
+        "width": 69,
+        "height": 30
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 11,
+          "width": 67.922,
+          "baseline": 26,
+          "ascent": 26,
+          "descent": 12.813,
+          "runs": [
+            {
+              "start": 0,
+              "length": 9,
+              "x": 0,
+              "width": 57.922,
+              "rightToLeft": false,
+              "math": false
+            },
+            {
+              "start": 9,
+              "length": 2,
+              "x": 57.922,
+              "width": 11,
+              "rightToLeft": false,
+              "math": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "note-math-sqrt-sub-sup",
+      "kind": "note",
+      "label": "root $$\\sqrt{x_i^2+y^2}$$",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:root $$\\sqrt{x_i^2+y^2}$$",
+      "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": true,
+      "text": "root xi2+y2",
+      "elementCount": 1,
+      "box": {
+        "width": 95,
+        "height": 37
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 11,
+          "width": 94.125,
+          "baseline": 20.75,
+          "ascent": 20.75,
+          "descent": 5.016,
+          "runs": [
+            {
+              "start": 0,
+              "length": 5,
+              "x": 0,
+              "width": 31.438,
+              "rightToLeft": false,
+              "math": false
+            },
+            {
+              "start": 5,
+              "length": 6,
+              "x": 31.438,
+              "width": 63.344,
+              "rightToLeft": false,
+              "math": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "note-math-matrix",
+      "kind": "note",
+      "label": "matrix $$\\begin{matrix}a&b\\\\c&d\\end{matrix}$$",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:matrix $$\\begin{matrix}a&b\\\\c&d\\end{matrix}$$",
+      "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": true,
+      "text": "matrix abcd",
+      "elementCount": 1,
+      "box": {
+        "width": 92,
+        "height": 36
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 11,
+          "width": 86.094,
+          "baseline": 21.5,
+          "ascent": 21.5,
+          "descent": 12.5,
+          "runs": [
+            {
+              "start": 0,
+              "length": 7,
+              "x": 0,
+              "width": 48.922,
+              "rightToLeft": false,
+              "math": false
+            },
+            {
+              "start": 7,
+              "length": 4,
+              "x": 48.922,
+              "width": 43.563,
+              "rightToLeft": false,
+              "math": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "note-math-multiple-spans",
+      "kind": "note",
+      "label": "left $$x$$ middle $$y^2$$ right",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:left $$x$$ middle $$y^2$$ right",
+      "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": true,
+      "text": "left x middle y2 right",
+      "elementCount": 1,
+      "box": {
+        "width": 138,
+        "height": 22
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 22,
+          "width": 137.734,
+          "baseline": 17,
+          "ascent": 17,
+          "descent": 5,
+          "runs": [
+            {
+              "start": 0,
+              "length": 5,
+              "x": 0,
+              "width": 24.438,
+              "rightToLeft": false,
+              "math": false
+            },
+            {
+              "start": 5,
+              "length": 1,
+              "x": 24.438,
+              "width": 9,
+              "rightToLeft": false,
+              "math": true
+            },
+            {
+              "start": 6,
+              "length": 8,
+              "x": 33.438,
+              "width": 51.922,
+              "rightToLeft": false,
+              "math": false
+            },
+            {
+              "start": 14,
+              "length": 2,
+              "x": 85.359,
+              "width": 16.125,
+              "rightToLeft": false,
+              "math": true
+            },
+            {
+              "start": 16,
+              "length": 6,
+              "x": 101.484,
+              "width": 36.25,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "note-math-break",
+      "kind": "note",
+      "label": "before $$x$$<br/>after $$y$$",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:before $$x$$<br/>after $$y$$",
+      "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": false,
+      "text": "before xafter y",
+      "elementCount": 1,
+      "box": {
+        "width": 58,
+        "height": 44
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 8,
+          "width": 58.375,
+          "baseline": 17,
+          "ascent": 17,
+          "descent": 5,
+          "runs": [
+            {
+              "start": 0,
+              "length": 7,
+              "x": 0,
+              "width": 49.375,
+              "rightToLeft": false,
+              "math": false
+            },
+            {
+              "start": 7,
+              "length": 1,
+              "x": 49.375,
+              "width": 9,
+              "rightToLeft": false,
+              "math": true
+            }
+          ]
+        },
+        {
+          "start": 8,
+          "length": 7,
+          "width": 44.891,
+          "baseline": 17,
+          "ascent": 17,
+          "descent": 5,
+          "runs": [
+            {
+              "start": 8,
+              "length": 6,
+              "x": 0,
+              "width": 35.891,
+              "rightToLeft": false,
+              "math": false
+            },
+            {
+              "start": 14,
+              "length": 1,
+              "x": 35.891,
+              "width": 9,
+              "rightToLeft": false,
+              "math": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "note-math-cjk-rtl",
+      "kind": "note",
+      "label": "中文 $$\\frac{x}{2}$$ مرحبا",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:中文 $$\\frac{x}{2}$$ مرحبا",
+      "sequence": {},
+      "wrapWidth": 0,
+      "logicalComparable": true,
+      "text": "中文 x2 مرحبا",
+      "elementCount": 1,
+      "box": {
+        "width": 77,
+        "height": 34
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 11,
+          "width": 76.672,
+          "baseline": 25.906,
+          "ascent": 25.906,
+          "descent": 12.906,
+          "runs": [
+            {
+              "start": 0,
+              "length": 3,
+              "x": 0,
+              "width": 32,
+              "rightToLeft": false,
+              "math": false
+            },
+            {
+              "start": 3,
+              "length": 2,
+              "x": 32,
+              "width": 11,
+              "rightToLeft": false,
+              "math": true
+            },
+            {
+              "start": 10,
+              "length": 6,
+              "x": 43,
+              "width": 33.672,
+              "rightToLeft": true,
+              "math": false
+            }
+          ]
+        }
+      ]
     }
   ],
-  "fixtureSha256": "105fa54a9c924fa652ee699986bdb53556c7f2c5a3424b739cdfcce5bead351b"
+  "fixtureSha256": "e06af7f9c9b23b1c23a75ff8f79c6392d3c6bc03db41bebaa23a6cf911cb9885"
 }

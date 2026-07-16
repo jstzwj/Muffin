@@ -248,6 +248,7 @@ qreal measureTextRange(const FlowLabelDocument& label, qsizetype start, qsizetyp
   QTextLayout layout(label.text.mid(start, length), font);
   QTextOption option;
   option.setUseDesignMetrics(true);
+  option.setTextDirection(label.direction);
   layout.setTextOption(option);
   QVector<QTextLayout::FormatRange> ranges;
   for (const auto& range : label.formats) {
@@ -290,6 +291,7 @@ void drawTextRange(QPainter& painter, const FlowLabelDocument& label,
   QTextLayout layout(label.text.mid(start, length), font);
   QTextOption option;
   option.setUseDesignMetrics(true);
+  option.setTextDirection(label.direction);
   layout.setTextOption(option);
   layout.setFormats(localFormats(label, start, length));
   layout.beginLayout();
@@ -337,6 +339,26 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
       qreal actualLineHeight = lineHeight;
       qsizetype cursor = offset;
       muffin::math::MathRenderer renderer;
+      auto rangeIsRtl = [&](qsizetype start, qsizetype length) {
+        if (length <= 0) return false;
+        const QString directionText = label.text.mid(start, length).trimmed();
+        if (directionText.isEmpty()) return false;
+        QTextLayout directionLayout(directionText, font);
+        QTextOption directionOption;
+        directionOption.setUseDesignMetrics(true);
+        directionOption.setTextDirection(label.direction);
+        directionLayout.setTextOption(directionOption);
+        directionLayout.beginLayout();
+        QTextLine directionLine = directionLayout.createLine();
+        if (directionLine.isValid()) directionLine.setLineWidth(1e9);
+        directionLayout.endLayout();
+        const auto runs = directionLine.isValid()
+            ? directionLine.glyphRuns(0, -1, QTextLayout::RetrieveAll) : QList<QGlyphRun>{};
+        return !runs.isEmpty() &&
+            std::all_of(runs.cbegin(), runs.cend(), [](const QGlyphRun& run) {
+              return run.isRightToLeft();
+            });
+      };
       auto mathTextWidth = [&](qsizetype start, qsizetype length) {
         qreal width = 0.0;
         const qsizetype end = start + length;
@@ -381,7 +403,7 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
         const qreal textWidth = mathTextWidth(cursor, math.start - cursor);
         if (math.start > cursor)
           measured.runs.push_back({cursor, math.start - cursor, lineWidth, textWidth,
-                                   false, false, font.family()});
+                                   rangeIsRtl(cursor, math.start - cursor), false, font.family()});
         lineWidth += textWidth;
         const muffin::math::MathLayoutResult layout = renderer.render(
             math.source, fontPixelSize * 1.21, Qt::black, true);
@@ -401,7 +423,8 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
       const qreal tailWidth = mathTextWidth(cursor, offset + line.size() - cursor);
       if (cursor < offset + line.size())
         measured.runs.push_back({cursor, offset + line.size() - cursor, lineWidth,
-                                 tailWidth, false, false, font.family()});
+                                 tailWidth, rangeIsRtl(cursor, offset + line.size() - cursor),
+                                 false, font.family()});
       lineWidth += tailWidth;
       measured.width = lineWidth;
       // The fallback is emitted as one SVG text range (17px ink box) inside
@@ -419,6 +442,7 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
     QTextLayout layout(line, font);
     QTextOption option;
     option.setUseDesignMetrics(true);
+    option.setTextDirection(label.direction);
     layout.setTextOption(option);
     QVector<QTextLayout::FormatRange> ranges;
     for (const auto& range : label.formats) {

@@ -222,6 +222,8 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       const QJsonObject sequenceConfig = pre.config.value(QStringLiteral("sequence")).toObject();
       const qreal actorMargin = configNumber(sequenceConfig, QStringLiteral("actorMargin"), 50.0);
       const qreal actorWidth = configNumber(sequenceConfig, QStringLiteral("width"), 150.0);
+      const qreal wrapPadding = configNumber(sequenceConfig, QStringLiteral("wrapPadding"), 10.0);
+      const bool globalWrap = sequenceConfig.value(QStringLiteral("wrap")).toBool(false);
       const auto labelDocument = [&](const QString& text, sequence::SequenceLabelKind kind) {
         return sequence::parseSequenceLabel(text, kind);
       };
@@ -229,9 +231,16 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         return sequence::layoutSequenceLabel(label, MermaidFontRegistry::cssFamilyStack(),
                                              16.0, 22.0).size;
       };
-      for (const auto& actor : diagram.data().actors)
-        measurements.participants.insert(actor.id, measure(labelDocument(
-            actor.description, sequence::SequenceLabelKind::Participant)));
+      for (const auto& actor : diagram.data().actors) {
+        auto document = labelDocument(actor.description, sequence::SequenceLabelKind::Participant);
+        if (actor.wrap || globalWrap) {
+          document = sequence::wrapSequenceLabel(std::move(document),
+              MermaidFontRegistry::cssFamilyStack(), 16.0,
+              std::max(1.0, actorWidth - 2.0 * wrapPadding));
+          measurements.participantDisplayById.insert(actor.id, document.richText.text);
+        }
+        measurements.participants.insert(actor.id, measure(document));
+      }
       for (const auto& box : diagram.data().boxes)
         measurements.boxes.append(measure(labelDocument(box.name, sequence::SequenceLabelKind::Box)));
       for (qsizetype index = 0; index < diagram.data().messages.size(); ++index) {
@@ -244,14 +253,24 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
             : fragment ? sequence::SequenceLabelKind::Fragment
                        : sequence::SequenceLabelKind::Message;
         auto document = labelDocument(message.message.toString(), kind);
-        if (!note && !fragment &&
-            (message.wrap || sequenceConfig.value(QStringLiteral("wrap")).toBool(false)))
+        if (!fragment && (message.wrap || globalWrap)) {
+          qreal maximumWidth = actorWidth + actorMargin;
+          if (note) {
+            maximumWidth = message.placement == 2 && message.from != message.to
+                ? 2.0 * actorWidth - 2.0 * wrapPadding
+                : actorWidth - 2.0 * wrapPadding;
+          }
           document = sequence::wrapSequenceLabel(std::move(document),
-              MermaidFontRegistry::cssFamilyStack(), 16.0, actorWidth + actorMargin);
+              MermaidFontRegistry::cssFamilyStack(), 16.0, maximumWidth);
+        }
         const QSizeF size = measure(document);
         if (!note && !fragment && document.richText.math.isEmpty())
           measurements.messageDisplayByIndex.insert(static_cast<int>(index), document.richText.text);
-        if (note) measurements.notesByIndex.insert(static_cast<int>(index), size);
+        if (note) {
+          measurements.notesByIndex.insert(static_cast<int>(index), size);
+          if (document.richText.math.isEmpty())
+            measurements.noteDisplayByIndex.insert(static_cast<int>(index), document.richText.text);
+        }
         else if (fragment)
           measurements.fragmentsByIndex.insert(static_cast<int>(index), size);
         else measurements.messagesByIndex.insert(static_cast<int>(index), size);
@@ -264,7 +283,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       layoutOptions.boxTextMargin = configNumber(sequenceConfig, QStringLiteral("boxTextMargin"), 5.0);
       layoutOptions.noteMargin = configNumber(sequenceConfig, QStringLiteral("noteMargin"), 10.0);
       layoutOptions.activationWidth = configNumber(sequenceConfig, QStringLiteral("activationWidth"), 10.0);
-      layoutOptions.wrapPadding = configNumber(sequenceConfig, QStringLiteral("wrapPadding"), 10.0);
+      layoutOptions.wrapPadding = wrapPadding;
       layoutOptions.labelBoxWidth = configNumber(sequenceConfig, QStringLiteral("labelBoxWidth"), 50.0);
       layoutOptions.labelBoxHeight = configNumber(sequenceConfig, QStringLiteral("labelBoxHeight"), 20.0);
       layoutOptions.rightAngles = sequenceConfig.value(QStringLiteral("rightAngles")).toBool(false);
@@ -276,6 +295,20 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
           sequence::layoutSequence(diagram.data(), measurements, layoutOptions);
       sequence::SequenceSceneStyle style;
       style.fontFamily = MermaidFontRegistry::cssFamilyStack();
+      if (themeFromConfig(pre.config).compare(QStringLiteral("dark"), Qt::CaseInsensitive) == 0) {
+        style.actorFill = QStringLiteral("#1f2020");
+        style.actorStroke = QStringLiteral("#cccccc");
+        style.textColor = QStringLiteral("#d3d3d3");
+        style.signalColor = QStringLiteral("#d3d3d3");
+        style.lifelineColor = QStringLiteral("#cccccc");
+        style.noteFill = QStringLiteral("#474949");
+        style.noteStroke = QStringLiteral("#2f2f2f");
+        style.activationFill = QStringLiteral("#2f3030");
+        style.activationStroke = QStringLiteral("#cccccc");
+        style.fragmentStroke = QStringLiteral("#d3d3d3");
+        style.labelFill = QStringLiteral("#1f2020");
+        style.boxStroke = QStringLiteral("rgba(204,204,204,0.5)");
+      }
       sequence::SequenceScene scene = sequence::buildSequenceScene(layout, style);
       MermaidRenderEntry entry;
       entry.status = MermaidRenderStatus::Ready;

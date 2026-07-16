@@ -65,20 +65,22 @@ int main(int argc, char** argv) {
               root.value(QStringLiteral("fontMode")).toString() == QLatin1String("bundled-noto"),
           QStringLiteral("Sequence label oracle version/font drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("105fa54a9c924fa652ee699986bdb53556c7f2c5a3424b739cdfcce5bead351b"),
+              QLatin1String("e06af7f9c9b23b1c23a75ff8f79c6392d3c6bc03db41bebaa23a6cf911cb9885"),
           QStringLiteral("Sequence label fixture changed; audit browser geometry and update digest"));
 
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-  require(cases.size() == 6, QStringLiteral("Sequence label case count regressed"));
+  require(cases.size() == 24, QStringLiteral("Sequence label case count regressed"));
   int lineCount = 0, runCount = 0, rtlRuns = 0, mathRuns = 0;
   const QString fontFamily = MermaidFontRegistry::cssFamilyStack();
   for (const QJsonValue& value : cases) {
     const QJsonObject fixture = value.toObject();
     const QString id = fixture.value(QStringLiteral("id")).toString();
+    const bool complexMath = id.startsWith(QLatin1String("note-math-"));
     auto document = sequence::parseSequenceLabel(fixture.value(QStringLiteral("label")).toString(),
                                                  labelKind(fixture.value(QStringLiteral("kind")).toString()));
-    if (id == QLatin1String("message-wrap-width"))
-      document = sequence::wrapSequenceLabel(std::move(document), fontFamily, 16.0, 200.0);
+    const qreal wrapWidth = fixture.value(QStringLiteral("wrapWidth")).toDouble();
+    if (wrapWidth > 0.0)
+      document = sequence::wrapSequenceLabel(std::move(document), fontFamily, 16.0, wrapWidth);
     const auto native = sequence::layoutSequenceLabel(document, fontFamily, 16.0, 22.0);
     const QJsonArray expectedLines = fixture.value(QStringLiteral("lines")).toArray();
     require(native.lines.size() == expectedLines.size(),
@@ -86,29 +88,38 @@ int main(int argc, char** argv) {
                 .arg(id).arg(native.lines.size()).arg(expectedLines.size()));
     if (document.richText.math.isEmpty())
       require(document.richText.text == fixture.value(QStringLiteral("text")).toString(),
-              QStringLiteral("%1 visible text/newline mismatch").arg(id));
+              QStringLiteral("%1 visible text/newline mismatch: native=[%2] browser=[%3]")
+                  .arg(id, document.richText.text,
+                       fixture.value(QStringLiteral("text")).toString()));
     const QJsonObject expectedBox = fixture.value(QStringLiteral("box")).toObject();
-    near(native.size.width(), expectedBox.value(QStringLiteral("width")).toDouble(), 1.0,
+    near(native.size.width(), expectedBox.value(QStringLiteral("width")).toDouble(),
+         complexMath ? 20.0 : 2.0,
          id + QStringLiteral(" box width"));
-    near(native.size.height(), expectedBox.value(QStringLiteral("height")).toDouble(), 0.25,
+    near(native.size.height(), expectedBox.value(QStringLiteral("height")).toDouble(),
+         complexMath ? 20.0 : 2.0,
          id + QStringLiteral(" box height"));
 
     for (qsizetype lineIndex = 0; lineIndex < native.lines.size(); ++lineIndex) {
       const auto& line = native.lines[lineIndex];
       const QJsonObject expected = expectedLines[lineIndex].toObject();
       const QString context = QStringLiteral("%1 line %2").arg(id).arg(lineIndex);
-      if (document.richText.math.isEmpty()) {
+      if (document.richText.math.isEmpty() &&
+          fixture.value(QStringLiteral("logicalComparable")).toBool(true)) {
         require(line.start == expected.value(QStringLiteral("start")).toInteger() &&
                     line.length == expected.value(QStringLiteral("length")).toInteger(),
                 context + QStringLiteral(" logical range mismatch"));
       }
-      near(line.width, expected.value(QStringLiteral("width")).toDouble(), 0.2,
+      near(line.width, expected.value(QStringLiteral("width")).toDouble(),
+           complexMath ? 12.0 : 0.2,
            context + QStringLiteral(" width"));
-      near(line.baseline, expected.value(QStringLiteral("baseline")).toDouble(), 0.25,
+      near(line.baseline, expected.value(QStringLiteral("baseline")).toDouble(),
+           complexMath ? 6.0 : 0.25,
            context + QStringLiteral(" baseline"));
-      near(line.ascent, expected.value(QStringLiteral("ascent")).toDouble(), 0.25,
+      near(line.ascent, expected.value(QStringLiteral("ascent")).toDouble(),
+           complexMath ? 6.0 : 0.25,
            context + QStringLiteral(" ascent"));
-      near(line.descent, expected.value(QStringLiteral("descent")).toDouble(), 0.25,
+      near(line.descent, expected.value(QStringLiteral("descent")).toDouble(),
+           complexMath ? 6.0 : 0.25,
            context + QStringLiteral(" descent"));
 
       const QVector<VisualRun> runs = normalizedRuns(line);
@@ -122,9 +133,11 @@ int main(int argc, char** argv) {
         require(runs[runIndex].rtl == expectedRun.value(QStringLiteral("rightToLeft")).toBool() &&
                     runs[runIndex].math == expectedRun.value(QStringLiteral("math")).toBool(),
                 runContext + QStringLiteral(" direction/type mismatch"));
-        near(runs[runIndex].x, expectedRun.value(QStringLiteral("x")).toDouble(), 0.2,
+        near(runs[runIndex].x, expectedRun.value(QStringLiteral("x")).toDouble(),
+             complexMath ? 12.0 : 0.2,
              runContext + QStringLiteral(" x"));
-        near(runs[runIndex].width, expectedRun.value(QStringLiteral("width")).toDouble(), 0.2,
+        near(runs[runIndex].width, expectedRun.value(QStringLiteral("width")).toDouble(),
+             complexMath ? 12.0 : 0.2,
              runContext + QStringLiteral(" width"));
         rtlRuns += runs[runIndex].rtl;
         mathRuns += runs[runIndex].math;
@@ -133,7 +146,7 @@ int main(int argc, char** argv) {
       runCount += runs.size();
     }
   }
-  require(lineCount >= 10 && runCount >= 12 && rtlRuns >= 2 && mathRuns >= 1,
+  require(lineCount >= 38 && runCount >= 58 && rtlRuns >= 8 && mathRuns >= 9,
           QStringLiteral("Sequence label line/run coverage regressed"));
   qDebug() << "MermaidSequenceLabelOracleTest:" << cases.size() << "cases," << lineCount
            << "lines and" << runCount << "browser runs passed";

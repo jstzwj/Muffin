@@ -41,6 +41,7 @@ muffin_add_test(NAME MuffinMermaidSequenceDifferentialFuzzTest SOURCE tests/merm
 muffin_add_test(NAME MuffinMermaidSequenceLayoutOracleTest SOURCE tests/mermaid/MermaidSequenceLayoutOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/sequence-layout.json)
 muffin_add_test(NAME MuffinMermaidSequenceLabelOracleTest SOURCE tests/mermaid/MermaidSequenceLabelOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/sequence-label.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidSequencePixelTest SOURCE tests/mermaid/MermaidSequencePixelTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/sequence-pixel/manifest.json RESOURCE_LOCK)
+muffin_add_test(NAME MuffinMermaidSequenceSvgStructuralTest SOURCE tests/mermaid/MermaidSequenceSvgStructuralTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/sequence-pixel/manifest.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidDagreCompoundTest SOURCE tests/mermaid/MermaidDagreCompoundTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinParserBasicTest      SOURCE tests/parser/ParserBasicTest.cpp      LINK MuffinCore)
 muffin_add_test(NAME MuffinParserDefinitionTest SOURCE tests/parser/ParserDefinitionTest.cpp LINK MuffinCore)

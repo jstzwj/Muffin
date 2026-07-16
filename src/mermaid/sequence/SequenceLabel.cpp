@@ -8,6 +8,7 @@
 #include <QRegularExpression>
 
 #include <algorithm>
+#include <utility>
 
 namespace muffin::mermaid::sequence {
 
@@ -15,20 +16,22 @@ SequenceLabelDocument parseSequenceLabel(const QString& source, SequenceLabelKin
   static const QRegularExpression breaks(QStringLiteral("<br\\s*/?>"),
                                           QRegularExpression::CaseInsensitiveOption);
   QString text = source;
+  const bool mathEnabled = (kind == SequenceLabelKind::Message || kind == SequenceLabelKind::Note) &&
+                           text.contains(QStringLiteral("$$"));
   text.replace(breaks, QStringLiteral("\n"));
   if (kind == SequenceLabelKind::Fragment)
     text = QLatin1Char('[') + text + QLatin1Char(']');
-  const bool mathEnabled = (kind == SequenceLabelKind::Message || kind == SequenceLabelKind::Note) &&
-                           text.contains(QStringLiteral("$$"));
   if (mathEnabled) {
     auto richText = flowchart::parseFlowLabel(text, QStringLiteral("string"), true);
     // Sequence emits the surrounding text as an unscaled foreignObject range;
     // Markdown markers remain literal even when the Math span is MathML.
     richText.literalMarkdownMathFallback = true;
+    richText.direction = Qt::LeftToRight;
     return {std::move(richText), false, kind};
   }
   flowchart::FlowLabelDocument plain;
   plain.text = std::move(text);
+  plain.direction = Qt::LeftToRight;
   return {std::move(plain), false, kind};
 }
 
@@ -44,18 +47,42 @@ SequenceLabelDocument wrapSequenceLabel(SequenceLabelDocument label,
   font.setPixelSize(qRound(fontPixelSize));
   font.setHintingPreference(QFont::PreferNoHinting);
   const QFontMetricsF metrics(font);
-  qsizetype lineStart = 0;
-  qsizetype separator = label.richText.text.indexOf(QLatin1Char(' '));
-  while (separator >= 0) {
-    const qsizetype nextSeparator = label.richText.text.indexOf(QLatin1Char(' '), separator + 1);
-    const qsizetype candidateEnd = nextSeparator >= 0 ? nextSeparator : label.richText.text.size();
-    if (metrics.horizontalAdvance(label.richText.text.mid(lineStart, candidateEnd - lineStart)) >
-            maximumWidth && separator > lineStart) {
-      label.richText.text[separator] = QLatin1Char('\n');
-      lineStart = separator + 1;
+  const auto width = [&](const QString& text) {
+    return std::round(metrics.horizontalAdvance(text));
+  };
+  QStringList completed;
+  QString nextLine;
+  const QStringList words = label.richText.text.split(QLatin1Char(' '), Qt::SkipEmptyParts);
+  for (qsizetype wordIndex = 0; wordIndex < words.size(); ++wordIndex) {
+    const QString& word = words[wordIndex];
+    if (width(word + QLatin1Char(' ')) > maximumWidth) {
+      if (!nextLine.isEmpty()) completed.append(std::exchange(nextLine, {}));
+      QString current;
+      for (qsizetype characterIndex = 0; characterIndex < word.size(); ++characterIndex) {
+        current += word[characterIndex];
+        if (width(current) < maximumWidth) continue;
+        if (characterIndex + 1 < word.size()) current += QLatin1Char('-');
+        completed.append(std::exchange(current, {}));
+      }
+      nextLine = std::move(current);
+    } else {
+      // SVG getBBox accumulates spaced words slightly more tightly than Qt's
+      // per-string advances; character splitting below intentionally stays raw.
+      constexpr qreal kSvgWordMeasureScale = 0.9;
+      const qreal candidateWidth =
+          (width(nextLine) + width(word + QLatin1Char(' '))) * kSvgWordMeasureScale;
+      if (!nextLine.isEmpty() && candidateWidth >= maximumWidth) {
+        completed.append(std::exchange(nextLine, {}));
+        nextLine = word;
+      } else {
+        if (!nextLine.isEmpty()) nextLine += QLatin1Char(' ');
+        nextLine += word;
+      }
     }
-    separator = nextSeparator;
+    if (wordIndex + 1 == words.size() && !nextLine.isEmpty())
+      completed.append(nextLine);
   }
+  label.richText.text = completed.join(QLatin1Char('\n'));
   return label;
 }
 
@@ -73,26 +100,27 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
     } else if (label.kind == SequenceLabelKind::Message) {
       line.baseline = line.ascent = line.height * (12.719 / 22.0);
       line.descent = line.height - line.baseline;
+    } else if (label.kind == SequenceLabelKind::Note && label.richText.math.isEmpty()) {
+      line.baseline = line.ascent = line.height * (12.719 / 22.0);
+      line.descent = line.height - line.baseline;
     } else if (label.kind == SequenceLabelKind::Note ||
                label.kind == SequenceLabelKind::Fragment) {
-      line.baseline = line.ascent = 17.0;
-      line.descent = 5.0;
+      const qreal visualHeight = !label.richText.math.isEmpty() && result.lines.size() == 1
+          ? result.size.height() : 22.0;
+      line.baseline = line.ascent = 17.0 + (visualHeight - 22.0) / 2.0;
+      line.descent = visualHeight - line.baseline;
     }
     if (label.richText.literalMarkdownMathFallback && !line.runs.isEmpty()) {
       constexpr qreal kSequenceMathTextScale = 86.281 / 90.359375;
-      constexpr qreal kSequenceMathSpanScale = 15.469 / 15.9482421875;
-      constexpr qreal kSequenceMathTrailingGap = 0.656;
+      constexpr qreal kSequenceMathSpanScale = 16.125 / 15.9482421875;
       qreal cursor = 0.0;
-      bool previousMath = false;
       for (auto& run : line.runs) {
-        if (previousMath && !run.math) cursor += kSequenceMathTrailingGap;
         run.x = cursor;
         if (run.math)
           run.width *= kSequenceMathSpanScale;
         else if (run.length > 1)
           run.width *= kSequenceMathTextScale;
         cursor += run.width;
-        previousMath = run.math;
       }
       line.width = cursor;
     }
@@ -100,17 +128,61 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
         std::all_of(line.runs.cbegin(), line.runs.cend(), [](const auto& run) {
           return run.rightToLeft;
         });
+    const bool hasRtl = std::any_of(line.runs.cbegin(), line.runs.cend(),
+                                    [](const auto& run) { return run.rightToLeft; });
+    const bool hasLtr = std::any_of(line.runs.cbegin(), line.runs.cend(),
+                                    [](const auto& run) { return !run.rightToLeft; });
     const QString lineText = label.richText.text.mid(line.start, line.length);
     const bool containsHebrew = std::any_of(lineText.cbegin(), lineText.cend(), [](QChar ch) {
       return ch.unicode() >= 0x0590 && ch.unicode() <= 0x05ff;
     });
+    const bool containsArabic = std::any_of(lineText.cbegin(), lineText.cend(), [](QChar ch) {
+      return ch.unicode() >= 0x0600 && ch.unicode() <= 0x08ff;
+    });
+    const bool containsLatin = std::any_of(lineText.cbegin(), lineText.cend(), [](QChar ch) {
+      const ushort code = ch.unicode();
+      return (code >= 0x0041 && code <= 0x005a) || (code >= 0x0061 && code <= 0x007a);
+    });
     if (allRtl && containsHebrew) {
-      constexpr qreal kSequenceRtlAdvanceScale = 73.469 / 71.75;
-      line.width *= kSequenceRtlAdvanceScale;
+      constexpr qreal kSequenceMixedRtlAdvanceScale = 73.469 / 71.75;
+      constexpr qreal kSequenceHebrewAdvanceScale = 73.406 / 71.96875;
+      const qreal scale = containsArabic ? kSequenceMixedRtlAdvanceScale
+                                         : kSequenceHebrewAdvanceScale;
+      line.width *= scale;
       for (auto& run : line.runs) {
-        run.x *= kSequenceRtlAdvanceScale;
-        run.width *= kSequenceRtlAdvanceScale;
+        run.x *= scale;
+        run.width *= scale;
       }
+    } else if (allRtl && containsArabic && label.kind == SequenceLabelKind::Message) {
+      constexpr qreal kSequenceArabicMessageScale = 77.094 / 78.625;
+      line.width *= kSequenceArabicMessageScale;
+      for (auto& run : line.runs) {
+        run.x *= kSequenceArabicMessageScale;
+        run.width *= kSequenceArabicMessageScale;
+      }
+    } else if (hasRtl && hasLtr && label.kind == SequenceLabelKind::Message) {
+      constexpr qreal kSequenceMixedDirectionScale = 145.328 / 145.125;
+      line.width *= kSequenceMixedDirectionScale;
+      for (auto& run : line.runs) {
+        run.x *= kSequenceMixedDirectionScale;
+        run.width *= kSequenceMixedDirectionScale;
+      }
+    } else if (hasLtr && !hasRtl && containsLatin &&
+               !label.richText.literalMarkdownMathFallback) {
+      constexpr qreal kSequenceLatinSvgAdvanceScale = 183.375 / 183.1875;
+      line.width *= kSequenceLatinSvgAdvanceScale;
+      for (auto& run : line.runs) {
+        run.x *= kSequenceLatinSvgAdvanceScale;
+        run.width *= kSequenceLatinSvgAdvanceScale;
+      }
+    }
+    if (allRtl) {
+      auto visual = line.runs.first();
+      visual.start = line.start;
+      visual.length = line.length;
+      visual.x = 0.0;
+      visual.width = line.width;
+      line.runs = {std::move(visual)};
     }
     maximumWidth = std::max(maximumWidth, line.width);
   }

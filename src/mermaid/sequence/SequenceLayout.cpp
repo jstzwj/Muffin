@@ -353,9 +353,11 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     actorIndex.insert(data.actors[index].id, static_cast<int>(index));
     if (!options.hideUnusedParticipants || usedActors.contains(data.actors[index].id))
       visibleActors.append(static_cast<int>(index));
-    actorWidths[index] = std::max(options.width,
-                                  std::round(measurements.participants.value(data.actors[index].id).width()) +
-                                      2.0 * options.wrapPadding);
+    actorWidths[index] = measurements.participantDisplayById.contains(data.actors[index].id)
+        ? options.width
+        : std::max(options.width,
+                   std::round(measurements.participants.value(data.actors[index].id).width()) +
+                       2.0 * options.wrapPadding);
   }
 
   QMap<QString, qreal> maximumMessageWidth;
@@ -364,7 +366,7 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     if (!actorIndex.contains(message.from) || !actorIndex.contains(message.to)) continue;
     const SequenceActor& actor = data.actors[actorIndex.value(message.to)];
     const bool note = message.placement >= 0;
-    if (!note && (message.wrap || options.wrap)) continue;
+    if (message.wrap || options.wrap) continue;
     const QSizeF measured = note ? measuredNotes.value(static_cast<int>(messageIndex))
                                  : measuredMessages.value(static_cast<int>(messageIndex));
     const qreal width = measured.width() + 2.0 * options.wrapPadding;
@@ -407,6 +409,11 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     for (const QSizeF& size : measurements.boxes) titleHeight = std::max(titleHeight, size.height());
     topBaseY = options.boxMargin + titleHeight;
   }
+  qreal participantHeight = options.height;
+  for (auto it = measurements.participantDisplayById.cbegin();
+       it != measurements.participantDisplayById.cend(); ++it)
+    participantHeight = std::max(
+        participantHeight, measurements.participants.value(it.key()).height());
   for (int index : visibleActors) {
     const SequenceActor& actor = data.actors[index];
     if (actor.boxIndex != previousBox) {
@@ -427,17 +434,17 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     SequenceLayoutParticipant participant;
     participant.id = actor.id;
     participant.type = actor.type;
-    participant.label = actor.description;
-    participant.logicalRect = QRectF(x, topBaseY, actorWidths[index], options.height);
+    participant.label = measurements.participantDisplayById.value(actor.id, actor.description);
+    participant.logicalRect = QRectF(x, topBaseY, actorWidths[index], participantHeight);
     participant.margin = actorMargins[index];
     participant.anchorX = x + actorWidths[index] / 2.0;
     if (actor.type == QLatin1String("actor") || actor.type == QLatin1String("boundary"))
       participant.lifelineStartY = topBaseY + 80.0;
     else if (actor.type == QLatin1String("control") || actor.type == QLatin1String("entity") ||
              actor.type == QLatin1String("database"))
-      participant.lifelineStartY = topBaseY + options.height + 2.0 * options.boxTextMargin;
+      participant.lifelineStartY = topBaseY + participantHeight + 2.0 * options.boxTextMargin;
     else
-      participant.lifelineStartY = topBaseY + options.height;
+      participant.lifelineStartY = topBaseY + participantHeight;
     participant.topY = topBaseY;
     participant.drawBottom = options.mirrorActors;
     result.participants.append(participant);
@@ -447,7 +454,7 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
       boxWidth[actor.boxIndex] = previousWidth + options.boxTextMargin - boxStart[actor.boxIndex];
     previousMargin = actorMargins[index];
   }
-  bounds.vertical = topBaseY + options.height;
+  bounds.vertical = topBaseY + participantHeight;
 
   QVector<OpenActivation> active;
   qreal sequenceIndex = 1.0;
@@ -469,8 +476,11 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
 
   for (qsizetype messageIndex = 0; messageIndex < data.messages.size(); ++messageIndex) {
     const SequenceMessage& message = data.messages[messageIndex];
-    const QString text = measurements.messageDisplayByIndex.value(
-        static_cast<int>(messageIndex), messageText(message.message));
+    const QString text = message.placement >= 0
+        ? measurements.noteDisplayByIndex.value(
+              static_cast<int>(messageIndex), messageText(message.message))
+        : measurements.messageDisplayByIndex.value(
+              static_cast<int>(messageIndex), messageText(message.message));
     if (message.type == kAutonumber) {
       const QJsonObject config = message.message.toObject();
       const qreal start = config.value(QStringLiteral("start")).toDouble();

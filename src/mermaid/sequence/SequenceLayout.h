@@ -11,6 +11,7 @@ namespace muffin::mermaid::sequence {
 
 struct SequenceLayoutMeasurements {
   QMap<QString, QSizeF> participants;
+  QMap<QString, QString> participantDisplayById;
   QVector<QSizeF> boxes;
   QVector<QSizeF> messages;
   QVector<QSizeF> notes;
@@ -18,6 +19,7 @@ struct SequenceLayoutMeasurements {
   QMap<int, QSizeF> messagesByIndex;
   QMap<int, QString> messageDisplayByIndex;
   QMap<int, QSizeF> notesByIndex;
+  QMap<int, QString> noteDisplayByIndex;
   QMap<int, QSizeF> fragmentsByIndex;
 };
 
