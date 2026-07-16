@@ -70,7 +70,8 @@ public:
   std::optional<MathGlyphMetrics> glyph(const QString& character) const;
   std::optional<MathGlyphMetrics> mathItalicGlyph(QChar character) const;
   std::optional<MathGlyphVariant> verticalVariant(const QString& character,
-                                                  qreal minimumExtent) const;
+                                                  qreal minimumExtent,
+                                                  bool allowAssembly = false) const;
   qreal textAdvance(const QString& text) const;
   QRectF textInkBounds(const QString& text) const;
 
@@ -87,6 +88,8 @@ private:
   QHash<quint32, bool> extendedShapes_;
   struct RawVariant { quint16 glyphIndex = 0; quint16 extent = 0; };
   QHash<quint32, QVector<RawVariant>> verticalVariants_;
+  QHash<quint32, QVector<quint16>> verticalAssemblyParts_;
+  QHash<quint32, qint16> verticalAssemblyCorrections_;
 };
 
 }  // namespace muffin::math

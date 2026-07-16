@@ -8,6 +8,10 @@
 
 #include <algorithm>
 
+static void initKatexFontsResource() {
+  Q_INIT_RESOURCE(katex_fonts);
+}
+
 namespace muffin::math {
 namespace {
 
@@ -69,6 +73,7 @@ const OpenTypeMathFont& OpenTypeMathFont::instance() {
 }
 
 OpenTypeMathFont::OpenTypeMathFont() {
+  initKatexFontsResource();
   QFile file(QStringLiteral(":/katex/fonts/STIXTwoMath-Regular.otf"));
   if (!file.open(QIODevice::ReadOnly)) return;
   // Loading at one pixel per design unit avoids platform hinting from rounding
@@ -148,6 +153,7 @@ void OpenTypeMathFont::parseMathTable(const QByteArray& table) {
         const quint16 constructionOffset = u16(table, variants + 10 + i * 2);
         const qsizetype construction = variants + constructionOffset;
         if (!constructionOffset || construction + 4 > table.size()) continue;
+        const quint16 assemblyOffset = u16(table, construction);
         const quint16 variantCount = u16(table, construction + 2);
         if (construction + 4 + qsizetype(variantCount) * 4 > table.size()) continue;
         QVector<RawVariant> records;
@@ -157,6 +163,18 @@ void OpenTypeMathFont::parseMathTable(const QByteArray& table) {
           records.push_back({u16(table, offset), u16(table, offset + 2)});
         }
         verticalVariants_.insert(bases[i], records);
+        const qsizetype assembly = construction + assemblyOffset;
+        if (assemblyOffset && assembly + 6 <= table.size()) {
+          const quint16 partCount = u16(table, assembly + 4);
+          if (assembly + 6 + qsizetype(partCount) * 10 <= table.size()) {
+            QVector<quint16> parts;
+            parts.reserve(partCount);
+            for (quint16 part = 0; part < partCount; ++part)
+              parts.push_back(u16(table, assembly + 6 + part * 10));
+            verticalAssemblyParts_.insert(bases[i], parts);
+            verticalAssemblyCorrections_.insert(bases[i], s16(table, assembly));
+          }
+        }
       }
     }
   }
@@ -198,18 +216,41 @@ std::optional<MathGlyphMetrics> OpenTypeMathFont::mathItalicGlyph(QChar characte
 }
 
 std::optional<MathGlyphVariant> OpenTypeMathFont::verticalVariant(
-    const QString& character, qreal minimumExtent) const {
+    const QString& character, qreal minimumExtent, bool allowAssembly) const {
   const auto base = glyph(character);
   if (!base) return std::nullopt;
   const QVector<RawVariant> records = verticalVariants_.value(base->glyphIndex);
   if (records.isEmpty()) return std::nullopt;
-  const RawVariant* selected = &records.back();
+  const RawVariant* selected = nullptr;
   for (const RawVariant& record : records) {
     if (designUnitsToPixels(record.extent) >= minimumExtent) {
       selected = &record;
       break;
     }
   }
+  if (selected == nullptr && allowAssembly) {
+    const QVector<quint16> parts = verticalAssemblyParts_.value(base->glyphIndex);
+    if (!parts.isEmpty()) {
+      QList<quint32> indexes;
+      indexes.reserve(parts.size());
+      for (quint16 part : parts) indexes.push_back(part);
+      const QList<QPointF> advances = font_.advancesForGlyphIndexes(indexes);
+      qreal advance = base->advance * kOutlineLoadPixelSize / kCssMathPixelSize;
+      for (qsizetype i = 0; i < indexes.size(); ++i) {
+        if (i < advances.size())
+          advance = std::max(advance, advances[i].x() +
+                                      italicCorrections_.value(indexes[i]));
+        advance = std::max(advance, font_.boundingRect(indexes[i]).width());
+      }
+      const qreal outlineScale = kCssMathPixelSize / kOutlineLoadPixelSize;
+      return MathGlyphVariant{
+          parts.front(),
+          advance * outlineScale + designUnitsToPixels(
+              verticalAssemblyCorrections_.value(base->glyphIndex)),
+          minimumExtent};
+    }
+  }
+  if (selected == nullptr) selected = &records.back();
   const QList<quint32> indexes{selected->glyphIndex};
   const QList<QPointF> advances = font_.advancesForGlyphIndexes(indexes);
   const qreal outlineScale = kCssMathPixelSize / kOutlineLoadPixelSize;
