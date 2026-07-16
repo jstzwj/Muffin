@@ -749,6 +749,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSymbol(const QString& text, Mat
     fontClass = QStringLiteral("main");
   }
   node->fontClass = fontClass;
+  node->mathStyleSize = options.style().size();
   node->font = options.fontForClass(fontClass);
   node->color = options.color();
   node->phantom = options.phantom();
@@ -837,10 +838,12 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSupSub(const MathParseNode& nod
   const MathScriptKind scriptKind = !node.sup.isEmpty() && !node.sub.isEmpty()
       ? MathScriptKind::SubSup
       : !node.sup.isEmpty() ? MathScriptKind::Superscript : MathScriptKind::Subscript;
-  const auto markSupSub = [scriptKind](std::unique_ptr<MathRenderNode> result) {
+  const int mathStyleSize = options_.style().size();
+  const auto markSupSub = [scriptKind, mathStyleSize](std::unique_ptr<MathRenderNode> result) {
     if (result) {
       result->semanticKind = MathSemanticKind::SupSub;
       result->scriptKind = scriptKind;
+      result->mathStyleSize = mathStyleSize;
     }
     return result;
   };
@@ -940,7 +943,6 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSupSub(const MathParseNode& nod
     return markSupSub(std::move(limitsNode));
   }
 
-  const qreal baseWidth = base->width;
   const qreal baseHeight = base->height;
   const qreal baseDepth = base->depth;
   const qreal baseItalic = italicCorrection(*base, options_);
@@ -1104,6 +1106,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeFraction(const MathParseNode& n
 
   auto result = makeGenfrac(node, std::move(frac));
   result->semanticKind = MathSemanticKind::Fraction;
+  result->mathStyleSize = options_.style().size();
   return result;
 }
 
@@ -1249,6 +1252,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSqrt(const MathParseNode& node)
 
   auto sqrtBody = renderNodeFromLayout(*sqrtBodyLayout);
   sqrtBody->semanticKind = MathSemanticKind::Radical;
+  sqrtBody->mathStyleSize = options_.style().size();
   if (!node.rootIndex.isEmpty()) {
     auto index = MathBuilder(options_.havingStyle(MathStyle::scriptScript())).buildExpression(node.rootIndex);
     const qreal toShift = 0.6 * (sqrtBody->height - sqrtBody->depth);
@@ -1268,6 +1272,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSqrt(const MathParseNode& node)
     auto indexed = makeSpan(std::move(indexedChildren));
     indexed->semanticKind = MathSemanticKind::Radical;
     indexed->radicalIndex = true;
+    indexed->mathStyleSize = options_.style().size();
     return indexed;
   }
   return sqrtBody;

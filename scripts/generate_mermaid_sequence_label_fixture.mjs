@@ -20,6 +20,8 @@ const fontFaces = fonts.map(([family, file]) =>
   `@font-face{font-family:"${family}";src:url("${pathToFileURL(path.join(notoDir, file)).href}")}`
 ).join("\n");
 const fontStack = '"Noto Sans", "Noto Sans CJK SC", "Noto Sans Arabic", "Noto Sans Hebrew", sans-serif';
+const mathFontPath = path.resolve("third_party", "stix", "fonts", "STIXTwoMath-Regular.otf");
+const mathFontFace = `@font-face{font-family:"STIX Two Math";src:url("${pathToFileURL(mathFontPath).href}")}`;
 
 const cases = [
   {
@@ -227,15 +229,16 @@ try {
   const snapshots = [];
   for (let index = 0; index < cases.length; ++index) {
     await page.goto(harness);
-    const snapshot = await page.evaluate(async ({ fixture, index, mermaidModule, fontFaces, fontStack }) => {
+    const snapshot = await page.evaluate(async ({ fixture, index, mermaidModule, fontFaces, fontStack, mathFontFace }) => {
       const style = document.createElement("style");
-      style.textContent = fontFaces;
+      style.textContent = `${fontFaces}\n${mathFontFace}\nmath{font-family:"STIX Two Math" !important}`;
       document.head.appendChild(style);
       await Promise.all([
         document.fonts.load('16px "Noto Sans"', "Fixed Noto"),
         document.fonts.load('16px "Noto Sans CJK SC"', "\u4e2d\u6587"),
         document.fonts.load('16px "Noto Sans Arabic"', "\u0645\u0631\u062d\u0628\u0627"),
         document.fonts.load('16px "Noto Sans Hebrew"', "\u05e9\u05dc\u05d5\u05dd"),
+        document.fonts.load('16px "STIX Two Math"', "x+\u2211\u221a"),
       ]);
       await document.fonts.ready;
       const { default: mermaid } = await import(mermaidModule);
@@ -462,10 +465,11 @@ try {
         box: measuredBox,
         lines,
       };
-    }, { fixture: cases[index], index, mermaidModule, fontFaces, fontStack });
+    }, { fixture: cases[index], index, mermaidModule, fontFaces, fontStack, mathFontFace });
     snapshots.push(snapshot);
   }
-  const payload = { mermaidVersion: packageJson.version, fontMode: "bundled-noto", cases: snapshots };
+  const payload = { mermaidVersion: packageJson.version,
+    fontMode: "bundled-noto-stix-two-math-2.13b171", cases: snapshots };
   payload.fixtureSha256 = createHash("sha256").update(JSON.stringify(payload)).digest("hex");
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, `${JSON.stringify(payload, null, 2)}\n`);

@@ -400,6 +400,7 @@ std::unique_ptr<MathRenderNode> cloneNode(const MathRenderNode& node) {
   copy->allowBreak = node.allowBreak;
   copy->tightSpacing = node.tightSpacing;
   copy->phantom = node.phantom;
+  copy->mathStyleSize = node.mathStyleSize;
   copy->columns = node.columns;
   copy->rows = node.rows;
   copy->arrayColumnWidths = node.arrayColumnWidths;

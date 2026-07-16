@@ -1,6 +1,7 @@
 #include "mermaid/sequence/SequenceLabel.h"
 
 #include "mermaid/MermaidFontRegistry.h"
+#include "math/OpenTypeMathFont.h"
 
 #include <QFont>
 #include <QFontMetricsF>
@@ -114,9 +115,20 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
         const qreal mathTop = (containerHeight - primaryMath->mathBoxHeight) / 2.0;
         const qreal textTop = (containerHeight - lineHeight) / 2.0;
         const qreal containerBaseline = containerHeight / 2.0 + 6.0;
-        const qreal inkTop = std::min(textTop, mathTop + primaryMath->mathInkTop);
+        const bool mixedFallback = std::any_of(
+            label.richText.text.cbegin(), label.richText.text.cend(), [](QChar character) {
+              const ushort code = character.unicode();
+              return (code >= 0x2e80 && code <= 0x9fff) ||
+                     (code >= 0x0600 && code <= 0x08ff);
+            });
+        const qreal fractionClip = mixedFallback &&
+            primaryMath->mathStructure == flowchart::FlowLabelMathStructure::Fraction
+            ? muffin::math::OpenTypeMathFont::instance().constants().fractionRuleThickness / 4.0
+            : 0.0;
+        const qreal inkTop = std::min(
+            textTop, mathTop + primaryMath->mathInkTop + fractionClip);
         const qreal inkBottom = std::max(textTop + lineHeight,
-            mathTop + primaryMath->mathInkBottom);
+            mathTop + primaryMath->mathInkBottom - fractionClip);
         line.baseline = line.ascent = containerBaseline - inkTop;
         line.descent = inkBottom - containerBaseline;
       } else {
@@ -206,6 +218,8 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
   result.size.setWidth(label.richText.literalMarkdownMathFallback && !literalMarkdownMarkers
                            ? containerWidth
                            : literalMarkdownMarkers ? std::round(maximumWidth) : maximumWidth);
+  if (!label.richText.math.isEmpty())
+    result.size.setHeight(std::round(result.size.height()));
   return result;
 }
 

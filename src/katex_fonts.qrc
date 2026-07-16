@@ -1,6 +1,7 @@
 <RCC>
   <!-- KaTeX source data is embedded for native metrics, symbols, and SVG geometry. -->
   <qresource prefix="/katex/fonts">
+    <file alias="STIXTwoMath-Regular.otf">../third_party/stix/fonts/STIXTwoMath-Regular.otf</file>
     <file alias="KaTeX_Main-Regular.ttf">../third_party/katex/fonts/KaTeX_Main-Regular.ttf</file>
     <file alias="KaTeX_Main-Bold.ttf">../third_party/katex/fonts/KaTeX_Main-Bold.ttf</file>
     <file alias="KaTeX_Main-Italic.ttf">../third_party/katex/fonts/KaTeX_Main-Italic.ttf</file>

@@ -126,8 +126,11 @@ int main(int argc,char** argv) {
   QFile file(QString::fromLocal8Bit(argv[1])); require(file.open(QIODevice::ReadOnly),QStringLiteral("Cannot open sequence pixel manifest"));
   const QJsonObject root=QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("mermaidVersion")).toString()==QLatin1String("11.16.0"),QStringLiteral("Sequence pixel version drifted"));
+  require(root.value(QStringLiteral("fontMode")).toString()==
+              QLatin1String("bundled-noto-stix-two-math-2.13b171"),
+          QStringLiteral("Sequence pixel font oracle drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("992fe7c87f5c6902a498f3ddd7c00c6da2dbdeac996a1b0e583b83f4fb8072dc"),
+              QLatin1String("4d978067d79df6a5a3afff2029fe444722b7bbbdabd79df71dee83742cebe05c"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;

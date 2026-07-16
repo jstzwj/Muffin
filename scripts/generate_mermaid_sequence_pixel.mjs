@@ -13,6 +13,8 @@ const fonts = [["Noto Sans","NotoSans-Regular.ttf"],["Noto Sans CJK SC","NotoSan
   ["Noto Sans Arabic","NotoSansArabic-Regular.ttf"],["Noto Sans Hebrew","NotoSansHebrew-Regular.ttf"]];
 const faces = fonts.map(([family,file]) => `@font-face{font-family:"${family}";src:url("${pathToFileURL(path.join(notoDir,file)).href}")}`).join("\n");
 const stack = '"Noto Sans", "Noto Sans CJK SC", "Noto Sans Arabic", "Noto Sans Hebrew", sans-serif';
+const mathFontPath = path.resolve("third_party", "stix", "fonts", "STIXTwoMath-Regular.otf");
+const mathFace = `@font-face{font-family:"STIX Two Math";src:url("${pathToFileURL(mathFontPath).href}")}`;
 const cases = [
   { id: "basic", source: "sequenceDiagram\nparticipant A as Alice\nactor B as Bob\nA->>B:Hello\nB-->>A:Return" },
   { id: "activation-note", source: "sequenceDiagram\nA->>+B:Call\nNote over A,B:Working 中文\nB-->>-A:Done" },
@@ -79,9 +81,9 @@ try {
   for (let i=0;i<cases.length;++i) {
     await page.setViewport({width:2200,height:1600,deviceScaleFactor:cases[i].dpr ?? 1});
     await page.goto(harness);
-    const dimensions = await page.evaluate(async ({fixture,i,module,faces,stack}) => {
-      const style=document.createElement("style"); style.textContent=faces; document.head.appendChild(style);
-      await document.fonts.load('16px "Noto Sans"'); await document.fonts.ready;
+    const dimensions = await page.evaluate(async ({fixture,i,module,faces,stack,mathFace}) => {
+      const style=document.createElement("style"); style.textContent=`${faces}\n${mathFace}\nmath{font-family:"STIX Two Math" !important}`; document.head.appendChild(style);
+      await Promise.all([document.fonts.load('16px "Noto Sans"'), document.fonts.load('16px "STIX Two Math"', 'x+\u2211\u221a')]); await document.fonts.ready;
       const {default:mermaid}=await import(module);
       mermaid.initialize({startOnLoad:false,securityLevel:"strict",theme:fixture.theme ?? "default",fontFamily:stack,sequence:{useMaxWidth:false}});
       const {svg}=await mermaid.render(`sequence-pixel-${i}`,fixture.source);
@@ -132,7 +134,7 @@ try {
           .map((node)=>`${node.tagName}:${node.getAttribute("class") ?? ""}`),
       };
       return {width:Math.ceil(b.width),height:Math.ceil(b.height),structure};
-    }, {fixture:cases[i],i,module,faces,stack});
+    }, {fixture:cases[i],i,module,faces,stack,mathFace});
     const file=`${cases[i].id}.png`;
     const svg = await page.$("svg");
     await svg.screenshot({path:path.join(outDir,file),omitBackground:true});
@@ -166,7 +168,7 @@ try {
       ? createHash("sha256").update(fs.readFileSync(path.join(outDir,cropFile))).digest("hex") : undefined;
     manifestCases.push({...cases[i],file,sha256,cropFile,cropSha256,...dimensions});
   }
-  const payload={mermaidVersion:pkg.version,fontMode:"bundled-noto",cases:manifestCases};
+  const payload={mermaidVersion:pkg.version,fontMode:"bundled-noto-stix-two-math-2.13b171",cases:manifestCases};
   payload.fixtureSha256=createHash("sha256").update(JSON.stringify(payload)).digest("hex");
   fs.writeFileSync(path.join(outDir,"manifest.json"),`${JSON.stringify(payload,null,2)}\n`);
   console.log(`Wrote ${cases.length} sequence pixel goldens to ${outDir}`);

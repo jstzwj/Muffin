@@ -445,6 +445,7 @@ set(MUFFIN_CORE_SOURCES
   src/math/MathParserEnvironment.cpp
   src/math/MathRenderer.cpp
   src/math/MathCssBox.cpp
+  src/math/OpenTypeMathFont.cpp
   src/math/MathRenderNode.cpp
   src/math/MathSettings.cpp
   src/math/MathStyle.cpp
@@ -850,6 +851,7 @@ set(MUFFIN_UI_SOURCES
   src/math/MathDelimiter.h
   src/math/MathFontMetrics.h
   src/math/MathFontRegistry.h
+  src/math/OpenTypeMathFont.h
   src/math/MathDimension.h
   src/math/MathFunctionRegistry.h
   src/math/MathLexer.h

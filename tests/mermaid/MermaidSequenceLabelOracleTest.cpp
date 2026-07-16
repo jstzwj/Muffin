@@ -62,10 +62,11 @@ int main(int argc, char** argv) {
   require(file.open(QIODevice::ReadOnly), QStringLiteral("Cannot open sequence label fixture"));
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("mermaidVersion")).toString() == QLatin1String("11.16.0") &&
-              root.value(QStringLiteral("fontMode")).toString() == QLatin1String("bundled-noto"),
+              root.value(QStringLiteral("fontMode")).toString() ==
+                  QLatin1String("bundled-noto-stix-two-math-2.13b171"),
           QStringLiteral("Sequence label oracle version/font drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("e06af7f9c9b23b1c23a75ff8f79c6392d3c6bc03db41bebaa23a6cf911cb9885"),
+              QLatin1String("8e32a6ad57c96131bbf3ce048c80d4ec71d4c43e8fe37d5ef290a061454c1b34"),
           QStringLiteral("Sequence label fixture changed; audit browser geometry and update digest"));
 
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();

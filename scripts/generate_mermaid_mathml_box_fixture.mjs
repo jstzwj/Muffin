@@ -23,6 +23,9 @@ const fontFaces = fonts.map(([family, file]) =>
   `@font-face{font-family:"${family}";src:url("${pathToFileURL(path.join(notoDir, file)).href}")}`
 ).join("\n");
 const fontStack = '"Noto Sans", "Noto Sans CJK SC", "Noto Sans Arabic", "Noto Sans Hebrew", sans-serif';
+const mathFontPath = path.resolve("third_party", "stix", "fonts", "STIXTwoMath-Regular.otf");
+if (!fs.existsSync(mathFontPath)) throw new Error(`Missing bundled Math font: ${mathFontPath}`);
+const mathFontFace = `@font-face{font-family:"STIX Two Math";src:url("${pathToFileURL(mathFontPath).href}")}`;
 
 const formulas = [
   ["symbol", "x"],
@@ -53,6 +56,18 @@ const formulas = [
   ["matrix-3x3", "\\begin{matrix}a&b&c\\\\d&e&f\\\\g&h&i\\end{matrix}"],
   ["fraction-sup", "\\frac{x_i^2}{y_j^3}"],
   ["sqrt-fraction", "\\sqrt{\\frac{a}{b}}"],
+  ["greek-row", "\\alpha+\\beta=\\gamma"],
+  ["relations", "x\\le y\\ne z"],
+  ["large-operators", "\\sum+\\prod+\\int"],
+  ["sum-limits", "\\sum_{i=1}^{n}i"],
+  ["integral-limits", "\\int_0^1x^2\\,dx"],
+  ["accent-hat", "\\hat{x}"],
+  ["accent-vector", "\\vec{x+y}"],
+  ["delimiter-row", "\\left(x+y\\right)"],
+  ["nested-script", "x^{y_i^2}"],
+  ["fraction-greek", "\\frac{\\alpha+\\beta}{\\gamma}"],
+  ["sqrt-matrix", "\\sqrt{\\begin{matrix}a&b\\\\c&d\\end{matrix}}"],
+  ["matrix-fractions", "\\begin{matrix}\\frac{a}{b}&x^2\\\\\\sqrt{y}&z_i\\end{matrix}"],
 ];
 const cases = [];
 for (const [id, tex] of formulas) cases.push({id, tex, fontSize: 16, dpr: 1});
@@ -85,10 +100,11 @@ try {
     const fixture = cases[index];
     await page.setViewport({width: 1200, height: 800, deviceScaleFactor: fixture.dpr});
     await page.goto(harness);
-    const snapshot = await page.evaluate(async ({fixture, index, mermaidModule, fontFaces, fontStack}) => {
+    const snapshot = await page.evaluate(async ({fixture, index, mermaidModule, fontFaces, fontStack, mathFontFace}) => {
       const style = document.createElement("style");
-      style.textContent = fontFaces;
+      style.textContent = `${fontFaces}\n${mathFontFace}\nmath{font-family:"STIX Two Math" !important}`;
       document.head.appendChild(style);
+      await document.fonts.load('16px "STIX Two Math"', "x+∑√");
       await document.fonts.ready;
       const {default: mermaid} = await import(mermaidModule);
       mermaid.initialize({
@@ -190,7 +206,7 @@ try {
         textBaseline,
         tree: serialize(math),
       };
-    }, {fixture, index, mermaidModule, fontFaces, fontStack});
+    }, {fixture, index, mermaidModule, fontFaces, fontStack, mathFontFace});
     snapshots.push(snapshot);
   }
 } finally {
@@ -198,7 +214,7 @@ try {
 }
 
 const payload = {mermaidVersion: packageJson.version, katexVersion: "0.16.45",
-  fontMode: "bundled-noto", cases: snapshots};
+  fontMode: "bundled-noto-stix-two-math-2.13b171", cases: snapshots};
 payload.fixtureSha256 = createHash("sha256").update(JSON.stringify(payload)).digest("hex");
 fs.mkdirSync(path.dirname(output), {recursive: true});
 fs.writeFileSync(output, `${JSON.stringify(payload, null, 2)}\n`);

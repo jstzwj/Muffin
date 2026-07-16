@@ -1,6 +1,6 @@
 {
   "mermaidVersion": "11.16.0",
-  "fontMode": "bundled-noto",
+  "fontMode": "bundled-noto-stix-two-math-2.13b171",
   "cases": [
     {
       "id": "basic",
@@ -2440,9 +2440,9 @@
       "cropKind": "note",
       "source": "sequenceDiagram\nA->>B:start\nNote over A,B:`**Speed** $$x^2$$`\nB-->>A:done",
       "file": "label-note-markdown-math.png",
-      "sha256": "6e3d3d16dea2a5f1abe219da234b0c7e60ac7f6d188bccf0f9bb969faef67724",
+      "sha256": "cb7d971f6a1343c45b106f75eee5e7009016e975bacec9c612d5feb78c702c4c",
       "cropFile": "label-note-markdown-math-label.png",
-      "cropSha256": "0c475ac835a555cff6147512b18243b0dde6a025e231e0cdefe37d25f2eee45e",
+      "cropSha256": "4ba45fd451e25d1054ab93ed2f639f2c11859497dc171e7c3df3ad2401009201",
       "width": 350,
       "height": 310,
       "structure": {
@@ -2590,7 +2590,7 @@
         "labelParentTag": "g",
         "labelAttributes": {
           "height": "22",
-          "width": "107",
+          "width": "106",
           "x": "122",
           "y": "139"
         },
@@ -3467,13 +3467,13 @@
       "cropKind": "note",
       "source": "sequenceDiagram\nA->>B:start\nNote over A,B:中文 $$\\frac{x}{2}$$ مرحبا",
       "file": "label-dpr-150-math-rtl.png",
-      "sha256": "62ade7058f4c5490f17185f14646510836a34cc113aabcf59c54596df42cf175",
+      "sha256": "df51ae029d61d44dacc5499190e93b4534d90d51c73f9d93fde21978323a308e",
       "cropFile": "label-dpr-150-math-rtl-label.png",
-      "cropSha256": "97b7c53a2f071b3379fea5e12a11ba8213487c3daf3f140faa884e7e74480faa",
+      "cropSha256": "69dc18c89f8050c38788c0732c655efe9f801bcbabf4d60b7618cf9b33fde9ca",
       "width": 350,
-      "height": 264,
+      "height": 262,
       "structure": {
-        "viewBox": "0 0 350 264",
+        "viewBox": "0 0 350 262",
         "role": "graphics-document document",
         "ariaRoleDescription": "sequence",
         "ariaLabelledBy": "",
@@ -3615,7 +3615,7 @@
         "labelClass": "",
         "labelParentTag": "g",
         "labelAttributes": {
-          "height": "30",
+          "height": "28",
           "width": "73",
           "x": "138",
           "y": "139"
@@ -4231,13 +4231,13 @@
       "cropKind": "note",
       "source": "%%{init: {\"theme\": \"dark\"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\sqrt{x_i^2}$$",
       "file": "label-dpr-150-dark-math.png",
-      "sha256": "85a53abcc29c9f2bce891604dbd3ac6d26ac3b09e3ec1eb6f93768067c31b757",
+      "sha256": "3d223a07b06deeabdaa6088763e8f2abd85464912deae05406dedeaf26e9bcfd",
       "cropFile": "label-dpr-150-dark-math-label.png",
-      "cropSha256": "53c835a28c0e7935788e43a53f235e79a9a0996256df31e0bd7a80a3f991f5ce",
+      "cropSha256": "70fe2f72aa0d3240c3a9a015d9f7ba9bc83f0b5f266e87eaf9be083f3924908e",
       "width": 350,
-      "height": 271,
+      "height": 264,
       "structure": {
-        "viewBox": "0 0 350 271",
+        "viewBox": "0 0 350 264",
         "role": "graphics-document document",
         "ariaRoleDescription": "sequence",
         "ariaLabelledBy": "",
@@ -4379,9 +4379,9 @@
         "labelClass": "",
         "labelParentTag": "g",
         "labelAttributes": {
-          "height": "37",
-          "width": "28",
-          "x": "161",
+          "height": "30",
+          "width": "35",
+          "x": "158",
           "y": "139"
         },
         "labelParentAttributes": {
@@ -5249,5 +5249,5 @@
       }
     }
   ],
-  "fixtureSha256": "992fe7c87f5c6902a498f3ddd7c00c6da2dbdeac996a1b0e583b83f4fb8072dc"
+  "fixtureSha256": "4d978067d79df6a5a3afff2029fe444722b7bbbdabd79df71dee83742cebe05c"
 }

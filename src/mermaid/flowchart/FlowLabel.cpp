@@ -486,6 +486,10 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
                                  tailWidth, rangeIsRtl(cursor, offset + line.size() - cursor),
                                  false, font.family()});
       lineWidth += tailWidth;
+      if (cursor >= offset + line.size() && !measured.runs.isEmpty() &&
+          measured.runs.back().math &&
+          measured.runs.back().mathStructure == FlowLabelMathStructure::Fraction)
+        lineWidth = std::max<qreal>(0.0, lineWidth - 1.0);
       visualRight = std::max(visualRight, lineWidth);
       if (label.sequenceMathMlModel && actualLineHeight > lineHeight) {
         const bool mixedFallback = std::any_of(line.cbegin(), line.cend(), [](QChar ch) {

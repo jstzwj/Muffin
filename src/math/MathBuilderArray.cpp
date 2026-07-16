@@ -177,6 +177,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeArray(const MathParseNode& node
   auto array = std::make_unique<MathRenderNode>();
   array->kind = MathRenderKind::Array;
   array->semanticKind = MathSemanticKind::Array;
+  array->mathStyleSize = options_.style().size();
   array->columns = colCount;
   array->rows = rowCount;
   array->arrayColumnWidths.assign(colWidths.cbegin(), colWidths.cend());

@@ -46,6 +46,7 @@ struct MathLayoutNode {
   bool allowBreak = false;
   bool tightSpacing = false;
   bool phantom = false;
+  int mathStyleSize = 1;
   int columns = 0;
   int rows = 0;
   std::vector<qreal> arrayColumnWidths;

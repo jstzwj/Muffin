@@ -1,6 +1,6 @@
 {
   "mermaidVersion": "11.16.0",
-  "fontMode": "bundled-noto",
+  "fontMode": "bundled-noto-stix-two-math-2.13b171",
   "cases": [
     {
       "id": "participant-html-cjk",
@@ -119,14 +119,14 @@
       "text": "`**Speed** x2`",
       "elementCount": 1,
       "box": {
-        "width": 107,
+        "width": 106,
         "height": 22
       },
       "lines": [
         {
           "start": 0,
           "length": 14,
-          "width": 106.906,
+          "width": 105.906,
           "baseline": 17,
           "ascent": 17,
           "descent": 5,
@@ -143,14 +143,14 @@
               "start": 11,
               "length": 2,
               "x": 86.281,
-              "width": 16.125,
+              "width": 15.125,
               "rightToLeft": false,
               "math": true
             },
             {
               "start": 13,
               "length": 1,
-              "x": 102.406,
+              "x": 101.406,
               "width": 4.5,
               "rightToLeft": false,
               "math": false
@@ -977,16 +977,16 @@
       "elementCount": 1,
       "box": {
         "width": 69,
-        "height": 30
+        "height": 29
       },
       "lines": [
         {
           "start": 0,
           "length": 11,
-          "width": 67.922,
-          "baseline": 26,
-          "ascent": 26,
-          "descent": 12.813,
+          "width": 67.813,
+          "baseline": 24.5,
+          "ascent": 24.5,
+          "descent": 12.531,
           "runs": [
             {
               "start": 0,
@@ -1000,7 +1000,7 @@
               "start": 9,
               "length": 2,
               "x": 57.922,
-              "width": 11,
+              "width": 10.891,
               "rightToLeft": false,
               "math": true
             }
@@ -1019,17 +1019,17 @@
       "text": "root xi2+y2",
       "elementCount": 1,
       "box": {
-        "width": 95,
-        "height": 37
+        "width": 99,
+        "height": 30
       },
       "lines": [
         {
           "start": 0,
           "length": 11,
-          "width": 94.125,
-          "baseline": 20.75,
-          "ascent": 20.75,
-          "descent": 5.016,
+          "width": 95.547,
+          "baseline": 17.969,
+          "ascent": 17.969,
+          "descent": 5.109,
           "runs": [
             {
               "start": 0,
@@ -1043,7 +1043,7 @@
               "start": 5,
               "length": 6,
               "x": 31.438,
-              "width": 63.344,
+              "width": 67.484,
               "rightToLeft": false,
               "math": true
             }
@@ -1063,16 +1063,16 @@
       "elementCount": 1,
       "box": {
         "width": 92,
-        "height": 36
+        "height": 39
       },
       "lines": [
         {
           "start": 0,
           "length": 11,
-          "width": 86.094,
-          "baseline": 21.5,
-          "ascent": 21.5,
-          "descent": 12.5,
+          "width": 85.891,
+          "baseline": 21.719,
+          "ascent": 21.719,
+          "descent": 13.844,
           "runs": [
             {
               "start": 0,
@@ -1086,7 +1086,7 @@
               "start": 7,
               "length": 4,
               "x": 48.922,
-              "width": 43.563,
+              "width": 43.359,
               "rightToLeft": false,
               "math": true
             }
@@ -1105,14 +1105,14 @@
       "text": "left x middle y2 right",
       "elementCount": 1,
       "box": {
-        "width": 138,
+        "width": 136,
         "height": 22
       },
       "lines": [
         {
           "start": 0,
           "length": 22,
-          "width": 137.734,
+          "width": 135.906,
           "baseline": 17,
           "ascent": 17,
           "descent": 5,
@@ -1129,14 +1129,14 @@
               "start": 5,
               "length": 1,
               "x": 24.438,
-              "width": 9,
+              "width": 8.953,
               "rightToLeft": false,
               "math": true
             },
             {
               "start": 6,
               "length": 8,
-              "x": 33.438,
+              "x": 33.391,
               "width": 51.922,
               "rightToLeft": false,
               "math": false
@@ -1144,15 +1144,15 @@
             {
               "start": 14,
               "length": 2,
-              "x": 85.359,
-              "width": 16.125,
+              "x": 85.313,
+              "width": 14.344,
               "rightToLeft": false,
               "math": true
             },
             {
               "start": 16,
               "length": 6,
-              "x": 101.484,
+              "x": 99.656,
               "width": 36.25,
               "rightToLeft": false,
               "math": false
@@ -1179,7 +1179,7 @@
         {
           "start": 0,
           "length": 8,
-          "width": 58.375,
+          "width": 58.328,
           "baseline": 17,
           "ascent": 17,
           "descent": 5,
@@ -1196,7 +1196,7 @@
               "start": 7,
               "length": 1,
               "x": 49.375,
-              "width": 9,
+              "width": 8.953,
               "rightToLeft": false,
               "math": true
             }
@@ -1205,7 +1205,7 @@
         {
           "start": 8,
           "length": 7,
-          "width": 44.891,
+          "width": 44.063,
           "baseline": 17,
           "ascent": 17,
           "descent": 5,
@@ -1222,7 +1222,7 @@
               "start": 14,
               "length": 1,
               "x": 35.891,
-              "width": 9,
+              "width": 8.172,
               "rightToLeft": false,
               "math": true
             }
@@ -1248,10 +1248,10 @@
         {
           "start": 0,
           "length": 11,
-          "width": 76.672,
-          "baseline": 25.906,
-          "ascent": 25.906,
-          "descent": 12.906,
+          "width": 76.625,
+          "baseline": 24.234,
+          "ascent": 24.234,
+          "descent": 12.234,
           "runs": [
             {
               "start": 0,
@@ -1265,14 +1265,14 @@
               "start": 3,
               "length": 2,
               "x": 32,
-              "width": 11,
+              "width": 10.953,
               "rightToLeft": false,
               "math": true
             },
             {
               "start": 10,
               "length": 6,
-              "x": 43,
+              "x": 42.953,
               "width": 33.672,
               "rightToLeft": true,
               "math": false
@@ -1282,5 +1282,5 @@
       ]
     }
   ],
-  "fixtureSha256": "e06af7f9c9b23b1c23a75ff8f79c6392d3c6bc03db41bebaa23a6cf911cb9885"
+  "fixtureSha256": "8e32a6ad57c96131bbf3ce048c80d4ec71d4c43e8fe37d5ef290a061454c1b34"
 }

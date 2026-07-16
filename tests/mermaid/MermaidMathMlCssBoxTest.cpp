@@ -1,5 +1,6 @@
 #include "math/MathCssBox.h"
 #include "math/MathRenderer.h"
+#include "math/OpenTypeMathFont.h"
 
 #include <QFile>
 #include <QGuiApplication>
@@ -47,12 +48,40 @@ int main(int argc, char** argv) {
     const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
     require(root.value(QStringLiteral("mermaidVersion")).toString() == QLatin1String("11.16.0"),
             QStringLiteral("MathML CSS box Mermaid version drifted"));
+    require(root.value(QStringLiteral("fontMode")).toString() ==
+                QLatin1String("bundled-noto-stix-two-math-2.13b171"),
+            QStringLiteral("MathML CSS box must use the fixed STIX oracle"));
     require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-                QLatin1String("71ff2425117aae28f036835d3cae4d51bab23ac713f6c1b7b54c4d6ca908cbde"),
+                QLatin1String("191f74a7fba9c51d7c68cde3404ab63725f43a35e571fa69f78af42ccf8d5a8e"),
             QStringLiteral("MathML CSS box fixture changed; regenerate and audit"));
 
+    const math::OpenTypeMathFont& mathFont = math::OpenTypeMathFont::instance();
+    require(mathFont.valid(), QStringLiteral("Bundled STIX Two Math failed to load"));
+    require(mathFont.familyName() == QLatin1String("STIX Two Math"),
+            QStringLiteral("Unexpected strict Math font family"));
+    near(mathFont.unitsPerEm(), 1000.0, 0.0, QStringLiteral("STIX units per em"));
+    near(mathFont.constants().scriptPercentScaleDown, 0.70, 0.0001,
+         QStringLiteral("MATH script scale"));
+    near(mathFont.constants().axisHeight, 4.128, 0.001,
+         QStringLiteral("MATH axis height"));
+    near(mathFont.constants().fractionRuleThickness, 1.088, 0.001,
+         QStringLiteral("MATH fraction rule"));
+    near(mathFont.constants().radicalDegreeBottomRaisePercent, 0.55, 0.0001,
+         QStringLiteral("MATH radical degree raise"));
+    const auto italicX = mathFont.mathItalicGlyph(QLatin1Char('x'));
+    require(italicX.has_value(), QStringLiteral("STIX mathematical italic x is missing"));
+    near(italicX->advance, 8.944, 0.02, QStringLiteral("STIX italic x advance"));
+    near(italicX->topAccentAttachment, 5.52, 0.001,
+         QStringLiteral("MATH top accent attachment"));
+    const auto radicalVariant = mathFont.verticalVariant(
+        QString(QChar(0x221A)), 30.0);
+    require(radicalVariant.has_value(), QStringLiteral("STIX radical variants are missing"));
+    near(radicalVariant->advance, 18.832, 0.02,
+         QStringLiteral("MATH radical variant advance"));
+    near(radicalVariant->extent, 37.936, 0.001,
+         QStringLiteral("MATH radical variant extent"));
     const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-    require(cases.size() == 50, QStringLiteral("MathML CSS box case count regressed"));
+    require(cases.size() == 62, QStringLiteral("MathML CSS box case count regressed"));
     math::MathRenderer renderer;
     QSet<QString> tags;
     QHash<QString, QSizeF> invariantBoxes;
@@ -91,6 +120,8 @@ int main(int argc, char** argv) {
                                     QStringLiteral("mfrac"), QStringLiteral("msup"),
                                     QStringLiteral("msub"), QStringLiteral("msubsup"),
                                     QStringLiteral("msqrt"), QStringLiteral("mroot"),
+                                    QStringLiteral("mo"), QStringLiteral("mover"),
+                                    QStringLiteral("munderover"),
                                     QStringLiteral("mtable"), QStringLiteral("mtr"),
                                     QStringLiteral("mtd")})
       require(tags.contains(required), QStringLiteral("MathML oracle misses <%1>").arg(required));

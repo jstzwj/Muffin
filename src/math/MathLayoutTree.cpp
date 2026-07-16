@@ -112,6 +112,7 @@ std::unique_ptr<MathLayoutNode> layoutFromRenderNode(std::unique_ptr<MathRenderN
   layout->allowBreak = node->allowBreak;
   layout->tightSpacing = node->tightSpacing;
   layout->phantom = node->phantom;
+  layout->mathStyleSize = node->mathStyleSize;
   layout->columns = node->columns;
   layout->rows = node->rows;
   layout->arrayColumnWidths = std::move(node->arrayColumnWidths);
@@ -153,6 +154,7 @@ std::unique_ptr<MathRenderNode> renderNodeFromLayout(const MathLayoutNode& node)
   render->allowBreak = node.allowBreak;
   render->tightSpacing = node.tightSpacing;
   render->phantom = node.phantom;
+  render->mathStyleSize = node.mathStyleSize;
   render->columns = node.columns;
   render->rows = node.rows;
   render->arrayColumnWidths = node.arrayColumnWidths;
