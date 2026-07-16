@@ -68,6 +68,16 @@ const formulas = [
   ["fraction-greek", "\\frac{\\alpha+\\beta}{\\gamma}"],
   ["sqrt-matrix", "\\sqrt{\\begin{matrix}a&b\\\\c&d\\end{matrix}}"],
   ["matrix-fractions", "\\begin{matrix}\\frac{a}{b}&x^2\\\\\\sqrt{y}&z_i\\end{matrix}"],
+  ["aligned-equations", "\\begin{aligned}a&=b+c\\\\d&=e-f\\end{aligned}"],
+  ["cases-piecewise", "\\begin{cases}x^2&x>0\\\\-x&x\\le0\\end{cases}"],
+  ["product-limits", "\\prod_{k=1}^{n}k"],
+  ["limit-below", "\\lim_{x\\to0}\\frac{\\sin x}{x}"],
+  ["operator-name", "\\operatorname{rank}(A)=n"],
+  ["accent-overline", "\\overline{x+y}"],
+  ["accent-widehat", "\\widehat{x+y+z}"],
+  ["nested-delimiters", "\\left[\\frac{x}{\\left(y+1\\right)}\\right]"],
+  ["greek-variants", "\\varepsilon+\\vartheta+\\varphi+\\varrho"],
+  ["binomial", "\\binom{n}{k}"],
 ];
 const cases = [];
 for (const [id, tex] of formulas) cases.push({id, tex, fontSize: 16, dpr: 1});
@@ -152,6 +162,10 @@ try {
           fontFamily: computed.fontFamily,
           lineHeight: computed.lineHeight, verticalAlign: computed.verticalAlign,
         };
+        const attributes = {};
+        for (const name of element.getAttributeNames())
+          attributes[name] = element.getAttribute(name);
+        if (Object.keys(attributes).length) result.attributes = attributes;
         const text = [...element.childNodes]
           .filter(node => node.nodeType === Node.TEXT_NODE).map(node => node.data).join("").trim();
         if (text) {

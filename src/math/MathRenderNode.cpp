@@ -56,6 +56,29 @@ QString scriptKindName(MathScriptKind kind) {
   return {};
 }
 
+QString operatorKindName(MathOperatorKind kind) {
+  switch (kind) {
+    case MathOperatorKind::None: return {};
+    case MathOperatorKind::Named: return QStringLiteral("Named");
+    case MathOperatorKind::Symbol: return QStringLiteral("Symbol");
+    case MathOperatorKind::Limits: return QStringLiteral("Limits");
+  }
+  return {};
+}
+
+QString accentKindName(MathAccentKind kind) {
+  switch (kind) {
+    case MathAccentKind::None: return {};
+    case MathAccentKind::Over: return QStringLiteral("Over");
+    case MathAccentKind::Under: return QStringLiteral("Under");
+    case MathAccentKind::Overline: return QStringLiteral("Overline");
+    case MathAccentKind::Underline: return QStringLiteral("Underline");
+    case MathAccentKind::OverBrace: return QStringLiteral("OverBrace");
+    case MathAccentKind::UnderBrace: return QStringLiteral("UnderBrace");
+  }
+  return {};
+}
+
 double rounded(qreal value) {
   return std::round(value * 10000.0) / 10000.0;
 }
@@ -298,8 +321,18 @@ QJsonObject MathRenderNode::toJson() const {
     object.insert(QStringLiteral("semanticKind"), semanticKindName(semanticKind));
   if (scriptKind != MathScriptKind::None)
     object.insert(QStringLiteral("scriptKind"), scriptKindName(scriptKind));
+  if (operatorKind != MathOperatorKind::None)
+    object.insert(QStringLiteral("operatorKind"), operatorKindName(operatorKind));
+  if (accentKind != MathAccentKind::None)
+    object.insert(QStringLiteral("accentKind"), accentKindName(accentKind));
   if (radicalIndex) object.insert(QStringLiteral("radicalIndex"), true);
+  if (semanticKind == MathSemanticKind::Fraction)
+    object.insert(QStringLiteral("fractionHasBarLine"), fractionHasBarLine);
   if (!text.isEmpty()) object.insert(QStringLiteral("text"), text);
+  if (!operatorText.isEmpty()) object.insert(QStringLiteral("operatorText"), operatorText);
+  if (!accentLabel.isEmpty()) object.insert(QStringLiteral("accentLabel"), accentLabel);
+  if (!leftDelimiter.isEmpty()) object.insert(QStringLiteral("leftDelimiter"), leftDelimiter);
+  if (!rightDelimiter.isEmpty()) object.insert(QStringLiteral("rightDelimiter"), rightDelimiter);
   if (!atomClass.isEmpty()) object.insert(QStringLiteral("atomClass"), atomClass);
   if (!fontClass.isEmpty()) object.insert(QStringLiteral("fontClass"), fontClass);
   if (!pathName.isEmpty()) object.insert(QStringLiteral("pathName"), pathName);
@@ -320,6 +353,16 @@ QJsonObject MathRenderNode::toJson() const {
   if (phantom) object.insert(QStringLiteral("phantom"), true);
   if (columns > 0) object.insert(QStringLiteral("columns"), columns);
   if (rows > 0) object.insert(QStringLiteral("rows"), rows);
+  if (!arrayEnvironment.isEmpty())
+    object.insert(QStringLiteral("arrayEnvironment"), arrayEnvironment);
+  if (!arrayColumnSeparation.isEmpty())
+    object.insert(QStringLiteral("arrayColumnSeparation"), arrayColumnSeparation);
+  if (!arrayLeftDelimiter.isEmpty())
+    object.insert(QStringLiteral("arrayLeftDelimiter"), arrayLeftDelimiter);
+  if (!arrayRightDelimiter.isEmpty())
+    object.insert(QStringLiteral("arrayRightDelimiter"), arrayRightDelimiter);
+  if (!qFuzzyCompare(arrayStretch, 1.0))
+    object.insert(QStringLiteral("arrayStretch"), rounded(arrayStretch));
   if (!arrayColumnWidths.empty()) {
     QJsonArray values;
     for (qreal value : arrayColumnWidths) values.append(rounded(value));
@@ -377,8 +420,15 @@ std::unique_ptr<MathRenderNode> cloneNode(const MathRenderNode& node) {
   copy->kind = node.kind;
   copy->semanticKind = node.semanticKind;
   copy->scriptKind = node.scriptKind;
+  copy->operatorKind = node.operatorKind;
+  copy->accentKind = node.accentKind;
   copy->radicalIndex = node.radicalIndex;
+  copy->fractionHasBarLine = node.fractionHasBarLine;
   copy->text = node.text;
+  copy->operatorText = node.operatorText;
+  copy->accentLabel = node.accentLabel;
+  copy->leftDelimiter = node.leftDelimiter;
+  copy->rightDelimiter = node.rightDelimiter;
   copy->atomClass = node.atomClass;
   copy->fontClass = node.fontClass;
   copy->pathName = node.pathName;
@@ -403,6 +453,11 @@ std::unique_ptr<MathRenderNode> cloneNode(const MathRenderNode& node) {
   copy->mathStyleSize = node.mathStyleSize;
   copy->columns = node.columns;
   copy->rows = node.rows;
+  copy->arrayEnvironment = node.arrayEnvironment;
+  copy->arrayColumnSeparation = node.arrayColumnSeparation;
+  copy->arrayLeftDelimiter = node.arrayLeftDelimiter;
+  copy->arrayRightDelimiter = node.arrayRightDelimiter;
+  copy->arrayStretch = node.arrayStretch;
   copy->arrayColumnWidths = node.arrayColumnWidths;
   copy->arrayRowHeights = node.arrayRowHeights;
   copy->arrayRowDepths = node.arrayRowDepths;

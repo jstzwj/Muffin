@@ -398,6 +398,8 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeOperator(const MathParseNode& n
     }
     auto opBody = makeSpan(std::move(children));
     opBody->fontClass = QStringLiteral("main");
+    opBody->operatorKind = MathOperatorKind::Named;
+    opBody->operatorText = node.text.isEmpty() ? node.label : node.text;
     return opBody;
   }
   if (node.opSymbol) {
@@ -407,12 +409,21 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeOperator(const MathParseNode& n
     if (!qFuzzyIsNull(shift)) {
       op->yOffset = -shift;
     }
+    op->operatorKind = MathOperatorKind::Symbol;
+    op->operatorText = node.text;
     return op;
   }
   if (node.text.size() > 1) {
-    return makeTextSpan(node.text, node.type, options_, QStringLiteral("main"));
+    auto op = makeTextSpan(node.text, node.type, options_, QStringLiteral("main"));
+    op->operatorKind = MathOperatorKind::Named;
+    op->operatorText = node.text;
+    return op;
   }
-  return makeSymbol(node.text, node.type, options_, node.fontClass.isEmpty() ? QStringLiteral("main") : node.fontClass);
+  auto op = makeSymbol(node.text, node.type, options_,
+                       node.fontClass.isEmpty() ? QStringLiteral("main") : node.fontClass);
+  op->operatorKind = MathOperatorKind::Named;
+  op->operatorText = node.text;
+  return op;
 }
 
 
@@ -428,6 +439,8 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeUnderline(const MathParseNode& 
 
   auto result = std::make_unique<MathRenderNode>();
   result->kind = MathRenderKind::Accent;
+  result->accentKind = MathAccentKind::Underline;
+  result->accentLabel = node.label;
   result->width = body->width;
   result->height = body->height;
   result->depth = body->depth + options_.fontPointSize() * 0.22;
@@ -450,6 +463,8 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeOverline(const MathParseNode& n
 
   auto result = std::make_unique<MathRenderNode>();
   result->kind = MathRenderKind::Accent;
+  result->accentKind = MathAccentKind::Overline;
+  result->accentLabel = node.label;
   result->width = body->width;
   result->height = body->height + gap + rule;
   result->depth = body->depth;
@@ -856,6 +871,15 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSupSub(const MathParseNode& nod
   const bool limitsOperator = !node.base.isEmpty() && node.base.first().type == MathNodeType::Operator &&
                               operatorUsesLimits(node.base.first(), options_);
   if (limitsOperator) {
+    const auto markLimits = [&](std::unique_ptr<MathRenderNode> result) {
+      result = markSupSub(std::move(result));
+      if (result) {
+        result->operatorKind = MathOperatorKind::Limits;
+        result->operatorText = node.base.first().text.isEmpty()
+            ? node.base.first().label : node.base.first().text;
+      }
+      return result;
+    };
     const qreal baseShift = !node.base.isEmpty() && node.base.first().opSymbol
                                 ? ((base->height - base->depth) / 2.0 - axisHeight(options_))
                                 : 0.0;
@@ -938,9 +962,9 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSupSub(const MathParseNode& nod
       parts.push_back(std::move(limitsNode));
       auto wrapper = makeSpan(std::move(parts));
       wrapper->atomClass = QStringLiteral("mop");
-      return markSupSub(std::move(wrapper));
+      return markLimits(std::move(wrapper));
     }
-    return markSupSub(std::move(limitsNode));
+    return markLimits(std::move(limitsNode));
   }
 
   const qreal baseHeight = base->height;
@@ -1107,6 +1131,9 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeFraction(const MathParseNode& n
   auto result = makeGenfrac(node, std::move(frac));
   result->semanticKind = MathSemanticKind::Fraction;
   result->mathStyleSize = options_.style().size();
+  result->fractionHasBarLine = hasBarLine;
+  result->leftDelimiter = node.leftDelim;
+  result->rightDelimiter = node.rightDelim;
   return result;
 }
 
@@ -1294,7 +1321,10 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeAccent(const MathParseNode& nod
     entries.push_back(makeLayoutVListElem(MathVListChild{layoutFromRenderNode(std::move(accent))}));
     auto layout = makeLayoutVListFirstBaseline(std::move(entries));
     layout->renderKind = MathRenderKind::Accent;
-    return renderNodeFromLayout(*layout);
+    auto result = renderNodeFromLayout(*layout);
+    result->accentKind = MathAccentKind::Over;
+    result->accentLabel = node.label;
+    return result;
   } else {
     QString accentText = QStringLiteral("^");
     // Math-mode accent labels
@@ -1359,7 +1389,10 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeAccent(const MathParseNode& nod
   entries.push_back(makeLayoutVListElem(MathVListChild{layoutFromRenderNode(std::move(accentWrapper))}));
   auto layout = makeLayoutVListFirstBaseline(std::move(entries));
   layout->renderKind = MathRenderKind::Accent;
-  return renderNodeFromLayout(*layout);
+  auto result = renderNodeFromLayout(*layout);
+  result->accentKind = MathAccentKind::Over;
+  result->accentLabel = node.label;
+  return result;
 }
 
 std::unique_ptr<MathRenderNode> MathBuilder::makeAccentUnder(const MathParseNode& node) {
@@ -1382,6 +1415,8 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeAccentUnder(const MathParseNode
   layout->width = width;
   auto result = renderNodeFromLayout(*layout);
   result->atomClass = QStringLiteral("mord");
+  result->accentKind = MathAccentKind::Under;
+  result->accentLabel = node.label;
   return result;
 }
 
@@ -1391,6 +1426,9 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeHorizBrace(const MathParseNode&
   const qreal gap = options_.fontPointSize() * 0.1;
   auto result = std::make_unique<MathRenderNode>();
   result->kind = MathRenderKind::Accent;
+  result->accentKind = node.isOver ? MathAccentKind::OverBrace
+                                   : MathAccentKind::UnderBrace;
+  result->accentLabel = node.label;
   result->width = qMax(body->width, brace->width);
   body->xOffset = (result->width - body->width) / 2.0;
   brace->xOffset = (result->width - brace->width) / 2.0;
@@ -1634,6 +1672,8 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeLeftRight(const MathParseNode& 
   const qreal innerDepth = inner->depth;
   auto result = std::make_unique<MathRenderNode>();
   result->kind = MathRenderKind::LeftRight;
+  result->leftDelimiter = node.leftDelim;
+  result->rightDelimiter = node.rightDelim;
   const qreal nullDelimiterWidth = options_.fontPointSize() * 0.12;
 
   qreal x = 0.0;

@@ -45,12 +45,36 @@ enum class MathScriptKind {
   SubSup
 };
 
+enum class MathOperatorKind {
+  None,
+  Named,
+  Symbol,
+  Limits
+};
+
+enum class MathAccentKind {
+  None,
+  Over,
+  Under,
+  Overline,
+  Underline,
+  OverBrace,
+  UnderBrace
+};
+
 struct MathRenderNode {
   MathRenderKind kind = MathRenderKind::Span;
   MathSemanticKind semanticKind = MathSemanticKind::None;
   MathScriptKind scriptKind = MathScriptKind::None;
+  MathOperatorKind operatorKind = MathOperatorKind::None;
+  MathAccentKind accentKind = MathAccentKind::None;
   bool radicalIndex = false;
+  bool fractionHasBarLine = false;
   QString text;
+  QString operatorText;
+  QString accentLabel;
+  QString leftDelimiter;
+  QString rightDelimiter;
   QString atomClass;
   QString fontClass;
   QString pathName;
@@ -77,6 +101,11 @@ struct MathRenderNode {
   int mathStyleSize = 1;
   int columns = 0;
   int rows = 0;
+  QString arrayEnvironment;
+  QString arrayColumnSeparation;
+  QString arrayLeftDelimiter;
+  QString arrayRightDelimiter;
+  qreal arrayStretch = 1.0;
   std::vector<qreal> arrayColumnWidths;
   std::vector<qreal> arrayRowHeights;
   std::vector<qreal> arrayRowDepths;

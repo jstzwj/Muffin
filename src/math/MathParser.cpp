@@ -375,6 +375,7 @@ MathParseNode MathParser::parseFraction(const MathToken& token) {
   frac.numerator = parseRequiredGroup(token.text);
   frac.denominator = parseRequiredGroup(token.text);
   if (token.text.contains(QStringLiteral("binom"))) {
+    frac.lineThickness = 0.0;
     frac.leftDelim = QStringLiteral("(");
     frac.rightDelim = QStringLiteral(")");
   }
@@ -434,6 +435,7 @@ MathParseNode MathParser::parseXArrow(const MathToken& token) {
 MathParseNode MathParser::parseUnderline(const MathToken& token) {
   MathParseNode underline;
   underline.type = MathNodeType::Underline;
+  underline.label = token.text;
   underline.base = parseRequiredGroup(token.text);
   return parseScripts(std::move(underline));
 }
@@ -441,6 +443,7 @@ MathParseNode MathParser::parseUnderline(const MathToken& token) {
 MathParseNode MathParser::parseOverline(const MathToken& token) {
   MathParseNode overline;
   overline.type = MathNodeType::Overline;
+  overline.label = token.text;
   overline.base = parseRequiredGroup(token.text);
   return parseScripts(std::move(overline));
 }

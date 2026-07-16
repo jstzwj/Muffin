@@ -63,9 +63,21 @@ int main(int argc, char** argv) {
     require(radical.has_value(), QStringLiteral("Radical variants are missing"));
     near(radical->advance, 18.832, 0.02, QStringLiteral("radical advance"));
     near(radical->extent, 37.936, 0.001, QStringLiteral("radical extent"));
-    const auto assembledBrace = font.verticalVariant(QStringLiteral("{"), 100.0, true);
+    const auto assembledBrace = font.verticalAssembly(QStringLiteral("{"), 42.0);
     require(assembledBrace.has_value(), QStringLiteral("Brace assembly is missing"));
     near(assembledBrace->advance, 9.6, 0.02, QStringLiteral("brace assembly width"));
+    near(assembledBrace->extent, 71.984, 0.001,
+         QStringLiteral("brace minimum assembly extent"));
+    const auto stretchedBrace = font.verticalAssembly(QStringLiteral("{"), 100.0);
+    require(stretchedBrace.has_value(), QStringLiteral("Stretchable brace assembly is missing"));
+    near(stretchedBrace->extent, 100.0, 0.001,
+         QStringLiteral("brace extender assembly extent"));
+    near(font.constants().stackTopDisplayStyleShiftUp, 12.48, 0.001,
+         QStringLiteral("display stack top shift"));
+    near(font.constants().stackBottomDisplayStyleShiftDown, 11.04, 0.001,
+         QStringLiteral("display stack bottom shift"));
+    near(font.constants().stackDisplayStyleGapMin, 4.8, 0.001,
+         QStringLiteral("display stack gap"));
 
     std::cout << "MermaidMathFontContractTest: bundled STIX/OpenType MATH contract passed\n";
     return 0;

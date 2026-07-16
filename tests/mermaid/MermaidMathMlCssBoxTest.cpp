@@ -36,6 +36,41 @@ void collectTags(const QJsonObject& node, QSet<QString>* tags) {
     collectTags(child.toObject(), tags);
 }
 
+const math::MathRenderNode* findArray(const math::MathRenderNode* node) {
+  if (!node) return nullptr;
+  if (node->semanticKind == math::MathSemanticKind::Array) return node;
+  for (const auto& child : node->children)
+    if (const auto* array = findArray(child.get())) return array;
+  return nullptr;
+}
+
+const math::MathRenderNode* findSemantic(const math::MathRenderNode* node,
+                                         math::MathSemanticKind kind) {
+  if (!node) return nullptr;
+  if (node->semanticKind == kind) return node;
+  for (const auto& child : node->children)
+    if (const auto* semantic = findSemantic(child.get(), kind)) return semantic;
+  return nullptr;
+}
+
+const math::MathRenderNode* findOperator(const math::MathRenderNode* node,
+                                         math::MathOperatorKind kind) {
+  if (!node) return nullptr;
+  if (node->operatorKind == kind) return node;
+  for (const auto& child : node->children)
+    if (const auto* op = findOperator(child.get(), kind)) return op;
+  return nullptr;
+}
+
+const math::MathRenderNode* findAccent(const math::MathRenderNode* node,
+                                       math::MathAccentKind kind) {
+  if (!node) return nullptr;
+  if (node->accentKind == kind) return node;
+  for (const auto& child : node->children)
+    if (const auto* accent = findAccent(child.get(), kind)) return accent;
+  return nullptr;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -52,7 +87,7 @@ int main(int argc, char** argv) {
                 QLatin1String("bundled-noto-stix-two-math-2.13b171"),
             QStringLiteral("MathML CSS box must use the fixed STIX oracle"));
     require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-                QLatin1String("191f74a7fba9c51d7c68cde3404ab63725f43a35e571fa69f78af42ccf8d5a8e"),
+                QLatin1String("bf83d70d5a08edfe6faab7f55c56ffffde6d7ac6a9290ce5ad5c699fc9fd9fa4"),
             QStringLiteral("MathML CSS box fixture changed; regenerate and audit"));
 
     const math::OpenTypeMathFont& mathFont = math::OpenTypeMathFont::instance();
@@ -81,7 +116,7 @@ int main(int argc, char** argv) {
     near(radicalVariant->extent, 37.936, 0.001,
          QStringLiteral("MATH radical variant extent"));
     const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-    require(cases.size() == 62, QStringLiteral("MathML CSS box case count regressed"));
+    require(cases.size() == 72, QStringLiteral("MathML CSS box case count regressed"));
     math::MathRenderer renderer;
     QSet<QString> tags;
     QHash<QString, QSizeF> invariantBoxes;
@@ -92,6 +127,49 @@ int main(int argc, char** argv) {
       constexpr qreal kKatexRootFontSize = 16.0 * 1.21;
       const auto layout = renderer.render(tex, kKatexRootFontSize, Qt::black, true);
       require(layout.valid(), id + QStringLiteral(" should produce a native render tree"));
+      if (id == QLatin1String("cases-piecewise") ||
+          id == QLatin1String("aligned-equations")) {
+        const math::MathRenderNode* array = findArray(layout.root.get());
+        require(array, id + QStringLiteral(" must preserve its Array semantic node"));
+        require(array->arrayEnvironment == (id == QLatin1String("cases-piecewise")
+                    ? QLatin1String("cases") : QLatin1String("aligned")),
+                id + QStringLiteral(" array environment was lost"));
+        require(array->arrayColumnSeparation == (id == QLatin1String("cases-piecewise")
+                    ? QLatin1String("") : QLatin1String("align")),
+                id + QStringLiteral(" column separation was lost"));
+        if (id == QLatin1String("cases-piecewise")) {
+          near(array->arrayStretch, 1.2, 0.0001, id + QStringLiteral(" array stretch"));
+          require(array->arrayLeftDelimiter == QLatin1String("\\lbrace") &&
+                      array->arrayRightDelimiter == QLatin1String("."),
+                  id + QStringLiteral(" delimiters were lost"));
+        }
+      }
+      if (id == QLatin1String("product-limits") || id == QLatin1String("limit-below")) {
+        const auto* op = findOperator(layout.root.get(), math::MathOperatorKind::Limits);
+        require(op, id + QStringLiteral(" must preserve its limits operator container"));
+        require(!op->operatorText.isEmpty(), id + QStringLiteral(" operator identity was lost"));
+      }
+      if (id == QLatin1String("operator-name")) {
+        const auto* op = findOperator(layout.root.get(), math::MathOperatorKind::Named);
+        require(op && op->operatorText == QLatin1String("\\operatorname"),
+                id + QStringLiteral(" named operator identity was lost"));
+      }
+      if (id == QLatin1String("accent-overline")) {
+        const auto* accent = findAccent(layout.root.get(), math::MathAccentKind::Overline);
+        require(accent && accent->accentLabel == QLatin1String("\\overline"),
+                id + QStringLiteral(" overline semantic was lost"));
+      }
+      if (id == QLatin1String("accent-widehat")) {
+        const auto* accent = findAccent(layout.root.get(), math::MathAccentKind::Over);
+        require(accent && accent->accentLabel == QLatin1String("\\widehat"),
+                id + QStringLiteral(" stretchy accent semantic was lost"));
+      }
+      if (id == QLatin1String("binomial")) {
+        const auto* fraction = findSemantic(
+            layout.root.get(), math::MathSemanticKind::Fraction);
+        require(fraction && !fraction->fractionHasBarLine,
+                id + QStringLiteral(" must preserve its zero-thickness fraction"));
+      }
       const math::MathCssBox box = math::layoutMathMlCssBox(layout, kKatexRootFontSize);
       const QJsonObject expected = fixture.value(QStringLiteral("math")).toObject();
       near(box.width, expected.value(QStringLiteral("width")).toDouble(), 0.22,

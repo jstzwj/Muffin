@@ -180,6 +180,11 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeArray(const MathParseNode& node
   array->mathStyleSize = options_.style().size();
   array->columns = colCount;
   array->rows = rowCount;
+  array->arrayEnvironment = node.label;
+  array->arrayColumnSeparation = node.colSeparationType;
+  array->arrayLeftDelimiter = node.leftDelim;
+  array->arrayRightDelimiter = node.rightDelim;
+  array->arrayStretch = node.arrayStretch;
   array->arrayColumnWidths.assign(colWidths.cbegin(), colWidths.cend());
   array->arrayRowHeights.assign(intrinsicRowHeights.cbegin(), intrinsicRowHeights.cend());
   array->arrayRowDepths.assign(intrinsicRowDepths.cbegin(), intrinsicRowDepths.cend());

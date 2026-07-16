@@ -33,6 +33,12 @@ struct MathFontConstants {
   qreal fractionNumeratorGapMin = 0.0;
   qreal fractionRuleThickness = 0.0;
   qreal fractionDenominatorGapMin = 0.0;
+  qreal stackTopShiftUp = 0.0;
+  qreal stackTopDisplayStyleShiftUp = 0.0;
+  qreal stackBottomShiftDown = 0.0;
+  qreal stackBottomDisplayStyleShiftDown = 0.0;
+  qreal stackGapMin = 0.0;
+  qreal stackDisplayStyleGapMin = 0.0;
   qreal radicalVerticalGap = 0.0;
   qreal radicalRuleThickness = 0.0;
   qreal radicalExtraAscender = 0.0;
@@ -72,6 +78,8 @@ public:
   std::optional<MathGlyphVariant> verticalVariant(const QString& character,
                                                   qreal minimumExtent,
                                                   bool allowAssembly = false) const;
+  std::optional<MathGlyphVariant> verticalAssembly(const QString& character,
+                                                   qreal targetExtent) const;
   qreal textAdvance(const QString& text) const;
   QRectF textInkBounds(const QString& text) const;
 
@@ -88,7 +96,15 @@ private:
   QHash<quint32, bool> extendedShapes_;
   struct RawVariant { quint16 glyphIndex = 0; quint16 extent = 0; };
   QHash<quint32, QVector<RawVariant>> verticalVariants_;
-  QHash<quint32, QVector<quint16>> verticalAssemblyParts_;
+  struct RawAssemblyPart {
+    quint16 glyphIndex = 0;
+    quint16 startConnector = 0;
+    quint16 endConnector = 0;
+    quint16 fullAdvance = 0;
+    bool extender = false;
+  };
+  qreal minimumConnectorOverlap_ = 0.0;
+  QHash<quint32, QVector<RawAssemblyPart>> verticalAssemblyParts_;
   QHash<quint32, qint16> verticalAssemblyCorrections_;
 };
 
