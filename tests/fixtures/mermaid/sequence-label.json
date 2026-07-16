@@ -1,0 +1,296 @@
+{
+  "mermaidVersion": "11.16.0",
+  "fontMode": "bundled-noto",
+  "cases": [
+    {
+      "id": "participant-html-cjk",
+      "kind": "participant",
+      "label": "<b>Client</b><br/>客户端",
+      "source": "sequenceDiagram\nparticipant A as <b>Client</b><br/>客户端\nA->>B:ping",
+      "sequence": {},
+      "text": "<b>Client</b>\n客户端",
+      "elementCount": 2,
+      "box": {
+        "width": 105.297,
+        "height": 44
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 13,
+          "width": 105.297,
+          "baseline": 11,
+          "ascent": 11,
+          "descent": 11,
+          "runs": [
+            {
+              "start": 0,
+              "length": 13,
+              "x": 0,
+              "width": 105.297,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        },
+        {
+          "start": 14,
+          "length": 3,
+          "width": 48,
+          "baseline": 11,
+          "ascent": 11,
+          "descent": 11,
+          "runs": [
+            {
+              "start": 14,
+              "length": 3,
+              "x": 0,
+              "width": 48,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "message-html-bidi",
+      "kind": "message",
+      "label": "Hello <i>世界</i><br/>مرحبا שלום",
+      "source": "sequenceDiagram\nA->>B:Hello <i>世界</i><br/>مرحبا שלום",
+      "sequence": {},
+      "text": "Hello <i>世界</i>\nمرحبا שלום",
+      "elementCount": 2,
+      "box": {
+        "width": 125.797,
+        "height": 44
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 15,
+          "width": 125.797,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 0,
+              "length": 15,
+              "x": 0,
+              "width": 125.797,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        },
+        {
+          "start": 16,
+          "length": 10,
+          "width": 73.469,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 16,
+              "length": 10,
+              "x": 0,
+              "width": 73.469,
+              "rightToLeft": true,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "note-markdown-math",
+      "kind": "note",
+      "label": "`**Speed** $$x^2$$`",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:`**Speed** $$x^2$$`",
+      "sequence": {},
+      "text": "`**Speed** x2`",
+      "elementCount": 1,
+      "box": {
+        "width": 107,
+        "height": 22
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 14,
+          "width": 106.906,
+          "baseline": 17,
+          "ascent": 17,
+          "descent": 5,
+          "runs": [
+            {
+              "start": 0,
+              "length": 11,
+              "x": 0,
+              "width": 86.281,
+              "rightToLeft": false,
+              "math": false
+            },
+            {
+              "start": 11,
+              "length": 2,
+              "x": 86.281,
+              "width": 15.469,
+              "rightToLeft": false,
+              "math": true
+            },
+            {
+              "start": 13,
+              "length": 1,
+              "x": 102.406,
+              "width": 4.5,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fragment-html-rtl",
+      "kind": "fragment",
+      "label": "<b>Success</b><br/>نجاح",
+      "source": "sequenceDiagram\nalt <b>Success</b><br/>نجاح\nA->>B:ok\nend",
+      "sequence": {},
+      "text": "[<b>Success</b>\nنجاح]",
+      "elementCount": 2,
+      "box": {
+        "width": 125.891,
+        "height": 44
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 15,
+          "width": 125.891,
+          "baseline": 17,
+          "ascent": 17,
+          "descent": 5,
+          "runs": [
+            {
+              "start": 0,
+              "length": 15,
+              "x": 0,
+              "width": 125.891,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        },
+        {
+          "start": 16,
+          "length": 5,
+          "width": 34.656,
+          "baseline": 17,
+          "ascent": 17,
+          "descent": 5,
+          "runs": [
+            {
+              "start": 16,
+              "length": 5,
+              "x": 0,
+              "width": 34.656,
+              "rightToLeft": true,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "box-markdown-math",
+      "kind": "box",
+      "label": "`**Services** $$x$$`",
+      "source": "sequenceDiagram\nbox rgb(238, 246, 255) `**Services** $$x$$`\nparticipant A\nparticipant B\nend\nA->>B:call",
+      "sequence": {},
+      "text": "`**Services** $$x$$`",
+      "elementCount": 1,
+      "box": {
+        "width": 155.032,
+        "height": 22
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 20,
+          "width": 154.531,
+          "baseline": 11,
+          "ascent": 11,
+          "descent": 11,
+          "runs": [
+            {
+              "start": 0,
+              "length": 20,
+              "x": 0,
+              "width": 154.531,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "message-wrap-width",
+      "kind": "message",
+      "label": "alpha beta gamma delta epsilon zeta eta theta",
+      "source": "sequenceDiagram\nA->>B:wrap:alpha beta gamma delta epsilon zeta eta theta",
+      "sequence": {
+        "wrap": true,
+        "wrapPadding": 10
+      },
+      "text": "alpha beta gamma delta\nepsilon zeta eta theta",
+      "elementCount": 2,
+      "box": {
+        "width": 183.375,
+        "height": 44
+      },
+      "lines": [
+        {
+          "start": 0,
+          "length": 22,
+          "width": 183.375,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 0,
+              "length": 22,
+              "x": 0,
+              "width": 183.375,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        },
+        {
+          "start": 23,
+          "length": 22,
+          "width": 161.359,
+          "baseline": 12.719,
+          "ascent": 12.719,
+          "descent": 9.281,
+          "runs": [
+            {
+              "start": 23,
+              "length": 22,
+              "x": 0,
+              "width": 161.359,
+              "rightToLeft": false,
+              "math": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "fixtureSha256": "105fa54a9c924fa652ee699986bdb53556c7f2c5a3424b739cdfcce5bead351b"
+}

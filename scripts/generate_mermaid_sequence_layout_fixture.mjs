@@ -202,6 +202,69 @@ const cases = [
       "A/|-A:self reverse",
     ].join("\n"),
   },
+  {
+    id: "participant-boxes",
+    axes: ["participant-box", "participant-size", "message-spacing"],
+    source: [
+      "sequenceDiagram",
+      "box rgb(230, 240, 255) Services",
+      "participant A as API",
+      "participant B as Worker",
+      "end",
+      "box #fff0f0",
+      "actor C as Worker",
+      'participant D@{ "type": "database" } as Store',
+      "end",
+      "A->>C:cross box",
+      "C->>D:persist",
+      "create participant E as Runtime",
+      "D->>E:create beside boxes",
+      "destroy E",
+      "E-->>A:destroy beside boxes",
+    ].join("\n"),
+  },
+  {
+    id: "visibility-no-footer",
+    axes: ["participant-visibility", "footer-policy", "participant-lifecycle"],
+    sequence: { mirrorActors: false, hideUnusedParticipants: true },
+    source: [
+      "sequenceDiagram",
+      "participant UNUSED as Hidden",
+      "participant P as Participant",
+      'participant A@{ "type": "actor" } as Actor',
+      'participant B@{ "type": "boundary" } as Boundary',
+      'participant C@{ "type": "control" } as Control',
+      'participant E@{ "type": "entity" } as Entity',
+      'participant D@{ "type": "database" } as Store',
+      'participant L@{ "type": "collections" } as Collection',
+      'participant Q@{ "type": "queue" } as Queue',
+      "P->>A:one",
+      "A->>B:two",
+      "B->>C:three",
+      "C->>E:four",
+      "E->>D:five",
+      "D->>L:six",
+      "L->>Q:seven",
+      "destroy Q",
+      "Q-->>P:done",
+    ].join("\n"),
+  },
+  {
+    id: "activation-lifecycle",
+    axes: ["activation-stack", "activation-lifecycle", "fragment-geometry"],
+    source: [
+      "sequenceDiagram",
+      "activate A",
+      "A->>+B:explicit and plus",
+      "B->>+B:nested self",
+      "alt branch",
+      "B-->>-B:close nested",
+      "end",
+      "B-->>-A:close B",
+      "deactivate A",
+      "A->>+C:unclosed",
+    ].join("\n"),
+  },
 ];
 
 const { default: puppeteer } = await import(
@@ -284,6 +347,12 @@ try {
         return { id: element.getAttribute("name") ?? container?.getAttribute("name") ?? "",
           paintedBox: container ? paintedBox(container) : paintedBox(element) };
       });
+      const participantBoxes = [...root.querySelectorAll("rect.rect")].map((element, position) => ({
+        position, shape: { x: number(element, "x"), y: number(element, "y"),
+          width: number(element, "width"), height: number(element, "height"),
+          fill: element.getAttribute("fill") ?? "", stroke: element.getAttribute("stroke") ?? "" },
+        label: text(element.parentElement?.querySelector("text.text")),
+      }));
       const messageLabels = [...root.querySelectorAll(".messageText")];
       const messages = [...root.querySelectorAll('[data-et="message"]')].map((element, position) => {
         const line = element.tagName.toLowerCase() === "line" ? element : element.querySelector("line");
@@ -372,11 +441,12 @@ try {
           ...Object.fromEntries([
             "actorMargin", "width", "height", "boxMargin", "boxTextMargin", "messageMargin",
             "noteMargin", "activationWidth", "diagramMarginX", "diagramMarginY", "mirrorActors",
-            "wrapPadding", "labelBoxWidth", "labelBoxHeight", "bottomMarginAdj", "rightAngles",
+            "hideUnusedParticipants", "wrapPadding", "labelBoxWidth", "labelBoxHeight",
+            "bottomMarginAdj", "rightAngles",
           ].map((key) => [key, resolved[key]])),
         },
         root: { viewBox: root.getAttribute("viewBox"), ...box(root) },
-        participants, footers, lifelines, messages, centralConnections, sequenceNumbers,
+        participants, footers, participantBoxes, lifelines, messages, centralConnections, sequenceNumbers,
         activations, notes, fragments,
         svgStructure: { markers: markerStructure },
       };

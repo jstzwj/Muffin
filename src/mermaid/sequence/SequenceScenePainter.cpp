@@ -1,6 +1,7 @@
 #include "mermaid/sequence/SequenceScenePainter.h"
 
 #include "mermaid/MermaidFontRegistry.h"
+#include "mermaid/sequence/SequenceLabel.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QFont>
@@ -15,18 +16,16 @@ namespace {
 
 QColor color(const QString& value) { return mermaid::color::toQColor(value); }
 
-void centeredText(QPainter& painter, const QString& text, const QRectF& rect,
+void centeredText(QPainter& painter, const SequenceLabelDocument& label, const QRectF& rect,
                   const SequenceSceneStyle& style) {
-  QFont font(style.fontFamily);
-  font.setPixelSize(qRound(style.fontSize));
-  MermaidFontRegistry::configureFont(font, style.fontFamily);
-  painter.setFont(font);
-  painter.setPen(color(style.textColor));
-  painter.drawText(rect, Qt::AlignCenter | Qt::TextWordWrap, text);
+  paintSequenceLabel(painter, label, rect, style.fontFamily,
+                     style.fontSize, style.fontSize * 1.375,
+                     color(style.textColor), true);
 }
 
 void participantShape(QPainter& painter, const SequenceLayoutParticipant& actor,
-                      bool footer, const SequenceSceneStyle& style) {
+                      const SequenceLabelDocument& label, bool footer,
+                      const SequenceSceneStyle& style) {
   painter.setPen(QPen(color(style.actorStroke), 2.0));
   painter.setBrush(color(style.actorFill));
   const auto& paths = footer ? actor.bottomShapePaths : actor.topShapePaths;
@@ -36,7 +35,7 @@ void participantShape(QPainter& painter, const SequenceLayoutParticipant& actor,
     painter.setBrush(Qt::NoBrush);
   }
   for (const QPainterPath& path : paths) painter.drawPath(path);
-  centeredText(painter, actor.label, labelRect, style);
+  centeredText(painter, label, labelRect, style);
 }
 
 void marker(QPainter& painter, const QString& type, QPointF point, QPointF direction,
@@ -77,27 +76,36 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter) {
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setRenderHint(QPainter::TextAntialiasing);
 
-  for (const auto& actor : scene.participants) {
+  for (qsizetype index = 0; index < scene.boxes.size(); ++index) {
+    const auto& box = scene.boxes[index];
+    painter.setPen(QPen(color(scene.style.boxStroke), 1.0));
+    painter.setBrush(box.fill == QLatin1String("transparent") ? Qt::NoBrush : color(box.fill));
+    painter.drawRect(box.rect);
+    if (!box.label.isEmpty()) centeredText(painter, scene.boxLabels[index], box.labelRect, scene.style);
+  }
+  for (qsizetype index = 0; index < scene.participants.size(); ++index) {
+    const auto& actor = scene.participants[index];
     painter.setPen(QPen(color(scene.style.lifelineColor), 0.5, Qt::DashLine));
     painter.drawLine(QPointF(actor.anchorX, actor.lifelineStartY),
                      QPointF(actor.anchorX, actor.lifelineStopY));
-    participantShape(painter, actor, false, scene.style);
-    participantShape(painter, actor, true, scene.style);
+    if (actor.drawTop) participantShape(painter, actor, scene.participantLabels[index], false, scene.style);
+    if (actor.drawBottom) participantShape(painter, actor, scene.participantLabels[index], true, scene.style);
   }
   for (const auto& activation : scene.activations) {
     painter.setPen(QPen(color(scene.style.activationStroke), 1.0));
     painter.setBrush(color(scene.style.activationFill));
     painter.drawRect(activation.rect);
   }
-  for (const auto& fragment : scene.fragments) {
+  for (qsizetype index = 0; index < scene.fragments.size(); ++index) {
+    const auto& fragment = scene.fragments[index];
     painter.setPen(QPen(color(scene.style.fragmentStroke), 2.0));
     painter.setBrush(Qt::NoBrush);
     painter.drawRect(fragment.rect);
     const QRectF tag(fragment.rect.x(), fragment.rect.y(), 50.0, 20.0);
     painter.setBrush(color(scene.style.labelFill));
     painter.drawRect(tag);
-    centeredText(painter, fragment.kind, tag, scene.style);
-    centeredText(painter, fragment.label,
+    centeredText(painter, scene.fragmentKindLabels[index], tag, scene.style);
+    centeredText(painter, scene.fragmentLabels[index],
                  QRectF(fragment.rect.x() + 50.0, fragment.rect.y(),
                         fragment.rect.width() - 50.0, 30.0), scene.style);
     QPen sectionPen(color(scene.style.fragmentStroke), 1.0, Qt::DashLine);
@@ -105,13 +113,15 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter) {
     for (qreal y : fragment.sectionY)
       painter.drawLine(QPointF(fragment.rect.left(), y), QPointF(fragment.rect.right(), y));
   }
-  for (const auto& note : scene.notes) {
+  for (qsizetype index = 0; index < scene.notes.size(); ++index) {
+    const auto& note = scene.notes[index];
     painter.setPen(QPen(color(scene.style.noteStroke), 1.0));
     painter.setBrush(color(scene.style.noteFill));
     painter.drawRect(note.rect);
-    centeredText(painter, note.label, note.rect, scene.style);
+    centeredText(painter, scene.noteLabels[index], note.rect, scene.style);
   }
-  for (const auto& message : scene.messages) {
+  for (qsizetype index = 0; index < scene.messages.size(); ++index) {
+    const auto& message = scene.messages[index];
     QPen pen(color(scene.style.signalColor), 2.0);
     if (message.dashed) pen.setDashPattern({3.0, 3.0});
     painter.setPen(pen);
@@ -132,7 +142,7 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter) {
            color(scene.style.signalColor));
     marker(painter, message.markerStart, QPointF(message.startX, message.lineY),
            message.markerStartDirection, color(scene.style.signalColor));
-    centeredText(painter, message.label, message.labelRect, scene.style);
+    centeredText(painter, scene.messageLabels[index], message.labelRect, scene.style);
     const auto number = std::find_if(scene.sequenceNumbers.cbegin(), scene.sequenceNumbers.cend(),
         [&](const SequenceLayoutNumber& item) { return item.messageIndex == message.messageIndex; });
     if (number != scene.sequenceNumbers.cend()) {

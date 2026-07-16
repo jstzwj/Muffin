@@ -31,6 +31,21 @@ const cases = [
       "B<<-->>A:bidirectional", "autonumber off", "A-->>B:unnumbered"].join("\n") },
   { id: "self-autonumber", source: ["sequenceDiagram", "autonumber", "A->>A:self solid",
       "A-->>A:self dotted", "A-xA:self cross", "A<<->>A:self both"].join("\n") },
+  { id: "label-participant-html-cjk", source: ["sequenceDiagram",
+      "participant A as <b>Client</b><br/>\u5ba2\u6237\u7aef", "participant B as Server",
+      "A->>B:ping"].join("\n") },
+  { id: "label-message-wrap-bidi", source: [
+      '%%{init: {"sequence": {"wrap": true, "wrapPadding": 10}}}%%', "sequenceDiagram",
+      "A->>B:wrap:alpha beta gamma delta epsilon zeta eta theta",
+      "B-->>A:Hello \u0645\u0631\u062d\u0628\u0627 \u05e9\u05dc\u05d5\u05dd"].join("\n") },
+  { id: "label-note-markdown-math", source: ["sequenceDiagram", "A->>B:start",
+      "Note over A,B:`**Speed** $$x^2$$`", "B-->>A:done"].join("\n") },
+  { id: "label-fragment-html-rtl", source: ["sequenceDiagram",
+      "alt <b>Success</b><br/>\u0646\u062c\u0627\u062d", "A->>B:ok", "else fallback",
+      "B-->>A:return", "end"].join("\n") },
+  { id: "label-box-markdown-math", source: ["sequenceDiagram",
+      "box rgb(238, 246, 255) `**Services** $$x$$`", "participant A", "participant B", "end",
+      "A->>B:call"].join("\n") },
 ];
 const { default: puppeteer } = await import(pathToFileURL(path.join(path.dirname(mermaidRoot), "puppeteer", "lib", "puppeteer", "puppeteer.js")));
 const browser = await puppeteer.launch({headless:true, executablePath:chrome, args:["--allow-file-access-from-files"]});

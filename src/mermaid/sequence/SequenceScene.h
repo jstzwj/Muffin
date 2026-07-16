@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mermaid/sequence/SequenceLayout.h"
+#include "mermaid/sequence/SequenceLabel.h"
 
 namespace muffin::mermaid::sequence {
 
@@ -17,6 +18,7 @@ struct SequenceSceneStyle {
   QString fragmentFill = QStringLiteral("transparent");
   QString fragmentStroke = QStringLiteral("#666666");
   QString labelFill = QStringLiteral("#eaeaea");
+  QString boxStroke = QStringLiteral("rgba(0,0,0,0.5)");
   QString fontFamily = QStringLiteral("Noto Sans");
   qreal fontSize = 16.0;
 };
@@ -25,11 +27,18 @@ struct SequenceSceneStyle {
 // the parser DB and never performs placement.
 struct SequenceScene {
   QRectF bounds;
+  QVector<SequenceLayoutBox> boxes;
+  QVector<SequenceLabelDocument> boxLabels;
   QVector<SequenceLayoutParticipant> participants;
+  QVector<SequenceLabelDocument> participantLabels;
   QVector<SequenceLayoutMessage> messages;
+  QVector<SequenceLabelDocument> messageLabels;
   QVector<SequenceLayoutActivation> activations;
   QVector<SequenceLayoutNote> notes;
+  QVector<SequenceLabelDocument> noteLabels;
   QVector<SequenceLayoutFragment> fragments;
+  QVector<SequenceLabelDocument> fragmentKindLabels;
+  QVector<SequenceLabelDocument> fragmentLabels;
   QVector<SequenceLayoutNumber> sequenceNumbers;
   SequenceSceneStyle style;
 };

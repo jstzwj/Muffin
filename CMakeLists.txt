@@ -510,6 +510,8 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/sequence/SequenceDiagram.h
   src/mermaid/sequence/SequenceLayout.cpp
   src/mermaid/sequence/SequenceLayout.h
+  src/mermaid/sequence/SequenceLabel.cpp
+  src/mermaid/sequence/SequenceLabel.h
   src/mermaid/sequence/SequenceScene.cpp
   src/mermaid/sequence/SequenceScene.h
   src/mermaid/sequence/SequenceScenePainter.cpp

@@ -11,10 +11,12 @@ namespace muffin::mermaid::sequence {
 
 struct SequenceLayoutMeasurements {
   QMap<QString, QSizeF> participants;
+  QVector<QSizeF> boxes;
   QVector<QSizeF> messages;
   QVector<QSizeF> notes;
   QVector<QSizeF> fragments;
   QMap<int, QSizeF> messagesByIndex;
+  QMap<int, QString> messageDisplayByIndex;
   QMap<int, QSizeF> notesByIndex;
   QMap<int, QSizeF> fragmentsByIndex;
 };
@@ -82,6 +84,17 @@ struct SequenceLayoutOptions {
   qreal labelBoxWidth = 50.0;
   qreal labelBoxHeight = 20.0;
   bool rightAngles = false;
+  bool wrap = false;
+  bool mirrorActors = true;
+  bool hideUnusedParticipants = false;
+};
+
+struct SequenceLayoutBox {
+  int boxIndex = -1;
+  QString label;
+  QString fill;
+  QRectF rect;
+  QRectF labelRect;
 };
 
 struct SequenceLayoutParticipant {
@@ -97,6 +110,8 @@ struct SequenceLayoutParticipant {
   qreal bottomY = 0.0;
   bool created = false;
   bool destroyed = false;
+  bool drawTop = true;
+  bool drawBottom = true;
   QVector<QPainterPath> topShapePaths;
   QVector<QPainterPath> bottomShapePaths;
   QRectF topLabelRect;
@@ -159,6 +174,7 @@ struct SequenceLayoutFragment {
 };
 
 struct SequenceLayoutResult {
+  QVector<SequenceLayoutBox> boxes;
   QVector<SequenceLayoutParticipant> participants;
   QVector<SequenceLayoutMessage> messages;
   QVector<SequenceLayoutActivation> activations;

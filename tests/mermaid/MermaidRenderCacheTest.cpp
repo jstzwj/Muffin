@@ -4,12 +4,14 @@
 
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/sequence/SequenceLabel.h"
 
 #include <QDebug>
 #include <QEventLoop>
 #include <QGuiApplication>
 #include <QTimer>
 
+#include <algorithm>
 #include <cstdlib>
 
 using namespace muffin::mermaid::editor;
@@ -74,6 +76,33 @@ int main(int argc, char** argv) {
     require(e.sequenceScene->participants.size() == 2 && e.sequenceScene->messages.size() == 1 &&
                 e.naturalSize.width() > 0 && e.naturalSize.height() > 0,
             QStringLiteral("sequenceDiagram scene must contain participant/message geometry"));
+  }
+
+  // --- sequence config + box measurements reach the production scene ---
+  {
+    MermaidRenderCache cache;
+    const QString configured = QStringLiteral(
+        "%%{init: {\"sequence\": {\"mirrorActors\": false, "
+        "\"hideUnusedParticipants\": true, \"width\": 180, \"boxMargin\": 14}}}%%\n"
+        "sequenceDiagram\n"
+        "participant UNUSED as Hidden\n"
+        "box rgb(238, 246, 255) Services\n"
+        "participant A as API\n"
+        "participant B as Worker\n"
+        "end\n"
+        "A->>B:call");
+    const MermaidRenderEntry e = cache.getSync(MermaidRenderCache::makeKey(configured), configured);
+    require(e.status == kReady && e.sequenceScene != nullptr,
+            QStringLiteral("configured sequence must render"));
+    require(e.sequenceScene->participants.size() == 2 && e.sequenceScene->boxes.size() == 1,
+            QStringLiteral("sequence hideUnusedParticipants/box config must reach the scene"));
+    require(e.sequenceScene->participants.first().logicalRect.width() == 180.0 &&
+                !e.sequenceScene->participants.first().drawBottom &&
+                e.sequenceScene->participants.first().lifelineStopY == 2000.0,
+            QStringLiteral("sequence width/mirrorActors config must reach layout"));
+    require(e.sequenceScene->boxes.first().label == QLatin1String("Services") &&
+                e.sequenceScene->boxes.first().labelRect.height() > 0.0,
+            QStringLiteral("sequence box title must be measured and retained"));
   }
 
   // --- async request: Loading → renderReady → Ready ---
@@ -150,6 +179,56 @@ int main(int argc, char** argv) {
                                      QStringLiteral("string"));
     require(html.text == QLatin1String("Bold\nitalic") && html.formats.size() == 2,
             QStringLiteral("safe inline HTML must use the same native label model"));
+  }
+
+  // --- sequence labels share structured HTML/Markdown/Math/bidi metrics ---
+  {
+    using muffin::mermaid::sequence::layoutSequenceLabel;
+    using muffin::mermaid::sequence::parseSequenceLabel;
+    const auto html = parseSequenceLabel(QStringLiteral("\u4e2d\u6587 <b>bold</b><br/>"
+                                                        "\u0645\u0631\u062d\u0628\u0627 "
+                                                        "\u05e9\u05dc\u05d5\u05dd"));
+    const auto htmlMetrics = layoutSequenceLabel(html, QStringLiteral("Noto Sans"), 16.0, 22.0);
+    require(html.richText.text == QStringLiteral("\u4e2d\u6587 <b>bold</b>\n"
+                                                 "\u0645\u0631\u062d\u0628\u0627 "
+                                                 "\u05e9\u05dc\u05d5\u05dd") &&
+                htmlMetrics.lines.size() == 2 && htmlMetrics.size.height() >= 44.0,
+            QStringLiteral("sequence HTML/br labels must retain visual lines"));
+    require(std::all_of(htmlMetrics.lines.cbegin(), htmlMetrics.lines.cend(), [](const auto& line) {
+              return line.baseline > 0.0 && line.ascent > 0.0 && line.descent >= 0.0 &&
+                     !line.runs.isEmpty();
+            }), QStringLiteral("sequence labels must expose baseline/ascent/descent/bidi runs"));
+    const auto markdownMath = parseSequenceLabel(
+        QStringLiteral("`**\u901f\u5ea6** $$x^2$$`"),
+        muffin::mermaid::sequence::SequenceLabelKind::Note);
+    const auto mathMetrics = layoutSequenceLabel(markdownMath, QStringLiteral("Noto Sans"), 16.0, 22.0);
+    require(!markdownMath.markdown && !markdownMath.richText.math.isEmpty() &&
+                markdownMath.richText.text.startsWith(QLatin1String("`**")) &&
+                mathMetrics.size.width() > 0.0,
+            QStringLiteral("sequence literal Markdown/Math labels must use structured measurement"));
+  }
+
+  // --- structured label height participates in sequence vertical placement ---
+  {
+    MermaidRenderCache cache;
+    const QString source = QStringLiteral(
+        "sequenceDiagram\n"
+        "box rgb(238, 246, 255) <b>\u670d\u52a1</b>\n"
+        "participant A as `**\u5ba2\u6237\u7aef**`\n"
+        "participant B as \u062e\u0627\u062f\u0645\n"
+        "end\n"
+        "A->>B:\u7b2c\u4e00\u884c<br/>\u0645\u0631\u062d\u0628\u0627 "
+        "\u05e9\u05dc\u05d5\u05dd\n"
+        "note over A,B:\u8bf4\u660e<br/>$$x^2$$\n"
+        "B-->>A:after");
+    const MermaidRenderEntry e = cache.getSync(MermaidRenderCache::makeKey(source), source);
+    require(e.status == kReady && e.sequenceScene != nullptr &&
+                e.sequenceScene->messages.size() == 2 && e.sequenceScene->notes.size() == 1,
+            QStringLiteral("structured sequence labels must render end-to-end"));
+    require(e.sequenceScene->messages.first().labelRect.height() >= 44.0 &&
+                e.sequenceScene->notes.first().rect.height() >= 64.0 &&
+                e.sequenceScene->messages.at(1).lineY - e.sequenceScene->messages.first().lineY > 100.0,
+            QStringLiteral("multiline label height must advance sequence geometry"));
   }
 
   // --- regression: the example.md diagram (nested compound + cluster-crossing

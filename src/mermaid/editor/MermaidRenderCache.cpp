@@ -9,6 +9,7 @@
 #include "mermaid/scene/FlowScenePainter.h"
 #include "mermaid/sequence/SequenceDiagram.h"
 #include "mermaid/sequence/SequenceLayout.h"
+#include "mermaid/sequence/SequenceLabel.h"
 #include "mermaid/sequence/SequenceScene.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 #include "mermaid/theme/FlowTheme.h"
@@ -17,8 +18,6 @@
 #include <QCryptographicHash>
 #include <QFutureWatcher>
 #include <QImage>
-#include <QFont>
-#include <QFontMetricsF>
 #include <QJsonObject>
 #include <QRegularExpression>
 #include <QtConcurrent>
@@ -220,26 +219,61 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     if (type == QLatin1String("sequence")) {
       const sequence::SequenceDiagram diagram = sequence::SequenceDiagram::parse(pre.code);
       sequence::SequenceLayoutMeasurements measurements;
-      QFont font(MermaidFontRegistry::primaryFamily());
-      font.setPixelSize(16);
-      MermaidFontRegistry::configureFont(font, MermaidFontRegistry::cssFamilyStack());
-      const QFontMetricsF metrics(font);
-      const auto measure = [&](const QString& text) {
-        return QSizeF(metrics.horizontalAdvance(text), metrics.height());
+      const QJsonObject sequenceConfig = pre.config.value(QStringLiteral("sequence")).toObject();
+      const qreal actorMargin = configNumber(sequenceConfig, QStringLiteral("actorMargin"), 50.0);
+      const qreal actorWidth = configNumber(sequenceConfig, QStringLiteral("width"), 150.0);
+      const auto labelDocument = [&](const QString& text, sequence::SequenceLabelKind kind) {
+        return sequence::parseSequenceLabel(text, kind);
+      };
+      const auto measure = [&](const sequence::SequenceLabelDocument& label) {
+        return sequence::layoutSequenceLabel(label, MermaidFontRegistry::cssFamilyStack(),
+                                             16.0, 22.0).size;
       };
       for (const auto& actor : diagram.data().actors)
-        measurements.participants.insert(actor.id, measure(actor.description));
+        measurements.participants.insert(actor.id, measure(labelDocument(
+            actor.description, sequence::SequenceLabelKind::Participant)));
+      for (const auto& box : diagram.data().boxes)
+        measurements.boxes.append(measure(labelDocument(box.name, sequence::SequenceLabelKind::Box)));
       for (qsizetype index = 0; index < diagram.data().messages.size(); ++index) {
         const auto& message = diagram.data().messages[index];
-        const QSizeF size = measure(message.message.toString());
-        if (message.type == 2) measurements.notesByIndex.insert(static_cast<int>(index), size);
-        else if (message.type == 10 || message.type == 12 || message.type == 15 ||
-                 message.type == 19 || message.type == 22 || message.type == 27 ||
-                 message.type == 30 || message.type == 32)
+        const bool note = message.type == 2;
+        const bool fragment = message.type == 10 || message.type == 12 || message.type == 15 ||
+                              message.type == 19 || message.type == 22 || message.type == 27 ||
+                              message.type == 30 || message.type == 32;
+        const auto kind = note ? sequence::SequenceLabelKind::Note
+            : fragment ? sequence::SequenceLabelKind::Fragment
+                       : sequence::SequenceLabelKind::Message;
+        auto document = labelDocument(message.message.toString(), kind);
+        if (!note && !fragment &&
+            (message.wrap || sequenceConfig.value(QStringLiteral("wrap")).toBool(false)))
+          document = sequence::wrapSequenceLabel(std::move(document),
+              MermaidFontRegistry::cssFamilyStack(), 16.0, actorWidth + actorMargin);
+        const QSizeF size = measure(document);
+        if (!note && !fragment && document.richText.math.isEmpty())
+          measurements.messageDisplayByIndex.insert(static_cast<int>(index), document.richText.text);
+        if (note) measurements.notesByIndex.insert(static_cast<int>(index), size);
+        else if (fragment)
           measurements.fragmentsByIndex.insert(static_cast<int>(index), size);
         else measurements.messagesByIndex.insert(static_cast<int>(index), size);
       }
-      const sequence::SequenceLayoutResult layout = sequence::layoutSequence(diagram.data(), measurements);
+      sequence::SequenceLayoutOptions layoutOptions;
+      layoutOptions.actorMargin = actorMargin;
+      layoutOptions.width = actorWidth;
+      layoutOptions.height = configNumber(sequenceConfig, QStringLiteral("height"), 65.0);
+      layoutOptions.boxMargin = configNumber(sequenceConfig, QStringLiteral("boxMargin"), 10.0);
+      layoutOptions.boxTextMargin = configNumber(sequenceConfig, QStringLiteral("boxTextMargin"), 5.0);
+      layoutOptions.noteMargin = configNumber(sequenceConfig, QStringLiteral("noteMargin"), 10.0);
+      layoutOptions.activationWidth = configNumber(sequenceConfig, QStringLiteral("activationWidth"), 10.0);
+      layoutOptions.wrapPadding = configNumber(sequenceConfig, QStringLiteral("wrapPadding"), 10.0);
+      layoutOptions.labelBoxWidth = configNumber(sequenceConfig, QStringLiteral("labelBoxWidth"), 50.0);
+      layoutOptions.labelBoxHeight = configNumber(sequenceConfig, QStringLiteral("labelBoxHeight"), 20.0);
+      layoutOptions.rightAngles = sequenceConfig.value(QStringLiteral("rightAngles")).toBool(false);
+      layoutOptions.wrap = sequenceConfig.value(QStringLiteral("wrap")).toBool(false);
+      layoutOptions.mirrorActors = sequenceConfig.value(QStringLiteral("mirrorActors")).toBool(true);
+      layoutOptions.hideUnusedParticipants =
+          sequenceConfig.value(QStringLiteral("hideUnusedParticipants")).toBool(false);
+      const sequence::SequenceLayoutResult layout =
+          sequence::layoutSequence(diagram.data(), measurements, layoutOptions);
       sequence::SequenceSceneStyle style;
       style.fontFamily = MermaidFontRegistry::cssFamilyStack();
       sequence::SequenceScene scene = sequence::buildSequenceScene(layout, style);

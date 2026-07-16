@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <QSet>
 
 namespace muffin::mermaid::sequence {
 namespace {
@@ -338,10 +339,20 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
       ? 22.0 : measurements.participants.cbegin().value().height();
 
   QMap<QString, int> actorIndex;
+  QSet<QString> usedActors;
+  if (options.hideUnusedParticipants) {
+    for (const SequenceMessage& message : data.messages) {
+      if (!message.from.isEmpty()) usedActors.insert(message.from);
+      if (!message.to.isEmpty()) usedActors.insert(message.to);
+    }
+  }
+  QVector<int> visibleActors;
   QVector<qreal> actorWidths(data.actors.size(), options.width);
   QVector<qreal> actorMargins(data.actors.size(), options.actorMargin);
   for (qsizetype index = 0; index < data.actors.size(); ++index) {
     actorIndex.insert(data.actors[index].id, static_cast<int>(index));
+    if (!options.hideUnusedParticipants || usedActors.contains(data.actors[index].id))
+      visibleActors.append(static_cast<int>(index));
     actorWidths[index] = std::max(options.width,
                                   std::round(measurements.participants.value(data.actors[index].id).width()) +
                                       2.0 * options.wrapPadding);
@@ -353,6 +364,7 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     if (!actorIndex.contains(message.from) || !actorIndex.contains(message.to)) continue;
     const SequenceActor& actor = data.actors[actorIndex.value(message.to)];
     const bool note = message.placement >= 0;
+    if (!note && (message.wrap || options.wrap)) continue;
     const QSizeF measured = note ? measuredNotes.value(static_cast<int>(messageIndex))
                                  : measuredMessages.value(static_cast<int>(messageIndex));
     const qreal width = measured.width() + 2.0 * options.wrapPadding;
@@ -385,8 +397,27 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
   bounds.boxMargin = options.boxMargin;
   qreal previousWidth = 0.0, previousMargin = 0.0;
   QMap<QString, int> placedActor;
-  for (qsizetype index = 0; index < data.actors.size(); ++index) {
+  QVector<qreal> boxStart(data.boxes.size(), 0.0);
+  QVector<qreal> boxWidth(data.boxes.size(), 0.0);
+  QVector<bool> boxStarted(data.boxes.size(), false);
+  int previousBox = -1;
+  qreal topBaseY = 0.0;
+  if (!data.boxes.isEmpty()) {
+    qreal titleHeight = 0.0;
+    for (const QSizeF& size : measurements.boxes) titleHeight = std::max(titleHeight, size.height());
+    topBaseY = options.boxMargin + titleHeight;
+  }
+  for (int index : visibleActors) {
     const SequenceActor& actor = data.actors[index];
+    if (actor.boxIndex != previousBox) {
+      if (previousBox >= 0) previousMargin += options.boxMargin + options.boxTextMargin;
+      if (actor.boxIndex >= 0) {
+        boxStart[actor.boxIndex] = previousWidth + previousMargin;
+        boxStarted[actor.boxIndex] = true;
+        previousMargin += options.boxTextMargin;
+      }
+      previousBox = actor.boxIndex;
+    }
     // Mermaid intentionally reserves half an actor before runtime-created
     // participants so their creation message can terminate at the new box.
     // The JS truthiness check excludes only a creation recorded at index 0.
@@ -397,23 +428,26 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     participant.id = actor.id;
     participant.type = actor.type;
     participant.label = actor.description;
-    participant.logicalRect = QRectF(x, 0.0, actorWidths[index], options.height);
+    participant.logicalRect = QRectF(x, topBaseY, actorWidths[index], options.height);
     participant.margin = actorMargins[index];
     participant.anchorX = x + actorWidths[index] / 2.0;
     if (actor.type == QLatin1String("actor") || actor.type == QLatin1String("boundary"))
-      participant.lifelineStartY = 80.0;
+      participant.lifelineStartY = topBaseY + 80.0;
     else if (actor.type == QLatin1String("control") || actor.type == QLatin1String("entity") ||
              actor.type == QLatin1String("database"))
-      participant.lifelineStartY = options.height + 2.0 * options.boxTextMargin;
+      participant.lifelineStartY = topBaseY + options.height + 2.0 * options.boxTextMargin;
     else
-      participant.lifelineStartY = options.height;
-    participant.topY = 0.0;
+      participant.lifelineStartY = topBaseY + options.height;
+    participant.topY = topBaseY;
+    participant.drawBottom = options.mirrorActors;
     result.participants.append(participant);
-    placedActor.insert(actor.id, static_cast<int>(index));
+    placedActor.insert(actor.id, result.participants.size() - 1);
     previousWidth += actorWidths[index] + previousMargin;
+    if (actor.boxIndex >= 0)
+      boxWidth[actor.boxIndex] = previousWidth + options.boxTextMargin - boxStart[actor.boxIndex];
     previousMargin = actorMargins[index];
   }
-  bounds.vertical = options.height;
+  bounds.vertical = topBaseY + options.height;
 
   QVector<OpenActivation> active;
   qreal sequenceIndex = 1.0;
@@ -435,7 +469,8 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
 
   for (qsizetype messageIndex = 0; messageIndex < data.messages.size(); ++messageIndex) {
     const SequenceMessage& message = data.messages[messageIndex];
-    const QString text = messageText(message.message);
+    const QString text = measurements.messageDisplayByIndex.value(
+        static_cast<int>(messageIndex), messageText(message.message));
     if (message.type == kAutonumber) {
       const QJsonObject config = message.message.toObject();
       const qreal start = config.value(QStringLiteral("start")).toDouble();
@@ -449,13 +484,15 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
       const auto& actor = participantFor(message.from);
       int stacked = 0;
       for (const OpenActivation& activation : active) if (activation.actor == message.from) ++stacked;
+      const bool overlapsOpenActivation = !active.isEmpty();
       // Mermaid's emitted SVG aligns the first top-level activation with its
       // triggering line; nested or fragment-contained activations retain the
       // renderer's 2px start offset.
       active.append({static_cast<int>(messageIndex), message.from, stacked + 1,
                      actor.anchorX + (stacked - 1) * options.activationWidth / 2.0,
                      actor.anchorX + (stacked - 1) * options.activationWidth / 2.0 + options.activationWidth,
-                     bounds.vertical + (stacked > 0 || !bounds.fragments.isEmpty() ? 2.0 : 0.0)});
+                     bounds.vertical + (overlapsOpenActivation || stacked > 0 || !bounds.fragments.isEmpty()
+                                            ? 2.0 : 0.0)});
       continue;
     }
     if (message.type == kActivationEnd) {
@@ -574,7 +611,10 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     const QSizeF measured = measuredMessages.value(static_cast<int>(messageIndex));
     const qreal startY = bounds.vertical;
     bounds.vertical += 10.0;
-    const int lines = std::max(1, static_cast<int>(text.count(QLatin1Char('\n'))) + 1);
+    const int measuredLines = defaultTextHeight > 0.0
+        ? std::max(1, qRound(measured.height() / defaultTextHeight)) : 1;
+    const int lines = std::max(measuredLines,
+                               static_cast<int>(text.count(QLatin1Char('\n'))) + 1);
     const qreal lineHeight = measured.height() / lines;
     bounds.vertical += lineHeight;
     qreal totalOffset = measured.height() - 10.0;
@@ -606,7 +646,8 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
       stopX += actor.anchorX < participantFor(message.from).anchorX ? adjustment : -adjustment;
       actor.created = true;
       actor.topY = lineY - actor.logicalRect.height() / 2.0;
-      actor.lifelineStartY += actor.topY;
+      const qreal lifelineOffset = actor.lifelineStartY - actor.logicalRect.y();
+      actor.lifelineStartY = actor.topY + lifelineOffset;
       bounds.vertical += actor.logicalRect.height() / 2.0;
     } else if (data.destroyedActors.value(message.from, -1) == messageIndex ||
                data.destroyedActors.value(message.to, -1) == messageIndex) {
@@ -614,10 +655,12 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
       SequenceLayoutParticipant& actor = lifecycleParticipant(sender ? message.from : message.to);
       const qreal adjustment = narrowLifecycleActor(actor.type)
           ? 18.0 + (sender ? 0.0 : 3.0) : actor.logicalRect.width() / 2.0 + (sender ? 0.0 : 3.0);
-      if (sender)
-        startX += actor.anchorX < participantFor(message.to).anchorX ? adjustment : -adjustment;
-      else
-        stopX += actor.anchorX < participantFor(message.from).anchorX ? adjustment : -adjustment;
+      if (options.mirrorActors) {
+        if (sender)
+          startX += actor.anchorX < participantFor(message.to).anchorX ? adjustment : -adjustment;
+        else
+          stopX += actor.anchorX < participantFor(message.from).anchorX ? adjustment : -adjustment;
+      }
       actor.destroyed = true;
       actor.bottomY = lineY - actor.logicalRect.height() / 2.0;
       actor.lifelineStopY = actor.bottomY;
@@ -729,8 +772,11 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
   const qreal lifelineStop = bounds.vertical + 2.0 * options.boxMargin;
   for (SequenceLayoutParticipant& participant : result.participants) {
     if (!participant.destroyed) {
-      participant.lifelineStopY = lifelineStop;
+      participant.lifelineStopY = options.mirrorActors ? lifelineStop : 2000.0;
       participant.bottomY = lifelineStop;
+    } else if (!options.mirrorActors) {
+      participant.lifelineStopY = participant.bottomY + participant.logicalRect.height() / 2.0;
+      if (participant.type == QLatin1String("database")) participant.lifelineStopY += 2.5;
     }
     const QSizeF labelSize = measurements.participants.value(
         participant.id, QSizeF(0.0, defaultTextHeight));
@@ -739,13 +785,37 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     const ParticipantPaintGeometry bottom = participantGeometry(
         participant, participant.bottomY, true, labelSize);
     participant.topShapePaths = top.paths;
-    participant.bottomShapePaths = bottom.paths;
+    participant.bottomShapePaths = participant.drawBottom ? bottom.paths : QVector<QPainterPath>{};
     participant.topLabelRect = top.labelRect;
     participant.bottomLabelRect = bottom.labelRect;
     participant.topPaintedBounds = top.bounds;
-    participant.bottomPaintedBounds = bottom.bounds;
+    participant.bottomPaintedBounds = participant.drawBottom ? bottom.bounds : QRectF{};
     bounds.insert(top.bounds.left(), top.bounds.top(), top.bounds.right(), top.bounds.bottom());
-    bounds.insert(bottom.bounds.left(), bottom.bounds.top(), bottom.bounds.right(), bottom.bounds.bottom());
+    if (participant.drawBottom)
+      bounds.insert(bottom.bounds.left(), bottom.bounds.top(), bottom.bounds.right(), bottom.bounds.bottom());
+  }
+  if (!data.boxes.isEmpty()) {
+    const qreal boxBottom = bounds.all.bottom() + options.boxMargin + 1.5;
+    for (qsizetype index = 0; index < data.boxes.size(); ++index) {
+      if (!boxStarted[index]) continue;
+      const SequenceBox& source = data.boxes[index];
+      const QSizeF labelSize = index < measurements.boxes.size()
+          ? measurements.boxes[index] : QSizeF{};
+      SequenceLayoutBox box;
+      box.boxIndex = static_cast<int>(index);
+      box.label = source.name;
+      box.fill = source.fill;
+      box.rect = QRectF(boxStart[index] - 2.0 * options.boxMargin,
+                        -options.boxTextMargin,
+                        boxWidth[index] + 4.0 * options.boxMargin,
+                        boxBottom + options.boxTextMargin);
+      box.labelRect = QRectF(box.rect.x(), options.boxTextMargin,
+                             box.rect.width(), labelSize.height());
+      // Mermaid lowers every newly drawn box, reversing source order in the
+      // final scene while actor membership keeps its source box index.
+      result.boxes.prepend(box);
+      bounds.insert(box.rect.left(), box.rect.top(), box.rect.right(), box.rect.bottom());
+    }
   }
   result.bounds = bounds.hasBounds ? bounds.all : QRectF{};
   return result;

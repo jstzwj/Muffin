@@ -77,11 +77,11 @@ int main(int argc, char** argv) {
   require(root.value(QStringLiteral("fontMode")).toString() == QLatin1String("bundled-noto"),
           QStringLiteral("Sequence layout must use the fixed Noto oracle"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("1e8742395c4d0784b32a9bdec3e4f8f79c488f5e50c295e82d23b9594e9c3aca"),
+              QLatin1String("765bb2adde98bea003fd0ca879722169c39aa81f8c534c32c64d7e0004371843"),
           QStringLiteral("Sequence layout fixture changed; audit geometry and update its digest"));
 
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-  require(cases.size() == 11, QStringLiteral("Sequence layout case count drifted"));
+  require(cases.size() == 14, QStringLiteral("Sequence layout case count drifted"));
   QSet<QString> ids, coveredAxes;
   int participantCount = 0, lifelineCount = 0, messageCount = 0;
   int activationCount = 0, noteCount = 0, fragmentCount = 0;
@@ -104,6 +104,7 @@ int main(int argc, char** argv) {
     SequenceLayoutMeasurements measurements;
     const QJsonArray participants = fixture.value(QStringLiteral("participants")).toArray();
     const QJsonArray footers = fixture.value(QStringLiteral("footers")).toArray();
+    const QJsonArray participantBoxes = fixture.value(QStringLiteral("participantBoxes")).toArray();
     const QJsonArray lifelines = fixture.value(QStringLiteral("lifelines")).toArray();
     const QJsonArray messages = fixture.value(QStringLiteral("messages")).toArray();
     const QJsonArray centralConnections = fixture.value(QStringLiteral("centralConnections")).toArray();
@@ -116,6 +117,8 @@ int main(int argc, char** argv) {
       measurements.participants.insert(object.value(QStringLiteral("id")).toString(),
                                        sizeOf(object.value(QStringLiteral("label")).toObject()));
     }
+    for (const QJsonValue& box : participantBoxes)
+      measurements.boxes.append(sizeOf(box.toObject().value(QStringLiteral("label")).toObject()));
     for (const QJsonValue& message : messages) {
       const QJsonObject object = message.toObject();
       const QSizeF measured = sizeOf(object.value(QStringLiteral("label")).toObject());
@@ -145,11 +148,15 @@ int main(int argc, char** argv) {
     options.labelBoxWidth = config.value(QStringLiteral("labelBoxWidth")).toDouble();
     options.labelBoxHeight = config.value(QStringLiteral("labelBoxHeight")).toDouble();
     options.rightAngles = config.value(QStringLiteral("rightAngles")).toBool();
+    options.mirrorActors = config.value(QStringLiteral("mirrorActors")).toBool(true);
+    options.hideUnusedParticipants = config.value(QStringLiteral("hideUnusedParticipants")).toBool();
     const SequenceLayoutResult layout = layoutSequence(data, measurements, options);
     const SequenceScene scene = buildSequenceScene(layout);
 
-    require(input.participants.size() == participants.size() && lifelines.size() == participants.size(),
+    require(layout.participants.size() == participants.size() && lifelines.size() == participants.size(),
             QStringLiteral("%1 participant/lifeline input count mismatch").arg(id));
+    require(!options.hideUnusedParticipants || input.participants.size() >= layout.participants.size(),
+            QStringLiteral("%1 hidden participant semantic input was lost").arg(id));
     QMap<QString, qreal> participantCenters;
     QMap<QString, QString> participantTypes;
     for (const SequenceLayoutParticipantInput& participant : input.participants)
@@ -175,6 +182,20 @@ int main(int argc, char** argv) {
       require(native->created == data.createdActors.contains(actorId) &&
                   native->destroyed == data.destroyedActors.contains(actorId),
               QStringLiteral("%1/%2 lifecycle flags mismatch").arg(id, actorId));
+    }
+    require(layout.boxes.size() == participantBoxes.size(),
+            QStringLiteral("%1 participant box count mismatch").arg(id));
+    for (const QJsonValue& boxValue : participantBoxes) {
+      const QJsonObject box = boxValue.toObject();
+      const qsizetype position = box.value(QStringLiteral("position")).toInteger();
+      const SequenceLayoutBox& native = layout.boxes.at(position);
+      const QJsonObject shape = box.value(QStringLiteral("shape")).toObject();
+      requireRectNear(native.rect, shape, 0.001,
+                      QStringLiteral("%1 participant box %2").arg(id).arg(position));
+      require(native.fill == shape.value(QStringLiteral("fill")).toString() &&
+                  native.label == box.value(QStringLiteral("label")).toObject()
+                                      .value(QStringLiteral("text")).toString(),
+              QStringLiteral("%1 participant box %2 style/label mismatch").arg(id).arg(position));
     }
     if (fixture.value(QStringLiteral("axes")).toArray().contains(QStringLiteral("participant-lifecycle"))) {
       for (const QJsonValue& footerValue : footers) {
@@ -275,7 +296,8 @@ int main(int argc, char** argv) {
     int activationStarts = 0;
     for (const SequenceLayoutActivationInput& activation : input.activations)
       if (activation.begin) ++activationStarts;
-    require(activationStarts == activations.size(), QStringLiteral("%1 activation stack count mismatch").arg(id));
+    require(activationStarts >= activations.size() && layout.activations.size() == activations.size(),
+            QStringLiteral("%1 activation lifecycle count mismatch").arg(id));
     for (const QJsonValue& activationValue : activations) {
       const QJsonObject activation = activationValue.toObject();
       require(std::abs(activation.value(QStringLiteral("width")).toDouble() - 10.0) <= 0.001 &&
@@ -349,7 +371,8 @@ int main(int argc, char** argv) {
               QStringLiteral("%1 incomplete SVG marker definition").arg(id));
     }
 
-    require(scene.participants.size() == layout.participants.size() &&
+    require(scene.boxes.size() == layout.boxes.size() &&
+                scene.participants.size() == layout.participants.size() &&
                 scene.messages.size() == layout.messages.size() &&
                 scene.activations.size() == layout.activations.size() &&
                 scene.notes.size() == layout.notes.size() &&
@@ -364,6 +387,8 @@ int main(int argc, char** argv) {
 
   for (const QString& axis : {QStringLiteral("participant-size"), QStringLiteral("participant-painted-bounds"),
                               QStringLiteral("participant-lifecycle"), QStringLiteral("message-marker"), QStringLiteral("lifeline"),
+                              QStringLiteral("participant-box"), QStringLiteral("participant-visibility"),
+                              QStringLiteral("footer-policy"), QStringLiteral("activation-lifecycle"),
                               QStringLiteral("central-connection"), QStringLiteral("autonumber"),
                               QStringLiteral("self-message"), QStringLiteral("right-angles"),
                               QStringLiteral("message-spacing"), QStringLiteral("activation-stack"),

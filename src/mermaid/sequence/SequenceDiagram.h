@@ -62,6 +62,7 @@ struct SequenceActor {
   QString nextActor;
   QString type = QStringLiteral("participant");
   QString box;
+  int boxIndex = -1;
   QJsonObject links;
   QJsonObject properties;
 };

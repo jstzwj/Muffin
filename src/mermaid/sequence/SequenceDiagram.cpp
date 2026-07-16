@@ -234,6 +234,7 @@ private:
     }
     if (currentBox_ >= 0) {
       actor.box = data_.boxes[currentBox_].name;
+      actor.boxIndex = currentBox_;
       data_.boxes[currentBox_].actorKeys.append(id);
     }
     data_.actors.append(actor);

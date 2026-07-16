@@ -9,6 +9,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSet>
 
 #include <cstdlib>
 
@@ -55,14 +56,17 @@ int main(int argc,char** argv) {
   const QJsonObject root=QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("mermaidVersion")).toString()==QLatin1String("11.16.0"),QStringLiteral("Sequence pixel version drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("e2037a1eef7b81d7ce3caa90668e624b1f4592e7f6c5d9469db6c1f1c624dda2"),
+              QLatin1String("bc06d7d5c0e25fbbc10a427fb32878d1defb4e9c3918f7b885645b4ca03bc991"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;
   const QJsonArray cases=root.value(QStringLiteral("cases")).toArray();
-  require(cases.size()==7,QStringLiteral("Sequence pixel matrix regressed"));
+  require(cases.size()==12,QStringLiteral("Sequence pixel matrix regressed"));
+  QSet<QString> ids;
   for(const QJsonValue& value:cases) {
     const QJsonObject fixture=value.toObject(); const QString id=fixture.value(QStringLiteral("id")).toString();
+    require(!id.isEmpty()&&!ids.contains(id),QStringLiteral("Duplicate sequence pixel case: %1").arg(id));
+    ids.insert(id);
     const auto entry=cache.getSync(cache.makeKey(fixture.value(QStringLiteral("source")).toString()),fixture.value(QStringLiteral("source")).toString());
     require(entry.status==editor::MermaidRenderStatus::Ready&&entry.sequenceScene,QStringLiteral("%1 native scene failed").arg(id));
     const QImage native=sequence::renderSequenceSceneToImage(*entry.sequenceScene,1.0,0.0);
@@ -86,6 +90,12 @@ int main(int argc,char** argv) {
         qAbs(average(ns.blue,ns.opaque)-average(gs.blue,gs.opaque));
     require(colorDistance<260.0,QStringLiteral("%1 mean color drift: %2").arg(id).arg(colorDistance));
   }
+  for(const QString& id:{QStringLiteral("label-participant-html-cjk"),
+                         QStringLiteral("label-message-wrap-bidi"),
+                         QStringLiteral("label-note-markdown-math"),
+                         QStringLiteral("label-fragment-html-rtl"),
+                         QStringLiteral("label-box-markdown-math")})
+    require(ids.contains(id),QStringLiteral("Sequence label pixel axis is uncovered: %1").arg(id));
   qDebug()<<"MermaidSequencePixelTest:" << cases.size() << "Chrome/native pixel goldens passed";
   return 0;
 }

@@ -50,7 +50,42 @@
       "file": "self-autonumber.png",
       "width": 150,
       "height": 486
+    },
+    {
+      "id": "label-participant-html-cjk",
+      "source": "sequenceDiagram\nparticipant A as <b>Client</b><br/>客户端\nparticipant B as Server\nA->>B:ping",
+      "file": "label-participant-html-cjk.png",
+      "width": 350,
+      "height": 204
+    },
+    {
+      "id": "label-message-wrap-bidi",
+      "source": "%%{init: {\"sequence\": {\"wrap\": true, \"wrapPadding\": 10}}}%%\nsequenceDiagram\nA->>B:wrap:alpha beta gamma delta epsilon zeta eta theta\nB-->>A:Hello مرحبا שלום",
+      "file": "label-message-wrap-bidi.png",
+      "width": 350,
+      "height": 280
+    },
+    {
+      "id": "label-note-markdown-math",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:`**Speed** $$x^2$$`\nB-->>A:done",
+      "file": "label-note-markdown-math.png",
+      "width": 350,
+      "height": 310
+    },
+    {
+      "id": "label-fragment-html-rtl",
+      "source": "sequenceDiagram\nalt <b>Success</b><br/>نجاح\nA->>B:ok\nelse fallback\nB-->>A:return\nend",
+      "file": "label-fragment-html-rtl.png",
+      "width": 350,
+      "height": 384
+    },
+    {
+      "id": "label-box-markdown-math",
+      "source": "sequenceDiagram\nbox rgb(238, 246, 255) `**Services** $$x$$`\nparticipant A\nparticipant B\nend\nA->>B:call",
+      "file": "label-box-markdown-math.png",
+      "width": 400,
+      "height": 261
     }
   ],
-  "fixtureSha256": "e2037a1eef7b81d7ce3caa90668e624b1f4592e7f6c5d9469db6c1f1c624dda2"
+  "fixtureSha256": "bc06d7d5c0e25fbbc10a427fb32878d1defb4e9c3918f7b885645b4ca03bc991"
 }
