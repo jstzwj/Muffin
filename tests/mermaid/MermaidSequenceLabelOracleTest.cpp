@@ -93,10 +93,10 @@ int main(int argc, char** argv) {
                        fixture.value(QStringLiteral("text")).toString()));
     const QJsonObject expectedBox = fixture.value(QStringLiteral("box")).toObject();
     near(native.size.width(), expectedBox.value(QStringLiteral("width")).toDouble(),
-         complexMath ? 20.0 : 2.0,
+         complexMath ? 0.2 : 2.0,
          id + QStringLiteral(" box width"));
     near(native.size.height(), expectedBox.value(QStringLiteral("height")).toDouble(),
-         complexMath ? 20.0 : 2.0,
+         complexMath ? 0.2 : 2.0,
          id + QStringLiteral(" box height"));
 
     for (qsizetype lineIndex = 0; lineIndex < native.lines.size(); ++lineIndex) {
@@ -110,16 +110,16 @@ int main(int argc, char** argv) {
                 context + QStringLiteral(" logical range mismatch"));
       }
       near(line.width, expected.value(QStringLiteral("width")).toDouble(),
-           complexMath ? 12.0 : 0.2,
+           0.2,
            context + QStringLiteral(" width"));
       near(line.baseline, expected.value(QStringLiteral("baseline")).toDouble(),
-           complexMath ? 6.0 : 0.25,
+           0.25,
            context + QStringLiteral(" baseline"));
       near(line.ascent, expected.value(QStringLiteral("ascent")).toDouble(),
-           complexMath ? 6.0 : 0.25,
+           0.25,
            context + QStringLiteral(" ascent"));
       near(line.descent, expected.value(QStringLiteral("descent")).toDouble(),
-           complexMath ? 6.0 : 0.25,
+           0.25,
            context + QStringLiteral(" descent"));
 
       const QVector<VisualRun> runs = normalizedRuns(line);
@@ -134,10 +134,10 @@ int main(int argc, char** argv) {
                     runs[runIndex].math == expectedRun.value(QStringLiteral("math")).toBool(),
                 runContext + QStringLiteral(" direction/type mismatch"));
         near(runs[runIndex].x, expectedRun.value(QStringLiteral("x")).toDouble(),
-             complexMath ? 12.0 : 0.2,
+             0.2,
              runContext + QStringLiteral(" x"));
         near(runs[runIndex].width, expectedRun.value(QStringLiteral("width")).toDouble(),
-             complexMath ? 12.0 : 0.2,
+             0.2,
              runContext + QStringLiteral(" width"));
         rtlRuns += runs[runIndex].rtl;
         mathRuns += runs[runIndex].math;

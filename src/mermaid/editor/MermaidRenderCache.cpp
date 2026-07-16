@@ -299,16 +299,48 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         style.actorFill = QStringLiteral("#1f2020");
         style.actorStroke = QStringLiteral("#cccccc");
         style.textColor = QStringLiteral("#d3d3d3");
+        style.actorTextColor = QStringLiteral("#d3d3d3");
         style.signalColor = QStringLiteral("#d3d3d3");
+        style.signalTextColor = QStringLiteral("#d3d3d3");
         style.lifelineColor = QStringLiteral("#cccccc");
         style.noteFill = QStringLiteral("#474949");
         style.noteStroke = QStringLiteral("#2f2f2f");
+        style.noteTextColor = QStringLiteral("#ffffff");
         style.activationFill = QStringLiteral("#2f3030");
         style.activationStroke = QStringLiteral("#cccccc");
         style.fragmentStroke = QStringLiteral("#d3d3d3");
+        style.loopTextColor = QStringLiteral("#d3d3d3");
         style.labelFill = QStringLiteral("#1f2020");
+        style.labelStroke = QStringLiteral("#bdbccc");
+        style.labelTextColor = QStringLiteral("#d3d3d3");
+        style.sequenceNumberColor = QStringLiteral("#ffffff");
         style.boxStroke = QStringLiteral("rgba(204,204,204,0.5)");
       }
+      const QHash<QString, QString> sequenceTheme = themeOverrides(pre.config);
+      const auto applyTheme = [&](QString& target, const QString& key) {
+        if (sequenceTheme.contains(key)) target = sequenceTheme.value(key);
+      };
+      applyTheme(style.actorFill, QStringLiteral("actorBkg"));
+      applyTheme(style.actorStroke, QStringLiteral("actorBorder"));
+      applyTheme(style.actorTextColor, QStringLiteral("actorTextColor"));
+      applyTheme(style.lifelineColor, QStringLiteral("actorLineColor"));
+      applyTheme(style.signalColor, QStringLiteral("signalColor"));
+      applyTheme(style.signalTextColor, QStringLiteral("signalTextColor"));
+      applyTheme(style.noteFill, QStringLiteral("noteBkgColor"));
+      applyTheme(style.noteStroke, QStringLiteral("noteBorderColor"));
+      applyTheme(style.noteTextColor, QStringLiteral("noteTextColor"));
+      applyTheme(style.activationFill, QStringLiteral("activationBkgColor"));
+      applyTheme(style.activationStroke, QStringLiteral("activationBorderColor"));
+      applyTheme(style.fragmentFill, QStringLiteral("rectBkgColor"));
+      applyTheme(style.fragmentStroke, QStringLiteral("labelBoxBorderColor"));
+      applyTheme(style.loopTextColor, QStringLiteral("loopTextColor"));
+      applyTheme(style.labelFill, QStringLiteral("labelBoxBkgColor"));
+      applyTheme(style.labelStroke, QStringLiteral("labelBoxBorderColor"));
+      applyTheme(style.labelTextColor, QStringLiteral("labelTextColor"));
+      applyTheme(style.sequenceNumberColor, QStringLiteral("sequenceNumberColor"));
+      applyTheme(style.fontFamily, QStringLiteral("fontFamily"));
+      if (sequenceTheme.contains(QStringLiteral("fontSize")))
+        style.fontSize = pixelValue(sequenceTheme.value(QStringLiteral("fontSize")), style.fontSize);
       sequence::SequenceScene scene = sequence::buildSequenceScene(layout, style);
       MermaidRenderEntry entry;
       entry.status = MermaidRenderStatus::Ready;

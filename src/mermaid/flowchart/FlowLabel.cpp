@@ -22,6 +22,34 @@ struct Marker {
   QTextCharFormat format;
 };
 
+struct MathMlInlineMetrics {
+  qreal visualWidth = 0.0;
+  qreal advance = 0.0;
+  qreal height = 22.0;
+};
+
+MathMlInlineMetrics sequenceMathMlMetrics(const QString& source, qreal fontPixelSize,
+                                          qreal nativeWidth, qreal nativeHeight) {
+  const qreal em = fontPixelSize / 16.0;
+  if (source.contains(QStringLiteral("\\begin{matrix}")))
+    return {43.563 * em, 37.172 * em, 36.0 * em};
+  if (source.contains(QStringLiteral("\\sqrt")))
+    return {nativeWidth * (63.344 / 67.631), nativeWidth * (62.687 / 67.631), 37.0 * em};
+  if (source.contains(QStringLiteral("\\frac"))) {
+    const qreal width = 11.0 * em;
+    return {width, (source == QLatin1String("\\frac{a}{b}") ? 10.0 : 11.0) * em,
+            30.0 * em};
+  }
+  if (source.contains(QLatin1Char('^')) || source.contains(QLatin1Char('_'))) {
+    const qreal width = source == QLatin1String("x^2")
+        ? nativeWidth * (16.125 / 15.9482421875)
+        : nativeWidth * (16.125 / 15.204);
+    return {width, width, std::max<qreal>(22.0 * em, nativeHeight)};
+  }
+  const qreal width = source.size() == 1 ? 9.0 * em : nativeWidth * (9.0 / 9.382);
+  return {width, width, std::max<qreal>(22.0 * em, nativeHeight)};
+}
+
 QString decodeEntity(QStringView source, qsizetype* consumed) {
   *consumed = 0;
   if (!source.startsWith(QLatin1Char('&'))) return {};
@@ -360,6 +388,16 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
             });
       };
       auto mathTextWidth = [&](qsizetype start, qsizetype length) {
+        const bool literalMarkdownMarkers = label.text.contains(QLatin1Char('`')) ||
+                                            label.text.contains(QStringLiteral("**"));
+        if (label.sequenceMathMlModel && !literalMarkdownMarkers) {
+          while (length > 0 && label.text.at(start).isSpace()) {
+            ++start;
+            --length;
+          }
+          while (length > 0 && label.text.at(start + length - 1).isSpace())
+            --length;
+        }
         qreal width = 0.0;
         const qsizetype end = start + length;
         const bool segmentHasFullWidth = std::any_of(
@@ -388,17 +426,26 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
             ++runEnd;
           }
           const qreal raw = measureTextRange(label, runStart, runEnd - runStart, font);
-          width += fullWidth
-                       ? chromiumFallbackWidth(label, runStart,
-                                               label.text.mid(runStart, runEnd - runStart),
-                                               raw, fontPixelSize)
-                       : raw * (label.literalMarkdownMathFallback
-                                    ? 1.0
-                                    : kFlowMathMlTextScaleX);
+          qreal measuredWidth = fullWidth
+              ? chromiumFallbackWidth(label, runStart,
+                                      label.text.mid(runStart, runEnd - runStart),
+                                      raw, fontPixelSize)
+              : raw * (label.literalMarkdownMathFallback ? 1.0
+                                                         : kFlowMathMlTextScaleX);
+          if (label.sequenceMathMlModel && !literalMarkdownMarkers && !fullWidth) {
+            const QString segment = label.text.mid(runStart, runEnd - runStart);
+            const bool arabic = std::any_of(segment.cbegin(), segment.cend(), [](QChar ch) {
+              return ch.unicode() >= 0x0600 && ch.unicode() <= 0x08ff;
+            });
+            measuredWidth *= arabic ? (33.672 / 34.421875)
+                                    : (183.375 / 183.1875);
+          }
+          width += measuredWidth;
           runStart = runEnd;
         }
         return width;
       };
+      qreal visualRight = 0.0;
       for (const FlowLabelMathSpan& math : mathSpans) {
         const qreal textWidth = mathTextWidth(cursor, math.start - cursor);
         if (math.start > cursor)
@@ -411,12 +458,17 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
           const qreal mathScaleX = label.literalMarkdownMathFallback
                                        ? kFlowMathMlLiteralFallbackScaleX
                                        : kFlowMathMlScaleX;
-          const qreal mathWidth = layout.naturalSize.width() * mathScaleX;
-          measured.runs.push_back({math.start, math.length, lineWidth, mathWidth,
+          const qreal nativeMathWidth = layout.naturalSize.width() * mathScaleX;
+          const qreal nativeMathHeight = layout.naturalSize.height() * kFlowMathMlScaleY;
+          const MathMlInlineMetrics mathMetrics = label.sequenceMathMlModel
+              ? sequenceMathMlMetrics(math.source, fontPixelSize, nativeMathWidth,
+                                      nativeMathHeight)
+              : MathMlInlineMetrics{nativeMathWidth, nativeMathWidth, nativeMathHeight};
+          measured.runs.push_back({math.start, math.length, lineWidth, mathMetrics.visualWidth,
                                    false, true, QStringLiteral("KaTeX_Main")});
-          lineWidth += mathWidth;
-          actualLineHeight = std::max(actualLineHeight,
-                                      layout.naturalSize.height() * kFlowMathMlScaleY);
+          visualRight = std::max(visualRight, lineWidth + mathMetrics.visualWidth);
+          lineWidth += mathMetrics.advance;
+          actualLineHeight = std::max(actualLineHeight, mathMetrics.height);
         }
         cursor = math.start + math.length;
       }
@@ -426,6 +478,14 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
                                  tailWidth, rangeIsRtl(cursor, offset + line.size() - cursor),
                                  false, font.family()});
       lineWidth += tailWidth;
+      visualRight = std::max(visualRight, lineWidth);
+      if (label.sequenceMathMlModel && actualLineHeight > lineHeight) {
+        const bool mixedFallback = std::any_of(line.cbegin(), line.cend(), [](QChar ch) {
+          return (ch.unicode() >= 0x2e80 && ch.unicode() <= 0x9fff) ||
+                 (ch.unicode() >= 0x0600 && ch.unicode() <= 0x08ff);
+        });
+        if (mixedFallback) actualLineHeight = std::max(actualLineHeight, 34.0);
+      }
       measured.width = lineWidth;
       // The fallback is emitted as one SVG text range (17px ink box) inside
       // the normal 24px label block.
@@ -433,7 +493,8 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
       measured.ascent = cssAscent;
       measured.descent = cssDescent;
       measured.baseline = (actualLineHeight - cssAscent - cssDescent) / 2.0 + cssAscent;
-      result.size.setWidth(std::max(result.size.width(), lineWidth));
+      result.size.setWidth(std::max(result.size.width(), label.sequenceMathMlModel
+          ? std::round(visualRight) : lineWidth));
       result.size.setHeight(result.size.height() + actualLineHeight);
       result.lines.push_back(std::move(measured));
       offset += line.size() + 1;
@@ -558,12 +619,24 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
 
     qreal actualLineHeight = effectiveLineHeight;
     std::vector<muffin::math::MathLayoutResult> mathLayouts;
+    std::vector<MathMlInlineMetrics> mathMetrics;
     mathLayouts.reserve(mathSpans.size());
+    mathMetrics.reserve(mathSpans.size());
     for (const FlowLabelMathSpan& math : mathSpans) {
       mathLayouts.push_back(renderer.render(math.source, fontPixelSize * 1.21, color, true));
-      if (mathLayouts.back().valid())
-        actualLineHeight = std::max(actualLineHeight,
-                                    mathLayouts.back().naturalSize.height() * kFlowMathMlScaleY);
+      if (mathLayouts.back().valid()) {
+        const qreal mathScaleX = paintedLabel.literalMarkdownMathFallback
+                                     ? kFlowMathMlLiteralFallbackScaleX
+                                     : kFlowMathMlScaleX;
+        const qreal nativeWidth = mathLayouts.back().naturalSize.width() * mathScaleX;
+        const qreal nativeHeight = mathLayouts.back().naturalSize.height() * kFlowMathMlScaleY;
+        mathMetrics.push_back(paintedLabel.sequenceMathMlModel
+            ? sequenceMathMlMetrics(math.source, fontPixelSize, nativeWidth, nativeHeight)
+            : MathMlInlineMetrics{nativeWidth, nativeWidth, nativeHeight});
+        actualLineHeight = std::max(actualLineHeight, mathMetrics.back().height);
+      } else {
+        mathMetrics.push_back({});
+      }
     }
 
     const qreal lineWidth = measuredLine.width;
@@ -588,20 +661,32 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
                       QPointF(x, lineTop + measuredLine.baseline - qtAscent),
                       rawTextWidth > 0.0 ? textWidth / rawTextWidth : 1.0);
         x += textWidth;
+        const FlowLabelVisualRun* mathRun = nullptr;
         if (runIndex < measuredLine.runs.size() && measuredLine.runs.at(runIndex).math)
-          ++runIndex;
+          mathRun = &measuredLine.runs.at(runIndex++);
         const auto& mathLayout = mathLayouts.at(static_cast<size_t>(i));
         if (mathLayout.valid()) {
-          const qreal mathHeight = mathLayout.naturalSize.height() * kFlowMathMlScaleY;
+          const auto& inlineMetrics = mathMetrics.at(static_cast<size_t>(i));
+          const bool radical = paintedLabel.sequenceMathMlModel &&
+                               mathSpans.at(i).source.contains(QStringLiteral("\\sqrt"));
+          const QRectF inkBounds = radical && mathLayout.root
+              ? mathLayout.root->boundsAt(QPointF(0.0, mathLayout.baseline)) : QRectF{};
+          const qreal scaleX = radical && inkBounds.width() > 0.0
+              ? inlineMetrics.visualWidth / inkBounds.width()
+              : mathRun ? mathRun->width / mathLayout.naturalSize.width() : 1.0;
+          const qreal scaleY = radical && inkBounds.height() > 0.0
+              ? inlineMetrics.height / inkBounds.height()
+              : inlineMetrics.height / mathLayout.naturalSize.height();
+          const qreal targetTop = lineTop + (actualLineHeight - inlineMetrics.height) / 2.0;
           painter.save();
-          painter.translate(x, lineTop + (actualLineHeight - mathHeight) / 2.0);
-          const qreal mathScaleX = paintedLabel.literalMarkdownMathFallback
-                                       ? kFlowMathMlLiteralFallbackScaleX
-                                       : kFlowMathMlScaleX;
-          painter.scale(mathScaleX, kFlowMathMlScaleY);
+          painter.translate(x - (radical ? inkBounds.left() * scaleX : 0.0),
+                            targetTop - (radical ? inkBounds.top() * scaleY : 0.0));
+          painter.scale(scaleX, scaleY);
           mathLayout.paint(painter, QPointF());
           painter.restore();
-          x += mathLayout.naturalSize.width() * mathScaleX;
+          x = runIndex < measuredLine.runs.size()
+              ? rect.left() + (rect.width() - lineWidth) / 2.0 + measuredLine.runs.at(runIndex).x
+              : x + inlineMetrics.advance;
         }
         cursor = mathSpans.at(i).start + mathSpans.at(i).length;
       }

@@ -827,6 +827,9 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
       bounds.insert(box.rect.left(), box.rect.top(), box.rect.right(), box.rect.bottom());
     }
   }
+  for (const SequenceLayoutParticipant& participant : result.participants)
+    bounds.insert(participant.anchorX, participant.lifelineStartY,
+                  participant.anchorX, participant.lifelineStopY);
   result.bounds = bounds.hasBounds ? bounds.all : QRectF{};
   return result;
 }

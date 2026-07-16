@@ -9,6 +9,7 @@
 #include <QJsonObject>
 #include <QRegularExpression>
 
+#include <algorithm>
 #include <cstdlib>
 
 using namespace muffin::mermaid;
@@ -36,13 +37,13 @@ int main(int argc,char** argv) {
   const QJsonObject root=QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("mermaidVersion")).toString()==QLatin1String("11.16.0")&&
               root.value(QStringLiteral("fixtureSha256")).toString()==
-                  QLatin1String("305fac299f6f9cead1a89874a7dc44bf98fbe5c0f6ce525dba1f75bf5d293112"),
+                  QLatin1String("992fe7c87f5c6902a498f3ddd7c00c6da2dbdeac996a1b0e583b83f4fb8072dc"),
           QStringLiteral("Sequence SVG structural fixture drifted"));
 
   editor::MermaidRenderCache cache;
-  int mathCases=0,foreignObjectCases=0,ariaCases=0,labelCases=0,domEntries=0;
+  int mathCases=0,foreignObjectCases=0,ariaCases=0,labelCases=0,domEntries=0,markerEntries=0;
   const QJsonArray cases=root.value(QStringLiteral("cases")).toArray();
-  require(cases.size()==19,QStringLiteral("Sequence SVG structural matrix regressed"));
+  require(cases.size()==20,QStringLiteral("Sequence SVG structural matrix regressed"));
   for(const QJsonValue& value:cases) {
     const QJsonObject fixture=value.toObject();
     const QString id=fixture.value(QStringLiteral("id")).toString();
@@ -72,6 +73,23 @@ int main(int argc,char** argv) {
     require((mathCount>0)==(foreignCount>0),
             QStringLiteral("%1 MathML/foreignObject pairing drifted").arg(id));
     mathCases+=mathCount>0; foreignObjectCases+=foreignCount>0;
+    const QJsonArray markers=structure.value(QStringLiteral("markers")).toArray();
+    require(structure.value(QStringLiteral("defs")).toInt()>=markers.size()&&markers.size()>=8,
+            QStringLiteral("%1 defs/marker count drifted").arg(id));
+    for(const QJsonValue& markerValue:markers) {
+      const QJsonObject marker=markerValue.toObject();
+      require(!marker.value(QStringLiteral("id")).toString().isEmpty()&&
+                  !marker.value(QStringLiteral("refX")).toString().isEmpty()&&
+                  !marker.value(QStringLiteral("refY")).toString().isEmpty()&&
+                  !marker.value(QStringLiteral("markerWidth")).toString().isEmpty()&&
+                  !marker.value(QStringLiteral("markerHeight")).toString().isEmpty()&&
+                  !marker.value(QStringLiteral("orient")).toString().isEmpty()&&
+                  !marker.value(QStringLiteral("childTag")).toString().isEmpty(),
+              QStringLiteral("%1 marker structural attributes drifted").arg(id));
+    }
+    markerEntries+=markers.size();
+    const QJsonArray classSet=structure.value(QStringLiteral("classSet")).toArray();
+    require(classSet.size()>=8,QStringLiteral("%1 SVG class set regressed").arg(id));
 
     const QJsonArray order=structure.value(QStringLiteral("domOrder")).toArray();
     const QJsonArray textNodes=structure.value(QStringLiteral("textNodes")).toArray();
@@ -117,11 +135,22 @@ int main(int argc,char** argv) {
     if(!labelledBy.isEmpty()) {
       ++ariaCases;
       const auto data=sequence::SequenceDiagram::parse(source).data();
-      require(!data.accTitle.isEmpty()&&labelledBy.startsWith(QLatin1String("chart-title-")),
+      require(!data.accTitle.isEmpty()&&!data.accDescription.isEmpty()&&
+                  structure.value(QStringLiteral("ariaTitle")).toString()==data.accTitle&&
+                  structure.value(QStringLiteral("ariaDescription")).toString()==data.accDescription&&
+                  labelledBy.startsWith(QLatin1String("chart-title-")),
               QStringLiteral("%1 native/browser accessibility title mismatch").arg(id));
     }
+    if(id==QLatin1String("structural-combined-order")) {
+      require(scene.boxes.size()==1&&scene.participants.size()==3&&scene.activations.size()==1&&
+                  scene.notes.size()==1&&scene.fragments.size()==1&&scene.sequenceNumbers.size()>=3&&
+                  std::all_of(scene.participants.cbegin(),scene.participants.cend(),
+                              [](const auto& actor){return !actor.drawBottom;}),
+              QStringLiteral("combined SVG/native container order coverage regressed"));
+    }
   }
-  require(mathCases>=3&&foreignObjectCases>=3&&ariaCases>=1&&labelCases>=10&&domEntries>=500,
+  require(mathCases>=3&&foreignObjectCases>=3&&ariaCases>=1&&labelCases>=10&&domEntries>=500&&
+              markerEntries>=160,
           QStringLiteral("Sequence SVG structural coverage regressed"));
   qDebug()<<"MermaidSequenceSvgStructuralTest:"<<cases.size()<<"cases,"<<domEntries
           <<"ordered DOM entries passed";

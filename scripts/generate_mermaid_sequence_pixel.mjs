@@ -60,6 +60,12 @@ const cases = [
   { id: "label-dpr-200-default-box", dpr: 2, cropSelector: "text.text", cropKind: "box",
     source: "sequenceDiagram\nbox rgb(238, 246, 255) 服务 Services\nparticipant A\nparticipant B\nend\nA->>B:call" },
   { id: "structural-aria", source: "sequenceDiagram\naccTitle: Checkout sequence\naccDescr: Client request lifecycle\nA->>B:go" },
+  { id: "structural-combined-order", source: [
+      '%%{init: {"sequence": {"mirrorActors": false, "hideUnusedParticipants": true}}}%%',
+      "sequenceDiagram", "autonumber", "participant UNUSED", "box rgb(238, 246, 255) Services",
+      "participant A", "participant B", "end", "A->>+B:call", "alt branch",
+      "Note over A,B:note", "B-->>-A:return", "end", "create participant C", "A->>C:create",
+      "destroy C", "C-xA:destroy"].join("\n") },
 ];
 const { default: puppeteer } = await import(pathToFileURL(path.join(path.dirname(mermaidRoot), "puppeteer", "lib", "puppeteer", "puppeteer.js")));
 const browser = await puppeteer.launch({headless:true, executablePath:chrome, args:["--allow-file-access-from-files"]});
@@ -98,6 +104,19 @@ try {
         text:root.querySelectorAll("text").length, tspan:root.querySelectorAll("tspan").length,
         foreignObject:root.querySelectorAll("foreignObject").length,
         math:root.querySelectorAll("math").length, clipPath:root.querySelectorAll("clipPath").length,
+        defs:root.querySelectorAll("defs").length,
+        markers:[...root.querySelectorAll("marker")].map((marker)=>({
+          id:marker.id,class:marker.getAttribute("class") ?? "",viewBox:marker.getAttribute("viewBox") ?? "",
+          refX:marker.getAttribute("refX") ?? "",refY:marker.getAttribute("refY") ?? "",
+          markerWidth:marker.getAttribute("markerWidth") ?? "",markerHeight:marker.getAttribute("markerHeight") ?? "",
+          markerUnits:marker.getAttribute("markerUnits") ?? "",orient:marker.getAttribute("orient") ?? "",
+          childTag:marker.firstElementChild?.tagName ?? "",
+          childClass:marker.firstElementChild?.getAttribute("class") ?? "",
+          childPath:marker.firstElementChild?.getAttribute("d") ?? ""})),
+        classSet:[...new Set([...root.querySelectorAll("[class]")]
+          .flatMap((node)=>[...node.classList]))].sort(),
+        ariaTitle:root.querySelector("title")?.textContent ?? "",
+        ariaDescription:root.querySelector("desc")?.textContent ?? "",
         labelTag:selected?.tagName ?? "", labelClass:selected?.getAttribute("class") ?? "",
         labelParentTag:selected?.parentElement?.tagName ?? "",
         labelAttributes:selected ? Object.fromEntries([...selected.attributes].map((attribute)=>
@@ -131,6 +150,15 @@ try {
         return {x:left,y:top,width:Math.max(1,right-left),height:Math.max(1,bottom-top)};
       },cases[i].cropCount ?? (cases[i].cropFirst ? 1 : 0));
       if (!clip) throw new Error(`${cases[i].id}: crop selector resolved to nothing`);
+      await page.$$eval(cases[i].cropSelector,(elements,cropCount)=>{
+        const selected=cropCount>0 ? elements.slice(0,cropCount) : elements;
+        const root=document.querySelector("svg");
+        for(const node of root.querySelectorAll("*")) node.style.visibility="hidden";
+        for(const node of selected) {
+          node.style.visibility="visible";
+          for(const child of node.querySelectorAll("*")) child.style.visibility="visible";
+        }
+      },cases[i].cropCount ?? (cases[i].cropFirst ? 1 : 0));
       await page.screenshot({path:path.join(outDir,cropFile),omitBackground:true,clip});
     }
     const sha256=createHash("sha256").update(fs.readFileSync(path.join(outDir,file))).digest("hex");

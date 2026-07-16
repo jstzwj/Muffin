@@ -28,6 +28,7 @@ struct FlowLabelDocument {
   QVector<QTextLayout::FormatRange> formats;
   QVector<FlowLabelMathSpan> math;
   bool literalMarkdownMathFallback = false;
+  bool sequenceMathMlModel = false;
   Qt::LayoutDirection direction = Qt::LayoutDirectionAuto;
 };
 

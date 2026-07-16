@@ -260,6 +260,37 @@ int main(int argc, char** argv) {
             QStringLiteral("wrapped participant height must reach participant geometry"));
   }
 
+  // --- sequence themeVariables reach their distinct painter channels ---
+  {
+    MermaidRenderCache cache;
+    const QString source = QStringLiteral(
+        "%%{init: {\"themeVariables\": {\"actorBkg\": \"#101112\", "
+        "\"actorBorder\": \"#202122\", \"actorTextColor\": \"#303132\", "
+        "\"actorLineColor\": \"#404142\", \"signalColor\": \"#505152\", "
+        "\"signalTextColor\": \"#606162\", \"noteBkgColor\": \"#707172\", "
+        "\"noteBorderColor\": \"#808182\", \"noteTextColor\": \"#909192\", "
+        "\"activationBkgColor\": \"#a0a1a2\", "
+        "\"activationBorderColor\": \"#b0b1b2\", "
+        "\"labelBoxBkgColor\": \"#c0c1c2\", "
+        "\"labelBoxBorderColor\": \"#d0d1d2\", "
+        "\"labelTextColor\": \"#e0e1e2\", \"loopTextColor\": \"#f0f1f2\", "
+        "\"sequenceNumberColor\": \"#123456\"}}}%%\n"
+        "sequenceDiagram\nautonumber\nA->>+B:call\nNote over A,B:note\nalt branch\nB-->>-A:return\nend");
+    const auto entry=cache.getSync(MermaidRenderCache::makeKey(source),source);
+    require(entry.status==kReady&&entry.sequenceScene,
+            QStringLiteral("sequence themeVariables case must render"));
+    const auto& style=entry.sequenceScene->style;
+    require(style.actorFill==QLatin1String("#101112")&&style.actorStroke==QLatin1String("#202122")&&
+                style.actorTextColor==QLatin1String("#303132")&&style.lifelineColor==QLatin1String("#404142")&&
+                style.signalColor==QLatin1String("#505152")&&style.signalTextColor==QLatin1String("#606162")&&
+                style.noteFill==QLatin1String("#707172")&&style.noteStroke==QLatin1String("#808182")&&
+                style.noteTextColor==QLatin1String("#909192")&&style.activationFill==QLatin1String("#a0a1a2")&&
+                style.activationStroke==QLatin1String("#b0b1b2")&&style.labelFill==QLatin1String("#c0c1c2")&&
+                style.labelStroke==QLatin1String("#d0d1d2")&&style.labelTextColor==QLatin1String("#e0e1e2")&&
+                style.loopTextColor==QLatin1String("#f0f1f2")&&style.sequenceNumberColor==QLatin1String("#123456"),
+            QStringLiteral("sequence themeVariables did not reach all painter channels"));
+  }
+
   // --- regression: the example.md diagram (nested compound + cluster-crossing
   // edges + `-- text -->` labeled edges + self-loop + cycle). This previously
   // failed twice: (1) `A -- x --> B` labeled edges mis-parsed as a node, and
