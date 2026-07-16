@@ -12,7 +12,9 @@ public:
   static bool hasPath(const QString& name);
   static QString path(const QString& name);
   static QPainterPath painterPath(const QString& name, QRectF target);
-  static QPainterPath painterPathFromSvgPath(const QString& svgPath, QRectF viewBox, QRectF target);
+  static QPainterPath painterPathFromSvgPath(
+      const QString& svgPath, QRectF viewBox, QRectF target,
+      Qt::AspectRatioMode aspectRatioMode = Qt::IgnoreAspectRatio);
   static QString innerPath(const QString& name, int height);
   static QString tallDelimiterPath(const QString& label, int midHeight);
   static QString sqrtPath(const QString& size, qreal extraVinculum, int viewBoxHeight);

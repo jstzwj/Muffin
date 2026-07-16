@@ -97,6 +97,7 @@ std::unique_ptr<MathLayoutNode> layoutFromRenderNode(std::unique_ptr<MathRenderN
   layout->font = node->font;
   layout->color = node->color;
   layout->width = node->width;
+  layout->paintWidth = node->paintWidth;
   layout->height = node->height;
   layout->depth = node->depth;
   layout->shift = node->shift;
@@ -128,6 +129,7 @@ std::unique_ptr<MathRenderNode> renderNodeFromLayout(const MathLayoutNode& node)
   render->font = node.font;
   render->color = node.color;
   render->width = node.width;
+  render->paintWidth = node.paintWidth;
   render->height = node.height;
   render->depth = node.depth;
   render->shift = node.shift;

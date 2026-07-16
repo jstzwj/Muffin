@@ -70,6 +70,37 @@ void testStrictMathGeometryFeatures1() {
           QStringLiteral("KaTeX tall delimiter SVG path should be generated"));
   require(!math::MathSvgGeometry::sqrtPath(QStringLiteral("sqrtTall"), 0.0, 3200).isEmpty(),
           QStringLiteral("KaTeX sqrt SVG path should be generated"));
+  const QString sqrtSize2 = math::MathSvgGeometry::sqrtPath(QStringLiteral("sqrtSize2"), 0.0, 1944);
+  const QRectF sqrtViewBox(0.0, 0.0, 400000.0, 1944.0);
+  const QRectF sqrtTarget(0.0, 0.0, 400.0, 194.4);
+  const QPainterPath sqrtPainterPath =
+      math::MathSvgGeometry::painterPathFromSvgPath(sqrtSize2, sqrtViewBox, sqrtTarget);
+  const QRectF sqrtInk = sqrtPainterPath.boundingRect();
+  require(sqrtInk.width() > sqrtTarget.width() * 0.99 &&
+              sqrtInk.height() > sqrtTarget.height() * 0.85,
+          QStringLiteral("KaTeX sqrt path should preserve ordered x/y coordinates and full vinculum"));
+  require(sqrtPainterPath.fillRule() == Qt::WindingFill,
+          QStringLiteral("KaTeX SVG paths should use the SVG nonzero fill rule"));
+  const QPainterPath slicedSqrt = math::MathSvgGeometry::painterPathFromSvgPath(
+      sqrtSize2, sqrtViewBox, sqrtTarget, Qt::KeepAspectRatioByExpanding);
+  require(slicedSqrt.boundingRect().width() > sqrtTarget.width() * 100.0 &&
+              slicedSqrt.boundingRect().height() > sqrtTarget.height() * 0.85,
+          QStringLiteral("KaTeX sqrt slice should scale by height before its parent clips width"));
+
+  const auto sqrtNodes = math::MathParser(QStringLiteral("\\sqrt{x_i^2}"), delimiterSettings).parse();
+  std::unique_ptr<math::MathRenderNode> sqrtRoot =
+      math::MathBuilder(delimiterOptions).buildExpression(sqrtNodes);
+  const std::function<const math::MathRenderNode*(const math::MathRenderNode*)> findRadical =
+      [&](const math::MathRenderNode* node) -> const math::MathRenderNode* {
+    if (node == nullptr) return nullptr;
+    if (node->pathName.startsWith(QStringLiteral("sqrt"))) return node;
+    for (const auto& child : node->children)
+      if (const auto* result = findRadical(child.get())) return result;
+    return nullptr;
+  };
+  const math::MathRenderNode* radical = findRadical(sqrtRoot.get());
+  require(radical != nullptr && radical->paintWidth > radical->width,
+          QStringLiteral("KaTeX sqrt SVG should paint across its expression while advancing by the delimiter"));
 
   requireMathSnippetLayout(QStringLiteral("\\left\\lbrace\\frac{\\frac{a}{b}}{\\frac{c}{d}}\\right\\rbrace"), QStringLiteral("stacked brace delimiter"));
   requireMathSnippetLayout(QStringLiteral("\\left[\\begin{matrix}a\\\\\\frac{b}{c}\\\\d\\end{matrix}\\right]"), QStringLiteral("stacked bracket matrix delimiter"));

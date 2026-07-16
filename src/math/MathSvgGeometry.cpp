@@ -47,6 +47,8 @@ qreal nextNumber(const QVector<QString>& tokens, int& index) {
 QPainterPath parseSvgPath(const QString& source) {
   const QVector<QString> tokens = pathTokens(source);
   QPainterPath path;
+  // SVG's default fill-rule is nonzero; QPainterPath defaults to odd-even.
+  path.setFillRule(Qt::WindingFill);
   QChar command;
   QPointF current;
   QPointF subpathStart;
@@ -69,6 +71,11 @@ QPainterPath parseSvgPath(const QString& source) {
       QPointF p(x, y);
       return relative ? current + p : p;
     };
+    const auto nextPoint = [&]() {
+      const qreal x = nextNumber(tokens, i);
+      const qreal y = nextNumber(tokens, i);
+      return point(x, y);
+    };
     const auto hasNumber = [&]() {
       return i < tokens.size() && !isCommandToken(tokens.at(i));
     };
@@ -76,7 +83,7 @@ QPainterPath parseSvgPath(const QString& source) {
     if (c == QLatin1Char('M')) {
       bool first = true;
       while (hasNumber() && i + 1 < tokens.size()) {
-        const QPointF p = point(nextNumber(tokens, i), nextNumber(tokens, i));
+        const QPointF p = nextPoint();
         if (first) {
           path.moveTo(p);
           subpathStart = p;
@@ -88,7 +95,7 @@ QPainterPath parseSvgPath(const QString& source) {
       }
     } else if (c == QLatin1Char('L')) {
       while (hasNumber() && i + 1 < tokens.size()) {
-        current = point(nextNumber(tokens, i), nextNumber(tokens, i));
+        current = nextPoint();
         path.lineTo(current);
       }
     } else if (c == QLatin1Char('H')) {
@@ -105,9 +112,9 @@ QPainterPath parseSvgPath(const QString& source) {
       }
     } else if (c == QLatin1Char('C')) {
       while (hasNumber() && i + 5 < tokens.size()) {
-        const QPointF c1 = point(nextNumber(tokens, i), nextNumber(tokens, i));
-        const QPointF c2 = point(nextNumber(tokens, i), nextNumber(tokens, i));
-        const QPointF p = point(nextNumber(tokens, i), nextNumber(tokens, i));
+        const QPointF c1 = nextPoint();
+        const QPointF c2 = nextPoint();
+        const QPointF p = nextPoint();
         path.cubicTo(c1, c2, p);
         current = p;
         lastCubicControl = c2;
@@ -117,8 +124,8 @@ QPainterPath parseSvgPath(const QString& source) {
     } else if (c == QLatin1Char('S')) {
       while (hasNumber() && i + 3 < tokens.size()) {
         const QPointF c1 = hasLastCubic ? current * 2.0 - lastCubicControl : current;
-        const QPointF c2 = point(nextNumber(tokens, i), nextNumber(tokens, i));
-        const QPointF p = point(nextNumber(tokens, i), nextNumber(tokens, i));
+        const QPointF c2 = nextPoint();
+        const QPointF p = nextPoint();
         path.cubicTo(c1, c2, p);
         current = p;
         lastCubicControl = c2;
@@ -127,8 +134,8 @@ QPainterPath parseSvgPath(const QString& source) {
       }
     } else if (c == QLatin1Char('Q')) {
       while (hasNumber() && i + 3 < tokens.size()) {
-        const QPointF q = point(nextNumber(tokens, i), nextNumber(tokens, i));
-        const QPointF p = point(nextNumber(tokens, i), nextNumber(tokens, i));
+        const QPointF q = nextPoint();
+        const QPointF p = nextPoint();
         path.quadTo(q, p);
         current = p;
         lastQuadControl = q;
@@ -138,7 +145,7 @@ QPainterPath parseSvgPath(const QString& source) {
     } else if (c == QLatin1Char('T')) {
       while (hasNumber() && i + 1 < tokens.size()) {
         const QPointF q = hasLastQuad ? current * 2.0 - lastQuadControl : current;
-        const QPointF p = point(nextNumber(tokens, i), nextNumber(tokens, i));
+        const QPointF p = nextPoint();
         path.quadTo(q, p);
         current = p;
         lastQuadControl = q;
@@ -200,7 +207,9 @@ QPainterPath MathSvgGeometry::painterPath(const QString& name, QRectF target) {
   return painterPathFromSvgPath(paths().value(name), {}, target);
 }
 
-QPainterPath MathSvgGeometry::painterPathFromSvgPath(const QString& svgPath, QRectF viewBox, QRectF target) {
+QPainterPath MathSvgGeometry::painterPathFromSvgPath(
+    const QString& svgPath, QRectF viewBox, QRectF target,
+    Qt::AspectRatioMode aspectRatioMode) {
   QPainterPath parsed = parseSvgPath(svgPath);
   const QRectF source = viewBox.isEmpty() ? parsed.boundingRect() : viewBox;
   if (parsed.isEmpty() || source.isEmpty() || target.isEmpty()) {
@@ -208,7 +217,15 @@ QPainterPath MathSvgGeometry::painterPathFromSvgPath(const QString& svgPath, QRe
   }
   QTransform transform;
   transform.translate(target.left(), target.top());
-  transform.scale(target.width() / source.width(), target.height() / source.height());
+  qreal scaleX = target.width() / source.width();
+  qreal scaleY = target.height() / source.height();
+  if (aspectRatioMode != Qt::IgnoreAspectRatio) {
+    const qreal uniformScale = aspectRatioMode == Qt::KeepAspectRatio
+        ? qMin(scaleX, scaleY) : qMax(scaleX, scaleY);
+    scaleX = uniformScale;
+    scaleY = uniformScale;
+  }
+  transform.scale(scaleX, scaleY);
   transform.translate(-source.left(), -source.top());
   return transform.map(parsed);
 }

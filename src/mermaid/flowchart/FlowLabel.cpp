@@ -12,6 +12,7 @@
 #include <QRegularExpression>
 
 #include <algorithm>
+#include <functional>
 #include <vector>
 
 namespace muffin::mermaid::flowchart {
@@ -28,12 +29,35 @@ struct MathMlInlineMetrics {
   qreal height = 22.0;
 };
 
-MathMlInlineMetrics sequenceMathMlMetrics(const QString& source, qreal fontPixelSize,
+bool mathTreeContains(const muffin::math::MathRenderNode* node,
+                      const std::function<bool(const muffin::math::MathRenderNode&)>& predicate) {
+  if (node == nullptr) return false;
+  if (predicate(*node)) return true;
+  return std::any_of(node->children.cbegin(), node->children.cend(), [&](const auto& child) {
+    return mathTreeContains(child.get(), predicate);
+  });
+}
+
+bool isRadical(const muffin::math::MathLayoutResult& layout) {
+  return mathTreeContains(layout.root.get(), [](const auto& node) {
+    return node.pathName.startsWith(QStringLiteral("sqrt"));
+  });
+}
+
+bool isArray(const muffin::math::MathLayoutResult& layout) {
+  return mathTreeContains(layout.root.get(), [](const auto& node) {
+    return node.kind == muffin::math::MathRenderKind::Array;
+  });
+}
+
+MathMlInlineMetrics sequenceMathMlMetrics(const QString& source,
+                                          const muffin::math::MathLayoutResult& layout,
+                                          qreal fontPixelSize,
                                           qreal nativeWidth, qreal nativeHeight) {
   const qreal em = fontPixelSize / 16.0;
-  if (source.contains(QStringLiteral("\\begin{matrix}")))
+  if (isArray(layout))
     return {43.563 * em, 37.172 * em, 36.0 * em};
-  if (source.contains(QStringLiteral("\\sqrt")))
+  if (isRadical(layout))
     return {nativeWidth * (63.344 / 67.631), nativeWidth * (62.687 / 67.631), 37.0 * em};
   if (source.contains(QStringLiteral("\\frac"))) {
     const qreal width = 11.0 * em;
@@ -461,7 +485,7 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
           const qreal nativeMathWidth = layout.naturalSize.width() * mathScaleX;
           const qreal nativeMathHeight = layout.naturalSize.height() * kFlowMathMlScaleY;
           const MathMlInlineMetrics mathMetrics = label.sequenceMathMlModel
-              ? sequenceMathMlMetrics(math.source, fontPixelSize, nativeMathWidth,
+              ? sequenceMathMlMetrics(math.source, layout, fontPixelSize, nativeMathWidth,
                                       nativeMathHeight)
               : MathMlInlineMetrics{nativeMathWidth, nativeMathWidth, nativeMathHeight};
           measured.runs.push_back({math.start, math.length, lineWidth, mathMetrics.visualWidth,
@@ -631,7 +655,8 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
         const qreal nativeWidth = mathLayouts.back().naturalSize.width() * mathScaleX;
         const qreal nativeHeight = mathLayouts.back().naturalSize.height() * kFlowMathMlScaleY;
         mathMetrics.push_back(paintedLabel.sequenceMathMlModel
-            ? sequenceMathMlMetrics(math.source, fontPixelSize, nativeWidth, nativeHeight)
+            ? sequenceMathMlMetrics(math.source, mathLayouts.back(), fontPixelSize,
+                                    nativeWidth, nativeHeight)
             : MathMlInlineMetrics{nativeWidth, nativeWidth, nativeHeight});
         actualLineHeight = std::max(actualLineHeight, mathMetrics.back().height);
       } else {
@@ -667,8 +692,7 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
         const auto& mathLayout = mathLayouts.at(static_cast<size_t>(i));
         if (mathLayout.valid()) {
           const auto& inlineMetrics = mathMetrics.at(static_cast<size_t>(i));
-          const bool radical = paintedLabel.sequenceMathMlModel &&
-                               mathSpans.at(i).source.contains(QStringLiteral("\\sqrt"));
+          const bool radical = paintedLabel.sequenceMathMlModel && isRadical(mathLayout);
           const QRectF inkBounds = radical && mathLayout.root
               ? mathLayout.root->boundsAt(QPointF(0.0, mathLayout.baseline)) : QRectF{};
           const qreal scaleX = radical && inkBounds.width() > 0.0
@@ -677,7 +701,8 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
           const qreal scaleY = radical && inkBounds.height() > 0.0
               ? inlineMetrics.height / inkBounds.height()
               : inlineMetrics.height / mathLayout.naturalSize.height();
-          const qreal targetTop = lineTop + (actualLineHeight - inlineMetrics.height) / 2.0;
+          const qreal targetTop = lineTop + measuredLine.baseline -
+                                  mathLayout.baseline * scaleY;
           painter.save();
           painter.translate(x - (radical ? inkBounds.left() * scaleX : 0.0),
                             targetTop - (radical ? inkBounds.top() * scaleY : 0.0));

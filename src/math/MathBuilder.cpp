@@ -1217,6 +1217,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSqrt(const MathParseNode& node)
   radical->svgPath = MathSvgGeometry::sqrtPath(sqrtName, extraVinculum, viewBoxHeight);
   radical->viewBox = QRectF(0.0, 0.0, 400000.0, viewBoxHeight);
   radical->width = advanceWidthEm * em;
+  radical->paintWidth = radical->width + body->width;
   radical->height = texHeightEm * em;
   radical->depth = 0.0;
   radical->ruleThickness = rule;

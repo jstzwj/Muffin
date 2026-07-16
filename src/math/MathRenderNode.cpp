@@ -113,16 +113,17 @@ void MathRenderNode::paint(QPainter& painter, QPointF origin) const {
       break;
     }
     case MathRenderKind::Stretchy: {
+      const qreal renderedWidth = paintWidth > 0.0 ? paintWidth : width;
       painter.setPen(QPen(color, qMax<qreal>(1.0, ruleThickness), Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
       const qreal left = origin.x();
-      const qreal right = origin.x() + width;
-      const qreal mid = left + width / 2.0;
+      const qreal right = origin.x() + renderedWidth;
+      const qreal mid = left + renderedWidth / 2.0;
       const qreal top = origin.y() - height + ruleThickness;
       const qreal base = origin.y() - ruleThickness;
       if (!pathName.isEmpty() && MathSvgGeometry::hasPath(pathName)) {
         painter.setPen(Qt::NoPen);
         painter.setBrush(color);
-        painter.drawPath(MathSvgGeometry::painterPath(pathName, QRectF(left, origin.y() - height, width, height)));
+        painter.drawPath(MathSvgGeometry::painterPath(pathName, QRectF(left, origin.y() - height, renderedWidth, height)));
       } else if (!svgPath.isEmpty()) {
         painter.setPen(Qt::NoPen);
         painter.setBrush(color);
@@ -130,7 +131,17 @@ void MathRenderNode::paint(QPainter& painter, QPointF origin) const {
         // (e.g. sqrt emPad padding). KaTeX uses span.style.height = texHeight + 0.08
         // for rendering but span.height = texHeight for layout.
         const qreal paintPad = qMin<qreal>(0.0, yOffset);
-        painter.drawPath(MathSvgGeometry::painterPathFromSvgPath(svgPath, viewBox, QRectF(left, origin.y() - height + paintPad, width, height + depth - paintPad)));
+        const QRectF paintRect(left, origin.y() - height + paintPad, renderedWidth,
+                               height + depth - paintPad);
+        if (text == QStringLiteral("\\sqrt")) {
+          painter.save();
+          painter.setClipRect(paintRect, Qt::IntersectClip);
+          painter.drawPath(MathSvgGeometry::painterPathFromSvgPath(
+              svgPath, viewBox, paintRect, Qt::KeepAspectRatioByExpanding));
+          painter.restore();
+        } else {
+          painter.drawPath(MathSvgGeometry::painterPathFromSvgPath(svgPath, viewBox, paintRect));
+        }
       } else if (text == QStringLiteral("\\cancel") || text == QStringLiteral("\\bcancel") || text == QStringLiteral("\\xcancel") ||
                  text == QStringLiteral("\\sout") || text == QStringLiteral("\\fbox") || text == QStringLiteral("\\colorbox") ||
                  text == QStringLiteral("\\fcolorbox") || text == QStringLiteral("\\phase") || text == QStringLiteral("\\angl")) {
@@ -269,6 +280,7 @@ QJsonObject MathRenderNode::toJson() const {
   if (!svgPath.isEmpty()) object.insert(QStringLiteral("hasSvgPath"), true);
   if (!imageSource.isEmpty()) object.insert(QStringLiteral("imageSource"), imageSource);
   object.insert(QStringLiteral("width"), rounded(width));
+  if (paintWidth > 0.0) object.insert(QStringLiteral("paintWidth"), rounded(paintWidth));
   object.insert(QStringLiteral("height"), rounded(height));
   object.insert(QStringLiteral("depth"), rounded(depth));
   object.insert(QStringLiteral("shift"), rounded(shift));
@@ -327,6 +339,7 @@ std::unique_ptr<MathRenderNode> cloneNode(const MathRenderNode& node) {
   copy->font = node.font;
   copy->color = node.color;
   copy->width = node.width;
+  copy->paintWidth = node.paintWidth;
   copy->height = node.height;
   copy->depth = node.depth;
   copy->shift = node.shift;

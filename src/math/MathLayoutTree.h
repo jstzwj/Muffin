@@ -31,6 +31,7 @@ struct MathLayoutNode {
   QFont font;
   QColor color = Qt::black;
   qreal width = 0.0;
+  qreal paintWidth = 0.0;
   qreal height = 0.0;
   qreal depth = 0.0;
   qreal shift = 0.0;

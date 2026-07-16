@@ -42,6 +42,9 @@ struct MathRenderNode {
   QFont font;
   QColor color = Qt::black;
   qreal width = 0.0;
+  // Some KaTeX SVG nodes advance by one delimiter width while painting across
+  // their complete containing expression (notably square-root vincula).
+  qreal paintWidth = 0.0;
   qreal height = 0.0;
   qreal depth = 0.0;
   qreal shift = 0.0;
